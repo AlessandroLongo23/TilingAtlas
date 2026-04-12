@@ -1,10 +1,6 @@
-// TODO(phase-1.6): this file reads from Svelte writable stores via `get()`.
-// Rewrite these calls to use Zustand store selectors after stores are ported.
-// The imports below are intentionally broken until then.
 import { Polygon, Vector } from '@/classes';
 import { map, findIntersection, isWithinTolerance } from '@/utils';
-import { get } from 'svelte/store';
-import { controls, lineWidth, islamicAngle } from '@/stores';
+import { useConfiguration } from "@/stores/configuration";
 
 export enum StarVertexTypes {
     INNER = 'inner',
@@ -80,9 +76,9 @@ export class StarPolygon extends Polygon {
 
     showIslamic = (ctx) => {
         ctx.noFill();
-        ctx.strokeWeight(get(lineWidth) / get(controls).zoom);
+        ctx.strokeWeight(useConfiguration.getState().lineWidth / useConfiguration.getState().controls.zoom);
         ctx.stroke(0, 0, 100);
-        let angle = get(islamicAngle) * Math.PI / 180;
+        let angle = useConfiguration.getState().islamicAngle * Math.PI / 180;
         for (let i = 0; i < this.halfways.length; i++) {
             let perp = Vector.sub(this.vertices[i], this.halfways[i]).rotate(Math.PI / 2);
             let dir1 = Vector.rotate(perp, angle / 2).normalize();

@@ -1,6 +1,6 @@
 import { type GeneratorParameters, PolygonType, StarVertexTypes, Vector, PolygonSignature, VCGenerator, EquilateralPolygon, GenericPolygon } from '@/classes';
 import { coprime, isWithinTolerance, segmentsIntersect, toRadians } from '@/utils';
-import { tolerance } from '@/utils/geoTolerance';
+import { tolerance } from '@/utils/tolerance';
 
 class Segment {
     s: Vector;

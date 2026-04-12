@@ -1,11 +1,7 @@
-// TODO(phase-1.6): this file reads from Svelte writable stores via `get()`.
-// Rewrite these calls to use Zustand store selectors after stores are ported.
-// The imports below are intentionally broken until then.
-import { lineWidth, liveChartMode, controls, islamicAngle, isIslamic } from '@/stores';
+import { useConfiguration } from "@/stores/configuration";
 import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex, isWithinTolerance } from '@/utils';
 import { Vector, Behavior, State } from '@/classes';
-import { get } from 'svelte/store';
-import { tolerance } from '@/stores';
+import { tolerance } from "@/utils/tolerance";
 
 export class Polygon {
     n: number;
@@ -185,18 +181,18 @@ export class Polygon {
 
         // this.calculateHue();
         
-        const lineWidthValue = get(lineWidth);
+        const lineWidthValue = useConfiguration.getState().lineWidth;
         if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / get(controls).zoom);
+            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0, opacity);
         } else if (lineWidthValue === 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(1 / get(controls).zoom);
+            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0, lineWidthValue * opacity);
         }
 
-        if (get(isIslamic)) {
+        if (useConfiguration.getState().isIslamic) {
             this.showIslamic(ctx);
         } else {
             ctx.fill(customColor || this.hue, 40, 100 / opacity, 0.80 * opacity);
@@ -209,16 +205,16 @@ export class Polygon {
 
         if (showPolygonPoints) {
             ctx.fill(0, 100, 100);
-            ctx.ellipse(this.centroid.x, this.centroid.y, 5 / get(controls).zoom);
+            ctx.ellipse(this.centroid.x, this.centroid.y, 5 / useConfiguration.getState().controls.zoom);
             
             ctx.fill(120, 100, 100);
             for (let i = 0; i < this.halfways.length; i++) {
-                ctx.ellipse(this.halfways[i].x, this.halfways[i].y, 5 / get(controls).zoom);
+                ctx.ellipse(this.halfways[i].x, this.halfways[i].y, 5 / useConfiguration.getState().controls.zoom);
             }
             
             ctx.fill(240, 100, 100);
             for (let i = 0; i < this.vertices.length; i++) {
-                ctx.ellipse(this.vertices[i].x, this.vertices[i].y, 5 / get(controls).zoom);
+                ctx.ellipse(this.vertices[i].x, this.vertices[i].y, 5 / useConfiguration.getState().controls.zoom);
             }
         }
 
@@ -227,12 +223,12 @@ export class Polygon {
 
     showIslamic = (ctx) => {
         ctx.noFill();
-        ctx.strokeWeight(get(lineWidth) / get(controls).zoom);
+        ctx.strokeWeight(useConfiguration.getState().lineWidth / useConfiguration.getState().controls.zoom);
         ctx.stroke(0, 0, 100);
         // const noise = ctx.noise(this.centroid.x / 5 + 1000, this.centroid.y / 5 + 1000, ctx.frameCount / 25);
         // const noiseAngle = map(noise, 0, 1, 0, 180);
         // let angle = noiseAngle * Math.PI / 180;
-        let angle = get(islamicAngle) * Math.PI / 180;
+        let angle = useConfiguration.getState().islamicAngle * Math.PI / 180;
         for (let i = 0; i < this.halfways.length; i++) {
             let side = 0.5
             let perp = Vector.sub(this.centroid, this.halfways[i]);
@@ -253,7 +249,7 @@ export class Polygon {
     showGameOfLife = (ctx, ruleType, parsedGolRule, rules) => {
         ctx.push();
         
-        if (get(liveChartMode) === 'count') {
+        if (useConfiguration.getState().liveChartMode === 'count') {
             if (this.state === 0) {
                 ctx.fill(0, 0, 100);
             } else if (this.state === 1) {

@@ -11,3 +11,4 @@ export * from "./compactSeedName";
 export * from "./vcChiral";
 export * from "./authorIdentity";
 export * from "./experimentHash";
+export * from "./fetchPipelineWithProgress";

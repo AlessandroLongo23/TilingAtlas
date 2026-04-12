@@ -15,7 +15,7 @@ import {
 } from '@/classes';
 import { deduplicatePoints, isWithinAngularTolerance, isWithinTolerance, toRadians, compareVCNames } from '@/utils';
 import { regularPolygonRegex, regularStarRegex, parametricStarRegex, equilateralPolygonRegex, genericPolygonRegex } from './regex';
-import { tolerance } from '@/utils/geoTolerance';
+import { tolerance } from '@/utils/tolerance';
 
 export class VertexConfiguration {
     polygons: Polygon[];

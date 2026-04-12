@@ -1,10 +1,7 @@
-// TODO(phase-1.6): this file reads from Svelte writable stores via `get()`.
-// Rewrite these calls to use Zustand store selectors after stores are ported.
-// The imports below are intentionally broken until then.
 import { type GameOfLifeRule, GOLRuleType, Behavior, State, Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
-import { lineWidth, showDualConnections, controls, liveChartMode, tolerance } from '@/stores';
+import { tolerance } from "@/utils/tolerance";
+import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons } from '@/utils';
-import { get } from 'svelte/store';
 
 export type VCWithOccurrences = { vc: { polygons: Polygon[]; name: string }; occurrences: number };
 
@@ -40,14 +37,14 @@ export class Tiling {
     }
 
     show = (ctx, showPolygonPoints: boolean, opacity: number = 1, circlePacking: boolean = false): void => {
-        const lineWidthValue = get(lineWidth);
+        const lineWidthValue = useConfiguration.getState().lineWidth;
         if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / get(controls).zoom);
+            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0);
         } else if (lineWidthValue === 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(1 / get(controls).zoom);
+            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0, lineWidthValue);
         }
 
@@ -68,7 +65,7 @@ export class Tiling {
             }
         }
         
-        const showDualConnectionsValue = get(showDualConnections);
+        const showDualConnectionsValue = useConfiguration.getState().showDualConnections;
         if (showDualConnectionsValue)
             this.drawDualConnections(ctx);
     }
@@ -78,7 +75,7 @@ export class Tiling {
 
         ctx.stroke(0, 0, 100);
         ctx.fill(240, 7, 8);
-        ctx.strokeWeight(1 / get(controls).zoom);
+        ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
         
         for (let node of this.nodes) {
             for (let neighbor of node.neighbors) {
@@ -124,15 +121,15 @@ export class Tiling {
         let uniqueVerticesSorted = sortPointsByAngleAndDistance(uniqueVertices);
 
 
-        let offset = new Vector(6 / get(controls).zoom, 0 / get(controls).zoom)
-        let pointSize = 6 / get(controls).zoom
+        let offset = new Vector(6 / useConfiguration.getState().controls.zoom, 0 / useConfiguration.getState().controls.zoom)
+        let pointSize = 6 / useConfiguration.getState().controls.zoom
 
         ctx.scale(1, -1);
-        ctx.textSize(18 / get(controls).zoom);
+        ctx.textSize(18 / useConfiguration.getState().controls.zoom);
         ctx.fill(0, 0, 100);
         ctx.stroke(0, 0, 0);
 
-        ctx.strokeWeight(1 / get(controls).zoom);
+        ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
 
         for (let i in uniqueCentroidsSorted)
             ctx.ellipse(uniqueCentroidsSorted[i].x, -uniqueCentroidsSorted[i].y, pointSize);
@@ -143,7 +140,7 @@ export class Tiling {
         for (let i in uniqueVerticesSorted)
             ctx.ellipse(uniqueVerticesSorted[i].x, -uniqueVerticesSorted[i].y, pointSize);
 
-        ctx.strokeWeight(3 / get(controls).zoom);
+        ctx.strokeWeight(3 / useConfiguration.getState().controls.zoom);
 
         for (let i in uniqueCentroidsSorted)
             ctx.text('c' + (i + 1), uniqueCentroidsSorted[i].x + offset.x, -uniqueCentroidsSorted[i].y + offset.y);
@@ -155,13 +152,13 @@ export class Tiling {
             ctx.text('v' + (i + 1), uniqueVerticesSorted[i].x + offset.x, -uniqueVerticesSorted[i].y + offset.y);
 
         
-        const showDualConnectionsValue = get(showDualConnections);
+        const showDualConnectionsValue = useConfiguration.getState().showDualConnections;
         if (showDualConnectionsValue)
             this.drawDualConnections(ctx, true);
     }
 
     drawDualConnections = (ctx, flipY = false): void => {
-        ctx.strokeWeight(1 / get(controls).zoom);
+        ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
         ctx.stroke(0, 0, 0, 0.10);
         
         for (let node of this.nodes) {        
@@ -245,19 +242,19 @@ export class Tiling {
     }
 
     showNeighbors = (ctx, showPolygonPoints: boolean): void => {
-        const lineWidthValue = get(lineWidth);
+        const lineWidthValue = useConfiguration.getState().lineWidth;
         if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / get(controls).zoom);
+            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0);
         } else if (lineWidthValue === 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(1 / get(controls).zoom);
+            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0, lineWidthValue);
         }
         
-        const mouseWorldX = (ctx.mouseX - ctx.width / 2) / get(controls).zoom;
-        const mouseWorldY = (-ctx.mouseY + ctx.height / 2) / get(controls).zoom;
+        const mouseWorldX = (ctx.mouseX - ctx.width / 2) / useConfiguration.getState().controls.zoom;
+        const mouseWorldY = (-ctx.mouseY + ctx.height / 2) / useConfiguration.getState().controls.zoom;
         const mousePoint = new Vector(mouseWorldX, mouseWorldY);
         
         for (let node of this.nodes) {
@@ -290,7 +287,7 @@ export class Tiling {
             }
         }
         
-        const showDualConnectionsValue = get(showDualConnections);
+        const showDualConnectionsValue = useConfiguration.getState().showDualConnections;
         if (showDualConnectionsValue)
             this.drawDualConnections(ctx);
     }
@@ -395,19 +392,19 @@ export class Tiling {
     }
 
     drawGameOfLife = (ctx, circlePacking: boolean = false) => {
-        const lineWidthValue = get(lineWidth);
+        const lineWidthValue = useConfiguration.getState().lineWidth;
         if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / get(controls).zoom);
+            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0);
         } else if (lineWidthValue === 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(1 / get(controls).zoom);
+            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
             ctx.stroke(0, 0, 0, lineWidthValue);
         }
 
         if (circlePacking) {
-            const liveChartModeValue = get(liveChartMode);
+            const liveChartModeValue = useConfiguration.getState().liveChartMode;
             for (let i = 0; i < this.nodes.length; i++) {
                 const node = this.nodes[i];
                 const radius = node.halfways?.length > 0

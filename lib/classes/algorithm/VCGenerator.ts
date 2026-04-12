@@ -1,6 +1,6 @@
 import { PolygonSignature, PolygonType, VertexConfiguration } from '@/classes';
 import { comparePolygonNames, isWithinAngularTolerance, isWithinTolerance, toDegrees } from '@/utils';
-import { tolerance } from '@/utils/geoTolerance';
+import { tolerance } from '@/utils/tolerance';
 
 export class VCGenerator {
     vertexConfigurations: VertexConfiguration[] = [];

@@ -1,9 +1,5 @@
-// TODO(phase-1.6): this file reads from Svelte writable stores via `get()`.
-// Rewrite these calls to use Zustand store selectors after stores are ported.
-// The imports below are intentionally broken until then.
 import { Polygon, Vector } from '@/classes';
-import { get } from 'svelte/store';
-import { colorParams } from '@/stores';
+import { useConfiguration } from "@/stores/configuration";
 import { toDegrees } from '@/lib/utils/geometry';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
@@ -65,7 +61,7 @@ export class DualPolygon extends Polygon {
             angles = angles.reverse();
         }
 
-        const params = get(colorParams);
+        const params = useConfiguration.getState().colorParams;
         const a = params.a;
         const b = params.b;
         
