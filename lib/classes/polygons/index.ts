@@ -1,0 +1,11 @@
+export { Polygon } from './Polygon';
+export { RegularPolygon } from './RegularPolygon';
+export { StarPolygon } from './StarPolygon';
+export { StarRegularPolygon } from './StarRegularPolygon';
+export { StarParametricPolygon } from './StarParametricPolygon';
+export { DualPolygon } from './DualPolygon';
+export { EquilateralPolygon } from './EquilateralPolygon';
+export { IsohedralPolygon } from './IsohedralPolygon';
+export { GenericPolygon } from './GenericPolygon';
+export { PolygonType } from './PolygonType';
+export type { ShapeSeed } from './ShapeSeed';

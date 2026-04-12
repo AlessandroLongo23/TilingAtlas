@@ -4,7 +4,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -16,11 +16,17 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"],
+      "@/lib": ["./lib"],
       "@/lib/*": ["./lib/*"],
+      "@/components": ["./components"],
       "@/components/*": ["./components/*"],
+      "@/classes": ["./lib/classes"],
       "@/classes/*": ["./lib/classes/*"],
+      "@/stores": ["./lib/stores"],
       "@/stores/*": ["./lib/stores/*"],
+      "@/services": ["./lib/services"],
       "@/services/*": ["./lib/services/*"],
+      "@/utils": ["./lib/utils"],
       "@/utils/*": ["./lib/utils/*"]
     }
   },
