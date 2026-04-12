@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Loader2, X, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { usePipelineProgress } from "@/stores/pipelineProgress";
+import { Button } from "./ui/button";
 import { cn } from "@/lib/utils/cn";
 
 export function PipelineProgressDialog() {
@@ -40,36 +41,36 @@ export function PipelineProgressDialog() {
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.95, y: -8 }}
 						transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-						className="relative bg-zinc-800 border border-zinc-700/50 rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
+						className="relative bg-surface-overlay border border-line rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
 					>
-						<div className="flex items-center justify-between px-5 py-4 border-b border-zinc-700/50">
+						<div className="flex items-center justify-between px-5 py-4 border-b border-line">
 							<div className="flex items-center gap-3">
 								{progress === 100 && canClose ? (
-									<CheckCircle2 size={22} className="text-green-500 shrink-0" />
+									<CheckCircle2 size={22} className="text-accent shrink-0" />
 								) : (
-									<Loader2 size={22} className="text-green-500/90 animate-spin shrink-0" />
+									<Loader2 size={22} className="text-accent animate-spin shrink-0" />
 								)}
-								<h2 id="progress-dialog-title" className="text-lg font-medium text-white">
+								<h2 id="progress-dialog-title" className="text-lg font-medium text-fg">
 									{title}
 								</h2>
 							</div>
 							{canClose ? (
-								<button
-									className="p-1.5 rounded-md hover:bg-zinc-700/70 transition-colors text-zinc-400 hover:text-white"
-									onClick={close}
+								<Button
+									variant="ghost"
+									size="icon"
+									icon={X}
 									aria-label="Close"
-								>
-									<X size={18} />
-								</button>
+									onClick={close}
+								/>
 							) : null}
 						</div>
 
 						<div className="px-5 py-5 space-y-4">
-							<p id="progress-dialog-message" className="text-sm text-zinc-300 font-mono leading-relaxed min-h-[2.5rem]">
+							<p id="progress-dialog-message" className="text-sm text-fg-secondary font-mono leading-relaxed min-h-[2.5rem]">
 								{message || "Starting…"}
 							</p>
 
-							<div className="h-2 rounded-full bg-zinc-700/60 overflow-hidden">
+							<div className="h-2 rounded-full bg-surface-overlay/60 overflow-hidden">
 								{progress !== null ? (
 									<div
 										className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300 ease-out"
@@ -84,7 +85,7 @@ export function PipelineProgressDialog() {
 							</div>
 
 							{progress !== null && progress < 100 && !canClose ? (
-								<p className="text-xs text-zinc-500 tabular-nums">{Math.round(progress)}%</p>
+								<p className="text-xs text-fg-muted tabular-nums">{Math.round(progress)}%</p>
 							) : null}
 						</div>
 					</motion.div>

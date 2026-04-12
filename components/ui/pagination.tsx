@@ -76,7 +76,7 @@ export function Pagination({
 
 	return (
 		<div className="flex items-center justify-between gap-4 select-none">
-			<span className="text-xs text-zinc-500 tabular-nums whitespace-nowrap">
+			<span className="text-xs text-fg-muted tabular-nums whitespace-nowrap">
 				{startItem}–{endItem} of {totalItems}
 			</span>
 			<div className="flex items-center gap-1">
@@ -93,7 +93,7 @@ export function Pagination({
 						type="number"
 						min={1}
 						max={totalPages}
-						className="w-10 h-7 px-1 rounded-md border border-zinc-700/40 bg-zinc-800/50 text-zinc-100 text-xs font-medium tabular-nums text-center hover:bg-zinc-700/50 focus:outline-none focus:border-green-500/40 focus:bg-zinc-800/80 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+						className="w-10 h-7 px-1 rounded-md border border-line bg-surface-overlay/50 text-fg text-xs font-medium tabular-nums text-center hover:bg-surface-overlay/50 focus:outline-none focus:border-line-focus focus:bg-surface-overlay/80 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
 						value={focused ? inputValue : currentPage}
 						onFocus={() => {
 							setFocused(true);
@@ -107,21 +107,21 @@ export function Pagination({
 						onKeyDown={handleKeyDown}
 						aria-label="Current page"
 					/>
-					<span className="text-zinc-500 text-xs whitespace-nowrap">of {totalPages}</span>
+					<span className="text-fg-muted text-xs whitespace-nowrap">of {totalPages}</span>
 				</span>
 				{visiblePages.map((p, i) =>
 					p === null ? (
-						<span key={`ellipsis-${i}`} className="flex items-center justify-center w-5 h-7 text-zinc-600 text-xs pointer-events-none">…</span>
+						<span key={`ellipsis-${i}`} className="flex items-center justify-center w-5 h-7 text-fg-disabled text-xs pointer-events-none">…</span>
 					) : (
 						<button
 							key={p}
 							onClick={() => goto(p)}
 							aria-current={currentPage === p ? "page" : undefined}
 							className={cn(
-								"flex items-center justify-center min-w-7 h-7 px-1 rounded-md border text-xs font-medium tabular-nums transition-all",
+								"flex items-center justify-center min-w-7 h-7 px-1 rounded-md border text-xs font-medium tabular-nums transition-all cursor-pointer",
 								currentPage === p
-									? "bg-green-500/12 text-green-400/90 border-green-500/25 hover:bg-green-500/20"
-									: "bg-zinc-800/50 text-zinc-400 border-zinc-700/40 hover:bg-zinc-700/50 hover:text-zinc-200",
+									? "bg-accent-subtle text-accent border-line-focus hover:bg-accent-subtle"
+									: "bg-surface-overlay/50 text-fg-muted border-line hover:bg-surface-overlay/50 hover:text-fg-secondary",
 							)}
 						>
 							{p}
@@ -143,7 +143,7 @@ function PageBtn({ children, ...rest }: React.ComponentProps<"button">) {
 	return (
 		<button
 			{...rest}
-			className="flex items-center justify-center w-7 h-7 rounded-md border border-zinc-700/40 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+			className="flex items-center justify-center w-7 h-7 rounded-md border border-line bg-surface-overlay/50 text-fg-muted hover:bg-surface-overlay/50 hover:text-fg-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all"
 		>
 			{children}
 		</button>

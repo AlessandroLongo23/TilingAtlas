@@ -39,19 +39,19 @@ export function SearchInput({
 
 	return (
 		<div className="flex flex-col gap-2">
-			<span className="text-xs uppercase text-zinc-400 font-medium tracking-wider">Search</span>
+			<span className="text-xs uppercase text-fg-muted font-medium tracking-wider">Search</span>
 			<div className="relative">
-				<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+				<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" />
 				<input
 					type="text"
 					value={local}
 					onChange={handleInput}
 					placeholder={placeholder}
-					className="w-full h-9 rounded-md border border-zinc-700/50 bg-zinc-800/90 pl-9 pr-8 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500/40 focus-visible:border-green-500/70 transition-all"
+					className="w-full h-9 rounded-md border border-line bg-surface-overlay/90 pl-9 pr-8 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40 focus-visible:border-line-focus transition-all"
 				/>
 				{local ? (
 					<button
-						className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700/50 transition-colors"
+						className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-fg-muted hover:text-fg-secondary hover:bg-surface-overlay/50 transition-colors cursor-pointer"
 						onClick={clear}
 						aria-label="Clear search"
 					>

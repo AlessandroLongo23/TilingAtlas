@@ -6,6 +6,7 @@ import { Loader2, Play } from "lucide-react";
 import { PolygonType } from "@/classes/polygons/PolygonType";
 import type { GeneratorParameters } from "@/classes";
 import { Modal } from "./ui/modal";
+import { Button } from "./ui/button";
 import { PolygonPicker } from "./polygon-picker";
 import { KSelector, kValuesFor, type KMode } from "./k-selector";
 import { SearchCompletenessBar } from "./search-completeness-bar";
@@ -87,7 +88,7 @@ export function NewExperimentModal({ isOpen, onOpenChange }: NewExperimentModalP
 		<Modal isOpen={isOpen} onOpenChange={onOpenChange} title="New Experiment" maxWidth="max-w-2xl">
 			<div className="p-5 flex flex-col gap-6">
 				<div>
-					<p className="text-xs text-zinc-500 uppercase tracking-wide mb-3">Polygon pool</p>
+					<p className="text-xs text-fg-muted uppercase tracking-wide mb-3">Polygon pool</p>
 					<PolygonPicker
 						selectedNames={selectedNames}
 						onSelectedNamesChange={setSelectedNames}
@@ -97,7 +98,7 @@ export function NewExperimentModal({ isOpen, onOpenChange }: NewExperimentModalP
 				</div>
 
 				<div>
-					<p className="text-xs text-zinc-500 uppercase tracking-wide mb-3">Vertex count (k)</p>
+					<p className="text-xs text-fg-muted uppercase tracking-wide mb-3">Vertex count (k)</p>
 					<KSelector
 						mode={kMode}
 						onModeChange={setKMode}
@@ -109,13 +110,13 @@ export function NewExperimentModal({ isOpen, onOpenChange }: NewExperimentModalP
 				</div>
 
 				<div>
-					<p className="text-xs text-zinc-500 uppercase tracking-wide mb-2">Coverage</p>
+					<p className="text-xs text-fg-muted uppercase tracking-wide mb-2">Coverage</p>
 					<SearchCompletenessBar selectedNames={selectedNames} kValues={kValues} />
 				</div>
 
 				<div>
-					<label htmlFor="author-name" className="text-xs text-zinc-500 uppercase tracking-wide block mb-2">
-						Author name <span className="normal-case text-zinc-600">(optional)</span>
+					<label htmlFor="author-name" className="text-xs text-fg-muted uppercase tracking-wide block mb-2">
+						Author name <span className="normal-case text-fg-disabled">(optional)</span>
 					</label>
 					<input
 						id="author-name"
@@ -123,20 +124,22 @@ export function NewExperimentModal({ isOpen, onOpenChange }: NewExperimentModalP
 						value={authorName}
 						onChange={(e) => setAuthorNameState(e.target.value)}
 						placeholder="Your name"
-						className="w-full h-9 px-3 rounded-lg bg-zinc-900/60 border border-zinc-700/60 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-colors"
+						className="w-full h-9 px-3 rounded-lg bg-surface-raised/60 border border-line text-sm text-fg-secondary placeholder-zinc-600 focus:outline-none focus:border-line-strong transition-colors"
 					/>
 				</div>
 
 				{errorMsg ? (
-					<p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-md px-3 py-2">
+					<p className="text-xs text-danger bg-danger-subtle border border-danger/20 rounded-md px-3 py-2">
 						{errorMsg}
 					</p>
 				) : null}
 
-				<button
+				<Button
+					variant="primary"
+					size="md"
+					fullWidth
 					onClick={run}
 					disabled={submitting || selectedNames.length === 0 || kValues.length === 0}
-					className="flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-medium transition-colors bg-green-600/20 border border-green-500/40 text-green-400 hover:bg-green-600/30 disabled:opacity-40 disabled:cursor-not-allowed"
 				>
 					{submitting ? (
 						<>
@@ -149,7 +152,7 @@ export function NewExperimentModal({ isOpen, onOpenChange }: NewExperimentModalP
 							Run Experiment
 						</>
 					)}
-				</button>
+				</Button>
 			</div>
 		</Modal>
 	);

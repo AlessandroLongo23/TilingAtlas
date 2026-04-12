@@ -18,15 +18,15 @@ export function VertexTypeCard({ id, name, isSelected, onToggle }: VertexTypeCar
 			className={cn(
 				"w-full h-full group flex flex-col items-center justify-between border rounded-lg overflow-hidden transition-all",
 				isSelected
-					? "border-green-500/50 bg-green-500/10"
-					: "border-zinc-700/50 bg-zinc-800/50 hover:border-zinc-600/80 hover:bg-zinc-800/80",
+					? "border-line-focus bg-accent-subtle"
+					: "border-line bg-surface-overlay/50 hover:border-line-strong hover:bg-surface-overlay/80",
 			)}
 		>
 			<div className="w-full aspect-square relative">
 				<div
 					className={cn(
 						"absolute top-1 left-1 z-10 px-2 py-1 rounded-md font-medium text-sm backdrop-blur-sm",
-						isSelected ? "bg-black/60 text-green-400" : "bg-black/50 text-white/90",
+						isSelected ? "bg-black/60 text-accent" : "bg-black/50 text-fg",
 					)}
 				>
 					{name}

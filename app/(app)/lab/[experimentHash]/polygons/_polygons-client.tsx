@@ -61,7 +61,7 @@ function polygonFromSignature(sig: Signature): Polygon | null {
 
 export function PolygonsClient({ polygonNames }: { polygonNames: string[] }) {
 	const { setBadge } = useExperiment();
-	const [gridColumns, setGridColumns] = useState(0);
+	const [gridColumns, setGridColumns] = useState(5);
 	const [currentPage, setCurrentPage] = useState(1);
 
 	const items = useMemo(() => {
@@ -79,10 +79,7 @@ export function PolygonsClient({ polygonNames }: { polygonNames: string[] }) {
 	}, [items.length, setBadge]);
 
 	const paginated = items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-	const gridStyle =
-		gridColumns === 0
-			? { gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }
-			: { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
+	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
 
 	return (
 		<>
@@ -97,7 +94,7 @@ export function PolygonsClient({ polygonNames }: { polygonNames: string[] }) {
 			<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 				<div className="flex-1 overflow-y-auto px-6 py-4">
 					{items.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-16 text-zinc-600">
+						<div className="flex flex-col items-center justify-center py-16 text-fg-disabled">
 							<p className="text-sm">No polygons configured for this experiment.</p>
 						</div>
 					) : (

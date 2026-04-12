@@ -85,9 +85,9 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 	};
 
 	return (
-		<div className="bg-zinc-900/80 rounded-lg shadow-lg overflow-hidden min-w-[120px] select-none touch-none">
-			<div className="flex items-center justify-between px-3 py-2 bg-zinc-800/90 border-b border-white/10">
-				<span className="text-white text-sm font-medium">Color Palette</span>
+		<div className="bg-surface-raised/80 rounded-lg shadow-lg overflow-hidden min-w-[120px] select-none touch-none">
+			<div className="flex items-center justify-between px-3 py-2 bg-surface-overlay/90 border-b border-line-subtle">
+				<span className="text-fg text-sm font-medium">Color Palette</span>
 			</div>
 			<div className="p-3">
 				<div
@@ -99,7 +99,7 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 					style={{ width: PAD, height: PAD }}
 					onMouseDown={onMouseDown}
 					onTouchStart={onTouchStart}
-					className="relative mx-auto bg-zinc-700/30 border border-zinc-600 rounded cursor-pointer overflow-hidden"
+					className="relative mx-auto bg-surface-overlay/30 border border-line-strong rounded cursor-pointer overflow-hidden"
 				>
 					<div
 						className="absolute inset-0 z-10 pointer-events-none"
@@ -110,7 +110,7 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 						}}
 					/>
 					<div
-						className="absolute w-3.5 h-3.5 bg-white border-2 border-zinc-800 rounded-full z-20 pointer-events-none"
+						className="absolute w-3.5 h-3.5 bg-white border-2 border-line-subtle rounded-full z-20 pointer-events-none"
 						style={{
 							left: position.x,
 							top: position.y,

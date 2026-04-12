@@ -22,11 +22,11 @@ export function SeedCard({ seed, k, m }: SeedCardProps) {
 			body={
 				<div className="space-y-1.5">
 					<div className="flex items-center gap-3">
-						<span className="font-mono text-[11px] text-zinc-500">k={k}</span>
-						<span className="font-mono text-[11px] text-zinc-500">m={m}</span>
+						<span className="font-mono text-[11px] text-fg-muted">k={k}</span>
+						<span className="font-mono text-[11px] text-fg-muted">m={m}</span>
 					</div>
 					<p
-						className="font-mono text-[11px] text-zinc-300 leading-tight break-all"
+						className="font-mono text-[11px] text-fg-secondary leading-tight break-all"
 						title={seed.name}
 						dangerouslySetInnerHTML={{ __html: compactName }}
 					/>

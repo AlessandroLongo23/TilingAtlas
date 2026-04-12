@@ -1,7 +1,7 @@
 import { type GameOfLifeRule, GOLRuleType, Behavior, State, Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
 import { tolerance } from "@/utils/tolerance";
 import { useConfiguration } from "@/stores/configuration";
-import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons } from '@/utils';
+import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
 
 export type VCWithOccurrences = { vc: { polygons: Polygon[]; name: string }; occurrences: number };
 
@@ -60,6 +60,9 @@ export class Tiling {
                 }
             }
         } else {
+            if (useConfiguration.getState().isIslamic) {
+                this.drawIslamicVertexRegions(ctx, opacity);
+            }
             for (let i = 0; i < this.nodes.length; i++) {
                 this.nodes[i].show(ctx, showPolygonPoints, null, opacity);
             }
@@ -73,12 +76,20 @@ export class Tiling {
     showGraph = (ctx): void => {
         this.show(ctx, false, 0.5);
 
+        const zoom = useConfiguration.getState().controls.zoom;
+        ctx.push();
         ctx.stroke(0, 0, 100);
-        ctx.fill(240, 7, 8);
-        ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
-        
-        for (let node of this.nodes) {
-            for (let neighbor of node.neighbors) {
+        ctx.strokeWeight(2 / zoom);
+
+        const seen = new Set<string>();
+        for (let i = 0; i < this.nodes.length; i++) {
+            const node = this.nodes[i];
+            for (const neighbor of node.neighbors ?? []) {
+                const j = this.nodes.indexOf(neighbor);
+                if (j < 0) continue;
+                const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
                 ctx.line(
                     node.centroid.x,
                     node.centroid.y,
@@ -87,15 +98,14 @@ export class Tiling {
                 );
             }
         }
-        
-        for (let node of this.nodes) {
-            ctx.ellipse(
-                node.centroid.x,
-                node.centroid.y,
-                1/5,
-                1/5
-            );
+
+        ctx.noStroke();
+        ctx.fill(0, 0, 100);
+        const r = 4 / zoom;
+        for (const node of this.nodes) {
+            ctx.ellipse(node.centroid.x, node.centroid.y, r, r);
         }
+        ctx.pop();
     }
 
     drawConstructionPoints = (ctx): void => {
@@ -157,20 +167,122 @@ export class Tiling {
             this.drawDualConnections(ctx, true);
     }
 
+    drawIslamicVertexRegions = (ctx, opacity: number = 1): void => {
+        const angle = useConfiguration.getState().islamicAngle * Math.PI / 180;
+
+        const tipsCache = new Map<Polygon, Vector[]>();
+        const getTips = (tile: Polygon): Vector[] => {
+            let t = tipsCache.get(tile);
+            if (!t) { t = tile.calculateIslamicTips(angle); tipsCache.set(tile, t); }
+            return t;
+        };
+
+        const QUANT = 1e5;
+        const keyOf = (v: Vector) => `${Math.round(v.x * QUANT)},${Math.round(v.y * QUANT)}`;
+
+        type Corner = { tile: Polygon; cornerIdx: number; position: Vector };
+        const fans = new Map<string, Corner[]>();
+        for (const tile of this.nodes) {
+            if (!tile.vertices || !tile.halfways) continue;
+            for (let ci = 0; ci < tile.vertices.length; ci++) {
+                const v = tile.vertices[ci];
+                const key = keyOf(v);
+                let arr = fans.get(key);
+                if (!arr) { arr = []; fans.set(key, arr); }
+                arr.push({ tile, cornerIdx: ci, position: v });
+            }
+        }
+
+        ctx.push();
+        ctx.noStroke();
+
+        for (const corners of fans.values()) {
+            if (corners.length < 2) continue;
+
+            const V = corners[0].position;
+
+            const withAngle = corners.map(c => ({
+                c,
+                ang: Math.atan2(c.tile.centroid.y - V.y, c.tile.centroid.x - V.x),
+            }));
+            withAngle.sort((a, b) => a.ang - b.ang);
+            const ordered = withAngle.map(w => w.c);
+
+            let interiorSum = 0;
+            let interiorOk = true;
+            for (const c of ordered) {
+                const a = c.tile.angles?.[c.cornerIdx];
+                if (typeof a === 'number' && isFinite(a)) interiorSum += a;
+                else { interiorOk = false; break; }
+            }
+            if (!interiorOk) continue;
+            if (Math.abs(interiorSum - 2 * Math.PI) > 1e-3) continue;
+
+            type Arms = { ccwArm: Vector; cwArm: Vector; tip: Vector };
+            const armsOf = (c: Corner): Arms => {
+                const n = c.tile.halfways.length;
+                const hPrev = c.tile.halfways[(c.cornerIdx - 1 + n) % n];
+                const hNext = c.tile.halfways[c.cornerIdx];
+                const tip = getTips(c.tile)[(c.cornerIdx - 1 + n) % n];
+                const tc = c.tile.centroid;
+                const tcx = tc.x - V.x, tcy = tc.y - V.y;
+                const px = hPrev.x - V.x, py = hPrev.y - V.y;
+                const crossPrev = tcx * py - tcy * px;
+                if (crossPrev > 0) return { ccwArm: hPrev, cwArm: hNext, tip };
+                return { ccwArm: hNext, cwArm: hPrev, tip };
+            };
+
+            const armsArr = ordered.map(armsOf);
+            const hue = vertexFigureHue(ordered.map(c => c.tile.n));
+
+            ctx.fill(hue, 40, 100 / opacity, 0.80 * opacity);
+            ctx.beginShape();
+            for (let i = 0; i < ordered.length; i++) {
+                ctx.vertex(armsArr[i].cwArm.x, armsArr[i].cwArm.y);
+                ctx.vertex(armsArr[i].tip.x, armsArr[i].tip.y);
+            }
+            ctx.endShape(ctx.CLOSE);
+        }
+
+        ctx.pop();
+    }
+
     drawDualConnections = (ctx, flipY = false): void => {
-        ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
-        ctx.stroke(0, 0, 0, 0.10);
-        
-        for (let node of this.nodes) {        
-            for (let neighbor of node.neighbors) {
+        const zoom = useConfiguration.getState().controls.zoom;
+        ctx.push();
+        ctx.strokeWeight(2 / zoom);
+        ctx.stroke(0, 0, 100, 0.9);
+        ctx.fill(0, 0, 100);
+
+        const seen = new Set<string>();
+        for (let i = 0; i < this.nodes.length; i++) {
+            const node = this.nodes[i];
+            for (const neighbor of node.edgeNeighbors ?? []) {
+                const j = this.nodes.indexOf(neighbor);
+                if (j < 0) continue;
+                const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
                 ctx.line(
                     node.centroid.x,
-                    flipY ? -node.centroid.y : node.centroid.y, 
-                    neighbor.centroid.x, 
+                    flipY ? -node.centroid.y : node.centroid.y,
+                    neighbor.centroid.x,
                     flipY ? -neighbor.centroid.y : neighbor.centroid.y
                 );
             }
         }
+
+        ctx.noStroke();
+        const r = 4 / zoom;
+        for (const node of this.nodes) {
+            ctx.ellipse(
+                node.centroid.x,
+                flipY ? -node.centroid.y : node.centroid.y,
+                r,
+                r
+            );
+        }
+        ctx.pop();
     }
 
     rotate = (origin: Vector, angle: number): void => {

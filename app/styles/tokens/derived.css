@@ -1,0 +1,83 @@
+/* Derived tokens — static, theme-agnostic semantic aliases.
+   All values resolve to var(--*) from primitives.css.
+   Components reference these alongside themed.css tokens. */
+
+:root {
+  /* ─────────── Spacing (semantic re-export of size primitives) ─────────── */
+  --space-0:  var(--size-0);
+  --space-px: var(--size-px);
+  --space-1:  var(--size-1);
+  --space-2:  var(--size-2);
+  --space-3:  var(--size-3);
+  --space-4:  var(--size-4);
+  --space-5:  var(--size-5);
+  --space-6:  var(--size-6);
+  --space-8:  var(--size-8);
+  --space-10: var(--size-10);
+  --space-12: var(--size-12);
+  --space-16: var(--size-16);
+  --space-20: var(--size-20);
+  --space-24: var(--size-24);
+
+  /* ─────────── Radii (semantic) ─────────── */
+  --radius-control: var(--radius-md);   /* buttons, inputs, small controls */
+  --radius-surface: var(--radius-lg);   /* cards, panels */
+  --radius-overlay: var(--radius-xl);   /* modals, popovers */
+  --radius-pill:    var(--radius-full); /* badges, toggles */
+
+  /* ─────────── Typography (semantic) ─────────── */
+  --font-sans: var(--font-family-sans);
+  --font-mono: var(--font-family-mono);
+
+  --text-caption-size: var(--font-size-xs);
+  --text-caption-line: var(--line-height-normal);
+
+  --text-label-size: var(--font-size-sm);
+  --text-label-line: var(--line-height-normal);
+
+  --text-body-size: var(--font-size-base);
+  --text-body-line: var(--line-height-relaxed);
+
+  --text-code-size: var(--font-size-sm);
+  --text-code-line: var(--line-height-normal);
+
+  --text-heading-4-size: var(--font-size-lg);
+  --text-heading-4-line: var(--line-height-tight);
+
+  --text-heading-3-size: var(--font-size-xl);
+  --text-heading-3-line: var(--line-height-tight);
+
+  --text-heading-2-size: var(--font-size-2xl);
+  --text-heading-2-line: var(--line-height-tight);
+
+  --text-heading-1-size: var(--font-size-3xl);
+  --text-heading-1-line: var(--line-height-tight);
+
+  /* ─────────── Motion (semantic transitions) ─────────── */
+  --motion-control-transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+
+  --motion-surface-transition:
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
+
+  --motion-modal-transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+
+  /* ─────────── Z-layers ─────────── */
+  --z-base:     0;
+  --z-elevated: 10;
+  --z-dropdown: 100;
+  --z-modal:    200;
+  --z-toast:    300;
+  --z-tooltip:  400;
+
+  /* ─────────── Focus ring ─────────── */
+  --ring-focus-width:  2px;
+  --ring-focus-offset: 2px;
+}

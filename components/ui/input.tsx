@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, type ChangeEvent, type ComponentProps } fr
 import { sounds } from "@/lib/utils/sounds";
 import { cn } from "@/lib/utils/cn";
 
-interface InputProps extends Omit<ComponentProps<"input">, "value" | "onChange" | "min" | "max" | "step"> {
+type InputSize = "sm" | "md" | "lg";
+
+interface InputProps extends Omit<ComponentProps<"input">, "value" | "onChange" | "min" | "max" | "step" | "size"> {
 	id?: string;
 	label?: string | null;
 	value: string | number;
@@ -16,7 +18,20 @@ interface InputProps extends Omit<ComponentProps<"input">, "value" | "onChange" 
 	step?: number;
 	disabled?: boolean;
 	align?: "left" | "center";
+	size?: InputSize;
 }
+
+const SIZE_CLASSES: Record<InputSize, string> = {
+	sm: "h-8 px-2.5 text-xs",
+	md: "h-9 px-3 text-sm",
+	lg: "h-11 px-4 text-base",
+};
+
+const STEPPER_HEIGHT: Record<InputSize, string> = {
+	sm: "h-[14px]",
+	md: "h-[18px]",
+	lg: "h-[22px]",
+};
 
 const INITIAL_DELAY = 300;
 const REPEAT_INTERVAL = 80;
@@ -33,6 +48,7 @@ export function Input({
 	step = 1,
 	disabled = false,
 	align,
+	size = "md",
 }: InputProps) {
 	const [internal, setInternal] = useState(value);
 	const prev = useRef(value);
@@ -115,7 +131,7 @@ export function Input({
 					htmlFor={id}
 					className={cn(
 						align === "center" ? "text-lg font-bold" : "text-sm font-medium",
-						"leading-none text-white/80",
+						"leading-none text-fg-secondary",
 					)}
 				>
 					{label}
@@ -133,18 +149,19 @@ export function Input({
 					step={step}
 					disabled={disabled}
 					className={cn(
-						"flex h-9 w-full rounded-md border border-zinc-700/50 bg-zinc-800/90 px-3 py-2 text-sm text-zinc-100 ring-offset-zinc-900 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-green-500/40 focus-visible:border-green-500/70 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+						"flex w-full rounded-control border border-line-strong bg-surface-overlay/90 py-2 text-fg ring-offset-surface-raised file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-fg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40 focus-visible:border-line-focus focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+						SIZE_CLASSES[size],
 						align === "center" && "text-center",
 					)}
 				/>
 				{type === "number" ? (
-					<div className="absolute inset-y-0 right-0 flex flex-col border-l border-zinc-700/50 text-white/70">
+					<div className="absolute inset-y-0 right-0 flex flex-col border-l border-line-strong text-fg-secondary">
 						<button
 							type="button"
 							onMouseDown={startInc}
 							onMouseUp={stop}
 							onMouseLeave={stop}
-							className="flex items-center justify-center h-[18px] w-8 hover:bg-zinc-700/40 hover:text-white border-b border-zinc-700/50 rounded-tr-md transition-colors"
+							className={cn("flex items-center justify-center w-8 cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg border-b border-line-strong rounded-tr-md transition-colors", STEPPER_HEIGHT[size])}
 							disabled={disabled || (max !== undefined && Number(internal) >= max)}
 							aria-label="Increment"
 						>
@@ -155,7 +172,7 @@ export function Input({
 							onMouseDown={startDec}
 							onMouseUp={stop}
 							onMouseLeave={stop}
-							className="flex items-center justify-center h-[18px] w-8 hover:bg-zinc-700/40 hover:text-white rounded-br-md transition-colors"
+							className={cn("flex items-center justify-center w-8 cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg rounded-br-md transition-colors", STEPPER_HEIGHT[size])}
 							disabled={disabled || (min !== undefined && Number(internal) <= min)}
 							aria-label="Decrement"
 						>

@@ -1,0 +1,145 @@
+/* Primitive tokens — literal values. Never referenced from components.
+   Consumed only by themed.css and derived.css. */
+
+:root {
+  /* ─────────── Color palette (oklch) ─────────── */
+
+  --palette-white: oklch(1 0 0);
+  --palette-black: oklch(0 0 0);
+
+  /* Neutral — slight cool cast (H ≈ 250) */
+  --palette-neutral-50:  oklch(0.985 0.002 250);
+  --palette-neutral-100: oklch(0.965 0.003 250);
+  --palette-neutral-200: oklch(0.925 0.004 250);
+  --palette-neutral-300: oklch(0.865 0.005 250);
+  --palette-neutral-400: oklch(0.705 0.008 250);
+  --palette-neutral-500: oklch(0.555 0.010 250);
+  --palette-neutral-600: oklch(0.445 0.010 250);
+  --palette-neutral-700: oklch(0.345 0.008 250);
+  --palette-neutral-800: oklch(0.245 0.006 250);
+  --palette-neutral-900: oklch(0.175 0.005 250);
+  --palette-neutral-950: oklch(0.125 0.004 250);
+
+  /* Green — brand accent (H ≈ 150) */
+  --palette-green-50:  oklch(0.970 0.030 150);
+  --palette-green-100: oklch(0.935 0.060 150);
+  --palette-green-200: oklch(0.875 0.100 150);
+  --palette-green-300: oklch(0.810 0.140 150);
+  --palette-green-400: oklch(0.755 0.160 150);
+  --palette-green-500: oklch(0.685 0.170 150);
+  --palette-green-600: oklch(0.585 0.160 150);
+  --palette-green-700: oklch(0.485 0.140 150);
+  --palette-green-800: oklch(0.385 0.110 150);
+  --palette-green-900: oklch(0.285 0.080 150);
+  --palette-green-950: oklch(0.205 0.055 150);
+
+  /* Red — danger (H ≈ 27) */
+  --palette-red-50:  oklch(0.965 0.020 27);
+  --palette-red-100: oklch(0.925 0.040 27);
+  --palette-red-200: oklch(0.860 0.080 27);
+  --palette-red-300: oklch(0.780 0.130 27);
+  --palette-red-400: oklch(0.700 0.170 27);
+  --palette-red-500: oklch(0.620 0.200 27);
+  --palette-red-600: oklch(0.540 0.200 27);
+  --palette-red-700: oklch(0.450 0.170 27);
+  --palette-red-800: oklch(0.365 0.135 27);
+  --palette-red-900: oklch(0.285 0.100 27);
+  --palette-red-950: oklch(0.205 0.070 27);
+
+  /* Amber — warning (H ≈ 75) */
+  --palette-amber-50:  oklch(0.975 0.025 75);
+  --palette-amber-100: oklch(0.945 0.055 75);
+  --palette-amber-200: oklch(0.905 0.105 75);
+  --palette-amber-300: oklch(0.855 0.145 75);
+  --palette-amber-400: oklch(0.810 0.160 75);
+  --palette-amber-500: oklch(0.760 0.165 75);
+  --palette-amber-600: oklch(0.655 0.150 75);
+  --palette-amber-700: oklch(0.535 0.125 75);
+  --palette-amber-800: oklch(0.415 0.100 75);
+  --palette-amber-900: oklch(0.315 0.075 75);
+  --palette-amber-950: oklch(0.225 0.055 75);
+
+  /* Blue — info (H ≈ 245) */
+  --palette-blue-50:  oklch(0.970 0.020 245);
+  --palette-blue-100: oklch(0.935 0.040 245);
+  --palette-blue-200: oklch(0.880 0.080 245);
+  --palette-blue-300: oklch(0.800 0.120 245);
+  --palette-blue-400: oklch(0.720 0.160 245);
+  --palette-blue-500: oklch(0.630 0.190 245);
+  --palette-blue-600: oklch(0.540 0.190 245);
+  --palette-blue-700: oklch(0.450 0.160 245);
+  --palette-blue-800: oklch(0.365 0.130 245);
+  --palette-blue-900: oklch(0.285 0.100 245);
+  --palette-blue-950: oklch(0.205 0.070 245);
+
+  /* ─────────── Spacing (4px grid) ─────────── */
+  --size-0:  0;
+  --size-px: 1px;
+  --size-1:  0.25rem;   /* 4  */
+  --size-2:  0.5rem;    /* 8  */
+  --size-3:  0.75rem;   /* 12 */
+  --size-4:  1rem;      /* 16 */
+  --size-5:  1.25rem;   /* 20 */
+  --size-6:  1.5rem;    /* 24 */
+  --size-8:  2rem;      /* 32 */
+  --size-10: 2.5rem;    /* 40 */
+  --size-12: 3rem;      /* 48 */
+  --size-16: 4rem;      /* 64 */
+  --size-20: 5rem;      /* 80 */
+  --size-24: 6rem;      /* 96 */
+
+  /* ─────────── Typography ─────────── */
+  /* Font family primitives — bound to next/font vars set on <html>.
+     Fallbacks used if next/font has not yet loaded. */
+  --font-family-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --font-size-xs:   0.75rem;   /* 12 */
+  --font-size-sm:   0.875rem;  /* 14 */
+  --font-size-base: 1rem;      /* 16 */
+  --font-size-lg:   1.125rem;  /* 18 */
+  --font-size-xl:   1.25rem;   /* 20 */
+  --font-size-2xl:  1.5rem;    /* 24 */
+  --font-size-3xl:  1.875rem;  /* 30 */
+  --font-size-4xl:  2.25rem;   /* 36 */
+
+  --line-height-tight:   1.2;
+  --line-height-normal:  1.5;
+  --line-height-relaxed: 1.7;
+
+  --letter-spacing-tight:  -0.02em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide:   0.04em;
+
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* ─────────── Radius ─────────── */
+  --radius-none: 0;
+  --radius-xs:   0.125rem;  /* 2  */
+  --radius-sm:   0.25rem;   /* 4  */
+  --radius-md:   0.5rem;    /* 8  */
+  --radius-lg:   0.75rem;   /* 12 */
+  --radius-xl:   1rem;      /* 16 */
+  --radius-full: 9999px;
+
+  /* ─────────── Motion ─────────── */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 350ms;
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:      cubic-bezier(0, 0, 0.2, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─────────── Opacity ─────────── */
+  --opacity-0:   0;
+  --opacity-10:  0.10;
+  --opacity-20:  0.20;
+  --opacity-40:  0.40;
+  --opacity-60:  0.60;
+  --opacity-80:  0.80;
+  --opacity-100: 1;
+}

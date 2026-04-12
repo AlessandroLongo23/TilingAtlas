@@ -37,7 +37,7 @@ export function Toggle({
 	return (
 		<div className={cn("w-full gap-1.5", align === "center" ? "flex flex-col items-center" : "grid")}>
 			{label ? (
-				<label htmlFor={id} className={cn(align === "center" ? "text-lg font-bold" : "text-sm font-medium", "leading-none text-white/80")}>
+				<label htmlFor={id} className={cn(align === "center" ? "text-lg font-bold" : "text-sm font-medium", "leading-none text-fg-secondary")}>
 					{label}
 				</label>
 			) : null}
@@ -50,11 +50,11 @@ export function Toggle({
 					disabled={disabled}
 					onClick={() => click(leftValue, "on")}
 					className={cn(
-						"relative text-sm font-medium transition-all duration-200 ease-in-out rounded-l-md border border-r-0 focus:z-10 focus:outline-none focus:ring-1 focus:ring-green-500/40",
+						"relative text-sm font-medium transition-all duration-200 ease-in-out rounded-l-md border border-r-0 focus:z-10 focus:outline-none focus:ring-1 focus:ring-line-focus/40",
 						padding,
 						value === leftValue
-							? "bg-green-500/50 text-white hover:bg-green-600/50 border-green-500/80"
-							: "bg-zinc-800/40 text-zinc-200 hover:bg-zinc-700/60 border-zinc-700/50",
+							? "bg-accent-subtle text-fg hover:bg-accent-subtle border-line-focus"
+							: "bg-surface-overlay/40 text-fg-secondary hover:bg-surface-overlay/60 border-line",
 						disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
 					)}
 				>
@@ -68,11 +68,11 @@ export function Toggle({
 					disabled={disabled}
 					onClick={() => click(rightValue, "off")}
 					className={cn(
-						"relative text-sm font-medium transition-all duration-200 ease-in-out rounded-r-md border focus:z-10 focus:outline-none focus:ring-1 focus:ring-green-500/40",
+						"relative text-sm font-medium transition-all duration-200 ease-in-out rounded-r-md border focus:z-10 focus:outline-none focus:ring-1 focus:ring-line-focus/40",
 						padding,
 						value === rightValue
-							? "bg-green-500/50 text-white hover:bg-green-600/50 border-green-500/80"
-							: "bg-zinc-800/40 text-zinc-200 hover:bg-zinc-700/60 border-zinc-700/50",
+							? "bg-accent-subtle text-fg hover:bg-accent-subtle border-line-focus"
+							: "bg-surface-overlay/40 text-fg-secondary hover:bg-surface-overlay/60 border-line",
 						disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
 					)}
 				>

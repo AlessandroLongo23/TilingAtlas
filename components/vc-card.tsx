@@ -24,20 +24,20 @@ export function VCCard({ id, name, vc, vertexCount }: VCCardProps) {
 				vc ? (
 					<canvas ref={canvasRef} className="block w-full h-full" />
 				) : (
-					<div className="w-full h-full flex items-center justify-center text-zinc-600 text-sm">—</div>
+					<div className="w-full h-full flex items-center justify-center text-fg-disabled text-sm">—</div>
 				)
 			}
 			body={
 				<div className="space-y-1">
 					<div className="flex items-center justify-between">
 						<span
-							className="truncate font-mono text-[11px] text-zinc-300"
+							className="truncate font-mono text-[11px] text-fg-secondary"
 							title={name}
 							dangerouslySetInnerHTML={{ __html: compactToHtml(compactVcName(name)) }}
 						/>
-						<span className="shrink-0 text-[11px] text-zinc-500 tabular-nums">#{id}</span>
+						<span className="shrink-0 text-[11px] text-fg-muted tabular-nums">#{id}</span>
 					</div>
-					<div className="text-[11px] text-zinc-500">{vertexCount} tiles</div>
+					<div className="text-[11px] text-fg-muted">{vertexCount} tiles</div>
 				</div>
 			}
 		/>

@@ -53,29 +53,29 @@ export function PieChart() {
 	};
 
 	return (
-		<div className="w-full h-64 bg-zinc-800/60 backdrop-blur-sm rounded-lg overflow-hidden border border-zinc-700/50 shadow-lg">
-			<div className="px-4 py-2 text-xs font-medium text-white/80 flex justify-between items-center border-b border-zinc-700/50">
+		<div className="w-full h-64 bg-surface-overlay/60 backdrop-blur-sm rounded-lg overflow-hidden border border-line shadow-lg">
+			<div className="px-4 py-2 text-xs font-medium text-fg-secondary flex justify-between items-center border-b border-line">
 				<div className="flex items-center gap-2">
 					{currentPath.length > 0 ? (
-						<button className="text-white/60 hover:text-white/90 flex items-center" onClick={navigateBack}>
+						<button className="text-fg-muted hover:text-fg flex items-center" onClick={navigateBack}>
 							<span className="text-lg leading-none mr-1">←</span>
 							<span>Back</span>
 						</button>
 					) : (
-						<button className="text-blue-300 hover:text-blue-100" onClick={() => navigateTo([])}>
+						<button className="text-info hover:text-info" onClick={() => navigateTo([])}>
 							Root
 						</button>
 					)}
 					{currentPath.length > 0 ? (
 						<>
-							<span className="text-white/50 mx-1">›</span>
+							<span className="text-fg-muted mx-1">›</span>
 							<div className="flex items-center">
 								{breadcrumbs.map((crumb, i) => (
 									<span key={crumb.label + i} className="flex items-center">
-										<button className="text-blue-300 hover:text-blue-100" onClick={() => navigateTo(crumb.path)}>
+										<button className="text-info hover:text-info" onClick={() => navigateTo(crumb.path)}>
 											{crumb.label}
 										</button>
-										{i < breadcrumbs.length - 1 ? <span className="text-white/50 mx-1">›</span> : null}
+										{i < breadcrumbs.length - 1 ? <span className="text-fg-muted mx-1">›</span> : null}
 									</span>
 								))}
 							</div>

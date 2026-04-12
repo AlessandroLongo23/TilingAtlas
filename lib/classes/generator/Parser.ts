@@ -1,4 +1,4 @@
-import { parameter, possibleSides, possibleAngles } from '@/stores';
+import { possibleSides, possibleAngles, useConfiguration } from '@/stores';
 import { toRadians } from '@/utils';
 import { PolygonType, type ShapeSeed, type GameOfLifeRule, GOLNeighborhood, type RelativeTo, type RelativeToType, type Transform, TransformType } from '@/classes';
 
@@ -57,9 +57,7 @@ export class Parser {
                         const alphaString: string = content.split('|')[1];
                         let alpha: number = 0;
                         if (isNaN(parseInt(alphaString))) {
-                            parameter.subscribe((v) => {
-                                alpha = toRadians(v)
-                            });
+                            alpha = toRadians(useConfiguration.getState().parameter);
                         } else {
                             alpha = toRadians(parseInt(alphaString));
                         }
@@ -237,11 +235,12 @@ export class Parser {
         return translateTransform as Transform;
     }
 
-    isValidShapeSeed = (shapeSeed): boolean => {
+    isValidShapeSeed = (shapeSeed: string): boolean => {
+        const count = (s: string, ch: string) => s.split(ch).length - 1;
         if (
-            shapeSeed.count('(') != shapeSeed.count(')') ||
-            shapeSeed.count('[') != shapeSeed.count(']') ||
-            shapeSeed.count('{') != shapeSeed.count('}')
+            count(shapeSeed, '(') != count(shapeSeed, ')') ||
+            count(shapeSeed, '[') != count(shapeSeed, ']') ||
+            count(shapeSeed, '{') != count(shapeSeed, '}')
         )
             return false;
 

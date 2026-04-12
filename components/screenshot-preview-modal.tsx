@@ -5,6 +5,7 @@ import { Download, CloudUpload, Loader2 } from "lucide-react";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { uploadTilingScreenshot, dataUrlToWebPBlob } from "@/lib/services/tilingImages";
 import { Modal } from "./ui/modal";
+import { Button } from "./ui/button";
 
 export function ScreenshotPreviewModal() {
 	const {
@@ -59,28 +60,30 @@ export function ScreenshotPreviewModal() {
 	return (
 		<Modal isOpen={isOpen} onOpenChange={handleOpenChange} title="Screenshot Preview" maxWidth="max-w-2xl">
 			<div className="p-4 space-y-4">
-				<div className="flex justify-center bg-zinc-900/60 rounded-lg p-4 border border-zinc-700/50 min-h-[280px]">
+				<div className="flex justify-center bg-surface-raised/60 rounded-lg p-4 border border-line min-h-[280px]">
 					{imageDataUrl ? (
 						// eslint-disable-next-line @next/next/no-img-element
 						<img src={imageDataUrl} alt="Screenshot preview" className="max-w-full max-h-[320px] object-contain rounded-md" />
 					) : (
-						<div className="flex items-center justify-center text-zinc-500">
+						<div className="flex items-center justify-center text-fg-muted">
 							<Loader2 size={32} className="animate-spin" />
 						</div>
 					)}
 				</div>
 
 				{supabaseError ? (
-					<p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+					<p className="text-sm text-danger bg-danger-subtle border border-danger/30 rounded-md px-3 py-2">
 						{supabaseError}
 					</p>
 				) : null}
 
 				<div className="flex flex-col sm:flex-row gap-3 pt-2">
-					<button
+					<Button
+						variant="secondary"
+						size="lg"
+						fullWidth
 						onClick={handleSaveLocally}
 						disabled={savingLocal || !imageDataUrl}
-						className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md border border-zinc-700/50 bg-zinc-800/40 hover:bg-zinc-700/60 text-white/90 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						{savingLocal ? (
 							<>
@@ -93,13 +96,15 @@ export function ScreenshotPreviewModal() {
 								Save Locally
 							</>
 						)}
-					</button>
+					</Button>
 					{allowSupabaseUpload ? (
-						<button
+						<Button
+							variant="primary"
+							size="lg"
+							fullWidth
 							onClick={handleSaveToSupabase}
 							disabled={savingSupabase || !imageDataUrl || !groupId}
 							title={!groupId ? "This tiling is not in the database" : "Replace the tiling image in Supabase storage"}
-							className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md border border-zinc-700/50 bg-green-700/40 hover:bg-green-700/60 text-white font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{savingSupabase ? (
 								<>
@@ -112,12 +117,12 @@ export function ScreenshotPreviewModal() {
 									Save to Supabase
 								</>
 							)}
-						</button>
+						</Button>
 					) : null}
 				</div>
 
 				{allowSupabaseUpload && !groupId && imageDataUrl ? (
-					<p className="text-xs text-zinc-500">
+					<p className="text-xs text-fg-muted">
 						&ldquo;Save to Supabase&rdquo; is only available for tilings in the database.
 					</p>
 				) : null}

@@ -20,26 +20,26 @@ export function TilingListItem({
 	onScreenshot,
 }: TilingListItemProps) {
 	return (
-		<div className="flex items-center gap-3 px-3 py-2 rounded-md border border-zinc-700/30 bg-zinc-800/30 hover:border-zinc-600/40 transition-colors">
-			<div className="shrink-0 w-16 h-16 rounded overflow-hidden border border-zinc-700/50 bg-zinc-900">
+		<div className="flex items-center gap-3 px-3 py-2 rounded-md border border-line bg-surface-overlay/30 hover:border-line-strong transition-colors">
+			<div className="shrink-0 w-16 h-16 rounded overflow-hidden border border-line bg-surface-raised">
 				{thumbnail ?? (
-					<div className="w-full h-full flex items-center justify-center text-zinc-600 text-[10px]">—</div>
+					<div className="w-full h-full flex items-center justify-center text-fg-disabled text-[10px]">—</div>
 				)}
 			</div>
-			<span className="text-xs text-zinc-500 tabular-nums shrink-0 w-6 text-right">{id}</span>
+			<span className="text-xs text-fg-muted tabular-nums shrink-0 w-6 text-right">{id}</span>
 			<span
-				className="truncate font-mono text-sm text-zinc-300 flex-1 min-w-0"
+				className="truncate font-mono text-sm text-fg-secondary flex-1 min-w-0"
 				title={name}
 				dangerouslySetInnerHTML={{ __html: compactToHtml(compactSeedName(name || "")) }}
 			/>
-			<span className="shrink-0 text-xs text-zinc-500">{polygonCount} polys</span>
+			<span className="shrink-0 text-xs text-fg-muted">{polygonCount} polys</span>
 			{onScreenshot ? (
 				<button
 					type="button"
 					onClick={onScreenshot}
 					title="Screenshot"
 					aria-label="Take screenshot"
-					className="p-1.5 rounded-md bg-zinc-800/90 border border-zinc-600/60 text-zinc-400 hover:text-white hover:bg-zinc-700/90 shrink-0"
+					className="p-1.5 rounded-md bg-surface-overlay/90 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay/90 shrink-0"
 				>
 					<Camera size={14} />
 				</button>

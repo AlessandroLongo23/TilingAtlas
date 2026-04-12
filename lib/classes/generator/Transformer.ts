@@ -1,4 +1,6 @@
-import { tolerance, debugView, offsets, debugManager } from '@/stores';
+import { tolerance, offsets, debugManager, useConfiguration } from '@/stores';
+
+const debugView = () => useConfiguration.getState().debugView;
 import { sortPointsByAngleAndDistance, getSpatialKey, isWithinTolerance } from '@/utils';
 import { Polygon, Vector, Tiling, RelativeToType, type Transform } from '@/classes';
 
@@ -131,7 +133,7 @@ export class Transformer {
     }
 
     findOrigin = (nodes: Polygon[], type: RelativeToType, index: number): Vector => {
-        if (debugView) debugManager.startTimer(`findOrigin (${type}${index})`);
+        if (debugView()) debugManager.startTimer(`findOrigin (${type}${index})`);
         
         const deduplicatePoints = (points: Vector[]): Vector[] => {
             const spatialMap = new Map();
@@ -205,7 +207,7 @@ export class Transformer {
             result = sortedVertices[index - 1];
         }
         
-        if (debugView) debugManager.endTimer(`findOrigin (${type}${index})`);
+        if (debugView()) debugManager.endTimer(`findOrigin (${type}${index})`);
         
         return result!;
     }

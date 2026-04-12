@@ -1,6 +1,9 @@
-import { tolerance, debugView, offsets, debugManager, updateDebugStore } from '@/stores';
+import { tolerance, offsets, debugManager, updateDebugStore, useConfiguration } from '@/stores';
+
+const debugView = () => useConfiguration.getState().debugView;
 import { isWithinTolerance, getSpatialKey } from '@/utils';
-import { Tiling, Parser, Polygon, GOLNeighborhood, GOLRuleType } from '@/classes';
+import { Tiling, Polygon, GOLNeighborhood, GOLRuleType } from '@/classes';
+import { Parser } from './Parser';
 
 export class GOLEngine {
     tiling: Tiling;
@@ -33,11 +36,11 @@ export class GOLEngine {
     }
 
     calculateGoLNeighbors = (depth: number = 1, neighborhoodType: GOLNeighborhood = GOLNeighborhood.MOORE): void => {
-        if (debugView) debugManager.startTimer("Computing Neighbors");
+        if (debugView()) debugManager.startTimer("Computing Neighbors");
         
         const neighborSet = new Set();
         
-        if (debugView) debugManager.startTimer("Creating spatial indices");
+        if (debugView()) debugManager.startTimer("Creating spatial indices");
         const halfwaysSpatialMap = new Map();
         const verticesSpatialMap = new Map();
 
@@ -70,7 +73,7 @@ export class GOLEngine {
                 });
             }
         }
-        if (debugView) debugManager.endTimer("Creating spatial indices");
+        if (debugView()) debugManager.endTimer("Creating spatial indices");
         
         const addGolNeighbor = (i: number, k: number): void => {
             const pairKey = i < k ? `${i}-${k}` : `${k}-${i}`;
@@ -82,7 +85,7 @@ export class GOLEngine {
             }
         };
 
-        if (debugView) debugManager.startTimer("Calculating halfways neighbors");
+        if (debugView()) debugManager.startTimer("Calculating halfways neighbors");
         const processedHalfwayCells = new Set();
         
         for (const [key, entries] of halfwaysSpatialMap.entries()) {
@@ -133,10 +136,10 @@ export class GOLEngine {
                 }
             }
         }
-        if (debugView) debugManager.endTimer("Calculating halfways neighbors");
+        if (debugView()) debugManager.endTimer("Calculating halfways neighbors");
 
         if (neighborhoodType === GOLNeighborhood.MOORE) {
-            if (debugView) debugManager.startTimer("Calculating vertices neighbors");
+            if (debugView()) debugManager.startTimer("Calculating vertices neighbors");
             const vertexToNodesMap = new Map();
             
             for (let i = 0; i < this.tiling.nodes.length; i++) {
@@ -211,10 +214,10 @@ export class GOLEngine {
                     }
                 }
             }
-            if (debugView) debugManager.endTimer("Calculating vertices neighbors");
+            if (debugView()) debugManager.endTimer("Calculating vertices neighbors");
         }
 
-        if (debugView) debugManager.startTimer("Calculating all neighbors with DFS");
+        if (debugView()) debugManager.startTimer("Calculating all neighbors with DFS");
         
         for (let i = 0; i < this.tiling.nodes.length; i++) {
             const node = this.tiling.nodes[i];
@@ -257,13 +260,13 @@ export class GOLEngine {
             delete this.tiling.nodes[i].golNeighbors;
         }
         
-        if (debugView) debugManager.endTimer("Calculating all neighbors with DFS");
-        if (debugView) debugManager.endTimer("Computing Neighbors");
+        if (debugView()) debugManager.endTimer("Calculating all neighbors with DFS");
+        if (debugView()) debugManager.endTimer("Computing Neighbors");
         updateDebugStore();
     }
 
     removeDuplicates = (nodes: Polygon[]) => {
-        if (debugView) debugManager.startTimer("Remove Duplicates");
+        if (debugView()) debugManager.startTimer("Remove Duplicates");
         
         const spatialMap = new Map();
         for (let i = 0; i < nodes.length; i++) {
@@ -302,7 +305,7 @@ export class GOLEngine {
             }
         }
 
-        if (debugView) debugManager.endTimer("Remove Duplicates");
+        if (debugView()) debugManager.endTimer("Remove Duplicates");
         return uniqueNodes;
     }
 }

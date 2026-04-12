@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { useLegacyTilingStore } from "@/stores/legacyTilingStore";
 import { vertexTypes } from "@/stores/vertexTypes";
 import { Toggle } from "./ui/toggle";
+import { Button } from "./ui/button";
+import { ButtonGroup } from "./ui/button-group";
+import { SidebarSection } from "./ui/sidebar-section";
+import { Switch } from "./ui/switch";
 import { VertexTypeCard } from "./vertex-type-card";
-import { cn } from "@/lib/utils/cn";
 
 export type FilterMode = "exact" | "contains";
 
@@ -28,6 +29,8 @@ interface TilingFilterBarProps {
 
 const POLYGONS = [3, 4, 5, 6, 8, 9, 12];
 
+type SectionKey = "types" | "polygons" | "dual" | "vertexTypes";
+
 export function TilingFilterBar({
 	selectedTypes,
 	onSelectedTypesChange,
@@ -47,14 +50,14 @@ export function TilingFilterBar({
 	const activeRules = initialized ? store.tilingRules() : [];
 	const types = activeRules.map((r) => ({ id: r.id, label: r.title }));
 
-	const [expanded, setExpanded] = useState({
+	const [expanded, setExpanded] = useState<Record<SectionKey, boolean>>({
 		types: true,
 		polygons: true,
 		dual: true,
 		vertexTypes: true,
 	});
-	const toggleSection = (key: keyof typeof expanded) =>
-		setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+	const setOpen = (key: SectionKey) => (open: boolean) =>
+		setExpanded((prev) => ({ ...prev, [key]: open }));
 
 	const toggleType = (id: string) => {
 		onSelectedTypesChange(
@@ -88,188 +91,102 @@ export function TilingFilterBar({
 	};
 
 	return (
-		<div className="h-full overflow-y-auto border-r border-zinc-700/50">
-			<div className="flex flex-col gap-6 p-4">
-				{/* Class */}
-				<SectionHeader
+		<div className="h-full overflow-y-auto border-r border-line">
+			<div className="flex flex-col gap-2 p-4">
+				<SidebarSection
 					title="Class"
-					expanded={expanded.types}
-					onToggle={() => toggleSection("types")}
-				/>
-				<AnimateExpand open={expanded.types}>
-					<div className="flex flex-wrap gap-2 mt-3 pl-2">
-						{types.map((type) => (
-							<button
-								key={type.id}
-								onClick={() => toggleType(type.id)}
-								className={cn(
-									"px-3 py-1 text-xs rounded-full transition-all border",
-									selectedTypes.includes(type.id)
-										? "bg-green-500/20 text-green-400 border-green-500/30"
-										: "bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/60",
-								)}
-							>
-								{type.label}
-							</button>
+					summary={selectedTypes.length ? selectedTypes.length : null}
+					open={expanded.types}
+					onOpenChange={setOpen("types")}
+				>
+					<ButtonGroup
+						multi
+						variant="pill"
+						size="sm"
+						options={types.map((t) => ({ value: t.id, label: t.label }))}
+						selected={selectedTypes}
+						onChange={toggleType}
+					/>
+				</SidebarSection>
+
+				<SidebarSection
+					title="Polygon"
+					summary={selectedPolygons.length ? selectedPolygons.length : null}
+					open={expanded.polygons}
+					onOpenChange={setOpen("polygons")}
+					rightSlot={
+						<Toggle
+							leftValue="exact"
+							rightValue="contains"
+							value={polygonFilterMode}
+							onChange={(v) => onPolygonFilterModeChange(v as FilterMode)}
+							padding="py-1 px-3"
+						/>
+					}
+				>
+					<ButtonGroup
+						multi
+						variant="pill"
+						size="md"
+						options={POLYGONS.map((p) => ({ value: p, label: p, classes: "w-9 px-0" }))}
+						selected={selectedPolygons}
+						onChange={togglePolygon}
+					/>
+				</SidebarSection>
+
+				<SidebarSection
+					title="Vertex Type"
+					summary={selectedVertexTypes.length ? selectedVertexTypes.length : null}
+					open={expanded.vertexTypes}
+					onOpenChange={setOpen("vertexTypes")}
+					rightSlot={
+						<Toggle
+							leftValue="exact"
+							rightValue="contains"
+							value={vertexTypeFilterMode}
+							onChange={(v) => onVertexTypeFilterModeChange(v as FilterMode)}
+							padding="py-1 px-3"
+						/>
+					}
+				>
+					<div className="grid grid-cols-2 gap-2">
+						{vertexTypes.map((vt) => (
+							<div key={vt.id} className="w-full aspect-square">
+								<VertexTypeCard
+									id={vt.id}
+									name={vt.name}
+									isSelected={selectedVertexTypes.includes(vt.id)}
+									onToggle={toggleVertexType}
+								/>
+							</div>
 						))}
 					</div>
-				</AnimateExpand>
+				</SidebarSection>
 
-				{/* Polygon */}
-				<div className="border-t border-zinc-800 pt-4">
-					<SectionHeader
-						title="Polygon"
-						expanded={expanded.polygons}
-						onToggle={() => toggleSection("polygons")}
-						right={
-							<Toggle
-								leftValue="exact"
-								rightValue="contains"
-								value={polygonFilterMode}
-								onChange={(v) => onPolygonFilterModeChange(v as FilterMode)}
-								padding="py-1 px-4"
-							/>
-						}
-					/>
-					<AnimateExpand open={expanded.polygons}>
-						<div className="pl-2 mt-3">
-							<div className="flex flex-wrap gap-2">
-								{POLYGONS.map((polygon) => (
-									<button
-										key={polygon}
-										onClick={() => togglePolygon(polygon)}
-										className={cn(
-											"w-9 h-9 flex items-center justify-center rounded-full transition-all border text-xs font-medium",
-											selectedPolygons.includes(polygon)
-												? "bg-green-500/20 text-green-400 border-green-500/30"
-												: "bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700/60",
-										)}
-									>
-										{polygon}
-									</button>
-								))}
-							</div>
-						</div>
-					</AnimateExpand>
-				</div>
+				<SidebarSection
+					title="Dual Tilings"
+					summary={showDual ? "on" : null}
+					open={expanded.dual}
+					onOpenChange={setOpen("dual")}
+				>
+					<div className="flex justify-between items-center px-1">
+						<div className="text-sm text-fg-secondary">Show Dual Tilings</div>
+						<Switch
+							checked={showDual}
+							onCheckedChange={onShowDualChange}
+							aria-label="Toggle dual tilings"
+						/>
+					</div>
+				</SidebarSection>
 
-				{/* Vertex Types */}
-				<div className="border-t border-zinc-800 pt-4">
-					<SectionHeader
-						title="Vertex Type"
-						expanded={expanded.vertexTypes}
-						onToggle={() => toggleSection("vertexTypes")}
-						right={
-							<Toggle
-								leftValue="exact"
-								rightValue="contains"
-								value={vertexTypeFilterMode}
-								onChange={(v) => onVertexTypeFilterModeChange(v as FilterMode)}
-								padding="py-1 px-4"
-							/>
-						}
-					/>
-					<AnimateExpand open={expanded.vertexTypes}>
-						<div className="pl-2 mt-3">
-							<div className="grid grid-cols-2 gap-2">
-								{vertexTypes.map((vt) => (
-									<div key={vt.id} className="w-full aspect-square">
-										<VertexTypeCard
-											id={vt.id}
-											name={vt.name}
-											isSelected={selectedVertexTypes.includes(vt.id)}
-											onToggle={toggleVertexType}
-										/>
-									</div>
-								))}
-							</div>
-						</div>
-					</AnimateExpand>
-				</div>
-
-				{/* Dual */}
-				<div className="border-t border-zinc-800 pt-4">
-					<SectionHeader
-						title="Dual Tilings"
-						expanded={expanded.dual}
-						onToggle={() => toggleSection("dual")}
-					/>
-					<AnimateExpand open={expanded.dual}>
-						<div className="flex justify-between items-center mt-3 pl-2">
-							<div className="text-sm text-zinc-300">Show Dual Tilings</div>
-							<button
-								onClick={() => onShowDualChange(!showDual)}
-								aria-label="Toggle dual tilings"
-								aria-pressed={showDual}
-								className={cn(
-									"w-12 h-6 rounded-full transition-all relative",
-									showDual ? "bg-green-500/30" : "bg-zinc-700/50",
-								)}
-							>
-								<span
-									className={cn(
-										"absolute top-1 w-4 h-4 rounded-full transition-all",
-										showDual ? "bg-green-400 right-1" : "bg-zinc-400 left-1",
-									)}
-								/>
-							</button>
-						</div>
-					</AnimateExpand>
-				</div>
-
-				<button
+				<Button
+					variant="secondary"
+					size="md"
 					onClick={clearFilters}
-					className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-md border border-zinc-700/50 transition-all mt-2"
-				>
-					Clear Filters
-				</button>
+					classes="mt-2"
+					label="Clear Filters"
+				/>
 			</div>
 		</div>
-	);
-}
-
-function SectionHeader({
-	title,
-	expanded,
-	onToggle,
-	right,
-}: {
-	title: string;
-	expanded: boolean;
-	onToggle: () => void;
-	right?: React.ReactNode;
-}) {
-	return (
-		<div className="flex justify-between items-center p-2 rounded-md hover:bg-zinc-800/80 transition-colors">
-			<h3 className="text-xs uppercase text-zinc-300 font-medium tracking-wider">{title}</h3>
-			<div className="flex items-center gap-2">
-				{right}
-				<button
-					className="p-1.5 bg-zinc-800 rounded-md text-zinc-400 border border-zinc-700/50"
-					onClick={onToggle}
-					aria-label={expanded ? "Collapse" : "Expand"}
-				>
-					{expanded ? <ChevronUp size={14} className="text-green-400" /> : <ChevronDown size={14} />}
-				</button>
-			</div>
-		</div>
-	);
-}
-
-function AnimateExpand({ open, children }: { open: boolean; children: React.ReactNode }) {
-	return (
-		<AnimatePresence initial={false}>
-			{open ? (
-				<motion.div
-					initial={{ height: 0, opacity: 0 }}
-					animate={{ height: "auto", opacity: 1 }}
-					exit={{ height: 0, opacity: 0 }}
-					transition={{ duration: 0.2 }}
-					className="overflow-hidden"
-				>
-					{children}
-				</motion.div>
-			) : null}
-		</AnimatePresence>
 	);
 }

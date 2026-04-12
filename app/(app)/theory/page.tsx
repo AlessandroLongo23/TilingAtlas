@@ -10,7 +10,10 @@ async function loadAlgorithmMarkdown(): Promise<string> {
 	// also served as a static asset. RSC reads it from disk for SSR.
 	try {
 		const filePath = path.join(process.cwd(), "public", "theory", "algorithm.md");
-		return await readFile(filePath, "utf8");
+		const raw = await readFile(filePath, "utf8");
+		// Force $$…$$ fences onto their own lines — micromark's math-flow parser
+		// requires this, and authored content (Obsidian) often doesn't.
+		return raw.replace(/\$\$([\s\S]+?)\$\$/g, (_, body) => `\n\n$$\n${body.trim()}\n$$\n\n`);
 	} catch {
 		return "";
 	}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PolygonType } from "@/classes/polygons/PolygonType";
 import { Modal } from "./ui/modal";
 import { Checkbox } from "./ui/checkbox";
+import { Button } from "./ui/button";
 
 interface GeneratePolygonsDialogProps {
 	isOpen: boolean;
@@ -85,7 +86,7 @@ export function GeneratePolygonsDialog({
 	return (
 		<Modal isOpen={isOpen} onOpenChange={onOpenChange} title="Generate Polygons" maxWidth="max-w-lg">
 			<div className="p-4 flex flex-col gap-5">
-				<p className="text-sm text-zinc-400">
+				<p className="text-sm text-fg-muted">
 					Choose polygon types and parameters. Results will be saved to Supabase and added to the polygon
 					collection.
 				</p>
@@ -96,7 +97,7 @@ export function GeneratePolygonsDialog({
 						return (
 							<div
 								key={t.id}
-								className="flex flex-wrap items-center gap-4 p-3 rounded-lg border border-zinc-700/40 bg-zinc-800/30"
+								className="flex flex-wrap items-center gap-4 p-3 rounded-lg border border-line bg-surface-overlay/30"
 							>
 								<Checkbox
 									id={`gen-${t.id}`}
@@ -106,25 +107,25 @@ export function GeneratePolygonsDialog({
 								/>
 								{cfg.enabled ? (
 									<>
-										<label className="flex items-center gap-2 text-sm text-zinc-400">
+										<label className="flex items-center gap-2 text-sm text-fg-muted">
 											<span>Max sides</span>
 											<input
 												type="number"
 												min={3}
 												max={24}
-												className="w-16 px-2 py-1 rounded border border-zinc-600/60 bg-zinc-800 text-zinc-200 text-sm"
+												className="w-16 px-2 py-1 rounded border border-line-strong bg-surface-overlay text-fg-secondary text-sm"
 												value={cfg.n_max}
 												onChange={(e) => updateConfig(t.id, { n_max: Number(e.target.value) })}
 											/>
 										</label>
 										{t.hasAngle ? (
-											<label className="flex items-center gap-2 text-sm text-zinc-400">
+											<label className="flex items-center gap-2 text-sm text-fg-muted">
 												<span>Angle increment (°)</span>
 												<input
 													type="number"
 													min={1}
 													max={180}
-													className="w-16 px-2 py-1 rounded border border-zinc-600/60 bg-zinc-800 text-zinc-200 text-sm"
+													className="w-16 px-2 py-1 rounded border border-line-strong bg-surface-overlay text-fg-secondary text-sm"
 													value={cfg.angle}
 													onChange={(e) => updateConfig(t.id, { angle: Number(e.target.value) })}
 												/>
@@ -137,23 +138,23 @@ export function GeneratePolygonsDialog({
 					})}
 				</div>
 
-				{error ? <p className="text-sm text-red-400">{error}</p> : null}
+				{error ? <p className="text-sm text-danger">{error}</p> : null}
 
 				<div className="flex justify-end gap-2 pt-2">
-					<button
+					<Button
+						variant="secondary"
+						size="md"
 						onClick={() => onOpenChange(false)}
 						disabled={loading}
-						className="px-4 py-2 rounded-md font-medium text-sm bg-zinc-800/60 text-zinc-300 border border-zinc-700/50 hover:bg-zinc-700/60 transition-colors disabled:opacity-50"
-					>
-						Cancel
-					</button>
-					<button
+						label="Cancel"
+					/>
+					<Button
+						variant="primary"
+						size="md"
 						onClick={handleSubmit}
 						disabled={loading}
-						className="px-4 py-2 rounded-md font-medium text-sm bg-green-500/20 text-green-400 border border-green-500/40 hover:bg-green-500/30 transition-colors disabled:opacity-50"
-					>
-						{loading ? "Generating…" : "Generate"}
-					</button>
+						label={loading ? "Generating…" : "Generate"}
+					/>
 				</div>
 			</div>
 		</Modal>

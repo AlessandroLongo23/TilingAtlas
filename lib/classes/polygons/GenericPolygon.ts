@@ -46,7 +46,7 @@ export class GenericPolygon extends Polygon {
     }
 
     calculateHue = () => {
-        this.hue = map(this.vertices.length / 2, 3, 12, 300, 0) + 300 / 12;
+        this.hue = map(Math.log(this.vertices.length), Math.log(3), Math.log(40), 0, 300);
     }
 
     rotate = (origin: Vector, angle: number): GenericPolygon => {

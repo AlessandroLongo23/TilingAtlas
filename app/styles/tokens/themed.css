@@ -1,0 +1,119 @@
+/* Themed tokens — semantic values that flip between light and dark.
+   All values resolve to var(--palette-*) from primitives.css.
+   Components reference ONLY these tokens (never primitives directly). */
+
+:root {
+  /* ─────────── Surfaces ─────────── */
+  --color-surface-base:    var(--palette-neutral-50);
+  --color-surface-raised:  var(--palette-white);
+  --color-surface-chrome:  var(--palette-neutral-100);
+  --color-surface-overlay: var(--palette-neutral-100);
+  --color-surface-sunken:  var(--palette-neutral-200);
+
+  /* ─────────── Text ─────────── */
+  --color-text-primary:   var(--palette-neutral-900);
+  --color-text-secondary: var(--palette-neutral-700);
+  --color-text-muted:     var(--palette-neutral-500);
+  --color-text-disabled:  var(--palette-neutral-400);
+  --color-text-inverse:   var(--palette-neutral-50);
+  --color-text-accent:    var(--palette-green-700);
+
+  /* ─────────── Borders ─────────── */
+  --color-border-subtle:  var(--palette-neutral-200);
+  --color-border-default: var(--palette-neutral-300);
+  --color-border-strong:  var(--palette-neutral-400);
+  --color-border-focus:   var(--palette-green-600);
+
+  /* ─────────── Accent / brand ─────────── */
+  --color-accent:          var(--palette-green-600);
+  --color-accent-hover:    var(--palette-green-700);
+  --color-accent-active:   var(--palette-green-800);
+  --color-accent-subtle:   oklch(from var(--palette-green-500) l c h / 0.14);
+  --color-accent-contrast: var(--palette-white);
+
+  /* ─────────── Status ─────────── */
+  --color-danger:         var(--palette-red-600);
+  --color-danger-subtle:  oklch(from var(--palette-red-500) l c h / 0.14);
+  --color-success:        var(--palette-green-600);
+  --color-success-subtle: oklch(from var(--palette-green-500) l c h / 0.14);
+  --color-warning:        var(--palette-amber-600);
+  --color-warning-subtle: oklch(from var(--palette-amber-500) l c h / 0.18);
+  --color-info:           var(--palette-blue-600);
+  --color-info-subtle:    oklch(from var(--palette-blue-500) l c h / 0.14);
+
+  /* ─────────── Interactive state overlays ─────────── */
+  --color-hover-overlay:    oklch(from var(--palette-neutral-900) l c h / 0.06);
+  --color-active-overlay:   oklch(from var(--palette-neutral-900) l c h / 0.10);
+  --color-selected-overlay: oklch(from var(--palette-green-500) l c h / 0.12);
+  --color-focus-ring:       var(--palette-green-600);
+
+  /* ─────────── Shadows (color-tinted) ─────────── */
+  --shadow-sm: 0 1px 2px oklch(from var(--palette-neutral-900) l c h / 0.06);
+  --shadow-md:
+    0 2px 8px oklch(from var(--palette-neutral-900) l c h / 0.08),
+    0 1px 2px oklch(from var(--palette-neutral-900) l c h / 0.04);
+  --shadow-lg:
+    0 8px 24px oklch(from var(--palette-neutral-900) l c h / 0.10),
+    0 2px 4px oklch(from var(--palette-neutral-900) l c h / 0.05);
+  --shadow-xl:
+    0 20px 48px oklch(from var(--palette-neutral-900) l c h / 0.12),
+    0 4px 8px oklch(from var(--palette-neutral-900) l c h / 0.06);
+}
+
+.dark {
+  /* Surfaces — deep neutrals */
+  --color-surface-base:    var(--palette-neutral-950);
+  --color-surface-raised:  var(--palette-neutral-900);
+  --color-surface-chrome:  var(--palette-neutral-900);
+  --color-surface-overlay: var(--palette-neutral-800);
+  --color-surface-sunken:  var(--palette-neutral-900);
+
+  /* Text */
+  --color-text-primary:   var(--palette-neutral-50);
+  --color-text-secondary: var(--palette-neutral-200);
+  --color-text-muted:     var(--palette-neutral-400);
+  --color-text-disabled:  var(--palette-neutral-600);
+  --color-text-inverse:   var(--palette-neutral-950);
+  --color-text-accent:    var(--palette-green-400);
+
+  /* Borders */
+  --color-border-subtle:  oklch(from var(--palette-neutral-700) l c h / 0.5);
+  --color-border-default: var(--palette-neutral-700);
+  --color-border-strong:  var(--palette-neutral-600);
+  --color-border-focus:   var(--palette-green-400);
+
+  /* Accent */
+  --color-accent:          var(--palette-green-400);
+  --color-accent-hover:    var(--palette-green-300);
+  --color-accent-active:   var(--palette-green-200);
+  --color-accent-subtle:   oklch(from var(--palette-green-400) l c h / 0.14);
+  --color-accent-contrast: var(--palette-neutral-950);
+
+  /* Status */
+  --color-danger:         var(--palette-red-400);
+  --color-danger-subtle:  oklch(from var(--palette-red-400) l c h / 0.16);
+  --color-success:        var(--palette-green-400);
+  --color-success-subtle: oklch(from var(--palette-green-400) l c h / 0.16);
+  --color-warning:        var(--palette-amber-400);
+  --color-warning-subtle: oklch(from var(--palette-amber-400) l c h / 0.18);
+  --color-info:           var(--palette-blue-400);
+  --color-info-subtle:    oklch(from var(--palette-blue-400) l c h / 0.16);
+
+  /* Overlays */
+  --color-hover-overlay:    oklch(from var(--palette-white) l c h / 0.06);
+  --color-active-overlay:   oklch(from var(--palette-white) l c h / 0.10);
+  --color-selected-overlay: oklch(from var(--palette-green-400) l c h / 0.14);
+  --color-focus-ring:       var(--palette-green-400);
+
+  /* Shadows — darker, more pronounced */
+  --shadow-sm: 0 1px 2px oklch(from var(--palette-black) l c h / 0.35);
+  --shadow-md:
+    0 2px 8px oklch(from var(--palette-black) l c h / 0.40),
+    0 1px 2px oklch(from var(--palette-black) l c h / 0.25);
+  --shadow-lg:
+    0 8px 24px oklch(from var(--palette-black) l c h / 0.50),
+    0 2px 4px oklch(from var(--palette-black) l c h / 0.30);
+  --shadow-xl:
+    0 20px 48px oklch(from var(--palette-black) l c h / 0.55),
+    0 4px 8px oklch(from var(--palette-black) l c h / 0.35);
+}

@@ -35,7 +35,7 @@ function compactLabel(label: string) {
 export function TilingsClient({ tilings, total, page, pageSize, k, kValues }: TilingsClientProps) {
 	const router = useRouter();
 	const { setBadge } = useExperiment();
-	const [gridColumns, setGridColumns] = useState(0);
+	const [gridColumns, setGridColumns] = useState(5);
 	const [filterK, setFilterK] = useState<number | null>(k);
 
 	useEffect(() => {
@@ -64,10 +64,7 @@ export function TilingsClient({ tilings, total, page, pageSize, k, kValues }: Ti
 		updateUrl(filterK, nextPage);
 	};
 
-	const gridStyle =
-		gridColumns === 0
-			? { gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }
-			: { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
+	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
 
 	return (
 		<>
@@ -85,11 +82,11 @@ export function TilingsClient({ tilings, total, page, pageSize, k, kValues }: Ti
 			<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 				<div className="flex-1 overflow-y-auto px-6 py-4">
 					{tilings.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-16 text-center text-zinc-600 gap-3">
+						<div className="flex flex-col items-center justify-center py-16 text-center text-fg-disabled gap-3">
 							<Layers size={36} className="opacity-30" />
 							{total === 0 ? (
 								<>
-									<p className="text-sm text-zinc-400">No tilings yet — the experiment may still be running.</p>
+									<p className="text-sm text-fg-muted">No tilings yet — the experiment may still be running.</p>
 									<p className="text-xs">Results will appear here as the worker finds them.</p>
 								</>
 							) : (
@@ -114,41 +111,41 @@ export function TilingsClient({ tilings, total, page, pageSize, k, kValues }: Ti
 									return (
 										<div
 											key={tiling.id ?? `${page}-${i}`}
-											className="flex flex-col rounded-xl border border-zinc-700/30 bg-zinc-800/30 hover:border-zinc-600/50 transition-colors overflow-hidden cursor-pointer"
+											className="flex flex-col rounded-xl border border-line bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden cursor-pointer"
 										>
-											<div className="w-full aspect-square bg-zinc-900/80 flex items-center justify-center border-b border-zinc-700/20">
+											<div className="w-full aspect-square bg-surface-raised/80 flex items-center justify-center border-b border-line">
 												{cellPolys ? (
-													<TilingThumbnail polygons={cellPolys} size={200} />
+													<TilingThumbnail polygons={cellPolys} />
 												) : tiling.image_url ? (
 													// eslint-disable-next-line @next/next/no-img-element
 													<img src={tiling.image_url} alt="tiling" className="w-full h-full object-contain" />
 												) : (
 													<span
-														className="text-zinc-500 font-mono text-xs text-center leading-relaxed break-all p-5"
+														className="text-fg-muted font-mono text-xs text-center leading-relaxed break-all p-5"
 														dangerouslySetInnerHTML={{ __html: html }}
 													/>
 												)}
 											</div>
 											<div className="px-3 py-2.5 flex flex-col gap-2">
 												<p
-													className="text-xs text-zinc-300 font-mono leading-tight break-all"
+													className="text-xs text-fg-secondary font-mono leading-tight break-all"
 													title={label}
 													dangerouslySetInnerHTML={{ __html: html }}
 												/>
 												<div className="flex flex-wrap gap-1">
-													<span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-700/50 text-zinc-400">
+													<span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-overlay/50 text-fg-muted">
 														k={tiling.k}
 													</span>
-													<span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-700/50 text-zinc-400">
+													<span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-overlay/50 text-fg-muted">
 														m={tiling.m}
 													</span>
 													{tiling.wallpaper_group ? (
-														<span className="text-[10px] px-1.5 py-0.5 rounded text-blue-400 bg-blue-400/10">
+														<span className="text-[10px] px-1.5 py-0.5 rounded text-info bg-info-subtle">
 															{tiling.wallpaper_group}
 														</span>
 													) : null}
 													{tiling.is_regular ? (
-														<span className="text-[10px] px-1.5 py-0.5 rounded text-green-400 bg-green-400/10">
+														<span className="text-[10px] px-1.5 py-0.5 rounded text-accent bg-accent-subtle">
 															regular
 														</span>
 													) : null}

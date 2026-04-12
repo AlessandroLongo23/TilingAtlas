@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { ButtonGroup } from "./ui/button-group";
+import { SidebarSection } from "./ui/sidebar-section";
 import { cn } from "@/lib/utils/cn";
 
 interface ExperimentSidebarProps {
@@ -15,15 +18,8 @@ interface ExperimentSidebarProps {
 	showFilters?: boolean;
 }
 
-const COLUMN_PRESETS = [3, 4, 5, 6, 0];
+const COLUMN_PRESETS = [3, 4, 5, 6];
 
-/**
- * Lab experiment sidebar — grid-column picker + optional k/m filters.
- *
- * In the source, `visible` came from `getContext('experiment-sidebar')`.
- * Here, pass `visible` explicitly from a React Context provider at the
- * lab layout level (see Phase 4/5 plan).
- */
 export function ExperimentSidebar({
 	visible = true,
 	gridColumns,
@@ -36,52 +32,50 @@ export function ExperimentSidebar({
 	mOptions = [],
 	showFilters = false,
 }: ExperimentSidebarProps) {
+	const [open, setOpen] = useState({ grid: true, k: true, m: true });
+	const setSection = (key: keyof typeof open) => (v: boolean) =>
+		setOpen((prev) => ({ ...prev, [key]: v }));
+
 	return (
 		<aside
 			className={cn(
-				"h-full shrink-0 flex flex-col bg-zinc-800/50 border-r border-zinc-800/80 overflow-hidden transition-all duration-200",
+				"h-full shrink-0 flex flex-col bg-surface-overlay/50 border-r border-line-subtle overflow-hidden transition-all duration-200",
 				visible ? "w-56" : "w-0 border-r-0",
 			)}
 		>
-			<div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 min-w-[14rem]">
-				<div>
-					<p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-2">Grid columns</p>
-					<div className="flex gap-1.5 flex-wrap">
-						{COLUMN_PRESETS.map((col) => {
-							const active = gridColumns === col;
-							return (
-								<button
-									key={col}
-									onClick={() => onGridColumnsChange(col)}
-									className={cn(
-										"w-9 h-7 rounded-md text-xs font-medium border transition-colors",
-										active
-											? "bg-green-500/20 text-green-400 border-green-500/40"
-											: "bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:border-zinc-600",
-									)}
-								>
-									{col === 0 ? "Auto" : col}
-								</button>
-							);
-						})}
-					</div>
-				</div>
+			<div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 min-w-[14rem]">
+				<SidebarSection
+					title="Grid columns"
+					summary={gridColumns}
+					open={open.grid}
+					onOpenChange={setSection("grid")}
+				>
+					<ButtonGroup
+						options={COLUMN_PRESETS.map((c) => ({ value: c, label: c, classes: "w-9" }))}
+						selected={gridColumns}
+						onChange={onGridColumnsChange}
+					/>
+				</SidebarSection>
 
 				{showFilters && kOptions.length > 0 ? (
-					<FilterGroup
+					<NullableFilter
 						title="Filter by K"
 						value={filterK}
 						options={kOptions}
 						onChange={onFilterKChange}
+						open={open.k}
+						onOpenChange={setSection("k")}
 					/>
 				) : null}
 
 				{showFilters && mOptions.length > 0 ? (
-					<FilterGroup
+					<NullableFilter
 						title="Filter by M"
 						value={filterM}
 						options={mOptions}
 						onChange={onFilterMChange}
+						open={open.m}
+						onOpenChange={setSection("m")}
 					/>
 				) : null}
 			</div>
@@ -89,50 +83,36 @@ export function ExperimentSidebar({
 	);
 }
 
-function FilterGroup({
+function NullableFilter({
 	title,
 	value,
 	options,
 	onChange,
+	open,
+	onOpenChange,
 }: {
 	title: string;
 	value: number | null;
 	options: number[];
 	onChange: (val: number | null) => void;
+	open: boolean;
+	onOpenChange: (v: boolean) => void;
 }) {
+	// `null` represents "All"; we funnel it through ButtonGroup as a sentinel.
+	const ALL = Number.NEGATIVE_INFINITY;
+	const selected: number = value ?? ALL;
+	const items = [
+		{ value: ALL, label: "All", classes: "px-2.5" },
+		...options.map((o) => ({ value: o, label: o, classes: "w-9" })),
+	];
+
 	return (
-		<div>
-			<p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-2">{title}</p>
-			<div className="flex gap-1.5 flex-wrap">
-				<button
-					onClick={() => onChange(null)}
-					className={cn(
-						"px-2.5 h-7 rounded-md text-xs font-medium border transition-colors",
-						value === null
-							? "bg-green-500/20 text-green-400 border-green-500/40"
-							: "bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:border-zinc-600",
-					)}
-				>
-					All
-				</button>
-				{options.map((opt) => {
-					const active = value === opt;
-					return (
-						<button
-							key={opt}
-							onClick={() => onChange(opt)}
-							className={cn(
-								"w-9 h-7 rounded-md text-xs font-medium border transition-colors",
-								active
-									? "bg-green-500/20 text-green-400 border-green-500/40"
-									: "bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:border-zinc-600",
-							)}
-						>
-							{opt}
-						</button>
-					);
-				})}
-			</div>
-		</div>
+		<SidebarSection title={title} summary={value ?? null} open={open} onOpenChange={onOpenChange}>
+			<ButtonGroup
+				options={items}
+				selected={selected}
+				onChange={(v) => onChange(v === ALL ? null : v)}
+			/>
+		</SidebarSection>
 	);
 }

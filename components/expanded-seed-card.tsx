@@ -21,12 +21,12 @@ export function ExpandedSeedCard({ polygons, k, m, index }: ExpandedSeedCardProp
 				<div className="space-y-1">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
-							<span className="font-mono text-[11px] text-zinc-500">k={k}</span>
-							<span className="font-mono text-[11px] text-zinc-500">m={m}</span>
+							<span className="font-mono text-[11px] text-fg-muted">k={k}</span>
+							<span className="font-mono text-[11px] text-fg-muted">m={m}</span>
 						</div>
-						<span className="font-mono text-[11px] text-zinc-500">#{index + 1}</span>
+						<span className="font-mono text-[11px] text-fg-muted">#{index + 1}</span>
 					</div>
-					<div className="text-[11px] text-zinc-500">{polygons.length} polygons</div>
+					<div className="text-[11px] text-fg-muted">{polygons.length} polygons</div>
 				</div>
 			}
 		/>

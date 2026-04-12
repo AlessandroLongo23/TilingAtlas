@@ -6,7 +6,8 @@ import { useLegacyTilingStore } from "@/stores/legacyTilingStore";
 import { useTilingModal, useTilingFilters } from "@/stores/modalState";
 import { useConfiguration, type SelectedTiling } from "@/stores/configuration";
 import { Modal } from "./ui/modal";
-import { TilingCard } from "./tiling-card";
+import { Button } from "./ui/button";
+import { LegacyTilingCard } from "./legacy-tiling-card";
 import { TilingFilterBar, type FilterMode } from "./tiling-filter-bar";
 import { cn } from "@/lib/utils/cn";
 
@@ -163,11 +164,11 @@ export function TilingModalContent() {
 					onClick={() => setShowFilters((v) => !v)}
 					aria-label={showFilters ? "Hide filters" : "Show filters"}
 					title={showFilters ? "Hide filters" : "Show filters"}
-					className="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100 relative"
+					className="p-1 rounded-md hover:bg-surface-overlay/70 transition-all text-fg-secondary hover:text-fg relative"
 				>
-					<Filter size={18} className={showFilters ? "text-green-400" : ""} />
+					<Filter size={18} className={showFilters ? "text-accent" : ""} />
 					{activeFiltersCount > 0 ? (
-						<span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+						<span className="absolute -top-1 -right-1 bg-accent text-accent-contrast text-xs rounded-full w-4 h-4 flex items-center justify-center">
 							{activeFiltersCount}
 						</span>
 					) : null}
@@ -177,7 +178,7 @@ export function TilingModalContent() {
 			<div className="relative flex h-[80vh] overflow-hidden">
 				<div
 					className={cn(
-						"h-full transition-all duration-300 ease-in-out overflow-y-auto flex-shrink-0 bg-zinc-900/95",
+						"h-full transition-all duration-300 ease-in-out overflow-y-auto flex-shrink-0 bg-surface-raised/95",
 						showFilters ? "w-80 mr-4 opacity-100" : "w-0 mr-0 opacity-0 pointer-events-none",
 					)}
 				>
@@ -199,29 +200,30 @@ export function TilingModalContent() {
 
 				<div className="h-full overflow-y-auto flex-grow p-4">
 					{loading ? (
-						<div className="py-8 text-center text-zinc-400">
+						<div className="py-8 text-center text-fg-muted">
 							<Loader2 size={48} className="mx-auto mb-4 opacity-40 animate-spin" />
 							<p>Loading tilings...</p>
 						</div>
 					) : filteredTilings.length === 0 ? (
-						<div className="py-8 text-center text-zinc-400">
+						<div className="py-8 text-center text-fg-muted">
 							<Grid size={48} className="mx-auto mb-4 opacity-40" />
 							<p>No tilings match your filters</p>
-							<button
+							<Button
+								variant="secondary"
+								size="sm"
 								onClick={clearAll}
-								className="mt-2 px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-md border border-zinc-700/50 transition-all"
-							>
-								Clear Filters
-							</button>
+								classes="mt-2"
+								label="Clear Filters"
+							/>
 						</div>
 					) : (
 						<>
 							<div className="mb-4">
-								<p className="text-sm text-zinc-400">{filteredTilings.length} tilings found</p>
+								<p className="text-sm text-fg-muted">{filteredTilings.length} tilings found</p>
 							</div>
 							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pb-4">
 								{filteredTilings.map((tiling) => (
-									<TilingCard
+									<LegacyTilingCard
 										key={`${tiling.groupId}-${tiling.rulestring}`}
 										name={tiling.name}
 										cr={tiling.cr}

@@ -93,8 +93,8 @@ export function RangeSlider({
 		<div className="grid w-full gap-1.5">
 			{label ? (
 				<div className="flex flex-row justify-between items-center">
-					<label htmlFor={id} className="text-xs font-medium text-zinc-400">{label}</label>
-					<span className="text-[10px] text-green-400/90 font-medium tabular-nums">{displayValue}</span>
+					<label htmlFor={id} className="text-xs font-medium text-fg-muted">{label}</label>
+					<span className="text-[10px] text-accent font-medium tabular-nums">{displayValue}</span>
 				</div>
 			) : null}
 
@@ -108,14 +108,14 @@ export function RangeSlider({
 					max={max}
 					step={step}
 					disabled={disabled}
-					className="range-track w-full h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700/60 accent-green-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+					className="range-track w-full h-1.5 rounded-full appearance-none cursor-pointer bg-surface-overlay/60 accent-accent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
 					aria-label="Exact value"
 				/>
 			) : isRange ? (
 				<div className="relative w-full h-5 flex items-center">
-					<div className="absolute h-1.5 rounded-full bg-zinc-700/60 w-full pointer-events-none" aria-hidden="true" />
+					<div className="absolute h-1.5 rounded-full bg-surface-overlay/60 w-full pointer-events-none" aria-hidden="true" />
 					<div
-						className="absolute h-1.5 rounded-full bg-green-500/40 pointer-events-none transition-all"
+						className="absolute h-1.5 rounded-full bg-accent-subtle pointer-events-none transition-all"
 						style={{ left: `${lowPercent}%`, width: `${highPercent - lowPercent}%` }}
 						aria-hidden="true"
 					/>
@@ -153,7 +153,7 @@ export function RangeSlider({
 					max={max}
 					step={step}
 					disabled={disabled}
-					className="range-track w-full h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-700/60 accent-green-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+					className="range-track w-full h-1.5 rounded-full appearance-none cursor-pointer bg-surface-overlay/60 accent-accent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
 				/>
 			)}
 		</div>

@@ -17,8 +17,8 @@ interface PolygonListItemProps {
 }
 
 const TAG_COLORS: Record<NonNullable<PolygonListItemProps["tagClass"]>, string> = {
-	regular: "text-blue-400 bg-blue-400/10",
-	star_regular: "text-amber-400 bg-amber-400/10",
+	regular: "text-info bg-info-subtle",
+	star_regular: "text-warning bg-warning-subtle",
 	star_parametric: "text-pink-400 bg-pink-400/10",
 	equilateral: "text-emerald-400 bg-emerald-400/10",
 	generic: "text-violet-400 bg-violet-400/10",
@@ -53,7 +53,7 @@ export function PolygonListItem({
 			onClick={() => showCheckbox && onToggle?.()}
 			onKeyDown={handleKey}
 			className={cn(
-				"flex items-center gap-3 px-3 py-2 rounded-md border border-zinc-700/30 bg-zinc-800/30 hover:border-zinc-600/40 transition-colors",
+				"flex items-center gap-3 px-3 py-2 rounded-md border border-line bg-surface-overlay/30 hover:border-line-strong transition-colors",
 				showCheckbox && "cursor-pointer",
 			)}
 		>
@@ -63,19 +63,19 @@ export function PolygonListItem({
 						type="checkbox"
 						checked={checked}
 						onChange={() => onToggle?.()}
-						className="h-4 w-4 rounded border border-zinc-600/60 bg-zinc-800/50 checked:bg-green-500/90 checked:border-green-500/80 focus:ring-1 focus:ring-green-500/40"
+						className="h-4 w-4 rounded border border-line-strong bg-surface-overlay/50 checked:bg-accent-subtle checked:border-line-focus focus:ring-1 focus:ring-line-focus/40"
 					/>
 				</div>
 			) : null}
-			<div className="shrink-0 w-12 h-12 rounded overflow-hidden border border-zinc-700/50 bg-zinc-900">
+			<div className="shrink-0 w-12 h-12 rounded overflow-hidden border border-line bg-surface-raised">
 				{polygon ? (
 					<canvas ref={canvasRef} className="block w-full h-full" />
 				) : (
-					<div className="w-full h-full flex items-center justify-center text-zinc-600 text-[10px]">—</div>
+					<div className="w-full h-full flex items-center justify-center text-fg-disabled text-[10px]">—</div>
 				)}
 			</div>
-			<span className="text-xs text-zinc-500 tabular-nums shrink-0 w-6 text-right">{id}</span>
-			<span className="truncate font-mono text-sm text-zinc-300" title={name}>
+			<span className="text-xs text-fg-muted tabular-nums shrink-0 w-6 text-right">{id}</span>
+			<span className="truncate font-mono text-sm text-fg-secondary" title={name}>
 				{name}
 			</span>
 			<span

@@ -25,21 +25,21 @@ export function VertexConfigurationThumbnail({
 	});
 
 	return (
-		<div className="flex flex-col rounded-lg overflow-hidden border border-zinc-700/40 bg-zinc-800/40">
+		<div className="flex flex-col rounded-lg overflow-hidden border border-line bg-surface-overlay/40">
 			<canvas
 				ref={canvasRef}
 				className="block w-full aspect-square"
 				style={{ minWidth: size, minHeight: size }}
 			/>
 			{(showName || showOccurrences) && vc ? (
-				<div className="px-2 py-1.5 text-sm font-mono text-zinc-300 bg-zinc-800/60 border-t border-zinc-700/30 flex items-center justify-between gap-2 min-w-0">
+				<div className="px-2 py-1.5 text-sm font-mono text-fg-secondary bg-surface-overlay/60 border-t border-line flex items-center justify-between gap-2 min-w-0">
 					{showName ? (
 						<span className="truncate" title={vc.name}>
 							{vc.name}
 						</span>
 					) : null}
 					{showOccurrences && occurrences !== undefined && occurrences > 1 ? (
-						<span className="shrink-0 text-zinc-500">×{occurrences}</span>
+						<span className="shrink-0 text-fg-muted">×{occurrences}</span>
 					) : null}
 				</div>
 			) : null}

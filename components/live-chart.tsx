@@ -101,14 +101,14 @@ export function LiveChart({ alivePercentage, iterationCount, behaviorData }: Liv
 	};
 
 	return (
-		<div className="w-full h-48 bg-zinc-800/60 backdrop-blur-sm rounded-lg overflow-hidden border border-zinc-700/50 shadow-lg">
-			<div className="px-4 py-2 text-xs font-medium text-white/80 flex justify-between items-center border-b border-zinc-700/50">
+		<div className="w-full h-48 bg-surface-overlay/60 backdrop-blur-sm rounded-lg overflow-hidden border border-line shadow-lg">
+			<div className="px-4 py-2 text-xs font-medium text-fg-secondary flex justify-between items-center border-b border-line">
 				<div className="flex items-center gap-2">
 					<span>{chartMode === "count" ? "Live Population" : "Behavior Distribution"}</span>
-					<div className="flex rounded-md overflow-hidden border border-zinc-600">
+					<div className="flex rounded-md overflow-hidden border border-line-strong">
 						<button
 							className={`px-2 py-1 text-xs ${
-								chartMode === "count" ? "bg-zinc-600 text-white" : "bg-transparent text-zinc-400 hover:text-white"
+								chartMode === "count" ? "bg-fg-muted text-fg" : "bg-transparent text-fg-muted hover:text-fg"
 							}`}
 							onClick={() => switchMode("count")}
 						>
@@ -116,7 +116,7 @@ export function LiveChart({ alivePercentage, iterationCount, behaviorData }: Liv
 						</button>
 						<button
 							className={`px-2 py-1 text-xs ${
-								chartMode === "behavior" ? "bg-zinc-600 text-white" : "bg-transparent text-zinc-400 hover:text-white"
+								chartMode === "behavior" ? "bg-fg-muted text-fg" : "bg-transparent text-fg-muted hover:text-fg"
 							}`}
 							onClick={() => switchMode("behavior")}
 						>
@@ -125,20 +125,20 @@ export function LiveChart({ alivePercentage, iterationCount, behaviorData }: Liv
 					</div>
 				</div>
 				{chartMode === "count" ? (
-					<span className="text-green-400 font-bold">{alivePercentage.toFixed(1)}%</span>
+					<span className="text-accent font-bold">{alivePercentage.toFixed(1)}%</span>
 				) : null}
 			</div>
 			<div className="p-2 h-[calc(100%-32px)] relative">
 				<canvas ref={canvasRef} />
 				{chartMode === "behavior" ? (
 					<>
-						<div className="absolute bottom-8 left-0 right-0 mx-4 flex justify-between text-[10px] text-white/80">
+						<div className="absolute bottom-8 left-0 right-0 mx-4 flex justify-between text-[10px] text-fg-secondary">
 							<span className="flex items-center gap-1">
 								<div className="w-2 h-2 bg-black rounded-sm" />
 								Increasing
 							</span>
 							<span className="flex items-center gap-1">
-								<div className="w-2 h-2 bg-green-600 rounded-sm" />
+								<div className="w-2 h-2 bg-accent rounded-sm" />
 								Chaotic
 							</span>
 							<span className="flex items-center gap-1">
@@ -149,7 +149,7 @@ export function LiveChart({ alivePercentage, iterationCount, behaviorData }: Liv
 						<div className="absolute bottom-4 left-0 right-0 mx-4 h-1">
 							<div className="relative w-full h-full flex rounded-md overflow-hidden">
 								<div className="h-full bg-black" style={{ width: `${averageBehavior.increasing}%` }} />
-								<div className="h-full bg-green-600" style={{ width: `${averageBehavior.chaotic}%` }} />
+								<div className="h-full bg-accent" style={{ width: `${averageBehavior.chaotic}%` }} />
 								<div className="h-full bg-white" style={{ width: `${averageBehavior.decreasing}%` }} />
 							</div>
 						</div>

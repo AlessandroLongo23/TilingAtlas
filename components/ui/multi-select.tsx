@@ -47,9 +47,9 @@ export function MultiSelect({
 		<div className="flex flex-col gap-2">
 			{label ? (
 				<div className="flex items-center justify-between">
-					<span className="text-xs uppercase text-zinc-400 font-medium tracking-wider">{label}</span>
+					<span className="text-xs uppercase text-fg-muted font-medium tracking-wider">{label}</span>
 					<button
-						className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded hover:bg-zinc-700/40"
+						className="text-[10px] text-fg-muted hover:text-fg-secondary transition-colors px-1.5 py-0.5 rounded hover:bg-surface-overlay/40 cursor-pointer"
 						onClick={() => (allSelected ? deselectAll() : selectAll())}
 					>
 						{allSelected ? "Clear" : "All"}
@@ -62,10 +62,10 @@ export function MultiSelect({
 						key={option.id}
 						onClick={() => toggle(option.id)}
 						className={cn(
-							"px-3 py-1 text-xs rounded-full transition-all border select-none",
+							"px-3 py-1 text-xs rounded-full transition-all border select-none cursor-pointer",
 							selected.includes(option.id)
-								? "bg-green-500/15 text-green-400 border-green-500/30 hover:bg-green-500/25"
-								: "bg-zinc-800/80 text-zinc-500 border-zinc-700/40 hover:bg-zinc-700/50 hover:text-zinc-300",
+								? "bg-accent-subtle text-accent border-line-focus hover:bg-accent-subtle"
+								: "bg-surface-overlay/80 text-fg-muted border-line hover:bg-surface-overlay/50 hover:text-fg-secondary",
 						)}
 					>
 						{option.label}

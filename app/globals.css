@@ -1,15 +1,85 @@
 @import "tailwindcss";
-@import "katex/dist/katex.min.css";
 
-:root {
-  --background: #18181b;
-  --foreground: #f8fafc;
+/* Design tokens — three layers: primitives → themed + derived → components */
+@import "./styles/tokens/primitives.css";
+@import "./styles/tokens/themed.css";
+@import "./styles/tokens/derived.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tailwind v4 — map utilities to semantic tokens.
+   `inline` keeps references to CSS vars at runtime so `.dark` flips
+   every utility automatically. */
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Surfaces → bg-surface, bg-surface-raised, bg-surface-chrome, bg-surface-overlay, bg-surface-sunken */
+  --color-surface:         var(--color-surface-base);
+  --color-surface-raised:  var(--color-surface-raised);
+  --color-surface-chrome:  var(--color-surface-chrome);
+  --color-surface-overlay: var(--color-surface-overlay);
+  --color-surface-sunken:  var(--color-surface-sunken);
+
+  /* Foreground (text) → text-fg, text-fg-muted, … */
+  --color-fg:           var(--color-text-primary);
+  --color-fg-secondary: var(--color-text-secondary);
+  --color-fg-muted:     var(--color-text-muted);
+  --color-fg-disabled:  var(--color-text-disabled);
+  --color-fg-inverse:   var(--color-text-inverse);
+  --color-fg-accent:    var(--color-text-accent);
+
+  /* Borders (named `line` to avoid the `border-border` collision) →
+     border-line, border-line-subtle, border-line-strong, border-line-focus */
+  --color-line-subtle: var(--color-border-subtle);
+  --color-line:        var(--color-border-default);
+  --color-line-strong: var(--color-border-strong);
+  --color-line-focus:  var(--color-border-focus);
+
+  /* Accent → bg-accent, text-accent, bg-accent-subtle, text-accent-contrast, … */
+  --color-accent:          var(--color-accent);
+  --color-accent-hover:    var(--color-accent-hover);
+  --color-accent-active:   var(--color-accent-active);
+  --color-accent-subtle:   var(--color-accent-subtle);
+  --color-accent-contrast: var(--color-accent-contrast);
+
+  /* Status */
+  --color-danger:         var(--color-danger);
+  --color-danger-subtle:  var(--color-danger-subtle);
+  --color-success:        var(--color-success);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-warning:        var(--color-warning);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-info:           var(--color-info);
+  --color-info-subtle:    var(--color-info-subtle);
+
+  /* Radii → rounded-control, rounded-surface, rounded-overlay, rounded-pill */
+  --radius-control: var(--radius-control);
+  --radius-surface: var(--radius-surface);
+  --radius-overlay: var(--radius-overlay);
+  --radius-pill:    var(--radius-pill);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+
+.disable-transitions *,
+.disable-transitions *::before,
+.disable-transitions *::after {
+  transition: none !important;
+  animation: none !important;
 }
 
 .scrollbar-hide::-webkit-scrollbar {

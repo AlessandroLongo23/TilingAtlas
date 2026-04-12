@@ -46,32 +46,32 @@ export function SearchCompletenessBar({
 	const containerClass = cn(
 		"flex items-center gap-2 px-3 py-2 rounded-lg border text-xs",
 		loading || !result
-			? "border-zinc-700/40 bg-zinc-800/30"
+			? "border-line bg-surface-overlay/30"
 			: result.status === "Full"
-				? "text-green-400 bg-green-400/10 border-green-500/30"
+				? "text-accent bg-accent-subtle border-line-focus"
 				: result.status === "Partial"
 					? "text-yellow-400 bg-yellow-400/10 border-yellow-500/30"
-					: "text-zinc-400 bg-zinc-800/50 border-zinc-700/50",
+					: "text-fg-muted bg-surface-overlay/50 border-line",
 	);
 
 	return (
 		<div className={containerClass}>
 			{loading ? (
 				<>
-					<span className="w-2 h-2 rounded-full bg-zinc-600 animate-pulse shrink-0" />
-					<span className="text-zinc-500">Checking coverage…</span>
+					<span className="w-2 h-2 rounded-full bg-fg-muted animate-pulse shrink-0" />
+					<span className="text-fg-muted">Checking coverage…</span>
 				</>
 			) : !result ? (
 				<>
-					<span className="w-2 h-2 rounded-full bg-zinc-700 shrink-0" />
-					<span className="text-zinc-600">Select polygons and k values to check coverage</span>
+					<span className="w-2 h-2 rounded-full bg-surface-overlay shrink-0" />
+					<span className="text-fg-disabled">Select polygons and k values to check coverage</span>
 				</>
 			) : result.status === "Full" ? (
 				<>
-					<span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
+					<span className="w-2 h-2 rounded-full bg-accent shrink-0" />
 					<span className="flex-1">Complete coverage</span>
 					{viewLink ? (
-						<Link href={viewLink} className="shrink-0 underline hover:text-green-300 transition-colors ml-1">
+						<Link href={viewLink} className="shrink-0 underline hover:text-accent transition-colors ml-1">
 							View results →
 						</Link>
 					) : null}
@@ -88,7 +88,7 @@ export function SearchCompletenessBar({
 				</>
 			) : (
 				<>
-					<span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0" />
+					<span className="w-2 h-2 rounded-full bg-fg-muted shrink-0" />
 					<span>No prior search found</span>
 				</>
 			)}

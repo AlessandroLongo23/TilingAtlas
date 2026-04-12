@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils/cn";
 
@@ -29,7 +29,6 @@ export function TheorySidebar({
 }: TheorySidebarProps) {
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-	// Initialize expansion state when sections arrive.
 	useEffect(() => {
 		if (sections.length > 0 && Object.keys(expanded).length === 0) {
 			const initial: Record<string, boolean> = {};
@@ -43,8 +42,7 @@ export function TheorySidebar({
 		}
 	}, [sections, expanded]);
 
-	const toggle = (id: string, e: React.MouseEvent) => {
-		e.stopPropagation();
+	const toggle = (id: string) => {
 		setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 	};
 
@@ -52,123 +50,124 @@ export function TheorySidebar({
 
 	return (
 		<div className="h-full flex flex-col">
-			<div className="flex-1 overflow-y-auto p-3 bg-zinc-800/30">
-				<h3 className="font-medium text-xs text-white/80 uppercase tracking-wider mb-4">
-					Table of Contents
+			<div className="px-4 pt-4 pb-2">
+				<h3 className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">
+					Contents
 				</h3>
+			</div>
+			<div className="flex-1 overflow-y-auto px-2 pb-4">
 				{isLoading ? (
-					<div className="p-3 text-sm text-zinc-400">Loading content...</div>
+					<div className="px-3 py-2 text-xs text-fg-muted">Loading…</div>
 				) : error ? (
-					<div className="p-3 text-sm text-red-400">Error loading content: {error}</div>
+					<div className="px-3 py-2 text-xs text-danger">{error}</div>
 				) : sections.length === 0 ? (
-					<div className="p-3 text-sm text-zinc-400">No sections available</div>
+					<div className="px-3 py-2 text-xs text-fg-muted">No sections</div>
 				) : (
-					<div>
+					<nav className="flex flex-col gap-0.5">
 						{sections.map((section) => (
-							<div key={section.id} className="mb-4">
-								<div className="flex items-center">
-									<button
-										onClick={() => onSectionSelect(section.id)}
-										className={cn(
-											"text-left flex-1 py-1.5 px-2 rounded text-sm",
-											section.level === 1 ? "font-bold" : "font-medium",
-											activeSection === section.id ? "text-green-400" : "text-zinc-400 hover:text-white",
-										)}
-									>
-										{section.title}
-									</button>
-									{hasSubs(section) ? (
-										<button
-											onClick={(e) => toggle(section.id, e)}
-											className="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100"
-											aria-label={expanded[section.id] ? "Collapse section" : "Expand section"}
-										>
-											<ChevronDown
-												size={14}
-												className={cn(
-													"transition-transform duration-200",
-													expanded[section.id] ? "rotate-180" : "",
-												)}
-											/>
-										</button>
-									) : null}
-								</div>
-
-								<AnimatePresence initial={false}>
-									{hasSubs(section) && expanded[section.id] ? (
-										<motion.div
-											initial={{ height: 0, opacity: 0 }}
-											animate={{ height: "auto", opacity: 1 }}
-											exit={{ height: 0, opacity: 0 }}
-											transition={{ duration: 0.15 }}
-											className="ml-3 border-l border-zinc-700/50 pl-2 mt-1 overflow-hidden"
-										>
-											{section.subsections!.map((sub) => (
-												<div key={sub.id} className="my-2">
-													<div className="flex items-center">
-														<button
-															onClick={() => onSectionSelect(sub.id)}
-															className={cn(
-																"text-left flex-1 py-1 px-2 rounded text-xs font-medium",
-																activeSection === sub.id
-																	? "text-green-400"
-																	: "text-zinc-400 hover:text-white",
-															)}
-														>
-															{sub.title}
-														</button>
-														{hasSubs(sub) ? (
-															<button
-																onClick={(e) => toggle(sub.id, e)}
-																className="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100"
-																aria-label={expanded[sub.id] ? "Collapse section" : "Expand section"}
-															>
-																<ChevronDown
-																	size={12}
-																	className={cn(
-																		"transition-transform duration-200",
-																		expanded[sub.id] ? "rotate-180" : "",
-																	)}
-																/>
-															</button>
-														) : null}
-													</div>
-													<AnimatePresence initial={false}>
-														{hasSubs(sub) && expanded[sub.id] ? (
-															<motion.div
-																initial={{ height: 0, opacity: 0 }}
-																animate={{ height: "auto", opacity: 1 }}
-																exit={{ height: 0, opacity: 0 }}
-																transition={{ duration: 0.15 }}
-																className="ml-3 border-l border-zinc-700/50 pl-2 mt-1 overflow-hidden"
-															>
-																{sub.subsections!.map((subsub) => (
-																	<button
-																		key={subsub.id}
-																		onClick={() => onSectionSelect(subsub.id)}
-																		className={cn(
-																			"text-left w-full py-1 px-2 rounded text-xs",
-																			activeSection === subsub.id
-																				? "text-green-400"
-																				: "text-zinc-400 hover:text-white",
-																		)}
-																	>
-																		{subsub.title}
-																	</button>
-																))}
-															</motion.div>
-														) : null}
-													</AnimatePresence>
-												</div>
-											))}
-										</motion.div>
-									) : null}
-								</AnimatePresence>
-							</div>
+							<SectionItem
+								key={section.id}
+								section={section}
+								depth={0}
+								activeSection={activeSection}
+								expanded={expanded}
+								onToggle={toggle}
+								onSelect={onSectionSelect}
+								hasSubs={hasSubs}
+							/>
 						))}
-					</div>
+					</nav>
 				)}
 			</div>
+		</div>
+	);
+}
+
+interface SectionItemProps {
+	section: TheorySection;
+	depth: number;
+	activeSection: string;
+	expanded: Record<string, boolean>;
+	onToggle: (id: string) => void;
+	onSelect: (id: string) => void;
+	hasSubs: (s: TheorySection) => boolean;
+}
+
+function SectionItem({
+	section,
+	depth,
+	activeSection,
+	expanded,
+	onToggle,
+	onSelect,
+	hasSubs,
+}: SectionItemProps) {
+	const isActive = activeSection === section.id;
+	const isOpen = !!expanded[section.id];
+	const showToggle = hasSubs(section);
+
+	return (
+		<div>
+			<div
+				className={cn(
+					"group flex items-center rounded-control transition-colors",
+					isActive ? "bg-accent-subtle" : "hover:bg-surface-overlay/60",
+				)}
+			>
+				<button
+					type="button"
+					onClick={() => (showToggle ? onToggle(section.id) : undefined)}
+					className={cn(
+						"flex items-center justify-center shrink-0 w-5 h-7 text-fg-muted hover:text-fg transition-colors",
+						!showToggle && "invisible",
+					)}
+					aria-label={isOpen ? "Collapse" : "Expand"}
+					tabIndex={showToggle ? 0 : -1}
+				>
+					<ChevronRight
+						size={12}
+						className={cn("transition-transform duration-150", isOpen && "rotate-90")}
+					/>
+				</button>
+				<button
+					type="button"
+					onClick={() => onSelect(section.id)}
+					className={cn(
+						"flex-1 min-w-0 text-left py-1.5 pr-2 text-xs leading-snug wrap-break-word transition-colors",
+						depth === 0 ? "font-medium" : "font-normal",
+						isActive ? "text-accent" : "text-fg-secondary group-hover:text-fg",
+					)}
+				>
+					{section.title}
+				</button>
+			</div>
+
+			<AnimatePresence initial={false}>
+				{showToggle && isOpen ? (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.15 }}
+						className="overflow-hidden"
+					>
+						<div className="ml-3 mt-0.5 flex flex-col gap-0.5">
+							{section.subsections!.map((sub) => (
+								<SectionItem
+									key={sub.id}
+									section={sub}
+									depth={depth + 1}
+									activeSection={activeSection}
+									expanded={expanded}
+									onToggle={onToggle}
+									onSelect={onSelect}
+									hasSubs={hasSubs}
+								/>
+							))}
+						</div>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
 		</div>
 	);
 }

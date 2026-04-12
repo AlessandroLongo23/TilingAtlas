@@ -24,10 +24,10 @@ const STEPS = [
 ] as const;
 
 const STATUS_COLOR: Record<string, string> = {
-	completed: "text-green-400 bg-green-400/10",
+	completed: "text-accent bg-accent-subtle",
 	running: "text-yellow-400 bg-yellow-400/10 animate-pulse",
-	pending: "text-zinc-400 bg-zinc-700/40",
-	failed: "text-red-400 bg-red-400/10",
+	pending: "text-fg-muted bg-surface-overlay/40",
+	failed: "text-danger bg-danger-subtle",
 };
 
 export function ExperimentLayoutClient({
@@ -80,10 +80,10 @@ function Shell({ campaign, children }: { campaign: Campaign; children: ReactNode
 
 	return (
 		<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-			<div className="shrink-0 border-b border-zinc-800 px-6 py-3 flex items-center gap-4">
+			<div className="shrink-0 border-b border-line-subtle px-6 py-3 flex items-center gap-4">
 				<Link
 					href="/lab"
-					className="shrink-0 text-zinc-500 hover:text-zinc-300 transition-colors"
+					className="shrink-0 text-fg-muted hover:text-fg-secondary transition-colors"
 					title="Back to Lab"
 				>
 					<ChevronLeft size={16} />
@@ -92,18 +92,18 @@ function Shell({ campaign, children }: { campaign: Campaign; children: ReactNode
 				{isGoldStandard ? (
 					<Star size={14} className="shrink-0 text-yellow-400 fill-yellow-400/60" />
 				) : (
-					<FlaskConical size={14} className="shrink-0 text-green-400" />
+					<FlaskConical size={14} className="shrink-0 text-accent" />
 				)}
 
-				<span className="font-mono text-xs px-2 py-1 rounded-md bg-zinc-900/60 text-zinc-500 shrink-0">
+				<span className="font-mono text-xs px-2 py-1 rounded-md bg-surface-raised/60 text-fg-muted shrink-0">
 					{hash.slice(0, 8)}
 				</span>
 
 				<div className="flex-1 min-w-0 flex items-baseline gap-2">
-					<span className="text-sm font-medium text-zinc-200 truncate">
+					<span className="text-sm font-medium text-fg-secondary truncate">
 						{polygonNames.join(", ") || "—"}
 					</span>
-					<span className="text-xs text-zinc-500 shrink-0">k = {kValues.join(", ")}</span>
+					<span className="text-xs text-fg-muted shrink-0">k = {kValues.join(", ")}</span>
 				</div>
 
 				<span
@@ -116,11 +116,11 @@ function Shell({ campaign, children }: { campaign: Campaign; children: ReactNode
 				</span>
 
 				{campaign.author_name ? (
-					<span className="shrink-0 text-xs text-zinc-500">{campaign.author_name}</span>
+					<span className="shrink-0 text-xs text-fg-muted">{campaign.author_name}</span>
 				) : null}
 			</div>
 
-			<div className="shrink-0 border-b border-zinc-800 px-6 flex gap-1">
+			<div className="shrink-0 border-b border-line-subtle px-6 flex gap-1">
 				{STEPS.map((step) => {
 					const unlocked = isStepUnlocked(step.id);
 					const href = `/lab/${hash}/${step.id}`;
@@ -129,7 +129,7 @@ function Shell({ campaign, children }: { campaign: Campaign; children: ReactNode
 						return (
 							<span
 								key={step.id}
-								className="px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-zinc-700 cursor-not-allowed"
+								className="px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-fg-disabled cursor-not-allowed"
 								title="Not yet computed"
 							>
 								{step.label}
@@ -143,13 +143,13 @@ function Shell({ campaign, children }: { campaign: Campaign; children: ReactNode
 							className={cn(
 								"px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5",
 								active
-									? "border-green-400 text-green-400"
-									: "border-transparent text-zinc-400 hover:text-zinc-200",
+									? "border-line-focus text-accent"
+									: "border-transparent text-fg-muted hover:text-fg-secondary",
 							)}
 						>
 							{step.label}
 							{tabBadges[step.id] != null ? (
-								<span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-green-400/15 text-green-400 tabular-nums leading-none">
+								<span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-accent-subtle text-accent tabular-nums leading-none">
 									{tabBadges[step.id]}
 								</span>
 							) : null}
@@ -159,7 +159,7 @@ function Shell({ campaign, children }: { campaign: Campaign; children: ReactNode
 
 				<button
 					onClick={() => setSidebarVisible(!sidebarVisible)}
-					className="ml-auto px-2 py-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+					className="ml-auto px-2 py-2 text-fg-muted hover:text-fg-secondary transition-colors"
 					title={sidebarVisible ? "Hide sidebar" : "Show sidebar"}
 				>
 					<PanelLeft size={14} />

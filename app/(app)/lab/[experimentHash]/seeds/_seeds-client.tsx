@@ -32,7 +32,7 @@ export function SeedsClient({ polygonNames, kValues }: SeedsClientProps) {
 	const { setBadge } = useExperiment();
 	const [seedItems, setSeedItems] = useState<SeedItem[] | null>(null);
 	const [error, setError] = useState("");
-	const [gridColumns, setGridColumns] = useState(0);
+	const [gridColumns, setGridColumns] = useState(5);
 	const [filterK, setFilterK] = useState<number | null>(null);
 	const [filterM, setFilterM] = useState<number | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
@@ -96,10 +96,7 @@ export function SeedsClient({ polygonNames, kValues }: SeedsClientProps) {
 	);
 
 	const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-	const gridStyle =
-		gridColumns === 0
-			? { gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }
-			: { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
+	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
 
 	return (
 		<>
@@ -117,16 +114,16 @@ export function SeedsClient({ polygonNames, kValues }: SeedsClientProps) {
 			<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 				<div className="flex-1 overflow-y-auto px-6 py-4">
 					{seedItems === null ? (
-						<div className="flex items-center justify-center py-16 text-zinc-600 gap-2">
+						<div className="flex items-center justify-center py-16 text-fg-disabled gap-2">
 							<Loader2 size={16} className="animate-spin" />
 							<span className="text-sm">Deriving seed configurations…</span>
 						</div>
 					) : error ? (
 						<div className="flex items-center justify-center py-16">
-							<p className="text-sm text-red-400">{error}</p>
+							<p className="text-sm text-danger">{error}</p>
 						</div>
 					) : filtered.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-16 text-zinc-600">
+						<div className="flex flex-col items-center justify-center py-16 text-fg-disabled">
 							<p className="text-sm">
 								{seedItems.length === 0
 									? "No seed configurations found for this polygon set."

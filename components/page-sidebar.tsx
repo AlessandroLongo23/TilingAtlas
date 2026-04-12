@@ -9,7 +9,7 @@ interface PageSidebarProps {
 /** Unified sidebar wrapper for all pages — consistent width + scroll behavior. */
 export function PageSidebar({ children, scrollable = true }: PageSidebarProps) {
 	return (
-		<aside className="h-full w-72 shrink-0 flex flex-col bg-zinc-800/50 border-r border-zinc-800/80 overflow-hidden">
+		<aside className="h-full w-80 shrink-0 flex flex-col bg-surface-chrome border-r border-line-subtle overflow-hidden">
 			<div
 				className={cn(
 					"flex-1",

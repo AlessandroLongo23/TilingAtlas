@@ -1,4 +1,6 @@
-import { tolerance, debugView, transformSteps, offsets, debugManager } from '@/stores';
+import { tolerance, offsets, debugManager, useConfiguration } from '@/stores';
+
+const debugView = () => useConfiguration.getState().debugView;
 import { getClockwiseAngle, getSpatialKey, isWithinTolerance } from '@/utils';
 import { TilingGenerator } from './TilingGenerator';
 import { 
@@ -11,12 +13,12 @@ import {
     GenericPolygon, 
     type Polygon, 
     type ShapeSeed, 
-    Tiling, 
-    Vector, 
-    Transformer, 
-    Parser,
-    TransformType 
+    Tiling,
+    Vector,
+    TransformType
 } from '@/classes';
+import { Transformer } from './Transformer';
+import { Parser } from './Parser';
 
 export class TilingGeneratorFromRule extends TilingGenerator {
     parser: Parser;
@@ -34,7 +36,7 @@ export class TilingGeneratorFromRule extends TilingGenerator {
         this.parser.parseRule(rule);
         this.transformer.transforms = this.parser.transforms;
 
-        if (debugView) {
+        if (debugView()) {
             debugManager.reset();
             debugManager.startTimer("Tiling generation");
         }
@@ -49,7 +51,7 @@ export class TilingGeneratorFromRule extends TilingGenerator {
 
         // this.golEngine.calculateGoLNeighbors();
         
-        // if (debugView) debugManager.endTimer("Tiling generation");
+        // if (debugView()) debugManager.endTimer("Tiling generation");
         // updateDebugStore();
 
         this.tilingChecker.findVertexConfigurations(this.tiling);
@@ -59,7 +61,7 @@ export class TilingGeneratorFromRule extends TilingGenerator {
     }
 
     generateSeed = () => {
-        if (debugView) debugManager.startTimer("Seed");
+        if (debugView()) debugManager.startTimer("Seed");
         this.addCoreNode();
 
         for (let i = 1; i < this.parser.shapeSeed.length; i++) {
@@ -106,7 +108,7 @@ export class TilingGeneratorFromRule extends TilingGenerator {
 
         this.tiling.newLayerNodes = [...this.tiling.nodes];
         this.tiling.seedNodes = [...this.tiling.nodes];
-        if (debugView) debugManager.endTimer("Seed");
+        if (debugView()) debugManager.endTimer("Seed");
     }
 
     addCoreNode = () => {
@@ -153,22 +155,19 @@ export class TilingGeneratorFromRule extends TilingGenerator {
     }
 
     applyTransformations = () => {
-        if (debugView) debugManager.startTimer("Transformations");
-        let layers;
-        transformSteps.subscribe((v) => {
-            layers = v;
-        });
+        if (debugView()) debugManager.startTimer("Transformations");
+        const layers = useConfiguration.getState().transformSteps;
 
         const start: number = performance.now();
         
         for (let s = 0; s < layers; s++) {
-            if (debugView) debugManager.startTimer(`Transform ${s+1}`);
+            if (debugView()) debugManager.startTimer(`Transform ${s+1}`);
 
             let newNodes: Polygon[] = [];
             for (let i = 0; i < this.transformer.transforms.length; i++) {
                 if (s == layers - 1 && i == this.transformer.transforms.length - 1) break;
 
-                if (debugView) debugManager.startTimer(`Transform ${s+1}.${i+1}`);
+                if (debugView()) debugManager.startTimer(`Transform ${s+1}.${i+1}`);
 
                 if (s == 0) this.tiling.anchorNodes = [...this.tiling.nodes, ...newNodes];
 
@@ -184,15 +183,15 @@ export class TilingGeneratorFromRule extends TilingGenerator {
                     newNodes = newNodes.concat(this.transformer.translateRelativeTo(this.tiling, i, newNodes));
                 }
                 
-                if (debugView) debugManager.endTimer(`Transform ${s+1}.${i+1}`);
+                if (debugView()) debugManager.endTimer(`Transform ${s+1}.${i+1}`);
             }
 
             this.tiling.newLayerNodes = this.addNewNodes(newNodes);
             const end: number = performance.now();
             if (end - start > 1000) break;
-            if (debugView) debugManager.endTimer(`Transform ${s + 1}`);
+            if (debugView()) debugManager.endTimer(`Transform ${s + 1}`);
         }
-        if (debugView) debugManager.endTimer("Transformations");
+        if (debugView()) debugManager.endTimer("Transformations");
     }
 
     findAnchor = (newNodes: Polygon[], indexOff: number): [Vector, Vector] => {

@@ -7,6 +7,7 @@ export class Polygon {
     n: number;
     name: string;
     neighbors: Polygon[];
+    edgeNeighbors: Polygon[];
     state: State;
     nextState: number;
     hue: number;
@@ -27,6 +28,7 @@ export class Polygon {
         this.n = n;
         this.angle = 0;
         this.neighbors = [];
+        this.edgeNeighbors = [];
         this.state = State.DEAD;
         this.nextState = State.DEAD;
         this.sides = [];
@@ -193,7 +195,7 @@ export class Polygon {
         }
 
         if (useConfiguration.getState().isIslamic) {
-            this.showIslamic(ctx);
+            this.showIslamicFilled(ctx, opacity, customColor);
         } else {
             ctx.fill(customColor || this.hue, 40, 100 / opacity, 0.80 * opacity);
             ctx.beginShape();
@@ -221,28 +223,48 @@ export class Polygon {
         ctx.pop();
     }
 
-    showIslamic = (ctx) => {
+    calculateIslamicTips = (angle: number): Vector[] => {
+        const tips: Vector[] = [];
+        const beta = Math.PI / this.n;
+        const epsilon = Math.PI - beta - angle / 2;
+        const gamma = Math.PI / 2 - beta;
+        const side = 0.5;
+        const dist = side * Math.tan(gamma) * Math.sin(beta) / Math.sin(epsilon);
+        for (let i = 0; i < this.halfways.length; i++) {
+            const perp = Vector.sub(this.centroid, this.halfways[i]);
+            const dir2 = Vector.rotate(perp, -angle / 2).normalize();
+            tips.push(new Vector(
+                this.halfways[i].x + dir2.x * dist,
+                this.halfways[i].y + dir2.y * dist,
+            ));
+        }
+        return tips;
+    }
+
+    showIslamicFilled = (ctx, opacity: number = 0.80, customColor: number | null = null) => {
+        const angle = useConfiguration.getState().islamicAngle * Math.PI / 180;
+        const tips = this.calculateIslamicTips(angle);
+
+        ctx.push();
+        ctx.noStroke();
+        ctx.fill(customColor ?? this.hue, 40, 100 / opacity, 0.80 * opacity);
+        ctx.beginShape();
+        for (let i = 0; i < this.halfways.length; i++) {
+            ctx.vertex(this.halfways[i].x, this.halfways[i].y);
+            ctx.vertex(tips[i].x, tips[i].y);
+        }
+        ctx.endShape(ctx.CLOSE);
+        ctx.pop();
+
         ctx.noFill();
         ctx.strokeWeight(useConfiguration.getState().lineWidth / useConfiguration.getState().controls.zoom);
-        ctx.stroke(0, 0, 100);
-        // const noise = ctx.noise(this.centroid.x / 5 + 1000, this.centroid.y / 5 + 1000, ctx.frameCount / 25);
-        // const noiseAngle = map(noise, 0, 1, 0, 180);
-        // let angle = noiseAngle * Math.PI / 180;
-        let angle = useConfiguration.getState().islamicAngle * Math.PI / 180;
+        ctx.stroke(0, 0, 0);
         for (let i = 0; i < this.halfways.length; i++) {
-            let side = 0.5
-            let perp = Vector.sub(this.centroid, this.halfways[i]);
-            let dir1 = Vector.rotate(perp, angle / 2).normalize();
-            let dir2 = Vector.rotate(perp, -angle / 2).normalize();
-            
-            let beta = Math.PI / this.n;
-            let epsilon = Math.PI - beta - angle / 2;
-            let gamma = Math.PI / 2 - beta;
-
-            let dist = side * Math.tan(gamma) * Math.sin(beta) / Math.sin(epsilon);
-
-            ctx.line(this.halfways[i].x, this.halfways[i].y, this.halfways[i].x + dir1.x * dist, this.halfways[i].y + dir1.y * dist);
-            ctx.line(this.halfways[i].x, this.halfways[i].y, this.halfways[i].x + dir2.x * dist, this.halfways[i].y + dir2.y * dist);
+            const h = this.halfways[i];
+            const tipA = tips[i];
+            const tipB = tips[(i - 1 + this.halfways.length) % this.halfways.length];
+            ctx.line(h.x, h.y, tipA.x, tipA.y);
+            ctx.line(h.x, h.y, tipB.x, tipB.y);
         }
     }
 

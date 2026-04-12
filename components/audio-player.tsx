@@ -73,7 +73,7 @@ export function AudioPlayer({ src }: AudioPlayerProps) {
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0, x: 20 }}
 						transition={{ duration: 0.15 }}
-						className="h-10 bg-zinc-800/70 border border-zinc-700/40 rounded-full px-3 flex items-center backdrop-blur-sm"
+						className="h-10 bg-surface-overlay/70 border border-line rounded-full px-3 flex items-center backdrop-blur-sm"
 					>
 						<input
 							type="range"
@@ -82,7 +82,7 @@ export function AudioPlayer({ src }: AudioPlayerProps) {
 							value={percentage}
 							onChange={updateVolume}
 							style={sliderStyle}
-							className="w-24 h-1.5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0"
+							className="w-24 h-1.5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0"
 						/>
 					</motion.div>
 				) : null}
@@ -91,7 +91,7 @@ export function AudioPlayer({ src }: AudioPlayerProps) {
 			<button
 				onClick={toggleMute}
 				aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-				className="flex items-center justify-center w-10 h-10 bg-zinc-800/70 hover:bg-zinc-700/80 text-white/80 hover:text-white rounded-full transition-all duration-200 border border-zinc-700/40 hover:border-zinc-600/60 focus:outline-none focus:ring-1 focus:ring-green-500/40 shadow-md backdrop-blur-sm"
+				className="flex items-center justify-center w-10 h-10 bg-surface-overlay/70 hover:bg-surface-overlay/80 text-fg-secondary hover:text-fg rounded-full transition-all duration-200 border border-line hover:border-line-strong focus:outline-none focus:ring-1 focus:ring-line-focus/40 shadow-md backdrop-blur-sm"
 			>
 				<VolumeIcon className="w-5 h-5" />
 			</button>

@@ -47,16 +47,16 @@ export function KSelector({
 
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="flex rounded-lg overflow-hidden border border-zinc-700/50 w-fit">
+			<div className="flex rounded-lg overflow-hidden border border-line w-fit">
 				{(["upto", "specific"] as const).map((tab) => (
 					<button
 						key={tab}
 						onClick={() => onModeChange(tab)}
 						className={cn(
-							"px-3 py-1.5 text-xs font-medium transition-colors border-r border-zinc-700/50 last:border-r-0",
+							"px-3 py-1.5 text-xs font-medium transition-colors border-r border-line last:border-r-0",
 							mode === tab
-								? "bg-green-500/15 text-green-400"
-								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800",
+								? "bg-accent-subtle text-accent"
+								: "text-fg-muted hover:text-fg-secondary hover:bg-surface-overlay",
 						)}
 					>
 						{tab === "upto" ? "Up to k" : "Specific"}
@@ -72,10 +72,10 @@ export function KSelector({
 						max={K_MAX}
 						value={uptoK}
 						onChange={(e) => onUptoKChange(Number(e.target.value))}
-						className="w-32 accent-green-400"
+						className="w-32 accent-accent"
 					/>
-					<span className="text-sm text-zinc-300">
-						k = 1 … <span className="text-green-400 font-semibold">{uptoK}</span>
+					<span className="text-sm text-fg-secondary">
+						k = 1 … <span className="text-accent font-semibold">{uptoK}</span>
 					</span>
 				</div>
 			) : (
@@ -89,8 +89,8 @@ export function KSelector({
 								className={cn(
 									"w-8 h-8 rounded-md text-sm font-medium transition-colors border",
 									selected
-										? "bg-green-500/20 text-green-400 border-green-500/40"
-										: "bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:border-zinc-600",
+										? "bg-accent-subtle text-accent border-line-focus"
+										: "bg-surface-overlay text-fg-muted border-line hover:border-line-strong",
 								)}
 							>
 								{k}
@@ -100,7 +100,7 @@ export function KSelector({
 				</div>
 			)}
 
-			<p className="text-xs text-zinc-500">
+			<p className="text-xs text-fg-muted">
 				Searching k ∈ {"{"}
 				{kValues.join(", ")}
 				{"}"}

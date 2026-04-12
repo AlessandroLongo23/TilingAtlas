@@ -84,24 +84,24 @@ export function GolRuleCard({ name, rule, description, onClick }: GolRuleCardPro
 				sounds.button();
 				onClick(rule);
 			}}
-			className="w-full p-4 border border-zinc-700/50 bg-zinc-800/40 hover:bg-zinc-700/60 transition-all rounded-lg mb-2 text-left group"
+			className="w-full p-4 border border-line bg-surface-overlay/40 hover:bg-surface-overlay/60 transition-all rounded-lg mb-2 text-left group"
 		>
 			<div className="flex flex-col">
-				<span className="text-base font-medium mb-1 text-white/90 group-hover:text-white">{name}</span>
-				<span className="text-xs font-mono text-green-300/80 mb-2">{rule}</span>
-				<p className="text-xs text-white/70 mb-3 line-clamp-2">{description}</p>
+				<span className="text-base font-medium mb-1 text-fg group-hover:text-fg">{name}</span>
+				<span className="text-xs font-mono text-accent mb-2">{rule}</span>
+				<p className="text-xs text-fg-secondary mb-3 line-clamp-2">{description}</p>
 				<div className="flex space-x-2 mt-auto">
 					{characteristics.stability === "stable" ? (
-						<Heart className="w-4 h-4 text-blue-400" />
+						<Heart className="w-4 h-4 text-info" />
 					) : characteristics.stability === "explosive" ? (
-						<Bomb className="w-4 h-4 text-red-400" />
+						<Bomb className="w-4 h-4 text-danger" />
 					) : (
 						<Sparkles className="w-4 h-4 text-yellow-400" />
 					)}
 					{characteristics.isGenerations ? <Activity className="w-4 h-4 text-purple-400" /> : null}
-					{characteristics.isLargerThanLife ? <Maximize className="w-4 h-4 text-green-400" /> : null}
+					{characteristics.isLargerThanLife ? <Maximize className="w-4 h-4 text-accent" /> : null}
 					{characteristics.isTotalistic ? (
-						<Grid className="w-4 h-4 text-blue-400" />
+						<Grid className="w-4 h-4 text-info" />
 					) : characteristics.isNonTotalistic ? (
 						<Pilcrow className="w-4 h-4 text-orange-400" />
 					) : null}
