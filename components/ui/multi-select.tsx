@@ -1,0 +1,77 @@
+"use client";
+
+import { sounds } from "@/lib/utils/sounds";
+import { cn } from "@/lib/utils/cn";
+
+export interface MultiSelectOption {
+	id: string;
+	label: string;
+}
+
+interface MultiSelectProps {
+	label?: string | null;
+	options: MultiSelectOption[];
+	selected: string[];
+	onSelectedChange: (selected: string[]) => void;
+}
+
+export function MultiSelect({
+	label = null,
+	options,
+	selected,
+	onSelectedChange,
+}: MultiSelectProps) {
+	const toggle = (id: string) => {
+		if (selected.includes(id)) {
+			onSelectedChange(selected.filter((s) => s !== id));
+			sounds.toggleOff();
+		} else {
+			onSelectedChange([...selected, id]);
+			sounds.toggleOn();
+		}
+	};
+
+	const selectAll = () => {
+		onSelectedChange(options.map((o) => o.id));
+		sounds.toggleOn();
+	};
+
+	const deselectAll = () => {
+		onSelectedChange([]);
+		sounds.toggleOff();
+	};
+
+	const allSelected = selected.length === options.length;
+
+	return (
+		<div className="flex flex-col gap-2">
+			{label ? (
+				<div className="flex items-center justify-between">
+					<span className="text-xs uppercase text-zinc-400 font-medium tracking-wider">{label}</span>
+					<button
+						className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded hover:bg-zinc-700/40"
+						onClick={() => (allSelected ? deselectAll() : selectAll())}
+					>
+						{allSelected ? "Clear" : "All"}
+					</button>
+				</div>
+			) : null}
+			<div className="flex flex-wrap gap-1.5">
+				{options.map((option) => (
+					<button
+						key={option.id}
+						onClick={() => toggle(option.id)}
+						className={cn(
+							"px-3 py-1 text-xs rounded-full transition-all border select-none",
+							selected.includes(option.id)
+								? "bg-green-500/15 text-green-400 border-green-500/30 hover:bg-green-500/25"
+								: "bg-zinc-800/80 text-zinc-500 border-zinc-700/40 hover:bg-zinc-700/50 hover:text-zinc-300",
+						)}
+					>
+						{option.label}
+					</button>
+				))}
+			</div>
+		</div>
+	);
+}
