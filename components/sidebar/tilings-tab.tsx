@@ -65,16 +65,24 @@ export function TilingsTab({ newTilings, onNewTilingSelect }: TilingsTabProps) {
 						onCheckedChange={(v) => setCfg({ isIslamic: v })}
 					/>
 					{cfg.isIslamic ? (
-						<Slider
-							id="islamicAngle"
-							label="Islamic Angle"
-							value={cfg.islamicAngle}
-							onChange={(v) => setCfg({ islamicAngle: v })}
-							min={0}
-							max={180}
-							step={1}
-							unit="°"
-						/>
+						<>
+							<Slider
+								id="islamicAngle"
+								label="Islamic Angle"
+								value={cfg.islamicAngle}
+								onChange={(v) => setCfg({ islamicAngle: v })}
+								min={0}
+								max={180}
+								step={1}
+								unit="°"
+							/>
+							<Checkbox
+								id="islamicAnimate"
+								label="Animate Grid"
+								checked={cfg.islamicAnimate}
+								onCheckedChange={(v) => setCfg({ islamicAnimate: v })}
+							/>
+						</>
 					) : null}
 
 					<div className="space-y-2 pt-1">

@@ -2,6 +2,7 @@ import { useConfiguration } from "@/stores/configuration";
 import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex, isWithinTolerance } from '@/utils';
 import { Vector, Behavior, State } from '@/classes';
 import { tolerance } from "@/utils/tolerance";
+import { islamicAnglesForHalfways } from "@/utils/islamicNoise";
 
 export class Polygon {
     n: number;
@@ -223,16 +224,17 @@ export class Polygon {
         ctx.pop();
     }
 
-    calculateIslamicTips = (angle: number): Vector[] => {
+    calculateIslamicTips = (angle: number | number[]): Vector[] => {
         const tips: Vector[] = [];
         const beta = Math.PI / this.n;
-        const epsilon = Math.PI - beta - angle / 2;
         const gamma = Math.PI / 2 - beta;
         const side = 0.5;
-        const dist = side * Math.tan(gamma) * Math.sin(beta) / Math.sin(epsilon);
         for (let i = 0; i < this.halfways.length; i++) {
+            const a = Array.isArray(angle) ? angle[i] : angle;
+            const epsilon = Math.PI - beta - a / 2;
+            const dist = side * Math.tan(gamma) * Math.sin(beta) / Math.sin(epsilon);
             const perp = Vector.sub(this.centroid, this.halfways[i]);
-            const dir2 = Vector.rotate(perp, -angle / 2).normalize();
+            const dir2 = Vector.rotate(perp, -a / 2).normalize();
             tips.push(new Vector(
                 this.halfways[i].x + dir2.x * dist,
                 this.halfways[i].y + dir2.y * dist,
@@ -242,7 +244,12 @@ export class Polygon {
     }
 
     showIslamicFilled = (ctx, opacity: number = 0.80, customColor: number | null = null) => {
-        const angle = useConfiguration.getState().islamicAngle * Math.PI / 180;
+        const cfg = useConfiguration.getState();
+        const baseAngle = cfg.islamicAngle * Math.PI / 180;
+        let angle: number | number[] = baseAngle;
+        if (cfg.islamicAnimate) {
+            angle = islamicAnglesForHalfways(ctx, this.halfways);
+        }
         const tips = this.calculateIslamicTips(angle);
 
         ctx.push();

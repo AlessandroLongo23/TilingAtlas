@@ -1,4 +1,5 @@
 import { type GameOfLifeRule, GOLRuleType, Behavior, State, Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
+import { islamicAnglesForHalfways } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
@@ -168,12 +169,21 @@ export class Tiling {
     }
 
     drawIslamicVertexRegions = (ctx, opacity: number = 1): void => {
-        const angle = useConfiguration.getState().islamicAngle * Math.PI / 180;
+        const cfg = useConfiguration.getState();
+        const animate = cfg.islamicAnimate;
+        const baseAngle = cfg.islamicAngle * Math.PI / 180;
 
         const tipsCache = new Map<Polygon, Vector[]>();
         const getTips = (tile: Polygon): Vector[] => {
             let t = tipsCache.get(tile);
-            if (!t) { t = tile.calculateIslamicTips(angle); tipsCache.set(tile, t); }
+            if (!t) {
+                let angle: number | number[] = baseAngle;
+                if (animate) {
+                    angle = islamicAnglesForHalfways(ctx, tile.halfways);
+                }
+                t = tile.calculateIslamicTips(angle);
+                tipsCache.set(tile, t);
+            }
             return t;
         };
 

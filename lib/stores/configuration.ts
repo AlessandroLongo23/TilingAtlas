@@ -65,6 +65,7 @@ export interface ConfigurationState {
 	// Islamic / rendering variants
 	isIslamic: boolean;
 	islamicAngle: number;
+	islamicAnimate: boolean;
 	circlePacking: boolean;
 	isTilingRegularOnly: boolean;
 
@@ -117,6 +118,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	isIslamic: false,
 	islamicAngle: 90,
+	islamicAnimate: false,
 	circlePacking: false,
 	isTilingRegularOnly: false,
 
