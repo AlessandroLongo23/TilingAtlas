@@ -9,6 +9,7 @@ import { Vector } from "@/classes/Vector";
 import { Tiling } from "@/classes/Tiling";
 import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { TilingInfo } from "./tiling-info";
 import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
@@ -18,15 +19,15 @@ import { useP5 } from "@/lib/hooks/useP5";
 interface CanvasProps {
 	width?: number;
 	height?: number;
-	translationalCell?: Record<string, unknown> | null;
+	translationalCell?: TranslationalCellData | null;
 	translationalCellId?: string | null;
 	showTilingRuleInput?: boolean;
 }
 
-function buildTilingFromCell(cellData: Record<string, unknown>, radius: number): Tiling {
+function buildTilingFromCell(cellData: TranslationalCellData, radius: number): Tiling {
 	const r = Math.max(2, Math.min(8, radius || 4));
-	const polyArray = (cellData.p ?? cellData.cellPolygons ?? []) as Record<string, unknown>[];
-	const basisRaw = (cellData.b ?? cellData.basis ?? [[1, 0], [0, 1]]) as number[][];
+	const polyArray = cellData.p ?? cellData.cellPolygons ?? [];
+	const basisRaw = cellData.b ?? cellData.basis ?? [[1, 0], [0, 1]];
 	const [v1x, v1y] = basisRaw[0];
 	const [v2x, v2y] = basisRaw[1];
 
@@ -38,7 +39,7 @@ function buildTilingFromCell(cellData: Record<string, unknown>, radius: number):
 			const ox = i * v1x + j * v2x;
 			const oy = i * v1y + j * v2y;
 			for (const polyData of polyArray) {
-				const rawVerts = (polyData.v ?? polyData.vertices ?? []) as Array<number[] | { x: number; y: number }>;
+				const rawVerts = polyData.v ?? polyData.vertices ?? [];
 				const vertices = rawVerts.map((v) =>
 					Array.isArray(v)
 						? new Vector(v[0] + ox, v[1] + oy)

@@ -9,7 +9,7 @@
 import { supabase as browserClient } from "@/lib/supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { BATCH_SIZE } from "@/lib/constants";
-import type { GeneratorParameters } from "@/classes";
+import type { GeneratorParameters, TranslationalCellData } from "@/classes/algorithm/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ export interface NewTiling {
 	k: number;
 	m: number;
 	encoded_tiling: Record<string, unknown>;
-	translational_cell: Record<string, unknown> | null;
+	translational_cell: TranslationalCellData | null;
 	polygon_names: string[];
 	wallpaper_group: string | null;
 	is_regular: boolean;
@@ -221,7 +221,7 @@ export interface CampaignTiling {
 	k: number;
 	m: number;
 	encoded_tiling: Record<string, unknown>;
-	translational_cell: Record<string, unknown> | null;
+	translational_cell: TranslationalCellData | null;
 	polygon_names: string[];
 	wallpaper_group: string | null;
 	is_regular: boolean;
@@ -333,7 +333,7 @@ export async function fetchAllTilings(
  */
 export async function fetchRandomTilingCell(
 	client?: SupabaseClient
-): Promise<Record<string, unknown> | null> {
+): Promise<TranslationalCellData | null> {
 	const sb = getClient(client);
 
 	const { count, error: countError } = await sb
@@ -358,6 +358,6 @@ export async function fetchRandomTilingCell(
 		return null;
 	}
 
-	const row = data?.[0] as { translational_cell: Record<string, unknown> | null } | undefined;
+	const row = data?.[0] as { translational_cell: TranslationalCellData | null } | undefined;
 	return row?.translational_cell ?? null;
 }

@@ -27,3 +27,23 @@ export type PartialConfiguration = {
 }
 
 export type SurroundingPolygon = { polygon: Polygon, prevDir: number, nextDir: number };
+
+/**
+ * Translational-cell payload as stored in pipeline-output JSON (gzip-batched
+ * under translationalCells/k=*\/m=*\/). Short-form keys (`p`, `b`, `v`) are
+ * produced by the encoder; long-form keys are the in-memory equivalents.
+ */
+export type CellVertex = [number, number] | { x: number; y: number };
+
+export interface CellPolygonData {
+    v?: CellVertex[];
+    vertices?: CellVertex[];
+    n?: number;
+}
+
+export interface TranslationalCellData {
+    p?: CellPolygonData[];
+    cellPolygons?: CellPolygonData[];
+    b?: number[][];
+    basis?: number[][];
+}

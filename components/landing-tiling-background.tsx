@@ -1,19 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-
-interface TranslationalCellData {
-	p?: unknown[];
-	cellPolygons?: unknown[];
-	b?: number[][];
-	basis?: number[][];
-}
-
-interface CellPolyData {
-	v?: (number[] | { x: number; y: number })[];
-	vertices?: (number[] | { x: number; y: number })[];
-	n?: number;
-}
+import type { TranslationalCellData, CellPolygonData } from "@/classes/algorithm/types";
 
 interface RawPolygon {
 	n: number;
@@ -47,8 +35,8 @@ interface BaseCell {
 }
 
 function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
-	const polyArray = (cell.p ?? cell.cellPolygons ?? []) as CellPolyData[];
-	const basisRaw = (cell.b ?? cell.basis ?? [[1, 0], [0, 1]]) as number[][];
+	const polyArray: CellPolygonData[] = cell.p ?? cell.cellPolygons ?? [];
+	const basisRaw = cell.b ?? cell.basis ?? [[1, 0], [0, 1]];
 	const basis: [[number, number], [number, number]] = [
 		[basisRaw[0][0], basisRaw[0][1]],
 		[basisRaw[1][0], basisRaw[1][1]],

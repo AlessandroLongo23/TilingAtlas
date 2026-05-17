@@ -1,12 +1,13 @@
 import { fetchRandomTilingCell } from "@/lib/services/campaignService";
 import { createClient } from "@/lib/supabase/server";
+import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { LandingTilingBackground } from "@/components/landing-tiling-background";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-	let cell: Record<string, unknown> | null = null;
+	let cell: TranslationalCellData | null = null;
 	try {
 		const sb = await createClient();
 		cell = await fetchRandomTilingCell(sb);
