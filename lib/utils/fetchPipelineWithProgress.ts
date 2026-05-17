@@ -3,6 +3,7 @@
  * Opens the progress dialog, streams progress updates, and handles completion/errors.
  */
 
+import { z } from "zod";
 import {
 	openPipelineProgress,
 	updatePipelineProgress,
@@ -11,6 +12,30 @@ import {
 } from "@/stores/pipelineProgress";
 
 const encoder = new TextEncoder();
+
+const PipelineLineSchema = z.looseObject({
+	progress: z.number().optional(),
+	message: z.string().optional(),
+	done: z.boolean().optional(),
+	error: z.string().optional(),
+});
+
+type PipelineLine = z.infer<typeof PipelineLineSchema>;
+
+function parsePipelineLine(raw: string): PipelineLine | null {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		return null;
+	}
+	const result = PipelineLineSchema.safeParse(parsed);
+	if (!result.success) {
+		console.warn("Pipeline progress: malformed line", raw, result.error.issues);
+		return null;
+	}
+	return result.data;
+}
 
 /** Write a progress line to the stream (NDJSON format). */
 export function writeProgress(
@@ -81,42 +106,28 @@ export async function fetchPipelineWithProgress<T = Record<string, unknown>>(
 				const trimmed = line.trim();
 				if (!trimmed) continue;
 
-				try {
-					const data = JSON.parse(trimmed) as {
-						progress?: number;
-						message?: string;
-						done?: boolean;
-						error?: string;
-						[key: string]: unknown;
-					};
+				const data = parsePipelineLine(trimmed);
+				if (!data) continue;
 
-					if (data.error) {
-						failPipelineProgress(data.error);
-						throw new Error(data.error);
-					}
+				if (data.error) {
+					failPipelineProgress(data.error);
+					throw new Error(data.error);
+				}
 
-					if (data.message) {
-						updatePipelineProgress(data.progress ?? null, data.message);
-					}
+				if (data.message) {
+					updatePipelineProgress(data.progress ?? null, data.message);
+				}
 
-					if (data.done) {
-						finalResult = data as unknown as T;
-						completePipelineProgress(data.message ?? "Done");
-					}
-				} catch (e) {
-					if (e instanceof SyntaxError) continue;
-					throw e;
+				if (data.done) {
+					finalResult = data as unknown as T;
+					completePipelineProgress(data.message ?? "Done");
 				}
 			}
 		}
 
 		if (buffer.trim()) {
-			try {
-				const data = JSON.parse(buffer.trim()) as { done?: boolean };
-				if (data.done) finalResult = data as unknown as T;
-			} catch {
-				// Ignore trailing partial line
-			}
+			const data = parsePipelineLine(buffer.trim());
+			if (data?.done) finalResult = data as unknown as T;
 		}
 
 		return (finalResult ?? {}) as T;
