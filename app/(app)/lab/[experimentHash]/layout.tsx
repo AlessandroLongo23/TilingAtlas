@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { findCampaignByHash } from "@/lib/services/campaignService";
 import {
@@ -44,7 +44,6 @@ export default async function ExperimentLayout({ params, children }: LayoutProps
 	const { experimentHash } = await params;
 	const sb = await createClient();
 	const campaign = await findCampaignByHash(experimentHash, sb);
-	if (!campaign) redirect("/lab");
 	if (!campaign) notFound();
 
 	let badgeCounts: { seeds: number; expandedSeeds: number; tilings: number } | null = null;
