@@ -44,10 +44,6 @@ This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16
 
 **UI.** `components/ui/` is 14 primitives — Modal and Tabs via Radix, the rest hand-rolled. Domain components in `components/*.tsx`.
 
-## Known stubs
-
-- `components/canvas.tsx` and `components/sidebar.tsx` are deliberate stubs pending the `/play` port. All prerequisites (`useP5`, chart wrappers, stores, UI primitives) are already wired up.
-
 ## Migration history
 
 Port was done in 8 phases, each its own commit — replay via `git log`. High-level phases are documented in `README.md`. Full plan: `c:\Users\longo\.claude\plans\sorted-marinating-plum.md`.

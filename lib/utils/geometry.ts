@@ -1,5 +1,6 @@
 import { tolerance } from "./tolerance";
-import { parametricStarRegex, equilateralPolygonRegex, Vector, regularStarRegex, regularPolygonRegex, type PolygonSignatureData, PolygonType, StarVertexTypes, TriangleType, QuadrilateralType, type TriangleSignature, type QuadrilateralSignature, Polygon, genericPolygonRegex } from "@/classes";
+import { parametricStarRegex, equilateralPolygonRegex, Vector, regularStarRegex, regularPolygonRegex, type PolygonSignatureData, PolygonType, StarVertexTypes, Polygon, genericPolygonRegex } from "@/classes";
+import { TriangleType, QuadrilateralType, type TriangleSignature, type QuadrilateralSignature } from "./types";
 import { isWithinTolerance } from "./math";
 
 export const sortPointsByAngleAndDistance = (points: Vector[]): Vector[] => {
@@ -17,7 +18,7 @@ export const sortPointsByAngleAndDistance = (points: Vector[]): Vector[] => {
     });
 };
 
-export const getClockwiseAngle = (point: Vector): number => {
+const getClockwiseAngle = (point: Vector): number => {
     if (Math.abs(point.x) < tolerance)
         return point.y > 0 ? 0 : Math.PI;
 
@@ -28,17 +29,6 @@ export const getClockwiseAngle = (point: Vector): number => {
     }
 
     return angle;
-}
-
-export const apothem = (n: number): number => {
-    return 0.5 / Math.tan(Math.PI / n);
-}
-
-export const angleBetween = (a: Vector, b: Vector, c: Vector): number => {
-    let v1 = new Vector(a.x - b.x, a.y - b.y);
-    let v2 = new Vector(c.x - b.x, c.y - b.y);
-
-    return (v1.heading() - v2.heading() + Math.PI) % Math.PI;
 }
 
 export const findIntersection = (p1: Vector, v1: Vector, p2: Vector, v2: Vector): Vector | null => {

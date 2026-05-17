@@ -12,9 +12,9 @@ interface PolygonsCanvasOptions {
 }
 
 /**
- * Shared polygon-array → canvas renderer. Used by PolygonCard, PolygonListItem,
- * SeedCard, ExpandedSeedCard, and anything else that draws a Polygon[] with
- * HSB hue fill + fit-to-bounds + device-pixel-ratio scaling.
+ * Shared polygon-array → canvas renderer. Used by PolygonCard, SeedCard,
+ * ExpandedSeedCard, and anything else that draws a Polygon[] with HSB hue
+ * fill + fit-to-bounds + device-pixel-ratio scaling.
  */
 export function usePolygonsCanvas(
 	polygons: Polygon[] | null,

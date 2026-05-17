@@ -91,10 +91,6 @@ proxy.ts                 Next 16 request proxy (was middleware.ts in Next 15)
   inherited defects (`WallpaperGroup` constructor arity, `Tiling` union
   access, `generatorEncoding` union keys) are tracked for post-migration
   tightening.
-- `components/canvas.tsx` and `components/sidebar.tsx` are deliberate stubs.
-  They'll be filled in when the `/play` route's full interactive experience
-  is ported — all prerequisites (`useP5`, chart wrappers, stores, UI
-  primitives) are already in place.
 - `components/theory-sidebar.tsx` integrates with
   `lib/utils/tableOfContents.ts` but does **not** port the source's
   admonition plugin or IntersectionObserver-based GIF lazy-load. Both were
@@ -125,7 +121,7 @@ can be replayed. High-level:
 1. Scaffold (Next 16, Tailwind v4, Supabase SSR helpers)
 2. Port utils, algorithm core, classes, services, Zustand slices
 3. Port 14 UI primitives + rendering primitives (p5, Chart.js)
-4. Port 33/36 domain components (3 stubbed; Canvas/Sidebar + markdown helpers)
+4. Port 33/36 domain components (Canvas/Sidebar wired through `useP5` and the configuration store)
 5. Port 22 routes to App Router (13 page routes + 7 API + proxy middleware)
 6. Port API pipeline handlers with proxy auth
 7. Markdown infrastructure for /theory + tilings-storage pagination
