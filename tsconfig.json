@@ -24,8 +24,6 @@
       "@/classes/*": ["./lib/classes/*"],
       "@/stores": ["./lib/stores"],
       "@/stores/*": ["./lib/stores/*"],
-      "@/services": ["./lib/services"],
-      "@/services/*": ["./lib/services/*"],
       "@/utils": ["./lib/utils"],
       "@/utils/*": ["./lib/utils/*"]
     }

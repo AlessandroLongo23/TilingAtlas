@@ -1,7 +1,7 @@
 "use client";
 
 import { PageSidebar } from "@/components/page-sidebar";
-import type { CampaignTiling } from "@/services/campaignService";
+import type { CampaignTiling } from "@/lib/services/campaignService";
 import { TilingsTab } from "./tilings-tab";
 
 interface SidebarProps {

@@ -1,4 +1,4 @@
-import { fetchAllTilings } from "@/services/campaignService";
+import { fetchAllTilings } from "@/lib/services/campaignService";
 import { createClient } from "@/lib/supabase/server";
 import { PlayClient } from "./_play-client";
 

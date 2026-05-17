@@ -13,7 +13,7 @@ import {
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { AlgorithmTiling } from "@/classes/algorithm/Tiling";
 import { sanitizeForStorage } from "@/lib/utils/storageKey";
-import type { CampaignTiling } from "@/services/campaignService";
+import type { CampaignTiling } from "@/lib/services/campaignService";
 
 type Density = "comfortable" | "compact";
 

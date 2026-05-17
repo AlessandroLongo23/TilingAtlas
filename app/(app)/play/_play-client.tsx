@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@/components/canvas";
 import { Sidebar } from "@/components/sidebar";
 import { TilingModalContent } from "@/components/tiling-modal-content";
-import type { CampaignTiling } from "@/services/campaignService";
+import type { CampaignTiling } from "@/lib/services/campaignService";
 
 interface PlayClientProps {
 	newTilings: CampaignTiling[];

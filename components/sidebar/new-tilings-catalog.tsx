@@ -5,7 +5,7 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { TilingCard } from "@/components/tiling-card";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
-import type { CampaignTiling } from "@/services/campaignService";
+import type { CampaignTiling } from "@/lib/services/campaignService";
 
 interface NewTilingsCatalogProps {
 	items: CampaignTiling[];
