@@ -2,11 +2,11 @@ import { SeedConfiguration, type Polygon } from "@/classes";
 import type { Gyration, Reflection } from "@/classes";
 import type { FullSeedConfiguration } from "./SeedConfiguration";
 import { encodeGenerator, decodeGenerator } from "@/lib/algorithm/generatorEncoding";
-import type { EncodedGenerator } from "@/lib/algorithm/generatorEncoding";
+import type { EncodedGeneratorRaw } from "@/lib/algorithm/generatorEncoding";
 
 export interface EncodedTiling {
     seed: FullSeedConfiguration | Record<string, unknown>;
-    generators: (EncodedGenerator | Record<string, unknown>)[];
+    generators: EncodedGeneratorRaw[];
     iterations: number;
 }
 
