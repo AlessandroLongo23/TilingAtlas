@@ -8,8 +8,7 @@ export default async function PlayPage() {
 	let tilings: Awaited<ReturnType<typeof fetchAllTilings>> = [];
 	try {
 		const sb = await createClient();
-		const all = await fetchAllTilings({}, sb);
-		tilings = all.filter((t) => t.translational_cell != null);
+		tilings = await fetchAllTilings({ requireCell: true }, sb);
 	} catch (e) {
 		console.error("Play: failed to load new-algorithm tilings", e);
 	}

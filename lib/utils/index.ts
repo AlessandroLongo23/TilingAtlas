@@ -13,3 +13,4 @@ export * from "./authorIdentity";
 export * from "./experimentHash";
 export * from "./fetchPipelineWithProgress";
 export * from "./vertexFigureHue";
+export * from "./types";

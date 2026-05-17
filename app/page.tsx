@@ -1,4 +1,4 @@
-import { fetchAllTilings } from "@/lib/services/campaignService";
+import { fetchRandomTilingCell } from "@/lib/services/campaignService";
 import { createClient } from "@/lib/supabase/server";
 import { LandingTilingBackground } from "@/components/landing-tiling-background";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,7 @@ export default async function HomePage() {
 	let cell: Record<string, unknown> | null = null;
 	try {
 		const sb = await createClient();
-		const all = await fetchAllTilings({}, sb);
-		const withCell = all.filter((t) => t.translational_cell != null);
-		if (withCell.length > 0) {
-			const picked = withCell[Math.floor(Math.random() * withCell.length)];
-			cell = picked.translational_cell;
-		}
+		cell = await fetchRandomTilingCell(sb);
 	} catch (e) {
 		console.error("Landing: failed to load tiling for background", e);
 	}

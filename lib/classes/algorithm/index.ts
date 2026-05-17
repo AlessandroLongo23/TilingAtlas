@@ -10,6 +10,5 @@ export * from './SeedExpander';
 export * from './TranslationalCellExtractor';
 export * from './Tiling';
 export * from './TilingGenerator';
-export * from '../wallpaperGroups';
 export * from './types';
 export * from './regex';

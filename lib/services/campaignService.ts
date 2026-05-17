@@ -282,6 +282,7 @@ export async function fetchAllTilings(
 		polygonNames?: string[];
 		wallpaperGroup?: string;
 		exhaustiveOnly?: boolean;
+		requireCell?: boolean;
 	} = {},
 	client?: SupabaseClient
 ): Promise<CampaignTiling[]> {
@@ -289,7 +290,7 @@ export async function fetchAllTilings(
 
 	let query = sb
 		.from("tilings")
-		.select("*, campaign:search_campaigns(id, is_exhaustive, polygon_config)")
+		.select("*, campaign:search_campaigns(id, is_exhaustive)")
 		.order("k", { ascending: true })
 		.order("m", { ascending: true });
 
@@ -303,6 +304,10 @@ export async function fetchAllTilings(
 
 	if (filters.wallpaperGroup) {
 		query = query.eq("wallpaper_group", filters.wallpaperGroup);
+	}
+
+	if (filters.requireCell) {
+		query = query.not("translational_cell", "is", null);
 	}
 
 	const { data, error } = await query;
@@ -319,4 +324,40 @@ export async function fetchAllTilings(
 	}
 
 	return results;
+}
+
+/**
+ * Fetch a single random `translational_cell` blob without scanning the whole
+ * table. Two cheap queries: COUNT(*) then a one-row range at a random offset.
+ * Used by the landing page background, which only needs one cell.
+ */
+export async function fetchRandomTilingCell(
+	client?: SupabaseClient
+): Promise<Record<string, unknown> | null> {
+	const sb = getClient(client);
+
+	const { count, error: countError } = await sb
+		.from("tilings")
+		.select("id", { count: "exact", head: true })
+		.not("translational_cell", "is", null);
+
+	if (countError || !count) {
+		if (countError) console.error("fetchRandomTilingCell count error:", countError);
+		return null;
+	}
+
+	const offset = Math.floor(Math.random() * count);
+	const { data, error } = await sb
+		.from("tilings")
+		.select("translational_cell")
+		.not("translational_cell", "is", null)
+		.range(offset, offset);
+
+	if (error) {
+		console.error("fetchRandomTilingCell error:", error);
+		return null;
+	}
+
+	const row = data?.[0] as { translational_cell: Record<string, unknown> | null } | undefined;
+	return row?.translational_cell ?? null;
 }
