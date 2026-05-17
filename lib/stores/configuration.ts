@@ -1,19 +1,10 @@
 import { create } from "zustand";
-import { GOLRuleType } from "@/classes/GameOfLifeRule";
 import { Vector } from "@/classes/Vector";
-
-export enum ActiveTab {
-	TILINGS = "Tilings",
-	GAME_OF_LIFE = "Game of Life",
-	THEORY = "Theory",
-}
 
 export interface SelectedTiling {
 	name: string;
 	rulestring: string;
 	cr: string;
-	dualname: string;
-	golRules: { standard: string[]; dual: string[] };
 }
 
 export interface Controls {
@@ -30,15 +21,9 @@ export interface ColorParams {
 }
 
 export interface ConfigurationState {
-	// GOL
-	golRule: string;
-	golRules: Record<string, unknown>;
-	ruleType: GOLRuleType;
-
 	// Selected tiling + view state
 	selectedTiling: SelectedTiling;
 	isDual: boolean;
-	activeTab: ActiveTab;
 
 	// Canvas controls (read in p5 draw loops)
 	controls: Controls;
@@ -52,8 +37,6 @@ export interface ConfigurationState {
 	showPolygonPoints: boolean;
 	showConstructionPoints: boolean;
 	showWallpaperGroup: boolean;
-	showChart: boolean;
-	liveChartMode: string;
 	debugView: boolean;
 
 	// Screenshot / export
@@ -77,19 +60,13 @@ export interface ConfigurationState {
 }
 
 export const useConfiguration = create<ConfigurationState>()((set) => ({
-	golRule: "B3/S23",
-	golRules: {},
-	ruleType: GOLRuleType.SINGLE,
-
 	selectedTiling: {
 		name: "square",
 		rulestring: "4-4-0,4/r90/r(v2)",
 		cr: "4^4",
 		dualname: "square",
-		golRules: { standard: [], dual: [] },
 	},
 	isDual: false,
-	activeTab: ActiveTab.TILINGS,
 
 	controls: {
 		zoom: 50,
@@ -107,8 +84,6 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showPolygonPoints: false,
 	showConstructionPoints: false,
 	showWallpaperGroup: false,
-	showChart: false,
-	liveChartMode: "count",
 	debugView: false,
 
 	screenshotButtonHover: false,

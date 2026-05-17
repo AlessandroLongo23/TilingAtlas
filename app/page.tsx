@@ -27,7 +27,7 @@ export default async function HomePage() {
 							Welcome to <span className="font-bold text-accent">Tiling Atlas</span>
 						</h1>
 						<p className="mt-3 text-fg-secondary text-sm md:text-base font-light">
-							Explore the beauty of cellular automata on a variety of interactive tiling patterns
+							Explore a variety of interactive tiling patterns
 						</p>
 						<div className="mt-8 flex flex-col gap-3">
 							<Button href="/play" variant="primary" size="md" fullWidth label="Start Exploring" />

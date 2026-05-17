@@ -139,7 +139,7 @@ export function TilingModalContent() {
 		useLegacyTilingStore.getState().initialize();
 	}, []);
 
-	const loadTiling = (payload: { name: string; cr: string; rulestring: string; golRules: unknown }) => {
+	const loadTiling = (payload: { name: string; cr: string; rulestring: string }) => {
 		setConfig({ selectedTiling: payload as SelectedTiling });
 		setOpen(false);
 	};
@@ -232,7 +232,6 @@ export function TilingModalContent() {
 										onClick={loadTiling}
 										imageUrl={tiling.imageUrl}
 										dualImageUrl={tiling.dualImageUrl}
-										golRules={undefined}
 									/>
 								))}
 							</div>

@@ -1,4 +1,4 @@
-import { type GameOfLifeRule, GOLRuleType, Behavior, State, Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
+import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
 import { islamicAnglesForHalfways } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
 import { useConfiguration } from "@/stores/configuration";
@@ -10,9 +10,6 @@ export class Tiling {
     nodes: Polygon[];
     anchorNodes: Polygon[];
     vcs: VCWithOccurrences[] = [];
-    parsedGolRule: GameOfLifeRule;
-    golRuleType: GOLRuleType;
-    rules: { [key: number]: GameOfLifeRule };
     newLayerNodes: Polygon[];
     seedNodes: Polygon[];
     coreNode: Polygon | null;
@@ -27,10 +24,6 @@ export class Tiling {
     constructor() {
         this.nodes = [];
         this.anchorNodes = [];
-
-        this.parsedGolRule = {};
-        this.golRuleType = GOLRuleType.SINGLE;
-        this.rules = {};
 
         this.newLayerNodes = [];
         this.seedNodes = [];
@@ -412,149 +405,6 @@ export class Tiling {
         const showDualConnectionsValue = useConfiguration.getState().showDualConnections;
         if (showDualConnectionsValue)
             this.drawDualConnections(ctx);
-    }
-
-    randomizeGameOfLifeGrid = (): void => {
-        for (let i = 0; i < this.nodes.length; i++) {
-            this.nodes[i].state = Math.random() < 0.5 ? State.ALIVE : State.DEAD;
-            this.nodes[i].nextState = State.DEAD;
-            this.nodes[i].alive_neighbors = 0;
-            this.nodes[i].behavior = Behavior.DECREASING;
-        }
-    }
-
-    updateGameOfLife = (): void => {
-        for (let i = 0; i < this.nodes.length; i++)
-            this.nodes[i].alive_neighbors = 0;
-        
-        for (let i = 0; i < this.nodes.length; i++) {
-            if (this.nodes[i].state !== State.ALIVE)
-                continue;
-
-            for (let j = 0; j < this.nodes[i].neighbors.length; j++) 
-                this.nodes[i].neighbors[j].alive_neighbors++;
-        }
-
-        for (let node of this.nodes) {
-            if (!node.neighbors || node.neighbors.length === 0) {
-                node.nextState = State.DEAD;
-                continue;
-            }
-            
-            let nodeRule = this.golRuleType === GOLRuleType.SINGLE ? this.parsedGolRule : this.rules[node.n];
-            if (!nodeRule) {
-                node.nextState = State.DEAD;
-                continue;
-            }
-
-            const aliveRate: number = node.alive_neighbors / node.neighbors.length;
-
-            if (node.state === State.DEAD) {
-                let hasBirthNeighbors = false;
-                if (nodeRule.birth?.min !== undefined) {
-                    if (nodeRule.birth?.min <= 1 && nodeRule.birth?.max <= 1) {
-                        hasBirthNeighbors = aliveRate >= nodeRule.birth?.min && aliveRate <= nodeRule.birth?.max;
-                    } else {
-                        hasBirthNeighbors = node.alive_neighbors >= nodeRule.birth?.min && node.alive_neighbors <= nodeRule.birth?.max;
-                        if (hasBirthNeighbors) {
-                            node.behavior = Behavior.INCREASING;
-                        } else {
-                            if (
-                                node.alive_neighbors == nodeRule.birth?.min - 1 ||
-                                node.alive_neighbors == nodeRule.birth?.max + 1
-                            ) {
-                                node.behavior = Behavior.CHAOTIC;
-                            } else {
-                                node.behavior = Behavior.INCREASING;
-                            }
-                        }
-                    }
-                } else {
-                    hasBirthNeighbors = nodeRule.birth?.includes(node.alive_neighbors);
-                    if (hasBirthNeighbors) {
-                        node.behavior = Behavior.INCREASING;
-                    } else {
-                        let edge = nodeRule.birth?.includes(node.alive_neighbors + 1) || nodeRule.birth?.includes(node.alive_neighbors - 1);
-                        node.behavior = edge ? Behavior.CHAOTIC : Behavior.DECREASING;
-                    }
-                }
-
-                node.nextState = hasBirthNeighbors ? State.ALIVE : State.DEAD;
-            }
-                                
-            else if (node.state === State.ALIVE) {
-                let hasSurvivalNeighbors = false;
-                if (nodeRule.survival?.min !== undefined) {
-                    if (nodeRule.survival?.min <= 1 && nodeRule.survival?.max <= 1) {
-                        hasSurvivalNeighbors = aliveRate >= nodeRule.survival?.min && aliveRate <= nodeRule.survival?.max;
-                    } else {
-                        hasSurvivalNeighbors = node.alive_neighbors >= nodeRule.survival?.min && node.alive_neighbors <= nodeRule.survival?.max;
-                        node.behavior = Behavior.INCREASING;
-                    }
-                } else {
-                    hasSurvivalNeighbors = nodeRule.survival?.includes(node.alive_neighbors);
-                    node.behavior = Behavior.INCREASING;
-                }
-
-                if (hasSurvivalNeighbors) {
-                    node.nextState = State.ALIVE;
-                } else {
-                    node.nextState = node.state + 1 >= nodeRule.generations ? State.DEAD : node.state + 1;
-                    node.behavior = Behavior.DECREASING;
-                }
-            }
-
-            else {
-                node.nextState = node.state + 1 === nodeRule.generations ? State.DEAD : node.state + 1;
-            }
-        }
-
-        for (let i = 0; i < this.nodes.length; i++)
-            this.nodes[i].state = this.nodes[i].nextState;
-    }
-
-    drawGameOfLife = (ctx, circlePacking: boolean = false) => {
-        const lineWidthValue = useConfiguration.getState().lineWidth;
-        if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0);
-        } else if (lineWidthValue === 0) {
-            ctx.noStroke();
-        } else {
-            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0, lineWidthValue);
-        }
-
-        if (circlePacking) {
-            const liveChartModeValue = useConfiguration.getState().liveChartMode;
-            for (let i = 0; i < this.nodes.length; i++) {
-                const node = this.nodes[i];
-                const radius = node.halfways?.length > 0
-                    ? Vector.distance(node.centroid, node.halfways[0])
-                    : 0;
-                if (radius > 0) {
-                    ctx.push();
-                    if (liveChartModeValue === 'count') {
-                        if (node.state === 0) ctx.fill(0, 0, 100);
-                        else if (node.state === 1) ctx.fill(0, 0, 0);
-                        else {
-                            const maxGen = this.golRuleType === GOLRuleType.SINGLE ? this.parsedGolRule.generations : this.rules[node.n].generations;
-                            const progress = (node.state - 1) / (maxGen - 1);
-                            ctx.fill(0, 0, progress * 100);
-                        }
-                    } else {
-                        if (node.behavior === Behavior.DECREASING) ctx.fill(0, 0, 100);
-                        else if (node.behavior === Behavior.INCREASING) ctx.fill(0, 0, 0);
-                        else ctx.fill(345, 50, 100);
-                    }
-                    ctx.ellipse(node.centroid.x, node.centroid.y, radius * 2, radius * 2);
-                    ctx.pop();
-                }
-            }
-        } else {
-            for (let i = 0; i < this.nodes.length; i++)
-                this.nodes[i].showGameOfLife(ctx, this.golRuleType, this.parsedGolRule, this.rules);
-        }
     }
 
     exportGraph = () => {

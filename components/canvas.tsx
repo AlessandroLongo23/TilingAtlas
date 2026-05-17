@@ -9,12 +9,7 @@ import { Vector } from "@/classes/Vector";
 import { Tiling } from "@/classes/Tiling";
 import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
-import { GOLRuleType } from "@/classes/GameOfLifeRule";
-import { TilingGeneratorFromRule } from "@/classes/generator/TilingGeneratorFromRule";
-import { sounds } from "@/lib/utils/sounds";
-import { RefreshCw } from "lucide-react";
 import { TilingInfo } from "./tiling-info";
-import { LiveChart } from "./live-chart";
 import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
 import { ColorPad } from "./ui/color-pad";
@@ -23,7 +18,6 @@ import { useP5 } from "@/lib/hooks/useP5";
 interface CanvasProps {
 	width?: number;
 	height?: number;
-	showGameOfLife?: boolean;
 	translationalCell?: Record<string, unknown> | null;
 	translationalCellId?: string | null;
 	showTilingRuleInput?: boolean;
@@ -62,7 +56,6 @@ function buildTilingFromCell(cellData: Record<string, unknown>, radius: number):
 export function Canvas({
 	width = 600,
 	height = 600,
-	showGameOfLife = false,
 	translationalCell = null,
 	translationalCellId = null,
 	showTilingRuleInput = true,
@@ -70,34 +63,26 @@ export function Canvas({
 	const containerRef = useRef<HTMLDivElement | null>(null);
 
 	const tilingRef = useRef<Tiling | null>(null);
-	const generatorRef = useRef<TilingGeneratorFromRule | null>(null);
 	const grabRef = useRef(false);
-	const resetGolRef = useRef(false);
-	const iterationCountRef = useRef(0);
 
 	const prevRef = useRef({
 		rulestring: "",
 		transformSteps: -1,
 		parameter: -1,
 		ruleType: "" as string,
-		golRule: "" as string,
-		golRules: {} as Record<string, unknown>,
 		translationalCellId: null as string | null,
 		width,
 		height,
 	});
 
-	const propsRef = useRef({ width, height, showGameOfLife, translationalCell, translationalCellId });
+	const propsRef = useRef({ width, height, translationalCell, translationalCellId });
 	useEffect(() => {
-		propsRef.current = { width, height, showGameOfLife, translationalCell, translationalCellId };
-	}, [width, height, showGameOfLife, translationalCell, translationalCellId]);
+		propsRef.current = { width, height, translationalCell, translationalCellId };
+	}, [width, height, translationalCell, translationalCellId]);
 
 	const [canvasError, setCanvasError] = useState<string | null>(null);
 	const [tileCount, setTileCount] = useState(0);
 	const [vcs, setVcs] = useState<Tiling["vcs"]>([]);
-	const [alivePercentage, setAlivePercentage] = useState(0);
-	const [iterationCount, setIterationCount] = useState(0);
-	const [behaviorData, setBehaviorData] = useState({ increasing: 0, chaotic: 0, decreasing: 0 });
 
 	const debugEnabled = useDebug((s) => s.isEnabled);
 	const debugPhases = useDebug((s) => s.timingData.phases.length);
@@ -129,14 +114,9 @@ export function Canvas({
 				if (!tilingRef.current || ruleChanged || cellChanged) {
 					try {
 						if (cfg.debugView) debugManager.reset();
-						const gen = generatorRef.current ?? new TilingGeneratorFromRule();
-						generatorRef.current = gen;
 
-						const t = tc
-							? buildTilingFromCell(tc, cfg.transformSteps)
-							: gen.generateFromRule(cfg.selectedTiling.rulestring);
+						const t = buildTilingFromCell(tc, cfg.transformSteps)
 						tilingRef.current = t;
-						gen.golEngine.setupGameOfLife(t, cfg.ruleType, cfg.golRule, cfg.golRules);
 
 						const regularOnly = t.nodes.length > 0 && t.nodes.every((n) => n instanceof RegularPolygon);
 						useConfiguration.setState({
@@ -158,18 +138,6 @@ export function Canvas({
 				}
 			};
 
-			const isSameRule = (
-				prev: string | Record<string, string>,
-				current: string | Record<string, string>,
-				ruleType: GOLRuleType,
-			) => {
-				if (ruleType === GOLRuleType.SINGLE) return prev === current;
-				const prevObj = (prev ?? {}) as Record<string, string>;
-				const curObj = (current ?? {}) as Record<string, string>;
-				for (const k of Object.keys(prevObj)) if (prevObj[k] !== curObj[k]) return false;
-				return true;
-			};
-
 			const drawTiling = (cfg: ReturnType<typeof readCfg>, tiling: Tiling) => {
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
 				else tiling.show(p5, cfg.showPolygonPoints, 1, cfg.circlePacking);
@@ -187,62 +155,6 @@ export function Canvas({
 				p5.rect(p5.width / 2 - sss / 2, 0, sss, p5.height / 2 - sss / 2);
 				p5.rect(p5.width / 2 - sss / 2, p5.height / 2 + sss / 2, sss, p5.height / 2 - sss / 2);
 				p5.pop();
-			};
-
-			const drawGameOfLife = (
-				cfg: ReturnType<typeof readCfg>,
-				tiling: Tiling,
-				gen: TilingGeneratorFromRule,
-			) => {
-				const ruleChanged =
-					cfg.ruleType !== prevRef.current.ruleType ||
-					(cfg.ruleType === GOLRuleType.SINGLE && !isSameRule(prevRef.current.golRule, cfg.golRule, cfg.ruleType)) ||
-					(cfg.ruleType === GOLRuleType.BY_SHAPE &&
-						!isSameRule(
-							prevRef.current.golRules as Record<string, string>,
-							cfg.golRules as Record<string, string>,
-							cfg.ruleType,
-						)) ||
-					resetGolRef.current;
-
-				if (ruleChanged) {
-					gen.golEngine.setupGameOfLife(tiling, cfg.ruleType, cfg.golRule, cfg.golRules);
-					resetGolRef.current = false;
-				}
-
-				const frameMod = Math.max(1, Math.round(60 / Math.max(1, cfg.speed)));
-				if (p5.frameCount % frameMod === 0) {
-					const prevStates = tiling.nodes.map((n) => n.state);
-					tiling.updateGameOfLife();
-
-					const total = tiling.nodes.length;
-					const changed = tiling.nodes.filter((n, i) => n.state !== prevStates[i]).length;
-					if (changed > 0 && total > 0) {
-						const born = tiling.nodes.filter((n, i) => prevStates[i] === 0 && n.state === 1).length;
-						const died = tiling.nodes.filter((n, i) => prevStates[i] === 1 && n.state === 0).length;
-						const bornRatio = born / total;
-						const deadRatio = died / total;
-						sounds.stateChange(changed / total / 5, {
-							bornRatio,
-							deadRatio,
-							activityLevel: Math.min(1, (bornRatio + deadRatio) * 2),
-							iteration: iterationCountRef.current,
-						});
-					}
-					setAlivePercentage(total ? (tiling.nodes.filter((n) => n.state === 1).length / total) * 100 : 0);
-					const inc = tiling.nodes.filter((n) => n.behavior === "increasing").length;
-					const cha = tiling.nodes.filter((n) => n.behavior === "chaotic").length;
-					const dec = tiling.nodes.filter((n) => n.behavior === "decreasing").length;
-					setBehaviorData(
-						total
-							? { increasing: (inc / total) * 100, chaotic: (cha / total) * 100, decreasing: (dec / total) * 100 }
-							: { increasing: 0, chaotic: 0, decreasing: 0 },
-					);
-
-					iterationCountRef.current += 1;
-					setIterationCount(iterationCountRef.current);
-				}
-				tiling.drawGameOfLife(p5, cfg.circlePacking);
 			};
 
 			const takeScreenshotImpl = (cfg: ReturnType<typeof readCfg>, tiling: Tiling) => {
@@ -318,10 +230,8 @@ export function Canvas({
 				p5.clear();
 				ensureTiling();
 				const tiling = tilingRef.current;
-				const gen = generatorRef.current;
-				if (!tiling || !gen) return;
 
-				const { width: w, height: h, showGameOfLife: gol } = propsRef.current;
+				const { width: w, height: h } = propsRef.current;
 				if (w !== prevRef.current.width || h !== prevRef.current.height) {
 					p5.resizeCanvas(w, h);
 					prevRef.current.width = w;
@@ -334,8 +244,7 @@ export function Canvas({
 					p5.translate(ctrl.offset.x, ctrl.offset.y);
 					p5.scale(ctrl.zoom);
 					p5.scale(1, -1);
-					if (gol) drawGameOfLife(cfg, tiling, gen);
-					else drawTiling(cfg, tiling);
+					drawTiling(cfg, tiling);
 					p5.pop();
 
 					if (cfg.screenshotButtonHover) drawScreenshotOverlay();
@@ -348,10 +257,6 @@ export function Canvas({
 					const prevMouse = new Vector(p5.pmouseX, p5.pmouseY);
 					ctrl.targetOffset.add(Vector.sub(mouse, prevMouse));
 				}
-
-				prevRef.current.ruleType = cfg.ruleType;
-				prevRef.current.golRule = cfg.golRule;
-				prevRef.current.golRules = cfg.golRules;
 
 				if (cfg.takeScreenshot) {
 					takeScreenshotImpl(cfg, tiling);
@@ -416,34 +321,13 @@ export function Canvas({
 				<TilingInfo tileCount={tileCount} vcs={vcs} />
 			</div>
 
-			{showGameOfLife ? (
-				<div className="absolute top-4 right-4 flex flex-col gap-4 z-10">
-					<button
-						className="bg-accent hover:bg-accent-hover text-accent-contrast font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-						onClick={() => {
-							resetGolRef.current = true;
-						}}
-					>
-						<RefreshCw size={18} />
-						Randomize
-					</button>
-					<div className="w-72">
-						<LiveChart
-							alivePercentage={alivePercentage}
-							iterationCount={iterationCount}
-							behaviorData={behaviorData}
-						/>
-					</div>
-				</div>
-			) : null}
-
-			{!showGameOfLife && !translationalCell && isDualRule ? (
+			{!translationalCell && isDualRule ? (
 				<div className="absolute bottom-4 right-4 z-20">
 					<ColorPad value={colorParams} onChange={(v) => setCfg({ colorParams: v })} />
 				</div>
 			) : null}
 
-			{!showGameOfLife && showTilingRuleInput && !translationalCell ? (
+			{showTilingRuleInput && !translationalCell ? (
 				<div className="absolute bottom-8 right-[50%] translate-x-[50%] z-20 w-80">
 					<div className="flex flex-col gap-3 bg-surface-overlay/90 rounded-lg p-2 pt-3 justify-center items-center w-full">
 						<label htmlFor="tilingRule" className="text-lg text-center font-bold leading-none text-fg">

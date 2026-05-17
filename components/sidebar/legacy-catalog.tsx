@@ -52,22 +52,13 @@ export function LegacyCatalog() {
 
 	const totalRules = tilingRules.reduce((acc, g) => acc + g.rules.length, 0);
 
-	const loadTiling = (payload: {
-		name: string;
-		cr: string;
-		rulestring: string;
-		golRules: unknown;
-	}) => {
+	const loadTiling = (payload: { name: string; cr: string; rulestring: string }) => {
 		setCfg({
 			selectedTiling: {
 				name: payload.name,
 				rulestring: payload.rulestring,
 				cr: payload.cr,
 				dualname: selectedDualname,
-				golRules: (payload.golRules as { standard: string[]; dual: string[] }) ?? {
-					standard: [],
-					dual: [],
-				},
 			},
 		});
 	};
@@ -149,7 +140,6 @@ export function LegacyCatalog() {
 										name: string;
 										cr: string;
 										rulestring: string;
-										golRules: unknown;
 										imageUrl: string;
 										dualImageUrl: string;
 										dualname: string;
@@ -161,7 +151,6 @@ export function LegacyCatalog() {
 											name={tiling.name}
 											cr={tiling.cr}
 											rulestring={tiling.rulestring}
-											golRules={tiling.golRules}
 											imageUrl={tiling.imageUrl}
 											dualImageUrl={tiling.dualImageUrl}
 											onClick={loadTiling}
@@ -172,7 +161,6 @@ export function LegacyCatalog() {
 												name={tiling.dualname}
 												cr={tiling.cr}
 												rulestring={`${tiling.rulestring}*`}
-												golRules={tiling.golRules}
 												imageUrl={tiling.imageUrl}
 												dualImageUrl={tiling.dualImageUrl}
 												onClick={loadTiling}

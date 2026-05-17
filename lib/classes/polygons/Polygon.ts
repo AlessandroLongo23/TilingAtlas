@@ -1,6 +1,6 @@
 import { useConfiguration } from "@/stores/configuration";
 import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex, isWithinTolerance } from '@/utils';
-import { Vector, Behavior, State } from '@/classes';
+import { Vector } from '@/classes';
 import { tolerance } from "@/utils/tolerance";
 import { islamicAnglesForHalfways } from "@/utils/islamicNoise";
 
@@ -9,7 +9,6 @@ export class Polygon {
     name: string;
     neighbors: Polygon[];
     edgeNeighbors: Polygon[];
-    state: State;
     nextState: number;
     hue: number;
     vertices: Vector[];
@@ -18,7 +17,6 @@ export class Polygon {
     angle: number;
     anchor: Vector;
     dir: Vector;
-    behavior: Behavior;
     golNeighbors?: Polygon[];
     alive_neighbors: number;
     interior_angle: number;
@@ -30,8 +28,6 @@ export class Polygon {
         this.angle = 0;
         this.neighbors = [];
         this.edgeNeighbors = [];
-        this.state = State.DEAD;
-        this.nextState = State.DEAD;
         this.sides = [];
         this.angles = [];
 
@@ -273,38 +269,6 @@ export class Polygon {
             ctx.line(h.x, h.y, tipA.x, tipA.y);
             ctx.line(h.x, h.y, tipB.x, tipB.y);
         }
-    }
-
-    showGameOfLife = (ctx, ruleType, parsedGolRule, rules) => {
-        ctx.push();
-        
-        if (useConfiguration.getState().liveChartMode === 'count') {
-            if (this.state === 0) {
-                ctx.fill(0, 0, 100);
-            } else if (this.state === 1) {
-                ctx.fill(0, 0, 0);
-            } else {
-                const maxGenerations = ruleType === 'Single' ? parsedGolRule.generations : rules[this.n].generations;
-                const progress = (this.state - 1) / (maxGenerations - 1);
-                const brightness = progress * 100;
-                ctx.fill(0, 0, brightness);
-            }
-        } else {
-            if (this.behavior === Behavior.DECREASING) {
-                ctx.fill(0, 0, 100);
-            } else if (this.behavior === Behavior.INCREASING) {
-                ctx.fill(0, 0, 0);
-            } else {
-                ctx.fill(345, 50, 100);
-            }
-        }
-
-        ctx.beginShape();
-        for (let i = 0; i < this.vertices.length; i++) {
-            ctx.vertex(this.vertices[i].x, this.vertices[i].y);
-        }
-        ctx.endShape(ctx.CLOSE);
-        ctx.pop();
     }
 
     getName = (coordinate: Vector | null = null): string => {

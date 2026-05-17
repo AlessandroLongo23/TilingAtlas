@@ -5,7 +5,6 @@ export * from "./header";
 export * from "./modalState";
 export * from "./screenshotPreview";
 export * from "./vertexTypes";
-export * from "./gameOfLifeRules";
 export * from "./debug";
 export * from "./pipelineProgress";
 export * from "./legacyTilingStore";

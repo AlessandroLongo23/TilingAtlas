@@ -2,7 +2,6 @@
 export * from "./Vector";
 export * from "./Transform";
 export * from "./Tiling";
-export * from "./GameOfLifeRule";
 export * from "./TilingChecker";
 
 // Polygons

@@ -1,13 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { sounds } from "@/lib/utils/sounds";
 
 interface TilingCardPayload {
 	name: string;
 	cr: string;
 	rulestring: string;
-	golRules: unknown;
 }
 
 interface LegacyTilingCardProps extends TilingCardPayload {
@@ -31,7 +29,6 @@ export function LegacyTilingCard({
 	name,
 	cr,
 	rulestring,
-	golRules,
 	imageUrl,
 	dualImageUrl,
 	onClick,
@@ -42,10 +39,7 @@ export function LegacyTilingCard({
 
 	return (
 		<button
-			onClick={() => {
-				sounds.button();
-				onClick({ name, cr, rulestring, golRules });
-			}}
+			onClick={() => onClick({ name, cr, rulestring })}
 			className="w-full p-3 border border-line bg-surface-overlay/40 hover:bg-surface-overlay/60 transition-all rounded-lg mb-2 text-left group cursor-pointer"
 		>
 			<div className="flex flex-col gap-2">
