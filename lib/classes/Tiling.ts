@@ -1,10 +1,11 @@
 import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
+import type { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { islamicAnglesForHalfways } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
 
-export type VCWithOccurrences = { vc: { polygons: Polygon[]; name: string }; occurrences: number };
+export type VCWithOccurrences = { vc: VertexConfiguration; occurrences: number };
 
 export class Tiling {
     nodes: Polygon[];

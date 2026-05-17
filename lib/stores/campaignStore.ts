@@ -6,7 +6,7 @@ import {
 	type CampaignTiling,
 } from "@/lib/services/campaignService";
 
-export interface TilingFilters {
+export interface CampaignTilingFilters {
 	kValues?: number[];
 	polygonNames?: string[];
 	wallpaperGroup?: string;
@@ -22,7 +22,7 @@ interface CampaignStoreState {
 
 	initialize: () => Promise<void>;
 	refresh: () => Promise<void>;
-	filterTilings: (filters?: TilingFilters) => CampaignTiling[];
+	filterTilings: (filters?: CampaignTilingFilters) => CampaignTiling[];
 }
 
 export const useCampaignStore = create<CampaignStoreState>()((set, get) => ({
@@ -63,7 +63,7 @@ export const useCampaignStore = create<CampaignStoreState>()((set, get) => ({
 		}
 	},
 
-	filterTilings(filters: TilingFilters = {}) {
+	filterTilings(filters: CampaignTilingFilters = {}) {
 		const { campaigns, tilings } = get();
 		return tilings.filter((t) => {
 			if (filters.kValues && filters.kValues.length > 0 && !filters.kValues.includes(t.k)) return false;
@@ -88,5 +88,5 @@ export const campaignStore = {
 	get initialized() { return useCampaignStore.getState().initialized; },
 	initialize: () => useCampaignStore.getState().initialize(),
 	refresh: () => useCampaignStore.getState().refresh(),
-	filterTilings: (f?: TilingFilters) => useCampaignStore.getState().filterTilings(f),
+	filterTilings: (f?: CampaignTilingFilters) => useCampaignStore.getState().filterTilings(f),
 };

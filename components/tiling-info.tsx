@@ -2,14 +2,9 @@
 
 import { useState } from "react";
 import { Info } from "lucide-react";
-import type { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
+import type { VCWithOccurrences } from "@/classes/Tiling";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
 import { Button } from "./ui/button";
-
-interface VCWithOccurrences {
-	vc: VertexConfiguration;
-	occurrences: number;
-}
 
 interface TilingInfoProps {
 	tileCount?: number;
