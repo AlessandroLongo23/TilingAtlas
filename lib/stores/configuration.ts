@@ -5,6 +5,7 @@ export interface SelectedTiling {
 	name: string;
 	rulestring: string;
 	cr: string;
+	dualname: string;
 }
 
 export interface Controls {
