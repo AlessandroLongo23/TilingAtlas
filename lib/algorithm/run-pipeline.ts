@@ -17,6 +17,9 @@ import {
 	SeedBuilder,
 	SeedExpander,
 	SeedConfiguration,
+	type CompactSeedConfiguration,
+	type CompactSeedConfigurationShort,
+	type FullSeedConfiguration,
 	TranslationalCellExtractor,
 	Vector,
 	RegularPolygon,
@@ -430,7 +433,10 @@ function expandSeedsForK(
 				for (let i = 0; i < configs.length; i++) {
 					processed++;
 					log.progress('Seeds', processed, totalToProcess);
-					const seed = SeedConfiguration.decodeCompact(configs[i], vcLibrary);
+					const seed = SeedConfiguration.decodeCompact(
+						configs[i] as CompactSeedConfiguration | CompactSeedConfigurationShort,
+						vcLibrary,
+					);
 					const count = expander.expand(seed, (patch) => {
 						const encodedPolygons = patch.map((p) =>
 							polygonToShort(p.encode() as Record<string, unknown>)
@@ -677,17 +683,22 @@ function tilingsGeneration(
 	}
 }
 
+type SeedConfigPayload =
+	| CompactSeedConfiguration
+	| CompactSeedConfigurationShort
+	| FullSeedConfiguration;
+
 function loadSeedConfigBatches(
 	paramsFolder: string,
 	k: number,
 	m: number,
 	onProgress?: (phase: string, current: number, total: number, msg?: string) => void
-): { format: string; configs: unknown[]; vcLibrary?: string[] } {
+): { format: string; configs: SeedConfigPayload[]; vcLibrary?: string[] } {
 	const folder = `${typeBasePath(paramsFolder)}/seedConfigurations/k=${k}/m=${m}`;
 	const manifest = JSON.parse(fs.readFileSync(`${folder}/manifest.json`, 'utf8'));
 	const total = manifest.total;
 	const format = manifest.format || 'compact';
-	const configs: unknown[] = [];
+	const configs: SeedConfigPayload[] = [];
 	let vcLibrary: string[] | undefined;
 	if (manifest.vcLibrary) {
 		try {
@@ -704,11 +715,11 @@ function loadSeedConfigBatches(
 		const baseName = `seedConfigurations_${String(batchIndex).padStart(4, '0')}`;
 		const gzPath = `${folder}/${baseName}.json.gz`;
 		const jsonPath = `${folder}/${baseName}.json`;
-		let batch: unknown[];
+		let batch: SeedConfigPayload[];
 		if (fs.existsSync(gzPath)) {
-			batch = JSON.parse(zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8'));
+			batch = JSON.parse(zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8')) as SeedConfigPayload[];
 		} else {
-			batch = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+			batch = JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as SeedConfigPayload[];
 		}
 		configs.push(...batch);
 	}

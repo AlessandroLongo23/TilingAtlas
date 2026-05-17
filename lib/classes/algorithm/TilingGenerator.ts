@@ -3,6 +3,7 @@ import {
     type Gyration,
     type Reflection,
     type CompactSeedConfiguration,
+    type CompactSeedConfigurationShort,
     type FullSeedConfiguration,
 } from "@/classes";
 import { AlgorithmTiling } from "./Tiling";
@@ -73,7 +74,7 @@ export class AlgorithmTilingGenerator {
         k: number,
         m: number,
         onProgress?: PhaseProgressCallback,
-        seedConfigs?: { format: string; configs: (CompactSeedConfiguration | FullSeedConfiguration)[]; vcLibrary?: string[] }
+        seedConfigs?: { format: string; configs: (CompactSeedConfiguration | CompactSeedConfigurationShort | FullSeedConfiguration)[]; vcLibrary?: string[] }
     ): AlgorithmTiling[] => {
         const { format, configs, vcLibrary } = seedConfigs ?? this.loadSeedConfigurations(k, m, onProgress);
         const tilings: AlgorithmTiling[] = [];
