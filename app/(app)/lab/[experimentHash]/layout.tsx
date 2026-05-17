@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { findCampaignByHash } from "@/lib/services/campaignService";
+import { getCampaign } from "@/lib/services/getCampaign";
 import {
 	getSeedConfigurationsManifestUrl,
 	getExpandedSeedsManifestUrl,
@@ -42,8 +41,7 @@ async function sumManifestTotals(
 
 export default async function ExperimentLayout({ params, children }: LayoutProps) {
 	const { experimentHash } = await params;
-	const sb = await createClient();
-	const campaign = await findCampaignByHash(experimentHash, sb);
+	const campaign = await getCampaign(experimentHash);
 	if (!campaign) notFound();
 
 	let badgeCounts: { seeds: number; expandedSeeds: number; tilings: number } | null = null;

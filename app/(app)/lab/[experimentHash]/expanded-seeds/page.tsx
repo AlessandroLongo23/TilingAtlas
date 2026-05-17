@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { findCampaignByHash } from "@/lib/services/campaignService";
+import { getCampaign } from "@/lib/services/getCampaign";
 import { ExpandedSeedsClient } from "./_expanded-seeds-client";
 
 export default async function ExpandedSeedsPage({
@@ -9,8 +8,7 @@ export default async function ExpandedSeedsPage({
 	params: Promise<{ experimentHash: string }>;
 }) {
 	const { experimentHash } = await params;
-	const sb = await createClient();
-	const campaign = await findCampaignByHash(experimentHash, sb);
+	const campaign = await getCampaign(experimentHash);
 	if (!campaign) notFound();
 	return (
 		<ExpandedSeedsClient

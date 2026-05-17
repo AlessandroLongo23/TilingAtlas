@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCampaign } from "@/lib/services/getCampaign";
 import {
-	findCampaignByHash,
 	fetchTilingsForCampaign,
 	type CampaignTiling,
 } from "@/lib/services/campaignService";
@@ -27,8 +27,7 @@ export default async function TilingsPage({
 	const k = sp.k ? parseInt(sp.k, 10) : null;
 	const m = sp.m ? parseInt(sp.m, 10) : 1;
 
-	const sb = await createClient();
-	const campaign = await findCampaignByHash(experimentHash, sb);
+	const campaign = await getCampaign(experimentHash);
 	if (!campaign) notFound();
 
 	// Storage-backed (Gold Standard) campaigns — page through gzip-batched
@@ -68,6 +67,7 @@ export default async function TilingsPage({
 	}
 
 	// DB-backed path (user campaigns).
+	const sb = await createClient();
 	const all = await fetchTilingsForCampaign(campaign.id, sb);
 	const filtered = k !== null ? all.filter((t) => t.k === k) : all;
 	const total = filtered.length;
