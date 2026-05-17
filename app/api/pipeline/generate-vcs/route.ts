@@ -4,12 +4,9 @@ import { compareVertexConfigurationNames } from "@/lib/utils/geometry";
 import { validateParamsFolder } from "@/lib/algorithm/paramsFolder";
 import { PIPELINE_BUCKET } from "@/lib/services/pipelineStorage";
 import { createServiceRoleClient } from "@/lib/supabase/service";
+import { streamLine } from "@/lib/api/streamLine";
 
 export const runtime = "nodejs";
-
-function streamLine(controller: ReadableStreamDefaultController<Uint8Array>, data: object) {
-	controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + "\n"));
-}
 
 export async function POST(request: Request) {
 	try {

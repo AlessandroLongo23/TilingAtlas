@@ -9,13 +9,10 @@ import { BATCH_SIZE } from "@/lib/constants";
 import { PIPELINE_BUCKET } from "@/lib/services/pipelineStorage";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { streamLine } from "@/lib/api/streamLine";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
-
-function streamLine(controller: ReadableStreamDefaultController<Uint8Array>, data: object) {
-	controller.enqueue(new TextEncoder().encode(JSON.stringify(data) + "\n"));
-}
 
 async function loadSeedConfigBatches(
 	supabase: SupabaseClient,
