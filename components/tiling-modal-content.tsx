@@ -87,8 +87,8 @@ export function TilingModalContent() {
 	}, [filters.selectedPolygons]);
 	const selectedVertexTypes = filters.selectedVertexTypes;
 	const showDual = filters.showDual;
-	const polygonFilterMode = filters.polygonFilterMode as FilterMode;
-	const vertexTypeFilterMode = filters.vertexTypeFilterMode as FilterMode;
+	const polygonFilterMode = filters.polygonFilterMode;
+	const vertexTypeFilterMode = filters.vertexTypeFilterMode;
 
 	const activeFiltersCount =
 		selectedTypes.length + selectedPolygons.length + selectedVertexTypes.length + (showDual ? 1 : 0);

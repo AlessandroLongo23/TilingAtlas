@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { FilterMode } from "@/components/tiling-filter-bar";
 
 interface TilingModalState {
 	isOpen: boolean;
@@ -16,8 +17,8 @@ export interface TilingFilters {
 	selectedPolygons: string[];
 	selectedVertexTypes: string[];
 	showDual: boolean;
-	polygonFilterMode: "exact" | "include" | "exclude";
-	vertexTypeFilterMode: "exact" | "include" | "exclude";
+	polygonFilterMode: FilterMode;
+	vertexTypeFilterMode: FilterMode;
 }
 
 interface TilingFiltersState extends TilingFilters {
