@@ -82,33 +82,33 @@ export function PolygonPicker({
 		}
 	};
 
-	const getNMax = (type: string): number => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		return (generatorParameters as any)[type]?.n_max ?? N_MAX_RANGE.default;
+	const getNMax = (type: PolygonType): number => {
+		const key = type as keyof GeneratorParameters;
+		return generatorParameters[key]?.n_max ?? N_MAX_RANGE.default;
 	};
 
-	const setNMax = (type: string, val: number) => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		if ((generatorParameters as any)[type] !== undefined) {
+	const setNMax = (type: PolygonType, val: number) => {
+		const key = type as keyof GeneratorParameters;
+		const existing = generatorParameters[key];
+		if (existing !== undefined) {
 			onGeneratorParametersChange({
 				...generatorParameters,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				[type]: { ...(generatorParameters as any)[type], n_max: val },
+				[key]: { ...existing, n_max: val },
 			});
 		}
 	};
 
-	const toggleCategoryEnabled = (type: string) => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		if ((generatorParameters as any)[type] !== undefined) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const { [type]: _removed, ...rest } = generatorParameters as any;
-			onGeneratorParametersChange(rest as GeneratorParameters);
+	const toggleCategoryEnabled = (type: PolygonType) => {
+		const key = type as keyof GeneratorParameters;
+		if (generatorParameters[key] !== undefined) {
+			const next = { ...generatorParameters };
+			delete next[key];
+			onGeneratorParametersChange(next);
 		} else {
 			onGeneratorParametersChange({
 				...generatorParameters,
-				[type]: { n_max: N_MAX_RANGE.default },
-			} as GeneratorParameters);
+				[key]: { n_max: N_MAX_RANGE.default },
+			});
 		}
 	};
 
@@ -125,8 +125,7 @@ export function PolygonPicker({
 
 			{categoryOptions.map(({ id: type, label }) => {
 				const names = byType.get(type) ?? [];
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const enabled = (generatorParameters as any)[type] !== undefined;
+				const enabled = generatorParameters[type as keyof GeneratorParameters] !== undefined;
 				const allSelected = names.length > 0 && names.every((n) => selectedNames.includes(n));
 				const someSelected = names.some((n) => selectedNames.includes(n));
 
