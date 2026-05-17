@@ -1,7 +1,5 @@
 export * from "./constants";
 export * from "./configuration";
-export * from "./audio";
-export * from "./header";
 export * from "./modalState";
 export * from "./screenshotPreview";
 export * from "./vertexTypes";

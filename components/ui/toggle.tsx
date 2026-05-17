@@ -1,6 +1,5 @@
 "use client";
 
-import { sounds } from "@/lib/utils/sounds";
 import { cn } from "@/lib/utils/cn";
 
 interface ToggleProps {
@@ -26,12 +25,8 @@ export function Toggle({
 	align = "left",
 	padding = "py-2 px-4",
 }: ToggleProps) {
-	const click = (v: string, sfx: "on" | "off") => {
-		if (value !== v && !disabled) {
-			onChange(v);
-			if (sfx === "on") sounds.toggleOn();
-			else sounds.toggleOff();
-		}
+	const click = (v: string) => {
+		if (value !== v && !disabled) onChange(v);
 	};
 
 	return (
@@ -48,7 +43,7 @@ export function Toggle({
 					role="radio"
 					aria-checked={value === leftValue}
 					disabled={disabled}
-					onClick={() => click(leftValue, "on")}
+					onClick={() => click(leftValue)}
 					className={cn(
 						"relative text-sm font-medium transition-all duration-200 ease-in-out rounded-l-md border border-r-0 focus:z-10 focus:outline-none focus:ring-1 focus:ring-line-focus/40",
 						padding,
@@ -66,7 +61,7 @@ export function Toggle({
 					role="radio"
 					aria-checked={value === rightValue}
 					disabled={disabled}
-					onClick={() => click(rightValue, "off")}
+					onClick={() => click(rightValue)}
 					className={cn(
 						"relative text-sm font-medium transition-all duration-200 ease-in-out rounded-r-md border focus:z-10 focus:outline-none focus:ring-1 focus:ring-line-focus/40",
 						padding,

@@ -1,8 +1,5 @@
 "use client";
 
-import { useRef, type MouseEvent } from "react";
-import { sounds } from "@/lib/utils/sounds";
-
 interface SliderProps {
 	id?: string;
 	label?: string;
@@ -26,19 +23,6 @@ export function Slider({
 	disabled = false,
 	unit = "",
 }: SliderProps) {
-	const last = useRef(value);
-
-	const handleMouseMove = (e: MouseEvent<HTMLInputElement>) => {
-		if (e.buttons === 1) {
-			const next = Number((e.target as HTMLInputElement).value);
-			if (next !== last.current) {
-				sounds.slider(0.02);
-				last.current = next;
-			}
-			onChange(next);
-		}
-	};
-
 	return (
 		<div className="grid w-full gap-2">
 			{label ? (
@@ -56,7 +40,6 @@ export function Slider({
 				type="range"
 				value={value}
 				onChange={(e) => onChange(Number(e.target.value))}
-				onMouseMove={handleMouseMove}
 				min={min}
 				max={max}
 				step={step}

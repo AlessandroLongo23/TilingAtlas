@@ -5,7 +5,6 @@ export * from "./storageFormat";
 export * from "./storageKey";
 export * from "./utils";
 export * from "./optimizing";
-export * from "./sounds";
 export * from "./filterHelpers";
 export * from "./compactSeedName";
 export * from "./vcChiral";

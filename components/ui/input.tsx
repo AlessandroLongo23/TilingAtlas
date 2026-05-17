@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type ComponentProps } from "react";
-import { sounds } from "@/lib/utils/sounds";
 import { cn } from "@/lib/utils/cn";
 
 type InputSize = "sm" | "md" | "lg";
@@ -51,20 +50,12 @@ export function Input({
 	size = "md",
 }: InputProps) {
 	const [internal, setInternal] = useState(value);
-	const prev = useRef(value);
 	const incTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const decTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		setInternal(value);
 	}, [value]);
-
-	useEffect(() => {
-		if (type === "number" && internal !== prev.current) {
-			sounds.slider();
-			prev.current = internal;
-		}
-	}, [internal, type]);
 
 	const emit = (next: number) => {
 		setInternal(next);
@@ -113,11 +104,8 @@ export function Input({
 	};
 
 	const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
-		const oldValue = internal;
 		if (type === "number") {
-			const n = Number(e.target.value);
-			setInternal(n);
-			if (oldValue !== n) sounds.slider();
+			setInternal(Number(e.target.value));
 		} else {
 			setInternal(e.target.value);
 		}

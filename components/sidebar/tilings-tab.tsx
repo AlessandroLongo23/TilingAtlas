@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { sounds } from "@/lib/utils/sounds";
 import type { CampaignTiling } from "@/services/campaignService";
 import { NewTilingsCatalog } from "./new-tilings-catalog";
 import { LegacyCatalog } from "./legacy-catalog";
@@ -120,10 +119,7 @@ export function TilingsTab({ newTilings, onNewTilingSelect }: TilingsTabProps) {
 								fullWidth
 								icon={Camera}
 								label="Screenshot"
-								onClick={() => {
-									setCfg({ takeScreenshot: true });
-									sounds.screenshot();
-								}}
+								onClick={() => setCfg({ takeScreenshot: true })}
 							/>
 						</div>
 						<div

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ChangeEvent, type MouseEvent } from "react";
-import { sounds } from "@/lib/utils/sounds";
+import { type ChangeEvent } from "react";
 
 type SingleValue = number;
 type RangeValue = [number, number];
@@ -33,32 +32,6 @@ export function RangeSlider({
 	const rangeMin = isRange ? (value as RangeValue)[0] : min;
 	const rangeMax = isRange ? (value as RangeValue)[1] : max;
 	const isCollapsed = isRange && rangeMin === rangeMax;
-
-	const lastLow = useRef(min);
-	const lastHigh = useRef(max);
-
-	useEffect(() => {
-		if (isRange) {
-			const [a, b] = value as RangeValue;
-			lastLow.current = a;
-			lastHigh.current = b;
-		} else {
-			const v = value as SingleValue;
-			lastLow.current = v;
-			lastHigh.current = v;
-		}
-	}, [value, isRange]);
-
-	const handleSingleMouseMove = (e: MouseEvent<HTMLInputElement>) => {
-		if (e.buttons === 1) {
-			const next = Number((e.target as HTMLInputElement).value);
-			if (next !== lastLow.current) {
-				sounds.slider(0.02);
-				lastLow.current = next;
-			}
-			onChange(next);
-		}
-	};
 
 	const handleCollapsedInput = (e: ChangeEvent<HTMLInputElement>) => {
 		const v = Number(e.target.value);
@@ -148,7 +121,6 @@ export function RangeSlider({
 					type="range"
 					value={value as SingleValue}
 					onChange={(e) => onChange(Number(e.target.value))}
-					onMouseMove={handleSingleMouseMove}
 					min={min}
 					max={max}
 					step={step}

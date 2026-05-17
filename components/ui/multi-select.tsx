@@ -1,6 +1,5 @@
 "use client";
 
-import { sounds } from "@/lib/utils/sounds";
 import { cn } from "@/lib/utils/cn";
 
 export interface MultiSelectOption {
@@ -24,22 +23,13 @@ export function MultiSelect({
 	const toggle = (id: string) => {
 		if (selected.includes(id)) {
 			onSelectedChange(selected.filter((s) => s !== id));
-			sounds.toggleOff();
 		} else {
 			onSelectedChange([...selected, id]);
-			sounds.toggleOn();
 		}
 	};
 
-	const selectAll = () => {
-		onSelectedChange(options.map((o) => o.id));
-		sounds.toggleOn();
-	};
-
-	const deselectAll = () => {
-		onSelectedChange([]);
-		sounds.toggleOff();
-	};
+	const selectAll = () => onSelectedChange(options.map((o) => o.id));
+	const deselectAll = () => onSelectedChange([]);
 
 	const allSelected = selected.length === options.length;
 

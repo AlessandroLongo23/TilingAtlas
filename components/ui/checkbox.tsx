@@ -1,7 +1,6 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { sounds } from "@/lib/utils/sounds";
 
 interface CheckboxProps {
 	id?: string;
@@ -14,10 +13,7 @@ interface CheckboxProps {
 export function Checkbox({ id, label, checked, onCheckedChange, disabled = false }: CheckboxProps) {
 	const toggle = () => {
 		if (disabled) return;
-		const next = !checked;
-		onCheckedChange(next);
-		if (next) sounds.toggleOn();
-		else sounds.toggleOff();
+		onCheckedChange(!checked);
 	};
 
 	return (
@@ -39,11 +35,7 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 					type="checkbox"
 					id={id}
 					checked={checked}
-					onChange={(e) => {
-						onCheckedChange(e.target.checked);
-						if (e.target.checked) sounds.toggleOn();
-						else sounds.toggleOff();
-					}}
+					onChange={(e) => onCheckedChange(e.target.checked)}
 					disabled={disabled}
 					className="peer h-4 w-4 appearance-none rounded border border-line-strong bg-surface-overlay/50 checked:bg-accent-subtle checked:border-line-focus focus:outline-none focus:ring-1 focus:ring-line-focus/40 focus:ring-offset-1 focus:ring-offset-surface-raised disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
 				/>
