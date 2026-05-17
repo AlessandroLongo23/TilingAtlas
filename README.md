@@ -86,11 +86,6 @@ proxy.ts                 Next 16 request proxy (was middleware.ts in Next 15)
 
 ## Known caveats
 
-- `next.config.ts` sets `typescript.ignoreBuildErrors: true` as a temporary
-  escape hatch. The source repo never ran `tsc --noEmit`; a handful of
-  inherited defects (`WallpaperGroup` constructor arity, `Tiling` union
-  access, `generatorEncoding` union keys) are tracked for post-migration
-  tightening.
 - `components/theory-sidebar.tsx` integrates with
   `lib/utils/tableOfContents.ts` but does **not** port the source's
   admonition plugin or IntersectionObserver-based GIF lazy-load. Both were

@@ -18,7 +18,7 @@ After every code change, run `pnpm build` to check for errors and warnings befor
 - `pnpm test` — Vitest once; `pnpm test:watch` for watch mode; `pnpm vitest run path/to/file.test.ts` for a single file
 - `pnpm pipeline` — runs `lib/algorithm/run-pipeline.ts` under `tsx` (server-only; uses `node:fs`)
 
-No `tsc --noEmit` step: `next.config.ts` sets `typescript.ignoreBuildErrors: true` as a temporary escape hatch (inherited defects in `WallpaperGroup`, `Tiling` unions, `generatorEncoding`).
+`pnpm build` runs the TypeScript type checker; type errors fail the build. For fast iterative checking, run `pnpm tsc --noEmit`.
 
 ## Environment variables
 
