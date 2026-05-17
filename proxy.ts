@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/session";
+import { unauthorized } from "@/lib/api/responses";
 
 export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/pipeline")) {
     const secret = request.headers.get("x-pipeline-secret");
     if (!secret || secret !== process.env.PIPELINE_SECRET) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorized();
     }
     return NextResponse.next();
   }

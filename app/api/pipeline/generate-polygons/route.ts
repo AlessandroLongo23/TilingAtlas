@@ -4,6 +4,7 @@ import { PolygonType, type GeneratorParameters } from "@/classes";
 import { toRadians } from "@/lib/utils/geometry";
 import { PIPELINE_BUCKET } from "@/lib/services/pipelineStorage";
 import { createServiceRoleClient } from "@/lib/supabase/service";
+import { badRequest, serviceUnavailable } from "@/lib/api/responses";
 
 export const runtime = "nodejs";
 
@@ -51,16 +52,15 @@ export async function POST(request: Request) {
 		}
 
 		if (Object.keys(parameters).length === 0) {
-			return NextResponse.json({ error: "At least one polygon type must be enabled" }, { status: 400 });
+			return badRequest("At least one polygon type must be enabled");
 		}
 
 		const { names, paramsFolder } = generatePolygons(parameters);
 
 		const supabase = createServiceRoleClient();
 		if (!supabase) {
-			return NextResponse.json(
-				{ error: "SUPABASE_SERVICE_ROLE_KEY not configured. Add it to .env.local for pipeline uploads." },
-				{ status: 503 },
+			return serviceUnavailable(
+				"SUPABASE_SERVICE_ROLE_KEY not configured. Add it to .env.local for pipeline uploads.",
 			);
 		}
 

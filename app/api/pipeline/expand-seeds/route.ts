@@ -10,6 +10,7 @@ import { PIPELINE_BUCKET } from "@/lib/services/pipelineStorage";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { streamLine } from "@/lib/api/streamLine";
+import { badRequest, serviceUnavailable } from "@/lib/api/responses";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -61,22 +62,20 @@ export async function POST(request: Request) {
 		const useStream = body?.stream === true;
 
 		if (!paramsFolder) {
-			return NextResponse.json(
-				{ error: "paramsFolder is required and must contain only letters, digits, underscores, or hyphens" },
-				{ status: 400 },
+			return badRequest(
+				"paramsFolder is required and must contain only letters, digits, underscores, or hyphens",
 			);
 		}
 
 		const supabase = createServiceRoleClient();
 		if (!supabase) {
-			return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY not configured." }, { status: 503 });
+			return serviceUnavailable("SUPABASE_SERVICE_ROLE_KEY not configured.");
 		}
 
 		const { configs, vcLibrary } = await loadSeedConfigBatches(supabase, paramsFolder, k, m);
 		if (configs.length === 0) {
-			return NextResponse.json(
-				{ error: `No seed configurations found for k=${k}/m=${m}. Run Generate Seed Configurations first.` },
-				{ status: 400 },
+			return badRequest(
+				`No seed configurations found for k=${k}/m=${m}. Run Generate Seed Configurations first.`,
 			);
 		}
 

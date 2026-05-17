@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { validateParamsFolder } from "@/lib/algorithm/paramsFolder";
 import { PIPELINE_BUCKET } from "@/lib/services/pipelineStorage";
 import { createServiceRoleClient } from "@/lib/supabase/service";
+import { badRequest, serviceUnavailable } from "@/lib/api/responses";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -50,35 +51,29 @@ async function discoverKm(
 }
 
 export async function GET(request: Request) {
-	try {
-		const url = new URL(request.url);
-		const folder = validateParamsFolder(url.searchParams.get("folder"));
-		if (!folder) {
-			return NextResponse.json(
-				{ error: "folder query param required and must contain only letters, digits, underscores, or hyphens" },
-				{ status: 400 },
-			);
-		}
-
-		const supabase = createServiceRoleClient();
-		if (!supabase) {
-			return NextResponse.json({ seedConfigurations: [], expandedSeeds: [], translationalCells: [] });
-		}
-
-		const result = {
-			seedConfigurations: [] as KmEntry[],
-			expandedSeeds: [] as KmEntry[],
-			translationalCells: [] as KmEntry[],
-		};
-		await Promise.all([
-			discoverKm(supabase, folder, "seedConfigurations", result.seedConfigurations),
-			discoverKm(supabase, folder, "expandedSeeds", result.expandedSeeds),
-			discoverKm(supabase, folder, "translationalCells", result.translationalCells),
-		]);
-
-		return NextResponse.json(result);
-	} catch (err) {
-		console.error("pipeline structure error:", err);
-		return NextResponse.json({ seedConfigurations: [], expandedSeeds: [], translationalCells: [] });
+	const url = new URL(request.url);
+	const folder = validateParamsFolder(url.searchParams.get("folder"));
+	if (!folder) {
+		return badRequest(
+			"folder query param required and must contain only letters, digits, underscores, or hyphens",
+		);
 	}
+
+	const supabase = createServiceRoleClient();
+	if (!supabase) {
+		return serviceUnavailable("SUPABASE_SERVICE_ROLE_KEY not configured.");
+	}
+
+	const result = {
+		seedConfigurations: [] as KmEntry[],
+		expandedSeeds: [] as KmEntry[],
+		translationalCells: [] as KmEntry[],
+	};
+	await Promise.all([
+		discoverKm(supabase, folder, "seedConfigurations", result.seedConfigurations),
+		discoverKm(supabase, folder, "expandedSeeds", result.expandedSeeds),
+		discoverKm(supabase, folder, "translationalCells", result.translationalCells),
+	]);
+
+	return NextResponse.json(result);
 }

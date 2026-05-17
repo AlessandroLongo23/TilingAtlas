@@ -14,6 +14,7 @@ import { BATCH_SIZE } from "@/lib/constants";
 import { PIPELINE_BUCKET } from "@/lib/services/pipelineStorage";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { streamLine } from "@/lib/api/streamLine";
+import { badRequest, serviceUnavailable } from "@/lib/api/responses";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -28,24 +29,20 @@ export async function POST(request: Request) {
 		const useStream = body?.stream === true;
 
 		if (!paramsFolder) {
-			return NextResponse.json(
-				{ error: "paramsFolder is required and must contain only letters, digits, underscores, or hyphens" },
-				{ status: 400 },
+			return badRequest(
+				"paramsFolder is required and must contain only letters, digits, underscores, or hyphens",
 			);
 		}
 
 		const supabase = createServiceRoleClient();
 		if (!supabase) {
-			return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY not configured." }, { status: 503 });
+			return serviceUnavailable("SUPABASE_SERVICE_ROLE_KEY not configured.");
 		}
 
 		// Determine which VCs to use
 		const vcsRes = await supabase.storage.from(PIPELINE_BUCKET).download(`${paramsFolder}/vcs.json`);
 		if (!vcsRes.data) {
-			return NextResponse.json(
-				{ error: "Missing vcs.json. Run Generate Vertex Configurations first." },
-				{ status: 400 },
-			);
+			return badRequest("Missing vcs.json. Run Generate Vertex Configurations first.");
 		}
 		const allVcNames: string[] = JSON.parse(await vcsRes.data.text());
 		let vcNames: string[];
@@ -54,7 +51,7 @@ export async function POST(request: Request) {
 				.filter((n) => allVcNames.includes(n))
 				.sort((a, b) => compareVertexConfigurationNames(a, b));
 			if (vcNames.length === 0) {
-				return NextResponse.json({ error: "No valid selected VCs found in vcs.json." }, { status: 400 });
+				return badRequest("No valid selected VCs found in vcs.json.");
 			}
 		} else {
 			vcNames = [...allVcNames].sort((a, b) => compareVertexConfigurationNames(a, b));

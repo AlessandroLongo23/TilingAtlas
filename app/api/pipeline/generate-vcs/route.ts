@@ -5,6 +5,7 @@ import { validateParamsFolder } from "@/lib/algorithm/paramsFolder";
 import { PIPELINE_BUCKET } from "@/lib/services/pipelineStorage";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { streamLine } from "@/lib/api/streamLine";
+import { badRequest, serviceUnavailable } from "@/lib/api/responses";
 
 export const runtime = "nodejs";
 
@@ -16,18 +17,17 @@ export async function POST(request: Request) {
 		const useStream = body?.stream === true;
 
 		if (!paramsFolder) {
-			return NextResponse.json(
-				{ error: "paramsFolder is required and must contain only letters, digits, underscores, or hyphens" },
-				{ status: 400 },
+			return badRequest(
+				"paramsFolder is required and must contain only letters, digits, underscores, or hyphens",
 			);
 		}
 		if (polygonNames.length === 0) {
-			return NextResponse.json({ error: "At least one polygon must be selected" }, { status: 400 });
+			return badRequest("At least one polygon must be selected");
 		}
 
 		const supabase = createServiceRoleClient();
 		if (!supabase) {
-			return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY not configured." }, { status: 503 });
+			return serviceUnavailable("SUPABASE_SERVICE_ROLE_KEY not configured.");
 		}
 
 		const compute = async () => {
