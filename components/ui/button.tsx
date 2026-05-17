@@ -58,52 +58,51 @@ const ICON_SIZE: Record<Size, string> = {
 const BASE =
 	"inline-flex items-center justify-center font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
-export function Button(props: ButtonProps) {
-	const {
-		variant = "secondary",
-		size = "md",
-		icon: Icon,
-		label,
-		fullWidth = false,
-		classes,
-		children,
-	} = props;
+function isLinkProps(p: ButtonProps): p is ButtonAsLink {
+	return "href" in p && p.href !== undefined;
+}
 
-	const className = cn(
+function computeClassName(p: CommonProps) {
+	return cn(
 		BASE,
-		VARIANT_CLASSES[variant],
-		SIZE_CLASSES[size],
-		fullWidth ? "w-full" : "",
-		classes,
+		VARIANT_CLASSES[p.variant ?? "secondary"],
+		SIZE_CLASSES[p.size ?? "md"],
+		p.fullWidth ? "w-full" : "",
+		p.classes,
 	);
+}
 
-	const content = (
+function renderContent(p: CommonProps) {
+	const size = p.size ?? "md";
+	const { icon: Icon, label, children } = p;
+	return (
 		<>
 			{Icon ? <Icon className={ICON_SIZE[size]} /> : null}
 			{size === "icon" ? null : (label ?? children)}
 		</>
 	);
+}
 
-	if ("href" in props && props.href !== undefined) {
-		// Link variant — strip common props and pass the rest through.
-		const {
-			variant: _v,
-			size: _s,
-			icon: _i,
-			label: _l,
-			fullWidth: _fw,
-			classes: _c,
-			children: _ch,
-			href,
-			...linkRest
-		} = props;
-		return (
-			<Link href={href} {...linkRest} className={cn(className, "cursor-pointer")}>
-				{content}
-			</Link>
-		);
-	}
+function ButtonAsLinkRender(props: ButtonAsLink) {
+	const {
+		variant: _v,
+		size: _s,
+		icon: _i,
+		label: _l,
+		fullWidth: _fw,
+		classes: _c,
+		children: _ch,
+		href,
+		...linkRest
+	} = props;
+	return (
+		<Link href={href} {...linkRest} className={cn(computeClassName(props), "cursor-pointer")}>
+			{renderContent(props)}
+		</Link>
+	);
+}
 
+function ButtonAsButtonRender(props: ButtonAsButton) {
 	const {
 		variant: _v,
 		size: _s,
@@ -115,18 +114,22 @@ export function Button(props: ButtonProps) {
 		disabled,
 		...buttonRest
 	} = props;
-
 	return (
 		<button
 			{...buttonRest}
 			disabled={disabled}
 			aria-disabled={disabled}
 			className={cn(
-				className,
+				computeClassName(props),
 				disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer",
 			)}
 		>
-			{content}
+			{renderContent(props)}
 		</button>
 	);
+}
+
+export function Button(props: ButtonProps) {
+	if (isLinkProps(props)) return <ButtonAsLinkRender {...props} />;
+	return <ButtonAsButtonRender {...props} />;
 }
