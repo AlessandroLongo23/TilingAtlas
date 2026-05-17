@@ -12,9 +12,8 @@ import { getEffectiveUniqueCount } from "@/lib/utils/vcChiral";
 import { SeedCard } from "@/components/seed-card";
 import { ExperimentSidebar } from "@/components/experiment-sidebar";
 import { Pagination } from "@/components/ui/pagination";
+import { LAB_ITEMS_PER_PAGE } from "@/lib/constants";
 import { useExperiment } from "../_experiment-context";
-
-const PAGE_SIZE = 25;
 
 interface SeedItem {
 	id: number;
@@ -95,7 +94,7 @@ export function SeedsClient({ polygonNames, kValues }: SeedsClientProps) {
 		[seedItems, filterK, filterM],
 	);
 
-	const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+	const paginated = filtered.slice((currentPage - 1) * LAB_ITEMS_PER_PAGE, currentPage * LAB_ITEMS_PER_PAGE);
 	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
 
 	return (
@@ -134,7 +133,7 @@ export function SeedsClient({ polygonNames, kValues }: SeedsClientProps) {
 						<>
 							<Pagination
 								totalItems={filtered.length}
-								pageSize={PAGE_SIZE}
+								pageSize={LAB_ITEMS_PER_PAGE}
 								currentPage={currentPage}
 								onPageChange={setCurrentPage}
 							/>
@@ -146,7 +145,7 @@ export function SeedsClient({ polygonNames, kValues }: SeedsClientProps) {
 							<div className="mt-4">
 								<Pagination
 									totalItems={filtered.length}
-									pageSize={PAGE_SIZE}
+									pageSize={LAB_ITEMS_PER_PAGE}
 									currentPage={currentPage}
 									onPageChange={setCurrentPage}
 								/>

@@ -10,9 +10,8 @@ import {
 	getTranslationalCellsBatchUrl,
 } from "@/lib/services/pipelineStorage";
 import { fetchPipelineJsonArray } from "@/lib/services/pipelineFetch";
+import { TILINGS_PER_PAGE } from "@/lib/constants";
 import { TilingsClient } from "./_tilings-client";
-
-const PAGE_SIZE = 48;
 
 export default async function TilingsPage({
 	params,
@@ -42,8 +41,8 @@ export default async function TilingsPage({
 			.catch(() => null);
 
 		const total = manifest?.total ?? 0;
-		const batchSize = manifest?.batchSize ?? PAGE_SIZE;
-		const offset = (pageNum - 1) * PAGE_SIZE;
+		const batchSize = manifest?.batchSize ?? TILINGS_PER_PAGE;
+		const offset = (pageNum - 1) * TILINGS_PER_PAGE;
 		const batchIndex = Math.floor(offset / batchSize);
 		const batchCount = Math.ceil(total / batchSize);
 
@@ -59,7 +58,7 @@ export default async function TilingsPage({
 				tilings={tilings}
 				total={total}
 				page={pageNum}
-				pageSize={PAGE_SIZE}
+				pageSize={TILINGS_PER_PAGE}
 				k={selectedK}
 				kValues={campaign.k_values ?? []}
 			/>
@@ -71,15 +70,15 @@ export default async function TilingsPage({
 	const all = await fetchTilingsForCampaign(campaign.id, sb);
 	const filtered = k !== null ? all.filter((t) => t.k === k) : all;
 	const total = filtered.length;
-	const offset = (pageNum - 1) * PAGE_SIZE;
-	const paged = filtered.slice(offset, offset + PAGE_SIZE) as CampaignTiling[];
+	const offset = (pageNum - 1) * TILINGS_PER_PAGE;
+	const paged = filtered.slice(offset, offset + TILINGS_PER_PAGE) as CampaignTiling[];
 
 	return (
 		<TilingsClient
 			tilings={paged}
 			total={total}
 			page={pageNum}
-			pageSize={PAGE_SIZE}
+			pageSize={TILINGS_PER_PAGE}
 			k={k}
 			kValues={campaign.k_values ?? []}
 		/>

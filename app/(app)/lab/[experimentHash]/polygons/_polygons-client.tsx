@@ -14,9 +14,8 @@ import {
 import { PolygonCard } from "@/components/polygon-card";
 import { ExperimentSidebar } from "@/components/experiment-sidebar";
 import { Pagination } from "@/components/ui/pagination";
+import { LAB_ITEMS_PER_PAGE } from "@/lib/constants";
 import { useExperiment } from "../_experiment-context";
-
-const PAGE_SIZE = 25;
 
 const TAG_LABEL: Record<string, string> = {
 	[PolygonType.REGULAR]: "Reg",
@@ -78,7 +77,7 @@ export function PolygonsClient({ polygonNames }: { polygonNames: string[] }) {
 		setBadge("polygons", items.length);
 	}, [items.length, setBadge]);
 
-	const paginated = items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+	const paginated = items.slice((currentPage - 1) * LAB_ITEMS_PER_PAGE, currentPage * LAB_ITEMS_PER_PAGE);
 	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
 
 	return (
@@ -101,7 +100,7 @@ export function PolygonsClient({ polygonNames }: { polygonNames: string[] }) {
 						<>
 							<Pagination
 								totalItems={items.length}
-								pageSize={PAGE_SIZE}
+								pageSize={LAB_ITEMS_PER_PAGE}
 								currentPage={currentPage}
 								onPageChange={setCurrentPage}
 							/>
@@ -121,7 +120,7 @@ export function PolygonsClient({ polygonNames }: { polygonNames: string[] }) {
 							<div className="mt-4">
 								<Pagination
 									totalItems={items.length}
-									pageSize={PAGE_SIZE}
+									pageSize={LAB_ITEMS_PER_PAGE}
 									currentPage={currentPage}
 									onPageChange={setCurrentPage}
 								/>

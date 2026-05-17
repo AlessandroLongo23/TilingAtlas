@@ -9,12 +9,11 @@ import { PageSidebar } from "@/components/page-sidebar";
 import { LibraryFilters, type LibraryFiltersValue } from "@/components/library-filters";
 import { TilingCard, resolveTilingLabel } from "@/components/tiling-card";
 import { Pagination } from "@/components/ui/pagination";
+import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 
 interface LibraryClientProps {
 	tilings: CampaignTiling[];
 }
-
-const PAGE_SIZE = 24;
 
 function matchesFilters(t: CampaignTiling & { campaign?: { is_exhaustive?: boolean } }, f: LibraryFiltersValue) {
 	if (f.kValues?.length && !f.kValues.includes(t.k)) return false;
@@ -78,7 +77,7 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 	}, [all, filters]);
 
 	const paginatedTilings = useMemo(
-		() => filteredTilings.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+		() => filteredTilings.slice((currentPage - 1) * LIBRARY_TILINGS_PER_PAGE, currentPage * LIBRARY_TILINGS_PER_PAGE),
 		[filteredTilings, currentPage],
 	);
 
@@ -147,7 +146,7 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 					<>
 						<Pagination
 							totalItems={filteredTilings.length}
-							pageSize={PAGE_SIZE}
+							pageSize={LIBRARY_TILINGS_PER_PAGE}
 							currentPage={currentPage}
 							onPageChange={setCurrentPage}
 						/>
@@ -159,7 +158,7 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 						<div className="mt-4">
 							<Pagination
 								totalItems={filteredTilings.length}
-								pageSize={PAGE_SIZE}
+								pageSize={LIBRARY_TILINGS_PER_PAGE}
 								currentPage={currentPage}
 								onPageChange={setCurrentPage}
 							/>

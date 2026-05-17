@@ -7,9 +7,8 @@ import { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
 import { VCCard } from "@/components/vc-card";
 import { ExperimentSidebar } from "@/components/experiment-sidebar";
 import { Pagination } from "@/components/ui/pagination";
+import { LAB_ITEMS_PER_PAGE } from "@/lib/constants";
 import { useExperiment } from "../_experiment-context";
-
-const PAGE_SIZE = 25;
 
 export function VCsClient({ polygonNames }: { polygonNames: string[] }) {
 	const { setBadge } = useExperiment();
@@ -42,7 +41,7 @@ export function VCsClient({ polygonNames }: { polygonNames: string[] }) {
 		[],
 	);
 
-	const paginated = (vcNames ?? []).slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+	const paginated = (vcNames ?? []).slice((currentPage - 1) * LAB_ITEMS_PER_PAGE, currentPage * LAB_ITEMS_PER_PAGE);
 	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
 
 	return (
@@ -70,7 +69,7 @@ export function VCsClient({ polygonNames }: { polygonNames: string[] }) {
 						<>
 							<Pagination
 								totalItems={vcNames.length}
-								pageSize={PAGE_SIZE}
+								pageSize={LAB_ITEMS_PER_PAGE}
 								currentPage={currentPage}
 								onPageChange={setCurrentPage}
 							/>
@@ -78,7 +77,7 @@ export function VCsClient({ polygonNames }: { polygonNames: string[] }) {
 								{paginated.map((name, i) => (
 									<VCCard
 										key={name}
-										id={(currentPage - 1) * PAGE_SIZE + i + 1}
+										id={(currentPage - 1) * LAB_ITEMS_PER_PAGE + i + 1}
 										name={name}
 										vc={makeVC(name)}
 										vertexCount={name.split(".").length}
@@ -88,7 +87,7 @@ export function VCsClient({ polygonNames }: { polygonNames: string[] }) {
 							<div className="mt-4">
 								<Pagination
 									totalItems={vcNames.length}
-									pageSize={PAGE_SIZE}
+									pageSize={LAB_ITEMS_PER_PAGE}
 									currentPage={currentPage}
 									onPageChange={setCurrentPage}
 								/>
