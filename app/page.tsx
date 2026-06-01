@@ -22,23 +22,23 @@ export default async function HomePage() {
 			) : null}
 			<div className="absolute inset-0 bg-black/55 pointer-events-none" />
 			<div className="relative max-w-md w-full rounded-lg overflow-hidden backdrop-blur-md shadow-xl border border-line bg-surface-overlay/40">
-					<div className="absolute inset-0 bg-linear-to-br from-zinc-800/50 via-zinc-900/50 to-black/50" />
-					<div className="relative z-10 p-8 md:p-10">
-						<h1 className="text-fg text-3xl md:text-4xl font-medium tracking-tight">
-							Welcome to <span className="font-bold text-accent">Tiling Atlas</span>
-						</h1>
-						<p className="mt-3 text-fg-secondary text-sm md:text-base font-light">
-							Explore a variety of interactive tiling patterns
-						</p>
-						<div className="mt-8 flex flex-col gap-3">
-							<Button href="/play" variant="primary" size="md" fullWidth label="Start Exploring" />
-							<div className="flex gap-2">
-								<Button href="/library" variant="secondary" size="md" fullWidth label="Library" />
-								<Button href="/lab" variant="secondary" size="md" fullWidth label="Lab" />
-							</div>
+				<div className="absolute inset-0 bg-linear-to-br from-zinc-800/50 via-zinc-900/50 to-black/50" />
+				<div className="relative z-10 p-8 md:p-10">
+					<h1 className="text-fg text-3xl md:text-4xl font-medium tracking-tight">
+						Welcome to <span className="font-bold text-accent">Tiling Atlas</span>
+					</h1>
+					<p className="mt-3 text-fg-secondary text-sm md:text-base font-light">
+						Explore a variety of interactive tiling patterns
+					</p>
+					<div className="mt-8 flex flex-col gap-3">
+						<Button href="/play" variant="primary" size="md" fullWidth label="Start Exploring" />
+						<div className="flex gap-2">
+							<Button href="/library" variant="secondary" size="md" fullWidth label="Library" />
+							<Button href="/lab" variant="secondary" size="md" fullWidth label="Lab" />
 						</div>
 					</div>
 				</div>
 			</div>
+		</div>
 	);
 }

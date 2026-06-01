@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Camera } from "lucide-react";
+import { Camera, Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { compactSeedName, compactToHtml } from "@/lib/utils/compactSeedName";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
@@ -124,6 +124,13 @@ export function TilingCard({ tiling, density = "comfortable", onClick }: TilingC
 					>
 						<Camera size={13} />
 					</button>
+				) : null}
+				{onClick ? (
+					<div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+						<span className="mb-2 inline-flex items-center gap-1.5 rounded-md bg-accent/90 px-2 py-1 text-[10px] font-medium text-white shadow-sm">
+							<Play size={11} fill="currentColor" /> Open in Play
+						</span>
+					</div>
 				) : null}
 			</div>
 			<div className={cn("flex flex-col", padClass)}>

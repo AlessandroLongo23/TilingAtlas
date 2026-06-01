@@ -152,7 +152,11 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 						/>
 						<div className="grid gap-3 mt-4" style={gridStyle}>
 							{paginatedTilings.map((tiling) => (
-								<TilingCard key={tiling.id} tiling={tiling} />
+								<TilingCard
+									key={tiling.id}
+									tiling={tiling}
+									onClick={(t) => router.push(`/play?tiling=${encodeURIComponent(t.id)}`)}
+								/>
 							))}
 						</div>
 						<div className="mt-4">

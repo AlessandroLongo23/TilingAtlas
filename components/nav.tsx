@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils/cn";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
-	{ href: "/theory", label: "Theory", icon: BookOpen },
+	{ href: "/play", label: "Play", icon: Gamepad2 },
 	{ href: "/library", label: "Library", icon: Library },
 	{ href: "/lab", label: "Lab", icon: FlaskConical },
-	{ href: "/play", label: "Play", icon: Gamepad2 },
+	{ href: "/theory", label: "Theory", icon: BookOpen },
 ];
 
 export function Nav() {
@@ -19,7 +19,7 @@ export function Nav() {
 	return (
 		<nav className="w-full shrink-0 flex items-center bg-surface-chrome border-b border-line-subtle px-4 h-12">
 			<Link href="/" className="flex items-center justify-center mr-4">
-				<span className="text-accent font-bold text-lg leading-none">T</span>
+				<span className="text-accent font-bold text-lg leading-none">Tiling Atlas</span>
 			</Link>
 
 			<div className="h-5 border-l border-line-subtle mr-3" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Canvas } from "@/components/canvas";
 import { Sidebar } from "@/components/sidebar";
 import { TilingModalContent } from "@/components/tiling-modal-content";
@@ -11,11 +12,23 @@ interface PlayClientProps {
 }
 
 export function PlayClient({ newTilings }: PlayClientProps) {
+	const searchParams = useSearchParams();
+	const requestedId = searchParams.get("tiling");
 	const canvasWrapRef = useRef<HTMLDivElement | null>(null);
 	const [size, setSize] = useState({ w: 0, h: 0 });
-	const [selectedNew, setSelectedNew] = useState<CampaignTiling | null>(() =>
-		newTilings.length > 0 ? newTilings[Math.floor(Math.random() * newTilings.length)] : null,
-	);
+	const [selectedNew, setSelectedNew] = useState<CampaignTiling | null>(() => {
+		if (requestedId) {
+			const match = newTilings.find((t) => t.id === requestedId);
+			if (match) return match;
+		}
+		return newTilings.length > 0 ? newTilings[Math.floor(Math.random() * newTilings.length)] : null;
+	});
+
+	useEffect(() => {
+		if (!requestedId) return;
+		const match = newTilings.find((t) => t.id === requestedId);
+		if (match && match.id !== selectedNew?.id) setSelectedNew(match);
+	}, [requestedId, newTilings, selectedNew?.id]);
 
 	useEffect(() => {
 		const el = canvasWrapRef.current;
