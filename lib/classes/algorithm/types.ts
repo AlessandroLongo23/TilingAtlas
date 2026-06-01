@@ -2,7 +2,13 @@ import { Polygon, PolygonType, Vector } from '@/classes';
 
 export interface GeneratorParameters {
     [PolygonType.REGULAR]?: {
-        n_max: number;
+        /** Upper bound for the contiguous range 3..n_max (legacy). Ignored if `ns` is set. */
+        n_max?: number;
+        /**
+         * Explicit set of regular polygon orders, e.g. [3,4,6,8,12] for the k-uniform gate.
+         * Required to avoid dragging non-tiling n (5,7,9,10,11) into the field order N.
+         */
+        ns?: number[];
     },
     [PolygonType.STAR_REGULAR]?: {
         n_max: number;

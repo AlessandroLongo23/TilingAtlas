@@ -1,5 +1,6 @@
 // Core
 export * from "./Vector";
+export * from "./Cyclotomic";
 export * from "./Transform";
 export * from "./Tiling";
 export * from "./TilingChecker";

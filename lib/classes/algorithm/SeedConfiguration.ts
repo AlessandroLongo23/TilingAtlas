@@ -13,6 +13,7 @@ import {
 } from "@/classes";
 import type { EncodedGyration, EncodedReflection } from "@/lib/algorithm/generatorEncoding";
 import { deduplicatePolygons, isWithinTolerance } from "@/utils";
+import { Cyclotomic, getActiveRing } from "../Cyclotomic";
 
 function polygonToShort(enc: Record<string, unknown>): Record<string, unknown> {
     const out: Record<string, unknown> = { t: enc.type, n: enc.n };
@@ -59,9 +60,12 @@ export interface CompactSeedConfiguration {
     vcs: (CompactVC | CompactVCWithId)[];
 }
 
-/** Short-key compact format: v=vcs, i=vcId, n=name, p=pos, r=rot. Points as [x,y]. */
+/** Short-key compact format: v=vcs, i=vcId, n=name, p=pos, r=rot.
+ *  `p` is a float point [x,y] (legacy) or an exact Cyclotomic { n, d } (exact form);
+ *  `r` is a float heading (legacy) or an integer ζ-step (exact form). */
+export type CompactPos = [number, number] | { n: string[]; d: string };
 export interface CompactSeedConfigurationShort {
-    v: ({ i: number; p: [number, number]; r: number } | { n: string; p: [number, number]; r: number })[];
+    v: ({ i: number; p: CompactPos; r: number } | { n: string; p: CompactPos; r: number })[];
 }
 
 export interface FullSeedConfiguration {
@@ -243,6 +247,16 @@ export class SeedConfiguration {
     encodeCompact = (vcLibrary?: string[], shortKeys = false): CompactSeedConfiguration | CompactSeedConfigurationShort => {
         if (shortKeys) {
             const items = this.vertexConfigurations.map((vc: VertexConfiguration) => {
+                // Exact generator-level form: integer first-edge orientation + exact shared vertex.
+                if (vc.hasExact()) {
+                    const r = this.getFirstEdgeRotK(vc);
+                    const p = vc.computeSharedVertexExact().encode();
+                    if (vcLibrary) {
+                        const vcId = vcLibrary.indexOf(vc.name);
+                        if (vcId >= 0) return { i: vcId, p, r };
+                    }
+                    return { n: vc.name, p, r };
+                }
                 const rot = this.getFirstEdgeHeading(vc);
                 const pos: [number, number] = [vc.sharedVertex.x, vc.sharedVertex.y];
                 if (vcLibrary) {
@@ -264,6 +278,25 @@ export class SeedConfiguration {
         });
         return { vcs: items };
     }
+
+    /** Integer ζ-exponent of the first edge from the shared vertex (exact decode round-trip).
+     *  fromName builds the canonical VC with this edge at direction 0, so this is the rotation. */
+    private getFirstEdgeRotK = (vc: VertexConfiguration): number => {
+        const shared = vc.computeSharedVertexExact();
+        const ring = shared.ring;
+        const N = ring.N;
+        for (const p of vc.polygons) {
+            const verts = p.exactVertices!;
+            const idx = verts.findIndex((v) => v.equals(shared));
+            if (idx !== -1) {
+                const next = verts[(idx + 1) % verts.length];
+                for (let k = 0; k < N; k++) {
+                    if (shared.add(Cyclotomic.zeta(ring, k)).equals(next)) return k;
+                }
+            }
+        }
+        return 0;
+    };
 
     /** Get the heading of the first edge emanating from the shared vertex (for decode round-trip). */
     private getFirstEdgeHeading = (vc: VertexConfiguration): number => {
@@ -288,8 +321,15 @@ export class SeedConfiguration {
             const pos = 'p' in c ? c.p : c.pos;
             const rot = 'r' in c ? c.r : c.rot;
             const vc = VertexConfiguration.fromName(name);
-            vc.rotate(new Vector(0, 0), rot);
-            vc.translate(new Vector(pos[0], pos[1]));
+            // Exact form: pos is an encoded Cyclotomic { n, d } and rot is an integer ζ-step.
+            if (pos && !Array.isArray(pos) && typeof pos === 'object' && vc.hasExact()) {
+                const ring = getActiveRing();
+                vc.rotateZeta(Cyclotomic.ZERO(ring), rot as number);
+                vc.translateExact(Cyclotomic.decode(ring, pos as { n: string[]; d: string }));
+            } else {
+                vc.rotate(new Vector(0, 0), rot);
+                vc.translate(new Vector(pos[0], pos[1]));
+            }
             return vc;
         });
         return new SeedConfiguration(vcs);

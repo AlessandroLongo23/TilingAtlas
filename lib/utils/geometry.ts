@@ -345,6 +345,19 @@ export const sdf = (vertices: Vector[], point: Vector): number => {
 }
 
 export const deduplicatePolygons = (polygons: Polygon[], tol: number = tolerance): Polygon[] => {
+    // Exact path: dedup by canonical exact key (O(n)), boundary-safe — no ε.
+    if (polygons.length > 0 && polygons.every((p) => p.hasExact())) {
+        const seen = new Set<string>();
+        const result: Polygon[] = [];
+        for (const p of polygons) {
+            const key = p.exactKey();
+            if (!seen.has(key)) {
+                seen.add(key);
+                result.push(p);
+            }
+        }
+        return result;
+    }
     return polygons.filter((p: Polygon, idx: number, self: Polygon[]) => {
         return idx === self.findIndex((other: Polygon) => p.isEquivalent(other, tol));
     });

@@ -1,6 +1,38 @@
-import { type GeneratorParameters, PolygonType, StarVertexTypes, Vector, PolygonSignature, VCGenerator, EquilateralPolygon, GenericPolygon } from '@/classes';
-import { coprime, isWithinTolerance, segmentsIntersect, toRadians } from '@/utils';
+import { type GeneratorParameters, PolygonType, StarVertexTypes, Vector, PolygonSignature, VCGenerator, EquilateralPolygon, GenericPolygon, CyclotomicRing } from '@/classes';
+import { coprime, gcd, isWithinTolerance, segmentsIntersect, toRadians } from '@/utils';
 import { tolerance } from '@/utils/tolerance';
+
+/** The explicit set of regular polygon orders for a run (honors `ns`, else 3..n_max). */
+export function regularOrders(parameters: GeneratorParameters): number[] {
+    const reg = parameters[PolygonType.REGULAR];
+    if (!reg) return [];
+    if (reg.ns && reg.ns.length) return [...reg.ns].sort((a, b) => a - b);
+    const nMax = reg.n_max ?? 0;
+    const out: number[] = [];
+    for (let n = 3; n <= nMax; n++) out.push(n);
+    return out;
+}
+
+function lcm(a: number, b: number): number {
+    return (a * b) / gcd(a, b);
+}
+
+/**
+ * Compute the field order N once per run from the enabled polygons (spec §5). For a regular
+ * n-gon the exterior turn is 2π/n (denominator n) and the inter-polygon interior-angle
+ * rotation π(n-2)/n pulls in the π → factor 2. So N = lcm(2, …enabled n). For {3,4,6,8,12}
+ * → 24. (Stars/parametric will add α-denominators in Phase 5.)
+ */
+export function computeOrder(parameters: GeneratorParameters): number {
+    let N = 2; // π term
+    for (const n of regularOrders(parameters)) N = lcm(N, n);
+    return N;
+}
+
+/** Build the single shared CyclotomicRing for a run from its generator parameters. */
+export function computeRing(parameters: GeneratorParameters): CyclotomicRing {
+    return CyclotomicRing.create(computeOrder(parameters));
+}
 
 class Segment {
     s: Vector;
@@ -19,11 +51,11 @@ export class PolygonsGenerator {
         this.polygons = [...additionalPolygons];
 
         if (parameters[PolygonType.REGULAR]) {
-            const n_max = parameters[PolygonType.REGULAR].n_max;
-            for (let n = 3; n <= n_max; n++) {
-                this.polygons.push(new PolygonSignature({ 
-                    type: PolygonType.REGULAR, 
-                    n: n 
+            const ns = regularOrders(parameters);
+            for (const n of ns) {
+                this.polygons.push(new PolygonSignature({
+                    type: PolygonType.REGULAR,
+                    n: n
                 }));
             }
         }

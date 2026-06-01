@@ -1,12 +1,15 @@
 import { SeedConfiguration } from './SeedConfiguration';
 import { VertexConfiguration } from './VertexConfiguration';
 import { Vector } from '../Vector';
+import { Cyclotomic, getActiveRing, zetaIndexFromAngle } from '../Cyclotomic';
 import type { Polygon } from '../polygons/Polygon';
 import { deduplicatePolygons, isWithinTolerance, isWithinAngularTolerance } from '@/utils';
 
 type PlacedVC = {
     center: Vector;
     neighboringVertices: Vector[];
+    /** Exact neighbouring vertices, index-aligned with `neighboringVertices`. */
+    neighboringVerticesExact: Cyclotomic[];
 };
 
 type BFSNode = {
@@ -117,6 +120,7 @@ export class SeedBuilder {
             const placedVCs: PlacedVC[] = [{
                 center: new Vector(0, 0),
                 neighboringVertices: vc.neighboringVertices.map((v) => v.copy()),
+                neighboringVerticesExact: vc.neighboringVerticesExact.slice(),
             }];
             return { seed, placedVCs, remaining: seedSet.slice(1) };
         };
@@ -158,6 +162,15 @@ export class SeedBuilder {
         return currentLayer.map(node => node.seed);
     }
 
+    /** Place a VC (built at the origin) exactly: rotate by the on-grid angle (snapped to an
+     *  integer ζ-step) then translate so its shared vertex lands on the exact target. */
+    private placeVCExact = (vc: VertexConfiguration, rotation: number, target: Cyclotomic): void => {
+        const ring = target.ring;
+        const k = zetaIndexFromAngle(rotation, ring.N);
+        vc.rotateZeta(Cyclotomic.ZERO(ring), k);
+        vc.translateExact(target);
+    };
+
     private expandNode = (node: BFSNode, seedSet: string[]): BFSNode[] => {
         const { seed, placedVCs, remaining } = node;
         const children: BFSNode[] = [];
@@ -165,14 +178,14 @@ export class SeedBuilder {
         const availableVertices = this.computeAvailableVertices(placedVCs);
 
         // Forward Checking: if any open vertex has entropy 0 (no VC from the full set can fit), prune this branch
-        for (const { vertex, directions } of availableVertices) {
-            if (!this.canAnyVCFitAtVertex(vertex, directions, seed, seedSet)) {
+        for (const { vertex, vertexExact, directions } of availableVertices) {
+            if (!this.canAnyVCFitAtVertex(vertex, vertexExact, directions, seed, seedSet)) {
                 return [];
             }
         }
         const seedCount = seed.polygons.length;
 
-        for (const { vertex: v, directions } of availableVertices) {
+        for (const { vertex: v, vertexExact: vExact, directions } of availableVertices) {
             const triedNames = new Set<string>();
 
             for (let i = 0; i < remaining.length; i++) {
@@ -195,8 +208,7 @@ export class SeedBuilder {
                             triedRotations.add(rotKey);
 
                             const clonedVC = templateVC.clone();
-                            clonedVC.rotate(new Vector(0, 0), rotation);
-                            clonedVC.translate(v);
+                            this.placeVCExact(clonedVC, rotation, vExact);
                             clonedVC.computeNeighboringVertices();
 
                             const vcCount = clonedVC.polygons.length;
@@ -210,6 +222,7 @@ export class SeedBuilder {
                                     {
                                         center: v.copy(),
                                         neighboringVertices: clonedVC.neighboringVertices.map((nv) => nv.copy()),
+                                        neighboringVerticesExact: clonedVC.neighboringVerticesExact.slice(),
                                     },
                                 ];
                                 const newRemaining = [...remaining.slice(0, i), ...remaining.slice(i + 1)];
@@ -235,6 +248,7 @@ export class SeedBuilder {
      */
     private canAnyVCFitAtVertex = (
         vertex: Vector,
+        vertexExact: Cyclotomic,
         directions: number[],
         seed: SeedConfiguration,
         allVCNames: string[]
@@ -260,8 +274,7 @@ export class SeedBuilder {
                     triedRotations.add(rotKey);
 
                     const clonedVC = templateVC.clone();
-                    clonedVC.rotate(new Vector(0, 0), rotation);
-                    clonedVC.translate(vertex);
+                    this.placeVCExact(clonedVC, rotation, vertexExact);
                     clonedVC.computeNeighboringVertices();
 
                     const vcCount = clonedVC.polygons.length;
@@ -309,6 +322,7 @@ export class SeedBuilder {
         const n = polygons.length;
         if (n === 0) return '';
 
+        const exact = polygons.every((p) => p.hasExact());
         const P = CANONICAL_PRECISION;
         const profiles: string[] = new Array(n);
 
@@ -317,7 +331,11 @@ export class SeedBuilder {
             let k = 0;
             for (let j = 0; j < n; j++) {
                 if (i === j) continue;
-                const dist = polygons[i].centroid.distance(polygons[j].centroid).toFixed(P);
+                // Exact: hash the EXACT squared distance |cᵢ − cⱼ|² (real, exact — z·conj(z)),
+                // not a rounded float distance. Boundary-safe, no drift.
+                const dist = exact
+                    ? polygons[i].exactCentroid!.sub(polygons[j].exactCentroid!).normSquared().key()
+                    : polygons[i].centroid.distance(polygons[j].centroid).toFixed(P);
                 neighbors[k++] = polygons[j].getName() + '@' + dist;
             }
             neighbors.sort();
@@ -336,7 +354,7 @@ export class SeedBuilder {
     private passesFinalVertexCheck = (node: BFSNode, seedSet: string[]): boolean => {
         const availableVertices = this.computeAvailableVertices(node.placedVCs);
 
-        for (const { vertex, directions } of availableVertices) {
+        for (const { vertex, vertexExact, directions } of availableVertices) {
             const polygonsAtVertex = this.getPolygonsAtVertex(vertex, node.seed.polygons);
             const angleSum = polygonsAtVertex.reduce((sum, p) => sum + p.getAngleAtVertex(vertex), 0);
             const isSurrounded = isWithinAngularTolerance(angleSum, 2 * Math.PI);
@@ -346,7 +364,7 @@ export class SeedBuilder {
                 if (emergingVCName === null) return false;
                 if (!this.isVCNameInSet(emergingVCName, seedSet)) return false;
             } else {
-                if (!this.canAnyVCFitAtVertex(vertex, directions, node.seed, seedSet)) return false;
+                if (!this.canAnyVCFitAtVertex(vertex, vertexExact, directions, node.seed, seedSet)) return false;
             }
         }
         return true;
@@ -387,16 +405,20 @@ export class SeedBuilder {
         return false;
     };
 
-    computeAvailableVertices = (placedVCs: PlacedVC[]): { vertex: Vector; directions: number[] }[] => {
-        const available: { vertex: Vector; directions: number[] }[] = [];
+    computeAvailableVertices = (
+        placedVCs: PlacedVC[]
+    ): { vertex: Vector; vertexExact: Cyclotomic; directions: number[] }[] => {
+        const available: { vertex: Vector; vertexExact: Cyclotomic; directions: number[] }[] = [];
 
         for (const pvc of placedVCs) {
-            for (const v of pvc.neighboringVertices) {
+            for (let i = 0; i < pvc.neighboringVertices.length; i++) {
+                const v = pvc.neighboringVertices[i];
+                const vExact = pvc.neighboringVerticesExact[i];
                 if (placedVCs.some((other) => isWithinTolerance(v, other.center))) continue;
 
                 let entry = available.find((av) => isWithinTolerance(av.vertex, v));
                 if (!entry) {
-                    entry = { vertex: v.copy(), directions: [] };
+                    entry = { vertex: v.copy(), vertexExact: vExact, directions: [] };
                     available.push(entry);
                 }
                 const dirCtoV = Vector.sub(v, pvc.center).heading();

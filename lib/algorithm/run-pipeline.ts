@@ -27,7 +27,11 @@ import {
 	StarParametricPolygon,
 	EquilateralPolygon,
 	GenericPolygon,
+	Cyclotomic,
+	getActiveRing,
+	setActiveRing,
 } from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
 import { AlgorithmTilingGenerator } from "@/classes/algorithm/TilingGenerator";
 import { comparePolygonNames, compareVertexConfigurationNames, roundNumbersInJson, toRadians, getEffectiveUniqueCount } from "@/utils";
 import { BATCH_SIZE } from "@/lib/constants";
@@ -44,28 +48,40 @@ function typeBasePath(paramsFolder: string): string {
 	return `${DATA_FOLDER_PATH}/${paramsFolder}`;
 }
 
-/** Encode polygon for storage (short format). */
+/** Encode polygon for storage (short format). Prefers the exact generator-level form
+ *  (anchor + integer direction index) so vertices reconstruct exactly via the boundary walk. */
 function polygonToShort(enc: Record<string, unknown>): Record<string, unknown> {
 	const out: Record<string, unknown> = { t: enc.type, n: enc.n };
-	if (enc.vertices && Array.isArray(enc.vertices)) {
+	if (enc.anchor && enc.dir != null) {
+		out.a = enc.anchor; // exact { n: string[], d: string }
+		out.dir = enc.dir; // integer ζ-exponent
+	} else if (enc.vertices && Array.isArray(enc.vertices)) {
 		out.v = (enc.vertices as { x: number; y: number }[]).map((v) => [v.x, v.y]);
 	}
 	if (enc.sides) out.s = enc.sides;
-	if (enc.angles) out.a = enc.angles;
+	if (enc.angles) out.an = enc.angles;
 	if (enc.d != null) out.d = enc.d;
 	if (enc.alpha != null) out.alpha = enc.alpha;
 	return out;
 }
 
-/** Decode polygon from short format to Polygon instance. */
+/** Decode polygon from short format to Polygon instance. Exact path when anchor+dir present. */
 function polygonFromShort(enc: Record<string, unknown>) {
+	const type = (enc.t ?? enc.type) as string;
+	// Exact reconstruction: anchor (exact) + integer direction → boundary walk.
+	if (enc.a && typeof enc.a === "object" && !Array.isArray(enc.a) && enc.dir != null) {
+		const ring = getActiveRing();
+		const anchor = Cyclotomic.decode(ring, enc.a as { n: string[]; d: string });
+		const n = (enc.n ?? 0) as number;
+		// only regular polygons are on the exact gate path
+		return RegularPolygon.fromAnchorAndDirExact(n, anchor, enc.dir as number);
+	}
 	const v = enc.v as [number, number][] | undefined;
 	const vertices = v
 		? v.map((p) => new Vector(p[0], p[1]))
 		: (enc.vertices as { x: number; y: number }[])?.map((p) =>
 				Array.isArray(p) ? new Vector(p[0], p[1]) : new Vector(p.x, p.y)
 			) ?? [];
-	const type = (enc.t ?? enc.type) as string;
 	switch (type) {
 		case PolygonType.REGULAR:
 			return RegularPolygon.fromVertices(vertices);
@@ -82,17 +98,24 @@ function polygonFromShort(enc: Record<string, unknown>) {
 	}
 }
 
-const MAX_K = 3;
+// k=1 reproduces 11 exactly. Expansion hot paths optimized (fused transform, lite float refresh,
+// trig-free toVector, coincident-skip collision, intermediate-state DAG memoization). Validating
+// k=2 → 20; bump toward 6 as each k is confirmed.
+const MAX_K = 2;
 
 const parameters: GeneratorParameters = {
 	[PolygonType.REGULAR]: {
-		n_max: 4
+		// k-uniform gate set: the regular polygons that tile edge-to-edge → N = 24.
+		ns: [3, 4, 6, 8, 12],
 	},
 };
 
 main();
 
 function main() {
+	// One shared cyclotomic ring per run, derived from the enabled polygons (spec §5).
+	setActiveRing(computeRing(parameters));
+
 	const additionalPolygons: PolygonSignature[] = [];
 
 	for (const p of additionalPolygons) {
@@ -396,10 +419,15 @@ function expandSeedsForK(
 		`Seed expansion for k=${k}`,
 		() => {
 			const expander = new SeedExpander(k);
+			// Per-seed wall-clock cap so one pathological hard seed (deep threshold=6k DFS) cannot
+			// stall the whole run. Capped seeds are logged below (no silent truncation).
+			expander.maxExpandMs = k >= 2 ? 90_000 : 0;
 			let processed = 0;
 			let expanded = 0;
 			let entropyWalls = 0;
 			let deadEnds = 0;
+			let cappedSeeds = 0;
+			const cappedNames: string[] = [];
 
 			const basePath = `${typeBasePath(paramsFolder)}/seedConfigurations/k=${k}`;
 			if (!fs.existsSync(basePath)) return 0;
@@ -457,6 +485,10 @@ function expandSeedsForK(
 							batchIndex++;
 						}
 					}) as number;
+					if (expander.lastExpandCapped) {
+						cappedSeeds++;
+						cappedNames.push(seed.name);
+					}
 					if (count > 0) {
 						expanded += count;
 					} else {
@@ -552,6 +584,10 @@ function extractTranslationalCellForK(
 				{ n: string; p: Record<string, unknown>[]; b: [[number, number], [number, number]]; o: [number, number] }[]
 			>();
 
+			// Global dedup of tilings up to the full isometry group (canonical cell key):
+			// the two chiral mirror forms of a snub tiling share a key → counted once.
+			const seenCanonical = new Set<string>();
+
 			for (const { mDir, mVal } of mDirsToProcess) {
 				const items = loadExpandedSeedsBatches(paramsFolder, k, mVal);
 				if (!byM.has(mVal)) byM.set(mVal, []);
@@ -565,6 +601,15 @@ function extractTranslationalCellForK(
 						skipped++;
 						continue;
 					}
+
+					// Dedup tilings up to the full isometry group using the boundary-free
+					// interior-neighbourhood canonical key (basis-independent, robust).
+					const canonical = extractor.canonicalPatchKey(polygons);
+					if (seenCanonical.has(canonical)) {
+						skipped++;
+						continue;
+					}
+					seenCanonical.add(canonical);
 
 					const result = extractor.extract(polygons);
 					if (!result) {

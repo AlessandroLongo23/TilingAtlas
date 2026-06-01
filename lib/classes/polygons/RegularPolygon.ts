@@ -1,4 +1,5 @@
 import { Polygon, PolygonType, Vector } from '@/classes';
+import { Cyclotomic } from '../Cyclotomic';
 import { isWithinTolerance, map } from '@/utils';
 
 export class RegularPolygon extends Polygon {
@@ -6,6 +7,34 @@ export class RegularPolygon extends Polygon {
         super(n);
         this.interior_angle = Math.PI * (n - 2) / n;
         this.name = n.toString();
+    }
+
+    /**
+     * Exact construction by boundary walk: start at the exact anchor with unit direction
+     * ζ^{dirIndex}, step by one unit edge, turn by the exterior angle N/n each vertex. Every
+     * vertex stays in ℤ[ζ_N]; requires n | N. The float cache is derived via toVector().
+     */
+    static fromAnchorAndDirExact = (n: number, anchorExact: Cyclotomic, dirIndex: number): RegularPolygon => {
+        const ring = anchorExact.ring;
+        const N = ring.N;
+        if (N % n !== 0) {
+            throw new Error(`RegularPolygon.fromAnchorAndDirExact: ${n} does not divide N=${N}`);
+        }
+        const turn = N / n; // exterior turn 2π/n in units of 2π/N
+        const verts: Cyclotomic[] = [];
+        const edgeDirs: number[] = [];
+        let p = anchorExact;
+        let dir = ((dirIndex % N) + N) % N;
+        for (let i = 0; i < n; i++) {
+            verts.push(p);
+            edgeDirs.push(dir);
+            p = p.add(Cyclotomic.zeta(ring, dir));
+            dir = (dir + turn) % N;
+        }
+        const polygon = new RegularPolygon(n);
+        polygon.setExactVertices(verts, edgeDirs);
+        polygon.calculateHue();
+        return polygon;
     }
 
     static fromCentroidAndAngle = (n: number, centroid: Vector, angle: number): RegularPolygon => {
@@ -94,17 +123,36 @@ export class RegularPolygon extends Polygon {
         return this.name;
     }
 
+    makeEmptyLike = (): RegularPolygon => new RegularPolygon(this.n);
+
     clone = (): RegularPolygon => {
+        // Exact clone: copy the exact source of truth so no float round-trip occurs.
+        if (this.exactVertices && this.edgeDirs) {
+            const polygon = new RegularPolygon(this.n);
+            polygon.setExactVertices(
+                this.exactVertices.slice(),
+                this.edgeDirs.slice()
+            );
+            polygon.calculateHue();
+            return polygon;
+        }
         const anchor = this.vertices[0].copy();
         const dir = Vector.sub(this.vertices[1], this.vertices[0]).copy().normalize();
         return RegularPolygon.fromAnchorAndDir(this.n, anchor, dir);
     }
 
     encode = (): Object => {
-        return {
+        const base: Record<string, unknown> = {
             type: PolygonType.REGULAR,
             n: this.n,
             vertices: this.vertices.map(v => v.encode()),
         };
+        // Exact generator-level form (spec §6 / persistence): anchor + integer direction index.
+        // Reconstructs every vertex exactly via the boundary walk — O(1) exact values, not per-vertex.
+        if (this.exactVertices && this.edgeDirs) {
+            base.anchor = this.exactVertices[0].encode();
+            base.dir = this.edgeDirs[0];
+        }
+        return base;
     }
 }

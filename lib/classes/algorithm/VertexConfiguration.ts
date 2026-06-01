@@ -16,6 +16,17 @@ import {
 import { deduplicatePoints, isWithinAngularTolerance, isWithinTolerance, toRadians, compareVCNames } from '@/utils';
 import { regularPolygonRegex, regularStarRegex, parametricStarRegex, equilateralPolygonRegex, genericPolygonRegex } from './regex';
 import { tolerance } from '@/utils/tolerance';
+import { Cyclotomic, getActiveRing } from '../Cyclotomic';
+
+/** Interior-angle turn between consecutive polygons in a VC walk, in integer ζ-steps. */
+function interiorAngleSteps(n: number, N: number): number {
+    const stepsReal = (N * (n - 2)) / (2 * n); // π(n-2)/n in units of 2π/N
+    const steps = Math.round(stepsReal);
+    if (Math.abs(stepsReal - steps) > 1e-9) {
+        throw new Error(`interiorAngleSteps: regular ${n}-gon interior angle is off-grid for N=${N}`);
+    }
+    return ((steps % N) + N) % N;
+}
 
 export class VertexConfiguration {
     polygons: Polygon[];
@@ -24,6 +35,8 @@ export class VertexConfiguration {
     current_dir: Vector;
     valid: boolean = true;
     neighboringVertices: Vector[];
+    /** Exact neighbouring vertices, index-aligned with `neighboringVertices` (when exact). */
+    neighboringVerticesExact: Cyclotomic[] = [];
     sharedVertex: Vector;
 
     private _polygonBaseNames: string[] | null = null;
@@ -41,10 +54,29 @@ export class VertexConfiguration {
     }
 
     static fromName = (name: string): VertexConfiguration => {
+        const polygonsData = name.split(',');
+
+        // Exact path: a VC of only regular polygons (the {3,4,6,8,12} gate) is built by the
+        // exact boundary walk from the origin, tracking an integer direction index. Every
+        // vertex stays in ℤ[ζ_N]; the shared vertex is the exact origin.
+        const allRegular = polygonsData.every((p) => !!p.match(regularPolygonRegex));
+        if (allRegular) {
+            const ring = getActiveRing();
+            const N = ring.N;
+            const ZERO = Cyclotomic.ZERO(ring);
+            const polygons: Polygon[] = [];
+            let dirIndex = 0;
+            for (const p of polygonsData) {
+                const n = parseInt(p);
+                polygons.push(RegularPolygon.fromAnchorAndDirExact(n, ZERO, dirIndex));
+                dirIndex = (dirIndex + interiorAngleSteps(n, N)) % N;
+            }
+            return new VertexConfiguration(polygons, null, name);
+        }
+
         let polygons: Polygon[] = [];
         let current_dir: Vector = new Vector(1, 0);
 
-        const polygonsData = name.split(',');
         for (const p of polygonsData) {
             let polygon: Polygon | null = null;
 
@@ -164,13 +196,23 @@ export class VertexConfiguration {
     }
 
     computeNeighboringVertices = (): void => {
+        // Exact path: compute exact neighbours, derive the float list from them so the two
+        // arrays stay index-aligned (callers pair float vertices with their exact form).
+        if (this.hasExact()) {
+            this.neighboringVerticesExact = this.neighboringVerticesExact_compute();
+            this.neighboringVertices = this.neighboringVerticesExact.map((v) => v.toVector());
+            this.sharedVertex = this.computeSharedVertexExact().toVector();
+            return;
+        }
+
         this.neighboringVertices = [];
+        this.neighboringVerticesExact = [];
         this.sharedVertex = this.computeSharedVertex();
 
         for (const polygon of this.polygons) {
             for (let i = 0; i < polygon.vertices.length; i++) {
                 const next = polygon.vertices[(i + 1) % polygon.vertices.length];
-                if (isWithinTolerance(next, this.sharedVertex)) 
+                if (isWithinTolerance(next, this.sharedVertex))
                     this.neighboringVertices.push(polygon.vertices[i].copy());
             }
         }
@@ -386,6 +428,59 @@ export class VertexConfiguration {
         const allVertices = deduplicatePoints(this.polygons.flatMap(p => p.vertices));
         const found = allVertices.find(v => this.polygons.every(p => p.vertices.some(v2 => isWithinTolerance(v2, v))));
         return found ?? this.polygons[0].vertices[0].copy();
+    }
+
+    // ---------------------------------------------------------------------------
+    // Exact coordinate representation — polygons are the single source of truth
+    // ---------------------------------------------------------------------------
+
+    hasExact = (): boolean => this.polygons.length > 0 && this.polygons.every((p) => p.hasExact());
+
+    /** The exact vertex common to all polygons (exact equality). */
+    computeSharedVertexExact = (): Cyclotomic => {
+        const first = this.polygons[0];
+        const verts = first.exactVertices!;
+        for (const v of verts) {
+            if (this.polygons.every((p) => p.exactVertices!.some((v2) => v2.equals(v)))) return v;
+        }
+        return verts[0];
+    }
+
+    /** Exact vertices adjacent (one edge away) to the shared vertex. */
+    private neighboringVerticesExact_compute = (): Cyclotomic[] => {
+        const shared = this.computeSharedVertexExact();
+        const result: Cyclotomic[] = [];
+        for (const p of this.polygons) {
+            const verts = p.exactVertices!;
+            for (let i = 0; i < verts.length; i++) {
+                const next = verts[(i + 1) % verts.length];
+                if (next.equals(shared)) {
+                    const cand = verts[i];
+                    if (!result.some((r) => r.equals(cand))) result.push(cand);
+                }
+                const prev = verts[(i - 1 + verts.length) % verts.length];
+                if (prev.equals(shared)) {
+                    const cand2 = verts[i];
+                    if (!result.some((r) => r.equals(cand2))) result.push(cand2);
+                }
+            }
+        }
+        return result;
+    }
+
+    rotateZeta = (origin: Cyclotomic, k: number): void => {
+        for (const p of this.polygons) p.rotateZeta(origin, k);
+        this.sharedVertex = this.computeSharedVertexExact().toVector();
+    }
+
+    translateExact = (t: Cyclotomic): void => {
+        for (const p of this.polygons) p.translateExact(t);
+        this.sharedVertex = this.computeSharedVertexExact().toVector();
+    }
+
+    mirrorZeta = (origin: Cyclotomic, axisK: number): void => {
+        for (const p of this.polygons) p.mirrorZeta(origin, axisK);
+        this.sharedVertex = this.computeSharedVertexExact().toVector();
     }
 }
 
