@@ -754,13 +754,38 @@ arithmetic is consistent only for this VC pair, *not* for [4⁴;3³.4²]). Its s
 `[3,3,3,3,3,3;3,3,3,4,4]` — the very seed §9.1 flagged as "produces 0 cells".
 
 Probed directly: its lattice **is** in the live `candidateLattices` (one of 397 candidates for that
-seed), but `torusFill` produces **0** cells on it. So the gap is in the **fill**, not lattice enumeration
-and not dedup. Most likely mechanism (to confirm next session): the fill is seeded from the **rigid
-2-VC core**, which has more tiles than this tiny cell (~5 tiles) can hold, so the core reduced mod Λ
-over-fills / self-overlaps and the lattice is rejected on contact (`initialArea > cellArea` or initial
-self-overlap in `torusFill`). The §7 decision "seed from the rigid k-VC core, not a single VC" is what
-makes the fill reach 2-uniform tilings whose cells are *large enough*; it cannot seed a tiling whose
-primitive cell is **smaller than the rigid core**. That is the open completeness frontier for k=2.
+seed; matches the oracle basis exactly), but `torusFill` produces **0** cells on it. So the gap is in the
+**fill**, not lattice enumeration and not dedup.
+
+**Mechanism — verified (a 3-agent adversarial workflow, `PeriodSolver.DEBUG` traces + reduction probes).**
+`torusFill` rejects at the **"core area > cell area" guard** (`initialArea > cellArea`,
+[`PeriodSolver.ts`](../lib/classes/algorithm/PeriodSolver.ts) ~351): the rigid 2-VC seed core (9 polys: a
+full 3⁶ fan = 6 triangles + a full 3³.4² fan = 3 triangles + 2 squares) reduces mod Λ to **6 distinct
+classes = 2 squares + 4 triangles = area 2+√3 ≈ 3.73**, but the cell holds only **1 square + 4 triangles
+= 1+√3 ≈ 2.73**. The extra square is the tell: in t2014 the two squares of a 3³.4² vertex are Λ-translates
+by `u=(1,0)` (ONE class), but the SeedBuilder glued the 3⁶ and 3³.4² blocks at a **non-lattice relative
+offset** (square-centroid difference `(-0.5,-1.866)`, *not* an integer combo of `u,v`), so the two
+squares stay distinct and the core spans 2+√3 in one domain. **The rigid core is therefore NOT a valid
+sub-patch of t2014** — its frozen adjacency can never reduce to t2014's cell.
+
+**The seeding hypothesis above was WRONG (corrected).** It is *not* that any seed bigger than this tiny
+cell fails, and *not* that sub-vertex seeding is required. With the allowed-VC set fixed to t2014's two
+VCs, `torusFill` **fills and certifies orbit=2** when seeded from **either full single-vertex fan** (the
+3⁶ hexagon reduces to 4 classes / area √3 < cell; the 3³.4² fan to 3 classes / area 1.866 < cell — both
+pass the guards), and even from a **single triangle or single square**. The 6-triangle hexagon does NOT
+self-overlap mod Λ (its triangles collapse to 4 classes). **Only the rigid 2-VC core fails.** So t2014 is
+genuinely reachable; the defect is *purely* the rigid core's size+arrangement, which §7 chose for
+completeness ("single-VC misses the tilings the rigid core reaches"). The truth is **neither seeding alone
+is complete**: the rigid core misses t2014, single-VC reaches it — so the fix is **union seeding** (seed
+torusFill from the rigid core *and* per-VC single-vertex fans; `coreSets` is already a `Polygon[][]`).
+
+**Why uniquely t2014 (verified across all 20).** It has the **smallest k=2 cell** (1+√3 ≈ 2.73, narrow
+side exactly 1 — the unit-edge minimum a period can be), and it is the **only** tiling whose rigid-core
+footprint exceeds its cell on *every* congruent basis (its 6 candidate bases give footprints
+{3.17…5.03}, all > 2.73). All other 19 fit. ⚑ **Latent fragility:** three tilings (t2004, t2011, t2012)
+fit *only by exact equality* (footprint == cell), passing solely because the guard compares with a
+`+1e-6` float slack — the area comparison should really be **exact in ℚ(√2,√3)** (`Surd`), not float, to
+be robust. That is a separate hardening item.
 
 ### 13.5 State at end of session 4
 - **Done, correct, landable:** `TilingCongruence.ts`; congruence dedup wired into `solve` +
@@ -768,7 +793,9 @@ primitive cell is **smaller than the rigid core**. That is the open completeness
   pos/neg, k=1 dedup-additive=11). **108 tests pass, `pnpm build` green.** Verified twice that the
   congruence dedup is sound (reduction-free cross-check).
 - **k=2 = 19** (honest count; deterministic). The 20th, t2014, is missing to the §13.4 fill gap.
-- **NEXT:** fix the `torusFill` seeding so a primitive cell smaller than the rigid k-VC core can still be
-  filled (e.g. seed from a single VC *or* a minimal sub-core when the cell area is below the core's tile
-  area, while keeping the rigid-core path for the larger cells it is needed for). Re-validate against the
-  oracle for exactly 20, twice, identical digest. Then the k≥3 oblique problem (§12.3) remains.
+- **NEXT (scoped + verified):** **union seeding** — seed `torusFill` from the rigid k-VC core **and** from
+  per-VC single-vertex fans (add them to `coreSets`, already a `Polygon[][]`), then dedup the union of
+  results. Verified to reach t2014 (orbit=2) without sub-vertex seeding. Keep the rigid core for the
+  tilings §7 needs it for; the per-VC fans recover t2014. Then optionally harden the `torusFill` area
+  guard to **exact `Surd`** (drops the float `+1e-6` slack that t2004/t2011/t2012 currently lean on).
+  Re-validate vs the oracle for exactly 20, twice, identical digest. Then the k≥3 oblique problem (§12.3).
