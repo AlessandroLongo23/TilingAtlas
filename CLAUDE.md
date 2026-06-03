@@ -15,6 +15,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Next.js 16 notice:** see `AGENTS.md`. APIs and file conventions differ from older Next.js. Consult `node_modules/next/dist/docs/` before writing framework code.
 
+## Project goal (the mission — durable)
+
+Enumerate **all and only** the edge-to-edge k-uniform tilings of the plane for a chosen polygon set,
+with *provable* completeness and correctness — every decisive test in exact arithmetic (ℚ(ζ_N); float
+only for render/broadphase). Acceptance targets (regular polygons): k=1..6 → **11 / 20 / 61 / 151 /
+332 / 673** (OEIS A068599; the per-tiling oracle is the Soto-Sánchez JSON — match *which* tilings,
+not just how many). Then: higher k, then star/parametric polygon families. The thesis's claimed
+contribution is **provable exhaustiveness** (Galebach's counts have no completeness proof), so:
+**completeness beats speed — any cap/filter/budget that could drop a tiling must be logged loudly,
+never silent.**
+
+## Session start — read these BEFORE coding
+
+1. `docs/SYNC.md` — current state + handoffs (the board shared with the thesis agent; see protocol below).
+2. `docs/DEVELOPMENT_NOTES.md` — the narrative source of truth; at minimum the **latest section** and
+   the **⚑ flag lists**. `docs/K2_DIAGNOSIS.md` holds the measurement log, `docs/LATTICE_ENUMERATION_DESIGN.md`
+   the enumeration design (read its STATUS header — parts are corrected), `docs/RESEARCH_NOTES.md` the literature.
+
+## Settled decisions — do NOT re-litigate (proofs/measurements behind each)
+
+- **Chirality: mirror pairs MERGE** (count once) — matches A068599; k=2 target is 20. (NOTES §12.8)
+- **HNF sublattice enumeration is provably incomplete** for mixed √2/√3 cells (the 4.8.8 obstruction) — do not implement it, despite RESEARCH_NOTES §0 recommending it. (NOTES §12.3)
+- **Emit-on-validated-closure + prune is UNSOUND** in the planar expander (boundary can extend non-periodically into a *different* tiling). (NOTES §6)
+- **ℤ[ζ₂₄] is dense in ℂ**: finiteness arguments must bound the **step count**, never Euclidean length. (NOTES §12.5)
+- **Float `Polygon.intersects` is sound only for convex regular tiles**; exact segment intersection is a prerequisite for star/non-convex polygons. (NOTES §9.4)
+- **`V_i ≤ 12` is a per-ORBIT bound, not per-VC-type** (orbits can share a VC type). (NOTES §12.8)
+- **Measure at the real threshold/gate** — the threshold-4 profiling verdict was an artifact. (NOTES §5)
+- **Completeness knobs are not speed dials** (node caps, area caps, direction filters): if turning one down can lose a tiling, the fast regime is the incomplete regime. (NOTES §11.4)
+
 ## Workflow rule
 
 After every code change, run `pnpm build` to check for errors and warnings before reporting the task complete. `pnpm lint` and `pnpm test` are not substitutes — only a full build surfaces the real issues.
@@ -26,6 +55,8 @@ After every code change, run `pnpm build` to check for errors and warnings befor
 - `pnpm lint` — ESLint (`eslint-config-next`)
 - `pnpm test` — Vitest once; `pnpm test:watch` for watch mode; `pnpm vitest run path/to/file.test.ts` for a single file
 - `pnpm pipeline` — runs `lib/algorithm/run-pipeline.ts` under `tsx` (server-only; uses `node:fs`)
+- `USE_PERIOD_SOLVER=1 pnpm pipeline` — the **live** solve-for-period path (replaces seedsExpansion + extract)
+- `pnpm tsx scripts/probe-pipeline.ts` — per-seed k=2 count harness with composition digest (determinism check)
 
 `pnpm build` runs the TypeScript type checker; type errors fail the build. For fast iterative checking, run `pnpm tsc --noEmit`.
 
@@ -69,4 +100,4 @@ not edit those two folders.**
 
 ## Migration history
 
-Port was done in 8 phases, each its own commit — replay via `git log`. High-level phases are documented in `README.md`. Full plan: `c:\Users\longo\.claude\plans\sorted-marinating-plum.md`.
+Port was done in 8 phases, each its own commit — replay via `git log`. High-level phases are documented in `README.md`. (The full plan file lived on the original Windows machine — historical, unreachable.)
