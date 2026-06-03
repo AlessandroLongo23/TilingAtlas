@@ -12,7 +12,6 @@ SvelteKit codebase (see [../TilingAtlas](../TilingAtlas) tagged
 - **Supabase** via `@supabase/ssr`
 - **p5.js** via a custom `useP5` hook (Strict-Mode safe)
 - **Chart.js** via `react-chartjs-2`
-- **react-markdown** + `remark-gfm` + `remark-math` + `rehype-katex` for theory content
 - **Radix** + hand-rolled primitives under `components/ui/`
 
 ## Getting started
@@ -56,7 +55,6 @@ app/
     library/             /library
     lab/                 /lab, /lab/[hash]/{polygons,vcs,seeds,expanded-seeds,tilings}
     play/                /play (Canvas + Sidebar — in-progress)
-    theory/              /theory (markdown)
   api/pipeline/*/        7 route handlers (gzip-batched Supabase Storage pipeline)
   error.tsx, not-found.tsx, page.tsx, layout.tsx
 components/
@@ -66,13 +64,13 @@ lib/
   algorithm/             pipeline-core, run-pipeline, paramsFolder, conwayCost,
                          transformFinder, generatorEncoding, PipelineLogger,
                          pipelineStorageFormat
-  classes/               52 TS classes (polygons, wallpaperGroups, algorithm, …)
+  classes/               domain TS classes (polygons, algorithm, exact arithmetic, …)
   hooks/                 useP5, useVcCanvas, usePolygonsCanvas
   query/                 TanStack Query provider + key factory
   services/              Supabase-backed services (campaigns, storage, search oracle)
   stores/                13 Zustand slices (configuration, audio, debug, modal, …)
   supabase/              browser/server/session clients + service-role factory
-  utils/                 18 pure utils (math, geometry, markdown TOC, …)
+  utils/                 pure utils (math, geometry, …)
 proxy.ts                 Next 16 request proxy (was middleware.ts in Next 15)
 ```
 
@@ -86,10 +84,11 @@ proxy.ts                 Next 16 request proxy (was middleware.ts in Next 15)
 
 ## Known caveats
 
-- `components/theory-sidebar.tsx` integrates with
-  `lib/utils/tableOfContents.ts` but does **not** port the source's
-  admonition plugin or IntersectionObserver-based GIF lazy-load. Both were
-  niche markdown-it extensions, not load-bearing.
+- The `/theory` page (markdown rendering of the original 7-step design) was
+  **removed 2026-06**: it documented a superseded method. The historical
+  write-ups live in `../resources/drafts/`; the implemented algorithm is
+  documented in `docs/DEVELOPMENT_NOTES.md`. `public/theory/images/vertexTypes/`
+  is kept — the Library vertex cards serve images from that path.
 - `lib/classes/algorithm/TilingGenerator.ts` and the entire
   `lib/classes/generator/*` tree are intentionally **not** re-exported from
   `@/classes` — they import `node:fs` or pre-Zustand store names. Import
