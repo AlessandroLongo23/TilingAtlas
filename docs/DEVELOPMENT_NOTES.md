@@ -6,7 +6,8 @@
 >
 > Companion docs: [`CYCLOTOMIC_SPEC.md`](CYCLOTOMIC_SPEC.md) (exact-arithmetic engineering brief),
 > [`K2_DIAGNOSIS.md`](K2_DIAGNOSIS.md) (the detailed k≥2 performance measurement log),
-> [`../public/theory/algorithm.md`](../public/theory/algorithm.md) (the *documented* 7-step design).
+> `algorithm.md` (the *documented* 7-step design — **removed from the app 2026-06-03** as stale;
+> archived at `../../resources/drafts/website-theory-algorithm-2026-06.md`).
 > Where this doc references measurements, the raw tables live in `K2_DIAGNOSIS.md`.
 
 ---
@@ -60,8 +61,9 @@ the live path** (`grep` finds only commented-out / post-hoc-label / UI reference
   `canonicalPatchKey` survivors that yielded a non-null cell.
 
 The thesis write-up therefore currently documents an algorithm the code does not run, and omits the
-one it does. [`algorithm.md`](../public/theory/algorithm.md) should be updated to describe
-*expand-and-extract + orbit gate* (this is tracked as a remaining task).
+one it does. *(Resolved 2026-06-03 by **removal**: the `/theory` page and `algorithm.md` were deleted
+from the app — archived at `../../resources/drafts/website-theory-algorithm-2026-06.md`. The thesis
+LaTeX (`../../thesis/chapters/algorithm.tex`) is now the single prose description to keep aligned.)*
 
 **Judgement on direction.** Expand-and-extract is *more* well-posed than the documented
 wallpaper-fitting (which the author himself flagged as unproven): a periodic k-uniform tiling **is**
@@ -392,9 +394,10 @@ time of writing.
    safeguard — verify they give 61/151/332/673 once discovery is complete at those k.
 4. **Non-convex tiles (stars, irregular).** Replace the float `Polygon.intersects` overlap test with
    exact rational segment-intersection before extending beyond the convex regular core.
-5. **Update [`algorithm.md`](../public/theory/algorithm.md)** to document the implemented
-   solve-for-period (torus-fill + orbit-gate) method (it currently describes the unused wallpaper
-   approach).
+5. ~~Update `algorithm.md`~~ — **resolved 2026-06-03 by removal** (the `/theory` page documented the
+   unused wallpaper approach; archived in `../../resources/drafts/`). The implemented solve-for-period
+   method gets its prose description in the thesis (`../../thesis/chapters/algorithm.tex`), kept in
+   sync via `docs/SYNC.md`.
 
 ---
 
