@@ -53,3 +53,14 @@ seeding gap (rigid 2-VC core larger than the tiny primitive cell), NOT dedup/lat
 fixed: the k=1 chiral snub was over-counted (2→1) on the live `PeriodSolver` path (the "k=1=11" was only
 ever validated via the expander path). 108 tests green, build green. **For the thesis:** do NOT yet
 claim k=2=20 — the certified-exhaustive count is 19 pending the fill fix (the next CC task).
+
+**2026-06-04 — CC** — **k=2 = 20** ✅ (the fill gap is closed). Implemented **targeted union seeding**
+(`PeriodSolver.solve`): on lattices where the rigid 2-VC core overflows the cell (`footprintArea > |det Λ|`
+— only the smallest cells, e.g. t2014's 1×(1+√3)), seed instead from the single-VC fans, which recover the
+small-cell tilings the rigid core can't hold. Full k=2 probe = **20**, **0 timeouts, deterministic**
+(identical composition digest across two runs), ~750s. t2014 recovered (orbit 2). 109 tests green
+(incl. a t2014 regression), build green; live per-seed cap raised 60s→120s. **For the thesis: k=2 = 20 is
+now reproduced exactly and certified (orbit-gated, congruence-deduped, oracle-matched).** ⚑ One caveat to
+record: "fans only on core-overflow lattices" is *exact for k=2* (verified across all 20) but a *heuristic
+at k≥3* (a fan-only tiling on a core-fitting cell would be missed) — see DEVELOPMENT_NOTES §13.5. Open:
+exact-`Surd` area guard (drops a float-slack fragility), k≥3 seeding completeness, k≥3 oblique (§12.3).

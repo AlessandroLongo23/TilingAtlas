@@ -771,7 +771,10 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 						cfg as CompactSeedConfiguration | CompactSeedConfigurationShort,
 						vcLibrary
 					);
-					const { cells, diag } = solver.solve(seed, { maxMs: k >= 2 ? 60_000 : 30_000 });
+					// 120s for k≥2: union seeding (fan fills on the few small-cell lattices, e.g. t2014's
+					// 1×(1+√3)) pushes the hardest 3⁶ seeds to ~55s; the cap gives headroom so the
+					// deterministic seed-free fill is not truncated. Timeouts are surfaced as INCOMPLETE below.
+					const { cells, diag } = solver.solve(seed, { maxMs: k >= 2 ? 120_000 : 30_000 });
 					if (diag.timedOut) { capped++; cappedNames.push(seed.name); }
 					for (const cell of cells) {
 						allCells.push(cell);

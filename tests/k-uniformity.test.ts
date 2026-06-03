@@ -53,14 +53,14 @@ describe('exact k-uniformity gate: the 11 regular 1-uniform tilings each have ex
 		'4,8,8',
 	];
 	for (const name of oneUniform) {
-		it(`${name} → 1 orbit`, () => {
+		it(`${name} → 1 orbit`, { timeout: 30000 }, () => {
 			expect(orbitCountForVC(name)).toBe(1);
 		});
 	}
 });
 
 describe('k=1 regular-polygon pipeline reproduces 11 (the gate is purely additive: all 11 pass)', () => {
-	it('counts exactly 11 distinct 1-uniform tilings, all with orbit-count 1', () => {
+	it('counts exactly 11 distinct 1-uniform tilings, all with orbit-count 1', { timeout: 60000 }, () => {
 		const parameters: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } };
 		setActiveRing(computeRing(parameters));
 

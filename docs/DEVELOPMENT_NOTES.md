@@ -333,7 +333,7 @@ so it reaches every edge-to-edge filling of T.
 | **Solve-for-period (`PeriodSolver`)** | ✅ **new** | **bounded — all 40 k=2 seeds FINISH (0 timeouts, 203 s total)**; k=1=11 (primitive cells); fast k=2 seeds → 2; `[3⁶;3⁴.6]` 2-uniform recovered |
 | Lattice/cell extraction | ✅ (regular core) | float collision; basis-cap caveat |
 | **k-uniformity gate** | ✅ | k=1=11 validated; k=2 cells→2; supercell-safe via primitivity filter |
-| k=2 count = 20 | ⚠ **19/20** (§13) | dedup now correct (congruence, §13.1); true emitted count is **19** — the 20th, t2014, is missing to a `torusFill` seeding gap (§13.4), NOT lattice discovery |
+| **k=2 count = 20** | ✅ **20/20** (§13.5) | dedup correct (congruence, §13.1) + targeted union seeding recovers t2014 (§13.5); deterministic, 0 timeouts, identical digest across runs |
 
 Tests: PeriodSolver suite (8) + the k-uniformity suite pass. Wired into the CLI behind
 `USE_PERIOD_SOLVER=1` (replaces seedsExpansion + extractTranslationalCell). Changes uncommitted at
@@ -787,15 +787,37 @@ fit *only by exact equality* (footprint == cell), passing solely because the gua
 `+1e-6` float slack — the area comparison should really be **exact in ℚ(√2,√3)** (`Surd`), not float, to
 be robust. That is a separate hardening item.
 
-### 13.5 State at end of session 4
-- **Done, correct, landable:** `TilingCongruence.ts`; congruence dedup wired into `solve` +
-  `probe-pipeline` + `run-pipeline`; digest re-pointed; tests added (snub 4→1, k=1 snub 2→1, congruence
-  pos/neg, k=1 dedup-additive=11). **108 tests pass, `pnpm build` green.** Verified twice that the
-  congruence dedup is sound (reduction-free cross-check).
-- **k=2 = 19** (honest count; deterministic). The 20th, t2014, is missing to the §13.4 fill gap.
-- **NEXT (scoped + verified):** **union seeding** — seed `torusFill` from the rigid k-VC core **and** from
-  per-VC single-vertex fans (add them to `coreSets`, already a `Polygon[][]`), then dedup the union of
-  results. Verified to reach t2014 (orbit=2) without sub-vertex seeding. Keep the rigid core for the
-  tilings §7 needs it for; the per-VC fans recover t2014. Then optionally harden the `torusFill` area
-  guard to **exact `Surd`** (drops the float `+1e-6` slack that t2004/t2011/t2012 currently lean on).
-  Re-validate vs the oracle for exactly 20, twice, identical digest. Then the k≥3 oblique problem (§12.3).
+### 13.5 The fix — targeted union seeding — and **k=2 = 20** ✅
+Implemented in `PeriodSolver.solve`. The rigid k-VC core stays the default seed, but **per-lattice** the
+solver now checks whether the core OVERFLOWS the cell — `footprintArea(corePolys mod Λ) > |det Λ|` (with a
+cheap exact short-circuit: skip the check when `|det Λ| ≥ totalCoreArea`, since the reduced footprint
+never exceeds the unreduced total). On the few small cells where it overflows (the core would be
+area-rejected and yield nothing), it seeds instead from the **single-VC fans** (`corePolys` incident to
+each VC's shared vertex — exact, correctly placed). A `diag.fanLattices` counter surfaces how many
+lattices used fans (loud, not silent).
+
+- **Why targeted, not blanket union:** seeding from the fans on *every* lattice (the naive union) tripled
+  the work and pushed the hardest 3⁶ seeds past the 120s cap → **timeout → non-determinism** (the very
+  wart §12.7 eliminated). Restricting fans to overflow lattices keeps the fast rigid-only path on every
+  large cell, so the run stays **deterministic** (0 timeouts) and only ~2× the dedup-only time.
+- **Result:** full k=2 probe = **20**, 0 timeouts, **deterministic** — identical composition digest
+  `f3e2e0517191362c` across two runs (745s without the short-circuit, **405s with it** — the short-circuit
+  nearly halved the time while leaving the digest unchanged, confirming it is behavior-preserving). t2014
+  (the 1×(1+√3) cell, 4 triangles + 1 square, orbit 2) is recovered. 109 tests
+  pass (incl. a t2014 regression test asserting `fanLattices>0`, the cell shape, and orbit 2), `pnpm build`
+  green. Live `run-pipeline` per-seed cap raised 60s→120s for headroom (timeouts there are logged INCOMPLETE).
+- **⚑ COMPLETENESS NOTE (load-bearing, do not lose):** "fans only where the core overflows the cell" is
+  **exact for k=2** — verified across all 20 that the rigid core misses ONLY the core-overflow tiling
+  t2014. It is a **heuristic at k≥3**: a tiling could in principle be reachable only by a fan on a cell the
+  rigid core *also* fits (a different relative-orientation gluing), which this trigger would not cover.
+  Revisit before trusting k≥3 counts — the honest general fix is either blanket union seeding (with the
+  timeout/perf cost addressed) or a proof that the rigid core + overflow-fans suffice.
+
+### 13.6 Remaining (future work)
+1. **Harden the `torusFill` area guard to exact `Surd`.** t2004/t2011/t2012 currently fit only by the
+   guard's float `+1e-6` slack (footprint == cell exactly); an exact ℚ(√2,√3) comparison removes that
+   fragility.
+2. **k≥3 seeding completeness** (the §13.5 caveat) and **k≥3 oblique lattices** (§12.3 — the deep open
+   problem; HNF is ruled out).
+3. **Performance:** union seeding is ~2× the dedup-only time; the fan fills on overflow lattices are the
+   cost. A fast necessary-condition reject before each fan fill, or incremental block reuse, would help.

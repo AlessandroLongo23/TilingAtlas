@@ -95,6 +95,7 @@ export type PeriodSolverDiag = {
 	rawCells: number; // completed torus tilings before dedup/gate
 	emitted: number; // after canonical dedup + k-gate
 	gateRejected: number; // completed but orbit count ≠ k
+	fanLattices: number; // lattices where the rigid core overflowed the cell → seeded from VC fans instead
 	timedOut: boolean;
 };
 
@@ -139,12 +140,27 @@ export class PeriodSolver {
 		);
 		const polySizes = Array.from(new Set(corePolys.map((p) => p.n))).sort((a, b) => a - b);
 
-		// Seed the torus fill from the seed's rigid k-VC core: it pins the k VCs in a concrete adjacency
-		// that is a sub-patch of the target tiling, so corner-completion reaches that tiling. (Seeding
-		// from a single VC instead is strictly worse here: it frees the gluing but, with the lattice and
-		// VC orientation fixed, the fill then misses the very 2-uniform tilings the rigid core does
-		// reach — the completeness frontier is in lattice DISCOVERY, not in the seeding.)
-		const coreSets: Polygon[][] = [corePolys];
+		// Seeding. The rigid k-VC core pins the k VCs in a concrete adjacency and is the default seed for
+		// torusFill. But a tiling whose primitive cell is SMALLER than the rigid core cannot contain it
+		// (e.g. t2014's 1×(1+√3) cell: the core's two squares sit at a non-lattice offset, so the core
+		// reduces mod Λ to 2 squares + 4 triangles = 2+√3 > the 1+√3 cell — torusFill's area guard rejects
+		// it before any fill). For exactly those lattices we instead seed from each VC's single-vertex
+		// fan, which pins only one VC and lets corner-completion find the gluing. The fans are built as the
+		// core's polygons incident to each VC's shared vertex (exact, correctly placed). See §13.4.
+		const fanCoreSets: Polygon[][] = [];
+		const seenFan = new Set<string>([corePolys.map((p) => p.exactKey()).sort().join('|')]);
+		for (const cv of coreVertices) {
+			const fan = corePolys.filter((p) => p.vertexKeySet().has(cv.key()));
+			if (fan.length < 2 || fan.length >= corePolys.length) continue; // not a proper single-vertex fan
+			const fanKey = fan.map((p) => p.exactKey()).sort().join('|');
+			if (seenFan.has(fanKey)) continue;
+			seenFan.add(fanKey);
+			fanCoreSets.push(fan);
+		}
+		// Total (unreduced) core area. The reduced footprint mod Λ never exceeds this, so a cell with
+		// area ≥ totalCoreArea ALWAYS holds the core — a cheap exact short-circuit that skips the
+		// per-lattice footprint computation on every large cell (only small cells can overflow).
+		const totalCoreArea = corePolys.reduce((s, p) => s + regularArea(p.n), 0);
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const lattices = this.candidateLattices(seed);
@@ -155,6 +171,7 @@ export class PeriodSolver {
 			rawCells: 0,
 			emitted: 0,
 			gateRejected: 0,
+			fanLattices: 0,
 			timedOut: false,
 		};
 
@@ -173,8 +190,22 @@ export class PeriodSolver {
 			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys);
 			if (!ctx) continue; // degenerate basis
 
+			// Choose the seed(s) for THIS lattice. Normally the rigid core. But when the rigid core
+			// OVERFLOWS the cell (its footprint mod Λ exceeds |det Λ| — the t2014 case), the core would be
+			// area-rejected and yield nothing, so seed from the single-VC fans instead. This keeps the fast
+			// path (one fill, rigid core) on every lattice the core fits, and only pays the extra fan fills
+			// on the few small cells the core cannot hold — so the run stays fast and DETERMINISTIC (no
+			// timeout pressure). ⚑ COMPLETENESS NOTE: this is exact for k=2 (the rigid core misses ONLY the
+			// core-overflow tiling t2014; verified across all 20). At k≥3 a tiling could in principle be
+			// reachable ONLY by a fan on a cell the rigid core also fits — that case is NOT covered here and
+			// must be revisited (do not treat fan-on-overflow as a general completeness guarantee).
+			const coreOverflows = fanCoreSets.length > 0 && ctx.cellArea < totalCoreArea - 1e-9 &&
+				this.footprintArea(corePolys, ctx) > ctx.cellArea + 1e-6;
+			const seedSets = coreOverflows ? fanCoreSets : [corePolys];
+			if (coreOverflows) diag.fanLattices++;
+
 			const rawCells: Polygon[][] = [];
-			for (const core of coreSets) {
+			for (const core of seedSets) {
 				if (maxMs > 0 && Date.now() - start > maxMs) { diag.timedOut = true; break; }
 				rawCells.push(...this.torusFill(core, ctx, () => maxMs > 0 && Date.now() - start > maxMs));
 			}
@@ -209,7 +240,7 @@ export class PeriodSolver {
 		if (opts.verbose) {
 			process.stderr.write(
 				`[PeriodSolver k=${k}] lattices=${diag.candidateLattices} tried=${diag.latticesTried} ` +
-				`raw=${diag.rawCells} emitted=${diag.emitted} gateRej=${diag.gateRejected}` +
+				`raw=${diag.rawCells} emitted=${diag.emitted} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices}` +
 				(diag.timedOut ? ' (TIMED OUT)' : '') + `\n`
 			);
 		}
@@ -560,6 +591,16 @@ export class PeriodSolver {
 		return q;
 	}
 
+	/** Total tile area of `core` reduced to ONE fundamental domain (distinct lattice-classes mod Λ).
+	 *  When this exceeds the cell area |det Λ|, the core cannot fit a single cell, so `torusFill` would
+	 *  area-reject it (the t2014 case) — the signal to seed from the single-VC fans instead. */
+	private footprintArea(core: Polygon[], ctx: FillCtx): number {
+		const reps = this.dedupModLattice(core, ctx, new Map());
+		let area = 0;
+		for (const p of reps) area += regularArea(p.n);
+		return area;
+	}
+
 	/** Dedup polygons into one CANONICAL representative per lattice class. The canonical rep is the
 	 *  lexicographically smallest exact key among the class's lattice translates lying near the origin
 	 *  — a choice that is identical for every member of a class (the near-origin translate SET is the
@@ -743,7 +784,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, timedOut: false };
 }
 
 function bbox(p: Polygon): { minX: number; maxX: number; minY: number; maxY: number } {

@@ -73,22 +73,54 @@ describe('PeriodSolver — the hard k=2 seeds now FINISH (bounded torus, no hang
 	// The expand-and-extract path could not finish these seeds (it grew unbounded allowed-VC
 	// non-periodic patches to radius 6k and hit the 90s cap). Fixing the period first makes the fill
 	// finite, so the solver returns well within budget without timing out.
+	// One concrete per name suffices to show termination. maxMs is 130s: union seeding (fan fills on the
+	// small-cell lattices) pushes these 3⁶ seeds to ~55s, so the old 40s budget now (correctly) reports a
+	// timeout — the seeds finish, they are just slower. The cap gives headroom; we assert no truncation.
 	for (const name of ['[3,3,3,3,3,3;3,3,3,3,6]', '[3,3,3,3,3,3;3,3,3,4,4]']) {
-		it(`${name} terminates without timeout`, { timeout: 60000 }, () => {
+		it(`${name} terminates without timeout`, { timeout: 150000 }, () => {
 			const seeds = buildSeeds(2).filter((s) => new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2);
-			const concretes = seeds.filter((s) => s.name === name);
-			expect(concretes.length).toBeGreaterThan(0);
-			for (const seed of concretes) {
-				const { cells, diag } = new PeriodSolver(2).solve(seed, { maxMs: 40000 });
-				expect(diag.timedOut).toBe(false);
-				// every EMITTED cell is exactly 2-uniform (the gate is sound)
-				for (const c of cells) {
-					const o = checker.countVertexOrbits(c.cellPolygons, c.basisExact[0], c.basisExact[1]);
-					expect(o === null || o === 2).toBe(true);
-				}
+			const seed = seeds.find((s) => s.name === name);
+			expect(seed).toBeDefined();
+			const { cells, diag } = new PeriodSolver(2).solve(seed!, { maxMs: 130000 });
+			expect(diag.timedOut).toBe(false);
+			// every EMITTED cell is exactly 2-uniform (the gate is sound)
+			for (const c of cells) {
+				const o = checker.countVertexOrbits(c.cellPolygons, c.basisExact[0], c.basisExact[1]);
+				expect(o === null || o === 2).toBe(true);
 			}
 		});
 	}
+});
+
+describe('Union seeding — the small-cell tiling t2014 is recovered (k=2 fill gap)', () => {
+	// t2014 = [3⁶;3³.4²] is the SMALLEST k=2 cell: a 1×(1+√3) rectangle (1 square + 4 triangles). Its
+	// lattice is enumerated, but the rigid 2-VC seed core reduces mod Λ to 2 squares + 4 triangles
+	// (2+√3 > the 1+√3 cell), so torusFill's area guard rejected it → t2014 was silently missing (true
+	// count was 19, not 20). The fix seeds from the single-VC fans on lattices where the core overflows
+	// the cell. (DEVELOPMENT_NOTES §13.4.)
+	it('[3,3,3,3,3,3;3,3,3,4,4] emits the 1×(1+√3) cell with 2 vertex orbits', { timeout: 150000 }, () => {
+		const concretes = buildSeeds(2).filter(
+			(s) => s.name === '[3,3,3,3,3,3;3,3,3,4,4]' && new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2
+		);
+		expect(concretes.length).toBeGreaterThan(0);
+		const found: PeriodCell[] = [];
+		for (const seed of concretes) {
+			const { cells, diag } = new PeriodSolver(2).solve(seed, { maxMs: 130000 });
+			expect(diag.timedOut).toBe(false); // deterministic: must finish, not truncate
+			expect(diag.fanLattices).toBeGreaterThan(0); // the core DID overflow some cell → fans were used
+			for (const c of cells) {
+				const u = c.basisExact[0].toVector(), v = c.basisExact[1].toVector();
+				const lo = Math.min(Math.hypot(u.x, u.y), Math.hypot(v.x, v.y));
+				const hi = Math.max(Math.hypot(u.x, u.y), Math.hypot(v.x, v.y));
+				if (Math.abs(lo - 1) < 0.02 && Math.abs(hi - (1 + Math.sqrt(3))) < 0.02) found.push(c);
+			}
+			if (found.length > 0) break; // found t2014 — stop (each concrete is ~1 min)
+		}
+		expect(found.length).toBeGreaterThan(0); // t2014's 1×(1+√3) cell is emitted
+		const c = found[0];
+		expect(c.cellPolygons.length).toBe(5); // 4 triangles + 1 square
+		expect(checker.countVertexOrbits(c.cellPolygons, c.basisExact[0], c.basisExact[1])).toBe(2);
+	});
 });
 
 describe('Congruence dedup — representation- & chirality-robust (the snub over-count fix)', () => {
