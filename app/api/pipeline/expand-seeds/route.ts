@@ -80,6 +80,10 @@ export async function POST(request: Request) {
 		}
 
 		const expander = new SeedExpander(k);
+		// Per-seed wall-clock cap so one pathological hard seed cannot hang the request to the
+		// 300s function timeout. Capped seeds produce NO tilings and are surfaced (never silent).
+		expander.maxExpandMs = k >= 2 ? 90_000 : 0;
+		const cappedNames: string[] = [];
 		const folderPath = `${paramsFolder}/expandedSeeds/k=${k}/m=${m}`;
 
 		const processAll = async (
@@ -98,6 +102,12 @@ export async function POST(request: Request) {
 						p: roundNumbersInJson(encodedPolygons) as Record<string, unknown>[],
 					});
 				});
+				if (expander.lastExpandCapped) cappedNames.push(seed.name);
+			}
+			if (cappedNames.length > 0) {
+				console.warn(
+					`expand-seeds: ${cappedNames.length} seed(s) hit the 90s cap (INCOMPLETE, no tilings): ${cappedNames.join(", ")}`,
+				);
 			}
 			return out;
 		};
@@ -144,12 +154,15 @@ export async function POST(request: Request) {
 						await uploadBatches(items);
 						streamLine(controller, {
 							progress: 100,
-							message: `Expanded ${items.length} seeds`,
+							message: `Expanded ${items.length} seeds`
+								+ (cappedNames.length ? ` (⚠ ${cappedNames.length} capped, INCOMPLETE)` : ''),
 							done: true,
 							paramsFolder,
 							k,
 							m,
 							expandedCount: items.length,
+							cappedSeeds: cappedNames.length,
+							cappedNames,
 						});
 					} catch (err) {
 						console.error("expand-seeds error:", err);
@@ -163,7 +176,10 @@ export async function POST(request: Request) {
 
 		const items = await processAll();
 		await uploadBatches(items);
-		return NextResponse.json({ paramsFolder, k, m, expandedCount: items.length });
+		return NextResponse.json({
+			paramsFolder, k, m, expandedCount: items.length,
+			cappedSeeds: cappedNames.length, cappedNames,
+		});
 	} catch (err) {
 		console.error("expand-seeds error:", err);
 		const message = err instanceof Error ? err.message : "Unknown error";
