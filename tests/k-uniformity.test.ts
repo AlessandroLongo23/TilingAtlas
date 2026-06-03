@@ -4,6 +4,8 @@ import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
 import { SeedExpander } from '@/classes/algorithm/SeedExpander';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
 import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
+import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
+import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import {
 	PolygonsGenerator,
 	VCGenerator,
@@ -79,6 +81,7 @@ describe('k=1 regular-polygon pipeline reproduces 11 (the gate is purely additiv
 		const extractor = new TranslationalCellExtractor();
 		const checker = new KUniformityChecker();
 		const seenCanonical = new Set<string>();
+		const cells: PeriodCell[] = [];
 		let extracted = 0;
 		let gateRejected = 0;
 
@@ -95,11 +98,15 @@ describe('k=1 regular-polygon pipeline reproduces 11 (the gate is purely additiv
 					return;
 				}
 				extracted++;
+				cells.push({ cellPolygons: result.cellPolygons, basisExact: [result.basisExact[0], result.basisExact[1]] });
 			});
 		}
 
 		expect(extracted).toBe(11);
 		expect(gateRejected).toBe(0); // no genuine 1-uniform tiling is wrongly dropped
+		// congruence dedup must be ADDITIVE here: the 11 distinct Archimedean tilings (incl. the chiral
+		// snub 3,3,3,3,6) are pairwise non-congruent, so it must not over-merge any of them.
+		expect(dedupeByCongruence(cells).length).toBe(11);
 	});
 });
 

@@ -43,6 +43,7 @@ import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
 import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet } from './LatticeEnumerator';
 import { detSurd } from './exact/Surd';
+import { dedupeByCongruence } from './TilingCongruence';
 
 const FLOAT_TOL = 1e-6;
 
@@ -197,6 +198,14 @@ export class PeriodSolver {
 			}
 		}
 
+		// Final dedup up to CONGRUENCE. `canonicalKey` (the intra-loop pre-filter above) under-merges the
+		// chiral snub: its two mirror lattices and two fundamental-domain representations survive as
+		// distinct keys (the k=1 snub `3,3,3,3,6` as 2 cells, the k=2 t2020 as up to 4 — the over-count).
+		// The exact pairwise congruence test merges them; it runs only on the few survivors of the
+		// pre-filter, so it is cheap. (DEVELOPMENT_NOTES §12.7/§12.11.)
+		const deduped = dedupeByCongruence(cells, (c) => extractor.canonicalKey(c.cellPolygons));
+		diag.emitted = deduped.length;
+
 		if (opts.verbose) {
 			process.stderr.write(
 				`[PeriodSolver k=${k}] lattices=${diag.candidateLattices} tried=${diag.latticesTried} ` +
@@ -204,7 +213,7 @@ export class PeriodSolver {
 				(diag.timedOut ? ' (TIMED OUT)' : '') + `\n`
 			);
 		}
-		return { cells, diag };
+		return { cells: deduped, diag };
 	}
 
 	// ---------------------------------------------------------------------------

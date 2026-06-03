@@ -40,3 +40,16 @@ k=2 = 20 with stable composition digest twice, k=1 stays 11, build + tests green
 **NEXT (TA)** — Rewrite `thesis/chapters/algorithm.tex` + `correctness.tex` around solve-for-period
 (currently describe the superseded expand-and-extract); complete `thesis/references.bib` from
 `resources/papers/`.
+
+**2026-06-04 — CC** — Representation-robust tiling dedup landed (`lib/classes/algorithm/TilingCongruence.ts`:
+exact pairwise **grid-isometry congruence** by flag correspondence; wired into `PeriodSolver.solve` +
+`probe-pipeline` + `run-pipeline`). Sound — verified by an independent reduction-free cross-check (no
+over-merge). **Two prior claims corrected (DEVELOPMENT_NOTES §13):** (1) the "off-grid chiral" framing
+was a red herring — every merging isometry is a *grid* isometry (every tile edge is a unit grid
+direction); (2) the over-count was NOT "23 = 20 + 3 snub" — the pipeline only ever emitted **19**
+distinct k=2 tilings, inflated to 23 by `canonicalKey` under-merging. So the dedup is correct but k=2 is
+now an honest **19/20**: **t2014 = [3⁶;3³.4²]** (1×(1+√3) cell) is missing, root-caused to a `torusFill`
+seeding gap (rigid 2-VC core larger than the tiny primitive cell), NOT dedup/lattice-enumeration. Also
+fixed: the k=1 chiral snub was over-counted (2→1) on the live `PeriodSolver` path (the "k=1=11" was only
+ever validated via the expander path). 108 tests green, build green. **For the thesis:** do NOT yet
+claim k=2=20 — the certified-exhaustive count is 19 pending the fill fix (the next CC task).

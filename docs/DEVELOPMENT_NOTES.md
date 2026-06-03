@@ -333,7 +333,7 @@ so it reaches every edge-to-edge filling of T.
 | **Solve-for-period (`PeriodSolver`)** | ✅ **new** | **bounded — all 40 k=2 seeds FINISH (0 timeouts, 203 s total)**; k=1=11 (primitive cells); fast k=2 seeds → 2; `[3⁶;3⁴.6]` 2-uniform recovered |
 | Lattice/cell extraction | ✅ (regular core) | float collision; basis-cap caveat |
 | **k-uniformity gate** | ✅ | k=1=11 validated; k=2 cells→2; supercell-safe via primitivity filter |
-| k=2 count = 20 | ⚠ **15/20** | hard seeds now finish (no hang); the 5 missing are the lattice-discovery coverage gap (§9.1), not a termination failure |
+| k=2 count = 20 | ⚠ **19/20** (§13) | dedup now correct (congruence, §13.1); true emitted count is **19** — the 20th, t2014, is missing to a `torusFill` seeding gap (§13.4), NOT lattice discovery |
 
 Tests: PeriodSolver suite (8) + the k-uniformity suite pass. Wired into the CLI behind
 `USE_PERIOD_SOLVER=1` (replaces seedsExpansion + extractTranslationalCell). Changes uncommitted at
@@ -622,7 +622,7 @@ edge points elsewhere; all 20 / all k≤6 regular tilings use only EVEN directio
 - Oblique census (oracle): 0,2,5,18,30 oblique at k=2..6; short vector of every oblique cell ≤ 3.61,
   area ≤ 13.
 
-### 12.7 k=2 result and the over-count diagnosis (the remaining gap)
+### 12.7 k=2 result and the over-count diagnosis (the remaining gap)  *(PARTLY WRONG — corrected in §13.3: "23 = 20 + 3" was actually 19 distinct inflated by canonicalKey under-merging; t2014 was never emitted)*
 Full k=2 probe: **23 distinct tilings, 0 timeouts, 407 s (~6.8 min)**, a stable composition digest (so it
 is deterministic). The +3 over 20 is **entirely one tiling**: the **snub-hex 2-uniform (oracle t2020),
 counted 4× instead of 1×**. Diagnosis (`scripts/probe-pipeline.ts` + ad-hoc checks):
@@ -641,8 +641,10 @@ counted 4× instead of 1×**. Diagnosis (`scripts/probe-pipeline.ts` + ad-hoc ch
 1. **Chirality convention = MERGE mirrors → target 20** (author-confirmed, matches OEIS A068599 /
    Galebach). A chiral tiling and its enantiomorph count as ONE. The tiling-level dedup MUST be
    reflection-invariant AND representation-invariant AND orientation-invariant (incl. OFF-grid). The
-   current `canonicalKey` is none of the latter two for the snub. **This is the only thing standing
-   between the current pipeline and a correct k=2 = 20.**
+   current `canonicalKey` is none of the latter two for the snub. ~~**This is the only thing standing
+   between the current pipeline and a correct k=2 = 20.**~~ *(WRONG — §13: a robust dedup was built and
+   is correct, but it is NOT the only gap; t2014 is missing to a separate `torusFill` bug. The dedup
+   merging isometry is also a GRID isometry, not off-grid as claimed below.)*
 2. **`canonicalKey` is not a true tiling invariant** — it depends on the cell's polygon representation
    (which depends on the basis used for mod-Λ reduction) and only tries 15° rotations. Needs a
    representation-robust canonical key (research notes point at Systre/Gavrog for exactly this).
@@ -669,9 +671,104 @@ float broadphase for the incidence/overlap with exact confirm. None are needed f
 `[a,b,c,d]` = `a + b·ζ₁₂ + c·ζ₁₂² + d·ζ₁₂³`, and **ζ₁₂ = ζ₂₄²**, so it embeds into our ring as
 `a + b·ζ²+ c·ζ⁴ + d·ζ⁶` (even powers only). This is THE authority for "got exactly these N tilings".
 
-### 12.11 Immediate next step
+### 12.11 Immediate next step  *(SUPERSEDED — see §13: dedup is DONE, and it revealed the real count is 19, not 23-as-distinct)*
 Implement the **chirality- and representation-robust tiling dedup** (merge the snub's mirror lattices +
 representations). Cleanest: dedup by a canonical key computed from a fixed-radius vertex-star patch,
 normalized over reflection AND the actual (possibly off-grid) lattice orientation — rather than over the
 24 grid rotations of one cell's polygon set. Expectation: k=2 → exactly 20. Then re-run twice to confirm
 the composition digest is identical (determinism), then `algorithm.md` update + the fill speed pass.
+
+> **Correction (§13):** the dedup was implemented as an **exact pairwise congruence test** (not a
+> canonical key), and the "off-grid orientation" premise above is **wrong** — every merging isometry is
+> a *grid* isometry. The dedup is correct, but it did **not** yield 20: it revealed that the pipeline only
+> ever emitted **19** distinct tilings (the old "23" was 19 inflated by `canonicalKey` under-merging),
+> with **t2014 missing** to a separate `torusFill` gap. Read §13.
+
+---
+
+## 13. Representation-robust dedup DONE — and it uncovered that k=2 coverage is 19/20, not 20/20 (2026-06-03/04, session 4)
+
+This session implemented the dedup (§12.11), which is **correct and sound**, and in verifying it
+end-to-end discovered that two long-standing claims in this document were **wrong**: the over-count was
+not "20 + 3 snub", and coverage was never complete. The dedup did its job — it removed the over-count
+*and exposed a real, separate, pre-existing completeness bug the over-count had masked*.
+
+### 13.1 The dedup: exact pairwise CONGRUENCE, grid-only (the "off-grid" premise was a red herring)
+`lib/classes/algorithm/TilingCongruence.ts` — `tilingsCongruent(cellA,uA,vA, cellB,uB,vB)` and
+`dedupeByCongruence(cells, keyOf?)`. Two periodic tilings are the same iff some plane isometry maps one
+onto the other (chirality MERGED). The candidate isometries are derived by **flag correspondence**: pick
+a reference polygon P0 of A; for every same-name Q of B, every grid rotation r∈[0,N) and reflect∈{F,T},
+pin `T` so g(P0)=Q exactly, then verify (i) `g(Λ_A)=Λ_B` (`sameLattice`) and (ii) the whole cell maps
+onto cell B mod Λ_B by exact-key set equality (lex-min canonical class rep on both sides). Reuses
+`KUniformityChecker`'s isometry machinery, `sameLattice`/`isIntCombo`, `Polygon.exactKey`.
+
+**The grid-only finding (refutes §12.7/§12.8's "off-grid chiral orientation").** Every tile is built by
+`RegularPolygon.fromAnchorAndDirExact`, a unit-ζ-step boundary walk, so **every edge vector is a unit
+grid direction ζ^t** (and the oracle confirms all regular k≤6 coords are in ℤ[ζ₁₂]). Any
+tiling→tiling isometry maps edges to edges, so its rotation generator is a ratio of two unit grid edges
+= a **grid power** (for a unit edge `e=ζ^a`, `e⁻¹=conj(e)`, so no field inverse is needed). The
+off-gridness lives **only** in the lattice period vector (3+ζ₆), never in an edge or in the merging
+isometry. So a *grid*-isometry test is complete; the scary off-grid cyclotomic-unit enumeration the docs
+feared is unnecessary. A throwaway verify-first spike confirmed `0` non-grid edges and merged the snub's
+representations under grid isometries before any production code was written.
+
+**Sound (no over-merge), proven two ways.** (a) Argument: a passing g is an explicit grid isometry with
+`g(Λ_A)=Λ_B` and an exact-key bijection of A's tiles onto B's — a genuine tiling isomorphism, so only
+truly-isometric tilings merge. (b) Empirical: every merge `dedupeByCongruence` makes was independently
+re-checked with a **reduction-free** test (does a grid isometry map one tiling's central disk *exactly*
+onto the other's patch, comparing actual placed polygons — no mod-Λ reduction?). All merges confirmed,
+including 3-member classes that merge cells on *different* lattices (`sameLattice=false`) that are the
+same tiling at different orientations.
+
+Applied at three layers: a cheap `canonicalKey` pre-filter is kept intra-loop; `PeriodSolver.solve` then
+runs `dedupeByCongruence` on its few survivors (final authority per seed); and the cross-seed
+aggregation in `scripts/probe-pipeline.ts` + `lib/algorithm/run-pipeline.ts` runs it again (the snub's
+duplicates are produced across different seeds). The probe's composition digest is re-pointed at the
+congruence-class id (min-`canonicalKey` member), so it is order-independent.
+
+### 13.2 A broader instance of the same bug: the k=1 chiral snub was also over-counted
+`PeriodSolver.solve` for the single VC `3,3,3,3,6` returned **2** cells, not 1 (a test failing already at
+HEAD `468ebc6`). The k=1 chiral snub's two mirror lattices were never merged by `canonicalKey` either.
+The "k=1 = 11 validated" claim (§3, §6) held only via the **expander** path (`k-uniformity.test.ts`),
+which is *not* the live `PeriodSolver` path — so the live path silently over-counted the k=1 snub
+(its true k=1 output was 12). The congruence dedup in `solve` fixes it (2→1). Lesson for the thesis:
+validate the *live* path, not a parallel one.
+
+### 13.3 ⚑⚑ The over-count diagnosis in §12.7 was WRONG: the true emitted count is 19, not 20
+The probe now reports **19**, not 20. The reduction-free cross-check proves the dedup is **not**
+over-merging, so 19 is the genuine number of distinct tilings the pipeline emits. Therefore the old
+"23 = 20 real + 3 snub duplicates" (§12.7, and the memory) was **incorrect**. The real decomposition,
+confirmed against the Soto-Sánchez oracle:
+- **19 distinct tilings are emitted**, inflated to 23 by `canonicalKey` *under*-merging: the snub t2020
+  split into 4 keys (+3) and one other tiling split into 2 keys (+1). `canonicalKey` never over-merges
+  (equal key ⇒ congruent), so its 23 was an over-count of a true 19, never an undercount-masking-20.
+- Matched each emitted cell's lattice against all 20 oracle k=2 lattices: **19/20 covered, t2014 missing**.
+  (Aside: the 20 oracle tilings occupy only **17 distinct lattice classes** — several share a lattice —
+  so "20 lattices covered" in §12.2 was about lattice coverage, which is *necessary but not sufficient*
+  for emitting 20 tilings. §12.8 flag 5 — "coverage ≠ enumeration" — is exactly this, now concrete.)
+
+### 13.4 The missing tiling t2014 = [3⁶;3³.4²], and its root cause: a `torusFill` gap (NOT dedup, NOT enumeration)
+`t2014` (oracle T1=[1,0,0,0], T2=[-1,0,2,1]) is the **1×(1+√3) rectangle**, cell = **1 square + 4
+triangles**, on VCs **3⁶ and 3³.4²** (V₀=1 hexagonal-VC vertex, V₁=2 mixed vertices — the tile/vertex
+arithmetic is consistent only for this VC pair, *not* for [4⁴;3³.4²]). Its seed is
+`[3,3,3,3,3,3;3,3,3,4,4]` — the very seed §9.1 flagged as "produces 0 cells".
+
+Probed directly: its lattice **is** in the live `candidateLattices` (one of 397 candidates for that
+seed), but `torusFill` produces **0** cells on it. So the gap is in the **fill**, not lattice enumeration
+and not dedup. Most likely mechanism (to confirm next session): the fill is seeded from the **rigid
+2-VC core**, which has more tiles than this tiny cell (~5 tiles) can hold, so the core reduced mod Λ
+over-fills / self-overlaps and the lattice is rejected on contact (`initialArea > cellArea` or initial
+self-overlap in `torusFill`). The §7 decision "seed from the rigid k-VC core, not a single VC" is what
+makes the fill reach 2-uniform tilings whose cells are *large enough*; it cannot seed a tiling whose
+primitive cell is **smaller than the rigid core**. That is the open completeness frontier for k=2.
+
+### 13.5 State at end of session 4
+- **Done, correct, landable:** `TilingCongruence.ts`; congruence dedup wired into `solve` +
+  `probe-pipeline` + `run-pipeline`; digest re-pointed; tests added (snub 4→1, k=1 snub 2→1, congruence
+  pos/neg, k=1 dedup-additive=11). **108 tests pass, `pnpm build` green.** Verified twice that the
+  congruence dedup is sound (reduction-free cross-check).
+- **k=2 = 19** (honest count; deterministic). The 20th, t2014, is missing to the §13.4 fill gap.
+- **NEXT:** fix the `torusFill` seeding so a primitive cell smaller than the rigid k-VC core can still be
+  filled (e.g. seed from a single VC *or* a minimal sub-core when the cell area is below the core's tile
+  area, while keeping the rigid-core path for the larger cells it is needed for). Re-validate against the
+  oracle for exactly 20, twice, identical digest. Then the k≥3 oblique problem (§12.3) remains.

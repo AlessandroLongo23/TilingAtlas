@@ -1,9 +1,9 @@
 /* Validate PeriodSolver over the full k seed set. Run: pnpm tsx scripts/probe-pipeline.ts [k] */
 import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
-import { PeriodSolver } from '@/classes/algorithm/PeriodSolver';
-import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
+import { PeriodSolver, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
+import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
 import {
 	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
 	PolygonType, type GeneratorParameters,
@@ -30,34 +30,29 @@ const useSeeds = k >= 2 ? seeds.filter((s) => new Set(s.vertexConfigurations.map
 console.log(`k=${k}: ${seeds.length} seeds (${useSeeds.length} used)`);
 
 const extractor = new TranslationalCellExtractor();
-const checker = new KUniformityChecker();
-const seenCanonical = new Set<string>();
-let total = 0, capped = 0;
+const allCells: PeriodCell[] = [];
+let capped = 0;
 const t0 = Date.now();
 for (let i = 0; i < useSeeds.length; i++) {
 	const seed = useSeeds[i];
 	const ts = Date.now();
 	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs: 120000 });
 	const ms = Date.now() - ts;
-	let added = 0;
-	for (const c of cells) {
-		const key = extractor.canonicalKey(c.cellPolygons);
-		if (seenCanonical.has(key)) continue;
-		seenCanonical.add(key);
-		added++;
-		total++;
-	}
+	for (const c of cells) allCells.push(c);
 	if (diag.timedOut) capped++;
-	if (ms > 3000 || diag.timedOut || added > 0)
+	if (ms > 3000 || diag.timedOut || cells.length > 0)
 		console.log(
-			`  [${i}] ${seed.name.padEnd(28)} +${added} (cells=${cells.length}) ` +
+			`  [${i}] ${seed.name.padEnd(28)} cells=${cells.length} ` +
 			`lat=${diag.candidateLattices} raw=${diag.rawCells} gateRej=${diag.gateRejected} ${ms}ms${diag.timedOut ? ' TIMEOUT' : ''}`
 		);
 }
-console.log(`\nk=${k}: ${total} distinct tilings, ${capped} seeds timed out, ${((Date.now() - t0) / 1000).toFixed(1)}s total`);
-// Deterministic-composition fingerprint: sort the canonical cell keys and digest them. Two runs must
-// print the SAME digest (count alone is not enough — the old discovery gave 15 with shifting members).
-const sorted = [...seenCanonical].sort();
+// Authoritative cross-seed dedup: up to CONGRUENCE (representation- & chirality-robust). The old
+// canonicalKey-Set under-merges the chiral snub, over-counting t2020 4× (DEVELOPMENT_NOTES §12.7/§12.11).
+const reps = dedupeByCongruence(allCells, (c) => extractor.canonicalKey(c.cellPolygons));
+console.log(`\nk=${k}: ${reps.length} distinct tilings (from ${allCells.length} raw cells), ${capped} seeds timed out, ${((Date.now() - t0) / 1000).toFixed(1)}s total`);
+// Deterministic-composition fingerprint over the congruence-class representatives (each the
+// min-canonicalKey member of its class ⇒ order-independent). Two runs must print the SAME digest.
+const ids = reps.map((c) => extractor.canonicalKey(c.cellPolygons)).sort();
 let h = 5381n;
-for (const c of sorted.join('|')) h = ((h * 33n) ^ BigInt(c.codePointAt(0)!)) & 0xffffffffffffffffn;
-console.log(`COMPOSITION digest=${h.toString(16)} count=${sorted.length}`);
+for (const c of ids.join('|')) h = ((h * 33n) ^ BigInt(c.codePointAt(0)!)) & 0xffffffffffffffffn;
+console.log(`COMPOSITION digest=${h.toString(16)} count=${reps.length}`);

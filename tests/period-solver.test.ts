@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
-import { PeriodSolver } from '@/classes/algorithm/PeriodSolver';
+import { PeriodSolver, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
+import { cellsCongruent, dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
 import {
 	PolygonsGenerator,
 	VCGenerator,
@@ -88,6 +89,48 @@ describe('PeriodSolver — the hard k=2 seeds now FINISH (bounded torus, no hang
 			}
 		});
 	}
+});
+
+describe('Congruence dedup — representation- & chirality-robust (the snub over-count fix)', () => {
+	// canonicalKey fingerprints ONE fundamental-domain representation and tries only the 24 GRID
+	// rotations + conj, so it under-merges the chiral snub: the snub-hex 2-uniform (oracle t2020) is
+	// emitted as 2 mirror lattices × 2 representations = up to 4 cells with 4 distinct keys (the +3 over
+	// the target 20). The exact pairwise congruence test merges them. (DEVELOPMENT_NOTES §12.7/§12.11.)
+	it('the snub-hex 2-uniform (t2020) is over-emitted yet dedupes to ONE tiling', { timeout: 120000 }, () => {
+		const concretes = buildSeeds(2).filter(
+			(s) => s.name === '[3,3,3,3,3,3;3,3,3,3,6]' && new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2
+		);
+		expect(concretes.length).toBeGreaterThan(0);
+		const all: PeriodCell[] = [];
+		for (const seed of concretes) all.push(...new PeriodSolver(2).solve(seed, { maxMs: 60000 }).cells);
+		// the snub cell is the hexagonal lattice with Gram diagonal |u|²=|v|²=13 (the √13 norm, off-grid).
+		const isSnub = (c: PeriodCell) => {
+			const u = c.basisExact[0].toVector(), v = c.basisExact[1].toVector();
+			return Math.abs(u.x * u.x + u.y * u.y - 13) < 0.05 && Math.abs(v.x * v.x + v.y * v.y - 13) < 0.05;
+		};
+		const snub = all.filter(isSnub);
+		expect(snub.length).toBeGreaterThan(1); // the over-count (canonicalKey did NOT merge them)
+		for (let i = 0; i < snub.length; i++)
+			for (let j = i + 1; j < snub.length; j++)
+				expect(cellsCongruent(snub[i], snub[j])).toBe(true); // all the same tiling (mirror + rep)
+		expect(dedupeByCongruence(snub).length).toBe(1); // ⇒ counted once
+	});
+
+	it('a tiling is congruent to itself under a different (unimodular) lattice basis', { timeout: 30000 }, () => {
+		const { cells } = new PeriodSolver(1).solve(new SeedConfiguration([VertexConfiguration.fromName('3,4,6,4')]), {});
+		expect(cells.length).toBeGreaterThan(0);
+		const a = cells[0];
+		const [u, v] = a.basisExact;
+		const b: PeriodCell = { cellPolygons: a.cellPolygons, basisExact: [u, v.add(u)] }; // same lattice, new basis
+		expect(cellsCongruent(a, b)).toBe(true);
+	});
+
+	it('genuinely different tilings are NOT merged (no over-merge)', { timeout: 30000 }, () => {
+		const sq = new PeriodSolver(1).solve(new SeedConfiguration([VertexConfiguration.fromName('4,4,4,4')]), {}).cells[0];
+		const hex = new PeriodSolver(1).solve(new SeedConfiguration([VertexConfiguration.fromName('6,6,6')]), {}).cells[0];
+		expect(cellsCongruent(sq, hex)).toBe(false);
+		expect(dedupeByCongruence([sq, hex]).length).toBe(2);
+	});
 });
 
 describe('PeriodSolver — emitted cells are exact, gap-free, primitive tilings', () => {

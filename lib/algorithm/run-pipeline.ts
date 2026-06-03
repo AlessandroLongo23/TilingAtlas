@@ -34,6 +34,8 @@ import {
 	setActiveRing,
 } from "@/classes";
 import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import { AlgorithmTilingGenerator } from "@/classes/algorithm/TilingGenerator";
 import { comparePolygonNames, compareVertexConfigurationNames, roundNumbersInJson, toRadians, getEffectiveUniqueCount } from "@/utils";
 import { BATCH_SIZE } from "@/lib/constants";
@@ -735,15 +737,17 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 			if (!fs.existsSync(basePath)) return 0;
 
 			const extractor = new TranslationalCellExtractor();
-			const seenCanonical = new Set<string>();
-			const byM = new Map<
-				number,
-				{ n: string; p: Record<string, unknown>[]; b: [[number, number], [number, number]]; o: [number, number] }[]
-			>();
+			type CellRec = { n: string; p: Record<string, unknown>[]; b: [[number, number], [number, number]]; o: [number, number] };
+			const byM = new Map<number, CellRec[]>();
+			// Collect every certified cell across all seeds, then dedup ONCE up to congruence at the end
+			// (representation- & chirality-robust). The old canonicalKey-Set under-merges the chiral snub →
+			// over-counts t2020 4× (DEVELOPMENT_NOTES §12.7/§12.11). Each cell's m (= #distinct VC types) is
+			// tracked so survivors persist under the right m= folder.
+			const allCells: PeriodCell[] = [];
+			const cellMeta = new Map<PeriodCell, { mVal: number; name: string }>();
 
 			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith('m='));
 			let processed = 0;
-			let emitted = 0;
 			let capped = 0;
 			const cappedNames: string[] = [];
 			// total for progress
@@ -758,7 +762,6 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 				const manifestPath = `${basePath}/${mDir}/manifest.json`;
 				if (!fs.existsSync(manifestPath)) continue;
 				const { configs, vcLibrary } = loadSeedConfigBatches(paramsFolder, k, mVal);
-				if (!byM.has(mVal)) byM.set(mVal, []);
 				const solver = new PeriodSolver(k);
 
 				for (const cfg of configs) {
@@ -771,23 +774,29 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 					const { cells, diag } = solver.solve(seed, { maxMs: k >= 2 ? 60_000 : 30_000 });
 					if (diag.timedOut) { capped++; cappedNames.push(seed.name); }
 					for (const cell of cells) {
-						const canonical = extractor.canonicalKey(cell.cellPolygons);
-						if (seenCanonical.has(canonical)) continue;
-						seenCanonical.add(canonical);
-						emitted++;
-						const u = cell.basisExact[0].toVector();
-						const v = cell.basisExact[1].toVector();
-						const origin = cell.cellPolygons[0].exactCentroid!.toVector();
-						byM.get(mVal)!.push({
-							n: seed.name,
-							p: roundNumbersInJson(cell.cellPolygons.map((p) => polygonToShort(p.encode() as Record<string, unknown>))) as Record<string, unknown>[],
-							b: [[u.x, u.y], [v.x, v.y]],
-							o: [origin.x, origin.y],
-						});
+						allCells.push(cell);
+						cellMeta.set(cell, { mVal, name: seed.name });
 					}
 				}
 			}
 			log.clearLine();
+
+			// Authoritative cross-seed dedup up to congruence; survivors regrouped by m for persistence.
+			const reps = dedupeByCongruence(allCells, (c) => extractor.canonicalKey(c.cellPolygons));
+			const emitted = reps.length;
+			for (const cell of reps) {
+				const { mVal, name } = cellMeta.get(cell)!;
+				if (!byM.has(mVal)) byM.set(mVal, []);
+				const u = cell.basisExact[0].toVector();
+				const v = cell.basisExact[1].toVector();
+				const origin = cell.cellPolygons[0].exactCentroid!.toVector();
+				byM.get(mVal)!.push({
+					n: name,
+					p: roundNumbersInJson(cell.cellPolygons.map((p) => polygonToShort(p.encode() as Record<string, unknown>))) as Record<string, unknown>[],
+					b: [[u.x, u.y], [v.x, v.y]],
+					o: [origin.x, origin.y],
+				});
+			}
 
 			for (const [mVal, cells] of byM.entries()) {
 				if (cells.length === 0) continue;
