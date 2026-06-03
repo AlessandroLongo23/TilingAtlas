@@ -29,6 +29,8 @@ export * from "./algorithm/SeedSetExtractor";
 export * from "./algorithm/SeedBuilder";
 export * from "./algorithm/SeedExpander";
 export * from "./algorithm/TranslationalCellExtractor";
+export * from "./algorithm/KUniformityChecker";
+export * from "./algorithm/PeriodSolver";
 export * from "./algorithm/Tiling";
 
 // algorithm/TilingGenerator intentionally NOT re-exported: it imports node:fs

@@ -8,6 +8,8 @@ export * from './SeedSetExtractor';
 export * from './SeedBuilder';
 export * from './SeedExpander';
 export * from './TranslationalCellExtractor';
+export * from './KUniformityChecker';
+export * from './PeriodSolver';
 export * from './Tiling';
 export * from './TilingGenerator';
 export * from './types';

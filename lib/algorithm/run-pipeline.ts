@@ -21,6 +21,8 @@ import {
 	type CompactSeedConfigurationShort,
 	type FullSeedConfiguration,
 	TranslationalCellExtractor,
+	KUniformityChecker,
+	PeriodSolver,
 	Vector,
 	RegularPolygon,
 	StarRegularPolygon,
@@ -144,8 +146,17 @@ function main() {
 	const adjacencyList = compatibilityGraphGeneration(vertexConfigurations, paramsFolder, log);
 	seedSetExtraction(adjacencyList, vertexConfigurations, paramsFolder, log);
 	seedsGeneration(paramsFolder, null, null, log);
-	seedsExpansion(paramsFolder, null, null, log);
-	extractTranslationalCell(paramsFolder, null, null, log);
+
+	if (process.env.USE_PERIOD_SOLVER === '1') {
+		// Solve-for-period path (docs/DEVELOPMENT_NOTES.md §8.1): go straight from each seed to its
+		// fundamental cell(s) by fixing the period and filling the bounded torus — replacing the
+		// expand-to-radius-6k + extract path. Bounded even for the hard seeds that the expander could
+		// not finish. Writes the same translationalCells output the downstream stages consume.
+		for (let k = 1; k <= MAX_K; k++) periodSolveForK(paramsFolder, k, log);
+	} else {
+		seedsExpansion(paramsFolder, null, null, log);
+		extractTranslationalCell(paramsFolder, null, null, log);
+	}
 	tilingsGeneration(paramsFolder, 1, 1, log);
 
 	log.log('='.repeat(50));
@@ -520,14 +531,25 @@ function expandSeedsForK(
 				}
 			}
 			log.clearLine();
-			return { expanded, entropyWalls, deadEnds, processed };
+			return { expanded, entropyWalls, deadEnds, processed, cappedSeeds, cappedNames };
 		},
 		(result) => {
 			if (typeof result === 'number' && result === 0) return;
-			const r = result as { expanded: number; entropyWalls: number; deadEnds: number; processed: number };
+			const r = result as {
+				expanded: number; entropyWalls: number; deadEnds: number; processed: number;
+				cappedSeeds: number; cappedNames: string[];
+			};
 			log.log(
 				`  → ${r.expanded} fully expanded, ${r.entropyWalls} entropy walls, ${r.deadEnds} dead ends (${r.processed} total)`
 			);
+			// Capped seeds are INCOMPLETE — their tilings are silently missing unless surfaced. Never
+			// hide them: a non-zero count means the run is not exhaustive for those seeds.
+			if (r.cappedSeeds > 0) {
+				log.log(
+					`  ⚠ ${r.cappedSeeds} seed(s) hit the ${'90s'} per-seed cap and produced NO tilings ` +
+					`(INCOMPLETE — completeness not guaranteed for these): ${r.cappedNames.join(', ')}`
+				);
+			}
 		}
 	);
 }
@@ -557,9 +579,11 @@ function extractTranslationalCellForK(
 		`Translational cell extraction for k=${k}`,
 		() => {
 			const extractor = new TranslationalCellExtractor();
+			const kChecker = new KUniformityChecker();
 			let processed = 0;
 			let extracted = 0;
 			let skipped = 0;
+			let gateRejected = 0; // periodic cells whose true vertex-orbit count ≠ k (not k-uniform)
 
 			const basePath = `${typeBasePath(paramsFolder)}/expandedSeeds/k=${k}`;
 			if (!fs.existsSync(basePath)) return 0;
@@ -617,6 +641,22 @@ function extractTranslationalCellForK(
 						continue;
 					}
 
+					// k-uniformity gate (plan §5 Step 1): the defining property is "exactly k vertex
+					// orbits under the full symmetry group". Verify it exactly. A null result means the
+					// patch is too small/degenerate to decide — keep it (never drop on uncertainty,
+					// only on a definite ≠ k verdict), so the gate cannot reduce completeness.
+					if (result.basisExact) {
+						const orbits = kChecker.countVertexOrbits(
+							result.cellPolygons,
+							result.basisExact[0],
+							result.basisExact[1]
+						);
+						if (orbits !== null && orbits !== k) {
+							gateRejected++;
+							continue;
+						}
+					}
+
 					extracted++;
 					const encodedCell = result.cellPolygons.map((p) =>
 						polygonToShort(p.encode() as Record<string, unknown>)
@@ -667,12 +707,115 @@ function extractTranslationalCellForK(
 				);
 			}
 			log.clearLine();
-			return { extracted, skipped, processed };
+			return { extracted, skipped, gateRejected, processed };
 		},
 		(result) => {
 			if (typeof result === 'number' && result === 0) return;
-			const r = result as { extracted: number; skipped: number; processed: number };
-			log.log(`  → ${r.extracted} cells extracted, ${r.skipped} skipped (${r.processed} total)`);
+			const r = result as { extracted: number; skipped: number; gateRejected: number; processed: number };
+			log.log(
+				`  → ${r.extracted} cells extracted, ${r.gateRejected} rejected by k-uniformity gate, ` +
+				`${r.skipped} skipped (${r.processed} total)`
+			);
+		}
+	);
+}
+
+/**
+ * Solve-for-period stage (opt-in via USE_PERIOD_SOLVER=1): for each seed, fix the period and fill the
+ * bounded torus directly (PeriodSolver), producing fundamental cells already gated to exactly k vertex
+ * orbits. Replaces seedsExpansion + extractTranslationalCell with one bounded step (no radius-6k growth,
+ * so the hard seeds that the expander could not finish now terminate). Writes the identical
+ * translationalCells output that the downstream tiling stage consumes.
+ */
+function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): void {
+	log.runStep(
+		`Solve-for-period cells for k=${k}`,
+		() => {
+			const basePath = `${typeBasePath(paramsFolder)}/seedConfigurations/k=${k}`;
+			if (!fs.existsSync(basePath)) return 0;
+
+			const extractor = new TranslationalCellExtractor();
+			const seenCanonical = new Set<string>();
+			const byM = new Map<
+				number,
+				{ n: string; p: Record<string, unknown>[]; b: [[number, number], [number, number]]; o: [number, number] }[]
+			>();
+
+			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith('m='));
+			let processed = 0;
+			let emitted = 0;
+			let capped = 0;
+			const cappedNames: string[] = [];
+			// total for progress
+			let total = 0;
+			for (const mDir of mDirs) {
+				const manifestPath = `${basePath}/${mDir}/manifest.json`;
+				if (fs.existsSync(manifestPath)) total += (JSON.parse(fs.readFileSync(manifestPath, 'utf8')).total ?? 0);
+			}
+
+			for (const mDir of mDirs) {
+				const mVal = parseInt(mDir.replace('m=', ''), 10);
+				const manifestPath = `${basePath}/${mDir}/manifest.json`;
+				if (!fs.existsSync(manifestPath)) continue;
+				const { configs, vcLibrary } = loadSeedConfigBatches(paramsFolder, k, mVal);
+				if (!byM.has(mVal)) byM.set(mVal, []);
+				const solver = new PeriodSolver(k);
+
+				for (const cfg of configs) {
+					processed++;
+					log.progress('Seeds', processed, total);
+					const seed = SeedConfiguration.decodeCompact(
+						cfg as CompactSeedConfiguration | CompactSeedConfigurationShort,
+						vcLibrary
+					);
+					const { cells, diag } = solver.solve(seed, { maxMs: k >= 2 ? 60_000 : 30_000 });
+					if (diag.timedOut) { capped++; cappedNames.push(seed.name); }
+					for (const cell of cells) {
+						const canonical = extractor.canonicalKey(cell.cellPolygons);
+						if (seenCanonical.has(canonical)) continue;
+						seenCanonical.add(canonical);
+						emitted++;
+						const u = cell.basisExact[0].toVector();
+						const v = cell.basisExact[1].toVector();
+						const origin = cell.cellPolygons[0].exactCentroid!.toVector();
+						byM.get(mVal)!.push({
+							n: seed.name,
+							p: roundNumbersInJson(cell.cellPolygons.map((p) => polygonToShort(p.encode() as Record<string, unknown>))) as Record<string, unknown>[],
+							b: [[u.x, u.y], [v.x, v.y]],
+							o: [origin.x, origin.y],
+						});
+					}
+				}
+			}
+			log.clearLine();
+
+			for (const [mVal, cells] of byM.entries()) {
+				if (cells.length === 0) continue;
+				const folderPath = `${typeBasePath(paramsFolder)}/translationalCells/k=${k}/m=${mVal}`;
+				if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
+				const totalCells = cells.length;
+				for (let i = 0; i < totalCells; i += BATCH_SIZE) {
+					const batchIndex = Math.floor(i / BATCH_SIZE);
+					const batch = cells.slice(i, i + BATCH_SIZE);
+					const compressed = zlib.gzipSync(JSON.stringify(batch), { level: 9 });
+					fs.writeFileSync(`${folderPath}/translationalCells_${String(batchIndex).padStart(4, '0')}.json.gz`, compressed);
+				}
+				fs.writeFileSync(
+					`${folderPath}/manifest.json`,
+					JSON.stringify({ format: 'full', shortKeys: true, compressed: true, total: totalCells, batchSize: BATCH_SIZE })
+				);
+			}
+			return { emitted, processed, capped, cappedNames };
+		},
+		(result) => {
+			if (typeof result === 'number' && result === 0) return;
+			const r = result as { emitted: number; processed: number; capped: number; cappedNames: string[] };
+			log.log(`  → ${r.emitted} distinct k-uniform cells from ${r.processed} seeds`);
+			if (r.capped > 0) {
+				log.log(
+					`  ⚠ ${r.capped} seed(s) hit the per-seed time cap (INCOMPLETE — their cells may be missing): ${r.cappedNames.join(', ')}`
+				);
+			}
 		}
 	);
 }
