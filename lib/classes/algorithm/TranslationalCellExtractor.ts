@@ -20,6 +20,9 @@ export type TranslationalCellResult = {
 	cellPolygons: Polygon[];
 	origin: Vector;
 	basis: [Vector, Vector];
+	/** Exact translation basis (present on the exact path; absent on the legacy float fallback).
+	 *  Used by the k-uniformity gate to count vertex orbits under the full symmetry group. */
+	basisExact?: [Cyclotomic, Cyclotomic];
 };
 
 export class TranslationalCellExtractor {
@@ -52,6 +55,7 @@ export class TranslationalCellExtractor {
 			cellPolygons: reps,
 			origin: originPolygon.exactCentroid!.toVector(),
 			basis: [u.toVector(), v.toVector()],
+			basisExact: [u, v],
 		};
 	}
 
