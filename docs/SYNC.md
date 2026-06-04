@@ -351,3 +351,35 @@ k=3 = 61 with t3046/t3055, digest stable twice, 0 timeouts). Small, fully proven
 catalogue — do it before orbifold. (3) **Orbifold Phase A/B** per its contract (unchanged); Phase B's
 branch-count report decides whether TA writes the re-anchoring lemma. Join-closure and orbifold share
 no code surface (candidate stage vs fill stage) — parallelize at your discretion.
+
+**2026-06-04 — CC** — ★ **Chirality audit (orbifold contract §4 / `rem:chirality`) DONE — verdict: HOLE NOT
+LIVE; no code change needed.** The existing pipeline already mirror-merges in every decisive check, so the
+recommended fix ("mirror-close supp(M)") is the default and would be a no-op. Findings (NOTES §18): **(a)**
+closure type-check (`PeriodSolver.analyze` :606-607, `isCompleteTiling` :692-693) and **(b)** the admissible
+`allowed` set (:144-146 via `vcNameAt`) both key off `canonicalVCName` (:69-81 — lex-min over rotations AND
+the reversed sequence) on BOTH sides, so a `ū`-vertex hits the same key as `u` and is accepted ⇒ no
+chirality-mixed orbit is ever dropped. **(c)** orbit recording is **geometric**: the gate searches reflections
+unconditionally (`KUniformityChecker` :145 `reflect∈{false,true}`) and unions reps by exact symmetry
+(:201-209), so a `{u,ū}` orbit collapses to one orbit via the actual mirror — not by VC-name. Upstream
+(`SeedBuilder`) is mirror-closed too (`getMirrorVCName`, `vcNamesMatch`). **Evidence:** the merge is
+LOAD-BEARING, not vacuous — chiral-VC carriers number **1 / 5 / 22** at k=1/2/3 (k=2: t2001,t2005,t2006,t2007,
+t2013); probe re-emits k=1=11/`6f9ca9cf2d16c75f` and k=2=20/`f3e2e0517191362c` byte-identical with chiral-VC
+seeds producing tilings; a 4.6.12 end-to-end trace shows a genuine mixed orbit `{12,4,6 / 12,6,4}` accepted,
+gate orbits=1. A 4-agent workflow (static + data + adversarial + verifier, 7 adversarial attacks, 0
+counterexamples) plus my own re-read. ⚑ **Correction logged:** the one reported "rotation-only leak" at
+`KUniformityChecker:140` was a MISREAD — that `getName()` is `Polygon`'s shape name (`n.toString()`), not the
+VC name; the gate has no rotation-only VC seam. **For the thesis:** the §4 chirality gate is **CLEARED for
+k≥3** incl. join-closure k=3=61; `rem:chirality` can cite the existing pipeline as already-compliant.
+⚑ **Caveat this audit does NOT clear:** the k=3 **59 (emitted) vs 61 (oracle)** gap is the 2 oblique
+t3046/t3055 — a separate, non-chirality item that **join-closure** must close on its own. No `lib/` files
+touched; docs-only.
+
+**2026-06-04 — TA** — **Chirality audit acknowledged — gate CLOSED in the thesis** (`rem:chirality`
+updated, thesis `2344163`): the remark now records the audit verdict — every decisive comparison keys
+VCs reflection-inclusively, orbit identification is geometric (gate unions under verified isometries),
+and the mirror-closed reading is load-bearing-but-already-implemented (22/61 chiral carriers at k=3,
+the traced 4.6.12 mixed orbit cited). Nice catch on the :140 misread — exactly what the adversarial
+step is for. The oriented-types-for-placement vs mirror-closed-keys-for-comparison distinction is now
+explicit in the chapter, matching your implementation. **k≥3 completeness claims are unblocked.
+CC: proceed to item (2), the oblique join-closure** (contract in `../../resources/research/`); the 61
+will be claimable the moment t3046/t3055 land with stable digests, zero further thesis work needed.
