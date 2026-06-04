@@ -23,12 +23,13 @@ import { PolygonType, type GeneratorParameters } from '@/classes';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
 import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
 import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import { deserializeCell, type SerializedCell } from './scoutCodec';
+import { deserializeCell, readResumeNdjson, type SerializedCell } from './scoutCodec';
 
 const k = parseInt(process.argv[2] ?? '1', 10);
 const tiles = process.argv[3] ?? '3,4,6,8,12';
 const maxMs = process.argv[4] ? parseInt(process.argv[4], 10) : 0; // 0 = no cap (certified)
 const W = process.argv[5] ? parseInt(process.argv[5], 10) : Math.max(1, Math.min(8, os.cpus().length - 2));
+const fresh = process.argv.includes('fresh'); // ignore any prior resume file
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: tiles.split(',').map(Number) } };
 const baseRing = computeRing(params);
@@ -41,13 +42,29 @@ type Worker = { proc: ChildProcess; inFlight: number | null; alive: boolean };
 
 const t0 = Date.now();
 const collected: SerializedCell[] = [];
-const ndjson = fs.createWriteStream(`/tmp/scout-k${k}.ndjson`);
-let total = -1, nextIdx = 0, done = 0, timeouts = 0, finished = false;
+
+// Crash-resume: a PERSISTENT NDJSON (in-repo, not /tmp — survives reboot), keyed by (k, tiles, cap) so
+// only a matching prior run resumes. On startup we read the finished seeds + their cells; new results are
+// APPENDED. So a shutdown loses at most the seeds in flight. `fresh` ignores any existing file.
+const RESUME_DIR = '.scout-cache';
+const resumePath = `${RESUME_DIR}/k${k}_${tiles.replace(/,/g, '.')}_cap${maxMs}.ndjson`;
+fs.mkdirSync(RESUME_DIR, { recursive: true });
+if (fresh) { try { fs.rmSync(resumePath); } catch { /* none */ } }
+const doneSet = new Set<number>();
+{
+	const r = readResumeNdjson(resumePath);
+	for (const i of r.done) doneSet.add(i);
+	for (const c of r.cells) collected.push(c);
+	if (doneSet.size > 0) console.error(`[coord] RESUMING from ${resumePath}: ${doneSet.size} seeds already done (pass 'fresh' for a clean run)`);
+}
+const ndjson = fs.createWriteStream(resumePath, { flags: 'a' }); // append — keep prior results
+let total = -1, nextIdx = 0, timeouts = 0, finished = false;
 const pending: number[] = []; // indices re-queued after a worker died mid-flight
 const workers: Worker[] = [];
 
 function nextAssignment(): number | 'stop' {
 	if (pending.length) return pending.pop()!;
+	while (total >= 0 && nextIdx < total && doneSet.has(nextIdx)) nextIdx++; // skip already-done (resumed)
 	if (total >= 0 && nextIdx < total) return nextIdx++;
 	return 'stop';
 }
@@ -59,17 +76,18 @@ function assign(w: Worker): void {
 	w.proc.stdin!.write(JSON.stringify({ idx: a }) + '\n');
 }
 function onReady(w: Worker, nSeeds: number): void {
-	if (total < 0) { total = nSeeds; console.error(`[coord] total=${total} seeds, workers=${W}, cap=${maxMs}ms (${maxMs === 0 ? 'no cap / certified' : 'capped'})`); }
+	if (total < 0) { total = nSeeds; console.error(`[coord] total=${total} seeds, resumed=${doneSet.size}, workers=${W}, cap=${maxMs}ms (${maxMs === 0 ? 'no cap / certified' : 'capped'})`); }
+	if (doneSet.size >= total) { finish(); return; } // already fully done from the resume file
 	assign(w);
 }
 function onResult(w: Worker, r: Result): void {
 	w.inFlight = null;
 	for (const c of r.cells) collected.push(c);
 	ndjson.write(JSON.stringify({ idx: r.idx, cells: r.cells }) + '\n');
-	done++; if (r.timedOut) timeouts++;
+	doneSet.add(r.idx); if (r.timedOut) timeouts++;
 	if (r.ms > 3000 || r.timedOut || r.cells.length > 0)
-		console.error(`  [${r.idx}] ${r.name.padEnd(30)} cells=${r.cells.length} ${r.ms}ms${r.timedOut ? ' TIMEOUT' : ''}  (${done}/${total})`);
-	if (done === total) { finish(); return; }
+		console.error(`  [${r.idx}] ${r.name.padEnd(30)} cells=${r.cells.length} ${r.ms}ms${r.timedOut ? ' TIMEOUT' : ''}  (${doneSet.size}/${total})`);
+	if (doneSet.size === total) { finish(); return; }
 	assign(w);
 }
 function finish(): void {
