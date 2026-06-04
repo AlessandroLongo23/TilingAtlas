@@ -821,3 +821,73 @@ lattices used fans (loud, not silent).
    problem; HNF is ruled out).
 3. **Performance:** union seeding is ~2× the dedup-only time; the fan fills on overflow lattices are the
    cost. A fast necessary-condition reject before each fan fill, or incremental block reuse, would help.
+
+---
+
+## 14. k=3 — structural generalization confirmed, but the tractability wall is real (2026-06-04, session 5)
+
+Goal: check whether the method generalizes to k=3 (target 61). Verdict, now empirical: **it generalizes
+STRUCTURALLY (produces correct orbit-3 tilings) but is NOT tractable to completion at k=3 as built** —
+the hard 3⁶-family seeds time out. Setting it up correctly also surfaced two real issues a naive
+`probe 3` would have hit silently. **All k=3 code changes below are committed but the full-run RESULT
+was not yet captured** (the scout was mid-flight at handoff — re-run it; see §14.5).
+
+### 14.1 Oracle characterization (new durable tool `scripts/oracle-characterize.ts`)
+Decodes the Soto-Sánchez oracle for any k and classifies each lattice's Bravais type by **exact
+symmetry** (lattice automorphism: invariant under a rotation ζ^r or reflection conj∘ζ^r). k=3 = 61
+tilings: **hex 22, cmm/rect-conventional 17, rectangular 16, square 2, rhombic-cmm 2, OBLIQUE 2**.
+- **Reachable ceiling = 59/61.** The 2 oblique (**t3046, t3055**) are not in our candidate set (no
+  oblique enumeration — §12.3, HNF ruled out), so they cannot be produced.
+- ⚑ **Classifier trap (re-hit and caught):** my first classifier judged oblique on the *primitive*-basis
+  angle/length and reported 19 oblique at k=3 — the exact long-thin-cmm mistake §11.1 warned about. The
+  **controls** (known oblique census 0,0,2,5 at k=1..4) exposed it (k=2 showed 5 instead of 0 — the 5
+  cmm cells). The symmetry-based classifier gives the correct 0,0,2,5. *Always validate a classifier on
+  the known-answer controls.*
+
+### 14.2 Parameter scaling (PeriodSolver.candidateLattices) — committed
+`POOL_STEPS=6 / POOL_LMAX=5.6` were **k=2-hardcoded**; the longest k=3 cell vector is **6.732 > 5.6** and
+needs **≥7 > 6** edge-steps, so those tilings were silently un-generated. Now **k-scaled**: k≤2 keeps the
+validated 6/5.6 (so k=2=20 is unchanged); k≥3 uses `poolSteps = 2k+2`, `poolLmax = √(22k)` (k=3 → 8 /
+8.12), and the short-side caps (`compactOffMax2`, `gridShortMax2`) are loosened to the pool length.
+`areaBound = 16k` already scaled (k=3: 48 > max area 39.25 ✓). ⚑ These are **empirical bounds sized to
+the known oracle maxima, NOT proven** — a tiling whose cell vector exceeds the pool reach is silently
+missed, and a longer pool blows up the dense ring (see §14.4). A real completeness bound is future work.
+
+### 14.3 ⚑ The Surd lattice enumeration is N=24-ONLY (architectural constraint)
+`imSurd`/`gridDirOf`/`detSurd` (Surd = ℚ(√2,√3) = ℚ(ζ₂₄)⁺) **require N=24**. But `computeRing` picks the
+*minimal* ring — {3,4,6,12} → **N=12** — which **crashes** (`imSurd: requires the N=24 ring`). This never
+surfaced at k=2 (the full set {3,4,6,8,12} → N=24). Workaround in the probe: **force N=24** (every regular
+n ∈ {3,4,6,8,12} divides 24, so it is always valid — just a larger containing ring). To run a non-octagon
+subset *natively* in N=12 would need the Surd layer extended to ℚ(√3). The live `run-pipeline` is only safe
+because it uses the full N=24 set; a non-octagon param there would hit the same crash.
+
+### 14.4 The tractability wall (the genuine blocker)
+- **447 multi-VC seeds at k=3**; building them alone takes ~125s.
+- The machinery **works**: sampled seeds produce orbit-3 cells (`orbits=[3,3,3,3]`), dedup + union
+  seeding fine. But the **hard 3⁶-family seeds time out** — all 6 sampled concretes of
+  `[3⁶;3⁴.6;3⁴.6]` hit the 120s cap (fanLat 14–20 — union seeding is firing on many small cells). This
+  is the §11 dense-pool / per-candidate-fill wall at k=3 scale.
+- **Tile-set tractability** (pool size at k=3 params, steps 8 / lmax 8.12): {3,6}=216, {3,4,6}=6624,
+  {3,4,6,12}=6624 (12-dir) — all OK; **{3,4,6,8,12}=700k** (octagons → 24 directions = the wall).
+- So the run is scoped to **{3,4,6,12}** (12-dir, tractable); it excludes octagon tilings, so it reaches
+  at most the non-octagon subset of the 59.
+
+### 14.5 The scout (re-run in the new chat) + how the probe changed
+`pnpm tsx scripts/probe-pipeline.ts 3 3,4,6,12 60000` — launched in the background at handoff (60s
+per-seed cap for a faster first look), **result not captured** (multi-hour run, was in progress). Re-run
+it to get the **X/59 lower bound** + the timed-out-seed breakdown. Coverage is the **union over seeds**,
+so per-seed timeouts don't necessarily lose a tiling (often reachable via another seed) — the count is a
+meaningful lower bound. The probe now: takes a tile-set arg (`argv[3]`), a per-seed `maxMs` arg
+(`argv[4]`), **forces N=24**, and prints `fanLat` per seed. Then oracle-match the emitted cells (decode
++ `latticeCongruent`, as in session 4) to report which of the 59 were found/missed and why.
+
+### 14.6 NEXT (priority order)
+1. **Optimize the hard-seed per-fill cost** — the genuine blocker for tractable k≥3. Levers (§12.9/§11.5):
+   skip far polygons in `torusFill.analyze`; incremental block reuse instead of rebuilding `buildBlock`
+   every pop; a fast necessary-condition reject before each (union-seeding) fan fill; float broadphase
+   with exact confirm. The union-seeding fan fills on small cells are a measurable contributor.
+2. **Verify the k≥3 union-seeding heuristic** (fans-only-on-core-overflow — exact at k=2, unproven at
+   k≥3; §13.5): at k=3 a tiling could be reachable only by a fan on a core-FITTING cell.
+3. **Oblique** (2 at k=3, growing 0,2,5,18,30) — the deep open problem (§12.3; HNF ruled out).
+4. **N=12 Surd support** if non-octagon subsets are wanted without forcing N=24; **octagon (24-dir)
+   tractability** for the full set.

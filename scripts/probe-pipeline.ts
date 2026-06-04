@@ -9,11 +9,19 @@ import {
 	PolygonType, type GeneratorParameters,
 } from '@/classes';
 import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing } from '@/classes/Cyclotomic';
+import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
 
 const k = parseInt(process.argv[2] ?? '1', 10);
-const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } };
-setActiveRing(computeRing(params));
+// Optional tile-set arg, e.g. `pnpm tsx scripts/probe-pipeline.ts 3 3,4,6,12` to scope k=3 to the
+// 12-direction (tractable) tiles, excluding octagons (n=8 → 24 directions → ~700k pool, the §11 wall).
+const ns = process.argv[3] ? process.argv[3].split(',').map(Number) : [3, 4, 6, 8, 12];
+const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns } };
+// The seed-free lattice enumeration (Surd = ℚ(√2,√3) = ℚ(ζ₂₄)⁺) REQUIRES N=24. computeRing picks the
+// minimal N (e.g. {3,4,6,12} → N=12), which crashes gridDirOf/imSurd — so force N=24 (every regular
+// n ∈ {3,4,6,8,12} divides 24, so this is always valid and just uses a larger containing ring).
+const baseRing = computeRing(params);
+setActiveRing(baseRing.N === 24 ? baseRing : CyclotomicRing.create(24));
+console.log(`tiles: {${ns.join(',')}}  ring N=${baseRing.N === 24 ? 24 : `24 (computeRing gave ${baseRing.N}, forced to 24 for Surd)`}`);
 
 const pg = new PolygonsGenerator(params, []);
 const vcs = new VCGenerator(pg.polygons).generateVertexConfigurations();
@@ -32,11 +40,12 @@ console.log(`k=${k}: ${seeds.length} seeds (${useSeeds.length} used)`);
 const extractor = new TranslationalCellExtractor();
 const allCells: PeriodCell[] = [];
 let capped = 0;
+const maxMs = process.argv[4] ? parseInt(process.argv[4], 10) : 120000; // per-seed cap (ms)
 const t0 = Date.now();
 for (let i = 0; i < useSeeds.length; i++) {
 	const seed = useSeeds[i];
 	const ts = Date.now();
-	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs: 120000 });
+	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs });
 	const ms = Date.now() - ts;
 	for (const c of cells) allCells.push(c);
 	if (diag.timedOut) capped++;

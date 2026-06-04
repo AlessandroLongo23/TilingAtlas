@@ -286,11 +286,22 @@ export class PeriodSolver {
 		if (cached) return cached;
 
 		const lat = new LatticeEnumerator(this.k);
+		// Completeness knobs scale with k. k≤2 keeps the validated 6/5.6 pool and the small short-side
+		// caps; k≥3 grows the pool reach (the longest k=3 oracle cell vector is 6.732 > POOL_LMAX=5.6 and
+		// needs ≥7 > POOL_STEPS=6 edge-steps) and LOOSENS the short-side caps to the pool length so larger
+		// k≥3 short vectors / off-grid round cells are not dropped. ⚑ COMPLETENESS: these bounds are sized
+		// to the KNOWN oracle maxima (k=3 longest = 6.732), NOT proven — a tiling whose cell vector exceeds
+		// the pool reach would be silently missed, and a longer pool blows up the dense ring (24-dir octagon
+		// seeds → ~700k pts; see §13.6 / §11.5). Revisit for a real completeness bound + the dense case.
+		const poolSteps = this.k <= 2 ? POOL_STEPS : 2 * this.k + 2; // k=3→8, k=4→10
+		const poolLmax = this.k <= 2 ? POOL_LMAX : Math.sqrt(22 * this.k); // k=3→8.12, k=4→9.38
+		const compactOffMax2 = this.k <= 2 ? COMPACT_OFFGRID_MAX2 : poolLmax * poolLmax;
+		const gridShortMax2 = this.k <= 2 ? GRID_SHORT_MAX2 : poolLmax * poolLmax;
 		// Restrict the pool to the edge directions these tiles can actually produce (sound: every edge,
 		// hence every period vector, lies in them). Collapses the pool 50–1000× when the tiles fit one
 		// symmetry ring (e.g. {3,6} → 6 hexagonal directions).
 		const dirs = edgeStepDirs(ring, polySizes);
-		const pool = shortVectorPool(ring, POOL_STEPS, POOL_LMAX, dirs, /* monotone */ true);
+		const pool = shortVectorPool(ring, poolSteps, poolLmax, dirs, /* monotone */ true);
 		const poolSet = new Set(pool.map((p) => p.key()));
 		// Safe over-estimate of the max k-uniform cell area (the largest k=2 cell, t2001, is 12+8√3 ≈
 		// 25.86; the largest k=1 cell ≈ 14.8). Err large for completeness — the VC-area filter and
@@ -317,7 +328,7 @@ export class PeriodSolver {
 		const roundPool = pool.filter((p) => {
 			if (gridDirOf(p, ring) !== null) return true;
 			const f = p.toVector();
-			return f.x * f.x + f.y * f.y <= COMPACT_OFFGRID_MAX2;
+			return f.x * f.x + f.y * f.y <= compactOffMax2;
 		});
 		for (const [u, v] of lat.roundCells(roundPool, polySizes, ring, areaBoundF, undefined, areas)) push(u, v);
 
@@ -325,7 +336,7 @@ export class PeriodSolver {
 		// long/centering vector must itself be a realizable vertex difference.
 		const gridShorts = pool.filter((p) => {
 			const f = p.toVector();
-			return f.x * f.x + f.y * f.y <= GRID_SHORT_MAX2;
+			return f.x * f.x + f.y * f.y <= gridShortMax2;
 		});
 		for (const [u, v] of lat.gridAlignedCells(gridShorts, polySizes, ring, undefined, areas)) {
 			if (poolSet.has(v.key())) push(u, v);

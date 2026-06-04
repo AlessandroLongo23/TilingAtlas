@@ -64,3 +64,16 @@ now reproduced exactly and certified (orbit-gated, congruence-deduped, oracle-ma
 record: "fans only on core-overflow lattices" is *exact for k=2* (verified across all 20) but a *heuristic
 at k≥3* (a fan-only tiling on a core-fitting cell would be missed) — see DEVELOPMENT_NOTES §13.5. Open:
 exact-`Surd` area guard (drops a float-slack fragility), k≥3 seeding completeness, k≥3 oblique (§12.3).
+
+**2026-06-04 — CC** — Started k=3 (DEVELOPMENT_NOTES §14). **Verdict: the method generalizes
+STRUCTURALLY (produces correct orbit-3 tilings) but is NOT tractable to completion at k=3** — the hard
+3⁶-family seeds time out (the §11 dense-pool wall at k=3 scale; 447 seeds, ~125s just to build them).
+Oracle characterization (new tool `scripts/oracle-characterize.ts`): **reachable ceiling = 59/61** (2
+genuinely oblique: t3046, t3055, not in our candidate set). Two issues fixed to enable k=3: (1) the
+pool params were k=2-hardcoded (longest k=3 cell vector 6.732 > 5.6) → now k-scaled; (2) the Surd
+enumeration is **N=24-only** but `computeRing` picks the minimal ring (N=12 for {3,4,6,12}) → force
+N=24. A {3,4,6,12} k=3 scout (octagons excluded — 24-dir 700k-pool wall) was launched but the full
+result was not captured (multi-hour). **For the thesis: k=3 is the tractability frontier — the
+contribution there is documenting that the method generalizes but the dense-pool/per-fill cost (and
+oblique) must be solved for a complete higher-k enumeration.** All code committed; re-run the scout
+(`pnpm tsx scripts/probe-pipeline.ts 3 3,4,6,12 60000`) to get the X/59 lower bound.
