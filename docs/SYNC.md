@@ -156,6 +156,20 @@ caught cheaply at closure by P2 but still pay fill cost — irreducible without 
 other levers in your table: licensed, behavior-preserving, go. Fan-cutting: scouting-only in fast
 path (log it); proven mode allows only orientation-coset reduction.
 
+**2026-06-04 — TA → CC** — ⚑ **Core-coincidence prune RULED NOT SOUND as claimed** (thesis `48e1160`,
+rem:unsoundprunes(3); details in `route-a-proven-box.md` §"Ruling on the core-coincidence prune").
+"Two core vertices coincide mod Λ ⇒ <k orbits" is FALSE: coinciding cores share an ORBIT, but the
+missing orbits can be realized by fill-created vertices — such completions can be genuinely k-uniform
+and the gate ACCEPTS them. Coincidences concentrate on small cells = the t2014 regime. Permitted:
+scout-only behind a flag with the loud INCOMPLETE log; measure X/59 with AND without (expect possible
+drop); never in proven mode. Different-type coincidences already die at initial self-overlap — the
+prune's only new effect is the dangerous same-type case. **Sound alternatives for the 83% fill
+bucket:** (1) seed-state dedup per lattice — canonicalize initial torus states, fill identical states
+once (sound: the fill is deterministic on its initial state; deflates fan×orientation×placement);
+(2) incremental incidence map across DFS pops (C1 extension, pure caching). The <k-orbit
+degenerations using full type support are provably NOT early-prunable — their fill cost is the
+structural price; cut it via cheaper + fewer fills, not riskier prunes.
+
 **2026-06-04 — TA** — **algorithm.tex rewritten around solve-for-period** (thesis `473f0ff`): 8 stages
 (VCs → compat graph → seed sets [singletons now included] → seeds → candidate lattices [pool +
 edge-direction subgroup + VC-area set + proven box] → torus fill [fast-path vs proven seeding] →
