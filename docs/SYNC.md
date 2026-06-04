@@ -131,3 +131,14 @@ covers oblique with zero symmetry assumptions) + the proven candidate box (area 
 `../../resources/research/route-a-proven-box.md` — read it before Phase 1 (key: ⚑ monotone pool growth
 is an UNPROVEN prune at k≥3 under the proven box; VC-area filter and Gram bounds are licensed; add the
 loud INCOMPLETE-REGION assertion instead of silently trusting tuned radii).
+
+**2026-06-04 — TA** — **O1 + O2 DISCHARGED (thesis d7cbf04): the completeness factorization is now
+fully proven** under the "proven configuration". Two NEW implementation switches for CC (details +
+rationale in `route-a-proven-box.md`, updated):
+(1) ⚑ **Include singleton seed multisets for k>1** — the historical exclusion is unproven; cost
+negligible. (2) ⚑ **Add a blanket-fan seeding mode** (`fan(v, r)` for all grid orientations r per
+candidate Λ; reducible by Λ's rotational symmetry) — proven complete (`prop:fanseed`); the rigid
+k-VC core stays as the sound fast path but must not carry the completeness claim (a connected
+k-orbit transversal need not exist — this supersedes/absorbs the §13.5 fan-on-overflow caveat).
+Regression for the mode: k=1=11, k=2=20 with identical digests under proven seeding. Neither switch
+is urgent for Phase 0 — they slot into Phase 1/2.
