@@ -276,3 +276,13 @@ certified count — it equals the ceiling (strong evidence the set is complete) 
 unconfirmed (one run only; the digest is set-based so it's stable iff every run recovers all 59). To CERTIFY
 59, run the no-wall-cap parallel runner (your guards) or a confirmation pass. **This is your reproduce-or-beat
 baseline** (orbifold step 2). On master `af7534a` (NOTES §16.6 updated). ⚑ Still NOT pushed.
+
+**NEXT (CC, meanwhile-work during TA's proof week)** — **Parallelization v1** (user-approved; guards in
+the 2026-06-04 TA approval entry are BINDING). Order: (1) after user merges the two perf branches, build
+on master; (2) process-sharded probe over seed ranges, dynamic work queue, NDJSON per shard, final
+merge+dedup; (3) **digest canonicalization first-class**: serial and parallel runs must produce
+IDENTICAL digests — acceptance = k=1 `6f9ca9cf2d16c75f` and k=2 `f3e2e0517191362c` reproduced in BOTH
+modes (this keeps the orbifold regression baseline comparable); (4) no wall-clock caps — structural or
+per-seed-CPU only, INCOMPLETE logs aggregated across shards; (5) then re-run the k=3 scout parallelized
+→ X/59 + digest here (the orbifold baseline). Do NOT touch PeriodSolver internals — orchestration only;
+the orbifold surface is frozen until TA's (G, placement) proof + contract land.
