@@ -1,0 +1,66 @@
+/* Parallel-scout WORKER (parallelization v1, SYNC 2026-06-04). One process per core. Rebuilds the
+ * ring + seed list itself (guard #4 — no shared mutable state), then solves seed indices handed to it
+ * by the coordinator over stdin and streams back serialized exact cells over stdout as NDJSON.
+ *
+ * Protocol (all single-line JSON):
+ *   worker → coord : {"type":"ready","nSeeds":N}                       once, after build
+ *   coord  → worker: {"idx":i}                                         solve useSeeds[i]
+ *   worker → coord : {"type":"result","idx":i,"name":..,"cells":[..],"timedOut":b,"ms":n}
+ *   coord  → worker: {"stop":true}                                     exit
+ *
+ * stdout carries ONLY protocol JSON — all diagnostics go to stderr (inherited) so the stream stays clean.
+ */
+import readline from 'node:readline';
+import { PeriodSolver } from '@/classes/algorithm/PeriodSolver';
+import {
+	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
+	PolygonType, type GeneratorParameters,
+} from '@/classes';
+import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
+import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
+import { serializeCell } from './scoutCodec';
+
+const k = parseInt(process.argv[2] ?? '1', 10);
+const ns = (process.argv[3] ?? '3,4,6,8,12').split(',').map(Number);
+const maxMs = process.argv[4] ? parseInt(process.argv[4], 10) : 0; // 0 = no wall-clock cap (guard #2)
+
+const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns } };
+const baseRing = computeRing(params);
+// Surd enumeration is N=24-only; force the containing ring exactly as scripts/probe-pipeline.ts does.
+setActiveRing(baseRing.N === 24 ? baseRing : CyclotomicRing.create(24));
+
+const pg = new PolygonsGenerator(params, []);
+const vcs = new VCGenerator(pg.polygons).generateVertexConfigurations();
+const adj: Record<string, string[]> = {};
+for (const vc of vcs) adj[vc.name] = [];
+for (let i = 0; i < vcs.length; i++)
+	for (let j = i + 1; j < vcs.length; j++)
+		if (vcs[i].isCompatible(vcs[j])) { adj[vcs[i].name].push(vcs[j].name); adj[vcs[j].name].push(vcs[i].name); }
+const graph = CompatibilityGraph.fromAdjacencyList(adj, vcs);
+const seedSets = new SeedSetExtractor(graph).findSeedSets(k);
+const seeds = new SeedBuilder().buildSeeds(k, 1, { seedSetLoader: () => seedSets });
+// Same seed filter as the serial probe — identical ordering ⇒ index i means the SAME seed in every worker.
+const useSeeds = k >= 2 ? seeds.filter((s) => new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2) : seeds;
+
+const send = (o: unknown) => process.stdout.write(JSON.stringify(o) + '\n');
+send({ type: 'ready', nSeeds: useSeeds.length });
+
+const rl = readline.createInterface({ input: process.stdin });
+rl.on('line', (line) => {
+	const trimmed = line.trim();
+	if (!trimmed) return;
+	const msg = JSON.parse(trimmed) as { idx?: number; stop?: boolean };
+	if (msg.stop) { rl.close(); process.exit(0); }
+	if (typeof msg.idx !== 'number') return;
+	const seed = useSeeds[msg.idx];
+	const ts = Date.now();
+	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs });
+	send({
+		type: 'result',
+		idx: msg.idx,
+		name: seed.name,
+		cells: cells.map(serializeCell),
+		timedOut: diag.timedOut,
+		ms: Date.now() - ts,
+	});
+});
