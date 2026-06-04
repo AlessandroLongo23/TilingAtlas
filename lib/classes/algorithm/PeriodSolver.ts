@@ -303,10 +303,16 @@ export class PeriodSolver {
 		const dirs = edgeStepDirs(ring, polySizes);
 		const pool = shortVectorPool(ring, poolSteps, poolLmax, dirs, /* monotone */ true);
 		const poolSet = new Set(pool.map((p) => p.key()));
-		// Safe over-estimate of the max k-uniform cell area (the largest k=2 cell, t2001, is 12+8√3 ≈
-		// 25.86; the largest k=1 cell ≈ 14.8). Err large for completeness — the VC-area filter and
-		// the orbit gate remain exact.
-		const areaBoundF = 16 * this.k;
+		// Proven cell-area bound (Route-A: thesis correctness.tex thm:weight / cor:box; summary in
+		// resources/research/route-a-proven-box.md). A k-uniform cell has F ≤ 24k tiles (|V(Q)| ≤ 12k,
+		// vertex degree ≥ 3), each of area ≤ a_max = the largest tile area in the seed's tile set, so
+		// |det Λ| ≤ 24k·a_max. This REPLACES the tuned `16k`, which was sized to a WRONG "largest k=1
+		// cell ≈ 14.8" estimate and SILENTLY DROPPED 4.6.12 (truncated trihexagonal, cell 9+6√3 ≈ 19.39
+		// > 16 at k=1 — one of the 11 Archimedean tilings; the live path gave k=1=10 until this fix).
+		// Float ceiling only; the VC-area set + torusFill area checks stay exact (Surd). Raising the area
+		// ceiling does NOT enlarge the pool (the binding completeness knob), so no tractability blow-up.
+		const aMax = Math.max(...polySizes.map(regularArea));
+		const areaBoundF = 24 * this.k * aMax;
 		// Exact cell areas the seed's VCs can actually produce (the tile multiset is forced by the VCs,
 		// not any tile sum). Sound + complete; far sparser than the generic ladder ⇒ many fewer spurious
 		// candidates reaching torusFill.
