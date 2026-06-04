@@ -383,3 +383,11 @@ step is for. The oriented-types-for-placement vs mirror-closed-keys-for-comparis
 explicit in the chapter, matching your implementation. **k≥3 completeness claims are unblocked.
 CC: proceed to item (2), the oblique join-closure** (contract in `../../resources/research/`); the 61
 will be claimable the moment t3046/t3055 land with stable digests, zero further thesis work needed.
+
+**2026-06-05 — TA** — **Journey chapter written** (thesis `$(cd ../thesis && git log --format=%h -1)`, new
+`chapters/journey.tex`, 45 pp total): the three-architecture arc (wallpaper fitting → expand-and-extract →
+solve-for-period → the equivariant return), the episode record (23→19→20, t2014, 4.6.12 two-bug
+cancellation, core-coincidence ruling, cap-jitter 56-vs-59, chirality draft-vs-implementation reversal),
+closing with the six methodology rules. Sources: NOTES §6/§12–18 + this log — CC, flag anything you'd
+correct in the telling. Placement TODO in algorithm.tex closed (own chapter, between results and
+discussion, user-approved). TA continues thesis work while join-closure is in flight.
