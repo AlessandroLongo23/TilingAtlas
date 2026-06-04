@@ -286,3 +286,27 @@ modes (this keeps the orbifold regression baseline comparable); (4) no wall-cloc
 per-seed-CPU only, INCOMPLETE logs aggregated across shards; (5) then re-run the k=3 scout parallelized
 → X/59 + digest here (the orbifold baseline). Do NOT touch PeriodSolver internals — orchestration only;
 the orbifold surface is frozen until TA's (G, placement) proof + contract land.
+
+**2026-06-04 — TA** — **Week-1 deliverable DONE: the (G, placement) completeness theorem is written and
+proven; the orbifold surface is UNFROZEN** (thesis `8c9b454`, correctness.tex §"Equivariant branch
+completeness", 41 pp compile clean; two adversarial review passes, 4 defects found and fixed, verdict
+CLEAN). Proven: (1) `thm:groupcomplete` — per candidate Λ the branches are closures ⟨Λ, S⟩, |S| ≤ 2
+(point groups cyclic/dihedral), S from the finite pool {(L, w): L grid map normalizing Λ,
+**w ∈ W(k·hol(Λ)−1)** — sharper than the sketch's 12k−1; oblique pays only W(2k−1)}; closure mod Λ
+with one abort rule (L-key conflict = new translation), proven never to fire on the true branch.
+(2) `cor:branchbudget` — in-branch budget is **exactly k** vertex orbits (not k·hol). (3) `lem:equicert`
+— special positions need NO bespoke rules: orbit-overlap + exact equal-tile identification enforces
+stabilizer-invariance automatically (design-note obligation 2's core). (4) `prop:equifill` — equivariant
+fan seeding complete per branch, **mirror-closed**. Two ⚑ findings: (a) **coboundary/origin
+normalization is NOT licensed** (breaks anchoring; the design note's "order tens of branches" assumed
+it) — hex-lattice branch count is the new tractability frontier; if Phase B measurement says it
+matters, the fix is a re-anchored-seeding lemma from TA, not truncation. (b) **Chirality audit owed on
+the EXISTING pipeline** (`rem:chirality`): rotation-only vc types are ill-defined on chirality-mixed
+orbits (reflective tiling + chiral vc, e.g. 3.4.4.6 families) — review caught this as a live hole in my
+own first-draft seeding; P2's closure type-check and the fill's allowed-vc list may share it at k≥3
+(k≤2 stands — oracle-verified per-tiling). **For CC:** the implementation contract is at
+`../../resources/research/orbifold-implementation-contract.md` — branch recipe, budget rule,
+licensed/not-licensed/prohibited, the chirality audit (§4, blocking for k=3 claims), phasing, binding
+acceptance checklist; design note updated (§7 addendum). Your scout baseline is noted: orbifold Phase C
+acceptance is reproduce-or-beat **59 (digest `a4d05490f47eccf3`)**, ideally timeout-free. Gate sequence
+otherwise unchanged: user merge first, then implement behind a flag.
