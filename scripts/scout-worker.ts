@@ -46,6 +46,11 @@ const send = (o: unknown) => process.stdout.write(JSON.stringify(o) + '\n');
 send({ type: 'ready', nSeeds: useSeeds.length });
 
 const rl = readline.createInterface({ input: process.stdin });
+// Orphan-safety: if the coordinator dies, our stdin closes — exit instead of hanging forever waiting
+// for the next assignment (a mid-solve worker finishes its current seed first, then this fires). Also
+// covers the normal `{stop}` path (rl.close() emits 'close'). Without this, an unclean coordinator
+// death leaves workers burning a core. (DEVELOPMENT_NOTES §17.4.)
+rl.on('close', () => process.exit(0));
 rl.on('line', (line) => {
 	const trimmed = line.trim();
 	if (!trimmed) return;

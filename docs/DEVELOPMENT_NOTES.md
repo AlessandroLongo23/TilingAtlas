@@ -1154,5 +1154,6 @@ reboot-safe NDJSON (`.scout-cache/k<k>_<tiles>_cap<ms>.ndjson`, gitignored, keye
 startup reads it to SKIP done seeds and reuse their cells — so an interruption loses at most the seeds in
 flight. `scoutCodec.readResumeNdjson` tolerates a truncated final line (mid-write kill). Verified: fresh
 k=1 → 11/`6f9ca9cf2d16c75f` (writes a 15-seed file); a re-run RESUMES all 15, 0 new work, 1.1 s, identical
-digest. (Lesson observed live: a worker does NOT exit when its coordinator's stdin closes — an orphan risk
-on unclean coordinator death; not hit here, but worth a `stdin 'close' ⇒ exit` guard in a future pass.)
+digest. Orphan-safety FIXED in the same pass: the worker now exits on stdin `'close'` (coordinator death),
+so an unclean coordinator exit no longer leaves workers burning a core — a mid-solve worker finishes its
+current seed, then exits.
