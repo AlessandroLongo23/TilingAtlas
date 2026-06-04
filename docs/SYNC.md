@@ -170,6 +170,15 @@ once (sound: the fill is deterministic on its initial state; deflates fan×orien
 degenerations using full type support are provably NOT early-prunable — their fill cost is the
 structural price; cut it via cheaper + fewer fills, not riskier prunes.
 
+**2026-06-04 — TA** — **Orbifold-fill design note added** (user-proposed, TA-analyzed):
+`../../resources/research/orbifold-fill-design.md`. Branch each Λ over candidate wallpaper groups
+(Λ, P, placement) and fill the ORBIFOLD with a budget of ≤ k vertex-orbits per branch — kills the
+92%-gateRej fill class structurally (every branch fills ≤ k vertex stars up to symmetry; depth ÷ |P|).
+Sound by the same reject-or-recover pattern; NOT the abandoned wallpaper-fitting (no shape matching —
+Λ fixed first). **Status: DESIGNED, GATED — do not implement yet.** Gate: land P0/P1 + seed-state
+dedup + incremental incidence, re-scout k=3; if the 3⁶ family still caps, TA writes the (G, placement)
+completeness proof FIRST (the t2014/coincidence lesson), then CC implements behind a flag.
+
 **2026-06-04 — TA** — **algorithm.tex rewritten around solve-for-period** (thesis `473f0ff`): 8 stages
 (VCs → compat graph → seed sets [singletons now included] → seeds → candidate lattices [pool +
 edge-direction subgroup + VC-area set + proven box] → torus fill [fast-path vs proven seeding] →
