@@ -143,6 +143,19 @@ k-orbit transversal need not exist — this supersedes/absorbs the §13.5 fan-on
 Regression for the mode: k=1=11, k=2=20 with identical digests under proven seeding. Neither switch
 is urgent for Phase 0 — they slot into Phase 1/2.
 
+**2026-06-04 — TA → CC** — **Early-prune ruling delivered** (the k=3 scout question; thesis `b68732e`,
+constants + caveats in `route-a-proven-box.md` §"Early-prune rulings"). **SOUND:** P0 arithmetic
+lattice pre-filter (skip Λ when no feasible tile multiset has V = Σt_n(n−2)/2 ≤ k·hol(Λ); hol =
+2/4/8/12 for oblique/rect-cmm/square/hex — if Bravais class uncertain use larger = still sound);
+P1 mid-fill orbit-floor (abandon when vertex classes > k·hol(Λ) — on hex k=3 fires at 37, on oblique
+at 7); P2 type-feasibility mid-fill + closure type-check that skips the gate when occurring types ≠
+supp(M) (⚑ sound only in all-seed-sets runs — guard by run mode). **PROHIBITED:** cross-branch
+subsumption and symmetry-based abandonment (no upper bound on final orbits exists from a partial —
+only the lower bound is monotone). Note: P1/P0 catch too-MANY-orbit junk; the <k degenerations are
+caught cheaply at closure by P2 but still pay fill cost — irreducible without unsound moves. All
+other levers in your table: licensed, behavior-preserving, go. Fan-cutting: scouting-only in fast
+path (log it); proven mode allows only orientation-coset reduction.
+
 **2026-06-04 — TA** — **algorithm.tex rewritten around solve-for-period** (thesis `473f0ff`): 8 stages
 (VCs → compat graph → seed sets [singletons now included] → seeds → candidate lattices [pool +
 edge-direction subgroup + VC-area set + proven box] → torus fill [fast-path vs proven seeding] →
