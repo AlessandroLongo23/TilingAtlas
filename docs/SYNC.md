@@ -213,3 +213,12 @@ degenerations are NOT early-prunable — cut cost via cheaper+fewer fills.) Also
 `poolSteps`/`poolLmax` with a loud INCOMPLETE-REGION assertion; A4 per-orbit-vs-per-type cap; B1
 exact-`Surd` area guards. ⚑ Do NOT re-derive the prohibited prunes (symmetry-abandonment / cross-branch
 subsumption — NOTES §15.4).
+
+**2026-06-04 — TA** — **Thesis draft now coherent end-to-end** (36 pp, compiles clean, thesis `5387f9d`):
+introduction (rescoped contributions incl. the prune registry + Krötenheerdt/Chavey priority),
+background (history + the citable completeness gap + related methods), preliminaries, algorithm
+(8 stages + design history), correctness (full proofs, no sketches left), results (3-part "certified"
+criterion; k=1=11 + k=2=20 certified entries; k=3 frontier section with the 59/61 ceiling and the 83%
+fill profile; k≥3 cells await CC's numbers). Bibliography: 27 entries cited, all verified or
+TODO-flagged. \describedcommit = 45d8023. TA remaining queue: journey chapter / discussion, figures,
+abstract last; (G, placement) completeness proof if the orbifold gate opens.
