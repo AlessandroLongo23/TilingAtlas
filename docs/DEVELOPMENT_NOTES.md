@@ -1157,3 +1157,88 @@ k=1 → 11/`6f9ca9cf2d16c75f` (writes a 15-seed file); a re-run RESUMES all 15, 
 digest. Orphan-safety FIXED in the same pass: the worker now exits on stdin `'close'` (coordinator death),
 so an unclean coordinator exit no longer leaves workers burning a core — a mid-solve worker finishes its
 current seed, then exits.
+
+## 18. Chirality audit — the orbifold-contract §4 obligation, discharged (2026-06-04, session 9)
+
+The proof pass for the orbifold (G, placement) theorem (thesis `8c9b454`, `rem:chirality`) raised a latent
+ambiguity that, per the contract, had to be checked against the **existing** pipeline before any k≥3
+completeness claim (including the upcoming join-closure k=3=61). This audit is the discharge. **No code
+change resulted — the pipeline was already correct; the value is the proof of robustness, which gates
+everything downstream.**
+
+### 18.1 The hazard
+
+A vertex configuration (VC) is a cyclic sequence of polygon edge-counts; it is **chiral** when its mirror
+(reversed sequence) is not equal to itself up to rotation — over {3,4,6,8,12} there are exactly **3 chiral
+mirror-pairs**: `{3.4.4.6 ↔ 3.6.4.4}`, `{3.3.4.12 ↔ 3.3.12.4}`, `{4.6.12 ↔ 4.12.6}` (12 of the 18 VC types
+are achiral). In a **reflective** tiling that contains a chiral VC `u`, the mirror symmetry sends a
+`u`-vertex to a vertex of the mirror type `ū` — chiral vertices never lie *on* a mirror line, so they occur
+in mirror pairs that, under the full group, form a **single chirality-mixed orbit** with member oriented
+types `{u, ū}`. The feared hole: if a pre-gate check compared VC types **rotation-only** and the admissible
+set held only `u`, the torus fill would hit a `ū`-vertex, fail the closure check, and **silently drop the
+whole tiling** — fatal for the completeness claim, with no oracle backstop at k≥3.
+
+### 18.2 What the three contract checks actually do
+
+- **(a) closure type-check** (`PeriodSolver.analyze` `:606-607`, `isCompleteTiling` `:692-693`) and **(b) the
+  admissible-vc list** `allowed` (`:144-146` via `vcNameAt` → `:894-902`) both run every comparison through
+  the local **`canonicalVCName`** (`:69-81`), which takes the lex-least over rotations **AND the reversed
+  sequence** — i.e. **mirror-merged**. Both sides of every closure comparison use the *same* function, so a
+  `ū`-vertex resolves to the *same* key as `u` and is accepted whenever `u` is admissible. The hole's premise
+  ("`allowed` holds only `u`") is structurally impossible: `allowed` is never keyed by an oriented name.
+- **(c) per-orbit type recording**: there is **none that is name-based**. The gate (`KUniformityChecker`)
+  counts orbits **geometrically** — it searches reflections unconditionally (`reflect ∈ {false,true}`,
+  `:145`), verifies each candidate as an exact global symmetry, and unions vertex reps under *any* verified
+  symmetry incl. reflections (`:201-209`). A `{u, ū}` mixed orbit is unioned to **one** orbit by the actual
+  mirror symmetry, with no VC-name comparison involved.
+- **Upstream** is mirror-closed too: `SeedBuilder` seeds both `seedSet[0]` and `getMirrorVCName(seedSet[0])`
+  (`:113`), tries both forms at each expansion step (`:193`, `:259`), and its closure check `isVCNameInSet`
+  → `vcNamesMatch` (`:384-406`) tests reversed rotations. The one rotation-only producer in that path,
+  `getEmergingVCNameAtVertex` → `getName` (`:380`), is consumed by the mirror-inclusive `vcNamesMatch` — so
+  even there the *comparison* is mirror-merged. `VertexConfiguration.getName` (`:235-246`) and
+  `VCGenerator.canonicalCyclicForm` are rotation-only and so emit `u` and `ū` as **distinct nodes** — that is
+  harmless (and correct): the dedup/merge happens at the geometric gate + congruence dedup, not by name.
+
+### 18.3 Evidence (4-agent audit workflow + independent re-read)
+
+A parallel workflow ran a static code audit, a computational data check, and an adversarial attack, then a
+reconciling verifier; I re-read the decisive sites myself.
+- **Canonicalization demo:** replicated `canonicalVCName` — `[3,4,4,6]` and `[3,6,4,4]` both → `"3,4,4,6"`;
+  `[3,3,4,12]`/`[3,3,12,4]` both → `"12,3,3,4"`; `[4,6,12]`/`[4,12,6]` both → `"12,4,6"`; distinct types stay
+  distinct. `VertexConfiguration.getName` does **not** merge any chiral pair (proving the two conventions
+  diverge exactly on chirality, and that the fill uses the mirror-merged one).
+- **The merge is LOAD-BEARING, not vacuous:** chirality-mixed-orbit carriers in the oracle are real and
+  numerous — **k=1: 1** (t1003 = 4.6.12), **k=2: 5** (t2001, t2005, t2006, t2007, t2013), **k=3: 22**. Each
+  carrier's geometry contains both `u` and `ū`.
+- **No carrier is dropped:** the probe emits **k=1 = 11** (`6f9ca9cf2d16c75f`) and **k=2 = 20**
+  (`f3e2e0517191362c`), byte-identical to certified, with chiral-VC seeds actively producing tilings.
+  Stretch check: dumping per-vertex oriented types in two emitted k=2 cells showed a single merged group
+  holding **both** `{3.3.4.12, 3.3.12.4}` (resp. `{3.4.4.6, 3.6.4.4}`) — a genuine mixed orbit collapsed to
+  one allowed name. Adversarial end-to-end trace of 4.6.12 (reflective p6m, chiral VC): emitted with
+  orbits=1, 0 gate rejections; the gate found 114 symmetries and unioned all 12 reps to one orbit.
+- **Adversarial:** 7 attacks (the three checks; a concrete reflective+chiral trace; the gate; upstream seed
+  generation; `isChiralOnlySet`; the `isPrimitive` rotation-only `getName` seam; an over-acceptance/
+  unsoundness probe) — **no counterexample**. `isPrimitive` (`:756`) uses rotation-only `getName` correctly:
+  translations preserve orientation, so rotation-only is exact there and strictly conservative (can only keep
+  a cell, never drop one).
+
+### 18.4 ⚑ One reported "leak" was a misread — corrected
+
+The static agent flagged `KUniformityChecker.ts:140` (`targets = patch.filter(p => p.getName() === p0Name …)`)
+as a rotation-only chirality leak that could miss `u↔ū` reflections and inflate orbit counts. **False — it
+conflated `Polygon.getName()` with `VertexConfiguration.getName()`.** At `:140` `p` is a *polygon*;
+`RegularPolygon.getName()` returns `this.name = n.toString()` (`RegularPolygon.ts:9`, `:114-123`) — the n-gon
+shape descriptor (e.g. `"12"`), with **zero chirality content**. A reflection maps a 12-gon to a 12-gon and
+trivially passes this same-shape candidate filter; reflections are then searched and verified geometrically
+(`:145`). There is no rotation-only VC seam anywhere in the gate. (Recorded here because the seam between
+`Polygon.getName` and `VertexConfiguration.getName` is a real readability trap.)
+
+### 18.5 Verdict + the residual non-chirality caveat
+
+**HOLE NOT LIVE.** Checks (a)+(b) are mirror-merged, (c) is geometric/reflection-aware; the recommended fix
+("mirror-close supp(M) in those comparisons") is **already the default** — applying it would be a no-op. The
+**chirality gate is CLEARED for k≥3**, including the join-closure k=3=61 work. ⚑ **Caveat that this audit does
+NOT clear:** chirality is necessary-but-not-sufficient. The k=3 certified *emitted* count is **59** while the
+oracle has **61** — that 59→61 gap is the two oblique tilings (t3046, t3055), a **separate, non-chirality**
+completeness item that join-closure (`join-closure-implementation-contract.md`, `cor:box`) must close on its
+own. No `lib/` files changed.
