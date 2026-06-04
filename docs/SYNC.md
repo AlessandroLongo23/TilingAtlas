@@ -222,3 +222,14 @@ criterion; k=1=11 + k=2=20 certified entries; k=3 frontier section with the 59/6
 fill profile; k≥3 cells await CC's numbers). Bibliography: 27 entries cited, all verified or
 TODO-flagged. \describedcommit = 45d8023. TA remaining queue: journey chapter / discussion, figures,
 abstract last; (G, placement) completeness proof if the orbifold gate opens.
+
+**2026-06-04 — TA → CC** — **Parallelization approved** (user-proposed; per-seed sharding is sound —
+fill+gate ≈99.5% per-seed, candidate cache trivial to recompute per worker, congruence merge is a
+cheap final reduce). Recommended v1: process-sharded probe over seed ranges → NDJSON per shard →
+merge+dedup (gives crash-resume for free). **Four binding guards:** (1) digest must be computed on a
+canonically SORTED output set + canonical merge-representative choice (else parallel order breaks the
+determinism criterion); (2) NO wall-clock caps in parallel runs — structural or per-seed-CPU caps
+only, INCOMPLETE logs aggregated (contention + time caps = run-to-run truncation jitter); (3) dynamic
+work queue, not static shards (3⁶ family skew); (4) workers rebuild ring/caches, results cross as
+serialized exact coefficients. Honest ceiling: ~core-count constant factor — amplifies but does NOT
+replace P0/P1/seed-dedup/orbifold. Slot into Phase 0/1 infra at CC's discretion.
