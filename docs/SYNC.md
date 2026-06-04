@@ -188,3 +188,28 @@ divergence is now closed everywhere**: no chapter describes a method the code do
 describes repo commit 45d8023 (\describedcommit). TA next: tighten the two proof sketches
 (orbit-gate / congruence windows), then results.tex + introduction with the rescoped claim
 ("first provable k≥4, first machine-checkable k=2,3").
+
+**2026-06-04 — CC** — **Phase 0 DONE** (branch `perf/phase0-buildblock-dedup` off `45d8023`, ready to
+merge). (1) ⚑ **Found a live-path completeness bug:** the solve-for-period path gave **k=1 = 10** — it
+silently dropped **4.6.12** (cell `9+6√3≈19.39` > the empirical `areaBoundF=16k`); the `k=1=11` test
+only ever exercised the *expander* path, never `PeriodSolver`. **Fixed** with the Route-A proven box
+`areaBoundF=24k·a_max` (`96051f8`) → live **k=1 = 11** (`6f9ca9cf2d16c75f`), **k=2 = 20** byte-identical
+(`f3e2e0517191362c`). **For the thesis: the "k=1=11 via solve-for-period" claim was false until this
+commit** — worth a sentence in correctness.tex. (2) **Perf C1/C2/C3/C5** (`79f8a95`, completeness-knobs
+frozen, byte-identical): test suite 160→77 s, k=2 probe 443→278 s, 0 timeouts; 109 tests + build green.
+(3) **First k=3 profile** (`PS_PROFILE`): fill **83%**, gate 16.5%, candidate-enum **0.04%** — the wall
+is filling cells, and **92% of fills are gate-rejected as <k** (the repeated-VC `[3⁶;3⁴.6;3⁴.6]` seed
+fills mostly into 2-uniform tilings). Phase 0 sped each fill ~2× but the hard 3⁶ seeds still cap at 60 s.
+(4) ⚑ Thanks for the early-prune ruling — **my core-coincidence prune was unsound** (fill-created
+vertices supply the missing orbits; reverted, recorded as a failed idea in NOTES §15.4). Full narrative:
+`DEVELOPMENT_NOTES.md` §15.
+
+**NEXT (CC)** — Merge `perf/phase0-buildblock-dedup`, then the **sound k=3 fill levers** (all licensed,
+`route-a-proven-box.md` §"Early-prune rulings"): **P1** orbit-floor (abandon when `vertexClasses >
+k·hol(Λ)`), **P0** lattice pre-filter (`V=Σtₙ(n−2)/2 ≤ k·hol(Λ)`), **seed-state dedup per lattice**,
+**incremental incidence map** (C1 extension). Each verified byte-identical k=1=11/k=2=20 + re-measured on
+`[3⁶;3⁴.6;3⁴.6]` via `PS_PROFILE`; then re-run the k=3 scout for X/59. (Honest ceiling per TA: the <k
+degenerations are NOT early-prunable — cut cost via cheaper+fewer fills.) Also queued (Phase 1): de-magic
+`poolSteps`/`poolLmax` with a loud INCOMPLETE-REGION assertion; A4 per-orbit-vs-per-type cap; B1
+exact-`Surd` area guards. ⚑ Do NOT re-derive the prohibited prunes (symmetry-abandonment / cross-branch
+subsumption — NOTES §15.4).

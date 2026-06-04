@@ -891,3 +891,116 @@ meaningful lower bound. The probe now: takes a tile-set arg (`argv[3]`), a per-s
 3. **Oblique** (2 at k=3, growing 0,2,5,18,30) — the deep open problem (§12.3; HNF ruled out).
 4. **N=12 Surd support** if non-octagon subsets are wanted without forcing N=24; **octagon (24-dir)
    tractability** for the full set.
+
+---
+
+## 15. Weak-spot audit → Phase 0 (the 4.6.12 fix + behaviour-preserving perf), the k=3 profile, and the early-prune rulings (2026-06-04, session 6)
+
+This session executed **Phase 0** of the weak-spot audit (`docs/WEAK_SPOT_AUDIT_2026-06-04.md`), which
+uncovered a **real completeness bug on the live path**, landed four behaviour-preserving optimizations,
+then **profiled k=3 for the first time** and got an early-prune soundness ruling from TA. Work is on
+branch `perf/phase0-buildblock-dedup` (commits below); k=1=11/k=2=20 reproduced byte-identical.
+
+### 15.1 ⚑ The live solve-for-period path was k=1 = **10**, not 11 — 4.6.12 silently dropped (commit `96051f8`)
+Capturing the Phase-0 baseline exposed that the **live `PeriodSolver` path drops 4.6.12** (truncated
+trihexagonal, one of the 11 Archimedean tilings): the k=1 probe gives **10 distinct tilings, digest
+`78c43fdc3e372188`**. The `k=1=11` test never caught it because that test exercises the **`SeedExpander`
+path** ([`tests/k-uniformity.test.ts:89`](../tests/k-uniformity.test.ts)), not `PeriodSolver` — the exact
+"validate the live path, not a parallel one" trap §13.2 flagged for the snub, *still open* for 4.6.12.
+- **Root cause (confirmed by experiment):** `candidateLattices` returned **0** for `[4,6,12]`. Its
+  primitive cell is 1 dodecagon + 2 hexagons + 3 squares = **`9 + 6√3 ≈ 19.39`** (12 vertices = the
+  tight `V=12k` bound), but `areaBoundF = 16·k = 16` at k=1 filtered the area out, so no lattice was
+  generated. The code comment even asserted "the largest k=1 cell ≈ 14.8" — **wrong** (it overlooked
+  4.6.12). Temporarily lifting the bound → `[4,6,12]` immediately yields 3 lattices → 1 cell → k=1 = 11.
+- **Fix:** `areaBoundF = 24·k·a_max`, `a_max` = largest tile area in the seed's tile set — the **proven**
+  cell-area bound (Route-A `thm:weight`/`cor:box`; `../resources/research/route-a-proven-box.md`). Raising
+  the area *ceiling* does **not** enlarge the pool (the binding completeness knob is the pool reach), so
+  no tractability blow-up. Verified: live **k=1 = 11** (digest `6f9ca9cf2d16c75f`); **k=2 = 20**
+  byte-identical (`f3e2e0517191362c` — the pool already caps k=2 area below the old 32, so no k=2 change).
+- **Lesson:** the empirical `16k` was not merely "unproven" (audit A1/A5/D1) — it **demonstrably dropped a
+  target tiling at the simplest k**, silently. This is the mission rule's forbidden case. Other empirical
+  bounds (`poolSteps`, `poolLmax`, the per-orbit-vs-per-type cap A4) remain to be de-magicked in Phase 1.
+
+### 15.2 Phase 0 behaviour-preserving optimizations (commit `79f8a95`)
+Four optimizations, completeness-knobs FROZEN, **byte-identical** results (k=1=11/`6f9ca9cf`,
+k=2=20/`f3e2e051`), 109 tests + build green. Speedups: test suite **160 s → 77 s (~2×)**, k=2 probe
+**443 s → 278 s (~1.6×)**, 0 timeouts.
+- **C1 — incremental `buildBlock`:** the torus-fill DFS now *carries* each cell's block on the stack and
+  extends it by ONE new tile's lattice translates per child (disjoint classes ⇒ a set union), instead of
+  rebuilding the whole block every pop (the §12.9-named dominant cost). Block order is irrelevant to every
+  consumer (incidence is a vertex-keyed map; overlap checks are boolean). The `canonicalRep`-based
+  progress check reproduces the old `dedupModLattice(...).length` test exactly.
+- **C2 — `analyze` incidence cull:** skip block tiles whose centroid is beyond `judgeR + maxCircum` (no
+  vertex within `judgeR`); the *full* block is still returned for the wider overlap check.
+- **C3 — `coreSelfOverlapsNearest`:** a cheap O(reps) reject of too-small Λ via the 8 nearest translates,
+  a strict subset of `blockHasProperOverlap`, run before the initial block build.
+- **C5 — memoize `reducedClassKey`** per `(polygon.exactKey, lattice)` across all pairwise congruence
+  tests in `dedupeByCongruence`.
+
+### 15.3 ★ The k=3 profile — the FIRST real measurement (env `PS_PROFILE`)
+Profiled one hard seed `[3⁶;3⁴.6;3⁴.6]` (12-dir `{3,4,6,12}`, 60 s cap). The breakdown rewrites the lever
+ranking:
+
+| phase | time | share |
+|---|---|---|
+| **torus fill** | **50.1 s** | **83%** |
+| orbit gate (`KUniformityChecker`) | 9.9 s | 16.5% |
+| candidate enumeration | **0.024 s** | 0.04% |
+| canonicalKey + congruence dedup | 0.43 s | <1% |
+
+`lat=171` candidate lattices, only **89 tried** in 60 s; **`gateRej=67` of 73 completed cells (92%) fail
+the orbit==3 gate** — the repeated-`3⁴.6` seed fills mostly into **2-uniform** tilings. So: candidate
+enumeration and dedup are NEGLIGIBLE (Gram-first sieve / the C5 memo do **nothing** for the k=3 wall);
+**the wall is filling cells that aren't even k-uniform.** Phase 0 made each fill ~2× faster but
+`#fills × cost` still blows 60 s. Many seeds (the whole `[3⁶;3⁴.6;3⁴.6]` family — 15 concretes) time out.
+
+### 15.4 Idea tried and **rejected** — the core-coincidence prune (UNSOUND; TA `48e1160`, `rem:unsoundprunes(3)`)
+Tempted by the 92% waste, I implemented "abandon a fill when two of the seed's k core vertices coincide
+mod Λ — same vertex ⇒ <k orbits ⇒ the gate rejects anyway." Behind a flag it caught ~0 on the test seed.
+**TA ruled it NOT SOUND, and the reasoning was the bug:** coinciding core vertices share *one* orbit, but
+the **missing orbits can be realized by FILL-CREATED vertices**, so such completions can be genuinely
+k-uniform and the gate **accepts** them — the prune would *silently drop valid tilings*. Reverted. The
+deep reason (TA `b68732e`, `rem:unsoundprunes`): **no upper bound on final orbit count is readable from a
+partial fill** — only the lower bound is monotone. So *symmetry-based abandonment* and *cross-branch
+subsumption* are both prohibited (the latter is the §6 emit-on-closure mistake again).
+
+### 15.5 The early-prune rulings — what IS sound (TA `b68732e`; `route-a-proven-box.md` §"Early-prune rulings")
+The honest k=3 ceiling: the **<k degenerations (the 92%) use full type support, so NO sound early prune
+can detect them mid-fill** — their fill cost is the structural price of completeness. Reduce it via
+*cheaper* and *fewer* fills, not riskier prunes. Let `hol(Λ)` = holohedry order: **oblique 2, rect/cmm 4,
+square 8, hex 12** (from reduced Gram data; if unsure use the LARGER — always sound).
+- **P1 — orbit-floor (mid-fill, "the big one"):** abandon when `vertexClasses(partial) > k·hol(Λ)`.
+  Catches too-MANY-orbit junk / supercells (hex k=3 fires at 37 classes; oblique at 7 — makes oblique
+  fills cheap when they arrive in Phase 3). Sound: classes only accumulate; a primitive completion then
+  has orbits > k (gate-rejected), a supercell is primitivity-rejected and re-found at its finer lattice.
+- **P0 — arithmetic lattice pre-filter (before any fill):** skip Λ if NO feasible tile multiset with
+  `V = Σ tₙ(n−2)/2 ≤ k·hol(Λ)` (per-tile V: △ ½, □ 1, ⬡ 2, 8-gon 3, 12-gon 5). Pure integer arithmetic
+  over the area decomposition the enumerator already computes; cuts the `lat=171` list upfront.
+- **P2 — type-feasibility + cheap pre-gate:** at closure, if occurring types ≠ `supp(M)`, drop without
+  the gate. ⚑ Sound ONLY in all-seed-sets runs (the probe) — guard by run mode.
+- **Sound, no-ruling-needed levers:** **seed-state dedup per lattice** (canonicalize initial torus states,
+  fill identical ones once — deflates fan×orientation×placement) and **incremental incidence map** (the C1
+  extension — carry the incidence map across pops). Plus everything else in the audit's perf table.
+- **PROHIBITED:** cross-branch subsumption; symmetry-based abandonment (see §15.4).
+
+### 15.6 State at handoff + NEXT
+- **Branch `perf/phase0-buildblock-dedup`**, off `45d8023`. Commits: `96051f8` (area-bound fix),
+  `79f8a95` (C1/C2/C3/C5), + the `PS_PROFILE` diagnostic. Verified byte-identical k=1=11/k=2=20; build +
+  109 tests green. **Ready to merge to master.** k=3 NOT yet run to completion (the hard 3⁶ seeds still
+  time out at 60 s — Phase 0 helps but does not crack the wall, exactly as the audit predicted).
+- **NEXT (Phase 1/2, all sound + licensed):** merge the branch, then implement **P0 + P1** (orbit-floor +
+  lattice pre-filter) and **seed-state dedup + incremental incidence**, each verified byte-identical
+  against k=1=11/k=2=20 and re-measured on the `[3⁶;3⁴.6;3⁴.6]` seed via `PS_PROFILE`. Then re-run the k=3
+  scout (`pnpm tsx scripts/probe-pipeline.ts 3 3,4,6,12 60000`) for the X/59 lower bound + digest. Also
+  pending from Phase 1: de-magic `poolSteps`/`poolLmax` (loud INCOMPLETE-REGION assertion), fix A4
+  (per-orbit vs per-type cap), exact-`Surd` area guards (B1).
+- **Escalation (GATED — do NOT implement yet):** if the 3⁶ family still caps after the licensed levers,
+  the user-proposed **orbifold-fill** is the structural cure for the 92% <k waste — branch each Λ over
+  candidate wallpaper groups `(Λ, P, placement)` and fill the **orbifold** (quotient by P) with a budget
+  of ≤ k vertex-orbits per branch, so the fill depth is divided by |P| and the redundant lower-symmetry
+  copies are never built. It is NOT the abandoned wallpaper-fitting (Λ is fixed first; no shape matching),
+  and sound by the same reject-or-recover pattern. **Designed in
+  `../resources/research/orbifold-fill-design.md`; gated** behind: land the licensed levers + re-scout,
+  and TA writes the `(G, placement)` completeness proof FIRST (the t2014/core-coincidence lesson — a
+  symmetry assumption that *looks* sound can drop tilings), THEN CC implements behind a flag. (SYNC
+  2026-06-04 TA.)
