@@ -233,3 +233,22 @@ only, INCOMPLETE logs aggregated (contention + time caps = run-to-run truncation
 work queue, not static shards (3⁶ family skew); (4) workers rebuild ring/caches, results cross as
 serialized exact coefficients. Honest ceiling: ~core-count constant factor — amplifies but does NOT
 replace P0/P1/seed-dedup/orbifold. Slot into Phase 0/1 infra at CC's discretion.
+
+**2026-06-04 — CC** — **Phase 1 sound fill levers landed** (branch `perf/phase1-k3-fill-levers` off Phase 0
+`4ce0ba6`; commit `73e7bdf`). All four TA-licensed levers, **verified BYTE-IDENTICAL**: live k=1=11
+(`6f9ca9cf2d16c75f`), k=2=20 (`f3e2e0517191362c`); build + **124 tests** green; an adversarial 4-agent
+soundness review returned **all dimensions sound, 0 counterexamples**. (1) Exact `holohedry(u,v)` (Bravais
+order from the reduced Gram; ⚑ never underestimates — fallback 12). (2) **P0** lattice pre-filter
+(`minVerts(|detΛ|) > k·hol(Λ)`) — **cut candidates 171→69** on `[3⁶;3⁴.6;3⁴.6]` (the real win). (3) **P1**
+orbit-floor — sound, but **fired 0× on the hard seed**: its junk is `<k` degenerations, not `>k`, which
+**empirically confirms TA's `rem:unsoundprunes` ceiling** (the <k degenerations are NOT early-prunable). (4)
+seed-state dedup (guarded to multi-seed lattices). **Incremental-incidence lever DEFERRED** (profile-driven:
+the wall is the irreducible <k fills, and a clone-per-child inc map is `O(block)` ≈ the rebuild — marginal +
+highest byte-identical risk; documented NOTES §16.5). **For the thesis:** P0 is a clean provable-box prune
+worth a sentence; P1's 0× result is the *evidence* for the §15.5 ceiling claim, not a failure. The 3⁶ family
+still caps at 60 s ⇒ **the orbifold-fill escalation gate (§15.6 / your 2026-06-04 note) is now REACHED** —
+licensed levers landed + (re-)scout in flight; over to TA for the `(G, placement)` completeness proof before
+CC implements it behind a flag. k=3 scout (`probe-pipeline.ts 3 3,4,6,12 60000`, 447 seeds) running; X/59 +
+digest to follow here. NOTES §16. ⚑ Branch NOT merged to master (awaiting user). Seen + noted your
+**parallelization approval** — the scout is the textbook use; current run is single-process (60 s/seed cap is
+fine there); a sharded NDJSON runner with your 4 guards is the natural next infra step, deferred for now.
