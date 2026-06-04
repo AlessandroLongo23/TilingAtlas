@@ -39,7 +39,20 @@ import type { PeriodCell } from './PeriodSolver';
  * rounding that splits a class when each polygon is reduced independently (the bug `canonicalRep` was
  * written to fix in PeriodSolver). Float only picks the integer translations; the keys are exact.
  */
-function reducedClassKey(p: Polygon, u: Cyclotomic, v: Cyclotomic): string {
+function reducedClassKey(
+	p: Polygon,
+	u: Cyclotomic,
+	v: Cyclotomic,
+	memo?: Map<string, string>,
+	latKey?: string
+): string {
+	// Pure function of (p geometry, Λ=(u,v)) ⇒ memoizable. Keyed by (p.exactKey, latKey) where latKey
+	// identifies the basis; the same class rep is the comparison target for many candidates in a bucket.
+	const cacheKey = memo && latKey ? `${latKey}@${p.exactKey()}` : undefined;
+	if (cacheKey !== undefined) {
+		const hit = memo!.get(cacheKey);
+		if (hit !== undefined) return hit;
+	}
 	const uV = u.toVector();
 	const vV = v.toVector();
 	const det = uV.x * vV.y - uV.y * vV.x;
@@ -68,6 +81,7 @@ function reducedClassKey(p: Polygon, u: Cyclotomic, v: Cyclotomic): string {
 			if (kq < bestKey) bestKey = kq;
 		}
 	}
+	if (cacheKey !== undefined) memo!.set(cacheKey, bestKey);
 	return bestKey;
 }
 
@@ -93,7 +107,8 @@ export function tilingsCongruent(
 	vA: Cyclotomic,
 	cellB: Polygon[],
 	uB: Cyclotomic,
-	vB: Cyclotomic
+	vB: Cyclotomic,
+	memo?: Map<string, string>
 ): boolean {
 	if (cellA.length === 0 || cellB.length === 0) return false;
 	// --- cheap necessary rejects ---
@@ -105,8 +120,11 @@ export function tilingsCongruent(
 	const N = ring.N;
 	const ZERO = Cyclotomic.ZERO(ring);
 
-	// target tiling B as a set of canonical class keys (computed once per pair)
-	const KB = new Set(cellB.map((q) => reducedClassKey(q, uB, vB)));
+	// target tiling B as a set of canonical class keys. reducedClassKey is a pure function of
+	// (polygon, Λ_B), so it is memoized per (p.exactKey, Λ_B) across all pairwise comparisons — the
+	// same class rep B is the target for every candidate compared against it (audit perf C5).
+	const latKeyB = `${uB.key()}|${vB.key()}`;
+	const KB = new Set(cellB.map((q) => reducedClassKey(q, uB, vB, memo, latKeyB)));
 
 	// reference polygon in A (deterministic: min exact key)
 	const P0 = cellA.reduce((m, p) => (p.exactKey() < m.exactKey() ? p : m));
@@ -140,7 +158,7 @@ export function tilingsCongruent(
 				const mapped = new Set<string>();
 				for (const p of cellA) {
 					const gp = p.transformedRigid(ZERO, reflect, r, 0, T, 'full');
-					mapped.add(reducedClassKey(gp, uB, vB));
+					mapped.add(reducedClassKey(gp, uB, vB, memo, latKeyB));
 				}
 				if (mapped.size === cellB.length && [...mapped].every((kk) => KB.has(kk))) return true;
 			}
@@ -150,10 +168,11 @@ export function tilingsCongruent(
 }
 
 /** Convenience wrapper over `PeriodCell`s. */
-export function cellsCongruent(a: PeriodCell, b: PeriodCell): boolean {
+export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, string>): boolean {
 	return tilingsCongruent(
 		a.cellPolygons, a.basisExact[0], a.basisExact[1],
-		b.cellPolygons, b.basisExact[0], b.basisExact[1]
+		b.cellPolygons, b.basisExact[0], b.basisExact[1],
+		memo
 	);
 }
 
@@ -174,11 +193,14 @@ export function cellsCongruent(a: PeriodCell, b: PeriodCell): boolean {
 export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) => string): PeriodCell[] {
 	// bucket by necessary invariants so we only run the O(class²) test within a bucket
 	const buckets = new Map<string, PeriodCell[][]>(); // bucketKey → list of classes (each a list of members)
+	// memoize reducedClassKey per (polygon exact-key, lattice) across all pairwise tests — each class
+	// rep is the comparison target for many candidates, so its key set is computed once, not per pair.
+	const rckMemo = new Map<string, string>();
 	for (const c of cells) {
 		const bk = `${nameMultiset(c.cellPolygons)}@${detAbsKey(c.basisExact[0], c.basisExact[1])}`;
 		let classes = buckets.get(bk);
 		if (!classes) { classes = []; buckets.set(bk, classes); }
-		const cls = classes.find((members) => cellsCongruent(c, members[0]));
+		const cls = classes.find((members) => cellsCongruent(c, members[0], rckMemo));
 		if (cls) cls.push(c);
 		else classes.push([c]);
 	}

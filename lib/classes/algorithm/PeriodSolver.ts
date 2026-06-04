@@ -383,10 +383,13 @@ export class PeriodSolver {
 		// up to the global cap. +2 slack for the float area comparison.
 		const minTileArea = Math.min(...polySizes.map(regularArea));
 		const areaCap = Math.ceil(cellArea / minTileArea) + 2;
+		// Largest tile circumradius (regular n-gon = 1/(2 sin(π/n))) — used to cull far tiles from the
+		// per-pop incidence map (a tile beyond judgeR + maxCircum has no vertex within judgeR).
+		const maxCircum = Math.max(...polySizes.map((n) => 1 / (2 * Math.sin(Math.PI / n))));
 		return {
 			u, v, ring, N: ring.N, allowed, polySizes,
 			maxCellPolys: Math.min(maxCellPolys, areaCap),
-			uV, vV, det, cellDiam, minLen, cellArea,
+			uV, vV, det, cellDiam, minLen, cellArea, maxCircum,
 		};
 	}
 
@@ -409,27 +412,38 @@ export class PeriodSolver {
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: core area ${initialArea.toFixed(2)} > cell ${ctx.cellArea.toFixed(2)} → reject\n`);
 			return [];
 		}
-		// Reject if the seed self-overlaps mod Λ (Λ smaller than a real period).
-		if (this.blockHasProperOverlap(this.buildBlock(initial, ctx, 5), ctx)) {
+		// Cheap pre-block reject: if a core rep properly overlaps one of its 8 nearest lattice translates,
+		// Λ is too small — a necessary self-overlap condition caught in O(reps) intersects before the
+		// initial block build (audit perf C3). A strict subset of blockHasProperOverlap, so it only
+		// rejects candidates the full check would also reject (a valid tiling never has a tile overlapping
+		// its own translate ⇒ never drops a real tiling); results are byte-identical.
+		if (this.coreSelfOverlapsNearest(initial, ctx)) {
+			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: core self-overlap (nearest translate) → reject\n`); return [];
+		}
+		// Build the initial cell's block and reject if the seed self-overlaps mod Λ. Reuse this block as
+		// the DFS root's block — the DFS carries each cell's block and extends it by ONE new tile's lattice
+		// translates per child instead of rebuilding the whole block every pop (audit perf C1).
+		const initialBlock = this.buildBlock(initial, ctx, 5);
+		if (this.blockHasProperOverlap(initialBlock, ctx)) {
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: initial self-overlap → reject\n`); return [];
 		}
 
 		const results: Polygon[][] = [];
 		const seenState = new Set<string>();
-		const stack: Polygon[][] = [initial];
+		const stack: { reps: Polygon[]; block: Polygon[] }[] = [{ reps: initial, block: initialBlock }];
 		let pops = 0;
 		const t0 = PeriodSolver.DEBUG ? Date.now() : 0;
 
 		while (stack.length > 0) {
 			if (timedOut()) break;
-			const reps = stack.pop()!;
+			const { reps, block } = stack.pop()!;
 			const stateKey = this.stateKey(reps);
 			if (seenState.has(stateKey)) continue;
 			seenState.add(stateKey);
 			pops++;
 			if (reps.length > ctx.maxCellPolys) continue;
 
-			const analysis = this.analyze(reps, ctx);
+			const analysis = this.analyze(reps, ctx, block);
 			if (analysis.contradiction) continue;
 			if (!analysis.openVertex) {
 				// No open vertex within a full cell ⇒ torus closed. Certify, and reject supercells (a
@@ -441,17 +455,23 @@ export class PeriodSolver {
 
 			// Corner-complete the chosen open vertex: place one polygon into its CW-most gap.
 			const { vertex: w, intervals } = analysis.openVertex;
-			const block = analysis.block ?? this.buildBlock(reps, ctx, 5);
 			const d0 = this.gapStartRay(intervals, ctx.N);
 			if (d0 < 0) continue; // no fillable gap (shouldn't happen for an open vertex)
+			const repsKeys = new Set(reps.map((r) => r.exactKey())); // reps are canonical class reps
 
 			for (const n of ctx.polySizes) {
 				const P = RegularPolygon.fromAnchorAndDirExact(n, w, d0);
 				if (this.properOverlapWithBlock(P, block, ctx)) continue;
-				const next = this.dedupModLattice([...reps, P], ctx, memo);
-				if (next.length === reps.length) continue; // P already present mod Λ ⇒ no progress
+				// The new tile reduces to ONE canonical lattice-class rep. If already present the branch
+				// makes no progress (matches the old dedupModLattice length check). The child's block =
+				// this block + the new rep's lattice translates — disjoint classes, so a plain set union;
+				// no full rebuild (audit perf C1). Block order is irrelevant to every consumer.
+				const pc = this.canonicalRep(P, ctx, memo);
+				if (repsKeys.has(pc.key)) continue; // P already present mod Λ ⇒ no progress
+				const next = [...reps, pc.poly];
 				if (next.length > ctx.maxCellPolys) continue;
-				stack.push(next);
+				const childBlock = block.concat(this.buildBlock([pc.poly], ctx, 5));
+				stack.push({ reps: next, block: childBlock });
 			}
 		}
 		if (PeriodSolver.DEBUG) process.stderr.write(`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`);
@@ -466,16 +486,22 @@ export class PeriodSolver {
 	 *  neighbours), then classify every vertex within one cell of the origin as surrounded (with an
 	 *  allowed VC), open, or contradictory. Returns the nearest-origin open vertex (with its covered
 	 *  angular intervals) or, if none, signals torus-closed (unless a contradiction was found). */
-	private analyze(reps: Polygon[], ctx: FillCtx): AnalyzeResult {
+	private analyze(reps: Polygon[], ctx: FillCtx, prebuilt?: Polygon[]): AnalyzeResult {
 		const judgeR = ctx.cellDiam + 0.5;
 		// Inclusion radius cellDiam+7 (Rabs=5): vertex incidence within judgeR needs ≤ cellDiam+2.43, the
 		// open-vertex overlap check needs ≤ cellDiam+4.93 — both covered, with the final certification
 		// block (larger) as the safety net. Much cheaper than the old 2·cellDiam+6.
-		const block = this.buildBlock(reps, ctx, 5);
+		const block = prebuilt ?? this.buildBlock(reps, ctx, 5);
 
-		// vertex incidence keyed by exact vertex key
+		// vertex incidence keyed by exact vertex key. Only tiles whose centroid is within
+		// judgeR + maxCircum can have a vertex within judgeR, so the rest are culled from the incidence
+		// map (audit perf C2). Sound: a tile all of whose vertices are > judgeR is never judged here, and
+		// the FULL `block` is still returned for the wider overlap check below.
+		const incR = judgeR + ctx.maxCircum + 0.01;
 		const inc = new Map<string, { v: Cyclotomic; polys: { p: Polygon; idx: number }[] }>();
 		for (const p of block) {
+			const cf = p.exactCentroid!.toVector();
+			if (Math.hypot(cf.x, cf.y) > incR) continue;
 			const verts = p.exactVertices!;
 			for (let i = 0; i < verts.length; i++) {
 				const kk = verts[i].key();
@@ -750,6 +776,26 @@ export class PeriodSolver {
 		return false;
 	}
 
+	/** Cheap necessary self-overlap test: does any rep properly overlap one of its 8 nearest lattice
+	 *  translates (±u, ±v, ±(u±v))? If so Λ is too small to be a real period. A strict subset of
+	 *  blockHasProperOverlap, so rejecting here only removes candidates the full block check would also
+	 *  reject — the emitted tilings (and the digest) are unchanged (audit perf C3). */
+	private coreSelfOverlapsNearest(reps: Polygon[], ctx: FillCtx): boolean {
+		const u = ctx.u, v = ctx.v;
+		const nu = u.scaleRational(-1n, 1n), nv = v.scaleRational(-1n, 1n);
+		const Ts = [u, nu, v, nv, u.add(v), nu.add(nv), u.add(nv), nu.add(v)];
+		for (const rep of reps) {
+			const rb = bbox(rep);
+			for (const T of Ts) {
+				const q = rep.clone();
+				q.translateExact(T);
+				if (!bboxOverlap(rb, bbox(q))) continue;
+				if (!rep.isEquivalent(q) && rep.intersects(q)) return true;
+			}
+		}
+		return false;
+	}
+
 	/** True iff two distinct (non-coincident) tiles in the block properly overlap. */
 	private blockHasProperOverlap(block: Polygon[], _ctx: FillCtx): boolean {
 		const boxes = block.map((p) => bbox(p));
@@ -790,6 +836,7 @@ type FillCtx = {
 	cellDiam: number;
 	minLen: number;
 	cellArea: number;
+	maxCircum: number; // max tile circumradius — a poly beyond judgeR+this has no vertex within judgeR
 };
 
 type Interval = { start: number; units: number; n: number };
