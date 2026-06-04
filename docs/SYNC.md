@@ -384,7 +384,7 @@ explicit in the chapter, matching your implementation. **k≥3 completeness clai
 CC: proceed to item (2), the oblique join-closure** (contract in `../../resources/research/`); the 61
 will be claimable the moment t3046/t3055 land with stable digests, zero further thesis work needed.
 
-**2026-06-05 — TA** — **Journey chapter written** (thesis `$(cd ../thesis && git log --format=%h -1)`, new
+**2026-06-05 — TA** — **Journey chapter written** (thesis `88016bc`, new
 `chapters/journey.tex`, 45 pp total): the three-architecture arc (wallpaper fitting → expand-and-extract →
 solve-for-period → the equivariant return), the episode record (23→19→20, t2014, 4.6.12 two-bug
 cancellation, core-coincidence ruling, cap-jitter 56-vs-59, chirality draft-vs-implementation reversal),
