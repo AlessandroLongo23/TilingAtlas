@@ -125,6 +125,8 @@ export class PeriodSolver {
 		const maxCellPolys = opts.maxCellPolys ?? 20 * k + 24;
 		const maxMs = opts.maxMs ?? 45000;
 		const start = Date.now();
+		// Optional phase profiler (env PS_PROFILE) — purely additive, byte-identical when off.
+		const prof = process.env.PS_PROFILE ? { cand: 0, fill: 0, gate: 0, canon: 0, dedup: 0 } : null;
 
 		const corePolys: Polygon[] = seed.polygons;
 		if (corePolys.length === 0 || !corePolys.every((p) => p.hasExact())) {
@@ -163,7 +165,9 @@ export class PeriodSolver {
 		const totalCoreArea = corePolys.reduce((s, p) => s + regularArea(p.n), 0);
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
+		const _tc0 = prof ? Date.now() : 0;
 		const lattices = this.candidateLattices(seed);
+		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
 			candidateLattices: lattices.length,
@@ -207,18 +211,24 @@ export class PeriodSolver {
 			const rawCells: Polygon[][] = [];
 			for (const core of seedSets) {
 				if (maxMs > 0 && Date.now() - start > maxMs) { diag.timedOut = true; break; }
+				const _tf0 = prof ? Date.now() : 0;
 				rawCells.push(...this.torusFill(core, ctx, () => maxMs > 0 && Date.now() - start > maxMs));
+				if (prof) prof.fill += Date.now() - _tf0;
 			}
 			diag.rawCells += rawCells.length;
 
 			for (const reps of rawCells) {
 				// dedup up to the full isometry group (boundary-free canonical cell key)
+				const _tk0 = prof ? Date.now() : 0;
 				const canonical = extractor.canonicalKey(reps);
+				if (prof) prof.canon += Date.now() - _tk0;
 				if (seenCanonical.has(canonical)) continue;
 				seenCanonical.add(canonical);
 
 				// k-uniformity gate: exactly k vertex orbits under the full symmetry group.
+				const _tg0 = prof ? Date.now() : 0;
 				const orbits = checker.countVertexOrbits(reps, u, v);
+				if (prof) prof.gate += Date.now() - _tg0;
 				if (opts.onRawCell) opts.onRawCell(reps, [u, v], orbits);
 				if (orbits !== null && orbits !== k) {
 					diag.gateRejected++;
@@ -234,8 +244,15 @@ export class PeriodSolver {
 		// distinct keys (the k=1 snub `3,3,3,3,6` as 2 cells, the k=2 t2020 as up to 4 — the over-count).
 		// The exact pairwise congruence test merges them; it runs only on the few survivors of the
 		// pre-filter, so it is cheap. (DEVELOPMENT_NOTES §12.7/§12.11.)
+		const _td0 = prof ? Date.now() : 0;
 		const deduped = dedupeByCongruence(cells, (c) => extractor.canonicalKey(c.cellPolygons));
+		if (prof) prof.dedup += Date.now() - _td0;
 		diag.emitted = deduped.length;
+		if (prof) process.stderr.write(
+			`[PS_PROFILE k=${k}] cand=${prof.cand}ms fill=${prof.fill}ms gate=${prof.gate}ms ` +
+			`canon=${prof.canon}ms dedup=${prof.dedup}ms | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
+			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices}\n`
+		);
 
 		if (opts.verbose) {
 			process.stderr.write(
