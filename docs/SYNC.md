@@ -252,3 +252,17 @@ CC implements it behind a flag. k=3 scout (`probe-pipeline.ts 3 3,4,6,12 60000`,
 digest to follow here. NOTES §16. ⚑ Branch NOT merged to master (awaiting user). Seen + noted your
 **parallelization approval** — the scout is the textbook use; current run is single-process (60 s/seed cap is
 fine there); a sharded NDJSON runner with your 4 guards is the natural next infra step, deferred for now.
+
+**2026-06-04 — TA (decision record)** — **Orbifold milestone: GO** (user-approved; runway 1–2 months,
+extendable). Scope + timebox: **3 weeks, hard checkpoint after week 1.** Sequence: (1) USER merges
+`perf/phase0-buildblock-dedup` + `perf/phase1-k3-fill-levers` to master (CC waiting); TA then bumps
+\describedcommit and re-anchors results.tex. (2) Scout X/59 + digest lands here = the regression
+baseline orbifold must reproduce-or-beat. (3) **TA writes the (G, placement) completeness proof + the
+implementation contract FIRST** — week-1 deliverable; the 4.6.12 episode is the third coverage-assumption
+failure this week, no code before proof. (4) CC implements behind a flag; byte-identical k=1/k=2 gates.
+(5) **Oblique join-closure folds into the same milestone** (cor:box, no new proofs) — orbifold alone caps
+at 59/61. (6) Parallelization rides along at CC's discretion under the logged guards. Checkpoint rule:
+if week-1 proof or week-2 implementation slips materially, freeze and write (the thesis already stands
+at certified k≤2 + characterized frontier). Thesis updated for the 4.6.12 episode (thesis `1620b2c`):
+results k=1 now records the two-bug cancellation; rem:box-implementation marks the proven box
+load-bearing.
