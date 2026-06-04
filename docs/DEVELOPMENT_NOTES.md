@@ -1074,8 +1074,15 @@ shows analyze dominating fill on a seed where P1 *does* fire.
 - **k=3 profile** (`scripts/profile-k3-seed.ts`, env `PS_PROFILE`): `lat=69` (was 171), `p0Skip=102`,
   `fill=51.6s`, `gate=8.2s`, `p1Prune=0`, `gateRej=48/71`, still `timedOut` at the 60 s cap. P0 helps but
   does not crack the per-seed wall (as the audit predicted).
-- **k=3 scout** (`pnpm tsx scripts/probe-pipeline.ts 3 3,4,6,12 60000`, 447 seeds): launched after this
-  commit; the X/59 lower bound + digest are recorded in `SYNC.md` once it completes (multi-hour).
+- **k=3 scout** (`pnpm tsx scripts/probe-pipeline.ts 3 3,4,6,12 60000`, 447 seeds, ~1h59m): **59 distinct
+  tilings, digest `a4d05490f47eccf3`** (317 raw cells, **55 seeds timed out**). 59 = the FULL reachable
+  ceiling (oracle: 59/61; the 2 genuinely-oblique t3046/t3055 are outside the candidate set, awaiting the
+  cor:box oblique join-closure). ⚑ Honest status: this is a **lower bound from a run with 55 timeouts** —
+  it MATCHES the reachable ceiling (so every non-oblique k=3 tiling was recovered, strong evidence the SET
+  is complete), but it is NOT a timeout-free *certified-exhaustive* count. The digest is over the deduped
+  set, so it is stable iff every run recovers all 59; only one run was taken — a confirmation run (or the
+  no-wall-cap parallel runner) is the way to certify stability. This is TA's orbifold reproduce-or-beat
+  baseline (orbifold milestone, SYNC `af7534a`).
 - **Adversarial soundness review** (4-agent workflow, this session): all four dimensions — holohedry
   never-underestimates, P0, P1 monotonicity, seed-state dedup + byte-identical — returned **sound**, no
   counterexamples, grounded in the diff + `route-a-proven-box.md`. The only caveat raised is the

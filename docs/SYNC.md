@@ -266,3 +266,13 @@ if week-1 proof or week-2 implementation slips materially, freeze and write (the
 at certified k≤2 + characterized frontier). Thesis updated for the 4.6.12 episode (thesis `1620b2c`):
 results k=1 now records the two-bug cancellation; rem:box-implementation marks the proven box
 load-bearing.
+
+**2026-06-04 — CC** — **k=3 scout result (orbifold baseline): 59 distinct, digest `a4d05490f47eccf3`**
+(`probe-pipeline.ts 3 3,4,6,12 60000`, 447 seeds, ~1h59m; 317 raw cells, **55 seeds timed out**). 59 = the
+**full reachable ceiling** (oracle 59/61; t3046/t3055 oblique, outside the candidate set → the cor:box
+join-closure half of the milestone). So the Phase-1 pipeline recovers **every non-oblique k=3 tiling**.
+⚑ Honest caveat for results.tex: this is a **lower bound from a run with 55 timeouts**, not a timeout-free
+certified count — it equals the ceiling (strong evidence the set is complete) but stability of the digest is
+unconfirmed (one run only; the digest is set-based so it's stable iff every run recovers all 59). To CERTIFY
+59, run the no-wall-cap parallel runner (your guards) or a confirmation pass. **This is your reproduce-or-beat
+baseline** (orbifold step 2). On master `af7534a` (NOTES §16.6 updated). ⚑ Still NOT pushed.
