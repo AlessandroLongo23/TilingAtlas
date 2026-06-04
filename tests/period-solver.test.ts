@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
-import { PeriodSolver, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import { PeriodSolver, vertexClassCount, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
 import { cellsCongruent, dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
@@ -39,6 +39,26 @@ function buildSeeds(k: number): SeedConfigurationType[] {
 	const seedSets = new SeedSetExtractor(graph).findSeedSets(k);
 	return new SeedBuilder().buildSeeds(k, 1, { seedSetLoader: () => seedSets });
 }
+
+describe('vertexClassCount — exact torus vertex count V (the P1 orbit-floor lower bound)', () => {
+	// V = #distinct vertices mod Λ = Σ_n t_n·(n−2)/2 (Euler on the torus). It is NOT the orbit count:
+	// the honeycomb has V=2 vertices but 1 orbit; trihexagonal has V=3 but 1 orbit. P1 prunes on V
+	// (monotone under filling) because orbits ≥ V/hol(Λ).
+	const vcOf = (name: string) => {
+		const { cells } = new PeriodSolver(1).solve(new SeedConfiguration([VertexConfiguration.fromName(name)]), {});
+		expect(cells.length).toBe(1);
+		return vertexClassCount(cells[0].cellPolygons, cells[0].basisExact[0], cells[0].basisExact[1]);
+	};
+	it('square tiling 4,4,4,4 → V = 1 (the 4 unit-cell corners are one lattice class)', { timeout: 30000 }, () => {
+		expect(vcOf('4,4,4,4')).toBe(1);
+	});
+	it('hexagonal tiling 6,6,6 → V = 2 (two vertices per primitive cell)', { timeout: 30000 }, () => {
+		expect(vcOf('6,6,6')).toBe(2);
+	});
+	it('trihexagonal 3,6,3,6 → V = 3 (1 hexagon + 2 triangles ⇒ V=3, yet 1 orbit)', { timeout: 30000 }, () => {
+		expect(vcOf('3,6,3,6')).toBe(3);
+	});
+});
 
 describe('PeriodSolver (solve-for-period torus construction) — k=1 cells are primitive & 1-uniform', () => {
 	// Each VC, solved by fixing the period and filling the torus, yields exactly ONE primitive cell

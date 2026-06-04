@@ -1004,3 +1004,89 @@ square 8, hex 12** (from reduced Gram data; if unsure use the LARGER — always 
   and TA writes the `(G, placement)` completeness proof FIRST (the t2014/core-coincidence lesson — a
   symmetry assumption that *looks* sound can drop tilings), THEN CC implements behind a flag. (SYNC
   2026-06-04 TA.)
+
+## 16. Phase 1 — the sound k=3 fill levers (P0 lattice pre-filter, P1 orbit-floor, seed-state dedup, the exact holohedry classifier), byte-identical at k=1/k=2, and the honest k=3 profile (2026-06-04, session 7)
+
+Branch `perf/phase1-k3-fill-levers` (off Phase 0 `4ce0ba6`). Implements the four TA-licensed sound levers
+from `route-a-proven-box.md` §"Early-prune rulings". **All four verified byte-identical** against the
+Phase-0 baseline: live **k=1 = 11** (`6f9ca9cf2d16c75f`), **k=2 = 20** (`f3e2e0517191362c`); `pnpm build`
+green; **124 tests** green (109 + 15 new). The levers are sound (they cut only branches/lattices that the
+gate/primitivity would reject anyway) — the byte-identical digest is the empirical proof, exactly the
+safety net the mission rule demands.
+
+### 16.1 `holohedry(u, v)` — the exact Bravais-class divisor (`lib/classes/algorithm/LatticeEnumerator.ts`)
+P0/P1 divide the vertex count by `hol(Λ)` (oblique 2, rect/cmm 4, square 8, hex 12), the order of Λ's
+Bravais point group and an **upper bound** on any tiling's point group `|P|`. Computed exactly from the
+Gram matrix `(|u|², |v|², u·v)` of the Gauss-reduced basis — `reSurd(u.normSquared())`,
+`reSurd(u.conj().mul(v))`, compared with exact `Surd.equals`/`.cmp`. The three reduced-cell symmetry
+signatures are `u·v = 0` (perp), `|u| = |v|` (eqLen), `2|u·v| = |u|²` (centered); square = eqLen∧perp,
+hex = eqLen∧centered, rect/cmm = any one signature, oblique = none. ⚑ **Soundness rule: it must NEVER
+underestimate** (a too-low floor drops valid tilings), so on any doubt — a basis not provably
+Lagrange-reduced (`2|u·v| ≤ |u|² ≤ |v|²` checked exactly), or a degenerate input — it returns **12**, the
+2D maximum, which is always sound (weaker prune). TDD'd against square/hex/rect/cmm/oblique and the
+off-grid snub-hex t2020 (Bravais class hex, NOT oblique — the trap) + basis-independence.
+
+### 16.2 ★ P0 — arithmetic lattice pre-filter (the big win: candidate lattices 171 → 69)
+Skip a candidate Λ when **every** tile multiset realizing its exact cell area needs more vertex classes
+than `k·hol(Λ)` allows: `minVerts(|det Λ|) > k·hol(Λ)`. `vcAreaMinVerts` (sibling of `vcAreaSet`) returns,
+per realizable area, the minimum `V = Σ_i V_i` over the VC-orbit multiplicity assignments — and by Euler
+`V = Σ_i V_i = Σ_n t_n(n−2)/2` is exactly the torus vertex count, so `orbits ≥ V/hol(Λ) > k` ⇒ the cell is
+gate-rejected (or a supercell, re-found at its primitive sublattice — a separate, smaller candidate).
+Cached with the candidate list (per ring/vcSig/k). On the hard `[3⁶;3⁴.6;3⁴.6]` seed it removed **102 of
+171** candidates upfront (`p0Skip=102`, `lat=69`). Sound + licensed (NOT a completeness knob): it removes
+only lattices that can carry no k-uniform tiling with these VCs. Area-key miss ⇒ keep (never drop on doubt).
+
+### 16.3 P1 — orbit-floor prune (sound, but a **0× no-op on the hard seed** — confirms TA's <k ceiling)
+The DFS carries the running set of vertex classes mod Λ (`vReps`, extended one tile at a time via the
+exact `latticeEquivExact`); a child whose count exceeds `ctx.orbitFloor = k·hol(Λ)` is pruned. Sound
+because every k-uniform tiling has `V_final ≤ k·hol(Λ)` (orbit size ≤ |P| ≤ hol) and `V` is monotone under
+filling, so a branch toward a valid tiling NEVER exceeds the floor (prune is strict `>`; the boundary
+`V = k·hol` is kept). The exact vertex counter (`vertexClassCount`, TDD'd: square cell V=1, honeycomb V=2,
+trihexagonal V=3 — proving V ≠ orbit count) cannot over-count, so it never prunes early.
+- ⚑ **The measurement that matters:** on `[3⁶;3⁴.6;3⁴.6]` (hex, floor 3·12 = 36) **P1 fired 0 times**
+  (`p1Prune=0`). Reason: the 92% wasted fills are **<k degenerations** (2-uniform, V ≤ 24), which have too
+  FEW orbits, not too many — they never reach 37 classes. This **empirically confirms TA's honest ceiling**
+  (`rem:unsoundprunes`): the dominant <k degenerations are provably NOT early-prunable; their fill cost is
+  the structural price of completeness. P1's value is real but lies elsewhere — too-many-orbit junk /
+  supercells, and (Phase 3) the brutal oblique floor (`2k+1`).
+
+### 16.4 Seed-state dedup — implemented, guarded; near-no-op in the fast path (infra for the proven mode)
+On lattices with >1 seed set (only the core-overflow / fan lattices), fill each distinct initial torus
+state (canonical `stateKey` mod Λ) once. Sound by determinism of the fill on its initial state. Guarded by
+`seedSets.length > 1` so the single-seed fast path is byte-identical and unpenalized. In the current rigid-
+core fast path this fires rarely (fans already deduped at the planar level), so its real payoff is the
+**proven blanket-fan mode (O2)**, where `fan × orientation × placement` multiplies redundant states.
+
+### 16.5 Incremental incidence map — **DEFERRED** (profile-driven, documented)
+The fourth listed lever. Deferred after the profile: the k=3 wall is the irreducible <k-degeneration fills
+(P1 = 0×, §16.3), **not** analyze-overhead. An incremental inc map needs a per-child clone (siblings can't
+share a mutable map) which is `O(block)` — the *same order* as the rebuild it replaces — so a constant-
+factor (~1.5–2×) win on a sub-part of fill that does NOT crack the wall, while carrying the highest byte-
+identical risk of the four (Map-insertion-order → open-vertex tie-break; safe only because the k=1/k=2
+digest is set-based on non-timeout runs). Not worth the risk for the gain. The structural cure for the <k
+bucket is the gated **orbifold-fill** (§15.6 escalation), not this micro-opt. Revisit if a future profile
+shows analyze dominating fill on a seed where P1 *does* fire.
+
+### 16.6 Verification + the k=3 profile/scout
+- **Byte-identical:** k=1 probe `6f9ca9cf2d16c75f` (11), k=2 probe `f3e2e0517191362c` (20) — unchanged.
+  Build green, 124 tests green. The k=2 probe also ran faster (~96 s vs the Phase-0 278 s) — likely P0
+  trimming back-of-queue large-cell candidates, though some is environmental; the digest is the hard fact.
+- **k=3 profile** (`scripts/profile-k3-seed.ts`, env `PS_PROFILE`): `lat=69` (was 171), `p0Skip=102`,
+  `fill=51.6s`, `gate=8.2s`, `p1Prune=0`, `gateRej=48/71`, still `timedOut` at the 60 s cap. P0 helps but
+  does not crack the per-seed wall (as the audit predicted).
+- **k=3 scout** (`pnpm tsx scripts/probe-pipeline.ts 3 3,4,6,12 60000`, 447 seeds): launched after this
+  commit; the X/59 lower bound + digest are recorded in `SYNC.md` once it completes (multi-hour).
+- **Adversarial soundness review** (4-agent workflow, this session): all four dimensions — holohedry
+  never-underestimates, P0, P1 monotonicity, seed-state dedup + byte-identical — returned **sound**, no
+  counterexamples, grounded in the diff + `route-a-proven-box.md`. The only caveat raised is the
+  PRE-EXISTING pool-completeness heuristic (isPrimitive-guarded; the open INCOMPLETE-REGION item), not
+  introduced here.
+
+### 16.7 State + NEXT
+- Branch `perf/phase1-k3-fill-levers`. New exports: `holohedry`, `vcAreaMinVerts`, `areaKey`
+  (`LatticeEnumerator`), `vertexClassCount` (`PeriodSolver`); new diag fields `p0Skipped`/`p1Pruned`/
+  `seedStateDedup`; new harness `scripts/profile-k3-seed.ts`.
+- **NEXT:** still queued from Phase 1 — de-magic `poolSteps`/`poolLmax` (loud INCOMPLETE-REGION assertion),
+  A4 (per-orbit vs per-type cap), exact-`Surd` area guards (B1). The 3⁶ family still caps ⇒ the
+  **orbifold-fill escalation gate is now reached** (licensed levers landed + re-scouted) — per §15.6 / SYNC
+  this hands back to TA for the `(G, placement)` completeness proof before CC implements it behind a flag.

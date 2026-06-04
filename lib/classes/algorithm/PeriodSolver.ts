@@ -41,7 +41,7 @@ import { Cyclotomic } from '../Cyclotomic';
 import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
-import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet } from './LatticeEnumerator';
+import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey } from './LatticeEnumerator';
 import { detSurd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
 
@@ -60,8 +60,9 @@ const GRID_SHORT_MAX2 = 3.5 * 3.5;
  *  symmetry reason to exist. The only k=2 off-grid round cell is t2020 (|v|=√13≈3.61). */
 const COMPACT_OFFGRID_MAX2 = 4 * 4;
 
-/** Seed-free candidate lattices depend only on (ring, tile set, k) — computed once and cached. */
-const candidateCache = new Map<string, [Cyclotomic, Cyclotomic][]>();
+/** Seed-free candidate lattices depend only on (ring, tile set, k) — computed once and cached.
+ *  `p0Skipped` records how many candidates the P0 pre-filter removed (diagnostic only). */
+const candidateCache = new Map<string, { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number }>();
 
 /** Canonical vertex-configuration name from a cyclic list of polygon edge-counts — minimal over
  *  rotations AND reflection (a VC and its mirror share a name; matches the seed-build convention). */
@@ -96,6 +97,9 @@ export type PeriodSolverDiag = {
 	emitted: number; // after canonical dedup + k-gate
 	gateRejected: number; // completed but orbit count ≠ k
 	fanLattices: number; // lattices where the rigid core overflowed the cell → seeded from VC fans instead
+	p0Skipped: number; // candidate lattices removed by the P0 arithmetic pre-filter (minVerts > k·hol)
+	p1Pruned: number; // DFS branches cut by the P1 orbit-floor (vertexClasses > k·hol)
+	seedStateDedup: number; // redundant seed sets skipped (identical initial torus state mod Λ)
 	timedOut: boolean;
 };
 
@@ -166,7 +170,7 @@ export class PeriodSolver {
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const _tc0 = prof ? Date.now() : 0;
-		const lattices = this.candidateLattices(seed);
+		const { lattices, p0Skipped } = this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
@@ -176,6 +180,9 @@ export class PeriodSolver {
 			emitted: 0,
 			gateRejected: 0,
 			fanLattices: 0,
+			p0Skipped,
+			p1Pruned: 0,
+			seedStateDedup: 0,
 			timedOut: false,
 		};
 
@@ -209,10 +216,24 @@ export class PeriodSolver {
 			if (coreOverflows) diag.fanLattices++;
 
 			const rawCells: Polygon[][] = [];
+			// Seed-state dedup (route-a-proven-box.md §"core-coincidence ruling", sound alternative #1):
+			// distinct seed sets that reduce mod Λ to the IDENTICAL initial torus state produce identical
+			// completions (the fill is deterministic on its initial state), so fill each once. Only the
+			// multi-seed (fan / core-overflow) lattices can collide, so guard by seedSets.length to leave
+			// the single-seed fast path untouched and byte-identical. (The proven blanket-fan mode, where
+			// fan×orientation×placement multiplies states, is the real beneficiary — O2.)
+			const dedupSeeds = seedSets.length > 1;
+			const seenInitial = dedupSeeds ? new Set<string>() : null;
+			const sdMemo = dedupSeeds ? new Map<string, { key: string; poly: Polygon }>() : null;
 			for (const core of seedSets) {
 				if (maxMs > 0 && Date.now() - start > maxMs) { diag.timedOut = true; break; }
+				if (seenInitial) {
+					const sk = this.stateKey(this.dedupModLattice(core, ctx, sdMemo!));
+					if (seenInitial.has(sk)) { diag.seedStateDedup++; continue; }
+					seenInitial.add(sk);
+				}
 				const _tf0 = prof ? Date.now() : 0;
-				rawCells.push(...this.torusFill(core, ctx, () => maxMs > 0 && Date.now() - start > maxMs));
+				rawCells.push(...this.torusFill(core, ctx, () => maxMs > 0 && Date.now() - start > maxMs, diag));
 				if (prof) prof.fill += Date.now() - _tf0;
 			}
 			diag.rawCells += rawCells.length;
@@ -251,7 +272,7 @@ export class PeriodSolver {
 		if (prof) process.stderr.write(
 			`[PS_PROFILE k=${k}] cand=${prof.cand}ms fill=${prof.fill}ms gate=${prof.gate}ms ` +
 			`canon=${prof.canon}ms dedup=${prof.dedup}ms | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
-			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices}\n`
+			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} p1Prune=${diag.p1Pruned} ssDedup=${diag.seedStateDedup}\n`
 		);
 
 		if (opts.verbose) {
@@ -285,7 +306,7 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): [Cyclotomic, Cyclotomic][] {
+	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number } {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -367,8 +388,25 @@ export class PeriodSolver {
 
 		// shortest cells first (exact area) — torusFill is cheapest on small lattices.
 		lattices.sort((a, b) => detSurd(a[0], a[1]).abs().cmp(detSurd(b[0], b[1]).abs()));
-		candidateCache.set(cacheKey, lattices);
-		return lattices;
+
+		// --- P0: arithmetic lattice pre-filter (route-a-proven-box.md §"Early-prune rulings"). ---
+		// Skip a candidate Λ when EVERY tile multiset realizing its exact cell area needs more vertex
+		// classes than k·hol(Λ) allows: minVerts(|det Λ|) > k·hol(Λ) ⇒ any completion has orbits ≥
+		// V/hol(Λ) > k, so it is gate-rejected (or is a supercell, re-found at its primitive sublattice
+		// which is a separate, smaller candidate). SOUND + licensed — it is NOT a completeness knob; it
+		// removes only lattices that can carry no k-uniform tiling with these VCs. hol(Λ) never
+		// underestimates (it falls back to 12), so the floor is never too low. Cached with the list.
+		const minVerts = vcAreaMinVerts(vcIncidences, areaBoundF);
+		const kept: [Cyclotomic, Cyclotomic][] = [];
+		let p0Skipped = 0;
+		for (const [u, v] of lattices) {
+			const mv = minVerts.get(areaKey(detSurd(u, v).abs()));
+			if (mv !== undefined && mv > this.k * holohedry(u, v)) { p0Skipped++; continue; }
+			kept.push([u, v]);
+		}
+		const result = { lattices: kept, p0Skipped };
+		candidateCache.set(cacheKey, result);
+		return result;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -403,10 +441,15 @@ export class PeriodSolver {
 		// Largest tile circumradius (regular n-gon = 1/(2 sin(π/n))) — used to cull far tiles from the
 		// per-pop incidence map (a tile beyond judgeR + maxCircum has no vertex within judgeR).
 		const maxCircum = Math.max(...polySizes.map((n) => 1 / (2 * Math.sin(Math.PI / n))));
+		// P1 orbit-floor = k·hol(Λ). hol(Λ) is an exact UPPER bound on any tiling's point group on Λ,
+		// so any k-uniform tiling has V = #vertex classes ≤ k·hol(Λ); a partial fill exceeding this can
+		// only complete above k orbits (gate-rejected) or to a supercell (primitivity-rejected). hol
+		// never underestimates (falls back to 12), so the floor is never set too low.
+		const orbitFloor = this.k * holohedry(u, v);
 		return {
 			u, v, ring, N: ring.N, allowed, polySizes,
 			maxCellPolys: Math.min(maxCellPolys, areaCap),
-			uV, vV, det, cellDiam, minLen, cellArea, maxCircum,
+			uV, vV, det, cellDiam, minLen, cellArea, maxCircum, orbitFloor,
 		};
 	}
 
@@ -415,7 +458,7 @@ export class PeriodSolver {
 
 	/** All complete torus tilings extending the seed core under the fixed lattice in `ctx`.
 	 *  Each result is one representative polygon per lattice class (a fundamental cell). */
-	private torusFill(corePolys: Polygon[], ctx: FillCtx, timedOut: () => boolean): Polygon[][] {
+	private torusFill(corePolys: Polygon[], ctx: FillCtx, timedOut: () => boolean, diag: PeriodSolverDiag): Polygon[][] {
 		const memo = new Map<string, { key: string; poly: Polygon }>();
 		// Initial cell = seed polygons reduced into canonical lattice-class representatives.
 		const initial = this.dedupModLattice(corePolys, ctx, memo);
@@ -445,15 +488,35 @@ export class PeriodSolver {
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: initial self-overlap → reject\n`); return [];
 		}
 
+		// P1 orbit-floor state: the vertex classes mod Λ present so far (`vReps`), carried on the stack
+		// and extended by one tile's classes per child. A child whose count exceeds `ctx.orbitFloor`
+		// (= k·hol(Λ)) is pruned — its completion must have orbits > k (gate-rejected) or be a supercell
+		// (primitivity-rejected, re-found at its primitive sublattice). Every k-uniform tiling has V ≤
+		// k·hol(Λ) and V is monotone, so a branch leading to a valid tiling is NEVER pruned (byte-identical).
+		const uL = ctx.u, vL = ctx.v;
+		const extendV = (parent: Cyclotomic[], poly: Polygon): Cyclotomic[] => {
+			const out = parent.slice();
+			for (const w of poly.exactVertices!) {
+				if (!out.some((r) => latticeEquivExact(w, r, uL, vL))) out.push(w);
+			}
+			return out;
+		};
+		let initialV: Cyclotomic[] = [];
+		for (const p of initial) initialV = extendV(initialV, p);
+		if (initialV.length > ctx.orbitFloor) {
+			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: seed core ${initialV.length} vertex classes > floor ${ctx.orbitFloor} → reject\n`);
+			return [];
+		}
+
 		const results: Polygon[][] = [];
 		const seenState = new Set<string>();
-		const stack: { reps: Polygon[]; block: Polygon[] }[] = [{ reps: initial, block: initialBlock }];
+		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[] }[] = [{ reps: initial, block: initialBlock, vReps: initialV }];
 		let pops = 0;
 		const t0 = PeriodSolver.DEBUG ? Date.now() : 0;
 
 		while (stack.length > 0) {
 			if (timedOut()) break;
-			const { reps, block } = stack.pop()!;
+			const { reps, block, vReps } = stack.pop()!;
 			const stateKey = this.stateKey(reps);
 			if (seenState.has(stateKey)) continue;
 			seenState.add(stateKey);
@@ -487,8 +550,10 @@ export class PeriodSolver {
 				if (repsKeys.has(pc.key)) continue; // P already present mod Λ ⇒ no progress
 				const next = [...reps, pc.poly];
 				if (next.length > ctx.maxCellPolys) continue;
+				const childV = extendV(vReps, pc.poly);
+				if (childV.length > ctx.orbitFloor) { diag.p1Pruned++; continue; } // P1 orbit-floor prune
 				const childBlock = block.concat(this.buildBlock([pc.poly], ctx, 5));
-				stack.push({ reps: next, block: childBlock });
+				stack.push({ reps: next, block: childBlock, vReps: childV });
 			}
 		}
 		if (PeriodSolver.DEBUG) process.stderr.write(`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`);
@@ -854,6 +919,7 @@ type FillCtx = {
 	minLen: number;
 	cellArea: number;
 	maxCircum: number; // max tile circumradius — a poly beyond judgeR+this has no vertex within judgeR
+	orbitFloor: number; // k·hol(Λ): P1 prunes a partial fill whose vertex-class count exceeds this
 };
 
 type Interval = { start: number; units: number; n: number };
@@ -865,7 +931,42 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, timedOut: false };
+}
+
+/** Exact test: a − b ∈ Λ = ℤu + ℤv. The integer combo is guessed by a float solve, then verified
+ *  EXACTLY (`diff.sub(recon).isZero()`) — never a false positive; false negatives are excluded for
+ *  real periods (minLen ≥ 0.9, so the solve is well-conditioned). Used to count vertex classes. */
+function latticeEquivExact(a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclotomic): boolean {
+	const diff = a.sub(b);
+	if (diff.isZero()) return true;
+	const d = diff.toVector(), au = u.toVector(), av = v.toVector();
+	const det = au.x * av.y - au.y * av.x;
+	if (Math.abs(det) < FLOAT_TOL) return false;
+	const m = (d.x * av.y - d.y * av.x) / det;
+	const n = (au.x * d.y - au.y * d.x) / det;
+	const mi = Math.round(m), ni = Math.round(n);
+	if (Math.abs(m - mi) > 1e-3 || Math.abs(n - ni) > 1e-3) return false;
+	return diff.sub(u.scaleRational(BigInt(mi), 1n).add(v.scaleRational(BigInt(ni), 1n))).isZero();
+}
+
+/**
+ * The torus vertex count V = number of distinct vertex classes mod Λ among the cell polygons `reps`
+ * (= Σ_n t_n·(n−2)/2 by Euler). NOT the orbit count: V counts translation classes, the gate counts
+ * orbits under the full point group, with orbits ≥ V/hol(Λ). V grows monotonically as the torus fill
+ * adds tiles, so it lower-bounds the final V — the basis of the **P1 orbit-floor prune**
+ * (`route-a-proven-box.md` §"Early-prune rulings"): a partial fill with V > k·hol(Λ) can only complete
+ * to a tiling with orbits > k (gate-rejected) or to a supercell (primitivity-rejected, re-found at its
+ * primitive sublattice). Exact, via `latticeEquivExact` (O(V²); V is bounded by the floor when pruning).
+ */
+export function vertexClassCount(reps: Polygon[], u: Cyclotomic, v: Cyclotomic): number {
+	const vReps: Cyclotomic[] = [];
+	for (const p of reps) {
+		for (const w of p.exactVertices!) {
+			if (!vReps.some((r) => latticeEquivExact(w, r, u, v))) vReps.push(w);
+		}
+	}
+	return vReps.length;
 }
 
 function bbox(p: Polygon): { minX: number; maxX: number; minY: number; maxY: number } {

@@ -230,6 +230,80 @@ export function vcAreaSet(vcIncidences: Map<number, number>[], areaBoundF: numbe
 }
 
 /**
+ * For each realizable cell area (same enumeration as `vcAreaSet`), the MINIMUM number of vertex
+ * classes `V = Σ_i V_i` over the VC-orbit multiplicity assignments that produce that exact area.
+ * Keyed by `areaKey`. This is the data the **P0 lattice pre-filter** consumes: a candidate lattice Λ
+ * is skippable when `minVerts(|det Λ|) > k · hol(Λ)`, because every tile multiset realizing that area
+ * already needs more vertex classes than `k · hol(Λ)` allows, so its completion has > k orbits
+ * (`orbits ≥ V / hol(Λ)`) — a sound prune (`route-a-proven-box.md` §"Early-prune rulings", P0). The
+ * Euler relation `V = Σ_i V_i = Σ_n t_n·(n−2)/2` holds for every assignment, so summing the orbit
+ * multiplicities is exactly the torus vertex count.
+ */
+export function vcAreaMinVerts(vcIncidences: Map<number, number>[], areaBoundF: number): Map<string, number> {
+	const types = vcIncidences;
+	const out = new Map<string, number>();
+	if (types.length === 0) return out;
+	const perVertexF = types.map((t) =>
+		[...t.entries()].reduce((s, [n, c]) => s + (tileAreaSurd(n).toFloat() * c) / n, 0)
+	);
+	const rec = (idx: number, inc: Map<number, number>, partialF: number, sumV: number): void => {
+		if (idx === types.length) {
+			let area = Surd.ZERO;
+			for (const [n, c] of inc) {
+				if (c % n !== 0) return; // fractional tile count ⇒ not a realizable cell
+				area = area.add(tileAreaSurd(n).scaleRational(BigInt(c / n), 1n));
+			}
+			if (area.isZero() || area.toFloat() > areaBoundF + 1e-9) return;
+			const key = areaKey(area);
+			const prev = out.get(key);
+			if (prev === undefined || sumV < prev) out.set(key, sumV);
+			return;
+		}
+		const type = types[idx];
+		for (let v = 1; v <= MAX_ORBIT_VERTICES; v++) {
+			const next = new Map(inc);
+			for (const [n, c] of type) next.set(n, (next.get(n) ?? 0) + c * v);
+			const pf = partialF + perVertexF[idx] * v;
+			if (pf > areaBoundF + 1e-9) break; // area strictly increases with v ⇒ safe to stop
+			rec(idx + 1, next, pf, sumV + v);
+		}
+	};
+	rec(0, new Map(), 0, 0);
+	return out;
+}
+
+/**
+ * Holohedry order of the lattice ⟨a, b⟩ — the order of its Bravais point group, an UPPER bound on the
+ * point group |P| of any tiling with this period (P ⊆ the lattice symmetry): oblique 2,
+ * rectangular / centered-rectangular (cmm) 4, square 8, hexagonal 12. Computed EXACTLY from the Gram
+ * matrix (|u|², |v|², u·v) of the Gauss-reduced basis (reduced-cell classification: the three
+ * symmetry signatures are u·v = 0, |u| = |v|, and 2|u·v| = |u|²).
+ *
+ * ⚑ SOUNDNESS: the orbit-floor prunes (P0/P1, `route-a-proven-box.md` §"Early-prune rulings") divide
+ * by this value, so it MUST NEVER underestimate the true holohedry — underestimating would let the
+ * floor `k·hol(Λ)` drop a valid tiling. Any doubt — a basis not PROVABLY Lagrange-reduced, or a
+ * degenerate input — falls back to 12 (the 2D maximum), which is always sound (a weaker prune).
+ */
+export function holohedry(a: Cyclotomic, b: Cyclotomic): number {
+	const [u, v] = gaussReduceExact(a, b);
+	const guu = reSurd(u.normSquared()); // |u|²  (u·conj(u) is real)
+	const gvv = reSurd(v.normSquared()); // |v|²
+	if (guu.isZero() || gvv.isZero()) return 12; // degenerate ⇒ max (sound)
+	const guv = reSurd(u.conj().mul(v)); // u·v  (real part of conj(u)·v)
+	const twoAbsuv = guv.abs().scaleRational(2n, 1n); // 2|u·v|
+	// Demand a Lagrange-reduced basis (|u|² ≤ |v|² and 2|u·v| ≤ |u|²); otherwise the length/angle
+	// conditions below need not match the Bravais class — fall back to the always-sound maximum.
+	if (guu.cmp(gvv) > 0 || twoAbsuv.cmp(guu) > 0) return 12;
+	const eqLen = guu.equals(gvv);
+	const perp = guv.isZero();
+	const centered = twoAbsuv.equals(guu); // 2|u·v| = |u|² (60° rhombus / rectangle-centering edge)
+	if (eqLen && perp) return 8; // square
+	if (eqLen && centered) return 12; // hexagonal (equal length, 60°)
+	if (perp || eqLen || centered) return 4; // rectangular / centered-rectangular / rhombic
+	return 2; // oblique (no symmetry signature holds)
+}
+
+/**
  * If `u` lies along a grid direction (its angle is a multiple of 15°), return that direction index
  * `m` (u = ζ^m·|u|) and its exact length `|u| ∈ ℚ(√2,√3)`. Otherwise null (off-grid, e.g. snub).
  */
@@ -314,7 +388,7 @@ export function isIntCombo(w: Cyclotomic, a: Cyclotomic, b: Cyclotomic): boolean
 	return w.sub(recon).isZero();
 }
 
-function areaKey(s: Surd): string {
+export function areaKey(s: Surd): string {
 	return `${s.P},${s.Q},${s.R},${s.S},${s.D}`;
 }
 

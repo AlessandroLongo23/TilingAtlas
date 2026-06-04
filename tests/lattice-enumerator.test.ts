@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
 import { Surd, surdToCyclotomic, detSurd } from "@/classes/algorithm/exact/Surd";
-import { LatticeEnumerator, gridDirOf, sameLattice, shortVectorPool, vcAreaSet } from "@/classes/algorithm/LatticeEnumerator";
+import { LatticeEnumerator, gridDirOf, sameLattice, shortVectorPool, vcAreaSet, holohedry, vcAreaMinVerts, areaKey } from "@/classes/algorithm/LatticeEnumerator";
 
 const ring = CyclotomicRing.create(24);
 const ONE = Cyclotomic.ONE(ring);
@@ -123,5 +123,71 @@ describe("vcAreaSet: the cell area is forced by the seed's vertex configurations
 	it("every area is realizable by the VCs (#hexagons divisible by 6 ⇒ no area below 4√3)", () => {
 		const min = Math.min(...areas.map((a) => a.toFloat()));
 		expect(min).toBeGreaterThan(4 * Math.sqrt(3) - 1e-6); // smallest cell: 1×3⁶ + 6×3⁴.6 → 4√3
+	});
+});
+
+describe("holohedry: exact Bravais-class classification (P0/P1 orbit-floor divisor)", () => {
+	const OMEGA = Cyclotomic.zeta(ring, 4); // e^{iπ/3}, 60° — hexagonal multiplier
+	const IMAG = Cyclotomic.zeta(ring, 6); // i, 90° — square multiplier
+	const realCyc = (s: Surd) => surdToCyclotomic(s, ring);
+
+	it("square lattice (1, i) → 8", () => {
+		expect(holohedry(ONE, IMAG)).toBe(8);
+	});
+	it("hexagonal lattice (1, ω) → 12", () => {
+		expect(holohedry(ONE, OMEGA)).toBe(12);
+	});
+	it("rectangular lattice (1, 2i) → 4", () => {
+		expect(holohedry(ONE, IMAG.scaleRational(2n, 1n))).toBe(4);
+	});
+	it("centered-rectangular (cmm) oracle cell t2003 → 4", () => {
+		const cmm = (hConv: Surd) => ONE.add(realCyc(hConv).mulZeta(6)).scaleRational(1n, 2n);
+		expect(holohedry(ONE, cmm(new Surd(6n, 0n, 1n, 0n, 1n)))).toBe(4); // 1 × (6+√3) centered
+	});
+	it("rectangular oracle cell t2014 (1, (1+√3)i) → 4", () => {
+		expect(holohedry(ONE, realCyc(new Surd(1n, 0n, 1n, 0n, 1n)).mulZeta(6))).toBe(4);
+	});
+	it("hexagonal oracle cell t2018 (c = 1+√3) → 12", () => {
+		const c = realCyc(new Surd(1n, 0n, 1n, 0n, 1n));
+		expect(holohedry(c, c.mul(OMEGA))).toBe(12);
+	});
+	it("OFF-GRID snub-hexagonal t2020 (c = 3+ω) → 12 (Bravais class is hexagonal, not oblique)", () => {
+		const c = ONE.scaleRational(3n, 1n).add(OMEGA); // |c|² = 13, off the 15° grid
+		expect(holohedry(c, c.mul(OMEGA))).toBe(12);
+	});
+	it("genuinely oblique lattice (1, ζ²+ζ⁴) → 2", () => {
+		// reduced basis (1, ζ²+ζ⁴−1): Gram (|u|²,|v|²,u·v) = (1, 2, (√3−1)/2) — all three symmetry
+		// conditions (perp, equal-length, 2|u·v|=|u|²) fail ⇒ no mirror/rotation ⇒ oblique.
+		const v = Cyclotomic.zeta(ring, 2).add(Cyclotomic.zeta(ring, 4));
+		expect(holohedry(ONE, v)).toBe(2);
+	});
+	it("is basis-independent: a unimodular change of basis preserves the class", () => {
+		expect(holohedry(ONE, IMAG)).toBe(holohedry(ONE, IMAG.add(ONE))); // square, sheared basis
+		expect(holohedry(ONE, OMEGA)).toBe(holohedry(ONE, OMEGA.add(ONE.scaleRational(2n, 1n)))); // hex
+	});
+	it("never UNDER-estimates: every classification is ≥ the true holohedry (soundness invariant)", () => {
+		// Underestimating hol would make P0/P1 prune valid tilings. A correct classifier returns the
+		// exact value; this guards the contract that the function is an upper bound on |point group|.
+		expect(holohedry(ONE, IMAG)).toBeGreaterThanOrEqual(8);
+		expect(holohedry(ONE, OMEGA)).toBeGreaterThanOrEqual(12);
+	});
+});
+
+describe("vcAreaMinVerts: min vertex-class count per realizable cell area (P0 lattice pre-filter)", () => {
+	const vc36 = new Map<number, number>([[3, 6]]);
+	const vc346 = new Map<number, number>([[3, 4], [6, 1]]);
+
+	it("the smallest cell area 4√3 needs 7 vertex classes (1×3⁶ + 6×3⁴.6)", () => {
+		const minV = vcAreaMinVerts([vc36, vc346], 16);
+		expect(minV.get(areaKey(new Surd(0n, 0n, 4n, 0n, 1n)))).toBe(7);
+	});
+	it("has an entry for every area vcAreaSet produces, each ≥ 1", () => {
+		const minV = vcAreaMinVerts([vc36, vc346], 16);
+		const areas = vcAreaSet([vc36, vc346], 16);
+		for (const a of areas) {
+			const m = minV.get(areaKey(a));
+			expect(m).toBeDefined();
+			expect(m!).toBeGreaterThanOrEqual(1);
+		}
 	});
 });
