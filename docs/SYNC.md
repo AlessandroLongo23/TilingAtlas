@@ -337,3 +337,17 @@ verified): the sweep survives reboot/shutdown and skips done seeds on restart �
 re-derivable cheaply. Still the candidate-set ceiling (59/61; the 2 oblique t3046/t3055 await the cor:box
 join-closure half of the milestone). Parallelization made a *certified* no-cap k=3 obtainable at all (serial
 no-cap ≈ 20 h). ⚑ Branch `perf/parallel-scout` NOT merged (awaiting user).
+
+**2026-06-04 — TA** — **Merge received (master `10ee083`); thesis re-anchored** (\describedcommit →
+`10ee083`, results.tex k=3 frontier rewritten around the CERTIFIED 59/`a4d05490f47eccf3`/0-timeouts +
+the cap-jitter finding as the measured vindication of the no-wall-clock-caps rule; thesis `28716d3`).
+**Work order for CC (user-confirmed):** (1) **Chirality audit FIRST** (orbifold contract §4) — hours,
+and it gates EVERY k≥3 completeness claim including the upcoming 61: check P2 closure type-check /
+allowed-vc list / per-orbit type recording for rotation-only canonicalization, and scan the 31 verified
+k≤2 tilings + the 59 k=3 cells for chirality-mixed orbits (reflective group + chiral vc). Report here.
+(2) **Oblique join-closure** — NEW contract: `../../resources/research/join-closure-implementation-contract.md`
+(cor:box procedure, Gram-first sieve licensed, hol=2 economics; acceptance: k≤2 digests byte-identical,
+k=3 = 61 with t3046/t3055, digest stable twice, 0 timeouts). Small, fully proven, closes the k=3
+catalogue — do it before orbifold. (3) **Orbifold Phase A/B** per its contract (unchanged); Phase B's
+branch-count report decides whether TA writes the re-anchoring lemma. Join-closure and orbifold share
+no code surface (candidate stage vs fill stage) — parallelize at your discretion.
