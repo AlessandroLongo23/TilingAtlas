@@ -1137,8 +1137,22 @@ Probed the worst-looking seed `[3⁶;3⁶;3⁴.6]` with **no cap** (`maxMs=0`): 
 (~6.2 min), `timedOut=false`**, lat=50 (P0 cut 93), raw=397, gateRej=222, **p1Prune=0** (the 92% gate
 rejections are <k degenerations again — §16.3), fill 88%. So the seeds the 60 s cap was killing are not
 unbounded — they are ~minutes-long finite fills. ⇒ a **no-cap parallel sweep is tractable for the first
-time**: ~72 hard seeds × a few min / 8 cores. Running now (`maxMs=0`); the timeout-free X + digest is the
-orbifold Phase-C reproduce-or-beat baseline (recorded in SYNC). **Honest framing:** parallelization is a
-sound ~core-count accelerator (it does NOT crack the per-seed cost — that's the orbifold's job), but by
-removing the wall-clock cap it converts the k=3 scout from "incomplete lower bound" to a *certifiable*
-sweep that actually finishes.
+time**: ~72 hard seeds × a few min / 8 cores. **RESULT: the no-cap sweep finished — 59 distinct, digest
+`a4d05490f47eccf3`, 0 timeouts, 447/447 seeds, ~149 min on 8 workers** (inflated ~1.6× by a concurrent DS
+emulator + Spotlight indexing; ~90-110 min on a free box). It reproduces the EXACT digest the capped serial
+run found (55 timeouts there), so it **certifies** the 59 rather than lower-bounding it — the orbifold
+Phase-C reproduce-or-beat baseline, timeout-free. The hard cost is real: the worst concretes are
+single-threaded ~10-22-min torus fills (one `[3⁶;3⁶;3⁴.6]` concrete took 1328 s uncapped — concretes of a
+single seed *name* vary 4× in cost), so a *serial* no-cap sweep would be ~20 h; parallelization is what
+makes a certified k=3 obtainable at all. **Honest framing:** parallelization is a sound ~core-count
+accelerator (it does NOT crack the per-seed cost — that's the orbifold's job), but by removing the
+wall-clock cap it converts the k=3 scout from "incomplete lower bound" to a *certified* sweep that finishes.
+
+### 17.4 Crash-resume (commit `8ce89d5`)
+A long no-cap sweep must survive shutdowns. The coordinator writes each finished seed to an in-repo,
+reboot-safe NDJSON (`.scout-cache/k<k>_<tiles>_cap<ms>.ndjson`, gitignored, keyed by run params) and on
+startup reads it to SKIP done seeds and reuse their cells — so an interruption loses at most the seeds in
+flight. `scoutCodec.readResumeNdjson` tolerates a truncated final line (mid-write kill). Verified: fresh
+k=1 → 11/`6f9ca9cf2d16c75f` (writes a 15-seed file); a re-run RESUMES all 15, 0 new work, 1.1 s, identical
+digest. (Lesson observed live: a worker does NOT exit when its coordinator's stdin closes — an orphan risk
+on unclean coordinator death; not hit here, but worth a `stdin 'close' ⇒ exit` guard in a future pass.)

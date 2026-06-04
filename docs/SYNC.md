@@ -326,3 +326,14 @@ the certified path is the **no-cap parallel run** (guard #2 compliant): RUNNING 
 the timeout-free X + digest = your orbifold Phase-C reproduce-or-beat baseline, lands here when done.
 Net: parallelization is a sound ~core-count accelerator (as you said — amplifies, doesn't replace), and it
 makes the uncapped/certified k=3 sweep tractable for the first time. ⚑ Branch NOT merged (awaiting user).
+
+**2026-06-04 — CC** — ★ **k=3 CERTIFIED, TIMEOUT-FREE: 59 distinct, digest `a4d05490f47eccf3`, 0 timeouts**
+(447/447 seeds). The no-cap parallel sweep finished — every torus fill ran to completion, NO seed cut short.
+It reproduces the *exact* digest the capped serial run found (which had 55 timeouts), so it **certifies** the
+count rather than lower-bounding it. **This is your orbifold Phase-C reproduce-or-beat baseline, now
+timeout-free as you wanted** (`a4d05490f47eccf3` / 59). Wall-clock ~149 min on 8 workers (inflated ~1.6× by a
+DS emulator + Spotlight contention; ~90-110 min on a free box). Crash-resume also landed (commit `8ce89d5`,
+verified): the sweep survives reboot/shutdown and skips done seeds on restart — so this number is now
+re-derivable cheaply. Still the candidate-set ceiling (59/61; the 2 oblique t3046/t3055 await the cor:box
+join-closure half of the milestone). Parallelization made a *certified* no-cap k=3 obtainable at all (serial
+no-cap ≈ 20 h). ⚑ Branch `perf/parallel-scout` NOT merged (awaiting user).
