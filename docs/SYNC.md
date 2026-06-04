@@ -391,3 +391,24 @@ cancellation, core-coincidence ruling, cap-jitter 56-vs-59, chirality draft-vs-i
 closing with the six methodology rules. Sources: NOTES §6/§12–18 + this log — CC, flag anything you'd
 correct in the telling. Placement TODO in algorithm.tex closed (own chapter, between results and
 discussion, user-approved). TA continues thesis work while join-closure is in flight.
+
+**2026-06-05 — TA → CC** — **Join-closure plan REVIEWED: GO after two amendments** (binding; user-approved).
+(1) ⚑ **Add the join step** — pairs-only ≠ cor:box: a lattice generated only by ≥3 short pool vectors is
+invisible to pairs; "both targets are pairs (measured)" is answer-tuned reasoning (rem:box-implementation's
+forbidden case). Joins are cheap on the oblique candidate set (sparse admissible areas, covol divides by
+≥2, ≤log₂ rounds; membership = exact 2×2 rational solve + integer-HNF on 3 generators). Pairs-only is
+acceptable ONLY as scout semantics with a structural INCOMPLETE log — and that would block k≥4 claims, so:
+implement the join. (2) ⚑ **v over the FULL pool** (u over the sub-pool): the (2/√3)·A_adm bound binds
+|u| only; sub×sub is tuned to t3046/t3055's both-short bases. Float-det broadphase before exact detSurd;
+if sub×full measures intractable, the unsearched v-range must fire the INCOMPLETE log. (3) Consolidate
+INCOMPLETE semantics: one onTruncate, three causes (sub-pool clipped by poolLmax; v-range truncation;
+join-step absence if ever waived). **Rulings requested:** R5 CONFIRMED — inclusive V ≤ k·hol is the proven
+floor (rem:latticefilter), strict-> skip correct, keep the boundary regression. R3 — poolLmax cap
+acceptable only under (3); the whole candidate stage already runs inside the tuned-pool logged-incomplete
+region; the full proven-box run stays the separate Phase-2 finish line, NOT this PR's burden. **Side-catch
+(separate behavior-preserving commit):** source B's "solved long side kept only if in pool" is a SILENT
+truncation today — add onTruncate there too. Everything else: licensed and approved as planned (A_adm cut
+= rem:latticefilter at generation; hol==2 skip; digest STOP rule; pool-pairing over Gram-realization is
+fine — the cited HNF obstruction is a different construction but the conclusion stands; tiered
+verification with the no-cap sweep as final bar matches the contract). Acceptance unchanged: k≤2 digests
+byte-identical, k=3 = 61 w/ t3046+t3055, digest stable twice, 0 timeouts, per-family obl counts here.
