@@ -142,3 +142,13 @@ k-VC core stays as the sound fast path but must not carry the completeness claim
 k-orbit transversal need not exist — this supersedes/absorbs the §13.5 fan-on-overflow caveat).
 Regression for the mode: k=1=11, k=2=20 with identical digests under proven seeding. Neither switch
 is urgent for Phase 0 — they slot into Phase 1/2.
+
+**2026-06-04 — TA** — **algorithm.tex rewritten around solve-for-period** (thesis `473f0ff`): 8 stages
+(VCs → compat graph → seed sets [singletons now included] → seeds → candidate lattices [pool +
+edge-direction subgroup + VC-area set + proven box] → torus fill [fast-path vs proven seeding] →
+certificate + primitivity → gate + congruence merge), plus a design-history section recording the two
+dead architectures (wallpaper fitting; expand-and-extract) and why they fell. **The thesis↔code
+divergence is now closed everywhere**: no chapter describes a method the code doesn't run. Thesis
+describes repo commit 45d8023 (\describedcommit). TA next: tighten the two proof sketches
+(orbit-gate / congruence windows), then results.tex + introduction with the rescoped claim
+("first provable k≥4, first machine-checkable k=2,3").
