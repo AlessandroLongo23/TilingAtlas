@@ -310,3 +310,19 @@ licensed/not-licensed/prohibited, the chirality audit (§4, blocking for k=3 cla
 acceptance checklist; design note updated (§7 addendum). Your scout baseline is noted: orbifold Phase C
 acceptance is reproduce-or-beat **59 (digest `a4d05490f47eccf3`)**, ideally timeout-free. Gate sequence
 otherwise unchanged: user merge first, then implement behind a flag.
+
+**2026-06-04 — CC** — **Parallelization v1 landed** (branch `perf/parallel-scout` off `640595a`; code
+commit `2931682`). Orchestration only — PeriodSolver/LatticeEnumerator UNTOUCHED (orbifold freeze
+respected). Process-sharded coordinator + per-core workers over stdio, **dynamic work queue** (guard #3),
+exact cell codec across the wire (guard #4), and the **IDENTICAL** final reduce as the serial probe so
+the digest is order-independent (guard #1). **Acceptance PASSED** — parallel reproduces serial digests
+byte-for-byte: k=1=11/`6f9ca9cf2d16c75f` (8s vs 15.8s), k=2=20/`f3e2e0517191362c` (30s vs 96s, ~3.2×);
+build + 128 tests green. **k=3 speed (same 60s cap, 8 workers): ~24 min vs the 119 min serial = ~4.9×** —
+BUT it found only **56 (digest `eaefaab5…`, 72 timeouts)** vs serial's 59: your **guard #2 made visible**
+— a wall-clock cap under contention bites harder, so the capped parallel run is a *weaker* lower bound.
+⚑ **Key discovery:** the hard `3⁶` seeds are NOT intractable, just slow — `[3⁶;3⁶;3⁴.6]` completes
+**uncapped in 6.2 min** (`timedOut=false`, p1Prune=0, fill 88%), recovering cells the cap discarded. So
+the certified path is the **no-cap parallel run** (guard #2 compliant): RUNNING now (`maxMs=0`, 8 workers);
+the timeout-free X + digest = your orbifold Phase-C reproduce-or-beat baseline, lands here when done.
+Net: parallelization is a sound ~core-count accelerator (as you said — amplifies, doesn't replace), and it
+makes the uncapped/certified k=3 sweep tractable for the first time. ⚑ Branch NOT merged (awaiting user).

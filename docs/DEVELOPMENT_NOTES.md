@@ -1097,3 +1097,48 @@ shows analyze dominating fill on a seed where P1 *does* fire.
   A4 (per-orbit vs per-type cap), exact-`Surd` area guards (B1). The 3⁶ family still caps ⇒ the
   **orbifold-fill escalation gate is now reached** (licensed levers landed + re-scouted) — per §15.6 / SYNC
   this hands back to TA for the `(G, placement)` completeness proof before CC implements it behind a flag.
+
+## 17. Parallelization v1 — the process-sharded scout, and the discovery that the 3⁶ wall is *slow*, not intractable (2026-06-04, session 8)
+
+TA approved per-seed parallelization (SYNC, work order `640595a`) with four binding guards + a
+serial/parallel digest-identity acceptance test. Implemented as pure **orchestration** (PeriodSolver and
+LatticeEnumerator UNTOUCHED — the orbifold freeze): `scripts/scoutCodec.ts` (exact cell (de)serialization),
+`scripts/scout-worker.ts` (per-core process), `scripts/scout-parallel.ts` (coordinator). Branch
+`perf/parallel-scout`, commit `2931682`; build + 128 tests green.
+
+### 17.1 Design + the four guards
+- **Guard #4 (exact coefficients cross the wire):** a cell tile is a `RegularPolygon` from the unit-ζ-step
+  boundary walk, so `{n, exact anchor, first edge-dir}` reconstructs it EXACTLY via
+  `fromAnchorAndDirExact` → identical `exactVertices`/`exactCentroid` → identical `canonicalKey`. TDD'd
+  (`tests/scout-codec.test.ts`): serialize→JSON→deserialize preserves canonicalKey AND congruence.
+- **Guard #1 (order-independent digest):** the coordinator collects every worker's cells and runs the
+  *same* `dedupeByCongruence(cells, canonicalKey)` + DJB2 as the serial probe. That dedup keeps the
+  **min-canonicalKey representative per class and sorts by it** (TilingCongruence.ts) — so the digest is a
+  pure function of the SET of raw cells, independent of arrival order. Hence digest-identity is *by
+  construction*, not luck.
+- **Guard #3 (dynamic queue):** the coordinator hands out seed indices one at a time over stdio (not static
+  shards), so the front-loaded 3⁶ family can't starve a shard. **Guard #4 also** = each worker rebuilds the
+  ring + seed list itself (≈126 s, concurrent) — no shared mutable state.
+- **Acceptance PASSED:** parallel k=1 = 11/`6f9ca9cf2d16c75f` (8.0 s vs 15.8 s), k=2 = 20/`f3e2e0517191362c`
+  (30.2 s vs 96.4 s, ~3.2×) — byte-identical to serial.
+
+### 17.2 ★ The capped k=3 run, and why guard #2 exists (the result got WORSE)
+Parallel k=3 at the **same 60 s cap** as the 119 min serial baseline, 8 workers: **1447.5 s (~24 min) =
+~4.9×** wall-clock — **but it recovered only 56 distinct (digest `eaefaab5…`, 72 timeouts) vs serial's 59
+(55 timeouts).** This is **guard #2 made visible** ("contention + time caps = run-to-run truncation
+jitter"): a *wall-clock* cap under 8-way contention gives each capped seed slightly less CPU in its 60 s
+window, so 17 more seeds tip over the cap and 3 tilings are lost. The ~4.9× is partly inflated — the
+parallel run did *less* total fill work. Lesson, now empirical: **never wall-clock-cap a parallel run you
+want a stable/certified number from.** (A per-CPU-time cap would dodge this but needs editing the frozen
+`PeriodSolver`, so it waits.)
+
+### 17.3 ★ The discovery: the 3⁶ wall is *slow*, not intractable — no-cap parallel is the certified path
+Probed the worst-looking seed `[3⁶;3⁶;3⁴.6]` with **no cap** (`maxMs=0`): it **completes in 369.6 s
+(~6.2 min), `timedOut=false`**, lat=50 (P0 cut 93), raw=397, gateRej=222, **p1Prune=0** (the 92% gate
+rejections are <k degenerations again — §16.3), fill 88%. So the seeds the 60 s cap was killing are not
+unbounded — they are ~minutes-long finite fills. ⇒ a **no-cap parallel sweep is tractable for the first
+time**: ~72 hard seeds × a few min / 8 cores. Running now (`maxMs=0`); the timeout-free X + digest is the
+orbifold Phase-C reproduce-or-beat baseline (recorded in SYNC). **Honest framing:** parallelization is a
+sound ~core-count accelerator (it does NOT crack the per-seed cost — that's the orbifold's job), but by
+removing the wall-clock cap it converts the k=3 scout from "incomplete lower bound" to a *certifiable*
+sweep that actually finishes.
