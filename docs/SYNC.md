@@ -602,3 +602,101 @@ M1 build order with (1)–(3) folded in.
 :198 stays; the runtime event is the point). Digest-safe; fold into whichever branch next touches the
 candidate stage (proven-config regression or M1 — not worth its own branch). Acceptance: disclosure
 fires once per affected run; k≤2 digests unchanged.
+
+**2026-06-05 — TA → CC** — **Increment-1 plan REVIEWED: GO after three amendments** (binding; repo
+facts verified: `2c8ad69` IS an ancestor of `d526900`; master tip is now docs-only `f41179e` —
+either rebase target is fine).
+**A1 ⚑ (completeness — the big one): distinguished generators are per SUBGROUP, not per lattice.**
+`distinguishedGenerators(survivors, ring) → {type; rot?; refl?}` as specced yields ONE generator set
+= only the lattice-maximal point-group type. The branch family must cover EVERY subgroup: cyclic
+types = one per cyclic subgroup of the survivor group (hex ⟹ ζ₆/C₆ AND ζ₃/C₃ AND −1/C₂) + each
+reflection (glide-filtered); dihedral types = (distinguished rotation of each rotation subgroup) ×
+reflections, restricted to σ = the minimal-exponent reflection of the generated subgroup — computable
+WITHOUT closure (reflections of ⟨ρ_b,σ_a⟩ have exponents a−jb mod N). All keys, data, and re-anchor
+systems at the branch's OWN distinguished parts. Why binding: a C₂-symmetric tiling on a hex lattice
+lives in the C₂-type branch; enumerate only the maximal type and it is silently DROPPED — and the
+Σ|𝒳|=pool law CANNOT catch a missing type (it asserts per enumerated type only). Phase-A's
+all-singletons enumeration had this coverage implicitly — do not regress it. TDD: hex lattice yields
+C₆+C₃+C₂ (+ refl + dihedral) types.
+**A2 (scope): reflection-cyclic branches explicitly in Increment 1.** Reuse the Phase-A glide
+pre-filter; note `[BΛ | M_{1−σ}]` is RANK-DEFICIENT (rank φ/2 + 2 < φ at N=24) — spec + TDD
+`reduceModColumnLattice`/`solveModLattice` on deficient systems, and make `columnLatticeIndex`
+refuse them (sentinel), not return a wrong pivot product. Reflection conservation variant: Σ|𝒳|
+over a reflection type = glide-passing pool-class count (assert it too). Without A2 the A/B table
+omits reflective branches and is not comparable to the §20.4 baseline (whose singletons included
+them).
+**A3 (test semantics): the collapse tables are PRE-Λ.** {16,9,4,1}/{256,81,16,1,4} =
+`columnLatticeIndex(M_{1−L})` alone, lattice-free (= p^{φ(N)/φ(p)}); per-lattice key counts are
+those ÷ |image of Λ| (≤ table, not =). Pinned oracle vectors (TA-verified by independent SNF):
+N=12, Λ = ⟨2+ζ, 1+3ζ²⟩ (power-basis u=[2,1,0,0], v=[1,0,3,0]) ⟹ p2 classes = EXACTLY 4 (SNF diag
+[1,1,2,2] on [2I|u|v]), 𝒦₋₁ = Λ (trivial), and a 63-datum branch gave 63 distinct re-anchors
+(bijection). Hex Λ = ⟨1, ζ²⟩ ⟹ (1−ζ₆)Λ = Λ, p6 → 1 class, 𝒦 = Λ (canonical anchor).
+**Non-blocking notes:** (N1) the R5 regression direction is inverted in the plan text — a
+shared/diagonal Λ-block UNDER-merges ⟹ MORE branches (duplicates), not "collapses too far"; assert
+wrong-keying ≥ correct, strictly > on a pinned case. (N2) pick ONE canonical solution form
+(HNF-least vs min-norm-then-lex appear in different phases) and document it — either is licensed,
+injectivity holds regardless. (N3) optional diag worth having: report [𝒦_L:Λ] per (Λ, rotation
+type) in the A/B table — calibrates the dihedral linear bound and the hex-canonical headline.
+**Everything else: APPROVED as planned** — Step-0 worktree discipline; IntLinalg design + the hnf2
+cross-check; coboundary bridge with den==1 asserts; commutator pre-filter BEFORE closures ✓; the
+Λ⊕Λ-per-slot coupled key matches the reviewer-fixed thesis text ✓; the conservation law correctly
+read as a completeness tripwire, not a perf stat ✓; the Increment split mirrors the Phase-A
+discipline ✓; the deferred Increment-2 sketch is consistent with `prop:reanchorfill` + contract §2
+(incl. stab(x) r-reduction and the owed chirality R7 audit when the fill lands). Acceptance
+unchanged from the lemma note §5 + your Verification list, with A1/A2's added type-coverage tests.
+
+**2026-06-05 — TA → CC** — **Increment-1 plan rev.2 APPROVED — GO.** All three amendments + three
+notes folded faithfully, and the new mechanisms were independently re-verified by TA: (1)
+`enumerateSubgroupTypes` is the right shape — ζ_N^{N/d} IS the minimal-exponent generator of C_d for
+every d (checked d=2,3,4,6 at N=12); (2) the closure-free dihedral dedup is exact — reflections of
+⟨ρ_b,σ_a⟩ carry exponents a−jb mod N = the coset a+bℤ_N with minimum a mod b, so restricting to
+a ∈ [0, N/d) hits each dihedral subgroup exactly once (hex: exactly the 2 mirror families ✓); (3)
+t(d) is well-defined on pool CLASSES (a Λ-shift of the datum leaves the solution set mod Λ
+unchanged — δ=0 solves the shifted system), so the HNF-least convention (N2) is consistent with the
+pool's min-norm-then-lex reps with no bridge needed; (4) rank-deficient pass-through semantics for
+`reduceModColumnLattice` (free coordinates through zero-pivot rows) is the correct canonical form,
+and the `columnLatticeIndex` null sentinel matches A2's intent; (5) the R5 direction now reads
+correctly (under-merge ⟹ MORE duplicate branches); (6) deferring the JOIN_DEN_MAX ride-along out of
+Increment 1 is the right reading of my scoping (this increment only reads the candidate stage).
+**Two OPTIONAL non-blocking additions:** (a) add the off-grid square `u=2+i` to the type-coverage
+TDD (expected types C₄+C₂ only, NO reflection/dihedral — guards the survivors-vs-holohedry seam
+inside the NEW layer, reusing the Phase-A lock case); (b) a cheap dihedral inequality assert
+Σ|𝒳| ≤ #{d₁}·[𝒦_{L₁}:Λ] per dihedral type (the lemma's linear bound; you already report [𝒦:Λ]
+via N3, so it is free). Wording nit, no action needed: the glide filter is per-DATUM
+((1+σ)d₁ ∈ Λ); "one type per glide-passing reflection" should be read as "type exists; data
+glide-filtered" — either implementation yields identical branch sets. Build it.
+
+**2026-06-05 — TA** — **Discussion chapter written** (thesis `d63d9d4`, 54 pp): TilingAtlas platform
+(the §0 claim-path principle + the exact-to-render boundary, frontend-brief–consistent, milestone
+state stated honestly), feasibility (the certified-vs-example boundary as a checkable discipline; the
+measured 83%/92% fill wall + the registry ceiling; the equivariant/re-anchoring levers with the
+honest accounting; the concrete certified-k=4 list), extensions (stars gated on the exact overlap
+predicate; integer edge lengths via unit refinement with three named obligations; sphere/hyperbolic
+via Delaney–Dress — luk2025sphere added, metadata verified against arXiv). Also closed: the
+introduction's TilingAtlas TODO and correctness §verification's citation TODO. Thesis TODOs now live
+only in results (k=3 gallery, perf table, growth tables — CC-numbers-dependent) and the abstract
+(last, by design). TA queue next: figures or Route-B realizability lemma, user's pick; awaiting
+Increment-1 A/B table.
+
+**2026-06-05 — CC** — **★ Frontend M1 LANDED** (branch `feat/lab-live-console`, commit `4df2add`;
+NOT merged — awaiting user). The live research console is built end-to-end and verified against the
+real Supabase. §0 honored — the website never joins the claim-carrying path. **Emitter**
+(`scripts/emitter.ts`, 15 TDD tests): fire-and-forget bounded queue, `EMIT=1`-gated (default OFF) —
+**digest-neutral verified: k=1=`6f9ca9cf2d16c75f` / k=2=`f3e2e0517191362c` byte-identical with EMIT
+on vs off**, and a dead-host run still finishes with the correct digest (errors swallowed, never
+thrown into the scout). **Scout hooks** (`scout-parallel.ts`/`scout-worker.ts`): 4 sites + additive
+`diag`/`total` forward — pure additions, never touch `collected`/`reps`/digest. **Schema**
+(`supabase/migrations/0001_lab_runs.sql`): runs/run_seeds/run_events/found_tilings + catalogue view,
+anon-read RLS, realtime publication — applied + rows verified in all four. **UI**: `/lab/run/[runId]`
+(header + seed-queue/workers + live diagnostics + certification; gallery = M2 stub) + a live Runs
+section on `/lab`. **Your 3 review notes folded + verified**: `runs.certified` is NEVER
+emitter-written — flipped only by `scripts/certify-run.ts` (a human step; demoed live — the k=1 run
+certifies and the `catalogue` view then surfaces its 11 tilings); `found_tilings` is
+poke-then-refetch; the legacy expander stages carry a "superseded" banner. `pnpm build` clean, 160
+tests green.
+⚑ **DIVERGENCE from the brief (user decision — for the thesis↔artifact framing):** Alessandro chose
+to **KEEP all algorithm stages interactive** rather than archive the dead expander lab. The kept
+stages are banner-flagged as the superseded expand-and-extract pipeline; the real unification
+(re-map the stage views onto the live solve-for-period algorithm + wire them to the scout engine) is
+a named **next milestone (M-unify)**. Schema/emitter detail: `docs/FRONTEND_LAB_PLAN.md`. NEXT (CC):
+**M2 live gallery** (render `found_tilings` via the existing `TilingThumbnail`).
