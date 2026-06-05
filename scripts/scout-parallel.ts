@@ -48,8 +48,19 @@ const extractor = new TranslationalCellExtractor();
 const runId = randomUUID();
 let commit = '';
 try { commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim(); } catch { /* best-effort */ }
+// Float render-ready cell (TranslationalCellData) for the M2 gallery — the exact cell deserialized to
+// floats so the browser renders via the existing TilingThumbnail without bundling Cyclotomic.
+function cellToRenderData(cell: PeriodCell): { cellPolygons: { n: number; vertices: number[][] }[]; basis: number[][] } {
+	const u = cell.basisExact[0].toVector();
+	const v = cell.basisExact[1].toVector();
+	return {
+		cellPolygons: cell.cellPolygons.map((p) => ({ n: p.n, vertices: p.vertices.map((vec) => [vec.x, vec.y]) })),
+		basis: [[u.x, u.y], [v.x, v.y]],
+	};
+}
 const emit = emitterFromEnv({
 	canonicalKeyOf: (sc) => extractor.canonicalKey(deserializeCell(ring, sc as SerializedCell).cellPolygons),
+	renderCellOf: (sc) => cellToRenderData(deserializeCell(ring, sc as SerializedCell)),
 });
 
 type Result = { type: 'result'; idx: number; name: string; cells: SerializedCell[]; timedOut: boolean; ms: number; diag?: PeriodSolverDiag };

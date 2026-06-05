@@ -172,6 +172,20 @@ describe('makeEmitter — event → table translation, fire-and-forget', () => {
     expect(() => emit.seedCompleted({ idx: 0, name: 's', cells: [{}], timedOut: false, ms: 1, workerId: 0 })).not.toThrow();
     await expect(emit.flush()).resolves.toBeUndefined();
   });
+
+  it('seedCompleted includes render_cell when a renderCellOf is provided (M2 gallery)', async () => {
+    const { client, calls } = makeFakeClient();
+    const emit = makeEmitter({
+      client,
+      canonicalKeyOf: (c) => `key:${(c as { id: number }).id}`,
+      renderCellOf: (c) => ({ rendered: (c as { id: number }).id }),
+    });
+    emit.runStarted(meta);
+    emit.seedCompleted({ idx: 1, name: 's', cells: [{ id: 7 }], timedOut: false, ms: 5, workerId: 0 });
+    await emit.flush();
+    const found = calls.find((c) => c.table === 'found_tilings' && c.op === 'upsert');
+    expect((found?.rows as { render_cell: unknown }).render_cell).toMatchObject({ rendered: 7 });
+  });
 });
 
 describe('emitterFromEnv — EMIT gating', () => {

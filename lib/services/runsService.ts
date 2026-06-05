@@ -77,6 +77,31 @@ export async function fetchRun(sb: SupabaseClient, id: string): Promise<RunRow |
 	return (data as RunRow) ?? null;
 }
 
+export interface FoundTiling {
+	run_id: string;
+	canonical_key: string;
+	render_cell: unknown | null; // float TranslationalCellData (parseBaseCell-ready); null if not yet populated
+	k: number;
+	seed_idx: number | null;
+	first_seen_at: string;
+}
+
+// Only the render-relevant columns — NOT cell_codec (large; that's the exact mirror, fetched on demand).
+const FOUND_COLS = "run_id,canonical_key,render_cell,k,seed_idx,first_seen_at";
+
+export async function fetchFoundTilings(sb: SupabaseClient, runId: string): Promise<FoundTiling[]> {
+	const { data, error } = await sb
+		.from("found_tilings")
+		.select(FOUND_COLS)
+		.eq("run_id", runId)
+		.order("first_seen_at", { ascending: true });
+	if (error) {
+		console.error("fetchFoundTilings:", error.message);
+		return [];
+	}
+	return (data ?? []) as FoundTiling[];
+}
+
 export async function fetchRunSeeds(sb: SupabaseClient, runId: string): Promise<RunSeedRow[]> {
 	const { data, error } = await sb
 		.from("run_seeds")

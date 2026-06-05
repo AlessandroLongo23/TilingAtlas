@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { FlaskConical, Cpu, LayoutGrid, Gauge, BadgeCheck, Wifi, WifiOff } from "lucide-react";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { GalleryPanel } from "@/components/run/gallery-panel";
 import { useLiveRun } from "@/lib/hooks/useLiveRun";
-import type { RunRow, RunSeedRow } from "@/lib/services/runsService";
+import type { RunRow, RunSeedRow, FoundTiling } from "@/lib/services/runsService";
 import { cn } from "@/lib/utils/cn";
 
 // ── format helpers ───────────────────────────────────────────────────────────────────────────
@@ -80,10 +81,12 @@ export function RunView({
 	runId,
 	initialRun,
 	initialSeeds,
+	initialTilings,
 }: {
 	runId: string;
 	initialRun: RunRow;
 	initialSeeds: RunSeedRow[];
+	initialTilings: FoundTiling[];
 }) {
 	const { run, seeds, connected } = useLiveRun(runId, initialRun, initialSeeds);
 	const isRunning = run.status === "running";
@@ -203,15 +206,10 @@ export function RunView({
 					<Panel
 						icon={LayoutGrid}
 						title="Found tilings"
+						className="lg:col-span-2"
 						right={<span className="text-xs text-fg-muted font-mono tabular-nums">{run.count ?? "—"} distinct</span>}
 					>
-						<div className="flex flex-col items-center justify-center py-10 text-center">
-							<LayoutGrid size={28} className="text-fg-disabled/40 mb-3" />
-							<p className="text-sm text-fg-muted">{run.count ?? 0} cells mirrored</p>
-							<Badge tone="info" className="mt-2">
-								live gallery — M2
-							</Badge>
-						</div>
+						<GalleryPanel runId={runId} initial={initialTilings} />
 					</Panel>
 
 					<Panel icon={Gauge} title="Diagnostics">
@@ -227,8 +225,8 @@ export function RunView({
 						</p>
 					</Panel>
 
-					<Panel icon={BadgeCheck} title="Certification" className="lg:col-span-2">
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+					<Panel icon={BadgeCheck} title="Certification">
+						<div className="grid grid-cols-2 gap-2">
 							<Stat
 								label="timeouts"
 								value={

@@ -80,6 +80,9 @@ export function makeEmitter(opts: {
   /** When provided, each certified cell is mirrored to found_tilings keyed by this canonical key.
    *  Injected by the coordinator (which owns the ring + extractor) — keeps this module decoupled. */
   canonicalKeyOf?: (cell: unknown) => string;
+  /** When provided, a render-ready float cell (TranslationalCellData) is stored alongside the exact
+   *  cell_codec so the browser gallery (M2) renders without bundling Cyclotomic. */
+  renderCellOf?: (cell: unknown) => unknown;
 }): Emitter {
   const client = opts.client;
   if (!client) {
@@ -88,6 +91,7 @@ export function makeEmitter(opts: {
   }
   const queue = opts.queue ?? makeTaskQueue({ retries: opts.retries, warn: opts.warn });
   const canonicalKeyOf = opts.canonicalKeyOf;
+  const renderCellOf = opts.renderCellOf;
   let runId = '';
   let runK = 0;
   let seq = 0;
@@ -125,7 +129,14 @@ export function makeEmitter(opts: {
       if (canonicalKeyOf) {
         for (const cell of r.cells) {
           push(() => client.from('found_tilings').upsert(
-            { run_id: runId, canonical_key: canonicalKeyOf(cell), cell_codec: cell, k: runK, seed_idx: r.idx },
+            {
+              run_id: runId,
+              canonical_key: canonicalKeyOf(cell),
+              cell_codec: cell,
+              render_cell: renderCellOf ? renderCellOf(cell) : null,
+              k: runK,
+              seed_idx: r.idx,
+            },
             { onConflict: 'run_id,canonical_key' },
           ));
         }
@@ -148,7 +159,9 @@ export function makeEmitter(opts: {
 /** Build an emitter from the environment — the coordinator's entry point. The emitter is OFF unless
  *  `EMIT=1`; with `EMIT=1` but missing creds it logs once and stays a no-op. This is the §0 opt-in:
  *  default-off ⇒ the certified path runs byte-identical with the emitter absent. */
-export function emitterFromEnv(opts: { canonicalKeyOf?: (cell: unknown) => string } = {}): Emitter {
+export function emitterFromEnv(
+  opts: { canonicalKeyOf?: (cell: unknown) => string; renderCellOf?: (cell: unknown) => unknown } = {},
+): Emitter {
   if (process.env.EMIT !== '1') return makeEmitter({ client: null });
   const url = process.env.PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -158,5 +171,5 @@ export function emitterFromEnv(opts: { canonicalKeyOf?: (cell: unknown) => strin
   }
   const client = createClient(url, key, { auth: { persistSession: false } });
   console.error('[emitter] EMIT=1 — mirroring run events to Supabase (fire-and-forget)');
-  return makeEmitter({ client, canonicalKeyOf: opts.canonicalKeyOf });
+  return makeEmitter({ client, canonicalKeyOf: opts.canonicalKeyOf, renderCellOf: opts.renderCellOf });
 }
