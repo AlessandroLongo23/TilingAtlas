@@ -41,7 +41,7 @@ import { Cyclotomic } from '../Cyclotomic';
 import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
-import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey } from './LatticeEnumerator';
+import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
 import { detSurd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
 
@@ -62,7 +62,10 @@ const COMPACT_OFFGRID_MAX2 = 4 * 4;
 
 /** Seed-free candidate lattices depend only on (ring, tile set, k) — computed once and cached.
  *  `p0Skipped` records how many candidates the P0 pre-filter removed (diagnostic only). */
-const candidateCache = new Map<string, { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number }>();
+const candidateCache = new Map<
+	string,
+	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null }
+>();
 
 /** Canonical vertex-configuration name from a cyclic list of polygon edge-counts — minimal over
  *  rotations AND reflection (a VC and its mirror share a name; matches the seed-build convention). */
@@ -100,6 +103,8 @@ export type PeriodSolverDiag = {
 	p0Skipped: number; // candidate lattices removed by the P0 arithmetic pre-filter (minVerts > k·hol)
 	p1Pruned: number; // DFS branches cut by the P1 orbit-floor (vertexClasses > k·hol)
 	seedStateDedup: number; // redundant seed sets skipped (identical initial torus state mod Λ)
+	obliqueCandidates: number; // candidate lattices contributed by source (C) oblique join-closure
+	obliqueTruncated: ObliqueTruncation['cause'] | null; // INCOMPLETE-REGION cause if the oblique reach was clipped
 	timedOut: boolean;
 };
 
@@ -170,7 +175,7 @@ export class PeriodSolver {
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped } = this.candidateLattices(seed);
+		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated } = this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
@@ -183,6 +188,8 @@ export class PeriodSolver {
 			p0Skipped,
 			p1Pruned: 0,
 			seedStateDedup: 0,
+			obliqueCandidates,
+			obliqueTruncated,
 			timedOut: false,
 		};
 
@@ -272,13 +279,14 @@ export class PeriodSolver {
 		if (prof) process.stderr.write(
 			`[PS_PROFILE k=${k}] cand=${prof.cand}ms fill=${prof.fill}ms gate=${prof.gate}ms ` +
 			`canon=${prof.canon}ms dedup=${prof.dedup}ms | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
-			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} p1Prune=${diag.p1Pruned} ssDedup=${diag.seedStateDedup}\n`
+			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} p1Prune=${diag.p1Pruned} ssDedup=${diag.seedStateDedup} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''}\n`
 		);
 
 		if (opts.verbose) {
 			process.stderr.write(
 				`[PeriodSolver k=${k}] lattices=${diag.candidateLattices} tried=${diag.latticesTried} ` +
-				`raw=${diag.rawCells} emitted=${diag.emitted} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices}` +
+				`raw=${diag.rawCells} emitted=${diag.emitted} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} obl=${diag.obliqueCandidates}` +
+				(diag.obliqueTruncated ? ` (oblTrunc:${diag.obliqueTruncated})` : '') +
 				(diag.timedOut ? ' (TIMED OUT)' : '') + `\n`
 			);
 		}
@@ -306,7 +314,7 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number } {
+	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null } {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -386,6 +394,28 @@ export class PeriodSolver {
 			if (poolSet.has(v.key())) push(u, v);
 		}
 
+		// `minVerts` (min vertex-classes per realizable cell area) drives BOTH the P0 pre-filter below AND
+		// the oblique sub-pool sizing in source (C); computed once here (hoisted from the P0 loop — pure,
+		// no behavioural change).
+		const minVerts = vcAreaMinVerts(vcIncidences, areaBoundF);
+
+		// (C) OBLIQUE (p1/p2) cells — the cor:box join-closure completion that reaches the Bravais classes
+		// the symmetry-pinned (A)/(B) cannot (k≥3 oblique cells t3046/t3055). Source (C) contributes ONLY
+		// `hol==2` lattices, so (A)/(B) remain the SOLE round/grid source and the k≤2 catalogue stays
+		// byte-identical (the oracle has 0 oblique at k≤2; those candidates gate-reject). The proven box is
+		// large; the searched region is the tuned pool reach, so an out-of-reach oblique cell is logged
+		// LOUDLY (INCOMPLETE-REGION, never silent), per route-a-proven-box.md / join-closure contract.
+		let obliqueCandidates = 0;
+		let obliqueTruncated: ObliqueTruncation['cause'] | null = null;
+		for (const [u, v] of lat.obliqueCells(pool, areas, ring, areaBoundF, poolLmax, minVerts, (info) => {
+			obliqueTruncated = info.cause;
+			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (oblique candidate stage): ${JSON.stringify(info)}\n`);
+		})) {
+			const before = seen.size;
+			push(u, v);
+			if (seen.size > before) obliqueCandidates++;
+		}
+
 		// shortest cells first (exact area) — torusFill is cheapest on small lattices.
 		lattices.sort((a, b) => detSurd(a[0], a[1]).abs().cmp(detSurd(b[0], b[1]).abs()));
 
@@ -396,7 +426,6 @@ export class PeriodSolver {
 		// which is a separate, smaller candidate). SOUND + licensed — it is NOT a completeness knob; it
 		// removes only lattices that can carry no k-uniform tiling with these VCs. hol(Λ) never
 		// underestimates (it falls back to 12), so the floor is never too low. Cached with the list.
-		const minVerts = vcAreaMinVerts(vcIncidences, areaBoundF);
 		const kept: [Cyclotomic, Cyclotomic][] = [];
 		let p0Skipped = 0;
 		for (const [u, v] of lattices) {
@@ -404,7 +433,7 @@ export class PeriodSolver {
 			if (mv !== undefined && mv > this.k * holohedry(u, v)) { p0Skipped++; continue; }
 			kept.push([u, v]);
 		}
-		const result = { lattices: kept, p0Skipped };
+		const result = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated };
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
@@ -931,7 +960,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, timedOut: false };
 }
 
 /** Exact test: a − b ∈ Λ = ℤu + ℤv. The integer combo is guessed by a float solve, then verified

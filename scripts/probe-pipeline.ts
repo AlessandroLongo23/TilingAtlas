@@ -52,7 +52,7 @@ for (let i = 0; i < useSeeds.length; i++) {
 	if (ms > 3000 || diag.timedOut || cells.length > 0)
 		console.log(
 			`  [${i}] ${seed.name.padEnd(28)} cells=${cells.length} ` +
-			`lat=${diag.candidateLattices} raw=${diag.rawCells} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} ${ms}ms${diag.timedOut ? ' TIMEOUT' : ''}`
+			`lat=${diag.candidateLattices} raw=${diag.rawCells} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''} ${ms}ms${diag.timedOut ? ' TIMEOUT' : ''}`
 		);
 }
 // Authoritative cross-seed dedup: up to CONGRUENCE (representation- & chirality-robust). The old

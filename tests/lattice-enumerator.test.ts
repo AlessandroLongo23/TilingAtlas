@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
 import { Surd, surdToCyclotomic, detSurd } from "@/classes/algorithm/exact/Surd";
-import { LatticeEnumerator, gridDirOf, sameLattice, shortVectorPool, vcAreaSet, holohedry, vcAreaMinVerts, areaKey } from "@/classes/algorithm/LatticeEnumerator";
+import { LatticeEnumerator, gridDirOf, sameLattice, shortVectorPool, vcAreaSet, holohedry, vcAreaMinVerts, areaKey, edgeStepDirs, joinLattice, isIntCombo, gaussReduceExact, latticeKey } from "@/classes/algorithm/LatticeEnumerator";
 
 const ring = CyclotomicRing.create(24);
 const ONE = Cyclotomic.ONE(ring);
@@ -189,5 +189,97 @@ describe("vcAreaMinVerts: min vertex-class count per realizable cell area (P0 la
 			expect(m).toBeDefined();
 			expect(m!).toBeGreaterThanOrEqual(1);
 		}
+	});
+});
+
+describe("joinLattice: rational HNF join of a vector into a 2D lattice (cor:box step 2)", () => {
+	const I = Cyclotomic.zeta(ring, 6); // i (90°), so (a=ONE, b=I) is the integer lattice ℤ²
+
+	it("index-2 join halves the covolume and contains all three generators", () => {
+		const w = ONE.add(I).scaleRational(1n, 2n); // (½, ½) in (1, i) coords — w ∉ ℤ²
+		const j = joinLattice(ONE, I, w);
+		expect(j).not.toBeNull();
+		const [e1, e2] = j!;
+		expect(detSurd(e1, e2).abs().equals(Surd.rational(1n, 2n))).toBe(true); // covolume 1 → ½
+		// ⟨e1,e2⟩ contains a, b, and w (each an INTEGER combination of the new basis)
+		expect(isIntCombo(ONE, e1, e2)).toBe(true);
+		expect(isIntCombo(I, e1, e2)).toBe(true);
+		expect(isIntCombo(w, e1, e2)).toBe(true);
+		// and it is strictly FINER than ⟨a,b⟩ (e1 is not an integer combo of the original basis)
+		expect(isIntCombo(e1, ONE, I)).toBe(false);
+	});
+
+	it("returns null when w already lies in the lattice (no progress)", () => {
+		expect(joinLattice(ONE, I, ONE.add(I))).toBeNull(); // (1,1) ∈ ℤ²
+		expect(joinLattice(ONE, I, I.scaleRational(3n, 1n))).toBeNull(); // (0,3) ∈ ℤ²
+	});
+
+	it("returns null when w has irrational coordinates (⟨a,b,w⟩ is not a rank-2 lattice)", () => {
+		const offGrid = Cyclotomic.zeta(ring, 1); // ζ = (cos15°, sin15°): irrational coords in (1, i)
+		expect(joinLattice(ONE, I, offGrid)).toBeNull();
+	});
+});
+
+describe("LatticeEnumerator.obliqueCells: oblique candidates via pair-seed + join-closure", () => {
+	// Decode the Soto-Sánchez oracle vectors (T = a + b·ζ₁₂ + c·ζ₁₂² + d·ζ₁₂³, ζ₁₂ = ζ₂₄²).
+	const dec = ([a, b, c, d]: number[]) =>
+		Cyclotomic.fromRational(ring, BigInt(a))
+			.add(Cyclotomic.zeta(ring, 2).scaleRational(BigInt(b), 1n))
+			.add(Cyclotomic.zeta(ring, 4).scaleRational(BigInt(c), 1n))
+			.add(Cyclotomic.zeta(ring, 6).scaleRational(BigInt(d), 1n));
+	const t3046 = gaussReduceExact(dec([2, 0, -2, 0]), dec([2, 0, 1, 0])); // area 3√3, oblique
+	const t3055 = gaussReduceExact(dec([1, 0, -1, -1]), dec([2, 1, 0, 0])); // area (6+3√3)/2, oblique
+	const A_t3046 = new Surd(0n, 0n, 3n, 0n, 1n); // 3√3
+	const A_t3055 = new Surd(6n, 0n, 3n, 0n, 2n); // (6+3√3)/2
+
+	const dirs = edgeStepDirs(ring, [3, 4, 6, 12]);
+	const poolLmax = Math.sqrt(22 * 3); // k=3 reach ≈ 8.124
+	const pool = shortVectorPool(ring, 8, poolLmax, dirs, true);
+	const areas = [A_t3046, A_t3055];
+	const minVerts = new Map<string, number>([
+		[areaKey(A_t3046), 5],
+		[areaKey(A_t3055), 6],
+	]);
+	const lat = new LatticeEnumerator(3);
+	const cells = lat.obliqueCells(pool, areas, ring, 24 * 3 * (6 + 3 * Math.sqrt(3)), poolLmax, minVerts);
+
+	it("contains the oblique k=3 cell t3046 (area 3√3)", () => {
+		expect(cells.some(([a, b]) => sameLattice(t3046[0], t3046[1], a, b))).toBe(true);
+	});
+	it("contains the oblique k=3 cell t3055 (area (6+3√3)/2)", () => {
+		expect(cells.some(([a, b]) => sameLattice(t3055[0], t3055[1], a, b))).toBe(true);
+	});
+	it("contributes ONLY oblique lattices (holohedry == 2) — never round/grid (protects the k≤2 digest)", () => {
+		for (const [a, b] of cells) expect(holohedry(a, b)).toBe(2);
+	});
+	it("contributes only area-admissible, non-degenerate cells", () => {
+		for (const [a, b] of cells) {
+			expect(detSurd(a, b).isZero()).toBe(false);
+			expect(areas.some((A) => A.equals(detSurd(a, b).abs()))).toBe(true);
+		}
+	});
+	it("returns [] when no area is admissible", () => {
+		expect(lat.obliqueCells(pool, [], ring, 100, poolLmax, new Map())).toEqual([]);
+	});
+	it("fires onTruncate when the sub-pool reach exceeds poolLmax (loud INCOMPLETE log)", () => {
+		const causes: string[] = [];
+		lat.obliqueCells(pool, areas, ring, 1000, 1.0 /* tiny */, minVerts, (info) => causes.push(info.cause));
+		expect(causes).toContain("subpool-clipped");
+	});
+
+	it("the JOIN reaches a ≥3-generator oblique lattice that pairs-only would MISS", () => {
+		// t3046's reduced basis (u, v). Pool = {u, 2v, u+3v}: in (u,v) coords {(1,0),(0,2),(1,3)} —
+		// pairwise indices 2,3,2, but jointly generate ⟨u,v⟩ = the oblique t3046 lattice (area 3√3).
+		const [u, v] = t3046;
+		const p3 = [u, v.scaleRational(2n, 1n), u.add(v.scaleRational(3n, 1n))];
+		// no PAIR of the pool generates the target lattice (so pairs-only cannot find it):
+		const pairFinds =
+			sameLattice(u, v, p3[0], p3[1]) || sameLattice(u, v, p3[0], p3[2]) || sameLattice(u, v, p3[1], p3[2]);
+		expect(pairFinds).toBe(false);
+		// the join-closure DOES find it. Seed areas must admit the parent (6√3) and the join (3√3).
+		const synthAreas = [A_t3046, new Surd(0n, 0n, 6n, 0n, 1n), new Surd(0n, 0n, 9n, 0n, 1n)];
+		const synthMin = new Map<string, number>(synthAreas.map((A) => [areaKey(A), 6]));
+		const got = lat.obliqueCells(p3, synthAreas, ring, 100, poolLmax, synthMin);
+		expect(got.some(([a, b]) => sameLattice(u, v, a, b))).toBe(true);
 	});
 });

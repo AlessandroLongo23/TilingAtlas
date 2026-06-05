@@ -31,6 +31,19 @@ const MAX_ORBIT_VERTICES = 12;
  *  what bounds the count, so this can be loose without flooding candidates. */
 const LONG_AXIS_MIN = 1.0;
 
+/** Tuned upper bound on a join-step denominator (the cor:box step-2 float broadphase in `obliqueCells`):
+ *  part of the logged-incomplete candidate region, not a proven bound. The k=3 oblique targets are pairs
+ *  (denominator-free), so this never affects them. */
+const JOIN_DEN_MAX = 60;
+function isNearInt(x: number): boolean {
+	return Math.abs(x - Math.round(x)) < 1e-9;
+}
+/** True iff `x` is within tolerance of a rational p/q with q ≤ JOIN_DEN_MAX (float broadphase). */
+function nearRational(x: number): boolean {
+	for (let q = 1; q <= JOIN_DEN_MAX; q++) if (Math.abs(x * q - Math.round(x * q)) < 1e-7) return true;
+	return false;
+}
+
 export class LatticeEnumerator {
 	constructor(private readonly k: number) {}
 
@@ -97,6 +110,119 @@ export class LatticeEnumerator {
 					}
 				}
 			}
+		}
+		return out;
+	}
+
+	/**
+	 * Oblique (`hol = 2`) candidate cells via pair-seed + join-closure — the cor:box completion that
+	 * reaches the Bravais classes the symmetry-pinned `roundCells`/`gridAlignedCells` cannot (e.g. the
+	 * k=3 oblique cells t3046, t3055). Returns ONLY oblique lattices (`holohedry == 2`); the higher-
+	 * symmetry lattices traversed internally (needed to seed joins toward ≥3-generator oblique children)
+	 * are NOT emitted — `roundCells`/`gridAlignedCells` remain the sole source for those, so adding this
+	 * cannot perturb the round/grid catalogues (the k≤2 byte-identical guarantee).
+	 *
+	 *  - **(C.1) seed pairs:** `u` over the sub-pool `|u|² ≤ (2/√3)·A_adm` (the reduced short side of an
+	 *    oblique cell; `A_adm` = the largest admissible area realisable by ≤ 2k vertex classes, the P0
+	 *    floor at `hol = 2`), `v` over the FULL pool. Float-det broadphase, then exact.
+	 *  - **(C.2) join-closure (cor:box step 2):** repeatedly add `⟨L, w⟩` for a pool vector `w`. A join
+	 *    has area ≤ area(L)/2, so a lattice whose area can't be halved into the admissible set is skipped
+	 *    (sound). Pairs-only would miss any lattice with no two-pool-vector basis.
+	 *  - **(C.3) INCOMPLETE log:** `onTruncate` fires (loud, never silent) when the proven reach exceeds
+	 *    the tuned pool reach (`route-a-proven-box.md` doctrine).
+	 *
+	 * A candidate is kept iff its exact area ∈ `areas` (the sharp VC-area cut); deduped by `latticeKey`.
+	 */
+	obliqueCells(
+		pool: Cyclotomic[],
+		areas: Surd[],
+		ring: Cyclotomic["ring"],
+		areaBoundF: number,
+		poolLmax: number,
+		minVerts: Map<string, number>,
+		onTruncate?: (info: ObliqueTruncation) => void
+	): [Cyclotomic, Cyclotomic][] {
+		void ring; // the exact helpers carry their own ring; kept for call-site consistency with A/B.
+		if (areas.length === 0) return [];
+		const areaSet = new Set(areas.map(areaKey));
+		const areaFloats = areas.map((a) => a.toFloat());
+		const minAreaF = Math.min(...areaFloats);
+
+		// A_adm: the largest admissible area realisable by ≤ 2k vertex classes (P0 floor at hol = 2).
+		let aAdm: Surd | null = null;
+		for (const a of areas) {
+			const mv = minVerts.get(areaKey(a));
+			if (mv !== undefined && mv <= 2 * this.k && (aAdm === null || a.cmp(aAdm) > 0)) aAdm = a;
+		}
+		if (aAdm === null) return []; // no area survives the hol=2 orbit floor ⇒ no oblique candidate
+		const aAdmF = aAdm.toFloat();
+		const uMax2 = (2 / Math.sqrt(3)) * aAdmF; // |u|² bound for the reduced short side
+		// (C.3) loud truncation: the proven reach exceeds the tuned pool reach.
+		if (Math.sqrt(uMax2) > poolLmax + 1e-9)
+			onTruncate?.({ cause: "subpool-clipped", aAdm: aAdmF, needReach: Math.sqrt(uMax2), poolLmax });
+		else if (uMax2 > poolLmax + 1e-9)
+			onTruncate?.({ cause: "v-range-truncated", needReach: uMax2, poolLmax });
+
+		// Pool float coords precomputed ONCE (the pairing/join sweeps are float-broadphased; exact
+		// arithmetic only re-confirms a survivor — so `toVector` is never recomputed per candidate pair).
+		const PF = pool.map((p) => { const f = p.toVector(); return { p, x: f.x, y: f.y, r2: f.x * f.x + f.y * f.y }; });
+		const sub = PF.filter((e) => e.r2 <= uMax2 + 1e-9);
+
+		const out: [Cyclotomic, Cyclotomic][] = [];
+		const seen = new Set<string>(); // contributed (oblique) lattice keys
+		const working = new Map<string, [Cyclotomic, Cyclotomic]>(); // all admissible candidates (any class)
+		/** Admit (a,b) (with its precomputed |float det| `dF`) if its area is admissible & new; emit only
+		 *  if oblique. Returns the pair iff NEWLY admitted (for the join frontier). */
+		const admit = (a: Cyclotomic, b: Cyclotomic, dF: number): [Cyclotomic, Cyclotomic] | null => {
+			if (dF < 1e-9 || dF > areaBoundF + 1e-6) return null;
+			if (!areaFloats.some((x) => Math.abs(dF - x) < 1e-6)) return null; // float area pre-filter
+			const A = detSurd(a, b).abs(); // exact confirm
+			if (!areaSet.has(areaKey(A))) return null;
+			const lk = latticeKey(a, b);
+			if (working.has(lk)) return null;
+			const pair: [Cyclotomic, Cyclotomic] = [a, b];
+			working.set(lk, pair);
+			if (holohedry(a, b) === 2 && !seen.has(lk)) {
+				seen.add(lk);
+				out.push(pair);
+			}
+			return pair;
+		};
+
+		// (C.1) seed pairs: u ∈ sub-pool, v ∈ full pool (float det pre-filter, then exact admit).
+		for (const ue of sub) for (const ve of PF) admit(ue.p, ve.p, Math.abs(ue.x * ve.y - ue.y * ve.x));
+
+		// (C.2) join-closure (cor:box step 2) — fixpoint; each join divides covolume by ≥ 2. A
+		// float near-rational broadphase on the (a,b)-coordinates of `w` keeps the exact `joinLattice`
+		// (and its exact division) off the overwhelmingly common irrational case. The join denominator
+		// is bounded by `JOIN_DEN_MAX` — a tuned cut within the logged-incomplete candidate region
+		// (route-a-proven-box.md / join-closure contract R3); a join needing a larger denominator is
+		// not enumerated (the targets t3046/t3055 are pairs, denominator-free, so they are unaffected).
+		const maxRounds = Math.max(2, Math.ceil(Math.log2((2 * areaBoundF) / Math.max(minAreaF, 1e-6) + 2)) + 2);
+		let frontier = [...working.values()];
+		let round = 0;
+		while (frontier.length > 0) {
+			if (++round > maxRounds + 8) throw new Error("obliqueCells: join-closure exceeded the covolume round bound (bug)");
+			const next: [Cyclotomic, Cyclotomic][] = [];
+			for (const [a, b] of frontier) {
+				const af = a.toVector(), bf = b.toVector();
+				const detab = af.x * bf.y - af.y * bf.x;
+				// sound per-lattice reject: every join has area ≤ area(L)/2; if that is below the
+				// smallest admissible area, no join from L can be admitted — skip its whole pool sweep.
+				if (Math.abs(detab) / 2 < minAreaF - 1e-9) continue;
+				for (const we of PF) {
+					const al = (we.x * bf.y - we.y * bf.x) / detab;
+					const be = (af.x * we.y - af.y * we.x) / detab;
+					if (isNearInt(al) && isNearInt(be)) continue; // w ∈ L ⇒ no progress
+					if (!nearRational(al) || !nearRational(be)) continue; // not a small-denominator join
+					const j = joinLattice(a, b, we.p);
+					if (!j) continue;
+					const e0 = j[0].toVector(), e1 = j[1].toVector();
+					const admitted = admit(j[0], j[1], Math.abs(e0.x * e1.y - e0.y * e1.x));
+					if (admitted) next.push(admitted);
+				}
+			}
+			frontier = next;
 		}
 		return out;
 	}
@@ -390,6 +516,107 @@ export function isIntCombo(w: Cyclotomic, a: Cyclotomic, b: Cyclotomic): boolean
 
 export function areaKey(s: Surd): string {
 	return `${s.P},${s.Q},${s.R},${s.S},${s.D}`;
+}
+
+/** A loud INCOMPLETE-REGION signal from the oblique candidate stage (`obliqueCells`). */
+export type ObliqueTruncation =
+	| { cause: "subpool-clipped"; aAdm: number; needReach: number; poolLmax: number }
+	| { cause: "v-range-truncated"; needReach: number; poolLmax: number }
+	| { cause: "join-waived" };
+
+function babs(a: bigint): bigint {
+	return a < 0n ? -a : a;
+}
+function bgcd(a: bigint, b: bigint): bigint {
+	a = babs(a);
+	b = babs(b);
+	while (b !== 0n) [a, b] = [b, a % b];
+	return a;
+}
+function blcm(a: bigint, b: bigint): bigint {
+	if (a === 0n || b === 0n) return 0n;
+	return babs(a / bgcd(a, b) * b);
+}
+/** Extended gcd: returns [g, x, y] with g = x·a + y·b, g ≥ 0. */
+function bgcdExt(a: bigint, b: bigint): [bigint, bigint, bigint] {
+	let [or, r] = [a, b];
+	let [os, s] = [1n, 0n];
+	let [ot, t] = [0n, 1n];
+	while (r !== 0n) {
+		const q = or / r;
+		[or, r] = [r, or - q * r];
+		[os, s] = [s, os - q * s];
+		[ot, t] = [t, ot - q * t];
+	}
+	return or < 0n ? [-or, -os, -ot] : [or, os, ot];
+}
+
+/**
+ * Hermite Normal Form of a rank-2 integer lattice given by generator columns: returns a ℤ-basis
+ * `[(h11, h21), (0, h22)]` of the lattice spanned by `cols`. Used to realise a join (cor:box step 2)
+ * exactly. Assumes the generators span ℚ² (the join always does — ⟨a,b⟩ already spans).
+ */
+function hnf2(colsIn: [bigint, bigint][]): [[bigint, bigint], [bigint, bigint]] {
+	const cols = colsIn.map((c) => [c[0], c[1]] as [bigint, bigint]).filter((c) => c[0] !== 0n || c[1] !== 0n);
+	// Step A: reduce all first coordinates to a single pivot (= gcd of the first coords).
+	for (;;) {
+		const idx = cols.map((c, i) => [c[0], i] as const).filter(([x]) => x !== 0n).map(([, i]) => i);
+		if (idx.length <= 1) break;
+		const i = idx[0], j = idx[1];
+		const ci = cols[i], cj = cols[j];
+		const [g, x, y] = bgcdExt(ci[0], cj[0]);
+		cols[i] = [x * ci[0] + y * cj[0], x * ci[1] + y * cj[1]]; // first coord = g
+		const fi = ci[0] / g, fj = cj[0] / g;
+		cols[j] = [fi * cj[0] - fj * ci[0], fi * cj[1] - fj * ci[1]]; // first coord = 0
+	}
+	const pivotIdx = cols.findIndex((c) => c[0] !== 0n);
+	let h11 = 0n, h21 = 0n;
+	const rest: [bigint, bigint][] = [];
+	if (pivotIdx !== -1) {
+		const pv = cols[pivotIdx];
+		[h11, h21] = pv[0] < 0n ? [-pv[0], -pv[1]] : [pv[0], pv[1]];
+		for (let i = 0; i < cols.length; i++) if (i !== pivotIdx) rest.push(cols[i]); // all first coord 0
+	} else {
+		rest.push(...cols);
+	}
+	// Step B: second basis vector (0, h22), h22 = gcd of the rest's second coords.
+	let h22 = 0n;
+	for (const c of rest) h22 = bgcd(h22, c[1]);
+	// Step C: reduce the pivot's second coordinate mod h22 (0 ≤ h21 < h22).
+	if (h22 !== 0n) h21 = ((h21 % h22) + h22) % h22;
+	return [[h11, h21], [0n, h22]];
+}
+
+/**
+ * Join a vector `w` into the lattice ⟨a, b⟩ (cor:box step 2): the finer lattice ⟨a, b, w⟩. Returns a
+ * fresh exact basis, or `null` when `w ∈ ⟨a, b⟩` (no progress) or `w` is not in the ℚ-span of (a, b)
+ * (so ⟨a,b,w⟩ is not a rank-2 lattice — the dense-ring case, correctly skipped). Each proper join
+ * divides the covolume by an integer ≥ 2 (`route-a-proven-box.md`, cor:box), so the join-closure
+ * terminates.
+ *
+ * Method: solve `w = α·a + β·b` exactly (Cramer with `detSurd`); both α, β must be RATIONAL (else not a
+ * lattice point). With `α = A/Dc, β = B/Dc` over a common denominator `Dc`, the lattice in (a,b)-coords
+ * is `⟨(1,0),(0,1),(α,β)⟩ = (1/Dc)·⟨(Dc,0),(0,Dc),(A,B)⟩`; its HNF gives the new basis, mapped back via
+ * `scaleRational` on a, b.
+ */
+export function joinLattice(
+	a: Cyclotomic,
+	b: Cyclotomic,
+	w: Cyclotomic
+): [Cyclotomic, Cyclotomic] | null {
+	const det = detSurd(a, b);
+	if (det.isZero()) return null;
+	const alpha = detSurd(w, b).div(det); // w = α·a + β·b
+	const beta = detSurd(a, w).div(det);
+	if (!alpha.isRational() || !beta.isRational()) return null; // w ∉ ℚ-span ⇒ not a rank-2 join
+	if (alpha.D === 1n && beta.D === 1n) return null; // w ∈ ⟨a,b⟩ ⇒ no progress
+	const Dc = blcm(alpha.D, beta.D);
+	const A = alpha.P * (Dc / alpha.D);
+	const B = beta.P * (Dc / beta.D);
+	const [[x1, y1], [x2, y2]] = hnf2([[Dc, 0n], [0n, Dc], [A, B]]);
+	const e1 = a.scaleRational(x1, Dc).add(b.scaleRational(y1, Dc));
+	const e2 = a.scaleRational(x2, Dc).add(b.scaleRational(y2, Dc));
+	return [e1, e2];
 }
 
 /** Module cache: the unit-edge-sum pool is seed-free (depends only on ring/depth/length), so it is
