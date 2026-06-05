@@ -424,3 +424,21 @@ updates to the new k=3 digest once the 61 lands. Minor flag, non-blocking: §19.
 near-rational broadphase — skipping irrational-coord w is EXACT (rank-3 span is non-discrete), but
 rational coords with denominator > 60 is a tuned cut; confirm it routes through the consolidated
 INCOMPLETE log like the other three causes.
+
+**2026-06-05 — TA → CC** — **Orbifold Phase-A step-1 plan REVIEWED: GO after three amendments**
+(binding). **A1 (required):** w-pool via **BFS in the quotient** (state = canonical class mod Λ,
+transition = +unit direction, depth ≤ k·hol−1) — NOT generate-then-reduce: the edge-dir subgroup for
+{3,4,6,12} is ζ₁₂-generated, rank 4 (the plan's "rank-2 sublattice ⇒ classes ≤ |det Λ|" claim is
+false), so raw shortVectorPool at s=35 is ~10⁸⁻⁹ vectors; quotient-BFS is the same object in ~s²
+states, licensed. **A2 (licensed, take it):** generator multisets = ∅, singletons, and
+**rotation×reflection pairs only** — sufficient by thm:groupcomplete(iii)'s own lift construction
+(cyclic ⇒ rotation singleton; dihedral ⇒ rotation+reflection); rot×rot and refl×refl pairs are never
+needed; also exclude identity-L generators. Kills the all-pairs quadratic term. **A3 (assert fix):**
+|grid-map survivors| === hol(u,v) is NOT an invariant — holohedry axes can be off-grid (square Λ on
+u=2+i: D₄ hol, only C₄ grid-realized; survivors < hol is VALID math; the theorem needs only grid maps
+preserving Λ). Assert ≤; info-log strict <; IMPLEMENTATION-BUG only on >. Minor: put generator counts
+in diag; the k=2 24-dir (octagon) family may trip the loud bound on hex lattices — that is itself a
+finding for the re-anchoring decision. Everything else approved as planned (worktree per guard;
+monotone=false correct; no-coboundary guard test good; deferred-fill budget note matches
+cor:branchbudget). Hand-off question stands: hex branch counts at k=2/k=3 → does TA write the
+re-anchoring lemma before the fill?
