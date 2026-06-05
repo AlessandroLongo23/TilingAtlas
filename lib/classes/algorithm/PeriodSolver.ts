@@ -298,6 +298,16 @@ export class PeriodSolver {
 	// ---------------------------------------------------------------------------
 
 	/**
+	 * Public read-only accessor for the deterministic candidate-lattice list. ADDITIVE and
+	 * behaviour-preserving — it delegates verbatim to the private enumeration and touches no decisive
+	 * path (the certified k≤2 digests are unaffected). Exists only so the orbifold branch-enumeration
+	 * measurement harness can enumerate symmetry branches over the EXACT pipeline lattices.
+	 */
+	candidateLatticesFor(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null } {
+		return this.candidateLattices(seed);
+	}
+
+	/**
 	 * Distinct candidate period lattices for the seed's tile set, enumerated ALGEBRAICALLY and
 	 * SEED-FREE (no expander, no wall-clock ⇒ reproducible run-to-run). Depends only on (ring, tile
 	 * set, k), so it is cached and shared across every seed with the same tiles. Two sources together
