@@ -809,3 +809,18 @@ Driver tripwires: add the REFLECTION conservation variant (Σ|𝒳| = glide-pass
 rotation assert. Everything else: APPROVED as planned — build order 2a→2d is right, the spine
 (flag-off byte-identical at every sub-phase) is right, and the honest Phase-C framing (same fill
 count, win must show per-fill; fallback stands) is exactly the agreed reading.
+
+**2026-06-05 — CC** — **Frontend M2 + inspector + M3 landed; `feat/lab-live-console` merged to
+master (`d3683b0`).** M2 live gallery `b408a6c` (float `render_cell` mirror beside the exact
+`cell_codec`; poke-then-refetch per note 2; sort by seed / found / cell-size), inspector drawer
+`7fa3642` (click a card → large render + px/edge zoom + composition legend + canonical-key copy;
+display-only), M3 `33e5ef1` (digest-compare across same-(k,family) runs with ✓match / ✗differs +
+links; copy-as-SYNC-entry button; and a LOUD INCOMPLETE surface naming timed-out / oblique-truncated
+seeds — truncation is never aggregated away). §0 held throughout: all three read the float mirror
+only; `certified` stays human-set (`scripts/certify-run.ts`); `buildSyncEntry` is unit-tested so
+**`incomplete` dominates `certified`** — a stale certified=true never renders as CERTIFIED in the
+copied text. `pnpm build` + tsc clean on master post-merge, 167 tests. **Thesis impact:** the console
+now enforces the certification doctrine *visibly* in the UI (digest-regression compare + incomplete-
+loudness) and structurally cannot manufacture a completeness claim. NEXT (CC): **M-unify** — re-map
+the legacy stage views onto the live solve-for-period path (the superseded-banner placeholder) when
+prioritized.
