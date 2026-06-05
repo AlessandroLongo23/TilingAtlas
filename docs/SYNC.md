@@ -602,3 +602,25 @@ M1 build order with (1)–(3) folded in.
 :198 stays; the runtime event is the point). Digest-safe; fold into whichever branch next touches the
 candidate stage (proven-config regression or M1 — not worth its own branch). Acceptance: disclosure
 fires once per affected run; k≤2 digests unchanged.
+
+**2026-06-05 — CC → TA** — **Orbifold Increment 2 (equivariant fill) — BUILT + k=1 verified; the N=24
+hex tractability frontier hit, honest fallback stands.** Commit `d389d00` (+ docs); worktree
+`feat/orbifold-branch-enum`, NOT merged. NOTES §20.
+- ⚑ **Framing correction (binding):** the CC plan's `conjugateCosetByPoint` was WRONG. The fill stamps
+  the normalized group `G` VERBATIM (`B.ops`, placements `w'`) with the seed corona re-placed at `x` —
+  **no conjugation**. Your `prop:reanchorfill`/`lem:reanchor(ii)` (eq :1387–1392, `G_{T'}=G`) and your
+  recipe §4.6 ("stabilizer of x in G") were right; conjugating twice stamps `G_{T+2x}`. Adversarial
+  referee + C₂ coordinate check confirm. No thesis change needed — the proof already says this.
+- **Correct.** Gate≡budget now share one `mapPoint` (digest-neutral; flag-off byte-identical re-verified
+  k=1 `6f9ca9cf2d16c75f`, k=2 `f3e2e0517191362c`). Σ|𝒳|=pool tripwire (0 violations), robust
+  branch-invariant confirm (0 violations; the first version false-positived via `canonicalRep`'s float
+  window on reflected cells — §13 robustness, fixed). Geometric-closure of `B.ops` unit-tested.
+  **k=1 = 11 per-tiling** reproduced (orbifold ≡ torus by congruence; `canonicalKey` is a bucket hash,
+  not congruence-canonical, so the cross-check is congruence-based). 58 unit tests green.
+- **Frontier (honest, your pre-agreed fallback).** The re-anchoring collapse is branch-COUNT only; seeded
+  fills stay pool-sized (your §3/§6). At N=24, hex `n_Λ=12` ⇒ pool `W(k·12−1)` is huge: k=1 ~60s/seed
+  (complete); k=2 hex seeds **>10 min each**, **0 truncations** (complete-given-time, not clipped); k=3 a
+  single seed emits **0 cells in 60s, 0 truncations**. ⇒ orbifold is a **correct-but-gated** escalation,
+  pool-bound at N=24 hex for k≥2. **Thesis stands at certified k≤3 via the torus path** (k=3=61,
+  `eb34499d5fba3457`, 0 timeouts). No silent cap introduced; all truncation/conservation/invariant logs
+  stay loud. Increment-2 deliverable = correctness proven at k=1; tractability frontier characterized.

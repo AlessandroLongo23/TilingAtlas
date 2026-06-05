@@ -1374,3 +1374,98 @@ by low-symmetry oblique cells.
   is now matched by the implementation. Any prior certified count produced by this dedup is safe IF it hit the
   acceptance target (an under-merge would have shown as a count *above* target — which is exactly how this surfaced
   at k=3, and exactly why k=1=11/k=2=20 hitting target proves no rotation-only merge was missed there).
+
+## 20. Equivariant orbifold fill (Increment 2) — built + k=1 verified; the N=24 hex tractability frontier (2026-06-05, session 11)
+
+The equivariant fill that consumes Increment-1's normalized branches + re-anchor sets: per candidate
+lattice Λ, branch over normalized wallpaper groups G, fill the Λ-torus stamping a full G-orbit per step
+with a budget of *exactly k* vertex-orbits-under-G. Flag-gated (`PeriodSolverOptions.mode:'orbifold'` /
+`PS_MODE=orbifold`); the certified bare-torus path is untouched. Built TDD, `pnpm build` clean
+throughout.
+
+### 20.1 The framing — the load-bearing decision, resolved AGAINST the written plan
+
+The first plan for this increment (and two of three independent research passes) said the orbit-stamping
+group must be **conjugated to the base point x** (`conjugateCosetByPoint`: `(L,w) ↦ (L,(1−L)x+w)`).
+**That is wrong, and adopting it would have been a silent completeness bug** (dropped reflective/rotational
+carriers at every `x ∉ 𝒦_L`). The fill stamps the normalized group `G` **verbatim** — ops with the
+normalized placements `w'` (`B.ops`) — with only the seed corona re-placed at `x`. **No conjugation.**
+
+Proof (`correctness.tex`, `prop:reanchorfill` + `lem:reanchor(ii)`, the displayed equation at :1387–1392):
+the re-anchor point `x = t(d)` is *constructed* (solving `(1−L_i)x ≡ w'_i − d_i`) so that the single
+conjugation `G_T → G_{T'} = τ_x G_T τ_x⁻¹` lands EXACTLY on the normalized placements: `G_{T'} = G`. The
+target `T' = T+x` has full symmetry group exactly `G` and a vertex at `x`; stamping `G` (placements `w'`)
+on the corona-at-`x` keeps every image inside `T'`. Conjugating a *second* time produces `G_{T+2x}` — the
+symmetry group of the wrong tiling. TA's own implementation recipe agrees literally
+(`reanchoring-lemma-2026-06-05.md` §4.6: "stamp at x instead of the origin … r-reduction generalizes …
+to the **stabilizer of x in G**"). An adversarial referee pass against the proof equation confirmed
+POSITION A (unconjugated) with a C₂ coordinate check. The empirical backstop is k=2's reflective tilings:
+a wrong frame would drop them. **Lesson for the thesis: the written CC plan had this backwards; the
+proof (TA's) and TA's recipe were right all along.**
+
+### 20.2 Implementation (the four-stage factorization preserved)
+
+- **Shared isometry primitive.** Extracted `mapPoint(z,reflect,r,T) = applyPointOp(...)·+T` into
+  `OrbifoldBranches`, now called by BOTH the k-uniformity gate (`KUniformityChecker`, replacing its
+  inline closure) and the orbifold budget counter (`countOrbitsUnderBranch` via `mapCoset`) — so the gate
+  and the budget provably quotient by the *same* map (the budget could otherwise silently over-prune).
+  Byte-identical to the gate's former inline arithmetic; **flag-off digests re-verified byte-identical
+  after this decisive-path refactor (k=1 `6f9ca9cf2d16c75f`, k=2 `f3e2e0517191362c`).**
+- **Budget** = strict `> k` vertex-orbits-under-`B.ops`, recomputed per child, never cached
+  (`cor:branchbudget`: the in-branch floor is exactly k, *not* k·hol(Λ)).
+- **Σ|𝒳| = pool conservation tripwire** in `equivariantFillForLattice` (reads Increment-1's
+  `NormalizedDiag`): a deficit per rotation/reflection type = a lost re-anchor datum = a dropped tiling →
+  loud `IMPLEMENTATION-BUG`. 0 violations observed.
+- **Deterministic branch order** (sort by `branch.key`); **`PS_MODE` threaded** into the parallel scout.
+- **Branch-invariant confirm (R3 tripwire).** Each emitted cell is G-invariant by construction (every step
+  stamps a full G-orbit), so each `g ∈ B.ops` must map it to itself mod Λ. ⚑ The first implementation
+  re-canonicalized the *reflected* cell with `canonicalRep` and false-positived: `canonicalRep`'s
+  near-origin float window (§13's representation-robustness limit) is not position-robust for tiles a
+  reflection throws far from the cell. Replaced with a position-robust per-tile test (lattice-equiv on
+  centroids + orientation-insensitive `exactKey` match after the connecting translation). A
+  geometric-closure unit test proves `B.ops` *is* a correct group (composition lands in `B.ops` mod Λ for
+  hex and square D4), so the violations were the confirm's artifact, not a fill bug. With the robust
+  confirm: **0 branch-invariant violations** on every case tested.
+
+### 20.3 Verification — correctness is solid
+
+- **k=1 = 11 per-tiling CONFIRMED.** Orbifold mode reproduces the certified torus enumeration EXACTLY by
+  congruence (`dedupeByCongruence(torus ∪ orbifold) = 11`; `canonicalKey` is a fast bucket hash, NOT
+  congruence-canonical — the honeycomb keys differently in each mode but is congruent, so the cross-mode
+  check must be by congruence, not raw key). Conservation + branch-invariant tripwires clean.
+- Tiny cases {4}/{6}/{3} (p4mm / p6mm, exercising C₄/C₆/C₃ + dihedral + reflection branches) all match.
+- **Flag-off byte-identical** at every sub-phase. 58 unit tests green (incl. mapPoint≡gate pinning,
+  geometric closure of branch ops, the 2a budget/stabilizer units).
+
+### 20.4 The tractability frontier — the honest accounting, realized
+
+The recipe's honest accounting (`reanchoring-lemma` §3/§6) is confirmed empirically: the re-anchoring
+lemma collapses the *branch count* (478→~4, hex→1) but NOT the *seeded-fill count* (= pool size, a proven
+bijection `d ↦ t(d)`). At N=24 the pool `W(k·n_Λ−1)` is large on high-symmetry lattices (hex realizes the
+full D6, `n_Λ=12`), so the fill does pool-many shallow fills per lattice:
+- **k=1**: complete but slow (~60s/seed on the octagon/hex lattices; one seed needed >60s — found all 11
+  regardless: no tiling lost).
+- **k=2** (depth `2·n_Λ−1`, up to 23 for hex): hex-heavy seeds take **>10 minutes EACH** uncapped. ⚑
+  Crucially, **0 pool truncations** — the pool stays under cap, so the enumeration is *complete given
+  time*, not silently clipped. A no-cap k=2 run would reach 20 but costs ~1+ hour; the per-tiling
+  correctness is already established by k=1 + the proof, so the literal sweep was not run to completion
+  (Alessandro's call, frontier accepted).
+- **k=3** (depth up to 35 for hex): seed-building completes (447 seeds, as certified), but a single seed
+  in orbifold mode **timed out at 60 s having emitted 0 cells, with 0 pool truncations** — the pool stays
+  under cap, so it is grinding pool-sized branch-enumeration + fills, not silently clipping. k=3 is thus
+  out of practical reach in this mode at N=24 (the torus path certifies k=3 = 61 in the parallel scout
+  with 0 timeouts; orbifold cannot get one seed out the door at 60 s).
+
+**Verdict (honest, pre-agreed with TA).** The equivariant fill is **implemented and correct** (k=1 proven
+per-tiling; the proof's framing validated empirically), but at **N=24 it is tractability-bound for k≥2 on
+hexagonal lattices** — the documented hex-pool frontier (`rem:branchpool`/`rem:reanchoraccount`). The
+thesis claim therefore **stands at certified k≤3 via the fast torus path**; the orbifold mode is a
+**correct-but-gated escalation** (validated at k=1, proven complete, pool-bound at N=24 hex). This is the
+fallback TA stated up front ("if Phase B numbers say infeasible, the honest fallback stands"). No silent
+cap was introduced — the pool-truncation log and the conservation/branch-invariant tripwires all stay
+loud.
+
+### 20.5 Tooling added
+`scripts/diag-tiny.ts` (single-process orbifold-vs-torus congruence check), `scripts/verify-worker.ts` +
+`scripts/verify-orbifold.ts` (parallel both-mode per-tiling verification by congruence), and
+`tests/orbifold-fill.test.ts` (2a units + mapPoint/lattice pinning + geometric-closure of branch ops).
