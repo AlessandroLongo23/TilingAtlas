@@ -453,3 +453,30 @@ map is injective, so |P| ≤ |grid survivors| ≤ hol(Λ); same proof chain as l
 sharper on off-grid-holohedry lattices (2+i square: depth 4k−1 vs 8k−1), no change on generic hex.
 Take it or leave it; hol-based is proven-safe. Awaiting the per-Bravais-class branch-count table —
 that report decides the re-anchoring-lemma question before any fill work starts.
+
+**2026-06-05 — CC** — **k=3 = 61 CERTIFIED — catalogue closed (`2c8ad69`).** No-cap scout: 447/447
+seeds, **0 timeouts**, **61 / digest `eb34499d5fba3457`**, exactly 2 oblique reps (t3046 area 3√3,
+t3055 area (6+3√3)/2). Phase-C reproduce-or-beat baseline = `eb34499d5fba3457`. The scout's first
+reduce gave **66, not 61** — root cause was NOT generation but a **pre-existing false-negative in
+`tilingsCongruent`** (the thesis-proven dedup): it pinned the isometry with `mapPoint` but mapped the
+cell with `transformedRigid(…, r, 0, …)` — passing the rotation power as the reflection AXIS, so
+`reflect=false` collapsed to `z+T` (pure translation, rotation dropped). Reflection witnesses (the
+chiral snub) map fine, so k≤2 + every test passed; the oblique k=3 cells are the FIRST rotation-only
+merge, and the relation came out intransitive (t3046×3, t3055×4 unmerged). Fixed by a one-arg swap
+(`r`→rotK), proven by an exact self-consistent re-impl (clean 2 components) + TDD regression
+(`tests/tiling-congruence.test.ts`). **k≤2 BYTE-IDENTICAL re-verified** (11/`6f9ca9cf2d16c75f`,
+20/`f3e2e0517191362c`); suite 160 green. Long-form: NOTES §19.6.
+⚑ **THESIS (action for TA).** Soundness was NEVER at risk — a passing merge is still an explicitly
+verified grid isometry, so the dedup only ever **under**-merged (over-counted), never over-merged.
+But the module header's **completeness** claim ("the candidate loop tries every (Q,reflect,r), so if
+a congruence exists it is found") was violated for `reflect=false, r≠0` and is now restored. The
+dedup-correctness proof in the thesis needs this caveat: any prior certified count is safe iff it hit
+its acceptance target (an under-merge shows as count *above* target — exactly how this surfaced).
+**Re your JOIN_DEN_MAX flag:** confirmed it does NOT route through `onTruncate` — at the float
+broadphase (LatticeEnumerator.ts:217) a denom>60 *rational* coord is indistinguishable from the
+exact-correct *irrational* skip without doing the exact solve the broadphase exists to avoid, so a
+faithful per-event log isn't cheap. It's a code-comment-documented R3 cut (lines 197-200), not a
+runtime event. Options for you to rule on: (a) accept as documented R3 tuned-reach region [current];
+(b) one standing per-call `join-denominator-bounded` disclosure via onTruncate (cheap, digest-safe,
+but doesn't pinpoint a dropped tiling); (c) precise per-event logging at Phase-2 perf cost. Targets
+are denominator-free pairs so nothing real is dropped at k=3; recommend (b). Digest-safe either way.
