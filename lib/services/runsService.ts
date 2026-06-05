@@ -77,6 +77,30 @@ export async function fetchRun(sb: SupabaseClient, id: string): Promise<RunRow |
 	return (data as RunRow) ?? null;
 }
 
+// Prior runs of the SAME (k, family) — the digest-history compare set. A digest that differs from a
+// certified sibling is a regression signal (or just a different commit); display-only, never a claim.
+export async function fetchRunsByKFamily(
+	sb: SupabaseClient,
+	k: number,
+	family: string,
+	excludeId: string,
+	limit = 12,
+): Promise<RunRow[]> {
+	const { data, error } = await sb
+		.from("runs")
+		.select("*")
+		.eq("k", k)
+		.eq("family", family)
+		.neq("id", excludeId)
+		.order("started_at", { ascending: false })
+		.limit(limit);
+	if (error) {
+		console.error("fetchRunsByKFamily:", error.message);
+		return [];
+	}
+	return (data ?? []) as RunRow[];
+}
+
 export interface FoundTiling {
 	run_id: string;
 	canonical_key: string;

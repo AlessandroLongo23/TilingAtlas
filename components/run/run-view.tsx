@@ -1,11 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FlaskConical, Cpu, LayoutGrid, Gauge, BadgeCheck, Wifi, WifiOff } from "lucide-react";
+import Link from "next/link";
+import {
+	FlaskConical,
+	Cpu,
+	LayoutGrid,
+	Gauge,
+	BadgeCheck,
+	Wifi,
+	WifiOff,
+	GitCompare,
+	Copy,
+	Check,
+	AlertTriangle,
+} from "lucide-react";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { GalleryPanel } from "@/components/run/gallery-panel";
 import { useLiveRun } from "@/lib/hooks/useLiveRun";
 import type { RunRow, RunSeedRow, FoundTiling } from "@/lib/services/runsService";
+import { buildSyncEntry, dateOf, shortId } from "@/lib/services/syncEntry";
 import { cn } from "@/lib/utils/cn";
 
 // ── format helpers ───────────────────────────────────────────────────────────────────────────
@@ -20,6 +34,28 @@ function fmtDuration(ms: number): string {
 }
 function fmtClock(iso: string): string {
 	return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+// Small inline "copy this text" affordance — clipboard only, no side effects.
+function CopyChip({ text, label = "copy" }: { text: string; label?: string }) {
+	const [copied, setCopied] = useState(false);
+	return (
+		<button
+			type="button"
+			onClick={() =>
+				navigator.clipboard?.writeText(text).then(
+					() => {
+						setCopied(true);
+						setTimeout(() => setCopied(false), 1400);
+					},
+					() => {},
+				)
+			}
+			className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-fg-muted hover:text-fg hover:bg-surface-overlay/60 transition-colors"
+		>
+			{copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+			{copied ? "copied" : label}
+		</button>
+	);
 }
 
 // `now` is null until mount → avoids SSR/client hydration mismatch on elapsed text.
@@ -82,11 +118,13 @@ export function RunView({
 	initialRun,
 	initialSeeds,
 	initialTilings,
+	siblings,
 }: {
 	runId: string;
 	initialRun: RunRow;
 	initialSeeds: RunSeedRow[];
 	initialTilings: FoundTiling[];
+	siblings: RunRow[];
 }) {
 	const { run, seeds, connected } = useLiveRun(runId, initialRun, initialSeeds);
 	const isRunning = run.status === "running";
@@ -117,6 +155,12 @@ export function RunView({
 		}
 		return { gateRejected, p0, p1, obl, raw };
 	}, [seedsArr]);
+
+	// Completeness hazards — surfaced LOUDLY, never aggregated away. A timed-out or oblique-truncated
+	// seed means the sweep may have dropped a tiling; the run is then not a completeness claim.
+	const timedOutSeeds = useMemo(() => seedsArr.filter((s) => s.timed_out), [seedsArr]);
+	const truncatedSeeds = useMemo(() => seedsArr.filter((s) => s.diag?.obliqueTruncated), [seedsArr]);
+	const hazards = timedOutSeeds.length + truncatedSeeds.length;
 
 	const elapsedMs = run.finished_at
 		? Date.parse(run.finished_at) - Date.parse(run.started_at)
@@ -220,12 +264,15 @@ export function RunView({
 							<Stat label="oblique candidates" value={agg.obl.toLocaleString()} />
 						</div>
 						<p className="mt-3 text-[10px] text-fg-disabled">
-							Aggregated across {seedsArr.filter((s) => s.diag).length} reporting seeds. INCOMPLETE-log feed + “copy as
-							SYNC entry” land in M3.
+							Aggregated across {seedsArr.filter((s) => s.diag).length} reporting seeds.
 						</p>
 					</Panel>
 
-					<Panel icon={BadgeCheck} title="Certification">
+					<Panel
+						icon={BadgeCheck}
+						title="Certification"
+						right={!isRunning ? <CopyChip text={buildSyncEntry(run)} label="copy SYNC entry" /> : undefined}
+					>
 						<div className="grid grid-cols-2 gap-2">
 							<Stat
 								label="timeouts"
@@ -265,6 +312,113 @@ export function RunView({
 										? "Not certified: run is INCOMPLETE (timeouts / truncation)."
 										: "Not certified yet. Certification is a human step (scripts/certify-run.ts) — the emitter never sets it."}
 						</p>
+
+						{hazards > 0 ? (
+							<div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2">
+								<div className="flex items-center gap-1.5 text-xs font-medium text-danger">
+									<AlertTriangle size={13} />
+									Completeness hazards — a tiling may have been dropped
+								</div>
+								<ul className="mt-1.5 space-y-1 text-[11px] font-mono text-fg-secondary">
+									{timedOutSeeds.map((s) => (
+										<li key={`to-${s.seed_idx}`} className="truncate" title={s.name ?? undefined}>
+											⏱ seed #{s.seed_idx} timed out{s.name ? ` · ${s.name}` : ""}
+										</li>
+									))}
+									{truncatedSeeds.map((s) => (
+										<li key={`tr-${s.seed_idx}`} className="truncate" title={s.diag?.obliqueTruncated ?? undefined}>
+											✂ seed #{s.seed_idx} oblique-truncated · {s.diag?.obliqueTruncated}
+										</li>
+									))}
+								</ul>
+							</div>
+						) : null}
+					</Panel>
+
+					{/* ── digest history: same (k, family) across runs (M3) ──────────── */}
+					<Panel
+						icon={GitCompare}
+						title="Digest history"
+						className="lg:col-span-2"
+						right={
+							<span className="text-xs text-fg-muted font-mono">
+								k={run.k} · {"{"}
+								{run.family}
+								{"}"}
+							</span>
+						}
+					>
+						{siblings.length === 0 ? (
+							<p className="text-xs text-fg-disabled">No other runs for this k / family yet.</p>
+						) : (
+							<div className="overflow-x-auto">
+								<table className="w-full text-xs">
+									<thead>
+										<tr className="text-left text-[10px] uppercase tracking-wide text-fg-disabled">
+											<th className="font-normal py-1 pr-3">run</th>
+											<th className="font-normal py-1 pr-3">date</th>
+											<th className="font-normal py-1 pr-3">count</th>
+											<th className="font-normal py-1 pr-3">digest</th>
+											<th className="font-normal py-1 pr-3">vs this</th>
+											<th className="font-normal py-1">state</th>
+										</tr>
+									</thead>
+									<tbody className="font-mono tabular-nums">
+										{/* this run, pinned as the reference row */}
+										<tr className="border-t border-line-subtle bg-accent-subtle/30">
+											<td className="py-1.5 pr-3 text-accent">{shortId(run.id)} ·this</td>
+											<td className="py-1.5 pr-3 text-fg-muted">{dateOf(run)}</td>
+											<td className="py-1.5 pr-3 text-fg">{run.count ?? "—"}</td>
+											<td className="py-1.5 pr-3 text-fg-secondary">{run.digest ?? "—"}</td>
+											<td className="py-1.5 pr-3 text-fg-disabled">ref</td>
+											<td className="py-1.5">{run.certified ? "✓ cert" : run.incomplete ? "incompl." : "—"}</td>
+										</tr>
+										{siblings.map((s) => {
+											const cmp =
+												!s.digest || !run.digest
+													? null
+													: s.digest === run.digest
+														? "match"
+														: "differ";
+											return (
+												<tr key={s.id} className="border-t border-line-subtle">
+													<td className="py-1.5 pr-3">
+														<Link href={`/lab/run/${s.id}`} className="text-fg-muted hover:text-accent transition-colors">
+															{shortId(s.id)}
+														</Link>
+													</td>
+													<td className="py-1.5 pr-3 text-fg-muted">{dateOf(s)}</td>
+													<td className="py-1.5 pr-3 text-fg">{s.count ?? "—"}</td>
+													<td className="py-1.5 pr-3 text-fg-secondary">{s.digest ?? "—"}</td>
+													<td className="py-1.5 pr-3">
+														{cmp === "match" ? (
+															<span className="text-emerald-400">✓ match</span>
+														) : cmp === "differ" ? (
+															<span className="text-danger">✗ differs</span>
+														) : (
+															<span className="text-fg-disabled">—</span>
+														)}
+													</td>
+													<td className="py-1.5">
+														{s.certified ? (
+															<span className="text-emerald-400">✓ cert</span>
+														) : s.incomplete ? (
+															<span className="text-danger">incompl.</span>
+														) : (
+															<span className="text-fg-disabled">{s.status}</span>
+														)}
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+								<p className="mt-2 text-[10px] text-fg-disabled">
+									A digest that differs from a certified sibling is a regression signal — or just a different commit.
+									Comparison only; the site never certifies.
+								</p>
+							</div>
+						)}
 					</Panel>
 				</div>
 			</div>
