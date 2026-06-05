@@ -7,6 +7,7 @@ import { ChevronLeft, FlaskConical, Star, PanelLeft } from "lucide-react";
 import type { Campaign } from "@/lib/services/campaignService";
 import { ExperimentProvider, useExperiment } from "./_experiment-context";
 import { polygonNamesToSignatures, generateVCs } from "@/lib/algorithm/pipeline-core";
+import { LegacyStageBanner } from "@/components/legacy-stage-banner";
 import { cn } from "@/lib/utils/cn";
 
 interface ExperimentLayoutClientProps {
@@ -165,6 +166,8 @@ function Shell({ campaign, children }: { campaign: Campaign; children: ReactNode
 					<PanelLeft size={14} />
 				</button>
 			</div>
+
+			<LegacyStageBanner />
 
 			<div className="flex-1 min-h-0 flex overflow-hidden">{children}</div>
 		</div>

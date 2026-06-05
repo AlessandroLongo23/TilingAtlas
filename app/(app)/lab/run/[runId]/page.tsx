@@ -1,0 +1,15 @@
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { fetchRun, fetchRunSeeds } from "@/lib/services/runsService";
+import { RunView } from "@/components/run/run-view";
+
+export const dynamic = "force-dynamic";
+
+export default async function RunPage({ params }: { params: Promise<{ runId: string }> }) {
+	const { runId } = await params;
+	const sb = await createClient();
+	const run = await fetchRun(sb, runId);
+	if (!run) notFound();
+	const seeds = await fetchRunSeeds(sb, runId);
+	return <RunView runId={runId} initialRun={run} initialSeeds={seeds} />;
+}

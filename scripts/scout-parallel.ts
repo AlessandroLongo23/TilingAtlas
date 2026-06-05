@@ -22,8 +22,11 @@ import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
 import { PolygonType, type GeneratorParameters } from '@/classes';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
 import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import type { PeriodCell, PeriodSolverDiag } from '@/classes/algorithm/PeriodSolver';
 import { deserializeCell, readResumeNdjson, type SerializedCell } from './scoutCodec';
+import { emitterFromEnv } from './emitter';
+import { randomUUID } from 'node:crypto';
+import { execSync } from 'node:child_process';
 
 const k = parseInt(process.argv[2] ?? '1', 10);
 const tiles = process.argv[3] ?? '3,4,6,8,12';
@@ -37,8 +40,20 @@ const ring = baseRing.N === 24 ? baseRing : CyclotomicRing.create(24);
 setActiveRing(ring);
 const extractor = new TranslationalCellExtractor();
 
-type Result = { type: 'result'; idx: number; name: string; cells: SerializedCell[]; timedOut: boolean; ms: number };
-type Worker = { proc: ChildProcess; inFlight: number | null; alive: boolean };
+// Fire-and-forget mirror to Supabase (docs/FRONTEND_LAB_PLAN.md §0/§3). OFF unless EMIT=1; the §0
+// acceptance is byte-identical digests with it on vs off. canonicalKeyOf is the SAME key the final
+// reduce uses, so found_tilings mirrors the per-seed cells faithfully (deferred into the queue task,
+// so a throw can never reach this coordinator). NEVER awaited except at finish() — it cannot affect
+// `collected`/`reps`/the digest.
+const runId = randomUUID();
+let commit = '';
+try { commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim(); } catch { /* best-effort */ }
+const emit = emitterFromEnv({
+	canonicalKeyOf: (sc) => extractor.canonicalKey(deserializeCell(ring, sc as SerializedCell).cellPolygons),
+});
+
+type Result = { type: 'result'; idx: number; name: string; cells: SerializedCell[]; timedOut: boolean; ms: number; diag?: PeriodSolverDiag };
+type Worker = { proc: ChildProcess; inFlight: number | null; alive: boolean; id: number };
 
 const t0 = Date.now();
 const collected: SerializedCell[] = [];
@@ -73,11 +88,16 @@ function assign(w: Worker): void {
 	const a = nextAssignment();
 	if (a === 'stop') { w.inFlight = null; w.proc.stdin!.write(JSON.stringify({ stop: true }) + '\n'); return; }
 	w.inFlight = a;
+	emit.seedClaimed(a, w.id);
 	w.proc.stdin!.write(JSON.stringify({ idx: a }) + '\n');
 }
 function onReady(w: Worker, nSeeds: number): void {
-	if (total < 0) { total = nSeeds; console.error(`[coord] total=${total} seeds, resumed=${doneSet.size}, workers=${W}, cap=${maxMs}ms (${maxMs === 0 ? 'no cap / certified' : 'capped'})`); }
-	if (doneSet.size >= total) { finish(); return; } // already fully done from the resume file
+	if (total < 0) {
+		total = nSeeds;
+		console.error(`[coord] total=${total} seeds, resumed=${doneSet.size}, workers=${W}, cap=${maxMs}ms (${maxMs === 0 ? 'no cap / certified' : 'capped'})`);
+		emit.runStarted({ runId, k, family: tiles, params: { maxMs, workers: W, mode: maxMs === 0 ? 'certified' : 'capped', resumed: doneSet.size, total: nSeeds }, commit });
+	}
+	if (doneSet.size >= total) { void finish(); return; } // already fully done from the resume file
 	assign(w);
 }
 function onResult(w: Worker, r: Result): void {
@@ -85,12 +105,13 @@ function onResult(w: Worker, r: Result): void {
 	for (const c of r.cells) collected.push(c);
 	ndjson.write(JSON.stringify({ idx: r.idx, cells: r.cells }) + '\n');
 	doneSet.add(r.idx); if (r.timedOut) timeouts++;
+	emit.seedCompleted({ idx: r.idx, name: r.name, cells: r.cells, timedOut: r.timedOut, ms: r.ms, workerId: w.id, diag: r.diag });
 	if (r.ms > 3000 || r.timedOut || r.cells.length > 0)
 		console.error(`  [${r.idx}] ${r.name.padEnd(30)} cells=${r.cells.length} ${r.ms}ms${r.timedOut ? ' TIMEOUT' : ''}  (${doneSet.size}/${total})`);
-	if (doneSet.size === total) { finish(); return; }
+	if (doneSet.size === total) { void finish(); return; }
 	assign(w);
 }
-function finish(): void {
+async function finish(): Promise<void> {
 	if (finished) return;
 	finished = true;
 	for (const w of workers) if (w.alive) w.proc.stdin!.write(JSON.stringify({ stop: true }) + '\n');
@@ -104,6 +125,10 @@ function finish(): void {
 	const secs = (Date.now() - t0) / 1000;
 	console.log(`\nPARALLEL k=${k}: ${reps.length} distinct tilings (from ${cells.length} raw cells), ${timeouts} seeds timed out, ${secs.toFixed(1)}s total, ${W} workers`);
 	console.log(`COMPOSITION digest=${h.toString(16)} count=${reps.length}`);
+	// Emitter runs AFTER the digest is computed + printed, so it cannot affect the claim. flush() drains
+	// the background queue before exit; it never rejects.
+	emit.runFinished({ count: reps.length, digest: h.toString(16), timeouts, incomplete: timeouts > 0 });
+	await emit.flush();
 	setTimeout(() => { for (const w of workers) { try { w.proc.kill(); } catch { /* */ } } process.exit(0); }, 200);
 }
 
@@ -113,7 +138,7 @@ for (let i = 0; i < W; i++) {
 		cwd: process.cwd(),
 		stdio: ['pipe', 'pipe', 'inherit'],
 	});
-	const w: Worker = { proc, inFlight: null, alive: true };
+	const w: Worker = { proc, inFlight: null, alive: true, id: i };
 	workers.push(w);
 	const rl = readline.createInterface({ input: proc.stdout! });
 	rl.on('line', (line) => {
