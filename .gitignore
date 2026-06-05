@@ -45,3 +45,6 @@ next-env.d.ts
 
 # parallel-scout crash-resume artifacts
 .scout-cache/
+
+# MCP config holds a Supabase PAT — never commit
+.mcp.json
