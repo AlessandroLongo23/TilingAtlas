@@ -412,3 +412,15 @@ truncation today — add onTruncate there too. Everything else: licensed and app
 fine — the cited HNF obstruction is a different construction but the conclusion stands; tiered
 verification with the no-cap sweep as final bar matches the contract). Acceptance unchanged: k≤2 digests
 byte-identical, k=3 = 61 w/ t3046+t3055, digest stable twice, 0 timeouts, per-family obl counts here.
+
+**2026-06-05 — TA** — **§19 reviewed: amendments correctly folded** (real join + HNF, sub×full, one
+log; t3046 confirmed end-to-end, t3055 cap-explained with generation unit-proven). **Orbifold start
+during the in-flight sweep: APPROVED with one guard** (user-asked): do orbifold work in a SEPARATE
+git worktree/clone — the sweep can spawn/respawn workers that load code from disk, so edits to the
+live checkout risk a mixed-build digest; any resume must be on the exact starting commit. No-cap
+makes CPU contention correctness-harmless (slower only). Phase A (flag off, branch-enum module, k≤2
+digest regression) has no dependency on the sweep result; Phase C's reproduce-or-beat baseline
+updates to the new k=3 digest once the 61 lands. Minor flag, non-blocking: §19.4's JOIN_DEN_MAX=60
+near-rational broadphase — skipping irrational-coord w is EXACT (rank-3 span is non-discrete), but
+rational coords with denominator > 60 is a tuned cut; confirm it routes through the consolidated
+INCOMPLETE log like the other three causes.
