@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { Badge } from "@/components/ui/badge";
+import { InspectorDrawer } from "@/components/run/inspector-drawer";
 import { fetchFoundTilings, type FoundTiling } from "@/lib/services/runsService";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { cn } from "@/lib/utils/cn";
@@ -26,6 +27,7 @@ function polyCount(t: FoundTiling): number {
 export function GalleryPanel({ runId, initial }: { runId: string; initial: FoundTiling[] }) {
 	const [tilings, setTilings] = useState<FoundTiling[]>(initial);
 	const [sort, setSort] = useState<SortKey>("seed");
+	const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
 	useEffect(() => {
 		const client = createClient();
@@ -62,6 +64,13 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 		return arr;
 	}, [tilings, sort]);
 
+	// Resolve the open cell from the live list by key, so refetches keep it in sync (and it closes
+	// itself if the row ever disappears).
+	const selected = useMemo(
+		() => tilings.find((t) => t.canonical_key === selectedKey) ?? null,
+		[tilings, selectedKey],
+	);
+
 	if (tilings.length === 0) {
 		return <div className="py-10 text-center text-sm text-fg-disabled">No cells mirrored yet.</div>;
 	}
@@ -94,7 +103,16 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 							initial={{ opacity: 0, scale: 0.9 }}
 							animate={{ opacity: 1, scale: 1 }}
 							transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-							className="rounded-lg border border-line bg-surface-overlay/30 overflow-hidden"
+							role="button"
+							tabIndex={0}
+							onClick={() => setSelectedKey(t.canonical_key)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									setSelectedKey(t.canonical_key);
+								}
+							}}
+							className="group cursor-pointer rounded-lg border border-line bg-surface-overlay/30 overflow-hidden transition-colors hover:border-accent/60 focus:outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/40"
 						>
 							<div className="aspect-square bg-surface-raised">
 								{t.render_cell ? (
@@ -113,6 +131,8 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 					))}
 				</AnimatePresence>
 			</div>
+
+			<InspectorDrawer tiling={selected} onClose={() => setSelectedKey(null)} />
 		</div>
 	);
 }
