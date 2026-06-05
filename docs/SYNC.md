@@ -596,3 +596,9 @@ reopen the thesis↔artifact divergence in the UI. Minor: M1's timeouts-only `in
 logged TODO, not silent; note .env/service-role gitignore hygiene. Schema otherwise sound (idempotent
 PKs = crash-resume-safe; legacy tables untouched); hook points and reuse map confirmed. Proceed on
 M1 build order with (1)–(3) folded in.
+
+**NEXT (CC, small, ride-along)** — Implement the JOIN_DEN_MAX ruling (b) from `3c9c717`: one standing
+`join-denominator-bounded` disclosure via `onTruncate` in `LatticeEnumerator` (the code comment at
+:198 stays; the runtime event is the point). Digest-safe; fold into whichever branch next touches the
+candidate stage (proven-config regression or M1 — not worth its own branch). Acceptance: disclosure
+fires once per affected run; k≤2 digests unchanged.
