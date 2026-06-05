@@ -94,6 +94,16 @@ export function applyPointOp(op: PointOp, z: Cyclotomic): Cyclotomic {
 }
 
 /**
+ * Apply a full isometry g(z) = L(z) + T = conj?(z)·ζ^r + T. The SINGLE isometry-application primitive
+ * shared by the k-uniformity gate's verified-symmetry union-find (`KUniformityChecker`) and the orbifold
+ * budget counter (`countOrbitsUnderBranch`), so both provably quotient by the same map. Byte-identical to
+ * the gate's former inline `mapPoint` (pinned by `tests/orbifold-fill.test.ts`).
+ */
+export function mapPoint(z: Cyclotomic, reflect: boolean, r: number, T: Cyclotomic): Cyclotomic {
+	return applyPointOp({ reflect, r }, z).add(T);
+}
+
+/**
  * Compose point parts: (a∘b)(z) = a(b(z)). Derivation: reflect = a.reflect XOR b.reflect; the
  * rotation index is a.r + b.r when a is direct and a.r − b.r when a reflects (the outer conj negates
  * the inner exponent). Unit-tested against applyPointOp ∘ applyPointOp over all 48² maps.
@@ -332,7 +342,7 @@ function invertCosetOp(g: CosetOp, u: Cyclotomic, v: Cyclotomic, N: number): Cos
  * a point part receiving two distinct translation classes (a conflict at L = identity is a
  * translation outside Λ). The abort never fires on a true branch (`thm:groupcomplete`).
  */
-function closeGroup(
+export function closeGroup(
 	generators: CosetOp[],
 	u: Cyclotomic,
 	v: Cyclotomic,

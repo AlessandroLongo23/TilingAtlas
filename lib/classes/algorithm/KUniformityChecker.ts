@@ -25,6 +25,7 @@
 
 import type { Polygon } from '../polygons/Polygon';
 import { Cyclotomic } from '../Cyclotomic';
+import { mapPoint } from './OrbifoldBranches';
 
 const FLOAT_TOL = 1e-6;
 
@@ -50,7 +51,15 @@ export class KUniformityChecker {
 		cellPolygons: Polygon[],
 		u: Cyclotomic,
 		v: Cyclotomic,
-		diag?: { syms: number; reps: number; blockSize: number; orbits: number | null }
+		diag?: {
+			syms: number;
+			reps: number;
+			blockSize: number;
+			orbits: number | null;
+			/** The full discovered symmetry group as {reflect, r, T} maps (incl. identity); populated for
+			 *  the orbifold gate-confirm cross-check (emitted group ⊇ branch group). Additive, digest-neutral. */
+			verifiedSyms?: { reflect: boolean; r: number; T: Cyclotomic }[];
+		}
 	): number | null {
 		if (cellPolygons.length === 0) return null;
 		if (!cellPolygons.every((p) => p.hasExact())) return null;
@@ -108,9 +117,8 @@ export class KUniformityChecker {
 		const p0Name = P0.getName();
 
 		// --- 1+2. Find the symmetry group (as {reflect, r, T} maps), including identity. ---
-		const mapPoint = (z: Cyclotomic, reflect: boolean, r: number, T: Cyclotomic): Cyclotomic =>
-			(reflect ? z.conj().mulZeta(r) : z.mulZeta(r)).add(T);
-
+		// `mapPoint` is the shared isometry primitive (OrbifoldBranches) so the gate and the orbifold
+		// budget counter quotient by provably the same map; byte-identical to the former inline closure.
 		const transformedKey = (p: Polygon, reflect: boolean, r: number, T: Cyclotomic): string => {
 			const c = mapPoint(p.exactCentroid!, reflect, r, T);
 			const vks = p.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).key()).sort().join(';');
@@ -211,7 +219,7 @@ export class KUniformityChecker {
 		const roots = new Set<number>();
 		for (let i = 0; i < reps.length; i++) roots.add(find(i));
 		const orbits = roots.size;
-		if (diag) { diag.syms = syms.length; diag.reps = reps.length; diag.blockSize = patch.length; diag.orbits = orbits; }
+		if (diag) { diag.syms = syms.length; diag.reps = reps.length; diag.blockSize = patch.length; diag.orbits = orbits; diag.verifiedSyms = syms; }
 		return orbits;
 	}
 

@@ -15,14 +15,64 @@
 import { Cyclotomic } from "../Cyclotomic";
 import {
 	applyPointOp,
+	mapPoint,
 	branchTranslationPool,
+	closeGroup,
 	latticePointGroup,
 	reduceVecModLattice,
 	type Bravais,
+	type CosetOp,
 	type PointOp,
 } from "./OrbifoldBranches";
 import { holohedry, edgeStepDirs, isIntCombo, latticeKey } from "./LatticeEnumerator";
 import { reduceModColumnLattice, solveModLattice, compileReducer, compileSolver } from "./exact/IntLinalg";
+
+/** The map of a coset op applied to a point: g·z = L(z) + w = mapPoint(z, reflect, r, w). Uses the
+ *  SHARED `mapPoint` primitive (OrbifoldBranches), the exact same isometry the k-uniformity gate's
+ *  union-find applies — so the budget counter and the gate provably quotient by the same map. */
+function mapCoset(g: CosetOp, z: Cyclotomic): Cyclotomic {
+	return mapPoint(z, g.reflect, g.r, g.w);
+}
+
+/**
+ * Vertex-orbit count of a partial fill UNDER a supplied branch group G (the exact-k budget, contract
+ * §2 / `cor:branchbudget`). Union-find over the distinct vertex classes `vReps`, merging i~j whenever
+ * some coset op maps vReps[i] onto vReps[j] mod Λ. Mirror of `KUniformityChecker` (its discovered-sym
+ * union-find), quotienting by the SUPPLIED `ops` instead. Pure; the fill prunes a branch step at
+ * count `> k` (strictly — monotone-sound, never prune a valid branch).
+ */
+export function countOrbitsUnderBranch(vReps: Cyclotomic[], u: Cyclotomic, v: Cyclotomic, ops: CosetOp[]): number {
+	const n = vReps.length;
+	const parent = vReps.map((_, i) => i);
+	const find = (x: number): number => {
+		while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+		return x;
+	};
+	const union = (a: number, b: number) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+	for (let i = 0; i < n; i++) {
+		for (const g of ops) {
+			const gw = mapCoset(g, vReps[i]);
+			for (let j = 0; j < n; j++) {
+				if (find(i) === find(j)) continue;
+				if (isIntCombo(gw.sub(vReps[j]), u, v)) { union(i, j); break; }
+			}
+		}
+	}
+	const roots = new Set<number>();
+	for (let i = 0; i < n; i++) roots.add(find(i));
+	return roots.size;
+}
+
+/**
+ * The stabiliser of a base point x in the branch group G: `{ (L,w) ∈ ops : w ≡ (1−L)x (mod Λ) }` (the
+ * direct congruence — NO conjugation, B2 frame convention). Used to r-reduce the equivariant seeding.
+ */
+export function stabG(x: Cyclotomic, ops: CosetOp[], u: Cyclotomic, v: Cyclotomic): CosetOp[] {
+	return ops.filter((g) => {
+		const target = x.sub(applyPointOp({ reflect: g.reflect, r: g.r }, x)); // (1−L)x
+		return isIntCombo(g.w.sub(target), u, v);
+	});
+}
 
 /**
  * The coboundary matrix M_{1−L} as an array of φ COLUMN vectors over ℤ: column j is the coordinate
@@ -237,7 +287,26 @@ export type NormalizedBranch = {
 	order: number;
 	key: string; // latticeKey | typeTag | classKey  (canonical, deterministic)
 	reAnchorSet: Cyclotomic[]; // 𝒳(Λ,G,k); [0] for p1
+	ops: CosetOp[]; // the closed group G mod Λ at the branch's normalized placements (x=0 frame)
 };
+
+/** Close the branch's distinguished generators (at their normalized placements) into G mod Λ. */
+function materializeOps(type: SubgroupType, rep: bigint[], u: Cyclotomic, v: Cyclotomic, ring: Cyclotomic["ring"]): CosetOp[] {
+	let gens: CosetOp[];
+	if (type.kind === "p1") gens = [];
+	else if (type.kind === "cyclic-rot") gens = [{ reflect: false, r: type.rot.r, w: new Cyclotomic(ring, rep) }];
+	else if (type.kind === "cyclic-refl") gens = [{ reflect: true, r: type.refl.r, w: new Cyclotomic(ring, rep) }];
+	else {
+		const phi = ring.phi;
+		gens = [
+			{ reflect: false, r: type.rot.r, w: new Cyclotomic(ring, rep.slice(0, phi)) },
+			{ reflect: true, r: type.refl.r, w: new Cyclotomic(ring, rep.slice(phi, 2 * phi)) },
+		];
+	}
+	const ops = closeGroup(gens, u, v, ring);
+	if (ops === null) throw new Error(`materializeOps: branch group failed to close (${typeTag(type)}) — should be impossible for an enumerated branch`);
+	return ops;
+}
 
 export type NormalizedBranchOpts = { poolClassCap?: number };
 
@@ -291,7 +360,7 @@ export function enumerateNormalizedBranches(
 
 	for (const type of types) {
 		if (type.kind === "p1") {
-			branches.push({ type, classKey: "p1", order: 1, key: `${lk}|p1`, reAnchorSet: [Cyclotomic.ZERO(ring)] });
+			branches.push({ type, classKey: "p1", order: 1, key: `${lk}|p1`, reAnchorSet: [Cyclotomic.ZERO(ring)], ops: materializeOps(type, [], u, v, ring) });
 			byKind.p1++;
 			continue;
 		}
@@ -317,7 +386,7 @@ export function enumerateNormalizedBranches(
 				const g = groups.get(ck)!;
 				const X = dedupCyc(g.data.map((d) => reAnchorFromSolution(solve(g.rep.map((x, i) => x - d.num[i])), ring, "reAnchorCyclic")));
 				sum += X.length;
-				branches.push({ type, classKey: ck, order: type.order, key: `${lk}|${typeTag(type)}|${ck}`, reAnchorSet: X });
+				branches.push({ type, classKey: ck, order: type.order, key: `${lk}|${typeTag(type)}|${ck}`, reAnchorSet: X, ops: materializeOps(type, g.rep, u, v, ring) });
 			}
 			if (type.kind === "cyclic-rot") byKind.cyclicRot++;
 			else byKind.cyclicRefl++;
@@ -367,7 +436,7 @@ export function enumerateNormalizedBranches(
 					const stacked = [...d1.num, ...d2.num];
 					return reAnchorFromSolution(solveCoupled(g.rep.map((x, i) => x - stacked[i])), ring, "reAnchorDihedral");
 				}));
-				branches.push({ type, classKey: ck, order: type.order, key: `${lk}|${typeTag(type)}|${ck}`, reAnchorSet: X });
+				branches.push({ type, classKey: ck, order: type.order, key: `${lk}|${typeTag(type)}|${ck}`, reAnchorSet: X, ops: materializeOps(type, g.rep, u, v, ring) });
 			}
 			byKind.dihedral++;
 		}

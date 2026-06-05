@@ -44,6 +44,8 @@ import type { SeedConfigurationLike } from './SeedExpander';
 import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
 import { detSurd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
+import { enumerateNormalizedBranches, countOrbitsUnderBranch, stabG, type NormalizedBranch } from './OrbifoldNormalized';
+import { composePointOps, type CosetOp } from './OrbifoldBranches';
 
 const FLOAT_TOL = 1e-6;
 
@@ -106,6 +108,12 @@ export type PeriodSolverDiag = {
 	obliqueCandidates: number; // candidate lattices contributed by source (C) oblique join-closure
 	obliqueTruncated: ObliqueTruncation['cause'] | null; // INCOMPLETE-REGION cause if the oblique reach was clipped
 	timedOut: boolean;
+	// --- orbifold mode only (optional; absent/zero in the certified torus path) ---
+	orbifoldBranches?: number; // normalized branches enumerated across the run's lattices
+	budgetPruned?: number; // DFS steps cut by the exact-k orbits-under-G budget
+	poolTruncated?: boolean; // ⚑ a branch pool hit poolClassCap ⇒ truncated 𝒳 ⇒ scout-grade (not a claim)
+	conservationViolated?: boolean; // ⚑ Σ|𝒳| ≠ pool-class count on some lattice ⇒ a re-anchor datum was lost (a DROPPED tiling)
+	branchInvariantViolated?: boolean; // ⚑ an emitted cell was NOT invariant under its branch group ⇒ stamping/keying bug
 };
 
 export type PeriodSolverOptions = {
@@ -116,6 +124,10 @@ export type PeriodSolverOptions = {
 	verbose?: boolean;
 	/** Debug hook: called for every completed primitive cell, BEFORE the k-gate filter. */
 	onRawCell?: (cell: Polygon[], basis: [Cyclotomic, Cyclotomic], orbits: number | null) => void;
+	/** Fill mode. 'torus' (default) = the certified bare-torus fill. 'orbifold' = the equivariant fill
+	 *  (normalized branches + re-anchored seeding; Increment 2). Flag-off is byte-identical by
+	 *  construction (the orbifold branch is never constructed). Env override: PS_MODE=orbifold. */
+	mode?: 'torus' | 'orbifold';
 };
 
 export class PeriodSolver {
@@ -133,6 +145,9 @@ export class PeriodSolver {
 		const k = this.k;
 		const maxCellPolys = opts.maxCellPolys ?? 20 * k + 24;
 		const maxMs = opts.maxMs ?? 45000;
+		// Fill mode — resolved to a local (like PS_PROFILE); when unset it is the literal 'torus', so the
+		// flag-off path never even constructs the orbifold branch and stays byte-identical.
+		const mode: 'torus' | 'orbifold' = opts.mode ?? (process.env.PS_MODE === 'orbifold' ? 'orbifold' : 'torus');
 		const start = Date.now();
 		// Optional phase profiler (env PS_PROFILE) — purely additive, byte-identical when off.
 		const prof = process.env.PS_PROFILE ? { cand: 0, fill: 0, gate: 0, canon: 0, dedup: 0 } : null;
@@ -150,6 +165,10 @@ export class PeriodSolver {
 			coreVertices.map((cv) => this.vcNameAt(cv, corePolys.filter((p) => p.vertexKeySet().has(cv.key()))))
 		);
 		const polySizes = Array.from(new Set(corePolys.map((p) => p.n))).sort((a, b) => a - b);
+		// Per-VC coronas (with their centre vertex) — the equivariant seed fans = supp(M) (prop:equifill;
+		// the mirror closure supp±(M) and the orientations are produced in equivariantSeed). For k=1 this
+		// is the single full corona; for k≥2, one fan per seed VC. Only used in orbifold mode.
+		const seedFans = coreVertices.map((cv) => ({ center: cv, polys: corePolys.filter((p) => p.vertexKeySet().has(cv.key())) }));
 
 		// Seeding. The rigid k-VC core pins the k VCs in a concrete adjacency and is the default seed for
 		// torusFill. But a tiling whose primitive cell is SMALLER than the rigid core cannot contain it
@@ -208,6 +227,8 @@ export class PeriodSolver {
 			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys);
 			if (!ctx) continue; // degenerate basis
 
+			const rawCells: Polygon[][] = [];
+			if (mode === "torus") {
 			// Choose the seed(s) for THIS lattice. Normally the rigid core. But when the rigid core
 			// OVERFLOWS the cell (its footprint mod Λ exceeds |det Λ| — the t2014 case), the core would be
 			// area-rejected and yield nothing, so seed from the single-VC fans instead. This keeps the fast
@@ -222,7 +243,6 @@ export class PeriodSolver {
 			const seedSets = coreOverflows ? fanCoreSets : [corePolys];
 			if (coreOverflows) diag.fanLattices++;
 
-			const rawCells: Polygon[][] = [];
 			// Seed-state dedup (route-a-proven-box.md §"core-coincidence ruling", sound alternative #1):
 			// distinct seed sets that reduce mod Λ to the IDENTICAL initial torus state produce identical
 			// completions (the fill is deterministic on its initial state), so fill each once. Only the
@@ -242,6 +262,11 @@ export class PeriodSolver {
 				const _tf0 = prof ? Date.now() : 0;
 				rawCells.push(...this.torusFill(core, ctx, () => maxMs > 0 && Date.now() - start > maxMs, diag));
 				if (prof) prof.fill += Date.now() - _tf0;
+			}
+			} else {
+				// Orbifold equivariant fill (Increment 2): branch over normalized wallpaper groups +
+				// re-anchor sets, fill each with the G-orbit-stamping DFS. Same downstream tail.
+				rawCells.push(...this.equivariantFillForLattice(u, v, ctx, seedFans, k, () => maxMs > 0 && Date.now() - start > maxMs, diag));
 			}
 			diag.rawCells += rawCells.length;
 
@@ -608,6 +633,224 @@ export class PeriodSolver {
 		}
 		if (PeriodSolver.DEBUG) process.stderr.write(`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`);
 		return results;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Equivariant (orbifold) fill — Increment 2
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Orbifold equivariant fill for one lattice Λ: enumerate the normalized branches (+ re-anchor sets),
+	 * and per (branch, base point x) run the G-orbit-stamping DFS from the re-anchored, mirror-closed fan
+	 * seeds. Emits Λ-torus cells (one canonical rep per class) → the SAME downstream tail as torusFill.
+	 */
+	private equivariantFillForLattice(
+		u: Cyclotomic, v: Cyclotomic, ctx: FillCtx, seedFans: { center: Cyclotomic; polys: Polygon[] }[],
+		k: number, timedOut: () => boolean, diag: PeriodSolverDiag
+	): Polygon[][] {
+		const poolCap = process.env.PS_POOLCAP ? parseInt(process.env.PS_POOLCAP, 10) : 50000;
+		const { branches, diag: bd } = enumerateNormalizedBranches(u, v, ctx.ring, ctx.polySizes, k, { poolClassCap: poolCap });
+		diag.orbifoldBranches = (diag.orbifoldBranches ?? 0) + branches.length;
+		// Deterministic branch processing order (canonical group key; contract §1.6/§6.5) — the run's
+		// composition digest must not depend on enumerator iteration order.
+		branches.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+		if (bd.poolTruncated) {
+			diag.poolTruncated = true;
+			process.stderr.write(`[orbifold] ⚑ INCOMPLETE-REGION: branch pool truncated (cap ${poolCap}) for ${latticeKey(u, v)} — scout-grade, not a claim (raise PS_POOLCAP)\n`);
+		}
+		// Conservation tripwire (binding; reanchoring-lemma §4.5/§5.3, lem:reanchor(i)): Σ_branches|𝒳|
+		// per rotation type must equal the pool-class count, per reflection type the glide-passing count.
+		// A deficit means a re-anchor datum was LOST — a dropped tiling, NOT a speedup — so fail loud.
+		if (!bd.rotationConserved || !bd.reflectionConserved) {
+			diag.conservationViolated = true;
+			const bad = bd.conservationDetail.filter((c) => !c.ok)
+				.map((c) => `${c.typeKey}: Σ|𝒳|=${c.sum}≠${c.expected}`).join("; ");
+			process.stderr.write(`[orbifold] ⚑ IMPLEMENTATION-BUG: Σ|𝒳| ≠ pool-class count for ${latticeKey(u, v)} — ${bad}\n`);
+		}
+		const results: Polygon[][] = [];
+		const memo = new Map<string, { key: string; poly: Polygon }>();
+		for (const B of branches) {
+			// Seed-state dedup PER BRANCH (across all x∈𝒳 and all (v,r)): identical G-stamped initial
+			// states fill identically under this branch's ops, so each distinct state is filled once.
+			const seenSeed = new Set<string>();
+			for (const x of B.reAnchorSet) {
+				if (timedOut()) return results;
+				for (const initial of this.equivariantSeed(B, x, ctx, seedFans, memo, seenSeed)) {
+					results.push(...this.equivariantTorusFill(B, initial, ctx, k, timedOut, diag, memo));
+				}
+			}
+		}
+		return results;
+	}
+
+	/** The re-anchored, mirror-closed equivariant seeds for one (branch, x): per seed fan and per
+	 *  placement (reflect,r) reduced by stab_G(x), place the fan with its centre on x and stamp the
+	 *  G-orbit (unconjugated ops, B2). Returns distinct initial cell states (deduped mod Λ by state key). */
+	private equivariantSeed(
+		B: NormalizedBranch, x: Cyclotomic, ctx: FillCtx,
+		seedFans: { center: Cyclotomic; polys: Polygon[] }[], memo: Map<string, { key: string; poly: Polygon }>,
+		seen: Set<string>
+	): Polygon[][] {
+		const ZERO = Cyclotomic.ZERO(ctx.ring);
+		const placements = this.reducePlacements(x, B, ctx);
+		const out: Polygon[][] = [];
+		for (const fan of seedFans) {
+			const trans = x.sub(fan.center);
+			for (const pl of placements) {
+				// place the fan (centre sv → x, oriented (reflect,r) about sv), then G-orbit-stamp with the
+				// UNCONJUGATED branch ops (B2). 'full' mode keeps the float caches valid for the DFS overlap checks.
+				const stamped: Polygon[] = [];
+				for (const p of fan.polys) {
+					const placed = p.transformedRigid(fan.center, pl.reflect, pl.reflect ? pl.r : 0, pl.reflect ? 0 : pl.r, trans, 'full');
+					for (const g of B.ops)
+						stamped.push(placed.transformedRigid(ZERO, g.reflect, g.reflect ? g.r : 0, g.reflect ? 0 : g.r, g.w, 'full'));
+				}
+				const initial = this.dedupModLattice(stamped, ctx, memo);
+				const sk = this.stateKey(initial);
+				if (seen.has(sk)) continue;
+				seen.add(sk);
+				out.push(initial);
+			}
+		}
+		return out;
+	}
+
+	/** Placements (reflect,r) reduced by the stabilizer of x in G (the licensed r-reduction; NOT by the
+	 *  fan's own symmetry). One representative per stab_G(x)-orbit of the 2N point placements. */
+	private reducePlacements(x: Cyclotomic, B: NormalizedBranch, ctx: FillCtx): { reflect: boolean; r: number }[] {
+		const stab = stabG(x, B.ops, ctx.u, ctx.v);
+		const N = ctx.N;
+		const seen = new Set<string>();
+		const out: { reflect: boolean; r: number }[] = [];
+		for (const reflect of [false, true]) {
+			for (let r = 0; r < N; r++) {
+				let best = `${reflect ? 1 : 0}:${r}`;
+				for (const s of stab) {
+					const c = composePointOps({ reflect: s.reflect, r: s.r }, { reflect, r }, N);
+					const key = `${c.reflect ? 1 : 0}:${c.r}`;
+					if (key < best) best = key;
+				}
+				if (seen.has(best)) continue;
+				seen.add(best);
+				out.push({ reflect, r });
+			}
+		}
+		return out;
+	}
+
+	/** The G-orbit-stamping DFS — a clone of torusFill where each step stamps the full branch-group orbit
+	 *  of the placed tile (identify exact coincidences, reject proper overlaps) and the budget is exactly
+	 *  k vertex-orbits UNDER G. Emits primitive, complete Λ-torus cells. Downstream tail unchanged. */
+	private equivariantTorusFill(
+		B: NormalizedBranch, initialIn: Polygon[], ctx: FillCtx, k: number, timedOut: () => boolean,
+		diag: PeriodSolverDiag, memo: Map<string, { key: string; poly: Polygon }>
+	): Polygon[][] {
+		const ZERO = Cyclotomic.ZERO(ctx.ring);
+		const uL = ctx.u, vL = ctx.v;
+		const initial = this.dedupModLattice(initialIn, ctx, memo);
+		if (initial.length === 0) return [];
+		let initialArea = 0;
+		for (const p of initial) initialArea += regularArea(p.n);
+		if (initialArea > ctx.cellArea + 1e-6) return [];
+		if (this.coreSelfOverlapsNearest(initial, ctx)) return [];
+		const initialBlock = this.buildBlock(initial, ctx, 5);
+		if (this.blockHasProperOverlap(initialBlock, ctx)) return [];
+		const extendV = (parent: Cyclotomic[], poly: Polygon): Cyclotomic[] => {
+			const o = parent.slice();
+			for (const w of poly.exactVertices!) if (!o.some((r) => latticeEquivExact(w, r, uL, vL))) o.push(w);
+			return o;
+		};
+		let initialV: Cyclotomic[] = [];
+		for (const p of initial) initialV = extendV(initialV, p);
+		if (countOrbitsUnderBranch(initialV, uL, vL, B.ops) > k) return []; // seed already over the G-budget
+
+		const results: Polygon[][] = [];
+		const seenState = new Set<string>();
+		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[] }[] = [{ reps: initial, block: initialBlock, vReps: initialV }];
+		while (stack.length > 0) {
+			if (timedOut()) break;
+			const { reps, block, vReps } = stack.pop()!;
+			const sk = this.stateKey(reps);
+			if (seenState.has(sk)) continue;
+			seenState.add(sk);
+			if (reps.length > ctx.maxCellPolys) continue;
+			const analysis = this.analyze(reps, ctx, block);
+			if (analysis.contradiction) continue;
+			if (!analysis.openVertex) {
+				if (this.isCompleteTiling(reps, ctx) && this.isPrimitive(reps, ctx, memo)) {
+					this.confirmBranchInvariant(reps, B, ctx, memo, diag); // R3 tripwire (keeps the cell either way)
+					results.push(reps);
+				}
+				continue;
+			}
+			const { vertex: w, intervals } = analysis.openVertex;
+			const d0 = this.gapStartRay(intervals, ctx.N);
+			if (d0 < 0) continue;
+			const repsKeys = new Set(reps.map((r) => r.exactKey()));
+			for (const n of ctx.polySizes) {
+				const P = RegularPolygon.fromAnchorAndDirExact(n, w, d0);
+				// stamp the G-orbit of P; per member: identify (already present) / reject (proper overlap) / add
+				const orbit: { key: string; rep: Polygon; placed: Polygon }[] = [];
+				let rejected = false;
+				for (const g of B.ops) {
+					const gP = P.transformedRigid(ZERO, g.reflect, g.reflect ? g.r : 0, g.reflect ? 0 : g.r, g.w, 'full');
+					const pc = this.canonicalRep(gP, ctx, memo);
+					if (repsKeys.has(pc.key) || orbit.some((o) => o.key === pc.key)) continue; // identify (present mod Λ)
+					if (this.properOverlapWithBlock(gP, block, ctx)) { rejected = true; break; } // overlap vs block
+					if (orbit.length && this.properOverlapWithBlock(gP, orbit.map((o) => o.placed), ctx)) { rejected = true; break; } // vs new orbit
+					orbit.push({ key: pc.key, rep: pc.poly, placed: gP });
+				}
+				if (rejected) continue;
+				if (orbit.length === 0) continue; // whole orbit already present ⇒ no progress
+				const next = reps.concat(orbit.map((o) => o.rep));
+				if (next.length > ctx.maxCellPolys) continue;
+				let childV = vReps;
+				for (const o of orbit) childV = extendV(childV, o.rep);
+				if (countOrbitsUnderBranch(childV, uL, vL, B.ops) > k) { diag.budgetPruned = (diag.budgetPruned ?? 0) + 1; continue; } // exact-k budget
+				let childBlock = block;
+				for (const o of orbit) childBlock = childBlock.concat(this.buildBlock([o.rep], ctx, 5));
+				stack.push({ reps: next, block: childBlock, vReps: childV });
+			}
+		}
+		return results;
+	}
+
+	/**
+	 * Branch-invariant confirm (R3 tripwire, `prop:reanchorfill` construction invariant): an emitted
+	 * orbifold cell is G-invariant BY CONSTRUCTION (every step stamps a full G-orbit), so each
+	 * `g ∈ B.ops` must map the cell onto itself mod Λ. A miss means a stamping/identify/keying bug
+	 * (an orbit member was wrongly dropped or mis-keyed). We log IMPLEMENTATION-BUG loudly and KEEP the
+	 * cell — the k-uniformity gate downstream stays authoritative. Cheap: runs only on completed cells.
+	 */
+	private confirmBranchInvariant(
+		reps: Polygon[], B: NormalizedBranch, ctx: FillCtx, memo: Map<string, { key: string; poly: Polygon }>, diag: PeriodSolverDiag
+	): void {
+		const ZERO = Cyclotomic.ZERO(ctx.ring);
+		// Robust per-tile symmetry test (NOT via canonicalRep — its near-origin float window is not
+		// position-robust for tiles a reflection throws far from the cell, NOTES §13): each g·t must
+		// equal some cell tile t′ modulo Λ — same name, centroids Λ-equivalent, and equal after the
+		// connecting lattice translation (exactKey is orientation-insensitive).
+		for (const g of B.ops) {
+			for (const t of reps) {
+				const gt = t.transformedRigid(ZERO, g.reflect, g.reflect ? g.r : 0, g.reflect ? 0 : g.r, g.w, 'full');
+				let matched = false;
+				for (const t2 of reps) {
+					if (t2.getName() !== gt.getName()) continue;
+					if (!latticeEquivExact(t2.exactCentroid!, gt.exactCentroid!, ctx.u, ctx.v)) continue;
+					const shifted = gt.clone();
+					shifted.translateExact(t2.exactCentroid!.sub(gt.exactCentroid!));
+					if (shifted.exactKey() === t2.exactKey()) { matched = true; break; }
+				}
+				if (!matched) {
+					diag.branchInvariantViolated = true;
+					process.stderr.write(
+						`[orbifold] ⚑ IMPLEMENTATION-BUG: emitted cell NOT invariant under branch op (reflect=${g.reflect}, r=${g.r}) of ${B.key} ` +
+						`— |reps|=${reps.length}, g·tile ${gt.exactKey().slice(0, 44)} has no match in the cell — keeping cell (k-gate authoritative)\n`
+					);
+					return; // one report per cell suffices
+				}
+			}
+		}
 	}
 
 	// ---------------------------------------------------------------------------
