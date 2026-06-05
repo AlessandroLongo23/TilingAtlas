@@ -390,9 +390,20 @@ export class PeriodSolver {
 			const f = p.toVector();
 			return f.x * f.x + f.y * f.y <= gridShortMax2;
 		});
+		// The solved cmm/rect long axis is kept only when it is itself a realizable vertex difference
+		// (present in the pool) — this discards spurious solved lengths. ⚑ A long axis that is grid-aligned
+		// and within the area bound but exceeds the pool REACH (poolLmax) is a genuine tuned-pool
+		// truncation, not a spurious solution; log it LOUDLY so the candidate-stage boundary is never
+		// silent (same INCOMPLETE-REGION doctrine as source C / the area ladder). Behaviour-preserving:
+		// the pushed lattice set is unchanged.
+		let gridReachTrunc = 0;
 		for (const [u, v] of lat.gridAlignedCells(gridShorts, polySizes, ring, undefined, areas)) {
-			if (poolSet.has(v.key())) push(u, v);
+			if (poolSet.has(v.key())) { push(u, v); continue; }
+			const vf = v.toVector();
+			if (vf.x * vf.x + vf.y * vf.y > poolLmax * poolLmax + 1e-9) gridReachTrunc++;
 		}
+		if (gridReachTrunc > 0)
+			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid long-side reach): ${gridReachTrunc} solved cmm/rect long axes exceed poolLmax=${poolLmax.toFixed(2)} and are not enumerated\n`);
 
 		// `minVerts` (min vertex-classes per realizable cell area) drives BOTH the P0 pre-filter below AND
 		// the oblique sub-pool sizing in source (C); computed once here (hoisted from the P0 loop — pure,
