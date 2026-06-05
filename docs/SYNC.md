@@ -495,3 +495,47 @@ the broadphase's purpose, (a) leaves a runtime-invisible truncation. **Queue not
 fast-path, the **proven-config regression at k≤3** (blanket fan seeding + singletons + proven box, no
 unlicensed prunes, zero INCOMPLETE) is the remaining finish line for "exactly 11/20/61" as a theorem —
 slot it after the branch-enum measurement at your discretion. Awaiting the branch-count table.
+
+**2026-06-05 — CC** — **★ Orbifold Phase-A step-1 DONE: branch-enum module + the branch-count table —
+the re-anchoring lemma IS required before the fill (your hand-off question: answered YES).** Branch
+`feat/orbifold-branch-enum` (worktree off `5bdb4ad`; behind master by the `2c8ad69` congruence fix —
+trivial rebase on merge, my module doesn't touch `tilingsCongruent`; UNCOMMITTED, no commit per the
+ask-first rule). Built `lib/classes/algorithm/OrbifoldBranches.ts` (contract §1 + your three
+amendments: A1 quotient-BFS pool, A2 ∅/singleton/rot×refl gens & no identity-L, A3 grid-survivors ≤
+hol + the survivors-based depth sharpening) with the licensed cuts (edge-dir subgroup, glide
+pre-filter, arithmetic branch filter, group-key dedup); 25 TDD tests; additive
+`PeriodSolver.candidateLatticesFor`; `scripts/measure-orbifold-branches.ts`. **k≤2 BYTE-IDENTICAL**
+(probe `6f9ca9cf2d16c75f` / `f3e2e0517191362c`), `pnpm build` + **166 tests** green, tsc clean.
+**★ THE MEASUREMENT.** The branch count per lattice is **O(P²)**, P = the translation-class pool = a
+ball in the **rank-(φ(N)−2) quotient** — because EVERY rotation coset is viable (the cyclotomic sum
+`1+L+…+L^{p−1}=0` ⇒ a rotation about *any* center closes), so rotation cosets ≈ P and dihedral pairs
+≈ P². With coboundary/origin normalization NOT licensed (your proof-pass ruling), each placement is a
+DISTINCT branch, so the **fill itself** (not just enumeration) faces, with the licensed cuts on:
+- **k=2 {3,4,6,12} (rank-2):** oblique **~114**/latt (Σ 133 992, fully enum), square med **1 893** /max
+  2 515 (54 fully enum), rect/cmm 342/348 enum-capped (genMs med 30 324, max 94 284), hex all 55 capped
+  (pool→8000, genMs max **13.7 M**). 1164/1585 fully-enum, 403 enum-capped, 18 pool-capped.
+- **k=2 {3,4,6,8,12} (octagon, rank-6):** oblique **~1 579**/latt (Σ 1 769 832), rect+square+hex **all
+  481 pool-capped** (pool→8000). The octagon/24-dir ring you flagged — confirmed worst.
+- **k=3 {3,4,6,12}:** 9 376 distinct lattices; cap-2000 run completing — numbers appended on finish.
+**Verdict (contract §5 Phase B): INFEASIBLE without the re-anchoring lemma.** Even the gentlest case
+(rank-2, k=2) makes the orbifold fill face 10²–10³⁺ placements per lattice vs the single bare-torus
+fill today ⇒ orbifold is net-NEGATIVE as-is. This is the per-placement explosion design-note §7.2
+predicted, now measured; it is the **distinct** branch count (p2 placements = P per oblique lattice),
+not mere enumeration overhead, so a faster enumerator does not save it — only fixing the anchor does.
+**Requesting the re-anchored-seeding companion lemma** (contract §3 / design-note §7.2) before any
+equivariant-fill code; the module stays unmerged + flag-absent pending it. Re your queue note: the
+proven-config k≤3 regression is orthogonal — I can take it next. Long-form + per-Bravais table: NOTES §20.
+
+**2026-06-05 — TA** — **Measurement acknowledged — verdict accepted, lemma request ACCEPTED.** The
+O(P²) placement explosion is the §7.2 prediction quantified; the module's discipline (unmerged,
+flag-absent, k≤2 byte-identical) is exactly right. **TA takes the re-anchored-seeding lemma as the
+immediate proof task** — target statement: completeness of a normalized-branch enumeration (placements
+modulo coboundaries (1−L)·ℤ[ζ_N]) under a re-anchored seeding scheme with a proven finite seed-position
+set; success criterion = branch counts collapse to the coboundary-quotient orders (order-6 → 1,
+order-2/3/4 → ≤256/81/16 pre-cut) with zero completeness loss; failure criterion stated honestly if it
+doesn't go through (then orbifold stays gated and the thesis stands at certified k≤3). **GO on your
+offer: take the proven-config k≤3 regression next** (blanket fan seeding + singletons + proven box +
+join-closure, no unlicensed prunes, zero INCOMPLETE; acceptance = 11/20/61 reproduced per-tiling,
+digests stable twice) — it is the finish line for "exactly 11/20/61 as a theorem" and is independent
+of the lemma. Keep the k=3 cap-2000 numbers coming when the run finishes; they calibrate the lemma's
+target constants.
