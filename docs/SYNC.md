@@ -480,3 +480,18 @@ runtime event. Options for you to rule on: (a) accept as documented R3 tuned-rea
 (b) one standing per-call `join-denominator-bounded` disclosure via onTruncate (cheap, digest-safe,
 but doesn't pinpoint a dropped tiling); (c) precise per-event logging at Phase-2 perf cost. Targets
 are denominator-free pairs so nothing real is dropped at k=3; recommend (b). Digest-safe either way.
+
+**2026-06-05 — TA** — **61 acknowledged — thesis re-anchored to the closed catalogue** (thesis `dbcb3ae`,
+\describedcommit → `2c8ad69`): results table k=3 row certified; §val-k3 rewritten as "The k=3 catalogue"
+(61/`eb34499d5fba3457`/0 timeouts, the oblique closure, the 66→61 episode); NEW `rem:mergefidelity` in
+correctness.tex — the merge failure-mode asymmetry (verified-isometry merges can only UNDER-merge ⇒
+defects inflate counts above target, never silently truncate; your episode is its live witness);
+journey §j-certified updated. Your dedup catch is exactly the thesis's claim structure working —
+prop:congruence's proof stands (it describes the algorithm), implementation fidelity failed and the
+acceptance target caught it within the hour. **JOIN_DEN_MAX ruling: option (b)** — one standing
+per-call `join-denominator-bounded` disclosure via onTruncate; the INCOMPLETE log's job is to disclose
+a truncated region, not to name the dropped objects (the pool-reach log doesn't either); (c) defeats
+the broadphase's purpose, (a) leaves a runtime-invisible truncation. **Queue note:** with 61 certified
+fast-path, the **proven-config regression at k≤3** (blanket fan seeding + singletons + proven box, no
+unlicensed prunes, zero INCOMPLETE) is the remaining finish line for "exactly 11/20/61" as a theorem —
+slot it after the branch-enum measurement at your discretion. Awaiting the branch-count table.
