@@ -1242,3 +1242,135 @@ NOT clear:** chirality is necessary-but-not-sufficient. The k=3 certified *emitt
 oracle has **61** — that 59→61 gap is the two oblique tilings (t3046, t3055), a **separate, non-chirality**
 completeness item that join-closure (`join-closure-implementation-contract.md`, `cor:box`) must close on its
 own. No `lib/` files changed.
+
+## 19. Oblique join-closure — closing the k=3 catalogue 59 → 61 (2026-06-05, session 10)
+
+The candidate-lattice enumeration had two symmetry-pinned sources — (A) `roundCells` (hex/square similar
+sublattices) and (B) `gridAlignedCells` (rect/cmm, long axis solved from the area ladder). Both encode a
+Bravais symmetry, so neither can produce an **oblique** lattice (no symmetry beyond ±1). The two k=3 tilings
+**t3046** and **t3055** have oblique period lattices, so they were structurally unreachable: certified k=3 was
+**59/61**. This session adds source **(C) oblique**, the proven `cor:box` completion (thesis `8c9b454`;
+contracts in `../resources/research/{route-a-proven-box,join-closure-implementation-contract}.md`), entirely
+in the candidate stage — the back half (torusFill → certify → primitivity → k-gate → congruence dedup) is
+reused UNCHANGED, so soundness rides on it. Commits `d2df217` (source C) + `c5e40fc` (side-catch).
+
+### 19.1 The method — pool-pairing + join-closure (not Gram-realisation)
+
+`cor:box` says every realisable period is reachable by weight-bounded join-closure with no symmetry pin. Two
+ways to realise it: (i) enumerate Gram triples `(|u|², |v|², u·v)` then *realise* them as ring elements, or
+(ii) **pool-pairing** — iterate pairs of existing pool vectors and read their exact Gram. We took (ii): the
+pool vectors are already realisable edge-direction-restricted vertex differences, so pairing reuses every
+exact primitive with ZERO new ring-realisation code — and avoids the dense-ℤ[ζ₂₄] / mixed-√2√3 realisation
+problem the design doc warns is incomplete (the 4.8.8/HNF obstruction, §12.3). `obliqueCells`
+(`lib/classes/algorithm/LatticeEnumerator.ts`):
+
+- **(C.1) seed pairs:** `u` over the SUB-pool `|u|² ≤ (2/√3)·A_adm`, `v` over the FULL pool. The bound is the
+  reduced short side of an oblique cell: angle ∈ [60°,120°] ⇒ area ≥ (√3/2)|u||v| ≥ (√3/2)|u|². **`A_adm` is
+  the load-bearing constant** = the largest admissible area realisable by ≤ 2k vertex classes (the P0 floor
+  at `hol=2`, `vcAreaMinVerts ≤ 2k`). ⚑ The measured trap: bounding by the *raw* max VC area (~806 at k=3)
+  gives 21.9M pairs/family (~17 min, floods the fill); bounding by `A_adm` gives ~15k candidates in ~1.5 s.
+  Sizing the sub-pool by `A_adm` is what makes (C) tractable.
+- **(C.2) join-closure (cor:box step 2):** `joinLattice(a,b,w)` = the finer lattice ⟨a,b,w⟩, via an exact
+  2×2 rational solve (`w = α·a + β·b`, both ∈ ℚ via `Surd.isRational`) + an integer **HNF** on the three
+  generators in (a,b)-coords, mapped back with `scaleRational`. Repeated to a fixpoint; each proper join
+  divides covolume by an integer ≥ 2, so it terminates in ≤ log₂ rounds (implemented as a round-counter
+  assert). ⚑ **Why the join is load-bearing, not decoration:** pairs-only misses any lattice with no
+  two-pool-vector basis (a lattice generated only by ≥ 3 short vectors). "Both k=3 targets are pairs
+  (measured)" is *answer-tuned* reasoning — sound for k=3 but it would silently block k≥4. A TDD test
+  constructs such a ≥3-generator oblique lattice and shows the join finds it where pairs-only cannot.
+- **(C.3) contribution rule:** push ONLY `holohedry==2` results. The higher-symmetry lattices traversed
+  internally (needed to seed joins toward ≥3-generator oblique children) are NOT emitted — (A)/(B) stay the
+  sole round/grid source, so (C) cannot perturb the round/grid catalogues. This is what keeps **k≤2
+  byte-identical** (the oracle has 0 oblique at k≤2, so any oblique candidate gate-rejects there).
+
+### 19.2 TA review — two binding amendments folded in (SYNC 2026-06-05)
+
+The plan was reviewed GO after two amendments, both valid (they caught real flaws in the draft): (1) **add the
+actual join** — pairs-only ≠ cor:box (the answer-tuned trap above); (2) **`v` over the FULL pool, `u` over the
+sub-pool** — the (2/√3) bound binds only the short side, so sub×sub was tuned to the targets' both-short
+bases. (3) one consolidated INCOMPLETE log. Rulings: R5 — the inclusive `V ≤ k·hol` P0 floor is the proven
+bound (strict-`>` skip correct; t3055 survives at the boundary `minVerts=6 = k·hol=6` — a regression test
+guards it); R3 — the `poolLmax` length cap is acceptable *under* the loud INCOMPLETE log; the full proven-box
+run is a separate Phase-2, not this PR's burden.
+
+### 19.3 INCOMPLETE-REGION logging (the doctrine, made consistent)
+
+One `onTruncate` with three causes (subpool-clipped / v-range-truncated / join-waived), routed loudly to
+stderr — the candidate-stage boundary is never silent. **Side-catch (`c5e40fc`, behaviour-preserving):**
+source (B) used to drop a solved cmm/rect long axis exceeding the pool reach *silently*; it now logs the
+reach truncation. ⚑ At k=3 this log fires with large counts (e.g. 33972 long axes > poolLmax on a 3⁶-family
+seed) — but those drops are empirically all *spurious* solved lengths, not real cells: the certified k=3 = 59
+(pre-oblique) recovered every non-oblique oracle cell, so nothing real was lost. The log surfaces a
+pre-existing tuned-pool boundary, it does not introduce one.
+
+### 19.4 Performance — the join broadphase (the regression and its fix)
+
+First cut made the k=1 probe 15 s → **104 s**: the join-closure called the exact `joinLattice` (with its exact
+`Surd` division) for every (working lattice, pool vector), overwhelmingly to discover the coords are
+irrational. Fix (still byte-identical): (a) precompute the pool float coords once (no `toVector` per pair),
+(b) a float **near-rational broadphase** — skip `w` unless its float (a,b)-coords are near a rational with
+denominator ≤ `JOIN_DEN_MAX=60` before the exact confirm. This is a tuned cut inside the logged-incomplete
+region; the targets are pairs (denominator-free), so unaffected. Result: k=1 back to **15.3 s**, k=2 ~150 s
+(from 96 s baseline — the per-family oblique generation, cached once per family).
+
+### 19.5 Verification
+
+- **Byte-identical k≤2** (the hard gate): k=1 = 11 / `6f9ca9cf2d16c75f`, k=2 = 20 / `f3e2e0517191362c`,
+  re-verified AFTER the §19.6 congruence fix, 0 timeouts. Build + full suite **160 tests** green (lattice-enumerator
+  gains 11 oblique/join tests; `tiling-congruence.test.ts` adds the 4 rotation-congruence regression tests, TDD).
+- **`joinLattice` exactness fuzzed** (~5000 random a,b,w): every rational join satisfies covolume =
+  covol(a,b)·gcd(Dc,A,B)/Dc EXACTLY and contains a,b,w; every `w∈L` and every irrational-coord `w` returns
+  null. 0 failures — the rational-solve + integer-HNF realisation is concretely verified.
+- **De-risk (6 s-cap targeted run):** of 447 k=3 seeds, 69 admit a target oblique area with minVerts ≤ 6.
+  **t3046 (3√3) emits + gates to k=3 = orbits 3** ✓ from 3⁶-family seeds. **t3055 ((6+3√3)/2)** did not appear
+  *under the 6 s cap* — every t3046 hit was itself `TIMEOUT`-flagged, so the cap (not a generation miss) is the
+  cause: t3055's candidate lattice is generated (unit-test-proven; both basis vectors in pool; survives P0 at
+  the boundary), its producing 3⁶ seed just needs more fill time. Resolved by the no-cap sweep.
+- **Certified k=3 (no-cap parallel scout):** the cap-free run completed all 447 seeds with **0 timeouts** in
+  7236 s (446 raw certified cells, `.scout-cache/k3_3.4.6.12_cap0.ndjson`). Its first final reduce returned **66**
+  — which exposed a pre-existing congruence-dedup bug (§19.6), NOT a generation error: the raw certified cells are
+  correct and complete. With the §19.6 fix, the (deterministic) final reduce over those exact cells gives **61** /
+  digest `eb34499d5fba3457` — t3046 (area 3√3 ≈ 5.196) + t3055 ((6+3√3)/2 ≈ 5.598), the only two `holohedry==2`
+  reps. **k=3 = 61/61, the catalogue is closed.** (The certification — every seed solved, 0 timeouts — is a
+  property of raw-cell production, untouched by the fix, which lives only in the post-hoc reduce.)
+
+### 19.6 The no-cap scout exposed a pre-existing congruence-dedup false-negative (66 → 61)
+
+The certified scout's first reduce gave **66**, not 61 — five un-merged duplicates, all in the oblique class
+(t3046 appeared as 3 cells, t3055 as 4; the oracle has 1 each). These are different fundamental-domain
+extractions of the *same* tiling that failed to merge. The cause is **NOT in the oblique diff** — it is a
+pre-existing bug in `tilingsCongruent` (`TilingCongruence.ts`), latent for the whole project and first triggered
+by low-symmetry oblique cells.
+
+- **The bug.** `tilingsCongruent` pins the candidate isometry with `mapPoint` (`z ↦ (conj?)·ζ^r + T`) but mapped
+  the whole cell with `transformedRigid(ZERO, reflect, r, 0, T)` — passing the rotation power `r` as the
+  **reflection axis** `axisK`, with `rotK = 0`. Per `transformedRigid`'s composition (`rk = rotK`,
+  `ak = axisK + rotK`): the `reflect=true` branch uses `ak = r` (correct), but the **`reflect=false` branch uses
+  `rk = 0`** ⇒ it computes `z + T`, a **pure translation — the rotation is silently dropped**.
+- **Why it hid until now.** A congruence whose only witness is a non-trivial rotation (`reflect=false`, `r≠0`)
+  was missed; reflection witnesses (`reflect=true`) map correctly. Every k≤2 merge `tilingsCongruent` was built
+  for is a **reflection** (the chiral snub, §12.7), where the buggy call is accidentally right — so all tests and
+  both byte-identical digests passed despite the latent fault. The oblique k=3 cells are the **first** case where
+  two extractions of one tiling relate ONLY by a rotation (ζ⁴/ζ¹⁶) and by no reflection: extraction A≅B via
+  reflections (found), A≅C via a ζ⁴ rotation (missed) — so the relation came out **intransitive**, the tell-tale
+  of a false negative.
+- **Diagnosis discipline (systematic-debugging).** An exhaustive *single-P0* brute force still found A≇C → the
+  reference-polygon choice was not the gap. A fully **exact, self-consistent** re-implementation (one map function
+  for BOTH the flag-pin and the cell-set, `surdFloor` reduction throughout — no `transformedRigid`, no
+  float-window `reducedClassKey`) gave a clean transitive equivalence: the 7 oblique cells partition into exactly
+  **2 complete-graph components** {t3055×4, t3046×3}. The controlled swap that isolated the bug: replacing only
+  the cell-set map (`transformedRigid` → the same pointwise map as the flag-pin) flipped A~C from F to T —
+  pinpointing `transformedRigid`'s argument order, not the lattice reduction.
+- **The fix (`TilingCongruence.ts:160`).** Pass `r` as `rotK`, `0` as `axisK` —
+  `transformedRigid(ZERO, reflect, 0, r, T, 'full')` gives `rk = ak = r`, matching `mapPoint` for *both* branches.
+  One-argument fix. TDD (`tests/tiling-congruence.test.ts`): a synthetic oblique cell vs its ζ⁴/ζ⁸/ζ¹⁶ rotation,
+  built independently of `transformedRigid` — RED before, GREEN after; plus a soundness guard (non-congruent cells
+  stay rejected) and a symmetry check.
+- **⚑ Thesis impact (flagged to TA).** The module header's **completeness** claim ("the candidate loop tries every
+  `(Q, reflect, r)`, so if a congruence exists it is found") was *violated*: the loop tried every `(Q, reflect, r)`
+  at the flag-pin but applied the wrong isometry at the cell-set step for `reflect=false`. **Soundness was never at
+  risk** — a passing merge is still an explicitly-verified grid isometry, so the dedup only ever **under**-merged
+  (over-counted), never over-merged. The fix restores the proven completeness; the thesis's "complete dedup" claim
+  is now matched by the implementation. Any prior certified count produced by this dedup is safe IF it hit the
+  acceptance target (an under-merge would have shown as a count *above* target — which is exactly how this surfaced
+  at k=3, and exactly why k=1=11/k=2=20 hitting target proves no rotation-only merge was missed there).

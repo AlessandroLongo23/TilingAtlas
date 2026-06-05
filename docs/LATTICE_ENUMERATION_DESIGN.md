@@ -1,5 +1,21 @@
 # Deterministic candidate-lattice (Λ) enumeration — design for the next phase
 
+> **STATUS UPDATE (2026-06-05, session 10 — read `DEVELOPMENT_NOTES.md` §19).** The **oblique class is now
+> CLOSED for the regular core**: `PeriodSolver.candidateLattices` gained a third source **(C) `obliqueCells`**
+> — the proven `cor:box` completion (pair-seed `u∈sub-pool × v∈full-pool` + a join-closure via the exact
+> rational-HNF `joinLattice`), contributing only `hol==2` lattices so (A)/(B) stay the sole round/grid source
+> and k≤2 stays byte-identical. This reaches the two oblique k=3 cells **t3046, t3055** (closing 59 → 61). ⚑
+> The note at line 12 below ("oblique remains the open problem") and the "only complete oblique method …
+> explodes" claim in (1) are **superseded** for the regular core: pool-pairing over the **`A_adm`-bounded
+> sub-pool** (largest area with `vcAreaMinVerts ≤ 2k`) is tractable (~15k candidates, not the dense
+> explosion). Completeness within the **tuned pool reach** is loud-INCOMPLETE-logged (the full proven-box
+> reach stays a separate Phase-2); the HNF *sublattice* obstruction in (1) still stands — `obliqueCells` does
+> NOT do HNF sublattice enumeration, it pairs realisable pool vectors. **Generation was only half the
+> close:** the certified no-cap scout first returned 66, not 61 — the oblique cells exposed a pre-existing
+> rotation-only false-negative in `tilingsCongruent` (the dedup applied a pure translation instead of `ζ^r`
+> for `reflect=false`). Fixed (§19.6); with it the certified cells reduce to **61 / `eb34499d5fba3457`**,
+> k≤2 still byte-identical. So closing the oblique class needed BOTH the new source (C) AND a complete dedup.
+
 > **STATUS UPDATE (2026-06-02, session 3 — read `DEVELOPMENT_NOTES.md` §12).** This design is now
 > IMPLEMENTED and LIVE: `PeriodSolver.candidateLattices` is seed-free (`shortVectorPool` + `edgeStepDirs`
 > + monotone + `roundCells` + `gridAlignedCells` + the **VC-area filter** — the cell area is forced by the

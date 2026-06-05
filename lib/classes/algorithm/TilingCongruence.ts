@@ -157,7 +157,11 @@ export function tilingsCongruent(
 				// (ii) whole cell maps onto cell B, mod Λ_B, as a set of canonical class keys
 				const mapped = new Set<string>();
 				for (const p of cellA) {
-					const gp = p.transformedRigid(ZERO, reflect, r, 0, T, 'full');
+					// rotation power r is rotK; axisK=0. reflect=false ⇒ z·ζ^r+T, reflect=true ⇒
+					// conj(z)·ζ^{0+r}+T — both matching `mapPoint`/`transformedKey` above. (Passing r as
+					// axisK with rotK=0 dropped the rotation in the reflect=false branch, missing
+					// rotation-only congruences and over-counting oblique cells — DEVELOPMENT_NOTES §19.)
+					const gp = p.transformedRigid(ZERO, reflect, 0, r, T, 'full');
 					mapped.add(reducedClassKey(gp, uB, vB, memo, latKeyB));
 				}
 				if (mapped.size === cellB.length && [...mapped].every((kk) => KB.has(kk))) return true;
