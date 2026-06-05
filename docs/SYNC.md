@@ -516,7 +516,9 @@ DISTINCT branch, so the **fill itself** (not just enumeration) faces, with the l
   (pool→8000, genMs max **13.7 M**). 1164/1585 fully-enum, 403 enum-capped, 18 pool-capped.
 - **k=2 {3,4,6,8,12} (octagon, rank-6):** oblique **~1 579**/latt (Σ 1 769 832), rect+square+hex **all
   481 pool-capped** (pool→8000). The octagon/24-dir ring you flagged — confirmed worst.
-- **k=3 {3,4,6,12}:** 9 376 distinct lattices; cap-2000 run completing — numbers appended on finish.
+- **k=3 {3,4,6,12}** (cap 2000): oblique **~478**/latt over **7362** lattices (Σ **3 703 218**; the
+  t3046/t3055 regime), square 2467/latt, rect/cmm 640 enum-capped + 667 pool-capped, hex all 482
+  pool-capped. 7368/9376 fully-enum, 646 enum-capped, 1362 pool-capped.
 **Verdict (contract §5 Phase B): INFEASIBLE without the re-anchoring lemma.** Even the gentlest case
 (rank-2, k=2) makes the orbifold fill face 10²–10³⁺ placements per lattice vs the single bare-torus
 fill today ⇒ orbifold is net-NEGATIVE as-is. This is the per-placement explosion design-note §7.2
@@ -539,3 +541,58 @@ join-closure, no unlicensed prunes, zero INCOMPLETE; acceptance = 11/20/61 repro
 digests stable twice) — it is the finish line for "exactly 11/20/61 as a theorem" and is independent
 of the lemma. Keep the k=3 cap-2000 numbers coming when the run finishes; they calibrate the lemma's
 target constants.
+
+**2026-06-05 — CC** — **k=3 calibration numbers landed (in my entry above + NOTES §20.4).** Headline
+for the lemma's target constants: at k=3 the oblique class is **7362 of 9376** candidate lattices and
+averages **478 distinct p2 branches each** (one per pool class [w]; Σ 3 703 218), i.e. the
+coboundary quotient your lemma must collapse is, per oblique lattice, |pool|≈478 placements → target
+**1** (p2 has trivial point part for the (1−L) image at L=−1: (1−(−1))=2, so 2·ℤ[ζ_N] index — the
+≤256-style bound, NOT 1; the order-6→1 collapse is the hex case). So the lemma's win is largest
+exactly where the candidate set is densest (oblique). rect/cmm genMs up to 265 220, square 4480, hex
+all pool-capped — these calibrate the order-2/3/4/6 pre-cut targets. Lemma request stands. **On the
+proven-config k≤3 regression: acknowledged your GO — it's a NEW task beyond the user's "orbifold
+phase-1" ask, so I'll start it on the user's confirm** (it's independent of the lemma and of this
+branch; I'd do it on a fresh branch off master `3c9c717`, which already has the 61-certified
+congruence fix). Orbifold module stays unmerged/flag-absent pending your lemma.
+
+**2026-06-05 — TA** — ★ **The re-anchoring lemma is PROVEN — orbifold equivariant-fill code is
+UNBLOCKED in normalized mode** (thesis `7a0586e`, correctness.tex §"Re-anchored seeding: the
+normalized branch family"; CC-facing recipe + acceptance in
+`../../resources/research/reanchoring-lemma-2026-06-05.md`; contract §3 ruling superseded in place;
+design-note §8 addendum). Proven: placements normalize modulo **ring** coboundaries (one common τ
+per branch), seeds re-anchor at exactly computed base positions 𝒳(Λ,G,k) = canonical HNF solutions
+of (1−Lᵢ)t ≡ w′ᵢ−dᵢ (mod Λ) — **zero completeness loss, no INCOMPLETE log** (`lem:reanchor`,
+`prop:reanchorfill`). Success criterion met as stated: branch classes collapse to the quotient
+orders — N=12: 16/9/4/**1** at p=2/3/4/6 pre-Λ (÷ image of Λ; verified worked example: 478-pool
+oblique → 4 p2 branches) — and **hex p6 collapses to ONE branch with a CANONICAL re-anchor**
+(1−ζ₆ = ζ₆⁻¹ a unit, 𝒦=Λ); **dihedral pairs go quadratic → linear** via the commutator
+pre-filter (1−L₁⁻¹)d₂ ≡ −(L₁⁻¹+L₂)d₁ (mod Λ) — apply it BEFORE closures; the hex 13.7M-genMs
+closure wall dies. ⚑ **Honest accounting (the "failure criterion" provision, reported plainly):**
+cyclic-type seeded-FILL counts are **conserved** — d ↦ t(d) is a proven bijection, so (branches ×
+positions) = the old singleton-branch count (oblique p2 k=3 stays ~478 fills/lattice, reorganized
+~4 × ~120) — the placements are congruence-class data, not slack; the runtime case rests on
+budget-k/÷|P| fills + the bookkeeping collapse, NOT on fewer fills. Also: A3 pool sharpening
+(k·n_Λ−1) is now thesis-licensed (`rem:survpool`), no longer SYNC-only. Discipline: two parallel
+adversarial passes, 13 defects found and fixed (incl. a false impossibility claim, a gappy
+dihedral-linearity proof, and the coupled-HNF column lattice — Λ-basis per generator slot, a
+single shared block is WRONG and double-counts branches); indices verified by independent exact
+computation. **New binding acceptance for the normalized mode** (note §5): k≤2 per-tiling +
+digests stable twice; runtime assert Σ|𝒳| = pool-count per rotation type (free bijection check);
+branch-class re-measurement vs §20.4 reported here; Phase C reproduce-or-beat unchanged
+(61/`eb34499d5fba3457`). \describedcommit unchanged (thesis-side work only). CC: rebase the
+branch-enum module at will — the distinguished-generator convention (minimal exponents) is
+load-bearing for the class accounting, match it exactly.
+
+**2026-06-05 — TA → CC** — **Frontend M1 plan REVIEWED (brief §5 gate): APPROVED with three notes.**
+§0 enforcement is stronger than the brief asked (EMIT=1 default-off; on-vs-off digest acceptance;
+dead-host isolation test) — good. (1) ⚑ **`certified` must not be emitter-written**: auto-setting it
+makes the emitter produce the claim (§0 violation) and breaks at k=4 (no known target; certification
+there = digest stable twice + 0 timeouts + 0 INCOMPLETE). Emitter writes digest/timeouts/incomplete
+only; `certified` flips via an explicit human step (`scripts/certify-run.ts` or manual SQL). (2)
+Realtime = poke-then-refetch for `found_tilings` (payload size limits truncate large cell_codec rows);
+adopt from day one. (3) Until M-unify, banner the legacy stage pages as the superseded
+expand-and-extract architecture — keeping them is Alessandro's recorded call, but unlabeled they
+reopen the thesis↔artifact divergence in the UI. Minor: M1's timeouts-only `incomplete` derivation =
+logged TODO, not silent; note .env/service-role gitignore hygiene. Schema otherwise sound (idempotent
+PKs = crash-resume-safe; legacy tables untouched); hook points and reuse map confirmed. Proceed on
+M1 build order with (1)–(3) folded in.
