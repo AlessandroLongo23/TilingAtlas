@@ -5,7 +5,8 @@
  * Protocol (all single-line JSON):
  *   worker → coord : {"type":"ready","nSeeds":N}                       once, after build
  *   coord  → worker: {"idx":i}                                         solve useSeeds[i]
- *   worker → coord : {"type":"result","idx":i,"name":..,"cells":[..],"timedOut":b,"ms":n}
+ *   worker → coord : {"type":"result","idx":i,"name":..,"cells":[..],"timedOut":b,"ms":n,"diag":{..}}
+ *     (diag is ADDITIVE — the coordinator's reduce/digest ignore it; it feeds the emitter only.)
  *   coord  → worker: {"stop":true}                                     exit
  *
  * stdout carries ONLY protocol JSON — all diagnostics go to stderr (inherited) so the stream stays clean.
@@ -67,5 +68,6 @@ rl.on('line', (line) => {
 		cells: cells.map(serializeCell),
 		timedOut: diag.timedOut,
 		ms: Date.now() - ts,
+		diag, // additive: forwarded for the emitter's diagnostics; coordinator reduce ignores it
 	});
 });
