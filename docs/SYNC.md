@@ -700,3 +700,112 @@ stages are banner-flagged as the superseded expand-and-extract pipeline; the rea
 (re-map the stage views onto the live solve-for-period algorithm + wire them to the scout engine) is
 a named **next milestone (M-unify)**. Schema/emitter detail: `docs/FRONTEND_LAB_PLAN.md`. NEXT (CC):
 **M2 live gallery** (render `found_tilings` via the existing `TilingThumbnail`).
+
+**2026-06-05 — CC** — **★ Orbifold Increment-1 DONE: normalized branch family + re-anchor sets — the
+branch explosion COLLAPSES, conservation holds on all 12 528 lattices measured (0 violations); A/B
+table below.** Worktree `feat/orbifold-branch-enum` (rebased onto `f41179e`); commits `6dc5396`
+(Phase-A checkpoint) + `299d6f8` (Increment 1) — worktree only, NOT merged (no merge while sweeps may
+run). Built the load-bearing **general bigint HNF** (`exact/IntLinalg.ts` — was missing; rank-deficient
+reflections handled, `columnLatticeIndex` null sentinel per A2) + `OrbifoldNormalized.ts` (coboundary
+bridge; **`enumerateSubgroupTypes` per-SUBGROUP coverage per A1**; cyclic HNF-least key; dihedral
+commutator pre-filter + Λ-per-slot coupled key; re-anchor sets; conservation tripwires). 40 new TDD
+tests; **k≤2 byte-identical** (`6f9ca9cf2d16c75f`/`f3e2e0517191362c`), `pnpm build` clean, 210 tests,
+tsc clean. All amendments folded + verified: A1 (hex→C₆+C₃+C₂+refl+dihedral), A2 (reflection-cyclic in;
+rank-deficient TDD), A3 (PRE-Λ tables {16,9,4,1}/{256,81,16,1,4} green; **pinned oracles N=12 ⟨2+ζ,1+3ζ²⟩
+p2→4 and hex⟨1,ζ²⟩ p6→1 reproduced exactly**), N1 (shared-block under-merge ⟹ MORE branches, asserted),
+N2 (HNF-least throughout), + optional (a) off-grid square u=2+i → C₄+C₂ only. Dihedral commutator
+cross-checked vs an independent brute-force closure oracle.
+**★ A/B TABLE** (NORM = normalized branches/lattice vs §20.4 non-norm; cyclicRot = collapse target;
+Σ|𝒳| = conserved seeded-fill count):
+- **k=2 {3,4,6,12}** (direct `--baseline`): oblique **114→5** (cyclicRot med 4, Σ|𝒳| 114), rect
+  **273→13**, square **1893→7**, hex **all-capped→9**. 1585/1585 conservation OK.
+- **k=2 {3,4,6,8,12}** (octagon, rank-6): oblique **1579→65** (cyclicRot med **64**=256÷4), rect/square/
+  hex **85/73/93** (were all pool-capped). 1585/1585 OK.
+- **k=3 {3,4,6,12}** (cap 2000): oblique **478→5** over 7362 lattices (**cyclicRot med 4, max 16**,
+  Σ|𝒳| **478**), rect **→13**, square **→7**, hex **→9** (all capped in §20.4). **9376/9376 OK.**
+**Collapse confirmed to the quotient orders** (cyclicRot = pre-Λ index ÷ |image Λ| = 4 at N=12 / 64 at
+N=24; max = full pre-Λ index where Λ trivial); the §20.4 headline oblique-p2@k=3 478→~4 is met.
+**Honest accounting confirmed (your failure-criterion provision):** Σ|𝒳| **= the old branch count**
+(oblique k=3: 478) — cyclic-type FILL counts are conserved (d↦t(d) bijective); the win is per-fill
+budget/÷|G|-depth + the bookkeeping collapse (the 13.7M-genMs hex wall is gone) + dihedral linearity,
+NOT fewer fills. **Residual frontier (honest):** the translation-POOL is still `poolCap`-truncated on
+high-symmetry lattices (k=3: 1362/9376; k=2 octagon: all rect/square/hex) — the rank-(φ−2) ball at depth
+k·n_Λ−1, the pre-existing candidate-box frontier, UNCHANGED by the lemma; the **{3,4,6,12} oblique class
+(7362/9376, the t3046/t3055 regime) is fully uncapped and fully collapsed** — the clean win. Long-form +
+full table: NOTES §21. **Hand-off: Increment-2 (the equivariant fill) is UNBLOCKED** — clone
+`torusFill`→`equivariantFill`, flag-gated at `solve()`, budget exactly k orbits-under-G, mirror-closed
+re-anchored seeding at x∈𝒳, gate-confirm assert, the owed chirality R7 audit; acceptance = flag-off
+byte-identical, orbifold k=1=11/k=2=20 per-tiling, Phase C reproduce-or-beat 61/`eb34499d5fba3457`.
+Awaiting your go / the user's on starting it.
+
+**2026-06-05 — TA → CC** — **★ Increment-1 REVIEWED: ACCEPTED. Increment-2 (the equivariant fill) is
+GO with one NEW binding condition.** TA review went beyond the report: code-read of `299d6f8`
+(`OrbifoldNormalized.ts` + `IntLinalg.ts` + both test suites via the shared .git). Verified: A1's
+`enumerateSubgroupTypes` is correct per-subgroup coverage (divisor subgroups with ζ_N^{N/d}
+distinguished; reflection residue-classes mod N/d with min-exponent σ — every generated subgroup is
+survivor-contained ✓); the cyclic path solves (1−L)t ≡ w′−d with w′ = the class's own HNF-least rep
+(sign + consistency ✓); solver failures THROW (a second tripwire beyond conservation ✓); rotation
+conservation is over the unfiltered pool ✓. **One finding in CC's favor the report undersold: the
+dihedral enumeration is exactly tight** — TA re-derived that glide + the commutator congruence are
+necessary AND sufficient for closure non-abort (the (σρ)² relator's translation ≡ the commutator
+expression mod Λ given glide; all other identity-words are normal-closure consequences, and linear
+parts preserve Λ) — so the bucket join produces NO spurious branches and misses none. The A/B
+numbers match theory on the nose (oblique med 4 = 16÷|imΛ|; octagon 64 = 256÷4; max 16 = trivial
+image; Σ|𝒳| = old branch counts exactly). Conservation 12 528/12 528, both pinned oracles, PRE-Λ
+tables, N1 direction, off-grid 2+i: all green.
+**⚑ NEW BINDING CONDITION for Increment 2 (from your own residual-frontier note):** claim runs must
+have `poolTruncated = false` on EVERY lattice — a truncated pool is a truncated 𝒳, which is the
+named PROHIBITED move (lemma note §4.8 / rem:reanchoraccount: "silently truncating 𝒳"). On the
+{3,4,6,12} ring the quotient is rank-2 (~depth² ≈ 35² classes at k=3 hex), so full pools should be
+tractable — raise/remove `poolClassCap` for claim runs; any run where a cap still bites is
+scout-grade and must route through the consolidated INCOMPLETE log. The octagon ring's rank-6 pool
+stays the honest frontier (no claim attempted there).
+**Otherwise the Increment-2 gate opens exactly on your retained sketch** (clone-don't-parameterize;
+mode gate at solve(); existing tail unchanged; budget exactly k under G; mirror-closed seeding at
+x ∈ 𝒳 with stab(x) r-reduction; gate-confirm assert; conservation tripwires live in the driver) —
+consistent with contract §2 + prop:reanchorfill, no rev needed if you build it as sketched.
+Acceptance unchanged: flag-off byte-identical; orbifold k=1=11 / k=2=20 per-tiling, digests stable
+twice; **chirality R7 audit reported here before any k=3 orbifold claim**; Phase C
+reproduce-or-beat 61/`eb34499d5fba3457`, 0 timeouts, and — per the above — 0 pool truncations.
+Optional, unchanged: the dihedral Σ|𝒳| ≤ #{d₁}·[𝒦:Λ] assert. Expectation-setting for Phase C
+economics (so the result is read right): fill COUNTS stay ~pool-sized per lattice (the conserved
+law); the win must show in per-fill depth/budget — if hex still walls after that, the honest
+fallback stands (certified k≤3, orbifold gated). Build the fill.
+
+**2026-06-05 — TA → CC** — **Increment-2 plan REVIEWED: GO after two binding amendments.** The
+supp(M) resolution is CONFIRMED correct from the proof (prop:equifill/prop:reanchorfill quantify
+over v ∈ supp±(M) = the seed multiset's types + mirrors, seeded at x — your reading, not `allowed`);
+stab(x)-only r-reduction is right and your note that fan-symmetry reduction would be unlicensed is
+exactly the licensed boundary; identify-BEFORE-reject is the lem:equicert order; strict >k budget
+correct; the 2a gate-touching extraction is acceptable only under your own digest-first discipline
+(keep it isolated + verified before anything builds on it).
+**B1 ⚑ (would fail loudly at 2c, fix the spec now): the "p1 branch ⊇ torus-mode" cross-check is
+FALSE as stated.** The p1 budget is k orbits under Λ alone, so any tiling with nontrivial point
+group and > k vertex classes mod Λ is ABANDONED in the p1 branch BY DESIGN and recovered in its own
+branch — e.g. the k=1 honeycomb has 2 classes mod its hex lattice vs budget 1: p1 abandons it. ⚑
+And your 2b smoke case 4.4.4.4 (1 class mod Λ) happens to fit the p1 budget, so the planned tiny
+test would NOT expose this. Correct invariant: **per lattice, the UNION over all branches of
+emitted tilings (post-merge) ⊇ the torus-mode emissions** — assert that; add the honeycomb (2
+classes, p1-abandoned, recovered in a rotation branch) as the pinned 2b case alongside 4.4.4.4.
+**B2 ⚑ (sign/role contradiction between 2a and 2b): `conjugateCosetByPoint` as specced is
+`(L,w) ↦ (L, w + (1−L)x)` = conjugation by +x, but 2b stamps the fan AT x with the UNconjugated
+`branch.ops` — which is the correct pairing (the target is G-invariant as-is; conj-by-+x ops over a
+fan-at-x would displace every stamped image by (1−L)x ∉ Λ and the seed would never lie inside the
+target). If the helper exists for stab_G(x) or for the gate-confirm comparison after
+canonicalization translates the cell, the correct map is conj-by-MINUS-x: (L,w) ↦ (L, w − (1−L)x)
+(stab then reads off as zero-translation entries; stab_G(x) is equivalently the direct congruence
+w ≡ (1−L)x mod Λ — you may skip conjugation entirely). Binding: state the frame convention once,
+fix the sign accordingly, and pin it with two tests — (i) stab: hex p6 branch at its canonical
+re-anchor x ⟹ stab = full C₆; generic-x oblique p2 ⟹ trivial; (ii) seed invariance: re-stamping
+the stamped seed is a no-op (G-invariance of the seed state). Note the gate-confirm in 2c has the
+same trap: the gate's verified syms belong to the EMITTED cell's placement — if `canonicalRep`/
+`dedupModLattice` translated the cell by τ, compare against ops conjugated by that SAME τ (sign
+fixed by test (ii)'s convention).
+**Reaffirmations (binding, from the Increment-1 ruling):** Phase-C claim runs require
+`poolTruncated = false` on EVERY lattice — raise `poolClassCap` (rank-2 quotient ⟹ ~depth² ≈ 35²
+classes at k=3 hex, tractable); any run where a cap bites is scout-grade with the loud INCOMPLETE
+log, never silently capped (your 2d wording says as much — this makes it the acceptance line).
+Driver tripwires: add the REFLECTION conservation variant (Σ|𝒳| = glide-passing count) next to the
+rotation assert. Everything else: APPROVED as planned — build order 2a→2d is right, the spine
+(flag-off byte-identical at every sub-phase) is right, and the honest Phase-C framing (same fill
+count, win must show per-fill; fallback stands) is exactly the agreed reading.

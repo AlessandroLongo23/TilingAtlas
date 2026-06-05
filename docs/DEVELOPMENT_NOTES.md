@@ -1374,3 +1374,198 @@ by low-symmetry oblique cells.
   is now matched by the implementation. Any prior certified count produced by this dedup is safe IF it hit the
   acceptance target (an under-merge would have shown as a count *above* target — which is exactly how this surfaced
   at k=3, and exactly why k=1=11/k=2=20 hitting target proves no rotation-only merge was missed there).
+
+## 20. Orbifold Phase A, step 1 — branch enumeration + the branch-count measurement; the re-anchoring lemma is required before the fill (2026-06-05, session 11)
+
+The orbifold-fill milestone (NOTES §15.6 escalation, contract `orbifold-implementation-contract.md`)
+branches each candidate lattice Λ over candidate wallpaper groups G = ⟨Λ, S⟩ and fills ℝ²/G with a
+budget of exactly k vertex-orbits per branch. Per the user's scoping, **this session builds only the
+branch-enumeration machinery + a measurement** and **defers the equivariant fill**, because the
+contract (§5 Phase B) gates the fill on a measured branch count: "Measure branch counts per Bravais
+class and report — those numbers decide whether the re-anchoring lemma is needed before k=3." All work
+is in a separate git worktree (branch `feat/orbifold-branch-enum`, off `5bdb4ad`) per the (then-live)
+sweep guard; UNCOMMITTED.
+
+### 20.1 What was built
+- `lib/classes/algorithm/OrbifoldBranches.ts` (NEW, pure, standalone — no `PeriodSolver` internals):
+  `latticePointGroup`, `branchTranslationPool` (quotient-BFS), `reduceVecModLattice` (canonical class
+  rep), `enumerateGeneratorMultisets`, `enumerateBranches`. Implements contract §1 with TA's three
+  rev.2 amendments (SYNC 2026-06-05) and the licensed cuts.
+- `tests/orbifold-branches.test.ts` — 25 TDD tests (point-group orders incl. the off-grid `u=2+i`
+  C₄<D₄ lock; BFS↔brute-force cross-check; A2 generator shapes; the no-coboundary-merge pm/pg
+  distinctness; glide + arithmetic filters; determinism).
+- `PeriodSolver.candidateLatticesFor` — a thin additive public accessor (behaviour-preserving; the
+  measurement needs the exact pipeline lattices).
+- `scripts/measure-orbifold-branches.ts` — the per-Bravais-class measurement.
+
+### 20.2 The amendments + licensed cuts (as implemented)
+- **A1 quotient-BFS pool.** The translation pool W(depth) is BFS'd in the quotient (state = canonical
+  class mod Λ), never generate-then-reduce — the edge-direction subgroup is ζ₁₂/ζ₂₄-generated (rank 4 /
+  8), so a raw step-≈35 pool is ~10⁸ vectors; the quotient ball is ~depth².
+- **A2 generators = ∅ + singletons + rotation×reflection pairs only**, no identity-L (a crystallographic
+  group is cyclic ⟨rotation⟩ or dihedral ⟨rotation, reflection⟩).
+- **A3 grid-survivors ≤ holohedry.** The grid-realized point group can be strictly smaller than the
+  Bravais holohedry (off-grid axes — square Λ on `u=2+i` is D₄ but only C₄ is grid-realized); pool
+  depth uses `k·|grid survivors|−1` (the proven `lem:symrep` sharpening), not `k·hol−1`.
+- Licensed cuts: edge-direction subgroup on the pool, glide pre-filter `(1+L)w∈Λ`, arithmetic branch
+  filter (skip when min feasible V > k·|P|), group-key dedup + canonical order.
+- NOT licensed (deliberately absent): coboundary/origin normalization `w ↦ w+(1−L)τ` — a unit test
+  asserts pm and pg stay distinct branches.
+
+### 20.3 ★ The structural finding — branch count is O(P²) per lattice
+The decisive discovery: **every rotation coset is viable**. For a rotation `L` of order p (a primitive
+p-th root), `1 + L + … + L^{p−1} = 0`, so `(L, w)^p = (id, (1+L+…+L^{p−1})w) = id` for ANY translation
+class `[w]` — a p-fold rotation about *any* center closes to a finite cyclic group. Hence the rotation
+cosets number ≈ P (the pool size), the dihedral generator-pairs ≈ P², and — because coboundary/origin
+normalization is NOT licensed (it breaks anchoring; the proof-pass ruling) — **each placement `[w]` is
+a DISTINCT branch** (e.g. the oblique p2 groups ⟨Λ, (−1,[w])⟩ are pairwise distinct subgroups, one per
+class). So the branch count is not the design-note's optimistic "order tens"; it is **P (cyclic/oblique)
+to P² (dihedral)** per lattice, where P is a ball in the **rank-(φ(N)−2) quotient** (rank-2 for the
+12-direction ring {3,4,6,12}, rank-6 for the 24-direction octagon ring {3,4,6,8,12}). This is the
+per-placement explosion the design note §7.2 / `rem:branchpool` flagged after ruling out coboundary
+normalization — now measured.
+
+### 20.4 The branch-count table (licensed cuts active; `poolClassCap`, `enumCap` bound the work)
+Distinct candidate lattices are deduped by latticeKey across all VC-signatures, then each is
+branch-enumerated once. "fully-enum" = exact distinct branch count; "enum-capped" = generator-multisets
+> 4000 (closure skipped, magnitude reported); "pool-capped" = pool > cap (even the pool is intractable).
+
+| run | Bravais | #latt | pool min/med/max | EXACT branches/latt (fully-enum) | full / enumCap / poolCap |
+|---|---|---|---|---|---|
+| **k=2 {3,4,6,12}** (rank-2) | oblique | 1104 | 55/113/225 | 56/**114**/226 (Σ 133 992) | 1104/0/0 |
+| | rect/cmm | 348 | 169/561/1163 | 273 (only 6 full) | 6/342/0 |
+| | square | 78 | 505/1137/6350 | 1011/**1893**/2515 (Σ 99 822) | 54/24/0 |
+| | hex | 55 | 1453/4009/8000 | — (all capped; genMs max **13.7 M**) | 0/37/18 |
+| **k=2 {3,4,6,8,12}** (octagon, rank-6) | oblique | 1104 | 1099/**1578**/2061 | 1100/1579/2062 (Σ 1 769 832) | 1104/0/0 |
+| | rect/cmm | 348 | →8000 | — | 0/0/348 |
+| | square | 78 | →8000 | — | 0/0/78 |
+| | hex | 55 | →8000 | — | 0/0/55 |
+| **k=3 {3,4,6,12}** (rank-2, cap 2000) | oblique | 7362 | 169/477/1106 | 170/**478**/1107 (Σ 3 703 218) | 7362/0/0 |
+| | rect/cmm | 1307 | 529/→2000 | — (genMs med 137 683, max 265 220) | 0/640/667 |
+| | square | 225 | 1233/→2000 | 2467 (6 full) | 6/6/213 |
+| | hex | 482 | →2000 | — (all capped) | 0/0/482 |
+
+Reading: at k=2 even the **rank-2** ring forces ~114 (oblique) to ~1893 (square) DISTINCT branches per
+lattice, with hex/rect already intractable; the **rank-6** octagon ring forces ~1579 oblique branches
+and caps rect/square/hex outright. At **k=3** (the certified-catalogue ring) the oblique class — 7362
+of the 9376 candidate lattices, the t3046/t3055 regime — averages **478** distinct p2 branches each
+(Σ 3.7 M), and rect/square/hex are almost entirely capped. All are 10²–10³⁺× the **single** bare-torus
+fill the pipeline does per lattice today — the per-placement explosion, scaling with depth (hence k).
+
+### 20.5 Verdict — Phase B infeasible without the re-anchoring lemma
+The orbifold fill's intended trade is "branch count replaces fill depth." But without fixing the
+placement, the branch count IS the (huge) pool — so the orbifold fill would do P–P² fills per lattice
+where the current method does one, making it **net-negative**. Critically, this is the **distinct**
+branch count (the real fill cost: each p2 placement is a genuinely different space group on Λ that must
+be filled), **not** mere enumeration overhead — a faster enumerator does not help; only **fixing the
+anchor** (the re-anchored-seeding companion lemma, contract §3 / design-note §7.2) collapses the P
+placements per group-type to O(1). **Hand-off to TA: the re-anchoring lemma is REQUIRED before any
+equivariant-fill code.** The module stays unmerged and flag-absent pending it.
+
+### 20.6 Verification
+- **k≤2 byte-identical** (the additive accessor + new module touch no decisive path): probe k=1 =
+  11 / `6f9ca9cf2d16c75f`, k=2 = 20 / `f3e2e0517191362c`.
+- `pnpm build` green; full suite **166 tests** green (25 new + 141 existing unaffected); `tsc` clean.
+
+### 20.7 The perf journey (failed/learned, for the record)
+- **Per-(vcSig × lattice) enumeration was O(redundant).** Branch enumeration depends only on (Λ, k),
+  not the seed — fixed by deduping lattices by latticeKey and enumerating each once.
+- **`reduceVecModLattice` crawled on anisotropic cells** (the canonical-class scan ranged up to ±60 on
+  non-reduced bases). Fixed by gauss-reducing the basis first (cached) — on a Lagrange-reduced basis a
+  fixed ±2 scan covers the Voronoi cell; the min-norm rep is basis-independent so counts are unchanged.
+- **The "viable singletons → pair them" optimization** (only pair generators whose singletons close)
+  is what exposed §20.3: ALL rotation singletons are viable, so the pairing is O(P²), not the hoped-for
+  small set. That cost is the finding, not a bug — capped via `enumCap` (report magnitude, skip closure).
+
+## 21. Orbifold normalized mode — Increment 1: the re-anchoring lemma, implemented and measured; the branch explosion collapses (2026-06-05, session 12)
+
+The re-anchoring lemma (TA, thesis `7a0586e`, `correctness.tex` §"Re-anchored seeding"; CC recipe
+`../resources/research/reanchoring-lemma-2026-06-05.md`) made coboundary normalization **licensed**
+when paired with re-anchored seeding from the full sets 𝒳(Λ,G,k) — superseding the contract's §3
+"NOT licensed" ruling that §20 ran into. This increment **implements the normalized branch family +
+re-anchor sets and measures the collapse** (the fill itself — Increment 2 — is deferred; same
+build+measure-then-fill discipline as Phase A). Worktree `feat/orbifold-branch-enum` (rebased onto
+master `f41179e`); commits `6dc5396` (Phase-A checkpoint), `299d6f8` (Increment 1).
+
+### 21.1 What was built (all TDD, 40 new tests)
+- **`exact/IntLinalg.ts`** — the load-bearing primitive that did not exist (only a rank-2 `hnf2`): a
+  general bigint **HNF** (`hnf`, with the unimodular transform U), `reduceModColumnLattice` (the
+  HNF-least class key), `solveModLattice` (the re-anchor solve `(1−Lᵢ)t ≡ w′ᵢ−dᵢ mod Λ`),
+  `columnLatticeIndex`, and compiled (HNF-once) reducer/solver. **Rank-deficient handling (A2):**
+  reflection systems `[B_Λ|M_{1−σ}]` have rank φ/2+2 < φ at N=24 — free coordinates pass through the
+  HNF zero-pivot rows, and `columnLatticeIndex` returns a **null sentinel** (never a wrong pivot
+  product).
+- **`OrbifoldNormalized.ts`** — `coboundaryMatrix(L)=M_{1−L}` and `latticeBasisMatrix(u,v)=B_Λ` (den==1
+  asserts); **`enumerateSubgroupTypes` (A1 — per SUBGROUP, not per lattice):** p1 + one type per cyclic
+  rotation subgroup + each reflection + each dihedral subgroup, distinguished at minimal exponents, NO
+  group closure (dihedral reflection exponents = `a−jb mod N`); `cyclicBranchKey` (HNF-least residue),
+  `dihedralCommutatorPrefilter` + coupled `dihedralBranchKey` (Λ-block **per slot**), `reAnchorPoint`,
+  and `enumerateNormalizedBranches` (full assembly: linear dihedral pairing via the commutator bucket;
+  the conservation tripwires).
+- **`scripts/measure-normalized-branches.ts`** — the A/B harness (optional `--baseline` re-runs Phase A
+  on the same lattices).
+
+### 21.2 ★ The measurement — the branch explosion collapses to the quotient orders (A/B vs §20.4)
+Per distinct candidate lattice: §20.4's non-normalized branch count vs the normalized branch count,
+the cyclic-rotation class count (the collapse target), and Σ|𝒳| (the conserved seeded-fill count).
+
+| run | Bravais | #latt | §20.4 non-norm | **NORM branches**/latt med | cyclicRot classes med/max | Σ\|𝒳\| med | conservation |
+|---|---|---|---|---|---|---|---|
+| **k=2 {3,4,6,12}** (rank-2) | oblique | 1104 | 114 | **5** | 4/8 | 114 | 1104/1104 OK |
+| | rect/cmm | 348 | 273 (342 enumCap) | **13** | 4/16 | 973 | 348 OK |
+| | square | 78 | 1893 | **7** | 4/16 | 2275 | 78 OK |
+| | hex | 55 | all capped | **9** | 4/16 | 12028 | 55 OK (18 poolCap) |
+| **k=2 {3,4,6,8,12}** (octagon, rank-6) | oblique | 1104 | 1579 | **65** | 64/110 | 1579 | 1104 OK |
+| | rect/cmm | 348 | all poolCap | **85** | 64/256 | 9482 | 348 OK (348 poolCap) |
+| | square | 78 | all poolCap | **73** | 64/256 | 16001 | 78 OK (78 poolCap) |
+| | hex | 55 | all poolCap | **93** | 64/256 | 24001 | 55 OK (55 poolCap) |
+| **k=3 {3,4,6,12}** (rank-2, cap 2000) | oblique | 7362 | **478** | **5** | **4/16** | **478** | 7362/7362 OK |
+| | rect/cmm | 1307 | all capped | **13** | 4/16 | 3087 | 1307 OK (667 poolCap) |
+| | square | 225 | mostly capped | **7** | 4/16 | 4001 | 225 OK (213 poolCap) |
+| | hex | 482 | all capped | **9** | 4/16 | 6001 | 482 OK (482 poolCap) |
+
+**Reading.** The cyclic-rotation branch count collapses to the **coboundary quotient order ÷ image of
+Λ** exactly as the lemma predicts: **4** at N=12 (= 16 pre-Λ ÷ 4) and **64** at N=24 octagon (= 256 ÷
+4), with the per-lattice max reaching the full pre-Λ index (16 / 256) where Λ's image is trivial. The
+headline §20.4 case — **oblique p2 @ k=3, 478 branches/lattice over 7362 lattices** — collapses to
+**~4 classes (5 total branches incl. p1, max 16)**. The previously **uncomputable** hex/rect/square
+branches (all `enumCap`/`poolCap` in §20.4) now enumerate to single/double digits. **Conservation:
+0 violations across all 12 528 lattices measured** (1585+1585+9376) — the Σ|𝒳| = pool (rotation) /
+glide-passing-pool (reflection) bijection holds everywhere it is checked.
+
+### 21.3 The honest accounting (read before celebrating the fill)
+Σ|𝒳| **equals** the §20.4 branch count (oblique k=3: Σ|𝒳| med 478 = the old 478). This is the lemma's
+own "failure-criterion provision", confirmed empirically: **cyclic-type seeded-fill counts are
+conserved** — d ↦ t(d) is a bijection, so the placements relocate from group-enumeration into seed
+positions; the orbifold fill still does ~478 *fills* per oblique lattice at k=3, organized as ~4
+branches × ~120 positions. The runtime win (Increment 2) is therefore **per-fill** (budget exactly k
+orbits-under-G, ÷|G| depth, the 92%-gateRej deep class dies) **plus the bookkeeping/closure collapse**
+(closures run once per class, not once per placement — the 13.7M-genMs hex wall of §20.4 is gone) and
+the dihedral linearisation — **NOT** fewer fills on cyclic types.
+
+### 21.4 The residual frontier (honest)
+The lemma collapses branch **formation**; it does **not** touch the translation-class **pool** (the
+rank-(φ(N)−2) ball at depth k·n_Λ−1). That pool is still `poolCap`-truncated on the high-symmetry
+lattices (k=3: 667 rect + 213 square + 482 hex = 1362/9376; k=2 octagon: all rect/square/hex). This is
+the pre-existing candidate-box / pool-depth frontier (§20.4 capped the same lattices), unchanged here.
+For the **certified target family {3,4,6,12}** the oblique class (7362/9376 at k=3, the t3046/t3055
+regime) is **fully uncapped** and fully collapsed — the clean win. Conservation on a pool-capped
+lattice is relative to the enumerated pool (both sides truncate consistently), so it stays a valid
+bijection check.
+
+### 21.5 Verification
+- **k≤2 byte-identical** (no decisive path touched): probe k=1 = 11 / `6f9ca9cf2d16c75f`, k=2 = 20 /
+  `f3e2e0517191362c`.
+- PRE-Λ collapse tables {16,9,4,1} (N=12) / {256,81,16,1,4} (N=24) and TA's SNF-verified per-Λ oracles
+  (N=12 Λ=⟨2+ζ,1+3ζ²⟩ p2 → **4**; hex Λ=⟨1,ζ²⟩ p6 → **1**) green; dihedral commutator cross-checked
+  against an independent brute-force closure oracle; off-grid square u=2+i → C₄+C₂ only (survivors <
+  holohedry) green; reAnchorPoint round-trip exact.
+- `pnpm build` clean; full suite **210 tests** green (40 new); `tsc` clean.
+
+### 21.6 Status / hand-off
+Increment 1 done. The normalized enumeration is correct (collapse numbers match the proof, conservation
+holds everywhere). **Increment 2 (the equivariant fill) is unblocked** behind a flag — `equivariantFill`
+cloned from `torusFill`, gated at `solve()`, budget exactly k orbits-under-G, mirror-closed re-anchored
+seeding at x∈𝒳, the gate-confirm assert, and the chirality R7 audit when it lands; acceptance =
+flag-off digests byte-identical, orbifold mode k=1=11 / k=2=20 per-tiling, Phase C reproduce-or-beat
+k=3 = 61 / `eb34499d5fba3457`.
