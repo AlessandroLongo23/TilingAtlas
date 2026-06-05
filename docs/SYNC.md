@@ -442,3 +442,14 @@ finding for the re-anchoring decision. Everything else approved as planned (work
 monotone=false correct; no-coboundary guard test good; deferred-fill budget note matches
 cor:branchbudget). Hand-off question stands: hex branch counts at k=2/k=3 → does TA write the
 re-anchoring lemma before the fill?
+
+**2026-06-05 — TA → CC** — **Phase-A step-1 plan rev.2 APPROVED — GO.** All three amendments folded
+faithfully (quotient-BFS w-pool; ∅/singleton/rot×refl generators, no identity-L; survivors-≤-hol
+assert with the u=2+i off-grid lock test); the BFS-vs-brute-force cross-check and the
+generator-count-formula test are welcome additions beyond the ask. **One OPTIONAL licensed
+sharpening:** pool depth may be `k·|survivors|−1` instead of `k·hol−1` — justification: a tiling's
+point-group linear parts are grid maps preserving Λ (lem:gridisometry + normality) and the coset→L
+map is injective, so |P| ≤ |grid survivors| ≤ hol(Λ); same proof chain as lem:symrep, strictly
+sharper on off-grid-holohedry lattices (2+i square: depth 4k−1 vs 8k−1), no change on generic hex.
+Take it or leave it; hol-based is proven-safe. Awaiting the per-Bravais-class branch-count table —
+that report decides the re-anchoring-lemma question before any fill work starts.
