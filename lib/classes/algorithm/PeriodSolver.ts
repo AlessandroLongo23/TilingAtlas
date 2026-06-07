@@ -44,7 +44,7 @@ import type { SeedConfigurationLike } from './SeedExpander';
 import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
 import { detSurd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
-import { enumerateNormalizedBranches, countOrbitsUnderBranch, stabG, type NormalizedBranch } from './OrbifoldNormalized';
+import { enumerateNormalizedBranches, countOrbitsUnderBranch, stabG, incidenceDisplacements, incidenceAnchorSet, type NormalizedBranch } from './OrbifoldNormalized';
 import { composePointOps, type CosetOp } from './OrbifoldBranches';
 
 const FLOAT_TOL = 1e-6;
@@ -113,7 +113,19 @@ export type PeriodSolverDiag = {
 	budgetPruned?: number; // DFS steps cut by the exact-k orbits-under-G budget
 	poolTruncated?: boolean; // ⚑ a branch pool hit poolClassCap ⇒ truncated 𝒳 ⇒ scout-grade (not a claim)
 	conservationViolated?: boolean; // ⚑ Σ|𝒳| ≠ pool-class count on some lattice ⇒ a re-anchor datum was lost (a DROPPED tiling)
+	cocycleConservationSkipped?: number; // cyclic-rot conservation entries NOT evaluated (𝒳 skipped, incidence) ⇒ rotationConserved is vacuous there, NOT verified — guard is frozen-catalogue ⊇ + 𝒜≡𝒳 oracle + --crosscheck
+	// --- C4 pool-bypass (PS_BYPASS=1) ---
+	bypassed?: boolean; // this run used the direct quotient-enumeration bypass on rotation/dihedral branches
+	emptyAnchorBranches?: number; // bypassed rotation-bearing branches with |𝒜|=0 ⇒ PHANTOMS (prop:incidencefill: realizable ⇒ |𝒜|≥1, so sound to skip) — a diagnostic, NOT a drop
+	poolBuiltLattices?: number; // lattices where the O(pool) BFS was STILL built (reflections/glide force it — finding E1). bypass deletes it only where rotations are the sole pool user (oblique).
+	latticesFilled?: number; // candidate lattices the orbifold fill processed (denominator for poolBuiltLattices)
 	branchInvariantViolated?: boolean; // ⚑ an emitted cell was NOT invariant under its branch group ⇒ stamping/keying bug
+	// --- incidence anchoring (Increment 3) A/B accounting (orbifold mode only) ---
+	incidenceSeeds?: number; // Σ |𝒜| fed to the fill across rotation-bearing branches (anchor='incidence')
+	cocycleSeeds?: number; // Σ |𝒳| that WOULD have been fed under anchor='cocycle' (the A/B baseline for the same branches)
+	// --- 𝒜≡𝒳 per-branch fill-equality oracle (PS_ANCHOR_XCHECK=1; the C4 de-risker, incidence-contract §5.2) ---
+	anchorDivergence?: number; // ⚑ rotation-bearing branches where fill_𝒜(B) ≠ fill_𝒳(B) by congruence (both complete) ⇒ a SEED bug
+	anchorXcheckInconclusive?: number; // branches where one side timed out mid-fill ⇒ comparison skipped (not a divergence)
 };
 
 export type PeriodSolverOptions = {
@@ -128,6 +140,14 @@ export type PeriodSolverOptions = {
 	 *  (normalized branches + re-anchored seeding; Increment 2). Flag-off is byte-identical by
 	 *  construction (the orbifold branch is never constructed). Env override: PS_MODE=orbifold. */
 	mode?: 'torus' | 'orbifold';
+	/** Orbifold seed-position generator (Increment 3; orbifold mode only). 'cocycle' (default) = the
+	 *  pool-sized re-anchor set 𝒳; 'incidence' = the pool-free incidence set 𝒜 on rotation-bearing
+	 *  branches (cyclic-refl + glide stay on 𝒳). Env override: PS_ANCHOR=incidence. Ignored in torus
+	 *  mode (read ONLY on the orbifold path), so the flag-off digest is unaffected. */
+	anchor?: 'cocycle' | 'incidence';
+	/** C4 pool-bypass (orbifold mode only): enumerate the rotation/dihedral coboundary quotient directly
+	 *  (no pool walk). Forces `anchor='incidence'` (the bypass has no 𝒳). Env override: PS_BYPASS=1. */
+	bypass?: boolean;
 };
 
 export class PeriodSolver {
@@ -148,6 +168,14 @@ export class PeriodSolver {
 		// Fill mode — resolved to a local (like PS_PROFILE); when unset it is the literal 'torus', so the
 		// flag-off path never even constructs the orbifold branch and stays byte-identical.
 		const mode: 'torus' | 'orbifold' = opts.mode ?? (process.env.PS_MODE === 'orbifold' ? 'orbifold' : 'torus');
+		// Orbifold seed generator (Increment 3) — resolved env-only like `mode` so spawned scout/verify
+		// workers inherit it through the environment (a mixed-anchor fleet = a mixed-build digest hazard).
+		// Read ONLY on the orbifold path below, so the torus path stays byte-identical.
+		// C4 pool-bypass (orbifold only) — resolved env-only like mode/anchor. It has no pool ⇒ no cocycle
+		// 𝒳, so it FORCES anchor='incidence' (𝒜 supplies seeds). A mixed-bypass fleet would mix digests, so
+		// it is resolved once here, never per-lattice.
+		const bypass = opts.bypass ?? (process.env.PS_BYPASS === '1');
+		const anchor: 'cocycle' | 'incidence' = bypass ? 'incidence' : (opts.anchor ?? (process.env.PS_ANCHOR === 'incidence' ? 'incidence' : 'cocycle'));
 		const start = Date.now();
 		// Optional phase profiler (env PS_PROFILE) — purely additive, byte-identical when off.
 		const prof = process.env.PS_PROFILE ? { cand: 0, fill: 0, gate: 0, canon: 0, dedup: 0 } : null;
@@ -266,7 +294,7 @@ export class PeriodSolver {
 			} else {
 				// Orbifold equivariant fill (Increment 2): branch over normalized wallpaper groups +
 				// re-anchor sets, fill each with the G-orbit-stamping DFS. Same downstream tail.
-				rawCells.push(...this.equivariantFillForLattice(u, v, ctx, seedFans, k, () => maxMs > 0 && Date.now() - start > maxMs, diag));
+				rawCells.push(...this.equivariantFillForLattice(u, v, ctx, seedFans, k, anchor, bypass, () => maxMs > 0 && Date.now() - start > maxMs, diag));
 			}
 			diag.rawCells += rawCells.length;
 
@@ -646,10 +674,17 @@ export class PeriodSolver {
 	 */
 	private equivariantFillForLattice(
 		u: Cyclotomic, v: Cyclotomic, ctx: FillCtx, seedFans: { center: Cyclotomic; polys: Polygon[] }[],
-		k: number, timedOut: () => boolean, diag: PeriodSolverDiag
+		k: number, anchor: 'cocycle' | 'incidence', bypass: boolean, timedOut: () => boolean, diag: PeriodSolverDiag
 	): Polygon[][] {
 		const poolCap = process.env.PS_POOLCAP ? parseInt(process.env.PS_POOLCAP, 10) : 50000;
-		const { branches, diag: bd } = enumerateNormalizedBranches(u, v, ctx.ring, ctx.polySizes, k, { poolClassCap: poolCap });
+		// 𝒜≡𝒳 per-branch oracle (incidence-contract §5.2): when on, the pool-built 𝒳 must be available to
+		// compare against 𝒜 per branch, so we do NOT skip it even in incidence mode. Mutually exclusive with
+		// bypass (which has no pool/𝒳 at all; the bypass is validated by --crosscheck, not this oracle).
+		const xcheck = process.env.PS_ANCHOR_XCHECK === '1' && !bypass;
+		// Incidence/bypass never fill the rotation branches' cocycle 𝒳 (they seed from 𝒜 = the centre's
+		// incidences), so skip building 𝒳 for them — the dominant fixed cost at hex (~12M solves/run).
+		const { branches, diag: bd } = enumerateNormalizedBranches(u, v, ctx.ring, ctx.polySizes, k,
+			{ poolClassCap: poolCap, skipRotationReAnchor: (anchor === 'incidence' && !xcheck) || bypass, bypass });
 		diag.orbifoldBranches = (diag.orbifoldBranches ?? 0) + branches.length;
 		// Deterministic branch processing order (canonical group key; contract §1.6/§6.5) — the run's
 		// composition digest must not depend on enumerator iteration order.
@@ -667,13 +702,43 @@ export class PeriodSolver {
 				.map((c) => `${c.typeKey}: Σ|𝒳|=${c.sum}≠${c.expected}`).join("; ");
 			process.stderr.write(`[orbifold] ⚑ IMPLEMENTATION-BUG: Σ|𝒳| ≠ pool-class count for ${latticeKey(u, v)} — ${bad}\n`);
 		}
+		// Incidence skips the cyclic-rot Σ|𝒳|=pool check (𝒳 not built) — surface it so rotationConserved=true
+		// is never read as "verified" (incidence-contract §3). The active incidence guards are the |𝒜|≥1
+		// coverage, the frozen-catalogue ⊇ check (verify-orbifold), and the 𝒜≡𝒳 oracle (PS_ANCHOR_XCHECK).
+		if (bd.conservationSkipped > 0) diag.cocycleConservationSkipped = (diag.cocycleConservationSkipped ?? 0) + bd.conservationSkipped;
+		diag.latticesFilled = (diag.latticesFilled ?? 0) + 1;
+		if (bd.poolBuilt) diag.poolBuiltLattices = (diag.poolBuiltLattices ?? 0) + 1; // E1: pool still built (reflections)
+		// Incidence anchoring (Increment 3): swap ONLY the per-branch seed-position set. 𝒳 (cocycle,
+		// pool-sized) → 𝒜 (incidence, pool-free) on rotation-bearing branches; cyclic-refl + glide keep
+		// 𝒳 (rem:glidefallback — both proven complete). D is family-level + memoized, so this is free
+		// per lattice after the first. The Σ|𝒳|=pool conservation tripwire above still validates the
+		// (still-built) cocycle machinery; the PRIMARY 𝒜 completeness guard is the external
+		// frozen-catalogue union-⊇-torus check (verify-orbifold), not this in-process assert.
+		const D = anchor === 'incidence' ? incidenceDisplacements(ctx.ring, ctx.polySizes) : null;
+		// 𝒜≡𝒳 per-branch oracle (de-risks C4: once seeding is proven equivalent, C4 only has to prove the
+		// branch ENUMERATION matches). Runs before the normal fill; sets diag.anchorDivergence on mismatch.
+		if (xcheck) this.anchorXCheck(branches, u, v, ctx, seedFans, k, timedOut, diag);
+		if (bypass) diag.bypassed = true;
 		const results: Polygon[][] = [];
 		const memo = new Map<string, { key: string; poly: Polygon }>();
 		for (const B of branches) {
-			// Seed-state dedup PER BRANCH (across all x∈𝒳 and all (v,r)): identical G-stamped initial
+			const seedSet = D ? incidenceAnchorSet(B, u, v, ctx.ring, D) : B.reAnchorSet;
+			// |𝒜|-coverage diagnostic (replaces the disabled Σ|𝒳|=pool law under bypass). |𝒜|=0 on a
+			// rotation-bearing bypassed branch ⇒ a PHANTOM class (prop:incidencefill: a realizable branch's
+			// centre is at an incidence ⇒ |𝒜|≥1, so |𝒜|=0 ⇒ carries no tiling ⇒ sound to skip). Tracked as a
+			// diagnostic, NOT a drop. Completeness rests on: bypass enumerates the FULL quotient (Tripwire A
+			// count==ν) + --crosscheck (bypass branch SET ⊇ pool's at k≤3) + the frozen-catalogue ⊇ check.
+			if (bypass && seedSet.length === 0 && (B.type.kind === 'cyclic-rot' || B.type.kind === 'dihedral'))
+				diag.emptyAnchorBranches = (diag.emptyAnchorBranches ?? 0) + 1;
+			// A/B accounting: 𝒜 actually fed vs the 𝒳 the same branch would have fed (cocycle baseline).
+			if (D) {
+				diag.incidenceSeeds = (diag.incidenceSeeds ?? 0) + seedSet.length;
+				diag.cocycleSeeds = (diag.cocycleSeeds ?? 0) + B.reAnchorSet.length;
+			}
+			// Seed-state dedup PER BRANCH (across all x and all (v,r)): identical G-stamped initial
 			// states fill identically under this branch's ops, so each distinct state is filled once.
 			const seenSeed = new Set<string>();
-			for (const x of B.reAnchorSet) {
+			for (const x of seedSet) {
 				if (timedOut()) return results;
 				for (const initial of this.equivariantSeed(B, x, ctx, seedFans, memo, seenSeed)) {
 					results.push(...this.equivariantTorusFill(B, initial, ctx, k, timedOut, diag, memo));
@@ -681,6 +746,58 @@ export class PeriodSolver {
 			}
 		}
 		return results;
+	}
+
+	/**
+	 * 𝒜 ≡ 𝒳 per-branch fill-equality oracle (PS_ANCHOR_XCHECK=1; incidence-contract §5.2). For every
+	 * rotation-bearing branch, fill it from BOTH the incidence set 𝒜 and the cocycle set 𝒳 (both proven
+	 * complete) and assert the deduped tiling sets are EQUAL by canonical key. This is a *seed-divergence*
+	 * oracle — two independent seed generators through the same fill/gate/merge — and it is what de-risks
+	 * C4: once 𝒜≡𝒳 holds per branch, C4's bypass only has to prove the branch ENUMERATION matches. A
+	 * branch whose 𝒳 fill times out mid-way is counted inconclusive (not a divergence). It does NOT change
+	 * the returned results (the normal fill runs afterward); it only sets diag flags.
+	 */
+	private anchorXCheck(
+		branches: NormalizedBranch[], u: Cyclotomic, v: Cyclotomic, ctx: FillCtx,
+		seedFans: { center: Cyclotomic; polys: Polygon[] }[], k: number, timedOut: () => boolean, diag: PeriodSolverDiag
+	): void {
+		const D = incidenceDisplacements(ctx.ring, ctx.polySizes);
+		const ex = new TranslationalCellExtractor();
+		for (const B of branches) {
+			if (B.type.kind !== 'cyclic-rot' && B.type.kind !== 'dihedral') continue;
+			const a = this.branchFillKeys(B, incidenceAnchorSet(B, u, v, ctx.ring, D), u, v, ctx, seedFans, k, timedOut, ex, diag);
+			const x = this.branchFillKeys(B, B.reAnchorSet, u, v, ctx, seedFans, k, timedOut, ex, diag);
+			if (a.timedOut || x.timedOut) { diag.anchorXcheckInconclusive = (diag.anchorXcheckInconclusive ?? 0) + 1; continue; }
+			const equal = a.keys.size === x.keys.size && [...a.keys].every((key) => x.keys.has(key));
+			if (!equal) {
+				diag.anchorDivergence = (diag.anchorDivergence ?? 0) + 1;
+				const onlyA = [...a.keys].filter((key) => !x.keys.has(key)).length;
+				const onlyX = [...x.keys].filter((key) => !a.keys.has(key)).length;
+				process.stderr.write(`[orbifold] ⚑ ANCHOR-DIVERGENCE ${latticeKey(u, v)} branch ${B.key}: |𝒜|=${a.keys.size} |𝒳|=${x.keys.size} (only-𝒜=${onlyA}, only-𝒳=${onlyX})\n`);
+			}
+		}
+	}
+
+	/** Fill one branch from an explicit seed set and return the deduped (by congruence) set of canonical
+	 *  cell keys, plus whether the fill was cut short by the wall cap. Used only by anchorXCheck. */
+	private branchFillKeys(
+		B: NormalizedBranch, seedSet: Cyclotomic[], u: Cyclotomic, v: Cyclotomic, ctx: FillCtx,
+		seedFans: { center: Cyclotomic; polys: Polygon[] }[], k: number, timedOut: () => boolean,
+		ex: TranslationalCellExtractor, diag: PeriodSolverDiag
+	): { keys: Set<string>; timedOut: boolean } {
+		const cells: PeriodCell[] = [];
+		const memo = new Map<string, { key: string; poly: Polygon }>();
+		const seenSeed = new Set<string>();
+		let cut = false;
+		for (const seedX of seedSet) {
+			if (timedOut()) { cut = true; break; }
+			for (const initial of this.equivariantSeed(B, seedX, ctx, seedFans, memo, seenSeed))
+				for (const cell of this.equivariantTorusFill(B, initial, ctx, k, timedOut, diag, memo))
+					cells.push({ cellPolygons: cell, basisExact: [u, v] });
+		}
+		if (timedOut()) cut = true;
+		const reps = dedupeByCongruence(cells, (c) => ex.canonicalKey(c.cellPolygons));
+		return { keys: new Set(reps.map((c) => ex.canonicalKey(c.cellPolygons))), timedOut: cut };
 	}
 
 	/** The re-anchored, mirror-closed equivariant seeds for one (branch, x): per seed fan and per

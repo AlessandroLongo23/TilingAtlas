@@ -1469,3 +1469,227 @@ loud.
 `scripts/diag-tiny.ts` (single-process orbifold-vs-torus congruence check), `scripts/verify-worker.ts` +
 `scripts/verify-orbifold.ts` (parallel both-mode per-tiling verification by congruence), and
 `tests/orbifold-fill.test.ts` (2a units + mapPoint/lattice pinning + geometric-closure of branch ops).
+
+## 21. Incidence anchoring (Increment 3) — the pool-free seed set: 48× fewer fills, 170× at hex (2026-06-06, session 12)
+
+The structural cure for §20's surviving wall. Increment-2 measured that re-anchoring collapses the branch
+*count* but each branch still seeds `|𝒳| =` pool-many fills (`W(k·n_Λ−1)`, intractable at N=24 hex). This
+increment replaces the cocycle seed set 𝒳 with a geometry-indexed **incidence set 𝒜** (TA's new lemma,
+thesis `cf355cb`/`3f43bc2`, recipe `incidence-anchoring-2026-06-05.md`, SYNC 873/900/901/903).
+Flag-gated (`anchor:'incidence'` / `PS_ANCHOR=incidence`, default `cocycle`); flag-off **and** the
+cocycle path byte-identical. Built TDD; `pnpm build` clean.
+
+### 21.1 The idea + construction (`def:incidence`)
+A rotation centre of a regular-polygon tiling is not anywhere in the plane — it sits at a **vertex, edge
+midpoint, or tile centroid** (`lem:fixedincidence`, Alessandro's observation, now proven). A branch
+already knows its centre exactly: a rotation `(L,w)∈G` has centre `c=(1−L)⁻¹w ∈ ℚ(ζ_N)`. So every target
+of the branch has a seed vertex at `c+δ` for `δ` in a fixed, family-level displacement set `D`:
+`𝒜(Λ,G) = (c+D) ∩ ℤ[ζ_N]` (mod Λ), with `|𝒜| ≤ (2+|sizes|)·N` — **independent of k AND of the lattice**
+(vs `|𝒳| =` pool). Scope (TA-ruled, SYNC 900 — Option A): rotation-bearing branches (cyclic-rot,
+dihedral) get 𝒜 via the rotation centre; p1→{0}; **cyclic-refl + glide keep the proven-complete cocycle
+𝒳 fallback** (`rem:glidefallback` licenses 𝒜/𝒳 as interchangeable complete seed sets there — a ~1.3%
+k-flat residual, not the bottleneck; the reflection-axis construction needs ζ_{2N} arithmetic + a
+mirror/glide split and was declined for a 1.3% shave).
+
+### 21.2 The half-grid bug — caught in TA's review, avoided by construction
+The centroid→vertex displacement is **NOT** a power of ζ_N when N/n is odd — it is a HALF-grid direction
+`ζ_{2N}^odd` (the vertex ray bisects an edge-direction wedge). A naive `σ·ζ_N^j` encoding of `D` silently
+drops **4.8.8 (octagon @ N=24)** and **4.4.4.4 (square @ N=12)**. **Fix: build `D` from REAL placed-polygon
+geometry** — `vertex − exactCentroid` (centroid case) and `vertex − exactHalfway` (edge-midpoint case),
+read off the exact `RegularPolygon`, never from `ζ_N^j`. Pinned by the **discriminating regression** (TA's
+Fix A): geometry `D` recovers every octagon@24 / square@12 vertex, and those offsets are provably *not*
+grid-aligned (an independent `isGridAligned` oracle: `z·ζ^{-j}` real for no integer `j`) ⇒ a `ζ_N^j` `D`
+*must* miss them. (Not the brittle `den===2` assert the first plan proposed.)
+
+### 21.3 Implementation
+- **`solveRationalSquare(A,b)`** (`exact/IntLinalg.ts`) — exact rational φ×φ solve (Cramer's rule with a
+  fraction-free Bareiss determinant) for `c=(1−L)⁻¹w`. A genuinely new primitive: `Cyclotomic` has **no
+  field inverse**, and `c` is non-integral in general (`columnLatticeIndex(1−L)` = 16/81/256 for order
+  d=4/3/2). `A = coboundaryMatrix(rot)` is already the integer matrix of `(1−L)` (column j = `(1−ζ^r)ζ^j`).
+- **`incidenceDisplacements(ring, sizes)`** + **`incidenceAnchorSet(B,u,v,ring,D)`** (`OrbifoldNormalized.ts`).
+  The anchor set computes `c` via the solve, asserts **`(1−L)c == w`** exactly (a defensive tripwire that
+  would have caught TA's own draft bug), filters `c+d ∈ ℤ[ζ_N]` (`den===1`), reduces mod Λ, sorts by key.
+- **The flag** (`PeriodSolver`): `anchor` resolved env-only inside `solve()` (`PS_ANCHOR`, exactly like
+  `PS_MODE`, so spawned scout/verify workers inherit it — a mixed-anchor fleet is a mixed-build digest
+  hazard); read ONLY on the orbifold path. `FillCtx`/`makeCtx`/torus untouched ⇒ flag-off byte-identical
+  by construction.
+- **The 𝒳-skip** (`skipRotationReAnchor`): incidence never *fills* the rotation branches' 𝒳, so
+  `enumerateNormalizedBranches` skips *building* it for cyclic-rot/dihedral — the dominant fixed cost at
+  hex (≈12M coboundary solves/run; see §21.5). cyclic-refl 𝒳 is still built (the fallback consumes it).
+  Opt-in (set only when `anchor==='incidence'`) ⇒ cocycle path unchanged; the (cocycle-only,
+  retired-for-𝒜) rotation conservation entry is omitted so it cannot false-positive on `sum=0`.
+
+### 21.4 Verification — correctness solid
+- **Flag-off byte-identical:** k=1 `6f9ca9cf2d16c75f` (11), k=2 `f3e2e0517191362c` (20, 0 timeouts). ⚑ The
+  first *capped* k=2 attempt returned **19 / `f0ab170315e3c7c6` / 2 timeouts** under heavy CPU contention
+  (idle dev-server from another worktree + Figma/MCP helpers, load 3.5) — pure **cap-jitter** (2 octagon
+  seeds hit the 120 s wall, truncated, dropped t-x). The torus path is code-identical, so the **no-cap
+  re-run** restored 20 / `f3e2e0517191362c` byte-identical. A textbook re-demonstration of guard #2 (no
+  wall-clock caps on a claim run); cost us a scare, not a regression.
+- **67 tests** green across `int-linalg` / `orbifold-incidence` / `orbifold-fill` / `orbifold-normalized`,
+  incl. the **4.8.8@24 / 4.4.4.4@12 discriminating regression** and the 𝒳-skip pin.
+- **k=1 {3,4,6,12} per-tiling: orbifold-incidence ≡ certified torus EXACTLY** (`✅ MATCH`, 10/10 by
+  congruence, 0 timeouts, 0 conservation / 0 branch-invariant violations). [k=2 {3,4,6,12}: §21.6.]
+
+### 21.5 The measurement — the seed-count collapse (the headline result)
+Dry `𝒜`-vs-`𝒳` seed counts on the rotation-bearing branches, `{3,4,6,12}` k=2, by Bravais class
+(`scripts/measure-incidence.ts`, poolCap=20000):
+
+| Bravais | lattices | Σ\|𝒳\| (cocycle) | Σ\|𝒜\| (incidence) | reduction |
+|---|--:|--:|--:|--:|
+| oblique | 1956 | 228,912 | 99,762 | 2.3× |
+| rect/cmm | 822 | 817,102 | 96,938 | 8.4× |
+| square | 156 | 1,118,226 | 31,558 | 35× |
+| **hex** | 206 | **12,364,831** | **72,670** | **170×** |
+| **TOTAL** | | **14,529,071** | **300,928** | **48×** |
+
+The collapse is **largest exactly where the pool was densest (hex, 170×)** — the lemma's prediction,
+measured. ⚑ **Honest accounting (`rem:incidenceaccount`):** the per-fill cost is *unchanged*, so the
+~300K residual fills are the new floor — incidence **moves** the hex-k=2 wall ~48× (a cocycle run filling
+14.5M seeds → an incidence run filling 0.3M) but does **not eliminate** it. `|𝒜|` is k-free but the
+polygon family + ring N still set the constant (here ~120/branch pre-filter, ~hundreds/hex-lattice
+post-`∩ℤ[ζ_N]`). This is the lemma's own "a measurement, not a corollary."
+
+### 21.6 The live wall-clock — the collapse is real but LATENT (the pool sweep dominates)
+Head-to-head **cocycle-orbifold vs incidence-orbifold** on `{3,4,6}` k=2 (26 seeds, 60 s/seed cap,
+single process, load settled to ~3). Dry A/B for this family was even sharper than `{3,4,6,12}`:
+**88.7× fewer fills total, 353× at hex** (Σ\|𝒳\| 15.19M → Σ\|𝒜\| 171K; |D|=97). Live:
+- **cocycle (𝒳):** 1564.0 s, **7 tilings**, 10 cells, 1996 branches, budgetPruned 156, timedOut.
+- **incidence (𝒜):** 1564.8 s, **7 tilings**, 9 cells, 4582 branches, budgetPruned 197, timedOut.
+- **✅ same 7 tilings by congruence** — k=2 incidence drops nothing vs cocycle (a second completeness
+  signal beside the k=1-vs-torus `✅ MATCH`).
+
+⚑ **The honest, load-bearing read: identical wall-clock, identical tiling set — the 88× fill-collapse
+did NOT cash into a speedup at this cap.** Both modes cap at 60 s on the hard hex seeds and reach the
+same 7. Incidence attacks the *fill* term (2/3 below), but the hex seeds time out in the
+**pool-sweep / branch-enumeration** term FIRST — before the fill phase where 𝒜's collapse lives. The
+𝒳-skip did speed branch-enum (incidence reached **4582** branches vs cocycle's **1996** in the same
+budget), but not enough: even incidence's reduced per-seed work exceeds 60 s on hex, because the pool
+sweep alone does. So the seed-collapse is a real, proven reduction in fill *work* (the dry A/B), but it
+is **latent** — un-cashable in wall-clock until the pool-sweep wall is also removed.
+
+### 21.7 Verdict + the strategic read for higher k (the three cost terms)
+Per lattice the orbifold fill costs: **(1) the pool sweep** (branch enumeration) — `O(pool)`, a ball in
+the rank-(φ(N)−2) quotient at depth `k·n_Λ−1`; ~13–15M classes/hex-lattice at N=24 k=2, and it
+*truncates* by k=3; **(2) the seed count** `𝒳` — `O(pool)` solves; **(3) the per-fill cost** — shared
+with the torus path but symmetry-pruned (the DFS makes ≤k independent corner-completions, the rest
+stamped by G, so the fill tree is exponentially smaller than torus's). **Incidence killed (2) and made
+the fill *count* k-independent (48–353×). It does NOT touch (1) — and §21.6 shows (1) is now the binding
+wall.**
+- ⚑ **The pool sweep is an IMPLEMENTATION artifact, not fundamental.** It sweeps millions of pool
+  classes to find **~9 branches** — but Increment-1 proved the branches collapse to the **coboundary
+  quotient orders (16/9/4/1 pre-Λ), bounded and k-INDEPENDENT**. The quotient is a finite abelian group
+  of known, bounded order; its classes can in principle be **enumerated directly** (every realizable
+  branch has a quotient class ⇒ complete; unrealizable classes over-generate harmlessly ⇒ sound),
+  *bypassing the pool sweep entirely*. **This is the only orbifold lever left worth pursuing — and it is
+  NOT more seed-side tuning (that is now maxed).** It is a NEW lemma owed to TA (the dihedral coupled
+  quotient + candidate-box interaction are where it could bite); unverified.
+- **If the pool-bypass goes through**, orbifold becomes k-independent in branches *and* seeds, leaving
+  only the (exponentially cheaper than torus) fill — a credibly *better* high-k method. Until then it is
+  pool-bound and not the k≥2-hex path.
+- **For the thesis (k=4 = 151, "first provable k≥4"): the low-risk path is a k=4 TORUS scout** — the
+  parallel infrastructure exists, it directly tests the claim, and the torus path is certified to k=3
+  while orbifold is tractable only to k=1. Measure k=4 torus before betting on orbifold optimization.
+- **For genuine high k (5,6,…,13): Delaney–Dress / combinatorial-first** (Route B, δ≤12k; how Čtrnáct
+  reaches k=13) is the field's answer — it enumerates abstract symbols, sidestepping the geometric pool
+  that caps *both* lattice methods. The lattice programme (torus + orbifold) has a ceiling that the
+  discussion chapter should name, not paper over.
+
+### 21.8 Tooling added
+`scripts/measure-incidence.ts` (dry 𝒜-vs-𝒳 seed-count A/B by Bravais + capped live cocycle-vs-incidence
+head-to-head), `scripts/diag-tiny.ts` + `scripts/verify-orbifold.ts` threaded with `PS_ANCHOR`,
+`tests/orbifold-incidence.test.ts` (solveRationalSquare, the 4.8.8@24/4.4.4.4@12 discriminating
+regression, incidenceAnchorSet, the 𝒳-skip pin). ⚑ Two operational scars worth recording: (a) a
+*capped* k=2 flag-off probe returned 19/wrong-digest under CPU contention (cap-jitter — the no-cap
+re-run restored 20/`f3e2e0517191362c`); (b) a no-cap k=2 acceptance run was **killed by macOS sleep**
+(broken coordinator↔worker pipes, 8 h elapsed at 0 % CPU) — long no-cap sweeps need
+`caffeinate`/crash-resume.
+
+## 22. C4 — the orbifold pool-bypass (direct quotient enumeration); necessary, not sufficient (2026-06-07, session 14)
+
+> ⚑ Worktree-local § number — `master` also carries a §22 (the k=4 torus wall, `results.tex` §val-k4);
+> renumber on merge. Branch `feat/c4-pool-bypass` off `feat/orbifold-branch-enum` `0636ded`.
+
+**The target (§20/§21 carry-over).** Incidence anchoring (Increment 3) removed the *seed-count* term but
+not the **pool sweep** itself: branch *discovery* still walks the `O(pool)` ball `W(k·n_Λ−1)` (~13M raw /
+hex, cap-truncated by k=3). §21.7 localized this as the last orbifold lever. C4 = enumerate the rotation
+coboundary quotient `𝒬_{L,Λ}=ℤ[ζ_N]/(Λ+(1−L)ℤ[ζ_N])` **directly** (the SNF index, k-independent ≤256),
+never forming the pool. Gated on the T2 lemma (verdict: pool-bypass-lemma §9 + gap-closure §5 — *sound,
+necessary-not-sufficient*).
+
+### 22.1 What landed (behind `PS_BYPASS=1`; flag-off byte-identical)
+- **`IntLinalg.enumerateQuotientReps(gens)`** — the one new primitive: the ν=`columnLatticeIndex` distinct
+  HNF-least residues of `ℤ^m/⟨gens⟩` via the **diagonal HNF box** `∏[0,H_kk)` (each box tuple is already
+  self-reduced — the reducer's per-step quotient is 0 in `[0,d_k)` — so the box IS exactly the ν canonical
+  residues; proof + 5 unit tests incl. the brute-force residue-set oracle). **Throws on rank-deficient
+  input** — the guard that keeps reflection `M_{1−σ}` (infinite quotient, `ci:kernel`) off this path.
+- **Increment-3 (incidence 𝒜) validated as the bypass's seed foundation** (it was built-but-uncommitted;
+  the C4 review wrongly read it as absent — it greps refs, the code was in the working tree, using
+  `solveRationalSquare` for the EXACT centre + the `(1−L)c==w` post-check, both contract traps already
+  met). New **`PS_ANCHOR_XCHECK` per-branch `𝒜≡𝒳` oracle** (`anchorXCheck`): fills every rotation branch
+  from both 𝒜 and 𝒳 and asserts equal deduped sets ⇒ **0 divergences** on every completed branch (k=1).
+  Plus the aggregate `PS_ANCHOR=incidence` verify k=1 = 11 MATCH. Seeding **trusted**.
+- **The cyclic-rot bypass** (`OrbifoldNormalized`): `enumerateQuotientReps([B_Λ|M_{1−L}])` replaces the pool
+  walk; **Tripwire A** (`#reps==ν`, a *loop self-check* not an inflation guard — gap-closure §5);
+  `reAnchorSet=[]` (𝒜 seeds). |𝒜|=0 on a bypassed branch ⇒ **phantom** (`prop:incidencefill`: realizable
+  ⇒ |𝒜|≥1, so |𝒜|=0 ⇒ no tiling, sound to skip) — *tracked, not flagged* (this corrected the plan's
+  "|𝒜|≥1 hard assert", which would false-positive on every phantom).
+- **Always-on merge equivalence-partition guard** (`assertEquivalencePartition` in `dedupeByCongruence`):
+  per bucket asserts reflexivity + **predicate symmetry `cong(a,b)==cong(b,a)`** (the §19.6 argument-order
+  root cause, now always-on) + the partition law `cong ⟺ same-class`. Catches inflation/intransitivity at
+  **any k, oracle-free**. Order-invariance re-run under `PS_MERGECHECK=full`.
+- **Conservation-dispatch fix** (contract §3): the cyclic-rot `Σ|𝒳|=pool` skip under incidence/bypass is
+  now *surfaced* (`conservationSkipped`/`cocycleConservationSkipped`), never silently vacuous.
+
+### 22.2 The findings — necessary, not sufficient (the crosscheck + the verify)
+`scripts/measure-bypass.ts --crosscheck` (enumerate every candidate lattice both ways), k=1 `{3,4,6,8,12}`:
+
+| Bravais | latts | pool classes | bypass classes | extra (bypass-only) | **pool still built under bypass** | pool-build ms |
+|---|--:|--:|--:|--:|:--:|--:|
+| oblique | 48 | 480 | 3072 | +2592 | **0/48 — pool DELETED** | 25 |
+| rect/cmm | 85 | 8633 | 9956 | +1323 | 85/85 | 7 653 |
+| square | 22 | 3546 | 3564 | +18 | 20/22 | 57 255 |
+| **hex** | 45 | 10057 | 10057 | +0 | **37/45 — pool KEPT** | **414 954** |
+
+- **Completeness — PROVEN in measurement:** bypass branch SET **⊇** pool branch SET on *every* lattice (0
+  dropped). The bypass even recovers classes the *bounded* pool ball missed (oblique +2592) ⇒ strictly
+  ≥-complete; those extras are phantoms.
+- **Soundness end-to-end:** `PS_BYPASS=1` verify-orbifold k=1 = **11 per-tiling MATCH** (353 s, 0 timeouts,
+  **0 conservation / 0 branch-invariant** violations) — the phantoms fill into nothing valid, **no
+  inflation**. Octagon `[4,8,8]` and `[3,12,12]` seeds included.
+- **⚑ E1 confirmed (the make-or-break):** the pool BFS is built **once per lattice and shared**; the bypass
+  deletes its *rotation walk* but reflections/dihedral still force the BFS — **kept on 37/45 hex lattices**.
+  And the pool-build cost is *exactly* on hex (415 s vs oblique 25 ms): **the bypass deletes the pool where
+  it was cheap (oblique) and keeps it where it is expensive (hex).** Rotation/dihedral bypass alone does
+  **not** crack hex.
+- **⚑ E2 (the second wall):** the equivariant *fill* is slow on hex independent of branch formation —
+  88–240 s for a *single* hex seed at **k=1** under bypass (`[3,3,3,3,3,3]` 88 s, `[3,12,12]` 203 s). Even a
+  total branch bypass would meet this.
+- **⚑ Both walls bind at k=2** (`measure-bypass --fill 2 3,4,6 --maxMs=30000`): every hex-heavy seed shows
+  `poolBuilt = N/N` (pool built on *every* candidate lattice — E1) **and** TIMEOUT at the 30 s cap (E2): e.g.
+  `[3,3,3,3,3,3;…]` 4/4, `[…;3,3,3,4,4]` 9/9, `[…;3,3,4,3,4]` 12/14 — 0 cells, all walled. The bypass
+  enumerates the branches (676–1134/seed) but the pool is still built and the fill still walls.
+
+### 22.3 Scope — dihedral deliberately NOT bypassed
+At the operative ring **N=24** the *coupled* coboundary quotient is **infinite** (`ci:kernel`: the
+reflection slot `M₂` kills φ/2 dims, Λ adds only 2 ⇒ d₂-slot rank 6 < φ=8), so direct enumeration does not
+apply; the per-d₁-solve + glide-intersection fallback is **deferred**. Justification: it **cannot change the
+hex verdict** — E1 keeps the pool for reflections regardless, so a dihedral bypass alone never deletes the
+hex BFS. Dihedral stays on the proven pool path, which correctly applies **glide ∧ commutator**
+(`prop:dihedralclose`, TA fix #1: `glidePasses(L₂,d₂)` + the commutator bucket). cyclic-rot — the *measured*
+hex-p6 bottleneck — IS bypassed.
+
+### 22.4 Verdict
+The rotation pool-bypass is **proven-complete, validated, and deletes the pool on low-symmetry lattices** —
+a genuine, certified advance, and the done half of a two-part wall. But it is **necessary-not-sufficient for
+the hex wall (E1)**, and even full branch bypass faces the **fill wall (E2)**. Certified k≤3 stands via the
+torus path. **Cracking hex requires the reflection branch-enumeration lemma** — the open two-factor
+construction (transverse incidence × **in-axis glide residue**, needing ζ_{2N} half-grid axis arithmetic + a
+mirror/glide discriminator; the transverse factor is already proven, `fi:refl`). **→ a TA ask.** Flag-off
+byte-identical (k=1 `6f9ca9cf2d16c75f`, k=2 `f3e2e0517191362c`); 247 tests green; `pnpm build` clean.
+
+### 22.5 Tooling added
+`IntLinalg.enumerateQuotientReps` (+5 tests), `assertEquivalencePartition` (+`tests/merge-consistency.test.ts`,
+5 cases), `scripts/verify-anchor.ts` (the `𝒜≡𝒳` oracle runner), `scripts/measure-bypass.ts`
+(`--crosscheck` branch-set superset check + `--fill` E1/E2 timing). Env: `PS_BYPASS=1`, `PS_ANCHOR_XCHECK=1`,
+`PS_MERGECHECK=full`, `PS_PROFILE=1`.

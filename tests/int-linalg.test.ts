@@ -7,6 +7,8 @@ import {
 	columnLatticeIndex,
 	compileReducer,
 	compileSolver,
+	solveRationalSquare,
+	enumerateQuotientReps,
 } from "@/classes/algorithm/exact/IntLinalg";
 
 // ----------------------------------------------------------------------------
@@ -86,6 +88,74 @@ describe("columnLatticeIndex", () => {
 		expect(columnLatticeIndex([[1n, 1n], [1n, 1n]])).toBeNull(); // rank 1 in ℤ²
 		expect(columnLatticeIndex([[1n, -1n, 0n], [2n, -2n, 0n]])).toBeNull(); // rank 1 in ℤ³
 		expect(columnLatticeIndex([[1n, 0n, 0n], [0n, 1n, 0n]])).toBeNull(); // rank 2 in ℤ³
+	});
+});
+
+/** Brute-force SET of distinct residues of ℤ^m mod a full-rank lattice (one fundamental domain). The
+ *  side `box` covers ≥1 domain when ≥ every diagonal pivot, which holds for box = the index ν. */
+function residueSetByEnumeration(cols: bigint[][], box: number): Set<string> {
+	const m = cols[0].length;
+	const seen = new Set<string>();
+	const rec = (i: number, v: bigint[]) => {
+		if (i === m) { seen.add(reduceModColumnLattice(v, cols).join(",")); return; }
+		for (let x = 0; x < box; x++) rec(i + 1, [...v, BigInt(x)]);
+	};
+	rec(0, []);
+	return seen;
+}
+
+describe("enumerateQuotientReps", () => {
+	// full-rank lattices: the 2D/3D triangular + minor examples reused from columnLatticeIndex's specs
+	const fullRank: bigint[][][] = [
+		[[2n, 0n], [0n, 3n]],
+		[[2n, 0n], [2n, 3n]],
+		[[5n, 1n], [3n, 7n]],
+		[[12n, 0n], [0n, 12n], [3n, 8n], [7n, 2n]],
+		[[2n, 0n, 0n], [0n, 3n, 0n], [0n, 0n, 5n]],
+		[[2n, 0n, 0n], [1n, 3n, 0n], [4n, 1n, 5n]],
+	];
+
+	it("emits exactly columnLatticeIndex distinct, reduce-idempotent residues", () => {
+		for (const cols of fullRank) {
+			const nu = columnLatticeIndex(cols)!;
+			const reps = enumerateQuotientReps(cols);
+			expect(BigInt(reps.length)).toBe(nu); // count == ν
+			const keys = new Set(reps.map((r) => r.join(",")));
+			expect(keys.size).toBe(reps.length); // pairwise distinct
+			for (const r of reps) expect(reduceModColumnLattice(r, cols)).toEqual(r); // each already HNF-least
+		}
+	});
+
+	it("its rep SET equals the brute-force residue set (complete + sound transversal)", () => {
+		for (const cols of fullRank) {
+			const nu = Number(columnLatticeIndex(cols)!);
+			const mine = new Set(enumerateQuotientReps(cols).map((r) => r.join(",")));
+			const brute = residueSetByEnumeration(cols, nu); // side ν ≥ every pivot ⇒ covers a domain
+			expect(mine).toEqual(brute);
+		}
+	});
+
+	it("is a deterministic function of the LATTICE, not the generator order", () => {
+		for (const cols of fullRank) {
+			const a = enumerateQuotientReps(cols);
+			const b = enumerateQuotientReps([...cols].reverse()); // same lattice, permuted generators
+			expect(b).toEqual(a);
+		}
+	});
+
+	it("throws on rank-deficient input (reflections must stay on the pool)", () => {
+		for (const cols of [[[1n, 1n], [1n, 1n]], [[1n, -1n, 0n], [2n, -2n, 0n]], [[1n, 0n, 0n], [0n, 1n, 0n]]]) {
+			expect(() => enumerateQuotientReps(cols)).toThrow(/rank-deficient/);
+		}
+	});
+
+	it("handles the trivial and diagonal boxes", () => {
+		expect(enumerateQuotientReps([[1n]])).toEqual([[0n]]); // ν = 1
+		const six = enumerateQuotientReps([[2n, 0n], [0n, 3n]]); // ν = 6, box {0,1}×{0,1,2}
+		expect(six.length).toBe(6);
+		expect(new Set(six.map((r) => r.join(",")))).toEqual(
+			new Set(["0,0", "0,1", "0,2", "1,0", "1,1", "1,2"]),
+		);
 	});
 });
 
@@ -204,6 +274,55 @@ describe("solveModLattice", () => {
 		const BL = [[1n, 0n], [0n, 9n]];
 		const b = [4n, 5n];
 		expect(solveModLattice(M, b, BL)).toEqual(solveModLattice(M, b, BL));
+	});
+});
+
+describe("solveRationalSquare (exact rational A·x = b; A as column vectors)", () => {
+	// Oracle: reconstruct A·num and check it equals b·den exactly (A·x = b with x = num/den).
+	// A·x in the COLUMN convention is Σ_j x_j·A[j].
+	const reconstructsExactly = (A: bigint[][], b: bigint[], sol: { num: bigint[]; den: bigint }) => {
+		const n = A.length;
+		for (let i = 0; i < n; i++) {
+			let acc = 0n;
+			for (let j = 0; j < n; j++) acc += sol.num[j] * A[j][i];
+			expect(acc).toBe(b[i] * sol.den); // A·num == b·den  (i.e. A·(num/den) == b)
+		}
+	};
+
+	it("solves a diagonal system (hand-checked fractions)", () => {
+		// A = diag(2,3) as columns [[2,0],[0,3]]; b = [1,1] ⇒ x = [1/2, 1/3]
+		const A = [[2n, 0n], [0n, 3n]];
+		const sol = solveRationalSquare(A, [1n, 1n])!;
+		expect(sol).not.toBeNull();
+		reconstructsExactly(A, [1n, 1n], sol);
+		// normalise to lowest terms for the explicit check
+		expect(sol.num[0] * 2n).toBe(sol.den); // num0/den = 1/2
+		expect(sol.num[1] * 3n).toBe(sol.den); // num1/den = 1/3
+	});
+
+	it("solves dense full-rank systems exactly (reconstruction oracle)", () => {
+		const cases: [bigint[][], bigint[]][] = [
+			[[[2n, 1n], [1n, 2n]], [1n, 0n]], // columns (2,1),(1,2)
+			[[[1n, 2n, 3n], [0n, 1n, 4n], [5n, 6n, 0n]], [7n, 8n, 9n]],
+			[[[3n, 0n, 0n], [1n, 3n, 0n], [4n, 1n, 3n]], [2n, 5n, 7n]],
+		];
+		for (const [A, b] of cases) {
+			const sol = solveRationalSquare(A, b)!;
+			expect(sol).not.toBeNull();
+			reconstructsExactly(A, b, sol);
+		}
+	});
+
+	it("returns null on a singular matrix", () => {
+		expect(solveRationalSquare([[1n, 1n], [2n, 2n]], [1n, 0n])).toBeNull(); // rank 1
+		expect(solveRationalSquare([[0n, 0n], [0n, 0n]], [1n, 0n])).toBeNull();
+	});
+
+	it("handles 1×1 and integer-result systems", () => {
+		expect(solveRationalSquare([[5n]], [10n])).toEqual({ num: [10n], den: 5n });
+		const A = [[1n, 0n], [0n, 1n]]; // identity columns
+		const sol = solveRationalSquare(A, [3n, -4n])!;
+		reconstructsExactly(A, [3n, -4n], sol);
 	});
 });
 

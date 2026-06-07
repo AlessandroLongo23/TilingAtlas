@@ -181,6 +181,40 @@ export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, 
 }
 
 /**
+ * Assert a `dedupeByCongruence` bucket's partition is a genuine EQUIVALENCE RELATION — the
+ * target-independent, oracle-free merge guard the k≥4 regime needs (no count oracle there; the
+ * frozen-catalogue ⊇ check catches misses but is blind to inflation). It fires DIRECTLY on the §19.6
+ * bug class: an argument-order-asymmetric `tilingsCongruent` makes the partition non-symmetric /
+ * non-transitive, which fails here at ANY k. Exported (and `congruent`-injectable) so a deliberately
+ * broken predicate can be unit-tested. Throws loud on violation — a non-equivalence partition makes the
+ * dedup COUNT meaningless. Cheap: buckets are tiny (the name-multiset@|detΛ| split is aggressive).
+ */
+export function assertEquivalencePartition(
+	classes: PeriodCell[][],
+	congruent: (a: PeriodCell, b: PeriodCell) => boolean,
+	bucketKey = ""
+): void {
+	const bug = (reason: string): never => {
+		const msg = `[congruence] ⚑ IMPLEMENTATION-BUG: merge relation is not an equivalence (${reason})${bucketKey ? ` in bucket ${bucketKey}` : ""}`;
+		console.error(msg);
+		throw new Error(msg);
+	};
+	const members = classes.flat();
+	const classOf = new Map<PeriodCell, number>();
+	classes.forEach((cls, ci) => cls.forEach((c) => classOf.set(c, ci)));
+	for (const c of members) if (!congruent(c, c)) bug("reflexivity: a cell is not congruent to itself");
+	for (let i = 0; i < members.length; i++) {
+		for (let j = i + 1; j < members.length; j++) {
+			const cij = congruent(members[i], members[j]);
+			const cji = congruent(members[j], members[i]); // ← the §19.6 root cause: argument-order asymmetry
+			if (cij !== cji) bug("symmetry: cong(a,b) ≠ cong(b,a)");
+			const same = classOf.get(members[i]) === classOf.get(members[j]);
+			if (cij !== same) bug(cij ? "intransitivity: a congruent pair landed in different classes (under-merge → inflation)" : "a non-congruent pair was merged (over-merge)");
+		}
+	}
+}
+
+/**
  * Dedup a list of certified tilings up to congruence — the authoritative replacement for
  * `canonicalKey`-Set dedup (which under-merges the chiral snub, §12.7). Congruence is an equivalence
  * relation, so the resulting PARTITION (and hence the count) is independent of input order.
@@ -207,6 +241,30 @@ export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) 
 		const cls = classes.find((members) => cellsCongruent(c, members[0], rckMemo));
 		if (cls) cls.push(c);
 		else classes.push([c]);
+	}
+
+	// Always-on merge guard (incidence-contract §3 / C4-review §4): every bucket's partition must be a
+	// genuine equivalence relation. Catches the §19.6 argument-order asymmetry → inflation at any k, with
+	// no count oracle. Pure assertion — output (and digest) unchanged when the relation is valid.
+	for (const [bk, classes] of buckets) assertEquivalencePartition(classes, (a, b) => cellsCongruent(a, b, rckMemo), bk);
+	// PS_MERGECHECK=full: order-invariance — re-partition the REVERSED input and assert the same classes
+	// (a genuinely independent run through the same predicate; catches an order-dependent merge bug). Off
+	// by default (it ~doubles the dedup cost). Needs keyOf for an order-independent class signature.
+	if (process.env.PS_MERGECHECK === "full" && keyOf) {
+		const buckets2 = new Map<string, PeriodCell[][]>();
+		const rckMemo2 = new Map<string, string>();
+		for (const c of [...cells].reverse()) {
+			const bk = `${nameMultiset(c.cellPolygons)}@${detAbsKey(c.basisExact[0], c.basisExact[1])}`;
+			let cl = buckets2.get(bk); if (!cl) { cl = []; buckets2.set(bk, cl); }
+			const hit = cl.find((m) => cellsCongruent(c, m[0], rckMemo2));
+			if (hit) hit.push(c); else cl.push([c]);
+		}
+		const sig = (bks: Map<string, PeriodCell[][]>) => [...bks.values()].flat().map((cl) => cl.map(keyOf).sort()[0]).sort().join("|");
+		if (sig(buckets) !== sig(buckets2)) {
+			const msg = "[congruence] ⚑ IMPLEMENTATION-BUG: dedupe partition is ORDER-DEPENDENT (merge relation not transitive)";
+			console.error(msg);
+			throw new Error(msg);
+		}
 	}
 
 	const reps: PeriodCell[] = [];

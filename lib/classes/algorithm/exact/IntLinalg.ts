@@ -158,6 +158,44 @@ export function columnLatticeIndex(gens: bigint[][]): bigint | null {
 }
 
 /**
+ * Enumerate the `ν = columnLatticeIndex(gens)` distinct HNF-least coset representatives of the finite
+ * quotient `ℤ^m / ⟨gens⟩` — the direct quotient enumeration the C4 pool-bypass needs (the realizable
+ * cyclic-rotation branches biject with `𝒬_{L,Λ}=ℤ[ζ_N]/(Λ+(1−L)ℤ[ζ_N])`, enumerable as this quotient
+ * of `[B_Λ | M_{1−L}]`). Each returned rep is idempotent under `reduceModColumnLattice(·, gens)` and
+ * the array is sorted deterministically (so the result is a function of the LATTICE, not of generator
+ * order). THROWS on rank-deficient input (`columnLatticeIndex===null`) — this guard keeps reflection
+ * coboundary matrices `M_{1−σ}` (infinite quotient, `ci:kernel`) off this path; they MUST stay on the
+ * pool-indexed 𝒳.
+ *
+ * Method (HNF-box): for a full-rank column lattice the HNF is upper-triangular with positive diagonal
+ * `d_k = H[k][k]` and pivot columns `[0..m-1]`; the diagonal box `∏_k [0, d_k)` is EXACTLY the set of
+ * ν canonical residues (each box tuple is already HNF-least: the reducer's per-step quotient is 0 when
+ * the coordinate is in `[0,d_k)`, and inductively no step fires). Reuses `hnf`/`reduceModColumnLattice`.
+ */
+export function enumerateQuotientReps(gens: bigint[][]): bigint[][] {
+	const m = gens.length > 0 ? gens[0].length : 0;
+	const idx = columnLatticeIndex(gens);
+	if (idx === null) throw new RangeError("enumerateQuotientReps: rank-deficient column lattice (infinite quotient — reflections must stay on the pool)");
+	const { H, pivotCols } = hnf(gens, false); // full rank ⇒ pivotCols = [0..m-1], H upper-triangular
+	const diag = pivotCols.map((c, k) => H[k][c]); // the m positive pivots d_0..d_{m-1}
+	const reduce = compileReducer(gens); // canonical residue; a no-op on box tuples but keeps reps == the pool-path's HNF-least form
+	const reps: bigint[][] = [];
+	const a = new Array<bigint>(m).fill(0n); // mixed-radix counter over the diagonal box
+	for (let count = 0n; count < idx; count++) {
+		const rep = new Array<bigint>(m).fill(0n);
+		for (let k = 0; k < pivotCols.length; k++) rep[pivotCols[k]] = a[k];
+		reps.push(reduce(rep));
+		for (let k = m - 1; k >= 0; k--) { // increment the counter (least-significant = last pivot)
+			a[k] += 1n;
+			if (a[k] < diag[k]) break;
+			a[k] = 0n;
+		}
+	}
+	reps.sort((p, q) => { const ps = p.join(","), qs = q.join(","); return ps < qs ? -1 : ps > qs ? 1 : 0; });
+	return reps;
+}
+
+/**
  * A particular canonical solution `x` of `M·x ≡ b (mod ⟨BΛ⟩)` over ℤ — i.e. integer `x` (and some
  * integer `y`) with `M·x + BΛ·y = b`, returning the M-part `x`. `null` if no integer solution exists.
  * Deterministic (same inputs ⇒ same x), which is all the conservation law needs: distinct pool data d
@@ -198,4 +236,61 @@ export function compileSolver(M: bigint[][], BLambda: bigint[][]): (b: bigint[])
 
 export function solveModLattice(M: bigint[][], b: bigint[], BLambda: bigint[][]): bigint[] | null {
 	return compileSolver(M, BLambda)(b);
+}
+
+/**
+ * Exact determinant of a square bigint matrix (row-major) via the Bareiss fraction-free algorithm:
+ * every intermediate division is exact (the Sylvester–Desnanot identity), so the result is the precise
+ * integer determinant with no rounding. Row swaps (to dodge a zero pivot) flip a tracked sign; the
+ * exact-division invariant is unaffected by row order. Returns 0n for a singular matrix. Operates on a
+ * copy.
+ */
+function detBareiss(M: bigint[][]): bigint {
+	const n = M.length;
+	if (n === 0) return 1n;
+	const a = M.map((r) => r.slice());
+	let sign = 1n;
+	let prev = 1n;
+	for (let k = 0; k < n - 1; k++) {
+		if (a[k][k] === 0n) {
+			let sw = -1;
+			for (let i = k + 1; i < n; i++) if (a[i][k] !== 0n) { sw = i; break; }
+			if (sw < 0) return 0n; // whole sub-column zero ⇒ singular
+			[a[k], a[sw]] = [a[sw], a[k]];
+			sign = -sign;
+		}
+		for (let i = k + 1; i < n; i++) {
+			for (let j = k + 1; j < n; j++) a[i][j] = (a[i][j] * a[k][k] - a[i][k] * a[k][j]) / prev; // exact
+			a[i][k] = 0n;
+		}
+		prev = a[k][k];
+	}
+	return sign * a[n - 1][n - 1];
+}
+
+/**
+ * Exact rational solution of the square system `A·x = b` over ℚ, with `A` given as `n` COLUMN vectors
+ * (each length n) — the same column convention as `coboundaryMatrix` (column j is `(1−L)·ζ^j`) — and
+ * `b` of length n. Returns `{ num, den }` with `x_j = num[j]/den` (common positive-or-signed
+ * denominator; the caller's `Cyclotomic` constructor canonicalises the sign), or `null` if `A` is
+ * singular. This is the orbifold incidence-anchoring branch centre `c = (1−L)⁻¹·w`, which is in general
+ * NON-integral — `Cyclotomic` provides no field inversion, so the rotation centre cannot be obtained by
+ * `solveModLattice` (that reduces mod Λ and moves the centre). For a rotation generator `L≠1`, `A` is
+ * full rank, so the solve never returns null on the enumerated branches. Cramer's rule with Bareiss
+ * determinants; exact, n≤8 in practice (`φ(N)`).
+ */
+export function solveRationalSquare(A: bigint[][], b: bigint[]): { num: bigint[]; den: bigint } | null {
+	const n = A.length;
+	if (n === 0) return { num: [], den: 1n };
+	if (b.length !== n || A.some((col) => col.length !== n)) throw new Error("solveRationalSquare: non-square system or shape mismatch");
+	// row-major M[i][j] = A[j][i]  (A[j] is column j) ⇒ M·x = b is the standard form of A·x = b
+	const M: bigint[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => A[j][i]));
+	const det = detBareiss(M);
+	if (det === 0n) return null; // singular
+	const num: bigint[] = [];
+	for (let j = 0; j < n; j++) {
+		const Mj = M.map((row, i) => row.map((val, c) => (c === j ? b[i] : val))); // Cramer: column j ← b
+		num.push(detBareiss(Mj));
+	}
+	return { num, den: det }; // x_j = num[j] / det
 }
