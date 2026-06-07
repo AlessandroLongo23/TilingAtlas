@@ -28,8 +28,12 @@ never silent.**
 
 ## Session start — read these BEFORE coding
 
-1. `docs/SYNC.md` — current state + handoffs (the board shared with the thesis agent; see protocol below).
-2. `docs/DEVELOPMENT_NOTES.md` — the narrative source of truth; at minimum the **latest section** and
+1. `docs/STATUS.md` — **the current-state cache: frontier, the one live NEXT per party, active gates.**
+   Read this first — it's the 30-second "where are we." Regenerable from the logs, so treat it as a
+   pointer, not history.
+2. `docs/SYNC.md` — the CC⇄TA handoff log (append-only, 3–6-line entries). Full pre-2026-06 history is
+   rotated into `docs/archive/`.
+3. `docs/DEVELOPMENT_NOTES.md` — the narrative source of truth; at minimum the **latest section** and
    the **⚑ flag lists**. `docs/K2_DIAGNOSIS.md` holds the measurement log, `docs/LATTICE_ENUMERATION_DESIGN.md`
    the enumeration design (read its STATUS header — parts are corrected), `docs/RESEARCH_NOTES.md` the literature.
 
@@ -84,17 +88,28 @@ This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16
 
 **UI.** `components/ui/` is 14 primitives — Modal and Tabs via Radix, the rest hand-rolled. Domain components in `components/*.tsx`.
 
-## Agent sync protocol (two agents, one project)
+## Agent sync protocol (multiple agents, one project)
 
 This repo is one of three siblings under `../`: `TilingAtlas/` (this repo — **you own it**),
-`../thesis/` (LaTeX) and `../resources/` (papers/drafts) — **owned by the thesis agent (Cowork); do
-not edit those two folders.**
+`../thesis/` (LaTeX) and `../resources/` (papers/drafts/notes) — **owned by the thesis agent (TA, in
+Cowork); do not edit those two folders.** All three are under git (`resources/` since 2026-06-07).
 
-- **`docs/SYNC.md` is the shared handoff board.** Read it at session start. After every milestone
-  (feature landed, counts changed, method pivoted), append a dated, signed (`CC`) entry: commit hash,
-  what changed, what it means for the thesis. 3–6 lines, newest last, never rewrite old entries.
-- Keep the long-form record in `docs/DEVELOPMENT_NOTES.md` as before — including failed ideas and
-  *why* they failed; the thesis must reconstruct the full development journey from it.
+**Two tiers — never mix them.**
+
+- **Ledgers — sacred: append-only, never trimmed, ONE writer per file.** The natural-language history
+  the thesis (`../thesis/chapters/journey.tex`) is written from. Rotate to `docs/archive/<name>-YYYY-MM.md`
+  when a file gets large — rotation *moves* history, never deletes it.
+  - `docs/DEVELOPMENT_NOTES.md` — CC's session-by-session narrative (code/algorithm); failed ideas and
+    *why* they failed belong here too.
+  - `../resources/research/TA_LOG.md` — the TA's chronological ledger (theory/proofs); topical detail in
+    the sibling `resources/research/*.md` notes.
+  - `docs/SYNC.md` — the CC⇄TA **handoff log**. Append a dated, signed (`CC`/`TA`) entry per milestone:
+    **3–6 lines** = what landed + commit hash + a link to the ledger note holding the detail. Newest
+    last, never rewrite old entries, never inline long-form narrative (the ledgers are for that). Short
+    entries also keep the merge-conflict surface small when branches land.
+- **Cache — `docs/STATUS.md`.** Current state only (frontier, one live NEXT per party, active gates).
+  Mutable, disposable, regenerable from the ledgers; overwrite freely. Never write history here.
+
 - The algorithm's prose description lives in the thesis (`../thesis/chapters/algorithm.tex`), not in
   the app. Don't recreate an in-app theory page.
 
