@@ -1787,3 +1787,46 @@ count — logged for completeness transparency). `PS_NOPRE=1` disables the prech
 `measure-bypass --fill` prints the per-seed split. New tests: `extendPartition ≡ countOrbitsUnderBranch` (4
 cases) + `reduceVecModLattice` translate-invariance (2 cases). ⚑ Flags: the fill redesign (§23.4) and
 `prop:incidencefill` (§23.6) are the two open obligations carried forward.
+
+### 23.8 ★ The scaling experiment that ends the circling — per-fill is O(1), the wall is the COUNT (⚑ CORRECTS §23.4)
+TA called the standoff exactly: CC and TA kept declaring ceilings without the one measurement that determines
+the scaling. TA's factorization — cost = (candidate cells) × (groups/cell) × (placements/group, const by C4)
+× (seeds/placement, const by incidence) × (reflection branches, ~k² unless the lemma) × (**cost/fill,
+UNMEASURED past k=1**) — correctly isolates the per-fill cost as the one unknown that decides polynomial-vs-
+exponential. So I measured it: `scripts/measure-fill-scaling.ts` records, per EMITTED cell, `(cell tiles, DFS
+nodes to close it)` — a CLEAN per-fill cost (the cell closes before any global timeout), tagged by lattice type.
+
+**Result ({3,4,6}, k=1/2/3): the per-fill DFS is O(1), FLAT in cell size.**
+- k=1: **every** emitted cell (1, 2, 3, 6, 9 tiles) closes in **1 node**.
+- k=2: max **2 nodes** — including a **15-tile hex cell**. Every one of 26 seeds timed out *with the DFS doing
+  ≤2 nodes*.
+- k=3: max **4** (a timeout *lower* bound; 0 cells emitted in 15 s — not because the DFS is deep, but because
+  the outer candidate-cell loop never reaches the productive fills).
+
+The seed (orbit-stamped fan) **over-determines the cell** — there is essentially no search. This **answers TA's
+central question: the per-fill is NOT exponential in cell size, it's constant.** By TA's own logic, the method is
+not exponential-blocked on the per-fill axis, and **Delaney–Dress is not forced by per-fill cost.**
+
+**⚑ But this REFUTES §23.4 and TA's hope alike: the fundamental-domain reduction is NOT the lever.** I called it
+"the real fix"; TA hoped ÷|G| of the cell was an exponential win. It is **neither** — there is no DFS/cell-search
+to cut (÷|G| of a 2-node search is ~1 node). I retract §23.4's "cracking k≥2-hex needs the fundamental-domain
+reduction" as plainly as TA retracted "near the ceiling."
+
+**The actual wall is factor (A): the candidate-cell COUNT × the per-seed SETUP (block-build), not search.**
+`ΣcandidateLattices` grew **183 → 3103 = 17×** from k=1→k=2 (useSeeds 10→26). Two points can't pin the degree,
+but 17× is far steeper than TA's "~k²" (=4×) — closer to **~k⁴**. Every k=2 seed walled with the DFS idle: the
+523 s is enumerating lattices×branches and `buildBlock`/overlap-checking the feasible seeds (per-seed setup is
+polynomial, ~O(cell²); the COUNT of seeds is what explodes).
+
+**So the reflection lemma's role is now precise — and TA was right about it:** it cuts the **branch count**, one
+factor in that product ("sets the polynomial degree", TA's phrase) — it reduces the COUNT, not a per-fill
+explosion. Same axis as lattice pruning (the Phase-1 P0 filter — **119 candidate lattices/seed at k=2 looks
+over-generated/prunable**) and incidence (already cuts the seed count).
+
+**Verdict (decision-grade, measured):** the orbifold method is **polynomial-but-steep** — walled by a
+fast-growing combinatorial COUNT of individually-cheap (O(1)-fill) cells, NOT by an exponential per-fill, and NOT
+by anything the fundamental-domain fill would fix. "Viable by grinding" is real *iff the count is tamed*. The
+levers that matter are all **count-reduction**: the reflection lemma (branch count), harder candidate-lattice
+pruning (the over-generated 119/seed — investigate why P0 isn't cutting it in the bypass path), and the
+done prechecks/incidence (seed count). The fill redesign is **off the list.** Tooling: `scripts/measure-fill-
+scaling.ts` + `PS_PROFILE` `fillNodeProfile`(per-emitted-cell tiles/pops/holohedry) + `orbFillMaxPops`.

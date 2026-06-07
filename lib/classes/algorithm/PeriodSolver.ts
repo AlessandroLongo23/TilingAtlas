@@ -130,6 +130,8 @@ export type PeriodSolverDiag = {
 	orbSeedMs?: number; // PS_PROFILE: ms in equivariantSeed (|G|-fold 'full' orbit-stamp + dedup per branch×x) — the real §2 site
 	orbRejEmpty?: number; orbRejArea?: number; orbRejSelfOverlap?: number; orbRejBlockOverlap?: number; // PS_PROFILE: per-launch early-reject reasons (which guard kills the infeasible seeds)
 	orbPrecheckSkipped?: number; // (always on) (branch,x,placement,fan) seeds the centroid area/overlap prechecks soundly skipped before the 'full' orbit-stamp — never drops a cell (equivariantTorusFill would also reject)
+	orbFillMaxPops?: number; // PS_PROFILE: the largest single-fill DFS node count over all fills (a fill cut by the global timeout is a LOWER bound)
+	fillNodeProfile?: { tiles: number; pops: number; hol: number }[]; // PS_PROFILE: per EMITTED cell, (cell tile count, DFS nodes explored to find it, lattice holohedry) — a CLEAN per-fill cost even under a global timeout (the cell closed before any cutoff). The scaling question: is `pops` polynomial or exponential in `tiles`?
 	branchInvariantViolated?: boolean; // ⚑ an emitted cell was NOT invariant under its branch group ⇒ stamping/keying bug
 	// --- incidence anchoring (Increment 3) A/B accounting (orbifold mode only) ---
 	incidenceSeeds?: number; // Σ |𝒜| fed to the fill across rotation-bearing branches (anchor='incidence')
@@ -954,11 +956,13 @@ export class PeriodSolver {
 
 		const results: Polygon[][] = [];
 		const seenState = new Set<string>();
+		const hol = PROF ? holohedry(uL, vL) : 0; // lattice holohedry (hex=12 / square=8 / …) — tags the per-fill cost sample
+		let localPops = 0; // DFS nodes explored by THIS fill (per-fill cost; the TA's scaling number)
 		const stack: { reps: Polygon[]; block: Polygon[]; part: OrbitPartition }[] = [{ reps: initial, block: initialBlock, part: initialPart }];
 		while (stack.length > 0) {
 			if (timedOut()) break;
 			const { reps, block, part } = stack.pop()!;
-			if (PROF) diag.orbFillPops = (diag.orbFillPops ?? 0) + 1;
+			if (PROF) { diag.orbFillPops = (diag.orbFillPops ?? 0) + 1; localPops++; }
 			const vReps = part.verts;
 			const sk = this.stateKey(reps);
 			if (seenState.has(sk)) continue;
@@ -970,6 +974,8 @@ export class PeriodSolver {
 				if (this.isCompleteTiling(reps, ctx) && this.isPrimitive(reps, ctx, memo)) {
 					this.confirmBranchInvariant(reps, B, ctx, memo, diag); // R3 tripwire (keeps the cell either way)
 					results.push(reps);
+					// CLEAN per-fill cost sample: this cell closed at localPops nodes, BEFORE any global timeout.
+					if (PROF) { (diag.fillNodeProfile ??= []); if (diag.fillNodeProfile.length < 4000) diag.fillNodeProfile.push({ tiles: reps.length, pops: localPops, hol }); }
 				}
 				continue;
 			}
@@ -1006,6 +1012,7 @@ export class PeriodSolver {
 				stack.push({ reps: next, block: childBlock, part: childPart });
 			}
 		}
+		if (PROF) diag.orbFillMaxPops = Math.max(diag.orbFillMaxPops ?? 0, localPops);
 		return results;
 	}
 
