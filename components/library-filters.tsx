@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { SidebarSection } from "./ui/sidebar-section";
 import { ButtonGroup } from "./ui/button-group";
+import type { CatalogueFilter } from "@/lib/services/catalogueService";
 
-export interface LibraryFiltersValue {
-	kValues?: number[];
-	polygonNames?: string[];
-	wallpaperGroup?: string;
-	exhaustiveOnly?: boolean;
-}
+// The library filters drive a CatalogueFilter over the certified-results catalogue. Certification is
+// first-class (the atlas is about what's proven). Wallpaper-group / regular / star filters are gone for
+// now — the scout doesn't yet emit symmetry/orbit data (deferred; FRONTEND_ROADMAP.md).
+export type LibraryFiltersValue = CatalogueFilter;
 
 interface LibraryFiltersProps {
 	filters: LibraryFiltersValue;
@@ -18,24 +17,22 @@ interface LibraryFiltersProps {
 	onGridColumnsChange: (cols: number) => void;
 }
 
-const K_OPTIONS = [1, 2, 3, 4, 5, 6];
-const WALLPAPER_GROUPS = [
-	"p1", "p2", "pm", "pg", "cm",
-	"pmm", "pmg", "pgg", "cmm",
-	"p4", "p4m", "p4g",
-	"p3", "p3m1", "p31m",
-	"p6", "p6m",
-];
+// The certified catalogue currently spans k=1..3 (octagon-lemma families); extend when k≥4 lands.
+const K_OPTIONS = [1, 2, 3];
 const COLUMN_PRESETS = [3, 4, 5, 6];
+const CERT_OPTIONS: { value: NonNullable<CatalogueFilter["certification"]>; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "certified", label: "Certified" },
+	{ value: "candidate", label: "Candidate" },
+];
 
-type SectionKey = "k" | "polygons" | "wallpaper" | "options" | "grid";
+type SectionKey = "k" | "polygons" | "certification" | "grid";
 
 export function LibraryFilters({ filters, onFiltersChange, gridColumns, onGridColumnsChange }: LibraryFiltersProps) {
 	const [sectionsOpen, setSectionsOpen] = useState<Record<SectionKey, boolean>>({
 		k: true,
 		polygons: false,
-		wallpaper: false,
-		options: false,
+		certification: true,
 		grid: true,
 	});
 
@@ -55,8 +52,8 @@ export function LibraryFilters({ filters, onFiltersChange, gridColumns, onGridCo
 		onFiltersChange({ ...filters, polygonNames: names.length ? names : undefined });
 	};
 
-	const setWallpaper = (val: string) => {
-		onFiltersChange({ ...filters, wallpaperGroup: val || undefined });
+	const setCertification = (val: NonNullable<CatalogueFilter["certification"]>) => {
+		onFiltersChange({ ...filters, certification: val === "all" ? undefined : val });
 	};
 
 	return (
@@ -76,6 +73,19 @@ export function LibraryFilters({ filters, onFiltersChange, gridColumns, onGridCo
 			</SidebarSection>
 
 			<SidebarSection
+				title="Certification"
+				summary={filters.certification ?? null}
+				open={sectionsOpen.certification}
+				onOpenChange={setOpen("certification")}
+			>
+				<ButtonGroup
+					options={CERT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+					selected={filters.certification ?? "all"}
+					onChange={setCertification}
+				/>
+			</SidebarSection>
+
+			<SidebarSection
 				title="Polygon types"
 				summary={filters.polygonNames?.length ? `${filters.polygonNames.length} set` : null}
 				open={sectionsOpen.polygons}
@@ -88,45 +98,7 @@ export function LibraryFilters({ filters, onFiltersChange, gridColumns, onGridCo
 					onChange={(e) => setPolygonSearch(e.target.value)}
 					className="w-full bg-surface-overlay border border-line rounded-control px-2 py-1 text-xs text-fg-secondary placeholder:text-fg-disabled focus:outline-none focus:border-line-strong"
 				/>
-				<p className="mt-1 text-fg-disabled text-[10px]">Comma-separated polygon names</p>
-			</SidebarSection>
-
-			<SidebarSection
-				title="Wallpaper group"
-				summary={filters.wallpaperGroup ?? null}
-				open={sectionsOpen.wallpaper}
-				onOpenChange={setOpen("wallpaper")}
-			>
-				<select
-					value={filters.wallpaperGroup ?? ""}
-					onChange={(e) => setWallpaper(e.target.value)}
-					className="w-full bg-surface-overlay border border-line rounded-control px-2 py-1 text-xs text-fg-secondary focus:outline-none focus:border-line-strong"
-				>
-					<option value="">All groups</option>
-					{WALLPAPER_GROUPS.map((group) => (
-						<option key={group} value={group}>
-							{group}
-						</option>
-					))}
-				</select>
-			</SidebarSection>
-
-			<SidebarSection
-				title="Options"
-				open={sectionsOpen.options}
-				onOpenChange={setOpen("options")}
-			>
-				<label className="flex items-center gap-2 cursor-pointer px-1 py-1">
-					<input
-						type="checkbox"
-						checked={filters.exhaustiveOnly ?? false}
-						onChange={(e) =>
-							onFiltersChange({ ...filters, exhaustiveOnly: e.target.checked || undefined })
-						}
-						className="h-3.5 w-3.5 rounded accent-accent"
-					/>
-					<span className="text-xs text-fg-secondary">Exhaustive campaigns only</span>
-				</label>
+				<p className="mt-1 text-fg-disabled text-[10px]">Comma-separated polygon names (matched against the family)</p>
 			</SidebarSection>
 
 			<SidebarSection

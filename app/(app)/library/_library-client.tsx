@@ -4,39 +4,25 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Library, X } from "lucide-react";
-import type { CampaignTiling } from "@/lib/services/campaignService";
+import { matchesCatalogueFilters, type CatalogueTiling } from "@/lib/services/catalogueService";
 import { PageSidebar } from "@/components/page-sidebar";
 import { LibraryFilters, type LibraryFiltersValue } from "@/components/library-filters";
-import { TilingCard, resolveTilingLabel } from "@/components/tiling-card";
+import { CatalogueCard } from "@/components/catalogue-card";
 import { Pagination } from "@/components/ui/pagination";
 import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 
 interface LibraryClientProps {
-	tilings: CampaignTiling[];
-}
-
-function matchesFilters(t: CampaignTiling & { campaign?: { is_exhaustive?: boolean } }, f: LibraryFiltersValue) {
-	if (f.kValues?.length && !f.kValues.includes(t.k)) return false;
-	if (f.polygonNames?.length) {
-		const hasAll = f.polygonNames.every((n) => t.polygon_names?.includes(n));
-		if (!hasAll) return false;
-	}
-	if (f.wallpaperGroup && t.wallpaper_group !== f.wallpaperGroup) return false;
-	if (f.exhaustiveOnly && !t.campaign?.is_exhaustive) return false;
-	return true;
+	tilings: CatalogueTiling[];
 }
 
 function parseFilters(sp: URLSearchParams): LibraryFiltersValue {
 	const parsed: LibraryFiltersValue = {};
 	const kParam = sp.get("k");
 	const polygonParam = sp.get("polygon");
-	const wallpaperParam = sp.get("wallpaper");
-	const exhaustiveParam = sp.get("exhaustive");
+	const certParam = sp.get("cert");
 	if (kParam) parsed.kValues = kParam.split(",").map(Number).filter(Boolean);
-	if (polygonParam)
-		parsed.polygonNames = polygonParam.split(",").map((s) => s.trim()).filter(Boolean);
-	if (wallpaperParam) parsed.wallpaperGroup = wallpaperParam;
-	if (exhaustiveParam === "true") parsed.exhaustiveOnly = true;
+	if (polygonParam) parsed.polygonNames = polygonParam.split(",").map((s) => s.trim()).filter(Boolean);
+	if (certParam === "certified" || certParam === "candidate") parsed.certification = certParam;
 	return parsed;
 }
 
@@ -48,16 +34,14 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 	const [gridColumns, setGridColumns] = useState(5);
 	const [currentPage, setCurrentPage] = useState(1);
 
-	// Push filter changes into URL without navigation (mirrors source's replaceState approach)
+	// Push filter changes into URL without navigation (mirrors the source's replaceState approach).
 	useEffect(() => {
 		const params = new URLSearchParams();
 		if (filters.kValues?.length) params.set("k", filters.kValues.join(","));
 		if (filters.polygonNames?.length) params.set("polygon", filters.polygonNames.join(","));
-		if (filters.wallpaperGroup) params.set("wallpaper", filters.wallpaperGroup);
-		if (filters.exhaustiveOnly) params.set("exhaustive", "true");
+		if (filters.certification) params.set("cert", filters.certification);
 		const q = params.toString();
-		const next = q ? `${pathname}?${q}` : pathname;
-		window.history.replaceState(null, "", next);
+		window.history.replaceState(null, "", q ? `${pathname}?${q}` : pathname);
 	}, [filters, pathname]);
 
 	useEffect(() => {
@@ -67,14 +51,15 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 	const activeFilterCount =
 		(filters.kValues?.length ? 1 : 0) +
 		(filters.polygonNames?.length ? 1 : 0) +
-		(filters.wallpaperGroup ? 1 : 0) +
-		(filters.exhaustiveOnly ? 1 : 0);
+		(filters.certification ? 1 : 0);
 
 	const filteredTilings = useMemo(() => {
-		const matched = all.filter((t) => matchesFilters(t, filters));
-		const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
-		return matched.sort((a, b) => collator.compare(resolveTilingLabel(a), resolveTilingLabel(b)));
+		return all
+			.filter((t) => matchesCatalogueFilters(t, filters))
+			.sort((a, b) => a.k - b.k || (a.canonicalKey < b.canonicalKey ? -1 : a.canonicalKey > b.canonicalKey ? 1 : 0));
 	}, [all, filters]);
+
+	const certifiedCount = useMemo(() => filteredTilings.filter((t) => t.certified).length, [filteredTilings]);
 
 	const paginatedTilings = useMemo(
 		() => filteredTilings.slice((currentPage - 1) * LIBRARY_TILINGS_PER_PAGE, currentPage * LIBRARY_TILINGS_PER_PAGE),
@@ -112,32 +97,29 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 					<Library size={18} className="text-accent" />
 					<h1 className="text-base font-semibold text-fg">Tiling Library</h1>
 					<span className="text-xs px-2 py-0.5 rounded-full bg-surface-overlay border border-line text-fg-muted">
-						{filteredTilings.length} tilings
+						{filteredTilings.length} tilings · {certifiedCount} certified
 					</span>
 				</div>
 
 				{filteredTilings.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center">
 						<Library size={40} className="text-fg-disabled mb-4" />
-						<p className="text-fg-muted font-medium">No tilings yet</p>
+						<p className="text-fg-muted font-medium">No tilings</p>
 						<p className="text-fg-disabled text-sm mt-1">
-							{Object.keys(filters).length > 0 ? (
+							{activeFilterCount > 0 ? (
 								<>
 									No tilings match the current filters.{" "}
-									<button
-										onClick={() => setFilters({})}
-										className="text-accent hover:underline ml-1"
-									>
+									<button onClick={() => setFilters({})} className="text-accent hover:underline ml-1">
 										Clear filters
 									</button>
 								</>
 							) : (
 								<>
-									Run a search in the{" "}
+									No certified runs yet. Run a sweep in the{" "}
 									<Link href="/lab" className="text-accent hover:underline">
 										Lab
 									</Link>{" "}
-									to populate the library.
+									to populate the catalogue.
 								</>
 							)}
 						</p>
@@ -152,10 +134,10 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 						/>
 						<div className="grid gap-3 mt-4" style={gridStyle}>
 							{paginatedTilings.map((tiling) => (
-								<TilingCard
-									key={tiling.id}
+								<CatalogueCard
+									key={tiling.canonicalKey}
 									tiling={tiling}
-									onClick={(t) => router.push(`/play?tiling=${encodeURIComponent(t.id)}`)}
+									onClick={(t) => router.push(`/play?tiling=${encodeURIComponent(t.canonicalKey)}`)}
 								/>
 							))}
 						</div>
@@ -173,4 +155,3 @@ export function LibraryClient({ tilings: all }: LibraryClientProps) {
 		</div>
 	);
 }
-

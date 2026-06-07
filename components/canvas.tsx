@@ -10,6 +10,7 @@ import { Tiling } from "@/classes/Tiling";
 import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
+import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
 import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
@@ -24,8 +25,83 @@ interface CanvasProps {
 	showTilingRuleInput?: boolean;
 }
 
-function buildTilingFromCell(cellData: TranslationalCellData, radius: number): Tiling {
-	const r = Math.max(2, Math.min(8, radius || 4));
+// Per-axis safety backstop on the replicated grid. Sized so it never limits a real screen-fill at the
+// zoom floor (worst realistic case ~63 cells/axis for a skewed cell on a 4K-at-100% display); it only
+// caps a pathological/near-degenerate basis from exploding the polygon count. Fill normally needs far
+// fewer (~23/axis on a Retina laptop). Perf is governed by the zoom floor (tile density), not this cap.
+const MAX_FILL_RADIUS = 72;
+const DEGENERATE_DET = 1e-9;
+
+// The lattice basis (two world-space translation vectors) of a translational cell, plus its
+// determinant. Single source of truth so fill-radius, wrap, and replication never disagree.
+function latticeBasisFromCell(cellData: TranslationalCellData): { v1: Vector; v2: Vector; det: number } {
+	const basisRaw = cellData?.b ?? cellData?.basis ?? [[1, 0], [0, 1]];
+	const v1 = new Vector(basisRaw[0][0], basisRaw[0][1]);
+	const v2 = new Vector(basisRaw[1][0], basisRaw[1][1]);
+	return { v1, v2, det: v1.x * v2.y - v2.x * v1.y };
+}
+
+// The two on-screen (pixel-space) lattice vectors for the world basis, mirroring the canvas transform
+// world -> scale(zoom) -> flip-y -> rotate(theta). So e(v) = Rot(theta)·(zoom*vx, -zoom*vy). At
+// theta=0 this is the plain (zoom*vx, -zoom*vy). Fill-radius and wrap both reduce against these, so a
+// rotated lattice still tiles/wraps seamlessly.
+function screenLatticeVectors(v1: Vector, v2: Vector, zoom: number, rotation: number) {
+	const c = Math.cos(rotation), s = Math.sin(rotation);
+	const e = (v: Vector) => ({ x: zoom * (c * v.x + s * v.y), y: zoom * (s * v.x - c * v.y) });
+	return { e1: e(v1), e2: e(v2) };
+}
+
+// How many lattice copies (per axis, each side of origin) are needed to cover the viewport plus a
+// one-cell margin. We transform the four screen corners into lattice coords via M^{-1} (columns of M
+// are the on-screen lattice vectors e1, e2) and take the worst case. The +1 absorbs the half-cell wrap
+// shift and the cell's own extent past its anchor.
+function computeFillRadii(
+	v1: Vector, v2: Vector, det: number, zoomForFill: number, width: number, height: number, rotation: number,
+): { Ri: number; Rj: number } {
+	if (Math.abs(det) < DEGENERATE_DET || zoomForFill <= 0) return { Ri: 6, Rj: 6 };
+	const { e1, e2 } = screenLatticeVectors(v1, v2, zoomForFill, rotation);
+	const detM = e1.x * e2.y - e2.x * e1.y; // = zoomForFill^2 * det (rotation-invariant)
+	let maxA = 0, maxB = 0;
+	const hw = width / 2, hh = height / 2;
+	for (const cx of [-hw, hw]) {
+		for (const cy of [-hh, hh]) {
+			const a = (cx * e2.y - cy * e2.x) / detM;
+			const b = (-cx * e1.y + cy * e1.x) / detM;
+			if (Math.abs(a) > maxA) maxA = Math.abs(a);
+			if (Math.abs(b) > maxB) maxB = Math.abs(b);
+		}
+	}
+	const clamp = (n: number) => Math.max(1, Math.min(MAX_FILL_RADIUS, Math.ceil(n) + 1));
+	return { Ri: clamp(maxA), Rj: clamp(maxB) };
+}
+
+// Reduce the (pixel-space) pan offset modulo the on-screen lattice {e1, e2} into the centered
+// fundamental cell. Because the drawn content is exactly lattice-periodic, subtracting whole lattice
+// vectors shifts it by full periods — visually invisible — so panning wraps seamlessly while the copy
+// count stays bounded. Applied at draw time only; stored offset is left untouched. Also returns the
+// WORLD lattice vector L = ra*v1 + rb*v2 that the wrap removed: the Islamic noise is non-periodic and
+// must be sampled at the true (unwrapped) position (world - L), or it snaps at every cell boundary.
+function wrapOffset(
+	offset: Vector, v1: Vector, v2: Vector, det: number, zoom: number, rotation: number,
+): { draw: Vector; worldShiftX: number; worldShiftY: number } {
+	if (Math.abs(det) < DEGENERATE_DET || zoom <= 0) {
+		return { draw: offset.copy(), worldShiftX: 0, worldShiftY: 0 };
+	}
+	const { e1, e2 } = screenLatticeVectors(v1, v2, zoom, rotation);
+	const detM = e1.x * e2.y - e2.x * e1.y;
+	const a = (offset.x * e2.y - offset.y * e2.x) / detM;
+	const b = (-offset.x * e1.y + offset.y * e1.x) / detM;
+	const ra = Math.round(a), rb = Math.round(b);
+	return {
+		draw: new Vector(offset.x - ra * e1.x - rb * e2.x, offset.y - ra * e1.y - rb * e2.y),
+		worldShiftX: ra * v1.x + rb * v2.x,
+		worldShiftY: ra * v1.y + rb * v2.y,
+	};
+}
+
+function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number): Tiling {
+	const ri = Math.max(1, Math.min(MAX_FILL_RADIUS, Ri || 1));
+	const rj = Math.max(1, Math.min(MAX_FILL_RADIUS, Rj || 1));
 	const polyArray = cellData.p ?? cellData.cellPolygons ?? [];
 	const basisRaw = cellData.b ?? cellData.basis ?? [[1, 0], [0, 1]];
 	const [v1x, v1y] = basisRaw[0];
@@ -34,8 +110,8 @@ function buildTilingFromCell(cellData: TranslationalCellData, radius: number): T
 	const t = new Tiling();
 	t.nodes = [];
 
-	for (let i = -r; i <= r; i++) {
-		for (let j = -r; j <= r; j++) {
+	for (let i = -ri; i <= ri; i++) {
+		for (let j = -rj; j <= rj; j++) {
 			const ox = i * v1x + j * v2x;
 			const oy = i * v1y + j * v2y;
 			for (const polyData of polyArray) {
@@ -68,12 +144,13 @@ export function Canvas({
 
 	const prevRef = useRef({
 		rulestring: "",
-		transformSteps: -1,
 		parameter: -1,
 		ruleType: "" as string,
 		translationalCellId: null as string | null,
 		width,
 		height,
+		Ri: -1,
+		Rj: -1,
 	});
 
 	const propsRef = useRef({ width, height, translationalCell, translationalCellId });
@@ -102,21 +179,33 @@ export function Canvas({
 
 			const ensureTiling = () => {
 				const cfg = readCfg();
-				const { translationalCell: tc, translationalCellId: tcId } = propsRef.current;
+				const ctrl = cfg.controls;
+				const { translationalCell: tc, translationalCellId: tcId, width: W, height: H } = propsRef.current;
 				const prev = prevRef.current;
+
+				// Auto-fill: size the replicated grid to cover the viewport + 1-cell margin. Use the
+				// most-zoomed-out point of any in-flight zoom ease (min of current/target) so the grid is
+				// never momentarily undersized during a zoom-out (which would flash black corners).
+				let Ri = prev.Ri, Rj = prev.Rj;
+				if (tc) {
+					const { v1, v2, det } = latticeBasisFromCell(tc);
+					const zoomForFill = Math.min(ctrl.zoom, ctrl.targetZoom);
+					const rot = (cfg.rotation || 0) * Math.PI / 180;
+					({ Ri, Rj } = computeFillRadii(v1, v2, det, zoomForFill, W, H, rot));
+				}
 
 				const ruleChanged =
 					!tc &&
 					(cfg.selectedTiling.rulestring !== prev.rulestring ||
-						cfg.transformSteps !== prev.transformSteps ||
 						cfg.parameter !== prev.parameter);
-				const cellChanged = !!tc && (prev.translationalCellId !== tcId || cfg.transformSteps !== prev.transformSteps);
+				const cellChanged =
+					!!tc && (prev.translationalCellId !== tcId || Ri !== prev.Ri || Rj !== prev.Rj);
 
 				if (!tilingRef.current || ruleChanged || cellChanged) {
 					try {
 						if (cfg.debugView) debugManager.reset();
 
-						const t = buildTilingFromCell(tc, cfg.transformSteps)
+						const t = buildTilingFromCell(tc, Ri, Rj);
 						tilingRef.current = t;
 
 						const regularOnly = t.nodes.length > 0 && t.nodes.every((n) => n instanceof RegularPolygon);
@@ -130,9 +219,10 @@ export function Canvas({
 						setVcs(t.vcs ?? []);
 
 						prev.rulestring = cfg.selectedTiling.rulestring;
-						prev.transformSteps = cfg.transformSteps;
 						prev.parameter = cfg.parameter;
 						prev.translationalCellId = tcId;
+						prev.Ri = Ri;
+						prev.Rj = Rj;
 					} catch (e) {
 						setCanvasError(e instanceof Error ? e.message : String(e));
 					}
@@ -168,10 +258,12 @@ export function Canvas({
 				g.background(240, 7, 16);
 				g.translate(300, 300);
 				g.stroke(0);
-				g.strokeWeight(2 / cfg.controls.zoom);
+				// A small fixed 3x3 patch -> deterministic thumbnail independent of play-mode zoom.
+				const tc = propsRef.current.translationalCell;
+				const patch = tc ? buildTilingFromCell(tc, 1, 1) : tiling;
 
 				let maxX = 0, maxY = 0, minX = 0, minY = 0;
-				for (const n of tiling.nodes) {
+				for (const n of patch.nodes) {
 					for (const v of n.vertices) {
 						if (v.x > maxX) maxX = v.x;
 						if (v.y > maxY) maxY = v.y;
@@ -179,10 +271,15 @@ export function Canvas({
 						if (v.y < minY) minY = v.y;
 					}
 				}
-				g.scale(cfg.controls.zoom);
+				const bw = Math.max(maxX - minX, 1e-6);
+				const bh = Math.max(maxY - minY, 1e-6);
+				// The outer transform maps a 600x600 world box onto the 300px buffer; fit the patch in.
+				const fit = 0.9 * Math.min(600 / bw, 600 / bh);
+				g.strokeWeight(2 / fit);
+				g.scale(fit);
 				g.translate(-(maxX + minX) / 2, -(maxY + minY) / 2);
 
-				for (const n of tiling.nodes) {
+				for (const n of patch.nodes) {
 					g.push();
 					g.fill(n.hue ?? 0, 40, 100, 0.8);
 					g.beginShape();
@@ -240,9 +337,26 @@ export function Canvas({
 				}
 
 				try {
+					// Wrap the pan offset modulo the lattice so panning feels infinite while the drawn
+					// copy count stays bounded; the wrap jump is a whole period -> invisible.
+					const rot = (cfg.rotation || 0) * Math.PI / 180;
+					const tc = propsRef.current.translationalCell;
+					let drawOffset = ctrl.offset;
+					if (tc) {
+						const { v1, v2, det } = latticeBasisFromCell(tc);
+						const wrapped = wrapOffset(ctrl.offset, v1, v2, det, ctrl.zoom, rot);
+						drawOffset = wrapped.draw;
+						// Keep the Islamic noise sampling in the true (unwrapped) world frame so the animated
+						// motif pans with the content instead of snapping back at each lattice wrap.
+						setIslamicNoiseWorldOffset(-wrapped.worldShiftX, -wrapped.worldShiftY);
+					} else {
+						setIslamicNoiseWorldOffset(0, 0);
+					}
+
 					p5.push();
 					p5.translate(p5.width / 2, p5.height / 2);
-					p5.translate(ctrl.offset.x, ctrl.offset.y);
+					p5.translate(drawOffset.x, drawOffset.y);
+					p5.rotate(rot);
 					p5.scale(ctrl.zoom);
 					p5.scale(1, -1);
 					drawTiling(cfg, tiling);
@@ -283,7 +397,7 @@ export function Canvas({
 					event.preventDefault();
 					event.stopPropagation();
 					ctrl.targetOffset.set(new Vector(0, 0));
-					useConfiguration.setState({ controls: { ...ctrl, targetZoom: 50 } });
+					useConfiguration.setState({ controls: { ...ctrl, targetZoom: Math.max(40, Math.min(150, 50)) } });
 					return;
 				}
 				grabRef.current = true;
@@ -300,7 +414,7 @@ export function Canvas({
 				const mouse = new Vector(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2);
 				const world = Vector.sub(mouse, ctrl.targetOffset).scale(1 / ctrl.targetZoom);
 				let z = ctrl.targetZoom;
-				if (event && event.deltaY > 0) z = Math.max(z / 1.1, 10);
+				if (event && event.deltaY > 0) z = Math.max(z / 1.1, 40);
 				else if (event && event.deltaY < 0) z = Math.min(z * 1.1, 150);
 				const newScreen = Vector.add(Vector.scale(world, z), ctrl.targetOffset);
 				ctrl.targetOffset.add(Vector.sub(mouse, newScreen));

@@ -32,6 +32,7 @@ export interface ConfigurationState {
 	speed: number;
 	parameter: number;
 	transformSteps: number;
+	rotation: number;
 
 	// Display toggles
 	showDualConnections: boolean;
@@ -80,6 +81,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	speed: 20,
 	parameter: 45,
 	transformSteps: 5,
+	rotation: 0,
 
 	showDualConnections: false,
 	showPolygonPoints: false,

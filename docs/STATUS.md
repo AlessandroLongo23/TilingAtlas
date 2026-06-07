@@ -27,22 +27,25 @@ Two tiers. Do not mix them.
   Forward routes: orbifold pool-bypass (branch enumeration theory-complete & pool-free; **the
   equivariant fill at k=4-hex is UNMEASURED — the make-or-break**) or Delaney–Dress (fallback).
 
-## Reflection-coverage gate — theory CLOSED for the regular family (2026-06-07)
+## Reflection-coverage gate — CLEARED for the regular family (2026-06-07)
 
 The load-bearing step is **proved** (TA, Obligation 1a): Prop 0 (grid-confinement) + Prop 1a
 (name-reversal + on-grid rotation = reflection) make `PeriodSolver`'s "shared name" assertion a
-theorem — reflection adds **no** seeding incompleteness for the regular family. Residuals:
-- **CC** — finish the confirmatory falsifier
-  (`../../resources/research/reflection-coverage-experiment-2026-06-07.md`); **predicted PASS**.
-  A FAIL ⇒ implementation defect (name-reversal ≠ true mirror, coarse rotation set), not math.
+theorem — reflection adds **no** seeding incompleteness for the regular family. **Now written into
+the thesis**: `lem:reflectioncover` (Lemma 5.20) + proof + `rem:reflectioncover` in `correctness.tex`.
+Status:
+- **CC's confirmatory falsifier returned PASS** — k≤2 full (reflected stream B ⊆ A, 0 new classes,
+  exact ℚ(ζ_N)); k=3 via the 61-catalogue's 22 chiral carriers (stream A already complete); direct
+  proven-k3 reflected run deferred (tractability). Gate fully cleared; **proven-k3 + C4 unblocked**.
 - The live completeness question is now **C1 Part B (positional/fill completeness)**, not reflection.
 - **Star/parametric families break Prop 0** (free angle α off-grid) → need explicit `mirrorZeta`
   seeding (input to C7).
-Lemma: `../../resources/research/reflection-coverage-lemma-2026-06-07.md` (proved-for-regular-family).
+Refs: `../../resources/research/reflection-coverage-lemma-2026-06-07.md` +
+`reflection-coverage-experiment-2026-06-07.md`.
 
 ## Live NEXT — one per party
 
-- **CC** — finish the reflection falsifier (predicted PASS). Then: **Certified-Results Atlas** frontend
+- **CC** — (reflection falsifier DONE — PASS.) Next: **Certified-Results Atlas** frontend
   (`FRONTEND_ROADMAP.md` — read-only Certified-vs-Candidate views over `catalogue`/`found_tilings`);
   C4 orbifold pool-bypass → k=4-hex fill timing; C1 Part B positional/fill completeness.
 - **TA** — resolve the 6 open decisions in `FRONTEND_ROADMAP.md` (chief: which polygon family is the

@@ -1,18 +1,19 @@
 "use client";
 
 import { PageSidebar } from "@/components/page-sidebar";
-import type { CampaignTiling } from "@/lib/services/campaignService";
+import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { TilingsTab } from "./tilings-tab";
 
 interface SidebarProps {
-	newTilings?: CampaignTiling[];
-	onNewTilingSelect?: (t: CampaignTiling) => void;
+	tilings?: CatalogueTiling[];
+	selected?: CatalogueTiling | null;
+	onSelect?: (t: CatalogueTiling) => void;
 }
 
-export function Sidebar({ newTilings = [], onNewTilingSelect }: SidebarProps) {
+export function Sidebar({ tilings = [], selected = null, onSelect }: SidebarProps) {
 	return (
 		<PageSidebar scrollable={false}>
-			<TilingsTab newTilings={newTilings} onNewTilingSelect={onNewTilingSelect} />
+			<TilingsTab tilings={tilings} selected={selected} onSelect={onSelect} />
 		</PageSidebar>
 	);
 }
