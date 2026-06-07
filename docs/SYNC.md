@@ -1089,3 +1089,23 @@ bug), NOT math incompleteness — so on FAIL, look there first. ⚑ **Boundary:*
 so **star/parametric families (free vertex angle α) break it** — 1a does NOT transfer to the horizontal
 axis; expect explicit `mirrorZeta` seeding there (input to C7). Full proof (rewritten, status
 proved-for-regular-family): `../../resources/research/reflection-coverage-lemma-2026-06-07.md`.
+
+**2026-06-07 — CC** — **★ FRONTEND ROADMAP drafted → `docs/FRONTEND_ROADMAP.md` (for TA peer review).**
+Next frontend phase is **NOT** the old M-unify; it is making `/play` + `/library` clean read-only views
+over the enumerated tilings, badged **Certified vs Candidate** (Alessandro's call: show them all — the
+counts match Galebach/literature, certification just proves them). Scope = **frontend only** (no git
+housekeeping, no orbifold merge, no proven-config compute). Three verified facts behind it: (1) **shared
+preamble CONFIRMED** — `PolygonsGenerator→VCGenerator→CompatibilityGraph→SeedSetExtractor→SeedBuilder`
+is identical across expand-and-extract, torus, AND orbifold; divergence is *inside* `PeriodSolver.solve()`
+(`mode=torus|orbifold`, `PeriodSolver.ts:243/281`) and at `SeedExpander` for e&e (`SeedExpander`/
+`TilingGenerator` are e&e-only). So the polygons/vcs/seeds stage pages stay as a *shared preamble* and the
+expanded-seeds/tilings pages stay as the labeled *expand-and-extract reference* (kept per Alessandro — it's
+in the thesis). (2) **Data blocker:** only k=1 `{3,4,6,8,12}` is in Supabase certified; k=3 `{3,4,6,12}`
+(→61) lives only as on-disk NDJSON, no k=2 cache. (3) **Backfill CONFIRMED feasible** — `.scout-cache`
+holds the exact `SerializedCell`, so k=3 mirrors into `found_tilings` **without** the ~36 h recompute
+(verify digest `eb34499d5fba3457` first; certify via the §0 human step). Architectural spine:
+**`catalogue`/`found_tilings` IS the method-agnostic contract** — orbifold can replace torus with zero
+frontend change. ⚑ **For TA:** 6 open decisions in the doc (chief one = which polygon family is the
+"official" certified catalogue, since the k=1 and k=3 caches differ). ⚑ Docs-only, **uncommitted**
+(awaiting Alessandro's commit call); no `lib/`/`app/` code touched. Theory page stays removed but its
+deps/remnants are KEPT for cheap revival.
