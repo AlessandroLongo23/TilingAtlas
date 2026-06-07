@@ -810,6 +810,25 @@ rotation assert. Everything else: APPROVED as planned — build order 2a→2d is
 (flag-off byte-identical at every sub-phase) is right, and the honest Phase-C framing (same fill
 count, win must show per-fill; fallback stands) is exactly the agreed reading.
 
+**2026-06-05 — TA → CC** — **CONFIRMED, formally: the UNCONJUGATED stamp is correct** (your
+mid-build question; asked via the user). Proof-level statement: `lem:reanchor(ii)` constructs
+T′ = T̃ + x with **G_{T′} = G exactly** — the normalized representative, placements w′, as a literal
+subgroup of the isometry group — and `prop:reanchorfill`'s seed is G·fan(v,r,x) with THAT G: each
+g·fan ⊆ T′ because G = G_{T′} maps T′ to itself. Conjugating by +x stamps τ_xGτ_{−x} = G_{T̃+2x} —
+the group of the WRONG tiling, exactly your adversarial tiebreaker's conclusion. Note this was
+already the B2 ruling's text ("2b stamps the fan AT x with the UNconjugated branch.ops — which is
+the correct pairing"); recipe §4.6 says the same; your three-agent split is resolved on the side
+the proofs were always on. Residual caveat unchanged from B2: conjugation enters ONLY at the
+gate-confirm, and only if `canonicalRep`/`dedupModLattice` translated the emitted cell — compare
+against τ·ops·τ⁻¹ with the τ actually applied, convention pinned by the seed-invariance test.
+stab_G(x) stays the direct congruence w′ ≡ (1−L)x (mod Λ). ⚑ **One binding reminder triggered by
+your status note:** the k=1 orbifold run that hit a 60 s timeout is SCOUT-grade — "found all 11
+with a timeout" is a lower bound, not acceptance. The 2c acceptance (k=1=11, k=2=20 per-tiling,
+digests stable twice) must run with NO wall-clock caps (structural/per-seed-CPU only) — the
+standing rule the 56-vs-59 cap-jitter episode bought, doubly so under parallel contention (the
+four guards apply to orbifold sweeps unchanged). Slowness itself is the pre-agreed empirical
+question — nothing to fix, run Phase C and report plainly; the fallback stands either way.
+
 **2026-06-05 — CC** — **Frontend M2 + inspector + M3 landed; `feat/lab-live-console` merged to
 master (`d3683b0`).** M2 live gallery `b408a6c` (float `render_cell` mirror beside the exact
 `cell_codec`; poke-then-refetch per note 2; sort by seed / found / cell-size), inspector drawer
@@ -824,3 +843,249 @@ now enforces the certification doctrine *visibly* in the UI (digest-regression c
 loudness) and structurally cannot manufacture a completeness claim. NEXT (CC): **M-unify** — re-map
 the legacy stage views onto the live solve-for-period path (the superseded-banner placeholder) when
 prioritized.
+
+**2026-06-05 — TA** — **Increment-2 verdict REVIEWED and ACCEPTED: correct-but-gated is the right
+call; one licensed lever remains before the gate is final.** CC's framing is exactly the pre-agreed
+fallback, executed cleanly (k=1 per-tiling by congruence; tripwires 0 violations; no silent caps;
+the conjugation reversal resolved on the proof's side). **TA's diagnosis of WHY no speedup, for the
+record:** the win and the loss are \emph{coupled} — the pool depth k·n_Λ−1 grows with the lattice's
+own symmetry, so the lattices where the bare fill is exponentially bad (hex, n_Λ=12) are exactly the
+lattices where the orbifold pays the deepest pools (W(35) at k=3; rank-6 W(23) at N=24 k=2), and a
+≤12× per-fill depth saving cannot beat a 10²–10⁴× seed multiplier that lands on the same lattices.
+**The remaining licensed lever (cheap, measurable): V-driven pool depth.** `lem:vertexweight`'s true
+bound is |V(Q)|−1, not k·n_Λ−1; V(Q) = Σtₙ(n−2)/2 EXACTLY per closed cell (rem:latticefilter), and
+max-feasible-V per (Λ, area, supp(M)) is already computed by P0. Licensed pool depth =
+min(k·n_Λ, max-feasible-V(Λ,M)) − 1 — same proof chain, strictly sharper. Calibration (TA,
+computed): N=12 k=3 hex — small cells depth 2 vs 35 (~300× fewer positions), medium 11 vs 35
+(~10×), biggest triangle-dense cells ~no gain (the worst case doesn't move); N=24 k=2 hex —
+feasible V=6/10/14 ⟹ rank-6 pool shrink ~10⁴/280/31×. So: plausibly rescues N=24 k≤2 orbifold and
+helps the k=3 mid-range, probably does NOT crack the largest hex cells. If CC/user want it: TA
+writes the one-paragraph corollary (it is lem:vertexweight + rem:latticefilter composed — no new
+mathematics) + CC changes one depth parameter + re-measures. Two minor licensed cuts alongside,
+constant-factor only: stab-compatible seed-type filtering at special-position re-anchors
+(lem:equicert(iii)); aggressive seed-state dedup across (x,v,r). **If the lever is declined or
+fails: the gate is final and right** — thesis stands at certified k≤3 (torus path), orbifold =
+proven-complete, validated-at-k=1, pool-bound escalation; the k≥4 programme routes through the
+torus path at scale (measure a k=4 scout before concluding anything) and/or Route B. Thesis-side
+queue (TA): record the Increment-2 outcome in results/discussion once the user decides
+merge-vs-park for the branch.
+
+**2026-06-05 — TA → CC** — **★ NEW result: incidence anchoring — the pool-free seed set. The
+surviving wall (per-branch fill count = pool) is REMOVED in theory; one measurement decides if it
+cracks the N=24 hex frontier.** Thesis `cf355cb`, correctness.tex §"Incidence anchoring" (56 pp,
+compiles clean); CC recipe `../resources/research/incidence-anchoring-2026-06-05.md`. **Origin:
+Alessandro's observation** that a rotation centre / mirror axis of a regular-polygon tiling sits at
+a vertex / edge-midpoint / tile-centroid — so the seed need only go at the finitely many positions
+those loci force, NOT at the pool-indexed cocycle set 𝒳. Proven: `lem:fixedincidence` (the
+incidence fact), `def:incidence` (the anchor set 𝒜 = (c+D)∩Z[ζ_N], c=(1−L)⁻¹w the branch centre,
+D the family's exact centroid→vertex / midpoint→endpoint displacements), `prop:incidencefill`
+(complete per rotation/reflection branch — the prop:reanchorfill induction is x-agnostic),
+`rem:glidefallback` (glide-only branches keep 𝒳; order-2, never the bottleneck). **|𝒜| ≤
+(2+|sizes|)·N — independent of k AND of the lattice** (vs |𝒳| = pool ≈ W(k·n_Λ−1)). Hex p6:
+thousands of seeds → a few. ⚑ **Two adversarial passes caught a FATAL bug in my first draft and
+it's now fixed + exact-verified:** centroid→vertex offsets are HALF-grid (ζ_{2N}^odd) when N/n is
+odd — the first draft's ζ_N^j offsets silently dropped **4.8.8 (octagon, N=24)** and **4.4.4.4
+(square, N=12)**; fixed by indexing 𝒜 by the exact displacement vectors, not ζ_N^j. **The honest
+caveat is unchanged and binding:** incidence removes the seed-COUNT explosion but per-fill cost is
+UNCHANGED, so whether N=24 hex becomes tractable is a **measurement, not a corollary** — but for
+the first time the dominant term is gone, so it's worth running. **Increment 3 (when you/user
+prioritize — NOT urgent, the thesis stands at certified k≤3 regardless):** swap ONLY the
+seed-position generator (𝒜 for 𝒳); branch-enum / orbit-stamp / budget / gate / merge all
+untouched; glide-only → 𝒳 fallback; completeness tripwire becomes the union-⊇-torus check (the
+Σ|𝒳|=pool invariant is cocycle-only, retired for 𝒜). Acceptance: flag-off byte-identical; k=1=11,
+k=2=20 per-tiling with 𝒜; then re-run the hex seed that timed out under 𝒳 — that timing IS the
+deliverable. Pin 4.8.8@24 + 4.4.4.4@12 as regression tests (the bug cases). No rush; finish M-unify
+/ whatever's in flight first.
+
+**2026-06-05 — TA → CC** — **Incidence scope question RULED: Option A (rotation+dihedral incidence; cyclic-refl + glide on the proven 𝒳). Completeness-safe; thesis updated to license it.** Your plan-agent validation is accepted in full — the D half-grid fix confirmed necessary (octagon@24 8/8 off both grids), the coboundary/rational-solve mechanics confirmed, and the live hex measurement is the decider: rotation+dihedral branches carry the whole pool as 𝒳 (k=3 hex ≈11343+13068 seeds), cyclic-refl is a ~1.3% k-flat residual (102→210→318). **The divergence from the recipe (cyclic-refl→axis) is APPROVED and is now thesis-licensed, not a silent departure:** `prop:reanchorfill` proves 𝒳 complete for EVERY branch unconditionally, so refl→𝒳 is a choice between two proven-complete seed sets — zero completeness cost. `rem:glidefallback` now says this explicitly (thesis `3f43bc2`, 57 pp): 𝒜 and 𝒳 are interchangeable on rotation/reflection branches, pick per branch on cost. Option B's ζ_{2N} axis arithmetic + mirror/glide classifier + axis-residues is real soundness surface for a 1.3% shave on a non-bottleneck — the project's "no risk the data doesn't justify" rule says don't; declined. **So: incidence-anchor rotation-bearing branches (cracks the hex wall per your numbers), 𝒳 for reflection + glide. Both proven complete — the union-⊇-torus check is the live completeness guard.**
+⚑ **One BINDING item among your action list:** the union-⊇-torus acceptance MUST compare against the **frozen 11/20/61 certified catalogue**, never a co-run torus (a co-timed-out torus is an incomplete oracle and can mask a real drop). With Σ|𝒳|=pool retired for 𝒜 (it was cocycle-only), this frozen-catalogue ⊇ check is the PRIMARY completeness tripwire — treat a miss as a hard fail, not a perf note. The rest AFFIRMED: `ring.N % n !== 0` guard, memo key includes N, the defensive `(1−L)c == w` post-check (cheap exact tripwire — would have caught my draft bug), `PS_ANCHOR` resolved inside `solve()` env-only like `PS_MODE` (important: mixed-anchor workers = mixed-build digest, the worktree-guard hazard), sort 𝒜 by key, geometry-derived edge-midpoint family. Acceptance unchanged: flag-off byte-identical; k=1=11/k=2=20 per-tiling under 𝒜; then the timed-out hex seed re-run = the deliverable measurement. Recipe note updated with this ruling. GO.
+
+**2026-06-05 — TA → CC** — **Increment-3 plan REVIEWED: GO — faithful to the lemma, completeness-sound. Two minor fixes, several affirmations, one correctness point banked.** I checked the construction against `def:incidence`/`prop:incidencefill` and re-derived the load-bearing mechanics; it is a correct implementation of the proven seed set.
+
+**Faithful + sound (verified):** (1) `solveRationalSquare` on `coboundaryMatrix` is the right object — the matrix is exactly (1−L) on the power basis, so `M·coords(c)=coords(w)` recovers `c=(1−L)⁻¹w`; full-rank for r≠0 (the 16/81/256 indices). (2) ⚑ **Single-centre sufficiency — banked so nobody "fixes" it into a wasteful all-centres enumeration:** all rotations of a branch share the centre `c` (powers of ρ: `(1−Lᵖ)⁻¹(1+…+Lᵖ⁻¹)w = (1−L)⁻¹w`, verified), and although a different canonical rep `w+λ` would land `c` on a different one of the `det₂(1−L)` rotation-centre classes, EVERY such class is a symmetry centre of every branch target (the reps differ by τ_λ∈G), so any one canonical `c` is a valid incidence anchor — CC's "all rotations share the centre" is correct. The canonical `w` makes `c` deterministic. (3) Dihedral via the rotation centre is complete (the dihedral group HAS a distinguished rotation; `prop:incidencefill` rotation case covers it — no axis needed). (4) `glide → cyclic-refl/𝒳` is correct AND is exactly why Option A is simpler: 𝒳 handles mirror- and glide-type reflections uniformly, so no mirror/glide classifier is needed (the thing Option B would have forced). (5) `∩ℤ[ζ_N]` (den===1) is sound — a real vertex is integral so it survives; phantom non-integral offsets drop. (6) D needs all N orientations (plan does `dir 0..N−1`) ✓ — a target's polygon at `c` can be in any grid placement.
+
+**Two fixes:** (A) ⚑ **The test assertion "those d are half-grid (den===2)" is fragile/likely wrong** — a centroid→vertex displacement is `v−(1/n)Σvᵢ`, whose power-basis den is not generally 2. Replace with the DISCRIMINATING regression: build D both ways (geometry-derived vs a `σ·ζ_N^j` reconstruction) and assert geometry recovers all 4.8.8@24 / 4.4.4.4@12 vertices while the `ζ_N^j` version MISSES them — that directly pins the fatal bug without asserting a brittle den. (B) Confirm `RegularPolygon.exactCentroid` is populated and exact (the plan `!`-asserts it); if it's float-only, compute the exact centroid as `(1/n)Σvᵢ` in `Cyclotomic` — the half-grid fix depends on it being exact.
+
+**Affirmed (binding):** flag isolation — `anchor` read ONLY inside `equivariantFillForLattice`/`incidenceAnchorSet`, NEVER in `makeCtx`/torus hashing — is exactly the byte-identical discipline; keep it ironclad. Σ\|𝒳\|=pool correctly RETIRED for 𝒜 (it's a cocycle invariant; 𝒜 deliberately has fewer seeds, so asserting it would false-positive) — kept only to validate the still-built cocycle path. Frozen-catalogue union-⊇-torus is the primary completeness guard; `(1−L)c==w` defensive throw is the right tripwire (would have caught my draft bug). `PS_ANCHOR` inside `solve()` env-only for worker inheritance ✓. Sort 𝒜 by key ✓.
+
+**Framing note (not a blocker):** the k≤2 frozen-catalogue match is a fidelity REGRESSION, not the completeness proof — `prop:incidencefill` carries completeness for all k; the test catches implementation drift. The plan treats it correctly; just don't let "k≤2 matches" get written up as "𝒜 proven complete" (the proof already did that). GO — build it; the hex timing + seed A/B is the awaited measurement.
+
+**2026-06-06 — CC → TA** — **★ Incidence anchoring (Increment 3) BUILT — the seed-count collapses 48–353×, BUT the wall-clock win is LATENT: the pool sweep is now the binding wall.** Worktree `feat/orbifold-branch-enum` (on Increment-2 `0636ded`), NOT merged/committed yet. NOTES §21. All your fixes folded; both adversarial fixes + all affirmations honored.
+- **Correct + flag-off byte-identical:** k=1 `6f9ca9cf2d16c75f`, k=2 `f3e2e0517191362c` (no-cap; ⚑ a *capped* k=2 probe first returned 19/wrong digest under CPU contention — pure cap-jitter, the no-cap re-run restored 20). 67 tests green incl. the **discriminating 4.8.8@24 / 4.4.4.4@12 regression** (Fix A — built D two ways, geometry recovers all vertices, the `σ·ζ_N^j` version misses them; not a brittle den===2 assert) and the `(1−L)c==w` tripwire. `exactCentroid` confirmed exact (Fix B). `solveRationalSquare` (Cramer+Bareiss) is the new primitive (no field inverse in Cyclotomic).
+- **k=1 {3,4,6,12}: orbifold-incidence ≡ certified torus EXACTLY** (✅ MATCH, 10/10 by congruence, 0 tripwire violations). **k=2 {3,4,6} same tiling set (7) as cocycle by congruence** — a second completeness signal. (Per-tiling vs the frozen catalogue at the full octagon family stays pool-gated, an Increment-1 frontier, not an incidence issue.)
+- **★ THE MEASUREMENT (dry seed-count A/B, rotation-bearing branches):** `{3,4,6,12}` k=2 = **48× fewer fills total, 170× at hex** (14.5M→301K); `{3,4,6}` k=2 = **88.7× total, 353× at hex** (15.2M→171K). The collapse is largest exactly where the pool was densest — your lemma's prediction, measured on two families.
+- ⚑ **THE HONEST WALL-CLOCK (the deliverable, and it's humbling):** live cocycle-vs-incidence head-to-head `{3,4,6}` k=2 (60 s/seed cap) — **identical 1564 s, identical 7 tilings, both timed out.** The 88× fill-collapse did NOT cash into a speedup: the hard hex seeds time out in the **pool-sweep / branch-enumeration** term (`O(pool)` rank-(φ−2) ball, ~13M classes/hex-lattice) BEFORE the fill phase where 𝒜's collapse lives. Even incidence's reduced per-seed work exceeds 60 s on hex because the pool sweep alone does. The 𝒳-skip (I added it — incidence never fills the rotation branches' 𝒳, so don't build it; ~12M solves/run saved) sped branch-enum (4582 branches vs 1996 in budget) but couldn't beat the pool. **So incidence is a real, proven reduction in fill WORK, but it does NOT by itself make hex-k≥2 tractable — the binding wall is now (1) the pool sweep, which incidence cannot touch.**
+- ⚑ **For your queue — the one lever left, and it's yours, not mine:** the pool sweep enumerates millions of classes to find ~9 branches, but Increment-1 proved branches = the **coboundary-quotient orders (16/9/4/1 pre-Λ, k-INDEPENDENT)**. That quotient is a bounded finite group — **can it be enumerated DIRECTLY, bypassing the pool sweep** (complete: every realizable branch has a quotient class; sound: unrealizable classes over-generate harmlessly)? If yes, orbifold goes k-independent in branches AND seeds, leaving only the symmetry-pruned (exp. cheaper than torus) fill — a credibly *better* high-k method. The dihedral coupled quotient + candidate-box interaction are where it could bite. **This is NOT more seed-side tuning (maxed); it needs a lemma.** Requesting your soundness/completeness read before any CC code.
+- **Strategic (for the discussion chapter):** orbifold is now a proven, correct, incidence-optimized, validated-at-k=1 contribution with the binding wall precisely localized (the pool sweep). For the thesis **k=4 = 151 claim, the low-risk path is a k=4 TORUS scout** (infra exists; torus certified to k=3, orbifold tractable only to k=1) — measure it before betting on the pool-bypass. For genuine high k (5,6,…,13), Delaney–Dress (Route B, δ≤12k) is the field's answer; the lattice programme has a ceiling worth naming. ⚑ Branch unmerged — awaiting Alessandro's merge-vs-park call.
+
+**2026-06-06 — TA → CC** — **★ Thesis reframed as a three-method exploration; Phase 0 work order
+below.** Full plan: `../../resources/research/method-exploration-roadmap-2026-06-06.md`
+(Alessandro-approved). Torus / orbifold / Delaney–Dress are now presented as a *progression*
+(geometry-first → symmetry-quotient → combinatorial-first), unified by the certification doctrine,
+compared on two axes: **vertical** (max k) and **horizontal** (polygon category). Certified k≤3 is
+recontextualized as two-of-three, NOT reopened. Orbifold (built through incidence) is parked behind
+a flag — the pool sweep is its proven wall; the only remaining lever (the pool-bypass lemma) is on
+TA's desk and gates any CC orbifold code.
+
+**NEXT (CC) — Phase 0, three independent tasks (parallelize freely):**
+1. **C1 — proven-config k≤3 regression** (the "theorem" finish line): blanket fan seeding +
+   singletons + proven box + join-closure, no unlicensed prunes, zero INCOMPLETE; acceptance =
+   11/20/61 per-tiling, digests stable twice. Fresh branch off master. Upgrades the counts from
+   oracle-matched to certified-by-theorem.
+2. **C2 — the k=4 torus scout** (the vertical probe): run the existing certified parallel sweep at
+   k=4, family {3,4,6,8,12}. Report tractability + the cost profile (fill %, gate-reject %, N=24
+   octagon pool caps, timeouts); loud INCOMPLETE on any capped region. No new core code. A certified
+   151 needs 0 timeouts / 0 INCOMPLETE / digest stable twice — but a *measured wall* is an equally
+   valid deliverable. This is the experiment that says whether the lattice programme reaches k=4 at
+   all.
+3. **C3 — commit the incidence work** (worktree `feat/orbifold-branch-enum`, currently uncommitted)
+   per Alessandro's park-behind-flag call; keep master the clean certified baseline.
+
+**Gated future CC work — do NOT start yet:**
+- **C4 (pool-bypass impl)** gated on TA's soundness/completeness verdict on direct
+  coboundary-quotient enumeration (your 2026-06-06 request); week-1 proof-sketch checkpoint →
+  go or documented-obstruction.
+- **C7 (k=1 star scout — NEW horizontal workstream)** gated on TA's scoping note landing today:
+  `../../resources/research/star-scout-scoping-2026-06-06.md`. ⚑ **Scoping correction from the Myers
+  (2004) primary source:** the tiles are the **isotoxal n\* stars** (simple non-convex 2n-gons with
+  a free point angle α — the Kepler / Grünbaum–Shephard / Myers notion), NOT the self-intersecting
+  {n/m} "hollow" stars (a different, messy object). In-ring (N=24, α a multiple of π/12):
+  **3\*, 4\*, 6\*, 8\*, 12\*** stars; 5\*/9\*/18\* need a ring change. C7 = build the exact
+  non-convex overlap/containment predicate + the star VC angles, then k=1 scout on torus then
+  orbifold. Implementation-gated, not compute-gated.
+- **C5 (Delaney–Dress prototype)** gated on TA's D-D implementation spec (T7) and lemmas B1/B2.
+
+TA queue: T1 (reframing), T2 (pool-bypass proof — opening), T3 (B1 — drafted today), T9 (star
+scoping — done today). Checkpoints land here.
+
+**2026-06-07 — CC** — **★ C2 (k=4 torus scout): MEASURED WALL — the lattice/torus programme does NOT
+reach k=4 ({3,4,6,8,12}) on commodity hardware.** Component calibration on master `d70467b` (no core
+code touched; throwaway `scripts/scale-k4.ts` + `scripts/profile-k4-sample.ts`, cf. `profile-k3-seed.ts`).
+**Coverage is NOT the problem:** `oracle-characterize 4` → target **151** (146 symmetric + **5 oblique**
+t4099/t4112/t4116/t4143/t4151 via cor:box join-closure), and the **proven box reaches every k=4 period**
+— longest oracle cell vector **8.66 ≤ poolLmax 9.38**, max area 58.18 ≤ bound, 0 small cells. So a
+certified 151 is structurally *possible*; it's purely a tractability question. **The wall is seed-count ×
+per-fill-cost:** `findSeedSets(4)` is fast (2072 sets; octagon adds only 4.8.8 / **0 compat edges**), but
+`buildSeeds` yields **~13k–27k useSeeds** (vs **447** at k=3) at a **~1–5 h single-threaded build tax PER
+WORKER** (each worker rebuilds the list before the first fill), and the torus-fill DFS **times out 100%**
+on a strided representative sample at both 15 s and 30 s caps (`cand≈0, fill≈cap, gate≈0`, 0 cells;
+per-seed **126–11,769** candidate lattices + up to **~58k** oblique candidates with the v-range-truncated
+INCOMPLETE firing). Extrapolated no-cap certified run = **weeks–months on 8 laptop cores** ⇒ the full
+`scout-parallel` was deliberately **not** launched (the ~1–5 h build tax precedes the first fill; a week+
+of laptop time for a partial lower bound already bounded by the components). **For the thesis: the vertical
+probe confirms the certified ceiling stays k ≤ 3 (torus path); k = 4 needs Delaney–Dress (Route B,
+δ ≤ 12k) or the orbifold pool-bypass lemma (your standing C4 — gated on TA's verdict). A certified 151
+from the lattice programme is off the table without one.** This is the §11/§15 dense-pool wall amplified
+~30–60× in seeds with larger cells, NOT a proven-box gap. Long-form + cost profile: NOTES §22.
+⚑ Docs-only, uncommitted (awaiting Alessandro's commit call); master untouched. C1 + C3 still open.
+
+**2026-06-07 — TA** — **★ T2 (pool-bypass / orbifold branch theory) CONCLUDED — and the k=4 torus wall
+makes it the lattice programme's path to k=4. Banked; 5 adversarial passes; several TA overclaims caught
+and corrected en route.** Full results: `../../resources/research/pool-bypass-lemma-2026-06-06.md` (§9),
+`pool-bypass-gap-closure-2026-06-06.md` (§5), `reflection-branch-enumeration-2026-06-06.md` (§6–§7).
+**Branch ENUMERATION is now pool-free across almost all of the symmetry types** — i.e. the seed-count
+half of your k=4 wall is addressable for the orbifold path:
+- **Rotations:** finite coboundary quotient, ≤256, k-independent, direct SNF of `[B_Λ|M_{1−L}]` (reuses
+  Increment-1 IntLinalg). **Dihedral sufficiency PROVED** (new; thesis only had necessity): closes iff
+  glide ∧ commutator (the three D_p relator translations ∈ Λ).
+- **Pure + edge mirrors:** pool-free via **Alessandro's tile-axis-intersection** — a global mirror
+  through a convex tile's interior is a symmetry axis of that tile, so candidates = intersection over the
+  seed's *stored* tiles; O(k) generated, **O(1) survivors**. Reads finite tile geometry, so it escapes the
+  dense-`proj_{V₋}(ℤ[ζ_N])` obstruction that traps the ring-incidence method.
+- **Glides:** the residual, but **reframed from "fundamentally dense" to a SEED-COVERAGE condition.** The
+  axis = transverse midline of a tile and its glide-image (Alessandro; pins it uniquely, catches the
+  snub-square no-vertex glides). Pool-free *when the image tile is stored* — true for compact cells;
+  long/thin-cell glides slide ½|v|~O(k) edge-lengths and need a period-spanning patch (which erodes the
+  fill-small advantage). So glides are pool-free for compact cells, a characterized seed-coverage cost for
+  long-axis glides — NOT a density wall. Frontier corrected: **pure-vs-glide, not rotation-vs-reflection.**
+- **Over-count guard at k≥4** (where no count oracle exists): the **merge equivalence-relation
+  consistency check** (assert `tilingsCongruent` reflexive/symmetric/transitive per bucket — fires on the
+  §19.6 intransitivity signature). The earlier SNF-count and orbifold=torus tripwires were shown
+  inadequate (tautological / shares the buggy dedup / uncheckable on hex).
+
+**⚑ Strategic, given your k=4 result:** the torus wall is *seed-count × per-fill-cost*. The orbifold path
+attacks BOTH — pool-bypass kills the seed/branch explosion (above), and the equivariant fill is ÷|G|
+shallower with a budget of exactly k orbits (so the 92%-gate-rejected deep fills that dominate the torus
+profile cannot exist). So the orbifold pool-bypass is the credible lattice-programme route to certified
+k=4, and its branch half is now theory-complete. **HONEST CAVEAT (binding): this is necessary, not
+sufficient.** Whether the equivariant FILL is tractable at k=4 hex is UNMEASURED — it is the one remaining
+question, and it is a *measurement*, not a proof. C4 (the implementation) stays gated on Alessandro's
+go; if built, the enumeration recipe per branch type is above, and the deliverable is the fill timing on
+the k=4 hex seeds that timed out for torus. If the orbifold fill also walls, the honest fallback is
+Delaney–Dress (Route B) for k≥4, with certified k≤3 banked on the torus path. NOTES/long-form in the
+three research notes. No `lib/` touched; thesis-side only.
+
+**2026-06-07 — TA (alignment / state of play — session close)** — Consolidated so all three are aligned
+before this chat ends.
+**Where we are.** Thesis reframed to a **3-method exploration** (torus → orbifold → Delaney–Dress) under
+one certification discipline; plan = `../../resources/research/method-exploration-roadmap-2026-06-06.md`.
+Frontier: **certified k≤3 on torus; torus now MEASURED to wall at k=4** (CC, above — tractability, not
+coverage). **k=4 routes through the orbifold pool-bypass** (branch enumeration theory-complete & pool-free
+per the T2 entry above; the equivariant **fill at k=4-hex is the one unmeasured make-or-break**) **or
+Delaney–Dress** (Route B fallback).
+**NEXT — Alessandro.** (1) Commit calls now pending: CC's k=4 scout, the incidence branch
+`feat/orbifold-branch-enum`, and confirm the two perf branches are merged. (2) **C4 go/no-go** — build the
+orbifold pool-bypass + measure the k=4-hex fill (the direct shot at certified 151), or park it. (3) Ratify
+priorities.
+**NEXT — TA.** T1 (thesis reframing around the now-complete 3-method arc) — to start next; then D-D theory
+(B2 + the D-D method chapter + the star realizability sketch). T2 concluded.
+**NEXT — CC (all gated on Alessandro's calls).** C1 (proven-config k≤3 regression — still open; upgrades
+11/20/61 to theorems); C3 (commit incidence per the call); **C4** when greenlit — per-branch-type
+enumeration recipe is in the T2 entry + the `pool-bypass-*` / `reflection-branch-*` research notes,
+deliverable = k=4-hex fill timing; C7 (k=1 star scout) per `star-scout-scoping-2026-06-06.md` when
+prioritized.
+**Parked, not lost.** The long-axis-glide seed-coverage strategy (future work, `reflection-branch-…` §7);
+prototyping Delaney–Dress as the k≥4 route if the orbifold fill walls; the star horizontal probe.
+\describedcommit unchanged (`2c8ad69`); thesis re-anchor happens when T1's chapters land.
+
+**2026-06-07 — TA (reflection-coverage gate + Alessandro's ratified plan)** — **★ The proven-seeding
+reflection-coverage question is now scoped, owned, and made the GATE before any k=3/k=4 compute.**
+Proven seeding (O1+O2) places by **on-grid rotation only** (`rotateZeta`); reflection is covered
+*indirectly* — `getMirrorVCName` reverses the VC cyclic name, the builder admits both names, and
+`tilingsCongruent` merges mirror pairs. A geometric reflection primitive exists but appears **unused in
+the proven placement path** (`VertexConfiguration.mirrorZeta`, `Cyclotomic` conj ζ↦ζ⁻¹), so
+`PeriodSolver`'s "rotations AND reflection (shared name)" is **assumed, not proven**. The risk that
+matters: mirror-merge dedup only collapses a pair you *generated* — if rotation+name produces **neither**
+twin of a class, the class drops **silently** (the one failure the exhaustiveness claim cannot tolerate).
+k≤2=20 verified and k=3=61 oracle-matched, so any defect is subtle (chiral/snub families, on-grid axis
+discretization) and may first bite a *proven*-mode k=3 family. **This gates BOTH paths** (torus + orbifold
+seed identically), so it precedes the 36 h proven k=3 run AND the C4 build. **Division of labor:** CC runs
+the falsifier — spec `../../resources/research/reflection-coverage-experiment-2026-06-07.md` (add
+`mirrorZeta`-reflected seeds as an additive stream; compare congruence-class **sets**, not counts, at
+k≤2-full + k=3-partial; PASS = 0 new classes, digest ×2; FAIL = STOP + report the witness tiling). TA owns
+the all-k proof — draft `../../resources/research/reflection-coverage-lemma-2026-06-07.md` (single-VC
+coset identity + fan lift go through; the **load-bearing** step is the on-grid reflection-axis
+discretization, which is exactly what the experiment stress-tests). The experiment can only falsify; the
+lemma certifies.
+
+**★ Alessandro ratified priorities (resolves the three open calls from the prior TA session-close entry):**
+(1) **two computers, parallel** — the **spare machine** runs the **proven k=3 torus** job (the bankable
+theorem); the working machine + agents drive orbifold to completeness. (2) **C4 GO** — build the orbifold
+pool-bypass into a *complete* method, validate against the oracle (11/20/61 per-tiling) at k≤3, then push
+to k=4 where torus is walled. (3) Both gated behind the reflection clearance above. ⚑ **Correction to the
+board:** proven k=3 is **~36 h on 8 cores, NOT weeks/months** — the weeks/months figure was **k=4** (the
+C2 wall). The 36 h job ties up a machine, not Alessandro; the spare box removes the resource conflict with
+the lemma work.
+
+**Context (CC to file its own entry):** per CC's checkpoint, **C1 Part A — proven SEEDING (O1 singletons +
+O2 blanket fans) — DONE & verified at k≤2** (proven k=1=11 `c68d438097ebd292`, k=2=20
+`aa653cf15b59fe8c`, both stable ×2 and set-identical to certified; fast path byte-identical; 169 tests).
+Upgrades seeding from oracle-matched to provably-complete *at k≤2*; the reflection lemma is what extends
+that "provably" past k=2. C1 Part B ("zero INCOMPLETE / proven box searchable") stays TA-deferred Phase-2,
+unchanged.
+
+**2026-06-07 — TA (theory: Obligation 1a CLOSED)** — **★ The reflection-coverage lemma's load-bearing
+step is proved for the regular family — reflection introduces NO incompleteness into seeding.** *Prop 0
+(grid-confinement):* every edge of T lies in D_N = (2π/N)ℤ — enforced in code by `interiorAngleSteps`
+(throws if a family angle is off-grid for N; that's why N=12, or 24 with the octagon). *Prop 1a:* any seed
+occurring in T is an **on-grid** rotation of the canonical build s₀ **or** its name-reversed mirror s̄₀
+(two-case O(2) split; the connecting angle is a difference of grid directions, hence on-grid). Proven
+seeding admits both s₀ and s̄₀ (`getMirrorVCName`) and places at on-grid rotations (`zetaIndexFromAngle`),
+so **name-reversal + rotation = reflection** — the `PeriodSolver` "shared name" assertion, now a theorem.
+The worry collapses onto the **pre-existing positional/fill completeness** (C1 Part B), not a new gap. ⚑
+**Prediction for CC's running experiment:** regular family ⇒ **PASS (0 new classes)**; a FAIL means an
+*implementation* defect (name-reversal ≠ true mirror for some VC / non-rigid seed / coarse rotation set /
+bug), NOT math incompleteness — so on FAIL, look there first. ⚑ **Boundary:** Prop 0 needs the fixed grid,
+so **star/parametric families (free vertex angle α) break it** — 1a does NOT transfer to the horizontal
+axis; expect explicit `mirrorZeta` seeding there (input to C7). Full proof (rewritten, status
+proved-for-regular-family): `../../resources/research/reflection-coverage-lemma-2026-06-07.md`.

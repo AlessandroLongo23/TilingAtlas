@@ -1569,3 +1569,78 @@ cloned from `torusFill`, gated at `solve()`, budget exactly k orbits-under-G, mi
 seeding at x∈𝒳, the gate-confirm assert, and the chirality R7 audit when it lands; acceptance =
 flag-off digests byte-identical, orbifold mode k=1=11 / k=2=20 per-tiling, Phase C reproduce-or-beat
 k=3 = 61 / `eb34499d5fba3457`.
+
+## 22. k=4 torus scout (C2) — the measured wall: structurally reachable, computationally intractable (2026-06-07, session 13)
+
+**The question (C2, method-exploration roadmap `method-exploration-roadmap-2026-06-06.md`).** Does the
+lattice/torus programme reach **k=4** ({3,4,6,8,12}, target **151**)? The TA framed this as the *vertical
+probe*: a certified 151 needs 0 timeouts / 0 INCOMPLETE / digest stable twice, **but a measured wall is an
+equally valid deliverable** — the experiment that says whether the lattice method reaches k=4 at all.
+Approach: calibrate the scout's component costs (seed-build, candidate enumeration, fill) before
+committing to a multi-day no-cap run; "no new core code" — `PeriodSolver`/`scout-*` untouched, only
+throwaway measurement scripts (`scripts/scale-k4.ts`, `scripts/profile-k4-sample.ts`; cf. the existing
+`profile-k3-seed.ts`).
+
+### 22.1 Structural coverage — the proven box REACHES k=4 (so the wall is NOT a coverage gap)
+`scripts/oracle-characterize.ts 4` against the Soto-Sánchez/Galebach JSON:
+- **151 tilings** = hex 43 + cmm/rect 45 + rect 45 + rhombic(cmm) 5 + square 8 + **OBLIQUE 5**
+  (t4099, t4112, t4116, t4143, t4151 — recovered via the cor:box join-closure, as the 2 oblique at k=3).
+- **Param coverage at k=4** (`poolLmax=√88≈9.38`, `areaBoundF=24·k·a_max`): **longest oracle cell vector
+  8.660 ≤ 9.38 ✓**, max cell area 58.177 ≤ bound ✓, **0 small cells** (no fan-heuristic risk). So the
+  Route-A proven box is large enough for every k=4 period — a certified 151 is **not structurally
+  precluded**. The wall is purely combinatorial tractability (seed-count × per-fill-cost), not a missing
+  region. Pool k-scaling verified live in `PeriodSolver.ts:342-361`; ring force-set to N=24
+  (`scout-parallel.ts:39`, octagon → 24-dir handled, not dropped).
+
+### 22.2 Seed-stage explosion (~30–60× the k=3 seed count + a multi-hour per-worker build tax)
+- VCs = **18** ({3,4,6,12} gives 17; the octagon adds **only 4.8.8**, and **0 new compatibility edges** —
+  the octagon VC is nearly *isolated* in the compat graph, so multi-VC seeds are dominated by the
+  triangle/hexagon families).
+- `findSeedSets(4)` = **2072 seed-sets in 0.1 s** — seed-*set* enumeration is **not** the wall (identical
+  count for {3,4,6,12} and {3,4,6,8,12}).
+- `buildSeeds(4)` — the geometric expansion — IS heavy: **~6.1 useSeeds/set** (strided sample) to
+  **~13.2/set** (3⁶-dense head) ⇒ **~13,000–27,000 useSeeds** total (vs **447 at k=3**). Exact total not
+  obtained: a full `buildSeeds` run **exceeded 43 min single-threaded (RSS 1.7 GB) without completing**;
+  per-set build time ranges 1.9 s (strided) to 9.0 s (dense head) ⇒ **~1–5 h to build the seed list**.
+  ⚑ In the real scout **every worker rebuilds the seed list independently at startup** (`scout-worker.ts:33-44`)
+  — so this is a ~1–5 h *parallel* startup tax paid *before the first fill*.
+
+### 22.3 Fill-stage wall (the binding cost: 100% timeout, fill-DFS dominates)
+Strided representative sample (every ~51st of 2072 sets, 25 fills, `PS_PROFILE=1`):
+- **25 / 25 fills timed out (100%)** — at both a 15 s and a 30 s per-seed cap; **0 cells found** within 30 s.
+- The representative population is **entirely triangle/hexagon-dense** (14× 3⁶, 11× 3⁴.6) — the §11/§15
+  dense-pool family, now confirmed to *be* the seed population, not a head-bias artifact.
+- `PS_PROFILE`: **`cand≈0 ms, fill≈27000 ms (the entire budget), gate≈0`** — candidate enumeration is
+  instant; the **torus-fill DFS is the wall**; fills never reach the gate.
+- Per-seed candidate lattices observed **126 → 11,769** (median ~3300); **oblique join-closure candidates
+  up to ~58,000** per seed with the **v-range-truncated INCOMPLETE** firing. P0 pre-filter skips ~58k
+  lattices per dense seed — working as designed, but the surviving few thousand still don't fill in 30 s.
+- INCOMPLETE-REGION logs fire loudly (never silent): (a) **grid long-side reach** (≈1980 candidates >
+  poolLmax — *benign* per the oracle, whose real max period 8.66 < 9.38, but logged); (b) **oblique
+  v-range-truncated**. Either alone disqualifies a *certified* count under the doctrine.
+
+### 22.4 Extrapolation, verdict, and why the full scout was NOT run to completion
+Full no-cap certified run ≈ (13k–27k seeds) × (per-fill cost) ÷ 8 workers, on top of the ~1–5 h build tax.
+Per-fill cost is **> 30 s and exponential** (the k=3 hard 3⁶ seed alone took **6.2 min uncapped**, NOTES
+§17; k=4 cells are larger ⇒ worse). Even at an absurdly optimistic flat 60 s/seed: 13,000×60/8 ≈ **27 h**;
+realistically (hard fills minutes–hours each) ⇒ **weeks-to-months on 8 laptop cores**. The full
+`scout-parallel 4 3,4,6,8,12 0` was therefore **deliberately not launched**: each worker would spend ~1–5 h
+in `buildSeeds` *before the first fill*, then grind ~13k–27k timeout-bound seeds — a week+ of laptop time
+for a partial lower bound already bounded by the component measurements. Measuring the components is the
+honest, cheap equivalent of running the wall.
+
+**Verdict (C2): k=4 {3,4,6,8,12} via the torus path is INTRACTABLE on commodity hardware — a measured
+wall, not a certified 151.** The lattice/torus programme does **not** reach k=4. The cause is the
+seed-count × per-fill-cost product (the §11/§15 dense-pool wall, amplified ~30–60× in seeds and with
+larger cells), **not** a proven-box coverage gap — the box reaches every k=4 period. This vindicates the
+thesis's three-method framing: **certified ceiling at k≤3 via the torus path**; k≥4 needs Delaney–Dress
+(Route B, δ ≤ 12k) or the **orbifold pool-bypass lemma** (gated on TA's soundness verdict, the standing
+C4). A k=4 *certified* number from the lattice programme is not on the table without one of those.
+
+### 22.5 Reproduction
+- `pnpm tsx scripts/oracle-characterize.ts 4` — the 151 target + param-coverage check.
+- `pnpm tsx scripts/scale-k4.ts 0 0 3,4,6,8,12` — seed-stage counts/timing (per-stage stderr; `buildSeeds`
+  is the long pole — expect >40 min, multi-GB).
+- `PS_PROFILE=1 pnpm tsx scripts/profile-k4-sample.ts 30000 40 40 3,4,6,8,12` — strided fill profile
+  (100% timeout, fill-DFS dominant). For the dense-head bias check: `... 15000 40 3,4,6,8,12` on the
+  pre-strided variant reproduced the same 100%-timeout conclusion.
