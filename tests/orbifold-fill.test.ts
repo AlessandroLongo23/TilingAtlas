@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
-import { applyPointOp, mapPoint, composePointOps, closeGroup, type CosetOp } from "@/classes/algorithm/OrbifoldBranches";
+import { applyPointOp, mapPoint, composePointOps, closeGroup, reduceVecModLattice, type CosetOp } from "@/classes/algorithm/OrbifoldBranches";
 import {
 	countOrbitsUnderBranch,
+	emptyPartition,
+	extendPartition,
 	stabG,
 	enumerateNormalizedBranches,
 } from "@/classes/algorithm/OrbifoldNormalized";
@@ -36,6 +38,88 @@ describe("countOrbitsUnderBranch", () => {
 		expect(countOrbitsUnderBranch(cycle, COARSE_U, COARSE_V, c4)).toBe(1);
 		// add an unrelated class ⇒ 2 orbits
 		expect(countOrbitsUnderBranch([...cycle, Cyclotomic.ONE(R12).scaleRational(2n, 1n)], COARSE_U, COARSE_V, c4)).toBe(2);
+	});
+});
+
+// The incremental orbit partition (hot-loop fill fix) must be byte-identical in COUNT to the
+// from-scratch counter at every prefix — otherwise the fill prunes differently and could drop a tiling.
+describe("extendPartition ≡ countOrbitsUnderBranch (incremental = from-scratch)", () => {
+	// distinct lattice classes from a radius-bounded pool (all within radius 3 of origin ⇒ pairwise
+	// differences < 6 < 10 = lattice spacing ⇒ every distinct complex value is a distinct class).
+	const pool = (ring: CyclotomicRing) => {
+		const out: Cyclotomic[] = [Cyclotomic.ZERO(ring)];
+		for (let j = 0; j < ring.N; j++) out.push(z(ring, j));
+		for (let j = 0; j < ring.N; j++) out.push(z(ring, j).scaleRational(2n, 1n));
+		out.push(Cyclotomic.ONE(ring).scaleRational(3n, 1n));
+		return out;
+	};
+	// deterministic batch schedule covering singles and multi-adds (exercises old→new and new→new edges)
+	const BATCHES = [1, 2, 1, 3, 2, 1, 4, 1, 2, 3, 5, 1];
+	const check = (ring: CyclotomicRing, u: Cyclotomic, v: Cyclotomic, ops: CosetOp[]) => {
+		const classes = pool(ring);
+		let part = emptyPartition();
+		const acc: Cyclotomic[] = [];
+		let idx = 0;
+		for (const bs of BATCHES) {
+			const batch = classes.slice(idx, idx + bs);
+			if (batch.length === 0) break;
+			idx += batch.length;
+			part = extendPartition(part, batch, u, v, ops);
+			acc.push(...batch);
+			expect(part.verts.length).toBe(acc.length);
+			expect(part.count).toBe(countOrbitsUnderBranch(acc, u, v, ops));
+		}
+		expect(idx).toBeGreaterThan(10); // the schedule actually consumed most of the pool
+	};
+	it("C₄ (rotation only) on the coarse square lattice", () => {
+		const c4 = closeGroup([{ reflect: false, r: 3, w: Cyclotomic.ZERO(R12) }], COARSE_U, COARSE_V, R12)!;
+		check(R12, COARSE_U, COARSE_V, c4);
+	});
+	it("D₄ (rotation + reflection) on the coarse square lattice", () => {
+		const d4 = closeGroup(
+			[{ reflect: false, r: 3, w: Cyclotomic.ZERO(R12) }, { reflect: true, r: 0, w: Cyclotomic.ZERO(R12) }],
+			COARSE_U, COARSE_V, R12,
+		)!;
+		check(R12, COARSE_U, COARSE_V, d4);
+	});
+	it("C₆ on a coarse hex lattice (N=24)", () => {
+		const HU = Cyclotomic.ONE(R24).scaleRational(10n, 1n);
+		const HV = z(R24, 4).scaleRational(10n, 1n); // 10·ζ₆
+		const c6 = closeGroup([{ reflect: false, r: 4, w: Cyclotomic.ZERO(R24) }], HU, HV, R24)!;
+		check(R24, HU, HV, c6);
+	});
+	it("identity group ⇒ count == #classes at every prefix", () => {
+		const id = closeGroup([], COARSE_U, COARSE_V, R12)!;
+		check(R12, COARSE_U, COARSE_V, id);
+	});
+});
+
+// The centroid AREA precheck dedups tiles by `reduceVecModLattice(centroid).key()`; its soundness
+// (areaLB ≤ trueArea ⇒ never false-rejects a feasible seed) requires that two lattice-EQUIVALENT centroids
+// reduce to the SAME key — even centroids on the Math.round half-boundary, where a naive reduction would
+// split a class and over-count the area. (This is exactly the float-straddle the adversarial soundness
+// review probed and the ±2 min-norm Voronoi search is designed to defeat.) Pin it directly.
+describe("reduceVecModLattice is translate-invariant (area-precheck soundness crux)", () => {
+	const check = (u: Cyclotomic, v: Cyclotomic, w: Cyclotomic) => {
+		const base = reduceVecModLattice(w, u, v).key();
+		for (let m = -3; m <= 3; m++)
+			for (let n = -3; n <= 3; n++) {
+				const lam = u.scaleRational(BigInt(m), 1n).add(v.scaleRational(BigInt(n), 1n));
+				expect(reduceVecModLattice(w.add(lam), u, v).key(), `λ=${m}u+${n}v`).toBe(base);
+			}
+	};
+	it("square lattice (N=12): generic + the 4-way-tie cell-centre + edge-midpoint", () => {
+		const u = Cyclotomic.ONE(R12).scaleRational(10n, 1n), v = z(R12, 3).scaleRational(10n, 1n); // 10, 10i
+		check(u, v, z(R12, 1)); // generic
+		check(u, v, u.scaleRational(1n, 2n).add(v.scaleRational(1n, 2n))); // exact cell centre (5,5): 4 translates tie at norm 50
+		check(u, v, u.scaleRational(1n, 2n)); // edge midpoint (5,0): 2-way tie
+		check(u, v, Cyclotomic.ONE(R12).add(z(R12, 2)).add(z(R12, 5))); // messy interior point
+	});
+	it("hex lattice (N=24): generic + half-grid centre + the 1/3,2/3 special point", () => {
+		const u = Cyclotomic.ONE(R24).scaleRational(10n, 1n), v = z(R24, 4).scaleRational(10n, 1n); // 10, 10·ζ₆
+		check(u, v, z(R24, 1));
+		check(u, v, u.scaleRational(1n, 2n).add(v.scaleRational(1n, 2n)));
+		check(u, v, u.scaleRational(1n, 3n).add(v.scaleRational(2n, 3n)));
 	});
 });
 

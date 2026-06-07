@@ -1693,3 +1693,97 @@ byte-identical (k=1 `6f9ca9cf2d16c75f`, k=2 `f3e2e0517191362c`); 247 tests green
 5 cases), `scripts/verify-anchor.ts` (the `𝒜≡𝒳` oracle runner), `scripts/measure-bypass.ts`
 (`--crosscheck` branch-set superset check + `--fill` E1/E2 timing). Env: `PS_BYPASS=1`, `PS_ANCHOR_XCHECK=1`,
 `PS_MERGECHECK=full`, `PS_PROFILE=1`.
+
+## 23. The fill wall (E2) — profiled, re-diagnosed, and cut ~4–28× by two sound centroid prechecks (2026-06-07, session 15)
+
+TA returned two notes (`resources/research/reflection-tileaxis-lemma-2026-06-07.md`,
+`orbifold-fill-perf-diagnosis-2026-06-07.md`). Per the §22.4 ask, the reflection note claims pure/edge mirrors
+are pool-free (tile-axis, `lem:equicert(iii)`) and the perf note claims E2 is "very likely an implementation
+wall." I validated BOTH against the code and **profiled** (the perf note explicitly asked CC to). The profiling
+**overturned the perf diagnosis** and the measurement **demoted the reflection lemma off the critical path.**
+
+### 23.1 The perf diagnosis was wrong about the mechanism (measured, not argued)
+The note blamed the per-fill DFS: §1 the O(n²·|G|) budget recompute, §2 `'full'` orbit-transforms, §3 the
+non-fundamental-domain search. All three are real code, but on an all-hex `[6,6,6]` k=1 seed the DFS **barely
+runs**: total **18 nodes popped, 0 orbit-stamps** for the *whole* seed (`PS_PROFILE`). `budgetPruned=0` — the
+budget never even fires. The 28.5 s is not in the DFS. **The real wall is the seed-launch explosion:** the fill
+is *launched* ~4016×/seed (branch × incidence-anchor × placement × fan), and **95 % of those launches build a
+full G-orbit seed that `equivariantTorusFill` immediately AREA-rejects** (`rej(area=3831/4016)`). The cost is
+`equivariantSeed` (81 %): the |G|-fold orbit-stamp, **dominated by irreducible ℤ[ζ_N] exact arithmetic** — a
+micro-benchmark put `'full'` at only **1.33–1.42× `'exact'`**, so the float-cache the note fingered is ~30 % of
+a transform, not the lever. Cutting the wall means **stamping fewer seeds**, not faster transforms.
+
+### 23.2 The fix — two sound centroid prechecks (skip infeasible seeds before the 'full' stamp)
+Both reject a `(branch,x,placement,fan)` seed using ONLY tile **centroids** (one cyclotomic op/orbit-member, no
+vertex stamp), each by a condition `equivariantTorusFill` would also reject ⇒ **byte-identical result, never
+drops a cell**:
+- **Area precheck.** Dedup the orbit by `(name, reduceVecModLattice(centroid).key())`, sum tile areas. This is a
+  **sound LOWER BOUND** on the true deduped area: `(name,centroid)` merges ⊇ the polygon `canonicalRep` (lattice
+  translates share a centroid-class, and `reduceVecModLattice` maps Λ-equivalent centroids to the SAME key), so
+  `area_lb ≤ area_true` ⇒ `area_lb > |det Λ|` ⇒ genuinely infeasible. Skips ~95 % of seeds.
+- **Self-overlap precheck.** Reject if any pair has min-centroid-distance-mod-Λ `< apothem_i+apothem_j−ε` —
+  overlapping inscribed circles ⇒ overlapping interiors ⇒ a PROPER overlap. A *sufficient* condition (strict
+  `<sum−ε` keeps edge-adjacent tiles at distance exactly =sum) ⇒ never a false overlap. Catches the crowded-orbit
+  seeds that pass area but fail the O(block²) overlap check, before paying `buildBlock`.
+- Plus **§1 incremental orbit-budget** (`extendPartition`, OrbifoldNormalized): carries the union-find on the DFS
+  stack, unioning only edges incident to a child's new vertices — count-identical to the from-scratch
+  `countOrbitsUnderBranch` (pinned in tests), removing its O(n²·|G|) per-child rebuild.
+
+### 23.3 Results
+Per-seed orbifold fill (`measure-bypass --fill`): `[6,6,6]` **28.5 s → 7.4 s**; mixed-tile k=1 worst cases
+`[3,3,4,3,4]` **533 s → 18.8 s (~28×)**, `[3,3,3,4,4]` 563 → 24.8 s — **all k=1 seeds now complete** (were
+3/4 timing out). **`verify-orbifold 1 3,4,6,8,12 0` (uncapped) = `✅ MATCH, 11 tilings, timeouts=0,
+consViol=0, biViol=0`** — orbifold reproduces certified k=1=11 EXACTLY per-tiling with both prechecks live.
+253 tests green; `pnpm build` clean.
+
+### 23.4 Honest ceiling — this does NOT crack k=4
+k=2 still walls (`measure-bypass 2 3,4,6 --fill`, 60 s cap: all seeds TIMEOUT). The prechecks *work* there
+(`preSkip` 55 K–427 K seed-combos skipped) but the **branch×lattice×seed product explodes with k** —
+`[3,3,4,3,4]` at k=2 has **23 640 branches over 232 candidate lattices**, and the residual feasible seeds'
+`seed`(~25 s)+`block`(~30 s) exceed the cap. Constant-factor wins (even ~28×) cannot beat a product that grows
+with k. **Cracking k≥2-hex needs the architectural fix the orbifold method PROMISED but never implemented: the
+fundamental-domain reduction** — `equivariantTorusFill` is a line-for-line clone of `torusFill` that fills the
+*entire* Λ-cell and stamps the G-orbit as overhead, instead of searching ~1/|G| of the cell and reconstructing by
+symmetry (TA perf-note §3, `prop:equifill`/`cor:branchbudget`). That is a real, completeness-sensitive redesign —
+a TA-theory (the reduction's completeness proof) + CC-implementation item, not a precheck.
+
+### 23.5 The reflection lemma is the SECOND wall, deferred — not the first, not dead (CC measured + TA corrected)
+I first wrote "E1 = `orbPoolBuildMs` = 99 ms on `[6,6,6]` k=1 = 0.3 % of the wall ⇒ the reflection lemma can't
+help tractability." **TA corrected this and is right (SYNC 2026-06-07):** 99 ms is a **k=1 artifact** — the pool
+is a BFS ball of depth `k·|survivors|−1`, so E1 *grows with k* and becomes the ~13M-class wall at k≥3 that was
+the original motivation for C4 (reconciling the numbers: 99 ms is k=1 *with bypass* = only the residual
+reflection/dihedral pool; the prior **415 s** hex figure was the higher-k / non-bypass *full* pool — different k
+AND different bypass state, not a contradiction). My own k=2 data confirms the growth: `orbPoolBuildMs` rose
+99 ms → up to ~3.1 s. So the honest picture is a **sequencing of two walls, not a dismissal**:
+- **E2 (the fill) walls FIRST** — even at k=2 the fill times out (60 s) while the pool still builds in seconds.
+  So the fill redesign (§23.4) is the prerequisite to even *reach* the target k.
+- **E1 (the pool) returns as the SECOND wall at k≥3**, and *there* the reflection pure/edge-mirror lemma is the
+  lever to delete the residual reflection pool. **Deferred, not dead** — re-judged at k=3/4 after the fill fix.
+So §22.4's "cracking hex requires the reflection lemma" was incomplete: cracking hex requires **both** the fill
+redesign (E2, first) **and** the reflection lemma (E1, second). The lemma is **not implemented this session**
+(correctly — E2 is the binding wall now), and it still carries the note's own open Findings A/B/C (the
+`prop:fanseed` carrier, the rotation-coupling claim "banked only after a dedicated check", the de-knobbed
+construction, ζ_{2N} half-grid arithmetic + mirror/glide discriminator) before it can be built.
+
+### 23.6 Soundness — verified three independent ways
+Completeness is the thesis's crown jewel, so the "skip a seed" prechecks were verified beyond the perf
+measurement: **(1)** the gold per-tiling oracle (`verify-orbifold` k=1 = 11 EXACT, torus≡orbifold≡union);
+**(2)** an adversarial fan-out (5 independent skeptics + a gatekeeper, `verify-precheck-soundness` workflow) —
+its two "completeness-violation" attacks on the area lower bound were REFUTED (both rest on the false premise
+that `canonicalRep` keeps lattice translates separate; it returns the lex-min key over translates ⇒ merges them,
+so both dedup schemes merge translates ⇒ `area_lb ≤ area_true`); **(3)** a direct unit test that
+`reduceVecModLattice` is translate-invariant even at the 4-way-tie cell-centre `(5,5)` and half-boundary points
+(the float-straddle the attack probed, defeated by the ±2 min-norm Voronoi search). The adversarial pass also
+re-surfaced ONE real open item, **unrelated to these prechecks**: `prop:incidencefill` (|𝒜|≥1 for a realizable
+rotation branch, `PeriodSolver.ts` ≈747) is asserted-not-proven; it is OFF the default path (`anchor='cocycle'`
+uses the proven `B.reAnchorSet`), only fires under `PS_BYPASS=1`/`PS_ANCHOR=incidence`, and is gated as a
+diagnostic (`emptyAnchorBranches`) + cross-checks, never a silent drop — **a standing TA obligation for the
+bypass path** (⚑ flag), not a blocker here.
+
+### 23.7 Tooling
+`PS_PROFILE` now attributes the orbifold fill: `orbPoolBuildMs`(E1) / `orbFillMs`(E2) / `orbSeedMs`,
+per-launch reject reasons (`orbRej*`), DFS `pops`/`stamps`, and the always-on `orbPrecheckSkipped` (sound-skip
+count — logged for completeness transparency). `PS_NOPRE=1` disables the prechecks (A/B escape hatch).
+`measure-bypass --fill` prints the per-seed split. New tests: `extendPartition ≡ countOrbitsUnderBranch` (4
+cases) + `reduceVecModLattice` translate-invariance (2 cases). ⚑ Flags: the fill redesign (§23.4) and
+`prop:incidencefill` (§23.6) are the two open obligations carried forward.

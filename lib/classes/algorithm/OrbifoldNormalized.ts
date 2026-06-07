@@ -65,6 +65,73 @@ export function countOrbitsUnderBranch(vReps: Cyclotomic[], u: Cyclotomic, v: Cy
 }
 
 /**
+ * An INCREMENTAL view of the vertex-orbit partition under a fixed branch group G. `verts` are the
+ * distinct vertex classes already merged; `parent`/`count` are the union-find state and its component
+ * count. This is the hot-loop fix for the orbifold fill: `countOrbitsUnderBranch` rebuilds the whole
+ * O(n²·|G|) union-find on every DFS child, whereas the fill only ADDS a G-orbit per step — so we carry
+ * the partition on the DFS stack and union only the edges incident to the new vertices (O(new·n·|G|)).
+ *
+ * SOUNDNESS (byte-identical to a from-scratch `countOrbitsUnderBranch`): the orbit count is the number
+ * of connected components of the graph whose edges are {(i,j) : ∃g∈G, g·vᵢ ≡ vⱼ (mod Λ)} — and a graph's
+ * components are independent of the order edges are inserted. Adding new vertices can create NO new
+ * old↔old edge (each such edge depends only on its two endpoints, both already present), so the parent
+ * partition already holds every old↔old edge; `extendPartition` adds exactly the edges incident to a new
+ * vertex (new→all and old→new), reproducing the full edge set. (Note: g·vᵢ ≡ vⱼ for at most one j, since
+ * the vⱼ are DISTINCT lattice classes — so the inner `break` drops nothing.) Pinned in tests against the
+ * from-scratch counter over random incremental sequences.
+ */
+export interface OrbitPartition { verts: Cyclotomic[]; parent: number[]; count: number; }
+
+/** The empty partition (no vertices); `extendPartition(emptyPartition(), V, …)` ≡ countOrbitsUnderBranch(V, …). */
+export function emptyPartition(): OrbitPartition { return { verts: [], parent: [], count: 0 }; }
+
+/**
+ * Return a NEW partition that appends `newVerts` (which MUST be distinct lattice classes, both from each
+ * other and from `part.verts` — the fill's `extendV` guarantees this) and unions every G-edge incident to
+ * a newly-added vertex. The input partition is not mutated. O(new·(old+new)·|G|) exact ops.
+ */
+export function extendPartition(
+	part: OrbitPartition, newVerts: Cyclotomic[], u: Cyclotomic, v: Cyclotomic, ops: CosetOp[]
+): OrbitPartition {
+	if (newVerts.length === 0) return part;
+	const verts = part.verts.concat(newVerts);
+	const parent = part.parent.slice();
+	const oldN = part.verts.length;
+	const newN = verts.length;
+	for (let i = oldN; i < newN; i++) parent.push(i);
+	let count = part.count + newVerts.length;
+	const find = (x: number): number => {
+		while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+		return x;
+	};
+	const tryUnion = (a: number, b: number) => { const ra = find(a), rb = find(b); if (ra !== rb) { parent[ra] = rb; count--; } };
+	// Edges from each NEW vertex i to every vertex j (old or new) — the full from-scratch loop, restricted
+	// to new sources. `break` on the first (unique) match.
+	for (let i = oldN; i < newN; i++) {
+		for (const g of ops) {
+			const gw = mapCoset(g, verts[i]);
+			for (let j = 0; j < newN; j++) {
+				if (find(i) === find(j)) continue;
+				if (isIntCombo(gw.sub(verts[j]), u, v)) { tryUnion(i, j); break; }
+			}
+		}
+	}
+	// Edges from each OLD vertex i to a NEW vertex j (old→old edges already live in `part`). g·vᵢ matches
+	// at most one j overall; if it matched an old j it is already merged in `part`, so scanning only new j
+	// here adds exactly the missing edges.
+	for (let i = 0; i < oldN; i++) {
+		for (const g of ops) {
+			const gw = mapCoset(g, verts[i]);
+			for (let j = oldN; j < newN; j++) {
+				if (find(i) === find(j)) continue;
+				if (isIntCombo(gw.sub(verts[j]), u, v)) { tryUnion(i, j); break; }
+			}
+		}
+	}
+	return { verts, parent, count };
+}
+
+/**
  * The stabiliser of a base point x in the branch group G: `{ (L,w) ∈ ops : w ≡ (1−L)x (mod Λ) }` (the
  * direct congruence — NO conjugation, B2 frame convention). Used to r-reduce the equivariant seeding.
  */

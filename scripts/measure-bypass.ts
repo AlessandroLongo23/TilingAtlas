@@ -95,7 +95,7 @@ if (doFill) {
 		branches += r.diag.orbifoldBranches ?? 0; emitted += r.diag.emitted ?? 0; budget += r.diag.budgetPruned ?? 0;
 		empty += r.diag.emptyAnchorBranches ?? 0; poolBuilt += r.diag.poolBuiltLattices ?? 0; lattices += r.diag.latticesFilled ?? 0;
 		if (r.diag.timedOut) to++;
-		console.log(`  [${i}] ${useSeeds[i].name.padEnd(26)} cells=${r.cells.length} branches=${r.diag.orbifoldBranches ?? 0} poolBuilt=${r.diag.poolBuiltLattices ?? 0}/${r.diag.latticesFilled ?? 0} ${r.diag.timedOut ? "TIMEOUT" : ""}`);
+		console.log(`  [${i}] ${useSeeds[i].name.padEnd(26)} cells=${r.cells.length} branches=${r.diag.orbifoldBranches ?? 0} poolBuilt=${r.diag.poolBuiltLattices ?? 0}/${r.diag.latticesFilled ?? 0} orbPool=${r.diag.orbPoolBuildMs ?? 0}ms orbFill=${r.diag.orbFillMs ?? 0}ms fillCalls=${r.diag.orbFillCalls ?? 0} pops=${r.diag.orbFillPops ?? 0} stamps=${r.diag.orbFillStamps ?? 0} [seed=${r.diag.orbSeedMs ?? 0} block=${r.diag.orbSetupBlockMs ?? 0}]ms preSkip=${r.diag.orbPrecheckSkipped ?? 0} rej(area=${r.diag.orbRejArea ?? 0},block=${r.diag.orbRejBlockOverlap ?? 0}) ${r.diag.timedOut ? "TIMEOUT" : ""}`);
 	}
 	const tilings = dedupeByCongruence(cells, (c) => ex.canonicalKey(c.cellPolygons)).length;
 	console.log(`\n  ${((Date.now() - t) / 1000).toFixed(1)}s  distinct=${tilings} rawCells=${cells.length} branches=${branches} budgetPruned=${budget} emptyPhantom=${empty} timedOutSeeds=${to}/${useSeeds.length}`);

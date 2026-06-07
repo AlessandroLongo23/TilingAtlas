@@ -44,8 +44,8 @@ import type { SeedConfigurationLike } from './SeedExpander';
 import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
 import { detSurd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
-import { enumerateNormalizedBranches, countOrbitsUnderBranch, stabG, incidenceDisplacements, incidenceAnchorSet, type NormalizedBranch } from './OrbifoldNormalized';
-import { composePointOps, type CosetOp } from './OrbifoldBranches';
+import { enumerateNormalizedBranches, emptyPartition, extendPartition, stabG, incidenceDisplacements, incidenceAnchorSet, type NormalizedBranch, type OrbitPartition } from './OrbifoldNormalized';
+import { composePointOps, mapPoint, reduceVecModLattice, type CosetOp } from './OrbifoldBranches';
 
 const FLOAT_TOL = 1e-6;
 
@@ -119,6 +119,17 @@ export type PeriodSolverDiag = {
 	emptyAnchorBranches?: number; // bypassed rotation-bearing branches with |𝒜|=0 ⇒ PHANTOMS (prop:incidencefill: realizable ⇒ |𝒜|≥1, so sound to skip) — a diagnostic, NOT a drop
 	poolBuiltLattices?: number; // lattices where the O(pool) BFS was STILL built (reflections/glide force it — finding E1). bypass deletes it only where rotations are the sole pool user (oblique).
 	latticesFilled?: number; // candidate lattices the orbifold fill processed (denominator for poolBuiltLattices)
+	orbPoolBuildMs?: number; // PS_PROFILE: ms spent in enumerateNormalizedBranches (branch enumeration incl. pool sweep) — E1
+	orbFillMs?: number; // PS_PROFILE: ms spent in the equivariant fill loop (equivariantSeed + equivariantTorusFill) — E2 (the perf-fix target)
+	orbFillCalls?: number; // PS_PROFILE: # equivariantTorusFill invocations (branch×seed fill-DFS launches)
+	orbFillPops?: number; // PS_PROFILE: total DFS nodes popped across all fill invocations (search size → §3 signal)
+	orbFillStamps?: number; // PS_PROFILE: total 'full' orbit-stamp transforms (§2 signal)
+	orbSetupDedupMs?: number; // PS_PROFILE: ms in per-launch dedupModLattice(initialIn)
+	orbSetupBlockMs?: number; // PS_PROFILE: ms in per-launch buildBlock + blockHasProperOverlap + coreSelfOverlapsNearest
+	orbSetupBudgetMs?: number; // PS_PROFILE: ms in per-launch seed budget (extendPartition from empty)
+	orbSeedMs?: number; // PS_PROFILE: ms in equivariantSeed (|G|-fold 'full' orbit-stamp + dedup per branch×x) — the real §2 site
+	orbRejEmpty?: number; orbRejArea?: number; orbRejSelfOverlap?: number; orbRejBlockOverlap?: number; // PS_PROFILE: per-launch early-reject reasons (which guard kills the infeasible seeds)
+	orbPrecheckSkipped?: number; // (always on) (branch,x,placement,fan) seeds the centroid area/overlap prechecks soundly skipped before the 'full' orbit-stamp — never drops a cell (equivariantTorusFill would also reject)
 	branchInvariantViolated?: boolean; // ⚑ an emitted cell was NOT invariant under its branch group ⇒ stamping/keying bug
 	// --- incidence anchoring (Increment 3) A/B accounting (orbifold mode only) ---
 	incidenceSeeds?: number; // Σ |𝒜| fed to the fill across rotation-bearing branches (anchor='incidence')
@@ -331,7 +342,8 @@ export class PeriodSolver {
 		diag.emitted = deduped.length;
 		if (prof) process.stderr.write(
 			`[PS_PROFILE k=${k}] cand=${prof.cand}ms fill=${prof.fill}ms gate=${prof.gate}ms ` +
-			`canon=${prof.canon}ms dedup=${prof.dedup}ms | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
+			`canon=${prof.canon}ms dedup=${prof.dedup}ms` +
+			`${diag.orbPoolBuildMs !== undefined || diag.orbFillMs !== undefined ? ` | orbPool=${diag.orbPoolBuildMs ?? 0}ms orbFill=${diag.orbFillMs ?? 0}ms` : ''} | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
 			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} p1Prune=${diag.p1Pruned} ssDedup=${diag.seedStateDedup} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''}\n`
 		);
 
@@ -683,8 +695,10 @@ export class PeriodSolver {
 		const xcheck = process.env.PS_ANCHOR_XCHECK === '1' && !bypass;
 		// Incidence/bypass never fill the rotation branches' cocycle 𝒳 (they seed from 𝒜 = the centre's
 		// incidences), so skip building 𝒳 for them — the dominant fixed cost at hex (~12M solves/run).
+		const _tEnum = process.env.PS_PROFILE ? Date.now() : 0;
 		const { branches, diag: bd } = enumerateNormalizedBranches(u, v, ctx.ring, ctx.polySizes, k,
 			{ poolClassCap: poolCap, skipRotationReAnchor: (anchor === 'incidence' && !xcheck) || bypass, bypass });
+		if (process.env.PS_PROFILE) diag.orbPoolBuildMs = (diag.orbPoolBuildMs ?? 0) + (Date.now() - _tEnum);
 		diag.orbifoldBranches = (diag.orbifoldBranches ?? 0) + branches.length;
 		// Deterministic branch processing order (canonical group key; contract §1.6/§6.5) — the run's
 		// composition digest must not depend on enumerator iteration order.
@@ -721,6 +735,7 @@ export class PeriodSolver {
 		if (bypass) diag.bypassed = true;
 		const results: Polygon[][] = [];
 		const memo = new Map<string, { key: string; poly: Polygon }>();
+		const _tFill = process.env.PS_PROFILE ? Date.now() : 0;
 		for (const B of branches) {
 			const seedSet = D ? incidenceAnchorSet(B, u, v, ctx.ring, D) : B.reAnchorSet;
 			// |𝒜|-coverage diagnostic (replaces the disabled Σ|𝒳|=pool law under bypass). |𝒜|=0 on a
@@ -739,12 +754,16 @@ export class PeriodSolver {
 			// states fill identically under this branch's ops, so each distinct state is filled once.
 			const seenSeed = new Set<string>();
 			for (const x of seedSet) {
-				if (timedOut()) return results;
-				for (const initial of this.equivariantSeed(B, x, ctx, seedFans, memo, seenSeed)) {
+				if (timedOut()) { if (process.env.PS_PROFILE) diag.orbFillMs = (diag.orbFillMs ?? 0) + (Date.now() - _tFill); return results; }
+				const _ts = process.env.PS_PROFILE ? Date.now() : 0;
+				const seeds = this.equivariantSeed(B, x, ctx, seedFans, memo, seenSeed, diag);
+				if (process.env.PS_PROFILE) diag.orbSeedMs = (diag.orbSeedMs ?? 0) + (Date.now() - _ts);
+				for (const initial of seeds) {
 					results.push(...this.equivariantTorusFill(B, initial, ctx, k, timedOut, diag, memo));
 				}
 			}
 		}
+		if (process.env.PS_PROFILE) diag.orbFillMs = (diag.orbFillMs ?? 0) + (Date.now() - _tFill);
 		return results;
 	}
 
@@ -791,7 +810,7 @@ export class PeriodSolver {
 		let cut = false;
 		for (const seedX of seedSet) {
 			if (timedOut()) { cut = true; break; }
-			for (const initial of this.equivariantSeed(B, seedX, ctx, seedFans, memo, seenSeed))
+			for (const initial of this.equivariantSeed(B, seedX, ctx, seedFans, memo, seenSeed, diag))
 				for (const cell of this.equivariantTorusFill(B, initial, ctx, k, timedOut, diag, memo))
 					cells.push({ cellPolygons: cell, basisExact: [u, v] });
 		}
@@ -806,7 +825,7 @@ export class PeriodSolver {
 	private equivariantSeed(
 		B: NormalizedBranch, x: Cyclotomic, ctx: FillCtx,
 		seedFans: { center: Cyclotomic; polys: Polygon[] }[], memo: Map<string, { key: string; poly: Polygon }>,
-		seen: Set<string>
+		seen: Set<string>, diag: PeriodSolverDiag
 	): Polygon[][] {
 		const ZERO = Cyclotomic.ZERO(ctx.ring);
 		const placements = this.reducePlacements(x, B, ctx);
@@ -814,6 +833,44 @@ export class PeriodSolver {
 		for (const fan of seedFans) {
 			const trans = x.sub(fan.center);
 			for (const pl of placements) {
+				// CENTROID AREA PRE-CHECK (perf — the orbifold-fill wall is the seed launches, not the DFS:
+				// TA-diagnosis follow-up, measured 2026-06-07). ~95% of (branch,x,placement,fan) seeds are
+				// AREA-infeasible (their G-orbit doesn't collapse mod Λ), yet the old code paid the full
+				// |G|-fold exact-arithmetic orbit-stamp + dedup before equivariantTorusFill area-rejected them.
+				// Here we reject them using ONLY centroids (one Cyclotomic op per orbit member, no vertex
+				// stamp, no float): dedup the orbit by (name, centroid-class mod Λ) and sum tile areas. This is
+				// a SOUND LOWER BOUND on the true deduped area — (name,centroid) merges at least as much as the
+				// polygon canonicalRep (lattice translates share a centroid-class), so area_lb ≤ area_true ⇒
+				// area_lb > cellArea ⇒ truly infeasible. It NEVER false-rejects a feasible seed (a skipped seed
+				// is one equivariantTorusFill would also area-reject ⇒ contributes no cell ⇒ byte-identical).
+				const seenC = new Set<string>();
+				const survC: { n: number; c: Cyclotomic }[] = []; // distinct (name,centroid-class) tiles of the orbit
+				let areaLB = 0;
+				let infeasible = false;
+				if (process.env.PS_NOPRE !== '1') { // escape hatch: disable the (proven-sound) prechecks for A/B
+				for (const p of fan.polys) {
+					const dC = p.exactCentroid!.sub(fan.center);
+					const placedC = (pl.reflect ? dC.conj().mulZeta(pl.r) : dC.mulZeta(pl.r)).add(fan.center).add(trans);
+					for (const g of B.ops) {
+						const gC = mapPoint(placedC, g.reflect, g.r, g.w);
+						const ck = `${p.n}|${reduceVecModLattice(gC, ctx.u, ctx.v).key()}`;
+						if (seenC.has(ck)) continue;
+						seenC.add(ck);
+						survC.push({ n: p.n, c: gC });
+						areaLB += regularArea(p.n);
+						if (areaLB > ctx.cellArea + 1e-6) { infeasible = true; break; }
+					}
+					if (infeasible) break;
+				}
+				// SELF-OVERLAP PRE-CHECK (the second cheap layer — see §block-overlap wall): two distinct
+				// orbit tiles whose centroid distance mod Λ is below apothem_i+apothem_j have overlapping
+				// inscribed circles ⇒ overlapping interiors ⇒ a PROPER overlap equivariantTorusFill would
+				// reject. Sufficient-condition test (strict `< sum − ε`, so edge-adjacent tiles at distance
+				// =sum are kept) ⇒ never false-rejects a valid seed. Catches the crowded-orbit seeds that pass
+				// the area test but fail the O(block²) overlap check, before paying the buildBlock.
+				if (!infeasible && this.centroidsOverlapModLattice(survC, ctx)) infeasible = true;
+				}
+				if (infeasible) { diag.orbPrecheckSkipped = (diag.orbPrecheckSkipped ?? 0) + 1; continue; } // sound skip: equivariantTorusFill would also reject ⇒ no cell dropped
 				// place the fan (centre sv → x, oriented (reflect,r) about sv), then G-orbit-stamp with the
 				// UNCONJUGATED branch ops (B2). 'full' mode keeps the float caches valid for the DFS overlap checks.
 				const stamped: Polygon[] = [];
@@ -863,15 +920,22 @@ export class PeriodSolver {
 		diag: PeriodSolverDiag, memo: Map<string, { key: string; poly: Polygon }>
 	): Polygon[][] {
 		const ZERO = Cyclotomic.ZERO(ctx.ring);
+		const PROF = process.env.PS_PROFILE ? true : false;
+		if (PROF) diag.orbFillCalls = (diag.orbFillCalls ?? 0) + 1;
 		const uL = ctx.u, vL = ctx.v;
+		const _td = PROF ? Date.now() : 0;
 		const initial = this.dedupModLattice(initialIn, ctx, memo);
-		if (initial.length === 0) return [];
+		if (PROF) diag.orbSetupDedupMs = (diag.orbSetupDedupMs ?? 0) + (Date.now() - _td);
+		if (initial.length === 0) { if (PROF) diag.orbRejEmpty = (diag.orbRejEmpty ?? 0) + 1; return []; }
 		let initialArea = 0;
 		for (const p of initial) initialArea += regularArea(p.n);
-		if (initialArea > ctx.cellArea + 1e-6) return [];
-		if (this.coreSelfOverlapsNearest(initial, ctx)) return [];
+		if (initialArea > ctx.cellArea + 1e-6) { if (PROF) diag.orbRejArea = (diag.orbRejArea ?? 0) + 1; return []; }
+		const _tb = PROF ? Date.now() : 0;
+		if (this.coreSelfOverlapsNearest(initial, ctx)) { if (PROF) { diag.orbSetupBlockMs = (diag.orbSetupBlockMs ?? 0) + (Date.now() - _tb); diag.orbRejSelfOverlap = (diag.orbRejSelfOverlap ?? 0) + 1; } return []; }
 		const initialBlock = this.buildBlock(initial, ctx, 5);
-		if (this.blockHasProperOverlap(initialBlock, ctx)) return [];
+		const _blockOverlap = this.blockHasProperOverlap(initialBlock, ctx);
+		if (PROF) diag.orbSetupBlockMs = (diag.orbSetupBlockMs ?? 0) + (Date.now() - _tb);
+		if (_blockOverlap) { if (PROF) diag.orbRejBlockOverlap = (diag.orbRejBlockOverlap ?? 0) + 1; return []; }
 		const extendV = (parent: Cyclotomic[], poly: Polygon): Cyclotomic[] => {
 			const o = parent.slice();
 			for (const w of poly.exactVertices!) if (!o.some((r) => latticeEquivExact(w, r, uL, vL))) o.push(w);
@@ -879,14 +943,23 @@ export class PeriodSolver {
 		};
 		let initialV: Cyclotomic[] = [];
 		for (const p of initial) initialV = extendV(initialV, p);
-		if (countOrbitsUnderBranch(initialV, uL, vL, B.ops) > k) return []; // seed already over the G-budget
+		// Orbit budget under G, carried INCREMENTALLY on the DFS stack (perf: was an O(n²·|G|) from-scratch
+		// `countOrbitsUnderBranch` rebuilt on every child — the orbifold-fill perf bug, TA diagnosis
+		// 2026-06-07 §1). `extendPartition` adds only the edges incident to a child's new vertices and is
+		// byte-identical in COUNT to the from-scratch counter (pinned in tests/orbifold-fill.test.ts).
+		const _tbg = PROF ? Date.now() : 0;
+		const initialPart = extendPartition(emptyPartition(), initialV, uL, vL, B.ops);
+		if (PROF) diag.orbSetupBudgetMs = (diag.orbSetupBudgetMs ?? 0) + (Date.now() - _tbg);
+		if (initialPart.count > k) return []; // seed already over the G-budget
 
 		const results: Polygon[][] = [];
 		const seenState = new Set<string>();
-		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[] }[] = [{ reps: initial, block: initialBlock, vReps: initialV }];
+		const stack: { reps: Polygon[]; block: Polygon[]; part: OrbitPartition }[] = [{ reps: initial, block: initialBlock, part: initialPart }];
 		while (stack.length > 0) {
 			if (timedOut()) break;
-			const { reps, block, vReps } = stack.pop()!;
+			const { reps, block, part } = stack.pop()!;
+			if (PROF) diag.orbFillPops = (diag.orbFillPops ?? 0) + 1;
+			const vReps = part.verts;
 			const sk = this.stateKey(reps);
 			if (seenState.has(sk)) continue;
 			seenState.add(sk);
@@ -910,6 +983,7 @@ export class PeriodSolver {
 				const orbit: { key: string; rep: Polygon; placed: Polygon }[] = [];
 				let rejected = false;
 				for (const g of B.ops) {
+					if (PROF) diag.orbFillStamps = (diag.orbFillStamps ?? 0) + 1;
 					const gP = P.transformedRigid(ZERO, g.reflect, g.reflect ? g.r : 0, g.reflect ? 0 : g.r, g.w, 'full');
 					const pc = this.canonicalRep(gP, ctx, memo);
 					if (repsKeys.has(pc.key) || orbit.some((o) => o.key === pc.key)) continue; // identify (present mod Λ)
@@ -923,10 +997,13 @@ export class PeriodSolver {
 				if (next.length > ctx.maxCellPolys) continue;
 				let childV = vReps;
 				for (const o of orbit) childV = extendV(childV, o.rep);
-				if (countOrbitsUnderBranch(childV, uL, vL, B.ops) > k) { diag.budgetPruned = (diag.budgetPruned ?? 0) + 1; continue; } // exact-k budget
+				// extendV appends only genuinely-new lattice classes, so the tail past |vReps| is exactly the
+				// child's new distinct vertex classes — feed just those to the incremental partition.
+				const childPart = extendPartition(part, childV.slice(vReps.length), uL, vL, B.ops);
+				if (childPart.count > k) { diag.budgetPruned = (diag.budgetPruned ?? 0) + 1; continue; } // exact-k budget
 				let childBlock = block;
 				for (const o of orbit) childBlock = childBlock.concat(this.buildBlock([o.rep], ctx, 5));
-				stack.push({ reps: next, block: childBlock, vReps: childV });
+				stack.push({ reps: next, block: childBlock, part: childPart });
 			}
 		}
 		return results;
@@ -1113,6 +1190,31 @@ export class PeriodSolver {
 	 *  m·u+n·v nearest its centroid. Exact: Λ-translates collapse to the same exact key (m,n shift by
 	 *  the exact integer between them, so the subtracted translation differs by exactly that lattice
 	 *  vector and the reduced polygon is identical). The float solve only picks the integers m,n. */
+	/** Inscribed-circle radius (apothem) of a unit-edge regular n-gon = ½·cot(π/n). Cached per n. */
+	private static _apothem = new Map<number, number>();
+	private apothem(n: number): number {
+		let a = PeriodSolver._apothem.get(n);
+		if (a === undefined) { a = 0.5 / Math.tan(Math.PI / n); PeriodSolver._apothem.set(n, a); }
+		return a;
+	}
+
+	/** True iff some pair of the given tiles (by their exact centroids) has a PROPER overlap forced by
+	 *  the inscribed circles: min distance mod Λ between centroids i,j is < apothem_i + apothem_j. A
+	 *  SUFFICIENT overlap condition (inscribed circle ⊂ tile), so it never reports a false overlap; the
+	 *  strict `< sum − ε` keeps edge-adjacent tiles (distance exactly =sum). Cheap: O(pairs) exact
+	 *  point reductions, no polygon build. */
+	private centroidsOverlapModLattice(tiles: { n: number; c: Cyclotomic }[], ctx: FillCtx): boolean {
+		for (let i = 0; i < tiles.length; i++) {
+			const ai = this.apothem(tiles[i].n);
+			for (let j = i + 1; j < tiles.length; j++) {
+				const thresh = ai + this.apothem(tiles[j].n) - 1e-6;
+				const d = reduceVecModLattice(tiles[i].c.sub(tiles[j].c), ctx.u, ctx.v).toVector();
+				if (d.x * d.x + d.y * d.y < thresh * thresh) return true;
+			}
+		}
+		return false;
+	}
+
 	private reducePolygon(p: Polygon, ctx: FillCtx): Polygon {
 		const c = p.exactCentroid!.toVector();
 		const a = (c.x * ctx.vV.y - c.y * ctx.vV.x) / ctx.det;
