@@ -62,6 +62,11 @@ After every code change, run `pnpm build` to check for errors and warnings befor
 - `USE_PERIOD_SOLVER=1 pnpm pipeline` — the **live** solve-for-period path (replaces seedsExpansion + extract)
 - `pnpm tsx scripts/probe-pipeline.ts` — per-seed k=2 count harness with composition digest (determinism check)
 
+**Context tooling** (zero-dep Node — `scripts/status.mjs`, `scripts/docs-check.mjs`):
+- `pnpm status` — the **derived** current-state board (push state, `\describedcommit` drift, last 5 SYNC handoffs, the curated `docs/NEXT.md`). Run it first; being derived, it can't go stale. `docs/STATUS.md` is the prose cache; this is the live view.
+- `pnpm docs:check` — docs invariant linter (dead nav-doc links, staged litter, SYNC entries >6 lines, `\describedcommit` ancestry). Runs `--staged` as the pre-commit hook.
+- `pnpm hooks:install` — once per clone: activates the pre-commit hook (`core.hooksPath=scripts/hooks`). Bypass a blocked commit with `git commit --no-verify`.
+
 `pnpm build` runs the TypeScript type checker; type errors fail the build. For fast iterative checking, run `pnpm tsc --noEmit`.
 
 ## Environment variables

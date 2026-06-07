@@ -48,3 +48,8 @@ next-env.d.ts
 
 # MCP config holds a Supabase PAT — never commit
 .mcp.json
+
+# agent/editor litter
+*.tmp
+*.orig
+*.rej

@@ -9,7 +9,10 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "pipeline": "tsx lib/algorithm/run-pipeline.ts"
+    "pipeline": "tsx lib/algorithm/run-pipeline.ts",
+    "status": "node scripts/status.mjs",
+    "docs:check": "node scripts/docs-check.mjs",
+    "hooks:install": "git config core.hooksPath scripts/hooks"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

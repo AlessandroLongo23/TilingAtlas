@@ -1,0 +1,13 @@
+#!/bin/sh
+# Versioned pre-commit hook. Activate once per clone with:  pnpm hooks:install
+#
+# Runs ONLY the fast, hard-fail docs checks (staged litter + dead cross-links) so it never
+# blocks the rapid parallel commits. The warn-level checks (SYNC entry length, \describedcommit
+# drift) live in the full `pnpm docs:check` / CI, not here. Bypass with `git commit --no-verify`.
+ROOT=$(git rev-parse --show-toplevel)
+if [ -f "$ROOT/scripts/docs-check.mjs" ]; then
+  node "$ROOT/scripts/docs-check.mjs" --staged || {
+    echo "pre-commit: docs:check failed (see above). If intentional: git commit --no-verify" >&2
+    exit 1
+  }
+fi
