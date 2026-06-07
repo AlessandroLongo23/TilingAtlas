@@ -27,34 +27,38 @@ Two tiers. Do not mix them.
   Forward routes: orbifold pool-bypass (branch enumeration theory-complete & pool-free; **the
   equivariant fill at k=4-hex is UNMEASURED — the make-or-break**) or Delaney–Dress (fallback).
 
-## ⛔ Active gate — blocks ALL k=3/k=4 compute
+## Reflection-coverage gate — theory CLOSED for the regular family (2026-06-07)
 
-**Reflection-coverage.** Proven seeding places by on-grid rotation; reflection is covered only
-indirectly (name-reversal + mirror-merge dedup). If rotation+name yields **neither** twin of a
-class, it drops **silently** — the one failure exhaustiveness can't tolerate. Clear before the
-proven k=3 run and before C4.
-- **CC** runs the falsifier — `../../resources/research/reflection-coverage-experiment-2026-06-07.md`
-  (PASS = 0 new congruence classes, digest ×2; FAIL = STOP + report the witness tiling).
-- **TA** proves the lemma — `../../resources/research/reflection-coverage-lemma-2026-06-07.md`
-  (load-bearing step: on-grid reflection-axis discretization).
+The load-bearing step is **proved** (TA, Obligation 1a): Prop 0 (grid-confinement) + Prop 1a
+(name-reversal + on-grid rotation = reflection) make `PeriodSolver`'s "shared name" assertion a
+theorem — reflection adds **no** seeding incompleteness for the regular family. Residuals:
+- **CC** — finish the confirmatory falsifier
+  (`../../resources/research/reflection-coverage-experiment-2026-06-07.md`); **predicted PASS**.
+  A FAIL ⇒ implementation defect (name-reversal ≠ true mirror, coarse rotation set), not math.
+- The live completeness question is now **C1 Part B (positional/fill completeness)**, not reflection.
+- **Star/parametric families break Prop 0** (free angle α off-grid) → need explicit `mirrorZeta`
+  seeding (input to C7).
+Lemma: `../../resources/research/reflection-coverage-lemma-2026-06-07.md` (proved-for-regular-family).
 
 ## Live NEXT — one per party
 
-- **CC** — run the reflection-coverage falsifier (gate above). If it clears: C4 orbifold pool-bypass
-  → deliver k=4-hex fill timing; C1 proven k≤3 regression (upgrades 11/20/61 to theorems).
-- **TA** — reflection-coverage lemma; then T1 (reframe thesis around the 3-method arc:
-  torus → orbifold → Delaney–Dress) + the Delaney–Dress method chapter.
-- **Alessandro** — once the gate clears: start proven-k=3 torus on the spare machine (~36 h / 8 cores,
-  the bankable theorem). C4 = GO, gated on the gate.
+- **CC** — finish the reflection falsifier (predicted PASS). Then: **Certified-Results Atlas** frontend
+  (`FRONTEND_ROADMAP.md` — read-only Certified-vs-Candidate views over `catalogue`/`found_tilings`);
+  C4 orbifold pool-bypass → k=4-hex fill timing; C1 Part B positional/fill completeness.
+- **TA** — resolve the 6 open decisions in `FRONTEND_ROADMAP.md` (chief: which polygon family is the
+  *official* certified catalogue — the k=1 `{3,4,6,8,12}` vs k=3 `{3,4,6,12}` caches differ). Then T1
+  (reframe thesis around torus → orbifold → Delaney–Dress) + the Delaney–Dress method chapter.
+- **Alessandro** — start proven-k=3 torus on the spare machine (~36 h / 8 cores, the bankable theorem);
+  C4 = GO; make the official-catalogue-family call for the Atlas.
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- master `60a4d69` (k=4 scout committed 2026-06-07); ahead of `origin`. **`\describedcommit` =
-  `2c8ad69` → thesis describes code ~14 commits stale; re-anchor when T1's chapters land.**
+- master `e11aa7b` (2026-06-07); ahead of `origin`. **`\describedcommit` = `2c8ad69` → thesis
+  describes code ~14+ commits stale; re-anchor when T1's chapters land.**
 - Worktrees: `feat/c1-proven-seeding`, `feat/lab-live-console` (merged), `feat/orbifold-branch-enum`
   (**ongoing — Increment-1/2 orbifold work; diverged on `SYNC.md`/`DEVELOPMENT_NOTES.md`; leave it**).
-- ⚠ `docs/FRONTEND_ROADMAP.md` + live edits on `docs/SYNC.md` are an agent's in-flight work
-  (2026-06-07). The SYNC→thin rotation is **staged in `docs/SYNC.thin.md`, pending a quiet worktree.**
+- `docs/SYNC.md` rotated to a thin board 2026-06-07; full prior history in `archive/SYNC-2026-06.md`.
+  `docs/FRONTEND_ROADMAP.md` is CC's Certified-Results Atlas plan (awaiting TA's 6 decisions).
 - `resources/` placed under git 2026-06-07 (heavy `papers/` + `archive/` gitignored).
 
 ## Ledger index
