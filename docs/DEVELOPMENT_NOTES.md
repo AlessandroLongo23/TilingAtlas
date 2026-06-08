@@ -1644,3 +1644,113 @@ C4). A k=4 *certified* number from the lattice programme is not on the table wit
 - `PS_PROFILE=1 pnpm tsx scripts/profile-k4-sample.ts 30000 40 40 3,4,6,8,12` — strided fill profile
   (100% timeout, fill-DFS dominant). For the dense-head bias check: `... 15000 40 3,4,6,8,12` on the
   pre-strided variant reproduced the same 100%-timeout conclusion.
+
+## 23. C7 star spike — Myers 4(j) `8.4*.8.4*` end-to-end; the convex layer made star-aware, and 4(j) certified k=1 exact (2026-06-08, session 14)
+
+**Branch `feat/c7-star-spike` (off master `4381401`), NOT merged.** The horizontal star lane (C7),
+parallel to and independent of the orbifold-vs-Delaney–Dress decision (k≤3 stays certified via torus).
+Per the TA work order + two contracts (`resources/research/star-vc-implementation-contract-2026-06-08.md`,
+`star-spike-4j-contract-2026-06-08.md`): a **diagnostic spike**, not a feature — make the
+vertex/angle/VC/area layer star-aware (Part A) + a minimal star tile + exact non-convex overlap (minimal
+B), drive **one** pinned tiling — Myers 4(j) `8.4*_{π/4}.8.4*_{π/4}` (octagon + a 4-pointed star, point
+45°/dent 225°) — through the live solve, and deliver the **break list** of every convex assumption a star
+reaches. Primary deliverable = the break list; 4(j) emergence secondary.
+
+**Hard invariant held at every stage:** regular k=1=11 `6f9ca9cf2d16c75f`, k=2=20 `f3e2e0517191362c`
+**byte-identical** (`scripts/probe-pipeline.ts`), full build green, all 195 vitest pass.
+
+### 23.1 Part A — the layer fix (digest-safe; every star branch dormant on the regular path)
+- **A1 — corner-aware angle.** New `Polygon.cornerAngleUnits(i)` reads the interior angle EXACTLY from
+  `edgeDirs` (reflex-aware: `ext=(edgeDirs[i]−edgeDirs[i−1]) mod N`, `interior=(N/2−ext) mod N`). Equals
+  the old `angleUnits(n)=12(n−2)/n` for every regular corner; gives 3/15 for a star point/dent. Replaced
+  the convex `angleUnits(n)` at `KUniformityChecker`, `SeedExpander`, and the inline copy in
+  `PeriodSolver.coveredIntervals`.
+- **A2 — ≥3-tile vertex predicate + legal 2-tile dent-fill.** Classify a 2π point by distinct incident
+  tile count `t` (by `exactKey`, not corners): `t≥3` = real vertex (allowed-VC check, orbit rep); `t=2` =
+  forced dent-fill (Myers non-vertex) — **accepted, NOT a vertex, NOT a contradiction**. Threaded through
+  `KUniformityChecker` (orbit reps), `PeriodSolver.analyze` + `isCompleteTiling`, `SeedExpander.has­Disallowed­SurroundedVertex`.
+  Inert on the regular path (no two `{3,4,6,8,12}` interior angles sum to 2π ⇒ every regular surrounded
+  vertex has `t≥3`).
+- **A3 — star-aware VC tokens.** `Polygon.cornerToken(i)`: bare `n` for regular corners (byte-identical),
+  `4*p@3`/`4*d@15` for star point/dent. `canonicalVCName` now takes `string[]`; the allowed-set builder
+  and every tested namer (`vcNameAt`/`vcRingNames`/`computeVCNameAtVertex`) share the one token function.
+- **A4 — exact star area.** New `polygonAreaSurd(verts)` (exact shoelace `½·|Σ detSurd(vᵢ,vᵢ₊₁)|`, abs ⇒
+  winding-independent) + `tileAreaFloatFor(p)` (star → shoelace, else `regularArea`). Routed the
+  polygon-iterating float-area sites — the **certificate** (`isCompleteTiling`), `aMax`, core/initial/
+  footprint areas. The **`n`-keyed candidate-lattice ladder** (`vcAreaSet`/`vcAreaMinVerts`) was left as a
+  **documented break** (see 23.3) — fixing it is the Increment-2 ladder refactor.
+
+### 23.2 Part B — the star tile, the exact overlap, and the harnesses
+- **B1 — `lib/classes/polygons/ExactStarPolygon.ts`.** The exact `4*_{π/4}` in ℤ[ζ₂₄] by a unit-edge
+  boundary walk (turns cycle −3/+9), `isStar=true` (disambiguates from the square — both `n=4`). Unit-test
+  (`tests/exact-star-polygon.test.ts`): 8 vertices in-ring, `cornerAngleUnits=[3,15,…]`, closes exactly,
+  area > 0, tokens disjoint from `"4"`.
+- **B2 — `lib/classes/algorithm/exact/exactOverlap.ts`.** Certificate-grade exact proper-overlap, SIGN-ONLY
+  (no intersection coordinates): `orient2D`/`segmentsProperlyCross`/`collinearSameSideOverlap`/non-convex
+  `pointInPolygon` (winding by `imSign`+`orient2D`). Overlap iff proper edge cross ∨ vertex/midpoint
+  strictly interior ∨ collinear same-side (parallel) sub-segment overlap. Wired into `Polygon.intersects`,
+  **star-gated** (`isStar` operand → exact; convex×convex → the float path, so digest-identical).
+  TDD-first (`tests/exact-overlap.test.ts`, 12 cases) incl. the decisive **octagon-seated-in-star-dent →
+  NOT overlap**, overlapping stars → true, and **agreement with float `intersects` on convex pairs**.
+- **Harness 1 `scripts/spike-star-4j.ts`** — REAL solve of the hand-seeded `8.4*.8.4*` VC.
+- **Harness 2 `scripts/spike-star-4j-cell.ts`** — independent EXACT verification of the emitted cell. Per
+  the TA's B3b hardening (SYNC 2026-06-08): the cell is an *unvalidated input*, so it must pass its OWN
+  correctness gate built only from the independently unit-tested primitives — **G1** no proper overlap
+  (exact B2) · **G2** every interior vertex at 2π and well-typed (t≥3 real or t=2 dent) · **G3** exact area
+  = |det Λ| · **G4** edge-to-edge (every directed edge reverse-matched) — NOT from `isCompleteTiling` /
+  `KUniformityChecker`. Only after the gate passes is the orbit count trusted (else a validator bug and a
+  bad cell are indistinguishable).
+- **Env-gated `spikeBreak`** (`exact/spikeTrace.ts`, fires only on `SPIKE_TRACE=1`) at the two silent core
+  sites (the `n`-keyed ladder; the regular-only fill loop) — inert otherwise.
+
+### 23.3 Result — 4(j) emerged through the REAL solve, k=1, verified EXACT (better than predicted)
+The plan/review predicted Harness 1 would block at the regular-only corner-completion fill loop (finding
+1), so the break list would miss the post-fill validators. **It did not block:** the 4-tile seed mod the
+right Λ closes with **no corner-completion** — Harness 1 emitted **1 certified k=1 cell**, reaching the
+certificate and the orbit gate. Harness 2 then confirmed it independently with exact arithmetic:
+- exact `4*_{π/4}` area = **2** (rational; *not* the square's 1);
+- fundamental cell = **{1 octagon + 1 star}**, Σ shoelace = **4+2√2 = |det Λ| as an exact Surd equality**;
+- **k = 1** (`KUniformityChecker`, 64 symmetries → 1 orbit);
+- **16 two-tile-at-2π dent-fills + 9 ≥3-tile real vertices** in one cell — the octagon-in-dent points are
+  present and correctly NOT counted (the A2 fix, verified end-to-end).
+
+**All of A1–A4 + B1 + B2 were necessary** for 4(j) to certify: without A4's exact star area the certificate
+rejects (octArea+1 = 5.828 ≠ 6.828); without B2 the dent-seat reads as overlap; without A2 the 16 dent
+points fail the allowed-VC check; without A1/A3 the angles/tokens are wrong. The spike thus both produced
+the break list AND drove a real non-convex star tiling end-to-end.
+
+### 23.4 The break list (the deliverable — pre-fill ∪ post-fill)
+**FIXED this session (and validated by 4(j)):** A1 corner angle; A2 dent-fill classify; A3 VC tokens; A4
+exact area in the certificate/`aMax`/core-area; B2 exact non-convex overlap; the exact star area + tile.
+
+**LATENT breaks — confirmed by inspection/run, deferred to Increment 2 (NOT needed for 4(j)):**
+1. **⚑ `n`-keyed candidate-lattice ladder** (`LatticeEnumerator.vcAreaSet`/`vcAreaMinVerts` via
+   `PeriodSolver.candidateLattices`) — `tileAreaSurd(n)` + the Euler relation `V=Σtₙ(n−2)/2`. A star and a
+   square both have `n=4`, so the ladder silently uses the SQUARE area (1) and a convex vertex count ⇒ a
+   wrong candidate-lattice set + unsound P0 prune (findings 2,3). **For 4(j) this was MASKED by an area
+   coincidence** — the star's true area (2) = 2× the square area, so the wrong ladder admitted the true Λ
+   via a different convex multiset (`octagon + 2 squares` = `octagon + 1 star` = 4+2√2). For any star whose
+   area is not a coincidental match, the wrong ladder would **drop the true Λ** ⇒ silent incompleteness.
+   Fix = key the ladder by tile identity + per-corner vertex contribution.
+2. **⚑ Regular-only fill loop** (`PeriodSolver.ts torusFill corner-completion`, `for n of ctx.polySizes →
+   RegularPolygon.fromAnchorAndDirExact`). Cannot construct a star during fill. 4(j) needs no fill so it
+   never bit, but any star tiling whose cell requires corner-completion would block here (finding 1).
+   Fix = a star-aware gap-fill.
+3. **`makeCtx` `n`-keyed bounds** — `minTileArea = min(polySizes.map(regularArea))` and
+   `maxCircum = max(1/(2 sin(π/n)))` use edge-count only (finding 2 / the circumradius break). A spiky star
+   can be larger/reach farther than the regular n-gon of the same `n` ⇒ `areaCap`/incidence-cull could
+   clip. Not exercised by 4(j) (no fill); fix needs the polygons threaded into `makeCtx`.
+4. **Latent, not exercised:** `holohedry`/`gridDirOf` (off-grid star periods), `TilingCongruence`/
+   `TranslationalCellExtractor` `exactCentroid` keying (a non-issue for the **isotoxal** in-ring stars —
+   Cₙ symmetry ⇒ vertex-mean = true centroid = kernel, strictly interior — but latent for asymmetric
+   stars), and `setExactVertices`' vertex-mean centroid. The B2 predicate deliberately does NOT use the
+   centroid as its interior witness.
+5. **File-health aside (not a star break):** `lib/classes/algorithm/SeedExpander.ts` contains an embedded
+   NUL byte (offset ~8273) so plain `grep` treats it as binary and silently skips it; use `grep -a`/`rg
+   --text`. Pre-existing; tolerated by the build; flagged for cleanup.
+
+### 23.5 Reproduction
+- `pnpm tsx scripts/probe-pipeline.ts 1` / `2` — regression gate (`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20).
+- `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4j.ts` — real solve → 1 certified k=1 cell + the ladder break.
+- `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4j-cell.ts` — exact verification (area=|det Λ|, k=1, dent-fills).
+- `pnpm vitest run tests/exact-star-polygon.test.ts tests/exact-overlap.test.ts` — B1/B2 units.

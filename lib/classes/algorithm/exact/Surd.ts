@@ -269,3 +269,17 @@ export function surdToCyclotomic(s: Surd, ring: Cyclotomic["ring"]): Cyclotomic 
 export function detSurd(u: Cyclotomic, v: Cyclotomic): Surd {
 	return imSurd(u.conj().mul(v));
 }
+
+/**
+ * Exact area of a simple polygon given its vertices in ℤ[ζ₂₄], by the shoelace formula
+ * ½·|Σ vᵢ × vᵢ₊₁| = ½·|Σ detSurd(vᵢ, vᵢ₊₁)|. `.abs()` makes it winding-independent (a CW-built
+ * polygon doesn't yield a negative area). Correct for NON-CONVEX tiles (stars) — unlike `tileAreaSurd(n)`,
+ * which is the unit-edge *regular* n-gon area and would silently return the convex area for a star of
+ * the same edge-count `n`.
+ */
+export function polygonAreaSurd(verts: Cyclotomic[]): Surd {
+	let acc = Surd.ZERO;
+	const L = verts.length;
+	for (let i = 0; i < L; i++) acc = acc.add(detSurd(verts[i], verts[(i + 1) % L]));
+	return acc.scaleRational(1n, 2n).abs();
+}

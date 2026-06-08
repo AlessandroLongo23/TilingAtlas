@@ -5,6 +5,7 @@ import { Cyclotomic } from "../Cyclotomic";
 import type { CyclotomicRing } from "../Cyclotomic";
 import { tolerance } from "@/utils/tolerance";
 import { islamicAnglesForHalfways } from "@/utils/islamicNoise";
+import { exactPolygonsOverlap } from "../algorithm/exact/exactOverlap";
 
 export class Polygon {
     n: number;
@@ -34,6 +35,10 @@ export class Polygon {
     exactCentroid?: Cyclotomic;
     /** Integer ζ-exponent (direction in units of 2π/N) of each edge vertexᵢ → vertexᵢ₊₁. */
     edgeDirs?: number[];
+    /** True for non-convex star tiles (set by ExactStarPolygon). Disambiguates a star from a regular
+     *  n-gon of the same edge-count `n` (e.g. 4*_{π/4} vs the square), which `n` alone cannot. Drives
+     *  corner-aware VC tokens and the star-gated exact overlap predicate. Undefined ⇒ regular. */
+    isStar?: boolean;
 
     constructor(n: number = 3) {
         this.n = n;
@@ -190,6 +195,36 @@ export class Polygon {
         this.edgeDirs = dirs;
     }
 
+    /**
+     * Interior angle at corner `i` (the vertex `exactVertices[i]`), in units of 2π/N (a full turn =
+     * N; on the decisive N=24 path this is π/12 units, a full vertex = 24). Computed EXACTLY from
+     * `edgeDirs` as the reflex-aware heading change, so it is correct for non-convex tiles: every
+     * corner of a regular n-gon returns N(n−2)/(2n) (= 12(n−2)/n at N=24), while a star's point and
+     * dent corners return their differing angles (e.g. 4*_{π/4}: point 3, dent 15). Replaces the
+     * convex-only per-polygon `angleUnits(n) = 12(n−2)/n`. */
+    cornerAngleUnits = (i: number): number => {
+        if (!this.edgeDirs || !this.ring) throw new Error('cornerAngleUnits: no exact edge directions');
+        const N = this.ring.N;
+        const L = this.edgeDirs.length;
+        const prev = (i - 1 + L) % L;
+        // exterior turn at vertex i = (outgoing edge dir) − (incoming edge dir), in 2π/N steps.
+        const ext = (((this.edgeDirs[i] - this.edgeDirs[prev]) % N) + N) % N;
+        // interior = π − exterior = N/2 − ext (reflex-aware via mod N: a reflex dent wraps to >N/2).
+        return (((N / 2 - ext) % N) + N) % N;
+    };
+
+    /** Token naming corner `i` for VC-name building: the bare edge-count `n` for a regular tile (so the
+     *  regular VC alphabet stays BYTE-IDENTICAL), or a point/dent-tagged token for a star corner —
+     *  distinct α and point-vs-reflex-dent give distinct tokens (4*_{π/4}: point "4*p@3", dent "4*d@15").
+     *  The allowed-VC set and the tested vertices MUST name through this single function or they silently
+     *  fail to match. */
+    cornerToken = (i: number): string => {
+        if (!this.isStar) return String(this.n);
+        const u = this.cornerAngleUnits(i);
+        const straight = (this.ring?.N ?? 24) / 2; // π in 2π/N units; reflex (dent) ⇒ u > straight
+        return `${this.n}*${u > straight ? 'd' : 'p'}@${u}`;
+    };
+
     /** Empty same-subclass instance (no vertices). Used by `transformedRigid` to build a fresh
      *  polygon without the eager float rebuild that `clone()` triggers. Abstract. */
     makeEmptyLike = (): Polygon => {
@@ -341,6 +376,15 @@ export class Polygon {
     }
 
     intersects = (other: Polygon, tol: number = tolerance): boolean => {
+        // Star-gated EXACT proper-overlap: the float path below leans on `containsPoint`/
+        // `isWithinConvexHull`, a CONVEX-hull point test that misclassifies points in a star's reflex
+        // dents (NOTES §9.4). When either tile is a star (and both carry exact vertices), decide overlap
+        // exactly in ℤ[ζ₂₄] (sign-only, no intersection coords). Convex×convex keeps the float path, so
+        // the regular decisive path is byte-identical; the exact predicate is validated to AGREE with this
+        // float one on convex pairs (tests/exact-overlap.test.ts).
+        if ((this.isStar || other.isStar) && this.exactVertices && other.exactVertices) {
+            return exactPolygonsOverlap(this.exactVertices, other.exactVertices);
+        }
         if (this.containsPoint(other.centroid, tol)) return true;
         if (other.containsPoint(this.centroid, tol)) return true;
 

@@ -42,8 +42,9 @@ import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
 import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
-import { detSurd } from './exact/Surd';
+import { detSurd, polygonAreaSurd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
+import { spikeBreak } from './exact/spikeTrace';
 
 const FLOAT_TOL = 1e-6;
 
@@ -67,10 +68,11 @@ const candidateCache = new Map<
 	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null }
 >();
 
-/** Canonical vertex-configuration name from a cyclic list of polygon edge-counts — minimal over
+/** Canonical vertex-configuration name from a cyclic list of corner TOKENS (bare edge-count `n` for
+ *  regular corners — byte-identical to the old number-list — or star point/dent tokens) — minimal over
  *  rotations AND reflection (a VC and its mirror share a name; matches the seed-build convention). */
-function canonicalVCName(ns: number[]): string {
-	const rotMin = (a: number[]): string => {
+function canonicalVCName(ns: string[]): string {
+	const rotMin = (a: string[]): string => {
 		let best: string | null = null;
 		for (let i = 0; i < a.length; i++) {
 			const r = a.slice(i).concat(a.slice(0, i)).join(',');
@@ -86,6 +88,14 @@ function canonicalVCName(ns: number[]): string {
 /** Unit-edge regular n-gon area (float), for the gap-free area certificate. */
 function regularArea(n: number): number {
 	return n / (4 * Math.tan(Math.PI / n));
+}
+
+/** Float tile area routed by tile IDENTITY (not edge-count `n`): a star's area depends on its
+ *  point-angle α, not `n`, so a 4*_{π/4} and a square (both n=4) have different areas — `regularArea(4)`
+ *  would silently return the square's. Exact shoelace for stars, the regular formula otherwise. For any
+ *  regular tile this is exactly `regularArea(p.n)` ⇒ byte-identical on the regular path. */
+function tileAreaFloatFor(p: Polygon): number {
+	return p.isStar ? polygonAreaSurd(p.exactVertices!).toFloat() : regularArea(p.n);
 }
 
 export type PeriodCell = {
@@ -171,7 +181,7 @@ export class PeriodSolver {
 		// Total (unreduced) core area. The reduced footprint mod Λ never exceeds this, so a cell with
 		// area ≥ totalCoreArea ALWAYS holds the core — a cheap exact short-circuit that skips the
 		// per-lattice footprint computation on every large cell (only small cells can overflow).
-		const totalCoreArea = corePolys.reduce((s, p) => s + regularArea(p.n), 0);
+		const totalCoreArea = corePolys.reduce((s, p) => s + tileAreaFloatFor(p), 0);
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const _tc0 = prof ? Date.now() : 0;
@@ -323,6 +333,14 @@ export class PeriodSolver {
 			for (const p of vc.polygons) m.set(p.n, (m.get(p.n) ?? 0) + 1);
 			return m;
 		});
+		if (process.env.SPIKE_TRACE === '1' && seed.polygons.some((p) => p.isStar)) {
+			spikeBreak(
+				'LatticeEnumerator.vcAreaSet/vcAreaMinVerts (via PeriodSolver.candidateLattices)',
+				'candidate-lattice area ladder + minVerts are n-keyed (tileAreaSurd(n)) and bake in the Euler relation V=Σtₙ(n−2)/2',
+				'a star and a square both have n=4 ⇒ the star silently uses the SQUARE area and a convex vertex-count ⇒ a WRONG candidate-lattice set + unsound P0 prune (findings 2,3)',
+				'fix = key the ladder by tile identity + per-corner vertex contribution (Increment 2)'
+			);
+		}
 		const vcSig = vcIncidences
 			.map((m) => [...m.entries()].sort((a, b) => a[0] - b[0]).map(([n, c]) => `${n}^${c}`).join('.'))
 			.sort()
@@ -357,7 +375,13 @@ export class PeriodSolver {
 		// > 16 at k=1 — one of the 11 Archimedean tilings; the live path gave k=1=10 until this fix).
 		// Float ceiling only; the VC-area set + torusFill area checks stay exact (Surd). Raising the area
 		// ceiling does NOT enlarge the pool (the binding completeness knob), so no tractability blow-up.
-		const aMax = Math.max(...polySizes.map(regularArea));
+		// a_max routed by tile identity (seed.polygons, not the n-only polySizes) so a star's exact area
+		// enters the bound — a star can be larger than the regular n-gon of the same n; using regularArea(n)
+		// would under-size the box and could silently clip the star's own cell. Max is dedup-invariant ⇒
+		// byte-identical on the regular path. (The candidate-area LADDER below is still n-keyed: vcAreaSet /
+		// vcAreaMinVerts use tileAreaSurd(n) and the Euler relation, both unsound for a star — a documented
+		// break for Harness 1, the Increment-2 ladder refactor; raising a_max here is strictly conservative.)
+		const aMax = Math.max(...seed.polygons.map(tileAreaFloatFor));
 		const areaBoundF = 24 * this.k * aMax;
 		// Exact cell areas the seed's VCs can actually produce (the tile multiset is forced by the VCs,
 		// not any tile sum). Sound + complete; far sparser than the generic ladder ⇒ many fewer spurious
@@ -507,7 +531,7 @@ export class PeriodSolver {
 		// total area cannot exceed the cell area |det Λ|. A too-small / wrong candidate is killed in
 		// O(reps) before the expensive block build. Sound (a necessary condition for any fitting).
 		let initialArea = 0;
-		for (const p of initial) initialArea += regularArea(p.n);
+		for (const p of initial) initialArea += tileAreaFloatFor(p);
 		if (initialArea > ctx.cellArea + 1e-6) {
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: core area ${initialArea.toFixed(2)} > cell ${ctx.cellArea.toFixed(2)} → reject\n`);
 			return [];
@@ -579,6 +603,15 @@ export class PeriodSolver {
 			if (d0 < 0) continue; // no fillable gap (shouldn't happen for an open vertex)
 			const repsKeys = new Set(reps.map((r) => r.exactKey())); // reps are canonical class reps
 
+			if (process.env.SPIKE_TRACE === '1' && reps.some((r) => r.isStar)) {
+				spikeBreak(
+					'PeriodSolver.ts torusFill corner-completion (the gap-fill loop)',
+					'every gap is filled only by RegularPolygon.fromAnchorAndDirExact(n,…) over ctx.polySizes',
+					'it can never CONSTRUCT a star during fill (and seats a square at a star n=4 slot) ⇒ a star cell cannot be completed by the real solve (finding 1, the structural block)',
+					'fix = a star-aware gap-fill (Increment 2); the spike reaches the post-fill validators via the injected-cell harness instead'
+				);
+			}
+
 			for (const n of ctx.polySizes) {
 				const P = RegularPolygon.fromAnchorAndDirExact(n, w, d0);
 				if (this.properOverlapWithBlock(P, block, ctx)) continue;
@@ -642,7 +675,11 @@ export class PeriodSolver {
 			const totalUnits = intervals.reduce((s, it) => s + it.units, 0);
 			if (totalUnits > ctx.N + 0.5) return { contradiction: true }; // angular over-fill (overlap)
 			if (Math.abs(totalUnits - ctx.N) < 0.5) {
-				// surrounded: VC must be allowed, else this branch can never be valid
+				// surrounded at 2π. A2: classify by distinct incident-tile count t. A 2-tile point is a
+				// forced dent-fill (Myers non-vertex): legal — NOT a vertex, NOT a contradiction. Only a
+				// ≥3-tile point is a real VC that must be allowed. (Regular path: t≥3 always ⇒ inert.)
+				const t = new Set(polys.map(({ p }) => p.exactKey())).size;
+				if (t < 3) continue; // legal dent-fill
 				const name = canonicalVCName(this.vcRingNames(v, polys));
 				if (!ctx.allowed.has(name)) return { contradiction: true };
 				continue;
@@ -660,9 +697,8 @@ export class PeriodSolver {
 	private coveredIntervals(v: Cyclotomic, polys: { p: Polygon; idx: number }[], N: number): Interval[] {
 		const intervals: Interval[] = [];
 		for (const { p, idx } of polys) {
-			const len = p.n;
-			const dOut = p.edgeDirs![idx]; // v → next vertex
-			const units = (N * (p.n - 2)) / (2 * p.n);
+			const dOut = p.edgeDirs![idx]; // v → next vertex (the corner at vertex `idx`)
+			const units = p.cornerAngleUnits(idx); // corner-aware (reflex-safe); = N(p.n−2)/(2p.n) for regular
 			intervals.push({ start: ((dOut % N) + N) % N, units, n: p.n });
 		}
 		return intervals;
@@ -684,12 +720,13 @@ export class PeriodSolver {
 		return bestRay;
 	}
 
-	/** Ring-ordered polygon edge-counts around vertex `v` (CCW by edge direction) — for the VC name. */
-	private vcRingNames(v: Cyclotomic, polys: { p: Polygon; idx: number }[], N = polys[0].p.ring!.N): number[] {
+	/** Ring-ordered corner tokens around vertex `v` (CCW by edge direction) — for the VC name. Regular
+	 *  corners yield the bare `n` token (byte-identical); star corners yield point/dent tokens. */
+	private vcRingNames(v: Cyclotomic, polys: { p: Polygon; idx: number }[], N = polys[0].p.ring!.N): string[] {
 		const sorted = polys
-			.map(({ p, idx }) => ({ n: p.n, start: ((p.edgeDirs![idx] % N) + N) % N }))
+			.map(({ p, idx }) => ({ token: p.cornerToken(idx), start: ((p.edgeDirs![idx] % N) + N) % N }))
 			.sort((a, b) => a.start - b.start);
-		return sorted.map((s) => s.n);
+		return sorted.map((s) => s.token);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -701,8 +738,10 @@ export class PeriodSolver {
 	 *  surrounded (2π) with an allowed VC, and (c) total cell area = |det Λ| (gap-free area check).
 	 *  All three ⇒ the Λ-periodic extension is a valid edge-to-edge tiling with only allowed VCs. */
 	isCompleteTiling(reps: Polygon[], ctx: FillCtx): boolean {
-		// (c) area: cell polygons must exactly cover one fundamental domain.
-		const area = reps.reduce((s, p) => s + regularArea(p.n), 0);
+		// (c) area: cell polygons must exactly cover one fundamental domain. Star-aware (exact shoelace via
+		// tileAreaFloatFor) so a star cell's area = star+neighbour shares is checked against |det Λ| with the
+		// star's TRUE area, not the convex regularArea(n) (which would reject the valid 4(j) cell).
+		const area = reps.reduce((s, p) => s + tileAreaFloatFor(p), 0);
 		if (Math.abs(area - ctx.cellArea) > 1e-4 * Math.max(1, ctx.cellArea)) return false;
 
 		const block = this.buildBlock(reps, ctx, ctx.cellDiam + 8);
@@ -729,6 +768,10 @@ export class PeriodSolver {
 			const intervals = this.coveredIntervals(v, polys, ctx.N);
 			const totalUnits = intervals.reduce((s, it) => s + it.units, 0);
 			if (Math.abs(totalUnits - ctx.N) > 0.5) return false; // not surrounded (gap) or over-full
+			// A2: a 2-tile point at 2π is a legal dent-fill (Myers non-vertex), not a counted VC — accept
+			// it without requiring an allowed-VC name. (Regular path: t≥3 always ⇒ this never fires.)
+			const t = new Set(polys.map(({ p }) => p.exactKey())).size;
+			if (t < 3) continue;
 			const name = canonicalVCName(this.vcRingNames(v, polys));
 			if (!ctx.allowed.has(name)) return false;
 		}
@@ -762,7 +805,7 @@ export class PeriodSolver {
 	private footprintArea(core: Polygon[], ctx: FillCtx): number {
 		const reps = this.dedupModLattice(core, ctx, new Map());
 		let area = 0;
-		for (const p of reps) area += regularArea(p.n);
+		for (const p of reps) area += tileAreaFloatFor(p);
 		return area;
 	}
 
@@ -930,15 +973,19 @@ export class PeriodSolver {
 		return false;
 	}
 
-	/** Canonical (mirror-merged) VC name at a vertex from the polygons touching it (angular order). */
+	/** Canonical (mirror-merged) VC name at a vertex from the polygons touching it (angular order).
+	 *  Corner token via the shared-vertex index, so star point/dent corners name distinctly while regular
+	 *  corners stay byte-identical. Builds the allowed-VC set ⇒ must use the SAME `cornerToken` as the
+	 *  tested vertices (`vcRingNames`). */
 	private vcNameAt(vertex: Cyclotomic, polys: Polygon[]): string {
 		const vf = vertex.toVector();
+		const vk = vertex.key();
 		const withAngle = polys.map((p) => ({
-			n: p.n,
+			token: p.cornerToken(p.vertexKeyIndex().get(vk)!),
 			a: Math.atan2(p.centroid.y - vf.y, p.centroid.x - vf.x),
 		}));
 		withAngle.sort((x, y) => x.a - y.a);
-		return canonicalVCName(withAngle.map((w) => w.n));
+		return canonicalVCName(withAngle.map((w) => w.token));
 	}
 }
 

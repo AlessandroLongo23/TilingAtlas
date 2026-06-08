@@ -28,13 +28,6 @@ import { Cyclotomic } from '../Cyclotomic';
 
 const FLOAT_TOL = 1e-6;
 
-/** Interior-angle of a regular n-gon in units of (π/12): 12·(n−2)/n. Integer for the regular core
- *  {3,4,6,8,12} (4,6,8,9,10); a full vertex is 2π = 24 of these units. */
-function angleUnits(n: number): number {
-	const u = (12 * (n - 2)) / n;
-	return u;
-}
-
 export class KUniformityChecker {
 	/**
 	 * True number of vertex-transitivity classes of the periodic tiling DEFINED by a fundamental
@@ -170,19 +163,24 @@ export class KUniformityChecker {
 
 		// --- 3. Vertex orbit representatives (one per lattice class of surrounded interior vertices). ---
 		// incidence: vertex key → { vertex, n's of incident polygons }
-		const incident = new Map<string, { vertex: Cyclotomic; units: number }>();
+		const incident = new Map<string, { vertex: Cyclotomic; units: number; tiles: Set<string> }>();
 		for (const p of patch) {
-			const uUnit = angleUnits(p.n);
-			for (const vx of p.exactVertices!) {
+			const pk = p.exactKey();
+			p.exactVertices!.forEach((vx, i) => {
+				const uUnit = p.cornerAngleUnits(i); // corner-aware (reflex-safe); = angleUnits(p.n) for regular
 				const k = vx.key();
 				const e = incident.get(k);
-				if (e) e.units += uUnit;
-				else incident.set(k, { vertex: vx, units: uUnit });
-			}
+				if (e) { e.units += uUnit; e.tiles.add(pk); }
+				else incident.set(k, { vertex: vx, units: uUnit, tiles: new Set([pk]) });
+			});
 		}
 		const reps: Cyclotomic[] = [];
-		for (const { vertex, units } of incident.values()) {
+		for (const { vertex, units, tiles } of incident.values()) {
 			if (units !== 24) continue; // not a fully-surrounded (interior) tiling vertex (2π = 24 units)
+			// A2: a 2-tile point summing to 2π is a forced dent-fill (Myers non-vertex), NOT an orbit
+			// rep. t counts distinct tile INSTANCES (by exactKey), never incident corners. Regular path:
+			// no two {3,4,6,8,12} interior angles sum to 2π ⇒ every surrounded vertex has t≥3 ⇒ inert.
+			if (tiles.size < 3) continue;
 			const vv = vertex.toVector();
 			if (Math.hypot(vv.x - cx, vv.y - cy) > vertR) continue;
 			if (reps.some((rp) => this.latticeEquiv(vertex, rp, u, v, ZERO))) continue;

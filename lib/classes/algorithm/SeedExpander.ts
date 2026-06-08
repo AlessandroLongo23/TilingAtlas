@@ -18,14 +18,11 @@ import { deduplicatePolygons } from '@/utils';
 const POLYGON_BUCKET_GRID_SIDE_LENGTH = 1;
 const POLYGON_SEARCH_RADIUS = 3;
 
-/** Interior angle of a regular n-gon in units of (π/12); a full vertex (2π) is 24 of these.
- *  Integer for the regular core {3,4,6,8,12} (4,6,8,9,10). */
-const angleUnits = (n: number): number => (12 * (n - 2)) / n;
-
-/** Canonical vertex-configuration name from a cyclic list of polygon edge-counts — minimal over
- *  rotations AND reflection, so a VC and its mirror share a name (matches the seed-build convention). */
-const canonicalVCName = (ns: number[]): string => {
-	const rotMin = (a: number[]): string => {
+/** Canonical vertex-configuration name from a cyclic list of corner TOKENS (bare edge-count `n` for
+ *  regular corners — byte-identical — or star point/dent tokens) — minimal over rotations AND
+ *  reflection, so a VC and its mirror share a name (matches the seed-build convention). */
+const canonicalVCName = (ns: string[]): string => {
+	const rotMin = (a: string[]): string => {
 		let best: string | null = null;
 		for (let i = 0; i < a.length; i++) {
 			const r = a.slice(i).concat(a.slice(0, i)).join(',');
@@ -377,12 +374,13 @@ export class SeedExpander {
 	 *  angular position around the vertex (float ordering is safe — positions are well separated). */
 	private computeVCNameAtVertex = (vertex: Cyclotomic, polys: Polygon[]): string => {
 		const vf = vertex.toVector();
+		const vk = vertex.key();
 		const withAngle = polys.map((p) => ({
-			n: p.n,
+			token: p.cornerToken(p.vertexKeyIndex().get(vk)!),
 			a: Math.atan2(p.centroid.y - vf.y, p.centroid.x - vf.x),
 		}));
 		withAngle.sort((x, y) => x.a - y.a);
-		return canonicalVCName(withAngle.map((w) => w.n));
+		return canonicalVCName(withAngle.map((w) => w.token));
 	};
 
 	/** True iff some fully-surrounded vertex (interior angle sum = 2π) has a VC outside `allowed`.
@@ -390,17 +388,21 @@ export class SeedExpander {
 	private hasDisallowedSurroundedVertex = (patch: Polygon[], allowed: Set<string>): boolean => {
 		const inc = new Map<string, { units: number; polys: Polygon[]; v: Cyclotomic }>();
 		for (const p of patch) {
-			const u = angleUnits(p.n);
-			for (const vx of p.exactVertices!) {
+			p.exactVertices!.forEach((vx, i) => {
+				const u = p.cornerAngleUnits(i); // corner-aware (reflex-safe); = angleUnits(p.n) for regular
 				const k = vx.key();
 				const e = inc.get(k);
 				if (e) { e.units += u; e.polys.push(p); }
 				else inc.set(k, { units: u, polys: [p], v: vx });
-			}
+			});
 		}
 		for (const { units, polys, v } of inc.values()) {
 			// 2π = 24 units of (π/12); only fully-surrounded vertices have a complete (decidable) VC.
 			if (Math.abs(units - 24) > 1e-9) continue;
+			// A2: a 2-tile point at 2π is a legal dent-fill (Myers non-vertex), not a counted vertex —
+			// skip the allowed-VC check. (Regular path: t≥3 always at 2π ⇒ inert.)
+			const t = new Set(polys.map((p) => p.exactKey())).size;
+			if (t < 3) continue;
 			if (!allowed.has(this.computeVCNameAtVertex(v, polys))) return true;
 		}
 		return false;
