@@ -1,0 +1,54 @@
+# DG-1 proven-pool measurement — k=1, s=23 (thm:weight / cor:box, correctness.tex:407-459)
+# date: 2026-06-09T22:27:36.905Z   machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+# basis: Z[zeta_24] = 8 int coords over 1,z,...,z^7; Phi_24(x) = x^8 - x^4 + 1 => z^8 = z^4 - 1; sanity zeta^12 = -1 PASSED, float cross-check 24/24 PASSED (<=1e-9)
+# bounds: a_max = 3(2+sqrt3) = 11.196152; |det| <= 24k*a_max = 268.7077; |v| <= (2/sqrt3)*24k*a_max = 310.2769 (NEVER binds at s=23: weight 23 => |w| <= 23)
+# |u| <= sqrt((2/sqrt3)*24k*a_max) = 17.6147 — u-eligible subset REPORTED per level (cumulative, nonzero), float, NO pruning on it during BFS
+# pruning during BFS: NONE (no proven-sound prune applies at k=1; see header of scripts/measure-proven-pool.ts)
+# budgets (loud abort): RSS > 6 GiB | elapsed > 25 min | |seen| > 1.5e8
+# cor:box(iv) multiset cap C(47,24) = 16,123,801,841,550 (~1.61e+13) — an upper bound on |W(23)|, not the distinct count
+# seen-set: open-addressing, 2^28 slots * 8 B = 2.00GB preallocated
+#
+level 0: +1 distinct (the zero element), cumulative 1, u-eligible(<=17.6): 0, growth n/a, elapsed 0.0s, RSS 0.10GB, ETA-to-23: n/a
+level 1: +24 distinct, cumulative 25, u-eligible(<=17.6): 24, growth xn/a, elapsed 0.0s, RSS 0.11GB, ETA-to-23: n/a
+level 2: +264 distinct, cumulative 289, u-eligible(<=17.6): 288, growth x11.00, elapsed 0.0s, RSS 0.11GB, ETA-to-23: ~2.15e+24 more values, ~516252849992.6y (from last growth ratio x11.00)
+level 3: +1,800 distinct, cumulative 2,089, u-eligible(<=17.6): 2,088, growth x6.82, elapsed 0.0s, RSS 0.18GB, ETA-to-23: ~9.94e+19 more values, ~8758228.1y (from last growth ratio x6.82)
+level 4: +8,736 distinct, cumulative 10,825, u-eligible(<=17.6): 10,824, growth x4.85, elapsed 0.0s, RSS 0.42GB, ETA-to-23: ~1.19e+17 more values, ~7355.4y (from last growth ratio x4.85)
+level 5: +32,952 distinct, cumulative 43,777, u-eligible(<=17.6): 43,776, growth x3.77, elapsed 0.1s, RSS 1.07GB, ETA-to-23: ~1.07e+15 more values, ~49.5y (from last growth ratio x3.77)
+level 6: +102,744 distinct, cumulative 146,521, u-eligible(<=17.6): 146,520, growth x3.12, elapsed 0.2s, RSS 1.89GB, ETA-to-23: ~3.76e+13 more values, ~309.5d (from last growth ratio x3.12)
+level 7: +276,648 distinct, cumulative 423,169, u-eligible(<=17.6): 423,168, growth x2.69, elapsed 0.3s, RSS 2.13GB, ETA-to-23: ~3.36e+12 more values, ~16.7d (from last growth ratio x2.69)
+level 8: +663,744 distinct, cumulative 1,086,913, u-eligible(<=17.6): 1,086,912, growth x2.40, elapsed 0.5s, RSS 2.14GB, ETA-to-23: ~5.72e+11 more values, ~2.0d (from last growth ratio x2.40)
+level 9: +1,451,736 distinct, cumulative 2,538,649, u-eligible(<=17.6): 2,538,648, growth x2.19, elapsed 1.0s, RSS 2.14GB, ETA-to-23: ~1.53e+11 more values, ~14.4h (from last growth ratio x2.19)
+level 10: +2,944,104 distinct, cumulative 5,482,753, u-eligible(<=17.6): 5,482,752, growth x2.03, elapsed 1.9s, RSS 2.15GB, ETA-to-23: ~5.70e+10 more values, ~5.3h (from last growth ratio x2.03)
+level 11: +5,607,624 distinct, cumulative 11,090,377, u-eligible(<=17.6): 11,090,376, growth x1.90, elapsed 3.8s, RSS 2.18GB, ETA-to-23: ~2.69e+10 more values, ~2.4h (from last growth ratio x1.90)
+level 12: +10,131,552 distinct, cumulative 21,221,929, u-eligible(<=17.6): 21,221,928, growth x1.81, elapsed 7.3s, RSS 2.23GB, ETA-to-23: ~1.52e+10 more values, ~88.5min (from last growth ratio x1.81)
+level 13: +17,499,768 distinct, cumulative 38,721,697, u-eligible(<=17.6): 38,721,696, growth x1.73, elapsed 14.1s, RSS 2.31GB, ETA-to-23: ~9.78e+9 more values, ~63.1min (from last growth ratio x1.73)
+  ... level 14 in progress: 47.9% of frontier, +14,287,214 new so far, |seen| 53,008,911, elapsed 20.1s, RSS 2.36GB
+level 14: +29,077,176 distinct, cumulative 67,798,873, u-eligible(<=17.6): 67,798,872, growth x1.66, elapsed 27.5s, RSS 2.46GB, ETA-to-23: ~6.98e+9 more values, ~53.6min (from last growth ratio x1.66)
+  ... level 15 in progress: 48.7% of frontier, +23,242,456 new so far, |seen| 91,041,329, elapsed 40.2s, RSS 2.51GB
+level 15: +46,711,656 distinct, cumulative 114,510,529, u-eligible(<=17.6): 114,510,528, growth x1.61, elapsed 57.4s, RSS 2.64GB, ETA-to-23: ~5.37e+9 more values, ~57.3min (from last growth ratio x1.61)
+  ... level 16 in progress: 4.1% of frontier, +3,486,408 new so far, |seen| 117,996,937, elapsed 60.3s, RSS 2.62GB
+  ... level 16 in progress: 35.9% of frontier, +26,874,230 new so far, |seen| 141,384,759, elapsed 80.6s, RSS 2.44GB
+ABORT during level 16 (47.9% of frontier expanded): |seen| 150,069,248 > 1.5e8
+#
+# ---- run finished: BUDGET ABORT after 88.7s, peak RSS (sampled) 2.65GB ----
+ABORTED AT BUDGET — proven pool NOT enumerated to s=23
+reason: |seen| 150,069,248 > 1.5e8
+last completed level: 15  (abort happened during level 16, +35,558,719 partial new values found there (not counted below))
+cumulative |W(15)| = 114,510,529 distinct values; u-eligible(<=17.6) = 114,510,528
+last growth ratios: r(11)=1.905, r(12)=1.807, r(13)=1.727, r(14)=1.662, r(15)=1.606
+#
+# ---- honest extrapolation (polynomial fit new(t) ~ c*t^d on the last 3 growth ratios) ----
+# fitted growth exponent d = 6.85 (rank-8 lattice predicts frontier ~ t^7)
+# projected |W(23)| ~ 3.02e+9 distinct values (cumulative 1.15e+8 + projected 2.90e+9 for levels 16..23)
+# cor:box(iv) cap for reference: C(47,24) ~ 1.61e+13
+# projected cost to finish enumeration at the measured rate (1.56e+6 values/s, single core): ~31.0min; memory for the seen-set alone: ~54.58GB
+# u-eligible note: every value of weight <= 17 has |w| <= 17 < 17.61 (triangle inequality), so the u-eligible subset tracks |W(t)| up to level 17 — the |u| filter does NOT tame the pool at k=1.
+# PAIR-STAGE lower bound (observed u-eligible x projected |W(23)|): >= 3.45e+17 naive pairs.
+#
+# ==== DECISION INPUT FOR DG-1 ====
+# k=1, s=23, proven configuration (cor:box, no unproven filters): NOT enumerable within 6 GiB / 25 min / 1.5e8 values.
+# Reached level 15/23 with |W(15)| = 114,510,529; projected |W(23)| ~ 3.02e+9 (fit d=6.85).
+# The proven in-search prunes available at k=1 prune NOTHING (|v|~310 never binds; |u| must not prune the BFS).
+# Implied DG-1 table verdict: k=1 proven-pool enumeration INFEASIBLE at this scale => per the decision table, the honest rewrite (TX-1 option b) is mandatory and TH-10 (tighter weight bound) is the route back.
+# (Caveat: this measures the VALUE enumeration of W(23) itself. Any feasible proven path needs a filter with a proof that cuts BEFORE materializing W(23) — the registry pattern applies.)
+# log file: /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/dg1-proven-pool-k1.log

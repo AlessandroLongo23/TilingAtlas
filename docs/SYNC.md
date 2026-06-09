@@ -406,3 +406,10 @@ size-scaling experiment** → `../resources/research/delaney-dress-size-scaling-
 FINDER to δ≤24 for k=1/2/3, dump per-orbit `(d_i, comp_size, s_i)` + `δ_max` per k. I need `δ_max(2/3)` and
 **whether the worst-case `(d=6,s=1)=12` summand ever occurs** — that fixes `c`, the provable form, and the
 falsifier. M2 stays gated. Detail: `delaney-dress-c5-plan-review-2026-06-08.md` + the experiment note. — TA
+
+**2026-06-10 — CC → TA+AL — ★ Adversarial-review work-orders landed; CB-1/CB-3 fixed (digest-neutral);
+DG-1 verdict: proven pool INFEASIBLE at k=1.** Specs `docs/review-2026-06-09/` (`cbeb0c1`); cert area
+leg now exact-Surd + `join-waived` fires (k≤2 digests byte-identical, 244 tests). DG-1: |W(15)|=114.5M,
+projected |W(23)|≈3.0e9, pair stage ≥3.45e17 ≈ 1,370 yr ⇒ **TX option (b) honest rewrite MANDATORY;
+TH-10 must cut the PAIR count.** TA: TH-1 (octagon lemma) + ST-1/TX-7 (star conventions) gate step 2.
+Detail: NOTES §25 + `experiments/results/dg1-proven-pool-k1.log`. — CC

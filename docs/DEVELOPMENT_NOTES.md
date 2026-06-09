@@ -1881,3 +1881,46 @@ isotoxal `n*_α`; C3 star point-fill + P1 loosening + star-aware `makeCtx` bound
 - `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4p.ts` — 4(p) certifies k=1 from its fan (star-fill active, breaks logged).
 - `pnpm tsx scripts/scout-star-inring.ts --single-star` — the in-ring demonstration run (caps printed loud).
 - Full sound run (≈8 h): `pnpm tsx scripts/scout-star-inring.ts` (no scope flags).
+
+## 25. Adversarial review work-orders + CB-1/CB-3 landed + DG-1 verdict: the proven pool is NOT enumerable at k=1 (2026-06-10, session 16)
+
+**Review pack.** The 2026-06-09 multi-agent adversarial review (32 verified critical/major findings)
+is now structured work-orders in `docs/review-2026-06-09/` (`cbeb0c1`): DG decision gate, CB code
+bugs, TX thesis alignment, TH theory obligations, OP optimizations, ST star/new directions. Read
+`README.md` there for the amended execution order. Hygiene commits: star Increment-2 working tree
+(`4c4c5a5`), `experiments/` tracked (`03e15ba`).
+
+**CB-1 — certificate area leg is now EXACT** (commit this session). The decisive leg (c) compares
+`Σ tileAreaSurdFor(p)` to `ctx.cellAreaSurd = |det Λ|` by exact `Surd.cmp`; the old 1e-4 float
+compare is demoted to broadphase pre-reject (provably cannot contradict the exact decider — float
+error ≲1e-10 ≪ 1e-4). Core-overflow guard at fill entry RULED stays-float (hot path; its +1e-6 slack
+only ever over-accepts, caught by the exact certificate downstream). New `tileAreaSurdFor` = exact
+shoelace, placement-invariant; tests pin closed forms n∈{3,4,6,8,12} and the 4(j) identity
+star+octagon = 4+2√2 exactly. **Digest gate: k=1 `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20 —
+byte-identical; 244/244 tests.** ⚑ The three §13.4 float-slack tilings (t2004/t2011/t2012) now pass
+by exact equality, confirming the slack was accommodating float noise, not masking inequality.
+⚑ k=3 oracle regression (2.5 h no-cap scout) queued as the formal acceptance — run before the next
+certified-claim refresh.
+
+**CB-3 — `join-waived` now fires.** The den≤60 near-rational join cut in `obliqueCells` emits
+`{cause:"join-waived", rejects, denMax}` once per run through `onTruncate` (TA ruling
+SYNC-2026-06 option (b)). **Correction to §19.3:** the claim that all three oblique truncation
+causes were "routed loudly to stderr" was WRONG until this session — `join-waived` was defined in
+the type and had zero emission sites; only subpool-clipped/v-range-truncated fired. The count is an
+upper bound (float can't split irrational coords from den>60 rationals). Test pins once-per-run +
+positive count.
+
+**DG-1 — the proven-configuration pool measured INFEASIBLE at k=1** (`scripts/measure-proven-pool.ts`,
+log `experiments/results/dg1-proven-pool-k1.log`). Level-BFS over distinct W(t) values (ℤ[ζ₂₄] as
+8 int coords, Φ₂₄ reduction; hand-checked new(2)=264): aborted at budget during level 16 of 23 with
+|W(15)| = 114,510,529 (88.7 s, RSS 2.65 GB). Projected |W(23)| ≈ 3.02e9 (poly fit d=6.85 ≈ the
+theoretical t⁷ frontier) — value enumeration alone needs ~55 GB; the PAIR stage is ≥3.45e17 naive
+pairs ≈ **1,370 years on 8 cores**. ⚑ Structural: the proven cor:box filters prune NOTHING at k=1 —
+|v|≤310 never binds (weight 23 ⇒ |w|≤23) and |u|≤17.61 is vacuous below level 18. For scale: the
+tuned pool lives at ~level 4 (~10⁴ values vs ~10⁹·⁵). **Verdict per the DG-1 decision table:
+"k=1 infeasible" ⇒ the honest thesis rewrite (TX-1/TX-2 option b) is MANDATORY — no thesis sentence
+may state or imply a proven-configuration run was executed — and TH-10 (tighter weight bound) is
+the route back, with the bar set by the PAIR count (≥5 orders), not |W| (~recoverable on 128 GB).**
+The measurement itself is thesis-grade: an intractable proven box is a result, and it motivates
+TH-10 precisely (correctness.tex rem:box-implementation's "may search a smaller region only behind
+filters proven sound" now has a measured floor on what those filters must achieve).
