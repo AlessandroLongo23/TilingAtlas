@@ -1754,3 +1754,130 @@ exact area in the certificate/`aMax`/core-area; B2 exact non-convex overlap; the
 - `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4j.ts` — real solve → 1 certified k=1 cell + the ladder break.
 - `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4j-cell.ts` — exact verification (area=|det Λ|, k=1, dent-fills).
 - `pnpm vitest run tests/exact-star-polygon.test.ts tests/exact-overlap.test.ts` — B1/B2 units.
+
+## 24. C7 star Increment 2 — closing the completeness gap; the in-ring k=1 star enumeration made sound (2026-06-08, session 15)
+
+**Branch `feat/c7-star-spike` (continues §23), NOT merged.** Per the TA contract
+(`resources/research/star-increment2-contract-2026-06-08.md`): turn the §23 *correctness* result (4(j)
+certified, but DESPITE break #1, masked by an area coincidence) into a *completeness* one — make the full
+in-ring k=1 star enumeration sound, then validate per-tiling against Myers (2004). Doctrine throughout:
+**completeness knobs are not speed dials** — where a star breaks a *prune*, LOOSEN it (sound, slower,
+never drops), never feed it a regular-tile formula.
+
+**Hard invariant held at every stage:** regular k=1=11 `6f9ca9cf2d16c75f`, k=2=20 `f3e2e0517191362c`
+**byte-identical** (`scripts/probe-pipeline.ts`), full build green, all star units pass (51 across
+`exact-star-polygon` + `star-vc`; + the §23 `exact-overlap`).
+
+### 24.1 C1 — identity-keyed exact area through the candidate-lattice ladder
+`vcAreaSet`/`vcAreaMinVerts` (`LatticeEnumerator`) were `n`-keyed: a star and a regular n-gon share `n`,
+so the ladder used the SQUARE's area for the 4* star (§23 break #1). Re-keyed every area lookup by **tile
+identity** (`tileIdToken`: `String(n)` regular, `${n}*@${α}` star — α = min corner angle, read
+geometrically). `vcIncidences` is now `Map<string,number>[]`; `vcAreaSet(vcIncidences, tileArea,
+tileCorners, …)` consumes side maps built from `seed.polygons` (star area = `polygonAreaSurd`). Regular
+seeds → token `String(n)` ⇒ **byte-identical**.
+
+### 24.2 ★ The finding C1 surfaced — `vcAreaSet`'s tile-count model is UNSOUND for stars
+Once the star area was *correct* (4*_{π/4} = **2**), Harness 1 emitted **0 cells**: identity-keying made
+the coincidence (§23.3, star area 2 = 2× square) no longer paper over the bug. Root cause deeper than the
+contract's C1/C2 split: `vcAreaSet` derives the candidate area set from the **VC-forced tile multiset**
+(`corners / n = tile count`), which assumes **every tile corner is a counted vertex**. FALSE for stars —
+a star's dents are filled at **t=2 dent-fill non-vertices**, so an octagon abutting a dent contributes
+fewer than 8 counted corners. The model dropped the true 4(j) cell `{1 oct + 1 star}` = 4+2√2 (its
+smallest admitted multiset was `{1 oct + 2 stars}` = 6+2√2). This is a *combinatorial* unsoundness, not
+just a mis-valued constant.
+
+### 24.3 C2 — loosen the candidate ladder + the P0 prune for star seeds
+Doctrine fix: when `seed.polygons.some(isStar)`, replace the sharp VC-forced `vcAreaSet` with the generic
+identity-keyed `areaLadderFromTiles` (ANY sum of tile areas ≤ `aMax` = 24k·max-tile-area — a sound
+superset; the fill + certificate + k-gate reject the extras) and **empty `minVerts`** (the P0
+admissibility prune cannot fire). `spikeBreak`-logged (never silent). Regular seeds untouched ⇒
+byte-identical. **Result:** 4(j) re-emerges via the real solve for the RIGHT area (ladder star entry = 2),
+Harness 2 re-CONFIRMS the cell. The tightened, still-sound star area set (the dent-aware model) is
+**Increment 3, TA-owed.**
+
+### 24.4 B1-gen — `ExactStarPolygon` generalized to isotoxal `n*_α`
+`ExactStarPolygon.isotoxal(nPoints, αU, anchor, dir)`: a `2n`-gon by a unit-edge walk with exterior turns
+cycling `[12−β, 12−α]` (π/12 units, β = 24 − 24/n − α), Σturns = `n·(24−α−β) = 24` ⇒ every vertex in
+ℤ[ζ₂₄]. Carries `alphaU` (for the C3 fill palette) and `betaU`. `fourStarPi4` is now a thin wrapper.
+**Admissible in-ring set: 32 variants** — n ∈ {3,4,6,8,12} (n | 24), `0 < α < 12(n−2)/n` (the upper bound
+⟺ β > 12, a genuine reflex dent), counts [3,5,7,8,9]. Unit-tested across all 32 (corner angles `[α,β,…]`,
+closure, area > 0) + range/divisibility rejection + the gap-seating primitive (point at anchor, edge d0).
+
+### 24.5 C3 — star-aware fill loop + the P1 loosening
+`torusFill`'s corner-completion placed only `RegularPolygon`s. Added a **star palette** on `FillCtx`
+(`starTiles` = the seed's distinct `(n,α)` star variants, with exact area + circumradius folded into
+`minTileArea`/`maxCircum` so star-only / star-smallest seeds get a sound area cap). The fill loop now also
+seats each star variant's **POINT** (`ExactStarPolygon.isotoxal(n,α,w,d0)`, covering [d0, d0+α]) into the
+open gap, reusing the §23 B2 exact overlap. Regular seeds: empty palette ⇒ byte-identical.
+- **★ The P1 finding.** The orbit-floor prune (`vReps.length > k·hol(Λ)`, both the seed-core gate and the
+  per-child cut) counts **every tile corner as a vertex class** — UNSOUND for stars, whose dents are t=2
+  **non-vertices** wrongly inflating V, so P1 could prune a branch leading to a valid star tiling (a DROP).
+  **LOOSENED:** P1 disabled for star seeds (`skipP1`), logged; `maxCellPolys` (area cap) still bounds the
+  cell. Tightened bound `V = [Σ_reg(n−2) + Σ_star(2nₛ−2)]/2 − D` (D = dent-fills) needs D-per-cell ⇒
+  **Increment 3.**
+- **★ The 4(p) surprise.** The contract assumed Myers 4(p) `4.6.4*_{π/6}.6` needs fill. It does **not** —
+  its translational cell = the single-VC fan `{square, star, 2 hex}`, closing mod Λ with NO
+  corner-completion (like 4(j)). So neither pinned tiling exercises *productive* star-fill; that is an
+  empirical property checked in the Run. C3 is verified to (a) keep 4(p)/4(j) at exactly 1 certified cell
+  with star-fill now active on the ~1134/~204 non-closing lattices, (b) hold the regular digests.
+- **⚑ Dent-seating NOT attempted (Fig-3 gap).** The fill loop seats only star POINTS. The Fig-3
+  dent-AT-vertex class (a reflex dent corner at a real ≥3-tile vertex) is not generated by fill ⇒ those
+  tilings can be DROPPED — a completeness gap (not soundness), flagged loud. (`isotoxalDentAt` exists for
+  the seed-construction side; the fill-loop dent branch is Increment-3/best-effort.)
+
+### 24.6 C4 — exact in-ring star VC enumeration (standalone, NOT the legacy float VCGenerator)
+`lib/classes/algorithm/StarVC.ts` — a STANDALONE exact enumerator, deliberately **not** an extension of
+the legacy float `VCGenerator`/`PolygonSignature`/`SeedBuilder`: that front-end is float and feeds the
+REGULAR pipeline; plumbing stars through it risks the regular byte-identical invariant and re-introduces
+float on the decisive star path. The §23 spike already established the exact hand-built-seed pattern.
+- `enumerateStarVCs` — cyclic corner sequences (regular interiors + star points [+ dents]) summing to 2π,
+  under Myers's prunes: **≥1 point, no two adjacent points (cyclic), ≤1 dent, t≥3.** Names match
+  `Polygon.cornerToken`/`canonicalVCName` exactly. Recovers the 4(j) and 4(p) figures (tested).
+- **★ The dent-fillability filter (sound, derived not hand-listed).** A Fig-4 dent is a t=2 point where
+  dent(β) + γ = 2π, so the dent-fill angle γ = 24/n + α must be a single available corner. Requiring it
+  to be a **regular** corner (γ ∈ {4,6,8,9,10}) cuts the 32 variants to **19** — and is a SOUND SUPERSET
+  of the TA oracle: it **equals** the oracle for the constrained n=3,4,6 (`3*@{1,2}`, `4*@{2,3,4}`,
+  `6*@{2,4,5,6}`) and **contains** it for n=8,12 (`8*@{1,3,5,6,7}⊇{1}`, `12*@{2,4,6,7,8}⊇{2}`; the solver
+  rejects the extras). ⚑ Assumption flagged: dents filled by a single *regular* corner — a Fig-4 tiling
+  with a star-point-filled dent would be missed (not in the oracle, but a real caveat for the general/Fig-3
+  case). `buildStarVCSeed` materialises the exact seed fan (point via `isotoxal`, dent via `isotoxalDentAt`).
+
+### 24.7 Run — `scripts/scout-star-inring.ts`; the feasibility wall, and the recovered set
+Standalone scout: enumerate → exact seed fan → `PeriodSolver(1).solve` → `dedupeByCongruence`, reporting
+recovered tilings + star variants vs the oracle. Keeps `pnpm pipeline` byte-identical.
+- **⚑ Feasibility wall (measured, surfaced — the plan assumed the run was tractable; it is not).** The
+  C2/C3 loosening inflates `candidateLattices` to ~100–1100 per seed (the sharp star area set is the
+  Increment-3 dent-aware bound, not yet available), so each solve is ~1–30 s. The fully-sound run over all
+  **4896** dent-reg VCs is ≈ **8 h** — a background batch, not interactive. Any scope reduction
+  (`--single-star`, `--limit`, `--max-corners`, per-seed `--maxMs`) is a CAP that can drop an in-ring
+  tiling and is printed loudly; the completeness CLAIM holds only for the full unscoped sound run.
+- **Demonstration run (single-star-type, 483 VCs, dent-reg variants).** <!-- RUN_RESULTS -->_(results
+  pending — fill from `scripts/scout-star-inring.ts --single-star`)_
+
+### 24.8 The Increment-2 break/finding ledger
+**FIXED + sound this session:** C1 identity-keyed area; C2 loosened ladder + P0 for star seeds; B1-gen
+isotoxal `n*_α`; C3 star point-fill + P1 loosening + star-aware `makeCtx` bounds; C4 exact VC enumeration
++ the sound dent-fillability filter.
+
+**Deferred / flagged (loud, never silent):**
+1. **⚑ Sharp star area set (Increment 3, TA-owed)** — the dent-aware `vcAreaSet`/`vcAreaMinVerts`
+   (`V = [Σ_reg(n−2)+Σ_star(2nₛ−2)]/2 − D`). Without it the candidate ladder is a loose superset ⇒ the 8 h
+   wall. Soundness is NOT at risk (superset); only speed.
+2. **⚑ Dent-seating in the fill loop (Fig-3 gap)** — only points are seated; dent-at-vertex tilings can be
+   dropped. `isotoxalDentAt` + the Fig-3 VC enumeration exist; the fill-loop branch does not.
+3. **⚑ Dent-fillability filter assumption** — Fig-4 dents filled by a *single regular* corner (sound for
+   the oracle; a star-point-filled dent would be missed).
+4. **Standalone scout, not legacy VCGenerator** — a deliberate architecture choice (keep the regular
+   pipeline exact + byte-identical), flagged for TA review.
+5. **⚑ Grid long-side reach (`poolLmax`) not raised for stars** — the candidate enumeration prints
+   `INCOMPLETE-REGION` (cmm/rect long axes beyond `poolLmax=5.6` not enumerated). For regular k=1 this was
+   sound (all 11 cells fit; ~108 skipped); for star seeds the loosened ladder pushes this to **millions**
+   skipped, so a star tiling whose primitive cell has a long axis > 5.6 would be MISSED. Loud (printed),
+   not silent; a real completeness bound for the star run, shared with the §13.6/§11.5 pool-reach issue.
+
+### 24.9 Reproduction
+- `pnpm tsx scripts/probe-pipeline.ts 1` / `2` — regression gate (`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20).
+- `pnpm vitest run tests/star-vc.test.ts tests/exact-star-polygon.test.ts` — C4 enumerator + B1-gen units (51).
+- `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4p.ts` — 4(p) certifies k=1 from its fan (star-fill active, breaks logged).
+- `pnpm tsx scripts/scout-star-inring.ts --single-star` — the in-ring demonstration run (caps printed loud).
+- Full sound run (≈8 h): `pnpm tsx scripts/scout-star-inring.ts` (no scope flags).

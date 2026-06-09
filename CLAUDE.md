@@ -121,3 +121,7 @@ Cowork); do not edit those two folders.** All three are under git (`resources/` 
 ## Migration history
 
 Port was done in 8 phases, each its own commit — replay via `git log`. High-level phases are documented in `README.md`. (The full plan file lived on the original Windows machine — historical, unreachable.)
+
+## Experiments
+
+When run the experiments, log synchronously in a file in /experiments/results folder, so that I can inspect the data as it comes. For the format, log the progress, ETA, and make it human readable.

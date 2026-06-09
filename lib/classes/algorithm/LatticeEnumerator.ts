@@ -273,39 +273,52 @@ export class LatticeEnumerator {
 	 */
 	private areaLadder(polySizes: number[], onTruncate?: () => void, maxAreaOverride?: number): Surd[] {
 		const tiles = [...new Set(polySizes)].sort((a, b) => a - b).map(tileAreaSurd);
-		const maxTileF = Math.max(...tiles.map((t) => t.toFloat()));
-		const orbitBoundF = 24 * this.k * maxTileF; // F ≤ 24k ⇒ area ≤ 24k·maxTileArea
-		const maxAreaF = maxAreaOverride ?? Math.min(orbitBoundF, 8 * this.k);
-		const maxTiles = 24 * this.k;
-		const seen = new Map<string, Surd>();
-		const visited = new Set<string>([areaKey(Surd.ZERO)]);
-		let frontier: Surd[] = [Surd.ZERO];
-		let truncated = maxAreaF < orbitBoundF; // practical cap below the sound bound ⇒ already truncating
-		for (let count = 1; count <= maxTiles && frontier.length > 0 && seen.size < LADDER_SIZE_CAP; count++) {
-			const next: Surd[] = [];
-			for (const a of frontier) {
-				for (const t of tiles) {
-					const s = a.add(t);
-					if (s.toFloat() > maxAreaF + 1e-9) continue;
-					const key = areaKey(s);
-					if (visited.has(key)) continue;
-					visited.add(key);
-					seen.set(key, s);
-					next.push(s);
-					if (seen.size >= LADDER_SIZE_CAP) {
-						truncated = true;
-						break;
-					}
-				}
-				if (seen.size >= LADDER_SIZE_CAP) break;
-			}
-			frontier = next;
-		}
-		if (truncated) onTruncate?.();
-		const out = [...seen.values()];
-		out.sort((a, b) => a.cmp(b));
-		return out;
+		return areaLadderFromTiles(tiles, this.k, onTruncate, maxAreaOverride);
 	}
+}
+
+/**
+ * Generic area ladder from EXACT per-tile areas (any sum of ≤24k tile areas ≤ the bound). Identity-keyed
+ * — pass `polygonAreaSurd` for stars, `tileAreaSurd(n)` for regulars. This is the SOUND-but-loose area
+ * filter used for STAR seeds (Increment 2): `vcAreaSet`'s sharp VC-forced-multiset model is *unsound* for
+ * stars (its `corners/n = tiles` identity assumes every tile corner sits at a counted vertex — false when
+ * a star's dents are filled at `t=2` non-vertex points, so e.g. an octagon abutting a dent contributes
+ * <8 vertex-corners). The generic ladder never drops a realizable area; the fill + certificate gates
+ * reject the extra candidates. Regulars keep the sharp `vcAreaSet`.
+ */
+export function areaLadderFromTiles(tiles: Surd[], k: number, onTruncate?: () => void, maxAreaOverride?: number): Surd[] {
+	const maxTileF = Math.max(...tiles.map((t) => t.toFloat()));
+	const orbitBoundF = 24 * k * maxTileF; // F ≤ 24k ⇒ area ≤ 24k·maxTileArea
+	const maxAreaF = maxAreaOverride ?? Math.min(orbitBoundF, 8 * k);
+	const maxTiles = 24 * k;
+	const seen = new Map<string, Surd>();
+	const visited = new Set<string>([areaKey(Surd.ZERO)]);
+	let frontier: Surd[] = [Surd.ZERO];
+	let truncated = maxAreaF < orbitBoundF; // practical cap below the sound bound ⇒ already truncating
+	for (let count = 1; count <= maxTiles && frontier.length > 0 && seen.size < LADDER_SIZE_CAP; count++) {
+		const next: Surd[] = [];
+		for (const a of frontier) {
+			for (const t of tiles) {
+				const s = a.add(t);
+				if (s.toFloat() > maxAreaF + 1e-9) continue;
+				const key = areaKey(s);
+				if (visited.has(key)) continue;
+				visited.add(key);
+				seen.set(key, s);
+				next.push(s);
+				if (seen.size >= LADDER_SIZE_CAP) {
+					truncated = true;
+					break;
+				}
+			}
+			if (seen.size >= LADDER_SIZE_CAP) break;
+		}
+		frontier = next;
+	}
+	if (truncated) onTruncate?.();
+	const out = [...seen.values()];
+	out.sort((a, b) => a.cmp(b));
+	return out;
 }
 
 /**
@@ -318,21 +331,29 @@ export class LatticeEnumerator {
  * sound: every real cell's area lies in its own seed's set. `vcIncidences[i]` maps n → #n-gons at a
  * vertex of VC i. Areas are bounded by `areaBoundF`; VCs with identical tile counts are merged.
  */
-export function vcAreaSet(vcIncidences: Map<number, number>[], areaBoundF: number): Surd[] {
-	// One entry per VC ORBIT (k of them) — not deduped, so the per-orbit count bound below is exact.
+export function vcAreaSet(
+	vcIncidences: Map<string, number>[],
+	tileArea: Map<string, Surd>,
+	tileCorners: Map<string, number>,
+	areaBoundF: number
+): Surd[] {
+	// Keyed by tile IDENTITY token (C1): `tileArea` gives the exact area (star = shoelace, regular =
+	// tileAreaSurd(n)); `tileCorners` (= n) is the corner-count divisor. Regular tokens reduce this to the
+	// old n-keyed behavior byte-for-byte.
 	const types = vcIncidences;
 	if (types.length === 0) return [];
-	// per-orbit average area per vertex (Σ_n area(n)·c_{i,n}/n) — exact float, for the recursion bound.
+	// per-orbit average area per vertex (Σ area(id)·c/corners) — exact float, for the recursion bound.
 	const perVertexF = types.map((t) =>
-		[...t.entries()].reduce((s, [n, c]) => s + (tileAreaSurd(n).toFloat() * c) / n, 0)
+		[...t.entries()].reduce((s, [id, c]) => s + (tileArea.get(id)!.toFloat() * c) / tileCorners.get(id)!, 0)
 	);
 	const out = new Map<string, Surd>();
-	const rec = (idx: number, inc: Map<number, number>, partialF: number): void => {
+	const rec = (idx: number, inc: Map<string, number>, partialF: number): void => {
 		if (idx === types.length) {
 			let area = Surd.ZERO;
-			for (const [n, c] of inc) {
-				if (c % n !== 0) return; // a fractional tile count ⇒ not a realizable cell
-				area = area.add(tileAreaSurd(n).scaleRational(BigInt(c / n), 1n));
+			for (const [id, c] of inc) {
+				const corners = tileCorners.get(id)!;
+				if (c % corners !== 0) return; // a fractional tile count ⇒ not a realizable cell
+				area = area.add(tileArea.get(id)!.scaleRational(BigInt(c / corners), 1n));
 			}
 			if (!area.isZero() && area.toFloat() <= areaBoundF + 1e-9) out.set(areaKey(area), area);
 			return;
@@ -343,7 +364,7 @@ export function vcAreaSet(vcIncidences: Map<number, number>[], areaBoundF: numbe
 		// it excludes the large wrong-orbit fills that the gate would otherwise reject expensively.
 		for (let v = 1; v <= MAX_ORBIT_VERTICES; v++) {
 			const next = new Map(inc);
-			for (const [n, c] of type) next.set(n, (next.get(n) ?? 0) + c * v);
+			for (const [id, c] of type) next.set(id, (next.get(id) ?? 0) + c * v);
 			const pf = partialF + perVertexF[idx] * v;
 			if (pf > areaBoundF + 1e-9) break; // area strictly increases with v ⇒ safe to stop
 			rec(idx + 1, next, pf);
@@ -363,21 +384,29 @@ export function vcAreaSet(vcIncidences: Map<number, number>[], areaBoundF: numbe
  * already needs more vertex classes than `k · hol(Λ)` allows, so its completion has > k orbits
  * (`orbits ≥ V / hol(Λ)`) — a sound prune (`route-a-proven-box.md` §"Early-prune rulings", P0). The
  * Euler relation `V = Σ_i V_i = Σ_n t_n·(n−2)/2` holds for every assignment, so summing the orbit
- * multiplicities is exactly the torus vertex count.
+ * multiplicities is exactly the torus vertex count. NB: this Euler relation is FALSE for stars, so the
+ * P0 prune that consumes this is SKIPPED for star seeds (C2) — this function therefore only ever runs on
+ * regular seeds, where the identity token = `String(n)` ⇒ byte-identical to the old n-keyed code.
  */
-export function vcAreaMinVerts(vcIncidences: Map<number, number>[], areaBoundF: number): Map<string, number> {
+export function vcAreaMinVerts(
+	vcIncidences: Map<string, number>[],
+	tileArea: Map<string, Surd>,
+	tileCorners: Map<string, number>,
+	areaBoundF: number
+): Map<string, number> {
 	const types = vcIncidences;
 	const out = new Map<string, number>();
 	if (types.length === 0) return out;
 	const perVertexF = types.map((t) =>
-		[...t.entries()].reduce((s, [n, c]) => s + (tileAreaSurd(n).toFloat() * c) / n, 0)
+		[...t.entries()].reduce((s, [id, c]) => s + (tileArea.get(id)!.toFloat() * c) / tileCorners.get(id)!, 0)
 	);
-	const rec = (idx: number, inc: Map<number, number>, partialF: number, sumV: number): void => {
+	const rec = (idx: number, inc: Map<string, number>, partialF: number, sumV: number): void => {
 		if (idx === types.length) {
 			let area = Surd.ZERO;
-			for (const [n, c] of inc) {
-				if (c % n !== 0) return; // fractional tile count ⇒ not a realizable cell
-				area = area.add(tileAreaSurd(n).scaleRational(BigInt(c / n), 1n));
+			for (const [id, c] of inc) {
+				const corners = tileCorners.get(id)!;
+				if (c % corners !== 0) return; // fractional tile count ⇒ not a realizable cell
+				area = area.add(tileArea.get(id)!.scaleRational(BigInt(c / corners), 1n));
 			}
 			if (area.isZero() || area.toFloat() > areaBoundF + 1e-9) return;
 			const key = areaKey(area);
@@ -388,7 +417,7 @@ export function vcAreaMinVerts(vcIncidences: Map<number, number>[], areaBoundF: 
 		const type = types[idx];
 		for (let v = 1; v <= MAX_ORBIT_VERTICES; v++) {
 			const next = new Map(inc);
-			for (const [n, c] of type) next.set(n, (next.get(n) ?? 0) + c * v);
+			for (const [id, c] of type) next.set(id, (next.get(id) ?? 0) + c * v);
 			const pf = partialF + perVertexF[idx] * v;
 			if (pf > areaBoundF + 1e-9) break; // area strictly increases with v ⇒ safe to stop
 			rec(idx + 1, next, pf, sumV + v);

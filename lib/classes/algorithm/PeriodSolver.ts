@@ -37,12 +37,13 @@
 
 import type { Polygon } from '../polygons/Polygon';
 import { RegularPolygon } from '../polygons/RegularPolygon';
+import { ExactStarPolygon } from '../polygons/ExactStarPolygon';
 import { Cyclotomic } from '../Cyclotomic';
 import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
-import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
-import { detSurd, polygonAreaSurd } from './exact/Surd';
+import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, areaLadderFromTiles, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
+import { detSurd, polygonAreaSurd, tileAreaSurd, type Surd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
 import { spikeBreak } from './exact/spikeTrace';
 
@@ -96,6 +97,43 @@ function regularArea(n: number): number {
  *  regular tile this is exactly `regularArea(p.n)` ⇒ byte-identical on the regular path. */
 function tileAreaFloatFor(p: Polygon): number {
 	return p.isStar ? polygonAreaSurd(p.exactVertices!).toFloat() : regularArea(p.n);
+}
+
+/** Tile-identity token for the candidate-lattice area path (C1). A star and a regular n-gon share `n`,
+ *  so the bare `n` collides; tag a star with its point angle (the minimum corner angle, in π/12 units)
+ *  so distinct stars — and distinct α-variants of the same `n` — get distinct area entries. Regular →
+ *  `String(n)` ⇒ byte-identical on the regular path. */
+function tileIdToken(p: Polygon): string {
+	if (!p.isStar) return String(p.n);
+	let min = Infinity;
+	const verts = p.exactVertices!;
+	for (let i = 0; i < verts.length; i++) min = Math.min(min, p.cornerAngleUnits(i));
+	return `${p.n}*@${min}`;
+}
+
+/** C3 star palette: the distinct `(n, α)` star variants in a seed, with exact area + (centroid-relative)
+ *  circumradius for the fill bounds. `α` = the minimum corner angle (the point), in π/12 units — read
+ *  geometrically so it works for any star polygon type. The fill loop seats each variant's POINT into an
+ *  open gap via `ExactStarPolygon.isotoxal(n, α, …)`. Empty for regular seeds ⇒ byte-identical. */
+function buildStarPalette(polys: Polygon[]): { n: number; alphaU: number; area: number; circum: number }[] {
+	const seen = new Map<string, { n: number; alphaU: number; area: number; circum: number }>();
+	for (const p of polys) {
+		if (!p.isStar) continue;
+		const verts = p.exactVertices!;
+		let alphaU = Infinity;
+		for (let i = 0; i < verts.length; i++) alphaU = Math.min(alphaU, p.cornerAngleUnits(i));
+		const key = `${p.n}@${alphaU}`;
+		if (seen.has(key)) continue;
+		const area = polygonAreaSurd(verts).toFloat();
+		const c = p.exactCentroid!.toVector();
+		let circum = 0;
+		for (const v of verts) {
+			const vv = v.toVector();
+			circum = Math.max(circum, Math.hypot(vv.x - c.x, vv.y - c.y));
+		}
+		seen.set(key, { n: p.n, alphaU, area, circum });
+	}
+	return [...seen.values()];
 }
 
 export type PeriodCell = {
@@ -159,7 +197,11 @@ export class PeriodSolver {
 		const allowed = new Set<string>(
 			coreVertices.map((cv) => this.vcNameAt(cv, corePolys.filter((p) => p.vertexKeySet().has(cv.key()))))
 		);
-		const polySizes = Array.from(new Set(corePolys.map((p) => p.n))).sort((a, b) => a - b);
+		// Regular tile sizes only — a star carries `p.n` (its point count) but is NOT a regular n-gon, so
+		// it must not feed `RegularPolygon.fromAnchorAndDirExact`. The star variants go to `starTiles`
+		// (C3 palette). For regular seeds (no stars) this is byte-identical to the old `corePolys.map(n)`.
+		const polySizes = Array.from(new Set(corePolys.filter((p) => !p.isStar).map((p) => p.n))).sort((a, b) => a - b);
+		const starTiles = buildStarPalette(corePolys);
 
 		// Seeding. The rigid k-VC core pins the k VCs in a concrete adjacency and is the default seed for
 		// torusFill. But a tiling whose primitive cell is SMALLER than the rigid core cannot contain it
@@ -215,7 +257,7 @@ export class PeriodSolver {
 				break;
 			}
 			diag.latticesTried++;
-			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys);
+			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles);
 			if (!ctx) continue; // degenerate basis
 
 			// Choose the seed(s) for THIS lattice. Normally the rigid core. But when the rigid core
@@ -328,21 +370,26 @@ export class PeriodSolver {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
+		// C1 (Increment 2): the candidate-area set is keyed by tile IDENTITY, not edge-count `n`, so a star
+		// gets its exact shoelace area (not the regular n-gon's). Token = `n` for regular (byte-identical),
+		// `n*@αU` for a star. `tileArea` routes the area; `tileCorners` (= p.n = the star's point count =
+		// corners at counted vertices) is the c/n tile-count divisor.
 		const vcIncidences = seed.vertexConfigurations.map((vc) => {
-			const m = new Map<number, number>();
-			for (const p of vc.polygons) m.set(p.n, (m.get(p.n) ?? 0) + 1);
+			const m = new Map<string, number>();
+			for (const p of vc.polygons) { const id = tileIdToken(p); m.set(id, (m.get(id) ?? 0) + 1); }
 			return m;
 		});
-		if (process.env.SPIKE_TRACE === '1' && seed.polygons.some((p) => p.isStar)) {
-			spikeBreak(
-				'LatticeEnumerator.vcAreaSet/vcAreaMinVerts (via PeriodSolver.candidateLattices)',
-				'candidate-lattice area ladder + minVerts are n-keyed (tileAreaSurd(n)) and bake in the Euler relation V=Σtₙ(n−2)/2',
-				'a star and a square both have n=4 ⇒ the star silently uses the SQUARE area and a convex vertex-count ⇒ a WRONG candidate-lattice set + unsound P0 prune (findings 2,3)',
-				'fix = key the ladder by tile identity + per-corner vertex contribution (Increment 2)'
-			);
+		const tileArea = new Map<string, Surd>();
+		const tileCorners = new Map<string, number>();
+		for (const p of seed.polygons) {
+			const id = tileIdToken(p);
+			if (!tileArea.has(id)) {
+				tileArea.set(id, p.isStar ? polygonAreaSurd(p.exactVertices!) : tileAreaSurd(p.n));
+				tileCorners.set(id, p.n);
+			}
 		}
 		const vcSig = vcIncidences
-			.map((m) => [...m.entries()].sort((a, b) => a[0] - b[0]).map(([n, c]) => `${n}^${c}`).join('.'))
+			.map((m) => [...m.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).map(([n, c]) => `${n}^${c}`).join('.'))
 			.sort()
 			.join('|');
 		const cacheKey = `${ring.N}:${vcSig}:${this.k}`;
@@ -383,10 +430,25 @@ export class PeriodSolver {
 		// break for Harness 1, the Increment-2 ladder refactor; raising a_max here is strictly conservative.)
 		const aMax = Math.max(...seed.polygons.map(tileAreaFloatFor));
 		const areaBoundF = 24 * this.k * aMax;
-		// Exact cell areas the seed's VCs can actually produce (the tile multiset is forced by the VCs,
-		// not any tile sum). Sound + complete; far sparser than the generic ladder ⇒ many fewer spurious
-		// candidates reaching torusFill.
-		const areas = vcAreaSet(vcIncidences, areaBoundF);
+		// Exact cell areas the seed's VCs can actually produce. For REGULAR seeds the sharp VC-forced
+		// multiset (`vcAreaSet`) is sound+complete and far sparser. For STAR seeds it is UNSOUND — its
+		// `corners/n = tiles` identity assumes every tile corner is a counted vertex, but a star's dents are
+		// filled at `t=2` non-vertex points (so e.g. an octagon abutting a dent contributes <8 vertex
+		// corners), and it drops the true cell (4(j) = {1 oct + 1 star} = 4+2√2 is excluded). So for star
+		// seeds we LOOSEN to the generic identity-keyed ladder (any sum of tile areas — sound superset; the
+		// fill+certificate reject the extras). Doctrine: completeness knobs are not speed dials.
+		const seedHasStar = seed.polygons.some((p) => p.isStar);
+		const areas = seedHasStar
+			? areaLadderFromTiles([...tileArea.values()], this.k, undefined, areaBoundF)
+			: vcAreaSet(vcIncidences, tileArea, tileCorners, areaBoundF);
+		if (seedHasStar && process.env.SPIKE_TRACE === '1') {
+			spikeBreak(
+				'PeriodSolver.candidateLattices area filter (vcAreaSet)',
+				'vcAreaSet uses the VC-forced tile multiset (corners/n = tiles), assuming every tile corner is a counted vertex',
+				'FALSE for stars (dents are t=2 non-vertices) ⇒ it drops the true cell; LOOSENED to the generic identity-keyed ladder for star seeds (sound superset)',
+				'C2-style loosening; tightening needs the dent-aware vertex/corner model (Increment 3)'
+			);
+		}
 
 		const lattices: [Cyclotomic, Cyclotomic][] = [];
 		const seen = new Set<string>();
@@ -431,8 +493,12 @@ export class PeriodSolver {
 
 		// `minVerts` (min vertex-classes per realizable cell area) drives BOTH the P0 pre-filter below AND
 		// the oblique sub-pool sizing in source (C); computed once here (hoisted from the P0 loop — pure,
-		// no behavioural change).
-		const minVerts = vcAreaMinVerts(vcIncidences, areaBoundF);
+		// no behavioural change). For STAR seeds it is LEFT EMPTY (C2): `vcAreaMinVerts` bakes in the regular
+		// Euler relation V=Σtₙ(n−2)/2, false for stars (a 2n-gon; dents are non-vertices) — so an empty map
+		// makes P0 prune nothing and oblique sizing prune nothing (sound; never drops; k=1 has no oblique).
+		const minVerts = seedHasStar
+			? new Map<string, number>()
+			: vcAreaMinVerts(vcIncidences, tileArea, tileCorners, areaBoundF);
 
 		// (C) OBLIQUE (p1/p2) cells — the cor:box join-closure completion that reaches the Bravais classes
 		// the symmetry-pinned (A)/(B) cannot (k≥3 oblique cells t3046/t3055). Source (C) contributes ONLY
@@ -483,7 +549,8 @@ export class PeriodSolver {
 		ring: Cyclotomic['ring'],
 		allowed: Set<string>,
 		polySizes: number[],
-		maxCellPolys: number
+		maxCellPolys: number,
+		starTiles: { n: number; alphaU: number; area: number; circum: number }[] = []
 	): FillCtx | null {
 		const uV = u.toVector();
 		const vV = v.toVector();
@@ -500,11 +567,18 @@ export class PeriodSolver {
 		// by the smallest tile area (equilateral triangle = √3/4). This ties the fill bound to the
 		// lattice: a wrong/too-small candidate Λ is abandoned almost immediately instead of branching
 		// up to the global cap. +2 slack for the float area comparison.
-		const minTileArea = Math.min(...polySizes.map(regularArea));
+		// Smallest tile area over regulars AND stars (C3): a star carries its own exact area, so a star-
+		// only or star-smallest seed gets a sound (never-too-small) areaCap. Regular seeds (no stars) →
+		// `Math.min(...regAreas)` exactly as before ⇒ byte-identical.
+		const minTileArea = Math.min(...polySizes.map(regularArea), ...starTiles.map((s) => s.area));
 		const areaCap = Math.ceil(cellArea / minTileArea) + 2;
-		// Largest tile circumradius (regular n-gon = 1/(2 sin(π/n))) — used to cull far tiles from the
-		// per-pop incidence map (a tile beyond judgeR + maxCircum has no vertex within judgeR).
-		const maxCircum = Math.max(...polySizes.map((n) => 1 / (2 * Math.sin(Math.PI / n))));
+		// Largest tile circumradius (regular n-gon = 1/(2 sin(π/n)); star = its centroid-relative max) —
+		// used to cull far tiles from the per-pop incidence map (a tile beyond judgeR + maxCircum has no
+		// vertex within judgeR). Including stars keeps the cull sound for star seeds.
+		const maxCircum = Math.max(
+			...polySizes.map((n) => 1 / (2 * Math.sin(Math.PI / n))),
+			...starTiles.map((s) => s.circum),
+		);
 		// P1 orbit-floor = k·hol(Λ). hol(Λ) is an exact UPPER bound on any tiling's point group on Λ,
 		// so any k-uniform tiling has V = #vertex classes ≤ k·hol(Λ); a partial fill exceeding this can
 		// only complete above k orbits (gate-rejected) or to a supercell (primitivity-rejected). hol
@@ -514,6 +588,7 @@ export class PeriodSolver {
 			u, v, ring, N: ring.N, allowed, polySizes,
 			maxCellPolys: Math.min(maxCellPolys, areaCap),
 			uV, vV, det, cellDiam, minLen, cellArea, maxCircum, orbitFloor,
+			starTiles: starTiles.map((s) => ({ n: s.n, alphaU: s.alphaU })),
 		};
 	}
 
@@ -557,6 +632,29 @@ export class PeriodSolver {
 		// (= k·hol(Λ)) is pruned — its completion must have orbits > k (gate-rejected) or be a supercell
 		// (primitivity-rejected, re-found at its primitive sublattice). Every k-uniform tiling has V ≤
 		// k·hol(Λ) and V is monotone, so a branch leading to a valid tiling is NEVER pruned (byte-identical).
+		//
+		// C3 — UNSOUND for stars, so SKIP P1 for star seeds (sound loosening, doctrine: "completeness
+		// knobs are not speed dials"). `extendV` counts every tile corner as a vertex class, but a star's
+		// DENTS land at t=2 dent-fill points that are NOT counted vertices — so `vReps` over-counts V and
+		// could prune a branch leading to a valid star tiling (a DROP = incompleteness). The fill +
+		// certificate + orbit-count gates still reject invalid candidates; only speed is affected (maxCellPolys
+		// area cap still bounds the cell). The tightened bound (V = [Σ_reg(n−2)+Σ_star(2nₛ−2)]/2 − D, D =
+		// dent-fill count) needs D bounded per cell — TA-owed (Increment 3).
+		const skipP1 = ctx.starTiles.length > 0;
+		if (skipP1 && process.env.SPIKE_TRACE === '1') {
+			spikeBreak(
+				'PeriodSolver.ts torusFill P1 orbit-floor prune (vReps > k·hol)',
+				'V ≤ k·hol(Λ) counted over ALL tile corners (regular Euler relation)',
+				'a star DENT lands at a t=2 dent-fill NON-vertex wrongly counted in V ⇒ P1 could prune a valid star branch (a DROP)',
+				'LOOSENED: P1 disabled for star seeds (sound; maxCellPolys still bounds the cell). Tightened bound = Increment 3',
+			);
+			spikeBreak(
+				'PeriodSolver.ts torusFill star gap-fill — DENT-seating not attempted',
+				'the fill loop seats only star POINTS (interior α) into a gap',
+				'the Fig-3 dent-AT-vertex class (a reflex dent corner coincides with a real ≥3-tile vertex) is NOT generated by fill ⇒ those tilings can be DROPPED (a completeness gap, not a soundness one)',
+				'SCOPED: Fig-4 (point-at-vertex) is sound+complete; Fig-3 a,f are best-effort (C4 hand-derived fallback). Flag is loud, never silent (project doctrine)',
+			);
+		}
 		const uL = ctx.u, vL = ctx.v;
 		const extendV = (parent: Cyclotomic[], poly: Polygon): Cyclotomic[] => {
 			const out = parent.slice();
@@ -567,7 +665,7 @@ export class PeriodSolver {
 		};
 		let initialV: Cyclotomic[] = [];
 		for (const p of initial) initialV = extendV(initialV, p);
-		if (initialV.length > ctx.orbitFloor) {
+		if (!skipP1 && initialV.length > ctx.orbitFloor) {
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: seed core ${initialV.length} vertex classes > floor ${ctx.orbitFloor} → reject\n`);
 			return [];
 		}
@@ -603,31 +701,30 @@ export class PeriodSolver {
 			if (d0 < 0) continue; // no fillable gap (shouldn't happen for an open vertex)
 			const repsKeys = new Set(reps.map((r) => r.exactKey())); // reps are canonical class reps
 
-			if (process.env.SPIKE_TRACE === '1' && reps.some((r) => r.isStar)) {
-				spikeBreak(
-					'PeriodSolver.ts torusFill corner-completion (the gap-fill loop)',
-					'every gap is filled only by RegularPolygon.fromAnchorAndDirExact(n,…) over ctx.polySizes',
-					'it can never CONSTRUCT a star during fill (and seats a square at a star n=4 slot) ⇒ a star cell cannot be completed by the real solve (finding 1, the structural block)',
-					'fix = a star-aware gap-fill (Increment 2); the spike reaches the post-fill validators via the injected-cell harness instead'
-				);
-			}
-
-			for (const n of ctx.polySizes) {
-				const P = RegularPolygon.fromAnchorAndDirExact(n, w, d0);
-				if (this.properOverlapWithBlock(P, block, ctx)) continue;
+			// Candidate corners for the CW-most gap: every regular n-gon (a corner of interior `regular(n)`)
+			// AND — C3 — every star variant seating its POINT (interior α). Each is placed with a corner at
+			// `w` and outgoing edge `d0`, covering [d0, d0+interior]; the post-placement overlap + the
+			// downstream `analyze` (over-fill / VC) reject the ones that do not fit.
+			const place = (P: Polygon) => {
+				if (this.properOverlapWithBlock(P, block, ctx)) return;
 				// The new tile reduces to ONE canonical lattice-class rep. If already present the branch
 				// makes no progress (matches the old dedupModLattice length check). The child's block =
 				// this block + the new rep's lattice translates — disjoint classes, so a plain set union;
 				// no full rebuild (audit perf C1). Block order is irrelevant to every consumer.
 				const pc = this.canonicalRep(P, ctx, memo);
-				if (repsKeys.has(pc.key)) continue; // P already present mod Λ ⇒ no progress
+				if (repsKeys.has(pc.key)) return; // P already present mod Λ ⇒ no progress
 				const next = [...reps, pc.poly];
-				if (next.length > ctx.maxCellPolys) continue;
+				if (next.length > ctx.maxCellPolys) return;
 				const childV = extendV(vReps, pc.poly);
-				if (childV.length > ctx.orbitFloor) { diag.p1Pruned++; continue; } // P1 orbit-floor prune
+				if (!skipP1 && childV.length > ctx.orbitFloor) { diag.p1Pruned++; return; } // P1 orbit-floor prune
 				const childBlock = block.concat(this.buildBlock([pc.poly], ctx, 5));
 				stack.push({ reps: next, block: childBlock, vReps: childV });
-			}
+			};
+
+			for (const n of ctx.polySizes) place(RegularPolygon.fromAnchorAndDirExact(n, w, d0));
+			// C3: seat each seed star's POINT (the convex corner, interior α) into the gap. Dent-seating
+			// (the Fig-3 dent-at-vertex class) is NOT yet attempted — flagged loudly below.
+			for (const st of ctx.starTiles) place(ExactStarPolygon.isotoxal(st.n, st.alphaU, w, d0));
 		}
 		if (PeriodSolver.DEBUG) process.stderr.write(`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`);
 		return results;
@@ -1007,6 +1104,7 @@ type FillCtx = {
 	cellArea: number;
 	maxCircum: number; // max tile circumradius — a poly beyond judgeR+this has no vertex within judgeR
 	orbitFloor: number; // k·hol(Λ): P1 prunes a partial fill whose vertex-class count exceeds this
+	starTiles: { n: number; alphaU: number }[]; // C3 star palette: (n,α) variants the fill loop may seat
 };
 
 type Interval = { start: number; units: number; n: number };

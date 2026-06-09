@@ -1,7 +1,25 @@
 import { describe, it, expect } from "vitest";
 import { Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
-import { Surd, surdToCyclotomic, detSurd } from "@/classes/algorithm/exact/Surd";
+import { Surd, surdToCyclotomic, detSurd, tileAreaSurd } from "@/classes/algorithm/exact/Surd";
 import { LatticeEnumerator, gridDirOf, sameLattice, shortVectorPool, vcAreaSet, holohedry, vcAreaMinVerts, areaKey, edgeStepDirs, joinLattice, isIntCombo, gaussReduceExact, latticeKey } from "@/classes/algorithm/LatticeEnumerator";
+
+// vcAreaSet/vcAreaMinVerts are identity-keyed (C1, Increment 2). These adapters drive them with the old
+// regular-only n-keyed incidences: token = String(n), tileArea = tileAreaSurd(n), tileCorners = n.
+const regMaps = (incs: Map<number, number>[]) => {
+	const strIncs = incs.map((m) => new Map<string, number>([...m].map(([n, c]) => [String(n), c])));
+	const tileArea = new Map<string, Surd>();
+	const tileCorners = new Map<string, number>();
+	for (const m of incs) for (const n of m.keys()) { tileArea.set(String(n), tileAreaSurd(n)); tileCorners.set(String(n), n); }
+	return { strIncs, tileArea, tileCorners };
+};
+const regAreaSet = (incs: Map<number, number>[], bound: number) => {
+	const { strIncs, tileArea, tileCorners } = regMaps(incs);
+	return vcAreaSet(strIncs, tileArea, tileCorners, bound);
+};
+const regMinVerts = (incs: Map<number, number>[], bound: number) => {
+	const { strIncs, tileArea, tileCorners } = regMaps(incs);
+	return vcAreaMinVerts(strIncs, tileArea, tileCorners, bound);
+};
 
 const ring = CyclotomicRing.create(24);
 const ONE = Cyclotomic.ONE(ring);
@@ -106,7 +124,7 @@ describe("vcAreaSet: the cell area is forced by the seed's vertex configurations
 	// seed [3⁶; 3⁴.6] (snub-hexagonal 2-uniform): VCs 3⁶ (six triangles) and 3⁴.6 (four triangles, one hexagon).
 	const vc36 = new Map<number, number>([[3, 6]]);
 	const vc346 = new Map<number, number>([[3, 4], [6, 1]]);
-	const areas = vcAreaSet([vc36, vc346], 16);
+	const areas = regAreaSet([vc36, vc346], 16);
 
 	it("contains the real snub-hex cell area 6.5√3 (= 20 triangles + 1 hexagon, from 6×3⁶ + 6×3⁴.6)", () => {
 		const target = new Surd(0n, 0n, 13n, 0n, 2n); // 13√3/2 = 6.5√3
@@ -178,12 +196,12 @@ describe("vcAreaMinVerts: min vertex-class count per realizable cell area (P0 la
 	const vc346 = new Map<number, number>([[3, 4], [6, 1]]);
 
 	it("the smallest cell area 4√3 needs 7 vertex classes (1×3⁶ + 6×3⁴.6)", () => {
-		const minV = vcAreaMinVerts([vc36, vc346], 16);
+		const minV = regMinVerts([vc36, vc346], 16);
 		expect(minV.get(areaKey(new Surd(0n, 0n, 4n, 0n, 1n)))).toBe(7);
 	});
 	it("has an entry for every area vcAreaSet produces, each ≥ 1", () => {
-		const minV = vcAreaMinVerts([vc36, vc346], 16);
-		const areas = vcAreaSet([vc36, vc346], 16);
+		const minV = regMinVerts([vc36, vc346], 16);
+		const areas = regAreaSet([vc36, vc346], 16);
 		for (const a of areas) {
 			const m = minV.get(areaKey(a));
 			expect(m).toBeDefined();

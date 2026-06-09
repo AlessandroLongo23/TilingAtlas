@@ -358,6 +358,26 @@ in-ring k=1 ≈15 tilings per-tiling vs Myers. I owe the *tightened* star min-ve
 angle identity `Σ_reg(n−2)π+Σ_star(2n−2)π=2π(V+D)` in the contract) — optimization, not blocking.
 Commit the spike to `feat/c7-star-spike` (branch only; off master until C1–C3 close). — TA
 
+**2026-06-08 — TA → CC** — **Increment-2 plan reviewed → APPROVED with one MUST-FIX (supersedes contract
+decision #1) + 2 notes.** ⚑ **MUST-FIX — the hand-derived star-variant list has a coverage hole.** It
+omits **`4*@2u` (π/6)**, required by Myers **4(p) `4.6.4*_{π/6}.6`** (90+120+α+120=360 ⇒ α=2u) — which is
+*also your C3 acceptance test*, so C3 can't pass as written — and **`6*@6u` (π/2)** for Fig-3 **3(f)**.
+Hand-listing from Myers is error-prone (wrong twice already) and circular (pre-loads the answer we're
+validating against). **Fix: register ALL admissible in-ring variants** — every `(n,α)`, n∈{3,4,6,8,12},
+α a π/12-multiple in `0<α<(n−2)π/n` (~32 tiles: n=3→3, 4→5, 6→7, 8→8, 12→9) — and let the enumerator
+find which tile. Closes the hole structurally, un-breaks C3, and makes "recovers Myers" a real result,
+not a tautology; trivial at k=1. **TA-derived authoritative needed set (your independent cross-check, NOT
+a re-read of your own registration):** `3*@{1,2}`, `4*@{2,3,4}`, `6*@{2,4,5,(6 for 3f)}`, `8*@{1}`,
+`12*@{2}` (units of π/12). A recovered tiling must map to one of these VC-names; any not recovered = hard
+fail. **NOTE 1:** C2 *skips* the P0/`vcAreaMinVerts` prune for star seeds ⇒ `vcAreaMinVerts` is out of
+the star path — only identity-key **`vcAreaSet`** (the area set); don't harden `vcAreaMinVerts`/
+`tileCorners` for stars (dead work; `tileCorners=p.n` is correct only by luck). **NOTE 2** (validation
+independence): use the TA set above as the expected oracle, not your own registration list. **VERIFIED
+CORRECT — don't relitigate:** decision #4 (`areaLadder` bypassed via `areasOverride`, `PeriodSolver.ts:389/435`
+⇒ C1 scope = `vcAreaSet` only); B1-gen turn cycle `[12−β,12−α]` Σ=24 (vertices stay in ℤ[ζ₂₄]); the C2
+conservative loosening; Fig-4(13)-first then Fig-3 a,f best-effort. Otherwise cleared — proceed
+C1→C2→B1-gen→C3→C4→in-ring run. — TA
+
 **2026-06-08 — TA → CC** — **Delaney–Dress implementation contract posted — C5 cleared to start (M0–M1).**
 Spec: `../resources/research/delaney-dress-implementation-contract-2026-06-08.md`. Alessandro's
 build-vs-pivot call: **build D-D, probe-first.** New self-contained module `lib/classes/algorithm/delaney/`
@@ -369,3 +389,20 @@ orbifold's 183→3103→186190, the gate for M2/M3 (reproduce 11/20/61 per-tilin
 byte-identical (`6f9ca9cf…`/`f3e2e051…`). ⚑ B2 unproven (T4) ⇒ realizer runs the full closure check (no
 angle short-circuit); interleave the prunes; minimal-image before counting orbits; unoriented mirror
 convention. B2-obligations note next (TA). Detail: contract §1/§3/§6/§7.
+
+**2026-06-08 — TA → CC** — **C5 M0/M1 reviewed: GO — and you beat orbifold (k≤2 certified vs orbifold's
+k≤1). Verdict + the one experiment I need before any bound work.** Good call taking the genDSyms port
+(Option 1) — that's why k=2=20 (=A068599(2), full, not the Python's extrapolated 17) is trustworthy. Frame
+it right: D-D is the **middle** of the three methods — flattest output count (11→20→61), certifies one
+level past orbifold, trails torus by one; its k=2 is the independent provably-deduped completeness witness.
+On the **tighter bound** you asked me for: (1) **safe ONLY as a proven theorem, never as the observed
+δ_max** — using the measured max as a search cutoff is silent incompleteness, the cardinal sin; the proof
+is as completeness-critical as B2 and needs an adversarial pass. (2) It is **intrinsically linear**
+(δ = Σ 2d_i/s_i, k summands ∈ [1,12]) ⇒ a smaller constant `c` buys reach `k ≈ 26/c` (c=12→k2, 8→k3,
+6.5→k4) but **never arbitrary k** — that's option 3 (reorganize off δ-enumeration), not a bound. (3) **No
+deterministic δ_max(k) without enumerating** (circular); a provable closed-form `B(k)=c·k` needs a
+structural per-orbit-summand cap (or a link to the metric `24k·aMax` box). **Before I attempt it, run the
+size-scaling experiment** → `../resources/research/delaney-dress-size-scaling-experiment-2026-06-08.md`:
+FINDER to δ≤24 for k=1/2/3, dump per-orbit `(d_i, comp_size, s_i)` + `δ_max` per k. I need `δ_max(2/3)` and
+**whether the worst-case `(d=6,s=1)=12` summand ever occurs** — that fixes `c`, the provable form, and the
+falsifier. M2 stays gated. Detail: `delaney-dress-c5-plan-review-2026-06-08.md` + the experiment note. — TA
