@@ -285,6 +285,25 @@ describe("LatticeEnumerator.obliqueCells: oblique candidates via pair-seed + joi
 		expect(causes).toContain("subpool-clipped");
 	});
 
+	it("CB-3: the den≤60 join cut is no longer silent — join-waived fires once, with a positive count", () => {
+		// A join from an area-A lattice has area ≤ A/2, so the join sweep only runs when the area set
+		// has a rung at or below A/2 — add (3√3)/2 under t3046's 3√3. The full-pool (a,b)-coordinate
+		// scan then necessarily hits non-near-rational coordinates; the tuned den≤JOIN_DEN_MAX cut must
+		// report loudly (TA ruling SYNC-2026-06 option (b): once per affected run, with a count).
+		const A_half = new Surd(0n, 0n, 3n, 0n, 2n); // (3√3)/2
+		const areas2 = [A_t3046, A_half];
+		const minVerts2 = new Map<string, number>([
+			[areaKey(A_t3046), 5],
+			[areaKey(A_half), 4],
+		]);
+		const events: { cause: string; rejects?: number; denMax?: number }[] = [];
+		lat.obliqueCells(pool, areas2, ring, 24 * 3 * (6 + 3 * Math.sqrt(3)), poolLmax, minVerts2, (info) => events.push(info));
+		const waived = events.filter((e) => e.cause === "join-waived");
+		expect(waived.length).toBe(1); // once per run, not per-pair spam
+		expect(waived[0].rejects!).toBeGreaterThan(0);
+		expect(waived[0].denMax).toBe(60);
+	});
+
 	it("the JOIN reaches a ≥3-generator oblique lattice that pairs-only would MISS", () => {
 		// t3046's reduced basis (u, v). Pool = {u, 2v, u+3v}: in (u,v) coords {(1,0),(0,2),(1,3)} —
 		// pairwise indices 2,3,2, but jointly generate ⟨u,v⟩ = the oblique t3046 lattice (area 3√3).

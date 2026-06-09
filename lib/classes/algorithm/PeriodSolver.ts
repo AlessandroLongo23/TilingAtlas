@@ -43,7 +43,7 @@ import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
 import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, areaLadderFromTiles, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
-import { detSurd, polygonAreaSurd, tileAreaSurd, type Surd } from './exact/Surd';
+import { detSurd, polygonAreaSurd, tileAreaSurd, Surd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
 import { spikeBreak } from './exact/spikeTrace';
 
@@ -97,6 +97,16 @@ function regularArea(n: number): number {
  *  regular tile this is exactly `regularArea(p.n)` ⇒ byte-identical on the regular path. */
 function tileAreaFloatFor(p: Polygon): number {
 	return p.isStar ? polygonAreaSurd(p.exactVertices!).toFloat() : regularArea(p.n);
+}
+
+/** EXACT tile area routed by tile IDENTITY (CB-1): the exact shoelace over the placed tile's exact
+ *  vertices, uniform for regular and star tiles (translation/rotation-invariant, so any placement of
+ *  the same tile yields the same Surd). For a regular n-gon this equals the closed-form
+ *  `tileAreaSurd(n)` (unit-test-pinned); for a star it is the tile's TRUE non-convex area. Used by the
+ *  certificate's area leg, which must be exact (thesis correctness.tex leg (c): "equals |det Λ|
+ *  exactly") — the float `tileAreaFloatFor` remains as broadphase only. */
+export function tileAreaSurdFor(p: Polygon): Surd {
+	return polygonAreaSurd(p.exactVertices!);
 }
 
 /** Tile-identity token for the candidate-lattice area path (C1). A star and a regular n-gon share `n`,
@@ -588,6 +598,8 @@ export class PeriodSolver {
 			u, v, ring, N: ring.N, allowed, polySizes,
 			maxCellPolys: Math.min(maxCellPolys, areaCap),
 			uV, vV, det, cellDiam, minLen, cellArea, maxCircum, orbitFloor,
+			// CB-1: exact |det Λ| for the certificate's area leg — computed once per candidate lattice.
+			cellAreaSurd: detSurd(u, v).abs(),
 			starTiles: starTiles.map((s) => ({ n: s.n, alphaU: s.alphaU })),
 		};
 	}
@@ -605,6 +617,9 @@ export class PeriodSolver {
 		// Microsecond reject (no block): the DISTINCT core polygons mod Λ all live in one cell, so their
 		// total area cannot exceed the cell area |det Λ|. A too-small / wrong candidate is killed in
 		// O(reps) before the expensive block build. Sound (a necessary condition for any fitting).
+		// CB-1 ruling: stays FLOAT (hot path, runs per candidate lattice). Failure direction is sound:
+		// the +1e-6 slack only ever over-ACCEPTS (float error ≲1e-13 ≪ 1e-6 can't cause a wrongful
+		// reject); an over-accepted candidate is killed by the exact certificate downstream.
 		let initialArea = 0;
 		for (const p of initial) initialArea += tileAreaFloatFor(p);
 		if (initialArea > ctx.cellArea + 1e-6) {
@@ -835,11 +850,17 @@ export class PeriodSolver {
 	 *  surrounded (2π) with an allowed VC, and (c) total cell area = |det Λ| (gap-free area check).
 	 *  All three ⇒ the Λ-periodic extension is a valid edge-to-edge tiling with only allowed VCs. */
 	isCompleteTiling(reps: Polygon[], ctx: FillCtx): boolean {
-		// (c) area: cell polygons must exactly cover one fundamental domain. Star-aware (exact shoelace via
-		// tileAreaFloatFor) so a star cell's area = star+neighbour shares is checked against |det Λ| with the
-		// star's TRUE area, not the convex regularArea(n) (which would reject the valid 4(j) cell).
+		// (c) area: cell polygons must exactly cover one fundamental domain. CB-1: the DECISION is the
+		// exact Surd comparison Σ tileAreaSurdFor(p) == |det Λ| (thesis leg (c): "equals |det Λ| exactly");
+		// the float sum is kept as a broadphase PRE-REJECT only. Soundness of the broadphase: float error
+		// is ≲1e-10 over ≤10³ tiles, so exact-equal cells always pass it (it can only reject cells the
+		// exact test would also reject). Star-aware in both layers (exact shoelace = the tile's TRUE area,
+		// not regularArea(n) — which would reject the valid 4(j) cell).
 		const area = reps.reduce((s, p) => s + tileAreaFloatFor(p), 0);
 		if (Math.abs(area - ctx.cellArea) > 1e-4 * Math.max(1, ctx.cellArea)) return false;
+		let areaSurd = Surd.ZERO;
+		for (const p of reps) areaSurd = areaSurd.add(tileAreaSurdFor(p));
+		if (areaSurd.cmp(ctx.cellAreaSurd) !== 0) return false;
 
 		const block = this.buildBlock(reps, ctx, ctx.cellDiam + 8);
 		// (a) no proper overlap.
@@ -1102,6 +1123,7 @@ type FillCtx = {
 	cellDiam: number;
 	minLen: number;
 	cellArea: number;
+	cellAreaSurd: Surd; // CB-1: exact |det Λ| — the certificate's area leg decides on this, not the float
 	maxCircum: number; // max tile circumradius — a poly beyond judgeR+this has no vertex within judgeR
 	orbitFloor: number; // k·hol(Λ): P1 prunes a partial fill whose vertex-class count exceeds this
 	starTiles: { n: number; alphaU: number }[]; // C3 star palette: (n,α) variants the fill loop may seat

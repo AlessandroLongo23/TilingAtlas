@@ -201,6 +201,13 @@ export class LatticeEnumerator {
 		const maxRounds = Math.max(2, Math.ceil(Math.log2((2 * areaBoundF) / Math.max(minAreaF, 1e-6) + 2)) + 2);
 		let frontier = [...working.values()];
 		let round = 0;
+		// CB-3 (review-2026-06-09): the den≤JOIN_DEN_MAX near-rational cut is a TUNED truncation and must
+		// report loudly (correctness.tex "any cap that could truncate the search is required to report
+		// loudly"; TA ruling SYNC-2026-06 option (b): once per affected run, with a count — not per-pair
+		// spam). The float test cannot distinguish irrational coords (exactly no join — sound skip) from
+		// rational coords with denominator > JOIN_DEN_MAX (a waived join), so the count is an UPPER bound
+		// on waived joins.
+		let joinWaived = 0;
 		while (frontier.length > 0) {
 			if (++round > maxRounds + 8) throw new Error("obliqueCells: join-closure exceeded the covolume round bound (bug)");
 			const next: [Cyclotomic, Cyclotomic][] = [];
@@ -214,7 +221,7 @@ export class LatticeEnumerator {
 					const al = (we.x * bf.y - we.y * bf.x) / detab;
 					const be = (af.x * we.y - af.y * we.x) / detab;
 					if (isNearInt(al) && isNearInt(be)) continue; // w ∈ L ⇒ no progress
-					if (!nearRational(al) || !nearRational(be)) continue; // not a small-denominator join
+					if (!nearRational(al) || !nearRational(be)) { joinWaived++; continue; } // irrational OR den > JOIN_DEN_MAX
 					const j = joinLattice(a, b, we.p);
 					if (!j) continue;
 					const e0 = j[0].toVector(), e1 = j[1].toVector();
@@ -224,6 +231,7 @@ export class LatticeEnumerator {
 			}
 			frontier = next;
 		}
+		if (joinWaived > 0) onTruncate?.({ cause: "join-waived", rejects: joinWaived, denMax: JOIN_DEN_MAX });
 		return out;
 	}
 
@@ -547,11 +555,14 @@ export function areaKey(s: Surd): string {
 	return `${s.P},${s.Q},${s.R},${s.S},${s.D}`;
 }
 
-/** A loud INCOMPLETE-REGION signal from the oblique candidate stage (`obliqueCells`). */
+/** A loud INCOMPLETE-REGION signal from the oblique candidate stage (`obliqueCells`).
+ *  `join-waived` (alias in the SYNC ruling: "join-denominator-bounded"): joins rejected by the
+ *  den≤`denMax` near-rational broadphase — `rejects` counts irrational coords (sound skips) and
+ *  waived large-denominator joins together (an upper bound on the truly waived). CB-3. */
 export type ObliqueTruncation =
 	| { cause: "subpool-clipped"; aAdm: number; needReach: number; poolLmax: number }
 	| { cause: "v-range-truncated"; needReach: number; poolLmax: number }
-	| { cause: "join-waived" };
+	| { cause: "join-waived"; rejects: number; denMax: number };
 
 function babs(a: bigint): bigint {
 	return a < 0n ? -a : a;
