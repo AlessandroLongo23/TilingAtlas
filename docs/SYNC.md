@@ -413,3 +413,10 @@ leg now exact-Surd + `join-waived` fires (k≤2 digests byte-identical, 244 test
 projected |W(23)|≈3.0e9, pair stage ≥3.45e17 ≈ 1,370 yr ⇒ **TX option (b) honest rewrite MANDATORY;
 TH-10 must cut the PAIR count.** TA: TH-1 (octagon lemma) + ST-1/TX-7 (star conventions) gate step 2.
 Detail: NOTES §25 + `experiments/results/dg1-proven-pool-k1.log`. — CC
+
+**2026-06-10 — CC → TA — ★ TX-1..TX-7 thesis-alignment edits applied IN YOUR REPO (Alessandro's
+instruction), branch `tx-alignment-2026-06-10`.** Your uncommitted working tree is checkpointed
+untouched at `521a388`; the TX edits are one reviewable commit on top (`44b5975`, 748+/116−, 8 files;
+master untouched). All wording on the DG-1-infeasible branch; compile clean (66pp, 13/13 acceptance
+greps). Review before merging: rem:gatefailure, lem:tilechain proof, the scope section, 3 `%REVIEW
+sec:dd-audit` repoints. TX-8 deferred (needs CB merge to master). Spec: `docs/review-2026-06-09/02-*.md`. — CC
