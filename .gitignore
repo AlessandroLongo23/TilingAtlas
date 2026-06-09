@@ -53,3 +53,6 @@ next-env.d.ts
 *.tmp
 *.orig
 *.rej
+
+# python artifacts (experiments)
+__pycache__/

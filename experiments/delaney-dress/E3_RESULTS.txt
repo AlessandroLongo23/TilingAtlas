@@ -1,0 +1,166 @@
+E3 -- candidate-growth scout + B2 characterization
+====================================================================
+
+FILES (all under /tmp/dd-experiments/):
+  enumerate.py      naive involution-triple brute force (trusted, walls at n=7)
+  enumerate3.py     <s0,s2>-block generation (faster, matches enumerate.py exactly)
+  enumerate4.py     enumerate3 + invariant bucketing (no speedup; bottleneck is s1)
+  strategy_a.py     BFS-canonical-layout COMPLETE generator (gen_triples, n<=12, 1.4s)
+  scout_k2.py       k=2 scout built on gen_triples
+  mixed_sign.py     mixed-sign ghost finder
+  investigate_ghosts.py  why dead necklaces produce 0 symbols
+  build_3446.py     hand attempt at the 3.4.4.6 corona
+  cyclo.py          exact Q(zeta_48) ring (covers m in {3,4,6,8,12})
+  develop5.py       universal-cover development (collision + neighbour-apothem rebuild)
+  develop6.py       vertex-closure isometry experiments
+
+====================================================================
+1. GROWTH TABLE  (raw = BFS-layout connected commuting triples = COMPLETE
+   generating set, NOT iso-deduped; candidates = regular-labeled +
+   per_component_flat, iso-deduped by canonical_form)
+====================================================================
+size  raw_triples  k1_cand  k2_cand  k2_mixedSign
+   1            1        3        0             0
+   2            7       12        2             1
+   3            9        5        1             0
+   4           43       18        8             6
+   5           65        2        1             6
+   6          279       20       17            16
+   7          469        0        3            21
+   8         1923       19       27            33
+   9         3537        0        9            32
+  10        13983        7       11            52
+  11        27665        0        1            27
+  12       106263        7       64            72
+
+  k=1 TOTAL (sizes<=12) = 93   *** COMPLETE: B1 proves k=1 => size<=12 ***
+       of which 11 are the realizable 1-uniform tilings (target A068599 k=1=11)
+  k=2 TOTAL (sizes<=12) = 144  *** CAP: k=2 ceiling is size 24; only sizes<=12
+       covered = roughly the FIRST HALF of the k=2 range. LOUD FLAG. ***
+  k=2 mixed-sign ghosts (sizes<=12) = 266
+
+  raw-triple growth ratio raw(n)/raw(n-1): ~4x on each EVEN step, ~1.5-2x on odd
+  (parity: regular-family flat symbols overwhelmingly need EVEN chamber counts).
+
+  Direct brute (enumerate.py/3) walls at n=7-8 (~10 min for n=8). The COMPLETE
+  results above only exist because gen_triples (BFS-canonical layout) generates the
+  154244 layouts for n<=12 in 1.4s; the cost is per-triple labeling + canonical_form.
+
+====================================================================
+2. CANDIDATE-GROWTH VERDICT (vs torus lattice 183 -> 3103, ~17x, ~k^4)
+====================================================================
+  DD k=1 candidates = 93  <  torus k=1 lattices = 183.  DD is MORE economical at k=1.
+  DD k=2 (sizes<=12, HALF the range) = 144 already.  Honest projection:
+    - k=1 distribution: 60 in sizes 1..6, 33 in sizes 7..12 (second/first = 0.55,
+      i.e. it TAILS OFF toward the size ceiling).
+    - IF k=2 tails off similarly: total ~ 144 * 1.55 ~ 220.
+    - BUT the k=2 size-12 layer ALONE = 64 and is NOT tailing off, so 220 is a
+      LOWER bound; a realistic range is ~250-600.
+  Even at 600, k2/k1 ~ 6x, well below the torus 17x. So the THESIS BET (DD grows
+  slower than the torus method) is PLAUSIBLE and supported at k=1 (93<183) and by
+  the projected k=2 ratio. NOT proven (k=2 is half-covered) -- flagged.
+
+====================================================================
+3. MIXED-SIGN GHOST (global K=0 but a {1,2}-component sub-sum != 0)
+====================================================================
+  SMALLEST: size 2, k=2:  (2, (1,0), (0,1), (0,1), (4,4), (3,6))
+    validate = True ; global K = 0 ; euclidean = True ; per_component_flat = False
+    vertex orbit {0}: (m01,m12)=(4,3)  subK = +1/12  (3 squares = 270deg, SPHERICAL)
+    vertex orbit {1}: (m01,m12)=(4,6)  subK = -1/12  (6 squares = 540deg, HYPERBOLIC)
+    sum = 0 = global K.
+  Counts (regular-labeled, K=0, NOT pcflat, deduped): k=2 sizes<=12 = 266.
+  k=1 mixed-sign ghosts = 0 (trivially: k=1 => the single per-component sum IS the
+  global sum). So mixed-sign ghosts REQUIRE k>=2 and they are ABUNDANT there.
+  CONCLUSION: global K==0 is an INSUFFICIENT filter for k>=2; per_component_flat is
+  strictly stronger and MUST be used. (E2 already showed 0 at k=1; E3 shows the
+  ghosts appear exactly at k>=2, as the axioms permit.)
+
+====================================================================
+4. IN-FAMILY CLOSURE GHOST (3.4.4.6) -- SURPRISE / HONEST CORRECTION
+====================================================================
+  3.4.4.6 is a valid NECKLACE (60+90+90+120=360, polygons {3,4,6}).
+  EXPECTED (task framing): a valid + flat D-symbol that fails ONLY metric closure.
+  ACTUAL (measured): there is NO axiom-valid k=1 D-symbol with necklace 3.4.4.6 at
+  ALL, at any size <= 12.  investigate_ghosts.py: necklace 3.4.4.6 -> any=0, flat=0.
+  Since k=1 => size<=12 (B1) and gen_triples sweeps <=12 COMPLETELY, this is
+  conclusive for k=1: the 3.4.4.6 obstruction bites at the COMBINATORIAL/abstract
+  level (DS2 commuting + DS3 m-constancy + DS4 gluing of the necklace into a valid
+  involution s0) -- NOT at a metric-development step.
+  The four dead necklaces (any=flat=0): 3.3.4.12, 3.3.6.6, 3.4.3.12, 3.4.4.6.
+  CATCH POINT for 3.4.4.6: validate() (the axioms) -- it never produces a symbol to
+  reach curvature/flatness/development. So 3.4.4.6 is NOT a clean witness that
+  "B2 = metric closure"; it is a witness that for THIS family the abstract axioms
+  already absorb part of what one might fear needs metric closure.
+
+  CAVEAT (the symbol (4,(0,1,2,3),(0,2,1,3),(1,0,3,2),(3,4,4,6),(4,4,4,4)) has the
+  m01 TUPLE (3,4,4,6) but its CYCLIC necklace reads 3.4.6.4 -- the realizable
+  rhombitrihexagonal. m01-list order != necklace order; don't be fooled.)
+
+====================================================================
+5. METRIC DEVELOPMENT (exact Q(zeta_48))
+====================================================================
+  develop5.py walks the chamber system, places unit-edge regular polygons with
+  EXACT Q(zeta_48) coordinates, rebuilds the neighbour tile-center at the
+  neighbour's apothem on edge-crossings, and checks (a) COLLISION (two chambers
+  forced to the same flag) and (b) per-tile-center m01 consistency.
+
+  POSITIVE WITNESS: 4.8.8 develops to a 55-tile patch (18 squares + 37 octagons),
+  ZERO conflicting tile-centers, edge-to-edge, all coordinates exact. The three
+  regular tilings + all 93 k=1 candidates + all 59 k=2 candidates (<=8) develop
+  with NO collision within the step cap.
+
+  HONEST LIMITATION (measured, not assumed):
+   - The collision/tile-conflict test catches FORCED combinatorial incompatibility
+     (a true 3.4.4.6-corona would trip it -- but no such valid symbol exists to test).
+   - It does NOT catch ANGLE defects: the mixed-sign ghost (270/540deg) and the
+     hyperbolic symbol (K=-1/12) develop with NO collision (they spiral; exact
+     points never coincide). Those are caught by per_component_flat / curvature.
+   - 'Clean patch within cap' is a SEMI-decision, not a closure PROOF (the cover is
+     infinite; a real tiling develops cleanly forever, but so does an undetected
+     near-miss within a finite budget). A complete metric oracle needs periodicity
+     detection (translation-lattice recovery), which I did NOT finish.
+
+  So flat+regular does NOT trivially "always develop": development is a real,
+  separate computation. For the cases tested, every axiom-valid + per_component_flat
+  symbol developed without collision -- but that is EVIDENCE, not a proof that B2 is
+  vacuous.
+
+====================================================================
+6. B2 VERDICT (is realizability a cheap finite check, or the closure problem?)
+====================================================================
+  For the REGULAR family at k=1, the data leans toward: the cheap combinatorial
+  filters (DS axioms + regular labels + per_component_flat) are SURPRISINGLY strong.
+   - 3.4.4.6 (the classic Chavey closure obstruction) is killed by the AXIOMS, not
+     by metric closure -- it never forms a valid symbol.
+   - No axiom-valid + flat symbol was found that DEMONSTRABLY fails metric closure
+     (my development found 0 collisions among 93 k=1 + 59 k=2 candidates).
+  BUT this is NOT a proof that B2 is free:
+   - My development is a semi-decision (no periodicity proof), so I cannot certify
+     that all 93/59 are truly realizable -- only that none was caught failing.
+   - The 93 k=1 candidates vs 11 realizable tilings GAP (82 extra) is unexplained
+     by collision: those 82 develop cleanly too. They are most plausibly LARGER-CELL
+     (sub-symmetry) representations of the SAME 11 tilings -- meaning the real B2
+     gate is "is this the MAXIMAL-symmetry quotient / does it correspond to a
+     DISTINCT tiling", which is exactly a GLOBAL property (the symmetry group of the
+     developed tiling), i.e. the same closure/periodicity computation the lattice
+     method does.
+  NET: B2 is NOT obviously a cheap finite check. The combinatorial filters remove
+  MORE than expected (3.4.4.6), but distinguishing the 11 realizable tilings from
+  the 82 extra abstract symbols requires developing the tiling and reading off its
+  symmetry/periodicity -- the same hard global closure the torus method performs.
+  B2 is the closure problem re-skinned, just with a smaller candidate set feeding it.
+
+====================================================================
+7. KEY FINDING: D-symbol candidates OVERCOUNT tilings (the real B2 gate)
+====================================================================
+  All 11 D-symbols with necklace 6.6.6 (sizes 1,2,2,3,3,6x6) develop to the
+  IDENTICAL hexagonal tiling -- same anchored tile-center point set (29 tiles,
+  27 verts on a common lattice). They are the SAME tiling at larger (sub-symmetry)
+  fundamental domains, NOT distinct tilings.
+  Clustering all 93 k=1 candidates by developed tiling collapses them toward 11
+  (my crude seed-anchored heuristic gives 18 due to anchoring over-split on
+  chiral/low-symmetry cases; the big clusters 36->square, 20->triangular,
+  11->hexagon are exact). So the 93 candidate count is NOT 93 tilings.
+  => To reach the A068599 answer (11), one must DEVELOP each symbol and identify
+     same-tiling duplicates = compute the developed tiling's symmetry/periodicity =
+     the SAME global closure the torus/lattice method performs. B2 is that step.
