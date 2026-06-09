@@ -1830,3 +1830,59 @@ levers that matter are all **count-reduction**: the reflection lemma (branch cou
 pruning (the over-generated 119/seed — investigate why P0 isn't cutting it in the bypass path), and the
 done prechecks/incidence (seed count). The fill redesign is **off the list.** Tooling: `scripts/measure-fill-
 scaling.ts` + `PS_PROFILE` `fillNodeProfile`(per-emitted-cell tiles/pops/holohedry) + `orbFillMaxPops`.
+
+### 23.9 ★ The candidate-count chase resolves the P0 suspicion — P0 is FINE; the wall is structural-oblique ⇒ pivot to Delaney–Dress (⚑ closes §23.8's open question)
+
+§23.8 ended with the open suspicion *"119 candidate lattices/seed at k=2 looks over-generated — why isn't P0
+cutting it in the bypass path?"* I chased it to the bottom. **The suspicion is wrong: P0 fires at full strength
+on the bypass path; there is no pruning gap.** Confirmed by code AND measurement, three ways:
+1. **P0 runs before the mode-branch.** `solve()` calls `candidateLattices(seed)` (`PeriodSolver.ts:238`)
+   *before* the `mode==="torus"`/orbifold split (`:272`); P0 is applied inside it (`:519-523`); `bypass` is read
+   only downstream in `equivariantFillForLattice`. So `diag.candidateLattices` (`:242`) is the **post-P0** count
+   — the 119/seed is *already after* P0, not before it.
+2. **No `mv===undefined` slip.** Every candidate is generated only at an exact realizable area (`obliqueCells`
+   `return null` unless `areaSet.has` `LatticeEnumerator.ts:180`; `roundCells` `:258`; `gridAlignedCells` `:93`),
+   and `vcAreaSet`/`vcAreaMinVerts` are the **same recursion over the same area set** (`:321`/`:368`) ⇒
+   `minVerts.get(area)` is always defined ⇒ the `mv!==undefined` guard never lets a prunable lattice slip. And
+   the guard fails *safe* anyway (undefined ⇒ keep, never drop). **Measured: `survivorsMvUndefined = 0` at every k.**
+3. **P0 is the most aggressive filter we have.** It removes a *rising* share of generated candidates:
+   **74.7% (k=1) → 75.7% (k=2) → 83.0% (k=3)** — `Σp0Skipped` = 539 / 9648 / 913575 vs kept 183 / 3103 / 186190.
+
+**The measured candidate curve (ΣcandidateLattices, post-P0, {3,4,6}, commit-instrumented counters, enumeration
+byte-identical — k=1 digest `6f9ca9cf2d16c75f`, ΣcandLat 183/3103 reproduce §23.8):**
+
+| k | seeds | ΣcandidateLattices | Σ ratio | per-seed | P0 cut | oblique survivors (share) |
+|---|------:|-------------------:|--------:|---------:|-------:|---------------------------|
+| 1 | 10  | 183     | —     | 18.3  | 74.7% | 48 (26%)        |
+| 2 | 26  | 3 103   | 17.0× | 119.3 | 75.7% | 1 956 (63%)     |
+| 3 | 323 | 186 190 | 60.0× | 576.4 | 83.0% | 127 746 (**69%**) |
+
+**The exponent is NOT constant — it ACCELERATES (17×→60×/step), super-k⁴ in this range.** Decomposed: per-seed
+candidates grow ~cubic (6.5×→4.8×), but the **seed count explodes combinatorially** (10→26→323 = 2.6×→12.4×) and
+the two multiply. **The dominant + fastest term is the oblique (hol=2) class:** 48→1956→127746 = 40.8×→**65.3×/step**,
+now **69%** of all survivors. Oblique is **already at P0's `hol=2` floor**, so the only theorem-gated sound lever
+(point-group-tightened P0 = replace hol by a certified-not-exceeded |P|) **cannot touch it** (|P| can't go below
+the oblique floor), tightening the proven `24k·aMax` box yields nothing (the VC-area set already does the sound
+tightening; candidates gate on area-membership not the float ceiling), and supercell/primitivity dropping is
+low-yield + carries a truncation trap (dropping Λ whose primitive sublattice was pool-truncated turns a
+*logged*-incomplete region *silent*). The reflection lemma cuts **branches**, not these lattices. And oblique
+candidates are **required for completeness** (source C exists solely to reach the 2 oblique k=3 tilings
+t3046/t3055) yet yield ~nothing each — they cannot be dropped. **There is no sound count-lever for the term that
+dominates the explosion.**
+
+**Verdict (decision-grade): pivot the home-run to Delaney–Dress.** Projecting k=4: ~186k × (≥60×) ≈ **11M+
+candidate lattices**, each needing branch-enum + `buildBlock`/overlap setup (per-fill O(1)-flat ⇒ cost ≈ count ×
+setup) — infeasible AND un-tameable by sound means. The lattice programme (torus+orbifold) pays the full
+oblique-Bravais search cost — a symmetry-free 2-parameter family, the largest possible candidate space — that
+produces almost nothing. Delaney–Dress (δ≤12k) enumerates combinatorial tiling types directly, sidestepping the
+lattice-candidate explosion: the field's answer for high k. **k≤3 certified stands via the torus path either way.**
+The build-vs-pivot call is Alessandro's; the measurement points hard at pivot.
+
+⚑ **Standing items closed:** (a) the `|𝒜|≥1` guard is already a *diagnostic* not a throw — `emptyAnchorBranches`
+(`PeriodSolver.ts:748`) increments on bypassed |𝒜|=0 phantoms and continues (measured 15390/7934/13416 over the
+runs, no throw); the remaining `incidenceAnchorSet` throws (`OrbifoldNormalized.ts:685/688/692`) are structural
+invariants on rotation-bearing branches (r≠0 ⇒ (1−L) full-rank) that do NOT fire on phantoms — leave as throws.
+(b) Instrumentation kept (optional `survivors{Oblique,RectCmm,Square,Hex,MvUndefined}` diag fields + the script's
+holohedry-breakdown line): cheap, byte-identical, and the reproducible evidence for the pivot claim + the data TA
+needs to size any future oblique lever. Tooling: `scripts/measure-fill-scaling.ts` (now prints `Σp0Skipped`, the
+4-way survivor breakdown, `mvUndefined`, and `emptyAnchorBranches`).

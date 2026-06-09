@@ -39,6 +39,7 @@ console.log(`\n=== fill-scaling k=${k} {${ns.join(",")}}: ${useSeeds.length} see
 
 const profile: { tiles: number; pops: number; hol: number }[] = [];
 let maxPops = 0, candLattices = 0, branches = 0, emitted = 0, to = 0;
+let p0Skipped = 0, sObl = 0, sRect = 0, sSq = 0, sHex = 0, sMvU = 0, emptyAnchor = 0;
 const t0 = Date.now();
 for (let i = 0; i < useSeeds.length; i++) {
 	const r = new PeriodSolver(k).solve(useSeeds[i], { mode: "orbifold", bypass: true, maxMs });
@@ -48,11 +49,20 @@ for (let i = 0; i < useSeeds.length; i++) {
 	branches += r.diag.orbifoldBranches ?? 0;
 	emitted += r.diag.emitted ?? 0;
 	if (r.diag.timedOut) to++;
+	// P0 attribution: how many candidates P0 cut, the holohedry breakdown of the SURVIVORS, and the
+	// mv-undefined leak count (claim: 0). emptyAnchor = bypassed |𝒜|=0 phantoms handled WITHOUT a throw.
+	p0Skipped += r.diag.p0Skipped ?? 0;
+	sObl += r.diag.survivorsOblique ?? 0; sRect += r.diag.survivorsRectCmm ?? 0;
+	sSq += r.diag.survivorsSquare ?? 0; sHex += r.diag.survivorsHex ?? 0;
+	sMvU += r.diag.survivorsMvUndefined ?? 0; emptyAnchor += r.diag.emptyAnchorBranches ?? 0;
 }
 const secs = ((Date.now() - t0) / 1000).toFixed(0);
 
 // (A) candidate-cell factor
-console.log(`(A) candidate-cell loop:  useSeeds=${useSeeds.length}  ΣcandidateLattices=${candLattices}  Σbranches=${branches}  emitted=${emitted}  timedOut=${to}/${useSeeds.length}  [${secs}s]`);
+console.log(`(A) candidate-cell loop:  useSeeds=${useSeeds.length}  ΣcandidateLattices=${candLattices}  Σp0Skipped=${p0Skipped}  Σbranches=${branches}  emitted=${emitted}  timedOut=${to}/${useSeeds.length}  [${secs}s]`);
+const sSum = sObl + sRect + sSq + sHex;
+console.log(`    survivors by holohedry:  oblique=${sObl}  rect/cmm=${sRect}  square=${sSq}  hex=${sHex}   (Σ=${sSum} ${sSum === candLattices ? "==" : "≠ ⚑MISMATCH"} ΣcandidateLattices=${candLattices})`);
+console.log(`    P0 soundness checks:  mvUndefined=${sMvU} (claim 0)   |𝒜|=0 phantoms handled w/o throw: emptyAnchorBranches=${emptyAnchor}`);
 
 // (B) per-fill cost: pops vs tiles, by lattice type
 console.log(`(B) per-fill DFS cost (CLEAN, emitted cells only) — "<tiles>t:<maxPops>", is pops poly or exp in tiles?`);

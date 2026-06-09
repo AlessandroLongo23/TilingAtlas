@@ -62,12 +62,26 @@ const GRID_SHORT_MAX2 = 3.5 * 3.5;
  *  symmetry reason to exist. The only k=2 off-grid round cell is t2020 (|v|=√13≈3.61). */
 const COMPACT_OFFGRID_MAX2 = 4 * 4;
 
+/** Result shape of `candidateLattices` (and its cache). The `survivors*` fields are a temporary,
+ *  behaviour-neutral COUNT breakdown of the P0-kept candidates by lattice holohedry class, plus
+ *  `survivorsMvUndefined` (candidates whose realizable-area key was absent from `minVerts` — provably
+ *  0: every candidate is generated only at a `vcAreaSet` area and `vcAreaMinVerts` shares that exact
+ *  enumeration). Consumed by the candidate-count scaling measurement; does NOT affect enumeration. */
+type CandidateLatticeResult = {
+	lattices: [Cyclotomic, Cyclotomic][];
+	p0Skipped: number;
+	obliqueCandidates: number;
+	obliqueTruncated: ObliqueTruncation['cause'] | null;
+	survivorsOblique: number;
+	survivorsRectCmm: number;
+	survivorsSquare: number;
+	survivorsHex: number;
+	survivorsMvUndefined: number;
+};
+
 /** Seed-free candidate lattices depend only on (ring, tile set, k) — computed once and cached.
  *  `p0Skipped` records how many candidates the P0 pre-filter removed (diagnostic only). */
-const candidateCache = new Map<
-	string,
-	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null }
->();
+const candidateCache = new Map<string, CandidateLatticeResult>();
 
 /** Canonical vertex-configuration name from a cyclic list of polygon edge-counts — minimal over
  *  rotations AND reflection (a VC and its mirror share a name; matches the seed-build convention). */
@@ -132,6 +146,12 @@ export type PeriodSolverDiag = {
 	orbPrecheckSkipped?: number; // (always on) (branch,x,placement,fan) seeds the centroid area/overlap prechecks soundly skipped before the 'full' orbit-stamp — never drops a cell (equivariantTorusFill would also reject)
 	orbFillMaxPops?: number; // PS_PROFILE: the largest single-fill DFS node count over all fills (a fill cut by the global timeout is a LOWER bound)
 	fillNodeProfile?: { tiles: number; pops: number; hol: number }[]; // PS_PROFILE: per EMITTED cell, (cell tile count, DFS nodes explored to find it, lattice holohedry) — a CLEAN per-fill cost even under a global timeout (the cell closed before any cutoff). The scaling question: is `pops` polynomial or exponential in `tiles`?
+	// --- P0-survivor breakdown (temporary count-scaling measurement; counters only, enumeration byte-identical) ---
+	survivorsOblique?: number; // P0-kept candidate lattices with hol == 2
+	survivorsRectCmm?: number; // hol == 4
+	survivorsSquare?: number; // hol == 8
+	survivorsHex?: number; // hol == 12
+	survivorsMvUndefined?: number; // P0-survivors whose realizable-area key was absent from minVerts (provably 0 — every candidate is at a vcAreaSet area; the mv!==undefined guard then never drops, only keeps)
 	branchInvariantViolated?: boolean; // ⚑ an emitted cell was NOT invariant under its branch group ⇒ stamping/keying bug
 	// --- incidence anchoring (Increment 3) A/B accounting (orbifold mode only) ---
 	incidenceSeeds?: number; // Σ |𝒜| fed to the fill across rotation-bearing branches (anchor='incidence')
@@ -235,7 +255,7 @@ export class PeriodSolver {
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated } = this.candidateLattices(seed);
+		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated, survivorsOblique, survivorsRectCmm, survivorsSquare, survivorsHex, survivorsMvUndefined } = this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
@@ -251,6 +271,11 @@ export class PeriodSolver {
 			obliqueCandidates,
 			obliqueTruncated,
 			timedOut: false,
+			survivorsOblique,
+			survivorsRectCmm,
+			survivorsSquare,
+			survivorsHex,
+			survivorsMvUndefined,
 		};
 
 		// --- 2+3. Fill each torus, certify, dedup, gate. ---
@@ -370,7 +395,7 @@ export class PeriodSolver {
 	 * path (the certified k≤2 digests are unaffected). Exists only so the orbifold branch-enumeration
 	 * measurement harness can enumerate symmetry branches over the EXACT pipeline lattices.
 	 */
-	candidateLatticesFor(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null } {
+	candidateLatticesFor(seed: SeedConfigurationLike): CandidateLatticeResult {
 		return this.candidateLattices(seed);
 	}
 
@@ -391,7 +416,7 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null } {
+	private candidateLattices(seed: SeedConfigurationLike): CandidateLatticeResult {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -516,12 +541,19 @@ export class PeriodSolver {
 		// underestimates (it falls back to 12), so the floor is never too low. Cached with the list.
 		const kept: [Cyclotomic, Cyclotomic][] = [];
 		let p0Skipped = 0;
+		// Temporary measurement (counters only — enumeration byte-identical): bin the P0 SURVIVORS by
+		// holohedry class and count any whose realizable-area key is absent from `minVerts` (provably 0).
+		// `holohedry(u,v)` is hoisted from the prune condition (same value, same decision) — no double call.
+		let survivorsOblique = 0, survivorsRectCmm = 0, survivorsSquare = 0, survivorsHex = 0, survivorsMvUndefined = 0;
 		for (const [u, v] of lattices) {
+			const hol = holohedry(u, v);
 			const mv = minVerts.get(areaKey(detSurd(u, v).abs()));
-			if (mv !== undefined && mv > this.k * holohedry(u, v)) { p0Skipped++; continue; }
+			if (mv !== undefined && mv > this.k * hol) { p0Skipped++; continue; }
 			kept.push([u, v]);
+			if (mv === undefined) survivorsMvUndefined++;
+			if (hol >= 12) survivorsHex++; else if (hol >= 8) survivorsSquare++; else if (hol >= 4) survivorsRectCmm++; else survivorsOblique++;
 		}
-		const result = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated };
+		const result: CandidateLatticeResult = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated, survivorsOblique, survivorsRectCmm, survivorsSquare, survivorsHex, survivorsMvUndefined };
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
