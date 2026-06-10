@@ -56,3 +56,6 @@ next-env.d.ts
 
 # python artifacts (experiments)
 __pycache__/
+
+# thesis figure pipeline intermediates (PDFs are delivered to ../thesis, sources committed)
+figures/out/

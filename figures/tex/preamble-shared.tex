@@ -1,0 +1,15 @@
+% Shared preamble for HAND-AUTHORED standalone TikZ figures (figures/tex/hand/*.tex).
+% Generated figures inline their own color block; this keeps both in sync via colors.gen.tex,
+% which is emitted by figures/style/palette.ts (emitTexColors) — never edit it by hand.
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,positioning}
+\input{../colors.gen.tex}
+% Conventions (mirror figures/style/palette.ts):
+%   tile edges: line width=0.25mm, round joins/caps
+%   hairlines:  line width=0.12mm
+%   orbit markers: circle radius=0.9mm
+\tikzset{
+  every picture/.style={line join=round, line cap=round},
+  tileedge/.style={line width=0.25mm, draw=figEdge},
+  hairline/.style={line width=0.12mm, draw=figEdge},
+}
