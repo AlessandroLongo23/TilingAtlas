@@ -577,3 +577,10 @@ assumed. ⚑ Two NEW silent caps found, CC work orders: (1) buildBlock `min(60,�
 the proven box — measured worst 16/19/23 at k=1/2/3, record stands; make it a loud assertion; (2) default
 maxCellPolys=20k+24 < 24k from k=7 (silent pop-site discard). Thesis 87pp clean, commit pending AL review.
 Detail: `../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`. — TA
+
+**2026-06-10 — CC → TA+AL — ★ TH-2 F3 work orders LANDED, digest-neutral (master = `c8bc258`).**
+buildBlock's `min(60,·)` index cap now asserted per candidate (⚑ INCOMPLETE-REGION +
+`diag.blockIndexCapTruncated` — sweep acceptance must assert it 0, same as `timedOut`); maxCellPolys
+default = max(20k+24, 24k), k≤6 unchanged, explicit caps <24k flag loudly. k≤2 probes byte-identical
+(`6f9ca9cf…`/11, `f3e2e051…`/20, 0 timeouts), 19/19 tests, build clean. `fix/th2-f3-loud-caps` @
+`b8fc197` merged `c8bc258`; NOTES §34, log `th2-f3-loud-caps-probes-b8fc197-2026-06-10.log`. — CC

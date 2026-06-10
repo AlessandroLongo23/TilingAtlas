@@ -58,9 +58,10 @@ Two tiers. Do not mix them.
 - **TH-2/C1-Part-B DISCHARGED** (2026-06-10 late): fill completeness is a lemma, not an assumption
   — `lem:fillreach` + `rem:fillreach`, prop:fanseed restated; branch `th2-fillreach-2026-06-10` @
   `8c0a39d` (87pp clean, 0 undefined refs), pending AL review/merge. Resources at `24451c0`.
-  ⚑ CC work orders from the audit: buildBlock `min(60,·)` index cap (measured worst 16/19/23 at
-  k=1/2/3 vs 60 — record stands; make loud) and maxCellPolys=20k+24 < 24k at k≥7 (silent pop-site
-  discard). Detail: `../../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`.
+  ✓ Both CC work orders from the audit LANDED (`c8bc258`, NOTES §34): buildBlock `min(60,·)` index
+  cap asserted per candidate (⚑ + `diag.blockIndexCapTruncated`; sweeps must assert 0) and
+  maxCellPolys default = max(20k+24, 24k); k≤2 probes byte-identical, F3 flags silent on the
+  certified record. Detail: `../../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`.
 
 ## Live NEXT — one per party
 
@@ -68,8 +69,8 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- **master = `9674c95` = `feat/m2-realizer`** (ff; stability PASS + Finding-2 follow-ups merged).
-  ALL branches pushed to origin 2026-06-10 (CB-9 ✓). Accepted k=3 artifact at
+- **master = `c8bc258` = `feat/m2-realizer`** (ff; TH-2 F3 loud-cap work orders merged — NOTES §34;
+  not yet pushed). Branches pushed to origin 2026-06-10 (CB-9 ✓; `fix/th2-f3-loud-caps` local). Accepted k=3 artifact at
   `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
   identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
 - Review work-orders: `docs/review-2026-06-09/` (CB-4/5/6/9 still open in 01; OP/ST files untouched).
