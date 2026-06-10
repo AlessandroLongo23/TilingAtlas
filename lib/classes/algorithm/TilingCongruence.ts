@@ -49,14 +49,14 @@ function surdFloor(s: Surd): bigint {
  * Class-canonical by construction: lattice translates shift (α, β) by integers, which cancel in
  * the exact floor — the SAME key for every member of a class, with no float in the decision.
  *
- * §34 (CB-4 guard discovery, 2026-06-10): this replaces the original float-guessed ±2-window
+ * §35 (CB-4 guard discovery, 2026-06-10): this replaces the original float-guessed ±2-window
  * lex-min reduction, which was NOT class-canonical on skewed bases (window/`lim` cutoffs picked
  * different representatives for members of one class) — producing direction-dependent FALSE
  * NEGATIVES in `tilingsCongruent`'s cell-set verification, caught as a cong(a,b) ≠ cong(b,a)
  * symmetry violation by `assertEquivalencePartition` on the k=3 artifact. Soundness was never at
  * risk (keys are exact geometry — distinct classes cannot collide); the defect was completeness
  * of the merge, the same axis as §19.6.
- * Exported for the §34 class-invariance regression test only — not part of the public dedup API.
+ * Exported for the §35 class-invariance regression test only — not part of the public dedup API.
  */
 export function reducedClassKey(
 	p: Polygon,

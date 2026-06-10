@@ -576,4 +576,4 @@ CB-5 N≠24 throw (`983b8e3`) + CB-4 guard/differential (`942da53`) + CB-6 cull 
 fired on the k=3 artifact: `reducedClassKey`'s float-window reduction was NOT class-canonical on skewed bases
 ⇒ false negatives (completeness, never soundness; certified 61 stands — merged via a lucky third rep). Fixed
 exact (`c802989`); k≤2 byte-identical ×2; recert ★ PASS 61/61 + differential 0/2131. ⚑ TA: §19.6 narrative
-gains the §34 sibling caveat. Detail: NOTES §34. Outstanding: fresh k=3 sweep + merge on AL's go. — CC
+gains the §35 sibling caveat. Detail: NOTES §35. Outstanding: fresh k=3 sweep + merge on AL's go. — CC

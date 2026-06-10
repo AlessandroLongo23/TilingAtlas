@@ -11,15 +11,15 @@ digests trivially unchanged — run the k≤2 regression anyway.
 
 | ID | Title | Severity | Owner | Depends on | Status |
 |----|-------|----------|-------|------------|--------|
-| CB-1 | Exact certificate area leg (replace float 1e-4) | major | CC | — | [ ] |
-| CB-2 | Surd.sign semi-static error-bound filter | major | CC | — | [ ] |
-| CB-3 | Emit the join-waived truncation (nearRational) | major | CC | — | [ ] |
-| CB-7 | Primitivity-rejection guard | major | CC | — | [ ] |
-| CB-8 | Pool-reach loud truncation assertion | major | CC | [DG-1](00-decision-gate.md) (informs) | [ ] |
-| CB-5 | KUniformityChecker N≠24 must throw | major | CC | — | [ ] |
-| CB-4 | Merge assertEquivalencePartition + standing congruence differential | major | CC | feat/c4-pool-bypass branch | [ ] |
-| CB-6 | properOverlapWithBlock 2.5 centroid cull false for 8/12-gons | minor | CC | — | [ ] |
-| CB-9 | Evidence hygiene (commit §23.9 + D-D artifacts, push branches) | major ⚠ unverified (cap) | CC | — | [ ] |
+| CB-1 | Exact certificate area leg (replace float 1e-4) | major | CC | — | [x] done (`cellAreaSurd`, NOTES §30-era; k=3 oracle reg `k3-oracle-regression-cb1-*.log`) |
+| CB-2 | Surd.sign semi-static error-bound filter | major | CC | — | [x] done `216302b` (NOTES §30) |
+| CB-3 | Emit the join-waived truncation (nearRational) | major | CC | — | [x] done (join-waived emission live — fires on k≤2 runs) |
+| CB-7 | Primitivity-rejection guard | major | CC | — | [x] done `eefa6ac` (NOTES §32; Finding-2 follow-ups `9674c95`) |
+| CB-8 | Pool-reach loud truncation assertion | major | CC | [DG-1](00-decision-gate.md) (informs) | [x] done `eefa6ac` (NOTES §32) |
+| CB-5 | KUniformityChecker N≠24 must throw | major | CC | — | [x] done `983b8e3` (NOTES §35) |
+| CB-4 | Merge assertEquivalencePartition + standing congruence differential | major | CC | feat/c4-pool-bypass branch | [x] done `942da53` (+§35 guard-discovery fix `c802989`) |
+| CB-6 | properOverlapWithBlock 2.5 centroid cull false for 8/12-gons | minor | CC | — | [x] done `46b0f79` (NOTES §35; OP-9 owns the k=4 re-measure) |
+| CB-9 | Evidence hygiene (commit §23.9 + D-D artifacts, push branches) | major ⚠ unverified (cap) | CC | — | [x] done (experiments committed; all branches pushed 2026-06-10) |
 
 ---
 
