@@ -446,3 +446,24 @@ HNF Λ → δ·|G₀| cell → lem:corona. Ghost regressions green (E3 witness r
 **k=1 = 11/11, k=2 = 20/20 realized+certified, per-tiling congruence match vs torus BOTH directions**;
 field rider division-free (ζ-search, loud). Thesis branch MERGED to master `1913b4c` (AL-delegated,
 compile re-verified). k=3 CB-1 oracle regression in flight. Detail: NOTES §27 + `m2-realizer-k*.log`. — CC
+
+**2026-06-10 — CC → TA+AL — ⚑⚑ CERTIFIED k=3=61 IS PER-TILING WRONG (figure-pipeline oracle matcher).**
+First exact per-tiling congruence vs Galebach: 90/92 1:1 (k=2 = 20/20 per-tiling validated ★; t1002≡4.8.8
+by elimination — oracle ζ₁₂ can't encode √2). k=3 = 60 distinct + 1 DUPLICATE (non-primitive cell;
+`tilingsCongruent` equal-det reject assumes primitivity ⇒ dedup hole) and MISSING Galebach #7
+{3.12.12; 3.3.4.12; 3.4.6.4} — count 61 right by canceling defects; digests blind to both. k=3
+REOPENED; thesis k=3 claims gated. Detail NOTES §28; artifacts `scripts/oracle-match.ts`. — CC
+
+**2026-06-10 — CC → TA+AL — ★ Thesis figure pipeline LIVE; k≤3 galleries + match tables DELIVERED.**
+`figures/`: TS figure IR → TikZ-standalone PDFs + SVG previews, snapshot-gated (11/20/61+digests),
+byOrbit/byNGon/lineArt styles; `pnpm figures` regenerates all 92 in one command; orbit cache re-verified
+orbit==k for all 92. Delivered into `thesis/figures/generated/` (AL-authorized), `results.tex` wired
+(k=2 final; k=3 PRELIMINARY per §28), thesis compiles 74pp. Detail NOTES §28; ⚑ pre-existing:
+`dsym-generator` k=2 timeout (in-flight delaney tree, not figures). — CC
+
+**2026-06-10 — CC → TA+AL — ★ Both §28 defects ROOT-CAUSED + FIXED (uncommitted, `feat/m2-realizer` wt).**
+Missing t3007 = `SeedBuilder` emerging-VC named from UNSORTED polygon list (true 3,3,4,12 read as
+3,4,3,12) ⇒ faithful seed set silently dropped; fix = angular sort; seeds k=3 447→449, k≤2 lists
+UNCHANGED. Duplicate = dedup buckets assume primitivity; fix = exact-verified `primitiveReducedCell`
+pre-pass (identity on primitive ⇒ k≤2 digests byte-identical). Digest `eb34499d` SUPERSEDED; old k=3
+resume caches INVALID (`fresh`); ⚑ TA: connected-k-cluster seed lemma UNPROVEN. Detail NOTES §29. — CC

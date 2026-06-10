@@ -28,6 +28,21 @@ import { Cyclotomic } from '../Cyclotomic';
 
 const FLOAT_TOL = 1e-6;
 
+export type TilingSymmetry = { reflect: boolean; r: number; T: Cyclotomic };
+
+/** Rich result of the orbit computation (see `vertexOrbits`). */
+export type VertexOrbitsResult = {
+	orbits: number;
+	syms: TilingSymmetry[];
+	reps: Cyclotomic[];
+	/** Orbit id per rep, 0..orbits-1 (stable: numbered by first appearance over the rep order). */
+	repOrbit: number[];
+	/** The replicated periodic block the symmetries were verified on — for incidence queries. */
+	block: Polygon[];
+	/** Exact lattice-class lookup: orbit id of any tiling vertex, null for non-vertices. */
+	orbitOf: (v: Cyclotomic) => number | null;
+};
+
 export class KUniformityChecker {
 	/**
 	 * True number of vertex-transitivity classes of the periodic tiling DEFINED by a fundamental
@@ -45,6 +60,24 @@ export class KUniformityChecker {
 		v: Cyclotomic,
 		diag?: { syms: number; reps: number; blockSize: number; orbits: number | null }
 	): number | null {
+		const res = this.vertexOrbits(cellPolygons, u, v, diag);
+		return res ? res.orbits : null;
+	}
+
+	/**
+	 * Rich variant of `countVertexOrbits` (purely additive; the count gate delegates here and is
+	 * behavior-identical). Exposes what the gate already computed and discarded: the verified
+	 * symmetry list, the surrounded-vertex lattice representatives with their orbit ids, the
+	 * replicated block (for incidence queries, e.g. vertex-figure naming), and an exact
+	 * lattice-class lookup `orbitOf`. Consumed by the thesis figure pipeline
+	 * (figures/tiling/orbits.ts) for orbit-colored rendering.
+	 */
+	vertexOrbits(
+		cellPolygons: Polygon[],
+		u: Cyclotomic,
+		v: Cyclotomic,
+		diag?: { syms: number; reps: number; blockSize: number; orbits: number | null }
+	): VertexOrbitsResult | null {
 		if (cellPolygons.length === 0) return null;
 		if (!cellPolygons.every((p) => p.hasExact())) return null;
 		const ring = cellPolygons[0].exactVertices![0].ring;
@@ -206,11 +239,24 @@ export class KUniformityChecker {
 			}
 		}
 
-		const roots = new Set<number>();
-		for (let i = 0; i < reps.length; i++) roots.add(find(i));
-		const orbits = roots.size;
+		// Stable orbit ids: number the union-find roots by first appearance over the rep order
+		// (deterministic — reps were collected in a deterministic sweep).
+		const rootIndex = new Map<number, number>();
+		const repOrbit: number[] = [];
+		for (let i = 0; i < reps.length; i++) {
+			const root = find(i);
+			if (!rootIndex.has(root)) rootIndex.set(root, rootIndex.size);
+			repOrbit.push(rootIndex.get(root)!);
+		}
+		const orbits = rootIndex.size;
 		if (diag) { diag.syms = syms.length; diag.reps = reps.length; diag.blockSize = patch.length; diag.orbits = orbits; }
-		return orbits;
+		const orbitOf = (q: Cyclotomic): number | null => {
+			for (let j = 0; j < reps.length; j++) {
+				if (this.latticeEquiv(q, reps[j], u, v, ZERO)) return repOrbit[j];
+			}
+			return null;
+		};
+		return { orbits, syms, reps, repOrbit, block: patch, orbitOf };
 	}
 
 	/** Exact test: a − b = m·u + n·v for integers m,n (m,n guessed from a float solve, verified exactly). */

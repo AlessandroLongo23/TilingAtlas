@@ -1,0 +1,348 @@
+=== k=3 oracle regression (CB-1 formal acceptance) ===
+commit: 06ec432 (feat/c7-star-spike, CB-1+CB-3 applied)
+target digest: eb34499d5fba3457 / 61 tilings (certified k=3, master fdacd57)
+config: scout-parallel 3 3,4,6,12 maxMs=0 (no cap, certified mode), fresh
+started: Wed Jun 10 10:26:29 CEST 2026
+expected: ~2.5 h
+
+[coord] total=447 seeds, resumed=0, workers=8, cap=0ms (no cap / certified)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [4] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 232702ms  (1/447)
+  [6] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 242598ms  (2/447)
+  [5] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 250746ms  (3/447)
+  [1] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 252161ms  (4/447)
+  [2] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 276818ms  (5/447)
+  [3] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 298317ms  (6/447)
+  [7] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 304232ms  (7/447)
+  [10] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 232358ms  (8/447)
+  [9] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 247665ms  (9/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1074 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [14] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 186233ms  (10/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1074 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [8] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 271927ms  (11/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1074 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [11] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 276195ms  (12/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1074 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [13] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 243452ms  (13/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1074 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [18] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 460642ms  (14/447)
+  [17] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 541900ms  (15/447)
+  [20] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 562119ms  (16/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18528 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [23] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 68219ms  (17/447)
+  [16] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=3 684992ms  (18/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18528 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [19] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=3 681082ms  (19/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18528 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [24] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 49959ms  (20/447)
+  [25] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 54152ms  (21/447)
+  [26] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 49944ms  (22/447)
+  [27] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 56916ms  (23/447)
+  [28] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 80300ms  (24/447)
+  [29] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 74033ms  (25/447)
+  [30] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 57982ms  (26/447)
+  [31] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 37012ms  (27/447)
+  [33] [3,3,3,3,3,3;3,3,3,3,6;3,3,4,3,4] cells=0 13344ms  (28/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 6240 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [34] [3,3,3,3,3,3;3,3,3,3,6;3,3,4,3,4] cells=0 13650ms  (31/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [32] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 55053ms  (32/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [21] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 556981ms  (33/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [0] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=4 1610636ms  (34/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [22] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,3,3] cells=3 688457ms  (35/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [12] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=4 1562381ms  (36/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [15] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=4 1399833ms  (37/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [39] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=4 575193ms  (38/447)
+  [38] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=5 610959ms  (39/447)
+  [40] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=4 586263ms  (40/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+  [42] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=5 520899ms  (41/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+  [43] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=5 501909ms  (42/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+  [47] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 496356ms  (43/447)
+  [48] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 484710ms  (44/447)
+  [49] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 515530ms  (45/447)
+  [50] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 453799ms  (46/447)
+  [51] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 456674ms  (47/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 16464 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":83140776,"denMax":60}
+  [44] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 1464045ms  (48/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 16464 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":83140776,"denMax":60}
+  [52] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 537605ms  (49/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 16464 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":83140776,"denMax":60}
+  [45] [3,3,3,3,3,3;3,3,3,3,6;3,6,3,6] cells=3 1615455ms  (50/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 16464 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":83140776,"denMax":60}
+  [41] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=4 2098742ms  (51/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [37] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=4 2357722ms  (52/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+  [53] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 722601ms  (53/447)
+  [54] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=4 765536ms  (54/447)
+  [55] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=2 865497ms  (55/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+  [56] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=4 879249ms  (56/447)
+  [57] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=3 866861ms  (57/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+  [46] [3,3,3,3,3,3;3,3,3,3,6;3,6,3,6] cells=5 2562683ms  (58/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20904 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [65] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,12] cells=1 21164ms  (59/447)
+  [66] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4] cells=1 23088ms  (60/447)
+  [67] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,12] cells=0 5959ms  (61/447)
+  [68] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4] cells=0 6991ms  (62/447)
+  [69] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4] cells=0 5433ms  (63/447)
+  [70] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4] cells=1 16737ms  (64/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 22860 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":45576536,"denMax":60}
+  [60] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=4 985725ms  (65/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18960 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [59] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=4 1077555ms  (66/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18960 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [72] [3,3,3,3,3,3;3,3,3,4,4;3,4,4,6] cells=0 53609ms  (67/447)
+  [61] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=4 894611ms  (68/447)
+  [58] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=3 1138815ms  (69/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 33972 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [73] [3,3,3,3,3,3;3,3,3,4,4;3,6,4,4] cells=0 59271ms  (70/447)
+  [74] [3,3,3,3,3,3;3,3,3,4,4;3,4,6,4] cells=1 33659ms  (71/447)
+  [71] [3,3,3,3,3,3;3,3,3,4,4;3,3,6,6] cells=0 240299ms  (72/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":181648754,"denMax":60}
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+  [63] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=4 727517ms  (73/447)
+  [62] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=4 818013ms  (74/447)
+  [64] [3,3,3,3,3,3;3,3,4,3,4;3,3,3,4,4] cells=5 721147ms  (75/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20904 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [82] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4] cells=1 8492ms  (76/447)
+  [83] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4] cells=0 4813ms  (77/447)
+  [84] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4] cells=0 4785ms  (78/447)
+  [85] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4] cells=1 8026ms  (79/447)
+  [86] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,12] cells=0 4037ms  (80/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 22860 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":45576536,"denMax":60}
+  [76] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 388487ms  (81/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20904 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [88] [3,3,3,3,3,3;3,3,4,3,4;3,4,3,12] cells=0 4112ms  (82/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18960 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [77] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 402803ms  (83/447)
+  [79] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 406432ms  (84/447)
+  [78] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 408022ms  (85/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 7968 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 7968 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [91] [3,3,3,3,3,3;3,3,4,12;3,3,12,4] cells=0 6751ms  (86/447)
+  [89] [3,3,3,3,3,3;3,3,4,3,4;3,4,4,6] cells=1 32783ms  (87/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 7968 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [92] [3,3,3,3,3,3;3,3,4,12;3,3,4,12] cells=0 17233ms  (88/447)
+  [93] [3,3,3,3,3,3;3,3,4,12;3,3,12,4] cells=0 16540ms  (89/447)
+  [94] [3,3,3,3,3,3;3,3,4,12;3,3,12,4] cells=0 13586ms  (90/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 6276 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 8448 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [95] [3,3,3,3,3,3;3,3,4,12;3,3,12,4] cells=0 8269ms  (91/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1506 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [96] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,4,12] cells=0 3540ms  (92/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1506 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [90] [3,3,3,3,3,3;3,3,4,3,4;3,4,6,4] cells=2 37801ms  (93/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1506 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [97] [3,3,3,3,3,3;3,3,4,12;4,6,12]  cells=1 8055ms  (94/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1506 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [87] [3,3,3,3,3,3;3,3,4,3,4;3,3,6,6] cells=0 113076ms  (95/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [98] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 47512ms  (96/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1662 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [101] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 45779ms  (97/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 3948 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [104] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 6131ms  (98/447)
+  [100] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 60078ms  (99/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 3948 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [99] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 62076ms  (100/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 3948 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [105] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 6331ms  (101/447)
+  [107] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 4695ms  (102/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4068 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [106] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 7306ms  (103/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4068 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [108] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 6775ms  (104/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4068 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [109] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 4478ms  (105/447)
+  [110] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 3658ms  (106/447)
+  [111] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 3799ms  (107/447)
+  [81] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,4,3,4] cells=0 333102ms  (108/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 3948 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [112] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 4441ms  (110/447)
+  [116] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=0 4661ms  (111/447)
+  [117] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=0 4850ms  (112/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4128 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20688 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [118] [3,3,3,3,6;3,3,4,3,4;3,3,3,4,4] cells=0 8364ms  (116/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":37003884,"denMax":60}
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20688 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [102] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,6,6] cells=0 68528ms  (117/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20688 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [115] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=1 17922ms  (118/447)
+  [114] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=1 19165ms  (119/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":37003884,"denMax":60}
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":37003884,"denMax":60}
+  [80] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=0 391980ms  (120/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [103] [3,3,3,3,3,3;3,3,6,6;6,6,6]    cells=1 59256ms  (121/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [126] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 28698ms  (122/447)
+  [127] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 31359ms  (123/447)
+  [128] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 31033ms  (124/447)
+  [125] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 45685ms  (125/447)
+  [122] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]  cells=0 82239ms  (126/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [129] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=0 45905ms  (127/447)
+  [123] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]  cells=0 81160ms  (128/447)
+  [130] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 35055ms  (129/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [124] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]  cells=0 82436ms  (130/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [131] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 35962ms  (131/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20688 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":37003884,"denMax":60}
+  [132] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 40268ms  (132/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20688 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":37003884,"denMax":60}
+  [75] [3,3,3,3,3,3;3,3,3,4,4;4,4,4,4] cells=7 645142ms  (133/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [133] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 40531ms  (134/447)
+  [136] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 35301ms  (135/447)
+  [134] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 37881ms  (136/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 25068 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 25068 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [137] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 37797ms  (137/447)
+  [143] [3,3,3,3,6;3,3,4,3,4;3,3,4,3,4] cells=0 3930ms  (138/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4128 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 3948 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [144] [3,3,3,3,6;3,3,4,3,4;3,3,4,3,4] cells=0 4113ms  (140/447)
+  [135] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 46978ms  (141/447)
+  [142] [3,3,3,3,6;3,3,3,4,4;4,4,4,4]  cells=0 23169ms  (142/447)
+  [141] [3,3,3,3,6;3,3,3,4,4;4,4,4,4]  cells=0 23626ms  (143/447)
+  [140] [3,3,3,3,6;3,3,3,4,4;3,4,6,4]  cells=0 36849ms  (144/447)
+  [146] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]  cells=0 32366ms  (145/447)
+  [147] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]  cells=0 35745ms  (147/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1632 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 3900 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [148] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]  cells=0 36269ms  (150/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4080 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [149] [3,3,3,3,6;3,3,4,3,4;3,4,4,6]  cells=0 38560ms  (153/447)
+  [150] [3,3,3,3,6;3,3,4,3,4;3,6,4,4]  cells=0 38128ms  (154/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [159] [3,3,3,3,6;3,3,6,6;3,3,6,6]    cells=0 14067ms  (155/447)
+  [158] [3,3,3,3,6;3,3,6,6;3,3,6,6]    cells=0 18468ms  (156/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [151] [3,3,3,3,6;3,3,4,3,4;3,4,4,6]  cells=0 37465ms  (157/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [160] [3,3,3,3,6;3,3,6,6;3,3,6,6]    cells=0 10240ms  (158/447)
+  [138] [3,3,3,3,6;3,6,3,6;3,3,3,4,4]  cells=0 104556ms  (159/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [153] [3,3,3,3,6;3,3,4,3,4;3,4,6,4]  cells=0 36269ms  (160/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [139] [3,3,3,3,6;3,6,3,6;3,3,3,4,4]  cells=0 104285ms  (161/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [166] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 11190ms  (162/447)
+  [167] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 9883ms  (163/447)
+  [161] [3,3,3,3,6;3,3,6,6;3,3,6,6]    cells=0 24291ms  (164/447)
+  [163] [3,3,3,3,6;3,3,3,3,6;3,3,6,6]  cells=0 18726ms  (165/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [162] [3,3,3,3,6;3,3,6,6;3,3,6,6]    cells=0 23551ms  (166/447)
+  [164] [3,3,3,3,6;3,3,3,3,6;3,3,6,6]  cells=0 19157ms  (167/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [168] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 16684ms  (168/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [165] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 24893ms  (169/447)
+  [169] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 17624ms  (170/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [170] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 20283ms  (171/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [171] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 22355ms  (172/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1674 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [179] [3,3,3,3,6;3,3,6,6;6,6,6]      cells=1 50829ms  (173/447)
+  [180] [3,3,3,3,6;3,3,6,6;6,6,6]      cells=1 54207ms  (174/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 21924 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":18046336,"denMax":60}
+  [176] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 161218ms  (175/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 21924 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":18046336,"denMax":60}
+  [175] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=1 178690ms  (176/447)
+  [181] [3,3,3,3,6;3,6,3,6;3,6,4,4]    cells=0 66429ms  (177/447)
+  [183] [3,3,3,3,6;3,6,3,6;3,6,3,6]    cells=0 15381ms  (178/447)
+  [172] [3,3,3,3,6;3,3,6,6;3,6,3,6]    cells=0 202728ms  (179/447)
+  [184] [3,3,3,3,6;3,6,3,6;3,6,3,6]    cells=0 20925ms  (180/447)
+  [173] [3,3,3,3,6;3,3,6,6;3,6,3,6]    cells=0 215090ms  (181/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [185] [3,3,3,3,6;3,6,3,6;3,6,3,6]    cells=0 20912ms  (182/447)
+  [182] [3,3,3,3,6;3,6,3,6;3,4,4,6]    cells=0 67217ms  (183/447)
+  [186] [3,3,3,3,6;3,3,3,3,6;3,6,3,6]  cells=2 38804ms  (184/447)
+  [188] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 38235ms  (185/447)
+  [189] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 37766ms  (186/447)
+  [187] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 48207ms  (187/447)
+  [177] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 250196ms  (188/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+  [190] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 31370ms  (189/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+  [191] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 34416ms  (190/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+  [178] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 261376ms  (191/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+  [192] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 34507ms  (192/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+  [193] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 32308ms  (193/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+  [194] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 31848ms  (194/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+  [174] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 386377ms  (195/447)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+  [196] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 137325ms  (196/447)
+  [195] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 146736ms  (197/447)
+  [197] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 138533ms  (198/447)
+  [198] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 137874ms  (199/447)
+  [199] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 136699ms  (200/447)
+  [200] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 135042ms  (201/447)
+  [201] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 134273ms  (202/447)
+  [202] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 141610ms  (203/447)
+  [203] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 138556ms  (204/447)
+  [205] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 141142ms  (205/447)
+  [206] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 141583ms  (206/447)
+  [204] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 149015ms  (207/447)
+  [207] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 140106ms  (208/447)
+  [209] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 139806ms  (209/447)
+  [208] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 144098ms  (210/447)

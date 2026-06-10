@@ -2131,3 +2131,110 @@ certification input. **NOT changed:** k=3 = 61 stays oracle-anchored (D-D genera
 still in flight at write time (its own entry when it lands). Branch: `feat/m2-realizer`
 (= c7-star-spike ∪ master; M2 = `500893b`). ⚑ NOTES numbering: two §23 exist post-merge (see the
 merge note above §23) — D-D §23 carries the `§23.x` cross-refs.
+
+## 28. Figure pipeline built → its oracle matcher finds the certified k=3 catalogue per-tiling WRONG (2026-06-10, session 16d)
+
+### 28.1 What was built (thesis figure infrastructure, approved plan)
+
+`figures/`: one TypeScript figure IR → two emitters (TikZ standalone→PDF thesis-final; SVG preview),
+shared style module (Okabe–Ito, `byOrbit`/`byNGon`/`lineArt` strategies), snapshot-driven
+(`figures/data/catalogue-k1-3.json`, hard-gated 11/20/61 + digests), orbit recompute via a purely
+additive `KUniformityChecker.vertexOrbits()` (the gate delegates to it; behavior-identical, 15/15
+old tests green). Orbit cache regeneration re-verified orbit-count==k for all 92 certified tilings;
+k=1 vertex-figure names reproduce the 11 Archimedean names exactly. 18 pilot figures compiled and
+visually verified. Tests: `tests/figure-{orbits,emitters}.test.ts`.
+
+### 28.2 The finding — count 61 was right by two canceling defects
+
+`scripts/oracle-match.ts` ran the FIRST exact per-tiling congruence match of the certified catalogue
+against the pinned Galebach JSON (decode per `oracle-characterize.ts`; tilings RECONSTRUCTED from
+Seed vertex sets: unit edges by exact `normSquared()==1`, faces by directed-edge tracing, exact
+ζ-walk regularity check, exact area partition, one face per lattice class by exact anchor-difference
+dedup — float-floor dedup is a trap, it double-counts boundary-centroid faces). Result: **90/92
+matched 1:1** (k=2 = 20/20 — per-tiling oracle validation, stronger than the count match; k=1 =
+10/11 + t1002≡4.8.8 by elimination — the oracle's ζ₁₂ integer format cannot encode the √2 basis,
+the 4.8.8 obstruction seen from the other side). The two residuals decompose the k=3 defect:
+
+- **Duplicate**: certified `3:1|-1,0,0,0,-1,0,0,0;1|-1,0…` (det 8.928, 18 tiles) is a NON-PRIMITIVE
+  index-2 cell of the same tiling as certified `3:1|-1,0,-1,0,-1,0,0,0;1|-1,…` (det 4.464, 9 tiles):
+  `TranslationalCellExtractor` reduces it 2×, and the reduction is `cellsCongruent` to the other.
+  Root cause: `tilingsCongruent`'s equal-det cheap reject silently ASSUMES primitive cells, so
+  `dedupeByCongruence` can never merge a non-primitive encoding with its primitive twin.
+- **Missing**: Galebach #7 (t3007), VC types {3.12.12; 3.3.4.12; 3.4.6.4}, is congruent to NONE of
+  the 92. The reconstruction is a genuine 3-uniform tiling (exact regular faces, exact area
+  partition, every interior vertex sums to exactly 24 units, primitive cell, orbit count 3) and
+  visually matches Galebach's own probabilitysports.com/t3/7.png.
+
+So the certified k=3 set is 60 distinct + 1 duplicate; the byte-identical digest reproduced both
+deterministic defects. ⚑ **Digest stability cannot detect under-merge or a systematic miss.**
+
+### 28.3 Consequences
+
+- k=3 certification REOPENED. Fix 1 (cheap): primitive-reduce every cell before congruence dedup.
+  Fix 2 (the real question): WHY did the scout never emit t3007's tiling — seed coverage, lattice
+  pool, or a gate? Unexplained at write time; investigation is its own session.
+- The oracle matcher graduates to a permanent verification gate (it found what three certifications
+  missed). Thesis-quotable: per-tiling exact congruence vs an external catalogue ≫ count matching.
+- Figure galleries for k=3 are gated until the catalogue is fixed (k=1/k=2 unaffected).
+
+## 29. Both §28 defects root-caused and fixed: the emerging-VC naming bug + the primitivity assumption (2026-06-10, session 16e)
+
+### 29.1 Missing t3007 — root cause: `SeedBuilder` mis-names surrounded emerging vertices
+
+Probe chain (scripts/diag-t3007*.ts, run against the pinned oracle + live generators):
+t3007's lattice is hexagonal, |u|=|v|=6.46 at 60°, well inside poolLmax=8.12 — **not** a pool/gate
+truncation. Its vertex types are {3.3.4.12; 3.4.6.4; 3.12.12} (adjacent-triangle form), the
+compatibility graph carries all three edges (the triple is even a clique), `findSeedSets(3)` emits
+it — but `buildSeedsFromSet` returned **0 seeds** for every variant containing 3,3,4,12/3,3,12,4,
+so the seed set vanished silently and the solver never saw t3007's types. (The only surviving
+multiset variant, [3,12,12;3,4,3,12;3,4,6,4], pins the *separated*-triangle VC — a different vertex
+type.) Inside the BFS: the faithful 3-cluster IS generated (601 of t3007's 3.3.4.12 vertices have
+all three types as neighbors — the connected-cluster assumption holds here), but
+`passesFinalVertexCheck` rejected it: the cluster's surrounded vertex (true cyclic figure
+**3,3,4,12** — provably contains adjacent 3s, the two triangles share the edge to the B-center) was
+named **3,4,3,12**. Cause: `getEmergingVCNameAtVertex` built `new VertexConfiguration(polygons)`
+from the **seed.polygons FILTER order**, while `VertexConfiguration.getName()` canonicalizes only
+over rotations of the list order, assuming cyclic angular order. Fix: sort the incident polygons by
+centroid heading around the vertex first (the pattern `TilingChecker` already used). Measured
+seed-list impact ({3,4,6,12}): k=1 14→14, k=2 40→40 (**k≤2 untouched**), k=3 **447→449** — restores
+[3,12,12;3,3,12,4;3,4,6,4] (t3007) and [3,12,12;3,3,12,4;3,3,4,3,4] (no oracle tiling has those
+types; it must still run for completeness). Regression: tests/seed-builder-emerging-vc.test.ts.
+
+### 29.2 Duplicate — root cause: congruence dedup's bucket keys assume primitive cells
+
+Reproduced end-to-end (scripts/diag-k3-duplicate.ts): the certified 18-tile det-8.928 cell and the
+9-tile det-4.464 cell sit in different (name-multiset, |det Λ|) buckets, so `dedupeByCongruence`
+keeps both; replicating the 18-tile cell and re-extracting yields a 9-tile cell exactly congruent
+to the certified twin. A solver candidate lattice can be a proper **sublattice** of the tiling's
+full translation lattice — the fill passes every gate but encodes the tiling as an index-2
+supercell. Fix: new `primitiveReducedCell` (TilingCongruence.ts) — replicate 5×5, re-extract via
+`TranslationalCellExtractor`, and accept ONLY under exact verification (Λ ⊆ Λ′ and every original
+polygon an exact Λ′-translate of a reduced polygon — proves same infinite tiling); applied as a
+pre-pass in `dedupeByCongruence`. Already-primitive cells return the SAME object — k≤2 catalogues
+are byte-identical (their counts matched the oracle, so they carry no supercells). Regression:
+tests/congruence-primitive.test.ts.
+
+### 29.3 Consequences + flags
+
+- **k=3 digest `eb34499d5fba3457` is SUPERSEDED** — with fixed code the same raw cells reduce
+  61→60 distinct, and the 449-seed run should restore t3007 → expect 61 again with the *correct*
+  membership. Full re-scout queued behind the in-flight CB-1 regression (8 workers since 10:26;
+  that run uses pre-fix code and stays a valid CB-1 determinism check against the old digest).
+- ⚑ **Old k=3 resume caches are INVALID**: `.scout-cache/k3_*.ndjson` keys results by seed INDEX
+  only, and indices shifted (447→449). Always pass `fresh` after this fix; delete stale caches.
+- ★ End-to-end acceptance PASSED (experiments/results/t3007-fix-verify-2026-06-10.log): the
+  restored seed idx=378 solves (no cap) to exactly 1 cell, 21 tiles, **exactly `cellsCongruent` to
+  the oracle's t3007** — in ~6 s. The control seed idx=401 (separated-triangle 3.4.3.12 variant)
+  yields a non-congruent tiling, confirming the two VC variants pin different tilings. t3007 was
+  never expensive — it was unreachable.
+- ⚑ **Thesis flag (TA): the SeedBuilder paradigm's completeness rests on an UNPROVEN lemma** —
+  "every k-uniform tiling contains a connected set of k vertices covering its k orbit types, one
+  each." t3007 satisfies it (the bug was naming, not the paradigm), but a tiling whose types only
+  connect through *repeated* intermediate vertices would have no buildable seed. Needs a proof or a
+  fallback (e.g. allow >k-vertex clusters with repeated types). Related smaller risk, unverified:
+  `computeCanonicalForm` layer-dedup keys on the (reflection-invariant) pairwise-distance profile —
+  an incomplete congruence invariant; a collision between non-congruent partial clusters would
+  silently drop one expansion branch.
+- Probe scripts kept for reference: scripts/diag-t3007{,-compat,-seedbuild,-bfs,-finalcheck,-expand,
+  -neighbors}.ts, scripts/diag-k3-duplicate.ts, scripts/diag-seedcount-impact.ts,
+  scripts/verify-t3007-found.ts.

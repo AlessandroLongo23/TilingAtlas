@@ -1,0 +1,14 @@
+[2026-06-10T10:37:37.312Z] === t3007 fix verification (NOTES §29) ===
+[2026-06-10T10:37:37.313Z] rebuilding worker-identical seed list ({3,4,6,12}, k=3)…
+[2026-06-10T10:39:57.206Z] seed list: 449 seeds (was 447 pre-fix)
+[2026-06-10T10:39:57.207Z] t3007-multiset seeds: idx=378 [3,12,12;3,3,12,4;3,4,6,4]; idx=401 [3,12,12;3,4,3,12;3,4,6,4]
+[2026-06-10T10:39:57.217Z] oracle t3007 reconstructed: 21 tiles
+[2026-06-10T10:39:57.217Z] solving seed idx=378 [3,12,12;3,3,12,4;3,4,6,4] (no cap — this is the slow part, expect tens of minutes)…
+[2026-06-10T10:40:03.427Z] seed idx=378: 1 cells in 0.1 min (timedOut=false)
+[2026-06-10T10:40:07.165Z]   1 distinct tilings from this seed
+[2026-06-10T10:40:07.198Z]   rep 0: 21 tiles — congruent to t3007: true
+[2026-06-10T10:40:07.198Z] solving seed idx=401 [3,12,12;3,4,3,12;3,4,6,4] (no cap — this is the slow part, expect tens of minutes)…
+[2026-06-10T10:40:13.384Z] seed idx=401: 1 cells in 0.1 min (timedOut=false)
+[2026-06-10T10:40:17.082Z]   1 distinct tilings from this seed
+[2026-06-10T10:40:17.335Z]   rep 0: 21 tiles — congruent to t3007: false
+[2026-06-10T10:40:17.335Z] ★ SUCCESS: t3007 found by the fixed seed path

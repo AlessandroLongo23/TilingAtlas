@@ -30,6 +30,7 @@ import type { Polygon } from '../polygons/Polygon';
 import { Cyclotomic } from '../Cyclotomic';
 import { detSurd } from './exact/Surd';
 import { sameLattice } from './LatticeEnumerator';
+import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { PeriodCell } from './PeriodSolver';
 
 /**
@@ -180,6 +181,106 @@ export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, 
 	);
 }
 
+/** True iff w is an exact integer combination of (u, v): float Cramer guess, exact verify. */
+function isIntegerCombo(w: Cyclotomic, u: Cyclotomic, v: Cyclotomic): boolean {
+	const d = w.toVector();
+	const a = u.toVector();
+	const b = v.toVector();
+	const det = a.x * b.y - a.y * b.x;
+	if (Math.abs(det) < 1e-9) return false;
+	const m = Math.round((d.x * b.y - d.y * b.x) / det);
+	const n = Math.round((a.x * d.y - a.y * d.x) / det);
+	const recon = u.scaleRational(BigInt(m), 1n).add(v.scaleRational(BigInt(n), 1n));
+	return w.sub(recon).isZero();
+}
+
+/** Exact (m,n) with w = m·u + n·v, or null. */
+function integerCombo(w: Cyclotomic, u: Cyclotomic, v: Cyclotomic): [number, number] | null {
+	const d = w.toVector();
+	const a = u.toVector();
+	const b = v.toVector();
+	const det = a.x * b.y - a.y * b.x;
+	if (Math.abs(det) < 1e-9) return null;
+	const m = Math.round((d.x * b.y - d.y * b.x) / det);
+	const n = Math.round((a.x * d.y - a.y * d.x) / det);
+	const recon = u.scaleRational(BigInt(m), 1n).add(v.scaleRational(BigInt(n), 1n));
+	return w.sub(recon).isZero() ? [m, n] : null;
+}
+
+/**
+ * Primitive-reduce a periodic-tiling encoding (§29). A solver candidate lattice can be a proper
+ * SUBLATTICE of the tiling's full translation lattice; the fill then passes every gate but encodes
+ * the tiling with an index-m supercell (m× the tiles), and the (name-multiset, |det Λ|) buckets in
+ * `dedupeByCongruence` — sound only for primitive cells — can never merge it with its primitive
+ * twin (the certified k=3 duplicate, §28.2). Reduction: replicate the cell over a 5×5 lattice
+ * window, re-extract the translational cell (TranslationalCellExtractor prefers the shortest,
+ * Gauss-reduced basis), and accept the result ONLY under exact verification:
+ *   (i)  the original basis is an integer combination of the reduced basis (Λ ⊆ Λ′, exact), and
+ *   (ii) every original cell polygon is an exact Λ′-translate of a reduced cell polygon
+ * — which proves (cell, Λ) and (cell′, Λ′) define the SAME infinite tiling, so the swap is sound.
+ * Already-primitive cells (and any unverifiable reduction) return the ORIGINAL object unchanged —
+ * never drop or alter on uncertainty, and k≤2 digests stay byte-identical.
+ */
+export function primitiveReducedCell(cell: PeriodCell): PeriodCell {
+	let current = cell;
+	// fixed-point: an index-4 encoding may reduce 2× (guard bound is generous, not load-bearing)
+	for (let guard = 0; guard < 4; guard++) {
+		const next = reduceOnce(current);
+		if (next === current) break;
+		current = next;
+	}
+	return current;
+}
+
+function reduceOnce(cell: PeriodCell): PeriodCell {
+	if (cell.cellPolygons.length <= 1) return cell;
+	if (!cell.cellPolygons.every((p) => p.hasExact())) return cell;
+	const [u, v] = cell.basisExact;
+
+	// replicate over a (2R+1)² lattice window — large enough that a false sub-period would
+	// produce a visible overlap for the extractor's full-patch verification
+	const R = 2;
+	const patch: Polygon[] = [];
+	const seen = new Set<string>();
+	for (let i = -R; i <= R; i++) {
+		for (let j = -R; j <= R; j++) {
+			const t = u.scaleRational(BigInt(i), 1n).add(v.scaleRational(BigInt(j), 1n));
+			for (const p of cell.cellPolygons) {
+				const q = p.clone();
+				q.translateExact(t);
+				const k = q.exactKey();
+				if (seen.has(k)) continue;
+				seen.add(k);
+				patch.push(q);
+			}
+		}
+	}
+
+	const ext = new TranslationalCellExtractor().extract(patch);
+	if (!ext || !ext.basisExact) return cell;
+	if (ext.cellPolygons.length >= cell.cellPolygons.length) return cell; // already primitive
+	const [u2, v2] = ext.basisExact;
+
+	// (i) Λ ⊆ Λ′ — exact
+	if (!isIntegerCombo(u, u2, v2) || !isIntegerCombo(v, u2, v2)) return cell;
+
+	// (ii) every original polygon is an exact Λ′-translate of a reduced polygon
+	for (const p of cell.cellPolygons) {
+		const ok = ext.cellPolygons.some((q) => {
+			if (q.getName() !== p.getName()) return false;
+			const mn = integerCombo(p.exactCentroid!.sub(q.exactCentroid!), u2, v2);
+			if (!mn) return false;
+			const T = u2.scaleRational(BigInt(mn[0]), 1n).add(v2.scaleRational(BigInt(mn[1]), 1n));
+			const qt = q.clone();
+			qt.translateExact(T);
+			return qt.exactKey() === p.exactKey();
+		});
+		if (!ok) return cell;
+	}
+
+	return { cellPolygons: ext.cellPolygons, basisExact: ext.basisExact };
+}
+
 /**
  * Dedup a list of certified tilings up to congruence — the authoritative replacement for
  * `canonicalKey`-Set dedup (which under-merges the chiral snub, §12.7). Congruence is an equivalence
@@ -195,12 +296,16 @@ export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, 
  * different buckets are never compared; this keeps the cost near-linear when classes are small.
  */
 export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) => string): PeriodCell[] {
+	// §29: the bucket keys below (cell size via nameMultiset, |det Λ|) are necessary invariants only
+	// for PRIMITIVE cells — reduce every input first (identity for already-primitive cells, so this
+	// is byte-neutral on catalogues that carry no supercell encodings).
+	const reducedCells = cells.map(primitiveReducedCell);
 	// bucket by necessary invariants so we only run the O(class²) test within a bucket
 	const buckets = new Map<string, PeriodCell[][]>(); // bucketKey → list of classes (each a list of members)
 	// memoize reducedClassKey per (polygon exact-key, lattice) across all pairwise tests — each class
 	// rep is the comparison target for many candidates, so its key set is computed once, not per pair.
 	const rckMemo = new Map<string, string>();
-	for (const c of cells) {
+	for (const c of reducedCells) {
 		const bk = `${nameMultiset(c.cellPolygons)}@${detAbsKey(c.basisExact[0], c.basisExact[1])}`;
 		let classes = buckets.get(bk);
 		if (!classes) { classes = []; buckets.set(bk, classes); }

@@ -376,7 +376,17 @@ export class SeedBuilder {
 
     private getEmergingVCNameAtVertex = (vertex: Vector, polygons: Polygon[]): string | null => {
         if (polygons.length === 0) return null;
-        const vc = new VertexConfiguration(polygons);
+        // VertexConfiguration.getName canonicalizes over ROTATIONS of the polygon LIST order — it
+        // assumes the list is in cyclic angular order around the shared vertex. The incident set
+        // arrives here in seed.polygons FILTER order, so without sorting, a faithful surrounded
+        // vertex can be mis-named (e.g. true cyclic order 3,3,4,12 named as 3,4,3,12) and the
+        // whole seed set silently rejected by passesFinalVertexCheck — this dropped the only seed
+        // able to produce Galebach t3007 (NOTES §29). Sort by centroid heading around the vertex
+        // first (same pattern as TilingChecker).
+        const ordered = polygons
+            .slice()
+            .sort((a, b) => Vector.sub(a.centroid, vertex).heading() - Vector.sub(b.centroid, vertex).heading());
+        const vc = new VertexConfiguration(ordered);
         return vc.getName();
     };
 
