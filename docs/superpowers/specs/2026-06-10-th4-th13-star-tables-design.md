@@ -45,11 +45,28 @@ trap the original TH-4 finding documents, and it bites a second time at the Fig-
 
 ## TH-4 — `scripts/star-dmax-th4.ts`
 
+### Module layout (one engine, three consumers — no copied constants)
+
+The computation core is exported library code; the scripts are thin CLI wrappers (arg parsing +
+log writing), and the pinned-constants test imports the SAME engine. A test that hard-codes
+`expect(9)` against a hard-coded table tests nothing; here the test recomputes via the engine
+and compares to the hand-derived constants, so alphabet drift breaks it.
+
+- `lib/classes/algorithm/StarDmaxRoute2.ts` — the independent engine. **Zero imports from
+  `StarVC.ts`** (mechanically greppable). Pure; no `node:fs` (safe for the `@/classes` direct
+  import convention; NOT added to the barrel).
+- `lib/classes/algorithm/StarTables.ts` — Route 1 wrapper (imports `enumerateStarVCs` /
+  `inRingStarVariants` / `dentRegularFillableVariants`), the per-cell agreement + invariant
+  checks, table assembly, and the TH-13 γ-table. Imports Route 2's module.
+- `scripts/star-dmax-th4.ts`, `scripts/star-dentfill-th13.ts` — CLI wrappers; all `node:fs`
+  logging lives here.
+- `tests/star-vc.test.ts` — imports `StarTables.ts` / `StarDmaxRoute2.ts` and pins the
+  constants below.
+
 ### Route 2 (published number) — independent multiset engine
 
-Self-contained inside the script; imports NOTHING from `StarVC.ts`. Derives the alphabet from
-the formulas in P3 (regular interiors (n−2)·12/n; points 0 < α < 12(n−2)/n; dents
-β = 24 − 24/n − α). Enumerates corner multisets with Σu = 24, t ≥ 3, ≤ 1 dent (P1),
+Derives the alphabet from the formulas in P3 (regular interiors (n−2)·12/n; points
+0 < α < 12(n−2)/n; dents β = 24 − 24/n − α) — never from `inRingStarVariants()`. Enumerates corner multisets with Σu = 24, t ≥ 3, ≤ 1 dent (P1),
 #points ≤ ⌊t/2⌋ (⟺ a cyclic arrangement with no two points adjacent exists — pigeonhole; P2).
 **No constraint on point count from below** — dent-no-point and pure-regular multisets are in
 the search space. Maximize t; record a witness multiset.
@@ -79,18 +96,27 @@ that the citable enumerator semantics agree.
 
 - **Rows:** 32 per-variant families 𝓕(n,α) = {regulars} ∪ {(n,α)}; envelopes: all-32 mixed,
   dent-reg-19 mixed, regular-only.
-- **Columns:** Fig-4 (no dent tokens at the vertex) | Fig-3 (≤ 1 dent token). Each cell:
-  d_max + witness VC.
+- **Columns — three strata per row:** Fig-4 (0 dent tokens) | Fig-3(=1) (exactly one dent token
+  — the dent-at-vertex stratum TH-3's Γ⋆ bookkeeping consumes) | Fig-3(≤1) (the full Fig-3
+  universe — reported because the work order asks for it, but its value is the identity
+  max(Fig-4, Fig-3(=1)) and its envelope is dominated by dentless VCs). Each cell: d_max +
+  witness VC. Same enumeration, one dent-count bookkeeping flag.
+- **Per-cell structural invariants (checked, exit non-zero on failure):**
+  Fig-3(≤1) == max(Fig-4, Fig-3(=1)), hence Fig-3(≤1) ≥ Fig-4.
 - **Pinned expectations (hand-derived, acceptance gate for Fig-4):**
   - regular-only = **6**;
   - all-32 envelope = **9** (witness: 4 × (α=1 point) + 5 triangles = 4+20 = 24, p = 4 ≤ ⌊9/2⌋;
     t = 10 impossible: minimum 5·1 + 5·4 = 25 > 24);
   - dent-reg-19 envelope = **9** (3\*@1 and 8\*@1 are in the 19);
   - every 𝓕(n,1) = **9**; every 𝓕(n,2) = **8**;
+  - **Fig-3(=1) all-32 envelope = 6** (witness: one dent β = 13 (3\*d@13, i.e. n=3, α=3) +
+    3 × (α=1 point) + 2 triangles = 13+3+8 = 24, t = 6, p = 3 ≤ ⌊6/2⌋; t = 7 impossible:
+    p ≤ 3 forces ≥ 3 regulars, min 13 + 3·1 + 3·4 = 28 > 24);
   - the review's degree-7 falsifier [8\*p@1, 3, 3, 3, 3\*p@3, 3, 3] appears in the all-32
     enumeration (witness-presence is a sanity anchor, NOT the acceptance — the max is).
-- Fig-3 values: computed + route-agreement-checked; pinned in the test from the first verified
-  run (no hand-derived expectation claimed for them).
+- Remaining Fig-3(=1) per-family values: computed + route-agreement-checked; pinned in the test
+  from the first verified run (no hand-derived expectation claimed for them). Fig-3(≤1) needs no
+  independent pins — it is pinned by the per-cell identity invariant.
 - **Transfer constant handed to TA explicitly:** δ ≤ 2k·d_max = **18k** for the in-ring
   universe (vs the crude envelope guess ≈ 11 ⇒ 22k, and the false regular-derived 12k).
 
@@ -124,13 +150,17 @@ the entire at-risk class is mixed-variant. Gear chains require ≥ 2 distinct va
 
 - Branch `feat/th4-th13-star-tables` off master@`0291e83`, worktree
   `~/.config/superpowers/worktrees/TilingAtlas/th4-th13-star-tables`.
-- `scripts/star-dmax-th4.ts`, `scripts/star-dentfill-th13.ts` — standalone `pnpm tsx` scripts;
+- New library modules `lib/classes/algorithm/StarDmaxRoute2.ts` + `StarTables.ts` (additive;
+  pure, no `node:fs`; not barrel-exported) — the single engine shared by scripts and test.
+- `scripts/star-dmax-th4.ts`, `scripts/star-dentfill-th13.ts` — thin `pnpm tsx` CLI wrappers;
   exit non-zero on any cross-check failure; write logs synchronously (experiments rule).
 - Logs committed: `experiments/results/th4-star-dmax-<commit>-2026-06-10.log`,
   `experiments/results/th13-dentfill-table-<commit>-2026-06-10.log`.
-- Pinned-constants tests appended to `tests/star-vc.test.ts`: Fig-4 pinned expectations above +
-  the 19-count; Fig-3 constants pinned post-verification. Guards the committed tables against
-  silent alphabet drift.
+- Pinned-constants tests appended to `tests/star-vc.test.ts`, importing the engine (recompute,
+  compare to hand-derived constants — no copied tables): Fig-4 pinned expectations + the
+  Fig-3(=1) envelope = 6 + the per-cell identity/inclusion invariants + the 19-count; remaining
+  Fig-3(=1) constants pinned post-verification. Guards the committed tables against silent
+  alphabet drift.
 - `StarVC.ts` and `scout-star-inring.ts` UNTOUCHED — zero decisive-path risk by construction;
   regular digests untouched trivially (no regular-path file changes).
 - Docs: NOTES §35 (premise mini-lemmas P1/P2 + fold-back lemmas + results + the same-family
@@ -139,9 +169,10 @@ the entire at-risk class is mixed-variant. Gear chains require ≥ 2 distinct va
 
 ## Acceptance
 
-1. Both scripts run clean (exit 0), logs committed, per-cell route agreement.
-2. Fig-4 pinned expectations all match (6 / 9 / 9 / 9-per-𝓕(n,1) / 8-per-𝓕(n,2)); degree-7
-   falsifier present.
+1. Both scripts run clean (exit 0), logs committed, per-cell route agreement + the
+   Fig-3(≤1) == max(Fig-4, Fig-3(=1)) identity on every cell.
+2. Fig-4 pinned expectations all match (6 / 9 / 9 / 9-per-𝓕(n,1) / 8-per-𝓕(n,2));
+   Fig-3(=1) all-32 envelope = 6; degree-7 falsifier present.
 3. TH-13: 19/32 REGULAR-FILLABLE, same-family column all-impossible, dent-match column all-∅,
    verdicts partition 32.
 4. `pnpm build` clean; star-vc tests green (8 baseline + new pinned).
