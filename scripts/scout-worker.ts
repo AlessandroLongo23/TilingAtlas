@@ -12,6 +12,7 @@
  * stdout carries ONLY protocol JSON — all diagnostics go to stderr (inherited) so the stream stays clean.
  */
 import readline from 'node:readline';
+import fs from 'node:fs';
 import { PeriodSolver } from '@/classes/algorithm/PeriodSolver';
 import {
 	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
@@ -23,6 +24,12 @@ import { serializeCell } from './scoutCodec';
 
 const k = parseInt(process.argv[2] ?? '1', 10);
 const ns = (process.argv[3] ?? '3,4,6,8,12').split(',').map(Number);
+
+// OP-2: per-worker NDJSON census stream (opt-in via PS_LATTICE_CENSUS=1).
+// No mkdir here: the coordinator (scout-parallel.ts) mkdirs .scout-cache before spawning workers.
+const censusStream = process.env.PS_LATTICE_CENSUS === '1'
+	? fs.createWriteStream(`.scout-cache/lattice-census-k${k}.${process.pid}.ndjson`, { flags: 'a' })
+	: null;
 const maxMs = process.argv[4] ? parseInt(process.argv[4], 10) : 0; // 0 = no wall-clock cap (guard #2)
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns } };
@@ -56,11 +63,22 @@ rl.on('line', (line) => {
 	const trimmed = line.trim();
 	if (!trimmed) return;
 	const msg = JSON.parse(trimmed) as { idx?: number; stop?: boolean };
-	if (msg.stop) { rl.close(); process.exit(0); }
+	if (msg.stop) {
+		// process.exit() does NOT flush fs.WriteStream buffers — end() the census stream and exit in its flush callback.
+		// (No rl.close() here: it emits 'close' synchronously and the handler above would exit before the flush lands.)
+		censusStream ? censusStream.end(() => process.exit(0)) : process.exit(0);
+		return;
+	}
 	if (typeof msg.idx !== 'number') return;
 	const seed = useSeeds[msg.idx];
 	const ts = Date.now();
-	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs });
+	const solveOpts: Parameters<InstanceType<typeof PeriodSolver>['solve']>[1] = { maxMs };
+	if (censusStream) {
+		solveOpts.onCandidateLattices = (lattices) => {
+			censusStream.write(JSON.stringify({ seed: seed.name, k, lattices }) + '\n');
+		};
+	}
+	const { cells, diag } = new PeriodSolver(k).solve(seed, solveOpts);
 	send({
 		type: 'result',
 		idx: msg.idx,

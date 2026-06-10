@@ -371,6 +371,33 @@ describe('OP-2 candidate-stage instrumentation', () => {
 		expect(s.poolMisses).toBe(1);  // one pool miss (from the first call)
 	});
 
+	it('OP-2: onCandidateLattices hook fires with non-empty list, valid keys and hols', { timeout: 30000 }, () => {
+		// A small k=1 seed with the hook wired. The solve runs to completion with no maxMs cap.
+		// onCandidateLattices fires with the post-P0 candidate list for each seed; the hook is called
+		// once per solve call and its list must be non-empty for any valid seed.
+		// Every entry must have a non-empty string key and hol ∈ {2,4,8,12}.
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		const captured: { key: string; hol: number }[] = [];
+		new PeriodSolver(1).solve(seed, {
+			onCandidateLattices: (lats) => { captured.push(...lats); },
+		});
+		expect(captured.length).toBeGreaterThan(0);
+		for (const { key, hol } of captured) {
+			expect(typeof key).toBe('string');
+			expect(key.length).toBeGreaterThan(0);
+			expect([2, 4, 8, 12]).toContain(hol);
+		}
+	});
+
+	it('OP-2: solve WITHOUT the hook still works (no crash, no behavioral coupling)', { timeout: 30000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		// No hook — must return normally with correct cell count.
+		const { cells } = new PeriodSolver(1).solve(seed, {});
+		expect(cells.length).toBe(1); // the trihexagonal tiling
+	});
+
 	it('two k=2 seeds over same polySizes={3,6}: first is poolMiss, second is poolHit', { timeout: 30000 }, () => {
 		// Two k=2 seeds with polySizes={3,6} but different VC compositions. The first call populates
 		// both candidateCache and poolStatsCache; the second hits candidateCache for a DIFFERENT key

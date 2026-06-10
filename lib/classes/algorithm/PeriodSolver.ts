@@ -282,6 +282,12 @@ export type PeriodSolverOptions = {
 	verbose?: boolean;
 	/** Debug hook: called for every completed primitive cell, BEFORE the k-gate filter. */
 	onRawCell?: (cell: Polygon[], basis: [Cyclotomic, Cyclotomic], orbits: number | null) => void;
+	/** OP-2/OP-9 census hook: called once per solve with the post-P0 candidate list
+	 *  (canonical latticeKey + holohedry per lattice). Σ over seeds = work items; set-union of
+	 *  keys = distinct lattices. Reported even if the lattice loop later times out — Σ measures
+	 *  intended work, not completed work. Fires at most once per solve (degenerate seeds exit
+	 *  before candidate enumeration). Instrumentation only — never affects the solve. */
+	onCandidateLattices?: (lattices: { key: string; hol: number }[]) => void;
 };
 
 /** Default per-cell polygon cap: max(20k+24, 24k). Any k-uniform cell has F ≤ 24k tiles (torus
@@ -404,6 +410,26 @@ export class PeriodSolver {
 			blockIndexCapTruncated: 0,
 			timedOut: false,
 		};
+
+		// OP-2/OP-9 census hook: report the post-P0 candidate list once per solve. The guard is
+		// intentional: the `.map` must NOT run when the hook is undefined (a per-solve cost even if
+		// the result is discarded). Using `?.()` with an eagerly-evaluated argument would run the
+		// map unconditionally — so we guard explicitly.
+		// Key = lexicographic min over `latticeKeySet(lu, lv)`: per that function's docstring, a
+		// single `latticeKey` is NOT unique per lattice on tied minima (hex/rhombic) — the same
+		// lattice can key differently across solves, splitting one lattice into several census keys
+		// (overcounting "distinct", understating the OP-9 multiplicity). `latticeKeySet` enumerates
+		// EVERY key the lattice can canonicalize to, so its lexicographic min is a true per-lattice
+		// invariant. Cost (≤ 56 pair checks per candidate) is paid only when the hook is set, i.e.
+		// census runs only.
+		if (opts.onCandidateLattices) {
+			opts.onCandidateLattices(
+				lattices.map(([lu, lv]) => ({
+					key: [...latticeKeySet(lu, lv)].reduce((m, s) => (s < m ? s : m)),
+					hol: holohedry(lu, lv),
+				}))
+			);
+		}
 
 		// --- 2+3. Fill each torus, certify, dedup, gate. ---
 		const checker = new KUniformityChecker();
