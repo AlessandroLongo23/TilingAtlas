@@ -24,11 +24,15 @@ import {
 	type GeneratorParameters,
 } from '@/classes';
 import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing } from '@/classes/Cyclotomic';
+import { setActiveRing, Cyclotomic } from '@/classes/Cyclotomic';
+import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
+import type { Polygon } from '@/classes/polygons/Polygon';
+import { gridImage, holohedry } from '@/classes/algorithm/LatticeEnumerator';
 import type { SeedConfiguration as SeedConfigurationType } from '@/classes/algorithm/SeedConfiguration';
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } };
-setActiveRing(computeRing(params));
+const ring = computeRing(params);
+setActiveRing(ring);
 
 const checker = new KUniformityChecker();
 
@@ -328,6 +332,111 @@ describe('lem:fillreach F3 loud-cap guards (TH-2 work orders, 2026-06-10)', () =
 		expect(defaultMaxCellPolys(1)).toBe(44); // = 20k+24, unchanged
 		expect(defaultMaxCellPolys(6)).toBe(144); // boundary: 20·6+24 = 24·6
 		expect(defaultMaxCellPolys(7)).toBe(168); // was 164 — the F3a hole, now 24k
+	});
+});
+
+describe('OP-3 g⁻¹ seed-map inversion (lem:orbitdedup constraint 2) — pins the transformedRigid convention', () => {
+	// THE convention everything in OP-3 rests on. The orbit grouping records g = (rot, refl) with
+	// g(Λ_rep) = Λ_member via gridImage (refl ? conj(w)·ζ^rot : w·ζ^rot); solve()'s per-map seeding
+	// must apply g⁻¹ to the core via transformedRigid(origin=0, reflect, axisK, rotK, T=0, 'full')
+	// (reflect ⇒ z ↦ conj(z)·ζ^{axisK+rotK}; else z ↦ z·ζ^{rotK}). The claimed inverses:
+	//   pure rotation g = ζ^rot     ⇒ g⁻¹ = ζ^{(N−rot) mod N}  → transformedRigid(0, false, 0, (N−rot)%N, 0)
+	//   reflection   g = conj∘ζ^rot ⇒ involution, g⁻¹ = g       → transformedRigid(0, true, rot, 0, 0)
+	// A wrong inverse silently seeds the wrong state and the k≤2 gate cannot catch it (0 oblique
+	// tilings there) — so the formulas are pinned HERE, against gridImage itself.
+	const ZERO = Cyclotomic.ZERO(ring);
+	const N = ring.N;
+	/** g⁻¹ exactly as solve()'s per-map `mapCore` applies it — keep in lockstep with PeriodSolver. */
+	const invMap = (p: Polygon, rot: number, refl: boolean): Polygon =>
+		p.transformedRigid(ZERO, refl, refl ? rot : 0, refl ? 0 : (N - rot) % N, ZERO, 'full');
+	/** the forward g (= gridImage on every exact vertex). */
+	const fwdMap = (p: Polygon, rot: number, refl: boolean): Polygon =>
+		p.transformedRigid(ZERO, refl, refl ? rot : 0, refl ? 0 : rot, ZERO, 'full');
+	/** a triangle anchored AWAY from the origin, so origin-rotations genuinely move it. */
+	const tri = () => RegularPolygon.fromAnchorAndDirExact(3, Cyclotomic.ONE(ring).add(Cyclotomic.zeta(ring, 2)), 0);
+
+	it('forward polygon map agrees with gridImage on every exact vertex (the orbit-grouping convention)', () => {
+		for (const [rot, refl] of [[5, false], [3, true]] as [number, boolean][]) {
+			const p = tri();
+			const fp = fwdMap(p, rot, refl);
+			const want = [...p.exactVertices!.map((w) => gridImage(w, rot, refl).key())].sort();
+			const got = [...fp.exactVertices!.map((w) => w.key())].sort();
+			expect(got).toEqual(want);
+		}
+	});
+	it('pure rotation g = ζ⁵: applying g⁻¹ then the forward g round-trips to the original exactKey', () => {
+		const p = tri();
+		const inv = invMap(p, 5, false);
+		expect(inv.exactKey()).not.toBe(p.exactKey()); // sanity: g⁻¹ is NOT the identity on this fixture
+		expect(fwdMap(inv, 5, false).exactKey()).toBe(p.exactKey()); // round-trip identity
+	});
+	it('reflection g = conj∘ζ³ is an involution: the seed map applied TWICE returns the original', () => {
+		const p = tri();
+		const once = invMap(p, 3, true);
+		expect(once.exactKey()).not.toBe(p.exactKey()); // sanity: not the identity
+		expect(invMap(once, 3, true).exactKey()).toBe(p.exactKey()); // involution
+		expect(once.exactKey()).toBe(fwdMap(p, 3, true).exactKey()); // and g⁻¹ IS the forward g
+	});
+});
+
+describe('OP-3 stage 1 — oblique grid-orbit candidate reduction (lem:orbitdedup)', () => {
+	it('k=3 {3,4} multi-VC seed: oblique candidates reduce to orbit reps, identity-first seed maps, exact accounting', { timeout: 60000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		// candidateLattices is SEED-FREE (ring, tile set, k only), so an unplaced multi-VC
+		// SeedConfiguration is a valid fixture — no SeedBuilder placement needed. This {3,4} pair is
+		// the measured heavy case: 1223 post-P0 candidates, of which 1092 oblique, grouping to 91
+		// orbit reps (orbitSkipped = 1001, orbits up to 12 enumerated members) — the dominant-class
+		// reduction OP-3 stage 1 exists for. (Counts not pinned below; only the arithmetic identity.)
+		const seed = new SeedConfiguration([
+			VertexConfiguration.fromName('3,3,4,3,4'),
+			VertexConfiguration.fromName('3,3,3,4,4'),
+		]);
+		const solver = new PeriodSolver(3);
+		const { lattices, orbitSkipped } = (solver as any).candidateLattices(seed) as {
+			lattices: { basis: [InstanceType<typeof Cyclotomic>, InstanceType<typeof Cyclotomic>]; seedMaps: { rot: number; refl: boolean }[] }[];
+			orbitSkipped: number;
+		};
+		expect(orbitSkipped).toBeGreaterThan(0); // the reduction FIRES at k=3 (oblique orbits exist)
+		let memberTotal = 0;
+		let sawMultiMap = false;
+		for (const { basis: [u, v], seedMaps } of lattices) {
+			expect(seedMaps.length).toBeGreaterThanOrEqual(1);
+			expect(seedMaps[0]).toEqual({ rot: 0, refl: false }); // identity FIRST — the historical first fill
+			if (holohedry(u, v) !== 2) {
+				expect(seedMaps).toEqual([{ rot: 0, refl: false }]); // non-oblique: NEVER reduced (stage-1 hol gate)
+			} else if (seedMaps.length > 1) {
+				sawMultiMap = true;
+			}
+			memberTotal += seedMaps.length;
+		}
+		expect(sawMultiMap).toBe(true); // some oblique rep carries deleted members' coverage
+		// Constraint-2 accounting (the pre-change pin, as the arithmetic identity): every enumerated
+		// post-P0 candidate is either a representative or a deleted member carried as a seed map, so
+		// Σ seedMaps = old (pre-reduction) candidate count = candidateLattices + orbitSkipped — and
+		// the post-reduction list is strictly smaller than the old count (orbitSkipped > 0 above).
+		expect(memberTotal).toBe(lattices.length + orbitSkipped);
+		// The diag surface agrees (candidateLattices = the post-reduction count; maxMs:1 runs
+		// candidateLattices fully — cache hit — and skips the fill, per the OP-2 test technique).
+		const { diag } = solver.solve(seed, { maxMs: 1 });
+		expect(diag.orbitSkipped).toBe(orbitSkipped);
+		expect(diag.candidateLattices).toBe(lattices.length);
+		expect(diag.candidateLattices + diag.orbitSkipped).toBe(memberTotal);
+		expect(diag.candidateLattices).toBeLessThan(memberTotal); // strictly fewer lattices TRIED than enumerated
+	});
+
+	it('k=1 (no oblique candidates in play): every candidate carries exactly the identity map; catalogue unchanged', { timeout: 30000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		const solver = new PeriodSolver(1);
+		const { lattices, orbitSkipped } = (solver as any).candidateLattices(seed) as {
+			lattices: { seedMaps: { rot: number; refl: boolean }[] }[];
+			orbitSkipped: number;
+		};
+		for (const { seedMaps } of lattices) expect(seedMaps[0]).toEqual({ rot: 0, refl: false });
+		// identity-only k=1 path: the trihexagonal tiling still solves to exactly one cell
+		const { cells, diag } = solver.solve(seed, {});
+		expect(cells.length).toBe(1);
+		expect(diag.orbitSkipped).toBe(orbitSkipped);
 	});
 });
 

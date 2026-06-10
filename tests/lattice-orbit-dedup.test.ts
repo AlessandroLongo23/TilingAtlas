@@ -106,6 +106,17 @@ describe("groupIntoGridOrbits: exact grid point-group orbit grouping (lem:orbitd
 		verifyMaps(groups, lattices);
 	});
 
+	it("g⁻¹ formulas (OP-3 seeding): exact inversion of gridImage for EVERY g ∈ G", () => {
+		// solve()'s per-map seeding inverts the recorded g = (rot, refl) as:
+		//   refl=false ⇒ g⁻¹ = pure rotation by (N−rot) mod N;   refl=true ⇒ g⁻¹ = g (involution).
+		// Pinned here at the vector level, over the full group (all 2N elements).
+		const w = OBL_V; // a non-symmetric vector: no g fixes it except the identity
+		for (let rot = 0; rot < N; rot++) {
+			expect(gridImage(gridImage(w, rot, false), (N - rot) % N, false).sub(w).isZero()).toBe(true);
+			expect(gridImage(gridImage(w, rot, true), rot, true).sub(w).isZero()).toBe(true);
+		}
+	});
+
 	it("determinism: the member-index PARTITION is shuffle-invariant (reps follow input order — by design)", () => {
 		const base: Basis[] = [
 			[OBL_U, OBL_V],

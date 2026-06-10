@@ -42,7 +42,7 @@ import { Cyclotomic } from '../Cyclotomic';
 import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
-import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, areaLadderFromTiles, holohedry, areaKey, isIntCombo, joinLattice, gaussReduceExact, type ObliqueTruncation } from './LatticeEnumerator';
+import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, areaLadderFromTiles, holohedry, areaKey, isIntCombo, joinLattice, gaussReduceExact, groupIntoGridOrbits, gridImageBasis, type ObliqueTruncation } from './LatticeEnumerator';
 import { detSurd, polygonAreaSurd, tileAreaSurd, Surd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
 import { spikeBreak } from './exact/spikeTrace';
@@ -127,13 +127,23 @@ export function poolConfig(
 /** Once-per-process(-per-regime) registry for the CB-8 tuned-regime banner. */
 const regimeBannerEmitted = new Set<string>();
 
+/** OP-3 stage 1 (lem:orbitdedup): one candidate lattice to FILL, plus the grid point-group maps of
+ *  the enumerated orbit members it stands for. `seedMaps` lists, for EVERY enumerated member
+ *  Λ_member of the representative's G-orbit (including the rep itself, as the identity FIRST), the
+ *  map g = (rot, refl) with g(Λ_rep) = Λ_member — exactly as `groupIntoGridOrbits` records it.
+ *  solve() seeds g⁻¹(core) per map, so each deleted member's fill coverage is conserved
+ *  (rem:orbitdedup constraint 2). Non-reduced candidates carry exactly the bare identity map. */
+type CandidateLattice = { basis: [Cyclotomic, Cyclotomic]; seedMaps: { rot: number; refl: boolean }[] };
+
 /** Seed-free candidate lattices depend only on (ring, tile set, k) — computed once and cached.
- *  `p0Skipped` records how many candidates the P0 pre-filter removed (diagnostic only).
- *  `allKeys` is the FULL enumerated candidate key set (pre-P0) and `areaKeys` the admissible
- *  cell-area key set — both for the CB-7 primitivity guard. */
+ *  `p0Skipped` records how many candidates the P0 pre-filter removed (diagnostic only);
+ *  `orbitSkipped` how many oblique candidates the OP-3 grid-orbit reduction deleted (their fill
+ *  coverage survives as seed maps on the orbit representatives — see `CandidateLattice`).
+ *  `allKeys` is the FULL enumerated candidate key set (pre-P0, pre-reduction) and `areaKeys` the
+ *  admissible cell-area key set — both for the CB-7 primitivity guard. */
 const candidateCache = new Map<
 	string,
-	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> }
+	{ lattices: CandidateLattice[]; p0Skipped: number; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> }
 >();
 
 /** OP-2 instrumentation: candidate-stage cache effectiveness (the Σ-vs-distinct companion data
@@ -257,6 +267,7 @@ export type PeriodSolverDiag = {
 	gateRejected: number; // completed but orbit count ≠ k
 	fanLattices: number; // lattices where the rigid core overflowed the cell → seeded from VC fans instead
 	p0Skipped: number; // candidate lattices removed by the P0 arithmetic pre-filter (minVerts > k·hol)
+	orbitSkipped: number; // OP-3 stage 1 (lem:orbitdedup): enumerated oblique (hol=2) candidate lattices DELETED as non-representative grid-orbit members. Fires only in candidateLattices, post-P0, regular seeds only (star seeds unreduced — TH-13 open). Accounting: orbitSkipped + candidateLattices = the pre-reduction post-P0 candidate count; each deleted member's fill coverage is conserved as a g⁻¹ seed map on its orbit representative (constraint 2), so nothing is dropped — candidateLattices counts what is TRIED, this counts what rides along
 	p1Pruned: number; // DFS branches cut by the P1 orbit-floor (vertexClasses > k·hol)
 	p2Skipped: number; // OP-1 prop:typeprune closed-cell half: in-fill, post-certificate, pre-primitivity — certified cells discarded because their occurring VC-type set ⊊ the seed's allowed set (licensed two-sided by prop:typeprune; recovery routes through prop:fanseed — rem:fastpath caveat inherited). Excluded from rawCells; NOT counted in gateRejected (the k-gate is never reached for these cells)
 	vBelowKSkipped: number; // OP-1 V<k half: in-fill, post-certificate, pre-primitivity — closed cells with vertex-class count V < k (orbits ≤ V < k). The k-gate WOULD reject these (orbit count < k), but the counter fires before the gate: excluded from rawCells and NOT counted in gateRejected
@@ -386,7 +397,7 @@ export class PeriodSolver {
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = this.candidateLattices(seed);
+		const { lattices, p0Skipped, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
@@ -397,6 +408,7 @@ export class PeriodSolver {
 			gateRejected: 0,
 			fanLattices: 0,
 			p0Skipped,
+			orbitSkipped,
 			p1Pruned: 0,
 			p2Skipped: 0,
 			vBelowKSkipped: 0,
@@ -411,7 +423,9 @@ export class PeriodSolver {
 			timedOut: false,
 		};
 
-		// OP-2/OP-9 census hook: report the post-P0 candidate list once per solve. The guard is
+		// OP-2/OP-9 census hook: report the post-P0, post-orbit-reduction candidate list once per
+		// solve (the lattices actually TRIED; a deleted orbit member is not a census item — its fill
+		// rides its representative's seed maps, see OP-3 in candidateLattices). The guard is
 		// intentional: the `.map` must NOT run when the hook is undefined (a per-solve cost even if
 		// the result is discarded). Using `?.()` with an eagerly-evaluated argument would run the
 		// map unconditionally — so we guard explicitly.
@@ -424,7 +438,7 @@ export class PeriodSolver {
 		// census runs only.
 		if (opts.onCandidateLattices) {
 			opts.onCandidateLattices(
-				lattices.map(([lu, lv]) => ({
+				lattices.map(({ basis: [lu, lv] }) => ({
 					key: [...latticeKeySet(lu, lv)].reduce((m, s) => (s < m ? s : m)),
 					hol: holohedry(lu, lv),
 				}))
@@ -437,7 +451,8 @@ export class PeriodSolver {
 		const seenCanonical = new Set<string>();
 		const cells: PeriodCell[] = [];
 
-		for (const [u, v] of lattices) {
+		const ZERO = Cyclotomic.ZERO(ring); // hoisted: the per-map g⁻¹ seeding below transforms about the origin
+		for (const { basis: [u, v], seedMaps } of lattices) {
 			if (maxMs > 0 && Date.now() - start > maxMs) {
 				diag.timedOut = true;
 				break;
@@ -447,19 +462,40 @@ export class PeriodSolver {
 			if (!ctx) continue; // degenerate basis
 			if (ctx.blockIndexCapBinds) diag.blockIndexCapTruncated++; // F3b: ⚑ already emitted in makeCtx
 
-			// Choose the seed(s) for THIS lattice. Normally the rigid core. But when the rigid core
-			// OVERFLOWS the cell (its footprint mod Λ exceeds |det Λ| — the t2014 case), the core would be
-			// area-rejected and yield nothing, so seed from the single-VC fans instead. This keeps the fast
-			// path (one fill, rigid core) on every lattice the core fits, and only pays the extra fan fills
-			// on the few small cells the core cannot hold — so the run stays fast and DETERMINISTIC (no
-			// timeout pressure). ⚑ COMPLETENESS NOTE: this is exact for k=2 (the rigid core misses ONLY the
-			// core-overflow tiling t2014; verified across all 20). At k≥3 a tiling could in principle be
-			// reachable ONLY by a fan on a cell the rigid core also fits — that case is NOT covered here and
+			// Choose the seed(s) for THIS lattice — one per orbit map (OP-3 stage 1, lem:orbitdedup).
+			// Each map g = (rot, refl) ∈ seedMaps satisfies g(Λ_rep) = a deleted enumerated orbit
+			// member; the member's historical fill corresponds on Λ_rep to seeding g⁻¹(core)
+			// (lem:orbitdedup (i)). g⁻¹ formulas (unit-test-pinned, "OP-3 g⁻¹ seed-map inversion"):
+			//   pure rotation g = ζ^rot     ⇒ g⁻¹ = ζ^{(N−rot) mod N};
+			//   reflection   g = conj∘ζ^rot ⇒ g is an involution, so g⁻¹ = g (conj then ·ζ^rot).
+			// transformedRigid(origin=0, reflect, axisK, rotK, T=0, 'full'):
+			//   reflect=true ⇒ z ↦ conj(z)·ζ^{axisK+rotK};  reflect=false ⇒ z ↦ z·ζ^{rotK} —
+			// so g⁻¹ is transformedRigid(0,false,0,(N−rot)%N,0) resp. transformedRigid(0,true,rot,0,0).
+			// IDENTITY-ONLY case (every non-oblique lattice, all k≤2 paths, star seeds): exactly one
+			// map {0,false} ⇒ one footprint test on corePolys, seedSets = [corePolys] or the fans on
+			// overflow, dedupSeeds false for a single seed — byte-identical control flow to the
+			// historical single-seed path. Per-map seeding otherwise: normally the (mapped) rigid
+			// core; when a seed image OVERFLOWS the cell (its footprint mod Λ exceeds |det Λ| — the
+			// t2014 case) the core would be area-rejected and yield nothing, so that image is replaced
+			// by ITS fan images instead. This keeps the fast path on every lattice the core fits.
+			// ⚑ COMPLETENESS NOTE (inherited unchanged from the pre-OP-3 single-seed path): the
+			// fan-on-overflow fallback is exact for k=2 (the rigid core misses ONLY the core-overflow
+			// tiling t2014; verified across all 20). At k≥3 a tiling could in principle be reachable
+			// ONLY by a fan on a cell the rigid core also fits — that case is NOT covered here and
 			// must be revisited (do not treat fan-on-overflow as a general completeness guarantee).
-			const coreOverflows = fanCoreSets.length > 0 && ctx.cellArea < totalCoreArea - 1e-9 &&
-				this.footprintArea(corePolys, ctx) > ctx.cellArea + 1e-6;
-			const seedSets = coreOverflows ? fanCoreSets : [corePolys];
-			if (coreOverflows) diag.fanLattices++;
+			const seedSets: Polygon[][] = [];
+			let anyOverflow = false;
+			for (const m of seedMaps) {
+				const isId = m.rot === 0 && !m.refl;
+				const mapCore = (ps: Polygon[]): Polygon[] =>
+					isId ? ps : ps.map((p) => p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : (ring.N - m.rot) % ring.N, ZERO, 'full'));
+				const core = mapCore(corePolys);
+				const overflows = fanCoreSets.length > 0 && ctx.cellArea < totalCoreArea - 1e-9 &&
+					this.footprintArea(core, ctx) > ctx.cellArea + 1e-6;
+				if (overflows) { anyOverflow = true; for (const fan of fanCoreSets) seedSets.push(mapCore(fan)); }
+				else seedSets.push(core);
+			}
+			if (anyOverflow) diag.fanLattices++;
 
 			const rawCells: Polygon[][] = [];
 			// Seed-state dedup (route-a-proven-box.md §"core-coincidence ruling", sound alternative #1):
@@ -553,7 +589,7 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
+	private candidateLattices(seed: SeedConfigurationLike): { lattices: CandidateLattice[]; p0Skipped: number; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -797,18 +833,69 @@ export class PeriodSolver {
 			if (mv !== undefined && mv > this.k * holohedry(u, v)) { p0Skipped++; continue; }
 			kept.push([u, v]);
 		}
+
+		// --- OP-3 stage 1: oblique grid-orbit candidate reduction (thesis lem:orbitdedup, TH-9). ---
+		// LICENSE: filling ONE representative Λ_rep per grid-isometry orbit, with every deleted
+		// member's seed image supplied EXPLICITLY, yields the same certified congruence classes
+		// (lem:orbitdedup; the three binding constraints of rem:orbitdedup):
+		//   (1) EXACT orbit ID — `groupIntoGridOrbits` declares G-equivalence only after an exact
+		//       `sameLattice` verification of the recorded map g (g(Λ_rep) = Λ_member); never on a
+		//       key collision. memberMaps is identity-first by that helper's contract, which
+		//       preserves the historical unrotated-core-first fill order on every representative.
+		//   (2) EXPLICIT SEEDING — deleting member gΛ_rep WITHOUT seeding g⁻¹(core) on Λ_rep would
+		//       trade redundancy for SILENT LOSS. So each candidate carries `seedMaps` = the maps of
+		//       ALL its enumerated orbit members, and solve() seeds g⁻¹(core) per map. The seed maps
+		//       ARE the deleted members' coverage — exactly the ENUMERATED members, no more: fills
+		//       are CONSERVED, not expanded (an orbit member the tuned pool never enumerated was
+		//       never filled before either, so it is not owed here; the candidate-stage completeness
+		//       contract is the pool's, unchanged by this reduction).
+		//   (3) ORBIT-AWARE CB-7 — the primitivity guard's membership test ranges over the G-images
+		//       of the witness closure (see `supercellRejectionGuard`), else it false-alarms when
+		//       the primitive lattice's orbit was reduced.
+		// STAGE-1 SCOPE (the hol gate): reduce OBLIQUE (hol === 2) candidates ONLY — the
+		// maximal-orbit class (trivial point stabilizer ⇒ orbit size up to 2N), where the win
+		// concentrates; k≤2 has 0 oblique TILINGS, so the k≤2 catalogue expectation is
+		// byte-identical (verified by the probes, next commit). STAR seeds: NO reduction at all
+		// (rem:orbitdedup scope — TH-13 open); every candidate keeps the bare identity map.
+		// POOL-CLOSURE DIAGNOSTIC NOTE: the enumerated candidate set need not be G-closed under the
+		// tuned pool, so an orbit can be PARTIAL — the reduction only regroups what was enumerated.
+		// ⚑ CRITICAL invariant: `allKeys` (the `seen` set, the CB-7 membership universe) is built at
+		// push() time, BEFORE this reduction — it keeps EVERY enumerated orbit member. Do not move it.
+		const idMaps = (): { rot: number; refl: boolean }[] => [{ rot: 0, refl: false }];
+		let orbitSkipped = 0;
+		let candidates: CandidateLattice[];
+		if (seedHasStar) {
+			candidates = kept.map((basis) => ({ basis, seedMaps: idMaps() }));
+		} else {
+			const oblique: [Cyclotomic, Cyclotomic][] = [];
+			const other: [Cyclotomic, Cyclotomic][] = [];
+			for (const b of kept) (holohedry(b[0], b[1]) === 2 ? oblique : other).push(b);
+			const groups = groupIntoGridOrbits(oblique, ring.N);
+			const reduced: CandidateLattice[] = groups.map((g) => ({
+				basis: oblique[g.repIdx],
+				seedMaps: g.memberMaps.map((m) => ({ rot: m.rot, refl: m.refl })), // identity-first (helper contract)
+			}));
+			orbitSkipped = oblique.length - groups.length;
+			candidates = [...other.map((basis) => ({ basis, seedMaps: idMaps() })), ...reduced];
+			// Re-sort by exact cell area — keep the cheapest-fill-first invariant. JS sort is stable,
+			// so equal-area order stays deterministic.
+			candidates.sort((a, b) => detSurd(a.basis[0], a.basis[1]).abs().cmp(detSurd(b.basis[0], b.basis[1]).abs()));
+		}
+
 		// `allKeys` = every enumerated candidate key PRE-P0 (the `seen` set) — the membership universe
 		// for the CB-7 primitivity-rejection guard. Pre-P0 on purpose: a P0-skipped lattice was
 		// enumerated and removed by a LICENSED prune (if the rejected supercell's tiling were k-uniform,
 		// its primitive lattice would satisfy minVerts ≤ k·hol and survive P0 — so a P0-skipped
 		// primitive means the tiling is not k-uniform and the discard is sound, not a silent loss).
+		// Pre-REDUCTION too (OP-3): a deleted orbit member is still a candidate in the conserved-fill
+		// sense — its coverage rides its representative's seed maps.
 		// `areaKeys` = the admissible cell-area set: a discarded supercell whose PRIMITIVE area is
 		// outside it cannot carry this seed's orbit-VC multiset (the same Euler/incidence completeness
 		// contract the candidate area filter rests on) — it is another seed's tiling, so the guard
 		// must not alarm on it (observed live: pure-triangle = 1-uniform supercell completions inside
 		// multi-VC k=2 seeds; vcAreaSet uses v ≥ 1 for EVERY VC, so their primitive area √3/2 is
 		// excluded by construction).
-		const result = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
+		const result = { lattices: candidates, p0Skipped, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
@@ -1304,9 +1391,11 @@ export class PeriodSolver {
 	 *  enumerated. Under cor:box that is a theorem; under the tuned pool it is unchecked — so compute
 	 *  Λ′ and check membership of the LATTICE in the seed's enumerated candidate set via
 	 *  `latticeKeySet` (every key Λ′ can canonicalize to — `latticeKey` alone is ambiguous on tied
-	 *  minima, see there). Pre-P0 universe on purpose (a P0-skipped primitive is a licensed discard —
-	 *  see `candidateLattices`). Two provably-harmless miss classes are filtered before alarming:
-	 *  (1) candidate-set hit (any canonical key); (2) primitive area outside the seed's admissible
+	 *  minima, see there). Pre-P0, pre-orbit-reduction universe on purpose (a P0-skipped primitive is
+	 *  a licensed discard — see `candidateLattices`; a reduction-deleted member's fills are conserved
+	 *  on its representative). Two provably-harmless miss classes are filtered before alarming:
+	 *  (1) candidate-set hit — any canonical key of any of the ≤ 2N G-IMAGES of the closure
+	 *  (rem:orbitdedup constraint 3, identity first); (2) primitive area outside the seed's admissible
 	 *  area set — then the tiling cannot carry this seed's orbit-VC multiset (the area filter's own
 	 *  Euler/incidence completeness contract) and is another seed's tiling (observed live: pure-
 	 *  triangle 1-uniform supercell completions inside multi-VC k=2 seeds). Anything else is a
@@ -1317,8 +1406,22 @@ export class PeriodSolver {
 		diag.supercellRejected++;
 		const closure = primitiveLatticeClosure(ctx.u, ctx.v, witnesses);
 		if (closure !== null) {
-			for (const k of latticeKeySet(closure[0], closure[1])) {
-				if (ctx.candidateKeys.has(k)) return; // primitive lattice IS a candidate — sound discard
+			// rem:orbitdedup constraint 3 (OP-3): after the orbit reduction the cell being filled may
+			// be a g⁻¹-seeded stand-in for a deleted orbit member, so the rejected tiling's primitive
+			// lattice can have been enumerated only as a G-IMAGE of this witness closure — a
+			// single-identity membership test would false-alarm on reduced orbits. Range the test
+			// over the ≤ 2N grid images (identity FIRST: rot=0/refl=false is the historical
+			// pre-reduction hit and the common fast path). Membership in the PRE-reduction universe
+			// (`candidateKeys` = allKeys) is the right test: a deleted member's fills are conserved
+			// on its representative (constraint 2), so an enumerated G-image re-finds the tiling.
+			// Rare path: runs only on supercell rejection.
+			for (let rot = 0; rot < ctx.N; rot++) {
+				for (const refl of [false, true]) {
+					const [ga, gb] = gridImageBasis(closure[0], closure[1], rot, refl);
+					for (const kk of latticeKeySet(ga, gb)) {
+						if (ctx.candidateKeys.has(kk)) return; // primitive lattice (up to G) IS a candidate — sound discard
+					}
+				}
 			}
 			// Primitive area not admissible for THIS seed ⇒ the discarded tiling cannot realize the
 			// seed's VC multiset on its primitive cell ⇒ it is enumerated from its own (sub)seed, not
@@ -1520,7 +1623,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, orbitSkipped: 0, p1Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
 }
 
 /**
