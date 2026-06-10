@@ -78,9 +78,12 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- **master = MERGED: `c8bc258` (TH-2 F3, NOTES §34) + `fix/cb5-cb4-cb6` (CB-5/4/6 + §35,
-  AL-directed merge 2026-06-10 night; final hash in the post-push docs commit)**. Branches pushed
-  to origin (CB-9 ✓; `fix/th2-f3-loud-caps` local). Accepted k=3 artifact at
+- **master = ff of `fix/cb5-cb4-cb6` post-merge (merge commit `7d3813a` = `c8bc258` TH-2 F3 ⋈
+  CB-5/4/6+§35; AL-directed 2026-06-10 night). Post-merge acceptance: k=1 `6f9ca9cf2d16c75f`/11 ✓,
+  k=2 `f3e2e0517191362c`/20 ✓ 0 timeouts (first k=2 run showed cap-jitter under the other
+  session's load — 2 seeds hit the 120s default cap; re-run maxMs=600000 byte-identical;
+  `cb456-postmerge-probes-7d3813a-*.log`), suite 331/331 (5 load-timeouts pass isolated)**.
+  Branches pushed to origin (CB-9 ✓). Accepted k=3 artifact at
   `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
   identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
 - Review work-orders: `docs/review-2026-06-09/` (01 code items ALL closed; OP/ST files untouched).

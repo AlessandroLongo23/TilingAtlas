@@ -1,0 +1,13 @@
+# k≤2 probe post-merge (7d3813a = c8bc258 TH-2 F3 ⋈ fix/cb5-cb4-cb6) — expect k1=6f9ca9cf2d16c75f k2=f3e2e0517191362c, 0 timeouts (re-run if contention timeouts appear; other session active)
+k=1: 15 seeds (15 used)
+k=1: 11 distinct tilings (from 11 raw cells), 0 seeds timed out, 93.4s total
+COMPOSITION digest=6f9ca9cf2d16c75f count=11
+k=2: 40 seeds (40 used)
+k=2: 18 distinct tilings (from 23 raw cells), 2 seeds timed out, 1530.4s total
+COMPOSITION digest=7eb406988517428b count=18
+DONE
+# k=2 RE-RUN with maxMs=600000 (default 120000 capped 2 seeds under the other session's load — cap-jitter, see header)
+k=2: 40 seeds (40 used)
+k=2: 20 distinct tilings (from 25 raw cells), 0 seeds timed out, 666.9s total
+COMPOSITION digest=f3e2e0517191362c count=20
+DONE-RERUN
