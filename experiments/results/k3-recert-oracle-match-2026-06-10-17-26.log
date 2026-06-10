@@ -1,0 +1,4 @@
+[17:26:40] === k=3 re-cert per-tiling oracle match — artifact .scout-cache/k3_3.4.6.12_cap0.ndjson ===
+[17:26:40] oracle k=3 entries: 61 (must be 61)
+[17:26:40] reconstructed: 61/61 (errors: 0)
+[17:26:40] raw cells: 362

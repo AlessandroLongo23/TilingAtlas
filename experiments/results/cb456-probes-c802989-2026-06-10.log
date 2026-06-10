@@ -1,0 +1,8 @@
+# k≤2 probe re-check on fix/cb5-cb4-cb6 (c802989 = CB-5+CB-4+CB-6+§34 exact reduction) — expect k1=6f9ca9cf2d16c75f k2=f3e2e0517191362c
+k=1: 15 seeds (15 used)
+k=1: 11 distinct tilings (from 11 raw cells), 0 seeds timed out, 25.8s total
+COMPOSITION digest=6f9ca9cf2d16c75f count=11
+k=2: 40 seeds (40 used)
+k=2: 20 distinct tilings (from 25 raw cells), 0 seeds timed out, 243.8s total
+COMPOSITION digest=f3e2e0517191362c count=20
+DONE

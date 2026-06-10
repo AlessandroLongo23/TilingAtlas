@@ -1,0 +1,133 @@
+raw cells: 362
+bucket 3,3,3,3,3,3,3,3,3,3,3,3,6,6@0,0,6,0,1: 18 cells (global indices 46,50,57,59,64,95,106,123,193,194,196,199,200,202,205,206,208,210)
+ASYM: [11]→[13] = false, [13]→[11] = true (global 199, 202)
+ASYM: [13]→[14] = true, [14]→[13] = false (global 202, 205)
+asymmetric pairs: 2
+
+=== asymmetric pair [11]↔[13] ===
+  Λ_A = (1.0000,1.7321) (-4.5000,2.5981), Λ_B = (-1.0000,1.7321) (-4.5000,-2.5981)
+  independent: A→B = true, B→A = true  (ground truth — exact, no float windows)
+  prod A→B: |KB| = 14 (cell size 14)
+  prod A→B: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod A→B: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod A→B: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod A→B: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod A→B: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 11
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod A→B: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod A→B: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 7
+  prod A→B: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod A→B: pin passes=72, lattice passes=24, targets=12
+  prod B→A: |KB| = 14 (cell size 14)
+  prod B→A: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod B→A: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 0 ✓ WOULD ACCEPT
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 0 ✓ WOULD ACCEPT
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 11
+  prod B→A: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 0 ✓ WOULD ACCEPT
+  prod B→A: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod B→A: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod B→A: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod B→A: pin passes=72, lattice passes=24, targets=12
+  reducedClassKey invariance on A(idx11): 4 violations over 14×10 translates
+  reducedClassKey invariance on B(idx13): 7 violations over 14×10 translates
+
+=== asymmetric pair [13]↔[14] ===
+  Λ_A = (-1.0000,1.7321) (-4.5000,-2.5981), Λ_B = (1.0000,1.7321) (-4.5000,2.5981)
+  independent: A→B = true, B→A = true  (ground truth — exact, no float windows)
+  prod A→B: |KB| = 14 (cell size 14)
+  prod A→B: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod A→B: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 0 ✓ WOULD ACCEPT
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 0 ✓ WOULD ACCEPT
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 11
+  prod A→B: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 0 ✓ WOULD ACCEPT
+  prod A→B: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod A→B: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod A→B: candidate reflect=false r=20 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod A→B: candidate reflect=false r=8 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod A→B: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod A→B: pin passes=72, lattice passes=24, targets=12
+  prod B→A: |KB| = 14 (cell size 14)
+  prod B→A: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod B→A: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod B→A: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod B→A: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod B→A: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 11
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod B→A: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 1
+  prod B→A: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 4
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 7
+  prod B→A: candidate reflect=false r=16 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=true r=12 PIN+LAT pass — |mapped|=14, missing from KB: 10
+  prod B→A: candidate reflect=false r=4 PIN+LAT pass — |mapped|=14, missing from KB: 3
+  prod B→A: candidate reflect=true r=0 PIN+LAT pass — |mapped|=14, missing from KB: 6
+  prod B→A: pin passes=72, lattice passes=24, targets=12
+  reducedClassKey invariance on A(idx13): 7 violations over 14×10 translates
+  reducedClassKey invariance on B(idx14): 4 violations over 14×10 translates
+
+done.
+
+VIOLATION DUMP (cell A, shift (0,1)):
+  u.key = 1|0,0,0,0,2,0,0,0
+  v.key = 1|-6,0,0,0,3,0,0,0
+  poly n=3 name=3
+  vertex keys: 1|-1,0,0,0,-5,0,0,0  1|0,0,0,0,-5,0,0,0  1|-1,0,0,0,-4,0,0,0
+  edgeDirs: [0,8,16]
+  key(p)   = 3:3|-2,0,0,0,-14,0,0,0:1|-1,0,0,0,-4,0,0,0;1|-1,0,0,0,-5,0,0,0;1|0,0,0,0,-5,0,0,0
+  key(p+λ) = 3:3|-2,0,0,0,-2,0,0,0:1|-1,0,0,0,-1,0,0,0;1|-1,0,0,0,0,0,0,0;1|0,0,0,0,-1,0,0,0
+dump done.
