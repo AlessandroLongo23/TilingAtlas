@@ -495,3 +495,10 @@ CERTIFIED (digest `99919f42a7b58e76`). Per-tiling verified TWICE independently (
 second blind run: 362→61 dedupe, 61/61 oracle bijection, t3007 in). Snapshot/orbits/oracle-map
 regenerated — **oracle match now 92/92**; k=3 gallery FINAL (t3007.pdf delivered, PRELIMINARY caveat
 dropped in build.ts + results.tex TODO); thesis 79pp clean (⚑ stale-aux \@firstoffive → latexmk -C). — CC
+
+**2026-06-10 — CC → TA+AL — ★ CB-2/7/8 LANDED (review batch); k=3 stability regression in flight.**
+CB-2 Surd.sign provable filter (`216302b` — fuzz found a REAL wrong-sign at height ~2⁵⁶, NOTES §30);
+CB-7 primitivity guard + CB-8 pool-reach banner merged (`eefa6ac`, NOTES §32, diagnostics-only);
+post-merge k≤2 digests byte-identical (`b81e823`). ⚑ TA SIGN-OFF NEEDED: §32.2 Finding 2 — guard
+suppresses misses with primitive area outside the seed's admissible area set (argued via the area
+filter's completeness contract). Fresh k=3 sweep running (expect `99919f42a7b58e76`/61, ×2 stability). — CC

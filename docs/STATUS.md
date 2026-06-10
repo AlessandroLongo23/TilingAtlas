@@ -3,7 +3,7 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-06-10, CC.
+> entry of each ledger. **Never write history here.** — last updated 2026-06-10 (evening), CC.
 
 ## Knowledge model (read once, then follow it)
 
@@ -19,34 +19,36 @@ Two tiers. Do not mix them.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
 
-## Frontier (2026-06-10)
+## Frontier (2026-06-10 evening)
 
-- ★★ **k ≤ 2 THEOREM-CERTIFIED, oracle-independent (NEW — the thesis contribution, delivered).**
-  Chain: B1 (δ≤12k, proven) → published canonical-augmentation generation (complete) →
-  **lem:ddrealize** (B2.2+B2.3+B2.6+B2.7, TA-proven 2026-06-10, two adversarial passes) →
-  **lem:ddrealizer** realizer (`DSymRealizer.ts`, Lemma R steps 1–6) → lem:corona certificate on
-  every accept. k=1 = 11/11, k=2 = 20/20, **per-tiling congruence match vs the independent torus
-  catalogue both directions**. The oracle is consulted nowhere. NOTES §27; proof note
-  `delaney-dress-B22-realizability-proof-2026-06-10.md`.
-- **k = 3 = 61: certified oracle-anchored via the torus path** (digest `eb34499d5fba3457`). The
-  CB-1 formal acceptance (full no-cap k=3 re-run on the CB-fixed branch) is **in flight**
-  (`experiments/results/k3-oracle-regression-cb1-2026-06-10.log`). D-D generation walls at δ≤36 ⇒
-  the theorem-certified frontier stays k≤2 until a tighter size bound B(k) (TA, optional).
-- **DG-1 verdict (2026-06-09/10 review): the proven-configuration lattice run is INFEASIBLE even
-  at k=1** (pair stage ≈ 1,370 yr) ⇒ thesis rewritten honest (TX option (b), merged). The
-  infeasibility measurement is itself a thesis result. NOTES §25.
-- **Seed-anchored D-D (SA): dead by mechanism** — species info cannot reach the D-set tree
-  (identical 205.8M nodes per anchor). Geometric anchoring (contract 06 §6) is the only surviving
-  escalation. NOTES §26.
-- Orbifold: correct-but-gated (count wall, super-k⁴ oblique class — NOTES §23.9). Star: 4(j)
-  spike certified k=1 exact; conventions ST-1/TX-7 gate the next increment (TA).
+- ★★ **k ≤ 2 THEOREM-CERTIFIED, oracle-independent** (B1 + canonical augmentation + lem:ddrealize +
+  lem:ddrealizer realizer + lem:corona; per-tiling torus match both directions). NOTES §27.
+- ★★ **k = 3 RE-CERTIFIED PER-TILING, end-to-end CLOSED** (2026-06-10): the old certified digest
+  `eb34499d5fba3457` was per-tiling WRONG (canceling duplicate + missing t3007 — NOTES §28); both
+  defects fixed (§29), full no-cap re-sweep 449/449 seeds → **new anchor `99919f42a7b58e76`/61**,
+  per-tiling oracle bijection PASSED ×2 (`recert-oracle-match.ts`); DB: old run de-certified, recert
+  run `52d0cb2e` certified; figures snapshot/orbits/oracle-map regenerated → **92/92**; k=3 gallery
+  FINAL incl. t3007.pdf. NOTES §31. ⚑ **Stability ×2 sweep in flight**
+  (`experiments/results/k3-stability-regression-0d6c96b-2026-06-10.log`, ETA ~2.3h) — also the k=3
+  batch acceptance for the CB landings below.
+- ★ **Review batch CB-2/7/8 LANDED, digest-neutral** (k≤2 byte-identical post-merge, `b81e823`):
+  CB-2 Surd.sign provable error-bound filter (`216302b` — the fuzz test found a REAL wrong-sign at
+  coefficient height ~2⁵⁶: the old 1e-6 gate was unsound in fact, not just in principle; NOTES §30);
+  CB-7 primitivity-rejection guard + CB-8 tuned-pool regime banner/reach counting (`eefa6ac`,
+  diagnostics-only; NOTES §32). ⚑ **TA sign-off needed: §32.2 Finding 2** (guard's area-set miss
+  suppression). Remaining review code items: CB-4, CB-5, CB-6, CB-9 (push branches!).
+- **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
+  honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
+- Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1/TX-7
+  conventions gate the next increment (TA). Seed-anchored D-D dead by mechanism (NOTES §26).
 
 ## Thesis state
 
-- **Thesis master = `1913b4c`** (2026-06-10): TX-1..7 honest-rewrite batch + B2 landing
-  (lem:ddrealize 5.52 / lem:ddrealizer 5.53 / rem:ddscope 5.54) merged fast-forward, 68pp,
-  0 undefined refs. TX-8 (`\describedcommit` re-anchor) deferred until CB fixes merge to
-  TilingAtlas master.
+- Thesis master: TX-1..7 + B2 (lem:ddrealize/ddrealizer/rem:ddscope) + TH-1 octagon lemma landed;
+  k=3 gallery FINAL on the recert digest (thesis commit `01a7dd5`), 79pp clean.
+- ⚑ TA prose swap pending in results.tex (~:271-275): digest → `99919f42a7b58e76`, seeds 447→**449**,
+  and the 33,972 truncation count is the OLD run's number — re-derive from `k3-recert-2026-06-10.log`.
+  TODO marker at results.tex:337.
 
 ## Live NEXT — one per party
 
@@ -54,16 +56,15 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- master `71eace0` (D-D engine M0+M1). **Live branch: `feat/m2-realizer`** (tip `3664746`) =
-  `feat/c7-star-spike` (CB-1/CB-3 + star + review docs) ∪ master + the M2 realizer. Merge to
-  master is gated on the in-flight k=3 oracle regression digest.
-- Review work-orders: `docs/review-2026-06-09/` (DG/CB/TX/TH/OP/ST/SA — README has the order).
-- Scout artifacts: `.scout-cache/k<k>_<tiles>_cap<ms>.ndjson` (crash-resume + cross-check input).
-- `resources/` under git; thesis repo branch `tx-alignment-2026-06-10` merged (can be deleted).
+- **master = `0d6c96b` = `feat/m2-realizer`** (ff). Nothing pushed to origin (CB-9). Accepted k=3
+  artifact preserved at `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache path is
+  being rewritten by the in-flight stability sweep. ⚑ Old k=3 resume caches INVALID (seed indices
+  shifted) — always fresh.
+- Review work-orders: `docs/review-2026-06-09/` (CB-4/5/6/9 still open in 01; OP/ST files untouched).
+- Supabase: k=3 run `52d0cb2e` certified (61); old `d522b481` de-certified, rows retained.
 
 ## Ledger index
 
 `DEVELOPMENT_NOTES.md` (CC narrative) · `SYNC.md` (handoff) + `archive/` (rotated history) ·
-`../../resources/research/TA_LOG.md` (TA narrative) + `resources/research/*.md` (topical:
-delaney-dress-\*, method-exploration-roadmap, pool-bypass-\*, reflection-\*, orbifold-\*,
-route-a-proven-box, star-\*) · `../../thesis/chapters/journey.tex` (the sink the ledgers feed).
+`../../resources/research/TA_LOG.md` (TA narrative) + `resources/research/*.md` (topical) ·
+`../../thesis/chapters/journey.tex` (the sink the ledgers feed).
