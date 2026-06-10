@@ -28,19 +28,37 @@
 
 import type { Polygon } from '../polygons/Polygon';
 import { Cyclotomic } from '../Cyclotomic';
-import { detSurd } from './exact/Surd';
+import { Surd, detSurd } from './exact/Surd';
 import { sameLattice } from './LatticeEnumerator';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { PeriodCell } from './PeriodSolver';
 
+/** Exact integer floor of a Surd: float guess, then exact `cmp` correction (each loop step moves
+ *  monotonically toward the unique n with n ≤ s < n+1; cmp/sign are exact — CB-2). */
+function surdFloor(s: Surd): bigint {
+	let n = BigInt(Math.floor(s.toFloat()));
+	while (s.cmp(Surd.rational(n)) < 0) n -= 1n;
+	while (s.cmp(Surd.rational(n + 1n)) >= 0) n += 1n;
+	return n;
+}
+
 /**
- * Canonical lattice-class representative key of `p` under Λ = (u, v): the lexicographically smallest
- * exact key among `p`'s near-origin lattice translates. The same key for every member of a class (the
- * near-origin translate SET is identical for p and p+λ), so it is immune to the half-integer-boundary
- * rounding that splits a class when each polygon is reduced independently (the bug `canonicalRep` was
- * written to fix in PeriodSolver). Float only picks the integer translations; the keys are exact.
+ * Canonical lattice-class representative key of `p` under Λ = (u, v): translate `p` so its
+ * centroid's EXACT coordinates (α, β) in the basis (u, v) land in the fundamental domain [0,1)²
+ * (α, β computed by Surd Cramer — they lie in ℚ(√2,√3); representative = p − ⌊α⌋u − ⌊β⌋v).
+ * Class-canonical by construction: lattice translates shift (α, β) by integers, which cancel in
+ * the exact floor — the SAME key for every member of a class, with no float in the decision.
+ *
+ * §34 (CB-4 guard discovery, 2026-06-10): this replaces the original float-guessed ±2-window
+ * lex-min reduction, which was NOT class-canonical on skewed bases (window/`lim` cutoffs picked
+ * different representatives for members of one class) — producing direction-dependent FALSE
+ * NEGATIVES in `tilingsCongruent`'s cell-set verification, caught as a cong(a,b) ≠ cong(b,a)
+ * symmetry violation by `assertEquivalencePartition` on the k=3 artifact. Soundness was never at
+ * risk (keys are exact geometry — distinct classes cannot collide); the defect was completeness
+ * of the merge, the same axis as §19.6.
+ * Exported for the §34 class-invariance regression test only — not part of the public dedup API.
  */
-function reducedClassKey(
+export function reducedClassKey(
 	p: Polygon,
 	u: Cyclotomic,
 	v: Cyclotomic,
@@ -54,34 +72,17 @@ function reducedClassKey(
 		const hit = memo!.get(cacheKey);
 		if (hit !== undefined) return hit;
 	}
-	const uV = u.toVector();
-	const vV = v.toVector();
-	const det = uV.x * vV.y - uV.y * vV.x;
-	const c = p.exactCentroid!.toVector();
-	// integer combo bringing the centroid into the fundamental cell (exact translate, float-guessed m,n)
-	const ma = Math.round((c.x * vV.y - c.y * vV.x) / det);
-	const mb = Math.round((uV.x * c.y - uV.y * c.x) / det);
+	const den = detSurd(u, v); // ≠ 0: (u, v) is a basis
+	const c = p.exactCentroid!;
+	const ma = surdFloor(detSurd(c, v).div(den)); // α: c = α·u + β·v (Cramer, exact)
+	const mb = surdFloor(detSurd(u, c).div(den)); // β
 	let base = p;
-	if (ma !== 0 || mb !== 0) {
-		const T = u.scaleRational(BigInt(-ma), 1n).add(v.scaleRational(BigInt(-mb), 1n));
+	if (ma !== 0n || mb !== 0n) {
+		const T = u.scaleRational(-ma, 1n).add(v.scaleRational(-mb, 1n));
 		base = p.clone();
 		base.translateExact(T);
 	}
-	const cellDiam = Math.max(Math.hypot(uV.x, uV.y), Math.hypot(vV.x, vV.y));
-	const lim = 1.5 * cellDiam + 0.1;
-	let bestKey = base.exactKey();
-	for (let i = -2; i <= 2; i++) {
-		for (let j = -2; j <= 2; j++) {
-			if (i === 0 && j === 0) continue;
-			const T = u.scaleRational(BigInt(i), 1n).add(v.scaleRational(BigInt(j), 1n));
-			const q = base.clone();
-			q.translateExact(T);
-			const cf = q.exactCentroid!.toVector();
-			if (Math.hypot(cf.x, cf.y) > lim) continue;
-			const kq = q.exactKey();
-			if (kq < bestKey) bestKey = kq;
-		}
-	}
+	const bestKey = base.exactKey();
 	if (cacheKey !== undefined) memo!.set(cacheKey, bestKey);
 	return bestKey;
 }
