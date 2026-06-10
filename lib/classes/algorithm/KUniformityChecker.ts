@@ -82,6 +82,20 @@ export class KUniformityChecker {
 		if (!cellPolygons.every((p) => p.hasExact())) return null;
 		const ring = cellPolygons[0].exactVertices![0].ring;
 		const N = ring.N;
+		// CB-5: the full-surround test below counts `cornerAngleUnits` (units of 2π/N) against a
+		// full turn of N units — but the gate has only ever been validated at N=24. On an N≠24 ring
+		// the old hardcoded `=== 24` test could never fire: reps stayed empty, the gate returned
+		// null, and the caller KEPT every candidate — a silent un-gating that violates "all and
+		// only". N≠24 is an explicit non-goal (review ST-5); throw loudly instead of degrading,
+		// matching the sibling star code (StarVC, ExactStarPolygon).
+		if (N !== 24) {
+			throw new Error(
+				`KUniformityChecker: hardcoded to N=24 angle units; N=${N} unsupported — see review ST-5`
+			);
+		}
+		// Full turn (2π) in cornerAngleUnits' units of 2π/N — the one site a future N-generalization
+		// must revisit (asserted === 24 above until the rest of the gate is verified N-generic).
+		const FULL_TURN_UNITS = N;
 		const ZERO = Cyclotomic.ZERO(ring);
 
 		// --- Reconstruct a periodic block: replicate the cell over a (2R+1)² lattice window. ---
@@ -209,7 +223,7 @@ export class KUniformityChecker {
 		}
 		const reps: Cyclotomic[] = [];
 		for (const { vertex, units, tiles } of incident.values()) {
-			if (units !== 24) continue; // not a fully-surrounded (interior) tiling vertex (2π = 24 units)
+			if (units !== FULL_TURN_UNITS) continue; // not a fully-surrounded (interior) tiling vertex (2π = N units; N=24 asserted above)
 			// A2: a 2-tile point summing to 2π is a forced dent-fill (Myers non-vertex), NOT an orbit
 			// rep. t counts distinct tile INSTANCES (by exactKey), never incident corners. Regular path:
 			// no two {3,4,6,8,12} interior angles sum to 2π ⇒ every surrounded vertex has t≥3 ⇒ inert.
