@@ -2394,3 +2394,46 @@ the kept-cell and pushed-lattice sets are exactly unchanged — verified by the 
 - k=1 probe digest `6f9ca9cf2d16c75f` count=11 and k=2 probe digest `f3e2e0517191362c` count=20 —
   both byte-identical; banner + reach lines on stderr. Logs:
   `experiments/results/cb7-cb8-probes-2026-06-10.log`.
+
+## 33. Finding-2 SIGNED OFF by the TA + the three follow-ups landed (2026-06-10)
+
+TA verdict on §32.2 Finding 2 (the guard's area-set miss suppression): **SOUND for the regular
+family** — every link verified against the code, not the comments
+(`../resources/research/cb7-finding2-signoff-2026-06-10.md`). The load-bearing link: `vcIncidences`
+retains duplicate VC entries (plain `.map`, no merge) and seeds carry one entry per conjectured
+orbit, so `vcAreaSet`'s `v ≤ 12` loop IS the per-orbit crystallographic bound — §12.8 not violated.
+
+### 33.1 The scope rider — record verbatim, it bounds the thesis claim
+
+**CB-7's protective claim is "pool-reach soundness, conditional on area-filter correctness" — NOT
+"the candidate stage is guarded."** The suppression conditions on the same code-computed
+`admissibleAreaKeys` the candidate stage filters by, so post-suppression the guard cannot detect a
+`vcAreaSet` implementation bug (an under-generated area set drops the lattice AND suppresses the
+alarm — correlated failure). Acceptable because (a) the TA verified the implementation against the
+mathematical contract, (b) it is exact and cap-free for regular seeds, (c) k≤3 per-tiling oracle
+bijection ×2 corroborates end-to-end. The incidental cross-seed flood-power Finding 2 removed is
+covered by the CB-8 regime banner — the right channel for it. Standing inheritance unchanged: the
+connected-k-cluster seed lemma (§29.3 ⚑) is NOT discharged by any of this.
+
+### 33.2 Follow-ups landed (`fix/cb7-finding2-followups` @ `d433b95`, branched from master `0d6c96b`)
+
+1. **`primitivityGuardAreaSuppressed` diag counter** (TA ask §3): suppressed-by-area was
+   indistinguishable from suppressed-by-candidate-hit; the class is now countable — a jump is a
+   cheap anomaly signal for the §33.1 correlated-failure mode.
+2. **⚑ Star area-ladder truncation made loud** (TA ask §4): `PeriodSolver` star call site passed
+   `onTruncate=undefined` — a silent `LADDER_SIZE_CAP` hit would under-generate
+   `admissibleAreaKeys` AND let Finding-2 suppression mask the downstream alarm (the §33.1 mode
+   made real). Now: ⚑ INCOMPLETE-REGION + `starLadderTruncated` (cache → diag) + the guard alarms
+   UNCONDITIONALLY for truncated-ladder seeds. Rider: `areaLadderFromTiles`' initial
+   below-bound check got the standard 1e-9 slack — the call site's `24k·a_max` travels a
+   different float route (`regularArea` closed-form) than the ladder's `max(Surd.toFloat())`;
+   an ULP gap would have fired the alarm spuriously once per star seed. Found by writing the
+   test first; the failing case is pinned in `tests/lattice-enumerator.test.ts`.
+3. **Stale `vcAreaSet` docstring fixed** (TA ⚑ in sign-off §1.2): "VCs with identical tile counts
+   are merged" was false — no merge ever existed; the docstring now states the per-orbit
+   semantics the sign-off rests on.
+
+Digest-neutral by construction on regular seeds (counter = pure addition; bypass needs star +
+truncation; slack changes only alarm timing at ULP equality). 57/57 tests, build clean. ⚑ k≤2
+probe re-verification DEFERRED — the k=3 stability regression occupies the machine; run the probe
+before merging the branch.
