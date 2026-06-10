@@ -201,15 +201,17 @@ async function main(): Promise<void> {
 	}
 
 	// --- generated includes (galleries + match tables) ---
-	const k3Caveat =
-		'Preliminary (NOTES \\S28): the certified $k=3$ catalogue currently misses Galebach \\#7 and contained a non-primitive duplicate (excluded here); regenerated once the catalogue is re-certified.';
+	// (the k=3 PRELIMINARY caveat was dropped 2026-06-10: re-certified per-tiling, digest
+	// 99919f42a7b58e76, oracle match 92/92 — NOTES §31)
 	const includes: [string, string][] = [];
 	for (const k of [1, 2, 3]) {
-		let ke = entries.filter((e) => e.k === k);
-		if (k === 3) ke = ke.filter((e) => e.tCode !== null); // exclude the known duplicate
+		const ke = entries.filter((e) => e.k === k && e.tCode !== null);
+		if (ke.length !== entries.filter((e) => e.k === k).length) {
+			throw new Error(`gallery k=${k}: unmatched tilings present — oracle map is stale, rerun figures:data`);
+		}
 		if (ke.length === 0) continue;
-		includes.push([`gallery-k${k}.tex`, galleryTex(k, ke, k === 3 ? k3Caveat : undefined)]);
-		includes.push([`match-table-k${k}.tex`, matchTableTex(k, ke, k === 3 ? k3Caveat : undefined)]);
+		includes.push([`gallery-k${k}.tex`, galleryTex(k, ke)]);
+		includes.push([`match-table-k${k}.tex`, matchTableTex(k, ke)]);
 	}
 
 	// --- deliver ---

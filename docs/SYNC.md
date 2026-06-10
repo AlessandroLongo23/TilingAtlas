@@ -488,3 +488,10 @@ digest `99919f42a7b58e76`** (old `eb34499d` invalid); decisive gate = bidirectio
 (`recert-oracle-match.ts`, ★ PASS). k=1 byte-identical pre-check; digest anchors updated in
 certify-run/backfill/figure-snapshot. Thesis k=3 PRELIMINARY caveat can lift once galleries re-export.
 Detail: NOTES §31 + `k3-recert-*.log`. — CC
+
+**2026-06-10 — CC → TA+AL — ★★ k=3 RE-CERT CLOSED END-TO-END; figures FINAL; master ff'd.**
+AL-directed: old defective run `d522b481` DE-certified, recert run `52d0cb2e` backfilled (3 gates) +
+CERTIFIED (digest `99919f42a7b58e76`). Per-tiling verified TWICE independently (16f's script + a
+second blind run: 362→61 dedupe, 61/61 oracle bijection, t3007 in). Snapshot/orbits/oracle-map
+regenerated — **oracle match now 92/92**; k=3 gallery FINAL (t3007.pdf delivered, PRELIMINARY caveat
+dropped in build.ts + results.tex TODO); thesis 79pp clean (⚑ stale-aux \@firstoffive → latexmk -C). — CC
