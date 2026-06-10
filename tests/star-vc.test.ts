@@ -114,3 +114,26 @@ describe("TH-4 — Route 2 alphabet derivation (independent of StarVC; drift sen
 		expect(r2DentRegVariants().map(key).sort()).toEqual(dentRegularFillableVariants().map(key).sort());
 	});
 });
+
+describe("TH-4 — pinned d_max constants (hand-derived, spec 2026-06-10; mismatch = STOP and reconcile)", () => {
+	it("regular-only: fig4 = 6 (3⁶), fig3(=1) = 0 (no dents in alphabet ⇒ empty stratum), fig3(≤1) = 6", () => {
+		expect(r2Dmax([], "fig4")).toEqual({ dmax: 6, witness: ["3", "3", "3", "3", "3", "3"] });
+		expect(r2Dmax([], "fig3eq1").dmax).toBe(0);
+		expect(r2Dmax([], "fig3le1").dmax).toBe(6);
+	});
+	it("all-32 envelope fig4 = 9 (4 × α=1 points + 5 triangles; t=10 needs ≥ 5·1+5·4 = 25 > 24)", () => {
+		expect(r2Dmax(r2AllVariants(), "fig4").dmax).toBe(9);
+	});
+	it("dent-reg-19 envelope fig4 = 9 (3*@1 and 8*@1 are in the 19)", () => {
+		expect(r2Dmax(r2DentRegVariants(), "fig4").dmax).toBe(9);
+	});
+	it("all-32 envelope fig3(=1) = 6 (β=13 dent + 3 × α=1 points + 2 triangles; t=7 needs ≥ 13+3+12 = 28 > 24)", () => {
+		expect(r2Dmax(r2AllVariants(), "fig3eq1").dmax).toBe(6);
+	});
+	it("every F(n,1) fig4 = 9 and every F(n,2) fig4 = 8 (points repeat within one variant)", () => {
+		for (const n of R2_STAR_NS) {
+			expect(r2Dmax([{ n, alphaU: 1 }], "fig4").dmax, `F(${n},1)`).toBe(9);
+			expect(r2Dmax([{ n, alphaU: 2 }], "fig4").dmax, `F(${n},2)`).toBe(8);
+		}
+	});
+});
