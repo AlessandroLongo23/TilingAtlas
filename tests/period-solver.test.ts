@@ -251,6 +251,54 @@ describe('OP-1 prop:typeprune prep', () => {
 	});
 });
 
+describe('OP-1 prop:typeprune', () => {
+	// prop:typeprune (correctness.tex:731-751, two-sided): a certified closed cell whose occurring
+	// VC-type set ⊊ the seed's allowed set does not realize the seed's orbit-VC multiset — it is
+	// another seed's tiling and may be discarded WITHOUT the orbit gate. V<k closes the cheap half
+	// (orbits ≤ V). Pinned baselines (UNCHANGED solver @ 62e2434, experiments/results/
+	// op1-pin-k2-2026-06-10.log): both fixtures are single-concrete and deterministic (no timeout).
+	it('[3,3,3,3,3,3;3,3,6,6]: pure-3⁶ supercells die at P2 BEFORE the CB-7 guard; catalogue unchanged', { timeout: 90000 }, () => {
+		// Pinned (pre-change): cells=1 rawCells=1 supercellRejected=29 gateRejected=0.
+		const concretes = buildSeeds(2).filter((s) => s.name === '[3,3,3,3,3,3;3,3,6,6]');
+		expect(concretes.length).toBe(1);
+		const { cells, diag } = new PeriodSolver(2).solve(concretes[0], { maxMs: 60000 });
+		expect(diag.timedOut).toBe(false); // deterministic run — the pins are only valid untruncated
+		expect(diag.p2Skipped).toBeGreaterThan(0); // the filter FIRES (pure-3⁶ closures: occ ⊊ allowed)
+		expect(cells.length).toBe(1); // emitted catalogue for the seed UNCHANGED (pinned)
+		expect(diag.rawCells).toBe(1); // the one genuine 2-uniform cell still certifies (pinned)
+		// The 29 pre-change supercell discards now die at P2 upstream of isPrimitive — the CB-7
+		// surface DROPS (a count shift, not a loss: theorem-licensed upstream of the guard).
+		// Measured split (op1-vbelowk-sweep-k2-2026-06-10.log, seed index 6):
+		// 27 die at P2 (p2Skipped=27) and 2 remain to CB-7 (scRej=2).
+		expect(diag.supercellRejected).toBeLessThan(29);
+		// FALLBACK pin for the V<k half (plan-approved): vBelowKSkipped CANNOT fire at k=2. V<2 means
+		// V=1 — a certified closure with ONE vertex class mod Λ — which bounds the cell area below the
+		// k=2 candidate area floor: the candidate area filter excludes the sub-area primitive lattices
+		// whose completions would have V<k. Measured: 0 fires across ALL 40 k=2 concretes
+		// (experiments/results/op1-vbelowk-sweep-k2-2026-06-10.log; segment 16-40 explicit timeouts=0,
+		// indices 1-15 corroborated by wall-times < budget). The k=3 sweep's diag aggregation is the
+		// live verification of this half.
+		expect(diag.vBelowKSkipped).toBe(0);
+	});
+	it('[3,3,3,4,4;4,4,4,4]: NEGATIVE control — full-type-support orbits>k closures must REACH the gate', { timeout: 90000 }, () => {
+		// Pinned (pre-change): cells=2 rawCells=5 supercellRejected=0 gateRejected=2. The two gate
+		// rejects use BOTH allowed VC types — occ = allowed (so ≥2 names ⇒ orbits ≥ 2) and are
+		// gate-rejected (orbits ≠ 2) ⇒ orbits ≥ 3. That is exactly the class prop:typeprune provably
+		// cannot catch (type support is necessary, not sufficient for orbits = k). OP-1 must not
+		// over-fire: every diagnostic must match the pre-change pin and both former gate rejects must
+		// still die AT THE GATE, not earlier.
+		const concretes = buildSeeds(2).filter((s) => s.name === '[3,3,3,4,4;4,4,4,4]');
+		expect(concretes.length).toBe(1);
+		const { cells, diag } = new PeriodSolver(2).solve(concretes[0], { maxMs: 60000 });
+		expect(diag.timedOut).toBe(false);
+		expect(diag.p2Skipped).toBe(0); // no subset-support closure on this seed — the filter must NOT fire
+		expect(diag.vBelowKSkipped).toBe(0); // no V<k closure either
+		expect(diag.rawCells).toBe(5); // all five certified closures still reach the gate loop (pinned)
+		expect(diag.gateRejected).toBe(2); // the two orbits=3 cells die at the GATE, exactly as pre-change
+		expect(cells.length).toBe(2); // emitted catalogue UNCHANGED (pinned)
+	});
+});
+
 describe('lem:fillreach F3 loud-cap guards (TH-2 work orders, 2026-06-10)', () => {
 	// F3b: buildBlock's per-axis index cap must never bind SILENTLY. The worst-case requirement is
 	// asserted per candidate lattice (certificate radius dominates: limit = 2·cellDiam+10, range

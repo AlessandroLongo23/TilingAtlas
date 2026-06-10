@@ -221,12 +221,14 @@ export type PeriodCell = {
 export type PeriodSolverDiag = {
 	candidateLattices: number;
 	latticesTried: number;
-	rawCells: number; // completed torus tilings before dedup/gate
+	rawCells: number; // completed torus tilings surviving the in-fill filters (V<k, P2, primitivity), before dedup/gate. Accounting identity per lattice: certified closures = vBelowKSkipped + p2Skipped + supercellRejected + rawCells-contribution
 	emitted: number; // after canonical dedup + k-gate
 	gateRejected: number; // completed but orbit count ≠ k
 	fanLattices: number; // lattices where the rigid core overflowed the cell → seeded from VC fans instead
 	p0Skipped: number; // candidate lattices removed by the P0 arithmetic pre-filter (minVerts > k·hol)
 	p1Pruned: number; // DFS branches cut by the P1 orbit-floor (vertexClasses > k·hol)
+	p2Skipped: number; // OP-1 prop:typeprune closed-cell half: in-fill, post-certificate, pre-primitivity — certified cells discarded because their occurring VC-type set ⊊ the seed's allowed set (licensed two-sided by prop:typeprune; recovery routes through prop:fanseed — rem:fastpath caveat inherited). Excluded from rawCells; NOT counted in gateRejected (the k-gate is never reached for these cells)
+	vBelowKSkipped: number; // OP-1 V<k half: in-fill, post-certificate, pre-primitivity — closed cells with vertex-class count V < k (orbits ≤ V < k). The k-gate WOULD reject these (orbit count < k), but the counter fires before the gate: excluded from rawCells and NOT counted in gateRejected
 	seedStateDedup: number; // redundant seed sets skipped (identical initial torus state mod Λ)
 	obliqueCandidates: number; // candidate lattices contributed by source (C) oblique join-closure
 	obliqueTruncated: ObliqueTruncation['cause'] | null; // INCOMPLETE-REGION cause if the oblique reach was clipped
@@ -359,6 +361,8 @@ export class PeriodSolver {
 			fanLattices: 0,
 			p0Skipped,
 			p1Pruned: 0,
+			p2Skipped: 0,
+			vBelowKSkipped: 0,
 			seedStateDedup: 0,
 			obliqueCandidates,
 			obliqueTruncated,
@@ -911,12 +915,21 @@ export class PeriodSolver {
 			const analysis = this.analyze(reps, ctx, block);
 			if (analysis.contradiction) continue;
 			if (!analysis.openVertex) {
-				// No open vertex within a full cell ⇒ torus closed. Certify, and reject supercells (a
-				// non-primitive Λ tiles the SAME tiling as its primitive sublattice — counting both
-				// would over-count). Sound PROVIDED stage 6 enumerated the primitive Λ as its own
-				// candidate — unconditional under cor:box, guarded LOUDLY here under any tuned pool
-				// (CB-7: `isPrimitive` checks the closure lattice against ctx.candidateKeys; log-only).
-				if (this.isCompleteTiling(reps, ctx) && this.isPrimitive(reps, ctx, memo, diag)) results.push(reps);
+				// No open vertex within a full cell ⇒ torus closed. Certify, then OP-1 (prop:typeprune,
+				// correctness.tex:731-751): (i) V<k ⇒ orbits ≤ V < k, the gate would reject — skip the
+				// 7×7 exact symmetry search; (ii) occurring VC-type set ⊊ allowed ⇒ the cell does not
+				// realize this seed's orbit-VC multiset — it is another seed's tiling (two-sided), discard
+				// without gate or primitivity scan. The size-equality test (ii) is sound because the
+				// certificate already enforces occ ⊆ allowed (any disallowed name returns false) and both
+				// sides live in the same canonicalVCName namespace, so |occ| = |allowed| ⇔ occ = allowed.
+				// Both OFF for star seeds (P0/P1 doctrine: vReps over-counts star dents — sound but
+				// conservative — and TH-13 is open). Then reject supercells (CB-7 guard unchanged).
+				const occ: Set<string> | undefined = skipP1 ? undefined : new Set<string>();
+				if (this.isCompleteTiling(reps, ctx, occ)) {
+					if (occ !== undefined && vReps.length < this.k) { diag.vBelowKSkipped++; continue; }
+					if (occ !== undefined && occ.size !== ctx.allowed.size) { diag.p2Skipped++; continue; }
+					if (this.isPrimitive(reps, ctx, memo, diag)) results.push(reps);
+				}
 				continue;
 			}
 
@@ -1434,7 +1447,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
 }
 
 /**
