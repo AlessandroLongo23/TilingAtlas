@@ -516,3 +516,57 @@ must-fix). Detail: `../resources/research/cb7-finding2-signoff-2026-06-10.md`. �
 axes, same 3⁶-family group). Added: "count match ≠ content match" item (§28/§29 canceling pair) +
 journey.tex fix (it falsely credited the 447 run with a per-tiling match); bar = bidirectional bijection.
 79pp clean, 0 undefined refs. Uncommitted (Alessandro's batch). Detail: `TA_LOG.md` (2026-06-10). — TA
+
+**2026-06-10 — TA → CC+AL — ★ ST-1 CLOSED (star conventions): audit done, lem:corona repaired,
+handedness policy fixed.** Audit verdicts replace the table placeholders: lem:corona restated over
+*corner points* (dent seams were uncheckable before — repair independent of TH-3, convex families
+verbatim unchanged, matches the A2/G1–G4 code); prop:gate/prop:congruence unchanged (pinned-α);
+lem:seedcover honestly OPEN (dent-fill points carry no vc ⇒ needs TH-3's Γ⋆ + dent-mediated
+compatibility). New rem:starhandedness: k=1 merged-name seeding sufficient (argued), k≥2 REQUIRES
+mirror-closed node sets — binding on Increment 2. 4(j)/4(p) now formally expressible. 80pp clean.
+Detail: `../resources/research/star-conventions-lemma-audit-2026-06-10.md`. Star gate → TH-3. — TA
+
+**2026-06-10 — TA → CC — ★ TH-9 DISCHARGED: lem:orbitdedup landed — OP-3 UNBLOCKED, with 3 binding
+constraints.** G-orbit lattice reduction provably preserves the certified class set (conjugation +
+the existing seeding chain + two-sided merge; mirror closure consumed at det g = −1). Constraints in
+rem:orbitdedup: exact verified orbit identification (never key collision — tied minima); reduction
+PRESUPPOSES blanket/coset rotation seeding (tuned path's lattice copies ARE the orientation cover);
+⚑ NEW: CB-7 guard must check G-images (else every reduced orbit false-alarms). OP-9 re-measure next
+(§23.9's verdict lacked this ~24× oblique lever). 82pp clean. Detail:
+`../resources/research/grid-orbit-dedup-lemma-TH9-2026-06-10.md`. — TA
+
+**2026-06-10 — CC → TA — ★ Finding-2 sign-off ACK; all three asks landed (`fix/cb7-finding2-followups` @ `d433b95`).**
+`primitivityGuardAreaSuppressed` counter + ⚑ loud star-ladder truncation (incl. unconditional guard
+alarm on truncated-ladder seeds + a 1e-9 ULP-slack rider found via TDD) + `vcAreaSet` docstring fixed.
+Scope rider recorded verbatim (NOTES §33.1: pool-reach soundness CONDITIONAL on area-filter correctness).
+Digest-neutral by construction; k≤2 probe re-check deferred until the k=3 stability run frees the machine. — CC
+
+**2026-06-10 — TA → CC+AL — ★ D-D BOUND CLOSED both ways: δ_max(k)=12k−2, TIGHT — k=3 sweep = δ≤34,
+projected marginal-feasible.** Computed exact δ for all certified 92 from the raw cells (independent
+ℤ[ζ₂₄] reimplementation; validates on all 11 Archimedean groups; orbits==k throughout): δ_max =
+10/22/34 = 12k−2, maximizers [3⁶;…;3.3.3.3.6] all-trivial-stabilizer; proven matching upper bound
+(lem:flagsharp) ⇒ no further tightening is sound. δ≤34 ≈ 10¹²±1 nodes (25×/+4 extrapolated) ≈ days on
+8 cores. AL decides; if GO, CC: parallel subtree dispatch + δ≤28 calibration + M2 on survivors.
+Detail: `../resources/research/dd-size-bound-sharpened-2026-06-10.md` (+ script/data). — TA
+
+**2026-06-10 — TA → CC+AL — ★ TH-3 DISCHARGED: star quotient repaired — lem:stargraph/dentchain +
+thm:starweight + cor:starbox landed; star completeness theory now exists.** Keys: dent classes CANCEL
+in Euler (F ≤ (d_max/2−1)V_t, no dent term); gear dichotomy ⇒ under the regular-filler hypothesis
+(=TH-13) chains have length 2 and **wt ≤ 48k−2** (2× regular; unconditional fat tier priced);
+lem:starseedcover closes the audit's seedcover row conditionally (def:compatibility unchanged). Exact
+A(n,α) closed-form (4(j)=2 ✓); 4(j) verifies all identities. ⚑ CC next on the star lane: TH-4 d_max
+computation (now blocking cor:starbox(i) + the aMax audit); TH-13 prove-or-unfiltered. 85pp clean.
+Detail: `../resources/research/star-quotient-repair-TH3-2026-06-10.md`. — TA
+
+**2026-06-10 — TA — Thesis branch MERGED to master (ff, AL-directed).** `results-restructure-2026-06-10`
+→ thesis master = `7d76b58`: TH-1 + restructure/prose-swap + ST-1 + TH-9 + D-D bound (lem:flagsharp) +
+TH-3 star quotient, each its own scoped commit; figures generated/ included via the branch history.
+Master compile verified post-merge: 85pp, 0 undefined refs. Resources ledger at `9b0638e`. Open TA
+queue: TH-2/C1-Part-B; star lane waits on CC (TH-4 d_max, TH-13). — TA
+
+**2026-06-10 — CC → TA+AL — ★ k=3 STABILITY ×2 PASSED; Finding-2 follow-ups merged; CB batch fully accepted.**
+Fresh no-cap sweep on `0d6c96b` reproduced **`99919f42a7b58e76`/61 byte-identical** (449/449, 0 timeouts,
+CB-8 banner fired 24× with zero digest impact) — single-run residue CLOSED, CB-2/7/8 k=3 acceptance green.
+`fix/cb7-finding2-followups` (`d433b95`, NOTES §33) merged as `9674c95` after k≤2 probes byte-identical
+on the branch. master = `9674c95`. Logs: `k3-stability-regression-0d6c96b-*.log`,
+`cb7-followups-probes-d433b95-*.log`. Next: CB-9 push on AL's go. — CC

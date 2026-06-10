@@ -28,17 +28,20 @@ Two tiers. Do not mix them.
   defects fixed (§29), full no-cap re-sweep 449/449 seeds → **new anchor `99919f42a7b58e76`/61**,
   per-tiling oracle bijection PASSED ×2 (`recert-oracle-match.ts`); DB: old run de-certified, recert
   run `52d0cb2e` certified; figures snapshot/orbits/oracle-map regenerated → **92/92**; k=3 gallery
-  FINAL incl. t3007.pdf. NOTES §31. ⚑ **Stability ×2 sweep in flight**
-  (`experiments/results/k3-stability-regression-0d6c96b-2026-06-10.log`, ETA ~2.3h) — also the k=3
-  batch acceptance for the CB landings below.
+  FINAL incl. t3007.pdf. NOTES §31. ★ **Stability ×2 PASSED** (fresh sweep reproduced
+  `99919f42a7b58e76`/61 byte-identical, 449/449, 0 timeouts —
+  `experiments/results/k3-stability-regression-0d6c96b-2026-06-10.log`) — single-run residue closed;
+  also the k=3 batch acceptance for the CB landings below.
 - ★ **Review batch CB-2/7/8 LANDED, digest-neutral** (k≤2 byte-identical post-merge, `b81e823`):
   CB-2 Surd.sign provable error-bound filter (`216302b` — the fuzz test found a REAL wrong-sign at
   coefficient height ~2⁵⁶: the old 1e-6 gate was unsound in fact, not just in principle; NOTES §30);
   CB-7 primitivity-rejection guard + CB-8 tuned-pool regime banner/reach counting (`eefa6ac`,
-  diagnostics-only; NOTES §32). **§32.2 Finding 2 SIGNED OFF by TA 2026-06-10** (sound; scope + 2
-  asks: `primitivityGuardAreaSuppressed` counter, star-path silent ladder truncation at
-  `PeriodSolver.ts:547` — see `../resources/research/cb7-finding2-signoff-2026-06-10.md`).
-  Remaining review code items: CB-4, CB-5, CB-6, CB-9 (push branches!).
+  diagnostics-only; NOTES §32). **§32.2 Finding 2 SIGNED OFF by TA 2026-06-10** (sound; see
+  `../resources/research/cb7-finding2-signoff-2026-06-10.md`); **all 3 sign-off asks LANDED** on
+  `fix/cb7-finding2-followups` @ `d433b95` (counter + loud star-ladder truncation + docstring;
+  NOTES §33) — **MERGED `9674c95`** after k≤2 probe re-check byte-identical on d433b95
+  (`cb7-followups-probes-d433b95-2026-06-10.log`). Remaining review code items: CB-4, CB-5, CB-6,
+  CB-9 (push branches — awaiting AL go).
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
 - Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1/TX-7
@@ -46,13 +49,12 @@ Two tiers. Do not mix them.
 
 ## Thesis state
 
-- Thesis master: TX-1..7 + B2 (lem:ddrealize/ddrealizer/rem:ddscope); k=3 gallery FINAL on the
-  recert digest (thesis commit `01a7dd5`), 79pp clean.
-- Thesis branch `results-restructure-2026-06-10` (COMMITTED 2026-06-10, pending merge to master):
-  TH-1 octagon lemma (`8595b7d`) + restructure/prose-swap batch (`ece66b0`: sec:val-dd leads,
-  results.tex digest/449/truncation re-derived from the recert log, "count match ≠ content match"
-  item, journey.tex 447-run overclaim fixed); 79pp clean, 0 undefined refs. Resources ledger batch
-  committed (`fc46e9b`). Detail: TA_LOG (2026-06-10).
+- **Thesis master = `7d76b58`** (ff-merged 2026-06-10 late, AL-directed; 85pp clean post-merge,
+  0 undefined refs). Contains, as scoped commits: TH-1 octagon lemma (`8595b7d`), results
+  restructure + prose swap (`ece66b0`), ST-1 star conventions closed (`cefccc6`), TH-9
+  lem:orbitdedup (`ae61853`), D-D bound closed — lem:flagsharp δ≤12k−2 tight (`efe6d6c`), TH-3
+  star quotient repair (`7d76b58`). Resources ledger at `9b0638e` (incl. the exact-δ script/data
+  for the certified 92). Detail: TA_LOG (2026-06-10).
 
 ## Live NEXT — one per party
 
@@ -60,10 +62,10 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- **master = `0d6c96b` = `feat/m2-realizer`** (ff). Nothing pushed to origin (CB-9). Accepted k=3
-  artifact preserved at `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache path is
-  being rewritten by the in-flight stability sweep. ⚑ Old k=3 resume caches INVALID (seed indices
-  shifted) — always fresh.
+- **master = `9674c95` = `feat/m2-realizer`** (ff; stability PASS + Finding-2 follow-ups merged).
+  Nothing pushed to origin (CB-9 — awaiting AL go). Accepted k=3 artifact at
+  `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
+  identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
 - Review work-orders: `docs/review-2026-06-09/` (CB-4/5/6/9 still open in 01; OP/ST files untouched).
 - Supabase: k=3 run `52d0cb2e` certified (61); old `d522b481` de-certified, rows retained.
 
