@@ -44,8 +44,14 @@ Two tiers. Do not mix them.
   (CB-9 push ✓ 2026-06-10).
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
-- Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1/TX-7
-  conventions gate the next increment (TA). Seed-anchored D-D dead by mechanism (NOTES §26).
+- Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1 conventions
+  CLOSED in thesis master. Seed-anchored D-D dead by mechanism (NOTES §26).
+- ★ **ST-2 + ST-3(1+3) + ST-9 LANDED** (2026-06-10, `feat/st-star-work-orders` @ `a99e61b`, NOT merged,
+  digest-neutral): Myers-2009 k=2 oracle (43 records, 34 in-ring, pins 36/40/42; ⚑ TA caption
+  spot-check pending); productive star-fill positively covered via 4(i) + mutation check; honest
+  run-matrix + §24 retitle + per-cause truncation summary. ⚑ NEW finding: **4(i) is measured OUTSIDE
+  the tuned pool ⇒ the tuned dentreg sweep's ceiling is 12/13 Fig-4 tilings** (the §24.7
+  demonstration run can never be 13/13 without Increment-3 pool work). NOTES §35.
 
 ## Thesis state
 
@@ -69,8 +75,10 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- **master = `c8bc258` = `feat/m2-realizer`** (ff; TH-2 F3 loud-cap work orders merged — NOTES §34;
-  not yet pushed). Branches pushed to origin 2026-06-10 (CB-9 ✓; `fix/th2-f3-loud-caps` local). Accepted k=3 artifact at
+- **master = `0291e83`** (TH-2 F3 + docs; not yet pushed, 5 ahead of origin). Open branches:
+  `feat/st-star-work-orders` @ `a99e61b` (ST-2/3/9, this session — merge held) and the other
+  session's `fix/cb5-cb4-cb6` @ `5a5367d` (⚑ carries its OWN §34 — renumber at merge; solver edits
+  may conflict with the ST-9 poolConfig change). Accepted k=3 artifact at
   `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
   identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
 - Review work-orders: `docs/review-2026-06-09/` (CB-4/5/6/9 still open in 01; OP/ST files untouched).
