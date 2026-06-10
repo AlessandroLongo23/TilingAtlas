@@ -40,8 +40,8 @@ Two tiers. Do not mix them.
   `../resources/research/cb7-finding2-signoff-2026-06-10.md`); **all 3 sign-off asks LANDED** on
   `fix/cb7-finding2-followups` @ `d433b95` (counter + loud star-ladder truncation + docstring;
   NOTES §33) — **MERGED `9674c95`** after k≤2 probe re-check byte-identical on d433b95
-  (`cb7-followups-probes-d433b95-2026-06-10.log`). Remaining review code items: CB-4, CB-5, CB-6,
-  CB-9 (push branches — awaiting AL go).
+  (`cb7-followups-probes-d433b95-2026-06-10.log`). Remaining review code items: CB-4, CB-5, CB-6
+  (CB-9 push ✓ 2026-06-10).
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
 - Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1/TX-7
@@ -63,7 +63,7 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 ## Repo state (re-verify on read — this section goes stale fastest)
 
 - **master = `9674c95` = `feat/m2-realizer`** (ff; stability PASS + Finding-2 follow-ups merged).
-  Nothing pushed to origin (CB-9 — awaiting AL go). Accepted k=3 artifact at
+  ALL branches pushed to origin 2026-06-10 (CB-9 ✓). Accepted k=3 artifact at
   `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
   identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
 - Review work-orders: `docs/review-2026-06-09/` (CB-4/5/6/9 still open in 01; OP/ST files untouched).
