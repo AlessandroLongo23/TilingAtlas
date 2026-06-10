@@ -1,0 +1,29 @@
+# CB-7/CB-8 verification probes — branch fix/cb7-cb8-loud-truncation, 2026-06-10T12:04:50Z
+# k=1 done: COMPOSITION digest=6f9ca9cf2d16c75f count=11 (expected 6f9ca9cf2d16c75f) — byte-identical, regime banner on stderr as designed
+# k=2 run below (expected digest f3e2e0517191362c); per-seed progress lines appear as they complete
+
+tiles: {3,4,6,8,12}  ring N=24
+k=2: 40 seeds (40 used)
+  [0] [3,3,3,3,3,3;3,3,3,3,6]      cells=2 lat=23 raw=21 gateRej=10 fanLat=0 obl=0 48341ms
+  [1] [3,3,3,3,3,3;3,3,3,3,6]      cells=1 lat=23 raw=20 gateRej=10 fanLat=0 obl=0 44969ms
+  [2] [3,3,3,3,3,3;3,3,3,4,4]      cells=2 lat=487 raw=12 gateRej=4 fanLat=353 obl=2616(trunc:join-waived) 63383ms
+  [3] [3,3,3,3,3,3;3,3,4,3,4]      cells=1 lat=487 raw=2 gateRej=1 fanLat=360 obl=2616(trunc:join-waived) 41953ms
+  [4] [3,3,3,3,3,3;3,3,4,12]       cells=1 lat=3 raw=2 gateRej=0 fanLat=0 obl=0 6464ms
+  [5] [3,3,3,3,3,3;3,3,6,6]        cells=1 lat=47 raw=1 gateRej=0 fanLat=28 obl=12 32595ms
+  [10] [3,3,3,3,6;3,3,6,6]          cells=1 lat=26 raw=1 gateRej=0 fanLat=10 obl=12 5610ms
+  [11] [3,3,3,3,6;3,3,6,6]          cells=1 lat=26 raw=1 gateRej=0 fanLat=16 obl=12 5522ms
+  [12] [3,3,3,3,6;3,6,3,6]          cells=0 lat=26 raw=4 gateRej=2 fanLat=10 obl=12 5678ms
+  [13] [3,3,3,4,4;3,3,4,3,4]        cells=1 lat=330 raw=3 gateRej=2 fanLat=280 obl=648(trunc:join-waived) 24453ms
+  [14] [3,3,3,4,4;3,3,4,3,4]        cells=2 lat=330 raw=4 gateRej=2 fanLat=280 obl=648(trunc:join-waived) 28108ms
+  [15] [3,3,3,4,4;3,3,4,3,4]        cells=2 lat=330 raw=4 gateRej=2 fanLat=297 obl=648(trunc:join-waived) 29866ms
+  [18] [3,3,3,4,4;3,4,6,4]          cells=1 lat=9 raw=1 gateRej=0 fanLat=0 obl=0 4726ms
+  [19] [3,3,3,4,4;4,4,4,4]          cells=2 lat=402 raw=5 gateRej=2 fanLat=279 obl=1932(trunc:join-waived) 20698ms
+  [23] [3,3,4,3,4;3,4,6,4]          cells=1 lat=9 raw=2 gateRej=0 fanLat=0 obl=0 6396ms
+  [30] [3,3,6,6;3,6,3,6]            cells=1 lat=23 raw=6 gateRej=4 fanLat=15 obl=0 6705ms
+  [33] [3,12,12;3,4,3,12]           cells=1 lat=12 raw=1 gateRej=0 fanLat=8 obl=0 3071ms
+  [34] [3,4,4,6;3,4,6,4]            cells=1 lat=33 raw=4 gateRej=2 fanLat=26 obl=0 8095ms
+  [36] [3,4,4,6;3,6,3,6]            cells=2 lat=336 raw=4 gateRej=2 fanLat=313 obl=1056(trunc:join-waived) 10710ms
+  [39] [3,4,6,4;4,12,6]             cells=1 lat=2 raw=1 gateRej=0 fanLat=0 obl=0 2927ms
+
+k=2: 20 distinct tilings (from 25 raw cells), 0 seeds timed out, 481.8s total
+COMPOSITION digest=f3e2e0517191362c count=20
