@@ -114,3 +114,25 @@ The certified k≤3 torus results stand as they are (oracle-anchored). B2 remain
 proof-anchored counts on ANY D-D variant. The DG-1 verdict and the TX option-(b) thesis wording are
 unaffected — if the probe wins, the thesis gains a *fourth* method section and a sharper future-work
 claim, not a retroactive rewrite.
+
+## 8. Probe outcome (2026-06-10) — §5 row 3, measured: species-anchoring is dead as a k≥3 lever
+
+Branch `feat/dsym-seeded` (pushed), log `experiments/results/dsym-seeded-probe.log` there.
+
+- **SA-2 falsifier passed where it ran:** anchored k=1 union = exactly the 11 canonical keys
+  (digest match); the 4 non-extendable species (3.3.4.12, 3.3.6.6, 3.4.3.12, 3.4.4.6) die
+  combinatorially — the classical 15→11 enumeration reproduced in 0.1 s. *(This is Alessandro's
+  "expand each VC and see what survives" executed in symbol space — validated, at k=1.)*
+- **The kill:** anchored k=2 multisets [1/43] and [2/43] each cost an **identical 205,822,063
+  nodes** (~51% of the full 404M tree, per anchor). Mechanism: the D-set tree depends ONLY on the
+  (faces, degrees) divisor signature — species-level information **cannot reach the D-set level**,
+  where the 2.24^δ explosion lives. Each anchor re-pays the tree; Σ over 43 anchors ≈ 10–20×
+  *worse* than unanchored. Sweep killed at [2/43]; k=3 not attempted (each anchored tree is a
+  constant fraction of the δ≤36 tree that walls unanchored).
+- **Corollary (sharper than §5 anticipated):** wherever unanchored completes, anchoring is pure
+  overhead — post-filter the unanchored survivors by species instead. The ONLY anchoring that can
+  prune the D-set tree is **geometric** (§6): pinned σ-structure / subsymbol-start with folding
+  branches, obligations SA-4/SA-5. That is now the live escalation, and the bar it must clear is
+  explicit: its pinned chambers must cut the *D-set* branching, not the labeling.
+- Flag-off discipline held: original `dsym-probe.ts` k=1 byte-identical post-change
+  (digest `e91646625684e01f`); k=2 entry-point equivalence via step-0 (404,533,320 nodes).

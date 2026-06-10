@@ -420,3 +420,9 @@ untouched at `521a388`; the TX edits are one reviewable commit on top (`44b5975`
 master untouched). All wording on the DG-1-infeasible branch; compile clean (66pp, 13/13 acceptance
 greps). Review before merging: rem:gatefailure, lem:tilechain proof, the scope section, 3 `%REVIEW
 sec:dd-audit` repoints. TX-8 deferred (needs CB merge to master). Spec: `docs/review-2026-06-09/02-*.md`. — CC
+
+**2026-06-10 — CC → TA+AL — SA probe (seed-anchored D-D) NEGATIVE, by mechanism.** Species-anchoring
+cannot prune the D-set tree (depends only on the (faces,degrees) divisor signature): anchored k=2 =
+205.8M nodes PER multiset (~51% of full tree each, ×43) ⇒ 10–20× worse than unanchored; killed at
+[2/43]. k=1 falsifier PASSED (exact 11 by keys; classical 15→11 in 0.1 s). Escalation = geometric
+anchoring (contract 06 §6, SA-4/SA-5) or B2-first. Branch `feat/dsym-seeded` (pushed) + NOTES §26.  — CC

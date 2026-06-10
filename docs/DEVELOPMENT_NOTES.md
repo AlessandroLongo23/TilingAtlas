@@ -1924,3 +1924,19 @@ the route back, with the bar set by the PAIR count (≥5 orders), not |W| (~reco
 The measurement itself is thesis-grade: an intractable proven box is a result, and it motivates
 TH-10 precisely (correctness.tex rem:box-implementation's "may search a smaller region only behind
 filters proven sound" now has a measured floor on what those filters must achieve).
+
+## 26. Seed-anchored D-D probe (SA, contract 06) — NEGATIVE by mechanism: species can't reach the D-set tree (2026-06-10, session 16b)
+
+Alessandro's partial-symbol sketch → contract `docs/review-2026-06-09/06-seed-anchored-dsym.md` →
+probe on `feat/dsym-seeded` (off master, pushed). Anchored `generateCandidateSymbols` (flag-off
+byte-identical, digest `e91646625684e01f`; fresh k=2 baseline 20 / 54,911 dsets / 404,533,320 nodes
+reproduces §23.5). **Anchored k=1 PASSED its falsifier**: union over 15 species = the exact 11
+canonical keys; the 4 non-extendable species die combinatorially (classical 15→11, 0.1 s — the
+per-VC expansion idea machine-validated at k=1). **Anchored k=2 KILLED the idea**: multisets [1/43]
+and [2/43] cost an identical 205,822,063 nodes (~51% of the full tree EACH) — the D-set tree
+depends only on the (faces, degrees) divisor signature, so species information never reaches the
+level where 2.24^δ lives; Σ over 43 anchors ≈ 10–20× WORSE than unanchored. Sweep killed at [2/43]
+(re-measuring a constant); anchored k=3 pointless (same walling tree). ⚑ Corollary: wherever
+unanchored completes, anchoring = pure overhead (species post-filter is free). ⚑ The surviving
+escalation is GEOMETRIC anchoring (contract §6, SA-4/SA-5): pinned σ-structure must cut the D-set
+branching itself. B2/TH-11 remains the realizability gate for every D-D variant.
