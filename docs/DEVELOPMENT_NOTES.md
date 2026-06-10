@@ -2054,3 +2054,80 @@ level where 2.24^δ lives; Σ over 43 anchors ≈ 10–20× WORSE than unanchore
 unanchored completes, anchoring = pure overhead (species post-filter is free). ⚑ The surviving
 escalation is GEOMETRIC anchoring (contract §6, SA-4/SA-5): pinned σ-structure must cut the D-set
 branching itself. B2/TH-11 remains the realizability gate for every D-D variant.
+
+## 27. B2 proven → M2 realizer built → k≤2 THEOREM-CERTIFIED, oracle-independent (2026-06-10, session 16c)
+
+The session the project's claimed contribution became real at k≤2. TA closed TH-11
+(`resources/research/delaney-dress-B22-realizability-proof-2026-06-10.md`, two logged adversarial
+passes; thesis lem:ddrealize / lem:ddrealizer / rem:ddscope — thesis master now `1913b4c` after the
+fast-forward merge of `tx-alignment-2026-06-10`, compile re-verified 68pp/0 undefined refs). CC then
+wired `DSymRealizer.ts` per Lemma R and ran the acceptance.
+
+### 27.1 The TA proof, and the trap my own spec set
+
+TH-11 as written prescribed "assemble from DF TCS-303 Thm 5". TA re-read the paper: **Thm 5 is
+topological/equivariant only** — it certifies the mixed-sign ghost (K=0, squashed quadrilaterals).
+A proof following my spec route would have been UNSOUND. The metric statement is instead proven
+directly: B2.0 chamber gluing → compact Euclidean orbifold (angle equation consumed exactly at the
+vertex loci, nowhere else) → Thurston 13.3.2 (good + developing + discrete) → lift the chamber
+decomposition → tiles from {0,1}-stars. The second adversarial pass also forced B2.7 (plain symbols
+of k-uniform tilings are minimal — surjectivity of the counting bijection), proven internally via
+orbit-refinement contradiction. Spot-checked here: the Step-2 orbit angle computations, the B2.7c
+refinement argument, and the octagon field trap (`csc(π/8) ∉ ℚ(ζ₂₄)` since `ℚ(ζ₁₆)∩ℚ(ζ₂₄)=ℚ(ζ₈)`)
+— all hold. Residual honest dependencies: Thurston 13.3.2 (published, standard), Bieberbach,
+B2.0/B2.3/B2.4/B2.5 from the 06-08 note, lem:corona.
+
+### 27.2 The realizer (Lemma R steps 1–6, `lib/classes/algorithm/delaney/DSymRealizer.ts`)
+
+- **Step 1 angle gate** = exact rational; REJECT names its {1,2}-component, its developed face
+  sequence, and Σ(1−2/p_j) as a fraction. Verified algebra: the developed sum S relates to the
+  curvature sub-sum κ by S = 2 − v12·κ (cycle) / 2 − 2·v12·κ (chain) ⇒ gate ≡ perComponentFlat
+  (B2.5) as a decision; the gate adds the naming.
+- **Step 2 development**: chamber = (V,E,F) Cyclotomic triple; s0 = V′=2E−V (apothem-wall
+  reflection, division-free); s1 = reflect E across (V,F); s2 = rebuild F on the other side with
+  the NEIGHBOUR's apothem (cross-tile, the one place unit-edge is consumed). ⚑ Field rider
+  implemented division-free: every reflection's linear part found by exact search d² = |d|²·ζ^k;
+  no match ⇒ `FieldClosureError` (loud). `csc(π/8)` never appears as a scalar anywhere.
+- **Steps 3–4**: holonomy generators = non-tree Delaney edges + mirror walls (Poincaré
+  face-pairing of the developed tree = fundamental domain); linear parts are integer pairs
+  (refl, k) ∈ D_24 ⇒ G₀ finite a priori; Schreier on the ≤48-coset action gives pure-translation
+  generators of Λ (asserted: linear part = id).
+- **Step 5**: exact unimodular HNF over the ζ-coefficient lattice (span preserved exactly ⇒ Λ is
+  the FULL translation subgroup, not a sublattice); rank-2 asserted; Lagrange-reduced
+  geometrically (float picks integers, exact subtraction — sound).
+- **Step 6**: Λ-quotient chamber BFS with exact coset keys (rational pivot reduction against the
+  HNF rows); **count asserted = δ·|G₀|**; tiles from {0,1}-stars via exact ζ^{N/p} rotation;
+  emitted as `RegularPolygon.fromAnchorAndDirExact` (vertex-set re-asserted) → `PeriodCell` →
+  **`PeriodSolver.certifyExternalCell`** (additive wrapper = the session's one shared-code touch)
+  runs lem:corona, whose accept-side soundness is independent of B2.2 (defense in depth).
+- ⚑ **Bug found by the δ·|G₀| assertion during build:** the SYMBOL folds mirror chambers but the
+  TILING does not — the quotient BFS must cross mirror walls (s_i c = c) too. First build skipped
+  them → 1 chamber instead of 8 on the square. The assertion caught it instantly; this is exactly
+  why Lemma R's "precomputed target count" termination design is right.
+
+### 27.3 Acceptance (TA note §6 ghost regressions, verbatim — ALL GREEN)
+
+- (a) E3 mixed-sign witness `(2,(1,0),(0,1),(0,1),(4,4),(3,6))` → REJECT naming orbit {0},
+  faces [4,4,4], sum 3/2 (the other orbit: [4×6], sum 3). Pure rational; no development.
+- (b) No monogonal dead-necklace flat symbol at k=1 (3.4.4.6 / 3.3.4.12 / 3.3.6.6 / 3.4.3.12).
+- (c) **k=1: 11/11** realized + corona-certified + KUniformityChecker-crosschecked +
+  congruence-distinct; 4.8.8 exercises the octagon rider, zero field violations. **Per-tiling
+  congruence match vs the torus catalogue: 11/11 both directions.**
+  (`experiments/results/m2-realizer-k1-2026-06-10.log`)
+- **k=2: 20/20** — M1 reproduced the §23.5 tree EXACTLY (404,533,320 nodes — determinism), all 20
+  realized + certified (δ up to 22, |G₀| ∈ {4,6,8,12}, cells up to 21 tiles), 0 rejects,
+  congruence-distinct, **per-tiling match vs the torus catalogue 20/20 both directions**
+  (`experiments/results/m2-realizer-k2-2026-06-10.log`).
+
+### 27.4 What is now true (and what is not)
+
+**k=1 = 11 and k=2 = 20 are theorem-certified and oracle-independent**: B1 (δ≤12k, proven) bounds
+the sweep; the published canonical-augmentation order enumerates symbols completely; lem:ddrealize
+(B2.2+B2.3+B2.6+B2.7) gives the bijection minimal-flat-symbols ↔ tilings; every accept carries an
+independently verified corona certificate. The Soto-Sánchez oracle is consulted NOWHERE in this
+chain — the torus per-tiling match is a cross-validation between two independent methods, not a
+certification input. **NOT changed:** k=3 = 61 stays oracle-anchored (D-D generation still walls at
+δ≤36); the DG-1 verdict and the TX option-(b) wording stand; the k=3 CB-1 oracle regression was
+still in flight at write time (its own entry when it lands). Branch: `feat/m2-realizer`
+(= c7-star-spike ∪ master; M2 = `500893b`). ⚑ NOTES numbering: two §23 exist post-merge (see the
+merge note above §23) — D-D §23 carries the `§23.x` cross-refs.

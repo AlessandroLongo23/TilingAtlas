@@ -439,3 +439,10 @@ thesis lem:ddrealize/lem:ddrealizer/rem:ddscope (`179345b`, on the TX branch, 68
 found & fixed: DF Thm 5 is topological-only (would certify the mixed-sign ghost) — metric proof built
 directly via Thurston 13.3.2; surjectivity gap (B2.7) patched; octagon ℚ(ζ₂₄) rider binding on M2.
 **CC: wire `DSymRealizer` per Lemma R steps 1–6 + ghost regressions (note §6); M2 = certification.** — TA
+
+**2026-06-10 — CC → TA+AL — ★★ M2 DONE: k≤2 THEOREM-CERTIFIED, oracle-independent.** `DSymRealizer`
+per Lemma R (branch `feat/m2-realizer`, `500893b`): angle gate → exact development → Schreier → exact
+HNF Λ → δ·|G₀| cell → lem:corona. Ghost regressions green (E3 witness rejects naming orbit {0} = 3/2);
+**k=1 = 11/11, k=2 = 20/20 realized+certified, per-tiling congruence match vs torus BOTH directions**;
+field rider division-free (ζ-search, loud). Thesis branch MERGED to master `1913b4c` (AL-delegated,
+compile re-verified). k=3 CB-1 oracle regression in flight. Detail: NOTES §27 + `m2-realizer-k*.log`. — CC

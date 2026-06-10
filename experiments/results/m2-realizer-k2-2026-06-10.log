@@ -1,0 +1,29 @@
+[08:58:01] M2 realizer acceptance — k=2 P={3,4,6,8,12} δ≤24 budget=500M nodes
+[09:17:38] M1: candidateSymbols=20 (COMPLETE) nodes=404533320 1176.546s
+[09:17:38] allowed VC alphabet over P: 15 names
+[09:17:38] symbol 1/20: REALIZED+CERTIFIED δ=6 |G₀|=12 cellTiles=11 k✓  [0.5s, ETA 9s]
+[09:17:39] symbol 2/20: REALIZED+CERTIFIED δ=7 |G₀|=8 cellTiles=6 k✓  [0.8s, ETA 7s]
+[09:17:39] symbol 3/20: REALIZED+CERTIFIED δ=7 |G₀|=12 cellTiles=13 k✓  [1.4s, ETA 8s]
+[09:17:40] symbol 4/20: REALIZED+CERTIFIED δ=9 |G₀|=12 cellTiles=15 k✓  [1.9s, ETA 8s]
+[09:17:40] symbol 5/20: REALIZED+CERTIFIED δ=9 |G₀|=12 cellTiles=15 k✓  [2.4s, ETA 7s]
+[09:17:41] symbol 6/20: REALIZED+CERTIFIED δ=10 |G₀|=12 cellTiles=12 k✓  [2.9s, ETA 7s]
+[09:17:41] symbol 7/20: REALIZED+CERTIFIED δ=12 |G₀|=12 cellTiles=18 k✓  [3.4s, ETA 6s]
+[09:17:42] symbol 8/20: REALIZED+CERTIFIED δ=5 |G₀|=12 cellTiles=8 k✓  [3.8s, ETA 6s]
+[09:17:42] symbol 9/20: REALIZED+CERTIFIED δ=9 |G₀|=4 cellTiles=5 k✓  [4.3s, ETA 5s]
+[09:17:42] symbol 10/20: REALIZED+CERTIFIED δ=8 |G₀|=4 cellTiles=5 k✓  [4.8s, ETA 5s]
+[09:17:43] symbol 11/20: REALIZED+CERTIFIED δ=11 |G₀|=4 cellTiles=7 k✓  [5.5s, ETA 4s]
+[09:17:44] symbol 12/20: REALIZED+CERTIFIED δ=7 |G₀|=4 cellTiles=4 k✓  [5.8s, ETA 4s]
+[09:17:44] symbol 13/20: REALIZED+CERTIFIED δ=6 |G₀|=4 cellTiles=3 k✓  [6.1s, ETA 3s]
+[09:17:44] symbol 14/20: REALIZED+CERTIFIED δ=9 |G₀|=4 cellTiles=5 k✓  [6.5s, ETA 3s]
+[09:17:45] symbol 15/20: REALIZED+CERTIFIED δ=15 |G₀|=8 cellTiles=18 k✓  [7.0s, ETA 2s]
+[09:17:45] symbol 16/20: REALIZED+CERTIFIED δ=10 |G₀|=4 cellTiles=5 k✓  [7.2s, ETA 2s]
+[09:17:46] symbol 17/20: REALIZED+CERTIFIED δ=10 |G₀|=12 cellTiles=16 k✓  [7.8s, ETA 1s]
+[09:17:46] symbol 18/20: REALIZED+CERTIFIED δ=10 |G₀|=4 cellTiles=5 k✓  [8.1s, ETA 1s]
+[09:17:46] symbol 19/20: REALIZED+CERTIFIED δ=22 |G₀|=6 cellTiles=21 k✓  [8.7s, ETA 0s]
+[09:17:47] symbol 20/20: REALIZED+CERTIFIED δ=20 |G₀|=4 cellTiles=12 k✓  [9.2s, ETA 0s]
+[09:17:47] RESULT: realized+certified=20 rejected=0 congruence-classes=20
+[09:17:47] (exact-tiles artifact missing — falling back to .scout-cache/k2_3.4.6.12_cap0.ndjson)
+[09:17:47] torus artifact: 25 raw cells → 20 congruence classes
+[09:17:48] M3 cross-check: D-D∩torus=20/20; D-D-only=0; torus-only=0
+[09:17:48] ★ PER-TILING MATCH — the two independent catalogues coincide
+[09:17:48] done.
