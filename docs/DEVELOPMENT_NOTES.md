@@ -2306,3 +2306,91 @@ that run is superseded and its log kept as record).
 - Count-matching alone hid this defect for five days. **Per-tiling match is now the k≤3
   certification bar** (certify-run/backfill/figure-snapshot digest anchors updated to
   `99919f42a7b58e76`).
+
+## 32. CB-7 (primitivity-rejection guard) + CB-8 (pool-reach loud truncation) — the tuned regime is now self-announcing (2026-06-10, session 16f)
+
+(Numbered §32 on merge: written as §31 on branch `fix/cb7-cb8-loud-truncation` concurrently with
+§31 above — renumbered here, content unchanged.)
+
+Work-orders CB-7 and CB-8 from `docs/review-2026-06-09/01-code-bugs.md`, on branch
+`fix/cb7-cb8-loud-truncation` (base `8ef3a0b` on `feat/m2-realizer`). Both are **diagnostics-only**:
+the kept-cell and pushed-lattice sets are exactly unchanged — verified by the k=1 probe digest
+`6f9ca9cf2d16c75f` and the k=2 probe digest `f3e2e0517191362c` (both byte-identical, §32.3).
+
+### 32.1 CB-8 — poolConfig centralization + regime banner + per-candidate reach checks
+
+- **`poolConfig(k, aMax, provenMode)`** (exported, `PeriodSolver.ts`): the five candidate-stage
+  bounds (`poolSteps`, `poolLmax`, `compactOffMax2`, `gridShortMax2`, `areaBoundF`) in ONE place,
+  tuned regime side by side with the proven box (thm:weight `24k−1` steps; cor:box(ii) `24k·a_max`
+  area; cor:box(iii) `(2/√3)·24k·a_max` reach). Tuned values byte-identical to the historical
+  constants. `PROVEN_POOL=1` flips to the proven regime (the DG-1 switch; candidate cache key now
+  carries the regime tag so the two never share entries).
+- **Regime banner**: on any tuned run, once per `(k, a_max)` per process:
+  `⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=… (proven …) … below proven box — run is
+  oracle-anchored, not proof-anchored`. Provably cannot fire under `PROVEN_POOL=1`: `active ===
+  proven`, so every strict `<` in `isTuned` is false (unit-test-pinned for k=1..6).
+- **Per-candidate reach checks** (extending the pre-existing `gridReachTrunc` pattern): the compact
+  off-grid cap (`roundCells` source) and the grid short-side cap (`gridAlignedCells` source) now
+  count + report dropped pool vectors loudly; the oblique sub-pool sizing was already loud
+  (`subpool-clipped`/`v-range-truncated`/`join-waived` via `onTruncate`, CB-3). ⚑ RESIDUAL,
+  documented in-code: a solved grid long axis WITHIN `poolLmax` but absent from the pool is
+  ambiguous (spurious vs step-count-truncated; ℤ[ζ₂₄] dense ⇒ length ≠ steps) and is covered only
+  by the regime banner, not per-candidate.
+- **WEAK_SPOT A1 correction**: `docs/WEAK_SPOT_AUDIT_2026-06-04.md` row A1 ("Logged?" = **silent**,
+  🔴) is superseded — A1 is now **loud, regime-level** (the banner on every tuned run) **plus
+  per-candidate where checkable** (compact cap, grid short cap, grid long reach, oblique causes).
+  Its `PeriodSolver.ts:296-299` citation was already stale; the bounds now live in `poolConfig`.
+  (A1's substance — the tuned bounds are oracle-fit, not proven — is unchanged; what changed is
+  that no run can present itself as proof-anchored without the banner contradicting it.)
+
+### 32.2 CB-7 — primitivity-rejection guard (+ two findings made along the way)
+
+- `isPrimitive` now collects ALL rejection witnesses (same accept/reject verdict — a witness exists
+  ⇔ non-primitive); on rejection, `supercellRejectionGuard` computes the primitive lattice Λ′ =
+  ⟨Λ ∪ witnesses⟩ (`primitiveLatticeClosure`: exact `joinLattice` HNF folds) and checks membership
+  in the seed's enumerated candidate set (pre-P0 `seen` keys, threaded through `FillCtx`). On a
+  real miss: `⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive
+  lattice <key> not in candidate list`, per occurrence + `diag.primitivityGuardMisses`. Log-only;
+  the supercell stays rejected (keeping it needs TA sign-off). Docstrings/comments at
+  `isPrimitive`, the accept path, P0, P1, and `vertexClassCount` softened to the conditional form:
+  sound provided stage 6 contains the primitive lattice — unconditional under cor:box, guarded
+  under any tuned pool.
+- **Finding 1 — `latticeKey` is NOT unique per lattice on tied minima.** First guard bring-up
+  false-fired at k=1 on honeycomb supercells: the honeycomb primitive lattice keys differently as
+  the `roundCells` candidate `(v, v·ω)` than as the witness closure. Cause: `gaussReduceExact` is
+  canonical only up to ties (hexagonal = 3 tied shortest directions; rhombic/cmm = tied second
+  minima), and `latticeKey` inherits the ambiguity. Fix CONFINED to the guard (touching
+  `latticeKey` would change candidate dedup = digest risk): `latticeKeySet(a,b)` enumerates EVERY
+  key the lattice can canonicalize to (all same-covolume signed pairs over
+  {±r₁, ±r₂, ±(r₁+r₂), ±(r₁−r₂)} — exhaustive because any reduced-basis vector has coordinates in
+  {0,±1}² over a reduced basis, and `gaussReduceExact` is a fixed point on its own outputs);
+  membership = any key hits. ⚑ Side implication, recorded not fixed: the candidate `seen` dedup can
+  hold the SAME lattice under two keys (sound — over-enumeration only, merged downstream by
+  congruence; zero completeness risk).
+- **Finding 2 — sub-multiset supercell completions are a benign, systematic miss class.** With
+  tie-handling fixed, the guard still fired at k=2: pure-triangle (1-uniform) supercell completions
+  certify inside multi-VC seeds (pre-gate), and their primitive lattice (unit triangular, area
+  √3/2) is NOT a candidate there — `vcAreaSet` uses v ≥ 1 for EVERY VC, so sub-multiset areas are
+  excluded by construction. That discard is provably harmless by the area filter's own
+  Euler/incidence completeness contract: a tiling whose primitive area is outside the seed's
+  admissible area set cannot carry the seed's orbit-VC multiset ⇒ it is another (smaller) seed's
+  tiling. The guard therefore alarms only when the primitive area IS admissible and the lattice is
+  still missing — the true silent-loss mode; suppression can never hide a real loss (a tiling with
+  this seed's multiset has its primitive area in the set by the same contract). This is a
+  DELIBERATE refinement over the literal spec ("emit per occurrence on miss"): without it every
+  k≥2 run floods with false alarms and the ⚑ INCOMPLETE-REGION channel loses its meaning.
+- **Result: zero primitivity-rejection events** across the full test suite, the k=1 probe, and the
+  4,4,4,4 / 6,6,6 live-solve tests (which pin `supercellRejected > 0` with `misses = 0`). The
+  guard firing anywhere remains a stop-and-investigate event.
+
+### 32.3 Verification
+
+- `pnpm build` clean (only the pre-existing turbopack workspace-root warning).
+- `pnpm vitest run`: 301/302 — the 1 failure is `tests/dsym-generator.test.ts` k=2 δ≤16 timing out
+  at its 5 s cap, **pre-existing on the clean base** (verified by stash; the in-flight k=3 cert run
+  loads the machine). New `tests/pool-config.test.ts`: 15 tests (poolConfig tuned/proven/banner
+  predicate; primitiveLatticeKey closure; latticeKeySet tie cases incl. the live honeycomb
+  mismatch; two live-solve guard tests).
+- k=1 probe digest `6f9ca9cf2d16c75f` count=11 and k=2 probe digest `f3e2e0517191362c` count=20 —
+  both byte-identical; banner + reach lines on stderr. Logs:
+  `experiments/results/cb7-cb8-probes-2026-06-10.log`.

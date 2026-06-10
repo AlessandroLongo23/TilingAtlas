@@ -42,7 +42,7 @@ import { Cyclotomic } from '../Cyclotomic';
 import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
-import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, areaLadderFromTiles, holohedry, areaKey, type ObliqueTruncation } from './LatticeEnumerator';
+import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, areaLadderFromTiles, holohedry, areaKey, isIntCombo, joinLattice, gaussReduceExact, type ObliqueTruncation } from './LatticeEnumerator';
 import { detSurd, polygonAreaSurd, tileAreaSurd, Surd } from './exact/Surd';
 import { dedupeByCongruence } from './TilingCongruence';
 import { spikeBreak } from './exact/spikeTrace';
@@ -62,11 +62,78 @@ const GRID_SHORT_MAX2 = 3.5 * 3.5;
  *  symmetry reason to exist. The only k=2 off-grid round cell is t2020 (|v|=√13≈3.61). */
 const COMPACT_OFFGRID_MAX2 = 4 * 4;
 
+/** One regime's bounds for the candidate-vector stage (the completeness knobs of stage 6). */
+export type PoolBounds = {
+	/** Max unit-edge steps in the short-vector pool (the W(s) weight bound). */
+	poolSteps: number;
+	/** Euclidean pool reach — must cover the LONG basis vector |v| of any candidate cell. */
+	poolLmax: number;
+	/** |w|² cap on OFF-GRID round-cell basis vectors (the compact-snub heuristic). */
+	compactOffMax2: number;
+	/** |w|² cap on the grid-aligned cell's SHORT side. */
+	gridShortMax2: number;
+	/** Float ceiling on the cell area |det Λ|. */
+	areaBoundF: number;
+};
+
+/**
+ * CB-8: the candidate-stage bounds, centralized — the ACTIVE regime side by side with the PROVEN
+ * box (thesis correctness.tex thm:weight + cor:box), so the tuned-vs-proven comparison lives in ONE
+ * place and the regime banner provably cannot fire under the proven configuration (active ===
+ * proven ⇒ every strict `<` in `isTuned` is false). Proven values, with their sources:
+ *   poolSteps      = 24k−1                 (thm:weight: wt(w) ≤ 2k|P|−1 ≤ 24k−1)
+ *   poolLmax       = (2/√3)·24k·a_max      (cor:box(iii): |v| ≤ (2/√3)·24k·a_max)
+ *   compactOffMax2 = (2/√3)·24k·a_max      (cor:box(iii): |u|² ≤ (2/√3)·24k·a_max — a |w|² cap)
+ *   gridShortMax2  = (2/√3)·24k·a_max      (same |u|² bound; the short side is the reduced vector)
+ *   areaBoundF     = 24k·a_max             (cor:box(ii))
+ * The tuned values are byte-identical to the historical constants (POOL_STEPS/POOL_LMAX/… above and
+ * the k≥3 formulas), sized to KNOWN oracle maxima — oracle-anchored, not proof-anchored. Flip to the
+ * proven regime with env PROVEN_POOL=1 (the DG-1 measurement switch; opt-in, default off — the
+ * default path is unchanged; DG-1 measured the proven k=1 pool past 1.5e8 values at weight 15/23,
+ * budget abort — see experiments/results/dg1-proven-pool-k1.log).
+ */
+export function poolConfig(
+	k: number,
+	aMax: number,
+	provenMode: boolean = process.env.PROVEN_POOL === '1'
+): { active: PoolBounds; proven: PoolBounds; isTuned: boolean } {
+	const areaBoundF = 24 * k * aMax; // cor:box(ii) — already the proven value in BOTH regimes
+	const reach = (2 / Math.sqrt(3)) * areaBoundF; // cor:box(iii) long-vector / short-vector² bound
+	const proven: PoolBounds = {
+		poolSteps: 24 * k - 1,
+		poolLmax: reach,
+		compactOffMax2: reach,
+		gridShortMax2: reach,
+		areaBoundF,
+	};
+	const tunedLmax = k <= 2 ? POOL_LMAX : Math.sqrt(22 * k); // k=3→8.12, k=4→9.38
+	const tuned: PoolBounds = {
+		poolSteps: k <= 2 ? POOL_STEPS : 2 * k + 2, // k=3→8, k=4→10
+		poolLmax: tunedLmax,
+		compactOffMax2: k <= 2 ? COMPACT_OFFGRID_MAX2 : tunedLmax * tunedLmax,
+		gridShortMax2: k <= 2 ? GRID_SHORT_MAX2 : tunedLmax * tunedLmax,
+		areaBoundF,
+	};
+	const active = provenMode ? proven : tuned;
+	const isTuned =
+		active.poolSteps < proven.poolSteps ||
+		active.poolLmax < proven.poolLmax ||
+		active.compactOffMax2 < proven.compactOffMax2 ||
+		active.gridShortMax2 < proven.gridShortMax2 ||
+		active.areaBoundF < proven.areaBoundF;
+	return { active, proven, isTuned };
+}
+
+/** Once-per-process(-per-regime) registry for the CB-8 tuned-regime banner. */
+const regimeBannerEmitted = new Set<string>();
+
 /** Seed-free candidate lattices depend only on (ring, tile set, k) — computed once and cached.
- *  `p0Skipped` records how many candidates the P0 pre-filter removed (diagnostic only). */
+ *  `p0Skipped` records how many candidates the P0 pre-filter removed (diagnostic only).
+ *  `allKeys` is the FULL enumerated candidate key set (pre-P0) and `areaKeys` the admissible
+ *  cell-area key set — both for the CB-7 primitivity guard. */
 const candidateCache = new Map<
 	string,
-	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null }
+	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; allKeys: Set<string>; areaKeys: Set<string> }
 >();
 
 /** Canonical vertex-configuration name from a cyclic list of corner TOKENS (bare edge-count `n` for
@@ -163,6 +230,8 @@ export type PeriodSolverDiag = {
 	seedStateDedup: number; // redundant seed sets skipped (identical initial torus state mod Λ)
 	obliqueCandidates: number; // candidate lattices contributed by source (C) oblique join-closure
 	obliqueTruncated: ObliqueTruncation['cause'] | null; // INCOMPLETE-REGION cause if the oblique reach was clipped
+	supercellRejected: number; // certified cells discarded as non-primitive supercells (CB-7 surface)
+	primitivityGuardMisses: number; // CB-7 guard: supercell discarded with its PRIMITIVE lattice absent from the candidate set (each is a loud INCOMPLETE-REGION)
 	timedOut: boolean;
 };
 
@@ -237,7 +306,7 @@ export class PeriodSolver {
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated } = this.candidateLattices(seed);
+		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated, allKeys, areaKeys } = this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
@@ -252,6 +321,8 @@ export class PeriodSolver {
 			seedStateDedup: 0,
 			obliqueCandidates,
 			obliqueTruncated,
+			supercellRejected: 0,
+			primitivityGuardMisses: 0,
 			timedOut: false,
 		};
 
@@ -267,7 +338,7 @@ export class PeriodSolver {
 				break;
 			}
 			diag.latticesTried++;
-			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles);
+			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles, allKeys, areaKeys);
 			if (!ctx) continue; // degenerate basis
 
 			// Choose the seed(s) for THIS lattice. Normally the rigid core. But when the rigid core
@@ -376,7 +447,7 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null } {
+	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; allKeys: Set<string>; areaKeys: Set<string> } {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -402,22 +473,46 @@ export class PeriodSolver {
 			.map((m) => [...m.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).map(([n, c]) => `${n}^${c}`).join('.'))
 			.sort()
 			.join('|');
-		const cacheKey = `${ring.N}:${vcSig}:${this.k}`;
+		const provenMode = process.env.PROVEN_POOL === '1';
+		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? 'proven' : 'tuned'}`;
 		const cached = candidateCache.get(cacheKey);
 		if (cached) return cached;
 
 		const lat = new LatticeEnumerator(this.k);
-		// Completeness knobs scale with k. k≤2 keeps the validated 6/5.6 pool and the small short-side
-		// caps; k≥3 grows the pool reach (the longest k=3 oracle cell vector is 6.732 > POOL_LMAX=5.6 and
-		// needs ≥7 > POOL_STEPS=6 edge-steps) and LOOSENS the short-side caps to the pool length so larger
-		// k≥3 short vectors / off-grid round cells are not dropped. ⚑ COMPLETENESS: these bounds are sized
-		// to the KNOWN oracle maxima (k=3 longest = 6.732), NOT proven — a tiling whose cell vector exceeds
-		// the pool reach would be silently missed, and a longer pool blows up the dense ring (24-dir octagon
-		// seeds → ~700k pts; see §13.6 / §11.5). Revisit for a real completeness bound + the dense case.
-		const poolSteps = this.k <= 2 ? POOL_STEPS : 2 * this.k + 2; // k=3→8, k=4→10
-		const poolLmax = this.k <= 2 ? POOL_LMAX : Math.sqrt(22 * this.k); // k=3→8.12, k=4→9.38
-		const compactOffMax2 = this.k <= 2 ? COMPACT_OFFGRID_MAX2 : poolLmax * poolLmax;
-		const gridShortMax2 = this.k <= 2 ? GRID_SHORT_MAX2 : poolLmax * poolLmax;
+		// Completeness knobs scale with k; the values AND the tuned-vs-proven comparison are centralized
+		// in `poolConfig` (CB-8). k≤2 keeps the validated 6/5.6 pool and the small short-side caps; k≥3
+		// grows the pool reach (the longest k=3 oracle cell vector is 6.732 > POOL_LMAX=5.6 and needs
+		// ≥7 > POOL_STEPS=6 edge-steps) and LOOSENS the short-side caps to the pool length so larger
+		// k≥3 short vectors / off-grid round cells are not dropped. ⚑ COMPLETENESS: the tuned bounds are
+		// sized to the KNOWN oracle maxima (k=3 longest = 6.732), NOT proven — a tiling whose cell vector
+		// exceeds the pool reach would be silently missed, and the proven pool blows up the dense ring
+		// (24-dir octagon seeds → ~700k pts; see §13.6 / §11.5; DG-1: the proven k=1 pool budget-aborted
+		// past 1.5e8 values at weight 15/23). The regime banner below makes every tuned run visibly
+		// oracle-anchored (WEAK_SPOT A1: silent → loud, regime-level).
+		// a_max routed by tile IDENTITY (seed.polygons, not the n-only polySizes) so a star's exact area
+		// enters the bound — see the area-bound comment below; max is dedup-invariant ⇒ byte-identical
+		// on the regular path.
+		const aMax = Math.max(...seed.polygons.map(tileAreaFloatFor));
+		const cfg = poolConfig(this.k, aMax, provenMode);
+		const { poolSteps, poolLmax, compactOffMax2, gridShortMax2, areaBoundF } = cfg.active;
+		// CB-8 regime banner (the de-magic assertion, WEAK_SPOT A1): if ANY active bound is below the
+		// proven box (thm:weight / cor:box), say so loudly, once per (k, a_max) per process. Under
+		// PROVEN_POOL=1 the active regime IS the proven one (`active === proven`), so every strict `<`
+		// in `isTuned` is identically false and the banner provably cannot fire.
+		if (cfg.isTuned) {
+			const bk = `${this.k}:${aMax}`;
+			if (!regimeBannerEmitted.has(bk)) {
+				regimeBannerEmitted.add(bk);
+				const t = cfg.active, p = cfg.proven;
+				process.stderr.write(
+					`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (tuned pool regime): ` +
+					`poolSteps=${t.poolSteps} (proven ${p.poolSteps}), poolLmax=${t.poolLmax.toFixed(2)} (proven ${p.poolLmax.toFixed(2)}), ` +
+					`compactOffMax2=${t.compactOffMax2.toFixed(2)}, gridShortMax2=${t.gridShortMax2.toFixed(2)} (proven ${p.compactOffMax2.toFixed(2)}), ` +
+					`areaBound=${t.areaBoundF.toFixed(2)} (proven ${p.areaBoundF.toFixed(2)}) ` +
+					`below proven box — run is oracle-anchored, not proof-anchored\n`
+				);
+			}
+		}
 		// Restrict the pool to the edge directions these tiles can actually produce (sound: every edge,
 		// hence every period vector, lies in them). Collapses the pool 50–1000× when the tiles fit one
 		// symmetry ring (e.g. {3,6} → 6 hexagonal directions).
@@ -438,8 +533,8 @@ export class PeriodSolver {
 		// byte-identical on the regular path. (The candidate-area LADDER below is still n-keyed: vcAreaSet /
 		// vcAreaMinVerts use tileAreaSurd(n) and the Euler relation, both unsound for a star — a documented
 		// break for Harness 1, the Increment-2 ladder refactor; raising a_max here is strictly conservative.)
-		const aMax = Math.max(...seed.polygons.map(tileAreaFloatFor));
-		const areaBoundF = 24 * this.k * aMax;
+		// (`aMax` is hoisted above; `areaBoundF` = 24k·a_max comes from `poolConfig` — cor:box(ii), the
+		// proven value in BOTH regimes.)
 		// Exact cell areas the seed's VCs can actually produce. For REGULAR seeds the sharp VC-forced
 		// multiset (`vcAreaSet`) is sound+complete and far sparser. For STAR seeds it is UNSOUND — its
 		// `corners/n = tiles` identity assumes every tile corner is a counted vertex, but a star's dents are
@@ -472,26 +567,46 @@ export class PeriodSolver {
 
 		// (A) round (hexagonal + square) cells. The short vector must be grid-aligned (the on-grid round
 		// cells) OR compact (the few off-grid snubs, e.g. t2020 at √13) — a LARGE off-grid short vector
-		// is a long wiggly edge-path with no symmetry reason to be a period, so it is pruned.
+		// is a long wiggly edge-path with no symmetry reason to be a period, so it is pruned. ⚑ The
+		// compact cap is a TUNED bound (see `poolConfig`): a pool vector it drops EXISTS but is never
+		// tried as a round-cell basis — a per-candidate-checkable truncation, logged LOUDLY below
+		// (CB-8, same INCOMPLETE-REGION doctrine as the grid long-side reach). Behaviour-preserving:
+		// the pushed lattice set is unchanged (log-only).
+		let compactReachTrunc = 0;
 		const roundPool = pool.filter((p) => {
 			if (gridDirOf(p, ring) !== null) return true;
 			const f = p.toVector();
-			return f.x * f.x + f.y * f.y <= compactOffMax2;
+			if (f.x * f.x + f.y * f.y <= compactOffMax2) return true;
+			compactReachTrunc++;
+			return false;
 		});
+		if (compactReachTrunc > 0)
+			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (compact off-grid cap): ${compactReachTrunc} off-grid pool vectors exceed compactOffMax2=${compactOffMax2.toFixed(2)} and are not tried as round-cell bases\n`);
 		for (const [u, v] of lat.roundCells(roundPool, polySizes, ring, areaBoundF, undefined, areas)) push(u, v);
 
 		// (B) grid-aligned (rect + cmm) cells — short side from the SHORT pool vectors; the solved
-		// long/centering vector must itself be a realizable vertex difference.
+		// long/centering vector must itself be a realizable vertex difference. ⚑ The short-side cap is
+		// a TUNED bound (see `poolConfig`): a pool vector it drops EXISTS but is never tried as a
+		// short side — logged LOUDLY (CB-8), pushed lattice set unchanged (log-only).
+		let gridShortTrunc = 0;
 		const gridShorts = pool.filter((p) => {
 			const f = p.toVector();
-			return f.x * f.x + f.y * f.y <= gridShortMax2;
+			if (f.x * f.x + f.y * f.y <= gridShortMax2) return true;
+			gridShortTrunc++;
+			return false;
 		});
+		if (gridShortTrunc > 0)
+			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid short-side cap): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} and are not tried as cmm/rect short sides\n`);
 		// The solved cmm/rect long axis is kept only when it is itself a realizable vertex difference
 		// (present in the pool) — this discards spurious solved lengths. ⚑ A long axis that is grid-aligned
 		// and within the area bound but exceeds the pool REACH (poolLmax) is a genuine tuned-pool
 		// truncation, not a spurious solution; log it LOUDLY so the candidate-stage boundary is never
 		// silent (same INCOMPLETE-REGION doctrine as source C / the area ladder). Behaviour-preserving:
-		// the pushed lattice set is unchanged.
+		// the pushed lattice set is unchanged. ⚑ RESIDUAL (CB-8 audit): a solved axis WITHIN poolLmax but
+		// absent from the pool is ambiguous — spurious (not a vertex difference) OR step-count-truncated
+		// (≤ poolLmax Euclidean but needing > poolSteps edge-steps / no monotone path; ℤ[ζ₂₄] is dense, so
+		// length does not bound steps). That case is NOT distinguishable here and is NOT logged per
+		// candidate; it is covered only by the regime banner above.
 		let gridReachTrunc = 0;
 		for (const [u, v] of lat.gridAlignedCells(gridShorts, polySizes, ring, undefined, areas)) {
 			if (poolSet.has(v.key())) { push(u, v); continue; }
@@ -533,10 +648,12 @@ export class PeriodSolver {
 		// --- P0: arithmetic lattice pre-filter (route-a-proven-box.md §"Early-prune rulings"). ---
 		// Skip a candidate Λ when EVERY tile multiset realizing its exact cell area needs more vertex
 		// classes than k·hol(Λ) allows: minVerts(|det Λ|) > k·hol(Λ) ⇒ any completion has orbits ≥
-		// V/hol(Λ) > k, so it is gate-rejected (or is a supercell, re-found at its primitive sublattice
-		// which is a separate, smaller candidate). SOUND + licensed — it is NOT a completeness knob; it
-		// removes only lattices that can carry no k-uniform tiling with these VCs. hol(Λ) never
-		// underestimates (it falls back to 12), so the floor is never too low. Cached with the list.
+		// V/hol(Λ) > k, so it is gate-rejected (or is a supercell — re-found at its primitive
+		// sublattice, which is a candidate provided stage 6 contains the primitive lattice:
+		// unconditional under cor:box, GUARDED loudly under any tuned pool, CB-7). SOUND + licensed —
+		// it is NOT a completeness knob; it removes only lattices that can carry no k-uniform tiling
+		// with these VCs. hol(Λ) never underestimates (it falls back to 12), so the floor is never too
+		// low. Cached with the list.
 		const kept: [Cyclotomic, Cyclotomic][] = [];
 		let p0Skipped = 0;
 		for (const [u, v] of lattices) {
@@ -544,7 +661,18 @@ export class PeriodSolver {
 			if (mv !== undefined && mv > this.k * holohedry(u, v)) { p0Skipped++; continue; }
 			kept.push([u, v]);
 		}
-		const result = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated };
+		// `allKeys` = every enumerated candidate key PRE-P0 (the `seen` set) — the membership universe
+		// for the CB-7 primitivity-rejection guard. Pre-P0 on purpose: a P0-skipped lattice was
+		// enumerated and removed by a LICENSED prune (if the rejected supercell's tiling were k-uniform,
+		// its primitive lattice would satisfy minVerts ≤ k·hol and survive P0 — so a P0-skipped
+		// primitive means the tiling is not k-uniform and the discard is sound, not a silent loss).
+		// `areaKeys` = the admissible cell-area set: a discarded supercell whose PRIMITIVE area is
+		// outside it cannot carry this seed's orbit-VC multiset (the same Euler/incidence completeness
+		// contract the candidate area filter rests on) — it is another seed's tiling, so the guard
+		// must not alarm on it (observed live: pure-triangle = 1-uniform supercell completions inside
+		// multi-VC k=2 seeds; vcAreaSet uses v ≥ 1 for EVERY VC, so their primitive area √3/2 is
+		// excluded by construction).
+		const result = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
@@ -560,7 +688,12 @@ export class PeriodSolver {
 		allowed: Set<string>,
 		polySizes: number[],
 		maxCellPolys: number,
-		starTiles: { n: number; alphaU: number; area: number; circum: number }[] = []
+		starTiles: { n: number; alphaU: number; area: number; circum: number }[] = [],
+		// CB-7 guard universes (all enumerated candidate lattice keys pre-P0; admissible cell-area
+		// keys). Default empty: the only caller that omits them is `certifyExternalCell`, whose path
+		// never reaches `isPrimitive`.
+		candidateKeys: Set<string> = new Set(),
+		admissibleAreaKeys: Set<string> = new Set()
 	): FillCtx | null {
 		const uV = u.toVector();
 		const vV = v.toVector();
@@ -601,6 +734,8 @@ export class PeriodSolver {
 			// CB-1: exact |det Λ| for the certificate's area leg — computed once per candidate lattice.
 			cellAreaSurd: detSurd(u, v).abs(),
 			starTiles: starTiles.map((s) => ({ n: s.n, alphaU: s.alphaU })),
+			candidateKeys,
+			admissibleAreaKeys,
 		};
 	}
 
@@ -645,7 +780,8 @@ export class PeriodSolver {
 		// P1 orbit-floor state: the vertex classes mod Λ present so far (`vReps`), carried on the stack
 		// and extended by one tile's classes per child. A child whose count exceeds `ctx.orbitFloor`
 		// (= k·hol(Λ)) is pruned — its completion must have orbits > k (gate-rejected) or be a supercell
-		// (primitivity-rejected, re-found at its primitive sublattice). Every k-uniform tiling has V ≤
+		// (primitivity-rejected; re-found at its primitive sublattice unconditionally under cor:box,
+		// guarded loudly under the tuned pool — CB-7). Every k-uniform tiling has V ≤
 		// k·hol(Λ) and V is monotone, so a branch leading to a valid tiling is NEVER pruned (byte-identical).
 		//
 		// C3 — UNSOUND for stars, so SKIP P1 for star seeds (sound loosening, doctrine: "completeness
@@ -705,8 +841,10 @@ export class PeriodSolver {
 			if (!analysis.openVertex) {
 				// No open vertex within a full cell ⇒ torus closed. Certify, and reject supercells (a
 				// non-primitive Λ tiles the SAME tiling as its primitive sublattice — counting both
-				// would over-count; the primitive Λ is a separate, smaller candidate that is kept).
-				if (this.isCompleteTiling(reps, ctx) && this.isPrimitive(reps, ctx, memo)) results.push(reps);
+				// would over-count). Sound PROVIDED stage 6 enumerated the primitive Λ as its own
+				// candidate — unconditional under cor:box, guarded LOUDLY here under any tuned pool
+				// (CB-7: `isPrimitive` checks the closure lattice against ctx.candidateKeys; log-only).
+				if (this.isCompleteTiling(reps, ctx) && this.isPrimitive(reps, ctx, memo, diag)) results.push(reps);
 				continue;
 			}
 
@@ -958,12 +1096,23 @@ export class PeriodSolver {
 
 	/** True iff the lattice is the PRIMITIVE period of the completed cell-tiling — i.e. no smaller
 	 *  translation maps it onto itself. A supercell (n× the primitive) is the same infinite tiling and
-	 *  would be double-counted; its primitive sublattice is a separate (smaller) candidate, so
-	 *  rejecting supercells here loses no tiling. Test: any same-name rep-pair difference t that maps
-	 *  every class onto a class is a sub-lattice period ⇒ non-primitive. */
-	private isPrimitive(reps: Polygon[], ctx: FillCtx, memo: Map<string, { key: string; poly: Polygon }>): boolean {
+	 *  would be double-counted. Rejecting it here loses no tiling PROVIDED stage 6 enumerated the
+	 *  primitive lattice as its own (smaller) candidate — unconditional under the proven box
+	 *  (cor:box), NOT guaranteed under a tuned pool: the pool is bounded by edge-STEP count, which is
+	 *  not monotone under sublattice (the primitive basis is Euclidean-shorter but can need MORE
+	 *  steps; ℤ[ζ₂₄] is dense, so length never bounds steps — CLAUDE.md settled decision). The CB-7
+	 *  guard below therefore closes Λ under the rejection witnesses and reports LOUDLY when the
+	 *  primitive lattice is absent from the candidate set — log-only, the rejection is unchanged.
+	 *  Test: any same-name rep-pair difference t that maps every class onto a class is a sub-lattice
+	 *  period ⇒ non-primitive. */
+	private isPrimitive(reps: Polygon[], ctx: FillCtx, memo: Map<string, { key: string; poly: Polygon }>, diag: PeriodSolverDiag): boolean {
 		if (reps.length <= 1) return true;
 		const repKeys = new Set(reps.map((r) => r.exactKey())); // reps are canonical
+		// Collect ALL witness translations (not just the first): the primitive lattice is the closure
+		// of Λ under every witness, so the guard needs the full set. Same accept/reject decision as the
+		// historical first-witness early-return (a witness exists ⇔ non-primitive); the extra scan runs
+		// only on the rare rejection path.
+		let witnesses: Cyclotomic[] | null = null;
 		for (let i = 0; i < reps.length; i++) {
 			for (let j = 0; j < reps.length; j++) {
 				if (i === j || reps[i].getName() !== reps[j].getName()) continue;
@@ -975,10 +1124,50 @@ export class PeriodSolver {
 					rt.translateExact(t);
 					if (!repKeys.has(this.canonicalRep(rt, ctx, memo).key)) { all = false; break; }
 				}
-				if (all) return false; // sub-lattice translation t (∉ Λ, distinct classes) ⇒ non-primitive
+				if (all) (witnesses ??= []).push(t); // sub-lattice translation t (∉ Λ, distinct classes) ⇒ non-primitive
 			}
 		}
-		return true;
+		if (witnesses === null) return true;
+		this.supercellRejectionGuard(ctx, witnesses, diag); // CB-7: diagnostics only — never changes the verdict
+		return false;
+	}
+
+	/** CB-7 primitivity-rejection guard (diagnostics ONLY — the supercell stays rejected either way).
+	 *  The discard at the accept path is sound iff the certified tiling is re-found: its PRIMITIVE
+	 *  lattice Λ′ = ⟨Λ ∪ witnesses⟩ (the full translation group of the cell-tiling) must itself be
+	 *  enumerated. Under cor:box that is a theorem; under the tuned pool it is unchecked — so compute
+	 *  Λ′ and check membership of the LATTICE in the seed's enumerated candidate set via
+	 *  `latticeKeySet` (every key Λ′ can canonicalize to — `latticeKey` alone is ambiguous on tied
+	 *  minima, see there). Pre-P0 universe on purpose (a P0-skipped primitive is a licensed discard —
+	 *  see `candidateLattices`). Two provably-harmless miss classes are filtered before alarming:
+	 *  (1) candidate-set hit (any canonical key); (2) primitive area outside the seed's admissible
+	 *  area set — then the tiling cannot carry this seed's orbit-VC multiset (the area filter's own
+	 *  Euler/incidence completeness contract) and is another seed's tiling (observed live: pure-
+	 *  triangle 1-uniform supercell completions inside multi-VC k=2 seeds). Anything else is a
+	 *  certified tiling discarded with no candidate to re-find it — the silent-loss mode CB-7 exists
+	 *  to surface; emit ⚑ INCOMPLETE-REGION per occurrence. The k≤3 oracle says this never fired
+	 *  there; it firing ANYWHERE is a discovery. */
+	private supercellRejectionGuard(ctx: FillCtx, witnesses: Cyclotomic[], diag: PeriodSolverDiag): void {
+		diag.supercellRejected++;
+		const closure = primitiveLatticeClosure(ctx.u, ctx.v, witnesses);
+		if (closure !== null) {
+			for (const k of latticeKeySet(closure[0], closure[1])) {
+				if (ctx.candidateKeys.has(k)) return; // primitive lattice IS a candidate — sound discard
+			}
+			// Primitive area not admissible for THIS seed ⇒ the discarded tiling cannot realize the
+			// seed's VC multiset on its primitive cell ⇒ it is enumerated from its own (sub)seed, not
+			// owed by this one — sound discard, no alarm. (Suppression can never hide a real loss: a
+			// tiling WITH this seed's orbit multiset has its primitive area in the set by the same
+			// contract that licenses the candidate area filter.)
+			if (!ctx.admissibleAreaKeys.has(areaKey(detSurd(closure[0], closure[1]).abs()))) return;
+		}
+		diag.primitivityGuardMisses++;
+		const pk = closure === null ? null : latticeKey(closure[0], closure[1]);
+		process.stderr.write(
+			`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; ` +
+			`primitive lattice ${pk ?? '<witness join failed>'} not in candidate list ` +
+			`(supercell ${latticeKey(ctx.u, ctx.v)}, ${witnesses.length} witness(es))\n`
+		);
 	}
 
 	/** Canonical lattice-class representative: lex-min exact key among the class's lattice translates
@@ -1139,6 +1328,8 @@ type FillCtx = {
 	maxCircum: number; // max tile circumradius — a poly beyond judgeR+this has no vertex within judgeR
 	orbitFloor: number; // k·hol(Λ): P1 prunes a partial fill whose vertex-class count exceeds this
 	starTiles: { n: number; alphaU: number }[]; // C3 star palette: (n,α) variants the fill loop may seat
+	candidateKeys: Set<string>; // ALL enumerated candidate lattice keys (pre-P0) — CB-7 guard universe
+	admissibleAreaKeys: Set<string>; // admissible cell-area keys (the seed's area ladder) — CB-7 guard
 };
 
 type Interval = { start: number; units: number; n: number };
@@ -1150,7 +1341,65 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, timedOut: false };
+}
+
+/**
+ * Exact basis of the PRIMITIVE lattice Λ′ = ⟨Λ ∪ witnesses⟩, where Λ = ℤu + ℤv and each witness t
+ * maps the certified cell-tiling onto itself (so t permutes the finitely many tile classes mod Λ ⇒
+ * q·t ∈ Λ for some integer q ⇒ t has RATIONAL (u,v)-coordinates and every join is a finite-index
+ * superlattice — discreteness is never in doubt). Folds `joinLattice` (exact HNF) over the
+ * witnesses; order-independent (the generated lattice is). Returns null only if a witness is not a
+ * rational combination of (u, v) — impossible for a true witness, kept as a defensive signal.
+ * Exported for the CB-7 guard and its unit tests.
+ */
+export function primitiveLatticeClosure(u: Cyclotomic, v: Cyclotomic, witnesses: Cyclotomic[]): [Cyclotomic, Cyclotomic] | null {
+	let a = u, b = v;
+	for (const t of witnesses) {
+		if (isIntCombo(t, a, b)) continue; // already inside the current (possibly enlarged) lattice
+		const j = joinLattice(a, b, t);
+		if (j === null) return null; // not in the ℚ-span / irrational coords — defensive, see docstring
+		[a, b] = j;
+	}
+	return [a, b];
+}
+
+/** One canonical `latticeKey` of the witness closure (for logs/tests). ⚑ NOT unique per lattice on
+ *  tied minima — membership checks must use `latticeKeySet`, never a single-key comparison. */
+export function primitiveLatticeKey(u: Cyclotomic, v: Cyclotomic, witnesses: Cyclotomic[]): string | null {
+	const c = primitiveLatticeClosure(u, v, witnesses);
+	return c === null ? null : latticeKey(c[0], c[1]);
+}
+
+/**
+ * EVERY `latticeKey` the lattice ⟨a, b⟩ can canonicalize to. `latticeKey` Gauss-reduces its input,
+ * and Gaussian reduction is canonical only up to TIES in the successive minima: a hexagonal lattice
+ * has 3 shortest directions (any 2 form a reduced basis), a rhombic/cmm lattice has tied second
+ * minima (|v| = |v−u|) — so the SAME lattice can carry distinct keys depending on the input basis.
+ * Observed live (2026-06-10, CB-7 bring-up): the honeycomb primitive lattice keys differently as the
+ * `roundCells` candidate `(v, v·ω)` than as the supercell witness closure — a single-key membership
+ * test false-fires there. Enumeration is exhaustive: every Gauss-reduced basis consists of vectors
+ * of length λ₁/λ₂, and every lattice vector of length ≤ λ₂ has coordinates in {0,±1}² over any one
+ * reduced basis (r₁, r₂) — so every reduced pair lies, with signs, in {±r₁, ±r₂, ±(r₁+r₂), ±(r₁−r₂)}.
+ * `gaussReduceExact` is a fixed point on its own outputs, so keying every same-covolume ordered
+ * signed pair from that set reproduces the key of EVERY reduced pair — in particular the one a
+ * candidate was stored under. Exact membership (det compared as Surd); ≤ 56 cheap pair checks, only
+ * on the rare supercell-rejection path.
+ */
+export function latticeKeySet(a: Cyclotomic, b: Cyclotomic): Set<string> {
+	const [r1, r2] = gaussReduceExact(a, b);
+	const dirs = [r1, r2, r1.add(r2), r1.sub(r2)];
+	const vecs = dirs.flatMap((d) => [d, d.neg()]);
+	const cov = detSurd(r1, r2).abs();
+	const keys = new Set<string>();
+	for (const x of vecs) {
+		for (const y of vecs) {
+			if (x === y) continue;
+			if (detSurd(x, y).abs().cmp(cov) !== 0) continue; // 0 (parallel) or a proper sublattice ⇒ not a basis of ⟨a,b⟩
+			keys.add(latticeKey(x, y));
+		}
+	}
+	return keys;
 }
 
 /** Exact test: a − b ∈ Λ = ℤu + ℤv. The integer combo is guessed by a float solve, then verified
@@ -1175,8 +1424,9 @@ function latticeEquivExact(a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclo
  * orbits under the full point group, with orbits ≥ V/hol(Λ). V grows monotonically as the torus fill
  * adds tiles, so it lower-bounds the final V — the basis of the **P1 orbit-floor prune**
  * (`route-a-proven-box.md` §"Early-prune rulings"): a partial fill with V > k·hol(Λ) can only complete
- * to a tiling with orbits > k (gate-rejected) or to a supercell (primitivity-rejected, re-found at its
- * primitive sublattice). Exact, via `latticeEquivExact` (O(V²); V is bounded by the floor when pruning).
+ * to a tiling with orbits > k (gate-rejected) or to a supercell (primitivity-rejected; re-found at its
+ * primitive sublattice unconditionally under cor:box, guarded loudly under the tuned pool — CB-7).
+ * Exact, via `latticeEquivExact` (O(V²); V is bounded by the floor when pruning).
  */
 export function vertexClassCount(reps: Polygon[], u: Cyclotomic, v: Cyclotomic): number {
 	const vReps: Cyclotomic[] = [];
