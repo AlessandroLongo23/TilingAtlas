@@ -146,6 +146,7 @@ describe('CB-7 guard on a live solve — supercells are rejected, the guard neve
 		expect(cells.length).toBe(1); // the square tiling, exactly once
 		expect(diag.supercellRejected).toBeGreaterThan(0); // supercell completions DID occur and were rejected
 		expect(diag.primitivityGuardMisses).toBe(0); // the guard found every primitive lattice among the candidates
+		expect(diag.primitivityGuardAreaSuppressed).toBe(0); // every suppression here is a candidate-set HIT, not an area-set miss (Finding-2 counter, TA sign-off 2026-06-10)
 	});
 
 	it('6,6,6 (honeycomb = hexagonal/tied-minima lattice): 0 guard misses — the latticeKeySet membership is tie-robust', { timeout: 60000 }, () => {
@@ -156,5 +157,6 @@ describe('CB-7 guard on a live solve — supercells are rejected, the guard neve
 		expect(cells.length).toBe(1); // the honeycomb, exactly once
 		expect(diag.supercellRejected).toBeGreaterThan(0); // honeycomb supercells (index 2, 3) get certified and rejected
 		expect(diag.primitivityGuardMisses).toBe(0); // single-key membership false-fired here pre-fix
+		expect(diag.primitivityGuardAreaSuppressed).toBe(0); // candidate-hit suppressions only (hex primitive lattices ARE candidates)
 	});
 });

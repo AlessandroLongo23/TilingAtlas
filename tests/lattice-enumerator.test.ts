@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
 import { Surd, surdToCyclotomic, detSurd, tileAreaSurd } from "@/classes/algorithm/exact/Surd";
-import { LatticeEnumerator, gridDirOf, sameLattice, shortVectorPool, vcAreaSet, holohedry, vcAreaMinVerts, areaKey, edgeStepDirs, joinLattice, isIntCombo, gaussReduceExact, latticeKey } from "@/classes/algorithm/LatticeEnumerator";
+import { LatticeEnumerator, gridDirOf, sameLattice, shortVectorPool, vcAreaSet, holohedry, vcAreaMinVerts, areaKey, edgeStepDirs, joinLattice, isIntCombo, gaussReduceExact, latticeKey, areaLadderFromTiles } from "@/classes/algorithm/LatticeEnumerator";
 
 // vcAreaSet/vcAreaMinVerts are identity-keyed (C1, Increment 2). These adapters drive them with the old
 // regular-only n-keyed incidences: token = String(n), tileArea = tileAreaSurd(n), tileCorners = n.
@@ -318,5 +318,32 @@ describe("LatticeEnumerator.obliqueCells: oblique candidates via pair-seed + joi
 		const synthMin = new Map<string, number>(synthAreas.map((A) => [areaKey(A), 6]));
 		const got = lat.obliqueCells(p3, synthAreas, ring, 100, poolLmax, synthMin);
 		expect(got.some(([a, b]) => sameLattice(u, v, a, b))).toBe(true);
+	});
+});
+
+describe("areaLadderFromTiles (star-path area filter): truncation is LOUD, never silent (§32.2 sign-off ⚑)", () => {
+	// The TA's Finding-2 sign-off (cb7-finding2-signoff-2026-06-10.md §4) flagged the PeriodSolver star
+	// call site passing onTruncate=undefined — these pin the function-level contract that fix relies on.
+	it("fires onTruncate exactly once when LADDER_SIZE_CAP bites", () => {
+		// {3,4,6,8,12} areas span ℚ + ℚ√2 + ℚ√3: distinct coefficient triples are distinct keys, so the
+		// sums reachable below the proven orbit bound (24k·a_max, k=6) vastly exceed the 4000-entry cap.
+		const tiles = [3, 4, 6, 8, 12].map(tileAreaSurd);
+		const orbitBoundF = 24 * 6 * Math.max(...tiles.map((t) => t.toFloat()));
+		let fired = 0;
+		areaLadderFromTiles(tiles, 6, () => fired++, orbitBoundF);
+		expect(fired).toBe(1);
+	});
+
+	it("does NOT fire at the proven bound when the ladder fits (square-only, k=1: 24 rungs)", () => {
+		let fired = 0;
+		const out = areaLadderFromTiles([tileAreaSurd(4)], 1, () => fired++, 24); // area(4)=1 ⇒ bound 24·1·1
+		expect(fired).toBe(0);
+		expect(out.length).toBe(24); // sums 1..24
+	});
+
+	it("an override a float-ULP below the orbit bound is NOT truncation (1e-9 slack — the call site's 24k·a_max travels a different float route than max(toFloat))", () => {
+		let fired = 0;
+		areaLadderFromTiles([tileAreaSurd(4)], 1, () => fired++, 24 - 1e-12);
+		expect(fired).toBe(0);
 	});
 });
