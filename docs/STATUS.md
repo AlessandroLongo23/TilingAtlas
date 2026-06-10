@@ -55,6 +55,12 @@ Two tiers. Do not mix them.
   lem:orbitdedup (`ae61853`), D-D bound closed — lem:flagsharp δ≤12k−2 tight (`efe6d6c`), TH-3
   star quotient repair (`7d76b58`). Resources ledger at `9b0638e` (incl. the exact-δ script/data
   for the certified 92). Detail: TA_LOG (2026-06-10).
+- **TH-2/C1-Part-B DISCHARGED** (2026-06-10 late): fill completeness is a lemma, not an assumption
+  — `lem:fillreach` + `rem:fillreach`, prop:fanseed restated; branch `th2-fillreach-2026-06-10` @
+  `8c0a39d` (87pp clean, 0 undefined refs), pending AL review/merge. Resources at `24451c0`.
+  ⚑ CC work orders from the audit: buildBlock `min(60,·)` index cap (measured worst 16/19/23 at
+  k=1/2/3 vs 60 — record stands; make loud) and maxCellPolys=20k+24 < 24k at k≥7 (silent pop-site
+  discard). Detail: `../../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`.
 
 ## Live NEXT — one per party
 

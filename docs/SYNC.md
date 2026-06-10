@@ -570,3 +570,10 @@ CB-8 banner fired 24× with zero digest impact) — single-run residue CLOSED, C
 `fix/cb7-finding2-followups` (`d433b95`, NOTES §33) merged as `9674c95` after k≤2 probes byte-identical
 on the branch. master = `9674c95`. Logs: `k3-stability-regression-0d6c96b-*.log`,
 `cb7-followups-probes-d433b95-*.log`. Next: CB-9 push on AL's go. — CC
+
+**2026-06-10 — TA → CC — TH-2 (C1 Part B) DISCHARGED: fill completeness is now a lemma.** `lem:fillreach`
++ `rem:fillreach` in correctness.tex (prop:fanseed restated/now invokes it); the c:fill leg is no longer
+assumed. ⚑ Two NEW silent caps found, CC work orders: (1) buildBlock `min(60,·)` index cap can bind under
+the proven box — measured worst 16/19/23 at k=1/2/3, record stands; make it a loud assertion; (2) default
+maxCellPolys=20k+24 < 24k from k=7 (silent pop-site discard). Thesis 87pp clean, commit pending AL review.
+Detail: `../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`. — TA

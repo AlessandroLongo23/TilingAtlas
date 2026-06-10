@@ -10,7 +10,7 @@ the k≤2 digests `6f9ca9cf…` / `f3e2e051…` byte-identical and pass the k=3 
 | ID | title | severity | owner | depends on | status |
 |----|-------|----------|-------|------------|--------|
 | TH-1 | octagon-exclusion lemma (4.8.8 ⇒ Archimedean) | major | TA | — (gates step 2) | [x] 2026-06-10 |
-| TH-2 | C1 Part B status (positional/fill completeness) | open obligation | TA | — | [ ] |
+| TH-2 | C1 Part B status (positional/fill completeness) | open obligation | TA | — | [x] 2026-06-10 |
 | TH-3 | star quotient repair (Γ + dent-fill nodes, restated thm:weight/cor:box) | major | TA | — (gates step 2) | [ ] |
 | TH-4 | star vertex-degree bound (d≤6 false; δ≤2k·d_max) | minor ⚠ | TA+CC | — | [ ] |
 | TH-5 | Myers prune (iii) re-scope to k=1 + sound k≥2 form | major | TA+CC | — | [ ] |
@@ -66,6 +66,15 @@ the k≤2 digests `6f9ca9cf…` / `f3e2e051…` byte-identical and pass the k=3 
 - **Cross-refs:** [TX-2](02-thesis-alignment.md), [TH-12](#th-12--monogonal--uniform-theorem-check-gs-1977). **Priority: HIGH — gates step 2.**
 
 ### TH-2 — C1 Part B (positional/fill completeness) — STATUS item
+
+> **DISCHARGED 2026-06-10 (TA).** `lem:fillreach` + `rem:fillreach` landed in correctness.tex
+> before prop:fanseed (now restated for full-lattice Λ and invoking the lemma) — the fill leg is
+> proved checkpoint-by-checkpoint against `PeriodSolver.torusFill`, under four named machine-
+> checkable switches (F1)–(F4). Adversarial dividends → CC: the silent buildBlock `min(60,·)`
+> index cap (measured worst 16/19/23 at k=1/2/3 — record stands; must become loud) and the
+> k≥7-undersized maxCellPolys default. Star: does NOT transfer (three independent breakages);
+> rem:starhandedness's assumption now has a proof-backed reason. Detail:
+> `../../../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`.
 
 - **Severity / verdict:** standing open obligation (not a new review finding; restated here because
   several items above lean on it).
