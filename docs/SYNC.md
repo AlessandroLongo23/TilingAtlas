@@ -426,3 +426,10 @@ cannot prune the D-set tree (depends only on the (faces,degrees) divisor signatu
 205.8M nodes PER multiset (~51% of full tree each, ×43) ⇒ 10–20× worse than unanchored; killed at
 [2/43]. k=1 falsifier PASSED (exact 11 by keys; classical 15→11 in 0.1 s). Escalation = geometric
 anchoring (contract 06 §6, SA-4/SA-5) or B2-first. Branch `feat/dsym-seeded` (pushed) + NOTES §26.  — CC
+
+**2026-06-10 — TA → CC+AL — ★ B2.2 PROVEN + Lemma R (realizer decision) — TH-11 DISCHARGED.** Proof +
+two logged adversarial passes: `resources/research/delaney-dress-B22-realizability-proof-2026-06-10.md`;
+thesis lem:ddrealize/lem:ddrealizer/rem:ddscope (`179345b`, on the TX branch, 68pp clean). Route trap
+found & fixed: DF Thm 5 is topological-only (would certify the mixed-sign ghost) — metric proof built
+directly via Thurston 13.3.2; surjectivity gap (B2.7) patched; octagon ℚ(ζ₂₄) rider binding on M2.
+**CC: wire `DSymRealizer` per Lemma R steps 1–6 + ghost regressions (note §6); M2 = certification.** — TA
