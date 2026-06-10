@@ -64,6 +64,13 @@ Two tiers. Do not mix them.
   lem:orbitdedup (`ae61853`), D-D bound closed — lem:flagsharp δ≤12k−2 tight (`efe6d6c`), TH-3
   star quotient repair (`7d76b58`). Resources ledger at `9b0638e` (incl. the exact-δ script/data
   for the certified 92). Detail: TA_LOG (2026-06-10).
+- **TH-2/C1-Part-B DISCHARGED** (2026-06-10 late): fill completeness is a lemma, not an assumption
+  — `lem:fillreach` + `rem:fillreach`, prop:fanseed restated; branch `th2-fillreach-2026-06-10` @
+  `8c0a39d` (87pp clean, 0 undefined refs), pending AL review/merge. Resources at `24451c0`.
+  ✓ Both CC work orders from the audit LANDED (`c8bc258`, NOTES §34): buildBlock `min(60,·)` index
+  cap asserted per candidate (⚑ + `diag.blockIndexCapTruncated`; sweeps must assert 0) and
+  maxCellPolys default = max(20k+24, 24k); k≤2 probes byte-identical, F3 flags silent on the
+  certified record. Detail: `../../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`.
 
 ## Live NEXT — one per party
 
@@ -71,9 +78,9 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- **master = `6fe0ab0`** (docs; = `9674c95` code-wise). **`fix/cb5-cb4-cb6` @ `74e03a9` (worktree)
-  awaits merge** — CB-5/4/6 + §35 congruence fix, acceptance green except the fresh-sweep gate.
-  ALL branches pushed to origin 2026-06-10 (CB-9 ✓). Accepted k=3 artifact at
+- **master = MERGED: `c8bc258` (TH-2 F3, NOTES §34) + `fix/cb5-cb4-cb6` (CB-5/4/6 + §35,
+  AL-directed merge 2026-06-10 night; final hash in the post-push docs commit)**. Branches pushed
+  to origin (CB-9 ✓; `fix/th2-f3-loud-caps` local). Accepted k=3 artifact at
   `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
   identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
 - Review work-orders: `docs/review-2026-06-09/` (01 code items ALL closed; OP/ST files untouched).

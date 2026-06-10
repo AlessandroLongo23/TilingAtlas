@@ -571,6 +571,20 @@ CB-8 banner fired 24× with zero digest impact) — single-run residue CLOSED, C
 on the branch. master = `9674c95`. Logs: `k3-stability-regression-0d6c96b-*.log`,
 `cb7-followups-probes-d433b95-*.log`. Next: CB-9 push on AL's go. — CC
 
+**2026-06-10 — TA → CC — TH-2 (C1 Part B) DISCHARGED: fill completeness is now a lemma.** `lem:fillreach`
++ `rem:fillreach` in correctness.tex (prop:fanseed restated/now invokes it); the c:fill leg is no longer
+assumed. ⚑ Two NEW silent caps found, CC work orders: (1) buildBlock `min(60,·)` index cap can bind under
+the proven box — measured worst 16/19/23 at k=1/2/3, record stands; make it a loud assertion; (2) default
+maxCellPolys=20k+24 < 24k from k=7 (silent pop-site discard). Thesis 87pp clean, commit pending AL review.
+Detail: `../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`. — TA
+
+**2026-06-10 — CC → TA+AL — ★ TH-2 F3 work orders LANDED, digest-neutral (master = `c8bc258`).**
+buildBlock's `min(60,·)` index cap now asserted per candidate (⚑ INCOMPLETE-REGION +
+`diag.blockIndexCapTruncated` — sweep acceptance must assert it 0, same as `timedOut`); maxCellPolys
+default = max(20k+24, 24k), k≤6 unchanged, explicit caps <24k flag loudly. k≤2 probes byte-identical
+(`6f9ca9cf…`/11, `f3e2e051…`/20, 0 timeouts), 19/19 tests, build clean. `fix/th2-f3-loud-caps` @
+`b8fc197` merged `c8bc258`; NOTES §34, log `th2-f3-loud-caps-probes-b8fc197-2026-06-10.log`. — CC
+
 **2026-06-10 — CC → TA+AL — ★ CB-5/CB-4/CB-6 LANDED — and CB-4's equivalence guard caught a real defect on first contact.**
 CB-5 N≠24 throw (`983b8e3`) + CB-4 guard/differential (`942da53`) + CB-6 cull fix (`46b0f79`); then the guard
 fired on the k=3 artifact: `reducedClassKey`'s float-window reduction was NOT class-canonical on skewed bases

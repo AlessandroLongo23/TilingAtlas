@@ -234,11 +234,15 @@ export type PeriodSolverDiag = {
 	primitivityGuardMisses: number; // CB-7 guard: supercell discarded with its PRIMITIVE lattice absent from the candidate set (each is a loud INCOMPLETE-REGION)
 	primitivityGuardAreaSuppressed: number; // CB-7 guard alarms suppressed because the primitive area is outside the seed's admissible set — sound per the Finding-2 sign-off (TA 2026-06-10), but counted: a jump in this class is itself an anomaly signal, and it must stay distinguishable from candidate-hit suppression
 	starLadderTruncated: boolean; // the star-seed area ladder hit its cap ⇒ admissibleAreaKeys is UNDER-generated ⇒ Finding-2 area suppression is unlicensed for this seed (the guard alarms unconditionally; ⚑ INCOMPLETE-REGION emitted at the ladder)
+	blockIndexCapTruncated: number; // F3b (lem:fillreach): candidate lattices whose worst-case buildBlock index range exceeds BLOCK_INDEX_CAP — each is a loud ⚑ INCOMPLETE-REGION (an under-built block can mis-open covered vertices → no-progress kills the true continuation, AND a valid cell can fail the certificate's saturation leg). Measured worst requirement 16/19/23 at k=1/2/3 ⇒ 0 on the certified record; non-zero ANYWHERE voids a completeness claim for the run.
 	timedOut: boolean;
 };
 
 export type PeriodSolverOptions = {
-	/** Hard cap on polygons per fundamental cell (a runaway / wrong-Λ backstop). Default 20·k+24. */
+	/** Hard cap on polygons per fundamental cell (a runaway / wrong-Λ backstop). Default
+	 *  `defaultMaxCellPolys(k)` = max(20·k+24, 24·k) — never below the proven per-cell tile bound
+	 *  F ≤ 24k (torus Euler; lem:fillreach F3a), so the silent pop-site discard cannot drop a valid
+	 *  cell. An explicit value below 24k is flagged ⚑ INCOMPLETE-REGION at solve start. */
 	maxCellPolys?: number;
 	/** Wall-clock cap (ms) for the whole solve (0 = unlimited). Default 45000. */
 	maxMs?: number;
@@ -246,6 +250,33 @@ export type PeriodSolverOptions = {
 	/** Debug hook: called for every completed primitive cell, BEFORE the k-gate filter. */
 	onRawCell?: (cell: Polygon[], basis: [Cyclotomic, Cyclotomic], orbits: number | null) => void;
 };
+
+/** Default per-cell polygon cap: max(20k+24, 24k). Any k-uniform cell has F ≤ 24k tiles (torus
+ *  Euler V−E+F=0, vertex degrees in [3,6] ⇒ F ≤ 2|V(Q)| ≤ 24k), so the default never binds on a
+ *  true tiling at ANY k — the old `20k+24` undersized it from k=7 (lem:fillreach F3a work order,
+ *  TA 2026-06-10). Identical to the old default for k ≤ 6 (20k+24 ≥ 24k ⇔ k ≤ 6) ⇒ digest-neutral
+ *  on the certified k≤3 record. */
+export function defaultMaxCellPolys(k: number): number {
+	return Math.max(20 * k + 24, 24 * k);
+}
+
+/** Hard cap on the per-axis lattice-translate index range in `buildBlock`. lem:fillreach (F3b):
+ *  a binding cap UNDER-builds the block — covered vertices mis-classify as open (then the
+ *  no-progress test kills the true continuation: a silent drop mode) and a valid cell can fail
+ *  the certificate's saturation leg. So it must never bind silently: `makeCtx` asserts the
+ *  worst-case requirement per candidate lattice and emits ⚑ INCOMPLETE-REGION (counted in
+ *  `diag.blockIndexCapTruncated`) when it would. TA-measured worst requirement over the certified
+ *  catalogues: 16/19/23 at k=1/2/3 — far from binding, the record stands. */
+export const BLOCK_INDEX_CAP = 60;
+
+/** Worst-case per-axis index range `buildBlock` needs for a lattice, over EVERY call site: the
+ *  certificate's Rabs = cellDiam+8 dominates (limit = Rabs + cellDiam + 2 = 2·cellDiam+10), and
+ *  the longer basis vector (= cellDiam) drives the range (Mm = ⌈limit·|v|/area⌉+1, Mn likewise
+ *  with |u|; max over both axes uses max(|u|,|v|) = cellDiam). Exported for the F3b regression
+ *  test. */
+export function blockIndexRangeNeeded(cellDiam: number, cellArea: number): number {
+	return Math.ceil(((2 * cellDiam + 10) * cellDiam) / cellArea) + 1;
+}
 
 export class PeriodSolver {
 	k: number;
@@ -260,7 +291,15 @@ export class PeriodSolver {
 	 */
 	solve(seed: SeedConfigurationLike, opts: PeriodSolverOptions = {}): { cells: PeriodCell[]; diag: PeriodSolverDiag } {
 		const k = this.k;
-		const maxCellPolys = opts.maxCellPolys ?? 20 * k + 24;
+		const maxCellPolys = opts.maxCellPolys ?? defaultMaxCellPolys(k);
+		// F3a (lem:fillreach): an explicit cap below the proven F ≤ 24k turns the silent pop-site
+		// discard (`reps.length > maxCellPolys → continue`) into a completeness knob — never silent.
+		if (opts.maxCellPolys !== undefined && opts.maxCellPolys < 24 * k) {
+			process.stderr.write(
+				`[PeriodSolver k=${k}] ⚑ INCOMPLETE-REGION (maxCellPolys): explicit cap ${opts.maxCellPolys} < proven ` +
+				`per-cell tile bound 24k = ${24 * k} — the pop-site discard may silently drop valid cells\n`
+			);
+		}
 		const maxMs = opts.maxMs ?? 45000;
 		const start = Date.now();
 		// Optional phase profiler (env PS_PROFILE) — purely additive, byte-identical when off.
@@ -327,6 +366,7 @@ export class PeriodSolver {
 			primitivityGuardMisses: 0,
 			primitivityGuardAreaSuppressed: 0,
 			starLadderTruncated,
+			blockIndexCapTruncated: 0,
 			timedOut: false,
 		};
 
@@ -344,6 +384,7 @@ export class PeriodSolver {
 			diag.latticesTried++;
 			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles, allKeys, areaKeys);
 			if (!ctx) continue; // degenerate basis
+			if (ctx.blockIndexCapBinds) diag.blockIndexCapTruncated++; // F3b: ⚑ already emitted in makeCtx
 
 			// Choose the seed(s) for THIS lattice. Normally the rigid core. But when the rigid core
 			// OVERFLOWS the cell (its footprint mod Λ exceeds |det Λ| — the t2014 case), the core would be
@@ -745,10 +786,23 @@ export class PeriodSolver {
 		// only complete above k orbits (gate-rejected) or to a supercell (primitivity-rejected). hol
 		// never underestimates (falls back to 12), so the floor is never set too low.
 		const orbitFloor = this.k * holohedry(u, v);
+		// F3b (lem:fillreach): assert buildBlock's index cap cannot bind for this lattice — over every
+		// call site (the certificate radius dominates). A binding cap under-builds the block: covered
+		// vertices mis-classify as open (the no-progress test then kills the true continuation) and a
+		// valid cell can fail the certificate's saturation leg — a silent drop mode. Emitted HERE (the
+		// single ctx chokepoint) so the external-certify path is covered too; solve counts it in diag.
+		const blockIndexCapBinds = blockIndexRangeNeeded(cellDiam, cellArea) > BLOCK_INDEX_CAP;
+		if (blockIndexCapBinds) {
+			process.stderr.write(
+				`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (block index cap): lattice ${latticeKey(u, v)} needs ` +
+				`index range ${blockIndexRangeNeeded(cellDiam, cellArea)} > ${BLOCK_INDEX_CAP} — blocks under-built; ` +
+				`this candidate's results are NOT completeness-grade\n`
+			);
+		}
 		return {
 			u, v, ring, N: ring.N, allowed, polySizes,
 			maxCellPolys: Math.min(maxCellPolys, areaCap),
-			uV, vV, det, cellDiam, minLen, cellArea, maxCircum, orbitFloor,
+			uV, vV, det, cellDiam, minLen, cellArea, maxCircum, orbitFloor, blockIndexCapBinds,
 			// CB-1: exact |det Λ| for the certificate's area leg — computed once per candidate lattice.
 			cellAreaSurd: detSurd(u, v).abs(),
 			starTiles: starTiles.map((s) => ({ n: s.n, alphaU: s.alphaU })),
@@ -1240,8 +1294,11 @@ export class PeriodSolver {
 		const lu = Math.hypot(ctx.uV.x, ctx.uV.y);
 		const lv = Math.hypot(ctx.vV.x, ctx.vV.y);
 		const area = Math.abs(ctx.det);
-		const Mm = Math.min(60, Math.ceil((limit * lv) / area) + 1);
-		const Mn = Math.min(60, Math.ceil((limit * lu) / area) + 1);
+		// The clamp is NOT a silent knob: makeCtx asserts per candidate (worst call site) that it
+		// cannot bind, and flags ⚑ INCOMPLETE-REGION + diag.blockIndexCapTruncated when it would
+		// (lem:fillreach F3b).
+		const Mm = Math.min(BLOCK_INDEX_CAP, Math.ceil((limit * lv) / area) + 1);
+		const Mn = Math.min(BLOCK_INDEX_CAP, Math.ceil((limit * lu) / area) + 1);
 		for (let m = -Mm; m <= Mm; m++) {
 			for (let n = -Mn; n <= Mn; n++) {
 				// cheap centroid-of-cell range check before the exact translate
@@ -1368,6 +1425,7 @@ type FillCtx = {
 	starTiles: { n: number; alphaU: number }[]; // C3 star palette: (n,α) variants the fill loop may seat
 	candidateKeys: Set<string>; // ALL enumerated candidate lattice keys (pre-P0) — CB-7 guard universe
 	admissibleAreaKeys: Set<string>; // admissible cell-area keys (the seed's area ladder) — CB-7 guard
+	blockIndexCapBinds: boolean; // F3b (lem:fillreach): buildBlock's index cap WOULD bind for this lattice ⇒ blocks may be under-built ⇒ results for this candidate are not completeness-grade (⚑ emitted at makeCtx, counted in diag by solve)
 };
 
 type Interval = { start: number; units: number; n: number };
@@ -1379,7 +1437,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
 }
 
 /**
