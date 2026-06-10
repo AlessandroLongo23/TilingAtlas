@@ -1,0 +1,52 @@
+[2026-06-10T00:25:59.598Z] === dsym-seeded-probe start: steps {0,1} P={3,4,6,8,12} ===
+[2026-06-10T00:25:59.599Z] == STEP 0: unanchored baseline freeze (anchor OFF, this exact build) ==
+[2026-06-10T00:25:59.599Z]    expected from NOTES §23.5: k=1 δ≤12 → 11 (276 dsets, ~18k nodes); k=2 δ≤24 → 20 (~404M nodes, ~12min)
+[2026-06-10T00:25:59.599Z]    step0 k=1 δ≤12 starting (budget 450M nodes)
+[2026-06-10T00:25:59.706Z]    step0 k=1 δ≤12: candidateSymbols=11 (matches §23.5 (11)) dsets=276 nodes=17862 COMPLETE digest=e91646625684e01f 0.1s → /Users/alessandro/.config/superpowers/worktrees/TilingAtlas/dsym-seeded/experiments/results/dsym-seeded-baseline-k1.json
+[2026-06-10T00:25:59.706Z]    step0 k=2 δ≤24 starting (budget 450M nodes) — expect ~12 min, no intra-run progress (single sync DFS)
+[2026-06-10T00:26:57.648Z] === dsym-seeded-probe start: steps {2} P={3,4,6,8,12} ===
+[2026-06-10T00:26:57.649Z] == STEP 2: anchored k=2 (δ≤24, per-multiset) — THE HEADLINE MEASUREMENT ==
+[2026-06-10T00:26:57.712Z]    pipeline seed multisets=63 (multi-VC filtered; ⚑ {X,X} same-species multisets excluded by the pipeline's monogonal⇒uniform assumption) → 43 after unoriented projection-dedup
+[2026-06-10T00:32:14.112Z]    k2 [1/43] S={3,12,12|3,3,4,12}  nodes=205822063 dsets=365 survivors=0 union=0 316.4s complete  Σnodes=205.8M ETA=3.7h
+[2026-06-10T00:37:26.528Z]    k2 [2/43] S={3,12,12|3,4,3,12}  nodes=205822063 dsets=365 survivors=1 union=1 312.4s complete  Σnodes=411.6M ETA=3.6h
+[2026-06-10T00:37:53.069Z]    step0 k=2 δ≤24: candidateSymbols=20 (matches §23.5 (20)) dsets=54911 nodes=404533320 COMPLETE digest=8f5c83c735e88297 713.4s → /Users/alessandro/.config/superpowers/worktrees/TilingAtlas/dsym-seeded/experiments/results/dsym-seeded-baseline-k2.json
+[2026-06-10T00:37:53.069Z] == STEP 1: anchored k=1 (δ≤12, per-species) ==
+[2026-06-10T00:37:53.125Z]    pipeline VCs=18 (rotation-canonical names) → 15 unoriented species; 15 anchored runs
+[2026-06-10T00:37:53.136Z]    k1 [1/15] S={3,12,12}  nodes=10205 dsets=13 survivors=1 union=1 0.0s complete  Σnodes=0.0M ETA=0s
+[2026-06-10T00:37:53.144Z]    k1 [2/15] S={3,3,3,3,3,3}  nodes=5997 dsets=20 survivors=1 union=2 0.0s complete  Σnodes=0.0M ETA=0s
+[2026-06-10T00:37:53.152Z]    k1 [3/15] S={3,3,3,3,6}  nodes=7114 dsets=18 survivors=1 union=3 0.0s complete  Σnodes=0.0M ETA=0s
+[2026-06-10T00:37:53.161Z]    k1 [4/15] S={3,3,3,4,4}  nodes=8075 dsets=26 survivors=1 union=4 0.0s complete  Σnodes=0.0M ETA=0s
+[2026-06-10T00:37:53.174Z]    k1 [5/15] S={3,3,4,12}  nodes=12078 dsets=42 survivors=0 union=4 0.0s complete  Σnodes=0.0M ETA=0s
+[2026-06-10T00:37:53.182Z]    k1 [6/15] S={3,3,4,3,4}  nodes=8075 dsets=26 survivors=1 union=5 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.190Z]    k1 [7/15] S={3,3,6,6}  nodes=8876 dsets=25 survivors=0 union=5 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.202Z]    k1 [8/15] S={3,4,3,12}  nodes=12078 dsets=42 survivors=0 union=5 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.213Z]    k1 [9/15] S={3,4,4,6}  nodes=11949 dsets=42 survivors=0 union=5 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.225Z]    k1 [10/15] S={3,4,6,4}  nodes=11949 dsets=42 survivors=1 union=6 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.234Z]    k1 [11/15] S={3,6,3,6}  nodes=8876 dsets=25 survivors=1 union=7 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.242Z]    k1 [12/15] S={4,4,4,4}  nodes=7903 dsets=36 survivors=1 union=8 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.251Z]    k1 [13/15] S={4,6,12}  nodes=10205 dsets=13 survivors=1 union=9 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.259Z]    k1 [14/15] S={4,8,8}  nodes=7361 dsets=8 survivors=1 union=10 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.266Z]    k1 [15/15] S={6,6,6}  nodes=7613 dsets=11 survivors=1 union=11 0.0s complete  Σnodes=0.1M ETA=0s
+[2026-06-10T00:37:53.266Z]    step1 Σnodes=138354 (baseline ~18k) per-species max=12078 walled=0 wall-clock=0s
+[2026-06-10T00:37:53.266Z]    step1: UNION == UNANCHORED by canonical keys ✓ (11 symbols, digest=e91646625684e01f == baseline e91646625684e01f)
+[2026-06-10T00:37:53.267Z] === dsym-seeded-probe done in 11.9min ===
+
+==== VERDICT (2026-06-10, appended after killing the k=2 sweep at [2/43]) ====
+SPECIES-ANCHORING IS DEAD AS A k>=3 LEVER — by mechanism, not extrapolation.
+- step0 baselines reproduced exactly (k=1: 11/276 dsets/17,862 nodes; k=2: 20/54,911 dsets/404,533,320 nodes).
+- anchored k=1: union == unanchored by canonical keys (11, digest match); the 4 non-extendable
+  species (3.3.4.12, 3.3.6.6, 3.4.3.12, 3.4.4.6) die combinatorially — the classical 15->11
+  result reproduced in 0.1s total. Anchored Sum-nodes 138k vs 18k unanchored (7.7x OVERHEAD).
+- anchored k=2: multisets [1/43] and [2/43] cost an IDENTICAL 205,822,063 nodes each (~51% of the
+  full unanchored tree, per multiset). Mechanism: the D-set tree depends ONLY on the (faces,
+  degrees) divisor signature — species-level information cannot reach the D-set level, where the
+  2.24^delta explosion lives; each anchor re-pays the tree. Sweep killed at [2/43] (3.6h remaining
+  would re-measure a constant); k=3 anchored NOT attempted (each anchored tree is a constant
+  fraction of the same delta<=36 tree that walls unanchored at 400M/zero progress).
+- corollary: for any k where unanchored completes, anchoring is pure overhead (post-filter the
+  unanchored survivors by species instead). The only anchoring that can prune the D-SET tree is
+  GEOMETRIC (pinned sigma-structure / subsymbol-start with folding branches) — contract 06 §6,
+  obligations SA-4/SA-5.
+- flag-off discipline: original dsym-probe.ts k=1 re-run post-change: 11/276/17,862,
+  digest e91646625684e01f — byte-identical. k=2 flag-off equivalence via step0 (same entry point,
+  anchor undefined): 20/54,911/404,533,320.

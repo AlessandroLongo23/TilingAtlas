@@ -19,9 +19,64 @@
  * 144 → 17; k=2/δ≤24 → 20. A drop = an unsound prune; the generation order is the
  * published one precisely so this cannot happen above δ=12.
  */
-import { DSymbol, validate, perComponentFlat, minimalImage, kUniformity } from './DSymbol';
+import { DSymbol, validate, perComponentFlat, minimalImage, kUniformity, compareInts } from './DSymbol';
 
 const M12_RANGE = [3, 4, 5, 6]; // regular vertex degrees (3–6 tiles meet; >6 impossible for unit angles)
+
+// ---------------------------------------------------------------------------
+// PART 0 — vertex species (seed-anchoring support, 2026-06)
+// ---------------------------------------------------------------------------
+
+/**
+ * Dihedral (rotation + reflection) canonical form of a cyclic int sequence:
+ * the numeric-lex-min over all rotations of `seq` and of its reversal. This is
+ * the right invariant for a vertex SPECIES — a 2-D Delaney symbol is unoriented,
+ * so a species and its mirror are the same anchor class.
+ */
+export function dihedralCanonical(seq: readonly number[]): number[] {
+  const n = seq.length;
+  if (n === 0) return [];
+  const rev = [...seq].reverse();
+  let best: number[] | null = null;
+  for (const base of [seq, rev]) {
+    for (let r = 0; r < n; r++) {
+      const rot = new Array<number>(n);
+      for (let i = 0; i < n; i++) rot[i] = base[(r + i) % n];
+      if (best === null || compareInts(rot, best) < 0) best = rot;
+    }
+  }
+  return best!;
+}
+
+/** String key of the dihedral canonical form (species identity). */
+export const dihedralKey = (seq: readonly number[]): string => dihedralCanonical(seq).join(',');
+
+/**
+ * UNFOLDED vertex species of the {1,2}-orbit containing chamber `c`: the cyclic
+ * sequence of face sizes around the REPRESENTED VERTEX, i.e. m12(c) steps of the
+ * walk x ↦ s2(s1(x)) collecting m01.
+ *
+ * Soundness of the unfolding (the folding caution): in the universal tiling the
+ * 2m flags around a degree-m vertex form a 2m-cycle under alternating s1,s2; the
+ * quotient projection π onto the symbol COMMUTES with every s_i and preserves m01.
+ * Hence the projection of the cover walk (s2∘s1)^i IS the quotient walk, and the
+ * true face sequence around the vertex is exactly [m01((s2∘s1)^i c)]_{i=0..m-1}.
+ * A closed {1,2}-orbit with cycle length r12 = r therefore carries the species as
+ * its r-periodic walk repeated m/r times (cyclic fold) — and for chain orbits
+ * (mirror chambers, dihedral fold) the SAME m-step walk reads the species out
+ * correctly, reflections included. Never compare the raw r-length orbit sequence.
+ * Requires r12 | m12 (DS4), which the label layer guarantees by construction.
+ */
+export function vertexSpeciesAt(sym: DSymbol, c: number): number[] {
+  const m = sym.m12[c];
+  const out = new Array<number>(m);
+  let x = c;
+  for (let i = 0; i < m; i++) {
+    out[i] = sym.m01[x];
+    x = sym.s[2][sym.s[1][x]];
+  }
+  return out;
+}
 
 // ---------------------------------------------------------------------------
 // PART 1 — published D-set canonical augmentation (1-indexed; op[D] = [s0,s1,s2], 0 = undef)
@@ -314,6 +369,15 @@ export interface GenResult {
 
 export interface GenOptions {
   maxNodes?: number; // DFS node budget; default very large
+  /**
+   * SEED ANCHOR (optional): the candidate vertex-species MULTISET S — exactly k cyclic
+   * face-size sequences (e.g. [[3,4,6,4],[3,3,4,3,4]]). With it set, the run keeps only
+   * symbols whose k vertex orbits carry EXACTLY this species multiset (dihedral-canonical
+   * comparison, mirrors merged), and prunes the D-set DFS with the matching restricted
+   * p01/p12 (still hereditary ⇒ still sound). With it UNDEFINED the behavior is
+   * byte-identical to the unanchored generator.
+   */
+  anchor?: number[][];
 }
 
 /**
@@ -329,7 +393,30 @@ export function generateCandidateSymbols(
   const P = [...polygons].sort((a, b) => a - b);
   const maxNodes = opts.maxNodes ?? 200_000_000;
   const budget = { nodes: maxNodes };
-  const feasible = makeFeasible(k, feasibleRs(P), feasibleRs(M12_RANGE));
+
+  // --- seed anchor (optional): restricted face/degree alphabets + species keys ---
+  let anchorKeys: string[] | null = null; // sorted multiset of dihedral species keys
+  let anchorKeySet: Set<string> | null = null;
+  let anchorFaces: number[] | null = null; // unique face sizes across S (⊆ P enforced LOUD)
+  let anchorDegrees: number[] | null = null; // unique species degrees (⊆ M12_RANGE enforced LOUD)
+  if (opts.anchor) {
+    if (opts.anchor.length !== k) {
+      throw new Error(`anchor: species multiset has ${opts.anchor.length} entries, need exactly k=${k}`);
+    }
+    anchorKeys = opts.anchor.map(dihedralKey).sort();
+    anchorKeySet = new Set(anchorKeys);
+    anchorFaces = [...new Set(opts.anchor.flat())].sort((a, b) => a - b);
+    for (const f of anchorFaces) {
+      if (!P.includes(f)) throw new Error(`anchor: face size ${f} not in polygon set {${P.join(',')}}`);
+    }
+    anchorDegrees = [...new Set(opts.anchor.map((s) => s.length))].sort((a, b) => a - b);
+    for (const d of anchorDegrees) {
+      if (!M12_RANGE.includes(d)) throw new Error(`anchor: species degree ${d} outside regular range {3..6}`);
+    }
+  }
+  const faceAlphabet = anchorFaces ?? P;
+  const degreeAlphabet = anchorDegrees ?? M12_RANGE;
+  const feasible = makeFeasible(k, feasibleRs(faceAlphabet), feasibleRs(degreeAlphabet));
 
   let dsetsGenerated = 0;
   let generated = 0;
@@ -348,9 +435,9 @@ export function generateCandidateSymbols(
     const r01 = o01.map((orb) => rawCycleLen(s0, s1, orb[0]));
     const r12 = c12.map((orb) => rawCycleLen(s1, s2, orb[0]));
 
-    const m01opts = r01.map((r) => P.filter((m) => m % r === 0));
+    const m01opts = r01.map((r) => faceAlphabet.filter((m) => m % r === 0));
     if (m01opts.some((o) => o.length === 0)) continue;
-    const m12opts = r12.map((r) => M12_RANGE.filter((m) => m % r === 0));
+    const m12opts = r12.map((r) => degreeAlphabet.filter((m) => m % r === 0));
     if (m12opts.some((o) => o.length === 0)) continue;
 
     for (const m01a of cartesian(m01opts)) {
@@ -362,6 +449,23 @@ export function generateCandidateSymbols(
         const sym = new DSymbol(s0, s1, s2, m01, m12);
         generated += 1;
         if (!validate(sym).ok || !perComponentFlat(sym)) continue;
+        // anchored: every closed {1,2}-component's UNFOLDED species must be in S,
+        // and the multiset over the k components must equal S exactly.
+        if (anchorKeySet) {
+          const keys: string[] = [];
+          let ok = true;
+          for (const orb of c12) {
+            const key = dihedralKey(vertexSpeciesAt(sym, orb[0]));
+            if (!anchorKeySet.has(key)) {
+              ok = false;
+              break;
+            }
+            keys.push(key);
+          }
+          if (!ok) continue;
+          keys.sort();
+          if (keys.some((v, i) => v !== anchorKeys![i])) continue;
+        }
         rawCanon.set(sym.canonicalKey(), sym);
       }
     }
