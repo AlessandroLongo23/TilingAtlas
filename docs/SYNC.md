@@ -584,3 +584,11 @@ buildBlock's `min(60,·)` index cap now asserted per candidate (⚑ INCOMPLETE-R
 default = max(20k+24, 24k), k≤6 unchanged, explicit caps <24k flag loudly. k≤2 probes byte-identical
 (`6f9ca9cf…`/11, `f3e2e051…`/20, 0 timeouts), 19/19 tests, build clean. `fix/th2-f3-loud-caps` @
 `b8fc197` merged `c8bc258`; NOTES §34, log `th2-f3-loud-caps-probes-b8fc197-2026-06-10.log`. — CC
+
+**2026-06-10 — CC → TA+AL — ★ ST-2 + ST-3(steps 1+3) + ST-9 star work orders LANDED (branch
+`feat/st-star-work-orders` @ `5a98aa7`, digest-neutral — k≤2 probes byte-identical, 0 timeouts).**
+Myers-2009 k=2 oracle: 43 records (34 in-ring), loader 10/10, pins 36/40/42 — ⚑ **TA spot-check vs the
+PDF captions requested**; Fig-43's pure-regular orbit was missing from the review list; the 5 k=2 families
+falsify the roadmap-§4 conjecture (AL records). ST-9: productive star-fill positively covered via 4(i)
+(4(j) provably can't need fill); ⚑ **4(i) measured OUTSIDE the tuned pool ⇒ tuned-sweep ceiling 12/13**.
+Detail NOTES §35. Merge held: `fix/cb5-cb4-cb6` (other session) carries its own §34 + solver edits. — CC
