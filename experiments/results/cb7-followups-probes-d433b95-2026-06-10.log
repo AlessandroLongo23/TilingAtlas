@@ -1,0 +1,5 @@
+# k≤2 probe re-check on fix/cb7-finding2-followups (d433b95) — expect k1=6f9ca9cf2d16c75f k2=f3e2e0517191362c
+k=1: 11 distinct tilings (from 11 raw cells), 0 seeds timed out, 26.0s total
+COMPOSITION digest=6f9ca9cf2d16c75f count=11
+k=2: 20 distinct tilings (from 25 raw cells), 0 seeds timed out, 232.3s total
+COMPOSITION digest=f3e2e0517191362c count=20

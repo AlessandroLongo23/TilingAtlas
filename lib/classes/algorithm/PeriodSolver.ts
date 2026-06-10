@@ -133,7 +133,7 @@ const regimeBannerEmitted = new Set<string>();
  *  cell-area key set — both for the CB-7 primitivity guard. */
 const candidateCache = new Map<
 	string,
-	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; allKeys: Set<string>; areaKeys: Set<string> }
+	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> }
 >();
 
 /** Canonical vertex-configuration name from a cyclic list of corner TOKENS (bare edge-count `n` for
@@ -232,6 +232,8 @@ export type PeriodSolverDiag = {
 	obliqueTruncated: ObliqueTruncation['cause'] | null; // INCOMPLETE-REGION cause if the oblique reach was clipped
 	supercellRejected: number; // certified cells discarded as non-primitive supercells (CB-7 surface)
 	primitivityGuardMisses: number; // CB-7 guard: supercell discarded with its PRIMITIVE lattice absent from the candidate set (each is a loud INCOMPLETE-REGION)
+	primitivityGuardAreaSuppressed: number; // CB-7 guard alarms suppressed because the primitive area is outside the seed's admissible set — sound per the Finding-2 sign-off (TA 2026-06-10), but counted: a jump in this class is itself an anomaly signal, and it must stay distinguishable from candidate-hit suppression
+	starLadderTruncated: boolean; // the star-seed area ladder hit its cap ⇒ admissibleAreaKeys is UNDER-generated ⇒ Finding-2 area suppression is unlicensed for this seed (the guard alarms unconditionally; ⚑ INCOMPLETE-REGION emitted at the ladder)
 	timedOut: boolean;
 };
 
@@ -306,7 +308,7 @@ export class PeriodSolver {
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated, allKeys, areaKeys } = this.candidateLattices(seed);
+		const { lattices, p0Skipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
@@ -323,6 +325,8 @@ export class PeriodSolver {
 			obliqueTruncated,
 			supercellRejected: 0,
 			primitivityGuardMisses: 0,
+			primitivityGuardAreaSuppressed: 0,
+			starLadderTruncated,
 			timedOut: false,
 		};
 
@@ -447,7 +451,7 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; allKeys: Set<string>; areaKeys: Set<string> } {
+	private candidateLattices(seed: SeedConfigurationLike): { lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -543,8 +547,22 @@ export class PeriodSolver {
 		// seeds we LOOSEN to the generic identity-keyed ladder (any sum of tile areas — sound superset; the
 		// fill+certificate reject the extras). Doctrine: completeness knobs are not speed dials.
 		const seedHasStar = seed.polygons.some((p) => p.isStar);
+		// ⚑ LOUD truncation (TA Finding-2 sign-off §4, 2026-06-10): a capped ladder UNDER-generates the
+		// admissible-area set, which both drops candidate lattices AND would let the CB-7 guard's
+		// Finding-2 area suppression mask the resulting supercell alarms — the correlated-failure mode.
+		// So the truncation (a) logs ⚑ INCOMPLETE-REGION, (b) sets `starLadderTruncated`, which disables
+		// the area suppression in `supercellRejectionGuard` (alarm unconditionally) for this seed.
+		// Fires at most once per uncached candidateLattices call; star seeds only.
+		let starLadderTruncated = false;
 		const areas = seedHasStar
-			? areaLadderFromTiles([...tileArea.values()], this.k, undefined, areaBoundF)
+			? areaLadderFromTiles([...tileArea.values()], this.k, () => {
+					starLadderTruncated = true;
+					process.stderr.write(
+						`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (star area-ladder): truncated below the sound ` +
+						`orbit bound (LADDER_SIZE_CAP or area cap) — admissible-area set under-generated; ` +
+						`CB-7 Finding-2 area suppression DISABLED for this seed\n`
+					);
+				}, areaBoundF)
 			: vcAreaSet(vcIncidences, tileArea, tileCorners, areaBoundF);
 		if (seedHasStar && process.env.SPIKE_TRACE === '1') {
 			spikeBreak(
@@ -672,7 +690,7 @@ export class PeriodSolver {
 		// must not alarm on it (observed live: pure-triangle = 1-uniform supercell completions inside
 		// multi-VC k=2 seeds; vcAreaSet uses v ≥ 1 for EVERY VC, so their primitive area √3/2 is
 		// excluded by construction).
-		const result = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
+		const result = { lattices: kept, p0Skipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
@@ -1158,8 +1176,17 @@ export class PeriodSolver {
 			// seed's VC multiset on its primitive cell ⇒ it is enumerated from its own (sub)seed, not
 			// owed by this one — sound discard, no alarm. (Suppression can never hide a real loss: a
 			// tiling WITH this seed's orbit multiset has its primitive area in the set by the same
-			// contract that licenses the candidate area filter.)
-			if (!ctx.admissibleAreaKeys.has(areaKey(detSurd(closure[0], closure[1]).abs()))) return;
+			// contract that licenses the candidate area filter — Finding-2, SIGNED OFF by the TA
+			// 2026-06-10 for the regular family. Two riders from that sign-off: (1) the suppression is
+			// conditional on area-filter CORRECTNESS — it conditions on the same code-computed set the
+			// candidate stage filters by, so it cannot catch a vcAreaSet implementation bug; the class
+			// is therefore COUNTED, a jump is an anomaly signal. (2) If the star area ladder truncated,
+			// the set is known-UNDER-generated and the suppression is unlicensed — fall through to the
+			// unconditional alarm.)
+			if (!diag.starLadderTruncated && !ctx.admissibleAreaKeys.has(areaKey(detSurd(closure[0], closure[1]).abs()))) {
+				diag.primitivityGuardAreaSuppressed++;
+				return;
+			}
 		}
 		diag.primitivityGuardMisses++;
 		const pk = closure === null ? null : latticeKey(closure[0], closure[1]);
@@ -1341,7 +1368,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, timedOut: false };
 }
 
 /**

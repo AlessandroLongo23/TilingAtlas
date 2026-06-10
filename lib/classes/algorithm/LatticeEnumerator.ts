@@ -302,7 +302,12 @@ export function areaLadderFromTiles(tiles: Surd[], k: number, onTruncate?: () =>
 	const seen = new Map<string, Surd>();
 	const visited = new Set<string>([areaKey(Surd.ZERO)]);
 	let frontier: Surd[] = [Surd.ZERO];
-	let truncated = maxAreaF < orbitBoundF; // practical cap below the sound bound ⇒ already truncating
+	// Practical cap meaningfully below the sound bound ⇒ already truncating. The 1e-9 slack (the
+	// codebase's standard float tolerance) absorbs float-route noise: PeriodSolver's star call site
+	// passes areaBoundF = 24k·a_max computed via `tileAreaFloatFor` (regularArea closed-form), while
+	// `orbitBoundF` here maxes `Surd.toFloat()` — same value, different float path, possible ULP gap.
+	// Without the slack an ULP-low override would fire the ⚑ truncation alarm spuriously per seed.
+	let truncated = maxAreaF < orbitBoundF - 1e-9;
 	for (let count = 1; count <= maxTiles && frontier.length > 0 && seen.size < LADDER_SIZE_CAP; count++) {
 		const next: Surd[] = [];
 		for (const a of frontier) {
@@ -337,7 +342,11 @@ export function areaLadderFromTiles(tiles: Surd[], k: number, onTruncate?: () =>
  * `Σ_n area(n)·#n-gons`. This is the tile multiset FORCED by the VCs, a sparse set over `V_i ≥ 1`
  * (every vertex orbit appears in the translation cell) — far sharper than "any sum of tile areas", yet
  * sound: every real cell's area lies in its own seed's set. `vcIncidences[i]` maps n → #n-gons at a
- * vertex of VC i. Areas are bounded by `areaBoundF`; VCs with identical tile counts are merged.
+ * vertex of VC i. Areas are bounded by `areaBoundF`. One entry per VC *instance* — duplicates are NOT
+ * merged (the seed carries one entry per conjectured orbit), so the `v ≤ 12` loop below bounds each
+ * ORBIT separately: the §12.8 per-orbit crystallographic bound, NOT a per-VC-type bound. (Load-bearing
+ * for the CB-7 Finding-2 suppression — verified link 2 of the TA sign-off, 2026-06-10. An earlier
+ * version of this docstring claimed identical tile counts "are merged"; no merge ever existed.)
  */
 export function vcAreaSet(
 	vcIncidences: Map<string, number>[],
