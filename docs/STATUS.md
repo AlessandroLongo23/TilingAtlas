@@ -35,8 +35,10 @@ Two tiers. Do not mix them.
   CB-2 Surd.sign provable error-bound filter (`216302b` — the fuzz test found a REAL wrong-sign at
   coefficient height ~2⁵⁶: the old 1e-6 gate was unsound in fact, not just in principle; NOTES §30);
   CB-7 primitivity-rejection guard + CB-8 tuned-pool regime banner/reach counting (`eefa6ac`,
-  diagnostics-only; NOTES §32). ⚑ **TA sign-off needed: §32.2 Finding 2** (guard's area-set miss
-  suppression). Remaining review code items: CB-4, CB-5, CB-6, CB-9 (push branches!).
+  diagnostics-only; NOTES §32). **§32.2 Finding 2 SIGNED OFF by TA 2026-06-10** (sound; scope + 2
+  asks: `primitivityGuardAreaSuppressed` counter, star-path silent ladder truncation at
+  `PeriodSolver.ts:547` — see `../resources/research/cb7-finding2-signoff-2026-06-10.md`).
+  Remaining review code items: CB-4, CB-5, CB-6, CB-9 (push branches!).
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
 - Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1/TX-7
@@ -44,11 +46,13 @@ Two tiers. Do not mix them.
 
 ## Thesis state
 
-- Thesis master: TX-1..7 + B2 (lem:ddrealize/ddrealizer/rem:ddscope) + TH-1 octagon lemma landed;
-  k=3 gallery FINAL on the recert digest (thesis commit `01a7dd5`), 79pp clean.
-- ⚑ TA prose swap pending in results.tex (~:271-275): digest → `99919f42a7b58e76`, seeds 447→**449**,
-  and the 33,972 truncation count is the OLD run's number — re-derive from `k3-recert-2026-06-10.log`.
-  TODO marker at results.tex:337.
+- Thesis master: TX-1..7 + B2 (lem:ddrealize/ddrealizer/rem:ddscope); k=3 gallery FINAL on the
+  recert digest (thesis commit `01a7dd5`), 79pp clean.
+- Thesis branch `results-restructure-2026-06-10` (COMMITTED 2026-06-10, pending merge to master):
+  TH-1 octagon lemma (`8595b7d`) + restructure/prose-swap batch (`ece66b0`: sec:val-dd leads,
+  results.tex digest/449/truncation re-derived from the recert log, "count match ≠ content match"
+  item, journey.tex 447-run overclaim fixed); 79pp clean, 0 undefined refs. Resources ledger batch
+  committed (`fc46e9b`). Detail: TA_LOG (2026-06-10).
 
 ## Live NEXT — one per party
 

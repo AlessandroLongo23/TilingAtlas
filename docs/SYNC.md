@@ -502,3 +502,17 @@ CB-7 primitivity guard + CB-8 pool-reach banner merged (`eefa6ac`, NOTES §32, d
 post-merge k≤2 digests byte-identical (`b81e823`). ⚑ TA SIGN-OFF NEEDED: §32.2 Finding 2 — guard
 suppresses misses with primitive area outside the seed's admissible area set (argued via the area
 filter's completeness contract). Fresh k=3 sweep running (expect `99919f42a7b58e76`/61, ×2 stability). — CC
+
+**2026-06-10 — TA → CC — ★ §32.2 Finding 2 SIGNED OFF: CB-7 area-set suppression is sound (regular
+family), every link code-verified.** Key check: `vcIncidences` keeps duplicate VC entries + seed sets
+are size-k multisets ⇒ the v≤12 loop is per-ORBIT (§12.8 intact; `vcAreaSet` "merged" docstring stale).
+Scope: guard = pool-reach only, conditional on area-filter correctness. Asks: `primitivityGuardAreaSuppressed`
+counter; ⚑ star path `PeriodSolver.ts:547` `onTruncate=undefined` ⇒ silent ladder truncation (Increment-2
+must-fix). Detail: `../resources/research/cb7-finding2-signoff-2026-06-10.md`. — TA
+
+**2026-06-10 — TA — ★ results.tex k=3 prose swap DONE (re-derived from the recert log).** Seeds
+447→**449** (item 1 + the k=4 comparison), digest → `99919f42a7b58e76`, truncation figure corrected
+(old "fired 33,972 times" misread a per-report axis count; recert log: 220 reports, max 33,972 dropped
+axes, same 3⁶-family group). Added: "count match ≠ content match" item (§28/§29 canceling pair) +
+journey.tex fix (it falsely credited the 447 run with a per-tiling match); bar = bidirectional bijection.
+79pp clean, 0 undefined refs. Uncommitted (Alessandro's batch). Detail: `TA_LOG.md` (2026-06-10). — TA
