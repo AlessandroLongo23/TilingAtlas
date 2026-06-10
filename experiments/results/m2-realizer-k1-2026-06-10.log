@@ -1,0 +1,19 @@
+[08:57:05] M2 realizer acceptance — k=1 P={3,4,6,8,12} δ≤12 budget=500M nodes
+[08:57:06] M1: candidateSymbols=11 (COMPLETE) nodes=17862 0.249s
+[08:57:06] allowed VC alphabet over P: 15 names
+[08:57:06] symbol 1/11: REALIZED+CERTIFIED δ=1 |G₀|=12 cellTiles=2 k✓  [0.3s, ETA 3s]
+[08:57:06] symbol 2/11: REALIZED+CERTIFIED δ=1 |G₀|=8 cellTiles=1 k✓  [0.5s, ETA 2s]
+[08:57:06] symbol 3/11: REALIZED+CERTIFIED δ=1 |G₀|=12 cellTiles=1 k✓  [0.6s, ETA 2s]
+[08:57:06] symbol 4/11: REALIZED+CERTIFIED δ=2 |G₀|=12 cellTiles=3 k✓  [0.9s, ETA 1s]
+[08:57:07] symbol 5/11: REALIZED+CERTIFIED δ=3 |G₀|=12 cellTiles=3 k✓  [1.2s, ETA 1s]
+[08:57:07] symbol 6/11: REALIZED+CERTIFIED δ=3 |G₀|=8 cellTiles=2 k✓  [1.3s, ETA 1s]
+[08:57:07] symbol 7/11: REALIZED+CERTIFIED δ=4 |G₀|=12 cellTiles=6 k✓  [1.6s, ETA 1s]
+[08:57:07] symbol 8/11: REALIZED+CERTIFIED δ=5 |G₀|=4 cellTiles=3 k✓  [1.9s, ETA 1s]
+[08:57:08] symbol 9/11: REALIZED+CERTIFIED δ=5 |G₀|=8 cellTiles=6 k✓  [2.2s, ETA 0s]
+[08:57:08] symbol 10/11: REALIZED+CERTIFIED δ=6 |G₀|=12 cellTiles=6 k✓  [2.5s, ETA 0s]
+[08:57:08] symbol 11/11: REALIZED+CERTIFIED δ=10 |G₀|=6 cellTiles=9 k✓  [2.9s, ETA 0s]
+[08:57:08] RESULT: realized+certified=11 rejected=0 congruence-classes=11
+[08:57:08] torus artifact: 11 raw cells → 11 congruence classes
+[08:57:09] M3 cross-check: D-D∩torus=11/11; D-D-only=0; torus-only=0
+[08:57:09] ★ PER-TILING MATCH — the two independent catalogues coincide
+[08:57:09] done.

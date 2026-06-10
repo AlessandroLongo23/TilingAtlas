@@ -845,6 +845,18 @@ export class PeriodSolver {
 	// Completeness certificate
 	// ---------------------------------------------------------------------------
 
+	/** ADDITIVE (M2, lem:ddrealizer step 6): run the lem:corona certificate on an EXTERNALLY
+	 *  constructed cell (the D-D realizer's Λ-quotient). Zero behaviour change to the torus path —
+	 *  this only wraps makeCtx + isCompleteTiling for a caller that already holds a PeriodCell.
+	 *  Soundness is the certificate's own (independent of how the cell was produced): an accept
+	 *  means the Λ-periodic extension is a valid edge-to-edge tiling with only allowed VCs. */
+	certifyExternalCell(cell: PeriodCell, allowed: Set<string>, polySizes: number[]): boolean {
+		const ring = cell.basisExact[0].ring;
+		const ctx = this.makeCtx(cell.basisExact[0], cell.basisExact[1], ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
+		if (!ctx) return false;
+		return this.isCompleteTiling(cell.cellPolygons, ctx);
+	}
+
 	/** Exact gap-free certificate for a closed torus tiling (cell `reps` + lattice in ctx):
 	 *  (a) no proper overlap in a block, (b) every vertex within one cell of the origin is fully
 	 *  surrounded (2π) with an allowed VC, and (c) total cell area = |det Λ| (gap-free area check).

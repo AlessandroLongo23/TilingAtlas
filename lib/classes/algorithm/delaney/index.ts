@@ -7,3 +7,4 @@
  */
 export * from './DSymbol';
 export * from './DSymGenerator';
+export * from './DSymRealizer';
