@@ -2238,3 +2238,42 @@ tests/congruence-primitive.test.ts.
 - Probe scripts kept for reference: scripts/diag-t3007{,-compat,-seedbuild,-bfs,-finalcheck,-expand,
   -neighbors}.ts, scripts/diag-k3-duplicate.ts, scripts/diag-seedcount-impact.ts,
   scripts/verify-t3007-found.ts.
+
+## 30. CB-2: Surd.sign semi-static error-bound filter — the 1e-6 float gate was provably wrong, now provably sound (2026-06-10, worktree feat branch)
+
+(Numbered §30, not §24: this is written on a worktree branched at §23 while master is at §29 — sections
+24–29 merge in from master.)
+
+### 30.1 The defect (review CB-2, findings #5/#19)
+`Surd.sign()` accepted the float sign whenever `|toFloat()| > 1e-6` — an **absolute** threshold with no
+operand-height guard, on the decisive path (`cmp`, area comparisons, lattice predicates). Under
+cancellation at coefficient heights ≳2³⁴ the float rounding noise (~ε·M, M the coefficient majorant)
+exceeds 1e-6 while the true value can be arbitrarily smaller ⇒ wrong sign accepted. **Not hypothetical:**
+the new fuzz test demonstrated it red — e.g. Pell-residual product
+`(82450995619473798 + 58301658036173809√2 − 47603104448794160√3 − 33660478008806234√6)/1` → old
+`sign() = −1`, exact sign `+1`. The thesis claim "every decisive test in exact arithmetic" did not hold
+at this site.
+
+### 30.2 The fix — semi-static forward-error filter
+`sign()` now computes, sharing the same conversions, the float value `f` and the float majorant
+`M = (|p|+|q|+|r|+|s|)/d`, and accepts the float sign **iff `|f| > 32·ε·M`** (ε = `Number.EPSILON`),
+else falls through to `signExact()` (rational-interval ground truth). Derivation lives as a comment on
+`C_SIGN` in `Surd.ts`, counted against the implemented expression: 5 bigint→Number conversions (relative
+error ≤ u = ε/2 even above 2⁵³) + 3 correctly-rounded irrational constants (√3/√6 are now literals —
+round-to-nearest by ES spec, asserted `=== Math.sqrt(·)` in the test) + 3 multiplications + 3 additions +
+1 division = **15 first-order roundings** ⇒ `|f − v| ≤ γ₁₅·M_true ≈ 7.5ε·M_true`; M's own float error
+(γ₈) absorbed by doubling → 15ε; next power of two with margin → **c = 32** (>4× the requirement). An
+accepted float sign is therefore *provably* the true sign; nothing else changed (`toFloat` untouched,
+still debug-only). Faster in the common case too: tiny-but-well-conditioned values (e.g. exact 1e-30)
+no longer force `signExact`.
+
+### 30.3 Verification
+- **Fuzz regression** `tests/surd-sign-fuzz.test.ts`: 120 000 random Surds (heights 2⁸..2⁹⁶, random
+  D > 0) + Pell residuals of √2/√3/√6 to ~2¹⁰⁰ (closed-form signs asserted independently) + mixed
+  products/sums + `x.sub(x)` / `x.sub(x.add(10⁻³⁰))` + 2²⁰⁰⁰-height non-finite path; every case
+  `sign() === signExact()`, and every filter-ACCEPTED case asserted against the oracle (soundness).
+  Red on old code (2 adversarial suites failed), green on new.
+- **Digests byte-identical** (the filter only re-routes ambiguity to ground truth): k=1
+  `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20 (probe logs `experiments/results/cb2-probe-k{1,2}-2026-06-10.log`).
+- `pnpm build` clean; full vitest 201/202 — the 1 failure (`dsym-generator`) is pre-existing at this
+  branch point (verified by stash), fixed on master by §29.

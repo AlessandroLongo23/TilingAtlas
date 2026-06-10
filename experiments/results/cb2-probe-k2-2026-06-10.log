@@ -1,0 +1,46 @@
+tiles: {3,4,6,8,12}  ring N=24
+k=2: 40 seeds (40 used)
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 720 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [0] [3,3,3,3,3,3;3,3,3,3,6]      cells=2 lat=23 raw=21 gateRej=10 fanLat=0 obl=0 44715ms
+  [1] [3,3,3,3,3,3;3,3,3,3,6]      cells=1 lat=23 raw=20 gateRej=10 fanLat=0 obl=0 37709ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 8532 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [2] [3,3,3,3,3,3;3,3,3,4,4]      cells=2 lat=487 raw=12 gateRej=4 fanLat=353 obl=2616 65803ms
+  [3] [3,3,3,3,3,3;3,3,4,3,4]      cells=1 lat=487 raw=2 gateRej=1 fanLat=360 obl=2616 50276ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 3156 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [4] [3,3,3,3,3,3;3,3,4,12]       cells=1 lat=3 raw=2 gateRej=0 fanLat=0 obl=0 2755ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 852 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [5] [3,3,3,3,3,3;3,3,6,6]        cells=1 lat=47 raw=1 gateRej=0 fanLat=28 obl=12 41532ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 2112 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 552 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 768 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [10] [3,3,3,3,6;3,3,6,6]          cells=1 lat=26 raw=1 gateRej=0 fanLat=10 obl=12 6001ms
+  [11] [3,3,3,3,6;3,3,6,6]          cells=1 lat=26 raw=1 gateRej=0 fanLat=16 obl=12 4871ms
+  [12] [3,3,3,3,6;3,6,3,6]          cells=0 lat=26 raw=4 gateRej=2 fanLat=10 obl=12 7030ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [13] [3,3,3,4,4;3,3,4,3,4]        cells=1 lat=330 raw=3 gateRej=2 fanLat=280 obl=648 23841ms
+  [14] [3,3,3,4,4;3,3,4,3,4]        cells=2 lat=330 raw=4 gateRej=2 fanLat=280 obl=648 22966ms
+  [15] [3,3,3,4,4;3,3,4,3,4]        cells=2 lat=330 raw=4 gateRej=2 fanLat=297 obl=648 24842ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1608 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 2184 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [18] [3,3,3,4,4;3,4,6,4]          cells=1 lat=9 raw=1 gateRej=0 fanLat=0 obl=0 1509ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 9504 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [19] [3,3,3,4,4;4,4,4,4]          cells=2 lat=402 raw=5 gateRej=2 fanLat=279 obl=1932 21791ms
+  [23] [3,3,4,3,4;3,4,6,4]          cells=1 lat=9 raw=2 gateRej=0 fanLat=0 obl=0 3422ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 480 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 528 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1380 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 552 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 300 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [30] [3,3,6,6;3,6,3,6]            cells=1 lat=23 raw=6 gateRej=4 fanLat=15 obl=0 6301ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 984 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [33] [3,12,12;3,4,3,12]           cells=1 lat=12 raw=1 gateRej=0 fanLat=8 obl=0 1237ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 660 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [34] [3,4,4,6;3,4,6,4]            cells=1 lat=33 raw=4 gateRej=2 fanLat=26 obl=0 4721ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 3924 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [36] [3,4,4,6;3,6,3,6]            cells=2 lat=336 raw=4 gateRej=2 fanLat=313 obl=1056 10654ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 4344 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 528 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [39] [3,4,6,4;4,12,6]             cells=1 lat=2 raw=1 gateRej=0 fanLat=0 obl=0 701ms
+
+k=2: 20 distinct tilings (from 25 raw cells), 0 seeds timed out, 395.5s total
+COMPOSITION digest=f3e2e0517191362c count=20

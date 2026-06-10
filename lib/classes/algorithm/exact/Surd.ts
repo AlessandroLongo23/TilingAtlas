@@ -35,6 +35,45 @@ function isqrt(n: bigint): bigint {
 	return x;
 }
 
+/**
+ * √3 and √6 as correctly-rounded doubles for the `sign()` filter. A numeric literal is the
+ * round-to-nearest double of its decimal expansion by the ES spec, so these carry relative error
+ * ≤ u (unlike `Math.sqrt(x)`, which the spec only requires to be implementation-approximated —
+ * on IEEE-754 hardware both equal these literals, asserted by the fuzz test).
+ */
+const SIGN_SQRT3 = 1.7320508075688772;
+const SIGN_SQRT6 = 2.449489742783178;
+
+/**
+ * Semi-static error-bound filter constant for `sign()` (review CB-2). The filter accepts the
+ * float sign iff |f| > C_SIGN·ε·M, where f and M are computed in `sign()` as
+ *
+ *   f = (p + q + r + s) / d,   M = (|p| + |q| + |r| + |s|) / d,
+ *   p = Number(P), q = Number(Q)·√2̂, r = Number(R)·√3̂, s = Number(S)·√6̂, d = Number(D),
+ *
+ * with √2̂ = Math.SQRT2 and √3̂, √6̂ the literals above. Rounding count for f against exactly that
+ * expression — every step is correctly rounded with relative error ≤ u = 2⁻⁵³ = ε/2, where
+ * ε = Number.EPSILON = 2⁻⁵². Note bigint→Number is round-to-nearest even above 2⁵³, so its
+ * RELATIVE error stays ≤ u at any coefficient height:
+ *
+ *    5  bigint→Number conversions (P, Q, R, S, D)
+ *    3  irrational constants (Math.SQRT2, SIGN_SQRT3, SIGN_SQRT6)
+ *    3  multiplications (Q·√2̂, R·√3̂, S·√6̂)
+ *    3  additions (p+q, +r, +s)
+ *    1  division (/d)
+ *   ---
+ *   15  first-order roundings ⇒ standard forward bound |f − v| ≤ γ₁₅·M_true, γₙ = n·u/(1−n·u),
+ *       so γ₁₅ ≈ 15u = 7.5ε, where v = (P + Q√2 + R√3 + S√6)/D is the true value and
+ *       M_true = (|P| + |Q|√2 + |R|√3 + |S|√6)/D ≥ |v| is the true majorant.
+ *
+ * M itself is floats: its terms reuse the three products (Math.abs is exact) and add 3 additions
+ * + 1 division, so M ≥ M_true·(1−γ₈). Acceptance is sound when C_SIGN·ε·M ≥ γ₁₅·M_true, i.e.
+ * C_SIGN ≥ γ₁₅/(ε·(1−γ₈)) ≈ 7.5. Doubling to absorb the M error gives 15; the next power of two
+ * with margin is C_SIGN = 32 (> 4× the first-order requirement). Hence an accepted float sign is
+ * PROVABLY the true sign; everything else falls through to `signExact()` (ground truth).
+ */
+const C_SIGN = 32;
+
 export class Surd {
 	/** value = (P + Q√2 + R√3 + S√6) / D, with D > 0 and gcd(P,Q,R,S,D) = 1. */
 	readonly P: bigint;
@@ -130,11 +169,22 @@ export class Surd {
 		return this.sign() < 0 ? this.neg() : this;
 	}
 
-	/** −1 | 0 | +1. Float-first; exact rational-interval refinement on ambiguity. */
+	/**
+	 * −1 | 0 | +1. Float-first behind the semi-static error-bound filter (see C_SIGN above):
+	 * the float sign is accepted only when |f| > C_SIGN·ε·M, which the forward error bound proves
+	 * implies sign(f) = sign(value); every ambiguous case falls through to the exact
+	 * rational-interval refinement. Never wrong — this IS a decision, unlike `toFloat`.
+	 */
 	sign(): number {
 		if (this.isZero()) return 0;
-		const f = this.toFloat();
-		if (Number.isFinite(f) && Math.abs(f) > 1e-6) return f > 0 ? 1 : -1;
+		const p = Number(this.P);
+		const q = Number(this.Q) * Math.SQRT2;
+		const r = Number(this.R) * SIGN_SQRT3;
+		const s = Number(this.S) * SIGN_SQRT6;
+		const d = Number(this.D);
+		const f = (p + q + r + s) / d;
+		const M = (Math.abs(p) + Math.abs(q) + Math.abs(r) + Math.abs(s)) / d;
+		if (Number.isFinite(f) && Math.abs(f) > C_SIGN * Number.EPSILON * M) return f > 0 ? 1 : -1;
 		return this.signExact();
 	}
 	/** -1/0/1 comparison with `o` (exact). */
