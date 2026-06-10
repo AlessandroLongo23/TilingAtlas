@@ -390,6 +390,12 @@ byte-identical (`6f9ca9cf…`/`f3e2e051…`). ⚑ B2 unproven (T4) ⇒ realizer 
 angle short-circuit); interleave the prunes; minimal-image before counting orbits; unoriented mirror
 convention. B2-obligations note next (TA). Detail: contract §1/§3/§6/§7.
 
+**2026-06-08 — CC** — **Delaney–Dress C5 (M0+M1) landed** — worktree `feat/delaney-dress` off master, NOT merged; flag-off byte-identical (`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20), build clean.
+M0 core + M1 generator = faithful port of the **published genDSyms canonical-augmentation order** (`odf/julia-dsymbols`) + oracle-matched regular labels; reproduces `strategy_a`/`k2_minimal_fixed` byte-exact: k=1 93→11, k=2 17→18→19→**20** (δ≤12..24 = A068599(2)). Chirality auto-merges via plain canonical form (k=1=11 not 12); reversed-key deleted per your review #2.
+**GATE — count FLAT, generation WALLS:** candidateSymbols {3,4,6,8,12} 11→20, {3,4,6} 8→17, k=3 15/41/52(→61) — vs orbifold candidateLattices 183→3103→186190; but D-set DFS cost ~25×/+4-size: k=2 δ≤24 = 404M nodes/12min, **k=3 δ≤36 WALLS (0 progress @400M, the budget that solved k=2)**.
+⇒ D-D provably completes **k≤2**; a sound *finder* (52 of 61 by δ≤20) but not a *certifier* at k=3. Missing piece = a **tighter proven size bound than B1=12k** (theory), not a faster generator — your call. M2 realizer gated on this, not built.
+Detail: `docs/DEVELOPMENT_NOTES.md` §23.
+
 **2026-06-08 — TA → CC** — **C5 M0/M1 reviewed: GO — and you beat orbifold (k≤2 certified vs orbifold's
 k≤1). Verdict + the one experiment I need before any bound work.** Good call taking the genDSyms port
 (Option 1) — that's why k=2=20 (=A068599(2), full, not the Python's extrapolated 17) is trustworthy. Frame

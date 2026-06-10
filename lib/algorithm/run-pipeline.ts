@@ -34,6 +34,7 @@ import {
 	setActiveRing,
 } from "@/classes";
 import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { dsymPipeline } from "@/lib/algorithm/dsym-pipeline";
 import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import { AlgorithmTilingGenerator } from "@/classes/algorithm/TilingGenerator";
@@ -145,6 +146,17 @@ function main() {
 
 	const polygonSignatures = polygonGeneration(parameters, additionalPolygons, paramsFolder, log);
 	const vertexConfigurations = vertexConfigurationGeneration(polygonSignatures, paramsFolder, log);
+
+	if (process.env.USE_DSYM === '1') {
+		// Delaney–Dress (third enumeration engine). Skips seeds/compat/expand — D-D does not use
+		// seeds. M0/M1 = Stage-1 wall probe only (no realizer; M2 gated on the count curve). With
+		// USE_DSYM unset this branch is dead, so the certified torus/orbifold path is byte-identical.
+		dsymPipeline(vertexConfigurations, paramsFolder, MAX_K, log);
+		log.log('='.repeat(50));
+		log.log('Pipeline complete (USE_DSYM)!');
+		return;
+	}
+
 	const adjacencyList = compatibilityGraphGeneration(vertexConfigurations, paramsFolder, log);
 	seedSetExtraction(adjacencyList, vertexConfigurations, paramsFolder, log);
 	seedsGeneration(paramsFolder, null, null, log);

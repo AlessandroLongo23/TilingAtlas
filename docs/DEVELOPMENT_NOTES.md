@@ -1645,6 +1645,120 @@ C4). A k=4 *certified* number from the lattice programme is not on the table wit
   (100% timeout, fill-DFS dominant). For the dense-head bias check: `... 15000 40 3,4,6,8,12` on the
   pre-strided variant reproduced the same 100%-timeout conclusion.
 
+> **⚑ Merge note (2026-06-10, CC):** two parallel session-14 ledgers (master's C5 and the c7 branch)
+> both claimed **§23**. Kept verbatim per append-only doctrine: the **Delaney–Dress §23** (next) is the
+> one all `§23.x` cross-references point to (e.g. §23.5 wall data); the **star-spike §23** follows it and
+> is referenced by title only. Numbering resumes consistently at §24.
+
+## 23. Delaney–Dress engine (C5) — M0 (symbol core) + M1 (sound generator + wall-probe): the count is flat, the generation walls at k=3 (2026-06-08, session 14)
+
+**The question (C5, contract `../resources/research/delaney-dress-implementation-contract-2026-06-08.md`).**
+Stand up Delaney–Dress as a third enumeration engine, **probe-first**: M0 = the pure symbol core, M1 =
+a *sound* constrained generator whose deliverable is **ΣcandidateSymbols vs k** — the analog of the
+orbifold method's ΣcandidateLattices `183 → 3103 → 186190` (§22/§23.x). Gate: a dramatically flatter
+curve earns the pivot; a wall is itself a verdict. Isolation: a self-contained `lib/classes/algorithm/delaney/`
+module behind `USE_DSYM`, one branch at `run-pipeline.ts:147`, exact core untouched, **flag-off
+byte-identical** (`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20). Built on `feat/delaney-dress` off
+`master` (worktree). B2 (the realizability lemma) only enters via **B2.5** here (the angle prune is
+completeness-safe); the geometric realizer (M2) is gated on this measurement and not built.
+
+### 23.1 The two corrections the TA's plan-review forced (and why they mattered)
+The review (`../resources/research/delaney-dress-c5-plan-review-2026-06-08.md`), checked against the
+session's own run-verified `experiments/delaney-dress/FINDINGS.md`, overturned two things in the first plan:
+- **Chirality: there is no reversed/mirror key.** The first design proposed `min(canonicalForm,
+  canonicalFormReversed)`. Wrong on two counts: a 2-D Delaney symbol is *already* unoriented, so a chiral
+  tiling and its mirror **share one symbol** (FINDINGS §1) — **plain** DF-Alg-8 `canonical_form` merges
+  them; and the "reverse the BFS order" construction re-encodes the *same* symbol `D`, never the mirror
+  `D*`, so it merges nothing. The chiral **snub-hex `3.3.3.3.6` (p6, size 10) lives at k=1** and is the
+  regression: **k=1 = 11, not 12**, is the chirality test. The reversed key was deleted.
+- **`strategy_a.py` is the ground-truth ORACLE, not a "phantom-wall anti-pattern."** It is *correct-but-
+  slow* (brute-generate-all-BFS-layouts + canonical-dedup; SHA256-cross-checked 93→11). So a *new*
+  generator's danger is the **opposite of over-counting — silently DROPPING an iso-class via a homemade
+  prune** (FINDINGS §5: "soundness is tied to the exact Read/Faradžev order — do not invent one"). The
+  mandate became: **port the published order, validate against `strategy_a` exactly at every δ it reaches.**
+
+### 23.2 M0 — `lib/classes/algorithm/delaney/DSymbol.ts` (pure, fs-free; 14 tests green)
+A faithful TS port of `dsymbol.py` + `minimal_image_test.py` (immutable, dense `number[]`): axioms
+DS0–DS4 (`validate`), {0,1}/{1,2}/{0,2} orbits, exact per-component curvature via bigint fractions
+(`perComponentFlat` — the operative filter; global `K=0` is insufficient, the mixed-sign-ghost finding),
+**plain** DF-Alg-8 `canonicalForm` (numeric field comparison, not digit-lex — the "10 < 2" hazard), and
+the DF-Alg-10 `minimalImage` (the maximal-symmetry quotient = the genuine-k collapse). Cross-checked
+against the hand-verified ground truth (3 regular + **4.8.8** size-3 + a hyperbolic contrast); the
+doubled-square folds to the square at genuine k=1; canonical form is invariant under every relabeling
+(the mirror = an isomorphic relabel).
+
+### 23.3 M1 — `DSymGenerator.ts`: the published order + sound interleaved prunes
+**Base = a faithful port of the published canonical-augmentation order for 2-D Delaney SETS**
+(`odf/julia-dsymbols`, `src/dsetGenerator.jl` — Delgado-Friedrichs / Read–Faradžev): `firstUndefined`
+→ `scan02Orbit` (the m02=2 / DS2 closure) → `checkCanonicity` (reject if a remap-start chamber yields a
+smaller renumbering). This visits each connected 2-D D-set iso-class of size ≤ δ **exactly once** — no
+invented order. The regular-Euclidean **label layer matches the oracle `k2_minimal_fixed.py` exactly**:
+per {0,1}-orbit `m01 ∈ P` with `r01|m01`; per {1,2}-orbit `m12 ∈ {3,4,5,6}` with `r12|m12`; keep iff
+`validate` ∧ `perComponentFlat`; dedup by plain canonical form; genuine k via `minimalImage`. (No
+VC-alphabet coupling: `perComponentFlat` + the axioms already kill the ghost arrangements — FINDINGS §3 —
+so the module stays fully decoupled.) Three **interleaved, hereditary monotone prunes** make it tractable
+without dropping a class (a closed orbit is frozen ⇒ sound): a closed {1,2}-orbit must admit `m12≤6`
+(`r12≤6`); a closed {0,1}-orbit must admit some `m01∈P`; the count of **closed {1,2}-components ≤ k**.
+The DFS is in-place (pre-allocated `op`, edge-undo on backtrack — allocation-free per node).
+
+### 23.4 Soundness validated against the oracle (the trust anchor — three checkpoints)
+`pnpm vitest run tests/dsym-generator.test.ts` reproduces `strategy_a`/`k2_minimal_fixed` **byte-exactly**:
+
+| k | δ-bound | raw candidates (post-flat, deduped) | genuine-k minimal | oracle |
+|---|---|---|---|---|
+| 1 | ≤12 (= 12k, **provable**) | **93** | **11** | A068599(1)=11 ✓ |
+| 2 | ≤12 (partial) | **144** | **17** | matches `k2_minimal_fixed` (17, ≤12) ✓ |
+| 2 | ≤16 / ≤20 / ≤24 | — | **18 / 19 / 20** | A068599(2)=**20** at the full δ≤24 ✓ |
+
+k=1 = 11 (not 12) confirms the chirality auto-merge (snub-hex counted once). The k=2 climb 17→18→19→**20**
+across the proven envelope δ≤24 is the soundness proof at the **full** k=2 range — the Python oracle only
+ever *verified* 17 (≤12) and *extrapolated* 20.
+
+### 23.5 The gate — the count is FLAT, the generation COST explodes
+Two curves, and they diverge sharply:
+- **OUTPUT — ΣcandidateSymbols:** `11 (k=1) → 20 (k=2)` — the A068599 sequence, **dramatically flatter
+  than orbifold's ΣcandidateLattices `183 → 3103 → 186190`.** The method's premise (a clean, small
+  candidate set) is **confirmed**.
+- **COST — D-set DFS nodes to reach the proven B1 bound δ≤12k:** k=1 = 18 k nodes (instant, 276 D-sets);
+  k=2 δ≤24 = **404 M nodes / ~12 min** (0.6 M nodes/s). The node count grows **~25–29× per +4 size**
+  (558 k @δ16 → 14 M @δ20 → 404 M @δ24), so k=3 (δ≤36) extrapolates to **~10¹²–10¹³ nodes ⇒ months**.
+  **Confirmed walled**: k=3 at the *provable* δ≤36 bound, given 400 M nodes (the budget that fully solved
+  k=2 δ≤24), made **zero** progress — `completed=false`, `dsets=0` (depth-first augmentation at maxSize 36
+  never backtracks to the small raw-k=3 D-sets within budget). Yet at *tractable* sizes the count
+  completes and climbs toward **A068599(3)=61**: **k=3 δ≤12 / 16 / 20 = 15 / 41 / 52** candidateSymbols
+  (29 k → 0.7 M → 18 M nodes / 3 min, all complete) — so the k=3 set is ~tens (flat), **reachable as a
+  sound FINDER (52 of 61 by δ≤20) but NOT exhaustible as a CERTIFIER** at δ≤36. The matched `{3,4,6}` curve (orbifold's
+  baseline polygon set) tells the same story flatter still: **candidateSymbols `8 (k=1) → 17 (k=2)`**
+  (both complete; k=2 δ≤24 = 273 M nodes / 7 min) **vs orbifold candidateLattices `183 → 3103`** — D-D's
+  count is ~20× smaller and growing ~2× where orbifold grows ~17×.
+
+### 23.6 Verdict — front-end tamed, provable completeness gated on a tighter size bound than B1
+The Delaney–Dress front-end is exactly what FINDINGS predicted: the candidate **count** is clean and flat
+(`11 → 20 → …`), the minimal-image collapse is cheap and combinatorial, and the port is **sound** (the
+published order reproduces the oracle to the byte). But the **generation** — enumerating *all* D-sets up
+to the B1 envelope δ≤12k — is the same explosion the published genDSyms has (it, too, generates every
+D-set and prunes at the label stage); the regular-feasibility interleaving cuts the constant but not the
+~25×/+4 asymptotic. So **D-D provably completes k≤2 (δ≤24 reachable) but walls at k=3 (δ≤36)** — it does
+*not*, as-is, extend the certified frontier past the torus method's k≤3, and the k≥4 home-run is
+unreachable. The decisive missing piece is **not** a faster generator but a **tighter proven size bound
+than B1 = 12k** (the working sizes are far smaller — k=2's largest minimal symbol is ≤24 but most ≤16):
+with a bound near the true max size, the flat candidate count would be reachable. That bound is a *theory*
+deliverable (TA). Until then, D-D stands as an **independent, complexity-bounded cross-method completeness
+*witness* for k≤2** (and a sound *finder* — not yet a *certifier* — at k=3 via a capped search), exactly
+the honest framing FINDINGS §5 reached: Tegula already enumerates D-symbols (no regular gate),
+Galebach/Čtrnáct already have the counts; D-D's novelty is the clean B1 + minimal-image front-end with B2
+the open bridge.
+
+### 23.7 Isolation discharged
+`USE_DSYM` unset ⇒ both digests byte-identical (`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20, re-run after
+all changes); `pnpm build` clean; `delaney/` is fs-free and off the `@/classes` barrel; the only shared-code
+edit is one import + the dead-when-unset branch at `run-pipeline.ts:147` (verified, skips seeds/compat/expand).
+
+### 23.8 Repro
+- `pnpm vitest run tests/dsymbol.test.ts tests/dsym-generator.test.ts` — M0 (14) + M1 (5), the oracle cross-checks.
+- `pnpm tsx scripts/dsym-probe.ts 4 3,4,6` / `... 3,4,6,8,12` — the gate table (ΣcandidateSymbols + completed-vs-walled per k; `[budget]M` nodes/k; a wall is loud, never silent truncation).
+- `USE_DSYM=1 DSYM_BUDGET_M=5 pnpm tsx lib/algorithm/run-pipeline.ts` — the integrated path (k=1=11, k≥2 walls fast); writes `pipeline-output/<params>/dsym-probe.json`.
+
 ## 23. C7 star spike — Myers 4(j) `8.4*.8.4*` end-to-end; the convex layer made star-aware, and 4(j) certified k=1 exact (2026-06-08, session 14)
 
 **Branch `feat/c7-star-spike` (off master `4381401`), NOT merged.** The horizontal star lane (C7),
