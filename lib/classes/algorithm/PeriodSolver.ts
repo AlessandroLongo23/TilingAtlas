@@ -1070,8 +1070,15 @@ export class PeriodSolver {
 	/** Exact gap-free certificate for a closed torus tiling (cell `reps` + lattice in ctx):
 	 *  (a) no proper overlap in a block, (b) every vertex within one cell of the origin is fully
 	 *  surrounded (2π) with an allowed VC, and (c) total cell area = |det Λ| (gap-free area check).
-	 *  All three ⇒ the Λ-periodic extension is a valid edge-to-edge tiling with only allowed VCs. */
-	isCompleteTiling(reps: Polygon[], ctx: FillCtx): boolean {
+	 *  All three ⇒ the Λ-periodic extension is a valid edge-to-edge tiling with only allowed VCs.
+	 *
+	 *  If `occurringOut` is provided, every canonical VC name judged at a t≥3 vertex is added to it.
+	 *  The collected set is COMPLETE (not a sample) ONLY when the certificate returns true: every
+	 *  Λ-vertex class has a representative within judgeR = cellDiam + 0.5 of the origin (one full
+	 *  cell), and the certificate judges all of them, so on a true return `occurringOut` holds the
+	 *  full occurring VC-type set of the periodic tiling.  On a false return the set may be empty or
+	 *  partial — early rejects (gap/over-full vertex, disallowed name) bail mid-collection. */
+	isCompleteTiling(reps: Polygon[], ctx: FillCtx, occurringOut?: Set<string>): boolean {
 		// (c) area: cell polygons must exactly cover one fundamental domain. CB-1: the DECISION is the
 		// exact Surd comparison Σ tileAreaSurdFor(p) == |det Λ| (thesis leg (c): "equals |det Λ| exactly");
 		// the float sum is kept as a broadphase PRE-REJECT only. Soundness of the broadphase: float error
@@ -1114,6 +1121,7 @@ export class PeriodSolver {
 			if (t < 3) continue;
 			const name = canonicalVCName(this.vcRingNames(v, polys));
 			if (!ctx.allowed.has(name)) return false;
+			occurringOut?.add(name);
 		}
 		return judged > 0;
 	}

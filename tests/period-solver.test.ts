@@ -211,6 +211,46 @@ describe('PeriodSolver — emitted cells are exact, gap-free, primitive tilings'
 	});
 });
 
+describe('OP-1 prop:typeprune prep', () => {
+	it('isCompleteTiling reports the occurring VC-name set via the out-param', { timeout: 30000 }, () => {
+		// Use the 3,4,6,4 k=1 seed — a small cell that certifies quickly.
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,4,6,4')]);
+		const solver = new PeriodSolver(1);
+		const { cells } = solver.solve(seed, {});
+		expect(cells.length).toBeGreaterThan(0);
+
+		const cell = cells[0];
+		const [u, v] = cell.basisExact;
+		const ring = u.ring;
+
+		// Build allowed + polySizes the same way solve() does.
+		const corePolys = seed.polygons;
+		const coreVertices = seed.vertexConfigurations.map((vc) => vc.computeSharedVertexExact());
+		const allowed = new Set<string>(
+			coreVertices.map((cv) =>
+				(solver as any).vcNameAt(cv, corePolys.filter((p) => p.vertexKeySet().has(cv.key())))
+			)
+		);
+		const polySizes = Array.from(
+			new Set(corePolys.filter((p) => !p.isStar).map((p) => p.n))
+		).sort((a: number, b: number) => a - b);
+
+		const ctx = (solver as any).makeCtx(u, v, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
+		expect(ctx).not.toBeNull();
+
+		// First call WITHOUT the out-param — must still return true (zero behavior change).
+		const withoutOut = solver.isCompleteTiling(cell.cellPolygons, ctx);
+		expect(withoutOut).toBe(true);
+
+		// Second call WITH the out-param — must collect the full occurring VC-name set.
+		const occ = new Set<string>();
+		const withOut = solver.isCompleteTiling(cell.cellPolygons, ctx, occ);
+		expect(withOut).toBe(true);
+		// At k=1 every VC type that is allowed must occur (occurring = allowed for this fixture).
+		expect([...occ].sort()).toEqual([...allowed].sort());
+	});
+});
+
 describe('lem:fillreach F3 loud-cap guards (TH-2 work orders, 2026-06-10)', () => {
 	// F3b: buildBlock's per-axis index cap must never bind SILENTLY. The worst-case requirement is
 	// asserted per candidate lattice (certificate radius dominates: limit = 2·cellDiam+10, range
