@@ -2437,3 +2437,94 @@ Digest-neutral by construction on regular seeds (counter = pure addition; bypass
 truncation; slack changes only alarm timing at ULP equality). 57/57 tests, build clean. ⚑ k≤2
 probe re-verification DEFERRED — the k=3 stability regression occupies the machine; run the probe
 before merging the branch.
+
+## 34. Review batch CB-5 + CB-4 + CB-6 — and the CB-4 guard's first catch: `reducedClassKey` was not class-canonical (2026-06-10, session 17, branch `fix/cb5-cb4-cb6`)
+
+The last three open code items of the 2026-06-09 review (work-order `docs/review-2026-06-09/01-code-bugs.md`),
+in NEXT order CB-5 → CB-4 → CB-6, each TDD'd and committed separately. Then the new CB-4 guard fired on its
+FIRST contact with real data and exposed a latent completeness defect in the congruence dedup — diagnosed,
+root-caused, and fixed in the same session (§34.2–34.3).
+
+### 34.1 The three work-order items
+
+- **CB-5 (`983b8e3`)** — `KUniformityChecker` now **throws** on any N≠24 ring instead of silently
+  un-gating (on N≠24 the hardcoded full-surround `=== 24` could never fire → reps empty → gate
+  returns null → caller KEEPS everything — a silent "all and only" violation). Magic 24 replaced by
+  `FULL_TURN_UNITS = N` (asserted === 24) — one site for a future N-generalization; module grepped
+  clean of other literal-24 angle assumptions. TDD: N=12 square cell throws, N=24 control gates 1 orbit.
+- **CB-4 (`942da53`)** — two standing verification layers for the merge step. (1)
+  `assertEquivalencePartition`, cherry-picked **surgically** from `feat/c4-pool-bypass` (the branch
+  predates §29 — a merge would have clobbered `primitiveReducedCell`; ported function + call site +
+  tests only): every dedup bucket's partition is asserted to be a genuine equivalence relation
+  (reflexivity, argument-order symmetry, transitivity-vs-classes), always-on, throw-loud;
+  `PS_MERGECHECK=full` adds reversed-input order-invariance. (2) `CongruenceDifferential.ts` — the
+  §19.6 one-shot exact re-implementation (never committed; reconstructed from its design notes)
+  promoted to a **standing differential oracle**, import-disjoint from `TilingCongruence.ts`: ONE
+  map function for pin and cell-set, self-built keys, exact Surd-floor fundamental-domain reduction.
+  `diffPartitionAgainstIndependent` re-checks every merge decision (member ~ rep) and every split
+  (rep ≁ rep over ALL pairs, so production bucket-key bugs are also caught); wired into
+  `recert-oracle-match.ts` with zero-mismatch required. `congruencePartition` exported (additive);
+  `dedupeByCongruence` rebuilt on it byte-identically.
+- **CB-6 (`46b0f79`)** — `properOverlapWithBlock`'s centroid cull constant 2.5 was geometrically
+  FALSE for 8/12-gons (12-gon R ≈ 1.932 ⇒ pairs overlap to ≈ 3.86; octagon ≈ 2.61): real overlaps at
+  distance 2.5–3.86 were admitted into the DFS and died only downstream — dead subtrees on exactly
+  the 8/12-gon-heavy k=4 fills (§22). Now `circum(P) + ctx.maxCircum (+1e-9)` — the true
+  R₁+R₂ overlap-impossibility radius, sound for every pair, tighter for small tiles. Emitted set
+  provably unchanged (the certificate backstop killed those fills anyway); k=4 timeout-budget
+  re-measure deferred to OP-9 (owns the protocol).
+
+### 34.2 ★ The guard's first catch — `cong(a,b) ≠ cong(b,a)` on the k=3 artifact
+
+Running the upgraded recert harness on the live k=3 artifact (362 raw cells), the partition aborted:
+`⚑ IMPLEMENTATION-BUG: merge relation is not an equivalence (symmetry) in bucket
+3,3,3,3,3,3,3,3,3,3,3,3,6,6@0,0,6,0,1` (12×3 + 2×6, |det Λ| = 6√3 — snub-class, skewed oblique bases).
+Diagnosis (`scripts/diag-cb4-asymmetry.ts`; logs `diag-cb4-asymmetry-2026-06-10-*.log`):
+
+- Exactly **one asymmetric pair** in the 18-cell bucket; the independent differential says
+  **congruent both ways** — the false direction was a FALSE NEGATIVE in `tilingsCongruent`.
+- Instrumented candidate loop: in the failing direction all 24 pin+lattice-passing candidates miss
+  the reduced-key-set by ≥1 key — the **cell-set verification step** was the failure site.
+- Root cause: `reducedClassKey`'s float-guessed ±2-window lex-min reduction **violates its own
+  class-invariance claim** ("same key for every member of a class") on skewed bases — 7/140 and
+  4/140 violations under plain lattice translates of the two cells' own polygons. Window/`lim`
+  artifacts pick different representatives for members of one class ⇒ direction-dependent false
+  negatives. A concrete violating instance was extracted verbatim (basis u = 2ζ⁴, v = −6+3ζ⁴;
+  triangle anchored −1−5ζ⁴, dirs 0/8/16; λ = v) and pinned as the RED regression test.
+- **Why the certified 61 survived:** the two cells merged into one class via a third
+  representative (production tests `cong(c, members[0])` only), so the partition — oracle-bijection
+  -verified ×2 — was correct; the *predicate* was unreliable. Same axis as §19.6: completeness of
+  the merge, never soundness (keys are exact geometry; distinct classes cannot collide ⇒ no false
+  positives possible from this site). The guard exists precisely to remove the dependence on this
+  kind of luck, and it did so on first contact.
+
+### 34.3 The fix (`c802989`): exact fundamental-domain reduction
+
+`reducedClassKey` now translates `p` so its centroid's **exact** basis coordinates (α, β) — Surd
+Cramer, values in ℚ(√2,√3) — land in [0,1)² (representative = p − ⌊α⌋u − ⌊β⌋v, exact `surdFloor`).
+Class-canonical *by construction*: lattice translates shift (α, β) by integers, which cancel in the
+floor. This simultaneously (a) closes the §34.2 defect class entirely, (b) **removes a float
+decision from a decisive path** (the old `Math.round` guess + float `lim` cutoff chose which
+translates were even considered — thesis exactness doctrine), and (c) replaces ≤25 clone+exactKey
+window probes per polygon with 2 Surd divisions (cheaper).
+
+### 34.4 Acceptance evidence (all in `experiments/results/`)
+
+- k≤2 probes **byte-identical twice** — after CB-5+4+6 (`cb456-probes-46b0f79`) and after the §34
+  fix (`cb456-probes-c802989`): k1 = `6f9ca9cf2d16c75f`/11, k2 = `f3e2e0517191362c`/20, 0 timeouts.
+  (Expected: k≤2 classes are theorem-certified distinct, so the strictly-more-complete reduction
+  cannot introduce merges there. Verified, not assumed.)
+- Full suite **327/327** green (incl. 16 new tests across the batch); build clean.
+- Post-fix diag: **0 asymmetric pairs** in the offending bucket.
+- Recert + differential (`k3-recert-oracle-match-...-18-22.log`): **★ PASS** — partition 61, guard
+  silent, **differential 301 merges + 1830 splits re-checked, 0 mismatches**, 61/61 per-tiling
+  oracle bijection, t3007 present, no duplicates.
+- ⚑ **Outstanding batch acceptance:** a fresh no-cap k=3 sweep must reproduce
+  `99919f42a7b58e76`/61 byte-identical (CB-6 + §34 both touch decisive paths; the artifact-level
+  evidence above says the partition is unchanged, and CB-6 only rejects certificate-dead
+  placements — but the sweep is the standard, machine-occupying gate; schedule with AL as before).
+- ⚑ **TA flag (thesis):** the §19.6/2c8ad69 congruence-dedup narrative gains a sibling caveat — the
+  cell-set verification step contained a float-window reduction that was not class-canonical
+  (completeness, never soundness; caught by the CB-4 guard, fixed exact same-day). The "exact
+  congruence test" wording is now *more* true: one more float decision is gone from the decisive
+  path. The §34.2 mechanism (merge-through-lucky-representative) is exactly the fragility class the
+  thesis can now claim is guarded against by construction (equivalence guard + standing differential).

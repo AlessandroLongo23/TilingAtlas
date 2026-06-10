@@ -570,3 +570,10 @@ CB-8 banner fired 24× with zero digest impact) — single-run residue CLOSED, C
 `fix/cb7-finding2-followups` (`d433b95`, NOTES §33) merged as `9674c95` after k≤2 probes byte-identical
 on the branch. master = `9674c95`. Logs: `k3-stability-regression-0d6c96b-*.log`,
 `cb7-followups-probes-d433b95-*.log`. Next: CB-9 push on AL's go. — CC
+
+**2026-06-10 — CC → TA+AL — ★ CB-5/CB-4/CB-6 LANDED — and CB-4's equivalence guard caught a real defect on first contact.**
+CB-5 N≠24 throw (`983b8e3`) + CB-4 guard/differential (`942da53`) + CB-6 cull fix (`46b0f79`); then the guard
+fired on the k=3 artifact: `reducedClassKey`'s float-window reduction was NOT class-canonical on skewed bases
+⇒ false negatives (completeness, never soundness; certified 61 stands — merged via a lucky third rep). Fixed
+exact (`c802989`); k≤2 byte-identical ×2; recert ★ PASS 61/61 + differential 0/2131. ⚑ TA: §19.6 narrative
+gains the §34 sibling caveat. Detail: NOTES §34. Outstanding: fresh k=3 sweep + merge on AL's go. — CC

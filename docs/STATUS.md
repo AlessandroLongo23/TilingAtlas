@@ -3,7 +3,7 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-06-10 (evening), CC.
+> entry of each ledger. **Never write history here.** — last updated 2026-06-10 (night), CC.
 
 ## Knowledge model (read once, then follow it)
 
@@ -40,8 +40,17 @@ Two tiers. Do not mix them.
   `../resources/research/cb7-finding2-signoff-2026-06-10.md`); **all 3 sign-off asks LANDED** on
   `fix/cb7-finding2-followups` @ `d433b95` (counter + loud star-ladder truncation + docstring;
   NOTES §33) — **MERGED `9674c95`** after k≤2 probe re-check byte-identical on d433b95
-  (`cb7-followups-probes-d433b95-2026-06-10.log`). Remaining review code items: CB-4, CB-5, CB-6
-  (CB-9 push ✓ 2026-06-10).
+  (`cb7-followups-probes-d433b95-2026-06-10.log`). (CB-9 push ✓ 2026-06-10.)
+- ★ **Review batch CB-5/CB-4/CB-6 LANDED on `fix/cb5-cb4-cb6` @ `74e03a9` — ALL CB items now
+  closed** (NOTES §34): CB-5 N≠24 throw (`983b8e3`); CB-4 always-on equivalence guard + standing
+  import-disjoint congruence differential wired into the recert harness (`942da53`); CB-6 cull
+  R_P+maxCircum (`46b0f79`). **The CB-4 guard fired on first contact with the k=3 artifact** —
+  `reducedClassKey`'s float-window reduction was NOT class-canonical on skewed bases (direction-
+  dependent false negatives; completeness, never soundness; certified 61 unaffected — lucky third
+  rep). Fixed exact (`c802989`). Acceptance: k≤2 probes byte-identical ×2, suite 327/327, recert
+  ★ PASS 61/61 + differential 0/2131 mismatches (`cb456-probes-*`, `k3-recert-...-18-22.log`).
+  ⚑ Outstanding: fresh k=3 no-cap sweep (expect `99919f42a7b58e76`/61) as batch acceptance; merge
+  on AL's go. ⚑ TA: thesis §19.6 congruence narrative gains the §34 sibling caveat.
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
 - Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1/TX-7
@@ -62,11 +71,12 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- **master = `9674c95` = `feat/m2-realizer`** (ff; stability PASS + Finding-2 follow-ups merged).
+- **master = `6fe0ab0`** (docs; = `9674c95` code-wise). **`fix/cb5-cb4-cb6` @ `74e03a9` (worktree)
+  awaits merge** — CB-5/4/6 + §34 congruence fix, acceptance green except the fresh-sweep gate.
   ALL branches pushed to origin 2026-06-10 (CB-9 ✓). Accepted k=3 artifact at
   `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
   identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
-- Review work-orders: `docs/review-2026-06-09/` (CB-4/5/6/9 still open in 01; OP/ST files untouched).
+- Review work-orders: `docs/review-2026-06-09/` (01 code items ALL closed; OP/ST files untouched).
 - Supabase: k=3 run `52d0cb2e` certified (61); old `d522b481` de-certified, rows retained.
 
 ## Ledger index
