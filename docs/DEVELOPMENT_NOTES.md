@@ -2480,3 +2480,73 @@ it (the k=3 recert did).
 written first, red, then green. Full `period-solver.test.ts` 19/19, build clean. k≤2 probe
 byte-identity vs `6f9ca9cf2d16c75f`/11 + `f3e2e0517191362c`/20:
 `experiments/results/th2-f3-loud-caps-probes-b8fc197-2026-06-10.log`.
+
+## 35. TH-4 d_max + TH-13 γ-feasibility tables — the star lane's CC constants landed (2026-06-10)
+
+The two CC-side finite exact computations the star lane was waiting on
+(`docs/review-2026-06-09/03-theory-obligations.md` TH-4/TH-13; TA's TH-3 note "CC follow-ups").
+Branch `feat/th4-th13-star-tables` off master `0291e83`; spec
+`docs/superpowers/specs/2026-06-10-th4-th13-star-tables-design.md`. ⚑ **Neither TH-4 nor TH-13
+is discharged by these tables** — they are the constants/scoping INPUT to TA's restated transfer
+lemma (TH-4) and lemma-or-scope-cut (TH-13).
+
+### 35.1 The prune-(iii) trap, second bite
+
+TH-4 exists because Remark 3 asserted d ≤ 6 from a convex-regular premise. The first
+implementation sketch nearly repeated the sin one level down: `StarVC.ts:134` applies Myers
+prune (iii) (≥1 star point — **uniformity-only**, see TH-5) unconditionally, `includeDents`
+does not bypass it, so a d_max read off `enumerateStarVCs` alone would silently rest on (iii)
+at the Fig-3 column (dent-no-point VCs like [4*d@16, 3, 3] are admissible k≥2 vertices but
+never enumerated). Resolution (AL review): **Route 2** — an independent multiset engine
+(`StarDmaxRoute2.ts`, ZERO StarVC imports, alphabet from the P3 formulas, no lower bound on
+points anywhere) publishes the numbers; **Route 1** (the live enumerator + computed point-free
+fold-backs) is the per-cell agreement gate. Fold-back case split (exhaustive: every
+(i)/(ii)-admissible vertex is point-carrying | pure-regular | dent-no-point):
+pure-regular ≤ 6 (corners ≥ 4u); dent-no-point: β ≥ 13 ⇒ ≤ 11u left ⇒ ≤ 2 regulars ⇒ t ≤ 3.
+Both are *computed per alphabet*, not asserted — the hard-coded 3 would phantom-floor empty
+=1-dent strata (F(12,1) → 0) and fail the gate; the ≤ 3 lemma is enforced as a loud throw.
+
+### 35.2 Premises stated, not inherited
+
+P1 (≤1 dent): two reflex corners (β > 12u) sum > 2π. P2 (no adjacent points): isotoxal edges
+run point→dent, so two adjacent points at v put a dent of each star at the shared edge's far
+endpoint — > 2π by P1. Both k-independent; (iii) used nowhere. P3 (scope, inherited NOT
+derived): n ∈ {3,4,6,8,12}, 0 < α < 12(n−2)/n. P4: degree = t over t≥3 true vertices.
+Strata: Fig-4 (0 dents) | Fig-3(=1) (the TH-3 Γ⋆ stratum) | Fig-3(≤1) ≡ max of the two
+(identity, checked per row).
+
+### 35.3 Results (log `experiments/results/th4-star-dmax-be943b9-2026-06-10.log`, 7.5s, exit 0)
+
+**d_max(in-ring envelope) = 9 exact, all strata** (witness 4×3*p@1 + 5 triangles; t=10 needs
+≥ 25u) **⇒ δ ≤ 2k·d_max = 18k** (vs crude guess ≈11 ⇒ 22k; regular 12k is false for stars)
+and **F ≤ (d_max/2 − 1)·12k = 42k** for cor:starbox(i). Fig-3(=1) envelope = 6 (β=13 + 3 pts
++ 2 triangles); ⚑ dent-reg-19 envelope's =1 stratum = **5**, not 6 — the β=13 dent is 3*d@13
+from 3*@3, which the dent-reg filter excludes. Per-family: 𝓕(n,1) = 9, 𝓕(n,2) = 8, others 6;
+=1-dent stratum ranges 0/3/4/5 (empty e.g. for all 𝓕(12,α) with α ∉ {6,8}). regular-only
+recovers 6. Pinned in `tests/star-vc.test.ts` (engine recomputed, not copied constants);
+agreement on the 33 cheap rows in CI, envelope rows agreement-checked by the script run (the
+committed log is the artifact — enumerator cost).
+
+### 35.4 TH-13 table (log `experiments/results/th13-dentfill-table-9f77e32-2026-06-10.log`)
+
+Verdicts partition the 32: **19 REGULAR-FILLABLE** (== `dentRegularFillableVariants`, set
+equality checked) / **8 POINT-ONLY** (γ ∈ {3,5,7}; star-point-fillable in the MIXED universe
+only — dropped by today's filter, the real TH-13 risk class) / **5 UNFILLABLE** (γ=11 =
+{3*@3, 4*@5, 6*@7, 8*@8, 12*@9}: no single corner matches — provably Fig-4-absent, *sharper*
+than the filter's "solver rejects extras"). Dent-by-dent fill impossible (γ < 12 < β′).
+**Rider:** same-family point-fill is arithmetically impossible (γ = α + 24/n ≠ α) ⇒ the
+regular-filler hypothesis (TH-3's sharp tier) holds **unconditionally for single-variant
+in-ring tilings**; gear chains require ≥ 2 distinct variants. Gear column (lem:dentchain rung
+1): chains through γ′=11 fillers terminate immediately; the open gear-train candidates are
+the 'point'-class continuations (e.g. 12*@1 → 12*@3 → γ′=5 point).
+
+### 35.5 Honest flags
+
+(a) ⚑ TH-4 discharged only when TA re-proves the flag-count transfer with d_max = 9; TH-13
+needs TA's local exclusion on the 8 POINT-ONLY rows or the unfiltered sound-run fallback
+(deferred with AL: contingent on TA's verdict + machine availability). (b) ⚑ P3 scope
+sentinel: the variant-set-equality test catches StarVC alphabet drift, NOT a deliberate scope
+widening (n=24, off-ring α) — then every constant must be recomputed. (c) Route 2's pigeonhole
+form of (ii) (#points ≤ ⌊t/2⌋ ⟺ non-adjacent cyclic arrangement) is guarded by the per-cell
+route agreement. (d) Fig-3 class remains best-effort in the solver; nothing decisive changed —
+`StarVC.ts`/scout untouched, regular digests untouched trivially, build clean, 23/23 tests.

@@ -44,8 +44,11 @@ Two tiers. Do not mix them.
   (CB-9 push ✓ 2026-06-10).
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
-- Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1/TX-7
-  conventions gate the next increment (TA). Seed-anchored D-D dead by mechanism (NOTES §26).
+- Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1 closed +
+  TH-3 star theory landed (TA); ★ **CC star tables LANDED 2026-06-10** (`feat/th4-th13-star-tables`
+  @ `7813ce8`, NOTES §35): TH-4 d_max(envelope) = 9 exact ⇒ δ ≤ 18k, F ≤ 42k; TH-13 19/8/5 +
+  single-variant regular-filler rider — constants INPUT, discharge is TA's. Seed-anchored D-D dead
+  by mechanism (NOTES §26).
 
 ## Thesis state
 

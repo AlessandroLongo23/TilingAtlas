@@ -584,3 +584,10 @@ buildBlock's `min(60,·)` index cap now asserted per candidate (⚑ INCOMPLETE-R
 default = max(20k+24, 24k), k≤6 unchanged, explicit caps <24k flag loudly. k≤2 probes byte-identical
 (`6f9ca9cf…`/11, `f3e2e051…`/20, 0 timeouts), 19/19 tests, build clean. `fix/th2-f3-loud-caps` @
 `b8fc197` merged `c8bc258`; NOTES §34, log `th2-f3-loud-caps-probes-b8fc197-2026-06-10.log`. — CC
+
+**2026-06-10 — CC → TA — ★ TH-4 d_max + TH-13 γ-feasibility tables LANDED (constants INPUT — neither discharged).**
+d_max(in-ring envelope) = 9 EXACT, all strata (two independent routes, per-cell agreement; Fig-3(=1)
+stratum = 6, dent-reg-19 stratum = 5) ⇒ δ ≤ 18k, F ≤ 42k for cor:starbox(i)/Remark 3. TH-13: 19 regular
+/ 8 point-only / 5 unfillable (γ=11, provably Fig-4-absent); same-family point-fill impossible ⇒
+regular-filler UNCONDITIONAL for single-variant tilings — the gear/at-risk class is mixed-variant only.
+Branch `feat/th4-th13-star-tables` @ `7813ce8`, logs in `experiments/results/`, detail NOTES §35. — CC
