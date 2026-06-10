@@ -1,21 +1,43 @@
 /*
  * C7 Increment-2 — in-ring k=1 star scout. Enumerates exact star VCs (StarVC), builds the exact seed
  * fan per VC, solves each with PeriodSolver(1), dedupes up to congruence, and reports recovered tilings
- * + the star variants present vs the TA oracle. Standalone (does NOT touch the regular `pnpm pipeline`).
+ * + the star variants present vs the Myers oracle. Standalone (does NOT touch the regular `pnpm pipeline`).
  *
  * Run:  pnpm tsx scripts/scout-star-inring.ts [flags]
  *   --variants all|dentreg   variant set (default dentreg = the 19 SOUND dent-regular-fillable; see StarVC)
- *   --single-star            only VCs with a single star (n,α) type  (heuristic — see ⚑ below)
- *   --dents                  also enumerate Fig-3 dent-at-vertex VCs (best-effort)
- *   --max-corners N          only VCs with ≤ N corners
- *   --limit N                solve only the first N VCs (after sort)   ⚑ a CAP — logged loud
- *   --maxMs N                per-seed wall cap (default 30000)         ⚑ a CAP — logged loud
+ *   --single-star            only VCs with a single star (n,α) type  (heuristic — a CAP, see run-matrix)
+ *   --dents                  also enumerate Fig-3 dent-at-vertex VCs (BEST-EFFORT — see run-matrix)
+ *   --max-corners N          only VCs with ≤ N corners                ⚑ a CAP — logged loud
+ *   --limit N                solve only the first N VCs (after sort)  ⚑ a CAP — logged loud
+ *   --maxMs N                per-seed wall cap (default 30000)        ⚑ a CAP — logged loud
  *
- * ⚑ FEASIBILITY (project doctrine — completeness over speed, no silent caps): the fully-sound run over
- * all 4896 dent-reg VCs is ~8h (C2/C3 loosening inflates candidateLattices; the sharp star area set is
- * the Increment-3 dent-aware bound, TA-owed). Any scope reduction below the full sound set (--single-star,
- * --limit, --max-corners, a per-seed --maxMs timeout) is a CAP that can DROP an in-ring tiling and is
- * printed loudly. The completeness CLAIM holds only for the full unscoped sound run.
+ * RUN-MATRIX (ST-2) — what each config can and cannot claim; the report prints its row:
+ *   (no flags: --variants dentreg, no --dents — the default)
+ *       scope = Myers 2004 Fig-4 IN-RING POINT-AT-VERTEX subclass (13 tilings). Fig-3 is structurally
+ *       OUT: dent-at-vertex VCs (including Fig-3(f)'s 6*@6) exist only under --dents, so the no-flag
+ *       run is guaranteed to miss them. This config is NOT a full star run and NEVER carries the
+ *       completeness claim for anything beyond the Fig-4 subclass.
+ *   --dents
+ *       adds the Fig-3 dent-at-vertex VC class — BEST-EFFORT ONLY: the fill loop seats star POINTS
+ *       only (dent-seating not implemented, NOTES §24.5) and the dent-fillability filter assumes a
+ *       single regular corner (§24.6). A Fig-3 miss under --dents is NOT decisive.
+ *   --variants all
+ *       32-variant sound superset of dentreg (the solver rejects the extras; slower, same scope row).
+ *   --single-star / --limit / --max-corners / --maxMs
+ *       CAPS. Each one can DROP an in-ring tiling; all are printed loudly; any active cap (or any
+ *       timeout) disqualifies a completeness reading of the run.
+ *
+ * VOCABULARY (ST-2): results here are at most CERTIFIED-CORRECT (this tiling exists, is k-uniform,
+ * verified exactly — what 4(j)/4(p) have). NOTHING in the star lane is CERTIFIED-COMPLETE (the
+ * enumeration provably found all) until TH-3/TH-6 close and the truncation summary below is zero
+ * under a proven star pool bound. The Myers list itself is an UNCHECKED hand enumeration
+ * (star-scout-scoping-2026-06-06.md): recovering it is verification of an unchecked catalogue, not
+ * validation against proven ground truth.
+ *
+ * ⚑ FEASIBILITY (project doctrine — completeness over speed, no silent caps): the unscoped dentreg run
+ * over all 4896 VCs is ~8h (C2/C3 loosening inflates candidateLattices; the sharp star area set is the
+ * Increment-3 dent-aware bound, TA-owed). The Fig-4-subclass completeness reading requires the full
+ * unscoped run with zero timeouts AND a zero truncation summary.
  */
 import { PeriodSolver, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
@@ -49,8 +71,31 @@ const starKey = (p: Polygon): string => {
 	return `${p.n}*@${min}`;
 };
 
-// TA oracle: star variants needed across the in-ring Myers tilings (6*@6 only for Fig-3(f)).
-const ORACLE = new Set(['3*@1', '3*@2', '4*@2', '4*@3', '4*@4', '6*@2', '6*@4', '6*@5', '6*@6', '8*@1', '12*@2']);
+// Myers oracle, split per scope row (ST-2 reconciliation with the SYNC downgrade): the Fig-4 in-ring
+// point-at-vertex set is the HARD set — on a full unscoped run with 0 timeouts and a zero truncation
+// summary, any Fig-4 miss is a hard fail. Fig-3 (a,f) is BEST-EFFORT: 6*@6 occurs only in Fig-3(f),
+// whose dent-at-vertex VCs exist only under --dents, and even then the fill is point-only.
+const FIG4_ORACLE = new Set(['3*@1', '3*@2', '4*@2', '4*@3', '4*@4', '6*@2', '6*@4', '6*@5', '8*@1', '12*@2']);
+const FIG3_BEST_EFFORT = new Set(['6*@6']); // Fig-3(f) only
+
+// --- ST-2: per-cause INCOMPLETE-REGION aggregation -------------------------------------------------
+// The solver's stderr flags stay authoritative, but at star scale the per-call lines flood (the
+// loosened ladder pushes grid-reach skips to millions). Print the FIRST line per cause verbatim,
+// swallow repeats, and report ONE aggregate line per cause at the end — loud, legible, nothing lost.
+const trunc = new Map<string, { lines: number; skips: number }>();
+const realStderrWrite = process.stderr.write.bind(process.stderr);
+process.stderr.write = ((chunk: string | Uint8Array, ...rest: never[]) => {
+	const s = typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString();
+	const m = /INCOMPLETE-REGION \(([^)]+)\):\s*(\d+)?/.exec(s);
+	if (m) {
+		const e = trunc.get(m[1]) ?? { lines: 0, skips: 0 };
+		e.lines++;
+		e.skips += m[2] ? parseInt(m[2], 10) : 0;
+		trunc.set(m[1], e);
+		if (e.lines > 1) return true; // aggregated in the summary; first occurrence already printed
+	}
+	return realStderrWrite(chunk, ...rest);
+}) as typeof process.stderr.write;
 
 // --- enumerate + scope ---
 let vcs: StarVC[] = enumerateStarVCs({ variants: variantSet, includeDents });
@@ -66,14 +111,18 @@ if (limit > 0) vcs = vcs.slice(0, limit);
 
 console.log('=== C7 in-ring star scout ===');
 console.log(`variants=${opt('--variants', 'dentreg')}(${variantSet.length}) dents=${includeDents} singleStar=${singleStar} maxCorners=${maxCorners} maxMs=${maxMs} limit=${limit || '∞'}`);
+console.log(includeDents
+	? 'SCOPE: Myers Fig-4 in-ring point-at-vertex subclass (13, HARD) + Fig-3 dent-at-vertex BEST-EFFORT (point-only fill, single-regular-corner dent filter — a Fig-3 miss is NOT decisive)'
+	: 'SCOPE: Myers Fig-4 in-ring point-at-vertex subclass (13 tilings) ONLY — Fig-3 out of scope (dent VCs not enumerated; 6*@6 not expected)');
 console.log(`VCs: enumerated=${totalEnum} scoped=${scoped} solving=${vcs.length}`);
 const caps: string[] = [];
-if (opt('--variants', 'dentreg') !== 'all') caps.push(`variant filter (dent-reg ${variantSet.length}/32; SOUND superset of oracle)`);
 if (singleStar) caps.push(`single-star-type (${totalEnum}→ heuristic, may miss multi-star-type VCs)`);
 if (maxCorners < 999) caps.push(`max-corners ${maxCorners}`);
 if (limit > 0) caps.push(`limit ${limit}`);
 caps.push(`per-seed timeout ${maxMs}ms`);
+const capsActive = singleStar || maxCorners < 999 || limit > 0;
 console.log(`⚑ ACTIVE CAPS (each can drop an in-ring tiling): ${caps.join('; ')}`);
+if (opt('--variants', 'dentreg') !== 'all') console.log(`variant filter: dent-reg ${variantSet.length}/32 — SOUND superset of the oracle, not a cap (StarVC §24.6)`);
 console.log('');
 
 // --- solve ---
@@ -110,10 +159,37 @@ console.log(`timeouts: ${timeouts}${timeouts > 0 ? '  ⚑ possible drops — re-
 
 const hits = [...variantHits].sort();
 console.log(`\nstar variants RECOVERED (${hits.length}): ${hits.join(', ')}`);
-const missing = [...ORACLE].filter((v) => !variantHits.has(v)).sort();
-const extra = hits.filter((v) => !ORACLE.has(v));
-console.log(`oracle NOT recovered (${missing.length}): ${missing.join(', ') || '—'}${missing.length ? '  ⚑' : '  ✓'}`);
+const fig4Missing = [...FIG4_ORACLE].filter((v) => !variantHits.has(v)).sort();
+if (fig4Missing.length === 0) {
+	console.log(`Fig-4 hard oracle: all ${FIG4_ORACLE.size} variants recovered  ✓`);
+} else if (capsActive || timeouts > 0 || trunc.size > 0) {
+	console.log(`⚑ Fig-4 hard oracle NOT recovered (${fig4Missing.length}): ${fig4Missing.join(', ')} — caps/timeouts/truncations active, may be drops; NOT decisive.`);
+	console.log(`  (known: 4(i) 8.3*@1.8.6*@5 is MEASURED outside the tuned pool — off-grid ℓ≈5.05, ~8 edge-steps — so 3*@1/6*@5 misses are EXPECTED under the tuned regime; NOTES §35. The tuned-pool ceiling is 12/13.)`);
+} else {
+	console.log(`⚑⚑ HARD FAIL (Fig-4 in-ring miss on an unscoped, truncation-free run): ${fig4Missing.join(', ')}`);
+}
+if (includeDents) {
+	const fig3Missing = [...FIG3_BEST_EFFORT].filter((v) => !variantHits.has(v)).sort();
+	console.log(fig3Missing.length === 0
+		? 'Fig-3 best-effort (6*@6, Fig-3(f)): recovered  ✓ (best-effort class — recovery is a bonus, not a claim)'
+		: `Fig-3 best-effort NOT recovered: ${fig3Missing.join(', ')} — expected limitation (point-only fill, §24.5); NOT a hard fail`);
+} else {
+	console.log('Fig-3: out of scope for this config (6*@6 not expected — dent VCs require --dents)');
+}
+const extra = hits.filter((v) => !FIG4_ORACLE.has(v) && !FIG3_BEST_EFFORT.has(v));
 console.log(`recovered BEYOND oracle (${extra.length}): ${extra.join(', ') || '—'}  ${extra.length ? '(logged finding — Myers is hand-made / extras are candidates)' : ''}`);
+
+// --- ST-2 truncation summary (per cause; §22.3 doctrine: nonzero ⇒ no completeness reading) ---
+console.log('\n⚑ TRUNCATION SUMMARY (INCOMPLETE-REGION, aggregated per cause):');
+if (trunc.size === 0) {
+	console.log('  none fired  ✓');
+} else {
+	for (const [cause, e] of [...trunc.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+		console.log(`  ${cause}: ${e.lines} occurrence(s), Σ skipped = ${e.skips || '(unparsed, see first verbatim line above)'}`);
+	}
+	console.log('  ⚑ any nonzero cause above disqualifies a completeness reading of this run (NOTES §22.3)');
+}
+console.log(`\nverdict vocabulary: recovered tilings are at most CERTIFIED-CORRECT; this run makes NO certified-complete claim${capsActive || timeouts > 0 || trunc.size > 0 ? ' (caps/timeouts/truncations active)' : ' for anything beyond the Fig-4 in-ring subclass'}.`);
 
 // per-tiling digest (deterministic)
 const ids = reps.map((c) => extractor.canonicalKey(c.cellPolygons)).sort();
