@@ -18,6 +18,7 @@ import {
 } from "@/classes/algorithm/StarDmaxRoute2";
 import {
 	computeDmaxRow,
+	computeDentFillTable,
 	dmaxRowSpecs,
 	degree7FalsifierPresent,
 	STRATA,
@@ -158,5 +159,30 @@ describe("TH-4 — route agreement + identity invariant (cheap rows: regular-onl
 	});
 	it("the review's degree-7 falsifier vertex appears in the enumeration (sanity anchor, NOT the acceptance)", () => {
 		expect(degree7FalsifierPresent()).toBe(true);
+	});
+});
+
+describe("TH-13 — dent-fill γ-feasibility table (computed, not asserted)", () => {
+	const { rows, counts, crossChecksPass } = computeDentFillTable();
+	it("cross-checks pass (19-count + set equality vs dentRegularFillableVariants, 32 rows, partition)", () => {
+		expect(crossChecksPass).toBe(true);
+	});
+	it("verdict counts: 19 REGULAR-FILLABLE / 8 POINT-ONLY / 5 UNFILLABLE", () => {
+		expect(counts["REGULAR-FILLABLE"]).toBe(19);
+		expect(counts["POINT-ONLY"]).toBe(8);
+		expect(counts["UNFILLABLE"]).toBe(5);
+	});
+	it("UNFILLABLE = exactly the five γ=11 (α-max) variants — provably Fig-4-absent", () => {
+		const unf = rows.filter((r) => r.verdict === "UNFILLABLE").map((r) => `${r.n}*@${r.alphaU}`).sort();
+		expect(unf).toEqual(["12*@9", "3*@3", "4*@5", "6*@7", "8*@8"]);
+	});
+	it("same-family point fill impossible everywhere (γ = α + 24/n ≠ α) — the single-variant rider", () => {
+		for (const r of rows) expect(r.sameFamilyPointMatch, `${r.n}*@${r.alphaU}`).toBe(false);
+	});
+	it("dent-by-dent fill impossible everywhere (γ < 12 < β′)", () => {
+		for (const r of rows) expect(r.dentMatches, `${r.n}*@${r.alphaU}`).toEqual([]);
+	});
+	it("every row carries a gear column entry per point filler", () => {
+		for (const r of rows) expect(r.gear.length).toBe(r.crossFamilyPointMatches.length);
 	});
 });

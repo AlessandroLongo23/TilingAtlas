@@ -150,3 +150,85 @@ export function degree7FalsifierPresent(): boolean {
 	const vcs = enumerateStarVCs({ variants: [{ n: 8, alphaU: 1 }, { n: 3, alphaU: 3 }] });
 	return vcs.some((v) => v.name === name);
 }
+
+// ───────────────────────────── TH-13 — γ-feasibility table ─────────────────────────────
+
+export type GearCls = 'regular' | 'point' | 'both' | 'none';
+export type DentFillVerdict = 'REGULAR-FILLABLE' | 'POINT-ONLY' | 'UNFILLABLE';
+export type DentFillRow = {
+	n: number;
+	alphaU: number;
+	betaU: number; //                       reflex dent angle β = 24 − 24/n − α
+	gammaU: number; //                      dent-fill angle γ = 24 − β = 24/n + α
+	regularMatches: number[]; //            m ∈ STAR_NS with regular interior == γ
+	sameFamilyPointMatch: boolean; //       γ == α (arithmetically impossible; computed anyway)
+	crossFamilyPointMatches: R2Variant[]; // m*@γ exists as an in-ring variant (variant-validity)
+	dentMatches: R2Variant[]; //            (m, α′) with β′ == γ (expect ∅: γ < 12 < β′)
+	gear: { filler: R2Variant; gammaPrimeU: number; cls: GearCls }[]; // lem:dentchain rung 1
+	verdict: DentFillVerdict;
+};
+
+/** Which single corners can fill an angle γ — class only (first rung of the gear recursion). */
+function fillClass(gammaU: number): GearCls {
+	const reg = R2_STAR_NS.some((m) => r2RegInteriorU(m) === gammaU);
+	const pt = R2_STAR_NS.some((m) => gammaU > 0 && gammaU < r2RegInteriorU(m));
+	return reg && pt ? 'both' : reg ? 'regular' : pt ? 'point' : 'none';
+}
+
+export function computeDentFillTable(): {
+	rows: DentFillRow[];
+	counts: Record<DentFillVerdict, number>;
+	crossChecksPass: boolean;
+	crossCheckLog: string[];
+} {
+	const all = r2AllVariants();
+	const rows: DentFillRow[] = all.map(({ n, alphaU }) => {
+		const betaU = 24 - 24 / n - alphaU;
+		const gammaU = 24 - betaU; // = 24/n + α
+		const regularMatches = [...R2_STAR_NS].filter((m) => r2RegInteriorU(m) === gammaU);
+		const crossFamilyPointMatches: R2Variant[] = [...R2_STAR_NS]
+			.filter((m) => gammaU > 0 && gammaU < r2RegInteriorU(m)) // 0 < γ ⇒ m*@γ is a valid variant
+			.map((m) => ({ n: m, alphaU: gammaU }));
+		const dentMatches = all.filter((v) => 24 - 24 / v.n - v.alphaU === gammaU);
+		const gear = crossFamilyPointMatches.map((filler) => ({
+			filler,
+			gammaPrimeU: 24 / filler.n + gammaU,
+			cls: fillClass(24 / filler.n + gammaU),
+		}));
+		const verdict: DentFillVerdict =
+			regularMatches.length > 0 ? 'REGULAR-FILLABLE'
+			: crossFamilyPointMatches.length > 0 ? 'POINT-ONLY'
+			: 'UNFILLABLE';
+		return {
+			n, alphaU, betaU, gammaU, regularMatches,
+			sameFamilyPointMatch: gammaU === alphaU,
+			crossFamilyPointMatches, dentMatches, gear, verdict,
+		};
+	});
+
+	const counts: Record<DentFillVerdict, number> = {
+		'REGULAR-FILLABLE': 0, 'POINT-ONLY': 0, 'UNFILLABLE': 0,
+	};
+	for (const r of rows) counts[r.verdict]++;
+
+	const crossCheckLog: string[] = [];
+	let crossChecksPass = true;
+	const check = (name: string, cond: boolean) => {
+		crossCheckLog.push(`${cond ? '✓' : '✗'} ${name}`);
+		crossChecksPass = crossChecksPass && cond;
+	};
+	const key = (v: R2Variant) => `${v.n}*@${v.alphaU}`;
+	const regSet = rows.filter((r) => r.verdict === 'REGULAR-FILLABLE').map(key).sort().join(',');
+	const filterSet = dentRegularFillableVariants().map(key).sort().join(',');
+	check(`rows (${rows.length}) == inRingStarVariants().length (${inRingStarVariants().length})`,
+		rows.length === inRingStarVariants().length);
+	check(`REGULAR-FILLABLE count (${counts['REGULAR-FILLABLE']}) == dentRegularFillableVariants().length (${dentRegularFillableVariants().length})`,
+		counts['REGULAR-FILLABLE'] === dentRegularFillableVariants().length);
+	check('REGULAR-FILLABLE set == dentRegularFillableVariants() set', regSet === filterSet);
+	check('same-family point match impossible everywhere (γ = α + 24/n ≠ α)',
+		rows.every((r) => !r.sameFamilyPointMatch));
+	check('dent matches empty everywhere (γ < 12 < β′)', rows.every((r) => r.dentMatches.length === 0));
+	check('verdicts partition the 32',
+		counts['REGULAR-FILLABLE'] + counts['POINT-ONLY'] + counts['UNFILLABLE'] === rows.length);
+	return { rows, counts, crossChecksPass, crossCheckLog };
+}
