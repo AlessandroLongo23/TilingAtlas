@@ -1277,10 +1277,21 @@ export class PeriodSolver {
 		const pc = P.exactCentroid!.toVector();
 		const pBox = bbox(P);
 		const pKey = P.exactKey();
+		// CB-6: the true overlap-impossibility radius is R_P + R_q (sum of circumradii). The old
+		// constant 2.5 was geometrically FALSE for 8/12-gons (unit-edge 12-gon R ≈ 1.932 ⇒ pairs
+		// overlap out to ≈ 3.86; octagon R ≈ 1.307 ⇒ ≈ 2.61): real overlaps at centroid distance
+		// 2.5–3.86 were skipped here, admitted into the DFS, and died only downstream (angular
+		// contradiction or the blockHasProperOverlap certificate backstop) — dead subtrees on
+		// exactly the 8/12-gon-heavy fills. R_P + ctx.maxCircum ≥ R_P + R_q is sound for every q
+		// (and tighter than any constant for small P); the 1e-9 slack absorbs float rounding in
+		// the radius/distance arithmetic so the cull never under-reaches.
+		let circumP = 0;
+		for (const w of P.vertices) circumP = Math.max(circumP, Math.hypot(w.x - pc.x, w.y - pc.y));
+		const cullR = circumP + ctx.maxCircum + 1e-9;
 		for (const q of block) {
 			if (q.exactKey() === pKey) continue;
 			const qc = q.exactCentroid!.toVector();
-			if (Math.hypot(pc.x - qc.x, pc.y - qc.y) > 2.5) continue; // tiles ≥ this far apart can't overlap
+			if (Math.hypot(pc.x - qc.x, pc.y - qc.y) > cullR) continue; // beyond R_P+R_q ⇒ cannot overlap
 			if (!bboxOverlap(pBox, bbox(q))) continue;
 			if (!P.isEquivalent(q) && P.intersects(q)) return true;
 		}
