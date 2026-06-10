@@ -2277,3 +2277,32 @@ no longer force `signExact`.
   `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20 (probe logs `experiments/results/cb2-probe-k{1,2}-2026-06-10.log`).
 - `pnpm build` clean; full vitest 201/202 — the 1 failure (`dsym-generator`) is pre-existing at this
   branch point (verified by stash), fixed on master by §29.
+
+## 31. k=3 RE-CERTIFIED per-tiling: 61/61 oracle bijection, t3007 present, duplicate gone — new digest 99919f42a7b58e76 (2026-06-10, session 16f)
+
+The §28 defect is closed end-to-end. Full no-cap re-run on the committed fix (`8ef3a0b`:
+SeedBuilder emerging-VC naming + congruence-dedup primitivity + CB-1/CB-3), under `caffeinate -i`
+(the morning CB-1 regression died silently at 210/447 — sleep-killed workers the prime suspect;
+that run is superseded and its log kept as record).
+
+- **Run:** 449/449 seeds (was 447 — the fix adds the two t3007-multiset seeds), **0 timeouts**,
+  362 raw cells → **61 congruence classes**, 2 h 20 m / 8 workers.
+  **NEW k=3 digest: `99919f42a7b58e76`** (old `eb34499d5fba3457` INVALID — non-primitive
+  duplicate + missing t3007, canceling). Log `experiments/results/k3-recert-2026-06-10.log`.
+- **Pre-run gates:** build clean + 287/287 tests on the fix; k=1 digest byte-identical
+  (`6f9ca9cf2d16c75f`/11) on the fixed code; stale k3 resume caches quarantined
+  (`.scout-cache/invalid-pre-t3007-fix/`).
+- **The decisive gate — per-tiling oracle match (`scripts/recert-oracle-match.ts`): ★ PASS.**
+  All 61 oracle entries reconstructed exactly (0 errors) and congruence-matched against the new
+  catalogue **bijectively**: 61/61 with exactly one match each, **t3007 matched**, 0 scout cells
+  double-matched, 0 unmatched either side. Log `k3-recert-oracle-match-2026-06-10.log`.
+  ⚑ Two traps for future matchers: oracle keys must be filtered `^t3\d{3}$` (the JSON also holds
+  a 39-entry `t3uXXX` family), and `Cyclotomic.assertSameRing` compares ring INSTANCES — reuse
+  the reconstruction module's ring, never `CyclotomicRing.create(24)` a second one.
+- **Honest residue:** single-run digest (the digest is order-canonical and k≤2 reproduce
+  byte-identically across runs and code changes, but a second confirming k=3 run has not been
+  executed — cheap to queue if wanted). CB-1's old "byte-identical to eb34499d" acceptance is
+  superseded by this re-certification, which is strictly stronger (per-tiling, not count).
+- Count-matching alone hid this defect for five days. **Per-tiling match is now the k≤3
+  certification bar** (certify-run/backfill/figure-snapshot digest anchors updated to
+  `99919f42a7b58e76`).

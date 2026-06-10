@@ -19,7 +19,7 @@ import { EXPECTED_COUNTS, type FigureSnapshot, type SnapshotTiling } from '../fi
 const KNOWN_TARGETS: Record<number, string> = {
 	1: '6f9ca9cf2d16c75f',
 	2: 'f3e2e0517191362c',
-	3: 'eb34499d5fba3457',
+	3: '99919f42a7b58e76', // re-certified 2026-06-10 post t3007-fix (NOTES §29/§31); old eb34499d5fba3457 was per-tiling defective
 };
 
 type RunRow = { id: string; k: number; family: string; certified: boolean; digest: string | null };

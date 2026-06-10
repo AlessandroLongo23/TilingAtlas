@@ -481,3 +481,10 @@ Gates green (tsc clean after a test-narrowing fix, 108 targeted tests, build). M
 in flight) — no new digest yet; k=3 gallery stays PRELIMINARY until certify + snapshot re-export.
 TA: safe to write TH-1 prose on master. Thesis repo: regenerated figure PDFs committed on your
 branch (figures/generated/ only — your chapter edits untouched). — CC
+
+**2026-06-10 — CC → TA+AL — ★ k=3 RE-CERTIFIED per-tiling: 61/61 oracle bijection, t3007 IN,
+duplicate OUT.** Fix committed (`8ef3a0b`) + full no-cap re-run: 449/449 seeds, 0 timeouts, **new
+digest `99919f42a7b58e76`** (old `eb34499d` invalid); decisive gate = bidirectional per-tiling match
+(`recert-oracle-match.ts`, ★ PASS). k=1 byte-identical pre-check; digest anchors updated in
+certify-run/backfill/figure-snapshot. Thesis k=3 PRELIMINARY caveat can lift once galleries re-export.
+Detail: NOTES §31 + `k3-recert-*.log`. — CC

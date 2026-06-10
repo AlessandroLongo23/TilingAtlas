@@ -1,0 +1,16 @@
+[13:28:21] === k=3 re-cert per-tiling oracle match — artifact .scout-cache/k3_3.4.6.12_cap0.ndjson ===
+[13:28:21] oracle k=3 entries: 61 (must be 61)
+[13:28:21] reconstructed: 61/61 (errors: 0)
+[13:28:21] raw cells: 362
+[13:39:33] congruence classes: 61 (must be 61)
+[13:39:33]   …10/61 oracle entries matched
+[13:39:33]   …20/61 oracle entries matched
+[13:39:34]   …30/61 oracle entries matched
+[13:39:36]   …40/61 oracle entries matched
+[13:39:36]   …50/61 oracle entries matched
+[13:39:37]   …60/61 oracle entries matched
+[13:39:37] oracle entries with exactly one scout match: 61/61
+[13:39:37] t3007 matched: true
+[13:39:37] scout cells matched by ≥2 oracle entries (duplicates): 0
+[13:39:37] scout cells matched by NO oracle entry: 0
+[13:39:37] ★ PASS — 61/61 per-tiling bijection, t3007 present, no duplicates
