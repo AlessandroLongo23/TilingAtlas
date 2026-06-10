@@ -2437,3 +2437,46 @@ Digest-neutral by construction on regular seeds (counter = pure addition; bypass
 truncation; slack changes only alarm timing at ULP equality). 57/57 tests, build clean. ⚑ k≤2
 probe re-verification DEFERRED — the k=3 stability regression occupies the machine; run the probe
 before merging the branch.
+
+## 34. TH-2 work orders landed: the two F3 silent caps are now loud (2026-06-10)
+
+The TA discharged TH-2 / C1 Part B — fill completeness is now `lem:fillreach`, a checkpoint-by-
+checkpoint audit of `torusFill` under four named switches (F1)–(F4)
+(`../resources/research/fill-completeness-lemma-TH2-2026-06-10.md`). The adversarial pass found
+two REAL silent-truncation knobs — exactly the class the doctrine forbids — and handed CC two
+work orders. Both landed on `fix/th2-f3-loud-caps` @ `b8fc197`.
+
+### 34.1 F3b — `buildBlock`'s `min(60,·)` index cap, now asserted per candidate
+
+The drop mode: for a sufficiently long-thin (anisotropic) reduced cell the clamped (m,n) range
+under-builds the block → a covered vertex mis-classifies as OPEN → the no-progress test kills the
+true continuation (a silent drop), AND a valid cell can fail the certificate's saturation leg.
+The fix follows the lemma's option 1: `makeCtx` (the single ctx chokepoint, so the external-
+certify path is covered too) asserts the worst-case requirement over every call site —
+`blockIndexRangeNeeded(cellDiam, cellArea) = ⌈(2·cellDiam+10)·cellDiam/cellArea⌉+1 ≤ 60`
+(certificate radius Rabs = cellDiam+8 dominates; the longer basis vector = cellDiam drives the
+range) — and on violation emits ⚑ INCOMPLETE-REGION + sets `ctx.blockIndexCapBinds`, counted as
+`diag.blockIndexCapTruncated` per candidate lattice. The cap itself stays (a runaway backstop) —
+it is no longer silent. TA-measured worst requirement over the certified catalogues: 16/19/23 at
+k=1/2/3 vs 60 ⇒ the guard never fires on the certified record (verified: probe flags silent).
+**Non-zero `blockIndexCapTruncated` anywhere voids a completeness claim for that run** — sweep
+acceptance must assert it 0, same as `timedOut`.
+
+### 34.2 F3a — `maxCellPolys` default raised to `max(20k+24, 24k)`
+
+`F ≤ 2|V(Q)| ≤ 24k` (torus Euler) is the proven per-cell tile bound; the old default `20k+24`
+undersizes it from k=7 and the pop-site discard (`reps.length > maxCellPolys → continue`) is
+silent. New default `defaultMaxCellPolys(k) = max(20k+24, 24k)` — identical for k ≤ 6 (the
+acceptance range), so the certified record is untouched by construction; from k=7 the cap sits at
+the proven bound and can never bind on a true tiling. An EXPLICIT `opts.maxCellPolys < 24k` now
+flags ⚑ INCOMPLETE-REGION at solve start (no current caller passes one). F3c (the 45 s wall-clock
+knob) needed no change — `diag.timedOut` is already per-run surfaced and sweep acceptance asserts
+it (the k=3 recert did).
+
+### 34.3 Acceptance
+
+`blockIndexRangeNeeded` + `defaultMaxCellPolys` + `BLOCK_INDEX_CAP` exported; 4 new tests
+(boundary k=6 = 144 unchanged, k=7 168 > old 164; unit-square range 13, long-thin 91 > 60) —
+written first, red, then green. Full `period-solver.test.ts` 19/19, build clean. k≤2 probe
+byte-identity vs `6f9ca9cf2d16c75f`/11 + `f3e2e0517191362c`/20:
+`experiments/results/th2-f3-loud-caps-probes-b8fc197-2026-06-10.log`.

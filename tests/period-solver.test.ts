@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
-import { PeriodSolver, vertexClassCount, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import {
+	PeriodSolver,
+	vertexClassCount,
+	blockIndexRangeNeeded,
+	defaultMaxCellPolys,
+	BLOCK_INDEX_CAP,
+	type PeriodCell,
+} from '@/classes/algorithm/PeriodSolver';
 import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
 import { cellsCongruent, dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
@@ -201,5 +208,35 @@ describe('PeriodSolver — emitted cells are exact, gap-free, primitive tilings'
 			keys.add(ex.canonicalKey(c.cellPolygons));
 		}
 		expect(keys.size).toBe(cells.length); // distinct cells
+	});
+});
+
+describe('lem:fillreach F3 loud-cap guards (TH-2 work orders, 2026-06-10)', () => {
+	// F3b: buildBlock's per-axis index cap must never bind SILENTLY. The worst-case requirement is
+	// asserted per candidate lattice (certificate radius dominates: limit = 2·cellDiam+10, range
+	// driver = the longer basis vector = cellDiam).
+	it('F3b: ordinary cells need far less than the cap (unit square → 13)', () => {
+		expect(blockIndexRangeNeeded(1, 1)).toBe(13);
+		// TA-measured worst over the certified catalogues: 16/19/23 at k=1/2/3 — all ≪ 60.
+		expect(23).toBeLessThan(BLOCK_INDEX_CAP);
+	});
+	it('F3b: a long thin (anisotropic) cell EXCEEDS the cap — the flagged regime', () => {
+		// |u|=1 ⊥ |v|=40 → cellDiam=40, area=40 → ⌈(2·40+10)·40/40⌉+1 = 91 > 60.
+		expect(blockIndexRangeNeeded(40, 40)).toBe(91);
+		expect(blockIndexRangeNeeded(40, 40)).toBeGreaterThan(BLOCK_INDEX_CAP);
+	});
+	it('F3b: a normal k=1 solve flags nothing (diag.blockIndexCapTruncated = 0)', { timeout: 30000 }, () => {
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,4,6,4')]);
+		const { cells, diag } = new PeriodSolver(1).solve(seed, {});
+		expect(cells.length).toBeGreaterThan(0);
+		expect(diag.blockIndexCapTruncated).toBe(0);
+	});
+	// F3a: the default per-cell polygon cap must never undersize the proven F ≤ 24k (torus Euler).
+	// The old default 20k+24 < 24k from k=7 — a silent pop-site discard.
+	it('F3a: default maxCellPolys ≥ 24k for ALL k; unchanged (digest-neutral) for k ≤ 6', () => {
+		for (let k = 1; k <= 12; k++) expect(defaultMaxCellPolys(k)).toBeGreaterThanOrEqual(24 * k);
+		expect(defaultMaxCellPolys(1)).toBe(44); // = 20k+24, unchanged
+		expect(defaultMaxCellPolys(6)).toBe(144); // boundary: 20·6+24 = 24·6
+		expect(defaultMaxCellPolys(7)).toBe(168); // was 164 — the F3a hole, now 24k
 	});
 });
