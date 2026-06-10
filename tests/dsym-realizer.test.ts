@@ -42,7 +42,9 @@ describe('Lemma R step 1 — the angle gate (ghost regression a)', () => {
     expect(validate(ghost).ok).toBe(true); // axiom-valid: the gate is what kills it
     const g = angleGate(ghost);
     expect(g.flat).toBe(false);
-    if (!g.flat) {
+    // equality (not truthiness) — discriminant narrowing via `!g.flat` needs strictNullChecks,
+    // which this repo's tsconfig (strict: false) doesn't enable
+    if (g.flat === false) {
       expect(g.component).toEqual([0]); // names the offending component
       expect(g.faces).toEqual([4, 4, 4]); // 3 squares
       expect(`${g.sumNum}/${g.sumDen}`).toBe('3/2'); // 270° ≠ 360°
