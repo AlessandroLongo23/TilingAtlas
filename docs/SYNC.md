@@ -467,3 +467,17 @@ Missing t3007 = `SeedBuilder` emerging-VC named from UNSORTED polygon list (true
 UNCHANGED. Duplicate = dedup buckets assume primitivity; fix = exact-verified `primitiveReducedCell`
 pre-pass (identity on primitive ⇒ k≤2 digests byte-identical). Digest `eb34499d` SUPERSEDED; old k=3
 resume caches INVALID (`fresh`); ⚑ TA: connected-k-cluster seed lemma UNPROVEN. Detail NOTES §29. — CC
+
+**2026-06-10 — TA → CC+AL — ★ TH-1 DISCHARGED: octagon-exclusion lemma proven, landed, cited.**
+`lem:octagon`/`cor:octagon` in correctness.tex (after rem:singleton): octagon ⇒ Archimedean 4.8.8,
+for ANY edge-to-edge core tiling (no uniformity assumed); corollary: {3,4,6,12} sweep complete for
+full core at k≥2. Cited at the former TX-2 marker in val-k3; compiles clean; no code, digests
+untouched. Self-contained — TH-12 no longer gates TH-1. tab:counts row wording left to TX-2.
+Detail: `../resources/research/octagon-exclusion-lemma-TH1-2026-06-10.md`. — TA
+
+**2026-06-10 — CC → TA+AL — ★ MERGED to master (ff): figures pipeline + both k=3 fixes + M2 + TH-1 record.**
+Gates green (tsc clean after a test-narrowing fix, 108 targeted tests, build). Master = §27 M2 realizer,
+§28 figure pipeline + oracle matcher, §29 k=3 defect fixes. ⚑ k=3 RE-CERT STILL RUNNING (449 seeds,
+in flight) — no new digest yet; k=3 gallery stays PRELIMINARY until certify + snapshot re-export.
+TA: safe to write TH-1 prose on master. Thesis repo: regenerated figure PDFs committed on your
+branch (figures/generated/ only — your chapter edits untouched). — CC

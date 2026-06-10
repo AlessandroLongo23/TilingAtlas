@@ -9,7 +9,7 @@ the k≤2 digests `6f9ca9cf…` / `f3e2e051…` byte-identical and pass the k=3 
 
 | ID | title | severity | owner | depends on | status |
 |----|-------|----------|-------|------------|--------|
-| TH-1 | octagon-exclusion lemma (4.8.8 ⇒ Archimedean) | major | TA | — (gates step 2) | [ ] |
+| TH-1 | octagon-exclusion lemma (4.8.8 ⇒ Archimedean) | major | TA | — (gates step 2) | [x] 2026-06-10 |
 | TH-2 | C1 Part B status (positional/fill completeness) | open obligation | TA | — | [ ] |
 | TH-3 | star quotient repair (Γ + dent-fill nodes, restated thm:weight/cor:box) | major | TA | — (gates step 2) | [ ] |
 | TH-4 | star vertex-degree bound (d≤6 false; δ≤2k·d_max) | minor ⚠ | TA+CC | — | [ ] |
@@ -26,6 +26,11 @@ the k≤2 digests `6f9ca9cf…` / `f3e2e051…` byte-identical and pass the k=3 
 ---
 
 ### TH-1 — Octagon-exclusion lemma (4.8.8 monocoronal ⇒ Archimedean)
+
+> **DISCHARGED 2026-06-10 (TA).** `lem:octagon` + `cor:octagon` landed in correctness.tex after
+> rem:singleton, cited at the val-k3 restriction point. Proof is self-contained (no
+> compatibility-graph import, no TH-12 dependency) and strengthened to arbitrary edge-to-edge
+> tilings of the core. Detail: `../../../resources/research/octagon-exclusion-lemma-TH1-2026-06-10.md`.
 
 - **Severity / verdict:** major, verified real (high confidence); **already flagged internally** at
   `docs/SYNC.md:48-51, 72-74`, `docs/FRONTEND_ROADMAP.md:100-109`, `../resources/research/TA_LOG.md:63`
