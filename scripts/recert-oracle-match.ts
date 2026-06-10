@@ -7,6 +7,12 @@
  * acceptance = 61/61 bijective, t3007 matched, no scout cell matching two oracle entries
  * and vice versa. Every failure mode prints loudly and exits 1.
  *
+ * CB-4: additionally re-checks EVERY production merge decision (the full congruence
+ * partition, not just the reps) against the independent differential implementation
+ * (CongruenceDifferential.ts) — zero mismatches required. This is the standing,
+ * oracle-free guard against a systematic tilingsCongruent false positive/negative
+ * corrupting dedup and oracle-match together.
+ *
  * ⚑ Ring discipline: Cyclotomic.assertSameRing compares ring INSTANCES, and oracle-match.ts
  * owns its module-level ring — so the oracle cells are reconstructed FIRST and the scout
  * artifact is deserialized with THAT ring (creating a second CyclotomicRing.create(24)
@@ -16,13 +22,16 @@
  */
 import fs from 'node:fs';
 import { setActiveRing } from '@/classes/Cyclotomic';
-import { cellsCongruent, dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
+import { cellsCongruent, congruencePartition } from '@/classes/algorithm/TilingCongruence';
+import { diffPartitionAgainstIndependent } from '@/classes/algorithm/CongruenceDifferential';
 import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import { readResumeNdjson, deserializeCell } from './scoutCodec';
 import { loadOracle, reconstructOracleCell } from './oracle-match';
 
 const ART = '.scout-cache/k3_3.4.6.12_cap0.ndjson';
-const LOG = 'experiments/results/k3-recert-oracle-match-2026-06-10.log';
+// per-run timestamped log — a re-run must never clobber a prior run's committed evidence
+const STAMP = new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-');
+const LOG = `experiments/results/k3-recert-oracle-match-${STAMP}.log`;
 const lines: string[] = [];
 function log(s: string): void {
 	const line = `[${new Date().toISOString().slice(11, 19)}] ${s}`;
@@ -61,12 +70,29 @@ setActiveRing(ring);
 // --- scout side, in the SAME ring ---
 const { cells: raw } = readResumeNdjson(ART);
 log(`raw cells: ${raw.length}`);
-const mine: PeriodCell[] = dedupeByCongruence(raw.map((sc) => deserializeCell(ring, sc)));
+// full partition (classes, not just reps): the CB-4 differential re-checks every merge decision.
+// classes.map(cl => cl[0]) is exactly what dedupeByCongruence(cells) returned here (no keyOf).
+const classes = congruencePartition(raw.map((sc) => deserializeCell(ring, sc)));
+const mine: PeriodCell[] = classes.map((cl) => cl[0]);
 log(`congruence classes: ${mine.length} (must be 61)`);
 if (mine.length !== 61) {
 	log('✗ FAIL: class count ≠ 61');
 	process.exit(1);
 }
+
+// --- CB-4 standing differential: re-check every production merge decision against the
+// independent implementation (CongruenceDifferential.ts — import-disjoint from the production
+// predicate). Zero mismatches required for certification.
+const nPos = classes.reduce((s, cl) => s + (cl.length - 1), 0);
+const nNeg = (classes.length * (classes.length - 1)) / 2;
+log(`differential: re-checking ${nPos} merges + ${nNeg} splits independently…`);
+const t0 = Date.now();
+const diff = diffPartitionAgainstIndependent(classes, (d, t) => {
+	const dt = (Date.now() - t0) / 1000;
+	log(`  …differential ${d}/${t} (${dt.toFixed(0)}s elapsed, ETA ${((dt / d) * (t - d)).toFixed(0)}s)`);
+});
+for (const m of diff.mismatches) log(`✗ DIFFERENTIAL MISMATCH: ${m}`);
+log(`differential: ${diff.positives} merges + ${diff.negatives} splits re-checked — ${diff.mismatches.length} mismatches`);
 
 // --- bidirectional per-tiling match ---
 const memo = new Map<string, string>();
@@ -94,6 +120,14 @@ log(`scout cells matched by ≥2 oracle entries (duplicates): ${doubled.length}`
 log(`scout cells matched by NO oracle entry: ${unmatchedMine.length}`);
 
 const pass =
-	reconErrors === 0 && exact.length === 61 && doubled.length === 0 && unmatchedMine.length === 0;
-log(pass ? '★ PASS — 61/61 per-tiling bijection, t3007 present, no duplicates' : '✗ FAIL — see above');
+	reconErrors === 0 &&
+	exact.length === 61 &&
+	doubled.length === 0 &&
+	unmatchedMine.length === 0 &&
+	diff.ok;
+log(
+	pass
+		? '★ PASS — 61/61 per-tiling bijection, t3007 present, no duplicates, differential clean'
+		: '✗ FAIL — see above'
+);
 process.exit(pass ? 0 : 1);

@@ -282,20 +282,47 @@ function reduceOnce(cell: PeriodCell): PeriodCell {
 }
 
 /**
- * Dedup a list of certified tilings up to congruence — the authoritative replacement for
- * `canonicalKey`-Set dedup (which under-merges the chiral snub, §12.7). Congruence is an equivalence
- * relation, so the resulting PARTITION (and hence the count) is independent of input order.
- *
- * @param keyOf  optional deterministic id of a cell (e.g. `canonicalKey`). When given, the
- *   representative kept for each class is the member with the lexicographically smallest id, and the
- *   output is ordered by that id — so the representative (and any digest derived from it) is fully
- *   order-independent, not just the count. When omitted, the first-seen member is kept, in first-seen
- *   order.
- *
- * Buckets by (name-multiset, |det Λ|) first — both are necessary congruence invariants, so cells in
- * different buckets are never compared; this keeps the cost near-linear when classes are small.
+ * Assert a `dedupeByCongruence` bucket's partition is a genuine EQUIVALENCE RELATION — the
+ * target-independent, oracle-free merge guard the k≥4 regime needs (no count oracle there; the
+ * frozen-catalogue ⊇ check catches misses but is blind to inflation). It fires DIRECTLY on the §19.6
+ * bug class: an argument-order-asymmetric `tilingsCongruent` makes the partition non-symmetric /
+ * non-transitive, which fails here at ANY k. Exported (and `congruent`-injectable) so a deliberately
+ * broken predicate can be unit-tested. Throws loud on violation — a non-equivalence partition makes the
+ * dedup COUNT meaningless. Cheap: buckets are tiny (the name-multiset@|detΛ| split is aggressive).
  */
-export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) => string): PeriodCell[] {
+export function assertEquivalencePartition(
+	classes: PeriodCell[][],
+	congruent: (a: PeriodCell, b: PeriodCell) => boolean,
+	bucketKey = ""
+): void {
+	const bug = (reason: string): never => {
+		const msg = `[congruence] ⚑ IMPLEMENTATION-BUG: merge relation is not an equivalence (${reason})${bucketKey ? ` in bucket ${bucketKey}` : ""}`;
+		console.error(msg);
+		throw new Error(msg);
+	};
+	const members = classes.flat();
+	const classOf = new Map<PeriodCell, number>();
+	classes.forEach((cls, ci) => cls.forEach((c) => classOf.set(c, ci)));
+	for (const c of members) if (!congruent(c, c)) bug("reflexivity: a cell is not congruent to itself");
+	for (let i = 0; i < members.length; i++) {
+		for (let j = i + 1; j < members.length; j++) {
+			const cij = congruent(members[i], members[j]);
+			const cji = congruent(members[j], members[i]); // ← the §19.6 root cause: argument-order asymmetry
+			if (cij !== cji) bug("symmetry: cong(a,b) ≠ cong(b,a)");
+			const same = classOf.get(members[i]) === classOf.get(members[j]);
+			if (cij !== same) bug(cij ? "intransitivity: a congruent pair landed in different classes (under-merge → inflation)" : "a non-congruent pair was merged (over-merge)");
+		}
+	}
+}
+
+/**
+ * The congruence PARTITION underlying `dedupeByCongruence` — exported (CB-4) so the certifying
+ * harnesses can hand the full classes (not just the reps) to the independent differential oracle
+ * (`CongruenceDifferential.ts`). Classes are returned in deterministic first-seen order (bucket
+ * insertion order, then class insertion order within a bucket) — exactly the order the old inlined
+ * loop produced, so `dedupeByCongruence` built on top is byte-identical.
+ */
+export function congruencePartition(cells: PeriodCell[]): PeriodCell[][] {
 	// §29: the bucket keys below (cell size via nameMultiset, |det Λ|) are necessary invariants only
 	// for PRIMITIVE cells — reduce every input first (identity for already-primitive cells, so this
 	// is byte-neutral on catalogues that carry no supercell encodings).
@@ -314,14 +341,54 @@ export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) 
 		else classes.push([c]);
 	}
 
+	// Always-on merge guard (CB-4, cherry-picked from feat/c4-pool-bypass): every bucket's partition
+	// must be a genuine equivalence relation. Catches the §19.6 argument-order asymmetry → inflation
+	// at any k, with no count oracle. Pure assertion — output (and digest) unchanged when the
+	// relation is valid.
+	for (const [bk, classes] of buckets) assertEquivalencePartition(classes, (a, b) => cellsCongruent(a, b, rckMemo), bk);
+
+	const out: PeriodCell[][] = [];
+	for (const classes of buckets.values()) for (const members of classes) out.push(members);
+	return out;
+}
+
+/**
+ * Dedup a list of certified tilings up to congruence — the authoritative replacement for
+ * `canonicalKey`-Set dedup (which under-merges the chiral snub, §12.7). Congruence is an equivalence
+ * relation, so the resulting PARTITION (and hence the count) is independent of input order.
+ *
+ * @param keyOf  optional deterministic id of a cell (e.g. `canonicalKey`). When given, the
+ *   representative kept for each class is the member with the lexicographically smallest id, and the
+ *   output is ordered by that id — so the representative (and any digest derived from it) is fully
+ *   order-independent, not just the count. When omitted, the first-seen member is kept, in first-seen
+ *   order.
+ *
+ * Buckets by (name-multiset, |det Λ|) first — both are necessary congruence invariants, so cells in
+ * different buckets are never compared; this keeps the cost near-linear when classes are small.
+ */
+export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) => string): PeriodCell[] {
+	const classes = congruencePartition(cells);
+
+	// PS_MERGECHECK=full: order-invariance — re-partition the REVERSED input and assert the same
+	// classes (a genuinely independent run through the same predicate; catches an order-dependent
+	// merge bug). Off by default (it ~doubles the dedup cost). Needs keyOf for an order-independent
+	// class signature.
+	if (process.env.PS_MERGECHECK === "full" && keyOf) {
+		const classes2 = congruencePartition([...cells].reverse());
+		const sig = (cls: PeriodCell[][]) => cls.map((m) => m.map(keyOf).sort()[0]).sort().join("|");
+		if (sig(classes) !== sig(classes2)) {
+			const msg = "[congruence] ⚑ IMPLEMENTATION-BUG: dedupe partition is ORDER-DEPENDENT (merge relation not transitive)";
+			console.error(msg);
+			throw new Error(msg);
+		}
+	}
+
 	const reps: PeriodCell[] = [];
-	for (const classes of buckets.values()) {
-		for (const members of classes) {
-			if (keyOf) {
-				reps.push(members.reduce((m, c) => (keyOf(c) < keyOf(m) ? c : m)));
-			} else {
-				reps.push(members[0]);
-			}
+	for (const members of classes) {
+		if (keyOf) {
+			reps.push(members.reduce((m, c) => (keyOf(c) < keyOf(m) ? c : m)));
+		} else {
+			reps.push(members[0]);
 		}
 	}
 	if (keyOf) reps.sort((a, b) => (keyOf(a) < keyOf(b) ? -1 : keyOf(a) > keyOf(b) ? 1 : 0));
