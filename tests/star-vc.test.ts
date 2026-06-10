@@ -16,6 +16,12 @@ import {
 	r2Dmax,
 	R2_STAR_NS,
 } from "@/classes/algorithm/StarDmaxRoute2";
+import {
+	computeDmaxRow,
+	dmaxRowSpecs,
+	degree7FalsifierPresent,
+	STRATA,
+} from "@/classes/algorithm/StarTables";
 
 const ring = CyclotomicRing.create(24);
 const isPt = (t: CornerTok) => t.kind === "pt";
@@ -135,5 +141,22 @@ describe("TH-4 — pinned d_max constants (hand-derived, spec 2026-06-10; mismat
 			expect(r2Dmax([{ n, alphaU: 1 }], "fig4").dmax, `F(${n},1)`).toBe(9);
 			expect(r2Dmax([{ n, alphaU: 2 }], "fig4").dmax, `F(${n},2)`).toBe(8);
 		}
+	});
+});
+
+describe("TH-4 — route agreement + identity invariant (cheap rows: regular-only + all 32 families)", () => {
+	it("route1 == route2 per cell and fig3(≤1) == max(fig4, fig3(=1)) per row", () => {
+		// Envelope rows (mixed alphabets) are agreement-checked by the script run — the
+		// committed log is the artifact; the enumerator cost there is too high for CI.
+		const cheap = dmaxRowSpecs().filter((s) => s.variants.length <= 1);
+		expect(cheap.length).toBe(33); // regular-only + 32 families
+		for (const spec of cheap) {
+			const row = computeDmaxRow(spec.label, spec.variants);
+			for (const s of STRATA) expect(row.cells[s].agree, `${spec.label}/${s}`).toBe(true);
+			expect(row.identityOk, spec.label).toBe(true);
+		}
+	});
+	it("the review's degree-7 falsifier vertex appears in the enumeration (sanity anchor, NOT the acceptance)", () => {
+		expect(degree7FalsifierPresent()).toBe(true);
 	});
 });
