@@ -10,6 +10,12 @@ import {
 	type CornerTok,
 } from "@/classes/algorithm/StarVC";
 import { CyclotomicRing, Cyclotomic } from "@/classes/Cyclotomic";
+import {
+	r2AllVariants,
+	r2DentRegVariants,
+	r2Dmax,
+	R2_STAR_NS,
+} from "@/classes/algorithm/StarDmaxRoute2";
 
 const ring = CyclotomicRing.create(24);
 const isPt = (t: CornerTok) => t.kind === "pt";
@@ -96,5 +102,15 @@ describe("StarVC — exact seed construction (C4)", () => {
 
 	it("regInteriorU matches the regular interior angles (π/12 units)", () => {
 		expect([3, 4, 6, 8, 12].map(regInteriorU)).toEqual([4, 6, 8, 9, 10]);
+	});
+});
+
+describe("TH-4 — Route 2 alphabet derivation (independent of StarVC; drift sentinel)", () => {
+	const key = (v: { n: number; alphaU: number }) => `${v.n}*@${v.alphaU}`;
+	it("derives the same 32-variant set as inRingStarVariants from the P3 formulas", () => {
+		expect(r2AllVariants().map(key).sort()).toEqual(inRingStarVariants().map(key).sort());
+	});
+	it("derives the same dent-reg-19 subset as dentRegularFillableVariants", () => {
+		expect(r2DentRegVariants().map(key).sort()).toEqual(dentRegularFillableVariants().map(key).sort());
 	});
 });
