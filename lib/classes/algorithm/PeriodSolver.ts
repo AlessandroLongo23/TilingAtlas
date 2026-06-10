@@ -136,6 +136,37 @@ const candidateCache = new Map<
 	{ lattices: [Cyclotomic, Cyclotomic][]; p0Skipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> }
 >();
 
+/** OP-2 instrumentation: candidate-stage cache effectiveness (the Σ-vs-distinct companion data
+ *  feeds OP-9; these counters quantify how much enumeration is actually shared across seeds). */
+const cacheStats = { candHits: 0, candMisses: 0, poolHits: 0, poolMisses: 0 };
+/** Return a point-in-time SNAPSHOT of the cache counters. Callers receive an independent copy;
+ *  deltas computed by subtracting two snapshots (before/after a solve call) are safe and correct.
+ *  Do not hold a reference expecting it to reflect future increments — call again for a new snapshot. */
+export function candidateStageCacheStats(): { candHits: number; candMisses: number; poolHits: number; poolMisses: number } { return { ...cacheStats }; }
+/** OP-2 pool sub-cache: `shortVectorPool` already memoizes internally (LatticeEnumerator has a
+ *  module-level cache keyed by `${N}:${maxSteps}:${lmaxF}:${dirList}:${monotone}` — so cross-vcSig
+ *  pool sharing already happens at that layer, and `edgeStepDirs` is computed BEFORE the outer
+ *  lookup so it is NOT skipped on a hit). This outer layer (poolStatsCache) exists solely to attach
+ *  the OP-9 poolHits/poolMisses counters at the candidateLattices granularity; an outer hit saves
+ *  only the inner key construction + one Map lookup. Cached arrays are NEVER mutated downstream
+ *  (filter/map create new arrays) — verified at introduction; keep it that way.
+ *  NOTE: poolMisses OVERCOUNTS true recomputation — distinct polySizes sets that share the same
+ *  edge directions (e.g. {3}, {6}, {3,6} all produce the same 6 hex dirs) miss the outer key but
+ *  hit the inner cache; this counter is conservative (understates sharing). */
+const poolStatsCache = new Map<string, Cyclotomic[]>();
+/** Test-only: reset the candidate-stage caches and counters so OP-2 tests start from a known
+ *  state regardless of which other tests ran before them. Production code must NOT call this.
+ *  (Reachable via the @/classes barrel; accidental production use is perf-only — caches memoize
+ *  pure deterministic computation — never a correctness risk.) */
+export function _testOnlyClearCandidateStageCaches(): void {
+	candidateCache.clear();
+	poolStatsCache.clear();
+	cacheStats.candHits = 0;
+	cacheStats.candMisses = 0;
+	cacheStats.poolHits = 0;
+	cacheStats.poolMisses = 0;
+}
+
 /** Canonical vertex-configuration name from a cyclic list of corner TOKENS (bare edge-count `n` for
  *  regular corners — byte-identical to the old number-list — or star point/dent tokens) — minimal over
  *  rotations AND reflection (a VC and its mirror share a name; matches the seed-build convention). */
@@ -525,7 +556,8 @@ export class PeriodSolver {
 		const provenMode = process.env.PROVEN_POOL === '1';
 		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? 'proven' : 'tuned'}`;
 		const cached = candidateCache.get(cacheKey);
-		if (cached) return cached;
+		if (cached) { cacheStats.candHits++; return cached; }
+		cacheStats.candMisses++;
 
 		const lat = new LatticeEnumerator(this.k);
 		// Completeness knobs scale with k; the values AND the tuned-vs-proven comparison are centralized
@@ -566,7 +598,22 @@ export class PeriodSolver {
 		// hence every period vector, lies in them). Collapses the pool 50–1000× when the tiles fit one
 		// symmetry ring (e.g. {3,6} → 6 hexagonal directions).
 		const dirs = edgeStepDirs(ring, polySizes);
-		const pool = shortVectorPool(ring, poolSteps, poolLmax, dirs, /* monotone */ true);
+		// OP-2 pool sub-cache (poolStatsCache): shortVectorPool already memoizes internally in
+		// LatticeEnumerator, so cross-vcSig sharing is NOT new. This outer cache (poolStatsCache)
+		// exists for the OP-9 poolHits/poolMisses counters; an outer hit saves only the inner key
+		// construction + one Map lookup. poolLmax is a float computed deterministically per
+		// (k, aMax) via poolConfig — equal inputs always produce the same IEEE-754 value, so
+		// string interpolation is a stable key. Cached arrays are NEVER mutated downstream
+		// (every use is filter/map/for-of, creating new arrays — keep it that way).
+		const poolCacheKey = `${ring.N}:${polySizes.join(',')}:${poolSteps}:${poolLmax}:1`;
+		let pool = poolStatsCache.get(poolCacheKey);
+		if (pool !== undefined) {
+			cacheStats.poolHits++;
+		} else {
+			cacheStats.poolMisses++;
+			pool = shortVectorPool(ring, poolSteps, poolLmax, dirs, /* monotone */ true);
+			poolStatsCache.set(poolCacheKey, pool);
+		}
 		const poolSet = new Set(pool.map((p) => p.key()));
 		// Proven cell-area bound (Route-A: thesis correctness.tex thm:weight / cor:box; summary in
 		// resources/research/route-a-proven-box.md). A k-uniform cell has F ≤ 24k tiles (|V(Q)| ≤ 12k,

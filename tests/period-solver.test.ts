@@ -7,6 +7,8 @@ import {
 	blockIndexRangeNeeded,
 	defaultMaxCellPolys,
 	BLOCK_INDEX_CAP,
+	candidateStageCacheStats,
+	_testOnlyClearCandidateStageCaches,
 	type PeriodCell,
 } from '@/classes/algorithm/PeriodSolver';
 import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
@@ -326,5 +328,83 @@ describe('lem:fillreach F3 loud-cap guards (TH-2 work orders, 2026-06-10)', () =
 		expect(defaultMaxCellPolys(1)).toBe(44); // = 20k+24, unchanged
 		expect(defaultMaxCellPolys(6)).toBe(144); // boundary: 20·6+24 = 24·6
 		expect(defaultMaxCellPolys(7)).toBe(168); // was 164 — the F3a hole, now 24k
+	});
+});
+
+describe('OP-2 candidate-stage instrumentation', () => {
+	// Each test calls _testOnlyClearCandidateStageCaches() to reset the module-level caches and
+	// counters to a known empty state, making assertions absolute (not delta-based) and independent
+	// of test execution order. The clear function is test-only; production code never calls it.
+	//
+	// Using maxMs:1 in solve() exercises candidateLattices (which runs BEFORE the lattice loop)
+	// without paying for torusFill: the timeout check fires inside the lattice loop, so
+	// candidateLattices ALWAYS runs to completion and its counters always increment.
+	//
+	// For k=1, each polySizes set maps to exactly ONE Archimedean VC, so two k=1 seeds can't share
+	// polySizes and differ in vcSig. We use k=1 seeds to validate miss/hit counting, and a pair of
+	// k=2 seeds sharing polySizes={3,6} (but differing in VC composition) to validate poolHit.
+
+	it('fresh k=1 seed (3,6,3,6) produces candMiss + poolMiss', { timeout: 30000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		new PeriodSolver(1).solve(seed, { maxMs: 1 }); // candidateLattices runs; fill skipped
+		const s = candidateStageCacheStats();
+		expect(s.candMisses).toBe(1);  // first-ever call → candidateCache miss
+		expect(s.poolMisses).toBe(1);  // first-ever call for this polySizes → poolCache miss
+		expect(s.candHits).toBe(0);
+		expect(s.poolHits).toBe(0);
+	});
+
+	it('second solve for SAME seed uses candidateCache hit (candHits++)', { timeout: 30000 }, () => {
+		// Each test clears state first; this test primes the cache itself then re-solves.
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		// Prime: first solve populates the candidateCache.
+		new PeriodSolver(1).solve(seed, { maxMs: 1 });
+		expect(candidateStageCacheStats().candMisses).toBe(1);
+		// Second solve: same cacheKey → candidateCache hit; returns before pool lookup.
+		new PeriodSolver(1).solve(seed, { maxMs: 1 });
+		const s = candidateStageCacheStats();
+		expect(s.candHits).toBe(1);    // hit on second call
+		expect(s.candMisses).toBe(1);  // only the first call was a miss
+		expect(s.poolHits).toBe(0);    // no pool interaction on the candHit path
+		expect(s.poolMisses).toBe(1);  // one pool miss (from the first call)
+	});
+
+	it('two k=2 seeds over same polySizes={3,6}: first is poolMiss, second is poolHit', { timeout: 30000 }, () => {
+		// Two k=2 seeds with polySizes={3,6} but different VC compositions. The first call populates
+		// both candidateCache and poolStatsCache; the second hits candidateCache for a DIFFERENT key
+		// (different vcSig) → candidateCache miss → pool lookup → poolStatsCache HIT (shared pool).
+		//
+		// vcSig = sorted incidence multiset per VC, joined: the cyclic order of polygons around a vertex
+		// is LOST — only the tile-type counts are recorded. Pairs that differ in cyclic order but share
+		// the same multiset per vertex (e.g. [3,3,3,3,6;3,3,6,6] and [3,3,3,3,6;3,6,3,6]) produce the
+		// SAME vcSig and are NOT collision-proof.
+		//
+		// We select by explicit name, choosing a pair with provably distinct incidence multisets:
+		//   [3,3,3,3,3,3;3,3,3,3,6]: VC1 = 3^6 (six triangles), VC2 = 3^4.6^1 → vcSig = 3^4.6^1|3^6
+		//   [3,3,3,3,6;3,3,6,6]:     VC1 = 3^4.6^1,             VC2 = 3^2.6^2 → vcSig = 3^2.6^2|3^4.6^1
+		// These vcSigs are distinct, so they map to different candidateCache keys. Both seeds share
+		// polySizes={3,6}, so they hit the SAME poolStatsCache entry (same poolCacheKey).
+		_testOnlyClearCandidateStageCaches();
+		const allK2Seeds = buildSeeds(2);
+		const seedA = allK2Seeds.find((s) => s.name === '[3,3,3,3,3,3;3,3,3,3,6]');
+		const seedB = allK2Seeds.find((s) => s.name === '[3,3,3,3,6;3,3,6,6]');
+		expect(seedA).toBeDefined();
+		expect(seedB).toBeDefined();
+
+		new PeriodSolver(2).solve(seedA!, { maxMs: 1 }); // candidateLattices runs fully; fill skipped
+		const afterA = candidateStageCacheStats();
+		expect(afterA.candMisses).toBe(1); // seedA fresh in candidateCache
+		expect(afterA.poolMisses).toBe(1); // pool for {3,6} at k=2 was fresh
+		expect(afterA.candHits).toBe(0);
+		expect(afterA.poolHits).toBe(0);
+
+		new PeriodSolver(2).solve(seedB!, { maxMs: 1 }); // same polySizes → pool should HIT
+		const afterB = candidateStageCacheStats();
+		expect(afterB.candMisses).toBe(2); // seedB is also a candidateCache miss (different vcSig)
+		expect(afterB.poolHits).toBe(1);   // same polySizes → pool sub-cache HIT (reused from seedA)
+		expect(afterB.poolMisses).toBe(1); // pool was NOT re-computed
+		expect(afterB.candHits).toBe(0);   // neither seed was a candHit
 	});
 });
