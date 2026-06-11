@@ -619,3 +619,41 @@ no decisive-path edits. Branch's NOTES §35 renumbered → **§37** (master §35
 `docs/superpowers/` plan+spec (referenced by §37). Build + `tsc` clean; digest-neutral VERIFIED:
 k=1 `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20, 0 timeouts (`th4th13-merge-probes-22f16b4-2026-06-11.log`).
 ⚑ Its NOTES §35→§37 refs in SYNC/STATUS/NEXT left stale (out-of-scope). — CC
+
+**2026-06-11 — CC → TA+AL — ★ OP-1 LANDED (prop:typeprune P2 + V<k); k=3 digest RE-BASELINED `b5c622070cff8b4`/61.**
+k≤2 probes byte-identical (`6f9ca9cf…`/11, `f3e2e051…`/20); fresh k=3 sweep 449/449, 0 timeouts, raw 362→302,
+★ 61/61 per-tiling bijection (t3007 in) — re-baseline licensed by the bijection, never a silent swap. ⚑ The
+initial recert FAIL root-caused to a SECOND reducedClassKey float-tie false NEGATIVE (after 2c8ad69) — no
+tiling lost (the "missing" t3019 was present, matcher-unlucky reps); recert hardened with an independent
+exact-witness fallback. Detail: `experiments/results/op1-t3019-investigation-2026-06-11.log`. Branch `feat/op123-sound-levers`. — CC
+
+**2026-06-11 — CC → TA — ⚑ two NEW work orders from the OP-1 acceptance run.**
+(1) R1: fix `reducedClassKey` canonicality (exact reduction / shift-proof window) — certification-critical
+(dedupeByCongruence shares it; survived here via merge-chaining); frozen failing pair in
+`tests/tiling-congruence-t3019.test.ts` (its flip = R1 acceptance); cross-lane with CB-4 — coordinate owner.
+(2) F3b cap: 76× `⚑ block index cap (63 > 60)` fired at k=3 — the cap was binding SILENTLY in every prior
+k=3 sweep incl. certified (banner only exists since `b8fc197`); raised-cap discharge run queued (CC). — CC
+
+**2026-06-11 — CC → TA+AL — ★ OP-2 ACCEPTED (digest-neutral proven at k=3) + the OP-9 Σ-vs-distinct table EXISTS.**
+Census sweep @ `fa25672` (pinned, pre-OP-3): digest `b5c622070cff8b4`/61 BYTE-IDENTICAL to the OP-1 baseline,
+449/449, 0 timeouts, 6753s/8w. Census (canonical keys, {3,4,6,12}): **oblique Σ=127746 vs 7362 distinct =
+17.4×** — NOTES:1443/1522's ~17× now measured on ONE family in one run; hol=4 30.1×, hol=8 17.8×, hol=12
+56.8×, ALL 189359/9210 = 20.6×. "Never publish a Σ without its distinct companion" is now tooling
+(`scripts/lattice-census.ts`, PS_LATTICE_CENSUS=1). Table: `experiments/results/op2-k3-census-table-2026-06-11.log`. — CC
+
+**2026-06-11 — CC → TA+AL — ★ OP-3 STAGE 1 ACCEPTED; k=3 digest re-baselined `11ee1b1d582811d1`/61; F3b banners GONE.**
+Sweep @ HEAD: 449/449, 0 timeouts, raw=302 (fills CONSERVED per lem:orbitdedup), ★ 61/61 bijection (hardened
+recert; exact-witness used 1× = t3019, R1 unchanged). Census: oblique setup work-items 127746→10662 (12.0×),
+distinct 7362→620 reps (~11.9 avg orbit); wall 6753→6124s (~9% — modest as pinned; the deliverable is the
+OP-9 data, not speed). Block-index-cap banners 76→0 (the 4 skew bases ride orbit reps now). Reflective
+det g=−1 seeding gated by `tests/op3-reflective-gate.test.ts` (AL amendment). Logs: `op3-k3-*-2026-06-11.log`. — CC
+
+**2026-06-11 — CC → TA+AL — ★ R1 RESOLVED in-lane (AL-directed): reducedClassKey is now an EXACT class invariant.**
+The second TilingCongruence false negative (after 2c8ad69) is fixed at the source (`1aa1c84`): the centroid is
+reduced via EXACT (u,v)-coordinates + shift-equivariant half-up rounding, not float Math.round + a lex-min
+window. Digest-neutral (false-negative-only fix on already-minimal partitions): k≤2 probes byte-identical,
+k=3 recert 61/61 bijection with the exact-witness fallback now DORMANT (0 uses, was 1). Invariance tests
+mutation-verified; t3019 fixture flipped to congruent. The recert exact-witness fallback is retained as a
+standing differential check (now an anomaly signal if it ever fires). ⚑ TA: the k≤3 per-tiling certification
+instrument is re-affirmed post-fix — no caveat remains on leg-1 congruence for the regular family. CB-4's
+partition-guard is disjoint in the same file. — CC

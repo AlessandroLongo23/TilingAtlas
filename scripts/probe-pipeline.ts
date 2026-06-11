@@ -1,4 +1,5 @@
 /* Validate PeriodSolver over the full k seed set. Run: pnpm tsx scripts/probe-pipeline.ts [k] */
+import fs from 'node:fs';
 import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
 import { PeriodSolver, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
@@ -37,6 +38,12 @@ const seeds = new SeedBuilder().buildSeeds(k, 1, { seedSetLoader: () => seedSets
 const useSeeds = k >= 2 ? seeds.filter((s) => new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2) : seeds;
 console.log(`k=${k}: ${seeds.length} seeds (${useSeeds.length} used)`);
 
+// OP-2: per-process NDJSON census stream (opt-in via PS_LATTICE_CENSUS=1).
+const censusStream = process.env.PS_LATTICE_CENSUS === '1'
+	? (fs.mkdirSync('.scout-cache', { recursive: true }),
+	   fs.createWriteStream(`.scout-cache/lattice-census-k${k}.${process.pid}.ndjson`, { flags: 'a' }))
+	: null;
+
 const extractor = new TranslationalCellExtractor();
 const allCells: PeriodCell[] = [];
 let capped = 0;
@@ -45,7 +52,13 @@ const t0 = Date.now();
 for (let i = 0; i < useSeeds.length; i++) {
 	const seed = useSeeds[i];
 	const ts = Date.now();
-	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs });
+	const solveOpts: Parameters<InstanceType<typeof PeriodSolver>['solve']>[1] = { maxMs };
+	if (censusStream) {
+		solveOpts.onCandidateLattices = (lattices) => {
+			censusStream.write(JSON.stringify({ seed: seed.name, k, lattices }) + '\n');
+		};
+	}
+	const { cells, diag } = new PeriodSolver(k).solve(seed, solveOpts);
 	const ms = Date.now() - ts;
 	for (const c of cells) allCells.push(c);
 	if (diag.timedOut) capped++;

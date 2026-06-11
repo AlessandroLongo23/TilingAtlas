@@ -6,7 +6,10 @@ import {
 	vertexClassCount,
 	blockIndexRangeNeeded,
 	defaultMaxCellPolys,
+	applySeedMapInv,
 	BLOCK_INDEX_CAP,
+	candidateStageCacheStats,
+	_testOnlyClearCandidateStageCaches,
 	type PeriodCell,
 } from '@/classes/algorithm/PeriodSolver';
 import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
@@ -22,11 +25,15 @@ import {
 	type GeneratorParameters,
 } from '@/classes';
 import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing } from '@/classes/Cyclotomic';
+import { setActiveRing, Cyclotomic } from '@/classes/Cyclotomic';
+import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
+import type { Polygon } from '@/classes/polygons/Polygon';
+import { gridImage, holohedry } from '@/classes/algorithm/LatticeEnumerator';
 import type { SeedConfiguration as SeedConfigurationType } from '@/classes/algorithm/SeedConfiguration';
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } };
-setActiveRing(computeRing(params));
+const ring = computeRing(params);
+setActiveRing(ring);
 
 const checker = new KUniformityChecker();
 
@@ -211,6 +218,94 @@ describe('PeriodSolver — emitted cells are exact, gap-free, primitive tilings'
 	});
 });
 
+describe('OP-1 prop:typeprune prep', () => {
+	it('isCompleteTiling reports the occurring VC-name set via the out-param', { timeout: 30000 }, () => {
+		// Use the 3,4,6,4 k=1 seed — a small cell that certifies quickly.
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,4,6,4')]);
+		const solver = new PeriodSolver(1);
+		const { cells } = solver.solve(seed, {});
+		expect(cells.length).toBeGreaterThan(0);
+
+		const cell = cells[0];
+		const [u, v] = cell.basisExact;
+		const ring = u.ring;
+
+		// Build allowed + polySizes the same way solve() does.
+		const corePolys = seed.polygons;
+		const coreVertices = seed.vertexConfigurations.map((vc) => vc.computeSharedVertexExact());
+		const allowed = new Set<string>(
+			coreVertices.map((cv) =>
+				(solver as any).vcNameAt(cv, corePolys.filter((p) => p.vertexKeySet().has(cv.key())))
+			)
+		);
+		const polySizes = Array.from(
+			new Set(corePolys.filter((p) => !p.isStar).map((p) => p.n))
+		).sort((a: number, b: number) => a - b);
+
+		const ctx = (solver as any).makeCtx(u, v, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
+		expect(ctx).not.toBeNull();
+
+		// First call WITHOUT the out-param — must still return true (zero behavior change).
+		const withoutOut = solver.isCompleteTiling(cell.cellPolygons, ctx);
+		expect(withoutOut).toBe(true);
+
+		// Second call WITH the out-param — must collect the full occurring VC-name set.
+		const occ = new Set<string>();
+		const withOut = solver.isCompleteTiling(cell.cellPolygons, ctx, occ);
+		expect(withOut).toBe(true);
+		// At k=1 every VC type that is allowed must occur (occurring = allowed for this fixture).
+		expect([...occ].sort()).toEqual([...allowed].sort());
+	});
+});
+
+describe('OP-1 prop:typeprune', () => {
+	// prop:typeprune (correctness.tex:731-751, two-sided): a certified closed cell whose occurring
+	// VC-type set ⊊ the seed's allowed set does not realize the seed's orbit-VC multiset — it is
+	// another seed's tiling and may be discarded WITHOUT the orbit gate. V<k closes the cheap half
+	// (orbits ≤ V). Pinned baselines (UNCHANGED solver @ 62e2434, experiments/results/
+	// op1-pin-k2-2026-06-10.log): both fixtures are single-concrete and deterministic (no timeout).
+	it('[3,3,3,3,3,3;3,3,6,6]: pure-3⁶ supercells die at P2 BEFORE the CB-7 guard; catalogue unchanged', { timeout: 90000 }, () => {
+		// Pinned (pre-change): cells=1 rawCells=1 supercellRejected=29 gateRejected=0.
+		const concretes = buildSeeds(2).filter((s) => s.name === '[3,3,3,3,3,3;3,3,6,6]');
+		expect(concretes.length).toBe(1);
+		const { cells, diag } = new PeriodSolver(2).solve(concretes[0], { maxMs: 60000 });
+		expect(diag.timedOut).toBe(false); // deterministic run — the pins are only valid untruncated
+		expect(diag.p2Skipped).toBeGreaterThan(0); // the filter FIRES (pure-3⁶ closures: occ ⊊ allowed)
+		expect(cells.length).toBe(1); // emitted catalogue for the seed UNCHANGED (pinned)
+		expect(diag.rawCells).toBe(1); // the one genuine 2-uniform cell still certifies (pinned)
+		// The 29 pre-change supercell discards now die at P2 upstream of isPrimitive — the CB-7
+		// surface DROPS (a count shift, not a loss: theorem-licensed upstream of the guard).
+		// Measured split (op1-vbelowk-sweep-k2-2026-06-10.log, seed index 6):
+		// 27 die at P2 (p2Skipped=27) and 2 remain to CB-7 (scRej=2).
+		expect(diag.supercellRejected).toBeLessThan(29);
+		// FALLBACK pin for the V<k half (plan-approved): vBelowKSkipped CANNOT fire at k=2. V<2 means
+		// V=1 — a certified closure with ONE vertex class mod Λ — which bounds the cell area below the
+		// k=2 candidate area floor: the candidate area filter excludes the sub-area primitive lattices
+		// whose completions would have V<k. Measured: 0 fires across ALL 40 k=2 concretes
+		// (experiments/results/op1-vbelowk-sweep-k2-2026-06-10.log; segment 16-40 explicit timeouts=0,
+		// indices 1-15 corroborated by wall-times < budget). The k=3 sweep's diag aggregation is the
+		// live verification of this half.
+		expect(diag.vBelowKSkipped).toBe(0);
+	});
+	it('[3,3,3,4,4;4,4,4,4]: NEGATIVE control — full-type-support orbits>k closures must REACH the gate', { timeout: 90000 }, () => {
+		// Pinned (pre-change): cells=2 rawCells=5 supercellRejected=0 gateRejected=2. The two gate
+		// rejects use BOTH allowed VC types — occ = allowed (so ≥2 names ⇒ orbits ≥ 2) and are
+		// gate-rejected (orbits ≠ 2) ⇒ orbits ≥ 3. That is exactly the class prop:typeprune provably
+		// cannot catch (type support is necessary, not sufficient for orbits = k). OP-1 must not
+		// over-fire: every diagnostic must match the pre-change pin and both former gate rejects must
+		// still die AT THE GATE, not earlier.
+		const concretes = buildSeeds(2).filter((s) => s.name === '[3,3,3,4,4;4,4,4,4]');
+		expect(concretes.length).toBe(1);
+		const { cells, diag } = new PeriodSolver(2).solve(concretes[0], { maxMs: 60000 });
+		expect(diag.timedOut).toBe(false);
+		expect(diag.p2Skipped).toBe(0); // no subset-support closure on this seed — the filter must NOT fire
+		expect(diag.vBelowKSkipped).toBe(0); // no V<k closure either
+		expect(diag.rawCells).toBe(5); // all five certified closures still reach the gate loop (pinned)
+		expect(diag.gateRejected).toBe(2); // the two orbits=3 cells die at the GATE, exactly as pre-change
+		expect(cells.length).toBe(2); // emitted catalogue UNCHANGED (pinned)
+	});
+});
+
 describe('lem:fillreach F3 loud-cap guards (TH-2 work orders, 2026-06-10)', () => {
 	// F3b: buildBlock's per-axis index cap must never bind SILENTLY. The worst-case requirement is
 	// asserted per candidate lattice (certificate radius dominates: limit = 2·cellDiam+10, range
@@ -238,5 +333,214 @@ describe('lem:fillreach F3 loud-cap guards (TH-2 work orders, 2026-06-10)', () =
 		expect(defaultMaxCellPolys(1)).toBe(44); // = 20k+24, unchanged
 		expect(defaultMaxCellPolys(6)).toBe(144); // boundary: 20·6+24 = 24·6
 		expect(defaultMaxCellPolys(7)).toBe(168); // was 164 — the F3a hole, now 24k
+	});
+});
+
+describe('OP-3 g⁻¹ seed-map inversion (lem:orbitdedup constraint 2) — pins the transformedRigid convention', () => {
+	// THE convention everything in OP-3 rests on. The orbit grouping records g = (rot, refl) with
+	// g(Λ_rep) = Λ_member via gridImage (refl ? conj(w)·ζ^rot : w·ζ^rot); solve()'s per-map seeding
+	// must apply g⁻¹ to the core via transformedRigid(origin=0, reflect, axisK, rotK, T=0, 'full')
+	// (reflect ⇒ z ↦ conj(z)·ζ^{axisK+rotK}; else z ↦ z·ζ^{rotK}). The claimed inverses:
+	//   pure rotation g = ζ^rot     ⇒ g⁻¹ = ζ^{(N−rot) mod N}  → transformedRigid(0, false, 0, (N−rot)%N, 0)
+	//   reflection   g = conj∘ζ^rot ⇒ involution, g⁻¹ = g       → transformedRigid(0, true, rot, 0, 0)
+	// A wrong inverse silently seeds the wrong state and the k≤2 gate cannot catch it (0 oblique
+	// tilings there) — so the formulas are pinned HERE, against gridImage itself.
+	const ZERO = Cyclotomic.ZERO(ring);
+	/** g⁻¹ via the PRODUCTION helper (`applySeedMapInv`) — the pins below guard solve()'s seeding path directly. */
+	const invMap = (p: Polygon, rot: number, refl: boolean): Polygon =>
+		applySeedMapInv([p], { rot, refl }, ring, ZERO)[0];
+	/** the forward g (= gridImage on every exact vertex). */
+	const fwdMap = (p: Polygon, rot: number, refl: boolean): Polygon =>
+		p.transformedRigid(ZERO, refl, refl ? rot : 0, refl ? 0 : rot, ZERO, 'full');
+	/** a triangle anchored AWAY from the origin, so origin-rotations genuinely move it. */
+	const tri = () => RegularPolygon.fromAnchorAndDirExact(3, Cyclotomic.ONE(ring).add(Cyclotomic.zeta(ring, 2)), 0);
+
+	it('forward polygon map agrees with gridImage on every exact vertex (the orbit-grouping convention)', () => {
+		for (const [rot, refl] of [[5, false], [3, true]] as [number, boolean][]) {
+			const p = tri();
+			const fp = fwdMap(p, rot, refl);
+			const want = [...p.exactVertices!.map((w) => gridImage(w, rot, refl).key())].sort();
+			const got = [...fp.exactVertices!.map((w) => w.key())].sort();
+			expect(got).toEqual(want);
+		}
+	});
+	it('pure rotation g = ζ⁵: applying g⁻¹ then the forward g round-trips to the original exactKey', () => {
+		const p = tri();
+		const inv = invMap(p, 5, false);
+		expect(inv.exactKey()).not.toBe(p.exactKey()); // sanity: g⁻¹ is NOT the identity on this fixture
+		expect(fwdMap(inv, 5, false).exactKey()).toBe(p.exactKey()); // round-trip identity
+	});
+	it('reflection g = conj∘ζ³ is an involution: the seed map applied TWICE returns the original', () => {
+		const p = tri();
+		const once = invMap(p, 3, true);
+		expect(once.exactKey()).not.toBe(p.exactKey()); // sanity: not the identity
+		expect(invMap(once, 3, true).exactKey()).toBe(p.exactKey()); // involution
+		expect(once.exactKey()).toBe(fwdMap(p, 3, true).exactKey()); // and g⁻¹ IS the forward g
+	});
+});
+
+describe('OP-3 stage 1 — oblique grid-orbit candidate reduction (lem:orbitdedup)', () => {
+	it('k=3 {3,4} multi-VC seed: oblique candidates reduce to orbit reps, identity-first seed maps, exact accounting', { timeout: 60000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		// candidateLattices is SEED-FREE (ring, tile set, k only), so an unplaced multi-VC
+		// SeedConfiguration is a valid fixture — no SeedBuilder placement needed. This {3,4} pair is
+		// the measured heavy case: 1223 post-P0 candidates, of which 1092 oblique, grouping to 91
+		// orbit reps (orbitSkipped = 1001, orbits up to 12 enumerated members) — the dominant-class
+		// reduction OP-3 stage 1 exists for. (Counts not pinned below; only the arithmetic identity.)
+		const seed = new SeedConfiguration([
+			VertexConfiguration.fromName('3,3,4,3,4'),
+			VertexConfiguration.fromName('3,3,3,4,4'),
+		]);
+		const solver = new PeriodSolver(3);
+		const { lattices, orbitSkipped } = (solver as any).candidateLattices(seed) as {
+			lattices: { basis: [InstanceType<typeof Cyclotomic>, InstanceType<typeof Cyclotomic>]; seedMaps: { rot: number; refl: boolean }[] }[];
+			orbitSkipped: number;
+		};
+		expect(orbitSkipped).toBeGreaterThan(0); // the reduction FIRES at k=3 (oblique orbits exist)
+		let memberTotal = 0;
+		let sawMultiMap = false;
+		for (const { basis: [u, v], seedMaps } of lattices) {
+			expect(seedMaps.length).toBeGreaterThanOrEqual(1);
+			expect(seedMaps[0]).toEqual({ rot: 0, refl: false }); // identity FIRST — the historical first fill
+			if (holohedry(u, v) !== 2) {
+				expect(seedMaps).toEqual([{ rot: 0, refl: false }]); // non-oblique: NEVER reduced (stage-1 hol gate)
+			} else if (seedMaps.length > 1) {
+				sawMultiMap = true;
+			}
+			memberTotal += seedMaps.length;
+		}
+		expect(sawMultiMap).toBe(true); // some oblique rep carries deleted members' coverage
+		// Constraint-2 accounting (the pre-change pin, as the arithmetic identity): every enumerated
+		// post-P0 candidate is either a representative or a deleted member carried as a seed map, so
+		// Σ seedMaps = old (pre-reduction) candidate count = candidateLattices + orbitSkipped — and
+		// the post-reduction list is strictly smaller than the old count (orbitSkipped > 0 above).
+		expect(memberTotal).toBe(lattices.length + orbitSkipped);
+		// The diag surface agrees (candidateLattices = the post-reduction count; maxMs:1 runs
+		// candidateLattices fully — cache hit — and skips the fill, per the OP-2 test technique).
+		const { diag } = solver.solve(seed, { maxMs: 1 });
+		expect(diag.orbitSkipped).toBe(orbitSkipped);
+		expect(diag.candidateLattices).toBe(lattices.length);
+		expect(diag.candidateLattices + diag.orbitSkipped).toBe(memberTotal);
+		expect(diag.candidateLattices).toBeLessThan(memberTotal); // strictly fewer lattices TRIED than enumerated
+	});
+
+	it('k=1 (no oblique candidates in play): every candidate carries exactly the identity map; catalogue unchanged', { timeout: 30000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		const solver = new PeriodSolver(1);
+		const { lattices, orbitSkipped } = (solver as any).candidateLattices(seed) as {
+			lattices: { seedMaps: { rot: number; refl: boolean }[] }[];
+			orbitSkipped: number;
+		};
+		for (const { seedMaps } of lattices) expect(seedMaps[0]).toEqual({ rot: 0, refl: false });
+		// identity-only k=1 path: the trihexagonal tiling still solves to exactly one cell
+		const { cells, diag } = solver.solve(seed, {});
+		expect(cells.length).toBe(1);
+		expect(diag.orbitSkipped).toBe(orbitSkipped);
+	});
+});
+
+describe('OP-2 candidate-stage instrumentation', () => {
+	// Each test calls _testOnlyClearCandidateStageCaches() to reset the module-level caches and
+	// counters to a known empty state, making assertions absolute (not delta-based) and independent
+	// of test execution order. The clear function is test-only; production code never calls it.
+	//
+	// Using maxMs:1 in solve() exercises candidateLattices (which runs BEFORE the lattice loop)
+	// without paying for torusFill: the timeout check fires inside the lattice loop, so
+	// candidateLattices ALWAYS runs to completion and its counters always increment.
+	//
+	// For k=1, each polySizes set maps to exactly ONE Archimedean VC, so two k=1 seeds can't share
+	// polySizes and differ in vcSig. We use k=1 seeds to validate miss/hit counting, and a pair of
+	// k=2 seeds sharing polySizes={3,6} (but differing in VC composition) to validate poolHit.
+
+	it('fresh k=1 seed (3,6,3,6) produces candMiss + poolMiss', { timeout: 30000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		new PeriodSolver(1).solve(seed, { maxMs: 1 }); // candidateLattices runs; fill skipped
+		const s = candidateStageCacheStats();
+		expect(s.candMisses).toBe(1);  // first-ever call → candidateCache miss
+		expect(s.poolMisses).toBe(1);  // first-ever call for this polySizes → poolCache miss
+		expect(s.candHits).toBe(0);
+		expect(s.poolHits).toBe(0);
+	});
+
+	it('second solve for SAME seed uses candidateCache hit (candHits++)', { timeout: 30000 }, () => {
+		// Each test clears state first; this test primes the cache itself then re-solves.
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		// Prime: first solve populates the candidateCache.
+		new PeriodSolver(1).solve(seed, { maxMs: 1 });
+		expect(candidateStageCacheStats().candMisses).toBe(1);
+		// Second solve: same cacheKey → candidateCache hit; returns before pool lookup.
+		new PeriodSolver(1).solve(seed, { maxMs: 1 });
+		const s = candidateStageCacheStats();
+		expect(s.candHits).toBe(1);    // hit on second call
+		expect(s.candMisses).toBe(1);  // only the first call was a miss
+		expect(s.poolHits).toBe(0);    // no pool interaction on the candHit path
+		expect(s.poolMisses).toBe(1);  // one pool miss (from the first call)
+	});
+
+	it('OP-2: onCandidateLattices hook fires with non-empty list, valid keys and hols', { timeout: 30000 }, () => {
+		// A small k=1 seed with the hook wired. The solve runs to completion with no maxMs cap.
+		// onCandidateLattices fires with the post-P0 candidate list for each seed; the hook is called
+		// once per solve call and its list must be non-empty for any valid seed.
+		// Every entry must have a non-empty string key and hol ∈ {2,4,8,12}.
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		const captured: { key: string; hol: number }[] = [];
+		new PeriodSolver(1).solve(seed, {
+			onCandidateLattices: (lats) => { captured.push(...lats); },
+		});
+		expect(captured.length).toBeGreaterThan(0);
+		for (const { key, hol } of captured) {
+			expect(typeof key).toBe('string');
+			expect(key.length).toBeGreaterThan(0);
+			expect([2, 4, 8, 12]).toContain(hol);
+		}
+	});
+
+	it('OP-2: solve WITHOUT the hook still works (no crash, no behavioral coupling)', { timeout: 30000 }, () => {
+		_testOnlyClearCandidateStageCaches();
+		const seed = new SeedConfiguration([VertexConfiguration.fromName('3,6,3,6')]);
+		// No hook — must return normally with correct cell count.
+		const { cells } = new PeriodSolver(1).solve(seed, {});
+		expect(cells.length).toBe(1); // the trihexagonal tiling
+	});
+
+	it('two k=2 seeds over same polySizes={3,6}: first is poolMiss, second is poolHit', { timeout: 30000 }, () => {
+		// Two k=2 seeds with polySizes={3,6} but different VC compositions. The first call populates
+		// both candidateCache and poolStatsCache; the second hits candidateCache for a DIFFERENT key
+		// (different vcSig) → candidateCache miss → pool lookup → poolStatsCache HIT (shared pool).
+		//
+		// vcSig = sorted incidence multiset per VC, joined: the cyclic order of polygons around a vertex
+		// is LOST — only the tile-type counts are recorded. Pairs that differ in cyclic order but share
+		// the same multiset per vertex (e.g. [3,3,3,3,6;3,3,6,6] and [3,3,3,3,6;3,6,3,6]) produce the
+		// SAME vcSig and are NOT collision-proof.
+		//
+		// We select by explicit name, choosing a pair with provably distinct incidence multisets:
+		//   [3,3,3,3,3,3;3,3,3,3,6]: VC1 = 3^6 (six triangles), VC2 = 3^4.6^1 → vcSig = 3^4.6^1|3^6
+		//   [3,3,3,3,6;3,3,6,6]:     VC1 = 3^4.6^1,             VC2 = 3^2.6^2 → vcSig = 3^2.6^2|3^4.6^1
+		// These vcSigs are distinct, so they map to different candidateCache keys. Both seeds share
+		// polySizes={3,6}, so they hit the SAME poolStatsCache entry (same poolCacheKey).
+		_testOnlyClearCandidateStageCaches();
+		const allK2Seeds = buildSeeds(2);
+		const seedA = allK2Seeds.find((s) => s.name === '[3,3,3,3,3,3;3,3,3,3,6]');
+		const seedB = allK2Seeds.find((s) => s.name === '[3,3,3,3,6;3,3,6,6]');
+		expect(seedA).toBeDefined();
+		expect(seedB).toBeDefined();
+
+		new PeriodSolver(2).solve(seedA!, { maxMs: 1 }); // candidateLattices runs fully; fill skipped
+		const afterA = candidateStageCacheStats();
+		expect(afterA.candMisses).toBe(1); // seedA fresh in candidateCache
+		expect(afterA.poolMisses).toBe(1); // pool for {3,6} at k=2 was fresh
+		expect(afterA.candHits).toBe(0);
+		expect(afterA.poolHits).toBe(0);
+
+		new PeriodSolver(2).solve(seedB!, { maxMs: 1 }); // same polySizes → pool should HIT
+		const afterB = candidateStageCacheStats();
+		expect(afterB.candMisses).toBe(2); // seedB is also a candidateCache miss (different vcSig)
+		expect(afterB.poolHits).toBe(1);   // same polySizes → pool sub-cache HIT (reused from seedA)
+		expect(afterB.poolMisses).toBe(1); // pool was NOT re-computed
+		expect(afterB.candHits).toBe(0);   // neither seed was a candHit
 	});
 });

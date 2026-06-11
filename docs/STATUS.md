@@ -51,6 +51,19 @@ Two tiers. Do not mix them.
   ★ PASS 61/61 + differential 0/2131 mismatches (`cb456-probes-*`, `k3-recert-...-18-22.log`).
   ⚑ Outstanding: fresh k=3 no-cap sweep (expect `99919f42a7b58e76`/61) as batch acceptance; merge
   on AL's go. ⚑ TA: thesis §19.6 congruence narrative gains the §35 sibling caveat.
+- ★ **OP-1/2/3 LANDED, `feat/op123-sound-levers` @ `cf1908e`** (off master `0291e83`; NOTES §35) —
+  the three sound levers in the mandated order. OP-1 prop:typeprune P2+V<k (k≤2 byte-identical; k=3
+  re-baselined `99919f42a7b58e76`→`b5c622070cff8b4`, raw 362→302 = duplicate-cert cut). OP-2 census +
+  counters (digest byte-identical; ⚑ branch-enum memoization is orbifold-lane, DEFERRED). OP-3 stage 1
+  oblique-only grid-orbit reduction per lem:orbitdedup (fills CONSERVED raw=302; k=3 re-baselined
+  `11ee1b1d582811d1`/61). All three: **61/61 per-tiling bijection** (t3007 in, 0 orphans/dupes).
+  ★ **OP-9 Σ-vs-distinct table exists** (oblique 17.4×, ALL 20.6×; post-OP-3 oblique work-items 12.0×
+  down). ✓ **R1 RESOLVED** (`1aa1c84`, AL-directed) — the second `reducedClassKey` float-tie false-NEG
+  (t3019, 1:4.73 skinny cell), surfaced by OP-1's sound P2, is fixed at the source: exact (u,v)-coord
+  reduction, no float window. Digest-neutral (k≤2 byte-identical, k=3 recert 61/61 with the exact-witness
+  fallback now DORMANT). No leg-1 congruence caveat remains for the regular family; CB-4 disjoint in-file.
+  F3b banners 76→0 post-OP-3 (A/B discharge abandoned ~50h; discharged on census=0 + the bijection).
+  NOT merged — awaiting AL merge decision.
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
 - Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1 conventions

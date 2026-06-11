@@ -533,7 +533,8 @@ export function gaussReduceExact(a: Cyclotomic, b: Cyclotomic): [Cyclotomic, Cyc
 	return [u, v];
 }
 
-/** True iff bases (a,b) and (c,d) generate the SAME lattice (equal covolume + mutual int-combos). */
+/** True iff bases (a,b) and (c,d) generate the SAME lattice (equal exact covolume + one-sided
+ *  containment — c,d ∈ ⟨a,b⟩_ℤ; at equal covolume one-sided containment forces equality). */
 export function sameLattice(
 	a: Cyclotomic,
 	b: Cyclotomic,
@@ -562,6 +563,113 @@ export function isIntCombo(w: Cyclotomic, a: Cyclotomic, b: Cyclotomic): boolean
 
 export function areaKey(s: Surd): string {
 	return `${s.P},${s.Q},${s.R},${s.S},${s.D}`;
+}
+
+/**
+ * One grid point-group element g ∈ G = {z ↦ ζ^r·z, z ↦ ζ^r·conj(z)} (order 2N) applied to a vector.
+ * Exact ring maps only (`mulZeta`, `conj`) — never a float rotation.
+ */
+export function gridImage(w: Cyclotomic, rot: number, refl: boolean): Cyclotomic {
+	return refl ? w.conj().mulZeta(rot) : w.mulZeta(rot);
+}
+
+/** g applied to a basis: g is linear, so (g·u, g·v) is a basis of g(⟨u, v⟩). */
+export function gridImageBasis(
+	u: Cyclotomic,
+	v: Cyclotomic,
+	rot: number,
+	refl: boolean
+): [Cyclotomic, Cyclotomic] {
+	return [gridImage(u, rot, refl), gridImage(v, rot, refl)];
+}
+
+/** One G-orbit of candidate lattices (lem:orbitdedup): the kept representative plus, for every
+ *  member, an exactly-verified map g with g(Λ_rep) = Λ_member. */
+export type OrbitGroup = {
+	/** index (into the input list) of the kept representative — the FIRST-generated member */
+	repIdx: number;
+	/** for every member (incl. the rep, as {idx: repIdx, rot: 0, refl: false} first), the map g
+	 *  with g(Λ_rep) = Λ_member — VERIFIED exactly via sameLattice; seeding will use g⁻¹ */
+	memberMaps: { idx: number; rot: number; refl: boolean }[];
+};
+
+/**
+ * Partition candidate lattices into orbits of the grid point group G = {ζ^r, conj∘ζ^r} (order 2N =
+ * 48 at N = 24) — the foundation of the OP-3 candidate reduction (thesis lem:orbitdedup).
+ *
+ * ⚑ SOUNDNESS (rem:orbitdedup constraint 1): two lattices are declared G-equivalent ONLY after an
+ * exact `sameLattice` verification of one of the ≤ 2N candidate maps — never on a key collision.
+ * The `areaKey` bucket below is a pure accelerator: |det| is G-invariant (rotations and reflections
+ * preserve area), so bucketing can only keep non-equivalent pairs from being COMPARED — it can
+ * split an orbit across buckets only if the keys differ, which for an exact key on a G-invariant
+ * never happens; and it can never force a merge. A wrong merge would silently drop a lattice — a
+ * completeness bug; a spurious split is merely redundant work downstream.
+ *
+ * Deterministic: input order decides representatives (the first member of each orbit encountered
+ * becomes its rep); the map search order is rot-major (rot ascending 0..N−1, refl false-before-true),
+ * so the recorded g is the lexicographically smallest (rot, refl) pair — Task 8 may rely on which g
+ * is recorded. Class-agnostic — the lemma covers all Bravais classes; the oblique (hol = 2)
+ * restriction is applied later, at the call site.
+ *
+ * Cost: worst case O(bucket-groups × 2N) `sameLattice` calls per inserted lattice; buckets ≈ area
+ * classes so they can be large; the in-bucket detSurd check inside `sameLattice` is then
+ * redundant-but-sound (do not remove it as an optimisation).
+ *
+ * @param N  Order of the rotation sub-group.  A too-small N searches a subgroup of G — failure
+ *   direction is completeness-SAFE (spurious orbit splits, never wrong merges).
+ */
+export function groupIntoGridOrbits(
+	lattices: [Cyclotomic, Cyclotomic][],
+	N: number
+): OrbitGroup[] {
+	const groups: OrbitGroup[] = [];
+	const buckets = new Map<string, number[]>(); // exact |det| key → indices into `groups`
+	for (let i = 0; i < lattices.length; i++) {
+		const [u, v] = lattices[i];
+		const key = areaKey(detSurd(u, v).abs()); // exact, G-invariant
+		let bucket = buckets.get(key);
+		if (!bucket) {
+			bucket = [];
+			buckets.set(key, bucket);
+		}
+		let placed = false;
+		for (const gi of bucket) {
+			const g = groups[gi];
+			const [ru, rv] = lattices[g.repIdx];
+			const m = findGridMap(ru, rv, u, v, N);
+			if (m) {
+				g.memberMaps.push({ idx: i, rot: m.rot, refl: m.refl });
+				placed = true;
+				break;
+			}
+		}
+		if (!placed) {
+			groups.push({ repIdx: i, memberMaps: [{ idx: i, rot: 0, refl: false }] });
+			bucket.push(groups.length - 1);
+		}
+	}
+	return groups;
+}
+
+/** First g ∈ G with g(⟨ru, rv⟩) = ⟨u, v⟩, verified exactly by `sameLattice` (equal exact covolume +
+ *  one-sided containment, which at equal covolume forces equality); null when the lattices are not
+ *  G-equivalent.  Search order: rot ascending (0..N−1), refl false-before-true (rot-major) — the
+ *  recorded g is therefore the lexicographically smallest (rot, refl) pair; Task 8 may rely on this. */
+function findGridMap(
+	ru: Cyclotomic,
+	rv: Cyclotomic,
+	u: Cyclotomic,
+	v: Cyclotomic,
+	N: number
+): { rot: number; refl: boolean } | null {
+	for (let rot = 0; rot < N; rot++) {
+		for (const refl of [false, true]) {
+			if (sameLattice(u, v, gridImage(ru, rot, refl), gridImage(rv, rot, refl))) {
+				return { rot, refl };
+			}
+		}
+	}
+	return null;
 }
 
 /** A loud INCOMPLETE-REGION signal from the oblique candidate stage (`obliqueCells`).

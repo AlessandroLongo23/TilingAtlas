@@ -1,0 +1,14 @@
+OP-1 pin run (UNCHANGED solver @ HEAD) — 2026-06-10T18:20:22.392Z
+k=2 seeds total: 40; distinct names: 32
+names containing 4,4,4,4: [3,3,3,4,4;4,4,4,4]  [3,4,4,6;4,4,4,4]
+
+=== [3,3,3,3,3,3;3,3,6,6]: 1 concrete(s) ===
+  concrete[0] (3,3,3,3,3,3 | 3,3,6,6): cells=1 rawCells=1 supercellRejected=29 gateRejected=0 emitted=1 timedOut=false (18.1s)
+
+=== [3,3,3,4,4;4,4,4,4]: 1 concrete(s) ===
+  concrete[0] (3,3,3,4,4 | 4,4,4,4): cells=2 rawCells=5 supercellRejected=0 gateRejected=2 emitted=2 timedOut=false (11.2s)
+
+=== [3,4,4,6;4,4,4,4]: 1 concrete(s) ===
+  concrete[0] (3,4,4,6 | 4,4,4,4): cells=0 rawCells=0 supercellRejected=0 gateRejected=0 emitted=0 timedOut=false (1.2s)
+
+pin run complete

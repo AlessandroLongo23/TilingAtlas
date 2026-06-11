@@ -2761,3 +2761,117 @@ widening (n=24, off-ring α) — then every constant must be recomputed. (c) Rou
 form of (ii) (#points ≤ ⌊t/2⌋ ⟺ non-adjacent cyclic arrangement) is guarded by the per-cell
 route agreement. (d) Fig-3 class remains best-effort in the solver; nothing decisive changed —
 `StarVC.ts`/scout untouched, regular digests untouched trivially, build clean, 23/23 tests.
+## 38. OP-1 / OP-2 / OP-3 — the three sound levers, the t3019 false-negative incident, the OP-9 Σ-vs-distinct table, and the F3b discharge (2026-06-11, worktree `feat/op123-sound-levers`)
+
+**Frame.** The review's `04-optimizations.md` mandates the optimisations in the strict order OP-1 →
+OP-2 → OP-3 (each must land and be accepted before the next). All work on a worktree branched off
+master `0291e83`. The acceptance instrument is held fixed across the whole sequence: the three k≤2
+byte-identity digests (`6f9ca9cf…`/11, `f3e2e051…`/20 — these never move) plus the k=3 per-tiling
+oracle BIJECTION (61/61, t3007 present, 0 duplicates, 0 orphans). A digest may be *re-baselined* only
+when the bijection licenses it — never a silent swap. Per-OP digest discipline: prove k≤2
+byte-identical, then run a fresh 449/449 k=3 sweep with 0 timeouts and re-run the bijection.
+
+**OP-1 (prop:typeprune P2 + the V<k gate short-circuit; `62e2434`→`b49f105`).** Two-sided
+closed-cell type-support filter: a certified torus cell whose occurring VC-type set is a strict
+subset of the seed's allowed set cannot realise this seed's orbit-VC multiset (it is another seed's
+tiling), so it is discarded pre-primitivity; and V<k ⇒ orbits ≤ V < k ⇒ the k-gate would reject, so
+the 7×7 exact symmetry search is skipped. k≤2 came back BYTE-IDENTICAL — REASON: no strict-subset-
+support cell passes the k-gate at k≤2, so the filter has nothing to remove there. The witness at k=3
+is `[3,3,3,3,3,3;3,3,6,6]`: `supercellRejected` 29→2, `p2Skipped`=27, emitted cells unchanged.
+k=3 re-baselined `99919f42a7b58e76`→`b5c622070cff8b4` — raw cells 362→302, a cross-seed
+duplicate-CERTIFICATION cut (the same congruence class certified under several seeds), 61/61 bijection
+intact (the P2 removals were redundant emissions, not tilings).
+
+**★ The t3019 incident (the centerpiece — thesis-relevant).** OP-1's first recert FAILED: 60/61
+bijective + 1 orphan, t3019 reporting 0 congruent scout classes. Root cause was NOT OP-1 — it was a
+SECOND `reducedClassKey` float-tie false NEGATIVE in `tilingsCongruent` (the first was fixed in
+`2c8ad69`). `Math.round` ties on the half-integer centroid coordinates of skinny lattices: t3019's
+cell is 1:4.73 (long-thin), float noise ~4e-16 straddles the rounding boundary and splits ONE
+congruence class across two distinct "canonical" keys. The master baseline's 61/61 had been
+ORDER-LUCKY — the emitted representative happened to be matcher-friendly. OP-1's P2 SOUNDLY removed
+exactly that matcher-friendly duplicate emission, exposing the latent bug. NO TILING WAS LOST: the
+orphan IS t3019, exact-isometry-verified (a pure translation). **FAILED IDEA recorded:** the first
+remediation R2 — "accept if ANY surviving class member is `cellsCongruent` to the oracle" — was
+insufficient, because for t3019 ALL surviving members are false-negative-prone (the investigation log
+predicted this; R2 still missed). The working fix is an independent exact grid-isometry witness
+fallback inside the recert INSTRUMENT (every accept carries an exact proof; loud ⚑ per use). It was
+used exactly 1× at k=3 = t3019 (member 0 of class 31, all 3 members `cellsCongruent`-false).
+Investigation committed (`experiments/results/op1-t3019-investigation-2026-06-11.log`, `f07b02c`).
+
+**R1 — RESOLVED (`1aa1c84`, AL directed it implemented in-lane).** `reducedClassKey` no longer rounds
+the centroid into the fundamental cell with float `Math.round` + a lex-min ±2 window. It reduces the
+EXACT `(u,v)`-coordinates — α = `detSurd(c,v)/detSurd(u,v)`, β = `detSurd(u,c)/detSurd(u,v)` (cross
+products as exact Surds) — with shift-equivariant half-up rounding (`roundHalfUpExact`: float-guess +
+exact `Surd.cmp` correction). For `p+λ` the coordinates shift by exact integers, so the rounding
+shifts identically and the reduced representative is the byte-identical exact polygon for every member
+of a lattice class (ties included) — class invariance is now EXACT, not a contingent window
+heuristic; the window (and its second float-tie point, the `lim` filter) is gone. Why it is
+digest-neutral: a false-negative-only fix can only MERGE classes the old code wrongly split, and the
+certified partitions were already minimal-correct (k≤2: 11/20; k=3 scout: 61, oracle-bijective), so
+the partition — hence every composition digest — is unchanged. Measured: k≤2 probes byte-identical
+(`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20); k=3 recert 61/61 per-tiling bijection with the
+exact-witness fallback now DORMANT (0 uses, was 1 — the fast path recognizes t3019). New
+class-invariance regression tests are mutation-verified (the old float body fails them); the frozen
+t3019 fixture flipped red→green. Adversarial review: no blocking findings. The recert exact-witness
+fallback is retained as a standing differential check (now expected dormant). CB-4's
+`assertEquivalencePartition` guard touches a disjoint part of `TilingCongruence` — no conflict.
+
+**OP-2 (honest scope).** The review's headline OP-2 — branch-enumeration memoization — is an
+ORBIFOLD-lane construct; master's live path is the torus solver, which has no branch enumeration to
+memoize. Recorded as DEFERRED-WITH-REASON, not done. What DID land: (a) census instrumentation
+(`PS_LATTICE_CENSUS=1` + `scripts/lattice-census.ts`); (b) candidate-stage cache counters; (c) a
+pool-lookup layer — DISCLOSED as redundant with `LatticeEnumerator`'s own internal memoization, kept
+only to feed the counters. ⚑ The census's canonical key is `min(latticeKeySet)` over the orbit's
+member keys — NOT a single `latticeKey`, because a single key SPLITS tied-minima hex lattices (measured
+at k=1: holohedry-12 distinct 26→18, multiplicity 1.7×→2.5× once the split is healed). k=3 sweep
+@`fa25672` (pinned, pre-OP-3) digest BYTE-IDENTICAL `b5c622070cff8b4`/61 ⇒ OP-2 is digest-neutral.
+
+**★ THE OP-9 TABLE ({3,4,6,12}, canonical keys, pre-OP-3 — `op2-k3-census-table-2026-06-11.log`):**
+oblique (hol=2) Σ=127746 vs 7362 distinct = 17.4× (this is `NOTES:1443/1522`'s ~17× redundancy now
+MEASURED on one family in one run); hol=4 30.1×, hol=8 17.8×, hol=12 56.8×; ALL 189359/9210 = 20.6×.
+"Never publish a Σ without its distinct companion" is now tooling. ⚑ The aggregator's "265 duplicate
+seed entries" warning is a NAME-collision FALSE POSITIVE: 449 solve-calls span only 184 distinct
+display names (names are non-unique across concrete seeds). The warning text was rewritten (M1) to be
+self-explaining; the Σ/multiplicity figures are per-solve-call and correct.
+
+**OP-3 stage 1 (`87c66d9`/`48ff7dd`/`a3dcc27`/`3535fca`).** Oblique-ONLY grid-orbit candidate
+reduction per `lem:orbitdedup`, honouring all three `rem:orbitdedup` constraints: (1) exact
+`sameLattice` grouping (no float); (2) g⁻¹ seeding of EXACTLY the members that were enumerated, so
+the fill coverage is CONSERVED — raw cells stayed 302 across all three sweeps; (3) an orbit-aware CB-7
+guard. The apparent TH-9-vs-OP-3 acceptance contradiction (byte-identical k≤2 vs a k=3 re-baseline)
+is RESOLVED by the oblique-only staging: k≤2 has 0 oblique tilings, so it is provably immune to a
+reduction that touches only hol=2. The reflective acceptance gate (AL's blocking amendment): ⚑
+single-vertex fans are ACHIRAL, so a dropped conjugation is fill-INVISIBLE on them — the gate therefore
+uses a CHIRAL two-fan core; 3 simulated bug modes all fail loudly
+(`tests/op3-reflective-gate.test.ts`). k=3 re-baselined `11ee1b1d582811d1`/61, 61/61 bijection
+(hardened recert, exact-witness used 1× = t3019, R1 still unchanged). Census post-reduction: oblique
+Σ 127746→10662 (12.0× setup-work-item cut; distinct 7362→620 representatives, ~11.9 avg orbit). Wall
+6753→6124s (~9%) — MODEST, exactly as AL pinned: fills are CONSERVED, so the deliverable is the OP-9
+reconciliation basis, NOT a speedup.
+
+**F3b story.** The 2026-06-10/11 pre-OP-3 sweeps fired 76 `⚑ block index cap (63 > 60)` banners = 4
+skew-BASIS oblique lattices × 19 seeds. ⚑ `blockIndexRangeNeeded` is BASIS-dependent, NOT a lattice
+invariant — a false G-invariance claim stood in `scripts/f3b-cap-census.ts` (only |det| is preserved
+by grid isometries; cellDiam depends on the stored basis), caught in review and corrected (header +
+the runtime verdict strings). Post-OP-3 banners = 0: those 4 skew bases now ride orbit representatives
+whose ranges are ≤60 — a consequence of enumeration ORDER, NOT a theorem, so the F3b assertion remains
+the loud guard. **FAILED IDEA:** a proof-grade A/B discharge (stock cap 60 vs raised cap 128 on the
+affected seeds) was ABANDONED as impractical — the 19 affected seeds are the pathological
+3³.4²-family at ~1.5h each, so ×19×2 ≈ 50h; the stock leg got through 13/19 and the raised leg 0/19
+before the call. F3b was discharged instead by (a) census = 0 affected post-OP-3 and (b) the 61/61
+oracle bijection on the certified artifact (ground truth, cap-independent). Evidence: `f3b-*.log`,
+`cf1908e`.
+
+**⚑ Two TA-flagged k≥4 caveats (from the whole-branch review — NULL at k≤3, live preconditions above):**
+
+- **(I1) the orbit-aware CB-7 guard over-reaches.** Its ∃g∈G membership sweep checks all ≤2N images
+  of the closure, which is BROADER than the member-conservation discharge strictly licenses:
+  `rem:orbitdedup` constraint 3 presupposes blanket seeding, but under conservation the sharp test is
+  `m(closure)` for the CURRENT seed map only. Empirically NULL at k=3 — CB-7 alarms = exactly 100 on
+  the pre-branch baseline AND on all three branch sweeps. Refinement if ever needed: thread the seed
+  map into `FillCtx`, alarm on `m(closure)`, and count all-G hits separately.
+- **(I2) prop:typeprune's "processes every seed set" rider vs the harness single-name seed filter.**
+  At k≥2 the harness filters to one representative per display name; P2 closes the accidental recovery
+  path for MONOTYPIC k-uniform tilings, which is a k≥4 PRECONDITION — either drop the single-name
+  filter at k≥4, or prove monotypic non-existence per k. NULL at k≤3 (no monotypic k-uniform tilings
+  exist there).

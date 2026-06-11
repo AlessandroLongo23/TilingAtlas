@@ -1,0 +1,8 @@
+⚠ 265 duplicate seed entries — stale files from a prior run? Σ/multiplicity inflated
+k=3  solve-calls=449  files=8
+hol | Σ work items | distinct lattices | multiplicity
+  2 |        10662 |               620 | 17.2×
+  4 |        39019 |              1296 | 30.1×
+  8 |         4008 |               225 | 17.8×
+ 12 |        18586 |               327 | 56.8×
+ALL |        72275 |              2468 | 29.3×
