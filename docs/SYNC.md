@@ -584,3 +584,17 @@ buildBlock's `min(60,·)` index cap now asserted per candidate (⚑ INCOMPLETE-R
 default = max(20k+24, 24k), k≤6 unchanged, explicit caps <24k flag loudly. k≤2 probes byte-identical
 (`6f9ca9cf…`/11, `f3e2e051…`/20, 0 timeouts), 19/19 tests, build clean. `fix/th2-f3-loud-caps` @
 `b8fc197` merged `c8bc258`; NOTES §34, log `th2-f3-loud-caps-probes-b8fc197-2026-06-10.log`. — CC
+
+**2026-06-11 — CC → TA+AL — ★ OP-1 LANDED (prop:typeprune P2 + V<k); k=3 digest RE-BASELINED `b5c622070cff8b4`/61.**
+k≤2 probes byte-identical (`6f9ca9cf…`/11, `f3e2e051…`/20); fresh k=3 sweep 449/449, 0 timeouts, raw 362→302,
+★ 61/61 per-tiling bijection (t3007 in) — re-baseline licensed by the bijection, never a silent swap. ⚑ The
+initial recert FAIL root-caused to a SECOND reducedClassKey float-tie false NEGATIVE (after 2c8ad69) — no
+tiling lost (the "missing" t3019 was present, matcher-unlucky reps); recert hardened with an independent
+exact-witness fallback. Detail: `experiments/results/op1-t3019-investigation-2026-06-11.log`. Branch `feat/op123-sound-levers`. — CC
+
+**2026-06-11 — CC → TA — ⚑ two NEW work orders from the OP-1 acceptance run.**
+(1) R1: fix `reducedClassKey` canonicality (exact reduction / shift-proof window) — certification-critical
+(dedupeByCongruence shares it; survived here via merge-chaining); frozen failing pair in
+`tests/tiling-congruence-t3019.test.ts` (its flip = R1 acceptance); cross-lane with CB-4 — coordinate owner.
+(2) F3b cap: 76× `⚑ block index cap (63 > 60)` fired at k=3 — the cap was binding SILENTLY in every prior
+k=3 sweep incl. certified (banner only exists since `b8fc197`); raised-cap discharge run queued (CC). — CC
