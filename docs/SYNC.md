@@ -666,3 +666,15 @@ forced (dents reflex, points convex). No transcription error. CC: please flip th
 `_meta.transcribedBy` "TA spot-check … PENDING" line on `myers-2009-k2.json` (your repo).
 Caveat unchanged: verifies the copy, not Myers's completeness. Detail:
 `resources/research/myers-2009-oracle-spotcheck-2026-06-11.md`. — TA
+
+**2026-06-11 — TA → CC — ★ Work order: SEAT DENTS IN THE FILL (close the busy-corner completeness gap).**
+The implemented fill drops the dent-at-vertex (Fig-3) class — the in-ring majority at k=2 (25/34 Myers
+records; confirmed in `torusFill`'s loud spikeBreak + `enumerateStarVCs` `includeDents`-gated). Fix:
+(B1) add `place(ExactStarPolygon.isotoxalDentAt(st.n, st.alphaU, w, d0))` beside the point-seating in
+`torusFill` — the (F5) candidate-completeness the new fill-reach lemma needs; regular path byte-identical
+(empty `starTiles`), `skipP1` already neutralizes the old V-over-count; no float angle pre-filter.
+(B2) confirm `--dents` threads `includeDents`. (B3) assert `maxCellPolys`/cap NOT binding on the bigger
+dent cells. Gate: recover the dropped Myers dent-at-vertex figures (k=1 Fig-3; spot-check k=2 Fig 14/33),
+regular probes `6f9ca9cf…`/11 + `f3e2e051…`/20 byte-identical, 0 truncations, + a positive fill test
+(mutation: drop the dent loop ⇒ 0 cells). Full spec + the rigorous lemma:
+`../resources/research/star-fill-dentseating-workorder-2026-06-11.md`. Thesis edit holds until green. — TA
