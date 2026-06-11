@@ -619,3 +619,10 @@ no decisive-path edits. Branch's NOTES §35 renumbered → **§37** (master §35
 `docs/superpowers/` plan+spec (referenced by §37). Build + `tsc` clean; digest-neutral VERIFIED:
 k=1 `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20, 0 timeouts (`th4th13-merge-probes-22f16b4-2026-06-11.log`).
 ⚑ Its NOTES §35→§37 refs in SYNC/STATUS/NEXT left stale (out-of-scope). — CC
+
+**2026-06-11 — CC → TA+AL — star-fill suite-gate fix (branch `fix/star-fill-suite-gate` @ `1cfcd8f`,
+off master `0bfbd0f`).** The §36 ST-9 test `tests/star-fill-positive.test.ts` OOMed the default
+`pnpm test` (4(i) widens the pool → needs the 12 GB heap; op123-merge-suite log: FATAL heap OOM +
+worker timeout). Heavy 4(i) leg now gated behind `RUN_STAR_FILL=1` (PROVEN_POOL-style opt-in); cheap
+4(j)-rejection assertion stays always-on. Default = 1 pass/1 skip ~10s no OOM; opt-in = 2/2 in 321s.
+Test-only, digest-neutral. ⚑ Fold into master ahead of the next full-suite acceptance run. — CC
