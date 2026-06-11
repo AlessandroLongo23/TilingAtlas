@@ -114,6 +114,20 @@ export function poolConfig(
 		gridShortMax2: k <= 2 ? GRID_SHORT_MAX2 : tunedLmax * tunedLmax,
 		areaBoundF,
 	};
+	// ST-9: opt-in pool WIDENING for targeted single-seed star runs/tests (Myers 4(i) is fill-
+	// requiring but its period is outside the tuned pool — see NOTES §36). Widen-only (`Math.max`
+	// against the tuned floor, the proven box stays the ceiling via `isTuned`); a wider pool only
+	// ADDS candidates, each still fully certified downstream, so emitted cells remain certified-
+	// correct. Default off (env unset ⇒ max(x,0) = x) ⇒ byte-identical; NOT a sweep knob — the
+	// star-sweep pool stays tuned per the ST-2 ruling (no star poolLmax increase before Increment 3).
+	const stepsUp = Number(process.env.POOL_STEPS_UP ?? '0');
+	const lmaxUp = Number(process.env.POOL_LMAX_UP ?? '0');
+	if (!provenMode && (stepsUp > 0 || lmaxUp > 0)) {
+		tuned.poolSteps = Math.max(tuned.poolSteps, Math.min(stepsUp, proven.poolSteps));
+		tuned.poolLmax = Math.max(tuned.poolLmax, Math.min(lmaxUp, proven.poolLmax));
+		tuned.compactOffMax2 = Math.max(tuned.compactOffMax2, Math.min(lmaxUp * lmaxUp, proven.compactOffMax2));
+		tuned.gridShortMax2 = Math.max(tuned.gridShortMax2, Math.min(lmaxUp * lmaxUp, proven.gridShortMax2));
+	}
 	const active = provenMode ? proven : tuned;
 	const isTuned =
 		active.poolSteps < proven.poolSteps ||
@@ -519,7 +533,11 @@ export class PeriodSolver {
 			.sort()
 			.join('|');
 		const provenMode = process.env.PROVEN_POOL === '1';
-		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? 'proven' : 'tuned'}`;
+		// ST-9: the opt-in pool widening (poolConfig env knobs) must key separately — a widened solve
+		// of the same tile set in one process must not reuse the narrow-pool candidate list (and vice
+		// versa). Env unset ⇒ suffix empty ⇒ key byte-identical to the historical format.
+		const widen = `${process.env.POOL_STEPS_UP ?? ''}|${process.env.POOL_LMAX_UP ?? ''}`;
+		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? 'proven' : 'tuned'}${widen !== '|' ? `:up${widen}` : ''}`;
 		const cached = candidateCache.get(cacheKey);
 		if (cached) return cached;
 

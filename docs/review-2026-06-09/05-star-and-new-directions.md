@@ -9,14 +9,14 @@ k≥2 code is written until the conventions layer (ST-1) lands. Star results unt
 | ID | title | severity | owner | depends on | status |
 |----|-------|----------|-------|------------|--------|
 | ST-1 | Star conventions layer (gate) | critical | TA+CC | [TH-3](03-theory-obligations.md), [TH-4](03-theory-obligations.md), [TH-5](03-theory-obligations.md), [TH-6](03-theory-obligations.md), [TX-7](02-thesis-alignment.md) | [ ] |
-| ST-2 | Honest run-matrix + §24 retitle + vocabulary | major | CC | ST-1 (thesis text only), [TH-3](03-theory-obligations.md) (pool bound) | [ ] |
-| ST-3 | Myers-2009 k=2 oracle (crown deliverable) | major | CC+TA (AL: conjecture) | ST-1, [TH-5](03-theory-obligations.md), [TH-6](03-theory-obligations.md), [TX-3](02-thesis-alignment.md) (bib) | [ ] |
+| ST-2 | Honest run-matrix + §24 retitle + vocabulary | major | CC | ST-1 (thesis text only), [TH-3](03-theory-obligations.md) (pool bound) | [x] CC side 2026-06-10 (NOTES §36.3; resources-contract wording → TA) |
+| ST-3 | Myers-2009 k=2 oracle (crown deliverable) | major | CC+TA (AL: conjecture) | ST-1, [TH-5](03-theory-obligations.md), [TH-6](03-theory-obligations.md), [TX-3](02-thesis-alignment.md) (bib) | [~] steps 1+3 landed 2026-06-10 (NOTES §36.1; TA spot-check + step 4 AL + step 5 TX-3 open) |
 | ST-4 | One-family stratified certificate | major | TA+CC | [TH-8](03-theory-obligations.md) | [ ] |
 | ST-5 | N≠24 rings = explicit non-goal | minor | TA (text) + CC ([CB-5](01-code-bugs.md)) | — | [ ] |
 | ST-6 | Quotient-first oblique probe ⚠ unverified (cap) | major | TA (note) + CC (probe) | [DG-1](00-decision-gate.md) context, [TH-9](03-theory-obligations.md) adjacent | [ ] |
 | ST-7 | Thesis scope-and-non-goals section | major | TA | [TX-6](02-thesis-alignment.md), ST-5, ST-8 | [ ] |
 | ST-8 | Irregular-polygon honest scope | major | TA | ST-7, [TX-7](02-thesis-alignment.md) | [ ] |
-| ST-9 | Productive star-fill validation gap | minor | CC | [CB-9](01-code-bugs.md) (commit hygiene) | [ ] |
+| ST-9 | Productive star-fill validation gap | minor | CC | [CB-9](01-code-bugs.md) (commit hygiene) | [x] 2026-06-10 (NOTES §36.2 — 4(j) sub-fan impossible by construction; positive case = 4(i), widened-pool test) |
 
 Digest discipline (applies to every CC item below): any change touching the decisive path must keep
 the k≤2 digests `6f9ca9cf2d16c75f` (k=1, 11) / `f3e2e0517191362c` (k=2, 20) byte-identical via

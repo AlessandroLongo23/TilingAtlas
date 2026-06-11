@@ -1869,7 +1869,7 @@ exact area in the certificate/`aMax`/core-area; B2 exact non-convex overlap; the
 - `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4j-cell.ts` — exact verification (area=|det Λ|, k=1, dent-fills).
 - `pnpm vitest run tests/exact-star-polygon.test.ts tests/exact-overlap.test.ts` — B1/B2 units.
 
-## 24. C7 star Increment 2 — closing the completeness gap; the in-ring k=1 star enumeration made sound (2026-06-08, session 15)
+## 24. C7 star Increment 2 — closing the completeness gap; the in-ring k=1 star enumeration made sound **for the Fig-4 point-at-vertex subclass** (2026-06-08, session 15; retitled 2026-06-10 per ST-2 — the no-flag run is Fig-4-subclass only and structurally misses Fig-3, see §24.10)
 
 **Branch `feat/c7-star-spike` (continues §23), NOT merged.** Per the TA contract
 (`resources/research/star-increment2-contract-2026-06-08.md`): turn the §23 *correctness* result (4(j)
@@ -1965,6 +1965,9 @@ recovered tilings + star variants vs the oracle. Keeps `pnpm pipeline` byte-iden
   **4896** dent-reg VCs is ≈ **8 h** — a background batch, not interactive. Any scope reduction
   (`--single-star`, `--limit`, `--max-corners`, per-seed `--maxMs`) is a CAP that can drop an in-ring
   tiling and is printed loudly; the completeness CLAIM holds only for the full unscoped sound run.
+  *[ST-2 correction, 2026-06-10: "fully-sound" here means sound **for the Fig-4 point-at-vertex
+  subclass only** — the no-`--dents` run never enumerates dent-at-vertex VCs, so it structurally
+  misses Fig-3 (incl. 3(f)'s `6*@6`) regardless of runtime. See the run-matrix, §24.10.]*
 - **Demonstration run (single-star-type, 483 VCs, dent-reg variants).** <!-- RUN_RESULTS -->_(results
   pending — fill from `scripts/scout-star-inring.ts --single-star`)_
 
@@ -1994,7 +1997,35 @@ isotoxal `n*_α`; C3 star point-fill + P1 loosening + star-aware `makeCtx` bound
 - `pnpm vitest run tests/star-vc.test.ts tests/exact-star-polygon.test.ts` — C4 enumerator + B1-gen units (51).
 - `SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4p.ts` — 4(p) certifies k=1 from its fan (star-fill active, breaks logged).
 - `pnpm tsx scripts/scout-star-inring.ts --single-star` — the in-ring demonstration run (caps printed loud).
-- Full sound run (≈8 h): `pnpm tsx scripts/scout-star-inring.ts` (no scope flags).
+- Full sound run (≈8 h): `pnpm tsx scripts/scout-star-inring.ts` (no scope flags). *[ST-2, 2026-06-10:
+  this config is the **Fig-4-subclass** run — Fig-3 is out of its scope by construction; §24.10.]*
+
+### 24.10 Run-matrix + certification vocabulary (added 2026-06-10 per ST-2 — docs/review-2026-06-09/05)
+
+The honest scope of every scout config, reconciling §24's original "fully-sound run" phrasing, the
+scout header, and the TA review's downgrade (SYNC: "Fig-4(13)-first then Fig-3 a,f best-effort").
+The scout prints its row at startup and aggregates `INCOMPLETE-REGION` per cause at exit.
+
+| config | scope | claim ceiling |
+|---|---|---|
+| *(no flags)* `--variants dentreg`, no `--dents` | Myers Fig-4 **in-ring point-at-vertex subclass (13 tilings)**. Fig-3 structurally OUT — dent-at-vertex VCs (incl. 3(f)'s `6*@6`) exist only under `--dents` | Fig-4-subclass completeness, and only with **0 timeouts AND a zero truncation summary** |
+| `--dents` | + Fig-3 dent-at-vertex VC class | **BEST-EFFORT only** — fill seats star POINTS only (§24.5), dent-fillability filter assumes a single regular corner (§24.6); a Fig-3 miss is NOT decisive |
+| `--variants all` | 32-variant sound superset of dentreg | same row as above (solver rejects the extras; slower) |
+| `--single-star` / `--limit` / `--max-corners` / `--maxMs` | — | **CAPS**: each can drop an in-ring tiling; any active cap or timeout disqualifies any completeness reading |
+
+**Oracle split (hard vs best-effort).** The scout's hard set is the Fig-4 variants
+(`3*@{1,2}, 4*@{2,3,4}, 6*@{2,4,5}, 8*@1, 12*@2`); a Fig-4 miss on an unscoped 0-timeout
+zero-truncation run is a **hard fail**. `6*@6` (Fig-3(f) only) is **best-effort** and is reported
+"out of scope (not expected)" on any no-`--dents` run. Restoring Fig-3 to the hard set requires dent
+seeding + dent-aware fill as a named increment with its own completeness argument (Increment 3 / TH-3).
+
+**Vocabulary (binding for every star result, incl. the eventual results chapter):**
+**certified-correct** = this tiling exists, is k-uniform, verified exactly — what 4(j)/4(p) have;
+**certified-complete** = the enumeration provably found all — what NOTHING in the star lane has, and
+cannot have until TH-3/TH-6 close and the truncation counts are zero under a proven star pool bound.
+The scoping note's own honesty is the anchor: the Myers list "is **not** a machine-checked,
+proven-complete catalogue … the G&S→Myers correction shows the genre's fallibility (exactly the
+Galebach situation we already cite)" (`star-scout-scoping-2026-06-06.md`).
 
 ## 25. Adversarial review work-orders + CB-1/CB-3 landed + DG-1 verdict: the proven pool is NOT enumerable at k=1 (2026-06-10, session 16)
 
@@ -2571,3 +2602,93 @@ window probes per polygon with 2 Surd divisions (cheaper).
   congruence test" wording is now *more* true: one more float decision is gone from the decisive
   path. The §35.2 mechanism (merge-through-lucky-representative) is exactly the fragility class the
   thesis can now claim is guarded against by construction (equivalence guard + standing differential).
+## 36. ST-2 / ST-3(1+3) / ST-9 star work orders landed — the Myers-2009 k=2 oracle, the honest run-matrix, and the first productive star-fill coverage (2026-06-10, session 17)
+
+Work orders from `docs/review-2026-06-09/05-star-and-new-directions.md`, the three CC items marked
+unblocked-now. Branch `feat/st-star-work-orders`. Digest gates: build clean, k≤2 probes
+**byte-identical** (`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20, 0 timeouts), suite green (the one
+`dsym-generator` fail was the known load-flake; passed on rerun).
+
+### 36.1 ST-3 steps 1+3 — the Myers-2009 k=2 star oracle, machine-readable + pinned
+
+`experiments/star-oracle/myers-2009-k2.json`: all **43 records** (38 tilings + 5 one-parameter
+families, Figs 25-28/32) transcribed from the PDF figure captions into the StarVC token syntax
+(⚑ dent tokens carry the INTERIOR reflex angle `u`, α = 24−24/n−u — the syntax the solver names by,
+not Myers's subscript). Every orbit angle-checked to Σ=2π at transcription time; the loader test
+(`tests/star-oracle-myers2009.test.ts`, 10 tests) re-derives everything in exact rational+symbolic
+arithmetic: angle sums (families included, Σa-coeff=0), dent/point↔declared-α consistency, in-ring
+reclassification from tokens (**34 in-ring tilings**; out-of-ring = Figs 18/19/22/23, all 9-/18-fold
+or π/9-multiples — the ST-5 ring boundary), and the three **regression pins Figs 36/40/42** (in-ring,
+one purely-regular orbit: `3⁶`, `4.8.8`, `4.4.4.4`) — asserted NOT enumerable by the k=1 StarVC
+enumerator, i.e. the falsifiers for the unscoped Myers prune (iii) "every vertex carries ≥1 star
+point" (k=1-only; rescope = TH-5). **Findings while transcribing:** (a) Fig 43
+`(4.4.8*π/4.4.8*π/4; 4.4.4.4)` ALSO has a purely-regular orbit — omitted from the work-order's
+"Figs 36, 38-42" list; recorded in the JSON + pinned in the test inventory. (b) The five k=2
+families falsify the roadmap-§4 conjecture as stated — recorded in the JSON `_meta.observations`;
+the roadmap edit itself is AL's call, TA records (step 4 untouched). ⚑ **TA spot-check of the
+transcription against the PDF captions is pending** — it is the oracle; asked in SYNC.
+
+### 36.2 ST-9 — productive star-fill finally has positive coverage (and what it took)
+
+The work order's premise verified: both certified star tilings close from their fans with zero fill.
+- **The spec'd strict 4(j) sub-fan dies upstream by construction** — `allowed` is built from seed
+  polygons incident to each declared vertex, so a partial fan names the partial VC `4*p@3,8` and the
+  true closed VC is never allowed; every branch contradicts (measured: 0 cells, 204/926/1092
+  lattices across pool configs, no timeout — `experiments/results/st9-fill-probe-0291e83-*.log`).
+  Stronger: for 4(j) ANY gate-passing seed contains the full closing fan ⇒ zero fill — no 4(j) seed
+  can exercise productive star-fill, period.
+- **The unique fill-requiring in-ring Fig-4 tiling is 4(i) `8.3*π/12.8.6*5π/12`** (dent/corner
+  bookkeeping over the TA scoping note's 13: per species, stars/cell = pt-tokens·V/n vs the fan's
+  pt-tokens; only 4(i) has a strict excess — V=6 ⇒ cell {3 oct (3 orientation classes), 2× 3*@1,
+  1× 6*@5}, fan supplies one star per species). A first blind probe scan missed it: the
+  `--single-star` heuristic excludes 4(i) (two species) — cap bias in action.
+- **⚑ 4(i) is OUTSIDE the tuned k=1 pool (measured)**: its hexagonal basis is off-grid with
+  ℓ≈5.05 (ℓ²≈25.5 > compactOffMax2=16) and needs ~8 edge-steps (> poolSteps=6). 0 cells under the
+  tuned pool, INCOMPLETE-REGION loud. **Consequence for §24/ST-2: the tuned-pool dentreg sweep's
+  ceiling is 12/13 Fig-4 tilings** — the scout now says so on any Fig-4 miss, and the hard-fail
+  branch additionally requires an empty truncation summary (which the tuned pool never produces).
+- **Widen-only pool override** (`POOL_STEPS_UP`/`POOL_LMAX_UP` env, `poolConfig`): Math.max against
+  the tuned floor, proven box as ceiling, candidate-cache key suffixed when active, **default off ⇒
+  byte-identical** (probes re-run green). A wider pool only ADDS candidates — each still fully
+  certified downstream — so emitted cells stay certified-correct. NOT a sweep knob (the ST-2 ruling
+  "no star poolLmax increase before Increment 3" stands for the sweep; this is a single-seed test
+  opt-in). Measured boundary: steps 8 + Lmax 5.7 (caps 32.5) solves 4(i) in 104 s; Lmax 8 (caps 64)
+  OOMs `gridAlignedCells` even at 12 GB heap.
+- **The positive test** `tests/star-fill-positive.test.ts`: 4(i) certifies with **cellStars=3 >
+  fanStars=2** — the second `3*@1` is fill-CONSTRUCTED by the C3 palette; composition + exact
+  |det Λ| = 6+3√2+4√3+2√6 pinned; the cell passes the independent G1-G4 gate (factored to
+  `scripts/_starCellGate.ts` from the §23 harness, which keeps its own copy as evidence) and
+  KUniformityChecker says orbits=1. ⚑ HEAVY (~2-4 min idle; budgets sized for load).
+- **4(p) G1-G4 (step 3)**: one-call addition to `spike-star-4p.ts` — PASSED all four (0 overlaps,
+  17 real vertices + 16 dent-fills all at 2π, exact area = |det Λ|, 0 unmatched edges), orbits=1.
+
+### 36.3 ST-2 — the run-matrix, the truncation summary, and the vocabulary
+
+`scout-star-inring.ts` header rewritten (run-matrix per config; "fully-sound run" dropped for the
+no-flag config), prints its scope row at startup ("Fig-3 out of scope (6*@6 not expected)" on any
+no-dents run), splits the oracle into the **Fig-4 hard set** vs **Fig-3(f) best-effort** (`6*@6`),
+aggregates `INCOMPLETE-REGION` per cause (first line verbatim, repeats swallowed, one Σ line per
+cause at exit — the millions-line flood is gone, nothing silent), and closes with the
+certified-correct/certified-complete vocabulary verdict. §24 retitled + §24.7/§24.9 ST-2-annotated +
+**§24.10** added (the run-matrix table + vocabulary, the binding text). Contracts reconciliation
+beyond CC's files (the resources/ contract wording) is TA's — asked in SYNC.
+
+### 36.4 Acceptance log
+
+- build ✓; `pnpm tsc --noEmit` ✓; k=1 probe `6f9ca9cf2d16c75f`/11 ✓; k=2 probe `f3e2e0517191362c`/20 ✓
+  (0 timeouts both) — the `poolConfig`/cache-key edit is digest-neutral.
+- oracle loader 10/10 ✓; suite 324/325 with the known dsym load-flake (rerun ✓).
+- ST-9 positive test: passes in isolation; first combined run hit the 600 s maxMs under full-suite
+  contention → budgets raised to 1200 s (a timeout there is a flake, not a finding).
+- Mutation check (work-order acceptance): recorded below at §36.5 after execution.
+
+### 36.5 Mutation check — executed and recorded (work-order acceptance)
+
+`PeriodSolver.torusFill`'s C3 palette line (`for (const st of ctx.starTiles)
+place(ExactStarPolygon.isotoxal(…))`) commented out → `tests/star-fill-positive.test.ts` FAILS at
+exactly the intended assertion (`expected 0 to be greater than or equal to 1` — 4(i) emits 0 cells,
+80 s, no timeout); line restored → 2/2 pass (101 s quiet-machine run). The 4(j)/4(p) full-fan
+certifications would survive the same mutation (they close with zero fill) — this test is the ONLY
+positive coverage of productive star-fill, which was the ST-9 point. (Vitest gotcha for the record:
+`-t` is a regex — `-t "certifies 4(i)"` matches nothing because of the parens; filter on a
+paren-free substring.)

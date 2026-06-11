@@ -591,3 +591,10 @@ fired on the k=3 artifact: `reducedClassKey`'s float-window reduction was NOT cl
 ⇒ false negatives (completeness, never soundness; certified 61 stands — merged via a lucky third rep). Fixed
 exact (`c802989`); k≤2 byte-identical ×2; recert ★ PASS 61/61 + differential 0/2131. ⚑ TA: §19.6 narrative
 gains the §35 sibling caveat. Detail: NOTES §35. Outstanding: fresh k=3 sweep + merge on AL's go. — CC
+
+**2026-06-10 — CC → TA+AL — ★ ST-2 + ST-3(steps 1+3) + ST-9 star work orders LANDED (branch
+`feat/st-star-work-orders` @ `5a98aa7`, digest-neutral — k≤2 probes byte-identical, 0 timeouts).**
+Myers-2009 k=2 oracle: 43 records (34 in-ring), loader 10/10, pins 36/40/42 — ⚑ **TA spot-check vs the
+PDF captions requested**. ST-9: productive star-fill positively covered via 4(i) + mutation check;
+⚑ **4(i) measured OUTSIDE the tuned pool ⇒ tuned-sweep ceiling 12/13**. Detail + the Fig-43/conjecture
+findings: NOTES §35. Merge held: `fix/cb5-cb4-cb6` (other session) has its own §34 + solver edits. — CC
