@@ -1,0 +1,60 @@
+[13:11:59] === k=3 re-cert per-tiling oracle match — artifact .scout-cache/k3_3.4.6.12_cap0.ndjson ===
+[13:11:59] oracle k=3 entries: 61 (must be 61)
+[13:11:59] reconstructed: 61/61 (errors: 0)
+[13:11:59] raw cells: 302
+[13:20:52] congruence classes: 61 (must be 61)
+[13:20:52] differential: re-checking 241 merges + 1830 splits independently…
+[13:20:52]   …differential 50/2071 (0s elapsed, ETA 4s)
+[13:20:52]   …differential 100/2071 (0s elapsed, ETA 3s)
+[13:20:52]   …differential 150/2071 (0s elapsed, ETA 2s)
+[13:20:52]   …differential 200/2071 (0s elapsed, ETA 2s)
+[13:20:52]   …differential 250/2071 (0s elapsed, ETA 1s)
+[13:20:52]   …differential 300/2071 (0s elapsed, ETA 1s)
+[13:20:52]   …differential 350/2071 (0s elapsed, ETA 1s)
+[13:20:52]   …differential 400/2071 (0s elapsed, ETA 1s)
+[13:20:52]   …differential 450/2071 (0s elapsed, ETA 1s)
+[13:20:52]   …differential 500/2071 (0s elapsed, ETA 1s)
+[13:20:52]   …differential 550/2071 (0s elapsed, ETA 1s)
+[13:20:52]   …differential 600/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 650/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 700/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 750/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 800/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 850/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 900/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 950/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1000/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1050/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1100/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1150/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1200/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1250/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1300/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1350/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1400/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1450/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1500/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1550/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1600/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1650/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1700/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1750/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1800/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1850/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1900/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 1950/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 2000/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 2050/2071 (0s elapsed, ETA 0s)
+[13:20:52]   …differential 2071/2071 (0s elapsed, ETA 0s)
+[13:20:52] differential: 241 merges + 1830 splits re-checked — 0 mismatches
+[13:20:52]   …10/61 oracle entries matched
+[13:20:52]   …20/61 oracle entries matched
+[13:20:52]   …30/61 oracle entries matched
+[13:20:52]   …40/61 oracle entries matched
+[13:20:53]   …50/61 oracle entries matched
+[13:20:53]   …60/61 oracle entries matched
+[13:20:53] oracle entries with exactly one scout match: 61/61
+[13:20:53] t3007 matched: true
+[13:20:53] scout cells matched by ≥2 oracle entries (duplicates): 0
+[13:20:53] scout cells matched by NO oracle entry: 0
+[13:20:53] ★ PASS — 61/61 per-tiling bijection, t3007 present, no duplicates, differential clean

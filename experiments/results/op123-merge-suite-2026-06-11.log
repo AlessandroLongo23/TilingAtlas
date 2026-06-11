@@ -1,0 +1,210 @@
+
+ RUN  v4.1.4 /Users/alessandro/Desktop/University/Thesis/TilingAtlas
+
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 27.71), compactOffMax2=16.00, gridShortMax2=12.25 (proven 27.71), areaBound=24.00 (proven 24.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 27.71), compactOffMax2=16.00, gridShortMax2=12.25 (proven 27.71), areaBound=24.00 (proven 24.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 24 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 44 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 24 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 104 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 44 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 104 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 72.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 72.00), areaBound=62.35 (proven 62.35) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 133.81), compactOffMax2=16.00, gridShortMax2=12.25 (proven 133.81), areaBound=115.88 (proven 115.88) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 304 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 512 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 144 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 34816 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 27.71), compactOffMax2=16.00, gridShortMax2=12.25 (proven 27.71), areaBound=24.00 (proven 24.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 24 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 44 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 104 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 72.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 72.00), areaBound=62.35 (proven 62.35) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 108 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 72.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 72.00), areaBound=62.35 (proven 62.35) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 108 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 108 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 48 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 48 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 23), poolLmax=5.70 (proven 187.04), compactOffMax2=32.49, gridShortMax2=32.49 (proven 187.04), areaBound=161.98 (proven 161.98) below proven box — run is oracle-anchored, not proof-anchored
+ ❯ tests/dsym-generator.test.ts (5 tests | 1 failed) 7393ms
+     × k=2, δ≤16: 18 genuine minimal (sound continuation past the oracle range) 5497ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 144.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 144.00), areaBound=124.71 (proven 124.71) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 852 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 720 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 55.43), compactOffMax2=16.00, gridShortMax2=12.25 (proven 55.43), areaBound=48.00 (proven 48.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 8532 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":4437846,"denMax":60}
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 144 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+
+<--- Last few GCs --->
+
+[7828:0xc9c000000]    61079 ms: Scavenge (interleaved) 4069.3 (4091.8) -> 4061.5 (4108.1) MB, pooled: 0 MB, 2.88 / 0.00 ms  (average mu = 0.303, current mu = 0.273) allocation failure; 
+[7828:0xc9c000000]    62052 ms: Mark-Compact (reduce) 4062.1 (4108.1) -> 4061.7 (4077.3) MB, pooled: 0 MB, 838.00 / 0.00 ms  (+ 46.7 ms in 10 steps since start of marking, biggest step 5.7 ms, walltime since start of marking 895 ms) (average mu = 0.297, c
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x10290483c node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/usr/local/bin/node]
+ 2: 0x102b04620 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/local/bin/node]
+ 3: 0x102d63a1c v8::internal::Heap::stack() [/usr/local/bin/node]
+ 4: 0x102d66df0 v8::internal::Heap::HasLowYoungGenerationAllocationRate() [/usr/local/bin/node]
+ 5: 0x102d77fe4 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags)::$_1::operator()() const [/usr/local/bin/node]
+ 6: 0x102d778b8 void heap::base::Stack::SetMarkerAndCallbackImpl<v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags)::$_1>(heap::base::Stack*, void*, void const*) [/usr/local/bin/node]
+ 7: 0x10372df10 PushAllRegistersAndIterateStack [/usr/local/bin/node]
+ 8: 0x102d61720 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/usr/local/bin/node]
+ 9: 0x102cd90b8 v8::internal::StackGuard::HandleInterrupts(v8::internal::StackGuard::InterruptLevel) [/usr/local/bin/node]
+10: 0x1031c73c8 v8::internal::Runtime_HandleNoHeapWritesInterrupts(int, unsigned long*, v8::internal::Isolate*) [/usr/local/bin/node]
+11: 0x10381e234 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/usr/local/bin/node]
+12: 0x12cea1728 
+13: 0x10377d978 Builtins_JSConstructStubGeneric [/usr/local/bin/node]
+14: 0x12cf25b14 
+15: 0x12cf27540 
+16: 0x12d0899b0 
+17: 0x12d09f124 
+18: 0x12d0cee28 
+19: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+20: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+21: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+22: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+23: 0x1038933dc Builtins_PromiseConstructor [/usr/local/bin/node]
+24: 0x103781550 Builtins_InterpreterPushArgsThenFastConstructFunction [/usr/local/bin/node]
+25: 0x103911628 Builtins_ConstructHandler [/usr/local/bin/node]
+26: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+27: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+28: 0x1038933dc Builtins_PromiseConstructor [/usr/local/bin/node]
+29: 0x103781550 Builtins_InterpreterPushArgsThenFastConstructFunction [/usr/local/bin/node]
+30: 0x103911628 Builtins_ConstructHandler [/usr/local/bin/node]
+31: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+32: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+33: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+34: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+35: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+36: 0x12cf3a30c 
+37: 0x12cf41f18 
+38: 0x103780bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+39: 0x1037bf7e8 Builtins_AsyncFunctionAwaitResolveClosure [/usr/local/bin/node]
+40: 0x103894e58 Builtins_PromiseFulfillReactionJob [/usr/local/bin/node]
+41: 0x1037aebd0 Builtins_RunMicrotasks [/usr/local/bin/node]
+42: 0x10377e7b0 Builtins_JSRunMicrotasksEntry [/usr/local/bin/node]
+43: 0x102ca7b98 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/usr/local/bin/node]
+44: 0x102ca840c v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/usr/local/bin/node]
+45: 0x102ca8548 v8::internal::Execution::TryRunMicrotasks(v8::internal::Isolate*, v8::internal::MicrotaskQueue*) [/usr/local/bin/node]
+46: 0x102cd731c v8::internal::MicrotaskQueue::RunMicrotasks(v8::internal::Isolate*) [/usr/local/bin/node]
+47: 0x102cd7c7c v8::internal::MicrotaskQueue::PerformCheckpoint(v8::Isolate*) [/usr/local/bin/node]
+48: 0x103782818 Builtins_CallApiCallbackGeneric [/usr/local/bin/node]
+49: 0x12cf5e074 
+50: 0x10377e8cc Builtins_JSEntryTrampoline [/usr/local/bin/node]
+51: 0x10377e570 Builtins_JSEntry [/usr/local/bin/node]
+52: 0x102ca7be0 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/usr/local/bin/node]
+53: 0x102ca7544 v8::internal::Execution::Call(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::DirectHandle<v8::internal::Object>, v8::base::Vector<v8::internal::DirectHandle<v8::internal::Object> const>) [/usr/local/bin/node]
+54: 0x102b1bfe0 v8::Function::Call(v8::Isolate*, v8::Local<v8::Context>, v8::Local<v8::Value>, int, v8::Local<v8::Value>*) [/usr/local/bin/node]
+55: 0x1028050f0 node::InternalCallbackScope::Close() [/usr/local/bin/node]
+56: 0x102805320 node::InternalMakeCallback(node::Environment*, v8::Local<v8::Object>, v8::Local<v8::Object>, v8::Local<v8::Function>, int, v8::Local<v8::Value>*, node::async_context, v8::Local<v8::Value>) [/usr/local/bin/node]
+57: 0x102819044 node::AsyncWrap::MakeCallback(v8::Local<v8::Function>, int, v8::Local<v8::Value>*) [/usr/local/bin/node]
+58: 0x102a35fe0 node::StreamBase::CallJSOnreadMethod(long, v8::Local<v8::ArrayBuffer>, unsigned long, node::StreamBase::StreamBaseJSChecks) [/usr/local/bin/node]
+59: 0x102a37774 node::EmitToJSStreamListener::OnStreamRead(long, uv_buf_t const&) [/usr/local/bin/node]
+60: 0x102a3ba9c node::LibuvStreamWrap::OnUvRead(long, uv_buf_t const*) [/usr/local/bin/node]
+61: 0x102a3c1cc node::LibuvStreamWrap::ReadStart()::$_1::__invoke(uv_stream_s*, long, uv_buf_t const*) [/usr/local/bin/node]
+62: 0x103768f70 uv__stream_io [/usr/local/bin/node]
+63: 0x103771598 uv__io_poll [/usr/local/bin/node]
+64: 0x10375d948 uv_run [/usr/local/bin/node]
+65: 0x102805b44 node::SpinEventLoopInternal(node::Environment*) [/usr/local/bin/node]
+66: 0x1029588c8 node::NodeMainInstance::Run() [/usr/local/bin/node]
+67: 0x1028be468 node::Start(int, char**) [/usr/local/bin/node]
+68: 0x18f9bbe00 start [/usr/lib/dyld]
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 9504 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":3099762,"denMax":60}
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 71), poolLmax=8.12 (proven 83.14), compactOffMax2=66.00, gridShortMax2=66.00 (proven 83.14), areaBound=72.00 (proven 72.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 720 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[vitest-pool]: Timeout terminating forks worker for test files /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tests/star-fill-positive.test.ts.
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":18967400,"denMax":60}
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 720 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 768 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/dsym-generator.test.ts > M1: sound generator vs the Python ground-truth oracle > k=2, δ≤16: 18 genuine minimal (sound continuation past the oracle range)
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/dsym-generator.test.ts:37:3
+     35|   // (The full δ≤24 → 20 run is a ~15-min gate measurement, exercised …
+     36|   // not a fast unit test.)
+     37|   it('k=2, δ≤16: 18 genuine minimal (sound continuation past the oracl…
+       |   ^
+     38|     const r = generateCandidateSymbols(2, P, 16);
+     39|     expect(r.completed).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Worker forks emitted error.
+ ❯ EventEmitter.<anonymous> node_modules/.pnpm/vitest@4.1.4_@types+node@20.19.39_@vitest+ui@4.1.4_jsdom@29.0.2_vite@8.0.8_@types+node@_f0971e7d9e7719f4bb15851754ee6204/node_modules/vitest/dist/chunks/cli-api.lDy4N9kC.js:3445:22
+ ❯ EventEmitter.emit node:events:508:28
+ ❯ ChildProcess.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.4_@types+node@20.19.39_@vitest+ui@4.1.4_jsdom@29.0.2_vite@8.0.8_@types+node@_f0971e7d9e7719f4bb15851754ee6204/node_modules/vitest/dist/chunks/cli-api.lDy4N9kC.js:3012:22
+ ❯ ChildProcess.emit node:events:508:28
+ ❯ Process.ChildProcess._handle.onexit node:internal/child_process:294:12
+
+Caused by: Error: Worker exited unexpectedly
+ ❯ ChildProcess.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.4_@types+node@20.19.39_@vitest+ui@4.1.4_jsdom@29.0.2_vite@8.0.8_@types+node@_f0971e7d9e7719f4bb15851754ee6204/node_modules/vitest/dist/chunks/cli-api.lDy4N9kC.js:3011:33
+ ❯ ChildProcess.emit node:events:508:28
+ ❯ Process.ChildProcess._handle.onexit node:internal/child_process:294:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed | 38 passed (40)
+      Tests  1 failed | 385 passed (387)
+     Errors  1 error
+   Start at  13:04:57
+   Duration  76.52s (transform 2.34s, setup 1.63s, import 12.09s, tests 111.51s, environment 16.82s)
+
+SUITE EXIT: 1

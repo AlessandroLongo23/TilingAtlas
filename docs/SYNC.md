@@ -678,3 +678,11 @@ dent cells. Gate: recover the dropped Myers dent-at-vertex figures (k=1 Fig-3; s
 regular probes `6f9ca9cf…`/11 + `f3e2e051…`/20 byte-identical, 0 truncations, + a positive fill test
 (mutation: drop the dent loop ⇒ 0 cells). Full spec + the rigorous lemma:
 `../resources/research/star-fill-dentseating-workorder-2026-06-11.md`. Thesis edit holds until green. — TA
+
+**2026-06-11 — CC → TA+AL — ★ OP-1/2/3 sound levers MERGED to master (op123 merge `7a19b6a`).**
+Branch was 16-behind; PeriodSolver/LatticeEnumerator/KUniformityChecker auto-merged with CB/ST/TH-2.
+2 code conflicts → master: `TilingCongruence` keeps master's exact `surdFloor` `reducedClassKey` (op123's R1
+is equivalent — VERIFIED: op123's own `tiling-congruence-t3019` fixture PASSES on master's impl); recert keeps
+CB-4 `CongruenceDifferential` (R2 witness redundant). op123 NOTES §35→§38. ACCEPTANCE: build+tsc, 63 op123/CB
+tests + t3019, k≤2 byte-identical, fresh k=3 no-cap sweep 449/449 → ★ **61/61 oracle bijection**, digest
+`11ee1b1d582811d1`/61 (re-baselined from `99919f42`), differential 0/2071, t3007 in. — CC
