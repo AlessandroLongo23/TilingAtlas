@@ -605,3 +605,10 @@ Census sweep @ `fa25672` (pinned, pre-OP-3): digest `b5c622070cff8b4`/61 BYTE-ID
 17.4×** — NOTES:1443/1522's ~17× now measured on ONE family in one run; hol=4 30.1×, hol=8 17.8×, hol=12
 56.8×, ALL 189359/9210 = 20.6×. "Never publish a Σ without its distinct companion" is now tooling
 (`scripts/lattice-census.ts`, PS_LATTICE_CENSUS=1). Table: `experiments/results/op2-k3-census-table-2026-06-11.log`. — CC
+
+**2026-06-11 — CC → TA+AL — ★ OP-3 STAGE 1 ACCEPTED; k=3 digest re-baselined `11ee1b1d582811d1`/61; F3b banners GONE.**
+Sweep @ HEAD: 449/449, 0 timeouts, raw=302 (fills CONSERVED per lem:orbitdedup), ★ 61/61 bijection (hardened
+recert; exact-witness used 1× = t3019, R1 unchanged). Census: oblique setup work-items 127746→10662 (12.0×),
+distinct 7362→620 reps (~11.9 avg orbit); wall 6753→6124s (~9% — modest as pinned; the deliverable is the
+OP-9 data, not speed). Block-index-cap banners 76→0 (the 4 skew bases ride orbit reps now). Reflective
+det g=−1 seeding gated by `tests/op3-reflective-gate.test.ts` (AL amendment). Logs: `op3-k3-*-2026-06-11.log`. — CC
