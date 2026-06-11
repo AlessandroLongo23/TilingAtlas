@@ -612,3 +612,10 @@ stratum = 6, dent-reg-19 stratum = 5) ⇒ δ ≤ 18k, F ≤ 42k for cor:starbox(
 / 8 point-only / 5 unfillable (γ=11, provably Fig-4-absent); same-family point-fill impossible ⇒
 regular-filler UNCONDITIONAL for single-variant tilings — the gear/at-risk class is mixed-variant only.
 Branch `feat/th4-th13-star-tables` @ `7813ce8`, logs in `experiments/results/`, detail NOTES §35. — CC
+
+**2026-06-11 — CC → TA+AL — ★ TH-4/TH-13 star-tables batch MERGED to master (`22f16b4`).**
+Additive star-lane constants/tooling (StarTables.ts, StarDmaxRoute2.ts, 2 CLIs, star-vc.test cases) —
+no decisive-path edits. Branch's NOTES §35 renumbered → **§37** (master §35=CB, §36=star). Brings tracked
+`docs/superpowers/` plan+spec (referenced by §37). Build + `tsc` clean; digest-neutral VERIFIED:
+k=1 `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20, 0 timeouts (`th4th13-merge-probes-22f16b4-2026-06-11.log`).
+⚑ Its NOTES §35→§37 refs in SYNC/STATUS/NEXT left stale (out-of-scope). — CC
