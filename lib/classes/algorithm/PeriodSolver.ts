@@ -37,7 +37,7 @@
 
 import type { Polygon } from '../polygons/Polygon';
 import { RegularPolygon } from '../polygons/RegularPolygon';
-import { Cyclotomic } from '../Cyclotomic';
+import { Cyclotomic, type CyclotomicRing } from '../Cyclotomic';
 import { KUniformityChecker } from './KUniformityChecker';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { SeedConfigurationLike } from './SeedExpander';
@@ -100,6 +100,7 @@ export type PeriodSolverDiag = {
 	emitted: number; // after canonical dedup + k-gate
 	gateRejected: number; // completed but orbit count ≠ k
 	fanLattices: number; // lattices where the rigid core overflowed the cell → seeded from VC fans instead
+	blanketFanLattices: number; // PROVEN mode: lattices seeded from blanket fans (every VC corona × all grid orientations)
 	p0Skipped: number; // candidate lattices removed by the P0 arithmetic pre-filter (minVerts > k·hol)
 	p1Pruned: number; // DFS branches cut by the P1 orbit-floor (vertexClasses > k·hol)
 	seedStateDedup: number; // redundant seed sets skipped (identical initial torus state mod Λ)
@@ -114,6 +115,23 @@ export type PeriodSolverOptions = {
 	/** Wall-clock cap (ms) for the whole solve (0 = unlimited). Default 45000. */
 	maxMs?: number;
 	verbose?: boolean;
+	/**
+	 * PROVEN configuration (route-a-proven-box.md §O2, prop:fanseed). Replace the rigid k-VC core (a
+	 * SOUND FAST PATH that cannot carry the completeness claim — a connected k-orbit transversal need
+	 * not exist in the target) with BLANKET FAN SEEDING: on every candidate lattice, fill from each
+	 * seed VC's single-vertex corona over all grid orientations r∈0..N−1 (the fan's own rotational
+	 * symmetry is pre-deduped; Λ-equivalent orientations collapse via per-lattice seed-state dedup).
+	 * Complete because a tiling always contains each of its own coronas. Byte-identical to the fast
+	 * path when false. Pair with singleton seed inclusion (O1, lem:seedcover) at the seed-build stage.
+	 */
+	provenSeeding?: boolean;
+	/**
+	 * Reflection-coverage falsifier (reflection-coverage-experiment-2026-06-07.md). With `provenSeeding`,
+	 * seed from the MIRROR fans (`mirrorZeta`) instead of the rotation-only fans — stream B. Used to test
+	 * whether rotation-only seeding (stream A) already reaches every mirror class. No effect unless
+	 * `provenSeeding` is set.
+	 */
+	reflectFans?: boolean;
 	/** Debug hook: called for every completed primitive cell, BEFORE the k-gate filter. */
 	onRawCell?: (cell: Polygon[], basis: [Cyclotomic, Cyclotomic], orbits: number | null) => void;
 };
@@ -185,6 +203,7 @@ export class PeriodSolver {
 			emitted: 0,
 			gateRejected: 0,
 			fanLattices: 0,
+			blanketFanLattices: 0,
 			p0Skipped,
 			p1Pruned: 0,
 			seedStateDedup: 0,
@@ -198,6 +217,10 @@ export class PeriodSolver {
 		const extractor = new TranslationalCellExtractor();
 		const seenCanonical = new Set<string>();
 		const cells: PeriodCell[] = [];
+
+		// PROVEN seeding (O2, prop:fanseed). Blanket fans depend only on the seed (not Λ), so build once.
+		const provenSeeding = opts.provenSeeding ?? false;
+		const blanketFans = provenSeeding ? this.blanketFanSeedSets(corePolys, coreVertices, ring, opts.reflectFans ?? false) : null;
 
 		for (const [u, v] of lattices) {
 			if (maxMs > 0 && Date.now() - start > maxMs) {
@@ -217,10 +240,18 @@ export class PeriodSolver {
 			// core-overflow tiling t2014; verified across all 20). At k≥3 a tiling could in principle be
 			// reachable ONLY by a fan on a cell the rigid core also fits — that case is NOT covered here and
 			// must be revisited (do not treat fan-on-overflow as a general completeness guarantee).
-			const coreOverflows = fanCoreSets.length > 0 && ctx.cellArea < totalCoreArea - 1e-9 &&
-				this.footprintArea(corePolys, ctx) > ctx.cellArea + 1e-6;
-			const seedSets = coreOverflows ? fanCoreSets : [corePolys];
-			if (coreOverflows) diag.fanLattices++;
+			// PROVEN mode (O2): seed EVERY lattice from the blanket fans — the rigid-core fast path and its
+			// fan-on-overflow heuristic are bypassed entirely (they cannot carry the completeness claim).
+			let seedSets: Polygon[][];
+			if (provenSeeding) {
+				seedSets = blanketFans!;
+				diag.blanketFanLattices++;
+			} else {
+				const coreOverflows = fanCoreSets.length > 0 && ctx.cellArea < totalCoreArea - 1e-9 &&
+					this.footprintArea(corePolys, ctx) > ctx.cellArea + 1e-6;
+				seedSets = coreOverflows ? fanCoreSets : [corePolys];
+				if (coreOverflows) diag.fanLattices++;
+			}
 
 			const rawCells: Polygon[][] = [];
 			// Seed-state dedup (route-a-proven-box.md §"core-coincidence ruling", sound alternative #1):
@@ -229,7 +260,7 @@ export class PeriodSolver {
 			// multi-seed (fan / core-overflow) lattices can collide, so guard by seedSets.length to leave
 			// the single-seed fast path untouched and byte-identical. (The proven blanket-fan mode, where
 			// fan×orientation×placement multiplies states, is the real beneficiary — O2.)
-			const dedupSeeds = seedSets.length > 1;
+			const dedupSeeds = (provenSeeding || seedSets.length > 1) && !process.env.PS_NO_SEED_DEDUP;
 			const seenInitial = dedupSeeds ? new Set<string>() : null;
 			const sdMemo = dedupSeeds ? new Map<string, { key: string; poly: Polygon }>() : null;
 			for (const core of seedSets) {
@@ -291,6 +322,42 @@ export class PeriodSolver {
 			);
 		}
 		return { cells: deduped, diag };
+	}
+
+	/**
+	 * Blanket fan seed sets (PROVEN config — O2, route-a-proven-box.md / prop:fanseed). For each VC's
+	 * single-vertex corona in the seed, the corona rotated about its shared vertex by every grid
+	 * orientation r ∈ 0..N−1. The fan's OWN rotational symmetry is pre-deduped here (identical exact
+	 * vertex-key multisets); Λ-equivalent orientations collapse downstream via the per-lattice seed-state
+	 * dedup. Independent of Λ, so built once per solve. Unlike `fanCoreSets` (fast-path overflow only)
+	 * this does NOT exclude the full-core fan: at k=1 the corona IS the whole core, and that single-VC
+	 * corona over all orientations is exactly the proven seed set. Completeness: a tiling always contains
+	 * each of its own coronas — anchor that vertex at 0 (translation preserves Λ) and it is some fan(v,r).
+	 *
+	 * `reflect` (reflection-coverage experiment, reflection-coverage-experiment-2026-06-07.md) builds the
+	 * MIRROR stream B: each fan is first reflected across the on-grid axis through cv (`mirrorZeta(cv,0)`)
+	 * and THEN rotated over all r — i.e. all reflected orientations. The default (rotation-only) stream A
+	 * is byte-identical to before. Used by the falsifier to test whether rotation-only seeding already
+	 * reaches a representative of every mirror class (B ⊆ A) or silently drops a chiral class.
+	 */
+	private blanketFanSeedSets(corePolys: Polygon[], coreVertices: Cyclotomic[], ring: CyclotomicRing, reflect = false): Polygon[][] {
+		const N = ring.N;
+		const out: Polygon[][] = [];
+		const seen = new Set<string>();
+		for (const cv of coreVertices) {
+			const incident = corePolys.filter((p) => p.vertexKeySet().has(cv.key()));
+			if (incident.length < 1) continue;
+			// stream A = the fan as placed; stream B = the fan reflected across the on-grid axis through cv.
+			const fan = reflect ? incident.map((p) => p.clone().mirrorZeta(cv, 0)) : incident;
+			for (let r = 0; r < N; r++) {
+				const rot = fan.map((p) => p.clone().rotateZeta(cv, r));
+				const key = rot.map((p) => p.exactKey()).sort().join('|');
+				if (seen.has(key)) continue; // collapse the fan's own rotational symmetry
+				seen.add(key);
+				out.push(rot);
+			}
+		}
+		return out;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -971,7 +1038,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, blanketFanLattices: 0, p0Skipped: 0, p1Pruned: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, timedOut: false };
 }
 
 /** Exact test: a − b ∈ Λ = ℤu + ℤv. The integer combo is guessed by a float solve, then verified

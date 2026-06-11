@@ -73,7 +73,11 @@ const collected: SerializedCell[] = [];
 // only a matching prior run resumes. On startup we read the finished seeds + their cells; new results are
 // APPENDED. So a shutdown loses at most the seeds in flight. `fresh` ignores any existing file.
 const RESUME_DIR = '.scout-cache';
-const resumePath = `${RESUME_DIR}/k${k}_${tiles.replace(/,/g, '.')}_cap${maxMs}.ndjson`;
+// PROVEN runs (PS_MODE=proven, propagated to workers via env) use a SEPARATE cache key — they enumerate a
+// different (larger) seed set, so their cells must never be confused with a fast-path resume file.
+const modeTag = process.env.PS_MODE === 'proven' ? '_proven' : '';
+const reflectTag = process.env.PS_REFLECT === '1' ? '_reflect' : ''; // reflection-coverage stream B
+const resumePath = `${RESUME_DIR}/k${k}_${tiles.replace(/,/g, '.')}_cap${maxMs}${modeTag}${reflectTag}.ndjson`;
 fs.mkdirSync(RESUME_DIR, { recursive: true });
 if (fresh) { try { fs.rmSync(resumePath); } catch { /* none */ } }
 const doneSet = new Set<number>();

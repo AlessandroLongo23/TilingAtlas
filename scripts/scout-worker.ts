@@ -24,6 +24,11 @@ import { serializeCell } from './scoutCodec';
 const k = parseInt(process.argv[2] ?? '1', 10);
 const ns = (process.argv[3] ?? '3,4,6,8,12').split(',').map(Number);
 const maxMs = process.argv[4] ? parseInt(process.argv[4], 10) : 0; // 0 = no wall-clock cap (guard #2)
+// C1 PROVEN config (route-a-proven-box.md §O1+O2): PS_MODE=proven ⇒ singletons included + blanket fans.
+const proven = process.env.PS_MODE === 'proven';
+// Reflection-coverage falsifier (reflection-coverage-experiment-2026-06-07.md): PS_REFLECT=1 ⇒ stream B
+// (mirror fans) instead of stream A (rotation-only). Only meaningful with PS_MODE=proven.
+const reflect = process.env.PS_REFLECT === '1';
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns } };
 const baseRing = computeRing(params);
@@ -41,7 +46,8 @@ const graph = CompatibilityGraph.fromAdjacencyList(adj, vcs);
 const seedSets = new SeedSetExtractor(graph).findSeedSets(k);
 const seeds = new SeedBuilder().buildSeeds(k, 1, { seedSetLoader: () => seedSets });
 // Same seed filter as the serial probe — identical ordering ⇒ index i means the SAME seed in every worker.
-const useSeeds = k >= 2 ? seeds.filter((s) => new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2) : seeds;
+// PROVEN mode keeps singletons (O1, lem:seedcover): the ≥2-distinct-VC filter is the fast-path heuristic.
+const useSeeds = proven ? seeds : (k >= 2 ? seeds.filter((s) => new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2) : seeds);
 
 const send = (o: unknown) => process.stdout.write(JSON.stringify(o) + '\n');
 send({ type: 'ready', nSeeds: useSeeds.length });
@@ -60,7 +66,7 @@ rl.on('line', (line) => {
 	if (typeof msg.idx !== 'number') return;
 	const seed = useSeeds[msg.idx];
 	const ts = Date.now();
-	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs });
+	const { cells, diag } = new PeriodSolver(k).solve(seed, { maxMs, provenSeeding: proven, reflectFans: proven && reflect });
 	send({
 		type: 'result',
 		idx: msg.idx,
