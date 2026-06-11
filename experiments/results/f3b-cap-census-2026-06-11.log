@@ -1,0 +1,44 @@
+F3b cap-census  k=3  BLOCK_INDEX_CAP=60
+G-invariance: blockIndexRangeNeeded(cellDiam, cellArea) is G-invariant (|·| and |det| both preserved
+  by grid isometries), so the orbit-representative verdict covers the full orbit.
+Seeds: 449 (multi-VC filter applied)
+Ring: N=24
+Started: 2026-06-11T01:11:39.371Z
+
+
+=== AFFECTED SEEDS (post-OP-3 representatives) ===
+
+
+=== DISTINCT AFFECTED LATTICES (across all seeds) ===
+
+
+=== SUMMARY ===
+
+  Total affected seeds (post-OP-3):           0
+  Total affected (seed,rep) pairs (post-OP-3): 0
+  Total affected (seed,lattice) pairs estimate (pre-OP-3, incl orbit members): 0
+  Cross-check vs sweep's 76 banner lines:      0 (expected 76)
+  Distinct affected lattice keys:              0
+  Max range needed:                            0
+  Current BLOCK_INDEX_CAP:                     60
+  Proposed raised cap (128 if max ≤ 128, else next pow2): 128
+
+=== G-INVARIANCE VERDICT ===
+
+  CONFIRMED: cellDiam = max(|u|,|v|) and cellArea = |det(u,v)| are both G-invariant
+  (Euclidean lengths and determinant magnitude preserved by rotations + reflections).
+  Therefore blockIndexRangeNeeded is G-invariant: the representative verdict covers
+  the full orbit.  No per-member recheck needed.
+
+=== DELTA ARITHMETIC (pre-OP-3 vs post-OP-3) ===
+
+  The sweep fired 76 banners = 4 distinct lattice keys × 19 seeds each.
+  This census (post-OP-3) enumerates representatives only.
+  If preOP3Pairs=0 matches 76, the orbit sizes account for the delta:
+  ⚠ Mismatch: preOP3Pairs=0 ≠ 76.
+    Possible cause: the sweep ran on a DIFFERENT vcSig (pre-OP-3 enumeration may have
+    included orbit members that were later removed; or a different k=3 seed list).
+    The post-OP-3 count (0) is definitive for the discharge re-run.
+
+Finished in 218.0s
+Log: /Users/alessandro/.config/superpowers/worktrees/TilingAtlas/op123-sound-levers/experiments/results/f3b-cap-census-2026-06-11.log
