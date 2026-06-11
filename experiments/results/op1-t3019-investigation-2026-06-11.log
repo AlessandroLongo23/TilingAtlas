@@ -1,0 +1,634 @@
+=== OP-1 t3019 regression — root-cause investigation (2026-06-11) ===
+Worktree: ~/.config/superpowers/worktrees/TilingAtlas/op123-sound-levers (HEAD 48ff7dd)
+Failure: OP-1 sweep @ b49f105 → 302 raw / 61 classes, digest b5c622070cff8b4;
+  recert-oracle-match: t3019 = 0 congruent scout classes, 1 alien scout class, 60/61 bijective.
+Baseline: master-era sweep → 362 raw / 61 classes, digest 99919f42a7b58e76, 61/61 PASS.
+Artifacts: baseline = main checkout .scout-cache/k3_3.4.6.12_cap0.ndjson (copied to /tmp/baseline-k3.ndjson, 449 lines);
+  OP-1 = worktree .scout-cache/k3_3.4.6.12_cap0.ndjson (449 lines).
+Plan: (0) verify artifact digests; (1) characterize oracle t3019; (2) baseline emission provenance of t3019;
+  (3) OP-1 raw-level t3019 census + alien identification; (4) mechanism re-run with b49f105 lib/; (5) verdict.
+[23:31:28] --- STEP 1: oracle t3019 characterization ---
+[23:31:28] oracle k=3 entries: 61
+[23:31:29] t3019 raw oracle: T1=[1,0,0,0] T2=[-1,0,2,3] |Seed|=5
+[23:31:29] t3019 recon: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:31:29] t3019 orbits (KUniformityChecker): 3
+[23:31:29] t3019 occurring VC names (2 distinct): 3,3,3,4,4 | 4,4,4,4
+[23:31:29] t3019 per-name judged vertex-rep counts: 3,3,3,4,4=75  4,4,4,4=18
+[23:31:29] t3019 recon primitive-reduced changes it: false (polys 7 -> 7)
+[23:31:29] seeds with allowed == occ(t3019): 5 -> [299] [3,3,3,4,4;4,4,4,4;4,4,4,4] {3,3,3,4,4 + 4,4,4,4 + 4,4,4,4} ; [300] [3,3,3,4,4;4,4,4,4;4,4,4,4] {3,3,3,4,4 + 4,4,4,4 + 4,4,4,4} ; [301] [3,3,3,4,4;3,3,3,4,4;4,4,4,4] {3,3,3,4,4 + 3,3,3,4,4 + 4,4,4,4} ; [302] [3,3,3,4,4;3,3,3,4,4;4,4,4,4] {3,3,3,4,4 + 3,3,3,4,4 + 4,4,4,4} ; [303] [3,3,3,4,4;4,4,4,4;3,3,3,4,4] {3,3,3,4,4 + 4,4,4,4 + 3,3,3,4,4}
+[23:31:29] seeds with allowed ⊇ occ(t3019): 12 (idx: 75,141,142,260,261,262,289,299,300,301,302,303)
+[23:31:29] --- census BASELINE: /tmp/baseline-k3.ndjson ---
+[manual] PER-SEED BYTE ANALYSIS: OP-1 cells are sub-multisets of baseline cells for ALL 449 seeds (423 identical, 26 strict subset, 0 violations).
+[manual]  => OP-1 sweep = baseline sweep MINUS filtered cells; the alien class consists of cells present byte-identically in baseline.
+[manual] the 26 seeds with filtered cells (lost cells as poly-counts):
+[manual]   idx=37 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 1 cells (polys: [11])
+[manual]   idx=38 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 2 cells (polys: [11, 19])
+[manual]   idx=39 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 1 cells (polys: [11])
+[manual]   idx=40 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 1 cells (polys: [11])
+[manual]   idx=41 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 1 cells (polys: [11])
+[manual]   idx=42 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 2 cells (polys: [11, 19])
+[manual]   idx=43 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 2 cells (polys: [11, 19])
+[manual]   idx=44 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,3,6,6} lost 1 cells (polys: [11])
+[manual]   idx=45 "[3,3,3,3,3,3;3,3,3,3,6;3,6,3,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,6,3,6} lost 2 cells (polys: [7, 11])
+[manual]   idx=46 "[3,3,3,3,3,3;3,3,3,3,6;3,6,3,6]" allowed(3)={3,3,3,3,3,3 | 3,3,3,3,6 | 3,6,3,6} lost 2 cells (polys: [7, 11])
+[manual]   idx=58 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 3,3,4,3,4} lost 3 cells (polys: [8, 9, 11])
+[manual]   idx=59 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 3,3,4,3,4} lost 4 cells (polys: [8, 9, 10, 11])
+[manual]   idx=60 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 3,3,4,3,4} lost 4 cells (polys: [8, 9, 10, 11])
+[manual]   idx=61 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 3,3,4,3,4} lost 4 cells (polys: [8, 9, 10, 11])
+[manual]   idx=62 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 3,3,4,3,4} lost 4 cells (polys: [8, 9, 10, 11])
+[manual]   idx=63 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 3,3,4,3,4} lost 4 cells (polys: [8, 9, 10, 11])
+[manual]   idx=64 "[3,3,3,3,3,3;3,3,4,3,4;3,3,3,4,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 3,3,4,3,4} lost 4 cells (polys: [8, 9, 10, 11])
+[manual]   idx=75 "[3,3,3,3,3,3;3,3,3,4,4;4,4,4,4]" allowed(3)={3,3,3,3,3,3 | 3,3,3,4,4 | 4,4,4,4} lost 3 cells (polys: [7, 8, 10])
+[manual]   idx=175 "[3,3,3,3,6;3,6,3,6;3,3,6,6]" allowed(3)={3,3,3,3,6 | 3,3,6,6 | 3,6,3,6} lost 1 cells (polys: [14])
+[manual]   idx=260 "[3,3,3,4,4;3,3,4,3,4;4,4,4,4]" allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4} lost 2 cells (polys: [6, 7])
+[manual]   idx=261 "[3,3,3,4,4;3,3,4,3,4;4,4,4,4]" allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4} lost 2 cells (polys: [6, 7])
+[manual]   idx=262 "[3,3,3,4,4;3,3,4,3,4;4,4,4,4]" allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4} lost 2 cells (polys: [6, 7])
+[manual]   idx=383 "[3,3,6,6;3,6,3,6;3,6,4,4]" allowed(3)={3,3,6,6 | 3,4,4,6 | 3,6,3,6} lost 2 cells (polys: [8, 8])
+[manual]   idx=384 "[3,3,6,6;3,6,3,6;3,4,4,6]" allowed(3)={3,3,6,6 | 3,4,4,6 | 3,6,3,6} lost 2 cells (polys: [8, 8])
+[manual]   idx=419 "[3,4,4,6;3,6,3,6;3,4,6,4]" allowed(3)={3,4,4,6 | 3,4,6,4 | 3,6,3,6} lost 2 cells (polys: [8, 8])
+[manual]   idx=432 "[3,4,4,6;3,6,3,6;4,4,4,4]" allowed(3)={3,4,4,6 | 3,6,3,6 | 4,4,4,4} lost 2 cells (polys: [8, 8])
+[manual] total filtered cells: 60 (362-302=60 expected)
+[23:37:11] --- STEP 2/3 targeted congruence: t3019-relevant cells ---
+[23:37:12]   base[75].0(6p): [3.3.3.3.4.4] u=(-0.500,0.866) v=(-3.232,-1.866) det=3.732 orbits=3 ≡t3019: false
+[23:37:13]   base[75].1(10p): [3.3.3.3.3.3.3.3.4.4] u=(1.000,0.000) v=(0.000,5.464) det=5.464 orbits=- ≡t3019: false
+[23:37:14]   base[75].2(8p): [3.3.3.3.3.3.4.4] u=(-0.500,0.866) v=(-4.232,-1.866) det=4.598 orbits=3 ≡t3019: false
+[23:37:14]   base[75].3(7p): [3.3.3.3.4.4.4] u=(0.866,0.500) v=(-2.366,4.098) det=4.732 orbits=3 ≡t3019: false
+[23:37:15]   base[75].4(7p): [3.3.3.3.4.4.4] u=(0.866,0.500) v=(-2.366,4.098) det=4.732 orbits=3 ≡t3019: true
+[23:37:15]   base[75].5(8p): [3.3.3.3.3.3.4.4] u=(1.000,0.000) v=(0.500,4.598) det=4.598 orbits=3 ≡t3019: false
+[23:37:16]   base[75].6(9p): [3.3.3.3.3.3.4.4.4] u=(0.500,0.866) v=(-4.598,3.232) det=5.598 orbits=- ≡t3019: false
+[23:37:17]   op1[75].0(6p): [3.3.3.3.4.4] u=(-0.500,0.866) v=(-3.232,-1.866) det=3.732 orbits=3 ≡t3019: false
+[23:37:18]   op1[75].1(8p): [3.3.3.3.3.3.4.4] u=(-0.500,0.866) v=(-4.232,-1.866) det=4.598 orbits=3 ≡t3019: false
+[23:37:18]   op1[75].2(7p): [3.3.3.3.4.4.4] u=(0.866,0.500) v=(-2.366,4.098) det=4.732 orbits=3 ≡t3019: false
+[23:37:19]   op1[75].3(9p): [3.3.3.3.3.3.4.4.4] u=(0.500,0.866) v=(-4.598,3.232) det=5.598 orbits=- ≡t3019: false
+[23:37:21]   base[260].0(13p): [3.3.3.3.3.3.3.3.4.4.4.4.4] u=(2.866,-0.500) v=(0.500,2.866) det=8.464 orbits=- ≡t3019: false
+[23:37:21]   base[260].1(7p): [3.3.3.3.4.4.4] u=(0.000,1.000) v=(-4.732,0.000) det=4.732 orbits=3 ≡t3019: true
+[23:37:22]   base[260].2(6p): [3.3.4.4.4.4] u=(0.000,1.000) v=(-4.866,0.500) det=4.866 orbits=3 ≡t3019: false
+[23:37:24]   op1[260].0(13p): [3.3.3.3.3.3.3.3.4.4.4.4.4] u=(2.866,-0.500) v=(0.500,2.866) det=8.464 orbits=- ≡t3019: false
+[23:37:24]   base[261].0(7p): [3.3.3.3.4.4.4] u=(0.000,1.000) v=(-4.732,0.000) det=4.732 orbits=3 ≡t3019: true
+[23:37:26]   base[261].1(13p): [3.3.3.3.3.3.3.3.4.4.4.4.4] u=(2.866,0.500) v=(-0.500,2.866) det=8.464 orbits=- ≡t3019: false
+[23:37:27]   base[261].2(6p): [3.3.4.4.4.4] u=(0.000,1.000) v=(-4.866,0.500) det=4.866 orbits=3 ≡t3019: false
+[23:37:28]   op1[261].0(13p): [3.3.3.3.3.3.3.3.4.4.4.4.4] u=(2.866,0.500) v=(-0.500,2.866) det=8.464 orbits=- ≡t3019: false
+[23:37:29]   base[262].0(7p): [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732) det=4.732 orbits=3 ≡t3019: false
+[23:37:30]   base[262].1(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:31]   base[262].2(13p): [3.3.3.3.3.3.3.3.4.4.4.4.4] u=(2.866,0.500) v=(-0.500,2.866) det=8.464 orbits=- ≡t3019: false
+[23:37:33]   op1[262].0(13p): [3.3.3.3.3.3.3.3.4.4.4.4.4] u=(2.866,0.500) v=(-0.500,2.866) det=8.464 orbits=- ≡t3019: false
+[23:37:33]   base[299].0(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:34]   base[299].1(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:35]   base[299].2(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:35]   op1[299].0(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:36]   op1[299].1(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:36]   op1[299].2(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:37]   base[300].0(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:37]   base[300].1(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:38]   base[300].2(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:39]   op1[300].0(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:39]   op1[300].1(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:40]   op1[300].2(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:40]   base[301].0(7p): [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732) det=4.732 orbits=3 ≡t3019: false
+[23:37:41]   base[301].1(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:41]   base[301].2(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:42]   base[301].3(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:42]   op1[301].0(7p): [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732) det=4.732 orbits=3 ≡t3019: false
+[23:37:43]   op1[301].1(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:44]   op1[301].2(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:44]   op1[301].3(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:45]   base[302].0(7p): [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732) det=4.732 orbits=3 ≡t3019: false
+[23:37:45]   base[302].1(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:46]   base[302].2(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:46]   base[302].3(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:47]   op1[302].0(7p): [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732) det=4.732 orbits=3 ≡t3019: false
+[23:37:47]   op1[302].1(8p): [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732) det=5.732 orbits=3 ≡t3019: false
+[23:37:48]   op1[302].2(6p): [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866) det=4.866 orbits=3 ≡t3019: false
+[23:37:49]   op1[302].3(7p): [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866) det=5.866 orbits=3 ≡t3019: false
+[23:37:49]   base[303].0(7p): [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732) det=4.732 orbits=3 ≡t3019: false
+[23:37:50]   op1[303].0(7p): [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732) det=4.732 orbits=3 ≡t3019: false
+[23:37:50] --- pairwise among the 3.3.3.3.4.4.4 7-poly cells (reduced) ---
+[23:37:51]   CONGRUENT: base[75].3(7p) ≡ op1[75].2(7p)
+[23:38:02]   CONGRUENT: base[75].4(7p) ≡ base[260].1(7p)
+[23:38:03]   CONGRUENT: base[75].4(7p) ≡ base[261].0(7p)
+[23:38:04]   CONGRUENT: base[75].4(7p) ≡ base[262].0(7p)
+[23:38:05]   CONGRUENT: base[75].4(7p) ≡ base[301].0(7p)
+[23:38:06]   CONGRUENT: base[75].4(7p) ≡ op1[301].0(7p)
+[23:38:07]   CONGRUENT: base[75].4(7p) ≡ base[302].0(7p)
+[23:38:07]   CONGRUENT: base[75].4(7p) ≡ op1[302].0(7p)
+[23:38:08]   …100/449 lines, 169 cells, 399s elapsed, ETA ~1392s
+[23:38:08]   CONGRUENT: base[75].4(7p) ≡ base[303].0(7p)
+[23:38:09]   CONGRUENT: base[75].4(7p) ≡ op1[303].0(7p)
+[23:38:19]   CONGRUENT: base[260].1(7p) ≡ base[261].0(7p)
+[23:38:20]   CONGRUENT: base[260].1(7p) ≡ base[262].0(7p)
+[23:38:21]   CONGRUENT: base[260].1(7p) ≡ base[301].0(7p)
+[23:38:22]   CONGRUENT: base[260].1(7p) ≡ op1[301].0(7p)
+[23:38:23]   CONGRUENT: base[260].1(7p) ≡ base[302].0(7p)
+[23:38:23]   CONGRUENT: base[260].1(7p) ≡ op1[302].0(7p)
+[23:38:24]   CONGRUENT: base[260].1(7p) ≡ base[303].0(7p)
+[23:38:25]   CONGRUENT: base[260].1(7p) ≡ op1[303].0(7p)
+[23:38:26]   CONGRUENT: base[261].0(7p) ≡ base[262].0(7p)
+[23:38:27]   CONGRUENT: base[261].0(7p) ≡ base[301].0(7p)
+[23:38:28]   CONGRUENT: base[261].0(7p) ≡ op1[301].0(7p)
+[23:38:29]   CONGRUENT: base[261].0(7p) ≡ base[302].0(7p)
+[23:38:30]   CONGRUENT: base[261].0(7p) ≡ op1[302].0(7p)
+[23:38:31]   CONGRUENT: base[261].0(7p) ≡ base[303].0(7p)
+[23:38:32]   CONGRUENT: base[261].0(7p) ≡ op1[303].0(7p)
+[23:38:33]   CONGRUENT: base[262].0(7p) ≡ base[301].0(7p)
+[23:38:34]   CONGRUENT: base[262].0(7p) ≡ op1[301].0(7p)
+[23:38:35]   CONGRUENT: base[262].0(7p) ≡ base[302].0(7p)
+[23:38:36]   CONGRUENT: base[262].0(7p) ≡ op1[302].0(7p)
+[23:38:37]   CONGRUENT: base[262].0(7p) ≡ base[303].0(7p)
+[23:38:38]   CONGRUENT: base[262].0(7p) ≡ op1[303].0(7p)
+[23:38:39]   CONGRUENT: base[301].0(7p) ≡ op1[301].0(7p)
+[23:38:40]   CONGRUENT: base[301].0(7p) ≡ base[302].0(7p)
+[23:38:40]   CONGRUENT: base[301].0(7p) ≡ op1[302].0(7p)
+[23:38:41]   CONGRUENT: base[301].0(7p) ≡ base[303].0(7p)
+[23:38:42]   CONGRUENT: base[301].0(7p) ≡ op1[303].0(7p)
+[23:38:43]   CONGRUENT: op1[301].0(7p) ≡ base[302].0(7p)
+[23:38:44]   CONGRUENT: op1[301].0(7p) ≡ op1[302].0(7p)
+[23:38:45]   CONGRUENT: op1[301].0(7p) ≡ base[303].0(7p)
+[23:38:46]   CONGRUENT: op1[301].0(7p) ≡ op1[303].0(7p)
+[23:38:47]   CONGRUENT: base[302].0(7p) ≡ op1[302].0(7p)
+[23:38:48]   CONGRUENT: base[302].0(7p) ≡ base[303].0(7p)
+[23:38:49]   CONGRUENT: base[302].0(7p) ≡ op1[303].0(7p)
+[23:38:50]   CONGRUENT: op1[302].0(7p) ≡ base[303].0(7p)
+[23:38:51]   CONGRUENT: op1[302].0(7p) ≡ op1[303].0(7p)
+[23:38:52]   CONGRUENT: base[303].0(7p) ≡ op1[303].0(7p)
+[23:38:52] targeted DONE
+[23:39:06]   …200/449 lines, 218 cells, 457s elapsed, ETA ~569s
+[23:40:21]   …300/449 lines, 275 cells, 531s elapsed, ETA ~264s
+[23:40:46]   …400/449 lines, 312 cells, 557s elapsed, ETA ~68s
+[23:41:46] BASELINE: 362 raw cells, 0 supercell encodings, 616.445s
+[23:41:46] BASELINE: cells congruent to t3019: 3 -> (idx=75,pos=4) (idx=261,pos=0) (idx=260,pos=1)
+[23:41:46]   t3019-cell BASELINE idx=75 pos=4: 7 polys [3.3.3.3.4.4.4], u=(0.8660,0.5000) v=(-2.3660,4.0981) |det|=4.7321
+[23:41:46]   t3019-cell BASELINE idx=261 pos=0: 7 polys [3.3.3.3.4.4.4], u=(0.0000,1.0000) v=(-4.7321,0.0000) |det|=4.7321
+[23:41:46]   t3019-cell BASELINE idx=260 pos=1: 7 polys [3.3.3.3.4.4.4], u=(0.0000,1.0000) v=(-4.7321,0.0000) |det|=4.7321
+[23:41:46] BASELINE: cells congruent to NO oracle entry: 4 -> (idx=262,pos=0) (idx=301,pos=0) (idx=303,pos=0) (idx=302,pos=0)
+[23:41:46]   ORPHAN BASELINE idx=262 pos=0: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:41:46]   ORPHAN BASELINE idx=301 pos=0: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:41:46]   ORPHAN BASELINE idx=303 pos=0: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:41:46]   ORPHAN BASELINE idx=302 pos=0: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:41:46] --- census OP1: /Users/alessandro/.config/superpowers/worktrees/TilingAtlas/op123-sound-levers/.scout-cache/k3_3.4.6.12_cap0.ndjson ---
+[23:41:50] --- dissect op1[301].0 vs t3019recon: library verdict=false ---
+[23:41:50]   cand(Q#0,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#0,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#0,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#1,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#1,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#5,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#5,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#6,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#6,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   op1[301].0: candidates passing stage1=24, stage2(lattice)=8, exact-truth congruences=4
+[23:41:50] --- dissect base[262].0 vs t3019recon: library verdict=false ---
+[23:41:50]   cand(Q#0,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#0,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#0,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#1,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#1,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#5,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#5,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#6,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#6,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:41:50]   base[262].0: candidates passing stage1=24, stage2(lattice)=8, exact-truth congruences=4
+[23:41:50] --- dissect base[260].1 (control TRUE) vs t3019recon: library verdict=true ---
+[23:41:50]   cand(Q#0,refl=false,r=6): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#0,refl=false,r=14): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=false,r=22): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=true,r=6): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#0,refl=true,r=14): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#0,refl=true,r=22): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=false,r=6): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#1,refl=false,r=14): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=false,r=22): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=true,r=6): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#1,refl=true,r=14): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#1,refl=true,r=22): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=false,r=2): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=false,r=10): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=false,r=18): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#5,refl=true,r=2): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=true,r=10): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#5,refl=true,r=18): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:41:50]   cand(Q#6,refl=false,r=2): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=false,r=10): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=false,r=18): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   cand(Q#6,refl=true,r=2): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=true,r=10): transformedKey OK, sameLattice FAIL
+[23:41:50]   cand(Q#6,refl=true,r=18): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:41:50]   base[260].1 (control TRUE): candidates passing stage1=24, stage2(lattice)=8, exact-truth congruences=4
+[23:41:50] dissect DONE
+[23:42:23] --- dissect op1[301].0 vs t3019recon: library verdict=false ---
+[23:42:23]   cand(Q#0,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#0,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#0,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#1,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#1,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#5,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#5,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#6,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#6,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   op1[301].0: candidates passing stage1=24, stage2(lattice)=8, exact-truth congruences=4
+[23:42:23] --- dissect base[262].0 vs t3019recon: library verdict=false ---
+[23:42:23]   cand(Q#0,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#0,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#0,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=false,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#1,refl=false,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=false,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=true,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=true,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#1,refl=true,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#5,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#5,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=false,r=4): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=false,r=12): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#6,refl=false,r=20): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=true,r=0): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#6,refl=true,r=8): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=true,r=16): transformedKey OK, sameLattice FAIL
+[23:42:23]   base[262].0: candidates passing stage1=24, stage2(lattice)=8, exact-truth congruences=4
+[23:42:23] --- dissect base[260].1 (control TRUE) vs t3019recon: library verdict=true ---
+[23:42:23]   cand(Q#0,refl=false,r=6): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#0,refl=false,r=14): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=false,r=22): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=true,r=6): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#0,refl=true,r=14): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#0,refl=true,r=22): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=false,r=6): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#1,refl=false,r=14): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=false,r=22): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=true,r=6): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#1,refl=true,r=14): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#1,refl=true,r=22): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=false,r=2): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=false,r=10): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=false,r=18): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#5,refl=true,r=2): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=true,r=10): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#5,refl=true,r=18): transformedKey OK, sameLattice OK, exact-class-map OK ⇒ TRUE CONGRUENCE
+[23:42:23]   cand(Q#6,refl=false,r=2): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=false,r=10): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=false,r=18): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   cand(Q#6,refl=true,r=2): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=true,r=10): transformedKey OK, sameLattice FAIL
+[23:42:23]   cand(Q#6,refl=true,r=18): transformedKey OK, sameLattice OK, exact-class-map fail
+[23:42:23]   base[260].1 (control TRUE): candidates passing stage1=24, stage2(lattice)=8, exact-truth congruences=4
+[23:42:23] dissect DONE
+[23:43:33] --- reducedClassKey dissect: identity candidate of (op1[301].0 -> t3019recon), lattice = t3019 basis ---
+[23:43:33] uB=(1,0) vB=(0.00000000000000041,4.73205080756887675)
+[23:43:33]   B[0] 3: cFloat=(-1.00000000000000022,-4.15470053837925146) aArg=-0.99999999999999978 bArg=-0.87799153207185388 (ma,mb)=(-1,-1) baseC=(0.000000,0.577350) lim=7.198 minAt=(-1,-1) nWin=14
+[23:43:33]   B[1] 3: cFloat=(-0.50000000000000011,-1.28867513459481287) aArg=-0.50000000000000000 bArg=-0.27232909936926025 (ma,mb)=(0,0) baseC=(-0.500000,-1.288675) lim=7.198 minAt=(0,0) nWin=14
+[23:43:33]   B[2] 4: cFloat=(-1.00000000000000022,-3.36602540378443837) aArg=-0.99999999999999978 bArg=-0.71132486540518713 (ma,mb)=(-1,-1) baseC=(0.000000,1.366025) lim=7.198 minAt=(-1,-1) nWin=14
+[23:43:33]   B[3] 4: cFloat=(-1.00000000000000000,-2.36602540378443837) aArg=-0.99999999999999978 bArg=-0.50000000000000000 (ma,mb)=(-1,0) baseC=(-0.000000,-2.366025) lim=7.198 minAt=(-1,0) nWin=15
+[23:43:33]   B[4] 4: cFloat=(-0.50000000000000000,-0.50000000000000000) aArg=-0.50000000000000000 bArg=-0.10566243270259357 (ma,mb)=(0,0) baseC=(-0.500000,-0.500000) lim=7.198 minAt=(-1,-1) nWin=14
+[23:43:33]   B[5] 3: cFloat=(-1.00000000000000000,-1.57735026918962573) aArg=-0.99999999999999978 bArg=-0.33333333333333337 (ma,mb)=(-1,0) baseC=(-0.000000,-1.577350) lim=7.198 minAt=(-1,0) nWin=14
+[23:43:33]   B[6] 3: cFloat=(-0.50000000000000044,-4.44337567297406455) aArg=-0.50000000000000011 bArg=-0.93899576603592705 (ma,mb)=(-1,-1) baseC=(0.500000,0.288675) lim=7.198 minAt=(-2,-1) nWin=14
+[23:43:33]   gA[0] 3: cFloat=(-3.00000000000000000,3.15470053837925146) aArg=-3.00000000000000044 bArg=0.66666666666666674 (ma,mb)=(-3,1) baseC=(-0.000000,-1.577350) lim=7.198 minAt=(-1,0) nWin=14
+[23:43:33]     gA[0] key ∈ KB: YES (B[5])
+[23:43:33]   gA[1] 3: cFloat=(-1.50000000000000044,-6.02072594216368984) aArg=-1.49999999999999978 bArg=-1.27232909936926020 (ma,mb)=(-1,-1) baseC=(-0.500000,-1.288675) lim=7.198 minAt=(0,0) nWin=14
+[23:43:33]     gA[1] key ∈ KB: YES (B[1])
+[23:43:33]   gA[2] 4: cFloat=(-2.00000000000000089,-7.09807621135331601) aArg=-2.00000000000000000 bArg=-1.50000000000000022 (ma,mb)=(-2,-2) baseC=(0.000000,2.366025) lim=7.198 minAt=(-1,-1) nWin=15
+[23:43:33]     gA[2] key ∈ KB: YES (B[3])
+[23:43:33]   gA[3] 4: cFloat=(-2.00000000000000089,-8.09807621135331601) aArg=-2.00000000000000000 bArg=-1.71132486540518736 (ma,mb)=(-2,-2) baseC=(0.000000,1.366025) lim=7.198 minAt=(-1,-1) nWin=14
+[23:43:33]     gA[3] key ∈ KB: YES (B[2])
+[23:43:33]   gA[4] 4: cFloat=(-1.50000000000000044,-5.23205080756887675) aArg=-1.50000000000000000 bArg=-1.10566243270259368 (ma,mb)=(-1,-1) baseC=(-0.500000,-0.500000) lim=7.198 minAt=(-1,-1) nWin=14
+[23:43:33]     gA[4] key ∈ KB: YES (B[4])
+[23:43:33]   gA[5] 3: cFloat=(-2.49999999999999956,5.02072594216368984) aArg=-2.50000000000000000 bArg=1.06100423396407306 (ma,mb)=(-2,1) baseC=(-0.500000,0.288675) lim=7.198 minAt=(-2,1) nWin=14
+[23:43:33]     gA[5] key ∈ KB: *** NO — DISCREPANT ***
+[23:43:33]   gA[6] 3: cFloat=(-1.00000000000000022,-4.15470053837925146) aArg=-0.99999999999999978 bArg=-0.87799153207185388 (ma,mb)=(-1,-1) baseC=(0.000000,0.577350) lim=7.198 minAt=(-1,-1) nWin=14
+[23:43:33]     gA[6] key ∈ KB: YES (B[0])
+[23:43:33] rck dissect DONE
+[manual] === INTERIM SYNTHESIS (steps 0-3 complete) ===
+[manual] STEP 0 — artifact identity VERIFIED by re-derived final-reduce digests:
+[manual]   baseline /tmp/baseline-k3.ndjson: raw=362 classes=61 digest=99919f42a7b58e76 (matches certified)
+[manual]   OP-1 worktree artifact:           raw=302 classes=61 digest=b5c622070cff8b4  (matches failure report)
+[manual] STEP 1 — oracle t3019: T1=[1,0,0,0] T2=[-1,0,2,3] (zeta12 basis) => u=(1,0), v=(0,3+sqrt3)~(0,4.7321), |det|=3+sqrt3.
+[manual]   7 polys [3.3.3.3.4.4.4], |Seed|=5 vertex classes, KUniformityChecker orbits=3, primitive (reduction=identity).
+[manual]   occurring VC types: ONLY 2 DISTINCT: {3,3,3,4,4} and {4,4,4,4} — 3 orbits share 2 types (orbit multiset {A,A,B}).
+[manual] STEP 2 — baseline emission provenance of the t3019 congruence class (7 members, all pairwise congruent):
+[manual]   base[75].4, base[260].1, base[261].0, base[262].0, base[301].0, base[302].0, base[303].0
+[manual]   direct cellsCongruent(member, oracle-recon): TRUE for 75.4/260.1/261.0; FALSE for 262.0/301.0/302.0/303.0
+[manual]   => NON-TRANSITIVITY: e.g. 262.0 ≡ 260.1 ≡ oracle-t3019 but cellsCongruent(262.0, oracle)=false. FALSE NEGATIVE in tilingsCongruent.
+[manual] STEP 3 — OP-1: byte-level per-seed analysis: OP-1 cells ⊆ baseline cells for ALL 449 seeds (0 violations) — filters only REMOVE.
+[manual]   OP-1 filtered exactly the 3-distinct-VC superset-seed members 75.4/260.1/261.0/262.0 (P2: occ 2 names ⊊ allowed 3 names).
+[manual]   Equal-multiset recovery seeds idx 301/302/303 {3,3,3,4,4 + 3,3,3,4,4 + 4,4,4,4} emitted t3019 in BOTH sweeps (byte-identical lines)
+[manual]   => prop:typeprune recovery WORKED; t3019 IS in OP-1's 302 raw cells (3 copies). NO rem:fastpath failure.
+[manual]   ALIEN = the {op1[301].0, op1[302].0, op1[303].0} class = t3019 itself, mis-judged by the matcher:
+[manual]     op1[301].0 basis (1,0),(0,4.7321) IDENTICAL to oracle basis, det equal, orbits=3, exact ground-truth congruence VERIFIED
+[manual]     (4 true isometries incl. pure translation), congruent to base[301].0 byte-identically. Not a supercell, same lattice.
+[manual] MATCHER BUG MECHANISM (reducedClassKey, lib/classes/algorithm/TilingCongruence.ts):
+[manual]   t3019's tile centroids sit at exact half-integer u-coordinates on a skinny lattice (|u|=1, |v|=4.73).
+[manual]   vB.toVector().x = 4.1e-16 (not 0) => centroid-reduction argument for one class member computes to -0.50000000000000011
+[manual]   (rounds to -1) while another member's computes to exactly -2.5 (Math.round half-up => -2): bases differ by one u-step.
+[manual]   The +-2-window min-key then differs (the minimal-key translate escapes the shifted window; lim=7.198 keeps ~14 candidates,
+[manual]   window edges matter at |u|=1) => same lattice class gets TWO different "canonical" keys => candidate isometry rejected.
+[manual]   Verified at the IDENTITY candidate: gA[5] vs B[6]: (ma,mb)=(-2,1) vs (-1,-1), minAt=(-2,1) vs (-2,-1), keys differ.
+[manual] WHY BASELINE PASSED: recert dedupe (no keyOf) rep = first-seen member; baseline artifact order put idx75 (flat pos 179, base[75].4,
+[manual]   a TRUE-matching member) first => lucky rep. OP-1's first surviving member is op1[301].0 (false-negative rep) => t3019 "0 matches" + 1 "alien".
+[manual]   The baseline PASS was ORDER-LUCKY (dynamic work queue ordering) — not robust.
+[manual] WHY k<=2 IMMUNE: every k<=2 catalogue entry has #distinct VC types == k (k=1 trivially; all 20 2-uniform tilings have 2 distinct types),
+[manual]   so occ==allowed at every emitting seed => P2 filters nothing => byte-identical artifacts => rep selection unchanged.
+[23:47:13]   …100/449 lines, 127 cells, 328s elapsed, ETA ~1143s
+[23:47:44] --- STEP4 [b49f105] solve seed idx=260 name="[3,3,3,4,4;3,3,4,3,4;4,4,4,4]" ---
+[23:47:45] --- STEP4 [b49f105] solve seed idx=301 name="[3,3,3,4,4;3,3,3,4,4;4,4,4,4]" ---
+[23:47:55]   [b49f105] onRawCell #1: 4 polys [3.3.4.4] orbits=2 u=(1.000,0.000) v=(0.500,2.866)
+[23:47:55]   [b49f105] onRawCell #2: 4 polys [3.3.4.4] orbits=2 u=(0.000,1.000) v=(-2.866,0.500)
+[23:48:00]   [b49f105] onRawCell #3: 5 polys [3.3.4.4.4] orbits=2 u=(1.000,0.000) v=(0.500,3.866)
+[23:48:01]   [b49f105] onRawCell #4: 5 polys [3.3.4.4.4] orbits=2 u=(0.000,1.000) v=(-3.866,0.500)
+[23:48:01]   [b49f105] onRawCell #5: 5 polys [3.3.4.4.4] orbits=2 u=(0.000,1.000) v=(-3.866,0.500)
+[23:48:10]   …200/449 lines, 172 cells, 385s elapsed, ETA ~479s
+[23:48:21]   [b49f105] onRawCell #6: 7 polys [3.3.3.3.4.4.4] orbits=3 u=(1.000,0.000) v=(0.000,4.732)
+[23:48:21]   [b49f105] onRawCell #7: 7 polys [3.3.3.3.4.4.4] orbits=3 u=(0.000,1.000) v=(-4.732,0.000)
+[23:49:13]   [b49f105] onRawCell #8: 6 polys [3.3.4.4.4.4] orbits=3 u=(1.000,0.000) v=(0.500,4.866)
+[23:49:14]   [b49f105] onRawCell #9: 6 polys [3.3.4.4.4.4] orbits=3 u=(0.000,1.000) v=(-4.866,0.500)
+[23:49:14]   [b49f105] onRawCell #10: 6 polys [3.3.4.4.4.4] orbits=3 u=(0.000,1.000) v=(-4.866,0.500)
+[23:49:14]   [b49f105] onRawCell #11: 6 polys [3.3.4.4.4.4] orbits=3 u=(0.000,1.000) v=(-4.866,0.500)
+[23:49:33]   …300/449 lines, 224 cells, 467s elapsed, ETA ~232s
+[23:49:36]   [b49f105] onRawCell #12: 8 polys [3.3.3.3.4.4.4.4] orbits=3 u=(1.000,0.000) v=(0.000,5.732)
+[23:50:00]   …400/449 lines, 257 cells, 494s elapsed, ETA ~61s
+[23:50:18]   [b49f105] onRawCell #13: 7 polys [3.3.4.4.4.4.4] orbits=3 u=(1.000,0.000) v=(0.500,5.866)
+[manual] REP DETERMINATION (recert dedupe = first-seen member, no keyOf):
+[manual]   baseline flat order: first t3019-class member = base[75].4 (flat pos 179; idx75 line 124) -> rep base[75].4 -> direct-vs-oracle TRUE -> PASS.
+[manual]   OP-1 flat order: idx75 kept none of the class; first member = op1[301].0 (flat pos 246; line 384) -> rep op1[301].0 -> direct-vs-oracle FALSE
+[manual]   -> "t3019: 0 congruent scout cells" + that whole class matches no oracle entry = the "alien". Both symptoms = ONE cause.
+[manual] GROUND TRUTH (exact, reducedClassKey-free class mapping): op1[301].0 ≡ t3019recon via 4 exact isometries (incl. pure translation);
+[manual]   base[262].0 ≡ t3019recon via 4 exact isometries. Library verdict false for both = FALSE NEGATIVE, localized to reducedClassKey.
+[manual] SCOPE: baseline census 362 cells: orphans = EXACTLY the 4 false-negative t3019 members; every other raw cell matches exactly 1 oracle entry.
+[manual]   The other ~21 two-type k=3 tilings also had P2-filtered superset emissions (60 cells/26 seeds) and were all correctly re-found+matched.
+[23:50:40]   [b49f105] onRawCell #14: 10 polys [3.3.3.3.3.3.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.500,6.598)
+[23:50:41]   [b49f105] onRawCell #1: 13 polys [3.3.3.3.3.3.3.3.4.4.4.4.4] orbits=3 u=(2.866,-0.500) v=(0.500,2.866)
+[23:50:42]   [b49f105] onRawCell #15: 9 polys [3.3.3.3.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.000,6.732)
+[23:50:42]   [b49f105] onRawCell #16: 9 polys [3.3.3.3.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.000,6.732)
+[23:50:42]   [b49f105] onRawCell #17: 9 polys [3.3.3.3.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.000,6.732)
+[23:50:43]   [b49f105] onRawCell #18: 8 polys [3.3.4.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.500,6.866)
+[23:50:46]   [b49f105] onRawCell #19: 11 polys [3.3.3.3.3.3.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.500,7.598)
+[23:50:46]   [b49f105] onRawCell #20: 11 polys [3.3.3.3.3.3.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.500,7.598)
+[23:50:46]   [b49f105] onRawCell #21: 11 polys [3.3.3.3.3.3.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.500,7.598)
+[23:50:48]   [b49f105] onRawCell #2: 22 polys [3.3.3.3.3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4.4.4] orbits=4 u=(3.866,-0.500) v=(0.500,3.866)
+[23:50:48]   [b49f105] onRawCell #22: 10 polys [3.3.3.3.4.4.4.4.4.4] orbits=5 u=(1.000,0.000) v=(0.000,7.732)
+[23:50:48]   [b49f105] onRawCell #23: 10 polys [3.3.3.3.4.4.4.4.4.4] orbits=5 u=(1.000,0.000) v=(0.000,7.732)
+[23:50:48]   [b49f105] onRawCell #24: 10 polys [3.3.3.3.4.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.000,7.732)
+[23:50:50]   [b49f105] onRawCell #25: 9 polys [3.3.4.4.4.4.4.4.4] orbits=4 u=(1.000,0.000) v=(0.500,7.866)
+[23:50:53]   [b49f105] onRawCell #3: 34 polys [3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4.4.4.4.4.4.4] orbits=4 u=(3.366,3.366) v=(-3.366,3.366)
+[23:50:56]   [b49f105] solve done in 192.2s: 1 cells emitted
+[23:50:56]   [b49f105] diag: rawCells=3 emitted=1 gateRejected=2 p2Skipped=18 vBelowKSkipped=0 supercellRejected=1 latticesTried=2943 candidateLattices=2943 timedOut=false
+[23:50:56]   [b49f105] emitted cell 0: 13 polys [3.3.3.3.3.3.3.3.4.4.4.4.4] u=(2.866,-0.500) v=(0.500,2.866)
+[23:50:56]   [b49f105] serialized emitted cells -> /tmp/step4-b49f105-idx260-cells.json
+[23:51:02] OP1: 302 raw cells, 0 supercell encodings, 556.589s
+[23:51:02] OP1: cells congruent to t3019: 0 -> 
+[23:51:02] OP1: cells congruent to NO oracle entry: 3 -> (idx=301,pos=0) (idx=302,pos=0) (idx=303,pos=0)
+[23:51:02]   ORPHAN OP1 idx=301 pos=0: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:51:02]   ORPHAN OP1 idx=302 pos=0: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:51:02]   ORPHAN OP1 idx=303 pos=0: 7 polys [3.3.3.3.4.4.4], u=(1.0000,0.0000) v=(0.0000,4.7321) |det|=4.7321
+[23:51:02] --- cross analysis ---
+[23:51:02] baseline t3019 emitter: idx=75 seed="[3,3,3,3,3,3;3,3,3,4,4;4,4,4,4]" allowed={3,3,3,3,3,3 | 3,3,3,4,4 | 4,4,4,4}
+[23:51:02] baseline t3019 emitter: idx=261 seed="[3,3,3,4,4;3,3,4,3,4;4,4,4,4]" allowed={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:02] baseline t3019 emitter: idx=260 seed="[3,3,3,4,4;3,3,4,3,4;4,4,4,4]" allowed={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:02] orphan (idx=262 seed="[3,3,3,4,4;3,3,4,3,4;4,4,4,4]"): occ + orbits + congruence tests:
+[23:51:02]   occ(2): 3,3,3,4,4 | 4,4,4,4
+[23:51:02]   orbits: 3
+[23:51:02]   cellsCongruent(orphan, oracle t3019): false
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=75,pos=4): true
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=261,pos=0): true
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=260,pos=1): true
+[23:51:02] orphan (idx=301 seed="[3,3,3,4,4;3,3,3,4,4;4,4,4,4]"): occ + orbits + congruence tests:
+[23:51:02]   occ(2): 3,3,3,4,4 | 4,4,4,4
+[23:51:02]   orbits: 3
+[23:51:02]   cellsCongruent(orphan, oracle t3019): false
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=75,pos=4): true
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=261,pos=0): true
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=260,pos=1): true
+[23:51:02] orphan (idx=303 seed="[3,3,3,4,4;4,4,4,4;3,3,3,4,4]"): occ + orbits + congruence tests:
+[23:51:02]   occ(2): 3,3,3,4,4 | 4,4,4,4
+[23:51:02]   orbits: 3
+[23:51:02]   cellsCongruent(orphan, oracle t3019): false
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=75,pos=4): true
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=261,pos=0): true
+[23:51:02]   cellsCongruent(orphan, baseline-t3019-cell idx=260,pos=1): true
+[23:51:02] orphan (idx=302 seed="[3,3,3,4,4;3,3,3,4,4;4,4,4,4]"): occ + orbits + congruence tests:
+[23:51:02]   occ(2): 3,3,3,4,4 | 4,4,4,4
+[23:51:03]   orbits: 3
+[23:51:03]   cellsCongruent(orphan, oracle t3019): false
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=75,pos=4): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=261,pos=0): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=260,pos=1): true
+[23:51:03] orphan (idx=301 seed="[3,3,3,4,4;3,3,3,4,4;4,4,4,4]"): occ + orbits + congruence tests:
+[23:51:03]   occ(2): 3,3,3,4,4 | 4,4,4,4
+[23:51:03]   orbits: 3
+[23:51:03]   cellsCongruent(orphan, oracle t3019): false
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=75,pos=4): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=261,pos=0): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=260,pos=1): true
+[23:51:03] orphan (idx=302 seed="[3,3,3,4,4;3,3,3,4,4;4,4,4,4]"): occ + orbits + congruence tests:
+[23:51:03]   occ(2): 3,3,3,4,4 | 4,4,4,4
+[23:51:03]   orbits: 3
+[23:51:03]   cellsCongruent(orphan, oracle t3019): false
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=75,pos=4): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=261,pos=0): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=260,pos=1): true
+[23:51:03] orphan (idx=303 seed="[3,3,3,4,4;4,4,4,4;3,3,3,4,4]"): occ + orbits + congruence tests:
+[23:51:03]   occ(2): 3,3,3,4,4 | 4,4,4,4
+[23:51:03]   orbits: 3
+[23:51:03]   cellsCongruent(orphan, oracle t3019): false
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=75,pos=4): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=261,pos=0): true
+[23:51:03]   cellsCongruent(orphan, baseline-t3019-cell idx=260,pos=1): true
+[23:51:03] per-seed raw-cell deltas (baseline->OP1), 26 seeds differ:
+[23:51:03]   idx=37 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 4->3
+[23:51:03]   idx=38 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 5->3
+[23:51:03]   idx=39 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 4->3
+[23:51:03]   idx=40 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 4->3
+[23:51:03]   idx=41 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 4->3
+[23:51:03]   idx=42 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 5->3
+[23:51:03]   idx=43 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 5->3
+[23:51:03]   idx=44 "[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]": 3->2
+[23:51:03]   idx=45 "[3,3,3,3,3,3;3,3,3,3,6;3,6,3,6]": 3->1
+[23:51:03]   idx=46 "[3,3,3,3,3,3;3,3,3,3,6;3,6,3,6]": 5->3
+[23:51:03]   idx=58 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]": 3->0
+[23:51:03]   idx=59 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]": 4->0
+[23:51:03]   idx=60 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]": 4->0
+[23:51:03]   idx=61 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]": 4->0
+[23:51:03]   idx=62 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]": 4->0
+[23:51:03]   idx=63 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]": 4->0
+[23:51:03]   idx=64 "[3,3,3,3,3,3;3,3,4,3,4;3,3,3,4,4]": 5->1
+[23:51:03]   idx=75 "[3,3,3,3,3,3;3,3,3,4,4;4,4,4,4]": 7->4
+[23:51:03]   idx=175 "[3,3,3,3,6;3,6,3,6;3,3,6,6]": 1->0
+[23:51:03]   idx=260 "[3,3,3,4,4;3,3,4,3,4;4,4,4,4]": 3->1
+[23:51:03]   idx=261 "[3,3,3,4,4;3,3,4,3,4;4,4,4,4]": 3->1
+[23:51:03]   idx=262 "[3,3,3,4,4;3,3,4,3,4;4,4,4,4]": 3->1
+[23:51:03]   idx=383 "[3,3,6,6;3,6,3,6;3,6,4,4]": 4->2
+[23:51:03]   idx=384 "[3,3,6,6;3,6,3,6;3,4,4,6]": 4->2
+[23:51:03]   idx=419 "[3,4,4,6;3,6,3,6;3,4,6,4]": 2->0
+[23:51:03]   idx=432 "[3,4,4,6;3,6,3,6;4,4,4,4]": 6->4
+[23:51:03] census DONE
+[23:51:07]   [b49f105] solve done in 202.2s: 4 cells emitted
+[23:51:07]   [b49f105] diag: rawCells=25 emitted=4 gateRejected=17 p2Skipped=0 vBelowKSkipped=0 supercellRejected=14 latticesTried=2943 candidateLattices=2943 timedOut=false
+[23:51:07]   [b49f105] emitted cell 0: 7 polys [3.3.3.3.4.4.4] u=(1.000,0.000) v=(0.000,4.732)
+[23:51:07]   [b49f105] emitted cell 1: 8 polys [3.3.3.3.4.4.4.4] u=(1.000,0.000) v=(0.000,5.732)
+[23:51:07]   [b49f105] emitted cell 2: 6 polys [3.3.4.4.4.4] u=(1.000,0.000) v=(0.500,4.866)
+[23:51:07]   [b49f105] emitted cell 3: 7 polys [3.3.4.4.4.4.4] u=(1.000,0.000) v=(0.500,5.866)
+[23:51:07]   [b49f105] serialized emitted cells -> /tmp/step4-b49f105-idx301-cells.json
+[23:51:44] --- STEP4 verify seed260: /tmp/skiplog-260.ndjson ---
+[23:51:44]   22 certified closures logged
+[23:51:44]   #0: P2SKIP V=3 polys=[3.3.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #1: P2SKIP V=3 polys=[3.3.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #2: P2SKIP V=3 polys=[3.3.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #3: P2SKIP V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #4: P2SKIP V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #5: P2SKIP V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #6: P2SKIP V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #7: P2SKIP V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #8: P2SKIP V=5 polys=[3.3.3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}  *** ≡ t3019 (via true member base[260].1) ***
+[23:51:44]   #9: P2SKIP V=5 polys=[3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #10: P2SKIP V=5 polys=[3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #11: P2SKIP V=5 polys=[3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #12: P2SKIP V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #13: P2SKIP V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #14: P2SKIP V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #15: P2SKIP V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #16: P2SKIP V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #17: P2SKIP V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #18: PASS V=9 polys=[3.3.3.3.3.3.3.3.4.4.4.4.4] occ(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #19: PASS V=16 polys=[3.3.3.3.3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4.4.4] occ(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #20: PASS V=18 polys=[3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4.4.4] occ(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44]   #21: PASS V=24 polys=[3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4.4.4.4.4.4.4] occ(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4} allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}
+[23:51:44] --- STEP4 verify seed301: /tmp/skiplog-301.ndjson ---
+[23:51:44]   39 certified closures logged
+[23:51:44]   #0: PASS V=3 polys=[3.3.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #1: PASS V=3 polys=[3.3.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #2: PASS V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #3: PASS V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #4: PASS V=4 polys=[3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #5: PASS V=5 polys=[3.3.3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}  *** ≡ t3019 (via true member base[260].1) ***
+[23:51:44]   #6: PASS V=5 polys=[3.3.3.3.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}  *** ≡ t3019 (via true member base[260].1) ***
+[23:51:44]   #7: PASS V=5 polys=[3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #8: PASS V=5 polys=[3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #9: PASS V=5 polys=[3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #10: PASS V=5 polys=[3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #11: PASS V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #12: PASS V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #13: PASS V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #14: PASS V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #15: PASS V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #16: PASS V=6 polys=[3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #17: PASS V=6 polys=[3.3.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #18: PASS V=7 polys=[3.3.3.3.3.3.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #19: PASS V=7 polys=[3.3.3.3.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #20: PASS V=7 polys=[3.3.3.3.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #21: PASS V=7 polys=[3.3.3.3.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #22: PASS V=7 polys=[3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #23: PASS V=8 polys=[3.3.3.3.3.3.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #24: PASS V=8 polys=[3.3.3.3.3.3.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #25: PASS V=8 polys=[3.3.3.3.3.3.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #26: PASS V=8 polys=[3.3.3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #27: PASS V=8 polys=[3.3.3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #28: PASS V=8 polys=[3.3.3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #29: PASS V=8 polys=[3.3.3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #30: PASS V=8 polys=[3.3.4.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #31: PASS V=9 polys=[3.3.3.3.3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #32: PASS V=10 polys=[3.3.3.3.3.3.3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #33: PASS V=10 polys=[3.3.3.3.3.3.3.3.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #34: PASS V=12 polys=[3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #35: PASS V=12 polys=[3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #36: PASS V=12 polys=[3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #37: PASS V=12 polys=[3.3.3.3.3.3.3.3.4.4.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44]   #38: PASS V=12 polys=[3.3.3.3.3.3.4.4.4.4.4.4.4.4.4] occ(2)={3,3,3,4,4 | 4,4,4,4} allowed(2)={3,3,3,4,4 | 4,4,4,4}
+[23:51:44] step4 verify DONE
+[manual] === STEP 4 (mechanism, b49f105 lib/ + scratch accept-site instrumentation; lib/ RESTORED to 48ff7dd after) ===
+[manual] seed 260 "[3,3,3,4,4;3,3,4,3,4;4,4,4,4]" (superset seed): 22 certified closures; t3019 cell IS CLOSED -> case (b):
+[manual]   verdict P2SKIP, V=5 (so vBelowK irrelevant), occ(2)={3,3,3,4,4 | 4,4,4,4} vs allowed(3)={3,3,3,4,4 | 3,3,4,3,4 | 4,4,4,4}.
+[manual]   diag: rawCells=3 emitted=1 p2Skipped=18 vBelowKSkipped=0 — reproduces the artifact delta (baseline 3 cells -> OP-1 1 cell) exactly.
+[manual] seed 301 "[3,3,3,4,4;3,3,3,4,4;4,4,4,4]" (equal-multiset recovery seed): 39 closures, ALL PASS (occ==allowed, 2==2),
+[manual]   p2Skipped=0 vBelowKSkipped=0; emits 4 cells incl. the t3019 cell (≡ verified) — identical to both sweep artifacts.
+[manual] => rem:fastpath recovery DID NOT FAIL: prop:typeprune's recovery precondition held; t3019 is in OP-1's raw output (3 copies).
+[manual]
+[manual] === STEP 5 VERDICT ===
+[manual] ROOT CAUSE — a LATENT FALSE NEGATIVE in tilingsCongruent/reducedClassKey (lib/classes/algorithm/TilingCongruence.ts),
+[manual]   EXPOSED (not caused) by OP-1's P2 filter changing which representation of t3019 survives into the recert's class representative.
+[manual]   reducedClassKey is not a canonical function of the lattice class on t3019's geometry: skinny lattice (|u|=1,|v|=3+sqrt3~4.73)
+[manual]   + tile centroids at exact half-integer u-coordinates => the float centroid-reduction argument sits ON the Math.round
+[manual]   tie boundary; float noise (v.toVector().x=4.1e-16 != 0) rounds different class members to bases one u-step apart; the
+[manual]   +-2-translate min-key window does not absorb a one-step base shift on a 4.7:1 lattice => two different "canonical" keys
+[manual]   for one class => every candidate isometry (incl. pure translation!) fails the mapped-keys test => cellsCongruent=false.
+[manual]   Non-transitivity proven: base[262].0 ≡ base[260].1 ≡ oracle-t3019 but cellsCongruent(base[262].0, oracle-t3019)=false;
+[manual]   exact ground-truth isometries (reducedClassKey-free) verified 4 congruences for both op1[301].0 and base[262].0 vs oracle.
+[manual] CHAIN: OP-1 P2 (soundly, per prop:typeprune) removed the 4 superset-seed emissions of t3019 (75.4/260.1/261.0/262.0) —
+[manual]   among them ALL 3 representations that the buggy matcher could match (75.4/260.1/261.0). The surviving 3 copies (recovery
+[manual]   seeds 301/302/303) are all false-negative-prone representations => recert rep = op1[301].0 fails vs oracle =>
+[manual]   "t3019: 0 congruent" + the same class surfaces as the 1 "alien". BOTH symptoms = ONE cause; the alien IS t3019.
+[manual] BASELINE PASS WAS ORDER-LUCKY: rep was base[75].4 (first in artifact order, a matchable representation). A different worker
+[manual]   completion order could have failed the baseline recert identically. The certified 61/61 bijection instrument is fragile.
+[manual] WHY k<=2 IMMUNE: no k<=2 catalogue tiling has fewer distinct VC types than orbits (an Archimedean-by-type tiling is uniform),
+[manual]   so no gate-passing closure has occ ⊊ allowed; P2 removed nothing emitted; artifacts byte-identical; rep selection unchanged.
+[manual] ALIEN: causal consequence, not independent — same class, same single root cause.
+[manual] WHICH OP-1 HALF: neither is unsound. vBelowKSkipped never fired on any t3019-relevant closure (V=5). The P2 half is the
+[manual]   proximate TRIGGER of the verification artifact; it lost no tiling (61 true classes still present in OP-1 raw; count digest
+[manual]   change is the expected membership effect). The catalogue produced at b49f105 is correct per exact ground truth.
+[manual] SCOPE: census of all 362+302 raw cells: the ONLY orphans in either artifact are the 4 (resp. 3) t3019 false-negative
+[manual]   representations; every other raw cell matches exactly one oracle entry; 0 supercell encodings; no multi-matches.
+[manual] REMEDIATION OPTIONS (no fix implemented — investigation only):
+[manual]   R1 (RECOMMENDED, the real fix): make reducedClassKey canonical — exact lattice-coordinate reduction (exact arithmetic
+[manual]       Cramer + exact tie rule instead of float Math.round on noisy floats) AND/OR a base-shift-proof candidate window
+[manual]       (per-axis window radius covering lim against the SHORT basis vector, so the min-key translate cannot escape).
+[manual]       This subsystem also underlies dedupeByCongruence => it is certification-critical beyond the recert script.
+[manual]   R2 (defense in depth for the matcher): recert should match per CLASS over ALL members (or fall back to the exact
+[manual]       class-map test on failure), so a single fragile representative cannot produce a spurious FAIL/PASS.
+[manual]   R3: regression fixtures: (op1[301].0 vs t3019recon) frozen pair must return true; property test: reducedClassKey
+[manual]       invariance under lattice translation + grid isometries on skinny-lattice cells.
+[manual]   R4: OP-1 itself: KEEP both halves; no revert and no "gate P2 to non-primitive cells" needed — its recovery precondition
+[manual]       held everywhere (22 two-type k=3 classes all re-found; t3019 included). Re-run recert after R1 on the SAME OP-1
+[manual]       artifact (.scout-cache/k3_3.4.6.12_cap0.ndjson, digest b5c622070cff8b4) — expect 61/61 bijection with t3019 matched.
+[manual]   NOTE for thesis/TA: the 2026-06-10 k=3 per-tiling certification (99919f42a7b58e76) remains TRUE in content but its
+[manual]   verifying instrument was order-fragile; after R1 it should be re-affirmed. Same bug family as the 2c8ad69 congruence
+[manual]   false-negative (rotation drop) — second false-negative in TilingCongruence; consider an exact-no-float audit of the file.
+[manual] === INVESTIGATION COMPLETE (scripts: /tmp/inv0-digest.ts /tmp/inv-seeds.ts /tmp/inv1-census.ts /tmp/inv2-targeted.ts
+[manual]     /tmp/inv3-matcher-dissect.ts /tmp/inv3b-rck.ts /tmp/inv4-solve-seed.ts /tmp/inv4b-verify-skiplog.ts; lib/ restored) ===
