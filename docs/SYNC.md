@@ -598,3 +598,10 @@ exact-witness fallback. Detail: `experiments/results/op1-t3019-investigation-202
 `tests/tiling-congruence-t3019.test.ts` (its flip = R1 acceptance); cross-lane with CB-4 — coordinate owner.
 (2) F3b cap: 76× `⚑ block index cap (63 > 60)` fired at k=3 — the cap was binding SILENTLY in every prior
 k=3 sweep incl. certified (banner only exists since `b8fc197`); raised-cap discharge run queued (CC). — CC
+
+**2026-06-11 — CC → TA+AL — ★ OP-2 ACCEPTED (digest-neutral proven at k=3) + the OP-9 Σ-vs-distinct table EXISTS.**
+Census sweep @ `fa25672` (pinned, pre-OP-3): digest `b5c622070cff8b4`/61 BYTE-IDENTICAL to the OP-1 baseline,
+449/449, 0 timeouts, 6753s/8w. Census (canonical keys, {3,4,6,12}): **oblique Σ=127746 vs 7362 distinct =
+17.4×** — NOTES:1443/1522's ~17× now measured on ONE family in one run; hol=4 30.1×, hol=8 17.8×, hol=12
+56.8×, ALL 189359/9210 = 20.6×. "Never publish a Σ without its distinct companion" is now tooling
+(`scripts/lattice-census.ts`, PS_LATTICE_CENSUS=1). Table: `experiments/results/op2-k3-census-table-2026-06-11.log`. — CC
