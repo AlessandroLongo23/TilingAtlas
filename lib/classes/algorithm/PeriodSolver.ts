@@ -1083,8 +1083,8 @@ export class PeriodSolver {
 			const analysis = this.analyze(reps, ctx, block);
 			if (analysis.contradiction) continue;
 			if (!analysis.openVertex) {
-				// No open vertex within a full cell ⇒ torus closed. Certify, then OP-1 (prop:typeprune,
-				// correctness.tex:731-751): (i) V<k ⇒ orbits ≤ V < k, the gate would reject — skip the
+				// No open vertex within a full cell ⇒ torus closed. Certify, then OP-1 (prop:typeprune):
+				// (i) V<k ⇒ orbits ≤ V < k, the gate would reject — skip the
 				// 7×7 exact symmetry search; (ii) occurring VC-type set ⊊ allowed ⇒ the cell does not
 				// realize this seed's orbit-VC multiset — it is another seed's tiling (two-sided), discard
 				// without gate or primitivity scan. The size-equality test (ii) is sound because the
@@ -1408,8 +1408,10 @@ export class PeriodSolver {
 	 *  Euler/incidence completeness contract) and is another seed's tiling (observed live: pure-
 	 *  triangle 1-uniform supercell completions inside multi-VC k=2 seeds). Anything else is a
 	 *  certified tiling discarded with no candidate to re-find it — the silent-loss mode CB-7 exists
-	 *  to surface; emit ⚑ INCOMPLETE-REGION per occurrence. The k≤3 oracle says this never fired
-	 *  there; it firing ANYWHERE is a discovery. */
+	 *  to surface; emit ⚑ INCOMPLETE-REGION per occurrence. NB the guard alarms CONSERVATIVELY: it
+	 *  fires ~100×/k=3 sweep (same count on the pre-branch baseline and all three branch sweeps),
+	 *  every one an over-alarm — the 61/61 oracle bijection affirms no tiling is lost. A jump in the
+	 *  count above that stable baseline is the discovery signal, not any firing at all. */
 	private supercellRejectionGuard(ctx: FillCtx, witnesses: Cyclotomic[], diag: PeriodSolverDiag): void {
 		diag.supercellRejected++;
 		const closure = primitiveLatticeClosure(ctx.u, ctx.v, witnesses);

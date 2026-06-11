@@ -14,15 +14,15 @@ plus a one-time digest re-baseline, recorded as such — never a silent baseline
 
 | ID | title | severity | owner | depends on | status |
 |----|-------|----------|-------|------------|--------|
-| OP-1 | Implement prop:typeprune (closed-cell half + V<k check) | major→minor (verifier) | CC | — | [ ] |
-| OP-2 | S1 cross-seed branch-enum amortization / lattice-first inversion | major | CC | — | [ ] |
-| OP-3 | S2 grid-isometry lattice orbit dedup + seed-stabilizer quotient | major | CC (+TA lemma) | [TH-9](03-theory-obligations.md) | [ ] |
+| OP-1 | Implement prop:typeprune (closed-cell half + V<k check) | major→minor (verifier) | CC | — | [x] 2026-06-11 |
+| OP-2 | S1 cross-seed branch-enum amortization / lattice-first inversion | major | CC | — | [x] 2026-06-11 (torus scope: census + counters; branch-enum memoization is orbifold-lane — deferred w/ reason, NOTES §35) |
+| OP-3 | S2 grid-isometry lattice orbit dedup + seed-stabilizer quotient | major | CC (+TA lemma) | [TH-9](03-theory-obligations.md) | [x] 2026-06-11 stage 1 (oblique-only; hol>2 + Stab-form gated on OP-9) |
 | OP-4 | Centroid-first cull reorder (canonicalRep / buildBlock / reducedClassKey) | major→minor (verifier) | CC | — | [ ] |
 | OP-5 | k=4 seed-build serialize + shard | major→moderate (verifier) | CC | — | [ ] |
 | OP-6 | Sub-seed (seed, lattice-index) checkpoints | major→moderate (verifier) | CC | — | [ ] |
 | OP-7 | Star predicate stack (filter + coord orient2D + edge bbox) | major | CC | [CB-2](01-code-bugs.md) | [ ] |
 | OP-8 | Incremental analyze() vertex-incidence (nearBlock) | minor | CC | — | [ ] |
-| OP-9 | Re-measurement protocol before any k=4 verdict | major | CC (verdict: AL/TA) | OP-1, OP-2, OP-3 | [ ] |
+| OP-9 | Re-measurement protocol before any k=4 verdict | major | CC (verdict: AL/TA) | OP-1, OP-2, OP-3 | [ ] (step-1 inputs exist: scripts/lattice-census.ts + committed tables — NOTES §35) |
 | OP-R | Rejected options register | minor/note | CC (docs) | — | [ ] |
 
 ---

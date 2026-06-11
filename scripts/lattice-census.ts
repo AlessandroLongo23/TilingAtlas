@@ -17,7 +17,7 @@ const files = fs.readdirSync('.scout-cache').filter((f) => f.startsWith(`lattice
 if (files.length === 0) { console.error(`no census files for k=${k} in .scout-cache/ (run with PS_LATTICE_CENSUS=1)`); process.exit(1); }
 const sigma = new Map<number, number>();
 const distinct = new Map<number, Set<string>>();
-const seedCount = new Map<string, number>(); // hook fires ≤1× per solve ⇒ a repeated seed name = stale appended file
+const seedCount = new Map<string, number>(); // keyed on the DISPLAY NAME, which is NOT unique across concrete seeds (distinct (rot,refl) seed maps and orbit-equivalent VC permutations share a name), so a repeat is expected and benign — NOT a staleness signal on its own
 let seeds = 0;
 for (const f of files) {
 	const lines = fs.readFileSync(`.scout-cache/${f}`, 'utf8').split('\n');
@@ -40,10 +40,13 @@ for (const f of files) {
 		}
 	}
 }
-// Warn only (no exit): duplicates inflate Σ and multiplicity but the distinct sets stay correct.
-const dupes = seeds - seedCount.size;
-if (dupes > 0) console.error(`⚠ ${dupes} duplicate seed entries — stale files from a prior run? Σ/multiplicity inflated`);
-console.log(`k=${k}  solve-calls=${seeds}  files=${files.length}`);
+// Note only (no exit): the census keys on DISPLAY NAMES, which are non-unique across concrete
+// seeds — repeated names are EXPECTED (many solve-calls share a name), not a staleness signal.
+// Σ/multiplicity count per solve-call (correct); the distinct lattice sets stay correct regardless.
+// A true staleness signal is solve-calls exceeding the known seed count for the run, not this.
+const repeats = seeds - seedCount.size;
+if (repeats > 0) console.error(`note: ${seeds} solve-calls span ${seedCount.size} distinct display names (${repeats} name repeats — benign; names are non-unique across concrete seeds). Delete stale lattice-census-k${k}.* only if solve-calls exceeds the run's known seed count.`);
+console.log(`k=${k}  solve-calls=${seeds}  distinct-names=${seedCount.size}  files=${files.length}`);
 console.log('hol | Σ work items | distinct lattices | multiplicity');
 for (const hol of [...sigma.keys()].sort((a, b) => a - b)) {
 	const s = sigma.get(hol)!, d = distinct.get(hol)!.size;
