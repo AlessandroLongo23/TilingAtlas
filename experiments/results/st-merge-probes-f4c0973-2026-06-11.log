@@ -1,0 +1,161 @@
+# ST-batch merge — post-merge k≤2 acceptance probes
+# merge commit: f4c0973 (Merge feat/st-star-work-orders into master; parents 17c59e8 + f96ddb3)
+# date: 2026-06-11
+# purpose: back the digest-neutral claim — confirm byte-identical vs recorded anchors
+# RECORDED ANCHORS: k=1 = 6f9ca9cf2d16c75f/11 ; k=2 = f3e2e0517191362c/20 ; 0 timeouts
+# harness: pnpm tsx scripts/probe-pipeline.ts <k> 3,4,6,8,12 <maxMs>
+# k=2 run uses maxMs=600000 to avoid cap-jitter under possible parallel-session load (see NOTES §34/SYNC).
+# ---------------------------------------------------------------------------
+=== k=1 probe started 11:56:18 ===
+tiles: {3,4,6,8,12}  ring N=24
+k=1: 15 seeds (15 used)
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 12.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 12.00), areaBound=10.39 (proven 10.39) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 84 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [0] [3,3,3,3,3,3]                cells=1 lat=23 raw=2 gateRej=0 fanLat=0 obl=0 7908ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 72.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 72.00), areaBound=62.35 (proven 62.35) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 48 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [1] [3,3,3,3,6]                  cells=1 lat=4 raw=4 gateRej=0 fanLat=0 obl=0 3008ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 27.71), compactOffMax2=16.00, gridShortMax2=12.25 (proven 27.71), areaBound=24.00 (proven 24.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 192 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":226824,"denMax":60}
+  [2] [3,3,3,4,4]                  cells=1 lat=48 raw=1 gateRej=0 fanLat=0 obl=108(trunc:join-waived) 1086ms
+  [3] [3,3,4,3,4]                  cells=1 lat=48 raw=1 gateRej=0 fanLat=0 obl=108(trunc:join-waived) 1135ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 310.28), compactOffMax2=16.00, gridShortMax2=12.25 (proven 310.28), areaBound=268.71 (proven 268.71) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 216 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 144 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [8] [3,4,6,4]                    cells=1 lat=4 raw=1 gateRej=0 fanLat=0 obl=0 687ms
+  [9] [3,6,3,6]                    cells=1 lat=11 raw=2 gateRej=0 fanLat=0 obl=0 1351ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 384 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [10] [3,12,12]                    cells=1 lat=6 raw=1 gateRej=0 fanLat=0 obl=0 759ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 24 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 44 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 104 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [11] [4,4,4,4]                    cells=1 lat=18 raw=1 gateRej=0 fanLat=0 obl=0 2754ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 252 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [12] [4,6,12]                     cells=1 lat=3 raw=1 gateRej=0 fanLat=0 obl=0 1112ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 133.81), compactOffMax2=16.00, gridShortMax2=12.25 (proven 133.81), areaBound=115.88 (proven 115.88) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 304 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 512 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 160 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [13] [4,8,8]                      cells=1 lat=8 raw=1 gateRej=0 fanLat=0 obl=0 470ms
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 108 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [14] [6,6,6]                      cells=1 lat=12 raw=1 gateRej=0 fanLat=0 obl=0 688ms
+
+k=1: 11 distinct tilings (from 11 raw cells), 0 seeds timed out, 25.3s total
+COMPOSITION digest=6f9ca9cf2d16c75f count=11
+=== k=1 done 11:56:44 ===
+=== k=2 probe started 11:56:44, maxMs=600000 ===
+tiles: {3,4,6,8,12}  ring N=24
+k=2: 40 seeds (40 used)
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 144.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 144.00), areaBound=124.71 (proven 124.71) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 720 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [0] [3,3,3,3,3,3;3,3,3,3,6]      cells=2 lat=23 raw=21 gateRej=10 fanLat=0 obl=0 23477ms
+  [1] [3,3,3,3,3,3;3,3,3,3,6]      cells=1 lat=23 raw=20 gateRej=10 fanLat=0 obl=0 21617ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 55.43), compactOffMax2=16.00, gridShortMax2=12.25 (proven 55.43), areaBound=48.00 (proven 48.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 8532 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":4437846,"denMax":60}
+  [2] [3,3,3,3,3,3;3,3,3,4,4]      cells=2 lat=487 raw=12 gateRej=4 fanLat=353 obl=2616(trunc:join-waived) 28769ms
+  [3] [3,3,3,3,3,3;3,3,4,3,4]      cells=1 lat=487 raw=2 gateRej=1 fanLat=360 obl=2616(trunc:join-waived) 20510ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 620.55), compactOffMax2=16.00, gridShortMax2=12.25 (proven 620.55), areaBound=537.42 (proven 537.42) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 3156 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [4] [3,3,3,3,3,3;3,3,4,12]       cells=1 lat=3 raw=2 gateRej=0 fanLat=0 obl=0 3208ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 852 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [5] [3,3,3,3,3,3;3,3,6,6]        cells=1 lat=47 raw=1 gateRej=0 fanLat=28 obl=12 16684ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 2112 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 552 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 768 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [10] [3,3,3,3,6;3,3,6,6]          cells=1 lat=26 raw=1 gateRej=0 fanLat=10 obl=12 2796ms
+  [11] [3,3,3,3,6;3,3,6,6]          cells=1 lat=26 raw=1 gateRej=0 fanLat=16 obl=12 2863ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":1345792,"denMax":60}
+  [13] [3,3,3,4,4;3,3,4,3,4]        cells=1 lat=330 raw=3 gateRej=2 fanLat=280 obl=648(trunc:join-waived) 11277ms
+  [14] [3,3,3,4,4;3,3,4,3,4]        cells=2 lat=330 raw=4 gateRej=2 fanLat=280 obl=648(trunc:join-waived) 13761ms
+  [15] [3,3,3,4,4;3,3,4,3,4]        cells=2 lat=330 raw=4 gateRej=2 fanLat=297 obl=648(trunc:join-waived) 14813ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1608 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 2184 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [18] [3,3,3,4,4;3,4,6,4]          cells=1 lat=9 raw=1 gateRej=0 fanLat=0 obl=0 2296ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 9504 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":3099762,"denMax":60}
+  [19] [3,3,3,4,4;4,4,4,4]          cells=2 lat=402 raw=5 gateRej=2 fanLat=279 obl=1932(trunc:join-waived) 10198ms
+  [23] [3,3,4,3,4;3,4,6,4]          cells=1 lat=9 raw=2 gateRej=0 fanLat=0 obl=0 3154ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 480 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 528 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1380 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 552 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 300 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [30] [3,3,6,6;3,6,3,6]            cells=1 lat=23 raw=6 gateRej=4 fanLat=15 obl=0 3370ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 984 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [33] [3,12,12;3,4,3,12]           cells=1 lat=12 raw=1 gateRej=0 fanLat=8 obl=0 1579ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 660 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [34] [3,4,4,6;3,4,6,4]            cells=1 lat=33 raw=4 gateRej=2 fanLat=26 obl=0 4161ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 3924 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":884270,"denMax":60}
+  [36] [3,4,4,6;3,6,3,6]            cells=2 lat=336 raw=4 gateRej=2 fanLat=313 obl=1056(trunc:join-waived) 5370ms
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 4344 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 528 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+  [39] [3,4,6,4;4,12,6]             cells=1 lat=2 raw=1 gateRej=0 fanLat=0 obl=0 1530ms
+
+k=2: 20 distinct tilings (from 25 raw cells), 0 seeds timed out, 233.2s total
+COMPOSITION digest=f3e2e0517191362c count=20
+=== k=2 done 12:00:42 ===

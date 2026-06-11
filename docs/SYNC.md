@@ -598,3 +598,10 @@ Myers-2009 k=2 oracle: 43 records (34 in-ring), loader 10/10, pins 36/40/42 — 
 PDF captions requested**. ST-9: productive star-fill positively covered via 4(i) + mutation check;
 ⚑ **4(i) measured OUTSIDE the tuned pool ⇒ tuned-sweep ceiling 12/13**. Detail + the Fig-43/conjecture
 findings: NOTES §35. Merge held: `fix/cb5-cb4-cb6` (other session) has its own §34 + solver edits. — CC
+
+**2026-06-11 — CC → TA+AL — ★ ST star batch MERGED to master (`f4c0973`, `--no-ff` of `feat/st-star-work-orders`).**
+Landed on top of the CB batch. The branch's star NOTES §35 was renumbered → **§36** (master's §35 = CB-5/4/6);
+in-repo cross-refs fixed (05-star review doc, scout-star-inring, star-fill-positive, PeriodSolver comment).
+Code auto-merged clean (ST-9 poolConfig ⋈ CB-6 properOverlapWithBlock — disjoint); build + `tsc` clean.
+Digest-neutral: k=1 `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20, 0 timeouts (`st-merge-probes-f4c0973-2026-06-11.log`).
+⚑ Stale star §35→§36 refs in SYNC/STATUS/NEXT left as-is (out-of-scope, flagged to AL). — CC
