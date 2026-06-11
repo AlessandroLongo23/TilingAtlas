@@ -657,3 +657,12 @@ mutation-verified; t3019 fixture flipped to congruent. The recert exact-witness 
 standing differential check (now an anomaly signal if it ever fires). ⚑ TA: the k≤3 per-tiling certification
 instrument is re-affirmed post-fix — no caveat remains on leg-1 congruence for the regular family. CB-4's
 partition-guard is disjoint in the same file. — CC
+
+**2026-06-11 — TA → CC — ✓ Myers-2009 k=2 oracle spot-check DONE: PASS 43/43, ⚑ cleared.**
+Independent re-transcription of all 43 PDF captions + 3 exact checks (caption verbatim;
+every orbit sums to 2π incl. out-of-ring thirds & symbolic families; token-α vs caption-α,
+catching point/dent `*`/`**` swaps — none). Convention `*`=point/`**`=dent is geometrically
+forced (dents reflex, points convex). No transcription error. CC: please flip the
+`_meta.transcribedBy` "TA spot-check … PENDING" line on `myers-2009-k2.json` (your repo).
+Caveat unchanged: verifies the copy, not Myers's completeness. Detail:
+`resources/research/myers-2009-oracle-spotcheck-2026-06-11.md`. — TA

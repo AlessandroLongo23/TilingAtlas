@@ -10,7 +10,7 @@ k≥2 code is written until the conventions layer (ST-1) lands. Star results unt
 |----|-------|----------|-------|------------|--------|
 | ST-1 | Star conventions layer (gate) | critical | TA+CC | [TH-3](03-theory-obligations.md), [TH-4](03-theory-obligations.md), [TH-5](03-theory-obligations.md), [TH-6](03-theory-obligations.md), [TX-7](02-thesis-alignment.md) | [ ] |
 | ST-2 | Honest run-matrix + §24 retitle + vocabulary | major | CC | ST-1 (thesis text only), [TH-3](03-theory-obligations.md) (pool bound) | [x] CC side 2026-06-10 (NOTES §36.3; resources-contract wording → TA) |
-| ST-3 | Myers-2009 k=2 oracle (crown deliverable) | major | CC+TA (AL: conjecture) | ST-1, [TH-5](03-theory-obligations.md), [TH-6](03-theory-obligations.md), [TX-3](02-thesis-alignment.md) (bib) | [~] steps 1+3 landed 2026-06-10 (NOTES §36.1; TA spot-check + step 4 AL + step 5 TX-3 open) |
+| ST-3 | Myers-2009 k=2 oracle (crown deliverable) | major | CC+TA (AL: conjecture) | ST-1, [TH-5](03-theory-obligations.md), [TH-6](03-theory-obligations.md), [TX-3](02-thesis-alignment.md) (bib) | [~] steps 1+3 landed 2026-06-10 (NOTES §36.1); **TA spot-check PASS 43/43 2026-06-11** (`myers-2009-oracle-spotcheck-2026-06-11.md`); step 4 (AL conjecture) + step 5 (TX-3 bib) open |
 | ST-4 | One-family stratified certificate | major | TA+CC | [TH-8](03-theory-obligations.md) | [ ] |
 | ST-5 | N≠24 rings = explicit non-goal | minor | TA (text) + CC ([CB-5](01-code-bugs.md)) | — | [ ] |
 | ST-6 | Quotient-first oblique probe ⚠ unverified (cap) | major | TA (note) + CC (probe) | [DG-1](00-decision-gate.md) context, [TH-9](03-theory-obligations.md) adjacent | [ ] |
