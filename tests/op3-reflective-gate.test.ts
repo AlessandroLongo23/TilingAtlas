@@ -38,9 +38,10 @@
  * (assertSameRing compares instances; a second CyclotomicRing.create(24) here would crash every
  * cross comparison).
  *
- * ⚑ Congruence verdicts: `cellsCongruent` has a known FALSE-NEGATIVE mode (reducedClassKey
- * float-tie on skinny lattices — pinned in tests/tiling-congruence-t3019.test.ts; R1 lib fix
- * pending). The bijection below therefore accepts a match via cellsCongruent OR via an exhaustive
+ * ⚑ Congruence verdicts: `cellsCongruent` HAD a false-negative mode (reducedClassKey float-tie on
+ * skinny lattices — pinned in tests/tiling-congruence-t3019.test.ts; FIXED in R1/1aa1c84, the key
+ * is now an exact class invariant). The bijection below still accepts a match via cellsCongruent OR
+ * via an exhaustive
  * exact grid-isometry witness (every accept is an exact-arithmetic proof — the gate is robust to
  * the lib bug without being weakened: every A-cell must still be EXACTLY verified congruent to
  * some B-cell, and vice versa).

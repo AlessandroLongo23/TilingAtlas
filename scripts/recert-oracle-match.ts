@@ -22,10 +22,14 @@
  * PAIRS test false — experiments/results/op1-t3019-investigation-2026-06-11.log): on t3019
  * EVERY surviving class member is false-negative-prone, so any-member matching alone (R2) still
  * failed (experiments/results/op1-k3-oracle-R2-2026-06-11.log). Every witness accept logs a loud
- * `⚑ exact-witness match` line — the standing evidence of the lib bug's blast radius. R1
- * (TilingCongruence.reducedClassKey, decisive-path) remains the lib fix, tracked separately;
- * tests/tiling-congruence-t3019.test.ts pins the buggy pair — its flip is the R1 acceptance
- * signal. Witness logic transplanted from tests/op3-reflective-gate.test.ts (mutation-verified).
+ * `⚑ exact-witness match` line. R1 — the lib fix (TilingCongruence.reducedClassKey now reduces
+ * the EXACT centroid coordinates, an exact class invariant) — has LANDED (`1aa1c84`), so the
+ * float-tie false negative is gone and this fallback is expected DORMANT (0 uses); it is RETAINED
+ * as a standing differential check (an independent, reducedClassKey-free second implementation —
+ * differential value, CB-4 spirit: the instrument must not share the fault under test), and a
+ * non-zero witness count is now itself an anomaly signal. tests/tiling-congruence-t3019.test.ts
+ * pins the formerly-failing pair (now congruent via the fast path). Witness logic transplanted
+ * from tests/op3-reflective-gate.test.ts (mutation-verified).
  *
  * ⚑ Ring discipline: Cyclotomic.assertSameRing compares ring INSTANCES, and oracle-match.ts
  * owns its module-level ring — so the oracle cells are reconstructed FIRST and the scout
@@ -169,8 +173,9 @@ if (mine.length !== 61) {
 }
 
 // --- class MEMBERSHIP reconstruction (R2) ---
-// dedupeByCongruence returns only the representatives — the partition is internal (the lib is
-// read-only here: the R1 TilingCongruence fix is deferred, certification-critical decisive path).
+// dedupeByCongruence returns only the representatives — the partition is internal. (Membership is
+// reconstructed here so the matcher can fall through class members; retained post-R1 as the
+// differential-witness harness, independent of TilingCongruence's now-fixed reducedClassKey.)
 // Rebuild the members in the script: primitive-reduce each raw cell exactly as the dedupe does
 // internally, then join it to the FIRST class where it is congruent to ANY current member —
 // chain-tolerant, mirroring how the dedupe chains classes. A TRUE verdict against any member is an
@@ -220,13 +225,14 @@ for (const [code, cell] of recon) {
 		if (hitAt < 0) {
 			// cellsCongruent-false residue ONLY: the independent exhaustive exact grid-isometry
 			// witness (reducedClassKey-free; every accept is an exact-arithmetic proof). Loud per
-			// use — these lines are the standing evidence of the lib bug's blast radius (R1 pending).
+			// use — post-R1 this is expected to NEVER fire; a non-zero count is now an anomaly signal
+				// (the reducedClassKey float-tie that needed it was fixed in 1aa1c84).
 			for (let m = 0; m < members.length; m++) {
 				if (exactCongruenceWitness(members[m], cell)) {
 					hitAt = m;
 					log(
 						`  ⚑ exact-witness match (cellsCongruent false-negative): ${code} via member ${m} ` +
-							`of class ${i} (all ${members.length} members cellsCongruent-false — R1 pending)`
+							`of class ${i} (all ${members.length} members cellsCongruent-false — UNEXPECTED post-R1, investigate)`
 					);
 					break;
 				}
@@ -234,7 +240,7 @@ for (const [code, cell] of recon) {
 		} else if (hitAt > 0) {
 			log(
 				`  ⚑ ${code} ↔ class ${i}: rep test FALSE, matched via member ${hitAt}/${members.length - 1} ` +
-					'(reducedClassKey false-negative representative — R1 pending)'
+					'(exact-witness path; reducedClassKey fixed in R1/1aa1c84 — expected unused)'
 			);
 		}
 		if (hitAt >= 0) hits.push(i);

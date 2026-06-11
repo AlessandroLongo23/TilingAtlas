@@ -2515,12 +2515,26 @@ remediation R2 — "accept if ANY surviving class member is `cellsCongruent` to 
 insufficient, because for t3019 ALL surviving members are false-negative-prone (the investigation log
 predicted this; R2 still missed). The working fix is an independent exact grid-isometry witness
 fallback inside the recert INSTRUMENT (every accept carries an exact proof; loud ⚑ per use). It was
-used exactly 1× at k=3 = t3019 (member 0 of class 31, all 3 members `cellsCongruent`-false). The
-library fix R1 (`reducedClassKey` canonicality in `TilingCongruence`) is DEFERRED: the decisive-path
-certification machinery is shared with `dedupeByCongruence`, so it is cross-lane with CB-4 — needs an
-owner call. A frozen failing pair is pinned in `tests/tiling-congruence-t3019.test.ts`; its FLIP from
-red to green is the R1 acceptance signal. Investigation committed
-(`experiments/results/op1-t3019-investigation-2026-06-11.log`, `f07b02c`).
+used exactly 1× at k=3 = t3019 (member 0 of class 31, all 3 members `cellsCongruent`-false).
+Investigation committed (`experiments/results/op1-t3019-investigation-2026-06-11.log`, `f07b02c`).
+
+**R1 — RESOLVED (`1aa1c84`, AL directed it implemented in-lane).** `reducedClassKey` no longer rounds
+the centroid into the fundamental cell with float `Math.round` + a lex-min ±2 window. It reduces the
+EXACT `(u,v)`-coordinates — α = `detSurd(c,v)/detSurd(u,v)`, β = `detSurd(u,c)/detSurd(u,v)` (cross
+products as exact Surds) — with shift-equivariant half-up rounding (`roundHalfUpExact`: float-guess +
+exact `Surd.cmp` correction). For `p+λ` the coordinates shift by exact integers, so the rounding
+shifts identically and the reduced representative is the byte-identical exact polygon for every member
+of a lattice class (ties included) — class invariance is now EXACT, not a contingent window
+heuristic; the window (and its second float-tie point, the `lim` filter) is gone. Why it is
+digest-neutral: a false-negative-only fix can only MERGE classes the old code wrongly split, and the
+certified partitions were already minimal-correct (k≤2: 11/20; k=3 scout: 61, oracle-bijective), so
+the partition — hence every composition digest — is unchanged. Measured: k≤2 probes byte-identical
+(`6f9ca9cf2d16c75f`/11, `f3e2e0517191362c`/20); k=3 recert 61/61 per-tiling bijection with the
+exact-witness fallback now DORMANT (0 uses, was 1 — the fast path recognizes t3019). New
+class-invariance regression tests are mutation-verified (the old float body fails them); the frozen
+t3019 fixture flipped red→green. Adversarial review: no blocking findings. The recert exact-witness
+fallback is retained as a standing differential check (now expected dormant). CB-4's
+`assertEquivalencePartition` guard touches a disjoint part of `TilingCongruence` — no conflict.
 
 **OP-2 (honest scope).** The review's headline OP-2 — branch-enumeration memoization — is an
 ORBIFOLD-lane construct; master's live path is the torus solver, which has no branch enumeration to

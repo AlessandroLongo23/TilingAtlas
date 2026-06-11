@@ -49,9 +49,10 @@ Two tiers. Do not mix them.
   oblique-only grid-orbit reduction per lem:orbitdedup (fills CONSERVED raw=302; k=3 re-baselined
   `11ee1b1d582811d1`/61). All three: **61/61 per-tiling bijection** (t3007 in, 0 orphans/dupes).
   ★ **OP-9 Σ-vs-distinct table exists** (oblique 17.4×, ALL 20.6×; post-OP-3 oblique work-items 12.0×
-  down). ⚑ **R1 open** — a second `reducedClassKey` float-tie false-NEG (t3019, 1:4.73 skinny cell)
-  surfaced by OP-1's sound P2; no tiling lost (recert hardened with an exact grid-isometry witness,
-  used 1×); lib fix DEFERRED, cross-lane CB-4, frozen pair in `tests/tiling-congruence-t3019.test.ts`.
+  down). ✓ **R1 RESOLVED** (`1aa1c84`, AL-directed) — the second `reducedClassKey` float-tie false-NEG
+  (t3019, 1:4.73 skinny cell), surfaced by OP-1's sound P2, is fixed at the source: exact (u,v)-coord
+  reduction, no float window. Digest-neutral (k≤2 byte-identical, k=3 recert 61/61 with the exact-witness
+  fallback now DORMANT). No leg-1 congruence caveat remains for the regular family; CB-4 disjoint in-file.
   F3b banners 76→0 post-OP-3 (A/B discharge abandoned ~50h; discharged on census=0 + the bijection).
   NOT merged — awaiting AL merge decision.
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis

@@ -612,3 +612,13 @@ recert; exact-witness used 1× = t3019, R1 unchanged). Census: oblique setup wor
 distinct 7362→620 reps (~11.9 avg orbit); wall 6753→6124s (~9% — modest as pinned; the deliverable is the
 OP-9 data, not speed). Block-index-cap banners 76→0 (the 4 skew bases ride orbit reps now). Reflective
 det g=−1 seeding gated by `tests/op3-reflective-gate.test.ts` (AL amendment). Logs: `op3-k3-*-2026-06-11.log`. — CC
+
+**2026-06-11 — CC → TA+AL — ★ R1 RESOLVED in-lane (AL-directed): reducedClassKey is now an EXACT class invariant.**
+The second TilingCongruence false negative (after 2c8ad69) is fixed at the source (`1aa1c84`): the centroid is
+reduced via EXACT (u,v)-coordinates + shift-equivariant half-up rounding, not float Math.round + a lex-min
+window. Digest-neutral (false-negative-only fix on already-minimal partitions): k≤2 probes byte-identical,
+k=3 recert 61/61 bijection with the exact-witness fallback now DORMANT (0 uses, was 1). Invariance tests
+mutation-verified; t3019 fixture flipped to congruent. The recert exact-witness fallback is retained as a
+standing differential check (now an anomaly signal if it ever fires). ⚑ TA: the k≤3 per-tiling certification
+instrument is re-affirmed post-fix — no caveat remains on leg-1 congruence for the regular family. CB-4's
+partition-guard is disjoint in the same file. — CC
