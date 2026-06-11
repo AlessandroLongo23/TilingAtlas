@@ -6,6 +6,7 @@ import {
 	vertexClassCount,
 	blockIndexRangeNeeded,
 	defaultMaxCellPolys,
+	applySeedMapInv,
 	BLOCK_INDEX_CAP,
 	candidateStageCacheStats,
 	_testOnlyClearCandidateStageCaches,
@@ -345,10 +346,9 @@ describe('OP-3 g⁻¹ seed-map inversion (lem:orbitdedup constraint 2) — pins 
 	// A wrong inverse silently seeds the wrong state and the k≤2 gate cannot catch it (0 oblique
 	// tilings there) — so the formulas are pinned HERE, against gridImage itself.
 	const ZERO = Cyclotomic.ZERO(ring);
-	const N = ring.N;
-	/** g⁻¹ exactly as solve()'s per-map `mapCore` applies it — keep in lockstep with PeriodSolver. */
+	/** g⁻¹ via the PRODUCTION helper (`applySeedMapInv`) — the pins below guard solve()'s seeding path directly. */
 	const invMap = (p: Polygon, rot: number, refl: boolean): Polygon =>
-		p.transformedRigid(ZERO, refl, refl ? rot : 0, refl ? 0 : (N - rot) % N, ZERO, 'full');
+		applySeedMapInv([p], { rot, refl }, ring, ZERO)[0];
 	/** the forward g (= gridImage on every exact vertex). */
 	const fwdMap = (p: Polygon, rot: number, refl: boolean): Polygon =>
 		p.transformedRigid(ZERO, refl, refl ? rot : 0, refl ? 0 : rot, ZERO, 'full');

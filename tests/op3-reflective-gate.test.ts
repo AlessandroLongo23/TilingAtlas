@@ -14,9 +14,9 @@
  *   Fill B: torusFill on Λ_rep    = Λ seeded with mapCore(core) = g⁻¹(core)  (the reduced world)
  *
  * for a REFLECTIVE g (refl=true, rot≠0) recorded by the REAL orbit machinery
- * (`groupIntoGridOrbits`), with `mapCore` the VERBATIM g⁻¹ expression from solve()'s per-map
- * seeding loop (PeriodSolver.ts, OP-3 stage 1) — replicated here argument-for-argument, NOT
- * refactored, and cross-checked vertex-by-vertex against the exact `gridImage` formulas. The gate:
+ * (`groupIntoGridOrbits`), with `mapCore` = `applySeedMapInv`, the PRODUCTION g⁻¹ helper solve()'s
+ * per-map seeding loop calls (PeriodSolver.ts, OP-3 stage 1) — the gate pins the real seeding path
+ * directly, cross-checked vertex-by-vertex against the exact `gridImage` formulas. The gate:
  * BOTH fills non-empty, and an exact-congruence bijection between them. A rotation-only control
  * map pins the det g = +1 path the same way.
  *
@@ -50,6 +50,7 @@ import { Cyclotomic } from '@/classes/Cyclotomic';
 import type { Polygon } from '@/classes/polygons/Polygon';
 import {
 	PeriodSolver,
+	applySeedMapInv,
 	type PeriodCell,
 	type PeriodSolverDiag,
 } from '@/classes/algorithm/PeriodSolver';
@@ -227,7 +228,7 @@ function congruent(a: PeriodCell, b: PeriodCell, memo: Map<string, string>): boo
 
 /**
  * THE GATE for one orbit map m: fill Λ_member = g(Λ) with `core` (unreduced world) and Λ_rep = Λ
- * with mapCore(core) = g⁻¹(core) (reduced world; mapCore is solve()'s VERBATIM expression), then
+ * with mapCore(core) = g⁻¹(core) (reduced world; mapCore is the production `applySeedMapInv`), then
  * require both fills non-empty and exact-congruence-bijective.
  */
 function runGate(m: { rot: number; refl: boolean }): {
@@ -239,12 +240,9 @@ function runGate(m: { rot: number; refl: boolean }): {
 	// Forward g (gridImage semantics: refl ⇒ z ↦ conj(z)·ζ^rot, else z ↦ z·ζ^rot) as a polygon map.
 	const gPoly = (p: Polygon): Polygon =>
 		p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : m.rot, ZERO, 'full');
-	// solve()'s mapCore — the OP-3 per-map g⁻¹ seeding expression, replicated VERBATIM
-	// (PeriodSolver.solve, stage-1 loop): refl ⇒ g⁻¹ = g (involution), else g⁻¹ = ζ^{(N−rot) mod N}.
-	const mapCore = (ps: Polygon[]): Polygon[] =>
-		ps.map((p) =>
-			p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : (N - m.rot) % N, ZERO, 'full')
-		);
+	// solve()'s g⁻¹ seeding — the PRODUCTION helper itself (`applySeedMapInv`, the expression used
+	// by solve()'s per-map loop): refl ⇒ g⁻¹ = g (involution), else g⁻¹ = ζ^{(N−rot) mod N}.
+	const mapCore = (ps: Polygon[]): Polygon[] => applySeedMapInv(ps, m, ring, ZERO);
 
 	// `core` is the seed AS THE UNREDUCED WORLD SEES IT on the member lattice: g(fan) — guaranteed
 	// completable on g(Λ) (g of the fixture tiling completes it), exactly as `fan` is on Λ.

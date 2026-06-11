@@ -265,7 +265,7 @@ export type PeriodSolverDiag = {
 	rawCells: number; // completed torus tilings surviving the in-fill filters (V<k, P2, primitivity), before dedup/gate. Accounting identity per lattice: certified closures = vBelowKSkipped + p2Skipped + supercellRejected + rawCells-contribution
 	emitted: number; // after canonical dedup + k-gate
 	gateRejected: number; // completed but orbit count ≠ k
-	fanLattices: number; // lattices where the rigid core overflowed the cell → seeded from VC fans instead
+	fanLattices: number; // lattices where ≥1 seed image (rigid core or a g⁻¹-mapped image) overflowed the cell → that image seeded from its (mapped) VC fans instead
 	p0Skipped: number; // candidate lattices removed by the P0 arithmetic pre-filter (minVerts > k·hol)
 	orbitSkipped: number; // OP-3 stage 1 (lem:orbitdedup): enumerated oblique (hol=2) candidate lattices DELETED as non-representative grid-orbit members. Fires only in candidateLattices, post-P0, regular seeds only (star seeds unreduced — TH-13 open). Accounting: orbitSkipped + candidateLattices = the pre-reduction post-P0 candidate count; each deleted member's fill coverage is conserved as a g⁻¹ seed map on its orbit representative (constraint 2), so nothing is dropped — candidateLattices counts what is TRIED, this counts what rides along
 	p1Pruned: number; // DFS branches cut by the P1 orbit-floor (vertexClasses > k·hol)
@@ -326,6 +326,15 @@ export const BLOCK_INDEX_CAP = 60;
  *  test. */
 export function blockIndexRangeNeeded(cellDiam: number, cellArea: number): number {
 	return Math.ceil(((2 * cellDiam + 10) * cellDiam) / cellArea) + 1;
+}
+
+/** OP-3: apply the INVERSE of grid map g=(rot,refl) to seed polygons — the g⁻¹(core) seed state
+ *  for the orbit representative (lem:orbitdedup (i)). g⁻¹: pure rotation → ζ^{N−rot}; reflection
+ *  conj∘ζ^rot is an involution → g⁻¹ = g. Pinned against gridImage by the inversion tests
+ *  (period-solver + op3-reflective-gate) — those pins now guard THIS production helper directly. */
+export function applySeedMapInv(ps: Polygon[], m: { rot: number; refl: boolean }, ring: Cyclotomic['ring'], ZERO: Cyclotomic): Polygon[] {
+	if (m.rot === 0 && !m.refl) return ps; // identity: original array, no clone (byte-identical fast path)
+	return ps.map((p) => p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : (ring.N - m.rot) % ring.N, ZERO, 'full'));
 }
 
 export class PeriodSolver {
@@ -470,7 +479,8 @@ export class PeriodSolver {
 			//   reflection   g = conj∘ζ^rot ⇒ g is an involution, so g⁻¹ = g (conj then ·ζ^rot).
 			// transformedRigid(origin=0, reflect, axisK, rotK, T=0, 'full'):
 			//   reflect=true ⇒ z ↦ conj(z)·ζ^{axisK+rotK};  reflect=false ⇒ z ↦ z·ζ^{rotK} —
-			// so g⁻¹ is transformedRigid(0,false,0,(N−rot)%N,0) resp. transformedRigid(0,true,rot,0,0).
+			// so g⁻¹ is transformedRigid(0,false,0,(N−rot)%N,0) resp. transformedRigid(0,true,rot,0,0),
+			// implemented ONCE in `applySeedMapInv` (shared with both inversion tests).
 			// IDENTITY-ONLY case (every non-oblique lattice, all k≤2 paths, star seeds): exactly one
 			// map {0,false} ⇒ one footprint test on corePolys, seedSets = [corePolys] or the fans on
 			// overflow, dedupSeeds false for a single seed — byte-identical control flow to the
@@ -486,13 +496,10 @@ export class PeriodSolver {
 			const seedSets: Polygon[][] = [];
 			let anyOverflow = false;
 			for (const m of seedMaps) {
-				const isId = m.rot === 0 && !m.refl;
-				const mapCore = (ps: Polygon[]): Polygon[] =>
-					isId ? ps : ps.map((p) => p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : (ring.N - m.rot) % ring.N, ZERO, 'full'));
-				const core = mapCore(corePolys);
+				const core = applySeedMapInv(corePolys, m, ring, ZERO);
 				const overflows = fanCoreSets.length > 0 && ctx.cellArea < totalCoreArea - 1e-9 &&
 					this.footprintArea(core, ctx) > ctx.cellArea + 1e-6;
-				if (overflows) { anyOverflow = true; for (const fan of fanCoreSets) seedSets.push(mapCore(fan)); }
+				if (overflows) { anyOverflow = true; for (const fan of fanCoreSets) seedSets.push(applySeedMapInv(fan, m, ring, ZERO)); }
 				else seedSets.push(core);
 			}
 			if (anyOverflow) diag.fanLattices++;
@@ -878,7 +885,8 @@ export class PeriodSolver {
 			orbitSkipped = oblique.length - groups.length;
 			candidates = [...other.map((basis) => ({ basis, seedMaps: idMaps() })), ...reduced];
 			// Re-sort by exact cell area — keep the cheapest-fill-first invariant. JS sort is stable,
-			// so equal-area order stays deterministic.
+			// so equal-area order stays deterministic (though equal-area ties may differ from the
+			// pre-OP-3 enumeration order: non-oblique before oblique — covered by probes/recert).
 			candidates.sort((a, b) => detSurd(a.basis[0], a.basis[1]).abs().cmp(detSurd(b.basis[0], b.basis[1]).abs()));
 		}
 
