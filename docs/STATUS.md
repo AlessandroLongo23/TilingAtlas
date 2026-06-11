@@ -49,8 +49,8 @@ Two tiers. Do not mix them.
   dependent false negatives; completeness, never soundness; certified 61 unaffected — lucky third
   rep). Fixed exact (`c802989`). Acceptance: k≤2 probes byte-identical ×2, suite 327/327, recert
   ★ PASS 61/61 + differential 0/2131 mismatches (`cb456-probes-*`, `k3-recert-...-18-22.log`).
-  ⚑ Outstanding: fresh k=3 no-cap sweep (expect `99919f42a7b58e76`/61) as batch acceptance; merge
-  on AL's go. ⚑ TA: thesis §19.6 congruence narrative gains the §35 sibling caveat.
+  **MERGED to master 2026-06-11** (NOTES §35); the fresh k=3 batch-acceptance sweep ran under OP-1/2/3
+  below (449/449, recert 61/61). ⚑ TA: thesis §19.6 congruence narrative gains the §35 sibling caveat.
 - ★ **OP-1/2/3 LANDED, `feat/op123-sound-levers` @ `cf1908e`** (off master `0291e83`; NOTES §35) —
   the three sound levers in the mandated order. OP-1 prop:typeprune P2+V<k (k≤2 byte-identical; k=3
   re-baselined `99919f42a7b58e76`→`b5c622070cff8b4`, raw 362→302 = duplicate-cert cut). OP-2 census +
@@ -63,22 +63,24 @@ Two tiers. Do not mix them.
   reduction, no float window. Digest-neutral (k≤2 byte-identical, k=3 recert 61/61 with the exact-witness
   fallback now DORMANT). No leg-1 congruence caveat remains for the regular family; CB-4 disjoint in-file.
   F3b banners 76→0 post-OP-3 (A/B discharge abandoned ~50h; discharged on census=0 + the bijection).
-  NOT merged — awaiting AL merge decision.
+  **MERGED to master 2026-06-11 (NOTES §38, op123 merge `7a19b6a`)** — master keeps its EQUIVALENT exact
+  `surdFloor` reducedClassKey (op123's t3019 fixture passes on it; R2 witness redundant). Fresh no-cap
+  sweep 449/449 → recert ★ 61/61, digest `11ee1b1d582811d1`/61, differential 0/2071.
 - **DG-1 verdict stands:** proven-config lattice run INFEASIBLE even at k=1 (≈1,370 yr) ⇒ thesis
   honest-rewrite (TX option (b)) merged; the measurement is itself a thesis result. NOTES §25.
 - Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1 conventions
   CLOSED in thesis master. Seed-anchored D-D dead by mechanism (NOTES §26).
-- ★ **ST-2 + ST-3(1+3) + ST-9 LANDED** (2026-06-10, `feat/st-star-work-orders` @ `a99e61b`, NOT merged,
-  digest-neutral): Myers-2009 k=2 oracle (43 records, 34 in-ring, pins 36/40/42; ⚑ TA caption
-  spot-check pending); productive star-fill positively covered via 4(i) + mutation check; honest
-  run-matrix + §24 retitle + per-cause truncation summary. ⚑ NEW finding: **4(i) is measured OUTSIDE
-  the tuned pool ⇒ the tuned dentreg sweep's ceiling is 12/13 Fig-4 tilings** (the §24.7
-  demonstration run can never be 13/13 without Increment-3 pool work). NOTES §35.
-- Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1 closed +
-  TH-3 star theory landed (TA); ★ **CC star tables LANDED 2026-06-10** (`feat/th4-th13-star-tables`
-  @ `7813ce8`, NOTES §35): TH-4 d_max(envelope) = 9 exact ⇒ δ ≤ 18k, F ≤ 42k; TH-13 19/8/5 +
-  single-variant regular-filler rider — constants INPUT, discharge is TA's. Seed-anchored D-D dead
-  by mechanism (NOTES §26).
+- ★ **ST-2 + ST-3(1+3) + ST-9 MERGED to master** (2026-06-11, NOTES §36, digest-neutral; ★ TA oracle
+  spot-check PASS 43/43 `d8fd260`): Myers-2009 k=2 oracle (43 records, 34 in-ring, pins 36/40/42);
+  productive star-fill positively covered via 4(i) + mutation check; honest run-matrix + §24 retitle.
+  ⚑ **4(i) is measured OUTSIDE the tuned pool ⇒ tuned dentreg ceiling 12/13 Fig-4 tilings**.
+- ★ **TH-4 / TH-13 star tables MERGED to master** (NOTES §37): d_max(envelope) = 9 exact ⇒ δ ≤ 18k,
+  F ≤ 42k; TH-13 19/8/5 + single-variant regular-filler rider — constants INPUT, discharge is TA's.
+- ★ **star-fill suite-gate MERGED**: heavy 4(i) test behind `RUN_STAR_FILL=1` (was OOMing default
+  `pnpm test`). Final full suite 40/40 files, 386 passed, 1 skipped, 0 OOM.
+- Orbifold: correct-but-gated (NOTES §23.9), branch `feat/c4-pool-bypass` PARKED. Star: 4(j) spike
+  certified k=1 exact; ST-1 closed + TH-3 star theory landed (TA). Seed-anchored D-D dead by
+  mechanism (NOTES §26).
 
 ## Thesis state
 
@@ -102,20 +104,21 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 
 ## Repo state (re-verify on read — this section goes stale fastest)
 
-- **master = ff of `fix/cb5-cb4-cb6` post-merge (merge commit `7d3813a` = `c8bc258` TH-2 F3 ⋈
-  CB-5/4/6+§35; AL-directed 2026-06-10 night). Post-merge acceptance: k=1 `6f9ca9cf2d16c75f`/11 ✓,
-  k=2 `f3e2e0517191362c`/20 ✓ 0 timeouts (first k=2 run showed cap-jitter under the other
-  session's load — 2 seeds hit the 120s default cap; re-run maxMs=600000 byte-identical;
-  `cb456-postmerge-probes-7d3813a-*.log`), suite 331/331 (5 load-timeouts pass isolated)**.
-  Branches pushed to origin (CB-9 ✓).
-- **master = `0291e83`** (TH-2 F3 + docs; not yet pushed, 5 ahead of origin). Open branches:
-  `feat/st-star-work-orders` @ `a99e61b` (ST-2/3/9, this session — merge held) and the other
-  session's `fix/cb5-cb4-cb6` @ `5a5367d` (⚑ carries its OWN §34 — renumber at merge; solver edits
-  may conflict with the ST-9 poolConfig change). Accepted k=3 artifact at
-  `.scout-cache/k3-accepted-99919f42a7b58e76.ndjson`; the live cache holds the stability sweep's
-  identical artifact. ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
-- Review work-orders: `docs/review-2026-06-09/` (01 code items ALL closed; OP/ST files untouched).
-- Supabase: k=3 run `52d0cb2e` certified (61); old `d522b481` de-certified, rows retained.
+- **master = `82c89f1` (suite-gate merge) + doc-cache commits on top** (2026-06-11 wind-down —
+  **NOT pushed**, ~47 ahead of origin/master). Linear
+  chain on top of the prior `0bfbd0f`: ST merge (`f4c0973`), th4-th13 merge (`22f16b4`), op123 merge
+  (`7a19b6a`) + AL ST-3 spot-check (`d8fd260`) + TA SEAT DENTS entry (`a54fa4f`) + op123 evidence
+  (`7e6716b`), star-fill suite-gate merge (`82c89f1`). Each batch digest-gated; full suite 40/40 files,
+  386 pass / 1 skip / 0 OOM.
+- **k=3 anchor RE-BASELINED `99919f42a7b58e76` → `11ee1b1d582811d1`/61** (OP-3 orbit-reduced reps; recert
+  ★ 61/61 per-tiling bijection, t3007 in). Artifact `.scout-cache/k3_3.4.6.12_cap0.ndjson`.
+  ⚑ Old k=3 resume caches INVALID (seed indices shifted) — always fresh.
+- **Open branches: master + 2 PARKED** — `feat/c1-proven-seeding` (merged ref, **8 uncommitted WIP files**
+  in its worktree — AL keep/discard call) and `feat/c4-pool-bypass` (orbifold, parked). Detached worktree
+  `op123-op2-sweep` (15 uncommitted scratch files) left untouched.
+- Review work-orders: `docs/review-2026-06-09/` (CB code items ALL closed; ST-2/3/9 + TH-4/13 done).
+- Supabase: k=3 run `52d0cb2e` certified (61) — ⚑ reflects the OLD `99919f42` digest; a re-cert DB
+  refresh for the new `11ee1b1d` anchor is a follow-up (not done in the wind-down).
 
 ## Ledger index
 
