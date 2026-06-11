@@ -61,6 +61,11 @@ Two tiers. Do not mix them.
   run-matrix + §24 retitle + per-cause truncation summary. ⚑ NEW finding: **4(i) is measured OUTSIDE
   the tuned pool ⇒ the tuned dentreg sweep's ceiling is 12/13 Fig-4 tilings** (the §24.7
   demonstration run can never be 13/13 without Increment-3 pool work). NOTES §35.
+- Orbifold: correct-but-gated (NOTES §23.9). Star: 4(j) spike certified k=1 exact; ST-1 closed +
+  TH-3 star theory landed (TA); ★ **CC star tables LANDED 2026-06-10** (`feat/th4-th13-star-tables`
+  @ `7813ce8`, NOTES §35): TH-4 d_max(envelope) = 9 exact ⇒ δ ≤ 18k, F ≤ 42k; TH-13 19/8/5 +
+  single-variant regular-filler rider — constants INPUT, discharge is TA's. Seed-anchored D-D dead
+  by mechanism (NOTES §26).
 
 ## Thesis state
 

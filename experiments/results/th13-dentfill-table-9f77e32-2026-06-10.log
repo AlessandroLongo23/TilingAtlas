@@ -1,0 +1,120 @@
+=== TH-13 — dent-fill γ-feasibility table (commit 9f77e32, 2026-06-10) ===
+
+Per in-ring variant (n,α): dent β = 24 − 24/n − α; dent-fill angle γ = 24 − β = 24/n + α.
+ALL columns computed from the P3 formulas, none asserted; cross-checked against the live filter.
+Verdicts: REGULAR-FILLABLE (kept by dentRegularFillableVariants today) | POINT-ONLY (dropped today;
+  star-point-fillable in the MIXED universe only) | UNFILLABLE (no single corner — provably Fig-4-absent,
+  sharper than the filter's current justification). Gear column = first rung of lem:dentchain:
+  each point filler m*@γ's own dent-fill angle γ′ = 24/m + γ and its fill class.
+
+variant      β   γ   reg-matches   same-fam-pt   cross-fam-pt-matches          dent   verdict
+3*@1         15   9   8             no            12*@9                         ∅      REGULAR-FILLABLE
+             gear: 12*@9 fills → its own γ′=11 is none
+3*@2         14  10   12            no            —                             ∅      REGULAR-FILLABLE
+3*@3         13  11   —             no            —                             ∅      UNFILLABLE
+4*@1         17   7   —             no            6*@7 8*@7 12*@7               ∅      POINT-ONLY
+             gear: 6*@7 fills → its own γ′=11 is none
+             gear: 8*@7 fills → its own γ′=10 is regular
+             gear: 12*@7 fills → its own γ′=9 is both
+4*@2         16   8   6             no            8*@8 12*@8                    ∅      REGULAR-FILLABLE
+             gear: 8*@8 fills → its own γ′=11 is none
+             gear: 12*@8 fills → its own γ′=10 is regular
+4*@3         15   9   8             no            12*@9                         ∅      REGULAR-FILLABLE
+             gear: 12*@9 fills → its own γ′=11 is none
+4*@4         14  10   12            no            —                             ∅      REGULAR-FILLABLE
+4*@5         13  11   —             no            —                             ∅      UNFILLABLE
+6*@1         19   5   —             no            4*@5 6*@5 8*@5 12*@5          ∅      POINT-ONLY
+             gear: 4*@5 fills → its own γ′=11 is none
+             gear: 6*@5 fills → its own γ′=9 is both
+             gear: 8*@5 fills → its own γ′=8 is both
+             gear: 12*@5 fills → its own γ′=7 is point
+6*@2         18   6   4             no            6*@6 8*@6 12*@6               ∅      REGULAR-FILLABLE
+             gear: 6*@6 fills → its own γ′=10 is regular
+             gear: 8*@6 fills → its own γ′=9 is both
+             gear: 12*@6 fills → its own γ′=8 is both
+6*@3         17   7   —             no            6*@7 8*@7 12*@7               ∅      POINT-ONLY
+             gear: 6*@7 fills → its own γ′=11 is none
+             gear: 8*@7 fills → its own γ′=10 is regular
+             gear: 12*@7 fills → its own γ′=9 is both
+6*@4         16   8   6             no            8*@8 12*@8                    ∅      REGULAR-FILLABLE
+             gear: 8*@8 fills → its own γ′=11 is none
+             gear: 12*@8 fills → its own γ′=10 is regular
+6*@5         15   9   8             no            12*@9                         ∅      REGULAR-FILLABLE
+             gear: 12*@9 fills → its own γ′=11 is none
+6*@6         14  10   12            no            —                             ∅      REGULAR-FILLABLE
+6*@7         13  11   —             no            —                             ∅      UNFILLABLE
+8*@1         20   4   3             no            4*@4 6*@4 8*@4 12*@4          ∅      REGULAR-FILLABLE
+             gear: 4*@4 fills → its own γ′=10 is regular
+             gear: 6*@4 fills → its own γ′=8 is both
+             gear: 8*@4 fills → its own γ′=7 is point
+             gear: 12*@4 fills → its own γ′=6 is both
+8*@2         19   5   —             no            4*@5 6*@5 8*@5 12*@5          ∅      POINT-ONLY
+             gear: 4*@5 fills → its own γ′=11 is none
+             gear: 6*@5 fills → its own γ′=9 is both
+             gear: 8*@5 fills → its own γ′=8 is both
+             gear: 12*@5 fills → its own γ′=7 is point
+8*@3         18   6   4             no            6*@6 8*@6 12*@6               ∅      REGULAR-FILLABLE
+             gear: 6*@6 fills → its own γ′=10 is regular
+             gear: 8*@6 fills → its own γ′=9 is both
+             gear: 12*@6 fills → its own γ′=8 is both
+8*@4         17   7   —             no            6*@7 8*@7 12*@7               ∅      POINT-ONLY
+             gear: 6*@7 fills → its own γ′=11 is none
+             gear: 8*@7 fills → its own γ′=10 is regular
+             gear: 12*@7 fills → its own γ′=9 is both
+8*@5         16   8   6             no            8*@8 12*@8                    ∅      REGULAR-FILLABLE
+             gear: 8*@8 fills → its own γ′=11 is none
+             gear: 12*@8 fills → its own γ′=10 is regular
+8*@6         15   9   8             no            12*@9                         ∅      REGULAR-FILLABLE
+             gear: 12*@9 fills → its own γ′=11 is none
+8*@7         14  10   12            no            —                             ∅      REGULAR-FILLABLE
+8*@8         13  11   —             no            —                             ∅      UNFILLABLE
+12*@1        21   3   —             no            3*@3 4*@3 6*@3 8*@3 12*@3     ∅      POINT-ONLY
+             gear: 3*@3 fills → its own γ′=11 is none
+             gear: 4*@3 fills → its own γ′=9 is both
+             gear: 6*@3 fills → its own γ′=7 is point
+             gear: 8*@3 fills → its own γ′=6 is both
+             gear: 12*@3 fills → its own γ′=5 is point
+12*@2        20   4   3             no            4*@4 6*@4 8*@4 12*@4          ∅      REGULAR-FILLABLE
+             gear: 4*@4 fills → its own γ′=10 is regular
+             gear: 6*@4 fills → its own γ′=8 is both
+             gear: 8*@4 fills → its own γ′=7 is point
+             gear: 12*@4 fills → its own γ′=6 is both
+12*@3        19   5   —             no            4*@5 6*@5 8*@5 12*@5          ∅      POINT-ONLY
+             gear: 4*@5 fills → its own γ′=11 is none
+             gear: 6*@5 fills → its own γ′=9 is both
+             gear: 8*@5 fills → its own γ′=8 is both
+             gear: 12*@5 fills → its own γ′=7 is point
+12*@4        18   6   4             no            6*@6 8*@6 12*@6               ∅      REGULAR-FILLABLE
+             gear: 6*@6 fills → its own γ′=10 is regular
+             gear: 8*@6 fills → its own γ′=9 is both
+             gear: 12*@6 fills → its own γ′=8 is both
+12*@5        17   7   —             no            6*@7 8*@7 12*@7               ∅      POINT-ONLY
+             gear: 6*@7 fills → its own γ′=11 is none
+             gear: 8*@7 fills → its own γ′=10 is regular
+             gear: 12*@7 fills → its own γ′=9 is both
+12*@6        16   8   6             no            8*@8 12*@8                    ∅      REGULAR-FILLABLE
+             gear: 8*@8 fills → its own γ′=11 is none
+             gear: 12*@8 fills → its own γ′=10 is regular
+12*@7        15   9   8             no            12*@9                         ∅      REGULAR-FILLABLE
+             gear: 12*@9 fills → its own γ′=11 is none
+12*@8        14  10   12            no            —                             ∅      REGULAR-FILLABLE
+12*@9        13  11   —             no            —                             ∅      UNFILLABLE
+
+VERDICT COUNTS: 19 REGULAR-FILLABLE / 8 POINT-ONLY / 5 UNFILLABLE
+
+CROSS-CHECKS:
+  ✓ rows (32) == inRingStarVariants().length (32)
+  ✓ REGULAR-FILLABLE count (19) == dentRegularFillableVariants().length (19)
+  ✓ REGULAR-FILLABLE set == dentRegularFillableVariants() set
+  ✓ same-family point match impossible everywhere (γ = α + 24/n ≠ α)
+  ✓ dent matches empty everywhere (γ < 12 < β′)
+  ✓ verdicts partition the 32
+
+RIDER (verified by the same-family column): in any tiling whose stars are ALL one variant (n,α),
+  no dent can be star-point-filled (γ = α + 24/n ≠ α) ⇒ the regular-filler hypothesis holds
+  UNCONDITIONALLY for single-variant in-ring tilings. The at-risk class is MIXED-variant only;
+  gear chains (lem:dentchain) require ≥ 2 distinct variants.
+
+⚑ TH-13 is NOT discharged by this table — it scopes TA's lemma attempt (vacuous where no point
+  match exists; the local-exclusion attempt is needed exactly on the cross-family matches above).
+ALL CROSS-CHECKS PASSED  (0.0s)

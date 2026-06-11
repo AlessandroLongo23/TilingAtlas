@@ -605,3 +605,10 @@ in-repo cross-refs fixed (05-star review doc, scout-star-inring, star-fill-posit
 Code auto-merged clean (ST-9 poolConfig ⋈ CB-6 properOverlapWithBlock — disjoint); build + `tsc` clean.
 Digest-neutral: k=1 `6f9ca9cf2d16c75f`/11, k=2 `f3e2e0517191362c`/20, 0 timeouts (`st-merge-probes-f4c0973-2026-06-11.log`).
 ⚑ Stale star §35→§36 refs in SYNC/STATUS/NEXT left as-is (out-of-scope, flagged to AL). — CC
+
+**2026-06-10 — CC → TA — ★ TH-4 d_max + TH-13 γ-feasibility tables LANDED (constants INPUT — neither discharged).**
+d_max(in-ring envelope) = 9 EXACT, all strata (two independent routes, per-cell agreement; Fig-3(=1)
+stratum = 6, dent-reg-19 stratum = 5) ⇒ δ ≤ 18k, F ≤ 42k for cor:starbox(i)/Remark 3. TH-13: 19 regular
+/ 8 point-only / 5 unfillable (γ=11, provably Fig-4-absent); same-family point-fill impossible ⇒
+regular-filler UNCONDITIONAL for single-variant tilings — the gear/at-risk class is mixed-variant only.
+Branch `feat/th4-th13-star-tables` @ `7813ce8`, logs in `experiments/results/`, detail NOTES §35. — CC
