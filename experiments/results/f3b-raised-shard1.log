@@ -1,0 +1,10 @@
+F3b cap-discharge  label=raised  BENCH (pre-OP-3 @ fa25672)  k=3  maxMs=0 (unlimited)
+Affected seeds (5): 47,48,49,50,51
+Started: 2026-06-11T08:05:44.375Z
+BLOCK_INDEX_CAP NOTE: the raised run requires the bench's lib const edited 60 -> 128 (no env knob:
+  completeness-knob doctrine). Restore via git checkout -- lib/ afterwards.
+
+  [1/5] seed 47 "[3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]"  elapsed=0.0s  eta~? ...
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 71), poolLmax=8.12 (proven 83.14), compactOffMax2=66.00, gridShortMax2=66.00 (proven 83.14), areaBound=72.00 (proven 72.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}

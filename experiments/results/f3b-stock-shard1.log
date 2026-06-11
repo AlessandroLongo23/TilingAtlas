@@ -1,0 +1,32 @@
+F3b cap-discharge  label=stock  BENCH (pre-OP-3 @ fa25672)  k=3  maxMs=0 (unlimited)
+Affected seeds (5): 47,48,49,50,51
+Started: 2026-06-11T07:48:59.024Z
+BLOCK_INDEX_CAP NOTE: the raised run requires the bench's lib const edited 60 -> 128 (no env knob:
+  completeness-knob doctrine). Restore via git checkout -- lib/ afterwards.
+
+  [1/5] seed 47 "[3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]"  elapsed=0.0s  eta~? ...
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 71), poolLmax=8.12 (proven 83.14), compactOffMax2=66.00, gridShortMax2=66.00 (proven 83.14), areaBound=72.00 (proven 72.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":107481322,"denMax":60}
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,0,0,2,0,-3,0#1|-7,0,4,0,8,0,-10,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-1,0,-4,0,8,0,-6,0#1|-1,0,0,0,-2,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,-1,0,3,0,-2,0#1|-6,0,1,0,10,0,-8,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-4,0,-1,0,10,0,-7,0#1|0,0,-1,0,-3,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+      -> 4 cells  raw=33  emitted=4  blockCapTrunc=4  timedOut=false  334865ms
+  [2/5] seed 48 "[3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]"  elapsed=334.9s  eta~1339s ...
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,0,0,2,0,-3,0#1|-7,0,4,0,8,0,-10,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-1,0,-4,0,8,0,-6,0#1|-1,0,0,0,-2,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,-1,0,3,0,-2,0#1|-6,0,1,0,10,0,-8,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-4,0,-1,0,10,0,-7,0#1|0,0,-1,0,-3,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+      -> 4 cells  raw=41  emitted=4  blockCapTrunc=4  timedOut=false  334828ms
+  [3/5] seed 49 "[3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]"  elapsed=669.7s  eta~1005s ...
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,0,0,2,0,-3,0#1|-7,0,4,0,8,0,-10,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-1,0,-4,0,8,0,-6,0#1|-1,0,0,0,-2,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,-1,0,3,0,-2,0#1|-6,0,1,0,10,0,-8,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-4,0,-1,0,10,0,-7,0#1|0,0,-1,0,-3,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+      -> 4 cells  raw=52  emitted=4  blockCapTrunc=4  timedOut=false  456482ms
+  [4/5] seed 50 "[3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]"  elapsed=1126.2s  eta~751s ...
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,0,0,2,0,-3,0#1|-7,0,4,0,8,0,-10,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-1,0,-4,0,8,0,-6,0#1|-1,0,0,0,-2,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-3,0,-1,0,3,0,-2,0#1|-6,0,1,0,10,0,-8,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (block index cap): lattice 1|-4,0,-1,0,10,0,-7,0#1|0,0,-1,0,-3,0,3,0 needs index range 63 > 60 — blocks under-built; this candidate's results are NOT completeness-grade

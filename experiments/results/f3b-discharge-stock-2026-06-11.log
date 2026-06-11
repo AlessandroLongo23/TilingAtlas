@@ -1,0 +1,14 @@
+F3b cap-discharge  label=stock  BENCH (pre-OP-3 @ fa25672)  k=3  maxMs=0 (unlimited)
+Affected seeds (4): 77,78,79,80
+Started: 2026-06-11T07:48:59.503Z
+BLOCK_INDEX_CAP NOTE: the raised run requires the bench's lib const edited 60 -> 128 (no env knob:
+  completeness-knob doctrine). Restore via git checkout -- lib/ afterwards.
+
+  [1/4] seed 77 "[3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4]"  elapsed=0.0s  eta~? ...
+         -> 4 cells  raw=43  emitted=4  blockCapTrunc=4  timedOut=false  356374ms
+  [2/5] seed 53 "[3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]"  elapsed=356.4s  eta~1426s          -> 0 cells  raw=12  emitted=0  blockCapTrunc=4  timedOut=false  392837ms
+  [3/5] seed 63 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]"  elapsed=738.3s  eta~1107             -> 0 cells  raw=14  emitted=0  blockCapTrunc=4  timedOut=false  578728ms
+  [4/5] seed 59 "[3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]"  elapsed=1281.6s  eta~      -> 0 cells  raw=3  emitted=0  blockCapTrunc=4  timedOut=false  402139ms
+
+Done in 1334.6s  →  /tmp/f3b-stock-4.json
+Finished: 2026-06-11T08:11:14.131Z
