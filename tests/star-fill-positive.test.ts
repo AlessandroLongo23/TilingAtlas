@@ -24,7 +24,17 @@
  * line `for (const st of ctx.starTiles) place(ExactStarPolygon.isotoxal(...))` in PeriodSolver makes
  * this test FAIL (0 cells) while 4(j)/4(p) full-fan certifications would still pass — proving this
  * test, and only this test, exercises productive star-fill.
+ *
+ * ⚑ HEAVY — OPT-IN ONLY (added 2026-06-11 after the op123 merge-suite run): the 4(i) case widens the
+ * candidate pool (POOL_STEPS_UP=8), which is memory-heavy — under the default `pnpm test` heap it
+ * OOMs the vitest worker and times out the fork (op123-merge-suite-2026-06-11.log: FATAL heap OOM +
+ * "Timeout terminating forks worker"). So the 4(i) solve runs ONLY under `RUN_STAR_FILL=1`, with the
+ * documented heap:  RUN_STAR_FILL=1 NODE_OPTIONS="--max-old-space-size=12288" pnpm vitest run
+ * tests/star-fill-positive.test.ts. The cheap upstream-rejection assertion (4(j) sub-fan, ~2.5 s)
+ * stays always-on so the default suite keeps the architectural fact under test. This mirrors the
+ * project's PROVEN_POOL=1 opt-in for expensive proof-anchored paths.
  */
+const RUN_STAR_FILL = process.env.RUN_STAR_FILL === "1";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
 import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
@@ -50,7 +60,7 @@ describe("ST-9 — productive star-fill (C3) positive coverage", () => {
 		expect(cells.length).toBe(0); // the partial VC "4*p@3,8" is allowed; the true closed VC never is
 	}, 120_000);
 
-	describe("Myers 4(i) 8.3*@1.8.6*@5 — the one fill-requiring in-ring Fig-4 tiling", () => {
+	describe.runIf(RUN_STAR_FILL)("Myers 4(i) 8.3*@1.8.6*@5 — the one fill-requiring in-ring Fig-4 tiling [HEAVY, RUN_STAR_FILL=1]", () => {
 		beforeAll(() => {
 			// widen-only pool override (NOTES §36): 4(i)'s period is outside the tuned pool — its
 			// hexagonal basis (ℓ ≈ 5.05, ℓ² ≈ 25.5) is off-grid (compactOffMax2=16 excludes it) and

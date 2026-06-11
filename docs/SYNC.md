@@ -686,3 +686,10 @@ is equivalent — VERIFIED: op123's own `tiling-congruence-t3019` fixture PASSES
 CB-4 `CongruenceDifferential` (R2 witness redundant). op123 NOTES §35→§38. ACCEPTANCE: build+tsc, 63 op123/CB
 tests + t3019, k≤2 byte-identical, fresh k=3 no-cap sweep 449/449 → ★ **61/61 oracle bijection**, digest
 `11ee1b1d582811d1`/61 (re-baselined from `99919f42`), differential 0/2071, t3007 in. — CC
+
+**2026-06-11 — CC → TA+AL — star-fill suite-gate fix (branch `fix/star-fill-suite-gate` @ `1cfcd8f`,
+off master `0bfbd0f`).** The §36 ST-9 test `tests/star-fill-positive.test.ts` OOMed the default
+`pnpm test` (4(i) widens the pool → needs the 12 GB heap; op123-merge-suite log: FATAL heap OOM +
+worker timeout). Heavy 4(i) leg now gated behind `RUN_STAR_FILL=1` (PROVEN_POOL-style opt-in); cheap
+4(j)-rejection assertion stays always-on. Default = 1 pass/1 skip ~10s no OOM; opt-in = 2/2 in 321s.
+Test-only, digest-neutral. ⚑ Fold into master ahead of the next full-suite acceptance run. — CC
