@@ -28,19 +28,63 @@
 
 import type { Polygon } from '../polygons/Polygon';
 import { Cyclotomic } from '../Cyclotomic';
-import { detSurd } from './exact/Surd';
+import { detSurd, type Surd } from './exact/Surd';
 import { sameLattice } from './LatticeEnumerator';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { PeriodCell } from './PeriodSolver';
 
 /**
- * Canonical lattice-class representative key of `p` under Λ = (u, v): the lexicographically smallest
- * exact key among `p`'s near-origin lattice translates. The same key for every member of a class (the
- * near-origin translate SET is identical for p and p+λ), so it is immune to the half-integer-boundary
- * rounding that splits a class when each polygon is reduced independently (the bug `canonicalRep` was
- * written to fix in PeriodSolver). Float only picks the integer translations; the keys are exact.
+ * Round `num/den` (den > 0) to the nearest integer, half-UP, EXACTLY. Float-guesses the integer
+ * then corrects it with exact `Surd.cmp`, so the result is the true round even when num/den lands on
+ * a half-integer tie (the boundary the old float `Math.round` decided inconsistently — R1). Half-up
+ * is `n = floor(num/den + 1/2)`, i.e. the integer with `n − 1/2 ≤ num/den < n + 1/2`, which in
+ * den-cleared exact form is `(2n−1)·den ≤ 2·num < (2n+1)·den`.
+ *
+ * Shift-equivariance — the property that makes `reducedClassKey` class-invariant: floor(x + 1/2)
+ * obeys floor(x + k + 1/2) = floor(x + 1/2) + k for every integer k and every real x (ties
+ * included). So when the argument shifts by an integer (as a centroid coordinate does between two
+ * members p, p+λ of one lattice class), the rounded value shifts by exactly that integer — and the
+ * reduced representative `base` is then the SAME exact polygon for every member.
  */
-function reducedClassKey(
+function roundHalfUpExact(num: Surd, den: Surd, floatGuess: number): number {
+	// The float guess only seeds the search to make it O(1); CORRECTNESS is independent of it — the
+	// exact loop walks `n` one step toward the true value per iteration and converges from ANY finite
+	// start (so the `isFinite` fallback to 0 is a guaranteed-correct path, not just a NaN guard; do
+	// not remove it). The 64 cap throws only on a zero-area (non-lattice) basis.
+	let n = Number.isFinite(floatGuess) ? Math.round(floatGuess) : 0;
+	const twoNum = num.scaleRational(2n); // 2·num
+	for (let it = 0; it < 64; it++) {
+		const bn = BigInt(n);
+		if (twoNum.cmp(den.scaleRational(2n * bn - 1n)) < 0) { n--; continue; } // num/den < n − 1/2
+		if (twoNum.cmp(den.scaleRational(2n * bn + 1n)) >= 0) { n++; continue; } // num/den ≥ n + 1/2
+		return n;
+	}
+	throw new Error('reducedClassKey/roundHalfUpExact: did not converge (degenerate basis?)');
+}
+
+/**
+ * Canonical lattice-class representative key of `p` under Λ = (u, v): the exact key of the unique
+ * representative whose centroid lies in the half-open fundamental cell centred at the origin, found
+ * by reducing the centroid's exact (u, v)-coordinates with half-up rounding.
+ *
+ * Class invariance is EXACT (not approximate). The centroid coordinates are α = ⟨c×v⟩/⟨u×v⟩,
+ * β = ⟨u×c⟩/⟨u×v⟩ where ⟨a×b⟩ = `detSurd(a, b)` is the exact signed cross product (Im(conj a·b)).
+ * For another class member p+λ with λ = a·u + b·v (a, b ∈ ℤ), bilinearity of the cross product and
+ * ⟨u×u⟩ = ⟨v×v⟩ = 0 give α(p+λ) = α + a and β(p+λ) = β + b; with the shift-equivariant exact
+ * rounding above, the reduced integers shift by exactly (a, b) and `base` is the IDENTICAL exact
+ * polygon — so `base.exactKey()` is one canonical value per lattice class, ties included.
+ *
+ * This replaces the prior float-`Math.round` reduction + lexicographic ±2 window. That design tried
+ * to recover class-invariance by minimising over a near-origin translate set, but on a skinny
+ * lattice (e.g. t3019's |u|=1, |v|=3+√3≈4.73) a tile centroid sits exactly on the Math.round
+ * half-integer boundary; float noise (~4e-16) rounded different members one u-step apart and the
+ * window's float `lim` filter did not absorb the shift, so one class acquired two keys and a genuine
+ * congruence read as a false negative (R1; second TilingCongruence false negative after the 2c8ad69
+ * rotation drop). The exact reduction removes both float-tie points, so no window is needed.
+ * Exported for the class-invariance regression test. Float is used ONLY to guess the integers; every
+ * decision is an exact Surd comparison and `Polygon.exactKey` is pure bigint.
+ */
+export function reducedClassKey(
 	p: Polygon,
 	u: Cyclotomic,
 	v: Cyclotomic,
@@ -54,36 +98,27 @@ function reducedClassKey(
 		const hit = memo!.get(cacheKey);
 		if (hit !== undefined) return hit;
 	}
-	const uV = u.toVector();
-	const vV = v.toVector();
-	const det = uV.x * vV.y - uV.y * vV.x;
-	const c = p.exactCentroid!.toVector();
-	// integer combo bringing the centroid into the fundamental cell (exact translate, float-guessed m,n)
-	const ma = Math.round((c.x * vV.y - c.y * vV.x) / det);
-	const mb = Math.round((uV.x * c.y - uV.y * c.x) / det);
+	const c = p.exactCentroid!;
+	// Exact (u, v)-coordinates of the centroid as ratios of cross products; normalise the denominator
+	// sign so den > 0 (the cross product is orientation-signed). α = numA/den, β = numB/den.
+	let den = detSurd(u, v); // ⟨u×v⟩ = signed cell area, ≠ 0 for a real basis
+	let numA = detSurd(c, v); // ⟨c×v⟩
+	let numB = detSurd(u, c); // ⟨u×c⟩
+	if (den.sign() < 0) { den = den.neg(); numA = numA.neg(); numB = numB.neg(); }
+	// Float guesses (sign-independent — the float det cancels), exact-corrected by roundHalfUpExact.
+	const uV = u.toVector(), vV = v.toVector(), cV = c.toVector();
+	const detF = uV.x * vV.y - uV.y * vV.x;
+	const nA = roundHalfUpExact(numA, den, (cV.x * vV.y - cV.y * vV.x) / detF);
+	const nB = roundHalfUpExact(numB, den, (uV.x * cV.y - uV.y * cV.x) / detF);
 	let base = p;
-	if (ma !== 0 || mb !== 0) {
-		const T = u.scaleRational(BigInt(-ma), 1n).add(v.scaleRational(BigInt(-mb), 1n));
+	if (nA !== 0 || nB !== 0) {
+		const T = u.scaleRational(BigInt(-nA), 1n).add(v.scaleRational(BigInt(-nB), 1n));
 		base = p.clone();
 		base.translateExact(T);
 	}
-	const cellDiam = Math.max(Math.hypot(uV.x, uV.y), Math.hypot(vV.x, vV.y));
-	const lim = 1.5 * cellDiam + 0.1;
-	let bestKey = base.exactKey();
-	for (let i = -2; i <= 2; i++) {
-		for (let j = -2; j <= 2; j++) {
-			if (i === 0 && j === 0) continue;
-			const T = u.scaleRational(BigInt(i), 1n).add(v.scaleRational(BigInt(j), 1n));
-			const q = base.clone();
-			q.translateExact(T);
-			const cf = q.exactCentroid!.toVector();
-			if (Math.hypot(cf.x, cf.y) > lim) continue;
-			const kq = q.exactKey();
-			if (kq < bestKey) bestKey = kq;
-		}
-	}
-	if (cacheKey !== undefined) memo!.set(cacheKey, bestKey);
-	return bestKey;
+	const key = base.exactKey();
+	if (cacheKey !== undefined) memo!.set(cacheKey, key);
+	return key;
 }
 
 /** Multiset of polygon names (sorted) — a necessary congruence invariant and a cheap bucket key. */

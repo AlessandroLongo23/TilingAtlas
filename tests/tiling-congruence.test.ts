@@ -14,7 +14,7 @@ import { describe, it, expect } from 'vitest';
 import { Cyclotomic, CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
 import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
 import { holohedry } from '@/classes/algorithm/LatticeEnumerator';
-import { tilingsCongruent } from '@/classes/algorithm/TilingCongruence';
+import { tilingsCongruent, reducedClassKey } from '@/classes/algorithm/TilingCongruence';
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -66,5 +66,53 @@ describe('tilingsCongruent — rotation-only congruences (oblique cells)', () =>
 		expect(tilingsCongruent(cellA, u, v, cellB, uB, vB)).toBe(
 			tilingsCongruent(cellB, uB, vB, cellA, u, v)
 		);
+	});
+});
+
+describe('reducedClassKey — exact class invariance (R1: t3019 float-tie fix)', () => {
+	// t3019's exact skinny lattice: u = (1,0), v = i·(3+√3) ≈ (0, 4.732). √3 = ζ² + ζ⁻² (= 2cos π/6);
+	// v = ζ⁶·(3+√3) is purely imaginary EXACTLY, but its float real part carries ~4e-16 noise — the
+	// trigger the OP-1 investigation pinned. A unit square anchored at m·u (m ∈ ℤ) has centroid
+	// (m+½, ½), so its u-coordinate α = cross(c,v)/cross(u,v) = m+½ sits EXACTLY on the half-integer
+	// Math.round tie. The OLD float-round reduction + ±2 lex-min window rounded different m
+	// inconsistently (noise tipping the tie) and gave the same lattice class two keys; the exact
+	// half-up reduction is shift-equivariant, so every m reduces to the IDENTICAL representative.
+	const sqrt3 = z(2).add(z(22));
+	const us = Q(1n, 1n);
+	const vs = z(6).mul(Q(3n, 1n).add(sqrt3));
+
+	it('the skinny lattice is rectangular (holohedry 4) and v is exactly imaginary', () => {
+		expect(holohedry(us, vs)).toBe(4);
+		// v's exact real part is zero (the float wobble that triggers the old bug is NOT in the value)
+		expect(vs.add(vs.conj()).isZero()).toBe(true); // v + conj(v) = 2·Re(v) = 0
+	});
+
+	it('one key per lattice class across integer u-shifts on the half-integer tie', () => {
+		// squares at m·u for several m — all in ONE lattice class (differ by integer multiples of u),
+		// each sitting on the α = m+½ tie. Exact invariance ⇒ a single reducedClassKey.
+		const keys = [-1, 0, 1, 2, 5].map((m) =>
+			reducedClassKey(RegularPolygon.fromAnchorAndDirExact(4, us.scaleRational(BigInt(m), 1n), 0), us, vs)
+		);
+		expect(new Set(keys).size).toBe(1);
+	});
+
+	it('invariant under general λ = a·u + b·v shifts (triangle + square, both tie and non-tie)', () => {
+		for (const spec of [[3, Cyclotomic.ZERO(ring), 0], [4, Cyclotomic.ZERO(ring), 0], [3, z(1), 2]] as [number, Cyclotomic, number][]) {
+			const base = RegularPolygon.fromAnchorAndDirExact(spec[0], spec[1], spec[2]);
+			const k0 = reducedClassKey(base, us, vs);
+			for (const [a, b] of [[1, 0], [0, 1], [1, 1], [-2, 3], [4, -1], [-3, -2]]) {
+				const T = us.scaleRational(BigInt(a), 1n).add(vs.scaleRational(BigInt(b), 1n));
+				const shifted = base.clone();
+				shifted.translateExact(T);
+				expect(reducedClassKey(shifted, us, vs)).toBe(k0);
+			}
+		}
+	});
+
+	it('distinct lattice classes still get distinct keys (no false merge)', () => {
+		// two squares in different classes (anchors not differing by a lattice vector) must NOT collide
+		const a = reducedClassKey(RegularPolygon.fromAnchorAndDirExact(4, Cyclotomic.ZERO(ring), 0), us, vs);
+		const b = reducedClassKey(RegularPolygon.fromAnchorAndDirExact(4, z(6), 0), us, vs); // shifted by i ≠ λ
+		expect(a).not.toBe(b);
 	});
 });

@@ -1,23 +1,28 @@
 /**
- * Frozen regression fixture: the t3019 reducedClassKey float-tie FALSE NEGATIVE (OP-1 root-cause
- * investigation, 2026-06-11 — experiments/results/op1-t3019-investigation-2026-06-11.log).
+ * Frozen regression fixture: the t3019 reducedClassKey float-tie false negative (OP-1 root-cause
+ * investigation, 2026-06-11 — experiments/results/op1-t3019-investigation-2026-06-11.log) — now
+ * FIXED by R1. ⚑ R1 LANDED: `reducedClassKey` reduces the centroid's EXACT (u,v)-coordinates with
+ * shift-equivariant half-up rounding, so its key is one canonical value per lattice class (ties
+ * included); the float-`Math.round` reduction + ±2 lex-min window that produced the false negative
+ * is gone.
  *
  * The pair: op1[301].0 (the 7-poly [3.3.3.3.4.4.4] scout cell emitted by seed idx 301 of the OP-1
  * k=3 sweep) vs the oracle t3019 reconstruction. Ground truth: they ARE the same tiling — the
  * investigation verified 4 exact grid isometries between them, including a PURE TRANSLATION
  * (identity candidate Q#0, reflect=false, r=0: transformedKey OK, sameLattice OK, exact class map
- * OK). Yet `cellsCongruent` returns FALSE: `reducedClassKey` is not a canonical function of the
+ * OK). The OLD code returned FALSE because `reducedClassKey` was not a canonical function of the
  * lattice class on this geometry — a skinny lattice (|u|=1, |v|=3+√3≈4.73) with tile centroids at
- * exact half-integer u-coordinates puts the float centroid-reduction argument ON the Math.round
- * tie boundary; float noise (v.toVector().x ≈ 4.1e-16 ≠ 0) rounds different class members to bases
- * one u-step apart, the ±2-translate min-key window does not absorb the shift, one class gets two
- * "canonical" keys, and every candidate isometry fails the mapped-keys test. Second false-negative
+ * exact half-integer u-coordinates put the float centroid-reduction argument ON the Math.round tie
+ * boundary; float noise (v.toVector().x ≈ 4.1e-16 ≠ 0) rounded different class members to bases one
+ * u-step apart, the ±2-translate min-key window did not absorb the shift, one class got two
+ * "canonical" keys, and every candidate isometry failed the mapped-keys test. Second false-negative
  * instance in TilingCongruence after 2c8ad69 (the rotation drop).
  *
- * Scope of this file: pin the bug (test a) and pin the exact ground truth that exposes it as a bug
- * (test b). The R1 lib fix (TilingCongruence.reducedClassKey) is DEFERRED — decisive-path
- * certification machinery, cross-lane (CB-4), TA flag pending. The recert matcher was made
- * any-member-robust instead (R2, scripts/recert-oracle-match.ts).
+ * Scope of this file: regression-pin the FIX (test a — congruence is now recognised by the fast
+ * path) and independently pin the exact ground truth (test b — a reducedClassKey-free witness, so
+ * the test cannot rot with the function it guards). The recert matcher's exact-witness fallback
+ * (R2, scripts/recert-oracle-match.ts) is retained as a standing differential check; post-R1 it is
+ * expected to stay dormant (0 uses).
  */
 import { describe, it, expect } from 'vitest';
 import type { Cyclotomic } from '@/classes/Cyclotomic';
@@ -92,13 +97,13 @@ function translatedKey(p: Polygon, t: Cyclotomic): string {
 	return q.exactKey();
 }
 
-describe('t3019 frozen fixture — reducedClassKey float-tie false negative (R1 pending)', () => {
-	it('(a) pins the BUG: cellsCongruent(op1[301].0, t3019recon) is false', () => {
-		// ⚠ pins the BUG — when the R1 reducedClassKey fix lands this must flip to true; the
-		// failure of THIS test is the R1 acceptance signal. The pair is genuinely congruent
-		// (test b proves it with an exact pure-translation witness); the false verdict is the
-		// reducedClassKey non-canonicality on t3019's skinny-lattice half-integer geometry.
-		expect(cellsCongruent(scout, oracle)).toBe(false);
+describe('t3019 frozen fixture — reducedClassKey float-tie false negative (R1 FIXED)', () => {
+	it('(a) R1 regression: cellsCongruent(op1[301].0, t3019recon) is now TRUE (fast path)', () => {
+		// Was the R1 acceptance signal (the bug returned false here); R1 made reducedClassKey an
+		// exact class invariant, so the genuine congruence — proven independently in test (b) by an
+		// exact pure-translation witness — is now recognised by the fast path. A regression to false
+		// would mean reducedClassKey lost canonicality again on this skinny-lattice geometry.
+		expect(cellsCongruent(scout, oracle)).toBe(true);
 	});
 
 	it('(b) ground truth: structural invariants agree and an exact PURE TRANSLATION maps the scout cell onto t3019', () => {
