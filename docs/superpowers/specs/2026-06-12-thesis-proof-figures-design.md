@@ -206,3 +206,25 @@ existing `fig:dd-chamber`.
 Gen exports (F19 + G1/G2 patches), the G6 DFS-structure export, the measured-data extraction
 (items 4–6), and assembling the figure specs above into a single handoff doc + SYNC entry for TA.
 The TikZ authoring and chapter placement are TA's work, tracked in `../thesis/FIGURE_PLAN.md`.
+
+## Delivery status (2026-06-12, branch `feat/proof-figure-data`)
+
+**Delivered** → `../thesis/figures/generated/explanatory/` (PDFs + auto README; TA to commit in the
+thesis repo), all rendered from the certified catalogue (digest `99919f42a7b58e76`), galleries untouched:
+- `oblique-A.pdf` = **t3046**, `oblique-B.pdf` = **t3055** — F19 oblique k=3 pair (basis overlay = the
+  oblique cell). Identified by exact `holohedry==2` (test `figures/tiling/oblique-k3.test.ts`).
+- `octagon-488.pdf` = **t1002** — G1 4.8.8 underlay (TA overlays Λ₈ vectors + square holes).
+- `incidence-axis.pdf` = **t1006** (3.4.6.4) — G2 Panel B underlay (TA draws the reflection axis).
+- Build path: `pnpm tsx figures/build.ts --explanatory` (manifest in `figures/build.ts`).
+
+**Deferred — NOT delivered (need clean/coordinated runs or own recon):**
+- **Lattice/seed-set census table** (manifest item 4, `algorithm.tex:80`): parser + tests shipped
+  (`figures/data-extract/censusTable.ts`), but the only census logs (op2/op3) are **dup-inflated and
+  mutually inconsistent** (72275/2468 vs 189359/9210 work/lattices — different OP lanes, neither
+  canonical). No fragment emitted; needs a clean re-run before any number is quoted.
+- **Per-stage perf profile** (item 5, `results.tex:444`) + **star-family timings** (item 6,
+  `results.tex:452`): not in existing logs; need fresh coordinated runs.
+- **G6 DFS trees** (`algorithm.tex:54`,`:100`): need generator instrumentation; own plan.
+
+**TA-authored TikZ (specs only, no CC data):** G3 star-graph/dent-chain, G4 equivariant cascade,
+G5 reflection-cover, plus the proof-specific overlays on the G1/G2/F19 underlays above.
