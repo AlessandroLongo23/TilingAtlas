@@ -18,6 +18,7 @@ import { loadSnapshot } from './snapshot';
 import { ensureOrbits } from './tiling/orbits';
 import { buildCellModel } from './tiling/cellModel';
 import { tilingFigure } from './tiling/tilingFigure';
+import type { TilingFigureOptions } from './tiling/tilingFigure';
 import { emitTikz } from './emit/tikz';
 import { emitSvg } from './emit/svg';
 import { emitTexColors } from './style/palette';
@@ -34,6 +35,47 @@ const opt = (name: string): string | undefined => {
 	const i = args.indexOf(name);
 	return i >= 0 ? args[i + 1] : undefined;
 };
+
+/**
+ * Single explanatory figures (NOT galleries): proof-figure underlays for the thesis, rendered with
+ * `tilingFigure`'s anatomy/plain mode and delivered to `../thesis/figures/generated/explanatory/`.
+ * Keyed by Galebach t-code (resolved to canonicalKey via the oracle map). Proof-specific overlays
+ * (Λ₈ vectors, reflection axes, rotation centres) are TA's TikZ — these are clean underlays.
+ * Spec: docs/superpowers/specs/2026-06-12-thesis-proof-figures-design.md.
+ */
+type ExplanatoryEntry = {
+	id: string;
+	tCode: string;
+	opts: Omit<TilingFigureOptions, 'windowMm' | 'edgeMm'> & { windowMm?: number; edgeMm?: number };
+	note: string;
+};
+
+const EXPLANATORY: ExplanatoryEntry[] = [
+	{
+		id: 'oblique-A',
+		tCode: 't3046',
+		opts: { strategy: 'byNGon', anatomy: { basis: true, latticePoints: true } },
+		note: 'F19: oblique k=3 tiling (t3046) recovered by join-closure; basis overlay = the oblique cell.',
+	},
+	{
+		id: 'oblique-B',
+		tCode: 't3055',
+		opts: { strategy: 'byNGon', anatomy: { basis: true, latticePoints: true } },
+		note: 'F19: second oblique k=3 tiling (t3055); basis overlay = the oblique cell.',
+	},
+	{
+		id: 'octagon-488',
+		tCode: 't1002',
+		opts: { strategy: 'byNGon' },
+		note: 'G1 underlay: clean 4.8.8 patch for TA to overlay the Λ₈ basis vectors + square holes.',
+	},
+	{
+		id: 'incidence-axis',
+		tCode: 't1006',
+		opts: { strategy: 'byNGon' },
+		note: 'G2 Panel B underlay: clean 3.4.6.4 patch (reflective, mixed) for TA to draw a reflection axis along edges/bisectors/centroid lines.',
+	},
+];
 
 function latexmk(texFile: string): Promise<void> {
 	return new Promise((resolve, reject) => {
@@ -153,6 +195,50 @@ async function main(): Promise<void> {
 	if (onlyK) entries = entries.filter((e) => e.k === Number(onlyK));
 	const only = opt('--only');
 	if (only) entries = entries.filter((e) => e.id.includes(only));
+
+	// --- explanatory mode: single proof-figure underlays, never the gallery pipeline ---
+	if (flag('--explanatory')) {
+		const EX_OUT = path.join(ROOT, 'figures', 'out', 'explanatory');
+		fs.mkdirSync(EX_OUT, { recursive: true });
+		const byTcode = new Map<string, string>(); // tCode → canonicalKey
+		for (const [ck, tc] of Object.entries(oracleMap.matched)) byTcode.set(tc, ck);
+		const exCompile: string[] = [];
+		for (const e of EXPLANATORY) {
+			const canonicalKey = byTcode.get(e.tCode);
+			if (!canonicalKey) throw new Error(`explanatory: t-code not in certified oracle map: ${e.id} (${e.tCode})`);
+			const t = snap.tilings.find((x) => x.canonicalKey === canonicalKey);
+			if (!t) throw new Error(`explanatory: canonicalKey not in snapshot: ${e.id} (${e.tCode})`);
+			const model = buildCellModel(t.cellCodec, orbits[canonicalKey]);
+			const { ir, edgeMm } = tilingFigure(model, {
+				...e.opts,
+				windowMm: e.opts.windowMm ?? 70,
+				edgeMm: e.opts.edgeMm ?? 8,
+			});
+			const tex = emitTikz(ir, { edgeMm });
+			fs.writeFileSync(path.join(EX_OUT, `${e.id}.tex`), tex);
+			fs.writeFileSync(path.join(EX_OUT, `${e.id}.svg`), emitSvg(ir, { edgeMm }));
+			exCompile.push(path.join(EX_OUT, `${e.id}.tex`));
+		}
+		console.error(`[explanatory] ${EXPLANATORY.length} figures emitted`);
+		if (!flag('--no-latex')) {
+			await pool(exCompile, os.cpus().length - 1, latexmk);
+		}
+		if (!flag('--no-deliver')) {
+			const dir = path.join(THESIS_FIG, 'explanatory');
+			fs.mkdirSync(dir, { recursive: true });
+			for (const e of EXPLANATORY) {
+				fs.copyFileSync(path.join(EX_OUT, `${e.id}.pdf`), path.join(dir, `${e.id}.pdf`));
+			}
+			const readme = EXPLANATORY.map((e) => `- ${e.id}.pdf — ${e.note}`).join('\n');
+			fs.writeFileSync(
+				path.join(dir, 'README.md'),
+				`# Explanatory figure underlays\n\nFrom TilingAtlas: \`pnpm tsx figures/build.ts --explanatory\`. Clean underlays for TA to\nannotate; proof-specific overlays are TA's TikZ. Spec:\n\`2026-06-12-thesis-proof-figures-design.md\`.\n\n${readme}\n`
+			);
+			console.error(`[explanatory] PDFs + README → ${dir}`);
+		}
+		console.error('★ explanatory build complete');
+		return;
+	}
 
 	// --- emit ---
 	const toCompile: string[] = [];
