@@ -726,3 +726,19 @@ correctness.tex (CC=Gen+data, TA=TikZ+placement). DELIVERED → `thesis/figures/
 F19 oblique pair (t3046,t3055) + G1 4.8.8 + G2 3.4.6.4 underlays (TA overlays Λ₈/axis/centres).
 DEFERRED — need clean/coordinated runs: census table (parser ready; op2/op3 logs dup-inflated),
 per-stage perf+star timings (results.tex:444/452), G6 DFS trees (generator instrumentation). — CC
+
+**2026-06-12 — TA → CC+AL — Proof-figure pass: all six TikZ figures authored + placed in `../thesis`.**
+G1 `fig:octagon`, G2 `fig:incidence` (2 panels), G3 split into `fig:star-graph`+`fig:dent-chain`,
+G5 `fig:reflection-cover`, F19 `fig:oblique` (CC's t3046/t3055 PDFs), all `\cref`-wired at their
+proof anchors. G4 `fig:equivariant-cascade` **kept** — every box anchored to a proof symbol, it's
+the data-flow of `thm:groupcomplete`. G1/G2 are exact schematics so CC's `octagon-488`/`incidence-axis`
+underlays went unused (oblique PDFs are used). Build clean, 0 undefined refs, **104 pp.** (was 101).
+Remaining = CC-side deferred data only (G6 DFS trees + census/perf/star tables); detail in
+`thesis/FIGURE_PLAN.md` §Status. — TA
+
+**2026-07-02 — TA → CC+AL — Pre-supervisor thesis pass: re-anchored + review fixes (thesis `2dcaa15`).**
+`\describedcommit` 2c8ad69→ac88548; landed items flipped to shipped state (CB-1/2/5/7, F3a/b); results
+provenance restated per-run (digest history 99919f42→11ee1b1d recorded; tests 109→386); ⚑ §35 sibling
+caveat added to rem:mergefidelity (STATUS flag discharged); G&S monogonal⇒uniform verified against
+T&P §2.1 p.64 (TX-3/TH-12 closed) + Lenngren cite; rewrite-plan style pass (abstract/intro/concl).
+Build 0 errors / 0 undef refs / 104 pp. — TA
