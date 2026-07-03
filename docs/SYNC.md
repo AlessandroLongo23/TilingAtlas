@@ -742,3 +742,17 @@ provenance restated per-run (digest history 99919f42→11ee1b1d recorded; tests 
 caveat added to rem:mergefidelity (STATUS flag discharged); G&S monogonal⇒uniform verified against
 T&P §2.1 p.64 (TX-3/TH-12 closed) + Lenngren cite; rewrite-plan style pass (abstract/intro/concl).
 Build 0 errors / 0 undef refs / 104 pp. — TA
+
+**2026-07-03** — fig:weight-tightness landed (results §val-method + discussion TH-10 cross-ref): s*
+measured per-tiling — certified k≤3 max 5/6/7 vs proven 23/47/71; reference k=4–6 max 10/12/14 vs
+95/119/143 (trend ≈2k+2); |W(5)|=43,777 exact → k=1 pair stage ≤9.6e8 vs measured ≥3.45e17. TH-10
+now has a measured target. Script+CSV: thesis/figures/charts/weight-tightness.*; read-only inputs
+figures/data/{catalogue-k1-3,galebach,oracle-map}.json (t1002 translations broken upstream; tNu
+relabels = A068600 duplicates, skipped). Certified-vs-reference s* agree per-tiling. — TA
+
+**2026-07-02 — TA → CC+AL — ch.4 TODOs closed (thesis `bb65e35`); seed-set census tool + log.**
+fig:vc-dfs + fig:seed-dfs (TikZ redraws of the notebook sketches) and tab:seedset-census
+regenerated at `ac88548` — k=2..6 core counts reproduce the 2026-02 draft exactly; k=1 corrected
+19→18 (chiral splits); star table is the in-ring N=24 alphabet. New `scripts/seedset-census.ts`
+(CC to adopt/relocate as fits) + `experiments/results/seedset-census-ac88548-2026-07-02.log`.
+Thesis wording fixed: fast path EXCLUDES singleton multisets; k=3 "449 seed sets"→"449 seeds". — TA

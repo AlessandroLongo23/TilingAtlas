@@ -1,0 +1,37 @@
+Seed-set census at master ac88548 — thesis tab:seedset-census source data
+Run: tsx scripts/seedset-census.ts [stars|nooct] [kmax] [kmin]
+Convention: fast path (singleton-support multisets excluded for k>1, SeedSetExtractor m>1 branch).
+Machine: single-threaded, Linux sandbox (Cowork), node 22. 2026-07-02.
+
+[run 1] family: regular{3,4,6,8,12}  N=24
+polygons: 5 [0.2ms]   vcs: 18 [20.0ms]   graph edges: 63 [46.1ms]
+k=1: total=18     m1=18                                        [0.21ms]
+k=2: total=63     m2=63                                        [0.16ms]
+k=3: total=410    m2=126 m3=284                                [0.68ms]
+k=4: total=2072   m2=189 m3=852 m4=1031                        [3.84ms]
+k=5: total=8963   m2=252 m3=1704 m4=4124 m5=2883               [10.17ms]
+k=6: total=34108  m2=315 m3=2840 m4=10310 m5=14415 m6=6228     [36.68ms]
+
+[run 2] family: regular{3,4,6,8,12} + star_regular n<=12 (in-ring, N=24)
+polygons: 45 [0.4ms]  vcs: 279 [571.8ms]  graph edges: 2792 [28233.1ms one-time]
+k=1: total=279      m1=279                                     [0.52ms]
+k=2: total=2792     m2=2792                                    [8.63ms]
+k=3: total=95895    m2=5584 m3=90311                           [234.49ms]
+k=4: total=3058914  m2=8376 m3=270933 m4=2779605               [11944.51ms]
+
+[run 3] family: regular{3,4,6,12} (k=3 sweep family, octagon dropped)
+graph edges: 63 [47.8ms]
+k=3: total=410  m2=126 m3=284  — identical to the full core, verifying that
+4.8.8's isolation in the compatibility graph contributes no m>=2 multiset.
+
+Notes for the thesis table:
+- k=2..6 regular counts reproduce the 2026-02 working-draft census EXACTLY
+  (63/410/2072/8963/34108, every m-bucket) — the enumeration is stable.
+- k=1 differs from the draft (18 vs 19): current canonical vc set for the
+  core is 18 oriented types = 15 species + chiral splits of 3.3.4.12,
+  3.4.4.6, 4.6.12 under rotation-only canonicalisation.
+- Star counts differ from the draft (279 vs 328 vcs etc.): the current
+  generator applies the in-ring N=24 scope (thesis sec:disc-scope); the
+  draft's alphabet included off-ring stars (n=5,7,9,10,11).
+- The 449 quoted at k=3 in results.tex is the SEED count (geometric builds
+  of the 410 sets); wording fixed in the thesis accordingly.
