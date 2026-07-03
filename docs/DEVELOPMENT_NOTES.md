@@ -2875,3 +2875,62 @@ oracle bijection on the certified artifact (ground truth, cap-independent). Evid
   path for MONOTYPIC k-uniform tilings, which is a k≥4 PRECONDITION — either drop the single-name
   filter at k≥4, or prove monotypic non-existence per k. NULL at k≤3 (no monotypic k-uniform tilings
   exist there).
+
+## 39. TH-10 scout — the tightened weight bound BUYS RUNS (EXAMPLE MODE measurement; 2026-07-03, session 18)
+
+**Mission** (TA program note `../resources/research/weight-bound-program-2026-07-03.md` §CC scout;
+SYNC 2026-07-03): measure the run economics of the cor:box procedure (pairs → exact
+area-admissibility → joins → fills → per-tiling match) with the weight-(24k−1) pool replaced by
+W(s), s = the staged target (5/6/8 at k=1/2/3), BEFORE the TA spends proof-weeks on Route 2.
+**Everything EXAMPLE MODE — the substituted bound is unproven; no count/completeness claim.**
+
+**Harness.** `scripts/th10-scout.ts` + a flag-gated injection seam
+`PeriodSolverOptions.th10Override` (hard-gated on `TH10_EXAMPLE_MODE=1`, throws otherwise; loud ⚑
+banner; candidateCache untouched; **k≤2 probes byte-identical flag-off** — digest-neutral).
+Design points, in soundness order:
+- **W(s) BFS** = the DG-1 frontier BFS (8 int coords, Φ₂₄ reduction), asserted against the TA's
+  exact |W(s)| table at every level ≤ 7 — all matched (25 / 289 / 2,089 / 10,825 / 43,777 /
+  146,521 / 423,169). **New exact value: |W(8)| = 1,086,913** (the program note's s⁸ fit said
+  ≈1.2e6).
+- **Integer-exact pair stage**: 4·det(w₁,w₂) = a+b√2+c√3+d√6 with a..d ∈ ℤ computed in Number
+  arithmetic (64 mults; cross-checked against `detSurd` at startup) — the admissibility DECISION is
+  exact; float+quantized-bitmap is broadphase only. Pair-det cap = min(s², 24k·a_max) — s² is
+  intrinsic (det ≤ |w₁||w₂|).
+- **Pair-stage ladder carries NO tile-count cap** (value-capped only): a pair may span an index-m
+  sublattice of the true cell, whose det = m·(cell area) is an m-fold multiset sum possibly >24k
+  tiles. ⚑ FLAG FOR TA: cor:box(iv)'s "pairs whose exact cell area is admissible" needs this
+  reading, or the two-of-the-gᵢ initial pair can be filtered before its joins reach Λ — check the
+  corollary's wording. (Empirically moot at k≤3 scale: sharp = admissible in every run.)
+- **Join closure keeps inadmissible-det intermediates** (joins chain; only admissible dets are fill
+  candidates). Float rationality prefilter (denominator ≤ det/(√3/2) = the index bound), exact
+  `joinLattice` decides.
+- **Fills = the live pipeline unchanged**: per-seed exact vcAreaSet + P0 (the proven-sound
+  filters), one lattice per solve, maxMs=0, identity seed map (no OP-3 — conservative superset).
+
+**Numbers** (log `experiments/results/th10-scout-2026-07-03.log`; darwin arm64, 10 cores, 24 GB,
+single-core measurements):
+- **k=1, s=5 (|W(5)|=43,777) — END-TO-END 17.3 min**: 9.58e8 pairs in 38 s (2.51e7/s) → det-in-range
+  8.77e8 (91.5% — the cor:box(ii) bound prunes ~nothing, as DG-1 predicted) → 4.77e6 exact-admissible
+  → **831,279 distinct lattices**; joins 3 rounds/11.9 min, +45,851 — **0 admissible-det**; fills
+  Σ 224,557 (vcAreaSet+P0 cut 12.2M seed×lattice items) in 4.5 min, mean 1.19 ms, p99 3 ms, max
+  1.3 s; 22 raw cells, 0 gate-rejected → **11 distinct, COMPOSITION digest `6f9ca9cf2d16c75f`
+  BYTE-IDENTICAL to the certified k=1 anchor; 11/11 per-tiling bijection vs the certified snapshot;
+  10/10 vs Galebach** (t1002 reconstruction degenerate upstream — known, TA 2026-07-03).
+- **k=2, s=6 (|W(6)|=146,521)**: pairs 1.07e10 in 5.3 min (3.37e7/s) → 3.46e7 admissible →
+  **6,174,578 distinct lattices**; joins ⚑ budget-cut at 2 h (334 L/s, 44% of round 1; +194,257
+  joined, again 0 admissible-det; full round 1 ≈ 5.1 h 1-core, parallelizable); fill work
+  Σ **1,666,968** over 40 seeds (median 59, max 240,009); tuned fast-path per-fill 106.4 ms ⇒
+  **projection ≈ 2.1 d single-core ≈ 6.2 h on 8 cores** (⚑ floor: W(6) cells can exceed tuned cells;
+  heavy-tailed).
+- **k=3, s=8**: 5.91e11 pairs; sampled 8.22e8 (0.139%): broadphase 19.6 ns/pair,
+  exact-admissible rate 0.152%, canonicalization 5.1 µs/survivor ⇒ **pair stage ≈ 4.5 h single-core
+  ≈ 34 min on 8 cores** (≈9e8 canonicalizations dominate; distinct count does not extrapolate —
+  dedup saturates). Joins/fills not measured (per spec).
+
+**Verdict against the TA decision rule** ("k=1 overnight + k=2 ≤ weeks ⇒ Route 2 worth full
+effort"): k=1 took 17 MINUTES, k=2 projects ~6.2 h of fills + ~hours of joins on 8 cores, k=3's
+pair gate is ~34 min — **GO for Route 2**, with margin. Honest residue: (a) the k=2 join closure is
+truncated — its contribution is empirically 0 admissible lattices at both k (joined dets = det/m
+fall off the tile-sum ladder), but the closure was not completed; (b) the k=2 fill projection uses
+the tuned per-fill cost as a floor; (c) EXAMPLE MODE throughout — these numbers license proof
+effort, not claims.

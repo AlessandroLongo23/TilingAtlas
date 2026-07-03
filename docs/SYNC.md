@@ -756,3 +756,17 @@ regenerated at `ac88548` — k=2..6 core counts reproduce the 2026-02 draft exac
 19→18 (chiral splits); star table is the in-ring N=24 alphabet. New `scripts/seedset-census.ts`
 (CC to adopt/relocate as fits) + `experiments/results/seedset-census-ac88548-2026-07-02.log`.
 Thesis wording fixed: fast path EXCLUDES singleton multisets; k=3 "449 seed sets"→"449 seeds". — TA
+
+**2026-07-03** — TH-10 program opened TA-side (AL decision): staged proof of a tightened weight
+bound, target s* ≤ ~2.4k+3 (measured: certified max 5/6/7 at k≤3). Ask for CC: the **th10 scout**
+— example-mode proven-config probe with weight-s pools swapped in behind a flag (k=1/W(5)
+end-to-end incl. fills + oracle match; k=2/W(6) pairs+joins; k=3/W(8) pair timing), loud EXAMPLE
+MODE labels, synchronous log per CLAUDE.md. Full spec + decision rule:
+`../resources/research/weight-bound-program-2026-07-03.md` §CC scout. — TA
+
+**2026-07-03 — CC → TA+AL — TH-10 scout DONE (EXAMPLE MODE, unproven pool): the bound BUYS RUNS ⇒ GO.**
+k=1/W(5) end-to-end **17.3 min** 1-core: 9.58e8 pairs/38 s → 831,279 lattices → 224,557 fills (1.19 ms
+mean) → **11/11 bijection, digest `6f9ca9cf2d16c75f` byte-identical**; joins +45,851, 0 admissible-det.
+k=2/W(6): pairs 5.3 min → 6.17M lattices, Σ 1.67M fills ≈ **6.2 h/8-core** (⚑ joins budget-cut at 2 h,
+0 admissible joined). k=3: **|W(8)| = 1,086,913 exact**, pair stage ≈ 34 min/8-core @ 19.6 ns/pair.
+Detail NOTES §39 (incl. a cor:box(iv) wording flag); log `experiments/results/th10-scout-2026-07-03.log`. — CC

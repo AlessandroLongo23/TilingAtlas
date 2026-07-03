@@ -313,6 +313,16 @@ export type PeriodSolverOptions = {
 	 *  intended work, not completed work. Fires at most once per solve (degenerate seeds exit
 	 *  before candidate enumeration). Instrumentation only — never affects the solve. */
 	onCandidateLattices?: (lattices: { key: string; hol: number }[]) => void;
+	/** TH-10 scout ONLY (EXAMPLE MODE — requires env TH10_EXAMPLE_MODE=1, throws otherwise).
+	 *  Replaces the candidate-lattice stage wholesale with an externally enumerated family (the
+	 *  hypothetical weight-s pool of the TH-10 program, `scripts/th10-scout.ts`): every basis is
+	 *  filled under the bare identity seed map; no P0 / orbit reduction / oblique enumeration runs
+	 *  here (the scout applies the per-seed sound filters itself before injecting). `allKeys` /
+	 *  `areaKeys` must be the FULL family's key sets (the CB-7 guard membership universe) — passing
+	 *  only the injected slice would false-alarm the primitivity guard. The substituted pool bound
+	 *  is UNPROVEN: a loud EXAMPLE-MODE banner is emitted and results carry NO completeness or
+	 *  certification claim. Unset ⇒ this option is inert and the solve is byte-identical. */
+	th10Override?: { bases: [Cyclotomic, Cyclotomic][]; allKeys: Set<string>; areaKeys: Set<string> };
 };
 
 /** Default per-cell polygon cap: max(20k+24, 24k). Any k-uniform cell has F ≤ 24k tiles (torus
@@ -349,6 +359,40 @@ export function blockIndexRangeNeeded(cellDiam: number, cellArea: number): numbe
 export function applySeedMapInv(ps: Polygon[], m: { rot: number; refl: boolean }, ring: Cyclotomic['ring'], ZERO: Cyclotomic): Polygon[] {
 	if (m.rot === 0 && !m.refl) return ps; // identity: original array, no clone (byte-identical fast path)
 	return ps.map((p) => p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : (ring.N - m.rot) % ring.N, ZERO, 'full'));
+}
+
+/** TH-10 scout (EXAMPLE MODE): wrap an externally enumerated lattice family as the stage-1 result.
+ *  Hard-gated on TH10_EXAMPLE_MODE=1 so the option cannot be reached accidentally; emits the loud
+ *  banner once per process. Every basis gets the bare identity seed map (no OP-3 orbit reduction —
+ *  the scout injects representatives itself). */
+let th10BannerEmitted = false;
+function th10OverrideStage1(
+	ov: NonNullable<PeriodSolverOptions['th10Override']>,
+	k: number
+): { lattices: CandidateLattice[]; p0Skipped: number; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
+	if (process.env.TH10_EXAMPLE_MODE !== '1') {
+		throw new Error(
+			'PeriodSolver: th10Override passed without TH10_EXAMPLE_MODE=1 — the TH-10 weight-s pool is UNPROVEN and may only run in explicitly flagged example mode'
+		);
+	}
+	if (!th10BannerEmitted) {
+		th10BannerEmitted = true;
+		process.stderr.write(
+			`[PeriodSolver k=${k}] ⚑ EXAMPLE MODE (TH-10 scout): candidate-lattice stage REPLACED by an ` +
+			`externally enumerated weight-s family — the substituted pool bound is UNPROVEN; results carry ` +
+			`NO completeness or certification claim\n`
+		);
+	}
+	return {
+		lattices: ov.bases.map((basis) => ({ basis, seedMaps: [{ rot: 0, refl: false }] })),
+		p0Skipped: 0,
+		orbitSkipped: 0,
+		obliqueCandidates: 0,
+		obliqueTruncated: null,
+		starLadderTruncated: false,
+		allKeys: ov.allKeys,
+		areaKeys: ov.areaKeys,
+	};
 }
 
 export class PeriodSolver {
@@ -419,8 +463,13 @@ export class PeriodSolver {
 		const totalCoreArea = corePolys.reduce((s, p) => s + tileAreaFloatFor(p), 0);
 
 		// --- 1. Candidate lattices (seed-free algebraic enumeration, cached). ---
+		// TH-10 scout EXAMPLE MODE: an injected external family replaces the stage wholesale (see
+		// the option docstring). The candidateCache is untouched — the override path never reads or
+		// writes it, so a mixed-mode process cannot serve poisoned candidates.
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = this.candidateLattices(seed);
+		const { lattices, p0Skipped, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = opts.th10Override
+			? th10OverrideStage1(opts.th10Override, k)
+			: this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
