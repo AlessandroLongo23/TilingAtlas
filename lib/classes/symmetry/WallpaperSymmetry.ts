@@ -1,6 +1,6 @@
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
-import { gaussReduceExact } from "@/classes/algorithm/LatticeEnumerator";
-import type { Axis, Center, SymmetryData, Vec2 } from "./types";
+import { gaussReduceExact, sameLattice } from "@/classes/algorithm/LatticeEnumerator";
+import type { Axis, Center, LatticeShape, SymmetryData, Vec2 } from "./types";
 
 const v2 = (z: Cyclotomic): Vec2 => {
 	const v = z.toVector();
@@ -199,6 +199,38 @@ function reflections(
 }
 export const _reflectionsForTest = reflections;
 
+// Exact 2D Bravais classification, ported verbatim from scripts/oracle-characterize.ts (validated
+// against the known oblique census 0,0,2,5 at k=1..4). "Oblique" is decided EXACTLY via lattice
+// automorphisms (rotation ζ^r or reflection conj∘ζ^r) — NOT by the primitive-basis angle, which
+// mislabels a long-thin centered (cmm/rhombic) cell as oblique (DEVELOPMENT_NOTES §11.1). The
+// remaining classes use the gauss-reduced basis. Centered-rectangular = rhombic in the 5-Bravais set.
+function isOblique(ring: CyclotomicRing, u: Cyclotomic, v: Cyclotomic): boolean {
+	for (let r = 1; r < ring.N; r++) {
+		if (r === ring.N / 2) continue; // ζ^12 = −1, the universal 2-fold; not distinguishing
+		if (sameLattice(u, v, u.mulZeta(r), v.mulZeta(r))) return false; // a rotational symmetry
+	}
+	for (let r = 0; r < ring.N; r++) {
+		if (sameLattice(u, v, u.conj().mulZeta(r), v.conj().mulZeta(r))) return false; // a reflection
+	}
+	return true;
+}
+
+function classifyLattice(ring: CyclotomicRing, u: Cyclotomic, v: Cyclotomic): LatticeShape {
+	if (isOblique(ring, u, v)) return "oblique";
+	const [ru, rv] = gaussReduceExact(u, v);
+	const a = ru.toVector(), b = rv.toVector();
+	const lu = Math.hypot(a.x, a.y), lv = Math.hypot(b.x, b.y);
+	const ang = (Math.acos((a.x * b.x + a.y * b.y) / (lu * lv)) * 180) / Math.PI;
+	const eqLen = Math.abs(lu - lv) < 1e-6;
+	const a90 = Math.abs(ang - 90) < 1e-6;
+	const a60 = Math.abs(ang - 60) < 1e-6 || Math.abs(ang - 120) < 1e-6;
+	if (eqLen && a60) return "hexagonal";
+	if (eqLen && a90) return "square";
+	if (eqLen) return "rhombic"; // rhombic(cmm)
+	if (a90) return "rectangular";
+	return "rhombic"; // centered-rectangular (conventional) = rhombic
+}
+
 // Exact wallpaper-symmetry analysis of a periodic tiling. T1,T2 = exact lattice basis; seed = the
 // deduped exact vertex set of one primitive cell (all Cyclotomic). The returned SymmetryData carries
 // FLOAT geometry for rendering, but every symmetry decision behind it is made in exact ℤ[ζ_N].
@@ -220,10 +252,11 @@ export function analyzeSymmetry(
 	const centers = rotationCenters(ring, c1, c2, rots);
 	const maxOrder = centers.length ? Math.max(...centers.map((c) => c.order)) : 1;
 	const axes = reflections(ring, T1, T2, seed);
+	const latticeShape = classifyLattice(ring, T1, T2);
 
 	return {
 		group: "p1",
-		latticeShape: "oblique",
+		latticeShape,
 		pointGroupOrder: maxOrder, // refined to the true |point group| once mirrors are known (Phase 3)
 		axes,
 		centers,

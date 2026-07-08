@@ -87,3 +87,16 @@ describe("mirrors and glides", () => {
 		expect(data.axes.some((a) => a.kind === "mirror")).toBe(false);
 	});
 });
+
+describe("lattice shape", () => {
+	it("square⇒square, hex⇒hexagonal, cmm⇒rhombic", () => {
+		const ring = CyclotomicRing.create(24);
+		setActiveRing(ring);
+		const sq = seedFromCell(ring, square44);
+		expect(analyzeSymmetry(ring, sq.T1, sq.T2, sq.seed).latticeShape).toBe("square");
+		const hx = seedFromCell(ring, hex666);
+		expect(analyzeSymmetry(ring, hx.T1, hx.T2, hx.seed).latticeShape).toBe("hexagonal");
+		const cm = galebachToInput(ring, galCmm);
+		expect(analyzeSymmetry(ring, cm.T1, cm.T2, cm.seed).latticeShape).toBe("rhombic");
+	});
+});
