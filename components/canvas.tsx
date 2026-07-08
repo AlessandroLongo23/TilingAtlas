@@ -10,18 +10,22 @@ import { Tiling } from "@/classes/Tiling";
 import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
+import { starHue } from "@/lib/utils/renderTiling";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
 import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
 import { ColorPad } from "./ui/color-pad";
 import { useP5 } from "@/lib/hooks/useP5";
+import { drawFundamentalDomain } from "./canvas-overlays";
+import type { SymmetryData } from "@/lib/classes/symmetry/types";
 
 interface CanvasProps {
 	width?: number;
 	height?: number;
 	translationalCell?: TranslationalCellData | null;
 	translationalCellId?: string | null;
+	symmetryData?: SymmetryData | null;
 	showTilingRuleInput?: boolean;
 }
 
@@ -122,7 +126,17 @@ function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: nu
 						: new Vector(v.x + ox, v.y + oy),
 				);
 				if (vertices.length >= 3) {
-					t.nodes.push(GenericPolygon.fromVertices(vertices));
+					{
+						const poly = GenericPolygon.fromVertices(vertices);
+						// GenericPolygon colors by the regular log ramp; a star tile ({n}: n points, 2n
+						// vertices, or an explicit `star` flag) uses the original StarPolygon hue instead.
+						const nn = (polyData as { n?: number }).n ?? vertices.length;
+						const isStar =
+							(polyData as { star?: boolean }).star === true ||
+							(nn >= 3 && vertices.length === 2 * nn);
+						if (isStar) poly.hue = starHue(nn);
+						t.nodes.push(poly);
+					}
 				}
 			}
 		}
@@ -135,6 +149,7 @@ export function Canvas({
 	height = 600,
 	translationalCell = null,
 	translationalCellId = null,
+	symmetryData = null,
 	showTilingRuleInput = true,
 }: CanvasProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -153,10 +168,10 @@ export function Canvas({
 		Rj: -1,
 	});
 
-	const propsRef = useRef({ width, height, translationalCell, translationalCellId });
+	const propsRef = useRef({ width, height, translationalCell, translationalCellId, symmetryData });
 	useEffect(() => {
-		propsRef.current = { width, height, translationalCell, translationalCellId };
-	}, [width, height, translationalCell, translationalCellId]);
+		propsRef.current = { width, height, translationalCell, translationalCellId, symmetryData };
+	}, [width, height, translationalCell, translationalCellId, symmetryData]);
 
 	const [canvasError, setCanvasError] = useState<string | null>(null);
 	const [tileCount, setTileCount] = useState(0);
@@ -360,6 +375,8 @@ export function Canvas({
 					p5.scale(ctrl.zoom);
 					p5.scale(1, -1);
 					drawTiling(cfg, tiling);
+					const sd = propsRef.current.symmetryData;
+					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
 					p5.pop();
 
 					if (cfg.screenshotButtonHover) drawScreenshotOverlay();
