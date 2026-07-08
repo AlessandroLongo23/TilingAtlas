@@ -254,11 +254,78 @@ function mirrorAngleCount(axes: Axis[]): number {
 	return s.size;
 }
 
-// Perpendicular distance from pt to the line {ax.p + s·ax.d} (ax.d unit) < tol.
-function pointOnLine(pt: Vec2, ax: Axis, tol: number): boolean {
-	const wx = pt.x - ax.p.x, wy = pt.y - ax.p.y;
-	return Math.abs(wx * ax.d.y - wy * ax.d.x) < tol;
+// EXACT p4m/p4g and p3m1/p31m discriminator: does EVERY top-order rotation centre lie on a mirror?
+// The float path decides this GROUP LABEL with a `0.03·cellSize` distance on float-placed centres;
+// this decides it in ℤ[ζ₂₄]. A rotation z↦ζ^{j*}z + num has centre c = num/D with D = 1−ζ^{j*} (the two
+// crystallographic powers of one order are mutual inverses about the SAME centres, so a single power j*
+// captures every top-order centre). Distinct centre classes: num₁ ≡ num₂ iff (num₁−num₂) ∈ D·Λ. A mirror
+// h(z)=ζ^m·z̄ + s has τ = ζ^m·s̄ + s = 0; c lies on its axis iff h(c)=c, and clearing the D·conj(D)
+// denominator gives ζ^m·num̄·D + s·D·conj(D) = num·conj(D) — a pure equality, no division/inversion/
+// tolerance. Only consulted for nMax∈{3,4}; returns false otherwise (identifyGroup ignores it there).
+function allTopCentersOnMirrorExact(
+	ring: CyclotomicRing,
+	T1: Cyclotomic,
+	T2: Cyclotomic,
+	seed: Cyclotomic[],
+): boolean {
+	const rots = rotations(T1, T2, seed);
+	if (rots.length === 0) return false;
+	const nMax = Math.max(...rots.map((r) => r.order));
+	const jStar = rots.find((r) => r.order === nMax)!.j; // one top-order power suffices (shared centres)
+	const D = Cyclotomic.ONE(ring).sub(Cyclotomic.zeta(ring, jStar)); // 1 − ζ^{j*}
+	const Dc = Cyclotomic.ONE(ring).sub(Cyclotomic.zeta(ring, (24 - jStar) % 24)); // conj(D) = 1 − ζ^{−j*}
+	const v0 = seed[0];
+
+	// (1) every valid rotation translation t for power j*, deduped mod Λ (each a distinct rotation coset).
+	const repsT: Cyclotomic[] = [];
+	for (const w of seed) {
+		const t = w.sub(v0.mulZeta(jStar));
+		if (!preserves(T1, T2, seed, (z) => applyRot(jStar, t, z))) continue;
+		if (repsT.some((r) => inLattice(T1, T2, t.sub(r)))) continue;
+		repsT.push(t);
+	}
+
+	// (2) all distinct top-order centre classes as numerators num = t + λ (λ over a small Λ window),
+	//     deduped by the finer sublattice D·Λ (Λ/(D·Λ) has index |D|² — e.g. 2 four-fold centres/cell).
+	const DT1 = D.mul(T1), DT2 = D.mul(T2);
+	const centerNums: Cyclotomic[] = [];
+	for (const t of repsT) {
+		for (let a = -2; a <= 2; a++) {
+			for (let b = -2; b <= 2; b++) {
+				const num = t.add(T1.scaleRational(BigInt(a), 1n)).add(T2.scaleRational(BigInt(b), 1n));
+				if (centerNums.some((m) => inLattice(DT1, DT2, num.sub(m)))) continue;
+				centerNums.push(num);
+			}
+		}
+	}
+
+	// (3) every reflection/glide COSET rep (j, s0): a reflection symmetry, one per coset mod Λ per angle.
+	const refls: { j: number; s0: Cyclotomic }[] = [];
+	for (let j = 0; j < 24; j++) {
+		for (const w of seed) {
+			const s0 = w.sub(v0.conj().mulZeta(j));
+			if (!preserves(T1, T2, seed, (z) => applyRef(j, s0, z))) continue;
+			if (refls.some((r) => r.j === j && inLattice(T1, T2, s0.sub(r.s0)))) continue;
+			refls.push({ j, s0 });
+		}
+	}
+	if (refls.length === 0) return false;
+
+	// (4) exact incidence, Λ-periodic (no window): a centre c = num/D lies on a mirror iff SOME reflection
+	// coset (j, s0) has a Λ-translate that FIXES c — and a fixed point of a reflection is exactly a mirror
+	// axis (glides have none). c fixed by (j, s0+λ) ⟺ λ = c − ζ^j·c̄ − s0 ∈ Λ; clearing the D·conj(D)
+	// denominator, (conj(D)·num − ζ^j·D·num̄ − s0·D·conj(D)) ∈ (D·conj(D))·Λ. Pure ℤ[ζ₂₄], no division.
+	const DDc = D.mul(Dc);
+	const DDcT1 = DDc.mul(T1), DDcT2 = DDc.mul(T2);
+	return centerNums.every((num) => {
+		return refls.some(({ j, s0 }) => {
+			// conj(D)·num − ζ^j·D·num̄ − s0·D·conj(D)
+			const val = Dc.mul(num).sub(Cyclotomic.zeta(ring, j).mul(D).mul(num.conj())).sub(s0.mul(DDc));
+			return inLattice(DDcT1, DDcT2, val);
+		});
+	});
 }
+export const _allTopOnMirrorExactForTest = allTopCentersOnMirrorExact;
 
 // The 17-group decision procedure, keyed on the exact element inventory. nMax = highest rotation
 // order; the mirror/glide/centers-on-mirror discriminators split the ambiguous pairs (pmm/pmg/cmm,
@@ -467,12 +534,10 @@ export function analyzeSymmetry(
 	const nMax = centers.length ? Math.max(...centers.map((c) => c.order)) : 1;
 	const hasMirror = axes.some((a) => a.kind === "mirror");
 	const hasGlide = axes.some((a) => a.kind === "glide");
-	const cellSize = Math.min(Math.hypot(c1.x, c1.y), Math.hypot(c2.x, c2.y));
-	const onLineTol = 0.03 * cellSize;
-	const topCenters = centers.filter((c) => c.order === nMax);
-	const allTopOnMirror =
-		topCenters.length > 0 &&
-		topCenters.every((c) => axes.some((a) => a.kind === "mirror" && pointOnLine(c.z, a, onLineTol)));
+	// The p4m/p4g and p3m1/p31m split is decided EXACTLY in ℤ[ζ₂₄] (no float centre, no distance
+	// tolerance) — the group label is a stored characterization attribute, held to the same exactness
+	// standard as k and lattice shape. The float centres/axes above remain, for RENDERING only.
+	const allTopOnMirror = allTopCentersOnMirrorExact(ring, T1, T2, seed);
 	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror);
 	const pointGroupOrder = POINT_GROUP_ORDER[group];
 	const { fd, anchor } = buildFD(pointGroupOrder, centers, axes, c1, c2);
