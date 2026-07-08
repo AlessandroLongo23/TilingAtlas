@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { seedFromCell } from "@/lib/services/cellCodecService";
-import { analyzeSymmetry, _inLatticeForTest, _rotationsForTest } from "@/lib/classes/symmetry/WallpaperSymmetry";
+import {
+	analyzeSymmetry,
+	_inLatticeForTest,
+	_rotationsForTest,
+	_polyAreaForTest,
+} from "@/lib/classes/symmetry/WallpaperSymmetry";
 import { galebachToInput } from "@/lib/services/galebachInput";
 import square44 from "./fixtures/cell-44.json";
 import hex666 from "./fixtures/cell-666.json";
@@ -127,5 +132,35 @@ describe("group identification", () => {
 	it.each(galCases)("identifies %s as %s", (_name, fixture, group) => {
 		const s = galebachToInput(ring, fixture as Parameters<typeof galebachToInput>[1]);
 		expect(analyzeSymmetry(ring, s.T1, s.T2, s.seed).group).toBe(group);
+	});
+});
+
+describe("fundamental domain", () => {
+	const ring = CyclotomicRing.create(24);
+	setActiveRing(ring);
+	const cellFx = [square44, hex666, tsp4m, p6m4612, triangular];
+	const galFx = [galCmm, galPgg, galP2];
+
+	it("FD area equals cell area / |point group| for every spot case", () => {
+		const check = (d: ReturnType<typeof analyzeSymmetry>) => {
+			const [c1, c2] = d.cell;
+			const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
+			expect(_polyAreaForTest(d.fd)).toBeCloseTo(cellArea / d.pointGroupOrder, 4);
+		};
+		for (const fx of cellFx) {
+			const s = seedFromCell(ring, fx as Parameters<typeof seedFromCell>[1]);
+			check(analyzeSymmetry(ring, s.T1, s.T2, s.seed));
+		}
+		for (const fx of galFx) {
+			const s = galebachToInput(ring, fx as Parameters<typeof galebachToInput>[1]);
+			check(analyzeSymmetry(ring, s.T1, s.T2, s.seed));
+		}
+	});
+
+	it("reflection groups get a triangular chamber, no-mirror groups a parallelogram", () => {
+		const p4m = seedFromCell(ring, tsp4m as Parameters<typeof seedFromCell>[1]);
+		expect(analyzeSymmetry(ring, p4m.T1, p4m.T2, p4m.seed).fd.length).toBe(3);
+		const p2 = galebachToInput(ring, galP2 as Parameters<typeof galebachToInput>[1]);
+		expect(analyzeSymmetry(ring, p2.T1, p2.T2, p2.seed).fd.length).toBe(4);
 	});
 });

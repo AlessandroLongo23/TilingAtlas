@@ -289,6 +289,159 @@ function identifyGroup(
 	}
 }
 
+function polyArea(pts: Vec2[]): number {
+	let a = 0;
+	for (let i = 0; i < pts.length; i++) {
+		const p = pts[i], q = pts[(i + 1) % pts.length];
+		a += p.x * q.y - q.x * p.y;
+	}
+	return Math.abs(a) / 2;
+}
+export const _polyAreaForTest = polyArea;
+
+// Drop consecutive duplicate vertices (and the wrap duplicate). Many mirror lines pass exactly through
+// the anchor, so raw clipping produces coincident points that corrupt later clips if not removed.
+function dedupPoly(pts: Vec2[]): Vec2[] {
+	const out: Vec2[] = [];
+	for (const p of pts) {
+		const last = out[out.length - 1];
+		if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 1e-7) out.push(p);
+	}
+	while (out.length > 1 && Math.hypot(out[0].x - out[out.length - 1].x, out[0].y - out[out.length - 1].y) < 1e-7) {
+		out.pop();
+	}
+	return out;
+}
+
+// Clip a convex polygon to the half-plane {(p−linePt)·normal ≥ 0} (Sutherland-Hodgman, one edge).
+// A vertex ON the line counts as inside; intersections are added only on a strict sign crossing, so a
+// line grazing a vertex doesn't emit a duplicate.
+function clipHalfPlane(poly: Vec2[], linePt: Vec2, normal: Vec2): Vec2[] {
+	const out: Vec2[] = [];
+	const n = poly.length;
+	for (let i = 0; i < n; i++) {
+		const a = poly[i], b = poly[(i + 1) % n];
+		const da = (a.x - linePt.x) * normal.x + (a.y - linePt.y) * normal.y;
+		const db = (b.x - linePt.x) * normal.x + (b.y - linePt.y) * normal.y;
+		if (da >= -1e-9) out.push(a);
+		if ((da > 1e-9 && db < -1e-9) || (da < -1e-9 && db > 1e-9)) {
+			const t = da / (da - db);
+			out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+		}
+	}
+	return dedupPoly(out);
+}
+
+const scaleAdd = (o: Vec2, u: Vec2, s: number, v?: Vec2, s2 = 0): Vec2 => ({
+	x: o.x + u.x * s + (v ? v.x * s2 : 0),
+	y: o.y + u.y * s + (v ? v.y * s2 : 0),
+});
+
+// Correct-area fallback FD: a parallelogram that is 1/|G| of the cell (a valid fundamental domain for
+// any group; used when the mirror chamber can't be cut). Factor split a·b = |G|.
+const FRAC: Record<number, [number, number]> = {
+	1: [1, 1], 2: [2, 1], 3: [3, 1], 4: [2, 2], 6: [3, 2], 8: [4, 2], 12: [4, 3],
+};
+function fractionParallelogram(c0: Vec2, r1: Vec2, r2: Vec2, order: number): Vec2[] {
+	const [a, b] = FRAC[order] ?? [1, 1];
+	const u = { x: r1.x / a, y: r1.y / a };
+	const v = { x: r2.x / b, y: r2.y / b };
+	return [c0, scaleAdd(c0, u, 1), scaleAdd(c0, u, 1, v, 1), scaleAdd(c0, v, 1)];
+}
+
+// Perpendicular distance from pt to the line of ax (ax.d unit).
+function perpDist(pt: Vec2, ax: Axis): number {
+	return Math.abs((pt.x - ax.p.x) * -ax.d.y + (pt.y - ax.p.y) * ax.d.x);
+}
+
+function triArea(a: Vec2, b: Vec2, c: Vec2): number {
+	return Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2;
+}
+const segOnMirror = (p: Vec2, q: Vec2, mirrors: Axis[], eps: number): boolean =>
+	mirrors.some((m) => perpDist(p, m) < eps && perpDist(q, m) < eps);
+
+// The orbifold chamber: the smallest triangle [c0, A, B] whose corners are rotation centers (A,B taken
+// from the centers and their lattice translates) with both legs c0-A and c0-B lying on mirror lines and
+// area = |cell|/|G|. This is the canonical FD for the *-reflection groups: 6·3·2 for p6m (30-60-90),
+// 4·2·4 for p4m (45-45-90), 3·3·3 for p3m1, etc. Returns null if no such triangle is found.
+function reflectionTriangle(
+	c0: Vec2,
+	centers: Center[],
+	mirrors: Axis[],
+	r1: Vec2,
+	r2: Vec2,
+	target: number,
+	cellSize: number,
+): Vec2[] | null {
+	const eps = 0.015 * cellSize;
+	const cand: Vec2[] = [];
+	for (const c of centers) {
+		for (let a = -1; a <= 1; a++) {
+			for (let b = -1; b <= 1; b++) {
+				const z = { x: c.z.x + a * r1.x + b * r2.x, y: c.z.y + a * r1.y + b * r2.y };
+				const d = Math.hypot(z.x - c0.x, z.y - c0.y);
+				if (d > eps && d < 1.6 * cellSize) cand.push(z);
+			}
+		}
+	}
+	cand.sort((p, q) => Math.hypot(p.x - c0.x, p.y - c0.y) - Math.hypot(q.x - c0.x, q.y - c0.y));
+	for (let i = 0; i < cand.length; i++) {
+		for (let j = i + 1; j < cand.length; j++) {
+			const A = cand[i], B = cand[j];
+			if (Math.abs(triArea(c0, A, B) - target) > 0.02 * Math.max(1e-9, target)) continue;
+			if (segOnMirror(c0, A, mirrors, eps) && segOnMirror(c0, B, mirrors, eps)) return [c0, A, B];
+		}
+	}
+	return null;
+}
+
+// The fundamental domain, group-determined (NOT a Voronoi cell). Anchored at the highest-order rotation
+// center nearest the origin. A mirror group's point group is exactly TWICE its rotation part, so its FD
+// is HALF the rotation fraction-parallelogram, cut by the mirror through the anchor — one robust clip
+// that yields the canonical chamber (45-45-90 for p4m, 30-60-90 for p6m). If that half doesn't hit the
+// target area (e.g. p4g/pmg, bounded by glides not mirrors), fall back to the correct-area
+// fraction-parallelogram. Area is guaranteed = |cell|/|G| either way.
+function buildFD(
+	order: number,
+	centers: Center[],
+	axes: Axis[],
+	r1: Vec2,
+	r2: Vec2,
+): { fd: Vec2[]; anchor: Vec2 } {
+	const nMax = centers.length ? Math.max(...centers.map((c) => c.order)) : 1;
+	const top = centers.filter((c) => c.order === nMax);
+	const c0 = top.length
+		? top.reduce((m, c) => (Math.hypot(c.z.x, c.z.y) < Math.hypot(m.z.x, m.z.y) ? c : m)).z
+		: { x: 0, y: 0 };
+	const cellArea = polyArea([{ x: 0, y: 0 }, r1, { x: r1.x + r2.x, y: r1.y + r2.y }, r2]);
+	const targetArea = cellArea / order;
+	const mirrors = axes.filter((a) => a.kind === "mirror");
+
+	const cellSize = Math.min(Math.hypot(r1.x, r1.y), Math.hypot(r2.x, r2.y));
+
+	// Reflection group (|G| = 2·rotationOrder). First try the canonical orbifold triangle from rotation
+	// centers; else halve the rotation parallelogram along the mirror through the anchor.
+	if (mirrors.length > 0 && order === 2 * Math.max(1, nMax)) {
+		const tri = reflectionTriangle(c0, centers, mirrors, r1, r2, targetArea, cellSize);
+		if (tri) return { fd: tri, anchor: c0 };
+		const rotFrac = fractionParallelogram(c0, r1, r2, Math.max(1, nMax));
+		const u = { x: rotFrac[1].x - c0.x, y: rotFrac[1].y - c0.y };
+		const v = { x: rotFrac[3].x - c0.x, y: rotFrac[3].y - c0.y };
+		const seed = { x: c0.x + 0.3 * u.x + 0.15 * v.x, y: c0.y + 0.3 * u.y + 0.15 * v.y }; // off any diagonal
+		const through = mirrors.filter((m) => perpDist(c0, m) < 0.01 * cellSize);
+		for (const m of through.length ? through : mirrors) {
+			const nrm = { x: -m.d.y, y: m.d.x };
+			const side = (seed.x - m.p.x) * nrm.x + (seed.y - m.p.y) * nrm.y;
+			const normal = side >= 0 ? nrm : { x: -nrm.x, y: -nrm.y };
+			const half = clipHalfPlane(rotFrac, m.p, normal);
+			if (half.length >= 3 && Math.abs(polyArea(half) - targetArea) < 0.02 * Math.max(1e-9, targetArea)) {
+				return { fd: half, anchor: c0 };
+			}
+		}
+	}
+	return { fd: fractionParallelogram(c0, r1, r2, order), anchor: c0 };
+}
+
 // Exact wallpaper-symmetry analysis of a periodic tiling. T1,T2 = exact lattice basis; seed = the
 // deduped exact vertex set of one primitive cell (all Cyclotomic). The returned SymmetryData carries
 // FLOAT geometry for rendering, but every symmetry decision behind it is made in exact ℤ[ζ_N].
@@ -321,15 +474,17 @@ export function analyzeSymmetry(
 		topCenters.length > 0 &&
 		topCenters.every((c) => axes.some((a) => a.kind === "mirror" && pointOnLine(c.z, a, onLineTol)));
 	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror);
+	const pointGroupOrder = POINT_GROUP_ORDER[group];
+	const { fd, anchor } = buildFD(pointGroupOrder, centers, axes, c1, c2);
 
 	return {
 		group,
 		latticeShape,
-		pointGroupOrder: POINT_GROUP_ORDER[group],
+		pointGroupOrder,
 		axes,
 		centers,
-		fd: [{ x: 0, y: 0 }, c1, { x: c1.x + c2.x, y: c1.y + c2.y }, c2], // real FD in Task 3.3
+		fd,
 		cell: [c1, c2],
-		cellOrigin: { x: 0, y: 0 },
+		cellOrigin: anchor, // draw the primitive cell anchored at the same rotation center as the FD
 	};
 }
