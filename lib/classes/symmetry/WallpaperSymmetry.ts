@@ -60,6 +60,14 @@ function preserves(
 	return true;
 }
 
+// A candidate isometry is a true symmetry only if its LINEAR part maps the translation lattice Λ onto
+// itself — otherwise it may map the finite seed into seed+Λ by coincidence while not preserving the
+// tiling globally (this is what let a 30° "mirror" be reported on a plain rectangular lattice). Exact.
+const rotationPreservesLattice = (T1: Cyclotomic, T2: Cyclotomic, j: number): boolean =>
+	inLattice(T1, T2, T1.mulZeta(j)) && inLattice(T1, T2, T2.mulZeta(j));
+const reflectionPreservesLattice = (T1: Cyclotomic, T2: Cyclotomic, j: number): boolean =>
+	inLattice(T1, T2, T1.conj().mulZeta(j)) && inLattice(T1, T2, T2.conj().mulZeta(j));
+
 const CRYSTALLOGRAPHIC = new Set([1, 2, 3, 4, 6]);
 function ngcd(x: number, y: number): number {
 	return y ? ngcd(y, x % y) : x;
@@ -82,6 +90,7 @@ function rotations(T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[]): Detected
 	for (let j = 1; j < 24; j++) {
 		const order = rotOrderOf(j);
 		if (!CRYSTALLOGRAPHIC.has(order) || order === 1) continue;
+		if (!rotationPreservesLattice(T1, T2, j)) continue; // linear part must map Λ→Λ
 		for (const w of seed) {
 			const t = w.sub(v0.mulZeta(j));
 			if (preserves(T1, T2, seed, (z) => applyRot(j, t, z))) {
@@ -167,6 +176,7 @@ function reflections(
 	const seen = new Set<string>();
 	const v0 = seed[0];
 	for (let j = 0; j < 24; j++) {
+		if (!reflectionPreservesLattice(T1, T2, j)) continue; // linear part must map Λ→Λ
 		const omega = Cyclotomic.zeta(ring, j);
 		const reps: Cyclotomic[] = [];
 		for (const w of seed) {
@@ -429,8 +439,8 @@ function triArea(a: Vec2, b: Vec2, c: Vec2): number {
 // spacing). Legs of a mirror-bounded FD run half this far to the next corner reflector.
 function onLinePeriod(dir: Vec2, r1: Vec2, r2: Vec2): number {
 	let best = Infinity;
-	for (let a = -4; a <= 4; a++) {
-		for (let b = -4; b <= 4; b++) {
+	for (let a = -12; a <= 12; a++) {
+		for (let b = -12; b <= 12; b++) {
 			if (a === 0 && b === 0) continue;
 			const lv = { x: a * r1.x + b * r2.x, y: a * r1.y + b * r2.y };
 			const perp = lv.x * -dir.y + lv.y * dir.x;
