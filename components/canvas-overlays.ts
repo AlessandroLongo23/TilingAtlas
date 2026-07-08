@@ -62,7 +62,28 @@ function drawCenter(p5: P5, c: Center, zoom: number) {
 	p5.pop();
 }
 
+// Mirror axes solid crimson, glide axes dashed royal-blue. Each line runs through its point `p` along
+// `d`, extended well past the cell so it crosses the viewport. Stroke weight and dash length are scaled
+// by 1/zoom to stay ~constant in pixels.
+function drawAxes(p5: P5, data: SymmetryData, zoom: number) {
+	const [c1, c2] = data.cell;
+	const L = (Math.hypot(c1.x, c1.y) + Math.hypot(c2.x, c2.y)) * 8;
+	for (const ax of data.axes) {
+		p5.push();
+		p5.strokeWeight(2 / zoom);
+		if (ax.kind === "glide") {
+			p5.stroke(220, 85, 90);
+			p5.drawingContext.setLineDash([8 / zoom, 5 / zoom]);
+		} else {
+			p5.stroke(348, 90, 85);
+		}
+		p5.line(ax.p.x - ax.d.x * L, ax.p.y - ax.d.y * L, ax.p.x + ax.d.x * L, ax.p.y + ax.d.y * L);
+		p5.drawingContext.setLineDash([]);
+		p5.pop();
+	}
+}
+
 export function drawSymmetryElements(p5: P5, data: SymmetryData, zoom: number) {
-	// (mirror/glide axes are drawn here in Phase 2, before the centers so marks sit on top)
+	drawAxes(p5, data, zoom); // axes first, so the rotation-center marks sit on top
 	for (const c of data.centers) drawCenter(p5, c, zoom);
 }
