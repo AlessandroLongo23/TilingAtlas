@@ -181,8 +181,8 @@ function reflections(
 		const dir = { x: cphi, y: sphi };
 		const nrm = { x: -sphi, y: cphi };
 		for (const t0 of reps) {
-			for (let a = -3; a <= 3; a++) {
-				for (let b = -3; b <= 3; b++) {
+			for (let a = -5; a <= 5; a++) {
+				for (let b = -5; b <= 5; b++) {
 					const t = t0.add(T1.scaleRational(BigInt(a), 1n)).add(T2.scaleRational(BigInt(b), 1n));
 					const tau = omega.mul(t.conj()).add(t); // EXACT τ = ω·t̄ + t
 					const kind: "mirror" | "glide" = tau.isZero() ? "mirror" : "glide";
@@ -424,8 +424,94 @@ function perpDist(pt: Vec2, ax: Axis): number {
 function triArea(a: Vec2, b: Vec2, c: Vec2): number {
 	return Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2;
 }
+
+// Reconstruct a COMPLETE set of mirror lines around the origin from the windowed detection. The detected
+// lines of one direction are equally spaced by a perpendicular period; replicating each direction at
+// that spacing across a disk of radius ~2.6·(|r1|+|r2|) gives every mirror the FD builder needs, so
+// segOnMirror / chamber checks stop failing near far-from-origin anchors (the cmm straggler cause).
+function completeMirrors(mirrors: Axis[], r1: Vec2, r2: Vec2): Axis[] {
+	const R = 2.6 * (Math.hypot(r1.x, r1.y) + Math.hypot(r2.x, r2.y));
+	const groups = new Map<number, { d: Vec2; offs: number[] }>();
+	for (const m of mirrors) {
+		const jIdx = Math.round(((((Math.atan2(m.d.y, m.d.x) * 180) / Math.PI) % 180 + 180) % 180) / 7.5) % 24;
+		const off = m.p.x * -m.d.y + m.p.y * m.d.x; // signed perpendicular offset from origin
+		const g = groups.get(jIdx) ?? { d: m.d, offs: [] };
+		g.offs.push(off);
+		groups.set(jIdx, g);
+	}
+	const out: Axis[] = [];
+	for (const { d, offs } of groups.values()) {
+		const nrm = { x: -d.y, y: d.x };
+		const uniq = [...new Set(offs.map((o) => Math.round(o * 1000) / 1000))].sort((a, b) => a - b);
+		let spacing = Infinity;
+		for (let i = 1; i < uniq.length; i++) spacing = Math.min(spacing, uniq[i] - uniq[i - 1]);
+		if (!Number.isFinite(spacing) || spacing < 1e-6) {
+			for (const o of uniq) out.push({ p: { x: o * nrm.x, y: o * nrm.y }, d, kind: "mirror" });
+			continue;
+		}
+		const base = uniq[0];
+		for (let k = Math.floor((-R - base) / spacing); k <= Math.ceil((R - base) / spacing); k++) {
+			const o = base + k * spacing;
+			out.push({ p: { x: o * nrm.x, y: o * nrm.y }, d, kind: "mirror" });
+		}
+	}
+	return out;
+}
 const segOnMirror = (p: Vec2, q: Vec2, mirrors: Axis[], eps: number): boolean =>
 	mirrors.some((m) => perpDist(p, m) < eps && perpDist(q, m) < eps);
+
+// A valid orbifold chamber has NO mirror crossing its interior (a mirror may bound an edge but not run
+// through the middle). This is what separates cmm's genuine right-triangle (free hypotenuse, no interior
+// mirror) from the spurious cell/4 triangle a *2222 pmm would otherwise admit (its long leg straddles an
+// interior mirror). Signed perpendicular distance of the 3 vertices: reject if a mirror has vertices
+// strictly on both sides.
+function noMirrorThroughInterior(tri: Vec2[], mirrors: Axis[], eps: number): boolean {
+	for (const m of mirrors) {
+		let pos = 0, neg = 0;
+		for (const v of tri) {
+			const s = (v.x - m.p.x) * -m.d.y + (v.y - m.p.y) * m.d.x;
+			if (s > eps) pos++;
+			else if (s < -eps) neg++;
+		}
+		if (pos > 0 && neg > 0) return false;
+	}
+	return true;
+}
+
+// A MIRROR edge of a genuine chamber runs vertex-to-adjacent-vertex with no rotation center in between;
+// a center strictly inside a mirror edge means the edge overshoots a chamber boundary (the *2222 pmm
+// case, whose long mirror leg has a 2-fold at its midpoint). A center inside a FREE (non-mirror) edge is
+// fine — that is exactly cmm's interior 2-fold cone point sitting on the hypotenuse. So gate mirror
+// edges only. Uses the reliably-complete center set, not the windowed mirror set.
+function noCenterInsideMirrorEdge(
+	tri: Vec2[],
+	centers: Center[],
+	mirrors: Axis[],
+	r1: Vec2,
+	r2: Vec2,
+	eps: number,
+): boolean {
+	const pts: Vec2[] = [];
+	for (const c of centers) {
+		for (let a = -2; a <= 2; a++) {
+			for (let b = -2; b <= 2; b++) pts.push({ x: c.z.x + a * r1.x + b * r2.x, y: c.z.y + a * r1.y + b * r2.y });
+		}
+	}
+	for (let i = 0; i < 3; i++) {
+		const P = tri[i], Q = tri[(i + 1) % 3];
+		if (!segOnMirror(P, Q, mirrors, eps)) continue; // only mirror edges must be bare
+		const ex = Q.x - P.x, ey = Q.y - P.y;
+		const len2 = ex * ex + ey * ey;
+		if (len2 < 1e-12) continue;
+		for (const z of pts) {
+			const tt = ((z.x - P.x) * ex + (z.y - P.y) * ey) / len2;
+			if (tt <= 0.02 || tt >= 0.98) continue; // strictly interior to the edge
+			const perp = Math.abs((z.x - P.x) * ey - (z.y - P.y) * ex) / Math.sqrt(len2);
+			if (perp < eps) return false;
+		}
+	}
+	return true;
+}
 
 // The orbifold chamber: the smallest triangle [c0, A, B] whose corners are rotation centers (A,B taken
 // from the centers and their lattice translates) with both legs c0-A and c0-B lying on mirror lines and
@@ -440,14 +526,14 @@ function reflectionTriangle(
 	target: number,
 	cellSize: number,
 ): Vec2[] | null {
-	const eps = 0.015 * cellSize;
+	const eps = 0.02 * cellSize;
 	const cand: Vec2[] = [];
 	for (const c of centers) {
-		for (let a = -1; a <= 1; a++) {
-			for (let b = -1; b <= 1; b++) {
+		for (let a = -2; a <= 2; a++) {
+			for (let b = -2; b <= 2; b++) {
 				const z = { x: c.z.x + a * r1.x + b * r2.x, y: c.z.y + a * r1.y + b * r2.y };
 				const d = Math.hypot(z.x - c0.x, z.y - c0.y);
-				if (d > eps && d < 1.6 * cellSize) cand.push(z);
+				if (d > eps && d < 2.4 * cellSize) cand.push(z);
 			}
 		}
 	}
@@ -456,7 +542,9 @@ function reflectionTriangle(
 		for (let j = i + 1; j < cand.length; j++) {
 			const A = cand[i], B = cand[j];
 			if (Math.abs(triArea(c0, A, B) - target) > 0.02 * Math.max(1e-9, target)) continue;
-			if (segOnMirror(c0, A, mirrors, eps) && segOnMirror(c0, B, mirrors, eps)) return [c0, A, B];
+			if (!segOnMirror(c0, A, mirrors, eps) || !segOnMirror(c0, B, mirrors, eps)) continue; // legs on mirrors
+			if (!noMirrorThroughInterior([c0, A, B], mirrors, eps)) continue;
+			if (noCenterInsideMirrorEdge([c0, A, B], centers, mirrors, r1, r2, eps)) return [c0, A, B]; // genuine chamber
 		}
 	}
 	return null;
@@ -486,11 +574,35 @@ function buildFD(
 
 	const cellSize = Math.min(Math.hypot(r1.x, r1.y), Math.hypot(r2.x, r2.y));
 
-	// Reflection group (|G| = 2·rotationOrder). First try the canonical orbifold triangle from rotation
-	// centers; else halve the rotation parallelogram along the mirror through the anchor.
+	// Reflection group (|G| = 2·rotationOrder). First try the canonical orbifold triangle. Its apex must
+	// sit on a mirror INTERSECTION (≥2 mirrors) so both legs can lie on mirrors — for p4m/p6m that's the
+	// top-order center, but for cmm the nearest 2-fold may be the one BETWEEN mirrors, so try every
+	// on-intersection center (highest order / nearest origin first). Triangle-less groups (pmm rectangle,
+	// pmg/pm/cm strips) find no area-matching triangle and correctly fall through to the parallelogram.
 	if (mirrors.length > 0 && order === 2 * Math.max(1, nMax)) {
-		const tri = reflectionTriangle(c0, centers, mirrors, r1, r2, targetArea, cellSize);
-		if (tri) return { fd: tri, anchor: c0 };
+		const fullMirrors = completeMirrors(mirrors, r1, r2);
+		// Try every nearby center (and its translates) as the triangle apex — the leg-on-mirror and
+		// genuine-chamber checks inside reflectionTriangle do the filtering, so we don't rely on the
+		// windowed mirror set to pre-identify apex intersections (which misses some cmm anchors).
+		const apexSeen = new Set<string>();
+		const apexes: { z: Vec2; order: number }[] = [];
+		for (const c of centers) {
+			for (let a = -1; a <= 1; a++) {
+				for (let b = -1; b <= 1; b++) {
+					const z = { x: c.z.x + a * r1.x + b * r2.x, y: c.z.y + a * r1.y + b * r2.y };
+					if (Math.hypot(z.x, z.y) > 1.8 * cellSize) continue;
+					const key = `${z.x.toFixed(3)},${z.y.toFixed(3)}`;
+					if (apexSeen.has(key)) continue;
+					apexSeen.add(key);
+					apexes.push({ z, order: c.order });
+				}
+			}
+		}
+		apexes.sort((p, q) => q.order - p.order || Math.hypot(p.z.x, p.z.y) - Math.hypot(q.z.x, q.z.y));
+		for (const ap of apexes) {
+			const tri = reflectionTriangle(ap.z, centers, fullMirrors, r1, r2, targetArea, cellSize);
+			if (tri) return { fd: tri, anchor: ap.z };
+		}
 		const rotFrac = fractionParallelogram(c0, r1, r2, Math.max(1, nMax));
 		const u = { x: rotFrac[1].x - c0.x, y: rotFrac[1].y - c0.y };
 		const v = { x: rotFrac[3].x - c0.x, y: rotFrac[3].y - c0.y };
