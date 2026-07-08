@@ -4,10 +4,12 @@ import { useState } from "react";
 import { SidebarSection } from "./ui/sidebar-section";
 import { ButtonGroup } from "./ui/button-group";
 import type { CatalogueFilter } from "@/lib/services/catalogueService";
+import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 
 // The library filters drive a CatalogueFilter over the certified-results catalogue. Certification is
-// first-class (the atlas is about what's proven). Wallpaper-group / regular / star filters are gone for
-// now — the scout doesn't yet emit symmetry/orbit data (deferred; FRONTEND_ROADMAP.md).
+// first-class (the atlas is about what's proven). Wallpaper-group / lattice-shape filters are backed by
+// the exact symmetry index (public/symmetry-index.json); their options are the groups/shapes actually
+// present in the catalogue (passed in), so no empty filter buttons appear.
 export type LibraryFiltersValue = CatalogueFilter;
 
 interface LibraryFiltersProps {
@@ -15,6 +17,8 @@ interface LibraryFiltersProps {
 	onFiltersChange: (filters: LibraryFiltersValue) => void;
 	gridColumns: number;
 	onGridColumnsChange: (cols: number) => void;
+	availableGroups?: WallpaperGroup[];
+	availableShapes?: LatticeShape[];
 }
 
 // The certified catalogue currently spans k=1..3 (octagon-lemma families); extend when k≥4 lands.
@@ -26,13 +30,22 @@ const CERT_OPTIONS: { value: NonNullable<CatalogueFilter["certification"]>; labe
 	{ value: "candidate", label: "Candidate" },
 ];
 
-type SectionKey = "k" | "polygons" | "certification" | "grid";
+type SectionKey = "k" | "polygons" | "certification" | "group" | "shape" | "grid";
 
-export function LibraryFilters({ filters, onFiltersChange, gridColumns, onGridColumnsChange }: LibraryFiltersProps) {
+export function LibraryFilters({
+	filters,
+	onFiltersChange,
+	gridColumns,
+	onGridColumnsChange,
+	availableGroups = [],
+	availableShapes = [],
+}: LibraryFiltersProps) {
 	const [sectionsOpen, setSectionsOpen] = useState<Record<SectionKey, boolean>>({
 		k: true,
 		polygons: false,
 		certification: true,
+		group: false,
+		shape: false,
 		grid: true,
 	});
 
@@ -45,6 +58,18 @@ export function LibraryFilters({ filters, onFiltersChange, gridColumns, onGridCo
 			...filters,
 			kValues: cur.includes(k) ? cur.filter((v) => v !== k) : [...cur, k],
 		});
+	};
+
+	const toggleGroup = (g: WallpaperGroup) => {
+		const cur = filters.wallpaperGroups ?? [];
+		const next = cur.includes(g) ? cur.filter((v) => v !== g) : [...cur, g];
+		onFiltersChange({ ...filters, wallpaperGroups: next.length ? next : undefined });
+	};
+
+	const toggleShape = (s: LatticeShape) => {
+		const cur = filters.latticeShapes ?? [];
+		const next = cur.includes(s) ? cur.filter((v) => v !== s) : [...cur, s];
+		onFiltersChange({ ...filters, latticeShapes: next.length ? next : undefined });
 	};
 
 	const setPolygonSearch = (val: string) => {
@@ -84,6 +109,38 @@ export function LibraryFilters({ filters, onFiltersChange, gridColumns, onGridCo
 					onChange={setCertification}
 				/>
 			</SidebarSection>
+
+			{availableGroups.length > 0 ? (
+				<SidebarSection
+					title="Wallpaper group"
+					summary={filters.wallpaperGroups?.length ? filters.wallpaperGroups.join(", ") : null}
+					open={sectionsOpen.group}
+					onOpenChange={setOpen("group")}
+				>
+					<ButtonGroup
+						multi
+						options={availableGroups.map((g) => ({ value: g, label: g }))}
+						selected={filters.wallpaperGroups ?? []}
+						onChange={toggleGroup}
+					/>
+				</SidebarSection>
+			) : null}
+
+			{availableShapes.length > 0 ? (
+				<SidebarSection
+					title="Lattice shape"
+					summary={filters.latticeShapes?.length ? filters.latticeShapes.join(", ") : null}
+					open={sectionsOpen.shape}
+					onOpenChange={setOpen("shape")}
+				>
+					<ButtonGroup
+						multi
+						options={availableShapes.map((s) => ({ value: s, label: s }))}
+						selected={filters.latticeShapes ?? []}
+						onChange={toggleShape}
+					/>
+				</SidebarSection>
+			) : null}
 
 			<SidebarSection
 				title="Polygon types"

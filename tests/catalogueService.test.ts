@@ -135,4 +135,21 @@ describe("matchesCatalogueFilters", () => {
     expect(matchesCatalogueFilters(cert, { certification: "candidate" })).toBe(false);
     expect(matchesCatalogueFilters(cand, { certification: "all" })).toBe(true);
   });
+
+  it("wallpaper-group filter keeps only the selected groups; unknown group excluded", () => {
+    const p4m = makeCatalogue({ wallpaperGroup: "p4m" });
+    const p6m = makeCatalogue({ wallpaperGroup: "p6m" });
+    const unknown = makeCatalogue(); // no wallpaperGroup (index not joined for this tiling)
+    expect(matchesCatalogueFilters(p4m, { wallpaperGroups: ["p4m", "cmm"] })).toBe(true);
+    expect(matchesCatalogueFilters(p6m, { wallpaperGroups: ["p4m", "cmm"] })).toBe(false);
+    expect(matchesCatalogueFilters(unknown, { wallpaperGroups: ["p4m"] })).toBe(false);
+    expect(matchesCatalogueFilters(unknown, {})).toBe(true); // no group filter ⇒ unaffected
+  });
+
+  it("lattice-shape filter keeps only the selected shapes", () => {
+    const sq = makeCatalogue({ latticeShape: "square" });
+    const hex = makeCatalogue({ latticeShape: "hexagonal" });
+    expect(matchesCatalogueFilters(sq, { latticeShapes: ["square", "rhombic"] })).toBe(true);
+    expect(matchesCatalogueFilters(hex, { latticeShapes: ["square", "rhombic"] })).toBe(false);
+  });
 });

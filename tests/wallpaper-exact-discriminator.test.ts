@@ -18,19 +18,19 @@ setActiveRing(ring);
 
 describe("exact allTopCentersOnMirror discriminator", () => {
 	it("is TRUE for 4.4.4.4 (p4m): every 4-fold centre lies on a mirror", () => {
-		const s = seedFromCell(ring, square44);
+		const s = seedFromCell(ring, square44 as Parameters<typeof seedFromCell>[1]);
 		expect(_allTopOnMirrorExactForTest(ring, s.T1, s.T2, s.seed)).toBe(true);
 	});
 
 	it("is FALSE for the snub square t1009 (p4g): 4-fold centres off every mirror", () => {
-		const s = seedFromCell(ring, cellP4g);
+		const s = seedFromCell(ring, cellP4g as Parameters<typeof seedFromCell>[1]);
 		expect(_allTopOnMirrorExactForTest(ring, s.T1, s.T2, s.seed)).toBe(false);
 	});
 
 	it("end-to-end: t1009 classifies as p4g, 4.4.4.4 as p4m", () => {
-		const p4g = seedFromCell(ring, cellP4g);
+		const p4g = seedFromCell(ring, cellP4g as Parameters<typeof seedFromCell>[1]);
 		expect(analyzeSymmetry(ring, p4g.T1, p4g.T2, p4g.seed).group).toBe("p4g");
-		const p4m = seedFromCell(ring, square44);
+		const p4m = seedFromCell(ring, square44 as Parameters<typeof seedFromCell>[1]);
 		expect(analyzeSymmetry(ring, p4m.T1, p4m.T2, p4m.seed).group).toBe("p4m");
 	});
 });

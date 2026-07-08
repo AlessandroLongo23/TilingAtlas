@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
+import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
 // method wrote found_tilings — torus today, orbifold later (DESIGN INTENT, gated on the Phase-1
@@ -15,6 +16,10 @@ export interface CatalogueTiling {
 	renderCell: unknown | null; // float TranslationalCellData (parseBaseCell-ready); null if unpopulated
 	certified: boolean;
 	runIds: string[]; // provenance: which runs found this tiling
+	// Joined from the exact symmetry index (public/symmetry-index.json, keyed by canonicalKey) when
+	// available; absent for tilings not yet in the index. Decided exactly in ℤ[ζ₂₄], not stored in the DB.
+	latticeShape?: LatticeShape;
+	wallpaperGroup?: WallpaperGroup;
 }
 
 // Pure transform: collapse found_tilings (a tiling is rediscovered once per run that finds it) into
@@ -49,11 +54,15 @@ export function dedupeCatalogue(found: FoundTiling[], runs: RunRow[]): Catalogue
 
 // Catalogue filtering (pure). Certification is first-class (not a campaign flag) — the atlas is about
 // what's proven. Polygon filter is matched against the run's `family` tokens (the octagon-lemma family
-// label, FRONTEND_ROADMAP.md §B); symmetry/wallpaper-group filtering is deferred until orbit data lands.
+// label, FRONTEND_ROADMAP.md §B). Wallpaper-group / lattice-shape filtering is now backed by the exact
+// symmetry index (public/symmetry-index.json); a tiling missing from the index is excluded when either
+// symmetry filter is active (it has no known group/shape to match).
 export interface CatalogueFilter {
 	kValues?: number[];
 	polygonNames?: string[]; // each must appear in the tiling's family
 	certification?: "all" | "certified" | "candidate";
+	wallpaperGroups?: WallpaperGroup[];
+	latticeShapes?: LatticeShape[];
 }
 
 export function matchesCatalogueFilters(t: CatalogueTiling, f: CatalogueFilter): boolean {
@@ -64,6 +73,8 @@ export function matchesCatalogueFilters(t: CatalogueTiling, f: CatalogueFilter):
 	}
 	if (f.certification === "certified" && !t.certified) return false;
 	if (f.certification === "candidate" && t.certified) return false;
+	if (f.wallpaperGroups?.length && (!t.wallpaperGroup || !f.wallpaperGroups.includes(t.wallpaperGroup))) return false;
+	if (f.latticeShapes?.length && (!t.latticeShape || !f.latticeShapes.includes(t.latticeShape))) return false;
 	return true;
 }
 
