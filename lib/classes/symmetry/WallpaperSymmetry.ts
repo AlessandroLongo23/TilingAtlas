@@ -99,6 +99,57 @@ export const _rotationsForTest = (
 	seed: Cyclotomic[],
 ) => rotations(T1, T2, seed);
 
+const CENTER_TOL = 0.02; // frac-coordinate dedup tolerance (spec §8.5)
+
+// Complex division num/den in float (for the rotation fixed point c = t/(1−ω)). Division isn't a
+// decision — the rotation was already accepted exactly; this only places the marker for rendering.
+function cdiv(num: Vec2, den: Vec2): Vec2 {
+	const d = den.x * den.x + den.y * den.y;
+	return { x: (num.x * den.x + num.y * den.y) / d, y: (num.y * den.x - num.x * den.y) / d };
+}
+
+// Fractional lattice coordinates of p in basis (r1,r2), reduced into [0,1)².
+function fracInCell(p: Vec2, r1: Vec2, r2: Vec2): { fa: number; fb: number } {
+	const det = r1.x * r2.y - r1.y * r2.x;
+	let fa = (p.x * r2.y - p.y * r2.x) / det;
+	let fb = (-p.x * r1.y + p.y * r1.x) / det;
+	fa -= Math.floor(fa);
+	fb -= Math.floor(fb);
+	return { fa, fb };
+}
+
+// All rotation centers, deduped into one primitive cell, each tagged with its MAXIMUM order. For a
+// detected order-n rotation z↦ωz+t, composing with every lattice translation T_λ yields a rotation of
+// the same order about (t+λ)/(1−ω); enumerating λ over a small Λ window and reducing mod Λ recovers all
+// center orbits of that order (Λ/(1−ω) has index |1−ω|² over Λ, e.g. 2 four-fold orbits for a square).
+function rotationCenters(
+	ring: CyclotomicRing,
+	r1: Vec2,
+	r2: Vec2,
+	rots: DetectedRotation[],
+): Center[] {
+	const K = Math.round(1 / CENTER_TOL);
+	const byKey = new Map<string, Center>();
+	for (const rot of rots) {
+		const w = Cyclotomic.zeta(ring, rot.j).toVector(); // ω
+		const oneMinus = { x: 1 - w.x, y: -w.y };
+		const tv = rot.t.toVector();
+		for (let a = -2; a <= 2; a++) {
+			for (let b = -2; b <= 2; b++) {
+				const numv = { x: tv.x + a * r1.x + b * r2.x, y: tv.y + a * r1.y + b * r2.y };
+				const { fa, fb } = fracInCell(cdiv(numv, oneMinus), r1, r2);
+				const world = { x: fa * r1.x + fb * r2.x, y: fa * r1.y + fb * r2.y };
+				const ka = ((Math.round(fa * K) % K) + K) % K;
+				const kb = ((Math.round(fb * K) % K) + K) % K;
+				const key = `${ka},${kb}`;
+				const existing = byKey.get(key);
+				if (!existing || rot.order > existing.order) byKey.set(key, { z: world, order: rot.order });
+			}
+		}
+	}
+	return Array.from(byKey.values());
+}
+
 // Exact wallpaper-symmetry analysis of a periodic tiling. T1,T2 = exact lattice basis; seed = the
 // deduped exact vertex set of one primitive cell (all Cyclotomic). The returned SymmetryData carries
 // FLOAT geometry for rendering, but every symmetry decision behind it is made in exact ℤ[ζ_N].
@@ -112,15 +163,20 @@ export function analyzeSymmetry(
 	seed: Cyclotomic[],
 ): SymmetryData {
 	// Gauss-reduce so the drawn cell is the compact parallelogram (matches oracle-characterize.ts).
-	const [r1, r2] = gaussReduceExact(T1, T2);
-	const c1 = v2(r1);
-	const c2 = v2(r2);
+	const [gr1, gr2] = gaussReduceExact(T1, T2);
+	const c1 = v2(gr1);
+	const c2 = v2(gr2);
+
+	const rots = rotations(T1, T2, seed);
+	const centers = rotationCenters(ring, c1, c2, rots);
+	const maxOrder = centers.length ? Math.max(...centers.map((c) => c.order)) : 1;
+
 	return {
 		group: "p1",
 		latticeShape: "oblique",
-		pointGroupOrder: 1,
+		pointGroupOrder: maxOrder, // refined to the true |point group| once mirrors are known (Phase 3)
 		axes: [],
-		centers: [],
+		centers,
 		fd: [{ x: 0, y: 0 }, c1, { x: c1.x + c2.x, y: c1.y + c2.y }, c2],
 		cell: [c1, c2],
 		cellOrigin: { x: 0, y: 0 },

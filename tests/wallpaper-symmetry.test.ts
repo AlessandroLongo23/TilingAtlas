@@ -42,3 +42,15 @@ describe("rotations", () => {
 		expect(Math.max(...hxRots.map((r) => r.order))).toBe(6);
 	});
 });
+
+describe("rotation centers", () => {
+	it("square tiling emits order-4 centers, deduped in the cell", () => {
+		const ring = CyclotomicRing.create(24);
+		setActiveRing(ring);
+		const s = seedFromCell(ring, square44);
+		const data = analyzeSymmetry(ring, s.T1, s.T2, s.seed);
+		expect(data.centers.some((c) => c.order === 4)).toBe(true);
+		const keys = new Set(data.centers.map((c) => `${c.z.x.toFixed(4)},${c.z.y.toFixed(4)}`));
+		expect(keys.size).toBe(data.centers.length);
+	});
+});
