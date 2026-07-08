@@ -17,7 +17,7 @@ import { loadSnapshot } from '../figures/snapshot';
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
-type Entry = { group: WallpaperGroup; latticeShape: LatticeShape; k: number };
+type Entry = { group: WallpaperGroup; orbifold: string; latticeShape: LatticeShape; k: number };
 const index: Record<string, Entry> = {};
 const failures: { canonicalKey: string; k: number; error: string }[] = [];
 const hist: Record<string, number> = {};
@@ -28,7 +28,7 @@ for (const t of snap.tilings) {
 	try {
 		const { T1, T2, seed } = seedFromCell(ring, t.cellCodec);
 		const d = analyzeSymmetry(ring, T1, T2, seed);
-		index[t.canonicalKey] = { group: d.group, latticeShape: d.latticeShape, k: t.k };
+		index[t.canonicalKey] = { group: d.group, orbifold: d.orbifold, latticeShape: d.latticeShape, k: t.k };
 		hist[d.group] = (hist[d.group] ?? 0) + 1;
 	} catch (e) {
 		failures.push({ canonicalKey: t.canonicalKey, k: t.k, error: e instanceof Error ? e.message : String(e) });
