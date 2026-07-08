@@ -1,0 +1,30 @@
+# oracle exact-reconstruction benchmark — 2026-07-08
+# started 2026-07-08T12:15:03.352Z
+
+--- k=1: 11 oracle entries ---
+--- k=2: 20 oracle entries ---
+  [20/20]
+--- k=3: 61 oracle entries ---
+  [20/61]
+  [40/61]
+  [60/61]
+
+ACCURACY: 92/92 agree (congruent or both-error), 0 disagree
+ROBUSTNESS: float clean 91/92, exact clean 91/92
+  float errors:
+    t1002: degenerate basis (det 0)
+  exact errors:
+    t1002: degenerate basis (det 0)
+
+--- negative fixtures (exact method must REJECT each) ---
+  ✓ rejected: degenerate basis (T1=T2=0) — degenerate basis (det 0)
+  ✓ rejected: basis with T1 doubled (seeds cannot tile the enlarged cell) — no faces reconstructed (negfix)
+  ✓ rejected: single stray seed, no basis structure — face areas ≠ |det Λ| — incomplete reconstruction (negfix)
+NEGATIVE FIXTURES: 3/3 rejected loudly (g=11→n=24 hole closed by the faceFromGap guard — unit-tested)
+
+--- speed (5 repeats over all 92 k≤3 entries) ---
+  float:  224.6 ms / full k≤3 pass
+  exact:  1300.9 ms / full k≤3 pass  (5.79× float)
+
+★ report written: experiments/results/oracle-exact-recon-2026-07-08.md
+  recommendation: exact reproduces float exactly; keep current per plan
