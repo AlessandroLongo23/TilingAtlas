@@ -162,7 +162,8 @@ function reflections(
 	T2: Cyclotomic,
 	seed: Cyclotomic[],
 ): Axis[] {
-	const axes: Axis[] = [];
+	type Line = { j: number; offKey: string; kind: "mirror" | "glide"; p: Vec2; d: Vec2 };
+	const lines: Line[] = [];
 	const seen = new Set<string>();
 	const v0 = seed[0];
 	for (let j = 0; j < 24; j++) {
@@ -187,15 +188,22 @@ function reflections(
 					const kind: "mirror" | "glide" = tau.isZero() ? "mirror" : "glide";
 					const tv = t.toVector();
 					const offset = (-sphi * tv.x + cphi * tv.y) / 2; // Im(e^{-iφ}·t)/2 = perpendicular offset
-					const key = `${j}|${offset.toFixed(2)}|${kind}`;
+					const offKey = offset.toFixed(2);
+					const key = `${j}|${offKey}|${kind}`;
 					if (seen.has(key)) continue;
 					seen.add(key);
-					axes.push({ p: { x: offset * nrm.x, y: offset * nrm.y }, d: dir, kind });
+					lines.push({ j, offKey, kind, p: { x: offset * nrm.x, y: offset * nrm.y }, d: dir });
 				}
 			}
 		}
 	}
-	return axes;
+	// Drop TRIVIAL glides: a glide whose axis coincides with a mirror line is just that mirror composed
+	// with an along-axis translation, not an essential glide. Keeping them would make even symmorphic
+	// groups (pmm, p4m) report glides and misclassify. Essential glide ⇔ no mirror on the same line.
+	const mirrorAt = new Set(lines.filter((l) => l.kind === "mirror").map((l) => `${l.j}|${l.offKey}`));
+	return lines
+		.filter((l) => l.kind === "mirror" || !mirrorAt.has(`${l.j}|${l.offKey}`))
+		.map((l) => ({ p: l.p, d: l.d, kind: l.kind }));
 }
 export const _reflectionsForTest = reflections;
 
