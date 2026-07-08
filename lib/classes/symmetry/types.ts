@@ -8,6 +8,17 @@ export const WALLPAPER_GROUPS = [
 ] as const;
 export type WallpaperGroup = (typeof WALLPAPER_GROUPS)[number];
 
+// Conway/Thurston orbifold signature per group: digits before * = gyration (cone-point) orders, * =
+// mirror boundary, digits after * = corner-reflector orders (mirror intersections), × = glide, o =
+// torus. This IS the symmetry inventory read off directly, and it fixes the fundamental-domain shape.
+export const ORBIFOLD_SIGNATURE: Record<WallpaperGroup, string> = {
+	p1: "o", p2: "2222", pm: "**", pg: "××", cm: "*×",
+	pmm: "*2222", pmg: "22*", pgg: "22×", cmm: "2*22",
+	p4: "442", p4m: "*442", p4g: "4*2",
+	p3: "333", p3m1: "*333", p31m: "3*3",
+	p6: "632", p6m: "*632",
+};
+
 export interface Vec2 {
 	x: number;
 	y: number;
@@ -27,6 +38,7 @@ export interface Center {
 
 export interface SymmetryData {
 	group: WallpaperGroup;
+	orbifold: string; // Conway orbifold signature of `group` (e.g. "2*22" for cmm)
 	latticeShape: LatticeShape;
 	pointGroupOrder: number; // |point group| — used to check FD area = cellArea / this
 	axes: Axis[];

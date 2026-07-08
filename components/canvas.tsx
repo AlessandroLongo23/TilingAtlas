@@ -461,6 +461,7 @@ export function Canvas({
 				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-1 rounded-lg bg-surface-overlay/90 px-3 py-2 text-right">
 					<span className="text-sm font-bold leading-none text-fg">
 						Group <span className="font-mono">{symmetryData.group}</span>
+						<span className="ml-1.5 font-mono font-normal text-fg-muted">{symmetryData.orbifold}</span>
 					</span>
 					<span className="text-xs capitalize leading-none text-fg-muted">
 						{symmetryData.latticeShape} lattice

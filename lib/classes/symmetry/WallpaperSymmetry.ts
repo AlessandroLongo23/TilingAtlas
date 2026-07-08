@@ -1,5 +1,6 @@
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
 import { gaussReduceExact, sameLattice } from "@/classes/algorithm/LatticeEnumerator";
+import { ORBIFOLD_SIGNATURE } from "./types";
 import type { Axis, Center, LatticeShape, SymmetryData, Vec2, WallpaperGroup } from "./types";
 
 const v2 = (z: Cyclotomic): Vec2 => {
@@ -742,6 +743,7 @@ export function analyzeSymmetry(
 
 	return {
 		group,
+		orbifold: ORBIFOLD_SIGNATURE[group],
 		latticeShape,
 		pointGroupOrder,
 		axes,
