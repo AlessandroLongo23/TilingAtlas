@@ -3,7 +3,8 @@
 import { useConfiguration } from "@/stores/configuration";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { CertificationBadge } from "@/components/ui/certification-badge";
+import { CertificationBadge, OracleBadge } from "@/components/ui/certification-badge";
+import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { CatalogueListPanel } from "./catalogue-list-panel";
 
@@ -14,9 +15,10 @@ interface TilingsTabProps {
 	tilings: CatalogueTiling[];
 	selected: CatalogueTiling | null;
 	onSelect?: (t: CatalogueTiling) => void;
+	mode?: "certified" | "reference";
 }
 
-export function TilingsTab({ tilings, selected, onSelect }: TilingsTabProps) {
+export function TilingsTab({ tilings, selected, onSelect, mode = "certified" }: TilingsTabProps) {
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
 
@@ -26,10 +28,14 @@ export function TilingsTab({ tilings, selected, onSelect }: TilingsTabProps) {
 				{selected ? (
 					<div className="flex flex-col gap-1.5">
 						<div className="flex items-center justify-between gap-2">
-							<span className="text-xs font-mono text-fg-secondary">
-								k={selected.k} · {`{${selected.family}}`}
+							<span className="text-xs font-mono text-fg-secondary" title={`{${selected.family}}`}>
+								k={selected.k} · {polygonClassLabel(selected.family)}
 							</span>
-							<CertificationBadge certified={selected.certified} size="sm" />
+							{mode === "reference" ? (
+								<OracleBadge size="sm" />
+							) : (
+								<CertificationBadge certified={selected.certified} size="sm" />
+							)}
 						</div>
 						<span className="text-[10px] font-mono text-fg-disabled truncate" title={selected.canonicalKey}>
 							{selected.canonicalKey}
@@ -71,6 +77,18 @@ export function TilingsTab({ tilings, selected, onSelect }: TilingsTabProps) {
 						checked={cfg.isIslamic}
 						onCheckedChange={(v) => setCfg({ isIslamic: v })}
 					/>
+					<Checkbox
+						id="showSymmetryElements"
+						label="Symmetry elements"
+						checked={cfg.showSymmetryElements}
+						onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
+					/>
+					<Checkbox
+						id="showFundamentalDomain"
+						label="Fundamental domain"
+						checked={cfg.showFundamentalDomain}
+						onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
+					/>
 				</div>
 
 				{cfg.isIslamic ? (
@@ -96,7 +114,7 @@ export function TilingsTab({ tilings, selected, onSelect }: TilingsTabProps) {
 			</div>
 
 			<div className="flex-1 overflow-y-auto">
-				<CatalogueListPanel items={tilings} selectedKey={selected?.canonicalKey ?? null} onSelect={onSelect} />
+				<CatalogueListPanel items={tilings} selectedKey={selected?.canonicalKey ?? null} onSelect={onSelect} mode={mode} />
 			</div>
 		</div>
 	);
