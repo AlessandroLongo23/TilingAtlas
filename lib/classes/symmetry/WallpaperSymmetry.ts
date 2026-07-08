@@ -425,6 +425,74 @@ function triArea(a: Vec2, b: Vec2, c: Vec2): number {
 	return Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2;
 }
 
+// Shortest lattice vector PARALLEL to `dir` — the on-mirror lattice period (Conway's kaleidoscope
+// spacing). Legs of a mirror-bounded FD run half this far to the next corner reflector.
+function onLinePeriod(dir: Vec2, r1: Vec2, r2: Vec2): number {
+	let best = Infinity;
+	for (let a = -4; a <= 4; a++) {
+		for (let b = -4; b <= 4; b++) {
+			if (a === 0 && b === 0) continue;
+			const lv = { x: a * r1.x + b * r2.x, y: a * r1.y + b * r2.y };
+			const perp = lv.x * -dir.y + lv.y * dir.x;
+			if (Math.abs(perp) < 1e-6) best = Math.min(best, Math.abs(lv.x * dir.x + lv.y * dir.y));
+		}
+	}
+	return best;
+}
+
+// Distinct mirror directions (angle mod 180°), each with a representative axis.
+function uniqueMirrorDirs(mirrors: Axis[]): { d: Vec2; rep: Axis }[] {
+	const byAng = new Map<number, Axis>();
+	for (const m of mirrors) {
+		const ang = Math.round(((((Math.atan2(m.d.y, m.d.x) * 180) / Math.PI) % 180) + 180) % 180);
+		if (!byAng.has(ang)) byAng.set(ang, m);
+	}
+	return Array.from(byAng.values()).map((rep) => ({ d: rep.d, rep }));
+}
+
+// Intersection point of two axis lines (returns null if parallel).
+function lineIntersect(a: Axis, b: Axis): Vec2 | null {
+	const den = a.d.x * b.d.y - a.d.y * b.d.x;
+	if (Math.abs(den) < 1e-9) return null;
+	const s = ((b.p.x - a.p.x) * b.d.y - (b.p.y - a.p.y) * b.d.x) / den;
+	return { x: a.p.x + s * a.d.x, y: a.p.y + s * a.d.y };
+}
+
+// Direct FD for the two-perpendicular-mirror-family groups (Conway 2*22 cmm and *2222 pmm). Anchor at a
+// mirror∩mirror corner reflector; the two legs run half the on-mirror period along each mirror. The
+// rectangle spanned by both legs is pmm's FD; when that rectangle is twice the target (a centered/rhombic
+// cell), the true FD is its half-triangle — cmm — with the interior 2-fold cone point on the hypotenuse.
+function perpMirrorFD(mirrors: Axis[], r1: Vec2, r2: Vec2, target: number): { fd: Vec2[]; anchor: Vec2 } | null {
+	const dirs = uniqueMirrorDirs(mirrors);
+	let best: { p0: Vec2; A: Vec2; B: Vec2; C: Vec2; rectArea: number } | null = null;
+	for (let i = 0; i < dirs.length; i++) {
+		for (let j = i + 1; j < dirs.length; j++) {
+			const cos = dirs[i].d.x * dirs[j].d.x + dirs[i].d.y * dirs[j].d.y;
+			if (Math.abs(cos) > 1e-6) continue; // want perpendicular directions
+			// choose the dir-i and dir-j mirrors whose intersection is nearest the origin
+			let p0: Vec2 | null = null;
+			for (const mi of mirrors.filter((m) => Math.abs(m.d.x * dirs[i].d.y - m.d.y * dirs[i].d.x) < 1e-6)) {
+				for (const mj of mirrors.filter((m) => Math.abs(m.d.x * dirs[j].d.y - m.d.y * dirs[j].d.x) < 1e-6)) {
+					const p = lineIntersect(mi, mj);
+					if (p && (!p0 || Math.hypot(p.x, p.y) < Math.hypot(p0.x, p0.y))) p0 = p;
+				}
+			}
+			if (!p0) continue;
+			const P1 = onLinePeriod(dirs[i].d, r1, r2), P2 = onLinePeriod(dirs[j].d, r1, r2);
+			if (!Number.isFinite(P1) || !Number.isFinite(P2)) continue;
+			const A = { x: p0.x + 0.5 * P1 * dirs[i].d.x, y: p0.y + 0.5 * P1 * dirs[i].d.y };
+			const B = { x: p0.x + 0.5 * P2 * dirs[j].d.x, y: p0.y + 0.5 * P2 * dirs[j].d.y };
+			const C = { x: A.x + B.x - p0.x, y: A.y + B.y - p0.y };
+			const rectArea = 0.5 * P1 * 0.5 * P2;
+			if (!best || Math.hypot(p0.x, p0.y) < Math.hypot(best.p0.x, best.p0.y)) best = { p0, A, B, C, rectArea };
+		}
+	}
+	if (!best) return null;
+	if (Math.abs(best.rectArea - target) < 0.02 * target) return { fd: [best.p0, best.A, best.C, best.B], anchor: best.p0 }; // pmm rectangle
+	if (Math.abs(best.rectArea - 2 * target) < 0.04 * target) return { fd: [best.p0, best.A, best.B], anchor: best.p0 }; // cmm triangle
+	return null;
+}
+
 // Reconstruct a COMPLETE set of mirror lines around the origin from the windowed detection. The detected
 // lines of one direction are equally spaced by a perpendicular period; replicating each direction at
 // that spacing across a disk of radius ~2.6·(|r1|+|r2|) gives every mirror the FD builder needs, so
@@ -557,6 +625,7 @@ function reflectionTriangle(
 // target area (e.g. p4g/pmg, bounded by glides not mirrors), fall back to the correct-area
 // fraction-parallelogram. Area is guaranteed = |cell|/|G| either way.
 function buildFD(
+	group: WallpaperGroup,
 	order: number,
 	centers: Center[],
 	axes: Axis[],
@@ -581,6 +650,13 @@ function buildFD(
 	// pmg/pm/cm strips) find no area-matching triangle and correctly fall through to the parallelogram.
 	if (mirrors.length > 0 && order === 2 * Math.max(1, nMax)) {
 		const fullMirrors = completeMirrors(mirrors, r1, r2);
+
+		// cmm (2*22) and pmm (*2222) are built directly from the two perpendicular mirror families — a
+		// robust, deterministic construction (Conway) that doesn't depend on the windowed center search.
+		if (group === "cmm" || group === "pmm") {
+			const pm = perpMirrorFD(fullMirrors, r1, r2, targetArea);
+			if (pm) return pm;
+		}
 		// Try every nearby center (and its translates) as the triangle apex — the leg-on-mirror and
 		// genuine-chamber checks inside reflectionTriangle do the filtering, so we don't rely on the
 		// windowed mirror set to pre-identify apex intersections (which misses some cmm anchors).
@@ -652,7 +728,7 @@ export function analyzeSymmetry(
 	const allTopOnMirror = allTopCentersOnMirrorExact(ring, T1, T2, seed);
 	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror);
 	const pointGroupOrder = POINT_GROUP_ORDER[group];
-	const { fd, anchor } = buildFD(pointGroupOrder, centers, axes, c1, c2);
+	const { fd, anchor } = buildFD(group, pointGroupOrder, centers, axes, c1, c2);
 
 	return {
 		group,
