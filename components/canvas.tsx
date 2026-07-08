@@ -183,6 +183,9 @@ export function Canvas({
 	const selectedRule = useConfiguration((s) => s.selectedTiling.rulestring);
 	const colorParams = useConfiguration((s) => s.colorParams);
 	const setCfg = useConfiguration((s) => s.set);
+	const showSymmetryElements = useConfiguration((s) => s.showSymmetryElements);
+	const showFundamentalDomain = useConfiguration((s) => s.showFundamentalDomain);
+	const showSymmetryInfo = (showSymmetryElements || showFundamentalDomain) && !!symmetryData;
 	const isDualRule = selectedRule.includes("*");
 
 	useP5(
@@ -453,6 +456,17 @@ export function Canvas({
 			<div className="absolute top-4 left-4 z-20">
 				<TilingInfo tileCount={tileCount} vcs={vcs} />
 			</div>
+
+			{showSymmetryInfo ? (
+				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-1 rounded-lg bg-surface-overlay/90 px-3 py-2 text-right">
+					<span className="text-sm font-bold leading-none text-fg">
+						Group <span className="font-mono">{symmetryData.group}</span>
+					</span>
+					<span className="text-xs capitalize leading-none text-fg-muted">
+						{symmetryData.latticeShape} lattice
+					</span>
+				</div>
+			) : null}
 
 			{!translationalCell && isDualRule ? (
 				<div className="absolute bottom-4 right-4 z-20">
