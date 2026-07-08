@@ -39,6 +39,8 @@ export interface ConfigurationState {
 	showPolygonPoints: boolean;
 	showConstructionPoints: boolean;
 	showWallpaperGroup: boolean;
+	showSymmetryElements: boolean;
+	showFundamentalDomain: boolean;
 	debugView: boolean;
 
 	// Screenshot / export
@@ -87,6 +89,8 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showPolygonPoints: false,
 	showConstructionPoints: false,
 	showWallpaperGroup: false,
+	showSymmetryElements: false,
+	showFundamentalDomain: false,
 	debugView: false,
 
 	screenshotButtonHover: false,
