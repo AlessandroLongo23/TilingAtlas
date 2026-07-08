@@ -40,6 +40,65 @@ function inLattice(T1: Cyclotomic, T2: Cyclotomic, w: Cyclotomic): boolean {
 }
 export const _inLatticeForTest = inLattice;
 
+// The two isometry families that can preserve a ℤ[ζ_N] tiling: rotation z↦ζ^j·z + t and
+// reflection/glide z↦ζ^j·z̄ + t (z̄ = Cyclotomic.conj, the exact ζ↦ζ⁻¹ automorphism).
+const applyRot = (j: number, t: Cyclotomic, z: Cyclotomic) => z.mulZeta(j).add(t);
+const applyRef = (j: number, t: Cyclotomic, z: Cyclotomic) => z.conj().mulZeta(j).add(t);
+
+// g preserves the tiling iff every seed vertex maps into (seed + Λ): g(v) ≡ some seed w (mod Λ).
+// This is THE decisive test — exact, congruence-closed (mod the translation lattice), no tolerance.
+function preserves(
+	T1: Cyclotomic,
+	T2: Cyclotomic,
+	seed: Cyclotomic[],
+	g: (z: Cyclotomic) => Cyclotomic,
+): boolean {
+	for (const v of seed) {
+		const gv = g(v);
+		if (!seed.some((w) => inLattice(T1, T2, gv.sub(w)))) return false;
+	}
+	return true;
+}
+
+const CRYSTALLOGRAPHIC = new Set([1, 2, 3, 4, 6]);
+function ngcd(x: number, y: number): number {
+	return y ? ngcd(y, x % y) : x;
+}
+// Order of the rotation z↦ζ_N^j·z. Only crystallographic orders {2,3,4,6} can occur (Barlow).
+const rotOrderOf = (j: number, N = 24) => N / ngcd(j, N);
+
+export interface DetectedRotation {
+	j: number;
+	t: Cyclotomic;
+	order: 2 | 3 | 4 | 6;
+}
+
+// One representative rotation per power j that is an actual symmetry. t is found by requiring
+// ζ^j·seed[0] + t ≡ some seed vertex (mod Λ); we then verify the whole seed closes. Centers (there are
+// several per order, related by Λ/order) are derived from these representatives in a later step.
+function rotations(T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[]): DetectedRotation[] {
+	const out: DetectedRotation[] = [];
+	const v0 = seed[0];
+	for (let j = 1; j < 24; j++) {
+		const order = rotOrderOf(j);
+		if (!CRYSTALLOGRAPHIC.has(order) || order === 1) continue;
+		for (const w of seed) {
+			const t = w.sub(v0.mulZeta(j));
+			if (preserves(T1, T2, seed, (z) => applyRot(j, t, z))) {
+				out.push({ j, t, order: order as 2 | 3 | 4 | 6 });
+				break; // one representative t per power j
+			}
+		}
+	}
+	return out;
+}
+export const _rotationsForTest = (
+	_ring: CyclotomicRing,
+	T1: Cyclotomic,
+	T2: Cyclotomic,
+	seed: Cyclotomic[],
+) => rotations(T1, T2, seed);
+
 // Exact wallpaper-symmetry analysis of a periodic tiling. T1,T2 = exact lattice basis; seed = the
 // deduped exact vertex set of one primitive cell (all Cyclotomic). The returned SymmetryData carries
 // FLOAT geometry for rendering, but every symmetry decision behind it is made in exact ℤ[ζ_N].

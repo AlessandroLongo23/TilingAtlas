@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { seedFromCell } from "@/lib/services/cellCodecService";
-import { analyzeSymmetry, _inLatticeForTest } from "@/lib/classes/symmetry/WallpaperSymmetry";
+import { analyzeSymmetry, _inLatticeForTest, _rotationsForTest } from "@/lib/classes/symmetry/WallpaperSymmetry";
 import square44 from "./fixtures/cell-44.json";
+import hex666 from "./fixtures/cell-666.json";
 
 describe("analyzeSymmetry — cell", () => {
 	it("returns the primitive cell as two independent world vectors", () => {
@@ -25,5 +26,19 @@ describe("inLattice", () => {
 		expect(_inLatticeForTest(T1, T2, T1.add(T2))).toBe(true);
 		expect(_inLatticeForTest(T1, T2, T1.scaleRational(2n, 1n).sub(T2.scaleRational(3n, 1n)))).toBe(true);
 		expect(_inLatticeForTest(T1, T2, T1.scaleRational(1n, 2n))).toBe(false);
+	});
+});
+
+describe("rotations", () => {
+	it("max rotation order: 4.4.4.4 ⇒ 4, 6.6.6 ⇒ 6", () => {
+		const ring = CyclotomicRing.create(24);
+		setActiveRing(ring);
+		const sq = seedFromCell(ring, square44);
+		const sqRots = _rotationsForTest(ring, sq.T1, sq.T2, sq.seed);
+		expect(Math.max(...sqRots.map((r) => r.order))).toBe(4);
+
+		const hx = seedFromCell(ring, hex666);
+		const hxRots = _rotationsForTest(ring, hx.T1, hx.T2, hx.seed);
+		expect(Math.max(...hxRots.map((r) => r.order))).toBe(6);
 	});
 });
