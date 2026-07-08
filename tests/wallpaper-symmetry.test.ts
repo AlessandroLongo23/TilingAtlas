@@ -6,8 +6,11 @@ import { galebachToInput } from "@/lib/services/galebachInput";
 import square44 from "./fixtures/cell-44.json";
 import hex666 from "./fixtures/cell-666.json";
 import tsp4m from "./fixtures/cell-488.json";
+import triangular from "./fixtures/cell-tri.json";
+import p6m4612 from "./fixtures/cell-4612.json";
 import galCmm from "./fixtures/gal-t5125.json";
 import galPgg from "./fixtures/gal-t6364.json";
+import galP2 from "./fixtures/gal-t3055.json";
 
 describe("analyzeSymmetry — cell", () => {
 	it("returns the primitive cell as two independent world vectors", () => {
@@ -98,5 +101,31 @@ describe("lattice shape", () => {
 		expect(analyzeSymmetry(ring, hx.T1, hx.T2, hx.seed).latticeShape).toBe("hexagonal");
 		const cm = galebachToInput(ring, galCmm);
 		expect(analyzeSymmetry(ring, cm.T1, cm.T2, cm.seed).latticeShape).toBe("rhombic");
+	});
+});
+
+describe("group identification", () => {
+	const ring = CyclotomicRing.create(24);
+	setActiveRing(ring);
+	const cellCases: [string, unknown, string][] = [
+		["4.4.4.4", square44, "p4m"],
+		["6.6.6", hex666, "p6m"],
+		["4.8.8", tsp4m, "p4m"],
+		["4.6.12 (t1003 — the prototype gets this WRONG)", p6m4612, "p6m"],
+		["triangular", triangular, "p6m"],
+	];
+	it.each(cellCases)("identifies %s as %s", (_name, fixture, group) => {
+		const s = seedFromCell(ring, fixture as Parameters<typeof seedFromCell>[1]);
+		expect(analyzeSymmetry(ring, s.T1, s.T2, s.seed).group).toBe(group);
+	});
+
+	const galCases: [string, unknown, string][] = [
+		["t5125", galCmm, "cmm"],
+		["t6364", galPgg, "pgg"],
+		["t3055", galP2, "p2"],
+	];
+	it.each(galCases)("identifies %s as %s", (_name, fixture, group) => {
+		const s = galebachToInput(ring, fixture as Parameters<typeof galebachToInput>[1]);
+		expect(analyzeSymmetry(ring, s.T1, s.T2, s.seed).group).toBe(group);
 	});
 });

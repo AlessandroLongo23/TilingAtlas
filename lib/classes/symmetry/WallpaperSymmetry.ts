@@ -1,6 +1,6 @@
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
 import { gaussReduceExact, sameLattice } from "@/classes/algorithm/LatticeEnumerator";
-import type { Axis, Center, LatticeShape, SymmetryData, Vec2 } from "./types";
+import type { Axis, Center, LatticeShape, SymmetryData, Vec2, WallpaperGroup } from "./types";
 
 const v2 = (z: Cyclotomic): Vec2 => {
 	const v = z.toVector();
@@ -239,6 +239,56 @@ function classifyLattice(ring: CyclotomicRing, u: Cyclotomic, v: Cyclotomic): La
 	return "rhombic"; // centered-rectangular (conventional) = rhombic
 }
 
+const POINT_GROUP_ORDER: Record<WallpaperGroup, number> = {
+	p1: 1, p2: 2, pm: 2, pg: 2, cm: 2, pmm: 4, pmg: 4, pgg: 4, cmm: 4,
+	p4: 4, p4m: 8, p4g: 8, p3: 3, p3m1: 6, p31m: 6, p6: 6, p6m: 12,
+};
+
+function mirrorAngleCount(axes: Axis[]): number {
+	const s = new Set<number>();
+	for (const a of axes) {
+		if (a.kind !== "mirror") continue;
+		const deg = (((Math.atan2(a.d.y, a.d.x) * 180) / Math.PI) % 180 + 180) % 180;
+		s.add(Math.round(deg));
+	}
+	return s.size;
+}
+
+// Perpendicular distance from pt to the line {ax.p + s·ax.d} (ax.d unit) < tol.
+function pointOnLine(pt: Vec2, ax: Axis, tol: number): boolean {
+	const wx = pt.x - ax.p.x, wy = pt.y - ax.p.y;
+	return Math.abs(wx * ax.d.y - wy * ax.d.x) < tol;
+}
+
+// The 17-group decision procedure, keyed on the exact element inventory. nMax = highest rotation
+// order; the mirror/glide/centers-on-mirror discriminators split the ambiguous pairs (pmm/pmg/cmm,
+// p3m1/p31m, p4m/p4g). Standard flowchart (e.g. IUCr Tables / Schattschneider 1978).
+function identifyGroup(
+	nMax: number,
+	hasMirror: boolean,
+	hasGlide: boolean,
+	mAngles: number,
+	allTopOnMirror: boolean,
+): WallpaperGroup {
+	switch (nMax) {
+		case 2:
+			if (!hasMirror) return hasGlide ? "pgg" : "p2";
+			if (!hasGlide) return "pmm";
+			return mAngles >= 2 ? "cmm" : "pmg";
+		case 3:
+			if (!hasMirror) return "p3";
+			return allTopOnMirror ? "p3m1" : "p31m";
+		case 4:
+			if (!hasMirror) return "p4";
+			return allTopOnMirror ? "p4m" : "p4g";
+		case 6:
+			return hasMirror ? "p6m" : "p6";
+		default: // nMax === 1
+			if (!hasMirror) return hasGlide ? "pg" : "p1";
+			return hasGlide ? "cm" : "pm";
+	}
+}
+
 // Exact wallpaper-symmetry analysis of a periodic tiling. T1,T2 = exact lattice basis; seed = the
 // deduped exact vertex set of one primitive cell (all Cyclotomic). The returned SymmetryData carries
 // FLOAT geometry for rendering, but every symmetry decision behind it is made in exact ℤ[ζ_N].
@@ -258,17 +308,27 @@ export function analyzeSymmetry(
 
 	const rots = rotations(T1, T2, seed);
 	const centers = rotationCenters(ring, c1, c2, rots);
-	const maxOrder = centers.length ? Math.max(...centers.map((c) => c.order)) : 1;
 	const axes = reflections(ring, T1, T2, seed);
 	const latticeShape = classifyLattice(ring, T1, T2);
 
+	const nMax = centers.length ? Math.max(...centers.map((c) => c.order)) : 1;
+	const hasMirror = axes.some((a) => a.kind === "mirror");
+	const hasGlide = axes.some((a) => a.kind === "glide");
+	const cellSize = Math.min(Math.hypot(c1.x, c1.y), Math.hypot(c2.x, c2.y));
+	const onLineTol = 0.03 * cellSize;
+	const topCenters = centers.filter((c) => c.order === nMax);
+	const allTopOnMirror =
+		topCenters.length > 0 &&
+		topCenters.every((c) => axes.some((a) => a.kind === "mirror" && pointOnLine(c.z, a, onLineTol)));
+	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror);
+
 	return {
-		group: "p1",
+		group,
 		latticeShape,
-		pointGroupOrder: maxOrder, // refined to the true |point group| once mirrors are known (Phase 3)
+		pointGroupOrder: POINT_GROUP_ORDER[group],
 		axes,
 		centers,
-		fd: [{ x: 0, y: 0 }, c1, { x: c1.x + c2.x, y: c1.y + c2.y }, c2],
+		fd: [{ x: 0, y: 0 }, c1, { x: c1.x + c2.x, y: c1.y + c2.y }, c2], // real FD in Task 3.3
 		cell: [c1, c2],
 		cellOrigin: { x: 0, y: 0 },
 	};
