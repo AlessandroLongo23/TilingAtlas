@@ -1,6 +1,6 @@
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
 import { gaussReduceExact } from "@/classes/algorithm/LatticeEnumerator";
-import type { Center, SymmetryData, Vec2 } from "./types";
+import type { Axis, Center, SymmetryData, Vec2 } from "./types";
 
 const v2 = (z: Cyclotomic): Vec2 => {
 	const v = z.toVector();
@@ -150,6 +150,55 @@ function rotationCenters(
 	return Array.from(byKey.values());
 }
 
+// All mirror and glide axes, exact. For reflection power j (axis angle φ = j·7.5°), a reflection/glide
+// is z↦ζ^j·z̄ + t. We collect every distinct coset rep t (mod Λ) that is a symmetry — capturing pmg-type
+// cases where a mirror coset and a glide coset share an angle (spec §8.3) — then walk each coset's
+// Λ-translates. Each translate is its OWN line: it is a MIRROR iff τ = ω·t̄ + t = 0 exactly, else a
+// GLIDE (g² = translation by τ ≠ 0). This exact τ test replaces the prototype's float on-line-period
+// trick and cannot mislabel a centered-lattice glide as a mirror (spec §8.1/§8.2).
+function reflections(
+	ring: CyclotomicRing,
+	T1: Cyclotomic,
+	T2: Cyclotomic,
+	seed: Cyclotomic[],
+): Axis[] {
+	const axes: Axis[] = [];
+	const seen = new Set<string>();
+	const v0 = seed[0];
+	for (let j = 0; j < 24; j++) {
+		const omega = Cyclotomic.zeta(ring, j);
+		const reps: Cyclotomic[] = [];
+		for (const w of seed) {
+			const t = w.sub(v0.conj().mulZeta(j));
+			if (!preserves(T1, T2, seed, (z) => applyRef(j, t, z))) continue;
+			if (reps.some((r) => inLattice(T1, T2, t.sub(r)))) continue; // same coset
+			reps.push(t);
+		}
+		if (reps.length === 0) continue;
+		const phi = (j * Math.PI) / 24; // axis angle
+		const cphi = Math.cos(phi), sphi = Math.sin(phi);
+		const dir = { x: cphi, y: sphi };
+		const nrm = { x: -sphi, y: cphi };
+		for (const t0 of reps) {
+			for (let a = -3; a <= 3; a++) {
+				for (let b = -3; b <= 3; b++) {
+					const t = t0.add(T1.scaleRational(BigInt(a), 1n)).add(T2.scaleRational(BigInt(b), 1n));
+					const tau = omega.mul(t.conj()).add(t); // EXACT τ = ω·t̄ + t
+					const kind: "mirror" | "glide" = tau.isZero() ? "mirror" : "glide";
+					const tv = t.toVector();
+					const offset = (-sphi * tv.x + cphi * tv.y) / 2; // Im(e^{-iφ}·t)/2 = perpendicular offset
+					const key = `${j}|${offset.toFixed(2)}|${kind}`;
+					if (seen.has(key)) continue;
+					seen.add(key);
+					axes.push({ p: { x: offset * nrm.x, y: offset * nrm.y }, d: dir, kind });
+				}
+			}
+		}
+	}
+	return axes;
+}
+export const _reflectionsForTest = reflections;
+
 // Exact wallpaper-symmetry analysis of a periodic tiling. T1,T2 = exact lattice basis; seed = the
 // deduped exact vertex set of one primitive cell (all Cyclotomic). The returned SymmetryData carries
 // FLOAT geometry for rendering, but every symmetry decision behind it is made in exact ℤ[ζ_N].
@@ -170,12 +219,13 @@ export function analyzeSymmetry(
 	const rots = rotations(T1, T2, seed);
 	const centers = rotationCenters(ring, c1, c2, rots);
 	const maxOrder = centers.length ? Math.max(...centers.map((c) => c.order)) : 1;
+	const axes = reflections(ring, T1, T2, seed);
 
 	return {
 		group: "p1",
 		latticeShape: "oblique",
 		pointGroupOrder: maxOrder, // refined to the true |point group| once mirrors are known (Phase 3)
-		axes: [],
+		axes,
 		centers,
 		fd: [{ x: 0, y: 0 }, c1, { x: c1.x + c2.x, y: c1.y + c2.y }, c2],
 		cell: [c1, c2],

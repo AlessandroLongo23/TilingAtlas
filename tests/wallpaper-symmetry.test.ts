@@ -2,8 +2,12 @@ import { describe, it, expect } from "vitest";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { seedFromCell } from "@/lib/services/cellCodecService";
 import { analyzeSymmetry, _inLatticeForTest, _rotationsForTest } from "@/lib/classes/symmetry/WallpaperSymmetry";
+import { galebachToInput } from "@/lib/services/galebachInput";
 import square44 from "./fixtures/cell-44.json";
 import hex666 from "./fixtures/cell-666.json";
+import tsp4m from "./fixtures/cell-488.json";
+import galCmm from "./fixtures/gal-t5125.json";
+import galPgg from "./fixtures/gal-t6364.json";
 
 describe("analyzeSymmetry — cell", () => {
 	it("returns the primitive cell as two independent world vectors", () => {
@@ -52,5 +56,34 @@ describe("rotation centers", () => {
 		expect(data.centers.some((c) => c.order === 4)).toBe(true);
 		const keys = new Set(data.centers.map((c) => `${c.z.x.toFixed(4)},${c.z.y.toFixed(4)}`));
 		expect(keys.size).toBe(data.centers.length);
+	});
+});
+
+describe("mirrors and glides", () => {
+	it("4.8.8 (p4m) reports both mirror and glide axes", () => {
+		const ring = CyclotomicRing.create(24);
+		setActiveRing(ring);
+		const s = seedFromCell(ring, tsp4m);
+		const data = analyzeSymmetry(ring, s.T1, s.T2, s.seed);
+		expect(data.axes.some((a) => a.kind === "mirror")).toBe(true);
+		expect(data.axes.some((a) => a.kind === "glide")).toBe(true);
+	});
+
+	it("cmm (t5125) reports BOTH mirror and glide axes — the centered-lattice glide regression", () => {
+		const ring = CyclotomicRing.create(24);
+		setActiveRing(ring);
+		const { T1, T2, seed } = galebachToInput(ring, galCmm);
+		const data = analyzeSymmetry(ring, T1, T2, seed);
+		expect(data.axes.some((a) => a.kind === "mirror")).toBe(true);
+		expect(data.axes.some((a) => a.kind === "glide")).toBe(true);
+	});
+
+	it("pgg (t6364) reports glides and NO mirrors", () => {
+		const ring = CyclotomicRing.create(24);
+		setActiveRing(ring);
+		const { T1, T2, seed } = galebachToInput(ring, galPgg);
+		const data = analyzeSymmetry(ring, T1, T2, seed);
+		expect(data.axes.some((a) => a.kind === "glide")).toBe(true);
+		expect(data.axes.some((a) => a.kind === "mirror")).toBe(false);
 	});
 });
