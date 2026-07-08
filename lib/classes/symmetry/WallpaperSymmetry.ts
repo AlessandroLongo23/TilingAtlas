@@ -1,6 +1,6 @@
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
 import { gaussReduceExact } from "@/classes/algorithm/LatticeEnumerator";
-import type { SymmetryData, Vec2 } from "./types";
+import type { Center, SymmetryData, Vec2 } from "./types";
 
 const v2 = (z: Cyclotomic): Vec2 => {
 	const v = z.toVector();

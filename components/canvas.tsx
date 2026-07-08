@@ -17,7 +17,7 @@ import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
 import { ColorPad } from "./ui/color-pad";
 import { useP5 } from "@/lib/hooks/useP5";
-import { drawFundamentalDomain } from "./canvas-overlays";
+import { drawFundamentalDomain, drawSymmetryElements } from "./canvas-overlays";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 
 interface CanvasProps {
@@ -377,6 +377,7 @@ export function Canvas({
 					drawTiling(cfg, tiling);
 					const sd = propsRef.current.symmetryData;
 					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
+					if (sd && cfg.showSymmetryElements) drawSymmetryElements(p5, sd, ctrl.zoom);
 					p5.pop();
 
 					if (cfg.screenshotButtonHover) drawScreenshotOverlay();

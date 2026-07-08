@@ -1,4 +1,4 @@
-import type { SymmetryData, Vec2 } from "@/lib/classes/symmetry/types";
+import type { Center, SymmetryData, Vec2 } from "@/lib/classes/symmetry/types";
 
 // p5 is the same untyped instance canvas.tsx uses. Every draw here runs INSIDE the canvas world
 // transform (…translate·rotate·scale·scale(1,-1)), so geometry is in WORLD units and follows
@@ -32,4 +32,37 @@ export function drawFundamentalDomain(p5: P5, data: SymmetryData) {
 	p5.strokeWeight(0.03);
 	polygon(p5, data.fd);
 	p5.pop();
+}
+
+// Standard crystallographic rotation-center marks. Hue by order; drawn at a fixed PIXEL size (unscaled
+// by zoom, y-flip undone) so they stay legible and upright at any zoom.
+const CENTER_HUE: Record<number, number> = { 2: 300, 3: 210, 4: 120, 6: 40 };
+
+function ngon(p5: P5, n: number, r: number, start: number) {
+	p5.beginShape();
+	for (let i = 0; i < n; i++) {
+		const a = start + (2 * Math.PI * i) / n;
+		p5.vertex(r * Math.cos(a), r * Math.sin(a));
+	}
+	p5.endShape(p5.CLOSE);
+}
+
+function drawCenter(p5: P5, c: Center, zoom: number) {
+	const r = 6; // px
+	p5.push();
+	p5.translate(c.z.x, c.z.y);
+	p5.scale(1 / zoom, -1 / zoom); // pixel units, undo the world y-flip so glyphs are upright
+	p5.stroke(0, 0, 0);
+	p5.strokeWeight(1);
+	p5.fill(CENTER_HUE[c.order] ?? 0, 80, 95);
+	if (c.order === 2) p5.ellipse(0, 0, r, 2 * r); // 2-fold: pointed oval / lens
+	else if (c.order === 3) ngon(p5, 3, r, Math.PI / 2); // triangle, point up
+	else if (c.order === 4) ngon(p5, 4, r, Math.PI / 4); // square, flat sides
+	else ngon(p5, 6, r, 0); // hexagon, flat top
+	p5.pop();
+}
+
+export function drawSymmetryElements(p5: P5, data: SymmetryData, zoom: number) {
+	// (mirror/glide axes are drawn here in Phase 2, before the centers so marks sit on top)
+	for (const c of data.centers) drawCenter(p5, c, zoom);
 }
