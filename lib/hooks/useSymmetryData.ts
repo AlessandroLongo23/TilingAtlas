@@ -4,6 +4,7 @@ import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { createClient } from "@/lib/supabase/client";
 import { fetchCellCodec, seedFromCell } from "@/lib/services/cellCodecService";
 import { analyzeSymmetry } from "@/lib/classes/symmetry/WallpaperSymmetry";
+import { symmetryFromExactSource } from "@/lib/services/oracleSymmetry";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
@@ -31,6 +32,14 @@ export function useSymmetryData(tiling: CatalogueTiling | null): SymmetryData | 
 			try {
 				const ring = CyclotomicRing.create(24);
 				setActiveRing(ring);
+				// Oracle tilings (Reference shelf) have no Supabase cell_codec; they carry the exact cell
+				// inline and are reconstructed locally.
+				if (tiling.exactSource) {
+					const result = symmetryFromExactSource(ring, key, tiling.exactSource);
+					cache.set(key, result);
+					if (alive) setData(result);
+					return;
+				}
 				const codec = await fetchCellCodec(createClient(), key);
 				if (!codec) {
 					cache.set(key, null);
