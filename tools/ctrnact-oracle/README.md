@@ -70,12 +70,46 @@ The C++ solver is the authoritative generator. An earlier Python solver port
 5959). The C++ solver, Marek's original, and `reference/count.txt` all agree on 2850 / 5960, so the
 C++ path is what settles the count. Completeness is the thesis's claim, so this is logged, not buried.
 
-## Performance (this machine, 2026-07)
+## Running at higher k (streaming)
 
-| stage | k=10 | k=11 |
-|-------|------|------|
-| solve (C++) | 137s | 361s |
-| prune (C++) | 4s | 10s |
-| Python pruner (replaced) | 353s | 1447s |
+For a single frontier k, fuse the two stages so raw blocks never touch disk and pruner RAM stays
+bounded to that one k:
 
-Whole k=11 pipeline: ~6 min, versus an estimated ~5 h all-Python route.
+```sh
+EU_STREAM=1 ./eu_solver | EU_STREAM=1 EU_KONLY=<k> EU_OUT=<dir> ./eu_pruner
+```
+
+(build the solver with `make MAXNUM=<k>`). The solver emits each solution block to stdout instead of
+per-family files; the pruner reads stdin, dedups on the fly, drops any block whose vertex count ≠ k,
+and writes only the distinct blocks to `<dir>/pruned/eupruned_<NN>.txt`. Default (no `EU_STREAM`)
+still runs the file-based pipeline unchanged. `EU_TRACE=1` restores the solver's per-node debug trace
+(off by default).
+
+## Performance (Apple M5, 2026-07)
+
+Two optimizations landed after the initial port, each validated against a golden capture of the
+pre-change output plus the A068599 counts (exact, not "close").
+
+**Trace-gating.** The solver wrote a per-node debug trace (`euoutput1.txt`) on every search node —
+hot-path string I/O never read by the search or the emitted solutions. Gating it behind `EU_TRACE`
+(default off) cut solve ~4–6× with byte-identical solution files:
+
+| solve | k=6 | k=10 |
+|-------|-----|------|
+| trace on (original) | 3.75s | 137s |
+| trace off (default) | 0.66s | 31.7s |
+
+**Streaming fuse + compact dedup.** Raw output never lands (it is streamed and consumed); the pruner
+stores each distinct solution as a packed `int16` graph (the dead `label` field dropped) and, under
+`EU_KONLY=k`, holds only the target k. Fused per-k run, one M5 core:
+
+| k | wall (solve+prune) | distinct | pruner peak RAM | raw on disk | pruned on disk |
+|---|--------------------|----------|-----------------|-------------|----------------|
+| 10 | 27s | 11866 | 16 MB | 0 | 5.4 MB |
+| 11 | 66s | 24459 | 31 MB | 0 | 12 MB |
+| 12 | 157s | 49794 | 64 MB | 0 | 26 MB |
+
+The old file path wrote ~500 MB of raw text at k=11 and held the cumulative distinct set (~405 MB
+peak for k≤12); the fused path writes 0 raw and caps pruner RAM at a single k (31 MB at k=11), which
+is what pushes the frontier past the disk/RAM walls. Design + validation: the spec and plan under
+`docs/superpowers/*/2026-07-09-ctrnact-streaming-compact-pruner*`.
