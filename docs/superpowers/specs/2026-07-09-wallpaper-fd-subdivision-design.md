@@ -89,9 +89,33 @@ basis with the mirror-aligned rhombus:
 
 Set `cell = [r1, r2]` for cm/cmm; the subdivision (Component 2) then tiles this rhombus.
 
+## Prototype findings (2026-07-09) — READ THIS; the naive algorithm was wrong
+
+A prototype over all 92 certified tilings settled the algorithm empirically. Two corrections to the
+approach below, and one honest limitation:
+
+1. **Generators must be the ANCHOR's site symmetry only** (rotations about the anchor + mirrors through
+   the anchor) **+ all glides** — NOT rotations about every center / every mirror. Using all centers
+   over-generates (cmm 5/4, p6m 14/12, p4m 9/8) because copies from non-anchor centers reduce to
+   overlapping extras.
+2. **Reject any candidate whose centroid lies inside an already-accepted copy** (point-in-polygon), and
+   cap strictly at `order`. This enforces a disjoint tiling and removes the remaining over-generation.
+
+With both, **88/92 pass** the area-exact gate (13–14 of 17 groups). The holdout is the **pure-rotation
+groups p3/p6** (no mirrors, no glides): `buildFD` returns a small quad near the n-fold center that is NOT
+a rotation-compatible sector, so its `order` rotations overlap-reject to 3–5 copies. Fixing that is a
+`buildFD` change (reconstruct the FD as an `order`-fold sector for pure-rotation groups) and is deferred.
+
+**Therefore the shipped design is SELF-VERIFYING:** compute the subdivision, check per tiling that it
+tiles exactly (`copies.length === order` AND `Σarea ≈ cellArea`); if yes, expose it in `subdivision`; if
+no (p3/p6 today), set `subdivision = [fd]` (just the base FD) so the overlay never draws a wrong/partial
+subdivision. The cm/cmm rhombus cell and the anchor-centered cell (FD-inside) apply to ALL groups
+regardless. p3/p6 full subdivision is a fast-follow.
+
 ## Component 2: FD subdivision (all groups)
 
-Add `buildSubdivision(fd, anchor, cell, cellOrigin, centers, axes, order, lattice)` returning `Vec2[][]`.
+Add `buildSubdivision(fd, anchor, cell, centers, axes, order)` returning `Vec2[][]` (self-verified; see
+findings above — anchor-site-symmetry + glides, overlap-reject, strict cap, then the tiles-exactly check).
 
 The `order` FD copies tiling one cell are the images of the base FD under the point group (space group mod
 translations). Generate them by orbit-closure over the tiling's own isometries, each reduced back into the
