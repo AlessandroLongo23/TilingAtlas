@@ -770,3 +770,26 @@ mean) → **11/11 bijection, digest `6f9ca9cf2d16c75f` byte-identical**; joins +
 k=2/W(6): pairs 5.3 min → 6.17M lattices, Σ 1.67M fills ≈ **6.2 h/8-core** (⚑ joins budget-cut at 2 h,
 0 admissible joined). k=3: **|W(8)| = 1,086,913 exact**, pair stage ≈ 34 min/8-core @ 19.6 ns/pair.
 Detail NOTES §39 (incl. a cor:box(iv) wording flag); log `experiments/results/th10-scout-2026-07-03.log`. — CC
+
+**2026-07-07 — CC → TA+AL — Star s* slope data delivered (4 solver k=2 cells); realizer built — ⚑ vertex figures underdetermine the tiling.**
+Slope inputs `experiments/star-oracle/star-cells-k1k2.json`: k=1 (4i s*=6, 4j, 4p) + **k=2 figs 36/39/40/43**
+(PeriodSolver, gate G1-G4 + `countVertexOrbits==2` + primitive; exact ℤ[ζ₂₄] cellCodec bases, dets 19.39/25.86/23.31/11.66).
+Realizer `scripts/star-realizer.ts` (corona growth): 8*@3 dent-fill 1-of-24 merge ✓, reproduces 36/43 exactly (cross-check ✓,
+`star-cells-realized.json`), but ⚑ **two vertex figures + α do NOT pin the 2-uniform tiling** — when an orbit self-tiles
+greedy collapses to 1-uniform (6/10 in-ring flagged, not emitted); those need a both-orbits search. Logs `.../star-*-2026-07-07.*`. — CC
+
+**2026-07-09 — CC → TA+AL — Fill-leg speedups (Rank 1/2 + early k-gate), all byte-identical; k=3 tail diagnosed.**
+Profiled torusFill (overlap ~70–90% of the fill at every k). **Rank 1** periodic overlap reduction + **Rank 2**
+OP-1-before-overlap: k=1 2.25× / k=2 1.54×, digest `6f9ca9cf2d16c75f` unchanged. k=3 with all levers: candidate
+stage trivial (662,465 fills, 35× < 24-dir); the FILL tail is COMBINATORIAL (0-closure dead-ends + closure-storms
+of 93 orbit>k closures, all gate-rejected). **Early k-gate** (reject orbit≠k before certify+primitivity, k≥3):
+closure-storm 65→35 s, byte-identical (45/45 tests); does NOT fix dead-ends or make full k=3 feasible. NOTES §42–43. — CC
+
+**2026-07-09 — CC → TA+AL — Symmetry overlay now works on oracle tilings (Play/Reference shelf).**
+Oracle tilings carried no Supabase cell_codec, so the symmetry/FD overlays silently no-op'd. Now each atlas
+entry carries an inline `exactSource` (`{T1,T2,Seed}` for Galebach/ctrnact, reconstructed browser-side via
+the extracted `oracleCellReconstruct`; serialized cell for t1002). **Gate: 6919 seed cells (Galebach all-k
++ ctrnact k≤8) reconstruct+classify, 0 fail.** ⚑ Myers stars UNSUPPORTED — the regular-only cellCodec can't
+hold star geometry (it silently regularized them → wrong overlay, caught in review); serializeCell now
+throws on stars, builder omits their exactSource (clean no-op). Commits 8d7c085…d5d1b33; spec+plan under
+docs/superpowers/*/2026-07-09-oracle-exact-cell-symmetry.md. — CC
