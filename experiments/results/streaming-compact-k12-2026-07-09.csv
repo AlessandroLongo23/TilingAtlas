@@ -1,0 +1,5 @@
+k,wall_s,distinct,pruner_peak_footprint_bytes,raw_files_on_disk,pruned_bytes,a068599_ok
+9,11.3,5960,8520016,0,2515774,True
+10,27.1,11866,15876432,0,5416400,True
+11,65.7,24459,31392128,0,12090029,True
+12,156.9,49794,63570280,0,26466332,True

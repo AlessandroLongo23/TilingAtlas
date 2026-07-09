@@ -11,6 +11,7 @@
 #include <fstream>
 #include <algorithm>
 #include <iostream>
+#include <cstdlib>
 
 std::string solvercode = "eu";
 std::string filepath = "out/";
@@ -32,6 +33,12 @@ constexpr int maxpoly = 12;
 #define EU_TRACE 0
 #endif
 constexpr bool eu_trace = EU_TRACE;
+
+// EU_STREAM (runtime toggle, no rebuild needed): when set, writesolution() emits each solution
+// block to std::cout instead of to a per-family file under `globe`, so the solver can be piped
+// straight into the pruner (eu_solver | eu_pruner) with raw blocks never landing on disk. The
+// block format itself is unchanged; only the sink changes.
+static const bool eu_stream = std::getenv("EU_STREAM") != nullptr;
 
 struct vertexdef {
     std::string symbol;
@@ -529,54 +536,38 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
 }
 
 int writesolution(configuration const& conf) {
-    std::cout << "\nSolution!\n";
     solfound++;
-    std::cout << "Number of vertices: " << std::to_string(conf.num) << "\n";
-    std::string finn = fname(conf.num);
     std::string fine = finename(conf);
-    std::string fullname = filepath + listfile + fine + ".txt";
-    int dex = -1;
-    int x = 0;
-    bool found = false;
-    while ((x < (int)runtotal.size()) && !found) {
-        if (fine == runtotal[x].soltype) {
-            runtotal[x].solnum++;
-            dex = x;
-            found = true;
-            globe.open(fullname, std::ios::app);
-        }
-        x++;
-    }
-    if (!found) {
-        runtotal.push_back(runt{ fine,1 });
-        dex = runtotal.size() - 1;
-        globe.open(fullname);
-    }
-    std::cout << "Total solutions: " << std::to_string(solfound) << "\n";
-    std::cout << "Solutions of type " << fine << ": " << std::to_string(runtotal[dex].solnum) << "\n";
     std::string vv = verbalvertices(conf.vertype);
-    std::cout << vv << "\n";
+    std::string versig = signature(conf.vertype);
+    std::string wc = writeconway(conf);
     int re = vertypesolvedadd(conf.vertype);
     std::string ret = std::to_string(vertypesolved[re].count);
-    std::string versig = signature(conf.vertype);
-    std::cout << versig << "\n";
-    std::string wc = writeconway(conf);
-    std::cout << wc << "\n";
-    globe << "Number of vertex types: " << std::to_string(conf.num) << "\n";
-    // globe << "DFS depth: " << conf.dfs_depth << "\n";
-    globe << vv << "\n";
-    globe << versig << "\n";
     std::string filesig = filesignature(conf.vertype);
     // dirsig prefix (NN/NN_fam/filesig/) so decode.py/develop.py's tes_id() can parse the id —
     // matches the Python solver's tesline; the C++ original omitted it.
-    std::string dirsig = finn + "/" + fine + "/" + filesig + "/";
-    std::string tesfile1 = dirsig + solvercode + " raw " + filesig + " " + ret + ".tes";
-    globe << "TES file: " << tesfile1 << "\n";
-    globe << wc << "\n";
-    writecyclefinal(conf, globe);
-    globe << "\n";   // placeholder for the Python solver's post-'---' assembly-conway line the pruner skips (framing parity)
-    globe << "\n";
-    globe.close();
+    std::string tesfile1 = fname(conf.num) + "/" + fine + "/" + filesig + "/"
+                         + solvercode + " raw " + filesig + " " + ret + ".tes";
+
+    std::ostream* blkp;
+    if (eu_stream) {
+        blkp = &std::cout;
+    } else {
+        std::string fullname = filepath + listfile + fine + ".txt";
+        bool found = false;
+        for (auto& rt : runtotal) if (fine == rt.soltype) { rt.solnum++; found = true; break; }
+        if (!found) runtotal.push_back(runt{fine, 1});
+        globe.open(fullname, found ? std::ios::app : std::ios::out);
+        blkp = &globe;
+    }
+    std::ostream& blk = *blkp;
+    blk << "Number of vertex types: " << conf.num << "\n"
+        << vv << "\n" << versig << "\n"
+        << "TES file: " << tesfile1 << "\n"
+        << wc << "\n";
+    writecyclefinal(conf, blk);
+    blk << "\n\n";
+    if (!eu_stream) globe.close();
     return 0;
 }
 

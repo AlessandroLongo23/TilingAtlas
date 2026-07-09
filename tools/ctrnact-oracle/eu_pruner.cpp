@@ -29,9 +29,10 @@ namespace fs = std::filesystem;
 #include "pruner_tables.inc"
 
 // ---------- global solution store (mirrors the Python globals) ----------
+// Node indices live in [0, le); int16_t is lossless well past any reachable k. `label` was stored
+// but never read (comparesolutions uses only the five arrays), so it is dropped, not narrowed.
 struct Sol {
-	std::vector<int> rneig, lneig, lvert, mirro, glue;
-	std::vector<std::string> label;
+	std::vector<int16_t> rneig, lneig, lvert, mirro, glue;
 };
 static std::vector<Sol> sols;                 // every kept solution
 static std::vector<std::string> siglist;      // distinct signatures
@@ -329,8 +330,10 @@ static bool compareToSeen(const Graph& g, const std::string& key) {
 	return false;
 }
 
+static std::vector<int16_t> narrow(const std::vector<int>& v) { return {v.begin(), v.end()}; }
+
 static void addsolution(const Graph& g, const std::string& key) {
-	Sol s{g.rneig, g.lneig, g.lvert, g.mirro, g.glue, g.label};
+	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.lvert), narrow(g.mirro), narrow(g.glue) };
 	sols.push_back(std::move(s));
 	bucket[key].push_back((int)sols.size() - 1);
 }
@@ -397,6 +400,39 @@ static long processfile(const std::string& fam) {
 	return kept;
 }
 
+// Read solver blocks from a stream (EU_STREAM). Each block: "Number of vertex types: N",
+// vertypeline, signatureline, "TES file: ...", conwayline, then cycle/blank lines. We read the four
+// header fields, then let the outer loop resync on the next "Number of vertex types:" — cycle/blank
+// lines never start with that prefix, so no explicit blank-counting is needed. Dedup is identical to
+// processfile; kept blocks route to per-k output files eupruned_<NN>.txt.
+static long processstream(std::istream& in, int konly, std::map<int,long>& keptByK) {
+	long kept = 0; std::string line;
+	std::map<int, std::ofstream> outByK;
+	while (std::getline(in, line)) {
+		if (line.rfind("Number of vertex types:", 0) != 0) continue;   // sync to a block header
+		std::string vertypeline, signatureline, tesline, conwayline;
+		if (!std::getline(in, vertypeline) || !std::getline(in, signatureline)
+		    || !std::getline(in, tesline)  || !std::getline(in, conwayline)) break;
+		int k = (int)buildvertextypes(vertypeline).size();   // sets countsignature; size() == k
+		if (konly > 0 && k != konly) continue;               // drop before the expensive decode
+		Graph g = decode(vertypeline, conwayline);           // recomputes the same countsignature
+		if (!simplify(g)) continue;
+		std::string key = keyOf(signatureline, fingerprint(g));
+		if (compareToSeen(g, key)) continue;
+		addsolution(g, key);
+		kept++; keptByK[k]++;
+		auto it = outByK.find(k);
+		if (it == outByK.end()) {
+			char nn[4]; std::snprintf(nn, sizeof(nn), "%02d", k);
+			it = outByK.emplace(k, std::ofstream(PRUNEDDIR + "eupruned_" + nn + ".txt")).first;
+		}
+		it->second << vertypeline << "\n" << signatureline << "\n"
+		           << "Count type: " << countsignature << "\n"
+		           << tesline << "\n" << conwayline << "\n---\n\n";
+	}
+	return kept;
+}
+
 // famof: eusolver_<NN>_<fam>.txt -> fam
 static std::string famof(const std::string& fname) {
 	// strip dir + "eusolver_" (9) + NN_ (3) prefix, and ".txt" (4) suffix
@@ -409,10 +445,25 @@ int main() {
 	if (OUTDIR.back() != '/') OUTDIR += "/";
 	PRUNEDDIR = OUTDIR + "pruned/";
 	fs::create_directories(PRUNEDDIR);
+
+	bool stream = std::getenv("EU_STREAM") != nullptr;
+	int konly = std::getenv("EU_KONLY") ? atoi(std::getenv("EU_KONLY")) : 0;
+	if (stream) {
+		std::map<int,long> keptByK;
+		long kept = processstream(std::cin, konly, keptByK);
+		for (auto& kv : keptByK)                                  // same "  k=<k> : <n>" format as file mode
+			std::cerr << "  k=" << kv.first << " : " << kv.second << "\n";
+		std::cerr << "total kept: " << kept << "\n";
+		return 0;
+	}
+
 	int KMIN = std::getenv("EU_KMIN") ? atoi(std::getenv("EU_KMIN")) : 1;
 	int KMAX = std::getenv("EU_KMAX") ? atoi(std::getenv("EU_KMAX")) : 11;
 
 	for (int k = KMIN; k <= KMAX; k++) {
+		// buckets never cross k (the signature key encodes the vertex-type count), so a finished k
+		// can be freed: caps RAM at the single largest k instead of the cumulative range.
+		sols.clear(); bucket.clear();
 		char nn[4]; std::snprintf(nn, sizeof(nn), "%02d", k);
 		filecodebase = nn;
 		std::vector<std::string> fams;
