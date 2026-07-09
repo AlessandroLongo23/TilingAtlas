@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
 import { deserializeCell, type SerializedCell } from "@/classes/algorithm/cellCodec";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 export type { SerializedCell };
 
@@ -24,17 +25,24 @@ export async function fetchCellCodec(
 
 // Exact seed = the two basis vectors + the deduped union of all cell-polygon vertices, as Cyclotomic.
 // This is the exact input to analyzeSymmetry — no floats.
+export function seedFromPeriodCell(cell: PeriodCell): {
+	T1: Cyclotomic;
+	T2: Cyclotomic;
+	seed: Cyclotomic[];
+} {
+	const [T1, T2] = cell.basisExact;
+	const byKey = new Map<string, Cyclotomic>();
+	for (const poly of cell.cellPolygons) {
+		for (const w of poly.exactVertices ?? []) {
+			if (!byKey.has(w.key())) byKey.set(w.key(), w);
+		}
+	}
+	return { T1, T2, seed: Array.from(byKey.values()) };
+}
+
 export function seedFromCell(
 	ring: CyclotomicRing,
 	sc: SerializedCell,
 ): { T1: Cyclotomic; T2: Cyclotomic; seed: Cyclotomic[] } {
-	const cell = deserializeCell(ring, sc);
-	const [T1, T2] = cell.basisExact;
-	const byKey = new Map<string, Cyclotomic>();
-	for (const poly of cell.cellPolygons) {
-		for (const v of poly.exactVertices ?? []) {
-			if (!byKey.has(v.key())) byKey.set(v.key(), v);
-		}
-	}
-	return { T1, T2, seed: Array.from(byKey.values()) };
+	return seedFromPeriodCell(deserializeCell(ring, sc));
 }
