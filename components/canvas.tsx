@@ -17,7 +17,7 @@ import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
 import { ColorPad } from "./ui/color-pad";
 import { useP5 } from "@/lib/hooks/useP5";
-import { drawFundamentalDomain, drawSymmetryElements } from "./canvas-overlays";
+import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "./canvas-overlays";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 
 interface CanvasProps {
@@ -377,10 +377,22 @@ export function Canvas({
 					p5.rotate(rot);
 					p5.scale(ctrl.zoom);
 					p5.scale(1, -1);
-					drawTiling(cfg, tiling);
 					const sd = propsRef.current.symmetryData;
+					// Symmetry-elements view: draw tiles plain (no per-tile colour) so colour is reserved for the
+					// symmetry axes + rotation-centre glyphs drawn on top. Otherwise the normal coloured render.
+					const symmetryActive = !!sd && cfg.showSymmetryElements;
+					if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
+					else drawTiling(cfg, tiling);
 					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
-					if (sd && cfg.showSymmetryElements) drawSymmetryElements(p5, sd, ctrl.zoom);
+					if (symmetryActive) {
+						drawSymmetryElements(p5, sd, {
+							zoom: ctrl.zoom,
+							rotation: rot,
+							offset: { x: drawOffset.x, y: drawOffset.y },
+							width: p5.width,
+							height: p5.height,
+						});
+					}
 					p5.pop();
 
 					if (cfg.screenshotButtonHover) drawScreenshotOverlay();

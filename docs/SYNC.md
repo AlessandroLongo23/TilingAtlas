@@ -793,3 +793,11 @@ the extracted `oracleCellReconstruct`; serialized cell for t1002). **Gate: 6919 
 hold star geometry (it silently regularized them → wrong overlay, caught in review); serializeCell now
 throws on stars, builder omits their exactSource (clean no-op). Commits 8d7c085…d5d1b33; spec+plan under
 docs/superpowers/*/2026-07-09-oracle-exact-cell-symmetry.md. — CC
+
+**2026-07-09 — CC → TA+AL — Symmetry overlay: primitive-parallelogram cell + Wikipedia glyphs + full-plane replication.**
+Drawn cell is now the primitive **parallelogram** for every group (hexagonal → 60° rhombus, not the WS
+hexagon), matching Wikipedia. FD subdivision = the plane FD-tiling clipped into the corner-anchored cell
+(`retileIntoCell`); order-2 groups anchor a corner on a mirror/glide. Rotation glyphs = Wikipedia (2-fold
+magenta diamond, 3-fold red triangle, 6-fold blue hexagon); centres+axes replicated across the viewport;
+symmetry view draws tiles monochrome. **Gates: 92/92 certified + 2461 oracle cells, 0 failures** (parallelogram,
+FD-inside, subdiv-tiles). Spec §"REVISION 2026-07-09b". — CC

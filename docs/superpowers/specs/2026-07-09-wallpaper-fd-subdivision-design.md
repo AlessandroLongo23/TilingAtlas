@@ -89,7 +89,40 @@ basis with the mirror-aligned rhombus:
 
 Set `cell = [r1, r2]` for cm/cmm; the subdivision (Component 2) then tiles this rhombus.
 
-## SHIPPED APPROACH (supersedes everything below): cut a symmetry-centred cell
+## REVISION 2026-07-09b: draw the primitive PARALLELOGRAM, not the Wigner–Seitz cell
+
+User follow-up after the first ship: the Wigner–Seitz cell for a **hexagonal** lattice is a 120°
+**hexagon**, but Wikipedia's "cell structure" diagram always draws the primitive **parallelogram** (for
+hexagonal that's the 60°/120° **rhombus**). The user wants the parallelogram for every group. Also:
+symmetry-elements view must not colour the tiles; rotation glyphs must match Wikipedia (2-fold magenta
+diamond, 3-fold red triangle, 4-fold amber square, 6-fold blue hexagon); centres + axes must be replicated
+across the whole viewport (not one cell) and land on the rendered tiling.
+
+**Cell.** `cellPolygon` is now the **corner-anchored** primitive parallelogram `[a, a+c1, a+c1+c2, a+c2]`
+(the max-symmetry centre at a VERTEX, so the FD-tiling chambers align with the cell edges instead of being
+split by them). Hexagonal → 60° rhombus, rectangular → rectangle, square → square, oblique → parallelogram.
+cm/cmm keep the mirror-aligned rhombus (also a parallelogram). The WS cell survives only as the *internal*
+source of correct FD copies.
+
+**Subdivision.** Cut the anchor-centred WS cell into correct FD copies (kaleidoscope / wedges, as before —
+the WS cell has the point-group symmetry about its centre, so this is exact), then **re-tile** those copies
+into the displayed parallelogram by clipping every lattice translate to it (`retileIntoCell`). Since the WS
+copies tile the plane under Λ, clipping the plane-tiling to the parallelogram partitions it exactly. p1 (whole
+cell) and p2 (two 2-fold-related halves via a lattice-aligned mid-cut) are built natively for clean pieces.
+A chamber straddling a cell edge splits into edge-aligned pieces, so the piece count can exceed `order` for
+mirror-misaligned hexagonal reflection groups (p3m1/p31m) — still area-exact with a whole FD emphasized.
+
+Result on the 92 certified k≤3 tilings: **FD-outside-cell 0/92**, **area-exact subdivision 92/92**,
+**p6m 34/34 draws the equal-edge 60° rhombus with 12 whole triangles**, cm/cmm rhombus 25/28.
+
+**Overlay (`canvas-overlays.ts`).** `drawSymmetryElements(p5, data, view)` inverts the canvas transform to
+the visible world AABB and replicates every centre + axis by the lattice basis across it (deduped, capped at
+80/axis). Glyphs per the Wikipedia legend above. `canvas.tsx` draws tiles via `drawTilingPlain` (monochrome)
+whenever the symmetry-elements toggle is on, reserving colour for the axes/centres.
+
+---
+
+## SHIPPED APPROACH (cell shape superseded by the revision above): cut a symmetry-centred cell
 
 The "orbit a pre-built FD" idea below was prototyped and abandoned — orbiting `buildFD`'s FD fans around
 the anchor into a Wigner–Seitz region that does not fill a parallelogram, so the FD kept poking out

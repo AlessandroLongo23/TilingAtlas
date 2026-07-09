@@ -715,11 +715,12 @@ function buildFD(
 // This is the Phase-0 skeleton: it returns only the primitive cell parallelogram. Rotations, mirrors,
 // glides, group identification, and the fundamental domain are layered in by later phases.
 // --- drawn cell + fundamental-domain subdivision (render-only float geometry) ---
-// The cell is subdivided into its `pointGroupOrder` fundamental-domain copies by CUTTING a symmetry-centred
-// cell with the kaleidoscope lines through the anchor. The copies are pieces of the cell, so the FD is
-// always inside it. The cell is the Wigner–Seitz (Dirichlet) cell of the lattice around the anchor — which
-// equals the conventional rectangle / square / 120° hexagon — except cm/cmm, drawn as the mirror-aligned
-// rhombus (Wikipedia). Validated area-exact on all 92 certified k≤3 tilings (scripts/validate-fd-subdivision.ts).
+// The DRAWN cell is the primitive PARALLELOGRAM (Wikipedia's "cell structure"): oblique → parallelogram,
+// rectangular → rectangle, square → square, hexagonal → 60°/120° rhombus, cm/cmm → mirror-aligned rhombus.
+// It is subdivided into its `pointGroupOrder` fundamental-domain copies: the FD-tiling of the plane
+// (computed by cutting the anchor-centred WS cell into correct copies) is re-tiled into the parallelogram
+// by clipping lattice translates, so every copy is a piece of the cell and the FD is always inside it.
+// Validated area-exact on all 92 certified k≤3 tilings (scripts/validate-fd-subdivision.ts).
 
 // Wigner–Seitz cell of the lattice (c1,c2) around `anchor`: a big box clipped by the perpendicular
 // bisectors of nearby lattice vectors (keep the half nearer the anchor).
@@ -795,9 +796,64 @@ function cutIntoWedges(cell: Vec2[], anchor: Vec2, order: number, base: number):
 	return faces;
 }
 
-// The drawn cell polygon + its `order` fundamental-domain copies. `faces[0]` is the emphasized FD. `ok`
-// is the area-exact self-check (exactly `order` copies tiling the cell); on failure the caller keeps the
-// buildFD fallback FD so a wrong subdivision is never drawn.
+// The DRAWN cell is the primitive PARALLELOGRAM (Wikipedia's "cell structure"): oblique → generic
+// parallelogram, rectangular → rectangle, square → square, hexagonal → 60°/120° rhombus, cm/cmm →
+// mirror-aligned rhombus. Corner-anchored so a top-order centre sits at a VERTEX (the parallelogram
+// corners are all lattice-translates of the anchor), which makes the FD-tiling chambers align with the
+// cell edges instead of being split by them.
+function cornerParallelogram(anchor: Vec2, c1: Vec2, c2: Vec2): Vec2[] {
+	return [
+		anchor,
+		{ x: anchor.x + c1.x, y: anchor.y + c1.y },
+		{ x: anchor.x + c1.x + c2.x, y: anchor.y + c1.y + c2.y },
+		{ x: anchor.x + c2.x, y: anchor.y + c2.y },
+	];
+}
+
+// Clip `poly` to the convex parallelogram `cell` (Sutherland–Hodgman against each edge, inward normal).
+function clipToConvexCell(poly: Vec2[], cell: Vec2[]): Vec2[] {
+	let signed = 0;
+	for (let i = 0; i < cell.length; i++) { const a = cell[i], b = cell[(i + 1) % cell.length]; signed += a.x * b.y - b.x * a.y; }
+	const cc = signed >= 0 ? cell : [...cell].reverse(); // ensure CCW so inward normal is +90° of the edge
+	let cur = poly;
+	for (let i = 0; i < cc.length && cur.length; i++) {
+		const a = cc[i], b = cc[(i + 1) % cc.length];
+		cur = clipHalfPlane(cur, a, { x: -(b.y - a.y), y: b.x - a.x });
+	}
+	return cur;
+}
+
+// Re-tile the FD copies `faces` (which tile ONE cell, hence tile the plane under Λ) into the displayed
+// parallelogram `cell`, by clipping every lattice translate to it. The result partitions `cell` exactly.
+// Reflection groups get whole chambers; a chamber straddling an edge splits into edge-aligned pieces.
+function retileIntoCell(faces: Vec2[][], cell: Vec2[], c1: Vec2, c2: Vec2): Vec2[][] {
+	const pieces: Vec2[][] = [];
+	for (const f of faces)
+		for (let m = -2; m <= 2; m++)
+			for (let n = -2; n <= 2; n++) {
+				const t = { x: m * c1.x + n * c2.x, y: m * c1.y + n * c2.y };
+				const clipped = clipToConvexCell(f.map((p) => ({ x: p.x + t.x, y: p.y + t.y })), cell);
+				if (polyArea(clipped) > 1e-7) pieces.push(clipped);
+			}
+	return pieces;
+}
+
+// Cut the WS cell (anchor at its CENTRE, where the point group acts) into `order` correct FD copies with
+// the anchor kaleidoscope — full mirror lines for a symmorphic reflection group, else equal angular wedges.
+function cutWignerSeitz(order: number, anchor: Vec2, axes: Axis[], c1: Vec2, c2: Vec2): Vec2[][] {
+	const ws = wignerSeitzCell(c1, c2, anchor);
+	const md = mirrorAnglesThrough(axes, anchor);
+	if (2 * md.length === order) {
+		const dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
+		return cutByLines(ws, anchor, dirs);
+	}
+	const base = md.length ? (md[0] * Math.PI) / 180 : Math.atan2(c1.y, c1.x);
+	return cutIntoWedges(ws, anchor, order, base);
+}
+
+// The DRAWN parallelogram cell + its `order` fundamental-domain copies (`faces[0]` is emphasized, a WHOLE
+// chamber). `ok` is the area-exact self-check (copies tile the cell AND a whole chamber exists to
+// emphasize); on failure the caller keeps the buildFD fallback so a wrong subdivision is never drawn.
 function buildSubdivision(
 	group: WallpaperGroup,
 	order: number,
@@ -813,36 +869,56 @@ function buildSubdivision(
 		const k = c.order * 100 + mirrorAnglesThrough(axes, c.z).length;
 		if (k > bestKey) { bestKey = k; anchor = c.z; }
 	}
-	// Cell shape per Wikipedia: oblique p1/p2 → parallelogram, cm/cmm → mirror-aligned rhombus, everything
-	// else → the Wigner–Seitz cell (= rectangle for rectangular, square for square, 120° hexagon for
-	// hexagonal). All centred on the anchor.
-	const parallelogram = (): Vec2[] => {
-		const o = { x: anchor.x - (c1.x + c2.x) / 2, y: anchor.y - (c1.y + c2.y) / 2 };
-		return [o, { x: o.x + c1.x, y: o.y + c1.y }, { x: o.x + c1.x + c2.x, y: o.y + c1.y + c2.y }, { x: o.x + c2.x, y: o.y + c2.y }];
-	};
-	const cellPolygon =
-		group === "p1" || group === "p2"
-			? parallelogram()
-			: ((group === "cm" || group === "cmm" ? rhombusCellCentered(axes, c1, c2, anchor) : null) ??
-				wignerSeitzCell(c1, c2, anchor));
-	if (order <= 1) return { anchor, cellPolygon, faces: [cellPolygon], ok: true };
-
-	const md = mirrorAnglesThrough(axes, anchor);
-	let faces: Vec2[][];
-	if (2 * md.length === order) {
-		// symmorphic reflection group: cut by the anchor's mirror kaleidoscope (full lines).
-		const dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
-		faces = cutByLines(cellPolygon, anchor, dirs);
-	} else {
-		// rotation-only / non-symmorphic: `order` equal angular wedges (handles odd order p3), aligned to a
-		// mirror when one exists so the wedges follow the symmetry.
-		const base = md.length ? (md[0] * Math.PI) / 180 : Math.atan2(c1.y, c1.x);
-		faces = cutIntoWedges(cellPolygon, anchor, order, base);
-	}
 	const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
-	const totArea = faces.reduce((s, f) => s + polyArea(f), 0);
-	const ok = faces.length === order && Math.abs(totArea - cellArea) < 1e-3 * cellArea;
-	return { anchor, cellPolygon, faces, ok };
+	const target = cellArea / Math.max(1, order);
+	const finish = (cellPolygon: Vec2[], faces: Vec2[][]): { anchor: Vec2; cellPolygon: Vec2[]; faces: Vec2[][]; ok: boolean } => {
+		// emphasise a WHOLE chamber (area ≈ target) by ordering it first
+		faces.sort((a, b) => Math.abs(polyArea(a) - target) - Math.abs(polyArea(b) - target));
+		const totArea = faces.reduce((s, f) => s + polyArea(f), 0);
+		const ok =
+			faces.length >= order &&
+			Math.abs(totArea - cellArea) < 1e-3 * cellArea &&
+			(order <= 1 || Math.abs(polyArea(faces[0]) - target) < 1e-2 * target);
+		return { anchor, cellPolygon, faces, ok };
+	};
+
+	// cm/cmm: the mirror-aligned rhombus, centred on the anchor, cut by the anchor kaleidoscope — already
+	// whole chambers. Falls through to the general parallelogram when the rhombus is degenerate.
+	if ((group === "cm" || group === "cmm") && order > 1) {
+		const rhombus = rhombusCellCentered(axes, c1, c2, anchor);
+		if (rhombus) {
+			const md = mirrorAnglesThrough(axes, anchor);
+			const dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
+			const faces = 2 * md.length === order ? cutByLines(rhombus, anchor, dirs) : cutIntoWedges(rhombus, anchor, order, dirs.length ? Math.atan2(dirs[0].y, dirs[0].x) : 0);
+			return finish(rhombus, faces);
+		}
+	}
+
+	if (order <= 1) {
+		const cell = cornerParallelogram(anchor, c1, c2);
+		return { anchor, cellPolygon: cell, faces: [cell], ok: true };
+	}
+
+	if (order === 2) {
+		// FD = half the cell (p2, pm, pg, and cm when its rhombus is degenerate). For a mirror/glide group
+		// the split MUST lie on the axis, so anchor a cell CORNER on an axis: gauss-reduction makes c⊥axis a
+		// full lattice period, hence the cell centre lands on the next parallel axis (½-period away), and the
+		// mid-line through the centre is a genuine mirror/glide — the two halves are true FD copies. p2 (no
+		// axis) keeps its 2-fold centre and splits parallel to c1 (halves 2-fold-related about the centre).
+		const axis = axes.find((a) => a.kind === "mirror") ?? axes.find((a) => a.kind === "glide");
+		if (axis) anchor = { x: axis.p.x, y: axis.p.y };
+		const cell = cornerParallelogram(anchor, c1, c2);
+		const dir = axis ? axis.d : c1;
+		const centre = { x: anchor.x + 0.5 * (c1.x + c2.x), y: anchor.y + 0.5 * (c1.y + c2.y) };
+		const nrm = { x: -dir.y, y: dir.x };
+		const faces = [clipHalfPlane(cell, centre, nrm), clipHalfPlane(cell, centre, { x: -nrm.x, y: -nrm.y })].filter((f) => polyArea(f) > 1e-7);
+		return finish(cell, faces);
+	}
+
+	// general: cut the WS cell into correct FD copies, then re-tile them into the displayed parallelogram.
+	const cell = cornerParallelogram(anchor, c1, c2);
+	const faces = retileIntoCell(cutWignerSeitz(order, anchor, axes, c1, c2), cell, c1, c2);
+	return finish(cell, faces);
 }
 
 export function analyzeSymmetry(

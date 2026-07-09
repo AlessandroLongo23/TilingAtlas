@@ -1,10 +1,13 @@
 /*
  * Acceptance gate for the FD-subdivision overlay (spec 2026-07-09-wallpaper-fd-subdivision).
+ * The DRAWN cell is the primitive PARALLELOGRAM (hexagonal → 60° rhombus, cm/cmm → mirror rhombus).
  * Over all 92 certified k≤3 tilings, per wallpaper group, checks:
- *   - FD inside the drawn cell   (every fd vertex in [cellOrigin, +c1, +c2]) — was 57/92 outside before.
- *   - subdivision valid          (length === pointGroupOrder AND Σarea ≈ cellArea, i.e. a full tiling)
- *                                OR length === 1 (the self-verified [fd] fallback — p3/p6 today).
- *   - cm/cmm cell is rhombic     (|c1| === |c2|).
+ *   - cell is a parallelogram    (4 vertices, area === |c1×c2|).
+ *   - FD inside the drawn cell    (fd centroid in cellPolygon AND area(fd) ≈ cellArea/order).
+ *   - subdivision tiles the cell  (Σarea ≈ cellArea AND count ≥ order — a chamber straddling a cell edge
+ *                                 splits into edge-aligned pieces, so count can exceed order; still exact)
+ *                                 OR length === 1 (the self-verified [fd] fallback).
+ *   - cm/cmm cell is rhombic      (4 equal edges).
  * Prints a per-group table; a FALSE in "fd-in-cell" or "subdiv-ok" is a failure.
  *
  * Run: pnpm tsx scripts/validate-fd-subdivision.ts
@@ -49,10 +52,15 @@ for (const t of tilings) {
 
 	// FD inside the drawn cell polygon: every FD vertex inside-or-on cellPolygon (test via the fd centroid
 	// plus each vertex against the cell). A subdivision face is a piece of the cell, so this must hold.
-	const fdIn = inPoly(centroid(d.fd), d.cellPolygon) && Math.abs(area(d.cellPolygon) - cellArea) < 1e-3 * cellArea;
+	const target = cellArea / d.pointGroupOrder;
+	const fdIn =
+		inPoly(centroid(d.fd), d.cellPolygon) &&
+		Math.abs(area(d.cellPolygon) - cellArea) < 1e-3 * cellArea &&
+		Math.abs(area(d.fd) - target) < 1e-2 * target;
 	const totArea = d.subdivision.reduce((acc, p) => acc + area(p), 0);
-	const full = d.subdivision.length === d.pointGroupOrder && Math.abs(totArea - cellArea) < 1e-3 * cellArea;
-	const fallback = d.subdivision.length === 1;
+	// area-exact tiling of the cell; a chamber split by the cell boundary makes length > order (still valid).
+	const full = d.subdivision.length >= d.pointGroupOrder && Math.abs(totArea - cellArea) < 1e-3 * cellArea;
+	const fallback = d.subdivision.length === 1 && d.pointGroupOrder > 1;
 	const subdivOK = full || fallback;
 	// cm/cmm should draw a rhombus (4 equal edges); measure the cellPolygon edges.
 	const edges = d.cellPolygon.map((p, i) => { const q = d.cellPolygon[(i + 1) % d.cellPolygon.length]; return Math.hypot(p.x - q.x, p.y - q.y); });
@@ -68,7 +76,7 @@ for (const t of tilings) {
 		r.bad.push(`${t.canonicalKey.slice(0, 18)} fdIn=${fdIn} subdiv=${d.subdivision.length}/${d.pointGroupOrder}`);
 }
 
-console.log("group   n   fd-in-cell  full-subdiv  fallback  cell=rhombus  issues");
+console.log("group   n   fd-in-cell  tiles-cell   fallback  cell=rhombus  issues");
 let fdFail = 0, subFail = 0;
 for (const [g, r] of Object.entries(byGroup).sort()) {
 	fdFail += r.n - r.fdIn;
@@ -78,8 +86,8 @@ for (const [g, r] of Object.entries(byGroup).sort()) {
 	);
 }
 console.log(`\nFD-outside-cell failures: ${fdFail}  (must be 0)`);
-console.log(`subdivision-invalid failures: ${subFail}  (must be 0; full or fallback both count as valid)`);
+console.log(`subdivision-invalid failures: ${subFail}  (must be 0; area-exact tiling or fallback both count as valid)`);
 const fullTotal = Object.values(byGroup).reduce((a, r) => a + r.full, 0);
 const fbTotal = Object.values(byGroup).reduce((a, r) => a + r.fallback, 0);
-console.log(`full subdivisions: ${fullTotal}/${tilings.length}   [fd] fallbacks: ${fbTotal}/${tilings.length}  (cm/cmm draw a rhombus)`);
+console.log(`area-exact subdivisions: ${fullTotal}/${tilings.length}   [fd] fallbacks: ${fbTotal}/${tilings.length}  (cm/cmm draw a rhombus)`);
 if (fdFail > 0 || subFail > 0) process.exitCode = 1;
