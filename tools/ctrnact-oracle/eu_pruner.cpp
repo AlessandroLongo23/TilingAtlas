@@ -416,6 +416,9 @@ int main() {
 	int KMAX = std::getenv("EU_KMAX") ? atoi(std::getenv("EU_KMAX")) : 11;
 
 	for (int k = KMIN; k <= KMAX; k++) {
+		// buckets never cross k (the signature key encodes the vertex-type count), so a finished k
+		// can be freed: caps RAM at the single largest k instead of the cumulative range.
+		sols.clear(); bucket.clear();
 		char nn[4]; std::snprintf(nn, sizeof(nn), "%02d", k);
 		filecodebase = nn;
 		std::vector<std::string> fams;
