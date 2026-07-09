@@ -2,7 +2,20 @@
 
 Date: 2026-07-09
 Author: CC
-Status: design approved, pre-plan
+Status: implemented (see correction below)
+
+## Correction (2026-07-09, post-implementation holistic review)
+
+This design assumed the 3 (later 6) `kind:'cell'` entries — Galebach t1002 plus the Myers stars — would
+all serialize and reconstruct faithfully. That is true for t1002 (4.8.8 is regular polygons) but FALSE
+for the Myers stars: `serializeCell`/`deserializeCell` is a regular-polygon-only `{n, anchor, dir}` codec
+with no slot for star geometry (reflex dents, extra boundary vertices). It silently regularized a star
+into an n-gon, so the Myers overlays classified the wrong tiling (two landed on `p1`, impossible for a
+vertex-transitive k=1 tiling). As shipped: `serializeCell` now THROWS on a star tile, and the builder
+OMITS `exactSource` for star cells, so the Myers symmetry overlay is a clean no-op (pre-feature behavior)
+rather than a wrong overlay. Regular oracles (Galebach k=1..6 including t1002, ctrnact k=7) work
+correctly. Faithful star wallpaper symmetry is deferred follow-up work (needs a star-aware codec +
+reconstruction), consistent with the mission's "star/parametric families are a later frontier."
 
 ## Problem
 
