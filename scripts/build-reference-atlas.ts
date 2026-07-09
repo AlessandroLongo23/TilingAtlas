@@ -237,14 +237,23 @@ function buildMyersK1Stars(): ReferenceTiling[] {
 	log(`  distinct k=1 star tilings (congruence): ${reps.length} (from ${allCells.length} raw, ${solved} VCs solved, ${timeouts} timeouts)`);
 	log('');
 
-	return reps.map((cell, idx) => ({
-		id: `myers-k1-star-${String(idx + 1).padStart(2, '0')}`,
-		source: 'myers' as const,
-		k: 1,
-		family: familyLabel(cell),
-		renderCell: cellToRenderData(cell),
-		exactSource: { kind: 'cell' as const, cell: serializeCell(cell) },
-	}));
+	// The regular-only cell codec cannot represent star tiles (serializeCell now throws on them), so star
+	// cells get NO exactSource: the Play symmetry overlay is DISABLED for them (honest no-op) rather than
+	// drawing a wrong overlay computed from a regularized cell. Faithful star wallpaper symmetry needs a
+	// star-aware codec + reconstruction (follow-up). Every Myers Fig-4 cell here is a star, so this is all
+	// of them; logged loud so the gap is never silent.
+	log(`  ⚑ symmetry overlay DISABLED for all ${reps.length} Myers star tilings (regular-only codec has no star support; no exactSource emitted).`);
+	return reps.map((cell, idx) => {
+		const hasStar = cell.cellPolygons.some((p) => (p as { isStar?: boolean }).isStar === true);
+		return {
+			id: `myers-k1-star-${String(idx + 1).padStart(2, '0')}`,
+			source: 'myers' as const,
+			k: 1,
+			family: familyLabel(cell),
+			renderCell: cellToRenderData(cell),
+			...(hasStar ? {} : { exactSource: { kind: 'cell' as const, cell: serializeCell(cell) } }),
+		};
+	});
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -327,9 +336,13 @@ function main(): void {
 	for (const key of Object.keys(byK).sort()) log(`    ${key}: ${byK[key]}`);
 	const withSeed = atlas.filter((t) => t.exactSource?.kind === 'seed').length;
 	const withCell = atlas.filter((t) => t.exactSource?.kind === 'cell').length;
-	const without = atlas.filter((t) => !t.exactSource).length;
+	// Star tilings (Myers) intentionally omit exactSource — the codec has no star support (see
+	// buildMyersK1Stars). Anything ELSE without exactSource is an unexpected gap and is flagged loud.
+	const starOmit = atlas.filter((t) => t.source === 'myers' && !t.exactSource).length;
+	const unexpected = atlas.filter((t) => !t.exactSource && t.source !== 'myers').length;
 	log(`  exactSource: ${withSeed} seed + ${withCell} cell = ${withSeed + withCell}/${atlas.length}` +
-		(without ? `  ⚑ ${without} MISSING` : '  ✓'));
+		`  (${starOmit} Myers star entries intentionally omit — no codec star support)` +
+		(unexpected ? `  ⚑ ${unexpected} UNEXPECTEDLY MISSING` : '  ✓'));
 	log(`  elapsed ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 	fs.writeFileSync(LOG_PATH, logLines.join('\n') + '\n');
 	console.log(`\n(log → ${path.relative(ROOT, LOG_PATH)})`);

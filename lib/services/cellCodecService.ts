@@ -7,7 +7,9 @@ export type { SerializedCell };
 
 // The exact cyclotomic cell an oracle tiling carries inline (it has no Supabase cell_codec). Either the
 // minimal generators {T1,T2,Seed} (reconstructed via reconstructOracleCell — Galebach/ctrnact) or a
-// serialized cell (Myers stars + Galebach t1002, which have no {T1,T2,Seed} encoding).
+// serialized cell (Galebach t1002/4.8.8, which has no {T1,T2,Seed} encoding but IS regular polygons).
+// Star tilings (Myers) carry NEITHER: the regular-only cell codec cannot represent them, so they get no
+// exactSource and no symmetry overlay (a star-aware codec is follow-up work).
 export type ExactCellSource =
 	| { kind: "seed"; T1: number[]; T2: number[]; Seed: number[][] }
 	| { kind: "cell"; cell: SerializedCell };
