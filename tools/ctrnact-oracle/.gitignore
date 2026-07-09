@@ -1,0 +1,10 @@
+# build artifacts
+eu_solver
+eu_pruner
+# pipeline run outputs
+run-k*/
+out/
+_import_scratch/
+# python
+__pycache__/
+*.pyc
