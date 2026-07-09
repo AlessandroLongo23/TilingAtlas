@@ -5,6 +5,13 @@ import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 export type { SerializedCell };
 
+// The exact cyclotomic cell an oracle tiling carries inline (it has no Supabase cell_codec). Either the
+// minimal generators {T1,T2,Seed} (reconstructed via reconstructOracleCell — Galebach/ctrnact) or a
+// serialized cell (Myers stars + Galebach t1002, which have no {T1,T2,Seed} encoding).
+export type ExactCellSource =
+	| { kind: "seed"; T1: number[]; T2: number[]; Seed: number[][] }
+	| { kind: "cell"; cell: SerializedCell };
+
 // One-row exact fetch. The catalogue read (catalogueService) omits cell_codec (heavy); the Play viewer
 // pulls it only for the selected tiling. Returns null if the row/codec is absent — the viewer then
 // simply shows no overlay (e.g. reference-mode tilings that have no cell_codec yet).
