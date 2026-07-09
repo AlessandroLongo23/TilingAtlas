@@ -400,6 +400,39 @@ static long processfile(const std::string& fam) {
 	return kept;
 }
 
+// Read solver blocks from a stream (EU_STREAM). Each block: "Number of vertex types: N",
+// vertypeline, signatureline, "TES file: ...", conwayline, then cycle/blank lines. We read the four
+// header fields, then let the outer loop resync on the next "Number of vertex types:" — cycle/blank
+// lines never start with that prefix, so no explicit blank-counting is needed. Dedup is identical to
+// processfile; kept blocks route to per-k output files eupruned_<NN>.txt.
+static long processstream(std::istream& in, int konly, std::map<int,long>& keptByK) {
+	long kept = 0; std::string line;
+	std::map<int, std::ofstream> outByK;
+	while (std::getline(in, line)) {
+		if (line.rfind("Number of vertex types:", 0) != 0) continue;   // sync to a block header
+		std::string vertypeline, signatureline, tesline, conwayline;
+		if (!std::getline(in, vertypeline) || !std::getline(in, signatureline)
+		    || !std::getline(in, tesline)  || !std::getline(in, conwayline)) break;
+		int k = (int)buildvertextypes(vertypeline).size();   // sets countsignature; size() == k
+		if (konly > 0 && k != konly) continue;               // drop before the expensive decode
+		Graph g = decode(vertypeline, conwayline);           // recomputes the same countsignature
+		if (!simplify(g)) continue;
+		std::string key = keyOf(signatureline, fingerprint(g));
+		if (compareToSeen(g, key)) continue;
+		addsolution(g, key);
+		kept++; keptByK[k]++;
+		auto it = outByK.find(k);
+		if (it == outByK.end()) {
+			char nn[4]; std::snprintf(nn, sizeof(nn), "%02d", k);
+			it = outByK.emplace(k, std::ofstream(PRUNEDDIR + "eupruned_" + nn + ".txt")).first;
+		}
+		it->second << vertypeline << "\n" << signatureline << "\n"
+		           << "Count type: " << countsignature << "\n"
+		           << tesline << "\n" << conwayline << "\n---\n\n";
+	}
+	return kept;
+}
+
 // famof: eusolver_<NN>_<fam>.txt -> fam
 static std::string famof(const std::string& fname) {
 	// strip dir + "eusolver_" (9) + NN_ (3) prefix, and ".txt" (4) suffix
@@ -412,6 +445,18 @@ int main() {
 	if (OUTDIR.back() != '/') OUTDIR += "/";
 	PRUNEDDIR = OUTDIR + "pruned/";
 	fs::create_directories(PRUNEDDIR);
+
+	bool stream = std::getenv("EU_STREAM") != nullptr;
+	int konly = std::getenv("EU_KONLY") ? atoi(std::getenv("EU_KONLY")) : 0;
+	if (stream) {
+		std::map<int,long> keptByK;
+		long kept = processstream(std::cin, konly, keptByK);
+		for (auto& kv : keptByK)                                  // same "  k=<k> : <n>" format as file mode
+			std::cerr << "  k=" << kv.first << " : " << kv.second << "\n";
+		std::cerr << "total kept: " << kept << "\n";
+		return 0;
+	}
+
 	int KMIN = std::getenv("EU_KMIN") ? atoi(std::getenv("EU_KMIN")) : 1;
 	int KMAX = std::getenv("EU_KMAX") ? atoi(std::getenv("EU_KMAX")) : 11;
 
