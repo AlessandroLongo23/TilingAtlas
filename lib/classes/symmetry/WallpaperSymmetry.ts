@@ -766,8 +766,8 @@ function mirrorAnglesThrough(axes: Axis[], z: Vec2): number[] {
 	return [...s];
 }
 
-// Split `cell` by each full line through `anchor` in `dirs` (a kaleidoscope cut → `order` sectors).
-function cutIntoSectors(cell: Vec2[], anchor: Vec2, dirs: Vec2[]): Vec2[][] {
+// Split `cell` by each full line through `anchor` in `dirs` (mirror kaleidoscope → 2·|dirs| sectors).
+function cutByLines(cell: Vec2[], anchor: Vec2, dirs: Vec2[]): Vec2[][] {
 	let faces = [cell];
 	for (const d of dirs) {
 		const n = { x: -d.y, y: d.x };
@@ -778,6 +778,19 @@ function cutIntoSectors(cell: Vec2[], anchor: Vec2, dirs: Vec2[]): Vec2[][] {
 			else next.push(f);
 		}
 		faces = next;
+	}
+	return faces;
+}
+
+// Split `cell` into `order` equal angular wedges (rays from `anchor` at 2π/order), starting at `base`.
+// Works for any order incl. odd (p3, order 3) where full-line cuts cannot produce an odd sector count.
+function cutIntoWedges(cell: Vec2[], anchor: Vec2, order: number, base: number): Vec2[][] {
+	const faces: Vec2[][] = [];
+	for (let k = 0; k < order; k++) {
+		const a0 = base + (k * 2 * Math.PI) / order, a1 = base + ((k + 1) * 2 * Math.PI) / order;
+		let f = clipHalfPlane(cell, anchor, { x: -Math.sin(a0), y: Math.cos(a0) }); // CCW of ray a0
+		f = clipHalfPlane(f, anchor, { x: Math.sin(a1), y: -Math.cos(a1) }); // CW of ray a1
+		faces.push(f);
 	}
 	return faces;
 }
@@ -815,19 +828,17 @@ function buildSubdivision(
 	if (order <= 1) return { anchor, cellPolygon, faces: [cellPolygon], ok: true };
 
 	const md = mirrorAnglesThrough(axes, anchor);
-	let dirs: Vec2[];
+	let faces: Vec2[][];
 	if (2 * md.length === order) {
-		// symmorphic reflection group: cut by the anchor's mirror kaleidoscope.
-		dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
+		// symmorphic reflection group: cut by the anchor's mirror kaleidoscope (full lines).
+		const dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
+		faces = cutByLines(cellPolygon, anchor, dirs);
 	} else {
-		// rotation-only / non-symmorphic: order/2 equally-spaced lines (aligned to a mirror if any).
+		// rotation-only / non-symmorphic: `order` equal angular wedges (handles odd order p3), aligned to a
+		// mirror when one exists so the wedges follow the symmetry.
 		const base = md.length ? (md[0] * Math.PI) / 180 : Math.atan2(c1.y, c1.x);
-		dirs = Array.from({ length: order / 2 }, (_, k) => {
-			const a = base + (k * Math.PI) / (order / 2);
-			return { x: Math.cos(a), y: Math.sin(a) };
-		});
+		faces = cutIntoWedges(cellPolygon, anchor, order, base);
 	}
-	const faces = cutIntoSectors(cellPolygon, anchor, dirs);
 	const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
 	const totArea = faces.reduce((s, f) => s + polyArea(f), 0);
 	const ok = faces.length === order && Math.abs(totArea - cellArea) < 1e-3 * cellArea;
