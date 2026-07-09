@@ -29,9 +29,10 @@ namespace fs = std::filesystem;
 #include "pruner_tables.inc"
 
 // ---------- global solution store (mirrors the Python globals) ----------
+// Node indices live in [0, le); int16_t is lossless well past any reachable k. `label` was stored
+// but never read (comparesolutions uses only the five arrays), so it is dropped, not narrowed.
 struct Sol {
-	std::vector<int> rneig, lneig, lvert, mirro, glue;
-	std::vector<std::string> label;
+	std::vector<int16_t> rneig, lneig, lvert, mirro, glue;
 };
 static std::vector<Sol> sols;                 // every kept solution
 static std::vector<std::string> siglist;      // distinct signatures
@@ -329,8 +330,10 @@ static bool compareToSeen(const Graph& g, const std::string& key) {
 	return false;
 }
 
+static std::vector<int16_t> narrow(const std::vector<int>& v) { return {v.begin(), v.end()}; }
+
 static void addsolution(const Graph& g, const std::string& key) {
-	Sol s{g.rneig, g.lneig, g.lvert, g.mirro, g.glue, g.label};
+	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.lvert), narrow(g.mirro), narrow(g.glue) };
 	sols.push_back(std::move(s));
 	bucket[key].push_back((int)sols.size() - 1);
 }
