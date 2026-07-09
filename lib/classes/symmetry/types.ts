@@ -44,6 +44,12 @@ export interface SymmetryData {
 	axes: Axis[];
 	centers: Center[];
 	fd: Vec2[]; // fundamental-domain polygon, CCW
-	cell: [Vec2, Vec2]; // (T1, T2) as world vectors, anchored at the cell origin
-	cellOrigin: Vec2; // where to anchor the cell parallelogram for drawing
+	// The `pointGroupOrder` fundamental-domain copies tiling the drawn cell (`subdivision[0] === fd`, the
+	// emphasized copy). SELF-VERIFIED area-exact; on the rare failure this is just [fd] so the overlay never
+	// draws a wrong/partial subdivision.
+	subdivision: Vec2[][];
+	cell: [Vec2, Vec2]; // lattice basis (T1,T2 reduced) — drives axis line length + cell area, NOT the outline
+	cellPolygon: Vec2[]; // the DRAWN cell: Wigner–Seitz cell of the lattice (rectangle/square/hexagon), or the
+	// mirror-aligned rhombus for cm/cmm. Centred on the anchor; its union === the subdivision.
+	cellOrigin: Vec2; // the FD anchor (cell centre / kaleidoscope point)
 }

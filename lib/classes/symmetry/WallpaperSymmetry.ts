@@ -714,6 +714,126 @@ function buildFD(
 //
 // This is the Phase-0 skeleton: it returns only the primitive cell parallelogram. Rotations, mirrors,
 // glides, group identification, and the fundamental domain are layered in by later phases.
+// --- drawn cell + fundamental-domain subdivision (render-only float geometry) ---
+// The cell is subdivided into its `pointGroupOrder` fundamental-domain copies by CUTTING a symmetry-centred
+// cell with the kaleidoscope lines through the anchor. The copies are pieces of the cell, so the FD is
+// always inside it. The cell is the Wigner–Seitz (Dirichlet) cell of the lattice around the anchor — which
+// equals the conventional rectangle / square / 120° hexagon — except cm/cmm, drawn as the mirror-aligned
+// rhombus (Wikipedia). Validated area-exact on all 92 certified k≤3 tilings (scripts/validate-fd-subdivision.ts).
+
+// Wigner–Seitz cell of the lattice (c1,c2) around `anchor`: a big box clipped by the perpendicular
+// bisectors of nearby lattice vectors (keep the half nearer the anchor).
+function wignerSeitzCell(c1: Vec2, c2: Vec2, anchor: Vec2): Vec2[] {
+	const R = 4 * (Math.hypot(c1.x, c1.y) + Math.hypot(c2.x, c2.y));
+	let poly: Vec2[] = [
+		{ x: anchor.x - R, y: anchor.y - R }, { x: anchor.x + R, y: anchor.y - R },
+		{ x: anchor.x + R, y: anchor.y + R }, { x: anchor.x - R, y: anchor.y + R },
+	];
+	for (let i = -2; i <= 2; i++)
+		for (let j = -2; j <= 2; j++) {
+			if (!i && !j) continue;
+			const v = { x: i * c1.x + j * c2.x, y: i * c1.y + j * c2.y };
+			poly = clipHalfPlane(poly, { x: anchor.x + v.x / 2, y: anchor.y + v.y / 2 }, { x: -v.x, y: -v.y });
+		}
+	return poly;
+}
+
+// cm/cmm: the mirror-aligned primitive rhombus, centred on `anchor`. A = shortest lattice vector along a
+// mirror, B along the perpendicular; the centred-rectangular primitive rhombus edges are (A±B)/2 (both
+// lattice vectors, equal length, same covolume). Null if degenerate (→ caller uses the Wigner–Seitz cell).
+function rhombusCellCentered(axes: Axis[], c1: Vec2, c2: Vec2, anchor: Vec2): Vec2[] | null {
+	const mirror = axes.find((a) => a.kind === "mirror");
+	if (!mirror) return null;
+	const dA = mirror.d, dB = { x: -mirror.d.y, y: mirror.d.x };
+	const PA = onLinePeriod(dA, c1, c2), PB = onLinePeriod(dB, c1, c2);
+	if (!Number.isFinite(PA) || !Number.isFinite(PB)) return null;
+	const r1 = { x: (dA.x * PA + dB.x * PB) / 2, y: (dA.y * PA + dB.y * PB) / 2 };
+	const r2 = { x: (dA.x * PA - dB.x * PB) / 2, y: (dA.y * PA - dB.y * PB) / 2 };
+	const det0 = Math.abs(c1.x * c2.y - c1.y * c2.x), det1 = Math.abs(r1.x * r2.y - r1.y * r2.x);
+	if (det1 < 1e-9 || Math.abs(det0 - det1) > 1e-6 * det0) return null;
+	const o = { x: anchor.x - (r1.x + r2.x) / 2, y: anchor.y - (r1.y + r2.y) / 2 };
+	return [o, { x: o.x + r1.x, y: o.y + r1.y }, { x: o.x + r1.x + r2.x, y: o.y + r1.y + r2.y }, { x: o.x + r2.x, y: o.y + r2.y }];
+}
+
+// Distinct mirror-line directions (deg mod 180) whose line passes through `z`.
+function mirrorAnglesThrough(axes: Axis[], z: Vec2): number[] {
+	const s = new Set<number>();
+	for (const a of axes) {
+		if (a.kind !== "mirror") continue;
+		if (Math.abs((z.x - a.p.x) * -a.d.y + (z.y - a.p.y) * a.d.x) > 1e-3) continue;
+		s.add(Math.round(((((Math.atan2(a.d.y, a.d.x) * 180) / Math.PI) % 180) + 180) % 180));
+	}
+	return [...s];
+}
+
+// Split `cell` by each full line through `anchor` in `dirs` (a kaleidoscope cut → `order` sectors).
+function cutIntoSectors(cell: Vec2[], anchor: Vec2, dirs: Vec2[]): Vec2[][] {
+	let faces = [cell];
+	for (const d of dirs) {
+		const n = { x: -d.y, y: d.x };
+		const next: Vec2[][] = [];
+		for (const f of faces) {
+			const pos = clipHalfPlane(f, anchor, n), neg = clipHalfPlane(f, anchor, { x: -n.x, y: -n.y });
+			if (polyArea(pos) > 1e-7 && polyArea(neg) > 1e-7) { next.push(pos); next.push(neg); }
+			else next.push(f);
+		}
+		faces = next;
+	}
+	return faces;
+}
+
+// The drawn cell polygon + its `order` fundamental-domain copies. `faces[0]` is the emphasized FD. `ok`
+// is the area-exact self-check (exactly `order` copies tiling the cell); on failure the caller keeps the
+// buildFD fallback FD so a wrong subdivision is never drawn.
+function buildSubdivision(
+	group: WallpaperGroup,
+	order: number,
+	centers: Center[],
+	axes: Axis[],
+	c1: Vec2,
+	c2: Vec2,
+): { anchor: Vec2; cellPolygon: Vec2[]; faces: Vec2[][]; ok: boolean } {
+	// anchor = the centre of maximal site symmetry: highest rotation order, then most mirrors through it.
+	let anchor: Vec2 = centers.length ? centers[0].z : { x: 0, y: 0 };
+	let bestKey = -1;
+	for (const c of centers) {
+		const k = c.order * 100 + mirrorAnglesThrough(axes, c.z).length;
+		if (k > bestKey) { bestKey = k; anchor = c.z; }
+	}
+	// Cell shape per Wikipedia: oblique p1/p2 → parallelogram, cm/cmm → mirror-aligned rhombus, everything
+	// else → the Wigner–Seitz cell (= rectangle for rectangular, square for square, 120° hexagon for
+	// hexagonal). All centred on the anchor.
+	const parallelogram = (): Vec2[] => {
+		const o = { x: anchor.x - (c1.x + c2.x) / 2, y: anchor.y - (c1.y + c2.y) / 2 };
+		return [o, { x: o.x + c1.x, y: o.y + c1.y }, { x: o.x + c1.x + c2.x, y: o.y + c1.y + c2.y }, { x: o.x + c2.x, y: o.y + c2.y }];
+	};
+	const cellPolygon =
+		group === "p1" || group === "p2"
+			? parallelogram()
+			: ((group === "cm" || group === "cmm" ? rhombusCellCentered(axes, c1, c2, anchor) : null) ??
+				wignerSeitzCell(c1, c2, anchor));
+	if (order <= 1) return { anchor, cellPolygon, faces: [cellPolygon], ok: true };
+
+	const md = mirrorAnglesThrough(axes, anchor);
+	let dirs: Vec2[];
+	if (2 * md.length === order) {
+		// symmorphic reflection group: cut by the anchor's mirror kaleidoscope.
+		dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
+	} else {
+		// rotation-only / non-symmorphic: order/2 equally-spaced lines (aligned to a mirror if any).
+		const base = md.length ? (md[0] * Math.PI) / 180 : Math.atan2(c1.y, c1.x);
+		dirs = Array.from({ length: order / 2 }, (_, k) => {
+			const a = base + (k * Math.PI) / (order / 2);
+			return { x: Math.cos(a), y: Math.sin(a) };
+		});
+	}
+	const faces = cutIntoSectors(cellPolygon, anchor, dirs);
+	const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
+	const totArea = faces.reduce((s, f) => s + polyArea(f), 0);
+	const ok = faces.length === order && Math.abs(totArea - cellArea) < 1e-3 * cellArea;
+	return { anchor, cellPolygon, faces, ok };
+}
+
 export function analyzeSymmetry(
 	ring: CyclotomicRing,
 	T1: Cyclotomic,
@@ -739,7 +859,12 @@ export function analyzeSymmetry(
 	const allTopOnMirror = allTopCentersOnMirrorExact(ring, T1, T2, seed);
 	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror);
 	const pointGroupOrder = POINT_GROUP_ORDER[group];
-	const { fd, anchor } = buildFD(group, pointGroupOrder, centers, axes, c1, c2);
+	const sub = buildSubdivision(group, pointGroupOrder, centers, axes, c1, c2);
+	// The cell (cut into `order` FD copies) tiles exactly for every certified group; on the rare self-check
+	// failure keep the buildFD fallback FD (area-correct) and draw no subdivision, never a wrong one.
+	const fallback = sub.ok ? null : buildFD(group, pointGroupOrder, centers, axes, c1, c2).fd;
+	const subdivision = sub.ok ? sub.faces : [fallback!];
+	const fd = subdivision[0];
 
 	return {
 		group,
@@ -749,7 +874,9 @@ export function analyzeSymmetry(
 		axes,
 		centers,
 		fd,
-		cell: [c1, c2],
-		cellOrigin: anchor, // draw the primitive cell anchored at the same rotation center as the FD
+		subdivision,
+		cell: [c1, c2], // lattice basis (drives axis line-length + area); the DRAWN cell is cellPolygon
+		cellPolygon: sub.cellPolygon,
+		cellOrigin: sub.anchor,
 	};
 }

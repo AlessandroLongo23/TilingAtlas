@@ -6,11 +6,6 @@ import type { Center, SymmetryData, Vec2 } from "@/lib/classes/symmetry/types";
 // World-unit stroke weights ≈ pixels/zoom; the canvas draws at zoom≈40–150, so 0.02–0.05 → ~1–4 px.
 type P5 = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-const add = (a: Vec2, b: Vec2, c?: Vec2): Vec2 => ({
-	x: a.x + b.x + (c?.x ?? 0),
-	y: a.y + b.y + (c?.y ?? 0),
-});
-
 function polygon(p5: P5, pts: Vec2[]) {
 	p5.beginShape();
 	for (const q of pts) p5.vertex(q.x, q.y);
@@ -18,15 +13,20 @@ function polygon(p5: P5, pts: Vec2[]) {
 }
 
 export function drawFundamentalDomain(p5: P5, data: SymmetryData) {
-	const o = data.cellOrigin;
-	const [c1, c2] = data.cell;
 	p5.push();
-	// primitive lattice cell — thin neutral parallelogram outline
+	// the drawn cell — Wigner–Seitz cell (rectangle/square/hexagon) or cm/cmm rhombus; thin neutral outline
 	p5.noFill();
 	p5.stroke(0, 0, 55);
 	p5.strokeWeight(0.02);
-	polygon(p5, [o, add(o, c1), add(o, c1, c2), add(o, c2)]);
-	// fundamental domain — translucent yellow fill + orange edge
+	polygon(p5, data.cellPolygon);
+	// subdivision — the cell tiled by all its fundamental-domain copies, faint orange outlines (a single
+	// entry means the self-check declined a subdivision, so only the FD below is drawn).
+	if (data.subdivision.length > 1) {
+		p5.stroke(28, 60, 90);
+		p5.strokeWeight(0.02);
+		for (const copy of data.subdivision) polygon(p5, copy);
+	}
+	// emphasized fundamental domain — translucent yellow fill + orange edge, on top
 	p5.fill(48, 85, 100, 0.5);
 	p5.stroke(28, 90, 90);
 	p5.strokeWeight(0.03);

@@ -89,7 +89,37 @@ basis with the mirror-aligned rhombus:
 
 Set `cell = [r1, r2]` for cm/cmm; the subdivision (Component 2) then tiles this rhombus.
 
-## Prototype findings (2026-07-09) — READ THIS; the naive algorithm was wrong
+## SHIPPED APPROACH (supersedes everything below): cut a symmetry-centred cell
+
+The "orbit a pre-built FD" idea below was prototyped and abandoned — orbiting `buildFD`'s FD fans around
+the anchor into a Wigner–Seitz region that does not fill a parallelogram, so the FD kept poking out
+(measured 23/92 still outside; the whole point was to fix that). The shipped method instead **cuts a cell
+that is centred on the anchor**, so the copies are literally pieces of the cell and the FD is inside by
+construction. Prototyped to **92/92 area-exact** on the certified catalogue before porting.
+
+Algorithm (`buildSubdivision` in `WallpaperSymmetry.ts`):
+1. **anchor** = the centre of maximal site symmetry: highest rotation order, then most mirror lines
+   through it.
+2. **cell polygon** (all centred on the anchor, matching Wikipedia's cell per lattice):
+   - oblique p1/p2 → parallelogram `[c1,c2]`; cm/cmm → mirror-aligned rhombus `(A±B)/2`; everything else →
+     the **Wigner–Seitz cell** of the lattice (= rectangle for rectangular, square for square, 120°
+     hexagon for hexagonal). WS is a box clipped by the perpendicular bisectors of nearby lattice vectors.
+3. **cut directions** through the anchor: if the mirror directions through the anchor form a clean
+   kaleidoscope (`2·count === order`) use them; otherwise `order/2` equally-spaced lines (rotation-only /
+   non-symmorphic), aligned to a mirror when one exists.
+4. **subdivision** = cut the cell polygon by those full lines through the anchor → exactly `order` equal
+   sectors. `subdivision[0]` is the emphasized FD. Self-checked area-exact; on the (never-hit on the
+   catalogue) failure, keep the `buildFD` fallback FD and draw no subdivision.
+
+Result on the 92 certified k≤3 tilings: **FD-outside-cell 0/92** (was 57), **subdivision exact 92/92**,
+**cm/cmm rhombus 25/28** (3 fall back to the WS cell where the perpendicular lattice period is absent —
+still correct, just a hexagon). `SymmetryData` gains `cellPolygon: Vec2[]` (the drawn cell) and
+`subdivision: Vec2[][]`; `cell` stays the lattice basis (axis length + area). Gate:
+`scripts/validate-fd-subdivision.ts`.
+
+---
+
+## (Historical, superseded) orbit-of-FD prototype notes
 
 A prototype over all 92 certified tilings settled the algorithm empirically. Two corrections to the
 approach below, and one honest limitation:
@@ -101,16 +131,8 @@ approach below, and one honest limitation:
 2. **Reject any candidate whose centroid lies inside an already-accepted copy** (point-in-polygon), and
    cap strictly at `order`. This enforces a disjoint tiling and removes the remaining over-generation.
 
-With both, **88/92 pass** the area-exact gate (13–14 of 17 groups). The holdout is the **pure-rotation
-groups p3/p6** (no mirrors, no glides): `buildFD` returns a small quad near the n-fold center that is NOT
-a rotation-compatible sector, so its `order` rotations overlap-reject to 3–5 copies. Fixing that is a
-`buildFD` change (reconstruct the FD as an `order`-fold sector for pure-rotation groups) and is deferred.
-
-**Therefore the shipped design is SELF-VERIFYING:** compute the subdivision, check per tiling that it
-tiles exactly (`copies.length === order` AND `Σarea ≈ cellArea`); if yes, expose it in `subdivision`; if
-no (p3/p6 today), set `subdivision = [fd]` (just the base FD) so the overlay never draws a wrong/partial
-subdivision. The cm/cmm rhombus cell and the anchor-centered cell (FD-inside) apply to ALL groups
-regardless. p3/p6 full subdivision is a fast-follow.
+This got 88/92 but never filled the parallelogram (FD still outside for 23/92) and left p3/p6 as a
+single-FD fallback — which is why it was replaced by the cut-the-cell method above.
 
 ## Component 2: FD subdivision (all groups)
 
