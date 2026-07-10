@@ -1,0 +1,435 @@
+           A canonical form for integer symbols of periodic tilings
+                            by regular polygons
+                                           TilingAtlas working note*
+
+                                                   July 9, 2026
+
+
+
+                                                     Abstract
+            Soto Sánchez, Weyrich, Medeiros e Sá and de Figueiredo encode an edge-to-edge periodic
+        tiling of the plane by unit-edge regular polygons as a (2 + n) × 4 integer matrix over Z[ω],
+        ω = e2πi/12 : two rows span a period lattice, the remaining n rows list one vertex per translation
+        class. One tiling has infinitely many symbols. We define a computable canonical form N and
+        prove it sound and canonical for the equivalence V ′ = gV + c with g in the dihedral group D12
+        and c ∈ Z[ω]. The lattice-basis, seed-representative and seed-order ambiguities are eliminated
+        by construction (Hermite normal form, canonical coset representatives, row sorting); the 24n-
+        fold frame ambiguity (orientation and origin) is cut to the stabilizer of an intrinsic invariant,
+        the multiset of vertex stars, and the residual minimization is proved to compare byte-identical
+        candidates whenever its ties come from symmetries of the tiling. Along the way we exhibit
+        a defect in the naive symbol equivalence: the four commonly listed ambiguity sources do not
+        generate equivalence of vertex sets, because a tiling can be re-encoded over any finite-index
+        sublattice of its period lattice; a correct canonical form must therefore recompute the maximal
+        translation lattice, and ours does. We give complexity bounds, run the form on the required
+        worked instances, and report an adversarial verification campaign in which no counterexample
+        to canonicity was found.
+
+
+1       Setting
+Let ω = e2πi/12 , with minimal polynomial Φ12 (x) = x4 − x2 + 1, so ω 4 = ω 2 − 1. The ring Z[ω] is a
+free Z-module with basis (1, ω, ω 2 , ω 3 ); we identify p ∈ Z[ω] with its coordinate row vector in Z4 .
+Multiplication by ω and complex conjugation are Z-linear maps preserving Z[ω]. Following [1],
+an edge-to-edge periodic tiling by unit-edge regular polygons, normalized so that one vertex is 0
+and all edges point along ω 0 , . . . , ω 11 (this excludes exactly the octagon-bearing truncated square
+tiling, whose edges lie off the 30◦ grid), is recorded by its vertex set V ⊂ Z[ω]: choosing a rank-2
+period lattice Λ = Zt1 + Zt2 with t1 , t2 R-linearly independent in C and V + Λ = V , the set V is
+a finite union of cosets
+                                ⋃︂
+                         V =         (s + Λ),        S ⊂ Z[ω]/Λ, |S| = n, 0 ∈ S,
+                                   s∈S
+
+and the symbol is the (2 + n) × 4 integer matrix M with rows t1 , t2 , s1 , . . . , sn . Edges are recovered
+by joining v to v + ω k whenever both are vertices; the polygons are implicit.
+    *
+    Reference implementation and the full adversarial verification record (differential oracle, attack suites, corpora)
+accompany this note in docs/canonical-form/verification/.
+
+
+
+                                                          1
+    Two vertex sets represent the same tiling exactly when
+
+                                  V ′ = gV + c,         g ∈ G, c ∈ Z[ω],                               (1)
+
+where G = {ρj : z ↦→ ω j z} ∪ {µj : z ↦→ ω j z̄} is the dihedral group D12 of order 24, acting by integer
+matrices on Z4 . We write M ∼ M ′ when the vertex sets of two symbols satisfy (1). A canonical
+form is a computable map N on symbols with N(M ) ∼ M (soundness) and M ∼ M ′ ⇒ N(M ) =
+N(M ′ ) as integer matrices (canonicity).
+   The classical inventory of symbol ambiguities lists four sources: (1) the lattice basis, U ∈
+GL2 (Z); (2) each seed representative, mod Λ; (3) the seed order; (4) the frame, i.e. origin (n
+choices) and orientation (g ∈ G, 24 choices). Source 4 is the substantial one; a brute-force baseline
+canonicalizes by minimizing over all 24n frames. Section 3 shows this list is incomplete as a
+generating set for (1).
+
+
+2    Preliminaries
+Lemma 2.1 (Hermite normal form, rank 2 in Z4 ). Every rank-2 sublattice Λ ⊂ Z4 has a unique
+basis (h1 , h2 ) such that, writing ci for the position of the first nonzero entry of hi and pi = hi [ci ]:
+c1 < c2 , p1 , p2 > 0, and 0 ≤ h1 [c2 ] < p2 . Uniqueness includes the entries outside the pivot columns
+c1 , c2 .
+
+Proof. Let c1 be the first coordinate not identically zero on Λ and p1 > 0 the generator of the
+image of the projection πc1 : Λ → Z. The kernel Λ2 = {v ∈ Λ : v[c1 ] = 0} satisfies Λ/Λ2 ∼   = Z, so it
+has rank 1 and a unique generator h2 whose first nonzero entry p2 := h2 [c2 ] is positive; its pivot c2
+exceeds c1 because all of Λ vanishes on coordinates before c1 . Pick u ∈ Λ with u[c1 ] = p1 and set
+h1 = u − ⌊u[c2 ]/p2 ⌋h2 ; any two candidates differ by an element of Λ2 = Zh2 whose c2 -entry lies in
+(−p2 , p2 ), hence by 0. Both h1 and h2 are thereby pinned as vectors, free columns included. See
+also [3, §2.4] for the general theory.
+
+Definition 2.2 (canonical coset representative). For Λ with HNF basis (h1 , h2 ) as above and
+v ∈ Z4 , let repΛ (v) be the unique element r ∈ v + Λ with r[c1 ] ∈ [0, p1 ) and r[c2 ] ∈ [0, p2 ),
+computed by two floor divisions (reduce by h1 , then by h2 ; the second step does not disturb
+coordinate c1 since h2 [c1 ] = 0).
+
+    Uniqueness: a difference ah1 +bh2 with both pivot coordinates in the open box forces |a|p1 < p1 ,
+so a = 0, then b = 0. In particular repΛ depends only on the coset and on Λ itself, not on any
+basis, and repΛ (0) = 0.
+
+Lemma 2.3 (direction covariance). For g ∈ G define σg ∈ Sym(Z/12) by σρj (k) = j + k and
+σµj (k) = j − k. Then g(v + ω k ) = g(v) + ω σg (k) for all v ∈ Z[ω], and g ↦→ σg is a group
+homomorphism.
+
+Proof. g is Z-linear and g(ω k ) equals ω j+k for g = ρj and ω j ω k = ω j−k for g = µj . The homomor-
+phism property follows from (g1 g2 )(ω k ) = g1 (ω σg2 (k) ) = ω σg1 σg2 (k) .
+
+
+3    Normalizing the lattice, and a defect in the four-source list
+For a vertex set V let Λmax (V ) = {t ∈ Z[ω] : t + V = V }, the full translation lattice.
+
+
+
+                                                    2
+Lemma 3.1 (Stage A). Let (Λ, S) encode V with S = {s1 , . . . , sn } ⊂ Z[ω]/Λ, and let T = {τ ∈
+Z[ω]/Λ : S + τ = S}. Then:
+ (a) T is a subgroup of Z[ω]/Λ and Λmax (V ) is its full preimage in Z[ω]; in particular Λ ⊆
+     Λmax (V ).
+ (b) Every τ ∈ T occurs among the n candidates sj − s1 , j = 1, . . . , n.
+ (c) For a candidate τ , the inclusion S + τ ⊆ S already implies S + τ = S.
+ (d) Every τ ∈ T has finite order in Z[ω]/Λ; hence the lattice generated by Λ and lifts of T has
+     rank 2 and equals Λmax (V ).
+ (e) Λmax (hV + c) = h Λmax (V ) for all h ∈ G, c ∈ Z[ω].
+Proof. (a) t + V = V iff (S + t) + Λ = S + Λ iff S + (t mod Λ) = S. (b) τ + s1 ∈ S, so τ ≡ sj − s1
+for some j. (c) Adding τ is injective on Z[ω]/Λ and S is finite, so an injection of S into itself is
+a bijection. (d) The orbit {s1 + mτ }m≥0 lies in the finite set S, so mτ = m′ τ for some m > m′
+and (m − m′ )τ = 0; thus Λmax ⊗ Q = Λ ⊗ Q has rank 2, and Λmax is generated by Λ together
+with the finitely many elements of T , all of which appear in (b). (e) t + hV + c = hV + c iff
+h−1 t + V = V .
+
+    Stage A of our algorithm computes Λmax by Lemma 3.1: test the n candidates, stack the valid
+ones on Λ, take the HNF (Lemma 2.1), reduce all seeds by repΛmax and remove duplicates. The
+result (Λmax , S) depends only on V .
+Remark 3.2 (the defect). The four ambiguity sources of Section 1 all preserve n, but equiv-
+alence (1) does not: the encoding definition requires only some invariant rank-2 lattice, so the
+same V admits a symbol over every finite-index sublattice Λ′ ⊂ Λmax (V ), with n · [Λmax : Λ′ ]
+seeds. Concretely, the square tiling V = Z + Zi has the n=1 symbol of Example 7.1 and also an
+n=4 symbol over 2Z + 2Zi; the two vertex sets are literally equal, hence equivalent under (1). A
+baseline that canonicalizes the given lattice by HNF and minimizes over 24n frames assigns these
+two symbols matrices of different shapes, so it is not canonical for (1); we verified this computa-
+tionally on a faithful implementation. Any correct N must therefore recompute Λmax , as Stage A
+does. Alternatively one may read lattice maximality as an unstated precondition on valid symbols;
+then Stage A is input validation rather than a correction, and it certifies the precondition at the
+same cost. Whether the convention of [1] already requires maximality should be checked before
+attributing the defect beyond the problem statement we received; in an enumeration pipeline the
+point is moot, since period-solving stages do not in general certify maximal periods, and a dedup
+key without Stage A can leak duplicates either way.
+
+
+4    Stars and the frame rule
+Definition 4.1 (stars, words, frame invariants). For a vertex class [s] ∈ V /Λmax let star(s) = {k ∈
+             k   V }, computed as {k : repΛmax (s + ω k ) ∈ S}. Encode subsets A ⊆ Z/12 as words
+Z/12 : s +∑︁ω ∈ 11−k
+w(A) = k∈A 2          . For g ∈ G let Lg (V ) be the ascending list of the n words w(σg (star(s))),
+[s] ∈ V /Λmax . Define
+                    Gmin (V ) = arg min Lg (V )   (lexicographic order on lists),
+                                  g∈G
+
+                           Ag (V ) = {[o] : w(σg (star(o))) = min Lg (V )}.
+Elements of Ag are the anchors (candidate origins) for orientation g.
+
+                                                  3
+Lemma 4.2 (equivariance). For all h ∈ G, c ∈ Z[ω]: starhV +c (hv + c) = σh (starV (v)); Lg′ (hV +
+c) = Lg′ h (V ); consequently Gmin (hV + c) = Gmin (V ) h−1 and Ag′ (hV + c) = h Ag′ h (V ) + c.
+                                            −1
+Proof. hv + c + ω m ∈ hV + c iff v + ω σh (m) ∈ V (Lemma 2.3), giving the star identity. The
+classes of hV + c are the hs + c, so the word list of hV + c at orientation g ′ consists of the
+w(σg′ σh (star(s))) = w(σg′ h (star(s))), which is Lg′ h (V ) after sorting. The last two statements read
+off the definitions.
+
+    Any family of seed invariants with the equivariance of Lemma 4.2 may replace the star here,
+e.g. direction-labeled neighborhood refinement (a 1-WL iteration with canonical relabeling); all
+proofs below use equivariance only. The bit order in w is likewise a convention: any fixed total
+order yields an equally canonical form.
+
+
+5     The canonical form
+Definition 5.1 (candidates and N). For g ∈ G and a class [o] ∈ V /Λmax set
+              (︃     )︃
+                 Bg                                       {︁        (︁     )︁             }︁
+CV (g, [o]) =           , Bg = HNF(g Λmax ), Rg,o = sort repgΛmax g(s − o) : [s] ∈ V /Λmax .
+                Rg,o
+
+This is well defined: replacing s or o by another representative changes g(s − o) by an element of
+gΛmax , which rep absorbs. On a symbol M , the canonical form is
+                                     {︁                                      }︁
+                      N(M ) = min CV (g, [o]) : g ∈ Gmin (V ), [o] ∈ Ag (V )
+
+in lexicographic order on flattened matrices, where V and (Λmax , S) are obtained from M by Stage
+A.
+Algorithm (on the (2 + n) × 4 input matrix M ):
+    A. H ← HNF of rows 1–2; reduce seed rows by rep, dedupe; maximize the lattice per Lemma 3.1;
+       now (Λmax , S), |S| = n.
+    B. Compute star(s) for all s ∈ S (12n membership tests against the hashed set S).
+    C. For the 24 elements g: transform star words by σg (bit rotation or reversal), sort, compare;
+       keep Gmin .
+    D. For each g ∈ Gmin : anchors = seeds whose transformed word equals min Lg .
+    E. For each (g, [o]): build CV (g, [o]) (one HNF, n reductions, one sort); output the lexicographic
+       minimum.
+Theorem 5.2 (soundness). N(M ) is a valid symbol and N(M ) ∼ M .
+Proof. Fix a candidate CV (g, [o]). Its first two rows are a basis of gΛmax , a rank-2 lattice with
+R-independent generators since g is an invertible R-linear map. Its seed rows are pairwise distinct
+(distinct cosets have distinct representatives) and contain rep(0) = 0 (take s = o). The union of
+the row cosets is g(V − o) = gV − go, so the candidate encodes a vertex set equivalent to V via
+(g, c = −go) in (1). N(M ) is one of the candidates.
+
+Lemma 5.3 (frame lemma). For all h ∈ G, c ∈ Z[ω], g ′ ∈ G and vertex classes [o′ ] of hV + c:
+
+                      ChV +c (g ′ , [o′ ]) = CV g ′ h, [ h−1 (o′ − c) ] .
+                                               (︁                      )︁
+
+
+                                                   4
+Proof. By Lemma 3.1(e), Λmax (hV + c) = hΛmax (V ), so both sides take the HNF of the same
+lattice g ′ h Λmax (V ), and by Lemma 2.1 they obtain the same first (︁two rows. Classes   )︁ of hV + c
+are s′ = hs + c with [s] ranging over V /Λmax , and g ′ (s′ − o′ ) = g ′ h s − h−1 (o′ − c) , so the two
+representative multisets coincide elementwise; sorting gives identical seed rows.
+
+Theorem 5.4 (canonicity). M ∼ M ′ ⇒ N(M ) = N(M ′ ).
+Proof. Let the vertex sets satisfy V ′ = hV + c. By Lemma 4.2, g ′ ∈ Gmin (V ′ ) iff g ′ h ∈ Gmin (V ),
+and for each such g ′ the map [o′ ] ↦→ [h−1 (o′ − c)] is a bijection Ag′ (V ′ ) → Ag′ h (V ). By Lemma 5.3
+this fiberwise correspondence preserves the candidate matrix, so the two candidate sets are equal
+as sets of integer matrices. Equal finite nonempty sets have equal lexicographic minima.
+
+Corollary 5.5. N(M ) = N(M ′ ) if and only if M ∼ M ′ . Equality of canonical forms decides
+equivalence, and hashing N deduplicates a collection exactly.
+Proof. One direction is Theorem 5.4. Conversely, by Theorem 5.2, M ∼ N(M ) = N(M ′ ) ∼ M ′ .
+
+Lemma 5.6      (coincidence of candidates). CV (g, [o]) = CV (g ′ , [o′ ]) if and only if the affine map
+γ(z) = g ′−1 gz − go + o′ preserves V . In that case γ is itself a symmetry of V of the form (1).
+            (︁       )︁
+
+Proof. γV = V is literally the statement g(V −o) = g ′ (V −o′ ). If the two candidates are equal, they
+are equal symbols, and a symbol determines its vertex set, so g(V − o) = g ′ (V − o′ ). Conversely,
+if the two pointed vertex sets are equal as sets, say to V0 , then by Lemma 3.1(e) both gΛmax (V )
+and g ′ Λmax (V ) equal Λmax (V0 ), so the HNF rows agree, and the seed rows are the rep-images of
+the classes of the same set V0 , so they agree as well. The linear part of γ is g ′−1 g ∈ G and its
+translation part lies in Z[ω].
+
+     Lemma 5.6 explains the behavior of the residual minimization in Stage E: whenever two frames
+in Gmin × A are related by a genuine symmetry of the tiling, the candidates they produce are byte-
+identical, so those ties never change the outcome (though each candidate is still built; the tie is
+redundant, not free of cost). Distinct candidate matrices occur exactly at frame pairs not related
+by a symmetry of V , i.e. when the star data is more symmetric than the tiling. On every uniform
+tiling we tested, all frames in the restricted set were symmetry-related and exactly one distinct
+candidate was ever built (Table 1).
+
+
+6    Complexity
+Costs are stated in the word-RAM model with unit-cost ring operations; entries stay polynomial
+in the input encoding throughout. Let nin be the input seed count, n ≤ nin the class count after
+Stage A, σ = |Gmin | ≤ 24 and a = |Ag | ≤ n (the same for every g ∈ Gmin , since all share the list
+ming Lg ).
+                                                             (︁                      )︁
+Theorem
+  (︁∑︁       6.1.)︁  Stages B–E   run  in   expected  time O    n log n + σa n log n    . Stage A runs in time
+O     τ (1+f τ )    where the sum  is over  the nin candidate   translations and  fτ  ≤   nin is the failure prefix
+of the verification of τ ; this is O(n2in ) in the worst case. Consequently: N runs in O(n2in +σa n log n)
+unconditionally; in O(σa n log n) when the input lattice is certified maximal; and in O(n log n) when
+additionally σa = O(1).
+Proof. Stage B performs 12n reductions and hashed membership tests, each O(1) expected. Stage
+C transforms n twelve-bit words for each of 24 group elements and sorts, O(n log n). Stage E
+builds σa candidates, each one HNF (O(1)), n reductions and one sort of n rows, O(n log n) each.
+Stage A verifies each candidate by scanning S with early exit at the first failure.
+
+                                                        5
+    Three honest annotations. First, the baseline’s cost is O(24n · n log n) = O(n2 log n), since each
+of its 24n frames also requires an O(n log n) build; our worst case matches it and our restricted
+search improves the constant by the factor 24n/σa. Second, Stage A is not always quadratic: with
+early exit it was measured to scale linearly on random maximal-lattice instances up to n = 4096;
+but an adversarial family exists (a single deleted vertex class per cell of a large square grid, so that
+many near-periods survive long verification prefixes) on which measured cost scales as Θ(n2 ), e.g.
+6.7 s at n = 3599 against 0.22 s for all other stages combined. Filtering candidates to those whose
+star matches the star of a rarest-star class (valid, since a true period preserves stars) reduces the
+candidate count; it does not remove the quadratic family. Third, “σa = O(1)” is a hypothesis
+about the input, not a theorem about tilings: every uniform tiling we ran has σ ∈ {4, 8, 12}
+(Table 1), with the saving grace that a = 1 and all σ candidates coincided; and in a corpus of 400
+random symbols, 131 required residual tie-breaking beyond such coincidences. The fair summary
+of directness is: the frame search is provably cut from 24n to σa, the cut set is computed by a direct
+rule, and its internal ties are provably harmless exactly when they come from true symmetries.
+
+
+7    Worked instances
+Example 7.1 (square tiling, the mandated pair). The three symbols of the unit square tiling
+                ⎛             ⎞      ⎛           ⎞        ⎛             ⎞
+                  1 0 0 0              1 0 0 0              0 1 0 0
+                ⎝0 0 0 1⎠ ,          ⎝1 0 0 1⎠ ,          ⎝−1 0 1 0⎠
+                  0 0 0 0              0 0 0 0              0 0 0 0
+(axis-aligned; sheared basis; rotated by ω) all map to
+                                           ⎛           ⎞
+                                             0 1 0 −1
+                                       N = ⎝0 0 1 0 ⎠ ,
+                                             0 0 0 0
+the square lattice ω 2 (Z + Zi) with basis (ω 11 , ω 2 ) in HNF. The orientation rule selects the star
+{2, 5, 8, 11} because w({2, 5, 8, 11}) = 585 < w({1, 4, 7, 10}) = 1170 < w({0, 3, 6, 9}) = 2340; see
+Figure 1. Here |Gmin | = 8 (the point group of the square tiling inside D12 ), and all 8 candidates
+are byte-identical, as Lemma 5.6 predicts.
+Example 7.2 (honeycomb, the mandated pair). The two origin choices
+                      ⎛            ⎞          ⎛               ⎞
+                        0 1 0 1                 0 1 0 1
+                      ⎜0 −1 0 2⎟              ⎜0 −1 0 2 ⎟
+                      ⎝0 0 0 0⎠ and ⎝0 0 0 −1⎠
+                      ⎜            ⎟          ⎜               ⎟
+
+                        0 0 0 1                 0 0 0 0
+both map to                                ⎛                ⎞
+                                            0      1   0   1
+                                           ⎜0      0   0   3⎟
+                                         N=⎜
+                                           ⎝0
+                                                            ⎟,
+                                                   0   0   0⎠
+                                            0      0   0   1
+which is the input symbol itself with the lattice rows in HNF: for the honeycomb the canonical
+frame happens to be the natural one. |Gmin | = 12, one anchor, and all 12 candidates coincide (the
+point group of the honeycomb has order 12). The two seed classes carry the stars {3, 7, 11} and
+{1, 5, 9} of Figure 2, whose words 273 < 1092 also fix the anchor.
+
+
+                                                   6
+tiling                     n   |Gmin |   anchors       distinct   canonical matrix (rows)
+          4
+square 4                   1      8         1             1       (0, 1, 0, −1) (0, 0, 1, 0) (0, 0, 0, 0)
+triangular 36              1     12         1             1       (0, 1, 0, 0) (0, 0, 0, 1) (0, 0, 0, 0)
+honeycomb 63               2     12         1             1       (0, 1, 0, 1) (0, 0, 0, 3) (0, 0, 0, 0) (0, 0, 0, 1)
+trihexagonal 3.6.3.6       3     12         1             1       (0, 2, 0, 0) (0, 0, 0, 2) (0, 0, 0, 0) (0, 0, 0, 1) (0, 1, 0, 1)
+elong. triangular 33 .42   2      4         1             1       (0, 1, 0, −1) (0, 0, 1, 1) (0, 0, 0, −1) (0, 0, 0, 0)
+
+Table 1: Canonical forms of five uniform tilings. “distinct” counts the distinct candidate matrices
+actually built in Stage E; in all five cases every frame of the restricted search produced the same
+matrix, so the residual minimization compared nothing. The elongated triangular tiling has point
+group of order 4 only, and |Gmin | = 4 tracks it exactly.
+
+
+
+
+                               (a) star {0, 3, 6, 9}              (b) star {2, 5, 8, 11}
+
+Figure 1: Orientation selection for the square tiling: (a) the input frame, (b) the canonical frame.
+Dotted rays mark the twelve directions ω 0 , . . . , ω 11 (counterclockwise from ω 0 on the right); thick
+arrows mark the occupied directions of the origin’s star. The word order prefers stars avoiding low
+direction indices, so the canonical frame is the input rotated by ω 2 .
+
+
+8        Adversarial verification
+Beyond the proofs, the reference implementation was subjected to an adversarial campaign; all
+artifacts accompany this note.
+
+     Differential against the baseline. On a corpus of 290 symbols (the five tilings of Table 1; re-
+      encodings across all four ambiguity sources simultaneously; sublattice re-encodings of index
+      2, 4 and 6; single-edit mutants; 60 random symbols with three scrambles each), N induces
+      the byte-identical equivalence partition (69 classes) as an independent implementation of
+      the 24n-frame baseline equipped with the same Stage A. The two forms select different
+      representatives, so partition agreement is the meaningful comparison.
+     Frame lemma at full strength. Lemma 5.3 was checked exhaustively, not only at minima:
+      for six symbols (including a chiral constellation, an all-empty-star cloud, and a degenerate
+      lattice with R-dependent generators), all 24 values of h, three translations c, all 24 values of
+      g ′ and every origin, about 5 × 104 matrix comparisons, zero violations. The D12 composition
+      table and the homomorphism property of σ were verified on all 576 pairs.
+     Targeted adversaries. A symbol whose star multiset is invariant under a strict supergroup
+      of its point group (so the residual minimization must compare genuinely distinct candi-
+      dates: |Gmin | = 2, two distinct candidates) and an empty-star cloud with trivial point group
+      (|Gmin | = 24, four anchors, 96 distinct candidates) were both stable under 300 random re-
+      encodings; a chiral constellation and its explicit mirror image merge, as (1) requires. In
+      total, canonicity was exercised on roughly 104 randomized re-encodings, including 131 of 400
+
+                                                           7
+                                           t2         t1
+
+
+
+
+Figure 2: The honeycomb and its symbol data. Filled and open dots are the two vertex classes;
+t1 = ω + ω 3 and t2 = ω 5 + ω 3 span the period lattice. The star of the filled class, drawn at a
+representative vertex on the right, is {3, 7, 11}; the star of the open class, drawn on the left, is
+{1, 5, 9}. The word order picks the filled class as the anchor in the canonical frame.
+
+
+      random symbols whose ties required real tie-breaking.
+     Idempotence and Stage A. N(N(M )) = N(M ) on the entire corpus; Stage A recovered max-
+      imal lattices from re-encodings at indices up to 49 and leaves already-maximal symbols
+      unchanged; the rank-2 assertion of Lemma 3.1(d) never fired on 3000 random symbols.
+
+    Degenerate inputs are handled as follows: symbols violating the encoding contract (rank-1
+lattices, empty seed lists) are rejected by assertion rather than canonicalized; R-linearly depen-
+dent lattice generators are accepted silently and canonicalized consistently (the theory never uses
+R-independence), which is acceptable for a dedup key but callers wanting validation must test
+Im(t1 t2 ) ̸= 0 themselves.
+
+
+9    Limitations and open directions
+T1 (directness). What is proved: the frame search is cut from 24n to the stabilizer σa of
+the star data by a direct, minimization-free rule, and internal ties coming from true symmetries
+are provably redundant (Lemma 5.6). What is not proved: that refined equivariant invariants
+always pin a unique frame per symmetry orbit. The residual minimization therefore remains as
+a correctness guarantee, and on symmetric tilings it demonstrably compares only copies of one
+matrix. We do not claim σa = O(1) generically over any natural distribution of tilings; the
+uniform tilings of Table 1 all have σ > 1, tracking their point groups.
+
+T2 (entry bounds). As delivered, N has no intrinsic entry bound: rep reduces pivot columns
+only, so free-column entries are bounded polynomially in the input encoding but not by tiling data.
+A variant replaces the HNF basis by the Lagrange–Gauss reduced basis (unique up to at most 16
+ordered sign/swap/tie choices, realized on hexagonal lattices; take the lexicographic minimum over
+them) and reduces seeds into the fundamental parallelogram. Sketch of the resulting bound: each
+ω k has coordinates in {−1, 0, 1}, so a vertex reachable from the origin by m unit-edge steps has
+all four coordinates bounded by m in absolute value; reduced representatives lie within Euclidean
+distance O(λ2 ) of the origin, and λ2 = O(n) since the cell area is Θ(n) and λ1 is bounded below by
+the minimum vertex distance of unit-edge tilings. The missing step is the routine bounded-dilation
+lemma converting Euclidean distance to path length in these tilings; we flag it rather than claim
+                   √
+it. Conversely O( n) is impossible: strip-stacked tilings in the style of the elongated triangular
+
+
+
+                                                 8
+family realize λ1 = Θ(1), λ2 = Θ(n), and any symbol must contain a basis vector of length Θ(n),
+forcing entries Ω(n).
+
+T3 (hardness). Nothing is proved. We note only that once a frame (g, o) is fixed, the labeled
+structure is rigid: a breadth-first traversal of the quotient graph with direction-sorted edges re-
+constructs the symbol deterministically in O(n) operations, so no canonical-labeling hardness can
+hide inside a frame. The entire search space of the problem is the 24n frame set, already cut
+to the star stabilizer; a hardness reduction would need families of tilings whose equivariant local
+invariants all coincide across inequivalent frames, which the rigidity of the fifteen vertex types
+makes implausible, but that is an expectation, not a theorem.
+
+Relation to prior sketches. Anchoring the origin at an extremal intrinsic label and fixing the
+orientation by star minimization realizes, with proofs, the dual-graph canonical-labeling sketch
+of [2, §5.10]; the contributions here are the equivariance framework making the restricted minimum
+well defined, the coincidence lemma, and the lattice-maximality correction of Remark 3.2.
+
+
+References
+[1] J. E. Soto Sánchez, T. Weyrich, A. Medeiros e Sá, L. H. de Figueiredo, An integer representation
+    for periodic tilings of the plane by regular polygons, Computers & Graphics 95 (2021) 69–80.
+
+[2] J. E. Soto Sánchez, On Periodic Tilings with Regular Polygons, PhD thesis, IMPA, 2020.
+
+[3] H. Cohen, A Course in Computational Algebraic Number Theory, Graduate Texts in Mathe-
+    matics 138, Springer, 1993.
+
+[4] B. Grünbaum, G. C. Shephard, Tilings and Patterns, W. H. Freeman, 1987.
+
+
+
+
+                                                  9
+

@@ -4,7 +4,7 @@ import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
 import { PeriodSolver, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
-import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
+import { dedupeByCongruence, dedupeByNKey } from '@/classes/algorithm/TilingCongruence';
 import {
 	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
 	PolygonType, type GeneratorParameters,
@@ -65,12 +65,14 @@ for (let i = 0; i < useSeeds.length; i++) {
 	if (ms > 3000 || diag.timedOut || cells.length > 0)
 		console.log(
 			`  [${i}] ${seed.name.padEnd(28)} cells=${cells.length} ` +
-			`lat=${diag.candidateLattices} raw=${diag.rawCells} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''} ${ms}ms${diag.timedOut ? ' TIMEOUT' : ''}`
+			`lat=${diag.candidateLattices} raw=${diag.rawCells} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0=${diag.p0Skipped} cSkip=${diag.cSkipped} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''} ${ms}ms${diag.timedOut ? ' TIMEOUT' : ''}`
 		);
 }
-// Authoritative cross-seed dedup: up to CONGRUENCE (representation- & chirality-robust). The old
-// canonicalKey-Set under-merges the chiral snub, over-counting t2020 4× (DEVELOPMENT_NOTES §12.7/§12.11).
-const reps = dedupeByCongruence(allCells, (c) => extractor.canonicalKey(c.cellPolygons));
+// Cross-seed dedup: default `dedupeByNKey` (proven hashable canonical form N — same partition + same
+// representatives as the pairwise congruence, so the COMPOSITION digest below is unchanged, just far
+// faster; NOTES §45). PS_DEDUPE=congruence restores the exact pairwise path (chirality-robust like N).
+const dedupe = process.env.PS_DEDUPE === 'congruence' ? dedupeByCongruence : dedupeByNKey;
+const reps = dedupe(allCells, (c) => extractor.canonicalKey(c.cellPolygons));
 console.log(`\nk=${k}: ${reps.length} distinct tilings (from ${allCells.length} raw cells), ${capped} seeds timed out, ${((Date.now() - t0) / 1000).toFixed(1)}s total`);
 // Deterministic-composition fingerprint over the congruence-class representatives (each the
 // min-canonicalKey member of its class ⇒ order-independent). Two runs must print the SAME digest.

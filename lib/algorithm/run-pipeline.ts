@@ -35,7 +35,7 @@ import {
 } from "@/classes";
 import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
 import { dsymPipeline } from "@/lib/algorithm/dsym-pipeline";
-import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
+import { dedupeByCongruence, dedupeByNKey } from "@/classes/algorithm/TilingCongruence";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import { AlgorithmTilingGenerator } from "@/classes/algorithm/TilingGenerator";
 import { comparePolygonNames, compareVertexConfigurationNames, roundNumbersInJson, toRadians, getEffectiveUniqueCount } from "@/utils";
@@ -796,8 +796,12 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 			}
 			log.clearLine();
 
-			// Authoritative cross-seed dedup up to congruence; survivors regrouped by m for persistence.
-			const reps = dedupeByCongruence(allCells, (c) => extractor.canonicalKey(c.cellPolygons));
+			// Cross-seed dedup; survivors regrouped by m for persistence. Default: `dedupeByNKey` — the
+			// proven hashable canonical form N (~10²–10⁴×/cell over the pairwise `primitiveReducedCell`
+			// path; measured ×111 at k=2, NOTES §45), same partition + same representatives (drop-in).
+			// PS_DEDUPE=congruence restores the exact pairwise authority; PS_MERGECHECK=nkey verifies.
+			const dedupe = process.env.PS_DEDUPE === "congruence" ? dedupeByCongruence : dedupeByNKey;
+			const reps = dedupe(allCells, (c) => extractor.canonicalKey(c.cellPolygons));
 			const emitted = reps.length;
 			for (const cell of reps) {
 				const { mVal, name } = cellMeta.get(cell)!;

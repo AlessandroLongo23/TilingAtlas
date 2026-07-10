@@ -32,6 +32,7 @@ import { Surd, detSurd } from './exact/Surd';
 import { sameLattice } from './LatticeEnumerator';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
 import type { PeriodCell } from './PeriodSolver';
+import { nKeyOfCell } from './canonicalFormN';
 
 /** Exact integer floor of a Surd: float guess, then exact `cmp` correction (each loop step moves
  *  monotonically toward the unique n with n ≤ s < n+1; cmp/sign are exact — CB-2). */
@@ -391,6 +392,68 @@ export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) 
 		} else {
 			reps.push(members[0]);
 		}
+	}
+	if (keyOf) reps.sort((a, b) => (keyOf(a) < keyOf(b) ? -1 : keyOf(a) > keyOf(b) ? 1 : 0));
+	return reps;
+}
+
+/**
+ * Fast dedup up to congruence by the PROVEN hashable canonical key N (`canonicalFormN`): group cells by
+ * `nKeyOfCell`, no pairwise `cellsCongruent`, no `primitiveReducedCell`. ~10⁴×/cell faster than
+ * `dedupeByCongruence` (0.23 vs 2245 ms/cell measured — NOTES §45) because N's Stage A does the
+ * maximal-lattice (primitivity) job internally, in 0.23 ms.
+ *
+ * COMPLETENESS: the no-drop direction — N(a)=N(b) ⇒ a~b — follows from N's SOUNDNESS proof
+ * (`docs/canonical-form/`, restated in the `canonicalFormN` header) plus the ℤ[ω] 12-direction model.
+ * Empirically validated with ZERO false merges across all 47,854 oracle tilings k≤11 (distinct N-keys =
+ * A068599) and ZERO false splits over 7,500 re-encodings incl. non-primitive supercells
+ * (`scripts/n-authority-test.ts`). Cells N cannot key (octagon-bearing → out of the 12-direction domain,
+ * or degenerate) return null and are deduped by the authoritative `congruencePartition` — an octagon
+ * tiling is never congruent to a 12-direction one, so the null subset never merges with an N-group.
+ *
+ * The residual risk is a PORT bug in N (not the math). Guard it with PS_MERGECHECK=nkey (or =full): for
+ * every N-group it re-checks members pairwise with the authoritative `cellsCongruent`, throwing loud if
+ * N ever merged two non-congruent tilings (the only direction that could DROP a tiling). Off by default
+ * (it reintroduces `primitiveReducedCell` on grouped members); on for certification runs. `keyOf`
+ * selects the representative exactly as `dedupeByCongruence`, so this is a drop-in with identical output
+ * whenever the two agree — which, per the validation above, is always on 12-direction inputs.
+ */
+export function dedupeByNKey(cells: PeriodCell[], keyOf?: (c: PeriodCell) => string): PeriodCell[] {
+	const groups = new Map<string, PeriodCell[]>();
+	const nullCells: PeriodCell[] = [];
+	for (const c of cells) {
+		const nk = nKeyOfCell(c);
+		if (nk === null) { nullCells.push(c); continue; }
+		const g = groups.get(nk);
+		if (g) g.push(c);
+		else groups.set(nk, [c]);
+	}
+
+	// Completeness guard (opt-in): verify N never merged two NON-congruent tilings — the only direction
+	// that could silently drop a tiling. Within each N-group, congruence is an equivalence, so checking
+	// every member against the group's first suffices. Throws loud on any violation.
+	if (process.env.PS_MERGECHECK === "nkey" || process.env.PS_MERGECHECK === "full") {
+		const memo = new Map<string, string>();
+		for (const [nk, members] of groups) {
+			if (members.length < 2) continue;
+			const r0 = primitiveReducedCell(members[0]);
+			for (let i = 1; i < members.length; i++) {
+				if (!cellsCongruent(r0, primitiveReducedCell(members[i]), memo)) {
+					const msg = `[nkey-dedup] ⚑ IMPLEMENTATION-BUG: N merged NON-congruent tilings under key ${nk} — a tiling would be DROPPED (completeness violation)`;
+					console.error(msg);
+					throw new Error(msg);
+				}
+			}
+		}
+	}
+
+	const classes: PeriodCell[][] = [...groups.values()];
+	if (nullCells.length) for (const cls of congruencePartition(nullCells)) classes.push(cls);
+
+	const reps: PeriodCell[] = [];
+	for (const members of classes) {
+		if (keyOf) reps.push(members.reduce((m, c) => (keyOf(c) < keyOf(m) ? c : m)));
+		else reps.push(members[0]);
 	}
 	if (keyOf) reps.sort((a, b) => (keyOf(a) < keyOf(b) ? -1 : keyOf(a) > keyOf(b) ? 1 : 0));
 	return reps;
