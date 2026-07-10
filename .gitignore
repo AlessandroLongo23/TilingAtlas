@@ -68,3 +68,21 @@ figures/out/
 # envelope summary (ctrnact-weight-envelope-k1-16.csv) captures the result.
 experiments/results/ctrnact-symclass-k1-16.csv
 experiments/results/ctrnact-weights-exact-k1-16.csv
+
+# native C++ engine — sources (.hpp/.cpp/.ts/Makefile/README) are committed; compiled Mach-O
+# binaries and generated traces are not
+native-engine/bench
+native-engine/bench-fast
+native-engine/bench-tf
+native-engine/difftest
+native-engine/fill-server
+native-engine/*.o
+native-engine/difftrace.txt
+
+# throwaway patch-growth galleries (the generating scripts are marked THROWAWAY)
+tmp-patches/
+tmp-star-patches/
+
+# scratch / intermediate data (underscore prefix — regenerable, not source-of-truth)
+experiments/results/_*
+figures/data/_*-tmp.json
