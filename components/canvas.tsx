@@ -29,11 +29,18 @@ interface CanvasProps {
 	showTilingRuleInput?: boolean;
 }
 
+// Play-mode zoom bounds (screen px per world unit). Wheel and reset clamp to [ZOOM_MIN, ZOOM_MAX].
+// Lowering ZOOM_MIN lets the user zoom further out; fill radius scales as 1/zoom, so MAX_FILL_RADIUS
+// below is sized against ZOOM_MIN — keep them in step.
+const ZOOM_MIN = 20;
+const ZOOM_MAX = 150;
+
 // Per-axis safety backstop on the replicated grid. Sized so it never limits a real screen-fill at the
-// zoom floor (worst realistic case ~63 cells/axis for a skewed cell on a 4K-at-100% display); it only
-// caps a pathological/near-degenerate basis from exploding the polygon count. Fill normally needs far
-// fewer (~23/axis on a Retina laptop). Perf is governed by the zoom floor (tile density), not this cap.
-const MAX_FILL_RADIUS = 72;
+// zoom floor (worst realistic case ~126 cells/axis for a skewed cell on a 4K-at-100% display at
+// ZOOM_MIN=20); it only caps a pathological/near-degenerate basis from exploding the polygon count.
+// Fill normally needs far fewer (~46/axis on a Retina laptop). Perf is governed by the zoom floor
+// (tile density), not this cap.
+const MAX_FILL_RADIUS = 144;
 const DEGENERATE_DET = 1e-9;
 
 // The lattice basis (two world-space translation vectors) of a translational cell, plus its
@@ -430,7 +437,7 @@ export function Canvas({
 					event.preventDefault();
 					event.stopPropagation();
 					ctrl.targetOffset.set(new Vector(0, 0));
-					useConfiguration.setState({ controls: { ...ctrl, targetZoom: Math.max(40, Math.min(150, 50)) } });
+					useConfiguration.setState({ controls: { ...ctrl, targetZoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, 50)) } });
 					return;
 				}
 				grabRef.current = true;
@@ -447,8 +454,8 @@ export function Canvas({
 				const mouse = new Vector(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2);
 				const world = Vector.sub(mouse, ctrl.targetOffset).scale(1 / ctrl.targetZoom);
 				let z = ctrl.targetZoom;
-				if (event && event.deltaY > 0) z = Math.max(z / 1.1, 40);
-				else if (event && event.deltaY < 0) z = Math.min(z * 1.1, 150);
+				if (event && event.deltaY > 0) z = Math.max(z / 1.1, ZOOM_MIN);
+				else if (event && event.deltaY < 0) z = Math.min(z * 1.1, ZOOM_MAX);
 				const newScreen = Vector.add(Vector.scale(world, z), ctrl.targetOffset);
 				ctrl.targetOffset.add(Vector.sub(mouse, newScreen));
 				useConfiguration.setState({ controls: { ...ctrl, targetZoom: z } });

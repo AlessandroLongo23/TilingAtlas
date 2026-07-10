@@ -5,68 +5,109 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { CertificationBadge } from "@/components/ui/certification-badge";
+import { CertificationBadge, OracleBadge } from "@/components/ui/certification-badge";
+import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
-// The /play picker: the certified-results catalogue grouped by k, each a thumbnail + cert badge.
-// Click selects (renders large on the canvas). Replaces the legacy NewTilingsCatalog/LegacyCatalog.
+// The /play picker: tilings nested by polygon class (regular / star) then by k, each a thumbnail +
+// badge. Click selects (renders large on the canvas). mode="reference" browses the oracle atlas.
 interface CatalogueListPanelProps {
 	items: CatalogueTiling[];
 	selectedKey: string | null;
 	onSelect?: (t: CatalogueTiling) => void;
+	mode?: "certified" | "reference";
 }
 
-export function CatalogueListPanel({ items, selectedKey, onSelect }: CatalogueListPanelProps) {
-	const grouped = useMemo(() => {
-		const map = new Map<number, CatalogueTiling[]>();
+// Regular before star; a class section only appears when it has tilings.
+const CLASS_ORDER = ["regular polygons", "star polygons"] as const;
+
+function titleCase(label: string): string {
+	return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+export function CatalogueListPanel({ items, selectedKey, onSelect, mode = "certified" }: CatalogueListPanelProps) {
+	// Two-level grouping: class → k. Each class keeps its k-buckets sorted ascending.
+	const byClass = useMemo(() => {
+		const map = new Map<string, Map<number, CatalogueTiling[]>>();
 		for (const t of items) {
-			if (!map.has(t.k)) map.set(t.k, []);
-			map.get(t.k)!.push(t);
+			const cls = polygonClassLabel(t.family);
+			if (!map.has(cls)) map.set(cls, new Map());
+			const kMap = map.get(cls)!;
+			if (!kMap.has(t.k)) kMap.set(t.k, []);
+			kMap.get(t.k)!.push(t);
 		}
-		return Array.from(map.entries()).sort(([a], [b]) => a - b);
+		return CLASS_ORDER.filter((c) => map.has(c)).map((cls) => {
+			const kMap = map.get(cls)!;
+			const ks = Array.from(kMap.entries())
+				.sort(([a], [b]) => a - b)
+				.map(([k, list]) => ({ k, list }));
+			const count = ks.reduce((s, g) => s + g.list.length, 0);
+			return { cls, count, ks };
+		});
 	}, [items]);
 
-	const { expanded, toggle } = useExpandableGroups(grouped, ([k]) => String(k));
+	// One flat expand-state set over every node id (class rows and their k rows).
+	const nodeIds = useMemo(() => {
+		const ids: string[] = [];
+		for (const g of byClass) {
+			ids.push(`c:${g.cls}`);
+			for (const kk of g.ks) ids.push(`k:${g.cls}:${kk.k}`);
+		}
+		return ids;
+	}, [byClass]);
+	const { expanded, toggle } = useExpandableGroups(nodeIds, (id) => id);
 
 	return (
 		<div className="flex flex-col gap-2">
 			<div className="sticky top-0 z-10 p-3 bg-surface-overlay">
-				<SectionHeading count={items.length}>Certified catalogue</SectionHeading>
+				<SectionHeading count={items.length}>{mode === "reference" ? "Reference (Oracle)" : "Certified catalogue"}</SectionHeading>
 			</div>
 			<div className="p-3 flex flex-col gap-2">
-				{grouped.map(([k, list]) => (
+				{byClass.map((g) => (
 					<SidebarSection
-						key={k}
-						flush
-						padded={false}
-						title={`k = ${k}`}
-						summary={list.length}
-						open={expanded[String(k)]}
-						onOpenChange={() => toggle(String(k))}
+						key={`c:${g.cls}`}
+						title={titleCase(g.cls)}
+						summary={g.count}
+						open={expanded[`c:${g.cls}`]}
+						onOpenChange={() => toggle(`c:${g.cls}`)}
 					>
-						<div className="grid grid-cols-2 gap-2 pt-2">
-							{list.map((t) => (
-								<button
-									key={t.canonicalKey}
-									type="button"
-									onClick={() => onSelect?.(t)}
-									title={`${t.canonicalKey} · {${t.family}}`}
-									className={cn(
-										"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden",
-										t.canonicalKey === selectedKey ? "border-accent ring-1 ring-accent/40" : "border-line",
-									)}
+						<div className="flex flex-col gap-2 pt-2">
+							{g.ks.map((kk) => (
+								<SidebarSection
+									key={`k:${g.cls}:${kk.k}`}
+									flush
+									padded={false}
+									title={`k = ${kk.k}`}
+									summary={kk.list.length}
+									open={expanded[`k:${g.cls}:${kk.k}`]}
+									onOpenChange={() => toggle(`k:${g.cls}:${kk.k}`)}
 								>
-									<div className="relative aspect-square bg-surface-raised">
-										{t.renderCell ? (
-											<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
-										) : null}
-										<div className="absolute top-1 left-1">
-											<CertificationBadge certified={t.certified} size="sm" />
-										</div>
+									<div className="grid grid-cols-2 gap-2 pt-2">
+										{kk.list.map((t) => (
+											<button
+												key={t.canonicalKey}
+												type="button"
+												onClick={() => onSelect?.(t)}
+												title={`${t.canonicalKey} · {${t.family}}`}
+												className={cn(
+													"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden",
+													t.canonicalKey === selectedKey ? "border-accent ring-1 ring-accent/40" : "border-line",
+												)}
+											>
+												<div className="relative aspect-square bg-surface-raised">
+													{t.renderCell ? (
+														<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
+													) : null}
+													<div className="absolute top-1 left-1">
+														{mode === "reference" ? <OracleBadge size="sm" /> : <CertificationBadge certified={t.certified} size="sm" />}
+													</div>
+												</div>
+											</button>
+										))}
 									</div>
-								</button>
+								</SidebarSection>
 							))}
 						</div>
 					</SidebarSection>

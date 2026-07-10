@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { CertificationBadge } from "@/components/ui/certification-badge";
+import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
@@ -43,8 +44,8 @@ export function CatalogueCard({ tiling, onClick }: CatalogueCardProps) {
 				) : null}
 			</div>
 			<div className="flex flex-col px-2.5 py-2 gap-1">
-				<p className="text-xs text-fg-secondary font-mono leading-tight">
-					k={tiling.k} · {`{${tiling.family}}`}
+				<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
+					k={tiling.k} · {polygonClassLabel(tiling.family)}
 				</p>
 				<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.canonicalKey}>
 					{tiling.canonicalKey}
