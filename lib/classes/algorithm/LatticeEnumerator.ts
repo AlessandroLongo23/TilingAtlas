@@ -15,6 +15,7 @@
  */
 import { Cyclotomic } from "../Cyclotomic";
 import { Surd, tileAreaSurd, detSurd, imSurd, reSurd, surdToCyclotomic } from "./exact/Surd";
+import { trace } from './figureTrace';
 
 /** Largest denominator a realizable lattice vector can carry (vertex/centroid differences). */
 const MAX_LATTICE_DEN = 12n;
@@ -1007,9 +1008,13 @@ export function shortVectorPool(
 		frontier = next;
 	}
 	const out = [...all.values()].filter((w) => !w.isZero());
+	if (trace.enabled) trace.node('pool', { N: ring.N, steps: maxSteps, lmax: lmaxF, dirs: dirList, monotone, vectors: out.map((w) => { const f = w.toVector(); return [f.x, f.y] as [number, number]; }) });
 	poolCache.set(cacheKey, out);
 	return out;
 }
+
+/** TEST-ONLY: clear the short-vector pool memo so a second solve in one process re-emits the pool trace. */
+export function _testOnlyClearPoolCache(): void { poolCache.clear(); }
 
 /** Integer gcd (non-negative). */
 function gcdInt(a: number, b: number): number {

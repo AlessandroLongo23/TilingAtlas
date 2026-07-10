@@ -53,3 +53,18 @@ describe('VCGenerator trace', () => {
     expect(verdicts.has('extend')).toBe(true);  // at least one interior node
   }, 180000); // long timeout: solveK2 runs a full k=2 solve
 });
+
+describe('pool + lattice trace', () => {
+  let dir: string;
+  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ftpool-')); });
+  afterEach(() => { delete process.env.TRACE_FIGURES; trace._reconfigureFromEnv(); fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('emits a non-empty pool and >=1 candidate lattice', () => {
+    process.env.TRACE_FIGURES = dir; trace._reconfigureFromEnv();
+    solveK2([3, 4, 6]);
+    const pool = fs.readFileSync(path.join(dir, 'pool.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    const lattice = fs.readFileSync(path.join(dir, 'lattice.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    expect(pool.some((p) => Array.isArray(p.vectors) && p.vectors.length > 0)).toBe(true);
+    expect(lattice.some((l) => Array.isArray(l.candidates) && l.candidates.length > 0)).toBe(true);
+  }, 180000);
+});

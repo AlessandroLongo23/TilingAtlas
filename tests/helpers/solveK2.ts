@@ -6,6 +6,7 @@ import {
 import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
 import { PeriodSolver, _testOnlyClearCandidateStageCaches, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
+import { _testOnlyClearPoolCache } from '@/classes/algorithm/LatticeEnumerator';
 
 /** Run stages 1–5 + the k=2 period solve for a regular set `ns`; return VC names + canonical cell keys. */
 export function solveK2(ns: number[]): { vcNames: string[]; cellKeys: string[] } {
@@ -15,6 +16,7 @@ export function solveK2(ns: number[]): { vcNames: string[]; cellKeys: string[] }
   // every other test file in this repo follows (CyclotomicRing.create(24)), not derived from `ns`.
   setActiveRing(CyclotomicRing.create(24));
   _testOnlyClearCandidateStageCaches(); // module-global caches must not leak across runs
+  _testOnlyClearPoolCache();
   const pg = new PolygonsGenerator(params, []);
   const vcs = new VCGenerator(pg.polygons).generateVertexConfigurations();
   const adj: Record<string, string[]> = {};

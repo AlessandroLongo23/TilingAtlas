@@ -39,6 +39,7 @@ import type { Polygon } from '../polygons/Polygon';
 import { RegularPolygon } from '../polygons/RegularPolygon';
 import { ExactStarPolygon } from '../polygons/ExactStarPolygon';
 import { Cyclotomic } from '../Cyclotomic';
+import { trace } from './figureTrace';
 import { KUniformityChecker } from './KUniformityChecker';
 import { countVertexOrbitsFast } from './KUniformityFast';
 // Experimental fast k-uniformity gate (point-group orbit count; proven equivalent to the exact gate
@@ -1205,6 +1206,15 @@ export class PeriodSolver {
 		// multi-VC k=2 seeds; vcAreaSet uses v ≥ 1 for EVERY VC, so their primitive area √3/2 is
 		// excluded by construction).
 		const result = { lattices: candidates, p0Skipped, cSkipped, feas: cFeas, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
+		if (trace.enabled) trace.node('lattice', {
+			vcSig,
+			polySizes,
+			p0Skipped, cSkipped, orbitSkipped,
+			candidates: candidates.map((c) => {
+				const a = c.basis[0].toVector(), b = c.basis[1].toVector();
+				return { key: latticeKey(c.basis[0], c.basis[1]), basis: [[a.x, a.y], [b.x, b.y]] };
+			}),
+		});
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
