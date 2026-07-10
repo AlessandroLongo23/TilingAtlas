@@ -1,0 +1,7 @@
+(3*d14,3,3*p2,3)A
+(3*d14,3,3*p2,3)A
+Count type: 1
+TES file: 01/01_3sB/4ke/eu raw 4ke 1.tes
+[0 2]
+---
+

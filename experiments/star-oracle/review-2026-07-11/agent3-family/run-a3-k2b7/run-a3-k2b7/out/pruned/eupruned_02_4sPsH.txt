@@ -1,0 +1,7 @@
+(6*d15,3*p3,4)F, (6*p5,3*d13,4)F
+(6*d15,3*p3,4)F, (6*p5,3*d13,4)F
+Count type: 2
+TES file: 02/02_4sPsH/3da 3dx/eu raw 3da 3dx 1.tes
+[0 0'][1 1'][2 2']
+---
+

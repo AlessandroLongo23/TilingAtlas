@@ -1,0 +1,53 @@
+== angle audit of candidates ==
+  E1 12*d@16.6                                sum=24 OK
+  E1 12*p@6.6.12*p@6.3                        sum=24 OK
+  E1 12*d@16.3.3                              sum=24 OK
+  E2 12*d@18.4                                sum=24 OK
+  E2 12*p@4.4.12*p@4.3.12*p@2.3               sum=24 OK
+  E2 12*d@18.12*p@2.3                         sum=24 OK
+  E2 12*d@20.3                                sum=24 OK
+  E2 12*p@4.12*d@20                           sum=24 OK
+  E3 3*d@14.3.3*p@2.3                         sum=24 OK
+  E3 3*d@14.3*p@2.3.3                         sum=24 OK
+  E4 3*d@15.3.3*p@1.3                         sum=24 OK
+  E4 3*d@15.3*p@1.3.3                         sum=24 OK
+
+== sweep vs ALL 43 Myers-2009 k=2 records (incl. out-of-ring + freeAlpha) ==
+
+E1: counting orbits = ['12*p@6.6.12*p@6.3', '12*d@16.3.3']
+  NO hits of any kind across all 43 records
+
+E2: counting orbits = ['12*p@4.4.12*p@4.3.12*p@2.3', '12*d@18.12*p@2.3']
+    [orbit-only] cand-orbit1 == fig14.orbit0
+
+E3: counting orbits = ['3*d@14.3.3*p@2.3', '3*d@14.3*p@2.3.3']
+    [orbit-only] cand-orbit1 == fig25(a=2).orbit0
+
+E4: counting orbits = ['3*d@15.3.3*p@1.3', '3*d@15.3*p@1.3.3']
+    [orbit-only] cand-orbit1 == fig25(a=1).orbit0
+
+== sweep vs Myers-2004 k=1 records (1-uniform disguise check) ==
+  E3 cand-orbit0 == k1 family fig3b at alpha=2: 3.3*p@2.3.3*d@14
+  E4 cand-orbit0 == k1 family fig3b at alpha=1: 3.3*p@1.3.3*d@15
+
+== intra-candidate: are the two counting orbits the same type? (1-uniform disguise) ==
+  E1: orbits cyclically distinct
+  E2: orbits cyclically distinct
+  E3: orbits cyclically distinct
+  E4: orbits cyclically distinct
+
+== extras.txt blocks 2,3 disposition re-check ==
+  block2 == fig29 ((4.12*π/3.6**π/2; 4.6*π/2.4.6*π/2))
+  block3 == fig42 ((4.4.6*π/6.4.12*π/3; 4.4.4.4))
+
+== E3/E4 vs fig25 detailed (the flagged preliminary check) ==
+  fig25 at a=2: ['3.3.3*p@2.3*d@14', '3.3.3.3.3.3']
+    E3.orbit0 vs fig25.orbit0: distinct
+    E3.orbit0 vs fig25.orbit1: distinct
+    E3.orbit1 vs fig25.orbit0: EQUAL
+    E3.orbit1 vs fig25.orbit1: distinct
+  fig25 at a=1: ['3.3.3*p@1.3*d@15', '3.3.3.3.3.3']
+    E4.orbit0 vs fig25.orbit0: distinct
+    E4.orbit0 vs fig25.orbit1: distinct
+    E4.orbit1 vs fig25.orbit0: EQUAL
+    E4.orbit1 vs fig25.orbit1: distinct

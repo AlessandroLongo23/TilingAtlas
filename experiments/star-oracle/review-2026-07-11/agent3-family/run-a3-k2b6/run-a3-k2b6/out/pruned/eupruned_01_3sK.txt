@@ -1,0 +1,7 @@
+(6*d14,6*p6,3)F
+(6*d14,6*p6,3)F
+Count type: 1
+TES file: 01/01_3sK/3cy/eu raw 3cy 1.tes
+(0 2)(1)
+---
+

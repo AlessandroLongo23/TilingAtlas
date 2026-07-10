@@ -1,0 +1,7 @@
+(6*d16,3*p2,4)F, (6*p4,3*d14,4)F
+(6*d16,3*p2,4)F, (6*p4,3*d14,4)F
+Count type: 2
+TES file: 02/02_4sBsG/3df 3dt/eu raw 3df 3dt 1.tes
+[0 0'][1 1'][2 2']
+---
+

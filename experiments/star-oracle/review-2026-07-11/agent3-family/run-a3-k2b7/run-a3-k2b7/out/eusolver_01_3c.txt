@@ -1,0 +1,10 @@
+Number of vertex types: 1
+(12,12,3)A
+(12,12,3)A
+TES file: 01/01_3c/3aa/eu raw 3aa 1.tes
+[0](1)
+0: [0/1(12)-1/*0(12)]x6
+1: [*0/0(3)]x3
+---
+
+

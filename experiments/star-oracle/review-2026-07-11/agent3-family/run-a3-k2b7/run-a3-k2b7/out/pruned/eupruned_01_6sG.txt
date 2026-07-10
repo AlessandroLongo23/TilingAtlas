@@ -1,0 +1,7 @@
+(6*d16,6)A, (6*p4,6,6*p4,6)S2
+(6*d16,6)A, (6*p4,6,6*p4,6)S2
+Count type: 2
+TES file: 01/01_6sG/2bm 4xs/eu raw 2bm 4xs 1.tes
+[0 0']
+---
+

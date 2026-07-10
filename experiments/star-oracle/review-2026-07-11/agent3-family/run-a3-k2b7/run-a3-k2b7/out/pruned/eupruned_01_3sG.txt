@@ -1,0 +1,7 @@
+(6*d16,6*p4,3)F
+(6*d16,6*p4,3)F
+Count type: 1
+TES file: 01/01_3sG/3dj/eu raw 3dj 1.tes
+(0 2)(1)
+---
+

@@ -1,0 +1,10 @@
+[01:16:17] build (MAXNUM=2 PALETTE=star24)
+[01:16:17] PHASE 1  solve (C++ DFS, all k<=2)
+[01:17:17]   raw blocks: 135  (60s)
+[01:17:17] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 39
+  k=2 : 68
+total kept: 107
+[01:17:17]   (0s)
+[01:17:17] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[01:17:17] DONE  total 60s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/3875973c-dc28-4ed8-b504-c76e1a9d7794/scratchpad/ctrnact-oracle/run-a3-k2b7/ctrnact-cells-k2.json

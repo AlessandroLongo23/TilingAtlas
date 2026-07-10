@@ -1,0 +1,7 @@
+(4*d15,4*p3,4)F
+(4*d15,4*p3,4)F
+Count type: 1
+TES file: 01/01_4sD/3ca/eu raw 3ca 1.tes
+(0 2)(1)
+---
+

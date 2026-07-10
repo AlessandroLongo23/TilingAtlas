@@ -1,0 +1,7 @@
+(6,6,6)S3
+(6,6,6)S3
+Count type: 1
+TES file: 01/01_6/3cn/eu raw 3cn 1.tes
+(0)
+---
+

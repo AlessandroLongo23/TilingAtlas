@@ -1,0 +1,7 @@
+(3*d13,3,3*p3,3)A
+(3*d13,3,3*p3,3)A
+Count type: 1
+TES file: 01/01_3sP/4ju/eu raw 4ju 1.tes
+[0 2]
+---
+

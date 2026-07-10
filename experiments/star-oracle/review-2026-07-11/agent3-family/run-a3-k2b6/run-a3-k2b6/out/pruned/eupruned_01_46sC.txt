@@ -1,0 +1,7 @@
+(4*d16,6)A, (4*p2,6,4,6)A
+(4*d16,6)A, (4*p2,6,4,6)A
+Count type: 2
+TES file: 01/01_46sC/2bg 4oz/eu raw 2bg 4oz 1.tes
+[0 0'][2']
+---
+

@@ -1,0 +1,9 @@
+Number of vertex types: 1
+(3,3,3,3,3,3)S6
+(3,3,3,3,3,3)S6
+TES file: 01/01_3/6b/eu raw 6b 1.tes
+(0)
+0: [0/0(3)]x3
+---
+
+

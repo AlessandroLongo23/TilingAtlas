@@ -1,0 +1,7 @@
+(4,4,4,4)S4
+(4,4,4,4)S4
+Count type: 1
+TES file: 01/01_4/4mg/eu raw 4mg 1.tes
+(0)
+---
+

@@ -942,3 +942,11 @@ BLOCK_INDEX_CAP stays 60 (census boxes + Gauss-reduce-at-push ⇒ in-box need �
 untouched, no difftest re-gate). allKeys hazard void (latticeKey basis-invariant). Riders: join-den DISCHARGED (index ≤ 28
 ≤ 60, in-run justification); L7 still open (TA). k=1/k=2 proven re-validated (11/20, 0 ⚑); k=3 re-running. Response
 appended to the workorder file. — CC
+
+**2026-07-11 — CC → TA+AL — Čtrnáct star extension (feat/ctrnact-star): k=1/k=2 in-ring reproduced; 2 candidate new tilings + 1 candidate new free-α family, triple-reviewed.**
+Engine generalized to corner classes (regular catalogs byte-identical, M2); star24 palette reproduces Myers k=1 37/37 (M3) and
+k=2 34/34 in-ring (M5); all 71 star tilings render in the Atlas reference shelf. 4 extras survived a 3-agent adversarial review
+(`experiments/results/star-adversarial-review-2026-07-11.log` + `experiments/star-oracle/review-2026-07-11/`): E1/E2 pinned
+singletons, E3/E4 = a=1,2 of ONE family proven to flex ∀α∈(0,π/3); predicted a=3 sibling FOUND after closing a palette gap.
+⚑ palette species list ≠ in-ring closed (3 k=2 entries were missing); ⚑ TA: check Myers conventions on star-star shared edges
+before any novelty claim. Author is Joseph Myers, not Brian. — CC

@@ -1,0 +1,73 @@
+# Adversarial review of the 4 candidate 2-uniform star tilings — 2026-07-11
+# Three independent review agents; full artifacts in experiments/star-oracle/review-2026-07-11/.
+# Candidates (from run-star-k2b6/extras4.txt; atlas ids in parentheses):
+#   E1 (ctrnact-star-k2-01): (12*p6,6,12*p6,3) + (12*d16,3,3)
+#   E2 (ctrnact-star-k2-04): (12*p4,4,12*p4,3,12*p2,3) + (12*d18,12*p2,3)
+#   E3 (ctrnact-star-k2-42): (3*d14,3,3*p2,3) + (3*d14,3*p2,3,3)     [a=2]
+#   E4 (ctrnact-star-k2-44): (3*d15,3,3*p1,3) + (3*d15,3*p1,3,3)     [a=1]
+
+## Agent 1 — adversarial Myers-catalog match audit: ALL FOUR SURVIVE
+- Independent re-implementation of the matching (agent1-myers-audit/sweep.py), all 43 records
+  swept INCLUDING the out-of-ring and free-alpha family records the M5 harness excluded.
+  Families solved symbolically. Zero matches for E1..E4.
+- Trust root closed at the copy level: fetched the actual 2009 PDF
+  (polyomino.org.uk/publications/2009/star-polygon-tiling-2-uniform.pdf), read all 23 pages;
+  all 43 captions match myers-2009-k2.json (third independent transcription check).
+- AUTHOR CORRECTION: Joseph Myers, not Brian Myers (Brian = Galebach). Fix before thesis use.
+- extras.txt blocks 2,3 disposition re-checked: they are exact matches of Figs 29 and 42
+  (fixed tilings, not "family members" as the M5 log said) — correctly dropped, wrong label.
+- Convention traps closed from primary sources (2004 pp.20-22): dent-fills provably not
+  counted in Myers' own 2009 figures (Figs 29/30/42); point-fills-dent explicitly contemplated
+  (covers E2); mirror merge = his reversal rule; no 1-uniform collapse possible (distinct types).
+- Residual risks: engine-side correctness (addressed by Agent 2); "new" = "not in Myers 2009"
+  only — wider literature sweep (Kepler, tilingsearch) still open.
+
+## Agent 2 — independent validity re-derivation: ALL FOUR PASS
+- Re-developed from pruned text with an independent exact ZZ[zeta_24] harness
+  (agent2-validity/verify_star_extras.py, report verify_report.txt):
+  exact ring-element area identity (not float), unreduced cone angle exactly 2*pi at every
+  vertex, torus complex chi=0 with every edge 2-sided, faces simple + consistently oriented.
+- k=2 proven two-sided: k>=2 from cyclic-word inequivalence of the two counted orbits
+  (no isometry can merge distinct types — E3/E4 words (d,3,p,3) vs (d,p,3,3) are NOT
+  rotation/reversal equivalent, checked exhaustively); k<=2 from an exhibited symmetry group
+  achieving 2 orbits (E1: order 12, E2: order 8, E3/E4: order 4 per cell).
+- Overlap-freeness: closed by the covering-degree argument (local isometry onto R^2/Lambda,
+  exact equal areas force degree 1 => embedding). Residues: the covering lemma is a paper
+  argument; face-simplicity signs verified in float (margins 0.26..1.0 vs 1e-12) — both
+  upgradeable to exact if the thesis wants zero float.
+- E2 caveat: its k=2 needs (12*p4,12*d20) treated as a non-counting fill; Agent 1's primary-
+  source read (2004 pp.21-22) covers exactly this case. E3/E4 have no fills: convention-free.
+
+## Agent 3 — alpha-family analysis + a=3 falsification run: FAMILY IS REAL (PROVEN)
+- Symbolic-flex developer (agent3-family/symbolic_flex.py): directions (t,m) at t*pi/12+m*delta,
+  positions as Laurent polynomials over ZZ[zeta_24]. For the E3/E4 gluing, closure and formal
+  period rank 2 hold IDENTICALLY in alpha — machine-verified for all alpha in (0, pi/3),
+  not just at grid values. det Lambda(alpha) = 2*sqrt(3)*(1+sin(alpha-pi/6)), never degenerate.
+  Exact area certificate in QQ(zeta_48) identically in alpha. Positive control: Myers' own
+  same-tile family passes the identical suite.
+- E1/E2 proven PINNED (flex dim 0; symbolic walk provably fails to close for delta != 0):
+  isolated tilings, not families. E1: alpha=pi/2 forced. E2: a=4, b=2 forced.
+- FALSIFICATION RUN: added species 3*3 (alpha=pi/4) to a palette copy; certs 33315/0 PASS;
+  k=2 runs at budgets 6 and 7 byte-identical (fixpoint), budget never engaged.
+  Catalog 65 -> 68 blocks, 0 lost, 3 new:
+    (3*d13,3,3*p3,3)A + (3*d13,3*p3,3,3)F      <- THE PREDICTED a=3 SIBLING. Family confirmed.
+    (3*d13,3*p3,3,3)F + (3,3,3,3,3,3)R6        <- a=3 member of Myers' own family (Fig 25).
+    (6*d15,3*p3,4)F + (6*p5,3*d13,4)F          <- a=3,b=5 of a 3*+6*+square family (b=a+2).
+  Plus 2 new k=1 blocks (a=3 members of known G&S uniform families). All develop rank-2, render.
+- ⚑ COMPLETENESS FLAG (loud, per repo doctrine): the star24 palette species list — derived as
+  the union of species appearing in Myers' in-ring records — is NOT closed under in-ring
+  instantiation of the free-alpha families. It was an incompleteness source: one missing species
+  (3*3) produced 3 missing k=2 catalog entries. Already provably productive further gaps: 6*3
+  (b=a+2 family at a=1) and 6*7 (b=a+4 family at a=3, proven free-alpha). Full in-ring closure
+  needs 3*{1..3} 4*{1..5} 6*{1..7} 8*{1..8} 12*{1..9} (+ a 24-star decision) vs the 15 species
+  present — or an exclusion argument. The M3/M5 "in-ring complete" readings must be qualified:
+  complete FOR THE 15-SPECIES PALETTE, not for the ring.
+- ⚑ Convention flag for TA: do Myers' catalog conventions admit star-star shared edges
+  (the new family's second orbit has one)? Review before any novelty claim in the thesis.
+
+## Net claim after review (thesis-ready phrasing)
+Two candidate new individual 2-uniform star tilings (E1, E2 — both proven pinned) and ONE
+candidate new one-parameter family (proven to flex for all alpha in (0, pi/3); in-ring members
+a=1,2,3 all found by the engine, a=3 after closing the palette gap) — all "new" relative to
+Myers 2009, the only known enumeration, which its author explicitly labels unchecked.
+NOT "4 new tilings": E3/E4 (+ the a=3 sibling) are members of the same family.

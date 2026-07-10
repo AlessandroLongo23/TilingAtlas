@@ -1,0 +1,7 @@
+(3*d15,8)A, (6*p5,8,3*p1,8)A, (6*d15,8)A
+(3*d15,8)A, (6*d15,8)A, (6*p5,8,3*p1,8)A
+Count type: 3
+TES file: 01/01_8sAsH/2ba 2bk 4yx/eu raw 2ba 2bk 4yx 1.tes
+[0 2'][0' 0'']
+---
+

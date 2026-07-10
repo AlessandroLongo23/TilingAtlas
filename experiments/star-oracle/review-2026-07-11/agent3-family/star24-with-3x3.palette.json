@@ -1,0 +1,30 @@
+{
+  "name": "star24",
+  "D": 24,
+  "pinnedLegacy": false,
+  "maxValence": 12,
+  "comment": "In-ring star palette: regular {3,4,6,8,12} plus the isotoxal star species appearing in Myers' k=1 (2004) and k=2 (2009) in-ring enumerations. The regular OCTAGON is required (Myers Fig-4 d,i,j use it; 135 deg = 9 units is on the 15-degree grid, so the zeta12 octagon-blind decision does not apply at D=24). alphaU = point angle in pi/12 units (15 degrees); dent angle = 24 - 24/n - alphaU units. Species list read off experiments/star-oracle/myers-2009-k2.json and the k=1 scouting notes: 3* at {1,2}, 4* at {2,3,4}, 6* at {2,4,5}, 8* at {1}, 12* at {2}. NOTE: with the octagon present the engine also enumerates the pure-regular uniform tilings over {3,4,6,8,12} (11 at k=1, incl. 4.8.8 = t1002); the oracle harness compares star-bearing output to Myers and pure-regular output to the classical counts.",
+  "tiles": [
+    { "kind": "regular", "n": 3, "name": "3", "famchar": "3" },
+    { "kind": "regular", "n": 4, "name": "4", "famchar": "4" },
+    { "kind": "regular", "n": 6, "name": "6", "famchar": "6" },
+    { "kind": "regular", "n": 8, "name": "8", "famchar": "8" },
+    { "kind": "regular", "n": 12, "name": "12", "famchar": "c" },
+    { "kind": "star", "n": 3, "alphaU": 1, "name": "3*1", "famchar": "sA" },
+    { "kind": "star", "n": 3, "alphaU": 2, "name": "3*2", "famchar": "sB" },
+    { "kind": "star", "n": 3, "alphaU": 3, "name": "3*3", "famchar": "sP" },
+    { "kind": "star", "n": 4, "alphaU": 2, "name": "4*2", "famchar": "sC" },
+    { "kind": "star", "n": 4, "alphaU": 3, "name": "4*3", "famchar": "sD" },
+    { "kind": "star", "n": 4, "alphaU": 4, "name": "4*4", "famchar": "sE" },
+    { "kind": "star", "n": 6, "alphaU": 2, "name": "6*2", "famchar": "sF" },
+    { "kind": "star", "n": 6, "alphaU": 4, "name": "6*4", "famchar": "sG" },
+    { "kind": "star", "n": 6, "alphaU": 5, "name": "6*5", "famchar": "sH" },
+    { "kind": "star", "n": 6, "alphaU": 6, "name": "6*6", "famchar": "sK" },
+    { "kind": "star", "n": 8, "alphaU": 1, "name": "8*1", "famchar": "sI" },
+    { "kind": "star", "n": 8, "alphaU": 3, "name": "8*3", "famchar": "sL" },
+    { "kind": "star", "n": 8, "alphaU": 6, "name": "8*6", "famchar": "sM" },
+    { "kind": "star", "n": 12, "alphaU": 2, "name": "12*2", "famchar": "sJ" },
+    { "kind": "star", "n": 12, "alphaU": 4, "name": "12*4", "famchar": "sN" },
+    { "kind": "star", "n": 12, "alphaU": 6, "name": "12*6", "famchar": "sO" }
+  ]
+}

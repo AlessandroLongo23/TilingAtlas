@@ -1,0 +1,7 @@
+(4*d14,4*p4,4)F
+(4*d14,4*p4,4)F
+Count type: 1
+TES file: 01/01_4sE/3bx/eu raw 3bx 1.tes
+(0 2)(1)
+---
+

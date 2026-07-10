@@ -1,0 +1,188 @@
+====================================================================================================
+CANDIDATE E1: (12*d16,6)A, (12*p6,6,12*p6,3)A, (12*d16,3,3)A
+conway: (0 1')[0' 0''](2'')
+[quotient] 9 stubs; glue is a total involution (1 self-glued stubs = C2-folded edges): OK
+[lattice] rank 2. T1=(2, 0, 3, 0, 2, 0, 0, 0)  T2=(-4, 0, -3, 0, 2, 0, 3, 0)
+[lattice] T1=5.598076211+3.232050808i  T2=-5.598076211+3.232050808i  det=36.186533479
+[faces] 12 developed face instances traced; every walk closed; single species per face: OK
+[cell] F = 9 faces / cell: {'{6}': 2, '12*{p6/d16}': 1, '{3}': 6}
+[area-EXACT] sum(4*A_f) coeffs = (72, 0, 84, 0, 0, 0, -42, 0)
+[area-EXACT] 4*|det|  coeffs = (72, 0, 84, 0, 0, 0, -42, 0)
+[area-EXACT] sum(face areas) == |det| exactly in ZZ[zeta24]: OK   (float: 36.186533479 vs 36.186533479)
+[orient] all 9 cell faces consistently CW oriented (min |4A| = 1.732051)
+[complex] V=18 E=27 F=9  V-E+F=0 OK (torus)
+[edges] every edge has exactly 2 sides with opposite orientations: OK
+[angles] all 18 cell vertices have cone angle EXACTLY 24 units (first-closure, unreduced): OK
+[vertices/cell] 18 total: 12 counted (>=3 corners), 6 dent-fills (=2 corners, each = 1 dent + 1 convex)
+    (12*d16,3,3)                           x3   COUNTED
+    (12*p6,3,12*p6,6)                      x1   COUNTED
+    (12*p6,6,12*p6,3)                      x3   COUNTED
+    (3,3,12*d16)                           x3   COUNTED
+    (6,12*p6,3,12*p6)                      x2   COUNTED
+    (12*d16,6)                             x4   dent-fill
+    (6,12*d16)                             x2   dent-fill
+[claim-match] every claimed counted orbit word realized in the developed cell: OK
+[word-equivalence] counted orbit words, pairwise cyclic-rotation+reversal comparison:
+    W1 = ('12*p6', '6', '12*p6', '3') : achiral (reversal is a rotation of the word)
+    W2 = ('12*d16', '3', '3') : achiral (reversal is a rotation of the word)
+    W1 vs W2 equivalent under rotation+reversal: False (=> NO isometry can identify them)
+[accounting] tile-corner incidence identities:
+    corner role 12*d16   demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 12*p6    demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 3        demanded at vertices:  18   supplied by faces:  18  OK
+    corner role 6        demanded at vertices:  12   supplied by faces:  12  OK
+[accounting] closure: OK
+[simplicity] species 12*{p6/d16}    min non-adjacent edge separation = 1.000000  OK (simple)
+[simplicity] species {3}            min non-adjacent edge separation = inf  OK (simple)
+[simplicity] species {6}            min non-adjacent edge separation = 1.000000  OK (simple)
+[symmetry] |Gamma/Lambda| = 12  (6 orientation-preserving, 6 orientation-reversing)
+[symmetry] rotation orders present: [1, 2, 3, 6]
+[symmetry] no pure translation outside Lambda: develop's period lattice is the full translation group: OK
+[k-check] orbits of COUNTED vertices under full symmetry group: 2
+    orbit size  6, word (6,12*p6,3,12*p6)
+    orbit size  6, word (12*d16,3,3)
+[k-check] dent-fill vertex orbits (not counted, Myers convention): 1
+[k-check] k = 2  => PASS (2-uniform)
+
+====================================================================================================
+CANDIDATE E2: (12*d18,4)A, (12*p4,4,12*p4,3,12*p2,3)A, (12*d18,12*p2,3)F, (12*d20,3)F, (12*p4,12*d20)A
+conway: (0 1')[0' 0''](4' 1''')(1'' 0@4)(2'' 0''')
+[quotient] 20 stubs; glue is a total involution (0 self-glued stubs = C2-folded edges): OK
+[lattice] rank 2. T1=(1, 0, 2, 0, 2, 0, 1, 0)  T2=(-3, 0, -2, 0, 2, 0, 3, 0)
+[lattice] T1=3.732050808+3.732050808i  T2=-3.732050808+3.732050808i  det=27.856406461
+[faces] 19 developed face instances traced; every walk closed; single species per face: OK
+[cell] F = 12 faces / cell: {'{4}': 2, '12*{p4/d18}': 1, '{3}': 8, '12*{p2/d20}': 1}
+[area-EXACT] sum(4*A_f) coeffs = (56, 0, 64, 0, 0, 0, -32, 0)
+[area-EXACT] 4*|det|  coeffs = (56, 0, 64, 0, 0, 0, -32, 0)
+[area-EXACT] sum(face areas) == |det| exactly in ZZ[zeta24]: OK   (float: 27.856406461 vs 27.856406461)
+[orient] all 12 cell faces consistently CW oriented (min |4A| = 1.732051)
+[complex] V=28 E=40 F=12  V-E+F=0 OK (torus)
+[edges] every edge has exactly 2 sides with opposite orientations: OK
+[angles] all 28 cell vertices have cone angle EXACTLY 24 units (first-closure, unreduced): OK
+[vertices/cell] 28 total: 12 counted (>=3 corners), 16 dent-fills (=2 corners, each = 1 dent + 1 convex)
+    (12*d18,12*p2,3)                       x2   COUNTED
+    (12*d18,3,12*p2)                       x2   COUNTED
+    (12*p2,3,12*d18)                       x2   COUNTED
+    (12*p4,3,12*p2,3,12*p4,4)              x1   COUNTED
+    (12*p4,4,12*p4,3,12*p2,3)              x1   COUNTED
+    (3,12*p2,12*d18)                       x2   COUNTED
+    (3,12*p2,3,12*p4,4,12*p4)              x1   COUNTED
+    (4,12*p4,3,12*p2,3,12*p4)              x1   COUNTED
+    (12*d18,4)                             x2   dent-fill
+    (12*d20,12*p4)                         x2   dent-fill
+    (12*d20,3)                             x4   dent-fill
+    (12*p4,12*d20)                         x2   dent-fill
+    (3,12*d20)                             x4   dent-fill
+    (4,12*d18)                             x2   dent-fill
+[claim-match] every claimed counted orbit word realized in the developed cell: OK
+[word-equivalence] counted orbit words, pairwise cyclic-rotation+reversal comparison:
+    W1 = ('12*p4', '4', '12*p4', '3', '12*p2', '3') : achiral (reversal is a rotation of the word)
+    W2 = ('12*d18', '12*p2', '3') : CHIRAL word (reversal is NOT a rotation)
+    W1 vs W2 equivalent under rotation+reversal: False (=> NO isometry can identify them)
+[accounting] tile-corner incidence identities:
+    corner role 12*d18   demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 12*d20   demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 12*p2    demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 12*p4    demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 3        demanded at vertices:  24   supplied by faces:  24  OK
+    corner role 4        demanded at vertices:   8   supplied by faces:   8  OK
+[accounting] closure: OK
+[simplicity] species 12*{p2/d20}    min non-adjacent edge separation = 0.500000  OK (simple)
+[simplicity] species 12*{p4/d18}    min non-adjacent edge separation = 0.866025  OK (simple)
+[simplicity] species {3}            min non-adjacent edge separation = inf  OK (simple)
+[simplicity] species {4}            min non-adjacent edge separation = 1.000000  OK (simple)
+[symmetry] |Gamma/Lambda| = 8  (4 orientation-preserving, 4 orientation-reversing)
+[symmetry] rotation orders present: [1, 2, 4]
+[symmetry] no pure translation outside Lambda: develop's period lattice is the full translation group: OK
+[k-check] orbits of COUNTED vertices under full symmetry group: 2
+    orbit size  4, word (4,12*p4,3,12*p2,3,12*p4)
+    orbit size  8, word (12*d18,12*p2,3)
+[k-check] dent-fill vertex orbits (not counted, Myers convention): 3
+[k-check] k = 2  => PASS (2-uniform)
+
+====================================================================================================
+CANDIDATE E3: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F
+conway: (0 2')[2 0'](1')(3')
+[quotient] 12 stubs; glue is a total involution (4 self-glued stubs = C2-folded edges): OK
+[lattice] rank 2. T1=(0, 0, 1, 0, -1, 0, -1, 0)  T2=(2, 0, 1, 0, -1, 0, 1, 0)
+[lattice] T1=0.366025404-1.366025404i  T2=2.366025404+0.633974596i  det=3.464101615
+[faces] 10 developed face instances traced; every walk closed; single species per face: OK
+[cell] F = 6 faces / cell: {'{3}': 4, '3*{p2/d14}': 2}
+[area-EXACT] sum(4*A_f) coeffs = (0, 0, 16, 0, 0, 0, -8, 0)
+[area-EXACT] 4*|det|  coeffs = (0, 0, 16, 0, 0, 0, -8, 0)
+[area-EXACT] sum(face areas) == |det| exactly in ZZ[zeta24]: OK   (float: 3.464101615 vs 3.464101615)
+[orient] all 6 cell faces consistently CW oriented (min |4A| = 1.732051)
+[complex] V=6 E=12 F=6  V-E+F=0 OK (torus)
+[edges] every edge has exactly 2 sides with opposite orientations: OK
+[angles] all 6 cell vertices have cone angle EXACTLY 24 units (first-closure, unreduced): OK
+[vertices/cell] 6 total: 6 counted (>=3 corners), 0 dent-fills (=2 corners, each = 1 dent + 1 convex)
+    (3,3,3*d14,3*p2)                       x1   COUNTED
+    (3,3,3*p2,3*d14)                       x1   COUNTED
+    (3,3*d14,3,3*p2)                       x1   COUNTED
+    (3*d14,3,3*p2,3)                       x1   COUNTED
+    (3*d14,3*p2,3,3)                       x1   COUNTED
+    (3*p2,3*d14,3,3)                       x1   COUNTED
+[claim-match] every claimed counted orbit word realized in the developed cell: OK
+[word-equivalence] counted orbit words, pairwise cyclic-rotation+reversal comparison:
+    W1 = ('3*d14', '3', '3*p2', '3') : achiral (reversal is a rotation of the word)
+    W2 = ('3*d14', '3*p2', '3', '3') : CHIRAL word (reversal is NOT a rotation)
+    W1 vs W2 equivalent under rotation+reversal: False (=> NO isometry can identify them)
+[accounting] tile-corner incidence identities:
+    corner role 3        demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 3*d14    demanded at vertices:   6   supplied by faces:   6  OK
+    corner role 3*p2     demanded at vertices:   6   supplied by faces:   6  OK
+[accounting] closure: OK
+[simplicity] species 3*{p2/d14}     min non-adjacent edge separation = 0.500000  OK (simple)
+[simplicity] species {3}            min non-adjacent edge separation = inf  OK (simple)
+[symmetry] |Gamma/Lambda| = 4  (2 orientation-preserving, 2 orientation-reversing)
+[symmetry] rotation orders present: [1, 2]
+[symmetry] no pure translation outside Lambda: develop's period lattice is the full translation group: OK
+[k-check] orbits of COUNTED vertices under full symmetry group: 2
+    orbit size  2, word (3*d14,3,3*p2,3)
+    orbit size  4, word (3,3,3*d14,3*p2)
+[k-check] dent-fill vertex orbits (not counted, Myers convention): 0
+[k-check] k = 2  => PASS (2-uniform)
+
+====================================================================================================
+CANDIDATE E4: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F
+conway: (0 2')[2 0'](1')(3')
+[quotient] 12 stubs; glue is a total involution (4 self-glued stubs = C2-folded edges): OK
+[lattice] rank 2. T1=(0, 0, 0, 1, -1, 0, 0, -1)  T2=(2, 0, 0, 1, -1, 0, 0, 1)
+[lattice] T1=0.465925826-1.124844449i  T2=1.948287736+0.807007204i  det=2.567526143
+[faces] 10 developed face instances traced; every walk closed; single species per face: OK
+[cell] F = 6 faces / cell: {'{3}': 4, '3*{p1/d15}': 2}
+[area-EXACT] sum(4*A_f) coeffs = (0, -4, 16, -4, 0, 8, -8, -4)
+[area-EXACT] 4*|det|  coeffs = (0, -4, 16, -4, 0, 8, -8, -4)
+[area-EXACT] sum(face areas) == |det| exactly in ZZ[zeta24]: OK   (float: 2.567526143 vs 2.567526143)
+[orient] all 6 cell faces consistently CW oriented (min |4A| = 1.670951)
+[complex] V=6 E=12 F=6  V-E+F=0 OK (torus)
+[edges] every edge has exactly 2 sides with opposite orientations: OK
+[angles] all 6 cell vertices have cone angle EXACTLY 24 units (first-closure, unreduced): OK
+[vertices/cell] 6 total: 6 counted (>=3 corners), 0 dent-fills (=2 corners, each = 1 dent + 1 convex)
+    (3,3,3*d15,3*p1)                       x1   COUNTED
+    (3,3,3*p1,3*d15)                       x1   COUNTED
+    (3,3*d15,3,3*p1)                       x1   COUNTED
+    (3*d15,3,3*p1,3)                       x1   COUNTED
+    (3*d15,3*p1,3,3)                       x1   COUNTED
+    (3*p1,3*d15,3,3)                       x1   COUNTED
+[claim-match] every claimed counted orbit word realized in the developed cell: OK
+[word-equivalence] counted orbit words, pairwise cyclic-rotation+reversal comparison:
+    W1 = ('3*d15', '3', '3*p1', '3') : achiral (reversal is a rotation of the word)
+    W2 = ('3*d15', '3*p1', '3', '3') : CHIRAL word (reversal is NOT a rotation)
+    W1 vs W2 equivalent under rotation+reversal: False (=> NO isometry can identify them)
+[accounting] tile-corner incidence identities:
+    corner role 3        demanded at vertices:  12   supplied by faces:  12  OK
+    corner role 3*d15    demanded at vertices:   6   supplied by faces:   6  OK
+    corner role 3*p1     demanded at vertices:   6   supplied by faces:   6  OK
+[accounting] closure: OK
+[simplicity] species 3*{p1/d15}     min non-adjacent edge separation = 0.258819  OK (simple)
+[simplicity] species {3}            min non-adjacent edge separation = inf  OK (simple)
+[symmetry] |Gamma/Lambda| = 4  (2 orientation-preserving, 2 orientation-reversing)
+[symmetry] rotation orders present: [1, 2]
+[symmetry] no pure translation outside Lambda: develop's period lattice is the full translation group: OK
+[k-check] orbits of COUNTED vertices under full symmetry group: 2
+    orbit size  2, word (3*d15,3,3*p1,3)
+    orbit size  4, word (3,3,3*d15,3*p1)
+[k-check] dent-fill vertex orbits (not counted, Myers convention): 0
+[k-check] k = 2  => PASS (2-uniform)
+

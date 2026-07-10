@@ -1,0 +1,14 @@
+(4,3,4,3,3)A
+(4,3,4,3,3)A
+Count type: 1
+TES file: 01/01_34/5nm/eu raw 5nm 1.tes
+(0 1)(4)
+---
+
+(4,4,3,3,3)A
+(4,4,3,3,3)A
+Count type: 1
+TES file: 01/01_34/5no/eu raw 5no 1.tes
+[0](1)(3)
+---
+

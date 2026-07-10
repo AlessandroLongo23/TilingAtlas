@@ -1,0 +1,35 @@
+== star-a3 falsification run — Sat Jul 11 00:59:52 CEST 2026 ==
+[00:59:52] copied ctrnact-oracle to scratchpad
+[01:11:53] palette edited: added 3*3 (alphaU=3, famchar sP) to copy of star24.json
+[01:11:53] starting: make PALETTE=star24 MAXNUM=2 (regenerates tables via gen_alphabet.py --certify, then builds solver/pruner/develop). ETA: minutes (prior alphabet 5739 entries built ~4s; certify is the slow part).
+[01:12:10] build OK: 6663 entries (was 5739), certs: 33315 PASS / 0
+0 FAIL
+[01:12:21] launching k=2 run, EU_NCBUDGET=6 -> run-a3-k2b6 (prior 15-species run took ~minutes; ETA <10 min)
+[01:16:16] b6 run DONE in 68s: k=1 -> 39 (was 37), k=2 -> 68 (was 65). New k=1 families: 3sP, 6sP.
+[01:16:16] launching EU_NCBUDGET=7 fixpoint run -> run-a3-k2b7 (ETA ~1-2 min)
+[01:20] b7 DONE (60s): pruned catalogs byte-identical to b6 (diff -r clean) => budget fixpoint at 6 vs 7.
+        Budget NEVER engaged in either run (empty solver-stderr) => complete run outright.
+[01:21] k=2 DIFF vs original run-star-k2b6/pruned/eupruned_02.txt: 65 -> 68 blocks, 0 lost, 3 NEW:
+        N1: (3*d13,3,3*p3,3)A, (3*d13,3*p3,3,3)F        <= PREDICTED E3/E4 sibling at a=3. FOUND.
+            graph line (0 2')[2 0'](1')(3') identical to the a=1/a=2 blocks.
+        N2: (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6          <= a=3 member of MYERS' OWN family (same tiles).
+        N3: (6*d15,3*p3,4)F, (6*p5,3*d13,4)F            <= a=3,b=5 member of a 3-star+6-star+square family
+            (b=a+2); its a=2,b=4 member (6*d16,3*p2,4)+(6*p4,3*d14,4) was already in the catalog; the
+            a=1,b=3 member needs 6*3 which is STILL absent from the palette.
+        k=1 side effect: 2 new blocks, both a=3 members of KNOWN free-alpha uniform families:
+        (3*d13,3,3*p3,3)A  [= G&S 3.3*a.3.3**a, present at a=1,2 as k1 blocks 029/030]
+        (3*d13,3*p3,6)F    [= hexagon family, present at a=1,2 as k1 blocks 018/019]
+        Next: Task A symbolic closure analysis (exact development over Z[zeta6][e^{i alpha}]).
+[01:4x] TASK A complete (symbolic_flex.py, exact arithmetic end to end):
+        E3/E4/N1 = ONE free-alpha family, PROVEN for all alpha in (0,pi/3):
+        flex dim 1; formal development closes over Z[zeta24][x^\pm], x=e^{i delta};
+        period lattice formally rank 2 (all periods in ZT1+ZT2); V=6 E=12 F=6 (Euler 0);
+        det Lambda(alpha) = 2*sqrt(3)*(1+sin(alpha-pi/6)) > 0 on the closed range;
+        area certificate 4*A_tri + 2*A_star(alpha) == det, exact in Q(zeta48).
+        Same checks pass for Myers' own family (positive control), the k=1 G&S uniform
+        family, the 6-star+square family (b=a+2), and the 6-star+triangle family (b=a+4).
+        E1: flex dim 0 (rows [-1],[2],[-1]) => alpha PINNED at pi/2 (b=6 from both orbits).
+        E2: flex dim 0; 2a+b=10 and b-a=-2 => a=4,b=2 unique. Both confirmed mechanically
+        (symbolic vertex walk fails to close for delta != 0).
+[01:4x] Renders: all 5 new a=3 blocks develop exactly (rank-2) and render, 0 errors (svg-a3/).
+        DONE. Report to parent.

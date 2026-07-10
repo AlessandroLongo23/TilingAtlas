@@ -1,0 +1,14 @@
+(4*d16,3,3)A, (4*d16,4*p2,3,4*p2)A
+(4*d16,3,3)A, (4*d16,4*p2,3,4*p2)A
+Count type: 2
+TES file: 02/02_3sC/3cb 4nz/eu raw 3cb 4nz 1.tes
+(0 2')(2)(0')
+---
+
+(4*d16,3,3)A, (4*p2,3,4*p2,3,4*p2,3,4*p2,3)S4
+(4*d16,3,3)A, (4*p2,3,4*p2,3,4*p2,3,4*p2,3)S4
+Count type: 2
+TES file: 02/02_3sC/3cb 8ok/eu raw 3cb 8ok 1.tes
+[0 0'](2)
+---
+

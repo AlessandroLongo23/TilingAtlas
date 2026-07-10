@@ -1,0 +1,9 @@
+Number of vertex types: 1
+(4,4,4,4)S4
+(4,4,4,4)S4
+TES file: 01/01_4/4mg/eu raw 4mg 1.tes
+(0)
+0: [0/0(4)]x4
+---
+
+

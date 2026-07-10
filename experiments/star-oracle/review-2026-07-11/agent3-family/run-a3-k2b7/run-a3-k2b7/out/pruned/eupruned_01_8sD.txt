@@ -1,0 +1,7 @@
+(4*d15,8)A, (4*p3,8,4*p3,8)S2
+(4*d15,8)A, (4*p3,8,4*p3,8)S2
+Count type: 2
+TES file: 01/01_8sD/2be 4qf/eu raw 2be 4qf 1.tes
+[0 0']
+---
+

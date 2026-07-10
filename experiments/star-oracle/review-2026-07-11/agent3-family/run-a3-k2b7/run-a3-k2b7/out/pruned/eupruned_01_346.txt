@@ -1,0 +1,7 @@
+(6,4,3,4)A
+(6,4,3,4)A
+Count type: 1
+TES file: 01/01_346/4rw/eu raw 4rw 1.tes
+[0][2]
+---
+

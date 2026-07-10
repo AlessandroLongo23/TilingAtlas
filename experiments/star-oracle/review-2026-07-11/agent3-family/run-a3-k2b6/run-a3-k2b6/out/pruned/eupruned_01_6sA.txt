@@ -1,0 +1,7 @@
+(3*d15,3*p1,6)F
+(3*d15,3*p1,6)F
+Count type: 1
+TES file: 01/01_6sA/3br/eu raw 3br 1.tes
+(0 2)(1)
+---
+

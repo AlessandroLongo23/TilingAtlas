@@ -1,0 +1,13 @@
+
+=== 3+6-star+triangle family a=1,b=5 ===
+    (6*p5,3*d15,3)F, (6*d15,3*p1,3,3)F
+    star species: ['3*1', '6*5']; vertex delta-coefficient rows: [[-1, 1], [1, -1]]
+    flex space dim = 1, basis [(1, 1)]
+    formal development closed: 42 frames, 32 period hits, formal period-lattice rank = 2
+    all 32 periods in ZZ*T1+ZZ*T2 formally: YES
+    faces per fundamental domain: 3 x6, 3*1 x2, 6*5 x1
+    quotient counts: V=12 E=21 F=9  (Euler on torus: V-E+F = 0, expect 0)
+    area certificate: sum(tile areas) == |det(T1,T2)| identically? YES (area-det==0: True, area+det==0: False)
+    det(delta) = 4*sqrt(3)*sin(delta + pi/4) - 6*cos(delta + pi/4) + 11*sqrt(3)/2
+    valid delta interval: (-pi/12, pi/4)  [alpha over full species range]
+    |det| on closed interval: min sampled 7.794229, max|det'| 9.1652, grid step 0.000262 => rigorous min > 7.791829 (NONVANISHING: rank 2 on the whole interval)

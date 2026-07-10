@@ -1,0 +1,7 @@
+(3*d14,12)A, (3*p2,12,3*p2,12)S2
+(3*d14,12)A, (3*p2,12,3*p2,12)S2
+Count type: 2
+TES file: 01/01_csB/2ay 4kv/eu raw 2ay 4kv 1.tes
+[0 0']
+---
+

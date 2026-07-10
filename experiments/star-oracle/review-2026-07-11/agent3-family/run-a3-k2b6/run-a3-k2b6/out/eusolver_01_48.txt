@@ -1,0 +1,10 @@
+Number of vertex types: 1
+(8,8,4)A
+(8,8,4)A
+TES file: 01/01_48/3ef/eu raw 3ef 1.tes
+[0](1)
+0: [0/1(8)-1/*0(8)]x4
+1: [*0/0(4)]x4
+---
+
+
