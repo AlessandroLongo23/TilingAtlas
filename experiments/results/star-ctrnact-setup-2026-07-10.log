@@ -58,3 +58,16 @@ gate = 44/44 exact reproduction of mainlist + pruner_tables.inc + certificates p
         4.8.8 = t1002) = 37/37, 0 extras, 0 hard fails.
         Also: flat-array table emission (giant brace initializers put clang into
         17+ CPU-min territory; flat arrays build in 3.8s, regular gate re-verified).
+
+[00:3x 07-11] M4 GATE PASS — exact zeta24 development + SVG renders, 37/37
+        render_cells.py: development in exact ZZ[zeta_24] (rank-8 int vectors,
+        Phi_24: zeta^8 = zeta^4 - 1), 24 directions, per-corner signed angle steps;
+        float only for Lagrange-Gauss reduction and the SVG viewport. All 37 k=1
+        solutions developed (rank-2 lattice found for every one; realizability
+        theorem holding empirically for non-convex tiles), faces traced closed,
+        0 errors. SVGs in tools/ctrnact-oracle/run-star-k1/svg/ (+ png previews).
+        Visual spot-check vs Myers' figures: 4(h) hexagram/hexagon, 4(j)
+        octagon/4-star, 3(a) dent-at-vertex 8-star: all match.
+        Deferred (logged): exact-integer area certificate (Sum face areas ==
+        |det Lambda| in the ring via x - conj(x) coordinates); M3's symbolic
+        per-tiling gate already carries correctness.
