@@ -30,6 +30,7 @@ import {
 	EquilateralPolygon,
 	GenericPolygon,
 	Cyclotomic,
+	CyclotomicRing,
 	getActiveRing,
 	setActiveRing,
 } from "@/classes";
@@ -111,7 +112,8 @@ const MAX_K = 2;
 const parameters: GeneratorParameters = {
 	[PolygonType.REGULAR]: {
 		// k-uniform gate set: the regular polygons that tile edge-to-edge → N = 24.
-		ns: [3, 4, 6, 8, 12],
+		// FIG_NS overrides the set for the figure-tracing probe ONLY (e.g. FIG_NS=3,4,6). Unset ⇒ identical.
+		ns: process.env.FIG_NS ? process.env.FIG_NS.split(',').map((s) => Number(s.trim())) : [3, 4, 6, 8, 12],
 	},
 };
 
@@ -119,7 +121,9 @@ main();
 
 function main() {
 	// One shared cyclotomic ring per run, derived from the enabled polygons (spec §5).
-	setActiveRing(computeRing(parameters));
+	// The PeriodSolver / Surd lattice enum operates in ℤ[ζ₂₄] regardless of the tile set (NOTES §49):
+	// a reduced FIG_NS set without the octagon would otherwise pick N=12 and crash candidateLattices.
+	setActiveRing(process.env.FIG_NS ? CyclotomicRing.create(24) : computeRing(parameters));
 
 	const additionalPolygons: PolygonSignature[] = [];
 
