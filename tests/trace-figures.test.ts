@@ -26,3 +26,34 @@ describe('loadTrace', () => {
     expect(loadTrace(EX, 'seed')).toEqual([]);
   });
 });
+
+// append to tests/trace-figures.test.ts
+import { regularPolygonAtCorner, bboxOfPts, fitInto } from '../figures/trace/geometry';
+import type { V2 } from '../figures/ir/types';
+
+describe('geometry', () => {
+  it('regularPolygonAtCorner: unit triangle at corner angle 0 has 3 verts, corner at origin', () => {
+    const tri = regularPolygonAtCorner(3, 0);
+    expect(tri.length).toBe(3);
+    expect(tri[0].x).toBeCloseTo(0, 9);
+    expect(tri[0].y).toBeCloseTo(0, 9);
+    expect(Math.hypot(tri[1].x - tri[0].x, tri[1].y - tri[0].y)).toBeCloseTo(1, 9);
+    expect(Math.atan2(tri[2].y - tri[0].y, tri[2].x - tri[0].x)).toBeCloseTo(Math.PI / 3, 9);
+  });
+
+  it('regularPolygonAtCorner: square has 4 verts, interior angle 90', () => {
+    const sq = regularPolygonAtCorner(4, 0);
+    expect(sq.length).toBe(4);
+    expect(Math.atan2(sq[3].y - sq[0].y, sq[3].x - sq[0].x)).toBeCloseTo(Math.PI / 2, 9);
+  });
+
+  it('fitInto maps a bbox into the target box preserving aspect (centered)', () => {
+    const pts: V2[] = [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 1 }, { x: 0, y: 1 }];
+    const box = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const t = fitInto(bboxOfPts(pts), box, 1);
+    const out = pts.map(t);
+    for (const p of out) { expect(p.x).toBeGreaterThanOrEqual(0); expect(p.x).toBeLessThanOrEqual(10); expect(p.y).toBeGreaterThanOrEqual(0); expect(p.y).toBeLessThanOrEqual(10); }
+    expect(out[1].x - out[0].x).toBeCloseTo(8, 6);
+    expect(out[2].y - out[1].y).toBeCloseTo(4, 6);
+  });
+});
