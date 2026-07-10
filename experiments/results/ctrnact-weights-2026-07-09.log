@@ -1,0 +1,4 @@
+W(≤8) built: 1,086,913 vectors (incl. 0), table-checked ≤7; MIM covers wt ≤ 16
+██ Čtrnáct reference — EXACT reduced-basis weight/(w/v) ratios, k=1..8 (⚑ octagon-blind ζ₁₂ reference) 2026-07-09T13:06:31.146Z
+metric r = max(wt(u)/|u|, wt(v)/|v|) over the gauss-reduced period basis; same as eff-pruning-{ratios,galebach}.
+

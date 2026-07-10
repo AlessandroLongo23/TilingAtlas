@@ -1,0 +1,92 @@
+[20:25:09] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[20:25:09] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k2 (k=2, s=6) — THE WEIGHT-6 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[20:25:09] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[20:25:09] bounds: 24k·a_max = 537.42, pair-det cap = 36.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[20:25:09]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(1)| matches the TA exact table (25)
+[20:25:09]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(2)| matches the TA exact table (289)
+[20:25:09]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(3)| matches the TA exact table (2,089)
+[20:25:09] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[20:25:09]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(1)| matches the TA exact table (25)
+[20:25:09]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(2)| matches the TA exact table (289)
+[20:25:09]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(3)| matches the TA exact table (2,089)
+[20:25:09]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(4)| matches the TA exact table (10,825)
+[20:25:09]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[20:25:09]   ✓ |W(5)| matches the TA exact table (43,777)
+[20:25:09]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.1s
+[20:25:09]   ✓ |W(6)| matches the TA exact table (146,521)
+[20:25:09] W(6) enumerated: 146,520 nonzero values (146,521 incl. 0) in 0.1s
+[20:25:09] area ladder (cap 36.00): 4,756 exact tile-sum values, min 0.4330; sharp (≤48 tiles) subset 4,756
+[20:25:09] PAIR stage: 146,520 nonzero pool vectors → 1.07e+10 unordered pairs; det cap 36.00 (= min(s²=36, 24k·a_max=537.4)); ladder |exact| = 4,756
+[20:25:45]   pairs: 7.37e+8/1.07e+10 (6.9%), 2.07e+7/s, ETA 8.1min | inRange 6.67e+8, bitmapHits 4.50e+6, exactAdm 4.50e+6, distinct 941,215
+[20:26:22]   pairs: 1.59e+9/1.07e+10 (14.8%), 2.19e+7/s, ETA 7.0min | inRange 1.45e+9, bitmapHits 8.96e+6, exactAdm 8.96e+6, distinct 1,420,838
+[20:26:55]   pairs: 2.53e+9/1.07e+10 (23.6%), 2.40e+7/s, ETA 5.7min | inRange 2.33e+9, bitmapHits 1.19e+7, exactAdm 1.19e+7, distinct 2,415,216
+[20:27:26]   pairs: 3.42e+9/1.07e+10 (31.9%), 2.49e+7/s, ETA 4.9min | inRange 3.15e+9, bitmapHits 1.44e+7, exactAdm 1.44e+7, distinct 3,012,240
+[20:27:58]   pairs: 4.26e+9/1.07e+10 (39.7%), 2.53e+7/s, ETA 4.3min | inRange 3.93e+9, bitmapHits 1.67e+7, exactAdm 1.67e+7, distinct 3,372,969
+[20:28:30]   pairs: 5.16e+9/1.07e+10 (48.1%), 2.57e+7/s, ETA 3.6min | inRange 4.77e+9, bitmapHits 1.94e+7, exactAdm 1.94e+7, distinct 3,460,841
+[20:29:01]   pairs: 5.79e+9/1.07e+10 (54.0%), 2.50e+7/s, ETA 3.3min | inRange 5.38e+9, bitmapHits 2.15e+7, exactAdm 2.15e+7, distinct 3,858,433
+
+<--- Last few GCs --->
+
+[98203:0x71680c000]   263945 ms: Scavenge (interleaved) 4090.3 (4095.5) -> 4086.4 (4095.8) MB, pooled: 0 MB, 1.04 / 0.00 ms  (average mu = 0.304, current mu = 0.307) allocation failure; 
+[98203:0x71680c000]   264927 ms: Mark-Compact (reduce) 4086.5 (4095.8) -> 4086.4 (4089.0) MB, pooled: 0 MB, 893.62 / 0.00 ms  (+ 1.8 ms in 1 steps since start of marking, biggest step 1.8 ms, walltime since start of marking 898 ms) (average mu = 0.266, cu
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x1028ec83c node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/usr/local/bin/node]
+ 2: 0x102aec620 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/local/bin/node]
+ 3: 0x102d4ba1c v8::internal::Heap::stack() [/usr/local/bin/node]
+ 4: 0x102d4edf0 v8::internal::Heap::HasLowYoungGenerationAllocationRate() [/usr/local/bin/node]
+ 5: 0x102d5ffe4 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags)::$_1::operator()() const [/usr/local/bin/node]
+ 6: 0x102d5f8b8 void heap::base::Stack::SetMarkerAndCallbackImpl<v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags)::$_1>(heap::base::Stack*, void*, void const*) [/usr/local/bin/node]
+ 7: 0x103715f10 PushAllRegistersAndIterateStack [/usr/local/bin/node]
+ 8: 0x102d49720 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/usr/local/bin/node]
+ 9: 0x102cc10b8 v8::internal::StackGuard::HandleInterrupts(v8::internal::StackGuard::InterruptLevel) [/usr/local/bin/node]
+10: 0x1031af3c8 v8::internal::Runtime_HandleNoHeapWritesInterrupts(int, unsigned long*, v8::internal::Isolate*) [/usr/local/bin/node]
+11: 0x103806234 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/usr/local/bin/node]
+12: 0x1367ec3b0 
+13: 0x1367d24e8 
+14: 0x103768bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+15: 0x103768bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+16: 0x13666abd8 
+17: 0x103768bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+18: 0x13666bcc0 
+19: 0x1366a1140 
+20: 0x136661cdc 
+21: 0x103768bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+22: 0x103768bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+23: 0x1037668cc Builtins_JSEntryTrampoline [/usr/local/bin/node]
+24: 0x103766570 Builtins_JSEntry [/usr/local/bin/node]
+25: 0x102c8fbe0 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/usr/local/bin/node]
+26: 0x102c8f544 v8::internal::Execution::Call(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::DirectHandle<v8::internal::Object>, v8::base::Vector<v8::internal::DirectHandle<v8::internal::Object> const>) [/usr/local/bin/node]
+27: 0x102b03fe0 v8::Function::Call(v8::Isolate*, v8::Local<v8::Context>, v8::Local<v8::Value>, int, v8::Local<v8::Value>*) [/usr/local/bin/node]
+28: 0x10289c180 node::loader::ModuleWrap::SyntheticModuleEvaluationStepsCallback(v8::Local<v8::Context>, v8::Local<v8::Module>) [/usr/local/bin/node]
+29: 0x1030be434 v8::internal::SyntheticModule::Evaluate(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::SyntheticModule>) [/usr/local/bin/node]
+30: 0x10305ba10 v8::internal::Module::Evaluate(v8::internal::Isolate*, v8::internal::Handle<v8::internal::Module>) [/usr/local/bin/node]
+31: 0x102af40cc v8::Module::Evaluate(v8::Local<v8::Context>) [/usr/local/bin/node]
+32: 0x10289d134 node::loader::ModuleWrap::Evaluate(v8::FunctionCallbackInfo<v8::Value> const&) [/usr/local/bin/node]
+33: 0x102b198bc v8::internal::(anonymous namespace)::InvokeFunctionCallback(v8::FunctionCallbackInfo<v8::Value> const&, v8::internal::CallApiCallbackMode) [/usr/local/bin/node]
+34: 0x10376a880 Builtins_CallApiCallbackGeneric [/usr/local/bin/node]
+35: 0x103768bec Builtins_InterpreterEntryTrampoline [/usr/local/bin/node]
+36: 0x1037a77e8 Builtins_AsyncFunctionAwaitResolveClosure [/usr/local/bin/node]
+37: 0x10387ce58 Builtins_PromiseFulfillReactionJob [/usr/local/bin/node]
+38: 0x103796bd0 Builtins_RunMicrotasks [/usr/local/bin/node]
+39: 0x1037667b0 Builtins_JSRunMicrotasksEntry [/usr/local/bin/node]
+40: 0x102c8fb98 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/usr/local/bin/node]
+41: 0x102c9040c v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/usr/local/bin/node]
+42: 0x102c90548 v8::internal::Execution::TryRunMicrotasks(v8::internal::Isolate*, v8::internal::MicrotaskQueue*) [/usr/local/bin/node]
+43: 0x102cbf31c v8::internal::MicrotaskQueue::RunMicrotasks(v8::internal::Isolate*) [/usr/local/bin/node]
+44: 0x102cbfc7c v8::internal::MicrotaskQueue::PerformCheckpoint(v8::Isolate*) [/usr/local/bin/node]
+45: 0x1027ed028 node::InternalCallbackScope::Close() [/usr/local/bin/node]
+46: 0x1027ecae8 node::InternalCallbackScope::~InternalCallbackScope() [/usr/local/bin/node]
+47: 0x1028a26e8 node::StartExecution(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value> (node::StartExecutionCallbackInfoWithModule const&)>) [/usr/local/bin/node]
+48: 0x1027f17c0 node::LoadEnvironment(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value> (node::StartExecutionCallbackInfoWithModule const&)>, std::__1::function<void (node::Environment*, v8::Local<v8::Value>, v8::Local<v8::Value>)>) [/usr/local/bin/node]
+49: 0x102940864 node::NodeMainInstance::Run() [/usr/local/bin/node]
+50: 0x1028a6468 node::Start(int, char**) [/usr/local/bin/node]
+51: 0x1870f3e00 start [/usr/lib/dyld]

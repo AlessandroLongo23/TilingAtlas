@@ -1,0 +1,13 @@
+[driver] DONE k=1: 15 solves in 22.2s — cells 11, raw 16, gateRej 0, timedOut 0
+[PS_FILL_PROFILE] fill-internals aggregate over 79 torusFill calls, 289 pops — total timed 12778ms
+  VALIDITY total 12335ms (96.5%) | SELECTION 442ms (3.5%) | BOOKKEEPING 1ms (0.0%)
+    analyze  (validity: open-vertex / contradiction)            59ms    0.5%
+    certify  (validity: isCompleteTiling certificate)        11096ms   86.8%
+    primitive(validity: isPrimitive supercell check)          1180ms    9.2%
+    expand   (selection: gap + place + reduce + block)         442ms    3.5%
+    dedupKey (bookkeeping: stateKey + seenState)                 1ms    0.0%
+  certify breakdown (of 11096ms isCompleteTiling): area(Surd) 2ms 0.0% | buildBlock(R=cellDiam+8) 1438ms 13.0% | overlap(O(n²) intersects) 9589ms 86.4% | vertexJudge 67ms 0.6%
+  tree shape: pops 289, seenHits 0, capSkips 0, contradictions 17, closures 65
+    closure fate: certCalls 65 → certPass 64; primCalls 64 → primTrue 16
+    placements: attempted 334, pushed 210; rejected: overlap 100, dup 0, p1 24, cap 0
+    per-pop fan-out: 1.16 places/pop, 0.73 children/pop

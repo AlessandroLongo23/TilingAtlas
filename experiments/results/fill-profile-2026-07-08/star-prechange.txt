@@ -1,0 +1,6 @@
+ ❯ tests/star-general-path.test.ts (4 tests | 1 failed | 1 skipped) 148374ms
+     × enumerates both orbit VCs of figs 40 and 43, incl. the purely-regular partner (includeStarFree) 148211ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/star-general-path.test.ts > Phase-1 general star path — compatibility & seed-set derivation (GATE-0 contract) > enumerates both orbit VCs of figs 40 and 43, incl. the purely-regular partner (includeStarFree)
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed | 1 skipped (4)

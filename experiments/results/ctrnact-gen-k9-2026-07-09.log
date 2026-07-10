@@ -1,0 +1,27 @@
+[2026-07-09 11:34:27] ==== Čtrnáct generation maxnum=9 (author: Marek Čtrnáct) ====
+[2026-07-09 11:34:33] PHASE 1 solve (BFS, all k<=9)  — heartbeat in out/progress.log
+[2026-07-09 11:56:14] solve done in 1300s ; raw output 924M
+[2026-07-09 11:56:14] PHASE 2 prune (EU_FAMILIES=all, completeness-safe, k=1..9)
+[2026-07-09 12:00:41] prune done in 268s
+[2026-07-09 12:00:41] PHASE 3 counts vs A068599 / count.txt:
+[2026-07-09 12:00:41]    k=1 : 10
+[2026-07-09 12:00:41]    k=2 : 20
+[2026-07-09 12:00:41]    k=3 : 61
+[2026-07-09 12:00:41]    k=4 : 151
+[2026-07-09 12:00:41]    k=5 : 332
+[2026-07-09 12:00:41]    k=6 : 673
+[2026-07-09 12:00:41]    k=7 : 1472
+[2026-07-09 12:00:41]    k=8 : 2849
+[2026-07-09 12:00:41]    k=9 : 5959
+[2026-07-09 12:00:41] PHASE 4 decode -> ctrnact-combinatorial-k9.json
+[2026-07-09 12:00:42]    decoded 11527 tilings -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/497e6c52-6f61-4fed-9c57-03574a460adc/scratchpad/k-uniform-solver/work/ctrnact-combinatorial-k9.json
+[2026-07-09 12:00:42]    k=1 : 10
+[2026-07-09 12:00:42]    k=2 : 20
+[2026-07-09 12:00:42]    k=3 : 61
+[2026-07-09 12:00:42]    k=4 : 151
+[2026-07-09 12:00:42]    k=5 : 332
+[2026-07-09 12:00:42]    k=6 : 673
+[2026-07-09 12:00:42]    k=7 : 1472
+[2026-07-09 12:00:42]    k=8 : 2849
+[2026-07-09 12:00:42]    k=9 : 5959
+[2026-07-09 12:00:42] ==== DONE maxnum=9 (total 1569s) ====

@@ -1,0 +1,30 @@
+# TH-10 FD-connectivity / edge-walk experiment  2026-07-08 00:40
+# For each tiling: build tiling graph (unit-distance edges), measure shortest EDGE-walk realizing lambda1, lambda2 (min over vertex reps).
+# Round = square/hex lattice. Test: edge-dist <= 2k+3 (round) / long-axis ~ 2k+2 (elongated); stretch = edge-dist/|lambda|.
+
+[150/1247] 1s elapsed, ETA 8s | ROUND n=67 over2k+3=1 | ELONG n=83 over2k+3=0
+[300/1247] 3s elapsed, ETA 8s | ROUND n=116 over2k+3=1 | ELONG n=184 over2k+3=0
+[450/1247] 5s elapsed, ETA 8s | ROUND n=133 over2k+3=1 | ELONG n=317 over2k+3=0
+[600/1247] 7s elapsed, ETA 7s | ROUND n=188 over2k+3=1 | ELONG n=412 over2k+3=0
+[750/1247] 10s elapsed, ETA 6s | ROUND n=227 over2k+3=1 | ELONG n=523 over2k+3=0
+[900/1247] 13s elapsed, ETA 5s | ROUND n=233 over2k+3=1 | ELONG n=667 over2k+3=0
+[1050/1247] 16s elapsed, ETA 3s | ROUND n=255 over2k+3=1 | ELONG n=795 over2k+3=0
+[1200/1247] 18s elapsed, ETA 1s | ROUND n=300 over2k+3=1 | ELONG n=900 over2k+3=0
+[1247/1247] 19s elapsed, ETA 0s | ROUND n=313 over2k+3=1 | ELONG n=934 over2k+3=0
+
+=== per-family summary ===
+ROUND: n=313  edge-dist>2k+3: 1  max(edge-dist/(2k+3))=1.200 at t1003  stretch(edge/|lam|) med=1.098 max=1.296
+ELONG: n=934  edge-dist>2k+3: 0  max(edge-dist/(2k+3))=0.933 at t6301  stretch(edge/|lam|) med=1.092 max=1.287
+
+=== round tilings where edge-dist(long) > 2k+3 (pure-edge exceeds the weight bound) ===
+  t1003 k=1 hex(R) edge(lam1,lam2)=(6,6) 2k+3=5  [uses non-edge center shortcut for tight wt]
+
+=== ROUND per-k: max edge-dist(lambda), max stretch, vs 2k+3 ===
+  k=1: n=9 max edge-dist=6 (2k+3=5) max stretch=1.268
+  k=2: n=11 max edge-dist=6 (2k+3=7) max stretch=1.195
+  k=3: n=24 max edge-dist=8 (2k+3=9) max stretch=1.238
+  k=4: n=51 max edge-dist=10 (2k+3=11) max stretch=1.260
+  k=5: n=82 max edge-dist=12 (2k+3=13) max stretch=1.268
+  k=6: n=136 max edge-dist=12 (2k+3=15) max stretch=1.296
+
+DONE

@@ -1,0 +1,67 @@
+=== FULL k=1 run: TH10_DIRS=12 + PRUNE_EFF_C2=2 + Rank1/2 (12-dir ⇒ octagon-blind ⇒ expect 10, not 11) ===
+[09:47:04] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[09:47:04] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k1 (k=1, s=5) — THE WEIGHT-5 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[09:47:04] ⚑⚑ TH10_DIRS=12: pool built from 12 even-power roots (ℤ[ζ₁₂]) — OCTAGON-BLIND. 4.8.8 (t1002) and every octagon-bearing tiling at every k are UNREACHABLE (odd ζ₂₄ powers absent). Deliberate scope loss, not a bug.
+[09:47:04] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[09:47:04] bounds: 24k·a_max = 268.71, pair-det cap = 25.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[09:47:04]   W-BFS level 1: +12 distinct, |W(1)| = 13 (incl. 0), 0.0s
+[09:47:04]   W-BFS level 2: +60 distinct, |W(2)| = 73 (incl. 0), 0.0s
+[09:47:04]   W-BFS level 3: +180 distinct, |W(3)| = 253 (incl. 0), 0.0s
+[09:47:04] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[09:47:04]   W-BFS level 1: +12 distinct, |W(1)| = 13 (incl. 0), 0.0s
+[09:47:04]   W-BFS level 2: +60 distinct, |W(2)| = 73 (incl. 0), 0.0s
+[09:47:04]   W-BFS level 3: +180 distinct, |W(3)| = 253 (incl. 0), 0.0s
+[09:47:04]   W-BFS level 4: +408 distinct, |W(4)| = 661 (incl. 0), 0.0s
+[09:47:04]   W-BFS level 5: +780 distinct, |W(5)| = 1,441 (incl. 0), 0.0s
+[09:47:04] W(5) enumerated: 1,440 nonzero values (1,441 incl. 0) in 0.0s
+[09:47:04] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[09:47:04] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 2/1 (c ≈ 1.4142). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[09:47:04] ⚑ POOL PRUNED: 1,440 → 840 vectors (58.33% kept, 1.71× vector-reduction ⇒ ~2.94× pair-reduction)
+[09:47:04] ⚑ per-weight-shell kept: wt1 12/12 (100%)  wt2 48/60 (80%)  wt3 120/180 (67%)  wt4 240/408 (59%)  wt5 420/780 (54%)
+[09:47:04] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[09:47:04] area ladder (cap 25.00): 1,760 exact tile-sum values, min 0.4330; sharp (≤24 tiles) subset 1,744
+[09:47:04] PAIR stage: 840 nonzero pool vectors → 3.52e+5 unordered pairs; det cap 25.00 (= min(s²=25, 24k·a_max=268.7)); ladder |exact| = 1,760
+[09:47:05] PAIR stage done in 1.0s: examined 3.52e+5 pairs (3.51e+5/s) → det-in-range 3.44e+5 → bitmap 1.67e+5 → EXACT-admissible 1.67e+5 (sharp ≤24-tile: 1.67e+5) → DISTINCT lattices 26,520
+[09:47:05] JOIN stage: closing 26,520 lattices under joins with 840 pool vectors (index bound per L: det/(√3/2))
+[09:47:08]   join round 1: +2,519 new lattices (admissible 0), family 29,039, 2.9s
+[09:47:08]   join round 2: +0 new lattices (admissible 0), family 29,039, 2.9s
+[09:47:08] JOIN stage done in 2.9s: 2 rounds, +2,519 joined lattices (0 admissible-det), family total 29,039
+[09:47:08] family after joins: 29,039 distinct lattices — 26,520 admissible-det (fill candidates), 26,505 sharp (≤24-tile); joins COMPLETED (2 rounds, +2,519, 0 admissible-det)
+[09:47:09] FILL stage (k=1, EXAMPLE MODE): 15 seeds × per-seed slice of 26,520 admissible-det lattices; per-seed exact vcAreaSet + P0 filters (the live pipeline's sound filters); maxMs=0 (no cap); budget 10.0h
+[09:47:09]   per-seed admissible-lattice counts: [649, 11, 174, 174, 0, 51, 0, 5, 5, 51, 4, 640, 5, 0, 273] — Σ = 2,042 fills (area-filtered 385,819, P0-filtered 9,939 across seeds)
+[PeriodSolver k=1] ⚑ EXAMPLE MODE (TH-10 scout): candidate-lattice stage REPLACED by an externally enumerated weight-s family — the substituted pool bound is UNPROVEN; results carry NO completeness or certification claim
+[09:47:14]   seed 1/15 [3,3,3,3,3,3]            649 fills, 5.1s, cells total 2
+[09:47:20]   seed 2/15 [3,3,3,3,6]              11 fills, 6.1s, cells total 7
+[09:47:21]   seed 3/15 [3,3,3,4,4]              174 fills, 0.9s, cells total 8
+[09:47:22]   seed 4/15 [3,3,4,3,4]              174 fills, 1.2s, cells total 9
+[09:47:22]   seed 5/15 [3,3,4,12]               0 fills, 0.0s, cells total 9
+[09:47:22]   seed 6/15 [3,3,6,6]                51 fills, 0.4s, cells total 9
+[09:47:22]   seed 7/15 [3,4,3,12]               0 fills, 0.0s, cells total 9
+[09:47:23]   seed 8/15 [3,4,4,6]                5 fills, 0.1s, cells total 9
+[09:47:24]   seed 9/15 [3,4,6,4]                5 fills, 1.2s, cells total 11
+[09:47:25]   seed 10/15 [3,6,3,6]                51 fills, 1.2s, cells total 13
+[09:47:26]   seed 11/15 [3,12,12]                4 fills, 1.4s, cells total 15
+[09:47:28]   seed 12/15 [4,4,4,4]                640 fills, 1.7s, cells total 16
+[09:47:31]   seed 13/15 [4,6,12]                 5 fills, 3.1s, cells total 19
+[09:47:31]   seed 14/15 [4,8,8]                  0 fills, 0.0s, cells total 19
+[09:47:32]   seed 15/15 [6,6,6]                  273 fills, 0.6s, cells total 21
+[09:47:32] FILL stage done in 23.0s: 2,042 fills (Σ over seeds), raw cells 21, gate-rejected 0
+[09:47:32]   fill cost distribution (ms/fill): min 0, p50 2, p90 11, p99 178, max 1275, mean 11.27
+[09:47:45] RESULT (EXAMPLE MODE — no certified claim): 10 distinct tilings from 21 raw cells; COMPOSITION digest=476ebbd763fa6193 count=10 (certified k=1 reference: 6f9ca9cf2d16c75f/11)
+[09:47:45]   certified 4:1|-1,0,0,0,0,0,0,0;1|-1,0,0,0,0,0,1,0;… → ⚑ 0 matches
+[09:47:45] PER-TILING vs certified snapshot (k=1): 10/11 one-to-one — ⚑ NOT a bijection
+[09:47:45]   galebach t1001: ✓ matched
+[09:47:45]   galebach t1002: ⚑ reconstruction failed (degenerate basis (det 0)) — KNOWN upstream defect (TA 2026-07-03)
+[09:47:45]   galebach t1003: ✓ matched
+[09:47:45]   galebach t1004: ✓ matched
+[09:47:45]   galebach t1005: ✓ matched
+[09:47:45]   galebach t1006: ✓ matched
+[09:47:45]   galebach t1007: ✓ matched
+[09:47:45]   galebach t1008: ✓ matched
+[09:47:45]   galebach t1009: ✓ matched
+[09:47:45]   galebach t1010: ✓ matched
+[09:47:45]   galebach t1011: ✓ matched
+[09:47:45] PER-TILING vs Galebach: 10/10 matched (1 reconstruction failures)
+[09:47:45] ██ TH-10 SCOUT phase=k1 finished in 40.7s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[09:47:45] 
+EXIT=0 k1 done

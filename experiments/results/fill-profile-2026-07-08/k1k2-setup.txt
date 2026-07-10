@@ -1,0 +1,31 @@
+### k=1 (setup-aware) ###
+[driver] DONE k=1: 15 solves in 22.3s — cells 11, raw 16, gateRej 0, timedOut 0
+[PS_FILL_PROFILE] fill-internals aggregate over 180 torusFill calls, 289 pops — total timed 16237ms
+  VALIDITY total 12312ms (75.8%) | SELECTION 448ms (2.8%) | SETUP 3477ms (21.4%) | BOOKKEEPING 1ms (0.0%)
+    setup    (per-fill: initial block + self-overlap)         3477ms   21.4%
+    analyze  (validity: open-vertex / contradiction)            61ms    0.4%
+    certify  (validity: isCompleteTiling certificate)        11063ms   68.1%
+    primitive(validity: isPrimitive supercell check)          1188ms    7.3%
+    expand   (selection: gap + place + reduce + block)         448ms    2.8%
+    dedupKey (bookkeeping: stateKey + seenState)                 1ms    0.0%
+  certify breakdown (of 11063ms isCompleteTiling): area(Surd) 2ms 0.0% | buildBlock(R=cellDiam+8) 1450ms 13.1% | overlap(O(n²) intersects) 9544ms 86.3% | vertexJudge 67ms 0.6%
+  tree shape: pops 289, seenHits 0, capSkips 0, contradictions 17, closures 65
+    closure fate: certCalls 65 → certPass 64; primCalls 64 → primTrue 16
+    placements: attempted 334, pushed 210; rejected: overlap 100, dup 0, p1 24, cap 0
+    per-pop fan-out: 1.16 places/pop, 0.73 children/pop
+
+### k=2 (setup-aware, 40 seeds, 12s cap) ###
+[driver] DONE k=2: 40 solves in 172.2s — cells 24, raw 80, gateRej 34, timedOut 2
+[PS_FILL_PROFILE] fill-internals aggregate over 4075 torusFill calls, 5976 pops — total timed 101763ms
+  VALIDITY total 47121ms (46.3%) | SELECTION 8441ms (8.3%) | SETUP 46179ms (45.4%) | BOOKKEEPING 22ms (0.0%)
+    setup    (per-fill: initial block + self-overlap)        46179ms   45.4%
+    analyze  (validity: open-vertex / contradiction)          1186ms    1.2%
+    certify  (validity: isCompleteTiling certificate)        39139ms   38.5%
+    primitive(validity: isPrimitive supercell check)          6797ms    6.7%
+    expand   (selection: gap + place + reduce + block)        8441ms    8.3%
+    dedupKey (bookkeeping: stateKey + seenState)                22ms    0.0%
+  certify breakdown (of 39139ms isCompleteTiling): area(Surd) 8ms 0.0% | buildBlock(R=cellDiam+8) 5407ms 13.8% | overlap(O(n²) intersects) 33501ms 85.6% | vertexJudge 223ms 0.6%
+  tree shape: pops 5976, seenHits 0, capSkips 0, contradictions 767, closures 142
+    closure fate: certCalls 142 → certPass 140; primCalls 95 → primTrue 80
+    placements: attempted 11988, pushed 5603; rejected: overlap 6145, dup 0, p1 240, cap 0
+    per-pop fan-out: 2.01 places/pop, 0.94 children/pop

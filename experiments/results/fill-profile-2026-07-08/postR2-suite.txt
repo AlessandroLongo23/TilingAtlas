@@ -1,0 +1,5 @@
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/dsym-generator.test.ts > M1: sound generator vs the Python ground-truth oracle > k=2, δ≤16: 18 genuine minimal (sound continuation past the oracle range)
+ FAIL  tests/star-general-path.test.ts > Phase-1 general star path — compatibility & seed-set derivation (GATE-0 contract) > enumerates both orbit VCs of figs 40 and 43, incl. the purely-regular partner (includeStarFree)
+ Test Files  2 failed | 50 passed (52)
+      Tests  2 failed | 448 passed | 2 skipped (452)

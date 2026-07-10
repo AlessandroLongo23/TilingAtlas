@@ -1,0 +1,58 @@
+==== k=12/13 oracle extension — weight-jump confirmation run (2026-07-10) ====
+[01:14:55] Predictions under w_max(k) = 2k + 2*floor((k-1)/3): k=12 -> 30 (2k+6, no jump), k=13 -> 34 (2k+8, jump).
+[01:14:55] Expected distinct counts (reference/count.txt): k=12 = 49794, k=13 = 103082.
+[01:14:55] Plan: [1] fused solve|prune k=12 (~3 min, measured 157s) [2] develop k=12 (~1 min)
+[01:14:55]       [3] fused solve|prune k=13 (~7 min extrapolated)   [4] develop k=13 (~2 min)
+[01:14:55]       [5] wtF exact weights k=12/k=13 + full k<=11 re-weigh (the 2 recovered tilings)
+[01:14:55] ---- k=12 : build (MAXNUM=12) ----
+make: Nothing to be done for `all'.
+[01:14:55] ---- k=12 : fused solve|prune (EU_STREAM, EU_KONLY=12) ----
+  k=12 : 49794
+total kept: 49794
+[01:18:02]   solve|prune done (187s)
+[01:18:02]   distinct k=12 blocks: 49794
+[01:18:02] ---- k=12 : develop (exact geometry) ----
+developed 49794 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k12s/ctrnact-cells-k12.json
+  k=12 : 49794
+[01:18:59]   develop done (57s)
+[01:18:59] ---- k=13 : build (MAXNUM=13) ----
+rm -f .maxnum-*
+touch .maxnum-13
+c++ -O2 -std=c++17 -DMAXNUM=13 -o eu_solver eu_solver.cpp
+[01:19:00] ---- k=13 : fused solve|prune (EU_STREAM, EU_KONLY=13) ----
+  k=13 : 103082
+total kept: 103082
+[01:25:42]   solve|prune done (402s)
+[01:25:42]   distinct k=13 blocks: 103082
+[01:25:42] ---- k=13 : develop (exact geometry) ----
+developed 103082 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k13s/ctrnact-cells-k13.json
+  k=13 : 103082
+[01:27:39]   develop done (117s)
+[01:27:39] ---- exact weights (wtF closed form) ----
+per-k max weight (F-formula EXACT): 12:30
+→ /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/ctrnact-weights-exact-k12.csv (49794 rows, 0 failed)
+[01:27:40]   k=12 weights done
+per-k max weight (F-formula EXACT): 13:34
+→ /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/ctrnact-weights-exact-k13.csv (103082 rows, 0 failed)
+[01:27:42]   k=13 weights done
+per-k max weight (F-formula EXACT): 1:5  2:6  3:7  4:10  5:12  6:14  7:18  8:20  9:22  10:26  11:28
+→ /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/ctrnact-weights-exact-k1-11-full.csv (47854 rows, 0 failed)
+[01:27:42]   k<=11 full re-weigh done (covers the 2 recovered k=8/9 tilings)
+[01:27:42] ==== ALL DONE ====
+
+==== RESULTS (2026-07-10, CC) ====
+k=12: 49794 distinct (= count.txt), max weight 30 = 2k+6 (NO jump)  — predicted 30 ✓
+      w=30 achieved by pgg (43) + pmg (12), all rectangular; nothing else reaches w>=26.
+      (formulas coincide at k=12: 2*floor(47/3) = 2*floor(46/3) = 30)
+k=13: 103082 distinct (= count.txt), max weight 34 = 2k+8 (JUMP)   — predicted 34 ✓
+      w=34: exactly 8 tilings, ALL pgg rectangular, ALL pure {3,6} tubes (4e/4j/5b seeds).
+      pmg caps at 32 = 2*floor(50/3)                                — predicted 32 ✓
+      First k where the pgg/pmg formulas split; the split lands exactly as predicted.
+Recovered k=8/9 tilings (missing from the old CSVs): weights 7 and 8 — maxima unchanged.
+All other k weight-multisets identical old vs regenerated catalogue (cross-validates both).
+Law confirmed k=2..13, 12/12 points:  w_max(k) = 2k + 2*floor((k-1)/3)   (slope 8/3)
+Group split confirmed:  pgg = 2k+2*floor((k-1)/3),  pmg = 2k+2*floor((k-2)/3).
+Extremal-subset classifications: ctrnact-symclass-k12-top.csv (w>=26), -k13-top.csv (w>=31).
+Cells: tools/ctrnact-oracle/run-k12s/, run-k13s/ (not merged into the k<=11 master).
+Side fix: tools/ctrnact-oracle/Makefile now stamps MAXNUM (a stale build silently kept the old
+k range — completeness hazard; run-oracle.sh inherited the same trap).

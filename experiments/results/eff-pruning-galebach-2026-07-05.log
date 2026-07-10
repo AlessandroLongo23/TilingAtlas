@@ -1,0 +1,21 @@
+W(≤7) built: 423,169 vectors (incl. 0), table-checked; MIM covers wt ≤ 14
+██ EFFICIENCY-PRUNING — EXP B extension: EXACT ratios over Galebach k≤6 (⚑ OCTAGON-BLIND ℤ[ζ₁₂] reference) 2026-07-05T08:48:45.153Z
+proxy claim to correct: max reduced-basis ratio ≈ 1.2957 @ t6268 (k=6), computed with a FLOAT weight.
+
+  ⚑ t1002: Surd: inverse of zero
+processed 1344 oracle tilings (1 decode/weight failures)
+
+═══ EXACT per-k max reduced-basis ratio (Galebach reference, octagon-blind) ═══
+  k=1: max ratio 1.1547  ← t1001  (wt u=2 v=2, ratio u=1.1547 v=1.1547)  ≤√2
+  k=2: max ratio 1.1954  ← t2016  (wt u=4 v=4, ratio u=1.1954 v=1.1954)  ≤√2
+  k=3: max ratio 1.1547  ← t3002  (wt u=2 v=4, ratio u=1.1547 v=1.1094)  ≤√2
+  k=4: max ratio 1.2604  ← t4079  (wt u=6 v=6, ratio u=1.2604 v=1.2604)  ≤√2
+  k=5: max ratio 1.1809  ← t5125  (wt u=4 v=5, ratio u=1.0000 v=1.1809)  ≤√2
+  k=6: max ratio 1.2957  ← t6268  (wt u=8 v=8, ratio u=1.2957 v=1.2957)  ≤√2
+
+OVERALL (Galebach k≤6, EXACT wt, octagon-blind): max ratio 1.2957  ← t6268  exact c² = (1664+0√2+-448√3+0√6)/529
+  proxy said 1.2957 @ t6268 (float wt). Exact vs proxy: LOWER — √2 (1.4142) margin: 0.1186
+  ⚑ this is a ζ₁₂ LOWER BOUND: an octagon tiling at k≥4 (absent here) could exceed it. Octagon-complete sup is available only at certified k≤3 = 1.2426 (eff-pruning-ratios).
+
+per-tiling CSV → experiments/results/eff-pruning-galebach-2026-07-05.csv (1344 rows)
+██ done ██

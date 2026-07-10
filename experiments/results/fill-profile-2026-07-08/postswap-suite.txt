@@ -1,0 +1,6 @@
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/certify-overlap-periodic.test.ts > blockOverlapPeriodic === blockHasProperOverlap on the certified k≤3 catalogue (no overlaps) > every certified cell: both checks agree and report NO overlap (valid tilings are gap-free & disjoint)
+ FAIL  tests/dsym-generator.test.ts > M1: sound generator vs the Python ground-truth oracle > k=2, δ≤16: 18 genuine minimal (sound continuation past the oracle range)
+ FAIL  tests/star-general-path.test.ts > Phase-1 general star path — compatibility & seed-set derivation (GATE-0 contract) > enumerates both orbit VCs of figs 40 and 43, incl. the purely-regular partner (includeStarFree)
+ Test Files  3 failed | 49 passed (52)
+      Tests  3 failed | 447 passed | 2 skipped (452)

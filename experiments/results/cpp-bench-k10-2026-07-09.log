@@ -1,0 +1,94 @@
+[17:53:31] ==== C++ Ctrnact oracle benchmark: solve+prune, k=1..10, best of 3 ====
+[17:53:31] box: Apple M5  cores=10
+[17:53:31] compiler: Apple clang version 21.0.0 (clang-2100.1.1.101)
+[17:53:32] pruner built
+[17:53:32] ---- k=1 : build (MAXNUM=1) ----
+[17:53:33]   solve rep 1/3: 0.375s
+[17:53:33]   solve rep 2/3: 0.003s
+[17:53:33]   solve rep 3/3: 0.003s
+[17:53:33]   prune rep 1/3: 0.212s
+[17:53:33]   prune rep 2/3: 0.003s
+[17:53:33]   prune rep 3/3: 0.003s
+[17:53:33]   == k=1: solve=0.003s prune=0.003s total=0.005s raw_blocks=11 kept(this k)=10 kept(<=k)=10
+[17:53:33]   progress 1/10  elapsed=1s  (next k is slower; ETA grows superlinearly)
+[17:53:33] ---- k=2 : build (MAXNUM=2) ----
+[17:53:34]   solve rep 1/3: 0.246s
+[17:53:34]   solve rep 2/3: 0.005s
+[17:53:34]   solve rep 3/3: 0.005s
+[17:53:34]   prune rep 1/3: 0.003s
+[17:53:34]   prune rep 2/3: 0.003s
+[17:53:34]   prune rep 3/3: 0.003s
+[17:53:34]   == k=2: solve=0.005s prune=0.003s total=0.007s raw_blocks=35 kept(this k)=20 kept(<=k)=30
+[17:53:34]   progress 2/10  elapsed=3s  (next k is slower; ETA grows superlinearly)
+[17:53:34] ---- k=3 : build (MAXNUM=3) ----
+[17:53:36]   solve rep 1/3: 0.289s
+[17:53:36]   solve rep 2/3: 0.016s
+[17:53:36]   solve rep 3/3: 0.015s
+[17:53:36]   prune rep 1/3: 0.004s
+[17:53:36]   prune rep 2/3: 0.004s
+[17:53:36]   prune rep 3/3: 0.004s
+[17:53:36]   == k=3: solve=0.015s prune=0.004s total=0.019s raw_blocks=124 kept(this k)=61 kept(<=k)=91
+[17:53:36]   progress 3/10  elapsed=4s  (next k is slower; ETA grows superlinearly)
+[17:53:36] ---- k=4 : build (MAXNUM=4) ----
+[17:53:37]   solve rep 1/3: 0.293s
+[17:53:37]   solve rep 2/3: 0.064s
+[17:53:37]   solve rep 3/3: 0.063s
+[17:53:37]   prune rep 1/3: 0.009s
+[17:53:37]   prune rep 2/3: 0.008s
+[17:53:37]   prune rep 3/3: 0.008s
+[17:53:37]   == k=4: solve=0.063s prune=0.008s total=0.071s raw_blocks=427 kept(this k)=151 kept(<=k)=242
+[17:53:37]   progress 4/10  elapsed=5s  (next k is slower; ETA grows superlinearly)
+[17:53:37] ---- k=5 : build (MAXNUM=5) ----
+[17:53:38]   solve rep 1/3: 0.467s
+[17:53:38]   solve rep 2/3: 0.221s
+[17:53:39]   solve rep 3/3: 0.221s
+[17:53:39]   prune rep 1/3: 0.021s
+[17:53:39]   prune rep 2/3: 0.020s
+[17:53:39]   prune rep 3/3: 0.020s
+[17:53:39]   == k=5: solve=0.221s prune=0.020s total=0.241s raw_blocks=1162 kept(this k)=332 kept(<=k)=574
+[17:53:39]   progress 5/10  elapsed=7s  (next k is slower; ETA grows superlinearly)
+[17:53:39] ---- k=6 : build (MAXNUM=6) ----
+[17:53:40]   solve rep 1/3: 0.946s
+[17:53:41]   solve rep 2/3: 0.665s
+[17:53:42]   solve rep 3/3: 0.662s
+[17:53:42]   prune rep 1/3: 0.054s
+[17:53:42]   prune rep 2/3: 0.054s
+[17:53:42]   prune rep 3/3: 0.055s
+[17:53:42]   == k=6: solve=0.662s prune=0.054s total=0.717s raw_blocks=2775 kept(this k)=673 kept(<=k)=1247
+[17:53:42]   progress 6/10  elapsed=10s  (next k is slower; ETA grows superlinearly)
+[17:53:42] ---- k=7 : build (MAXNUM=7) ----
+[17:53:45]   solve rep 1/3: 2.145s
+[17:53:47]   solve rep 2/3: 1.870s
+[17:53:49]   solve rep 3/3: 1.872s
+[17:53:49]   prune rep 1/3: 0.167s
+[17:53:49]   prune rep 2/3: 0.167s
+[17:53:49]   prune rep 3/3: 0.166s
+[17:53:49]   == k=7: solve=1.870s prune=0.166s total=2.036s raw_blocks=6678 kept(this k)=1472 kept(<=k)=2719
+[17:53:49]   progress 7/10  elapsed=17s  (next k is slower; ETA grows superlinearly)
+[17:53:49] ---- k=8 : build (MAXNUM=8) ----
+[17:53:55]   solve rep 1/3: 5.084s
+[17:54:00]   solve rep 2/3: 4.843s
+[17:54:05]   solve rep 3/3: 4.895s
+[17:54:05]   prune rep 1/3: 0.470s
+[17:54:06]   prune rep 2/3: 0.470s
+[17:54:06]   prune rep 3/3: 0.481s
+[17:54:06]   == k=8: solve=4.843s prune=0.470s total=5.313s raw_blocks=14849 kept(this k)=2850 kept(<=k)=5569
+[17:54:06]   progress 8/10  elapsed=34s  (next k is slower; ETA grows superlinearly)
+[17:54:06] ---- k=9 : build (MAXNUM=9) ----
+[17:54:21]   solve rep 1/3: 13.618s
+[17:54:35]   solve rep 2/3: 14.750s
+[17:54:49]   solve rep 3/3: 13.892s
+[17:54:51]   prune rep 1/3: 1.398s
+[17:54:52]   prune rep 2/3: 1.392s
+[17:54:53]   prune rep 3/3: 1.395s
+[17:54:53]   == k=9: solve=13.618s prune=1.392s total=15.010s raw_blocks=32963 kept(this k)=5960 kept(<=k)=11529
+[17:54:53]   progress 9/10  elapsed=81s  (next k is slower; ETA grows superlinearly)
+[17:54:53] ---- k=10 : build (MAXNUM=10) ----
+[17:55:26]   solve rep 1/3: 31.662s
+[17:55:58]   solve rep 2/3: 32.165s
+[17:56:40]   solve rep 3/3: 41.232s
+[17:56:45]   prune rep 1/3: 4.806s
+[17:56:49]   prune rep 2/3: 4.508s
+[17:56:54]   prune rep 3/3: 4.504s
+[17:56:54]   == k=10: solve=31.662s prune=4.504s total=36.166s raw_blocks=70919 kept(this k)=11866 kept(<=k)=23395
+[17:56:54] ==== DONE total wall 202s ; csv -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/cpp-bench-k10-2026-07-09.csv ====

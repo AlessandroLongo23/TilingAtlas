@@ -1,0 +1,151 @@
+████ k=3 FILL MEASUREMENT @ c=√2 (PRUNE_EFF_C2=2), EXAMPLE MODE — started 2026-07-05 15:49:45 ████
+cmd: TH10_K3_FILL=1 heap=22G family_guard=30M sample=4000 pair_budget=300m
+[13:49:46] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[13:49:46] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[13:49:46] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[13:49:46] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[13:49:46]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(1)| matches the TA exact table (25)
+[13:49:46]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(2)| matches the TA exact table (289)
+[13:49:46]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(3)| matches the TA exact table (2,089)
+[13:49:46] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[13:49:46]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(1)| matches the TA exact table (25)
+[13:49:46]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(2)| matches the TA exact table (289)
+[13:49:46]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(3)| matches the TA exact table (2,089)
+[13:49:46]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(4)| matches the TA exact table (10,825)
+[13:49:46]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(5)| matches the TA exact table (43,777)
+[13:49:46]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[13:49:46]   ✓ |W(6)| matches the TA exact table (146,521)
+[13:49:46]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[13:49:46]   ✓ |W(7)| matches the TA exact table (423,169)
+[13:49:46]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.4s
+[13:49:46] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[13:49:46] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[13:49:46] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 2/1 (c ≈ 1.4142). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[13:49:48] ⚑ POOL PRUNED: 1,086,912 → 229,800 vectors (21.14% kept, 4.73× vector-reduction ⇒ ~22.37× pair-reduction)
+[13:49:48] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 168/264 (64%)  wt3 768/1800 (43%)  wt4 2736/8736 (31%)  wt5 8496/32952 (26%)  wt6 23616/102744 (23%)  wt7 59136/276648 (21%)  wt8 134856/663744 (20%)
+[13:49:48] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[13:49:48] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[13:49:48] PAIR stage: 229,800 nonzero pool vectors → 2.64e+10 unordered pairs; det cap 64.00 (= min(s²=64, 24k·a_max=806.1)); ladder |exact| = 24,083
+[13:50:25]   pairs: 7.01e+8/2.64e+10 (2.7%), 1.89e+7/s, ETA 22.6min | inRange 6.90e+8, bitmapHits 5.53e+6, exactAdm 5.53e+6, distinct 1,242,647
+[13:50:58]   pairs: 1.62e+9/2.64e+10 (6.1%), 2.32e+7/s, ETA 17.8min | inRange 1.60e+9, bitmapHits 9.28e+6, exactAdm 9.19e+6, distinct 2,319,504
+[13:51:34]   pairs: 2.75e+9/2.64e+10 (10.4%), 2.59e+7/s, ETA 15.2min | inRange 2.71e+9, bitmapHits 1.32e+7, exactAdm 1.29e+7, distinct 2,619,698
+[13:52:12]   pairs: 3.85e+9/2.64e+10 (14.6%), 2.67e+7/s, ETA 14.1min | inRange 3.80e+9, bitmapHits 1.70e+7, exactAdm 1.63e+7, distinct 4,122,842
+[13:52:42]   pairs: 4.71e+9/2.64e+10 (17.8%), 2.70e+7/s, ETA 13.4min | inRange 4.66e+9, bitmapHits 2.00e+7, exactAdm 1.89e+7, distinct 5,244,608
+[13:53:17]   pairs: 5.76e+9/2.64e+10 (21.8%), 2.76e+7/s, ETA 12.5min | inRange 5.70e+9, bitmapHits 2.38e+7, exactAdm 2.21e+7, distinct 5,966,017
+[13:53:51]   pairs: 6.79e+9/2.64e+10 (25.7%), 2.79e+7/s, ETA 11.7min | inRange 6.72e+9, bitmapHits 2.75e+7, exactAdm 2.53e+7, distinct 6,003,588
+[13:54:24]   pairs: 7.79e+9/2.64e+10 (29.5%), 2.82e+7/s, ETA 11.0min | inRange 7.71e+9, bitmapHits 3.12e+7, exactAdm 2.83e+7, distinct 6,197,631
+[13:54:57]   pairs: 8.96e+9/2.64e+10 (33.9%), 2.89e+7/s, ETA 10.0min | inRange 8.87e+9, bitmapHits 3.48e+7, exactAdm 3.04e+7, distinct 7,171,082
+[13:55:32]   pairs: 1.01e+10/2.64e+10 (38.2%), 2.94e+7/s, ETA 9.3min | inRange 9.99e+9, bitmapHits 3.84e+7, exactAdm 3.27e+7, distinct 8,162,303
+[13:56:05]   pairs: 1.12e+10/2.64e+10 (42.3%), 2.96e+7/s, ETA 8.6min | inRange 1.11e+10, bitmapHits 4.18e+7, exactAdm 3.48e+7, distinct 9,044,125
+[13:56:37]   pairs: 1.22e+10/2.64e+10 (46.3%), 2.99e+7/s, ETA 7.9min | inRange 1.21e+10, bitmapHits 4.51e+7, exactAdm 3.68e+7, distinct 9,746,524
+[13:57:07]   pairs: 1.32e+10/2.64e+10 (50.2%), 3.02e+7/s, ETA 7.3min | inRange 1.31e+10, bitmapHits 4.83e+7, exactAdm 3.87e+7, distinct 10,212,852
+[13:57:37]   pairs: 1.41e+10/2.64e+10 (53.3%), 3.00e+7/s, ETA 6.9min | inRange 1.39e+10, bitmapHits 5.10e+7, exactAdm 4.02e+7, distinct 10,323,150
+[13:58:10]   pairs: 1.52e+10/2.64e+10 (57.4%), 3.02e+7/s, ETA 6.2min | inRange 1.50e+10, bitmapHits 5.46e+7, exactAdm 4.23e+7, distinct 10,347,360
+[13:58:42]   pairs: 1.62e+10/2.64e+10 (61.4%), 3.04e+7/s, ETA 5.6min | inRange 1.61e+10, bitmapHits 5.81e+7, exactAdm 4.43e+7, distinct 10,348,443
+[13:59:16]   pairs: 1.73e+10/2.64e+10 (65.7%), 3.05e+7/s, ETA 4.9min | inRange 1.72e+10, bitmapHits 6.22e+7, exactAdm 4.66e+7, distinct 10,402,288
+[13:59:50]   pairs: 1.84e+10/2.64e+10 (69.8%), 3.06e+7/s, ETA 4.3min | inRange 1.83e+10, bitmapHits 6.69e+7, exactAdm 4.86e+7, distinct 11,326,829
+[14:00:23]   pairs: 1.95e+10/2.64e+10 (74.0%), 3.08e+7/s, ETA 3.7min | inRange 1.94e+10, bitmapHits 7.17e+7, exactAdm 5.04e+7, distinct 12,111,202
+[14:00:55]   pairs: 2.04e+10/2.64e+10 (77.1%), 3.05e+7/s, ETA 3.3min | inRange 2.02e+10, bitmapHits 7.46e+7, exactAdm 5.18e+7, distinct 12,653,041
+[14:01:27]   pairs: 2.13e+10/2.64e+10 (80.8%), 3.05e+7/s, ETA 2.8min | inRange 2.11e+10, bitmapHits 7.91e+7, exactAdm 5.39e+7, distinct 13,380,128
+[14:01:58]   pairs: 2.23e+10/2.64e+10 (84.5%), 3.05e+7/s, ETA 2.2min | inRange 2.21e+10, bitmapHits 8.30e+7, exactAdm 5.57e+7, distinct 13,875,379
+[14:02:29]   pairs: 2.33e+10/2.64e+10 (88.1%), 3.06e+7/s, ETA 102.8s | inRange 2.31e+10, bitmapHits 8.69e+7, exactAdm 5.75e+7, distinct 14,248,543
+[14:02:59]   pairs: 2.42e+10/2.64e+10 (91.5%), 3.05e+7/s, ETA 73.5s | inRange 2.40e+10, bitmapHits 9.06e+7, exactAdm 5.92e+7, distinct 14,455,553
+[14:03:29]   pairs: 2.51e+10/2.64e+10 (95.0%), 3.05e+7/s, ETA 43.7s | inRange 2.49e+10, bitmapHits 9.46e+7, exactAdm 6.10e+7, distinct 14,502,820
+[14:04:00]   pairs: 2.60e+10/2.64e+10 (98.5%), 3.05e+7/s, ETA 12.9s | inRange 2.58e+10, bitmapHits 9.90e+7, exactAdm 6.28e+7, distinct 14,504,168
+[14:04:14] PAIR stage done in 14.4min: examined 2.64e+10 pairs (3.05e+7/s) → det-in-range 2.62e+10 → bitmap 1.01e+8 → EXACT-admissible 6.38e+7 (sharp ≤72-tile: 6.38e+7) → DISTINCT lattices 14,504,172
+[14:04:15] JOIN stage: closing 14,504,172 lattices under joins with 229,800 pool vectors (index bound per L: det/(√3/2))
+[14:04:45]   join round 1: 9704/14504172 lattices scanned, +775 new so far (prefilter 52,674, exact 52,674), elapsed 30.0s
+[14:05:15]   join round 1: 16575/14504172 lattices scanned, +2,351 new so far (prefilter 100,720, exact 100,720), elapsed 60.0s
+[14:05:45]   join round 1: 24693/14504172 lattices scanned, +2,974 new so far (prefilter 125,182, exact 125,182), elapsed 90.0s
+[14:06:15]   join round 1: 31511/14504172 lattices scanned, +4,565 new so far (prefilter 175,630, exact 175,630), elapsed 2.0min
+[14:06:45]   join round 1: 39478/14504172 lattices scanned, +5,144 new so far (prefilter 199,832, exact 199,832), elapsed 2.5min
+[14:07:15]   join round 1: 46229/14504172 lattices scanned, +6,751 new so far (prefilter 251,740, exact 251,740), elapsed 3.0min
+[14:07:45]   join round 1: 53840/14504172 lattices scanned, +7,758 new so far (prefilter 290,518, exact 290,518), elapsed 3.5min
+[14:08:15]   join round 1: 61018/14504172 lattices scanned, +8,941 new so far (prefilter 327,820, exact 327,820), elapsed 4.0min
+[14:08:45]   join round 1: 67917/14504172 lattices scanned, +10,474 new so far (prefilter 380,314, exact 380,314), elapsed 4.5min
+[14:09:15]   join round 1: 75786/14504172 lattices scanned, +11,126 new so far (prefilter 401,230, exact 401,230), elapsed 5.0min
+[14:09:45]   join round 1: 80731/14504172 lattices scanned, +12,636 new so far (prefilter 451,400, exact 451,400), elapsed 5.5min
+[14:10:15]   join round 1: 88241/14504172 lattices scanned, +13,497 new so far (prefilter 484,566, exact 484,566), elapsed 6.0min
+[14:10:45]   join round 1: 95301/14504172 lattices scanned, +14,901 new so far (prefilter 533,260, exact 533,260), elapsed 6.5min
+[14:11:15]   join round 1: 102304/14504172 lattices scanned, +16,393 new so far (prefilter 585,678, exact 585,678), elapsed 7.0min
+[14:11:45]   join round 1: 109256/14504172 lattices scanned, +18,264 new so far (prefilter 648,854, exact 648,854), elapsed 7.5min
+[14:12:15]   join round 1: 116155/14504172 lattices scanned, +20,252 new so far (prefilter 714,604, exact 714,604), elapsed 8.0min
+[14:12:45]   join round 1: 122384/14504172 lattices scanned, +22,456 new so far (prefilter 799,224, exact 799,224), elapsed 8.5min
+[14:13:15]   join round 1: 127676/14504172 lattices scanned, +22,924 new so far (prefilter 836,696, exact 836,696), elapsed 9.0min
+[14:13:45]   join round 1: 134446/14504172 lattices scanned, +23,531 new so far (prefilter 850,648, exact 850,648), elapsed 9.5min
+[14:14:15]   join round 1: 140840/14504172 lattices scanned, +24,121 new so far (prefilter 862,360, exact 862,360), elapsed 10.0min
+[14:14:45]   join round 1: 147278/14504172 lattices scanned, +24,728 new so far (prefilter 876,024, exact 876,024), elapsed 10.5min
+[14:15:15]   join round 1: 153755/14504172 lattices scanned, +25,333 new so far (prefilter 887,380, exact 887,380), elapsed 11.0min
+[14:15:45]   join round 1: 160240/14504172 lattices scanned, +25,934 new so far (prefilter 904,114, exact 904,114), elapsed 11.5min
+[14:16:15]   join round 1: 166283/14504172 lattices scanned, +26,436 new so far (prefilter 949,666, exact 949,666), elapsed 12.0min
+[14:16:45]   join round 1: 171642/14504172 lattices scanned, +26,921 new so far (prefilter 972,038, exact 972,038), elapsed 12.5min
+[14:17:15]   join round 1: 178605/14504172 lattices scanned, +27,528 new so far (prefilter 984,882, exact 984,882), elapsed 13.0min
+[14:17:45]   join round 1: 185097/14504172 lattices scanned, +28,107 new so far (prefilter 994,808, exact 994,808), elapsed 13.5min
+[14:18:15]   join round 1: 191352/14504172 lattices scanned, +28,700 new so far (prefilter 1,009,210, exact 1,009,210), elapsed 14.0min
+[14:18:45]   join round 1: 197544/14504172 lattices scanned, +29,268 new so far (prefilter 1,023,260, exact 1,023,260), elapsed 14.5min
+[14:19:15]   join round 1: 203598/14504172 lattices scanned, +29,718 new so far (prefilter 1,057,150, exact 1,057,150), elapsed 15.0min
+[14:19:45]   join round 1: 208694/14504172 lattices scanned, +30,137 new so far (prefilter 1,092,246, exact 1,092,246), elapsed 15.5min
+[14:20:15]   join round 1: 215237/14504172 lattices scanned, +30,647 new so far (prefilter 1,104,678, exact 1,104,678), elapsed 16.0min
+[14:20:45]   join round 1: 221584/14504172 lattices scanned, +31,220 new so far (prefilter 1,114,854, exact 1,114,854), elapsed 16.5min
+[14:21:15]   join round 1: 227518/14504172 lattices scanned, +31,710 new so far (prefilter 1,129,360, exact 1,129,360), elapsed 17.0min
+[14:21:45]   join round 1: 233408/14504172 lattices scanned, +32,176 new so far (prefilter 1,166,010, exact 1,166,010), elapsed 17.5min
+[14:22:15]   join round 1: 238604/14504172 lattices scanned, +32,589 new so far (prefilter 1,199,758, exact 1,199,758), elapsed 18.0min
+[14:22:45]   join round 1: 245159/14504172 lattices scanned, +33,100 new so far (prefilter 1,212,782, exact 1,212,782), elapsed 18.5min
+[14:23:15]   join round 1: 251108/14504172 lattices scanned, +33,606 new so far (prefilter 1,226,384, exact 1,226,384), elapsed 19.0min
+[14:23:45]   join round 1: 257181/14504172 lattices scanned, +34,089 new so far (prefilter 1,241,584, exact 1,241,584), elapsed 19.5min
+[14:24:15]   join round 1: 262292/14504172 lattices scanned, +34,455 new so far (prefilter 1,291,380, exact 1,291,380), elapsed 20.0min
+[14:24:45]   join round 1: 268764/14504172 lattices scanned, +34,942 new so far (prefilter 1,303,972, exact 1,303,972), elapsed 20.5min
+[14:25:15]   join round 1: 274880/14504172 lattices scanned, +35,433 new so far (prefilter 1,316,524, exact 1,316,524), elapsed 21.0min
+[14:25:45]   join round 1: 280550/14504172 lattices scanned, +35,836 new so far (prefilter 1,362,308, exact 1,362,308), elapsed 21.5min
+[14:26:15]   join round 1: 286541/14504172 lattices scanned, +36,278 new so far (prefilter 1,380,440, exact 1,380,440), elapsed 22.0min
+[14:26:45]   join round 1: 292552/14504172 lattices scanned, +36,756 new so far (prefilter 1,394,876, exact 1,394,876), elapsed 22.5min
+[14:27:15]   join round 1: 297800/14504172 lattices scanned, +37,114 new so far (prefilter 1,443,054, exact 1,443,054), elapsed 23.0min
+[14:27:45]   join round 1: 304196/14504172 lattices scanned, +37,570 new so far (prefilter 1,455,820, exact 1,455,820), elapsed 23.5min
+[14:28:15]   join round 1: 309482/14504172 lattices scanned, +37,928 new so far (prefilter 1,503,418, exact 1,503,418), elapsed 24.0min
+[14:28:45]   join round 1: 315237/14504172 lattices scanned, +38,294 new so far (prefilter 1,539,898, exact 1,539,898), elapsed 24.5min
+[14:29:15]   join round 1: 320938/14504172 lattices scanned, +38,669 new so far (prefilter 1,585,594, exact 1,585,594), elapsed 25.0min
+[14:29:45]   join round 1: 326370/14504172 lattices scanned, +39,010 new so far (prefilter 1,653,088, exact 1,653,088), elapsed 25.5min
+[14:30:15]   join round 1: 330880/14504172 lattices scanned, +40,612 new so far (prefilter 1,745,412, exact 1,745,412), elapsed 26.0min
+[14:30:45]   join round 1: 334794/14504172 lattices scanned, +42,304 new so far (prefilter 1,809,290, exact 1,809,290), elapsed 26.5min
+[14:31:15]   join round 1: 338561/14504172 lattices scanned, +43,250 new so far (prefilter 1,844,678, exact 1,844,678), elapsed 27.0min
+[14:31:45]   join round 1: 342772/14504172 lattices scanned, +43,581 new so far (prefilter 1,857,640, exact 1,857,640), elapsed 27.5min
+[14:32:15]   join round 1: 348207/14504172 lattices scanned, +44,453 new so far (prefilter 1,870,450, exact 1,870,450), elapsed 28.0min
+[14:32:46]   join round 1: 353481/14504172 lattices scanned, +46,161 new so far (prefilter 1,905,570, exact 1,905,570), elapsed 28.5min
+[14:33:16]   join round 1: 358147/14504172 lattices scanned, +46,720 new so far (prefilter 1,917,442, exact 1,917,442), elapsed 29.0min
+[14:33:46]   join round 1: 363096/14504172 lattices scanned, +48,150 new so far (prefilter 1,937,076, exact 1,937,076), elapsed 29.5min
+[14:34:16]   join round 1: 368359/14504172 lattices scanned, +48,952 new so far (prefilter 1,956,672, exact 1,956,672), elapsed 30.0min
+[14:34:16] ⚑ ABORT (join budget): ~2.05e+2 lattices/s scanned — closure incomplete, counts are partial
+[14:34:16] JOIN stage ⚑ ABORTED in 30.0min: 1 rounds, +48,952 joined lattices (0 admissible-det), family total 14,553,124
+[14:34:17] family after joins: 14,553,124 distinct lattices — 14,504,172 admissible-det (fill candidates), 14,504,172 sharp (≤72-tile); joins ⚑ budget-cut (1 rounds, +48,952, 0 admissible-det)
+[14:50:04] ────────────────────────────────────────────────────────────────────────────────
+[14:50:04] FILL MEASUREMENT (k=3, EXAMPLE MODE): distinct lattices 14,553,124, admissible-det 14,504,172
+[14:50:04]   Σ per-seed fill work = 23,436,240 — THE REAL k=3 distinct-fill count at this pool (replaces the ~1.7e7 model)
+[14:50:04]   449/449 seeds admit ≥1 lattice; per-seed counts (nonzero): [1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 1096, 771, 771, 771, 771, 771, 771, 771, 382, 382, 382, 382, 382, 382, 382, 382, 382, 382, 382, 382, 159, 159, 53571, 53571, 53571, 53571, 53571, 53571, 53571, 53571, 53571, 53571, 381568, 381568, 381568, 381568, 381568, 381568, 381568, 213461, 213461, 213461, 213461, 381568, 381568, 381568, 381568, 381568, 381568, 381568, 302, 302, 302, 302, 302, 302, 39250, 867, 867, 867, 462434, 381568, 381568, 381568, 381568, 381568, 213461, 302, 302, 302, 302, 302, 39250, 302, 867, 867, 314, 314, 314, 314, 314, 248, 281, 77540, 77540, 77540, 77540, 53571, 27374, 180, 180, 180, 180, 180, 141, 141, 141, 141, 141, 180, 180, 180, 180, 180, 42, 42, 42, 39090, 39090, 39090, 1732, 1732, 1732, 1732, 1732, 1732, 1732, 1732, 1732, 1732, 1732, 1732, 1732, 39090, 39090, 1732, 1174, 1174, 180, 180, 42, 1732, 1732, 1732, 1732, 1732, 1732, 42, 1732, 37, 92, 92, 184, 24889, 24889, 24889, 24889, 24889, 64504, 64504, 64504, 64504, 64504, 64504, 64504, 64504, 64504, 24889, 24889, 24889, 24889, 24889, 24889, 24889, 115521, 115521, 20113, 20113, 24889, 24889, 24889, 64504, 64504, 64504, 64504, 64504, 64504, 64504, 64504, 64504, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 168051, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 293452, 293452, 293452, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 17, 17, 17, 24169, 24169, 24169, 24169, 24169, 236, 181, 181, 181, 181, 236, 236, 236, 751, 24169, 236, 236, 236, 181, 181, 181, 181, 68, 139208, 139208, 293452, 293452, 293452, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 17, 266, 24169, 24169, 24, 24, 24, 24, 24, 24, 17, 17, 17, 266, 236, 236, 236, 181, 181, 181, 236, 236, 236, 236, 236, 236, 236, 751, 68, 236, 236, 236, 236, 236, 236, 236, 181, 181, 181, 181, 181, 181, 181, 181, 181, 181, 68, 68, 107, 107, 107, 107, 20, 153, 107, 20, 153, 153, 87, 33, 33, 33, 40, 44, 141, 111, 99, 63091, 63091, 102012, 102012, 102012, 102012, 102012, 102012, 102012, 13703, 13743, 13703, 33, 33, 33, 33, 20, 20, 40, 141, 141, 153, 153, 92399, 92399, 92399, 92399, 92399, 92399, 92399, 92399, 92399, 92399, 92399, 92399, 92399, 148650, 1018, 1018, 59, 59, 63091, 63091, 148650, 148650, 148650, 148650, 148650, 148650, 179812, 89, 1018, 1018, 1018, 59, 847, 847, 847, 57, 57, 57, 57, 57, 59, 59, 59]
+[14:55:49]   SAMPLING 4,259 lattices (stratified by seed × cell size); budget 10.0h
+[PeriodSolver k=3] ⚑ EXAMPLE MODE (TH-10 scout): candidate-lattice stage REPLACED by an externally enumerated weight-s family — the substituted pool bound is UNPROVEN; results carry NO completeness or certification claim
+[14:59:06]   fills: 392/4,259, 2.0/s, ETA 32.5min, cells 0
+[14:59:36]   fills: 896/4,259, 3.9/s, ETA 14.2min, cells 0
+[15:02:11]   fills: 1,378/4,259, 3.6/s, ETA 13.3min, cells 0
+[15:02:41]   fills: 2,144/4,259, 5.2/s, ETA 6.8min, cells 0
+[15:03:11]   fills: 2,782/4,259, 6.3/s, ETA 3.9min, cells 0
+[15:03:41]   fills: 3,460/4,259, 7.3/s, ETA 109.1s, cells 0
+[15:06:10]   fills: 3,799/4,259, 6.1/s, ETA 75.2s, cells 2
+[15:06:21] FILL MEASUREMENT done in 10.5min: 4,259 fills, 2 cells, raw 4, gate-rejected 2
+[15:06:21]   per-fill cost (ms): mean 148.50, p50 43, p90 87, p99 151, max 178077 — ⚑ heavy-tailed, the p99/max drive real cost
+[15:06:21]   per-fill mean by cell-size quartile (small→large det): Q1 203.1 · Q2 164.1 · Q3 49.8 · Q4 177.1 ms
+[15:06:21]   PROJECTION full k=3 fill stage (23,436,240 fills):
+[15:06:21]     at MEAN 148.50 ms/fill:  40.3d (1 core) · 5.0d (8 cores) · 4.0d (10 cores)
+[15:06:21]     at p99  151 ms/fill (tail-aware): 5.1d (8 cores) — a conservative upper estimate
+[15:06:21]   ⚑ EXAMPLE MODE: W(8) pool depth (s*≤8) UNPROVEN — this closes the TIMING half; total k=3 feasibility = this per-fill × the pool the proof licenses (s=8 vs s=10).
+[15:06:21] ────────────────────────────────────────────────────────────────────────────────
+[15:06:21] ██ TH-10 SCOUT phase=k3 finished in 76.6min — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[15:06:21] 
+████ k=3 FILL @ √2 EXIT 0 2026-07-05 17:06:23 ████

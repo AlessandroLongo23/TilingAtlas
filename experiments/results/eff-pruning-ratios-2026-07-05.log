@@ -1,0 +1,36 @@
+██ EFFICIENCY-PRUNING — EXPERIMENT B (analytic breaking threshold), 2026-07-05T08:26:25.405Z
+catalogue: 92 certified tilings; digests k1=6f9ca9cf2d16c75f k2=f3e2e0517191362c k3=99919f42a7b58e76
+⚑ NOTE: catalogue k=3 digest 99919f42a7b58e76 is the pre-OP-3 snapshot; the live master anchor is 11ee1b1d582811d1. Ratios are congruence-invariant, so the snapshot bases give the correct per-tiling ratios regardless.
+
+weight oracle: built W(≤7) (423,169 vectors incl. 0, table-checked ≤ min(7,7)); 104 distinct basis vectors resolved
+weight oracle: built W(≤3) (2,089 vectors incl. 0, table-checked ≤ min(3,7)); 2 distinct basis vectors resolved
+oracle self-check OK: wt(ζ⁰)=1, wt(ζ⁰+ζ³+ζ⁶)=3, |W(t)| table-matched.
+
+═══ PER-k BREAKING THRESHOLD (smallest c keeping every certified k-tiling) ═══
+
+k=1  (11 tilings)
+  BREAKING c = 1.2426  (c² = 1.54416)  ← tightest: t1002 [4×1 8×1]  wt/|·|: u 1.2426 / v 1.2426 (tight on u)
+  2/√3:DROPS  1.20:DROPS  1.25:SOUND  1.30:SOUND  1.35:SOUND  √2:SOUND  1.50:SOUND
+  top-5 tightest: t1002(1.243⬡), t1001(1.155), t1010(1.134), t1006(1.098), t1004(1.072)
+
+k=2  (20 tilings)
+  BREAKING c = 1.1954  (c² = 1.42906)  ← tightest: t2016 [3×12 4×6]  wt/|·|: u 1.1954 / v 1.1954 (tight on u)
+  2/√3:DROPS  1.20:SOUND  1.25:SOUND  1.30:SOUND  1.35:SOUND  √2:SOUND  1.50:SOUND
+  top-5 tightest: t2016(1.195), t2011(1.155), t2012(1.155), t2020(1.109), t2015(1.101)
+
+k=3  (61 tilings)
+  BREAKING c = 1.1547  (c² = 1.33333)  ← tightest: t3038 [3×12 6×2]  wt/|·|: u 1.0000 / v 1.1547 (tight on v)
+  2/√3:SOUND  1.20:SOUND  1.25:SOUND  1.30:SOUND  1.35:SOUND  √2:SOUND  1.50:SOUND
+  top-5 tightest: t3038(1.155), t3058(1.155), t3043(1.155), t3041(1.155), t3003(1.155)
+
+OVERALL (k≤3) breaking c = 1.2426  (c² = 1.54416)  ← t1002 [4×1 8×1]
+  exact c² Surd = (27 + -18√2 + 0√3 + 0√6)/1
+
+═══ OCTAGON REPORT (§3.5) — the ζ₁₂-proxy blind spot, computed EXACT in ℤ[ζ₂₄] ═══
+octagon-bearing certified tilings: 1 (work order premised '4.8.8 / 3.4.8-family' plural)
+  t1002 k=1 [4×1 8×1]: |u|²=(3+2√2+0√3+0√6)/1 |v|²=(3+2√2+0√3+0√6)/1
+     wt(u)=3 wt(v)=3  ratio u=1.2426 v=1.2426  → required c=1.2426  (√2=1.4142 ⇒ BELOW √2, octagon does NOT threaten the target)
+
+per-tiling CSV → experiments/results/eff-pruning-ratios-2026-07-05.csv (92 rows)
+
+██ done — analytic breaking thresholds above are EXACT; they are a SUFFICIENT c (reduced basis regenerates the lattice). The empirical k=1 scout digest sweep confirms the actual pipeline breaks no earlier. ██

@@ -1,0 +1,21 @@
+=== structural #rows (levels per period) vs d2 vs s* ===
+tid    k |Seed| Hgt   structRows  wtV/sStar  (d2 from earlier)
+t3003 3    6   4.00     6       4/4     d2=5
+t4013 4    8   5.00     8       5/5     d2=6
+t4015 4    7   5.00     7       5/5     d2=6
+t5005 5   10   7.00    10       7/7     d2=9
+t5015 5   10   6.00    10       6/6     d2=7
+t5020 5    9   6.00     9       6/6     d2=7
+t5031 5   12   4.00     7       4/4     d2=5
+t6012 6   12   8.00    12       8/8     d2=10
+t6033 6   12   8.00    12       8/8     d2=9
+t6036 6   12   7.00    12       7/7     d2=8
+t6043 6   12   8.50    12       9/9     d2=11
+
+t5005: minimal wt(v2)=7; step angles(deg)=[300, 300, 300, 300, 300, 300, 300]
+   NON-EDGE (15-off-grid) steps used: 0 of 7  -> []
+   v2 (zeta12 int coords)=(7, 0, -7, 0)  |v2|=7.0000
+
+t6649: minimal wt(v2)=7; step angles(deg)=[0, 0, 0, 0, 30, 60, 90]
+   NON-EDGE (15-off-grid) steps used: 0 of 7  -> []
+   v2 (zeta12 int coords)=(4, 1, 1, 1)  |v2|=5.8645

@@ -1,0 +1,297 @@
+=== fillprof tuned-pool ladder Sat Jul  4 18:10:34 CEST 2026 ===
+host: 00b98c0103.dynamic-ip4.rev.k-net.dk, sequential (no concurrency), pool ns=[3,4,6,12] N=24
+
+>>> RUN k=1 maxMs=5000 nSeeds=30  start=18:10:34
+SEEDBUILD k=1: 14 seeds in 0.2s
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 12.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 12.00), areaBound=10.39 (proven 10.39) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 84 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=28ms fill=4984ms gate=8ms canon=1ms dedup=122ms | lat=23 raw=2 gateRej=0 fanLat=0 p0Skip=45 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,3,3,3,3,3]" tried=17 timedOut=true
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 72.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 72.00), areaBound=62.35 (proven 62.35) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 48 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=3ms fill=1028ms gate=62ms canon=6ms dedup=1913ms | lat=4 raw=4 gateRej=0 fanLat=0 p0Skip=3 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,3,3,3,6]" tried=4 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 27.71), compactOffMax2=16.00, gridShortMax2=12.25 (proven 27.71), areaBound=24.00 (proven 24.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 192 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":226824,"denMax":60}
+[PS_PROFILE k=1] cand=89ms fill=784ms gate=15ms canon=0ms dedup=190ms | lat=26 raw=1 gateRej=0 fanLat=0 p0Skip=141 p1Prune=4 ssDedup=10 obl=108(trunc:join-waived)
+SOLVE k=1 seed="[3,3,3,4,4]" tried=26 timedOut=false
+[PS_PROFILE k=1] cand=0ms fill=625ms gate=20ms canon=1ms dedup=468ms | lat=26 raw=1 gateRej=0 fanLat=0 p0Skip=141 p1Prune=6 ssDedup=10 obl=108(trunc:join-waived)
+SOLVE k=1 seed="[3,3,4,3,4]" tried=26 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 23), poolLmax=5.60 (proven 310.28), compactOffMax2=16.00, gridShortMax2=12.25 (proven 310.28), areaBound=268.71 (proven 268.71) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 216 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=27ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,3,4,12]" tried=0 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 72 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=2ms fill=129ms gate=0ms canon=0ms dedup=0ms | lat=11 raw=0 gateRej=0 fanLat=0 p0Skip=27 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,3,6,6]" tried=11 timedOut=false
+[PS_PROFILE k=1] cand=0ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,4,3,12]" tried=0 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 144 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=32ms fill=57ms gate=0ms canon=0ms dedup=0ms | lat=4 raw=0 gateRej=0 fanLat=0 p0Skip=54 p1Prune=8 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,4,4,6]" tried=4 timedOut=false
+[PS_PROFILE k=1] cand=0ms fill=209ms gate=29ms canon=1ms dedup=446ms | lat=4 raw=1 gateRej=0 fanLat=0 p0Skip=54 p1Prune=3 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,4,6,4]" tried=4 timedOut=false
+[PS_PROFILE k=1] cand=0ms fill=1105ms gate=11ms canon=1ms dedup=237ms | lat=11 raw=2 gateRej=0 fanLat=0 p0Skip=27 p1Prune=2 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,6,3,6]" tried=11 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 384 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=29ms fill=168ms gate=19ms canon=1ms dedup=565ms | lat=6 raw=1 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[3,12,12]" tried=6 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 24 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 44 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 104 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=14ms fill=2750ms gate=5ms canon=0ms dedup=0ms | lat=18 raw=1 gateRej=0 fanLat=0 p0Skip=29 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[4,4,4,4]" tried=18 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 252 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=29ms fill=156ms gate=40ms canon=2ms dedup=875ms | lat=3 raw=1 gateRej=0 fanLat=0 p0Skip=0 p1Prune=1 ssDedup=0 obl=0
+SOLVE k=1 seed="[4,6,12]" tried=3 timedOut=false
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 108 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=1] cand=12ms fill=667ms gate=7ms canon=1ms dedup=0ms | lat=12 raw=1 gateRej=0 fanLat=0 p0Skip=18 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=1 seed="[6,6,6]" tried=12 timedOut=false
+DONE k=1
+<<< END k=1  end=18:10:53
+
+>>> RUN k=2 maxMs=20000 nSeeds=30  start=18:10:53
+SEEDBUILD k=2: 40 seeds in 4.0s
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 144.00), compactOffMax2=16.00, gridShortMax2=12.25 (proven 144.00), areaBound=124.71 (proven 124.71) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 720 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=10ms fill=12582ms gate=1871ms canon=92ms dedup=9116ms | lat=23 raw=21 gateRej=10 fanLat=0 p0Skip=33 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,3,3,3;3,3,3,3,6]" tried=23 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=12069ms gate=1812ms canon=92ms dedup=7563ms | lat=23 raw=20 gateRej=10 fanLat=0 p0Skip=33 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,3,3,3;3,3,3,3,6]" tried=23 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 55.43), compactOffMax2=16.00, gridShortMax2=12.25 (proven 55.43), areaBound=48.00 (proven 48.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 8532 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":4437846,"denMax":60}
+[PS_PROFILE k=2] cand=974ms fill=14135ms gate=717ms canon=15ms dedup=3956ms | lat=190 raw=12 gateRej=4 fanLat=62 p0Skip=2526 p1Prune=2 ssDedup=264 obl=2616(trunc:join-waived)
+SOLVE k=2 seed="[3,3,3,3,3,3;3,3,3,4,4]" tried=190 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=8699ms gate=144ms canon=5ms dedup=1233ms | lat=190 raw=2 gateRej=1 fanLat=63 p0Skip=2526 p1Prune=1 ssDedup=297 obl=2616(trunc:join-waived)
+SOLVE k=2 seed="[3,3,3,3,3,3;3,3,4,3,4]" tried=190 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=6 (proven 47), poolLmax=5.60 (proven 620.55), compactOffMax2=16.00, gridShortMax2=12.25 (proven 620.55), areaBound=537.42 (proven 537.42) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 3156 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=37ms fill=687ms gate=59ms canon=6ms dedup=2439ms | lat=3 raw=2 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,3,3,3;3,3,4,12]" tried=3 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 852 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=21ms fill=13402ms gate=37ms canon=1ms dedup=956ms | lat=47 raw=1 gateRej=0 fanLat=28 p0Skip=42 p1Prune=0 ssDedup=0 obl=12
+SOLVE k=2 seed="[3,3,3,3,3,3;3,3,6,6]" tried=47 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 2112 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=37ms fill=99ms gate=0ms canon=0ms dedup=0ms | lat=2 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,3,6;3,3,3,4,4]" tried=2 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=127ms gate=0ms canon=0ms dedup=0ms | lat=2 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,3,6;3,3,3,4,4]" tried=2 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=90ms gate=0ms canon=0ms dedup=0ms | lat=2 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,3,6;3,3,4,3,4]" tried=2 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 552 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=29ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,3,6;3,3,4,12]" tried=0 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 48 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 78 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 768 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=18ms fill=2280ms gate=21ms canon=1ms dedup=392ms | lat=26 raw=1 gateRej=0 fanLat=10 p0Skip=42 p1Prune=0 ssDedup=0 obl=12
+SOLVE k=2 seed="[3,3,3,3,6;3,3,6,6]" tried=26 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=2330ms gate=22ms canon=1ms dedup=392ms | lat=26 raw=1 gateRej=0 fanLat=16 p0Skip=42 p1Prune=0 ssDedup=0 obl=12
+SOLVE k=2 seed="[3,3,3,3,6;3,3,6,6]" tried=26 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=2573ms gate=249ms canon=16ms dedup=0ms | lat=26 raw=4 gateRej=2 fanLat=10 p0Skip=42 p1Prune=0 ssDedup=0 obl=12
+SOLVE k=2 seed="[3,3,3,3,6;3,6,3,6]" tried=26 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1440 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":1345792,"denMax":60}
+[PS_PROFILE k=2] cand=485ms fill=6951ms gate=69ms canon=2ms dedup=1315ms | lat=88 raw=1 gateRej=0 fanLat=42 p0Skip=423 p1Prune=7 ssDedup=110 obl=648(trunc:join-waived)
+SOLVE k=2 seed="[3,3,3,4,4;3,3,4,3,4]" tried=88 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=7318ms gate=131ms canon=5ms dedup=3699ms | lat=88 raw=2 gateRej=0 fanLat=42 p0Skip=423 p1Prune=16 ssDedup=110 obl=648(trunc:join-waived)
+SOLVE k=2 seed="[3,3,3,4,4;3,3,4,3,4]" tried=88 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=7102ms gate=126ms canon=5ms dedup=3694ms | lat=88 raw=2 gateRej=0 fanLat=55 p0Skip=423 p1Prune=17 ssDedup=220 obl=648(trunc:join-waived)
+SOLVE k=2 seed="[3,3,3,4,4;3,3,4,3,4]" tried=88 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1608 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=32ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,4,4;3,3,4,12]" tried=0 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 2184 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=38ms fill=503ms gate=0ms canon=0ms dedup=0ms | lat=9 raw=0 gateRej=0 fanLat=0 p0Skip=24 p1Prune=8 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,4,4;3,4,4,6]" tried=9 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=682ms gate=48ms canon=3ms dedup=1562ms | lat=9 raw=1 gateRej=0 fanLat=0 p0Skip=24 p1Prune=9 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,3,4,4;3,4,6,4]" tried=9 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 9504 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":3099762,"denMax":60}
+[PS_PROFILE k=2] cand=648ms fill=6125ms gate=206ms canon=3ms dedup=864ms | lat=171 raw=5 gateRej=2 fanLat=60 p0Skip=1845 p1Prune=23 ssDedup=208 obl=1932(trunc:join-waived)
+SOLVE k=2 seed="[3,3,3,4,4;4,4,4,4]" tried=171 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,12;3,3,4,3,4]" tried=0 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,3,4;3,4,3,12]" tried=0 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=528ms gate=0ms canon=0ms dedup=0ms | lat=9 raw=0 gateRej=0 fanLat=0 p0Skip=24 p1Prune=1 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,3,4;3,4,4,6]" tried=9 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=1302ms gate=72ms canon=5ms dedup=1793ms | lat=9 raw=2 gateRej=0 fanLat=0 p0Skip=24 p1Prune=78 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,3,4;3,4,6,4]" tried=9 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=707ms gate=0ms canon=0ms dedup=0ms | lat=9 raw=0 gateRej=0 fanLat=0 p0Skip=24 p1Prune=49 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,3,4;3,4,6,4]" tried=9 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 480 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=29ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,12;3,4,3,12]" tried=0 timedOut=false
+[PS_PROFILE k=2] cand=0ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,12;3,4,3,12]" tried=0 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 528 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=30ms fill=32ms gate=0ms canon=0ms dedup=0ms | lat=3 raw=0 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,12;3,4,6,4]" tried=3 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 1380 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=31ms fill=85ms gate=0ms canon=0ms dedup=0ms | lat=12 raw=0 gateRej=0 fanLat=8 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,12,12;3,3,12,4]" tried=12 timedOut=false
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (compact off-grid cap): 888 off-grid pool vectors exceed compactOffMax2=16.00 and are not tried as round-cell bases
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid short-side cap): 1344 pool vectors exceed gridShortMax2=12.25 and are not tried as cmm/rect short sides
+[PeriodSolver k=2] ⚑ INCOMPLETE-REGION (grid long-side reach): 552 solved cmm/rect long axes exceed poolLmax=5.60 and are not enumerated
+[PS_PROFILE k=2] cand=28ms fill=0ms gate=0ms canon=0ms dedup=0ms | lat=0 raw=0 gateRej=0 fanLat=0 p0Skip=0 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=2 seed="[3,3,4,12;4,6,12]" tried=0 timedOut=false
+DONE k=2
+<<< END k=2  end=18:13:34
+
+>>> RUN k=3 maxMs=60000 nSeeds=30  start=18:13:34
+SEEDBUILD k=3: 449 seeds in 127.0s
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 71), poolLmax=8.12 (proven 216.00), compactOffMax2=66.00, gridShortMax2=66.00 (proven 216.00), areaBound=187.06 (proven 187.06) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive lattice 1|-1,0,0,0,3,0,0,0#1|-5,0,0,0,1,0,0,0 not in candidate list (supercell 1|-4,0,0,0,-2,0,0,0#1|-6,0,0,0,4,0,0,0, 46 witness(es))
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive lattice 1|-1,0,0,0,-4,0,0,0#1|-3,0,0,0,2,0,0,0 not in candidate list (supercell 1|-4,0,0,0,-2,0,0,0#1|-6,0,0,0,4,0,0,0, 46 witness(es))
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive lattice 1|-1,0,0,0,5,0,0,0#1|-3,0,0,0,1,0,0,0 not in candidate list (supercell 1|-4,0,0,0,6,0,0,0#1|-6,0,0,0,2,0,0,0, 46 witness(es))
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive lattice 1|-2,0,0,0,3,0,0,0#1|-4,0,0,0,-1,0,0,0 not in candidate list (supercell 1|-4,0,0,0,6,0,0,0#1|-6,0,0,0,2,0,0,0, 46 witness(es))
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive lattice 1|-1,0,0,0,5,0,0,0#1|-3,0,0,0,1,0,0,0 not in candidate list (supercell 1|-2,0,0,0,-4,0,0,0#1|-6,0,0,0,2,0,0,0, 46 witness(es))
+[PS_PROFILE k=3] cand=28ms fill=51971ms gate=7865ms canon=358ms dedup=25966ms | lat=69 raw=74 gateRej=48 fanLat=0 p0Skip=102 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]" tried=56 timedOut=true
+[PS_PROFILE k=3] cand=0ms fill=55411ms gate=5802ms canon=362ms dedup=14700ms | lat=69 raw=59 gateRej=31 fanLat=13 p0Skip=102 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]" tried=66 timedOut=true
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18528 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=450ms fill=36230ms gate=0ms canon=0ms dedup=1ms | lat=123 raw=0 gateRej=0 fanLat=0 p0Skip=438 p1Prune=274 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]" tried=123 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1362 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=142ms fill=55584ms gate=4272ms canon=123ms dedup=7350ms | lat=98 raw=68 gateRej=46 fanLat=44 p0Skip=189 p1Prune=0 ssDedup=7 obl=102
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]" tried=47 timedOut=true
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 71), poolLmax=8.12 (proven 83.14), compactOffMax2=66.00, gridShortMax2=66.00 (proven 83.14), areaBound=72.00 (proven 72.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 16464 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":83140776,"denMax":60}
+[PS_PROFILE k=3] cand=10816ms fill=43875ms gate=1411ms canon=32ms dedup=7577ms | lat=626 raw=26 gateRej=10 fanLat=65 p0Skip=13836 p1Prune=6 ssDedup=457 obl=14688(trunc:join-waived)
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4]" tried=67 timedOut=true
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 71), poolLmax=8.12 (proven 930.83), compactOffMax2=66.00, gridShortMax2=66.00 (proven 930.83), areaBound=806.12 (proven 806.12) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 20904 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=330ms fill=5316ms gate=546ms canon=30ms dedup=7433ms | lat=80 raw=4 gateRej=1 fanLat=0 p0Skip=534 p1Prune=2 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,3,4,4;3,3,12,4]" tried=80 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=2547ms gate=0ms canon=0ms dedup=0ms | lat=80 raw=0 gateRej=0 fanLat=0 p0Skip=534 p1Prune=1 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,4,12;3,3,4,3,4]" tried=80 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1506 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=151ms fill=23484ms gate=36ms canon=2ms dedup=0ms | lat=106 raw=1 gateRej=1 fanLat=40 p0Skip=189 p1Prune=0 ssDedup=15 obl=102
+SOLVE k=3 seed="[3,3,3,3,3,3;3,3,6,6;3,3,6,6]" tried=106 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4068 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=189ms fill=2246ms gate=0ms canon=0ms dedup=0ms | lat=46 raw=0 gateRej=0 fanLat=6 p0Skip=54 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,6;3,3,3,3,6;3,3,3,4,4]" tried=46 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 17460 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=472ms fill=14322ms gate=51ms canon=7ms dedup=2007ms | lat=412 raw=3 gateRej=0 fanLat=91 p0Skip=846 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,6;3,6,4,4;3,3,3,4,4]" tried=412 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=16622ms gate=0ms canon=0ms dedup=0ms | lat=412 raw=0 gateRej=0 fanLat=203 p0Skip=846 p1Prune=85 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,6;3,3,3,4,4;3,4,6,4]" tried=412 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1632 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=140ms fill=215ms gate=0ms canon=0ms dedup=0ms | lat=12 raw=0 gateRej=0 fanLat=0 p0Skip=6 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,3,6;3,3,4,12;3,3,12,4]" tried=12 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1290 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=64ms fill=7747ms gate=36ms canon=3ms dedup=0ms | lat=79 raw=3 gateRej=2 fanLat=29 p0Skip=102 p1Prune=0 ssDedup=1 obl=18
+SOLVE k=3 seed="[3,3,3,3,6;3,3,6,6;3,3,3,3,6]" tried=79 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 21924 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":18046336,"denMax":60}
+[PS_PROFILE k=3] cand=2338ms fill=25767ms gate=0ms canon=0ms dedup=0ms | lat=186 raw=0 gateRej=0 fanLat=26 p0Skip=3762 p1Prune=226 ssDedup=64 obl=3696(trunc:join-waived)
+SOLVE k=3 seed="[3,3,3,3,6;3,6,3,6;3,4,4,6]" tried=186 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 2388 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":13085684,"denMax":60}
+[PS_PROFILE k=3] cand=3457ms fill=34431ms gate=111ms canon=9ms dedup=3347ms | lat=196 raw=6 gateRej=0 fanLat=105 p0Skip=2171 p1Prune=41 ssDedup=1070 obl=2748(trunc:join-waived)
+SOLVE k=3 seed="[3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]" tried=196 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=48321ms gate=251ms canon=12ms dedup=2313ms | lat=196 raw=6 gateRej=2 fanLat=105 p0Skip=2171 p1Prune=43 ssDedup=366 obl=2748(trunc:join-waived)
+SOLVE k=3 seed="[3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]" tried=196 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=53166ms gate=334ms canon=21ms dedup=2477ms | lat=196 raw=12 gateRej=4 fanLat=134 p0Skip=2171 p1Prune=50 ssDedup=355 obl=2748(trunc:join-waived)
+SOLVE k=3 seed="[3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]" tried=137 timedOut=true
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 3432 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=162ms fill=77ms gate=0ms canon=0ms dedup=0ms | lat=6 raw=0 gateRej=0 fanLat=0 p0Skip=120 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,4,4;3,3,4,3,4;3,3,12,4]" tried=6 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4188 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=198ms fill=2832ms gate=74ms canon=6ms dedup=0ms | lat=53 raw=1 gateRej=1 fanLat=6 p0Skip=345 p1Prune=10 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,4,4;3,3,4,3,4;3,4,6,4]" tried=53 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=86ms gate=0ms canon=0ms dedup=0ms | lat=6 raw=0 gateRej=0 fanLat=0 p0Skip=120 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,4,4;3,3,4,12;3,3,3,4,4]" tried=6 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 22092 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":41390730,"denMax":60}
+[PS_PROFILE k=3] cand=4737ms fill=22167ms gate=0ms canon=0ms dedup=0ms | lat=313 raw=0 gateRej=0 fanLat=114 p0Skip=11274 p1Prune=36 ssDedup=140 obl=10800(trunc:join-waived)
+SOLVE k=3 seed="[3,3,3,4,4;3,4,4,6;3,3,6,6]" tried=313 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=1480ms gate=0ms canon=0ms dedup=0ms | lat=53 raw=0 gateRej=0 fanLat=6 p0Skip=345 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,3,4,4;3,3,3,4,4;3,4,6,4]" tried=53 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4140 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=159ms fill=416ms gate=42ms canon=4ms dedup=0ms | lat=6 raw=1 gateRej=1 fanLat=0 p0Skip=132 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,4,12;3,4,3,12;3,3,4,3,4]" tried=6 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=106ms gate=0ms canon=0ms dedup=0ms | lat=6 raw=0 gateRej=0 fanLat=0 p0Skip=120 p1Prune=0 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,4,3,4;3,3,4,3,4;3,4,3,12]" tried=6 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4572 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=198ms fill=7043ms gate=37ms canon=1ms dedup=790ms | lat=61 raw=1 gateRej=0 fanLat=22 p0Skip=252 p1Prune=162 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,4,3,4;3,4,6,4;3,4,4,6]" tried=61 timedOut=false
+[PS_PROFILE k=3] cand=0ms fill=11889ms gate=46ms canon=2ms dedup=1ms | lat=61 raw=1 gateRej=1 fanLat=0 p0Skip=252 p1Prune=287 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,4,3,4;3,4,6,4;3,4,6,4]" tried=61 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1176 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=136ms fill=417ms gate=0ms canon=0ms dedup=0ms | lat=24 raw=0 gateRej=0 fanLat=24 p0Skip=48 p1Prune=3 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,3,12,4;3,4,3,12;3,3,12,4]" tried=24 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 4704 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=160ms fill=1570ms gate=301ms canon=16ms dedup=3554ms | lat=12 raw=3 gateRej=1 fanLat=0 p0Skip=132 p1Prune=8 ssDedup=0 obl=0
+SOLVE k=3 seed="[3,12,12;3,3,12,4;3,4,6,4]" tried=12 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1758 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PS_PROFILE k=3] cand=101ms fill=8866ms gate=886ms canon=30ms dedup=2988ms | lat=76 raw=19 gateRej=13 fanLat=12 p0Skip=162 p1Prune=0 ssDedup=0 obl=84
+SOLVE k=3 seed="[3,3,6,6;3,6,3,6;6,6,6]" tried=76 timedOut=false
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1164 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (oblique candidate stage): {"cause":"join-waived","rejects":5529930,"denMax":60}
+[PS_PROFILE k=3] cand=4711ms fill=27706ms gate=150ms canon=5ms dedup=2511ms | lat=174 raw=1 gateRej=0 fanLat=104 p0Skip=942 p1Prune=8 ssDedup=12 obl=1632(trunc:join-waived)
+SOLVE k=3 seed="[3,4,4,6;3,4,6,4;3,4,6,4]" tried=174 timedOut=false
+DONE k=3
+<<< END k=3  end=18:27:56
+
+=== ALL DONE Sat Jul  4 18:27:56 CEST 2026 ===
+
+=== AGGREGATED LADDER (Σfill/Σtried, first-solve warmup dropped per k) ===
+k | n(kept) | timedOut | Σfill(ms) | Σtried | per-fill(ms/lat) | median | p90 | max | clean-only per-fill
+--|---------|----------|-----------|--------|------------------|--------|-----|-----|--------------------
+1 | 13 | 0 | 7678 | 125 | 61.4 | 52.0 | 152.8 | 257.0 | 61.4
+2 | 29 | 0 | 87826 | 1032 | 85.1 | 78.6 | 229.0 | 524.7 | 85.1
+3 | 29 | 4 | 509939 | 3096 | 164.7 | 98.1 | 654.9 | 1182.6 | 108.6
+
+Note: per-fill = Σfill/Σtried (tried-weighted). "clean-only" excludes timed-out solves.
+median/p90/max are per-SOLVE ms/lattice — shows the seed-to-seed spread.

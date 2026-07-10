@@ -1,0 +1,4 @@
+### 32 period-solver tests ###
+ Test Files  1 passed (1)
+      Tests  32 passed (32)
+### k=1 scout fill-match digest (byte-identical gold) ###

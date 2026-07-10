@@ -1,0 +1,45 @@
+[driver] k=3: built 449 seeds (multi-VC filtered), solving 25 (maxMs=15000/solve)
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 71), poolLmax=8.12 (proven 216.00), compactOffMax2=66.00, gridShortMax2=66.00 (proven 216.00), areaBound=187.06 (proven 187.06) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1218 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[driver] #  1/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          44360ms cells=4 raw=20 gateRej=14 ⟨TIMEOUT⟩
+[driver] #  2/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          25147ms cells=1 raw=10 gateRej=1 ⟨TIMEOUT⟩
+[driver] #  3/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          26241ms cells=1 raw=11 gateRej=3 ⟨TIMEOUT⟩
+[driver] #  4/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          28918ms cells=2 raw=13 gateRej=3 ⟨TIMEOUT⟩
+[driver] #  5/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          24891ms cells=1 raw=13 gateRej=3 ⟨TIMEOUT⟩
+[driver] #  6/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          25057ms cells=1 raw=10 gateRej=1 ⟨TIMEOUT⟩
+[driver] #  7/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          25389ms cells=1 raw=13 gateRej=3 ⟨TIMEOUT⟩
+[driver] #  8/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          28653ms cells=2 raw=12 gateRej=2 ⟨TIMEOUT⟩
+[driver] #  9/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          25465ms cells=1 raw=11 gateRej=3 ⟨TIMEOUT⟩
+[driver] # 10/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          25046ms cells=1 raw=10 gateRej=1 ⟨TIMEOUT⟩
+[driver] # 11/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          21642ms cells=1 raw=10 gateRej=3 ⟨TIMEOUT⟩
+[driver] # 12/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          25224ms cells=1 raw=11 gateRej=3 ⟨TIMEOUT⟩
+[driver] # 13/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          48246ms cells=4 raw=17 gateRej=8 ⟨TIMEOUT⟩
+[driver] # 14/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          20198ms cells=1 raw=10 gateRej=4 ⟨TIMEOUT⟩
+[driver] # 15/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          30194ms cells=2 raw=13 gateRej=4 ⟨TIMEOUT⟩
+[driver] # 16/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]          48116ms cells=4 raw=19 gateRej=10 ⟨TIMEOUT⟩
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 1074 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[driver] # 17/25 [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]        45288ms cells=3 raw=19 gateRej=12 ⟨TIMEOUT⟩
+[driver] # 18/25 [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]        31397ms cells=2 raw=16 gateRej=8 ⟨TIMEOUT⟩
+[driver] # 19/25 [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]        42529ms cells=2 raw=15 gateRej=8 ⟨TIMEOUT⟩
+[driver] # 20/25 [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]        44720ms cells=3 raw=17 gateRej=12 ⟨TIMEOUT⟩
+[driver] # 21/25 [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]        40066ms cells=2 raw=17 gateRej=10 ⟨TIMEOUT⟩
+[driver] # 22/25 [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]        36900ms cells=2 raw=18 gateRej=13 ⟨TIMEOUT⟩
+[driver] # 23/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,3,3]        42263ms cells=3 raw=20 gateRej=12 ⟨TIMEOUT⟩
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (grid long-side reach): 18528 solved cmm/rect long axes exceed poolLmax=8.12 and are not enumerated
+[driver] # 24/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]          15001ms cells=0 raw=0 gateRej=0 ⟨TIMEOUT⟩
+[driver] # 25/25 [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]          15001ms cells=0 raw=0 gateRej=0 ⟨TIMEOUT⟩
+[driver] DONE k=3: 25 solves in 923.9s — cells 45, raw 325, gateRej 141, timedOut 25
+
+[PS_FILL_PROFILE] fill-internals aggregate over 1382 torusFill calls, 27092 pops — total timed 349275ms
+  VALIDITY total 258346ms (74.0%) | SELECTION 43266ms (12.4%) | SETUP 47542ms (13.6%) | BOOKKEEPING 121ms (0.0%)
+    setup    (per-fill: initial block + self-overlap)        47542ms   13.6%
+    analyze  (validity: open-vertex / contradiction)          6987ms    2.0%
+    certify  (validity: isCompleteTiling certificate)       216056ms   61.9%
+    primitive(validity: isPrimitive supercell check)         35303ms   10.1%
+    expand   (selection: gap + place + reduce + block)       43266ms   12.4%
+    dedupKey (bookkeeping: stateKey + seenState)               121ms    0.0%
+  certify breakdown (of 216055ms isCompleteTiling): area(Surd) 33ms 0.0% | buildBlock(R=cellDiam+8) 29846ms 13.8% | overlap(O(n²) intersects) 185076ms 85.7% | vertexJudge 1101ms 0.5%
+  tree shape: pops 27092, seenHits 0, capSkips 0, contradictions 3027, closures 554
+    closure fate: certCalls 554 → certPass 554; primCalls 325 → primTrue 325
+    placements: attempted 60577, pushed 26281; rejected: overlap 34296, dup 0, p1 0, cap 0
+    per-pop fan-out: 2.24 places/pop, 0.97 children/pop

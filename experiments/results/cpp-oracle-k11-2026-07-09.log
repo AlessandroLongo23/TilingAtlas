@@ -1,0 +1,14 @@
+[2026-07-09 15:47:51] ==== k=11 oracle (Marek Čtrnáct eu_solver.cpp, maxnum=11) ====
+[2026-07-09 15:47:51] reference count.txt k=11 total = 24459
+[2026-07-09 15:47:51] baselines: C++ solve k=10 = 137s ; Python prune k=10 = 353s
+[2026-07-09 15:47:51] PHASE 1 solve (C++ BFS, all k<=11) — heartbeat every 60s
+[2026-07-09 15:48:51]   …solving  elapsed=60s  raw=234M
+[2026-07-09 15:49:51]   …solving  elapsed=120s  raw=131M
+[2026-07-09 15:50:51]   …solving  elapsed=180s  raw=172M
+[2026-07-09 15:51:51]   …solving  elapsed=240s  raw=1.3G
+[2026-07-09 15:52:51]   …solving  elapsed=300s  raw=200M
+[2026-07-09 15:53:53] solve DONE in 361s ; raw=501M ; raw_blocks=152801
+[2026-07-09 15:53:53] PHASE 2 prune (Python, EU_FAMILIES=all, completeness-safe, k=1..11)
+[2026-07-09 16:18:00] prune DONE in 1447s ; errors=0
+0
+[2026-07-09 16:18:00] PHASE 3 counts (C++ solver -> my pruner) vs count.txt:

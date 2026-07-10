@@ -1,0 +1,22 @@
+=== t6649 crack: sStar=6 wtU=2(v1) wtV=7(v2) ===
+  exact wt(v1)=2, exact wt(v2)=7
+  minimal-weight vector w=a*v1+b*v2 (b!=0) that forms an index-1 basis with v1:
+    wt=6 at (a,b)=(-1,-1), w=(-5, -1, 0, 0), |w|=5.887, wt(w)=6
+  ==> s* = min over generating sets = 6 (matches oracle sStar=6); long-gen wt=7 is NOT s*.
+
+=== honest FULL-PATCH structural rows vs edge-climb vs s* ===
+  t3003: |V(Q)|=6  fullPatchRows=6  (H=4.00)  edge-climb=5  s*=4  wtV=4
+  t4013: |V(Q)|=8  fullPatchRows=8  (H=5.00)  edge-climb=6  s*=5  wtV=5
+  t5005: |V(Q)|=10  fullPatchRows=10  (H=7.00)  edge-climb=9  s*=7  wtV=7
+  t5015: |V(Q)|=10  fullPatchRows=10  (H=6.00)  edge-climb=7  s*=6  wtV=6
+  t6012: |V(Q)|=12  fullPatchRows=12  (H=8.00)  edge-climb=10  s*=8  wtV=8
+  t6033: |V(Q)|=12  fullPatchRows=12  (H=8.00)  edge-climb=9  s*=8  wtV=8
+  t6043: |V(Q)|=12  fullPatchRows=12  (H=8.50)  edge-climb=11  s*=9  wtV=9
+  t6649: |V(Q)|=12  fullPatchRows=12  (H=5.80)  edge-climb=7  s*=6  wtV=7
+elongated per-k: n, max s*, 2k+2 bound, headroom
+  k=1: n=  1  max s*=2  2k+2=4  OK
+  k=2: n=  9  max s*=4  2k+2=6  OK
+  k=3: n= 37  max s*=6  2k+2=8  OK
+  k=4: n=100  max s*=10  2k+2=10  OK
+  k=5: n=250  max s*=12  2k+2=12  OK
+  k=6: n=537  max s*=14  2k+2=14  OK

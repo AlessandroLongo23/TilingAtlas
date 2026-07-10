@@ -1,0 +1,36 @@
+====================================================================================
+JOIN-NECESSITY SWEEP — does any real k<=6 tiling need a >=3-generator (join) lattice?
+test per lattice L:  s*(L)=min s s.t. wt<=s vectors GENERATE L (any count);
+                     s*_pair(L)=min s s.t. a wt<=s unimodular PAIR (basis) exists.
+JOIN NEEDED  <=>  s*_pair > s*   (generate but no 2 of them form a basis).
+source: galebach.json oracle periods (k4-6 reference); zeta12->zeta24 embedding.
+====================================================================================
+
+[VERDICT LATTICE] t6649 (k6, snub-square band, lambda1=1.932):
+    Gauss-basis weights=(2,7) -> basis vec of wt 7 is OUTSIDE the s*=6 pool
+    s*=6  s*_pair=6  ->  JOIN NEEDED = False
+    (weight-!=-length IS active here: 2nd min has wt 7, but u+v has wt 6 and still pairs to a basis)
+
+[ROBUSTNESS] random sample of 14 k=6 oracle lattices (independent recompute):
+    t6138: basis-wt=(2,12) s*=12 s*_pair=12
+    t6583: basis-wt=(8,8) s*=8 s*_pair=8
+    t6065: basis-wt=(3,5) s*=5 s*_pair=5
+    t6262: basis-wt=(1,12) s*=12 s*_pair=12
+    t6121: basis-wt=(2,12) s*=12 s*_pair=12
+    t6508: basis-wt=(7,7) s*=7 s*_pair=7
+    t6461: basis-wt=(5,5) s*=5 s*_pair=5
+    t6484: basis-wt=(9,9) s*=9 s*_pair=9
+    t6668: basis-wt=(6,6) s*=6 s*_pair=6
+    t6389: basis-wt=(3,7) s*=7 s*_pair=7
+    t6215: basis-wt=(6,6) s*=6 s*_pair=6
+    t6097: basis-wt=(10,10) s*=10 s*_pair=10
+    t6500: basis-wt=(7,7) s*=7 s*_pair=7
+    t6030: basis-wt=(7,7) s*=7 s*_pair=7
+    -> join-needed in sample: 0
+
+[CATALOGUE VERDICT]
+  Shortcut (proven): s*_pair>s* is possible ONLY if s* < max(wtU,wtV) [reduced basis is itself a pair].
+  CSV scan of all 1,339 lattices (k=1..6): exactly ONE row has s* < basis-wt -> t6649.
+  t6649 explicitly resolved above: s*_pair == s*  -> NO join needed.
+  ==> Across the ENTIRE oracle catalogue k=1..6, ZERO tilings require a join. Pairs suffice everywhere.
+  Caveat: reference periods for k>=4 are Galebach (not certified); octagon tilings not in the zeta12 set.

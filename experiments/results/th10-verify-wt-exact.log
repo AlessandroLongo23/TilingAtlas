@@ -1,0 +1,15 @@
+sanity t1005: wt(v2_reduced)=1 (csv wtV=1, sStar=1)
+sanity t1003: wt(v2_reduced)=5 (csv wtV=5, sStar=5)
+sanity t1001: wt(v2_reduced)=2 (csv wtV=2, sStar=2)
+sanity t2001: wt(v2_reduced)=6 (csv wtV=6, sStar=6)
+
+=== independent exact wt(v2) for offenders vs CSV wtV vs edge d2 ===
+t5005: exact wt(v2)=7  CSV wtV=7 sStar=7  (edge d2 known > this)  match=YES
+t6012: exact wt(v2)=8  CSV wtV=8 sStar=8  (edge d2 known > this)  match=YES
+t6042: exact wt(v2)=8  CSV wtV=8 sStar=8  (edge d2 known > this)  match=YES
+t6043: exact wt(v2)=9  CSV wtV=9 sStar=9  (edge d2 known > this)  match=YES
+t6044: exact wt(v2)=8  CSV wtV=8 sStar=8  (edge d2 known > this)  match=YES
+t3003: exact wt(v2)=4  CSV wtV=4 sStar=4  (edge d2 known > this)  match=YES
+t4013: exact wt(v2)=5  CSV wtV=5 sStar=5  (edge d2 known > this)  match=YES
+t5031: exact wt(v2)=4  CSV wtV=4 sStar=4  (edge d2 known > this)  match=YES
+t5045: exact wt(v2)=8  CSV wtV=8 sStar=8  (edge d2 known > this)  match=YES

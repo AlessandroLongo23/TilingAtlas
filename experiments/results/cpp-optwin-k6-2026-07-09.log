@@ -1,0 +1,42 @@
+[17:48:30] ==== single-core solver wins: validate + measure, k=1..6, best of 3 ====
+[17:48:30] box: Apple M5  cores=10
+[17:48:31] compiler: Apple clang version 21.0.0 (clang-2100.1.1.101)
+[17:48:32] pruner built (-O2)
+[17:48:32] builds:  A=baseline (-O2, trace on)  |  B=trace off (-O2)  |  C=trace off + -O3 -march=native
+[17:48:32] ---- k=1 ----
+[17:48:33]   A baseline (-O2, trace on)         solve=0.004s  count(k=1)=10 OK  sol_bytes=1690
+[17:48:34]   B trace off (-O2)                  solve=0.003s  count(k=1)=10 OK  sol_bytes=1690
+[17:48:35]   C trace off + -O3 -march=native    solve=0.004s  count(k=1)=10 OK  sol_bytes=1690
+[17:48:35]   solution files A vs C: IDENTICAL (sha256 match)
+[17:48:35]   speedup  trace-gating 1.35x   +flags total 0.92x
+[17:48:35] ---- k=2 ----
+[17:48:36]   A baseline (-O2, trace on)         solve=0.020s  count(k=2)=20 OK  sol_bytes=8063
+[17:48:37]   B trace off (-O2)                  solve=0.009s  count(k=2)=20 OK  sol_bytes=8063
+[17:48:38]   C trace off + -O3 -march=native    solve=0.007s  count(k=2)=20 OK  sol_bytes=8063
+[17:48:38]   solution files A vs C: IDENTICAL (sha256 match)
+[17:48:38]   speedup  trace-gating 2.38x   +flags total 2.94x
+[17:48:38] ---- k=3 ----
+[17:48:40]   A baseline (-O2, trace on)         solve=0.088s  count(k=3)=61 OK  sol_bytes=42006
+[17:48:41]   B trace off (-O2)                  solve=0.016s  count(k=3)=61 OK  sol_bytes=42006
+[17:48:42]   C trace off + -O3 -march=native    solve=0.017s  count(k=3)=61 OK  sol_bytes=42006
+[17:48:42]   solution files A vs C: IDENTICAL (sha256 match)
+[17:48:42]   speedup  trace-gating 5.44x   +flags total 5.21x
+[17:48:42] ---- k=4 ----
+[17:48:44]   A baseline (-O2, trace on)         solve=0.374s  count(k=4)=151 OK  sol_bytes=205170
+[17:48:45]   B trace off (-O2)                  solve=0.061s  count(k=4)=151 OK  sol_bytes=205170
+[17:48:46]   C trace off + -O3 -march=native    solve=0.058s  count(k=4)=151 OK  sol_bytes=205170
+[17:48:46]   solution files A vs C: IDENTICAL (sha256 match)
+[17:48:46]   speedup  trace-gating 6.10x   +flags total 6.48x
+[17:48:46] ---- k=5 ----
+[17:48:51]   A baseline (-O2, trace on)         solve=1.259s  count(k=5)=332 OK  sol_bytes=700773
+[17:48:53]   B trace off (-O2)                  solve=0.215s  count(k=5)=332 OK  sol_bytes=700773
+[17:48:55]   C trace off + -O3 -march=native    solve=0.205s  count(k=5)=332 OK  sol_bytes=700773
+[17:48:55]   solution files A vs C: IDENTICAL (sha256 match)
+[17:48:55]   speedup  trace-gating 5.85x   +flags total 6.14x
+[17:48:55] ---- k=6 ----
+[17:49:07]   A baseline (-O2, trace on)         solve=3.679s  count(k=6)=673 OK  sol_bytes=1978227
+[17:49:10]   B trace off (-O2)                  solve=0.646s  count(k=6)=673 OK  sol_bytes=1978227
+[17:49:13]   C trace off + -O3 -march=native    solve=0.633s  count(k=6)=673 OK  sol_bytes=1978227
+[17:49:13]   solution files A vs C: IDENTICAL (sha256 match)
+[17:49:13]   speedup  trace-gating 5.69x   +flags total 5.81x
+[17:49:13] ==== ALL CHECKS PASS — counts match A068599 and A≡C byte-identical ; csv -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/cpp-optwin-k6-2026-07-09.csv ====

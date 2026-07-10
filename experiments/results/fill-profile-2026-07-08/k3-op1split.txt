@@ -1,0 +1,2 @@
+[driver] DONE k=3: 5 solves in 254.8s — cells 9, raw 122, gateRej 60, timedOut 5
+[driver] OP-1 split (Rank-2 target): vBelowKSkipped 0 + p2Skipped 71 = 71 closures discarded post-certificate

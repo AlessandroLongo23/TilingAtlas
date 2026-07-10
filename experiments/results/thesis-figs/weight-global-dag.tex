@@ -1,0 +1,223 @@
+% Global weight law — program status + closed bands (DAG appendix). Companion to
+% weight-ceiling-proof.tex (k>=4 width-2 laws) and smallk-weight-bound.tex (k<=3 exact).
+% Source of truth: docs/WEIGHT_PROOF_DAG.md + resources/research/th10-D3-consolidation-2026-07-10.md.
+% Build: pdflatex (TinyTeX) x2.
+\documentclass[11pt,a4paper,oneside]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=3cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalize]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\DeclareMathOperator{\wt}{wt}
+\DeclareMathOperator{\hol}{hol}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\zt}[1]{\zeta_{#1}}
+\newcommand{\Bk}{B(k)}
+\newcommand{\statDONE}{\textcolor{green!50!black}{\textsc{closed}}}
+\newcommand{\statOPEN}{\textcolor{red!60!black}{\textsc{open}}}
+\newcommand{\statCOND}[1]{\textcolor{orange!70!black}{\textsc{mod #1}}}
+
+\title{The global weight law:\\ dependency structure and two closed bands\\[1ex]
+\large Program-status appendix (DAG), with the refereed band-closure corollaries}
+\author{A.~Longo \and Claude (CC/TA)\thanks{Program design and drafting: CC, also acting
+as TA (A.~Longo's authorization, 2026-07-10). Corollaries C1/C2 hardened by two adversarial
+referee subagents (no fatal findings; both bounds came back sharper). Sources of truth:
+\texttt{docs/WEIGHT\_PROOF\_DAG.md} and
+\texttt{resources/research/th10-D3-consolidation-2026-07-10.md}.}}
+\date{July 10, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Target: the no-caveats global law --- for every $k$-uniform tiling by unit
+regular polygons $\{3,4,6,12\}$ (octagon analytic), $W(\Lambda) \le \Bk$ with
+$B(1..3) = 5, 6, 7$ and $\Bk = 2k + 2\lfloor(k{-}1)/3\rfloor$ for $k \ge 4$, attained at
+every $k$. The proof is a case split over $(\hol(\Lambda), \lambda_1)$; this appendix
+records the dependency structure (ten nodes), proves the two band closures that landed
+on 2026-07-10 --- $\lambda_1 = 1$ and $\lambda_1 = \sqrt3$ (hexagon-bearing), each at
+$W(\Lambda) \le 2k \le \Bk$ for all $k \ge 4$, by exact layered-word climbs that bypass
+the honest local-walk constant $c_0 \approx 50$ --- and documents two structural
+identifications: the width-2 inventory gap 3.1(d) equals the band program's E4-A$'$
+(one finite check, two ledgers, all $378$ catalogued $\lambda_1 = 2$ tilings), and the
+snub band is a two-letter layered word family whose closure follows the same pattern.
+No enumeration data enters any proof; the catalogue appears only as corroboration.
+\end{abstract}
+
+\section{Target and case split}\label{sec:target}
+
+$W(\Lambda)$ is the least possible maximum step-weight of a basis of the period lattice
+(12-direction alphabet). The split: $\hol(\Lambda) \in \{8, 12\}$ (square/hexagonal) is the
+rigid branch; $\hol \le 4$ splits by $\lambda_1$. Status of every cell (2026-07-10):
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+cell & bound & status & carrier\\
+\midrule
+$k \le 3$, all cells & $5, 6, 7$ exact & \statDONE & small-$k$ appendix (refereed)\\
+rigid, $4 \le k \le K^*$ & census per $k$ & \statOPEN\ (compute) & D8: shell engine\\
+rigid, $k > K^*$ & $c\sqrt k + d$ & \statOPEN & D9 (rate machinery)\\
+$\lambda_1 = 1$ & $W \le 2k$ & \statDONE\ (\cref{cor:C1}) & D3, this appendix\\
+$\lambda_1 \in (1, \sqrt3)$ & --- & \statOPEN\ (measured empty) & D4: extended T2\\
+$\lambda_1 = \sqrt3$, hex-bearing & $W \le 2k$ & \statDONE\ (\cref{cor:C2}) & D3, this appendix\\
+$\lambda_1 = \sqrt3$, $\{3,4\}$-only & --- & \statOPEN\ (measured empty) & D4: extended T2\\
+$\lambda_1 = 2$ (all hex-bearing) & $\Bk$ exact & \statCOND{3.1(d)} & width-2 IP ($k{\ge}4$ appendix)\\
+$\lambda_1 = 2\cos 15^\circ$ (snub) & $(1{+}\sqrt3)k$ crude & \statOPEN\ (route fixed) & D6: row-word classification\\
+other shells in $(\sqrt3, 1{+}\sqrt2)$ & --- & \statOPEN & shell census (engine incr.~2)\\
+$[1{+}\sqrt2, T_0)$ wide & $\sqrt3 H \le {\sim}4.2k$ & \statOPEN & D7: E5 + fine rate\\
+$\ge T_0$ & crossing constants & \statCOND{$T_0$} & D5 sharpening\\
+attainment, all $k$ & $\Bk$ attained & \statDONE & construction (Thm B) + small-$k$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Critical path: D1 (slab engine) $\to$ D6 (snub) $\to$ D10 (assembly). The engine's
+increment 1a (2026-07-10) reproduces the width-2 $\{T,S,H\}$ slab world mechanically;
+increment 1b (exhaustive fronts) closes D2 = 3.1(d) = E4-A$'$; increment 2 (rotated
+frames) serves D6 and the shell census.
+
+\section{The shared lemmas and the two closed bands}\label{sec:closed}
+
+Throughout: $u$ a shortest period, the tiling drawn on the $\lambda_1$-cylinder,
+``level'' = a horizontal line through a vertex, heights measured along the cylinder axis.
+
+\begin{lemma}[one vertex class per level, $\lambda_1 < 2$]\label{lem:L0a}
+Distinct vertices are at distance $\ge 1$ (thesis \emph{lem:wallpaper}, $\delta_0 = 1$).
+Two vertex classes on one level of the $\lambda_1$-cylinder have arc distances $\delta$ and
+$\lambda_1 - \delta$; both $\ge 1$ forces $\lambda_1 \ge 2$. So for $\lambda_1 < 2$ each
+level carries exactly one class.
+\end{lemma}
+
+\begin{lemma}[canonical pair]\label{lem:L0b}
+A shortest period $u$ is primitive; any horizontal period is an integer multiple of $u$;
+hence $\ker(\mathrm{height}) \cap \Lambda = \ZZ u$ and $\mathrm{height}(\Lambda) = h_0\ZZ$
+with $h_0 > 0$ minimal. Any $c' \in \Lambda$ of height $h_0$ makes $(u, c')$ a basis.
+\end{lemma}
+
+\begin{proof}
+$u = mw$, $m \ge 2$ contradicts minimality; $v = tu$, $t \notin \ZZ$ leaves the shorter
+horizontal period $\{t\}u$. For the basis: $x - (\mathrm{height}(x)/h_0)\,c'$ has height
+$0$, hence lies in $\ZZ u$.
+\end{proof}
+
+\begin{corollary}[$\lambda_1 = 1$ closes at $W \le 2k$]\label{cor:C1}
+Every $\{3,4,6,12\}$-tiling with $\lambda_1 = 1$ satisfies $W(\Lambda) \le 2k \le \Bk$ for
+all $k \ge 4$ (at $k = 4$: band max $\le 8 < 10 = B(4)$, margin).
+\end{corollary}
+
+\begin{proof}
+By the Width Lemma only triangles and squares fit, and by the layered classification (E2,
+with the E-12 repair; blocker ledgered in \cref{sec:ledger}) the tiling is a stack of $p$
+rings: square rings (height 1) and triangle rings (height $\sqrt3/2$), whose interfaces
+carry the vertex set $\delta + \ZZ$ --- one class per interface (also \cref{lem:L0a}),
+$|V(Q)| = p$, and $p \le 2k$ (a primitive word's dihedral symmetry group has order
+$\le 2$, so $k = \#\text{orbits} \ge \lceil p/2 \rceil$; an inessential vertical glide
+fixes interface indices, an essential one is dead for primitive words). Climb: every
+interface vertex of a square ring carries a vertical edge to the unique upper class; every
+base vertex $\delta{+}n$ of a triangle ring is a corner of the up-triangle on
+$[\delta{+}n, \delta{+}n{+}1]$, whose $60^\circ$-edge lands at $\delta{+}n{+}\tfrac12$ ---
+the unique upper class. One edge per ring, no connectors. Endpoint: $p$ rings span exactly
+one $\Lambda$-period of height $H$; $\mathrm{height}(\Lambda) = H\ZZ$ (\cref{lem:L0b});
+the landing vertex lies on the target level, whose unique class forces it to be
+$v + c + mu =: v + c'$ with $\mathrm{height}(c') = H$ minimal, so $(u, c')$ is a basis.
+$\wt(u) = 1$ ($u$ is literally an interface edge) and $\wt(c') \le p \le 2k$.
+\end{proof}
+
+\begin{corollary}[$\lambda_1 = \sqrt3$, hexagon-bearing, closes at $W \le 2k$]\label{cor:C2}
+Every hexagon-bearing $\{3,4,6\}$-tiling with $\lambda_1 = \sqrt3$ satisfies
+$W(\Lambda) \le 2k \le \Bk$ --- in fact for all $k \ge 1$, matching the measured band
+maximum exactly.
+\end{corollary}
+
+\begin{proof}
+By the ring classification (E3, patched: Chord-Lemma form of the hexagon-orientation
+lemma, crystallographic exclusion, level-gap-word recovery; sharpened count
+$|V(Q)| = 2h + t \le 2k$, now machine-checked on all 55 in-band catalogue tilings), the
+tiling is a word in HEX blocks (height $3/2$, level gaps $\tfrac12$ then $1$) and TRI
+blocks (height $\tfrac12$, one gap). Each level gap is crossed by exactly one edge: the
+$\tfrac12$-gaps by one of the two boundary-zigzag edges at the valley (direction
+$30^\circ$ or $150^\circ$, climb $\sin 30^\circ = \tfrac12$), the $1$-gaps by the vertical
+hexagon edge whose lower endpoint the zigzag edge just reached (corner table of the
+orientation lemma). The walk is monotone and crosses each of the $|V|$ gaps once per
+period: steps $= |V| \le 2k$. Endpoint and basis by \cref{lem:L0b};
+$\wt(u) = 2$ ($|u| = \sqrt3 > 1$ gives $\ge 2$; $e^{i30^\circ} + e^{-i30^\circ} = \sqrt3$
+gives $\le 2$). Hence $W(\Lambda) \le \max(2, 2k) = 2k$.
+\end{proof}
+
+\begin{remark}[why these are new]
+Both bands previously carried $s^* \le \frac{2}{\sqrt3}H + c_0$ resp.\ $\frac43 H + c_0$
+with the honest $c_0 \approx 50$ (adversarial review of 2026-07-03), useless below
+$k \approx 40$. The word climbs above have additive constant $0$: the layered structure
+is not just a counting device but an exact routing device. The same pattern is the planned
+route for the snub band (\cref{sec:ident}).
+\end{remark}
+
+\section{Identifications and the snub re-scope}\label{sec:ident}
+
+\textbf{3.1(d) $=$ E4-A$'$ $=$ node D2.} The width-2 appendix's only conditionality
+(exclusion of vertical-edge triangles and $30^\circ$-tilted squares at circumference $2$)
+is the same obligation the band program flags as E4-A$'$; the corrected census shows every
+$\lambda_1 = 2$ catalogue tiling ($378$) is hexagon-bearing and S/T/X-layered, so one
+finite check discharges: Theorems A/C's condition, the E4-A classification, and the
+$\lambda_1 = 2$ row of \cref{sec:target}. The slab engine's exhaustive-front increment is
+the designated closer; its reachable-closure increment already reproduces the inventory.
+
+\smallskip
+\noindent\textbf{The snub band re-scope (honesty entry).} The hoped-for shortcut ---
+``every weak climbing step (best up-edge $\sin 45^\circ$) lands at a vertex with a strong
+($\sin 75^\circ$) up-edge'' --- is FALSE: the machine sweep finds all four weak-landing
+direction sets contain an adjacent-square (domino) corner, and the catalogue realizes
+$829$ such vertices across $181$ snub-band tilings. Two traps were dodged and recorded:
+the domino does \emph{not} overlap its $u$-translate (support width is not an overlap
+criterion --- the review's E-4 lesson), and infinite square strips are not excluded by
+lattice arithmetic (they force a legal $45^\circ$-direction period). The surviving route
+is visible in the catalogue's own naming (\texttt{34-5d2\_5f} etc.): the band is a
+two-letter layered word family; classify the rows (E2/E3-style), then climb the word
+exactly as in \cref{cor:C1,cor:C2}. The engine's rotated-frame increment
+($15^\circ$-offset) is the discovery and completeness tool.
+
+\section{Referee round}\label{sec:referee}
+
+Two adversarial referee subagents attacked \cref{cor:C1,cor:C2} (2026-07-10). No fatal
+findings; both bounds came back sharper: C1 from $2k{+}2$ to $2k$ (orbit-count argument)
+with $\wt(u) = 1$ needing no lemma at all; C2's count upgraded from data-observed to
+machine-checked (the V5 assert tightened to the sharpened $|V| \le 2k$, 55/55). Gaps
+repaired in place: \cref{lem:L0a,lem:L0b} written out (they had been consumed silently);
+the endpoint lemma written (the exact failure mode the 2026-07-03 review flagged as G-4
+recurred and is now dead); the per-block climb gloss replaced by the gap-crossing
+invariant; the statement re-anchored to $W(\Lambda)$ (the quantity the enumerator's pair
+pool consumes) rather than the generator radius $s^*$.
+
+\section{Status ledger}\label{sec:ledger}
+
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+\item \statDONE: \cref{lem:L0a,lem:L0b,cor:C1,cor:C2} (refereed); the engine increment 1a
+  regression; the identifications of \cref{sec:ident}.
+\item \statCOND{E2-v2}: \cref{cor:C1} walks through E2's ring decomposition, whose Step-4
+  circularity repair (the ``three-lemma band-propagation restructure'', reviewer-supplied
+  in outline) is not yet integrated on disk. Writing E2-v2 is the one blocker between the
+  D3 node and DONE.
+\item \statOPEN\ (by node): D2/3.1(d) (engine increment 1b: exhaustive fronts with
+  incremental simplicity pruning); D4 extended T2 (three empty-band claims); D5 sharp
+  crossing constants; D6 snub row classification; D7 wide bands; D8/D9 rigid branch;
+  the per-band shell census; D10 assembly.
+\item Solver-side (independent of this program): the $k \le 3$ re-run at the proven
+  small-$k$ config --- the one item the thesis's $k = 3$ completeness claim still needs.
+\end{itemize}
+
+\end{document}

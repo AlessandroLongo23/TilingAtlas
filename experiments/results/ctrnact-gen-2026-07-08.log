@@ -1,0 +1,71 @@
+Expected (A068599 / count.txt): k1=10(+1=11 w/4.8.8) k2=20 k3=61 k4=151 k5=332 k6=673 k7=1472 k8=2850
+[2026-07-08 21:29:35] ==== Čtrnáct generation maxnum=7 (author: Marek Čtrnáct) ====
+[2026-07-08 21:29:36] PHASE 1 solve (BFS, all k<=7)  — heartbeat in out/progress.log
+[2026-07-08 21:32:30] solve done in 173s ; raw output 226M
+[2026-07-08 21:32:30] PHASE 2 prune (EU_FAMILIES=all, completeness-safe, k=1..7)
+[2026-07-08 21:32:58] prune done in 29s
+[2026-07-08 21:32:58] PHASE 3 counts vs A068599 / count.txt:
+[2026-07-08 21:32:58]    k=1 : 10
+[2026-07-08 21:32:58]    k=2 : 20
+[2026-07-08 21:32:58]    k=3 : 61
+[2026-07-08 21:32:58]    k=4 : 151
+[2026-07-08 21:32:58]    k=5 : 332
+[2026-07-08 21:32:58]    k=6 : 673
+[2026-07-08 21:32:58]    k=7 : 1472
+[2026-07-08 21:32:58] PHASE 4 decode -> ctrnact-combinatorial-k7.json
+[2026-07-08 21:32:59]    decoded 2719 tilings -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/497e6c52-6f61-4fed-9c57-03574a460adc/scratchpad/k-uniform-solver/work/ctrnact-combinatorial-k7.json
+[2026-07-08 21:32:59]    k=1 : 10
+[2026-07-08 21:32:59]    k=2 : 20
+[2026-07-08 21:32:59]    k=3 : 61
+[2026-07-08 21:32:59]    k=4 : 151
+[2026-07-08 21:32:59]    k=5 : 332
+[2026-07-08 21:32:59]    k=6 : 673
+[2026-07-08 21:32:59]    k=7 : 1472
+[2026-07-08 21:32:59] ==== DONE maxnum=7 (total 203s) ====
+[2026-07-08 21:33:24] ==== Čtrnáct generation maxnum=8 (author: Marek Čtrnáct) ====
+[2026-07-08 21:33:28] PHASE 1 solve (BFS, all k<=8)  — heartbeat in out/progress.log
+[2026-07-08 21:41:00] solve done in 451s ; raw output 511M
+[2026-07-08 21:41:00] PHASE 2 prune (EU_FAMILIES=all, completeness-safe, k=1..8)
+[2026-07-08 21:42:24] prune done in 85s
+[2026-07-08 21:42:24] PHASE 3 counts vs A068599 / count.txt:
+[2026-07-08 21:42:24]    k=1 : 10
+[2026-07-08 21:42:24]    k=2 : 20
+[2026-07-08 21:42:24]    k=3 : 61
+[2026-07-08 21:42:24]    k=4 : 151
+[2026-07-08 21:42:24]    k=5 : 332
+[2026-07-08 21:42:24]    k=6 : 673
+[2026-07-08 21:42:24]    k=7 : 1472
+[2026-07-08 21:42:24]    k=8 : 2849
+[2026-07-08 21:42:24] PHASE 4 decode -> ctrnact-combinatorial-k8.json
+[2026-07-08 21:42:25]    decoded 5568 tilings -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/497e6c52-6f61-4fed-9c57-03574a460adc/scratchpad/k-uniform-solver/work/ctrnact-combinatorial-k8.json
+[2026-07-08 21:42:25]    k=1 : 10
+[2026-07-08 21:42:25]    k=2 : 20
+[2026-07-08 21:42:25]    k=3 : 61
+[2026-07-08 21:42:25]    k=4 : 151
+[2026-07-08 21:42:25]    k=5 : 332
+[2026-07-08 21:42:25]    k=6 : 673
+[2026-07-08 21:42:25]    k=7 : 1472
+[2026-07-08 21:42:25]    k=8 : 2849
+[2026-07-08 21:42:25] ==== DONE maxnum=8 (total 537s) ====
+
+======================================================================
+⚑ FINDING (2026-07-08, CC): k=8 count discrepancy — reproduced 2849, not 2850
+----------------------------------------------------------------------
+Independent re-execution of Marek Čtrnáct's solver+pruner (ported to macOS,
+EU_FAMILIES=all so NO family dropped) yields per-k: 10 20 61 151 332 673 1472 2849.
+k=1..7 match A068599 / count.txt EXACTLY (totals AND k=7 distinct-type structure).
+k=8 = 2849, but count.txt's stated total and Wikipedia cite 2850.
+
+Root cause located in Čtrnáct's OWN count.txt:
+  - His k=8 breakdown by #distinct-vertex-types: 7:20 6:203 5:537 4:794 3:1037 2:258
+  - That breakdown SUMS TO 2849, contradicting his own stated total 2850.
+  - Every other k (3..7, 9..13) has breakdown == stated total. k=8 is the sole mismatch.
+  - My reproduction's breakdown matches his breakdown cell-for-cell (all 6 cells) = 2849.
+
+Conclusion (parsimonious): 2850 is a typo in Čtrnáct's k=8 TOTAL line; the self-
+consistent, breakdown-confirmed, independently-reproduced count is 2849. The 2850 on
+Wikipedia inherits this (Čtrnáct is the sole source for k>=7). Cannot 100% exclude that
+both breakdowns drop the same tiling a "true 2850" would include, but my pipeline drops
+no families and reproduces k<=7 perfectly, so the typo reading is strongly favored.
+ACTION: flag for TA/theory review; note in DEVELOPMENT_NOTES. Dataset uses k=8 = 2849.
+======================================================================

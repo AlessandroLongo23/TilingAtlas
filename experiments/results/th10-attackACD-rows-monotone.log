@@ -1,0 +1,34 @@
+=== ATTACK A/C/D on the d2>wtV offenders ===
+tid    k lat        l1    l2    d2 wtV sStar | rowsLong rowsPerpV1 rowOnPath | mono 1perRow downstep
+t5005 5 rect/obl(E) 1.732 7.000   9  7   7  |      10       10       10 | True  True  +0.500
+t6012 6 rect/obl(E) 1.732 8.000  10  8   8  |      12       12       11 | True  True  +0.500
+t6042 6 rect/obl(E) 1.732 8.000  10  8   8  |      11       11       11 | True  True  +0.500
+t6043 6 rect/obl(E) 1.732 8.544  11  9   9  |     146       12       12 | True  True  +0.410
+t6044 6 rect/obl(E) 1.732 8.000  10  8   8  |      12       12       11 | True  True  +0.500
+t3003 3 rect/obl(E) 1.732 4.000   5  4   4  |       6        6        6 | True  True  +0.500
+t4013 4 rect/obl(E) 1.732 5.000   6  5   5  |       8        8        7 | True  True  +0.500
+t4015 4 rect/obl(E) 1.732 5.000   6  5   5  |       7        7        7 | True  True  +0.500
+t4016 4 rect/obl(E) 1.732 5.568   7  6   6  |      62        8        8 | True  True  +0.359
+t4120 4 rect/obl(E) 3.464 5.000   6  5   5  |      10       10        7 | True  True  +0.500
+t5004 5 rect/obl(E) 1.732 6.557   8  7   7  |      86        9        9 | True  True  +0.381
+t5013 5 rect/obl(E) 1.732 6.557   8  7   7  |      86       10        9 | True  True  +0.381
+t5015 5 rect/obl(E) 1.732 6.000   7  6   6  |      10       10        8 | True  True  +0.500
+t5019 5 rect/obl(E) 1.732 7.000   8  7   7  |      10       10        9 | True  True  +0.500
+t5020 5 rect/obl(E) 1.732 6.000   7  6   6  |       9        9        8 | True  True  +0.500
+t5021 5 rect/obl(E) 1.732 6.557   8  7   7  |      86       10        9 | True  True  +0.381
+t5031 5 rect/obl(E) 3.464 4.000   5  4   4  |       7        7        6 | True  True  +0.500
+t5045 5 rect/obl(E) 3.732 7.464   9  8   8  |      10       10       10 | True  True  +0.500
+t5265 5 rect/obl(E) 1.732 6.000   7  6   6  |      10       10        8 | True  True  +0.500
+t6010 6 rect/obl(E) 1.732 8.544  10  9   9  |     146       12       11 | True  True  +0.410
+t6011 6 rect/obl(E) 1.732 7.550   9  8   8  |      38       11       10 | True  True  +0.397
+t6031 6 rect/obl(E) 1.732 8.544  10  9   9  |     146       12       11 | True  True  +0.410
+t6033 6 rect/obl(E) 1.732 8.000   9  8   8  |      12       12       10 | True  True  +0.500
+t6036 6 rect/obl(E) 1.732 7.000   8  7   7  |      12       12        9 | True  True  +0.500
+t6045 6 rect/obl(E) 1.732 7.000   8  7   7  |      11       11        9 | True  True  +0.500
+
+=== patch-doubling stability check on 5 worst (gap+2) ===
+t5005: d2(mult1)=9 (npts=5375)  d2(mult2)=9 (npts=18535)  wtV=7  -> STABLE
+t6012: d2(mult1)=10 (npts=7508)  d2(mult2)=10 (npts=25882)  wtV=8  -> STABLE
+t6042: d2(mult1)=10 (npts=6881)  d2(mult2)=10 (npts=23721)  wtV=8  -> STABLE
+t6043: d2(mult1)=11 (npts=7065)  d2(mult2)=11 (npts=24363)  wtV=9  -> STABLE
+t6044: d2(mult1)=10 (npts=7509)  d2(mult2)=10 (npts=25886)  wtV=8  -> STABLE

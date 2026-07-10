@@ -1,0 +1,91 @@
+=== FULL k=2 run: TH10_DIRS=12 + PRUNE_EFF_C2=2 + TH10_K2_FILL=1 + Rank1/2 (expect 20) ===
+[09:47:11] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[09:47:11] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k2 (k=2, s=6) — THE WEIGHT-6 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[09:47:11] ⚑⚑ TH10_DIRS=12: pool built from 12 even-power roots (ℤ[ζ₁₂]) — OCTAGON-BLIND. 4.8.8 (t1002) and every octagon-bearing tiling at every k are UNREACHABLE (odd ζ₂₄ powers absent). Deliberate scope loss, not a bug.
+[09:47:11] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[09:47:11] bounds: 24k·a_max = 537.42, pair-det cap = 36.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[09:47:11]   W-BFS level 1: +12 distinct, |W(1)| = 13 (incl. 0), 0.0s
+[09:47:11]   W-BFS level 2: +60 distinct, |W(2)| = 73 (incl. 0), 0.0s
+[09:47:11]   W-BFS level 3: +180 distinct, |W(3)| = 253 (incl. 0), 0.0s
+[09:47:11] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[09:47:11]   W-BFS level 1: +12 distinct, |W(1)| = 13 (incl. 0), 0.0s
+[09:47:11]   W-BFS level 2: +60 distinct, |W(2)| = 73 (incl. 0), 0.0s
+[09:47:11]   W-BFS level 3: +180 distinct, |W(3)| = 253 (incl. 0), 0.0s
+[09:47:11]   W-BFS level 4: +408 distinct, |W(4)| = 661 (incl. 0), 0.0s
+[09:47:11]   W-BFS level 5: +780 distinct, |W(5)| = 1,441 (incl. 0), 0.0s
+[09:47:11]   W-BFS level 6: +1,332 distinct, |W(6)| = 2,773 (incl. 0), 0.0s
+[09:47:11] W(6) enumerated: 2,772 nonzero values (2,773 incl. 0) in 0.0s
+[09:47:11] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[09:47:11] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 2/1 (c ≈ 1.4142). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[09:47:11] ⚑ POOL PRUNED: 2,772 → 1,572 vectors (56.71% kept, 1.76× vector-reduction ⇒ ~3.11× pair-reduction)
+[09:47:11] ⚑ per-weight-shell kept: wt1 12/12 (100%)  wt2 48/60 (80%)  wt3 120/180 (67%)  wt4 240/408 (59%)  wt5 420/780 (54%)  wt6 732/1332 (55%)
+[09:47:11] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[09:47:11] area ladder (cap 36.00): 4,756 exact tile-sum values, min 0.4330; sharp (≤48 tiles) subset 4,756
+[09:47:11] PAIR stage: 1,572 nonzero pool vectors → 1.23e+6 unordered pairs; det cap 36.00 (= min(s²=36, 24k·a_max=537.4)); ladder |exact| = 4,756
+[09:47:14] PAIR stage done in 3.5s: examined 1.23e+6 pairs (3.48e+5/s) → det-in-range 1.21e+6 → bitmap 6.15e+5 → EXACT-admissible 6.15e+5 (sharp ≤48-tile: 6.15e+5) → DISTINCT lattices 100,270
+[09:47:14] JOIN stage: closing 100,270 lattices under joins with 1,572 pool vectors (index bound per L: det/(√3/2))
+[09:47:30]   join round 1: +13,849 new lattices (admissible 3), family 114,119, 15.5s
+[09:47:31]   join round 2: +0 new lattices (admissible 0), family 114,119, 16.5s
+[09:47:31] JOIN stage done in 16.5s: 2 rounds, +13,849 joined lattices (3 admissible-det), family total 114,119
+[09:47:31] family after joins: 114,119 distinct lattices — 100,273 admissible-det (fill candidates), 100,273 sharp (≤48-tile); joins COMPLETED (2 rounds, +13,849, 3 admissible-det)
+[09:47:37] FILL stage (k=2, EXAMPLE MODE): 40 seeds × per-seed slice of 100,273 admissible-det lattices; per-seed exact vcAreaSet + P0 filters (the live pipeline's sound filters); maxMs=0 (no cap); budget 10.0h
+[09:47:37]   per-seed admissible-lattice counts: [148, 148, 1108, 1108, 52, 563, 13, 13, 13, 8, 482, 482, 482, 834, 834, 834, 6, 26, 26, 970, 6, 6, 26, 26, 26, 0, 0, 4, 14, 9, 777, 166, 4, 14, 49, 49, 589, 117, 3, 3] — Σ = 10,038 fills (area-filtered 3,835,222, P0-filtered 165,660 across seeds)
+[PeriodSolver k=2] ⚑ EXAMPLE MODE (TH-10 scout): candidate-lattice stage REPLACED by an externally enumerated weight-s family — the substituted pool bound is UNPROVEN; results carry NO completeness or certification claim
+[09:48:10]   fills: 135/10,038 (seed 1/40 [3,3,3,3,3,3;3,3,3,3,6]), 4.1/s, ETA 40.2min, cells so far 4
+[09:48:15]   seed 1/40 [3,3,3,3,3,3;3,3,3,3,6]  148 fills, 38.6s, cells total 4
+[09:48:40]   fills: 277/10,038 (seed 2/40 [3,3,3,3,3,3;3,3,3,3,6]), 4.4/s, ETA 37.2min, cells so far 7
+[09:48:51]   seed 2/40 [3,3,3,3,3,3;3,3,3,3,6]  148 fills, 35.7s, cells total 7
+[09:49:10]   fills: 965/10,038 (seed 3/40 [3,3,3,3,3,3;3,3,3,4,4]), 10.3/s, ETA 14.7min, cells so far 12
+[09:49:32]   seed 3/40 [3,3,3,3,3,3;3,3,3,4,4]  1,108 fills, 41.3s, cells total 14
+[09:49:40]   fills: 1,749/10,038 (seed 4/40 [3,3,3,3,3,3;3,3,4,3,4]), 14.1/s, ETA 9.8min, cells so far 14
+[09:50:04]   seed 4/40 [3,3,3,3,3,3;3,3,4,3,4]  1,108 fills, 31.7s, cells total 15
+[09:50:11]   fills: 2,524/10,038 (seed 5/40 [3,3,3,3,3,3;3,3,4,12]), 16.4/s, ETA 7.6min, cells so far 17
+[09:50:11]   seed 5/40 [3,3,3,3,3,3;3,3,4,12]   52 fills, 6.9s, cells total 17
+[09:50:28]   seed 6/40 [3,3,3,3,3,3;3,3,6,6]    563 fills, 17.4s, cells total 18
+[09:50:29]   seed 7/40 [3,3,3,3,6;3,3,3,4,4]    13 fills, 0.7s, cells total 18
+[09:50:30]   seed 8/40 [3,3,3,3,6;3,3,3,4,4]    13 fills, 0.8s, cells total 18
+[09:50:30]   seed 9/40 [3,3,3,3,6;3,3,4,3,4]    13 fills, 0.6s, cells total 18
+[09:50:31]   seed 10/40 [3,3,3,3,6;3,3,4,12]     8 fills, 0.1s, cells total 18
+[09:50:39]   seed 11/40 [3,3,3,3,6;3,3,6,6]      482 fills, 8.6s, cells total 19
+[09:50:41]   fills: 3,720/10,038 (seed 12/40 [3,3,3,3,6;3,3,6,6]), 20.2/s, ETA 5.2min, cells so far 20
+[09:50:48]   seed 12/40 [3,3,3,3,6;3,3,6,6]      482 fills, 9.0s, cells total 20
+[09:50:57]   seed 13/40 [3,3,3,3,6;3,6,3,6]      482 fills, 9.0s, cells total 20
+[09:51:11]   fills: 5,316/10,038 (seed 14/40 [3,3,3,4,4;3,3,4,3,4]), 24.9/s, ETA 3.2min, cells so far 20
+[09:51:15]   seed 14/40 [3,3,3,4,4;3,3,4,3,4]    834 fills, 18.1s, cells total 21
+[09:51:36]   seed 15/40 [3,3,3,4,4;3,3,4,3,4]    834 fills, 21.1s, cells total 23
+[09:51:41]   fills: 6,618/10,038 (seed 16/40 [3,3,3,4,4;3,3,4,3,4]), 27.1/s, ETA 2.1min, cells so far 23
+[09:51:58]   seed 16/40 [3,3,3,4,4;3,3,4,3,4]    834 fills, 21.7s, cells total 25
+[09:51:58]   seed 17/40 [3,3,3,4,4;3,3,4,12]     6 fills, 0.1s, cells total 25
+[09:51:59]   seed 18/40 [3,3,3,4,4;3,4,4,6]      26 fills, 1.3s, cells total 25
+[09:52:04]   seed 19/40 [3,3,3,4,4;3,4,6,4]      26 fills, 4.6s, cells total 27
+[09:52:12]   fills: 7,577/10,038 (seed 20/40 [3,3,3,4,4;4,4,4,4]), 27.5/s, ETA 89.4s, cells so far 30
+[09:52:33]   seed 20/40 [3,3,3,4,4;4,4,4,4]      970 fills, 29.0s, cells total 30
+[09:52:33]   seed 21/40 [3,3,4,12;3,3,4,3,4]     6 fills, 0.1s, cells total 30
+[09:52:33]   seed 22/40 [3,3,4,3,4;3,4,3,12]     6 fills, 0.1s, cells total 30
+[09:52:35]   seed 23/40 [3,3,4,3,4;3,4,4,6]      26 fills, 1.9s, cells total 30
+[09:52:42]   fills: 8,211/10,038 (seed 24/40 [3,3,4,3,4;3,4,6,4]), 26.9/s, ETA 67.9s, cells so far 32
+[09:52:43]   seed 24/40 [3,3,4,3,4;3,4,6,4]      26 fills, 7.7s, cells total 32
+[09:52:45]   seed 25/40 [3,3,4,3,4;3,4,6,4]      26 fills, 2.5s, cells total 32
+[09:52:45]   seed 26/40 [3,3,4,12;3,4,3,12]      0 fills, 0.0s, cells total 32
+[09:52:45]   seed 27/40 [3,3,4,12;3,4,3,12]      0 fills, 0.0s, cells total 32
+[09:52:45]   seed 28/40 [3,3,4,12;3,4,6,4]       4 fills, 0.1s, cells total 32
+[09:52:45]   seed 29/40 [3,12,12;3,3,12,4]       14 fills, 0.2s, cells total 32
+[09:52:46]   seed 30/40 [3,3,4,12;4,6,12]        9 fills, 0.1s, cells total 32
+[09:52:55]   seed 31/40 [3,3,6,6;3,6,3,6]        777 fills, 9.5s, cells total 33
+[09:52:58]   seed 32/40 [3,3,6,6;6,6,6]          166 fills, 3.0s, cells total 33
+[09:52:58]   seed 33/40 [3,4,3,12;3,4,6,4]       4 fills, 0.1s, cells total 33
+[09:53:00]   seed 34/40 [3,12,12;3,4,3,12]       14 fills, 1.7s, cells total 34
+[09:53:07]   seed 35/40 [3,4,4,6;3,4,6,4]        49 fills, 7.3s, cells total 36
+[09:53:09]   seed 36/40 [3,4,4,6;3,4,6,4]        49 fills, 1.4s, cells total 36
+[09:53:12]   fills: 9,642/10,038 (seed 37/40 [3,4,4,6;3,6,3,6]), 28.8/s, ETA 13.8s, cells so far 36
+[09:53:17]   seed 37/40 [3,4,4,6;3,6,3,6]        589 fills, 8.6s, cells total 38
+[09:53:19]   seed 38/40 [3,4,4,6;4,4,4,4]        117 fills, 1.8s, cells total 38
+[09:53:19]   seed 39/40 [3,4,4,6;4,12,6]         3 fills, 0.0s, cells total 38
+[09:53:23]   seed 40/40 [3,4,6,4;4,12,6]         3 fills, 3.6s, cells total 40
+[09:53:23] FILL stage done in 5.8min: 10,038 fills (Σ over seeds), raw cells 126, gate-rejected 84
+[09:53:23]   fill cost distribution (ms/fill): min 0, p50 19, p90 38, p99 229, max 4660, mean 34.44
+[09:54:33] RESULT (EXAMPLE MODE — no certified claim): 20 distinct tilings from 40 raw cells; COMPOSITION digest=ce4083699a3c448a count=20 (certified k=2 reference: f3e2e0517191362c/20)
+[09:54:33] PER-TILING vs certified snapshot (k=2): 20/20 one-to-one — ★ BIJECTION PASSED (example mode)
+[09:54:33] ██ TH-10 SCOUT phase=k2 finished in 7.4min — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[09:54:33] 
+EXIT=0 k2 done

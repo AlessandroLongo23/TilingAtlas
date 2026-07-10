@@ -1,0 +1,60 @@
+=== k=3 fill SMOKE 2 (STREAMING rewrite, c²=11/10, sample 100) 15:46:06 ===
+[13:46:07] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[13:46:07] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[13:46:07] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[13:46:07] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[13:46:07]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(1)| matches the TA exact table (25)
+[13:46:07]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(2)| matches the TA exact table (289)
+[13:46:07]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(3)| matches the TA exact table (2,089)
+[13:46:07] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[13:46:07]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(1)| matches the TA exact table (25)
+[13:46:07]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(2)| matches the TA exact table (289)
+[13:46:07]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(3)| matches the TA exact table (2,089)
+[13:46:07]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(4)| matches the TA exact table (10,825)
+[13:46:07]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(5)| matches the TA exact table (43,777)
+[13:46:07]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[13:46:07]   ✓ |W(6)| matches the TA exact table (146,521)
+[13:46:07]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[13:46:07]   ✓ |W(7)| matches the TA exact table (423,169)
+[13:46:07]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.4s
+[13:46:07] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[13:46:07] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[13:46:07] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 11/10 (c ≈ 1.0488). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[13:46:09] ⚑ POOL PRUNED: 1,086,912 → 6,624 vectors (0.61% kept, 164.09× vector-reduction ⇒ ~26924.53× pair-reduction)
+[13:46:09] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 72/264 (27%)  wt3 144/1800 (8%)  wt4 312/8736 (4%)  wt5 600/32952 (2%)  wt6 1032/102744 (1%)  wt7 1800/276648 (1%)  wt8 2640/663744 (0%)
+[13:46:09] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[13:46:09] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[13:46:09] PAIR stage: 6,624 nonzero pool vectors → 2.19e+7 unordered pairs; det cap 64.00 (= min(s²=64, 24k·a_max=806.1)); ladder |exact| = 24,083
+[13:46:11] PAIR stage done in 1.7s: examined 2.19e+7 pairs (1.27e+7/s) → det-in-range 2.17e+7 → bitmap 3.09e+5 → EXACT-admissible 2.63e+5 (sharp ≤72-tile: 2.63e+5) → DISTINCT lattices 57,186
+[13:46:11] JOIN stage: closing 57,186 lattices under joins with 6,624 pool vectors (index bound per L: det/(√3/2))
+[13:46:31]   join round 1: +13,287 new lattices (admissible 12), family 70,473, 20.8s
+[13:46:34]   join round 2: +216 new lattices (admissible 0), family 70,689, 23.2s
+[13:46:34]   join round 3: +0 new lattices (admissible 0), family 70,689, 23.3s
+[13:46:34] JOIN stage done in 23.3s: 3 rounds, +13,503 joined lattices (12 admissible-det), family total 70,689
+[13:46:34] family after joins: 70,689 distinct lattices — 57,198 admissible-det (fill candidates), 57,198 sharp (≤72-tile); joins COMPLETED (3 rounds, +13,503, 12 admissible-det)
+[13:48:45] ────────────────────────────────────────────────────────────────────────────────
+[13:48:45] FILL MEASUREMENT (k=3, EXAMPLE MODE): distinct lattices 70,689, admissible-det 57,198
+[13:48:45]   Σ per-seed fill work = 83,277 — THE REAL k=3 distinct-fill count at this pool (replaces the ~1.7e7 model)
+[13:48:45]   349/449 seeds admit ≥1 lattice; per-seed counts (nonzero): [76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 52, 52, 52, 52, 52, 52, 52, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 126, 126, 126, 126, 126, 126, 126, 126, 126, 126, 971, 971, 971, 971, 971, 971, 971, 579, 579, 579, 579, 971, 971, 971, 971, 971, 971, 971, 39, 39, 39, 39, 39, 39, 144, 87, 87, 87, 2155, 971, 971, 971, 971, 971, 579, 39, 39, 39, 39, 39, 144, 39, 87, 87, 37, 37, 37, 37, 37, 20, 37, 141, 141, 141, 141, 126, 88, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 20, 20, 20, 144, 144, 144, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 160, 144, 144, 160, 137, 137, 9, 9, 20, 160, 160, 160, 160, 160, 160, 20, 160, 20, 67, 67, 67, 67, 67, 103, 103, 103, 103, 103, 103, 103, 103, 103, 67, 67, 67, 67, 67, 67, 67, 170, 170, 80, 80, 67, 67, 67, 103, 103, 103, 103, 103, 103, 103, 103, 103, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 619, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 2207, 2207, 2207, 119, 119, 119, 119, 119, 12, 12, 12, 12, 12, 12, 12, 12, 54, 119, 12, 12, 12, 12, 12, 12, 12, 1314, 1314, 2207, 2207, 2207, 119, 119, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 54, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 99, 99, 138, 138, 138, 138, 138, 138, 138, 52, 62, 52, 144, 144, 144, 144, 144, 144, 144, 144, 144, 144, 144, 144, 144, 340, 124, 124, 99, 99, 340, 340, 340, 340, 340, 340, 548, 30, 124, 124, 124, 71, 71, 71, 8, 8, 8, 8, 8]
+[13:48:45]   SAMPLING 365 lattices (stratified by seed × cell size); budget 10.0h
+[PeriodSolver k=3] ⚑ EXAMPLE MODE (TH-10 scout): candidate-lattice stage REPLACED by an externally enumerated weight-s family — the substituted pool bound is UNPROVEN; results carry NO completeness or certification claim
+[13:49:19]   fills: 65/365, 1.9/s, ETA 2.6min, cells 2
+[13:49:40] FILL MEASUREMENT done in 54.8s: 365 fills, 3 cells, raw 6, gate-rejected 3
+[13:49:40]   per-fill cost (ms): mean 150.01, p50 15, p90 130, p99 1346, max 9048 — ⚑ heavy-tailed, the p99/max drive real cost
+[13:49:40]   per-fill mean by cell-size quartile (small→large det): Q1 12.9 · Q2 96.3 · Q3 119.9 · Q4 368.5 ms
+[13:49:40]   PROJECTION full k=3 fill stage (83,277 fills):
+[13:49:40]     at MEAN 150.01 ms/fill:  3.5h (1 core) · 26.0min (8 cores) · 20.8min (10 cores)
+[13:49:40]     at p99  1346 ms/fill (tail-aware): 3.9h (8 cores) — a conservative upper estimate
+[13:49:40]   ⚑ EXAMPLE MODE: W(8) pool depth (s*≤8) UNPROVEN — this closes the TIMING half; total k=3 feasibility = this per-fill × the pool the proof licenses (s=8 vs s=10).
+[13:49:40] ────────────────────────────────────────────────────────────────────────────────
+[13:49:40] ██ TH-10 SCOUT phase=k3 finished in 3.6min — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[13:49:40] 
+=== SMOKE2 EXIT 0 15:49:40 ===

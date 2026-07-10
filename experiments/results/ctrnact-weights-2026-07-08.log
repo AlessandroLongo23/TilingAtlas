@@ -1,0 +1,22 @@
+W(≤8) built: 1,086,913 vectors (incl. 0), table-checked ≤7; MIM covers wt ≤ 16
+██ Čtrnáct reference — EXACT reduced-basis weight/(w/v) ratios, k=1..8 (⚑ octagon-blind ζ₁₂ reference) 2026-07-08T21:59:03.651Z
+metric r = max(wt(u)/|u|, wt(v)/|v|) over the gauss-reduced period basis; same as eff-pruning-{ratios,galebach}.
+
+
+═══ EXACT per-k max reduced-basis ratio (Čtrnáct reproduced, octagon-blind ζ₁₂) ═══
+  k=1: max ratio 1.1547  ← ctrnact-01_6-3d-1 (6)  wt u=2 v=2  ≤√2
+  k=2: max ratio 1.1954  ← ctrnact-02_34-5c_5f-1 (3.4)  wt u=4 v=4  ≤√2
+  k=3: max ratio 1.1547  ← ctrnact-03_36-3d_4d_6a-1 (3.6)  wt u=4 v=4  ≤√2
+  k=4: max ratio 1.2604  ← ctrnact-04_34-4s_5c_5d_5f-1 (3.4)  wt u=6 v=6  ≤√2
+  k=5: max ratio 1.1809  ← ctrnact-05_346-4k_4u_5a_5d_6f-1 (3.4.6)  wt u=4 v=5  ≤√2
+  k=6: max ratio 1.2957  ← ctrnact-06_34-4s_4u_5c_5d2_5f-1 (3.4)  wt u=8 v=8  ≤√2
+  k=7: max ratio 1.2387  ← ctrnact-07_346-4f_4k3_5a2_5d-1 (3.4.6)  wt u=6 v=6  ≤√2
+  k=8: max ratio 1.2530  ← ctrnact-08_346-4f_4k2_4r_4u_5a_5d_6f-1 (3.4.6)  wt u=6 v=6  ≤√2
+
+OVERALL (k≤8, EXACT wt, octagon-blind ζ₁₂): max ratio 1.2957  ← ctrnact-06_34-4s_4u_5c_5d2_5f-1 (k=6, 3.4)
+  exact c² = (1664+0√2+-448√3+0√6)/529  ≤ √2 ✓
+  ⚑ ζ₁₂ LOWER BOUND: an octagon tiling (absent from Čtrnáct's alphabet) could exceed it — same caveat as eff-pruning-galebach.
+
+processed 5568 tilings (0 via greedy upper bound), 0 without geometry, 0 failed.
+per-tiling CSV → experiments/results/ctrnact-weights-2026-07-08.csv (5568 rows)
+log → experiments/results/ctrnact-weights-2026-07-08.log

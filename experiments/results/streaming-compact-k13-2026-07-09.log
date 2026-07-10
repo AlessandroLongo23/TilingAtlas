@@ -1,0 +1,5 @@
+[23:13:32] ==== fused streaming solve|prune scaling, k=[13] (raw never lands; RAM = pruner peak footprint) ====
+[23:13:32] box: Apple M5
+[23:13:33] ---- k=13: solving+pruning (fused, EU_KONLY=13) ----
+[23:20:39]   k=13: wall=426.3s count=103082 OK pruner_peak_footprint=135MB raw_files_on_disk=0 pruned_disk=58.66MB
+[23:20:39] ==== DONE all k<=11 counts match A068599 ; csv -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/streaming-compact-k13-2026-07-09.csv ====

@@ -1,0 +1,11 @@
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive lattice 1|-1,0,0,0,5,0,0,0#1|-3,0,0,0,1,0,0,0 not in candidate list (supercell 1|-4,0,0,0,6,0,0,0#1|-6,0,0,0,2,0,0,0, 46 witness(es))
+[PeriodSolver k=3] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; primitive lattice 1|-1,0,0,0,5,0,0,0#1|-3,0,0,0,1,0,0,0 not in candidate list (supercell 1|-2,0,0,0,-4,0,0,0#1|-6,0,0,0,2,0,0,0, 46 witness(es))
+[driver] DONE k=3: 8 solves in 352.3s — cells 13, raw 238, gateRej 120, timedOut 8
+[driver] OP-1 split (Rank-2 target): vBelowKSkipped 0 + p2Skipped 123 = 123 closures discarded post-certificate
+  VALIDITY total 62323ms (61.8%) | SELECTION 27301ms (27.1%) | SETUP 11098ms (11.0%) | BOOKKEEPING 87ms (0.1%)
+    setup    (per-fill: initial block + self-overlap)        11098ms   11.0%
+    certify  (validity: isCompleteTiling certificate)        28220ms   28.0%
+    primitive(validity: isPrimitive supercell check)         29009ms   28.8%
+    expand   (selection: gap + place + reduce + block)       27301ms   27.1%
+  certify breakdown (of 28219ms isCompleteTiling): area(Surd) 25ms 0.1% | buildBlock(R=cellDiam+8) 20355ms 72.1% | overlap(O(n²) intersects) 7089ms 25.1% | vertexJudge 750ms 2.7%
+  tree shape: pops 18720, seenHits 0, capSkips 0, contradictions 2614, closures 369

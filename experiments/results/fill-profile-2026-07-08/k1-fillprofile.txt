@@ -1,0 +1,14 @@
+=== k=1, profiler ON ===
+[20:34:13] RESULT (EXAMPLE MODE — no certified claim): 11 distinct tilings from 22 raw cells; COMPOSITION digest=6f9ca9cf2d16c75f count=11 (certified k=1 reference: 6f9ca9cf2d16c75f/11)
+[20:34:13] PER-TILING vs certified snapshot (k=1): 11/11 one-to-one — ★ BIJECTION PASSED (example mode)
+[PS_FILL_PROFILE] fill-internals aggregate over 318 torusFill calls, 1078 pops — total timed 18912ms
+  VALIDITY total 17315ms (91.6%) | SELECTION 1593ms (8.4%) | BOOKKEEPING 4ms (0.0%)
+    analyze  (validity: open-vertex / contradiction)           221ms    1.2%
+    certify  (validity: isCompleteTiling certificate)        15378ms   81.3%
+    primitive(validity: isPrimitive supercell check)          1715ms    9.1%
+    expand   (selection: gap + place + reduce + block)        1593ms    8.4%
+    dedupKey (bookkeeping: stateKey + seenState)                 4ms    0.0%
+  tree shape: pops 1078, seenHits 0, capSkips 0, contradictions 27, closures 78
+    closure fate: certCalls 78 → certPass 77; primCalls 77 → primTrue 22
+    placements: attempted 1280, pushed 760; rejected: overlap 418, dup 0, p1 102, cap 0
+    per-pop fan-out: 1.19 places/pop, 0.71 children/pop

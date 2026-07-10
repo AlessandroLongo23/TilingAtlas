@@ -1,0 +1,46 @@
+=== ATTACK B: edge-climb (d2) vs true weight (wtV) and sStar, ELONGATED ===
+total elongated measured: 934
+d2 None (patch too small): 0 []
+
+-- gap d2 - wtV (edge climb long - true weight long) --
+distribution: {0: 892, 1: 37, 2: 5}
+n with d2>wtV (edge OVERSHOOTS weight): 42
+n with d2<wtV (edge BELOW weight, impossible-ish): 0
+
+-- gap d2 - sStar --
+distribution: {0: 891, 1: 38, 2: 5}
+n with d2 != sStar: 43
+
+-- gap d1 - wtU (short axis) --
+distribution: {0: 930, 1: 4}
+
+-- worst |d2 - wtV| offenders --
+  t5005 k=5 rect/obl(E) lam1=1.732 lam2=7.000 d2=9 wtV=7 sStar=7 gap=+2
+  t6012 k=6 rect/obl(E) lam1=1.732 lam2=8.000 d2=10 wtV=8 sStar=8 gap=+2
+  t6042 k=6 rect/obl(E) lam1=1.732 lam2=8.000 d2=10 wtV=8 sStar=8 gap=+2
+  t6043 k=6 rect/obl(E) lam1=1.732 lam2=8.544 d2=11 wtV=9 sStar=9 gap=+2
+  t6044 k=6 rect/obl(E) lam1=1.732 lam2=8.000 d2=10 wtV=8 sStar=8 gap=+2
+  t3003 k=3 rect/obl(E) lam1=1.732 lam2=4.000 d2=5 wtV=4 sStar=4 gap=+1
+  t4013 k=4 rect/obl(E) lam1=1.732 lam2=5.000 d2=6 wtV=5 sStar=5 gap=+1
+  t4015 k=4 rect/obl(E) lam1=1.732 lam2=5.000 d2=6 wtV=5 sStar=5 gap=+1
+  t4016 k=4 rect/obl(E) lam1=1.732 lam2=5.568 d2=7 wtV=6 sStar=6 gap=+1
+  t4120 k=4 rect/obl(E) lam1=3.464 lam2=5.000 d2=6 wtV=5 sStar=5 gap=+1
+  t5004 k=5 rect/obl(E) lam1=1.732 lam2=6.557 d2=8 wtV=7 sStar=7 gap=+1
+  t5013 k=5 rect/obl(E) lam1=1.732 lam2=6.557 d2=8 wtV=7 sStar=7 gap=+1
+  t5015 k=5 rect/obl(E) lam1=1.732 lam2=6.000 d2=7 wtV=6 sStar=6 gap=+1
+  t5019 k=5 rect/obl(E) lam1=1.732 lam2=7.000 d2=8 wtV=7 sStar=7 gap=+1
+  t5020 k=5 rect/obl(E) lam1=1.732 lam2=6.000 d2=7 wtV=6 sStar=6 gap=+1
+  t5021 k=5 rect/obl(E) lam1=1.732 lam2=6.557 d2=8 wtV=7 sStar=7 gap=+1
+  t5031 k=5 rect/obl(E) lam1=3.464 lam2=4.000 d2=5 wtV=4 sStar=4 gap=+1
+  t5045 k=5 rect/obl(E) lam1=3.732 lam2=7.464 d2=9 wtV=8 sStar=8 gap=+1
+  t5265 k=5 rect/obl(E) lam1=1.732 lam2=6.000 d2=7 wtV=6 sStar=6 gap=+1
+  t6010 k=6 rect/obl(E) lam1=1.732 lam2=8.544 d2=10 wtV=9 sStar=9 gap=+1
+  t6011 k=6 rect/obl(E) lam1=1.732 lam2=7.550 d2=9 wtV=8 sStar=8 gap=+1
+  t6031 k=6 rect/obl(E) lam1=1.732 lam2=8.544 d2=10 wtV=9 sStar=9 gap=+1
+  t6033 k=6 rect/obl(E) lam1=1.732 lam2=8.000 d2=9 wtV=8 sStar=8 gap=+1
+  t6036 k=6 rect/obl(E) lam1=1.732 lam2=7.000 d2=8 wtV=7 sStar=7 gap=+1
+  t6045 k=6 rect/obl(E) lam1=1.732 lam2=7.000 d2=8 wtV=7 sStar=7 gap=+1
+
+-- split by lam1 threshold 2.2 --
+narrow(lam1<=2.2): n=685  d2>wtV: 26  d2!=wtV: 26
+wide  (lam1> 2.2): n=249   d2>wtV: 16   d2!=wtV: 16

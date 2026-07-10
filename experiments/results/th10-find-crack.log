@@ -1,0 +1,6 @@
+=== elongated tilings where sStar != wtV (s* NOT carried by long generator alone) ===
+  t6649 k=6: sStar=6 wtU=2 wtV=7  lenU=1.931852 lenV=5.864495  (max(wtU,wtV)=7)
+total elongated scanned: 934
+
+elongated where sStar != max(wtU,wtV): 1
+   ('t6649', 6, 2, 7)

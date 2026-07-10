@@ -1,0 +1,20 @@
+=== ST-9 fill-requiring star probe (2026-07-09T15:55:46.399Z) @ 6b44c60 ===
+flags: limit=6 maxMs=20000 maxCorners=6 singleStar=true wantHits=3
+⚑ PROBE, not a sweep: caps everywhere; results are existence evidence only, no completeness claim.
+
+[part 0] strict 4(j) sub-fan {8, 4*p@3}: cells=0 lattices=204 timedOut=false (1168ms)
+         expected 0 — the declared vertex names the PARTIAL VC "4*p@3,8", the closed VC 4*p@3,8,4*p@3,8 is never allowed ⇒ every branch contradicts.
+
+[part 1] scanning 6 Fig-4 VCs (single-star=true, ≤6 corners), fill-requiring criterion: cellStars > fanStars
+
+=== DONE: 0 fill-requiring hit(s) over 6 VCs (1 timeouts) in 31s ===
+=== ST-9 fill-requiring star probe (2026-07-09T15:56:19.884Z) @ 6b44c60 ===
+flags: limit=6 maxMs=20000 maxCorners=6 singleStar=true wantHits=3
+⚑ PROBE, not a sweep: caps everywhere; results are existence evidence only, no completeness claim.
+
+[part 0] strict 4(j) sub-fan {8, 4*p@3}: cells=0 lattices=204 timedOut=false (3751ms)
+         expected 0 — the declared vertex names the PARTIAL VC "4*p@3,8", the closed VC 4*p@3,8,4*p@3,8 is never allowed ⇒ every branch contradicts.
+
+[part 1] scanning 6 Fig-4 VCs (single-star=true, ≤6 corners), fill-requiring criterion: cellStars > fanStars
+
+=== DONE: 0 fill-requiring hit(s) over 6 VCs (1 timeouts) in 33s ===

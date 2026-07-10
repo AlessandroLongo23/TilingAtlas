@@ -1,0 +1,99 @@
+
+=== run 2026-07-09 10:55:37 ===
+[compute] 4321 ctrnact k=7,8 rows to do (already have 1339)
+[compute] 50/4321  7s elapsed  ETA 557s
+[compute] 100/4321  14s elapsed  ETA 574s
+[compute] 150/4321  17s elapsed  ETA 467s
+[compute] 200/4321  20s elapsed  ETA 417s
+[compute] 250/4321  27s elapsed  ETA 434s
+[compute] 300/4321  43s elapsed  ETA 582s
+[compute] 350/4321  48s elapsed  ETA 543s
+[compute] 400/4321  50s elapsed  ETA 493s
+[compute] 450/4321  53s elapsed  ETA 459s
+[compute] 500/4321  54s elapsed  ETA 415s
+[compute] 550/4321  57s elapsed  ETA 387s
+[compute] 600/4321  60s elapsed  ETA 372s
+[compute] 650/4321  62s elapsed  ETA 348s
+[compute] 700/4321  62s elapsed  ETA 319s
+[compute] 750/4321  63s elapsed  ETA 301s
+[compute] 800/4321  65s elapsed  ETA 287s
+[compute] 850/4321  66s elapsed  ETA 268s
+[compute] 900/4321  66s elapsed  ETA 250s
+[compute] 950/4321  74s elapsed  ETA 261s
+[compute] 1000/4321  74s elapsed  ETA 245s
+[compute] 1050/4321  74s elapsed  ETA 230s
+[compute] 1100/4321  74s elapsed  ETA 217s
+[compute] 1150/4321  75s elapsed  ETA 207s
+[compute] 1200/4321  76s elapsed  ETA 197s
+[compute] 1250/4321  78s elapsed  ETA 191s
+[compute] 1300/4321  83s elapsed  ETA 192s
+[compute] 1350/4321  113s elapsed  ETA 249s
+[compute] 1400/4321  124s elapsed  ETA 259s
+[compute] 1450/4321  136s elapsed  ETA 270s
+[compute] 1500/4321  142s elapsed  ETA 268s
+[compute] 1550/4321  148s elapsed  ETA 265s
+[compute] 1600/4321  154s elapsed  ETA 261s
+[compute] 1650/4321  171s elapsed  ETA 277s
+[compute] 1700/4321  177s elapsed  ETA 274s
+[compute] 1750/4321  189s elapsed  ETA 277s
+[compute] 1800/4321  195s elapsed  ETA 273s
+[compute] 1850/4321  209s elapsed  ETA 279s
+[compute] 1900/4321  213s elapsed  ETA 272s
+[compute] 1950/4321  213s elapsed  ETA 259s
+[compute] 2000/4321  246s elapsed  ETA 285s
+[compute] 2050/4321  293s elapsed  ETA 325s
+[compute] 2100/4321  306s elapsed  ETA 324s
+[compute] 2150/4321  309s elapsed  ETA 312s
+[compute] 2200/4321  314s elapsed  ETA 303s
+[compute] 2250/4321  315s elapsed  ETA 289s
+[compute] 2300/4321  315s elapsed  ETA 277s
+[compute] 2350/4321  386s elapsed  ETA 324s
+[compute] 2400/4321  386s elapsed  ETA 309s
+[compute] 2450/4321  387s elapsed  ETA 295s
+[compute] 2500/4321  387s elapsed  ETA 282s
+[compute] 2550/4321  388s elapsed  ETA 270s
+[compute] 2600/4321  388s elapsed  ETA 257s
+[compute] 2650/4321  395s elapsed  ETA 249s
+[compute] 2700/4321  404s elapsed  ETA 242s
+[compute] 2750/4321  404s elapsed  ETA 231s
+[compute] 2800/4321  404s elapsed  ETA 219s
+[compute] 2850/4321  405s elapsed  ETA 209s
+[compute] 2900/4321  405s elapsed  ETA 198s
+[compute] 2950/4321  422s elapsed  ETA 196s
+[compute] 3000/4321  425s elapsed  ETA 187s
+[compute] 3050/4321  425s elapsed  ETA 177s
+[compute] 3100/4321  425s elapsed  ETA 167s
+[compute] 3150/4321  432s elapsed  ETA 160s
+[compute] 3200/4321  432s elapsed  ETA 151s
+[compute] 3250/4321  438s elapsed  ETA 144s
+[compute] 3300/4321  438s elapsed  ETA 136s
+[compute] 3350/4321  438s elapsed  ETA 127s
+[compute] 3400/4321  438s elapsed  ETA 119s
+[compute] 3450/4321  451s elapsed  ETA 114s
+[compute] 3500/4321  452s elapsed  ETA 106s
+[compute] 3550/4321  452s elapsed  ETA 98s
+[compute] 3600/4321  452s elapsed  ETA 91s
+[compute] 3650/4321  452s elapsed  ETA 83s
+[compute] 3700/4321  454s elapsed  ETA 76s
+[compute] 3750/4321  455s elapsed  ETA 69s
+[compute] 3800/4321  455s elapsed  ETA 62s
+[compute] 3850/4321  455s elapsed  ETA 56s
+[compute] 3900/4321  456s elapsed  ETA 49s
+[compute] 3950/4321  459s elapsed  ETA 43s
+[compute] 4000/4321  461s elapsed  ETA 37s
+[compute] 4050/4321  465s elapsed  ETA 31s
+[compute] 4100/4321  465s elapsed  ETA 25s
+[compute] 4150/4321  465s elapsed  ETA 19s
+[compute] 4200/4321  549s elapsed  ETA 16s
+[compute] 4250/4321  550s elapsed  ETA 9s
+[compute] 4300/4321  580s elapsed  ETA 3s
+[compute] 4321/4321  580s elapsed  ETA 0s
+[compute] done: 4321 rows in 579.9s
+
+=== run 2026-07-09 11:05:41 ===
+
+=== run 2026-07-09 11:06:07 ===
+[figure] max s* per k: {1: 5, 2: 6, 3: 7, 4: 10, 5: 12, 6: 14, 7: 18, 8: 20}
+[figure] max ratio per k: 1:1.2426, 2:1.1954, 3:1.1547, 4:1.2604, 5:1.1809, 6:1.2957, 7:1.2387, 8:1.2530
+[figure] 2k+2 violated at k in [1, 7, 8]
+[figure] -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/thesis-figs/weight-tightness-ext.pdf  and  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/thesis-figs/weight-tightness-ext.png

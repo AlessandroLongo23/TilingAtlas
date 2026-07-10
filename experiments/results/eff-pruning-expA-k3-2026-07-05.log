@@ -1,0 +1,362 @@
+████████████████████████████████████████████████████████████████████████████████
+██ EFFICIENCY-PRUNING EXPERIMENT A — k=3 c-sweep — started 2026-07-05 12:20:02
+██ threshold PRUNE_EFF_C2 = c² (rational, exact). c ∈ {2/√3,1.20,1.25,1.30,1.35,√2,1.50,∞}
+██ analytic breaking (from eff-pruning-ratios): k1 c=1.2426, k2 c=1.1954, k3 c=1.1547
+████████████████████████████████████████████████████████████████████████████████
+
+▂▂▂▂▂▂▂▂ k=3  c=2-over-sqrt3  (PRUNE_EFF_C2=4/3) — 12:20:02 ▂▂▂▂▂▂▂▂
+[10:20:02] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:02] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:02] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:02] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:02]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:02]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:02]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:02] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:02]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:02]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:02]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:02]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:02]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:02]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:02]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.1s
+[10:20:02]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:02]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:02]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:03]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.4s
+[10:20:03] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[10:20:03] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:03] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 4/3 (c ≈ 1.1547). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[10:20:05] ⚑ POOL PRUNED: 1,086,912 → 54,600 vectors (5.02% kept, 19.91× vector-reduction ⇒ ~396.28× pair-reduction)
+[10:20:05] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 120/264 (45%)  wt3 360/1800 (20%)  wt4 1056/8736 (12%)  wt5 2832/32952 (9%)  wt6 6528/102744 (6%)  wt7 14472/276648 (5%)  wt8 29208/663744 (4%)
+[10:20:05] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:05] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:05] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 54,600 → 1.49e+9 unordered pairs; sampling every 719th outer row
+[10:20:05] k=3 PAIR TIMING done in 0.1s: sampled 2.10e+6 pairs (0.141% of 1.49e+9)
+[10:20:05]   per-pair broadphase+bitmap: 44.3 ns/pair (2.26e+7/s single core)
+[10:20:05]   survivor rates: det-in-range 99.23%, bitmap 0.831%, EXACT-admissible 0.5566% (sharp 0.5566%)
+[10:20:05]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.5 µs/survivor (11,691 in sample, 5,664 distinct)
+[10:20:05]   PROJECTION full pair stage: 1.49e+9 pairs → ~111.4s single-core ≈ 13.9s on 8 cores (incl. ~8.30e+6 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:05]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:05] ██ TH-10 SCOUT phase=k3 finished in 2.3s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:05] 
+▂▂▂▂▂▂▂▂ k=3 c=2-over-sqrt3 DONE — 12:20:05 ▂▂▂▂▂▂▂▂
+
+▂▂▂▂▂▂▂▂ k=3  c=1.20  (PRUNE_EFF_C2=36/25) — 12:20:05 ▂▂▂▂▂▂▂▂
+[10:20:05] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:05] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:05] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:05] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:05]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:05]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:05]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:05] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:05]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:05]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:05]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:05]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:05]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:05]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[10:20:05]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:05]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:05]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:05]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.4s
+[10:20:05] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[10:20:05] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:05] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 36/25 (c ≈ 1.2000). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[10:20:07] ⚑ POOL PRUNED: 1,086,912 → 85,632 vectors (7.88% kept, 12.69× vector-reduction ⇒ ~161.11× pair-reduction)
+[10:20:07] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 120/264 (45%)  wt3 456/1800 (25%)  wt4 1464/8736 (17%)  wt5 4032/32952 (12%)  wt6 10128/102744 (10%)  wt7 22752/276648 (8%)  wt8 46656/663744 (7%)
+[10:20:07] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:07] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:07] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 85,632 → 3.67e+9 unordered pairs; sampling every 719th outer row
+[10:20:07] k=3 PAIR TIMING done in 0.2s: sampled 5.14e+6 pairs (0.140% of 3.67e+9)
+[10:20:07]   per-pair broadphase+bitmap: 30.1 ns/pair (3.32e+7/s single core)
+[10:20:07]   survivor rates: det-in-range 99.24%, bitmap 0.557%, EXACT-admissible 0.3171% (sharp 0.3171%)
+[10:20:07]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.4 µs/survivor (16,307 in sample, 8,603 distinct)
+[10:20:07]   PROJECTION full pair stage: 3.67e+9 pairs → ~2.9min single-core ≈ 21.7s on 8 cores (incl. ~1.16e+7 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:07]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:07] ██ TH-10 SCOUT phase=k3 finished in 2.4s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:07] 
+▂▂▂▂▂▂▂▂ k=3 c=1.20 DONE — 12:20:07 ▂▂▂▂▂▂▂▂
+
+▂▂▂▂▂▂▂▂ k=3  c=1.25  (PRUNE_EFF_C2=25/16) — 12:20:07 ▂▂▂▂▂▂▂▂
+[10:20:08] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:08] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:08] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:08] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:08]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:08]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:08]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:08] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:08]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:08]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:08]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:08]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:08]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:08]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[10:20:08]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:08]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:08]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:08]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.4s
+[10:20:08] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[10:20:08] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:08] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 25/16 (c ≈ 1.2500). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[10:20:10] ⚑ POOL PRUNED: 1,086,912 → 119,544 vectors (11.00% kept, 9.09× vector-reduction ⇒ ~82.67× pair-reduction)
+[10:20:10] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 120/264 (45%)  wt3 528/1800 (29%)  wt4 1872/8736 (21%)  wt5 5448/32952 (17%)  wt6 13704/102744 (13%)  wt7 31248/276648 (11%)  wt8 66600/663744 (10%)
+[10:20:10] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:10] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:10] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 119,544 → 7.15e+9 unordered pairs; sampling every 719th outer row
+[10:20:10] k=3 PAIR TIMING done in 0.3s: sampled 1.00e+7 pairs (0.140% of 7.15e+9)
+[10:20:10]   per-pair broadphase+bitmap: 25.9 ns/pair (3.86e+7/s single core)
+[10:20:10]   survivor rates: det-in-range 99.23%, bitmap 0.470%, EXACT-admissible 0.2500% (sharp 0.2500%)
+[10:20:10]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.4 µs/survivor (24,995 in sample, 12,698 distinct)
+[10:20:10]   PROJECTION full pair stage: 7.15e+9 pairs → ~4.7min single-core ≈ 35.2s on 8 cores (incl. ~1.79e+7 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:10]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:10] ██ TH-10 SCOUT phase=k3 finished in 2.4s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:10] 
+▂▂▂▂▂▂▂▂ k=3 c=1.25 DONE — 12:20:10 ▂▂▂▂▂▂▂▂
+
+▂▂▂▂▂▂▂▂ k=3  c=1.30  (PRUNE_EFF_C2=169/100) — 12:20:10 ▂▂▂▂▂▂▂▂
+[10:20:10] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:10] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:10] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:10] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:10]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:10]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:10]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:10] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:10]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:10]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:10]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:10]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:10]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:10]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[10:20:10]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:11]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:11]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:11]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.3s
+[10:20:11] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.3s
+[10:20:11] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:11] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 169/100 (c ≈ 1.3000). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[10:20:13] ⚑ POOL PRUNED: 1,086,912 → 153,240 vectors (14.10% kept, 7.09× vector-reduction ⇒ ~50.31× pair-reduction)
+[10:20:13] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 144/264 (55%)  wt3 624/1800 (35%)  wt4 2256/8736 (26%)  wt5 6552/32952 (20%)  wt6 16800/102744 (16%)  wt7 39768/276648 (14%)  wt8 87072/663744 (13%)
+[10:20:13] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:13] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:13] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 153,240 → 1.17e+10 unordered pairs; sampling every 719th outer row
+[10:20:13] k=3 PAIR TIMING done in 0.4s: sampled 1.64e+7 pairs (0.140% of 1.17e+10)
+[10:20:13]   per-pair broadphase+bitmap: 25.9 ns/pair (3.86e+7/s single core)
+[10:20:13]   survivor rates: det-in-range 99.22%, bitmap 0.449%, EXACT-admissible 0.2598% (sharp 0.2598%)
+[10:20:13]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.1 µs/survivor (42,629 in sample, 21,976 distinct)
+[10:20:13]   PROJECTION full pair stage: 1.17e+10 pairs → ~7.7min single-core ≈ 57.5s on 8 cores (incl. ~3.05e+7 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:13]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:13] ██ TH-10 SCOUT phase=k3 finished in 2.7s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:13] 
+▂▂▂▂▂▂▂▂ k=3 c=1.30 DONE — 12:20:13 ▂▂▂▂▂▂▂▂
+
+▂▂▂▂▂▂▂▂ k=3  c=1.35  (PRUNE_EFF_C2=729/400) — 12:20:13 ▂▂▂▂▂▂▂▂
+[10:20:13] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:13] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:13] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:13] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:13]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:13]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:13]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:13] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:13]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:13]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:13]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:13]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:13]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:13]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[10:20:13]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:14]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:14]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:14]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.3s
+[10:20:14] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[10:20:14] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:14] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 729/400 (c ≈ 1.3500). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[10:20:16] ⚑ POOL PRUNED: 1,086,912 → 186,096 vectors (17.12% kept, 5.84× vector-reduction ⇒ ~34.11× pair-reduction)
+[10:20:16] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 144/264 (55%)  wt3 672/1800 (37%)  wt4 2568/8736 (29%)  wt5 7392/32952 (22%)  wt6 19704/102744 (19%)  wt7 48144/276648 (17%)  wt8 107448/663744 (16%)
+[10:20:16] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:16] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:16] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 186,096 → 1.73e+10 unordered pairs; sampling every 719th outer row
+[10:20:16] k=3 PAIR TIMING done in 0.6s: sampled 2.42e+7 pairs (0.140% of 1.73e+10)
+[10:20:16]   per-pair broadphase+bitmap: 24.8 ns/pair (4.03e+7/s single core)
+[10:20:16]   survivor rates: det-in-range 99.19%, bitmap 0.401%, EXACT-admissible 0.2351% (sharp 0.2351%)
+[10:20:16]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.5 µs/survivor (56,829 in sample, 31,198 distinct)
+[10:20:16]   PROJECTION full pair stage: 1.73e+10 pairs → ~10.9min single-core ≈ 81.7s on 8 cores (incl. ~4.07e+7 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:16]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:16] ██ TH-10 SCOUT phase=k3 finished in 2.9s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:16] 
+▂▂▂▂▂▂▂▂ k=3 c=1.35 DONE — 12:20:16 ▂▂▂▂▂▂▂▂
+
+▂▂▂▂▂▂▂▂ k=3  c=sqrt2  (PRUNE_EFF_C2=2) — 12:20:16 ▂▂▂▂▂▂▂▂
+[10:20:17] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:17] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:17] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:17] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:17]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:17]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:17]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:17] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:17]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:17]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:17]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:17]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:17]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:17]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[10:20:17]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:17]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:17]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:17]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.3s
+[10:20:17] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.3s
+[10:20:17] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:17] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 2/1 (c ≈ 1.4142). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[10:20:19] ⚑ POOL PRUNED: 1,086,912 → 229,800 vectors (21.14% kept, 4.73× vector-reduction ⇒ ~22.37× pair-reduction)
+[10:20:19] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 168/264 (64%)  wt3 768/1800 (43%)  wt4 2736/8736 (31%)  wt5 8496/32952 (26%)  wt6 23616/102744 (23%)  wt7 59136/276648 (21%)  wt8 134856/663744 (20%)
+[10:20:19] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:19] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:19] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 229,800 → 2.64e+10 unordered pairs; sampling every 719th outer row
+[10:20:20] k=3 PAIR TIMING done in 0.9s: sampled 3.68e+7 pairs (0.140% of 2.64e+10)
+[10:20:20]   per-pair broadphase+bitmap: 25.0 ns/pair (4.00e+7/s single core)
+[10:20:20]   survivor rates: det-in-range 99.16%, bitmap 0.381%, EXACT-admissible 0.2442% (sharp 0.2442%)
+[10:20:20]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.3 µs/survivor (89,956 in sample, 48,838 distinct)
+[10:20:20]   PROJECTION full pair stage: 2.64e+10 pairs → ~16.7min single-core ≈ 2.1min on 8 cores (incl. ~6.45e+7 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:20]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:20] ██ TH-10 SCOUT phase=k3 finished in 3.1s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:20] 
+▂▂▂▂▂▂▂▂ k=3 c=sqrt2 DONE — 12:20:20 ▂▂▂▂▂▂▂▂
+
+▂▂▂▂▂▂▂▂ k=3  c=1.50  (PRUNE_EFF_C2=9/4) — 12:20:20 ▂▂▂▂▂▂▂▂
+[10:20:20] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:20] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:20] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:20] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:20]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:20]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:20]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:20] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:20]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:20]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:20]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:20]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:20]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:20]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[10:20:20]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:20]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:20]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:20]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.4s
+[10:20:20] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[10:20:20] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:20] ⚑ EFFICIENCY PRUNE ACTIVE — PRUNE_EFF_C2 = c² = 9/4 (c ≈ 1.5000). Keep pool vector v iff wt(v)² ≤ c²·|v|² (EXACT ℚ(√2,√3) test). DATA-GATHERING: a dropped tiling is the measured breaking datum, NOT a bug to silence.
+[10:20:22] ⚑ POOL PRUNED: 1,086,912 → 292,296 vectors (26.89% kept, 3.72× vector-reduction ⇒ ~13.83× pair-reduction)
+[10:20:22] ⚑ per-weight-shell kept: wt1 24/24 (100%)  wt2 168/264 (64%)  wt3 816/1800 (45%)  wt4 3072/8736 (35%)  wt5 10080/32952 (31%)  wt6 29112/102744 (28%)  wt7 74664/276648 (27%)  wt8 174360/663744 (26%)
+[10:20:22] ⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑⚑
+[10:20:22] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:22] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 292,296 → 4.27e+10 unordered pairs; sampling every 719th outer row
+[10:20:24] k=3 PAIR TIMING done in 1.5s: sampled 5.96e+7 pairs (0.139% of 4.27e+10)
+[10:20:24]   per-pair broadphase+bitmap: 25.2 ns/pair (3.97e+7/s single core)
+[10:20:24]   survivor rates: det-in-range 99.10%, bitmap 0.355%, EXACT-admissible 0.2443% (sharp 0.2443%)
+[10:20:24]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.3 µs/survivor (145,527 in sample, 78,762 distinct)
+[10:20:24]   PROJECTION full pair stage: 4.27e+10 pairs → ~27.1min single-core ≈ 3.4min on 8 cores (incl. ~1.04e+8 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:24]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:24] ██ TH-10 SCOUT phase=k3 finished in 3.7s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:24] 
+▂▂▂▂▂▂▂▂ k=3 c=1.50 DONE — 12:20:24 ▂▂▂▂▂▂▂▂
+
+▂▂▂▂▂▂▂▂ k=3  c=inf  (PRUNE_EFF_C2=unset) — 12:20:24 ▂▂▂▂▂▂▂▂
+[10:20:24] ████████████████████████████████████████████████████████████████████████████████████████████████████
+[10:20:24] ██ TH-10 SCOUT — EXAMPLE MODE ██ phase=k3 (k=3, s=8) — THE WEIGHT-8 POOL BOUND IS UNPROVEN; no count/completeness claim is made by anything below
+[10:20:24] machine: darwin arm64, 10 cores, 24 GB RAM, node v24.14.1
+[10:20:24] bounds: 24k·a_max = 806.12, pair-det cap = 64.00, ladder = exact tile-multiset sums (no tile-count cap at pair stage — see header)
+[10:20:24]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:24]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:24]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:24] ✓ det4 integer-quadruple sanity vs exact detSurd PASSED (strided sample)
+[10:20:24]   W-BFS level 1: +24 distinct, |W(1)| = 25 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(1)| matches the TA exact table (25)
+[10:20:24]   W-BFS level 2: +264 distinct, |W(2)| = 289 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(2)| matches the TA exact table (289)
+[10:20:24]   W-BFS level 3: +1,800 distinct, |W(3)| = 2,089 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(3)| matches the TA exact table (2,089)
+[10:20:24]   W-BFS level 4: +8,736 distinct, |W(4)| = 10,825 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(4)| matches the TA exact table (10,825)
+[10:20:24]   W-BFS level 5: +32,952 distinct, |W(5)| = 43,777 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(5)| matches the TA exact table (43,777)
+[10:20:24]   W-BFS level 6: +102,744 distinct, |W(6)| = 146,521 (incl. 0), 0.0s
+[10:20:24]   ✓ |W(6)| matches the TA exact table (146,521)
+[10:20:24]   W-BFS level 7: +276,648 distinct, |W(7)| = 423,169 (incl. 0), 0.1s
+[10:20:24]   ✓ |W(7)| matches the TA exact table (423,169)
+[10:20:24]   W-BFS level 8: +663,744 distinct, |W(8)| = 1,086,913 (incl. 0), 0.4s
+[10:20:24] W(8) enumerated: 1,086,912 nonzero values (1,086,913 incl. 0) in 0.4s
+[10:20:24] area ladder (cap 64.00): 24,083 exact tile-sum values, min 0.4330; sharp (≤72 tiles) subset 24,083
+[10:20:24] k=3 PAIR TIMING (sampled): |W(8)\{0}| = 1,086,912 → 5.91e+11 unordered pairs; sampling every 719th outer row
+[10:20:39] k=3 PAIR TIMING done in 14.2s: sampled 8.22e+8 pairs (0.139% of 5.91e+11)
+[10:20:39]   per-pair broadphase+bitmap: 17.2 ns/pair (5.81e+7/s single core)
+[10:20:39]   survivor rates: det-in-range 95.90%, bitmap 0.171%, EXACT-admissible 0.1518% (sharp 0.1518%)
+[10:20:39]   canonicalization+dedup (gaussReduceExact + latticeKey): 5.0 µs/survivor (1,247,874 in sample, 612,001 distinct)
+[10:20:39]   PROJECTION full pair stage: 5.91e+11 pairs → ~4.1h single-core ≈ 30.5min on 8 cores (incl. ~8.97e+8 projected admissible-pair canonicalizations; distinct-lattice count does NOT extrapolate linearly — dedup saturates)
+[10:20:39]   ⚑ joins + fills NOT measured at k=3 (per spec) — pair stage is the necessary first gate
+[10:20:39] ██ TH-10 SCOUT phase=k3 finished in 14.5s — ALL numbers above are EXAMPLE MODE (unproven pool bound) ██
+[10:20:39] 
+▂▂▂▂▂▂▂▂ k=3 c=inf DONE — 12:20:39 ▂▂▂▂▂▂▂▂
+
+████ k=3 SWEEP COMPLETE 2026-07-05 12:20:39 ████

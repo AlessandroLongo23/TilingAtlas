@@ -1,0 +1,20 @@
+
+===== t5005 k=5 : sStar=7 wtU=2 wtV=7 =====
+  v1=1.500+0.866j |v1|=1.732  v2=3.500-6.062j |v2|=7.000  angle(v1,v2)=90.00deg  RECTANGULAR
+  structural rows (perp v1): H=7.000, 10 distinct levels, gaps=[0.5, 1.0, 0.5, 1.0, 0.5, 1.0, 0.5, 1.0, 0.5, 0.5]
+  edge-climb d2=9 (path 10 verts)
+    proj onto v2-hat (climb axis): [0.0, 1.0, 2.0, 2.5, 3.5, 4.0, 5.0, 5.5, 6.5, 7.0]
+    steps along v2-hat: [1.0, 1.0, 0.5, 1.0, 0.5, 1.0, 0.5, 1.0, 0.5]
+    proj onto nhat (row axis)   : [0.0, -1.0, -2.0, -2.5, -3.5, -4.0, -5.0, -5.5, -6.5, -7.0]
+    distinct row-levels visited by climb: 10
+  ==> THREE numbers: wt/s*=7, edge-climb=9, structural-rows=10
+
+===== t6649 k=6 : sStar=6 wtU=2 wtV=7 =====
+  v1=0.500-1.866j |v1|=1.932  v2=5.366+2.366j |v2|=5.864  angle(v1,v2)=98.79deg  OBLIQUE
+  structural rows (perp v1): H=5.796, 12 distinct levels, gaps=[0.707, 0.259, 0.707, 0.259, 0.707, 0.259, 0.707, 0.259, 0.707, 0.259, 0.707, 0.259]
+  edge-climb d2=7 (path 8 verts)
+    proj onto v2-hat (climb axis): [0.0, 0.994, 1.909, 2.716, 3.119, 4.034, 4.949, 5.864]
+    steps along v2-hat: [0.994, 0.915, 0.807, 0.403, 0.915, 0.915, 0.915]
+    proj onto nhat (row axis)   : [0.0, 0.966, 1.932, 2.639, 2.898, 3.864, 4.83, 5.796]
+    distinct row-levels visited by climb: 8
+  ==> THREE numbers: wt/s*=6, edge-climb=7, structural-rows=12

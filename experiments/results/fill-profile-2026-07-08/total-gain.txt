@@ -1,0 +1,13 @@
+### NEW (Rank-1+2, working tree) ###
+[driver] DONE k=1: 15 solves in 10.4s — cells 11, raw 16, gateRej 0, timedOut 0
+[driver] DIGEST k=1: 11 distinct canonical keys, hash=6f9ca9cf2d16c75f
+[driver] DONE k=2: 40 solves in 132.7s — cells 25, raw 91, gateRej 36, timedOut 0
+
+(stashed → OLD/HEAD, pre-optimization)
+### OLD (HEAD, pre-optimization) ###
+[driver] DONE k=1: 15 solves in 23.4s — cells 11, raw 16, gateRej 0, timedOut 0
+[driver] DIGEST k=1: 11 distinct canonical keys, hash=6f9ca9cf2d16c75f
+[driver] DONE k=2: 40 solves in 204.0s — cells 25, raw 91, gateRej 36, timedOut 0
+
+(restored NEW)
+=== total-gain.txt complete ===
