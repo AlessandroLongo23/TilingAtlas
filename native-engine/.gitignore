@@ -1,0 +1,6 @@
+# build artifacts
+difftest
+bench
+bench-fast
+# generated test trace
+difftrace.txt
