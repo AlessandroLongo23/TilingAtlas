@@ -140,3 +140,20 @@ describe('F3 vc tree figure', () => {
     expect(ir.elements.some((e) => e.kind === 'text' && (e as { tex: string }).tex.includes('explored'))).toBe(true);
   });
 });
+
+// append to tests/trace-figures.test.ts
+import { poolFigure } from '../figures/trace/poolFigure';
+import { loadTrace as load4, type PoolNode as PN, type LatticeNode as LN } from '../figures/trace/loadTrace';
+
+describe('F5 pool + lattice', () => {
+  it('draws pool vectors as arrows and marks the winning lattice parallelogram', () => {
+    const pool = load4<PN>('figures/traces/running-example', 'pool');
+    const lattice = load4<LN>('figures/traces/running-example', 'lattice');
+    const winnerKey = '1|-4,0,-1,0,2,0,1,0#1|0,0,0,0,-2,0,0,0';
+    const ir = poolFigure(pool, lattice, winnerKey);
+    const arrows = ir.elements.filter((e) => e.kind === 'arrow');
+    const winnerPolyline = ir.elements.filter((e) => e.kind === 'polyline' && e.styleRef === 'vec:winner');
+    expect(arrows.length).toBeGreaterThan(10);
+    expect(winnerPolyline.length).toBe(1);
+  });
+});

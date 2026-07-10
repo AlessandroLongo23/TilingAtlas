@@ -8,8 +8,9 @@ import type { FigureIR } from '../ir/types';
 import { emitSvg } from '../emit/svg';
 import { emitTikz } from '../emit/tikz';
 import { polygonsFigure } from './polygonsFigure';
-import { loadTrace, type TorusNode, type VcNode } from './loadTrace';
+import { loadTrace, type TorusNode, type VcNode, type PoolNode, type LatticeNode } from './loadTrace';
 import { torusTreeFigure, vcTreeFigure } from './treeFigure';
+import { poolFigure } from './poolFigure';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'figures', 'out', 'trace');
@@ -31,3 +32,7 @@ write('f6-torus-fill', torusTreeFigure(loadTrace<TorusNode>(EX, 'torus')));
 
 // F3 — VC search tree, curated, with the example's two VCs highlighted.
 write('f3-vc-search', vcTreeFigure(loadTrace<VcNode>(EX, 'vc'), [['3','4','6','4'], ['3','6','3','6']]));
+
+const WINNER = '1|-4,0,-1,0,2,0,1,0#1|0,0,0,0,-2,0,0,0';
+// F5 — vector pool + candidate lattices, winner highlighted.
+write('f5-pool-lattice', poolFigure(loadTrace<PoolNode>(EX, 'pool'), loadTrace<LatticeNode>(EX, 'lattice'), WINNER));
