@@ -68,3 +68,22 @@ describe('pool + lattice trace', () => {
     expect(lattice.some((l) => Array.isArray(l.candidates) && l.candidates.length > 0)).toBe(true);
   }, 180000);
 });
+
+describe('torus-fill trace', () => {
+  let dir: string;
+  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fttorus-')); });
+  afterEach(() => { delete process.env.TRACE_FIGURES; trace._reconfigureFromEnv(); fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('emits root/place/prune/emit torus nodes, groupable by fillId', () => {
+    process.env.TRACE_FIGURES = dir; trace._reconfigureFromEnv();
+    solveK2([3, 4, 6]);
+    const torus = fs.readFileSync(path.join(dir, 'torus.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    const verdicts = new Set(torus.map((r) => r.verdict));
+    const fills = new Set(torus.map((r) => r.fillId));
+    expect(verdicts.has('root')).toBe(true);
+    expect(verdicts.has('place')).toBe(true);
+    expect(verdicts.has('emit')).toBe(true);
+    expect([...verdicts].some((v) => String(v).startsWith('prune-'))).toBe(true);
+    expect(fills.size).toBeGreaterThan(0);
+  }, 180000);
+});

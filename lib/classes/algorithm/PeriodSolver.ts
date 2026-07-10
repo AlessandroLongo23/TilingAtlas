@@ -39,7 +39,7 @@ import type { Polygon } from '../polygons/Polygon';
 import { RegularPolygon } from '../polygons/RegularPolygon';
 import { ExactStarPolygon } from '../polygons/ExactStarPolygon';
 import { Cyclotomic } from '../Cyclotomic';
-import { trace } from './figureTrace';
+import { trace, polyDump } from './figureTrace';
 import { KUniformityChecker } from './KUniformityChecker';
 import { countVertexOrbitsFast } from './KUniformityFast';
 // Experimental fast k-uniformity gate (point-group orbit count; proven equivalent to the exact gate
@@ -1424,28 +1424,32 @@ export class PeriodSolver {
 
 		const results: Polygon[][] = [];
 		const seenState = new Set<string>();
-		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[]; counts: number[] | null }[] = [{ reps: initial, block: initialBlock, vReps: initialV, counts: initialCounts }];
+		const fillId = trace.enabled ? trace.nextId('fill') : 0;
+		const latKey = trace.enabled ? latticeKey(ctx.u, ctx.v) : '';
+		const rootId = trace.enabled ? trace.nextId('torus') : 0;
+		if (trace.enabled) trace.node('torus', { fillId, latKey, id: rootId, parentId: -1, reps: polyDump(initial), verdict: 'root' });
+		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[]; counts: number[] | null; id?: number }[] = [{ reps: initial, block: initialBlock, vReps: initialV, counts: initialCounts, id: rootId }];
 		let pops = 0;
 		const t0 = PeriodSolver.DEBUG ? Date.now() : 0;
 		if (FP) FP.t.setup += fpNow() - _s0; // seed survived setup → close the setup bracket, enter the DFS
 
 		while (stack.length > 0) {
 			if (timedOut()) break;
-			const { reps, block, vReps, counts } = stack.pop()!;
+			const { reps, block, vReps, counts, id: curId } = stack.pop()!;
 			let _t = FP ? fpNow() : 0;
 			const stateKey = this.stateKey(reps);
 			const seen = seenState.has(stateKey);
 			if (FP) { FP.t.dedupKey += fpNow() - _t; if (seen) FP.c.seenHits++; }
-			if (seen) continue;
+			if (seen) { if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, verdict: 'dedup' }); continue; }
 			seenState.add(stateKey);
 			pops++;
 			if (FP) FP.c.pops++;
-			if (reps.length > ctx.maxCellPolys) { if (FP) FP.c.capSkips++; continue; }
+			if (reps.length > ctx.maxCellPolys) { if (FP) FP.c.capSkips++; if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, verdict: 'cap-skip' }); continue; }
 
 			_t = FP ? fpNow() : 0;
 			const analysis = this.analyze(reps, ctx, block);
 			if (FP) FP.t.analyze += fpNow() - _t;
-			if (analysis.contradiction) { if (FP) FP.c.contradictions++; continue; }
+			if (analysis.contradiction) { if (FP) FP.c.contradictions++; if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, verdict: 'contradiction' }); continue; }
 			if (!analysis.openVertex) {
 				if (FP) FP.c.closures++;
 				// EARLY k-GATE (before the certificate): orbit count is a property of the closed cell and is
@@ -1457,7 +1461,7 @@ export class PeriodSolver {
 				// k=3 catastrophic tail (large lattices closing into many orbit>k tilings) stops being paid.
 				if (ctx.gate) {
 					const orbits = ctx.gate(reps);
-					if (orbits !== null && orbits !== this.k) { diag.earlyGateRejected++; continue; }
+					if (orbits !== null && orbits !== this.k) { diag.earlyGateRejected++; if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), verdict: 'gate-reject' }); continue; }
 				}
 				// No open vertex within a full cell ⇒ torus closed. Certify, then OP-1 (prop:typeprune):
 				// (i) V<k ⇒ orbits ≤ V < k, the gate would reject — skip the
@@ -1483,6 +1487,9 @@ export class PeriodSolver {
 					const prim = this.isPrimitive(reps, ctx, memo, diag);
 					if (FP) { FP.t.primitive += fpNow() - _t; if (prim) FP.c.primTrue++; }
 					if (prim) results.push(reps);
+					if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), stateKey: this.stateKey(reps), verdict: prim ? 'emit' : 'reject-supercell' });
+				} else if (trace.enabled) {
+					trace.node('torus', { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), verdict: 'cert-fail' });
 				}
 				continue;
 			}
@@ -1500,27 +1507,29 @@ export class PeriodSolver {
 			// downstream `analyze` (over-fill / VC) reject the ones that do not fit.
 			const place = (P: Polygon) => {
 				if (FP) FP.c.places++;
-				if (this.properOverlapWithBlock(P, block, ctx)) { if (FP) FP.c.overlapRej++; return; }
+				if (this.properOverlapWithBlock(P, block, ctx)) { if (FP) FP.c.overlapRej++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-overlap' }); return; }
 				// The new tile reduces to ONE canonical lattice-class rep. If already present the branch
 				// makes no progress (matches the old dedupModLattice length check). The child's block =
 				// this block + the new rep's lattice translates — disjoint classes, so a plain set union;
 				// no full rebuild (audit perf C1). Block order is irrelevant to every consumer.
 				const pc = this.canonicalRep(P, ctx, memo);
-				if (repsKeys.has(pc.key)) { if (FP) FP.c.dupRej++; return; } // P already present mod Λ ⇒ no progress
+				if (repsKeys.has(pc.key)) { if (FP) FP.c.dupRej++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-noprogress' }); return; } // P already present mod Λ ⇒ no progress
 				const next = [...reps, pc.poly];
-				if (next.length > ctx.maxCellPolys) { if (FP) FP.c.capRej++; return; }
+				if (next.length > ctx.maxCellPolys) { if (FP) FP.c.capRej++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-cap' }); return; }
 				const childV = extendV(vReps, pc.poly);
-				if (childV.length > ctx.orbitFloor) { diag.p1Pruned++; if (FP) FP.c.p1Pruned++; return; } // P1 orbit-floor prune (sound for stars: extendV excludes dents)
+				if (childV.length > ctx.orbitFloor) { diag.p1Pruned++; if (FP) FP.c.p1Pruned++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-P1' }); return; } // P1 orbit-floor prune (sound for stars: extendV excludes dents)
 				// P3 stage B: the child's per-size counts must stay dominated by some F*(Λ) member —
 				// else no completion can be an emitted cell (counts are monotone; see the header note).
 				let childCounts: number[] | null = null;
 				if (counts && sizeIdxOf) {
 					childCounts = counts.slice();
 					childCounts[sizeIdxOf.get(pc.poly.n)!]++;
-					if (!dominated(childCounts)) { diag.p3Pruned++; return; }
+					if (!dominated(childCounts)) { diag.p3Pruned++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-P3' }); return; }
 				}
 				const childBlock = block.concat(this.buildBlock([pc.poly], ctx, 5));
-				stack.push({ reps: next, block: childBlock, vReps: childV, counts: childCounts });
+				const childId = trace.enabled ? trace.nextId('torus') : 0;
+				if (trace.enabled) trace.node('torus', { fillId, latKey, id: childId, parentId: curId ?? 0, placedN: P.n, reps: polyDump(next), verdict: 'place' });
+				stack.push({ reps: next, block: childBlock, vReps: childV, counts: childCounts, id: childId });
 				if (FP) FP.c.pushed++;
 			};
 
