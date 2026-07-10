@@ -52,7 +52,7 @@ function log(msg = ''): void {
 
 export interface ReferenceTiling {
 	id: string;
-	source: 'galebach' | 'myers' | 'ctrnact';
+	source: 'galebach' | 'myers' | 'ctrnact' | 'ctrnact-star';
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12" (stars marked "n*")
 	renderCell: {
@@ -308,6 +308,49 @@ function buildCtrnact(): ReferenceTiling[] {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// Phase 4 — candidate NEW 2-uniform star tilings from the Čtrnáct-engine star extension
+// (feat/ctrnact-star). Found by the k=2 run and absent from Myers 2009; pending adversarial review.
+// Float render cells are pre-exported by tools/ctrnact-oracle/export_atlas_cells.py (exact ZZ[zeta_24]
+// development, per-cell float area check against |det Lambda|). Display-only, never certified; no
+// exactSource (the codec has no star support, same as the Myers entries).
+// ---------------------------------------------------------------------------------------------------
+function buildCtrnactStars(): ReferenceTiling[] {
+	const dsPath = path.join(ROOT, 'experiments', 'star-oracle', 'ctrnact-star-k2-extras.cells.json');
+	if (!fs.existsSync(dsPath)) {
+		log('(no experiments/star-oracle/ctrnact-star-k2-extras.cells.json — skipping Phase 4)\n');
+		return [];
+	}
+	const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
+		records: {
+			id: string;
+			k: number;
+			vertype: string;
+			orbits: string[];
+			renderCell: ReferenceTiling['renderCell'];
+			areaCheck: { cellArea: number; detAbs: number };
+		}[];
+	};
+	const out: ReferenceTiling[] = [];
+	log('=== Phase 4: Čtrnáct-engine candidate NEW star tilings (k=2, not in Myers 2009) ===');
+	for (const r of ds.records) {
+		// family label: distinct tile tokens across the counting orbits, stars as "n*"
+		const toks = new Set<string>();
+		for (const orb of r.orbits) {
+			for (const t of orb.replace(/^\(|\)[A-Z0-9a-z]*$/g, '').split(',')) {
+				const m = /^(\d+)\*/.exec(t);
+				toks.add(m ? `${m[1]}*` : t);
+			}
+		}
+		const family = [...toks].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b)).join('.');
+		out.push({ id: r.id, source: 'ctrnact-star', k: r.k, family, renderCell: r.renderCell });
+		log(`  ${r.id}  k=${r.k}  ${family}  (${r.renderCell.cellPolygons?.length ?? 0} cell polys, ` +
+			`area check ${Math.abs(r.areaCheck.cellArea - r.areaCheck.detAbs) < 1e-6 ? '✓' : '⚑ FAIL'})`);
+	}
+	log('');
+	return out;
+}
+
+// ---------------------------------------------------------------------------------------------------
 
 function main(): void {
 	const t0 = Date.now();
@@ -317,6 +360,8 @@ function main(): void {
 	else log('(--no-stars: skipping Phase 2)\n');
 	if (!argv.includes('--no-ctrnact')) atlas.push(...buildCtrnact());
 	else log('(--no-ctrnact: skipping Phase 3)\n');
+	if (withStars) atlas.push(...buildCtrnactStars());
+	else log('(--no-stars: skipping Phase 4)\n');
 
 	// deterministic order: source, k, id
 	atlas.sort(
@@ -338,8 +383,12 @@ function main(): void {
 	const withCell = atlas.filter((t) => t.exactSource?.kind === 'cell').length;
 	// Star tilings (Myers) intentionally omit exactSource — the codec has no star support (see
 	// buildMyersK1Stars). Anything ELSE without exactSource is an unexpected gap and is flagged loud.
-	const starOmit = atlas.filter((t) => t.source === 'myers' && !t.exactSource).length;
-	const unexpected = atlas.filter((t) => !t.exactSource && t.source !== 'myers').length;
+	const starOmit = atlas.filter(
+		(t) => (t.source === 'myers' || t.source === 'ctrnact-star') && !t.exactSource,
+	).length;
+	const unexpected = atlas.filter(
+		(t) => !t.exactSource && t.source !== 'myers' && t.source !== 'ctrnact-star',
+	).length;
 	log(`  exactSource: ${withSeed} seed + ${withCell} cell = ${withSeed + withCell}/${atlas.length}` +
 		`  (${starOmit} Myers star entries intentionally omit — no codec star support)` +
 		(unexpected ? `  ⚑ ${unexpected} UNEXPECTEDLY MISSING` : '  ✓'));

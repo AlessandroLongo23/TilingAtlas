@@ -19,6 +19,7 @@ const SOURCE_LABEL: Record<ReferenceTiling["source"], string> = {
 	galebach: "Galebach",
 	myers: "Myers",
 	ctrnact: "Čtrnáct",
+	"ctrnact-star": "New star (candidate)",
 };
 
 export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {

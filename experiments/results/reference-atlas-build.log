@@ -10,19 +10,26 @@
 === Phase 2: Myers k=1 in-ring stars (Fig-4 subclass) ===
   ⚑ SCOPED (display-only, not exhaustive): single-star dent-reg VCs, ≤6 corners, 2500ms/seed, 600s wall budget — the ~8h uncapped sweep is deliberately NOT run.
   solving 439 single-star VCs …
-    …50/439 (206s, 1 raw cells, 28 timeouts)
-    …100/439 (473s, 2 raw cells, 66 timeouts)
-  ⚑ WALL BUDGET hit — 319 VCs SKIPPED (display-only cap, logged loud).
-  distinct k=1 star tilings (congruence): 3 (from 3 raw, 120 VCs solved, 83 timeouts)
+    …50/439 (200s, 1 raw cells, 28 timeouts)
+    …100/439 (456s, 2 raw cells, 65 timeouts)
+  ⚑ WALL BUDGET hit — 314 VCs SKIPPED (display-only cap, logged loud).
+  distinct k=1 star tilings (congruence): 3 (from 3 raw, 125 VCs solved, 86 timeouts)
 
   ⚑ symmetry overlay DISABLED for all 3 Myers star tilings (regular-only codec has no star support; no exactSource emitted).
 === Phase 3: Čtrnáct k=7 (reproduced, extends Galebach beyond k=6) ===
   k=7: 1472/1472 reconstructed (target 1472)  ✓
   no skips ✓
 
+=== Phase 4: Čtrnáct-engine candidate NEW star tilings (k=2, not in Myers 2009) ===
+  ctrnact-star-k2-01  k=2  3.6.12*  (9 cell polys, area check ✓)
+  ctrnact-star-k2-02  k=2  3.4.12*  (12 cell polys, area check ✓)
+  ctrnact-star-k2-03  k=2  3.3*  (6 cell polys, area check ✓)
+  ctrnact-star-k2-04  k=2  3.3*  (6 cell polys, area check ✓)
+
 === reference-atlas.json written ===
-  2723 tilings → public/reference-atlas.json
+  2727 tilings → public/reference-atlas.json
     ctrnact k=7: 1472
+    ctrnact-star k=2: 4
     galebach k=1: 11
     galebach k=2: 20
     galebach k=3: 61
@@ -30,5 +37,5 @@
     galebach k=5: 332
     galebach k=6: 673
     myers k=1: 3
-  exactSource: 2719 seed + 1 cell = 2720/2723  (3 Myers star entries intentionally omit — no codec star support)  ✓
-  elapsed 636.8s
+  exactSource: 2719 seed + 1 cell = 2720/2727  (7 Myers star entries intentionally omit — no codec star support)  ✓
+  elapsed 625.8s

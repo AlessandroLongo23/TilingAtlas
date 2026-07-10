@@ -25,6 +25,7 @@ const SOURCE_OPTIONS: { value: ReferenceTiling["source"]; label: string }[] = [
 	{ value: "galebach", label: "Galebach" },
 	{ value: "myers", label: "Myers" },
 	{ value: "ctrnact", label: "Čtrnáct" },
+	{ value: "ctrnact-star", label: "New stars (candidate)" },
 ];
 const COLUMN_PRESETS = [3, 4, 5, 6];
 
