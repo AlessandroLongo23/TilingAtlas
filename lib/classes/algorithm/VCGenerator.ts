@@ -1,6 +1,7 @@
 import { PolygonSignature, PolygonType, VertexConfiguration } from '@/classes';
 import { comparePolygonNames, isWithinAngularTolerance, isWithinTolerance, toDegrees } from '@/utils';
 import { tolerance } from '@/utils/tolerance';
+import { trace } from './figureTrace';
 
 export class VCGenerator {
     vertexConfigurations: VertexConfiguration[] = [];
@@ -61,25 +62,41 @@ export class VCGenerator {
         const stackNames: string[] = [];
         let depth = 0;
         let angleSum = 0;
+        let vcNodeId = 0;
+        const nextVcId = () => (trace.enabled ? ++vcNodeId : 0);
 
-        const dfs = () => {
+        const dfs = (nodeId: number, parentId: number) => {
             if (depth > 0 && isWithinAngularTolerance(angleSum, TWO_PI)) {
                 const lastIdx = stack[depth - 1];
                 const firstIdx = stack[0];
-                if (sharedAngleLeft[lastIdx] + sharedAngleRight[firstIdx] > TWO_PI + tolerance) return;
-                if (!isWithinTolerance(sideLengthLeft[lastIdx], sideLengthRight[firstIdx])) return;
+                if (sharedAngleLeft[lastIdx] + sharedAngleRight[firstIdx] > TWO_PI + tolerance) {
+                    if (trace.enabled) trace.node('vc', { id: nodeId, parentId, path: stackNames.slice(), angleSum, verdict: 'reject-wrap' });
+                    return;
+                }
+                if (!isWithinTolerance(sideLengthLeft[lastIdx], sideLengthRight[firstIdx])) {
+                    if (trace.enabled) trace.node('vc', { id: nodeId, parentId, path: stackNames.slice(), angleSum, verdict: 'reject-wrap' });
+                    return;
+                }
 
                 const canonical = canonicalCyclicForm(stackNames);
+                let verdict = 'emit-dup';
                 if (!seen.has(canonical)) {
                     seen.add(canonical);
                     const vc = this.buildAndValidate(stack, depth);
-                    if (vc) this.vertexConfigurations.push(vc);
+                    if (vc) { this.vertexConfigurations.push(vc); verdict = 'emit'; }
+                    else verdict = 'reject-invalid';
                 }
+                if (trace.enabled) trace.node('vc', { id: nodeId, parentId, path: stackNames.slice(), angleSum, verdict });
                 return;
             }
 
             const remaining = TWO_PI - angleSum;
-            if (remaining < minAngle - tolerance) return;
+            if (remaining < minAngle - tolerance) {
+                if (trace.enabled) trace.node('vc', { id: nodeId, parentId, path: stackNames.slice(), angleSum, verdict: 'prune-angle-floor' });
+                return;
+            }
+
+            if (trace.enabled) trace.node('vc', { id: nodeId, parentId, path: stackNames.slice(), angleSum, verdict: 'extend' });
 
             const isFirst = depth === 0;
             const candidates = isFirst ? allByAngle : canFollow[stack[depth - 1]];
@@ -99,7 +116,7 @@ export class VCGenerator {
                 angleSum += angle;
                 depth++;
 
-                dfs();
+                dfs(nextVcId(), nodeId);
 
                 depth--;
                 stackNames.pop();
@@ -107,7 +124,7 @@ export class VCGenerator {
             }
         };
 
-        dfs();
+        dfs(nextVcId(), -1);
         return this.vertexConfigurations;
     }
 
