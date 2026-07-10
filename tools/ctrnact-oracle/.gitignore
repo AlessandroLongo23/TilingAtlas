@@ -1,6 +1,7 @@
 # build artifacts
 eu_solver
 eu_pruner
+eu_classify
 # pipeline run outputs
 run-k*/
 out/
@@ -8,3 +9,4 @@ _import_scratch/
 # python
 __pycache__/
 *.pyc
+.maxnum-*

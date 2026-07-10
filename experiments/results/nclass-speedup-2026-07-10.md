@@ -67,4 +67,31 @@ representational win (step 1) SUBSUMED the algorithmic win (star) — they are n
 stays blind.** The star machinery's value is unification with the N dedup key (same computation → symmetry
 group + canonical hash together), not speed; kept behind the flag for that, not adopted for classification.
 
-## Step 3 — C++ int32 in the oracle   [pending — port the BLIND classifier]
+## Step 3 — C++ int32 in the oracle   → adopted
+
+`tools/ctrnact-oracle/eu_classify.cpp` — native int32 port of the blind classifier. Reads a flat tiling
+stream (cells JSON → flat via `cells_to_flat.py`), writes id,k,lattice,group,orbifold. The reflection
+inventory keeps analyzeSymmetry's ±5 Λ-translate window (a power carries a mirror iff SOME translate has
+τ=0 — dropping it lost 75/24459 on k=11), but skips the offset/essential bookkeeping (cm/cmm decided by
+the exact lattice; hasGlide only consulted where there is no mirror). `make eu_classify`.
+
+**Validated:** 0 mismatches vs TS nClassify across **all 200,730 tilings k=1..13** (and TS is 0-mismatch vs
+the exact analyzeSymmetry on k≤11 → C++ is transitively exact). Timing incl. flat-parse:
+
+| classifier | k≤11 ms/tiling | over baseline | over TS |
+|---|---|---|---|
+| baseline analyzeSymmetry (ζ₂₄ bigint) | 30.51 | 1× | — |
+| step 1 — TS nClassify (int, blind) | 0.526 | 58× | 1× |
+| **step 3 — C++ eu_classify (int32)** | **0.067** | **458×** | **7.9×** |
+
+Full k=1..13 (200,730 tilings): 15.1 s end-to-end. C++ folds classification into the oracle so a future
+`develop → classify → weight` runs native; wiring `develop.py` to emit the flat stream directly is a small
+follow-up (currently a one-line `cells_to_flat.py` converter).
+
+## Summary — where the speed came from
+
+Step 1 (drop bigint: dim-8 ℚ(ζ₂₄) → dim-4 ℤ[ω] machine int, O(1) membership, render geometry dropped) did
+the heavy lifting: **58×**. Step 2 (star-stabilizer pruning) was a measured non-win — step 1 already removed
+the bottleneck it targeted. Step 3 (C++ int32) added **7.9×** on top for **458×** total, and moves the pass
+into the oracle. Correctness held at every step: exact-equal labels to analyzeSymmetry, gated on the full
+catalogue. A latent pmm↔cmm bug in analyzeSymmetry was found and fixed along the way (see §46).
