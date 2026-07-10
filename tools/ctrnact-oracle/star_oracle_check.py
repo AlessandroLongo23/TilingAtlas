@@ -63,7 +63,7 @@ def is_star_token(t):
 
 
 def family_instances(rec):
-    """Instantiate a family template at each palette alphaU: returns [(alphaU, tokens)]."""
+    """Instantiate a k=1 family template at each palette alphaU: [(alphaU, tokens)]."""
     pat = rec["template"]["orbitPattern"].split(".")
     n = rec["template"]["n"]
     dent_base = 24 - 24 // n
@@ -75,6 +75,43 @@ def family_instances(rec):
             toks.append(t)
         out.append((a, toks))
     return out
+
+
+# star species available in the palette, as (n, alphaU); kept in sync with star24.json
+PALETTE_SPECIES = {(3, 1), (3, 2), (4, 2), (4, 3), (4, 4), (6, 2), (6, 4), (6, 5), (6, 6),
+                   (8, 1), (8, 3), (8, 6), (12, 2), (12, 4), (12, 6)}
+
+
+def instantiate_k2_family(rec, a):
+    """Evaluate a k=2 family record's symbolic-a orbit patterns at integer a.
+    Returns list-of-orbit-token-lists, or None if any species falls outside the palette."""
+    orbits = []
+    for orb in rec["orbits"]:
+        toks = []
+        for t in orb.split("."):
+            m = re.match(r"(\d+)\*([pd])@(.+)$", t)
+            if not m:
+                toks.append(t)
+                continue
+            n, pd = int(m.group(1)), m.group(2)
+            u = eval(m.group(3), {}, {"a": a})
+            alpha = u if pd == "p" else 24 - 24 // n - u
+            if not (0 < alpha < 24 // 2) or (n, alpha) not in PALETTE_SPECIES:
+                return None
+            toks.append(f"{n}*{pd}@{u}")
+        orbits.append(toks)
+    return orbits
+
+
+def orbits_match(engine_orbits, oracle_orbits):
+    """Multiset match of orbit lists (k<=2), each cyclic up to reversal."""
+    if len(engine_orbits) != len(oracle_orbits):
+        return False
+    if len(engine_orbits) == 1:
+        return cyc_equal(engine_orbits[0], oracle_orbits[0])
+    a, b = engine_orbits
+    x, y = oracle_orbits
+    return (cyc_equal(a, x) and cyc_equal(b, y)) or (cyc_equal(a, y) and cyc_equal(b, x))
 
 
 def main():
@@ -103,30 +140,42 @@ def main():
 
     matched = defaultdict(list)   # oracle key -> engine solutions
     extras = []
+    regular_sols = []
     for orbits, vertype, conway in sols:
-        toks = orbits[0] if args.k == 1 else None
+        starry = any(is_star_token(t) for o in orbits for t in o)
         hit = None
-        if args.k == 1:
-            if not any(is_star_token(t) for t in toks):
+        if not starry:
+            if args.k == 1:
                 for kr in known_regular:
-                    if cyc_equal(toks, kr):
+                    if cyc_equal(orbits[0], kr):
                         hit = "regular:" + ".".join(kr)
                         break
             else:
+                regular_sols.append(vertype)
+                continue
+        else:
+            for rec in records:
+                if rec["kind"] == "tiling" and rec.get("inRing"):
+                    if orbits_match(orbits, [o.split(".") for o in rec["orbits"]]):
+                        hit = "fig" + rec["fig"]
+                        break
+            if hit is None:
                 for rec in records:
-                    if rec["kind"] == "tiling" and rec.get("inRing"):
-                        if cyc_equal(toks, rec["orbits"][0].split(".")):
-                            hit = "fig" + rec["fig"]
-                            break
-                if hit is None:
-                    for rec in records:
-                        if rec["kind"] == "family":
-                            for a, ftoks in family_instances(rec):
-                                if cyc_equal(toks, ftoks):
-                                    hit = f"fig{rec['fig']}[alphaU={a}]"
-                                    break
-                        if hit:
-                            break
+                    if rec["kind"] != "family":
+                        continue
+                    if args.k == 1 and "template" in rec:
+                        for a, ftoks in family_instances(rec):
+                            if cyc_equal(orbits[0], ftoks):
+                                hit = f"fig{rec['fig']}[alphaU={a}]"
+                                break
+                    elif args.k == 2:
+                        for a in range(1, 12):
+                            inst = instantiate_k2_family(rec, a)
+                            if inst and orbits_match(orbits, inst):
+                                hit = f"fig{rec['fig']}[a={a}]"
+                                break
+                    if hit:
+                        break
         if hit:
             matched[hit].append(vertype)
         else:
@@ -144,16 +193,35 @@ def main():
             print(f"  {key:8s} {rec['myersCaption']:50s} {status}" + (f" x{n}" if n > 1 else ""))
     for rec in records:
         if rec["kind"] == "family":
-            for a, ftoks in family_instances(rec):
-                key = f"fig{rec['fig']}[alphaU={a}]"
-                n = len(matched.get(key, []))
-                print(f"  {key:16s} member {'.'.join(ftoks):42s} {'FOUND' if n else 'missing (family member)'}")
-    nreg = sum(1 for k in matched if k.startswith("regular:"))
-    print(f"\n  pure-regular uniform tilings found: {nreg}/{len(known_regular)}")
-    for kr in known_regular:
-        key = "regular:" + ".".join(kr)
-        if key not in matched:
-            print(f"    MISSING regular {'.'.join(kr)} <-- HARD FAIL")
+            if args.k == 1 and "template" in rec:
+                for a, ftoks in family_instances(rec):
+                    key = f"fig{rec['fig']}[alphaU={a}]"
+                    n = len(matched.get(key, []))
+                    print(f"  {key:16s} member {'.'.join(ftoks):42s} {'FOUND' if n else 'missing (family member)'}")
+            elif args.k == 2:
+                for a in range(1, 12):
+                    inst = instantiate_k2_family(rec, a)
+                    if inst:
+                        key = f"fig{rec['fig']}[a={a}]"
+                        n = len(matched.get(key, []))
+                        print(f"  {key:16s} member {'; '.join('.'.join(o) for o in inst):58s} "
+                              f"{'FOUND' if n else 'missing (family member)'}")
+    if args.k == 1:
+        nreg = sum(1 for k in matched if k.startswith("regular:"))
+        print(f"\n  pure-regular uniform tilings found: {nreg}/{len(known_regular)}")
+        for kr in known_regular:
+            key = "regular:" + ".".join(kr)
+            if key not in matched:
+                print(f"    MISSING regular {'.'.join(kr)} <-- HARD FAIL")
+                fails += 1
+    else:
+        print(f"\n  pure-regular k=2 tilings found: {len(regular_sols)} (expected 20, "
+              f"octagon-bearing expected 0 per the settled octagon lemma)")
+        n_oct = sum(1 for v in regular_sols if re.search(r"[,(]8[,)]", v))
+        if len(regular_sols) != 20:
+            print(f"    COUNT MISMATCH <-- HARD FAIL"); fails += 1
+        if n_oct:
+            print(f"    {n_oct} octagon-bearing pure-regular k=2 solutions <-- would REFUTE the octagon lemma; inspect!")
             fails += 1
 
     print(f"\n== extras (engine output matching nothing; each is a logged finding) ==")

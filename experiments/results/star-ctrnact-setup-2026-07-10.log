@@ -71,3 +71,41 @@ gate = 44/44 exact reproduction of mainlist + pruner_tables.inc + certificates p
         Deferred (logged): exact-integer area certificate (Sum face areas ==
         |det Lambda| in the ring via x - conj(x) coordinates); M3's symbolic
         per-tiling gate already carries correctness.
+
+[00:5x 07-11] M5 in progress — first k=2 probe + palette extension
+        First k=2 run (11 star species, EU_NCBUDGET=4): 56 distinct solutions,
+        BUT budget bound the search 66 times => not certified; AND an exhaustive
+        species scan of myers-2009-k2.json found 4 in-ring species missing from
+        the notes-derived palette: 8*3, 8*6, 12*4, 12*6 (fig 43 uses 8*3 etc.).
+        Palette extended to 15 star species; harness extended for k=2 (orbit-pair
+        matching, symbolic-a family instantiation for figs 25/26/27/28/32,
+        pure-regular k=2 check = 20 expected + zero octagon-bearing per the
+        settled octagon lemma, which this run tests empirically).
+        Now running: k=1 regression + k=2 @ budget 5 + k=2 @ budget 6 (fixpoint).
+
+[01:1x 07-11] M5 GATE PASS — k=2 vs Myers 2009, all in-ring records found + 4 EXTRAS
+        Palette: 15 star species (exhaustive scan of the k=2 oracle; the notes-era
+        list was missing 8*3, 8*6, 12*4, 12*6). Alphabet: 5739 entries.
+        Budget certificates: k=1 catalogs IDENTICAL at EU_NCBUDGET 4 vs 5 (fixpoint);
+        k=2 catalogs IDENTICAL at 5 vs 6, and at budget 6 the cap NEVER engaged
+        (complete run outright). k=1 regression on extended palette: 37/37, 0 extras
+        (no new k=1 tilings from the 4 added species — confirms Myers k=1 closure).
+        k=2: 65 distinct solutions =
+          20 pure-regular (expected 20; ZERO octagon-bearing — independent empirical
+             confirmation of the settled octagon lemma by a D=24 engine that could
+             have represented them)
+        + 34/34 in-ring Myers tiling records FOUND (figs 1-17, 20, 21, 24, 29-43)
+        + 7 family members exactly matching palette coverage predictions
+          (fig25 a=1,2; fig26 a=2; fig27 a=2; fig28 a=1,2; fig32 a=2)
+        + 4 EXTRAS matching NOTHING in Myers 2009:
+          E1: (12*p6,6,12*p6,3) + (12*d16,3,3)      [12-star alpha=pi/2 + hexagons]
+          E2: (12*p4,4,12*p4,3,12*p2,3) + (12*d18,12*p2,3)  [mixed 12*2/12*4]
+          E3: (3*d14,3,3*p2,3) + (3*d14,3*p2,3,3)   [3-star alpha=pi/6]
+          E4: (3*d15,3,3*p1,3) + (3*d15,3*p1,3,3)   [same pattern, alpha=pi/12
+              => E3/E4 look like two members of a MISSED one-parameter family]
+        All 4 develop to rank-2 lattices and render (renderer has a cosmetic
+        boundary/mirror gap artifact to fix; combinatorial validity is theorem-backed
+        + core-certified). CANDIDATE new 2-uniform star tilings — first machine
+        cross-check of Myers' unchecked hand enumeration appears to have caught
+        genuine omissions. NEEDS: TA adversarial review + renders vs his figs 1-6
+        one more time + convention double-check before any claim goes in the thesis.

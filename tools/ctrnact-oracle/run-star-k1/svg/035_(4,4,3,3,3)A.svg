@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="299">
+<rect width="100%" height="100%" fill="white"/>
+<polygon points="90.00,233.92 130.00,233.92 110.00,268.56" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="70.00,159.28 110.00,159.28 90.00,193.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="50.00,84.64 90.00,84.64 70.00,119.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,233.92 170.00,233.92 150.00,268.56" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="110.00,159.28 150.00,159.28 130.00,193.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,84.64 130.00,84.64 110.00,119.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="170.00,233.92 210.00,233.92 190.00,268.56" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="150.00,159.28 190.00,159.28 170.00,193.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,84.64 170.00,84.64 150.00,119.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,233.92 90.00,233.92 90.00,193.92 130.00,193.92" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="110.00,159.28 70.00,159.28 70.00,119.28 110.00,119.28" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,84.64 50.00,84.64 50.00,44.64 90.00,44.64" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="170.00,233.92 130.00,233.92 130.00,193.92 170.00,193.92" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="150.00,159.28 110.00,159.28 110.00,119.28 150.00,119.28" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,84.64 90.00,84.64 90.00,44.64 130.00,44.64" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="210.00,233.92 170.00,233.92 170.00,193.92 210.00,193.92" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="190.00,159.28 150.00,159.28 150.00,119.28 190.00,119.28" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="170.00,84.64 130.00,84.64 130.00,44.64 170.00,44.64" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,193.92 90.00,233.92 50.00,233.92 50.00,193.92" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="70.00,119.28 70.00,159.28 30.00,159.28 30.00,119.28" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="50.00,44.64 50.00,84.64 10.00,84.64 10.00,44.64" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,193.92 130.00,233.92 90.00,233.92 90.00,193.92" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="110.00,119.28 110.00,159.28 70.00,159.28 70.00,119.28" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,44.64 90.00,84.64 50.00,84.64 50.00,44.64" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="170.00,193.92 170.00,233.92 130.00,233.92 130.00,193.92" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="150.00,119.28 150.00,159.28 110.00,159.28 110.00,119.28" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,44.64 130.00,84.64 90.00,84.64 90.00,44.64" fill="#e8c268" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,233.92 70.00,268.56 50.00,233.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="70.00,159.28 50.00,193.92 30.00,159.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="50.00,84.64 30.00,119.28 10.00,84.64" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,233.92 110.00,268.56 90.00,233.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="110.00,159.28 90.00,193.92 70.00,159.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,84.64 70.00,119.28 50.00,84.64" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="170.00,233.92 150.00,268.56 130.00,233.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="150.00,159.28 130.00,193.92 110.00,159.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,84.64 110.00,119.28 90.00,84.64" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="70.00,268.56 90.00,233.92 110.00,268.56" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="50.00,193.92 70.00,159.28 90.00,193.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="30.00,119.28 50.00,84.64 70.00,119.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="110.00,268.56 130.00,233.92 150.00,268.56" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,193.92 110.00,159.28 130.00,193.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="70.00,119.28 90.00,84.64 110.00,119.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="150.00,268.56 170.00,233.92 190.00,268.56" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,193.92 150.00,159.28 170.00,193.92" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="110.00,119.28 130.00,84.64 150.00,119.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,193.92 90.00,193.92 110.00,159.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="110.00,119.28 70.00,119.28 90.00,84.64" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="90.00,44.64 50.00,44.64 70.00,10.00" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="170.00,193.92 130.00,193.92 150.00,159.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="150.00,119.28 110.00,119.28 130.00,84.64" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="130.00,44.64 90.00,44.64 110.00,10.00" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="210.00,193.92 170.00,193.92 190.00,159.28" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="190.00,119.28 150.00,119.28 170.00,84.64" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<polygon points="170.00,44.64 130.00,44.64 150.00,10.00" fill="#88b0d8" stroke="#333" stroke-width="1"/>
+<text x="10" y="291" font-family="monospace" font-size="12">(4,4,3,3,3)A</text>
+</svg>

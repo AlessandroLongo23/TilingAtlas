@@ -20,6 +20,10 @@
     { "kind": "star", "n": 6, "alphaU": 5, "name": "6*5", "famchar": "sH" },
     { "kind": "star", "n": 6, "alphaU": 6, "name": "6*6", "famchar": "sK" },
     { "kind": "star", "n": 8, "alphaU": 1, "name": "8*1", "famchar": "sI" },
-    { "kind": "star", "n": 12, "alphaU": 2, "name": "12*2", "famchar": "sJ" }
+    { "kind": "star", "n": 8, "alphaU": 3, "name": "8*3", "famchar": "sL" },
+    { "kind": "star", "n": 8, "alphaU": 6, "name": "8*6", "famchar": "sM" },
+    { "kind": "star", "n": 12, "alphaU": 2, "name": "12*2", "famchar": "sJ" },
+    { "kind": "star", "n": 12, "alphaU": 4, "name": "12*4", "famchar": "sN" },
+    { "kind": "star", "n": 12, "alphaU": 6, "name": "12*6", "famchar": "sO" }
   ]
 }
