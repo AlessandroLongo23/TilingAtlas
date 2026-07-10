@@ -57,3 +57,14 @@ describe('geometry', () => {
     expect(out[2].y - out[1].y).toBeCloseTo(4, 6);
   });
 });
+
+// append to tests/trace-figures.test.ts
+import { resolveStyle } from '../figures/style/palette';
+
+describe('palette tree refs', () => {
+  it('registers the tree/figure styleRefs without throwing', () => {
+    for (const ref of ['tree:box', 'tree:edge', 'tree:pathedge', 'tree:prune', 'tree:success', 'vec:pool', 'vec:winner']) {
+      expect(() => resolveStyle(ref)).not.toThrow();
+    }
+  });
+});

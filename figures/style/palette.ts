@@ -138,6 +138,14 @@ function resolveBase(ref: string): ResolvedStyle {
 	if (ref === 'lattice') return { fill: 'oiBlue', radiusMm: 0.7 };
 	if (ref === 'label') return { text: 'figEdge' };
 	if (ref === 'label:basis') return { text: 'oiBlue' };
+	// Trace-walkthrough figures (Plan B): node boxes, tree edges, verdict-colored branch stubs, vectors.
+	if (ref === 'tree:box') return { stroke: 'figFaint', lineWidthMm: LINE_W.hairline };
+	if (ref === 'tree:edge') return { stroke: 'figFaint', lineWidthMm: LINE_W.hairline };
+	if (ref === 'tree:pathedge') return { stroke: 'figEdge', lineWidthMm: LINE_W.edge };
+	if (ref === 'tree:prune') return { stroke: 'oiVermillion', lineWidthMm: LINE_W.edge };
+	if (ref === 'tree:success') return { stroke: 'oiGreen', lineWidthMm: LINE_W.edge };
+	if (ref === 'vec:pool') return { stroke: 'figFaint', lineWidthMm: LINE_W.hairline };
+	if (ref === 'vec:winner') return { stroke: 'oiVermillion', lineWidthMm: LINE_W.overlay };
 	throw new Error(`palette: unknown styleRef '${ref}'`);
 }
 
