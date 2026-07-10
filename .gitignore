@@ -86,3 +86,7 @@ tmp-star-patches/
 # scratch / intermediate data (underscore prefix — regenerable, not source-of-truth)
 experiments/results/_*
 figures/data/_*-tmp.json
+
+# raw figure-trace probe output (regenerable via the FIG_NS probe); the curated per-example
+# slice under figures/traces/<name>/ is committed as the figures' data source
+figures/traces/_probe/
