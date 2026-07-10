@@ -77,13 +77,19 @@ def load_palette(path):
         if tile.kind == "regular":
             units = D // 2 - D // tile.n
             assert (D // 2 - D / tile.n) == units, f"tile {tile.name} off the 2pi/{D} grid"
-            classes.append(CornerClass(len(classes), tile, 0, units, tile.name))
+            cc = CornerClass(len(classes), tile, 0, units, tile.name)
+            cc.is_point = False
+            classes.append(cc)
         else:
             aU = tile.alphaU
             dU = D - D // tile.n - aU
             assert 0 < aU < D // 2 < dU < D, f"star {tile.name} angles invalid"
-            classes.append(CornerClass(len(classes), tile, 0, aU, f"{tile.n}*p{aU}"))
-            classes.append(CornerClass(len(classes), tile, 1, dU, f"{tile.n}*d{dU}"))
+            cp = CornerClass(len(classes), tile, 0, aU, f"{tile.n}*p{aU}")
+            cp.is_point = True
+            classes.append(cp)
+            cd = CornerClass(len(classes), tile, 1, dU, f"{tile.n}*d{dU}")
+            cd.is_point = False
+            classes.append(cd)
         tile.classes = [c for c in classes if c.tile is tile]
     return spec, D, tiles, classes
 
@@ -106,17 +112,33 @@ def cyclic_reps(words):
 
 def enum_configs(D, classes, min_len, max_len):
     """All cyclic words of corner classes with unit sum == D, up to rotation+reflection.
-    Enumerates necklaces via canonical (lex-max) representatives; sum bound prunes."""
+
+    PROVEN word constraint (point-adjacency lemma, not a heuristic): no two star-POINT
+    corners may be cyclically adjacent. Proof: two adjacent point corners at a vertex v
+    belong to stars S1, S2 sharing an edge e = (v,w). An isotoxal star's boundary
+    alternates point and dent corners along its edges, so both S1 and S2 have DENT
+    corners at w, and those two dent corners are adjacent at w (they share e). Dent
+    angles are reflex (alpha < pi - 2pi/n gives dent = 2pi - 2pi/n - alpha > pi), so the
+    two corners alone exceed 2pi around w: the tiles would overlap. Hence no valid
+    tiling contains an adjacent point-point pair, and excluding such words drops
+    nothing. (Two adjacent DENTS are excluded by the sum constraint itself: 2 reflex
+    angles already exceed 2pi.) Without this lemma the unit-1/2 point corners make the
+    word enumeration explode combinatorially; with it, points and >=4-unit separators
+    alternate, bounding word length."""
     out = []
     unit = {c.cid: c.units for c in classes}
+    pt = {c.cid: getattr(c, "is_point", False) for c in classes}
     cids = sorted(unit, key=lambda k: (-unit[k], k))
     def rec(word, total):
         if len(word) >= min_len and total == D:
-            out.append(list(word))
+            if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
+                out.append(list(word))
             return
         if total >= D or len(word) >= max_len:
             return
         for cid in cids:
+            if word and pt[word[-1]] and pt[cid]:   # point-adjacency lemma
+                continue
             word.append(cid)
             if total + unit[cid] <= D:
                 rec(word, total + unit[cid])
@@ -201,7 +223,7 @@ def divisors(n):
 class Entry:
     """A folded vertexdef: parallel arrays over darts."""
     __slots__ = ("labels", "lneig", "rneig", "mirro", "cls", "ferkval",
-                 "config", "H", "symbol", "code", "counting")
+                 "config", "H", "symbol", "code", "counting", "reps")
 
 def fold(c, H):
     """Orbit space of the doubled dart set of word c under subgroup H."""
@@ -294,7 +316,17 @@ def automorphisms(ent):
     return auts
 
 def certify(ent, name):
-    """Structural + attachment certificates. Returns (ferkval, lines)."""
+    """Structural + attachment certificates. Returns (ferkval, lines) and sets ent.reps.
+
+    IMPORTANT (discovered on the star24 palette): the legacy rule "try the first
+    darts/ferkval darts when attaching a fresh vertex" is NOT a transversal for words
+    that are chiral AND rotationally symmetric (e.g. (3,12*p2,4)^2): the leading darts
+    cover only unstarred Aut-orbits and miss every starred orbit, which would silently
+    drop tilings. No regular {3,4,6,12} configuration is both chiral and rotation-
+    symmetric, which is why Marek's prefix rule is sound there (certified per entry).
+    The generalized engine therefore iterates an EXPLICIT per-entry representative
+    list (ent.reps = lexicographic first dart of each Aut-orbit); for pinned palettes
+    we additionally assert reps == [0..ran-1] so legacy behavior is byte-identical."""
     lines = []
     n = len(ent.labels)
     ok = all(ent.lneig[ent.rneig[i]] == i for i in range(n))
@@ -317,16 +349,18 @@ def certify(ent, name):
     assert free
     assert n % fk == 0, f"{name}: |Aut|={fk} does not divide dart count {n}"
     ran = n // fk
-    orbits = set()
+    orbit_of = {}
+    orbits = []
     for i in range(n):
-        orbits.add(frozenset(a[i] for a in auts))
-    hit = set()
-    for i in range(ran):
-        hit.add(frozenset(a[i] for a in auts))
-    ok = hit == orbits and len(orbits) == ran
-    lines.append(f"{name}: first {ran} darts are an Aut-orbit transversal "
-                 f"({len(orbits)} orbits) {'PASS' if ok else 'FAIL'}")
-    assert ok, f"{name}: transversal certificate FAILED (completeness-grade)"
+        o = frozenset(a[i] for a in auts)
+        if o not in orbit_of:
+            orbit_of[o] = min(o)
+            orbits.append(o)
+    ent.reps = sorted(min(o) for o in orbits)
+    assert len(ent.reps) == ran, f"{name}: orbit count {len(ent.reps)} != darts/|Aut| {ran}"
+    prefix_ok = ent.reps == list(range(ran))
+    lines.append(f"{name}: {ran} Aut-orbits, reps={ent.reps} "
+                 f"(legacy prefix rule {'holds' if prefix_ok else 'WOULD DROP — explicit reps required'})")
     return fk, lines
 
 # ---------------------------------------------------------------- legacy parsing (regular gate)
@@ -404,47 +438,95 @@ def cxx_intlist(xs):
 def cxx_nested(xss, string=False):
     return "{" + ",".join((cxx_strlist if string else cxx_intlist)(xs) for xs in xss) + "}"
 
+def flat_tables_cxx(prefix, entries, disp):
+    """Flat C arrays + offsets. Huge nested brace initializers (3000+ entries) send
+    clang into quadratic territory (observed: 17+ CPU-minutes, killed); flat arrays
+    with a tiny runtime builder compile in seconds and keep the same public names."""
+    n = len(entries)
+    off = [0]
+    for e in entries:
+        off.append(off[-1] + len(e.labels))
+    roff = [0]
+    for e in entries:
+        roff.append(roff[-1] + len(e.reps))
+    numeric = all(d.isdigit() for d in disp)
+    lvert_flat = [int(disp[x]) if numeric else x for e in entries for x in e.cls]
+    s = f"static const int {prefix}N = {n};\n"
+    s += f"static const char* const {prefix}SYMBOL[] = " + cxx_strlist([e.symbol for e in entries]) + ";\n"
+    s += f"static const char* const {prefix}CODE[] = " + cxx_strlist([e.code for e in entries]) + ";\n"
+    s += f"static const int {prefix}FERKVAL[] = " + cxx_intlist([e.ferkval for e in entries]) + ";\n"
+    s += f"static const int {prefix}COUNTING[] = " + cxx_intlist([1 if e.counting else 0 for e in entries]) + ";\n"
+    s += f"static const int {prefix}OFF[] = " + cxx_intlist(off) + ";\n"
+    s += f"static const char* const {prefix}LABEL[] = " + cxx_strlist([x for e in entries for x in e.labels]) + ";\n"
+    s += f"static const int {prefix}LNEIG[] = " + cxx_intlist([x for e in entries for x in e.lneig]) + ";\n"
+    s += f"static const int {prefix}RNEIG[] = " + cxx_intlist([x for e in entries for x in e.rneig]) + ";\n"
+    s += f"static const int {prefix}MIRRO[] = " + cxx_intlist([x for e in entries for x in e.mirro]) + ";\n"
+    s += f"static const int {prefix}CLS[] = " + cxx_intlist([x for e in entries for x in e.cls]) + ";\n"
+    s += f"static const int {prefix}LVERT[] = " + cxx_intlist(lvert_flat) + ";\n"
+    s += f"static const int {prefix}REPS_OFF[] = " + cxx_intlist(roff) + ";\n"
+    s += f"static const int {prefix}REPS[] = " + cxx_intlist([x for e in entries for x in e.reps]) + ";\n"
+    return s
+
 def emit(outdir, D, tiles, classes, entries, cert_lines, palette_name):
     os.makedirs(outdir, exist_ok=True)
     disp = [c.disp for c in classes]
     maxL = max(t.L for t in tiles)
-    # ---- pruner_tables.inc: legacy 7 lines byte-compatible, then extensions
+    # ---- pruner_tables.inc: same public names/types as the legacy hand-written file
+    # (symbollist, labellistin, ...listin, codelist + clslistin/countinglist extensions),
+    # built at startup from flat arrays.
     with open(os.path.join(outdir, "pruner_tables.inc"), "w") as f:
-        f.write("static const std::vector<std::string> symbollist = "
-                + cxx_strlist([e.symbol for e in entries]) + ";\n")
-        f.write("static const std::vector<std::vector<std::string>> labellistin = "
-                + cxx_nested([e.labels for e in entries], string=True) + ";\n")
-        f.write("static const std::vector<std::vector<int>> lneiglistin = "
-                + cxx_nested([e.lneig for e in entries]) + ";\n")
-        f.write("static const std::vector<std::vector<int>> rneiglistin = "
-                + cxx_nested([e.rneig for e in entries]) + ";\n")
-        f.write("static const std::vector<std::vector<int>> mirrolistin = "
-                + cxx_nested([e.mirro for e in entries]) + ";\n")
-        # legacy int-typed array: polygon sizes when all display tokens are numeric
-        # (regular palette, byte-gate), class ids otherwise (M2 pruner uses clslistin).
-        numeric = all(d.isdigit() for d in disp)
-        f.write("static const std::vector<std::vector<int>> lvertlistin = "
-                + cxx_nested([[int(disp[x]) if numeric else x for x in e.cls]
-                              for e in entries]) + ";\n")
-        f.write("static const std::vector<std::string> codelist = "
-                + cxx_strlist([e.code for e in entries]) + ";\n")
-        f.write("// ---- generated extensions (gen_alphabet.py, palette=%s) ----\n" % palette_name)
-        f.write("static const std::vector<std::vector<int>> clslistin = "
-                + cxx_nested([e.cls for e in entries]) + ";\n")
-        f.write("static const std::vector<int> countinglist = "
-                + cxx_intlist([1 if e.counting else 0 for e in entries]) + ";\n")
+        f.write("// generated by gen_alphabet.py, palette=%s — do not edit\n" % palette_name)
+        f.write(flat_tables_cxx("PTAB_", entries, disp))
+        f.write("""
+static std::vector<std::string> _ptab_str(const char* const* a, int n) {
+    return std::vector<std::string>(a, a + n);
+}
+static std::vector<std::vector<int>> _ptab_nest(const int* flat, const int* off, int n) {
+    std::vector<std::vector<int>> v((size_t)n);
+    for (int i = 0; i < n; i++) v[i].assign(flat + off[i], flat + off[i + 1]);
+    return v;
+}
+static std::vector<std::vector<std::string>> _ptab_nests(const char* const* flat, const int* off, int n) {
+    std::vector<std::vector<std::string>> v((size_t)n);
+    for (int i = 0; i < n; i++) v[i].assign(flat + off[i], flat + off[i + 1]);
+    return v;
+}
+static const std::vector<std::string> symbollist = _ptab_str(PTAB_SYMBOL, PTAB_N);
+static const std::vector<std::vector<std::string>> labellistin = _ptab_nests(PTAB_LABEL, PTAB_OFF, PTAB_N);
+static const std::vector<std::vector<int>> lneiglistin = _ptab_nest(PTAB_LNEIG, PTAB_OFF, PTAB_N);
+static const std::vector<std::vector<int>> rneiglistin = _ptab_nest(PTAB_RNEIG, PTAB_OFF, PTAB_N);
+static const std::vector<std::vector<int>> mirrolistin = _ptab_nest(PTAB_MIRRO, PTAB_OFF, PTAB_N);
+static const std::vector<std::vector<int>> lvertlistin = _ptab_nest(PTAB_LVERT, PTAB_OFF, PTAB_N);
+static const std::vector<std::string> codelist = _ptab_str(PTAB_CODE, PTAB_N);
+static const std::vector<std::vector<int>> clslistin = _ptab_nest(PTAB_CLS, PTAB_OFF, PTAB_N);
+static const std::vector<int> countinglist(PTAB_COUNTING, PTAB_COUNTING + PTAB_N);
+""")
         f.write(class_tables_cxx(D, tiles, classes, maxL))
-    # ---- solver_tables.inc: full mainlist + class tables
+    # ---- solver_tables.inc: mainlist built from the same flat layout
     with open(os.path.join(outdir, "solver_tables.inc"), "w") as f:
         f.write("// generated by gen_alphabet.py, palette=%s — do not edit\n" % palette_name)
-        f.write("std::vector<vertexdef> mainlist = {\n")
-        for e in entries:
-            f.write("        vertexdef{%s,%s,%s,%s,%s,%s,%d,%s,%d}%s\n" % (
-                f'"{e.symbol}"', cxx_strlist(e.labels), cxx_intlist(e.lneig),
-                cxx_intlist(e.rneig), cxx_intlist(e.mirro), cxx_intlist(e.cls),
-                e.ferkval, f'"{e.code}"', 1 if e.counting else 0,
-                "," if e is not entries[-1] else ""))
-        f.write("};\n")
+        f.write(flat_tables_cxx("STAB_", entries, disp))
+        f.write("""
+static std::vector<vertexdef> _stab_mainlist() {
+    std::vector<vertexdef> v((size_t)STAB_N);
+    for (int i = 0; i < STAB_N; i++) {
+        vertexdef& d = v[i];
+        d.symbol = STAB_SYMBOL[i];
+        int a = STAB_OFF[i], b = STAB_OFF[i + 1];
+        d.label.assign(STAB_LABEL + a, STAB_LABEL + b);
+        d.lneig.assign(STAB_LNEIG + a, STAB_LNEIG + b);
+        d.rneig.assign(STAB_RNEIG + a, STAB_RNEIG + b);
+        d.mirro.assign(STAB_MIRRO + a, STAB_MIRRO + b);
+        d.lvert.assign(STAB_CLS + a, STAB_CLS + b);
+        d.ferkval = STAB_FERKVAL[i];
+        d.code = STAB_CODE[i];
+        d.counting = STAB_COUNTING[i];
+        d.reps.assign(STAB_REPS + STAB_REPS_OFF[i], STAB_REPS + STAB_REPS_OFF[i + 1]);
+    }
+    return v;
+}
+std::vector<vertexdef> mainlist = _stab_mainlist();
+""")
         f.write(class_tables_cxx(D, tiles, classes, maxL))
     # ---- tables.py mirror (develop.py / render)
     with open(os.path.join(outdir, "tables.py"), "w") as f:
@@ -459,6 +541,7 @@ def emit(outdir, D, tiles, classes, entries, cert_lines, palette_name):
         f.write("COUNTING = %r\n" % [1 if e.counting else 0 for e in entries])
         f.write("CODES = %r\n" % [e.code for e in entries])
         f.write("FERKVAL = %r\n" % [e.ferkval for e in entries])
+        f.write("REPS = %r\n" % [e.reps for e in entries])
         f.write("CLASS_DISP = %r\n" % disp)
         f.write("CLASS_UNITS = %r\n" % [c.units for c in classes])
         f.write("CLASS_L = %r\n" % [c.tile.L for c in classes])
@@ -492,20 +575,9 @@ def class_tables_cxx(D, tiles, classes, maxL):
 # ---------------------------------------------------------------- star naming (systematic)
 
 def star_symbol(ent, classes, variant):
-    disp = [classes[x].disp for x in ent.cls]
+    # the symbol shows the full configuration word (like Marek's), not the folded darts
+    disp = [classes[x].disp for x in ent.config]
     return "(" + ",".join(disp) + ")" + variant
-
-def variant_name(c, H, m):
-    rots = sorted(t for k, t in H if k == 'r')
-    refl = [a for k, a in H if k == 's']
-    rot_order = len(rots)
-    if rot_order == 1 and not refl:
-        return "F"
-    if refl and rot_order > 1:
-        return f"S{rot_order}"
-    if rot_order > 1:
-        return f"R{rot_order}"
-    return "A"
 
 # ---------------------------------------------------------------- main
 
@@ -556,6 +628,8 @@ def main():
             fk, lines = certify(want, sym)
             assert fk == legacy["ferkval"][k], \
                 f"GATE FAIL: {sym} ferkval mismatch gen={fk} legacy={legacy['ferkval'][k]}"
+            assert want.reps == list(range(len(want.reps))), \
+                f"GATE FAIL: {sym} legacy prefix rule does not hold (reps={want.reps})"
             cert_lines += lines
             cert_lines.append(f"{sym}: ferkval matches legacy ({fk}) PASS")
             want.ferkval = fk
@@ -575,28 +649,36 @@ def main():
         print(f"[gate] {len(entries)}/{len(legacy['symbol'])} legacy entries matched; "
               f"{len(n_folds)} distinct folds generated; ferkvals verified")
     else:
+        # Systematic fresh naming for non-pinned (star) palettes: per config, variants
+        # sorted by decreasing |H|; base names F / R<r> / A / S<r>; same-base classes
+        # within one config disambiguated by trailing a, b, c...
         entries = []
         for c in sorted(configs, key=lambda w: (len(w), [classes[x].disp for x in w])):
-            subs = subgroups_up_to_conjugacy(c)
-            named = {}
-            for H in sorted(subs, key=lambda X: -len(X)):
-                ent = fold(c, H)
-                base = variant_name(c, H, len(c))
-                nsame = sum(1 for b in named.values() if b == base)
-                suffix = "" if base in ("F",) and nsame == 0 else (chr(ord('a') + nsame) if nsame or base != "F" and any(b == base for b in named.values()) else "")
-                # disambiguate repeated variant names deterministically: a, b, c...
-                if base != "F":
-                    seen_same = [k for k, b in named.items() if b == base]
-                    suffix = chr(ord('a') + len(seen_same)) if seen_same else ""
+            folds = [(len(H), H, fold(c, H)) for H in subgroups_up_to_conjugacy(c)]
+            folds.sort(key=lambda t: (-t[0], sorted(t[1])))
+            base_of = []
+            for hsize, H, ent in folds:
+                r = sum(1 for g in H if g[0] == 'r')
+                has_refl = any(g[0] == 's' for g in H)
+                if hsize == 1:
+                    base = "F"
+                elif not has_refl:
+                    base = f"R{r}"
+                elif r == 1:
+                    base = "A"
                 else:
-                    suffix = ""
-                named[frozenset(H)] = base
+                    base = f"S{r}"
+                base_of.append(base)
+            for idx, (hsize, H, ent) in enumerate(folds):
+                base = base_of[idx]
+                same = [j for j, b in enumerate(base_of) if b == base]
+                suffix = chr(ord('a') + same.index(idx)) if len(same) > 1 else ""
                 ent.symbol = star_symbol(ent, classes, base + suffix)
                 fk, lines = certify(ent, ent.symbol)
                 ent.ferkval = fk
                 cert_lines += lines
                 entries.append(ent)
-        # codes: valence digit(s) + two letters, digit-free tail
+        # codes: valence digit(s) + two letters, digit-free tail (tes_id-safe)
         by_val = {}
         for e in entries:
             v = len(e.config)

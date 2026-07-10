@@ -58,6 +58,12 @@ struct vertexdef {
     int ferkval;
     std::string code;
     int counting;             // 1 = true (>=3-tile) vertex, 0 = dent-fill point (non-vertex)
+    // Explicit Aut-orbit representative darts to try when attaching a fresh vertex of
+    // this type. Replaces Marek's "first size/ferkval darts" prefix rule, which is NOT
+    // a transversal for words that are chiral AND rotationally symmetric (star palettes
+    // hit this; the prefix would silently drop tilings). For the regular palette the
+    // generator certifies reps == {0..ran-1}, so behavior is byte-identical.
+    std::vector<int> reps;
 };
 
 struct configuration {
@@ -668,8 +674,8 @@ int extend(configuration& slist) {
             newconf.vertype.push_back(gr);
             newconf.num++;
             newconf.kcnt += mainlist[gr].counting;
-            int ran = ferk(mainlist[gr]);
-            for (int i = l; i < l + ran; i++) {
+            for (int rrep : mainlist[gr].reps) {
+                int i = l + rrep;
                 configuration& newconf2 = newconf;
                 bool mirroredi = newconf2.mirro[i] == i;
                 if (mirrored == mirroredi) {

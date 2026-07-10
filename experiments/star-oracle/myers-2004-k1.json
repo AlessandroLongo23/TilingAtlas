@@ -1,0 +1,39 @@
+{
+  "_meta": {
+    "source": "Joseph Myers, \"Tiling with Regular Star Polygons\", Eureka 56 (2004), pp. 20-27",
+    "url": "https://www.polyomino.org.uk/publications/2004/star-polygon-tiling.pdf",
+    "transcribedBy": "CC (Fable 5 session), 2026-07-10, from the PDF figure captions fetched from polyomino.org.uk. Captions quoted verbatim in myersCaption; tokens use the same convention as myers-2009-k2.json: angle unit = pi/12 (15 deg); n*p@u = star point of angle u units; n*d@u = star dent of interior u units (u = 24 - 24/n - alphaU).",
+    "caution": "Myers' enumeration is a hand enumeration; he found 3 tilings missing from Gruenbaum-Shephard (Figs 2a, 4l, 4n), and the k=2 sequel carries an explicit not-double-checked caveat. Recovering this list is machine cross-verification of an unchecked enumeration, not validation against proven ground truth.",
+    "conventions": "Vertices are points where >= 3 tiles meet; a dent filled entirely by one corner is NOT a vertex (Myers p.21). Figure 2 = not edge-to-edge (out of engine scope); Figure 3 = edge-to-edge, some dent at a vertex (four entries are infinite alpha-families); Figure 4 = edge-to-edge, no dent at a vertex.",
+    "engineExpectations": "The star24 engine palette also contains the regular octagon, so the engine additionally enumerates the 11 pure-regular uniform tilings over {3,4,6,8,12} (Myers Fig 1; includes 4.8.8 = t1002) - those are matched against knownRegular below, not against the star records. In-ring members of the Fig-3 alpha-families at palette alpha values are expected engine output and matched against the family templates."
+  },
+  "records": [
+    { "fig": "4a", "kind": "tiling", "myersCaption": "(3^3 . 12*_{pi/6} . 3^2 . 12*_{pi/6})", "orbits": ["3.3.3.12*p@2.3.3.12*p@2"], "inRing": true },
+    { "fig": "4b", "kind": "tiling", "myersCaption": "(3^2 . 8*_{pi/12} . 3 . 4 . 3 . 8*_{pi/12})", "orbits": ["3.3.8*p@1.3.4.3.8*p@1"], "inRing": true },
+    { "fig": "4c", "kind": "tiling", "myersCaption": "(3 . 4 . 6 . 3 . 12*_{pi/6})", "orbits": ["3.4.6.3.12*p@2"], "inRing": true },
+    { "fig": "4d", "kind": "tiling", "myersCaption": "(3 . 4 . 8 . 3 . 8*_{pi/12})", "orbits": ["3.4.8.3.8*p@1"], "inRing": true },
+    { "fig": "4e", "kind": "tiling", "myersCaption": "(9^2 . 6*_{4pi/9})", "orbits": ["9.9.6*p@?"], "inRing": false, "notes": "9-fold, needs D=36" },
+    { "fig": "4f", "kind": "tiling", "myersCaption": "(12^2 . 4*_{pi/3})", "orbits": ["12.12.4*p@4"], "inRing": true },
+    { "fig": "4g", "kind": "tiling", "myersCaption": "(18^2 . 3*_{2pi/9})", "orbits": ["18.18.3*p@?"], "inRing": false, "notes": "9-fold, needs D=36" },
+    { "fig": "4h", "kind": "tiling", "myersCaption": "(6 . 6*_{pi/3} . 6 . 6*_{pi/3})", "orbits": ["6.6*p@4.6.6*p@4"], "inRing": true },
+    { "fig": "4i", "kind": "tiling", "myersCaption": "(8 . 3*_{pi/12} . 8 . 6*_{5pi/12})", "orbits": ["8.3*p@1.8.6*p@5"], "inRing": true },
+    { "fig": "4j", "kind": "tiling", "myersCaption": "(8 . 4*_{pi/4} . 8 . 4*_{pi/4})", "orbits": ["8.4*p@3.8.4*p@3"], "inRing": true },
+    { "fig": "4k", "kind": "tiling", "myersCaption": "(12 . 3*_{pi/6} . 12 . 3*_{pi/6})", "orbits": ["12.3*p@2.12.3*p@2"], "inRing": true },
+    { "fig": "4l", "kind": "tiling", "myersCaption": "(3 . 9 . 3*_{pi/9} . 9)", "orbits": ["3.9.3*p@?.9"], "inRing": false, "notes": "9-fold, needs D=36; one of Myers' 3 additions over G&S" },
+    { "fig": "4m", "kind": "tiling", "myersCaption": "(3 . 6 . 6*_{pi/3} . 6)", "orbits": ["3.6.6*p@4.6"], "inRing": true },
+    { "fig": "4n", "kind": "tiling", "myersCaption": "(3 . 4^2 . 6*_{pi/6} . 4)", "orbits": ["3.4.4.6*p@2.4"], "inRing": true, "notes": "one of Myers' 3 additions over G&S" },
+    { "fig": "4o", "kind": "tiling", "myersCaption": "(4 . 6*_{pi/6} . 4 . 6*_{pi/6} . 4 . 6*_{pi/6})", "orbits": ["4.6*p@2.4.6*p@2.4.6*p@2"], "inRing": true },
+    { "fig": "4p", "kind": "tiling", "myersCaption": "(4 . 6 . 4*_{pi/6} . 6)", "orbits": ["4.6.4*p@2.6"], "inRing": true },
+    { "fig": "4q", "kind": "tiling", "myersCaption": "(5^2 . 4*_{pi/10} . 5 . 4*_{pi/10})", "orbits": ["5.5.4*p@?.5.4*p@?"], "inRing": false, "notes": "5-fold, needs D=20" },
+    { "fig": "3a", "kind": "tiling", "myersCaption": "(3^2 . 8*_{pi/12} . 4**_{pi/3} . 8*_{pi/12})", "orbits": ["3.3.8*p@1.4*d@14.8*p@1"], "inRing": true, "notes": "pinned; dent of 4-star alpha=pi/3 at the vertex" },
+    { "fig": "3f", "kind": "tiling", "myersCaption": "(4 . 6*_{pi/6} . 6**_{pi/2} . 6*_{pi/6})", "orbits": ["4.6*p@2.6*d@14.6*p@2"], "inRing": true, "notes": "pinned; needs the 6-star at alpha=pi/2 (6*6), absent from the k=2-derived species list" },
+    { "fig": "3b", "kind": "family", "myersCaption": "family (3 . 3*_alpha . 3 . 3**_alpha)", "template": { "n": 3, "orbitPattern": "3.3*p@A.3.3*d@D" }, "inRingMembersAlphaU": [1, 2, 3], "paletteAlphaU": [1, 2], "notes": "D = 16 - A" },
+    { "fig": "3c", "kind": "family", "myersCaption": "family (3 . 6*_alpha . 6**_alpha)", "template": { "n": 6, "orbitPattern": "3.6*p@A.6*d@D" }, "inRingMembersAlphaU": [1, 2, 3, 4, 5, 6, 7], "paletteAlphaU": [2, 4, 5, 6], "notes": "D = 20 - A" },
+    { "fig": "3d", "kind": "family", "myersCaption": "family (4 . 4*_alpha . 4**_alpha)", "template": { "n": 4, "orbitPattern": "4.4*p@A.4*d@D" }, "inRingMembersAlphaU": [1, 2, 3, 4, 5], "paletteAlphaU": [2, 3, 4], "notes": "D = 18 - A" },
+    { "fig": "3e", "kind": "family", "myersCaption": "family (6 . 3*_alpha . 3**_alpha)", "template": { "n": 3, "orbitPattern": "6.3*p@A.3*d@D" }, "inRingMembersAlphaU": [1, 2, 3], "paletteAlphaU": [1, 2], "notes": "D = 16 - A" }
+  ],
+  "knownRegular": [
+    "3.3.3.3.3.3", "4.4.4.4", "6.6.6", "3.3.3.3.6", "3.3.3.4.4", "3.3.4.3.4",
+    "3.4.6.4", "3.6.3.6", "3.12.12", "4.6.12", "4.8.8"
+  ]
+}

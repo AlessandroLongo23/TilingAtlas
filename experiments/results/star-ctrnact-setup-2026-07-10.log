@@ -36,3 +36,25 @@ gate = 44/44 exact reproduction of mainlist + pruner_tables.inc + certificates p
         GATE: make check-regular -> all 34 golden sha256 identical (k<=6 catalogs +
         cells JSON, counts 10/20/61/151/332/673). Pin source moved to
         reference/eu_solver.orig.cpp (immutable authentic tables).
+
+[00:15 07-11] M3 GATE PASS — star24 k=1 vs Myers 2004, 37/37 exact
+        Palette: regular {3,4,6,8,12} + 11 in-ring star species (octagon REQUIRED by
+        Myers Fig-4 d,i,j — the zeta12 octagon-blind decision does not apply at D=24;
+        6*6 = 6-star at alpha=pi/2 required by Fig 3f, absent from k=2-derived list).
+        Alphabet: 4070 entries (4038 counting + 32 dent-fill), 27 corner classes.
+        Two theory items landed en route, both engine-critical:
+        (1) point-adjacency lemma (two adjacent star points force two adjacent reflex
+            dents at the shared edge's far endpoint, > 2pi): proven, matches Myers
+            p.21 verbatim; without it the word enumeration explodes.
+        (2) the legacy ferk prefix rule is NOT an orbit transversal for chiral+
+            rotation-symmetric words (5 star entries affected): engine now iterates
+            explicit per-entry Aut-orbit representatives; regular palette unaffected
+            (certified reps == prefix).
+        Run: EU_NCBUDGET=4, budget NEVER engaged (empty stderr) => no completeness
+        caveat. Pruner kept 37 distinct k=1 solutions.
+        Harness (star_oracle_check.py vs myers-2004-k1.json, transcribed verbatim
+        from the PDF): 13/13 in-ring Fig-4 + 2/2 pinned Fig-3 + 11/11 in-ring family
+        members (3b x2, 3c x4, 3d x3, 3e x2) + 11/11 pure-regular uniform (incl.
+        4.8.8 = t1002) = 37/37, 0 extras, 0 hard fails.
+        Also: flat-array table emission (giant brace initializers put clang into
+        17+ CPU-min territory; flat arrays build in 3.8s, regular gate re-verified).
