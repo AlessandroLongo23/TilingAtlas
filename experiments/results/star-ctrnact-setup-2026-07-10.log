@@ -24,3 +24,15 @@ gate = 44/44 exact reproduction of mainlist + pruner_tables.inc + certificates p
         completeness direction: exactly 44 distinct folds exist up to isomorphism
         == Marek's table has no missing variant and no extra (Track-1 obligations A3/A5)
         byte gate: generated pruner_tables.inc first 7 lines identical to legacy
+
+[23:32] M2 GATE PASS — engine generalized to corner classes
+        eu_solver: mainlist -> generated solver_tables.inc; checkpart walks corner
+        classes (+1 mod p; closed: count%p==0 && L%count==0; open: count<=L);
+        num/kcnt split (counting types drive k, maxnum, file naming); EU_NCBUDGET
+        machinery with loud exit report; finename/display via class tables.
+        ctrnact_decode.hpp: Graph.cls + countinglist + countk(); abort on unknown symbol.
+        eu_pruner: WL colors = corner-class ids (bijective recolor for regular).
+        Makefile: PALETTE dimension + per-palette stamps + check-regular target.
+        GATE: make check-regular -> all 34 golden sha256 identical (k<=6 catalogs +
+        cells JSON, counts 10/20/61/151/332/673). Pin source moved to
+        reference/eu_solver.orig.cpp (immutable authentic tables).

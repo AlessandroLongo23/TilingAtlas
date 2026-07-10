@@ -31,6 +31,8 @@ namespace fs = std::filesystem;
 // ---------- global solution store (mirrors the Python globals) ----------
 // Node indices live in [0, le); int16_t is lossless well past any reachable k. `label` was stored
 // but never read (comparesolutions uses only the five arrays), so it is dropped, not narrowed.
+// `lvert` here stores the corner-CLASS id (WL color) — for the regular palette that is a
+// bijective recoloring of the polygon size, so partitions and verdicts are unchanged.
 struct Sol {
 	std::vector<int16_t> rneig, lneig, lvert, mirro, glue;
 };
@@ -70,7 +72,7 @@ static bool simplify(const Graph& g) {
 				while (bits) {
 					int j = (w << 6) + __builtin_ctzll(bits);
 					bits &= bits - 1;
-					if (g.lvert[i] != g.lvert[j]
+					if (g.cls[i] != g.cls[j]
 					    || !test(j, i)
 					    || !test(g.mirro[i], g.mirro[j])
 					    || !test(g.glue[i], g.glue[j])
@@ -104,7 +106,7 @@ static bool comparesolutions(const Graph& x, int solIdx) {
 	static std::vector<int> rn, ln, mi, lv, gl;
 	rn.resize(n); ln.resize(n); mi.resize(n); lv.resize(n); gl.resize(n);
 	for (int i = 0; i < le; i++) {
-		rn[i] = x.rneig[i]; ln[i] = x.lneig[i]; mi[i] = x.mirro[i]; lv[i] = x.lvert[i]; gl[i] = x.glue[i];
+		rn[i] = x.rneig[i]; ln[i] = x.lneig[i]; mi[i] = x.mirro[i]; lv[i] = x.cls[i]; gl[i] = x.glue[i];
 		rn[le + i] = le + s.rneig[i]; ln[le + i] = le + s.lneig[i];
 		mi[le + i] = le + s.mirro[i]; lv[le + i] = s.lvert[i]; gl[le + i] = le + s.glue[i];
 	}
@@ -167,7 +169,7 @@ static inline uint64_t mix(uint64_t h, uint64_t x) {
 static uint64_t fingerprint(const Graph& g) {
 	int le = (int)g.rneig.size();
 	std::vector<uint64_t> col(le), nc(le);
-	for (int i = 0; i < le; i++) col[i] = 1469598103934665603ULL ^ (uint64_t)(g.lvert[i] + 1);
+	for (int i = 0; i < le; i++) col[i] = 1469598103934665603ULL ^ (uint64_t)(g.cls[i] + 1);
 	for (int r = 0; r < 3; r++) {
 		for (int i = 0; i < le; i++) {
 			uint64_t h = col[i] * 1099511628211ULL;
@@ -202,7 +204,7 @@ static bool compareToSeen(const Graph& g, const std::string& key) {
 static std::vector<int16_t> narrow(const std::vector<int>& v) { return {v.begin(), v.end()}; }
 
 static void addsolution(const Graph& g, const std::string& key) {
-	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.lvert), narrow(g.mirro), narrow(g.glue) };
+	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.cls), narrow(g.mirro), narrow(g.glue) };
 	sols.push_back(std::move(s));
 	bucket[key].push_back((int)sols.size() - 1);
 }
@@ -282,7 +284,8 @@ static long processstream(std::istream& in, int konly, std::map<int,long>& keptB
 		std::string vertypeline, signatureline, tesline, conwayline;
 		if (!std::getline(in, vertypeline) || !std::getline(in, signatureline)
 		    || !std::getline(in, tesline)  || !std::getline(in, conwayline)) break;
-		int k = (int)buildvertextypes(vertypeline).size();   // sets countsignature; size() == k
+		int k = countk(buildvertextypes(vertypeline));       // counting types only (Myers convention);
+		                                                     // buildvertextypes also sets countsignature
 		if (konly > 0 && k != konly) continue;               // drop before the expensive decode
 		Graph g = decode(vertypeline, conwayline);           // recomputes the same countsignature
 		if (!simplify(g)) continue;

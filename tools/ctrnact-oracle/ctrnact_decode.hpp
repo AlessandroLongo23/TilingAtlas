@@ -8,7 +8,12 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include "pruner_tables.inc" // symbollist + {r,l}neig/mirro/lvert/label listin tables
+#include <cstdio>
+#include <cstdlib>
+// Generated per palette by alphabets/gen_alphabet.py, resolved via -I tables/$(PALETTE):
+// legacy arrays (symbollist + {r,l}neig/mirro/lvert/label listin) plus clslistin
+// (corner-class ids), countinglist (1 = true vertex, 0 = dent-fill point) and class tables.
+#include "pruner_tables.inc"
 
 static std::string countsignature; // set by buildvertextypes; read by the pruner's signature bucketing
 
@@ -102,6 +107,13 @@ static std::vector<int> buildvertextypes(const std::string& vertypeline) {
 		else sym2code[it - sym2list.begin()]++;
 		g = g.substr(ind + 1);
 		int ind2 = (int)(std::find(symbollist.begin(), symbollist.end(), sym) - symbollist.begin());
+		if (ind2 == (int)symbollist.size()) {
+			// unknown symbol would index past every table (silent UB); cannot fire on
+			// valid input from the matching solver palette — a mismatch means the solver
+			// and this binary were built against different generated tables.
+			std::fprintf(stderr, "FATAL: unknown vertex symbol '%s' (palette mismatch?)\n", sym.c_str());
+			std::abort();
+		}
 		vertextypes.push_back(ind2);
 	}
 	countsignature = std::to_string(sym2list.size());
@@ -120,9 +132,17 @@ static std::vector<int> buildvertextypes(const std::string& vertypeline) {
 	return vertextypes;
 }
 
+// ---------- counting-k: true (>=3-tile) vertex types only, per the Myers convention ----------
+static int countk(const std::vector<int>& vertextypes) {
+	int k = 0;
+	for (int vt : vertextypes) k += countinglist[vt];
+	return k;
+}
+
 // ---------- decode: vertypeline + conway -> full glue graph ----------
 struct Graph {
 	std::vector<int> rneig, lneig, mirro, lvert, glue;
+	std::vector<int> cls;    // corner-class ids (WL color; regular: bijective with lvert)
 	std::vector<std::string> label;
 };
 static Graph decode(const std::string& vertypeline, const std::string& conwayline) {
@@ -137,6 +157,7 @@ static Graph decode(const std::string& vertypeline, const std::string& conwaylin
 			gph.lneig.push_back(l + lneiglistin[i][gg]);
 			gph.mirro.push_back(l + mirrolistin[i][gg]);
 			gph.lvert.push_back(lvertlistin[i][gg]);
+			gph.cls.push_back(clslistin[i][gg]);
 			gph.label.push_back(edgelabel(labellistin[i][gg], (int)j));
 		}
 	}

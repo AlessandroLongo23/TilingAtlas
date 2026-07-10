@@ -332,26 +332,23 @@ def certify(ent, name):
 # ---------------------------------------------------------------- legacy parsing (regular gate)
 
 def parse_legacy(oracle_dir):
-    """Parse pruner_tables.inc (7 arrays) and ferkvals from eu_solver.cpp's mainlist."""
-    txt = open(os.path.join(oracle_dir, "pruner_tables.inc")).read()
-    def grab(name):
-        mres = re.search(name + r"\s*=\s*(\{.*?\});", txt, re.S)
-        body = mres.group(1)
-        return eval(body.replace("{", "[").replace("}", "]"))
-    legacy = {
-        "symbol": grab("symbollist"),
-        "label": grab("labellistin"),
-        "lneig": grab("lneiglistin"),
-        "rneig": grab("rneiglistin"),
-        "mirro": grab("mirrolistin"),
-        "lvert": grab("lvertlistin"),
-        "code": grab("codelist"),
-    }
-    sol = open(os.path.join(oracle_dir, "eu_solver.cpp")).read()
-    ferk = {}
-    for mres in re.finditer(r'vertexdef\{"([^"]+)".*?,(\d+),"(\w+)"\}', sol):
-        ferk[mres.group(1)] = int(mres.group(2))
-    legacy["ferkval"] = [ferk[s] for s in legacy["symbol"]]
+    """Parse the 44 pinned entries from Marek's untouched original,
+    reference/eu_solver.orig.cpp (the authentic, immutable pin source)."""
+    txt = open(os.path.join(oracle_dir, "reference", "eu_solver.orig.cpp")).read()
+    legacy = {"symbol": [], "label": [], "lneig": [], "rneig": [],
+              "mirro": [], "lvert": [], "ferkval": [], "code": []}
+    for mres in re.finditer(r'vertexdef\{(.*)\}\s*,?\s*$', txt, re.M):
+        fields = eval("[" + mres.group(1).replace("{", "[").replace("}", "]") + "]")
+        sym, label, lneig, rneig, mirro, lvert, ferkval, code = fields
+        legacy["symbol"].append(sym)
+        legacy["label"].append(label)
+        legacy["lneig"].append(lneig)
+        legacy["rneig"].append(rneig)
+        legacy["mirro"].append(mirro)
+        legacy["lvert"].append(lvert)
+        legacy["ferkval"].append(ferkval)
+        legacy["code"].append(code)
+    assert len(legacy["symbol"]) == 44, f"expected 44 pinned entries, parsed {len(legacy['symbol'])}"
     return legacy
 
 def frames_of(c):

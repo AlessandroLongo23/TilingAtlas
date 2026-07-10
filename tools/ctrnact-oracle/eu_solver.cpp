@@ -23,7 +23,15 @@ std::string genfile = solvercode + "output";
 #endif
 constexpr int maxnum = MAXNUM;
 constexpr int seen = 0;  // emit every k in [1, maxnum] (original used seen=13 to emit only k=14)
-constexpr int maxpoly = 12;
+
+// EU_NCBUDGET: cap on noncounting vertex types (dent-fill points, star palettes only; the
+// regular palette has none). A heuristic cap is an incompleteness knob, so every hit is
+// counted and reported loudly at exit; certify by budget-fixpoint (identical catalogs at
+// B and B+1). See docs/ctrnact-proof-program-2026-07-10.md §4.4.
+static const int nc_budget = std::getenv("EU_NCBUDGET") ? atoi(std::getenv("EU_NCBUDGET")) : 8;
+static long ncbudget_hits = 0;   // fresh noncounting vertex skipped because budget reached
+static long nckzero = 0;         // closed all-noncounting solutions suppressed
+static bool has_noncounting = false;  // set in main(); false for the regular palette
 
 // Per-node debug trace (euoutput1.txt: a line for every configuration the DFS touches). It is pure
 // hot-path overhead — string-building + I/O done once per search node — and never feeds the search
@@ -46,9 +54,10 @@ struct vertexdef {
     std::vector<int> lneig;
     std::vector<int> rneig;
     std::vector<int> mirro;
-    std::vector<int> lvert;
+    std::vector<int> lvert;   // corner-CLASS id per dart (regular palette: bijective with size)
     int ferkval;
     std::string code;
+    int counting;             // 1 = true (>=3-tile) vertex, 0 = dent-fill point (non-vertex)
 };
 
 struct configuration {
@@ -56,59 +65,17 @@ struct configuration {
     std::vector<int> lneig;
     std::vector<int> rneig;
     std::vector<int> mirro;
-    std::vector<int> lvert;
+    std::vector<int> lvert;   // corner-class ids (see vertexdef)
     std::vector<int> glue;
     std::vector<int> vertype;
-    int num;
+    int num;                  // total vertex types incl. noncounting (drives labels/framing)
+    int kcnt;                 // counting vertex types only (drives k, maxnum, file naming)
     int dfs_depth;
 };
 
-std::vector<vertexdef> mainlist = {
-        vertexdef{"(3,12,12)A",{"0","1","*0"},{2,0,1},{1,2,0},{2,1,0},{3,12,12},1,"3a"},
-        vertexdef{"(3,12,12)F",{"0","1","2","*0","*1","*2"},{2,0,1,4,5,3},{1,2,0,5,3,4},{3,4,5,0,1,2},{3,12,12,12,12,3},2,"3b"},
-        vertexdef{"(4,6,12)",{"0","1","2","*0","*1","*2"},{2,0,1,4,5,3},{1,2,0,5,3,4},{3,4,5,0,1,2},{4,12,6,12,6,4},1,"3c"},
-        vertexdef{"(6,6,6)S",{"0"},{0},{0},{0},{6},1,"3d"},
-        vertexdef{"(6,6,6)R",{"0","*0"},{0,1},{0,1},{1,0},{6,6},2,"3e"},
-        vertexdef{"(6,6,6)A",{"0","1","*1"},{2,0,1},{1,2,0},{0,2,1},{6,6,6},1,"3f"},
-        vertexdef{"(6,6,6)F",{"0","1","2","*0","*1","*2"},{2,0,1,4,5,3},{1,2,0,5,3,4},{3,4,5,0,1,2},{6,6,6,6,6,6},6,"3g"},
-        vertexdef{"(3,3,4,12)",{"0","1","2","3","*0","*1","*2","*3"},{3,0,1,2,5,6,7,4},{1,2,3,0,7,4,5,6},{4,5,6,7,0,1,2,3},{3,12,4,3,12,4,3,3},1,"4a"},
-        vertexdef{"(3,4,3,12)A",{"0","*0","2","*2"},{3,0,1,2},{1,2,3,0},{1,0,3,2},{3,12,3,4},1,"4b"},
-        vertexdef{"(3,4,3,12)F",{"0","1","2","3","*0","*1","*2","*3"},{3,0,1,2,5,6,7,4},{1,2,3,0,7,4,5,6},{4,5,6,7,0,1,2,3},{3,12,3,4,12,3,4,3},2,"4c"},
-        vertexdef{"(3,3,6,6)A",{"0","1","*0","3"},{3,0,1,2},{1,2,3,0},{2,1,0,3},{3,6,6,3},1,"4d"},
-        vertexdef{"(3,3,6,6)F",{"0","1","2","3","*0","*1","*2","*3"},{3,0,1,2,5,6,7,4},{1,2,3,0,7,4,5,6},{4,5,6,7,0,1,2,3},{3,6,6,3,6,6,3,3},2,"4e"},
-        vertexdef{"(3,6,3,6)S",{"0","*0"},{1,0},{1,0},{1,0},{3,6},1,"4f"},
-        vertexdef{"(3,6,3,6)R",{"0","1","*0","*1"},{1,0,3,2},{1,0,3,2},{2,3,0,1},{3,6,6,3},2,"4g"},
-        vertexdef{"(3,6,3,6)A1",{"0","1","*1","*0"},{3,0,1,2},{1,2,3,0},{3,2,1,0},{3,6,3,6},2,"4h"},
-        vertexdef{"(3,6,3,6)A2",{"0","*0","2","*2"},{3,0,1,2},{1,2,3,0},{1,0,3,2},{3,6,3,6},2,"4i"},
-        vertexdef{"(3,6,3,6)F",{"0","1","2","3","*0","*1","*2","*3"},{3,0,1,2,5,6,7,4},{1,2,3,0,7,4,5,6},{4,5,6,7,0,1,2,3},{3,6,3,6,6,3,6,3},4,"4j"},
-        vertexdef{"(3,4,4,6)",{"0","1","2","3","*0","*1","*2","*3"},{3,0,1,2,5,6,7,4},{1,2,3,0,7,4,5,6},{4,5,6,7,0,1,2,3},{3,6,4,4,6,4,4,3},1,"4k"},
-        vertexdef{"(3,4,6,4)A",{"0","*0","2","*2"},{3,0,1,2},{1,2,3,0},{1,0,3,2},{4,6,4,3},1,"4l"},
-        vertexdef{"(3,4,6,4)F",{"0","1","2","3","*0","*1","*2","*3"},{3,0,1,2,5,6,7,4},{1,2,3,0,7,4,5,6},{4,5,6,7,0,1,2,3},{4,6,4,3,6,4,3,4},2,"4m"},
-        vertexdef{"(4,4,4,4)S4",{"0"},{0},{0},{0},{4},1,"4n"},
-        vertexdef{"(4,4,4,4)R4",{"0","*0"},{0,1},{0,1},{1,0},{4,4},2,"4o"},
-        vertexdef{"(4,4,4,4)S2a",{"0","1"},{1,0},{1,0},{0,1},{4,4},2,"4p"},
-        vertexdef{"(4,4,4,4)S2b",{"0","*0"},{1,0},{1,0},{1,0},{4,4},2,"4q"},
-        vertexdef{"(4,4,4,4)R2",{"0","1","*0","*1"},{1,0,3,2},{1,0,3,2},{2,3,0,1},{4,4,4,4},4,"4r"},
-        vertexdef{"(4,4,4,4)A1",{"0","1","2","*1"},{3,0,1,2},{1,2,3,0},{0,3,2,1},{4,4,4,4},2,"4s"},
-        vertexdef{"(4,4,4,4)A2",{"0","*0","2","*2"},{3,0,1,2},{1,2,3,0},{1,0,3,2},{4,4,4,4},2,"4t"},
-        vertexdef{"(4,4,4,4)F",{"0","1","2","3","*0","*1","*2","*3"},{3,0,1,2,5,6,7,4},{1,2,3,0,7,4,5,6},{4,5,6,7,0,1,2,3},{4,4,4,4,4,4,4,4},8,"4u"},
-        vertexdef{"(3,3,3,3,6)A",{"0","*0","2","3","*2"},{4,0,1,2,3},{1,2,3,4,0},{1,0,4,3,2},{3,6,3,3,3},1,"5a"},
-        vertexdef{"(3,3,3,3,6)F",{"0","1","2","3","4","*0","*1","*2","*3","*4"},{4,0,1,2,3,6,7,8,9,5},{1,2,3,4,0,9,5,6,7,8},{5,6,7,8,9,0,1,2,3,4},{3,6,3,3,3,6,3,3,3,3},2,"5b"},
-        vertexdef{"(3,3,3,4,4)A",{"0","1","*0","3","*3"},{4,0,1,2,3},{1,2,3,4,0},{2,1,0,4,3},{3,4,4,3,3},1,"5c"},
-        vertexdef{"(3,3,3,4,4)F",{"0","1","2","3","4","*0","*1","*2","*3","*4"},{4,0,1,2,3,6,7,8,9,5},{1,2,3,4,0,9,5,6,7,8},{5,6,7,8,9,0,1,2,3,4},{3,4,4,3,3,4,4,3,3,3},2,"5d"},
-        vertexdef{"(3,3,4,3,4)A",{"0","1","*1","*0","4"},{4,0,1,2,3},{1,2,3,4,0},{3,2,1,0,4},{3,4,3,4,3},1,"5e"},
-        vertexdef{"(3,3,4,3,4)F",{"0","1","2","3","4","*0","*1","*2","*3","*4"},{4,0,1,2,3,6,7,8,9,5},{1,2,3,4,0,9,5,6,7,8},{5,6,7,8,9,0,1,2,3,4},{3,4,3,4,3,4,3,4,3,3},2,"5f"},
-        vertexdef{"(3,3,3,3,3,3)S6",{"0"},{0},{0},{0},{3},1,"6a"},
-        vertexdef{"(3,3,3,3,3,3)R6",{"0","*0"},{0,1},{0,1},{1,0},{3,3},2,"6b"},
-        vertexdef{"(3,3,3,3,3,3)S3a",{"0","1"},{1,0},{1,0},{0,1},{3,3},2,"6c"},
-        vertexdef{"(3,3,3,3,3,3)S3b",{"0","*0"},{1,0},{1,0},{1,0},{3,3},2,"6d"},
-        vertexdef{"(3,3,3,3,3,3)R3",{"0","1","*0","*1"},{1,0,3,2},{1,0,3,2},{2,3,0,1},{3,3,3,3},4,"6e"},
-        vertexdef{"(3,3,3,3,3,3)S2",{"0","1","*1"},{2,0,1},{1,2,0},{0,2,1},{3,3,3},1,"6f"},
-        vertexdef{"(3,3,3,3,3,3)R2",{"0","1","2","*0","*1","*2"},{2,0,1,4,5,3},{1,2,0,5,3,4},{3,4,5,0,1,2},{3,3,3,3,3,3},6,"6g"},
-        vertexdef{"(3,3,3,3,3,3)A1",{"0","1","2","3","*2","*1"},{5,0,1,2,3,4},{1,2,3,4,5,0},{0,5,4,3,2,1},{3,3,3,3,3,3},2,"6h"},
-        vertexdef{"(3,3,3,3,3,3)A2",{"0","1","2","*2","*1","*0"},{5,0,1,2,3,4},{1,2,3,4,5,0},{5,4,3,2,1,0},{3,3,3,3,3,3},2,"6i"},
-        vertexdef{"(3,3,3,3,3,3)F",{"0","1","2","3","4","5","*0","*1","*2","*3","*4","*5"},{5,0,1,2,3,4,7,8,9,10,11,6},{1,2,3,4,5,0,11,6,7,8,9,10},{6,7,8,9,10,11,0,1,2,3,4,5},{3,3,3,3,3,3,3,3,3,3,3,3},12,"6j"}
-};
+// mainlist + class tables are generated per palette by alphabets/gen_alphabet.py
+// (resolved via -I tables/$(PALETTE); regular reproduces the legacy 44 entries exactly).
+#include "solver_tables.inc"
 
 int symbolcount;
 
@@ -156,18 +123,11 @@ bool simplify(configuration const& conf);
 int extend(configuration& slist);
 
 std::string finename(configuration const& conf) {
-    std::string m = fname(conf.num) + "_";
-    if (std::find(conf.lvert.begin(), conf.lvert.end(), 3) != conf.lvert.end()) {
-        m = m + "3";
-    }
-    if (std::find(conf.lvert.begin(), conf.lvert.end(), 4) != conf.lvert.end()) {
-        m = m + "4";
-    }
-    if (std::find(conf.lvert.begin(), conf.lvert.end(), 6) != conf.lvert.end()) {
-        m = m + "6";
-    }
-    if (std::find(conf.lvert.begin(), conf.lvert.end(), 12) != conf.lvert.end()) {
-        m = m + "c";
+    std::string m = fname(conf.kcnt) + "_";
+    for (int t = 0; t < (int)TILE_FAM.size(); t++) {
+        bool present = false;
+        for (int c : conf.lvert) if (CLASS_TILE[c] == t) { present = true; break; }
+        if (present) m += TILE_FAM[t];
     }
     return m;
 }
@@ -253,18 +213,26 @@ std::string verbalvertices(std::vector<int> const& vertype) {
     return s.substr(0, s.size() - 2);
 }
 
+// Face-cycle validity over corner CLASSES. Regular palette (period p=1, CLASS_NEXT=id,
+// L=n) degenerates to Marek's original: same class along the cycle, closed length divides
+// n, open length <= n. Star tiles (p=2, point/dent alternating word of length L=2n): the
+// class must advance +1 mod p along the walk, a closed cycle must be a whole number of
+// word periods (count % p == 0) AND a divisor of L (rotation symmetry of the tile), an
+// open cycle must not exceed L. p <= 2 is asserted by the generator; the +1-advance rule
+// is orientation-safe only up to p=2.
 bool checkpart(configuration const& conf) {
     for (int i = 0; i < (int)conf.rneig.size(); i++) {
         int free = i;
         int rfree = conf.rneig[free];
-        int vfree = conf.lvert[rfree];
-        int mainvert = vfree;
+        int expect = conf.lvert[rfree];
+        const int L = CLASS_L[expect];
+        const int p = CLASS_P[expect];
         int count = 1;
         bool passt = false;
         while (!passt) {
             free = conf.glue[rfree];
             if (free == -1) {
-                if (count > mainvert) {
+                if (count > L) {
                     return false;
                 }
                 else {
@@ -272,7 +240,7 @@ bool checkpart(configuration const& conf) {
                 }
             }
             else if (free == i) {
-                if (mainvert % count != 0) {
+                if (count % p != 0 || L % count != 0) {
                     return false;
                 }
                 else {
@@ -281,9 +249,9 @@ bool checkpart(configuration const& conf) {
             }
             else {
                 rfree = conf.rneig[free];
-                vfree = conf.lvert[rfree];
+                expect = CLASS_NEXT[expect];
                 count++;
-                if (vfree != mainvert) {
+                if (conf.lvert[rfree] != expect) {
                     return false;
                 }
             }
@@ -293,7 +261,7 @@ bool checkpart(configuration const& conf) {
 }
 
 int writecycle(configuration const& conf, std::ostream& filen) {
-    mincycle = { -1,maxpoly + 1 };
+    mincycle = { -1,TABLE_MAXL + 1 };
     int v = 0;
     std::vector<int> smet = {};
     for (int cy = 0; cy < (int)conf.glue.size(); cy++) {
@@ -308,11 +276,11 @@ int writecycle(configuration const& conf, std::ostream& filen) {
             if (conf.glue[left] == -1) {
                 int stable = left;
                 int right = conf.rneig[left];
-                int vstable = conf.lvert[right];
+                int vstable = CLASS_L[conf.lvert[right]];
                 bool cont = true;
                 while (cont) {
                     smet.push_back(left);
-                    if (eu_trace) mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + std::to_string(conf.lvert[right]) + ")-";
+                    if (eu_trace) mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
                     count++;
                     left = conf.glue[right];
                     if (left != -1) {
@@ -330,12 +298,12 @@ int writecycle(configuration const& conf, std::ostream& filen) {
             else {
                 left = cy;
                 int right = conf.rneig[left];
-                v = conf.lvert[right];
+                v = CLASS_L[conf.lvert[right]];
                 bool cont = true;
                 complete = true;
                 while (cont) {
                     smet.push_back(left);
-                    if (eu_trace) mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + std::to_string(conf.lvert[right]) + ")-";
+                    if (eu_trace) mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
                     count++;
                     left = conf.glue[right];
                     if (left != cy) {
@@ -429,6 +397,7 @@ int initex() {
         newconf.lvert = mainlist[i].lvert;
         newconf.vertype = { i };
         newconf.num = 1;
+        newconf.kcnt = mainlist[i].counting;
         newconf.dfs_depth = 0;
         newconf.glue = std::vector<int>(newconf.lneig.size(), -1);
         extend(newconf);
@@ -451,14 +420,14 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
         if (std::find(smet.begin(), smet.end(), cy) == smet.end()) {
             int left = cy;
             int right = conf.rneig[left];
-            v = conf.lvert[right];
+            v = CLASS_L[conf.lvert[right]];
             bool cont = true;
             while (cont) {
                 smet.push_back(left);
                 if (conf.mirro[right] < minmirror) {
                     minmirror = conf.mirro[right];
                 }
-                mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + std::to_string(conf.lvert[right]) + ")-";
+                mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
                 count++;
                 left = conf.glue[right];
                 if (left != cy) {
@@ -483,11 +452,11 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
                 int left = minmirror;
                 mainst = "";
                 right = conf.rneig[left];
-                v = conf.lvert[right];
+                v = CLASS_L[conf.lvert[right]];
                 cont = true;
                 while (cont) {
                     smet.push_back(left);
-                    mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + std::to_string(conf.lvert[right]) + ")-";
+                    mainst = mainst + conf.label[left] + "/" + conf.label[right] + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
                     count++;
                     left = conf.glue[right];
                     if (left != minmirror) {
@@ -546,7 +515,7 @@ int writesolution(configuration const& conf) {
     std::string filesig = filesignature(conf.vertype);
     // dirsig prefix (NN/NN_fam/filesig/) so decode.py/develop.py's tes_id() can parse the id —
     // matches the Python solver's tesline; the C++ original omitted it.
-    std::string tesfile1 = fname(conf.num) + "/" + fine + "/" + filesig + "/"
+    std::string tesfile1 = fname(conf.kcnt) + "/" + fine + "/" + filesig + "/"
                          + solvercode + " raw " + filesig + " " + ret + ".tes";
 
     std::ostream* blkp;
@@ -636,7 +605,7 @@ int extend(configuration& slist) {
     }
     bool mirrored = (slist.mirro[firstfree] == firstfree);
     if (eu_trace) gen << "firstfree = " << std::to_string(firstfree) << "(" << slist.label[firstfree] << "), between " <<
-        std::to_string(slist.lvert[firstfree]) << " and " << std::to_string(slist.lvert[slist.mirro[firstfree]]) <<
+        CLASS_DISP[slist.lvert[firstfree]] << " and " << CLASS_DISP[slist.lvert[slist.mirro[firstfree]]] <<
         ". Difference = " << std::to_string(minc) << "\n";
     for (int i = 0; i < (int)slist.rneig.size(); i++) {
         if (slist.glue[i] == -1) {
@@ -651,11 +620,12 @@ int extend(configuration& slist) {
                 configuration& newconf = slist;
                 if (checkpart(newconf)) {
                     if (std::find(newconf.glue.begin(), newconf.glue.end(), -1) == newconf.glue.end()) {
-                        if (newconf.num > seen) {
+                        if (newconf.kcnt > seen) {
                             if (simplify(newconf)) {
                                 writesolution(newconf);
                             }
                         }
+                        else nckzero++;   // closed but zero counting vertices: not a tiling record
                     }
                     else {
                         success++;
@@ -672,8 +642,18 @@ int extend(configuration& slist) {
             }
         }
     }
-    if (slist.num < maxnum) {
+    bool canK = slist.kcnt < maxnum;
+    bool canNC = has_noncounting && (slist.num - slist.kcnt) < nc_budget;
+    if (canK || canNC) {
         for (int gr = slist.vertype[0]; gr < symbolcount; gr++) {
+            // per-category budget: counting types against maxnum (=k), noncounting
+            // (dent-fill) types against the loud EU_NCBUDGET cap
+            if (mainlist[gr].counting) {
+                if (!canK) continue;
+            } else {
+                if (!has_noncounting) continue;
+                if (!canNC) { ncbudget_hits++; continue; }
+            }
             int l = slist.rneig.size();
             configuration& newconf = slist;
             int symbollength = mainlist[gr].rneig.size();
@@ -687,6 +667,7 @@ int extend(configuration& slist) {
             }
             newconf.vertype.push_back(gr);
             newconf.num++;
+            newconf.kcnt += mainlist[gr].counting;
             int ran = ferk(mainlist[gr]);
             for (int i = l; i < l + ran; i++) {
                 configuration& newconf2 = newconf;
@@ -700,11 +681,12 @@ int extend(configuration& slist) {
                     }
                     if (checkpart(newconf2)) {
                         if (std::find(newconf2.glue.begin(), newconf2.glue.end(), -1) == newconf2.glue.end()) {
-                            if (newconf2.num > seen) {
+                            if (newconf2.kcnt > seen) {
                                 if (simplify(newconf2)) {
                                     writesolution(newconf2);
                                 }
                             }
+                            else nckzero++;
                         }
                         else {
                             success++;
@@ -721,6 +703,7 @@ int extend(configuration& slist) {
                 }
             }
             newconf.num--;
+            newconf.kcnt -= mainlist[gr].counting;
             newconf.vertype.pop_back();
             newconf.rneig.resize(l);
             newconf.lneig.resize(l);
@@ -752,11 +735,22 @@ int extend(configuration& slist) {
 
 int main() {
     symbolcount = mainlist.size();
+    for (auto const& v : mainlist) if (!v.counting) has_noncounting = true;
     if (eu_trace) {
         int filecount = 1;
         gen.open(filepath + genfile + std::to_string(filecount) + ".txt");
     }
     initex();
     if (eu_trace) gen.close();
+    if (ncbudget_hits > 0) {
+        std::cerr << "EU_NCBUDGET WARNING: noncounting-vertex budget (" << nc_budget
+                  << ") bound the search " << ncbudget_hits << " time(s). COMPLETENESS NOT "
+                  << "CERTIFIED for this run — re-run with EU_NCBUDGET=" << (nc_budget + 1)
+                  << " and require identical catalogs (budget-fixpoint certificate).\n";
+    }
+    if (nckzero > 0) {
+        std::cerr << "note: " << nckzero << " closed all-noncounting configuration(s) "
+                  << "suppressed (no true vertex; not tilings by the Myers convention).\n";
+    }
     return 0;
 }
