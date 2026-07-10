@@ -1427,7 +1427,7 @@ export class PeriodSolver {
 		const fillId = trace.enabled ? trace.nextId('fill') : 0;
 		const latKey = trace.enabled ? latticeKey(ctx.u, ctx.v) : '';
 		const rootId = trace.enabled ? trace.nextId('torus') : 0;
-		if (trace.enabled) trace.node('torus', { fillId, latKey, id: rootId, parentId: -1, reps: polyDump(initial), verdict: 'root' });
+		if (trace.enabled) trace.node('torus', { fillId, latKey, k: this.k, id: rootId, parentId: -1, reps: polyDump(initial), verdict: 'root' });
 		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[]; counts: number[] | null; id?: number }[] = [{ reps: initial, block: initialBlock, vReps: initialV, counts: initialCounts, id: rootId }];
 		let pops = 0;
 		const t0 = PeriodSolver.DEBUG ? Date.now() : 0;
