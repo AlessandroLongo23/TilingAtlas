@@ -10,26 +10,95 @@
 === Phase 2: Myers k=1 in-ring stars (Fig-4 subclass) ===
   ⚑ SCOPED (display-only, not exhaustive): single-star dent-reg VCs, ≤6 corners, 2500ms/seed, 600s wall budget — the ~8h uncapped sweep is deliberately NOT run.
   solving 439 single-star VCs …
-    …50/439 (200s, 1 raw cells, 28 timeouts)
-    …100/439 (456s, 2 raw cells, 65 timeouts)
-  ⚑ WALL BUDGET hit — 314 VCs SKIPPED (display-only cap, logged loud).
-  distinct k=1 star tilings (congruence): 3 (from 3 raw, 125 VCs solved, 86 timeouts)
+    …50/439 (192s, 1 raw cells, 28 timeouts)
+    …100/439 (446s, 2 raw cells, 65 timeouts)
+  ⚑ WALL BUDGET hit — 313 VCs SKIPPED (display-only cap, logged loud).
+  distinct k=1 star tilings (congruence): 3 (from 3 raw, 126 VCs solved, 87 timeouts)
 
   ⚑ symmetry overlay DISABLED for all 3 Myers star tilings (regular-only codec has no star support; no exactSource emitted).
 === Phase 3: Čtrnáct k=7 (reproduced, extends Galebach beyond k=6) ===
   k=7: 1472/1472 reconstructed (target 1472)  ✓
   no skips ✓
 
-=== Phase 4: Čtrnáct-engine candidate NEW star tilings (k=2, not in Myers 2009) ===
-  ctrnact-star-k2-01  k=2  3.6.12*  (9 cell polys, area check ✓)
-  ctrnact-star-k2-02  k=2  3.4.12*  (12 cell polys, area check ✓)
-  ctrnact-star-k2-03  k=2  3.3*  (6 cell polys, area check ✓)
-  ctrnact-star-k2-04  k=2  3.3*  (6 cell polys, area check ✓)
+=== Phase 4: Čtrnáct-engine star catalogs (k=1..2 in-ring; candidates flagged) ===
+  ctrnact-star-k1-01  k=1  3.4.6.12*  (18 cell polys, area check ✓)
+  ctrnact-star-k1-02  k=1  3.12*  (15 cell polys, area check ✓)
+  ctrnact-star-k1-03  k=1  3*.12  (3 cell polys, area check ✓)
+  ctrnact-star-k1-04  k=1  3*.6*.8  (6 cell polys, area check ✓)
+  ctrnact-star-k1-05  k=1  4*.12  (2 cell polys, area check ✓)
+  ctrnact-star-k1-06  k=1  4*.8  (2 cell polys, area check ✓)
+  ctrnact-star-k1-07  k=1  4.4*.6  (4 cell polys, area check ✓)
+  ctrnact-star-k1-08  k=1  3.6.6*  (6 cell polys, area check ✓)
+  ctrnact-star-k1-09  k=1  6.6*  (3 cell polys, area check ✓)
+  ctrnact-star-k1-10  k=1  4.6*  (6 cell polys, area check ✓)
+  ctrnact-star-k1-11  k=1  4.6*  (4 cell polys, area check ✓)
+  ctrnact-star-k1-12  k=1  3.4.6*  (9 cell polys, area check ✓)
+  ctrnact-star-k1-13  k=1  3.4.8.8*  (12 cell polys, area check ✓)
+  ctrnact-star-k1-14  k=1  3.4*.8*  (6 cell polys, area check ✓)
+  ctrnact-star-k1-15  k=1  3.4.8*  (10 cell polys, area check ✓)
+  ctrnact-star-k1-16  k=1  3*.6  (3 cell polys, area check ✓)
+  ctrnact-star-k1-17  k=1  3*.6  (3 cell polys, area check ✓)
+  ctrnact-star-k1-18  k=1  4.4*  (2 cell polys, area check ✓)
+  ctrnact-star-k1-19  k=1  4.4*  (2 cell polys, area check ✓)
+  ctrnact-star-k1-20  k=1  4.4*  (2 cell polys, area check ✓)
+  ctrnact-star-k1-21  k=1  3.6*  (3 cell polys, area check ✓)
+  ctrnact-star-k1-22  k=1  3.6*  (3 cell polys, area check ✓)
+  ctrnact-star-k1-23  k=1  3.6*  (3 cell polys, area check ✓)
+  ctrnact-star-k1-24  k=1  3.6*  (3 cell polys, area check ✓)
+  ctrnact-star-k1-25  k=1  3.3*  (3 cell polys, area check ✓)
+  ctrnact-star-k1-26  k=1  3.3*  (3 cell polys, area check ✓)
+  ctrnact-star-k2-01  k=2  3.6.12*  ★ CANDIDATE (not in Myers)  (9 cell polys, area check ✓)
+  ctrnact-star-k2-02  k=2  4.6*.12*  (9 cell polys, area check ✓)
+  ctrnact-star-k2-03  k=2  4.6*.12*  (21 cell polys, area check ✓)
+  ctrnact-star-k2-04  k=2  3.4.12*  ★ CANDIDATE (not in Myers)  (12 cell polys, area check ✓)
+  ctrnact-star-k2-05  k=2  3.4*.12*  (16 cell polys, area check ✓)
+  ctrnact-star-k2-06  k=2  3.12.12*  (33 cell polys, area check ✓)
+  ctrnact-star-k2-07  k=2  3.12.12*  (21 cell polys, area check ✓)
+  ctrnact-star-k2-08  k=2  3.4*.12.12*  (16 cell polys, area check ✓)
+  ctrnact-star-k2-09  k=2  3.4.6.12*  (24 cell polys, area check ✓)
+  ctrnact-star-k2-10  k=2  3.4.12*  (28 cell polys, area check ✓)
+  ctrnact-star-k2-11  k=2  3.4.12*  (18 cell polys, area check ✓)
+  ctrnact-star-k2-12  k=2  3.4*.12*  (14 cell polys, area check ✓)
+  ctrnact-star-k2-13  k=2  3.12*  (21 cell polys, area check ✓)
+  ctrnact-star-k2-14  k=2  3.3*.12*  (15 cell polys, area check ✓)
+  ctrnact-star-k2-15  k=2  4.6*.12*  (9 cell polys, area check ✓)
+  ctrnact-star-k2-16  k=2  3.4*.8.8*  (12 cell polys, area check ✓)
+  ctrnact-star-k2-17  k=2  3.4*.6  (4 cell polys, area check ✓)
+  ctrnact-star-k2-18  k=2  4.6*  (10 cell polys, area check ✓)
+  ctrnact-star-k2-19  k=2  3.4.6*  (18 cell polys, area check ✓)
+  ctrnact-star-k2-20  k=2  3.3*.4.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k2-21  k=2  4.8*  (6 cell polys, area check ✓)
+  ctrnact-star-k2-22  k=2  4.8*  (7 cell polys, area check ✓)
+  ctrnact-star-k2-23  k=2  3.4.8.8*  (16 cell polys, area check ✓)
+  ctrnact-star-k2-24  k=2  3.4.8.8*  (32 cell polys, area check ✓)
+  ctrnact-star-k2-25  k=2  3.4.4*.8*  (16 cell polys, area check ✓)
+  ctrnact-star-k2-26  k=2  3.4*.8*  (10 cell polys, area check ✓)
+  ctrnact-star-k2-27  k=2  3.3*.4  (9 cell polys, area check ✓)
+  ctrnact-star-k2-28  k=2  3.3*.4.6  (12 cell polys, area check ✓)
+  ctrnact-star-k2-29  k=2  3.4.4*  (10 cell polys, area check ✓)
+  ctrnact-star-k2-30  k=2  3.4.4*  (8 cell polys, area check ✓)
+  ctrnact-star-k2-31  k=2  3.4*  (3 cell polys, area check ✓)
+  ctrnact-star-k2-32  k=2  3.4*  (5 cell polys, area check ✓)
+  ctrnact-star-k2-33  k=2  3.4.4*  (10 cell polys, area check ✓)
+  ctrnact-star-k2-34  k=2  3.4*  (6 cell polys, area check ✓)
+  ctrnact-star-k2-35  k=2  3.4.6*  (12 cell polys, area check ✓)
+  ctrnact-star-k2-36  k=2  3.6*  (7 cell polys, area check ✓)
+  ctrnact-star-k2-37  k=2  3.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k2-38  k=2  3*.4.6*  (6 cell polys, area check ✓)
+  ctrnact-star-k2-39  k=2  3.3*.6*  (9 cell polys, area check ✓)
+  ctrnact-star-k2-40  k=2  3.3*.6*  (9 cell polys, area check ✓)
+  ctrnact-star-k2-41  k=2  3.3*.6*  (9 cell polys, area check ✓)
+  ctrnact-star-k2-42  k=2  3.3*  ★ CANDIDATE (not in Myers)  (6 cell polys, area check ✓)
+  ctrnact-star-k2-43  k=2  3.3*  (8 cell polys, area check ✓)
+  ctrnact-star-k2-44  k=2  3.3*  ★ CANDIDATE (not in Myers)  (6 cell polys, area check ✓)
+  ctrnact-star-k2-45  k=2  3.3*  (8 cell polys, area check ✓)
+  Phase 4 total: 71 star tilings (4 candidates)
 
 === reference-atlas.json written ===
-  2727 tilings → public/reference-atlas.json
+  2794 tilings → public/reference-atlas.json
     ctrnact k=7: 1472
-    ctrnact-star k=2: 4
+    ctrnact-star k=1: 26
+    ctrnact-star k=2: 45
     galebach k=1: 11
     galebach k=2: 20
     galebach k=3: 61
@@ -37,5 +106,5 @@
     galebach k=5: 332
     galebach k=6: 673
     myers k=1: 3
-  exactSource: 2719 seed + 1 cell = 2720/2727  (7 Myers star entries intentionally omit — no codec star support)  ✓
-  elapsed 625.8s
+  exactSource: 2719 seed + 1 cell = 2720/2794  (74 Myers star entries intentionally omit — no codec star support)  ✓
+  elapsed 627.7s

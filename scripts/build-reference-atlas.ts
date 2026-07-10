@@ -60,6 +60,7 @@ export interface ReferenceTiling {
 		basis: number[][];
 	};
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family (slider). Phase 3.
+	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration, pending adversarial review
 	exactSource?:
 		| { kind: 'seed'; T1: number[]; T2: number[]; Seed: number[][] }
 		| { kind: 'cell'; cell: SerializedCell };
@@ -308,44 +309,60 @@ function buildCtrnact(): ReferenceTiling[] {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// Phase 4 — candidate NEW 2-uniform star tilings from the Čtrnáct-engine star extension
-// (feat/ctrnact-star). Found by the k=2 run and absent from Myers 2009; pending adversarial review.
-// Float render cells are pre-exported by tools/ctrnact-oracle/export_atlas_cells.py (exact ZZ[zeta_24]
-// development, per-cell float area check against |det Lambda|). Display-only, never certified; no
-// exactSource (the codec has no star support, same as the Myers entries).
+// Phase 4 — the Čtrnáct-engine star catalogs (feat/ctrnact-star): every star-bearing solution of the
+// in-ring k=1 and k=2 runs. Most reproduce Myers 2004/2009 records; the ones flagged candidate:true
+// match NOTHING in Myers and are pending adversarial review. Float render cells are pre-exported by
+// tools/ctrnact-oracle/export_atlas_cells.py (exact ZZ[zeta_24] development, per-cell float area check
+// against |det Lambda|). Display-only, never certified; no exactSource (the codec has no star support,
+// same as the Myers entries).
 // ---------------------------------------------------------------------------------------------------
+const CTRNACT_STAR_CELL_FILES = ['ctrnact-star-k1.cells.json', 'ctrnact-star-k2.cells.json'];
+
 function buildCtrnactStars(): ReferenceTiling[] {
-	const dsPath = path.join(ROOT, 'experiments', 'star-oracle', 'ctrnact-star-k2-extras.cells.json');
-	if (!fs.existsSync(dsPath)) {
-		log('(no experiments/star-oracle/ctrnact-star-k2-extras.cells.json — skipping Phase 4)\n');
-		return [];
-	}
-	const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
-		records: {
-			id: string;
-			k: number;
-			vertype: string;
-			orbits: string[];
-			renderCell: ReferenceTiling['renderCell'];
-			areaCheck: { cellArea: number; detAbs: number };
-		}[];
-	};
 	const out: ReferenceTiling[] = [];
-	log('=== Phase 4: Čtrnáct-engine candidate NEW star tilings (k=2, not in Myers 2009) ===');
-	for (const r of ds.records) {
-		// family label: distinct tile tokens across the counting orbits, stars as "n*"
-		const toks = new Set<string>();
-		for (const orb of r.orbits) {
-			for (const t of orb.replace(/^\(|\)[A-Z0-9a-z]*$/g, '').split(',')) {
-				const m = /^(\d+)\*/.exec(t);
-				toks.add(m ? `${m[1]}*` : t);
-			}
+	log('=== Phase 4: Čtrnáct-engine star catalogs (k=1..2 in-ring; candidates flagged) ===');
+	for (const fname of CTRNACT_STAR_CELL_FILES) {
+		const dsPath = path.join(ROOT, 'experiments', 'star-oracle', fname);
+		if (!fs.existsSync(dsPath)) {
+			log(`  ⚑ experiments/star-oracle/${fname} missing — skipped`);
+			continue;
 		}
-		const family = [...toks].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b)).join('.');
-		out.push({ id: r.id, source: 'ctrnact-star', k: r.k, family, renderCell: r.renderCell });
-		log(`  ${r.id}  k=${r.k}  ${family}  (${r.renderCell.cellPolygons?.length ?? 0} cell polys, ` +
-			`area check ${Math.abs(r.areaCheck.cellArea - r.areaCheck.detAbs) < 1e-6 ? '✓' : '⚑ FAIL'})`);
+		const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
+			records: {
+				id: string;
+				k: number;
+				vertype: string;
+				orbits: string[];
+				candidate?: boolean;
+				renderCell: ReferenceTiling['renderCell'];
+				areaCheck: { cellArea: number; detAbs: number };
+			}[];
+		};
+		for (const r of ds.records) {
+			// family label: distinct tile tokens across the counting orbits, stars as "n*"
+			const toks = new Set<string>();
+			for (const orb of r.orbits) {
+				for (const t of orb.replace(/^\(|\)[A-Z0-9a-z]*$/g, '').split(',')) {
+					const m = /^(\d+)\*/.exec(t);
+					toks.add(m ? `${m[1]}*` : t);
+				}
+			}
+			const family = [...toks].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b)).join('.');
+			out.push({
+				id: r.id,
+				source: 'ctrnact-star',
+				k: r.k,
+				family,
+				renderCell: r.renderCell,
+				...(r.candidate ? { candidate: true } : {}),
+			});
+			log(`  ${r.id}  k=${r.k}  ${family}${r.candidate ? '  ★ CANDIDATE (not in Myers)' : ''}  ` +
+				`(${r.renderCell.cellPolygons?.length ?? 0} cell polys, ` +
+				`area check ${Math.abs(r.areaCheck.cellArea - r.areaCheck.detAbs) < 1e-6 ? '✓' : '⚑ FAIL'})`);
+		}
 	}
+	const nCand = out.filter((t) => t.candidate).length;
+	log(`  Phase 4 total: ${out.length} star tilings (${nCand} candidates)`);
 	log('');
 	return out;
 }

@@ -19,7 +19,7 @@ const SOURCE_LABEL: Record<ReferenceTiling["source"], string> = {
 	galebach: "Galebach",
 	myers: "Myers",
 	ctrnact: "Čtrnáct",
-	"ctrnact-star": "New star (candidate)",
+	"ctrnact-star": "Star engine",
 };
 
 export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
@@ -36,9 +36,18 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 				<div className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full border border-sky-400/25 bg-sky-400/10 px-1.5 py-0.5 text-[9px] font-medium text-sky-400 backdrop-blur-sm">
 					{SOURCE_LABEL[tiling.source]}
 				</div>
-				{isFamily ? (
-					<div className="absolute top-1.5 right-1.5 inline-flex items-center rounded-full border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400 backdrop-blur-sm">
-						α
+				{isFamily || tiling.candidate ? (
+					<div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+						{tiling.candidate ? (
+							<div className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-400 backdrop-blur-sm">
+								NEW?
+							</div>
+						) : null}
+						{isFamily ? (
+							<div className="inline-flex items-center rounded-full border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400 backdrop-blur-sm">
+								α
+							</div>
+						) : null}
 					</div>
 				) : null}
 				{onClick ? (

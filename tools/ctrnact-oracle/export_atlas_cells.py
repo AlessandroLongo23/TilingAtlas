@@ -55,16 +55,31 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--k", type=int, required=True)
     ap.add_argument("--id-prefix", default="ctrnact-star")
+    ap.add_argument("--only-star", action="store_true",
+                    help="skip pure-regular solutions (no '*' in the vertype)")
+    ap.add_argument("--candidates", default=None,
+                    help="blocks file (extras format); matching vertypes get candidate:true")
     args = ap.parse_args()
     tab = load_tables(args.tables)
+    candidate_vertypes = set()
+    if args.candidates:
+        clines = [l.rstrip("\n") for l in open(args.candidates)]
+        j = 0
+        while j < len(clines):
+            if clines[j].startswith("(") and j + 2 < len(clines) and clines[j + 2].startswith("Count type"):
+                candidate_vertypes.add(clines[j])
+                j += 5
+            else:
+                j += 1
 
     records = []
     lines = [l.rstrip("\n") for l in open(args.pruned)]
     i = 0
     blocks = []
     while i < len(lines):
-        if lines[i].startswith("("):
-            blocks.append((lines[i], lines[i + 4]))
+        if lines[i].startswith("(") and i + 2 < len(lines) and lines[i + 2].startswith("Count type"):
+            if not args.only_star or "*" in lines[i]:
+                blocks.append((lines[i], lines[i + 4]))
             i += 5
         else:
             i += 1
@@ -94,11 +109,16 @@ def main():
         # counting orbits only, for the family label
         orbits = [s for s in vertype.split(", ")
                   if len(s.split(",")) >= 3]
-        records.append({
+        rec_out = {
             "id": f"{args.id_prefix}-k{args.k}-{bi:02d}",
             "k": args.k,
             "vertype": vertype,
             "orbits": orbits,
+        }
+        if vertype in candidate_vertypes:
+            rec_out["candidate"] = True
+        records.append({
+            **rec_out,
             "renderCell": {
                 "cellPolygons": polys,
                 "basis": [[round(b1.real, 12), round(b1.imag, 12)],
@@ -112,7 +132,9 @@ def main():
         json.dump({
             "_meta": {
                 "source": "Čtrnáct-engine star extension (feat/ctrnact-star), exact ZZ[zeta_24] development",
-                "note": "Candidate 2-uniform star tilings found by the k=2 run and NOT present in Myers 2009 (myers-2009-k2.json). Pending adversarial review; see experiments/results/star-ctrnact-setup-2026-07-10.log.",
+                "note": "Star-bearing k-uniform tilings from the in-ring star palette runs. Records with candidate:true "
+                        "are NOT present in Myers' enumeration and are pending adversarial review; the rest reproduce "
+                        "Myers 2004/2009 records. See experiments/results/star-ctrnact-setup-2026-07-10.log.",
             },
             "records": records,
         }, f, indent=1)

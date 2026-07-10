@@ -12,8 +12,9 @@ import type { ExactCellSource } from "@/lib/services/cellCodecService";
 //               JSON). An unchecked hand enumeration — shown as reference, never as certified.
 //   - ctrnact:  Marek Čtrnáct's k-uniform search, reproduced here (k=7 shown; k≤8 in figures/data/ctrnact.json).
 //               An unproven exhaustive search extending Galebach beyond k=6 — reference, never certified.
-//   - ctrnact-star: candidate 2-uniform star tilings found by the Čtrnáct-engine star extension
-//               (feat/ctrnact-star) and NOT present in Myers 2009 — pending adversarial review.
+//   - ctrnact-star: the Čtrnáct-engine star extension's full in-ring catalogs (feat/ctrnact-star),
+//               k=1..2, star-bearing solutions only. Most reproduce Myers records; the ones flagged
+//               candidate:true match NOTHING in Myers and are pending adversarial review.
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
 	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star";
@@ -21,6 +22,7 @@ export interface ReferenceTiling {
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider (Phase 3)
+	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
 	exactSource?: ExactCellSource; // exact cyclotomic cell for the symmetry overlay (added 2026-07)
 }
 
