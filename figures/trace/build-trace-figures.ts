@@ -14,28 +14,33 @@ import { poolFigure } from './poolFigure';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'figures', 'out', 'trace');
-const EDGE_MM = 8;
 
-function write(id: string, ir: FigureIR): void {
+/** Size each figure to a target PHYSICAL WIDTH (mm) rather than a fixed mm-per-edge: these figures
+ *  have very different model-unit extents (a 3-polygon row vs a 143-unit-wide tree), so a single
+ *  edgeMm blows the trees up to a metre wide. edgeMm = targetWidthMm / (bbox width in model units);
+ *  the emitter derives height from the bbox aspect. */
+function write(id: string, ir: FigureIR, targetWidthMm: number): void {
   fs.mkdirSync(OUT, { recursive: true });
-  fs.writeFileSync(path.join(OUT, `${id}.svg`), emitSvg(ir, { edgeMm: EDGE_MM }));
-  fs.writeFileSync(path.join(OUT, `${id}.tex`), emitTikz(ir, { edgeMm: EDGE_MM }));
-  console.error(`[trace-figures] wrote ${id}.svg + ${id}.tex`);
+  const widthUnits = Math.max(1e-6, ir.bbox.maxX - ir.bbox.minX);
+  const edgeMm = targetWidthMm / widthUnits;
+  fs.writeFileSync(path.join(OUT, `${id}.svg`), emitSvg(ir, { edgeMm }));
+  fs.writeFileSync(path.join(OUT, `${id}.tex`), emitTikz(ir, { edgeMm }));
+  console.error(`[trace-figures] wrote ${id}.svg + ${id}.tex (${targetWidthMm}mm wide, edgeMm=${edgeMm.toFixed(2)})`);
 }
 
-// F2 — polygon set.
-write('f2-polygons', polygonsFigure([3, 4, 6]));
+// F2 — polygon set (a compact row).
+write('f2-polygons', polygonsFigure([3, 4, 6]), 120);
 
 const EX = path.join(ROOT, 'figures', 'traces', 'running-example');
-// F6 — torus-fill DFS of the running example (fill 476, all 18 nodes).
-write('f6-torus-fill', torusTreeFigure(loadTrace<TorusNode>(EX, 'torus')));
+// F6 — torus-fill DFS of the running example (fill 476, all 18 nodes) — wide landscape.
+write('f6-torus-fill', torusTreeFigure(loadTrace<TorusNode>(EX, 'torus')), 165);
 
-// F3 — VC search tree, curated, with the example's two VCs highlighted.
-write('f3-vc-search', vcTreeFigure(loadTrace<VcNode>(EX, 'vc'), [['3','4','6','4'], ['3','6','3','6']]));
+// F3 — VC search tree, curated, with the example's two VCs highlighted (portrait — height follows).
+write('f3-vc-search', vcTreeFigure(loadTrace<VcNode>(EX, 'vc'), [['3','4','6','4'], ['3','6','3','6']]), 120);
 
 const WINNER = '1|-4,0,-1,0,2,0,1,0#1|0,0,0,0,-2,0,0,0';
-// F5 — vector pool + candidate lattices, winner highlighted.
-write('f5-pool-lattice', poolFigure(loadTrace<PoolNode>(EX, 'pool'), loadTrace<LatticeNode>(EX, 'lattice'), WINNER));
+// F5 — vector pool + candidate lattices, winner highlighted (square).
+write('f5-pool-lattice', poolFigure(loadTrace<PoolNode>(EX, 'pool'), loadTrace<LatticeNode>(EX, 'lattice'), WINNER), 85);
 
 const README = `# Pipeline-walkthrough figures (trace-driven)
 
