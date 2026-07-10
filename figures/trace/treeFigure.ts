@@ -9,11 +9,21 @@ import { layoutTree, type TreeInput } from './treeLayout';
 import { curateVcTree } from './curate';
 
 const BOX = 9;
-const GAPX = 4;
+const GAPX = 6;
 const GAPY = 7;
 const NODEMARGIN = 1;
 
 const pruneVerdict = (v: string) => v.startsWith('prune-') || v === 'contradiction' || v === 'cap-skip' || v === 'reject-supercell' || v === 'cert-fail' || v === 'dedup';
+
+/** Compact verdict labels — the raw verdict strings ("prune-overlap") are wider than the node pitch
+ *  and collide between siblings. */
+const VERDICT_LABEL: Record<string, string> = {
+  'prune-overlap': 'overlap', 'prune-noprogress': 'dup', 'prune-cap': 'cap',
+  'prune-P1': 'P1', 'prune-P3': 'P3', 'cap-skip': 'cap', 'dedup': 'seen',
+  'reject-supercell': 'super', 'cert-fail': 'cert', 'gate-reject': 'gate',
+  'contradiction': 'contra', 'emit': 'emit', 'place': 'place', 'root': 'root',
+};
+const shortVerdict = (v: string): string => VERDICT_LABEL[v] ?? v;
 
 export function torusTreeFigure(nodes: TorusNode[]): FigureIR {
   // The raw trace is NOT a clean id/parentId tree: prune leaves never persist a state, so they
@@ -70,7 +80,7 @@ export function torusTreeFigure(nodes: TorusNode[]): FigureIR {
       const t = fitInto(bboxOfPts(allPts), box, NODEMARGIN);
       for (const p of n.reps) elements.push({ kind: 'poly', verts: p.verts.map(([x, y]) => t({ x, y })), styleRef: `tile:n:${p.n}` });
     }
-    elements.push({ kind: 'text', at: { x: (box.minX + box.maxX) / 2, y: box.minY - 1.2 }, tex: n.verdict.replace(/_/g, '\\_'), styleRef: 'label' });
+    elements.push({ kind: 'text', at: { x: (box.minX + box.maxX) / 2, y: box.minY - 1.2 }, tex: shortVerdict(n.verdict), styleRef: 'label' });
   }
 
   const bbox: Rect = { minX: minX - 2, minY: minY - 3, maxX: maxX + 2, maxY: maxY + 2 };
@@ -121,12 +131,12 @@ export function vcTreeFigure(nodes: VcNode[], highlightPaths: string[][]): Figur
       const pts = fan.flatMap((f) => f.verts);
       const t = fitInto(bboxOfPts(pts), box, NODEMARGIN);
       for (const f of fan) elements.push({ kind: 'poly', verts: f.verts.map(t), styleRef: `tile:n:${f.n}` });
-    } else {
-      elements.push({ kind: 'text', at: boxCenter(box), tex: 'root', styleRef: 'label' });
     }
-    elements.push({ kind: 'text', at: { x: (box.minX + box.maxX) / 2, y: box.minY - 1.2 }, tex: `${n.path.join('.') || '\\varnothing'}`, styleRef: 'label' });
+    // one clean label per node below the box (empty path = the root)
+    elements.push({ kind: 'text', at: { x: (box.minX + box.maxX) / 2, y: box.minY - 1.2 }, tex: n.path.join('.') || 'root', styleRef: 'label' });
   }
-  elements.push({ kind: 'text', at: { x: maxX + 4, y: minY }, tex: `+${droppedCount}\\ \\mathrm{explored}`, styleRef: 'label' });
+  // honest ellipsis, placed clear of the tree on the right at mid-height
+  elements.push({ kind: 'text', at: { x: maxX + 9, y: (minY + maxY) / 2 }, tex: `+${droppedCount} explored`, styleRef: 'label' });
 
-  return { bbox: { minX: minX - 2, minY: minY - 3, maxX: maxX + 14, maxY: maxY + 2 }, elements };
+  return { bbox: { minX: minX - 2, minY: minY - 3, maxX: maxX + 20, maxY: maxY + 2 }, elements };
 }

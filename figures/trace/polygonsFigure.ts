@@ -12,12 +12,14 @@ export function polygonsFigure(ns: number[]): FigureIR {
   ns.forEach((n, i) => {
     const box = { minX: i * CELL, minY: 0, maxX: (i + 1) * CELL, maxY: CELL };
     const raw = regularPolygonAtCorner(n, 0);
-    const t = fitInto(bboxOfPts(raw), { ...box, maxY: box.maxY - 3 }, PAD);
+    // tile occupies the upper part; the bottom 3.5 units are a label strip so labels never overlap it
+    const t = fitInto(bboxOfPts(raw), { ...box, minY: box.minY + 3.5 }, PAD);
     const verts: V2[] = raw.map(t);
     elements.push({ kind: 'poly', verts, styleRef: `tile:n:${n}` });
     const interiorDeg = Math.round((180 * (n - 2)) / n);
-    elements.push({ kind: 'text', at: { x: (box.minX + box.maxX) / 2, y: 2 }, tex: `$\\{${n}\\}$`, styleRef: 'label' });
-    elements.push({ kind: 'text', at: { x: (box.minX + box.maxX) / 2, y: 0.5 }, tex: `${interiorDeg}^\\circ`, styleRef: 'label' });
+    const cx = (box.minX + box.maxX) / 2;
+    elements.push({ kind: 'text', at: { x: cx, y: 2.3 }, tex: `$\\{${n}\\}$`, styleRef: 'label' });
+    elements.push({ kind: 'text', at: { x: cx, y: 0.8 }, tex: `$${interiorDeg}^\\circ$`, styleRef: 'label' });
   });
   return { bbox: { minX: 0, minY: 0, maxX: ns.length * CELL, maxY: CELL }, elements };
 }

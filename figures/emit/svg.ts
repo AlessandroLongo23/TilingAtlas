@@ -15,6 +15,24 @@ const fmt = (v: number): string => {
 };
 const pts = (verts: V2[]): string => verts.map((p) => `${fmt(p.x)},${fmt(p.y)}`).join(' ');
 
+/** SVG is the PREVIEW backend and can't typeset TeX; render the small subset our figures use as
+ *  readable Unicode so the preview matches the TikZ output's intent (the .tex still carries real TeX). */
+function plainTex(s: string): string {
+	return s
+		.replace(/\$/g, '')
+		.replace(/\\varnothing/g, '∅')
+		.replace(/\\vec\s*([A-Za-z])/g, '$1⃗')
+		.replace(/\\mathrm\{([^}]*)\}/g, '$1')
+		.replace(/\^\\circ/g, '°')
+		.replace(/\\cdot/g, '·')
+		.replace(/\\ /g, ' ')
+		.replace(/\\\{/g, '{')
+		.replace(/\\\}/g, '}')
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.trim();
+}
+
 function emitElement(el: FigureElement, mmToModel: number): string {
 	const st = resolveStyle(el.styleRef);
 	// fade = mix toward white in code — the twin of the TikZ emitter's `name!pct!figBg`
@@ -47,9 +65,10 @@ function emitElement(el: FigureElement, mmToModel: number): string {
 			return `<line x1="${fmt(el.from.x)}" y1="${fmt(el.from.y)}" x2="${fmt(el.to.x)}" y2="${fmt(el.to.y)}" stroke="${c}" stroke-width="${fmt(w)}" marker-end="url(#arrowhead)"/>`;
 		}
 		case 'text': {
-			// counter-flip so text reads upright inside the y-flipped group; raw tex (preview only)
+			// counter-flip so text reads upright inside the y-flipped group; TeX rendered to readable
+			// Unicode for the preview (the TikZ backend typesets the real TeX).
 			const c = col(st.text ?? 'figEdge');
-			return `<text x="${fmt(el.at.x)}" y="${fmt(-el.at.y)}" transform="scale(1,-1)" fill="${c}" font-family="Georgia, serif" font-size="${fmt(3.2 * mmToModel)}" text-anchor="middle" dominant-baseline="middle">${el.tex}</text>`;
+			return `<text x="${fmt(el.at.x)}" y="${fmt(-el.at.y)}" transform="scale(1,-1)" fill="${c}" font-family="Georgia, serif" font-size="${fmt(3.2 * mmToModel)}" text-anchor="middle" dominant-baseline="middle">${plainTex(el.tex)}</text>`;
 		}
 	}
 }

@@ -27,9 +27,12 @@ export function poolFigure(pools: PoolNode[], lattices: LatticeNode[], winnerKey
     elements.push({ kind: 'polyline', verts: [o, uu, uv, vv], closed: true, styleRef: 'vec:winner' });
     elements.push({ kind: 'arrow', from: o, to: uu, styleRef: 'vec:winner' });
     elements.push({ kind: 'arrow', from: o, to: vv, styleRef: 'vec:winner' });
-    elements.push({ kind: 'text', at: { x: uu.x, y: uu.y }, tex: '$\\vec u$', styleRef: 'label:basis' });
-    elements.push({ kind: 'text', at: { x: vv.x, y: vv.y }, tex: '$\\vec v$', styleRef: 'label:basis' });
-    ext = Math.max(ext, Math.abs(uv.x), Math.abs(uv.y));
+    // labels placed BEYOND each tip (along the vector) so they clear the arrowhead
+    const lu = { x: uu.x * 1.22, y: uu.y * 1.22 };
+    const lv = { x: vv.x * 1.18, y: vv.y * 1.18 };
+    elements.push({ kind: 'text', at: lu, tex: '$\\vec u$', styleRef: 'label:basis' });
+    elements.push({ kind: 'text', at: lv, tex: '$\\vec v$', styleRef: 'label:basis' });
+    ext = Math.max(ext, Math.abs(uv.x), Math.abs(uv.y), Math.abs(lu.x), Math.abs(lu.y), Math.abs(lv.x), Math.abs(lv.y));
   }
   const m = ext + 1;
   return { bbox: { minX: -m, minY: -m, maxX: m, maxY: m }, elements };
