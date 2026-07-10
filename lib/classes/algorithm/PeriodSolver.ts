@@ -40,11 +40,19 @@ import { RegularPolygon } from '../polygons/RegularPolygon';
 import { ExactStarPolygon } from '../polygons/ExactStarPolygon';
 import { Cyclotomic } from '../Cyclotomic';
 import { KUniformityChecker } from './KUniformityChecker';
+import { countVertexOrbitsFast } from './KUniformityFast';
+// Experimental fast k-uniformity gate (point-group orbit count; proven equivalent to the exact gate
+// on all 92 certified k≤3 tilings — tests/kuniformity-fast.test.ts). Off by default ⇒ byte-identical.
+const PS_FAST_GATE = process.env.PS_FAST_GATE === '1';
 import { TranslationalCellExtractor } from './TranslationalCellExtractor';
+import { nativeFill } from './nativeFill';
+// TS↔native torusFill bridge (opt-in USE_NATIVE_FILL=1, read per-fill so a harness can A/B in-process):
+// ship each regular-polygon fill to the validated native engine (~13× the TS DFS). Emitted cells are
+// byte-equivalent; OFF by default ⇒ pure-TS path.
 import type { SeedConfigurationLike } from './SeedExpander';
-import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, areaLadderFromTiles, holohedry, areaKey, isIntCombo, joinLattice, gaussReduceExact, groupIntoGridOrbits, gridImageBasis, type ObliqueTruncation } from './LatticeEnumerator';
+import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, vcFeasAreaSets, bravaisClassExact, areaLadderFromTiles, holohedry, areaKey, isIntCombo, joinLattice, gaussReduceExact, groupIntoGridOrbits, gridImageBasis, type ObliqueTruncation } from './LatticeEnumerator';
 import { detSurd, polygonAreaSurd, tileAreaSurd, Surd } from './exact/Surd';
-import { dedupeByCongruence } from './TilingCongruence';
+import { dedupeByCongruence, dedupeByNKey } from './TilingCongruence';
 import { spikeBreak } from './exact/spikeTrace';
 
 const FLOAT_TOL = 1e-6;
@@ -68,6 +76,13 @@ export type PoolBounds = {
 	poolSteps: number;
 	/** Euclidean pool reach — must cover the LONG basis vector |v| of any candidate cell. */
 	poolLmax: number;
+	/** SMALLK_PROVEN only: solved cmm/rect long/centering axes accepted up to this length
+	 *  WITHOUT pool membership (census bound; SMALLK_W_BOUND.md §4-§5). */
+	longAxisMax?: number;
+	/** SMALLK_PROVEN only: |det| cap for grid-aligned (rect/cmm, hol ≤ 4) cells = 4k·s_max. */
+	gridAreaMax?: number;
+	/** SMALLK_PROVEN only: |det| cap for oblique (hol 2) cells = 2k·s_max·2 slack. */
+	oblAreaMax?: number;
 	/** |w|² cap on OFF-GRID round-cell basis vectors (the compact-snub heuristic). */
 	compactOffMax2: number;
 	/** |w|² cap on the grid-aligned cell's SHORT side. */
@@ -92,11 +107,51 @@ export type PoolBounds = {
  * default path is unchanged; DG-1 measured the proven k=1 pool past 1.5e8 values at weight 15/23,
  * budget abort — see experiments/results/dg1-proven-pool-k1.log).
  */
+/** SMALLK_PROVEN=1: the k ≤ 3 proof-anchored pool (docs/SMALLK_W_BOUND.md v2, refereed).
+ *  Per-branch radii from the small-k weight theorem replace the dead 24k−1 box:
+ *  non-rigid generators wt ≤ 2·4k−1 (+ joins, JOIN_DEN_MAX=60 ≥ census index ≤ 28);
+ *  round basis pairs within the census shells (|u|² ≤ (2/√3)·12k·s_max); grid-aligned
+ *  solved axes accepted by census bound (det ≤ 4k·s_max), NOT by pool membership —
+ *  which also removes the CB-8 "ambiguous residual" (ζ-density: length does not bound
+ *  steps). s_max = (12+7√3)/12, the max VC corner-share (census L1). */
+export const SMALLK_PROVEN_MODE = process.env.SMALLK_PROVEN === '1';
+const SMALLK_SMAX = (12 + 7 * Math.sqrt(3)) / 12; // ≈ 2.01036, exact (12+7√3)/12
+
 export function poolConfig(
 	k: number,
 	aMax: number,
 	provenMode: boolean = process.env.PROVEN_POOL === '1'
-): { active: PoolBounds; proven: PoolBounds; isTuned: boolean } {
+): { active: PoolBounds; proven: PoolBounds; isTuned: boolean; smallkProven?: boolean } {
+	if (SMALLK_PROVEN_MODE) {
+		if (k > 3) throw new Error(`SMALLK_PROVEN=1 is proven for k ≤ 3 only (got k=${k}); unset it or use the per-k theorem before extending`);
+		const areaBoundF = 24 * k * aMax; // cor:box(ii) reference value for the proven-box report
+		const reach = (2 / Math.sqrt(3)) * areaBoundF;
+		const proven: PoolBounds = { poolSteps: 24 * k - 1, poolLmax: reach, compactOffMax2: reach, gridShortMax2: reach, areaBoundF };
+		const roundArea = 12 * k * SMALLK_SMAX;         // hol 12: n ≤ 12k vertices (L1)
+		const gridArea = 4 * k * SMALLK_SMAX;           // hol ≤ 4 (rect/rhombic)
+		const oblArea = 2 * k * SMALLK_SMAX;            // hol 2 (oblique)
+		const steps = 2 * 4 * k - 1;                    // 7 / 15 / 23 (≥ census shell wt 6/8/10)
+		const active: PoolBounds = {
+			poolSteps: steps,
+			// VACUOUS on purpose (workorder smallk-proven-pool-workorder-2026-07-10.md task 1):
+			// the generator pool is ALL of W(steps) — any steps-walk has |v| ≤ steps < the doc's
+			// (2/√3)·A norm cap, so a Euclidean truncation could only LOSE generators (an earlier
+			// draft used Lmax ≈ 11 via an unwritten grid-axis lemma; cor:box(iv) needs no lemma).
+			// Round/grid sub-pools stay small via compactOffMax2/gridShortMax2 below; the oblique
+			// pair sweep is kept sub-quadratic by its internal A_adm sub-pool cap + oblAreaMax.
+			poolLmax: steps + 0.01,
+			longAxisMax: gridArea + 0.1,                 // rect long = det/short ≤ det; cmm centering ≤ same
+			gridAreaMax: gridArea + 0.05,
+			oblAreaMax: oblArea + 0.05,
+			compactOffMax2: (2 / Math.sqrt(3)) * roundArea + 0.5,
+			gridShortMax2: gridArea + 0.2,               // short² ≤ short·long = det ≤ gridArea
+			areaBoundF: roundArea + 0.05,                // global coarse cap = the census round max
+		};
+		// Invariant (proved in the wiring note): within these boxes blockIndexRangeNeeded ≤ 60
+		// = BLOCK_INDEX_CAP (worst rect: ceil((2·24.13+10)/1)+1 = 60, not >60), so the F3b cap
+		// can never bind on a census-admissible candidate; makeCtx throws under this mode if it does.
+		return { active, proven, isTuned: true, smallkProven: true };
+	}
 	const areaBoundF = 24 * k * aMax; // cor:box(ii) — already the proven value in BOTH regimes
 	const reach = (2 / Math.sqrt(3)) * areaBoundF; // cor:box(iii) long-vector / short-vector² bound
 	const proven: PoolBounds = {
@@ -157,7 +212,7 @@ type CandidateLattice = { basis: [Cyclotomic, Cyclotomic]; seedMaps: { rot: numb
  *  admissible cell-area key set — both for the CB-7 primitivity guard. */
 const candidateCache = new Map<
 	string,
-	{ lattices: CandidateLattice[]; p0Skipped: number; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> }
+	{ lattices: CandidateLattice[]; p0Skipped: number; cSkipped: number; feas: Map<number, Map<string, number[][]>> | null; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> }
 >();
 
 /** OP-2 instrumentation: candidate-stage cache effectiveness (the Σ-vs-distinct companion data
@@ -279,10 +334,13 @@ export type PeriodSolverDiag = {
 	rawCells: number; // completed torus tilings surviving the in-fill filters (V<k, P2, primitivity), before dedup/gate. Accounting identity per lattice: certified closures = vBelowKSkipped + p2Skipped + supercellRejected + rawCells-contribution
 	emitted: number; // after canonical dedup + k-gate
 	gateRejected: number; // completed but orbit count ≠ k
+	earlyGateRejected: number; // EARLY k-GATE (torusFill, pre-certificate): closures rejected for orbit count ≠ k BEFORE the certificate + primitivity ran (the certify/buildBlock/overlap + isPrimitive work that was SKIPPED). Would be gateRejected in the post-pass; counted here instead. Excluded from rawCells. Byte-identical emitted set.
 	fanLattices: number; // lattices where ≥1 seed image (rigid core or a g⁻¹-mapped image) overflowed the cell → that image seeded from its (mapped) VC fans instead
 	p0Skipped: number; // candidate lattices removed by the P0 arithmetic pre-filter (minVerts > k·hol)
+	cSkipped: number; // candidate lattices removed by the C(Λ,S) divisor-feasibility pre-filter (docs/LATTICE_ADMISSIBILITY_PROOF.md; PS_P3=0 disables)
 	orbitSkipped: number; // OP-3 stage 1 (lem:orbitdedup): enumerated oblique (hol=2) candidate lattices DELETED as non-representative grid-orbit members. Fires only in candidateLattices, post-P0, regular seeds only (star seeds unreduced — TH-13 open). Accounting: orbitSkipped + candidateLattices = the pre-reduction post-P0 candidate count; each deleted member's fill coverage is conserved as a g⁻¹ seed map on its orbit representative (constraint 2), so nothing is dropped — candidateLattices counts what is TRIED, this counts what rides along
 	p1Pruned: number; // DFS branches cut by the P1 orbit-floor (vertexClasses > k·hol)
+	p3Pruned: number; // DFS branches cut by the P3 stage-B tile-multiset domination (counts ∉ ↓F*(Λ); PS_P3_FILL=0 disables)
 	p2Skipped: number; // OP-1 prop:typeprune closed-cell half: in-fill, post-certificate, pre-primitivity — certified cells discarded because their occurring VC-type set ⊊ the seed's allowed set (licensed two-sided by prop:typeprune; recovery routes through prop:fanseed — rem:fastpath caveat inherited). Excluded from rawCells; NOT counted in gateRejected (the k-gate is never reached for these cells)
 	vBelowKSkipped: number; // OP-1 V<k half: in-fill, post-certificate, pre-primitivity — closed cells with vertex-class count V < k (orbits ≤ V < k). The k-gate WOULD reject these (orbit count < k), but the counter fires before the gate: excluded from rawCells and NOT counted in gateRejected
 	seedStateDedup: number; // redundant seed sets skipped (identical initial torus state mod Λ)
@@ -369,7 +427,7 @@ let th10BannerEmitted = false;
 function th10OverrideStage1(
 	ov: NonNullable<PeriodSolverOptions['th10Override']>,
 	k: number
-): { lattices: CandidateLattice[]; p0Skipped: number; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
+): { lattices: CandidateLattice[]; p0Skipped: number; cSkipped: number; feas: Map<number, Map<string, number[][]>> | null; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
 	if (process.env.TH10_EXAMPLE_MODE !== '1') {
 		throw new Error(
 			'PeriodSolver: th10Override passed without TH10_EXAMPLE_MODE=1 — the TH-10 weight-s pool is UNPROVEN and may only run in explicitly flagged example mode'
@@ -386,6 +444,8 @@ function th10OverrideStage1(
 	return {
 		lattices: ov.bases.map((basis) => ({ basis, seedMaps: [{ rot: 0, refl: false }] })),
 		p0Skipped: 0,
+		cSkipped: 0,
+		feas: null,
 		orbitSkipped: 0,
 		obliqueCandidates: 0,
 		obliqueTruncated: null,
@@ -394,6 +454,70 @@ function th10OverrideStage1(
 		areaKeys: ov.areaKeys,
 	};
 }
+
+// ---------------------------------------------------------------------------------------------
+// Fill-internals profiler (env PS_FILL_PROFILE=1). Accumulates ACROSS every torusFill in the
+// process, so one scout sweep prints a single aggregate breakdown on exit. Byte-identical when off:
+// FILL_PROF is null and every bracket / counter is a guarded no-op.
+//
+// It answers the two questions the raw PS_PROFILE `fill=` number can't: (1) where inside the DFS the
+// time goes, split into VALIDITY (does the current state / a placement hold up — analyze, certify,
+// primitive) vs SELECTION+EXPANSION (choose the gap, place each candidate, reduce mod Λ, extend the
+// block — `expand`) vs BOOKKEEPING (`dedupKey`); and (2) the search-tree SHAPE (pops, contradictions,
+// closures, per-pop placement fan-out and why children die) — which decides whether the lever is
+// fewer nodes (better pruning) or cheaper nodes (cheaper primitives). Timers are bracketed ONCE per
+// pop at the bucket level (≤5 performance.now pairs/pop) to keep distortion ≲1%; the finer within-
+// `expand` split (overlap vs canonicalRep vs child buildBlock) is read off the --cpu-prof self-time.
+type FillProf = {
+	// setup = per-fill work BEFORE the DFS loop (dedupModLattice + initial buildBlock + coreSelfOverlaps +
+	// blockHasProperOverlap on the seed) — runs once per fill; mostly overlap testing again.
+	t: { setup: number; dedupKey: number; analyze: number; certify: number; primitive: number; expand: number };
+	// certify sub-phases (isCompleteTiling runs ~once/closure, so timing its internals is distortion-free)
+	ct: { area: number; buildBlock: number; overlap: number; judge: number };
+	c: {
+		fills: number; pops: number; seenHits: number; capSkips: number;
+		contradictions: number; closures: number;
+		certCalls: number; certPass: number; primCalls: number; primTrue: number;
+		places: number; overlapRej: number; dupRej: number; p1Pruned: number; capRej: number; pushed: number;
+	};
+};
+const FILL_PROF: FillProf | null = process.env.PS_FILL_PROFILE === '1'
+	? { t: { setup: 0, dedupKey: 0, analyze: 0, certify: 0, primitive: 0, expand: 0 },
+	    ct: { area: 0, buildBlock: 0, overlap: 0, judge: 0 },
+	    c: { fills: 0, pops: 0, seenHits: 0, capSkips: 0, contradictions: 0, closures: 0, certCalls: 0, certPass: 0, primCalls: 0, primTrue: 0, places: 0, overlapRej: 0, dupRej: 0, p1Pruned: 0, capRej: 0, pushed: 0 } }
+	: null;
+export function getFillProfile(): FillProf | null { return FILL_PROF; }
+if (FILL_PROF) {
+	process.on('exit', () => {
+		const { t, c } = FILL_PROF;
+		const valid = t.analyze + t.certify + t.primitive; // certify+primitive+analyze = validity work
+		const total = valid + t.expand + t.dedupKey + t.setup;
+		const pctOf = (x: number) => total > 0 ? `${((100 * x) / total).toFixed(1)}%` : '0%';
+		const rows: [string, number][] = [
+			['setup    (per-fill: initial block + self-overlap)', t.setup],
+			['analyze  (validity: open-vertex / contradiction)', t.analyze],
+			['certify  (validity: isCompleteTiling certificate)', t.certify],
+			['primitive(validity: isPrimitive supercell check)', t.primitive],
+			['expand   (selection: gap + place + reduce + block)', t.expand],
+			['dedupKey (bookkeeping: stateKey + seenState)', t.dedupKey],
+		];
+		let out = `\n[PS_FILL_PROFILE] fill-internals aggregate over ${c.fills} torusFill calls, ${c.pops} pops — total timed ${total.toFixed(0)}ms\n`;
+		out += `  VALIDITY total ${valid.toFixed(0)}ms (${pctOf(valid)}) | SELECTION ${t.expand.toFixed(0)}ms (${pctOf(t.expand)}) | SETUP ${t.setup.toFixed(0)}ms (${pctOf(t.setup)}) | BOOKKEEPING ${t.dedupKey.toFixed(0)}ms (${pctOf(t.dedupKey)})\n`;
+		for (const [label, ms] of rows) out += `    ${label.padEnd(52)} ${ms.toFixed(0).padStart(9)}ms  ${pctOf(ms).padStart(6)}\n`;
+		const ct = FILL_PROF.ct;
+		const certTot = ct.area + ct.buildBlock + ct.overlap + ct.judge;
+		const pctCert = (x: number) => certTot > 0 ? `${((100 * x) / certTot).toFixed(1)}%` : '0%';
+		out += `  certify breakdown (of ${certTot.toFixed(0)}ms isCompleteTiling): ` +
+			`area(Surd) ${ct.area.toFixed(0)}ms ${pctCert(ct.area)} | buildBlock(R=cellDiam+8) ${ct.buildBlock.toFixed(0)}ms ${pctCert(ct.buildBlock)} | ` +
+			`overlap(O(n²) intersects) ${ct.overlap.toFixed(0)}ms ${pctCert(ct.overlap)} | vertexJudge ${ct.judge.toFixed(0)}ms ${pctCert(ct.judge)}\n`;
+		out += `  tree shape: pops ${c.pops}, seenHits ${c.seenHits}, capSkips ${c.capSkips}, contradictions ${c.contradictions}, closures ${c.closures}\n`;
+		out += `    closure fate: certCalls ${c.certCalls} → certPass ${c.certPass}; primCalls ${c.primCalls} → primTrue ${c.primTrue}\n`;
+		out += `    placements: attempted ${c.places}, pushed ${c.pushed}; rejected: overlap ${c.overlapRej}, dup ${c.dupRej}, p1 ${c.p1Pruned}, cap ${c.capRej}\n`;
+		out += `    per-pop fan-out: ${c.pops > 0 ? (c.places / c.pops).toFixed(2) : '0'} places/pop, ${c.pops > 0 ? (c.pushed / c.pops).toFixed(2) : '0'} children/pop\n`;
+		process.stderr.write(out);
+	});
+}
+const fpNow = (): number => performance.now();
 
 export class PeriodSolver {
 	k: number;
@@ -467,7 +591,7 @@ export class PeriodSolver {
 		// the option docstring). The candidateCache is untouched — the override path never reads or
 		// writes it, so a mixed-mode process cannot serve poisoned candidates.
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = opts.th10Override
+		const { lattices, p0Skipped, cSkipped, feas, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = opts.th10Override
 			? th10OverrideStage1(opts.th10Override, k)
 			: this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
@@ -478,10 +602,13 @@ export class PeriodSolver {
 			rawCells: 0,
 			emitted: 0,
 			gateRejected: 0,
+			earlyGateRejected: 0,
 			fanLattices: 0,
 			p0Skipped,
+			cSkipped,
 			orbitSkipped,
 			p1Pruned: 0,
+			p3Pruned: 0,
 			p2Skipped: 0,
 			vBelowKSkipped: 0,
 			seedStateDedup: 0,
@@ -533,6 +660,24 @@ export class PeriodSolver {
 			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles, allKeys, areaKeys);
 			if (!ctx) continue; // degenerate basis
 			if (ctx.blockIndexCapBinds) diag.blockIndexCapTruncated++; // F3b: ⚑ already emitted in makeCtx
+			// P3 stage B (in-fill domination, docs/LATTICE_ADMISSIBILITY_PROOF.md): hand the fill this
+			// lattice's feasible tile-count vectors F*(Λ) — every EMITTED cell's per-size counts equal
+			// a member (the C theorem), and counts grow monotonically, so a partial fill dominated by
+			// no member is a dead branch. Same scope as C (feas ≠ null ⟺ k ≥ 3 ∧ regular ∧ PS_P3≠0);
+			// PS_P3_FILL=0 disables just this arm for attribution A/Bs. Vectors are aligned to the
+			// ascending `polySizes` (both sides sort the same numeric tile sizes).
+			if (feas && process.env.PS_P3_FILL !== '0')
+				ctx.feasVectors = feas.get(bravaisClassExact(u, v))?.get(areaKey(detSurd(u, v).abs()));
+			// EARLY k-GATE: run the post-pass orbit gate at closure (in torusFill) so a wrong-uniformity
+			// closure is rejected before the (buildBlock+overlap) certificate + primitivity. Same fn as the
+			// post-pass below ⇒ identical reject decision on the same (unmutated) reps ⇒ byte-identical emit.
+			// SCOPE — k ≥ 3 only: the early gate costs one orbit count per closure but only PAYS when a
+			// closure is orbit≠k (skipping its certify+primitive). At k≤2 fills are cheap and virtually every
+			// closure is orbit==k (measured gateRej≈0), so it would be pure overhead — the catastrophic
+			// closure-storm tail (large lattices closing into many orbit>k tilings) is a k≥3 phenomenon.
+			// PS_EARLY_GATE=1 forces it on at any k (A/B + tests); PS_EARLY_GATE=0 forces it off. Read per-call.
+			if (process.env.PS_EARLY_GATE === '1' || (this.k >= 3 && process.env.PS_EARLY_GATE !== '0'))
+				ctx.gate = (r) => (PS_FAST_GATE ? countVertexOrbitsFast(r, u, v) : checker.countVertexOrbits(r, u, v));
 
 			// Choose the seed(s) for THIS lattice — one per orbit map (OP-3 stage 1, lem:orbitdedup).
 			// Each map g = (rot, refl) ∈ seedMaps satisfies g(Λ_rep) = a deleted enumerated orbit
@@ -598,12 +743,19 @@ export class PeriodSolver {
 				if (seenCanonical.has(canonical)) continue;
 				seenCanonical.add(canonical);
 
-				// k-uniformity gate: exactly k vertex orbits under the full symmetry group.
-				const _tg0 = prof ? Date.now() : 0;
-				const orbits = checker.countVertexOrbits(reps, u, v);
-				if (prof) prof.gate += Date.now() - _tg0;
+				// k-uniformity gate: exactly k vertex orbits under the full symmetry group. When the EARLY
+				// k-gate ran (ctx.gate set), every reps here already has orbit == k — recomputing the orbit
+				// count would be a redundant second pass, so skip it (compute only when the early gate is OFF,
+				// or a debug hook still wants the value). Byte-identical: early-gate ON ⇒ no reps with orbit≠k
+				// ever reaches here, so this gate would never reject; early-gate OFF ⇒ the original code path.
+				let orbits: number | null = null;
+				if (!ctx.gate || opts.onRawCell) {
+					const _tg0 = prof ? Date.now() : 0;
+					orbits = PS_FAST_GATE ? countVertexOrbitsFast(reps, u, v) : checker.countVertexOrbits(reps, u, v);
+					if (prof) prof.gate += Date.now() - _tg0;
+				}
 				if (opts.onRawCell) opts.onRawCell(reps, [u, v], orbits);
-				if (orbits !== null && orbits !== k) {
+				if (!ctx.gate && orbits !== null && orbits !== k) {
 					diag.gateRejected++;
 					continue;
 				}
@@ -615,16 +767,19 @@ export class PeriodSolver {
 		// Final dedup up to CONGRUENCE. `canonicalKey` (the intra-loop pre-filter above) under-merges the
 		// chiral snub: its two mirror lattices and two fundamental-domain representations survive as
 		// distinct keys (the k=1 snub `3,3,3,3,6` as 2 cells, the k=2 t2020 as up to 4 — the over-count).
-		// The exact pairwise congruence test merges them; it runs only on the few survivors of the
-		// pre-filter, so it is cheap. (DEVELOPMENT_NOTES §12.7/§12.11.)
+		// Default: `dedupeByNKey` — the proven hashable canonical form N (canonicalFormN), ~10⁴×/cell over
+		// the pairwise path (NOTES §45), no-drop by N's soundness proof + validated (0 false merges over
+		// all 47,854 oracle tilings). PS_DEDUPE=congruence restores the exact pairwise authority; run with
+		// PS_MERGECHECK=nkey to have N's merges re-verified against it. (DEVELOPMENT_NOTES §12.7/§12.11/§45.)
 		const _td0 = prof ? Date.now() : 0;
-		const deduped = dedupeByCongruence(cells, (c) => extractor.canonicalKey(c.cellPolygons));
+		const dedupe = process.env.PS_DEDUPE === "congruence" ? dedupeByCongruence : dedupeByNKey;
+		const deduped = dedupe(cells, (c) => extractor.canonicalKey(c.cellPolygons));
 		if (prof) prof.dedup += Date.now() - _td0;
 		diag.emitted = deduped.length;
 		if (prof) process.stderr.write(
 			`[PS_PROFILE k=${k}] cand=${prof.cand}ms fill=${prof.fill}ms gate=${prof.gate}ms ` +
 			`canon=${prof.canon}ms dedup=${prof.dedup}ms | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
-			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} p1Prune=${diag.p1Pruned} ssDedup=${diag.seedStateDedup} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''}\n`
+			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} cSkip=${diag.cSkipped} p1Prune=${diag.p1Pruned} p3Prune=${diag.p3Pruned} ssDedup=${diag.seedStateDedup} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''}\n`
 		);
 
 		if (opts.verbose) {
@@ -659,7 +814,7 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): { lattices: CandidateLattice[]; p0Skipped: number; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
+	private candidateLattices(seed: SeedConfigurationLike): { lattices: CandidateLattice[]; p0Skipped: number; cSkipped: number; feas: Map<number, Map<string, number[][]>> | null; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -690,7 +845,10 @@ export class PeriodSolver {
 		// of the same tile set in one process must not reuse the narrow-pool candidate list (and vice
 		// versa). Env unset ⇒ suffix empty ⇒ key byte-identical to the historical format.
 		const widen = `${process.env.POOL_STEPS_UP ?? ''}|${process.env.POOL_LMAX_UP ?? ''}`;
-		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? 'proven' : 'tuned'}${widen !== '|' ? `:up${widen}` : ''}`;
+		// PS_P3 keys the cache: toggling the C(Λ,S) filter mid-process must not serve a list built
+		// under the other regime (same pattern as the ST-9 pool-widening knobs above).
+		const p3Off = process.env.PS_P3 === '0';
+		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? 'proven' : 'tuned'}${widen !== '|' ? `:up${widen}` : ''}${p3Off ? ':p3off' : ''}`;
 		const cached = candidateCache.get(cacheKey);
 		if (cached) { cacheStats.candHits++; return cached; }
 		cacheStats.candMisses++;
@@ -716,7 +874,20 @@ export class PeriodSolver {
 		// proven box (thm:weight / cor:box), say so loudly, once per (k, a_max) per process. Under
 		// PROVEN_POOL=1 the active regime IS the proven one (`active === proven`), so every strict `<`
 		// in `isTuned` is identically false and the banner provably cannot fire.
-		if (cfg.isTuned) {
+		if (cfg.smallkProven) {
+			const bk = `${this.k}:${aMax}:smallk`;
+			if (!regimeBannerEmitted.has(bk)) {
+				regimeBannerEmitted.add(bk);
+				const t = cfg.active;
+				process.stderr.write(
+					`[PeriodSolver k=${this.k}] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): ` +
+					`poolSteps=${t.poolSteps}, poolLmax=${t.poolLmax.toFixed(2)}, longAxisMax=${t.longAxisMax?.toFixed(2)}, ` +
+					`gridAreaMax=${t.gridAreaMax?.toFixed(2)}, oblAreaMax=${t.oblAreaMax?.toFixed(2)}, ` +
+					`compactOffMax2=${t.compactOffMax2.toFixed(2)}, gridShortMax2=${t.gridShortMax2.toFixed(2)}, ` +
+					`areaBound=${t.areaBoundF.toFixed(2)} — per-branch census radii; block-cap and join-den invariants asserted\n`
+				);
+			}
+		} else if (cfg.isTuned) {
 			const bk = `${this.k}:${aMax}`;
 			if (!regimeBannerEmitted.has(bk)) {
 				regimeBannerEmitted.add(bk);
@@ -805,6 +976,12 @@ export class PeriodSolver {
 		const seen = new Set<string>();
 		const push = (u: Cyclotomic, v: Cyclotomic): void => {
 			if (detSurd(u, v).isZero()) return;
+			// SMALLK_PROVEN: Gauss-reduce the basis before keying/filling. Same lattice, better
+			// basis: the F3b block-index invariant (needed ≤ 60 within the census boxes) is proved
+			// for REDUCED bases (angle ∈ [60°,120°] ⇒ area ≥ (√3/2)|u||v|); an unreduced skew pair
+			// (e.g. |u|=1, |v|=7.45, area 2.73) legitimately needs index 69 and would false-trip
+			// the invariant throw. Mode-gated: the default path stays byte-identical.
+			if (cfg.smallkProven) [u, v] = gaussReduceExact(u, v);
 			const key = latticeKey(u, v);
 			if (seen.has(key)) return;
 			seen.add(key);
@@ -827,7 +1004,9 @@ export class PeriodSolver {
 			return false;
 		});
 		if (compactReachTrunc > 0)
-			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (compact off-grid cap): ${compactReachTrunc} off-grid pool vectors exceed compactOffMax2=${compactOffMax2.toFixed(2)} and are not tried as round-cell bases\n`);
+			process.stderr.write(cfg.smallkProven
+				? `[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §3): ${compactReachTrunc} off-grid pool vectors exceed the round shell box compactOffMax2=${compactOffMax2.toFixed(2)} — no census shell reaches them\n`
+				: `[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (compact off-grid cap): ${compactReachTrunc} off-grid pool vectors exceed compactOffMax2=${compactOffMax2.toFixed(2)} and are not tried as round-cell bases\n`);
 		for (const [u, v] of lat.roundCells(roundPool, polySizes, ring, areaBoundF, undefined, areas)) push(u, v);
 
 		// (B) grid-aligned (rect + cmm) cells — short side from the SHORT pool vectors; the solved
@@ -842,7 +1021,9 @@ export class PeriodSolver {
 			return false;
 		});
 		if (gridShortTrunc > 0)
-			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid short-side cap): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} and are not tried as cmm/rect short sides\n`);
+			process.stderr.write(cfg.smallkProven
+				? `[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §4): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} = the non-rigid det box (short² ≤ det)\n`
+				: `[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid short-side cap): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} and are not tried as cmm/rect short sides\n`);
 		// The solved cmm/rect long axis is kept only when it is itself a realizable vertex difference
 		// (present in the pool) — this discards spurious solved lengths. ⚑ A long axis that is grid-aligned
 		// and within the area bound but exceeds the pool REACH (poolLmax) is a genuine tuned-pool
@@ -854,13 +1035,30 @@ export class PeriodSolver {
 		// length does not bound steps). That case is NOT distinguishable here and is NOT logged per
 		// candidate; it is covered only by the regime banner above.
 		let gridReachTrunc = 0;
+		let gridCensusSkip = 0;
+		const longAxisMax = cfg.active.longAxisMax ?? 0;
+		const gridAreaMax = cfg.active.gridAreaMax ?? 0;
 		for (const [u, v] of lat.gridAlignedCells(gridShorts, polySizes, ring, undefined, areas)) {
 			if (poolSet.has(v.key())) { push(u, v); continue; }
 			const vf = v.toVector();
+			if (cfg.smallkProven) {
+				// SMALLK_PROVEN: accept the solved axis by CENSUS BOUND, not pool membership
+				// (SMALLK_W_BOUND §4-§5: a grid-aligned k≤3 cell has det ≤ 4k·s_max, so its
+				// long/centering axis is ≤ gridAreaMax/|u| ≤ longAxisMax). This also removes the
+				// CB-8 ambiguous residual: no realizable axis is dropped for step-count reasons.
+				const uf = u.toVector();
+				const det = Math.abs(uf.x * vf.y - uf.y * vf.x);
+				const l2 = vf.x * vf.x + vf.y * vf.y;
+				if (det <= gridAreaMax + 1e-6 && l2 <= longAxisMax * longAxisMax + 1e-6) { push(u, v); continue; }
+				gridCensusSkip++; // beyond the proven non-rigid box ⇒ unrealizable at k ≤ 3 (theorem), skip
+				continue;
+			}
 			if (vf.x * vf.x + vf.y * vf.y > poolLmax * poolLmax + 1e-9) gridReachTrunc++;
 		}
 		if (gridReachTrunc > 0)
 			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid long-side reach): ${gridReachTrunc} solved cmm/rect long axes exceed poolLmax=${poolLmax.toFixed(2)} and are not enumerated\n`);
+		if (gridCensusSkip > 0)
+			process.stderr.write(`[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §4): ${gridCensusSkip} solved axes beyond the non-rigid box (det ≤ ${gridAreaMax.toFixed(2)}, |v| ≤ ${longAxisMax.toFixed(2)}) — unrealizable at k ≤ 3 by theorem\n`);
 
 		// `minVerts` (min vertex-classes per realizable cell area) drives BOTH the P0 pre-filter below AND
 		// the oblique sub-pool sizing in source (C); computed once here (hoisted from the P0 loop — pure,
@@ -871,6 +1069,17 @@ export class PeriodSolver {
 			? new Map<string, number>()
 			: vcAreaMinVerts(vcIncidences, tileArea, tileCorners, areaBoundF);
 
+		// C(Λ,S) feasibility sets (Fable P3 stage A, docs/LATTICE_ADMISSIBILITY_PROOF.md): per exact
+		// Bravais class, the exact cell areas realizable with per-orbit class counts DIVIDING the
+		// class's holohedry order (orbit-stabilizer + Lagrange), full VC support, integral tile
+		// counts. SCOPE — regular seeds only (star: the incidence identity is false, same rule as
+		// P0) and k ≥ 3 only (at k ≤ 2 the native runGate=0 path intentionally emits gate-doomed
+		// closures whose tile vectors need not be feasible; nothing to win there anyway). PS_P3=0
+		// restores today's behavior byte-for-byte.
+		const cFeas = !p3Off && this.k >= 3 && !seedHasStar
+			? vcFeasAreaSets(vcIncidences, tileArea, tileCorners, this.k, areaBoundF)
+			: null;
+
 		// (C) OBLIQUE (p1/p2) cells — the cor:box join-closure completion that reaches the Bravais classes
 		// the symmetry-pinned (A)/(B) cannot (k≥3 oblique cells t3046/t3055). Source (C) contributes ONLY
 		// `hol==2` lattices, so (A)/(B) remain the SOLE round/grid source and the k≤2 catalogue stays
@@ -879,9 +1088,20 @@ export class PeriodSolver {
 		// LOUDLY (INCOMPLETE-REGION, never silent), per route-a-proven-box.md / join-closure contract.
 		let obliqueCandidates = 0;
 		let obliqueTruncated: ObliqueTruncation['cause'] | null = null;
-		for (const [u, v] of lat.obliqueCells(pool, areas, ring, areaBoundF, poolLmax, minVerts, (info) => {
+		// SMALLK_PROVEN: oblique (hol 2) cells have det ≤ 2k·s_max (census L1) — 15× below the
+		// coarse cap; join-closure stays complete (JOIN_DEN_MAX=60 ≥ census sublattice index ≤ 28).
+		const oblAreaBound = cfg.smallkProven ? (cfg.active.oblAreaMax ?? areaBoundF) : areaBoundF;
+		for (const [u, v] of lat.obliqueCells(pool, areas, ring, oblAreaBound, poolLmax, minVerts, (info) => {
 			obliqueTruncated = info.cause;
-			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (oblique candidate stage): ${JSON.stringify(info)}\n`);
+			if (cfg.smallkProven && info.cause === 'join-waived') {
+				// Proof-anchored justification (SMALLK_W_BOUND §4 + L1): a needed join's sublattice
+				// index divides |det|/covol_min ≤ oblAreaMax/(√3/2) ≤ 28 at k ≤ 3, and nearRational
+				// is accept-when-unsure — so every waived join (irrational or den > 60) is provably
+				// not a k ≤ 3 lattice join. Informational, not an INCOMPLETE-REGION.
+				process.stderr.write(`[PeriodSolver k=${this.k}] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): ${JSON.stringify(info)}\n`);
+			} else {
+				process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (oblique candidate stage): ${JSON.stringify(info)}\n`);
+			}
 		})) {
 			const before = seen.size;
 			push(u, v);
@@ -900,11 +1120,25 @@ export class PeriodSolver {
 		// it is NOT a completeness knob; it removes only lattices that can carry no k-uniform tiling
 		// with these VCs. hol(Λ) never underestimates (it falls back to 12), so the floor is never too
 		// low. Cached with the list.
+		// --- C(Λ,S): divisor-feasibility pre-filter (Fable P3 stage A). ---
+		// Skip a candidate Λ when NO support-preserving orbit-type vector with per-orbit class
+		// counts dividing hol(Λ) realizes |det Λ| exactly — a proven NECESSARY condition for Λ to
+		// carry a primitive, full-support, exactly-k-uniform cell (docs/LATTICE_ADMISSIBILITY_PROOF.md;
+		// V0 scout: 0 violations over 1311 real candidates, 79% of k=3 fill time on rejected
+		// lattices). Licensed, NOT a completeness knob. Two structural notes:
+		//  - CB-7/allKeys: same justification shape as P0 — if a discarded supercell's tiling were
+		//    k-uniform with this seed's support, its PRIMITIVE lattice would satisfy C (the theorem)
+		//    and survive; a C-skipped primitive means no such tiling, so the discard is sound.
+		//  - OP-3: |det| and the Bravais class are grid-isometry invariants, so C's verdict is
+		//    constant on each grid orbit — the filter can never split an orbit's members.
 		const kept: [Cyclotomic, Cyclotomic][] = [];
 		let p0Skipped = 0;
+		let cSkipped = 0;
 		for (const [u, v] of lattices) {
-			const mv = minVerts.get(areaKey(detSurd(u, v).abs()));
+			const ak = areaKey(detSurd(u, v).abs());
+			const mv = minVerts.get(ak);
 			if (mv !== undefined && mv > this.k * holohedry(u, v)) { p0Skipped++; continue; }
+			if (cFeas && !cFeas.get(bravaisClassExact(u, v))!.has(ak)) { cSkipped++; continue; }
 			kept.push([u, v]);
 		}
 
@@ -970,7 +1204,7 @@ export class PeriodSolver {
 		// must not alarm on it (observed live: pure-triangle = 1-uniform supercell completions inside
 		// multi-VC k=2 seeds; vcAreaSet uses v ≥ 1 for EVERY VC, so their primitive area √3/2 is
 		// excluded by construction).
-		const result = { lattices: candidates, p0Skipped, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
+		const result = { lattices: candidates, p0Skipped, cSkipped, feas: cFeas, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
@@ -1032,6 +1266,16 @@ export class PeriodSolver {
 		// single ctx chokepoint) so the external-certify path is covered too; solve counts it in diag.
 		const blockIndexCapBinds = blockIndexRangeNeeded(cellDiam, cellArea) > BLOCK_INDEX_CAP;
 		if (blockIndexCapBinds) {
+			if (SMALLK_PROVEN_MODE) {
+				// Proven-mode invariant: every candidate inside the census boxes needs index ≤ 60
+				// (worst rect: ceil((2·24.13+10)/1)+1 = 60). A bind here means an out-of-box
+				// candidate slipped past the census filters — a soundness bug, not a tuning event.
+				throw new Error(
+					`SMALLK_PROVEN invariant violated: block index cap binds for lattice ${latticeKey(u, v)} ` +
+					`(needs ${blockIndexRangeNeeded(cellDiam, cellArea)} > ${BLOCK_INDEX_CAP}; diam=${cellDiam.toFixed(2)}, area=${cellArea.toFixed(2)}) — ` +
+					`census filter leak, fix before trusting the run`
+				);
+			}
 			process.stderr.write(
 				`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (block index cap): lattice ${latticeKey(u, v)} needs ` +
 				`index range ${blockIndexRangeNeeded(cellDiam, cellArea)} > ${BLOCK_INDEX_CAP} — blocks under-built; ` +
@@ -1056,6 +1300,14 @@ export class PeriodSolver {
 	/** All complete torus tilings extending the seed core under the fixed lattice in `ctx`.
 	 *  Each result is one representative polygon per lattice class (a fundamental cell). */
 	private torusFill(corePolys: Polygon[], ctx: FillCtx, timedOut: () => boolean, diag: PeriodSolverDiag): Polygon[][] {
+		// BRIDGE (USE_NATIVE_FILL=1): run this fill on the native engine. Regular seeds only — star cores
+		// fall back to the TS DFS. runGate mirrors ctx.gate (early k-gate ON iff the enumeration set it, k≥3).
+		// Emitted cells are byte-equivalent to the TS DFS; the inner diag counters are not populated in this
+		// mode (only the emitted set + solve-level rawCells count), which is fine for the enumeration output.
+		if (process.env.USE_NATIVE_FILL === '1' && ctx.starTiles.length === 0) return nativeFill(corePolys, ctx, this.k, ctx.gate != null);
+		const FP = FILL_PROF; // fill-internals profiler (module-global; null when off ⇒ byte-identical)
+		if (FP) FP.c.fills++;
+		const _s0 = FP ? fpNow() : 0; // per-fill setup timer (closed at every setup exit + before the DFS loop)
 		const memo = new Map<string, { key: string; poly: Polygon }>();
 		// Initial cell = seed polygons reduced into canonical lattice-class representatives.
 		const initial = this.dedupModLattice(corePolys, ctx, memo);
@@ -1070,6 +1322,7 @@ export class PeriodSolver {
 		for (const p of initial) initialArea += tileAreaFloatFor(p);
 		if (initialArea > ctx.cellArea + 1e-6) {
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: core area ${initialArea.toFixed(2)} > cell ${ctx.cellArea.toFixed(2)} → reject\n`);
+			if (FP) FP.t.setup += fpNow() - _s0;
 			return [];
 		}
 		// Cheap pre-block reject: if a core rep properly overlaps one of its 8 nearest lattice translates,
@@ -1078,14 +1331,18 @@ export class PeriodSolver {
 		// rejects candidates the full check would also reject (a valid tiling never has a tile overlapping
 		// its own translate ⇒ never drops a real tiling); results are byte-identical.
 		if (this.coreSelfOverlapsNearest(initial, ctx)) {
-			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: core self-overlap (nearest translate) → reject\n`); return [];
+			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: core self-overlap (nearest translate) → reject\n`);
+			if (FP) FP.t.setup += fpNow() - _s0;
+			return [];
 		}
 		// Build the initial cell's block and reject if the seed self-overlaps mod Λ. Reuse this block as
 		// the DFS root's block — the DFS carries each cell's block and extends it by ONE new tile's lattice
 		// translates per child instead of rebuilding the whole block every pop (audit perf C1).
 		const initialBlock = this.buildBlock(initial, ctx, 5);
-		if (this.blockHasProperOverlap(initialBlock, ctx)) {
-			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: initial self-overlap → reject\n`); return [];
+		if (this.blockOverlapPeriodic(initial, initialBlock, ctx, 5)) { // RANK-1 periodic reduction (Rabs=5)
+			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: initial self-overlap → reject\n`);
+			if (FP) FP.t.setup += fpNow() - _s0;
+			return [];
 		}
 
 		// P1 orbit-floor state: the vertex classes mod Λ present so far (`vReps`), carried on the stack
@@ -1095,21 +1352,16 @@ export class PeriodSolver {
 		// guarded loudly under the tuned pool — CB-7). Every k-uniform tiling has V ≤
 		// k·hol(Λ) and V is monotone, so a branch leading to a valid tiling is NEVER pruned (byte-identical).
 		//
-		// C3 — UNSOUND for stars, so SKIP P1 for star seeds (sound loosening, doctrine: "completeness
-		// knobs are not speed dials"). `extendV` counts every tile corner as a vertex class, but a star's
-		// DENTS land at t=2 dent-fill points that are NOT counted vertices — so `vReps` over-counts V and
-		// could prune a branch leading to a valid star tiling (a DROP = incompleteness). The fill +
-		// certificate + orbit-count gates still reject invalid candidates; only speed is affected (maxCellPolys
-		// area cap still bounds the cell). The tightened bound (V = [Σ_reg(n−2)+Σ_star(2nₛ−2)]/2 − D, D =
-		// dent-fill count) needs D bounded per cell — TA-owed (Increment 3).
-		const skipP1 = ctx.starTiles.length > 0;
-		if (skipP1 && process.env.SPIKE_TRACE === '1') {
-			spikeBreak(
-				'PeriodSolver.ts torusFill P1 orbit-floor prune (vReps > k·hol)',
-				'V ≤ k·hol(Λ) counted over ALL tile corners (regular Euler relation)',
-				'a star DENT lands at a t=2 dent-fill NON-vertex wrongly counted in V ⇒ P1 could prune a valid star branch (a DROP)',
-				'LOOSENED: P1 disabled for star seeds (sound; maxCellPolys still bounds the cell). Tightened bound = Increment 3',
-			);
+		// C3 — P1 orbit-floor is now SOUND for star seeds too. `extendV` (below) counts only TRUE vertices
+		// (a star's convex POINTS, even indices), excluding its DENTS (odd indices — t=2 dent-fill
+		// NON-vertices), so `vReps` is a sound LOWER bound on V (vReps ≤ V). Since every k-uniform tiling
+		// has V ≤ k·hol(Λ) and V is monotone, a branch leading to a valid tiling is never pruned — for
+		// regular AND star seeds. (The old code disabled P1 for stars because extendV over-counted dents.)
+		// OP-1 (the occ/type-prune, prop:typeprune) stays OFF for stars via `skipOP1` — its star soundness
+		// is TA-owed (TH-13). The separate Fig-3 dent-AT-vertex fill gap (below) is unchanged by this.
+		const seedHasStar = ctx.starTiles.length > 0;
+		const skipOP1 = seedHasStar;
+		if (seedHasStar && process.env.SPIKE_TRACE === '1') {
 			spikeBreak(
 				'PeriodSolver.ts torusFill star gap-fill — DENT-seating not attempted',
 				'the fill loop seats only star POINTS (interior α) into a gap',
@@ -1120,36 +1372,83 @@ export class PeriodSolver {
 		const uL = ctx.u, vL = ctx.v;
 		const extendV = (parent: Cyclotomic[], poly: Polygon): Cyclotomic[] => {
 			const out = parent.slice();
-			for (const w of poly.exactVertices!) {
+			const verts = poly.exactVertices!;
+			for (let i = 0; i < verts.length; i++) {
+				// A star's DENTS (odd indices; even=point/true-vertex per ExactStarPolygon) sit at t=2
+				// dent-fill NON-vertices, so they must not be counted as vertex classes — excluding them
+				// makes vReps ≤ true V (the sound lower bound P1's orbit-floor prune needs to be drop-free
+				// for stars). Regular polygons have no dents ⇒ every corner counted (byte-identical).
+				if (poly.isStar && i % 2 === 1) continue;
+				const w = verts[i];
 				if (!out.some((r) => latticeEquivExact(w, r, uL, vL))) out.push(w);
 			}
 			return out;
 		};
 		let initialV: Cyclotomic[] = [];
 		for (const p of initial) initialV = extendV(initialV, p);
-		if (!skipP1 && initialV.length > ctx.orbitFloor) {
+		if (initialV.length > ctx.orbitFloor) {
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: seed core ${initialV.length} vertex classes > floor ${ctx.orbitFloor} → reject\n`);
+			if (FP) FP.t.setup += fpNow() - _s0;
 			return [];
+		}
+
+		// P3 stage B — in-fill tile-multiset domination (docs/LATTICE_ADMISSIBILITY_PROOF.md). Every
+		// EMITTED cell's per-size tile counts equal a member of F*(Λ) (`ctx.feasVectors`), and counts
+		// grow monotonically one tile per step, so a state dominated by NO member is a dead branch.
+		// `feasVectors` is set only on the k≥3 regular enumeration path; undefined ⇒ all of this is
+		// skipped and the DFS is byte-identical to pre-P3 behavior.
+		const feas = ctx.feasVectors;
+		const nSizes = ctx.polySizes.length;
+		const sizeIdxOf = feas ? new Map(ctx.polySizes.map((n, i) => [n, i])) : null;
+		const dominated = (c: number[]): boolean => feas!.some((f) => { for (let i = 0; i < nSizes; i++) if (c[i] > f[i]) return false; return true; });
+		let initialCounts: number[] | null = null;
+		if (feas && sizeIdxOf) {
+			initialCounts = new Array<number>(nSizes).fill(0);
+			for (const p of initial) initialCounts[sizeIdxOf.get(p.n)!]++;
+			if (!dominated(initialCounts)) {
+				diag.p3Pruned++;
+				if (FP) FP.t.setup += fpNow() - _s0;
+				return [];
+			}
 		}
 
 		const results: Polygon[][] = [];
 		const seenState = new Set<string>();
-		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[] }[] = [{ reps: initial, block: initialBlock, vReps: initialV }];
+		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[]; counts: number[] | null }[] = [{ reps: initial, block: initialBlock, vReps: initialV, counts: initialCounts }];
 		let pops = 0;
 		const t0 = PeriodSolver.DEBUG ? Date.now() : 0;
+		if (FP) FP.t.setup += fpNow() - _s0; // seed survived setup → close the setup bracket, enter the DFS
 
 		while (stack.length > 0) {
 			if (timedOut()) break;
-			const { reps, block, vReps } = stack.pop()!;
+			const { reps, block, vReps, counts } = stack.pop()!;
+			let _t = FP ? fpNow() : 0;
 			const stateKey = this.stateKey(reps);
-			if (seenState.has(stateKey)) continue;
+			const seen = seenState.has(stateKey);
+			if (FP) { FP.t.dedupKey += fpNow() - _t; if (seen) FP.c.seenHits++; }
+			if (seen) continue;
 			seenState.add(stateKey);
 			pops++;
-			if (reps.length > ctx.maxCellPolys) continue;
+			if (FP) FP.c.pops++;
+			if (reps.length > ctx.maxCellPolys) { if (FP) FP.c.capSkips++; continue; }
 
+			_t = FP ? fpNow() : 0;
 			const analysis = this.analyze(reps, ctx, block);
-			if (analysis.contradiction) continue;
+			if (FP) FP.t.analyze += fpNow() - _t;
+			if (analysis.contradiction) { if (FP) FP.c.contradictions++; continue; }
 			if (!analysis.openVertex) {
+				if (FP) FP.c.closures++;
+				// EARLY k-GATE (before the certificate): orbit count is a property of the closed cell and is
+				// invariant to certification (isCompleteTiling / isPrimitive do not mutate reps). If it is ≠ k
+				// the post-pass gate would reject this cell anyway, so reject NOW and skip the buildBlock+overlap
+				// certificate AND the isPrimitive search. Reject-only: a cell that would be EMITTED (orbits = k)
+				// is never dropped, because the same fn on the same reps yields the same count. null ⇒ undecided
+				// ⇒ do NOT reject (matches the post-pass `orbits !== null && orbits !== k`). This is where the
+				// k=3 catastrophic tail (large lattices closing into many orbit>k tilings) stops being paid.
+				if (ctx.gate) {
+					const orbits = ctx.gate(reps);
+					if (orbits !== null && orbits !== this.k) { diag.earlyGateRejected++; continue; }
+				}
 				// No open vertex within a full cell ⇒ torus closed. Certify, then OP-1 (prop:typeprune):
 				// (i) V<k ⇒ orbits ≤ V < k, the gate would reject — skip the
 				// 7×7 exact symmetry search; (ii) occurring VC-type set ⊊ allowed ⇒ the cell does not
@@ -1157,21 +1456,32 @@ export class PeriodSolver {
 				// without gate or primitivity scan. The size-equality test (ii) is sound because the
 				// certificate already enforces occ ⊆ allowed (any disallowed name returns false) and both
 				// sides live in the same canonicalVCName namespace, so |occ| = |allowed| ⇔ occ = allowed.
-				// Both OFF for star seeds (P0/P1 doctrine: vReps over-counts star dents — sound but
-				// conservative — and TH-13 is open). Then reject supercells (CB-7 guard unchanged).
-				const occ: Set<string> | undefined = skipP1 ? undefined : new Set<string>();
-				if (this.isCompleteTiling(reps, ctx, occ)) {
-					if (occ !== undefined && vReps.length < this.k) { diag.vBelowKSkipped++; continue; }
-					if (occ !== undefined && occ.size !== ctx.allowed.size) { diag.p2Skipped++; continue; }
-					if (this.isPrimitive(reps, ctx, memo, diag)) results.push(reps);
+				// OP-1 OFF for star seeds (its type-prune star soundness is TA-owed, TH-13 open); P1
+				// orbit-floor is now ON for stars (extendV excludes dents). Then reject supercells (CB-7 unchanged).
+				const occ: Set<string> | undefined = skipOP1 ? undefined : new Set<string>();
+				_t = FP ? fpNow() : 0;
+				if (FP) FP.c.certCalls++;
+				// RANK-2: OP-1 (V<k, prop:typeprune) is now applied INSIDE isCompleteTiling before the overlap
+				// leg via `opDoom` (non-star path only) — a doomed closure returns false (counted in diag) and
+				// skips the overlap work. Same emitted output as the old post-certificate discard.
+				const opDoom = skipOP1 ? undefined : { vReps, diag };
+				const cert = this.isCompleteTiling(reps, ctx, occ, opDoom);
+				if (FP) { FP.t.certify += fpNow() - _t; if (cert) FP.c.certPass++; }
+				if (cert) {
+					_t = FP ? fpNow() : 0;
+					if (FP) FP.c.primCalls++;
+					const prim = this.isPrimitive(reps, ctx, memo, diag);
+					if (FP) { FP.t.primitive += fpNow() - _t; if (prim) FP.c.primTrue++; }
+					if (prim) results.push(reps);
 				}
 				continue;
 			}
 
 			// Corner-complete the chosen open vertex: place one polygon into its CW-most gap.
+			_t = FP ? fpNow() : 0;
 			const { vertex: w, intervals } = analysis.openVertex;
 			const d0 = this.gapStartRay(intervals, ctx.N);
-			if (d0 < 0) continue; // no fillable gap (shouldn't happen for an open vertex)
+			if (d0 < 0) { if (FP) FP.t.expand += fpNow() - _t; continue; } // no fillable gap (shouldn't happen for an open vertex)
 			const repsKeys = new Set(reps.map((r) => r.exactKey())); // reps are canonical class reps
 
 			// Candidate corners for the CW-most gap: every regular n-gon (a corner of interior `regular(n)`)
@@ -1179,25 +1489,36 @@ export class PeriodSolver {
 			// `w` and outgoing edge `d0`, covering [d0, d0+interior]; the post-placement overlap + the
 			// downstream `analyze` (over-fill / VC) reject the ones that do not fit.
 			const place = (P: Polygon) => {
-				if (this.properOverlapWithBlock(P, block, ctx)) return;
+				if (FP) FP.c.places++;
+				if (this.properOverlapWithBlock(P, block, ctx)) { if (FP) FP.c.overlapRej++; return; }
 				// The new tile reduces to ONE canonical lattice-class rep. If already present the branch
 				// makes no progress (matches the old dedupModLattice length check). The child's block =
 				// this block + the new rep's lattice translates — disjoint classes, so a plain set union;
 				// no full rebuild (audit perf C1). Block order is irrelevant to every consumer.
 				const pc = this.canonicalRep(P, ctx, memo);
-				if (repsKeys.has(pc.key)) return; // P already present mod Λ ⇒ no progress
+				if (repsKeys.has(pc.key)) { if (FP) FP.c.dupRej++; return; } // P already present mod Λ ⇒ no progress
 				const next = [...reps, pc.poly];
-				if (next.length > ctx.maxCellPolys) return;
+				if (next.length > ctx.maxCellPolys) { if (FP) FP.c.capRej++; return; }
 				const childV = extendV(vReps, pc.poly);
-				if (!skipP1 && childV.length > ctx.orbitFloor) { diag.p1Pruned++; return; } // P1 orbit-floor prune
+				if (childV.length > ctx.orbitFloor) { diag.p1Pruned++; if (FP) FP.c.p1Pruned++; return; } // P1 orbit-floor prune (sound for stars: extendV excludes dents)
+				// P3 stage B: the child's per-size counts must stay dominated by some F*(Λ) member —
+				// else no completion can be an emitted cell (counts are monotone; see the header note).
+				let childCounts: number[] | null = null;
+				if (counts && sizeIdxOf) {
+					childCounts = counts.slice();
+					childCounts[sizeIdxOf.get(pc.poly.n)!]++;
+					if (!dominated(childCounts)) { diag.p3Pruned++; return; }
+				}
 				const childBlock = block.concat(this.buildBlock([pc.poly], ctx, 5));
-				stack.push({ reps: next, block: childBlock, vReps: childV });
+				stack.push({ reps: next, block: childBlock, vReps: childV, counts: childCounts });
+				if (FP) FP.c.pushed++;
 			};
 
 			for (const n of ctx.polySizes) place(RegularPolygon.fromAnchorAndDirExact(n, w, d0));
 			// C3: seat each seed star's POINT (the convex corner, interior α) into the gap. Dent-seating
 			// (the Fig-3 dent-at-vertex class) is NOT yet attempted — flagged loudly below.
 			for (const st of ctx.starTiles) place(ExactStarPolygon.isotoxal(st.n, st.alphaU, w, d0));
+			if (FP) FP.t.expand += fpNow() - _t;
 		}
 		if (PeriodSolver.DEBUG) process.stderr.write(`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`);
 		return results;
@@ -1315,6 +1636,19 @@ export class PeriodSolver {
 		return this.isCompleteTiling(cell.cellPolygons, ctx);
 	}
 
+	/** TEST-ONLY differential harness (tests/certify-overlap-periodic.test.ts): build the certificate
+	 *  block for a cell and run BOTH the old O(block²) overlap check and the RANK-1 periodic reduction,
+	 *  so the test can assert they agree. Not used in production. Returns null on degenerate input. */
+	_testOnlyBlockOverlap(cellPolygons: Polygon[], u: Cyclotomic, v: Cyclotomic): { old: boolean; periodic: boolean } | null {
+		const ring = u.ring;
+		const polySizes = Array.from(new Set(cellPolygons.filter((p) => !p.isStar).map((p) => p.n))).sort((a, b) => a - b);
+		const ctx = this.makeCtx(u, v, ring, new Set(), polySizes.length ? polySizes : [3], Number.MAX_SAFE_INTEGER);
+		if (!ctx) return null;
+		const Rabs = ctx.cellDiam + 8;
+		const block = this.buildBlock(cellPolygons, ctx, Rabs);
+		return { old: this.blockHasProperOverlap(block, ctx), periodic: this.blockOverlapPeriodic(cellPolygons, block, ctx, Rabs) };
+	}
+
 	/** Exact gap-free certificate for a closed torus tiling (cell `reps` + lattice in ctx):
 	 *  (a) no proper overlap in a block, (b) every vertex within one cell of the origin is fully
 	 *  surrounded (2π) with an allowed VC, and (c) total cell area = |det Λ| (gap-free area check).
@@ -1326,24 +1660,32 @@ export class PeriodSolver {
 	 *  cell), and the certificate judges all of them, so on a true return `occurringOut` holds the
 	 *  full occurring VC-type set of the periodic tiling.  On a false return the set may be empty or
 	 *  partial — early rejects (gap/over-full vertex, disallowed name) bail mid-collection. */
-	isCompleteTiling(reps: Polygon[], ctx: FillCtx, occurringOut?: Set<string>): boolean {
+	isCompleteTiling(reps: Polygon[], ctx: FillCtx, occurringOut?: Set<string>, opDoom?: { vReps: Cyclotomic[]; diag: PeriodSolverDiag }): boolean {
 		// (c) area: cell polygons must exactly cover one fundamental domain. CB-1: the DECISION is the
 		// exact Surd comparison Σ tileAreaSurdFor(p) == |det Λ| (thesis leg (c): "equals |det Λ| exactly");
 		// the float sum is kept as a broadphase PRE-REJECT only. Soundness of the broadphase: float error
 		// is ≲1e-10 over ≤10³ tiles, so exact-equal cells always pass it (it can only reject cells the
 		// exact test would also reject). Star-aware in both layers (exact shoelace = the tile's TRUE area,
 		// not regularArea(n) — which would reject the valid 4(j) cell).
+		const FP = FILL_PROF; // certify sub-phase timers (distortion-free: ~1 call/closure)
+		let _c = FP ? fpNow() : 0;
 		const area = reps.reduce((s, p) => s + tileAreaFloatFor(p), 0);
-		if (Math.abs(area - ctx.cellArea) > 1e-4 * Math.max(1, ctx.cellArea)) return false;
+		if (Math.abs(area - ctx.cellArea) > 1e-4 * Math.max(1, ctx.cellArea)) { if (FP) FP.ct.area += fpNow() - _c; return false; }
 		let areaSurd = Surd.ZERO;
 		for (const p of reps) areaSurd = areaSurd.add(tileAreaSurdFor(p));
-		if (areaSurd.cmp(ctx.cellAreaSurd) !== 0) return false;
+		const areaEq = areaSurd.cmp(ctx.cellAreaSurd) === 0;
+		if (FP) FP.ct.area += fpNow() - _c;
+		if (!areaEq) return false;
 
-		const block = this.buildBlock(reps, ctx, ctx.cellDiam + 8);
-		// (a) no proper overlap.
-		if (this.blockHasProperOverlap(block, ctx)) return false;
+		_c = FP ? fpNow() : 0;
+		const certRabs = ctx.cellDiam + 8;
+		const block = this.buildBlock(reps, ctx, certRabs);
+		if (FP) FP.ct.buildBlock += fpNow() - _c;
 
-		// (b) every vertex within one cell is a fully-surrounded allowed VC.
+		// (b) every vertex within one cell is a fully-surrounded allowed VC. RANK-2: the vertex judge is
+		// evaluated BEFORE the overlap leg (a) — order is irrelevant to the boolean result (both are AND-ed),
+		// but doing it first lets the OP-1 short-circuit below skip the overlap leg for doomed closures.
+		_c = FP ? fpNow() : 0;
 		const judgeR = ctx.cellDiam + 0.5;
 		const inc = new Map<string, { v: Cyclotomic; polys: { p: Polygon; idx: number }[] }>();
 		for (const p of block) {
@@ -1362,16 +1704,39 @@ export class PeriodSolver {
 			judged++;
 			const intervals = this.coveredIntervals(v, polys, ctx.N);
 			const totalUnits = intervals.reduce((s, it) => s + it.units, 0);
-			if (Math.abs(totalUnits - ctx.N) > 0.5) return false; // not surrounded (gap) or over-full
+			if (Math.abs(totalUnits - ctx.N) > 0.5) { if (FP) FP.ct.judge += fpNow() - _c; return false; } // not surrounded (gap) or over-full
 			// A2: a 2-tile point at 2π is a legal dent-fill (Myers non-vertex), not a counted VC — accept
 			// it without requiring an allowed-VC name. (Regular path: t≥3 always ⇒ this never fires.)
 			const t = new Set(polys.map(({ p }) => p.exactKey())).size;
 			if (t < 3) continue;
 			const name = canonicalVCName(this.vcRingNames(v, polys));
-			if (!ctx.allowed.has(name)) return false;
+			if (!ctx.allowed.has(name)) { if (FP) FP.ct.judge += fpNow() - _c; return false; }
 			occurringOut?.add(name);
 		}
-		return judged > 0;
+		if (FP) FP.ct.judge += fpNow() - _c;
+		if (judged === 0) return false;
+
+		// RANK-2 (prop:typeprune, moved BEFORE the overlap leg): on the non-star closure path (`opDoom`
+		// provided), a cell whose vertex-class count V < k, or whose occurring VC-type set ⊊ the seed's
+		// allowed set, can never be a valid k-uniform tiling of THIS seed — the caller discards it either
+		// way. Deciding here skips the (Rank-1-reduced) overlap leg for those ~40% of closures. Output is
+		// byte-identical (the cell is not emitted regardless); only the diag counters move earlier — a cell
+		// that is BOTH doomed AND has a non-vertex interior overlap now counts in vBelowK/p2 instead of an
+		// uncounted overlap-reject (rare/none for the regular catalogue, since overlaps surface as over-full
+		// vertices already caught by the judge above). OFF for stars (opDoom undefined ⇒ full certificate). */
+		if (opDoom) {
+			if (opDoom.vReps.length < this.k) { opDoom.diag.vBelowKSkipped++; return false; }
+			if (occurringOut && occurringOut.size !== ctx.allowed.size) { opDoom.diag.p2Skipped++; return false; }
+		}
+
+		// (a) no proper overlap. RANK-1: periodic reduction (reps-vs-block) — byte-identical to the old
+		// O(block²) all-pairs check under the reach guard (see blockOverlapPeriodic), O(reps·block).
+		_c = FP ? fpNow() : 0;
+		const hasOverlap = this.blockOverlapPeriodic(reps, block, ctx, certRabs);
+		if (FP) FP.ct.overlap += fpNow() - _c;
+		if (hasOverlap) return false;
+
+		return true;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1649,7 +2014,7 @@ export class PeriodSolver {
 		return false;
 	}
 
-	/** True iff two distinct (non-coincident) tiles in the block properly overlap. */
+	/** True iff two distinct (non-coincident) tiles in the block properly overlap. O(|block|²). */
 	private blockHasProperOverlap(block: Polygon[], _ctx: FillCtx): boolean {
 		const boxes = block.map((p) => bbox(p));
 		for (let i = 0; i < block.length; i++) {
@@ -1659,6 +2024,39 @@ export class PeriodSolver {
 			}
 		}
 		return false;
+	}
+
+	/** RANK-1 optimization: periodic reduction of `blockHasProperOverlap`. The block is a union of Λ-
+	 *  translates of the fundamental `reps`, so any proper overlap A∩B has a rep witness: translate A onto
+	 *  its rep rep_a, and B onto rep_b+(λ_B−λ_A); then rep_a overlaps that translate, which lies within
+	 *  cellDiam+2·maxCircum of the origin — inside the block when its reach (Rabs+cellDiam+2) covers that.
+	 *  So `reps.some(rep ⇒ rep overlaps a block tile)` finds EXACTLY the same overlaps as the O(|block|²)
+	 *  all-pairs scan, in O(|reps|·|block|) (and it reuses properOverlapWithBlock's cullR distance cull,
+	 *  which blockHasProperOverlap lacks). NEW-true ⟹ OLD-true unconditionally (never drops a valid tiling);
+	 *  NEW≡OLD given the reach guard (never wrongly accepts an overlapping cell). Differential-tested
+	 *  byte-identical to blockHasProperOverlap over the certified k≤3 catalogue + constructed overlaps
+	 *  (tests/certify-overlap-periodic.test.ts).
+	 *
+	 *  Guard (EXACT witness-containment, not a maxCircum proxy): the rep witness rep_b+(λ_B−λ_A) that
+	 *  properOverlapWithBlock must find sits at |centroid| ≤ (canonicalRep reach 1.5·cellDiam+0.1) +
+	 *  2·maxCircum, and buildBlock keeps tiles with centroid ≤ limit = Rabs+cellDiam+2. So the reduction is
+	 *  sound iff 1.5·cellDiam+0.1+2·maxCircum ≤ Rabs+cellDiam+2. The old `2·maxCircum ≤ Rabs+2` proxy omitted
+	 *  the 1.5·cellDiam canonicalRep reach — adequate only because maxCircum ≤ 1.932 over {3,4,6,8,12} sits
+	 *  far below both thresholds, but a future large-circumradius star (acute isotoxal point, circum > ~5)
+	 *  could slip the gap silently (Rank-1 review, 2026-07-09). This exact condition never trips the certify
+	 *  leg (Rabs=cellDiam+8) for the regular palette ⇒ byte-identical/digest-unchanged there, closes the
+	 *  setup-leg gap too, and falls back to the exact O(|block|²) check with a loud flag when it can't be
+	 *  guaranteed (correctness over speed — never a silent wrong-accept). */
+	private blockOverlapPeriodic(reps: Polygon[], block: Polygon[], ctx: FillCtx, Rabs: number): boolean {
+		if (1.5 * ctx.cellDiam + 0.1 + 2 * ctx.maxCircum > Rabs + ctx.cellDiam + 2) {
+			process.stderr.write(
+				`[PeriodSolver k=${this.k}] ⚑ blockOverlapPeriodic witness-containment guard: ` +
+				`1.5·cellDiam+0.1+2·maxCircum ${(1.5 * ctx.cellDiam + 0.1 + 2 * ctx.maxCircum).toFixed(2)} > block reach ` +
+				`${(Rabs + ctx.cellDiam + 2).toFixed(2)} — a rep's overlap partner may escape the block; falling back to O(block²)\n`
+			);
+			return this.blockHasProperOverlap(block, ctx);
+		}
+		return reps.some((rep) => this.properOverlapWithBlock(rep, block, ctx));
 	}
 
 	/** Canonical (mirror-merged) VC name at a vertex from the polygons touching it (angular order).
@@ -1679,7 +2077,7 @@ export class PeriodSolver {
 
 // --- internal types ---
 
-type FillCtx = {
+export type FillCtx = {
 	u: Cyclotomic;
 	v: Cyclotomic;
 	ring: Cyclotomic['ring'];
@@ -1700,6 +2098,8 @@ type FillCtx = {
 	candidateKeys: Set<string>; // ALL enumerated candidate lattice keys (pre-P0) — CB-7 guard universe
 	admissibleAreaKeys: Set<string>; // admissible cell-area keys (the seed's area ladder) — CB-7 guard
 	blockIndexCapBinds: boolean; // F3b (lem:fillreach): buildBlock's index cap WOULD bind for this lattice ⇒ blocks may be under-built ⇒ results for this candidate are not completeness-grade (⚑ emitted at makeCtx, counted in diag by solve)
+	gate?: (reps: Polygon[]) => number | null; // EARLY k-GATE orbit-count fn — the SAME function the post-pass gate uses (checker.countVertexOrbits, or countVertexOrbitsFast under PS_FAST_GATE). Set ONLY on the enumeration path (solve); undefined on the single-cell verify paths ⇒ no early gate there. When present, torusFill rejects a closed cell with orbit count ≠ k before the certificate — sound reject-only.
+	feasVectors?: number[][]; // P3 stage B: F*(Λ) — Pareto-maximal feasible per-size tile counts (aligned to polySizes ascending). Set ONLY on the enumeration path at k ≥ 3 for regular seeds (same scope as the C pre-filter); undefined ⇒ the domination prune is off and the fill is byte-identical to pre-P3 behavior.
 };
 
 type Interval = { start: number; units: number; n: number };
@@ -1711,7 +2111,7 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, fanLattices: 0, p0Skipped: 0, orbitSkipped: 0, p1Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
+	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, earlyGateRejected: 0, fanLattices: 0, p0Skipped: 0, cSkipped: 0, orbitSkipped: 0, p1Pruned: 0, p3Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
 }
 
 /**
@@ -1775,7 +2175,7 @@ export function latticeKeySet(a: Cyclotomic, b: Cyclotomic): Set<string> {
 /** Exact test: a − b ∈ Λ = ℤu + ℤv. The integer combo is guessed by a float solve, then verified
  *  EXACTLY (`diff.sub(recon).isZero()`) — never a false positive; false negatives are excluded for
  *  real periods (minLen ≥ 0.9, so the solve is well-conditioned). Used to count vertex classes. */
-function latticeEquivExact(a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclotomic): boolean {
+export function latticeEquivExact(a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclotomic): boolean {
 	const diff = a.sub(b);
 	if (diff.isZero()) return true;
 	const d = diff.toVector(), au = u.toVector(), av = v.toVector();

@@ -38,11 +38,57 @@ const JOIN_DEN_MAX = 60;
 function isNearInt(x: number): boolean {
 	return Math.abs(x - Math.round(x)) < 1e-9;
 }
-/** True iff `x` is within tolerance of a rational p/q with q ≤ JOIN_DEN_MAX (float broadphase). */
-function nearRational(x: number): boolean {
+/** True iff `x` is within tolerance of a rational p/q with q ≤ JOIN_DEN_MAX (float broadphase).
+ *  The reference predicate (kept verbatim as the slow path — the DECIDER whenever the fast path
+ *  cannot prove FALSE): ∃ q ≤ JOIN_DEN_MAX with |x·q − round(x·q)| < 1e-7. */
+function nearRationalLoop(x: number): boolean {
 	for (let q = 1; q <= JOIN_DEN_MAX; q++) if (Math.abs(x * q - Math.round(x * q)) < 1e-7) return true;
 	return false;
 }
+
+/** Sorted Farey grid F_{JOIN_DEN_MAX} on [0,1]: every reduced p/q with q ≤ JOIN_DEN_MAX (~1130
+ *  entries at 60), with per-entry acceptance radius 1e-7/q. Any x accepted by the loop at some q
+ *  lies within 1e-7/q′ of the REDUCED fraction p′/q′ (q′ | q, and q·|x−p′/q′| ≥ q′·|x−p′/q′|), so
+ *  the accept set is exactly ∪ B(p/q, 1e-7/q) over the grid. Distinct grid points are ≥ 1/q₁q₂ ≥
+ *  1/3600 apart ≫ 2e-7, so at most one entry can accept a given x. */
+const FAREY: { v: number; q: number }[] = (() => {
+	const out: { v: number; q: number }[] = [];
+	const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+	for (let q = 1; q <= JOIN_DEN_MAX; q++)
+		for (let p = 0; p <= q; p++) if (gcd(p, q) === 1) out.push({ v: p / q, q });
+	out.sort((a, b) => a.v - b.v);
+	return out;
+})();
+
+/**
+ * Fast `nearRational` — IDENTICAL accept set to `nearRationalLoop`, ~10× cheaper on the dominant
+ * FALSE case (measured 181.6M calls on one 3³.4² seed's join-closure = 21 s of a 38.6 s solve).
+ * Binary-search the Farey grid for the fractional part; if x is farther than (1e-7 + GUARD)/q from
+ * BOTH neighbours, every |x·q − round(x·q)| exceeds 1e-7 even after float error (error ≤
+ * ~|x|·q·ε ≪ GUARD), so FALSE is decided without the loop. Anything closer falls back to the
+ * verbatim loop, which is the decision — so the two functions compute the SAME predicate, only
+ * faster (byte-identical candidate sets by construction; differential-tested in
+ * tests/c-admissibility.test.ts).
+ */
+function nearRational(x: number): boolean {
+	const f = x - Math.floor(x);
+	const guard = 1e-9 + 1e-13 * Math.abs(x); // ≫ the ≤ ~1.4e-14·|x| float slack of the loop's x·q
+	// binary search for the insertion point of f
+	let lo = 0, hi = FAREY.length - 1;
+	while (lo < hi) {
+		const mid = (lo + hi) >> 1;
+		if (FAREY[mid].v < f) lo = mid + 1; else hi = mid;
+	}
+	// candidates: the entry at lo and its left neighbour
+	for (const e of [FAREY[lo], lo > 0 ? FAREY[lo - 1] : null]) {
+		if (e && Math.abs(f - e.v) < (1e-7 + guard) / e.q) return nearRationalLoop(x);
+	}
+	return false;
+}
+
+/** Test hooks: the fast/loop pair must decide identically (differential-tested). */
+export const _nearRationalForTest = nearRational;
+export const _nearRationalLoopForTest = nearRationalLoop;
 
 export class LatticeEnumerator {
 	constructor(private readonly k: number) {}
@@ -442,6 +488,132 @@ export function vcAreaMinVerts(
 	};
 	rec(0, new Map(), 0, 0);
 	return out;
+}
+
+/**
+ * C(Λ,S) feasibility sets — the divisor-constrained orbit-class admissibility condition (Fable,
+ * docs/LATTICE_ADMISSIBILITY_PROOF.md). For each Bravais class, the set of exact cell areas
+ * realizable by SOME support-preserving orbit-type vector τ (length k over the seed's distinct
+ * incidence multisets, every multiset used ≥ 1) with per-orbit class counts V_i that each DIVIDE
+ * the class's holohedry order, and integral tile counts. Soundness (why every emitted cell's
+ * |det Λ| lies in its class's set): a primitive k-uniform cell has Λ = T(G), the point group
+ * P = G/Λ acts transitively on each orbit's Λ-classes ⇒ V_i | |P| (orbit-stabilizer), and
+ * P ≤ Bravais(Λ) ⇒ |P| | hol(Λ) (Lagrange) — so V_i | hol(Λ). All other closures (≠k orbits,
+ * subset support, supercells) are ones the pipeline already discards post-hoc; see the proof doc.
+ *
+ * Keyed by `bravaisClassExact` (2/4/8/12, 0 = unknown). Class 0 uses the union of all divisor
+ * sets — always sound. Same star scope as `vcAreaSet`: the incidence identity is false for stars,
+ * so this function must only run on regular seeds (the caller guards).
+ *
+ * Per (class, areaKey) the value is the PARETO-MAXIMAL feasible tile-count vectors, aligned to the
+ * ascending sorted tile sizes (regular ids are numeric strings). Stage A (the C lattice pre-filter)
+ * only tests `.has(areaKey)`; stage B (the in-fill domination prune) reads the vectors: a partial
+ * fill whose per-size placed counts are dominated by NO member can complete into no emitted cell,
+ * so the branch is dead. Maximal elements suffice for domination (t ≤ f' and f' ≤ f ⇒ t ≤ f).
+ */
+const C_DIVISORS = new Map<number, number[]>([
+	[2, [1, 2]],
+	[4, [1, 2, 4]],
+	[8, [1, 2, 4, 8]],
+	[12, [1, 2, 3, 4, 6, 12]],
+	[0, [1, 2, 3, 4, 6, 8, 12]], // unknown Bravais class ⇒ union over all classes (weakest, sound)
+]);
+
+export function vcFeasAreaSets(
+	vcIncidences: Map<string, number>[],
+	tileArea: Map<string, Surd>,
+	tileCorners: Map<string, number>,
+	k: number,
+	areaBoundF: number
+): Map<number, Map<string, number[][]>> {
+	const sizes = [...tileArea.keys()].map(Number).sort((a, b) => a - b); // regular ids = numeric strings
+	const out = new Map<number, Map<string, number[][]>>();
+	// Distinct types BY INCIDENCE MULTISET (not by VC name): only the multiset enters the counting,
+	// and two same-multiset types assigned separately produce exactly the same aggregate sums.
+	const seen = new Map<string, Map<string, number>>();
+	for (const m of vcIncidences) {
+		const key = [...m.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([id, c]) => `${id}^${c}`).join('.');
+		if (!seen.has(key)) seen.set(key, m);
+	}
+	const types = [...seen.values()];
+	const T = types.length;
+	const dominates = (a: number[], b: number[]): boolean => a.every((x, i) => x >= b[i]);
+	for (const [cls, divs] of C_DIVISORS) {
+		const feas = new Map<string, number[][]>();
+		out.set(cls, feas);
+		if (T === 0 || T > k) continue;
+		// compositions of k orbits into T parts ≥ 1 (the support-preserving τ, aggregated per type)
+		const comps: number[][] = [];
+		const comp = (left: number, parts: number, acc: number[]): void => {
+			if (parts === 1) { comps.push([...acc, left]); return; }
+			for (let q = 1; q <= left - (parts - 1); q++) comp(left - q, parts - 1, [...acc, q]);
+		};
+		comp(k, T, []);
+		for (const c of comps) {
+			// per type: every achievable W = sum of n_c per-orbit counts, each a divisor of the class
+			const wLists: number[][] = c.map((cnt) => {
+				let sums = new Set<number>([0]);
+				for (let q = 0; q < cnt; q++) {
+					const nx = new Set<number>();
+					for (const s of sums) for (const d of divs) nx.add(s + d);
+					sums = nx;
+				}
+				return [...sums];
+			});
+			const walk = (ti: number, inc: Map<string, number>): void => {
+				if (ti === T) {
+					let area = Surd.ZERO;
+					const tvec = new Array<number>(sizes.length).fill(0);
+					for (const [id, cnt] of inc) {
+						const corners = tileCorners.get(id)!;
+						if (cnt % corners !== 0) return; // fractional tile count ⇒ not realizable
+						const t = cnt / corners;
+						tvec[sizes.indexOf(Number(id))] = t;
+						area = area.add(tileArea.get(id)!.scaleRational(BigInt(t), 1n));
+					}
+					if (area.isZero() || area.toFloat() > areaBoundF + 1e-9) return;
+					const ak = areaKey(area);
+					const vecs = feas.get(ak);
+					if (!vecs) { feas.set(ak, [tvec]); return; }
+					// keep the Pareto-maximal antichain: drop tvec if dominated; evict members it dominates
+					if (vecs.some((f) => dominates(f, tvec))) return;
+					feas.set(ak, [...vecs.filter((f) => !dominates(tvec, f)), tvec]);
+					return;
+				}
+				for (const w of wLists[ti]) {
+					const nx = new Map(inc);
+					for (const [id, m] of types[ti]) nx.set(id, (nx.get(id) ?? 0) + m * w);
+					walk(ti + 1, nx);
+				}
+			};
+			walk(0, new Map());
+		}
+	}
+	return out;
+}
+
+/**
+ * Exact Bravais class of ⟨a, b⟩ for DIVISOR-based consumers (C/P3): 2/4/8/12 exactly as
+ * `holohedry`, but 0 (UNKNOWN) instead of the sound-12 fallback. holohedry's overloaded 12 is fine
+ * for its ≤-semantics (a weaker floor); it is UNSOUND to read as "hexagonal" under divisor
+ * semantics — divisors(12) excludes 8, which a genuinely-square lattice hiding behind the fallback
+ * may need. Consumers map 0 to the all-classes divisor union.
+ */
+export function bravaisClassExact(a: Cyclotomic, b: Cyclotomic): number {
+	const [u, v] = gaussReduceExact(a, b);
+	const guu = reSurd(u.normSquared());
+	const gvv = reSurd(v.normSquared());
+	if (guu.isZero() || gvv.isZero()) return 0; // degenerate ⇒ unknown
+	const guv = reSurd(u.conj().mul(v));
+	const twoAbsuv = guv.abs().scaleRational(2n, 1n);
+	if (guu.cmp(gvv) > 0 || twoAbsuv.cmp(guu) > 0) return 0; // not provably Lagrange-reduced ⇒ unknown
+	const eqLen = guu.equals(gvv);
+	const perp = guv.isZero();
+	const centered = twoAbsuv.equals(guu);
+	if (eqLen && perp) return 8;
+	if (eqLen && centered) return 12;
+	if (perp || eqLen || centered) return 4;
+	return 2;
 }
 
 /**

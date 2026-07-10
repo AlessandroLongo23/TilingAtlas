@@ -143,8 +143,8 @@ const memberBases: [Cyclotomic, Cyclotomic][] = [
 const groups = groupIntoGridOrbits(memberBases, N);
 
 const freshDiag = (): PeriodSolverDiag => ({
-	candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0,
-	fanLattices: 0, p0Skipped: 0, orbitSkipped: 0, p1Pruned: 0, p2Skipped: 0,
+	candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, earlyGateRejected: 0,
+	fanLattices: 0, p0Skipped: 0, cSkipped: 0, orbitSkipped: 0, p1Pruned: 0, p3Pruned: 0, p2Skipped: 0,
 	vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null,
 	supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0,
 	starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false,

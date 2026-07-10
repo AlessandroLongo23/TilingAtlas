@@ -7,7 +7,7 @@ import catalogue from '../figures/data/catalogue-k1-3.json';
 describe('seedFromPeriodCell', () => {
   const ring = CyclotomicRing.create(24);
   setActiveRing(ring);
-  const sc = (catalogue as { tilings: { cellCodec: SerializedCell | null }[] }).tilings
+  const sc = (catalogue as unknown as { tilings: { cellCodec: SerializedCell | null }[] }).tilings
     .find((t) => t.cellCodec)!.cellCodec as SerializedCell;
 
   it('matches seedFromCell (same T1/T2 and same vertex key set)', () => {
