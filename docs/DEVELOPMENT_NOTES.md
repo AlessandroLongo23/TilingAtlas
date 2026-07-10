@@ -3272,8 +3272,15 @@ set, duplicate collapse, octagon fallback, merge-guard) + `tiling-congruence` re
 {3,4,6,12}, 40 seeds → 25 cross-seed cells → 20 distinct): the cross-seed aggregate dedup went **33.9 s → 0.30 s =
 ×111**, identical 20-tiling output (representative sets byte-identical). The multiplier is `primitiveReducedCell`
 (~1.4 s/cell here) × every cell vs one hash each; it therefore GROWS with k (k=2's aggregate is only 25 cells; at
-k≥3 it is hundreds–thousands, where the old path runs minutes–hours and N stays sub-second). Trust write-up for the
-thesis is AL's (the soundness-proof argument above).
+k≥3 it is hundreds–thousands, where the old path runs minutes–hours and N stays sub-second).
+
+**Also moved the cross-seed dedup site** (the bigger one — the whole `allCells` aggregate, which the per-seed wiring
+did NOT touch) in both `run-pipeline.ts` (the persisted catalogue producer) and `scripts/probe-pipeline.ts` (the
+determinism harness), same `PS_DEDUPE=congruence` escape hatch. PROVEN drop-in: probe at k=2 gives the
+**byte-identical COMPOSITION digest `f3e2e0517191362c` (count 20)** under both paths. Because `PS_DEDUPE` now governs
+per-seed AND cross-seed dedup, the full k=2 probe pipeline went **175.9 s → 88.1 s (~2×)** — the dedup work was ~half
+the wall-clock (per-seed congruence across 40 seeds + the cross-seed aggregate) and collapsed to <1 s. Trust write-up
+for the thesis is AL's (the soundness-proof argument above).
 
 ## 46. nClassify — wallpaper classification in rank-4 machine int (58×), and a pmm↔cmm bug in analyzeSymmetry it exposed (2026-07-10, session 21)
 
@@ -3309,3 +3316,70 @@ buggy labels; the k≤10 slice also carried the old develop undercount (k=8=2849
 exact). Charts re-rendered. The cmm/pmm curves moved (now both ≈2k, near-overlapping); the by-lattice chart and the
 2k+6 envelope (held by pgg on rectangular, never mislabeled) are unchanged — the headline result stands. Log:
 `experiments/results/nclass-speedup-2026-07-10.md`.
+
+## 47. Step 3 landed — C++ int32 wallpaper classifier in the oracle (462×), and the int32-safety question settled by measurement (2026-07-10, session 21)
+
+Step 3 of the "drop bigint → improve → C++" plan: `tools/ctrnact-oracle/eu_classify.cpp`, a native int32 port of
+blind `nClassify` over ℤ[ω]. Reads a flat tiling stream (cells JSON → flat via `cells_to_flat.py`), writes
+`id,k,lattice,group,orbifold`. Faithful transliteration; the one semantic shortcut is dropping the
+offset/essential-glide bookkeeping, which is safe because `hasGlide` is read only where there is no mirror (pgg/pg),
+so it cannot change a label. Landed as commit `6de7035` — but that commit updated only the experiments log, so this
+milestone and its verification were absent from the ledger until now.
+
+**Independent reproduction this session** (did not trust the commit's numbers). Rebuilt clean, then re-ran every
+claim: **200,730/200,730 identical** labels vs TS `nClassify` across k=1..13 (47,854 + 49,794 + 103,082), 0
+mismatches, A068599-exact counts per k; **0.066 ms/tiling** (3.17 s for 47,854), = **462×** over the 30.5 ms bigint
+baseline and 7.3× over TS. Clean under `-Wall -Wextra` and under UBSan (`-fsanitize=signed-integer-overflow`) over the
+whole stream. The correctness chain closes fully only at k≤11 (there TS was gated against the exact `analyzeSymmetry`);
+at k=12/13 it is C++ == TS, with TS's own exactness assumed by continuity, not re-proven against bigint. Harness:
+`scripts/eu-classify-diff.ts` (the differential the original commit never shipped — now the "0 mismatches" claim is
+reproducible).
+
+**The int32-safety question, settled.** I first flagged the int32 arithmetic as a silent-overflow risk (the header's
+soundness is a magnitude *probe*, not a bound, and a completeness tool should not fail silently). AL pushed back: if
+it's safe, say so. It is. Instrumenting every int multiply/accumulate over all 200,730 tilings, the **peak absolute
+intermediate is 176** — int32 (2.147e9) has ~12-million× headroom. And it grows the right way: raw cell coefficients
+grow ~linearly in k (26 at k=11, 32 at k=13), and every hot-path multiply pairs one such factor with a
+constant-bounded one (`D`, `Dc`, `DDc`, `ω^m`, none growing with k), so intermediates are linear in k, not quadratic.
+Overflow would need k ≈ 10^8; the frontier is 13. The int64 hardening I proposed was ceremony — retracted, code stays
+int32. Note: `eu_classify.cpp`'s header cites max intermediate 210 / product 3.5e5; those are the conservative dim-8
+ζ₂₄ bigint-probe figures (§46) carried over, not the dim-4 int path, which peaks at 176. The code is safer than its
+own comment.
+
+Net: the port is correct, fast, and int32 is the right choice. No follow-up. The symclass ladder is closed: step 1
+(int) 58×, step 2 (star) measured non-win, step 3 (C++) 462× and folded into the native oracle.
+
+## 48. eu_develop — the last Python oracle stage ported to C++, k pushed to 16, and the proven weight ceiling drawn on the charts (2026-07-10, session 21)
+
+`develop.py` (exact geometric reconstruction: pruned combinatorial solution → `{T1,T2,Seed}` cell in ℤ[ζ₁₂]) was
+the only remaining Python holdout in the oracle — solve/prune/classify were already C++. `tools/ctrnact-oracle/eu_develop.cpp`
+ports it: reuses the decode already validated in the pruner (vertex-figure tables in `pruner_tables.inc`), adds the
+geometric developer — flood-fill placing half-edges at exact ℤ[ζ₁₂] positions, integer lattice HNF from the
+wrap-around periods, Lagrange-Gauss reduction, seeds mod Λ. Faithful transliteration; to stay bit-close to Python I
+matched its float semantics (banker's rounding via `nearbyint` for the reduction coefficient, floor division in egcd,
+lexicographic seed sort). `develop()` needs only `rneig`/`lvert`/`glue`, so the port is small.
+
+**Validation (completeness-grade).** Same-input differential vs `develop.py` on all k≤13 (`work/k16-run/pruned`):
+**200,730/200,730 congruent** — 90% byte-identical, the other 10% the SAME lattice Λ with the SAME seed set mod Λ
+(an equivalent Gauss-reduced basis; a 1-ULP float sign/tie in the reduction, immaterial to the tiling), 0 not-congruent,
+and 0 classification-label diffs (eu_classify on both). For k=14–16 (no practical `develop.py` reference — Python would
+be ~19 min) the independent gate is the exact area certificate `ctrnact-recon-check.ts` (Σ face areas = |det Λ|, exact
+ℚ(ζ₂₄)): **1200/1200 sampled cells certified**. Every k=1..16 count is exact: 10/20/61/151/332/673/1472/2850/5960/
+11866/24459/49794/103082 (A068599 / oracle) and the new records **212631/445289/933637** at k=14/15/16.
+
+**Speed.** 1,792,287 tilings (k=1..16) developed in **67.5 s = 0.038 ms/tiling**, ~19× `develop.py` (0.73 ms/tiling;
+the full job would be ~22 min in Python). The oracle is now native end-to-end: develop → classify runs without touching
+Python. Also fixed a real bug in `develop.py`: its glob was `eupruned_%02d_*.txt` (family-file naming) and silently
+skipped the streamed `eupruned_NN.txt` files — a completeness trap; it now accepts both.
+
+**Charts — the proven ceiling, and it is attained to k=16.** Classified (eu_classify) and weighted (`ctrnact-wtF.ts`,
+exact ℚ(ζ₂₄) F-formula on the gauss-reduced basis) the new k=14/15/16 cells, extended both weight charts
+(`scripts/ctrnact-family-trends.py`) to k=16, and replaced the old empirical 2k+2 / 2k+4 / 2k+6 guide lines with the
+single proven ceiling **W ≤ 2k + 2⌊(k−1)/3⌋** (`docs/WEIGHT_CEILING_PROOF.md`, Thm A/B — the pgg maximum). The
+enumeration meets the theorem exactly: the empirical max weight **equals the ceiling at every k = 4..16** (attained,
+never exceeded), and pgg is the UNIQUE holder at the jump points k ≡ 1 (mod 3) — k = 4,7,10,13,16 — with pmg tying at
+the others, precisely the Theorem A (pgg) vs Theorem C (pmg, one phase behind) structure. The k=14/15/16 maxima are
+36/38/42, all = ceiling. Nuance handled honestly: the formula is the width-2 tube maximum, so at k ≤ 3 small rigid
+hexagonal (p6m) cells sit ABOVE it (max 5/6/7 vs 2/4/6) before tube economy overtakes them at k=4 — the ceiling line is
+drawn only for k ≥ 4, where it is the global envelope. Compact result: `experiments/results/ctrnact-weight-envelope-k1-16.csv`.
+The per-tiling k1-16 classify/weight CSVs (~195 MB) are gitignored (regenerable); the k≤13 slices stay committed.

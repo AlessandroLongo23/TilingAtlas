@@ -265,7 +265,12 @@ def main():
     records = []
     errors = []
     for k in range(args.kmin, args.kmax + 1):
-        for f in sorted(glob.glob(os.path.join(args.pruned, "eupruned_%02d_*.txt" % k))):
+        # family files (eupruned_NN_fam.txt) AND streamed single files (eupruned_NN.txt / eupruned_N.txt)
+        cand = set(glob.glob(os.path.join(args.pruned, "eupruned_%02d_*.txt" % k)))
+        cand |= set(glob.glob(os.path.join(args.pruned, "eupruned_%d_*.txt" % k)))
+        cand.add(os.path.join(args.pruned, "eupruned_%02d.txt" % k))
+        cand.add(os.path.join(args.pruned, "eupruned_%d.txt" % k))
+        for f in sorted(p for p in cand if os.path.exists(p)):
             for b in read_blocks(f):
                 tes = [l for l in b if l.startswith("TES file:")]
                 if not tes:

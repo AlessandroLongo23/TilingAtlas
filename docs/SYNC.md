@@ -849,3 +849,36 @@ mislabeled some pmm as cmm via a float `-0.00` offset-bucket in its glide test �
 deciding cm/cmm vs pm/pmm/pmg from the EXACT Bravais lattice (centered=rhombic; tests 24/24, build clean). Regenerated
 symclass+weights: counts A068599-exact (k=8 2849→2850, k=9 5959→5960); charts re-rendered, pgg 2k+6 envelope unchanged.
 Detail: NOTES §46, `experiments/results/nclass-speedup-2026-07-10.md`. Next: step-2 star-stabilizer, then C++. — CC
+
+**2026-07-10 — CC → TA+AL — nClassify step-2 (star-stabilizer prune) RESOLVED: sound but a net loss, do not default.**
+Validated the `nClassify` "star" mode (prune candidate rotations/reflections to the vertex-star stabilizer, Fable's N)
+vs "blind" over all 47,854 tilings (`scripts/nclass-star-check.ts`): **47,854/47,854 identical labels — SOUND** (the
+stabilizer is a necessary condition, so the pruned set is a superset of the true symmetries). BUT it is **0.88× —
+12% SLOWER** (0.534 vs 0.471 ms/tiling): step-1's int rewrite already made each candidate test O(1), and the existing
+`refPreservesLattice`/`rotPreservesLattice` pre-filter already cheaply rejects most candidates, so `starCandidates`'
+HNF+star precompute costs more than it saves. Conclusion: keep **blind** as default; the chat-2 "costly candidate
+isometry" problem was fully solved by step-1 (int, 58×), not the prune. star==blind + §46 blind==groundtruth ⇒
+star==groundtruth transitively (no need to re-run the 806 s bigint bench). — CC
+
+**2026-07-10 — CC → TA+AL — nClassify step-3 (C++ int32 in the oracle) VERIFIED; symclass ladder closed.**
+`tools/ctrnact-oracle/eu_classify.cpp` (committed `6de7035`, ledger entry was missing) independently reproduced:
+**200,730/200,730 identical** labels vs TS nClassify over k=1..13, **0.066 ms/tiling = 462×** over bigint, `-Wall` +
+UBSan clean; harness `scripts/eu-classify-diff.ts` (the differential the commit never shipped). int32-safety raised
+then settled by measurement: peak int intermediate = **176** over all 200,730 (12M× headroom), linear-in-k, overflow-k
+≈ 10^8 — int32 correct, the int64 hardening I floated was ceremony (retracted). Detail: NOTES §47. No follow-up. — CC
+
+**2026-07-10 — CC → TA+AL — Weight-ceiling PROOF v2, hardened by a six-referee adversarial round.**
+`docs/WEIGHT_CEILING_PROOF.md`: oracle-independent proof document. Core result now proven (modulo one isolated
+tile-exclusion lemma 3.1(d)): width-2 exact laws pgg = 2k+2⌊(k−1)/3⌋, pmg = 2k+2⌊(k−2)/3⌋, via a slab-word
+integer program (wt = 2k−b+α; constraints: glide ⟹ even slab counts, mirror-exclusion ⟹ t≥2, pmg mirror-hosting
+⟹ s≥2). Six adversarial subagent referees killed v1 (mirror-symmetric "pgg" family, self-refuting inventory proof,
+false "squares only dilute", broken glide∘rotation composition) — all repaired; §10 of the doc logs the round.
+⚑ OPEN: 3.1(d), Lemma M (widths (2,T₀), binned by norm AND angle), Appendix A words, Appendix B crossing constant.
+⚑ v1's pinning story in `WEIGHT_CEILING_OUTLINE.md` corrected (supersession header added). — CC
+
+**2026-07-10 — CC → TA+AL — oracle native end-to-end (develop→C++), k→16, proven ceiling ATTAINED to k=16.**
+`eu_develop.cpp` ports the last Python stage (exact ℤ[ζ₁₂] reconstruction): 1.79M tilings k=1..16 in **67.5s** (~19× Python).
+Validated: k≤13 vs develop.py **200,730/200,730 congruent** (same Λ + seeds mod Λ; 90% byte-identical) + 0 label diffs;
+k=14-16 **1200/1200 exact area-cert**; counts exact incl. records 212631/445289/933637. Charts→k=16 with the proven ceiling
+W ≤ 2k+2⌊(k−1)/3⌋ (Thm A/B) replacing the 2k+c guides: empirical max **= ceiling for every k=4..16**, pgg unique at jumps
+k≡1(3) / pmg ties else; k≤3 rigid p6m above the tube formula (drawn k≥4). Fixed develop.py glob. NOTES §48. — CC

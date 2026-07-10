@@ -62,3 +62,9 @@ figures/out/
 
 # claude worktrees (concurrent agent sessions)
 .claude/worktrees/
+
+# extended-catalogue chart intermediates (k≥14 per-tiling classify/weight CSVs, ~100+ MB each) —
+# regenerable via eu_develop → eu_classify → ctrnact-wtF; the k≤13 slices stay committed, the compact
+# envelope summary (ctrnact-weight-envelope-k1-16.csv) captures the result.
+experiments/results/ctrnact-symclass-k1-16.csv
+experiments/results/ctrnact-weights-exact-k1-16.csv

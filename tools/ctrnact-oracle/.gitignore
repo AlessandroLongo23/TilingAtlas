@@ -2,8 +2,10 @@
 eu_solver
 eu_pruner
 eu_classify
+eu_develop
 # pipeline run outputs
 run-k*/
+work/
 out/
 _import_scratch/
 # python

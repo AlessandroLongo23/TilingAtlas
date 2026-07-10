@@ -12,11 +12,18 @@ isomorphic duplicates. Details in `reference/algorithm.txt` and `reference/READM
 ## Pipeline
 
 ```
-eu_solver (C++)      raw solutions, with duplicates   ->  out/eusolver_<NN>_<fam>.txt
-eu_pruner (C++)      dedup to distinct tilings         ->  out/pruned/eupruned_<NN>_<fam>.txt
-develop.py (Python)  exact geometric reconstruction    ->  ctrnact-cells-k<K>.json  {id,k,T1,T2,Seed}
-decode.py (Python)   optional combinatorial view       ->  combinatorial JSON {conway, vertexConfigs, ...}
+eu_solver  (C++)     raw solutions, with duplicates   ->  out/eusolver_<NN>_<fam>.txt
+eu_pruner  (C++)     dedup to distinct tilings         ->  out/pruned/eupruned_<NN>[_<fam>].txt
+eu_develop (C++)     exact geometric reconstruction    ->  ctrnact-cells-k<K>.json  {id,k,T1,T2,Seed}
+develop.py (Python)  same, reference impl (slower)      ->  (validation oracle for eu_develop)
+decode.py  (Python)  optional combinatorial view        ->  combinatorial JSON {conway, vertexConfigs, ...}
 ```
+
+`eu_develop` is the native port of `develop.py` (flood-fill in exact ℤ[ζ₁₂], integer lattice HNF, Lagrange-Gauss
+reduction, seeds mod Λ). ~19× faster (k=1..16: 1.79M cells in ~68 s vs ~22 min); it reuses the pruner's decode.
+Validated congruent to `develop.py` on all 200,730 k≤13 cells (same Λ + same seeds mod Λ) and area-certified at
+k=14..16. `develop.py` is kept as the reference/oracle. Both accept the streamed `eupruned_NN.txt` and the
+family-file `eupruned_NN_fam.txt` naming.
 
 Run the whole thing:
 
@@ -58,10 +65,13 @@ are the ones you run:
   isomorphism-invariant fingerprint that buckets candidates (so `comparesolutions` only runs within
   exact matches), and bitset WL refinement. **~145× faster than the Python pruner** (k=11: 1447s →
   10s), exact same counts.
+- `eu_develop.cpp` — C++ port of `develop.py` (was the last Python stage in the hot path; became the
+  bottleneck once the frontier moved past k=13). Reuses the pruner's `decode`; adds the exact ℤ[ζ₁₂]
+  developer. **~19× faster**, congruent to `develop.py` on all 200,730 k≤13 cells, area-certified k=14..16.
 - `pruner.py` — the adapted Python pruner. Kept because `develop.py` reuses its `decode()`; also a
   cross-check for the C++ pruner.
-- `decode.py`, `develop.py` — Python-only stages (no C++ equivalent needed; `develop.py` runs on the
-  pruned distinct set, not the raw).
+- `develop.py` — the reference developer, kept as `eu_develop`'s validation oracle (runs on the pruned
+  distinct set, not the raw). `decode.py` — Python-only combinatorial view (no C++ equivalent needed).
 
 ### A completeness note
 
