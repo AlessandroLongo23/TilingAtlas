@@ -3,7 +3,8 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-06-10 (night), CC.
+> entry of each ledger. **Never write history here.** — last updated 2026-07-10, CC
+> (acting as TA too, AL authorization 2026-07-10).
 
 ## Knowledge model (read once, then follow it)
 
@@ -19,7 +20,31 @@ Two tiers. Do not mix them.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
 
-## Frontier (2026-06-10 evening)
+## Frontier (2026-07-10) — the weight-law program
+
+- ★★ **Small-k weight theorem PROVEN + REFEREED (3 agents, no fatal): max W = 5, 6, 7 at
+  k = 1, 2, 3 EXACT**, per-branch proven pool radii (hex 6/8/10 via census+shells, square
+  3/6/7, hol ≤ 4 via thm:weight generators 7/15/23 + joins). `docs/SMALLK_W_BOUND.md` (v2)
+  + appendix PDF + artifacts `experiments/results/smallk-*`. ⚑ **The k=3 completeness claim
+  needs ONE thing: re-run k ≤ 3 at the proven config** (tuned poolSteps 8 < proven hex 10;
+  Euclidean caps also clip — SMALLK_W_BOUND §5).
+- ★★ **pgg law proven for width-2 (Thms A/B/C, refereed)**: W = 2k + 2⌊(k−1)/3⌋ exact,
+  attained ∀k ≥ 2; global-max-for-k≥4 claim is measured (k ≤ 13) + partially proven.
+  `docs/WEIGHT_CEILING_PROOF.md` + appendix PDF.
+- ★ **The no-caveats program has a DAG** (`docs/WEIGHT_PROOF_DAG.md`, 10 nodes, critical
+  path D1→D6→D10). Landed 2026-07-10: **D1 slab engine incr. 1a** (width-2 T/S/H world
+  machine-reproduced; `tools/slab-engine/engine.py`); **D3 consolidation REFEREED** — two
+  bands CLOSED vs the pgg law via c₀-bypass word climbs (λ₁ = 1: W ≤ 2k; λ₁ = √3 hex:
+  W ≤ 2k), one blocker (write E2-v2); **D2 ≡ E4-A′ ≡ 3.1(d)** identified (one finite check
+  gates 378 tilings + unconditionalizes Thms A/C — engine incr. 1b closes it); **D6-snub
+  re-scoped honestly** (0.966-forcing refuted, 829 domino vertices in-catalogue; route =
+  row-word classification via engine incr. 2). Ledgers: SYNC 2026-07-10 entries ×5,
+  `resources/research/th10-D3-consolidation-2026-07-10.md`, TA_LOG.
+- Star lane (parked, scoped 2026-07-10): Myers anatomy + parametrization analysis done in
+  conversation; W-machinery splits universal/family-modular; free-α families need TH-8
+  regardless. No new artifacts beyond `experiments/results/smallk-*` siblings.
+
+## Frontier (2026-06-10 evening — previous)
 
 - ★★ **k ≤ 2 THEOREM-CERTIFIED, oracle-independent** (B1 + canonical augmentation + lem:ddrealize +
   lem:ddrealizer realizer + lem:corona; per-tiling torus match both directions). NOTES §27.

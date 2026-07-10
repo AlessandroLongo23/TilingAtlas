@@ -3383,3 +3383,70 @@ the others, precisely the Theorem A (pgg) vs Theorem C (pmg, one phase behind) s
 hexagonal (p6m) cells sit ABOVE it (max 5/6/7 vs 2/4/6) before tube economy overtakes them at k=4 — the ceiling line is
 drawn only for k ≥ 4, where it is the global envelope. Compact result: `experiments/results/ctrnact-weight-envelope-k1-16.csv`.
 The per-tiling k1-16 classify/weight CSVs (~195 MB) are gitignored (regenerable); the k≤13 slices stay committed.
+
+## 49. Native torusFill at ~13×, the TS↔native fill bridge, and the k=3 cost profiled — it is a pruning wall, not a speed one (2026-07-10, session 21)
+
+This is the `PeriodSolver` native track (`native-engine/`), separate from the Čtrnáct oracle track of §44–48. Full
+native-side detail lives in `native-engine/README.md`; this note is the algorithmic narrative + the k=3 diagnosis that
+hands off to Fable.
+
+**The native torusFill DFS reached ~13× the TS, byte-identical.** Matched bench (`bench-tf`, 12 cases from real k=1/k=2
+solves), sum ms/call, each step `make test`-gated at 100,029/100,029:
+- memoize `Poly::exactKey` (mutable cache): **254 → 183** (−28%). The "string-bound" cost was *rebuild frequency*
+  (stateKey per pop, gate keys), not the decimal format.
+- gate `PolyKey` (allocation-free exact membership keys, `exactkey.hpp`) in `countVertexOrbits`: **183 → 161** (−6%).
+  The same tuple-key swap in `analyze`/`buildBlock` gave ~0 and was reverted — those are `toVector`/`translate` work.
+- fast Cyclo representation, in two byte-identical steps: stack `std::array<i128,8>` (no heap/op) **161 → 127**, then
+  **deferred gcd** (reduce+sign eager, gcd lazy behind a `mutable` cache, `ensureCanon` at every reader) **127 → 90**.
+  Net **254 → 90 (−65%), 4.6× → ~13×** — the arithmetic-kernel ceiling. Deferred gcd overshot the estimate because
+  `latticeEquivExact`/`isLatticeCombo` resolve via `sub().isZero()`, which needs no canonical form, so those Cyclos
+  never pay a gcd. Failed-idea note: the identical stack-array change gave ~0 in a *prior* session (pre-memoization,
+  when strings still dominated) — same code, opposite result, because the bottleneck had moved.
+
+**The TS↔native fill BRIDGE (`lib/classes/algorithm/nativeFill.ts` + `native-engine/fill-server.cpp`).** Rather than
+port the (unsettled, proof-critical, 330-line-in-flight) candidate-lattice enumeration to C++, the TS `PeriodSolver`
+keeps enumeration + seed-gen + dedup and ships each *regular* fill to a persistent native `fill-server` over a FIFO
+pair (opened O_RDWR so blocking reads work without child fds — Node does not expose child stdio fds). Synchronous
+(solve is sync), opt-in `USE_NATIVE_FILL=1` (read per-fill), off ⇒ pure-TS. One guarded line at the top of
+`torusFill`; star cores fall back to the TS DFS. Response = compact `{n, anchor=verts[0], dir=edgeDirs[0]}` per rep,
+rebuilt via `RegularPolygon.fromAnchorAndDirExact` (same trick as `cellCodec`), byte-equivalent to the TS output.
+`ring` is always ζ₂₄ (the Surd lattice enum forces N=24), so the validated native ring is exactly right — no ζ₁₂ risk.
+Diag inner-counters are not populated in bridge mode (only the emitted set + solve-level `rawCells`); fine for the
+enumeration output. Verified with `probe-pipeline`'s composition digest (order-independent hash of the deduped set):
+- k=1 `3,4,6,12`: **10 tilings, digest 476ebbd763fa6193** — TS == native, identical.
+- k=2 `3,4,6,12`: **20 tilings, digest f3e2e0517191362c** — TS == native, identical; **85s → 27s (3.2× whole-solve)**.
+- k=3: bridge is faithful (first ~10 seeds emit valid cells) but **cannot be digest-compared to pure TS** — TS bails
+  heavy seeds at the wall-clock cap, native (13×) explores far more before the same deadline and finds more, so the two
+  legitimately diverge on any timed-out seed; a full pure-TS k=3 (no cap) is ~14 h. So k=3's check is "does native-to-
+  completion hit the known target 61", not a digest match. (Aside: native fills run uncapped = *most* complete, which
+  is doctrinally correct; the recurring "exit 144" on long k=3 runs is the task harness terminating a long background
+  job, not a crash.)
+
+**k=3 cost profiled (native fills, 12 clean seeds + seed-gen timing). The cost is ~95% fills, and it is ALGORITHMIC.**
+Per-seed `PS_PROFILE`: `fill` 7.6–56 s (99.5%), `cand` ~0 ms, `canon` ~13 ms, `dedup` ~20 ms, `gate` 0 (folded into
+the fill). Seed-gen: `buildSeeds` **139.5 s** while `findSeedSets` = **1 ms** and graph = 57 ms. Structure: **449 seeds
+/ 184 distinct names** (the `3.3.3.3.3.3 + 3.3.3.3.6` VC-set recurs a dozen+ times, ~9 s each); **~62 of every 69
+candidate lattices yield NO cell** (`raw≈7`/69); and both existing prunes are **dormant: `p1Prune=0`, `ssDedup=0`**
+across every seed. Total k=3 native ≈ 140 s + 449 × ~9 s ≈ **~70 min** (pure-TS ≈ 14 h). The k→ explosion is a product:
+seeds 14 → 40 → **449**; cell-size cap `maxCellPolys = 24k` = 24 → 48 → **72** (DFS depth ⇒ exponential tree);
+~69 lattices/seed ⇒ **~31,000 native DFS calls**, each a large exponential search.
+
+**Verdict (grounded): C++/pure speed will NOT crack k=3.** The fills are already native at the arithmetic ceiling; a
+further constant factor turns 70 min into 35 min, not into tractable. And porting the *outer* loop to C++ buys ~0 —
+`cand` is already ~0 ms, `canon`+`dedup` ~0 ms. This retroactively confirms the bridge-vs-port call. k=3 is where the
+enumeration's *algorithmic* cost dominates (the "oracle-anchored, not proof-anchored" region), and it needs **sound
+pruning** (every prune proven not to drop a tiling — the doctrine), ranked by expected leverage:
+1. A sound **lattice admissibility pre-filter** — a cheap necessary-condition "can this lattice admit a valid cell?"
+   test to delete most of the ~62/69 empty fills *before* the DFS. Biggest lever; necessary-conditions are often
+   provable. (P0 already removes 102 pre-filter; what survives is still ~90% non-productive.)
+2. **Why are P1 orbit-floor + seed-state dedup dormant at k=3?** (`p1Prune=0`, `ssDedup=0`.) These are *already proven*
+   and *already implemented*; if they are merely mis-tuned/not-triggering for k=3, re-engaging them is a cheap, sound
+   win with no new proof burden. Cheapest thing to try first.
+3. **`buildSeeds` = 140 s** (vs `findSeedSets` 1 ms) — an isolated, suspicious asymmetry; the one *outer* piece where a
+   C++ port or an algorithmic fix clearly pays. ~3% now, likely worse at k≥4.
+4. Cross-seed dedup (449 → 184 distinct + heavy same-name multiplicity) — proving a seed can't contribute a unique
+   tiling; bigger proof burden, defer.
+
+Files: `native-engine/{cyclotomic,exactkey,polygon,orbitgate,fillctx}.hpp`, `native-engine/fill-server.cpp`,
+`lib/classes/algorithm/nativeFill.ts`, one guarded line + `FillCtx` export in `PeriodSolver.ts` (working-tree,
+uncommitted). Handoff to Fable: attack lever #1/#2 (sound pruning), not more speed.

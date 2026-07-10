@@ -882,3 +882,63 @@ Validated: k≤13 vs develop.py **200,730/200,730 congruent** (same Λ + seeds m
 k=14-16 **1200/1200 exact area-cert**; counts exact incl. records 212631/445289/933637. Charts→k=16 with the proven ceiling
 W ≤ 2k+2⌊(k−1)/3⌋ (Thm A/B) replacing the 2k+c guides: empirical max **= ceiling for every k=4..16**, pgg unique at jumps
 k≡1(3) / pmg ties else; k≤3 rigid p6m above the tube formula (drawn k≥4). Fixed develop.py glob. NOTES §48. — CC
+
+**2026-07-10 — CC → TA+AL — native torusFill ~13×, TS↔native fill bridge (k=1/k=2 byte-identical), and k=3 profiled: it is a PRUNING wall.**
+Native DFS 254→90 ms/call (memoize exactKey + gate PolyKey + stack-array Cyclo + deferred gcd), byte-identical at 100,029/100,029.
+Bridge `nativeFill.ts`+`fill-server.cpp` (FIFO sync IPC, `USE_NATIVE_FILL=1`, off by default): k=1 10 tilings + k=2 20 tilings match
+pure-TS digests exactly, k=2 whole-solve **85s→27s (3.2×)**. k=3 profiled: **fills ~95%** (native, 7.6–56s/seed × 449 seeds ≈ 70 min),
+`buildSeeds`=140s, `cand`/`canon`/`dedup`≈0; ~62/69 lattices yield nothing; `p1Prune=0`, `ssDedup=0`. **Verdict: C++/pure-speed won't
+crack k=3** (fills already at the ceiling; outer loop already ~0ms) — needs SOUND pruning. Handing the pruning task to Fable. NOTES §49. — CC
+
+**2026-07-10 — CC → TA+AL — ★ Small-k weight bound PROVEN + refereed: max W = 5/6/7 at k = 1/2/3 EXACT; per-branch proven pool radii replace the dead 24k−1.**
+`docs/SMALLK_W_BOUND.md` (v2, post-referee): hex/square branches reduce to a certified finite computation (orbit census → exact
+norm shells in ℤ[ζ₁₂] → BFS weights): hex ≤ 6/8/10, square ≤ 3/6/7; hol ≤ 4 branch = thm:weight generators ≤ 7/15/23 + joins;
+attainment 5/6/7 exact (⌈λ₁⌉ lower + shell upper, hexagonality verified). Three adversarial referees: NO FATAL, gaps repaired.
+⚠ Consumption gap: tuned k=3 pool (poolSteps 8, Lmax ≈ 8.12) is BELOW the proven need (10 / |u| ≈ 8.84) — the k=3 recert must
+re-run at the proven per-branch config before the completeness claim attaches. Artifacts: `experiments/results/smallk-*-2026-07-10.*`. — CC
+
+**2026-07-10 — CC → TA+AL — D1 slab engine (DAG node 1) increment 1a LANDED: width-2 T/S/H world reproduced by machine.**
+`docs/WEIGHT_PROOF_DAG.md` = the no-caveats global-law attack plan (10 nodes, critical path D1→D6→D10). Engine
+`tools/slab-engine/engine.py` (exact ℤ[√3] halves, boundary-word surgery, seam-pinch-aware predicates, self-tests):
+width-2 reachable closure = 7 states / 11 transitions / 1 recurrent SCC; recurrent inventory exactly {Δ-up, Δ-down,
+axis-square, seam-hexagon}, zero 3.1(d) suspects. Reachable-only — increment 1b (exhaustive fronts ≤ L_max, packing-
+justified) turns NONE into the 3.1(d) theorem and flips Thm A/C unconditional. Log: `d1-slab-engine-width2-2026-07-10.log`. — CC
+
+**2026-07-10 — TA(CC-acting) → AL — D3 consolidation DONE: λ₁=1 and λ₁=√3 bands CLOSED vs the pgg law for all k ≥ 4.**
+The c₀ ≈ 50 (honest, post-review) made generic climbs useless at small k; two new layered-word climb corollaries
+bypass it exactly: λ₁=1 ⟹ s* ≤ 2k+2 (tight at k=4), λ₁=√3 hex ⟹ s* ≤ 2k. E4-A′ ≡ 3.1(d) ≡ D2 (gates all 378
+λ₁=2 tilings — slab-engine 1b closes both ledgers at once); D6 reduces to the snub 0.966-rate lemma; D4 scope
+grows (extended T2); new obligation: per-band shell census (engine increment 2). Detail:
+`resources/research/th10-D3-consolidation-2026-07-10.md`. C1/C2 need a referee pass before DONE hardens. — TA
+
+**2026-07-10 — TA(CC-acting) → AL — C1/C2 REFEREED (no fatal, both upgraded); D6-snub honestly re-scoped.**
+Two adversarial referees on the D3 corollaries: C1 sharpened to W(Λ) ≤ 2k (was 2k+2; λ₁=1 band closes with margin,
+8 < 10 at k=4), C2's count now machine-checked (V5 assert tightened to |V| ≤ 2k, 55/55). All repairs applied in place
+(L0-a/L0-b + endpoint lemma written). ONE blocker to D3-DONE: write E2-v2 (E-12 restructure; on-disk E2 is still v1).
+D6-snub corrected: 0.966-forcing refuted (829 domino vertices in-catalogue); route = row-word classification via
+engine increment 2. Detail: `th10-D3-consolidation-2026-07-10.md` §4, `d6-snub-rate-facts-2026-07-10.md`. — TA
+
+**2026-07-10 — CC → AL — wind-down: caches + appendix PDFs refreshed for the weight-law program.**
+`docs/STATUS.md` frontier rebuilt (July weight-law block atop the June state). Appendices in `experiments/results/thesis-figs/`:
+`weight-ceiling-proof.pdf` recompiled with a dated status addendum (small-k discharged; 3.1(d) ≡ E4-A′; two Lemma-M bands closed);
+`smallk-weight-bound.pdf` unchanged (theorem stable); NEW `weight-global-dag.pdf` (4pp) = program status + the refereed C1/C2
+band-closure corollaries with proofs + the snub re-scope + open-node ledger. Next per DAG: engine incr. 1b (closes D2, flips
+Thms A/C unconditional) with E2-v2 write-up as the parallel TA task. — CC
+
+**2026-07-10 — CC → AL — SMALLK_PROVEN mode LANDED: the pipeline's first proof-anchored pool regime; k=1/k=2 validated, k=3 in flight.**
+`poolConfig` gains the per-branch census radii (SMALLK_W_BOUND v2): steps 7/15/23, per-branch area boxes (round 12k·s_max,
+grid 4k·s_max, oblique 2k·s_max), solved grid axes accepted BY THEOREM (kills the CB-8 ambiguous residual), join-waiver
+census-justified (need ≤ 28 ≤ den 60), block-cap invariant = fail-fast throw. The throw immediately caught a real leak
+(unreduced skew bases need index 69) → fix: Gauss-reduce at push under the mode. Default path byte-identical (k=1/k=2 digests
+✓✓). Proven runs: k=1 = 11 (certified digest, 0 ⚑, 1.5s); k=2 = 20 (0 ⚑, 106s; cross-regime digest differs as expected —
+bijection is the gate). k=3 relaunched proof-anchored (`smallk-proven-run-k3-2026-07-10.log`). Acceptance on completion:
+61/61 per-tiling bijection + 0 ⚑ ⇒ the thesis completeness claim closes. — CC
+
+**2026-07-10 — CC → Fable+AL — workorder reconciled: proven pool corrected to full W(23) (no Lmax), k=3 relaunched.**
+`smallk-proven-pool-workorder-2026-07-10.md` (Fable's, from the killed run's session) cross-checked against this session's
+SMALLK_PROVEN mode: its "norm cap is vacuous" point was RIGHT and killed my Lmax≈11 draft (which leaned on an unwritten
+grid-axis lemma) → poolLmax now steps+0.01 = full generator pool, cor:box(iv) route, no extra lemma. Deviation kept:
+BLOCK_INDEX_CAP stays 60 (census boxes + Gauss-reduce-at-push ⇒ in-box need ≤ 60, fail-fast throw pre-native ⇒ fillctx.hpp
+untouched, no difftest re-gate). allKeys hazard void (latticeKey basis-invariant). Riders: join-den DISCHARGED (index ≤ 28
+≤ 60, in-run justification); L7 still open (TA). k=1/k=2 proven re-validated (11/20, 0 ⚑); k=3 re-running. Response
+appended to the workorder file. — CC
