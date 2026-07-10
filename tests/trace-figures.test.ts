@@ -68,3 +68,19 @@ describe('palette tree refs', () => {
     }
   });
 });
+
+// append to tests/trace-figures.test.ts
+import { polygonsFigure } from '../figures/trace/polygonsFigure';
+
+describe('F2 polygons figure', () => {
+  it('emits one poly element per input n, each labeled', () => {
+    const ir = polygonsFigure([3, 4, 6]);
+    const polys = ir.elements.filter((e) => e.kind === 'poly');
+    const labels = ir.elements.filter((e) => e.kind === 'text');
+    expect(polys.length).toBe(3);
+    expect(labels.length).toBeGreaterThanOrEqual(3);
+    const xs = polys.map((p) => Math.min(...(p as { verts: { x: number }[] }).verts.map((v) => v.x)));
+    expect(xs[0]).toBeLessThan(xs[1]);
+    expect(xs[1]).toBeLessThan(xs[2]);
+  });
+});
