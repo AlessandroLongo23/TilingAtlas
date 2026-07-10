@@ -8,8 +8,8 @@ import type { FigureIR } from '../ir/types';
 import { emitSvg } from '../emit/svg';
 import { emitTikz } from '../emit/tikz';
 import { polygonsFigure } from './polygonsFigure';
-import { loadTrace, type TorusNode } from './loadTrace';
-import { torusTreeFigure } from './treeFigure';
+import { loadTrace, type TorusNode, type VcNode } from './loadTrace';
+import { torusTreeFigure, vcTreeFigure } from './treeFigure';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'figures', 'out', 'trace');
@@ -28,3 +28,6 @@ write('f2-polygons', polygonsFigure([3, 4, 6]));
 const EX = path.join(ROOT, 'figures', 'traces', 'running-example');
 // F6 — torus-fill DFS of the running example (fill 476, all 18 nodes).
 write('f6-torus-fill', torusTreeFigure(loadTrace<TorusNode>(EX, 'torus')));
+
+// F3 — VC search tree, curated, with the example's two VCs highlighted.
+write('f3-vc-search', vcTreeFigure(loadTrace<VcNode>(EX, 'vc'), [['3','4','6','4'], ['3','6','3','6']]));

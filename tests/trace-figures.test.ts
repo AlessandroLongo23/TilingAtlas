@@ -112,3 +112,31 @@ describe('F6 torus tree', () => {
     expect(edges.length).toBeGreaterThanOrEqual(17);
   });
 });
+
+// append to tests/trace-figures.test.ts
+import { curateVcTree } from '../figures/trace/curate';
+import { vcTreeFigure } from '../figures/trace/treeFigure';
+import { loadTrace as load3, type VcNode as VN } from '../figures/trace/loadTrace';
+
+describe('curateVcTree', () => {
+  it('keeps paths to highlighted VCs + one stub per prune reason + an ellipsis, deterministically', () => {
+    const vc = load3<VN>('figures/traces/running-example', 'vc');
+    const a = curateVcTree(vc, [['3', '4', '6', '4'], ['3', '6', '3', '6']]);
+    const b = curateVcTree(vc, [['3', '4', '6', '4'], ['3', '6', '3', '6']]);
+    expect(a.kept.map((n) => n.id)).toEqual(b.kept.map((n) => n.id));
+    const emits = a.kept.filter((n) => n.verdict === 'emit').map((n) => n.path.join('.'));
+    expect(emits).toContain('3.4.6.4');
+    expect(emits).toContain('3.6.3.6');
+    expect(a.kept.length).toBeLessThan(vc.length);
+    expect(a.droppedCount).toBe(vc.length - a.kept.length);
+  });
+});
+
+describe('F3 vc tree figure', () => {
+  it('builds a FigureIR with fan polys + edges + the ellipsis label', () => {
+    const vc = load3<VN>('figures/traces/running-example', 'vc');
+    const ir = vcTreeFigure(vc, [['3', '4', '6', '4'], ['3', '6', '3', '6']]);
+    expect(ir.elements.filter((e) => e.kind === 'poly').length).toBeGreaterThan(5);
+    expect(ir.elements.some((e) => e.kind === 'text' && (e as { tex: string }).tex.includes('explored'))).toBe(true);
+  });
+});

@@ -3,9 +3,10 @@
  *  geometry; parent->child edges are colored by the child's verdict (success bold-green, prune red).
  *  Torus nodes render their `reps` directly. */
 import type { FigureIR, FigureElement, V2, Rect } from '../ir/types';
-import type { TorusNode } from './loadTrace';
-import { bboxOfPts, fitInto } from './geometry';
+import type { TorusNode, VcNode } from './loadTrace';
+import { bboxOfPts, fitInto, regularPolygonAtCorner } from './geometry';
 import { layoutTree, type TreeInput } from './treeLayout';
+import { curateVcTree } from './curate';
 
 const BOX = 9;
 const GAPX = 4;
@@ -74,4 +75,58 @@ export function torusTreeFigure(nodes: TorusNode[]): FigureIR {
 
   const bbox: Rect = { minX: minX - 2, minY: minY - 3, maxX: maxX + 2, maxY: maxY + 2 };
   return { bbox, elements };
+}
+
+/** Reconstruct a VC fan from a path of corner sizes: place each polygon at the shared vertex,
+ *  opening from the running angle sum. */
+function vcFan(pathStr: string[]): { n: number; verts: V2[] }[] {
+  const out: { n: number; verts: V2[] }[] = [];
+  let angle = 0;
+  for (const s of pathStr) {
+    const n = Number(s);
+    out.push({ n, verts: regularPolygonAtCorner(n, angle) });
+    angle += (Math.PI * (n - 2)) / n;
+  }
+  return out;
+}
+
+export function vcTreeFigure(nodes: VcNode[], highlightPaths: string[][]): FigureIR {
+  const { kept, droppedCount, highlightIds } = curateVcTree(nodes, highlightPaths);
+  const input: TreeInput[] = kept.map((n) => ({ id: n.id, parentId: n.parentId }));
+  const pos = layoutTree(input);
+  const boxOf = (id: number): Rect => {
+    const p = pos.get(id)!; const cx = p.x * (BOX + GAPX); const cy = -p.depth * (BOX + GAPY);
+    return { minX: cx, minY: cy - BOX / 2, maxX: cx + BOX, maxY: cy + BOX / 2 };
+  };
+  const boxCenter = (r: Rect): V2 => ({ x: (r.minX + r.maxX) / 2, y: (r.minY + r.maxY) / 2 });
+  const keptIds = new Set(kept.map((n) => n.id));
+
+  const elements: FigureElement[] = [];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const n of kept) { const b = boxOf(n.id); minX = Math.min(minX, b.minX); minY = Math.min(minY, b.minY); maxX = Math.max(maxX, b.maxX); maxY = Math.max(maxY, b.maxY); }
+
+  for (const n of kept) {
+    if (n.parentId === -1 || !keptIds.has(n.parentId)) continue;
+    const a = boxCenter(boxOf(n.parentId)); const b = boxCenter(boxOf(n.id));
+    const ref = n.verdict === 'emit' ? 'tree:success' : n.verdict.startsWith('prune') || n.verdict.startsWith('reject') ? 'tree:prune' : 'tree:pathedge';
+    elements.push({ kind: 'polyline', verts: [a, b], styleRef: ref });
+  }
+  for (const n of kept) {
+    const box = boxOf(n.id);
+    elements.push({ kind: 'polyline', verts: [
+      { x: box.minX, y: box.minY }, { x: box.maxX, y: box.minY }, { x: box.maxX, y: box.maxY }, { x: box.minX, y: box.maxY },
+    ], closed: true, styleRef: highlightIds.has(n.id) ? 'tree:success' : 'tree:box' });
+    const fan = vcFan(n.path);
+    if (fan.length) {
+      const pts = fan.flatMap((f) => f.verts);
+      const t = fitInto(bboxOfPts(pts), box, NODEMARGIN);
+      for (const f of fan) elements.push({ kind: 'poly', verts: f.verts.map(t), styleRef: `tile:n:${f.n}` });
+    } else {
+      elements.push({ kind: 'text', at: boxCenter(box), tex: 'root', styleRef: 'label' });
+    }
+    elements.push({ kind: 'text', at: { x: (box.minX + box.maxX) / 2, y: box.minY - 1.2 }, tex: `${n.path.join('.') || '\\varnothing'}`, styleRef: 'label' });
+  }
+  elements.push({ kind: 'text', at: { x: maxX + 4, y: minY }, tex: `+${droppedCount}\\ \\mathrm{explored}`, styleRef: 'label' });
+
+  return { bbox: { minX: minX - 2, minY: minY - 3, maxX: maxX + 14, maxY: maxY + 2 }, elements };
 }
