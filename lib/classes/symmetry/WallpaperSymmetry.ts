@@ -199,7 +199,11 @@ function reflections(
 					const kind: "mirror" | "glide" = tau.isZero() ? "mirror" : "glide";
 					const tv = t.toVector();
 					const offset = (-sphi * tv.x + cphi * tv.y) / 2; // Im(e^{-iφ}·t)/2 = perpendicular offset
-					const offKey = offset.toFixed(2);
+					// Normalize the sign of a near-zero offset: a mirror at +0 and a glide at −0 (float ε) format
+					// as "0.00" vs "-0.00" and escape the essential-glide dedup, spuriously reporting the on-mirror
+					// (trivial) glide as essential — this mislabels pmm as cmm. Collapse ±0 to one bucket.
+					const offKeyRaw = offset.toFixed(2);
+					const offKey = offKeyRaw === "-0.00" ? "0.00" : offKeyRaw;
 					const key = `${j}|${offKey}|${kind}`;
 					if (seen.has(key)) continue;
 					seen.add(key);
@@ -339,20 +343,25 @@ function allTopCentersOnMirrorExact(
 export const _allTopOnMirrorExactForTest = allTopCentersOnMirrorExact;
 
 // The 17-group decision procedure, keyed on the exact element inventory. nMax = highest rotation
-// order; the mirror/glide/centers-on-mirror discriminators split the ambiguous pairs (pmm/pmg/cmm,
-// p3m1/p31m, p4m/p4g). Standard flowchart (e.g. IUCr Tables / Schattschneider 1978).
+// order; the ambiguous reflection pairs are split by the EXACT Bravais lattice, not a float glide
+// test: cm/cmm live on a centered (rhombic) lattice, pm/pmm/pmg on a primitive rectangular one — the
+// textbook centering criterion (IUCr Tables / Schattschneider 1978). This replaces the earlier
+// hasGlide-based split, whose essential-glide detection bucketed axis offsets to 2 float decimals and
+// mislabeled pmm↔cmm when a trivial on-mirror glide's offset formatted as −0.00 (a float-ε sign flip).
+// hasGlide is still exact-and-robust where it is used (pgg/pg vs p2/p1, which have no mirror lines).
 function identifyGroup(
 	nMax: number,
 	hasMirror: boolean,
 	hasGlide: boolean,
 	mAngles: number,
 	allTopOnMirror: boolean,
+	isCentered: boolean,
 ): WallpaperGroup {
 	switch (nMax) {
 		case 2:
 			if (!hasMirror) return hasGlide ? "pgg" : "p2";
-			if (!hasGlide) return "pmm";
-			return mAngles >= 2 ? "cmm" : "pmg";
+			if (isCentered) return "cmm";
+			return mAngles >= 2 ? "pmm" : "pmg";
 		case 3:
 			if (!hasMirror) return "p3";
 			return allTopOnMirror ? "p3m1" : "p31m";
@@ -363,7 +372,7 @@ function identifyGroup(
 			return hasMirror ? "p6m" : "p6";
 		default: // nMax === 1
 			if (!hasMirror) return hasGlide ? "pg" : "p1";
-			return hasGlide ? "cm" : "pm";
+			return isCentered ? "cm" : "pm";
 	}
 }
 
@@ -944,7 +953,7 @@ export function analyzeSymmetry(
 	// tolerance) — the group label is a stored characterization attribute, held to the same exactness
 	// standard as k and lattice shape. The float centres/axes above remain, for RENDERING only.
 	const allTopOnMirror = allTopCentersOnMirrorExact(ring, T1, T2, seed);
-	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror);
+	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror, latticeShape === "rhombic");
 	const pointGroupOrder = POINT_GROUP_ORDER[group];
 	const sub = buildSubdivision(group, pointGroupOrder, centers, axes, c1, c2);
 	// The cell (cut into `order` FD copies) tiles exactly for every certified group; on the rare self-check

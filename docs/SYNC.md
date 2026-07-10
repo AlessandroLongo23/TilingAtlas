@@ -801,3 +801,51 @@ hexagon), matching Wikipedia. FD subdivision = the plane FD-tiling clipped into 
 magenta diamond, 3-fold red triangle, 6-fold blue hexagon); centres+axes replicated across the viewport;
 symmetry view draws tiles monochrome. **Gates: 92/92 certified + 2461 oracle cells, 0 failures** (parallelogram,
 FD-inside, subdiv-tiles). Spec §"REVISION 2026-07-09b". — CC
+
+**2026-07-09 — CC → TA+AL — C++ oracle: trace-gating + streaming fuse + compact exact dedup (past the disk/RAM walls).**
+`eu_solver` per-node debug trace gated behind `EU_TRACE` (default off) → solve ~4–6× (k=10 137→32 s), byte-identical
+output. Fused `eu_solver EU_STREAM | eu_pruner EU_STREAM EU_KONLY=k`: raw never lands (183 MB→0 at k≤10), pruner RAM
+bounded to one k (k=11 31 MB, k=12 64 MB). Dedup provably exact — golden byte-identity (file mode) + A068599 k≤11.
+⚑ Memory unblocks to ~k22 but *time* is the wall (~k19–20/machine); k≥21 needs distribution (deferred; design shards).
+NOTES §44; spec+plan `docs/superpowers/{specs,plans}/2026-07-09-ctrnact-streaming-compact-pruner*`; merged `f9053f0`. — CC
+
+**2026-07-10 — CC → TA+AL — A proven hashable canonical form ("N") from Fable; validated correct, but the pipeline speedup claim RETRACTED.**
+AL posed the Soto-Sánchez normal-form problem to Fable 5; it returned a proved canonical form N (Stage A recomputes
+Λmax — fixes a sublattice defect the naive baseline misses — then HNF + star-stabilizer frame cut + coincidence
+lemma), `docs/canonical-form/`. Ported to TS (`lib/classes/algorithm/canonicalFormN.ts`); on the ctrnact oracle it
+reproduces **10/20/61/151/332/673** (k≤6) as a pure hash, matching `dedupeByCongruence`, 0 false merges, ~18× vs the
+existing `canonicalKey` (which also under-merges re-encodings, 2428 vs N's 1247). Wired N as the bucket key in
+`congruencePartition` (completeness-safe). **BUT profiling retracts the speedup:** `dedupeByCongruence` is dominated
+by `primitiveReducedCell` (2245 ms/cell), NOT the pairwise (0.12 ms/pair) — N-bucketing is ×0.98 (no gain); the
+757 s k=3 batch was ~all `primitiveReducedCell`. Real lever = a *trusted* N-hash dedup bypassing
+`primitiveReducedCell` (~10⁴×/cell). **Fail-fast test (AL's plan) — N SURVIVED:** distinct N-keys = A068599 for
+**k=1..11, 0 collisions across all 47,854 tilings**; 7,500 re-encodings incl. non-primitive supercells, 0 splits.
+No-drop follows from N's soundness proof + the ℤ[ω] model, so trusting N doesn't weaken completeness (octagon
+null-fallback). **LANDED:** `dedupeByNKey` is now the default final dedup in `PeriodSolver` (hash `nKeyOfCell`,
+null→`congruencePartition` fallback, drop-in `keyOf` reps); `congruencePartition` reverted to pristine;
+`PS_MERGECHECK=nkey` re-verifies N's merges against the pairwise authority; `PS_DEDUPE=congruence` restores the old
+path. Gate: full build green, `dedupe-nkey`+congruence tests pass, N confirmed engaging on real cells. Thesis trust
+write-up = AL. NOTES §45. — CC
+
+**2026-07-10 — CC → TA+AL — Weight-ceiling slope settled empirically: exactly 8/3 (AL's pgg theory, confirmed + sharpened).**
+AL's fundamental-domain argument (pgg k=7 tube) predicted slope 8/3; against the full k≤11 oracle weights it holds as an
+exact law: **pgg max = 2k + 2⌊(k−1)/3⌋** (10/10), pmg one phase behind (9/9), global max for k≥4; dually min-k(p)=⌊3p/4⌋+1
+on the tube (13/13, p≤14). Kills the 2.33–2.5 band of `ceiling-family-2026-07-09.md` (2.5k already dead at k=10). Predicts
+k=12→30, k=13→34. ⚑ Route-2 lower bound (≥⌊3p/4⌋+1 orbits per height-p primitive pgg tube) now has an exact target; ⚑ any
+2k+const enumeration weight budget is incomplete from k=10. `experiments/results/weight-slope-8-3-2026-07-10.md`. — CC
+
+**2026-07-10 — CC → TA+AL — 8/3 law CONFIRMED at k=12/13 (oracle extended); proof outline drafted.**
+Extended the C++ oracle to k=13 (49794 + 103082 distinct, = count.txt): k=12 max weight 30 = 2k+6 (no jump),
+k=13 max 34 = 2k+8 (jump) — both exactly as the law predicted, and at k=13 (first split point) all 8 w=34 tilings
+are pgg {3,6} tubes while pmg caps at 32 = 2⌊50/3⌋. Law exact 12/12 (k=2..13). Proof skeleton for TA Route-2 in
+`docs/WEIGHT_CEILING_OUTLINE.md`: slope = (steps/vertex ≤ 2/3, width-2 deletion-cap lemma) × (orbit ≤ 4, glide-freeness);
+pgg = unique mirror-free order-4 free-aspect group. ⚑ Makefile MAXNUM-stamp fix (stale-build completeness trap).
+Log `experiments/results/ctrnact-k1213-jump-2026-07-10.md→.log`. — CC
+
+**2026-07-10 — CC → TA+AL — wallpaper classification 58× in machine int; a pmm↔cmm bug fixed; counts+charts corrected.**
+New `nClassify` (rank-4 int ℤ[ω], no bigint) reproduces `analyzeSymmetry`'s (group,lattice,orbifold) byte-for-byte on all
+47,854 k≤11 tilings at **58×** (full symclass 25 s vs ~24 min). Building the gate exposed a real bug: `analyzeSymmetry`
+mislabeled some pmm as cmm via a float `-0.00` offset-bucket in its glide test — fixed at root in both classifiers by
+deciding cm/cmm vs pm/pmm/pmg from the EXACT Bravais lattice (centered=rhombic; tests 24/24, build clean). Regenerated
+symclass+weights: counts A068599-exact (k=8 2849→2850, k=9 5959→5960); charts re-rendered, pgg 2k+6 envelope unchanged.
+Detail: NOTES §46, `experiments/results/nclass-speedup-2026-07-10.md`. Next: step-2 star-stabilizer, then C++. — CC

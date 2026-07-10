@@ -1,0 +1,22 @@
+loaded 47854 cells from ctrnact.json (mode=blind)
+
+-- correctness A/B (baseline analyzeSymmetry = ground truth) --
+   k=1: 10/10 match
+   k=2: 20/20 match
+   k=3: 61/61 match
+   k=4: 151/151 match
+   k=5: 332/332 match
+   k=6: 673/673 match
+   k=7: 1472/1472 match
+   k=8: 2850/2850 match
+   k=9: 5960/5960 match
+   k=10: 11866/11866 match
+   k=11: 24459/24459 match
+
+   TOTAL: 47854/47854 match  — CLEAN
+
+-- timing --
+   baseline (bigint ζ₂₄) :  1459815 ms   30.506 ms/tiling
+   nClassify (int  ζ₁₂,blind) :    25167 ms   0.526 ms/tiling
+   speedup: 58.0×
+

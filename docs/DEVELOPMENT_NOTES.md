@@ -2934,3 +2934,378 @@ truncated — its contribution is empirically 0 admissible lattices at both k (j
 fall off the tile-sum ladder), but the closure was not completed; (b) the k=2 fill projection uses
 the tuned per-fill cost as a floor; (c) EXAMPLE MODE throughout — these numbers license proof
 effort, not claims.
+
+## 40. Efficiency-pruning — the octagon is the tightest tiling and √2 is safe with margin (2026-07-05, session 19; work order `experiments/efficiency-pruning-workorder-2026-07-04.md`)
+
+AL's work order: quantify the pruning power and stress-test the completeness of an efficiency pool
+filter `keep v iff wt(v) ≤ c·|v|`, feeding the parallel AL/TA proof (target `c = √2`) two numbers —
+how much √2 buys, and whether any certified tiling (octagons included) violates a candidate `c`.
+Full results in `experiments/results/eff-pruning-2026-07-05.md` (+ the `eff-pruning-*` logs/CSVs).
+
+**Pre-flight double-check (a parallel 6-reader workflow) killed four of the work order's premises —
+recorded here because "failed ideas and why" belong in the ledger:**
+1. **`wt(v)` has no sound callable in the production pipeline.** `|v|²` is exact and ready
+   (`reSurd(v.normSquared())`), but the only integer weight in-code is the `shortVectorPool` BFS depth,
+   which is *inflated* by monotone + restricted-direction + `lmax` pruning — using it would OVER-prune
+   and silently drop tilings (the "completeness knob as speed dial" §11.4 forbids). Sound weight = the
+   scout's *unpruned all-24-root* BFS level. ⟹ the filter lives on the scout/example path; the analytic
+   ratios use a purpose-built unpruned wt-oracle, never `shortVectorPool`.
+2. **The octagon premises were inverted.** The work order feared "√2-length octagon periods push the
+   sup above √2." Reality (computed exact from the stored basis): the 4.8.8 octagon (t1002, k=1) has
+   |u|²=|v|²=**3+2√2** (period length **1+√2 ≈ 2.414, not √2**), u·v=0, wt=3, ratio 3/(1+√2)=**3(√2−1)
+   ≈ 1.2426**. The √2 is the target *ratio*, not a period length; the √2 field-fact enters via an ODD
+   power of ζ₂₄ (outside ℤ[ζ₁₂]) — that is what the ζ₁₂ proxy dropped. There is exactly ONE octagon
+   tiling in certified k≤3 (no "3.4.8-family", no k=2/k=3 octagons), and it is oracle-matched, not
+   excluded. **The octagon is the tightest certified tiling and sits 12% below √2.**
+3. The committed catalogue carries the stale k=3 digest `99919f42`; live anchor is `11ee1b1d582811d1`.
+   Ratios are congruence-invariant so the catalogue bases are fine for ratios; the empirical gate uses
+   the live anchor.
+4. The proxy table (14%/21%/8×/1.2957@t6268) is from AL's non-repo ζ₁₂ tool — `fillprof-sandbox.ts` is
+   a fill-*timing* profiler, not it. Treated every proxy number as a hypothesis; did NOT round sups
+   toward √2.
+
+**The filter.** `lib/classes/algorithm/effFilter.ts` (TDD, `tests/eff-filter.test.ts` 9/9): exact test
+`Surd.cmp((P/Q)|v|², wt²) ≥ 0` for rational c²=P/Q; `parseEffC2` rejects decimals and fails loud.
+Injected into `scripts/th10-scout.ts` behind `PRUNE_EFF_C2` — `enumerateW` now records the BFS level
+per vector (`Pool.wts`), `applyEffFilter` prunes after enumeration with a loud ⚑ banner + per-shell
+kept-fractions. **Byte-identical-off GATE PASSED**: flag-off k=1 reproduces pool 43,776 / distinct
+831,279 / 224,557 fills / digest `6f9ca9cf2d16c75f` / 11-11 bijection — all byte-for-byte vs history.
+
+**Exp B — the breaking threshold (exact).** Per certified tiling, `max(wt(u)/|u|, wt(v)/|v|)` over the
+gauss-reduced basis (unpruned wt-oracle self-checked vs |W(t)| to weight 7):
+- **k=1 = 1.2426 (octagon t1002), k=2 = 1.1954 (t2016), k=3 = 4/3 = 2/√3 (t3038).** Overall
+  **k≤3 sup = 1.2426 = 3(√2−1), exact c² = 27−18√2.** √2, 1.30, 1.25 all SOUND; 2/√3 UNSOUND (drops
+  k=1/k=2). `scripts/eff-pruning-ratios.ts`.
+- **Galebach k≤6 (octagon-blind ℤ[ζ₁₂] reference, meet-in-the-middle wt-oracle over W(≤7)):** sup =
+  **1.2957 @ t6268, exact c² = (1664−448√3)/529** — the proxy's float-weight 1.2957 CONFIRMED exact.
+  Galebach's k=1 max (1.1547) falls *below* the certified 1.2426 because it can't see the octagon —
+  a clean demonstration of the blindness. ⟹ ζ₁₂ sup is a lower bound; cannot establish √2 for k≥4.
+  `scripts/eff-pruning-galebach.ts`.
+
+**Exp A — pruning power (`scripts/eff-pruning-sweep.sh` + `-table.ts`).** k=1 complete sweep:
+**the reduction reaches the fills** (7–43× fills, > pool's 3–10×, since pairs~pool²). **√2 buys 3.6×
+pool / 5.3× distinct / 8.8× fills** (all 11 kept); 1.30 → 4.6×/8.0×/12.9× (the 8.0× matches the proxy
+exactly). **Empirical breaking ∈ (1.20, 1.25]** (digest `6f9ca9cf`/11 at c≥1.25, `476ebbd7`/**10** at
+c≤1.20, the dropped tiling = the octagon) — **brackets the analytic 1.2426 and names the same tiling,
+so the reduced-basis bound is TIGHT**, no alternate-generator rescue. Per-shell kept (2/√3):
+100/45/20/12/9% ⟹ higher shells prune harder ⟹ the prune is ≥ this aggressive at the proven pool. k=2:
+filtered points all complete; the **unfiltered ∞ point OOMs** (pre-existing scout heap limit, filter
+OFF) — so the prune *makes k=2 tractable*. k=3: pool% only (runK3 samples); higher-k prunes harder
+(√2 keeps 21.1% vs k=1's 27.9%).
+
+**Verdict for the proof:** √2 holds over all octagon-complete data (certified k≤3) with a 12% margin,
+confirmed analytically AND empirically (they agree). The octagon — the feared case — is the worst case
+and is comfortably under √2. Honest caveat: octagon-completeness is k≤3 only; k≥4 rests on the
+octagon-blind galebach reference, so an all-k √2 claim carries that extrapolation.
+
+## 41. k=3 fill-cost measured under √2 pruning — days, not weeks; the tail is the risk (2026-07-05, session 19; work order `experiments/k3-fillcost-workorder-2026-07-05.md`)
+
+The §40 filter made the OOM-ing k=2 case tractable; AL's follow-up: use it at k=3 to run the
+pair→distinct→fill path that was previously out of reach and return the two numbers every k=3 estimate
+MODELED. Added `TH10_K3_FILL=1` to `scripts/th10-scout.ts` — routes k=3 through the full
+pairStage→joinStage→`runK3Fill` (a stratified fill sample: two-pass streaming setup keeps memory
+bounded to the sample; the 449-seed × millions materialization would OOM). Byte-identical off, build
+clean. Results: `experiments/results/eff-pruning-k3fill-2026-07-05.{md,log}` (+ the 15k re-run log).
+
+**Measured at c=√2 (pool W(8) 21.14% = 229,800; EXAMPLE MODE, W(8) depth unproven):**
+- **Distinct admissible lattices = 14,504,172** (deterministic across two runs) — the prior model was
+  ~1.7e7, so **measured is ~15% below the model**. Total fill work Σ per-seed = **23,436,240**.
+- **Per-fill cost is heavy-tailed and tail-dominated.** Bulk is fast and stable across a 4,259- and a
+  15,209-fill sample (p50 42, p90 81, p99 135 ms), but rare **catastrophic 100 s+ fills** (genuine hard
+  cells, no cap warnings) dominate the mean: at n=4,259 the single 178 s fill was 28% of sampled time
+  (mean 148 ms); at n=15,209 the mean settled to 109 ms but the **max grew 178→203 s** — the mean is
+  range-bounded (~109–148 ms), not point-pinnable by sampling.
+- **k=3 wall-clock at √2 is FILL-DOMINATED ≈ 3.7 days on 8 cores** (range 1.4–5 d at p50→mean); pairs
+  ~2 min (2.64e10 pairs, 14.4 min/1-core, embarrassingly parallel); the **join closure budget-cut**
+  (14.5M-lattice closure too big to finish in 30 min).
+- ⚑ **Measure-don't-assume win:** at a tight prune the join closure COMPLETED and **added 12
+  admissible-det lattices** — so **k=3 joins are NOT trivially 0** (k≤2 had a proven 0). The
+  completeness story must account for k=3 join contributions.
+
+**Bottom line:** the *timing* half of "how long does k=3 take" is now measured — **days, not weeks** —
+with the residual uncertainty entirely in the catastrophic-fill tail. The *pool-depth* half stays with
+the AL/TA √2 + weight-bound proof (s=8 example vs s=10 proven ⇒ scale the fill count at the same
+per-fill). The efficiency filter is what made this measurable at all.
+
+## 42. torusFill internals profiled → Rank 1 + Rank 2 (overlap-leg collapse), byte-identical ~2× (2026-07-08/09, session 20)
+
+AL: profile the fill (selection vs validity vs bookkeeping), decide what to optimise, then implement the
+smart way. Full detail: `experiments/results/fill-profile-2026-07-08/FINDINGS.md`.
+
+**Method.** `PS_FILL_PROFILE=1` adds per-pop semantic timers + tree-shape counters to `torusFill`
+(byte-identical when off: 34/34 period-solver tests + k=1 digest match with the profiler on), corroborated
+by `node --cpu-prof`. Driver `scripts/fill-profile-driver.ts` runs the normal solve() on real seeds; the
+scout's example-mode pair cross-product OOMs before any fill (4 GB at 54% of the k=2 pair stage).
+
+**Diagnosis.** The typical fill is per-node-expensive, not combinatorial: tiny DFS (3.7 pops/fill at k=1,
+~20 at k=3, sub-exponential), and float overlap testing is ~70–90% of the fill at every k. certify's
+internal overlap share is a stable 86% at k=1/2/3. Exact ℤ[ζ₂₄] arithmetic is only ~7% (a common wrong
+guess). `Polygon.intersects` is O(V²); a valid tiling has no overlaps, so the cost is running full O(V²)
+intersects to CONFIRM that edge-adjacent tiles are disjoint. Lever: cheaper nodes, not fewer nodes.
+
+**Rank 1: periodic overlap reduction.** `blockHasProperOverlap(block)` (O(block²) all-pairs) →
+`reps.some(r ⇒ properOverlapWithBlock(r, block))` (O(reps·block)) at the certify site (isCompleteTiling) and
+the per-fill setup site. The block is a union of Λ-translates of the reps, so any proper overlap has a rep
+witness inside the block; a reach guard falls back to exact all-pairs when the block might not contain it.
+NEW-true ⇒ OLD-true unconditionally (a rep is the m=n=0 block term), so a valid tiling is never dropped.
+Measured (k=3, per closure): certify overlap 334→26 ms (~13×), certify total 390→87 ms (~4.5×), overlap
+share of certify 86%→30%. Adversarial review (3 skeptics + judge): the drop direction is unconditionally
+safe; the review found a latent WRONG-ACCEPT gap in the first guard (`Rabs+2 < 2·maxCircum` omitted
+canonicalRep's 1.5·cellDiam reach, reachable by a future acute-point isotoxal star with circumradius > ~5),
+hardened to the exact witness-containment condition `1.5·cellDiam+0.1+2·maxCircum > Rabs+cellDiam+2 ⇒ fall
+back to exact`. Never trips for {3,4,6,8,12}; chosen over star-gating because the invariant is
+circumradius-vs-reach, not regular-vs-star.
+
+**Rank 2: OP-1 before the overlap leg.** Failed idea first (belongs here): sourcing `occ` from `analyze` to
+skip the WHOLE certificate is UNSOUND, analyze's small Rabs=5 block does not reliably reach a closure. The
+differential test `occ_analyze === occ_certify` caught 1/92 (a k=3, 9-tile, cellDiam-4.464 cell where the
+Rabs=5 block under-reaches). Reverted. Sound form: a leg reorder inside isCompleteTiling (judge, collect
+occ, then an OP-1 short-circuit `opDoom`, non-star only, returning false for a V<k or occ⊊allowed closure
+before the overlap leg). Byte-identical (a doomed cell is discarded either way; AND is commutative). Win
+modest (~3.5% of fill): Rank 1 already collapsed the overlap leg, and the V<k half fires 0 times at k=2/k=3
+(the type-prune is the whole lever).
+
+**Total gain (byte-identical, direct OLD-vs-NEW, profiler off).** k=1 23.4→10.4 s (2.25×), k=2 204.0→132.7 s
+(1.54×); k=1 digest `6f9ca9cf2d16c75f` and k=2 25 distinct cells / 91 raw identical on both. k=2 gains less
+because solve() = candidate enumeration (unchanged by R1/R2) + fill (~2×), and the candidate stage is a
+larger share at k=2. After R1+R2 the fill is balanced and the new dominant certify sub-cost is buildBlock
+(14%→72% of certify, ~20% of fill). Rank 3 (shared-edge / SAT short-circuit) NOT implemented (AL decision):
+it modifies the shared `Polygon.intersects` and leans on an unasserted CCW-winding invariant, and Rank 1
+already collapsed its target. Test: `tests/certify-overlap-periodic.test.ts` (92 catalogue cells + 8
+constructed overlaps, old ≡ periodic).
+
+## 43. k=3 with all speedups; the catastrophic-cell diagnosis; the early k-gate (2026-07-09, session 20)
+
+AL: run k=3 with all optimisations so far (12-dir + √2 prune + W(8)=2k+2 + Rank 1 + Rank 2), then
+investigate one catastrophic cell and act on it. Logs: `experiments/results/k3-all-opts-2026-07-09.log`,
+`k3-monster-hunt-2026-07-09.log`, `k3-monster-hunt-earlygate-2026-07-09.log`.
+
+**All speedups on k=3.** The candidate stage is now trivial: 12-dir pool |W(8)| = 7,992, √2-pruned to 4,368,
+9.54e6 pairs (21 s), joins complete (3.9 min), 662,465 fill candidates. That is 35× fewer fills than the
+24-dir √2 count (23,436,240, §41). The candidate levers make generation minutes and deterministic. The FILL
+is the wall. On the bounded stratified sample (4,169 lattices, identical to the 07-08 run because the
+candidate stage is deterministic), Rank 1+2 give per-fill mean 35.6→29.9 ms (1.19×), p50 30→28, p90 60→46,
+p99 103→67 (1.54×). The improvement grows toward the tail (Rank 1's certify win lands on the expensive
+fills), but the k=3 sample is contradiction-dominated (2 closures / 4,169), so the mean gain is modest, not
+the ~2× of k=1. Full k=3 stays infeasible: the 07-08 uncapped full-fill stalled inside seed 1 at a 27-day
+instantaneous ETA. The wall is the catastrophic tail, not the mean, and Rank 1+2's ~2× does not cross
+days→hours.
+
+**Monster diagnosis (per-fill profiler-delta capture on seed 1 = 3⁶).** Env-gated scout hooks
+(`TH10_SEED_ONLY`, `TH10_FILL_DESC`, `TH10_FILL_SLOW_MS/N`) snapshot the profiler counters around each
+solve() and dump the tree shape of any fill over a threshold. The tail is COMBINATORIAL (thousands of pops
+vs ~20 at a typical fill), in two classes:
+
+| class | detF | wall | pops | closures | dominant cost |
+|---|---|---|---|---|---|
+| dead-end | 34.64 | ~7 s | 4,438 | 0 | expand 80% + analyze 19% |
+| closure-storm | 33.77 | ~65 s | 10,513 | 93 (all rejected) | certify 23% + primitive 23% + expand 20% |
+
+The aggregate settles what the closures are: certCalls 279 → certPass 279, primCalls 279 → primTrue 276,
+gateRejected 276, cells 0. So the closure-storm's ~93 closures per fill are VALID PRIMITIVE tilings (not
+supercells: 99% pass primitivity) that the k-gate rejects for orbit count ≠ k. `gateRejected` is documented
+"orbit count ≠ k" and V<k is counted separately, so these have orbit count > k: the 3⁶ seed on a large
+lattice keeps closing into higher-uniformity tilings, each fully certified (buildBlock + overlap) AND
+primitivity-checked before the gate discards it. Rank 1+2 touch only ~10% of this (overlap = 40% of certify
+= 25% of the tail), which is exactly why the tail barely moved (monster max 4454→3982 ms).
+
+**The early k-gate (implemented).** Move the orbit-count gate from the post-pass into `torusFill` at the
+closure: reject a closed cell with orbit count ≠ k BEFORE the buildBlock+overlap certificate and the
+isPrimitive search. Soundness: orbit count is a property of the closed cell and is invariant to
+certification (isCompleteTiling / isPrimitive do not mutate reps, verified), and the early gate calls the
+SAME orbit function on the SAME reps as the post-pass, so its reject decision is identical. Reject-only: a
+cell that would be emitted (orbit = k) is never dropped. Design:
+- `FillCtx.gate` carries the gate closure, set only on the enumeration path (solve); single-cell verify
+  paths keep it undefined and run unchanged.
+- Scoped to k ≥ 3. At k ≤ 2 fills are cheap and virtually every closure is orbit = k (gateRej ≈ 0), so the
+  extra orbit count per closure is pure overhead (measured: k=1 forced-on 14.5 s vs 11.0 s off).
+  `PS_EARLY_GATE=1` forces it on at any k (A/B + tests), `=0` forces it off.
+- The now-redundant post-pass gate is skipped when the early gate ran (no double orbit computation).
+- New diag counter `earlyGateRejected`.
+
+**Byte-identical, proven three ways.** k=1 composition digest `6f9ca9cf2d16c75f` unchanged (default AND
+forced-on). `tests/early-gate-equivalence.test.ts` 8/8 (on vs off at k=1, identical emitted set where it
+fires). 45/45 across period-solver + certify-overlap + op3 + early-gate suites. `pnpm build` passes.
+
+**The win.** Closure-storm (detF 33.77) 65 s → 35 s (1.86×). certify (15 s) and primitive (15 s) go to 0
+(certCalls 279 → 0, primCalls 279 → 0 over the same 12 monster fills; timed work 181 → 91 s). The DFS
+(expand, pops) is unchanged, as it must be.
+
+**What it does NOT cover (honest limits).**
+- The dead-end class (0 closures) is UNCHANGED: with nothing closing, the gate never fires. That class needs
+  earlier CONTRADICTION detection in the DFS (constraint propagation / lookahead), a separate and harder
+  lever.
+- The orbit-gate computation is now the exposed floor (~19 s per closure-storm, ~190 ms per
+  countVertexOrbits on these large cells). The early gate MOVES this cost from the post-pass to the closure,
+  it does not remove it; a cheaper orbit count or an even-earlier partial-orbit bound is the next target.
+- It does NOT make the full 662,465-fill k=3 stage session-feasible. It halves the worst tail class; the
+  tail is smaller, not gone.
+- Scoped k ≥ 3 is a heuristic threshold, not a proof. EXAMPLE MODE throughout (W(8) pool unproven): a timing
+  improvement, not a completeness change.
+
+Artifacts: `lib/classes/algorithm/PeriodSolver.ts` (FillCtx.gate, diag.earlyGateRejected, ctx.gate at k≥3,
+torusFill early reject, post-pass skip), `tests/early-gate-equivalence.test.ts`, `scripts/th10-scout.ts`
+(env-gated monster-hunt hooks + the k3-fill measurement path).
+
+## 44. C++ oracle — trace-gating + streaming fuse + compact exact dedup: past the disk/RAM walls, dedup still provably exact (2026-07-09, session 20, worktree `feat/ctrnact-streaming-pruner`)
+
+The Čtrnáct C++ oracle (`tools/ctrnact-oracle/`) got two optimizations. Both were validated against a golden
+capture of the pre-change output **plus** the A068599 counts (exact match k≤11: 10/20/61/151/332/673/1472/
+2850/5960/11866/24459), so completeness is untouched. Subagent-driven build, 7 tasks, each gated before the next.
+
+**Trace-gating — the wall-time win.** `eu_solver` wrote a per-node debug trace (`euoutput1.txt`) on every DFS
+node: string-building + I/O done once per configuration, never read by the search or the emitted solutions
+(the `mincycle` computation inside `writecycle` runs regardless). Gating it behind `EU_TRACE` (default off,
+`-DEU_TRACE=1` restores it) cut solve ~4–6× with byte-identical solution files (sha256). Measured k=10 solve
+137s→32s, k=6 3.75s→0.66s; the relative win shrinks with k as real search work dominates. This was the actual
+speed lever, NOT multicore — root-split parallelism would give ~3–5× but with a concurrency race on the global
+`mincycle`/output, a bad trade on a completeness oracle. Rejected with that reasoning recorded.
+
+**Streaming fuse + compact dedup — the headroom win.** `eu_solver EU_STREAM | eu_pruner EU_STREAM` pipes each
+solution block so raw output never lands on disk; the pruner stores each distinct solution as a packed `int16`
+graph (the `Sol.label` field was stored-but-never-read — `comparesolutions` uses only the five index arrays —
+so it was dropped, not narrowed) and frees the store between k; `EU_KONLY=k` drops non-target blocks before
+`decode`, bounding pruner RAM to a single k. Before/after at the k≤10 full catalogue: original (trace on, file
+two-step) 160s / 183 MB raw disk / 49 MB pruner RAM → fused (branch HEAD) 32s / **0** raw / 27 MB. Fused per-k:
+k=11 66s, pruner peak 31 MB, 0 raw; k=12 157s, 64 MB, 0 raw. The streaming layer's wall win is small at low k
+(1.26×) — its value is disk→0 and the RAM bound, i.e. the headroom that makes high k reachable at all.
+
+**⚑ What this buys, and what's deferred.** On the target M5 (24 GB, 4P+6E) the memory stack unblocks to ~k22
+on paper, but *time* is the true ceiling (~k19–20 on one machine; solve grows ~2.5×/k). k≥21 needs distribution
+— root-split across machines, which the design already accommodates (the streaming pruner is stateless except
+its bucket table, so it shards). A complete canonical-form dedup (store keys not graphs, ~50× less pruner RAM)
+is the frontier lever but rests on canonicalization completeness; **deferred** to the distributed layer where
+it's actually needed. The single-machine path keeps exact pairwise (packed), so no completeness-trust is
+introduced here. Spec + TDD plan: `docs/superpowers/{specs,plans}/2026-07-09-ctrnact-streaming-compact-pruner*`.
+Merged to `feat/wallpaper-symmetry` at `f9053f0` (branch commits `7c14bb1`…`971ecfc`).
+
+## 45. A proven hashable canonical form for period cells (Fable-derived "N"), and it replaces the O(n²) congruence bucket (2026-07-10, session 21)
+
+The §44 note flagged "a complete canonical-form dedup (store keys not graphs) is the frontier lever but rests on
+canonicalization completeness — deferred." That lever now exists. AL posed the Soto-Sánchez normal-form problem
+(one canonical symbol per tiling so congruence testing is an equality check, not a search) to Fable 5 as a
+self-contained brief; Fable returned a method with proofs, `docs/canonical-form/canonical-form.{tex,pdf}` +
+a Python reference and adversarial suite under `docs/canonical-form/verification/`. We reviewed, scored it 8/10,
+and validated it on our own data.
+
+**What N is, in one paragraph.** A tiling's symbol (period lattice + seed vertices in ℤ[ω], ω=ζ₁₂) has infinitely
+many encodings. N canonicalizes them: (Stage A) recompute the **maximal** translation lattice Λmax — this is the
+part the four-source ambiguity list *misses*, since the same tiling re-encodes over any finite-index sublattice,
+and Fable's note proves the naive 24n-frame baseline is therefore NOT canonical without it; then HNF the lattice,
+canonical coset reps for seeds, row-sort. The residual 24n orientation/origin ambiguity is cut to the **stabilizer
+of the vertex-star multiset** by a direct rule (a star is a per-vertex 12-bit invariant a global rotation only
+permutes), and a proved coincidence lemma says the frames that survive produce byte-identical candidates exactly
+when they are true symmetries — so the remaining minimization only ever compares copies. Soundness (N(M)~M) and
+canonicity (M~M' ⇒ N(M)=N(M')) are proved for the equivalence V'=gV+c, g∈D₁₂; octagon tilings are out of domain
+(ζ₁₂ excludes the 45° directions — the same 12-direction scope as our path).
+
+**Validated on the real oracle (`scripts/canonical-bench.ts`, `docs/canonical-form/verification/test_on_repo.py`).**
+Ported N to TS operating on `PeriodCell` (project ζ₂₄ encode → ζ₁₂ even positions; octagon ⇒ null). Over the
+ctrnact cells reconstructed via `reconstructOracleCellExact`: distinct-N per k = **10/20/61/151/332/673** (k=1..6),
+i.e. exactly A068599 as a pure hash, matching `dedupeByCongruence`; zero false merges; invariant under 1638+
+re-encodings (D₁₂ + basis + translation + sublattice). The one k=1 octagon tiling (t1002/4.8.8) correctly returns
+null (out of domain), re-added by hand per the octagon decision.
+
+**Speed.** N vs the repo's existing hashable key `TranslationalCellExtractor.canonicalKey`: **~18×** (k≤6 batch,
+228 vs 4255 µs/cell) — part algorithmic (star-stabilizer vs canonicalKey's 48 D₂₄ frames), part representational
+(ℤ[ζ₁₂] rank-4 machine ints vs ζ₂₄ rank-8 BigInt, legitimate since N excludes octagons). And N is *correct* where
+canonicalKey is not: on a 2494-cell batch with re-encoded duplicates N gave 1247 (correct), canonicalKey 2428
+(the §12.7 under-merge — canonicalKey canonicalizes a *fixed* cell's orientation/origin but not the
+fundamental-domain / basis choice, which N's Stage A absorbs). NB canonicalKey **does** handle chirality (its
+reflect loop merges the snub enantiomorph — all three methods merged it); N's edge over it is re-encoding
+robustness, not chirality.
+
+**Wired in — but it does NOT speed up `dedupeByCongruence` (corrected 2026-07-10, same session).** The first
+wiring bucketed `congruencePartition` (TilingCongruence.ts) by `nKeyOfCell` (module
+`lib/classes/algorithm/canonicalFormN.ts`), completeness-safe (N trusted only to *separate* — a false split can
+only over-count, never drop; *merging* stays under the authoritative pairwise `cellsCongruent`). The bucketing is
+correct and harmless, **but profiling proved it buys nothing**, because the pairwise it optimizes was never the
+bottleneck. Per-call cost (k=3, 40 cells): **`primitiveReducedCell` 2245 ms/cell**, `nKeyOfCell` 0.23 ms/cell,
+`cellsCongruent` 0.12 ms/**pair**. End-to-end `dedupeByCongruence` on the subset: N-bucket ON 96.8 s vs OFF 95.1 s
+= **×0.98**. The 757 s for the 364-cell k=3 batch reported above was ~entirely `primitiveReducedCell`
+(364 × 2.2 s ≈ 800 s), not the pairwise. My earlier "757 s → 1 s in the pipeline" claim was WRONG and is retracted.
+
+**The real bottleneck is `primitiveReducedCell`** — it replicates a (2R+1)²=25-cell patch and runs a full
+`TranslationalCellExtractor.extract` for *every* input cell, even already-primitive ones (all oracle cells are
+primitive), and it dominates the dedup at ~2.2 s/cell. **Where N actually delivers speed:** as a *standalone*
+hash dedup that BYPASSES `primitiveReducedCell` and the pairwise entirely — N's Stage A recomputes the maximal
+lattice in 0.23 ms/cell, doing the same primitivity job `primitiveReducedCell` does at ~10⁴× the speed. Deduping
+by `nKeyOfCell` into a Set is thus ~10⁴× faster per cell than `dedupeByCongruence`, but it TRUSTS N as the
+authority (no pairwise fallback) — a completeness decision deferred to AL, not taken here. So the honest state:
+N is a validated correct+fast canonical key; the bucket-wiring is a safe no-op; the true speed lever is either
+(a) a trusted N-hash dedup replacing `dedupeByCongruence`, or (b) giving `primitiveReducedCell` a fast
+already-primitive pre-check (independent of N). Gate on the landed change: `tiling-congruence` + `dsym-generator`
+tests 7/7, typecheck clean, counts unchanged. `CANON_N_BUCKET=0` restores pure-invariant bucketing.
+
+**⚑ Honest flags.** (1) The 18× (N vs `canonicalKey` as standalone keys) stands and is a mixed
+algorithmic+representational number. (2) The pipeline-integration speedup does NOT stand — retracted above; the
+bucket-wiring is ×0.98. (3) N-bucketing weakens one guard direction (a false *split* over-counts, uncaught
+within-bucket); N is proved/empirically split-free, but a verification run should A/B against `CANON_N_BUCKET=0`.
+(4) Scope is 12-direction (octagon out of domain). Fable's note leaves directness (T1) partly closed and entry
+bounds (T2) sketched. The thesis contribution is the proven canonical form + the sublattice-maximality
+correction; pitched as "correctness at hash speed," not "solved the open problem" — and NOT as a drop-in pipeline
+speedup, which this session disproved.
+
+**Fail-fast test: can N be the dedup AUTHORITY? (survived.)** AL's plan: use N as authority, try to break it against
+ground truth; one genuine failure kills it, else invest in the proof. No pairwise needed — the oracle IS the
+ground-truth partition, and N runs directly on `{T1,T2,Seed}` (`nKeyOfSymbol`). Results (`scripts/n-authority-test.ts`):
+**no false merge** — distinct N-keys per k equal A068599 for **k=1..11 (10/20/61/151/332/673/1472/2850/5960/11866/
+24459), zero collisions across all 47,854 tilings, 0 nulls, 12.2 s**; **no false split** — 300 tilings × (20
+isometries + 5 non-primitive supercells) = 7,500 re-encodings, 0 splits (the supercell leg specifically validates
+skipping `primitiveReducedCell`: N's Stage A recovers Λmax at indices 2/3/4/5/7). So option 1 is empirically viable.
+Rigor: the completeness-critical direction (N(M)=N(M') ⇒ M~M', i.e. no drop) follows from N's **soundness** proof
+(N(M)~M) plus the ℤ[ω] model, both in Fable's note — trusting N does not weaken the completeness proof beyond
+accepting that proof + the 12-direction model (octagon handled separately, null-fallback). Residual risk is a
+*port* bug, guarded by (a) this 47,854-tiling + 7,500-re-encoding differential and (b) keeping `dedupeByCongruence`
+as an opt-in verification.
+
+**LANDED — `dedupeByNKey` is the default final dedup.** `dedupeByNKey(cells, keyOf)` (TilingCongruence.ts) groups by
+`nKeyOfCell`, no pairwise, no `primitiveReducedCell`; null-key cells (octagon/degenerate) route to the authoritative
+`congruencePartition` (an octagon tiling is never congruent to a 12-direction one, so the subsets never cross); `keyOf`
+picks the representative exactly as `dedupeByCongruence`, so it is a drop-in with identical output. Completeness guard
+`PS_MERGECHECK=nkey|full` re-checks every N-group pairwise against `cellsCongruent` and throws loud if N ever merged
+two non-congruent tilings (the only drop-causing direction). `congruencePartition` was reverted to pristine (the
+earlier no-op N-bucket removed) so the authority stays untouched for verification. Wired at `PeriodSolver` final dedup;
+`PS_DEDUPE=congruence` restores the exact pairwise path. Gate: full `pnpm build` green; `dedupe-nkey` test (distinct
+set, duplicate collapse, octagon fallback, merge-guard) + `tiling-congruence` regression pass; N confirmed engaging
+(non-null, distinct keys) on real cells. **Measured earning on a REAL solve** (`scripts/dedup-timing.ts`, k=2,
+{3,4,6,12}, 40 seeds → 25 cross-seed cells → 20 distinct): the cross-seed aggregate dedup went **33.9 s → 0.30 s =
+×111**, identical 20-tiling output (representative sets byte-identical). The multiplier is `primitiveReducedCell`
+(~1.4 s/cell here) × every cell vs one hash each; it therefore GROWS with k (k=2's aggregate is only 25 cells; at
+k≥3 it is hundreds–thousands, where the old path runs minutes–hours and N stays sub-second). Trust write-up for the
+thesis is AL's (the soundness-proof argument above).
+
+## 46. nClassify — wallpaper classification in rank-4 machine int (58×), and a pmm↔cmm bug in analyzeSymmetry it exposed (2026-07-10, session 21)
+
+The symclass cost was the pole in chart generation: `WallpaperSymmetry.analyzeSymmetry` runs in ℚ(ζ₂₄) dim-8
+`bigint` and searches ~47 candidate isometries per tiling with an O(|seed|³) exact membership test —
+32 ms/tiling, 806 s for the 24,459 k=11 tilings. A throwaway magnitude probe (`scripts/bignum-magnitude-probe.ts`,
+48.8 M ops over the k=11 catalogue) settled that the bigint/rational layer is dead weight: max |coeff| = **210**,
+every denominator **= 1**, worst multiply intermediate 3.5e5 (int32 headroom 26e12×). The cells are natively
+rank-4 integer vectors `[a0,a1,a2,a3]` over {1,ω,ω²,ω³} (ω=ζ₁₂) — `analyzeSymmetry` decodes those INTO ζ₂₄ bigint.
+
+`lib/classes/symmetry/nClassify.ts` reimplements only the classification half (group / orbifold / latticeShape)
+in machine int: `inLattice` becomes an O(1) float-solve + exact int-verify (no dim-8 Cramer), the τ mirror/glide
+test and `allTopCentersOnMirror` incidence stay exact int, `classifyLattice`'s oblique test is Surd-free mutual
+integer-containment. The fundamental-domain float geometry (buildFD / buildSubdivision / Sutherland-Hodgman, ~half
+of `analyzeSymmetry`) is RENDER-only and dropped. Step 1 of the "drop bigint → improve algorithm → C++" plan keeps
+the same blind candidate enumeration; steps 2 (star-stabilizer pruning via N) and 3 (C++ int32 in the oracle) pending.
+
+**Result:** `scripts/nclass-bench.ts` A/B against `analyzeSymmetry` on the full k≤11 catalogue (ctrnact.json,
+47,854 tilings) = **47,854/47,854 identical labels, 58×** (30.5 → 0.53 ms/tiling; full symclass 25 s vs ~24 min).
+
+**Bug found + fixed en route.** `analyzeSymmetry` mislabeled some **pmm as cmm** (94/2000 at k≤7). Its
+essential-glide filter buckets each axis's perpendicular offset to 2 float decimals and string-matches a glide's
+bucket against the mirror buckets; a trivial glide sitting ON a mirror at offset ≈0 formatted as `"-0.00"` vs the
+mirror's `"0.00"` — a float-ε sign flip — so the on-mirror glide survived as "essential" and flipped pmm→cmm. The
+tell is `rectangular|cmm`, impossible (cmm needs a centered=rhombic lattice). Root fix in BOTH classifiers: cm/cmm
+vs pm/pmm/pmg is now decided by the EXACT Bravais lattice (centered=rhombic ⇒ cm/cmm), the textbook centering
+criterion, not a float glide test; `hasGlide` is kept only where there is no mirror (pgg/pg vs p2/p1), where it is
+exact. Wallpaper tests 24/24, `pnpm build` clean.
+
+**Counts + charts corrected.** The k≤11 symclass CSV and the "weight by wallpaper group" chart were built with the
+buggy labels; the k≤10 slice also carried the old develop undercount (k=8=2849, k=9=5959). Regenerated both symclass
+(nClassify) and weights (wtF) from ctrnact.json: k=1..11 = 10/20/61/151/332/673/1472/2850/5960/11866/24459 (A068599
+exact). Charts re-rendered. The cmm/pmm curves moved (now both ≈2k, near-overlapping); the by-lattice chart and the
+2k+6 envelope (held by pgg on rectangular, never mislabeled) are unchanged — the headline result stands. Log:
+`experiments/results/nclass-speedup-2026-07-10.md`.
