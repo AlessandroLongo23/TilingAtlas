@@ -1,0 +1,26 @@
+# Star extension of the Čtrnáct engine — setup + golden baseline
+# Branch: feat/ctrnact-star (worktree), off feat/wallpaper-symmetry @ 1656a39
+# Plan: ~/.claude/plans/cheerful-popping-falcon.md; design: docs/ctrnact-proof-program-2026-07-10.md §4
+# Date: 2026-07-10
+
+[23:12] Worktree created: ~/.config/superpowers/worktrees/TilingAtlas/ctrnact-star
+[23:12] Built untouched engine (make MAXNUM=6): eu_solver, eu_pruner, eu_classify, eu_develop
+[23:13] Golden baseline run: ./run-oracle.sh 6 golden-k6
+        counts k=1..6: 10 20 61 151 332 673  (octagon-blind, matches A068599 minus t1002)
+        total kept: 1247, develop 1247/1247, 3s end-to-end
+[23:13] Golden manifest: tools/ctrnact-oracle/golden/regular-k6.sha256
+        34 hashed files (33 pruned catalogs + ctrnact-cells-k6.json)
+        This is the byte gate for milestone M2: the corner-class generalization must
+        reproduce every one of these hashes with the generated regular palette.
+
+Next: M1 — alphabets/gen_alphabet.py + palettes/regular.json (pinned legacy names),
+gate = 44/44 exact reproduction of mainlist + pruner_tables.inc + certificates pass.
+
+[23:2x] M1 GATE PASS — alphabet generator (alphabets/gen_alphabet.py)
+        configs enumerated: 14 (the classical count for {3,4,6,12}, octagon-blind)
+        44/44 legacy entries matched exactly (label/lneig/rneig/mirro/lvert arrays)
+        ferkval == |Aut(vertexdef)| verified per entry, free action + first-ran
+        transversal certificates all PASS (309 PASS / 0 FAIL in tables/regular/certs.txt)
+        completeness direction: exactly 44 distinct folds exist up to isomorphism
+        == Marek's table has no missing variant and no extra (Track-1 obligations A3/A5)
+        byte gate: generated pruner_tables.inc first 7 lines identical to legacy
