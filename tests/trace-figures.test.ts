@@ -84,3 +84,31 @@ describe('F2 polygons figure', () => {
     expect(xs[1]).toBeLessThan(xs[2]);
   });
 });
+
+// append to tests/trace-figures.test.ts
+import { layoutTree, type TreeInput } from '../figures/trace/treeLayout';
+import { torusTreeFigure } from '../figures/trace/treeFigure';
+import { loadTrace as load2, type TorusNode as TN } from '../figures/trace/loadTrace';
+
+describe('treeLayout', () => {
+  it('assigns depth by ancestry and non-overlapping x to leaves', () => {
+    const nodes: TreeInput[] = [
+      { id: 1, parentId: -1 }, { id: 2, parentId: 1 }, { id: 3, parentId: 1 }, { id: 4, parentId: 2 },
+    ];
+    const pos = layoutTree(nodes);
+    expect(pos.get(1)!.depth).toBe(0);
+    expect(pos.get(4)!.depth).toBe(2);
+    expect(pos.get(2)!.x).not.toBeCloseTo(pos.get(3)!.x, 6);
+  });
+});
+
+describe('F6 torus tree', () => {
+  it('renders all 18 fill-476 nodes with per-node geometry + edges', () => {
+    const torus = load2<TN>('figures/traces/running-example', 'torus');
+    const ir = torusTreeFigure(torus);
+    const polys = ir.elements.filter((e) => e.kind === 'poly');
+    const edges = ir.elements.filter((e) => e.kind === 'polyline');
+    expect(polys.length).toBeGreaterThan(18);
+    expect(edges.length).toBeGreaterThanOrEqual(17);
+  });
+});

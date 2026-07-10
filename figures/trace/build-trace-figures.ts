@@ -8,6 +8,8 @@ import type { FigureIR } from '../ir/types';
 import { emitSvg } from '../emit/svg';
 import { emitTikz } from '../emit/tikz';
 import { polygonsFigure } from './polygonsFigure';
+import { loadTrace, type TorusNode } from './loadTrace';
+import { torusTreeFigure } from './treeFigure';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'figures', 'out', 'trace');
@@ -20,5 +22,9 @@ function write(id: string, ir: FigureIR): void {
   console.error(`[trace-figures] wrote ${id}.svg + ${id}.tex`);
 }
 
-// F2 — polygon set. (F3/F5/F6 wired in later tasks.)
+// F2 — polygon set. (F3/F5 wired in later tasks.)
 write('f2-polygons', polygonsFigure([3, 4, 6]));
+
+const EX = path.join(ROOT, 'figures', 'traces', 'running-example');
+// F6 — torus-fill DFS of the running example (fill 476, all 18 nodes).
+write('f6-torus-fill', torusTreeFigure(loadTrace<TorusNode>(EX, 'torus')));
