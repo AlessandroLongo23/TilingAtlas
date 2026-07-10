@@ -69,8 +69,77 @@ function preserves(T1: Vec, T2: Vec, seed: Vec[], g: (z: Vec) => Vec): boolean {
 // Candidate orientations to test. "blind" = all of them (analyzeSymmetry's enumeration). "star" prunes
 // to the frames that permute the vertex-star multiset onto itself (a necessary condition for a symmetry).
 const CRYST_ROT = [2, 3, 4, 6, 8, 9, 10]; // ω^m orders ∈ {6,4,3,2,3,4,6}; m=1,11 (order 12) not crystallographic
+const ALL_REF = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const orderOfRot = (m: number): number => 12 / gcd(m, 12);
 function gcd(a: number, b: number): number { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; }
+
+// --- star-stabilizer pruning (Fable's N): a candidate frame can be a symmetry only if it permutes the
+// vertex-star multiset onto itself. The star of a seed vertex s is the 12-bit set {k : s+ω^k is a vertex}
+// (a Λ-coset invariant). A global rotation ω^m rotates every star's bits by +m; a reflection ω^m·conj
+// sends bit k → m−k. So the star multiset must be invariant under that bit-permutation. ---
+const fdiv = (a: number, b: number) => Math.floor(a / b);
+const keyOf = (v: Vec) => `${v[0]},${v[1]},${v[2]},${v[3]}`;
+const WTAB: Vec[] = (() => { const w: Vec[] = []; let x: Vec = [1, 0, 0, 0]; for (let i = 0; i < 12; i++) { w.push(x); x = mulw(x); } return w; })();
+
+// HNF of the 2×4 lattice matrix → canonical basis of Λ (2 rows). Column-echelon integer reduction.
+function hnf2(rows: Vec[]): Vec[] {
+	const mat = rows.map((r) => r.slice());
+	const basis: Vec[] = [];
+	for (let col = 0; col < 4; col++) {
+		for (;;) {
+			const nz = mat.filter((r) => r[col] !== 0);
+			if (nz.length <= 1) break;
+			nz.sort((a, b) => Math.abs(a[col]) - Math.abs(b[col]));
+			const p = nz[0];
+			for (let idx = 1; idx < nz.length; idx++) { const r = nz[idx]; const q = fdiv(r[col], p[col]); for (let i = 0; i < 4; i++) r[i] -= q * p[i]; }
+		}
+		const pi = mat.findIndex((r) => r[col] !== 0);
+		if (pi < 0) continue;
+		let piv = mat[pi];
+		mat.splice(pi, 1);
+		if (piv[col] < 0) piv = piv.map((x) => -x);
+		for (const b of basis) { const q = fdiv(b[col], piv[col]); for (let i = 0; i < 4; i++) b[i] -= q * piv[i]; }
+		basis.push(piv);
+	}
+	return basis;
+}
+// Canonical coset representative of v modulo the HNF basis.
+function repH(v: Vec, basis: Vec[]): Vec {
+	const x = v.slice();
+	for (const b of basis) { const c = b.findIndex((e) => e !== 0); const q = fdiv(x[c], b[c]); if (q) for (let i = 0; i < 4; i++) x[i] -= q * b[i]; }
+	return x;
+}
+const rotBits = (w: number, m: number) => ((w << m) | (w >> (12 - m))) & 0xfff; // bit k → k+m
+function refBits(w: number, m: number): number { let r = 0; for (let k = 0; k < 12; k++) if (w & (1 << k)) r |= 1 << (((m - k) % 12) + 12) % 12; return r; } // bit k → m−k
+
+// Prune rotation/reflection powers to the star-stabilizer. Returns the candidate lists to feed the
+// (unchanged) preserves()-based verification — a superset of the true symmetries, so results are identical.
+function starCandidates(T1: Vec, T2: Vec, seed: Vec[]): { rot: number[]; ref: number[] } {
+	const H = hnf2([T1.slice(), T2.slice()]);
+	if (H.length !== 2) return { rot: CRYST_ROT, ref: ALL_REF }; // degenerate — fall back to blind
+	const reps = seed.map((v) => repH(v, H));
+	const Sset = new Set(reps.map(keyOf));
+	const words: number[] = [];
+	const seenS = new Set<string>();
+	for (const s of reps) {
+		const sk = keyOf(s);
+		if (seenS.has(sk)) continue;
+		seenS.add(sk);
+		let w = 0;
+		for (let k = 0; k < 12; k++) if (Sset.has(keyOf(repH(add(s, WTAB[k]), H)))) w |= 1 << k;
+		words.push(w);
+	}
+	const sortedWords = [...words].sort((a, b) => a - b);
+	const same = (transform: (w: number) => number) => {
+		const t = words.map(transform).sort((a, b) => a - b);
+		for (let i = 0; i < t.length; i++) if (t[i] !== sortedWords[i]) return false;
+		return true;
+	};
+	return {
+		rot: CRYST_ROT.filter((m) => same((w) => rotBits(w, m))),
+		ref: ALL_REF.filter((m) => same((w) => refBits(w, m))),
+	};
+}
 
 const rotPreservesLattice = (T1: Vec, T2: Vec, m: number): boolean =>
 	inLattice(T1, T2, mulwPow(T1, m)) && inLattice(T1, T2, mulwPow(T2, m));
@@ -139,7 +208,7 @@ function reflectionInventory(T1: Vec, T2: Vec, seed: Vec[], refCand: number[]): 
 
 // Exact p4m/p4g and p3m1/p31m split: does EVERY top-order rotation centre lie on a mirror? Direct port of
 // allTopCentersOnMirrorExact to ℤ[ω] int. Consulted only for nMax ∈ {3,4}. c = num/D, D = 1 − ω^{m*}.
-function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotCand: number[]): boolean {
+function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotCand: number[], refCand: number[]): boolean {
 	const v0 = seed[0];
 	// one top-order power m* (the two crystallographic powers of an order share centres)
 	let mStar = -1;
@@ -186,7 +255,7 @@ function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotC
 	}
 	// (3) reflection/glide coset reps (m, s0)
 	const refls: { m: number; s0: Vec }[] = [];
-	for (let m = 0; m < 12; m++) {
+	for (const m of refCand) {
 		if (!refPreservesLattice(T1, T2, m)) continue;
 		for (const w of seed) {
 			const s0 = sub(w, mulwPow(conj(v0), m));
@@ -286,12 +355,11 @@ function identifyGroup(nMax: number, hasMirror: boolean, hasGlide: boolean, mAng
 }
 
 /** Classify a 12-direction period cell (rank-4 int vectors) into (latticeShape, group, orbifold). */
-export function nClassify(T1: Vec, T2: Vec, seed: Vec[], _mode: NClassMode = "blind"): NClass {
-	const rotCand = CRYST_ROT;
-	const refCand = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-	const nMax = rotNMax(T1, T2, seed, rotCand);
-	const { hasMirror, hasGlide, mAngles } = reflectionInventory(T1, T2, seed, refCand);
-	const allTopOnMirror = nMax === 3 || nMax === 4 ? allTopCentersOnMirror(T1, T2, seed, nMax, rotCand) : false;
+export function nClassify(T1: Vec, T2: Vec, seed: Vec[], mode: NClassMode = "blind"): NClass {
+	const cand = mode === "star" ? starCandidates(T1, T2, seed) : { rot: CRYST_ROT, ref: ALL_REF };
+	const nMax = rotNMax(T1, T2, seed, cand.rot);
+	const { hasMirror, hasGlide, mAngles } = reflectionInventory(T1, T2, seed, cand.ref);
+	const allTopOnMirror = nMax === 3 || nMax === 4 ? allTopCentersOnMirror(T1, T2, seed, nMax, cand.rot, cand.ref) : false;
 	const latticeShape = classifyLattice(T1, T2);
 	const group = identifyGroup(nMax, hasMirror, hasGlide, mAngles, allTopOnMirror, latticeShape === "rhombic");
 	return { latticeShape, group, orbifold: ORBIFOLD_SIGNATURE[group] };

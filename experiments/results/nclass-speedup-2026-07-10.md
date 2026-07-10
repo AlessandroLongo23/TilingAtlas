@@ -47,6 +47,24 @@ The full symclass pass drops from ~24 min (baseline) / 806 s (k=11 alone, origin
 Counts regenerated from correct geometry: k=1..11 = 10/20/61/151/332/673/1472/2850/5960/11866/24459
 (A068599 exact; fixes the prior k=8=2849, k=9=5959 undercount). Both weight charts re-rendered from these.
 
-## Step 2 — star-stabilizer candidate pruning (Fable's N)   [pending]
+## Step 2 — star-stabilizer candidate pruning (Fable's N)   → measured NON-WIN, not adopted
 
-## Step 3 — C++ int32 in the oracle   [pending]
+Prune the rotation/reflection candidate powers to the vertex-star stabilizer (a candidate frame can be a
+symmetry only if its 12-bit star-permutation preserves the star multiset) before the `preserves()` check.
+Sound (2000/2000 k≤7 clean, identical labels). `nClassify(..., "star")`, default stays "blind".
+
+| sample | blind ms/tiling | star ms/tiling | star vs blind |
+|---|---|---|---|
+| k≤7 (ctrnact[:2000]) | 0.261 | 0.284 | **0.92× (slower)** |
+| k=11 (cells-k11[:2000]) | 0.149 | 0.185 | **0.81× (slower)** |
+
+Star pruning is ~10–25% SLOWER than blind. Why: the other chat's premise — "cut the 24 candidate isometries
+to the star-stabilizer, that's the expensive part" — held for the ORIGINAL classifier, where each candidate
+test was a dim-8 bigint `preserves()`. Step 1 already made membership O(1) (float-solve + exact verify) and
+kept the cheap linear-lattice gate, so little expensive per-candidate work remains to save; the star
+computation itself (HNF + |S|·12 coset lookups + 19 multiset compares/tiling) costs more than it saves. The
+representational win (step 1) SUBSUMED the algorithmic win (star) — they are not additive. **Production path
+stays blind.** The star machinery's value is unification with the N dedup key (same computation → symmetry
+group + canonical hash together), not speed; kept behind the flag for that, not adopted for classification.
+
+## Step 3 — C++ int32 in the oracle   [pending — port the BLIND classifier]
