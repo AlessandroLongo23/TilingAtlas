@@ -12,7 +12,7 @@ import catalogue from "../figures/data/catalogue-k1-3.json";
 describe("wallpaper classifier — full certified catalogue", () => {
 	const ring = CyclotomicRing.create(24);
 	setActiveRing(ring);
-	const tilings = (catalogue as { tilings: { cellCodec: SerializedCell | null }[] }).tilings.filter(
+	const tilings = (catalogue as unknown as { tilings: { cellCodec: SerializedCell | null }[] }).tilings.filter(
 		(t) => t.cellCodec,
 	);
 

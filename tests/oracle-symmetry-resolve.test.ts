@@ -30,7 +30,7 @@ describe('symmetryFromExactSource', () => {
 	// The kind:'cell' branch carries the atlas's serialized cells (Myers stars + t1002/4.8.8), which have
 	// no {T1,T2,Seed} encoding. Exercised here via a certified catalogue cell so it needs no 11.8MB atlas.
 	it("classifies a kind:'cell' source (serialized cell path)", () => {
-		const t = (catalogue as { tilings: { canonicalKey: string; cellCodec: SerializedCell | null }[] })
+		const t = (catalogue as unknown as { tilings: { canonicalKey: string; cellCodec: SerializedCell | null }[] })
 			.tilings.find((x) => x.cellCodec)!;
 		const d = symmetryFromExactSource(ring, t.canonicalKey, {
 			kind: 'cell',

@@ -7,7 +7,7 @@ describe("seedFromCell", () => {
 	it("returns two independent non-zero basis vectors and a deduped, non-empty exact seed", () => {
 		const ring = CyclotomicRing.create(24);
 		setActiveRing(ring);
-		const { T1, T2, seed } = seedFromCell(ring, square44);
+		const { T1, T2, seed } = seedFromCell(ring, square44 as unknown as Parameters<typeof seedFromCell>[1]);
 
 		expect(T1.isZero()).toBe(false);
 		expect(T2.isZero()).toBe(false);
