@@ -157,3 +157,20 @@ describe('F5 pool + lattice', () => {
     expect(winnerPolyline.length).toBe(1);
   });
 });
+
+// append to tests/trace-figures.test.ts
+import { execFileSync } from 'node:child_process';
+import * as fs2 from 'node:fs';
+
+describe('F2/F3/F5/F6 emit end-to-end', () => {
+  it('the driver writes 4 non-empty svg + tex pairs', () => {
+    execFileSync('pnpm', ['tsx', 'figures/trace/build-trace-figures.ts'], { stdio: 'ignore' });
+    for (const id of ['f2-polygons', 'f3-vc-search', 'f5-pool-lattice', 'f6-torus-fill']) {
+      for (const ext of ['svg', 'tex']) {
+        const p = `figures/out/trace/${id}.${ext}`;
+        expect(fs2.existsSync(p)).toBe(true);
+        expect(fs2.statSync(p).size).toBeGreaterThan(200);
+      }
+    }
+  }, 60000);
+});
