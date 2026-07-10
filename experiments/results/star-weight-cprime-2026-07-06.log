@@ -1,0 +1,36 @@
+=== VALIDATION: regular c = ceil(maxcross/2) vs L5 (12-gon=2, tri/sq/hex=1) ===
+  regular  3-gon: maxcross_wt=1  c=1  (L5=1)  OK
+  regular  4-gon: maxcross_wt=2  c=1  (L5=1)  OK
+  regular  6-gon: maxcross_wt=2  c=1  (L5=1)  OK
+  regular 12-gon: maxcross_wt=4  c=2  (L5=2)  OK
+  validation: ALL MATCH -> definition is faithful to L5
+
+=== STAR ESCAPE CONSTANT c' (in-ring Fig-4 stars, n*@u, u=alpha in pi/12 units) ===
+  star     diam maxcross_wt  c' tip-hop_wt   s* bound 4k+2c-3
+  3*@1    1.848           2   1          2     k=1:3  k=2:7
+  3*@2    1.932           2   1          2     k=1:3  k=2:7
+  4*@2    2.449           4   2          2     k=1:5  k=2:9
+  4*@3    2.613           4   2          2     k=1:5  k=2:9
+  4*@4    2.732           3   2          2     k=1:5  k=2:9
+  6*@2    2.828           4   2          2     k=1:5  k=2:9
+  6*@4    3.464           4   2          2     k=1:5  k=2:9
+  6*@5    3.696           4   2          2     k=1:5  k=2:9
+  8*@1    2.613           5   3          1     k=1:7  k=2:11
+  12*@2    3.864           4   2          1     k=1:5  k=2:9
+
+  c'_max over in-ring stars = 3   (regular c_max = 2, for the 12-gon)
+  => worst-case star k=1 pool bound: 4(1)+2*3-3 = 7 edge-steps
+     (regular k=1 bound 2k+3 = 5; tuned star pool = 6; measured 4(i) need = 8)
+  tip-hop weight = 2 for every star  => confirms dent-chain length 2 (the slope-4 mechanism)
+4(i): |det|=22.06982  hexagonal lambda1^2=25.48404  lambda1=5.04817  (=> s* >= ceil(lambda1)=6)
+  after wt<=1: |reachable|=25  vectors at 4(i) norm=0  min wt among them=None
+  after wt<=2: |reachable|=289  vectors at 4(i) norm=0  min wt among them=None
+  after wt<=3: |reachable|=2089  vectors at 4(i) norm=0  min wt among them=None
+  after wt<=4: |reachable|=10825  vectors at 4(i) norm=0  min wt among them=None
+  after wt<=5: |reachable|=43777  vectors at 4(i) norm=0  min wt among them=None
+  after wt<=6: |reachable|=146521  vectors at 4(i) norm=24  min wt among them=6
+  after wt<=7: |reachable|=423169  vectors at 4(i) norm=24  min wt among them=6
+
+  4(i) shortest-vector weight (min over all Z[zeta24] vectors at that exact norm) = 6
+  => s*(4i) >= 6 (the actual cell generator has wt >= this)
+  bound 4k+3 at k=1 = 7. poolSteps the implementation needed = 8.

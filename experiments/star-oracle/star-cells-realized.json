@@ -1,0 +1,184 @@
+[
+  {
+    "fig": "34",
+    "k": 2,
+    "orbits": [
+      "3.3.3.12*p@2.3.3.12*p@2",
+      "3.3.4.3.3.12*p@2"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "collapsed-1uniform",
+    "note": "only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig"
+  },
+  {
+    "fig": "35",
+    "k": 2,
+    "orbits": [
+      "3.3.3.12*p@2.3.3.12*p@2",
+      "3.3.12.3.12*p@2"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "collapsed-1uniform",
+    "note": "only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig"
+  },
+  {
+    "fig": "36",
+    "k": 2,
+    "orbits": [
+      "3.3.3.3.3.3",
+      "3.3.3.4.3.12*p@2"
+    ],
+    "composition": "12*@2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4",
+    "basis": [
+      {
+        "n": [
+          "3",
+          "0",
+          "1",
+          "0",
+          "-3",
+          "0",
+          "-2",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "0",
+          "0",
+          "1",
+          "0",
+          "3",
+          "0",
+          "1",
+          "0"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 19.392304845413264,
+    "status": "realized"
+  },
+  {
+    "fig": "37",
+    "k": 2,
+    "orbits": [
+      "3.3.8*p@1.3.4.3.8*p@1",
+      "3.4.8.3.8*p@1"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "collapsed-1uniform",
+    "note": "only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig"
+  },
+  {
+    "fig": "38",
+    "k": 2,
+    "orbits": [
+      "3.3.12*p@2.3.12",
+      "3.12.12"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "backtrack-stuck",
+    "note": "stuck at 62 open inner vertices, 122 tiles"
+  },
+  {
+    "fig": "39",
+    "k": 2,
+    "orbits": [
+      "3.4.6.3.12*p@2",
+      "3.4.6.4"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "collapsed-1uniform",
+    "note": "only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig"
+  },
+  {
+    "fig": "40",
+    "k": 2,
+    "orbits": [
+      "3.4.8.3.8*p@1",
+      "4.8.8"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "collapsed-1uniform",
+    "note": "only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig"
+  },
+  {
+    "fig": "41",
+    "k": 2,
+    "orbits": [
+      "3.4.4.6*p@2.4",
+      "3.3.3.4.4"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "collapsed-1uniform",
+    "note": "only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig"
+  },
+  {
+    "fig": "42",
+    "k": 2,
+    "orbits": [
+      "4.4.6*p@2.4.12*p@4",
+      "4.4.4.4"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "status": "backtrack-stuck",
+    "note": "stuck at 9 open inner vertices, 86 tiles"
+  },
+  {
+    "fig": "43",
+    "k": 2,
+    "orbits": [
+      "4.4.8*p@3.4.8*p@3",
+      "4.4.4.4"
+    ],
+    "composition": "4,4,4,4,4,4,8*@3",
+    "basis": [
+      {
+        "n": [
+          "2",
+          "1",
+          "0",
+          "1",
+          "0",
+          "-1",
+          "0",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "0",
+          "1",
+          "0",
+          "-1",
+          "0",
+          "-1",
+          "-2",
+          "0"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 11.65685424949238,
+    "status": "realized"
+  }
+]

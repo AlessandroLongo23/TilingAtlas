@@ -1,0 +1,26 @@
+
+=== family s* run 2026-07-09 13:30:13 ===
+[13:30:13] loaded 5568 ctrnact tilings; reusing 4321 precomputed k=7,8 s* from CSV
+[13:30:13]   computed 100/1247 (k<=6)  0s  ETA 1s
+[13:30:14]   computed 200/1247 (k<=6)  1s  ETA 3s
+[13:30:16]   computed 300/1247 (k<=6)  3s  ETA 9s
+[13:30:17]   computed 400/1247 (k<=6)  4s  ETA 9s
+[13:30:18]   computed 500/1247 (k<=6)  5s  ETA 8s
+[13:30:21]   computed 600/1247 (k<=6)  8s  ETA 9s
+[13:30:27]   computed 700/1247 (k<=6)  14s  ETA 11s
+[13:30:33]   computed 800/1247 (k<=6)  20s  ETA 11s
+[13:30:35]   computed 900/1247 (k<=6)  22s  ETA 9s
+[13:30:37]   computed 1000/1247 (k<=6)  24s  ETA 6s
+[13:30:38]   computed 1100/1247 (k<=6)  25s  ETA 3s
+[13:30:42]   computed 1200/1247 (k<=6)  29s  ETA 1s
+[13:30:46] per-tiling s* done: 5568 rows (1247 freshly computed) in 33s -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/family-sstar-2026-07-09.csv
+[13:30:46] 
+class \ k    k 1  k 2  k 3  k 4  k 5  k 6  k 7  k 8     fit(slope·k+c) vs 2k/2k+4
+ALL             5    6    7   10   12   14   18   20  ~2.60k-0.8
+snub            3    4    6   10   12   14   18   20  ~2.60k-0.8
+non-snub        5    6    7    9   10   14   16   18  ~2.40k-1.0
+3.4 (tri+sq)    2    4    6    8   10   12   14   16  ~2.00k+0.0
+3.6 (tri+hex)   3    4    6   10   10   14   18   20  ~2.80k-2.4
+3.4.6           3    5    6    8   12   14   16   20  ~2.80k-2.8
+has-12gon       5    6    7    9   10   11   12   14  ~1.20k+4.0
+[13:30:46] summary -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/family-sstar-2026-07-09.summary

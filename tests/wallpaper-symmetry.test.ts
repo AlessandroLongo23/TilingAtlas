@@ -8,11 +8,19 @@ import {
 	_polyAreaForTest,
 } from "@/lib/classes/symmetry/WallpaperSymmetry";
 import { galebachToInput } from "@/lib/services/galebachInput";
-import square44 from "./fixtures/cell-44.json";
-import hex666 from "./fixtures/cell-666.json";
-import tsp4m from "./fixtures/cell-488.json";
-import triangular from "./fixtures/cell-tri.json";
-import p6m4612 from "./fixtures/cell-4612.json";
+import type { SerializedCell } from "@/lib/services/cellCodecService";
+import square44Json from "./fixtures/cell-44.json";
+import hex666Json from "./fixtures/cell-666.json";
+import tsp4mJson from "./fixtures/cell-488.json";
+import triangularJson from "./fixtures/cell-tri.json";
+import p6m4612Json from "./fixtures/cell-4612.json";
+
+// JSON imports type `basis` as an array; SerializedCell wants the [EncCyc, EncCyc] tuple.
+const square44 = square44Json as unknown as SerializedCell;
+const hex666 = hex666Json as unknown as SerializedCell;
+const tsp4m = tsp4mJson as unknown as SerializedCell;
+const triangular = triangularJson as unknown as SerializedCell;
+const p6m4612 = p6m4612Json as unknown as SerializedCell;
 import galCmm from "./fixtures/gal-t5125.json";
 import galPgg from "./fixtures/gal-t6364.json";
 import galP2 from "./fixtures/gal-t3055.json";

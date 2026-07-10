@@ -1,0 +1,14 @@
+ fig  k  s*  wt(u,v)  lambda1  lambda2   bounds: 2k+3(reg) / 4k+3(star-global)
+  4i  1   6    (6,6)    5.048    5.048   5 / 7
+  4j  1   4    (4,4)    2.613    2.613   5 / 7
+  4p  1   3    (3,3)    2.732    2.732   5 / 7
+  36  2   5    (5,5)    4.732    4.732   7 / 11
+  39  2   6    (6,6)    5.464    5.464   7 / 11
+  40  2   6    (6,6)    4.828    4.828   7 / 11
+  43  2   4    (4,4)    3.414    3.414   7 / 11
+
+k=1 s*: [3, 4, 6]  (max 6)
+k=2 s*: [4, 5, 6, 6]  (max 6)
+
+regular ref: 2k+3 = 5 (k=1) / 7 (k=2).   star bound 4k+3 = 7 (k=1) / 11 (k=2).
+VERDICT: k=2 star s* max = 6 vs milder-hypothesis ~7-8 vs dent-doubling 11

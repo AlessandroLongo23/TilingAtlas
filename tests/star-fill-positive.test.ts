@@ -99,7 +99,7 @@ describe("ST-9 — productive star-fill (C3) positive coverage", () => {
 			// …and the certified cell holds TWO 3-stars (+ one 6-star + three octagons): the second
 			// 3*@1 was CONSTRUCTED by the C3 star-seating fill branch. This line is the productive-
 			// star-fill coverage; it fails if the palette loop is disabled (mutation check, header).
-			const starKey = (p: { exactVertices: unknown[] | null; cornerAngleUnits(i: number): number; n: number }): string => {
+			const starKey = (p: { exactVertices?: unknown[] | null; cornerAngleUnits(i: number): number; n: number }): string => {
 				let min = Infinity;
 				for (let i = 0; i < (p.exactVertices?.length ?? 0); i++) min = Math.min(min, p.cornerAngleUnits(i));
 				return `${p.n}*@${min}`;

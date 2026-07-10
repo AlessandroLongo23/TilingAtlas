@@ -3,6 +3,8 @@
 export interface RawPolygon {
 	n: number;
 	vertices: { x: number; y: number }[];
+	/** star tile ({n|α}: n points, 2n vertices) — colored by the star hue, not the regular ramp. */
+	star?: boolean;
 }
 
 export interface TranslationalCellData {
@@ -16,6 +18,7 @@ interface CellPolyData {
 	v?: (number[] | { x: number; y: number })[];
 	vertices?: (number[] | { x: number; y: number })[];
 	n?: number;
+	star?: boolean;
 }
 
 interface BaseCell {
@@ -34,6 +37,13 @@ function mapRange(value: number, fromLow: number, fromHigh: number, toLow: numbe
 
 export function polygonHue(n: number) {
 	return mapRange(Math.log(n), Math.log(3), Math.log(40), 0, 300);
+}
+
+// Star tiles use the original StarPolygon.calculateHue ramp (lib/classes/polygons/StarPolygon.ts):
+// by point count n (= vertices.length / 2) over [3,12] → [300,0], plus a 25° offset — a distinct
+// violet→red ramp, NOT the regular-polygon log ramp above.
+export function starHue(points: number) {
+	return mapRange(points, 3, 12, 300, 0) + 300 / 12;
 }
 
 export function hsbToHsla(h: number, s: number, b: number, a: number) {
@@ -71,7 +81,7 @@ export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 			const b = verts[(i + 1) % verts.length];
 			edges.push(Math.hypot(b.x - a.x, b.y - a.y));
 		}
-		polys.push({ n: poly.n ?? verts.length, vertices: verts });
+		polys.push({ n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)) });
 	}
 	if (polys.length === 0 || edges.length === 0) return null;
 	edges.sort((a, b) => a - b);
@@ -108,6 +118,7 @@ export function expandToViewport(
 		for (const poly of polys) {
 			out.push({
 				n: poly.n,
+				star: poly.star,
 				vertices: poly.vertices.map((v) => ({ x: v.x + ox, y: v.y + oy })),
 			});
 		}
@@ -150,7 +161,7 @@ export function drawPolygons(
 	scale: number,
 ) {
 	for (const poly of polygons) {
-		ctx.fillStyle = hsbToHsla(polygonHue(poly.n), 40, 100, 0.9);
+		ctx.fillStyle = hsbToHsla(poly.star ? starHue(poly.n) : polygonHue(poly.n), 40, 100, 0.9);
 		ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
 		ctx.lineWidth = 1 / scale;
 		ctx.beginPath();

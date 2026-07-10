@@ -1,0 +1,61 @@
+=== REALIZER — figs 43 ===
+  Fig 43: realized — 28 tiles; inner 14 verts, badSum=0, overlaps=0; 0.2s 
+=== REALIZER — figs 34,35,36,37,38,39,40,41,42,43 ===
+  Fig 34: realized — 54 tiles; inner 23 verts, badSum=0, overlaps=0; 0.5s 
+  Fig 35: realized — 54 tiles; inner 23 verts, badSum=0, overlaps=0; 0.5s 
+  Fig 36: realized — 96 tiles; inner 19 verts, badSum=0, overlaps=0; 0.5s 
+  Fig 37: realized — 67 tiles; inner 29 verts, badSum=0, overlaps=0; 0.9s 
+  Fig 38: backtrack-stuck — 33 tiles; inner 16 verts, badSum=6, overlaps=0; 0.9s stuck at 12 open inner vertices, 33 tiles
+  Fig 39: realized — 41 tiles; inner 18 verts, badSum=0, overlaps=0; 0.3s 
+  Fig 40: realized — 42 tiles; inner 19 verts, badSum=0, overlaps=0; 0.4s 
+  Fig 41: realized — 41 tiles; inner 19 verts, badSum=0, overlaps=0; 0.3s 
+  Fig 42: realized — 26 tiles; inner 16 verts, badSum=0, overlaps=0; 0.2s 
+  Fig 43: realized — 28 tiles; inner 14 verts, badSum=0, overlaps=0; 0.2s 
+=== REALIZER — figs 43,40,39,36 (radius 5) ===
+  Fig 43: realized — 65 tiles, cell [4,4,4,4,4,4,8*@3] det≈11.6569 ✓xcheck 11.6569; inner 53v badSum=0 overlaps=0; 1.2s 
+  Fig 40: realized — 103 tiles, cell [3,3,3,3,3,3,3,3,4,4,8,8*@1] det≈11.6569 ✗XCHECK solver 23.3137 != 11.6569; inner 65v badSum=0 overlaps=0; 2.1s 
+  Fig 39: realized — 93 tiles, cell [12*@2,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,6,6] det≈19.3923 ✗XCHECK solver 25.8564 != 19.3923; inner 65v badSum=0 overlaps=0; 1.6s 
+  Fig 36: realized — 216 tiles, cell [3,3] det≈0.8660 ✗XCHECK solver 19.3923 != 0.8660; inner 55v badSum=0 overlaps=0; 2.9s 
+
+realized w/ exact basis: 4/4 → /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/star-oracle/star-cells-realized.json
+=== REALIZER — figs 43,40,39,36 (radius 6.5) ===
+  Fig 43: realized — 100 tiles, cell [4,4,4,4,4,4,8*@3] det≈11.6569 ✓xcheck 11.6569; inner 105v badSum=0 overlaps=0; 1.4s 
+  Fig 40: realized — 162 tiles, cell [3,3,3,3,3,3,3,3,4,4,8,8*@1] det≈11.6569 ✗XCHECK solver 23.3137 != 11.6569; inner 129v badSum=0 overlaps=0; 3.1s 
+  Fig 39: realized — 149 tiles, cell [12*@2,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,6,6] det≈19.3923 ✗XCHECK solver 25.8564 != 19.3923; inner 111v badSum=0 overlaps=0; 2.1s 
+  Fig 36: realized — 348 tiles, cell [3,3] det≈0.8660 ✗XCHECK solver 19.3923 != 0.8660; inner 109v badSum=0 overlaps=0; 4.5s 
+
+realized w/ exact basis: 4/4 → /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/star-oracle/star-cells-realized.json
+=== REALIZER — figs 43,40,39,36 (radius 6.5) ===
+  Fig 43: realized — 100 tiles, cell [4,4,4,4,4,4,8*@3] det≈11.6569 ✓xcheck 11.6569; inner 105v badSum=0 overlaps=0; 1.4s 
+  Fig 40: realized — 162 tiles, cell [3,3,3,3,3,3,3,3,4,4,8,8*@1] det≈11.6569 ✗XCHECK solver 23.3137 != 11.6569; inner 129v badSum=0 overlaps=0; 3.0s 
+  Fig 39: realized — 149 tiles, cell [12*@2,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,6,6] det≈19.3923 ✗XCHECK solver 25.8564 != 19.3923; inner 111v badSum=0 overlaps=0; 2.1s 
+  Fig 36: realized — 348 tiles, cell [3,3] det≈0.8660 ✗XCHECK solver 19.3923 != 0.8660; inner 109v badSum=0 overlaps=0; 4.5s 
+
+realized w/ exact basis: 4/4 → /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/star-oracle/star-cells-realized.json
+=== REALIZER — figs 36 (radius 6.5) ===
+   [dbg] verified period len=1.0000 key=1|1,0,0,0,-1,0,0,0
+   [dbg] verified period len=1.0000 key=1|-1,0,0,0,1,0,0,0
+   [dbg] verified period len=1.0000 key=1|-1,0,0,0,0,0,0,0
+  Fig 36: realized — 348 tiles, cell [3,3] det≈0.8660 ✗XCHECK solver 19.3923 != 0.8660; inner 109v badSum=0 overlaps=0; 4.4s 
+
+realized w/ exact basis: 1/1 → /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/star-oracle/star-cells-realized.json
+=== REALIZER — figs 43,40,39,36 (radius 6.5) ===
+  Fig 43: realized — 100 tiles, cell [4,4,4,4,4,4,8*@3] det≈11.6569 ✓xcheck 11.6569; inner 105v badSum=0 overlaps=0; 1.4s 
+  Fig 40: realized — 162 tiles, cell [3,3,3,3,3,3,3,3,4,4,8,8*@1] det≈11.6569 ✗XCHECK solver 23.3137 != 11.6569; inner 129v badSum=0 overlaps=0; 3.1s 
+  Fig 39: realized — 149 tiles, cell [12*@2,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,6,6] det≈19.3923 ✗XCHECK solver 25.8564 != 19.3923; inner 111v badSum=0 overlaps=0; 2.0s 
+  Fig 36: realized — 226 tiles, cell [12*@2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4] det≈19.3923 ✓xcheck 19.3923; inner 121v badSum=0 overlaps=0; 3.3s 
+
+realized w/ exact basis: 4/4 → /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/star-oracle/star-cells-realized.json
+=== REALIZER — figs 34,35,36,37,38,39,40,41,42,43 (radius 6.5) ===
+  Fig 34: collapsed-1uniform — 205 tiles, cell [] det≈— ; inner 136v badSum=0 overlaps=0; 3.5s only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig
+  Fig 35: collapsed-1uniform — 205 tiles, cell [] det≈— ; inner 136v badSum=0 overlaps=0; 3.5s only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig
+  Fig 36: realized — 226 tiles, cell [12*@2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4] det≈19.3923 ✓xcheck 19.3923; inner 121v badSum=0 overlaps=0; 3.3s 
+  Fig 37: collapsed-1uniform — 266 tiles, cell [] det≈— ; inner 191v badSum=0 overlaps=0; 7.2s only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig
+  Fig 38: backtrack-stuck — 122 tiles, cell [] det≈— ; inner 100v badSum=43 overlaps=0; 12.3s stuck at 62 open inner vertices, 122 tiles
+  Fig 39: collapsed-1uniform — 149 tiles, cell [] det≈— ; inner 111v badSum=0 overlaps=0; 2.0s only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig
+  Fig 40: collapsed-1uniform — 162 tiles, cell [] det≈— ; inner 129v badSum=0 overlaps=0; 3.0s only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig
+  Fig 41: collapsed-1uniform — 165 tiles, cell [] det≈— ; inner 121v badSum=0 overlaps=0; 2.3s only orbit(s) [0] present — mono-uniform collapse, not the 2-uniform fig
+  Fig 42: backtrack-stuck — 86 tiles, cell [] det≈— ; inner 89v badSum=1 overlaps=0; 1.5s stuck at 9 open inner vertices, 86 tiles
+  Fig 43: realized — 100 tiles, cell [4,4,4,4,4,4,8*@3] det≈11.6569 ✓xcheck 11.6569; inner 105v badSum=0 overlaps=0; 1.4s 
+
+realized w/ exact basis: 2/10 → /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/star-oracle/star-cells-realized.json

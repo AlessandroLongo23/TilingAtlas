@@ -1,0 +1,363 @@
+[
+  {
+    "fig": "4i",
+    "k": 1,
+    "orbits": [
+      "3*p@1,8,6*p@5,8"
+    ],
+    "composition": "3*@1,3*@1,6*@5,8,8,8",
+    "basis": [
+      {
+        "n": [
+          "1",
+          "1",
+          "2",
+          "1",
+          "0",
+          "-1",
+          "-1",
+          "-2"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "0",
+          "1",
+          "1",
+          "2",
+          "1",
+          "0",
+          "1",
+          "-1"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 22.06982340296115,
+    "gatePass": true,
+    "status": "solved"
+  },
+  {
+    "fig": "4j",
+    "k": 1,
+    "orbits": [
+      "8.4*p@3.8.4*p@3"
+    ],
+    "composition": "4*@3,8",
+    "basis": [
+      {
+        "n": [
+          "1",
+          "-1",
+          "0",
+          "1",
+          "0",
+          "1",
+          "1",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "-1",
+          "-1",
+          "0",
+          "-1",
+          "0",
+          "1",
+          "1",
+          "0"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 6.82842712474619,
+    "gatePass": true,
+    "status": "solved"
+  },
+  {
+    "fig": "4p",
+    "k": 1,
+    "orbits": [
+      "4.6.4*p@2.6"
+    ],
+    "composition": "4,4*@2,6,6",
+    "basis": [
+      {
+        "n": [
+          "1",
+          "0",
+          "2",
+          "0",
+          "0",
+          "0",
+          "-1",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "-1",
+          "0",
+          "0",
+          "0",
+          "2",
+          "0",
+          "1",
+          "0"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 7.464101615137754,
+    "gatePass": true,
+    "status": "solved"
+  },
+  {
+    "fig": "34",
+    "k": 2,
+    "orbits": [
+      "3.3.3.12*p@2.3.3.12*p@2",
+      "3.3.4.3.3.12*p@2"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "gatePass": false,
+    "status": "seed-path-missing",
+    "note": "not attempted — outside chosen subset (36/40/42/43); mixed-orbit or deferred"
+  },
+  {
+    "fig": "35",
+    "k": 2,
+    "orbits": [
+      "3.3.3.12*p@2.3.3.12*p@2",
+      "3.3.12.3.12*p@2"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "gatePass": false,
+    "status": "seed-path-missing",
+    "note": "not attempted — outside chosen subset (36/40/42/43); mixed-orbit or deferred"
+  },
+  {
+    "fig": "36",
+    "k": 2,
+    "orbits": [
+      "3.3.3.3.3.3",
+      "3.3.3.4.3.12*p@2"
+    ],
+    "composition": "12*@2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4",
+    "basis": [
+      {
+        "n": [
+          "3",
+          "0",
+          "2",
+          "0",
+          "0",
+          "0",
+          "-1",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "0",
+          "0",
+          "1",
+          "0",
+          "3",
+          "0",
+          "1",
+          "0"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 19.392304845413264,
+    "gatePass": true,
+    "status": "solved"
+  },
+  {
+    "fig": "37",
+    "k": 2,
+    "orbits": [
+      "3.3.8*p@1.3.4.3.8*p@1",
+      "3.4.8.3.8*p@1"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "gatePass": false,
+    "status": "seed-path-missing",
+    "note": "not attempted — outside chosen subset (36/40/42/43); mixed-orbit or deferred"
+  },
+  {
+    "fig": "38",
+    "k": 2,
+    "orbits": [
+      "3.3.12*p@2.3.12",
+      "3.12.12"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "gatePass": false,
+    "status": "seed-path-missing",
+    "note": "no gated k=2 cell from 16 solved seed(s) (pool up 8/5.7, 180000ms)"
+  },
+  {
+    "fig": "39",
+    "k": 2,
+    "orbits": [
+      "3.4.6.3.12*p@2",
+      "3.4.6.4"
+    ],
+    "composition": "12*@2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,6,6,6",
+    "basis": [
+      {
+        "n": [
+          "2",
+          "0",
+          "4",
+          "0",
+          "0",
+          "0",
+          "-2",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "0",
+          "0",
+          "2",
+          "0",
+          "2",
+          "0",
+          "2",
+          "0"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 25.856406460551018,
+    "gatePass": true,
+    "status": "solved"
+  },
+  {
+    "fig": "40",
+    "k": 2,
+    "orbits": [
+      "3.4.8.3.8*p@1",
+      "4.8.8"
+    ],
+    "composition": "3,3,3,3,3,3,3,3,4,4,4,4,8,8,8,8*@1",
+    "basis": [
+      {
+        "n": [
+          "0",
+          "2",
+          "2",
+          "0",
+          "2",
+          "0",
+          "-2",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "0",
+          "0",
+          "-2",
+          "0",
+          "2",
+          "0",
+          "2",
+          "2"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 23.31370849898476,
+    "gatePass": true,
+    "status": "solved"
+  },
+  {
+    "fig": "41",
+    "k": 2,
+    "orbits": [
+      "3.4.4.6*p@2.4",
+      "3.3.3.4.4"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "gatePass": false,
+    "status": "seed-path-missing",
+    "note": "no gated k=2 cell from 2 solved seed(s) (pool up 8/5.7, 420000ms)"
+  },
+  {
+    "fig": "42",
+    "k": 2,
+    "orbits": [
+      "4.4.6*p@2.4.12*p@4",
+      "4.4.4.4"
+    ],
+    "composition": "",
+    "basis": null,
+    "detFloat": null,
+    "gatePass": false,
+    "status": "seed-path-missing",
+    "note": "no gated k=2 cell from 5 solved seed(s) (pool up 9/6.2, 300000ms)"
+  },
+  {
+    "fig": "43",
+    "k": 2,
+    "orbits": [
+      "4.4.8*p@3.4.8*p@3",
+      "4.4.4.4"
+    ],
+    "composition": "4,4,4,4,4,4,8*@3",
+    "basis": [
+      {
+        "n": [
+          "2",
+          "1",
+          "0",
+          "1",
+          "0",
+          "-1",
+          "0",
+          "0"
+        ],
+        "d": "1"
+      },
+      {
+        "n": [
+          "0",
+          "-1",
+          "0",
+          "1",
+          "0",
+          "1",
+          "2",
+          "0"
+        ],
+        "d": "1"
+      }
+    ],
+    "detFloat": 11.65685424949238,
+    "gatePass": true,
+    "status": "solved"
+  }
+]
