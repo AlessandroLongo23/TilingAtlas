@@ -6,6 +6,7 @@ import type { CyclotomicRing } from "../Cyclotomic";
 import { tolerance } from "@/utils/tolerance";
 import { islamicAnglesForHalfways } from "@/utils/islamicNoise";
 import { exactPolygonsOverlap } from "../algorithm/exact/exactOverlap";
+import { type Marker, tipPoint } from "@/utils/islamicArrangement";
 
 export class Polygon {
     n: number;
@@ -423,21 +424,29 @@ export class Polygon {
 
         // this.calculateHue();
         
-        const lineWidthValue = useConfiguration.getState().lineWidth;
-        if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0, opacity);
-        } else if (lineWidthValue === 0) {
+        const cfg = useConfiguration.getState();
+        const lineWidthValue = cfg.lineWidth;
+        if (lineWidthValue <= 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0, lineWidthValue * opacity);
+            ctx.strokeWeight(lineWidthValue / cfg.controls.zoom);
+            // Outline-only tiles on a dark canvas need a light stroke to be visible; a colored fill
+            // (or a light theme) reads best with the dark stroke. HSB: (0,0,100)=white, (0,0,0)=black.
+            const lightStroke = !cfg.showPolygonFill && document.documentElement.classList.contains("dark");
+            ctx.stroke(0, 0, lightStroke ? 100 : 0, opacity);
         }
 
-        if (useConfiguration.getState().isIslamic) {
-            this.showIslamicFilled(ctx, opacity, customColor);
+        if (cfg.isIslamic) {
+            // Islamic line mode: dim base tile + thick construction lines (no fill). The tiling path
+            // (Tiling.show) draws these in two ordered passes; this keeps a lone node.show consistent.
+            this.showIslamicDimBase(ctx, opacity);
+            this.showIslamicLines(ctx, opacity);
         } else {
-            ctx.fill(customColor || this.hue, 40, 100 / opacity, 0.80 * opacity);
+            if (cfg.showPolygonFill) {
+                ctx.fill(customColor || this.hue, 40, 100 / opacity, 0.80 * opacity);
+            } else {
+                ctx.noFill();
+            }
             ctx.beginShape();
             for (let i = 0; i < this.vertices.length; i++) {
                 ctx.vertex(this.vertices[i].x, this.vertices[i].y);
@@ -480,6 +489,154 @@ export class Polygon {
             ));
         }
         return tips;
+    }
+
+    /**
+     * Correct, shape-agnostic Islamic/Hankin line construction (replaces `calculateIslamicTips`, which
+     * assumed a regular convex n-gon). For each edge, two rays leave the edge midpoint at ±theta from
+     * the TRUE inward edge-normal; each ray stops at its nearest forward intersection with any OTHER
+     * ray of the tile. Returns one `[midpoint, endpoint]` segment per ray (2·edges total). Works for
+     * non-convex star tiles, where the old closed form put tips outside the tile.
+     *
+     * `theta` is measured from the inward normal: 0 ⇒ along the normal (all meetings collapse to the
+     * centroid), π/2 ⇒ along the edge. Accepts a per-edge array (animated angle) or a scalar.
+     */
+    calculateIslamicSegments = (angle: number | number[]): [Vector, Vector][] => {
+        const nEdges = this.halfways.length;
+        const eps = 1e-9;
+        // Two inward rays per edge, at ±theta from the true inward edge-normal.
+        const origins: Vector[] = [];
+        const dirs: Vector[] = [];
+        const edgeOf: number[] = [];
+        for (let i = 0; i < nEdges; i++) {
+            const v0 = this.vertices[i];
+            const v1 = this.vertices[(i + 1) % nEdges];
+            const edge = Vector.sub(v1, v0);
+            // Rotate the edge +90° to a candidate normal, then flip it to the centroid side — the true
+            // interior side for any tile star-shaped about its centroid (regular stars always are).
+            let nrm = new Vector(-edge.y, edge.x).normalize();
+            if (nrm.dot(Vector.sub(this.centroid, this.halfways[i])) < 0) nrm = nrm.scale(-1);
+            const a = Array.isArray(angle) ? angle[i] : angle;
+            origins.push(this.halfways[i], this.halfways[i]);
+            dirs.push(Vector.rotate(nrm, a), Vector.rotate(nrm, -a));
+            edgeOf.push(i, i);
+        }
+        const R = dirs.length;
+
+        // Growing-line simulation. Every ray grows at unit speed from its midpoint and stops the instant
+        // its tip touches ANOTHER ray's already-drawn body. This is the closure-correct reading of "stop
+        // at the first intersection": a bare nearest-crossing stops a ray on the partner's DISCARDED tail
+        // (the partner reaches that point only AFTER it has itself terminated), which leaves visible gaps.
+        // Build one arrival event per (ray, crossing) and resolve them in time order.
+        type Arrival = { time: number; ray: number; partner: number; partnerTime: number };
+        const arrivals: Arrival[] = [];
+        for (let i = 0; i < R; i++) {
+            for (let j = i + 1; j < R; j++) {
+                if (edgeOf[i] === edgeOf[j]) continue; // siblings share the origin
+                const denom = Vector.cross(dirs[i], dirs[j]);
+                if (Math.abs(denom) < eps) continue; // parallel
+                const diff = Vector.sub(origins[j], origins[i]);
+                const ti = Vector.cross(diff, dirs[j]) / denom;
+                const tj = Vector.cross(diff, dirs[i]) / denom;
+                if (ti <= eps || tj <= eps) continue; // both rays must reach it going forward
+                arrivals.push({ time: ti, ray: i, partner: j, partnerTime: tj });
+                arrivals.push({ time: tj, ray: j, partner: i, partnerTime: ti });
+            }
+        }
+        arrivals.sort((a, b) => a.time - b.time);
+
+        const stop = new Array<number>(R).fill(Infinity);
+        for (const ev of arrivals) {
+            if (stop[ev.ray] <= ev.time + eps) continue; // this ray already terminated at/before here
+            // The partner's body covers the crossing iff the partner reached it no later than we did
+            // (partnerTime ≤ time) and was still alive there (it did not stop before partnerTime).
+            if (ev.partnerTime <= ev.time + eps && stop[ev.partner] >= ev.partnerTime - eps) {
+                stop[ev.ray] = ev.time;
+            }
+        }
+
+        const segments: [Vector, Vector][] = [];
+        for (let i = 0; i < R; i++) {
+            if (!isFinite(stop[i])) {
+                // No partner body ever caught this ray. Impossible for a regular star (D_n symmetry
+                // guarantees a mate); a general non-convex tile could reach here. Never drop silently.
+                console.warn(`calculateIslamicSegments: a ray from edge ${edgeOf[i]} of ${this.name} found no partner`);
+                continue;
+            }
+            segments.push([origins[i], Vector.add(origins[i], Vector.scale(dirs[i], stop[i]))]);
+        }
+        return segments;
+    }
+
+    /**
+     * Typed marker points for the Islamic star fill: the centroid (always), plus for star tiles one
+     * dent marker per reflex vertex (nudged toward the centroid so it never sits on a construction line)
+     * and one tip marker per convex vertex (intersection of the two adjacent inward edge-normals). A
+     * regular tile's tips collapse onto the centroid, so it emits the centroid only.
+     */
+    islamicMarkers = (): Marker[] => {
+        const markers: Marker[] = [{ point: this.centroid.copy(), kind: "centroid" }];
+        if (!this.isStar) return markers;
+        const n = this.vertices.length;
+        const winding = this.vertices.reduce((a, v, i) => {
+            const w = this.vertices[(i + 1) % n];
+            return a + (v.x * w.y - w.x * v.y);
+        }, 0) >= 0 ? 1 : -1;
+        const inwardNormal = (e: number): Vector => {
+            const ev = Vector.sub(this.vertices[(e + 1) % n], this.vertices[e]);
+            let nrm = new Vector(-ev.y, ev.x).normalize();
+            if (nrm.dot(Vector.sub(this.centroid, this.halfways[e])) < 0) nrm = nrm.scale(-1);
+            return nrm;
+        };
+        for (let k = 0; k < n; k++) {
+            const prev = this.vertices[(k - 1 + n) % n];
+            const cur = this.vertices[k];
+            const next = this.vertices[(k + 1) % n];
+            const cross = (cur.x - prev.x) * (next.y - cur.y) - (cur.y - prev.y) * (next.x - cur.x);
+            const convex = cross * winding > 0;
+            if (convex) {
+                const tp = tipPoint(this.halfways[(k - 1 + n) % n], inwardNormal((k - 1 + n) % n), this.halfways[k], inwardNormal(k));
+                if (tp) markers.push({ point: tp, kind: "tip" });
+            } else {
+                const toC = Vector.sub(this.centroid, cur);
+                markers.push({ point: Vector.add(cur, Vector.scale(toC, 0.05)), kind: "dent" });
+            }
+        }
+        return markers;
+    }
+
+    private offScreen = (ctx): boolean =>
+        this.centroid.x < -ctx.width / 2 - 10 || this.centroid.y < -ctx.height / 2 - 10 ||
+        this.centroid.x > ctx.width / 2 + 10 || this.centroid.y > ctx.height / 2 + 10;
+
+    /** Pass 1 of the Islamic line mode: the base tile drawn faint, so the construction lines dominate. */
+    showIslamicDimBase = (ctx, opacity: number = 0.80): void => {
+        if (this.offScreen(ctx)) return;
+        const zoom = useConfiguration.getState().controls.zoom;
+        ctx.push();
+        ctx.strokeWeight(1 / zoom);
+        ctx.stroke(0, 0, 0, 0.22 * opacity);              // faint outline
+        ctx.fill(this.hue, 40, 100 / opacity, 0.22 * opacity); // dim fill
+        ctx.beginShape();
+        for (let i = 0; i < this.vertices.length; i++) ctx.vertex(this.vertices[i].x, this.vertices[i].y);
+        ctx.endShape(ctx.CLOSE);
+        ctx.pop();
+    }
+
+    /** Pass 2 of the Islamic line mode: the Hankin ray construction as thick lines, no fill. */
+    showIslamicLines = (ctx, opacity: number = 1): void => {
+        if (this.offScreen(ctx) || !this.vertices || !this.halfways) return;
+        const cfg = useConfiguration.getState();
+        const zoom = cfg.controls.zoom;
+        let angle: number | number[] = Math.min(Math.max(cfg.islamicAngle, 0), 90) * Math.PI / 180;
+        if (cfg.islamicAnimate) angle = islamicAnglesForHalfways(ctx, this.halfways);
+        const segments = this.calculateIslamicSegments(angle);
+        ctx.push();
+        ctx.noFill();
+        ctx.strokeWeight(Math.max(cfg.lineWidth, 1) * 2.5 / zoom); // slightly thicker than the base
+        ctx.stroke(0, 0, 100, opacity);                            // white — pops on the dark canvas
+        for (const [from, to] of segments) ctx.line(from.x, from.y, to.x, to.y);
+        ctx.pop();
     }
 
     showIslamicFilled = (ctx, opacity: number = 0.80, customColor: number | null = null) => {
