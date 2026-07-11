@@ -33,6 +33,16 @@ static long ncbudget_hits = 0;   // fresh noncounting vertex skipped because bud
 static long nckzero = 0;         // closed all-noncounting solutions suppressed
 static bool has_noncounting = false;  // set in main(); false for the regular palette
 
+// Coarse-grained parallelism (runtime, no rebuild). The initex() loop over first vertex types is a
+// PARTITION of the whole search: extend() never adds a type below vertype[0] (the min-type-root
+// invariant, line ~654), so the subtree seeded at first-type i holds exactly the tilings whose
+// minimum vertex type is i — disjoint across i. Worker w of EU_SHARD_N handles {i : i % N == w},
+// writing to its own out dir; the raw union across workers is IDENTICAL to a sequential run, so the
+// pruned catalog is byte-identical (the acceptance gate). No shared state: each worker is its own
+// process. Default N=1 => sequential, unchanged.
+static const int shard_n = std::getenv("EU_SHARD_N") ? atoi(std::getenv("EU_SHARD_N")) : 1;
+static const int shard_w = std::getenv("EU_SHARD_W") ? atoi(std::getenv("EU_SHARD_W")) : 0;
+
 // Per-node debug trace (euoutput1.txt: a line for every configuration the DFS touches). It is pure
 // hot-path overhead — string-building + I/O done once per search node — and never feeds the search
 // or the emitted solutions (those go to `globe` in writesolution). Default OFF; -DEU_TRACE=1 restores
@@ -395,6 +405,7 @@ int vertypesolvedadd(std::vector<int> const& vertype) {
 
 int initex() {
     for (int i = 0; i < symbolcount; i++) {
+        if (shard_n > 1 && i % shard_n != shard_w) continue;   // this worker's slice of the partition
         configuration newconf;
         newconf.label = mainlist[i].label;
         newconf.lneig = mainlist[i].lneig;
