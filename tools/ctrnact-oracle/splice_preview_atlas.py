@@ -47,6 +47,9 @@ def main():
             "family": family_label(r["orbits"]),
             "renderCell": r["renderCell"],
             "preview": True,
+            # a partial-solve preview is by definition unproven and surfaced by this work
+            "discoverer": "Alessandro Longo",
+            "certification": "candidate",
         })
         added += 1
 
