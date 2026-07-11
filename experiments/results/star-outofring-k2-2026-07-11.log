@@ -1,0 +1,32 @@
+=== k=2 split-vs-union test — started 12:34:57 ===
+[12:34:57] star18 k=2 budget 6 ...
+[12:35:13]   star18 k=2 b6: 37 pruned blocks
+[12:35:13] star18 k=2 budget 7 ...
+[12:35:27]   star18 k=2 b7: 37 pruned blocks
+  star18 budget-fixpoint b6==b7 OK
+[12:35:27] star20 k=2 budget 6 ...
+[12:35:29]   star20 k=2 b6: 6 pruned blocks
+[12:35:29] star20 k=2 budget 7 ...
+[12:35:30]   star20 k=2 b7: 6 pruned blocks
+  star20 budget-fixpoint b6==b7 OK
+[12:35:30] star180u k=2 budget 6 ...
+[12:37:04]   star180u k=2 b6: 58 pruned blocks
+[12:37:04] star180u k=2 budget 7 ...
+[12:38:37]   star180u k=2 b7: 58 pruned blocks
+  star180u budget-fixpoint b6==b7 OK
+=== all k=2 solves done 12:38:37 ===
+
+=== VERDICT (split-vs-union, k=2), rigorous angle-based classification ===
+Minimal ring per tiling: D_min = 360/gcd(all corner angles). A genuine 5-fold&9-fold MIXER has
+45 | D_min (needs both 5|D_min and 9|D_min). Buckets of the star180u union catalogs:
+  k=1: 27 tilings = 11 in-ring (D_min|24) + 11 9-fold (D_min|18) + 5 5-fold (D_min|20) + 0 MIXER.
+  k=2: 61 tilings = 29 in-ring + 27 9-fold + 5 5-fold + 0 MIXER.
+Counts: star18 k=2 = 37, star20 k=2 = 6, star180u k=2 = 58 blocks; all budget-fixpoint b6==b7 OK.
+=> The three-way ring split (in-ring D=24 + 9-fold D=18 + 5-fold D=20) is LOSSLESS at k=1 AND k=2:
+   NO tiling requires a ring combining 5-fold and 9-fold directions. (Earlier regex "mixer" hits
+   were false positives — matching angle-unit numbers like p20/d150 inside star labels, not 20-gons.)
+CAVEAT unchanged: the union palette carries only star18 U star20 species (no hybrid D=180-only
+stars), so this rules out mixers built from existing sub-ring tiles; a hybrid-star mixer is not
+excluded by experiment. Definitive guarantee still needs the ring-obstruction lemma (TA).
+Out-of-ring k=1 tilings added to the Atlas (exact ZZ[zeta_18]/ZZ[zeta_20] develop, unit edges,
+area-checked): 4g (18.18.3*), 4l (3.9.3*.9), 4e (9.9.6*), 4q (5.5.4*.5.4*).

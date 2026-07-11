@@ -1,0 +1,173 @@
+{
+  "name": "star18",
+  "D": 18,
+  "pinnedLegacy": false,
+  "maxValence": 12,
+  "comment": "Out-of-ring 9-fold palette (D=18, unit 20deg): regular {3,6,9,18} + all isotoxal stars whose point/dent land on the 20deg grid with a reflex dent. Covers Myers' 9-fold k=1 out-of-ring entries (4e 9.9.6*, 4g 18.18.3*, 4l 3.9.3*.9). maxValence 12 = the proven per-orbit bound. Solve+prune only; develop/render is zeta24-only, so no atlas cells yet.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 9,
+      "name": "9",
+      "famchar": "9"
+    },
+    {
+      "kind": "regular",
+      "n": 18,
+      "name": "18",
+      "famchar": "i"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 1,
+      "name": "3*1",
+      "famchar": "sA"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 2,
+      "name": "3*2",
+      "famchar": "sB"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 1,
+      "name": "6*1",
+      "famchar": "sC"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 2,
+      "name": "6*2",
+      "famchar": "sD"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 3,
+      "name": "6*3",
+      "famchar": "sE"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 4,
+      "name": "6*4",
+      "famchar": "sF"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 5,
+      "name": "6*5",
+      "famchar": "sG"
+    },
+    {
+      "kind": "star",
+      "n": 9,
+      "alphaU": 1,
+      "name": "9*1",
+      "famchar": "sH"
+    },
+    {
+      "kind": "star",
+      "n": 9,
+      "alphaU": 2,
+      "name": "9*2",
+      "famchar": "sI"
+    },
+    {
+      "kind": "star",
+      "n": 9,
+      "alphaU": 3,
+      "name": "9*3",
+      "famchar": "sJ"
+    },
+    {
+      "kind": "star",
+      "n": 9,
+      "alphaU": 4,
+      "name": "9*4",
+      "famchar": "sK"
+    },
+    {
+      "kind": "star",
+      "n": 9,
+      "alphaU": 5,
+      "name": "9*5",
+      "famchar": "sL"
+    },
+    {
+      "kind": "star",
+      "n": 9,
+      "alphaU": 6,
+      "name": "9*6",
+      "famchar": "sM"
+    },
+    {
+      "kind": "star",
+      "n": 18,
+      "alphaU": 1,
+      "name": "18*1",
+      "famchar": "sN"
+    },
+    {
+      "kind": "star",
+      "n": 18,
+      "alphaU": 2,
+      "name": "18*2",
+      "famchar": "sO"
+    },
+    {
+      "kind": "star",
+      "n": 18,
+      "alphaU": 3,
+      "name": "18*3",
+      "famchar": "sP"
+    },
+    {
+      "kind": "star",
+      "n": 18,
+      "alphaU": 4,
+      "name": "18*4",
+      "famchar": "sQ"
+    },
+    {
+      "kind": "star",
+      "n": 18,
+      "alphaU": 5,
+      "name": "18*5",
+      "famchar": "sR"
+    },
+    {
+      "kind": "star",
+      "n": 18,
+      "alphaU": 6,
+      "name": "18*6",
+      "famchar": "sS"
+    },
+    {
+      "kind": "star",
+      "n": 18,
+      "alphaU": 7,
+      "name": "18*7",
+      "famchar": "sT"
+    }
+  ]
+}

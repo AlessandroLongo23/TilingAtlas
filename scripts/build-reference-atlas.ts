@@ -370,6 +370,43 @@ function buildCtrnactStars(): ReferenceTiling[] {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// Phase 6 — OUT-OF-RING star tilings (D != 24): the 9-fold (D=18) and 5-fold (D=20) k=1 tilings that
+// carry a real 9-gon/18-gon or pentagon/decagon, reproducing Myers' out-of-ring k=1 entries (4e, 4g,
+// 4l, 4q). Developed exactly in their own cyclotomic ring by tools/ctrnact-oracle/export_ring_cells.py
+// (render_ring.Ring — ZZ[zeta_18]/ZZ[zeta_20]); unit edges, area-checked. Display-only.
+// ---------------------------------------------------------------------------------------------------
+function buildCtrnactOutOfRing(): ReferenceTiling[] {
+	const out: ReferenceTiling[] = [];
+	log('=== Phase 6: out-of-ring star tilings (9-fold D=18, 5-fold D=20) ===');
+	for (const fname of ['ctrnact-star-9fold-k1.cells.json', 'ctrnact-star-5fold-k1.cells.json']) {
+		const dsPath = path.join(ROOT, 'experiments', 'star-oracle', fname);
+		if (!fs.existsSync(dsPath)) {
+			log(`  (no experiments/star-oracle/${fname} — skipped)`);
+			continue;
+		}
+		const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
+			records: { id: string; k: number; orbits: string[]; ring: number;
+				renderCell: ReferenceTiling['renderCell']; areaCheck: { cellArea: number; detAbs: number } }[];
+		};
+		for (const r of ds.records) {
+			const toks = new Set<string>();
+			for (const orb of r.orbits)
+				for (const t of orb.replace(/^\(|\)[A-Za-z0-9]*$/g, '').split(',')) {
+					const m = /^(\d+)\*/.exec(t);
+					toks.add(m ? `${m[1]}*` : t);
+				}
+			const family = [...toks].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b)).join('.');
+			out.push({ id: r.id, source: 'ctrnact-star', k: r.k, family, renderCell: r.renderCell });
+			log(`  ${r.id}  k=${r.k}  ${family}  (ring D=${r.ring}, ${r.renderCell.cellPolygons?.length ?? 0} polys, ` +
+				`area ${Math.abs(r.areaCheck.cellArea - r.areaCheck.detAbs) < 1e-6 ? '✓' : '⚑ FAIL'})`);
+		}
+	}
+	log(`  Phase 6 total: ${out.length} out-of-ring tilings`);
+	log('');
+	return out;
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Phase 5 — one-parameter (free-alpha) star FAMILIES, detected and exported parametrically by
 // tools/ctrnact-oracle/export_family_cells.py (formal symbolic-alpha development: closure proven for
 // every alpha in the open range, not sampled). Each family becomes one shelf entry whose renderCell
@@ -444,7 +481,8 @@ function main(): void {
 		atlas.push(...stars);
 		const candidateIds = new Set(stars.filter((t) => t.candidate).map((t) => t.id));
 		atlas.push(...buildCtrnactStarFamilies(candidateIds));
-	} else log('(--no-stars: skipping Phases 4+5)\n');
+		atlas.push(...buildCtrnactOutOfRing());
+	} else log('(--no-stars: skipping Phases 4+5+6)\n');
 
 	// deterministic order: source, k, id
 	atlas.sort(

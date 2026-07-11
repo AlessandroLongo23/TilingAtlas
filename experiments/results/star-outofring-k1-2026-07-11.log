@@ -1,0 +1,40 @@
+=== Out-of-ring k=1 split-vs-union experiment — 12:21:49 ===
+[gen] star18 ...
+[gen] palette=star18 D=18 tiles=24 classes=44 configs=3108
+[gen] wrote tables/star18/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (3839 entries)
+[gen] star20 ...
+[gen] palette=star20 D=20 tiles=28 classes=52 configs=1286
+[gen] wrote tables/star20/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (1667 entries)
+tables/star20/certs.txt:0
+tables/star18/certs.txt:0
+=== star18 k=1 (budget 6 then 7) ===
+  budget 6: 18 pruned k=1 blocks
+  budget 7: 18 pruned k=1 blocks
+  budget-fixpoint: b6==b7 ✓
+=== star20 k=1 (budget 6 then 7) ===
+  budget 6: 6 pruned k=1 blocks
+  budget 7: 6 pruned k=1 blocks
+  budget-fixpoint: b6==b7 ✓
+=== star180u (union, D=180) gen+run ===
+[gen] palette=star180u D=180 tiles=52 classes=96 configs=10473
+[gen] wrote tables/star180u/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (11847 entries)
+certs FAIL: 0
+  star180u budget 6: 27 pruned k=1 blocks
+  star180u budget 7: 27 pruned k=1 blocks
+  budget-fixpoint b6==b7 ✓
+=== EXPECTED 24 (=18 star18 + 6 star20) if the split is lossless ===
+
+=== VERDICT (split-vs-union completeness test, k=1) ===
+star18 (9-fold, D=18):  18 blocks; reproduces Myers out-of-ring k=1: 4e (9.9.6*), 4g (18.18.3*), 4l (3.9.3*.9).
+star20 (5-fold, D=20):   6 blocks; reproduces Myers out-of-ring k=1: 4q (5.5.4*.5.4*).
+star180u (union, D=180): 27 blocks = 24 (=18+6, disjoint tile worlds) + 3 EXTRA.
+The 3 extra = (4,3,4,3,3)=3.3.4.3.4 snub-square, (4,4,3,3,3)=3.3.3.4.4 elongated-triangular,
+(6,4,3,4)=3.4.6.4 rhombitrihexagonal — ALL confirmed present in the in-ring star24 k=1 catalog.
+They surface only because D=180 contains the in-ring D=12 grid and the 2-way test split triangle
+(->star18) from square (->star20); the full THREE-way split (star24 + star18 + star20) owns them.
+RIGOROUS MIXER CHECK: 0 blocks combine a 5-fold-only tile (5/10/20/5*/10*/20*/4*) with a
+9-fold-only tile (9/18/9*/18*). No tiling forces a pentagon and a 9-gon together.
+=> At k=1, the three-way ring split is LOSSLESS. Caveats: (i) k=1 only — re-run at k=2 to extend;
+(ii) union palette used sub-ring species only (no hybrid D=180 stars) — rules out mixers using
+existing tiles, not hypothetical hybrid-star mixers; (iii) definitive guarantee needs the
+ring-obstruction lemma (no edge-to-edge tiling forces incommensurate rotational orders) — TA.
