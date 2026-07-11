@@ -1,26 +1,41 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Library, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
-import { SidebarSection } from "@/components/ui/sidebar-section";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { ToggleButton } from "@/components/ui/toggle-button";
 import { Pagination } from "@/components/ui/pagination";
 import { ReferenceCard } from "@/components/reference-card";
 import {
 	loadReferenceAtlas,
 	matchesReferenceFilters,
+	partitionKeyOf,
+	starFoldsOf,
 	type ReferenceTiling,
 	type ReferenceFilter,
 } from "@/lib/services/referenceAtlas";
+import { WALLPAPER_GROUPS, type LatticeShape, type WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 
 // The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars),
 // lazy-fetched from public/reference-atlas.json. Each entry carries a DISCOVERER (historical
-// first-finder) and a CERTIFICATION (proven / reproduced / candidate — orthogonal axes). No more
-// certified-vs-reference split; each tiling appears exactly once.
+// first-finder), a CERTIFICATION (proven / reproduced / candidate), and a vertex-type classification
+// (k, M, partition — see referenceAtlas.ts). Filters are flat and always-open (no accordion); groups
+// irrelevant to the current tile-class selection are hidden rather than shown as dead controls.
 const K_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+const M_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+const CLASS_OPTIONS: { value: "all" | "regular" | "star"; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "regular", label: "Regular" },
+	{ value: "star", label: "Star" },
+];
+const PARAM_OPTIONS: { value: "all" | "rigid" | "family"; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "rigid", label: "Rigid" },
+	{ value: "family", label: "α-family" },
+];
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -35,9 +50,35 @@ const CERT_OPTIONS: { value: ReferenceTiling["certification"]; label: string }[]
 	{ value: "reproduced", label: "Reproduced" },
 	{ value: "candidate", label: "Candidate" },
 ];
+const LATTICE_ORDER: LatticeShape[] = ["square", "hexagonal", "rhombic", "rectangular", "oblique"];
 const COLUMN_PRESETS = [3, 4, 5, 6];
 
-type SectionKey = "k" | "discoverer" | "certification" | "grid";
+// A flat, always-visible filter group: a static heading (optional accent summary + right-aligned note)
+// over its controls. Replaces the old collapsible SidebarSection in this shelf.
+function FilterGroup({
+	title,
+	summary,
+	note,
+	children,
+}: {
+	title: string;
+	summary?: ReactNode;
+	note?: string;
+	children: ReactNode;
+}) {
+	return (
+		<section className="flex flex-col gap-2 border-t border-line-subtle pt-3 first:border-t-0 first:pt-0">
+			<div className="flex items-baseline justify-between gap-2">
+				<h3 className="text-xs font-medium text-fg-secondary">
+					{title}
+					{summary ? <span className="ml-1.5 font-normal text-accent">{summary}</span> : null}
+				</h3>
+				{note ? <span className="text-[10px] uppercase tracking-wide text-fg-disabled">{note}</span> : null}
+			</div>
+			{children}
+		</section>
+	);
+}
 
 export function ReferenceShelf() {
 	const router = useRouter();
@@ -46,12 +87,6 @@ export function ReferenceShelf() {
 	const [filters, setFilters] = useState<ReferenceFilter>({});
 	const [gridColumns, setGridColumns] = useState(5);
 	const [currentPage, setCurrentPage] = useState(1);
-	const [sectionsOpen, setSectionsOpen] = useState<Record<SectionKey, boolean>>({
-		k: true,
-		discoverer: true,
-		certification: true,
-		grid: true,
-	});
 
 	useEffect(() => {
 		let alive = true;
@@ -67,24 +102,93 @@ export function ReferenceShelf() {
 		setCurrentPage(1);
 	}, [filters]);
 
-	const setOpen = (key: SectionKey) => (open: boolean) =>
-		setSectionsOpen((prev) => ({ ...prev, [key]: open }));
+	// ── Multi-toggle helpers (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
+	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
+		const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
+		setFilters({ ...filters, [key]: next.length ? next : undefined } as ReferenceFilter);
+	};
+	const toggleK = (k: number) => toggleIn("kValues", filters.kValues ?? [], k);
+	const toggleM = (m: number) => toggleIn("mValues", filters.mValues ?? [], m);
+	const togglePartition = (p: string) => toggleIn("partitions", filters.partitions ?? [], p);
+	const toggleFold = (n: number) => toggleIn("starFolds", filters.starFolds ?? [], n);
+	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
+	const toggleShape = (s: LatticeShape) => toggleIn("latticeShapes", filters.latticeShapes ?? [], s);
+	const toggleDiscoverer = (d: string) => toggleIn("discoverers", filters.discoverers ?? [], d);
+	const toggleCert = (c: ReferenceTiling["certification"]) => toggleIn("certifications", filters.certifications ?? [], c);
+	const toggleMaximal = () => setFilters({ ...filters, maximalOnly: filters.maximalOnly ? undefined : true });
 
-	const toggleK = (k: number) => {
-		const cur = filters.kValues ?? [];
-		setFilters({ ...filters, kValues: cur.includes(k) ? cur.filter((v) => v !== k) : [...cur, k] });
+	// Changing tile class clears the now-hidden filters so no invisible constraint lingers.
+	const setTileClass = (v: "all" | "regular" | "star") => {
+		const next: ReferenceFilter = { ...filters, tileClass: v === "all" ? undefined : v };
+		if (v === "regular") {
+			next.starFolds = undefined;
+			next.parametric = undefined;
+		} else if (v === "star") {
+			next.wallpaperGroups = undefined;
+			next.latticeShapes = undefined;
+		}
+		setFilters(next);
 	};
-	const toggleDiscoverer = (d: string) => {
-		const cur = filters.discoverers ?? [];
-		setFilters({ ...filters, discoverers: cur.includes(d) ? cur.filter((v) => v !== d) : [...cur, d] });
-	};
-	const toggleCert = (c: ReferenceTiling["certification"]) => {
-		const cur = filters.certifications ?? [];
-		setFilters({ ...filters, certifications: cur.includes(c) ? cur.filter((v) => v !== c) : [...cur, c] });
-	};
+	const setParametric = (v: "all" | "rigid" | "family") =>
+		setFilters({ ...filters, parametric: v === "all" ? undefined : v });
+
+	// ── Data-derived option sets: only offer filters some in-scope tiling can actually satisfy ──
+	const availableM = useMemo(() => {
+		if (!tilings) return [];
+		const s = new Set<number>();
+		for (const t of tilings) if (t.m != null) s.add(t.m);
+		return M_OPTIONS.filter((m) => s.has(m));
+	}, [tilings]);
+
+	const availableFolds = useMemo(() => {
+		if (!tilings) return [];
+		const s = new Set<number>();
+		for (const t of tilings) for (const n of starFoldsOf(t)) s.add(n);
+		return [...s].sort((a, b) => a - b);
+	}, [tilings]);
+
+	const availableGroups = useMemo(() => {
+		if (!tilings) return [];
+		const present = new Set(tilings.map((t) => t.wallpaperGroup).filter((g): g is WallpaperGroup => !!g));
+		return WALLPAPER_GROUPS.filter((g) => present.has(g));
+	}, [tilings]);
+
+	const availableShapes = useMemo(() => {
+		if (!tilings) return [];
+		const present = new Set(tilings.map((t) => t.latticeShape).filter((s): s is LatticeShape => !!s));
+		return LATTICE_ORDER.filter((s) => present.has(s));
+	}, [tilings]);
+
+	// Partition chips are faceted to the current view MINUS the partition filter itself, so they behave
+	// like the user's "per-k groups": pick k=7 and only 7's partitions (511, 421, 331, …) appear.
+	const availablePartitions = useMemo(() => {
+		if (!tilings) return [];
+		const byKey = new Map<string, number>(); // key → m
+		for (const t of tilings) {
+			if (!matchesReferenceFilters(t, { ...filters, partitions: undefined })) continue;
+			const key = partitionKeyOf(t);
+			if (key && t.m != null) byKey.set(key, t.m);
+		}
+		return [...byKey.entries()]
+			.map(([key, m]) => ({ key, m }))
+			.sort((a, b) => a.m - b.m || (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
+	}, [tilings, filters]);
+
+	const tileClass = filters.tileClass ?? "all";
+	const showStar = tileClass !== "regular" && availableFolds.length > 0;
+	const showGroup = tileClass !== "star" && availableGroups.length > 0;
+	const showLattice = tileClass !== "star" && availableShapes.length > 0;
 
 	const activeFilterCount =
 		(filters.kValues?.length ? 1 : 0) +
+		(filters.tileClass ? 1 : 0) +
+		(filters.mValues?.length ? 1 : 0) +
+		(filters.partitions?.length ? 1 : 0) +
+		(filters.maximalOnly ? 1 : 0) +
+		(filters.starFolds?.length ? 1 : 0) +
+		(filters.parametric ? 1 : 0) +
+		(filters.wallpaperGroups?.length ? 1 : 0) +
+		(filters.latticeShapes?.length ? 1 : 0) +
 		(filters.discoverers?.length ? 1 : 0) +
 		(filters.certifications?.length ? 1 : 0) +
 		(filters.query?.trim() ? 1 : 0);
@@ -117,33 +221,116 @@ export function ReferenceShelf() {
 						</button>
 					) : null}
 				</div>
-				<div className="p-3 flex flex-col gap-1 text-sm">
+				<div className="p-3 flex flex-col gap-4 text-sm">
 					<input
 						type="text"
 						value={filters.query ?? ""}
 						onChange={(e) => setFilters({ ...filters, query: e.target.value })}
 						placeholder="Search id or family…"
-						className="mb-2 w-full rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-xs text-fg placeholder:text-fg-disabled focus:border-line-strong focus:outline-none"
+						className="w-full rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-xs text-fg placeholder:text-fg-disabled focus:border-line-strong focus:outline-none"
 					/>
-					<SidebarSection
-						title="Vertex count (k)"
-						summary={filters.kValues?.length ? filters.kValues.join(", ") : null}
-						open={sectionsOpen.k}
-						onOpenChange={setOpen("k")}
-					>
+
+					<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
+						<ButtonGroup options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
+					</FilterGroup>
+
+					<FilterGroup title="Vertex count (k)" summary={filters.kValues?.length ? filters.kValues.join(", ") : null}>
 						<ButtonGroup
 							multi
 							options={K_OPTIONS.map((k) => ({ value: k, label: k, classes: "w-8" }))}
 							selected={filters.kValues ?? []}
 							onChange={toggleK}
 						/>
-					</SidebarSection>
+					</FilterGroup>
 
-					<SidebarSection
+					{availableM.length > 0 ? (
+						<FilterGroup
+							title="Distinct configs (M)"
+							summary={filters.mValues?.length ? filters.mValues.join(", ") : null}
+							note="M ≤ k"
+						>
+							<ButtonGroup
+								multi
+								options={availableM.map((m) => ({ value: m, label: m, classes: "w-8" }))}
+								selected={filters.mValues ?? []}
+								onChange={toggleM}
+							/>
+							{availablePartitions.length > 0 ? (
+								<div className="mt-1 flex flex-col gap-1.5">
+									<span className="text-[10px] text-fg-disabled">Partition (multiplicity group)</span>
+									<ButtonGroup
+										multi
+										options={availablePartitions.map((p) => ({ value: p.key, label: p.key }))}
+										selected={filters.partitions ?? []}
+										onChange={togglePartition}
+									/>
+								</div>
+							) : null}
+							<ToggleButton
+								size="sm"
+								pressed={!!filters.maximalOnly}
+								onPressedChange={toggleMaximal}
+								label="Maximal (M = k)"
+								classes="mt-1 self-start"
+							/>
+						</FilterGroup>
+					) : null}
+
+					{showStar ? (
+						<FilterGroup title="Star" note="star polygons">
+							<div className="flex flex-col gap-1.5">
+								<span className="text-[10px] text-fg-disabled">Fold (n-pointed)</span>
+								<ButtonGroup
+									multi
+									options={availableFolds.map((n) => ({ value: n, label: `${n}★`, classes: "px-2" }))}
+									selected={filters.starFolds ?? []}
+									onChange={toggleFold}
+								/>
+							</div>
+							<div className="mt-1 flex flex-col gap-1.5">
+								<span className="text-[10px] text-fg-disabled">Shape</span>
+								<ButtonGroup
+									options={PARAM_OPTIONS}
+									selected={filters.parametric ?? "all"}
+									onChange={setParametric}
+								/>
+							</div>
+						</FilterGroup>
+					) : null}
+
+					{showGroup ? (
+						<FilterGroup
+							title="Wallpaper group"
+							summary={filters.wallpaperGroups?.length ? `${filters.wallpaperGroups.length} sel` : null}
+							note="regular"
+						>
+							<ButtonGroup
+								multi
+								options={availableGroups.map((g) => ({ value: g, label: g }))}
+								selected={filters.wallpaperGroups ?? []}
+								onChange={toggleGroup}
+							/>
+						</FilterGroup>
+					) : null}
+
+					{showLattice ? (
+						<FilterGroup
+							title="Lattice"
+							summary={filters.latticeShapes?.length ? `${filters.latticeShapes.length} sel` : null}
+							note="regular"
+						>
+							<ButtonGroup
+								multi
+								options={availableShapes.map((s) => ({ value: s, label: s }))}
+								selected={filters.latticeShapes ?? []}
+								onChange={toggleShape}
+							/>
+						</FilterGroup>
+					) : null}
+
+					<FilterGroup
 						title="Discoverer"
 						summary={filters.discoverers?.length ? `${filters.discoverers.length} selected` : null}
-						open={sectionsOpen.discoverer}
-						onOpenChange={setOpen("discoverer")}
 					>
 						<ButtonGroup
 							multi
@@ -151,13 +338,11 @@ export function ReferenceShelf() {
 							selected={filters.discoverers ?? []}
 							onChange={toggleDiscoverer}
 						/>
-					</SidebarSection>
+					</FilterGroup>
 
-					<SidebarSection
+					<FilterGroup
 						title="Certification"
 						summary={filters.certifications?.length ? filters.certifications.join(", ") : null}
-						open={sectionsOpen.certification}
-						onOpenChange={setOpen("certification")}
 					>
 						<ButtonGroup
 							multi
@@ -165,20 +350,15 @@ export function ReferenceShelf() {
 							selected={filters.certifications ?? []}
 							onChange={toggleCert}
 						/>
-					</SidebarSection>
+					</FilterGroup>
 
-					<SidebarSection
-						title="Grid"
-						summary={`${gridColumns} cols`}
-						open={sectionsOpen.grid}
-						onOpenChange={setOpen("grid")}
-					>
+					<FilterGroup title="Grid" summary={`${gridColumns} cols`}>
 						<ButtonGroup
 							options={COLUMN_PRESETS.map((c) => ({ value: c, label: c, classes: "w-8" }))}
 							selected={gridColumns}
 							onChange={setGridColumns}
 						/>
-					</SidebarSection>
+					</FilterGroup>
 				</div>
 			</PageSidebar>
 

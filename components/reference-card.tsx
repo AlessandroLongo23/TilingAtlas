@@ -3,7 +3,13 @@
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { polygonClassLabel } from "@/lib/utils/tilingLabel";
-import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import {
+	isMaximal,
+	partitionKeyOf,
+	starFoldsOf,
+	tileClassOf,
+	type ReferenceTiling,
+} from "@/lib/services/referenceAtlas";
 
 // A tiling card in the unified library. Shows the DISCOVERER (historical first-finder) and a
 // CERTIFICATION badge (proven / reproduced / candidate — the rigorous completeness status of its
@@ -23,6 +29,14 @@ const CERT_STYLE: Record<ReferenceTiling["certification"], { label: string; cls:
 
 export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 	const isFamily = Array.isArray(tiling.alphaRange);
+	const folds = tileClassOf(tiling) === "star" ? starFoldsOf(tiling) : [];
+	const partitionKey = partitionKeyOf(tiling);
+	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
+	// (m === k, all orbits distinct) is the Krötenheerdt case — shown as "Kröt" since its key is all 1s.
+	const classLabel =
+		tiling.m != null
+			? `M${tiling.m}${isMaximal(tiling) ? " · Kröt" : partitionKey ? ` · ${partitionKey}` : ""}`
+			: null;
 	const wrapperClass = cn(
 		"relative flex flex-col rounded-lg border border-line bg-surface-overlay/30 hover:border-line-strong hover:bg-surface-overlay/50 transition-colors overflow-hidden group",
 		onClick && "cursor-pointer text-left",
@@ -54,6 +68,15 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 							α
 						</span>
 					) : null}
+					{folds.map((n) => (
+						<span
+							key={n}
+							className="inline-flex items-center rounded-full border border-rose-400/25 bg-rose-400/10 px-1.5 py-0.5 text-[10px] font-medium text-rose-400"
+							title={`${n}-pointed star polygon`}
+						>
+							{n}★
+						</span>
+					))}
 				</div>
 				<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
 					{tiling.discoverer}
@@ -61,6 +84,16 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 				<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
 					k={tiling.k} · {polygonClassLabel(tiling.family)}
 				</p>
+				{classLabel || tiling.wallpaperGroup ? (
+					<p
+						className="text-[10px] text-fg-muted font-mono leading-tight"
+						title={`${classLabel ? `${tiling.m} distinct vertex configuration(s)${partitionKey ? `, multiplicities ${tiling.partition?.join("·")}` : ""}` : ""}${tiling.wallpaperGroup ? ` · wallpaper group ${tiling.wallpaperGroup} (${tiling.latticeShape})` : ""}`.trim()}
+					>
+						{classLabel}
+						{classLabel && tiling.wallpaperGroup ? " · " : null}
+						{tiling.wallpaperGroup ? <span className="text-sky-400/80">{tiling.wallpaperGroup}</span> : null}
+					</p>
+				) : null}
 				<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
 					{tiling.id}
 				</p>

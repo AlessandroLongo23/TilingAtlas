@@ -2,6 +2,7 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
+import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 
 // The Reference (Oracle) shelf — a DISPLAY-ONLY atlas of known k-uniform tilings from the literature,
 // deliberately kept OFF the certified-results catalogue (§0: the site never produces the claim; these
@@ -37,10 +38,70 @@ export interface ReferenceTiling {
 	// (lib/utils/paramCell.ts). renderCell then holds the default-alpha evaluation (thumbnails).
 	paramCell?: ParametricCellData;
 	exactSource?: ExactCellSource; // exact cyclotomic cell for the symmetry overlay (added 2026-07)
+
+	// Vertex-type classification (build-computed, 2026-07). k counts vertex ORBITS; m counts DISTINCT
+	// vertex configurations among them (m ≤ k). `partition` is the multiplicities of those distinct
+	// configs, descending, summing to k — e.g. m=3, partition [5,1,1] is the "511" group at k=7.
+	// Absent when a source has no per-orbit config data (never guessed; the tiling is then excluded from
+	// M/partition filters). m === k is the Krötenheerdt (maximal) class.
+	m?: number;
+	partition?: number[];
+	// Exact wallpaper symmetry — REGULAR tilings only (WallpaperSymmetry needs exact convex-tile
+	// intersection; star tiles are non-convex ⇒ omitted, NOTES §9.4). Absent for every star tiling.
+	wallpaperGroup?: WallpaperGroup;
+	latticeShape?: LatticeShape;
+}
+
+// The star folds an atlas actually uses (the n of each n* token): 3,4,6,8,9,12,18. Used to seed the
+// star-fold filter without re-deriving from the whole atlas.
+export const STAR_FOLDS = [3, 4, 6, 8, 9, 12, 18] as const;
+
+// tileClass: a tiling is "star" iff its family carries a star token ("n*"); regular otherwise. This
+// matches polygonClassLabel and is source-independent (myers/ctrnact-star always mark stars).
+export function tileClassOf(t: Pick<ReferenceTiling, "family">): "regular" | "star" {
+	return t.family.includes("*") ? "star" : "regular";
+}
+
+// The star folds present in a family (unique, ascending). "3.4*.6*" → [4,6]. Empty for regular.
+export function starFoldsOf(t: Pick<ReferenceTiling, "family">): number[] {
+	const folds = new Set<number>();
+	for (const tok of t.family.split(".")) {
+		if (tok.endsWith("*")) {
+			const n = parseInt(tok, 10);
+			if (Number.isFinite(n)) folds.add(n);
+		}
+	}
+	return [...folds].sort((a, b) => a - b);
+}
+
+// A one-parameter (α-slider) family iff it carries an alphaRange. The rigid star tilings have none.
+export function isParametric(t: Pick<ReferenceTiling, "alphaRange">): boolean {
+	return Array.isArray(t.alphaRange);
+}
+
+// Canonical partition key for display + filtering: digits joined ("511"), switching to a "."
+// separator if any part reaches 10 so "10,1" never collides with "1,0,1". Null when unclassified.
+export function partitionKeyOf(t: Pick<ReferenceTiling, "partition">): string | null {
+	if (!t.partition?.length) return null;
+	const sep = t.partition.some((p) => p >= 10) ? "." : "";
+	return t.partition.join(sep);
+}
+
+// Krötenheerdt (maximal): every orbit has a distinct vertex config, i.e. m === k. False when unclassified.
+export function isMaximal(t: Pick<ReferenceTiling, "m" | "k">): boolean {
+	return t.m != null && t.m === t.k;
 }
 
 export interface ReferenceFilter {
 	kValues?: number[];
+	tileClass?: "regular" | "star"; // regular polygons only / star-bearing only
+	mValues?: number[]; // distinct vertex-config count(s); unclassified tilings never match
+	partitions?: string[]; // partition keys (e.g. "511", "421"); unclassified tilings never match
+	maximalOnly?: boolean; // Krötenheerdt: keep only m === k
+	starFolds?: number[]; // keep tilings using at least one of these star folds
+	parametric?: "rigid" | "family"; // rigid (no α) / one-parameter α-family
+	wallpaperGroups?: WallpaperGroup[]; // exact group; unclassified (all stars) never match
+	latticeShapes?: LatticeShape[]; // exact lattice shape; unclassified (all stars) never match
 	discoverers?: string[]; // each entry's discoverer must be in this set
 	certifications?: ReferenceTiling["certification"][]; // proven / reproduced / candidate
 	polygonNames?: string[]; // each must appear in the tiling's family label
@@ -49,6 +110,26 @@ export interface ReferenceFilter {
 
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
 	if (f.kValues?.length && !f.kValues.includes(t.k)) return false;
+	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
+	// M/partition/maximal: an active filter EXCLUDES unclassified tilings rather than matching them —
+	// completeness ethos, we never silently pass a tiling whose classification we don't have.
+	if (f.mValues?.length && (t.m == null || !f.mValues.includes(t.m))) return false;
+	if (f.partitions?.length) {
+		const key = partitionKeyOf(t);
+		if (key == null || !f.partitions.includes(key)) return false;
+	}
+	if (f.maximalOnly && !isMaximal(t)) return false;
+	if (f.starFolds?.length) {
+		const folds = starFoldsOf(t);
+		if (!f.starFolds.some((n) => folds.includes(n))) return false;
+	}
+	if (f.parametric) {
+		const isFam = isParametric(t);
+		if (f.parametric === "family" && !isFam) return false;
+		if (f.parametric === "rigid" && isFam) return false;
+	}
+	if (f.wallpaperGroups?.length && (t.wallpaperGroup == null || !f.wallpaperGroups.includes(t.wallpaperGroup))) return false;
+	if (f.latticeShapes?.length && (t.latticeShape == null || !f.latticeShapes.includes(t.latticeShape))) return false;
 	if (f.discoverers?.length && !f.discoverers.includes(t.discoverer)) return false;
 	if (f.certifications?.length && !f.certifications.includes(t.certification)) return false;
 	if (f.polygonNames?.length) {
