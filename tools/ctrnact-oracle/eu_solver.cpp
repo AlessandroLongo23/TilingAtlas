@@ -234,8 +234,10 @@ std::string verbalvertices(std::vector<int> const& vertype) {
 // n, open length <= n. Star tiles (p=2, point/dent alternating word of length L=2n): the
 // class must advance +1 mod p along the walk, a closed cycle must be a whole number of
 // word periods (count % p == 0) AND a divisor of L (rotation symmetry of the tile), an
-// open cycle must not exceed L. p <= 2 is asserted by the generator; the +1-advance rule
-// is orientation-safe only up to p=2.
+// open cycle must not exceed L. For arbitrary p (composite tiles, and MIRROR placements
+// that traverse the boundary backwards) the walk direction is locked from the first
+// observed step to CLASS_NEXT or CLASS_PREV, so the advance rule is orientation-safe for
+// any p; p=1 (regular) locks +1 immediately since CLASS_PREV==CLASS_NEXT==id.
 bool checkpart(configuration const& conf) {
     for (int i = 0; i < (int)conf.rneig.size(); i++) {
         int free = i;
@@ -244,32 +246,25 @@ bool checkpart(configuration const& conf) {
         const int L = CLASS_L[expect];
         const int p = CLASS_P[expect];
         int count = 1;
+        int dirlock = 0;            // 0 = undetermined, +1 = CLASS_NEXT, -1 = CLASS_PREV
         bool passt = false;
         while (!passt) {
             free = conf.glue[rfree];
             if (free == -1) {
-                if (count > L) {
-                    return false;
-                }
-                else {
-                    passt = true;
-                }
-            }
-            else if (free == i) {
-                if (count % p != 0 || L % count != 0) {
-                    return false;
-                }
-                else {
-                    passt = true;
-                }
-            }
-            else {
+                if (count > L) return false; else passt = true;
+            } else if (free == i) {
+                if (count % p != 0 || L % count != 0) return false; else passt = true;
+            } else {
                 rfree = conf.rneig[free];
-                expect = CLASS_NEXT[expect];
-                count++;
-                if (conf.lvert[rfree] != expect) {
-                    return false;
+                int actual = conf.lvert[rfree];
+                if (dirlock == 0) {                        // lock orientation on the first step
+                    if (actual == CLASS_NEXT[expect]) dirlock = 1;
+                    else if (actual == CLASS_PREV[expect]) dirlock = -1;
+                    else return false;
                 }
+                expect = (dirlock == 1) ? CLASS_NEXT[expect] : CLASS_PREV[expect];
+                count++;
+                if (actual != expect) return false;
             }
         }
     }
