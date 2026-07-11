@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Vector } from "@/classes";
 import { signedArea, pointInPolygon, lineIntersect, tipPoint } from "@/utils/islamicArrangement";
 import { extractFaces } from "@/utils/islamicArrangement";
+import { colorFaces, HUE } from "@/utils/islamicArrangement";
 
 describe("islamicArrangement geometry helpers", () => {
     it("signedArea is positive for a CCW triangle, negative for CW", () => {
@@ -56,5 +57,33 @@ describe("extractFaces", () => {
         ]);
         expect(faces.length).toBe(4);
         for (const f of faces) expect(signedArea(f.vertices)).toBeGreaterThan(0); // CCW, outer dropped
+    });
+});
+
+describe("colorFaces", () => {
+    const unit = [new Vector(0, 0), new Vector(1, 0), new Vector(1, 1), new Vector(0, 1)];
+    const faceAt = (cx: number) => ({ vertices: unit.map((v) => new Vector(v.x + cx, v.y)) });
+
+    it("colors a face by the only marker inside it", () => {
+        const face = faceAt(0);
+        const out = colorFaces([face], [{ point: new Vector(0.5, 0.5), kind: "dent" }]);
+        expect(out.length).toBe(1);
+        expect(out[0].hue).toBe(HUE.dent);
+    });
+
+    it("centroid wins when a face contains several markers", () => {
+        const face = faceAt(0);
+        const out = colorFaces([face], [
+            { point: new Vector(0.3, 0.5), kind: "tip" },
+            { point: new Vector(0.5, 0.5), kind: "centroid" },
+            { point: new Vector(0.7, 0.5), kind: "dent" },
+        ]);
+        expect(out[0].hue).toBe(HUE.centroid);
+    });
+
+    it("leaves marker-free faces unfilled", () => {
+        const out = colorFaces([faceAt(0), faceAt(5)], [{ point: new Vector(0.5, 0.5), kind: "tip" }]);
+        expect(out.length).toBe(1); // only the face containing the tip
+        expect(out[0].hue).toBe(HUE.tip);
     });
 });

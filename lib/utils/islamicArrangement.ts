@@ -134,3 +134,39 @@ export function extractFaces(segments: Segment[]): Face[] {
     for (const f of faces) if (signedArea(f.vertices) > 1e-9) result.push(f);
     return result;
 }
+
+export interface ColoredFace { face: Face; hue: number; kind: MarkerKind; }
+
+let warnedDentTip = false;
+
+/** Color each face by the highest-priority marker it contains. Marker-free faces are omitted. */
+export function colorFaces(faces: Face[], markers: Marker[]): ColoredFace[] {
+    const out: ColoredFace[] = [];
+    for (const face of faces) {
+        let best: MarkerKind | null = null;
+        const present = new Set<MarkerKind>();
+        for (const m of markers) {
+            if (!pointInPolygon(face.vertices, m.point)) continue;
+            present.add(m.kind);
+            if (best === null || PRIORITY[m.kind] < PRIORITY[best]) best = m.kind;
+        }
+        if (best === null) continue;
+        if (!warnedDentTip && present.has("dent") && present.has("tip") && !present.has("centroid")) {
+            warnedDentTip = true;
+            console.warn("colorFaces: a face holds a dent and a tip but no centroid — falling back to dent > tip");
+        }
+        out.push({ face, hue: HUE[best], kind: best });
+    }
+    return out;
+}
+
+/** Dedupe markers by quantized location, keeping the highest-priority kind on a collision. */
+export function dedupeMarkers(markers: Marker[]): Marker[] {
+    const byKey = new Map<string, Marker>();
+    for (const m of markers) {
+        const k = keyOf(m.point);
+        const prev = byKey.get(k);
+        if (!prev || PRIORITY[m.kind] < PRIORITY[prev.kind]) byKey.set(k, m);
+    }
+    return [...byKey.values()];
+}
