@@ -60,6 +60,10 @@ export function uncoveredBoundary(P: Cyclotomic[], placed: RegularPolygon[]): Di
  * True iff every vertex of the (N=24-lifted) tile lies inside-or-on the CCW convex polygon P (also
  * N=24-lifted): orient(P_i, P_{i+1}, v) ≥ 0 for every directed P edge. Exact via `orient2D` (detSurd
  * sign) — the same machinery the star overlap test uses.
+ *
+ * PRECONDITION: P must be CONVEX. A vertices-only test implies full tile containment only because the
+ * convex hull of the contained vertices ⊆ convex P. On a non-convex P a tile bulging across a reflex
+ * notch would be wrongly admitted — do not reuse this on non-convex targets without an edge-crossing test.
  */
 function tileInsideP(tile24: Cyclotomic[], P24: Cyclotomic[]): boolean {
   const n = P24.length;
