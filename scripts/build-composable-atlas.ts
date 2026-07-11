@@ -1,7 +1,10 @@
 /*
- * build-composable-atlas.ts — emit public/reference-atlas-composable.json, the "Composable" tile-class
- * shelf for the library. These are edge-to-edge tilings that use at least one COMPOSITE convex tile
- * (a rigid super-tile assembled from regular pieces, e.g. cx4-2.4.2.4) alongside the regular set.
+ * build-composable-atlas.ts — emit the "Composable" tile-class shelf for the library, sharded by k:
+ * the low-k entries (k≤2) into public/reference-atlas-composable.json (loaded eagerly with the base
+ * atlas) and each k≥3 into its own lazy shard public/reference-atlas-composable-k{k}.json, mirroring
+ * the regular atlas's k≥8 shards (loadReferenceAtlasShard). These are edge-to-edge tilings that use at
+ * least one COMPOSITE convex tile (a rigid super-tile assembled from regular pieces, e.g. cx4-2.4.2.4)
+ * alongside the regular set.
  *
  * This is a DISPLAY-ONLY, palette-agnosticism demo — NOT a certified enumeration. The counts are
  * illustrative (20 at k=1, 238 at k=2), not the all-and-only result the thesis claims for the regular
@@ -28,6 +31,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { canonicalTilingKey } from "@/classes/algorithm/composable/canonicalTilingKey";
 
 // The 7 composite convex tiles that dissect into regular polygons (the decomposable palette).
 const DECOMPOSABLE = new Set([
@@ -73,7 +77,13 @@ interface ComposableTiling {
 
 const ROOT = process.cwd();
 const IN_DIR = path.join(ROOT, "experiments", "composable-oracle");
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas-composable.json");
+const PUBLIC_DIR = path.join(ROOT, "public");
+const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-composable.json");
+const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-composable-k${k}.json`);
+// k≤MAIN_MAX_K ships in the eagerly-loaded main file; each higher k is written to its own lazy shard
+// (reference-atlas-composable-k{k}.json), mirroring the regular atlas's k≥8 shards. The k=3 convex
+// solve will add thousands of tilings to the k=3 shard without bloating the main /library + /play load.
+const MAIN_MAX_K = 2;
 const LOG_DIR = path.join(ROOT, "experiments", "results");
 const LOG_PATH = path.join(LOG_DIR, "composable-atlas-build.log");
 
@@ -121,6 +131,57 @@ function resolveFile(files: string[]): string | null {
 function isDecomposableOnly(tiles: string[] | undefined): boolean {
 	const cx = (tiles ?? []).filter((t) => t.startsWith("cx"));
 	return cx.every((t) => DECOMPOSABLE.has(t));
+}
+
+// Collapse entries that describe the SAME infinite tiling under a different fundamental domain,
+// supercell, sheared basis, or orbit/@-index relabelling. The composite engine emits many such
+// representations and this shelf previously ingested them verbatim (unlike the regular atlas, which
+// dedups with dedupeByCongruence). We can't reuse that exact-ℤ[ζ] dedup here (float-only cells, and it
+// treats a primitive cell and its supercell as distinct), so we use a fundamental-domain-invariant
+// float key (canonicalTilingKey). Keeps the most primitive representative (fewest cell polygons, then
+// smallest cell), logs every merge, and with --verify-dedup re-checks that a wider patch radius yields
+// the same distinct count (proving the merges aren't false — i.e. no genuinely distinct tiling dropped).
+function dedupeComposable(out: ComposableTiling[], verify: boolean): ComposableTiling[] {
+	const cellArea = (t: ComposableTiling): number => {
+		const [[ux, uy], [vx, vy]] = t.renderCell.basis;
+		return Math.abs(ux * vy - uy * vx);
+	};
+	const groups = new Map<string, number[]>();
+	out.forEach((t, i) => {
+		const key = `${t.k}#${canonicalTilingKey(t.renderCell)}`;
+		(groups.get(key) ?? groups.set(key, []).get(key)!).push(i);
+	});
+	const survivors: ComposableTiling[] = [];
+	const mergeLog: string[] = [];
+	let merged = 0;
+	for (const [, idxs] of groups) {
+		idxs.sort((a, b) => {
+			const pa = out[a].renderCell.cellPolygons.length;
+			const pb = out[b].renderCell.cellPolygons.length;
+			if (pa !== pb) return pa - pb; // fewest polygons ⇒ the primitive representation
+			const aa = cellArea(out[a]);
+			const ab = cellArea(out[b]);
+			if (Math.abs(aa - ab) > 1e-6) return aa - ab;
+			return a - b; // deterministic
+		});
+		survivors.push(out[idxs[0]]);
+		if (idxs.length > 1) {
+			merged += idxs.length - 1;
+			mergeLog.push(`    ${out[idxs[0]].id}  ⇐  ${idxs.slice(1).map((i) => out[i].id).join(", ")}`);
+		}
+	}
+	survivors.sort((a, b) => a.id.localeCompare(b.id)); // stable original order (IDs kept, gaps allowed)
+	log(`  dedup: ${out.length} → ${survivors.length} distinct tilings (${merged} duplicate representations merged)`);
+	for (const line of mergeLog) log(line);
+
+	if (verify) {
+		const wide = new Set<string>();
+		for (const t of out) wide.add(`${t.k}#${canonicalTilingKey(t.renderCell, 1.6)}`);
+		const same = wide.size === groups.size;
+		log(`  dedup verify: distinct at radiusFactor 1.1 = ${groups.size}, at 1.6 = ${wide.size}  ` +
+			`${same ? "✓ stable (no false merges)" : "⚑ MISMATCH — a tighter radius over-merged; investigate"}`);
+	}
+	return survivors;
 }
 
 function main(): void {
@@ -172,14 +233,44 @@ function main(): void {
 		log(`  ⚑ WARNING: cx tiles not in either known palette — treated as non-decomposable: ${[...unknownCx].join(", ")}`);
 	}
 
-	fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-	fs.writeFileSync(OUT_PATH, JSON.stringify(out, null, 0) + "\n");
-
-	const totalDecomp = Object.values(perK).reduce((s, v) => s + v.decomp, 0);
-	const totalNon = Object.values(perK).reduce((s, v) => s + v.nonDecomp, 0);
+	// Dedup: the raw counts above are pre-dedup (one row per source representation). Collapse
+	// same-tiling duplicates before writing the shelf.
 	log("");
-	log(`=== reference-atlas-composable.json written ===`);
-	log(`  ${out.length} tilings → ${path.relative(ROOT, OUT_PATH)}`);
+	const deduped = dedupeComposable(out, process.argv.includes("--verify-dedup"));
+
+	fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+
+	// Split the deduped shelf: k≤MAIN_MAX_K into the eagerly-loaded main file, each higher k into its
+	// own lazy shard. dedupe already keyed on `${k}#…` so no cross-k merge happened — every entry keeps
+	// its k and lands in exactly one output file.
+	const main = deduped.filter((t) => t.k <= MAIN_MAX_K);
+	const shardKs = [...new Set(deduped.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
+	const sizeKB = (p: string): string => (fs.statSync(p).size / 1024).toFixed(1);
+
+	fs.writeFileSync(OUT_PATH, JSON.stringify(main, null, 0) + "\n");
+	log("");
+	log(`=== composable atlas written (main + ${shardKs.length} shard${shardKs.length === 1 ? "" : "s"}) ===`);
+	log(`  main  k≤${MAIN_MAX_K}: ${main.length} tilings → ${path.relative(ROOT, OUT_PATH)}  (${sizeKB(OUT_PATH)} KB)`);
+	for (const k of shardKs) {
+		const entries = deduped.filter((t) => t.k === k);
+		const p = shardPath(k);
+		fs.writeFileSync(p, JSON.stringify(entries, null, 0) + "\n");
+		log(`  shard k=${k}: ${entries.length} tilings → ${path.relative(ROOT, p)}  (${sizeKB(p)} KB)`);
+	}
+
+	// Drop any orphaned composable shard from a prior build (a k that no longer has entries) so we never
+	// serve a stale shard. Only touches reference-atlas-composable-k{n}.json — this script's own outputs.
+	for (const f of fs.readdirSync(PUBLIC_DIR)) {
+		const m = /^reference-atlas-composable-k(\d+)\.json$/.exec(f);
+		if (m && !shardKs.includes(Number(m[1]))) {
+			fs.unlinkSync(path.join(PUBLIC_DIR, f));
+			log(`  removed stale shard ${f}`);
+		}
+	}
+
+	const totalDecomp = deduped.filter((t) => t.decomposableOnly).length;
+	const totalNon = deduped.length - totalDecomp;
+	log(`  total ${deduped.length} tilings  (${out.length} raw before dedup)`);
 	log(`  decomposable-only ${totalDecomp}  ·  uses-non-decomposable ${totalNon}`);
 	log(`  elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
 

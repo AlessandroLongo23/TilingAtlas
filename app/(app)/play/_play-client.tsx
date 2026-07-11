@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/sidebar";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
-import { loadReferenceAtlas, referenceToCatalogue } from "@/lib/services/referenceAtlas";
+import { loadComposableAtlasShard, loadReferenceAtlas, referenceToCatalogue } from "@/lib/services/referenceAtlas";
 import { evaluateParamCell } from "@/lib/utils/paramCell";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 
@@ -29,12 +29,50 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	useEffect(() => {
 		let alive = true;
 		loadReferenceAtlas()
-			.then((atlas) => alive && setRefList(atlas.map(referenceToCatalogue)))
-			.catch(() => alive && setRefList([]));
+			.then((atlas) => {
+				if (!alive) return;
+				const mapped = atlas.map(referenceToCatalogue);
+				// Union-by-key, not overwrite: the composable-shard effect below can resolve FIRST (the
+				// k3 shard is far smaller than the base atlas), so preserve any entries it already merged.
+				setRefList((prev) => {
+					if (!prev) return mapped;
+					const have = new Set(mapped.map((t) => t.canonicalKey));
+					const extra = prev.filter((t) => !have.has(t.canonicalKey));
+					return extra.length ? [...mapped, ...extra] : mapped;
+				});
+			})
+			.catch(() => alive && setRefList((prev) => prev ?? []));
 		return () => {
 			alive = false;
 		};
 	}, []);
+
+	// Composable k≥3 tilings live in lazy shards (public/reference-atlas-composable-k{k}.json), not the
+	// main atlas loadReferenceAtlas pulls. If we arrived directly at one (id "composable-k{n}-…", e.g. a
+	// click from the /library Composable shelf), fetch that shard and merge it in so the requested tiling
+	// is in the working list. Best-effort: a missing shard resolves to [] in the loader; dedup by key so
+	// navigating between composable-k3 tilings doesn't append the shard twice.
+	useEffect(() => {
+		const m = requestedKey?.match(/^composable-k(\d+)-/);
+		if (!m) return;
+		const k = Number(m[1]);
+		if (!Number.isFinite(k) || k < 3) return;
+		let alive = true;
+		loadComposableAtlasShard(k)
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [requestedKey]);
 
 	const working = refList ?? tilings;
 

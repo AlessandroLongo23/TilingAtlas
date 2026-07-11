@@ -11,6 +11,7 @@ import { ReferenceCard } from "@/components/reference-card";
 import {
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
+	loadComposableAtlasShard,
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
@@ -70,6 +71,11 @@ const COLUMN_PRESETS = [3, 4, 5, 6];
 // Čtrnáct tiers beyond the base atlas (k≤7), shipped as separate lazy shards (public/reference-atlas-
 // k{k}.json). Their k chips always show; selecting one fetches the shard on demand and merges it in.
 const HIGHER_K = [8, 9, 10];
+// Composable demo shelf tiers held out of the main file as lazy shards (public/reference-atlas-
+// composable-k{k}.json). The k≤2 composable entries ship in the eagerly-loaded main file; these load
+// on demand when the Composable class or a k≥3 chip is selected. Extend this when higher-k composable
+// shards land (must stay in sync with MAIN_MAX_K in scripts/build-composable-atlas.ts).
+const COMPOSABLE_HIGHER_K = [3];
 const ALL_NUM = 0; // sentinel: the "All" chip for a single-select numeric group (k / M)
 const ALL_STR = ""; // sentinel: the "All" chip for the partition group
 
@@ -148,6 +154,41 @@ export function ReferenceShelf() {
 			);
 	}, [filters.kValue, loadedShards, loadingShards, shardErrors]);
 
+	// Lazy composable k≥3 shards. The demo keeps k≤2 in the main atlas and splits each higher k into
+	// public/reference-atlas-composable-k{k}.json (COMPOSABLE_HIGHER_K). Fetch a shard when it's in view:
+	// the Composable class is selected (pull all its shards so the shelf fills in), or a composable
+	// shard-k chip is picked (also under "All", where k=3 includes composable). Composable shard ks (3)
+	// never collide with the regular shard ks (8/9/10), so the shared loaded/loading/error state is safe.
+	// A missing shard resolves to an empty merge inside the loader — no error is surfaced (it's a demo).
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "composable" && cls != null) return; // regular/star only — no composable shard needed
+		const k = filters.kValue;
+		const want =
+			k != null
+				? COMPOSABLE_HIGHER_K.filter((kk) => kk === k)
+				: cls === "composable"
+					? COMPOSABLE_HIGHER_K
+					: [];
+		for (const kk of want) {
+			if (loadedShards.has(kk) || loadingShards.has(kk) || shardErrors.has(kk)) continue;
+			setLoadingShards((s) => new Set(s).add(kk));
+			loadComposableAtlasShard(kk)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setLoadedShards((s) => new Set(s).add(kk));
+				})
+				.catch((e) => setShardErrors((m) => new Map(m).set(kk, e instanceof Error ? e.message : String(e))))
+				.finally(() =>
+					setLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(kk);
+						return n;
+					}),
+				);
+		}
+	}, [filters.tileClass, filters.kValue, loadedShards, loadingShards, shardErrors]);
+
 	// ── single-select setters (each clears the now-stale downstream selections) ──
 	const setKValue = (k: number | undefined) =>
 		setFilters({ ...filters, kValue: k, mValue: undefined, partitionKey: undefined });
@@ -206,6 +247,9 @@ export function ReferenceShelf() {
 			const s = new Set<number>();
 			if (tilings) for (const t of tilings) if (!cls || tileClassOf(t) === cls) s.add(t.k);
 			if (!cls || cls === "regular") for (const k of HIGHER_K) s.add(k);
+			// Composable k≥3 lives in lazy shards not yet in `tilings`; show their chips up front (like the
+			// regular HIGHER_K) so selecting one can trigger the fetch.
+			if (!cls || cls === "composable") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
 			return s;
 		},
 		[tilings],
@@ -353,7 +397,9 @@ export function ReferenceShelf() {
 							label="Maximal (M = k)"
 							classes="mt-1 self-start"
 						/>
-						{kChips.some((k) => k >= 8) ? (
+						{tileClass === "composable" && kChips.some((k) => k >= 3) ? (
+							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 3 loads on demand.</p>
+						) : kChips.some((k) => k >= 8) ? (
 							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
 						) : null}
 					</FilterGroup>
