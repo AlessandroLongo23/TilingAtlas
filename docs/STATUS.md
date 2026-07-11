@@ -144,6 +144,10 @@ See `docs/NEXT.md` (the single curated source — duplicated nowhere else).
 - Review work-orders: `docs/review-2026-06-09/` (CB code items ALL closed; ST-2/3/9 + TH-4/13 done).
 - Supabase: k=3 run `52d0cb2e` certified (61) — ⚑ reflects the OLD `99919f42` digest; a re-cert DB
   refresh for the new `11ee1b1d` anchor is a follow-up (not done in the wind-down).
+- **Reference (Oracle) shelf now serves k=8–10** (branch `feat/reference-atlas-k8-10`): per-k lazy
+  shards `public/reference-atlas-k{8,9,10}.json` (2850/5960/11866 tilings, ~15/34/73 MB), fetched
+  on demand when that k is selected. Čtrnáct, `reproduced` (display-only, never certified). Base
+  atlas + render (24/page) unchanged. Spec/plan under `docs/superpowers/`.
 
 ## Ledger index
 
