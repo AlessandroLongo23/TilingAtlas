@@ -288,12 +288,15 @@ function buildMyersK1Stars(): ReferenceTiling[] {
 // Phase 3 — Marek Čtrnáct k=7 (reproduced here; the first tier beyond Galebach's k=6). Reconstructed
 // from the exact {T1,T2,Seed} cells in figures/data/ctrnact.json (all 5568 k≤8 developed there were
 // certified by the exact area check; only k=7 is rendered as cards — the full k≤8 combinatorial +
-// geometry set lives in that file). An UNPROVEN exhaustive search: display-only, never certified.
+// geometry set lives in that file). k=7 ships in the base atlas; k=8..10 ship as separate lazy shards
+// (Phase 3b). An UNPROVEN exhaustive search: display-only, never certified.
 // ---------------------------------------------------------------------------------------------------
-function buildCtrnact(): ReferenceTiling[] {
+const CTRNACT_TARGETS: Record<number, number> = { 7: 1472, 8: 2850, 9: 5960, 10: 11866 };
+
+function buildCtrnactAtK(k: number): ReferenceTiling[] {
 	const dsPath = path.join(ROOT, 'figures', 'data', 'ctrnact.json');
 	if (!fs.existsSync(dsPath)) {
-		log('(no figures/data/ctrnact.json — skipping Phase 3)\n');
+		log(`(no figures/data/ctrnact.json — skipping k=${k})\n`);
 		return [];
 	}
 	const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
@@ -302,8 +305,9 @@ function buildCtrnact(): ReferenceTiling[] {
 	const out: ReferenceTiling[] = [];
 	const skips: { id: string; reason: string }[] = [];
 	let total = 0;
+	let done = 0;
 	for (const t of ds.tilings) {
-		if (t.k !== 7) continue;
+		if (t.k !== k) continue;
 		total++;
 		if (!t.T1 || !t.T2 || !t.Seed) {
 			skips.push({ id: t.id, reason: 'no geometry in ctrnact.json' });
@@ -317,22 +321,44 @@ function buildCtrnact(): ReferenceTiling[] {
 		out.push({
 			id: t.id,
 			source: 'ctrnact',
-			k: 7,
+			k,
 			family: familyLabel(rec.cell),
 			renderCell: cellToRenderData(rec.cell),
 			exactSource: { kind: 'seed', T1: t.T1, T2: t.T2, Seed: t.Seed },
 		});
+		if (++done % 500 === 0) log(`    …k=${k}: ${done} reconstructed`);
 	}
-	log('=== Phase 3: Čtrnáct k=7 (reproduced, extends Galebach beyond k=6) ===');
-	const flag = out.length === 1472 && total === 1472 ? '✓' : '⚑';
-	log(`  k=7: ${out.length}/${total} reconstructed (target 1472)  ${flag}`);
+	const target = CTRNACT_TARGETS[k];
+	const flag = out.length === target && total === target ? '✓' : '⚑';
+	log(`  k=${k}: ${out.length}/${total} reconstructed (target ${target ?? '?'})  ${flag}`);
 	if (skips.length === 0) log('  no skips ✓');
 	else {
 		log(`  ⚑ ${skips.length} SKIP(s):`);
 		for (const s of skips.slice(0, 15)) log(`      ✗ ${s.id}: ${s.reason}`);
 	}
-	log('');
 	return out;
+}
+
+// Phase 3b — the higher-k Čtrnáct tiers (k=8..10) as SEPARATE lazy-loaded shards, so the base
+// reference-atlas.json stays k≤7 and small. Each shard is stamped with discoverer + certification
+// (same attribution main() applies to the base atlas) and written sorted by id. Reproduced, never
+// certified. k=10 is the heaviest (~tens of MB) — logged loud so the payload is never a surprise.
+function writeHigherKShards(): void {
+	log('=== Phase 3b: higher-k Čtrnáct shards (k=8..10, lazy-loaded on demand) ===');
+	for (const k of [8, 9, 10]) {
+		const entries = buildCtrnactAtK(k);
+		for (const t of entries) {
+			const a = attribute(t);
+			t.discoverer = a.discoverer;
+			t.certification = a.certification;
+		}
+		entries.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+		const outPath = path.join(ROOT, 'public', `reference-atlas-k${k}.json`);
+		fs.writeFileSync(outPath, JSON.stringify(entries, null, 0) + '\n');
+		const bytes = fs.statSync(outPath).size;
+		log(`  → ${path.relative(ROOT, outPath)}  (${entries.length} tilings, ${(bytes / 1e6).toFixed(1)} MB)`);
+	}
+	log('');
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -529,7 +555,7 @@ function main(): void {
 	atlas.push(...buildGalebach());
 	if (withStars) atlas.push(...buildMyersK1Stars());
 	else log('(--no-stars: skipping Phase 2)\n');
-	if (!argv.includes('--no-ctrnact')) atlas.push(...buildCtrnact());
+	if (!argv.includes('--no-ctrnact')) atlas.push(...buildCtrnactAtK(7));
 	else log('(--no-ctrnact: skipping Phase 3)\n');
 	if (withStars) {
 		const { entries: stars, candidateIds } = buildCtrnactStars(familyMemberVertypes());
@@ -555,6 +581,9 @@ function main(): void {
 
 	fs.writeFileSync(OUT_PATH, JSON.stringify(atlas, null, 0) + '\n');
 	fs.mkdirSync(LOG_DIR, { recursive: true });
+
+	if (!argv.includes('--no-ctrnact') && !argv.includes('--no-shards')) writeHigherKShards();
+	else log('(--no-shards or --no-ctrnact: skipping Phase 3b higher-k shards)\n');
 
 	const byK: Record<string, number> = {};
 	for (const t of atlas) byK[`${t.source} k=${t.k}`] = (byK[`${t.source} k=${t.k}`] ?? 0) + 1;
