@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CyclotomicRing, Cyclotomic } from '@/classes';
 import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
 import { Polyform } from '@/classes/algorithm/composable/Polyform';
+import { generateFamily } from '@/classes/algorithm/composable/generateFamily';
 
 const ring = CyclotomicRing.create(12);
 const origin = Cyclotomic.fromRational(ring, 0n); // exact 0 (confirmed: no Cyclotomic.zero)
@@ -70,6 +71,14 @@ describe('Polyform convexAngleWord', () => {
   it('a domino (2 squares) -> null (has 180° corners, not unit-edge convex)', () => {
     const domino = new Polyform([RegularPolygon.fromAnchorAndDirExact(4, origin, 0)]).glue(4)[0];
     expect(domino.convexAngleWord()).toBeNull();
+  });
+});
+
+describe('generateFamily', () => {
+  it('maxTiles=2 yields exactly the rhombus and the house', () => {
+    const { tiles } = generateFamily(2);
+    const words = tiles.map(t => t.angles.join(',')).sort();
+    expect(words).toEqual(['2,4,2,4', '2,5,3,3,5'].sort()); // rhombus, house (canonical forms)
   });
 });
 
