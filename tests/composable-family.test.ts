@@ -48,3 +48,14 @@ describe('Polyform canonicalKey', () => {
     expect(rhombus.canonicalKey()).not.toBe(square.canonicalKey());
   });
 });
+
+describe('Polyform convexAngleWord', () => {
+  it('rhombus (2 triangles) -> [2,4,2,4]', () => {
+    const rhombus = new Polyform([RegularPolygon.fromAnchorAndDirExact(3, origin, 0)]).glue(3)[0];
+    expect(rhombus.convexAngleWord()).toEqual([2, 4, 2, 4]);
+  });
+  it('a domino (2 squares) -> null (has 180° corners, not unit-edge convex)', () => {
+    const domino = new Polyform([RegularPolygon.fromAnchorAndDirExact(4, origin, 0)]).glue(4)[0];
+    expect(domino.convexAngleWord()).toBeNull();
+  });
+});

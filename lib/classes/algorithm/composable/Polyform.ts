@@ -91,4 +91,49 @@ export class Polyform {
     }
     return best!;
   }
+
+  /** Ordered boundary loop of vertex keys, or null if the boundary is not a single simple cycle. */
+  private boundaryLoop(): HalfEdge[] | null {
+    const bs = this.boundaryHalfEdges();
+    const byStart = new Map<string, HalfEdge>();
+    for (const e of bs) { if (byStart.has(e.startKey)) return null; byStart.set(e.startKey, e); }
+    const loop: HalfEdge[] = [];
+    let cur = bs[0];
+    for (let i = 0; i < bs.length; i++) {
+      loop.push(cur);
+      const nxt = byStart.get(cur.endKey);
+      if (!nxt) return null;
+      cur = nxt;
+      if (cur === bs[0]) break;
+    }
+    return loop.length === bs.length ? loop : null;   // single cycle covering every boundary edge
+  }
+
+  /** Interior angle (units of 2π/12) at the turn between two consecutive boundary edges. */
+  private static interiorUnits(inDir: number, outDir: number, N: number): number {
+    const ext = (((outDir - inDir) % N) + N) % N;      // left turn
+    return (((N / 2 - ext) % N) + N) % N;              // interior = π − exterior
+  }
+
+  convexAngleWord(): number[] | null {
+    const loop = this.boundaryLoop();
+    if (!loop) return null;
+    const N = this.tiles[0].ring!.N;
+    const word: number[] = [];
+    for (let i = 0; i < loop.length; i++) {
+      const prev = loop[(i - 1 + loop.length) % loop.length];
+      const u = Polyform.interiorUnits(prev.dir, loop[i].dir, N);
+      if (u < 2 || u > 5) return null;                 // straight (6) or reflex (>6) ⇒ not a composable tile
+      word.push(u);
+    }
+    return Polyform.canonicalCyclicWord(word);
+  }
+
+  /** Lexicographically-min rotation of the word or its reverse (dihedral canonical form). */
+  static canonicalCyclicWord(w: number[]): number[] {
+    const rots = (a: number[]) => a.map((_, s) => a.slice(s).concat(a.slice(0, s)));
+    const all = [...rots(w), ...rots([...w].reverse())].map(a => a.join(','));
+    const min = all.reduce((m, x) => (x < m ? x : m));
+    return min.split(',').map(Number);
+  }
 }
