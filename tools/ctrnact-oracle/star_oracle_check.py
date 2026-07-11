@@ -77,9 +77,15 @@ def family_instances(rec):
     return out
 
 
-# star species available in the palette, as (n, alphaU); kept in sync with star24.json
+# star species available in the palette, as (n, alphaU); default matches star24.json,
+# overridden by --palette <palette.json> (e.g. star24full)
 PALETTE_SPECIES = {(3, 1), (3, 2), (4, 2), (4, 3), (4, 4), (6, 2), (6, 4), (6, 5), (6, 6),
                    (8, 1), (8, 3), (8, 6), (12, 2), (12, 4), (12, 6)}
+
+
+def load_palette_species(path):
+    spec = json.load(open(path))
+    return {(t["n"], t["alphaU"]) for t in spec["tiles"] if t["kind"] == "star"}
 
 
 def instantiate_k2_family(rec, a):
@@ -119,7 +125,11 @@ def main():
     ap.add_argument("--pruned", required=True)
     ap.add_argument("--oracle", required=True)
     ap.add_argument("--k", type=int, default=1)
+    ap.add_argument("--palette", help="palette JSON to read star species from (default: builtin star24 set)")
     args = ap.parse_args()
+    if args.palette:
+        global PALETTE_SPECIES
+        PALETTE_SPECIES = load_palette_species(args.palette)
 
     oracle = json.load(open(args.oracle))
     records = oracle["records"]

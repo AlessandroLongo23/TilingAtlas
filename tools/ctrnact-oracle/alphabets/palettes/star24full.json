@@ -1,0 +1,339 @@
+{
+  "name": "star24full",
+  "D": 24,
+  "pinnedLegacy": false,
+  "maxValence": 12,
+  "comment": "FULL in-ring closure at D=24 (unit pi/12), AL decision 2026-07-11: a tile is in-ring iff every corner angle is an integer unit. Regular n-gon: interior 12-24/n units, integer iff n|24 => n in {3,4,6,8,12,24} (24-gon INCLUDED: 11 units, combines with star dents, e.g. 24-gon+3*d13 is a 2-corner fill; the octagon-blind zeta12 decision does not apply at D=24). Isotoxal star n*a: point a, dent 24-24/n-a, both integer iff n|24; proper star (reflex dent) iff 1 <= a <= 11-24/n. Gives 3*{1..3} 4*{1..5} 6*{1..7} 8*{1..8} 12*{1..9} 24*{1..10} = 42 star species + 6 regular = 48 tiles. Supersedes star24 (15 Myers-derived species; provably not closed under in-ring instantiation of the free-alpha families \u2014 see star-adversarial-review-2026-07-11). star24.json is kept untouched for reproducibility; famchars of shared species are identical to star24.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    },
+    {
+      "kind": "regular",
+      "n": 12,
+      "name": "12",
+      "famchar": "c"
+    },
+    {
+      "kind": "regular",
+      "n": 24,
+      "name": "24",
+      "famchar": "y"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 1,
+      "name": "3*1",
+      "famchar": "sA"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 2,
+      "name": "3*2",
+      "famchar": "sB"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 3,
+      "name": "3*3",
+      "famchar": "sP"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 1,
+      "name": "4*1",
+      "famchar": "sQ"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 2,
+      "name": "4*2",
+      "famchar": "sC"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 3,
+      "name": "4*3",
+      "famchar": "sD"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 4,
+      "name": "4*4",
+      "famchar": "sE"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 5,
+      "name": "4*5",
+      "famchar": "sR"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 1,
+      "name": "6*1",
+      "famchar": "sS"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 2,
+      "name": "6*2",
+      "famchar": "sF"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 3,
+      "name": "6*3",
+      "famchar": "sT"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 4,
+      "name": "6*4",
+      "famchar": "sG"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 5,
+      "name": "6*5",
+      "famchar": "sH"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 6,
+      "name": "6*6",
+      "famchar": "sK"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 7,
+      "name": "6*7",
+      "famchar": "sU"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 1,
+      "name": "8*1",
+      "famchar": "sI"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 2,
+      "name": "8*2",
+      "famchar": "sV"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 3,
+      "name": "8*3",
+      "famchar": "sL"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 4,
+      "name": "8*4",
+      "famchar": "sW"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 5,
+      "name": "8*5",
+      "famchar": "sX"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 6,
+      "name": "8*6",
+      "famchar": "sM"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 7,
+      "name": "8*7",
+      "famchar": "sY"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 8,
+      "name": "8*8",
+      "famchar": "sZ"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 1,
+      "name": "12*1",
+      "famchar": "uA"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 2,
+      "name": "12*2",
+      "famchar": "sJ"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 3,
+      "name": "12*3",
+      "famchar": "uB"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 4,
+      "name": "12*4",
+      "famchar": "sN"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 5,
+      "name": "12*5",
+      "famchar": "uC"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 6,
+      "name": "12*6",
+      "famchar": "sO"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 7,
+      "name": "12*7",
+      "famchar": "uD"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 8,
+      "name": "12*8",
+      "famchar": "uE"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 9,
+      "name": "12*9",
+      "famchar": "uF"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 1,
+      "name": "24*1",
+      "famchar": "uG"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 2,
+      "name": "24*2",
+      "famchar": "uH"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 3,
+      "name": "24*3",
+      "famchar": "uI"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 4,
+      "name": "24*4",
+      "famchar": "uJ"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 5,
+      "name": "24*5",
+      "famchar": "uK"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 6,
+      "name": "24*6",
+      "famchar": "uL"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 7,
+      "name": "24*7",
+      "famchar": "uM"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 8,
+      "name": "24*8",
+      "famchar": "uN"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 9,
+      "name": "24*9",
+      "famchar": "uO"
+    },
+    {
+      "kind": "star",
+      "n": 24,
+      "alphaU": 10,
+      "name": "24*10",
+      "famchar": "uP"
+    }
+  ]
+}

@@ -678,13 +678,23 @@ def main():
                 ent.ferkval = fk
                 cert_lines += lines
                 entries.append(ent)
-        # codes: valence digit(s) + two letters, digit-free tail (tes_id-safe)
+        # codes: valence digit(s) + letters-only tail (digit-free, tes_id-safe). Tail is
+        # base-26 with 'a'=0, left-padded to width 2; width grows past 'zz' (i>=676),
+        # which large palettes hit (star24full: 21100 valence-6 entries). Fixed-width
+        # 2 chars overflowed into non-ASCII via chr(ord('a')+i//26). Injective: width-2
+        # covers i<676 exactly, wider tails have a nonzero leading digit.
         by_val = {}
         for e in entries:
             v = len(e.config)
             i = by_val.get(v, 0)
             by_val[v] = i + 1
-            e.code = f"{v}{chr(ord('a') + i // 26)}{chr(ord('a') + i % 26)}"
+            tail, j = "", i
+            while True:
+                tail = chr(ord('a') + j % 26) + tail
+                j //= 26
+                if j == 0:
+                    break
+            e.code = f"{v}{'a' * max(0, 2 - len(tail))}{tail}"
     emit(args.out, D, tiles, classes, entries, cert_lines, palette_name)
     print(f"[gen] wrote {args.out}/{{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt}}"
           f" ({len(entries)} entries)")

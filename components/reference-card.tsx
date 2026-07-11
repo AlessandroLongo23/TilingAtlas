@@ -36,8 +36,13 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 				<div className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full border border-sky-400/25 bg-sky-400/10 px-1.5 py-0.5 text-[9px] font-medium text-sky-400 backdrop-blur-sm">
 					{SOURCE_LABEL[tiling.source]}
 				</div>
-				{isFamily || tiling.candidate ? (
+				{isFamily || tiling.candidate || tiling.preview ? (
 					<div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+						{tiling.preview ? (
+							<div className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-400/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400 backdrop-blur-sm">
+								PREVIEW
+							</div>
+						) : null}
 						{tiling.candidate ? (
 							<div className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-400 backdrop-blur-sm">
 								NEW?

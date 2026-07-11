@@ -1,0 +1,108 @@
+# Full in-ring species closure + k=3 star runs + performance grid
+# Branch: feat/ctrnact-star (worktree), engine: tools/ctrnact-oracle (table-driven Ctrnact port)
+# Work order: AL 2026-07-11 ("we have to do it right" — full closure, no exclusion arguments)
+# Date: 2026-07-11
+#
+# Tasks:
+#   T1  derive the complete in-ring species list (D=24), build alphabets/palettes/star24full.json,
+#       gen_alphabet --certify gate (star24.json untouched)
+#   T2  closure validation: k=1,k=2 at EU_NCBUDGET 6 and 7 (byte fixpoint), ZERO-LOST gate vs
+#       run-star-k1 (37 blocks) and run-star-k2b6 (65 blocks), + the 5 agent3 3*3 blocks;
+#       disposition of every new block (Myers-fixed / Myers-family / known-new-family / UNMATCHED)
+#   T3  k=3: regular palette (target 61, golden gate), then star24full at budget fixpoint
+#       (checkpoint rule: kill + report partial if projected > ~5 h)
+#   T4  performance grid k=1..3 x {regular, star24, star24full}: wall clock, block count,
+#       raw-block work metric; growth ratios + honest extrapolation
+#
+# This log is appended SYNCHRONOUSLY as steps complete. If the session dies, this is the record.
+
+[T1] Species derivation (first principles, D=24, angle unit pi/12):
+  In-ring tile := every corner angle is an integer number of units.
+  Regular n-gon: interior = 12(n-2)/n = 12 - 24/n units; integer <=> n | 24, n >= 3
+    => n in {3,4,6,8,12,24}, interiors {4,6,8,9,10,11}. The 24-gon (11 units) IS in-ring
+    and is included: 24-gon corner + 3*d13 dent = 11+13 = 24 is a legal 2-corner fill, so
+    the regular-only exclusion argument does not carry over to star palettes.
+  Isotoxal star n*a: point = a units, dent = 24 - 24/n - a units; both integer <=> n | 24.
+    Proper star <=> dent reflex <=> 24 - 24/n - a > 12 <=> a < 12 - 24/n = interior(n-gon),
+    i.e. 1 <= a <= 11 - 24/n. (n=2 gives an empty range, so n >= 3 is automatic.)
+    => 3*{1..3}, 4*{1..5}, 6*{1..7}, 8*{1..8}, 12*{1..9}, 24*{1..10} = 3+5+7+8+9+10 = 42.
+  TOTAL: 42 star species + 6 regular = 48 tiles = 6 + 84 = 90 corner classes.
+  Sanity: star24's 5 regulars + 15 star species are a strict subset (verified by script).
+  New vs star24: regular 24-gon + 27 star species:
+    3*3; 4*{1,5}; 6*{1,3,7}; 8*{2,4,5,7,8}; 12*{1,3,5,7,8,9}; 24*{1..10}.
+  Palette written: alphabets/palettes/star24full.json (48 tiles; star24.json untouched;
+  famchars of shared species identical to star24, new species sP..sZ,uA..uP, 24-gon 'y').
+[T1] Next: gen_alphabet.py --certify (abort condition: >45 min or >2M entries).
+
+[01:56-02:00] T1 GATE PASS — star24full alphabet generated + certified
+  gen_alphabet --certify: 56,570 configs -> 60,927 entries (vs 5,739 star24 / 6,663 star24+3*3),
+  90 corner classes, MAXL=48 (the 24-star boundary word), generation 37 s wall.
+  Certificates: 304,635 PASS / 0 FAIL (structural + attachment transversal per entry).
+  Legacy prefix rule WOULD-DROP on 21 entries (chiral+rotation-symmetric words) — handled by
+  the explicit per-entry Aut-orbit reps, as designed; regular palette unaffected.
+  Point-adjacency lemma verified on the OUTPUT: 0 of 60,927 entry words contain a cyclically
+  adjacent point-point pair (the generator excludes them; lemma applies to every species since
+  it only uses "dent is reflex", which holds for all 42 by construction).
+  Entries by valence: 2:304 (dent-fills) 3:657 4:6375 5:5245 6:21100 7:10233 8:16311 9:702
+  (valence 9 = the (3,p1)x4+3 ceiling; maxValence=12 is safely above it).
+  ENGINE FIX en route: gen_alphabet code tails were fixed-width 2 letters; >676 entries per
+  valence (here: 21100) overflowed chr() into non-ASCII. Tail now letters-only variable width
+  ('a'=0 base-26, min width 2). Codes verified unique + ASCII (max width 5). Pinned/regular
+  palettes take codes from the legacy tables, so the regular byte-gate is unaffected (re-checked
+  below via make check-regular).
+  Table sizes: solver_tables.inc 16.9 MB, pruner_tables.inc 16.9 MB, tables.py 19.7 MB,
+  certs.txt 23.3 MB.
+[T1] Next: build PALETTE=star24full MAXNUM=2, then T2 runs (budgets 6,7).
+
+[02:00:56] T2 star24full k=1: launching runs at EU_NCBUDGET=6 then 7 (fixpoint pair)
+[02:01:10]   b6 done:  pruned k=1 blocks; [02:01:10] DONE  total 11s  ->  /Users/alessandro/.config/superpowers/worktrees/TilingAtlas/ctrnact-star/tools/ctrnact-oracle/run-star24full-k1b6/ctrnact-cells-k1.json; solver-stderr:        0 bytes
+[02:01:20]   b7 done:  pruned k=1 blocks; [02:01:20] DONE  total 10s  ->  /Users/alessandro/.config/superpowers/worktrees/TilingAtlas/ctrnact-star/tools/ctrnact-oracle/run-star24full-k1b7/ctrnact-cells-k1.json; solver-stderr:        0 bytes
+[02:01] T2 k=1 RESULTS (star24full, MAXNUM=1):
+  timings: solve 10 s, prune 1 s (b6); b7 identical within 1 s. Raw blocks 50, pruned 44.
+  GATE budget-fixpoint: pruned catalogs byte-identical at EU_NCBUDGET 6 vs 7 (diff -r clean),
+    and the budget NEVER engaged in either run (solver-stderr empty) => complete outright.
+  GATE zero-lost: all 37 star24 k=1 baseline blocks present (catalog_diff, key = canonical
+    vertex-type line). 37 -> 44, LOST 0, NEW 7.
+  GATE agent3 k=1 blocks: (3*d13,3,3*p3,3)A and (3*d13,3*p3,6)F both present. PASS.
+  Myers harness (star_oracle_check --k 1): 13/13 in-ring Fig-4 + 2/2 pinned Fig-3 + 11/11
+    family members at star24-era alphas + 11/11 pure-regular, 0 hard fails.
+  The 7 new blocks, disposition — ALL are in-ring members of Myers' KNOWN k=1 free-alpha
+  families at the newly added species (checked cyclically vs the fig-3 templates):
+    (3*d13,3,3*p3,3)A   = fig3b (3.3*a.3.3**a)   at alphaU=3   [agent3, known]
+    (3*d13,3*p3,6)F     = fig3e (6.3*a.3**a)     at alphaU=3   [agent3, known]
+    (6*d19,6*p1,3)F     = fig3c (3.6*a.6**a)     at alphaU=1   [new species 6*1]
+    (6*d17,6*p3,3)F     = fig3c                  at alphaU=3   [new species 6*3]
+    (6*d13,6*p7,3)F     = fig3c                  at alphaU=7   [new species 6*7]
+    (4*d17,4*p1,4)F     = fig3d (4.4*a.4**a)     at alphaU=1   [new species 4*1]
+    (4*d13,4*p5,4)F     = fig3d                  at alphaU=5   [new species 4*5]
+  => k=1 in-ring closure CONFIRMS Myers 2004: no new k=1 tiling outside his families;
+     every family instantiates at exactly its in-ring alphas. NO 8*/12*/24*/24-gon-bearing
+     k=1 tiling exists beyond the baseline ones (the engine had all 48 tiles available).
+[T2] Next: k=2 runs (MAXNUM=2) at budgets 6, 7.
+[02:03:19] T2 star24full k=2: launching EU_NCBUDGET=6 then 7 (star24 k=2 took ~68 s at 6.7k entries; alphabet is now 9x that — ETA unknown, watch out/ growth)
+
+[02:04-02:05] T3a regular palette k=3 (run in a scratchpad copy to avoid make races with the
+  concurrently running star24full k=2):
+  counts k=1/2/3 = 10/20/61 — k=3 == 61 == A068599 target. PASS.
+  (k=1 is 10 by design: octagon-blind zeta12 palette, t1002 re-added analytically.)
+  Golden byte gate: make check-regular PASS (all 34 sha256 identical, k<=6 = 10/20/61/151/332/673)
+  — this ALSO re-validates the pinned regular tables after the gen_alphabet code-tail fix.
+  k=3 catalog vs golden manifest: all 5 eupruned_03_*.txt sha256 match golden/regular-k6.sha256.
+  Timings (M-series, one core): solver 0.01 s, pruner <0.01 s at MAXNUM=3; the 1-2 s wall in
+  run-oracle.sh is build/develop overhead. Raw blocks: 11 (k<=1), 35 (k<=2), 124 (k<=3).
+
+[02:07-02:08] T4 star24 clean timings (scratchpad copy, EU_NCBUDGET=6, budget never engaged):
+  k=1: solve <1 s, 43 raw, 37 pruned; k=2: solve 51 s, 130 raw, 65 pruned (baseline counts reproduced).
+  Also: star24 tables regenerated after the code fix are semantically identical (only CODES differ;
+  the committed tables already carried the >676 overflow, e.g. '4{a' — same bug, now fixed).
+[02:09:31] T2 k=2 star24full progress: solver at ~6 min CPU, 21 raw blocks (star24 k=2: 130 raw in 51 s) — watcher installed, 5-min cadence
+
+[02:25] T2 k=2 pre-registered prediction (written BEFORE the run finishes), from instantiating
+  Myers' 5 family records + the proven-new family A over the FULL in-ring species set:
+  fig25[a=3], fig26[a=1], fig26[a=3], fig27[a=1], fig27[a=3], fig28[a=3], fig32[a=1],
+  fig32[a=3], new-family-A[a=3] = 9 predicted new star-bearing k=2 blocks; anything beyond
+  these is UNMATCHED (candidate new). Note: the review's "known new families" B (6*+3*+square,
+  b=a+2) and C (6*+3*+triangle, b=a+4) turn out to be Myers' OWN family records fig32 and
+  fig28 once instantiated over the closed palette — only family A (E3/E4/N1) is new.
+[02:14:22] T4: star24 k=3 (EU_NCBUDGET=6) launched in parallel on a second core (scratchpad copy) — measures the star-palette k2->k3 growth ratio for the T3 checkpoint decision and the grid
+[02:14:31]   k=2 watcher: run-star24full-k2b6 active, raw blocks 23, solver cpu 11:06.05
