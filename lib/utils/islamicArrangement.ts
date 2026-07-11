@@ -97,6 +97,14 @@ export function extractFaces(segments: Segment[]): Face[] {
     const ang = (a: number, b: number) => Math.atan2(pts[b].y - pts[a].y, pts[b].x - pts[a].x);
     for (let a = 0; a < pts.length; a++) adj[a].sort((x, y) => ang(a, x) - ang(a, y));
 
+    // A degree-1 (pendant) vertex means a segment endpoint dangles in open space rather than meeting
+    // another segment — impossible for the closed Islamic construction, but if the caller ever violates
+    // that (e.g. a ray dropped for having no partner), the trace detours into the spur and back, making
+    // the containing face non-simple. Never let that pass silently.
+    if (pts.some((_, a) => adj[a].length === 1)) {
+        console.warn("extractFaces: a degree-1 (pendant) vertex — a dangling segment endpoint will make its face non-simple");
+    }
+
     // 4. Trace faces: at each vertex the next half-edge is the one just clockwise of the reverse.
     const visited = new Set<string>();
     const he = (a: number, b: number) => `${a}->${b}`;
@@ -116,6 +124,7 @@ export function extractFaces(segments: Segment[]): Face[] {
                 const c = nb[(ia - 1 + nb.length) % nb.length];
                 a = b; b = c;
             }
+            if (guard >= 100000) console.warn("extractFaces: face-trace guard hit — the face may be truncated");
             faces.push({ vertices: loop.map((i) => pts[i]) });
         }
     }
