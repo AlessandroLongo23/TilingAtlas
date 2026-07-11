@@ -1,0 +1,28 @@
+=== 9-fold (star18, D=18) k=3 — parallel, 10 workers, budget 9 ===
+goal: certify the 9-fold slice of star k=3 to a budget-fixpoint (0 hits ⟹ untruncated).
+context: in-ring star k=3 already certified at 162 (101 star-bearing), b8==b9, 0 hits.
+9-fold k=2 fixpoint was b6==b7 (37 blocks); k=3 needs more depth, running b9 to target 0 hits.
+[17:19:34] build (MAXNUM=3 PALETTE=star18)
+[17:19:34] PHASE 1  parallel solve — 10 workers, budget 9
+[17:33:21]   workers done (827s wall)
+[17:33:21] PHASE 1b  merge worker outputs
+[17:33:21]   merged raw blocks: 101
+[17:33:21] PHASE 2  prune
+  k=1 : 18
+  k=2 : 19
+  k=3 : 40
+total kept: 77
+[17:33:21]   prune done (0s);  total wall 827s
+=== star18 b9 done ===
+
+=== BUCKETING (rigorous, angle-based D_min + Step-1 pinning test) ===
+star18 k=3 pruned = 40 counting-k=3 blocks:
+  32 in-ring (all angles on the 15-deg grid — already inside the 162 in-ring count)
+   8 genuine 9-fold (9 | D_min), all star-bearing; 0 five-fold, 0 mixer
+     of the 8:  4 PINNED (rigid, genuinely new) + 4 FREE (dim-1 alpha families)
+  The 4 FREE are alpha-samples of the 3-star family (3*d,3*p,6)+(3*d,3*p,3,3)+(3*d,3,3*p,3),
+  confirmed present in the star24 in-ring catalog at 15-deg-grid alpha (3*p1=15, 3*p2=30) ->
+  NOT new, correctly deduped. 0 budget hits at b9 => untruncated => 9-fold k=3 slice complete.
+ADDED to atlas: 4 rigid 9-fold star k=3 tilings (ctrnact-star9fold-k3-preview-01..04),
+  all develop exact in ZZ[zeta_18] with area == |det Lambda|. certification=candidate (pending
+  5-fold run + star180u k=3 mixer check to close the full star k=3 union).
