@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { CyclotomicRing, Cyclotomic } from '@/classes';
 import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
 import { Polyform } from '@/classes/algorithm/composable/Polyform';
-import { generateFamily } from '@/classes/algorithm/composable/generateFamily';
+import { generateFamily, period } from '@/classes/algorithm/composable/generateFamily';
 
 const ring = CyclotomicRing.create(12);
 const origin = Cyclotomic.fromRational(ring, 0n); // exact 0 (confirmed: no Cyclotomic.zero)
@@ -80,6 +80,12 @@ describe('generateFamily', () => {
     const words = tiles.map(t => t.angles.join(',')).sort();
     expect(words).toEqual(['2,4,2,4', '2,5,3,3,5'].sort()); // rhombus, house (canonical forms)
   });
+});
+
+describe('period', () => {
+  it('rhombus word has period 2', () => expect(period([2, 4, 2, 4])).toBe(2));
+  it('scalene 5-word has period 5', () => expect(period([2, 5, 3, 3, 5])).toBe(5));
+  it('regular hexagon word has period 1', () => expect(period([4, 4, 4, 4, 4, 4])).toBe(1));
 });
 
 describe('canonicalCyclicWord chirality', () => {

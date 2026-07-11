@@ -8,7 +8,7 @@ export type CompositeTile = { angles: number[]; name: string; sides: number; til
 export type FamilyRow = { sides: number; numTiles: number; numCornerClasses: number };
 
 /** Fundamental rotation period of a cyclic word (smallest p | len with w[i]==w[i+p]). */
-function period(w: number[]): number {
+export function period(w: number[]): number {
   const L = w.length;
   for (let p = 1; p <= L; p++) {
     if (L % p) continue;
