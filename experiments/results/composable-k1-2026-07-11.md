@@ -67,3 +67,38 @@ Pruned catalogs: `tools/ctrnact-oracle/run-composite-{decomp,convex}-k1/out/prun
 - `eu_solver.cpp` `checkpart`: direction-locking (pick `CLASS_NEXT`/`CLASS_PREV` from the first face
   step) so mirror-placed period-p>2 tiles verify. Regular catalog stays byte-identical
   (`make check-regular` PASS: k1-6 = 10/20/61/151/332/673).
+
+## Update — k=2, geometry, and app integration (same day)
+
+**k=2 combinatorial counts.**
+
+| family | k=1 | k=2 |
+|---|---|---|
+| decomposable (A) | 23 | 203 |
+| convex (B) | 30 | 258 |
+
+The decomposable-vs-convex gap widens from 7 (k=1) to 55 (k=2). Convex k=2 solved in 36s.
+
+**Geometry (develop).** The offline D-parameterized developer `render_cells.py` had a latent bug —
+it indexed the ζ₂₄ root table as `ZK[d % D]`, correct only at D=24, so every D=12 palette (composite
+*and* the regular reference) developed to the wrong lattice. Fixed with `STEP = 24 // D` →
+`ZK[STEP*d % 24]` (a no-op at D=24, so the star path is byte-identical). With that fix, **100% of the
+combinatorial solutions develop into valid periodic tilings** — 23/23 and 203/203 (decomp), 30/30 and
+258/258 (convex), every one passing cell-area == |det basis| and unit-edge checks. So at k≤2 there are
+no non-realizable combinatorial ghosts. renderCells exported to `experiments/composable-oracle/`.
+
+**App integration (/library + /play).** A "Composable" tile class now shows the composite-bearing
+tilings (`usesComposite`, i.e. pure-regular solutions filtered out): 20 at k=1, 238 at k=2, from the
+convex superset. Each is tagged `decomposableOnly` (uses only Family-A tiles) vs not, surfaced as a
+tri-state facet in the library and a badge on the card. Data ships as a standalone
+`public/reference-atlas-composable.json` (258 entries: 196 decomposable-family, 62 using a
+non-decomposable tile), merged at load — the 12 MB main atlas is untouched. `pnpm build` passes and
+prerenders /library. Preview of the developed tilings: `composable-tiling-develop-check-2026-07-11.png`,
+`composable-atlas-shipped-check-2026-07-11.png`.
+
+**A finding worth keeping.** The 4 non-decomposable convex tiles (hexagon A `[3,5,3,5,3,5]`, hexagon B
+`[3,4,5,3,4,5]`, octagon A `[4,5,4,5,4,5,4,5]`, octagon C `[3,5,5,5,3,5,5,5]`) are NOT unions of unit
+regular {3,4,6,12} tiles, yet several tile the plane — hexagon A and B monohedrally, octagon A in a
+4.8.8-style pattern with squares. So "decomposable into regulars" and "admits a tiling" are genuinely
+different properties, and the convex family tiles in ways the decomposable family cannot. That gap is
+the whole point of keeping the two families separate.
