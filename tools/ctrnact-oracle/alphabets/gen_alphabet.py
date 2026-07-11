@@ -41,23 +41,35 @@ import re
 import sys
 from fractions import Fraction
 
+def _word_period(w):
+    L = len(w)
+    for p in range(1, L + 1):
+        if L % p == 0 and all(w[i] == w[(i + p) % L] for i in range(L)):
+            return p
+    return L
+
 # ---------------------------------------------------------------- palette
 
 class Tile:
     def __init__(self, tid, spec):
         self.tid = tid
-        self.kind = spec["kind"]              # "regular" | "star"
-        self.n = spec["n"]
+        self.kind = spec["kind"]              # "regular" | "star" | "composite"
         self.name = spec["name"]              # display token base, e.g. "6" or "6*p2"/"6*d16"
         self.famchar = spec["famchar"]        # family char(s) for output filenames
         if self.kind == "regular":
+            self.n = spec["n"]
             self.L = self.n                   # boundary word length
             self.p = 1                        # rotation period of the word
-        else:
+        elif self.kind == "star":
+            self.n = spec["n"]
             self.alphaU = spec["alphaU"]      # point angle in 2pi/D units
             self.L = 2 * self.n
             self.p = 2
-        assert self.p <= 2, "p>2 tiles need a reversed-successor map (out of scope)"
+        else:                                 # composite
+            self.angles = spec["angles"]      # cyclic interior-angle word in D units
+            self.n = len(self.angles)
+            self.L = self.n                   # boundary word length = full angle word
+            self.p = _word_period(self.angles)  # corner classes = fundamental-period positions
 
 class CornerClass:
     def __init__(self, cid, tile, pos, units, disp):
@@ -80,7 +92,7 @@ def load_palette(path):
             cc = CornerClass(len(classes), tile, 0, units, tile.name)
             cc.is_point = False
             classes.append(cc)
-        else:
+        elif tile.kind == "star":
             aU = tile.alphaU
             dU = D - D // tile.n - aU
             assert 0 < aU < D // 2 < dU < D, f"star {tile.name} angles invalid"
@@ -90,6 +102,13 @@ def load_palette(path):
             cd = CornerClass(len(classes), tile, 1, dU, f"{tile.n}*d{dU}")
             cd.is_point = False
             classes.append(cd)
+        else:  # composite
+            assert sum(tile.angles) == (tile.n - 2) * (D // 2), \
+                f"composite {tile.name} angle sum {sum(tile.angles)} != {(tile.n-2)*(D//2)}"
+            for pos in range(tile.p):
+                cc = CornerClass(len(classes), tile, pos, tile.angles[pos], f"{tile.name}@{pos}")
+                cc.is_point = False
+                classes.append(cc)
         tile.classes = [c for c in classes if c.tile is tile]
     return spec, D, tiles, classes
 
@@ -547,6 +566,7 @@ std::vector<vertexdef> mainlist = _stab_mainlist();
         f.write("CLASS_L = %r\n" % [c.tile.L for c in classes])
         f.write("CLASS_P = %r\n" % [c.tile.p for c in classes])
         f.write("CLASS_NEXT = %r\n" % [next_class(c, classes) for c in classes])
+        f.write("CLASS_PREV = %r\n" % [prev_class(c, classes) for c in classes])
         f.write("CLASS_TILE = %r\n" % [c.tile.tid for c in classes])
         f.write("TILE_NAME = %r\n" % [t.name for t in tiles])
         f.write("TILE_FAM = %r\n" % [t.famchar for t in tiles])
@@ -560,6 +580,12 @@ def next_class(c, classes):
             return x.cid
     raise AssertionError
 
+def prev_class(c, classes):
+    for x in classes:
+        if x.tile is c.tile and x.pos == (c.pos - 1) % c.tile.p:
+            return x.cid
+    raise AssertionError
+
 def class_tables_cxx(D, tiles, classes, maxL):
     s = f"static constexpr int TABLE_D = {D};\n"
     s += f"static constexpr int TABLE_MAXL = {maxL};\n"
@@ -567,6 +593,7 @@ def class_tables_cxx(D, tiles, classes, maxL):
     s += "static const std::vector<int> CLASS_L = " + cxx_intlist([c.tile.L for c in classes]) + ";\n"
     s += "static const std::vector<int> CLASS_P = " + cxx_intlist([c.tile.p for c in classes]) + ";\n"
     s += "static const std::vector<int> CLASS_NEXT = " + cxx_intlist([next_class(c, classes) for c in classes]) + ";\n"
+    s += "static const std::vector<int> CLASS_PREV = " + cxx_intlist([prev_class(c, classes) for c in classes]) + ";\n"
     s += "static const std::vector<int> CLASS_TILE = " + cxx_intlist([c.tile.tid for c in classes]) + ";\n"
     s += "static const std::vector<std::string> CLASS_DISP = " + cxx_strlist([c.disp for c in classes]) + ";\n"
     s += "static const std::vector<std::string> TILE_FAM = " + cxx_strlist([t.famchar for t in tiles]) + ";\n"
