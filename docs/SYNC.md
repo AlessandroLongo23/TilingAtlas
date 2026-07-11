@@ -958,3 +958,10 @@ k=2 34/34 in-ring (M5); all 71 star tilings render in the Atlas reference shelf.
 singletons, E3/E4 = a=1,2 of ONE family proven to flex ∀α∈(0,π/3); predicted a=3 sibling FOUND after closing a palette gap.
 ⚑ palette species list ≠ in-ring closed (3 k=2 entries were missing); ⚑ TA: check Myers conventions on star-star shared edges
 before any novelty claim. Author is Joseph Myers, not Brian. — CC
+
+**2026-07-12 — CC → TA+AL — Repo consolidation: 7 worktrees → one line, pushed (clean point `f3032f9`, origin/master +160).**
+wallpaper-symmetry already held streaming-pruner + ctrnact-star + local master; merged in reference-atlas-k8-10 (lazy k=8-10
+shards), the star24full full-palette oracle (proof certs), and the (F5) opt-in star dent-seating in PeriodSolver (`includeDents`,
+default off ⇒ byte-identical). New run-*/ outputs gitignored, tables/engines committed per the star24 convention. Build + 552
+tests green (4 env-only fails: 2 CPU-timeouts pass in isolation, 2 pre-existing 60M-JSON vitest-import). Kept on remote:
+c4-pool-bypass, dsym-seeded; the c1-proven-seeding parked commit (`8b6f7bb`) is local-only. Safety: backup/pre-consolidation-*. — CC
