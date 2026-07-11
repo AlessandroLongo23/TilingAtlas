@@ -1,0 +1,9 @@
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 23), poolLmax=6.50 (proven 72.00), compactOffMax2=42.25, gridShortMax2=42.25 (proven 72.00), areaBound=62.35 (proven 62.35) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 4974 solved cmm/rect long axes exceed poolLmax=6.50 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 18282 solved cmm/rect long axes exceed poolLmax=6.50 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 366204 solved cmm/rect long axes exceed poolLmax=6.50 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 23), poolLmax=6.50 (proven 75.71), compactOffMax2=42.25, gridShortMax2=42.25 (proven 75.71), areaBound=65.57 (proven 65.57) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 333984 solved cmm/rect long axes exceed poolLmax=6.50 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=8 (proven 23), poolLmax=6.50 (proven 55.43), compactOffMax2=42.25, gridShortMax2=42.25 (proven 55.43), areaBound=48.00 (proven 48.00) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 135996 solved cmm/rect long axes exceed poolLmax=6.50 and are not enumerated
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid long-side reach): 1095144 solved cmm/rect long axes exceed poolLmax=6.50 and are not enumerated

@@ -1,0 +1,3 @@
+=== F5 dent-fill probe (dent-loop-required search) ===
+dent-bearing VCs (≤4 corners): 557; solving first 40; maxMs=300000
+widen: POOL_STEPS_UP=12 POOL_LMAX_UP=7

@@ -1,0 +1,6 @@
+=== F5 dent-fill probe (dent-loop-required search) ===
+dent-bearing VCs (≤3 corners): 130; solving first 60; maxMs=150000
+widen: POOL_STEPS_UP=8 POOL_LMAX_UP=6.5
+  TIMEOUT(dent) 150007ms lat=6389 [1/60] 3*d@14,3*p@1,8
+  0(dent) 5712ms lat=153 [2/60] 3*d@14,3*p@2,6
+  0(dent) 3315ms lat=75 [3/60] 3*d@15,3*p@1,6

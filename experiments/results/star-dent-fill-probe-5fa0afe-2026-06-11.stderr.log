@@ -1,0 +1,20 @@
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (tuned pool regime): poolSteps=12 (proven 23), poolLmax=7.00 (proven 133.81), compactOffMax2=49.00, gridShortMax2=49.00 (proven 133.81), areaBound=115.88 (proven 115.88) below proven box — run is oracle-anchored, not proof-anchored
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (compact off-grid cap): 18 off-grid pool vectors exceed compactOffMax2=49.00 and are not tried as round-cell bases
+[PeriodSolver k=1] ⚑ INCOMPLETE-REGION (grid short-side cap): 22 pool vectors exceed gridShortMax2=49.00 and are not tried as cmm/rect short sides
+/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/lib/classes/algorithm/LatticeEnumerator.ts:84
+			seen.add(structKey);
+			     ^
+
+RangeError: Set maximum size exceeded
+    at Set.add (<anonymous>)
+    at emit (/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/lib/classes/algorithm/LatticeEnumerator.ts:84:9)
+    at LatticeEnumerator.gridAlignedCells (/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/lib/classes/algorithm/LatticeEnumerator.ts:100:7)
+    at PeriodSolver.candidateLattices (/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/lib/classes/algorithm/PeriodSolver.ts:815:28)
+    at PeriodSolver.solve (/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/lib/classes/algorithm/PeriodSolver.ts:430:131)
+    at <anonymous> (/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/scripts/probe-star-dent-fill.ts:55:35)
+    at Object.<anonymous> (/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/scripts/probe-star-dent-fill.ts:88:1)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object.transformer (/Users/alessandro/.config/superpowers/worktrees/TilingAtlas/star-fill-dents/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1533:32)
+
+Node.js v24.14.1
