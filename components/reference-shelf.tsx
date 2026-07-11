@@ -10,17 +10,18 @@ import { Pagination } from "@/components/ui/pagination";
 import { ReferenceCard } from "@/components/reference-card";
 import {
 	loadReferenceAtlas,
+	loadReferenceAtlasShard,
 	matchesReferenceFilters,
 	type ReferenceTiling,
 	type ReferenceFilter,
 } from "@/lib/services/referenceAtlas";
 import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 
-// The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars),
-// lazy-fetched from public/reference-atlas.json. Each entry carries a DISCOVERER (historical
+// The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 in the base file,
+// k=8..10 lazy-loaded per-k shards, + stars), fetched from public/reference-atlas*.json. Each entry carries a DISCOVERER (historical
 // first-finder) and a CERTIFICATION (proven / reproduced / candidate — orthogonal axes). No more
 // certified-vs-reference split; each tiling appears exactly once.
-const K_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+const K_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -52,6 +53,9 @@ export function ReferenceShelf() {
 		certification: true,
 		grid: true,
 	});
+	const [shards, setShards] = useState<Map<number, ReferenceTiling[]>>(new Map());
+	const [loadingShards, setLoadingShards] = useState<Set<number>>(new Set());
+	const [shardErrors, setShardErrors] = useState<Map<number, string>>(new Map());
 
 	useEffect(() => {
 		let alive = true;
@@ -66,6 +70,27 @@ export function ReferenceShelf() {
 	useEffect(() => {
 		setCurrentPage(1);
 	}, [filters]);
+
+	// Fetch a k≥8 shard the first time that k is selected. k≤7 lives in the base atlas already.
+	useEffect(() => {
+		const wanted = (filters.kValues ?? []).filter((k) => k >= 8);
+		for (const k of wanted) {
+			if (shards.has(k) || loadingShards.has(k) || shardErrors.has(k)) continue;
+			setLoadingShards((s) => new Set(s).add(k));
+			loadReferenceAtlasShard(k)
+				.then((data) => setShards((m) => new Map(m).set(k, data)))
+				.catch((e) =>
+					setShardErrors((m) => new Map(m).set(k, e instanceof Error ? e.message : String(e))),
+				)
+				.finally(() =>
+					setLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(k);
+						return n;
+					}),
+				);
+		}
+	}, [filters.kValues, shards, loadingShards, shardErrors]);
 
 	const setOpen = (key: SectionKey) => (open: boolean) =>
 		setSectionsOpen((prev) => ({ ...prev, [key]: open }));
@@ -89,12 +114,19 @@ export function ReferenceShelf() {
 		(filters.certifications?.length ? 1 : 0) +
 		(filters.query?.trim() ? 1 : 0);
 
+	const allTilings = useMemo(() => {
+		if (!tilings) return null;
+		const extra: ReferenceTiling[] = [];
+		for (const list of shards.values()) extra.push(...list);
+		return extra.length ? [...tilings, ...extra] : tilings;
+	}, [tilings, shards]);
+
 	const filtered = useMemo(() => {
-		if (!tilings) return [];
-		return tilings
+		if (!allTilings) return [];
+		return allTilings
 			.filter((t) => matchesReferenceFilters(t, filters))
 			.sort((a, b) => a.k - b.k || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-	}, [tilings, filters]);
+	}, [allTilings, filters]);
 
 	const paginated = useMemo(
 		() => filtered.slice((currentPage - 1) * LIBRARY_TILINGS_PER_PAGE, currentPage * LIBRARY_TILINGS_PER_PAGE),
@@ -137,6 +169,7 @@ export function ReferenceShelf() {
 							selected={filters.kValues ?? []}
 							onChange={toggleK}
 						/>
+						<p className="mt-1.5 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
 					</SidebarSection>
 
 					<SidebarSection
@@ -189,6 +222,17 @@ export function ReferenceShelf() {
 					<span className="text-xs px-2 py-0.5 rounded-full bg-surface-overlay border border-line text-fg-muted">
 						{filtered.length} tilings
 					</span>
+					{loadingShards.size > 0 ? (
+						<span className="flex items-center gap-1.5 text-xs text-fg-muted">
+							<Loader2 size={12} className="animate-spin text-sky-400" />
+							loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
+						</span>
+					) : null}
+					{shardErrors.size > 0 ? (
+						<span className="text-xs text-danger">
+							failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
+						</span>
+					) : null}
 				</div>
 
 				{error ? (
