@@ -93,10 +93,10 @@ export function isMaximal(t: Pick<ReferenceTiling, "m" | "k">): boolean {
 }
 
 export interface ReferenceFilter {
-	kValues?: number[];
+	kValue?: number; // single vertex-orbit count; unset = every k
 	tileClass?: "regular" | "star"; // regular polygons only / star-bearing only
-	mValues?: number[]; // distinct vertex-config count(s); unclassified tilings never match
-	partitions?: string[]; // partition keys (e.g. "511", "421"); unclassified tilings never match
+	mValue?: number; // single distinct-vertex-config count; unclassified tilings never match
+	partitionKey?: string; // single partition key (e.g. "511"); unclassified tilings never match
 	maximalOnly?: boolean; // Krötenheerdt: keep only m === k
 	starFolds?: number[]; // keep tilings using at least one of these star folds
 	parametric?: "rigid" | "family"; // rigid (no α) / one-parameter α-family
@@ -109,15 +109,12 @@ export interface ReferenceFilter {
 }
 
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
-	if (f.kValues?.length && !f.kValues.includes(t.k)) return false;
+	if (f.kValue != null && t.k !== f.kValue) return false;
 	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
 	// M/partition/maximal: an active filter EXCLUDES unclassified tilings rather than matching them —
 	// completeness ethos, we never silently pass a tiling whose classification we don't have.
-	if (f.mValues?.length && (t.m == null || !f.mValues.includes(t.m))) return false;
-	if (f.partitions?.length) {
-		const key = partitionKeyOf(t);
-		if (key == null || !f.partitions.includes(key)) return false;
-	}
+	if (f.mValue != null && t.m !== f.mValue) return false;
+	if (f.partitionKey != null && partitionKeyOf(t) !== f.partitionKey) return false;
 	if (f.maximalOnly && !isMaximal(t)) return false;
 	if (f.starFolds?.length) {
 		const folds = starFoldsOf(t);

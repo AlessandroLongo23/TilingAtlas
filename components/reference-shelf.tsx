@@ -24,8 +24,10 @@ import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 // first-finder), a CERTIFICATION (proven / reproduced / candidate), and a vertex-type classification
 // (k, M, partition — see referenceAtlas.ts). Filters are flat and always-open (no accordion); groups
 // irrelevant to the current tile-class selection are hidden rather than shown as dead controls.
-const K_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
-const M_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+//
+// k / M / partition are SINGLE-select (pick one, or "All"). M and partition only appear once a k is
+// chosen, and their chips are faceted to values that actually occur under the current filters — so at
+// k=4 you see M ∈ {2,3,4}, never a dead M=1 button.
 const CLASS_OPTIONS: { value: "all" | "regular" | "star"; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "regular", label: "Regular" },
@@ -52,6 +54,8 @@ const CERT_OPTIONS: { value: ReferenceTiling["certification"]; label: string }[]
 ];
 const LATTICE_ORDER: LatticeShape[] = ["square", "hexagonal", "rhombic", "rectangular", "oblique"];
 const COLUMN_PRESETS = [3, 4, 5, 6];
+const ALL_NUM = 0; // sentinel: the "All" chip for a single-select numeric group (k / M)
+const ALL_STR = ""; // sentinel: the "All" chip for the partition group
 
 // A flat, always-visible filter group: a static heading (optional accent summary + right-aligned note)
 // over its controls. Replaces the old collapsible SidebarSection in this shelf.
@@ -102,22 +106,14 @@ export function ReferenceShelf() {
 		setCurrentPage(1);
 	}, [filters]);
 
-	// ── Multi-toggle helpers (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
-	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
-		const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
-		setFilters({ ...filters, [key]: next.length ? next : undefined } as ReferenceFilter);
-	};
-	const toggleK = (k: number) => toggleIn("kValues", filters.kValues ?? [], k);
-	const toggleM = (m: number) => toggleIn("mValues", filters.mValues ?? [], m);
-	const togglePartition = (p: string) => toggleIn("partitions", filters.partitions ?? [], p);
-	const toggleFold = (n: number) => toggleIn("starFolds", filters.starFolds ?? [], n);
-	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
-	const toggleShape = (s: LatticeShape) => toggleIn("latticeShapes", filters.latticeShapes ?? [], s);
-	const toggleDiscoverer = (d: string) => toggleIn("discoverers", filters.discoverers ?? [], d);
-	const toggleCert = (c: ReferenceTiling["certification"]) => toggleIn("certifications", filters.certifications ?? [], c);
+	// ── single-select setters (each clears the now-stale downstream selections) ──
+	const setKValue = (k: number | undefined) =>
+		setFilters({ ...filters, kValue: k, mValue: undefined, partitionKey: undefined });
+	const setMValue = (m: number | undefined) => setFilters({ ...filters, mValue: m, partitionKey: undefined });
+	const setPartitionKey = (p: string | undefined) => setFilters({ ...filters, partitionKey: p });
 	const toggleMaximal = () => setFilters({ ...filters, maximalOnly: filters.maximalOnly ? undefined : true });
-
-	// Changing tile class clears the now-hidden filters so no invisible constraint lingers.
+	const setParametric = (v: "all" | "rigid" | "family") =>
+		setFilters({ ...filters, parametric: v === "all" ? undefined : v });
 	const setTileClass = (v: "all" | "regular" | "star") => {
 		const next: ReferenceFilter = { ...filters, tileClass: v === "all" ? undefined : v };
 		if (v === "regular") {
@@ -129,16 +125,46 @@ export function ReferenceShelf() {
 		}
 		setFilters(next);
 	};
-	const setParametric = (v: "all" | "rigid" | "family") =>
-		setFilters({ ...filters, parametric: v === "all" ? undefined : v });
 
-	// ── Data-derived option sets: only offer filters some in-scope tiling can actually satisfy ──
-	const availableM = useMemo(() => {
-		if (!tilings) return [];
+	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
+	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
+		const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
+		setFilters({ ...filters, [key]: next.length ? next : undefined } as ReferenceFilter);
+	};
+	const toggleFold = (n: number) => toggleIn("starFolds", filters.starFolds ?? [], n);
+	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
+	const toggleShape = (s: LatticeShape) => toggleIn("latticeShapes", filters.latticeShapes ?? [], s);
+	const toggleDiscoverer = (d: string) => toggleIn("discoverers", filters.discoverers ?? [], d);
+	const toggleCert = (c: ReferenceTiling["certification"]) => toggleIn("certifications", filters.certifications ?? [], c);
+
+	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
+	const kOptions = useMemo(() => (tilings ? [...new Set(tilings.map((t) => t.k))].sort((a, b) => a - b) : []), [tilings]);
+
+	// M chips are faceted to the current view MINUS M/partition: at k=4 they resolve to {2,3,4}.
+	const mOptions = useMemo(() => {
+		if (!tilings || filters.kValue == null) return [];
 		const s = new Set<number>();
-		for (const t of tilings) if (t.m != null) s.add(t.m);
-		return M_OPTIONS.filter((m) => s.has(m));
-	}, [tilings]);
+		for (const t of tilings) {
+			if (t.m == null) continue;
+			if (matchesReferenceFilters(t, { ...filters, mValue: undefined, partitionKey: undefined })) s.add(t.m);
+		}
+		return [...s].sort((a, b) => a - b);
+	}, [tilings, filters]);
+
+	// Partition chips faceted to the current view MINUS the partition itself — so they narrow with the
+	// chosen k (and M, if one is picked): k=7 → 511/421/331/…; k=7,M=3 → just the M=3 partitions.
+	const partitionOptions = useMemo(() => {
+		if (!tilings || filters.kValue == null) return [];
+		const byKey = new Map<string, number>(); // key → m (for ordering)
+		for (const t of tilings) {
+			if (!matchesReferenceFilters(t, { ...filters, partitionKey: undefined })) continue;
+			const key = partitionKeyOf(t);
+			if (key && t.m != null) byKey.set(key, t.m);
+		}
+		return [...byKey.entries()]
+			.map(([key, m]) => ({ key, m }))
+			.sort((a, b) => a.m - b.m || (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
+	}, [tilings, filters]);
 
 	const availableFolds = useMemo(() => {
 		if (!tilings) return [];
@@ -159,31 +185,17 @@ export function ReferenceShelf() {
 		return LATTICE_ORDER.filter((s) => present.has(s));
 	}, [tilings]);
 
-	// Partition chips are faceted to the current view MINUS the partition filter itself, so they behave
-	// like the user's "per-k groups": pick k=7 and only 7's partitions (511, 421, 331, …) appear.
-	const availablePartitions = useMemo(() => {
-		if (!tilings) return [];
-		const byKey = new Map<string, number>(); // key → m
-		for (const t of tilings) {
-			if (!matchesReferenceFilters(t, { ...filters, partitions: undefined })) continue;
-			const key = partitionKeyOf(t);
-			if (key && t.m != null) byKey.set(key, t.m);
-		}
-		return [...byKey.entries()]
-			.map(([key, m]) => ({ key, m }))
-			.sort((a, b) => a.m - b.m || (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
-	}, [tilings, filters]);
-
 	const tileClass = filters.tileClass ?? "all";
+	const showM = filters.kValue != null;
 	const showStar = tileClass !== "regular" && availableFolds.length > 0;
 	const showGroup = tileClass !== "star" && availableGroups.length > 0;
 	const showLattice = tileClass !== "star" && availableShapes.length > 0;
 
 	const activeFilterCount =
-		(filters.kValues?.length ? 1 : 0) +
+		(filters.kValue != null ? 1 : 0) +
 		(filters.tileClass ? 1 : 0) +
-		(filters.mValues?.length ? 1 : 0) +
-		(filters.partitions?.length ? 1 : 0) +
+		(filters.mValue != null ? 1 : 0) +
+		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
 		(filters.starFolds?.length ? 1 : 0) +
 		(filters.parametric ? 1 : 0) +
@@ -234,45 +246,47 @@ export function ReferenceShelf() {
 						<ButtonGroup options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
 					</FilterGroup>
 
-					<FilterGroup title="Vertex count (k)" summary={filters.kValues?.length ? filters.kValues.join(", ") : null}>
+					<FilterGroup title="Vertex count (k)" summary={filters.kValue ?? null}>
 						<ButtonGroup
-							multi
-							options={K_OPTIONS.map((k) => ({ value: k, label: k, classes: "w-8" }))}
-							selected={filters.kValues ?? []}
-							onChange={toggleK}
+							options={[
+								{ value: ALL_NUM, label: "All", classes: "px-2.5" },
+								...kOptions.map((k) => ({ value: k, label: k, classes: "w-8" })),
+							]}
+							selected={filters.kValue ?? ALL_NUM}
+							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
+						/>
+						<ToggleButton
+							size="sm"
+							pressed={!!filters.maximalOnly}
+							onPressedChange={toggleMaximal}
+							label="Maximal (M = k)"
+							classes="mt-1 self-start"
 						/>
 					</FilterGroup>
 
-					{availableM.length > 0 ? (
-						<FilterGroup
-							title="Distinct configs (M)"
-							summary={filters.mValues?.length ? filters.mValues.join(", ") : null}
-							note="M ≤ k"
-						>
+					{showM ? (
+						<FilterGroup title="Distinct configs (M)" summary={filters.mValue ?? null} note="M ≤ k">
 							<ButtonGroup
-								multi
-								options={availableM.map((m) => ({ value: m, label: m, classes: "w-8" }))}
-								selected={filters.mValues ?? []}
-								onChange={toggleM}
+								options={[
+									{ value: ALL_NUM, label: "All", classes: "px-2.5" },
+									...mOptions.map((m) => ({ value: m, label: m, classes: "w-8" })),
+								]}
+								selected={filters.mValue ?? ALL_NUM}
+								onChange={(v) => setMValue(v === ALL_NUM ? undefined : v)}
 							/>
-							{availablePartitions.length > 0 ? (
+							{partitionOptions.length > 0 ? (
 								<div className="mt-1 flex flex-col gap-1.5">
 									<span className="text-[10px] text-fg-disabled">Partition (multiplicity group)</span>
 									<ButtonGroup
-										multi
-										options={availablePartitions.map((p) => ({ value: p.key, label: p.key }))}
-										selected={filters.partitions ?? []}
-										onChange={togglePartition}
+										options={[
+											{ value: ALL_STR, label: "All", key: "__all__" },
+											...partitionOptions.map((p) => ({ value: p.key, label: p.key })),
+										]}
+										selected={filters.partitionKey ?? ALL_STR}
+										onChange={(v) => setPartitionKey(v === ALL_STR ? undefined : v)}
 									/>
 								</div>
 							) : null}
-							<ToggleButton
-								size="sm"
-								pressed={!!filters.maximalOnly}
-								onPressedChange={toggleMaximal}
-								label="Maximal (M = k)"
-								classes="mt-1 self-start"
-							/>
 						</FilterGroup>
 					) : null}
 
