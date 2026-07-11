@@ -71,3 +71,26 @@ candidate new one-parameter family (proven to flex for all alpha in (0, pi/3); i
 a=1,2,3 all found by the engine, a=3 after closing the palette gap) — all "new" relative to
 Myers 2009, the only known enumeration, which its author explicitly labels unchecked.
 NOT "4 new tilings": E3/E4 (+ the a=3 sibling) are members of the same family.
+
+## Addendum — AL decisions (2026-07-11, post-review)
+- Star-star shared edges: Myers's conventions DO admit them (AL ruling). The TA convention flag
+  above is CLOSED; the new family's novelty claim is not blocked by it.
+- Palette closure: extend to FULL in-ring species closure ("we have to do it right") rather than
+  an exclusion argument. Work order issued same day (see star-closure-k3-2026-07-11.log).
+- Family representation: store proven free-alpha families parametrically (alpha + proven range)
+  and expose an alpha slider in /play. Design must leave room for future multi-parameter families
+  (k>=3 may produce 2-parameter families; ranges may be coupled — schema uses a params array).
+
+## Addendum 2 — out-of-ring gap made explicit (AL observation, 2026-07-11)
+- ⚑ The in-ring (D=24, pi/12) closure does NOT cover Myers' out-of-ring records — a RING boundary,
+  not a species gap: 9 and 5 do not divide 24. Outstanding: k=1 entries 4e (9.9.6*), 4g (18.18.3*),
+  4l (3.9.3*.9) [9-fold world, D=18, ZZ[zeta_18]] and 4q (5^2.4*.5.4*) [5-fold world, D=20,
+  ZZ[zeta_20]]; k=2 Figs 18/19/22/23 (all 9-fold; fig 22 has an 18-star). Myers coverage until
+  then: 13/17 (k=1), 39/43 (k=2, incl. the 5 families).
+- Plan: after the star24full k<=3 runs + perf grid land, add star9 (D=18) and star10 (D=20)
+  palettes via the same first-principles species closure per ring; generalize the developer/
+  renderer from hardcoded rank-8 zeta_24 to phi(D)-rank rings. Runs expected small.
+- ⚑ TA work item (the deeper claim): a denominator-bounding lemma — the vertex angle equations
+  over regular polygons + isotoxal stars admit pinned solutions only in enumerable denominator
+  classes (Myers' catalog: 12ths, 9ths, 10ths). With it, per-ring enumeration is exhaustive over
+  ALL edge-to-edge star tilings — strictly stronger than Myers' own unchecked claim.

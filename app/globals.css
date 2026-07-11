@@ -1,4 +1,11 @@
-@import "tailwindcss";
+/* source(none): disable Tailwind v4's automatic whole-project content scan — tools/ and
+   experiments/ carry tens of MB of generated solver tables and run logs (untracked, so the
+   gitignore heuristic doesn't skip them), which stalls the postcss worker past Turbopack's
+   deadline and panics the dev server. Utility classes only ever live in the dirs below. */
+@import "tailwindcss" source(none);
+@source "../app";
+@source "../components";
+@source "../lib";
 
 /* Design tokens — three layers: primitives → themed + derived → components */
 @import "./styles/tokens/primitives.css";

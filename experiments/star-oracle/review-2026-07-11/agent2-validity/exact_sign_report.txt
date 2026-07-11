@@ -1,0 +1,72 @@
+Exact (zero-float) sign certification: face simplicity + face orientation
+Harness: verify_star_extras_exact.py   Date: 2026-07-11
+Companion to verify_star_extras.py (cone angles, Euler/2-sided edges, ring-element
+area identity, symmetry/k: already exact there; simplicity and orientation were
+float there and are certified exact here; the area identity is re-proved here
+with certified signs on both sides).
+
+[selftest] ring identities, quad tables, 200-element randomized float cross-checks
+[selftest] (Re/Im, cross, dot), exact-zero paths, 95 Pell-convergent precision
+[selftest] stress cases (max interval bits needed: 256), segment predicates,
+[selftest] square/bowtie simplicity: ALL PASS  (1154 certified sign calls)
+
+====================================================================================================
+CANDIDATE E1: (12*d16,6)A, (12*p6,6,12*p6,3)A, (12*d16,3,3)A
+conway: (0 1')[0' 0''](2'')
+[lattice] T1=(2, 0, 3, 0, 2, 0, 0, 0)  T2=(-4, 0, -3, 0, 2, 0, 3, 0)
+[cell] F = 9 faces / cell: {'{6}': 2, '12*{p6/d16}': 1, '{3}': 6}   (matches prior report)
+[orient-EXACT] all 9 faces certified nonzero signed area with common sign -1 (CW): PASS
+[area-EXACT-signed] sigma*sum(2A_f) == 2*delta*det in Q(sqrt2,sqrt3), both signs certified: PASS
+[simplicity-EXACT] 9 faces; 270 non-adjacent edge pairs certified disjoint; distinct-vertex + adjacent-edge checks pass; straight corners: 0: PASS
+[precision] certified sign calls: 1240 (exact zeros: 96), interval bits used: {32: 1144}, max p = 32
+VERDICT E1: PASS (all checks certified exact)
+
+====================================================================================================
+CANDIDATE E2: (12*d18,4)A, (12*p4,4,12*p4,3,12*p2,3)A, (12*d18,12*p2,3)F, (12*d20,3)F, (12*p4,12*d20)A
+conway: (0 1')[0' 0''](4' 1''')(1'' 0@4)(2'' 0''')
+[lattice] T1=(1, 0, 2, 0, 2, 0, 1, 0)  T2=(-3, 0, -2, 0, 2, 0, 3, 0)
+[cell] F = 12 faces / cell: {'{4}': 2, '12*{p4/d18}': 1, '{3}': 8, '12*{p2/d20}': 1}   (matches prior report)
+[orient-EXACT] all 12 faces certified nonzero signed area with common sign -1 (CW): PASS
+[area-EXACT-signed] sigma*sum(2A_f) == 2*delta*det in Q(sqrt2,sqrt3), both signs certified: PASS
+[simplicity-EXACT] 12 faces; 508 non-adjacent edge pairs certified disjoint; distinct-vertex + adjacent-edge checks pass; straight corners: 0: PASS
+[precision] certified sign calls: 2317 (exact zeros: 192), interval bits used: {32: 2125}, max p = 32
+VERDICT E2: PASS (all checks certified exact)
+
+====================================================================================================
+CANDIDATE E3: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F
+conway: (0 2')[2 0'](1')(3')
+[lattice] T1=(0, 0, 1, 0, -1, 0, -1, 0)  T2=(2, 0, 1, 0, -1, 0, 1, 0)
+[cell] F = 6 faces / cell: {'{3}': 4, '3*{p2/d14}': 2}   (matches prior report)
+[orient-EXACT] all 6 faces certified nonzero signed area with common sign -1 (CW): PASS
+[area-EXACT-signed] sigma*sum(2A_f) == 2*delta*det in Q(sqrt2,sqrt3), both signs certified: PASS
+[simplicity-EXACT] 6 faces; 18 non-adjacent edge pairs certified disjoint; distinct-vertex + adjacent-edge checks pass; straight corners: 0: PASS
+[precision] certified sign calls: 103 (exact zeros: 0), interval bits used: {32: 103}, max p = 32
+VERDICT E3: PASS (all checks certified exact)
+
+====================================================================================================
+CANDIDATE E4: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F
+conway: (0 2')[2 0'](1')(3')
+[lattice] T1=(0, 0, 0, 1, -1, 0, 0, -1)  T2=(2, 0, 0, 1, -1, 0, 0, 1)
+[cell] F = 6 faces / cell: {'{3}': 4, '3*{p1/d15}': 2}   (matches prior report)
+[orient-EXACT] all 6 faces certified nonzero signed area with common sign -1 (CW): PASS
+[area-EXACT-signed] sigma*sum(2A_f) == 2*delta*det in Q(sqrt2,sqrt3), both signs certified: PASS
+[simplicity-EXACT] 6 faces; 18 non-adjacent edge pairs certified disjoint; distinct-vertex + adjacent-edge checks pass; straight corners: 0: PASS
+[precision] certified sign calls: 103 (exact zeros: 0), interval bits used: {32: 103}, max p = 32
+VERDICT E4: PASS (all checks certified exact)
+
+[a3-tables] loaded cached tables from /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/3875973c-dc28-4ed8-b504-c76e1a9d7794/scratchpad/a3-tables
+====================================================================================================
+CANDIDATE A3: (3*d13,3,3*p3,3)A, (3*d13,3*p3,3,3)F
+conway: (0 2')[2 0'](1')(3')
+[lattice] T1=(0, 1, 0, 0, -1, -1, 0, 0)  T2=(2, 1, 0, 0, -1, 1, 0, 0)
+[cell] F = 6 faces / cell: {'{3}': 4, '3*{p3/d13}': 2}
+[orient-EXACT] all 6 faces certified nonzero signed area with common sign -1 (CW): PASS
+[area-EXACT-signed] sigma*sum(2A_f) == 2*delta*det in Q(sqrt2,sqrt3), both signs certified: PASS
+[simplicity-EXACT] 6 faces; 18 non-adjacent edge pairs certified disjoint; distinct-vertex + adjacent-edge checks pass; straight corners: 0: PASS
+[precision] certified sign calls: 103 (exact zeros: 0), interval bits used: {32: 103}, max p = 32
+VERDICT A3: PASS (all checks certified exact)
+
+====================================================================================================
+GLOBAL: 5020 certified sign evaluations (500 exact zeros); max interval precision
+needed anywhere (including the selftest precision stress): 256 bits.
+Overall: ALL CANDIDATES PASS

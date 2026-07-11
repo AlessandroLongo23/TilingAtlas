@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
+import type { ParametricCellData } from "@/lib/utils/paramCell";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
 // method wrote found_tilings — torus today, orbifold later (DESIGN INTENT, gated on the Phase-1
@@ -24,6 +25,9 @@ export interface CatalogueTiling {
 	// Inline exact cell for oracle tilings (Reference shelf), which have no Supabase cell_codec row.
 	// Undefined for certified catalogue tilings — those resolve their exact cell via fetchCellCodec.
 	exactSource?: ExactCellSource;
+	// One-parameter family entries (Reference shelf only): the proven parametric cell that drives
+	// the /play alpha slider (lib/utils/paramCell.ts). Certified catalogue tilings never carry this.
+	paramCell?: ParametricCellData;
 }
 
 // Pure transform: collapse found_tilings (a tiling is rediscovered once per run that finds it) into

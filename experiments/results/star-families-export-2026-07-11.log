@@ -1,0 +1,113 @@
+[01:55:07] === family export sweep start; tables=tables/star24 ===
+[01:55:07] k=1: 26 star-bearing blocks in run-star-k1/pruned/eupruned_01.txt
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,6,4,3)F, (12*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,3,12*p2,3,3,3)A, (12*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d14,12)A, (3*p2,12,3*p2,12)S2: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d15,8)A, (6*p5,8,3*p1,8)A, (6*d15,8)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d14,12)A, (4*p4,12,12)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d15,8)A, (4*p3,8,4*p3,8)S2: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d16,6)A, (4*p2,6,4,6)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d16,6)A, (6*p4,6,3,6)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d16,6)A, (6*p4,6,6*p4,6)S2: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,4)A, (6*d14,6*p2,4,6*p2)A, (6*p6,6*d18)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,4)A, (6*p2,4,6*p2,4,6*p2,4)S3: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,4)F, (6*p2,4,4,3,4)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d20,3)A, (8*p1,3,8,4,3)F, (8*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d20,3)A, (8*p1,4*d14,8*p1,3,3)A, (8*d20,4*p4)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d20,3)A, (8*p1,3,4,3,8*p1,3,3)A, (8*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d14,3*p2,6)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d15,3*p1,6)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d14,4*p4,4)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d15,4*p3,4)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d16,4*p2,4)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d14,6*p6,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d15,6*p5,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d16,6*p4,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,6*p2,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d14,3,3*p2,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d15,3,3*p1,3)A: No module named 'sympy' — skipped
+[01:55:07] k=1: 0 pinned, 0 flexing blocks in 0 families
+[01:55:07] k=2: 45 star-bearing blocks in run-star-k2b6/pruned/eupruned_02.txt
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d16,6)A, (12*p6,6,12*p6,3)A, (12*d16,3,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d18,4)A, (12*p4,6*d14,4)F, (6*p6,4,6*p6,4)S2, (12*d18,6*p6)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d18,4)A, (12*p4,4,6*p2,4,4)F, (6*d18,4)A, (6*d18,4)A, (4,4,4,4)S2b, (12*d18,4)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d18,4)A, (12*p4,4,12*p4,3,12*p2,3)A, (12*d18,12*p2,3)F, (12*d20,3)F, (12*p4,12*d20)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,4*d14,3,3)F, (4*p4,3,4*p4,3,4*p4,3)S3, (12*d20,4*p4)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,12,3,3)F, (12*p2,3,3,12*p2,3,3,3)A, (12*d20,3)F, (12*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,12,3,3)F, (12,12,3)A, (12*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,4*p4,12,3)F, (12*d20,3)F, (12*p2,3,4*d14,3)A, (4*d14,12)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,6,4,3)F, (12*d20,3)A, (6,4,3,4)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,4,3,3,3)F, (3,3,3,3,3,3)S3b, (12*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,3,12*p2,3,3,3)A, (12*d20,3)F, (12*p2,3,3,4,3,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p2,3,4*p4,3,12*p2,3,3)A, (12*d20,3)F, (12*p2,3,4*d14,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)A, (12*p4,3,12*p2,3,3,12*p2,3)A, (12*d18,12*p2,3)F, (12*d20,3)F, (12*p4,12*d20)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*d20,3)F, (12*p2,3,3*d14,3)A, (12*p2,3,3*p2,3,12*p2,3,3*p2,3)S2: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (12*p6,6*d18)A, (12*d16,6*p2,4)F, (6*d18,4)A, (12*p6,4,12*p6,4)S2: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d15,8)A, (8*p1,3,4*p3,8,4*p3,3)A, (8*d20,3)F, (8*p1,3,4*d15,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d16,6)A, (4*p2,6,6,4*p2,3)A, (4*d16,3,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,4)F, (6*d14,6*p2,4,6*p2)A, (6*p2,4,6*p2,4,6*p2,4)S3, (6*p6,6*d18)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,4)F, (6*p2,4,4,3,4)F, (4,4,3,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,4)F, (6*p2,4,3*p2,3,3,4)F, (3*d14,4,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d18,4)A, (8*d15,8*p3,4)F, (8*p6,4,8*p6,4)S2, (8*p6,8*d18)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d18,4)A, (8*p3,4,8*p3,4,4)A, (8*d18,4)A, (4,4,4,4)S4: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d20,3)A, (8*p1,3,8,4,3)F, (8*d20,3)A, (8,8,4)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d20,3)A, (8*p1,3,8,4,3)F, (8*p1,3,4,3,8*p1,3,3)F, (8*d20,3)F, (8*d20,3)A, (8*d20,3)A, (8*d20,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d20,3)A, (8*p1,3,4,3,8*p1,3,3)A, (8*d20,3)F, (8*p1,4*d14,8*p1,3,3)A, (8*d20,4*p4)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (8*d20,3)F, (8*p1,3,4*d15,3)A, (8*p1,3,4*p3,3,8*p1,3,4*p3,3)S2: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d14,4,3)F, (3*p2,4,3,4,3*p2,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d14,4,3)F, (3*p2,4,3,6,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d14,4,3)F, (4*p4,4,4,4*p4,3)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d14,4,3)F, (4*p4,4,3,4,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d16,3,3)A, (4*d16,4*p2,3,4*p2)A: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d16,3,3)A, (4*p2,3,4*p2,3,4*p2,3,4*p2,3)S4: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*d16,3,3)F, (4*p2,3,4,3,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (4*p4,4*d16,3)F, (4*d14,4*p2,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d14,4,3)F, (6*p6,4,3,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d16,3,3)A, (6*p4,3,6*p4,3,6*p4,3)S3: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d16,3,3)F, (6*p4,3,3,3,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d16,3*p2,4)F, (6*p4,3*d14,4)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*d18,3*p2,3)F, (6*p2,3*d14,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*p5,3*d15,3)F, (6*d15,3*p1,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (6*p6,3*d14,3)F, (6*d14,3*p2,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F: No module named 'sympy' — skipped
+[01:55:07]   ⚑ ANALYSIS ERROR at (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6: No module named 'sympy' — skipped
+[01:55:07] k=2: 0 pinned, 0 flexing blocks in 0 families
+[01:55:07] wrote 0 family records -> ../../experiments/star-oracle/ctrnact-star-families.cells.json  (0 with failing checks)
+[01:55:30] === family export sweep start; tables=tables/star24 ===
+[01:55:30] k=1: 26 star-bearing blocks in run-star-k1/pruned/eupruned_01.txt
+[01:55:30]   flexing: (3*d14,3*p2,6)F  (dev 0.0s, primary 3*2)
+[01:55:30]   flexing: (3*d15,3*p1,6)F  (dev 0.0s, primary 3*1)
+[01:55:30]   flexing: (4*d14,4*p4,4)F  (dev 0.0s, primary 4*4)
+[01:55:30]   flexing: (4*d15,4*p3,4)F  (dev 0.0s, primary 4*3)
+[01:55:30]   flexing: (4*d16,4*p2,4)F  (dev 0.0s, primary 4*2)
+[01:55:30]   flexing: (6*d14,6*p6,3)F  (dev 0.0s, primary 6*6)
+[01:55:30]   flexing: (6*d15,6*p5,3)F  (dev 0.0s, primary 6*5)
+[01:55:30]   flexing: (6*d16,6*p4,3)F  (dev 0.0s, primary 6*4)
+[01:55:30]   flexing: (6*d18,6*p2,3)F  (dev 0.0s, primary 6*2)
+[01:55:30]   flexing: (3*d14,3,3*p2,3)A  (dev 0.0s, primary 3*2)
+[01:55:30]   flexing: (3*d15,3,3*p1,3)A  (dev 0.0s, primary 3*1)
+[01:55:30] k=1: 15 pinned, 11 flexing blocks in 4 families
+[01:55:30]   ctrnact-star-family-k1-01: (3*d@-a+16,3*p@a,6)  members a=[1, 2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k1-02: (3,3*d@-a+16,3,3*p@a)  members a=[1, 2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k1-03: (4,4*d@-a+18,4*p@a)  members a=[2, 3, 4]  alpha in [0.0, 90.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k1-04: (3,6*d@-a+20,6*p@a)  members a=[2, 4, 5, 6]  alpha in [0.0, 120.0] deg  checks 11/11 pass
+[01:55:30] k=2: 45 star-bearing blocks in run-star-k2b6/pruned/eupruned_02.txt
+[01:55:30]   flexing: (4*p4,4*d16,3)F, (4*d14,4*p2,3,3)F  (dev 0.0s, primary 4*2)
+[01:55:30]   flexing: (6*d16,3*p2,4)F, (6*p4,3*d14,4)F  (dev 0.0s, primary 3*2)
+[01:55:30]   flexing: (6*d18,3*p2,3)F, (6*p2,3*d14,3,3)F  (dev 0.0s, primary 3*2)
+[01:55:30]   flexing: (6*p5,3*d15,3)F, (6*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[01:55:30]   flexing: (6*p6,3*d14,3)F, (6*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[01:55:30]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[01:55:30]   flexing: (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[01:55:30]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[01:55:30]   flexing: (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[01:55:30] k=2: 36 pinned, 9 flexing blocks in 6 families
+[01:55:30]   ctrnact-star-family-k2-01: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a)  members a=[1, 2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k2-02: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k2-03: (3,3,4*d@-a+16,4*p@a) + (3,4*d@-a+18,4*p@a+2)  members a=[2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k2-04: (3*d@-a+16,4,6*p@a+2) + (3*p@a,4,6*d@-a+18)  members a=[2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k2-05: (3,3,3*d@-a+16,6*p@a) + (3,3*p@a,6*d@-a+20)  members a=[2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30]   ctrnact-star-family-k2-06: (3,3,3*p@a,6*d@-a+16) + (3,3*d@-a+16,6*p@a+4)  members a=[1, 2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[01:55:30] wrote 10 family records -> ../../experiments/star-oracle/ctrnact-star-families.cells.json  (0 with failing checks)

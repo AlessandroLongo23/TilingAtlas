@@ -1,4 +1,5 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 
@@ -21,8 +22,11 @@ export interface ReferenceTiling {
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready
-	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider (Phase 3)
+	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
+	// Present on family entries: the proven parametric cell driving the /play alpha slider
+	// (lib/utils/paramCell.ts). renderCell then holds the default-alpha evaluation (thumbnails).
+	paramCell?: ParametricCellData;
 	exactSource?: ExactCellSource; // exact cyclotomic cell for the symmetry overlay (added 2026-07)
 }
 
@@ -60,6 +64,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		certified: false,
 		runIds: [],
 		exactSource: r.exactSource,
+		paramCell: r.paramCell,
 	};
 }
 

@@ -30,6 +30,7 @@ import {
 } from '@/classes/algorithm/StarVC';
 import { loadOracle, reconstructOracleCell } from './oracle-match';
 import { serializeCell, deserializeCell, type SerializedCell } from './scoutCodec';
+import { evaluateParamCell, type ParametricCellData } from '@/lib/utils/paramCell';
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -59,8 +60,9 @@ export interface ReferenceTiling {
 		cellPolygons: { n: number; vertices: number[][]; star?: boolean }[];
 		basis: number[][];
 	};
-	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family (slider). Phase 3.
+	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family (slider)
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration, pending adversarial review
+	paramCell?: ParametricCellData; // family entries: proven parametric cell (drives the /play slider)
 	exactSource?:
 		| { kind: 'seed'; T1: number[]; T2: number[]; Seed: number[][] }
 		| { kind: 'cell'; cell: SerializedCell };
@@ -368,6 +370,66 @@ function buildCtrnactStars(): ReferenceTiling[] {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// Phase 5 — one-parameter (free-alpha) star FAMILIES, detected and exported parametrically by
+// tools/ctrnact-oracle/export_family_cells.py (formal symbolic-alpha development: closure proven for
+// every alpha in the open range, not sampled). Each family becomes one shelf entry whose renderCell
+// is the default-alpha evaluation (thumbnail) and whose paramCell drives the /play alpha slider.
+// A family is flagged candidate iff any of its pinned members is (i.e. not in Myers' enumeration).
+// ---------------------------------------------------------------------------------------------------
+function buildCtrnactStarFamilies(candidateIds: Set<string>): ReferenceTiling[] {
+	const dsPath = path.join(ROOT, 'experiments', 'star-oracle', 'ctrnact-star-families.cells.json');
+	const out: ReferenceTiling[] = [];
+	log('=== Phase 5: free-alpha star families (parametric, alpha slider) ===');
+	if (!fs.existsSync(dsPath)) {
+		log('  ⚑ experiments/star-oracle/ctrnact-star-families.cells.json missing — skipped\n');
+		return out;
+	}
+	const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
+		records: {
+			id: string;
+			k: number;
+			familySymbol: string;
+			primarySpecies: string;
+			members: { a_units: number; alphaDeg: number; vertype: string; atlasId: string | null }[];
+			params: ParametricCellData['params'];
+			cellPolygons: ParametricCellData['cellPolygons'];
+			basis: ParametricCellData['basis'];
+			allChecksPass: boolean;
+		}[];
+	};
+	for (const r of ds.records) {
+		if (!r.allChecksPass) {
+			log(`  ⚑ ${r.id}: exporter area checks failed — SKIPPED (never ship an unverified family)`);
+			continue;
+		}
+		const paramCell: ParametricCellData = { params: r.params, cellPolygons: r.cellPolygons, basis: r.basis };
+		const renderCell = evaluateParamCell(paramCell, r.params[0].defaultAlphaDeg) as ReferenceTiling['renderCell'];
+		// family label from the tile tokens of the symbolic words, e.g. "3.3*(α)"
+		const toks = new Set<string>();
+		for (const t of r.familySymbol.matchAll(/(\d+)\*[pd]/g)) toks.add(`${t[1]}*`);
+		for (const t of r.familySymbol.matchAll(/[(,](\d+)[,)]/g)) toks.add(t[1]);
+		const family = [...toks].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b)).join('.');
+		const isCandidate = r.members.some((m) => m.atlasId !== null && candidateIds.has(m.atlasId));
+		out.push({
+			id: r.id,
+			source: 'ctrnact-star',
+			k: r.k,
+			family,
+			renderCell,
+			alphaRange: r.params[0].alphaRangeDegOpen,
+			paramCell,
+			...(isCandidate ? { candidate: true } : {}),
+		});
+		log(`  ${r.id}  k=${r.k}  ${r.familySymbol}  α∈(${r.params[0].alphaRangeDegOpen[0]}°,` +
+			`${r.params[0].alphaRangeDegOpen[1]}°)  members ${r.members.map((m) => m.a_units).join(',')}` +
+			`${isCandidate ? '  ★ CANDIDATE family (not in Myers)' : ''}`);
+	}
+	log(`  Phase 5 total: ${out.length} families`);
+	log('');
+	return out;
+}
+
+// ---------------------------------------------------------------------------------------------------
 
 function main(): void {
 	const t0 = Date.now();
@@ -377,8 +439,12 @@ function main(): void {
 	else log('(--no-stars: skipping Phase 2)\n');
 	if (!argv.includes('--no-ctrnact')) atlas.push(...buildCtrnact());
 	else log('(--no-ctrnact: skipping Phase 3)\n');
-	if (withStars) atlas.push(...buildCtrnactStars());
-	else log('(--no-stars: skipping Phase 4)\n');
+	if (withStars) {
+		const stars = buildCtrnactStars();
+		atlas.push(...stars);
+		const candidateIds = new Set(stars.filter((t) => t.candidate).map((t) => t.id));
+		atlas.push(...buildCtrnactStarFamilies(candidateIds));
+	} else log('(--no-stars: skipping Phases 4+5)\n');
 
 	// deterministic order: source, k, id
 	atlas.sort(
