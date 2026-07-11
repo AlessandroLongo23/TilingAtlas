@@ -20,7 +20,8 @@ import sys
 from collections import deque
 
 # ---------------- exact ring ----------------
-RANK = 8  # ZZ[zeta_24]
+RANK = 8    # phi(24): ZZ[zeta_24] integer-vector rank
+ORDER = 24  # order of the ring's root of unity; ZK holds ZK[m] = zeta_24^m for m in [0, ORDER)
 
 def zmul_zeta(v):
     c = list(v)
@@ -98,6 +99,10 @@ def decode(tab, vertypeline, conwayline):
 # ---------------- development (port of develop.py, D-parameterized) ----------------
 def develop(tab, rneig, cls, glue, sign=1):
     D = tab.D
+    # A direction d is in D-units (360/D degrees). The zeta table ZK is in ORDER-units
+    # (zeta_24, 15 degrees), so d must index ZK[STEP*d], STEP = ORDER//D. NO-OP at D=24
+    # (STEP=1); the star palette (D=24) is unaffected. Fixes D=12 composites.
+    STEP = ORDER // D
     units = tab.CLASS_UNITS
     def star(h0, d0):
         seq, cur, d = [], h0, d0
@@ -136,7 +141,7 @@ def develop(tab, rneig, cls, glue, sign=1):
         for h, d in seq:
             reg(h, d, pos)
             g, gd = glue[h], (d + D // 2) % D
-            npos = zadd(pos, ZK[d % D])
+            npos = zadd(pos, ZK[STEP * d % ORDER])
             if reg(g, gd, npos):
                 q.append((g, gd, npos))
     # lattice from periods (integer elimination like develop.py, rank-8 columns)
@@ -198,6 +203,7 @@ def gauss_reduce(a, b):
 def trace_faces(tab, rneig, cls, glue, placed, sign=1):
     """One polygon per developed face instance reachable from the placed frames."""
     D = tab.D
+    STEP = ORDER // D  # direction d (D-units) -> ZK[STEP*d] (ORDER-units); NO-OP at D=24
     units = tab.CLASS_UNITS
     faces = {}
     for key, pos in placed.items():
@@ -208,7 +214,7 @@ def trace_faces(tab, rneig, cls, glue, placed, sign=1):
         for _ in range(64):
             verts.append(cur_pos)
             g = glue[cur_h]
-            npos = zadd(cur_pos, ZK[cur_d % D])
+            npos = zadd(cur_pos, ZK[STEP * cur_d % ORDER])
             nh = rneig[g]
             corner = cls[nh]
             tiles.add(tab.CLASS_TILE[corner])
