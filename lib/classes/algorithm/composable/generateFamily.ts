@@ -1,11 +1,30 @@
-import { CyclotomicRing, Cyclotomic } from '@/classes';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { Polyform } from './Polyform';
+import { CyclotomicRing } from '@/classes';
+import { enumerateConvexFamily } from './convexTiles';
+import { dissect } from './dissect';
 
-const REGULAR_ORDERS = [3, 4, 6, 12];
+/**
+ * The two "composable tile" families over the 30° grid.
+ *   Family B (convex)       — all 11 convex unit-edge tiles (`enumerateConvexFamily`).
+ *   Family A (decomposable) — the subset of B that dissects edge-to-edge into unit regular
+ *                             {3,4,6,12} pieces (`dissect`, exact). A ⊆ B.
+ * Every decomposability verdict is exact ℤ[ζ₂₄]-signed; float never enters the decision.
+ */
 
-export type CompositeTile = { angles: number[]; name: string; sides: number; tileCounts: Record<number, number> };
-export type FamilyRow = { sides: number; numTiles: number; numCornerClasses: number };
+export type ComposableTile = {
+  word: number[];
+  sides: number;
+  name: string;
+  decomposable: boolean;
+  pieceCounts: Record<number, number>;
+};
+
+/** One row of Table A: a side-count "family" with its convex/decomposable counts and corner classes. */
+export type FamilyRow = {
+  sides: number;
+  convexCount: number;
+  decomposableCount: number;
+  cornerClasses: number;
+};
 
 /** Fundamental rotation period of a cyclic word (smallest p | len with w[i]==w[i+p]). */
 export function period(w: number[]): number {
@@ -17,63 +36,41 @@ export function period(w: number[]): number {
   return L;
 }
 
-export function generateFamily(maxTiles: number): { tiles: CompositeTile[]; table: FamilyRow[]; peakFrontier: number } {
-  const ring = CyclotomicRing.create(12);
-  const origin = Cyclotomic.fromRational(ring, 0n); // exact 0
-  const seen = new Set<string>();
-  const results = new Map<string, CompositeTile>(); // keyed by canonical angle-word
-  let frontier: Polyform[] = REGULAR_ORDERS.map(n =>
-    new Polyform([RegularPolygon.fromAnchorAndDirExact(n, origin, 0)]));
-  for (const pf of frontier) seen.add(pf.canonicalKey());
-  let peak = frontier.length;
-
-  for (let size = 1; size < maxTiles; size++) {
-    const next: Polyform[] = [];
-    for (const pf of frontier) {
-      for (const n of REGULAR_ORDERS) {
-        for (const grown of pf.glue(n)) {
-          const key = grown.canonicalKey();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          next.push(grown);
-          const word = grown.convexAngleWord();
-          if (word && grown.tiles.length >= 2 && !isBareRegular(word)) {
-            const wkey = word.join(',');
-            if (!results.has(wkey)) results.set(wkey, toTile(grown, word));
-          }
-        }
-      }
-    }
-    frontier = next;
-    peak = Math.max(peak, next.length);
-    if (next.length === 0) break;
-  }
-  return { tiles: [...results.values()], table: buildTable([...results.values()]), peakFrontier: peak };
-}
-
-/** A convex composite whose word equals a single regular n-gon (all angles equal, n∈{3,4,6,12}). */
-function isBareRegular(word: number[]): boolean {
-  const uniq = new Set(word);
-  if (uniq.size !== 1) return false;
-  const u = word[0];
-  return (u === 2 && word.length === 3) || (u === 3 && word.length === 4)
-      || (u === 4 && word.length === 6) || (u === 5 && word.length === 12);
-}
-
-function toTile(pf: Polyform, word: number[]): CompositeTile {
-  const counts: Record<number, number> = {};
-  for (const t of pf.tiles) counts[t.n] = (counts[t.n] ?? 0) + 1;
-  return { angles: word, sides: word.length, name: nameFor(word), tileCounts: counts };
-}
-
 /** Stable name: side count + dash + the canonical angle-word (e.g. "cx4-2.4.2.4"). */
-function nameFor(word: number[]): string { return `cx${word.length}-${word.join('.')}`; }
+function nameFor(word: number[]): string {
+  return `cx${word.length}-${word.join('.')}`;
+}
 
-function buildTable(tiles: CompositeTile[]): FamilyRow[] {
-  const bySides = new Map<number, CompositeTile[]>();
-  for (const t of tiles) (bySides.get(t.sides) ?? bySides.set(t.sides, []).get(t.sides)!).push(t);
+export function generateFamily(ring: CyclotomicRing): {
+  convex: ComposableTile[];
+  decomposable: ComposableTile[];
+  tableA: FamilyRow[];
+} {
+  const convex: ComposableTile[] = enumerateConvexFamily(ring).map(word => {
+    const { decomposable, pieces } = dissect(word, ring);
+    const pieceCounts: Record<number, number> = {};
+    for (const p of pieces) pieceCounts[p.n] = (pieceCounts[p.n] ?? 0) + 1;
+    return { word, sides: word.length, name: nameFor(word), decomposable, pieceCounts };
+  });
+  const decomposable = convex.filter(t => t.decomposable);
+  return { convex, decomposable, tableA: buildTable(convex) };
+}
+
+/** cornerClasses = Σ over the side-count's CONVEX tiles of the word's fundamental period. */
+function buildTable(convex: ComposableTile[]): FamilyRow[] {
+  const bySides = new Map<number, ComposableTile[]>();
+  for (const t of convex) {
+    const arr = bySides.get(t.sides) ?? [];
+    arr.push(t);
+    bySides.set(t.sides, arr);
+  }
   return [...bySides.keys()].sort((a, b) => a - b).map(sides => {
     const fam = bySides.get(sides)!;
-    return { sides, numTiles: fam.length, numCornerClasses: fam.reduce((s, t) => s + period(t.angles), 0) };
+    return {
+      sides,
+      convexCount: fam.length,
+      decomposableCount: fam.filter(t => t.decomposable).length,
+      cornerClasses: fam.reduce((s, t) => s + period(t.word), 0),
+    };
   });
 }

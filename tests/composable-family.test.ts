@@ -3,6 +3,7 @@ import { CyclotomicRing, Cyclotomic } from '@/classes';
 import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
 import { Polyform } from '@/classes/algorithm/composable/Polyform';
 import { generateFamily, period } from '@/classes/algorithm/composable/generateFamily';
+import { dissect, uncoveredBoundary } from '@/classes/algorithm/composable/dissect';
 import { tileVertices, enumerateConvexFamily } from '@/classes/algorithm/composable/convexTiles';
 
 const ring = CyclotomicRing.create(12);
@@ -75,11 +76,68 @@ describe('Polyform convexAngleWord', () => {
   });
 });
 
+// The validated decomposable split (exact port target). A ⊆ B, |A| = 7 of the 11 convex tiles.
+const DECOMPOSABLE_WORDS = [
+  [2, 4, 2, 4],
+  [2, 5, 3, 3, 5],
+  [2, 5, 5, 2, 5, 5],
+  [3, 5, 4, 5, 3, 5, 5],
+  [4, 4, 5, 5, 4, 4, 5, 5],
+  [4, 5, 5, 4, 5, 5, 4, 5, 5],
+  [4, 5, 5, 5, 5, 4, 5, 5, 5, 5],
+].map(w => Polyform.canonicalCyclicWord(w).join(','));
+
+describe('dissect oracle', () => {
+  it('rhombus [2,4,2,4] decomposes into regular {3,4,6,12} pieces', () => {
+    const { decomposable, pieces } = dissect([2, 4, 2, 4], ring);
+    expect(decomposable).toBe(true);
+    expect(pieces.length).toBeGreaterThan(0);
+    for (const p of pieces) expect([3, 4, 6, 12]).toContain(p.n); // witness is all regular tiles
+  });
+  it('hexagon A [3,5,3,5,3,5] does NOT decompose', () => {
+    expect(dissect([3, 5, 3, 5, 3, 5], ring).decomposable).toBe(false);
+  });
+  it('hexagon B [3,4,5,3,4,5] does NOT decompose', () => {
+    expect(dissect([3, 4, 5, 3, 4, 5], ring).decomposable).toBe(false);
+  });
+  it('octagon A [4,5,4,5,4,5,4,5] does NOT decompose', () => {
+    expect(dissect([4, 5, 4, 5, 4, 5, 4, 5], ring).decomposable).toBe(false);
+  });
+  it('octagon C [3,5,5,5,3,5,5,5] does NOT decompose', () => {
+    expect(dissect([3, 5, 5, 5, 3, 5, 5, 5], ring).decomposable).toBe(false);
+  });
+  it('a witness dissection exactly covers its tile (uncoveredBoundary of the pieces is empty)', () => {
+    const word = [2, 5, 5, 2, 5, 5]; // hexagon C
+    const { decomposable, pieces } = dissect(word, ring);
+    expect(decomposable).toBe(true);
+    const P = tileVertices(word, ring);
+    expect(uncoveredBoundary(P, pieces).length).toBe(0); // exact cover, no residual boundary
+  });
+});
+
 describe('generateFamily', () => {
-  it('maxTiles=2 yields exactly the rhombus and the house', () => {
-    const { tiles } = generateFamily(2);
-    const words = tiles.map(t => t.angles.join(',')).sort();
-    expect(words).toEqual(['2,4,2,4', '2,5,3,3,5'].sort()); // rhombus, house (canonical forms)
+  const { convex, decomposable, tableA } = generateFamily(ring);
+
+  it('produces the 11 convex tiles (family B)', () => {
+    expect(convex.length).toBe(11);
+  });
+  it('produces the 7 decomposable tiles (family A)', () => {
+    expect(decomposable.length).toBe(7);
+  });
+  it('the decomposable set equals the validated 7 words (canonical forms)', () => {
+    const got = new Set(decomposable.map(t => Polyform.canonicalCyclicWord(t.word).join(',')));
+    expect(got).toEqual(new Set(DECOMPOSABLE_WORDS));
+  });
+  it('every convex tile is named cx<sides>-<word>', () => {
+    for (const t of convex) expect(t.name).toBe(`cx${t.sides}-${t.word.join('.')}`);
+  });
+  it('tableA corner-classes sum the fundamental period over that side-count’s convex tiles', () => {
+    for (const r of tableA) {
+      const fam = convex.filter(t => t.sides === r.sides);
+      expect(r.convexCount).toBe(fam.length);
+      expect(r.decomposableCount).toBe(fam.filter(t => t.decomposable).length);
+      expect(r.cornerClasses).toBe(fam.reduce((s, t) => s + period(t.word), 0));
+    }
   });
 });
 

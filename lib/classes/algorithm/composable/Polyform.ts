@@ -11,7 +11,7 @@ export type HalfEdge = { startKey: string; endKey: string; start: Cyclotomic; en
 // decision (and the "shared glue edge is not a false positive" guarantee) is unchanged. We lift ONLY
 // for the overlap call; all geometry/angle/key logic stays on N=12.
 const RING24 = CyclotomicRing.create(24);
-function liftTo24(z: Cyclotomic): Cyclotomic {
+export function liftTo24(z: Cyclotomic): Cyclotomic {
   // ζ12 = ζ24² holds only for an N=12 source; a ring-24 (or other-N) input would be silently
   // mis-embedded (its power-basis coeffs mean different roots of unity), so reject it loudly.
   if (z.ring.N !== 12) throw new Error(`liftTo24: expected an N=12 element, got N=${z.ring.N}`);

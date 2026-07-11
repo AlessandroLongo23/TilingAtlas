@@ -1,0 +1,186 @@
+{
+  "name": "composite-convex",
+  "D": 12,
+  "pinnedLegacy": false,
+  "comment": "Palette-agnosticism DEMO. Regular {3,4,6,12} + composable tiles on the 30deg grid (gen-composable-family.ts, exact zeta24-signed dissect oracle). Counts are NOT all-and-only: a decomposable composite admits multiple dissections, so this is NOT a completeness target.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 12,
+      "name": "12",
+      "famchar": "c"
+    },
+    {
+      "kind": "composite",
+      "name": "cx4-2.4.2.4",
+      "angles": [
+        2,
+        4,
+        2,
+        4
+      ],
+      "famchar": "x0"
+    },
+    {
+      "kind": "composite",
+      "name": "cx5-2.5.3.3.5",
+      "angles": [
+        2,
+        5,
+        3,
+        3,
+        5
+      ],
+      "famchar": "x1"
+    },
+    {
+      "kind": "composite",
+      "name": "cx6-2.5.5.2.5.5",
+      "angles": [
+        2,
+        5,
+        5,
+        2,
+        5,
+        5
+      ],
+      "famchar": "x2"
+    },
+    {
+      "kind": "composite",
+      "name": "cx6-3.4.5.3.4.5",
+      "angles": [
+        3,
+        4,
+        5,
+        3,
+        4,
+        5
+      ],
+      "famchar": "x3"
+    },
+    {
+      "kind": "composite",
+      "name": "cx6-3.5.3.5.3.5",
+      "angles": [
+        3,
+        5,
+        3,
+        5,
+        3,
+        5
+      ],
+      "famchar": "x4"
+    },
+    {
+      "kind": "composite",
+      "name": "cx7-3.5.4.5.3.5.5",
+      "angles": [
+        3,
+        5,
+        4,
+        5,
+        3,
+        5,
+        5
+      ],
+      "famchar": "x5"
+    },
+    {
+      "kind": "composite",
+      "name": "cx8-3.5.5.5.3.5.5.5",
+      "angles": [
+        3,
+        5,
+        5,
+        5,
+        3,
+        5,
+        5,
+        5
+      ],
+      "famchar": "x6"
+    },
+    {
+      "kind": "composite",
+      "name": "cx8-4.4.5.5.4.4.5.5",
+      "angles": [
+        4,
+        4,
+        5,
+        5,
+        4,
+        4,
+        5,
+        5
+      ],
+      "famchar": "x7"
+    },
+    {
+      "kind": "composite",
+      "name": "cx8-4.5.4.5.4.5.4.5",
+      "angles": [
+        4,
+        5,
+        4,
+        5,
+        4,
+        5,
+        4,
+        5
+      ],
+      "famchar": "x8"
+    },
+    {
+      "kind": "composite",
+      "name": "cx9-4.5.5.4.5.5.4.5.5",
+      "angles": [
+        4,
+        5,
+        5,
+        4,
+        5,
+        5,
+        4,
+        5,
+        5
+      ],
+      "famchar": "x9"
+    },
+    {
+      "kind": "composite",
+      "name": "cx10-4.5.5.5.5.4.5.5.5.5",
+      "angles": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5,
+        5
+      ],
+      "famchar": "x10"
+    }
+  ]
+}
