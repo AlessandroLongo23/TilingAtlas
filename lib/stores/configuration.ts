@@ -36,6 +36,7 @@ export interface ConfigurationState {
 
 	// Display toggles
 	showDualConnections: boolean;
+	showPolygonFill: boolean;
 	showPolygonPoints: boolean;
 	showConstructionPoints: boolean;
 	showWallpaperGroup: boolean;
@@ -86,6 +87,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	rotation: 0,
 
 	showDualConnections: false,
+	showPolygonFill: true,
 	showPolygonPoints: false,
 	showConstructionPoints: false,
 	showWallpaperGroup: false,
@@ -99,7 +101,8 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	exportGraph: false,
 
 	isIslamic: false,
-	islamicAngle: 90,
+	islamicAngle: 30, // θ from the edge normal (0 ⇒ meet at centroid, 90 ⇒ meet at vertices); ~30 shows a clear star
+
 	islamicAnimate: false,
 	circlePacking: false,
 	isTilingRegularOnly: false,

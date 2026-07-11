@@ -4,6 +4,7 @@ import { islamicAnglesForHalfways } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
+import { extractFaces, colorFacesByMarkerThenTile, type TileLite, type TileColoredFace, type Marker, type Segment } from "@/utils/islamicArrangement";
 
 export type VCWithOccurrences = { vc: VertexConfiguration; occurrences: number };
 
@@ -22,6 +23,10 @@ export class Tiling {
     reflections: Reflection[] | null = null;
     glideReflections: GlideReflection[] | null = null;
 
+    // Cached Islamic star-fill: the colored arrangement cells + the raw construction segments (for the
+    // border lines), recomputed only when the tiling's node set or the angle changes, not per frame.
+    private islamicFillCache?: { nodesRef: Polygon[]; theta: number; colored: TileColoredFace[]; segments: Segment[] };
+
     constructor() {
         this.nodes = [];
         this.anchorNodes = [];
@@ -33,14 +38,13 @@ export class Tiling {
 
     show = (ctx, showPolygonPoints: boolean, opacity: number = 1, circlePacking: boolean = false): void => {
         const lineWidthValue = useConfiguration.getState().lineWidth;
-        if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0);
-        } else if (lineWidthValue === 0) {
+        if (lineWidthValue <= 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0, lineWidthValue);
+            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
+            // White stroke only when tiles are outline-only on a dark theme; dark otherwise (HSB bright).
+            const useLightStroke = !useConfiguration.getState().showPolygonFill && document.documentElement.classList.contains("dark");
+            ctx.stroke(0, 0, useLightStroke ? 100 : 0);
         }
 
         if (circlePacking) {
@@ -54,10 +58,19 @@ export class Tiling {
                     ctx.ellipse(node.centroid.x, node.centroid.y, radius * 2, radius * 2);
                 }
             }
-        } else {
-            if (useConfiguration.getState().isIslamic) {
+        } else if (useConfiguration.getState().isIslamic) {
+            if (this.nodes.some((n) => n.isStar)) {
+                // Star tiling: fill each arrangement cell with its source tile's colour, then the black
+                // construction lines as cell borders. No base underneath (redundant and costly). Cells
+                // span tiles (dent triangles form where a star's rays meet a neighbour's at the shared
+                // edge), so the fill works over the whole tiling's arrangement, not per tile.
+                this.drawIslamicStarFill(ctx, opacity);
+            } else {
+                // Dentless tiling: keep the previous regular Islamic fill.
                 this.drawIslamicVertexRegions(ctx, opacity);
+                for (const node of this.nodes) node.showIslamicFilled(ctx, opacity);
             }
+        } else {
             for (let i = 0; i < this.nodes.length; i++) {
                 this.nodes[i].show(ctx, showPolygonPoints, null, opacity);
             }
@@ -66,6 +79,55 @@ export class Tiling {
         const showDualConnectionsValue = useConfiguration.getState().showDualConnections;
         if (showDualConnectionsValue)
             this.drawDualConnections(ctx);
+    }
+
+    /** Star-tiling Islamic fill: color each cell of the whole-tiling construction arrangement by the
+     *  source tile that contains it, then draw the construction lines as black cell borders. Cached
+     *  per (node set, angle) — a static view just redraws the cache, so panning stays smooth. */
+    drawIslamicStarFill = (ctx, opacity: number = 1): void => {
+        const cfg = useConfiguration.getState();
+        const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
+        const cache = this.islamicFillCache;
+        // Animated mode re-picks the per-edge angle every frame, so it can't be cached.
+        const fresh = cache && !cfg.islamicAnimate && cache.nodesRef === this.nodes && cache.theta === theta;
+        if (!fresh) {
+            const angle = (theta * Math.PI) / 180;
+            const segments: Segment[] = [];
+            const tiles: TileLite[] = [];
+            const markers: Marker[] = [];
+            for (const node of this.nodes) {
+                if (!node.vertices || !node.halfways) continue;
+                const a: number | number[] = cfg.islamicAnimate ? islamicAnglesForHalfways(ctx, node.halfways) : angle;
+                for (const s of node.calculateIslamicSegments(a)) segments.push(s);
+                tiles.push({ vertices: node.vertices, hue: node.hue });
+                for (const m of node.islamicMarkers()) markers.push(m);
+            }
+            const colored = colorFacesByMarkerThenTile(extractFaces(segments), markers, tiles);
+            this.islamicFillCache = { nodesRef: this.nodes, theta, colored, segments };
+        }
+        const { colored, segments } = this.islamicFillCache!;
+
+        // Colored cells, using the same fill params as the plain tiling so 90° is pixel-identical.
+        ctx.push();
+        ctx.noStroke();
+        for (const { face, hue } of colored) {
+            ctx.fill(hue, 40, 100 / opacity, 0.80 * opacity);
+            ctx.beginShape();
+            for (const v of face.vertices) ctx.vertex(v.x, v.y);
+            ctx.endShape(ctx.CLOSE);
+        }
+        ctx.pop();
+
+        // Construction lines as cell borders: black, following the Line-stroke slider width.
+        const lw = cfg.lineWidth;
+        if (lw > 0) {
+            ctx.push();
+            ctx.noFill();
+            ctx.strokeWeight(lw / cfg.controls.zoom);
+            ctx.stroke(0, 0, 0);
+            for (const [from, to] of segments) ctx.line(from.x, from.y, to.x, to.y);
+            ctx.pop();
+        }
     }
 
     showGraph = (ctx): void => {
@@ -359,14 +421,13 @@ export class Tiling {
 
     showNeighbors = (ctx, showPolygonPoints: boolean): void => {
         const lineWidthValue = useConfiguration.getState().lineWidth;
-        if (lineWidthValue > 1) {
-            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0);
-        } else if (lineWidthValue === 0) {
+        if (lineWidthValue <= 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
-            ctx.stroke(0, 0, 0, lineWidthValue);
+            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
+            // White stroke only when tiles are outline-only on a dark theme; dark otherwise (HSB bright).
+            const useLightStroke = !useConfiguration.getState().showPolygonFill && document.documentElement.classList.contains("dark");
+            ctx.stroke(0, 0, useLightStroke ? 100 : 0);
         }
         
         const mouseWorldX = (ctx.mouseX - ctx.width / 2) / useConfiguration.getState().controls.zoom;

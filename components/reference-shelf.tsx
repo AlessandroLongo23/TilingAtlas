@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Library, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
@@ -14,6 +14,7 @@ import {
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
+	tileClassOf,
 	type Certification,
 	type ReferenceTiling,
 	type ReferenceFilter,
@@ -156,7 +157,15 @@ export function ReferenceShelf() {
 	const setParametric = (v: "all" | "rigid" | "family") =>
 		setFilters({ ...filters, parametric: v === "all" ? undefined : v });
 	const setTileClass = (v: "all" | TileClass) => {
-		const next: ReferenceFilter = { ...filters, tileClass: v === "all" ? undefined : v };
+		const cls = v === "all" ? undefined : v;
+		const next: ReferenceFilter = { ...filters, tileClass: cls };
+		// k chips are faceted per class — if the current k isn't covered by the new class (e.g. k=10
+		// under Star), drop it (and its now-stale M/partition) so we don't silently filter to 0.
+		if (next.kValue != null && !kValuesForClass(cls).has(next.kValue)) {
+			next.kValue = undefined;
+			next.mValue = undefined;
+			next.partitionKey = undefined;
+		}
 		// The decomposable facet only means something inside the composable class — drop it otherwise.
 		if (v !== "composable") next.composableDecomp = undefined;
 		if (v === "regular") {
@@ -189,10 +198,22 @@ export function ReferenceShelf() {
 	const toggleCert = (c: Certification) => toggleIn("certifications", filters.certifications ?? [], c);
 
 	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
-	const kOptions = useMemo(() => (tilings ? [...new Set(tilings.map((t) => t.k))].sort((a, b) => a - b) : []), [tilings]);
-	// k chips = the k's present in loaded data UNION the lazy higher-k tiers, so 8/9/10 are selectable
-	// (and thus loadable) before their shard is fetched.
-	const kChips = useMemo(() => [...new Set([...kOptions, ...HIGHER_K])].sort((a, b) => a - b), [kOptions]);
+	// The k's a given tile class actually covers. Faceted, so Star/Composable (k=1..3 today) never show
+	// a dead k=10 button. The lazy higher-k tiers (8/9/10) are all regular Čtrnáct, so they're offered
+	// only when regular tilings are in scope (All or Regular) — before their shard is even fetched.
+	const kValuesForClass = useCallback(
+		(cls: TileClass | undefined): Set<number> => {
+			const s = new Set<number>();
+			if (tilings) for (const t of tilings) if (!cls || tileClassOf(t) === cls) s.add(t.k);
+			if (!cls || cls === "regular") for (const k of HIGHER_K) s.add(k);
+			return s;
+		},
+		[tilings],
+	);
+	const kChips = useMemo(
+		() => [...kValuesForClass(filters.tileClass)].sort((a, b) => a - b),
+		[kValuesForClass, filters.tileClass],
+	);
 
 	// M chips are faceted to the current view MINUS M/partition: at k=4 they resolve to {2,3,4}.
 	const mOptions = useMemo(() => {
@@ -332,7 +353,9 @@ export function ReferenceShelf() {
 							label="Maximal (M = k)"
 							classes="mt-1 self-start"
 						/>
-						<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
+						{kChips.some((k) => k >= 8) ? (
+							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
+						) : null}
 					</FilterGroup>
 
 					{showM ? (

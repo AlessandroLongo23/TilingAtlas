@@ -18,6 +18,14 @@ type BFSNode = {
     remaining: string[];
 };
 
+/** One geometric completion of an open vertex: the placed VC plus the polygons it adds to the
+ *  patch. Two placements adding the SAME polygon set are the same completion (deduped), whatever
+ *  (VC name, rotation) produced them — entropy counts completions, not placements. */
+export type VertexCompletion = {
+    vc: VertexConfiguration;
+    addedPolygons: Polygon[];
+};
+
 const CANONICAL_PRECISION = 3;
 
 /** Cached VC template: base VC at origin + precomputed neighboring vertices. */
@@ -253,6 +261,25 @@ export class SeedBuilder {
         seed: SeedConfiguration,
         allVCNames: string[]
     ): boolean => {
+        return this.enumerateVertexCompletions(vertex, vertexExact, directions, seed, allVCNames, 1).length > 0;
+    };
+
+    /**
+     * Enumerate the distinct geometric completions of an open vertex, up to `max`. The single
+     * audited completion enumerator: `canAnyVCFitAtVertex` is `max=1` (the entropy-0 test), the
+     * lookahead scout uses `max=2` to classify entropy 0 / 1 / ≥2. Same search as the historical
+     * forward check: full seed set + mirrors, every frontier direction, every on-grid rotation,
+     * exact placement, float-tolerance merge + validity. Distinctness is by ADDED polygon set
+     * (a completion reachable via two (name, rotation) routes counts once).
+     */
+    enumerateVertexCompletions = (
+        vertex: Vector,
+        vertexExact: Cyclotomic,
+        directions: number[],
+        seed: SeedConfiguration,
+        allVCNames: string[],
+        max: number = Number.POSITIVE_INFINITY
+    ): VertexCompletion[] => {
         const effectiveNames = new Set<string>();
         for (const n of allVCNames) {
             effectiveNames.add(n);
@@ -260,6 +287,8 @@ export class SeedBuilder {
         }
 
         const seedCount = seed.polygons.length;
+        const completions: VertexCompletion[] = [];
+        const seenAdded = new Set<string>();
 
         for (const vcName of effectiveNames) {
             const { vc: templateVC, neighboringVertices } = this.getCachedVC(vcName);
@@ -282,13 +311,24 @@ export class SeedBuilder {
                     if (mergedPolygons.length === seedCount + vcCount) continue;
 
                     const newSeed = new SeedConfiguration([...seed.vertexConfigurations, clonedVC]);
-                    if (newSeed.isValid()) {
-                        return true;
-                    }
+                    if (!newSeed.isValid()) continue;
+
+                    // deduplicatePolygons keeps first occurrences (the seed's), so the tail is
+                    // exactly the polygons this placement adds.
+                    const addedPolygons = mergedPolygons.slice(seedCount);
+                    const addedKey = addedPolygons
+                        .map((p) => (p.hasExact() ? p.exactKey() : `${p.getName()}@${p.centroid.x.toFixed(6)},${p.centroid.y.toFixed(6)}`))
+                        .sort()
+                        .join('|');
+                    if (seenAdded.has(addedKey)) continue;
+                    seenAdded.add(addedKey);
+
+                    completions.push({ vc: clonedVC, addedPolygons });
+                    if (completions.length >= max) return completions;
                 }
             }
         }
-        return false;
+        return completions;
     };
 
     /** Remove duplicate seeds from the final output (e.g. from chiral seed sets producing same seeds). */

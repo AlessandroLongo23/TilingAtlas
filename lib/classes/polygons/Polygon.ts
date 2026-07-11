@@ -575,7 +575,7 @@ export class Polygon {
      * regular tile's tips collapse onto the centroid, so it emits the centroid only.
      */
     islamicMarkers = (): Marker[] => {
-        const markers: Marker[] = [{ point: this.centroid.copy(), kind: "centroid" }];
+        const markers: Marker[] = [{ point: this.centroid.copy(), kind: "centroid", hue: this.hue }];
         if (!this.isStar) return markers;
         const n = this.vertices.length;
         const winding = this.vertices.reduce((a, v, i) => {
@@ -596,10 +596,10 @@ export class Polygon {
             const convex = cross * winding > 0;
             if (convex) {
                 const tp = tipPoint(this.halfways[(k - 1 + n) % n], inwardNormal((k - 1 + n) % n), this.halfways[k], inwardNormal(k));
-                if (tp) markers.push({ point: tp, kind: "tip" });
+                if (tp) markers.push({ point: tp, kind: "tip", hue: this.hue });
             } else {
                 const toC = Vector.sub(this.centroid, cur);
-                markers.push({ point: Vector.add(cur, Vector.scale(toC, 0.05)), kind: "dent" });
+                markers.push({ point: Vector.add(cur, Vector.scale(toC, 0.05)), kind: "dent", hue: this.hue });
             }
         }
         return markers;

@@ -39,11 +39,89 @@ export function polygonHue(n: number) {
 	return mapRange(Math.log(n), Math.log(3), Math.log(40), 0, 300);
 }
 
+// A composite/decomposable tile shares its side count with a regular polygon — a rhombus (two glued
+// equilateral triangles) is a quadrilateral like the square; a skewed hexagon has six sides like the
+// regular one — so the by-side-count ramp above paints the two identically. Detect genuine regularity
+// (equal sides AND equal angles) and rotate everything else to the complementary side of the wheel:
+// a regular n-gon and its irregular sibling then read as different colours (square→orange vs
+// rhombus→blue, regular hexagon→green vs skewed hexagon→violet) while side count stays legible within
+// each family. Star tiles are excluded — they keep starHue().
+const IRREGULAR_HUE_SHIFT = 180;
+
+export function isRegularPolygon(vertices: { x: number; y: number }[]): boolean {
+	const n = vertices.length;
+	if (n < 3) return false;
+	let side0 = -1;
+	let angle0 = -1;
+	for (let i = 0; i < n; i++) {
+		const prev = vertices[(i - 1 + n) % n];
+		const cur = vertices[i];
+		const next = vertices[(i + 1) % n];
+		const side = Math.hypot(next.x - cur.x, next.y - cur.y);
+		if (side < 1e-9) return false;
+		if (side0 < 0) side0 = side;
+		else if (Math.abs(side - side0) > 1e-3 * side0) return false;
+		const ax = prev.x - cur.x, ay = prev.y - cur.y;
+		const bx = next.x - cur.x, by = next.y - cur.y;
+		const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+		if (la < 1e-9 || lb < 1e-9) return false;
+		const angle = Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb))));
+		if (angle0 < 0) angle0 = angle;
+		else if (Math.abs(angle - angle0) > 1e-2) return false;
+	}
+	return true;
+}
+
+// Fill hue for a plain (non-star) tile: the regular by-side-count ramp, rotated to its complement
+// when the tile isn't actually regular.
+export function polygonFillHue(vertices: { x: number; y: number }[]): number {
+	const base = polygonHue(vertices.length);
+	return isRegularPolygon(vertices) ? base : (base + IRREGULAR_HUE_SHIFT) % 360;
+}
+
 // Star tiles use the original StarPolygon.calculateHue ramp (lib/classes/polygons/StarPolygon.ts):
 // by point count n (= vertices.length / 2) over [3,12] → [300,0], plus a 25° offset — a distinct
 // violet→red ramp, NOT the regular-polygon log ramp above.
-export function starHue(points: number) {
-	return mapRange(points, 3, 12, 300, 0) + 300 / 12;
+// Nudge the base hue by the star's apex (tip) angle so two same-n stars of different sharpness are
+// visually distinct. Centred so a ~60° apex keeps the base hue; clamped to ±STAR_APEX_HUE_SPAN so the
+// nudge never crosses into a neighbouring point-count's band (those are ~33° apart on this ramp).
+const STAR_APEX_HUE_SPAN = 25;
+
+export function starHue(points: number, apexAngleDeg?: number): number {
+	const base = mapRange(points, 3, 12, 300, 0) + 300 / 12;
+	if (apexAngleDeg == null || !Number.isFinite(apexAngleDeg)) return base;
+	const shift = Math.max(-STAR_APEX_HUE_SPAN, Math.min(STAR_APEX_HUE_SPAN, (apexAngleDeg - 60) * 0.5));
+	return (((base + shift) % 360) + 360) % 360;
+}
+
+// The apex (tip) angle of a star tile, in degrees: the sharpest TIP's corner opening. Tips are the
+// star's points — the vertices at a local maximum of radius from the centroid — so we measure the
+// unsigned wedge (winding-/convexity-agnostic) only there, never at the valleys between points (which
+// on a blunt star can be sharper than the tips). NaN if there's no clear tip or the outline degenerates.
+export function starApexAngleDeg(vertices: { x: number; y: number }[]): number {
+	const m = vertices.length;
+	if (m < 3) return NaN;
+	let cx = 0, cy = 0;
+	for (const v of vertices) { cx += v.x; cy += v.y; }
+	cx /= m; cy /= m;
+	const rad = vertices.map((v) => Math.hypot(v.x - cx, v.y - cy));
+	let min = Infinity;
+	for (let i = 0; i < m; i++) {
+		const rc = rad[i], rp = rad[(i - 1 + m) % m], rn = rad[(i + 1) % m];
+		// tip = strict local radius maximum (a point of the star), skipping valleys and flat runs
+		if (!(rc >= rp && rc >= rn && (rc > rp || rc > rn))) continue;
+		const cur = vertices[i];
+		const prev = vertices[(i - 1 + m) % m];
+		const next = vertices[(i + 1) % m];
+		const ax = prev.x - cur.x, ay = prev.y - cur.y;
+		const bx = next.x - cur.x, by = next.y - cur.y;
+		const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+		if (la < 1e-9 || lb < 1e-9) continue;
+		const cos = Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)));
+		const ang = Math.acos(cos);
+		if (ang < min) min = ang;
+	}
+	return Number.isFinite(min) ? (min * 180) / Math.PI : NaN;
 }
 
 export function hsbToHsla(h: number, s: number, b: number, a: number) {
@@ -161,7 +239,7 @@ export function drawPolygons(
 	scale: number,
 ) {
 	for (const poly of polygons) {
-		ctx.fillStyle = hsbToHsla(poly.star ? starHue(poly.n) : polygonHue(poly.n), 40, 100, 0.9);
+		ctx.fillStyle = hsbToHsla(poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices), 40, 100, 0.9);
 		ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
 		ctx.lineWidth = 1 / scale;
 		ctx.beginPath();

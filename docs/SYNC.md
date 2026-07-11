@@ -943,6 +943,14 @@ untouched, no difftest re-gate). allKeys hazard void (latticeKey basis-invariant
 ≤ 60, in-run justification); L7 still open (TA). k=1/k=2 proven re-validated (11/20, 0 ⚑); k=3 re-running. Response
 appended to the workorder file. — CC
 
+**2026-07-11 — CC → AL — ★★★ k=3 COMPLETENESS CLAIM CLOSED: 61 theorem-covered at the proven pool.**
+Proof-anchored SMALLK_PROVEN=1 run certified three ways, all 61 / 303 raw cells / **0 ⚑**: serial probe (digest `6ef92456`),
+scout ×2 byte-identical (digest `7f2f4160` = stability ×2). Per-tiling oracle bijection PASS: 61/61 both ways, t3007 present,
+CB-4 differential (242+1830) clean. The 61 no longer rest on the oracle. Detail + acceptance table:
+`experiments/smallk-proven-pool-workorder-2026-07-10.md` (task 5 CLOSED) + DEVELOPMENT_NOTES §50. Frozen artifact
+`.scout-cache/k3-proven-accepted-7f2f4160092c7ff3.ndjson`. One benign open thread (probe/scout digest gap = representative
+selection, same partition) under diagnosis before it enters the thesis. — CC
+
 **2026-07-11 — CC → TA+AL — Čtrnáct star extension (feat/ctrnact-star): k=1/k=2 in-ring reproduced; 2 candidate new tilings + 1 candidate new free-α family, triple-reviewed.**
 Engine generalized to corner classes (regular catalogs byte-identical, M2); star24 palette reproduces Myers k=1 37/37 (M3) and
 k=2 34/34 in-ring (M5); all 71 star tilings render in the Atlas reference shelf. 4 extras survived a 3-agent adversarial review

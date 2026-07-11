@@ -34,7 +34,7 @@ export default async function HomePage() {
 						<Button href="/play" variant="primary" size="md" fullWidth label="Start Exploring" />
 						<div className="flex gap-2">
 							<Button href="/library" variant="secondary" size="md" fullWidth label="Library" />
-							<Button href="/lab" variant="secondary" size="md" fullWidth label="Lab" />
+							<Button href="/history" variant="secondary" size="md" fullWidth label="History" />
 						</div>
 					</div>
 				</div>

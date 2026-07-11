@@ -383,7 +383,7 @@ export function RunView({
 											return (
 												<tr key={s.id} className="border-t border-line-subtle">
 													<td className="py-1.5 pr-3">
-														<Link href={`/lab/run/${s.id}`} className="text-fg-muted hover:text-accent transition-colors">
+														<Link href={`/history/run/${s.id}`} className="text-fg-muted hover:text-accent transition-colors">
 															{shortId(s.id)}
 														</Link>
 													</td>

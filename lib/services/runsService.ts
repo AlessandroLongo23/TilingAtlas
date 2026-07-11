@@ -9,6 +9,16 @@ export interface RunParams {
 	mode?: "certified" | "capped" | string;
 	resumed?: number;
 	total?: number; // total seed count (added at run start) — denominator for the queue panel
+
+	// ctrnact sweep runs (scripts/run-ktarnak.py → emit_run.py): one History row per k=1..maxnum solve.
+	engine?: string; // "ctrnact"
+	maxnum?: number; // the sweep's k target
+	perK?: Record<string, number>; // distinct count per k
+	peakMemMB?: number | null;
+	wallSec?: number;
+	poll?: number;
+	directions?: number;
+	octblind?: boolean;
 }
 
 export interface RunRow {

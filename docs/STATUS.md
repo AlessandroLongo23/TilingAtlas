@@ -3,7 +3,7 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-07-10, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-07-11, CC
 > (acting as TA too, AL authorization 2026-07-10).
 
 ## Knowledge model (read once, then follow it)
@@ -20,14 +20,22 @@ Two tiers. Do not mix them.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
 
-## Frontier (2026-07-10) — the weight-law program
+## Frontier (2026-07-11) — the weight-law program
 
+- ★★★ **k=3 COMPLETENESS CLAIM CLOSED — 61 theorem-covered at the proven pool** (2026-07-11).
+  Proof-anchored SMALLK_PROVEN=1 run certified three ways, all 61 / 303 raw cells / **0 ⚑**:
+  serial probe (digest `6ef92456`), scout ×2 byte-identical (digest `7f2f4160`, = stability ×2).
+  Per-tiling oracle bijection PASS (61/61 both ways, t3007 present, CB-4 differential 242+1830
+  clean). The 61 no longer rest on the oracle — the proven W-pool (SMALLK_W_BOUND v2) reaches
+  every k=3 period by theorem. Frozen artifact `.scout-cache/k3-proven-accepted-7f2f4160092c7ff3.ndjson`;
+  SYNC 2026-07-11. Open (benign, confirm before thesis): probe-vs-scout digest gap is
+  representative-selection (raw-min-key vs primitive-reduced), same partition — diagnosis in flight.
 - ★★ **Small-k weight theorem PROVEN + REFEREED (3 agents, no fatal): max W = 5, 6, 7 at
   k = 1, 2, 3 EXACT**, per-branch proven pool radii (hex 6/8/10 via census+shells, square
   3/6/7, hol ≤ 4 via thm:weight generators 7/15/23 + joins). `docs/SMALLK_W_BOUND.md` (v2)
-  + appendix PDF + artifacts `experiments/results/smallk-*`. ⚑ **The k=3 completeness claim
-  needs ONE thing: re-run k ≤ 3 at the proven config** (tuned poolSteps 8 < proven hex 10;
-  Euclidean caps also clip — SMALLK_W_BOUND §5).
+  + appendix PDF + artifacts `experiments/results/smallk-*`. **Consumed by the pipeline**:
+  `SMALLK_PROVEN=1` mode (PeriodSolver poolConfig) is the proof-anchored k≤3 regime — full W(23)
+  generator pool, per-branch census area boxes, solved axes by theorem, block-cap fail-fast throw.
 - ★★ **pgg law proven for width-2 (Thms A/B/C, refereed)**: W = 2k + 2⌊(k−1)/3⌋ exact,
   attained ∀k ≥ 2; global-max-for-k≥4 claim is measured (k ≤ 13) + partially proven.
   `docs/WEIGHT_CEILING_PROOF.md` + appendix PDF.

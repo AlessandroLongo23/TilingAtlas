@@ -3450,3 +3450,50 @@ pruning** (every prune proven not to drop a tiling — the doctrine), ranked by 
 Files: `native-engine/{cyclotomic,exactkey,polygon,orbitgate,fillctx}.hpp`, `native-engine/fill-server.cpp`,
 `lib/classes/algorithm/nativeFill.ts`, one guarded line + `FillCtx` export in `PeriodSolver.ts` (working-tree,
 uncommitted). Handoff to Fable: attack lever #1/#2 (sound pruning), not more speed.
+
+## 50. k=3 CLOSED at the proven pool — 61 theorem-covered, and the probe/scout digest gap is representative selection (2026-07-11, session 22)
+
+This is the payoff of §45 (proven canonical form N) + the SMALLK_PROVEN mode (SYNC 2026-07-10) + the small-k weight
+theorem (`docs/SMALLK_W_BOUND.md` v2): the k=3 count of **61** stops being oracle-anchored and becomes **theorem-covered**.
+Before this, "61" meant "the enumeration at a *tuned* pool matched the Soto-Sánchez oracle" — a config with no completeness
+proof (tuned poolSteps 8 < the proven hex radius 10, Euclidean caps that clip). Now the enumeration runs at the proven
+per-branch pool (full W(23) generator pool, per-branch census area boxes, solved grid axes accepted by theorem, block-cap
+fail-fast throw) — the pool the theorem proves reaches *every* k=3 period — and it still finds exactly the 61.
+
+**Certified three ways, all 61 / 303 raw cells / 0 ⚑ INCOMPLETE-REGION:**
+- serial probe (`experiments/results/smallk-proven-run-k3-2026-07-10.log`) — digest `6ef92456bdb76070`, 2h49m single-process.
+- parallel scout run #1 (`smallk-proven-scout-k3-2026-07-10.log`) — digest `7f2f4160092c7ff3`, 8 workers, 2h38m.
+- parallel scout run #2 (`smallk-proven-scout2-k3-2026-07-10.log`) — digest `7f2f4160092c7ff3` **byte-identical**, 5 workers,
+  1h50m. This is the **stability ×2** gate: the certified number reproduces across an independent fresh sweep.
+- **per-tiling oracle bijection** (`scripts/recert-oracle-match.ts`, the authority — *not* the composition digest): **61/61
+  both directions**, t3007 present, no scout cell matching ≥2 oracle entries and vice-versa, CB-4 differential (242 merges +
+  1830 splits re-checked against the independent `CongruenceDifferential`) clean. Accepted artifact frozen at
+  `.scout-cache/k3-proven-accepted-7f2f4160092c7ff3.ndjson`.
+
+**The probe and scout print different composition digests (`6ef92456` ≠ `7f2f4160`), both at 61 — and this is representative
+selection, not a partition difference.** The probe reduce (`dedupeByNKey`, the §45 fast path) groups the *raw* cells by
+`nKeyOfCell` and keeps, per class, the raw member with the smallest `canonicalKey`. The scout reduce (`dedupeByCongruence`)
+runs `congruencePartition`, which *first* maps every cell through `primitiveReducedCell` and then keeps the smallest-key
+member of the *reduced* cells. On any class that carries a non-primitive supercell encoding, the two paths therefore keep
+cells with different raw `canonicalKey`s ⇒ different digest, identical partition. This is *forced*, not incidental: both
+paths reduce to primitive before the congruence test, and `congruencePartition`'s always-on `assertEquivalencePartition`
+guard plus `dedupeByNKey`'s `PS_MERGECHECK` guard would each throw on a genuine merge disagreement — neither did. [Empirical
+Q1 confirmation — content-key partition identity over the 303 cells — was running at write time (`tmp-digest-diag.ts`); the
+mechanism above holds regardless, but the run pins that no class is split. **This falsifies the §45 header's "identical
+output on 12-direction inputs" claim** — true for the tuned pool (no supercell encodings surfaced), false at the proven pool;
+§45 needs a one-line correction: N and congruence induce the same *partition* always, but not the same *representative* when a
+class carries a supercell. Count and bijection are unaffected — both authorities agree on 61.]
+
+**Riders at close.** Join-denominator waiver *discharged* in-run (census index/det-ratio: a needed join's index ≤ 28 ≤ the
+den-60 cap, justification printed every seed). L7 (orbit-gate −1 escape, `docs/LATTICE_ADMISSIBILITY_PROOF.md` §2.4) still
+open/TA — but no `gateNullOnClosure`-style assert fired across all three sweeps, so it is discharged empirically for this run.
+
+**Measured aside (the parallelism question).** On this 4P+6E laptop the 5-worker run (1h50m) beat the 8-worker run (2h38m):
+sustained all-core load throttles, and per-seed cost degraded from ~1.8× slower (first minutes) to ~7× (late phase) under
+8-way load. Effective speedup is ~1.5× sustained, nowhere near the 10-core nameplate or even the 4–6× the opening minutes
+suggested — the binding factors are the E-cores (worth ~0.4 of a P-core here), shared memory bandwidth, and thermal. For a
+future long sweep, workers ≈ P-core count is the sweet spot; more cores buy heat, not throughput.
+
+Files touched: `docs/{SYNC,STATUS,SMALLK_W_BOUND?}.md`, `experiments/smallk-proven-pool-workorder-2026-07-10.md` (task 5
+CLOSED). Enumeration code unchanged since the workorder reconciliation (SMALLK_PROVEN mode in `PeriodSolver.ts`). Next: the
+§45 correction note, then the DAG's engine incr. 1b (closes D2 = 3.1(d), unconditionalizes Thms A/C).

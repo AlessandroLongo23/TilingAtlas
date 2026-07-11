@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Vector } from "@/classes";
 import { signedArea, pointInPolygon, lineIntersect, tipPoint } from "@/utils/islamicArrangement";
 import { extractFaces } from "@/utils/islamicArrangement";
-import { colorFaces, HUE } from "@/utils/islamicArrangement";
+import { colorFaces, colorFacesBySourceTile, HUE } from "@/utils/islamicArrangement";
 
 describe("islamicArrangement geometry helpers", () => {
     it("signedArea is positive for a CCW triangle, negative for CW", () => {
@@ -85,5 +85,30 @@ describe("colorFaces", () => {
         const out = colorFaces([faceAt(0), faceAt(5)], [{ point: new Vector(0.5, 0.5), kind: "tip" }]);
         expect(out.length).toBe(1); // only the face containing the tip
         expect(out[0].hue).toBe(HUE.tip);
+    });
+});
+
+describe("colorFacesBySourceTile", () => {
+    const box = (x0: number, y0: number, s: number, hue: number) => ({
+        vertices: [new Vector(x0, y0), new Vector(x0 + s, y0), new Vector(x0 + s, y0 + s), new Vector(x0, y0 + s)],
+        hue,
+    });
+
+    it("colors each face by the tile that contains its centroid", () => {
+        const tileA = box(0, 0, 2, 10);
+        const tileB = box(2, 0, 2, 20);
+        const faceInA = { vertices: [new Vector(0.4, 0.4), new Vector(1.6, 0.4), new Vector(1.6, 1.6), new Vector(0.4, 1.6)] };
+        const faceInB = { vertices: [new Vector(2.4, 0.4), new Vector(3.6, 0.4), new Vector(3.6, 1.6), new Vector(2.4, 1.6)] };
+        const out = colorFacesBySourceTile([faceInA, faceInB], [tileA, tileB]);
+        expect(out.find((o) => o.face === faceInA)!.hue).toBe(10);
+        expect(out.find((o) => o.face === faceInB)!.hue).toBe(20);
+    });
+
+    it("omits a face whose centroid is in no tile", () => {
+        const out = colorFacesBySourceTile(
+            [{ vertices: [new Vector(5, 5), new Vector(6, 5), new Vector(6, 6), new Vector(5, 6)] }],
+            [box(0, 0, 1, 10)],
+        );
+        expect(out.length).toBe(0);
     });
 });

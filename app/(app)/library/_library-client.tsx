@@ -178,11 +178,11 @@ function CertifiedShelf({ tilings: all }: LibraryClientProps) {
 								</>
 							) : (
 								<>
-									No certified runs yet. Run a sweep in the{" "}
-									<Link href="/lab" className="text-accent hover:underline">
-										Lab
+									No certified runs yet. Run a sweep and it shows up in{" "}
+									<Link href="/history" className="text-accent hover:underline">
+										History
 									</Link>{" "}
-									to populate the catalogue.
+									once the catalogue is populated.
 								</>
 							)}
 						</p>

@@ -1,5 +1,6 @@
 import { Polygon, PolygonType, Vector } from '@/classes';
-import { getAngleAtVertex, isWithinTolerance, map, toDegrees } from '@/utils';
+import { getAngleAtVertex, isWithinTolerance, toDegrees } from '@/utils';
+import { polygonFillHue } from '@/lib/utils/renderTiling';
 
 export class GenericPolygon extends Polygon {
     constructor(n: number) {
@@ -46,7 +47,11 @@ export class GenericPolygon extends Polygon {
     }
 
     calculateHue = () => {
-        this.hue = map(Math.log(this.vertices.length), Math.log(3), Math.log(40), 0, 300);
+        // Regular by-side-count ramp, rotated to its complement for irregular (composite/decomposable)
+        // tiles so a rhombus doesn't read as a square, nor a skewed hexagon as a regular one. Shared
+        // with the thumbnail render path (lib/utils/renderTiling) so both stay in step. Star tiles get
+        // their hue overwritten with starHue() by the caller after construction.
+        this.hue = polygonFillHue(this.vertices);
     }
 
     rotate = (origin: Vector, angle: number): GenericPolygon => {

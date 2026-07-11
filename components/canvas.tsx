@@ -10,7 +10,7 @@ import { Tiling } from "@/classes/Tiling";
 import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
-import { starHue } from "@/lib/utils/renderTiling";
+import { starHue, starApexAngleDeg } from "@/lib/utils/renderTiling";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
 import { PieChart } from "./pie-chart";
@@ -141,7 +141,8 @@ function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: nu
 						const isStar =
 							(polyData as { star?: boolean }).star === true ||
 							(nn >= 3 && vertices.length === 2 * nn);
-						if (isStar) poly.hue = starHue(nn);
+						if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
+						poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
 						t.nodes.push(poly);
 					}
 				}
@@ -163,6 +164,8 @@ export function Canvas({
 
 	const tilingRef = useRef<Tiling | null>(null);
 	const grabRef = useRef(false);
+	// Last applied rotation (degrees); drives the pivot-on-nearest-vertex compensation in the draw loop.
+	const prevRotationRef = useRef<number | null>(null);
 
 	const prevRef = useRef({
 		rulestring: "",
@@ -366,6 +369,28 @@ export function Canvas({
 					// copy count stays bounded; the wrap jump is a whole period -> invisible.
 					const rot = (cfg.rotation || 0) * Math.PI / 180;
 					const tc = propsRef.current.translationalCell;
+
+					// Rotate about the screen centre, not the world origin: when the angle changes by Δθ,
+					// rotate the stored pan offset by the same Δθ. That holds the world point under the
+					// viewport centre fixed there, so the pattern spins around the middle of the screen no
+					// matter how it's been panned. (To keep wc under centre: O_new = R(Δθ)·O_old — exact
+					// for any Δθ, and wrap-proof since it never leaves the drawn frame.)
+					const rotDeg = cfg.rotation || 0;
+					const prevRotDeg = prevRotationRef.current;
+					if (prevRotDeg !== null && prevRotDeg !== rotDeg) {
+						const dTheta = rot - prevRotDeg * Math.PI / 180;
+						const cd = Math.cos(dTheta), sd = Math.sin(dTheta);
+						const rotateAboutCentre = (o: Vector) => {
+							const x = cd * o.x - sd * o.y;
+							const y = sd * o.x + cd * o.y;
+							o.x = x;
+							o.y = y;
+						};
+						rotateAboutCentre(ctrl.offset);
+						rotateAboutCentre(ctrl.targetOffset);
+					}
+					prevRotationRef.current = rotDeg;
+
 					let drawOffset = ctrl.offset;
 					if (tc) {
 						const { v1, v2, det } = latticeBasisFromCell(tc);

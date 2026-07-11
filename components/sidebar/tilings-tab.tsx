@@ -1,6 +1,8 @@
 "use client";
 
+import { Shuffle } from "lucide-react";
 import { useConfiguration } from "@/stores/configuration";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { CertificationBadge, OracleBadge } from "@/components/ui/certification-badge";
@@ -15,10 +17,11 @@ interface TilingsTabProps {
 	tilings: CatalogueTiling[];
 	selected: CatalogueTiling | null;
 	onSelect?: (t: CatalogueTiling) => void;
+	onRandom?: () => void;
 	mode?: "certified" | "reference";
 }
 
-export function TilingsTab({ tilings, selected, onSelect, mode = "certified" }: TilingsTabProps) {
+export function TilingsTab({ tilings, selected, onSelect, onRandom, mode = "certified" }: TilingsTabProps) {
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
 
@@ -45,6 +48,18 @@ export function TilingsTab({ tilings, selected, onSelect, mode = "certified" }: 
 					<span className="text-xs text-fg-muted">Select a tiling below.</span>
 				)}
 
+				<Button
+					variant="secondary"
+					size="sm"
+					fullWidth
+					icon={Shuffle}
+					onClick={onRandom}
+					disabled={!onRandom || tilings.length < 2}
+					title="Pick a random tiling (R)"
+				>
+					Random tiling
+				</Button>
+
 				<Slider
 					id="rotation"
 					label="Rotation"
@@ -52,11 +67,27 @@ export function TilingsTab({ tilings, selected, onSelect, mode = "certified" }: 
 					onChange={(v) => setCfg({ rotation: v })}
 					min={0}
 					max={360}
-					step={15}
+					step={1}
 					unit="°"
 				/>
 
+				<Slider
+					id="lineWidth"
+					label="Line stroke"
+					value={cfg.lineWidth}
+					onChange={(v) => setCfg({ lineWidth: v })}
+					min={0}
+					max={5}
+					step={0.5}
+				/>
+
 				<div className="space-y-2">
+					<Checkbox
+						id="showPolygonFill"
+						label="Polygon fill"
+						checked={cfg.showPolygonFill}
+						onCheckedChange={(v) => setCfg({ showPolygonFill: v })}
+					/>
 					<Checkbox
 						id="showPolygonPoints"
 						label="Show Polygon Points"
@@ -99,7 +130,7 @@ export function TilingsTab({ tilings, selected, onSelect, mode = "certified" }: 
 							value={cfg.islamicAngle}
 							onChange={(v) => setCfg({ islamicAngle: v })}
 							min={0}
-							max={180}
+							max={90}
 							step={1}
 							unit="°"
 						/>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { CertificationBadge } from "@/components/ui/certification-badge";
@@ -32,18 +31,11 @@ export function CatalogueCard({ tiling, onClick }: CatalogueCardProps) {
 				) : (
 					<div className="w-full h-full flex items-center justify-center text-fg-disabled text-xs">k={tiling.k}</div>
 				)}
-				<div className="absolute top-1.5 left-1.5">
+			</div>
+			<div className="flex flex-col px-2.5 py-2 gap-1.5">
+				<div className="flex flex-wrap items-center gap-1">
 					<CertificationBadge certified={tiling.certified} size="sm" />
 				</div>
-				{onClick ? (
-					<div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-						<span className="mb-2 inline-flex items-center gap-1.5 rounded-md bg-accent/90 px-2 py-1 text-[10px] font-medium text-white shadow-sm">
-							<Play size={11} fill="currentColor" /> Open in Play
-						</span>
-					</div>
-				) : null}
-			</div>
-			<div className="flex flex-col px-2.5 py-2 gap-1">
 				<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
 					k={tiling.k} · {polygonClassLabel(tiling.family)}
 				</p>

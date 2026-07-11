@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Library, FlaskConical, Gamepad2 } from "lucide-react";
+import { Library, History, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
 	{ href: "/play", label: "Play", icon: Gamepad2 },
 	{ href: "/library", label: "Library", icon: Library },
-	{ href: "/lab", label: "Lab", icon: FlaskConical },
+	{ href: "/history", label: "History", icon: History },
 ];
 
 export function Nav() {

@@ -1,39 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
-import { fetchCampaignsPage } from "@/lib/services/campaignService";
 import { fetchRecentRuns } from "@/lib/services/runsService";
-import { CAMPAIGNS_PER_PAGE } from "@/lib/constants";
-import { LabListClient } from "./_lab-list-client";
-import { RunsSection } from "@/components/run/runs-section";
+import { RunsHistoryTable } from "@/components/run/runs-history-table";
 
 export const dynamic = "force-dynamic";
 
-export default async function LabListPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ page?: string }>;
-}) {
-	const params = await searchParams;
-	const page = Math.max(1, parseInt(params.page ?? "1", 10));
-	const offset = (page - 1) * CAMPAIGNS_PER_PAGE;
+// The run history: every enumeration run we've done (a read-only mirror of the local scout, public.runs),
+// as one live table — traceability + performance. Per-run drill-down lives at /history/run/[id].
+export default async function HistoryPage() {
 	const sb = await createClient();
-	const [{ campaigns, total }, runs] = await Promise.all([
-		fetchCampaignsPage(CAMPAIGNS_PER_PAGE, offset, sb),
-		fetchRecentRuns(sb, 12),
-	]);
-
-	// Unified /lab: the live run-console (new) above the existing campaign journal (kept per the
-	// keep-all-stages decision — docs/FRONTEND_LAB_PLAN.md §"Decisions locked").
+	const runs = await fetchRecentRuns(sb, 500);
 	return (
-		<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-			<RunsSection initialRuns={runs} />
-			<div className="flex-1 min-h-0 flex">
-				<LabListClient
-					campaigns={campaigns}
-					total={total}
-					page={page}
-					pageSize={CAMPAIGNS_PER_PAGE}
-				/>
-			</div>
+		<div className="flex-1 min-h-0 overflow-y-auto">
+			<RunsHistoryTable initialRuns={runs} />
 		</div>
 	);
 }

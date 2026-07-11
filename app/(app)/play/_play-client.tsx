@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Canvas } from "@/components/canvas";
 import { Sidebar } from "@/components/sidebar";
@@ -18,15 +18,15 @@ interface PlayClientProps {
 export function PlayClient({ tilings }: PlayClientProps) {
 	const searchParams = useSearchParams();
 	const requestedKey = searchParams.get("tiling");
-	const referenceMode = searchParams.get("source") === "reference";
 	const canvasWrapRef = useRef<HTMLDivElement | null>(null);
 	const [size, setSize] = useState({ w: 0, h: 0 });
 
-	// In reference mode the working list is the oracle atlas (lazy-fetched client-side, mapped to the
-	// CatalogueTiling shape), NOT the Supabase catalogue passed from the server.
+	// The working list is ALWAYS the oracle atlas (lazy-fetched client-side, mapped to the
+	// CatalogueTiling shape) — /play browses every tiling however you arrive (direct nav or a library
+	// click). The Supabase certified catalogue is only a fallback while the atlas loads; it is
+	// currently empty (the certified/reference split was retired, the library is unified).
 	const [refList, setRefList] = useState<CatalogueTiling[] | null>(null);
 	useEffect(() => {
-		if (!referenceMode) return;
 		let alive = true;
 		loadReferenceAtlas()
 			.then((atlas) => alive && setRefList(atlas.map(referenceToCatalogue)))
@@ -34,9 +34,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [referenceMode]);
+	}, []);
 
-	const working = referenceMode ? (refList ?? []) : tilings;
+	const working = refList ?? tilings;
 
 	// Deterministic default (lowest k, then key) so the first paint is stable, not random.
 	const sorted = useMemo(
@@ -67,13 +67,37 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return evaluateParamCell(paramCell, effAlpha);
 	}, [paramCell, effAlpha]);
 
-	// useCatalogueSelection seeds selection at mount; in reference mode the list arrives AFTER mount
-	// (async fetch), so apply the requested key (or the first entry) once the atlas lands.
+	// useCatalogueSelection seeds selection at mount; the atlas list arrives AFTER mount (async fetch),
+	// so apply the requested key (or the first entry) once the atlas lands.
 	useEffect(() => {
-		if (referenceMode && sorted.length > 0 && !selected) {
+		if (sorted.length > 0 && !selected) {
 			setSelected(sorted.find((t) => t.canonicalKey === requestedKey) ?? sorted[0]);
 		}
-	}, [referenceMode, sorted, selected, requestedKey, setSelected]);
+	}, [sorted, selected, requestedKey, setSelected]);
+
+	// Jump to a uniformly random tiling from the full atlas, excluding the current one so the view
+	// always visibly changes. No-op with fewer than two tilings. Client-only, so Math.random is fine.
+	const selectRandom = useCallback(() => {
+		const pool = selected
+			? sorted.filter((t) => t.canonicalKey !== selected.canonicalKey)
+			: sorted;
+		if (pool.length === 0) return;
+		setSelected(pool[Math.floor(Math.random() * pool.length)]);
+	}, [sorted, selected, setSelected]);
+
+	// "R" reshuffles — but not while typing in a field or dragging a control with a modifier held.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key !== "r" && e.key !== "R") return;
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = e.target as HTMLElement | null;
+			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			e.preventDefault();
+			selectRandom();
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [selectRandom]);
 
 	useEffect(() => {
 		const el = canvasWrapRef.current;
@@ -94,7 +118,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				tilings={sorted}
 				selected={selected}
 				onSelect={setSelected}
-				mode={referenceMode ? "reference" : "certified"}
+				onRandom={selectRandom}
+				mode={refList ? "reference" : "certified"}
 			/>
 			<div ref={canvasWrapRef} className="flex-1 min-w-0 relative">
 				<Canvas
