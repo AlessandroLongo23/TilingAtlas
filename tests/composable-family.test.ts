@@ -3,6 +3,7 @@ import { CyclotomicRing, Cyclotomic } from '@/classes';
 import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
 import { Polyform } from '@/classes/algorithm/composable/Polyform';
 import { generateFamily, period } from '@/classes/algorithm/composable/generateFamily';
+import { tileVertices, enumerateConvexFamily } from '@/classes/algorithm/composable/convexTiles';
 
 const ring = CyclotomicRing.create(12);
 const origin = Cyclotomic.fromRational(ring, 0n); // exact 0 (confirmed: no Cyclotomic.zero)
@@ -94,5 +95,55 @@ describe('canonicalCyclicWord chirality', () => {
     expect(Polyform.canonicalCyclicWord([2, 3, 4, 5]))
       .toEqual(Polyform.canonicalCyclicWord([5, 4, 3, 2]));
     expect(Polyform.canonicalCyclicWord([2, 3, 4, 5])).toEqual([2, 3, 4, 5]);
+  });
+});
+
+// Sum of the unit edge vectors of an angle-word, from the exact boundary walk (dir[0]=0,
+// dir[j] = dir[j-1] + (6 - word[j]) mod 12). Zero iff the word closes.
+function edgeVectorSum(word: number[]): Cyclotomic {
+  const dirs = [0];
+  for (let j = 1; j < word.length; j++) dirs.push((((dirs[j - 1] + (6 - word[j])) % 12) + 12) % 12);
+  let sum = origin;
+  for (const d of dirs) sum = sum.add(Cyclotomic.zeta(ring, d));
+  return sum;
+}
+
+describe('convexTiles.tileVertices', () => {
+  it('rhombus [2,4,2,4] -> 4 distinct exact vertices whose walk closes to the origin', () => {
+    const verts = tileVertices([2, 4, 2, 4], ring);
+    expect(verts.length).toBe(4);
+    expect(new Set(verts.map(v => v.key())).size).toBe(4);        // 4 distinct exact vertices
+    expect(verts[0].key()).toBe(origin.key());                    // walk starts at exact 0
+    expect(edgeVectorSum([2, 4, 2, 4]).key()).toBe(origin.key()); // last edge closes back to v0
+  });
+});
+
+describe('convexTiles.enumerateConvexFamily', () => {
+  const fam = enumerateConvexFamily(ring);
+  const strs = fam.map(w => w.join(','));
+
+  it('returns exactly the 11 convex composable tiles', () => {
+    expect(fam.length).toBe(11);
+  });
+  it('contains the rhombus [2,4,2,4] and the house (canonical of [2,5,3,3,5])', () => {
+    expect(strs).toContain(Polyform.canonicalCyclicWord([2, 4, 2, 4]).join(','));
+    expect(strs).toContain(Polyform.canonicalCyclicWord([2, 5, 3, 3, 5]).join(','));
+  });
+  it('excludes every bare regular polygon', () => {
+    for (const bare of [[2, 2, 2], [3, 3, 3, 3], new Array(6).fill(4), new Array(12).fill(5)]) {
+      expect(strs).not.toContain(Polyform.canonicalCyclicWord(bare).join(','));
+    }
+  });
+  it('every returned word closes exactly (edge vectors sum to exact zero)', () => {
+    for (const w of fam) expect(edgeVectorSum(w).key()).toBe(origin.key());
+  });
+  it('drops words that fail the exact closure test', () => {
+    // [2,2,5,5,5,5] has the right angle sum for a hexagon (24 units) but its unit edge vectors
+    // do NOT sum to zero, so it is not a real closing tile and must be absent from the family.
+    expect([2, 2, 5, 5, 5, 5].reduce((a, b) => a + b, 0)).toBe((6 - 2) * 6); // angle-sum-valid
+    expect(edgeVectorSum([2, 2, 5, 5, 5, 5]).key()).not.toBe(origin.key());  // but does not close
+    expect(strs).not.toContain(Polyform.canonicalCyclicWord([2, 2, 5, 5, 5, 5]).join(','));
+    // [2,2,2,2,2,2] (six 60° corners) is excluded too — its angle sum (12) is not 24.
+    expect(strs).not.toContain(Polyform.canonicalCyclicWord([2, 2, 2, 2, 2, 2]).join(','));
   });
 });
