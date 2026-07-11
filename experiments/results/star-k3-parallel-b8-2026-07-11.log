@@ -1,0 +1,14 @@
+=== parallel k=3 star24 budget 8 — launched 15:17:46, 10 workers ===
+b7 gave 158 but still bound the search 830 times. Fixpoint needs b7==b8. Trajectory of budget hits: b6=4412, b7=830, b8=?
+[15:17:46] build (MAXNUM=3 PALETTE=star24)
+[15:17:46] PHASE 1  parallel solve — 10 workers, budget 8
+[16:08:13]   workers done (3027s wall)
+[16:08:13] PHASE 1b  merge worker outputs
+[16:08:14]   merged raw blocks: 419
+[16:08:14]   ⚑ EU_NCBUDGET bound the search 100 time(s) across workers — NOT certified (re-run B+1)
+[16:08:14] PHASE 2  prune
+  k=1 : 37
+  k=2 : 65
+  k=3 : 162
+total kept: 264
+[16:08:14]   prune done (0s);  total wall 3028s

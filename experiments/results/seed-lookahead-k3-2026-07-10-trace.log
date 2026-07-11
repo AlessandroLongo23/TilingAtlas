@@ -1,0 +1,27 @@
+seed-lookahead scout  k=3 tiles={3,4,6,12} budget=16 maxSeedMs=10000
+building seeds (deterministic order, same as scout-worker/probe-pipeline)...
+seeds: 449 built (449 used) in 137.4s
+[49/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            killed/entropy0 collapses=2 prom=0 539ms ✂ KILLED@2 (entropy0)  ETA 4s
+[51/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            killed/entropy0 collapses=2 prom=0 599ms ✂ KILLED@2 (entropy0)  ETA 9s
+[127/449] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]                killed/entropy0 collapses=3 prom=0 603ms ✂ KILLED@3 (entropy0)  ETA 4s
+[129/449] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]                killed/entropy0 collapses=3 prom=0 689ms ✂ KILLED@3 (entropy0)  ETA 6s
+
+=== SUMMARY k=3 tiles={3,4,6,12} budget=16 ===
+seeds=449 killed=4 (0.9%) survived=445 timecap=0
+  kills within depth ≤  0: 0
+  kills within depth ≤  1: 0
+  kills within depth ≤  2: 2
+  kills within depth ≤  4: 4
+  kills within depth ≤  8: 4
+  kills within depth ≤ 16: 4
+  killed/entropy0: 4
+total 2.4s (check cost only — no pipeline change)
+
+=== ARTIFACT cross-check vs .scout-cache/k3_3.4.6.12_cap0.ndjson (core-containment semantics) ===
+   info: killed seed idx=48 ([3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]) has 4 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+   info: killed seed idx=50 ([3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]) has 4 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+   info: killed seed idx=126 ([3,3,3,3,6;3,6,4,4;3,3,3,4,4]) has 1 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+   info: killed seed idx=128 ([3,3,3,3,6;3,6,4,4;3,3,3,4,4]) has 1 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+artifact: 449 seed records, max idx=448 (scout nSeeds=449), 175 cell-producing seeds
+cross-check PASS: 0 of 4 kills refuted by core-containing cells (4 killed seeds have fan-path cells only)
+artifacts: experiments/results/seed-lookahead-k3-2026-07-10-trace.log, experiments/results/seed-lookahead-k3-2026-07-10-trace.csv

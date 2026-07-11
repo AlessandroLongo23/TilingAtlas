@@ -1,0 +1,6 @@
+# Python deps for the ctrnact-oracle star tooling.
+# sympy is REQUIRED for free-alpha family detection (export_family_cells.py / family_flex.py: the
+# formal symbolic-alpha development uses exact Matrix / Hermite-normal-form / linsolve). Without it,
+# family detection aborts loudly (exit 2) and refresh-preview.sh degrades to un-folded snapshots.
+# Install:  python3 -m pip install -r tools/ctrnact-oracle/requirements.txt
+sympy>=1.9

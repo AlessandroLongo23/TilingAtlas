@@ -1,0 +1,2 @@
+idx,name,verdict,reason,killDepth,collapses,promotions,frontier,ms
+48,"[3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]",killed,entropy0,2,2,0,9,564

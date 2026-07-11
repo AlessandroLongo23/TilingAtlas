@@ -280,6 +280,20 @@ def main():
     args = ap.parse_args()
     LOG = open(args.log, "a")
     log(f"=== family export sweep start; tables={args.tables} ===")
+
+    # The formal (symbolic-alpha) development needs sympy. Without it, family_flex raises
+    # ImportError inside analyze_block, which is caught per-block as an "ANALYSIS ERROR ... skipped"
+    # and the run still exits 0 reporting "0 families" — a silent false negative that hides real
+    # free-alpha families (this is exactly how the k=3 families went undetected). Fail loud instead.
+    try:
+        import sympy  # noqa: F401
+    except ImportError:
+        log("⚑ FATAL: sympy is not installed — the formal family development cannot run. Every block "
+            "would be skipped and 0 families reported (a false negative, NOT a real result). "
+            "Install it (pip install sympy) and re-run. No output file written.")
+        LOG.close()
+        sys.exit(2)
+
     tab = ff.load_tables(args.tables)
 
     cells_index = {}

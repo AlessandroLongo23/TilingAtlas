@@ -20,8 +20,15 @@ set -e
 W="$(cd "$(dirname "$0")" && pwd)"
 K="${1:-3}"
 PAL="${2:-star24}"
-RUN="$W/${3:-run-k$K-$PAL}"
+# RUNDIR (arg 3) may be a bare name (resolved under this tools dir) or an absolute path
+# (e.g. a run still living in another worktree). Default: run-k<K>-<PAL> beside this script.
+case "${3:-}" in
+  /*) RUN="$3" ;;
+  "") RUN="$W/run-k$K-$PAL" ;;
+  *)  RUN="$W/$3" ;;
+esac
 ATLAS="$(cd "$W/../.." && pwd)/public/reference-atlas.json"
+FAMILIES="$(cd "$W/../.." && pwd)/experiments/star-oracle/ctrnact-star-families.cells.json"
 
 [ -d "$RUN/out" ] || { echo "no output dir: $RUN/out" >&2; exit 1; }
 [ -x "$W/eu_pruner.$PAL" ] || { echo "missing pruner: eu_pruner.$PAL (build PALETTE=$PAL first)" >&2; exit 1; }
@@ -53,7 +60,36 @@ nice -n 15 python3 "$W/export_atlas_cells.py" \
   --pruned "$S/pruned_all.txt" --tables "$W/tables/$PAL" --only-star --k "$K" \
   --id-prefix "ctrnact-star-k${K}-preview" --out "$S/preview.cells.json" | tail -1
 
-# 5. splice into the served atlas (drops the previous preview of this k, adds the fresh one)
-python3 "$W/splice_preview_atlas.py" --cells "$S/preview.cells.json" --atlas "$ATLAS"
+# 4b. detect free-alpha families among the star blocks and merge them into the persistent families
+# file, so the live preview groups them (slider) exactly like the full atlas build. Needs sympy
+# (the formal symbolic-alpha development); without it we DEGRADE GRACEFULLY to un-folded snapshots
+# rather than silently wiping families or reporting a false "0 families".
+FAM_OK=0
+if python3 -c 'import sympy' 2>/dev/null; then
+  set +e
+  nice -n 15 python3 "$W/export_family_cells.py" \
+    --tables "$W/tables/$PAL" --catalog "$K:$S/pruned_all.txt" \
+    --cells "$S/preview.cells.json" --out "$S/families_k$K.cells.json" \
+    --log "$S/families_k$K.log" >/dev/null 2>&1
+  FAM_RC=$?
+  set -e
+  if [ "$FAM_RC" -le 1 ] && [ -s "$S/families_k$K.cells.json" ]; then
+    python3 "$W/merge_families.py" --into "$FAMILIES" --from "$S/families_k$K.cells.json" --k "$K"
+    FAM_OK=1
+  else
+    echo "⚑ family export failed (rc=$FAM_RC) — families file left unchanged, preview not folded" >&2
+  fi
+else
+  echo "⚑ sympy not installed — skipping free-alpha family detection (pip install sympy). Preview not folded." >&2
+fi
+
+# 5. splice into the served atlas (drops the previous preview of this k, adds the fresh one). When
+# families were detected, --families folds their members into slider entries so a refresh never
+# re-scatters a family back into standalone cards.
+if [ "$FAM_OK" = 1 ]; then
+  python3 "$W/splice_preview_atlas.py" --cells "$S/preview.cells.json" --atlas "$ATLAS" --families "$FAMILIES"
+else
+  python3 "$W/splice_preview_atlas.py" --cells "$S/preview.cells.json" --atlas "$ATLAS"
+fi
 
 echo "done — reload http://localhost:3000/library  (Reference mode, source \"Star engine\", k=$K)"

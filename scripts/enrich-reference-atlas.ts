@@ -87,10 +87,8 @@ function reconstructCell(e: AtlasEntry): { cell: PeriodCell } | { error: string 
 	}
 }
 
-// ── source-data indexes ──
+// ── source-data indexes (loaded once, shared across every target file) ──
 log('=== load source data ===');
-const atlas = JSON.parse(fs.readFileSync(ATLAS_PATH, 'utf8')) as AtlasEntry[];
-log(`atlas: ${atlas.length} entries`);
 
 const ctrnactById = new Map<string, { vertexConfigs: number[][]; distinctTypePartition: string }>();
 {
@@ -134,128 +132,141 @@ const starOrbitsById = new Map<string, string[]>();
 	log(`star cell files: ${files} read, ${starOrbitsById.size} ids with per-orbit configs`);
 }
 
-// ── per-entry enrichment ──
-log('\n=== classify ===');
-const t0 = Date.now();
-const stat = {
-	mOk: 0,
-	mSkip: 0,
-	symOk: 0,
-	symSkip: 0,
-	gateMismatch: [] as { id: string; src: string; computed: string }[],
-	symFail: [] as { id: string; error: string }[],
-	mFail: [] as { id: string; reason: string }[],
-};
-const groupHist: Record<string, number> = {};
-const regularCount = atlas.filter((e) => e.source === 'galebach' || e.source === 'ctrnact').length;
-let regularDone = 0;
+// ── per-file enrichment ── enrich one atlas file in place (base atlas, or a higher-k shard). All the
+// source indexes above are shared, so calling this for several files loads ctrnact.json/star cells once.
+function enrichFile(atlasPath: string): void {
+	const atlas = JSON.parse(fs.readFileSync(atlasPath, 'utf8')) as AtlasEntry[];
+	log(`\n=== classify ${path.relative(process.cwd(), atlasPath)} (${atlas.length} entries) ===`);
+	const t0 = Date.now();
+	const stat = {
+		mOk: 0,
+		mSkip: 0,
+		symOk: 0,
+		symSkip: 0,
+		gateMismatch: [] as { id: string; src: string; computed: string }[],
+		symFail: [] as { id: string; error: string }[],
+		mFail: [] as { id: string; reason: string }[],
+	};
+	const groupHist: Record<string, number> = {};
+	const regularCount = atlas.filter((e) => e.source === 'galebach' || e.source === 'ctrnact').length;
+	let regularDone = 0;
 
-for (const e of atlas) {
-	const isRegular = e.source === 'galebach' || e.source === 'ctrnact';
+	for (const e of atlas) {
+		const isRegular = e.source === 'galebach' || e.source === 'ctrnact';
 
-	// --- reconstruct once (regular only: needed for symmetry, and for galebach orbits) ---
-	let cell: PeriodCell | null = null;
-	if (isRegular) {
-		const rec = reconstructCell(e);
-		if ('cell' in rec) cell = rec.cell;
-		else stat.symFail.push({ id: e.id, error: `reconstruct: ${rec.error}` });
-	}
-	const cellRing = cell ? (cell.basisExact[0] as unknown as { ring: CyclotomicRing }).ring : null;
+		// --- reconstruct once (regular only: needed for symmetry, and for galebach orbits) ---
+		let cell: PeriodCell | null = null;
+		if (isRegular) {
+			const rec = reconstructCell(e);
+			if ('cell' in rec) cell = rec.cell;
+			else stat.symFail.push({ id: e.id, error: `reconstruct: ${rec.error}` });
+		}
+		const cellRing = cell ? (cell.basisExact[0] as unknown as { ring: CyclotomicRing }).ring : null;
 
-	// --- m / partition ---
-	let classified: { m: number; partition: number[] } | null = null;
-	if (e.source === 'ctrnact') {
-		const src = ctrnactById.get(e.id);
-		if (src) {
-			classified = classify(src.vertexConfigs.map((cfg) => cfg.join(',')));
-			const computed = ctrnactKey(classified.m, classified.partition, e.k);
-			if (computed !== src.distinctTypePartition)
-				stat.gateMismatch.push({ id: e.id, src: src.distinctTypePartition, computed });
-		} else stat.mFail.push({ id: e.id, reason: 'not in ctrnact.json' });
-	} else if (e.source === 'galebach') {
-		if (cell && cellRing) {
+		// --- m / partition ---
+		let classified: { m: number; partition: number[] } | null = null;
+		if (e.source === 'ctrnact') {
+			const src = ctrnactById.get(e.id);
+			if (src) {
+				classified = classify(src.vertexConfigs.map((cfg) => cfg.join(',')));
+				const computed = ctrnactKey(classified.m, classified.partition, e.k);
+				if (computed !== src.distinctTypePartition)
+					stat.gateMismatch.push({ id: e.id, src: src.distinctTypePartition, computed });
+			} else stat.mFail.push({ id: e.id, reason: 'not in ctrnact.json' });
+		} else if (e.source === 'galebach') {
+			if (cell && cellRing) {
+				try {
+					setActiveRing(cellRing);
+					const orb = assignOrbits(serializeCell(cell));
+					classified = classify(orb.vcOfOrbit);
+				} catch (err) {
+					stat.mFail.push({ id: e.id, reason: `assignOrbits: ${err instanceof Error ? err.message : err}` });
+				}
+			} else stat.mFail.push({ id: e.id, reason: 'no cell' });
+		} else {
+			// star: per-orbit orbits[] if we have it; k=1 is trivially m=1
+			const orbits = starOrbitsById.get(e.id);
+			if (orbits) classified = classify(orbits);
+			else if (e.k === 1) classified = { m: 1, partition: [1] };
+			else stat.mFail.push({ id: e.id, reason: 'no star orbits + k>1' });
+		}
+		if (classified) {
+			e.m = classified.m;
+			e.partition = classified.partition;
+			stat.mOk++;
+		} else {
+			delete e.m;
+			delete e.partition;
+			stat.mSkip++;
+		}
+
+		// --- wallpaper group / lattice (regular only) ---
+		if (isRegular && cell && cellRing) {
 			try {
 				setActiveRing(cellRing);
-				const orb = assignOrbits(serializeCell(cell));
-				classified = classify(orb.vcOfOrbit);
+				const { T1, T2, seed } = seedFromPeriodCell(cell);
+				const sym = analyzeSymmetry(cellRing, T1, T2, seed as Cyclotomic[]);
+				e.wallpaperGroup = sym.group;
+				e.latticeShape = sym.latticeShape;
+				groupHist[sym.group] = (groupHist[sym.group] ?? 0) + 1;
+				stat.symOk++;
 			} catch (err) {
-				stat.mFail.push({ id: e.id, reason: `assignOrbits: ${err instanceof Error ? err.message : err}` });
+				stat.symFail.push({ id: e.id, error: `analyzeSymmetry: ${err instanceof Error ? err.message : err}` });
+				delete e.wallpaperGroup;
+				delete e.latticeShape;
 			}
-		} else stat.mFail.push({ id: e.id, reason: 'no cell' });
-	} else {
-		// star: per-orbit orbits[] if we have it; k=1 is trivially m=1
-		const orbits = starOrbitsById.get(e.id);
-		if (orbits) classified = classify(orbits);
-		else if (e.k === 1) classified = { m: 1, partition: [1] };
-		else stat.mFail.push({ id: e.id, reason: 'no star orbits + k>1' });
-	}
-	if (classified) {
-		e.m = classified.m;
-		e.partition = classified.partition;
-		stat.mOk++;
-	} else {
-		delete e.m;
-		delete e.partition;
-		stat.mSkip++;
-	}
-
-	// --- wallpaper group / lattice (regular only) ---
-	if (isRegular && cell && cellRing) {
-		try {
-			setActiveRing(cellRing);
-			const { T1, T2, seed } = seedFromPeriodCell(cell);
-			const sym = analyzeSymmetry(cellRing, T1, T2, seed as Cyclotomic[]);
-			e.wallpaperGroup = sym.group;
-			e.latticeShape = sym.latticeShape;
-			groupHist[sym.group] = (groupHist[sym.group] ?? 0) + 1;
-			stat.symOk++;
-		} catch (err) {
-			stat.symFail.push({ id: e.id, error: `analyzeSymmetry: ${err instanceof Error ? err.message : err}` });
-			delete e.wallpaperGroup;
-			delete e.latticeShape;
+		} else if (isRegular) {
+			stat.symSkip++;
 		}
-	} else if (isRegular) {
-		stat.symSkip++;
-	}
 
-	if (isRegular) {
-		regularDone++;
-		if (regularDone % 100 === 0) {
-			const elapsed = (Date.now() - t0) / 1000;
-			const eta = (elapsed / regularDone) * (regularCount - regularDone);
-			log(`  [${regularDone}/${regularCount}] regular classified — ${elapsed.toFixed(0)}s elapsed, ETA ${eta.toFixed(0)}s`);
+		if (isRegular) {
+			regularDone++;
+			if (regularDone % 100 === 0) {
+				const elapsed = (Date.now() - t0) / 1000;
+				const eta = (elapsed / regularDone) * (regularCount - regularDone);
+				log(`  [${regularDone}/${regularCount}] regular classified — ${elapsed.toFixed(0)}s elapsed, ETA ${eta.toFixed(0)}s`);
+			}
 		}
 	}
+
+	// ── write back (same entries, same order, + new fields) ──
+	fs.writeFileSync(atlasPath, JSON.stringify(atlas) + '\n');
+
+	// ── report ──
+	log('\n--- summary ---');
+	log(`m/partition:  ${stat.mOk} classified, ${stat.mSkip} unclassified`);
+	log(`wallpaper:    ${stat.symOk} classified, ${stat.symSkip} skipped (stars, by design)`);
+	const mByK: Record<number, Record<number, number>> = {};
+	for (const e of atlas) if (e.m != null) ((mByK[e.k] ??= {})[e.m] = (mByK[e.k][e.m] ?? 0) + 1);
+	log('\nM distribution by k (k: {M: count}):');
+	for (const k of Object.keys(mByK).map(Number).sort((a, b) => a - b)) log(`  k=${k}: ${JSON.stringify(mByK[k])}`);
+	log('\nwallpaper-group histogram:');
+	for (const g of Object.keys(groupHist).sort()) log(`  ${g.padEnd(5)} ${groupHist[g]}`);
+
+	if (stat.gateMismatch.length) {
+		log(`\n⚑ CTRNACT PARTITION GATE: ${stat.gateMismatch.length} MISMATCH(es) — computed ≠ source distinctTypePartition:`);
+		for (const g of stat.gateMismatch.slice(0, 40)) log(`    ${g.id}: computed "${g.computed}" vs source "${g.src}"`);
+		process.exitCode = 1;
+	} else {
+		log(`\n✓ ctrnact partition gate: all ${atlas.filter((e) => e.source === 'ctrnact').length} entries agree with distinctTypePartition`);
+	}
+	if (stat.mFail.length) {
+		log(`\n⚑ ${stat.mFail.length} tiling(s) with NO m/partition (characterization gap):`);
+		for (const f of stat.mFail.slice(0, 40)) log(`    ${f.id}: ${f.reason}`);
+	}
+	if (stat.symFail.length) {
+		log(`\n⚑ ${stat.symFail.length} REGULAR tiling(s) failed symmetry classification:`);
+		for (const f of stat.symFail.slice(0, 40)) log(`    ${f.id}: ${f.error}`);
+	}
+	log(`\n★ wrote ${path.relative(process.cwd(), atlasPath)} in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 }
 
-// ── write back (same entries, same order, + new fields) ──
-fs.writeFileSync(ATLAS_PATH, JSON.stringify(atlas) + '\n');
+// Default: enrich the base atlas. With file args: enrich exactly those (e.g. the k=8..10 shards),
+// leaving the base atlas untouched. Relative paths resolve from cwd.
+const targets = process.argv.slice(2);
+const files = (targets.length ? targets : [ATLAS_PATH]).map((f) =>
+	path.isAbsolute(f) ? f : path.join(process.cwd(), f),
+);
+for (const f of files) enrichFile(f);
 
-// ── report ──
-log('\n=== summary ===');
-log(`m/partition:  ${stat.mOk} classified, ${stat.mSkip} unclassified`);
-log(`wallpaper:    ${stat.symOk} classified, ${stat.symSkip} skipped (stars, by design)`);
-const mByK: Record<number, Record<number, number>> = {};
-for (const e of atlas) if (e.m != null) ((mByK[e.k] ??= {})[e.m] = (mByK[e.k][e.m] ?? 0) + 1);
-log('\nM distribution by k (k: {M: count}):');
-for (const k of Object.keys(mByK).map(Number).sort((a, b) => a - b)) log(`  k=${k}: ${JSON.stringify(mByK[k])}`);
-log('\nwallpaper-group histogram:');
-for (const g of Object.keys(groupHist).sort()) log(`  ${g.padEnd(5)} ${groupHist[g]}`);
-
-if (stat.gateMismatch.length) {
-	log(`\n⚑ CTRNACT PARTITION GATE: ${stat.gateMismatch.length} MISMATCH(es) — computed ≠ source distinctTypePartition:`);
-	for (const g of stat.gateMismatch.slice(0, 40)) log(`    ${g.id}: computed "${g.computed}" vs source "${g.src}"`);
-	process.exitCode = 1;
-} else {
-	log(`\n✓ ctrnact partition gate: all ${atlas.filter((e) => e.source === 'ctrnact').length} entries agree with distinctTypePartition`);
-}
-if (stat.mFail.length) {
-	log(`\n⚑ ${stat.mFail.length} tiling(s) with NO m/partition (characterization gap):`);
-	for (const f of stat.mFail.slice(0, 40)) log(`    ${f.id}: ${f.reason}`);
-}
-if (stat.symFail.length) {
-	log(`\n⚑ ${stat.symFail.length} REGULAR tiling(s) failed symmetry classification:`);
-	for (const f of stat.symFail.slice(0, 40)) log(`    ${f.id}: ${f.error}`);
-}
-log(`\n★ wrote ${path.relative(process.cwd(), ATLAS_PATH)} in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 logStream.end();

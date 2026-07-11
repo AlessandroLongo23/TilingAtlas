@@ -1,0 +1,14 @@
+=== parallel k=3 star24 budget 7 — launched 14:26:15, 10 workers ===
+Fixpoint twin: if this catalog == the budget-6 catalog, the noncounting-budget search is certified complete.
+[14:26:15] build (MAXNUM=3 PALETTE=star24)
+[14:26:15] PHASE 1  parallel solve — 10 workers, budget 7
+[15:15:53]   workers done (2978s wall)
+[15:15:53] PHASE 1b  merge worker outputs
+[15:15:54]   merged raw blocks: 408
+[15:15:54]   ⚑ EU_NCBUDGET bound the search 830 time(s) across workers — NOT certified (re-run B+1)
+[15:15:54] PHASE 2  prune
+  k=1 : 37
+  k=2 : 65
+  k=3 : 158
+total kept: 260
+[15:15:54]   prune done (0s);  total wall 2979s

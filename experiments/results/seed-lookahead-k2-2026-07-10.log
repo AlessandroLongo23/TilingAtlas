@@ -1,0 +1,80 @@
+seed-lookahead scout  k=2 tiles={3,4,6,8,12} budget=16 maxSeedMs=10000
+building seeds (deterministic order, same as scout-worker/probe-pipeline)...
+seeds: 40 built (40 used) in 4.2s
+[1/40] [3,3,3,3,3,3;3,3,3,3,6]                      survived/wall collapses=5 prom=0 2405ms  ETA 94s
+[2/40] [3,3,3,3,3,3;3,3,3,3,6]                      survived/wall collapses=5 prom=0 2815ms  ETA 99s
+[3/40] [3,3,3,3,3,3;3,3,3,4,4]                      survived/timecap collapses=12 prom=0 10727ms ⚑ TIMECAP  ETA 197s
+[4/40] [3,3,3,3,3,3;3,3,4,3,4]                      survived/wall collapses=5 prom=0 1891ms  ETA 161s
+[5/40] [3,3,3,3,3,3;3,3,4,12]                       survived/timecap collapses=15 prom=1 11295ms ⚑ TIMECAP  ETA 204s
+[6/40] [3,3,3,3,3,3;3,3,6,6]                        survived/timecap collapses=14 prom=1 11396ms ⚑ TIMECAP  ETA 230s
+[7/40] [3,3,3,3,6;3,3,3,4,4]                        killed/entropy0 collapses=3 prom=0 361ms ✂ KILLED@3 (entropy0)  ETA 193s
+[8/40] [3,3,3,3,6;3,3,3,4,4]                        killed/entropy0 collapses=4 prom=0 454ms ✂ KILLED@4 (entropy0)  ETA 165s
+[9/40] [3,3,3,3,6;3,3,4,3,4]                        killed/entropy0 collapses=1 prom=0 103ms ✂ KILLED@1 (entropy0)  ETA 143s
+[10/40] [3,3,3,3,6;3,3,4,12]                         killed/entropy0 collapses=1 prom=0 111ms ✂ KILLED@1 (entropy0)  ETA 125s
+[11/40] [3,3,3,3,6;3,3,6,6]                          survived/wall collapses=1 prom=0 102ms  ETA 110s
+[12/40] [3,3,3,3,6;3,3,6,6]                          survived/wall collapses=1 prom=0 117ms  ETA 97s
+[13/40] [3,3,3,3,6;3,6,3,6]                          survived/wall collapses=1 prom=0 94ms  ETA 87s
+[14/40] [3,3,3,4,4;3,3,4,3,4]                        survived/wall collapses=4 prom=0 761ms  ETA 79s
+[15/40] [3,3,3,4,4;3,3,4,3,4]                        survived/wall collapses=1 prom=0 132ms  ETA 71s
+[16/40] [3,3,3,4,4;3,3,4,3,4]                        survived/wall collapses=2 prom=0 271ms  ETA 65s
+[17/40] [3,3,3,4,4;3,3,4,12]                         killed/entropy0 collapses=2 prom=0 240ms ✂ KILLED@2 (entropy0)  ETA 59s
+[18/40] [3,3,3,4,4;3,4,4,6]                          killed/entropy0 collapses=2 prom=0 190ms ✂ KILLED@2 (entropy0)  ETA 53s
+[19/40] [3,3,3,4,4;3,4,6,4]                          survived/budget collapses=16 prom=0 8661ms  ETA 58s
+[20/40] [3,3,3,4,4;4,4,4,4]                          survived/budget collapses=16 prom=0 11376ms  ETA 64s
+[21/40] [3,3,4,12;3,3,4,3,4]                         killed/entropy0 collapses=2 prom=0 178ms ✂ KILLED@2 (entropy0)  ETA 58s
+[22/40] [3,3,4,3,4;3,4,3,12]                         killed/entropy0 collapses=5 prom=0 669ms ✂ KILLED@5 (entropy0)  ETA 53s
+[23/40] [3,3,4,3,4;3,4,4,6]                          killed/entropy0 collapses=5 prom=0 805ms ✂ KILLED@5 (entropy0)  ETA 48s
+[24/40] [3,3,4,3,4;3,4,6,4]                          survived/wall collapses=6 prom=0 841ms  ETA 44s
+[25/40] [3,3,4,3,4;3,4,6,4]                          survived/wall collapses=8 prom=0 1534ms  ETA 41s
+[26/40] [3,3,4,12;3,4,3,12]                          killed/surrounded-disallowed collapses=4 prom=0 505ms ✂ KILLED@4 (surrounded-disallowed)  ETA 37s
+[27/40] [3,3,4,12;3,4,3,12]                          killed/surrounded-disallowed collapses=4 prom=0 387ms ✂ KILLED@4 (surrounded-disallowed)  ETA 33s
+[28/40] [3,3,4,12;3,4,6,4]                           killed/surrounded-disallowed collapses=2 prom=0 117ms ✂ KILLED@2 (surrounded-disallowed)  ETA 29s
+[29/40] [3,12,12;3,3,12,4]                           killed/entropy0 collapses=2 prom=0 107ms ✂ KILLED@2 (entropy0)  ETA 26s
+[30/40] [3,3,4,12;4,6,12]                            killed/entropy0 collapses=1 prom=0 60ms ✂ KILLED@1 (entropy0)  ETA 23s
+[31/40] [3,3,6,6;3,6,3,6]                            survived/budget collapses=16 prom=0 9044ms  ETA 23s
+[32/40] [3,3,6,6;6,6,6]                              killed/entropy0 collapses=1 prom=0 29ms ✂ KILLED@1 (entropy0)  ETA 19s
+[33/40] [3,4,3,12;3,4,6,4]                           killed/entropy0 collapses=2 prom=0 100ms ✂ KILLED@2 (entropy0)  ETA 17s
+[34/40] [3,12,12;3,4,3,12]                           survived/wall collapses=7 prom=3 853ms  ETA 14s
+[35/40] [3,4,4,6;3,4,6,4]                            survived/wall collapses=1 prom=0 100ms  ETA 11s
+[36/40] [3,4,4,6;3,4,6,4]                            survived/wall collapses=2 prom=0 209ms  ETA 9s
+[37/40] [3,4,4,6;3,6,3,6]                            survived/timecap collapses=16 prom=0 11725ms ⚑ TIMECAP  ETA 7s
+[38/40] [3,4,4,6;4,4,4,4]                            killed/entropy0 collapses=2 prom=0 110ms ✂ KILLED@2 (entropy0)  ETA 5s
+[39/40] [3,4,4,6;4,12,6]                             killed/entropy0 collapses=1 prom=0 42ms ✂ KILLED@1 (entropy0)  ETA 2s
+[40/40] [3,4,6,4;4,12,6]                             survived/wall collapses=11 prom=2 2824ms  ETA 0s
+
+=== SUMMARY k=2 tiles={3,4,6,8,12} budget=16 ===
+seeds=40 killed=18 (45.0%) survived=22 timecap=4 ⚑ (capped, verdicts conservative)
+  kills within depth ≤  0: 0
+  kills within depth ≤  1: 5
+  kills within depth ≤  2: 12
+  kills within depth ≤  4: 16
+  kills within depth ≤  8: 18
+  kills within depth ≤ 16: 18
+  killed/entropy0: 15
+  killed/surrounded-disallowed: 3
+  survived/budget: 3
+  survived/timecap: 4
+  survived/wall: 15
+total 93.8s (check cost only — no pipeline change)
+
+=== VERIFY_KILLED: PeriodSolver.solve on 18 killed seeds (cap 120000ms each) ===
+   verified idx=6 [3,3,3,3,6;3,3,3,4,4]: 0 cells (149ms)
+   verified idx=7 [3,3,3,3,6;3,3,3,4,4]: 0 cells (111ms)
+   verified idx=8 [3,3,3,3,6;3,3,4,3,4]: 0 cells (76ms)
+   verified idx=9 [3,3,3,3,6;3,3,4,12]: 0 cells (32ms)
+   verified idx=16 [3,3,3,4,4;3,3,4,12]: 0 cells (32ms)
+   verified idx=17 [3,3,3,4,4;3,4,4,6]: 0 cells (489ms)
+   verified idx=20 [3,3,4,12;3,3,4,3,4]: 0 cells (0ms)
+   verified idx=21 [3,3,4,3,4;3,4,3,12]: 0 cells (0ms)
+   verified idx=22 [3,3,4,3,4;3,4,4,6]: 0 cells (432ms)
+   verified idx=25 [3,3,4,12;3,4,3,12]: 0 cells (31ms)
+   verified idx=26 [3,3,4,12;3,4,3,12]: 0 cells (0ms)
+   verified idx=27 [3,3,4,12;3,4,6,4]: 0 cells (61ms)
+   verified idx=28 [3,12,12;3,3,12,4]: 0 cells (177ms)
+   verified idx=29 [3,3,4,12;4,6,12]: 0 cells (31ms)
+   verified idx=31 [3,3,6,6;6,6,6]: 0 cells (359ms)
+   verified idx=32 [3,4,3,12;3,4,6,4]: 0 cells (32ms)
+   verified idx=37 [3,4,4,6;4,4,4,4]: 0 cells (911ms)
+   verified idx=38 [3,4,4,6;4,12,6]: 0 cells (49ms)
+VERIFY_KILLED: 18 pass, 0 inconclusive, 0 FAIL
+artifacts: experiments/results/seed-lookahead-k2-2026-07-10.log, experiments/results/seed-lookahead-k2-2026-07-10.csv

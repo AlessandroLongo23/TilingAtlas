@@ -1,0 +1,15 @@
+=== parallel k=3 star24 budget 9 — 10 workers ===
+trajectory of budget hits: b6=4412, b7=830, b8=100, b9=?   catalog: b6=156,b7=158,b8=162
+fixpoint needs bN==b(N-1): b8=162 != b7=158, so continue. certificate lands when hits=0 AND catalog unchanged.
+[16:10:28] build (MAXNUM=3 PALETTE=star24)
+[16:10:28] PHASE 1  parallel solve — 10 workers, budget 9
+[17:11:36]   workers done (3668s wall)
+[17:11:36] PHASE 1b  merge worker outputs
+[17:11:37]   merged raw blocks: 419
+[17:11:37] PHASE 2  prune
+  k=1 : 37
+  k=2 : 65
+  k=3 : 162
+total kept: 264
+[17:11:37]   prune done (0s);  total wall 3669s
+=== b9 done ===

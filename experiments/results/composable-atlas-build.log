@@ -1,0 +1,9 @@
+=== build-composable-atlas ===
+  k=1 [ctrnact-composite-convex-k1.cells.json]: 20 usesComposite of 30 records  (decomposable-only 13, uses-non-decomposable 7)
+  k=2 [ctrnact-composite-convex-k2.cells.json]: 238 usesComposite of 258 records  (decomposable-only 183, uses-non-decomposable 55)
+  k=3 [ctrnact-composite-decomp-k3.cells.json]: 1362 usesComposite of 1423 records  (decomposable-only 1362, uses-non-decomposable 0)
+
+=== reference-atlas-composable.json written ===
+  1620 tilings → public/reference-atlas-composable.json
+  decomposable-only 1558  ·  uses-non-decomposable 62
+  elapsed 0.02s

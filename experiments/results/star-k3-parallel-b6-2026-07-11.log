@@ -1,0 +1,24 @@
+=== parallel k=3 star24 budget 6 — launched 13:22:36, 10 workers ===
+Goal: reproduce the sequential k=3 catalog (37/65/156) at ~3x speed; correctness check of the parallel path at real scale.
+[13:22:36] build (MAXNUM=3 PALETTE=star24)
+[13:22:37] PHASE 1  parallel solve — 10 workers, budget 6
+[14:11:27]   workers done (2930s wall)
+[14:11:27] PHASE 1b  merge worker outputs
+[14:11:27]   merged raw blocks: 402
+[14:11:27]   ⚑ EU_NCBUDGET bound the search 4412 time(s) across workers — NOT certified (re-run B+1)
+[14:11:27] PHASE 2  prune
+  k=1 : 37
+  k=2 : 65
+  k=3 : 156
+total kept: 258
+[14:11:27]   prune done (0s);  total wall 2930s
+
+=== VERDICT ===
+Parallel k=3 star24 budget 6, 10 workers: 2930s wall (~49 min) vs sequential 32576s (~9h) = 11.1x.
+Superlinear (>10x on 10 cores): each worker's per-process vertypesolvedadd list (linear-scan per
+solution, ~O(n²) in one process) is much smaller when sharded — parallelism + avoided quadratic.
+Catalog CORRECTNESS: 258 pruned blocks, sha256 over sorted (vertype||conway) IDENTICAL to the
+sequential run (sig aa68479fe073806b1f9f). Counts 37/65/156, raw 402, ncbudget hits 4412 — all
+match sequential exactly. Parallel path verified at real k=3 scale.
+STILL budget-bound (4412 hits) => NOT completeness-certified. Needs the EU_NCBUDGET=7 twin +
+identical-catalog diff for the fixpoint certificate.

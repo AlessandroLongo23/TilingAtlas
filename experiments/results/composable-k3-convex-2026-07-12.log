@@ -1,0 +1,2 @@
+[00:04:55] build (MAXNUM=3 PALETTE=composite-convex)
+[00:04:56] PHASE 1  solve (C++ DFS, all k<=3)

@@ -8,10 +8,11 @@ pruner's eupruned_NN.txt) + pruner RSS. Final: counts, wall, peak memory footpri
 
 Assumes `make MAXNUM=<MAXNUM>` already built tools/ctrnact-oracle/eu_solver (+ eu_pruner).
 """
-import os, sys, subprocess, time, glob, re
+import os, sys, subprocess, time, glob, re, uuid, datetime
 
 MAXNUM = int(sys.argv[1])
 POLL = int(sys.argv[2]) if len(sys.argv) > 2 else 60
+_started_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 REPO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 ORACLE = os.path.join(REPO, "tools", "ctrnact-oracle")
 RESULTS = os.path.join(REPO, "experiments", "results")
@@ -107,4 +108,36 @@ with open(os.path.join(RESULTS, f"ktarnak-k{MAXNUM}-2026-07-10.csv"), "w") as f:
     f.write("k,distinct\n")
     for k in sorted(final): f.write(f"{k},{final[k]}\n")
 log(f"csv -> ktarnak-k{MAXNUM}-2026-07-10.csv")
+
+# Fire-and-forget mirror to the /history console (opt-in via EMIT=1). Summary only — never the raw
+# catalogue. Any failure is logged and ignored so it can't affect the solve result.
+try:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from emit_run import emit_run, counts_digest
+    _incomplete = any(k in KNOWN_OCTBLIND and KNOWN_OCTBLIND[k] != c for k, c in final.items())
+    emit_run(
+        run_id=str(uuid.uuid4()),
+        k=MAXNUM,
+        family=os.environ.get("FAMILY", "regular"),
+        count=sum(final.values()),
+        params={
+            "engine": "ctrnact",
+            "maxnum": MAXNUM,
+            "perK": {str(k): final[k] for k in sorted(final)},
+            "peakMemMB": round(peak_mb) if peak_mb else None,
+            "wallSec": round(wall, 1),
+            "poll": POLL,
+            "directions": 12,
+            "octblind": True,
+        },
+        digest=counts_digest(final),
+        started_at=_started_iso,
+        finished_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        status="finished",
+        incomplete=_incomplete,
+        log=log,
+    )
+except Exception as _e:  # noqa: BLE001
+    log(f"[emit_run] skipped: {_e}")
+
 logf.close()

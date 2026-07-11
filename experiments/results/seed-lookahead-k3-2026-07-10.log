@@ -1,0 +1,476 @@
+seed-lookahead scout  k=3 tiles={3,4,6,12} budget=16 maxSeedMs=10000
+building seeds (deterministic order, same as scout-worker/probe-pipeline)...
+seeds: 449 built (449 used) in 135.6s
+[1/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/wall collapses=4 prom=0 2261ms  ETA 1013s
+[2/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=11 prom=0 11686ms ⚑ TIMECAP  ETA 3117s
+[3/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/wall collapses=10 prom=0 12371ms  ETA 3913s
+[4/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 11961ms ⚑ TIMECAP  ETA 4259s
+[5/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 11421ms ⚑ TIMECAP  ETA 4414s
+[6/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=11 prom=0 11886ms ⚑ TIMECAP  ETA 4547s
+[7/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 11811ms ⚑ TIMECAP  ETA 4635s
+[8/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 12221ms ⚑ TIMECAP  ETA 4720s
+[9/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 10213ms ⚑ TIMECAP  ETA 4685s
+[10/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 10189ms ⚑ TIMECAP  ETA 4654s
+[11/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=11 prom=0 11949ms ⚑ TIMECAP  ETA 4697s
+[12/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 10279ms ⚑ TIMECAP  ETA 4671s
+[13/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/wall collapses=4 prom=0 2349ms  ETA 4380s
+[14/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=10 prom=0 11054ms ⚑ TIMECAP  ETA 4401s
+[15/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/timecap collapses=9 prom=0 11846ms ⚑ TIMECAP  ETA 4441s
+[16/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6]            survived/wall collapses=4 prom=0 2677ms  ETA 4227s
+[17/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]          survived/wall collapses=5 prom=0 3446ms  ETA 4056s
+[18/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]          survived/wall collapses=5 prom=0 4038ms  ETA 3919s
+[19/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]          survived/wall collapses=6 prom=0 5013ms  ETA 3818s
+[20/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]          survived/wall collapses=5 prom=0 3609ms  ETA 3696s
+[21/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]          survived/wall collapses=5 prom=0 4061ms  ETA 3594s
+[22/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6]          survived/wall collapses=5 prom=0 4584ms  ETA 3512s
+[23/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,3,3]          survived/wall collapses=5 prom=0 3553ms  ETA 3417s
+[24/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=11 prom=0 12341ms ⚑ TIMECAP  ETA 3486s
+[25/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=11 prom=0 11090ms ⚑ TIMECAP  ETA 3526s
+[26/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=10 prom=0 10104ms ⚑ TIMECAP  ETA 3547s
+[27/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=10 prom=0 10099ms ⚑ TIMECAP  ETA 3566s
+[28/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=11 prom=0 11266ms ⚑ TIMECAP  ETA 3599s
+[29/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=11 prom=0 12653ms ⚑ TIMECAP  ETA 3650s
+[30/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=11 prom=0 12438ms ⚑ TIMECAP  ETA 3694s
+[31/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=10 prom=0 10397ms ⚑ TIMECAP  ETA 3707s
+[32/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            killed/entropy0 collapses=1 prom=0 357ms ✂ KILLED@1 (entropy0)  ETA 3587s
+[33/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4]            survived/timecap collapses=10 prom=0 10640ms ⚑ TIMECAP  ETA 3604s
+[34/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,4,3,4]            killed/entropy0 collapses=1 prom=0 310ms ✂ KILLED@1 (entropy0)  ETA 3493s
+[35/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,4,3,4]            killed/entropy0 collapses=1 prom=0 316ms ✂ KILLED@1 (entropy0)  ETA 3389s
+[36/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,12,4]             killed/entropy0 collapses=1 prom=0 285ms ✂ KILLED@1 (entropy0)  ETA 3290s
+[37/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,4,12]             killed/entropy0 collapses=1 prom=0 303ms ✂ KILLED@1 (entropy0)  ETA 3197s
+[38/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=1 prom=0 415ms  ETA 3110s
+[39/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=2 prom=1 989ms  ETA 3033s
+[40/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=1 prom=0 547ms  ETA 2956s
+[41/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=2 prom=0 830ms  ETA 2885s
+[42/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=1 prom=0 525ms  ETA 2814s
+[43/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=2 prom=0 788ms  ETA 2749s
+[44/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=1 prom=0 544ms  ETA 2685s
+[45/449] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]              survived/wall collapses=1 prom=0 591ms  ETA 2625s
+[46/449] [3,3,3,3,3,3;3,3,3,3,6;3,6,3,6]              survived/wall collapses=2 prom=0 889ms  ETA 2569s
+[47/449] [3,3,3,3,3,3;3,3,3,3,6;3,6,3,6]              survived/wall collapses=1 prom=0 446ms  ETA 2512s
+[48/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            survived/timecap collapses=11 prom=0 11136ms ⚑ TIMECAP  ETA 2546s
+[49/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            killed/entropy0 collapses=2 prom=0 546ms ✂ KILLED@2 (entropy0)  ETA 2493s
+[50/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            survived/timecap collapses=12 prom=0 10143ms ⚑ TIMECAP  ETA 2518s
+[51/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            killed/entropy0 collapses=2 prom=0 622ms ✂ KILLED@2 (entropy0)  ETA 2467s
+[52/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            survived/timecap collapses=12 prom=0 10105ms ⚑ TIMECAP  ETA 2491s
+[53/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            survived/timecap collapses=11 prom=0 10910ms ⚑ TIMECAP  ETA 2519s
+[54/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            survived/timecap collapses=10 prom=0 10279ms ⚑ TIMECAP  ETA 2541s
+[55/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4]          survived/timecap collapses=11 prom=0 11765ms ⚑ TIMECAP  ETA 2573s
+[56/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4]          survived/timecap collapses=11 prom=0 10892ms ⚑ TIMECAP  ETA 2597s
+[57/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4]          survived/timecap collapses=11 prom=0 11209ms ⚑ TIMECAP  ETA 2622s
+[58/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4]          survived/timecap collapses=11 prom=0 10704ms ⚑ TIMECAP  ETA 2643s
+[59/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]            survived/wall collapses=1 prom=0 537ms  ETA 2595s
+[60/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]            survived/wall collapses=2 prom=0 1023ms  ETA 2552s
+[61/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]            survived/wall collapses=1 prom=0 661ms  ETA 2507s
+[62/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]            survived/wall collapses=4 prom=0 2418ms  ETA 2476s
+[63/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]            survived/wall collapses=2 prom=0 1025ms  ETA 2436s
+[64/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4]            survived/wall collapses=3 prom=0 2283ms  ETA 2406s
+[65/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,3,4,4]            survived/wall collapses=2 prom=0 1246ms  ETA 2370s
+[66/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,12]             survived/timecap collapses=11 prom=0 12350ms ⚑ TIMECAP  ETA 2400s
+[67/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4]             survived/timecap collapses=10 prom=1 12282ms ⚑ TIMECAP  ETA 2428s
+[68/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,12]             killed/entropy0 collapses=2 prom=0 805ms ✂ KILLED@2 (entropy0)  ETA 2390s
+[69/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4]             killed/entropy0 collapses=1 prom=0 264ms ✂ KILLED@1 (entropy0)  ETA 2351s
+[70/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4]             killed/entropy0 collapses=2 prom=0 642ms ✂ KILLED@2 (entropy0)  ETA 2315s
+[71/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4]             survived/timecap collapses=11 prom=0 11382ms ⚑ TIMECAP  ETA 2337s
+[72/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,6,6]              killed/entropy0 collapses=1 prom=0 198ms ✂ KILLED@1 (entropy0)  ETA 2299s
+[73/449] [3,3,3,3,3,3;3,3,3,4,4;3,4,4,6]              killed/entropy0 collapses=3 prom=0 1297ms ✂ KILLED@3 (entropy0)  ETA 2268s
+[74/449] [3,3,3,3,3,3;3,3,3,4,4;3,6,4,4]              killed/entropy0 collapses=3 prom=0 1386ms ✂ KILLED@3 (entropy0)  ETA 2239s
+[75/449] [3,3,3,3,3,3;3,3,3,4,4;3,4,6,4]              survived/timecap collapses=12 prom=0 11634ms ⚑ TIMECAP  ETA 2261s
+[76/449] [3,3,3,3,3,3;3,3,3,4,4;4,4,4,4]              survived/timecap collapses=12 prom=0 11040ms ⚑ TIMECAP  ETA 2280s
+[77/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4]            survived/wall collapses=4 prom=0 1808ms  ETA 2253s
+[78/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4]            survived/wall collapses=4 prom=0 1865ms  ETA 2227s
+[79/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4]            survived/wall collapses=4 prom=0 1848ms  ETA 2201s
+[80/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4]            survived/wall collapses=7 prom=0 5304ms  ETA 2192s
+[81/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4]            survived/wall collapses=6 prom=0 4086ms  ETA 2178s
+[82/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,4,3,4]          killed/entropy0 collapses=1 prom=0 265ms ✂ KILLED@1 (entropy0)  ETA 2147s
+[83/449] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4]             survived/timecap collapses=10 prom=1 10028ms ⚑ TIMECAP  ETA 2159s
+[84/449] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4]             survived/timecap collapses=10 prom=1 10016ms ⚑ TIMECAP  ETA 2171s
+[85/449] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4]             survived/timecap collapses=11 prom=0 10687ms ⚑ TIMECAP  ETA 2186s
+[86/449] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4]             survived/timecap collapses=11 prom=0 10932ms ⚑ TIMECAP  ETA 2200s
+[87/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,12]             killed/entropy0 collapses=3 prom=0 1468ms ✂ KILLED@3 (entropy0)  ETA 2175s
+[88/449] [3,3,3,3,3,3;3,3,4,3,4;3,3,6,6]              killed/entropy0 collapses=1 prom=0 226ms ✂ KILLED@1 (entropy0)  ETA 2146s
+[89/449] [3,3,3,3,3,3;3,3,4,3,4;3,4,3,12]             survived/timecap collapses=11 prom=1 10993ms ⚑ TIMECAP  ETA 2160s
+[90/449] [3,3,3,3,3,3;3,3,4,3,4;3,4,4,6]              survived/timecap collapses=13 prom=0 10258ms ⚑ TIMECAP  ETA 2171s
+[91/449] [3,3,3,3,3,3;3,3,4,3,4;3,4,6,4]              survived/wall collapses=10 prom=0 9328ms  ETA 2178s
+[92/449] [3,3,3,3,3,3;3,3,4,12;3,3,12,4]              survived/timecap collapses=14 prom=1 11241ms ⚑ TIMECAP  ETA 2192s
+[93/449] [3,3,3,3,3,3;3,3,4,12;3,3,4,12]              survived/timecap collapses=13 prom=2 11221ms ⚑ TIMECAP  ETA 2205s
+[94/449] [3,3,3,3,3,3;3,3,4,12;3,3,12,4]              survived/timecap collapses=13 prom=2 11277ms ⚑ TIMECAP  ETA 2218s
+[95/449] [3,3,3,3,3,3;3,3,4,12;3,3,12,4]              survived/timecap collapses=14 prom=1 11371ms ⚑ TIMECAP  ETA 2231s
+[96/449] [3,3,3,3,3,3;3,3,4,12;3,3,12,4]              survived/timecap collapses=13 prom=1 10422ms ⚑ TIMECAP  ETA 2240s
+[97/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,4,12]           killed/entropy0 collapses=1 prom=0 276ms ✂ KILLED@1 (entropy0)  ETA 2211s
+[98/449] [3,3,3,3,3,3;3,3,4,12;4,6,12]                survived/wall collapses=7 prom=3 2068ms  ETA 2190s
+[99/449] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]                survived/timecap collapses=13 prom=1 11436ms ⚑ TIMECAP  ETA 2202s
+[100/449] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]                survived/timecap collapses=12 prom=2 11411ms ⚑ TIMECAP  ETA 2214s
+[101/449] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]                survived/timecap collapses=12 prom=2 11564ms ⚑ TIMECAP  ETA 2225s
+[102/449] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]                survived/timecap collapses=13 prom=1 12186ms ⚑ TIMECAP  ETA 2239s
+[103/449] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,6,6]            killed/entropy0 collapses=1 prom=0 208ms ✂ KILLED@1 (entropy0)  ETA 2211s
+[104/449] [3,3,3,3,3,3;3,3,6,6;6,6,6]                  survived/wall collapses=4 prom=1 685ms  ETA 2186s
+[105/449] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4]              killed/entropy0 collapses=2 prom=0 309ms ✂ KILLED@2 (entropy0)  ETA 2160s
+[106/449] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4]              killed/entropy0 collapses=3 prom=0 623ms ✂ KILLED@3 (entropy0)  ETA 2135s
+[107/449] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4]              killed/entropy0 collapses=3 prom=0 688ms ✂ KILLED@3 (entropy0)  ETA 2111s
+[108/449] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4]              killed/entropy0 collapses=3 prom=0 478ms ✂ KILLED@3 (entropy0)  ETA 2087s
+[109/449] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4]              killed/entropy0 collapses=4 prom=0 834ms ✂ KILLED@4 (entropy0)  ETA 2065s
+[110/449] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4]              killed/entropy0 collapses=3 prom=0 499ms ✂ KILLED@3 (entropy0)  ETA 2041s
+[111/449] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4]              killed/entropy0 collapses=3 prom=0 541ms ✂ KILLED@3 (entropy0)  ETA 2019s
+[112/449] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4]              killed/entropy0 collapses=2 prom=0 364ms ✂ KILLED@2 (entropy0)  ETA 1996s
+[113/449] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4]              killed/entropy0 collapses=3 prom=0 589ms ✂ KILLED@3 (entropy0)  ETA 1974s
+[114/449] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4]              killed/entropy0 collapses=1 prom=0 177ms ✂ KILLED@1 (entropy0)  ETA 1951s
+[115/449] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4]              survived/wall collapses=8 prom=0 4484ms  ETA 1942s
+[116/449] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4]              survived/wall collapses=8 prom=0 4606ms  ETA 1932s
+[117/449] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4]              killed/entropy0 collapses=3 prom=0 774ms ✂ KILLED@3 (entropy0)  ETA 1912s
+[118/449] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4]              killed/entropy0 collapses=3 prom=0 694ms ✂ KILLED@3 (entropy0)  ETA 1892s
+[119/449] [3,3,3,3,6;3,3,4,3,4;3,3,3,4,4]              killed/entropy0 collapses=4 prom=0 1133ms ✂ KILLED@4 (entropy0)  ETA 1874s
+[120/449] [3,3,3,3,6;3,3,3,4,4;3,3,4,12]               killed/entropy0 collapses=1 prom=0 189ms ✂ KILLED@1 (entropy0)  ETA 1853s
+[121/449] [3,3,3,3,6;3,3,3,4,4;3,3,12,4]               killed/entropy0 collapses=4 prom=0 1141ms ✂ KILLED@4 (entropy0)  ETA 1835s
+[122/449] [3,3,3,3,6;3,3,3,4,4;3,3,12,4]               killed/entropy0 collapses=3 prom=0 770ms ✂ KILLED@3 (entropy0)  ETA 1817s
+[123/449] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]                killed/entropy0 collapses=2 prom=0 321ms ✂ KILLED@2 (entropy0)  ETA 1797s
+[124/449] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]                killed/entropy0 collapses=1 prom=0 145ms ✂ KILLED@1 (entropy0)  ETA 1778s
+[125/449] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]                killed/entropy0 collapses=2 prom=0 312ms ✂ KILLED@2 (entropy0)  ETA 1759s
+[126/449] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]                survived/wall collapses=1 prom=0 214ms  ETA 1740s
+[127/449] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]                killed/entropy0 collapses=3 prom=0 615ms ✂ KILLED@3 (entropy0)  ETA 1723s
+[128/449] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]                survived/timecap collapses=14 prom=0 11272ms ⚑ TIMECAP  ETA 1732s
+[129/449] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]                killed/entropy0 collapses=3 prom=0 692ms ✂ KILLED@3 (entropy0)  ETA 1715s
+[130/449] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]                survived/wall collapses=2 prom=0 483ms  ETA 1698s
+[131/449] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]                survived/wall collapses=4 prom=0 1352ms  ETA 1683s
+[132/449] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]                survived/wall collapses=4 prom=0 1360ms  ETA 1668s
+[133/449] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]                survived/wall collapses=4 prom=0 1108ms  ETA 1653s
+[134/449] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]                survived/wall collapses=3 prom=0 892ms  ETA 1638s
+[135/449] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]                survived/wall collapses=3 prom=0 956ms  ETA 1623s
+[136/449] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]                survived/wall collapses=7 prom=0 2909ms  ETA 1612s
+[137/449] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]                survived/wall collapses=4 prom=0 1451ms  ETA 1599s
+[138/449] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]                survived/wall collapses=4 prom=0 1581ms  ETA 1586s
+[139/449] [3,3,3,3,6;3,6,3,6;3,3,3,4,4]                survived/timecap collapses=14 prom=0 10623ms ⚑ TIMECAP  ETA 1593s
+[140/449] [3,3,3,3,6;3,6,3,6;3,3,3,4,4]                survived/timecap collapses=13 prom=0 10102ms ⚑ TIMECAP  ETA 1599s
+[141/449] [3,3,3,3,6;3,3,3,4,4;3,4,6,4]                killed/entropy0 collapses=3 prom=0 780ms ✂ KILLED@3 (entropy0)  ETA 1584s
+[142/449] [3,3,3,3,6;3,3,3,4,4;4,4,4,4]                killed/entropy0 collapses=3 prom=0 973ms ✂ KILLED@3 (entropy0)  ETA 1570s
+[143/449] [3,3,3,3,6;3,3,3,4,4;4,4,4,4]                killed/entropy0 collapses=4 prom=0 824ms ✂ KILLED@4 (entropy0)  ETA 1555s
+[144/449] [3,3,3,3,6;3,3,4,3,4;3,3,4,3,4]              killed/entropy0 collapses=1 prom=0 199ms ✂ KILLED@1 (entropy0)  ETA 1540s
+[145/449] [3,3,3,3,6;3,3,4,3,4;3,3,4,3,4]              killed/entropy0 collapses=1 prom=0 178ms ✂ KILLED@1 (entropy0)  ETA 1525s
+[146/449] [3,3,3,3,6;3,3,4,3,4;3,3,4,12]               killed/entropy0 collapses=1 prom=0 304ms ✂ KILLED@1 (entropy0)  ETA 1510s
+[147/449] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]                survived/wall collapses=9 prom=0 6279ms  ETA 1508s
+[148/449] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]                survived/wall collapses=9 prom=0 6222ms  ETA 1505s
+[149/449] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]                survived/wall collapses=9 prom=0 6306ms  ETA 1503s
+[150/449] [3,3,3,3,6;3,3,4,3,4;3,4,4,6]                killed/entropy0 collapses=4 prom=0 1183ms ✂ KILLED@4 (entropy0)  ETA 1490s
+[151/449] [3,3,3,3,6;3,3,4,3,4;3,6,4,4]                killed/entropy0 collapses=10 prom=0 6291ms ✂ KILLED@10 (entropy0)  ETA 1488s
+[152/449] [3,3,3,3,6;3,3,4,3,4;3,4,4,6]                killed/entropy0 collapses=9 prom=0 5135ms ✂ KILLED@9 (entropy0)  ETA 1483s
+[153/449] [3,3,3,3,6;3,3,4,3,4;3,4,3,12]               killed/entropy0 collapses=1 prom=0 232ms ✂ KILLED@1 (entropy0)  ETA 1469s
+[154/449] [3,3,3,3,6;3,3,4,3,4;3,4,6,4]                killed/entropy0 collapses=1 prom=0 185ms ✂ KILLED@1 (entropy0)  ETA 1455s
+[155/449] [3,3,3,3,6;3,3,4,12;3,3,12,4]                killed/entropy0 collapses=1 prom=0 184ms ✂ KILLED@1 (entropy0)  ETA 1441s
+[156/449] [3,3,3,3,6;3,6,4,4;3,3,4,12]                 killed/entropy0 collapses=2 prom=0 247ms ✂ KILLED@2 (entropy0)  ETA 1427s
+[157/449] [3,3,3,3,6;3,6,4,4;3,3,12,4]                 killed/entropy0 collapses=1 prom=1 156ms ✂ KILLED@1 (entropy0)  ETA 1413s
+[158/449] [3,3,3,3,6;3,3,4,12;4,6,12]                  killed/entropy0 collapses=1 prom=0 182ms ✂ KILLED@1 (entropy0)  ETA 1400s
+[159/449] [3,3,3,3,6;3,3,6,6;3,3,6,6]                  survived/wall collapses=3 prom=0 517ms  ETA 1387s
+[160/449] [3,3,3,3,6;3,3,6,6;3,3,6,6]                  survived/wall collapses=3 prom=0 559ms  ETA 1375s
+[161/449] [3,3,3,3,6;3,3,6,6;3,3,6,6]                  killed/entropy0 collapses=1 prom=0 148ms ✂ KILLED@1 (entropy0)  ETA 1362s
+[162/449] [3,3,3,3,6;3,3,6,6;3,3,6,6]                  survived/wall collapses=0 prom=0 72ms  ETA 1349s
+[163/449] [3,3,3,3,6;3,3,6,6;3,3,6,6]                  survived/wall collapses=0 prom=0 111ms  ETA 1336s
+[164/449] [3,3,3,3,6;3,3,3,3,6;3,3,6,6]                survived/wall collapses=2 prom=0 337ms  ETA 1324s
+[165/449] [3,3,3,3,6;3,3,3,3,6;3,3,6,6]                survived/wall collapses=1 prom=0 203ms  ETA 1312s
+[166/449] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]                survived/wall collapses=1 prom=0 174ms  ETA 1300s
+[167/449] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]                killed/entropy0 collapses=1 prom=0 137ms ✂ KILLED@1 (entropy0)  ETA 1287s
+[168/449] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]                killed/entropy0 collapses=1 prom=0 130ms ✂ KILLED@1 (entropy0)  ETA 1275s
+[169/449] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]                survived/wall collapses=2 prom=0 311ms  ETA 1264s
+[170/449] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]                survived/wall collapses=1 prom=0 216ms  ETA 1252s
+[171/449] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]                survived/wall collapses=1 prom=0 209ms  ETA 1241s
+[172/449] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]                survived/wall collapses=2 prom=0 298ms  ETA 1230s
+[173/449] [3,3,3,3,6;3,3,6,6;3,6,3,6]                  survived/wall collapses=1 prom=0 193ms  ETA 1218s
+[174/449] [3,3,3,3,6;3,3,6,6;3,6,3,6]                  survived/wall collapses=2 prom=0 295ms  ETA 1208s
+[175/449] [3,3,3,3,6;3,6,3,6;3,3,6,6]                  survived/wall collapses=1 prom=0 154ms  ETA 1197s
+[176/449] [3,3,3,3,6;3,6,3,6;3,3,6,6]                  survived/wall collapses=2 prom=1 406ms  ETA 1186s
+[177/449] [3,3,3,3,6;3,6,3,6;3,3,6,6]                  survived/wall collapses=2 prom=0 355ms  ETA 1176s
+[178/449] [3,3,3,3,6;3,6,3,6;3,3,6,6]                  survived/wall collapses=1 prom=0 206ms  ETA 1165s
+[179/449] [3,3,3,3,6;3,6,3,6;3,3,6,6]                  survived/wall collapses=1 prom=0 202ms  ETA 1154s
+[180/449] [3,3,3,3,6;3,3,6,6;6,6,6]                    survived/wall collapses=0 prom=0 63ms  ETA 1144s
+[181/449] [3,3,3,3,6;3,3,6,6;6,6,6]                    survived/wall collapses=0 prom=0 68ms  ETA 1133s
+[182/449] [3,3,3,3,6;3,6,3,6;3,6,4,4]                  survived/timecap collapses=14 prom=0 10167ms ⚑ TIMECAP  ETA 1138s
+[183/449] [3,3,3,3,6;3,6,3,6;3,4,4,6]                  survived/timecap collapses=14 prom=0 11538ms ⚑ TIMECAP  ETA 1144s
+[184/449] [3,3,3,3,6;3,6,3,6;3,6,3,6]                  survived/wall collapses=7 prom=0 2204ms  ETA 1137s
+[185/449] [3,3,3,3,6;3,6,3,6;3,6,3,6]                  survived/wall collapses=2 prom=0 338ms  ETA 1127s
+[186/449] [3,3,3,3,6;3,6,3,6;3,6,3,6]                  survived/wall collapses=2 prom=0 331ms  ETA 1117s
+[187/449] [3,3,3,3,6;3,3,3,3,6;3,6,3,6]                survived/wall collapses=1 prom=0 201ms  ETA 1107s
+[188/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=0 prom=0 64ms  ETA 1097s
+[189/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=3 prom=0 584ms  ETA 1088s
+[190/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=3 prom=0 524ms  ETA 1079s
+[191/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=7 prom=0 2002ms  ETA 1072s
+[192/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=7 prom=0 1830ms  ETA 1065s
+[193/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=3 prom=0 533ms  ETA 1056s
+[194/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=2 prom=0 315ms  ETA 1046s
+[195/449] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]                survived/wall collapses=2 prom=0 311ms  ETA 1037s
+[196/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=5 prom=0 1613ms  ETA 1030s
+[197/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=9 prom=0 5192ms  ETA 1028s
+[198/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=5 prom=0 1907ms  ETA 1021s
+[199/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=3 prom=0 909ms  ETA 1013s
+[200/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=4 prom=0 1116ms  ETA 1005s
+[201/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=8 prom=0 4099ms  ETA 1001s
+[202/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=6 prom=0 2203ms  ETA 995s
+[203/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=8 prom=0 4169ms  ETA 991s
+[204/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=1 prom=0 274ms  ETA 982s
+[205/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=3 prom=0 907ms  ETA 975s
+[206/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=1 prom=0 303ms  ETA 966s
+[207/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=5 prom=0 1767ms  ETA 960s
+[208/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=4 prom=0 1165ms  ETA 953s
+[209/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=6 prom=0 2325ms  ETA 947s
+[210/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/timecap collapses=14 prom=0 10584ms ⚑ TIMECAP  ETA 950s
+[211/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=1 prom=0 245ms  ETA 942s
+[212/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=3 prom=0 631ms  ETA 934s
+[213/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=2 prom=0 448ms  ETA 927s
+[214/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=3 prom=0 696ms  ETA 919s
+[215/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=2 prom=0 459ms  ETA 911s
+[216/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4]              survived/wall collapses=3 prom=0 716ms  ETA 904s
+[217/449] [3,3,3,4,4;3,3,3,4,4;3,3,4,3,4]              survived/wall collapses=7 prom=0 3304ms  ETA 900s
+[218/449] [3,3,3,4,4;3,3,3,4,4;3,3,4,3,4]              survived/wall collapses=11 prom=0 8192ms  ETA 900s
+[219/449] [3,3,3,4,4;3,3,3,4,4;3,3,4,3,4]              survived/wall collapses=7 prom=0 2861ms  ETA 895s
+[220/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=3 prom=0 649ms  ETA 888s
+[221/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=7 prom=0 2847ms  ETA 883s
+[222/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=3 prom=0 665ms  ETA 876s
+[223/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/timecap collapses=15 prom=0 11581ms ⚑ TIMECAP  ETA 880s
+[224/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=6 prom=0 1935ms  ETA 874s
+[225/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=6 prom=0 1994ms  ETA 868s
+[226/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=3 prom=0 704ms  ETA 861s
+[227/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=0 prom=0 79ms  ETA 854s
+[228/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=5 prom=0 1334ms  ETA 847s
+[229/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/timecap collapses=15 prom=0 11648ms ⚑ TIMECAP  ETA 851s
+[230/449] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4]              survived/wall collapses=1 prom=0 210ms  ETA 844s
+[231/449] [3,3,3,4,4;3,3,4,12;3,3,4,3,4]               killed/entropy0 collapses=3 prom=0 735ms ✂ KILLED@3 (entropy0)  ETA 837s
+[232/449] [3,3,3,4,4;3,3,4,12;3,3,4,3,4]               killed/entropy0 collapses=3 prom=0 783ms ✂ KILLED@3 (entropy0)  ETA 830s
+[233/449] [3,3,3,4,4;3,3,4,12;3,3,4,3,4]               killed/entropy0 collapses=2 prom=0 473ms ✂ KILLED@2 (entropy0)  ETA 823s
+[234/449] [3,3,3,4,4;3,3,4,3,4;3,3,12,4]               killed/entropy0 collapses=3 prom=0 784ms ✂ KILLED@3 (entropy0)  ETA 817s
+[235/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,12]               survived/timecap collapses=13 prom=1 10158ms ⚑ TIMECAP  ETA 819s
+[236/449] [3,3,3,4,4;3,3,4,3,4;3,3,12,4]               survived/timecap collapses=12 prom=2 11757ms ⚑ TIMECAP  ETA 822s
+[237/449] [3,3,3,4,4;3,3,4,3,4;3,3,12,4]               killed/entropy0 collapses=4 prom=0 1288ms ✂ KILLED@4 (entropy0)  ETA 816s
+[238/449] [3,3,3,4,4;3,3,4,3,4;3,3,4,12]               killed/entropy0 collapses=3 prom=1 1231ms ✂ KILLED@3 (entropy0)  ETA 810s
+[239/449] [3,3,3,4,4;3,3,4,3,4;3,3,12,4]               survived/timecap collapses=13 prom=0 10913ms ⚑ TIMECAP  ETA 812s
+[240/449] [3,3,3,4,4;3,3,4,3,4;3,4,3,12]               killed/entropy0 collapses=1 prom=0 258ms ✂ KILLED@1 (entropy0)  ETA 805s
+[241/449] [3,3,3,4,4;3,3,4,3,4;3,4,3,12]               killed/entropy0 collapses=1 prom=1 392ms ✂ KILLED@1 (entropy0)  ETA 798s
+[242/449] [3,3,3,4,4;3,3,4,3,4;3,4,3,12]               survived/timecap collapses=14 prom=1 11801ms ⚑ TIMECAP  ETA 801s
+[243/449] [3,3,3,4,4;3,3,4,3,4;3,4,3,12]               survived/timecap collapses=14 prom=1 10970ms ⚑ TIMECAP  ETA 803s
+[244/449] [3,3,3,4,4;3,3,4,3,4;3,4,4,6]                survived/wall collapses=10 prom=0 6660ms  ETA 802s
+[245/449] [3,3,3,4,4;3,3,4,3,4;3,6,4,4]                killed/entropy0 collapses=2 prom=0 387ms ✂ KILLED@2 (entropy0)  ETA 795s
+[246/449] [3,3,3,4,4;3,3,4,3,4;3,4,4,6]                survived/wall collapses=11 prom=0 7990ms  ETA 794s
+[247/449] [3,3,3,4,4;3,3,4,3,4;3,4,4,6]                survived/wall collapses=12 prom=0 9830ms  ETA 795s
+[248/449] [3,3,3,4,4;3,3,4,3,4;3,6,4,4]                killed/entropy0 collapses=1 prom=0 240ms ✂ KILLED@1 (entropy0)  ETA 788s
+[249/449] [3,3,3,4,4;3,3,4,3,4;3,4,4,6]                survived/wall collapses=8 prom=0 4410ms  ETA 785s
+[250/449] [3,3,3,4,4;3,3,4,3,4;3,6,4,4]                survived/wall collapses=8 prom=0 4464ms  ETA 781s
+[251/449] [3,3,3,4,4;3,4,4,6;3,3,4,3,4]                survived/wall collapses=7 prom=0 2630ms  ETA 777s
+[252/449] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=9 prom=0 4545ms  ETA 773s
+[253/449] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=8 prom=0 3415ms  ETA 769s
+[254/449] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=13 prom=0 10406ms  ETA 770s
+[255/449] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=6 prom=0 2216ms  ETA 765s
+[256/449] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 2878ms  ETA 760s
+[257/449] [3,3,3,4,4;3,4,6,4;3,3,4,3,4]                survived/wall collapses=6 prom=0 1903ms  ETA 754s
+[258/449] [3,3,3,4,4;3,4,6,4;3,3,4,3,4]                survived/wall collapses=7 prom=0 2595ms  ETA 749s
+[259/449] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 2814ms  ETA 745s
+[260/449] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 3064ms  ETA 740s
+[261/449] [3,3,3,4,4;3,3,4,3,4;4,4,4,4]                survived/wall collapses=3 prom=0 731ms  ETA 734s
+[262/449] [3,3,3,4,4;3,3,4,3,4;4,4,4,4]                survived/wall collapses=3 prom=0 700ms  ETA 728s
+[263/449] [3,3,3,4,4;3,3,4,3,4;4,4,4,4]                survived/wall collapses=4 prom=0 1088ms  ETA 722s
+[264/449] [3,3,3,4,4;3,3,4,12;3,3,12,4]                killed/entropy0 collapses=1 prom=0 252ms ✂ KILLED@1 (entropy0)  ETA 715s
+[265/449] [3,3,3,4,4;3,3,4,12;3,3,12,4]                killed/entropy0 collapses=2 prom=0 298ms ✂ KILLED@2 (entropy0)  ETA 709s
+[266/449] [3,3,3,4,4;3,3,3,4,4;3,3,12,4]               killed/entropy0 collapses=1 prom=0 256ms ✂ KILLED@1 (entropy0)  ETA 703s
+[267/449] [3,3,3,4,4;3,3,4,12;3,3,3,4,4]               killed/entropy0 collapses=2 prom=0 380ms ✂ KILLED@2 (entropy0)  ETA 697s
+[268/449] [3,3,3,4,4;3,3,4,12;3,3,3,4,4]               killed/entropy0 collapses=1 prom=0 181ms ✂ KILLED@1 (entropy0)  ETA 690s
+[269/449] [3,3,3,4,4;3,3,4,12;3,4,3,12]                killed/surrounded-disallowed collapses=4 prom=0 1114ms ✂ KILLED@4 (surrounded-disallowed)  ETA 685s
+[270/449] [3,3,3,4,4;3,3,4,12;3,4,3,12]                killed/surrounded-disallowed collapses=6 prom=0 1817ms ✂ KILLED@6 (surrounded-disallowed)  ETA 680s
+[271/449] [3,3,3,4,4;3,4,3,12;3,3,12,4]                killed/surrounded-disallowed collapses=2 prom=0 297ms ✂ KILLED@2 (surrounded-disallowed)  ETA 673s
+[272/449] [3,3,3,4,4;3,4,3,12;3,3,4,12]                killed/surrounded-disallowed collapses=3 prom=1 727ms ✂ KILLED@3 (surrounded-disallowed)  ETA 668s
+[273/449] [3,3,3,4,4;3,4,3,12;3,3,4,12]                killed/entropy0 collapses=1 prom=0 180ms ✂ KILLED@1 (entropy0)  ETA 662s
+[274/449] [3,3,3,4,4;3,3,4,12;3,4,6,4]                 killed/entropy0 collapses=2 prom=0 378ms ✂ KILLED@2 (entropy0)  ETA 656s
+[275/449] [3,3,3,4,4;3,4,6,4;3,3,4,12]                 survived/timecap collapses=16 prom=0 11528ms ⚑ TIMECAP  ETA 657s
+[276/449] [3,3,3,4,4;3,4,6,4;3,3,12,4]                 survived/timecap collapses=15 prom=1 11433ms ⚑ TIMECAP  ETA 658s
+[277/449] [3,3,3,4,4;3,4,4,6;3,3,6,6]                  survived/wall collapses=6 prom=0 1739ms  ETA 653s
+[278/449] [3,3,3,4,4;3,4,4,6;3,3,6,6]                  survived/wall collapses=5 prom=1 1678ms  ETA 648s
+[279/449] [3,3,3,4,4;3,3,6,6;3,4,4,6]                  survived/wall collapses=8 prom=0 3252ms  ETA 644s
+[280/449] [3,3,3,4,4;3,3,6,6;3,6,4,4]                  survived/wall collapses=8 prom=0 3219ms  ETA 639s
+[281/449] [3,3,3,4,4;3,4,4,6;3,3,6,6]                  survived/wall collapses=7 prom=0 2490ms  ETA 635s
+[282/449] [3,3,3,4,4;3,4,4,6;3,6,4,4]                  killed/entropy0 collapses=1 prom=0 140ms ✂ KILLED@1 (entropy0)  ETA 629s
+[283/449] [3,3,3,4,4;3,3,3,4,4;3,4,4,6]                killed/entropy0 collapses=7 prom=0 2065ms ✂ KILLED@7 (entropy0)  ETA 624s
+[284/449] [3,3,3,4,4;3,3,3,4,4;3,6,4,4]                killed/entropy0 collapses=7 prom=0 2122ms ✂ KILLED@7 (entropy0)  ETA 619s
+[285/449] [3,3,3,4,4;3,3,3,4,4;3,4,4,6]                killed/entropy0 collapses=7 prom=0 2058ms ✂ KILLED@7 (entropy0)  ETA 615s
+[286/449] [3,3,3,4,4;3,3,3,4,4;3,6,4,4]                killed/entropy0 collapses=7 prom=0 2158ms ✂ KILLED@7 (entropy0)  ETA 610s
+[287/449] [3,3,3,4,4;3,4,6,4;3,4,4,6]                  killed/entropy0 collapses=3 prom=0 644ms ✂ KILLED@3 (entropy0)  ETA 605s
+[288/449] [3,3,3,4,4;3,4,6,4;3,4,4,6]                  killed/entropy0 collapses=1 prom=0 251ms ✂ KILLED@1 (entropy0)  ETA 599s
+[289/449] [3,3,3,4,4;3,4,4,6;3,4,6,4]                  killed/entropy0 collapses=4 prom=0 772ms ✂ KILLED@4 (entropy0)  ETA 594s
+[290/449] [3,3,3,4,4;4,4,4,4;3,4,4,6]                  killed/entropy0 collapses=3 prom=0 636ms ✂ KILLED@3 (entropy0)  ETA 588s
+[291/449] [3,3,3,4,4;3,4,4,6;3,6,3,6]                  survived/wall collapses=3 prom=0 675ms  ETA 583s
+[292/449] [3,3,3,4,4;3,4,6,4;3,4,6,4]                  survived/budget collapses=16 prom=0 11354ms  ETA 583s
+[293/449] [3,3,3,4,4;3,4,6,4;3,4,6,4]                  survived/budget collapses=16 prom=0 10538ms  ETA 583s
+[294/449] [3,3,3,4,4;3,4,6,4;3,4,6,4]                  survived/budget collapses=16 prom=0 10757ms  ETA 583s
+[295/449] [3,3,3,4,4;3,3,3,4,4;3,4,6,4]                killed/entropy0 collapses=1 prom=0 93ms ✂ KILLED@1 (entropy0)  ETA 577s
+[296/449] [3,3,3,4,4;3,4,6,4;3,3,3,4,4]                survived/budget collapses=16 prom=0 10349ms  ETA 577s
+[297/449] [3,3,3,4,4;3,4,6,4;3,3,3,4,4]                survived/budget collapses=16 prom=0 10399ms  ETA 577s
+[298/449] [3,3,3,4,4;3,4,6,4;3,3,3,4,4]                survived/budget collapses=16 prom=0 10442ms  ETA 576s
+[299/449] [3,3,3,4,4;3,4,6,4;4,6,12]                   killed/entropy0 collapses=2 prom=0 316ms ✂ KILLED@2 (entropy0)  ETA 571s
+[300/449] [3,3,3,4,4;4,4,4,4;4,4,4,4]                  survived/timecap collapses=16 prom=0 11540ms ⚑ TIMECAP  ETA 571s
+[301/449] [3,3,3,4,4;4,4,4,4;4,4,4,4]                  survived/timecap collapses=15 prom=0 10102ms ⚑ TIMECAP  ETA 570s
+[302/449] [3,3,3,4,4;3,3,3,4,4;4,4,4,4]                survived/timecap collapses=16 prom=0 11658ms ⚑ TIMECAP  ETA 570s
+[303/449] [3,3,3,4,4;3,3,3,4,4;4,4,4,4]                survived/timecap collapses=16 prom=0 11605ms ⚑ TIMECAP  ETA 570s
+[304/449] [3,3,3,4,4;4,4,4,4;3,3,3,4,4]                survived/timecap collapses=14 prom=0 11405ms ⚑ TIMECAP  ETA 570s
+[305/449] [3,3,4,12;3,3,4,3,4;3,3,12,4]                killed/entropy0 collapses=1 prom=0 126ms ✂ KILLED@1 (entropy0)  ETA 564s
+[306/449] [3,3,4,12;3,3,4,3,4;3,3,4,3,4]               killed/entropy0 collapses=2 prom=0 382ms ✂ KILLED@2 (entropy0)  ETA 558s
+[307/449] [3,3,4,12;3,3,4,3,4;3,3,4,3,4]               killed/entropy0 collapses=1 prom=0 317ms ✂ KILLED@1 (entropy0)  ETA 553s
+[308/449] [3,3,4,12;3,4,3,12;3,3,4,3,4]                survived/wall collapses=2 prom=0 460ms  ETA 547s
+[309/449] [3,3,4,12;3,4,3,12;3,3,4,3,4]                survived/wall collapses=2 prom=0 457ms  ETA 542s
+[310/449] [3,3,4,12;3,4,3,12;3,3,4,3,4]                survived/wall collapses=4 prom=0 1256ms  ETA 537s
+[311/449] [3,3,4,12;3,4,3,12;3,3,4,3,4]                survived/wall collapses=2 prom=0 866ms  ETA 532s
+[312/449] [3,3,4,12;3,3,4,3,4;3,4,3,12]                survived/wall collapses=4 prom=0 1510ms  ETA 527s
+[313/449] [3,3,4,12;3,3,4,3,4;3,4,3,12]                survived/wall collapses=4 prom=0 1368ms  ETA 522s
+[314/449] [3,3,4,12;3,3,4,3,4;3,4,3,12]                killed/entropy0 collapses=2 prom=0 652ms ✂ KILLED@2 (entropy0)  ETA 517s
+[315/449] [3,3,4,12;3,3,4,3,4;3,4,3,12]                survived/wall collapses=7 prom=0 2969ms  ETA 512s
+[316/449] [3,3,4,12;3,4,3,12;3,3,4,3,4]                survived/wall collapses=7 prom=0 2470ms  ETA 508s
+[317/449] [3,3,4,12;3,3,4,3,4;3,4,6,4]                 killed/entropy0 collapses=2 prom=0 494ms ✂ KILLED@2 (entropy0)  ETA 503s
+[318/449] [3,12,12;3,3,12,4;3,3,4,3,4]                 survived/wall collapses=3 prom=1 848ms  ETA 498s
+[319/449] [3,3,4,3,4;3,4,4,6;3,3,6,6]                  survived/wall collapses=4 prom=0 1140ms  ETA 493s
+[320/449] [3,3,4,3,4;3,3,6,6;3,4,4,6]                  killed/entropy0 collapses=1 prom=0 293ms ✂ KILLED@1 (entropy0)  ETA 488s
+[321/449] [3,3,4,3,4;3,4,3,12;3,4,3,12]                killed/entropy0 collapses=4 prom=0 823ms ✂ KILLED@4 (entropy0)  ETA 483s
+[322/449] [3,3,4,3,4;3,4,3,12;3,4,3,12]                killed/entropy0 collapses=3 prom=0 526ms ✂ KILLED@3 (entropy0)  ETA 478s
+[323/449] [3,3,4,3,4;3,3,4,3,4;3,4,3,12]               killed/entropy0 collapses=4 prom=0 1041ms ✂ KILLED@4 (entropy0)  ETA 473s
+[324/449] [3,3,4,3,4;3,3,4,3,4;3,4,3,12]               killed/entropy0 collapses=4 prom=0 849ms ✂ KILLED@4 (entropy0)  ETA 468s
+[325/449] [3,3,4,3,4;3,3,4,3,4;3,4,3,12]               killed/entropy0 collapses=4 prom=0 705ms ✂ KILLED@4 (entropy0)  ETA 463s
+[326/449] [3,3,4,3,4;3,4,3,12;3,3,4,3,4]               killed/entropy0 collapses=2 prom=0 359ms ✂ KILLED@2 (entropy0)  ETA 458s
+[327/449] [3,3,4,3,4;3,4,6,4;3,4,3,12]                 survived/budget collapses=16 prom=0 11213ms  ETA 457s
+[328/449] [3,3,4,3,4;3,4,6,4;3,4,3,12]                 survived/timecap collapses=16 prom=0 10357ms ⚑ TIMECAP  ETA 456s
+[329/449] [3,3,4,3,4;3,4,3,12;3,4,6,4]                 survived/timecap collapses=16 prom=0 10201ms ⚑ TIMECAP  ETA 454s
+[330/449] [3,12,12;3,4,3,12;3,3,4,3,4]                 killed/entropy0 collapses=4 prom=0 735ms ✂ KILLED@4 (entropy0)  ETA 449s
+[331/449] [3,3,4,3,4;3,4,4,6;3,6,4,4]                  killed/entropy0 collapses=4 prom=0 920ms ✂ KILLED@4 (entropy0)  ETA 445s
+[332/449] [3,3,4,3,4;3,4,4,6;3,6,4,4]                  killed/entropy0 collapses=2 prom=0 330ms ✂ KILLED@2 (entropy0)  ETA 440s
+[333/449] [3,3,4,3,4;3,4,4,6;3,6,4,4]                  killed/entropy0 collapses=5 prom=0 1494ms ✂ KILLED@5 (entropy0)  ETA 435s
+[334/449] [3,3,4,3,4;3,3,4,3,4;3,4,4,6]                killed/entropy0 collapses=4 prom=0 1023ms ✂ KILLED@4 (entropy0)  ETA 430s
+[335/449] [3,3,4,3,4;3,3,4,3,4;3,6,4,4]                killed/entropy0 collapses=4 prom=0 1020ms ✂ KILLED@4 (entropy0)  ETA 426s
+[336/449] [3,3,4,3,4;3,3,4,3,4;3,4,4,6]                killed/entropy0 collapses=4 prom=0 866ms ✂ KILLED@4 (entropy0)  ETA 421s
+[337/449] [3,3,4,3,4;3,4,6,4;3,4,4,6]                  survived/wall collapses=4 prom=0 1049ms  ETA 416s
+[338/449] [3,3,4,3,4;3,4,6,4;3,6,4,4]                  survived/wall collapses=4 prom=0 1056ms  ETA 412s
+[339/449] [3,3,4,3,4;3,4,6,4;3,6,4,4]                  survived/wall collapses=4 prom=0 1055ms  ETA 407s
+[340/449] [3,3,4,3,4;3,4,6,4;3,4,4,6]                  survived/wall collapses=4 prom=0 1014ms  ETA 403s
+[341/449] [3,3,4,3,4;3,4,4,6;3,4,6,4]                  survived/wall collapses=2 prom=0 497ms  ETA 398s
+[342/449] [3,3,4,3,4;3,4,6,4;3,6,4,4]                  killed/entropy0 collapses=1 prom=0 118ms ✂ KILLED@1 (entropy0)  ETA 393s
+[343/449] [3,3,4,3,4;3,4,6,4;3,4,4,6]                  survived/wall collapses=2 prom=0 555ms  ETA 389s
+[344/449] [3,3,4,3,4;3,4,4,6;4,4,4,4]                  killed/entropy0 collapses=1 prom=0 153ms ✂ KILLED@1 (entropy0)  ETA 384s
+[345/449] [3,3,4,3,4;3,4,4,6;4,12,6]                   killed/entropy0 collapses=5 prom=1 1579ms ✂ KILLED@5 (entropy0)  ETA 380s
+[346/449] [3,3,4,3,4;3,4,6,4;3,4,6,4]                  survived/wall collapses=11 prom=0 5176ms  ETA 376s
+[347/449] [3,3,4,3,4;3,4,6,4;3,4,6,4]                  survived/budget collapses=16 prom=0 9785ms  ETA 375s
+[348/449] [3,3,4,3,4;3,4,6,4;3,4,6,4]                  survived/wall collapses=5 prom=0 860ms  ETA 370s
+[349/449] [3,3,4,3,4;3,4,6,4;3,4,6,4]                  survived/wall collapses=5 prom=0 862ms  ETA 366s
+[350/449] [3,3,4,3,4;3,4,6,4;3,4,6,4]                  survived/wall collapses=15 prom=0 7362ms  ETA 363s
+[351/449] [3,3,4,3,4;3,4,6,4;3,4,6,4]                  survived/wall collapses=7 prom=0 1521ms  ETA 359s
+[352/449] [3,3,4,3,4;3,4,6,4;3,4,6,4]                  survived/wall collapses=7 prom=0 1546ms  ETA 354s
+[353/449] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 1891ms  ETA 350s
+[354/449] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=9 prom=0 3282ms  ETA 347s
+[355/449] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 1720ms  ETA 342s
+[356/449] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 1559ms  ETA 338s
+[357/449] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 1546ms  ETA 334s
+[358/449] [3,3,4,3,4;3,4,6,4;3,3,4,3,4]                survived/wall collapses=5 prom=0 796ms  ETA 330s
+[359/449] [3,3,4,3,4;3,4,6,4;3,3,4,3,4]                survived/wall collapses=9 prom=0 2927ms  ETA 326s
+[360/449] [3,3,4,3,4;3,4,6,4;3,3,4,3,4]                survived/wall collapses=7 prom=0 1642ms  ETA 322s
+[361/449] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=7 prom=0 1695ms  ETA 318s
+[362/449] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]                survived/wall collapses=11 prom=0 4238ms  ETA 314s
+[363/449] [3,3,4,3,4;3,4,6,4;4,6,12]                   killed/entropy0 collapses=1 prom=0 139ms ✂ KILLED@1 (entropy0)  ETA 310s
+[364/449] [3,3,4,3,4;3,4,6,4;4,6,12]                   survived/budget collapses=16 prom=1 10580ms  ETA 308s
+[365/449] [3,3,12,4;3,4,3,12;3,3,12,4]                 killed/surrounded-disallowed collapses=3 prom=0 276ms ✂ KILLED@3 (surrounded-disallowed)  ETA 303s
+[366/449] [3,3,12,4;3,4,3,12;3,3,4,12]                 killed/surrounded-disallowed collapses=3 prom=0 301ms ✂ KILLED@3 (surrounded-disallowed)  ETA 299s
+[367/449] [3,3,12,4;3,4,3,12;3,3,4,12]                 killed/surrounded-disallowed collapses=3 prom=0 425ms ✂ KILLED@3 (surrounded-disallowed)  ETA 295s
+[368/449] [3,3,12,4;3,4,3,12;3,3,4,12]                 killed/entropy0 collapses=2 prom=0 225ms ✂ KILLED@2 (entropy0)  ETA 290s
+[369/449] [3,3,12,4;3,4,6,4;3,3,4,12]                  killed/entropy0 collapses=1 prom=0 80ms ✂ KILLED@1 (entropy0)  ETA 286s
+[370/449] [3,12,12;3,3,12,4;3,3,4,12]                  killed/entropy0 collapses=2 prom=0 186ms ✂ KILLED@2 (entropy0)  ETA 282s
+[371/449] [3,3,4,12;3,4,3,12;3,4,3,12]                 killed/surrounded-disallowed collapses=2 prom=1 284ms ✂ KILLED@2 (surrounded-disallowed)  ETA 278s
+[372/449] [3,3,4,12;3,4,3,12;3,4,6,4]                  killed/surrounded-disallowed collapses=2 prom=0 304ms ✂ KILLED@2 (surrounded-disallowed)  ETA 273s
+[373/449] [3,12,12;3,4,3,12;3,3,12,4]                  survived/budget collapses=16 prom=4 10794ms  ETA 271s
+[374/449] [3,12,12;3,4,3,12;3,3,12,4]                  survived/timecap collapses=16 prom=4 10683ms ⚑ TIMECAP  ETA 269s
+[375/449] [3,3,4,12;3,4,3,12;4,6,12]                   killed/entropy0 collapses=1 prom=0 157ms ✂ KILLED@1 (entropy0)  ETA 265s
+[376/449] [3,3,4,12;3,4,6,4;3,4,6,4]                   killed/surrounded-disallowed collapses=2 prom=0 205ms ✂ KILLED@2 (surrounded-disallowed)  ETA 261s
+[377/449] [3,3,4,12;3,4,6,4;3,4,6,4]                   killed/surrounded-disallowed collapses=2 prom=0 151ms ✂ KILLED@2 (surrounded-disallowed)  ETA 256s
+[378/449] [3,3,4,12;3,4,6,4;3,6,4,4]                   killed/surrounded-disallowed collapses=2 prom=0 334ms ✂ KILLED@2 (surrounded-disallowed)  ETA 252s
+[379/449] [3,12,12;3,3,12,4;3,4,6,4]                   survived/timecap collapses=16 prom=4 10510ms ⚑ TIMECAP  ETA 250s
+[380/449] [3,3,4,12;4,6,12;3,6,4,4]                    killed/entropy0 collapses=1 prom=0 143ms ✂ KILLED@1 (entropy0)  ETA 246s
+[381/449] [3,12,12;3,3,12,4;3,12,12]                   killed/entropy0 collapses=1 prom=0 69ms ✂ KILLED@1 (entropy0)  ETA 242s
+[382/449] [3,12,12;3,3,12,4;4,12,6]                    killed/entropy0 collapses=2 prom=0 186ms ✂ KILLED@2 (entropy0)  ETA 237s
+[383/449] [3,3,4,12;4,6,12;4,12,6]                     killed/entropy0 collapses=1 prom=0 77ms ✂ KILLED@1 (entropy0)  ETA 233s
+[384/449] [3,3,6,6;3,6,3,6;3,6,4,4]                    survived/timecap collapses=15 prom=0 10214ms ⚑ TIMECAP  ETA 231s
+[385/449] [3,3,6,6;3,6,3,6;3,4,4,6]                    survived/timecap collapses=16 prom=0 10246ms ⚑ TIMECAP  ETA 228s
+[386/449] [3,3,6,6;3,6,3,6;3,6,3,6]                    survived/timecap collapses=16 prom=1 11169ms ⚑ TIMECAP  ETA 226s
+[387/449] [3,3,6,6;3,6,3,6;3,6,3,6]                    survived/budget collapses=16 prom=0 9101ms  ETA 223s
+[388/449] [3,3,6,6;3,6,3,6;3,6,3,6]                    survived/budget collapses=16 prom=0 9124ms  ETA 221s
+[389/449] [3,3,6,6;3,6,3,6;3,3,6,6]                    survived/budget collapses=16 prom=0 11056ms  ETA 218s
+[390/449] [3,3,6,6;3,6,3,6;3,3,6,6]                    survived/budget collapses=16 prom=0 10589ms  ETA 216s
+[391/449] [3,3,6,6;3,6,3,6;3,3,6,6]                    survived/budget collapses=16 prom=0 8647ms  ETA 213s
+[392/449] [3,3,6,6;3,6,3,6;3,3,6,6]                    survived/budget collapses=16 prom=0 8564ms  ETA 210s
+[393/449] [3,3,6,6;3,6,3,6;6,6,6]                      survived/wall collapses=2 prom=0 228ms  ETA 206s
+[394/449] [3,3,6,6;6,6,6;6,6,6]                        killed/entropy0 collapses=1 prom=0 40ms ✂ KILLED@1 (entropy0)  ETA 201s
+[395/449] [3,3,6,6;6,6,6;3,3,6,6]                      killed/entropy0 collapses=1 prom=0 54ms ✂ KILLED@1 (entropy0)  ETA 197s
+[396/449] [3,4,3,12;3,4,6,4;3,6,4,4]                   killed/entropy0 collapses=2 prom=0 276ms ✂ KILLED@2 (entropy0)  ETA 193s
+[397/449] [3,4,3,12;3,4,6,4;3,4,4,6]                   killed/entropy0 collapses=1 prom=0 112ms ✂ KILLED@1 (entropy0)  ETA 189s
+[398/449] [3,4,3,12;3,4,6,4;3,4,6,4]                   killed/entropy0 collapses=2 prom=0 144ms ✂ KILLED@2 (entropy0)  ETA 185s
+[399/449] [3,4,3,12;3,4,6,4;3,4,6,4]                   killed/entropy0 collapses=1 prom=0 62ms ✂ KILLED@1 (entropy0)  ETA 181s
+[400/449] [3,4,3,12;3,4,3,12;3,4,6,4]                  killed/entropy0 collapses=2 prom=0 129ms ✂ KILLED@2 (entropy0)  ETA 177s
+[401/449] [3,4,3,12;3,4,3,12;3,4,6,4]                  killed/entropy0 collapses=2 prom=0 126ms ✂ KILLED@2 (entropy0)  ETA 173s
+[402/449] [3,12,12;3,4,3,12;3,4,6,4]                   survived/budget collapses=16 prom=5 7656ms  ETA 170s
+[403/449] [3,12,12;3,4,3,12;3,12,12]                   survived/wall collapses=6 prom=3 782ms  ETA 166s
+[404/449] [3,12,12;3,4,3,12;3,12,12]                   survived/wall collapses=6 prom=3 809ms  ETA 162s
+[405/449] [3,12,12;3,4,3,12;3,4,3,12]                  survived/wall collapses=6 prom=3 784ms  ETA 158s
+[406/449] [3,12,12;3,4,3,12;3,4,3,12]                  survived/wall collapses=6 prom=3 835ms  ETA 154s
+[407/449] [3,4,4,6;3,4,6,4;3,4,6,4]                    survived/wall collapses=1 prom=0 168ms  ETA 150s
+[408/449] [3,4,4,6;3,4,6,4;3,4,6,4]                    survived/wall collapses=3 prom=0 431ms  ETA 146s
+[409/449] [3,4,4,6;3,4,6,4;3,4,6,4]                    survived/wall collapses=3 prom=0 422ms  ETA 142s
+[410/449] [3,4,4,6;3,4,6,4;3,4,6,4]                    survived/wall collapses=6 prom=0 1216ms  ETA 139s
+[411/449] [3,4,4,6;3,4,6,4;3,4,6,4]                    survived/wall collapses=6 prom=0 1412ms  ETA 135s
+[412/449] [3,4,4,6;3,4,6,4;3,4,6,4]                    survived/wall collapses=2 prom=0 339ms  ETA 131s
+[413/449] [3,4,4,6;3,6,4,4;3,4,6,4]                    survived/wall collapses=0 prom=0 60ms  ETA 127s
+[414/449] [3,4,4,6;3,6,4,4;3,4,6,4]                    survived/wall collapses=1 prom=0 166ms  ETA 123s
+[415/449] [3,4,4,6;3,4,6,4;3,6,4,4]                    survived/wall collapses=3 prom=0 434ms  ETA 120s
+[416/449] [3,4,4,6;3,4,6,4;3,6,4,4]                    survived/wall collapses=3 prom=0 522ms  ETA 116s
+[417/449] [3,4,4,6;3,4,6,4;3,6,4,4]                    killed/entropy0 collapses=1 prom=0 153ms ✂ KILLED@1 (entropy0)  ETA 112s
+[418/449] [3,4,4,6;3,6,4,4;3,4,6,4]                    survived/wall collapses=6 prom=0 1219ms  ETA 108s
+[419/449] [3,4,4,6;3,4,6,4;3,6,4,4]                    survived/wall collapses=5 prom=0 1159ms  ETA 105s
+[420/449] [3,4,4,6;3,6,3,6;3,4,6,4]                    survived/wall collapses=1 prom=0 173ms  ETA 101s
+[421/449] [3,4,4,6;3,4,6,4;4,4,4,4]                    survived/wall collapses=9 prom=1 2987ms  ETA 97s
+[422/449] [3,4,4,6;4,4,4,4;3,4,6,4]                    survived/wall collapses=10 prom=0 4605ms  ETA 94s
+[423/449] [3,4,4,6;3,4,6,4;4,12,6]                     survived/wall collapses=14 prom=1 8142ms  ETA 91s
+[424/449] [3,4,4,6;3,4,6,4;4,12,6]                     survived/budget collapses=16 prom=3 11371ms  ETA 88s
+[425/449] [3,4,4,6;3,6,3,6;3,6,3,6]                    survived/budget collapses=16 prom=0 10146ms  ETA 85s
+[426/449] [3,4,4,6;3,6,3,6;3,6,3,6]                    survived/budget collapses=16 prom=0 10086ms  ETA 82s
+[427/449] [3,4,4,6;3,6,3,6;3,6,4,4]                    survived/timecap collapses=15 prom=0 11450ms ⚑ TIMECAP  ETA 78s
+[428/449] [3,4,4,6;3,6,3,6;3,4,4,6]                    survived/budget collapses=16 prom=0 8903ms  ETA 75s
+[429/449] [3,4,4,6;3,6,3,6;3,6,4,4]                    survived/budget collapses=16 prom=0 8822ms  ETA 72s
+[430/449] [3,4,4,6;3,6,3,6;3,6,4,4]                    survived/timecap collapses=15 prom=0 11584ms ⚑ TIMECAP  ETA 69s
+[431/449] [3,4,4,6;3,6,3,6;3,6,4,4]                    survived/timecap collapses=16 prom=0 10256ms ⚑ TIMECAP  ETA 65s
+[432/449] [3,4,4,6;3,6,3,6;3,4,4,6]                    survived/timecap collapses=16 prom=0 10205ms ⚑ TIMECAP  ETA 62s
+[433/449] [3,4,4,6;3,6,3,6;4,4,4,4]                    survived/timecap collapses=16 prom=0 10444ms ⚑ TIMECAP  ETA 58s
+[434/449] [3,4,4,6;3,6,3,6;4,12,6]                     survived/wall collapses=14 prom=1 9039ms  ETA 55s
+[435/449] [3,4,4,6;4,4,4,4;3,6,4,4]                    killed/entropy0 collapses=1 prom=0 73ms ✂ KILLED@1 (entropy0)  ETA 51s
+[436/449] [3,4,4,6;4,4,4,4;3,6,4,4]                    killed/entropy0 collapses=2 prom=0 224ms ✂ KILLED@2 (entropy0)  ETA 47s
+[437/449] [3,4,4,6;4,4,4,4;3,4,4,6]                    killed/entropy0 collapses=2 prom=0 218ms ✂ KILLED@2 (entropy0)  ETA 44s
+[438/449] [3,4,4,6;3,6,4,4;4,12,6]                     killed/entropy0 collapses=1 prom=1 101ms ✂ KILLED@1 (entropy0)  ETA 40s
+[439/449] [3,4,4,6;4,4,4,4;4,4,4,4]                    killed/entropy0 collapses=2 prom=0 178ms ✂ KILLED@2 (entropy0)  ETA 36s
+[440/449] [3,4,4,6;4,4,4,4;4,4,4,4]                    killed/entropy0 collapses=2 prom=0 200ms ✂ KILLED@2 (entropy0)  ETA 33s
+[441/449] [3,4,4,6;4,4,4,4;4,4,4,4]                    killed/entropy0 collapses=2 prom=0 155ms ✂ KILLED@2 (entropy0)  ETA 29s
+[442/449] [3,4,4,6;4,12,6;4,6,12]                      killed/entropy0 collapses=2 prom=0 115ms ✂ KILLED@2 (entropy0)  ETA 25s
+[443/449] [3,4,4,6;4,12,6;4,6,12]                      killed/entropy0 collapses=1 prom=0 62ms ✂ KILLED@1 (entropy0)  ETA 22s
+[444/449] [3,4,6,4;4,12,6;4,6,12]                      survived/budget collapses=16 prom=3 6362ms  ETA 18s
+[445/449] [3,4,6,4;4,12,6;4,6,12]                      survived/wall collapses=11 prom=1 2820ms  ETA 14s
+[446/449] [3,4,6,4;4,12,6;4,6,12]                      survived/wall collapses=10 prom=2 2807ms  ETA 11s
+[447/449] [3,4,6,4;3,4,6,4;4,12,6]                     survived/wall collapses=10 prom=2 2873ms  ETA 7s
+[448/449] [3,4,6,4;3,4,6,4;4,6,12]                     survived/wall collapses=10 prom=2 2855ms  ETA 4s
+[449/449] [3,4,6,4;3,4,6,4;4,6,12]                     survived/wall collapses=13 prom=2 5079ms  ETA 0s
+
+=== SUMMARY k=3 tiles={3,4,6,12} budget=16 ===
+seeds=449 killed=146 (32.5%) survived=303 timecap=82 ⚑ (capped, verdicts conservative)
+  kills within depth ≤  0: 0
+  kills within depth ≤  1: 54
+  kills within depth ≤  2: 93
+  kills within depth ≤  4: 137
+  kills within depth ≤  8: 144
+  kills within depth ≤ 16: 146
+  killed/entropy0: 134
+  killed/surrounded-disallowed: 12
+  survived/budget: 23
+  survived/timecap: 82
+  survived/wall: 198
+total 1614.6s (check cost only — no pipeline change)
+
+=== ARTIFACT cross-check vs .scout-cache/k3_3.4.6.12_cap0.ndjson (core-containment semantics) ===
+   info: killed seed idx=48 ([3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]) has 4 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+   info: killed seed idx=50 ([3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]) has 4 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+   info: killed seed idx=126 ([3,3,3,3,6;3,6,4,4;3,3,3,4,4]) has 1 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+   info: killed seed idx=128 ([3,3,3,3,6;3,6,4,4;3,3,3,4,4]) has 1 FAN-PATH cells (none contain the core) — kill stands; fan fills must be preserved by any prune
+artifact: 449 seed records, max idx=448 (scout nSeeds=449), 175 cell-producing seeds
+cross-check PASS: 0 of 146 kills refuted by core-containing cells (4 killed seeds have fan-path cells only)
+artifacts: experiments/results/seed-lookahead-k3-2026-07-10.log, experiments/results/seed-lookahead-k3-2026-07-10.csv

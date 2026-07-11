@@ -1,0 +1,57 @@
+seed-lookahead scout  k=3 tiles={3,4,6,12} budget=16 maxSeedMs=30000
+building seeds (deterministic order, same as scout-worker/probe-pipeline)...
+seeds: 449 built (449 used) in 135.6s
+  TRACE seed [48] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] — 12 polygons
+    TRACE open v=(0.500,0.866) dirs=3 incident=[3,3,3,4] angleSum=270.0° entropy=1 → 3,3,3,4,4(+1)
+    TRACE open v=(-1.000,0.000) dirs=2 incident=[3,3,4] angleSum=210.0° entropy=1 → 3,3,3,4,4(+2)
+    TRACE open v=(-0.500,-0.866) dirs=1 incident=[3,3] angleSum=120.0° entropy=3 → 3,3,3,3,3,3(+4) | 3,3,3,4,4(+3) | 3,3,3,4,4(+3)
+    TRACE open v=(0.500,-0.866) dirs=2 incident=[3,3,3] angleSum=180.0° entropy=2 → 3,3,3,3,3,3(+3) | 3,3,3,4,4(+2)
+    TRACE open v=(1.500,-0.866) dirs=1 incident=[3,4] angleSum=150.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(1.866,0.500) dirs=1 incident=[4,4] angleSum=180.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(0.000,1.732) dirs=1 incident=[3,4] angleSum=150.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(-1.366,1.366) dirs=1 incident=[4,4] angleSum=180.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE collapse #1: v=(-1.000,0.000) ⇒ 3,3,3,4,4
+    TRACE open v=(0.500,0.866) dirs=3 incident=[3,3,3,4] angleSum=270.0° entropy=1 → 3,3,3,4,4(+1)
+    TRACE open v=(-0.500,-0.866) dirs=2 incident=[3,3,3] angleSum=180.0° entropy=2 → 3,3,3,3,3,3(+3) | 3,3,3,4,4(+2)
+    TRACE open v=(0.500,-0.866) dirs=2 incident=[3,3,3] angleSum=180.0° entropy=2 → 3,3,3,3,3,3(+3) | 3,3,3,4,4(+2)
+    TRACE open v=(1.500,-0.866) dirs=1 incident=[3,4] angleSum=150.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(1.866,0.500) dirs=1 incident=[4,4] angleSum=180.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(0.000,1.732) dirs=1 incident=[3,4] angleSum=150.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(-1.366,1.366) dirs=1 incident=[4,4] angleSum=180.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(-1.500,-0.866) dirs=1 incident=[3,4] angleSum=150.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(-1.866,0.500) dirs=1 incident=[4,4] angleSum=180.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE collapse #2: v=(0.500,0.866) ⇒ 3,3,3,4,4
+    TRACE open v=(-0.500,-0.866) dirs=2 incident=[3,3,3] angleSum=180.0° entropy=2 → 3,3,3,3,3,3(+3) | 3,3,3,4,4(+2)
+    TRACE open v=(0.500,-0.866) dirs=2 incident=[3,3,3] angleSum=180.0° entropy=2 → 3,3,3,3,3,3(+3) | 3,3,3,4,4(+2)
+    TRACE open v=(1.500,-0.866) dirs=1 incident=[3,4] angleSum=150.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(1.866,0.500) dirs=1 incident=[4,4] angleSum=180.0° entropy=1 → 3,3,3,4,4(+3)
+    TRACE open v=(0.000,1.732) dirs=2 incident=[3,4,4] angleSum=240.0° entropy=0
+    TRACE KILL (entropy0) — patch at kill time (15 polygons):
+      3-gon @ (0.500,0.289)
+      3-gon @ (0.000,0.577)
+      3-gon @ (-0.500,0.289)
+      3-gon @ (-0.500,-0.289)
+      3-gon @ (-0.000,-0.577)
+      3-gon @ (0.500,-0.289)
+      3-gon @ (1.000,-0.577)
+      4-gon @ (1.683,-0.183)
+      4-gon @ (1.183,0.683)
+      3-gon @ (0.000,1.155)
+      4-gon @ (-0.683,1.549)
+      4-gon @ (-1.183,0.683)
+      3-gon @ (-1.000,-0.577)
+      4-gon @ (-1.683,-0.183)
+      4-gon @ (0.683,1.549)
+[49/449] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4]            killed/entropy0 collapses=2 prom=0 564ms ✂ KILLED@2 (entropy0)  ETA 5s
+
+=== SUMMARY k=3 tiles={3,4,6,12} budget=16 ===
+seeds=449 killed=1 (0.2%) survived=448 timecap=0
+  kills within depth ≤  0: 0
+  kills within depth ≤  1: 0
+  kills within depth ≤  2: 1
+  kills within depth ≤  4: 1
+  kills within depth ≤  8: 1
+  kills within depth ≤ 16: 1
+  killed/entropy0: 1
+total 0.6s (check cost only — no pipeline change)
+artifacts: experiments/results/seed-lookahead-k3-2026-07-10.log, experiments/results/seed-lookahead-k3-2026-07-10.csv

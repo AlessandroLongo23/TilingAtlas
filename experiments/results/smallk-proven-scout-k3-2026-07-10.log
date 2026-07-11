@@ -1,0 +1,983 @@
+[coord] total=449 seeds, resumed=0, workers=8, cap=0ms (no cap / certified)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [2] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 3033ms  (1/449)
+  [1] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 3161ms  (2/449)
+  [3] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 2739ms  (3/449)
+  [4] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 2629ms  (4/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [6] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 2475ms  (5/449)
+  [5] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 3116ms  (6/449)
+  [7] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 2527ms  (7/449)
+  [8] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 2838ms  (8/449)
+  [9] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 2729ms  (9/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 624 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [10] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 2739ms  (10/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 624 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [13] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 2181ms  (11/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 624 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [11] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=1 2877ms  (12/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 624 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [14] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=2 2626ms  (13/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 624 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [0] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=4 8626ms  (14/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 624 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [18] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 4570ms  (15/449)
+  [12] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=4 7523ms  (16/449)
+  [16] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=3 5783ms  (17/449)
+  [17] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 5566ms  (18/449)
+  [15] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,6] cells=4 7097ms  (19/449)
+  [21] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 4759ms  (20/449)
+  [19] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=3 5675ms  (21/449)
+  [20] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,3,6] cells=2 5543ms  (22/449)
+  [22] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,3,3,3] cells=3 5577ms  (23/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [24] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 14883ms  (24/449)
+  [25] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 14796ms  (25/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+  [23] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 15305ms  (26/449)
+  [26] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 14929ms  (27/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+  [27] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 15254ms  (29/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [28] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 15394ms  (31/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 15528 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [29] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 15355ms  (32/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [30] [3,3,3,3,3,3;3,3,3,3,6;3,3,3,4,4] cells=0 14740ms  (35/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7980 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [35] [3,3,3,3,3,3;3,3,3,3,6;3,3,12,4] cells=0 6053ms  (36/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7980 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [36] [3,3,3,3,3,3;3,3,3,3,6;3,3,4,12] cells=0 6207ms  (37/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [39] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 8347ms  (38/449)
+  [40] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 8445ms  (39/449)
+  [38] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 9071ms  (40/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+  [37] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 10683ms  (41/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+  [41] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 10299ms  (42/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+  [42] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 9517ms  (43/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+  [44] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=2 9190ms  (44/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+  [43] [3,3,3,3,3,3;3,3,3,3,6;3,3,6,6] cells=3 9567ms  (45/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+  [45] [3,3,3,3,3,3;3,3,3,3,6;3,6,3,6] cells=1 6858ms  (46/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [46] [3,3,3,3,3,3;3,3,3,3,6;3,6,3,6] cells=3 9637ms  (47/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 10824 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":12564140042,"denMax":60}
+  [54] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=3 1014580ms  (48/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+  [55] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=3 108055ms  (49/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+  [56] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=3 113958ms  (50/449)
+  [47] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 1355758ms  (51/449)
+  [57] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,3,4,4] cells=3 112058ms  (52/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 11712 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [48] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 1371415ms  (53/449)
+  [51] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 1372017ms  (54/449)
+  [53] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 1386397ms  (55/449)
+  [52] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 1387160ms  (56/449)
+  [50] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 1405475ms  (57/449)
+  [49] [3,3,3,3,3,3;3,3,3,4,4;3,3,3,4,4] cells=4 1409600ms  (58/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 25332 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [65] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,12] cells=1 7120ms  (59/449)
+  [66] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4] cells=1 675ms  (60/449)
+  [70] [3,3,3,3,3,3;3,3,3,4,4;3,3,12,4] cells=1 615ms  (64/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 20652 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [71] [3,3,3,3,3,3;3,3,3,4,4;3,3,6,6] cells=0 19741ms  (65/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 16716 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [72] [3,3,3,3,3,3;3,3,3,4,4;3,4,4,6] cells=0 9225ms  (66/449)
+  [74] [3,3,3,3,3,3;3,3,3,4,4;3,4,6,4] cells=1 940ms  (68/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 24048 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [58] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=0 127705ms  (69/449)
+  [60] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=0 156598ms  (70/449)
+  [61] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=0 152296ms  (71/449)
+  [63] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=0 151157ms  (72/449)
+  [62] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=0 153637ms  (73/449)
+  [64] [3,3,3,3,3,3;3,3,4,3,4;3,3,3,4,4] cells=1 150478ms  (74/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 10824 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [76] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 117516ms  (75/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 25332 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [82] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4] cells=1 6685ms  (76/449)
+  [85] [3,3,3,3,3,3;3,3,4,12;3,3,4,3,4] cells=1 347ms  (79/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 20652 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [87] [3,3,3,3,3,3;3,3,4,3,4;3,3,6,6] cells=0 20416ms  (81/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 16716 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [89] [3,3,3,3,3,3;3,3,4,3,4;3,4,4,6] cells=1 8569ms  (83/449)
+  [90] [3,3,3,3,3,3;3,3,4,3,4;3,4,6,4] cells=2 1572ms  (84/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 6828 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [91] [3,3,3,3,3,3;3,3,4,12;3,3,12,4] cells=0 6377ms  (85/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [96] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,4,12] cells=0 6237ms  (90/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7284 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [97] [3,3,3,3,3,3;3,3,4,12;4,6,12]  cells=1 6324ms  (91/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 948 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [98] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 3675ms  (92/449)
+  [99] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 3493ms  (93/449)
+  [77] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 140450ms  (94/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 948 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [78] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 140391ms  (95/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 714 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [100] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 3569ms  (96/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1074 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [101] [3,3,3,3,3,3;3,3,6,6;3,3,6,6]  cells=0 3177ms  (97/449)
+  [103] [3,3,3,3,3,3;3,3,6,6;6,6,6]    cells=1 562ms  (98/449)
+  [102] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,6,6] cells=0 3087ms  (99/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3780 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3780 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3780 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [104] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 10349ms  (100/449)
+  [105] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 10596ms  (101/449)
+  [106] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 10644ms  (102/449)
+  [107] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 4111ms  (103/449)
+  [79] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=1 143451ms  (104/449)
+  [108] [3,3,3,3,6;3,3,3,4,4;3,3,3,4,4] cells=0 4297ms  (105/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [109] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 7093ms  (106/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [80] [3,3,3,3,3,3;3,3,4,3,4;3,3,4,3,4] cells=0 146651ms  (107/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3840 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [110] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 10508ms  (108/449)
+  [111] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 10362ms  (109/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [112] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 10771ms  (110/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3780 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [113] [3,3,3,3,6;3,3,3,3,6;3,3,3,4,4] cells=0 8256ms  (111/449)
+  [117] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=0 4378ms  (112/449)
+  [115] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=1 5595ms  (113/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3780 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [118] [3,3,3,3,6;3,3,4,3,4;3,3,3,4,4] cells=0 4768ms  (114/449)
+  [114] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=1 12321ms  (115/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [116] [3,3,3,3,6;3,3,3,4,4;3,3,4,3,4] cells=0 10921ms  (116/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4860 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [119] [3,3,3,3,6;3,3,3,4,4;3,3,4,12] cells=0 6170ms  (117/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4860 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [120] [3,3,3,3,6;3,3,3,4,4;3,3,12,4] cells=0 6127ms  (118/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4860 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [121] [3,3,3,3,6;3,3,3,4,4;3,3,12,4] cells=0 6165ms  (119/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 18060 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 18060 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 18060 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 12720 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 12720 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [125] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 10706ms  (120/449)
+  [126] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 15693ms  (121/449)
+  [127] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 8267ms  (122/449)
+  [128] [3,3,3,3,6;3,6,4,4;3,3,3,4,4]  cells=1 8296ms  (124/449)
+  [130] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 8336ms  (125/449)
+  [131] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 8362ms  (126/449)
+  [133] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 8590ms  (127/449)
+  [132] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 16244ms  (128/449)
+  [134] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 8343ms  (129/449)
+  [136] [3,3,3,3,6;3,3,3,4,4;3,4,4,6]  cells=1 7788ms  (130/449)
+  [135] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 16217ms  (131/449)
+  [137] [3,3,3,3,6;3,3,3,4,4;3,6,4,4]  cells=1 8210ms  (132/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 18060 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 18060 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [122] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]  cells=0 94031ms  (133/449)
+  [123] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]  cells=0 93923ms  (134/449)
+  [124] [3,3,3,3,6;3,3,6,6;3,3,3,4,4]  cells=0 94023ms  (135/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 12720 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 21228 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 21228 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [141] [3,3,3,3,6;3,3,3,4,4;4,4,4,4]  cells=0 8406ms  (136/449)
+  [142] [3,3,3,3,6;3,3,3,4,4;4,4,4,4]  cells=0 8328ms  (137/449)
+  [143] [3,3,3,3,6;3,3,4,3,4;3,3,4,3,4] cells=0 4484ms  (138/449)
+  [144] [3,3,3,3,6;3,3,4,3,4;3,3,4,3,4] cells=0 4487ms  (139/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4860 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [145] [3,3,3,3,6;3,3,4,3,4;3,3,4,12] cells=0 6446ms  (140/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 12720 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [140] [3,3,3,3,6;3,3,3,4,4;3,4,6,4]  cells=0 24708ms  (141/449)
+  [146] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]  cells=0 9809ms  (142/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 12720 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [148] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]  cells=0 7914ms  (143/449)
+  [147] [3,3,3,3,6;3,6,4,4;3,3,4,3,4]  cells=0 15710ms  (144/449)
+  [149] [3,3,3,3,6;3,3,4,3,4;3,4,4,6]  cells=0 15471ms  (145/449)
+  [150] [3,3,3,3,6;3,3,4,3,4;3,6,4,4]  cells=0 15378ms  (147/449)
+[PeriodSolver k=3] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): poolSteps=23, poolLmax=23.01, longAxisMax=24.22, gridAreaMax=24.17, oblAreaMax=12.11, compactOffMax2=84.07, gridShortMax2=24.32, areaBound=72.42 — per-branch census radii; block-cap and join-den invariants asserted
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1284 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [154] [3,3,3,3,6;3,3,4,12;3,3,12,4]  cells=0 5939ms  (148/449)
+  [151] [3,3,3,3,6;3,3,4,3,4;3,4,4,6]  cells=0 15518ms  (149/449)
+  [153] [3,3,3,3,6;3,3,4,3,4;3,4,6,4]  cells=0 15398ms  (150/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+  [155] [3,3,3,3,6;3,6,4,4;3,3,4,12]   cells=0 6150ms  (151/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 906 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [156] [3,3,3,3,6;3,6,4,4;3,3,12,4]   cells=0 6017ms  (152/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 906 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4068 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [157] [3,3,3,3,6;3,3,4,12;4,6,12]    cells=0 6138ms  (154/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 906 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [158] [3,3,3,3,6;3,3,6,6;3,3,6,6]    cells=0 3995ms  (155/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 756 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [161] [3,3,3,3,6;3,3,6,6;3,3,6,6]    cells=0 3039ms  (157/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 756 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [138] [3,3,3,3,6;3,6,3,6;3,3,3,4,4]  cells=0 94150ms  (158/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 756 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 756 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [163] [3,3,3,3,6;3,3,3,3,6;3,3,6,6]  cells=0 4089ms  (160/449)
+  [164] [3,3,3,3,6;3,3,3,3,6;3,3,6,6]  cells=0 3304ms  (161/449)
+  [166] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 3406ms  (162/449)
+  [139] [3,3,3,3,6;3,6,3,6;3,3,3,4,4]  cells=0 94173ms  (163/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 756 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [165] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 4082ms  (164/449)
+  [168] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 3476ms  (166/449)
+  [169] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 3306ms  (167/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 906 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [170] [3,3,3,3,6;3,3,6,6;3,3,3,3,6]  cells=0 4020ms  (169/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 906 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [172] [3,3,3,3,6;3,3,6,6;3,6,3,6]    cells=0 6644ms  (170/449)
+  [173] [3,3,3,3,6;3,3,6,6;3,6,3,6]    cells=0 6527ms  (171/449)
+  [175] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 7795ms  (172/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+  [176] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 7212ms  (173/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1050 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1050 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [177] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 7487ms  (174/449)
+  [174] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 12165ms  (175/449)
+  [179] [3,3,3,3,6;3,3,6,6;6,6,6]      cells=1 4465ms  (176/449)
+  [180] [3,3,3,3,6;3,3,6,6;6,6,6]      cells=1 4826ms  (177/449)
+  [178] [3,3,3,3,6;3,6,3,6;3,3,6,6]    cells=0 7825ms  (178/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [186] [3,3,3,3,6;3,3,3,3,6;3,6,3,6]  cells=2 3535ms  (182/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 20364 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 20364 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [187] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 3992ms  (183/449)
+  [188] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 4023ms  (184/449)
+  [189] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 4079ms  (185/449)
+  [190] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 3765ms  (186/449)
+  [191] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 3678ms  (187/449)
+  [192] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 3833ms  (188/449)
+  [193] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 3201ms  (189/449)
+  [194] [3,3,3,3,6;3,6,3,6;3,3,3,3,6]  cells=2 3038ms  (190/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 2304 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 2304 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 2304 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":1949117658,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":1949117658,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":1949117658,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3049304164,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3049304164,"denMax":60}
+  [196] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 220769ms  (191/449)
+  [181] [3,3,3,3,6;3,6,3,6;3,6,4,4]    cells=0 242845ms  (192/449)
+  [182] [3,3,3,3,6;3,6,3,6;3,4,4,6]    cells=0 245945ms  (193/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 2304 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 2304 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [195] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 242400ms  (194/449)
+  [197] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 259179ms  (195/449)
+  [198] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 50827ms  (196/449)
+  [201] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 57795ms  (197/449)
+  [202] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 66442ms  (198/449)
+  [203] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 58097ms  (199/449)
+  [204] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 61987ms  (200/449)
+  [205] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 47716ms  (201/449)
+  [206] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 52325ms  (202/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":1949117658,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":1949117658,"denMax":60}
+  [207] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 52008ms  (203/449)
+  [208] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 56308ms  (204/449)
+  [209] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 49914ms  (205/449)
+  [210] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 63164ms  (206/449)
+  [211] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 56219ms  (207/449)
+  [200] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 269701ms  (208/449)
+  [199] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 273910ms  (209/449)
+  [212] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 72299ms  (210/449)
+  [213] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 63665ms  (211/449)
+  [214] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=2 56288ms  (212/449)
+  [215] [3,3,3,4,4;3,3,4,3,4;3,3,4,3,4] cells=1 53153ms  (213/449)
+  [216] [3,3,3,4,4;3,3,3,4,4;3,3,4,3,4] cells=2 55539ms  (214/449)
+  [217] [3,3,3,4,4;3,3,3,4,4;3,3,4,3,4] cells=2 53479ms  (215/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":12564140042,"denMax":60}
+  [219] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 49471ms  (216/449)
+  [218] [3,3,3,4,4;3,3,3,4,4;3,3,4,3,4] cells=2 54497ms  (217/449)
+  [221] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 49043ms  (218/449)
+  [220] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 55121ms  (219/449)
+  [222] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 54974ms  (220/449)
+  [223] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=1 66886ms  (221/449)
+  [224] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=1 81219ms  (222/449)
+  [226] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 71554ms  (223/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+  [225] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 79602ms  (224/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3588 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [230] [3,3,3,4,4;3,3,4,12;3,3,4,3,4] cells=0 5294ms  (225/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":16962288670,"denMax":60}
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3588 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [231] [3,3,3,4,4;3,3,4,12;3,3,4,3,4] cells=0 5449ms  (237/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3432 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [243] [3,3,3,4,4;3,3,4,3,4;3,4,4,6]  cells=0 6604ms  (238/449)
+  [227] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=1 82159ms  (240/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3432 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [246] [3,3,3,4,4;3,3,4,3,4;3,4,4,6]  cells=0 4403ms  (241/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3432 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [244] [3,3,3,4,4;3,3,4,3,4;3,6,4,4]  cells=0 11436ms  (242/449)
+  [248] [3,3,3,4,4;3,3,4,3,4;3,4,4,6]  cells=0 6225ms  (243/449)
+  [247] [3,3,3,4,4;3,3,4,3,4;3,6,4,4]  cells=0 13770ms  (245/449)
+  [249] [3,3,3,4,4;3,3,4,3,4;3,6,4,4]  cells=0 7005ms  (246/449)
+  [251] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]  cells=0 7652ms  (247/449)
+  [252] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]  cells=0 8173ms  (248/449)
+  [253] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]  cells=0 8331ms  (249/449)
+  [254] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]  cells=0 8925ms  (251/449)
+  [255] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]  cells=0 8632ms  (252/449)
+  [257] [3,3,3,4,4;3,4,6,4;3,3,4,3,4]  cells=0 8160ms  (253/449)
+  [258] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]  cells=0 7983ms  (254/449)
+  [259] [3,3,3,4,4;3,3,4,3,4;3,4,6,4]  cells=0 8090ms  (255/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [229] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 64642ms  (256/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 14616 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 14616 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+  [228] [3,3,3,4,4;3,3,4,3,4;3,3,3,4,4] cells=2 86498ms  (257/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 14616 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3612 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [263] [3,3,3,4,4;3,3,4,12;3,3,12,4]  cells=0 12240ms  (258/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3612 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [264] [3,3,3,4,4;3,3,4,12;3,3,12,4]  cells=0 12023ms  (259/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3588 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [265] [3,3,3,4,4;3,3,3,4,4;3,3,12,4] cells=0 11767ms  (260/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3588 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [266] [3,3,3,4,4;3,3,4,12;3,3,3,4,4] cells=0 12024ms  (267/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4692 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [273] [3,3,3,4,4;3,3,4,12;3,4,6,4]   cells=0 11785ms  (268/449)
+  [275] [3,3,3,4,4;3,4,6,4;3,3,12,4]   cells=1 328ms  (269/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4692 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [274] [3,3,3,4,4;3,4,6,4;3,3,4,12]   cells=1 11898ms  (270/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 19356 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 19356 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [81] [3,3,3,3,3,3;3,3,3,3,3,3;3,3,4,3,4] cells=0 1159902ms  (271/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 19356 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [276] [3,3,3,4,4;3,4,4,6;3,3,6,6]    cells=1 120557ms  (272/449)
+  [277] [3,3,3,4,4;3,4,4,6;3,3,6,6]    cells=1 136412ms  (273/449)
+  [278] [3,3,3,4,4;3,3,6,6;3,4,4,6]    cells=1 136397ms  (274/449)
+  [279] [3,3,3,4,4;3,3,6,6;3,6,4,4]    cells=1 60993ms  (275/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3936 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [280] [3,3,3,4,4;3,4,4,6;3,3,6,6]    cells=0 51171ms  (276/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3432 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [281] [3,3,3,4,4;3,4,4,6;3,6,4,4]    cells=0 14251ms  (277/449)
+  [282] [3,3,3,4,4;3,3,3,4,4;3,4,4,6]  cells=0 12457ms  (278/449)
+  [285] [3,3,3,4,4;3,3,3,4,4;3,6,4,4]  cells=0 7035ms  (279/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3432 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3432 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [283] [3,3,3,4,4;3,3,3,4,4;3,6,4,4]  cells=0 12492ms  (280/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [284] [3,3,3,4,4;3,3,3,4,4;3,4,4,6]  cells=0 18384ms  (281/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3936 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3936 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [287] [3,3,3,4,4;3,4,6,4;3,4,4,6]    cells=0 13050ms  (282/449)
+  [288] [3,3,3,4,4;3,4,4,6;3,4,6,4]    cells=0 6883ms  (283/449)
+  [286] [3,3,3,4,4;3,4,6,4;3,4,4,6]    cells=0 18124ms  (284/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 20868 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [289] [3,3,3,4,4;4,4,4,4;3,4,4,6]    cells=0 13485ms  (285/449)
+  [291] [3,3,3,4,4;3,4,6,4;3,4,6,4]    cells=0 13350ms  (287/449)
+  [294] [3,3,3,4,4;3,3,3,4,4;3,4,6,4]  cells=0 7070ms  (290/449)
+  [296] [3,3,3,4,4;3,4,6,4;3,3,3,4,4]  cells=0 6966ms  (292/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4884 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [298] [3,3,3,4,4;3,4,6,4;4,6,12]     cells=0 11177ms  (293/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 18048 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 18048 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [290] [3,3,3,4,4;3,4,4,6;3,6,3,6]    cells=0 51070ms  (294/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 14616 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [59] [3,3,3,3,3,3;3,3,3,4,4;3,3,4,3,4] cells=0 1691749ms  (295/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 14616 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":23538144364,"denMax":60}
+  [75] [3,3,3,3,3,3;3,3,3,4,4;4,4,4,4] cells=4 2472778ms  (296/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 14616 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":10644837790,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":10644837790,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":15160484604,"denMax":60}
+  [299] [3,3,3,4,4;4,4,4,4;4,4,4,4]    cells=3 1387526ms  (297/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 6756 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [300] [3,3,3,4,4;4,4,4,4;4,4,4,4]    cells=3 1392151ms  (311/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":15160484604,"denMax":60}
+  [317] [3,12,12;3,3,12,4;3,3,4,3,4]   cells=0 18426ms  (312/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":15160484604,"denMax":60}
+  [318] [3,3,4,3,4;3,4,4,6;3,3,6,6]    cells=0 34932ms  (313/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 6756 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [319] [3,3,4,3,4;3,3,6,6;3,4,4,6]    cells=0 54249ms  (323/449)
+  [329] [3,12,12;3,4,3,12;3,3,4,3,4]   cells=0 27512ms  (324/449)
+  [331] [3,3,4,3,4;3,4,4,6;3,6,4,4]    cells=0 7606ms  (327/449)
+  [333] [3,3,4,3,4;3,3,4,3,4;3,4,4,6]  cells=0 7680ms  (328/449)
+  [334] [3,3,4,3,4;3,3,4,3,4;3,6,4,4]  cells=0 7739ms  (329/449)
+  [335] [3,3,4,3,4;3,3,4,3,4;3,4,4,6]  cells=0 7839ms  (330/449)
+  [336] [3,3,4,3,4;3,4,6,4;3,4,4,6]    cells=1 15781ms  (331/449)
+  [337] [3,3,4,3,4;3,4,6,4;3,6,4,4]    cells=1 15623ms  (332/449)
+  [338] [3,3,4,3,4;3,4,6,4;3,6,4,4]    cells=1 3291ms  (333/449)
+  [340] [3,3,4,3,4;3,4,4,6;3,4,6,4]    cells=1 3506ms  (334/449)
+  [339] [3,3,4,3,4;3,4,6,4;3,4,4,6]    cells=1 9509ms  (336/449)
+  [342] [3,3,4,3,4;3,4,6,4;3,4,4,6]    cells=0 4159ms  (338/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4884 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [344] [3,3,4,3,4;3,4,4,6;4,12,6]     cells=0 12093ms  (339/449)
+  [345] [3,3,4,3,4;3,4,6,4;3,4,6,4]    cells=0 16231ms  (340/449)
+  [347] [3,3,4,3,4;3,4,6,4;3,4,6,4]    cells=0 10524ms  (341/449)
+  [346] [3,3,4,3,4;3,4,6,4;3,4,6,4]    cells=0 15689ms  (342/449)
+  [349] [3,3,4,3,4;3,4,6,4;3,4,6,4]    cells=0 7841ms  (343/449)
+  [348] [3,3,4,3,4;3,4,6,4;3,4,6,4]    cells=0 9884ms  (344/449)
+  [350] [3,3,4,3,4;3,4,6,4;3,4,6,4]    cells=0 6286ms  (345/449)
+  [351] [3,3,4,3,4;3,4,6,4;3,4,6,4]    cells=0 5657ms  (346/449)
+  [352] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]  cells=0 7897ms  (347/449)
+  [353] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]  cells=0 7875ms  (348/449)
+  [354] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]  cells=0 7733ms  (349/449)
+  [355] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]  cells=0 7745ms  (350/449)
+  [356] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]  cells=0 7679ms  (352/449)
+  [358] [3,3,4,3,4;3,4,6,4;3,3,4,3,4]  cells=0 7673ms  (353/449)
+  [359] [3,3,4,3,4;3,4,6,4;3,3,4,3,4]  cells=0 7744ms  (354/449)
+  [360] [3,3,4,3,4;3,3,4,3,4;3,4,6,4]  cells=0 7986ms  (358/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 660 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 660 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [364] [3,3,12,4;3,4,3,12;3,3,12,4]   cells=0 17681ms  (359/449)
+  [365] [3,3,12,4;3,4,3,12;3,3,4,12]   cells=0 17970ms  (362/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1104 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [368] [3,3,12,4;3,4,6,4;3,3,4,12]    cells=0 11761ms  (363/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4068 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [370] [3,3,4,12;3,4,3,12;3,4,3,12]   cells=0 6597ms  (364/449)
+  [369] [3,12,12;3,3,12,4;3,3,4,12]    cells=0 22766ms  (366/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4068 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [373] [3,12,12;3,4,3,12;3,3,12,4]    cells=1 13577ms  (367/449)
+  [372] [3,12,12;3,4,3,12;3,3,12,4]    cells=1 23328ms  (368/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1236 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [374] [3,3,4,12;3,4,3,12;4,6,12]     cells=0 11602ms  (369/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1176 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [375] [3,3,4,12;3,4,6,4;3,4,6,4]     cells=0 11672ms  (370/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1176 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [376] [3,3,4,12;3,4,6,4;3,4,6,4]     cells=0 11462ms  (372/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4020 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [378] [3,12,12;3,3,12,4;3,4,6,4]     cells=1 12172ms  (373/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 3192 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [379] [3,3,4,12;4,6,12;3,6,4,4]      cells=0 11391ms  (374/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4116 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4308 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [381] [3,12,12;3,3,12,4;4,12,6]      cells=0 11453ms  (375/449)
+  [380] [3,12,12;3,3,12,4;3,12,12]     cells=0 21591ms  (376/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1260 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [382] [3,3,4,12;4,6,12;4,12,6]       cells=0 11445ms  (377/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 8292 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 8292 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":15160484604,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":15160484604,"denMax":60}
+  [262] [3,3,3,4,4;3,3,4,3,4;4,4,4,4]  cells=1 2109993ms  (378/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 222 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [385] [3,3,6,6;3,6,3,6;3,6,3,6]      cells=1 5133ms  (379/449)
+  [386] [3,3,6,6;3,6,3,6;3,6,3,6]      cells=1 2761ms  (380/449)
+  [387] [3,3,6,6;3,6,3,6;3,6,3,6]      cells=1 2774ms  (381/449)
+  [388] [3,3,6,6;3,6,3,6;3,3,6,6]      cells=1 3723ms  (382/449)
+  [389] [3,3,6,6;3,6,3,6;3,3,6,6]      cells=1 2811ms  (383/449)
+  [390] [3,3,6,6;3,6,3,6;3,3,6,6]      cells=1 3430ms  (384/449)
+  [391] [3,3,6,6;3,6,3,6;3,3,6,6]      cells=1 3288ms  (385/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1158 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [392] [3,3,6,6;3,6,3,6;6,6,6]        cells=2 3554ms  (386/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 1224 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1572 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1248 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1176 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [395] [3,4,3,12;3,4,6,4;3,6,4,4]     cells=0 11206ms  (389/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1104 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [399] [3,4,3,12;3,4,3,12;3,4,6,4]    cells=0 11015ms  (393/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4020 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [401] [3,12,12;3,4,3,12;3,4,6,4]     cells=1 11496ms  (395/449)
+  [261] [3,3,3,4,4;3,3,4,3,4;4,4,4,4]  cells=1 2185224ms  (396/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4116 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4116 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [402] [3,12,12;3,4,3,12;3,12,12]     cells=0 15717ms  (397/449)
+  [260] [3,3,3,4,4;3,3,4,3,4;4,4,4,4]  cells=1 2198223ms  (398/449)
+  [403] [3,12,12;3,4,3,12;3,12,12]     cells=0 12804ms  (399/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4068 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 4068 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 924 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [404] [3,12,12;3,4,3,12;3,4,3,12]    cells=0 10857ms  (400/449)
+  [405] [3,12,12;3,4,3,12;3,4,3,12]    cells=0 13045ms  (401/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 924 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":2067313610,"denMax":60}
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 924 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":2067313610,"denMax":60}
+  [383] [3,3,6,6;3,6,3,6;3,6,4,4]      cells=2 285237ms  (402/449)
+  [384] [3,3,6,6;3,6,3,6;3,4,4,6]      cells=2 281077ms  (403/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 924 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 924 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [406] [3,4,4,6;3,4,6,4;3,4,6,4]      cells=1 138917ms  (404/449)
+  [407] [3,4,4,6;3,4,6,4;3,4,6,4]      cells=1 137048ms  (405/449)
+  [408] [3,4,4,6;3,4,6,4;3,4,6,4]      cells=1 139435ms  (406/449)
+  [301] [3,3,3,4,4;3,3,3,4,4;4,4,4,4]  cells=4 2042320ms  (407/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 924 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [411] [3,4,4,6;3,4,6,4;3,4,6,4]      cells=0 40391ms  (408/449)
+  [412] [3,4,4,6;3,6,4,4;3,4,6,4]      cells=1 38340ms  (409/449)
+  [413] [3,4,4,6;3,6,4,4;3,4,6,4]      cells=1 39698ms  (410/449)
+  [302] [3,3,3,4,4;3,3,3,4,4;4,4,4,4]  cells=4 1972024ms  (411/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 924 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [409] [3,4,4,6;3,4,6,4;3,4,6,4]      cells=1 135186ms  (412/449)
+  [410] [3,4,4,6;3,4,6,4;3,4,6,4]      cells=1 133265ms  (413/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7776 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [420] [3,4,4,6;3,4,6,4;4,4,4,4]      cells=1 15960ms  (414/449)
+  [421] [3,4,4,6;4,4,4,4;3,4,6,4]      cells=1 3257ms  (415/449)
+  [415] [3,4,4,6;3,4,6,4;3,6,4,4]      cells=0 42265ms  (416/449)
+  [416] [3,4,4,6;3,4,6,4;3,6,4,4]      cells=0 42057ms  (417/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1332 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [422] [3,4,4,6;3,4,6,4;4,12,6]       cells=0 5698ms  (418/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1332 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [423] [3,4,4,6;3,4,6,4;4,12,6]       cells=0 5952ms  (419/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 8292 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+  [417] [3,4,4,6;3,6,4,4;3,4,6,4]      cells=1 42575ms  (420/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [425] [3,4,4,6;3,6,3,6;3,6,3,6]      cells=2 28715ms  (421/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [414] [3,4,4,6;3,4,6,4;3,6,4,4]      cells=1 134168ms  (422/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [418] [3,4,4,6;3,4,6,4;3,6,4,4]      cells=1 130418ms  (423/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":2067313610,"denMax":60}
+  [424] [3,4,4,6;3,6,3,6;3,6,3,6]      cells=2 246723ms  (424/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":15160484604,"denMax":60}
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7128 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3372164286,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3372164286,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3372164286,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3372164286,"denMax":60}
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3372164286,"denMax":60}
+  [419] [3,4,4,6;3,6,3,6;3,4,6,4]      cells=0 1218019ms  (425/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 13596 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [426] [3,4,4,6;3,6,3,6;3,6,4,4]      cells=3 1209252ms  (426/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3372164286,"denMax":60}
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 8868 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [433] [3,4,4,6;3,6,3,6;4,12,6]       cells=1 6304ms  (427/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 7776 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [434] [3,4,4,6;4,4,4,4;3,6,4,4]      cells=0 10026ms  (428/449)
+  [435] [3,4,4,6;4,4,4,4;3,6,4,4]      cells=0 6382ms  (429/449)
+  [427] [3,4,4,6;3,6,3,6;3,4,4,6]      cells=3 1228734ms  (430/449)
+  [436] [3,4,4,6;4,4,4,4;3,4,4,6]      cells=0 9185ms  (431/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1332 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [437] [3,4,4,6;3,6,4,4;4,12,6]       cells=0 10683ms  (432/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 8148 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 8148 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [428] [3,4,4,6;3,6,3,6;3,6,4,4]      cells=3 1230294ms  (433/449)
+  [438] [3,4,4,6;4,4,4,4;4,4,4,4]      cells=0 18902ms  (434/449)
+  [439] [3,4,4,6;4,4,4,4;4,4,4,4]      cells=0 18894ms  (435/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 8148 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1320 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [441] [3,4,4,6;4,12,6;4,6,12]        cells=0 11074ms  (436/449)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §3): 330072 off-grid pool vectors exceed the round shell box compactOffMax2=84.07 — no census shell reaches them
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 392688 pool vectors exceed gridShortMax2=24.32 = the non-rigid det box (short² ≤ det)
+[PeriodSolver k=3] census-pruned (proof-anchored, SMALLK_W_BOUND §4): 1320 solved axes beyond the non-rigid box (det ≤ 24.17, |v| ≤ 24.22) — unrealizable at k ≤ 3 by theorem
+  [442] [3,4,4,6;4,12,6;4,6,12]        cells=0 10935ms  (443/449)
+  [440] [3,4,4,6;4,4,4,4;4,4,4,4]      cells=0 18329ms  (444/449)
+  [429] [3,4,4,6;3,6,3,6;3,6,4,4]      cells=3 1253163ms  (445/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":3372164286,"denMax":60}
+  [430] [3,4,4,6;3,6,3,6;3,6,4,4]      cells=3 1253591ms  (446/449)
+  [303] [3,3,3,4,4;4,4,4,4;3,3,3,4,4]  cells=1 2480274ms  (447/449)
+  [431] [3,4,4,6;3,6,3,6;3,4,4,6]      cells=3 1180225ms  (448/449)
+[PeriodSolver k=3] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): {"cause":"join-waived","rejects":2747601126,"denMax":60}
+  [432] [3,4,4,6;3,6,3,6;4,4,4,4]      cells=4 389851ms  (449/449)
+
+PARALLEL k=3: 61 distinct tilings (from 303 raw cells), 0 seeds timed out, 9506.9s total, 8 workers
+COMPOSITION digest=7f2f4160092c7ff3 count=61

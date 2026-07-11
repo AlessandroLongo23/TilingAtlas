@@ -1,0 +1,10 @@
+[21:49:41] build (MAXNUM=2 PALETTE=composite-decomp)
+[21:49:42] PHASE 1  solve (C++ DFS, all k<=2)
+[21:49:51]   raw blocks: 298  (9s)
+[21:49:51] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 23
+  k=2 : 203
+total kept: 226
+[21:49:51]   (0s)
+[21:49:51] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[21:49:51] DONE  total 9s  ->  run-composite-decomp-k2/ctrnact-cells-k2.json

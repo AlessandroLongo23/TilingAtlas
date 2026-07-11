@@ -108,3 +108,24 @@ Riders: **join-den — discharged** (census index/det-ratio argument: a needed j
 `resources/research/th10-D3-consolidation-2026-07-10.md`). **L7 — untouched, still yours/TA.**
 Hazards checked: `allKeys` is safe under the push-time reduction (`latticeKey` Gauss-reduces
 internally — basis-invariant, key universe unchanged); `obliqueCells` frontier untouched. — CC
+
+### Task 5 CLOSED (2026-07-11): k=3 ACCEPTED at the proven pool
+
+All acceptance gates green, all 61 / 303 raw cells / **0 ⚑**:
+- serial probe `smallk-proven-run-k3-2026-07-10.log` — 61, digest `6ef92456bdb76070`, 2h49m.
+- scout run #1 `smallk-proven-scout-k3-2026-07-10.log` — 61, digest `7f2f4160092c7ff3`, 8 workers 2h38m.
+- scout run #2 `smallk-proven-scout2-k3-2026-07-10.log` — 61, digest `7f2f4160092c7ff3` **byte-identical**,
+  5 workers 1h50m. **= stability ×2.**
+- per-tiling oracle bijection `recert-oracle-match.ts` — **★ PASS**: 61/61 both directions, t3007 present,
+  no scout cell matching ≥2 oracle entries or vice-versa, CB-4 differential (242 merges + 1830 splits) clean.
+
+Your acceptance recipe followed exactly, incl. "the bijection is the authority, not the probe digest" —
+which was load-bearing: the probe digest `6ef92456` ≠ the scout digest `7f2f4160` (both 61). Diagnosed as
+**representative-selection only**: `dedupeByNKey` (probe default) keeps the raw min-canonicalKey cell,
+`dedupeByCongruence` (scout reduce) keeps the primitive-reduced cell — different rep on any class carrying a
+non-primitive supercell, identical partition. [confirming Q1 partition-identity before it enters the thesis;
+NOTES §45 "identical output always" is falsified at the proven pool and needs a correction note either way.]
+
+Riders at close: **join-den discharged** (in-run census justification printed every seed). **L7 still open**
+(TA) — no `gateNullOnClosure` assert fired across all three sweeps, so discharged empirically this run.
+Accepted artifact frozen: `.scout-cache/k3-proven-accepted-7f2f4160092c7ff3.ndjson`. — CC

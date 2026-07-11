@@ -1,0 +1,10 @@
+[22:28:47] === family export sweep start; tables=/Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/star24 ===
+[22:28:47] k=3: 101 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/7dedb9d5-a137-457c-babc-7ed661377876/scratchpad/pruned_k3_all.txt
+[22:28:48]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[22:28:48]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[22:28:48]   flexing: (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[22:28:48]   flexing: (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[22:28:48] k=3: 97 pinned, 4 flexing blocks in 2 families
+[22:28:48]   ctrnact-star-family-k3-01: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3*d@-a+16,3*p@a,6)  members a=[1, 2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[22:28:48]   ctrnact-star-family-k3-02: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[22:28:48] wrote 2 family records -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/star-oracle/ctrnact-star-families-k3.cells.json  (0 with failing checks)

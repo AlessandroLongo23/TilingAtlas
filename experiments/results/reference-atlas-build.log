@@ -7,20 +7,11 @@
   k=6: 673/673 reconstructed (target 673)  ✓
   no skips ✓
 
-=== Phase 2: Myers k=1 in-ring stars (Fig-4 subclass) ===
-  ⚑ SCOPED (display-only, not exhaustive): single-star dent-reg VCs, ≤6 corners, 2500ms/seed, 600s wall budget — the ~8h uncapped sweep is deliberately NOT run.
-  solving 439 single-star VCs …
-    …50/439 (192s, 1 raw cells, 28 timeouts)
-    …100/439 (446s, 2 raw cells, 65 timeouts)
-  ⚑ WALL BUDGET hit — 313 VCs SKIPPED (display-only cap, logged loud).
-  distinct k=1 star tilings (congruence): 3 (from 3 raw, 126 VCs solved, 87 timeouts)
-
-  ⚑ symmetry overlay DISABLED for all 3 Myers star tilings (regular-only codec has no star support; no exactSource emitted).
-=== Phase 3: Čtrnáct k=7 (reproduced, extends Galebach beyond k=6) ===
+    …k=7: 500 reconstructed
+    …k=7: 1000 reconstructed
   k=7: 1472/1472 reconstructed (target 1472)  ✓
   no skips ✓
-
-=== Phase 4: Čtrnáct-engine star catalogs (k=1..2 in-ring; candidates flagged) ===
+=== Phase 4: Čtrnáct-engine star catalogs (k=1..2 in-ring; family snapshots folded away) ===
   ctrnact-star-k1-01  k=1  3.4.6.12*  (18 cell polys, area check ✓)
   ctrnact-star-k1-02  k=1  3.12*  (15 cell polys, area check ✓)
   ctrnact-star-k1-03  k=1  3*.12  (3 cell polys, area check ✓)
@@ -36,17 +27,6 @@
   ctrnact-star-k1-13  k=1  3.4.8.8*  (12 cell polys, area check ✓)
   ctrnact-star-k1-14  k=1  3.4*.8*  (6 cell polys, area check ✓)
   ctrnact-star-k1-15  k=1  3.4.8*  (10 cell polys, area check ✓)
-  ctrnact-star-k1-16  k=1  3*.6  (3 cell polys, area check ✓)
-  ctrnact-star-k1-17  k=1  3*.6  (3 cell polys, area check ✓)
-  ctrnact-star-k1-18  k=1  4.4*  (2 cell polys, area check ✓)
-  ctrnact-star-k1-19  k=1  4.4*  (2 cell polys, area check ✓)
-  ctrnact-star-k1-20  k=1  4.4*  (2 cell polys, area check ✓)
-  ctrnact-star-k1-21  k=1  3.6*  (3 cell polys, area check ✓)
-  ctrnact-star-k1-22  k=1  3.6*  (3 cell polys, area check ✓)
-  ctrnact-star-k1-23  k=1  3.6*  (3 cell polys, area check ✓)
-  ctrnact-star-k1-24  k=1  3.6*  (3 cell polys, area check ✓)
-  ctrnact-star-k1-25  k=1  3.3*  (3 cell polys, area check ✓)
-  ctrnact-star-k1-26  k=1  3.3*  (3 cell polys, area check ✓)
   ctrnact-star-k2-01  k=2  3.6.12*  ★ CANDIDATE (not in Myers)  (9 cell polys, area check ✓)
   ctrnact-star-k2-02  k=2  4.6*.12*  (9 cell polys, area check ✓)
   ctrnact-star-k2-03  k=2  4.6*.12*  (21 cell polys, area check ✓)
@@ -80,31 +60,200 @@
   ctrnact-star-k2-31  k=2  3.4*  (3 cell polys, area check ✓)
   ctrnact-star-k2-32  k=2  3.4*  (5 cell polys, area check ✓)
   ctrnact-star-k2-33  k=2  3.4.4*  (10 cell polys, area check ✓)
-  ctrnact-star-k2-34  k=2  3.4*  (6 cell polys, area check ✓)
   ctrnact-star-k2-35  k=2  3.4.6*  (12 cell polys, area check ✓)
   ctrnact-star-k2-36  k=2  3.6*  (7 cell polys, area check ✓)
   ctrnact-star-k2-37  k=2  3.6*  (15 cell polys, area check ✓)
-  ctrnact-star-k2-38  k=2  3*.4.6*  (6 cell polys, area check ✓)
-  ctrnact-star-k2-39  k=2  3.3*.6*  (9 cell polys, area check ✓)
-  ctrnact-star-k2-40  k=2  3.3*.6*  (9 cell polys, area check ✓)
-  ctrnact-star-k2-41  k=2  3.3*.6*  (9 cell polys, area check ✓)
-  ctrnact-star-k2-42  k=2  3.3*  ★ CANDIDATE (not in Myers)  (6 cell polys, area check ✓)
-  ctrnact-star-k2-43  k=2  3.3*  (8 cell polys, area check ✓)
-  ctrnact-star-k2-44  k=2  3.3*  ★ CANDIDATE (not in Myers)  (6 cell polys, area check ✓)
-  ctrnact-star-k2-45  k=2  3.3*  (8 cell polys, area check ✓)
-  Phase 4 total: 71 star tilings (4 candidates)
+  ctrnact-star-k3-preview-k3-01  k=3  3.4.6.12.12*  (30 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-02  k=3  3.4.6.12.12*  (42 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-03  k=3  3.3*.4.6  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-04  k=3  3.4.4*.6  (8 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-05  k=3  3.4.4*.6  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-06  k=3  3.4.4*.6  (9 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-07  k=3  3.4.4*.6  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-08  k=3  3.4.4*.6  (9 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-09  k=3  3.4.4*.6  (16 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-10  k=3  3.4.6.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-11  k=3  3.4.6.6*  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-12  k=3  3.4.6.12*  (36 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-13  k=3  3.4.6.12*  (23 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-14  k=3  3.4.6.12*  (45 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-15  k=3  3.4.6.12*  (45 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-16  k=3  3.4.6.12*  (45 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-17  k=3  3.4.6.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-18  k=3  3.4.6.12*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-19  k=3  3.4.6.12*  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-20  k=3  3.4.8.8*  (12 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-21  k=3  3.4.8.8*  (14 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-22  k=3  3.4.8.8*  (22 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-23  k=3  3.3*.4.12  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-24  k=3  3.3*.4.12  (18 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-25  k=3  3.4.4*.12  (8 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-26  k=3  3.4.12.12*  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-27  k=3  3.3*.4  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-28  k=3  3.3*.4  (5 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-29  k=3  3.3*.4  (12 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-30  k=3  3.3*.4  (8 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-31  k=3  3.3*.4  (17 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-32  k=3  3.3*.4  (8 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-33  k=3  3.3*.4  (4 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-34  k=3  3.3*.4.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-35  k=3  3.3*.4.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-36  k=3  3.4.4*  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-37  k=3  3.4.4*  (14 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-38  k=3  3.4.4*  (14 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-39  k=3  3.4.4*  (7 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-40  k=3  3.4.4*  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-41  k=3  3.4.4*  (9 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-42  k=3  3.4.4*  (5 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-43  k=3  3.4.4*.8*  (22 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-44  k=3  3.4.4*.8*  (26 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-45  k=3  3.4.6*  (27 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-46  k=3  3.4.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-47  k=3  3.4.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-48  k=3  3.4.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-49  k=3  3.4.12*  (39 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-50  k=3  3.4.12*  (45 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-51  k=3  3.4.12*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-52  k=3  3.4.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-55  k=3  3.4*.6  (5 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-56  k=3  3.4*.6  (7 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-57  k=3  3.4*.6  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-58  k=3  3.4*.6.6*  (18 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-59  k=3  3.4*.6.12*  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-60  k=3  3.6.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-61  k=3  3.6.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-62  k=3  3.6.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-63  k=3  3.6.6*  (13 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-64  k=3  3.6.6*  (6 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-65  k=3  3.6.6*  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-66  k=3  3.6.6*  (18 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-67  k=3  3.6.6*  (8 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-68  k=3  3.6.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-69  k=3  3.6.6*  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-70  k=3  3.6.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-71  k=3  3.4*.8.8*  (16 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-72  k=3  3.3*.12.12*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-73  k=3  3.3*.12.12*  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-74  k=3  3.3*.12.12*  (33 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-75  k=3  3.4*.12  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-76  k=3  3.4*.12.12*  (20 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-77  k=3  3.12.12*  (48 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-78  k=3  3.12.12*  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-80  k=3  3.3*.6*.8*  (30 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-82  k=3  3.4*  (7 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-83  k=3  3.4*  (22 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-84  k=3  3.4*  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-85  k=3  3.4*.12*  (13 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-86  k=3  3.6*  (5 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-87  k=3  3.6*  (21 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-88  k=3  3.6*  (13 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-89  k=3  3.6*  (27 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-90  k=3  3.12*  (36 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-91  k=3  4.8.8*  (6 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-92  k=3  4.6*  (24 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-93  k=3  4.6*  (10 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-94  k=3  4.6*  (14 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-95  k=3  4.6*  (30 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-96  k=3  4.6*  (36 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-97  k=3  4.6*  (30 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-98  k=3  4.6*  (42 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-99  k=3  4.6*  (22 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-100  k=3  4.6*.12*  (15 cell polys, area check ✓)
+  ctrnact-star-k3-preview-k3-101  k=3  4.8*  (20 cell polys, area check ✓)
+  Phase 4 total: 148 standalone star tilings (2 candidates); 24 fixed-α snapshots folded into their families
+
+=== Phase 5: free-alpha star families (parametric, alpha slider) ===
+  ctrnact-star-family-k1-01  k=1  (3*d@-a+16,3*p@a,6)  α∈(0°,60°)  members 1,2
+  ctrnact-star-family-k1-02  k=1  (3,3*d@-a+16,3,3*p@a)  α∈(0°,60°)  members 1,2
+  ctrnact-star-family-k1-03  k=1  (4,4*d@-a+18,4*p@a)  α∈(0°,90°)  members 2,3,4
+  ctrnact-star-family-k1-04  k=1  (3,6*d@-a+20,6*p@a)  α∈(0°,120°)  members 2,4,5,6
+  ctrnact-star-family-k2-01  k=2  (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a)  α∈(0°,60°)  members 1,2
+  ctrnact-star-family-k2-02  k=2  (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a)  α∈(0°,60°)  members 1,2  ★ CANDIDATE family (not in Myers)
+  ctrnact-star-family-k2-03  k=2  (3,3,4*d@-a+16,4*p@a) + (3,4*d@-a+18,4*p@a+2)  α∈(0°,60°)  members 2
+  ctrnact-star-family-k2-04  k=2  (3*d@-a+16,4,6*p@a+2) + (3*p@a,4,6*d@-a+18)  α∈(0°,60°)  members 2
+  ctrnact-star-family-k2-05  k=2  (3,3,3*d@-a+16,6*p@a) + (3,3*p@a,6*d@-a+20)  α∈(0°,60°)  members 2
+  ctrnact-star-family-k2-06  k=2  (3,3,3*p@a,6*d@-a+16) + (3,3*d@-a+16,6*p@a+4)  α∈(0°,60°)  members 1,2
+  ctrnact-star-family-k3-01  k=3  (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3*d@-a+16,3*p@a,6)  α∈(0°,60°)  members 1,2
+  ctrnact-star-family-k3-02  k=3  (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  α∈(0°,60°)  members 1,2
+  Phase 5 total: 12 families
+
+=== Phase 6: out-of-ring star tilings (9-fold D=18, 5-fold D=20) ===
+  ctrnact-star-9fold-k1-01  k=1  3*.18  (ring D=18, 3 polys, area ✓)
+  ctrnact-star-9fold-k1-02  k=1  3.3*.9  (ring D=18, 3 polys, area ✓)
+  ctrnact-star-9fold-k1-03  k=1  6*.9  (ring D=18, 3 polys, area ✓)
+  ctrnact-star-5fold-k1-01  k=1  4*.5  (ring D=20, 6 polys, area ✓)
+  ctrnact-star-9fold-k2-01  k=2  3.3*.18*  (ring D=18, 21 polys, area ✓)
+  ctrnact-star-9fold-k2-02  k=2  3.6*.9.9*  (ring D=18, 12 polys, area ✓)
+  ctrnact-star-9fold-k2-03  k=2  3.3*.9*  (ring D=18, 12 polys, area ✓)
+  ctrnact-star-9fold-k2-04  k=2  3.6*.9*  (ring D=18, 21 polys, area ✓)
+  ctrnact-star-9fold-k3-01  k=3  3.3*.18.18*  (ring D=18, 27 polys, area ✓)
+  ctrnact-star-9fold-k3-02  k=3  3.3*.18.18*  (ring D=18, 45 polys, area ✓)
+  ctrnact-star-9fold-k3-03  k=3  3.3*.9.9*  (ring D=18, 27 polys, area ✓)
+  ctrnact-star-9fold-k3-04  k=3  3.3*.9.9*  (ring D=18, 18 polys, area ✓)
+  (no experiments/star-oracle/ctrnact-star-5fold-k3.cells.json — skipped)
+  Phase 6 total: 12 out-of-ring tilings
+
+=== Phase 3b: higher-k Čtrnáct shards (k=8..10, lazy-loaded on demand) ===
+    …k=8: 500 reconstructed
+    …k=8: 1000 reconstructed
+    …k=8: 1500 reconstructed
+    …k=8: 2000 reconstructed
+    …k=8: 2500 reconstructed
+  k=8: 2850/2850 reconstructed (target 2850)  ✓
+  no skips ✓
+  → public/reference-atlas-k8.json  (2850 tilings, 15.6 MB)
+    …k=9: 500 reconstructed
+    …k=9: 1000 reconstructed
+    …k=9: 1500 reconstructed
+    …k=9: 2000 reconstructed
+    …k=9: 2500 reconstructed
+    …k=9: 3000 reconstructed
+    …k=9: 3500 reconstructed
+    …k=9: 4000 reconstructed
+    …k=9: 4500 reconstructed
+    …k=9: 5000 reconstructed
+    …k=9: 5500 reconstructed
+  k=9: 5960/5960 reconstructed (target 5960)  ✓
+  no skips ✓
+  → public/reference-atlas-k9.json  (5960 tilings, 35.4 MB)
+    …k=10: 500 reconstructed
+    …k=10: 1000 reconstructed
+    …k=10: 1500 reconstructed
+    …k=10: 2000 reconstructed
+    …k=10: 2500 reconstructed
+    …k=10: 3000 reconstructed
+    …k=10: 3500 reconstructed
+    …k=10: 4000 reconstructed
+    …k=10: 4500 reconstructed
+    …k=10: 5000 reconstructed
+    …k=10: 5500 reconstructed
+    …k=10: 6000 reconstructed
+    …k=10: 6500 reconstructed
+    …k=10: 7000 reconstructed
+    …k=10: 7500 reconstructed
+    …k=10: 8000 reconstructed
+    …k=10: 8500 reconstructed
+    …k=10: 9000 reconstructed
+    …k=10: 9500 reconstructed
+    …k=10: 10000 reconstructed
+    …k=10: 10500 reconstructed
+    …k=10: 11000 reconstructed
+    …k=10: 11500 reconstructed
+  k=10: 11866/11866 reconstructed (target 11866)  ✓
+  no skips ✓
+  → public/reference-atlas-k10.json  (11866 tilings, 76.4 MB)
 
 === reference-atlas.json written ===
-  2794 tilings → public/reference-atlas.json
+  2892 tilings → public/reference-atlas.json
     ctrnact k=7: 1472
-    ctrnact-star k=1: 26
-    ctrnact-star k=2: 45
+    ctrnact-star k=1: 23
+    ctrnact-star k=2: 46
+    ctrnact-star k=3: 103
     galebach k=1: 11
     galebach k=2: 20
     galebach k=3: 61
     galebach k=4: 151
     galebach k=5: 332
     galebach k=6: 673
-    myers k=1: 3
-  exactSource: 2719 seed + 1 cell = 2720/2794  (74 Myers star entries intentionally omit — no codec star support)  ✓
-  elapsed 627.7s
+  exactSource: 2719 seed + 1 cell = 2720/2892  (172 Myers star entries intentionally omit — no codec star support)  ✓
+  elapsed 200.8s
