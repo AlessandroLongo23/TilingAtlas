@@ -364,6 +364,12 @@ export type PeriodSolverOptions = {
 	/** Wall-clock cap (ms) for the whole solve (0 = unlimited). Default 45000. */
 	maxMs?: number;
 	verbose?: boolean;
+	/** (F5) star fill-reach lemma (star-fill-dentseating-workorder-2026-06-11): also seat star DENTS
+	 *  (the reflex corner, interior β, via `isotoxalDentAt`) in the corner-completion fill, recovering
+	 *  the dent-at-vertex (Fig-3 busy-corner) class the point-only fill drops. Default OFF ⇒ the regular
+	 *  path (empty `starTiles`) and the point-at-vertex star sweep stay byte-identical; only the dent-mode
+	 *  sweep opts in (digest-stable gate). */
+	includeDents?: boolean;
 	/** Debug hook: called for every completed primitive cell, BEFORE the k-gate filter. */
 	onRawCell?: (cell: Polygon[], basis: [Cyclotomic, Cyclotomic], orbits: number | null) => void;
 	/** OP-2/OP-9 census hook: called once per solve with the post-P0 candidate list
@@ -543,6 +549,7 @@ export class PeriodSolver {
 			);
 		}
 		const maxMs = opts.maxMs ?? 45000;
+		const includeDents = opts.includeDents ?? false; // (F5) seat star dents in the fill (default off ⇒ byte-identical)
 		const start = Date.now();
 		// Optional phase profiler (env PS_PROFILE) — purely additive, byte-identical when off.
 		const prof = process.env.PS_PROFILE ? { cand: 0, fill: 0, gate: 0, canon: 0, dedup: 0 } : null;
@@ -658,7 +665,7 @@ export class PeriodSolver {
 				break;
 			}
 			diag.latticesTried++;
-			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles, allKeys, areaKeys);
+			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles, allKeys, areaKeys, includeDents);
 			if (!ctx) continue; // degenerate basis
 			if (ctx.blockIndexCapBinds) diag.blockIndexCapTruncated++; // F3b: ⚑ already emitted in makeCtx
 			// P3 stage B (in-fill domination, docs/LATTICE_ADMISSIBILITY_PROOF.md): hand the fill this
@@ -1235,7 +1242,10 @@ export class PeriodSolver {
 		// keys). Default empty: the only caller that omits them is `certifyExternalCell`, whose path
 		// never reaches `isPrimitive`.
 		candidateKeys: Set<string> = new Set(),
-		admissibleAreaKeys: Set<string> = new Set()
+		admissibleAreaKeys: Set<string> = new Set(),
+		// (F5) seat star DENTS in the fill (star-fill-dentseating work order). Default false ⇒ the dent
+		// loop in torusFill is skipped ⇒ byte-identical on the regular + point-at-vertex paths.
+		includeDents: boolean = false
 	): FillCtx | null {
 		const uV = u.toVector();
 		const vV = v.toVector();
@@ -1301,6 +1311,7 @@ export class PeriodSolver {
 			starTiles: starTiles.map((s) => ({ n: s.n, alphaU: s.alphaU })),
 			candidateKeys,
 			admissibleAreaKeys,
+			includeDents,
 		};
 	}
 
@@ -1534,9 +1545,19 @@ export class PeriodSolver {
 			};
 
 			for (const n of ctx.polySizes) place(RegularPolygon.fromAnchorAndDirExact(n, w, d0));
-			// C3: seat each seed star's POINT (the convex corner, interior α) into the gap. Dent-seating
-			// (the Fig-3 dent-at-vertex class) is NOT yet attempted — flagged loudly below.
+			// C3: seat each seed star's POINT (the convex corner, interior α) into the gap.
 			for (const st of ctx.starTiles) place(ExactStarPolygon.isotoxal(st.n, st.alphaU, w, d0));
+			// (F5) star fill-reach lemma (star-fill-dentseating-workorder-2026-06-11): ALSO seat each seed
+			// star's DENT (the reflex corner, interior β — `isotoxalDentAt`) into the gap. This supplies the
+			// (F5) candidate-completeness the dent-at-vertex (Fig-3 busy-corner) class needs: at an open
+			// vertex where T's actual tile presents a dent, the dent placement is now a candidate, so the
+			// T-following branch survives (lem proof, Part A). NO gap-size pre-filter — if β exceeds the
+			// remaining gap the post-placement exact overlap check + analyze's angular over-fill rejection
+			// kill it (work order B1; no float angle guard on the decisive path). Gated on includeDents so
+			// the regular path (empty starTiles) and the point-at-vertex sweep stay byte-identical.
+			if (ctx.includeDents) {
+				for (const st of ctx.starTiles) place(ExactStarPolygon.isotoxalDentAt(st.n, st.alphaU, w, d0));
+			}
 			if (FP) FP.t.expand += fpNow() - _t;
 		}
 		if (PeriodSolver.DEBUG) process.stderr.write(`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`);
@@ -2119,6 +2140,7 @@ export type FillCtx = {
 	blockIndexCapBinds: boolean; // F3b (lem:fillreach): buildBlock's index cap WOULD bind for this lattice ⇒ blocks may be under-built ⇒ results for this candidate are not completeness-grade (⚑ emitted at makeCtx, counted in diag by solve)
 	gate?: (reps: Polygon[]) => number | null; // EARLY k-GATE orbit-count fn — the SAME function the post-pass gate uses (checker.countVertexOrbits, or countVertexOrbitsFast under PS_FAST_GATE). Set ONLY on the enumeration path (solve); undefined on the single-cell verify paths ⇒ no early gate there. When present, torusFill rejects a closed cell with orbit count ≠ k before the certificate — sound reject-only.
 	feasVectors?: number[][]; // P3 stage B: F*(Λ) — Pareto-maximal feasible per-size tile counts (aligned to polySizes ascending). Set ONLY on the enumeration path at k ≥ 3 for regular seeds (same scope as the C pre-filter); undefined ⇒ the domination prune is off and the fill is byte-identical to pre-P3 behavior.
+	includeDents: boolean; // (F5) star fill-reach lemma: torusFill also seats star DENTS (isotoxalDentAt) into a gap ⇒ recovers the Fig-3 dent-at-vertex class (default false ⇒ point-only fill, byte-identical)
 };
 
 type Interval = { start: number; units: number; n: number };
