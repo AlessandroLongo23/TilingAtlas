@@ -56,6 +56,8 @@ def main():
     ap.add_argument("--tables", required=True)
     ap.add_argument("--k", type=int, required=True)
     ap.add_argument("--contains", default="", help="comma list of regular n; keep block iff it names one")
+    ap.add_argument("--kcount", type=int, default=0,
+                    help="keep only blocks with exactly this many COUNTING groups (>=3 corners); 0 = any")
     ap.add_argument("--id-prefix", default="ctrnact-star-ring")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
@@ -73,6 +75,10 @@ def main():
             if need is not None:
                 regs = set(re.findall(r'[(,](\d+)[,)]', vt))
                 if not (regs & need):
+                    continue
+            if args.kcount:
+                kc = sum(1 for g in re.findall(r'\(([^)]*)\)', vt) if len(g.split(",")) >= 3)
+                if kc != args.kcount:
                     continue
             blocks.append((vt, cw))
 

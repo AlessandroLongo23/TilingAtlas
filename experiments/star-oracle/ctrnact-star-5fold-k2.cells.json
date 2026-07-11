@@ -1,0 +1,7 @@
+{
+ "_meta": {
+  "source": "Cirnact-engine out-of-ring star extension, exact ZZ[zeta_20]",
+  "note": "Out-of-ring 1-uniform star tilings (D!=24). Reproduces Myers' out-of-ring k=1 entries. Develop is exact in the palette's own cyclotomic ring."
+ },
+ "records": []
+}

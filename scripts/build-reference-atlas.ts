@@ -378,7 +378,11 @@ function buildCtrnactStars(): ReferenceTiling[] {
 function buildCtrnactOutOfRing(): ReferenceTiling[] {
 	const out: ReferenceTiling[] = [];
 	log('=== Phase 6: out-of-ring star tilings (9-fold D=18, 5-fold D=20) ===');
-	for (const fname of ['ctrnact-star-9fold-k1.cells.json', 'ctrnact-star-5fold-k1.cells.json']) {
+	const files = [
+		'ctrnact-star-9fold-k1.cells.json', 'ctrnact-star-5fold-k1.cells.json',
+		'ctrnact-star-9fold-k2.cells.json', 'ctrnact-star-5fold-k2.cells.json',
+	];
+	for (const fname of files) {
 		const dsPath = path.join(ROOT, 'experiments', 'star-oracle', fname);
 		if (!fs.existsSync(dsPath)) {
 			log(`  (no experiments/star-oracle/${fname} — skipped)`);
