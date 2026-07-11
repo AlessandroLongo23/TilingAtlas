@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Vector } from "@/classes";
 import { signedArea, pointInPolygon, lineIntersect, tipPoint } from "@/utils/islamicArrangement";
+import { extractFaces } from "@/utils/islamicArrangement";
 
 describe("islamicArrangement geometry helpers", () => {
     it("signedArea is positive for a CCW triangle, negative for CW", () => {
@@ -27,5 +28,33 @@ describe("islamicArrangement geometry helpers", () => {
         const p = tipPoint(hPrev, nPrev, hCur, nCur);
         expect(p!.x).toBeCloseTo(0.5, 9);
         expect(p!.y).toBeCloseTo(0.5, 9);
+    });
+});
+
+describe("extractFaces", () => {
+    const seg = (ax: number, ay: number, bx: number, by: number): [Vector, Vector] =>
+        [new Vector(ax, ay), new Vector(bx, by)];
+
+    it("returns one bounded face for a single triangle", () => {
+        const faces = extractFaces([seg(0, 0, 1, 0), seg(1, 0, 0, 1), seg(0, 1, 0, 0)]);
+        expect(faces.length).toBe(1);
+        expect(Math.abs(signedArea(faces[0].vertices))).toBeCloseTo(0.5, 6);
+    });
+
+    it("splits an edge at a T-junction, yielding two faces", () => {
+        // triangle (0,0),(2,0),(0,2) plus a spoke from apex (0,2) to midpoint (1,0) of the base.
+        const faces = extractFaces([
+            seg(0, 0, 2, 0), seg(2, 0, 0, 2), seg(0, 2, 0, 0), seg(0, 2, 1, 0),
+        ]);
+        expect(faces.length).toBe(2);
+    });
+
+    it("returns four inner faces for a square with a center hub (no outer face)", () => {
+        const faces = extractFaces([
+            seg(0, 0, 2, 0), seg(2, 0, 2, 2), seg(2, 2, 0, 2), seg(0, 2, 0, 0), // square
+            seg(1, 1, 0, 0), seg(1, 1, 2, 0), seg(1, 1, 2, 2), seg(1, 1, 0, 2), // hub to corners
+        ]);
+        expect(faces.length).toBe(4);
+        for (const f of faces) expect(signedArea(f.vertices)).toBeGreaterThan(0); // CCW, outer dropped
     });
 });
