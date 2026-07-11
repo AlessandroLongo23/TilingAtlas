@@ -1,14 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
-import { fetchCatalogue } from "@/lib/services/catalogueService";
-import { LibraryClient } from "./_library-client";
+import { ReferenceShelf } from "@/components/reference-shelf";
 
-export const dynamic = "force-dynamic";
-
-// The library is a read-only view over the CERTIFIED-RESULTS catalogue (found_tilings of certified +
-// candidate runs, deduped, badged). It no longer reads the legacy `tilings` table (the dead
-// expand-and-extract pipeline). See docs/FRONTEND_ROADMAP.md.
-export default async function LibraryPage() {
-	const sb = await createClient();
-	const tilings = await fetchCatalogue(sb);
-	return <LibraryClient tilings={tilings} />;
+// One unified library over the whole atlas (public/reference-atlas.json), lazy-fetched client-side.
+// The former certified-vs-reference toggle is gone: every tiling appears exactly once, tagged with a
+// DISCOVERER (historical first-finder) and a CERTIFICATION (proven / reproduced / candidate). The
+// proven k≤3 regular tilings live here as the Kepler / Krötenheerdt / Chavey entries, marked
+// certification="proven"; the former Supabase certified shelf is retired.
+export default function LibraryPage() {
+	return <ReferenceShelf />;
 }

@@ -16,20 +16,28 @@ import {
 } from "@/lib/services/referenceAtlas";
 import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 
-// The Reference (Oracle) shelf: a display-only atlas of literature tilings (Galebach regular k=1..6 +
-// Myers stars), lazy-fetched from the static asset public/reference-atlas.json. Kept entirely off the
-// certified Supabase catalogue (§0). Its own filters (k + source) — the certified LibraryFilters is
-// tied to the certified data (k=1..3), so it isn't reused here.
+// The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars),
+// lazy-fetched from public/reference-atlas.json. Each entry carries a DISCOVERER (historical
+// first-finder) and a CERTIFICATION (proven / reproduced / candidate — orthogonal axes). No more
+// certified-vs-reference split; each tiling appears exactly once.
 const K_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
-const SOURCE_OPTIONS: { value: ReferenceTiling["source"]; label: string }[] = [
-	{ value: "galebach", label: "Galebach" },
-	{ value: "myers", label: "Myers" },
-	{ value: "ctrnact", label: "Čtrnáct" },
-	{ value: "ctrnact-star", label: "Star engine" },
+const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
+	{ value: "Kepler", label: "Kepler" },
+	{ value: "Krötenheerdt", label: "Krötenheerdt" },
+	{ value: "Chavey", label: "Chavey" },
+	{ value: "Brian Galebach", label: "Galebach" },
+	{ value: "Marek Čtrnáct", label: "Čtrnáct" },
+	{ value: "Joseph Myers", label: "Myers" },
+	{ value: "Alessandro Longo", label: "Longo" },
+];
+const CERT_OPTIONS: { value: ReferenceTiling["certification"]; label: string }[] = [
+	{ value: "proven", label: "Proven" },
+	{ value: "reproduced", label: "Reproduced" },
+	{ value: "candidate", label: "Candidate" },
 ];
 const COLUMN_PRESETS = [3, 4, 5, 6];
 
-type SectionKey = "k" | "source" | "grid";
+type SectionKey = "k" | "discoverer" | "certification" | "grid";
 
 export function ReferenceShelf() {
 	const router = useRouter();
@@ -40,7 +48,8 @@ export function ReferenceShelf() {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [sectionsOpen, setSectionsOpen] = useState<Record<SectionKey, boolean>>({
 		k: true,
-		source: true,
+		discoverer: true,
+		certification: true,
 		grid: true,
 	});
 
@@ -65,24 +74,26 @@ export function ReferenceShelf() {
 		const cur = filters.kValues ?? [];
 		setFilters({ ...filters, kValues: cur.includes(k) ? cur.filter((v) => v !== k) : [...cur, k] });
 	};
-	const toggleSource = (s: ReferenceTiling["source"]) => {
-		const cur = filters.sources ?? [];
-		setFilters({ ...filters, sources: cur.includes(s) ? cur.filter((v) => v !== s) : [...cur, s] });
+	const toggleDiscoverer = (d: string) => {
+		const cur = filters.discoverers ?? [];
+		setFilters({ ...filters, discoverers: cur.includes(d) ? cur.filter((v) => v !== d) : [...cur, d] });
+	};
+	const toggleCert = (c: ReferenceTiling["certification"]) => {
+		const cur = filters.certifications ?? [];
+		setFilters({ ...filters, certifications: cur.includes(c) ? cur.filter((v) => v !== c) : [...cur, c] });
 	};
 
 	const activeFilterCount =
-		(filters.kValues?.length ? 1 : 0) + (filters.sources?.length ? 1 : 0) + (filters.query?.trim() ? 1 : 0);
+		(filters.kValues?.length ? 1 : 0) +
+		(filters.discoverers?.length ? 1 : 0) +
+		(filters.certifications?.length ? 1 : 0) +
+		(filters.query?.trim() ? 1 : 0);
 
 	const filtered = useMemo(() => {
 		if (!tilings) return [];
 		return tilings
 			.filter((t) => matchesReferenceFilters(t, filters))
-			.sort(
-				(a, b) =>
-					(a.source < b.source ? -1 : a.source > b.source ? 1 : 0) ||
-					a.k - b.k ||
-					(a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
-			);
+			.sort((a, b) => a.k - b.k || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 	}, [tilings, filters]);
 
 	const paginated = useMemo(
@@ -129,16 +140,30 @@ export function ReferenceShelf() {
 					</SidebarSection>
 
 					<SidebarSection
-						title="Source"
-						summary={filters.sources?.length ? filters.sources.join(", ") : null}
-						open={sectionsOpen.source}
-						onOpenChange={setOpen("source")}
+						title="Discoverer"
+						summary={filters.discoverers?.length ? `${filters.discoverers.length} selected` : null}
+						open={sectionsOpen.discoverer}
+						onOpenChange={setOpen("discoverer")}
 					>
 						<ButtonGroup
 							multi
-							options={SOURCE_OPTIONS}
-							selected={filters.sources ?? []}
-							onChange={toggleSource}
+							options={DISCOVERER_OPTIONS}
+							selected={filters.discoverers ?? []}
+							onChange={toggleDiscoverer}
+						/>
+					</SidebarSection>
+
+					<SidebarSection
+						title="Certification"
+						summary={filters.certifications?.length ? filters.certifications.join(", ") : null}
+						open={sectionsOpen.certification}
+						onOpenChange={setOpen("certification")}
+					>
+						<ButtonGroup
+							multi
+							options={CERT_OPTIONS}
+							selected={filters.certifications ?? []}
+							onChange={toggleCert}
 						/>
 					</SidebarSection>
 
@@ -160,21 +185,21 @@ export function ReferenceShelf() {
 			<main className="flex-1 overflow-y-auto p-5">
 				<div className="flex items-center gap-3 mb-5">
 					<Library size={18} className="text-sky-400" />
-					<h1 className="text-base font-semibold text-fg">Reference Atlas</h1>
+					<h1 className="text-base font-semibold text-fg">Tiling Library</h1>
 					<span className="text-xs px-2 py-0.5 rounded-full bg-surface-overlay border border-line text-fg-muted">
-						{filtered.length} oracle tilings
+						{filtered.length} tilings
 					</span>
 				</div>
 
 				{error ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center">
-						<p className="text-danger font-medium">Could not load the reference atlas</p>
+						<p className="text-danger font-medium">Could not load the tiling library</p>
 						<p className="text-fg-disabled text-sm mt-1 font-mono">{error}</p>
 					</div>
 				) : tilings === null ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center text-fg-muted">
 						<Loader2 size={28} className="animate-spin mb-3 text-sky-400" />
-						<p className="text-sm">Loading reference atlas…</p>
+						<p className="text-sm">Loading tiling library…</p>
 					</div>
 				) : filtered.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center">

@@ -1,25 +1,24 @@
 "use client";
 
-import { Play } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
-// A Reference (Oracle) tiling card. Same renderer as the certified catalogue (TilingThumbnail ←
-// float TranslationalCellData), but the metadata is honest about provenance: source (Galebach/Myers)
-// + oracle id + k, and NO certification badge — these are external literature tilings, not our proven
-// results (§0). A "family" one-parameter tiling gets an α chip so it's discoverable.
+// A tiling card in the unified library. Shows the DISCOVERER (historical first-finder) and a
+// CERTIFICATION badge (proven / reproduced / candidate — the rigorous completeness status of its
+// enumeration level, orthogonal to who discovered it). A "family" one-parameter tiling gets an α chip.
 interface ReferenceCardProps {
 	tiling: ReferenceTiling;
 	onClick?: (t: ReferenceTiling) => void;
 }
 
-const SOURCE_LABEL: Record<ReferenceTiling["source"], string> = {
-	galebach: "Galebach",
-	myers: "Myers",
-	ctrnact: "Čtrnáct",
-	"ctrnact-star": "Star engine",
+// Certification is the thesis's headline axis: "proven" (our method certifies the level complete) is a
+// strictly stronger claim than "reproduced" (matches published counts) or "candidate" (unestablished).
+const CERT_STYLE: Record<ReferenceTiling["certification"], { label: string; cls: string }> = {
+	proven: { label: "Proven", cls: "border-emerald-400/30 bg-emerald-400/10 text-emerald-400" },
+	reproduced: { label: "Reproduced", cls: "border-line-strong bg-surface-raised text-fg-muted" },
+	candidate: { label: "Candidate", cls: "border-amber-400/30 bg-amber-400/10 text-amber-400" },
 };
 
 export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
@@ -33,37 +32,32 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 		<>
 			<div className="relative aspect-square bg-surface-raised">
 				<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
-				<div className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full border border-sky-400/25 bg-sky-400/10 px-1.5 py-0.5 text-[9px] font-medium text-sky-400 backdrop-blur-sm">
-					{SOURCE_LABEL[tiling.source]}
-				</div>
-				{isFamily || tiling.candidate || tiling.preview ? (
-					<div className="absolute top-1.5 right-1.5 flex items-center gap-1">
-						{tiling.preview ? (
-							<div className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-400/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400 backdrop-blur-sm">
-								PREVIEW
-							</div>
-						) : null}
-						{tiling.candidate ? (
-							<div className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-400 backdrop-blur-sm">
-								NEW?
-							</div>
-						) : null}
-						{isFamily ? (
-							<div className="inline-flex items-center rounded-full border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400 backdrop-blur-sm">
-								α
-							</div>
-						) : null}
-					</div>
-				) : null}
-				{onClick ? (
-					<div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-						<span className="mb-2 inline-flex items-center gap-1.5 rounded-md bg-accent/90 px-2 py-1 text-[10px] font-medium text-white shadow-sm">
-							<Play size={11} fill="currentColor" /> Open in Play
-						</span>
-					</div>
-				) : null}
 			</div>
-			<div className="flex flex-col px-2.5 py-2 gap-1">
+			<div className="flex flex-col px-2.5 py-2 gap-1.5">
+				<div className="flex flex-wrap items-center gap-1">
+					<span
+						className={cn(
+							"inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+							CERT_STYLE[tiling.certification].cls,
+						)}
+						title={`Completeness: ${tiling.certification}`}
+					>
+						{CERT_STYLE[tiling.certification].label}
+					</span>
+					{tiling.preview ? (
+						<span className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-400/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-400" title="from a still-running solve — partial">
+							preview
+						</span>
+					) : null}
+					{isFamily ? (
+						<span className="inline-flex items-center rounded-full border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[10px] font-medium text-violet-400" title="one-parameter family — α slider in Play">
+							α
+						</span>
+					) : null}
+				</div>
+				<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
+					{tiling.discoverer}
+				</p>
 				<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
 					k={tiling.k} · {polygonClassLabel(tiling.family)}
 				</p>

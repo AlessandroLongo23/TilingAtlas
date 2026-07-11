@@ -25,6 +25,14 @@ export interface ReferenceTiling {
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
 	preview?: boolean; // ctrnact-star only: from a PARTIAL (still-running) solve — incomplete, uncertified
+	// Historical first-discoverer of this tiling (Kepler, Krötenheerdt, Chavey, Galebach, Čtrnáct,
+	// Joseph Myers, Alessandro Longo). One attribute, orthogonal to certification.
+	discoverer: string;
+	// Rigorous completeness status of this tiling's enumeration level:
+	//   proven      — this work's method has a completeness certificate (regular k≤3)
+	//   reproduced  — count matches a published enumeration, not independently proven here
+	//   candidate   — surfaced by this work; completeness / literature-novelty not established
+	certification: "proven" | "reproduced" | "candidate";
 	// Present on family entries: the proven parametric cell driving the /play alpha slider
 	// (lib/utils/paramCell.ts). renderCell then holds the default-alpha evaluation (thumbnails).
 	paramCell?: ParametricCellData;
@@ -33,14 +41,16 @@ export interface ReferenceTiling {
 
 export interface ReferenceFilter {
 	kValues?: number[];
-	sources?: ReferenceTiling["source"][];
+	discoverers?: string[]; // each entry's discoverer must be in this set
+	certifications?: ReferenceTiling["certification"][]; // proven / reproduced / candidate
 	polygonNames?: string[]; // each must appear in the tiling's family label
 	query?: string; // free-text substring match on id or family (e.g. "4j5_5b2" or "3.6")
 }
 
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
 	if (f.kValues?.length && !f.kValues.includes(t.k)) return false;
-	if (f.sources?.length && !f.sources.includes(t.source)) return false;
+	if (f.discoverers?.length && !f.discoverers.includes(t.discoverer)) return false;
+	if (f.certifications?.length && !f.certifications.includes(t.certification)) return false;
 	if (f.polygonNames?.length) {
 		const fam = t.family.split(".").map((s) => s.trim());
 		if (!f.polygonNames.every((n) => fam.includes(n))) return false;

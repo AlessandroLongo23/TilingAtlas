@@ -62,10 +62,35 @@ export interface ReferenceTiling {
 	};
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family (slider)
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration, pending adversarial review
+	preview?: boolean; // ctrnact-star only: from a partial (still-running) solve
 	paramCell?: ParametricCellData; // family entries: proven parametric cell (drives the /play slider)
+	discoverer?: string; // stamped by attribute() before write
+	certification?: 'proven' | 'reproduced' | 'candidate'; // stamped by attribute() before write
 	exactSource?:
 		| { kind: 'seed'; T1: number[]; T2: number[]; Seed: number[][] }
 		| { kind: 'cell'; cell: SerializedCell };
+}
+
+// Historical discoverer + rigorous completeness status for each tiling. Discoverer is who first found
+// it; certification is whether THIS work proves its enumeration level exhaustive (proven, regular k≤3),
+// merely reproduces a published count (reproduced), or surfaced it without an establishing proof
+// (candidate). The two axes are orthogonal (Kepler discovered k=1; our method proves it complete).
+function attribute(t: ReferenceTiling): { discoverer: string; certification: 'proven' | 'reproduced' | 'candidate' } {
+	const k = t.k;
+	if (t.source === 'galebach') {
+		const disc = k === 1 ? 'Kepler' : k === 2 ? 'Krötenheerdt' : k === 3 ? 'Chavey' : 'Brian Galebach';
+		return { discoverer: disc, certification: k <= 3 ? 'proven' : 'reproduced' };
+	}
+	if (t.source === 'ctrnact') {
+		return { discoverer: k <= 14 ? 'Marek Čtrnáct' : 'Alessandro Longo', certification: k <= 14 ? 'reproduced' : 'candidate' };
+	}
+	if (t.source === 'myers') return { discoverer: 'Joseph Myers', certification: 'reproduced' };
+	// ctrnact-star: candidates / previews / new-at-k≥2 out-of-ring are Longo; the rest reproduce Myers
+	const outOfRing = t.id.startsWith('ctrnact-star-9fold') || t.id.startsWith('ctrnact-star-5fold');
+	if (t.candidate || t.preview || (outOfRing && k >= 2)) {
+		return { discoverer: 'Alessandro Longo', certification: 'candidate' };
+	}
+	return { discoverer: 'Joseph Myers', certification: 'reproduced' };
 }
 
 /** float TranslationalCellData (identical transform to scripts/scout-parallel.ts cellToRenderData). */
@@ -520,6 +545,13 @@ function main(): void {
 			a.k - b.k ||
 			(a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
 	);
+
+	// Stamp discoverer + certification on every entry (orthogonal attribution axes).
+	for (const t of atlas) {
+		const a = attribute(t);
+		t.discoverer = a.discoverer;
+		t.certification = a.certification;
+	}
 
 	fs.writeFileSync(OUT_PATH, JSON.stringify(atlas, null, 0) + '\n');
 	fs.mkdirSync(LOG_DIR, { recursive: true });
