@@ -319,10 +319,30 @@ function buildCtrnact(): ReferenceTiling[] {
 // same as the Myers entries).
 // ---------------------------------------------------------------------------------------------------
 const CTRNACT_STAR_CELL_FILES = ['ctrnact-star-k1.cells.json', 'ctrnact-star-k2.cells.json'];
+const CTRNACT_STAR_FAMILIES_FILE = 'ctrnact-star-families.cells.json';
 
-function buildCtrnactStars(): ReferenceTiling[] {
+// Every fixed-alpha snapshot that the family detector merged into a one-parameter family, keyed by
+// its exact vertype string. These snapshots must NOT appear in the atlas as standalone tilings — the
+// slider family (Phase 5) replaces them. (The raw pruned catalogs still hold every snapshot; only the
+// display atlas is deduplicated.)
+function familyMemberVertypes(): Set<string> {
+	const out = new Set<string>();
+	const dsPath = path.join(ROOT, 'experiments', 'star-oracle', CTRNACT_STAR_FAMILIES_FILE);
+	if (!fs.existsSync(dsPath)) return out;
+	const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
+		records: { members: { vertype: string }[] }[];
+	};
+	for (const fam of ds.records) for (const m of fam.members) out.add(m.vertype);
+	return out;
+}
+
+// Phase 4 returns the surviving standalone star tilings AND the candidate-id set derived from the FULL
+// (pre-fold) record list — so a family whose merged members were candidates still inherits the flag.
+function buildCtrnactStars(excludeVertypes: Set<string>): { entries: ReferenceTiling[]; candidateIds: Set<string> } {
 	const out: ReferenceTiling[] = [];
-	log('=== Phase 4: Čtrnáct-engine star catalogs (k=1..2 in-ring; candidates flagged) ===');
+	const candidateIds = new Set<string>();
+	let folded = 0;
+	log('=== Phase 4: Čtrnáct-engine star catalogs (k=1..2 in-ring; family snapshots folded away) ===');
 	for (const fname of CTRNACT_STAR_CELL_FILES) {
 		const dsPath = path.join(ROOT, 'experiments', 'star-oracle', fname);
 		if (!fs.existsSync(dsPath)) {
@@ -341,6 +361,11 @@ function buildCtrnactStars(): ReferenceTiling[] {
 			}[];
 		};
 		for (const r of ds.records) {
+			if (r.candidate) candidateIds.add(r.id); // record candidacy BEFORE any fold
+			if (excludeVertypes.has(r.vertype)) {
+				folded++;
+				continue; // merged into a Phase-5 family — the slider entry represents it
+			}
 			// family label: distinct tile tokens across the counting orbits, stars as "n*"
 			const toks = new Set<string>();
 			for (const orb of r.orbits) {
@@ -364,9 +389,10 @@ function buildCtrnactStars(): ReferenceTiling[] {
 		}
 	}
 	const nCand = out.filter((t) => t.candidate).length;
-	log(`  Phase 4 total: ${out.length} star tilings (${nCand} candidates)`);
+	log(`  Phase 4 total: ${out.length} standalone star tilings (${nCand} candidates); ` +
+		`${folded} fixed-α snapshots folded into their families`);
 	log('');
-	return out;
+	return { entries: out, candidateIds };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -481,9 +507,8 @@ function main(): void {
 	if (!argv.includes('--no-ctrnact')) atlas.push(...buildCtrnact());
 	else log('(--no-ctrnact: skipping Phase 3)\n');
 	if (withStars) {
-		const stars = buildCtrnactStars();
+		const { entries: stars, candidateIds } = buildCtrnactStars(familyMemberVertypes());
 		atlas.push(...stars);
-		const candidateIds = new Set(stars.filter((t) => t.candidate).map((t) => t.id));
 		atlas.push(...buildCtrnactStarFamilies(candidateIds));
 		atlas.push(...buildCtrnactOutOfRing());
 	} else log('(--no-stars: skipping Phases 4+5+6)\n');
