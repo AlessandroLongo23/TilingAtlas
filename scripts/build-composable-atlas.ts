@@ -7,11 +7,17 @@
  * illustrative (20 at k=1, 238 at k=2), not the all-and-only result the thesis claims for the regular
  * atlas. Float geometry only (render/broadphase is the sanctioned place for float).
  *
- * Source: the Čtrnáct-engine composite-convex development, exact ℤ[ζ₂₄], exported to
- *   experiments/composable-oracle/ctrnact-composite-convex-k{1,2}.cells.json
+ * Source: the Čtrnáct-engine composite development, exact ℤ[ζ₂₄], exported to
+ *   experiments/composable-oracle/ctrnact-composite-{convex,decomp}-k{n}.cells.json
  * (each `{ _meta, records: [...] }`; the convex palette is the SUPERSET — it includes the decomposable
  * palette). Only records with usesComposite === true enter the shelf; pure-regular solutions already
  * live in the regular atlas.
+ *
+ * Per-k source: k=1 and k=2 come from the CONVEX cells. k=3 currently comes from the DECOMPOSABLE
+ * cells (ctrnact-composite-decomp-k3.cells.json) because the convex k=3 solve is still running; since
+ * that palette is exactly {regular + 7 decomposable tiles}, every k=3 entry here is decomposable-only.
+ * When ctrnact-composite-convex-k3.cells.json lands it supersedes the decomp file automatically —
+ * INPUTS lists convex first per k and takes the first file that exists.
  *
  * Decomposable split: a tiling is "decomposable-family" iff every cx… tile it uses is one of the 7
  * tiles that dissect into regular pieces (DECOMPOSABLE below); using any of the 4 non-decomposable
@@ -71,9 +77,16 @@ const OUT_PATH = path.join(ROOT, "public", "reference-atlas-composable.json");
 const LOG_DIR = path.join(ROOT, "experiments", "results");
 const LOG_PATH = path.join(LOG_DIR, "composable-atlas-build.log");
 
-const INPUTS: { k: number; file: string }[] = [
-	{ k: 1, file: "ctrnact-composite-convex-k1.cells.json" },
-	{ k: 2, file: "ctrnact-composite-convex-k2.cells.json" },
+// Per k, candidate cells files in PREFERENCE order (first existing wins). Convex is the superset
+// palette and is preferred; the decomposable-only palette is the k=3 fallback while the convex k=3
+// solve runs. Keep this simple — a two-entry list per k, first hit is used.
+const INPUTS: { k: number; files: string[] }[] = [
+	{ k: 1, files: ["ctrnact-composite-convex-k1.cells.json"] },
+	{ k: 2, files: ["ctrnact-composite-convex-k2.cells.json"] },
+	{
+		k: 3,
+		files: ["ctrnact-composite-convex-k3.cells.json", "ctrnact-composite-decomp-k3.cells.json"],
+	},
 ];
 
 const NOTE =
@@ -96,6 +109,12 @@ function readRecords(file: string): CellRecord[] {
 	return Array.isArray(parsed) ? parsed : parsed.records ?? [];
 }
 
+// First candidate file that exists on disk (preference order), or null if none are present yet.
+function resolveFile(files: string[]): string | null {
+	for (const f of files) if (fs.existsSync(path.join(IN_DIR, f))) return f;
+	return null;
+}
+
 // A cx… tile decomposes iff it's in DECOMPOSABLE; a tiling is decomposable-family iff EVERY cx tile it
 // uses decomposes (i.e. it references none of the 4 non-decomposable composites). Pure-regular tokens
 // (e.g. "3", "6") are ignored — they never gate the classification.
@@ -111,10 +130,15 @@ function main(): void {
 	const unknownCx = new Set<string>();
 	const perK: Record<number, { total: number; decomp: number; nonDecomp: number }> = {};
 
-	for (const { k, file } of INPUTS) {
+	for (const { k, files } of INPUTS) {
+		perK[k] = { total: 0, decomp: 0, nonDecomp: 0 };
+		const file = resolveFile(files);
+		if (!file) {
+			log(`  k=${k}: no cells file present (${files.join(", ")}) — skipped`);
+			continue;
+		}
 		const records = readRecords(file);
 		const composite = records.filter((r) => r.usesComposite === true);
-		perK[k] = { total: 0, decomp: 0, nonDecomp: 0 };
 		composite.forEach((r, i) => {
 			for (const t of r.tiles ?? []) {
 				if (t.startsWith("cx") && !DECOMPOSABLE.has(t)) {
@@ -139,7 +163,7 @@ function main(): void {
 			else perK[k].nonDecomp++;
 		});
 		log(
-			`  k=${k}: ${composite.length} usesComposite of ${records.length} records  ` +
+			`  k=${k} [${file}]: ${composite.length} usesComposite of ${records.length} records  ` +
 				`(decomposable-only ${perK[k].decomp}, uses-non-decomposable ${perK[k].nonDecomp})`,
 		);
 	}
