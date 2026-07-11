@@ -1,0 +1,18 @@
+import { describe, it, expect } from 'vitest';
+import { CyclotomicRing, Cyclotomic } from '@/classes';
+import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
+
+const ring = CyclotomicRing.create(12);
+const origin = Cyclotomic.fromRational(ring, 0n); // exact 0 (confirmed: no Cyclotomic.zero)
+
+describe('exact tile primitive', () => {
+  it('places a unit triangle with three 60° (=2 unit) corners', () => {
+    const t = RegularPolygon.fromAnchorAndDirExact(3, origin, 0);
+    expect(t.exactVertices!.length).toBe(3);
+    expect([0, 1, 2].map(i => t.cornerAngleUnits(i))).toEqual([2, 2, 2]);
+  });
+  it('places a unit square with four 90° (=3 unit) corners', () => {
+    const s = RegularPolygon.fromAnchorAndDirExact(4, origin, 0);
+    expect([0, 1, 2, 3].map(i => s.cornerAngleUnits(i))).toEqual([3, 3, 3, 3]);
+  });
+});
