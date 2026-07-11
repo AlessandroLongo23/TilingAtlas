@@ -34,3 +34,17 @@ describe('Polyform glue', () => {
     expect(grown.some(pf => pf.boundaryHalfEdges().length === 4)).toBe(true);
   });
 });
+
+describe('Polyform canonicalKey', () => {
+  it('a rhombus built from edge A equals one built from edge B (same shape)', () => {
+    const tri = new Polyform([RegularPolygon.fromAnchorAndDirExact(3, origin, 0)]);
+    const grown = tri.glue(3);
+    const keys = new Set(grown.map(pf => pf.canonicalKey()));
+    expect(keys.size).toBe(1);                       // all triangle+triangle glues are one rhombus
+  });
+  it('a rhombus and a square are different shapes', () => {
+    const rhombus = new Polyform([RegularPolygon.fromAnchorAndDirExact(3, origin, 0)]).glue(3)[0];
+    const square = new Polyform([RegularPolygon.fromAnchorAndDirExact(4, origin, 0)]);
+    expect(rhombus.canonicalKey()).not.toBe(square.canonicalKey());
+  });
+});

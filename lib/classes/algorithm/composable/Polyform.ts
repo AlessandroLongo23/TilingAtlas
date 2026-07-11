@@ -57,4 +57,38 @@ export class Polyform {
     }
     return out;
   }
+
+  /** Congruence-invariant key: min over the 24 grid isometries of the translation-normalized
+   *  sorted per-tile exactKeys. transformedRigid('exact') gives a fresh transformed tile with no
+   *  float rebuild; translateExact re-anchors to a canonical origin before keying.
+   *
+   *  DEVIATION from the plan: the plan anchored translation to "the lexicographically-min vertex
+   *  key over all tiles", but a Cyclotomic's key string is NOT monotone under translation, so that
+   *  anchor is not translation-covariant — two congruent placements related by a pure translation
+   *  (which arise from a shape's own C_n symmetry, e.g. the three triangle+triangle rhombi) anchor
+   *  to different vertices and produce spurious distinct keys (verified: rhombus edge-1 gained an
+   *  8th orbit key not shared by edge-0/2, so keys.size==2). The vertex MEAN is translation-,
+   *  rotation- and reflection-covariant, so subtracting it is a genuinely canonical translation
+   *  normalization; it collapses all three rhombi to one key. */
+  canonicalKey(): string {
+    const ring = this.tiles[0].ring!;
+    const zero = this.tiles[0].exactVertices![0].sub(this.tiles[0].exactVertices![0]); // exact 0
+    let best: string | null = null;
+    for (const reflect of [false, true]) {
+      for (let rotK = 0; rotK < ring.N; rotK++) {
+        const moved = this.tiles.map(t =>
+          t.transformedRigid(zero, reflect, 0, rotK, zero, 'exact') as RegularPolygon);
+        // canonical translation: subtract the vertex mean (translation-covariant, unlike a min key)
+        let sum = zero, count = 0n;
+        for (const t of moved) for (const v of t.exactVertices!) { sum = sum.add(v); count += 1n; }
+        const negAnchor = zero.sub(sum.scaleRational(1n, count));
+        const parts = moved
+          .map(t => (t.translateExact(negAnchor) as RegularPolygon).exactKey())
+          .sort();
+        const key = parts.join('#');
+        if (best === null || key < best) best = key;
+      }
+    }
+    return best!;
+  }
 }
