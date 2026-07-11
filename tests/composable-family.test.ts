@@ -24,3 +24,13 @@ describe('Polyform boundary', () => {
     expect(pf.boundaryHalfEdges().length).toBe(3);
   });
 });
+
+describe('Polyform glue', () => {
+  it('gluing a triangle onto a triangle yields a 4-tile-edge rhombus (2 tiles)', () => {
+    const tri = new Polyform([RegularPolygon.fromAnchorAndDirExact(3, origin, 0)]);
+    const grown = tri.glue(3);                       // all triangle-gluings, deduped by shape
+    // every result has 2 tiles and a 4-edge boundary (rhombus) — triangles glue one way up to congruence
+    expect(grown.every(pf => pf.tiles.length === 2)).toBe(true);
+    expect(grown.some(pf => pf.boundaryHalfEdges().length === 4)).toBe(true);
+  });
+});
