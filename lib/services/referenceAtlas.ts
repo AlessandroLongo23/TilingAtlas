@@ -17,9 +17,15 @@ import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types"
 //   - ctrnact-star: the Čtrnáct-engine star extension's full in-ring catalogs (feat/ctrnact-star),
 //               k=1..2, star-bearing solutions only. Most reproduce Myers records; the ones flagged
 //               candidate:true match NOTHING in Myers and are pending adversarial review.
+//   - composable: tilings using COMPOSITE convex super-tiles (e.g. cx4-2.4.2.4) alongside the regular
+//               set — a palette-agnosticism DEMO (scripts/build-composable-atlas.ts → the separate
+//               public/reference-atlas-composable.json). Illustrative counts, NOT all-and-only; these
+//               carry no certification / discoverer-completeness / wallpaper classification.
+export type Certification = "proven" | "reproduced" | "candidate";
+
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready
@@ -33,7 +39,13 @@ export interface ReferenceTiling {
 	//   proven      — this work's method has a completeness certificate (regular k≤3)
 	//   reproduced  — count matches a published enumeration, not independently proven here
 	//   candidate   — surfaced by this work; completeness / literature-novelty not established
-	certification: "proven" | "reproduced" | "candidate";
+	// Absent on the composable demo shelf — those tilings make no completeness claim, so they're
+	// excluded from the certification facet rather than assigned a misleading status.
+	certification?: Certification;
+	// Composable shelf only: true iff every composite tile it uses dissects into regular pieces (the
+	// decomposable palette); false iff it uses a non-decomposable composite. Absent on every other source.
+	decomposableOnly?: boolean;
+	note?: string; // free-text provenance caveat (composable demo: counts are illustrative, not all-and-only)
 	// Present on family entries: the proven parametric cell driving the /play alpha slider
 	// (lib/utils/paramCell.ts). renderCell then holds the default-alpha evaluation (thumbnails).
 	paramCell?: ParametricCellData;
@@ -56,9 +68,12 @@ export interface ReferenceTiling {
 // star-fold filter without re-deriving from the whole atlas.
 export const STAR_FOLDS = [3, 4, 6, 8, 9, 12, 18] as const;
 
-// tileClass: a tiling is "star" iff its family carries a star token ("n*"); regular otherwise. This
-// matches polygonClassLabel and is source-independent (myers/ctrnact-star always mark stars).
-export function tileClassOf(t: Pick<ReferenceTiling, "family">): "regular" | "star" {
+// tileClass, the primary shelf axis: "composable" iff the tiling comes from the composite-tile demo
+// (source-driven, since a composite family has no "*" token); else "star" iff its family carries a
+// star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
+export type TileClass = "regular" | "star" | "composable";
+export function tileClassOf(t: Pick<ReferenceTiling, "family" | "source">): TileClass {
+	if (t.source === "composable") return "composable";
 	return t.family.includes("*") ? "star" : "regular";
 }
 
@@ -94,7 +109,10 @@ export function isMaximal(t: Pick<ReferenceTiling, "m" | "k">): boolean {
 
 export interface ReferenceFilter {
 	kValue?: number; // single vertex-orbit count; unset = every k
-	tileClass?: "regular" | "star"; // regular polygons only / star-bearing only
+	tileClass?: TileClass; // regular polygons only / star-bearing only / composite-tile demo
+	// Composable shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
+	// Any non-composable tiling (decomposableOnly undefined) is EXCLUDED while this is active.
+	composableDecomp?: "decomposable" | "non-decomposable";
 	mValue?: number; // single distinct-vertex-config count; unclassified tilings never match
 	partitionKey?: string; // single partition key (e.g. "511"); unclassified tilings never match
 	maximalOnly?: boolean; // Krötenheerdt: keep only m === k
@@ -103,7 +121,7 @@ export interface ReferenceFilter {
 	wallpaperGroups?: WallpaperGroup[]; // exact group; unclassified (all stars) never match
 	latticeShapes?: LatticeShape[]; // exact lattice shape; unclassified (all stars) never match
 	discoverers?: string[]; // each entry's discoverer must be in this set
-	certifications?: ReferenceTiling["certification"][]; // proven / reproduced / candidate
+	certifications?: Certification[]; // proven / reproduced / candidate
 	polygonNames?: string[]; // each must appear in the tiling's family label
 	query?: string; // free-text substring match on id or family (e.g. "4j5_5b2" or "3.6")
 }
@@ -111,6 +129,11 @@ export interface ReferenceFilter {
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
 	if (f.kValue != null && t.k !== f.kValue) return false;
 	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
+	if (f.composableDecomp) {
+		if (t.decomposableOnly == null) return false; // non-composable tilings never match this facet
+		if (f.composableDecomp === "decomposable" && !t.decomposableOnly) return false;
+		if (f.composableDecomp === "non-decomposable" && t.decomposableOnly) return false;
+	}
 	// M/partition/maximal: an active filter EXCLUDES unclassified tilings rather than matching them —
 	// completeness ethos, we never silently pass a tiling whose classification we don't have.
 	if (f.mValue != null && t.m !== f.mValue) return false;
@@ -128,7 +151,7 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	if (f.wallpaperGroups?.length && (t.wallpaperGroup == null || !f.wallpaperGroups.includes(t.wallpaperGroup))) return false;
 	if (f.latticeShapes?.length && (t.latticeShape == null || !f.latticeShapes.includes(t.latticeShape))) return false;
 	if (f.discoverers?.length && !f.discoverers.includes(t.discoverer)) return false;
-	if (f.certifications?.length && !f.certifications.includes(t.certification)) return false;
+	if (f.certifications?.length && (t.certification == null || !f.certifications.includes(t.certification))) return false;
 	if (f.polygonNames?.length) {
 		const fam = t.family.split(".").map((s) => s.trim());
 		if (!f.polygonNames.every((n) => fam.includes(n))) return false;
@@ -165,12 +188,19 @@ let inflight: Promise<ReferenceTiling[]> | null = null;
 export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 	if (cache) return cache;
 	if (inflight) return inflight;
-	inflight = fetch("/reference-atlas.json")
-		.then((res) => {
+	// The base atlas is required; the composable demo shelf is best-effort — a missing/broken
+	// reference-atlas-composable.json degrades to an empty merge, never breaks the library.
+	inflight = Promise.all([
+		fetch("/reference-atlas.json").then((res) => {
 			if (!res.ok) throw new Error(`reference-atlas.json: HTTP ${res.status}`);
 			return res.json() as Promise<ReferenceTiling[]>;
-		})
-		.then((data) => {
+		}),
+		fetch("/reference-atlas-composable.json")
+			.then((res) => (res.ok ? (res.json() as Promise<ReferenceTiling[]>) : []))
+			.catch(() => [] as ReferenceTiling[]),
+	])
+		.then(([base, composable]) => {
+			const data = [...base, ...composable];
 			cache = data;
 			inflight = null;
 			return data;
@@ -180,4 +210,36 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 			throw err;
 		});
 	return inflight;
+}
+
+// Per-k lazy shards for the higher-k Čtrnáct atlas (k≥8, generated by scripts/build-reference-atlas.ts
+// into public/reference-atlas-k{k}.json). Fetched only when that k is selected in the shelf filter, so
+// a heavy shard (k=10 ≈ 73 MB) never loads unless the user opens it. Cached per-k across the session.
+// NOTE: these records carry no m/partition/wallpaper classification yet (the build ctrnact path doesn't
+// compute it) — they filter by k/tileClass/discoverer/certification and render, but are excluded from
+// the M/partition/wallpaper facets until the build stamps those fields.
+const shardCache = new Map<number, ReferenceTiling[]>();
+const shardInflight = new Map<number, Promise<ReferenceTiling[]>>();
+
+export async function loadReferenceAtlasShard(k: number): Promise<ReferenceTiling[]> {
+	const cached = shardCache.get(k);
+	if (cached) return cached;
+	const existing = shardInflight.get(k);
+	if (existing) return existing;
+	const p = fetch(`/reference-atlas-k${k}.json`)
+		.then((res) => {
+			if (!res.ok) throw new Error(`reference-atlas-k${k}.json: HTTP ${res.status}`);
+			return res.json() as Promise<ReferenceTiling[]>;
+		})
+		.then((data) => {
+			shardCache.set(k, data);
+			shardInflight.delete(k);
+			return data;
+		})
+		.catch((err) => {
+			shardInflight.delete(k);
+			throw err;
+		});
+	shardInflight.set(k, p);
+	return p;
 }

@@ -10,17 +10,21 @@ import { Pagination } from "@/components/ui/pagination";
 import { ReferenceCard } from "@/components/reference-card";
 import {
 	loadReferenceAtlas,
+	loadReferenceAtlasShard,
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
+	type Certification,
 	type ReferenceTiling,
 	type ReferenceFilter,
+	type TileClass,
 } from "@/lib/services/referenceAtlas";
 import { WALLPAPER_GROUPS, type LatticeShape, type WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 
-// The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars),
-// lazy-fetched from public/reference-atlas.json. Each entry carries a DISCOVERER (historical
+// The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars in the
+// base file; regular k=8..10 as lazy per-k shards loaded on demand), fetched from public/reference-
+// atlas*.json. Each entry carries a DISCOVERER (historical
 // first-finder), a CERTIFICATION (proven / reproduced / candidate), and a vertex-type classification
 // (k, M, partition — see referenceAtlas.ts). Filters are flat and always-open (no accordion); groups
 // irrelevant to the current tile-class selection are hidden rather than shown as dead controls.
@@ -28,10 +32,18 @@ import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
 // k / M / partition are SINGLE-select (pick one, or "All"). M and partition only appear once a k is
 // chosen, and their chips are faceted to values that actually occur under the current filters — so at
 // k=4 you see M ∈ {2,3,4}, never a dead M=1 button.
-const CLASS_OPTIONS: { value: "all" | "regular" | "star"; label: string }[] = [
+const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "regular", label: "Regular" },
 	{ value: "star", label: "Star" },
+	{ value: "composable", label: "Composable" },
+];
+// Composable-shelf facet: the whole demo, only decomposable-family tilings, or only the ones that
+// reach for a non-decomposable composite. Shown only while the Composable tile class is selected.
+const DECOMP_OPTIONS: { value: "all" | "decomposable" | "non-decomposable"; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "decomposable", label: "Decomposable" },
+	{ value: "non-decomposable", label: "Uses non-decomp." },
 ];
 const PARAM_OPTIONS: { value: "all" | "rigid" | "family"; label: string }[] = [
 	{ value: "all", label: "All" },
@@ -47,13 +59,16 @@ const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Joseph Myers", label: "Myers" },
 	{ value: "Alessandro Longo", label: "Longo" },
 ];
-const CERT_OPTIONS: { value: ReferenceTiling["certification"]; label: string }[] = [
+const CERT_OPTIONS: { value: Certification; label: string }[] = [
 	{ value: "proven", label: "Proven" },
 	{ value: "reproduced", label: "Reproduced" },
 	{ value: "candidate", label: "Candidate" },
 ];
 const LATTICE_ORDER: LatticeShape[] = ["square", "hexagonal", "rhombic", "rectangular", "oblique"];
 const COLUMN_PRESETS = [3, 4, 5, 6];
+// Čtrnáct tiers beyond the base atlas (k≤7), shipped as separate lazy shards (public/reference-atlas-
+// k{k}.json). Their k chips always show; selecting one fetches the shard on demand and merges it in.
+const HIGHER_K = [8, 9, 10];
 const ALL_NUM = 0; // sentinel: the "All" chip for a single-select numeric group (k / M)
 const ALL_STR = ""; // sentinel: the "All" chip for the partition group
 
@@ -91,6 +106,9 @@ export function ReferenceShelf() {
 	const [filters, setFilters] = useState<ReferenceFilter>({});
 	const [gridColumns, setGridColumns] = useState(5);
 	const [currentPage, setCurrentPage] = useState(1);
+	const [loadedShards, setLoadedShards] = useState<Set<number>>(new Set());
+	const [loadingShards, setLoadingShards] = useState<Set<number>>(new Set());
+	const [shardErrors, setShardErrors] = useState<Map<number, string>>(new Map());
 
 	useEffect(() => {
 		let alive = true;
@@ -106,6 +124,29 @@ export function ReferenceShelf() {
 		setCurrentPage(1);
 	}, [filters]);
 
+	// Lazy k≥8 shards: selecting the k fetches public/reference-atlas-k{k}.json once and merges the
+	// records into `tilings`, so every derived facet (k chips, filtered, pagination) picks them up. A
+	// failed shard is sticky (won't refetch until Clear) and surfaces an inline error by the count.
+	useEffect(() => {
+		const k = filters.kValue;
+		if (k == null || k < 8) return;
+		if (loadedShards.has(k) || loadingShards.has(k) || shardErrors.has(k)) return;
+		setLoadingShards((s) => new Set(s).add(k));
+		loadReferenceAtlasShard(k)
+			.then((data) => {
+				setTilings((prev) => (prev ? [...prev, ...data] : data));
+				setLoadedShards((s) => new Set(s).add(k));
+			})
+			.catch((e) => setShardErrors((m) => new Map(m).set(k, e instanceof Error ? e.message : String(e))))
+			.finally(() =>
+				setLoadingShards((s) => {
+					const n = new Set(s);
+					n.delete(k);
+					return n;
+				}),
+			);
+	}, [filters.kValue, loadedShards, loadingShards, shardErrors]);
+
 	// ── single-select setters (each clears the now-stale downstream selections) ──
 	const setKValue = (k: number | undefined) =>
 		setFilters({ ...filters, kValue: k, mValue: undefined, partitionKey: undefined });
@@ -114,17 +155,27 @@ export function ReferenceShelf() {
 	const toggleMaximal = () => setFilters({ ...filters, maximalOnly: filters.maximalOnly ? undefined : true });
 	const setParametric = (v: "all" | "rigid" | "family") =>
 		setFilters({ ...filters, parametric: v === "all" ? undefined : v });
-	const setTileClass = (v: "all" | "regular" | "star") => {
+	const setTileClass = (v: "all" | TileClass) => {
 		const next: ReferenceFilter = { ...filters, tileClass: v === "all" ? undefined : v };
+		// The decomposable facet only means something inside the composable class — drop it otherwise.
+		if (v !== "composable") next.composableDecomp = undefined;
 		if (v === "regular") {
 			next.starFolds = undefined;
 			next.parametric = undefined;
 		} else if (v === "star") {
 			next.wallpaperGroups = undefined;
 			next.latticeShapes = undefined;
+		} else if (v === "composable") {
+			// No star folds, α-family, wallpaper group, or lattice on the composite-tile demo.
+			next.starFolds = undefined;
+			next.parametric = undefined;
+			next.wallpaperGroups = undefined;
+			next.latticeShapes = undefined;
 		}
 		setFilters(next);
 	};
+	const setComposableDecomp = (v: "all" | "decomposable" | "non-decomposable") =>
+		setFilters({ ...filters, composableDecomp: v === "all" ? undefined : v });
 
 	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
 	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
@@ -135,10 +186,13 @@ export function ReferenceShelf() {
 	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
 	const toggleShape = (s: LatticeShape) => toggleIn("latticeShapes", filters.latticeShapes ?? [], s);
 	const toggleDiscoverer = (d: string) => toggleIn("discoverers", filters.discoverers ?? [], d);
-	const toggleCert = (c: ReferenceTiling["certification"]) => toggleIn("certifications", filters.certifications ?? [], c);
+	const toggleCert = (c: Certification) => toggleIn("certifications", filters.certifications ?? [], c);
 
 	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
 	const kOptions = useMemo(() => (tilings ? [...new Set(tilings.map((t) => t.k))].sort((a, b) => a - b) : []), [tilings]);
+	// k chips = the k's present in loaded data UNION the lazy higher-k tiers, so 8/9/10 are selectable
+	// (and thus loadable) before their shard is fetched.
+	const kChips = useMemo(() => [...new Set([...kOptions, ...HIGHER_K])].sort((a, b) => a - b), [kOptions]);
 
 	// M chips are faceted to the current view MINUS M/partition: at k=4 they resolve to {2,3,4}.
 	const mOptions = useMemo(() => {
@@ -186,14 +240,16 @@ export function ReferenceShelf() {
 	}, [tilings]);
 
 	const tileClass = filters.tileClass ?? "all";
-	const showM = filters.kValue != null;
-	const showStar = tileClass !== "regular" && availableFolds.length > 0;
-	const showGroup = tileClass !== "star" && availableGroups.length > 0;
-	const showLattice = tileClass !== "star" && availableShapes.length > 0;
+	const showM = filters.kValue != null && tileClass !== "composable";
+	const showStar = tileClass !== "regular" && tileClass !== "composable" && availableFolds.length > 0;
+	const showGroup = tileClass !== "star" && tileClass !== "composable" && availableGroups.length > 0;
+	const showLattice = tileClass !== "star" && tileClass !== "composable" && availableShapes.length > 0;
+	const showComposable = tileClass === "composable";
 
 	const activeFilterCount =
 		(filters.kValue != null ? 1 : 0) +
 		(filters.tileClass ? 1 : 0) +
+		(filters.composableDecomp ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -246,11 +302,25 @@ export function ReferenceShelf() {
 						<ButtonGroup options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
 					</FilterGroup>
 
+					{showComposable ? (
+						<FilterGroup
+							title="Composite palette"
+							summary={filters.composableDecomp ?? null}
+							note="demo, not all-and-only"
+						>
+							<ButtonGroup
+								options={DECOMP_OPTIONS}
+								selected={filters.composableDecomp ?? "all"}
+								onChange={setComposableDecomp}
+							/>
+						</FilterGroup>
+					) : null}
+
 					<FilterGroup title="Vertex count (k)" summary={filters.kValue ?? null}>
 						<ButtonGroup
 							options={[
 								{ value: ALL_NUM, label: "All", classes: "px-2.5" },
-								...kOptions.map((k) => ({ value: k, label: k, classes: "w-8" })),
+								...kChips.map((k) => ({ value: k, label: k, classes: "w-8" })),
 							]}
 							selected={filters.kValue ?? ALL_NUM}
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
@@ -262,6 +332,7 @@ export function ReferenceShelf() {
 							label="Maximal (M = k)"
 							classes="mt-1 self-start"
 						/>
+						<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
 					</FilterGroup>
 
 					{showM ? (
@@ -376,13 +447,27 @@ export function ReferenceShelf() {
 				</div>
 			</PageSidebar>
 
-			<main className="flex-1 overflow-y-auto p-5">
+			{/* `relative` makes this scroll pane the containing block for the Pagination's absolutely-
+			    positioned sr-only <label>; without it the label anchors to <html> and stretches the
+			    document ~1000px below the app shell (a phantom black scroll region). */}
+			<main className="relative flex-1 overflow-y-auto p-5">
 				<div className="flex items-center gap-3 mb-5">
 					<Library size={18} className="text-sky-400" />
 					<h1 className="text-base font-semibold text-fg">Tiling Library</h1>
 					<span className="text-xs px-2 py-0.5 rounded-full bg-surface-overlay border border-line text-fg-muted">
 						{filtered.length} tilings
 					</span>
+					{loadingShards.size > 0 ? (
+						<span className="flex items-center gap-1.5 text-xs text-fg-muted">
+							<Loader2 size={12} className="animate-spin text-sky-400" />
+							loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
+						</span>
+					) : null}
+					{shardErrors.size > 0 ? (
+						<span className="text-xs text-danger">
+							failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
+						</span>
+					) : null}
 				</div>
 
 				{error ? (

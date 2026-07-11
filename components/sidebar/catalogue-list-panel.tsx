@@ -5,7 +5,6 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { CertificationBadge, OracleBadge } from "@/components/ui/certification-badge";
 import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -20,8 +19,8 @@ interface CatalogueListPanelProps {
 	mode?: "certified" | "reference";
 }
 
-// Regular before star; a class section only appears when it has tilings.
-const CLASS_ORDER = ["regular polygons", "star polygons"] as const;
+// Regular before star before composable; a class section only appears when it has tilings.
+const CLASS_ORDER = ["regular polygons", "star polygons", "composable tiles"] as const;
 
 function titleCase(label: string): string {
 	return label.charAt(0).toUpperCase() + label.slice(1);
@@ -92,7 +91,7 @@ export function CatalogueListPanel({ items, selectedKey, onSelect, mode = "certi
 												onClick={() => onSelect?.(t)}
 												title={`${t.canonicalKey} · {${t.family}}`}
 												className={cn(
-													"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden",
+													"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden cursor-pointer",
 													t.canonicalKey === selectedKey ? "border-accent ring-1 ring-accent/40" : "border-line",
 												)}
 											>
@@ -100,9 +99,14 @@ export function CatalogueListPanel({ items, selectedKey, onSelect, mode = "certi
 													{t.renderCell ? (
 														<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
 													) : null}
-													<div className="absolute top-1 left-1">
-														{mode === "reference" ? <OracleBadge size="sm" /> : <CertificationBadge certified={t.certified} size="sm" />}
-													</div>
+													{t.paramCell ? (
+														<span
+															title="One-parameter family (adjustable α)"
+															className="absolute top-1 left-1 inline-flex h-4 w-4 items-center justify-center rounded text-[10px] font-bold leading-none bg-white text-black ring-1 ring-black/20 shadow-sm dark:bg-black dark:text-white dark:ring-white/20"
+														>
+															α
+														</span>
+													) : null}
 												</div>
 											</button>
 										))}

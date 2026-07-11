@@ -8,6 +8,7 @@ import {
 	partitionKeyOf,
 	starFoldsOf,
 	tileClassOf,
+	type Certification,
 	type ReferenceTiling,
 } from "@/lib/services/referenceAtlas";
 
@@ -21,7 +22,7 @@ interface ReferenceCardProps {
 
 // Certification is the thesis's headline axis: "proven" (our method certifies the level complete) is a
 // strictly stronger claim than "reproduced" (matches published counts) or "candidate" (unestablished).
-const CERT_STYLE: Record<ReferenceTiling["certification"], { label: string; cls: string }> = {
+const CERT_STYLE: Record<Certification, { label: string; cls: string }> = {
 	proven: { label: "Proven", cls: "border-emerald-400/30 bg-emerald-400/10 text-emerald-400" },
 	reproduced: { label: "Reproduced", cls: "border-line-strong bg-surface-raised text-fg-muted" },
 	candidate: { label: "Candidate", cls: "border-amber-400/30 bg-amber-400/10 text-amber-400" },
@@ -29,6 +30,7 @@ const CERT_STYLE: Record<ReferenceTiling["certification"], { label: string; cls:
 
 export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 	const isFamily = Array.isArray(tiling.alphaRange);
+	const isComposable = tileClassOf(tiling) === "composable";
 	const folds = tileClassOf(tiling) === "star" ? starFoldsOf(tiling) : [];
 	const partitionKey = partitionKeyOf(tiling);
 	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
@@ -49,15 +51,42 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 			</div>
 			<div className="flex flex-col px-2.5 py-2 gap-1.5">
 				<div className="flex flex-wrap items-center gap-1">
-					<span
-						className={cn(
-							"inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
-							CERT_STYLE[tiling.certification].cls,
-						)}
-						title={`Completeness: ${tiling.certification}`}
-					>
-						{CERT_STYLE[tiling.certification].label}
-					</span>
+					{tiling.certification ? (
+						<span
+							className={cn(
+								"inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+								CERT_STYLE[tiling.certification].cls,
+							)}
+							title={`Completeness: ${tiling.certification}`}
+						>
+							{CERT_STYLE[tiling.certification].label}
+						</span>
+					) : null}
+					{isComposable ? (
+						<>
+							<span
+								className="inline-flex items-center rounded-full border border-indigo-400/30 bg-indigo-400/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400"
+								title={tiling.note ?? "Composite-tile demo (illustrative, not all-and-only)"}
+							>
+								Composable
+							</span>
+							<span
+								className={cn(
+									"inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+									tiling.decomposableOnly
+										? "border-teal-400/30 bg-teal-400/10 text-teal-400"
+										: "border-amber-400/30 bg-amber-400/10 text-amber-400",
+								)}
+								title={
+									tiling.decomposableOnly
+										? "every composite tile dissects into regular polygons"
+										: "uses a non-decomposable composite tile"
+								}
+							>
+								{tiling.decomposableOnly ? "decomposable" : "non-decomp"}
+							</span>
+						</>
+					) : null}
 					{tiling.preview ? (
 						<span className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-400/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-400" title="from a still-running solve — partial">
 							preview
