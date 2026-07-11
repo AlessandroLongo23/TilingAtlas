@@ -3,8 +3,16 @@ eu_solver
 eu_pruner
 eu_classify
 eu_develop
-# pipeline run outputs
+# pipeline run outputs (curated run-star-k*/ reference runs stay committed)
 run-k*/
+run-composite-*/
+run-par-*/
+run-star18-*/
+run-star20-*/
+run-star180u-*/
+run-star24-*/
+run-star24full-*/
+*.runlog
 work/
 out/
 _import_scratch/
