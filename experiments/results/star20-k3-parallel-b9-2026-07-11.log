@@ -1,0 +1,16 @@
+=== 5-fold (star20, D=20) k=3 — parallel, 10 workers, budget 9 ===
+goal: certify the 5-fold slice of star k=3 (0 hits => untruncated). tiles {4,5,10,20}+stars.
+context: in-ring k=3 = 162 (101 star); 9-fold k=3 added 4 rigid (8 genuine, 4 free-alpha).
+5-fold k=2 fixpoint was b6==b7 (6 blocks); running b9 to target 0 hits at k=3.
+[18:19:29] build (MAXNUM=3 PALETTE=star20)
+[18:19:30] PHASE 1  parallel solve — 10 workers, budget 9
+[18:19:39]   workers done (9s wall)
+[18:19:39] PHASE 1b  merge worker outputs
+[18:19:39]   merged raw blocks: 7
+[18:19:39] PHASE 2  prune
+  k=1 : 6
+  k=2 : 0
+  k=3 : 0
+total kept: 6
+[18:19:39]   prune done (0s);  total wall 9s
+=== star20 b9 done ===

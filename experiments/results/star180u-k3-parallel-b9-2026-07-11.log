@@ -1,0 +1,30 @@
+=== UNION (star180u, D=180=lcm(18,20)) k=3 — parallel, 10 workers, budget 9 ===
+DECISIVE completeness run: only D=180 can represent a 5-fold/9-fold MIXER (45|D_min).
+cross-check targets: 9-fold-rigid should reproduce star18's 4; 5-fold-pure should be 0;
+the open question is the mixer bucket — 0 => three-way ring split is lossless at k=3.
+context: in-ring k=3 = 162 (101 star), 9-fold +4 rigid, 5-fold +0.
+[18:21:44] build (MAXNUM=3 PALETTE=star180u)
+[18:21:45] PHASE 1  parallel solve — 10 workers, budget 9
+[20:03:00]   workers done (6075s wall)
+[20:03:00] PHASE 1b  merge worker outputs
+[20:03:01]   merged raw blocks: 209
+[20:03:01] PHASE 2  prune
+  k=1 : 27
+  k=2 : 31
+  k=3 : 78
+total kept: 136
+[20:03:01]   prune done (0s);  total wall 6076s
+=== star180u b9 done ===
+
+=== UNION MIXER CHECK (star180u D=180, 0 budget hits => untruncated) ===
+Bucketed by angle-based D_min + Step-1 pinning test:
+  k=1: 27 = 11 in-ring + 11 9-fold + 5 5-fold + 0 MIXER   (9-fold rigid: 3; 5-fold rigid: 1)
+  k=2: 30 = 18 in-ring + 12 9-fold + 0 5-fold + 0 MIXER   (9-fold rigid: 4; 5-fold rigid: 0)
+  k=3: 75 = 67 in-ring +  8 9-fold + 0 5-fold + 0 MIXER   (9-fold rigid: 4; 5-fold rigid: 0)
+Cross-check: union reproduces star18 (9-fold) and star20 (5-fold) genuine counts exactly.
+=> three-way ring split (D=24 in-ring + D=18 9-fold + D=20 5-fold) is LOSSLESS at k=1,2,3:
+   NO tiling needs a ring mixing 5-fold and 9-fold directions.
+CAVEAT (unchanged): star180u carries only star18 U star20 species (52 tiles), not hybrid
+   D=180-only stars; a hybrid-star mixer is not excluded by experiment. Definitive guarantee
+   needs the ring-obstruction lemma (TA).
+Full star k=3 = 162 in-ring + 4 rigid 9-fold + 0 5-fold + 0 mixer = 166 (105 star-bearing).
