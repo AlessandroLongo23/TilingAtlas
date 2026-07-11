@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CyclotomicRing, Cyclotomic } from '@/classes';
 import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
+import { Polyform } from '@/classes/algorithm/composable/Polyform';
 
 const ring = CyclotomicRing.create(12);
 const origin = Cyclotomic.fromRational(ring, 0n); // exact 0 (confirmed: no Cyclotomic.zero)
@@ -14,5 +15,12 @@ describe('exact tile primitive', () => {
   it('places a unit square with four 90° (=3 unit) corners', () => {
     const s = RegularPolygon.fromAnchorAndDirExact(4, origin, 0);
     expect([0, 1, 2, 3].map(i => s.cornerAngleUnits(i))).toEqual([3, 3, 3, 3]);
+  });
+});
+
+describe('Polyform boundary', () => {
+  it('a single triangle has 3 boundary half-edges', () => {
+    const pf = new Polyform([RegularPolygon.fromAnchorAndDirExact(3, origin, 0)]);
+    expect(pf.boundaryHalfEdges().length).toBe(3);
   });
 });
