@@ -72,11 +72,77 @@ export function isRegularPolygon(vertices: { x: number; y: number }[]): boolean 
 	return true;
 }
 
-// Fill hue for a plain (non-star) tile: the regular by-side-count ramp, rotated to its complement
-// when the tile isn't actually regular.
+// Convex isotoxal tiles (equilateral 2n-gons whose interior angles alternate α ≤ β < 180 — the convex
+// sibling of the star) share their side count with every other same-n isotoxal tile, so the by-side-count
+// ramp above would paint an isotoxal hexagon at 90°/150° identically to one at 60°/180⁻. Nudge the base
+// hue by where α sits inside its valid interval — the same trick starHue() plays with a star's apex angle
+// — so two same-n isotoxal tiles of different sharpness (and the live play-page slider as it flexes α)
+// read as distinct colours. Centred (mid-interval keeps the base hue), clamped to ±ISOTOXAL_ANGLE_HUE_SPAN
+// so the nudge stays well inside the ±180 irregular band and, for the side counts that share tilings
+// (4/6/8/12, ≥33° apart on the ramp), never crosses into a neighbouring side count's colour.
+const ISOTOXAL_ANGLE_HUE_SPAN = 12;
+
+// The smaller alternating interior angle α of a convex isotoxal 2n-gon, in degrees. NaN when the outline
+// isn't a convex isotoxal tile: odd side count, unequal edges, a reflex corner (that's a star — coloured
+// by the star path, not here), angles that don't fall into two strictly-alternating classes, or the
+// degenerate regular case (α = β). Float trig, display-only.
+export function isotoxalCharAngleDeg(vertices: { x: number; y: number }[]): number {
+	const m = vertices.length;
+	if (m < 4 || m % 2 !== 0) return NaN;
+	let side0 = -1;
+	let crossSign = 0;
+	let evenAng = -1;
+	let oddAng = -1;
+	for (let i = 0; i < m; i++) {
+		const prev = vertices[(i - 1 + m) % m];
+		const cur = vertices[i];
+		const next = vertices[(i + 1) % m];
+		const side = Math.hypot(next.x - cur.x, next.y - cur.y);
+		if (side < 1e-9) return NaN;
+		if (side0 < 0) side0 = side;
+		else if (Math.abs(side - side0) > 1e-3 * side0) return NaN;
+		const ax = prev.x - cur.x, ay = prev.y - cur.y;
+		const bx = next.x - cur.x, by = next.y - cur.y;
+		const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+		if (la < 1e-9 || lb < 1e-9) return NaN;
+		// Convexity: every corner must turn the same way (all cross products one sign). A mixed sign is a
+		// reflex dent ⇒ the tile is a star, not a convex isotoxal, and is handled by the star path.
+		const cross = ax * by - ay * bx;
+		if (Math.abs(cross) > 1e-9) {
+			const s = cross > 0 ? 1 : -1;
+			if (crossSign === 0) crossSign = s;
+			else if (s !== crossSign) return NaN;
+		}
+		const ang = (Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)))) * 180) / Math.PI;
+		if (i % 2 === 0) {
+			if (evenAng < 0) evenAng = ang;
+			else if (Math.abs(ang - evenAng) > 0.5) return NaN;
+		} else {
+			if (oddAng < 0) oddAng = ang;
+			else if (Math.abs(ang - oddAng) > 0.5) return NaN;
+		}
+	}
+	if (evenAng < 0 || oddAng < 0 || Math.abs(evenAng - oddAng) < 0.5) return NaN; // regular / degenerate
+	return Math.min(evenAng, oddAng);
+}
+
+// Fill hue for a plain (non-star) tile: the regular by-side-count ramp, rotated to its complement when
+// the tile isn't actually regular, then nudged by the isotoxal angle when the tile is a convex isotoxal.
 export function polygonFillHue(vertices: { x: number; y: number }[]): number {
 	const base = polygonHue(vertices.length);
-	return isRegularPolygon(vertices) ? base : (base + IRREGULAR_HUE_SHIFT) % 360;
+	if (isRegularPolygon(vertices)) return base;
+	const irregular = (base + IRREGULAR_HUE_SHIFT) % 360;
+	const alpha = isotoxalCharAngleDeg(vertices);
+	if (!Number.isFinite(alpha)) return irregular;
+	// α ∈ (max(0, C−180), C/2) with C = α + β = 360 − 360/n; map that open interval onto [−SPAN, +SPAN].
+	const n = vertices.length / 2;
+	const c = 360 - 360 / n;
+	const aLo = Math.max(0, c - 180);
+	const aHi = c / 2;
+	if (aHi - aLo < 1e-6) return irregular;
+	const t = Math.min(1, Math.max(0, (alpha - aLo) / (aHi - aLo)));
+	const shift = (t - 0.5) * 2 * ISOTOXAL_ANGLE_HUE_SPAN;
+	return (((irregular + shift) % 360) + 360) % 360;
 }
 
 // Star tiles use the original StarPolygon.calculateHue ramp (lib/classes/polygons/StarPolygon.ts):
