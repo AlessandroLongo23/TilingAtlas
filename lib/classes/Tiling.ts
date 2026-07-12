@@ -16,6 +16,10 @@ export class Tiling {
     seedNodes: Polygon[];
     coreNode: Polygon | null;
 
+    // Largest tile circumradius (centroid→vertex, world units), set by the play-mode grid builder.
+    // Used as the draw-time off-screen cull margin so a tile that clips the viewport is never dropped.
+    maxRadius?: number;
+
     // tiling check
     translationalCellBasis: [Vector, Vector] | null = null;
     originPolygon: Polygon | null = null;
@@ -36,20 +40,34 @@ export class Tiling {
         this.coreNode = null;
     }
 
-    show = (ctx, showPolygonPoints: boolean, opacity: number = 1, circlePacking: boolean = false): void => {
-        const lineWidthValue = useConfiguration.getState().lineWidth;
+    show = (
+        ctx,
+        showPolygonPoints: boolean,
+        opacity: number = 1,
+        circlePacking: boolean = false,
+        cull?: (c: Vector) => boolean,
+    ): void => {
+        // Read config ONCE per draw, not once per tile. The plain path below used to delegate to
+        // Polygon.show, which re-read Zustand state AND queried the DOM ("dark" class) for every tile
+        // every frame — the dominant cost at zoomed-out tile counts. Stroke is uniform across tiles, so
+        // set it once here; only the per-tile fill (hue) varies inside the loop. `cull`, when given,
+        // skips tiles outside the viewport (see makeVisibilityCull in canvas.tsx).
+        const cfg = useConfiguration.getState();
+        const zoom = cfg.controls.zoom;
+        const lineWidthValue = cfg.lineWidth;
         if (lineWidthValue <= 0) {
             ctx.noStroke();
         } else {
-            ctx.strokeWeight(lineWidthValue / useConfiguration.getState().controls.zoom);
+            ctx.strokeWeight(lineWidthValue / zoom);
             // White stroke only when tiles are outline-only on a dark theme; dark otherwise (HSB bright).
-            const useLightStroke = !useConfiguration.getState().showPolygonFill && document.documentElement.classList.contains("dark");
-            ctx.stroke(0, 0, useLightStroke ? 100 : 0);
+            const useLightStroke = !cfg.showPolygonFill && document.documentElement.classList.contains("dark");
+            ctx.stroke(0, 0, useLightStroke ? 100 : 0, opacity);
         }
 
         if (circlePacking) {
             for (let i = 0; i < this.nodes.length; i++) {
                 const node = this.nodes[i];
+                if (cull && !cull(node.centroid)) continue;
                 const radius = node.halfways?.length > 0
                     ? Vector.distance(node.centroid, node.halfways[0])
                     : 0;
@@ -58,12 +76,13 @@ export class Tiling {
                     ctx.ellipse(node.centroid.x, node.centroid.y, radius * 2, radius * 2);
                 }
             }
-        } else if (useConfiguration.getState().isIslamic) {
+        } else if (cfg.isIslamic) {
             if (this.nodes.some((n) => n.isStar)) {
                 // Star tiling: fill each arrangement cell with its source tile's colour, then the black
                 // construction lines as cell borders. No base underneath (redundant and costly). Cells
                 // span tiles (dent triangles form where a star's rays meet a neighbour's at the shared
-                // edge), so the fill works over the whole tiling's arrangement, not per tile.
+                // edge), so the fill works over the whole tiling's arrangement, not per tile — hence the
+                // whole-tiling arrangement is (deliberately) NOT viewport-culled.
                 this.drawIslamicStarFill(ctx, opacity);
             } else {
                 // Dentless tiling: keep the previous regular Islamic fill.
@@ -71,12 +90,37 @@ export class Tiling {
                 for (const node of this.nodes) node.showIslamicFilled(ctx, opacity);
             }
         } else {
+            // Hot path: inline fill + shape, reusing the stroke set once above. No push/pop, no per-tile
+            // getState, no DOM read — the fill (hue) is the only thing that varies per tile.
+            const showFill = cfg.showPolygonFill;
+            const fillV = 100 / opacity;
+            const fillA = 0.80 * opacity;
             for (let i = 0; i < this.nodes.length; i++) {
-                this.nodes[i].show(ctx, showPolygonPoints, null, opacity);
+                const node = this.nodes[i];
+                if (cull && !cull(node.centroid)) continue;
+                if (showFill) ctx.fill(node.hue, 40, fillV, fillA);
+                else ctx.noFill();
+                const vs = node.vertices;
+                ctx.beginShape();
+                for (let k = 0; k < vs.length; k++) ctx.vertex(vs[k].x, vs[k].y);
+                ctx.endShape(ctx.CLOSE);
+            }
+            if (showPolygonPoints) {
+                const r = 5 / zoom;
+                for (let i = 0; i < this.nodes.length; i++) {
+                    const node = this.nodes[i];
+                    if (cull && !cull(node.centroid)) continue;
+                    ctx.fill(0, 100, 100);
+                    ctx.ellipse(node.centroid.x, node.centroid.y, r);
+                    ctx.fill(120, 100, 100);
+                    for (const h of node.halfways) ctx.ellipse(h.x, h.y, r);
+                    ctx.fill(240, 100, 100);
+                    for (const v of node.vertices) ctx.ellipse(v.x, v.y, r);
+                }
             }
         }
-        
-        const showDualConnectionsValue = useConfiguration.getState().showDualConnections;
+
+        const showDualConnectionsValue = cfg.showDualConnections;
         if (showDualConnectionsValue)
             this.drawDualConnections(ctx);
     }

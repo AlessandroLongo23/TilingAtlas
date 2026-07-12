@@ -13,17 +13,22 @@ export function useCatalogueSelection(sorted: CatalogueTiling[], requestedKey: s
 		return sorted[0] ?? null;
 	});
 
-	// The URL key we've already applied. Seeded to the mount-time key (the initializer above already
-	// honored it) so the first effect run is a no-op. We react only when `requestedKey` genuinely
-	// changes — i.e. a fresh "Open in Play" navigation — not when the user picks in the sidebar
-	// (which changes `selected` but not the URL). That divergence used to snap selection back.
-	const appliedKeyRef = useRef<string | null>(requestedKey);
+	// The URL key we've actually SATISFIED (found in `sorted` and selected). Seeded to the mount-time key
+	// ONLY if it was present at mount — if the initializer fell back to sorted[0] because the key wasn't
+	// loaded yet (a lazy k≥8 / composable shard still fetching), we leave this null so the effect keeps
+	// retrying as `sorted` grows. Once satisfied, we never re-assert it against a later in-page pick
+	// (which changes `selected` but not the URL) — that divergence used to snap selection back.
+	const appliedKeyRef = useRef<string | null>(
+		requestedKey && sorted.some((t) => t.canonicalKey === requestedKey) ? requestedKey : null,
+	);
 
 	useEffect(() => {
 		if (!requestedKey || requestedKey === appliedKeyRef.current) return;
-		appliedKeyRef.current = requestedKey;
 		const m = sorted.find((t) => t.canonicalKey === requestedKey);
-		if (m) setSelected(m);
+		if (m) {
+			appliedKeyRef.current = requestedKey;
+			setSelected(m);
+		}
 	}, [requestedKey, sorted]);
 
 	return { selected, setSelected };

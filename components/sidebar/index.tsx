@@ -10,14 +10,25 @@ interface SidebarProps {
 	onSelect?: (t: CatalogueTiling) => void;
 	/** Jump to a random tiling (wired to the sidebar button and the "R" shortcut). */
 	onRandom?: () => void;
+	/** Step to the previous / next tiling in list order (arrow buttons and ←/→ shortcuts). */
+	onPrev?: () => void;
+	onNext?: () => void;
 	/** "reference" relabels the picker for the oracle atlas (Oracle pill, not the cert badge). */
 	mode?: "certified" | "reference";
 }
 
-export function Sidebar({ tilings = [], selected = null, onSelect, onRandom, mode = "certified" }: SidebarProps) {
+export function Sidebar({ tilings = [], selected = null, onSelect, onRandom, onPrev, onNext, mode = "certified" }: SidebarProps) {
 	return (
 		<PageSidebar scrollable={false}>
-			<TilingsTab tilings={tilings} selected={selected} onSelect={onSelect} onRandom={onRandom} mode={mode} />
+			<TilingsTab
+				tilings={tilings}
+				selected={selected}
+				onSelect={onSelect}
+				onRandom={onRandom}
+				onPrev={onPrev}
+				onNext={onNext}
+				mode={mode}
+			/>
 		</PageSidebar>
 	);
 }

@@ -1,0 +1,42 @@
+{
+  "name": "combined-z24",
+  "D": 24,
+  "pinnedLegacy": false,
+  "maxValence": 12,
+  "comment": "ALL-FAMILIES-TOGETHER palette (AL 2026-07-12): the ζ₂₄ union of star24 (regular {3,4,6,8,12} + Myers in-ring star species) and composite-convex (Family A decomposable + Family B non-decomposable composites, angles rescaled from the D=12 spec to D=24 units, i.e. doubled). This puts regular, star and composable/non-composable tiles in ONE alphabet so k-uniform tilings mixing all three families are enumerated together. NOT a completeness target: composites admit multiple dissections (decomposition ambiguity), so counts are over the tile alphabet, not all-and-only geometric tilings; do not compare to A068599. maxValence=12 is Myers' in-ring bound (a cap — logged, not silent). Star sub-families star18/star20 (9-fold / 5-fold) are EXCLUDED by construction: their direction systems (ζ₁₈ / ζ₂₀) are incommensurable with ζ₂₄, so they cannot share this periodic lattice.",
+  "tiles": [
+    { "kind": "regular", "n": 3,  "name": "3",  "famchar": "3" },
+    { "kind": "regular", "n": 4,  "name": "4",  "famchar": "4" },
+    { "kind": "regular", "n": 6,  "name": "6",  "famchar": "6" },
+    { "kind": "regular", "n": 8,  "name": "8",  "famchar": "8" },
+    { "kind": "regular", "n": 12, "name": "12", "famchar": "c" },
+
+    { "kind": "star", "n": 3,  "alphaU": 1, "name": "3*1",  "famchar": "sA" },
+    { "kind": "star", "n": 3,  "alphaU": 2, "name": "3*2",  "famchar": "sB" },
+    { "kind": "star", "n": 4,  "alphaU": 2, "name": "4*2",  "famchar": "sC" },
+    { "kind": "star", "n": 4,  "alphaU": 3, "name": "4*3",  "famchar": "sD" },
+    { "kind": "star", "n": 4,  "alphaU": 4, "name": "4*4",  "famchar": "sE" },
+    { "kind": "star", "n": 6,  "alphaU": 2, "name": "6*2",  "famchar": "sF" },
+    { "kind": "star", "n": 6,  "alphaU": 4, "name": "6*4",  "famchar": "sG" },
+    { "kind": "star", "n": 6,  "alphaU": 5, "name": "6*5",  "famchar": "sH" },
+    { "kind": "star", "n": 6,  "alphaU": 6, "name": "6*6",  "famchar": "sK" },
+    { "kind": "star", "n": 8,  "alphaU": 1, "name": "8*1",  "famchar": "sI" },
+    { "kind": "star", "n": 8,  "alphaU": 3, "name": "8*3",  "famchar": "sL" },
+    { "kind": "star", "n": 8,  "alphaU": 6, "name": "8*6",  "famchar": "sM" },
+    { "kind": "star", "n": 12, "alphaU": 2, "name": "12*2", "famchar": "sJ" },
+    { "kind": "star", "n": 12, "alphaU": 4, "name": "12*4", "famchar": "sN" },
+    { "kind": "star", "n": 12, "alphaU": 6, "name": "12*6", "famchar": "sO" },
+
+    { "kind": "composite", "name": "cx4-2.4.2.4",              "angles": [4,8,4,8],                    "famchar": "x0" },
+    { "kind": "composite", "name": "cx5-2.5.3.3.5",            "angles": [4,10,6,6,10],                "famchar": "x1" },
+    { "kind": "composite", "name": "cx6-2.5.5.2.5.5",          "angles": [4,10,10,4,10,10],            "famchar": "x2" },
+    { "kind": "composite", "name": "cx6-3.4.5.3.4.5",          "angles": [6,8,10,6,8,10],              "famchar": "x3" },
+    { "kind": "composite", "name": "cx6-3.5.3.5.3.5",          "angles": [6,10,6,10,6,10],             "famchar": "x4" },
+    { "kind": "composite", "name": "cx7-3.5.4.5.3.5.5",        "angles": [6,10,8,10,6,10,10],          "famchar": "x5" },
+    { "kind": "composite", "name": "cx8-3.5.5.5.3.5.5.5",      "angles": [6,10,10,10,6,10,10,10],      "famchar": "x6" },
+    { "kind": "composite", "name": "cx8-4.4.5.5.4.4.5.5",      "angles": [8,8,10,10,8,8,10,10],        "famchar": "x7" },
+    { "kind": "composite", "name": "cx8-4.5.4.5.4.5.4.5",      "angles": [8,10,8,10,8,10,8,10],        "famchar": "x8" },
+    { "kind": "composite", "name": "cx9-4.5.5.4.5.5.4.5.5",    "angles": [8,10,10,8,10,10,8,10,10],    "famchar": "x9" },
+    { "kind": "composite", "name": "cx10-4.5.5.5.5.4.5.5.5.5", "angles": [8,10,10,10,10,8,10,10,10,10],"famchar": "x10" }
+  ]
+}

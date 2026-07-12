@@ -1,6 +1,6 @@
 "use client";
 
-import { Shuffle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
 import { useConfiguration } from "@/stores/configuration";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,10 +18,12 @@ interface TilingsTabProps {
 	selected: CatalogueTiling | null;
 	onSelect?: (t: CatalogueTiling) => void;
 	onRandom?: () => void;
+	onPrev?: () => void;
+	onNext?: () => void;
 	mode?: "certified" | "reference";
 }
 
-export function TilingsTab({ tilings, selected, onSelect, onRandom, mode = "certified" }: TilingsTabProps) {
+export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNext, mode = "certified" }: TilingsTabProps) {
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
 
@@ -48,17 +50,37 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, mode = "cert
 					<span className="text-xs text-fg-muted">Select a tiling below.</span>
 				)}
 
-				<Button
-					variant="secondary"
-					size="sm"
-					fullWidth
-					icon={Shuffle}
-					onClick={onRandom}
-					disabled={!onRandom || tilings.length < 2}
-					title="Pick a random tiling (R)"
-				>
-					Random tiling
-				</Button>
+				<div className="flex items-stretch gap-2">
+					<Button
+						variant="secondary"
+						size="icon"
+						icon={ChevronLeft}
+						onClick={onPrev}
+						disabled={!onPrev || tilings.length < 2}
+						title="Previous tiling (←)"
+						aria-label="Previous tiling"
+					/>
+					<Button
+						variant="secondary"
+						size="sm"
+						classes="flex-1"
+						icon={Shuffle}
+						onClick={onRandom}
+						disabled={!onRandom || tilings.length < 2}
+						title="Pick a random tiling (R)"
+					>
+						Random tiling
+					</Button>
+					<Button
+						variant="secondary"
+						size="icon"
+						icon={ChevronRight}
+						onClick={onNext}
+						disabled={!onNext || tilings.length < 2}
+						title="Next tiling (→)"
+						aria-label="Next tiling"
+					/>
+				</div>
 
 				<Slider
 					id="rotation"

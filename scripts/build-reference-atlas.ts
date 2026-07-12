@@ -16,6 +16,7 @@
  * Run: pnpm tsx scripts/build-reference-atlas.ts [--no-stars]
  * Coverage is logged loudly to stdout AND experiments/results/reference-atlas-build.log.
  */
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Cyclotomic, CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
@@ -610,6 +611,29 @@ function main(): void {
 	log(`  elapsed ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 	fs.writeFileSync(LOG_PATH, logLines.join('\n') + '\n');
 	console.log(`\n(log → ${path.relative(ROOT, LOG_PATH)})`);
+
+	// Enrich the files just written, IN PLACE, with the vertex-type classification (m / partition) and
+	// exact wallpaper symmetry (group / lattice). This used to be a MANUAL second step, so any rebuild
+	// silently dropped m/partition and the library's M/partition filters went blank until someone
+	// remembered to re-run it. Chaining it here makes that impossible: the atlas a build produces is
+	// always fully classified. Skip with --no-enrich for fast structural iteration (the atlas then has
+	// NO m/partition/group — you must run scripts/enrich-reference-atlas.ts yourself before shipping).
+	if (argv.includes('--no-enrich')) {
+		console.log('(--no-enrich: skipped classification — atlas has NO m/partition/group; enrich before shipping)');
+		return;
+	}
+	const shardsWritten = !argv.includes('--no-ctrnact') && !argv.includes('--no-shards');
+	const enrichTargets = [
+		OUT_PATH,
+		...(shardsWritten ? [8, 9, 10].map((k) => path.join(ROOT, 'public', `reference-atlas-k${k}.json`)) : []),
+	];
+	console.log('\n=== enriching atlas: vertex-type classification + exact wallpaper symmetry ===');
+	execSync(
+		`pnpm tsx ${JSON.stringify(path.join('scripts', 'enrich-reference-atlas.ts'))} ${enrichTargets
+			.map((f) => JSON.stringify(f))
+			.join(' ')}`,
+		{ stdio: 'inherit', cwd: ROOT },
+	);
 }
 
 main();

@@ -62,6 +62,27 @@ function screenLatticeVectors(v1: Vector, v2: Vector, zoom: number, rotation: nu
 	return { e1: e(v1), e2: e(v2) };
 }
 
+// Draw-time off-screen cull. Returns a predicate on a world-space centroid: true iff the tile may touch
+// the viewport. The world -> centered-screen map here is the SAME one as screenLatticeVectors (translate
+// center, +offset, rotate, scale zoom, flip-y, reduced to centered coords), so it agrees with fill/wrap.
+// The pad is zoom·maxRadius (the largest centroid->vertex distance in world units): a tile whose body
+// clips the edge while its centroid sits just outside is still kept, so the cull never hides a visible
+// tile. Lets the drawer skip the off-screen remainder of an oversized grid (e.g. the larger grid retained
+// mid zoom-in) instead of stroking every replicated copy every frame.
+function makeVisibilityCull(
+	maxRadius: number, zoom: number, rotation: number, offset: Vector, width: number, height: number,
+): (c: Vector) => boolean {
+	const cos = Math.cos(rotation), sin = Math.sin(rotation);
+	const ox = offset.x, oy = offset.y;
+	const pad = zoom * (maxRadius > 0 ? maxRadius : 2);
+	const limX = width / 2 + pad, limY = height / 2 + pad;
+	return (c: Vector) => {
+		const sx = ox + zoom * (cos * c.x + sin * c.y);
+		const sy = oy + zoom * (sin * c.x - cos * c.y);
+		return sx >= -limX && sx <= limX && sy >= -limY && sy <= limY;
+	};
+}
+
 // How many lattice copies (per axis, each side of origin) are needed to cover the viewport plus a
 // one-cell margin. We transform the four screen corners into lattice coords via M^{-1} (columns of M
 // are the on-screen lattice vectors e1, e2) and take the worst case. The +1 absorbs the half-cell wrap
@@ -121,6 +142,13 @@ function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: nu
 	const t = new Tiling();
 	t.nodes = [];
 
+	// Largest tile circumradius (centroid→vertex), in world units. The draw-time off-screen cull tests
+	// each tile by its CENTROID; a tile whose centroid is off-screen can still have a vertex on-screen,
+	// but never further than this radius — so culling with a margin of zoom·maxRadius provably never
+	// drops a partially-visible tile. Every replicated cell is a translated copy of the same shapes, so
+	// the base cell (i=j=0) already carries the global maximum.
+	let maxRadius = 0;
+
 	for (let i = -ri; i <= ri; i++) {
 		for (let j = -rj; j <= rj; j++) {
 			const ox = i * v1x + j * v2x;
@@ -144,11 +172,19 @@ function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: nu
 						if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
 						poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
 						t.nodes.push(poly);
+						if (i === 0 && j === 0) {
+							const c = poly.centroid;
+							for (const vv of poly.vertices) {
+								const d = Math.hypot(vv.x - c.x, vv.y - c.y);
+								if (d > maxRadius) maxRadius = d;
+							}
+						}
 					}
 				}
 			}
 		}
 	}
+	t.maxRadius = maxRadius;
 	return t;
 }
 
@@ -226,8 +262,21 @@ export function Canvas({
 					!tc &&
 					(cfg.selectedTiling.rulestring !== prev.rulestring ||
 						cfg.parameter !== prev.parameter);
+
+				// Rebuilding the replicated grid is the expensive per-frame spike (thousands of polygons,
+				// each recomputing centroid/halfways/angles/hue). A zoom-IN shrinks the needed radius
+				// frame-by-frame across the ease, and rebuilding on every shrink is exactly what makes
+				// zoom-in stutter. So only rebuild when the grid would be UNDERSIZED (must grow — the
+				// zoom-out case, else black corners flash at the edges), or once the ease has SETTLED and
+				// a now-oversized grid can be reclaimed in a single at-rest rebuild. During a zoom-in
+				// gesture neither fires: the (larger-than-needed) grid is drawn as-is with zero rebuilds,
+				// and the one shrink happens after motion stops, off the critical path. The grid stays
+				// >= the fill radius throughout, so no visible tile is ever dropped.
+				const settled = Math.abs(ctrl.zoom - ctrl.targetZoom) < 0.5;
+				const grew = Ri > prev.Ri || Rj > prev.Rj;
+				const shrankAtRest = settled && (Ri !== prev.Ri || Rj !== prev.Rj);
 				const cellChanged =
-					!!tc && (prev.translationalCellId !== tcId || Ri !== prev.Ri || Rj !== prev.Rj);
+					!!tc && (prev.translationalCellId !== tcId || grew || shrankAtRest);
 
 				if (!tilingRef.current || ruleChanged || cellChanged) {
 					try {
@@ -257,9 +306,11 @@ export function Canvas({
 				}
 			};
 
-			const drawTiling = (cfg: ReturnType<typeof readCfg>, tiling: Tiling) => {
+			const drawTiling = (
+				cfg: ReturnType<typeof readCfg>, tiling: Tiling, cull?: (c: Vector) => boolean,
+			) => {
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
-				else tiling.show(p5, cfg.showPolygonPoints, 1, cfg.circlePacking);
+				else tiling.show(p5, cfg.showPolygonPoints, 1, cfg.circlePacking, cull);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 			};
 
@@ -413,8 +464,14 @@ export function Canvas({
 					// Symmetry-elements view: draw tiles plain (no per-tile colour) so colour is reserved for the
 					// symmetry axes + rotation-centre glyphs drawn on top. Otherwise the normal coloured render.
 					const symmetryActive = !!sd && cfg.showSymmetryElements;
+					// Skip tiles outside the viewport. Only meaningful when the grid can exceed it (the
+					// translational-cell path with its retained-oversize grid); the rulestring path draws all.
+					const cull =
+						tc && tiling
+							? makeVisibilityCull(tiling.maxRadius ?? 0, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
+							: undefined;
 					if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
-					else drawTiling(cfg, tiling);
+					else drawTiling(cfg, tiling, cull);
 					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
 					if (symmetryActive) {
 						drawSymmetryElements(p5, sd, {

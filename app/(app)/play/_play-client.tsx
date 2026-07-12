@@ -7,8 +7,15 @@ import { Sidebar } from "@/components/sidebar";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
-import { loadComposableAtlasShard, loadReferenceAtlas, referenceToCatalogue } from "@/lib/services/referenceAtlas";
+import {
+	loadComposableAtlasShard,
+	loadReferenceAtlas,
+	loadReferenceAtlasShard,
+	referenceToCatalogue,
+} from "@/lib/services/referenceAtlas";
 import { evaluateParamCell } from "@/lib/utils/paramCell";
+import { pickStratified } from "@/lib/utils/pickStratified";
+import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 
 interface PlayClientProps {
@@ -74,6 +81,33 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 	}, [requestedKey]);
 
+	// Higher-k regular tilings (Čtrnáct, k≥8, id "ctrnact-{kk}_…") live in lazy per-k shards
+	// (public/reference-atlas-k{k}.json), not the base atlas. If we arrived directly at one (a click from
+	// the /library higher-k shelf), fetch its shard and merge it in so the requested key resolves —
+	// otherwise useCatalogueSelection can't find it and silently falls back to the first tiling. Best-
+	// effort; dedup by key so navigating between k≥8 tilings doesn't append the shard twice.
+	useEffect(() => {
+		const m = requestedKey?.match(/^ctrnact-(\d+)_/);
+		if (!m) return;
+		const k = Number(m[1]);
+		if (!Number.isFinite(k) || k < 8) return;
+		let alive = true;
+		loadReferenceAtlasShard(k)
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [requestedKey]);
+
 	const working = refList ?? tilings;
 
 	// Deterministic default (lowest k, then key) so the first paint is stable, not random.
@@ -113,29 +147,52 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		}
 	}, [sorted, selected, requestedKey, setSelected]);
 
-	// Jump to a uniformly random tiling from the full atlas, excluding the current one so the view
-	// always visibly changes. No-op with fewer than two tilings. Client-only, so Math.random is fine.
+	// Jump to a random tiling, stratified by (polygon class × k) so fat buckets (e.g. regular k=10)
+	// don't swamp thin ones (e.g. star k=1): each class×k combination is equally likely, then a tiling
+	// uniformly within it. Excludes the current selection so the view always changes. Client-only, so
+	// Math.random is fine.
 	const selectRandom = useCallback(() => {
-		const pool = selected
-			? sorted.filter((t) => t.canonicalKey !== selected.canonicalKey)
-			: sorted;
-		if (pool.length === 0) return;
-		setSelected(pool[Math.floor(Math.random() * pool.length)]);
+		const pick = pickStratified(sorted, {
+			bucketOf: (t) => `${polygonClassLabel(t.family)}::${t.k}`,
+			keyOf: (t) => t.canonicalKey,
+			excludeKey: selected?.canonicalKey ?? null,
+		});
+		if (pick) setSelected(pick);
 	}, [sorted, selected, setSelected]);
 
-	// "R" reshuffles — but not while typing in a field or dragging a control with a modifier held.
+	// Step through the linear `sorted` order (k, then key), wrapping at both ends so arrow-key browsing
+	// never dead-ends. From no selection, forward lands on the first entry and backward on the last.
+	const step = useCallback(
+		(dir: -1 | 1) => {
+			if (sorted.length === 0) return;
+			const idx = selected ? sorted.findIndex((t) => t.canonicalKey === selected.canonicalKey) : -1;
+			const next = idx === -1 ? (dir === 1 ? 0 : sorted.length - 1) : (idx + dir + sorted.length) % sorted.length;
+			setSelected(sorted[next]);
+		},
+		[sorted, selected, setSelected],
+	);
+
+	// "R" reshuffles, ←/→ step prev/next — but not while a field or slider is focused (its own arrow
+	// handling wins) or a modifier is held.
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key !== "r" && e.key !== "R") return;
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			const el = e.target as HTMLElement | null;
 			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-			e.preventDefault();
-			selectRandom();
+			if (e.key === "r" || e.key === "R") {
+				e.preventDefault();
+				selectRandom();
+			} else if (e.key === "ArrowLeft") {
+				e.preventDefault();
+				step(-1);
+			} else if (e.key === "ArrowRight") {
+				e.preventDefault();
+				step(1);
+			}
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [selectRandom]);
+	}, [selectRandom, step]);
 
 	useEffect(() => {
 		const el = canvasWrapRef.current;
@@ -157,6 +214,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				selected={selected}
 				onSelect={setSelected}
 				onRandom={selectRandom}
+				onPrev={() => step(-1)}
+				onNext={() => step(1)}
 				mode={refList ? "reference" : "certified"}
 			/>
 			<div ref={canvasWrapRef} className="flex-1 min-w-0 relative">

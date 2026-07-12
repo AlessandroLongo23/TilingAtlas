@@ -10,6 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "pipeline": "tsx lib/algorithm/run-pipeline.ts",
+    "atlas": "tsx scripts/build-reference-atlas.ts",
+    "atlas:enrich": "tsx scripts/enrich-reference-atlas.ts",
     "figures": "tsx figures/build.ts",
     "figures:data": "tsx --env-file=.env scripts/export-figure-snapshot.ts && tsx scripts/oracle-match.ts",
     "figures:preview": "tsx figures/contact-sheet.ts",
