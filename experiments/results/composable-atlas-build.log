@@ -1,9 +1,460 @@
 === build-composable-atlas ===
   k=1 [ctrnact-composite-convex-k1.cells.json]: 20 usesComposite of 30 records  (decomposable-only 13, uses-non-decomposable 7)
   k=2 [ctrnact-composite-convex-k2.cells.json]: 238 usesComposite of 258 records  (decomposable-only 183, uses-non-decomposable 55)
-  k=3 [ctrnact-composite-decomp-k3.cells.json]: 1362 usesComposite of 1423 records  (decomposable-only 1362, uses-non-decomposable 0)
+  k=3 [ctrnact-composite-convex-k3.cells.json]: 1783 usesComposite of 1844 records  (decomposable-only 1362, uses-non-decomposable 421)
 
-=== reference-atlas-composable.json written ===
-  1620 tilings → public/reference-atlas-composable.json
-  decomposable-only 1558  ·  uses-non-decomposable 62
-  elapsed 0.02s
+  dedup: 2041 → 1451 distinct tilings (590 duplicate representations merged)
+    composable-k1-012  ⇐  composable-k1-015, composable-k2-226, composable-k3-1743, composable-k3-1747, composable-k3-1751, composable-k3-1755, composable-k2-227, composable-k2-228, composable-k3-1754, composable-k3-1760
+    composable-k1-013  ⇐  composable-k1-014, composable-k2-225, composable-k3-1745, composable-k3-1746, composable-k3-1749, composable-k3-1752
+    composable-k2-018  ⇐  composable-k2-019, composable-k3-367, composable-k3-368
+    composable-k2-020  ⇐  composable-k2-023
+    composable-k2-021  ⇐  composable-k2-024
+    composable-k2-022  ⇐  composable-k2-025
+    composable-k2-038  ⇐  composable-k2-040
+    composable-k2-039  ⇐  composable-k2-041
+    composable-k2-043  ⇐  composable-k2-044
+    composable-k2-046  ⇐  composable-k3-549
+    composable-k2-094  ⇐  composable-k2-095
+    composable-k2-098  ⇐  composable-k2-099
+    composable-k2-100  ⇐  composable-k2-103
+    composable-k2-102  ⇐  composable-k2-101
+    composable-k2-104  ⇐  composable-k2-107, composable-k2-105, composable-k2-106
+    composable-k2-108  ⇐  composable-k2-112
+    composable-k2-109  ⇐  composable-k2-113
+    composable-k2-110  ⇐  composable-k2-114
+    composable-k2-111  ⇐  composable-k2-115
+    composable-k2-116  ⇐  composable-k2-117
+    composable-k2-118  ⇐  composable-k2-119
+    composable-k2-121  ⇐  composable-k2-122
+    composable-k2-123  ⇐  composable-k2-124, composable-k3-1176, composable-k3-1177
+    composable-k2-133  ⇐  composable-k2-137
+    composable-k2-134  ⇐  composable-k2-138
+    composable-k2-135  ⇐  composable-k2-136
+    composable-k3-1283  ⇐  composable-k2-139
+    composable-k2-140  ⇐  composable-k3-1281, composable-k3-1284
+    composable-k2-157  ⇐  composable-k2-159
+    composable-k2-158  ⇐  composable-k2-160
+    composable-k2-163  ⇐  composable-k2-166, composable-k2-164, composable-k2-165
+    composable-k2-172  ⇐  composable-k2-174
+    composable-k2-175  ⇐  composable-k2-173
+    composable-k2-190  ⇐  composable-k2-202
+    composable-k2-191  ⇐  composable-k2-203
+    composable-k2-192  ⇐  composable-k2-200
+    composable-k2-193  ⇐  composable-k2-201
+    composable-k2-194  ⇐  composable-k2-195
+    composable-k2-196  ⇐  composable-k2-197
+    composable-k2-198  ⇐  composable-k2-199
+    composable-k2-204  ⇐  composable-k2-205
+    composable-k2-206  ⇐  composable-k2-207, composable-k3-1650, composable-k3-1651
+    composable-k2-215  ⇐  composable-k2-218
+    composable-k2-216  ⇐  composable-k2-217
+    composable-k2-219  ⇐  composable-k3-1716, composable-k3-1719
+    composable-k2-221  ⇐  composable-k2-224, composable-k2-222, composable-k2-223, composable-k3-1723, composable-k3-1721, composable-k3-1722, composable-k3-1724
+    composable-k2-229  ⇐  composable-k2-230
+    composable-k2-231  ⇐  composable-k2-233
+    composable-k2-232  ⇐  composable-k2-234
+    composable-k3-177  ⇐  composable-k3-182
+    composable-k3-178  ⇐  composable-k3-183
+    composable-k3-179  ⇐  composable-k3-184
+    composable-k3-180  ⇐  composable-k3-185
+    composable-k3-181  ⇐  composable-k3-203
+    composable-k3-186  ⇐  composable-k3-211
+    composable-k3-187  ⇐  composable-k3-212
+    composable-k3-188  ⇐  composable-k3-208
+    composable-k3-189  ⇐  composable-k3-204
+    composable-k3-190  ⇐  composable-k3-205
+    composable-k3-191  ⇐  composable-k3-202
+    composable-k3-192  ⇐  composable-k3-201
+    composable-k3-193  ⇐  composable-k3-195
+    composable-k3-194  ⇐  composable-k3-196
+    composable-k3-197  ⇐  composable-k3-199
+    composable-k3-198  ⇐  composable-k3-200
+    composable-k3-206  ⇐  composable-k3-209
+    composable-k3-207  ⇐  composable-k3-210
+    composable-k3-213  ⇐  composable-k3-214
+    composable-k3-215  ⇐  composable-k3-216
+    composable-k3-217  ⇐  composable-k3-218
+    composable-k3-219  ⇐  composable-k3-228
+    composable-k3-220  ⇐  composable-k3-229
+    composable-k3-221  ⇐  composable-k3-230
+    composable-k3-222  ⇐  composable-k3-231
+    composable-k3-223  ⇐  composable-k3-232
+    composable-k3-224  ⇐  composable-k3-226
+    composable-k3-225  ⇐  composable-k3-227
+    composable-k3-233  ⇐  composable-k3-234
+    composable-k3-235  ⇐  composable-k3-237
+    composable-k3-236  ⇐  composable-k3-238
+    composable-k3-239  ⇐  composable-k3-240
+    composable-k3-259  ⇐  composable-k3-261
+    composable-k3-260  ⇐  composable-k3-262
+    composable-k3-263  ⇐  composable-k3-268, composable-k3-264, composable-k3-267
+    composable-k3-265  ⇐  composable-k3-270, composable-k3-266, composable-k3-269
+    composable-k3-271  ⇐  composable-k3-329
+    composable-k3-272  ⇐  composable-k3-323
+    composable-k3-273  ⇐  composable-k3-313
+    composable-k3-274  ⇐  composable-k3-318
+    composable-k3-275  ⇐  composable-k3-330
+    composable-k3-276  ⇐  composable-k3-331
+    composable-k3-277  ⇐  composable-k3-332
+    composable-k3-278  ⇐  composable-k3-279
+    composable-k3-280  ⇐  composable-k3-309
+    composable-k3-281  ⇐  composable-k3-310
+    composable-k3-282  ⇐  composable-k3-324
+    composable-k3-283  ⇐  composable-k3-286, composable-k3-284, composable-k3-285
+    composable-k3-288  ⇐  composable-k3-287
+    composable-k3-289  ⇐  composable-k3-292, composable-k3-290, composable-k3-291
+    composable-k3-293  ⇐  composable-k3-296, composable-k3-294, composable-k3-295
+    composable-k3-297  ⇐  composable-k3-300
+    composable-k3-298  ⇐  composable-k3-299
+    composable-k3-301  ⇐  composable-k3-304, composable-k3-302, composable-k3-303
+    composable-k3-305  ⇐  composable-k3-308, composable-k3-306, composable-k3-307
+    composable-k3-311  ⇐  composable-k3-321
+    composable-k3-312  ⇐  composable-k3-322
+    composable-k3-314  ⇐  composable-k3-325
+    composable-k3-315  ⇐  composable-k3-326
+    composable-k3-316  ⇐  composable-k3-333
+    composable-k3-317  ⇐  composable-k3-334
+    composable-k3-319  ⇐  composable-k3-328
+    composable-k3-320  ⇐  composable-k3-327
+    composable-k3-335  ⇐  composable-k3-336
+    composable-k3-337  ⇐  composable-k3-340
+    composable-k3-338  ⇐  composable-k3-339
+    composable-k3-341  ⇐  composable-k3-345
+    composable-k3-342  ⇐  composable-k3-347
+    composable-k3-343  ⇐  composable-k3-346
+    composable-k3-344  ⇐  composable-k3-348
+    composable-k3-349  ⇐  composable-k3-352
+    composable-k3-350  ⇐  composable-k3-353
+    composable-k3-351  ⇐  composable-k3-354
+    composable-k3-355  ⇐  composable-k3-356
+    composable-k3-357  ⇐  composable-k3-389
+    composable-k3-358  ⇐  composable-k3-363
+    composable-k3-359  ⇐  composable-k3-390
+    composable-k3-360  ⇐  composable-k3-364
+    composable-k3-361  ⇐  composable-k3-362
+    composable-k3-365  ⇐  composable-k3-369
+    composable-k3-366  ⇐  composable-k3-370
+    composable-k3-371  ⇐  composable-k3-373
+    composable-k3-374  ⇐  composable-k3-372
+    composable-k3-375  ⇐  composable-k3-376
+    composable-k3-377  ⇐  composable-k3-380, composable-k3-378, composable-k3-379
+    composable-k3-381  ⇐  composable-k3-382
+    composable-k3-383  ⇐  composable-k3-384
+    composable-k3-385  ⇐  composable-k3-386
+    composable-k3-387  ⇐  composable-k3-388
+    composable-k3-391  ⇐  composable-k3-393
+    composable-k3-392  ⇐  composable-k3-394
+    composable-k3-420  ⇐  composable-k3-423
+    composable-k3-421  ⇐  composable-k3-424
+    composable-k3-425  ⇐  composable-k3-426
+    composable-k3-427  ⇐  composable-k3-428
+    composable-k3-429  ⇐  composable-k3-431
+    composable-k3-432  ⇐  composable-k3-430
+    composable-k3-524  ⇐  composable-k3-525
+    composable-k3-528  ⇐  composable-k3-529
+    composable-k3-531  ⇐  composable-k3-536
+    composable-k3-532  ⇐  composable-k3-537
+    composable-k3-533  ⇐  composable-k3-538
+    composable-k3-534  ⇐  composable-k3-539
+    composable-k3-535  ⇐  composable-k3-540
+    composable-k3-542  ⇐  composable-k3-543
+    composable-k3-552  ⇐  composable-k3-553
+    composable-k3-555  ⇐  composable-k3-556
+    composable-k3-558  ⇐  composable-k3-559
+    composable-k3-864  ⇐  composable-k3-866
+    composable-k3-865  ⇐  composable-k3-867
+    composable-k3-868  ⇐  composable-k3-869
+    composable-k3-870  ⇐  composable-k3-881, composable-k3-871, composable-k3-880
+    composable-k3-872  ⇐  composable-k3-883, composable-k3-873, composable-k3-882
+    composable-k3-874  ⇐  composable-k3-876
+    composable-k3-875  ⇐  composable-k3-877
+    composable-k3-878  ⇐  composable-k3-879
+    composable-k3-884  ⇐  composable-k3-890
+    composable-k3-885  ⇐  composable-k3-917
+    composable-k3-886  ⇐  composable-k3-888
+    composable-k3-887  ⇐  composable-k3-889
+    composable-k3-891  ⇐  composable-k3-929
+    composable-k3-892  ⇐  composable-k3-930
+    composable-k3-893  ⇐  composable-k3-903
+    composable-k3-894  ⇐  composable-k3-904
+    composable-k3-895  ⇐  composable-k3-901
+    composable-k3-896  ⇐  composable-k3-902
+    composable-k3-897  ⇐  composable-k3-905
+    composable-k3-898  ⇐  composable-k3-906
+    composable-k3-899  ⇐  composable-k3-907
+    composable-k3-900  ⇐  composable-k3-908
+    composable-k3-909  ⇐  composable-k3-910
+    composable-k3-911  ⇐  composable-k3-912
+    composable-k3-913  ⇐  composable-k3-914
+    composable-k3-915  ⇐  composable-k3-916
+    composable-k3-919  ⇐  composable-k3-918
+    composable-k3-920  ⇐  composable-k3-923, composable-k3-921, composable-k3-922
+    composable-k3-924  ⇐  composable-k3-927, composable-k3-925, composable-k3-926
+    composable-k3-931  ⇐  composable-k3-934, composable-k3-932, composable-k3-933
+    composable-k3-935  ⇐  composable-k3-942, composable-k3-959
+    composable-k3-936  ⇐  composable-k3-937
+    composable-k3-938  ⇐  composable-k3-939
+    composable-k3-940  ⇐  composable-k3-941
+    composable-k3-943  ⇐  composable-k3-951
+    composable-k3-944  ⇐  composable-k3-952
+    composable-k3-945  ⇐  composable-k3-953
+    composable-k3-946  ⇐  composable-k3-954
+    composable-k3-947  ⇐  composable-k3-955
+    composable-k3-948  ⇐  composable-k3-956
+    composable-k3-949  ⇐  composable-k3-957
+    composable-k3-950  ⇐  composable-k3-958
+    composable-k3-961  ⇐  composable-k3-962
+    composable-k3-963  ⇐  composable-k3-964
+    composable-k3-965  ⇐  composable-k3-966
+    composable-k3-967  ⇐  composable-k3-969
+    composable-k3-968  ⇐  composable-k3-970
+    composable-k3-1011  ⇐  composable-k3-1012
+    composable-k3-1013  ⇐  composable-k3-1019
+    composable-k3-1014  ⇐  composable-k3-1017
+    composable-k3-1015  ⇐  composable-k3-1018
+    composable-k3-1016  ⇐  composable-k3-1020
+    composable-k3-1021  ⇐  composable-k3-1022
+    composable-k3-1023  ⇐  composable-k3-1028, composable-k3-1024, composable-k3-1027
+    composable-k3-1025  ⇐  composable-k3-1030, composable-k3-1026, composable-k3-1029
+    composable-k3-1031  ⇐  composable-k3-1061
+    composable-k3-1033  ⇐  composable-k3-1057
+    composable-k3-1034  ⇐  composable-k3-1058
+    composable-k3-1036  ⇐  composable-k3-1059, composable-k3-1035, composable-k3-1060
+    composable-k3-1039  ⇐  composable-k3-1044, composable-k3-1040, composable-k3-1043
+    composable-k3-1041  ⇐  composable-k3-1046, composable-k3-1042, composable-k3-1045
+    composable-k3-1048  ⇐  composable-k3-1047
+    composable-k3-1049  ⇐  composable-k3-1054, composable-k3-1050, composable-k3-1053
+    composable-k3-1051  ⇐  composable-k3-1056, composable-k3-1052, composable-k3-1055
+    composable-k3-1062  ⇐  composable-k3-1063
+    composable-k3-1064  ⇐  composable-k3-1065, composable-k3-1066, composable-k3-1067
+    composable-k3-1068  ⇐  composable-k3-1085, composable-k3-1104, composable-k3-1133
+    composable-k3-1069  ⇐  composable-k3-1086, composable-k3-1105, composable-k3-1134
+    composable-k3-1070  ⇐  composable-k3-1087, composable-k3-1106, composable-k3-1135
+    composable-k3-1071  ⇐  composable-k3-1088, composable-k3-1107, composable-k3-1136
+    composable-k3-1072  ⇐  composable-k3-1089, composable-k3-1108, composable-k3-1137
+    composable-k3-1073  ⇐  composable-k3-1090, composable-k3-1109, composable-k3-1138
+    composable-k3-1074  ⇐  composable-k3-1091, composable-k3-1110, composable-k3-1139
+    composable-k3-1075  ⇐  composable-k3-1092, composable-k3-1111, composable-k3-1140
+    composable-k3-1076  ⇐  composable-k3-1079, composable-k3-1114, composable-k3-1115
+    composable-k3-1077  ⇐  composable-k3-1102, composable-k3-1112, composable-k3-1146
+    composable-k3-1078  ⇐  composable-k3-1103, composable-k3-1113, composable-k3-1147
+    composable-k3-1080  ⇐  composable-k3-1101, composable-k3-1132, composable-k3-1145
+    composable-k3-1081  ⇐  composable-k3-1116, composable-k3-1120, composable-k3-1141
+    composable-k3-1082  ⇐  composable-k3-1117, composable-k3-1121, composable-k3-1142
+    composable-k3-1083  ⇐  composable-k3-1118, composable-k3-1122, composable-k3-1143
+    composable-k3-1084  ⇐  composable-k3-1119, composable-k3-1123, composable-k3-1144
+    composable-k3-1093  ⇐  composable-k3-1095, composable-k3-1094, composable-k3-1096
+    composable-k3-1097  ⇐  composable-k3-1098, composable-k3-1099, composable-k3-1100
+    composable-k3-1124  ⇐  composable-k3-1126, composable-k3-1128, composable-k3-1130
+    composable-k3-1125  ⇐  composable-k3-1127, composable-k3-1129, composable-k3-1131
+    composable-k3-1148  ⇐  composable-k3-1164
+    composable-k3-1149  ⇐  composable-k3-1163
+    composable-k3-1150  ⇐  composable-k3-1169
+    composable-k3-1151  ⇐  composable-k3-1172
+    composable-k3-1152  ⇐  composable-k3-1173
+    composable-k3-1153  ⇐  composable-k3-1174
+    composable-k3-1154  ⇐  composable-k3-1175
+    composable-k3-1155  ⇐  composable-k3-1165
+    composable-k3-1156  ⇐  composable-k3-1166
+    composable-k3-1157  ⇐  composable-k3-1167
+    composable-k3-1158  ⇐  composable-k3-1168
+    composable-k3-1159  ⇐  composable-k3-1161
+    composable-k3-1160  ⇐  composable-k3-1162
+    composable-k3-1170  ⇐  composable-k3-1171
+    composable-k3-1178  ⇐  composable-k3-1181, composable-k3-1179, composable-k3-1180
+    composable-k3-1182  ⇐  composable-k3-1183
+    composable-k3-1184  ⇐  composable-k3-1185
+    composable-k3-1186  ⇐  composable-k3-1189, composable-k3-1187, composable-k3-1188
+    composable-k3-1190  ⇐  composable-k3-1194
+    composable-k3-1191  ⇐  composable-k3-1195
+    composable-k3-1192  ⇐  composable-k3-1196
+    composable-k3-1193  ⇐  composable-k3-1197
+    composable-k3-1198  ⇐  composable-k3-1201
+    composable-k3-1199  ⇐  composable-k3-1202
+    composable-k3-1200  ⇐  composable-k3-1203
+    composable-k3-1204  ⇐  composable-k3-1205, composable-k3-1209, composable-k3-1210
+    composable-k3-1206  ⇐  composable-k3-1211, composable-k3-1216, composable-k3-1217
+    composable-k3-1207  ⇐  composable-k3-1212, composable-k3-1214, composable-k3-1215
+    composable-k3-1208  ⇐  composable-k3-1213, composable-k3-1218, composable-k3-1219
+    composable-k3-1220  ⇐  composable-k3-1221
+    composable-k3-1247  ⇐  composable-k3-1252
+    composable-k3-1248  ⇐  composable-k3-1253
+    composable-k3-1249  ⇐  composable-k3-1250
+    composable-k3-1251  ⇐  composable-k3-1254
+    composable-k3-1255  ⇐  composable-k3-1258
+    composable-k3-1256  ⇐  composable-k3-1257
+    composable-k3-1263  ⇐  composable-k3-1264
+    composable-k3-1265  ⇐  composable-k3-1269
+    composable-k3-1266  ⇐  composable-k3-1270
+    composable-k3-1267  ⇐  composable-k3-1271
+    composable-k3-1268  ⇐  composable-k3-1272
+    composable-k3-1273  ⇐  composable-k3-1274
+    composable-k3-1275  ⇐  composable-k3-1276
+    composable-k3-1277  ⇐  composable-k3-1279
+    composable-k3-1278  ⇐  composable-k3-1280
+    composable-k3-1285  ⇐  composable-k3-1286
+    composable-k3-1292  ⇐  composable-k3-1296
+    composable-k3-1293  ⇐  composable-k3-1298
+    composable-k3-1294  ⇐  composable-k3-1299
+    composable-k3-1295  ⇐  composable-k3-1297
+    composable-k3-1303  ⇐  composable-k3-1300, composable-k3-1301, composable-k3-1304
+    composable-k3-1302  ⇐  composable-k3-1306
+    composable-k3-1307  ⇐  composable-k3-1308
+    composable-k3-1310  ⇐  composable-k3-1312
+    composable-k3-1311  ⇐  composable-k3-1313
+    composable-k3-1315  ⇐  composable-k3-1314
+    composable-k3-1377  ⇐  composable-k3-1378
+    composable-k3-1379  ⇐  composable-k3-1381
+    composable-k3-1380  ⇐  composable-k3-1382
+    composable-k3-1383  ⇐  composable-k3-1384
+    composable-k3-1385  ⇐  composable-k3-1387
+    composable-k3-1386  ⇐  composable-k3-1388
+    composable-k3-1389  ⇐  composable-k3-1397
+    composable-k3-1390  ⇐  composable-k3-1398
+    composable-k3-1391  ⇐  composable-k3-1399
+    composable-k3-1392  ⇐  composable-k3-1400
+    composable-k3-1393  ⇐  composable-k3-1395
+    composable-k3-1394  ⇐  composable-k3-1396
+    composable-k3-1401  ⇐  composable-k3-1409
+    composable-k3-1402  ⇐  composable-k3-1410
+    composable-k3-1403  ⇐  composable-k3-1412
+    composable-k3-1404  ⇐  composable-k3-1411
+    composable-k3-1405  ⇐  composable-k3-1406
+    composable-k3-1407  ⇐  composable-k3-1424
+    composable-k3-1408  ⇐  composable-k3-1423
+    composable-k3-1413  ⇐  composable-k3-1416, composable-k3-1414, composable-k3-1415
+    composable-k3-1417  ⇐  composable-k3-1420, composable-k3-1418, composable-k3-1419
+    composable-k3-1421  ⇐  composable-k3-1422
+    composable-k3-1425  ⇐  composable-k3-1426
+    composable-k3-1427  ⇐  composable-k3-1440
+    composable-k3-1428  ⇐  composable-k3-1441
+    composable-k3-1429  ⇐  composable-k3-1442
+    composable-k3-1430  ⇐  composable-k3-1443
+    composable-k3-1431  ⇐  composable-k3-1444
+    composable-k3-1432  ⇐  composable-k3-1445
+    composable-k3-1433  ⇐  composable-k3-1446
+    composable-k3-1434  ⇐  composable-k3-1447
+    composable-k3-1435  ⇐  composable-k3-1448
+    composable-k3-1436  ⇐  composable-k3-1449
+    composable-k3-1437  ⇐  composable-k3-1450
+    composable-k3-1438  ⇐  composable-k3-1439
+    composable-k3-1451  ⇐  composable-k3-1453
+    composable-k3-1452  ⇐  composable-k3-1454
+    composable-k3-1474  ⇐  composable-k3-1475
+    composable-k3-1476  ⇐  composable-k3-1477
+    composable-k3-1482  ⇐  composable-k3-1487, composable-k3-1483, composable-k3-1486
+    composable-k3-1484  ⇐  composable-k3-1489, composable-k3-1485, composable-k3-1488
+    composable-k3-1490  ⇐  composable-k3-1492, composable-k3-1491, composable-k3-1493
+    composable-k3-1494  ⇐  composable-k3-1495
+    composable-k3-1496  ⇐  composable-k3-1497
+    composable-k3-1510  ⇐  composable-k3-1511
+    composable-k3-1528  ⇐  composable-k3-1532
+    composable-k3-1529  ⇐  composable-k3-1533
+    composable-k3-1530  ⇐  composable-k3-1534
+    composable-k3-1531  ⇐  composable-k3-1535
+    composable-k3-1536  ⇐  composable-k3-1537
+    composable-k3-1541  ⇐  composable-k3-1542, composable-k3-1540, composable-k3-1543
+    composable-k3-1568  ⇐  composable-k3-1572
+    composable-k3-1569  ⇐  composable-k3-1573
+    composable-k3-1570  ⇐  composable-k3-1574
+    composable-k3-1571  ⇐  composable-k3-1575
+    composable-k3-1576  ⇐  composable-k3-1580
+    composable-k3-1577  ⇐  composable-k3-1581
+    composable-k3-1578  ⇐  composable-k3-1582
+    composable-k3-1579  ⇐  composable-k3-1583
+    composable-k3-1584  ⇐  composable-k3-1586
+    composable-k3-1585  ⇐  composable-k3-1587
+    composable-k3-1588  ⇐  composable-k3-1605
+    composable-k3-1589  ⇐  composable-k3-1590
+    composable-k3-1591  ⇐  composable-k3-1596, composable-k3-1592, composable-k3-1595
+    composable-k3-1593  ⇐  composable-k3-1594
+    composable-k3-1597  ⇐  composable-k3-1598
+    composable-k3-1599  ⇐  composable-k3-1604, composable-k3-1600, composable-k3-1603
+    composable-k3-1601  ⇐  composable-k3-1602
+    composable-k3-1606  ⇐  composable-k3-1609, composable-k3-1626, composable-k3-1633
+    composable-k3-1607  ⇐  composable-k3-1610, composable-k3-1627, composable-k3-1634
+    composable-k3-1608  ⇐  composable-k3-1621, composable-k3-1628, composable-k3-1637
+    composable-k3-1611  ⇐  composable-k3-1620, composable-k3-1635, composable-k3-1636
+    composable-k3-1612  ⇐  composable-k3-1613, composable-k3-1618, composable-k3-1619
+    composable-k3-1614  ⇐  composable-k3-1615, composable-k3-1616, composable-k3-1617
+    composable-k3-1622  ⇐  composable-k3-1624, composable-k3-1629, composable-k3-1631
+    composable-k3-1623  ⇐  composable-k3-1625, composable-k3-1630, composable-k3-1632
+    composable-k3-1638  ⇐  composable-k3-1646
+    composable-k3-1639  ⇐  composable-k3-1647
+    composable-k3-1640  ⇐  composable-k3-1643
+    composable-k3-1641  ⇐  composable-k3-1644
+    composable-k3-1642  ⇐  composable-k3-1645
+    composable-k3-1648  ⇐  composable-k3-1649
+    composable-k3-1652  ⇐  composable-k3-1655, composable-k3-1653, composable-k3-1654
+    composable-k3-1656  ⇐  composable-k3-1657
+    composable-k3-1658  ⇐  composable-k3-1659
+    composable-k3-1660  ⇐  composable-k3-1663, composable-k3-1661, composable-k3-1662
+    composable-k3-1664  ⇐  composable-k3-1666
+    composable-k3-1665  ⇐  composable-k3-1667
+    composable-k3-1668  ⇐  composable-k3-1669
+    composable-k3-1670  ⇐  composable-k3-1671, composable-k3-1672, composable-k3-1673
+    composable-k3-1699  ⇐  composable-k3-1701
+    composable-k3-1700  ⇐  composable-k3-1702
+    composable-k3-1703  ⇐  composable-k3-1704
+    composable-k3-1705  ⇐  composable-k3-1706
+    composable-k3-1710  ⇐  composable-k3-1712
+    composable-k3-1711  ⇐  composable-k3-1713
+    composable-k3-1714  ⇐  composable-k3-1715
+    composable-k3-1717  ⇐  composable-k3-1718
+    composable-k3-1725  ⇐  composable-k3-1727, composable-k3-1726, composable-k3-1728
+    composable-k3-1729  ⇐  composable-k3-1730
+    composable-k3-1731  ⇐  composable-k3-1734, composable-k3-1735, composable-k3-1738
+    composable-k3-1732  ⇐  composable-k3-1733, composable-k3-1736, composable-k3-1737
+    composable-k3-1739  ⇐  composable-k3-1742
+    composable-k3-1740  ⇐  composable-k3-1741
+    composable-k3-1744  ⇐  composable-k3-1750, composable-k3-1757, composable-k3-1758
+    composable-k3-1748  ⇐  composable-k3-1753, composable-k3-1756, composable-k3-1759
+    composable-k3-1761  ⇐  composable-k3-1773
+    composable-k3-1762  ⇐  composable-k3-1774
+    composable-k3-1763  ⇐  composable-k3-1775
+    composable-k3-1764  ⇐  composable-k3-1776
+    composable-k3-1765  ⇐  composable-k3-1769
+    composable-k3-1766  ⇐  composable-k3-1771
+    composable-k3-1767  ⇐  composable-k3-1770
+    composable-k3-1768  ⇐  composable-k3-1772
+
+=== relabel k → true vertex-orbit count (mirror-merged, matching the regular atlas) ===
+  31 of 1451 tilings were chirally over-counted; relabeled to their true (lower) k
+    composable-k2-172  k=2 → k=1  [(cx8-4.4.5.5.4.4.5.5@2,cx8-4.4.5.5.4.4.5.5@0,4)F, (cx8-4]
+    composable-k2-175  k=2 → k=1  [(cx8-4.4.5.5.4.4.5.5@2,cx8-4.4.5.5.4.4.5.5@1,4)F, (cx8-4]
+    composable-k3-020  k=3 → k=2  [(cx9-4.5.5.4.5.5.4.5.5@1,6,4)F, (cx9-4.5.5.4.5.5.4.5.5@2]
+    composable-k3-1032  k=3 → k=2  [(cx5-2.5.3.3.5@2,3,cx5-2.5.3.3.5@1,3)F, (cx5-2.5.3.3.5@0]
+    composable-k3-1036  k=3 → k=2  [(cx5-2.5.3.3.5@3,cx5-2.5.3.3.5@1,3,3)F, (cx5-2.5.3.3.5@0]
+    composable-k3-1062  k=3 → k=2  [(cx10-4.5.5.5.5.4.5.5.5.5@2,cx10-4.5.5.5.5.4.5.5.5.5@1,3]
+    composable-k3-1220  k=3 → k=2  [(cx8-4.5.4.5.4.5.4.5@1,cx6-2.5.5.2.5.5@1,3)F, (cx8-4.5.4]
+    composable-k3-1262  k=3 → k=2  [(cx9-4.5.5.4.5.5.4.5.5@1,cx6-3.5.3.5.3.5@1,3)F, (cx9-4.5]
+    composable-k3-1275  k=3 → k=2  [(cx7-3.5.4.5.3.5.5@5,cx7-3.5.4.5.3.5.5@1,3)F, (cx7-3.5.4]
+    composable-k3-1283  k=3 → k=2  [(cx8-4.4.5.5.4.4.5.5@3,cx8-4.4.5.5.4.4.5.5@2,3)F, (cx8-4]
+    composable-k3-1303  k=3 → k=2  [(cx6-2.5.5.2.5.5@1,6,4)F, (cx6-2.5.5.2.5.5@2,6,4)F, (cx6]
+    composable-k3-1305  k=3 → k=2  [(cx6-2.5.5.2.5.5@1,6,4)F, (cx6-2.5.5.2.5.5@2,6,4)F, (cx6]
+    composable-k3-1307  k=3 → k=2  [(cx6-2.5.5.2.5.5@1,6,4)F, (cx6-2.5.5.2.5.5@0,4,6,4)F, (c]
+    composable-k3-1315  k=3 → k=2  [(cx8-4.4.5.5.4.4.5.5@1,cx8-4.4.5.5.4.4.5.5@0,6)F, (cx8-4]
+    composable-k3-1438  k=3 → k=2  [(cx6-2.5.5.2.5.5@1,cx4-2.4.2.4@1,4)F, (cx6-2.5.5.2.5.5@0]
+    composable-k3-1496  k=3 → k=2  [(cx8-4.4.5.5.4.4.5.5@0,cx6-2.5.5.2.5.5@1,4)F, (cx8-4.4.5]
+    composable-k3-1541  k=3 → k=2  [(cx5-2.5.3.3.5@3,cx5-2.5.3.3.5@1,6)F, (cx5-2.5.3.3.5@4,c]
+    composable-k3-1731  k=3 → k=2  [(cx8-4.4.5.5.4.4.5.5@0,cx5-2.5.3.3.5@2,cx5-2.5.3.3.5@1)F]
+    composable-k3-239  k=3 → k=2  [(cx6-2.5.5.2.5.5@0,cx4-2.4.2.4@1,3,cx4-2.4.2.4@1)F, (cx6]
+    composable-k3-278  k=3 → k=2  [(cx5-2.5.3.3.5@1,3,4,3)F, (cx5-2.5.3.3.5@3,cx5-2.5.3.3.5]
+    composable-k3-355  k=3 → k=2  [(cx6-2.5.5.2.5.5@1,4,3,3)F, (cx6-2.5.5.2.5.5@2,4,3,3)F, ]
+    composable-k3-361  k=3 → k=2  [(cx6-2.5.5.2.5.5@1,4,3,3)F, (cx6-2.5.5.2.5.5@0,3,4,4,3)F]
+    composable-k3-371  k=3 → k=2  [(cx6-2.5.5.2.5.5@2,cx6-2.5.5.2.5.5@1,3)F, (cx6-2.5.5.2.5]
+    composable-k3-374  k=3 → k=2  [(cx6-2.5.5.2.5.5@2,cx6-2.5.5.2.5.5@1,3)F, (cx6-2.5.5.2.5]
+    composable-k3-425  k=3 → k=2  [(cx8-3.5.5.5.3.5.5.5@1,3,4,3)F, (cx8-3.5.5.5.3.5.5.5@2,3]
+    composable-k3-429  k=3 → k=2  [(cx8-4.4.5.5.4.4.5.5@3,cx8-4.4.5.5.4.4.5.5@2,3)F, (cx8-4]
+    composable-k3-432  k=3 → k=2  [(cx8-4.4.5.5.4.4.5.5@3,cx8-4.4.5.5.4.4.5.5@2,3)F, (cx8-4]
+    composable-k3-551  k=3 → k=2  [(cx6-2.5.5.2.5.5@1,12,3)F, (cx6-2.5.5.2.5.5@2,12,3)F, (c]
+    composable-k3-557  k=3 → k=2  [(cx8-4.4.5.5.4.4.5.5@2,12,3)F, (cx8-4.4.5.5.4.4.5.5@3,12]
+    composable-k3-558  k=3 → k=2  [(cx9-4.5.5.4.5.5.4.5.5@1,12,3)F, (cx9-4.5.5.4.5.5.4.5.5@]
+    composable-k3-931  k=3 → k=2  [(cx5-2.5.3.3.5@0,cx4-2.4.2.4@1,3,cx4-2.4.2.4@1)F, (cx5-2]
+
+=== composable atlas written (main + 1 shard) ===
+  main  k≤2: 231 tilings → public/reference-atlas-composable.json  (248.8 KB)
+  shard k=3: 1220 tilings → public/reference-atlas-composable-k3.json  (1828.9 KB)
+  total 1451 tilings  (2041 raw before dedup)
+  decomposable-only 1079  ·  uses-non-decomposable 372
+  elapsed 406.46s

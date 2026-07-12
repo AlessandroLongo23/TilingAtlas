@@ -31,7 +31,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { canonicalTilingKey } from "@/classes/algorithm/composable/canonicalTilingKey";
+import { canonicalTilingKey, trueVertexOrbitCount } from "@/classes/algorithm/composable/canonicalTilingKey";
 
 // The 7 composite convex tiles that dissect into regular polygons (the decomposable palette).
 const DECOMPOSABLE = new Set([
@@ -146,9 +146,13 @@ function dedupeComposable(out: ComposableTiling[], verify: boolean): ComposableT
 		const [[ux, uy], [vx, vy]] = t.renderCell.basis;
 		return Math.abs(ux * vy - uy * vx);
 	};
+	// Key on the tiling itself, NOT k#tiling: the engine's separate k-solves each emit the same tiling
+	// under their own target k (e.g. the dodecagon+cx6 tiling appears as k=2 in the convex-k2 solve AND
+	// k=3 in the decomp-k3 solve), so the same render must collapse regardless of its (unreliable) k
+	// label. Relabelling to the true k happens after this, once per distinct tiling.
 	const groups = new Map<string, number[]>();
 	out.forEach((t, i) => {
-		const key = `${t.k}#${canonicalTilingKey(t.renderCell)}`;
+		const key = canonicalTilingKey(t.renderCell);
 		(groups.get(key) ?? groups.set(key, []).get(key)!).push(i);
 	});
 	const survivors: ComposableTiling[] = [];
@@ -176,7 +180,7 @@ function dedupeComposable(out: ComposableTiling[], verify: boolean): ComposableT
 
 	if (verify) {
 		const wide = new Set<string>();
-		for (const t of out) wide.add(`${t.k}#${canonicalTilingKey(t.renderCell, 1.6)}`);
+		for (const t of out) wide.add(canonicalTilingKey(t.renderCell, 1.6));
 		const same = wide.size === groups.size;
 		log(`  dedup verify: distinct at radiusFactor 1.1 = ${groups.size}, at 1.6 = ${wide.size}  ` +
 			`${same ? "✓ stable (no false merges)" : "⚑ MISMATCH — a tighter radius over-merged; investigate"}`);
@@ -238,11 +242,38 @@ function main(): void {
 	log("");
 	const deduped = dedupeComposable(out, process.argv.includes("--verify-dedup"));
 
+	// Relabel k to the TRUE vertex-orbit count under the FULL symmetry group (mirror-merged). The
+	// composite engine counts orbits chirally (orientation-preserving subgroup only), so an achiral
+	// tiling whose vertex figures come in mirror pairs gets its k inflated — e.g. the dodecagon+cx9 p6m
+	// tiling lands at k=3 when it is really k=2. trueVertexOrbitCount is always ≤ the engine k, so a
+	// tiling only ever moves DOWN a shelf; genuinely chiral tilings are left untouched.
+	log("");
+	log("=== relabel k → true vertex-orbit count (mirror-merged, matching the regular atlas) ===");
+	let relabeled = 0;
+	const moves: string[] = [];
+	for (const t of deduped) {
+		const tk = trueVertexOrbitCount(t.renderCell, t.k);
+		if (tk !== t.k) {
+			relabeled++;
+			if (moves.length < 40) moves.push(`    ${t.id}  k=${t.k} → k=${tk}  [${t.family.slice(0, 56)}]`);
+			t.k = tk;
+		}
+	}
+	log(`  ${relabeled} of ${deduped.length} tilings were chirally over-counted; relabeled to their true (lower) k`);
+	for (const m of moves) log(m);
+	if (relabeled > moves.length) log(`    … and ${relabeled - moves.length} more`);
+	// Reassign ids so the k in each id matches its corrected shelf (ids are cosmetic; nothing references
+	// them). Renumber contiguously per corrected k, in stable order.
+	const byNewK = new Map<number, ComposableTiling[]>();
+	for (const t of [...deduped].sort((a, b) => a.id.localeCompare(b.id))) {
+		(byNewK.get(t.k) ?? byNewK.set(t.k, []).get(t.k)!).push(t);
+	}
+	for (const [k, list] of byNewK) list.forEach((t, i) => (t.id = `composable-k${k}-${String(i).padStart(3, "0")}`));
+
 	fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 
-	// Split the deduped shelf: k≤MAIN_MAX_K into the eagerly-loaded main file, each higher k into its
-	// own lazy shard. dedupe already keyed on `${k}#…` so no cross-k merge happened — every entry keeps
-	// its k and lands in exactly one output file.
+	// Split the deduped, relabelled shelf: k≤MAIN_MAX_K into the eagerly-loaded main file, each higher k
+	// into its own lazy shard. Every entry has exactly one (true) k and lands in exactly one file.
 	const main = deduped.filter((t) => t.k <= MAIN_MAX_K);
 	const shardKs = [...new Set(deduped.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
 	const sizeKB = (p: string): string => (fs.statSync(p).size / 1024).toFixed(1);

@@ -3497,3 +3497,190 @@ future long sweep, workers ≈ P-core count is the sweet spot; more cores buy he
 Files touched: `docs/{SYNC,STATUS,SMALLK_W_BOUND?}.md`, `experiments/smallk-proven-pool-workorder-2026-07-10.md` (task 5
 CLOSED). Enumeration code unchanged since the workorder reconciliation (SMALLK_PROVEN mode in `PeriodSolver.ts`). Next: the
 §45 correction note, then the DAG's engine incr. 1b (closes D2 = 3.1(d), unconditionalizes Thms A/C).
+
+## 51. k=1 across all three tile families, and the "all-together" alphabet is measured-infeasible (2026-07-12, session 23)
+
+AL asked to run the Čtrnáct oracle at k=1 for the three tile families the project now has — regular, star, and
+composable/non-composable — each solve → prune → develop → realizability (Σ face area == |det Λ|). Star scope = `star24`
+only (the ζ₂₄ {3,4,6,8,12}+in-ring-star system; star18/star20 are separate direction systems). All four palette runs are
+in `experiments/results/k1-all-families-2026-07-12.log`; every developed cell certified, 0 failures, 0 ⚑:
+
+| family | palette | k=1 combinatorial | developed & realizable | note |
+|---|---|---|---|---|
+| regular | `regular` | 10 | 10/10 exact-certified (ℚ(ζ₂₄), `ctrnact-recon-check.ts`) | octagon-blind; +t1002 = 11 |
+| stars | `star24` | 37 | 37/37 (float area==\|det\|) | = 26 star-bearing + 11 pure-regular |
+| composable (A) | `composite-decomp` | 23 | 23/23 | 13 use a composite tile |
+| non-composable superset (B) | `composite-convex` | 30 | 30/30 | 20 use a composite tile; A→B gap 7 |
+
+The 37/37 reproduces the SYNC 2026-07-11 M3 star record byte-for-count. Clean cross-check that fell out: star24's **11
+pure-regular** solutions = the complete regular k=1 count including the octagon tiling t1002, because ζ₂₄ is not
+octagon-blind (the 12-direction regular engine gives 10 and needs t1002 by hand). Standing caveat holds — composite/star
+counts are over each palette's tile alphabet (decomposition ambiguity), NOT all-and-only; only the regular 10/11 is the
+exhaustiveness number.
+
+**"All together" = one unified alphabet, and it is intractable through this engine (the measurement is the result, DG-1
+style).** AL clarified the intent was a single mixed enumeration (tilings mixing families at a vertex), not four separate
+runs. Built the coherent union `combined-z24` (spec kept at `tools/ctrnact-oracle/alphabets/palettes/combined-z24.json`):
+the ζ₂₄ union of `star24` and `composite-convex`, composite angles rescaled D=12→D=24 (doubled; each still satisfies
+Σangles = (n−2)·D/2). 31 tiles, **75 corner classes** (= 5 regular + 30 star point/dent + 40 composite fundamental-period
+positions — verified, not a palette bug). star18 (9-fold) / star20 (5-fold) are excluded by construction: ζ₁₈ / ζ₂₀ are
+incommensurable with ζ₂₄ and cannot share one periodic lattice.
+
+`gen_alphabet.py --certify` yields **1,747,450 vertex-config types** (vs 18,969 for composite-convex alone, ~92×) and a
+**588 MB** single-line `solver_tables.inc` of ~5M string+int literals (full tables dir ~2.8 GB), ~9.5 min to generate. The
+solver is table-driven (`#include "solver_tables.inc"` → a 1.75M-entry `mainlist`); compiling a half-gig line of millions
+of string literals (`STAB_SYMBOL`/`STAB_LABEL`/`STAB_CODE`) with `g++ -O2` on this **24 GB** machine thrashes/OOMs before
+the solve is reached. Not driven to completion — the compile risk to the machine is real and the payoff (solve-time over
+1.75M types) is itself unmeasured. **Why (not a bug):** each family alone is bounded (composite min corner 60° ⇒ word
+length ≤ 6; star24 alone compiles in seconds), but the 15° star point (`3*1` = 1 unit) removes the word-length bound while
+the 40 composite corner classes multiply the branching, so the count of corner-words summing to 360° at valence ≤ 12 blows
+up ~92×.
+
+**Verdict (AL, 2026-07-12): stop at the measurement.** The three families do not fuse into one tractable alphabet through
+the C++ oracle as built. Documented paths if ever revisited: (a) emit the pretty-print string tables as a concatenated
+char buffer + offsets so g++ compiles (labels aren't needed to count — reconstruct post-hoc), then measure solve-time/RAM;
+(b) a reduced-scope union (drop ≤30° star points / lower maxValence), a documented completeness compromise. Full verdict
+record: `experiments/results/k1-combined-INFEASIBLE-2026-07-12.md`. Cleaned up the 2.8 GB `tables/combined-z24` (re-gen is
+~9.5 min); kept the palette spec as the record. No enumeration/app code changed this session — palette spec + experiment
+records only, uncommitted on `feat/wallpaper-symmetry`.
+
+## 52. Composable tiles: a new convex-unit-edge tile family shipped to the atlas; the composite develop path lacks exact dedup (⚑ future task) (2026-07-12, session 24)
+
+**What landed.** A "composable tiles" family — convex, unit-edge polygons whose interior angles all lie in {60,90,120,150}
+(D=12, ℤ[ζ₁₂]). Exact boundary-enumeration (`lib/classes/algorithm/composable/convexTiles.ts`) gives the complete set of
+**11** such tiles; an exact, exhaustive edge-to-edge dissectability oracle (`dissect.ts`, verdict fully in exact ℤ[ζ₂₄]-lifted
+Surd arithmetic, no float in the decision) splits them into **7 decomposable** (genuine unions of regular {3,4,6,12} pieces)
+and **4 convex-only** (`[3,5,3,5,3,5]`, `[3,4,5,3,4,5]`, `[4,5,4,5,4,5,4,5]`, `[3,5,5,5,3,5,5,5]` — NOT unions of regulars,
+yet several tile the plane: the first two monohedrally, the third in a 4.8.8-style pattern with squares). Two Čtrnáct
+palettes (`composite-decomp`, `composite-convex`) via a new `composite` tile kind in `gen_alphabet.py` (period-p corner
+classes + a `CLASS_PREV` reverse-successor table; `checkpart` gained first-step direction-locking so mirror-placed p>2 tiles
+verify — regular catalog byte-identical, `make check-regular` 10/20/61/151/332/673). k-runs (combinatorial, WL-pruned):
+decomposable 23/203/1423 (k=1/2/3), convex 30/258 (convex k=3 solving at write time). The regular develop path was
+D-hardcoded; `render_cells.py` had a latent bug (`ZK[d%D]`, correct only at D=24) fixed with `STEP=24//D` — a no-op at D=24,
+so stars are byte-identical — after which **100 %** of the combinatorial solutions develop into valid periodic geometry
+(area == |det basis|, unit edges). Shipped as a "Composable" tile class in `/library` + `/play`
+(`public/reference-atlas-composable*.json`, k≥3 lazily sharded). This is a **palette-agnosticism DEMO** — decomposition
+ambiguity means the counts are over each palette's tile alphabet, NOT all-and-only; it sits OUTSIDE the completeness spine.
+
+**⚑ The gap to close (future task).** The composite develop/export path does **not** self-deduplicate the way the regular/star
+pipeline does (exact `dedupeByCongruence` on ℤ[ζ] geometry). It emits the *same* infinite tiling under many representations —
+different fundamental domains, non-primitive supercells, and corner-class @-index relabellings. Concretely at k=1 there are
+groups of 3 combinatorial solutions sharing one vertex configuration and one lattice (= one tiling). The demo shelf currently
+collapses these with a **float, display-only** heuristic (`lib/classes/algorithm/composable/canonicalTilingKey.ts`: primitive
+period-lattice reduction + a minimized full-period patch fingerprint over 48 grid isometries; keyed on primitive area so
+different primitive cells never merge). It took the shelf from **1620 raw representations → 1147 distinct tilings** (k1 18,
+k2 187, k3 942 composite-bearing) and is *verified conservative* — radius-stable (same distinct count at radiusFactor 1.1 and
+1.6) and it under-merges vs a naive area+shape grouping, so no genuinely distinct tiling is dropped. But it is a heuristic,
+not the exact congruence dedup. **Consequence:** the composite combinatorial pruner counts (decomp 23/203/1423, convex 30/258)
+are distinct-*combinatorial-solution* counts, which **over-count distinct tilings** for composites; they must not be cited as
+distinct-tiling counts. Future work: (a) give the composite develop path an EXACT dedup — dedup in ℤ[ζ₁₂] before export, or
+extend `dedupeByCongruence` to the composite cells — and retire the float heuristic; (b) determine *why* the composite
+pipeline emits multiple representations per tiling (pruner not canonicalizing @-index relabellings? develop supercells?),
+i.e. whether it is a pruner deficiency for composite alphabets or a develop artifact; (c) then re-report exact
+distinct-tiling counts. Acceptable as-is for the display demo; must be closed before any composite count enters the thesis.
+
+Files: `lib/classes/algorithm/composable/{convexTiles,dissect,generateFamily,Polyform,canonicalTilingKey}.ts`,
+`tools/ctrnact-oracle/{alphabets/gen_alphabet.py, alphabets/palettes/composite-*.json, eu_solver.cpp, render_cells.py}`,
+`scripts/{gen-composable-family,build-composable-atlas}.ts`, `public/reference-atlas-composable*.json`. Record + previews:
+`experiments/results/composable-k1-2026-07-11.md` and the `composable-*-2026-07-1{1,2}.{png,log}` artifacts.
+
+## 53. Composable-shelf dedup and k-count corrected — three bugs in the float heuristic, and k-uniformity now mirror-merges like the regular atlas (2026-07-12, session 25)
+
+Continuation of §52. That session shipped the "Composable" shelf with the float display-only dedup (`canonicalTilingKey`) and
+flagged the exact-dedup gap. This session, library inspection (AL) surfaced three defects in that heuristic and the k-labeling.
+All three are fixed; the shelf goes from **1620 raw → 1133 distinct** (was 1147), duplicate-free at the display level, with the
+k-uniformity number now counted the same way as the regular atlas. Still a float heuristic — the §52 ⚑ (exact ℤ[ζ] dedup) stands.
+
+**(1) k over-counted — the composite engine counts vertex orbits chirally / by @-index.** The engine numbers a tiling's
+uniformity by orbits under the orientation-preserving subgroup, treating each composite tile's @-rotation-state label as
+distinguishing a vertex. So an achiral tiling whose vertex figures come in mirror pairs (or whose composite @-states are related
+only by rotation/reflection) has its k inflated. Poster case (AL): the dodecagon + `cx9-4.5.5` tiling — triangle+3 squares+3
+rhombi merged into a convex nonagon, filling the gaps of a dodecagon packing. Reconstructed and verified **p6m** (6-fold + six
+mirror axes about the dodecagon centre) with exactly **2** vertex orbits — `(3,9,12)` at each dodecagon corner and `(9,3,9,3)`
+at the cx9 tips — yet catalogued k=3, because the two `(cx9,12,3)` vertices (`@1` vs `@2`) are mirror images the engine kept
+apart. Fix: `trueVertexOrbitCount` counts orbits under the FULL symmetry group (all 24 grid rotations × reflection), matching
+the chirality-MERGE convention (§12.8, A068599) and the standard Grünbaum–Shephard definition. It is provably ≤ the engine k
+(orbits under a larger group), so a tiling only ever moves DOWN a shelf. **28** tilings relabelled (k3→k2, k3→k1, k2→k1); the
+`cx6-2.5.5` chevron-hexagon tilings turn out 1-uniform (all vertices one orbit) but were k=3. Method is two-tier for speed: the
+distinct vertex figures up to rotation+reflection are a cheap lower bound (≤ true ≤ engine) that short-circuits the common
+"nothing merges" case; otherwise the exact orbit count is the number of distinct per-vertex patch fingerprints, each minimised
+over the 24×reflection isometries at a radius > one period. Soundness (no false merge): for a periodic tiling, two vertices with
+reflection-congruent neighbourhoods that large are provably in the same orbit — the reflection extends to a global symmetry.
+Bonus: 6 genuinely 1-uniform composite tilings the k=1 solve had missed now surface correctly at k=1.
+
+**(2) Cross-k dedup gap — the same tiling emitted under >1 engine-k.** The engine's separate k-solves each emit the same tiling
+under their own target k (confirmed 10 source tilings appearing as e.g. k=2 in `convex-k2` AND k=3 in `decomp-k3`). Dedup keyed
+on `${k}#${canonicalKey}` kept these apart; after relabelling each to a single true k they collided into duplicate cards. Fix:
+dedup on the canonical key ALONE (same render = same tiling, regardless of the unreliable k label), then relabel once per
+distinct tiling. The `${k}#…` guard from §52 was exactly what caused it.
+
+**(3) Supercell false-split — the fractional-coordinate scale was not divisible by 3.** AL spotted four identical k=1 cards
+(012 ≅ 020 ≅ 022 ≅ 023 by an independent congruence test — the primitive `cx6-2.5.5` hexagon and its 3× supercells; 021 the
+lone genuinely-different neighbour, correctly kept). Root cause: `canonicalTilingKey`'s primitive-period reduction represents
+fractional lattice coordinates in integer units of `SCALE`, and `SCALE = 1_000_000` is not divisible by 3, so a ⅓-cell period
+rounds to 333333 and ⅓+⅓ = 666666 ≠ 666667 — the modular period test misses thirds (and sixths, ninths). Every 3×/6× supercell
+therefore failed to reduce to its primitive and false-split from it in the key (which carries primitive area). Latent since §52,
+hidden because the earlier-reported dups were 2× supercells and ½ *is* exact in a power-of-ten scale. Fix: `SCALE = 720720` =
+lcm(1..16), making every relevant third/quarter/sixth/eighth exact, while staying small enough (~7·10⁵) that float noise never
+flips a round.
+
+**Verification.** 1133 distinct, **0** duplicate groups; **no over-merge** (every one of the 1133 stays distinct when the
+fingerprint radius is widened to 1.6× — so nothing genuinely different collapsed); the reported groups cross-checked with an
+independent brute-force congruence tester; 6 unit tests (`tests/composable-dedup.test.ts`, incl. supercell/sheared-basis
+invariance and the recount collapsing an over-count without ever raising k); `pnpm build` green. Counts by (corrected) k: 1→20,
+2→208, 3→905 composite-bearing. The dodecagon+cx9 tiling now lives at k=2 (eagerly-loaded main file).
+
+**⚑ Still open (unchanged from §52).** This is a FLOAT display-only dedup, not the exact ℤ[ζ] congruence dedup; the composite
+combinatorial pruner counts still over-count distinct tilings. What this session removes from the gap: the heuristic is now
+correct enough (no false-split, no cross-k dup, k counted like the regular atlas) that the SHELF is trustworthy for display.
+What remains: (a) exact composite dedup; (b) *why* the pipeline emits multiple representations per tiling; (c) exact
+distinct-tiling counts. Must be closed before any composite count enters the thesis.
+
+Files: `lib/classes/algorithm/composable/canonicalTilingKey.ts` (`trueVertexOrbitCount` added; `SCALE` 1e6→720720; dedup keys on
+the tiling alone), `scripts/build-composable-atlas.ts` (relabel-to-true-k step; dedup key change), `tests/composable-dedup.test.ts`,
+regenerated `public/reference-atlas-composable{,-k3}.json`.
+
+## 54. Convex k=3 folded into the Composable shelf, and the oracle solve made multi-core + observable (2026-07-12, session 26)
+
+The convex-palette k=3 solve that §52 left running finished, after two engine changes made it tractable and watchable. Its
+output then replaced the decomp-only k=3 shard on the shelf.
+
+**Multi-core solve.** `run-oracle-parallel.sh` shards `initex()`'s loop over first vertex types across `EU_SHARD_N` worker
+processes (worker w takes {i : i%N==w}). The min-type-root property — extend never adds a vertex type below `vertype[0]` — makes
+the shards a disjoint partition, so the union of workers equals a sequential run and the pruned catalog is byte-identical (the
+regular gate still gives 10/20/61/151/332/673). Five workers cleared convex k=3 in **43 min** where the serial run was still
+going past 2.5 h.
+
+**Progress heartbeat (commit 263313d).** `EU_PROGRESS=<sec>` gates one stderr line per worker every N seconds —
+`seed i/M (p%) elapsed s` — env-gated and stderr-only, so the regular gate stays byte-identical. The seed % is non-linear (early
+vertex types are cheap, later ones deepen the DFS), so it is a floor on progress, not an ETA; but it turned a blind multi-hour
+run into an observable one.
+
+**Counts.** Convex k solve: 30 / 258 / **1844** pruned blocks. Develop (`export_composable_cells.py`, exact ℤ[ζ₂₄], D=12) took
+the 1844 k=3 blocks to render cells with **0** failures — every cell passes both guards (Σ face areas == |det basis|, all edges
+unit length). 1783 of the 1844 use a composite tile; the other 61 are pure-regular tilings that also live in the convex palette
+(dropped by the shelf's `usesComposite` filter).
+
+**Fold-in.** `build-composable-atlas.ts` (the §53 dedup code: `trueVertexOrbitCount` relabel + dedup-on-tiling-key +
+`SCALE`=720720) rebuilt the shelf, preferring the convex k=3 cells over the decomp-only file. Raw composite-bearing
+20 + 238 + 1783 = 2041 → **1451** distinct (590 duplicate representations merged). Split: main k≤2 = **231** (k1 20, k2 211),
+k=3 shard **905 → 1220**. Decomposable-only 1079 · uses-non-decomposable 372. The k=3 shard grew because it now carries the
+tilings built from the 4 non-decomposable convex tiles (hexagon-A/B monohedral, octagon-A 4.8.8-style, cx8-3.5.5.5…) — the
+decomp-only cells excluded those by construction.
+
+**Cross-check that held.** The convex solve's decomposable-only k=3 subset is **1362**, exactly the standalone decomp-palette
+k=3 count. Two independent palettes — the 7-tile decomp set and the 7 decomposables inside the 11-tile convex set — agree on the
+decomposable tilings.
+
+**⚑ Still open (§52/§53 gap unchanged, now at k=3 scale).** The 1451 is still the FLOAT display-only dedup, not exact ℤ[ζ]
+congruence; the composite combinatorial pruner still over-counts distinct tilings. A future task must (a) give composite
+develop/export an exact dedup replacing `canonicalTilingKey`, (b) explain WHY the pipeline emits multiple representations per
+infinite tiling (supercell / corner-class @-index relabel), (c) produce exact distinct-tiling counts. Until all three land the
+Composable shelf stays a palette-agnosticism DEMO — no composite count enters the thesis as a distinct-tiling count. The convex
+k=3 solve dir is gitignored; the reproducible artifact is the cells file
+`experiments/composable-oracle/ctrnact-composite-convex-k3.cells.json`.
+
+Files: `tools/ctrnact-oracle/eu_solver.cpp` (EU_PROGRESS heartbeat, committed 263313d),
+`tools/ctrnact-oracle/run-oracle-parallel.sh`, regenerated `public/reference-atlas-composable{,-k3}.json`, new
+`experiments/composable-oracle/ctrnact-composite-convex-k3.cells.json`, logs
+`experiments/results/composable-k3-convex-{parallel,develop}-2026-07-12.log`.

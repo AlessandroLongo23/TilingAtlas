@@ -1,0 +1,11 @@
+[02:49:44] build (MAXNUM=3 PALETTE=composite-convex)
+[02:49:45] PHASE 1  parallel solve — 5 workers, budget 8
+[03:33:12]   workers done (2607s wall)
+[03:33:12] PHASE 1b  merge worker outputs
+[03:33:13]   merged raw blocks: 3140
+[03:33:13] PHASE 2  prune
+  k=1 : 30
+  k=2 : 258
+  k=3 : 1844
+total kept: 2132
+[03:33:13]   prune done (0s);  total wall 2608s

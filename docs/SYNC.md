@@ -965,3 +965,32 @@ shards), the star24full full-palette oracle (proof certs), and the (F5) opt-in s
 default off ⇒ byte-identical). New run-*/ outputs gitignored, tables/engines committed per the star24 convention. Build + 552
 tests green (4 env-only fails: 2 CPU-timeouts pass in isolation, 2 pre-existing 60M-JSON vitest-import). Kept on remote:
 c4-pool-bypass, dsym-seeded; the c1-proven-seeding parked commit (`8b6f7bb`) is local-only. Safety: backup/pre-consolidation-*. — CC
+
+**2026-07-12 — CC → TA+AL — k=1 all three tile families run; the "all-together" single alphabet is measured-infeasible.**
+Per-palette k=1 (solve→prune→develop→realizability), 0 ⚑: regular 10/10 (+t1002=11), star24 37/37 (=26 star + 11
+pure-regular; reproduces M3), composite-decomp 23/23, composite-convex 30/30 — all develop-realizable
+(`experiments/results/k1-all-families-2026-07-12.log`). "All together" = ONE ζ₂₄ alphabet `combined-z24` (31 tiles/75
+classes) → 1.75M vertex types / 588 MB tables, g++ OOMs on 24 GB ⇒ infeasible; AL call = stop. Verdict
+`experiments/results/k1-combined-INFEASIBLE-2026-07-12.md` + NOTES §51. Uncommitted, `feat/wallpaper-symmetry` @ `9be9547`. — CC
+
+**2026-07-12 — CC → TA+AL — Composable tiles in the atlas; ⚑ composite develop lacks exact dedup (future task).**
+Convex-unit-edge family (11 convex / 7 decomposable, exact edge-to-edge oracle) + composite Čtrnáct palettes; k≤3 runs
+(decomp 23/203/1423, convex 30/258, convex-k3 running), 100% develop-realizable after fixing render_cells D-param; shipped
+as a "Composable" shelf in /library+/play. ⚑ GAP: the composite develop/export emits one infinite tiling under many
+representations (supercell / corner-class @-index relabel); the shelf collapses them with a FLOAT display-only heuristic
+(`canonicalTilingKey`, 1620→1147 distinct at k≤3 — verified conservative/no-drop, but NOT exact). So composite combinatorial
+counts over-count distinct tilings; do NOT cite composite counts as distinct-tiling counts until an exact composite dedup lands. NOTES §52. — CC
+
+**2026-07-12 — CC → TA+AL — Composable-shelf dedup + k-count corrected (3 bugs); k now mirror-merges like the regular atlas.**
+Fixed §52's float dedup: (1) k over-counted — engine counts orbits chirally / by composite @-state; new `trueVertexOrbitCount`
+(orbits under the full symmetry group, mirror-merged like A068599) relabels 28 down, e.g. AL's dodecagon+cx9 p6m tiling k3→k2;
+(2) same tiling emitted under >1 engine-k across solves → dedup keys on the tiling, not `k#tiling` (10 cross-k dups gone);
+(3) `SCALE` 1e6 not ÷3 → 3×/6× supercells false-split (AL: 4 identical k=1 cards) → `SCALE`=720720. 1620→1133 distinct
+(k1 20/k2 208/k3 905), 0 dups, no over-merge (radius-1.6 stable), build+6 tests green. Still float display-only; §52 ⚑ stands. NOTES §53. Uncommitted, `feat/wallpaper-symmetry`. — CC
+
+**2026-07-12 — CC → TA+AL — Convex k=3 folded into the Composable shelf; oracle solve now multi-core + observable.**
+Convex-palette k=3 finished: `run-oracle-parallel.sh` shards `initex()` across 5 workers (disjoint min-type-root partition ⇒
+byte-identical catalog; regular gate 10/20/61/151/332/673) in 43 min vs serial 2.5 h+, plus an `EU_PROGRESS` stderr heartbeat
+(commit 263313d). Counts 30/258/1844, developed 0-fail → shelf rebuilt: main k≤2 231, k3 shard 905→1220, 1451 distinct (1079
+decomp/372 non-decomp; convex decomp-only k3 = 1362 = standalone decomp solve, cross-check). ⚑ §52/§53 exact-dedup gap UNCHANGED,
+float display-only — no composite count is distinct. NOTES §54. Committing+pushing this session. — CC
