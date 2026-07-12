@@ -71,6 +71,28 @@ export class GenericPolygon extends Polygon {
         return this;
     }
 
+    // Cheap replica of an already-built tile shifted by (dx, dy). Every cell in a replicated grid is this
+    // same shape translated, so we reuse the base's computed hue/sides/angles/isStar and only allocate
+    // fresh shifted vertices/halfways/centroid/anchor — skipping the full fromVertices rebuild (per-vertex
+    // angle, side lengths, hue classification) that an identical, merely-translated shape doesn't need
+    // redone. sides/angles are read-only in every draw path, so the copies share them by reference.
+    translatedCopy = (dx: number, dy: number): GenericPolygon => {
+        const p = new GenericPolygon(this.n);
+        p.name = this.name;
+        p.sides = this.sides;
+        p.angles = this.angles;
+        p.interior_angle = this.interior_angle;
+        p.angle = this.angle;
+        p.hue = this.hue;
+        p.isStar = this.isStar;
+        p.dir = this.dir.copy();
+        p.vertices = this.vertices.map((v) => new Vector(v.x + dx, v.y + dy));
+        p.halfways = this.halfways.map((v) => new Vector(v.x + dx, v.y + dy));
+        p.centroid = new Vector(this.centroid.x + dx, this.centroid.y + dy);
+        p.anchor = new Vector(this.anchor.x + dx, this.anchor.y + dy);
+        return p;
+    }
+
     translate = (vector: Vector): GenericPolygon => {
         this.centroid.add(vector);
         for (let i = 0; i < this.vertices.length; i++) {
