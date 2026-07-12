@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { PageSidebar } from "@/components/page-sidebar";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { TilingsTab } from "./tilings-tab";
@@ -17,7 +18,14 @@ interface SidebarProps {
 	mode?: "certified" | "reference";
 }
 
-export function Sidebar({ tilings = [], selected = null, onSelect, onRandom, onPrev, onNext, mode = "certified" }: SidebarProps) {
+// Memoized: the /play viewer holds transient state (the parametric-angle slider) in the parent, so the
+// parent re-renders on every slider tick. The tiling catalogue rendered here (thousands of thumbnails)
+// has none of that as input, so re-reconciling it per tick was the dominant slider-drag cost (React
+// jsxDEV + reconciliation, not the canvas). memo skips it while its props are referentially stable —
+// the parent keeps `tilings`/`selected`/`mode` stable and passes stable useCallback handlers.
+export const Sidebar = memo(function Sidebar({
+	tilings = [], selected = null, onSelect, onRandom, onPrev, onNext, mode = "certified",
+}: SidebarProps) {
 	return (
 		<PageSidebar scrollable={false}>
 			<TilingsTab
@@ -31,4 +39,4 @@ export function Sidebar({ tilings = [], selected = null, onSelect, onRandom, onP
 			/>
 		</PageSidebar>
 	);
-}
+});

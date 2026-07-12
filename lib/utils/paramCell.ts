@@ -77,3 +77,18 @@ export function clampAlphaAt(pc: ParametricCellData, paramIndex: number, alphaDe
 export function clampAlpha(pc: ParametricCellData, alphaDeg: number): number {
 	return clampAlphaAt(pc, 0, alphaDeg);
 }
+
+/**
+ * Resolve the effective per-parameter angles for a family from the persisted store values. One value
+ * per parameter (α, β, …): reuse the stored value clamped into THIS family's valid range if present and
+ * finite, else fall back to the parameter's default. Length always follows `pc.params`, so a stored
+ * tuple from a family with a different parameter count is handled gracefully (extra entries ignored,
+ * missing ones defaulted). Shared by the slider panel, the p5 canvas, and the inversive canvas so all
+ * three read the same cell for a given slider state.
+ */
+export function resolveAlphaDegs(pc: ParametricCellData, stored: number[] | null | undefined): number[] {
+	return pc.params.map((p, j) => {
+		const v = stored?.[j];
+		return v != null && Number.isFinite(v) ? clampAlphaAt(pc, j, v) : p.defaultAlphaDeg;
+	});
+}

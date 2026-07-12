@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { buildCellGeom } from "@/lib/render/inversiveCellGeom";
+import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { useFamilyAlphas } from "@/stores/familyAlphas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // The inversive view. A WebGL2 full-screen quad renders a conformal image of the selected tiling. For
@@ -20,6 +22,9 @@ interface InversiveCanvasProps {
 	height: number;
 	translationalCell: TranslationalCellData | null;
 	translationalCellId: string | null;
+	/** Free-angle family cell. When present, the geometry is rebuilt in the render loop from the store's
+	 *  `familyAlphas` (imperative — the alpha slider never re-renders React), matching the p5 canvas. */
+	paramCell?: ParametricCellData | null;
 }
 
 const MAX_POLYS = 128;
@@ -186,7 +191,7 @@ function uploadFloatTex(
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 }
 
-export function InversiveCanvas({ width, height, translationalCell, translationalCellId }: InversiveCanvasProps) {
+export function InversiveCanvas({ width, height, translationalCell, translationalCellId, paramCell = null }: InversiveCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const progRef = useRef<WebGLProgram | null>(null);
@@ -196,6 +201,15 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 	const geomRef = useRef<{ minv: [number, number, number, number]; v1: [number, number]; v2: [number, number]; vertsW: number; polyCount: number; avg: [number, number, number]; feature: number } | null>(null);
 	const sizeRef = useRef({ width, height });
 	sizeRef.current = { width, height };
+	// Latest paramCell for the render loop (read imperatively so the loop never re-subscribes), plus the
+	// last slider signature we uploaded geometry for. Reset on any selection/family change so a new family
+	// always rebuilds even if its slider tuple stringifies the same as the previous one.
+	const paramCellRef = useRef(paramCell);
+	paramCellRef.current = paramCell;
+	const lastSigRef = useRef<string | null>(null);
+	useEffect(() => {
+		lastSigRef.current = null;
+	}, [paramCell, translationalCellId]);
 
 	// One-time GL setup + render loop. Reads the latest props/config through refs so the loop never
 	// re-subscribes; panning stays smooth.
@@ -248,10 +262,30 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			raf = requestAnimationFrame(render);
 			const g = glRef.current;
 			const p = progRef.current;
-			const geom = geomRef.current;
-			if (!g || !p || !geom) return;
+			if (!g || !p) return;
 
 			const cfg = useConfiguration.getState();
+
+			// Parametric family: rebuild + re-upload the cell geometry when the store's slider tuple
+			// changes. An imperative read in the loop — the alpha slider never re-renders React, so this
+			// path stays as smooth as the p5 canvas.
+			const pc = paramCellRef.current;
+			if (pc && vertsTexRef.current && metaTexRef.current) {
+				const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+				const sig = alphas.map((a) => a.toFixed(2)).join(",");
+				if (sig !== lastSigRef.current) {
+					lastSigRef.current = sig;
+					const built = buildCellGeom(evaluateParamCell(pc, alphas));
+					if (built) {
+						uploadFloatTex(g, vertsTexRef.current, built.verts, built.vertsW, built.vertsH);
+						uploadFloatTex(g, metaTexRef.current, built.meta, built.polyCount * 2, 1);
+						geomRef.current = { minv: built.minv, v1: built.v1, v2: built.v2, vertsW: built.vertsW, polyCount: built.polyCount, avg: built.avg, feature: built.feature };
+					}
+				}
+			}
+
+			const geom = geomRef.current;
+			if (!geom) return;
 			const { width: w, height: h } = sizeRef.current;
 			if (w <= 0 || h <= 0) return;
 
@@ -318,8 +352,10 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 		};
 	}, []);
 
-	// (Re)upload the cell geometry whenever the selected tiling changes.
+	// (Re)upload the cell geometry whenever the selected tiling changes. Parametric families are handled
+	// imperatively in the render loop (from the store's slider tuple), so skip them here.
 	useEffect(() => {
+		if (paramCell) return;
 		const gl = glRef.current;
 		const vTex = vertsTexRef.current;
 		const mTex = metaTexRef.current;
@@ -333,7 +369,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 		uploadFloatTex(gl, vTex, geom.verts, geom.vertsW, geom.vertsH);
 		uploadFloatTex(gl, mTex, geom.meta, geom.polyCount * 2, 1);
 		geomRef.current = { minv: geom.minv, v1: geom.v1, v2: geom.v2, vertsW: geom.vertsW, polyCount: geom.polyCount, avg: geom.avg, feature: geom.feature };
-	}, [translationalCellId, translationalCell]);
+	}, [translationalCellId, translationalCell, paramCell]);
 
 	return (
 		<canvas

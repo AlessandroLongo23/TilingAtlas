@@ -11,6 +11,8 @@ import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { starHue, starApexAngleDeg } from "@/lib/utils/renderTiling";
+import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
 import { PieChart } from "./pie-chart";
@@ -25,6 +27,9 @@ interface CanvasProps {
 	height?: number;
 	translationalCell?: TranslationalCellData | null;
 	translationalCellId?: string | null;
+	/** Free-angle family cell. When present, the live cell is evaluated in the draw loop from the store's
+	 *  `familyAlphas` (an imperative read, so dragging a slider never re-renders React). */
+	paramCell?: ParametricCellData | null;
 	symmetryData?: SymmetryData | null;
 	showTilingRuleInput?: boolean;
 }
@@ -194,12 +199,25 @@ export function Canvas({
 	height = 600,
 	translationalCell = null,
 	translationalCellId = null,
+	paramCell = null,
 	symmetryData = null,
 	showTilingRuleInput = true,
 }: CanvasProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 
 	const tilingRef = useRef<Tiling | null>(null);
+	// The cell the current grid was built from — the static prop for a rigid tiling, or the live
+	// alpha-evaluated cell for a parametric family. The draw loop reads this (not the raw prop) for
+	// pan-wrap and culling, so a parametric family wraps/culls against its CURRENT geometry.
+	const activeCellRef = useRef<TranslationalCellData | null>(null);
+	// Last values pushed to React/store from the rebuild path, so we only re-render/notify on a real
+	// change. Critical during a parametric-slider drag (a rebuild every frame): `isTilingRegularOnly`
+	// is topological and never changes across an alpha drag, and TilingsTab subscribes to the WHOLE
+	// config store (no selector), so an unconditional setState here would re-render the entire tiling
+	// catalogue every frame.
+	const prevRegularOnlyRef = useRef<boolean | null>(null);
+	const prevTileCountRef = useRef(-1);
+	const prevVcsSigRef = useRef<string>("");
 	const grabRef = useRef(false);
 	// Last applied rotation (degrees); drives the pivot-on-nearest-vertex compensation in the draw loop.
 	const prevRotationRef = useRef<number | null>(null);
@@ -215,10 +233,10 @@ export function Canvas({
 		Rj: -1,
 	});
 
-	const propsRef = useRef({ width, height, translationalCell, translationalCellId, symmetryData });
+	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData });
 	useEffect(() => {
-		propsRef.current = { width, height, translationalCell, translationalCellId, symmetryData };
-	}, [width, height, translationalCell, translationalCellId, symmetryData]);
+		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData };
+	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData]);
 
 	const [canvasError, setCanvasError] = useState<string | null>(null);
 	const [tileCount, setTileCount] = useState(0);
@@ -245,8 +263,25 @@ export function Canvas({
 			const ensureTiling = () => {
 				const cfg = readCfg();
 				const ctrl = cfg.controls;
-				const { translationalCell: tc, translationalCellId: tcId, width: W, height: H } = propsRef.current;
+				const { translationalCell: staticCell, translationalCellId: baseId, paramCell: pc, width: W, height: H } = propsRef.current;
 				const prev = prevRef.current;
+
+				// Resolve the cell to draw. Rigid tiling: the static prop. Parametric family: evaluate the
+				// cell at the store's current slider tuple — an imperative read, so dragging a slider never
+				// re-renders React. The alpha signature is appended to the id so a slider move registers as a
+				// cell change (rebuilds the grid) exactly like a selection change; we only re-EVALUATE when
+				// that id actually changed, not every frame.
+				let tc = staticCell;
+				let tcId = baseId;
+				if (pc) {
+					const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+					tcId = `${baseId ?? ""}@a=${alphas.map((a) => a.toFixed(2)).join(",")}`;
+					tc =
+						tcId === prev.translationalCellId && activeCellRef.current
+							? activeCellRef.current
+							: evaluateParamCell(pc, alphas);
+				}
+				activeCellRef.current = tc;
 
 				// Auto-fill: size the replicated grid to cover the viewport + 1-cell margin. Use the
 				// most-zoomed-out point of any in-flight zoom ease (min of current/target) so the grid is
@@ -287,14 +322,29 @@ export function Canvas({
 						tilingRef.current = t;
 
 						const regularOnly = t.nodes.length > 0 && t.nodes.every((n) => n instanceof RegularPolygon);
-						useConfiguration.setState({
-							isTilingRegularOnly: regularOnly,
-							...(regularOnly ? {} : { circlePacking: false }),
-						});
+						// Only touch the config store when this actually flips — see prevRegularOnlyRef: an
+						// unconditional setState re-renders the whole-store-subscribed sidebar every frame.
+						if (regularOnly !== prevRegularOnlyRef.current) {
+							prevRegularOnlyRef.current = regularOnly;
+							useConfiguration.setState({
+								isTilingRegularOnly: regularOnly,
+								...(regularOnly ? {} : { circlePacking: false }),
+							});
+						}
 						if (cfg.debugView) updateDebugStore();
 						setCanvasError(null);
-						setTileCount(t.nodes.length);
-						setVcs(t.vcs ?? []);
+						// The tile-count + VC overlay is informational; re-render it only when the numbers
+						// actually change, so a slider drag doesn't re-render the overlay every frame for nothing.
+						if (t.nodes.length !== prevTileCountRef.current) {
+							prevTileCountRef.current = t.nodes.length;
+							setTileCount(t.nodes.length);
+						}
+						const nextVcs = t.vcs ?? [];
+						const vcsSig = JSON.stringify(nextVcs);
+						if (vcsSig !== prevVcsSigRef.current) {
+							prevVcsSigRef.current = vcsSig;
+							setVcs(nextVcs);
+						}
 
 						prev.rulestring = cfg.selectedTiling.rulestring;
 						prev.parameter = cfg.parameter;
@@ -338,8 +388,9 @@ export function Canvas({
 				g.background(240, 7, 16);
 				g.translate(300, 300);
 				g.stroke(0);
-				// A small fixed 3x3 patch -> deterministic thumbnail independent of play-mode zoom.
-				const tc = propsRef.current.translationalCell;
+				// A small fixed 3x3 patch -> deterministic thumbnail independent of play-mode zoom. Use the
+				// active cell so a parametric family's screenshot captures the current slider position.
+				const tc = activeCellRef.current ?? propsRef.current.translationalCell;
 				const patch = tc ? buildTilingFromCell(tc, 1, 1) : tiling;
 
 				let maxX = 0, maxY = 0, minX = 0, minY = 0;
@@ -422,9 +473,11 @@ export function Canvas({
 
 				try {
 					// Wrap the pan offset modulo the lattice so panning feels infinite while the drawn
-					// copy count stays bounded; the wrap jump is a whole period -> invisible.
+					// copy count stays bounded; the wrap jump is a whole period -> invisible. Use the cell
+					// the grid was actually built from (the live alpha cell for a parametric family), so the
+					// wrap lattice matches the drawn geometry.
 					const rot = (cfg.rotation || 0) * Math.PI / 180;
-					const tc = propsRef.current.translationalCell;
+					const tc = activeCellRef.current;
 
 					// Rotate about the screen centre, not the world origin: when the angle changes by Δθ,
 					// rotate the stored pan offset by the same Δθ. That holds the world point under the

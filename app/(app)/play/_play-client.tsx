@@ -19,7 +19,9 @@ import {
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
 } from "@/lib/services/referenceAtlas";
-import { evaluateParamCell } from "@/lib/utils/paramCell";
+import { resolveAlphaDegs } from "@/lib/utils/paramCell";
+import { useFamilyAlphas } from "@/stores/familyAlphas";
+import { ParamSliderPanel } from "@/components/param-slider-panel";
 import { pickStratified } from "@/lib/utils/pickStratified";
 import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
@@ -187,26 +189,25 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// no exact cell.
 	const symmetryData = useSymmetryData(selected);
 
-	// One-parameter (free-alpha) family entries carry a proven parametric cell: alpha becomes a live
-	// slider and the rendered cell is re-evaluated at the slider position (evaluateParamCell — real
-	// tilings at every alpha, the formal closure is alpha-independent). Alpha resets to the family's
-	// default whenever the selection changes.
 	// Free-angle family entries carry a proven parametric cell — each parameter becomes a live slider (a
-	// separable isotoxal family has one per independent tile). The rendered cell is re-evaluated at the slider
-	// tuple (evaluateParamCell — a real tiling at every position; the formal closure is angle-independent).
+	// separable isotoxal family has one per independent tile). The rendered cell is re-evaluated at the
+	// slider tuple (evaluateParamCell — a real tiling at every position; the formal closure is
+	// angle-independent). The slider values live in the configuration store (`familyAlphas`), NOT in
+	// React state here: the canvas draw loops read them imperatively each frame, so dragging updates the
+	// tiling with zero re-render of this page or the sidebar (the same reason the rotation slider is
+	// smooth). ParamSliderPanel is the only subscriber that re-renders on a drag.
 	const paramCell = selected?.paramCell;
-	const [alphaDegs, setAlphaDegs] = useState<number[] | null>(null);
+
+	// Persist the slider position across tiling selections instead of snapping back to the family
+	// default: on a new selection, reconcile the stored tuple into THIS family's valid range (clamped
+	// per parameter; parameters the stored tuple doesn't cover fall back to their default). Only runs on
+	// selection change, never on a drag. Non-parametric selections leave `familyAlphas` untouched so the
+	// position survives a detour through a rigid tiling.
 	useEffect(() => {
-		setAlphaDegs(paramCell ? paramCell.params.map((p) => p.defaultAlphaDeg) : null);
+		if (!paramCell) return;
+		const fa = useFamilyAlphas.getState();
+		fa.set(resolveAlphaDegs(paramCell, fa.values));
 	}, [selected?.canonicalKey, paramCell]);
-	const effAlphas = useMemo(
-		() => (paramCell ? paramCell.params.map((p, j) => alphaDegs?.[j] ?? p.defaultAlphaDeg) : null),
-		[paramCell, alphaDegs],
-	);
-	const liveCell = useMemo(() => {
-		if (!paramCell || !effAlphas) return null;
-		return evaluateParamCell(paramCell, effAlphas);
-	}, [paramCell, effAlphas]);
 
 	// useCatalogueSelection seeds selection at mount; the atlas list arrives AFTER mount (async fetch),
 	// so apply the requested key (or the first entry) once the atlas lands.
@@ -240,6 +241,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		},
 		[sorted, selected, setSelected],
 	);
+
+	// Stable handlers so the memoized Sidebar doesn't re-render on every parametric-angle slider tick
+	// (inline arrows would give it a new prop identity each render, defeating the memo).
+	const onPrev = useCallback(() => step(-1), [step]);
+	const onNext = useCallback(() => step(1), [step]);
 
 	// "R" reshuffles, ←/→ step prev/next, and single letters toggle the sidebar options (badges shown in
 	// the sidebar) — but not while a field or slider is focused (its own arrow handling wins) or a
@@ -284,12 +290,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	// Inversive (experimental) view: a WebGL overlay renders the same cell through a conformal map.
 	const inversive = useConfiguration((s) => s.inversive);
-	const renderCell = (liveCell ?? selected?.renderCell ?? null) as TranslationalCellData | null;
-	const renderCellId = selected
-		? liveCell
-			? `${selected.canonicalKey}@a=${effAlphas?.map((a) => a.toFixed(2)).join(",")}`
-			: selected.canonicalKey
-		: null;
+	// The alpha-independent base cell + id. For a parametric family the canvases derive the live cell
+	// from `paramCell` + the store's `familyAlphas` in their own draw loops (they append the alpha
+	// signature to this base id), so nothing alpha-dependent flows through this render.
+	const renderCell = (selected?.renderCell ?? null) as TranslationalCellData | null;
+	const renderCellId = selected?.canonicalKey ?? null;
 
 	useEffect(() => {
 		const el = canvasWrapRef.current;
@@ -311,8 +316,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				selected={selected}
 				onSelect={setSelected}
 				onRandom={selectRandom}
-				onPrev={() => step(-1)}
-				onNext={() => step(1)}
+				onPrev={onPrev}
+				onNext={onNext}
 				mode={refList ? "reference" : "certified"}
 			/>
 			<div ref={canvasWrapRef} className="flex-1 min-w-0 relative">
@@ -321,6 +326,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					height={size.h}
 					translationalCell={renderCell}
 					translationalCellId={renderCellId}
+					paramCell={paramCell ?? null}
 					symmetryData={symmetryData}
 					showTilingRuleInput={false}
 				/>
@@ -330,40 +336,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						height={size.h}
 						translationalCell={renderCell as unknown as InversiveCellData | null}
 						translationalCellId={renderCellId}
+						paramCell={paramCell ?? null}
 					/>
 				) : null}
-				{paramCell && effAlphas ? (
-					<div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col gap-2 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
-						{paramCell.params.map((p, j) => (
-							<div key={j} className="flex items-center gap-3">
-								<span className="text-xs font-medium text-violet-400 whitespace-nowrap w-24">
-									{(["α", "β", "γ", "δ", "ε"][j] ?? `α${j + 1}`)} = {effAlphas[j].toFixed(1)}°
-								</span>
-								<input
-									type="range"
-									min={p.alpha0Deg + p.deltaRangeDeg[0]}
-									max={p.alpha0Deg + p.deltaRangeDeg[1]}
-									step={0.1}
-									value={effAlphas[j]}
-									onChange={(e) => {
-										const v = Number(e.target.value);
-										setAlphaDegs((prev) => {
-											const base = prev ?? paramCell.params.map((q) => q.defaultAlphaDeg);
-											const next = [...base];
-											next[j] = v;
-											return next;
-										});
-									}}
-									className="w-56 accent-violet-400"
-									aria-label={`family angle ${["alpha", "beta", "gamma", "delta", "epsilon"][j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
-								/>
-								<span className="text-[10px] text-fg-disabled whitespace-nowrap font-mono">
-									({p.alphaRangeDegOpen[0].toFixed(0)}°, {p.alphaRangeDegOpen[1].toFixed(0)}°)
-								</span>
-							</div>
-						))}
-					</div>
-				) : null}
+				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
 			</div>
 		</div>
 	);
