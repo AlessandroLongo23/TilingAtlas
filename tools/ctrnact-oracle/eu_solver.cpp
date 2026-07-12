@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdlib>
+#include <ctime>
 
 std::string solvercode = "eu";
 std::string filepath = "out/";
@@ -42,6 +43,14 @@ static bool has_noncounting = false;  // set in main(); false for the regular pa
 // process. Default N=1 => sequential, unchanged.
 static const int shard_n = std::getenv("EU_SHARD_N") ? atoi(std::getenv("EU_SHARD_N")) : 1;
 static const int shard_w = std::getenv("EU_SHARD_W") ? atoi(std::getenv("EU_SHARD_W")) : 0;
+
+// EU_PROGRESS=<seconds>: throttled progress heartbeat to STDERR from initex() — the current first
+// vertex type i/symbolcount, a rough percent, and elapsed seconds. STDERR only (the catalog is on
+// stdout), so the pruned catalog stays byte-identical; default 0 => silent. Coarse: the top-level loop
+// over first vertex types is very non-uniform in cost, so the percent tracks SEEDS processed, not work
+// done — a rough progress signal, not a linear ETA. Fires at seed boundaries, so a single slow seed's
+// extend() shows as a silent stretch (informative in itself).
+static const int progress_sec = std::getenv("EU_PROGRESS") ? atoi(std::getenv("EU_PROGRESS")) : 0;
 
 // Per-node debug trace (euoutput1.txt: a line for every configuration the DFS touches). It is pure
 // hot-path overhead — string-building + I/O done once per search node — and never feeds the search
@@ -399,8 +408,19 @@ int vertypesolvedadd(std::vector<int> const& vertype) {
 }
 
 int initex() {
+    long t_start = (long)time(nullptr), last_progress = t_start;
     for (int i = 0; i < symbolcount; i++) {
         if (shard_n > 1 && i % shard_n != shard_w) continue;   // this worker's slice of the partition
+        if (progress_sec > 0) {
+            long now = (long)time(nullptr);
+            if (now - last_progress >= progress_sec) {
+                last_progress = now;
+                std::cerr << "[progress] shard " << shard_w << "/" << shard_n
+                          << " seed " << i << "/" << symbolcount
+                          << " (" << (symbolcount ? 100 * i / symbolcount : 0) << "%)  "
+                          << (now - t_start) << "s elapsed" << std::endl;
+            }
+        }
         configuration newconf;
         newconf.label = mainlist[i].label;
         newconf.lneig = mainlist[i].lneig;
