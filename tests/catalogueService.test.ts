@@ -1,18 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { dedupeCatalogue, matchesCatalogueFilters, type CatalogueTiling } from "@/lib/services/catalogueService";
+import { dedupeCatalogue } from "@/lib/services/catalogueService";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
-
-function makeCatalogue(over: Partial<CatalogueTiling> = {}): CatalogueTiling {
-  return {
-    canonicalKey: "key-1",
-    k: 2,
-    family: "3,4,6,12",
-    renderCell: { stub: true },
-    certified: true,
-    runIds: ["run-A"],
-    ...over,
-  };
-}
 
 function makeRun(over: Partial<RunRow> = {}): RunRow {
   return {
@@ -107,49 +95,5 @@ describe("dedupeCatalogue — the method-agnostic read transform", () => {
     ];
     const cat = dedupeCatalogue(found, runs);
     expect(cat.map((t) => t.canonicalKey)).toEqual(["a"]);
-  });
-});
-
-describe("matchesCatalogueFilters", () => {
-  it("empty filter matches everything", () => {
-    expect(matchesCatalogueFilters(makeCatalogue(), {})).toBe(true);
-  });
-
-  it("k filter keeps only the selected k values", () => {
-    expect(matchesCatalogueFilters(makeCatalogue({ k: 2 }), { kValues: [2, 3] })).toBe(true);
-    expect(matchesCatalogueFilters(makeCatalogue({ k: 1 }), { kValues: [2, 3] })).toBe(false);
-  });
-
-  it("polygon filter requires every requested polygon to be in the family", () => {
-    const t = makeCatalogue({ family: "3,4,6,12" });
-    expect(matchesCatalogueFilters(t, { polygonNames: ["3", "12"] })).toBe(true);
-    expect(matchesCatalogueFilters(t, { polygonNames: ["3", "8"] })).toBe(false); // 8 not in family
-  });
-
-  it("certification filter splits certified vs candidate", () => {
-    const cert = makeCatalogue({ certified: true });
-    const cand = makeCatalogue({ certified: false });
-    expect(matchesCatalogueFilters(cert, { certification: "certified" })).toBe(true);
-    expect(matchesCatalogueFilters(cand, { certification: "certified" })).toBe(false);
-    expect(matchesCatalogueFilters(cand, { certification: "candidate" })).toBe(true);
-    expect(matchesCatalogueFilters(cert, { certification: "candidate" })).toBe(false);
-    expect(matchesCatalogueFilters(cand, { certification: "all" })).toBe(true);
-  });
-
-  it("wallpaper-group filter keeps only the selected groups; unknown group excluded", () => {
-    const p4m = makeCatalogue({ wallpaperGroup: "p4m" });
-    const p6m = makeCatalogue({ wallpaperGroup: "p6m" });
-    const unknown = makeCatalogue(); // no wallpaperGroup (index not joined for this tiling)
-    expect(matchesCatalogueFilters(p4m, { wallpaperGroups: ["p4m", "cmm"] })).toBe(true);
-    expect(matchesCatalogueFilters(p6m, { wallpaperGroups: ["p4m", "cmm"] })).toBe(false);
-    expect(matchesCatalogueFilters(unknown, { wallpaperGroups: ["p4m"] })).toBe(false);
-    expect(matchesCatalogueFilters(unknown, {})).toBe(true); // no group filter ⇒ unaffected
-  });
-
-  it("lattice-shape filter keeps only the selected shapes", () => {
-    const sq = makeCatalogue({ latticeShape: "square" });
-    const hex = makeCatalogue({ latticeShape: "hexagonal" });
-    expect(matchesCatalogueFilters(sq, { latticeShapes: ["square", "rhombic"] })).toBe(true);
-    expect(matchesCatalogueFilters(hex, { latticeShapes: ["square", "rhombic"] })).toBe(false);
   });
 });

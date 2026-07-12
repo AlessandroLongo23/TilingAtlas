@@ -5,44 +5,40 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { polygonClassLabel } from "@/lib/utils/tilingLabel";
+import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
-// thumbnail + badge. Click selects (renders large on the canvas). mode="reference" browses the oracle atlas.
+// thumbnail + badge. Click selects (renders large on the canvas)
 interface CatalogueListPanelProps {
 	items: CatalogueTiling[];
 	selectedKey: string | null;
 	onSelect?: (t: CatalogueTiling) => void;
-	mode?: "certified" | "reference";
 }
 
-// Regular before star before convex-irregular before isotoxal; a class section only appears when it has tilings.
-const CLASS_ORDER = ["regular polygons", "star polygons", "convex irregular polygons", "isotoxal polygons"] as const;
+// Class order + labels come from the shared registry (referenceAtlas TILE_CLASS_ORDER / TILE_CLASS_LABEL),
+// the same source /library uses — so a new class appears here automatically. A class section only appears
+// when it has tilings.
 
-function titleCase(label: string): string {
-	return label.charAt(0).toUpperCase() + label.slice(1);
-}
-
-// Memoized: the catalogue's inputs (items/selectedKey/onSelect/mode) don't change while a sidebar
+// Memoized: the catalogue's inputs (items/selectedKey/onSelect) don't change while a sidebar
 // slider is dragged, but its parent TilingsTab subscribes to the WHOLE config store, so it re-renders on
 // every slider tick. Without memo, that re-rendered this whole thumbnail list (each a canvas) every tick
 // — the dominant cost of dragging the Islamic-angle / rotation / line-stroke sliders. memo skips it while
 // its props are referentially stable.
-export const CatalogueListPanel = memo(function CatalogueListPanel({ items, selectedKey, onSelect, mode = "certified" }: CatalogueListPanelProps) {
+export const CatalogueListPanel = memo(function CatalogueListPanel({ items, selectedKey, onSelect }: CatalogueListPanelProps) {
 	// Two-level grouping: class → k. Each class keeps its k-buckets sorted ascending.
 	const byClass = useMemo(() => {
-		const map = new Map<string, Map<number, CatalogueTiling[]>>();
+		const map = new Map<TileClass, Map<number, CatalogueTiling[]>>();
 		for (const t of items) {
-			const cls = polygonClassLabel(t.family);
+			const cls = tileClassOf(t);
 			if (!map.has(cls)) map.set(cls, new Map());
 			const kMap = map.get(cls)!;
 			if (!kMap.has(t.k)) kMap.set(t.k, []);
 			kMap.get(t.k)!.push(t);
 		}
-		return CLASS_ORDER.filter((c) => map.has(c)).map((cls) => {
+		return TILE_CLASS_ORDER.filter((c) => map.has(c)).map((cls) => {
 			const kMap = map.get(cls)!;
 			const ks = Array.from(kMap.entries())
 				.sort(([a], [b]) => a - b)
@@ -66,13 +62,13 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	return (
 		<div className="flex flex-col gap-2">
 			<div className="sticky top-0 z-10 p-3 bg-surface-overlay">
-				<SectionHeading count={items.length}>{mode === "reference" ? "Reference (Oracle)" : "Certified catalogue"}</SectionHeading>
+				<SectionHeading count={items.length}>Catalogue</SectionHeading>
 			</div>
 			<div className="p-3 flex flex-col gap-2">
 				{byClass.map((g) => (
 					<SidebarSection
 						key={`c:${g.cls}`}
-						title={titleCase(g.cls)}
+						title={TILE_CLASS_LABEL[g.cls].long}
 						summary={g.count}
 						open={expanded[`c:${g.cls}`]}
 						onOpenChange={() => toggle(`c:${g.cls}`)}

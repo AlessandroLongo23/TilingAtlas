@@ -14,17 +14,15 @@ interface SidebarProps {
 	/** Step to the previous / next tiling in list order (arrow buttons and ←/→ shortcuts). */
 	onPrev?: () => void;
 	onNext?: () => void;
-	/** "reference" relabels the picker for the oracle atlas (Oracle pill, not the cert badge). */
-	mode?: "certified" | "reference";
 }
 
 // Memoized: the /play viewer holds transient state (the parametric-angle slider) in the parent, so the
 // parent re-renders on every slider tick. The tiling catalogue rendered here (thousands of thumbnails)
 // has none of that as input, so re-reconciling it per tick was the dominant slider-drag cost (React
 // jsxDEV + reconciliation, not the canvas). memo skips it while its props are referentially stable —
-// the parent keeps `tilings`/`selected`/`mode` stable and passes stable useCallback handlers.
+// the parent keeps `tilings`/`selected` stable and passes stable useCallback handlers.
 export const Sidebar = memo(function Sidebar({
-	tilings = [], selected = null, onSelect, onRandom, onPrev, onNext, mode = "certified",
+	tilings = [], selected = null, onSelect, onRandom, onPrev, onNext,
 }: SidebarProps) {
 	return (
 		<PageSidebar scrollable={false}>
@@ -35,7 +33,6 @@ export const Sidebar = memo(function Sidebar({
 				onRandom={onRandom}
 				onPrev={onPrev}
 				onNext={onNext}
-				mode={mode}
 			/>
 		</PageSidebar>
 	);

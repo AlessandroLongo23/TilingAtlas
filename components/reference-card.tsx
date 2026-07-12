@@ -2,12 +2,12 @@
 
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import {
 	isMaximal,
 	partitionKeyOf,
 	starFoldsOf,
 	tileClassOf,
+	TILE_CLASS_LABEL,
 	type Certification,
 	type ReferenceTiling,
 } from "@/lib/services/referenceAtlas";
@@ -149,7 +149,7 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 					{tiling.discoverer}
 				</p>
 				<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
-					k={tiling.k} · {polygonClassLabel(tiling.family)}
+					k={tiling.k} · {TILE_CLASS_LABEL[tileClassOf(tiling)].long}
 				</p>
 				{classLabel || tiling.wallpaperGroup ? (
 					<p

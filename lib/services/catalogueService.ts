@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
-import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
 
@@ -15,13 +14,13 @@ export interface CatalogueTiling {
 	canonicalKey: string;
 	k: number;
 	family: string;
+	// Provenance source (Reference shelf). Drives the source-based tile-class axis (tileClassOf) so /play
+	// and /library classify identically. Absent for Supabase certified rows — tileClassOf then falls back
+	// to family tokens (those rows are regular-family, so the fallback is correct).
+	source?: import("@/lib/services/referenceAtlas").ReferenceTiling["source"];
 	renderCell: unknown | null; // float TranslationalCellData (parseBaseCell-ready); null if unpopulated
 	certified: boolean;
 	runIds: string[]; // provenance: which runs found this tiling
-	// Joined from the exact symmetry index (public/symmetry-index.json, keyed by canonicalKey) when
-	// available; absent for tilings not yet in the index. Decided exactly in ℤ[ζ₂₄], not stored in the DB.
-	latticeShape?: LatticeShape;
-	wallpaperGroup?: WallpaperGroup;
 	// Inline exact cell for oracle tilings (Reference shelf), which have no Supabase cell_codec row.
 	// Undefined for certified catalogue tilings — those resolve their exact cell via fetchCellCodec.
 	exactSource?: ExactCellSource;
@@ -58,32 +57,6 @@ export function dedupeCatalogue(found: FoundTiling[], runs: RunRow[]): Catalogue
 		}
 	}
 	return Array.from(byKey.values());
-}
-
-// Catalogue filtering (pure). Certification is first-class (not a campaign flag) — the atlas is about
-// what's proven. Polygon filter is matched against the run's `family` tokens (the octagon-lemma family
-// label, FRONTEND_ROADMAP.md §B). Wallpaper-group / lattice-shape filtering is now backed by the exact
-// symmetry index (public/symmetry-index.json); a tiling missing from the index is excluded when either
-// symmetry filter is active (it has no known group/shape to match).
-export interface CatalogueFilter {
-	kValues?: number[];
-	polygonNames?: string[]; // each must appear in the tiling's family
-	certification?: "all" | "certified" | "candidate";
-	wallpaperGroups?: WallpaperGroup[];
-	latticeShapes?: LatticeShape[];
-}
-
-export function matchesCatalogueFilters(t: CatalogueTiling, f: CatalogueFilter): boolean {
-	if (f.kValues?.length && !f.kValues.includes(t.k)) return false;
-	if (f.polygonNames?.length) {
-		const fam = t.family.split(",").map((s) => s.trim());
-		if (!f.polygonNames.every((n) => fam.includes(n))) return false;
-	}
-	if (f.certification === "certified" && !t.certified) return false;
-	if (f.certification === "candidate" && t.certified) return false;
-	if (f.wallpaperGroups?.length && (!t.wallpaperGroup || !f.wallpaperGroups.includes(t.wallpaperGroup))) return false;
-	if (f.latticeShapes?.length && (!t.latticeShape || !f.latticeShapes.includes(t.latticeShape))) return false;
-	return true;
 }
 
 // Only the render-relevant columns of found_tilings — NOT cell_codec (large; the exact mirror is

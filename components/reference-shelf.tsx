@@ -17,6 +17,8 @@ import {
 	partitionKeyOf,
 	starFoldsOf,
 	tileClassOf,
+	TILE_CLASS_ORDER,
+	TILE_CLASS_LABEL,
 	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
 	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
 	type Certification,
@@ -41,13 +43,11 @@ import {
 // k / M / partition are SINGLE-select (pick one, or "All"). M and partition only appear once a k is
 // chosen, and their chips are faceted to values that actually occur under the current filters — so at
 // k=4 you see M ∈ {2,3,4}, never a dead M=1 button.
+// Derived from the shared registry (referenceAtlas TILE_CLASS_ORDER/LABEL) — the SAME source /play's
+// catalogue groups read, so the two pages' class axes can never drift.
 const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = [
 	{ value: "all", label: "All" },
-	{ value: "regular", label: "Regular" },
-	{ value: "star", label: "Star" },
-	{ value: "convex", label: "Convex irregular" },
-	{ value: "isotoxal", label: "Isotoxal" },
-	{ value: "mixed", label: "Mixed" },
+	...TILE_CLASS_ORDER.map((c) => ({ value: c, label: TILE_CLASS_LABEL[c].short })),
 ];
 // Convex-irregular-shelf facet: the whole demo, only decomposable-family tilings, or only the ones that
 // reach for a non-decomposable composite. Shown only while the convex-irregular tile class is selected.

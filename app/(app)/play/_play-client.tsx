@@ -19,6 +19,7 @@ import {
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
 	referenceToCatalogue,
+	tileClassOf,
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
 } from "@/lib/services/referenceAtlas";
@@ -26,7 +27,7 @@ import { resolveAlphaDegs } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ParamSliderPanel } from "@/components/param-slider-panel";
 import { pickStratified } from "@/lib/utils/pickStratified";
-import { polygonClassLabel, polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
+import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 
 // Higher-k demo shards held out of the eager main atlas (convex k3, isotoxal k3/k4). We pull them all into
@@ -216,7 +217,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// class that doesn't support it (convex-irregular, isotoxal), force the toggle off — otherwise the
 	// render path would keep drawing the fill for a tiling whose sidebar no longer offers the control.
 	useEffect(() => {
-		if (selected && !polygonClassSupportsIslamic(selected.family) && useConfiguration.getState().isIslamic) {
+		if (selected && !polygonClassSupportsIslamic(selected) && useConfiguration.getState().isIslamic) {
 			useConfiguration.getState().set({ isIslamic: false });
 		}
 	}, [selected]);
@@ -235,7 +236,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Math.random is fine.
 	const selectRandom = useCallback(() => {
 		const pick = pickStratified(sorted, {
-			bucketOf: (t) => `${polygonClassLabel(t.family)}::${t.k}`,
+			bucketOf: (t) => `${tileClassOf(t)}::${t.k}`,
 			keyOf: (t) => t.canonicalKey,
 			excludeKey: selected?.canonicalKey ?? null,
 		});
@@ -303,7 +304,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				// classes; ignore their keys where the sidebar hides the matching control.
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
-					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected.family));
+					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected));
 				if (field && !blocked) {
 					e.preventDefault();
 					c.set({ [field]: !c[field] } as Partial<ConfigurationState>);

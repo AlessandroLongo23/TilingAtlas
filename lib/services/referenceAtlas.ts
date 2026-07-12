@@ -27,7 +27,7 @@ export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "doubled";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready
@@ -84,13 +84,32 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed";
-export function tileClassOf(t: Pick<ReferenceTiling, "family" | "source">): TileClass {
+export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "doubled";
+// The ONE source-driven tile classifier, shared by /library and /play. Source wins when present;
+// source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
+// matches the legacy polygonClassLabel, so the two pages agree with or without a source.
+export function tileClassOf(t: { family: string; source?: ReferenceTiling["source"] }): TileClass {
 	if (t.source === "mixed") return "mixed";
 	if (t.source === "isotoxal") return "isotoxal";
 	if (t.source === "composable") return "convex";
+	if (t.source === "doubled") return "doubled";
+	if (t.family.includes("cx")) return "convex";
+	if (t.family.includes("α")) return "isotoxal";
 	return t.family.includes("*") ? "star" : "regular";
 }
+
+// Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
+// (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
+// loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "doubled"];
+export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
+	regular: { short: "Regular", long: "Regular polygons" },
+	star: { short: "Star", long: "Star polygons" },
+	convex: { short: "Convex irregular", long: "Convex irregular polygons" },
+	isotoxal: { short: "Isotoxal", long: "Isotoxal polygons" },
+	mixed: { short: "Mixed", long: "Mixed polygons" },
+	doubled: { short: "Doubled", long: "Doubled polygons" },
+};
 
 // The star folds present in a family (unique, ascending). "3.4*.6*" → [4,6]. Empty for regular.
 export function starFoldsOf(t: Pick<ReferenceTiling, "family">): number[] {
@@ -203,6 +222,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		canonicalKey: r.id,
 		k: r.k,
 		family: r.family,
+		source: r.source,
 		renderCell: r.renderCell,
 		certified: false,
 		runIds: [],
@@ -233,9 +253,10 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-composable.json"),
 		bestEffort("/reference-atlas-isotoxal.json"),
 		bestEffort("/reference-atlas-mixed.json"),
+		bestEffort("/reference-atlas-doubled.json"),
 	])
-		.then(([base, composable, isotoxal, mixed]) => {
-			const data = [...base, ...composable, ...isotoxal, ...mixed];
+		.then(([base, composable, isotoxal, mixed, doubled]) => {
+			const data = [...base, ...composable, ...isotoxal, ...mixed, ...doubled];
 			cache = data;
 			inflight = null;
 			return data;

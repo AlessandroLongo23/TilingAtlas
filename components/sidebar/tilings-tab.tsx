@@ -8,12 +8,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { CertificationBadge, OracleBadge } from "@/components/ui/certification-badge";
-import { polygonClassLabel, polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
+import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
+import { tileClassOf, TILE_CLASS_LABEL } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { CatalogueListPanel } from "./catalogue-list-panel";
 
-// The /play sidebar: selected-tiling metadata + cert badge, the cell-relevant render toggles, and the
+// The /play sidebar: selected-tiling metadata, the cell-relevant render toggles, and the
 // catalogue picker. The rulestring playground controls (parameter/Islamic) and the legacy_tilings
 // browse were retired in the pure-viewer port (FRONTEND_ROADMAP.md Phase 3).
 interface TilingsTabProps {
@@ -23,31 +23,23 @@ interface TilingsTabProps {
 	onRandom?: () => void;
 	onPrev?: () => void;
 	onNext?: () => void;
-	mode?: "certified" | "reference";
 }
 
-export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNext, mode = "certified" }: TilingsTabProps) {
+export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNext }: TilingsTabProps) {
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 	// Islamic construction only applies to the regular and star classes (see polygonClassSupportsIslamic).
-	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected.family);
+	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected);
 
 	return (
 		<div className="h-full flex flex-col">
 			<div className="p-3 flex-shrink-0 border-b border-line bg-surface-overlay/40 flex flex-col gap-3">
 				{selected ? (
 					<div className="flex flex-col gap-1.5">
-						<div className="flex items-center justify-between gap-2">
-							<span className="text-xs font-mono text-fg-secondary" title={`{${selected.family}}`}>
-								k={selected.k} · {polygonClassLabel(selected.family)}
-							</span>
-							{mode === "reference" ? (
-								<OracleBadge size="sm" />
-							) : (
-								<CertificationBadge certified={selected.certified} size="sm" />
-							)}
-						</div>
+						<span className="text-xs font-mono text-fg-secondary" title={`{${selected.family}}`}>
+							k={selected.k} · {TILE_CLASS_LABEL[tileClassOf(selected)].long}
+						</span>
 						<span className="text-[10px] font-mono text-fg-disabled truncate" title={selected.canonicalKey}>
 							{selected.canonicalKey}
 						</span>
@@ -235,7 +227,7 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 			</div>
 
 			<div className="flex-1 overflow-y-auto">
-				<CatalogueListPanel items={tilings} selectedKey={selected?.canonicalKey ?? null} onSelect={onSelect} mode={mode} />
+				<CatalogueListPanel items={tilings} selectedKey={selected?.canonicalKey ?? null} onSelect={onSelect} />
 			</div>
 		</div>
 	);
