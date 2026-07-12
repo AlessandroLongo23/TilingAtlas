@@ -1,0 +1,39 @@
+{
+ "name": "regular-z24",
+ "D": 24,
+ "pinnedLegacy": false,
+ "maxValence": 12,
+ "comment": "Regular {3,4,6,8,12} on the zeta24 grid \u2014 the pure-regular baseline for the /configs page, same grid as star24 / isotoxal / reduced so the alphabets are comparable.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  }
+ ]
+}

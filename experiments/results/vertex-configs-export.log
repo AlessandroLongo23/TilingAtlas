@@ -1,0 +1,6 @@
+=== export vertex-config alphabets (with overlap check) ===
+  regular-z24: 15 enumerated -> 15 overlap-free shipped [5 tiles, 5 classes] -> 7 KB
+  star24: 4873 enumerated -> 1887 overlap-free shipped [20 tiles, 35 classes] -> 1574 KB
+  regular-isotoxal-z24: 1215 enumerated -> 1215 overlap-free shipped [14 tiles, 23 classes] -> 717 KB
+  isotoxal-star60-z24: 7389 enumerated -> 3731 overlap-free shipped [21 tiles, 37 classes] -> 2552 KB
+  isotoxal-star-z24: 278057 enumerated -> 31661 overlap-free shipped [29 tiles, 53 classes] -> 26011 KB

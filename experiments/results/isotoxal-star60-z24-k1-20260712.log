@@ -1,0 +1,13 @@
+=== REDUCED union (isotoxal + large-point stars) k=1 SOLVE+PRUNE started Sun Jul 12 16:27:09 CEST 2026 ===
+palette isotoxal-star60-z24: 21 tiles, 37 classes, 7389 configs. parallel 8 workers, EU_NCBUDGET=8 (live). DROPS sharp stars (point<60deg) — logged compromise.
+
+[16:27:09] build (MAXNUM=1 PALETTE=isotoxal-star60-z24)
+[16:27:14] PHASE 1  parallel solve — 8 workers, budget 8
+[16:27:14]   workers done (0s wall)
+[16:27:14] PHASE 1b  merge worker outputs
+[16:27:14]   merged raw blocks: 59
+[16:27:14] PHASE 2  prune
+  k=1 : 57
+total kept: 57
+[16:27:14]   prune done (0s);  total wall 0s
+=== REDUCED k=1 DONE Sun Jul 12 16:27:14 CEST 2026 ===
