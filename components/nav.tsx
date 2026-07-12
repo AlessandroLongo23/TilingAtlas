@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils/cn";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
-	{ href: "/play", label: "Play", icon: Gamepad2 },
-	{ href: "/library", label: "Library", icon: Library },
 	{ href: "/tiles", label: "Tiles", icon: Shapes },
 	{ href: "/configs", label: "Configs", icon: Grid3x3 },
+	{ href: "/library", label: "Library", icon: Library },
+	{ href: "/play", label: "Play", icon: Gamepad2 },
 	// { href: "/history", label: "History", icon: History }, // hidden from header (route still exists)
 ];
 
