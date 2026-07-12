@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
-// The /play picker: tilings nested by polygon class (regular / star) then by k, each a thumbnail +
-// badge. Click selects (renders large on the canvas). mode="reference" browses the oracle atlas.
+// The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
+// thumbnail + badge. Click selects (renders large on the canvas). mode="reference" browses the oracle atlas.
 interface CatalogueListPanelProps {
 	items: CatalogueTiling[];
 	selectedKey: string | null;
@@ -19,8 +19,8 @@ interface CatalogueListPanelProps {
 	mode?: "certified" | "reference";
 }
 
-// Regular before star before composable; a class section only appears when it has tilings.
-const CLASS_ORDER = ["regular polygons", "star polygons", "composable tiles"] as const;
+// Regular before star before convex-irregular before isotoxal; a class section only appears when it has tilings.
+const CLASS_ORDER = ["regular polygons", "star polygons", "convex irregular polygons", "isotoxal polygons"] as const;
 
 function titleCase(label: string): string {
 	return label.charAt(0).toUpperCase() + label.slice(1);

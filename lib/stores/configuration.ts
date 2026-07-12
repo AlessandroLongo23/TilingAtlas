@@ -57,6 +57,14 @@ export interface ConfigurationState {
 	circlePacking: boolean;
 	isTilingRegularOnly: boolean;
 
+	// Inversive view (experimental): swaps the affine p5 render for a WebGL conformal-map render of the
+	// same tiling. Lens fixed at screen centre; panning slides the world under it. See components/
+	// inversive-canvas.tsx and lib/render/inversiveCell.ts.
+	inversive: boolean;
+	inversiveMode: "inversion" | "mobius";
+	inversiveRadiusFrac: number; // lens radius as a fraction of min(w,h)/2
+	mobiusTwist: number; // loxodromic spiral angle, degrees (0 ⇒ pure source/sink flow)
+
 	// Color params
 	colorParams: ColorParams;
 
@@ -106,6 +114,11 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	islamicAnimate: false,
 	circlePacking: false,
 	isTilingRegularOnly: false,
+
+	inversive: false,
+	inversiveMode: "inversion",
+	inversiveRadiusFrac: 0.42,
+	mobiusTwist: 60,
 
 	colorParams: { a: 180, b: 0 },
 

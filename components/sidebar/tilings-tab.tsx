@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
 import { useConfiguration } from "@/stores/configuration";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { Kbd } from "@/components/ui/kbd";
+import { SidebarSection } from "@/components/ui/sidebar-section";
 import { CertificationBadge, OracleBadge } from "@/components/ui/certification-badge";
 import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
@@ -26,6 +29,7 @@ interface TilingsTabProps {
 export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNext, mode = "certified" }: TilingsTabProps) {
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
+	const [advancedOpen, setAdvancedOpen] = useState(false);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -69,7 +73,10 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 						disabled={!onRandom || tilings.length < 2}
 						title="Pick a random tiling (R)"
 					>
-						Random tiling
+						<span className="flex items-center gap-2">
+							Random tiling
+							<Kbd>R</Kbd>
+						</span>
 					</Button>
 					<Button
 						variant="secondary"
@@ -82,15 +89,12 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 					/>
 				</div>
 
-				<Slider
-					id="rotation"
-					label="Rotation"
-					value={cfg.rotation}
-					onChange={(v) => setCfg({ rotation: v })}
-					min={0}
-					max={360}
-					step={1}
-					unit="°"
+				<Checkbox
+					id="showPolygonFill"
+					label="Polygon fill"
+					shortcut="F"
+					checked={cfg.showPolygonFill}
+					onCheckedChange={(v) => setCfg({ showPolygonFill: v })}
 				/>
 
 				<Slider
@@ -103,67 +107,127 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 					step={0.5}
 				/>
 
-				<div className="space-y-2">
-					<Checkbox
-						id="showPolygonFill"
-						label="Polygon fill"
-						checked={cfg.showPolygonFill}
-						onCheckedChange={(v) => setCfg({ showPolygonFill: v })}
-					/>
-					<Checkbox
-						id="showPolygonPoints"
-						label="Show Polygon Points"
-						checked={cfg.showPolygonPoints}
-						onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
-					/>
-					{cfg.isTilingRegularOnly ? (
-						<Checkbox
-							id="circlePacking"
-							label="Circle Packing"
-							checked={cfg.circlePacking}
-							onCheckedChange={(v) => setCfg({ circlePacking: v })}
-						/>
-					) : null}
-					<Checkbox
-						id="isIslamic"
-						label="Islamic"
-						checked={cfg.isIslamic}
-						onCheckedChange={(v) => setCfg({ isIslamic: v })}
-					/>
-					<Checkbox
-						id="showSymmetryElements"
-						label="Symmetry elements"
-						checked={cfg.showSymmetryElements}
-						onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
-					/>
-					<Checkbox
-						id="showFundamentalDomain"
-						label="Fundamental domain"
-						checked={cfg.showFundamentalDomain}
-						onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
-					/>
-				</div>
-
-				{cfg.isIslamic ? (
+				<SidebarSection title="Advanced options" open={advancedOpen} onOpenChange={setAdvancedOpen}>
 					<div className="space-y-2">
 						<Slider
-							id="islamicAngle"
-							label="Islamic Angle"
-							value={cfg.islamicAngle}
-							onChange={(v) => setCfg({ islamicAngle: v })}
+							id="rotation"
+							label="Rotation"
+							value={cfg.rotation}
+							onChange={(v) => setCfg({ rotation: v })}
 							min={0}
-							max={90}
+							max={360}
 							step={1}
 							unit="°"
 						/>
 						<Checkbox
-							id="islamicAnimate"
-							label="Animate Grid"
-							checked={cfg.islamicAnimate}
-							onCheckedChange={(v) => setCfg({ islamicAnimate: v })}
+							id="showPolygonPoints"
+							label="Show Polygon Points"
+							shortcut="P"
+							checked={cfg.showPolygonPoints}
+							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
 						/>
+						{cfg.isTilingRegularOnly ? (
+							<Checkbox
+								id="circlePacking"
+								label="Circle Packing"
+								shortcut="C"
+								checked={cfg.circlePacking}
+								onCheckedChange={(v) => setCfg({ circlePacking: v })}
+							/>
+						) : null}
+						<Checkbox
+							id="isIslamic"
+							label="Islamic"
+							shortcut="I"
+							checked={cfg.isIslamic}
+							onCheckedChange={(v) => setCfg({ isIslamic: v })}
+						/>
+						{cfg.isIslamic ? (
+							<div className="space-y-2 pl-7">
+								<Slider
+									id="islamicAngle"
+									label="Islamic Angle"
+									value={cfg.islamicAngle}
+									onChange={(v) => setCfg({ islamicAngle: v })}
+									min={0}
+									max={90}
+									step={1}
+									unit="°"
+								/>
+								<Checkbox
+									id="islamicAnimate"
+									label="Animate Grid"
+									checked={cfg.islamicAnimate}
+									onCheckedChange={(v) => setCfg({ islamicAnimate: v })}
+								/>
+							</div>
+						) : null}
+						<Checkbox
+							id="showSymmetryElements"
+							label="Symmetry elements"
+							shortcut="S"
+							checked={cfg.showSymmetryElements}
+							onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
+						/>
+						<Checkbox
+							id="showFundamentalDomain"
+							label="Fundamental domain"
+							shortcut="D"
+							checked={cfg.showFundamentalDomain}
+							onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
+						/>
+						<Checkbox
+							id="inversive"
+							label="Inversive view"
+							shortcut="V"
+							checked={cfg.inversive}
+							onCheckedChange={(v) => setCfg({ inversive: v })}
+						/>
+						{cfg.inversive ? (
+							<div className="space-y-2 pl-7">
+								<div className="flex gap-2">
+									<Button
+										variant={cfg.inversiveMode === "inversion" ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ inversiveMode: "inversion" })}
+									>
+										Inversion
+									</Button>
+									<Button
+										variant={cfg.inversiveMode === "mobius" ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ inversiveMode: "mobius" })}
+									>
+										Möbius
+									</Button>
+								</div>
+								<Slider
+									id="inversiveRadius"
+									label="Lens radius"
+									value={cfg.inversiveRadiusFrac}
+									onChange={(v) => setCfg({ inversiveRadiusFrac: v })}
+									min={0.1}
+									max={1}
+									step={0.01}
+								/>
+								{cfg.inversiveMode === "mobius" ? (
+									<Slider
+										id="mobiusTwist"
+										label="Spiral twist"
+										value={cfg.mobiusTwist}
+										onChange={(v) => setCfg({ mobiusTwist: v })}
+										min={0}
+										max={180}
+										step={1}
+										unit="°"
+									/>
+								) : null}
+							</div>
+						) : null}
 					</div>
-				) : null}
+				</SidebarSection>
 			</div>
 
 			<div className="flex-1 overflow-y-auto">

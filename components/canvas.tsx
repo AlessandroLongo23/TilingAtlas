@@ -142,46 +142,47 @@ function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: nu
 	const t = new Tiling();
 	t.nodes = [];
 
-	// Largest tile circumradius (centroid→vertex), in world units. The draw-time off-screen cull tests
+	// Build each distinct base tile ONCE. fromVertices is the expensive part (per-vertex angle, side
+	// lengths, centroid, hue classification); every replicated cell is the same base tile translated by
+	// i·v1 + j·v2, so the grid loop below clones by translation (translatedCopy) rather than
+	// reconstructing each copy from scratch — the reconstruction is identical work for a shape that only
+	// shifted. This is what keeps the parametric-angle slider (which rebuilds the whole grid every tick)
+	// interactive: the cost drops from O(gridCells · perTileRebuild) to O(baseTiles · perTileRebuild)
+	// plus a cheap per-copy vertex shift.
+	//
+	// maxRadius = largest centroid→vertex distance (world units). The draw-time off-screen cull tests
 	// each tile by its CENTROID; a tile whose centroid is off-screen can still have a vertex on-screen,
 	// but never further than this radius — so culling with a margin of zoom·maxRadius provably never
-	// drops a partially-visible tile. Every replicated cell is a translated copy of the same shapes, so
-	// the base cell (i=j=0) already carries the global maximum.
+	// drops a partially-visible tile. It is translation-invariant, so the base tiles carry the global max.
 	let maxRadius = 0;
+	const basePolys: GenericPolygon[] = [];
+	for (const polyData of polyArray) {
+		const rawVerts = polyData.v ?? polyData.vertices ?? [];
+		const vertices = rawVerts.map((v) =>
+			Array.isArray(v) ? new Vector(v[0], v[1]) : new Vector(v.x, v.y),
+		);
+		if (vertices.length < 3) continue;
+		const poly = GenericPolygon.fromVertices(vertices);
+		// GenericPolygon colors by the regular log ramp; a star tile ({n}: n points, 2n vertices, or an
+		// explicit `star` flag) uses the original StarPolygon hue instead.
+		const nn = (polyData as { n?: number }).n ?? vertices.length;
+		const isStar =
+			(polyData as { star?: boolean }).star === true || (nn >= 3 && vertices.length === 2 * nn);
+		if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
+		poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
+		basePolys.push(poly);
+		const c = poly.centroid;
+		for (const vv of poly.vertices) {
+			const d = Math.hypot(vv.x - c.x, vv.y - c.y);
+			if (d > maxRadius) maxRadius = d;
+		}
+	}
 
 	for (let i = -ri; i <= ri; i++) {
 		for (let j = -rj; j <= rj; j++) {
 			const ox = i * v1x + j * v2x;
 			const oy = i * v1y + j * v2y;
-			for (const polyData of polyArray) {
-				const rawVerts = polyData.v ?? polyData.vertices ?? [];
-				const vertices = rawVerts.map((v) =>
-					Array.isArray(v)
-						? new Vector(v[0] + ox, v[1] + oy)
-						: new Vector(v.x + ox, v.y + oy),
-				);
-				if (vertices.length >= 3) {
-					{
-						const poly = GenericPolygon.fromVertices(vertices);
-						// GenericPolygon colors by the regular log ramp; a star tile ({n}: n points, 2n
-						// vertices, or an explicit `star` flag) uses the original StarPolygon hue instead.
-						const nn = (polyData as { n?: number }).n ?? vertices.length;
-						const isStar =
-							(polyData as { star?: boolean }).star === true ||
-							(nn >= 3 && vertices.length === 2 * nn);
-						if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
-						poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
-						t.nodes.push(poly);
-						if (i === 0 && j === 0) {
-							const c = poly.centroid;
-							for (const vv of poly.vertices) {
-								const d = Math.hypot(vv.x - c.x, vv.y - c.y);
-								if (d > maxRadius) maxRadius = d;
-							}
-						}
-					}
-				}
-			}
+			for (const base of basePolys) t.nodes.push(base.translatedCopy(ox, oy));
 		}
 	}
 	t.maxRadius = maxRadius;
@@ -405,7 +406,11 @@ export function Canvas({
 				ctrl.offset.add(Vector.sub(ctrl.targetOffset, ctrl.offset).scale(ctrl.dampening));
 
 				p5.clear();
-				ensureTiling();
+				// Inversive view: the WebGL overlay (InversiveCanvas) draws the tiling instead. Keep the p5
+				// canvas as the input layer — the ease/rotation/drag bookkeeping below still runs so panning
+				// and rotation keep flowing into the store — but skip the (now wasted) grid build and tile draw.
+				const inversive = cfg.inversive;
+				if (!inversive) ensureTiling();
 				const tiling = tilingRef.current;
 
 				const { width: w, height: h } = propsRef.current;
@@ -442,6 +447,9 @@ export function Canvas({
 					}
 					prevRotationRef.current = rotDeg;
 
+					// Everything below paints tiles onto the p5 canvas; the inversive overlay owns painting
+					// in that mode, so skip it (the rotation compensation above still ran).
+					if (!inversive) {
 					let drawOffset = ctrl.offset;
 					if (tc) {
 						const { v1, v2, det } = latticeBasisFromCell(tc);
@@ -485,6 +493,7 @@ export function Canvas({
 					p5.pop();
 
 					if (cfg.screenshotButtonHover) drawScreenshotOverlay();
+					}
 				} catch (e) {
 					setCanvasError(e instanceof Error ? e.message : String(e));
 				}
