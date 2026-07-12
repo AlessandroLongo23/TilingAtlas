@@ -1007,3 +1007,41 @@ on k1 18/k2 187, tsc clean, 2 tests pass. ⚑ REMAINS: k-label still float; comp
 `congruencePartition` (reduces EVERY cell — no gate can hide a supercell) returned **1451** on the combined 2041, matching the
 fast gated dedup and the float exactly (34.6 min). The §55 gates (gcd / all-shapes-distinct / sub-period) are confirmed
 complete; the 1451 count is now triple-confirmed. — CC
+
+**2026-07-12 — CC (Fable 5) → AL+TA — Track 1 proof SKELETON delivered; awaiting review before lemma closure.**
+Six-obligation skeleton for the Čtrnáct completeness theorem: `docs/ctrnact-completeness/skeleton.tex` (32 lemmas, T/S/C/U
+decomposition, full composition proof, 0 OPEN). Obligation-#6 sharpening ADOPTED with corrections (no period bound anywhere;
+Datta-Maity/Kundu-Maity demoted; B0 discreteness added; 12k stub bound; min-root not nondecreasing). New machine obligation
+found: A6 (44 alphabet entries pairwise non-isomorphic) — needed for pruner bucket exactness, missing from gen_alphabet certs.
+Top risk: B3 (congruence↔symmetry-group Galois correspondence). Audit (deliverable B) deferred until skeleton review. — CC
+
+**2026-07-12 — CC (Fable 5) → AL+TA — Track 1 phase-2 round 1: search block CLOSED (skeleton reviewed by AL).**
+17 lemmas closed in `docs/ctrnact-completeness/skeleton.tex` (PDF alongside, 21pp): the model (D1a/D1b/B0), alphabet math
+(A1/A2 = 14 configs × subgroup classes = 44), local rules (L1/L2), the full obligation-#3 search block (T1, S1 guided
+descent, S2 min-root+sharding, S3/S4), and dedup core (R1, P1, P2). Found+fixed a phase-1 dictionary error: glue is
+σ₂σ₀, not σ₀ (face-walk computation forces it; no lemma statement affected). Remaining OWED: geometry round only
+(O3, C1, C3, C4, B2b, B3-top-risk). Next: geometry round, then A6 certificate + deliverable-B audit. — CC
+
+**2026-07-12 — CC (Fable 5) → AL+TA — ★ Track 1 deliverable A COMPLETE: all proof lemmas closed (rounds 1+2 same day).**
+Geometry round closed in `docs/ctrnact-completeness/skeleton.tex` (PDF, 27pp): O3 octagon-forcing, C-block, B2b, B3, R2/R3.
+Architecture upgrade: orbifold route REPLACED by the direction bundle (what eu_develop literally iterates) — develops through
+a flat torus, site symmetries return as explicit affine maps; classical inputs down to TWO, both pinned (G&S Table 2.1.1
+pp.59-61 verified against resources/papers scan; Killing-Hopf). 0 OPEN, 0 OWED. Remaining risk moved where it belongs:
+5 machine certificates (A3-A5 unaudited, A6 to add, P3 optional) + deliverable-B C++ audit. Next: round 3 on approval. — CC
+
+**2026-07-12 — CC (Fable 5) → AL+TA — ★ Round 3: certificates + deliverable-B audit + k=8/9 mystery SOLVED.**
+A6 certificate added (44 letters pairwise non-iso), P3 N-key cross-check passes k≤6, deliverable-B audit written
+(8 hooks sound, 8 fix-obligations, none correctness-critical). k=8/9 root cause: Marek's PYTHON ferk[(4,4,4,4)A2]=1
+misses the starred Aut-orbit → drops one p4m tiling on a unique path; count.txt row-header 794 a separate slip.
+One-entry fix ⇒ 2850 (QED). Lemma A5's failure class in the wild. Detail: NOTES §56, `audit-deliverable-B.md`. — CC
+
+**2026-07-12 — CC (Fable 5 + Opus) → AL+TA — Adversarial review: no defect in T/S/C/U for the regular palette.**
+8 finders × refute-by-default verifier panels, two runs (3 math attackers re-ran on Opus after a Fable limit). Core
+math SURVIVED clean: search block, bundle C-block, D1a/B3 bridge each zero findings. Confirmed findings all minor +
+one audit overclaim (H3/FB-8: sharding is multiset- not byte-identical), all fixed; 1 refuted. Detail: NOTES §56. — CC
+
+**2026-07-12 — CC (Fable 5) → AL+TA — Independent verification of the finite lemmas + citation audit + trust map.**
+`checks/verify_finite.py` (shares no engine/gen_alphabet code) — 11/11 PASS incl. S1 NO-DROP: an independent brute
+enumerator reproduces the engine pruned set EXACTLY at k≤3 (10/20/61); soundness checked to k≤6, k=4 capped.
+`classical-citations-audit.md` (4 citations correctly applied) + `trust-map.md` (geometer's homework = 4 tier-G
+lemmas, not 27pp). Deliverable A complete-as-written, 0 OPEN; human review of tier-G is the next gate. NOTES §56. — CC

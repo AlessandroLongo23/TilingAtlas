@@ -1,0 +1,5 @@
+[13:42:58] k=8 exhibit run: eu_solver MAXNUM=8 (EU_STREAM) | eu_pruner EU_KONLY=8
+[13:42:58] purpose: identify the tiling missing from count.txt's k=8 breakdown (2849 vs 2850); expect the t=8 all-distinct-types row
+  k=8 : 2850
+total kept: 2850
+[13:43:03] pipeline exit: 0

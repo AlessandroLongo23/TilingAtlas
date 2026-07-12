@@ -1,0 +1,19 @@
+[16:01:42] independent no-drop enumeration vs engine, target k<=3 (engine: 10/20/61). Brute matching, NOT eu_solver DFS.
+=== ALPHABET (A1/A2/A3/A4/A5/A6/A2iv) ===
+[PASS] A1: 14 vertex configurations  — 333333 33336 33344 33434 33412 3366 34312 3446 3464 3636 31212 4444 4612 666
+[PASS] A1: exactly 3 chiral configurations  — 33412 3446 4612
+[PASS] A6: 44 letters pairwise non-isomorphic  — 44 letters, 44 iso-classes
+[PASS] A2/A3: independent from-scratch alphabet == shipped tables (up to iso)  — mine=44 shipped=44 only-mine=0 only-shipped=0
+[PASS] A4: structural identities on all 44 letters
+[PASS] A5: |Aut|=ferkval, free, reps=Aut-orbit transversal (all 44)
+[PASS] A2(iv): every rho-cycle weight-sum divides 12
+
+=== EMITTED SOLUTIONS (S4/R1/P1) ===
+[PASS] S4: all 1247 pruned solutions satisfy conditions 1/2a/2b
+[PASS] R1: all 1247 pruned solutions are cores
+[PASS] P1: pruned catalog pairwise non-isomorphic (per k)
+
+=== NO-DROP CROSS-CHECK (S1) ===
+[PASS] S1 no-drop: independent enumeration == engine pruned set (k<=3)  — k=1:10✓ k=2:20✓ k=3:61✓
+
+=== 11/11 checks PASS ===

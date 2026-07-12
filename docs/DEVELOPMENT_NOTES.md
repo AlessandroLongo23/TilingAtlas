@@ -3740,3 +3740,111 @@ Files: `tools/ctrnact-oracle/export_composable_cells.py` (retain exact coords), 
 `scripts/build-composable-atlas.ts` (exact dedup + strip exact fields before writing), regenerated
 `public/reference-atlas-composable{,-k3}.json` + the three convex `*.cells.json`, framing in
 `lib/services/referenceAtlas.ts` + `components/reference-{shelf,card}.tsx`.
+
+## 56. The Čtrnáct completeness proof — deliverables A+B, the k=8/9 root cause, adversarial review, and independent verification of the finite lemmas (2026-07-12, session 28)
+
+The thesis's central claimed contribution: a proof that Čtrnáct's combinatorial
+solver+pruner+develop pipeline enumerates **all and only** the edge-to-edge k-uniform
+tilings of the plane by regular polygons (12-direction, octagon analytic). Čtrnáct claims
+no proof ("gives me hope that k>6 are correct"); Galebach has none either. Everything below
+lives in `docs/ctrnact-completeness/`.
+
+**Deliverable A — the proof (`skeleton.tex`, 27pp, every lemma tagged, 0 OPEN).** Built in
+three rounds after a reviewed phase-1 skeleton. Decomposed into T/S/C/U (termination,
+soundness, completeness, non-redundancy) over six obligations: alphabet (A1–A6), local rules
+(L1–L2), search no-drop (S1–S4), rigidity+dedup (R1, P1–P3), realizability (C1–C4),
+planar↔quotient bridge (B0–B3), plus octagon scope (O1–O4).
+
+Two structural findings shaped the proof, both improvements over the commissioning brief:
+- *Obligation #6 needs NO period bound.* The brief wanted a Datta-Maity/Kundu-Maity a-priori
+  bound on period size per k. Verified wrong: the engine enumerates the QUOTIENT object
+  directly (≤12k stubs by construction), so termination is bare combinatorics and no lattice
+  bound enters T/S/C/U. Demanding one would re-import the mixed-type finiteness monster that
+  stalled the lattice method. Datta-Maity/Kundu-Maity demoted to context. This is also *why*
+  the engine scales — it never searches for periods.
+- *The orbifold route was replaced by the direction bundle (round 2).* Phase 1 planned to
+  realize each solution as a flat orbifold and quote Thurston's orbifold-developability. Round
+  2 replaced it: pair each stub with an edge direction mod 12 (the **direction bundle** —
+  exactly what `eu_develop` iterates), which unfolds every site symmetry combinatorially. The
+  glued surface is a closed flat *oriented* surface, hence a torus by Killing-Hopf. Payoffs:
+  classical inputs dropped to two (G&S species table + Killing-Hopf, both pinned against the
+  physical sources in `resources/papers`); C4 (the developer computes it) became nearly free
+  since the bundle IS the developer's data structure; and B3 (the top-risk Galois
+  correspondence congruences↔intermediate symmetry groups) collapsed to explicit affine maps
+  z↦ζʰz+w. Orbifolds remain the mental picture; they occur in no proof.
+
+Failed/corrected idea worth recording: the phase-1 flag dictionary set the gluing operator
+γ=σ₀. Wrong — carrying out the face-walk computation forces γ=σ₂σ₀ (crossing an edge reverses
+the local rotational sense; the extra σ₂ is that reversal). Caught precisely by *doing* the
+computation the review discipline demanded, not by trusting the Delaney-Dress analogy. No
+lemma statement changed.
+
+**Deliverable B — implementation-faithfulness audit (`audit-deliverable-B.md`).** A proof of
+the abstract algorithm is worthless if the C++ diverges. Audited eu_solver/eu_pruner/
+eu_develop/ctrnact_decode.hpp against the proved spec: 9 contact hooks verified sound, 8
+fix-obligations recorded (none correctness-critical on valid input). Notable: FB-1
+(eu_develop's seed reduction uses float coset coords, exact only within a magnitude bound —
+measured max coord 14 over the golden k≤6 catalog vs a break-point ~10⁷, six orders of
+margin; exact HNF replacement pending) and FB-8 (the "byte-identical" sharding gate is FALSE —
+parallel runs are multiset-identical but block-reordered, so `diff -r` rejects correct output;
+Lemma S2's actual claim (multiset equality) holds).
+
+**The k=8/9 exhibit — root-caused and closed (audit §4).** The four-year-old anomaly (repo
+reproduced 2849 not 2850 at k=8 in July 2026, and Čtrnáct's own count.txt k=8 rows sum to
+2849) was TWO independent errors that coincidentally agreed. (1) count.txt's 4-species row
+header says 794 but its sub-breakdown sums to 795 — an arithmetic slip; his totals were always
+right. (2) Čtrnáct's *Python* solver computes fresh-vertex attachment range from a hand-kept
+divisor list; diffing all 44 letters against the certified transversal, seven disagree, and
+exactly one UNDER-tries: (4,4,4,4)A2 gets range 1 not 2, missing its entire starred Aut-orbit.
+One k=8 tiling (species 3+3+1+1, square lattice, group p4m) is reachable by a UNIQUE DFS path
+that attaches its A2 vertex at the starred dart Marek's Python never tries → silently dropped.
+His C++ tables carry ferkval=2, which is why his C++ totals are right. QED: a one-entry fix to
+the Python ferk list makes his own solver produce 2850, the dropped tiling appearing once. This
+is Lemma A5's failure class realized in the wild; the A5/A6 certificates exclude it from the
+audited engine. The old "2850 is a typo" verdict is corrected in the record.
+
+**Machine certificates.** A6 (44 letters pairwise non-isomorphic) ADDED to gen_alphabet.py —
+it was missing and is load-bearing (the pruner buckets by letter-signature, so letters must be
+structure-determined or a tiling could be kept under two signatures). A3–A5 audited. P3
+(`scripts/p3-nkey-crosscheck.ts`, the proven canonical form N as an independent geometric
+arbiter) passes both directions (no under-merge, no over-merge) for k≤6.
+
+**Adversarial review (8 attackers × refute-by-default verifier panels, two runs).** First run
+lost the 3 hardest math attackers to a Fable usage limit; re-ran them cross-model on Opus. The
+core math SURVIVED CLEAN: search block (S1/S2), bundle C-block, and D1a/B3 bridge each returned
+zero findings (bridge hand-verified the dictionary, crossing rule, face walk, L1 orientation,
+B3 round-trips, §10 composition). Confirmed findings all minor + one audit overclaim, all
+fixed: H3/FB-8 byte-identity (independently reproduced 10/20/61/151, reorder-only); O1 heptagon
+enumeration gap (θ₇ complement 96.4°≥90° breaks the stated dismissal — replaced with a complete
+enumeration); O3 Step-4 circular citation (→ direct M₀-structure argument); O3 ledger tag stale;
+C4 "by construction" overclaim + census number wrong (8→14, verified vs golden json); B2a ledger
+deps under-recorded. One finding refuted (P_k "counting" misread as VC-type).
+
+**Independent verification of the finite lemmas (`checks/verify_finite.py`, 11/11 PASS).**
+Shares NO code with the engine or gen_alphabet — fresh decode, refinement, isomorphism, and a
+from-scratch alphabet generator; the shipped tables + emitted catalog are the data under test.
+Confirms A1/A2/A3/A4/A5/A6/A2iv (independent alphabet matches shipped up to iso), S4/R1/P1 (all
+1247 emitted k≤6 solutions re-validated valid+core+distinct), and — the crown — **S1 no-drop:
+a structurally different brute enumerator (not eu_solver's DFS) reproduces the engine pruned
+set EXACTLY at k=1,2,3 = 10/20/61.** Direct cross-method evidence for the highest-risk lemma.
+k=4 brute force capped (no convergence in window); independent frontier = k≤3 for completeness,
+k≤6 for soundness (logged, not silent). Classical citations audited
+(`classical-citations-audit.md`: Bieberbach/Killing-Hopf/G&S/partition-refinement all correctly
+applied, hypotheses discharged by named prior lemmas). Trust map (`trust-map.md`) sorts every
+lemma M/C/G: the geometer's actual homework is 4 lemmas (C1(iv), C3, B3, L1-orientation), not
+27 pages.
+
+**Honest status.** Deliverable A is complete-as-written with 0 OPEN lemmas and survived
+adversarial + independent-computational scrutiny on its finite spine. It is NOT yet "proved and
+settled": no human mathematician or proof assistant has checked the geometric core (tier G, 4
+lemmas), one vertex-link sub-check is admittedly owed (the "referee surface"), and the
+abstract↔C++ faithfulness (deliverable B) has FB-1/FB-8 unfixed in code. The thesis-honest claim
+is "we give a proof of completeness" (with scope, dependencies, and the M/C/G split stated), not
+"our results are proven complete." Next gate is human expert review of the 4 tier-G lemmas —
+Čtrnáct (Fulgur14) is the highest-leverage reviewer — and ideally formal verification of the
+combinatorial core.
+
+Files: `docs/ctrnact-completeness/{skeleton.tex,skeleton.pdf,audit-deliverable-B.md,
+classical-citations-audit.md,trust-map.md,checks/{verify_finite.py,README.md}}`,
+`tools/ctrnact-oracle/alphabets/gen_alphabet.py` (A6 cert), `scripts/p3-nkey-crosscheck.ts`,
+experiment logs `experiments/results/ctrnact-k8-*,ctrnact-nodrop-k{3,4}-2026-07-12.log`.

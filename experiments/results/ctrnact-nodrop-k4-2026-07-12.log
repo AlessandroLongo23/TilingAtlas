@@ -1,0 +1,3 @@
+[16:04:08] independent no-drop enumeration vs engine, target k<=4 (engine expects 10/20/61/151). Brute matching, NOT eu_solver DFS. May not finish; if capped, k<=3 stands as the independent-verification frontier.
+[16:09:22] CAPPED: k=4 brute-force enumeration did not converge in a reasonable window; independent no-drop frontier stands at k<=3 (10/20/61, exact set match). Soundness direction (valid+core+distinct) independently verified to k<=6. k=4 completeness rests on the written proof + the k<=3 cross-check.
+DONE(capped)

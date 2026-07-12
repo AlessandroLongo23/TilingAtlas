@@ -1,0 +1,4 @@
+- [ ] Use the same algorithm for aperiodic random tilings.
+- [ ] Understand what the budget is.
+- [ ] Make sure that the pipeline is correct and does all the steps, like the deprecation solve data extraction, on time in the Atlas.
+- [ ] convex parametric (stars, but on the other side)

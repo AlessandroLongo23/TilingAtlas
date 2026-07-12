@@ -1,0 +1,1732 @@
+\documentclass[11pt]{article}
+% Proof development, deliverable A. Phase 1 (skeleton) reviewed 2026-07-12; this file now
+% carries phase-2 closures. Thesis-chapter ready: demote \section to \subsection when
+% \input into ../thesis/; no package beyond ams* + geometry + hyperref.
+% Compile: tectonic skeleton.tex
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{claim}[theorem]{Claim}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{convention}[theorem]{Convention}
+\newtheorem{remark}[theorem]{Remark}
+
+% status tags: every lemma carries exactly one, per the anti-fabrication discipline
+\newcommand{\CLASSICAL}[1]{\textnormal{\textsc{[classical: #1]}}}
+\newcommand{\OWED}{\textnormal{\textsc{[owed]}}}
+\newcommand{\MACHINE}{\textnormal{\textsc{[machine]}}}
+\newcommand{\OPEN}{\textnormal{\textsc{[open]}}}
+\newcommand{\CLOSED}{\textnormal{\textsc{[closed]}}}
+
+\newcommand{\Flags}{\mathrm{Fl}}
+\newcommand{\dev}{\mathrm{dev}}
+\newcommand{\Aut}{\mathrm{Aut}}
+\newcommand{\Stab}{\mathrm{Stab}}
+\newcommand{\Sym}{\mathrm{Sym}}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\im}{\mathrm{im}}
+\newcommand{\Isom}{\mathrm{Isom}}
+
+\title{Completeness and correctness of \v{C}trn\'act's combinatorial enumeration
+of $k$-uniform tilings by regular polygons\\
+\large Proof development (deliverable A; phase 2, round 1) --- TilingAtlas working note}
+\author{}
+\date{July 12, 2026}
+
+\begin{document}
+\maketitle
+
+\paragraph{Status (updated after round 3: certificates + audit).}
+The phase-1 skeleton was reviewed and approved on 2026-07-12; rounds 1--3 closed on the
+same date. \textbf{Every lemma of deliverable A is \textsc{closed}}, and round 3
+discharged the machine and audit obligations: A3--A5 independently audited and re-run,
+A6 implemented and passing (44 letters pairwise non-isomorphic), P3 passing in both
+directions for $k \le 6$, the deliverable-B implementation audit written
+(\texttt{audit-deliverable-B.md}: all eight hooks verified sound, seven fix-obligations
+recorded, none correctness-critical on valid input), and the historical $k=8/9$ anomaly
+root-caused and closed by falsification (audit \S4; hook 9 below). The classical inputs are down to two, both pinned: the
+Gr\"unbaum--Shephard species table (Table 2.1.1, pp.~59--61, verified against the copy
+in \texttt{resources/papers}) and the Killing--Hopf classification of closed flat
+oriented surfaces. \textbf{0 lemmas are \textsc{open}.} Two structural changes came out
+of the closure work, both improvements: (1) round 1 corrected the flag dictionary
+($\gamma = \sigma_2\sigma_0$, not $\sigma_0$; Remark~\ref{rem:gammafix}); (2) round 2
+replaced the planned orbifold-developability route through the C-block by the
+\emph{direction bundle} (Remark~\ref{rem:bundle-arch}), the translation-level cover that
+\texttt{eu\_develop} literally iterates; all site symmetries unfold combinatorially, the
+developed object is a flat torus, and orbifold theory disappears from the proof
+entirely. Residual formalization debt is confined to three convention verifications
+flagged in Remark~\ref{rem:referee}; each is finite bookkeeping, not a gap in the
+argument. Remaining risk now lives in deliverable B (does the C++ implement the abstract
+pipeline?) and in the unaudited machine certificates, exactly where a completeness claim
+about a program should keep its risk.
+
+\tableofcontents
+
+%======================================================================
+\section{Scope, conventions, and the theorem}\label{sec:scope}
+
+\subsection{Objects}
+
+\begin{definition}[tiling, symmetry, uniformity]\label{def:tiling}
+A \emph{tiling} in this note is an edge-to-edge tiling $T$ of the Euclidean plane $\R^2$
+by regular polygons of edge length $1$: a countable family of closed regular polygonal
+tiles with pairwise disjoint interiors whose union is $\R^2$, such that the intersection
+of any two tiles is empty, a common vertex, or a common full edge. $V(T)$, $E(T)$, $F(T)$
+denote vertices, edges, faces. The \emph{symmetry group} $G(T)$ is the group of all
+isometries of $\R^2$ (orientation-reversing ones included) mapping $T$ to itself. $T$ is
+\emph{$k$-uniform} iff $G(T)$ has exactly $k$ orbits on $V(T)$.
+\end{definition}
+
+\begin{convention}[chirality merge --- definitional, not derived]\label{conv:chiral}
+Two tilings are \emph{equivalent} iff some isometry of $\R^2$, orientation-reversing
+allowed, maps one to the other. Enumeration is up to this equivalence: a chiral tiling and
+its mirror image count once. This matches the convention of OEIS A068599 and the
+Galebach/Soto-S\'anchez oracles, and is a settled repo decision. It is an axiom of the
+count, not a theorem.
+\end{convention}
+
+\begin{convention}[scope axioms]\label{conv:scope}
+(i) Unit edge length is a normalization, not a restriction (a tiling by regular polygons of
+common edge length rescales). (ii) The polygon palette of the engine is
+$\mathcal{P}=\{3,4,6,12\}$; the octagon is excluded from the palette and handled
+analytically by Lemmas O1--O4. (iii) $t1002$ denotes the truncated square tiling
+$(4.8.8)$, the unique octagon-bearing tiling (Lemma O3); it is re-added to the $k=1$
+catalog by hand.
+\end{convention}
+
+\begin{definition}[the two tiling classes]\label{def:classes}
+For $k\ge 1$ let
+\[
+\T_k = \{\text{$k$-uniform tilings containing no octagon}\}/\!\sim, \quad
+\T_k^{\mathrm{all}} = \{\text{all $k$-uniform tilings}\}/\!\sim,
+\]
+where $\sim$ is the equivalence of Convention~\ref{conv:chiral}. By Lemma O4, every member
+of $\T_k$ uses tiles from $\mathcal{P}$ only and has, after a rotation, all edge
+directions in the $30^\circ$ grid; this is how the ``12-direction'' scope enters, as a
+consequence of octagon-freeness rather than as an extra hypothesis.
+\end{definition}
+
+\begin{remark}[statement hygiene, correcting the brief]\label{rem:hygiene}
+The commissioning brief states the $k=1$ case as $P_1 \cong \T_1 \setminus \{t1002\}$
+with $\T_1$ already carrying the grid condition. That is redundant: with the grid (or
+octagon-free) condition in the definition, $t1002 \notin \T_1$ and the clean statement is
+$P_k \cong \T_k$ for \emph{all} $k \ge 1$, with the octagon accounted for separately by
+Theorem~\ref{thm:octagon}. This note uses the clean split.
+\end{remark}
+
+\subsection{The abstract pipeline}
+
+The theorem is about the abstract algorithm specified in
+\texttt{reference/algorithm.txt}; deliverable B (the implementation-faithfulness audit)
+separately certifies that the C++ sources (\texttt{eu\_solver}, \texttt{eu\_pruner},
+\texttt{eu\_develop}) implement it. The abstract pipeline, over the alphabet $\A$ of
+Section~\ref{sec:alphabet}, with target $k \le \texttt{maxnum}$:
+
+\begin{itemize}
+\item $\mathrm{Solve}$: the DFS of Section~\ref{sec:search} over partial stub systems;
+  emits every closed configuration that passes the rigidity filter
+  (Section~\ref{sec:rigidity}) with $1 \le \#\text{vertices} \le \texttt{maxnum}$.
+\item $\mathrm{Prune}$: retains exactly one representative per isomorphism class of
+  emitted configurations (Section~\ref{sec:rigidity}).
+\item $\mathrm{Develop}$: the geometric development map $M \mapsto \dev(M)$
+  (Section~\ref{sec:realizability}).
+\end{itemize}
+
+Let $P_k$ be the set of pruned outputs with exactly $k$ vertices ($k$ counting vertex
+types; for the regular palette every type is counting).
+
+\subsection{The theorem}
+
+\begin{theorem}[main theorem: the engine]\label{thm:main}
+Fix $k \ge 1$ and run the pipeline with $\texttt{maxnum} \ge k$. Then:
+\begin{itemize}
+\item[(T)] \textbf{Termination.} The run halts.
+\item[(S)] \textbf{Soundness.} For every $M \in P_k$, $\dev(M)$ is defined and is a
+  tiling whose class lies in $\T_k$; in particular its uniformity is exactly $k$.
+\item[(C)] \textbf{Completeness.} For every class $[T] \in \T_k$ there is an $M \in P_k$
+  with $\dev(M) \sim T$.
+\item[(U)] \textbf{Non-redundancy.} The map $M \mapsto [\dev(M)]$ is injective on $P_k$.
+\end{itemize}
+Equivalently: $\dev$ induces a bijection $P_k \to \T_k$.
+\end{theorem}
+
+\begin{theorem}[octagon scope]\label{thm:octagon}
+$\T_k^{\mathrm{all}} = \T_k$ for every $k \ge 2$, and
+$\T_1^{\mathrm{all}} = \T_1 \sqcup \{[t1002]\}$.
+\end{theorem}
+
+\begin{corollary}[catalog completeness]\label{cor:catalog}
+For $k \ge 2$ the developed catalog at $k$ is in bijection with all $k$-uniform
+edge-to-edge tilings by regular polygons of common edge length, up to isometry with
+reflections; for $k = 1$ the catalog together with $t1002$ is.
+\end{corollary}
+
+\begin{remark}[evidence is not proof]
+The pipeline reproduces A068599 exactly for $k \le 16$, with per-tiling agreement against
+the Soto-S\'anchez data where available. Per the anti-fabrication discipline this is
+treated as evidence about the implementation and is used nowhere in the proof of
+Theorems~\ref{thm:main} and~\ref{thm:octagon}. The one place the oracle legitimately
+enters is deliverable B, as a regression gate.
+\end{remark}
+
+\subsection{Obligation map}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+Obligation & Lemmas & Feeds \\
+\hline
+1 alphabet completeness & A1--A6 & C (no missing letter), U (labels well defined) \\
+2 local-rule soundness/necessity & L1, L2, S4 & C (no wrongful prune), S (via C-block) \\
+3 search exhaustiveness & T1, S1--S4 & T, C \\
+4 rigidity + dedup exactness & R1--R3, P1--P3 & U, C, S \\
+5 realizability & C1--C4 & S \\
+6 planar--quotient bridge & B0--B3 & C, S \\
+scope (octagon, grid) & O1--O4 & Theorem~\ref{thm:octagon} \\
+model well-definedness & D1a, D1b & everything \\
+\end{tabular}
+\end{center}
+
+%======================================================================
+\section{The octagon scope lemmas}\label{sec:octagon}
+
+\begin{lemma}[O1: octagon-bearing species]\label{lem:O1} \CLOSED\;
+In an edge-to-edge tiling by regular polygons, the multisets of interior angles at a
+vertex incident to an octagon, feasible by the angle equation alone, are exactly
+$\{4,8,8\}$ and $\{3,8,24\}$.
+\end{lemma}
+
+\begin{proof}
+Interior angles are $\theta_n = 180 - 360/n$ degrees, $\theta_n \ge 60$, and the angles at
+a vertex sum to $360$. With $a \ge 1$ octagons ($\theta_8 = 135$): if $a = 2$ the
+remainder is $90$, indivisible into two or more angles $\ge 60$, so it is a single square
+angle: $\{4,8,8\}$. If $a \ge 3$ the sum exceeds $360$. If $a = 1$ the remainder is $225$.
+As one angle: $225 > 180$, impossible. As two angles $\theta_m + \theta_n = 225$ with
+$\theta_m \le \theta_n$ (so $\theta_m \le 112.5$): the regular interior angles $\le 112.5$
+are exactly $\theta_3 = 60$, $\theta_4 = 90$, $\theta_5 = 108$ (there is none strictly
+between $60$ and $90$, nor strictly between $90$ and $108$), and their complements to
+$225$ are $165$, $135$, $117$; of these only $165 = \theta_{24}$ is a regular angle
+($135 = \theta_8$ re-enters the $a \ge 2$ case; $117 = 180 - 360/n$ has no integer
+solution), giving $\{3,8,24\}$. As three or more angles, each $\ge 60$: the sums
+attainable near $225$ from $\{60, 90, 108, 120, \dots\}$ are
+$60{+}60{+}60 = 180$, $60{+}60{+}90 = 210$, $60{+}60{+}108 = 228$, $60{+}90{+}90 = 240$,
+and four angles give $\ge 240$, so $225$ is never hit. Hence $\{3,8,24\}$ is the only
+$a=1$ solution.
+\end{proof}
+
+\begin{lemma}[O2: $3.8.24$ does not occur]\label{lem:O2}
+\CLOSED\ (anchor: \CLASSICAL{Gr\"unbaum--Shephard \S2.1})\;
+No edge-to-edge tiling by regular polygons contains a vertex whose species is $3.8.24$.
+\end{lemma}
+
+\begin{proof}
+Suppose vertex $v$ carries tiles $\{T_3, T_8, T_{24}\}$. Consider the triangle $T_3$, with
+vertices $v = v_0, v_1, v_2$. At $v_0$, the two edges of $T_3$ separate it from $T_8$ and
+$T_{24}$ in some order; say edge $v_0v_1$ borders the octagon. At $v_1$ the incident
+angles include $T_3$'s $60$ and the octagon's $135$; the remaining $165$ must decompose
+into angles $\theta_n$: as a single angle only $\theta_{24} = 165$ fits; as two or more,
+$165 - 60 = 105$ is not an angle and three angles exceed $165$. So $v_1$ also has species
+$3.8.24$, and the tile across the \emph{other} edge of $T_3$ at $v_1$, namely $v_1v_2$, is
+a 24-gon. Repeating at $v_2$: edge $v_2v_0$ borders an octagon. Now each vertex of $T_3$
+must see one octagon and one 24-gon across the two incident triangle edges, i.e.\ the
+3-cycle of $T_3$'s edges is properly 2-colored (octagon/24-gon) with colors alternating.
+A 3-cycle admits no such alternation, and specifically at $v_0$ both incident triangle
+edges now border octagons ($v_0v_1$ by choice, $v_2v_0$ by propagation), contradicting
+the species $3.8.24$ at $v_0$. (G\&S state the exclusion of all six double-starred
+species, $3.8.24$ included, in \S2.1, p.~59 with Table 2.1.1; pinned against the copy in
+\texttt{resources/papers}. The proof above is self-contained regardless.)
+\end{proof}
+
+\begin{lemma}[O3: an octagon forces $t1002$]\label{lem:O3} \CLOSED\;
+Any edge-to-edge tiling by regular polygons containing at least one octagon is congruent
+to the truncated square tiling $4.8.8$ ($t1002$). The truncated square tiling is
+$1$-uniform; consequently no octagon occurs in any $k$-uniform tiling with $k \ge 2$.
+\end{lemma}
+
+\begin{proof}
+Let $T$ contain an octagon. By O1 and O2, every vertex of $T$ incident to an octagon has
+species $4.8.8$.
+
+\emph{Step 1 (the vertex figure).} At a vertex $v$ of species $4.8.8$ the cyclic tile
+order is (square, octagon, octagon). Hence: the two tiles adjacent to the square across
+its two edges at $v$ are the two octagons; and each octagon has as cyclic neighbors at
+$v$ the square on one side and the other octagon on the other.
+
+\emph{Step 2 (squares adjacent to octagons).} Let a square $S$ share an edge $e$ with an
+octagon. Both endpoints of $e$ are octagon-incident, hence of species $4.8.8$; by Step 1
+the tiles across the two edges of $S$ adjacent to $e$ are octagons. Those octagons
+contain the endpoints of the edge $e'$ of $S$ opposite to $e$, so those endpoints are
+also of species $4.8.8$, and Step 1 there makes the tile across $e'$ an octagon too: all
+four neighbors of $S$ are octagons, and all four vertices of $S$ are of species $4.8.8$.
+(In particular no two squares share an edge: a $4.8.8$ vertex carries a single square.)
+
+\emph{Step 3 (octagon coronas).} Let $O'$ be an octagon of $T$. Each of its vertices is
+$4.8.8$, and by Step 1, at each vertex exactly one of the two edges of $O'$ borders a
+square and the other an octagon. Consecutive edges of $O'$ share a vertex, so the
+square/octagon assignment alternates around the eight edges; $8$ is even, so the
+alternation is consistent, and the entire corona of $O'$ is determined by the assignment
+at any single edge.
+
+\emph{Step 4 (agreement induction).} A copy of the truncated square tiling containing a
+given octagon is determined up to the corona parity of Step 3 (the point group of the
+model at an octagon center is $D_4$, of index 2 in the $D_8$ of the octagon, and the two
+cosets realize the two parities); let $M_0$ be the copy containing $O$ whose tile across
+one fixed edge $e_0$ of $O$ matches $T$'s. Let $A$ be the set of tiles $t$ of $T$ such
+that $t$ is a tile of $M_0$ \emph{and} every edge-neighbor of $t$ in $T$ equals the
+corresponding tile of $M_0$. First, $O \in A$: its $T$-corona alternates (Step 3) with
+the same pinning as $M_0$'s (choice of $M_0$), and an octagon or square sharing a
+specified edge of $O$ from the outside is determined as a set by its shape and that
+edge, so the corresponding tiles coincide. Now let $t \in A$ and let $t'$ be the tile of
+$T$ across an edge $e$ of $t$; then $t' \in M_0$ (membership of $t$ in $A$), and we
+check $t' \in A$. If $t'$ is an octagon, its $T$-corona alternates (Step 3) and is
+pinned by its neighbor $t$, which is also its $M_0$-neighbor; determined-by-shape-and-edge
+again makes each of its eight neighbors equal to $M_0$'s. If $t'$ is a square, then $t$
+is an octagon, by the structure of $M_0$ rather than Step 2: $t \in A$ makes $t'$ the
+$M_0$-neighbor of $t$ across $e$, and in the truncated square tiling $M_0$ a square is
+edge-adjacent only to octagons, so a square neighbor $t'$ forces $t$ to be an octagon.
+Now $t'$ is a square sharing edge $e$ with the octagon $t$, so Step 2 applies to $t'$ and
+makes all four $T$-neighbors of $t'$ octagons; at each vertex $v$ of the shared edge $e$,
+the third tile at $v$ is the octagon completing the $(4,8,8)$ figure, which shares a
+specified edge with $t'$, and the fourth neighbor shares the opposite edge; each is
+determined by shape and shared edge and so equals $M_0$'s tile. Hence $A$ is closed under edge-adjacency; the tile-adjacency graph
+of a plane tiling is connected (join interior points of two tiles by a segment avoiding
+vertices), so every tile of $T$ is a tile of $M_0$, and a tiling contained tile-wise in
+another equals it: $T = M_0$.
+
+\emph{1-uniformity.} In the truncated square tiling the point group at an octagon center
+is $D_4$ and no vertex of the octagon lies on one of its mirrors (the mirrors pass
+through edge midpoints), so $D_4$ acts freely, hence transitively, on the octagon's $8$
+vertices; every vertex lies on an octagon, and all octagons are equivalent under
+translations. So the symmetry group is vertex-transitive: exactly one vertex orbit.
+\end{proof}
+
+\begin{lemma}[O4: octagon-free implies palette $\{3,4,6,12\}$ and grid directions]
+\label{lem:O4} \CLOSED\ (classical anchor: G\&S Table 2.1.1, pp.~59--61)\;
+In an edge-to-edge tiling by regular polygons, only polygons with
+$n \in \{3,4,6,8,12\}$ occur. Hence an octagon-free tiling uses
+$\mathcal{P} = \{3,4,6,12\}$ only; all its interior angles are multiples of $30^\circ$,
+and after a global rotation all edge directions lie in the $30^\circ$ grid.
+\end{lemma}
+
+\begin{proof}
+The first sentence is classical, now pinned: G\&S enumerate the 17 species (21 types
+counting cyclic order) of angle-feasible vertices in Table 2.1.1 and state on p.~59 that
+for the six species marked with two asterisks there, namely $3.7.42$, $3.8.24$,
+$3.9.18$, $3.10.15$, $4.5.20$, $5.5.10$, ``there is no edge-to-edge tiling by regular
+polygons that includes even a single vertex of the species''; the surviving species use
+only $n \in \{3,4,6,8,12\}$. Each of the six exclusions is an odd-polygon adjacency
+argument of the O2 shape and can be reproved in an appendix if self-containedness is
+preferred. Glue:
+suppose the tiling is octagon-free, so all tiles lie in $\mathcal{P}$ and every interior
+angle is $60, 90, 120$ or $150$ degrees, a multiple of $30$. Assign to each
+\emph{edge-ray} (an edge directed away from one of its endpoints) its direction in
+$\R/360$. At a fixed vertex, consecutive rays in the rotational order differ by interior
+angles, so all rays at one vertex lie in a single coset of $30\Z$. The two rays of one
+edge differ by $180 = 6 \cdot 30$, so the coset is shared along every edge. The graph
+$(V(T), E(T))$ is connected (any two vertices are joined through the tile-adjacency chain
+along a segment between them, avoiding vertices by general position), so all edge-rays of
+$T$ lie in one coset $\alpha + 30\Z$; rotating by $-\alpha$ places every direction on the
+grid. Finally, $t1002$ genuinely needs the $15^\circ$ grid: its vertex figure mixes $90$
+and $135$ degree angles, so its rays occupy a coset of $45\Z$ meeting no single coset of
+$30\Z$; this is why the truncated square tiling is outside the $\zeta_{12}$ model and
+outside $\T_1$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:octagon} from O1--O4]
+A $k$-uniform tiling either contains an octagon, and is then $t1002$ with $k = 1$ (O3),
+or contains none and lies in $\T_k$ by definition. That $t1002$ is $1$-uniform is part of
+the phase close of O3 (its group $p4m$ acts transitively on vertices).
+\end{proof}
+
+%======================================================================
+\section{The combinatorial model}\label{sec:model}
+
+This section carries the definitional groundwork (the risk-4 item) and is now closed:
+the stub-system axioms, the flag calculus of a tiling, the dictionary between the two,
+and the quotient construction, each with proof.
+
+\subsection{Stub systems}
+
+\begin{definition}[stub system]\label{def:stub}
+A \emph{stub system} is a tuple $(X, \rho, \mu, \gamma, c)$: a finite set $X$ of
+\emph{stubs}; a bijection $\rho : X \to X$ (\texttt{rneig}; $\lambda := \rho^{-1}$ is
+\texttt{lneig}); an involution $\mu : X \to X$ (\texttt{mirro}) with
+$\mu\rho\mu = \rho^{-1}$; a partial map $\gamma : X \rightharpoonup X$ (\texttt{glue})
+with $\gamma^2 = \mathrm{id}$ on its domain (fixed points allowed: self-gluings), domain
+$\mu$-invariant and $\gamma\mu = \mu\gamma$ on the domain; and a coloring
+$c : X \to \mathcal{C}$ (\texttt{lvert}; for the regular palette
+$\mathcal{C} = \mathcal{P}$) satisfying $c \circ \mu = c \circ \rho$. A \emph{vertex} of
+$X$ is an orbit of $\langle \rho, \mu \rangle$. $X$ is \emph{closed} iff $\gamma$ is
+total, \emph{connected} iff $\langle \rho, \mu, \gamma \rangle$ acts transitively.
+Morphisms are maps commuting with $\rho, \mu, \gamma$ (where defined) and preserving $c$;
+isomorphisms accordingly.
+\end{definition}
+
+\begin{remark}[parity is an axiom consequence]\label{rem:parity}
+In any stub system, $\gamma(x)$ is $\mu$-fixed iff $x$ is: $\mu\gamma x = \gamma\mu x$,
+and $\gamma$ is injective on its domain, so $\mu\gamma x = \gamma x \iff \mu x = x$.
+This is the abstract half of the mirror-parity rule (L2); no geometric input is needed.
+\end{remark}
+
+\begin{definition}[face walk, validity]\label{def:valid}
+The \emph{face walk} is the partial map $\omega := \rho \circ \gamma$. A stub $x$ with
+$n = c(x)$ satisfies:
+\emph{condition 1} if $c$ is constant along the $\omega$-walk through $x$;
+\emph{condition 2a} if, when the walk through $x$ is a cycle of minimal period $\ell$,
+$\ell \mid n$;
+\emph{condition 2b} if, when the walk is not a cycle, the maximal $\omega$-chain through
+$x$ has length $\le n$ (length counts corners visited).
+A partial stub system is \emph{valid} if all three hold at every stub where applicable.
+\end{definition}
+
+\begin{definition}[alphabet labeling]\label{def:overalpha}
+A stub system is \emph{over the alphabet} $\A$ (Section~\ref{sec:alphabet}) if each of
+its vertices, as a substructure $(\text{orbit}; \rho, \mu, c)$ with $\gamma$ forgotten,
+is isomorphic to an entry of $\A$. By Lemma A6 the entry is then unique, so vertices are
+canonically labeled.
+\end{definition}
+
+\begin{definition}[congruence, core, refinement]\label{def:congruence}
+A \emph{congruence} on a stub system is an equivalence relation $\theta$ on $X$,
+compatible with $\rho, \mu, \gamma$ ($x \,\theta\, y \Rightarrow f(x)\,\theta\,f(y)$,
+with $\gamma$-definedness constant on classes) and refining the fibers of $c$. The
+quotient $X/\theta$ is again a stub system. $X$ is a \emph{core} iff its only congruence
+is equality. The \emph{refinement partition} $W(X)$ is the coarsest partition of $X$
+refining the $c$-fibers and stable under $\rho, \lambda, \mu, \gamma$; it is what
+\texttt{simplify} computes (Lemma R1).
+\end{definition}
+
+\subsection{Flags of a tiling and the dictionary}
+
+\begin{definition}[flags]\label{def:flags}
+A \emph{flag} of a tiling $T$ is an incident triple $x = (v, e, f)$, vertex--edge--face.
+On $\Flags(T)$ define the three involutions
+$\sigma_0$ (replace $v$ by the other endpoint of $e$),
+$\sigma_1$ (replace $e$ by the other edge of $f$ at $v$),
+$\sigma_2$ (replace $f$ by the other face at $e$).
+In an edge-to-edge tiling each is well defined and fixed-point free, and
+$\sigma_0\sigma_2 = \sigma_2\sigma_0$ (they alter disjoint components). The
+\emph{dictionary} is
+\[
+\rho := \sigma_2\sigma_1, \qquad
+\mu := \sigma_2, \qquad
+\gamma := \sigma_2\sigma_0, \qquad
+c(x) := \bigl|\,\text{face of } \sigma_2 x\,\bigr|
+\]
+(the color of a flag is the size of the \emph{opposite} face across its edge). Every
+isometry in $G(T)$ commutes with $\sigma_0, \sigma_1, \sigma_2$ (they are
+incidence-defined) and preserves face sizes, hence commutes with the dictionary;
+orientation plays no role at the flag level, which is why flags rather than oriented
+darts are the right carrier and why Convention~\ref{conv:chiral} is native to the model.
+\end{definition}
+
+\begin{remark}[correction to the phase-1 skeleton]\label{rem:gammafix}
+Phase 1 declared $\gamma := \sigma_0$. That is wrong: with $\gamma = \sigma_0$ the face
+walk $\omega = \rho\gamma$ changes faces at every step and condition 1 would fail in
+$\Flags(T)$ itself. The computation in D1a below forces $\gamma = \sigma_2\sigma_0$: when
+an edge is crossed, the local rotational sense reverses, and the extra $\sigma_2$ is that
+reversal. The error was caught by carrying out the walk computation rather than trusting
+the analogy with Delaney--Dress conventions; no lemma statement was affected.
+\end{remark}
+
+\begin{lemma}[D1a: flag calculus]\label{lem:D1a} \CLOSED\;
+Let $T$ be a tiling. Then $(\Flags(T); \rho, \mu, \gamma, c)$ satisfies the stub-system
+axioms with $\gamma$ total, is connected, and is valid; moreover the $\omega$-orbits are
+in bijection with the faces of $T$: the walk through a stub of color $n$ is a cycle of
+length exactly $n$ visiting the $n$ corners of one face in rotational order.
+\end{lemma}
+
+\begin{proof}
+\emph{Axioms.} $\mu^2 = \sigma_2^2 = \mathrm{id}$. $\gamma^2 =
+\sigma_2\sigma_0\sigma_2\sigma_0 = \mathrm{id}$ by commutation. $\gamma\mu =
+\sigma_2\sigma_0\sigma_2 = \sigma_2\sigma_2\sigma_0\ldots$ more directly $\gamma\mu =
+\sigma_2\sigma_0\sigma_2$ and $\mu\gamma = \sigma_2\sigma_2\sigma_0 = \sigma_0$; using
+commutation $\sigma_2\sigma_0\sigma_2 = \sigma_0\sigma_2\sigma_2 = \sigma_0$, so
+$\gamma\mu = \mu\gamma$. $\mu\rho\mu = \sigma_2(\sigma_2\sigma_1)\sigma_2 =
+\sigma_1\sigma_2 = (\sigma_2\sigma_1)^{-1} = \rho^{-1}$.
+
+\emph{Local coordinates.} Orient the plane once and for all. At a vertex $v$ of degree
+$d$, list the incident edges $e_0, \dots, e_{d-1}$ in counterclockwise order (indices mod
+$d$) and let $f_i$ be the face between $e_i$ and $e_{i+1}$. The $2d$ flags at $v$ are
+$(v, e_i, f_i)$ and $(v, e_i, f_{i-1})$; write them $(i,0)$ and $(i,1)$. Direct
+computation: $\sigma_1(v,e_i,f_i) = (v,e_{i+1},f_i)$ and then $\sigma_2$ gives
+$(v,e_{i+1},f_{i+1})$, so $\rho(i,0) = (i{+}1,0)$; similarly $\rho(i,1) = (i{-}1,1)$;
+and $\mu(i,b) = (i,1{-}b)$. Colors: $c(i,0) = |f_{i-1}|$ and $c(i,1) = |f_i|$, and one
+checks $c\mu = c\rho$ on both chirality types. (These formulas coincide with the
+generator's doubled dart structure; see A2.)
+
+\emph{Crossing an edge.} Let $e$ carry index $a$ at $v$ and index $b$ at the other
+endpoint $w$. Counterclockwise order at $v$ appears clockwise from $w$, which gives the
+face matching $f^v_a = f^w_{b-1}$ and $f^v_{a-1} = f^w_b$. Hence
+$\sigma_0(v,e_a,f^v_a) = (w,e_a,f^w_{b-1})$, a type-1 flag at $w$, and
+$\gamma(a,0)_v = \sigma_2\sigma_0(v,e_a,f^v_a) = (w, e_a, f^w_b) = (b,0)_w$: $\gamma$
+preserves chirality type relative to the global orientation.
+
+\emph{Face walk.} Take the corner $(\lambda x, x)$ with $x = (i{+}1,0)$ at $v$; its color
+is $c(x) = |f^v_i|$. Then $\gamma(x) = (j,0)$ at $w$ (the other end of $e_{i+1}$, with
+$f^v_i = f^w_j$ by the crossing rule), and $\omega(x) = \rho\gamma(x) = (j{+}1, 0)$ at
+$w$, whose color is $|f^w_j| = |f^v_i|$: the walk has advanced one corner around the same
+geometric face $f := f^v_i$ and kept its color. Iterating, the walk visits the corners of
+$f$ in rotational order; since $f$ is an embedded $n$-gon with $n$ distinct corners, the
+walk first returns after exactly $n$ steps. Conversely every corner of every face occurs
+in such a walk, giving the bijection. Conditions 1, 2a hold with $\ell = n$; there are no
+open chains ($\gamma$ total). The same computation on type-1 flags gives the reverse
+walks; nothing changes.
+
+\emph{Connectivity.} Flags at one vertex are connected by $\rho, \mu$. Any two vertices
+are joined by a path of edges (O4's connectivity argument), and $\gamma$ crosses each
+edge. Hence $\langle \rho, \mu, \gamma\rangle$ is transitive.
+\end{proof}
+
+\begin{lemma}[B0: flag rigidity and discreteness]\label{lem:B0} \CLOSED\;
+A symmetry of $T$ fixing a flag is the identity; $G(T)$ acts freely on $\Flags(T)$; the
+vertex set of $T$ is uniformly discrete and $G(T)$ is a discrete group.
+\end{lemma}
+
+\begin{proof}
+Let $g$ fix $(v,e,f)$: $g(v) = v$ and $g(e) = e$, so $g$ fixes both endpoints of $e$,
+hence fixes the line of $e$ pointwise; an isometry fixing a line pointwise is the
+identity or the reflection in that line, and the reflection swaps the two faces at $e$,
+contradicting $g(f) = f$. So $g = \mathrm{id}$, and the action on flags is free.
+Uniform discreteness: two distinct vertices have distance $\ge 1$. Indeed if
+$0 < d(v,w) < 1$, then $w$ lies within distance $1$ of $v$; every point at distance
+$< \tfrac12$ from $v$ lies in a tile incident to $v$ (each unit-edge regular tile
+contains the disk sector of radius $\ge \sqrt3/2$ at each of its corners), and for
+$d(v,w) < 1$ one checks $w$ lies on the boundary of a tile $P$ incident to $v$; by the
+edge-to-edge property a vertex of the tiling on $\partial P$ is a corner of $P$, and
+distinct corners of a unit-edge regular polygon are at distance $\ge 1$ from each other,
+a contradiction. Discreteness of $G(T)$: if $g_m \to \mathrm{id}$, then for large $m$,
+$g_m$ moves a fixed flag's vertex, edge midpoint and face barycenter by less than the
+minimal separation of those data, forcing $g_m$ to fix that flag, so $g_m =
+\mathrm{id}$.
+\end{proof}
+
+\begin{lemma}[D1b: quotients]\label{lem:D1b} \CLOSED\;
+Let $H \le G(T)$ have finitely many orbits on $\Flags(T)$. Then
+$T/H := (\Flags(T)/H, \text{induced operations})$ is a finite closed connected stub
+system; its vertices correspond to $H$-orbits of $V(T)$. Moreover, for a stub
+$\bar{x} = Hx$ with $x = (v,e,f)$:
+\begin{itemize}
+\item[(i)] $\mu\bar x = \bar x$ iff some $h \in H$ is the reflection in the line of $e$
+  (a mirror along the edge, through both endpoints);
+\item[(ii)] $\gamma\bar x = \bar x$ iff some $h \in H$ is the rotation by $\pi$ about the
+  midpoint of $e$ (the $(a)$-gluing);
+\item[(iii)] $\gamma\bar x = \mu\bar x$ iff some $h \in H$ is the reflection in the
+  perpendicular bisector of $e$ (the $[a]$-gluing).
+\end{itemize}
+Finally $T \mapsto T/H$ is functorial: an isometry $g$ with $gHg^{-1} = H'$ induces an
+isomorphism $T/H \cong (gT)/H'$; in particular mirror-image tilings have isomorphic
+canonical quotients (chirality merge at the model level).
+\end{lemma}
+
+\begin{proof}
+$H$ commutes with the dictionary (Definition~\ref{def:flags}), so the operations descend;
+the axioms and closedness are inherited, connectivity passes to quotients, and finiteness
+is the orbit hypothesis. Vertices: $\langle\rho,\mu\rangle$-orbits in the quotient are
+images of flag sets at single vertices, and two vertices' flag sets meet the same orbit
+iff the vertices are $H$-equivalent. For (i): $\mu\bar x = \bar x$ means $hx = \sigma_2 x$
+for some $h \in H$; such $h$ fixes $v$ and $e$, hence the line of $e$ pointwise (as in
+B0), and is not the identity (the faces differ), so it is the reflection in that line;
+conversely that reflection realizes $hx = \sigma_2x$. For (ii): $hx = \sigma_2\sigma_0 x$
+maps $(v,e,f)$ to $(w,e,f')$ with $w \ne v$, $f' \ne f$: $h$ preserves $e$, swaps its
+endpoints and swaps its sides, so $h$ is the half-turn about the midpoint; conversely the
+half-turn does this. For (iii): $hx = \mu\gamma\bar x$-wise, $hx = \sigma_0x$ maps
+$(v,e,f)$ to $(w,e,f)$: $h$ preserves $e$ and $f$, swaps endpoints, so it fixes the
+midpoint and the perpendicular direction: the reflection in the perpendicular bisector.
+Functoriality: $g$ maps flags of $T$ to flags of $gT$ commuting with everything, and
+descends to the orbit spaces. For the chirality statement take $H = G(T)$,
+$g$ any reflection: $(gT)/G(gT) \cong T/G(T)$.
+\end{proof}
+
+\begin{remark}[presentation vs.\ structure: starred labels]\label{rem:presentation}
+The implementation presents each vertex orbit by choosing one ``orientation sheet'':
+stubs of the chosen sheet are unstarred, their $\mu$-images starred. The choice is
+arbitrary per orbit, and nothing in the structure depends on it; in particular
+$\gamma$ may connect an unstarred stub to a starred one (the $[a\,b]$ Conway form)
+exactly when the two vertex orbits' chosen sheets disagree across the edge, since
+geometric $\gamma$ preserves the \emph{global} chirality type (D1a, crossing rule) while
+the sheets are local conventions. The four Conway bracket forms are therefore
+presentation data; the invariant content is D1b (i)--(iii). This is also why the pruner's
+isomorphism test, which never reads labels, is the right notion of sameness.
+\end{remark}
+
+\begin{lemma}[L1: necessity and heredity]\label{lem:L1} \CLOSED\;
+(i) For any tiling $T$ and $H \le G(T)$ with finitely many flag orbits, $T/H$ is valid:
+every $\omega$-cycle has constant color $n$ and length $\ell = n/r$ dividing $n$, where
+$r$ is the order of the rotation part of the $H$-stabilizer of the corresponding face.
+(ii) Heredity: if $M$ is closed and valid and $P$ is a partial substructure of $M$ (a
+subset of vertices carrying a subset of the gluings), then $P$ is valid.
+\end{lemma}
+
+\begin{proof}
+(i) Fix a stub $\bar x$ of $T/H$ and lift to $x \in \Flags(T)$; by D1a the planar walk
+through $x$ runs around a face $f$ with $|f| = n = c(x)$, visiting flags
+$x, \omega x, \dots, \omega^{n-1}x$, all of color $n$; colors descend, giving condition 1.
+The quotient walk closes at the minimal $\ell$ with $\omega^\ell x \in Hx$, say
+$h x = \omega^\ell x$ with $h \in H$; since $H$ commutes with $\omega$, $h$ maps the
+walk orbit to itself and stabilizes $f$. \emph{Claim: such $h$ is orientation-preserving.}
+Define for a flag $y = (u, e, f)$ the local orientation $\mathrm{or}(y) \in \{\pm 1\}$ as
+the orientation of the frame (direction of $e$ away from $u$, direction from $e$ into
+$f$). Each $\sigma_i$ reverses $\mathrm{or}$: the defining data of $y$ and $\sigma_i y$
+are exchanged by an explicit reflection (in the angle bisector of the corner for
+$\sigma_1$, the perpendicular bisector of $e$ for $\sigma_0$, the line of $e$ for
+$\sigma_2$), and $\mathrm{or}$ is covariant under isometries with the sign of their
+determinant. Hence $\omega = \sigma_2\sigma_1\sigma_2\sigma_0$ preserves $\mathrm{or}$,
+so all flags in one $\omega$-orbit share their value; from
+$\mathrm{or}(hx) = \det(h)\,\mathrm{or}(x)$ and $hx$ in the orbit of $x$ we get
+$\det(h) = +1$, proving the claim. So the return elements form the cyclic rotation group
+$C_r = \Stab_H(f) \cap SO$, acting on the $n$ corners of $f$ freely with orbits of size
+$r$; the minimal return is $\ell = n/r$, which divides $n$: condition 2a. Open chains do
+not occur ($\gamma$ total). Reflections in $\Stab_H(f)$, if any, do not shorten the
+cycle; they surface as coincidences between the cycle and its $\mu$-image.
+(ii) Let $\iota : P \to M$ be the inclusion-style morphism ($\rho,\mu,c$ preserved,
+$\gamma_P$ a restriction of $\gamma_M$). Walks in $P$ are walks in $M$ while defined and
+$\iota$ is injective, so: a $P$-cycle is an $M$-cycle with the same minimal period
+(deterministic walks return in $P$ iff they return in $M$ at the same step), giving 2a;
+a maximal open $P$-chain visits distinct stubs injectively inside an $M$-cycle of length
+$\ell \le n$, giving 2b; colors are inherited, giving 1. Monotonicity for the search:
+gluings are only ever added along a DFS branch, walks only extend, so a violation of
+1/2a/2b in a configuration persists in all its descendants; equivalently no ancestor of a
+valid configuration violates the conditions.
+\end{proof}
+
+\begin{lemma}[L2: mirror parity]\label{lem:L2} \CLOSED\;
+In any stub system, $\gamma$ maps $\mu$-fixed stubs to $\mu$-fixed stubs
+(Remark~\ref{rem:parity}); in $T/H$ a stub is $\mu$-fixed iff a mirror of $H$ runs along
+its edge (D1b(i)), and the mirror line of an edge contains both endpoints, so the two
+end-stubs of such an edge are both $\mu$-fixed. Consequently the solver's parity filter
+(glue self-mirrored only to self-mirrored) excludes no gluing that occurs in any $T/H$,
+and is forced for every closed valid system.
+\end{lemma}
+
+\begin{proof}
+All three assertions are contained in Remark~\ref{rem:parity} and D1b(i); the last
+sentence restates them for the search.
+\end{proof}
+
+\begin{remark}[kinship with Delaney--Dress symbols]
+$\Flags(T)/G(T)$ with $(\sigma_0, \sigma_1, \sigma_2)$ is the underlying set of the
+Delaney--Dress symbol of $T$; the stub system repackages the operators as
+$(\rho, \mu, \gamma)$ and carries sizes as colors. The correspondence theorems (C, B) are
+vertex-centered analogues of the D-symbol realization theorems (Dress 1987, Dress--Huson
+1987), cited as context and pattern only; the self-contained 2D proofs are shorter than a
+formal bridge between the conventions would be.
+\end{remark}
+
+%======================================================================
+\section{Obligation 1: the alphabet}\label{sec:alphabet}
+
+The alphabet $\A$ (\texttt{mainlist}) is the finite set of vertex letters: pairs
+(configuration, site-symmetry variant), encoded as stub structures with the attachment
+data \texttt{ferkval}/\texttt{reps}. The generator \texttt{alphabets/gen\_alphabet.py}
+constructs $\A$ from first principles and gates it against the 44 legacy entries.
+
+\begin{lemma}[A1: configuration enumeration]\label{lem:A1} \CLOSED\;
+The cyclic words over $\mathcal{P} = \{3,4,6,12\}$ with interior angles summing to
+$360^\circ$, up to rotation and reflection, are exactly the following 14:
+\[
+\begin{array}{llll}
+(3,12,12), & (4,6,12), & (6,6,6), & (4,4,4,4),\\
+(3,3,6,6), & (3,6,3,6), & (3,4,4,6), & (3,4,6,4),\\
+(3,3,4,12), & (3,4,3,12), & (3,3,3,3,6), & (3,3,3,4,4),\\
+(3,3,4,3,4), & (3,3,3,3,3,3), &&
+\end{array}
+\]
+of which exactly $(4,6,12)$, $(3,3,4,12)$ and $(3,4,4,6)$ are chiral (not fixed by any
+reflection of the cyclic word).
+\end{lemma}
+
+\begin{proof}
+With $m$ polygons at a vertex, the angle equation reads
+$\sum_i (1 - 2/n_i) = 2$, i.e.\ $\sum_i 1/n_i = (m-2)/2$ with
+$1/n_i \in \{1/3, 1/4, 1/6, 1/12\}$. Since each term is at most $1/3$, $m/3 \ge (m-2)/2$
+forces $m \le 6$; since each term is positive and at most... for $m \le 2$ no solution
+exists. Case $m=3$ ($\sum = 1/2$): with a $1/3$: remaining $1/6$ from two terms:
+$1/12 + 1/12$ only, giving $\{3,12,12\}$; without: $1/4+1/6+1/12 = 1/2$ giving
+$\{4,6,12\}$, and $1/6 \cdot 3 = 1/2$ giving $\{6,6,6\}$; all other combinations miss.
+Case $m=4$ ($\sum = 1$), by the number $t$ of triangles: $t = 2$: remaining $1/3$ from
+two terms: $1/4 + 1/12$ ($\{3,3,4,12\}$) or $1/6+1/6$ ($\{3,3,6,6\}$); $t = 1$: remaining
+$2/3$ from three terms of $\{1/4,1/6,1/12\}$: only $1/4+1/4+1/6$ ($\{3,4,4,6\}$);
+$t = 0$: only $1/4 \cdot 4$ ($\{4,4,4,4\}$); $t \ge 3$ overshoots. Case $m=5$
+($\sum = 3/2$): $t = 4$: fifth term $1/6$ ($\{3,3,3,3,6\}$); $t = 3$: two terms summing
+$1/2$: only $1/4+1/4$ ($\{3,3,3,4,4\}$); $t \le 2$: maximum $2/3 + 3/4 < 3/2$. Case
+$m=6$: all six terms must be $1/3$ ($\{3^6\}$). Cyclic arrangements up to the dihedral
+action: 3-element multisets have one arrangement each; $\{3,3,6,6\}$: equal pairs
+adjacent or alternating, $2$; $\{3,4,4,6\}$: the squares adjacent or separated, $2$;
+$\{3,3,4,12\}$: triangles adjacent or separated, $2$ (adjacent: the two rotation classes
+$(3,3,4,12)$ and $(3,3,12,4)$ merge under reflection, leaving one chiral dihedral class);
+$\{4,4,4,4\}, \{3,3,3,3,6\}, \{3^6\}$: one each; $\{3,3,3,4,4\}$: the lone triangle
+flanked by squares or not, i.e.\ $(3,3,3,4,4)$ and $(3,3,4,3,4)$, $2$. Total
+$3 + 7 + 3 + 1 = 14$. Chirality: a cyclic word is achiral iff some rotation of its
+reversal equals it; checking each, exactly the three listed fail, e.g.\ the rotations of
+$(3,3,4,12)$ are $(3,3,4,12), (3,4,12,3), (4,12,3,3), (12,3,3,4)$ and its reversal is
+$(3,3,12,4)$ up to rotation, not among them. (Consistency with the classical count: of
+G\&S's 21 types over all polygon sizes, 15 occur in tilings; removing the type $4.8.8$
+leaves the 14 above.)
+\end{proof}
+
+\begin{lemma}[A2: variants are subgroup conjugacy classes]\label{lem:A2} \CLOSED\;
+Fix a configuration $w$ of length $m$ and let $\Sym(w) \le D_m$ be the stabilizer of the
+cyclic word under the dihedral action on positions. For a tiling $T$ and a vertex $v$
+with configuration $w$:
+\begin{itemize}
+\item[(i)] $\Stab_{G(T)}(v)$ acts faithfully on the flags at $v$, and under the local
+  coordinates of D1a this action is by word symmetries: rotations act as
+  $(i,b) \mapsto (i+t, b)$ and reflections as $(i,b) \mapsto (a-i, 1-b)$; the image is a
+  subgroup $U \le \Sym(w)$.
+\item[(ii)] The vertex substructure of $T/H$ at $v$ (for any $H$, with
+  $U = $ image of $\Stab_H(v)$) is the orbit space of the doubled dart structure of $w$
+  under $U$, i.e.\ the generator's fold.
+\item[(iii)] Conjugate subgroups of $\Sym(w)$ yield isomorphic folds; hence the map
+  \{variants\} $\to$ \{conjugacy classes of subgroups of $\Sym(w)$\} is a well-defined
+  bijection onto, and no realizable vertex letter is missing from an alphabet that lists
+  one fold per conjugacy class.
+\item[(iv)] (angle-weight clause, consumed by the C-block) With $a(n) := 6 - 12/n$, every
+  $\rho$-cycle $C$ of the fold of $w$ by $U$ has angle-weight sum
+  $s(C) := \sum_{x \in C} a(c(x)) = 12/r$, where $r$ is the order of the rotation
+  subgroup of $U$; in particular $s(C)$ divides $12$.
+\end{itemize}
+\end{lemma}
+
+\begin{proof}
+(i) An element $h$ of the stabilizer fixes $v$, hence is a rotation about $v$ or a
+reflection through $v$; it permutes the incident edges preserving their counterclockwise
+cyclic order up to sense, and preserves the sizes of the faces between them, so its
+action on indices is an element of $D_m$ stabilizing the word $w$; the formulas for the
+two chirality types follow from D1a's coordinates ($h$ orientation-preserving fixes each
+sheet, orientation-reversing swaps them). Faithfulness: $h$ acting trivially on flags at
+$v$ fixes a flag, hence $h = \mathrm{id}$ by B0. (ii) The flags at $v$ \emph{are} the
+doubled dart set $\{(i,b)\}$ with the operations computed in D1a, which coincide with the
+generator's $\texttt{rneig}(i,0)=(i{+}1,0)$, $\texttt{rneig}(i,1)=(i{-}1,1)$,
+$\texttt{mirro}(i,b)=(i,1{-}b)$, $\texttt{cls}(i,0)=c[i{-}1]$, $\texttt{cls}(i,1)=c[i]$;
+the quotient by $\Stab_H(v)$ is by definition the fold by $U$. (iii) If
+$U' = sUs^{-1}$ with $s \in \Sym(w)$, then $s$ induces an isomorphism of folds
+$\text{darts}/U \to \text{darts}/U'$, $Ux \mapsto U'sx$, which respects the operations
+because $s$ does. Surjectivity of the classification is (i): every stabilizer that occurs
+is a subgroup of $\Sym(w)$, so its conjugacy class is listed. As a consistency check
+against the shipped table: $\Sym = 1$ for the three chiral words (1 variant each),
+$\Sym = \Z_2$ for the seven reflection-only words (2 variants), $\Sym(3,6,3,6) = D_2$
+(5 subgroups, all normal: F, A1, A2, R, S), $\Sym(6,6,6) = D_3$ (4 classes),
+$\Sym(4,4,4,4) = D_4$ (8 classes), $\Sym(3^6) = D_6$ (10 classes; the two $D_3$ classes
+are the a/b pair, and the single $D_2$ class explains why $(3^6)S2$ has one edge-type
+axis and one triangle-type axis), for a total of
+$3 + 14 + 5 + 4 + 8 + 10 = 44$, the legacy entry count.
+
+(iv) Lift a $\rho$-cycle of the fold to the doubled dart structure: $\rho$ preserves the
+two sheets there, so the lifted walk runs within one sheet, stepping through the word
+positions in one rotational sense with corner weights $a(c_j)$, whose total over the
+whole word is $12$ (the angle equation of A1, in $30^\circ$ units). The folded cycle
+closes at the least $t$ for which the lifted dart returns modulo $U$; sheet-preserving
+elements of $U$ are exactly its rotations, which form the cyclic group generated by the
+shift by $m/r$, so $t = m/r$. Rotations preserve the color word, so the color word is
+$(m/r)$-periodic and the partial weight sum over $m/r$ consecutive corners is $12/r$.
+Sheet-1 cycles are the mirror images of sheet-0 cycles and carry the same weights.
+\end{proof}
+
+\begin{remark}[spurious variants are harmless]
+The brief asks that ``none of the generated variants is spurious.'' That direction is not
+load-bearing: a letter that never occurs in a valid closed core simply never appears in
+output, and soundness of what does appear is Obligation 5's job, not the alphabet's. Only
+missing letters (A2(iii)) and wrongly encoded letters (A3/A4) can break the theorem.
+\end{remark}
+
+\begin{lemma}[A3: table correctness]\label{lem:A3} \MACHINE\ (implemented, unaudited)\;
+The generated (configuration $\times$ subgroup class) folds coincide, arrays and
+\texttt{ferkval} included, with the 44 legacy \texttt{mainlist} entries, trying every
+frame per fold; and the three consumed table copies (\texttt{solver\_tables.inc},
+\texttt{pruner\_tables.inc}, the original hard-coded \texttt{mainlist}) agree.
+\end{lemma}
+
+\begin{lemma}[A4: structural identities]\label{lem:A4} \MACHINE\ (implemented, unaudited)\;
+Every entry satisfies $\lambda\rho = \mathrm{id}$, $\mu^2 = \mathrm{id}$,
+$\mu\rho = \lambda\mu$, $c\,\mu = c\,\rho$.
+\end{lemma}
+
+\begin{lemma}[A5: the ferk transversal]\label{lem:A5} \MACHINE\ (implemented, unaudited)\;
+For every entry $D$: $|\Aut(D)| = \texttt{ferkval}(D)$, the action of $\Aut(D)$ on stubs
+is free, and the generated \texttt{reps} list meets every $\Aut(D)$-orbit.
+\end{lemma}
+
+\begin{lemma}[A6: pairwise non-isomorphism --- new certificate]\label{lem:A6}
+\MACHINE\ (\textbf{to be added})\;
+The 44 entries are pairwise non-isomorphic as colored stub structures
+$(\text{orbit}; \rho, \mu, c)$.
+\end{lemma}
+
+\begin{remark}[why A6 is needed, and that it was missing]
+The pruner buckets by the vertex-letter signature string and only compares within a
+bucket; the letter multiset must therefore be an isomorphism invariant of the underlying
+structure, which is exactly A6. Without it an over-count would be possible in principle:
+one tiling emitted under two letterings, landing in different buckets, kept twice. A6 is
+finite ($44^2$ colored-structure isomorphism tests) but is \emph{not} among the
+generator's current certificates; this note adds it as an obligation. Spot-check done by
+hand: the candidate collision $(3,6,3,6)A1$ vs $(3,6,3,6)A2$ is refuted by the corner
+colors at the $\mu$-symmetric corners.
+\end{remark}
+
+%======================================================================
+\section{Obligation 2: local rules}\label{sec:local}
+
+L1 and L2 are stated and proved in Section~\ref{sec:model} (Lemmas \ref{lem:L1},
+\ref{lem:L2}), where they belong to the quotient analysis. What remains here is the
+scope remark:
+
+\begin{remark}[L3: sufficiency is the development theorem]
+The brief's ``conditions jointly sufficient for a closed configuration to be a valid
+combinatorial tiling'' has no separate combinatorial content: the honest sufficiency
+statement is exactly the C-block (a closed valid rigid system develops to a genuine
+tiling), and it is proved there. Listing it here would double-count an obligation.
+\end{remark}
+
+%======================================================================
+\section{Obligation 3: search exhaustiveness}\label{sec:search}
+
+The abstract DFS. State: a connected partial stub system $P$ over $\A$ with an ordered
+vertex list (letters indexed into $\A$). Root: a single fresh letter, no gluings. Step:
+pick a free stub $s$ by any deterministic rule (the implementation uses
+\texttt{mincycle}, most-constrained-first, and normalizes $s$ to the unstarred partner;
+the proofs below are indifferent to the rule); enumerate as children:
+(a) for every free stub $t$ with the same $\mu$-parity as $s$, the configuration
+$P + \{s \leftrightarrow t\}$, with the mirror pair $\mu s \leftrightarrow \mu t$ glued
+alongside when $s \ne \mu s$; the cases $t = s$ (self-gluing) and $t = \mu s$ are
+included;
+(b) if the vertex budget allows, for every letter $g \ge$ the root letter and every
+$r \in \texttt{reps}(g)$ of matching parity, the configuration
+$P + (\text{fresh vertex of letter } g) + \{s \leftrightarrow r\}$ (mirror pair
+alongside).
+Children failing conditions 1/2a/2b are discarded; closed children go to the rigidity
+filter; open children recurse.
+
+\begin{lemma}[T1: termination]\label{lem:T1} \CLOSED\;
+The DFS tree is finite and the run halts.
+\end{lemma}
+
+\begin{proof}
+A configuration carries at most \texttt{maxnum} vertices of at most 12 stubs each (the
+largest letter, $(3^6)$F, has 12), so at most $12\,\texttt{maxnum}$ stubs. Every child
+adds at least one gluing and none is ever removed along a branch, so branch length is at
+most the stub count. Branching at a node is bounded by the number of free stubs plus
+$|\A| \cdot \max_g |\texttt{reps}(g)| < \infty$. A finitely-branching tree with bounded
+branch length is finite; the root loop over the 44 letters is finite.
+\end{proof}
+
+\begin{lemma}[S1: guided descent --- the no-drop core]\label{lem:S1} \CLOSED\;
+Let $M$ be a finite connected closed valid stub system over $\A$ with
+$m \le \texttt{maxnum}$ vertices whose minimal letter is $t^\ast$. Then the DFS rooted at
+$t^\ast$ visits at least one closed configuration isomorphic to $M$.
+\end{lemma}
+
+\begin{proof}
+Say a configuration $P$ \emph{follows} $M$ via $\psi$ if $\psi : X_P \to X_M$ is
+injective, preserves $\rho, \mu, c$, and carries each gluing of $P$ to a gluing of $M$
+(so $\gamma_M \psi = \psi \gamma_P$ on $\mathrm{dom}\,\gamma_P$). Since $\psi$ preserves
+$\rho$ and $\mu$ and letters are single $\langle\rho,\mu\rangle$-orbits, $\psi$ maps each
+vertex of $P$ bijectively onto a vertex of $M$ of the same letter, and distinct vertices
+to distinct vertices.
+
+\emph{Base.} $M$ has a vertex of letter $t^\ast$; the root configuration (one fresh
+$t^\ast$, no gluings) follows $M$ via any letter isomorphism onto it, which exists by
+Definition~\ref{def:overalpha}.
+
+\emph{Inductive step.} Suppose the DFS visits a non-closed $P$ that follows $M$ via
+$\psi$; let $s$ be the free stub the rule picks. $M$ is closed, so
+$y := \gamma_M(\psi s)$ exists. By Remark~\ref{rem:parity} applied in $M$, $y$ is
+$\mu$-fixed iff $\psi s$ is, iff $s$ is ($\psi$ preserves $\mu$): parities match.
+
+Case (a): $y = \psi(t)$ for some $t \in X_P$. Then $t$ is free in $P$: otherwise
+$\psi\gamma_P(t) = \gamma_M(y) = \psi s$ with $\psi$ injective would give
+$\gamma_P(t) = s$, contradicting $s$ free. The child $P' := P + \{s \leftrightarrow t\}$
+(mirror pair alongside if $s \ne \mu s$) is among the enumerated children, and $\psi$
+still follows: the new gluings map to $\{\psi s \leftrightarrow y\}$ and, for the mirror
+pair, to $\{\mu\psi s \leftrightarrow \mu y\}$, which is a gluing of $M$ because
+$\gamma_M$ commutes with $\mu$.
+
+Case (b): $y$'s vertex is not in the image of $\psi$. Its letter $g$ satisfies
+$g \ge t^\ast$ because $t^\ast$ is minimal among $M$'s letters, and $P$ has fewer than
+$m \le \texttt{maxnum}$ vertices (its vertices inject into $M$'s and miss $y$'s), so the
+fresh-vertex branch is enabled and tries letter $g$. The set of letter isomorphisms
+$D_g \to (\text{$y$'s vertex in } M)$ is a nonempty torsor under $\Aut(D_g)$, so the
+stubs $r$ with some isomorphism sending $r \mapsto y$ form exactly one
+$\Aut(D_g)$-orbit; by A5 the \texttt{reps} list meets it, say at $r_0$ with isomorphism
+$\psi_0$, $\psi_0(r_0) = y$. Parity of $r_0$ matches ($\psi_0$ preserves $\mu$-fixedness
+and $y$'s parity matches $s$'s). The child
+$P' := P + (\text{fresh } g) + \{s \leftrightarrow r_0\}$ is enumerated, and
+$\psi' := \psi \cup \psi_0$ follows $M$ ($\psi_0$'s image vertex is new, so injectivity
+holds; the gluing maps correctly as in case (a)).
+
+\emph{No prune.} A configuration following $M$ is isomorphic (via $\psi$, onto its image)
+to a partial substructure of $M$, hence valid by L1(ii); so \texttt{checkpart} never
+discards a child produced above.
+
+\emph{Closure.} Each step adds a gluing of $M$'s finite gluing set, so after finitely
+many steps the guided branch reaches a closed $P^\ast$ following $M$ via some
+$\psi^\ast$. Its image is closed under $\rho, \mu$ (unions of vertices) and under
+$\gamma_M$ ($P^\ast$ closed and $\gamma_M\psi^\ast = \psi^\ast\gamma_{P^\ast}$), hence
+equals $X_M$ by connectedness of $M$; an injective surjective morphism is an
+isomorphism. Since the DFS explores every child of every visited node and the root is
+visited, every node of the guided branch is visited, in particular $P^\ast$.
+\end{proof}
+
+\begin{lemma}[S2: minimal-letter rooting; sharding]\label{lem:S2} \CLOSED\;
+The run roots one DFS at every letter $i \in \A$. The search rooted at $i$ visits exactly
+(up to isomorphism) the closed valid systems over $\A$ whose minimal letter is $i$; in
+particular every $M$ as in S1 is reached from its minimal letter, and the root sets of
+distinct roots are disjoint. Sharding the root loop (\texttt{EU\_SHARD\_N/W}) partitions
+the roots; the union of the shards' outputs equals the sequential run's output.
+\end{lemma}
+
+\begin{proof}
+Containment one way: the fresh-vertex branch only adds letters
+$g \ge \mathrm{vertype}[0] = i$ and the root letter $i$ is never removed, so every
+configuration in the tree rooted at $i$ has letter multiset with minimum exactly $i$.
+Containment the other way is S1 applied with root $t^\ast(M) = i$. Disjointness: the
+minimal letter is an isomorphism invariant. Sharding assigns each root to exactly one
+worker and workers share no state, so the multiset union of emissions over workers equals
+the sequential emission multiset; the pruner's output is invariant under this
+repartition because its dedup is by isomorphism class within $k$ (P1/P2), which is
+insensitive to emission order across families. (The last step's implementation
+correctness, byte-identity of the merged catalog, is an audit item; the mathematical
+statement here is set equality of the pruned classes.)
+\end{proof}
+
+\begin{remark}[correcting the brief's description]
+The brief describes a ``nondecreasing-vertex-type tie-break.'' The code constrains new
+letters only by $g \ge \mathrm{vertype}[0]$ (min-root invariant,
+\texttt{eu\_solver.cpp:680}); letters may otherwise arrive in any order. This is weaker
+than nondecreasing order and makes S1/S2 easier, since the descent never needs to reorder
+$M$'s vertices.
+\end{remark}
+
+\begin{lemma}[S3: emission gates]\label{lem:S3} \CLOSED\ (abstract) + audit-facing\;
+In the abstract pipeline, every closed configuration visited with
+$1 \le \#\text{vertices} \le \texttt{maxnum}$ that passes the rigidity filter is emitted.
+On the regular palette no budget, cap, or filter other than conditions 1/2a/2b and the
+rigidity filter gates emission.
+\end{lemma}
+
+\begin{proof}
+Abstractly this is the definition of $\mathrm{Solve}$
+(Section~\ref{sec:scope}); there is nothing to prove. The content is entirely
+implementation-side and is carried by audit hooks 4 and 7: \texttt{seen} $= 0$ emits
+every $k \in [1, \texttt{maxnum}]$; the noncounting budget is inert on the regular
+palette (\texttt{has\_noncounting} false); \texttt{EU\_STREAM} changes the sink only;
+\texttt{EU\_KONLY} is a user-selected per-$k$ restriction applied before dedup and does
+not affect the selected $k$.
+\end{proof}
+
+\begin{lemma}[S4: the picked stub exists; the local tests are the conditions]
+\label{lem:S4} \CLOSED\ (abstract) + audit-facing\;
+In a non-closed configuration every free stub lies on an open $\omega$-walk, so a
+most-constrained free stub is well defined; and the abstract DFS prunes exactly on
+conditions 1/2a/2b. The choice rule affects traversal order only: S1's proof is
+indifferent to which free stub is picked.
+\end{lemma}
+
+\begin{proof}
+A free stub $x$ has $\gamma(x)$ undefined, so the maximal $\omega$-chain ending at
+$\rho$-predecessors of $x$ is open, and $x$ bounds it; hence open walks exist iff free
+stubs exist. The second and third assertions restate the abstract pipeline definition
+and S1. That \texttt{checkpart} decides exactly 1/2a/2b (walking each cycle from every
+starting stub, so every maximal open chain is checked at full length from its earliest
+stub) and that \texttt{mincycle} returns a free stub are implementation facts: audit
+hook 5.
+\end{proof}
+
+%======================================================================
+\section{Obligation 4: rigidity filter and dedup}\label{sec:rigidity}
+
+\begin{lemma}[R1: refinement computes the coarsest congruence]\label{lem:R1} \CLOSED\;
+Let $M$ be a finite closed stub system. Then: (i) $M$ has a coarsest congruence
+$\theta_{\max}$, and it equals the stable refinement partition $W(M)$ of
+Definition~\ref{def:congruence}; (ii) $M$ is a core iff $W(M)$ is discrete; (iii) both
+implementations of \texttt{simplify} (the solver's iterated sort-refinement and the
+pruner's pair-elimination) compute $W(M)$, so \texttt{simplify} accepts $M$ iff $M$ is a
+core.
+\end{lemma}
+
+\begin{proof}
+(i) A partition is \emph{stable} iff whenever $x, y$ share a class, $c(x) = c(y)$ and
+each of $\rho, \lambda, \mu, \gamma$ maps their classes into a common class. For
+partitions into equivalence relations this stability is verbatim the compatibility
+defining a congruence, because all four operations are (total, on a closed system)
+functions: every congruence is a stable partition refining the $c$-fibers, and every
+stable partition refining the $c$-fibers is a congruence. The coarsest stable partition
+refining a given initial partition exists and is computed by iterated refinement
+(standard partition-refinement theory; Cardon--Crochemore, Paige--Tarjan), which is
+$W(M)$; hence $W(M) = \theta_{\max}$. (ii) is immediate from (i). (iii) The solver's
+\texttt{simplify} is the textbook iterated refinement on the 6-tuple
+$(c, \text{class}, \text{class}\circ\mu, \text{class}\circ\gamma,
+\text{class}\circ\lambda, \text{class}\circ\rho)$ and converges to the coarsest stable
+partition. The pruner's computes the greatest symmetric relation $R$ below the complete
+relation that is compatible with colors and the four operations, by deleting violating
+pairs to a fixpoint. Diagonal pairs never violate (their tests compare a pair to itself),
+so $\Delta \subseteq R$; compatible symmetric relations containing $\Delta$ are closed
+under composition of relations, and the transitive closure of $R$ is again compatible and
+below the complete relation, so by maximality $R$ is transitive, hence an equivalence,
+hence (by (i)) a congruence, so $R \subseteq \theta_{\max}$; conversely
+$\theta_{\max}$ is a compatible symmetric relation below the complete one, so
+$\theta_{\max} \subseteq R$ by maximality. Thus $R = W(M)$. (That the two code paths
+implement these two computations faithfully is audit hook 6.)
+\end{proof}
+
+\begin{remark}[why Weisfeiler--Leman anxiety does not apply]
+Color refinement is famously incomplete for isomorphism and automorphism detection on
+general graphs. Stub systems are not general graphs: their relations are \emph{functions}
+(deterministic transition structures), and on those, refinement computes the coarsest
+congruence exactly; this is Myhill--Nerode/DFA-minimization logic, as
+\texttt{algorithm.txt} itself hints by calling the check ``DFA minimization.'' Both
+directions of the brief's obligation-4 worry (a rigid map wrongly rejected; two distinct
+maps wrongly merged) are settled by R1 and P1 respectively.
+\end{remark}
+
+\begin{corollary}[R2: rejection drops nothing]\label{cor:R2} \CLOSED\;
+If a closed valid $M$ fails the filter ($M$ not a core), the tiling $\dev(M)$ is still
+enumerated: its canonical quotient $T/G(T)$, $T := \dev(M)$, is a core (B2b), is reached
+independently (S1--S2), passes the filter (R1), and develops back to $T$ (B3(a)). Hence
+discarding non-cores never removes a tiling from the catalog.
+\end{corollary}
+
+\begin{corollary}[R3: accepted solutions have exact uniformity]\label{cor:R3} \CLOSED\;
+If $M$ is a core with $m$ vertices, then $G(\dev(M)) = H(M)$ and
+$\Flags(\dev(M))/G(\dev(M)) \cong M$; in particular $\dev(M)$ is exactly $m$-uniform.
+(Proof inside B3(c): a strictly larger symmetry group would induce a proper congruence
+on $M$.)
+\end{corollary}
+
+\begin{lemma}[P1: pruner exactness on cores]\label{lem:P1} \CLOSED\;
+Let $M, M'$ be finite connected closed stub systems that are cores. Then
+\texttt{comparesolutions}$(M, M')$ returns true iff $M \cong M'$.
+\end{lemma}
+
+\begin{proof}
+The procedure computes, by deleting violating pairs to a fixpoint, the greatest symmetric
+relation $R$ on $X \sqcup X'$ that is contained in the initial relation
+$\Delta \cup (X \times X') \cup (X' \times X)$ and compatible with colors and the four
+operations. As in R1, $\Delta$ survives, and the procedure returns true iff some class of
+$R$ is not a singleton, i.e.\ iff $R$ contains a cross pair.
+
+($\Leftarrow$) If $\varphi : M \to M'$ is an isomorphism, the relation
+$\Delta \cup \mathrm{graph}(\varphi) \cup \mathrm{graph}(\varphi^{-1})$ is symmetric,
+compatible, and inside the initial relation; an easy induction shows the deletion process
+never removes a pair of a compatible relation all of whose operation-image pairs it also
+contains, so $R$ retains the cross pairs of $\varphi$ and the procedure returns true.
+
+($\Rightarrow$) Suppose $R$ contains a cross pair and set
+$R' := R \cap (X \times X')$, a nonempty relation compatible componentwise with colors
+and operations (the fixpoint conditions transfer each cross pair's operation-images into
+$R'$). The composite $S := R'^{\top} \circ R' \subseteq X' \times X'$ is symmetric,
+compatible, and contains the diagonal of the range of $R'$; the equivalence it generates
+together with $\Delta_{X'}$ is compatible (compatibility survives symmetric closure,
+union with $\Delta$, and transitive closure, because the operations are functions), hence
+is a congruence on $M'$; $M'$ a core forces it to be equality, so $R'$ is single-valued.
+Symmetrically, $M$ a core forces $R'$ injective. The domain of $R'$ is closed under
+$\rho, \lambda, \mu, \gamma$ (images of pairs are pairs), hence is all of $X$ by
+connectedness; symmetrically $R'$ is surjective. A total, injective, surjective,
+color- and operation-preserving relation that is single-valued is an isomorphism.
+
+Both core hypotheses are supplied by the pipeline ordering invariant:
+\texttt{simplify} runs before \texttt{comparesolutions} on every block, in file mode and
+in \texttt{EU\_STREAM} mode alike. This ordering is a correctness precondition, not an
+optimization; audit hook 6 pins it.
+\end{proof}
+
+\begin{lemma}[P2: bucketing never separates duplicates]\label{lem:P2} \CLOSED\;
+The bucket key (letter-signature string, refinement fingerprint) is an isomorphism
+invariant, so isomorphic solutions land in the same bucket and are compared; within a
+bucket every new solution is compared against all kept ones. Hence, granting P1, exactly
+one representative per isomorphism class survives.
+\end{lemma}
+
+\begin{proof}
+The signature is the multiset of vertex letters; an isomorphism maps vertices to vertices
+preserving $(\rho, \mu, c)$-structure, hence (by A6) preserves letters, hence the
+multiset and its canonical string. The fingerprint is a hash of the sorted multiset of
+per-stub colors after three rounds of refinement seeded by $c$; each round's recoloring
+is defined from isomorphism-invariant data only, so isomorphic systems produce equal
+multisets and equal hashes. (Hash collisions between non-isomorphic systems merely place
+them in one bucket, where P1 separates them; nothing is lost.) The bucket therefore
+contains every previously kept isomorph, and \texttt{compareToSeen} tests against all of
+them.
+\end{proof}
+
+\begin{lemma}[P3: geometric cross-check via canonical form N]\label{lem:P3}
+\MACHINE\ (optional, cheap)\;
+For pruned $M \ne M'$ at the same $k$:
+$N(\mathrm{symbol}(\dev(M))) \ne N(\mathrm{symbol}(\dev(M')))$, and for every
+solver-emitted duplicate pair merged by the pruner the $N$-keys agree; $N$ is the proven
+canonical form of \texttt{docs/canonical-form/}.
+\end{lemma}
+
+\begin{remark}[relation to canonical form N; answering the brief directly]
+The pipeline computes no canonical form and does not need one: the pruner decides
+isomorphism pairwise, and P1 proves that decision exact on cores. Canonical form $N$
+lives at the geometric level and is related by the chain: combinatorial isomorphism of
+cores $\iff$ congruence of developed tilings (B3) $\iff$ equal $N$-keys ($N$'s
+Corollary 5.5). This makes $N$ an independent, already-proven arbiter that can
+machine-audit every merge and non-merge on real runs (P3). If P1 had resisted closure,
+replacing the pruner verdict by $N$-key equality at develop time was the designed escape
+hatch; with P1 closed, P3 is belt and braces.
+\end{remark}
+
+%======================================================================
+\section{Obligation 5: realizability (development)}\label{sec:realizability}
+
+\begin{remark}[architecture: the direction bundle replaces orbifolds]\label{rem:bundle-arch}
+Phase 1 planned this block through orbifold theory: realize $M$ as a compact flat
+2-orbifold, quote developability (Thurston's orbifold chapter), pull back. That plan is
+sound but imports machinery (orbifold gluings with mirror boundary, orbifold coverings)
+whose fine print a referee must re-verify. The closed proofs below use a lighter route,
+and it is the route \texttt{eu\_develop} literally computes: the \emph{direction bundle}
+$B(M)$, the cover of $M$ that unfolds every site symmetry by remembering an edge
+direction in $\Z/12$. Cone points and mirrors disappear upstairs: $B(M)$ assembles a
+closed flat \emph{oriented} surface, necessarily a torus, and the only classical input
+left is the classification of such surfaces. Orbifolds remain the right mental picture
+of the quotient; they no longer occur in any proof.
+\end{remark}
+
+\begin{definition}[angle weights; property $(\angle)$]\label{def:angle}
+For $n \in \mathcal{P}$ let $a(n) := 6 - 12/n \in \{2,3,4,5\}$, the interior angle of
+the regular unit $n$-gon in units of $30^\circ$. A closed valid stub system has property
+$(\angle)$ if every $\rho$-cycle $C$ satisfies
+$s(C) := \sum_{x \in C} a(c(x)) \mid 12$. By A2(iv), every stub system over $\A$ has
+$(\angle)$.
+\end{definition}
+
+\begin{lemma}[C0: congruence quotients preserve the hypotheses]\label{lem:C0} \CLOSED\;
+If $M$ is finite, connected, closed, valid with $(\angle)$ and $\theta$ is a congruence
+on $M$, then $M/\theta$ is finite, connected, closed, valid with $(\angle)$.
+\end{lemma}
+
+\begin{proof}
+All structure descends (Definition~\ref{def:congruence}); finiteness, connectedness and
+closedness are immediate. Validity: the quotient map $q$ intertwines $\omega$, so the
+walk through $q(x)$ is the $q$-image of the walk through $x$; its minimal period $\ell'$
+divides the original $\ell$, colors are constant as images of constants, and
+$\ell' \mid \ell \mid n$ gives condition 2a; open chains do not occur. $(\angle)$: a
+$\rho$-cycle $C'$ of $M/\theta$ is the image of a $\rho$-cycle $C$ with $|C'|$ dividing
+$|C|$; the color word of $C$ is $|C'|$-periodic, so
+$s(C') = s(C)\,|C'|/|C|$, which divides $s(C)$, hence $12$.
+\end{proof}
+
+\begin{definition}[the direction bundle]\label{def:bundle}
+Let $M$ be finite, connected, closed, valid with $(\angle)$. Since $\mu$ normalizes
+$\langle \rho, \gamma \rangle$, the $\langle \rho, \gamma \rangle$-orbits on $X$ are
+either one ($X^+ := X$) or two swapped by $\mu$ ($X = X^+ \sqcup \mu X^+$; $M$ is then
+called \emph{ultrachiral}, the solver's own term). Fix $X^+$ and a base stub
+$x_0 \in X^+$. The \emph{direction bundle} is $B(M) := X^+ \times \Z/12$ with two
+families of steps:
+\[
+\text{corner steps } (x,d) \to (\rho x,\ d + a(c(\rho x))), \qquad
+\text{edge steps } (x,d) \to (\gamma x,\ d + 6).
+\]
+$B_0$ denotes the connected component of $(x_0, 0)$. Elements $(x,d)$ are \emph{darts};
+\emph{bundle edges} are the pairs $\{(x,d), (\gamma x, d+6)\}$; the \emph{face walk} is
+$\hat\omega :=$ (edge step, then corner step). The \emph{corner} between a dart and its
+corner-step image is assigned the color $c(\rho x)$ and the angle $a(c(\rho x))$,
+matching the corner convention of D1a.
+\end{definition}
+
+\begin{lemma}[C1: the bundle surface]\label{lem:C1} \CLOSED\;
+(i) The corner-step cycle through $(x,d)$ projects onto the $\rho$-cycle $C \ni x$,
+traverses it $12/s(C)$ times, and carries total angle weight exactly $12$.
+(ii) Every face walk is a cycle; the walk through a dart of color $n$ has length exactly
+$n$ and constant color $n$.
+(iii) Every dart lies on exactly one face walk, and each bundle edge is traversed once
+by each of the face walks through its two darts, in opposite directions.
+(iv) Gluing one closed unit-edge regular $n$-gon per face walk of $B_0$ along the bundle
+edges (isometrically on edges, reversing the boundary walk directions) yields a compact,
+connected, flat, oriented surface $S(B_0)$.
+\end{lemma}
+
+\begin{proof}
+(i) After $|C|$ corner steps the direction has advanced by $s(C)$; the cycle closes at
+the least $t$ with $t\,s(C) \equiv 0 \pmod{12}$, namely $t = 12/s(C)$, an integer by
+$(\angle)$; the total weight is $t \, s(C) = 12$.
+(ii) One $\hat\omega$-step from a dart of color $n$ advances the direction by
+$6 + a(n) \equiv -12/n \pmod{12}$ and projects to one $\omega$-step of $M$. The
+underlying $M$-walk is a cycle of some length $\ell \mid n$ with constant color $n$
+(validity), so the bundle walk can close only at multiples $t\ell$; the direction
+returns first at $t\ell \cdot 12/n \equiv 0 \pmod{12}$, i.e.\ $t = n/\ell$: the bundle
+walk is a cycle of length exactly $n$.
+(iii) $\hat\omega$ is a bijection on darts, so its orbits partition them. The walk
+through $(x,d)$ traverses the bundle edge $\{(x,d), (\gamma x, d{+}6)\}$ exactly when it
+leaves $(x,d)$; the walk through the partner leaves $(\gamma x, d+6)$, crossing the same
+edge with direction labels differing by $6$, i.e.\ oppositely.
+(iv) The identification space of finitely many closed polygons under a complete
+isometric pairing of boundary edges is a compact surface; its points are face-interior
+points, edge-interior points (two flat half-disks), and vertex points. At a vertex
+point, the corners glued around it are enumerated by alternately crossing a glued edge
+and moving to the adjacent corner of the next polygon; under the conventions of
+Definition~\ref{def:bundle} this alternation is the corner step (the corner between the
+edges of $(x,d)$ and of its corner-step image is a corner of the polygon of color
+$c(\rho x)$ glued along both), so by (i) the link is a single cycle of total angle $12$
+units $= 2\pi$: a flat disk. Hence $S(B_0)$ is flat everywhere. Orienting every polygon
+positively along its face walk, (iii) says each gluing reverses boundary orientations,
+so the face orientations assemble to a global orientation. Compactness is finiteness of
+$B_0$; connectedness is connectedness of $B_0$.
+\end{proof}
+
+\begin{lemma}[C2: classification]\label{lem:C2}
+\CLASSICAL{Killing--Hopf; e.g.\ Wolf, \emph{Spaces of Constant Curvature}}\;
+A closed flat oriented surface is isometric to $\C/\Lambda$ for a lattice
+$\Lambda = \Z t_1 + \Z t_2 \subset \C$ of rank 2, acting by translations.
+\end{lemma}
+
+\begin{proof}[Proof note]
+Classical. The elementary route: a compact flat surface is complete, so its universal
+cover is the Euclidean plane (Killing--Hopf); deck transformations are fixed-point-free
+isometries, orientation-preserving by orientability of the quotient; a
+fixed-point-free orientation-preserving planar isometry is a translation; compactness
+forces rank 2.
+\end{proof}
+
+\begin{definition}[development; the marked model]\label{def:dev}
+Fix an isometry $S(B_0) \cong \C/\Lambda$ and let $p : \C \to S(B_0)$ be the covering
+map. $\dev(M) := \hat T$ is the tiling of $\C$ whose tiles are the closures of the
+connected lifts of the open faces of $S(B_0)$. Normalize the identification (rotating,
+and conjugating if needed) so that the base dart $(x_0, 0)$ develops with edge direction
+$0$ and corner steps rotate positively. A \emph{walk flag} of $\hat T$ is a flag reading
+off a lifted face-walk traversal; $F^{\circ}(\hat T)$ denotes the walk flags (one of the
+two orientation classes of $\Flags(\hat T)$). The \emph{marked model} is the bijection
+\[
+F^{\circ}(\hat T) \;\cong\; \{(b, z) : b \in B_0,\ z \in \mathrm{pos}(b) + \Lambda\},
+\]
+where $\mathrm{pos}$ is one fixed development of positions, under which corner steps fix
+$z$ and the edge step at a dart with direction label $d$ adds $\zeta^d$, with
+$\zeta := e^{i\pi/6}$. $\Phi : F^{\circ} \to X^+$ is the stub projection
+$(b, z) \mapsto (\text{stub of } b)$.
+\end{definition}
+
+\begin{lemma}[C3a: the developed tiling]\label{lem:C3a} \CLOSED\;
+$\hat T$ is an edge-to-edge, $\Lambda$-periodic tiling of $\C$ by unit-edge regular
+polygons with colors in $\mathcal{P}$ and all edge directions on the $30^\circ$ grid:
+the edge of every dart $(x,d)$ develops in direction $d \cdot 30^\circ$. The marked
+model is well defined, and it is \emph{rigid}: a position assignment
+$B_0 \to \C$ compatible with the step rules is determined by its value at one dart.
+$\Phi$ commutes with $\rho$ and $\gamma$ and preserves colors. Tiles do not overlap and
+leave no gaps by construction (the plane is the cover of an intrinsic gluing, not the
+target of an immersion), which answers the brief's overlap worry and is why this block
+will transfer to non-convex tiles unchanged. The exact area identity
+$\sum \text{face areas} = |\det(t_1, t_2)|$ remains a runtime evidence gate, never a
+proof step.
+\end{lemma}
+
+\begin{proof}
+Faces of $S(B_0)$ have simply connected interiors, so each lifts isometrically to $\C$;
+the closures are unit-edge regular $n$-gons; they have disjoint interiors and cover
+$\C$ because the faces decompose $S(B_0)$ and $p$ is a covering; edge-to-edge because
+the identifications pair full unit edges; $\Lambda$-periodic because $\Lambda$ is the
+deck group. Directions: the flat metric on $\C/\Lambda$ has trivial holonomy, so every
+edge of $S(B_0)$ has a well-defined direction in $\C$; assigning each dart its developed
+direction, a corner step rotates by the interior angle $a \cdot 30^\circ$ positively
+(normalization) and an edge step reverses ($+6$ units), matching the bundle labels; by
+induction from the base dart along the connected $B_0$, the label $d$ \emph{is} the
+direction in units. The same induction gives rigidity of the marked model: positions
+propagate deterministically along corner steps (fixed) and edge steps (add $\zeta^d$),
+and $B_0$ is connected. $\Phi$'s properties are read off the construction.
+\end{proof}
+
+\begin{lemma}[C3b: affine realization of bundle maps]\label{lem:C3b} \CLOSED\;
+Let $M_1, M_2$ be as in Definition~\ref{def:bundle}, with developments
+$\hat T_1, \hat T_2$ and marked models. Let $f : X_1^+ \to X_2^+$ be a surjection and
+$\varepsilon \in \{+1, -1\}$, $h \in \Z/12$, such that
+$\beta(x,d) := (f(x),\ \varepsilon d + h)$ maps steps of $B(M_1)$ to steps of $B(M_2)$
+(for $\varepsilon = -1$: to reversed steps); explicitly, for $\varepsilon = +1$ this
+holds iff $f$ commutes with $\rho, \gamma$ and preserves colors, and for
+$\varepsilon = -1$ iff $f\rho = \rho^{-1}f$, $f\gamma = \gamma f$ and
+$c \circ f = c \circ \rho$. Assume $\beta(B_0^{(1)}) \subseteq B_0^{(2)}$ (arrange by
+composing with a direction shift). Then for every choice of a base pair there is a
+unique isometry
+\[
+g(z) = \zeta^h z + w \quad (\varepsilon = +1), \qquad
+g(z) = \zeta^h \bar z + w \quad (\varepsilon = -1)
+\]
+such that $(b, z) \mapsto (\beta b, g z)$ maps walk flags of $\hat T_1$ to walk flags of
+$\hat T_2$; consequently $g(\hat T_1) = \hat T_2$.
+\end{lemma}
+
+\begin{proof}
+Step compatibility of $(\beta, g)$: corner steps fix $z$ on both sides; the edge step at
+$(x,d)$ adds $\zeta^d$, its $\beta$-image is the edge step at $(f x, \varepsilon d + h)$
+adding $\zeta^{\varepsilon d + h}$, and indeed
+$g(z + \zeta^d) = g(z) + \zeta^{h}\zeta^{d} = g(z) + \zeta^{d+h}$ for
+$\varepsilon = 1$, respectively
+$g(z + \zeta^d) = g(z) + \zeta^h \overline{\zeta^{d}} = g(z) + \zeta^{h-d}$ for
+$\varepsilon = -1$. (The hypothesis on colors is what makes $\beta$ map corner steps
+correctly: for $\varepsilon = -1$, the reversed corner step out of $f\rho x = \rho^{-1}fx$
+adds $a(c(\rho\,\rho^{-1}fx)) = a(c(fx)) = a(c(\rho x))$, using
+$c \circ f = c \circ \rho$; this is exactly the axiom $c\mu = c\rho$ when $f = \mu$.)
+Pin $w$ by one base pair; by rigidity (C3a) the position assignment
+$b \mapsto g(\mathrm{pos}_1(\beta^{-1}\text{-compatible base}))$ agrees with
+$\mathrm{pos}_2$ up to the model's $\Lambda_2$-freedom, so $(\beta, g)$ maps every walk
+flag of $\hat T_1$ to a walk flag of $\hat T_2$. Faces: by C1(ii) every face walk in
+either bundle has length exactly its color, so $\beta$ restricted to a face walk is a
+bijection onto a face walk of the same color, and $g$ maps the corresponding developed
+tile isometrically onto a developed tile. Since $f$ is onto, every tile of $\hat T_2$
+arises, so $g(\hat T_1) \subseteq \hat T_2$ tile-wise between two tilings, forcing
+equality. Uniqueness: an isometry is determined by the image of one flag.
+\end{proof}
+
+\begin{lemma}[C3c: $M$ is the quotient of its development]\label{lem:C3c} \CLOSED\;
+Define $\hat\Phi : \Flags(\hat T) \to X$ by $\hat\Phi := \Phi$ on walk flags and
+$\hat\Phi := \mu \circ \Phi \circ \sigma_2$ on the other orientation class, and set
+\[
+H(M) := \{\, g \in \Isom(\C) \;:\; g(\hat T) = \hat T \text{ and }
+\hat\Phi \circ g = \hat\Phi \,\}.
+\]
+Then $\hat\Phi$ is a surjective morphism of stub systems, $H(M) \le G(\hat T)$ acts
+freely on flags with finitely many orbits, its orbits are exactly the $\hat\Phi$-fibers,
+and $\hat\Phi$ descends to an isomorphism $\Flags(\hat T)/H(M) \cong M$. Moreover
+$H(M)$ contains orientation-reversing elements iff $M$ is not ultrachiral.
+\end{lemma}
+
+\begin{proof}
+\emph{$\hat\Phi$ is a morphism.} On walk flags this is C3a. On the other class, with
+$\tilde y$ a walk flag: colors,
+$c(\sigma_2\tilde y) = |{\rm face}(\tilde y)| = |{\rm face}(\sigma_1 \tilde y)| =
+c_{\hat T}(\rho\tilde y) = c(\Phi\rho\tilde y) = c(\rho\Phi\tilde y) =
+c(\mu\Phi\tilde y) = c(\hat\Phi \sigma_2\tilde y)$;
+$\rho$: $\rho\sigma_2 = \sigma_2\rho^{-1}$, so
+$\hat\Phi(\rho\,\sigma_2\tilde y) = \mu\Phi\rho^{-1}\tilde y = \rho\mu\Phi\tilde y
+= \rho\,\hat\Phi(\sigma_2\tilde y)$; $\gamma$ commutes with $\sigma_2$; and
+$\hat\Phi \circ \sigma_2 = \mu \circ \hat\Phi$ on both classes, so $\hat\Phi$
+intertwines the mirrors. Surjectivity: onto $X^+$ by C3a; onto $\mu X^+$ (which is
+$X^-$ or $X^+$) via the second clause.
+
+\emph{Freeness.} An isometry fixing a flag is the identity (B0 applies to $\hat T$).
+
+\emph{Orbits $=$ fibers.} $H(M)$ preserves fibers by definition. Transitivity, walk-flag
+part: two walk flags over the same stub $x$ are $(b_1, z_1)$, $(b_2, z_2)$ with
+$b_i = (x, d_i)$; the direction shift $\delta(y,e) := (y, e + d_2 - d_1)$ is a
+$\beta$-map of C3b with $\varepsilon = 1$, $f = \mathrm{id}$, preserving $B_0$ (it maps
+the component of $b_1$ to that of $b_2$, both $B_0$); realize it by
+$g(z) = \zeta^{d_2-d_1} z + w$ pinned by $(b_1,z_1) \mapsto (b_2,z_2)$: then
+$g \in H(M)$ and $g$ connects the two flags. Cross part: if $M$ is not ultrachiral,
+$\mu$ maps $X^+$ to itself and satisfies the $\varepsilon = -1$ hypotheses of C3b (the
+stub-system axioms verbatim), so after a direction-shift adjustment it is realized by
+some orientation-reversing $g_-$ with $\hat\Phi \circ g_- = \hat\Phi$ (checked on walk
+flags: $\hat\Phi(g_-\tilde y) = \mu\Phi(\sigma_2 g_- \tilde y) = \mu\,\mu\,\Phi\tilde y
+= \Phi\tilde y$, since $\sigma_2 g_-$ is the flag realization of $\mu$); $g_-$ maps the
+walk-flag part of a fiber to the other part, and $H(M) = H^+ \sqcup H^+ g_-$ acts
+transitively on each fiber. If $M$ is ultrachiral, fibers over $X^+$ contain walk flags
+only (the second clause of $\hat\Phi$ lands in $X^- = \mu X^+$), transitivity is the
+walk-flag part, and no orientation-reversing $g$ can preserve $\hat\Phi$ (it would force
+$\Phi$-values in $X^-$).
+
+\emph{Quotient.} A surjective morphism whose fibers are the orbits of a freely acting
+group descends to an isomorphism from the orbit space; finiteness of the orbit set is
+$|X| < \infty$.
+\end{proof}
+
+\begin{lemma}[C3d: round trip and functoriality]\label{lem:C3d} \CLOSED\;
+(i) If $T$ is a tiling and $H \le G(T)$ has finitely many flag orbits, then
+$\dev(T/H)$ is congruent to $T$; normalizing $\dev(T/H) = T$, one has $H(T/H) = H$.
+(ii) If $\theta$ is a congruence on $M$ and $q : M \to M/\theta$ the quotient, the
+developments can be normalized so that $\dev(M) = \dev(M/\theta)$ as tilings of $\C$,
+$\hat\Phi_{M/\theta} = q \circ \hat\Phi_M$, and $H(M) \le H(M/\theta)$.
+(iii) If $M_1 \cong M_2$ then $\dev(M_1) \sim \dev(M_2)$.
+\end{lemma}
+
+\begin{proof}
+(i) $T$'s own flags supply a step-compatible position assignment for $B_0(T/H)$: send a
+walk flag of $T$ to (its image stub and direction, its vertex position); the step
+equations hold in $T$ by the geometry of its tiles. Rotate $T$ so the base flag has
+direction $0$; by rigidity (C3a) this assignment coincides with the marked model, so the
+developed flag set of $\dev(T/H)$ equals the flag set of $T$: the tilings are equal.
+$H(T/H) \supseteq H$ is immediate ($H$ preserves $T$ and the quotient labeling). For the
+converse let $g \in H(T/H)$: $g$ preserves every fiber of
+$\Flags(T) \to \Flags(T)/H$, i.e.\ every $H$-orbit; picking a flag $\tilde y$, there is
+$h \in H$ with $g\tilde y = h\tilde y$, and $h^{-1}g$ fixes a flag, so $g = h \in H$ by
+freeness (B0).
+(ii) $\beta_q(x,d) := (q x, d)$ maps steps to steps (colors descend; C0 gives the
+hypotheses on $M/\theta$), and bases can be chosen compatibly; C3b with
+$\varepsilon = 1$, $h = 0$ realizes it by $g = \mathrm{id}$ once the two developments
+are normalized with matching base positions: $\dev(M) = \dev(M/\theta)$ literally, and
+$\hat\Phi_{M/\theta} = q \circ \hat\Phi_M$ by construction, whence every isometry
+preserving $\hat\Phi_M$-fibers preserves the coarser $\hat\Phi_{M/\theta}$-fibers.
+(iii) An isomorphism satisfies the $\varepsilon = 1$ hypotheses of C3b; the realized $g$
+carries $\hat T_1$ to $\hat T_2$.
+\end{proof}
+
+\begin{remark}[the referee surface]\label{rem:referee}
+Three places above compress convention verifications into a sentence; each is finite
+bookkeeping, flagged here per the anti-fabrication discipline. (1) C1(iv): the
+identification of the vertex-link alternation with the corner step (the corner between
+the edges of a dart and of its corner-step image belongs to the polygon glued along
+both). (2) C3a: the positivity convention for corner steps under the chosen orientation
+(fixed by allowing a conjugation in the normalization). (3) C3c: the color computation
+on the non-walk orientation class, written out in the proof but relying on the D1a
+convention $c(y) = |{\rm face}(\sigma_2 y)|$. All three are checkable mechanically from
+Definitions \ref{def:flags} and \ref{def:bundle}.
+\end{remark}
+
+\begin{lemma}[C4: \texttt{eu\_develop} computes the marked development]\label{lem:C4}
+\CLOSED\ (abstract) + audit-facing\;
+On input a finite connected closed valid $M$ with $(\angle)$, the BFS of
+\texttt{eu\_develop} computes a position assignment for $B_0$ compatible with the step
+rules (its \texttt{star} walk enumerates corner-step cycles; its glue step is the edge
+step); it terminates within the guards; the recorded position discrepancies generate
+exactly $\Lambda$; the integer elimination plus Lagrange--Gauss reduction output a basis
+of $\Lambda$; and the seed reduction outputs exactly one representative position per
+vertex of $\hat T$ modulo $\Lambda$. The developer therefore succeeds on every valid
+input; in the pipeline it only ever runs on cores, for which $\Lambda$ is the full
+translation lattice of $G(\dev(M))$ (R3), so the emitted cell is the true period cell.
+\end{lemma}
+
+\begin{proof}
+The algorithm's keys are pairs (stub, direction) and its two moves are precisely the
+corner and edge steps, so the explored key set is $B_0$ and the computed positions are a
+step-compatible assignment; by rigidity (C3a) it is \emph{the} development up to the
+base normalization. Termination and guards: a corner-step cycle has length equal to the
+degree of the developed vertex, at most $6$, within the 60-step guard; the number of
+keys is at most $12\,|X| \le 144\,\texttt{maxnum}$, within the 200k pop guard for every
+reachable target (audit hook 8 converts both guards into assertions with these bounds).
+Discrepancies: the BFS implicitly chooses a spanning tree of the step graph of $B_0$
+(the tree of first placements); positions are propagated along tree steps, and every
+non-tree step compares a propagated position against an existing one, recording the
+difference, which lies in $\Lambda$ because both are positions of the same
+$B_0$-point in the marked model. These differences generate $\Lambda$: the step graph of
+$B_0$ is the vertex-edge graph of the torus tiling of $S(B_0)$ enriched with direction
+data, its fundamental cycles surject onto $\pi_1$ of the surface (attaching the face
+disks only adds relations), and the discrepancy of a cycle is exactly its
+$\Lambda$-holonomy. The integer elimination (a Hermite-style column reduction) and
+Lagrange--Gauss steps compute a basis of the generated lattice by standard integer
+linear algebra, exactly (float enters only the reduction coefficient by rounding, never
+position identity). The seed pass reduces the placed vertex positions modulo the basis
+and dedupes to one representative per vertex class: with \emph{exact} coset reduction
+(the canonical representative of Def.~2.2 of the $N$-note, two integer floor divisions)
+this holds unconditionally. The shipped code instead reduces via float barycentric
+coordinates, which agrees with the exact reduction whenever every developed coordinate
+is bounded by $12\,|X| \le 144\,\texttt{maxnum}$ (each edge step adds a unit $\zeta^d$
+and there are $\le 12\,|X|$ steps): the reachable range keeps every coordinate small (the
+committed golden $k \le 6$ catalog has all reduced seed and lattice-basis coordinates
+$\le 14$; instrumenting the pre-reduction developing map gives $\le 8$), against a float
+break-point near $10^7$ where a translated congruent copy first mis-reduces --- five to
+six orders of margin --- and \emph{fix-obligation FB-1} of the audit replaces the float
+reduction by the exact one to remove the caveat entirely.
+\end{proof}
+
+%======================================================================
+\section{Obligation 6: the planar--quotient bridge}\label{sec:bridge}
+
+B0 is proved in Section~\ref{sec:model} (Lemma~\ref{lem:B0}).
+
+\begin{lemma}[B1: $k$-uniform implies cocompact wallpaper, hence periodic]\label{lem:B1}
+\CLOSED\ modulo citation pin (\CLASSICAL{Bieberbach; G\&S \S1.4/3.5 secondary})\;
+If $T$ is $k$-uniform then $G(T)$ has at most $12k$ orbits on flags and acts cocompactly
+on $\R^2$; being discrete (B0) and cocompact, it is one of the 17 wallpaper groups and
+contains a rank-2 lattice of translations. Corollary: $k$-uniform implies doubly
+periodic.
+\end{lemma}
+
+\begin{proof}
+Flags at a vertex number $2d \le 12$ ($d \le 6$ since all angles are $\ge 60^\circ$), and
+flags over one vertex orbit form at most $12$ flag orbits, so at most $12k$ in all.
+Cocompactness: let $v_1, \dots, v_k$ represent the vertex orbits and let $R$ be the
+circumradius of the dodecagon; every point of $\R^2$ lies in some tile, hence within $R$
+of some vertex, hence within $R$ of $g v_i$ for some $g \in G(T)$, $i \le k$; so the
+compact set $\bigcup_i \bar B(v_i, R)$ meets every orbit of points, i.e.\ the action is
+cocompact. The classification of discrete cocompact planar isometry groups and the
+existence of the translation lattice is Bieberbach's theorem in dimension 2 (citation to
+pin; any standard crystallographic reference suffices).
+\end{proof}
+
+\begin{lemma}[B2a: the canonical quotient is a valid stub system over $\A$]\label{lem:B2a}
+\CLOSED\;
+For $[T] \in \T_k$, $M := T/G(T)$ is a finite connected closed valid stub system over
+$\A$ with exactly $k$ vertices.
+\end{lemma}
+
+\begin{proof}
+Finiteness, closedness, connectedness and the vertex correspondence are D1b with
+$H = G(T)$ and B1 (finitely many flag orbits); the vertex count is $k$ by definition of
+$k$-uniformity. Validity is L1(i). Over the alphabet: each vertex substructure is a fold
+of its configuration word by a subgroup of the word's symmetry group (A2(i)--(ii)); the
+configuration is one of A1's fourteen (O4 restricts sizes to $\mathcal{P}$, and the angle
+equation holds at a tiling vertex); the alphabet lists one fold per conjugacy class
+(A2(iii), certified against the table by A3), and conjugate folds are isomorphic, so the
+substructure is isomorphic to an entry.
+\end{proof}
+
+\begin{lemma}[B2b: the canonical quotient is a core]\label{lem:B2b} \CLOSED\;
+For a tiling $T$ with finitely many flag orbits, $T/G(T)$ is a core.
+\end{lemma}
+
+\begin{proof}
+Let $\theta$ be a congruence on $M := T/G(T)$. By C3d(i) normalize
+$\dev(M) = T$ with $H(M) = G(T)$. By C3d(ii), $H' := H(M/\theta)$ satisfies
+$G(T) = H(M) \le H'$, and $H'$ preserves $\dev(M/\theta) = \dev(M) = T$, so
+$H' \le G(T)$, forcing $H' = G(T)$. By C3c applied to $M/\theta$, the fibers of
+$\hat\Phi_{M/\theta} = q \circ \hat\Phi_M$ are the $H'$-orbits $=$ the $G(T)$-orbits
+$=$ the fibers of $\hat\Phi_M$; hence $q$ is injective and $\theta$ is equality.
+\end{proof}
+
+\begin{lemma}[B3: the Galois correspondence and the bijection]\label{lem:B3} \CLOSED\;
+Let $T$ be a tiling and $H \le G(T)$ a subgroup with finitely many flag orbits;
+normalize $\dev(T/H) = T$ (C3d(i)).
+\begin{itemize}
+\item[(a)] (Round trip.) $\Flags(\dev(M))/H(M) \cong M$ for every finite connected
+  closed valid $M$ with $(\angle)$ (C3c), and $\dev(T/H) \sim T$ (C3d(i)).
+\item[(b)] (Correspondence.) The assignments
+  $H' \mapsto \theta_{H'} :=$ (the partition of $\Flags(T)/H$ induced by $H'$-orbits)
+  and $\theta \mapsto H\!\left((T/H)/\theta\right)$ are mutually inverse,
+  inclusion-preserving bijections between the intermediate groups
+  $H \le H' \le G(T)$ and the congruences on $T/H$.
+\item[(c)] (Bijection.) $M \mapsto [\dev(M)]$ and $[T'] \mapsto T'/G(T')$ are mutually
+  inverse bijections between isomorphism classes of cores over $\A$ with $k$ vertices
+  and $\T_k$. In particular every tiling has exactly one core, namely $T'/G(T')$.
+\end{itemize}
+\end{lemma}
+
+\begin{proof}
+(a) is C3c and C3d(i).
+
+(b) \emph{Forward map well defined:} $H'$ normalizes nothing special but commutes with
+the flag operations and preserves colors, so its orbit partition on $\Flags(T)$ descends
+to a congruence on $\Flags(T)/H$ (classes are $H'$-orbits, unions of $H$-orbits since
+$H \le H'$). \emph{Injective:} suppose $\theta_{H'} = \theta_{H''}$, i.e.\ $H'$ and
+$H''$ have the same flag orbits. For $h' \in H'$ and a flag $\tilde y$ there is
+$h'' \in H''$ with $h'\tilde y = h''\tilde y$; then $h''^{-1}h'$ fixes a flag, so
+$h' = h'' \in H''$ (B0), giving $H' \subseteq H''$ and symmetrically equality.
+\emph{Backward map lands in the interval:} for a congruence $\theta$ on $M := T/H$,
+C3d(ii) gives $H \le H(M/\theta)$ and $H(M/\theta)$ preserves
+$\dev(M/\theta) = \dev(M) = T$, so $H(M/\theta) \le G(T)$.
+\emph{Backward then forward is the identity:} the fibers of
+$\hat\Phi_{M/\theta} = q \circ \hat\Phi_M$ (C3d(ii)) are, by C3c applied to $M/\theta$,
+the $H(M/\theta)$-orbits; their induced partition on $M = \Flags(T)/H$ is the fiber
+partition of $q$, which is $\theta$.
+\emph{Forward then backward is the identity:} for $H \le H' \le G(T)$, the quotient
+$M/\theta_{H'}$ is canonically $\Flags(T)/H'$, and
+$H(\Flags(T)/H') = H'$ by the argument of C3d(i) (an isometry preserving every
+$H'$-orbit lies in $H'$, by freeness). \emph{Inclusion-preserving:} clear in both
+directions.
+
+(c) Well defined: if $M$ is a core with $k$ vertices, then applying (b) to
+$T' := \dev(M)$, $H := H(M)$ (using $M \cong T'/H(M)$ from (a)): the congruence
+$\theta_{G(T')}$ is proper iff $G(T') \supsetneq H(M)$; a core admits no proper
+congruence, so $G(T') = H(M)$, the uniformity of $T'$ is the number of
+$H(M)$-vertex-orbits $=$ the number of vertices of $M$, namely $k$; $T'$ is octagon-free
+because its tiles carry colors in $\mathcal{P}$; so $[T'] \in \T_k$. Isomorphic cores
+develop to congruent tilings (C3d(iii)), and congruent tilings have isomorphic canonical
+quotients (D1b functoriality), so both maps are well defined on classes. Round trips:
+$\dev(T'/G(T')) \sim T'$ is C3d(i); $T'/G(T') \cong M$ for $T' = \dev(M)$, $M$ a core,
+is (a) together with $G(T') = H(M)$ just shown. B2a/B2b put $T'/G(T')$ in the right
+codomain. Hence mutually inverse bijections, and the core of a tiling is unique.
+\end{proof}
+
+\subsection{Verdict on the brief's obligation-6 sharpening}\label{sec:verdict}
+
+\textbf{Adopted, with corrections.} The brief's analysis is right on the two points that
+matter, and both were verified rather than assumed:
+
+\begin{enumerate}
+\item \emph{No period bound is needed anywhere.} The enumerated object is the quotient
+itself: a solution with $k$ vertex letters has at most $12k$ stubs, so finiteness of the
+search (T1) is bare combinatorics, and no bound on the translation lattice of the
+developed tiling enters T, S, C, or U. A period bound is what a \emph{geometric}
+enumerator needs; demanding one here would import the mixed-type finiteness problem that
+stalled the lattice method, for no benefit. Datta--Maity (arXiv:1705.05236) and
+Kundu--Maity (arXiv:2111.15484) are demoted to context citations; independently, their
+bounds are per-Archimedean-type and would not cover the mixed-type case anyway.
+\item \emph{The split into 6a/6b is correct.} 6a (=B1) is classical: discreteness (B0)
+plus cocompactness plus Bieberbach; ``$k$-uniform $\Rightarrow$ periodic'' falls out.
+6b is the real content and is exactly B2 + B3 here.
+\end{enumerate}
+
+Corrections and refinements to the brief's formulation:
+(i) discreteness of $G(T)$ must be established before Bieberbach applies (B0).
+(ii) The quotient is in general a flat \emph{orbifold} with possible mirror boundary,
+not a torus; but the closed proof does not run in the orbifold category at all: the
+direction bundle (Remark~\ref{rem:bundle-arch}) passes to the translation-level cover,
+where the object \emph{is} a torus, and the site symmetries return as the explicit
+affine maps of C3b/C3c. The brief's instinct (``torus'') is thus right about the object
+the proof should develop, wrong about the object the solver enumerates.
+(iii) The flag bound is $12k$, not $\sim 24k$.
+(iv) The brief's ``nondecreasing-vertex-type tie-break'' misdescribes the search: the
+actual invariant is min-type rooting, which is weaker and easier to prove complete
+(remark after S2).
+(v) The brief's $k=1$ statement double-counts the octagon exclusion
+(Remark~\ref{rem:hygiene}).
+(vi) 6b should not be proved by importing Delaney--Dress realization theorems, though
+the kinship deserves the remark in Section~\ref{sec:model}; self-contained 2D proofs are
+shorter than the formal bridge to D-symbols would be.
+
+%======================================================================
+\section{Composition: proof of Theorem~\ref{thm:main} from the lemmas}\label{sec:compose}
+
+\begin{proof}[Proof of Theorem~\ref{thm:main}, assuming the lemma blocks]
+\textbf{(T)} is T1.
+
+\textbf{(S)} Let $M \in P_k$. $M$ is a closed configuration built by the DFS, so it is
+connected (every fresh vertex is glued to the existing component at birth), over $\A$ by
+construction, and valid because the search vetoed every violation (S4, L1 monotonicity).
+$M$ passed the rigidity filter, so $M$ is a core (R1). By the C-block (C1, C2, C3a),
+$\dev(M)$ is an edge-to-edge tiling by unit regular polygons from $\mathcal{P}$, octagon
+free by Convention~\ref{conv:scope}. By R3 its uniformity is exactly the vertex count of
+$M$, which is $k$. Hence $[\dev(M)] \in \T_k$.
+
+\textbf{(C)} Let $[T] \in \T_k$. By B1 and B2a/B2b, $M_0 := T/G(T)$ is a finite connected
+closed valid core over $\A$ with exactly $k \le \texttt{maxnum}$ vertices. By S2 the run
+roots a search at $M_0$'s minimal letter; by S1 that search visits a closed configuration
+$M \cong M_0$; by R1 the filter accepts it; by S3 it is emitted; by P1--P2 the pruner
+keeps exactly one representative of its isomorphism class, which is in $P_k$. By B3(a),
+$\dev(M) \sim \dev(M_0) \sim T$.
+
+\textbf{(U)} Let $M, M' \in P_k$ with $\dev(M) \sim \dev(M')$. Both are cores (R1), so by
+B3(c) $M \cong T/G(T) \cong M'$ for $T := \dev(M)$. But the pruner never retains two
+isomorphic solutions: they share a bucket (P2, using A6) and are compared and merged
+(P1). Hence $M = M'$.
+
+The bijection statement is (S) + (C) + (U).
+\end{proof}
+
+%======================================================================
+\section{Lemma ledger}\label{sec:ledger}
+
+\begingroup
+\footnotesize
+\begin{center}
+\begin{tabular}{llll}
+Lemma & Content & Tag & Depends on \\
+\hline
+D1a & flag calculus, dictionary, face walk & \textsc{closed} & --- \\
+D1b & quotients; gluing-type dictionary & \textsc{closed} & D1a, B0 \\
+B0 & flag rigidity, discreteness & \textsc{closed} & --- \\
+O1 & octagon species: $\{4.8.8, 3.8.24\}$ & \textsc{closed} & --- \\
+O2 & $3.8.24$ excluded & \textsc{closed} (+cite pin) & O1 \\
+O3 & octagon forces $t1002$ & \textsc{closed} & O1, O2 \\
+O4 & palette $\{3,4,6,12\}$, grid directions & \textsc{closed} (+cite pin) & --- \\
+A1 & 14 configurations, 3 chiral & \textsc{closed} & --- \\
+A2 & variants $=$ subgroup conjugacy classes & \textsc{closed} & D1a, B0 \\
+A3 & 44 entries, three copies agree & \textsc{machine} (implemented) & A1, A2 \\
+A4 & structural identities per entry & \textsc{machine} (implemented) & --- \\
+A5 & ferk transversal / $\Aut$ certificate & \textsc{machine} (implemented) & A4 \\
+A6 & entries pairwise non-isomorphic & \textsc{machine} (added; \textsc{pass}) & A3 \\
+L1 & necessity + heredity of conditions & \textsc{closed} & D1a, D1b \\
+L2 & mirror parity rule & \textsc{closed} & D1b \\
+T1 & termination & \textsc{closed} & --- \\
+S1 & guided descent (no-drop) & \textsc{closed} & L1, L2, A5, A6 \\
+S2 & min-letter rooting; sharding partition & \textsc{closed} & S1 \\
+S3 & emission gates & \textsc{closed} (abstract) + audit & --- \\
+S4 & picked stub exists; tests = conditions & \textsc{closed} (abstract) + audit & --- \\
+R1 & refinement $=$ coarsest congruence & \textsc{closed} & --- \\
+R2 & rejection sound & \textsc{closed} (corollary) & R1, S1--S3, B2, B3 \\
+R3 & exact uniformity of accepted cores & \textsc{closed} (corollary) & B3 \\
+P1 & pruner exact on cores & \textsc{closed} & R1 \\
+P2 & bucket keys are invariants & \textsc{closed} & A6 \\
+P3 & N cross-check, both directions & \textsc{machine} (\textsc{pass}, $k \le 6$) & B3, N-note \\
+C0 & quotients preserve valid/$(\angle)$ & \textsc{closed} & A2(iv) \\
+C1 & bundle surface: flat, oriented, closed & \textsc{closed} & C0, A2(iv), L1 \\
+C2 & closed flat oriented surface $= \C/\Lambda$ & \textsc{classical} (Killing--Hopf) & --- \\
+C3a & developed tiling; grid; rigidity & \textsc{closed} & C1, C2 \\
+C3b & affine realization of bundle maps & \textsc{closed} & C3a \\
+C3c & $\Flags(\dev M)/H(M) \cong M$ & \textsc{closed} & C3b, B0 \\
+C3d & round trip; functoriality & \textsc{closed} & C3b, C3c \\
+C4 & \texttt{eu\_develop} $=$ marked development & \textsc{closed} + audit & C3a \\
+B1 & cocompact wallpaper; periodicity & \textsc{closed} (Bieberbach) & B0 \\
+B2a & $T/G(T)$ valid over $\A$, $k$ vtx & \textsc{closed} & D1b,A1,A2,A3,O4,L1,B1 \\
+B2b & $T/G(T)$ is a core & \textsc{closed} & C3c, C3d \\
+B3 & Galois correspondence; bijection & \textsc{closed} & C3c, C3d, B0 \\
+\end{tabular}
+\end{center}
+\endgroup
+
+After round 3: every proof row is \textsc{closed}; the \textsc{machine} rows are
+discharged (A3--A5 audited and re-run, A6 added and passing, P3 passing in both
+directions for $k \le 6$); the sole standing \textsc{classical} input is C2
+(Killing--Hopf). The audit-facing halves of S3, S4, C4 are verified in deliverable B.
+Deliverable A is complete as written, subject to the referee surface of
+Remark~\ref{rem:referee}.
+
+Round 3 (machine + audit), done: A6 certificate added to the generator; A3/A4/A5
+audited against the lemma statements; P3 cross-check wired
+(\texttt{scripts/p3-nkey-crosscheck.ts}); deliverable B written
+(\texttt{audit-deliverable-B.md}); the $k{=}8$ exhibit root-caused and closed. An
+adversarial-referee pass (2026-07-12) is folded in: it surfaced no defect in T/S/C/U for
+the regular palette, and its confirmed minor findings (the O1 two-angle enumeration
+above, the O3 Step-4 citation above, and the C4 magnitude caveat) are addressed in place.
+
+%======================================================================
+\section{Audit hooks (forward pointers to deliverable B)}\label{sec:audit}
+
+The proof is about the abstract algorithm. Its contact points with the C++ are
+enumerated here so deliverable B can check each; none is discharged yet.
+
+\begin{enumerate}
+\item \textbf{Tables.} A3/A4/A5 certificates: audit \texttt{gen\_alphabet.py --certify}
+  against the lemma statements; confirm shipped binaries were built from certified
+  tables; add the A6 certificate.
+\item \textbf{Candidate enumeration} (S1): \texttt{extend} tries all free matching-parity
+  stubs including self and mirror, and all letters $g \ge \mathrm{vertype}[0]$ with all
+  \texttt{reps}; confirm the starred-stub normalization of \texttt{firstfree} loses no
+  candidate.
+\item \textbf{Rooting and sharding} (S2): \texttt{initex} covers every letter;
+  \texttt{EU\_SHARD\_N/W} partitions roots; union-equals-sequential.
+\item \textbf{Emission} (S3): \texttt{seen} $= 0$; noncounting budget inert on the
+  regular palette; \texttt{EU\_STREAM} changes the sink only; no other cap in the write
+  path.
+\item \textbf{Local tests} (S4): \texttt{checkpart} against conditions 1/2a/2b;
+  \texttt{writecycle}/\texttt{mincycle} free-stub selection.
+\item \textbf{Pipeline ordering invariant} (R1(iii), P1): \texttt{simplify} precedes
+  \texttt{comparesolutions} on every path; the two refinement implementations compute
+  the stated fixpoints.
+\item \textbf{Bucketing} (P2): key is (signature line, fingerprint); buckets never cross
+  $k$; \texttt{EU\_KONLY} semantics.
+\item \textbf{Developer} (C4): star-walk and BFS guards replaced by (or asserted
+  against) proven bounds; float confined to lattice reduction and coset rounding; the
+  \texttt{--sign} convention; area certificate logged as evidence, not proof.
+\item \textbf{The $k=8/9$ exhibit}: \textsc{closed} in deliverable B
+  (\texttt{audit-deliverable-B.md}, \S4, same directory). Root cause: the
+  Python reference solver's hand-computed attachment bound for the letter
+  $(4,4,4,4)A2$ tried one dart instead of two, missing the starred Aut-orbit; exactly
+  one $k=8$ tiling (species partition $3{+}3{+}1{+}1$, group $p4m$) is reachable only
+  through a gluing at that dart and was silently dropped. A one-entry fix restores
+  $2850$. This is Lemma A5's failure class realized in the wild, and the A5/A6
+  certificates are exactly the checks that exclude it from the audited engine.
+\end{enumerate}
+
+%======================================================================
+\begin{thebibliography}{9}
+\bibitem{GS} B.~Gr\"unbaum, G.~C.~Shephard, \emph{Tilings and Patterns}, W.~H.~Freeman,
+1987. Pinned against the copy in \texttt{resources/papers}: equation (2.1.2) (the angle
+equation); Table 2.1.1, pp.~59--61 (17 species, 21 types; the six double-starred species
+$3.7.42$, $3.8.24$, $3.9.18$, $3.10.15$, $4.5.20$, $5.5.10$ admit no vertex in any
+edge-to-edge tiling, p.~59); Statement 2.1.3 (the 11 uniform tilings); enantiomorphy of
+$(3^4.6)$, p.~59.
+\bibitem{Bieberbach} L.~Bieberbach, \"Uber die Bewegungsgruppen der Euklidischen
+R\"aume I, \emph{Math.\ Ann.} 70 (1911) 297--336. (Cocompact discrete planar groups; any
+standard crystallographic-groups reference may substitute.)
+\bibitem{Wolf} J.~A.~Wolf, \emph{Spaces of Constant Curvature}, 6th ed., AMS Chelsea,
+2011. (Space-form classification; used for C2. Any source for Killing--Hopf plus the
+fixed-point-free classification of planar isometries substitutes.)
+\bibitem{Thurston} W.~P.~Thurston, \emph{The Geometry and Topology of Three-Manifolds},
+Princeton lecture notes, ch.~13 (orbifolds). (Context only since round 2: the orbifold
+route was replaced by the direction bundle, Remark in Section 8.)
+\bibitem{Dress} A.~W.~M.~Dress, Presentations of discrete groups, acting on simply
+connected manifolds, \emph{Adv.\ Math.} 63 (1987) 196--212; A.~W.~M.~Dress, D.~Huson,
+On tilings of the plane, \emph{Geometriae Dedicata} 24 (1987) 295--310. (Context: the
+D-symbol correspondence; not imported.)
+\bibitem{CC} A.~Cardon, M.~Crochemore, Partitioning a graph in $O(|A|\log_2|V|)$,
+\emph{Theoret.\ Comput.\ Sci.} 19 (1982) 85--98; R.~Paige, R.~E.~Tarjan, Three partition
+refinement algorithms, \emph{SIAM J.\ Comput.} 16 (1987) 973--989. (Partition
+refinement computes the coarsest stable partition; used in R1.)
+\bibitem{Ctrnact} M.~\v{C}trn\'act, tiling solver/pruner algorithm description and
+implementation, \texttt{tools/ctrnact-oracle/reference/} (\texttt{algorithm.txt},
+\texttt{eu\_solver.orig.cpp}), 2021--2022.
+\bibitem{N} TilingAtlas working note, \emph{A canonical form for integer symbols of
+periodic tilings by regular polygons}, \texttt{docs/canonical-form/}, July 2026.
+\bibitem{DM} B.~Datta, D.~Maity, arXiv:1705.05236; A.~K.~Kundu, D.~Maity,
+arXiv:2111.15484. (Context only; demoted per Section~\ref{sec:verdict}.)
+\end{thebibliography}
+
+\end{document}

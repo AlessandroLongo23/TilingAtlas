@@ -1,0 +1,2 @@
+[13:56:28] Python solver k=8 RERUN with ferk[(4,4,4,4)A2] fixed 1->2 (root-cause QED test; expect prune=2850, was 2849)
+[14:04:04] solver done rc=0
