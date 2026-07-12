@@ -1,0 +1,45 @@
+[17:48:11] === MIXED (isotoxal+star) family export; tables=tables/isotoxal-star-z24 ===
+[17:48:13] k=1: 28 MIXED (cx+star) blocks in run-par-k1-isotoxal-star-z24-pruned/out/pruned
+[17:48:13]   flexing: (6*d16,cx4-60.120@1)F, (6*p4,cx4-60.120@0,cx4-60.120@1,3,cx4-60.120@0)F  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (4*d16,cx4-60.120@1)F, (4*p2,cx4-60.120@0,cx4-60.120@1,4,cx4-60.120@0)F  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (4*d16,cx4-60.120@1)A, (4*d16,4*p2,cx4-60.120@0,4*p2)A  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (4*d16,cx4-60.120@1)A, (4*p2,cx4-60.120@0,4*p2,cx4-60.120@0,cx4-60.120@1,cx4-60.120@0)A, (4*d16,cx4-60.120@1)A  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (4*d16,cx4-60.120@1)A, (4*p2,cx4-60.120@0,4*p2,cx4-60.120@0,4*p2,cx4-60.120@0,4*p2,cx4-60.120@0)S4  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (12*d16,cx4-60.120@1)A, (12*p6,cx4-60.120@0,6*p4,cx4-60.120@0,4*p2,cx4-60.120@0)F, (6*d16,cx4-60.120@1)A, (6*d16,cx4-60.120@1)A, (4*d16,cx4-60.120@1)A, (4*d16,cx4-60.120@1)A, (12*d16,cx4-60.120@1)A  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (8*d20,4*p4)A, (8*p1,4*d14,8*p1,cx4-60.120@1)A, (8*d20,cx4-60.120@0)A  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (6*d16,cx4-60.120@1)A, (6*p4,cx4-60.120@0,6*p4,cx4-60.120@0,6*p4,cx4-60.120@0)S3  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (4*d16,cx4-60.120@1)A, (4*p2,cx8-120.150@1,4*p2,cx4-60.120@0,4*p2,cx4-60.120@0)A, (4*d16,cx4-60.120@1)A, (4*d16,cx8-120.150@0)A  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (4*d16,cx4-60.120@1)A, (4*p2,cx8-120.150@1,4*p2,cx4-60.120@0,4*p2,cx4-60.120@0)F, (4*d16,cx4-60.120@1)A, (4*d16,cx4-60.120@1)F, (4*d16,cx8-120.150@0)A, (4*d16,cx8-120.150@0)A  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (12*d16,cx4-60.120@1)A, (12*p6,cx8-120.150@1,6*p4,cx4-60.120@0)F, (6*d16,cx4-60.120@1)A, (12*d16,cx8-120.150@0)A, (6*d16,cx8-120.150@0)A  (dev 0.0s, primary cx4-60.120)
+[17:48:13]   flexing: (3*d14,cx6-90.150@1)A, (3*p2,cx6-90.150@0,3*p2,cx6-90.150@0,3*p2,cx6-90.150@0)S3  (dev 0.0s, primary cx6-90.150)
+[17:48:13]   flexing: (6*d18,cx6-90.150@0)A, (6*p2,cx6-90.150@1,6*p2,cx6-90.150@1)S2  (dev 0.0s, primary cx6-90.150)
+[17:48:13]   flexing: (6*d14,cx6-90.150@1)A, (6*p6,cx6-90.150@0,6*p6,cx6-90.150@0)S2  (dev 0.0s, primary cx6-90.150)
+[17:48:13]   flexing: (3*d15,cx6-105.135@1)A, (3*p1,cx6-105.135@0,3*p1,cx6-105.135@0,3*p1,cx6-105.135@0)S3  (dev 0.0s, primary cx6-105.135)
+[17:48:13]   flexing: (6*d15,cx6-105.135@1)A, (6*p5,cx6-105.135@0,6*p5,cx6-105.135@0)S2  (dev 0.0s, primary cx6-105.135)
+[17:48:13]   flexing: (4*d15,cx12-135.165@0)A, (4*p3,cx12-135.165@1,4*p3,cx6-105.135@0)A, (4*d15,cx6-105.135@1)A  (dev 0.0s, primary cx6-105.135)
+[17:48:13]   flexing: (3*d14,cx8-120.150@1)A, (6*p6,cx8-120.150@0,3*p2,cx8-120.150@0)A, (6*d14,cx8-120.150@1)A  (dev 0.0s, primary cx8-120.150)
+[17:48:13]   flexing: (4*d16,cx8-120.150@0)A, (4*p2,cx8-120.150@1,4*p2,cx8-120.150@1)S2  (dev 0.0s, primary cx8-120.150)
+[17:48:13]   flexing: (4*d14,cx8-120.150@1)A, (4*p4,cx8-120.150@0,4*p4,cx8-120.150@0)S2  (dev 0.0s, primary cx8-120.150)
+[17:48:13]   flexing: (3*d15,cx12-135.165@0)A, (3*p1,cx12-135.165@1,3*p1,cx12-135.165@1)S2  (dev 0.0s, primary cx12-135.165)
+[17:48:13] k=1: 7 pinned, 21 flexing blocks in 19 keyed groups
+[17:48:13] k=1: 19 families (2 collapse >1 grid-member; 0 multi-slider separable)
+[17:48:13]   ctrnact-mixed-family-k1-01: (12S@d@a+12,cx4@1@-a+12) + (12S@d@a+12,cx4@1@-a+12) + (12S@p@-a+10,cx4@0@a,4S@p@-a+6,cx4@0@a,6S@p@-a+8,cx4@0@a) + (4S@d@a+12,cx4@1@-a+12) + (4S@d@a+12,cx4@1@-a+12) + (6S@d@a+12,cx4@1@-a+12) + (6S@d@a+12,cx4@1@-a+12)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-02: (12S@d@a+12,cx4@1@-a+12) + (12S@d@a+12,cx8@0@-a+12) + (12S@p@-a+10,cx4@0@a,6S@p@-a+8,cx8@1@a+6) + (6S@d@a+12,cx4@1@-a+12) + (6S@d@a+12,cx8@0@-a+12)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-03: (3S@d@a+8,cx6@1@-a+16) + (3S@p@-a+8,cx6@0@a,3S@p@-a+8,cx6@0@a,3S@p@-a+8,cx6@0@a)  P=1 α∈[[60.0, 120.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-04: (3S@d@a+6,cx8@1@-a+18) + (3S@p@-a+10,cx8@0@a,6S@p@-a+14,cx8@0@a) + (6S@d@a+6,cx8@1@-a+18)  P=1 α∈[[90.0, 150.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-05: (3S@d@-a+24,cx12@0@a) + (3S@p@a-8,cx12@1@-a+20,3S@p@a-8,cx12@1@-a+20)  P=1 α∈[[120.0, 180.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-06: (4S@d@a+6,cx8@1@-a+18) + (4S@p@-a+12,cx8@0@a,4S@p@-a+12,cx8@0@a)  P=1 α∈[[90.0, 180.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-07: (4S@d@a+8,cx12@0@-a+16) + (4S@d@a+8,cx6@1@-a+16) + (4S@p@-a+10,cx12@1@a+4,4S@p@-a+10,cx6@0@a)  P=1 α∈[[60.0, 120.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-08: (4S@d@a+12,4S@p@-a+6,cx4@0@a,4S@p@-a+6) + (4S@d@a+12,cx4@1@-a+12)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-09: (4S@d@a+12,cx4@1@-a+12) + (4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx4@0@a)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-10: (4S@d@a+12,cx4@1@-a+12) + (4S@d@a+12,cx4@1@-a+12) + (4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx4@0@a,cx4@1@-a+12,cx4@0@a)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-11: (4S@d@a+12,cx4@1@-a+12) + (4S@d@a+12,cx4@1@-a+12) + (4S@d@a+12,cx8@0@-a+12) + (4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx8@1@a+6)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-12: (4S@d@a+12,cx4@1@-a+12) + (4S@d@a+12,cx4@1@-a+12) + (4S@d@a+12,cx4@1@-a+12) + (4S@d@a+12,cx8@0@-a+12) + (4S@d@a+12,cx8@0@-a+12) + (4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx4@0@a,4S@p@-a+6,cx8@1@a+6)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-13: (4,cx4@0@a,4S@p@-a+6,cx4@0@a,cx4@1@-a+12) + (4S@d@a+12,cx4@1@-a+12)  P=1 α∈[[0.0, 90.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-14: (4S@d@-a+24,cx8@0@a) + (4S@p@a-6,cx8@1@-a+18,4S@p@a-6,cx8@1@-a+18)  P=1 α∈[[90.0, 180.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-15: (6S@d@a+8,cx6@1@-a+16) + (6S@p@-a+12,cx6@0@a,6S@p@-a+12,cx6@0@a)  P=1 α∈[[60.0, 180.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-16: (6S@d@a+12,cx4@1@-a+12) + (6S@p@-a+8,cx4@0@a,6S@p@-a+8,cx4@0@a,6S@p@-a+8,cx4@0@a)  P=1 α∈[[0.0, 120.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-17: (3,cx4@0@a,6S@p@-a+8,cx4@0@a,cx4@1@-a+12) + (6S@d@a+12,cx4@1@-a+12)  P=1 α∈[[0.0, 120.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-18: (6S@d@-a+24,cx6@0@a) + (6S@p@a-4,cx6@1@-a+16,6S@p@a-4,cx6@1@-a+16)  P=1 α∈[[60.0, 180.0]]  checks 5/5 pass
+[17:48:13]   ctrnact-mixed-family-k1-19: (4S@d@-a+18,8S@p@a-3,cx4@1@-a+12,8S@p@a-3) + (4S@p@a,8S@d@-a+24) + (8S@d@-a+24,cx4@0@a)  P=1 α∈[[45.0, 90.0]]  checks 5/5 pass
+[17:48:13] wrote 19 family records → ../../experiments/results/ctrnact-mixed-families.cells.json  (0 with failing checks)

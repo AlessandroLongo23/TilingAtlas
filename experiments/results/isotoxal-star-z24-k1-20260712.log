@@ -1,0 +1,14 @@
+=== COMBINED (isotoxal+star) k=1 SOLVE+PRUNE started Sun Jul 12 16:22:25 CEST 2026 ===
+palette isotoxal-star-z24: 29 tiles, 53 classes, 278057 configs. parallel 8 workers, EU_NCBUDGET=8 (LIVE — stars have noncounting types).
+
+[16:22:25] build (MAXNUM=1 PALETTE=isotoxal-star-z24)
+[16:24:27] PHASE 1  parallel solve — 8 workers, budget 8
+./run-oracle-parallel.sh: line 29: 94167 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 94173 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 94187 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 94182 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 94179 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 94185 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 94176 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 94170 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+a worker failed

@@ -621,6 +621,17 @@ def main():
     pinned = spec.get("pinnedLegacy", False)
     min_len = 2 if any(t.kind == "star" for t in tiles) else 3
     configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24))
+    # Optional geometric pre-filter (EU_PRUNE_OVERLAP=1): drop vertex configs whose PLACED tiles physically
+    # overlap. The solver is combinatorial (no geometry), so an overlapping figure would otherwise seed
+    # geometrically-impossible tilings; an overlapping figure appears in zero real tilings, so dropping it is
+    # SOUND (removes only the impossible, never a valid tiling). OFF by default ⇒ certified regular/star/
+    # isotoxal tables are byte-identical. Only meaningful for star (non-convex) palettes — convex-only
+    # alphabets are already overlap-free, so this is a no-op there.
+    if os.environ.get("EU_PRUNE_OVERLAP"):
+        from export_vertex_configs import build_config  # deferred: reuse the exact placement + overlap test
+        before = len(configs)
+        configs = [c for c in configs if not build_config(classes, D, c)["overlap"]]
+        print(f"[gen] EU_PRUNE_OVERLAP: dropped {before - len(configs)} overlapping configs ({before} -> {len(configs)})")
     print(f"[gen] palette={palette_name} D={D} tiles={len(tiles)} classes={len(classes)} "
           f"configs={len(configs)}")
 
@@ -722,6 +733,21 @@ def main():
                 if j == 0:
                     break
             e.code = f"{v}{'a' * max(0, 2 - len(tail))}{tail}"
+    # A6 certificate (proof obligation A6, docs/ctrnact-completeness/skeleton.tex):
+    # entries pairwise non-isomorphic as colored stub structures. Load-bearing because
+    # the pruner buckets by the letter-signature string and only compares within a
+    # bucket: two distinct letters with isomorphic structure would let one tiling be
+    # emitted under two signatures and kept twice. iso_key is a complete invariant for
+    # these structures (deterministic + connected: the BFS trace signature from a start
+    # dart determines the structure; minimizing over starts makes it canonical).
+    a6 = {}
+    for e in entries:
+        key = iso_key(e)
+        assert key not in a6, \
+            f"A6 FAIL: entries {a6[key]} and {e.symbol} are isomorphic colored structures"
+        a6[key] = e.symbol
+    cert_lines.append(f"A6: {len(entries)} entries pairwise non-isomorphic (iso_key) PASS")
+    print(f"[cert] A6: {len(entries)} entries pairwise non-isomorphic PASS")
     emit(args.out, D, tiles, classes, entries, cert_lines, palette_name)
     print(f"[gen] wrote {args.out}/{{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt}}"
           f" ({len(entries)} entries)")

@@ -1,0 +1,277 @@
+{
+ "name": "isotoxal-star-z24",
+ "D": 24,
+ "pinnedLegacy": false,
+ "maxValence": 12,
+ "comment": "UNIFIED ISOTOXAL palette (AL 2026-07-12): the \u03b624 union of regular {3,4,6,8,12}, the convex isotoxal cx tiles (regular-isotoxal-z24), and the concave/star species (star24). Both branches of the one isotoxal construction in a single palette, to look for tilings mixing convex+concave.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  },
+  {
+   "kind": "composite",
+   "name": "cx4-60.120",
+   "angles": [
+    4,
+    8,
+    4,
+    8
+   ],
+   "famchar": "y0"
+  },
+  {
+   "kind": "composite",
+   "name": "cx4-75.105",
+   "angles": [
+    5,
+    7,
+    5,
+    7
+   ],
+   "famchar": "y1"
+  },
+  {
+   "kind": "composite",
+   "name": "cx6-75.165",
+   "angles": [
+    5,
+    11,
+    5,
+    11,
+    5,
+    11
+   ],
+   "famchar": "y2"
+  },
+  {
+   "kind": "composite",
+   "name": "cx6-90.150",
+   "angles": [
+    6,
+    10,
+    6,
+    10,
+    6,
+    10
+   ],
+   "famchar": "y3"
+  },
+  {
+   "kind": "composite",
+   "name": "cx6-105.135",
+   "angles": [
+    7,
+    9,
+    7,
+    9,
+    7,
+    9
+   ],
+   "famchar": "y4"
+  },
+  {
+   "kind": "composite",
+   "name": "cx8-105.165",
+   "angles": [
+    7,
+    11,
+    7,
+    11,
+    7,
+    11,
+    7,
+    11
+   ],
+   "famchar": "y5"
+  },
+  {
+   "kind": "composite",
+   "name": "cx8-120.150",
+   "angles": [
+    8,
+    10,
+    8,
+    10,
+    8,
+    10,
+    8,
+    10
+   ],
+   "famchar": "y6"
+  },
+  {
+   "kind": "composite",
+   "name": "cx12-135.165",
+   "angles": [
+    9,
+    11,
+    9,
+    11,
+    9,
+    11,
+    9,
+    11,
+    9,
+    11,
+    9,
+    11
+   ],
+   "famchar": "y7"
+  },
+  {
+   "kind": "composite",
+   "name": "cx16-150.165",
+   "angles": [
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11
+   ],
+   "famchar": "y8"
+  },
+  {
+   "kind": "star",
+   "n": 3,
+   "alphaU": 1,
+   "name": "3*1",
+   "famchar": "sA"
+  },
+  {
+   "kind": "star",
+   "n": 3,
+   "alphaU": 2,
+   "name": "3*2",
+   "famchar": "sB"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 2,
+   "name": "4*2",
+   "famchar": "sC"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 3,
+   "name": "4*3",
+   "famchar": "sD"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 4,
+   "name": "4*4",
+   "famchar": "sE"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 2,
+   "name": "6*2",
+   "famchar": "sF"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 4,
+   "name": "6*4",
+   "famchar": "sG"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 5,
+   "name": "6*5",
+   "famchar": "sH"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 6,
+   "name": "6*6",
+   "famchar": "sK"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 1,
+   "name": "8*1",
+   "famchar": "sI"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 3,
+   "name": "8*3",
+   "famchar": "sL"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 6,
+   "name": "8*6",
+   "famchar": "sM"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 2,
+   "name": "12*2",
+   "famchar": "sJ"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 4,
+   "name": "12*4",
+   "famchar": "sN"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 6,
+   "name": "12*6",
+   "famchar": "sO"
+  }
+ ]
+}

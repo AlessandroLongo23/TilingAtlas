@@ -308,3 +308,4 @@
 (3,3,3,3,3,3)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
 (3,3,3,3,3,3)F: ferkval matches legacy (12) PASS
 GATE: 44 legacy entries == 44 generated folds (1:1 up to iso) PASS
+A6: 44 entries pairwise non-isomorphic (iso_key) PASS

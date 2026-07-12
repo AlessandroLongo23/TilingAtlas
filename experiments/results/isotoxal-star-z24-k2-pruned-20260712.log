@@ -1,0 +1,14 @@
+=== FULL COMBINED, overlap-PRUNED alphabet, k<=2 — started Sun Jul 12 17:59:54 CEST 2026 ===
+EU_PRUNE_OVERLAP=1 (31661 overlap-free configs), parallel 8 workers, EU_NCBUDGET=8
+
+[17:59:54] build (MAXNUM=2 PALETTE=isotoxal-star-z24)
+[17:59:56] PHASE 1  parallel solve — 8 workers, budget 8
+[18:09:03]   workers done (547s wall)
+[18:09:03] PHASE 1b  merge worker outputs
+[18:09:04]   merged raw blocks: 876
+[18:09:04] PHASE 2  prune
+  k=1 : 95
+  k=2 : 487
+total kept: 582
+[18:09:04]   prune done (0s);  total wall 548s
+=== DONE Sun Jul 12 18:09:04 CEST 2026 ===
