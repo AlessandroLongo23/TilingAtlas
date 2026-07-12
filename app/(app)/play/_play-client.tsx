@@ -3,20 +3,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Canvas } from "@/components/canvas";
+import { InversiveCanvas } from "@/components/inversive-canvas";
 import { Sidebar } from "@/components/sidebar";
+import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
+import type { TranslationalCellData as InversiveCellData } from "@/lib/utils/renderTiling";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import {
 	loadComposableAtlasShard,
+	loadIsotoxalAtlasShard,
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
 	referenceToCatalogue,
+	COMPOSABLE_SHARD_KS,
+	ISOTOXAL_SHARD_KS,
 } from "@/lib/services/referenceAtlas";
 import { evaluateParamCell } from "@/lib/utils/paramCell";
 import { pickStratified } from "@/lib/utils/pickStratified";
 import { polygonClassLabel } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
+
+// Higher-k demo shards held out of the eager main atlas (convex k3, isotoxal k3/k4). We pull them all into
+// the browse list on mount — see the eager-merge effect below.
+const KNOWN_HIGHER_TIERS: { source: "composable" | "isotoxal"; k: number }[] = [
+	...COMPOSABLE_SHARD_KS.map((k) => ({ source: "composable" as const, k })),
+	...ISOTOXAL_SHARD_KS.map((k) => ({ source: "isotoxal" as const, k })),
+];
 
 interface PlayClientProps {
 	tilings: CatalogueTiling[];
@@ -54,9 +67,35 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 	}, []);
 
+	// Eagerly pull the higher-k demo shards (convex k3, isotoxal k3/k4) into the browse list on mount, so
+	// every tier shows up for browsing — no click-to-load, no k4-without-k3 asymmetry. The eager base atlas
+	// is already ~13 MB, so gating these behind a click bought little; each shard background-merges as it
+	// resolves (base atlas still paints first), deduped by key. Loaders are module-cached, so the deep-link
+	// effects below dedupe against this. (Regular k≥8 stays deep-link-only — those shards total ~130 MB.)
+	useEffect(() => {
+		let alive = true;
+		for (const { source, k } of KNOWN_HIGHER_TIERS) {
+			const loader = source === "composable" ? loadComposableAtlasShard : loadIsotoxalAtlasShard;
+			loader(k)
+				.then((data) => {
+					if (!alive || data.length === 0) return;
+					setRefList((prev) => {
+						const base = prev ?? [];
+						const have = new Set(base.map((t) => t.canonicalKey));
+						const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+						return add.length ? [...base, ...add] : base;
+					});
+				})
+				.catch(() => {});
+		}
+		return () => {
+			alive = false;
+		};
+	}, []);
+
 	// Composable k≥3 tilings live in lazy shards (public/reference-atlas-composable-k{k}.json), not the
 	// main atlas loadReferenceAtlas pulls. If we arrived directly at one (id "composable-k{n}-…", e.g. a
-	// click from the /library Composable shelf), fetch that shard and merge it in so the requested tiling
+	// click from the /library convex-irregular shelf), fetch that shard and merge it in so the requested tiling
 	// is in the working list. Best-effort: a missing shard resolves to [] in the loader; dedup by key so
 	// navigating between composable-k3 tilings doesn't append the shard twice.
 	useEffect(() => {
@@ -66,6 +105,31 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (!Number.isFinite(k) || k < 3) return;
 		let alive = true;
 		loadComposableAtlasShard(k)
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [requestedKey]);
+
+	// Isotoxal α-family k≥3 tilings live in lazy shards (public/reference-atlas-isotoxal-k{k}.json). A direct
+	// arrival at one (id "ctrnact-isotoxal-family-k{n}-…", a click from the /library isotoxal shelf) fetches
+	// that shard and merges it in. Best-effort, dedup by key — same shape as the composable deep-link above.
+	useEffect(() => {
+		const m = requestedKey?.match(/^ctrnact-isotoxal-family-k(\d+)-/);
+		if (!m) return;
+		const k = Number(m[1]);
+		if (!Number.isFinite(k) || k < 3) return;
+		let alive = true;
+		loadIsotoxalAtlasShard(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
 				setRefList((prev) => {
@@ -127,17 +191,22 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// slider and the rendered cell is re-evaluated at the slider position (evaluateParamCell — real
 	// tilings at every alpha, the formal closure is alpha-independent). Alpha resets to the family's
 	// default whenever the selection changes.
+	// Free-angle family entries carry a proven parametric cell — each parameter becomes a live slider (a
+	// separable isotoxal family has one per independent tile). The rendered cell is re-evaluated at the slider
+	// tuple (evaluateParamCell — a real tiling at every position; the formal closure is angle-independent).
 	const paramCell = selected?.paramCell;
-	const [alphaDeg, setAlphaDeg] = useState<number | null>(null);
+	const [alphaDegs, setAlphaDegs] = useState<number[] | null>(null);
 	useEffect(() => {
-		setAlphaDeg(paramCell ? paramCell.params[0].defaultAlphaDeg : null);
+		setAlphaDegs(paramCell ? paramCell.params.map((p) => p.defaultAlphaDeg) : null);
 	}, [selected?.canonicalKey, paramCell]);
-	const paramInfo = paramCell ? paramCell.params[0] : null;
-	const effAlpha = paramInfo ? (alphaDeg ?? paramInfo.defaultAlphaDeg) : null;
+	const effAlphas = useMemo(
+		() => (paramCell ? paramCell.params.map((p, j) => alphaDegs?.[j] ?? p.defaultAlphaDeg) : null),
+		[paramCell, alphaDegs],
+	);
 	const liveCell = useMemo(() => {
-		if (!paramCell || effAlpha === null) return null;
-		return evaluateParamCell(paramCell, effAlpha);
-	}, [paramCell, effAlpha]);
+		if (!paramCell || !effAlphas) return null;
+		return evaluateParamCell(paramCell, effAlphas);
+	}, [paramCell, effAlphas]);
 
 	// useCatalogueSelection seeds selection at mount; the atlas list arrives AFTER mount (async fetch),
 	// so apply the requested key (or the first entry) once the atlas lands.
@@ -172,9 +241,20 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		[sorted, selected, setSelected],
 	);
 
-	// "R" reshuffles, ←/→ step prev/next — but not while a field or slider is focused (its own arrow
-	// handling wins) or a modifier is held.
+	// "R" reshuffles, ←/→ step prev/next, and single letters toggle the sidebar options (badges shown in
+	// the sidebar) — but not while a field or slider is focused (its own arrow handling wins) or a
+	// modifier is held.
 	useEffect(() => {
+		// Shortcut key → the boolean config field it toggles (matches the Kbd badges in the sidebar).
+		const TOGGLES: Record<string, keyof ConfigurationState> = {
+			f: "showPolygonFill",
+			p: "showPolygonPoints",
+			i: "isIslamic",
+			s: "showSymmetryElements",
+			d: "showFundamentalDomain",
+			v: "inversive",
+			c: "circlePacking",
+		};
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			const el = e.target as HTMLElement | null;
@@ -188,11 +268,28 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			} else if (e.key === "ArrowRight") {
 				e.preventDefault();
 				step(1);
+			} else {
+				const field = TOGGLES[e.key.toLowerCase()];
+				const c = useConfiguration.getState();
+				// Circle Packing only exists for regular-only tilings; ignore its key otherwise.
+				if (field && !(field === "circlePacking" && !c.isTilingRegularOnly)) {
+					e.preventDefault();
+					c.set({ [field]: !c[field] } as Partial<ConfigurationState>);
+				}
 			}
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [selectRandom, step]);
+
+	// Inversive (experimental) view: a WebGL overlay renders the same cell through a conformal map.
+	const inversive = useConfiguration((s) => s.inversive);
+	const renderCell = (liveCell ?? selected?.renderCell ?? null) as TranslationalCellData | null;
+	const renderCellId = selected
+		? liveCell
+			? `${selected.canonicalKey}@a=${effAlphas?.map((a) => a.toFixed(2)).join(",")}`
+			: selected.canonicalKey
+		: null;
 
 	useEffect(() => {
 		const el = canvasWrapRef.current;
@@ -222,37 +319,49 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				<Canvas
 					width={size.w}
 					height={size.h}
-					translationalCell={
-						(liveCell ?? selected?.renderCell ?? null) as TranslationalCellData | null
-					}
-					translationalCellId={
-						selected
-							? liveCell
-								? `${selected.canonicalKey}@a=${effAlpha?.toFixed(2)}`
-								: selected.canonicalKey
-							: null
-					}
+					translationalCell={renderCell}
+					translationalCellId={renderCellId}
 					symmetryData={symmetryData}
 					showTilingRuleInput={false}
 				/>
-				{paramInfo && effAlpha !== null ? (
-					<div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
-						<span className="text-xs font-medium text-violet-400 whitespace-nowrap">
-							α = {effAlpha.toFixed(1)}°
-						</span>
-						<input
-							type="range"
-							min={paramInfo.alpha0Deg + paramInfo.deltaRangeDeg[0]}
-							max={paramInfo.alpha0Deg + paramInfo.deltaRangeDeg[1]}
-							step={0.1}
-							value={effAlpha}
-							onChange={(e) => setAlphaDeg(Number(e.target.value))}
-							className="w-56 accent-violet-400"
-							aria-label="family parameter alpha (degrees)"
-						/>
-						<span className="text-[10px] text-fg-disabled whitespace-nowrap font-mono">
-							({paramInfo.alphaRangeDegOpen[0].toFixed(0)}°, {paramInfo.alphaRangeDegOpen[1].toFixed(0)}°)
-						</span>
+				{inversive ? (
+					<InversiveCanvas
+						width={size.w}
+						height={size.h}
+						translationalCell={renderCell as unknown as InversiveCellData | null}
+						translationalCellId={renderCellId}
+					/>
+				) : null}
+				{paramCell && effAlphas ? (
+					<div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col gap-2 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
+						{paramCell.params.map((p, j) => (
+							<div key={j} className="flex items-center gap-3">
+								<span className="text-xs font-medium text-violet-400 whitespace-nowrap w-24">
+									{(["α", "β", "γ", "δ", "ε"][j] ?? `α${j + 1}`)} = {effAlphas[j].toFixed(1)}°
+								</span>
+								<input
+									type="range"
+									min={p.alpha0Deg + p.deltaRangeDeg[0]}
+									max={p.alpha0Deg + p.deltaRangeDeg[1]}
+									step={0.1}
+									value={effAlphas[j]}
+									onChange={(e) => {
+										const v = Number(e.target.value);
+										setAlphaDegs((prev) => {
+											const base = prev ?? paramCell.params.map((q) => q.defaultAlphaDeg);
+											const next = [...base];
+											next[j] = v;
+											return next;
+										});
+									}}
+									className="w-56 accent-violet-400"
+									aria-label={`family angle ${["alpha", "beta", "gamma", "delta", "epsilon"][j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
+								/>
+								<span className="text-[10px] text-fg-disabled whitespace-nowrap font-mono">
+									({p.alphaRangeDegOpen[0].toFixed(0)}°, {p.alphaRangeDegOpen[1].toFixed(0)}°)
+								</span>
+							</div>
+						))}
 					</div>
 				) : null}
 			</div>

@@ -8,6 +8,30 @@ export const WALLPAPER_GROUPS = [
 ] as const;
 export type WallpaperGroup = (typeof WALLPAPER_GROUPS)[number];
 
+// Crystallographic realizability: which wallpaper groups can sit on each Bravais lattice shape. A
+// group is realizable on a lattice iff its point group is a subgroup of that lattice's holohedry with
+// compatible centering — a lattice may carry accidental higher symmetry, so the constraint is one-way
+// (lattice ⊇ group), not equality. Consequences: p1/p2 (no point symmetry) fit every lattice; an
+// n-fold rotation with n∈{4} pins the square lattice and n∈{3,6} the hexagonal one; primitive mirror
+// groups (pm/pg/pmm/pmg/pgg) need a primitive rectangular cell, centred ones (cm/cmm) a rhombic one,
+// and a square cell admits both. This is a THEORY table, independent of which tilings are loaded.
+// Source: the 2D Bravais holohedry hierarchy (G&S *Tilings and Patterns* §1.3, International Tables).
+// Edge note: cm/cmm are also realizable on a hexagonal-metric cell, but by the conventional
+// crystal-system assignment centred-mirror groups belong to the rhombic system, so they are listed
+// under `rhombic` only — flip them into `hexagonal` here if you want the looser point-group rule.
+export const LATTICE_REALIZABLE_GROUPS: Record<LatticeShape, readonly WallpaperGroup[]> = {
+	oblique: ["p1", "p2"],
+	rectangular: ["p1", "p2", "pm", "pg", "pmm", "pmg", "pgg"],
+	rhombic: ["p1", "p2", "cm", "cmm"],
+	square: ["p1", "p2", "pm", "pg", "cm", "pmm", "pmg", "pgg", "cmm", "p4", "p4m", "p4g"],
+	hexagonal: ["p1", "p2", "p3", "p3m1", "p31m", "p6", "p6m"],
+};
+
+/** True iff wallpaper group `group` is crystallographically realizable on lattice `lattice`. */
+export function isGroupOnLattice(group: WallpaperGroup, lattice: LatticeShape): boolean {
+	return LATTICE_REALIZABLE_GROUPS[lattice].includes(group);
+}
+
 // Conway/Thurston orbifold signature per group: digits before * = gyration (cone-point) orders, * =
 // mirror boundary, digits after * = corner-reflector orders (mirror intersections), × = glide, o =
 // torus. This IS the symmetry inventory read off directly, and it fixes the fundamental-domain shape.

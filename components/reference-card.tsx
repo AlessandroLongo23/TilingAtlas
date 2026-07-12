@@ -30,8 +30,13 @@ const CERT_STYLE: Record<Certification, { label: string; cls: string }> = {
 
 export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 	const isFamily = Array.isArray(tiling.alphaRange);
-	const isComposable = tileClassOf(tiling) === "composable";
-	const folds = tileClassOf(tiling) === "star" ? starFoldsOf(tiling) : [];
+	// Degrees of freedom = independent sliders in Play. 2+ (α, β, …) get their own badge.
+	const dof = tiling.paramCell?.params?.length ?? (isFamily ? 1 : 0);
+	const GREEK = ["α", "β", "γ", "δ", "ε"];
+	const isConvex = tileClassOf(tiling) === "convex";
+	const isIsotoxal = tileClassOf(tiling) === "isotoxal";
+	const isMixed = tileClassOf(tiling) === "mixed";
+	const folds = tileClassOf(tiling) === "star" || isMixed ? starFoldsOf(tiling) : [];
 	const partitionKey = partitionKeyOf(tiling);
 	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
 	// (m === k, all orbits distinct) is the Krötenheerdt case — shown as "Kröt" since its key is all 1s.
@@ -62,13 +67,13 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 							{CERT_STYLE[tiling.certification].label}
 						</span>
 					) : null}
-					{isComposable ? (
+					{isConvex ? (
 						<>
 							<span
 								className="inline-flex items-center rounded-full border border-indigo-400/30 bg-indigo-400/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400"
-								title={tiling.note ?? "Composite-tile tiling (exact ℤ[ζ₂₄] distinct-count dedup)"}
+								title={tiling.note ?? "Tiling built from convex-irregular unit-edge tiles (exact ℤ[ζ₂₄] distinct-count dedup)"}
 							>
-								Composable
+								Convex irregular
 							</span>
 							<span
 								className={cn(
@@ -87,12 +92,45 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 							</span>
 						</>
 					) : null}
+					{isIsotoxal ? (
+						<>
+							<span
+								className="inline-flex items-center rounded-full border border-purple-400/30 bg-purple-400/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-400"
+								title={tiling.note ?? "Tiling using a convex isotoxal tile (two alternating angles, ζ₂₄ grid)"}
+							>
+								Isotoxal
+							</span>
+							{tiling.offGrid ? (
+								<span
+									className="inline-flex items-center rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-400"
+									title="Uses an isotoxal tile not expressible on the ζ₁₂ grid — a tiling the 30°-grid enumeration could not reach"
+								>
+									off-grid
+								</span>
+							) : null}
+						</>
+					) : null}
+					{isMixed ? (
+						<span
+							className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-400"
+							title={tiling.note ?? "Convex isotoxal tile AND a concave star tile in one tiling (area-certified)"}
+						>
+							Mixed
+						</span>
+					) : null}
 					{tiling.preview ? (
 						<span className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-400/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-400" title="from a still-running solve — partial">
 							preview
 						</span>
 					) : null}
-					{isFamily ? (
+					{dof >= 2 ? (
+						<span
+							className="inline-flex items-center gap-0.5 rounded-full border border-fuchsia-400/40 bg-fuchsia-400/15 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300"
+							title={`${dof}-parameter family — ${GREEK.slice(0, dof).join(", ")} vary independently (${dof} sliders in Play)`}
+						>
+							{GREEK.slice(0, dof).join(" ")}
+						</span>
+					) : isFamily ? (
 						<span className="inline-flex items-center rounded-full border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[10px] font-medium text-violet-400" title="one-parameter family — α slider in Play">
 							α
 						</span>

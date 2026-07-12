@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { Library, Loader2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Check, Library, Link2, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { ToggleButton } from "@/components/ui/toggle-button";
@@ -12,17 +12,24 @@ import {
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
 	loadComposableAtlasShard,
+	loadIsotoxalAtlasShard,
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
 	tileClassOf,
+	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
+	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
 	type Certification,
 	type ReferenceTiling,
 	type ReferenceFilter,
 	type TileClass,
 } from "@/lib/services/referenceAtlas";
-import { WALLPAPER_GROUPS, type LatticeShape, type WallpaperGroup } from "@/lib/classes/symmetry/types";
-import { LIBRARY_TILINGS_PER_PAGE } from "@/lib/constants";
+import {
+	WALLPAPER_GROUPS,
+	isGroupOnLattice,
+	type LatticeShape,
+	type WallpaperGroup,
+} from "@/lib/classes/symmetry/types";
 
 // The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars in the
 // base file; regular k=8..10 as lazy per-k shards loaded on demand), fetched from public/reference-
@@ -38,10 +45,12 @@ const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "regular", label: "Regular" },
 	{ value: "star", label: "Star" },
-	{ value: "composable", label: "Composable" },
+	{ value: "convex", label: "Convex irregular" },
+	{ value: "isotoxal", label: "Isotoxal" },
+	{ value: "mixed", label: "Mixed" },
 ];
-// Composable-shelf facet: the whole demo, only decomposable-family tilings, or only the ones that
-// reach for a non-decomposable composite. Shown only while the Composable tile class is selected.
+// Convex-irregular-shelf facet: the whole demo, only decomposable-family tilings, or only the ones that
+// reach for a non-decomposable composite. Shown only while the convex-irregular tile class is selected.
 const DECOMP_OPTIONS: { value: "all" | "decomposable" | "non-decomposable"; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "decomposable", label: "Decomposable" },
@@ -51,6 +60,14 @@ const PARAM_OPTIONS: { value: "all" | "rigid" | "family"; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "rigid", label: "Rigid" },
 	{ value: "family", label: "α-family" },
+];
+// Isotoxal-shelf Shape facet: how many tile angles flex independently. 1 free angle (α-family) vs 2
+// independent free angles (α, β-family). There is no rigid bucket — the isotoxal exporter only emits
+// flexing families, so every shipped isotoxal tiling has P ∈ {1, 2}. Shown only for the isotoxal class.
+const ISOTOXAL_SHAPE_OPTIONS: { value: "all" | "alpha" | "alpha-beta"; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "alpha", label: "α-family" },
+	{ value: "alpha-beta", label: "α, β-family" },
 ];
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
@@ -68,16 +85,117 @@ const CERT_OPTIONS: { value: Certification; label: string }[] = [
 ];
 const LATTICE_ORDER: LatticeShape[] = ["square", "hexagonal", "rhombic", "rectangular", "oblique"];
 const COLUMN_PRESETS = [3, 4, 5, 6];
+// Page-size choices for the header dropdown; 25 is the default.
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+const DEFAULT_PAGE_SIZE = 25;
 // Čtrnáct tiers beyond the base atlas (k≤7), shipped as separate lazy shards (public/reference-atlas-
 // k{k}.json). Their k chips always show; selecting one fetches the shard on demand and merges it in.
 const HIGHER_K = [8, 9, 10];
-// Composable demo shelf tiers held out of the main file as lazy shards (public/reference-atlas-
-// composable-k{k}.json). The k≤2 composable entries ship in the eagerly-loaded main file; these load
-// on demand when the Composable class or a k≥3 chip is selected. Extend this when higher-k composable
-// shards land (must stay in sync with MAIN_MAX_K in scripts/build-composable-atlas.ts).
-const COMPOSABLE_HIGHER_K = [3];
+// Convex-irregular (COMPOSABLE_HIGHER_K) and isotoxal (ISOTOXAL_HIGHER_K) demo tiers held out of the eager
+// main file as lazy shards — imported from referenceAtlas so /play's browse tree reads the SAME tier list
+// (they drifted before: the shelf knew isotoxal k=4 while /play did not). k≤2 ship in the main file; these
+// load on demand when the class or a k≥3 chip is selected. The isotoxal ks are tracked in DEDICATED shard
+// state (below) because they collide with the convex-irregular shard ks in the shared number-keyed sets.
 const ALL_NUM = 0; // sentinel: the "All" chip for a single-select numeric group (k / M)
 const ALL_STR = ""; // sentinel: the "All" chip for the partition group
+
+// Enum whitelists for URL parsing — a hand-edited or stale link can carry any string, so only accept
+// values the filter actually understands (an unknown one is dropped, never injected into state).
+const TILE_CLASS_VALUES = CLASS_OPTIONS.map((o) => o.value).filter((v): v is TileClass => v !== "all");
+const CERT_VALUES = CERT_OPTIONS.map((o) => o.value);
+
+// ── URL ⇆ view state ──────────────────────────────────────────────────────────────────────────────
+// The whole view (every filter field + the page, page-size and column-count prefs) round-trips through
+// the query string: a reload restores the exact view, and the "Copy link" button hands a friend a link
+// that reproduces it. parseViewState and serializeView are inverse — add a field to one, add it to the
+// other. Keys are short and stable (they're a shared URL contract): k, class, decomp, m, partition,
+// maximal, folds, param, iso, group, lattice, by, cert, polygon, q + page, size, cols.
+interface ViewState {
+	filters: ReferenceFilter;
+	page: number;
+	pageSize: number;
+	gridColumns: number;
+}
+
+function parseViewState(sp: URLSearchParams): ViewState {
+	const f: ReferenceFilter = {};
+	const num = (key: string): number | undefined => {
+		const v = sp.get(key);
+		if (v == null) return undefined;
+		const n = Number(v);
+		return Number.isFinite(n) ? n : undefined;
+	};
+	const list = (key: string): string[] | undefined => {
+		const v = sp.get(key);
+		if (!v) return undefined;
+		const items = v.split(",").map((s) => s.trim()).filter(Boolean);
+		return items.length ? items : undefined;
+	};
+
+	const k = num("k");
+	if (k != null) f.kValue = k;
+	const cls = sp.get("class");
+	if (cls && (TILE_CLASS_VALUES as string[]).includes(cls)) f.tileClass = cls as TileClass;
+	const decomp = sp.get("decomp");
+	if (decomp === "decomposable" || decomp === "non-decomposable") f.convexDecomp = decomp;
+	const m = num("m");
+	if (m != null) f.mValue = m;
+	const partition = sp.get("partition");
+	if (partition) f.partitionKey = partition;
+	if (sp.get("maximal") === "1") f.maximalOnly = true;
+	const folds = list("folds")?.map(Number).filter((n) => Number.isFinite(n));
+	if (folds?.length) f.starFolds = folds;
+	const param = sp.get("param");
+	if (param === "rigid" || param === "family") f.parametric = param;
+	const iso = sp.get("iso");
+	if (iso === "alpha" || iso === "alpha-beta") f.isotoxalShape = iso;
+	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
+	if (groups?.length) f.wallpaperGroups = groups;
+	const lattices = list("lattice")?.filter((s): s is LatticeShape => (LATTICE_ORDER as string[]).includes(s));
+	if (lattices?.length) f.latticeShapes = lattices;
+	const discoverers = list("by");
+	if (discoverers?.length) f.discoverers = discoverers;
+	const certs = list("cert")?.filter((c): c is Certification => (CERT_VALUES as string[]).includes(c));
+	if (certs?.length) f.certifications = certs;
+	const polygons = list("polygon");
+	if (polygons?.length) f.polygonNames = polygons;
+	const q = sp.get("q");
+	if (q) f.query = q;
+
+	const page = num("page");
+	const size = num("size");
+	const cols = num("cols");
+	return {
+		filters: f,
+		page: page != null && page >= 1 ? Math.floor(page) : 1,
+		pageSize: size != null && PAGE_SIZE_OPTIONS.includes(size) ? size : DEFAULT_PAGE_SIZE,
+		gridColumns: cols != null ? Math.min(6, Math.max(3, Math.floor(cols))) : 5,
+	};
+}
+
+function serializeView(v: ViewState): string {
+	const p = new URLSearchParams();
+	const f = v.filters;
+	if (f.kValue != null) p.set("k", String(f.kValue));
+	if (f.tileClass) p.set("class", f.tileClass);
+	if (f.convexDecomp) p.set("decomp", f.convexDecomp);
+	if (f.mValue != null) p.set("m", String(f.mValue));
+	if (f.partitionKey) p.set("partition", f.partitionKey);
+	if (f.maximalOnly) p.set("maximal", "1");
+	if (f.starFolds?.length) p.set("folds", f.starFolds.join(","));
+	if (f.parametric) p.set("param", f.parametric);
+	if (f.isotoxalShape) p.set("iso", f.isotoxalShape);
+	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
+	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
+	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
+	if (f.certifications?.length) p.set("cert", f.certifications.join(","));
+	if (f.polygonNames?.length) p.set("polygon", f.polygonNames.join(","));
+	if (f.query?.trim()) p.set("q", f.query.trim());
+	if (v.page > 1) p.set("page", String(v.page));
+	if (v.pageSize !== DEFAULT_PAGE_SIZE) p.set("size", String(v.pageSize));
+	if (v.gridColumns !== 5) p.set("cols", String(v.gridColumns));
+	return p.toString();
+}
 
 // A flat, always-visible filter group: a static heading (optional accent summary + right-aligned note)
 // over its controls. Replaces the old collapsible SidebarSection in this shelf.
@@ -108,14 +226,24 @@ function FilterGroup({
 
 export function ReferenceShelf() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	// Parse the URL exactly once, on mount. After this we only WRITE the URL (one-way, via replaceState
+	// below) — we never re-read it, so browser back/forward inside the page isn't a filter-state source.
+	const [initialView] = useState(() => parseViewState(searchParams));
 	const [tilings, setTilings] = useState<ReferenceTiling[] | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const [filters, setFilters] = useState<ReferenceFilter>({});
-	const [gridColumns, setGridColumns] = useState(5);
-	const [currentPage, setCurrentPage] = useState(1);
+	const [filters, setFilters] = useState<ReferenceFilter>(initialView.filters);
+	const [gridColumns, setGridColumns] = useState(initialView.gridColumns);
+	const [pageSize, setPageSize] = useState(initialView.pageSize);
+	const [currentPage, setCurrentPage] = useState(initialView.page);
+	const [copied, setCopied] = useState(false);
+	const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [loadedShards, setLoadedShards] = useState<Set<number>>(new Set());
 	const [loadingShards, setLoadingShards] = useState<Set<number>>(new Set());
 	const [shardErrors, setShardErrors] = useState<Map<number, string>>(new Map());
+	// Dedicated isotoxal shard tracking — its k=3 collides with the convex-irregular k=3 in the shared sets.
+	const [isotoxalLoadedShards, setIsotoxalLoadedShards] = useState<Set<number>>(new Set());
+	const [isotoxalLoadingShards, setIsotoxalLoadingShards] = useState<Set<number>>(new Set());
 
 	useEffect(() => {
 		let alive = true;
@@ -127,9 +255,43 @@ export function ReferenceShelf() {
 		};
 	}, []);
 
+	// Reset to page 1 whenever filters or page size change — but skip the initial mount, so a shared or
+	// reloaded ?page=N link lands on page N instead of being clobbered back to 1.
+	const skipPageReset = useRef(true);
 	useEffect(() => {
+		if (skipPageReset.current) {
+			skipPageReset.current = false;
+			return;
+		}
 		setCurrentPage(1);
-	}, [filters]);
+	}, [filters, pageSize]);
+
+	// Mirror the whole view into the URL without navigating — a reload restores it and "Copy link" hands
+	// a friend the exact same view. replaceState (not router.replace) keeps this off the Next router, so
+	// it neither re-runs the server component nor spams history; useSearchParams is read once on mount.
+	useEffect(() => {
+		const q = serializeView({ filters, page: currentPage, pageSize, gridColumns });
+		window.history.replaceState(null, "", q ? `${window.location.pathname}?${q}` : window.location.pathname);
+	}, [filters, currentPage, pageSize, gridColumns]);
+
+	const copyLink = useCallback(() => {
+		navigator.clipboard
+			.writeText(window.location.href)
+			.then(() => {
+				setCopied(true);
+				if (copyResetRef.current) clearTimeout(copyResetRef.current);
+				copyResetRef.current = setTimeout(() => setCopied(false), 1500);
+			})
+			.catch(() => {
+				/* clipboard blocked (insecure origin or denied permission) — silently no-op */
+			});
+	}, []);
+	useEffect(
+		() => () => {
+			if (copyResetRef.current) clearTimeout(copyResetRef.current);
+		},
+		[],
+	);
 
 	// Lazy k≥8 shards: selecting the k fetches public/reference-atlas-k{k}.json once and merges the
 	// records into `tilings`, so every derived facet (k chips, filtered, pagination) picks them up. A
@@ -154,20 +316,20 @@ export function ReferenceShelf() {
 			);
 	}, [filters.kValue, loadedShards, loadingShards, shardErrors]);
 
-	// Lazy composable k≥3 shards. The demo keeps k≤2 in the main atlas and splits each higher k into
+	// Lazy convex-irregular k≥3 shards. The demo keeps k≤2 in the main atlas and splits each higher k into
 	// public/reference-atlas-composable-k{k}.json (COMPOSABLE_HIGHER_K). Fetch a shard when it's in view:
-	// the Composable class is selected (pull all its shards so the shelf fills in), or a composable
-	// shard-k chip is picked (also under "All", where k=3 includes composable). Composable shard ks (3)
+	// the convex-irregular class is selected (pull all its shards so the shelf fills in), or a convex-irregular
+	// shard-k chip is picked (also under "All", where k=3 includes it). Convex-irregular shard ks (3)
 	// never collide with the regular shard ks (8/9/10), so the shared loaded/loading/error state is safe.
 	// A missing shard resolves to an empty merge inside the loader — no error is surfaced (it's a demo).
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "composable" && cls != null) return; // regular/star only — no composable shard needed
+		if (cls !== "convex" && cls != null) return; // regular/star only — no convex-irregular shard needed
 		const k = filters.kValue;
 		const want =
 			k != null
 				? COMPOSABLE_HIGHER_K.filter((kk) => kk === k)
-				: cls === "composable"
+				: cls === "convex"
 					? COMPOSABLE_HIGHER_K
 					: [];
 		for (const kk of want) {
@@ -189,6 +351,34 @@ export function ReferenceShelf() {
 		}
 	}, [filters.tileClass, filters.kValue, loadedShards, loadingShards, shardErrors]);
 
+	// Lazy isotoxal k≥3 shards — same shape as the convex-irregular effect, but with dedicated shard state
+	// (its k=3 collides with convex-irregular's in the shared number-keyed sets). Fetch when the isotoxal
+	// class or a k≥3 chip is in view. A missing shard resolves to an empty merge inside the loader.
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "isotoxal" && cls != null) return;
+		const k = filters.kValue;
+		const want =
+			k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === "isotoxal" ? ISOTOXAL_HIGHER_K : [];
+		for (const kk of want) {
+			if (isotoxalLoadedShards.has(kk) || isotoxalLoadingShards.has(kk)) continue;
+			setIsotoxalLoadingShards((s) => new Set(s).add(kk));
+			loadIsotoxalAtlasShard(kk)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setIsotoxalLoadedShards((s) => new Set(s).add(kk));
+				})
+				.catch(() => setIsotoxalLoadedShards((s) => new Set(s).add(kk))) // best-effort demo; swallow + mark done
+				.finally(() =>
+					setIsotoxalLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(kk);
+						return n;
+					}),
+				);
+		}
+	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, isotoxalLoadingShards]);
+
 	// ── single-select setters (each clears the now-stale downstream selections) ──
 	const setKValue = (k: number | undefined) =>
 		setFilters({ ...filters, kValue: k, mValue: undefined, partitionKey: undefined });
@@ -197,6 +387,8 @@ export function ReferenceShelf() {
 	const toggleMaximal = () => setFilters({ ...filters, maximalOnly: filters.maximalOnly ? undefined : true });
 	const setParametric = (v: "all" | "rigid" | "family") =>
 		setFilters({ ...filters, parametric: v === "all" ? undefined : v });
+	const setIsotoxalShape = (v: "all" | "alpha" | "alpha-beta") =>
+		setFilters({ ...filters, isotoxalShape: v === "all" ? undefined : v });
 	const setTileClass = (v: "all" | TileClass) => {
 		const cls = v === "all" ? undefined : v;
 		const next: ReferenceFilter = { ...filters, tileClass: cls };
@@ -207,16 +399,18 @@ export function ReferenceShelf() {
 			next.mValue = undefined;
 			next.partitionKey = undefined;
 		}
-		// The decomposable facet only means something inside the composable class — drop it otherwise.
-		if (v !== "composable") next.composableDecomp = undefined;
+		// The decomposable facet only means something inside the convex-irregular class — drop it otherwise.
+		if (v !== "convex") next.convexDecomp = undefined;
+		// The isotoxal Shape facet only means something inside the isotoxal class — drop it otherwise.
+		if (v !== "isotoxal") next.isotoxalShape = undefined;
 		if (v === "regular") {
 			next.starFolds = undefined;
 			next.parametric = undefined;
 		} else if (v === "star") {
 			next.wallpaperGroups = undefined;
 			next.latticeShapes = undefined;
-		} else if (v === "composable") {
-			// No star folds, α-family, wallpaper group, or lattice on the composite-tile demo.
+		} else if (v === "convex" || v === "isotoxal") {
+			// No star folds, α-family, wallpaper group, or lattice on the composite-tile / isotoxal demos.
 			next.starFolds = undefined;
 			next.parametric = undefined;
 			next.wallpaperGroups = undefined;
@@ -224,8 +418,8 @@ export function ReferenceShelf() {
 		}
 		setFilters(next);
 	};
-	const setComposableDecomp = (v: "all" | "decomposable" | "non-decomposable") =>
-		setFilters({ ...filters, composableDecomp: v === "all" ? undefined : v });
+	const setConvexDecomp = (v: "all" | "decomposable" | "non-decomposable") =>
+		setFilters({ ...filters, convexDecomp: v === "all" ? undefined : v });
 
 	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
 	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
@@ -234,12 +428,25 @@ export function ReferenceShelf() {
 	};
 	const toggleFold = (n: number) => toggleIn("starFolds", filters.starFolds ?? [], n);
 	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
-	const toggleShape = (s: LatticeShape) => toggleIn("latticeShapes", filters.latticeShapes ?? [], s);
+	// Lattice is single-select — it drives which wallpaper groups are realizable, so at most one at a
+	// time. Re-clicking the active shape clears it; switching shape drops any now-incompatible group so
+	// the group filter never contradicts the chosen lattice.
+	const selectShape = (s: LatticeShape) => {
+		const next = filters.latticeShapes?.[0] === s ? undefined : s;
+		const groups = next
+			? filters.wallpaperGroups?.filter((g) => isGroupOnLattice(g, next))
+			: filters.wallpaperGroups;
+		setFilters({
+			...filters,
+			latticeShapes: next ? [next] : undefined,
+			wallpaperGroups: groups?.length ? groups : undefined,
+		});
+	};
 	const toggleDiscoverer = (d: string) => toggleIn("discoverers", filters.discoverers ?? [], d);
 	const toggleCert = (c: Certification) => toggleIn("certifications", filters.certifications ?? [], c);
 
 	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
-	// The k's a given tile class actually covers. Faceted, so Star/Composable (k=1..3 today) never show
+	// The k's a given tile class actually covers. Faceted, so Star/Convex-irregular (k=1..3 today) never show
 	// a dead k=10 button. The lazy higher-k tiers (8/9/10) are all regular Čtrnáct, so they're offered
 	// only when regular tilings are in scope (All or Regular) — before their shard is even fetched.
 	const kValuesForClass = useCallback(
@@ -247,9 +454,10 @@ export function ReferenceShelf() {
 			const s = new Set<number>();
 			if (tilings) for (const t of tilings) if (!cls || tileClassOf(t) === cls) s.add(t.k);
 			if (!cls || cls === "regular") for (const k of HIGHER_K) s.add(k);
-			// Composable k≥3 lives in lazy shards not yet in `tilings`; show their chips up front (like the
+			// Convex-irregular k≥3 lives in lazy shards not yet in `tilings`; show their chips up front (like the
 			// regular HIGHER_K) so selecting one can trigger the fetch.
-			if (!cls || cls === "composable") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
+			if (!cls || cls === "convex") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
+			if (!cls || cls === "isotoxal") for (const k of ISOTOXAL_HIGHER_K) s.add(k);
 			return s;
 		},
 		[tilings],
@@ -304,17 +512,25 @@ export function ReferenceShelf() {
 		return LATTICE_ORDER.filter((s) => present.has(s));
 	}, [tilings]);
 
+	// The one selected lattice (single-select). When set, it disables the wallpaper-group chips whose
+	// group can't be crystallographically realized on it.
+	const selectedLattice = filters.latticeShapes?.[0];
+
 	const tileClass = filters.tileClass ?? "all";
-	const showM = filters.kValue != null && tileClass !== "composable";
-	const showStar = tileClass !== "regular" && tileClass !== "composable" && availableFolds.length > 0;
-	const showGroup = tileClass !== "star" && tileClass !== "composable" && availableGroups.length > 0;
-	const showLattice = tileClass !== "star" && tileClass !== "composable" && availableShapes.length > 0;
-	const showComposable = tileClass === "composable";
+	// The convex-irregular + isotoxal demo shelves carry no m/partition/wallpaper/star-fold classification.
+	const isDemo = tileClass === "convex" || tileClass === "isotoxal";
+	const showM = filters.kValue != null && !isDemo;
+	const showStar = tileClass !== "regular" && !isDemo && availableFolds.length > 0;
+	const showGroup = tileClass !== "star" && !isDemo && availableGroups.length > 0;
+	const showLattice = tileClass !== "star" && !isDemo && availableShapes.length > 0;
+	const showConvex = tileClass === "convex";
+	const showIsotoxalShape = tileClass === "isotoxal";
 
 	const activeFilterCount =
 		(filters.kValue != null ? 1 : 0) +
 		(filters.tileClass ? 1 : 0) +
-		(filters.composableDecomp ? 1 : 0) +
+		(filters.convexDecomp ? 1 : 0) +
+		(filters.isotoxalShape ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -334,8 +550,8 @@ export function ReferenceShelf() {
 	}, [tilings, filters]);
 
 	const paginated = useMemo(
-		() => filtered.slice((currentPage - 1) * LIBRARY_TILINGS_PER_PAGE, currentPage * LIBRARY_TILINGS_PER_PAGE),
-		[filtered, currentPage],
+		() => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+		[filtered, currentPage, pageSize],
 	);
 
 	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
@@ -367,17 +583,34 @@ export function ReferenceShelf() {
 						<ButtonGroup options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
 					</FilterGroup>
 
-					{showComposable ? (
+					{showConvex ? (
 						<FilterGroup
 							title="Composite palette"
-							summary={filters.composableDecomp ?? null}
+							summary={filters.convexDecomp ?? null}
 							note="exact ℤ[ζ] distinct counts"
 						>
 							<ButtonGroup
 								options={DECOMP_OPTIONS}
-								selected={filters.composableDecomp ?? "all"}
-								onChange={setComposableDecomp}
+								selected={filters.convexDecomp ?? "all"}
+								onChange={setConvexDecomp}
 							/>
+						</FilterGroup>
+					) : null}
+
+					{showIsotoxalShape ? (
+						<FilterGroup
+							title="Shape"
+							summary={filters.isotoxalShape === "alpha" ? "α" : filters.isotoxalShape === "alpha-beta" ? "α, β" : null}
+							note="free angles"
+						>
+							<ButtonGroup
+								options={ISOTOXAL_SHAPE_OPTIONS}
+								selected={filters.isotoxalShape ?? "all"}
+								onChange={setIsotoxalShape}
+							/>
+							<p className="text-[10px] text-fg-disabled">
+								How many of the tile’s angles flex independently.
+							</p>
 						</FilterGroup>
 					) : null}
 
@@ -397,7 +630,7 @@ export function ReferenceShelf() {
 							label="Maximal (M = k)"
 							classes="mt-1 self-start"
 						/>
-						{tileClass === "composable" && kChips.some((k) => k >= 3) ? (
+						{tileClass === "convex" && kChips.some((k) => k >= 3) ? (
 							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 3 loads on demand.</p>
 						) : kChips.some((k) => k >= 8) ? (
 							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
@@ -452,32 +685,37 @@ export function ReferenceShelf() {
 						</FilterGroup>
 					) : null}
 
-					{showGroup ? (
+					{showLattice ? (
 						<FilterGroup
-							title="Wallpaper group"
-							summary={filters.wallpaperGroups?.length ? `${filters.wallpaperGroups.length} sel` : null}
-							note="regular"
+							title="Lattice"
+							summary={selectedLattice ?? null}
+							note="pick one"
 						>
 							<ButtonGroup
-								multi
-								options={availableGroups.map((g) => ({ value: g, label: g }))}
-								selected={filters.wallpaperGroups ?? []}
-								onChange={toggleGroup}
+								options={availableShapes.map((s) => ({ value: s, label: s }))}
+								selected={selectedLattice ?? null}
+								onChange={selectShape}
 							/>
 						</FilterGroup>
 					) : null}
 
-					{showLattice ? (
+					{showGroup ? (
 						<FilterGroup
-							title="Lattice"
-							summary={filters.latticeShapes?.length ? `${filters.latticeShapes.length} sel` : null}
-							note="regular"
+							title="Wallpaper group"
+							summary={filters.wallpaperGroups?.length ? `${filters.wallpaperGroups.length} sel` : null}
+							note={selectedLattice ? `on ${selectedLattice}` : "regular"}
 						>
 							<ButtonGroup
 								multi
-								options={availableShapes.map((s) => ({ value: s, label: s }))}
-								selected={filters.latticeShapes ?? []}
-								onChange={toggleShape}
+								options={availableGroups.map((g) => ({
+									value: g,
+									label: g,
+									// A selected lattice greys out (and blocks) every group it can't host — the disabled
+									// styling + not-allowed cursor + aria-disabled come from ToggleButton.
+									disabled: selectedLattice ? !isGroupOnLattice(g, selectedLattice) : false,
+								}))}
+								selected={filters.wallpaperGroups ?? []}
+								onChange={toggleGroup}
 							/>
 						</FilterGroup>
 					) : null}
@@ -505,14 +743,6 @@ export function ReferenceShelf() {
 							onChange={toggleCert}
 						/>
 					</FilterGroup>
-
-					<FilterGroup title="Grid" summary={`${gridColumns} cols`}>
-						<ButtonGroup
-							options={COLUMN_PRESETS.map((c) => ({ value: c, label: c, classes: "w-8" }))}
-							selected={gridColumns}
-							onChange={setGridColumns}
-						/>
-					</FilterGroup>
 				</div>
 			</PageSidebar>
 
@@ -537,6 +767,47 @@ export function ReferenceShelf() {
 							failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
 						</span>
 					) : null}
+
+					<div className="ml-auto flex items-center gap-4">
+						<button
+							type="button"
+							onClick={copyLink}
+							title="Copy a link to this filtered view"
+							className="flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2 py-1 text-xs text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:border-line-strong focus:outline-none"
+						>
+							{copied ? <Check size={12} className="text-emerald-400" /> : <Link2 size={12} />}
+							{copied ? "Copied" : "Copy link"}
+						</button>
+						<label className="flex items-center gap-2 text-xs text-fg-muted">
+							Columns
+							<input
+								type="range"
+								min={COLUMN_PRESETS[0]}
+								max={COLUMN_PRESETS[COLUMN_PRESETS.length - 1]}
+								step={1}
+								value={gridColumns}
+								onChange={(e) => setGridColumns(Number(e.target.value))}
+								aria-label="Grid columns"
+								className="w-24 h-1.5 rounded-full appearance-none cursor-pointer bg-surface-overlay/70 accent-accent focus:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40"
+							/>
+							<span className="w-3 text-center tabular-nums font-medium text-accent">{gridColumns}</span>
+						</label>
+						<label className="flex items-center gap-2 text-xs text-fg-muted">
+							Per page
+							<select
+								value={pageSize}
+								onChange={(e) => setPageSize(Number(e.target.value))}
+								aria-label="Items per page"
+								className="rounded-md border border-line bg-surface-raised px-2 py-1 text-xs text-fg cursor-pointer focus:border-line-strong focus:outline-none"
+							>
+								{PAGE_SIZE_OPTIONS.map((n) => (
+									<option key={n} value={n}>
+										{n}
+									</option>
+								))}
+							</select>
+						</label>
+					</div>
 				</div>
 
 				{error ? (
@@ -563,7 +834,7 @@ export function ReferenceShelf() {
 					<>
 						<Pagination
 							totalItems={filtered.length}
-							pageSize={LIBRARY_TILINGS_PER_PAGE}
+							pageSize={pageSize}
 							currentPage={currentPage}
 							onPageChange={setCurrentPage}
 						/>
@@ -579,7 +850,7 @@ export function ReferenceShelf() {
 						<div className="mt-4">
 							<Pagination
 								totalItems={filtered.length}
-								pageSize={LIBRARY_TILINGS_PER_PAGE}
+								pageSize={pageSize}
 								currentPage={currentPage}
 								onPageChange={setCurrentPage}
 							/>

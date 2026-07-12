@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Library, History, Gamepad2 } from "lucide-react";
+import { Library, Gamepad2, Shapes, Grid3x3 } from "lucide-react"; // History icon commented out with its nav link below
 import { cn } from "@/lib/utils/cn";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
 	{ href: "/play", label: "Play", icon: Gamepad2 },
 	{ href: "/library", label: "Library", icon: Library },
-	{ href: "/history", label: "History", icon: History },
+	{ href: "/tiles", label: "Tiles", icon: Shapes },
+	{ href: "/configs", label: "Configs", icon: Grid3x3 },
+	// { href: "/history", label: "History", icon: History }, // hidden from header (route still exists)
 ];
 
 export function Nav() {

@@ -17,16 +17,17 @@ import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types"
 //   - ctrnact-star: the Čtrnáct-engine star extension's full in-ring catalogs (feat/ctrnact-star),
 //               k=1..2, star-bearing solutions only. Most reproduce Myers records; the ones flagged
 //               candidate:true match NOTHING in Myers and are pending adversarial review.
-//   - composable: tilings using COMPOSITE convex super-tiles (e.g. cx4-2.4.2.4) alongside the regular
-//               set (scripts/build-composable-atlas.ts → the separate public/reference-atlas-composable
-//               .json). Distinct-tiling counts are EXACT (proof-grade ℤ[ζ₂₄] congruence dedup, NOTES §55);
-//               enumeration completeness rests on the engine, as for the regular family. These carry no
-//               certification / discoverer-completeness / wallpaper classification.
+//   - composable: source tag for the convex-irregular shelf (kept as historical provenance; the
+//               user-facing class is "convex", see TileClass). Tilings using convex unit-edge super-tiles
+//               (e.g. cx4-2.4.2.4) alongside the regular set (scripts/build-composable-atlas.ts → the
+//               separate public/reference-atlas-composable.json). Distinct-tiling counts are EXACT
+//               (proof-grade ℤ[ζ₂₄] congruence dedup, NOTES §55); enumeration completeness rests on the
+//               engine, as for the regular family. These carry no certification / wallpaper classification.
 export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready
@@ -40,13 +41,17 @@ export interface ReferenceTiling {
 	//   proven      — this work's method has a completeness certificate (regular k≤3)
 	//   reproduced  — count matches a published enumeration, not independently proven here
 	//   candidate   — surfaced by this work; completeness / literature-novelty not established
-	// Absent on the composable demo shelf — those tilings make no completeness claim, so they're
+	// Absent on the convex-irregular demo shelf — those tilings make no completeness claim, so they're
 	// excluded from the certification facet rather than assigned a misleading status.
 	certification?: Certification;
-	// Composable shelf only: true iff every composite tile it uses dissects into regular pieces (the
+	// Convex-irregular shelf only: true iff every composite tile it uses dissects into regular pieces (the
 	// decomposable palette); false iff it uses a non-decomposable composite. Absent on every other source.
 	decomposableOnly?: boolean;
-	note?: string; // free-text provenance caveat (composable demo: counts are illustrative, not all-and-only)
+	// Isotoxal shelf only: true iff the tiling uses a convex isotoxal tile NOT expressible on ζ₁₂ (i.e. not
+	// one of the 60/120 rhombus, 90/150 hexagon, 120/150 octagon the convex-irregular enumeration already reached)
+	// — the genuinely new tilings the ζ₂₄ grid unlocks. Absent on every other source.
+	offGrid?: boolean;
+	note?: string; // free-text provenance caveat (convex-irregular demo: counts are illustrative, not all-and-only)
 	// Present on family entries: the proven parametric cell driving the /play alpha slider
 	// (lib/utils/paramCell.ts). renderCell then holds the default-alpha evaluation (thumbnails).
 	paramCell?: ParametricCellData;
@@ -69,12 +74,21 @@ export interface ReferenceTiling {
 // star-fold filter without re-deriving from the whole atlas.
 export const STAR_FOLDS = [3, 4, 6, 8, 9, 12, 18] as const;
 
-// tileClass, the primary shelf axis: "composable" iff the tiling comes from the composite-tile demo
-// (source-driven, since a composite family has no "*" token); else "star" iff its family carries a
-// star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "composable";
+// Higher-k demo shards shipped as separate lazy files (the eager main atlas carries only k≤2 for these
+// classes — build-{composable,isotoxal}-atlas MAIN_MAX_K=2). Both the /library shelf and the /play browse
+// tree read these so their "known tiers" never drift. Keep in sync with those build scripts' cells.json
+// inputs (a new k lands here once its shard is built).
+export const COMPOSABLE_SHARD_KS = [3];
+export const ISOTOXAL_SHARD_KS = [3, 4];
+
+// tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
+// unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
+// "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
+export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed";
 export function tileClassOf(t: Pick<ReferenceTiling, "family" | "source">): TileClass {
-	if (t.source === "composable") return "composable";
+	if (t.source === "mixed") return "mixed";
+	if (t.source === "isotoxal") return "isotoxal";
+	if (t.source === "composable") return "convex";
 	return t.family.includes("*") ? "star" : "regular";
 }
 
@@ -95,6 +109,16 @@ export function isParametric(t: Pick<ReferenceTiling, "alphaRange">): boolean {
 	return Array.isArray(t.alphaRange);
 }
 
+// Isotoxal shelf only: how many INDEPENDENT free angles the family flexes on (its paramCell slider count
+// P). 1 ⇒ a single isotoxal tile flexes (α-family); 2 ⇒ two isotoxal tiles flex on their own (α, β-family).
+// Null for any non-isotoxal tiling, or an isotoxal record missing its parametric cell — those never match
+// the Shape facet, matching the exclude-the-unclassified ethos used by the M/partition filters.
+export function isotoxalParamCount(t: Pick<ReferenceTiling, "source" | "paramCell">): 1 | 2 | null {
+	if (t.source !== "isotoxal") return null;
+	const n = t.paramCell?.params?.length;
+	return n === 1 || n === 2 ? n : null;
+}
+
 // Canonical partition key for display + filtering: digits joined ("511"), switching to a "."
 // separator if any part reaches 10 so "10,1" never collides with "1,0,1". Null when unclassified.
 export function partitionKeyOf(t: Pick<ReferenceTiling, "partition">): string | null {
@@ -111,14 +135,15 @@ export function isMaximal(t: Pick<ReferenceTiling, "m" | "k">): boolean {
 export interface ReferenceFilter {
 	kValue?: number; // single vertex-orbit count; unset = every k
 	tileClass?: TileClass; // regular polygons only / star-bearing only / composite-tile demo
-	// Composable shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
-	// Any non-composable tiling (decomposableOnly undefined) is EXCLUDED while this is active.
-	composableDecomp?: "decomposable" | "non-decomposable";
+	// Convex-irregular shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
+	// Any tiling outside that class (decomposableOnly undefined) is EXCLUDED while this is active.
+	convexDecomp?: "decomposable" | "non-decomposable";
 	mValue?: number; // single distinct-vertex-config count; unclassified tilings never match
 	partitionKey?: string; // single partition key (e.g. "511"); unclassified tilings never match
 	maximalOnly?: boolean; // Krötenheerdt: keep only m === k
 	starFolds?: number[]; // keep tilings using at least one of these star folds
 	parametric?: "rigid" | "family"; // rigid (no α) / one-parameter α-family
+	isotoxalShape?: "alpha" | "alpha-beta"; // isotoxal only: 1 free angle (α) vs 2 independent (α, β)
 	wallpaperGroups?: WallpaperGroup[]; // exact group; unclassified (all stars) never match
 	latticeShapes?: LatticeShape[]; // exact lattice shape; unclassified (all stars) never match
 	discoverers?: string[]; // each entry's discoverer must be in this set
@@ -130,10 +155,10 @@ export interface ReferenceFilter {
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
 	if (f.kValue != null && t.k !== f.kValue) return false;
 	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
-	if (f.composableDecomp) {
-		if (t.decomposableOnly == null) return false; // non-composable tilings never match this facet
-		if (f.composableDecomp === "decomposable" && !t.decomposableOnly) return false;
-		if (f.composableDecomp === "non-decomposable" && t.decomposableOnly) return false;
+	if (f.convexDecomp) {
+		if (t.decomposableOnly == null) return false; // tilings outside the convex-irregular class never match this facet
+		if (f.convexDecomp === "decomposable" && !t.decomposableOnly) return false;
+		if (f.convexDecomp === "non-decomposable" && t.decomposableOnly) return false;
 	}
 	// M/partition/maximal: an active filter EXCLUDES unclassified tilings rather than matching them —
 	// completeness ethos, we never silently pass a tiling whose classification we don't have.
@@ -148,6 +173,11 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 		const isFam = isParametric(t);
 		if (f.parametric === "family" && !isFam) return false;
 		if (f.parametric === "rigid" && isFam) return false;
+	}
+	if (f.isotoxalShape) {
+		const p = isotoxalParamCount(t);
+		if (f.isotoxalShape === "alpha" && p !== 1) return false;
+		if (f.isotoxalShape === "alpha-beta" && p !== 2) return false;
 	}
 	if (f.wallpaperGroups?.length && (t.wallpaperGroup == null || !f.wallpaperGroups.includes(t.wallpaperGroup))) return false;
 	if (f.latticeShapes?.length && (t.latticeShape == null || !f.latticeShapes.includes(t.latticeShape))) return false;
@@ -189,19 +219,23 @@ let inflight: Promise<ReferenceTiling[]> | null = null;
 export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 	if (cache) return cache;
 	if (inflight) return inflight;
-	// The base atlas is required; the composable demo shelf is best-effort — a missing/broken
-	// reference-atlas-composable.json degrades to an empty merge, never breaks the library.
+	// The base atlas is required; the convex-irregular + isotoxal demo shelves are best-effort — a missing/broken
+	// reference-atlas-{composable,isotoxal}.json degrades to an empty merge, never breaks the library.
+	const bestEffort = (url: string) =>
+		fetch(url)
+			.then((res) => (res.ok ? (res.json() as Promise<ReferenceTiling[]>) : []))
+			.catch(() => [] as ReferenceTiling[]);
 	inflight = Promise.all([
 		fetch("/reference-atlas.json").then((res) => {
 			if (!res.ok) throw new Error(`reference-atlas.json: HTTP ${res.status}`);
 			return res.json() as Promise<ReferenceTiling[]>;
 		}),
-		fetch("/reference-atlas-composable.json")
-			.then((res) => (res.ok ? (res.json() as Promise<ReferenceTiling[]>) : []))
-			.catch(() => [] as ReferenceTiling[]),
+		bestEffort("/reference-atlas-composable.json"),
+		bestEffort("/reference-atlas-isotoxal.json"),
+		bestEffort("/reference-atlas-mixed.json"),
 	])
-		.then(([base, composable]) => {
-			const data = [...base, ...composable];
+		.then(([base, composable, isotoxal, mixed]) => {
+			const data = [...base, ...composable, ...isotoxal, ...mixed];
 			cache = data;
 			inflight = null;
 			return data;
@@ -245,11 +279,11 @@ export async function loadReferenceAtlasShard(k: number): Promise<ReferenceTilin
 	return p;
 }
 
-// Per-k lazy shards for the Composable demo shelf (k≥3, generated by scripts/build-composable-atlas.ts
+// Per-k lazy shards for the convex-irregular demo shelf (k≥3, generated by scripts/build-composable-atlas.ts
 // into public/reference-atlas-composable-k{k}.json). The main reference-atlas-composable.json carries
 // only k≤2; the higher-k entries — heaviest today is k=3, ~940 tilings and growing with the convex
-// solve — load only when the Composable class or a k≥3 chip is selected. Mirrors loadReferenceAtlasShard,
-// but a MISSING shard degrades to an empty merge (HTTP 404 ⇒ []) rather than throwing: the composable
+// solve — load only when the convex-irregular class or a k≥3 chip is selected. Mirrors loadReferenceAtlasShard,
+// but a MISSING shard degrades to an empty merge (HTTP 404 ⇒ []) rather than throwing: the convex-irregular
 // shelf is a best-effort demo, never a hard dependency of the library. Cached per-k across the session.
 const composableShardCache = new Map<number, ReferenceTiling[]>();
 const composableShardInflight = new Map<number, Promise<ReferenceTiling[]>>();
@@ -275,5 +309,36 @@ export async function loadComposableAtlasShard(k: number): Promise<ReferenceTili
 			throw err;
 		});
 	composableShardInflight.set(k, p);
+	return p;
+}
+
+// Per-k lazy shards for the isotoxal α-family shelf (k≥3, generated by scripts/build-isotoxal-atlas.ts into
+// public/reference-atlas-isotoxal-k{k}.json). The main reference-atlas-isotoxal.json carries only k≤2; k=3
+// (~858 families with parametric cells, several MB) loads only when the isotoxal class or a k≥3 chip is
+// selected. Same best-effort semantics as the convex-irregular shard: a missing shard (404) → empty merge.
+const isotoxalShardCache = new Map<number, ReferenceTiling[]>();
+const isotoxalShardInflight = new Map<number, Promise<ReferenceTiling[]>>();
+
+export async function loadIsotoxalAtlasShard(k: number): Promise<ReferenceTiling[]> {
+	const cached = isotoxalShardCache.get(k);
+	if (cached) return cached;
+	const existing = isotoxalShardInflight.get(k);
+	if (existing) return existing;
+	const p = fetch(`/reference-atlas-isotoxal-k${k}.json`)
+		.then((res) => {
+			if (res.status === 404) return [] as ReferenceTiling[];
+			if (!res.ok) throw new Error(`reference-atlas-isotoxal-k${k}.json: HTTP ${res.status}`);
+			return res.json() as Promise<ReferenceTiling[]>;
+		})
+		.then((data) => {
+			isotoxalShardCache.set(k, data);
+			isotoxalShardInflight.delete(k);
+			return data;
+		})
+		.catch((err) => {
+			isotoxalShardInflight.delete(k);
+			throw err;
+		});
+	isotoxalShardInflight.set(k, p);
 	return p;
 }
