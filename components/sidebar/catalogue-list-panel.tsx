@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
@@ -26,7 +26,12 @@ function titleCase(label: string): string {
 	return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-export function CatalogueListPanel({ items, selectedKey, onSelect, mode = "certified" }: CatalogueListPanelProps) {
+// Memoized: the catalogue's inputs (items/selectedKey/onSelect/mode) don't change while a sidebar
+// slider is dragged, but its parent TilingsTab subscribes to the WHOLE config store, so it re-renders on
+// every slider tick. Without memo, that re-rendered this whole thumbnail list (each a canvas) every tick
+// — the dominant cost of dragging the Islamic-angle / rotation / line-stroke sliders. memo skips it while
+// its props are referentially stable.
+export const CatalogueListPanel = memo(function CatalogueListPanel({ items, selectedKey, onSelect, mode = "certified" }: CatalogueListPanelProps) {
 	// Two-level grouping: class → k. Each class keeps its k-buckets sorted ascending.
 	const byClass = useMemo(() => {
 		const map = new Map<string, Map<number, CatalogueTiling[]>>();
@@ -119,4 +124,4 @@ export function CatalogueListPanel({ items, selectedKey, onSelect, mode = "certi
 			</div>
 		</div>
 	);
-}
+});
