@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Maximize, Minimize } from "lucide-react";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
+import { useImmersive } from "@/stores/immersive";
+import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData as InversiveCellData } from "@/lib/utils/renderTiling";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
@@ -283,6 +286,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			} else if (e.key === "ArrowRight") {
 				e.preventDefault();
 				step(1);
+			} else if (e.key === "h" || e.key === "H") {
+				// Toggle immersive (fullscreen-canvas) mode: hides the header + sidebar.
+				e.preventDefault();
+				useImmersive.getState().toggle();
+			} else if (e.key === "Escape") {
+				// Esc only exits immersive; otherwise leave it for whatever else handles it.
+				if (useImmersive.getState().immersive) {
+					e.preventDefault();
+					useImmersive.getState().set(false);
+				}
 			} else {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
@@ -303,6 +316,17 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	// Inversive (experimental) view: a WebGL overlay renders the same cell through a conformal map.
 	const inversive = useConfiguration((s) => s.inversive);
+
+	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the canvas fills the window.
+	const immersive = useImmersive((s) => s.immersive);
+	// The symmetry-info badge (a Canvas overlay) also sits top-right; when it's shown, drop the fullscreen
+	// toggle below it so the two never overlap.
+	const showSymmetryElements = useConfiguration((s) => s.showSymmetryElements);
+	const showFundamentalDomain = useConfiguration((s) => s.showFundamentalDomain);
+	const symmetryBadgeShown = (showSymmetryElements || showFundamentalDomain) && !!symmetryData;
+	// Leave immersive mode when navigating away from /play, so a collapsed header/sidebar never persists
+	// onto another route (which has no toggle to restore them).
+	useEffect(() => () => useImmersive.getState().set(false), []);
 	// The alpha-independent base cell + id. For a parametric family the canvases derive the live cell
 	// from `paramCell` + the store's `familyAlphas` in their own draw loops (they append the alpha
 	// signature to this base id), so nothing alpha-dependent flows through this render.
@@ -324,15 +348,23 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	return (
 		<div className="flex-1 flex min-h-0 overflow-hidden">
-			<Sidebar
-				tilings={sorted}
-				selected={selected}
-				onSelect={setSelected}
-				onRandom={selectRandom}
-				onPrev={onPrev}
-				onNext={onNext}
-				mode={refList ? "reference" : "certified"}
-			/>
+			{/* Immersive mode collapses this wrapper's width to 0 (the sidebar stays mounted, just clipped),
+			    which lets the canvas-wrap grow; the canvas resizes to fill via its ResizeObserver. */}
+			<div
+				className={cn(
+					"h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out",
+					immersive ? "w-0" : "w-80",
+				)}
+			>
+				<Sidebar
+					tilings={sorted}
+					selected={selected}
+					onSelect={setSelected}
+					onRandom={selectRandom}
+					onPrev={onPrev}
+					onNext={onNext}
+				/>
+			</div>
 			<div ref={canvasWrapRef} className="flex-1 min-w-0 relative">
 				<Canvas
 					width={size.w}
@@ -353,6 +385,21 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					/>
 				) : null}
 				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
+				{/* Fullscreen toggle: collapses the header + sidebar. Stays visible while immersive so it can
+				    exit. Drops below the symmetry-info badge (also top-right) when that's shown. */}
+				<button
+					type="button"
+					onClick={() => useImmersive.getState().toggle()}
+					title={immersive ? "Exit fullscreen (H or Esc)" : "Fullscreen canvas (H)"}
+					aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
+					aria-pressed={immersive}
+					className={cn(
+						"absolute right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
+						symmetryBadgeShown ? "top-20" : "top-4",
+					)}
+				>
+					{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
+				</button>
 			</div>
 		</div>
 	);

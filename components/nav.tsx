@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Library, Gamepad2, Shapes, Grid3x3 } from "lucide-react"; // History icon commented out with its nav link below
 import { cn } from "@/lib/utils/cn";
+import { useImmersive } from "@/stores/immersive";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
@@ -16,9 +17,17 @@ const LINKS = [
 
 export function Nav() {
 	const pathname = usePathname();
+	// Immersive (fullscreen-canvas) mode collapses the header. Kept in the layout (not unmounted) and
+	// animated so entering/exiting is a smooth 300ms slide, matching the sidebar collapse on /play.
+	const immersive = useImmersive((s) => s.immersive);
 
 	return (
-		<nav className="w-full shrink-0 flex items-center bg-surface-chrome border-b border-line-subtle px-4 h-12">
+		<nav
+			className={cn(
+				"w-full shrink-0 flex items-center bg-surface-chrome px-4 overflow-hidden transition-all duration-300 ease-in-out",
+				immersive ? "h-0 opacity-0 pointer-events-none border-b-0" : "h-12 border-b border-line-subtle",
+			)}
+		>
 			<Link href="/" className="flex items-center justify-center mr-4">
 				<span className="text-accent font-bold text-lg leading-none">Tiling Atlas</span>
 			</Link>
