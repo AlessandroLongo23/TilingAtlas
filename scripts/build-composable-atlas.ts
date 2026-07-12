@@ -6,21 +6,23 @@
  * least one COMPOSITE convex tile (a rigid super-tile assembled from regular pieces, e.g. cx4-2.4.2.4)
  * alongside the regular set.
  *
- * This is a DISPLAY-ONLY, palette-agnosticism demo — NOT a certified enumeration. The counts are
- * illustrative (20 at k=1, 238 at k=2), not the all-and-only result the thesis claims for the regular
- * atlas. Float geometry only (render/broadphase is the sanctioned place for float).
+ * The distinct-tiling COUNTS are now EXACT. The shelf dedups with proof-grade ℤ[ζ₂₄] congruence
+ * (lib/classes/algorithm/composable/exactComposableDedup — the same TilingCongruence stack behind the
+ * regular 11/20/61 claims), so a supercell, a relabelled fundamental domain, and the same tiling emitted
+ * at different target-k all collapse to one, exactly — no float in any dedup decision (NOTES §55, closing
+ * the §52/§54 gap). Caveats that remain: the k-uniformity LABEL still uses the float trueVertexOrbitCount
+ * (below), and COMPLETENESS of the enumeration — did the Čtrnáct solve find EVERY composite tiling — rests
+ * on the same engine exhaustiveness as the regular family (a thesis-theory question, not the dedup's). So
+ * this is an exact distinct-COUNT, not yet a closed all-and-only claim. Render geometry is float (the
+ * sanctioned place for it).
  *
  * Source: the Čtrnáct-engine composite development, exact ℤ[ζ₂₄], exported to
  *   experiments/composable-oracle/ctrnact-composite-{convex,decomp}-k{n}.cells.json
  * (each `{ _meta, records: [...] }`; the convex palette is the SUPERSET — it includes the decomposable
- * palette). Only records with usesComposite === true enter the shelf; pure-regular solutions already
- * live in the regular atlas.
- *
- * Per-k source: k=1 and k=2 come from the CONVEX cells. k=3 currently comes from the DECOMPOSABLE
- * cells (ctrnact-composite-decomp-k3.cells.json) because the convex k=3 solve is still running; since
- * that palette is exactly {regular + 7 decomposable tiles}, every k=3 entry here is decomposable-only.
- * When ctrnact-composite-convex-k3.cells.json lands it supersedes the decomp file automatically —
- * INPUTS lists convex first per k and takes the first file that exists.
+ * palette). Every record now carries the exact ℤ[ζ₂₄] coordinates the dedup consumes (cellPolygons.exact
+ * /name + exactBasis, from export_composable_cells.py); the build strips them before writing the shelf so
+ * the public JSON keeps only n/vertices/star + basis. Only usesComposite records enter the shelf;
+ * pure-regular solutions already live in the regular atlas. INPUTS prefers the convex cells per k.
  *
  * Decomposable split: a tiling is "decomposable-family" iff every cx… tile it uses is one of the 7
  * tiles that dissect into regular pieces (DECOMPOSABLE below); using any of the 4 non-decomposable
@@ -31,7 +33,8 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { canonicalTilingKey, trueVertexOrbitCount } from "@/classes/algorithm/composable/canonicalTilingKey";
+import { trueVertexOrbitCount } from "@/classes/algorithm/composable/canonicalTilingKey";
+import { exactComposableKeys, type ExactComposableCell } from "@/classes/algorithm/composable/exactComposableDedup";
 
 // The 7 composite convex tiles that dissect into regular polygons (the decomposable palette).
 const DECOMPOSABLE = new Set([
@@ -48,12 +51,21 @@ interface CellPoly {
 	n: number;
 	vertices: number[][];
 	star?: boolean;
+	// Exact ℤ[ζ₂₄] fields (present in the regenerated cells) — consumed by the exact dedup, stripped before
+	// the shelf JSON is written (renderTiling.ts needs only n/vertices/star).
+	name?: string;
+	exact?: number[][];
+}
+interface RenderCell {
+	cellPolygons: CellPoly[];
+	basis: number[][];
+	exactBasis?: number[][];
 }
 interface CellRecord {
 	id: string;
 	k: number;
 	family: string;
-	renderCell: { cellPolygons: CellPoly[]; basis: number[][] };
+	renderCell: RenderCell;
 	usesComposite?: boolean;
 	tiles?: string[];
 }
@@ -69,7 +81,7 @@ interface ComposableTiling {
 	source: "composable";
 	k: number;
 	family: string;
-	renderCell: { cellPolygons: CellPoly[]; basis: number[][] };
+	renderCell: RenderCell;
 	discoverer: string;
 	decomposableOnly: boolean;
 	note: string;
@@ -100,8 +112,7 @@ const INPUTS: { k: number; files: string[] }[] = [
 ];
 
 const NOTE =
-	"Palette-agnosticism demo: tilings using composite convex tiles. Illustrative shelf, not an " +
-	"all-and-only enumeration.";
+	"Tilings using composite convex tiles; distinct-tiling counts are exact (ℤ[ζ₂₄] congruence dedup).";
 
 const logLines: string[] = [];
 function log(msg = ""): void {
@@ -141,20 +152,33 @@ function isDecomposableOnly(tiles: string[] | undefined): boolean {
 // float key (canonicalTilingKey). Keeps the most primitive representative (fewest cell polygons, then
 // smallest cell), logs every merge, and with --verify-dedup re-checks that a wider patch radius yields
 // the same distinct count (proving the merges aren't false — i.e. no genuinely distinct tiling dropped).
-function dedupeComposable(out: ComposableTiling[], verify: boolean): ComposableTiling[] {
+function dedupeComposable(out: ComposableTiling[]): ComposableTiling[] {
 	const cellArea = (t: ComposableTiling): number => {
 		const [[ux, uy], [vx, vy]] = t.renderCell.basis;
 		return Math.abs(ux * vy - uy * vx);
 	};
-	// Key on the tiling itself, NOT k#tiling: the engine's separate k-solves each emit the same tiling
-	// under their own target k (e.g. the dodecagon+cx6 tiling appears as k=2 in the convex-k2 solve AND
-	// k=3 in the decomp-k3 solve), so the same render must collapse regardless of its (unreliable) k
-	// label. Relabelling to the true k happens after this, once per distinct tiling.
-	const groups = new Map<string, number[]>();
-	out.forEach((t, i) => {
-		const key = canonicalTilingKey(t.renderCell);
-		(groups.get(key) ?? groups.set(key, []).get(key)!).push(i);
+	// EXACT ℤ[ζ₂₄] congruence dedup (lib/classes/algorithm/composable/exactComposableDedup) — proof-grade,
+	// replacing the float canonicalTilingKey heuristic. Key on the tiling itself, NOT k#tiling: the engine's
+	// separate k-solves each emit the same tiling under their own target k (the dodecagon+cx6 tiling appears
+	// as k=2 AND k=3), so the render must collapse regardless of the unreliable k label; relabelling to the
+	// true k happens after, once per distinct tiling.
+	const cells: ExactComposableCell[] = out.map((t, i) => {
+		const rc = t.renderCell;
+		if (!rc.exactBasis || rc.cellPolygons.some((cp) => !cp.exact || !cp.name)) {
+			throw new Error(
+				`[build-composable-atlas] ${out[i].id} lacks exact ℤ[ζ₂₄] coords — regenerate the cells with the ` +
+					`updated export_composable_cells.py (it emits cellPolygons.exact/name + exactBasis).`,
+			);
+		}
+		return {
+			cellPolygons: rc.cellPolygons.map((cp) => ({ n: cp.n, name: cp.name!, exact: cp.exact!, star: cp.star })),
+			exactBasis: rc.exactBasis,
+		};
 	});
+	const { keys, distinct, reduced } = exactComposableKeys(cells);
+
+	const groups = new Map<string, number[]>();
+	keys.forEach((key, i) => (groups.get(key) ?? groups.set(key, []).get(key)!).push(i));
 	const survivors: ComposableTiling[] = [];
 	const mergeLog: string[] = [];
 	let merged = 0;
@@ -162,7 +186,7 @@ function dedupeComposable(out: ComposableTiling[], verify: boolean): ComposableT
 		idxs.sort((a, b) => {
 			const pa = out[a].renderCell.cellPolygons.length;
 			const pb = out[b].renderCell.cellPolygons.length;
-			if (pa !== pb) return pa - pb; // fewest polygons ⇒ the primitive representation
+			if (pa !== pb) return pa - pb; // fewest polygons ⇒ the primitive representation (kept for display)
 			const aa = cellArea(out[a]);
 			const ab = cellArea(out[b]);
 			if (Math.abs(aa - ab) > 1e-6) return aa - ab;
@@ -175,16 +199,11 @@ function dedupeComposable(out: ComposableTiling[], verify: boolean): ComposableT
 		}
 	}
 	survivors.sort((a, b) => a.id.localeCompare(b.id)); // stable original order (IDs kept, gaps allowed)
-	log(`  dedup: ${out.length} → ${survivors.length} distinct tilings (${merged} duplicate representations merged)`);
+	log(
+		`  dedup (EXACT ℤ[ζ₂₄] congruence): ${out.length} → ${distinct} distinct tilings ` +
+			`(${merged} duplicate representations merged; ${reduced} supercells primitive-reduced)`,
+	);
 	for (const line of mergeLog) log(line);
-
-	if (verify) {
-		const wide = new Set<string>();
-		for (const t of out) wide.add(canonicalTilingKey(t.renderCell, 1.6));
-		const same = wide.size === groups.size;
-		log(`  dedup verify: distinct at radiusFactor 1.1 = ${groups.size}, at 1.6 = ${wide.size}  ` +
-			`${same ? "✓ stable (no false merges)" : "⚑ MISMATCH — a tighter radius over-merged; investigate"}`);
-	}
 	return survivors;
 }
 
@@ -240,7 +259,7 @@ function main(): void {
 	// Dedup: the raw counts above are pre-dedup (one row per source representation). Collapse
 	// same-tiling duplicates before writing the shelf.
 	log("");
-	const deduped = dedupeComposable(out, process.argv.includes("--verify-dedup"));
+	const deduped = dedupeComposable(out);
 
 	// Relabel k to the TRUE vertex-orbit count under the FULL symmetry group (mirror-merged). The
 	// composite engine counts orbits chirally (orientation-preserving subgroup only), so an achiral
@@ -269,6 +288,15 @@ function main(): void {
 		(byNewK.get(t.k) ?? byNewK.set(t.k, []).get(t.k)!).push(t);
 	}
 	for (const [k, list] of byNewK) list.forEach((t, i) => (t.id = `composable-k${k}-${String(i).padStart(3, "0")}`));
+
+	// Strip the exact ℤ[ζ₂₄] fields (used only for the dedup) — renderTiling.ts consumes only n/vertices/star
+	// + basis, and keeping the exact coords would balloon the shelf JSON.
+	for (const t of deduped) {
+		t.renderCell = {
+			cellPolygons: t.renderCell.cellPolygons.map((cp) => ({ n: cp.n, vertices: cp.vertices, star: cp.star })),
+			basis: t.renderCell.basis,
+		};
+	}
 
 	fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 

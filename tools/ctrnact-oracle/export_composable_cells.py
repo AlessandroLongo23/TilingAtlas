@@ -104,7 +104,12 @@ def develop_block(tab, vertype, conway, k, palette, id_prefix, idx):
                              f"{len(bad)} non-unit edge(s), e.g. edge {bad[0][0]} len {bad[0][1]:.6f}")
         rec = {"n": n,
                "vertices": [[round(q.real, 12), round(q.imag, 12)] for q in pts],
-               "star": star}
+               "star": star,
+               # EXACT ℤ[ζ₂₄] coordinates (length-8 integer coefficient vectors, den=1) — kept so the
+               # TS side can rebuild Cyclotomic/Polygon and run the proof-grade exact congruence dedup
+               # (dedupeByCongruence). `name` disambiguates the tile species for the congruence buckets.
+               "name": tab.TILE_NAME[tile],
+               "exact": [list(v) for v in verts]}
         polys.append(rec)
         tile_names.add(tab.TILE_NAME[tile])
 
@@ -117,6 +122,8 @@ def develop_block(tab, vertype, conway, k, palette, id_prefix, idx):
             "cellPolygons": polys,
             "basis": [[round(b1.real, 12), round(b1.imag, 12)],
                       [round(b2.real, 12), round(b2.imag, 12)]],
+            # Exact translation basis Λ=(T1,T2) as ℤ[ζ₂₄] integer coefficient vectors (see cellPolygons.exact).
+            "exactBasis": [list(T1), list(T2)],
         },
         "usesComposite": uses_composite,
         "tiles": sorted(tile_names),

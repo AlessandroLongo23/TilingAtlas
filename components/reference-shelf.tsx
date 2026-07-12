@@ -371,7 +371,7 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Composite palette"
 							summary={filters.composableDecomp ?? null}
-							note="demo, not all-and-only"
+							note="exact ℤ[ζ] distinct counts"
 						>
 							<ButtonGroup
 								options={DECOMP_OPTIONS}

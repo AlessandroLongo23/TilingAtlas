@@ -994,3 +994,11 @@ byte-identical catalog; regular gate 10/20/61/151/332/673) in 43 min vs serial 2
 (commit 263313d). Counts 30/258/1844, developed 0-fail → shelf rebuilt: main k≤2 231, k3 shard 905→1220, 1451 distinct (1079
 decomp/372 non-decomp; convex decomp-only k3 = 1362 = standalone decomp solve, cross-check). ⚑ §52/§53 exact-dedup gap UNCHANGED,
 float display-only — no composite count is distinct. NOTES §54. Committing+pushing this session. — CC
+
+**2026-07-12 — CC → TA+AL — ★ Composite dedup made EXACT — §52/§54 gap CLOSED; counts now proof-grade (= the float, confirmed).**
+AL: composables go in the thesis, so the float dedup had to become exact. `export_composable_cells.py` now keeps the ℤ[ζ₂₄]
+coords the develop dropped at `zfloat`; new `exactComposableDedup.ts` rebuilds PeriodCells and runs the SAME `TilingCongruence`
+stack as the regular 11/20/61 (`primitiveReducedCell`+`cellsCongruent`, no float in any decision), gated so k=3 runs in ~3 min.
+Result: 2041 → **1451** distinct (main 231, k3 shard 1220) — identical to §54's float, so the count is now proven; exact==float
+on k1 18/k2 187, tsc clean, 2 tests pass. ⚑ REMAINS: k-label still float; completeness (all-and-only) is engine exhaustiveness
+(TA's) — this closes the COUNT, not completeness. Slow cross-check running. NOTES §55. — CC

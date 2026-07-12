@@ -3684,3 +3684,59 @@ Files: `tools/ctrnact-oracle/eu_solver.cpp` (EU_PROGRESS heartbeat, committed 26
 `tools/ctrnact-oracle/run-oracle-parallel.sh`, regenerated `public/reference-atlas-composable{,-k3}.json`, new
 `experiments/composable-oracle/ctrnact-composite-convex-k3.cells.json`, logs
 `experiments/results/composable-k3-convex-{parallel,develop}-2026-07-12.log`.
+
+## 55. The composite dedup made exact — the §52/§54 gap closed, counts proven (2026-07-12, session 27)
+
+AL's call: composable tilings are going INTO the thesis as a counted result, so the float display-only dedup (§52–§54) had
+to become proof-grade. It now is — the shelf dedups with exact ℤ[ζ₂₄] congruence, and every count is unchanged from the
+float, so the heuristic was right all along and the number is now a theorem, not a picture.
+
+**Why the pipeline over-counts (§54's "why", confirmed by inspecting the dup groups).** The Čtrnáct combinatorial enumeration
+counts (cell, root-labeling, target-k) TRIPLES, and one infinite tiling has many: (1) supercells — the same tiling in a
+primitive cell AND its 2×/3×/4× enlargement (different |detΛ|, different tile count); (2) same-cell relabelings — one
+fundamental domain rooted/labeled differently (combinatorially distinct, survives the WL pruner, geometrically identical);
+(3) cross-k — the same tiling emitted by the k=1, k=2 AND k=3 solves under their own target k. A float key papered over all
+three; exact congruence collapses them by construction.
+
+**The fix reuses the regular atlas's proven stack, not a new one.** The composite develop already computes in ℤ[ζ₂₄] (the
+D=12 palette lifts ζ₁₂→ζ₂₄ via STEP=2) — it just threw the exact coordinates away at the `zfloat` export.
+`export_composable_cells.py` now retains them (`cellPolygons.exact/name` + `exactBasis`, integer coefficient vectors, den=1).
+`lib/classes/algorithm/composable/exactComposableDedup.ts` rebuilds each cell as `Cyclotomic` → `Polygon` → `PeriodCell` and
+runs the SAME `TilingCongruence` machinery behind the regular 11/20/61 claims: `primitiveReducedCell` (collapses supercells,
+axis 1) + `cellsCongruent` (grid-isometry congruence on the actual tile FACES, axes 2/3), bucketed by the exact necessary
+invariants `(nameMultiset, |detΛ|)`. No float in any dedup decision.
+
+**One trap worth recording: `nKeyOfCell` is UNSOUND as a composite key.** N canonicalizes the vertex POINT SET, which
+determines a regular-polygon tiling but NOT a composite one — the same corner points can host different composite tiles — so
+it MERGES non-congruent composite tilings (a 52-cell N-bucket at k=2 whose true classes are dozens). It stays sound as a cheap
+BUCKET (congruent ⟹ same point set ⟹ same N-key, never a false split), but the buckets were too coarse, so I bucket on
+`(nameMultiset, |detΛ|)` instead. The mistake surfaced via a verify guard that re-checked each N-group with `cellsCongruent`
+and threw on the first false merge — keep that guard reflex when trusting a fast key.
+
+**Performance: gated reduction, k=3 in ~3 min not ~1 hr.** `primitiveReducedCell` (a 5×5-replicate + extract) is the dominant
+cost, super-linear in cell size (unusable on k=3's 30-poly cells if run on all 1783). It is only needed to collapse a
+supercell, so three cheap exact gates decide whether to pay for it: gcd of tile counts == 1 ⟹ provably primitive (a supercell
+multiplies every count by m); else all tile SHAPES distinct ⟹ primitive (a sub-period would make two tiles exact translates);
+else an O(p²) sub-period test. Only cells past all three reduce — 144 of 2041 combined. (k=3 alone: 1783 → 1258 distinct in
+193 s.)
+
+**Result — exact == float, so the count is now proven.** Combined 2041 usesComposite records → **1451** distinct (590
+duplicate representations merged, 144 supercells reduced): main k≤2 = **231** (k1 20, k2 211), k=3 shard **1220**. Identical
+to the §54 float build in every number; split 1079 decomposable / 372 non-decomposable. Validation: exact matches the float on
+k=1 (**18**) and k=2 (**187**) exactly; a synthetic square-supercell test (primitive ≅ 2× wide ≅ 2× tall → 1 distinct) passes;
+`pnpm tsc` clean. A missed reduction would make exact > float, and `cellsCongruent` admits no false merge, so exact == float ==
+1451 is strong evidence the fast gates are complete; a full slow-`congruencePartition` cross-check (reduces EVERY cell, no
+gate) is running to confirm and will be recorded in SYNC.
+
+**⚑ What §55 does and does NOT close.** CLOSED: the §52/§54 dedup gap — composite distinct-tiling counts are now EXACT
+(proof-grade ℤ[ζ₂₄]), the "why" is understood, and the shelf carries the exact number. STILL OPEN, now the only composite
+caveats: (a) the k-uniformity LABEL still uses the float `trueVertexOrbitCount` (a wrong label mis-shelves a tiling between k
+but does NOT change the total distinct count); (b) COMPLETENESS — that the Čtrnáct solve found EVERY composite tiling
+(all-and-only) — rests on the same engine exhaustiveness as the regular family and is a thesis-theory question for TA, NOT
+something the dedup addresses. So: an exact distinct-COUNT, not yet a closed all-and-only claim.
+
+Files: `tools/ctrnact-oracle/export_composable_cells.py` (retain exact coords), new
+`lib/classes/algorithm/composable/exactComposableDedup.ts` + `tests/exact-composable-dedup.test.ts`,
+`scripts/build-composable-atlas.ts` (exact dedup + strip exact fields before writing), regenerated
+`public/reference-atlas-composable{,-k3}.json` + the three convex `*.cells.json`, framing in
+`lib/services/referenceAtlas.ts` + `components/reference-{shelf,card}.tsx`.

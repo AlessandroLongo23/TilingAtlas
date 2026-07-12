@@ -18,9 +18,10 @@ import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types"
 //               k=1..2, star-bearing solutions only. Most reproduce Myers records; the ones flagged
 //               candidate:true match NOTHING in Myers and are pending adversarial review.
 //   - composable: tilings using COMPOSITE convex super-tiles (e.g. cx4-2.4.2.4) alongside the regular
-//               set — a palette-agnosticism DEMO (scripts/build-composable-atlas.ts → the separate
-//               public/reference-atlas-composable.json). Illustrative counts, NOT all-and-only; these
-//               carry no certification / discoverer-completeness / wallpaper classification.
+//               set (scripts/build-composable-atlas.ts → the separate public/reference-atlas-composable
+//               .json). Distinct-tiling counts are EXACT (proof-grade ℤ[ζ₂₄] congruence dedup, NOTES §55);
+//               enumeration completeness rests on the engine, as for the regular family. These carry no
+//               certification / discoverer-completeness / wallpaper classification.
 export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {

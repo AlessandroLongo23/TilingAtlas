@@ -66,7 +66,7 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 						<>
 							<span
 								className="inline-flex items-center rounded-full border border-indigo-400/30 bg-indigo-400/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400"
-								title={tiling.note ?? "Composite-tile demo (illustrative, not all-and-only)"}
+								title={tiling.note ?? "Composite-tile tiling (exact ℤ[ζ₂₄] distinct-count dedup)"}
 							>
 								Composable
 							</span>

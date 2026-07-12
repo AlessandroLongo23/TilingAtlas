@@ -3,28 +3,28 @@
   k=2 [ctrnact-composite-convex-k2.cells.json]: 238 usesComposite of 258 records  (decomposable-only 183, uses-non-decomposable 55)
   k=3 [ctrnact-composite-convex-k3.cells.json]: 1783 usesComposite of 1844 records  (decomposable-only 1362, uses-non-decomposable 421)
 
-  dedup: 2041 → 1451 distinct tilings (590 duplicate representations merged)
+  dedup (EXACT ℤ[ζ₂₄] congruence): 2041 → 1451 distinct tilings (590 duplicate representations merged; 144 supercells primitive-reduced)
     composable-k1-012  ⇐  composable-k1-015, composable-k2-226, composable-k3-1743, composable-k3-1747, composable-k3-1751, composable-k3-1755, composable-k2-227, composable-k2-228, composable-k3-1754, composable-k3-1760
     composable-k1-013  ⇐  composable-k1-014, composable-k2-225, composable-k3-1745, composable-k3-1746, composable-k3-1749, composable-k3-1752
-    composable-k2-018  ⇐  composable-k2-019, composable-k3-367, composable-k3-368
-    composable-k2-020  ⇐  composable-k2-023
-    composable-k2-021  ⇐  composable-k2-024
-    composable-k2-022  ⇐  composable-k2-025
+    composable-k2-018  ⇐  composable-k2-019
+    composable-k2-020  ⇐  composable-k2-025
+    composable-k2-021  ⇐  composable-k2-022
+    composable-k2-023  ⇐  composable-k2-024, composable-k3-367, composable-k3-368
     composable-k2-038  ⇐  composable-k2-040
     composable-k2-039  ⇐  composable-k2-041
     composable-k2-043  ⇐  composable-k2-044
     composable-k2-046  ⇐  composable-k3-549
     composable-k2-094  ⇐  composable-k2-095
-    composable-k2-098  ⇐  composable-k2-099
-    composable-k2-100  ⇐  composable-k2-103
-    composable-k2-102  ⇐  composable-k2-101
-    composable-k2-104  ⇐  composable-k2-107, composable-k2-105, composable-k2-106
-    composable-k2-108  ⇐  composable-k2-112
-    composable-k2-109  ⇐  composable-k2-113
-    composable-k2-110  ⇐  composable-k2-114
-    composable-k2-111  ⇐  composable-k2-115
-    composable-k2-116  ⇐  composable-k2-117
-    composable-k2-118  ⇐  composable-k2-119
+    composable-k2-098  ⇐  composable-k2-101, composable-k2-099, composable-k2-100
+    composable-k2-102  ⇐  composable-k2-116
+    composable-k2-103  ⇐  composable-k2-117
+    composable-k2-104  ⇐  composable-k2-105
+    composable-k2-106  ⇐  composable-k2-115
+    composable-k2-107  ⇐  composable-k2-108
+    composable-k2-109  ⇐  composable-k2-112
+    composable-k2-111  ⇐  composable-k2-110
+    composable-k2-113  ⇐  composable-k2-118
+    composable-k2-114  ⇐  composable-k2-119
     composable-k2-121  ⇐  composable-k2-122
     composable-k2-123  ⇐  composable-k2-124, composable-k3-1176, composable-k3-1177
     composable-k2-133  ⇐  composable-k2-137
@@ -36,18 +36,18 @@
     composable-k2-158  ⇐  composable-k2-160
     composable-k2-163  ⇐  composable-k2-166, composable-k2-164, composable-k2-165
     composable-k2-172  ⇐  composable-k2-174
-    composable-k2-175  ⇐  composable-k2-173
-    composable-k2-190  ⇐  composable-k2-202
-    composable-k2-191  ⇐  composable-k2-203
-    composable-k2-192  ⇐  composable-k2-200
-    composable-k2-193  ⇐  composable-k2-201
-    composable-k2-194  ⇐  composable-k2-195
-    composable-k2-196  ⇐  composable-k2-197
-    composable-k2-198  ⇐  composable-k2-199
+    composable-k2-173  ⇐  composable-k2-175
+    composable-k2-190  ⇐  composable-k2-191
+    composable-k2-192  ⇐  composable-k2-193
+    composable-k2-194  ⇐  composable-k2-196
+    composable-k2-195  ⇐  composable-k2-197
+    composable-k2-198  ⇐  composable-k2-202
+    composable-k2-199  ⇐  composable-k2-203
+    composable-k2-200  ⇐  composable-k2-201
     composable-k2-204  ⇐  composable-k2-205
     composable-k2-206  ⇐  composable-k2-207, composable-k3-1650, composable-k3-1651
-    composable-k2-215  ⇐  composable-k2-218
-    composable-k2-216  ⇐  composable-k2-217
+    composable-k2-215  ⇐  composable-k2-216
+    composable-k2-217  ⇐  composable-k2-218
     composable-k2-219  ⇐  composable-k3-1716, composable-k3-1719
     composable-k2-221  ⇐  composable-k2-224, composable-k2-222, composable-k2-223, composable-k3-1723, composable-k3-1721, composable-k3-1722, composable-k3-1724
     composable-k2-229  ⇐  composable-k2-230
@@ -420,8 +420,8 @@
 
 === relabel k → true vertex-orbit count (mirror-merged, matching the regular atlas) ===
   31 of 1451 tilings were chirally over-counted; relabeled to their true (lower) k
-    composable-k2-172  k=2 → k=1  [(cx8-4.4.5.5.4.4.5.5@2,cx8-4.4.5.5.4.4.5.5@0,4)F, (cx8-4]
-    composable-k2-175  k=2 → k=1  [(cx8-4.4.5.5.4.4.5.5@2,cx8-4.4.5.5.4.4.5.5@1,4)F, (cx8-4]
+    composable-k2-172  k=2 → k=1  [(cx8-4.4.5.5.4.4.5.5@2,cx8-4.4.5.5.4.4.5.5@1,4)F, (cx8-4]
+    composable-k2-173  k=2 → k=1  [(cx8-4.4.5.5.4.4.5.5@2,cx8-4.4.5.5.4.4.5.5@1,4)F, (cx8-4]
     composable-k3-020  k=3 → k=2  [(cx9-4.5.5.4.5.5.4.5.5@1,6,4)F, (cx9-4.5.5.4.5.5.4.5.5@2]
     composable-k3-1032  k=3 → k=2  [(cx5-2.5.3.3.5@2,3,cx5-2.5.3.3.5@1,3)F, (cx5-2.5.3.3.5@0]
     composable-k3-1036  k=3 → k=2  [(cx5-2.5.3.3.5@3,cx5-2.5.3.3.5@1,3,3)F, (cx5-2.5.3.3.5@0]
@@ -453,8 +453,8 @@
     composable-k3-931  k=3 → k=2  [(cx5-2.5.3.3.5@0,cx4-2.4.2.4@1,3,cx4-2.4.2.4@1)F, (cx5-2]
 
 === composable atlas written (main + 1 shard) ===
-  main  k≤2: 231 tilings → public/reference-atlas-composable.json  (248.8 KB)
+  main  k≤2: 231 tilings → public/reference-atlas-composable.json  (248.4 KB)
   shard k=3: 1220 tilings → public/reference-atlas-composable-k3.json  (1828.9 KB)
   total 1451 tilings  (2041 raw before dedup)
   decomposable-only 1079  ·  uses-non-decomposable 372
-  elapsed 406.46s
+  elapsed 590.64s
