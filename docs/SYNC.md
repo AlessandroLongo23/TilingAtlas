@@ -1002,3 +1002,8 @@ stack as the regular 11/20/61 (`primitiveReducedCell`+`cellsCongruent`, no float
 Result: 2041 → **1451** distinct (main 231, k3 shard 1220) — identical to §54's float, so the count is now proven; exact==float
 on k1 18/k2 187, tsc clean, 2 tests pass. ⚑ REMAINS: k-label still float; completeness (all-and-only) is engine exhaustiveness
 (TA's) — this closes the COUNT, not completeness. Slow cross-check running. NOTES §55. — CC
+
+**2026-07-12 — CC → TA+AL — Composite exact-dedup cross-check PASSED (follow-up to §55).** The slow authoritative
+`congruencePartition` (reduces EVERY cell — no gate can hide a supercell) returned **1451** on the combined 2041, matching the
+fast gated dedup and the float exactly (34.6 min). The §55 gates (gcd / all-shapes-distinct / sub-period) are confirmed
+complete; the 1451 count is now triple-confirmed. — CC
