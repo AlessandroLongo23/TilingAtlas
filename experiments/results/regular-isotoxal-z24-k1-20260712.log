@@ -1,0 +1,110 @@
+[gen] palette=regular-isotoxal-z24 D=24 tiles=14 classes=23 configs=1215
+[gen] wrote tables/regular-isotoxal-z24/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (1569 entries)
+
+=== k=1 SOLVE+PRUNE run Sun Jul 12 10:48:52 CEST 2026 ===
+[10:48:52] build (MAXNUM=1 PALETTE=regular-isotoxal-z24)
+[10:48:55] PHASE 1  solve (C++ DFS, all k<=1)
+[10:48:55]   raw blocks: 42  (0s)
+[10:48:55] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 41
+total kept: 41
+[10:48:56]   (1s)
+[10:48:56] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[10:48:56] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-regular-isotoxal-z24-k1/ctrnact-cells-k1.json
+
+=== k=1 DEVELOP (geometric realizability) Sun Jul 12 10:50:23 CEST 2026 ===
+  ERR #7 (iso4-60.120@1,6,iso4-60.120@0,3)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #8 (iso4-75.105@1,6,iso4-75.105@0,3)F: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #10 (iso4-60.120@1,3,iso4-60.120@0,3,3)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #11 (iso4-60.120@1,iso4-60.120@0,3,3,3)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #12 (iso4-60.120@1,iso4-60.120@0,3,3,3)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #13 (iso4-75.105@1,3,iso4-75.105@0,3,3)F: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #14 (iso4-75.105@1,iso4-75.105@0,3,3,3)F: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #15 (iso4-75.105@1,iso4-75.105@0,3,3,3)F: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #16 (iso6-75.165@1,3,iso6-75.165@0,3)A: point-count mismatch tile iso6-75.165: walked 6 corners but n=3
+  ERR #17 (iso6-90.150@1,3,iso6-90.150@0,3)A: point-count mismatch tile iso6-90.150: walked 6 corners but n=3
+  ERR #18 (iso6-105.135@1,3,iso6-105.135@0,3)A: point-count mismatch tile iso6-105.135: walked 6 corners but n=3
+  ERR #19 (iso12-135.165@1,iso12-135.165@0,3)F: point-count mismatch tile iso12-135.165: walked 12 corners but n=6
+  ERR #23 (iso4-60.120@1,4,iso4-60.120@0,4)A: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #24 (iso4-60.120@1,iso4-60.120@0,4,4)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #25 (iso4-60.120@1,iso4-60.120@0,4,4)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #26 (iso4-75.105@1,4,iso4-75.105@0,4)A: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #27 (iso4-75.105@1,iso4-75.105@0,4,4)F: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #28 (iso4-75.105@1,iso4-75.105@0,4,4)F: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #29 (iso8-105.165@1,iso8-105.165@0,4)F: point-count mismatch tile iso8-105.165: walked 8 corners but n=4
+  ERR #30 (iso8-120.150@1,iso8-120.150@0,4)F: point-count mismatch tile iso8-120.150: walked 8 corners but n=4
+  ERR #32 (iso6-75.165@1,iso6-75.165@0,6)F: point-count mismatch tile iso6-75.165: walked 6 corners but n=3
+  ERR #33 (iso6-90.150@1,iso6-90.150@0,6)F: point-count mismatch tile iso6-90.150: walked 6 corners but n=3
+  ERR #34 (iso6-105.135@1,iso6-105.135@0,6)F: point-count mismatch tile iso6-105.135: walked 6 corners but n=3
+  ERR #35 (iso4-60.120@1,iso4-60.120@0,iso4-60.120@1,iso4-60.120@0)S2: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #36 (iso4-60.120@1,iso4-60.120@1,iso4-60.120@0,iso4-60.120@0)A: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #37 (iso4-75.105@1,iso4-60.120@1,iso4-75.105@0,iso4-60.120@0)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #38 (iso4-75.105@1,iso4-75.105@0,iso4-60.120@0,iso4-60.120@1)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #39 (iso4-75.105@1,iso4-75.105@0,iso4-60.120@1,iso4-60.120@0)F: point-count mismatch tile iso4-60.120: walked 4 corners but n=2
+  ERR #40 (iso4-75.105@1,iso4-75.105@0,iso4-75.105@1,iso4-75.105@0)S2: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  ERR #41 (iso4-75.105@1,iso4-75.105@1,iso4-75.105@0,iso4-75.105@0)A: point-count mismatch tile iso4-75.105: walked 4 corners but n=2
+  #1 (3,3,3,3,3,3)S6: 2 cell polys, area 0.8660 == |det| ok
+  #2 (4,3,4,3,3)A: 6 cell polys, area 3.7321 == |det| ok
+  #3 (4,4,3,3,3)A: 3 cell polys, area 1.8660 == |det| ok
+  #4 (6,4,3,4)A: 6 cell polys, area 6.4641 == |det| ok
+  #5 (6,3,6,3)S2: 3 cell polys, area 3.4641 == |det| ok
+  #6 (6,3,3,3,3)F: 9 cell polys, area 6.0622 == |det| ok
+  #7 (12,12,3)A: 3 cell polys, area 12.0622 == |det| ok
+  #8 (4,4,4,4)S4: 1 cell polys, area 1.0000 == |det| ok
+  #9 (12,6,4)F: 6 cell polys, area 19.3923 == |det| ok
+  #10 (8,8,4)A: 2 cell polys, area 5.8284 == |det| ok
+  #11 (6,6,6)S3: 1 cell polys, area 2.5981 == |det| ok
+[regular-isotoxal-z24 k=1]  solutions 41  developed 11  usesComposite 0  failures 30  -> ../../experiments/results/regular-isotoxal-z24-k1.cells.json
+
+=== RERUN with cx-names Sun Jul 12 10:51:27 CEST 2026 ===
+[10:51:27] build (MAXNUM=1 PALETTE=regular-isotoxal-z24)
+[10:51:30] PHASE 1  solve (C++ DFS, all k<=1)
+[10:51:31]   raw blocks: 42  (1s)
+[10:51:31] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 41
+total kept: 41
+[10:51:31]   (0s)
+[10:51:31] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[10:51:31] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-regular-isotoxal-z24-k1/ctrnact-cells-k1.json
+  #1 (3,3,3,3,3,3)S6: 2 cell polys, area 0.8660 == |det| ok
+  #2 (4,3,4,3,3)A: 6 cell polys, area 3.7321 == |det| ok
+  #3 (4,4,3,3,3)A: 3 cell polys, area 1.8660 == |det| ok
+  #4 (6,4,3,4)A: 6 cell polys, area 6.4641 == |det| ok
+  #5 (6,3,6,3)S2: 3 cell polys, area 3.4641 == |det| ok
+  #6 (6,3,3,3,3)F: 9 cell polys, area 6.0622 == |det| ok
+  #7 (cx4-60.120@1,6,cx4-60.120@0,3)F: 6 cell polys, area 6.0622 == |det| ok  [composite]
+  #8 (cx4-75.105@1,6,cx4-75.105@0,3)F: 6 cell polys, area 6.3619 == |det| ok  [composite]
+  #9 (12,12,3)A: 3 cell polys, area 12.0622 == |det| ok
+  #10 (cx4-60.120@1,3,cx4-60.120@0,3,3)F: 6 cell polys, area 3.4641 == |det| ok  [composite]
+  #11 (cx4-60.120@1,cx4-60.120@0,3,3,3)F: 3 cell polys, area 1.7321 == |det| ok  [composite]
+  #12 (cx4-60.120@1,cx4-60.120@0,3,3,3)F: 6 cell polys, area 3.4641 == |det| ok  [composite]
+  #13 (cx4-75.105@1,3,cx4-75.105@0,3,3)F: 6 cell polys, area 3.6639 == |det| ok  [composite]
+  #14 (cx4-75.105@1,cx4-75.105@0,3,3,3)F: 3 cell polys, area 1.8320 == |det| ok  [composite]
+  #15 (cx4-75.105@1,cx4-75.105@0,3,3,3)F: 6 cell polys, area 3.6639 == |det| ok  [composite]
+  #16 (cx6-75.165@1,3,cx6-75.165@0,3)A: 3 cell polys, area 2.9568 == |det| ok  [composite]
+  #17 (cx6-90.150@1,3,cx6-90.150@0,3)A: 3 cell polys, area 3.2321 == |det| ok  [composite]
+  #18 (cx6-105.135@1,3,cx6-105.135@0,3)A: 3 cell polys, area 3.4051 == |det| ok  [composite]
+  #19 (cx12-135.165@1,cx12-135.165@0,3)F: 3 cell polys, area 11.8577 == |det| ok  [composite]
+  #20 (4,4,4,4)S4: 1 cell polys, area 1.0000 == |det| ok
+  #21 (12,6,4)F: 6 cell polys, area 19.3923 == |det| ok
+  #22 (8,8,4)A: 2 cell polys, area 5.8284 == |det| ok
+  #23 (cx4-60.120@1,4,cx4-60.120@0,4)A: 4 cell polys, area 3.7321 == |det| ok  [composite]
+  #24 (cx4-60.120@1,cx4-60.120@0,4,4)F: 2 cell polys, area 1.8660 == |det| ok  [composite]
+  #25 (cx4-60.120@1,cx4-60.120@0,4,4)F: 4 cell polys, area 3.7321 == |det| ok  [composite]
+  #26 (cx4-75.105@1,4,cx4-75.105@0,4)A: 4 cell polys, area 3.9319 == |det| ok  [composite]
+  #27 (cx4-75.105@1,cx4-75.105@0,4,4)F: 2 cell polys, area 1.9659 == |det| ok  [composite]
+  #28 (cx4-75.105@1,cx4-75.105@0,4,4)F: 4 cell polys, area 3.9319 == |det| ok  [composite]
+  #29 (cx8-105.165@1,cx8-105.165@0,4)F: 2 cell polys, area 5.4495 == |det| ok  [composite]
+  #30 (cx8-120.150@1,cx8-120.150@0,4)F: 2 cell polys, area 5.7321 == |det| ok  [composite]
+  #31 (6,6,6)S3: 1 cell polys, area 2.5981 == |det| ok
+  #32 (cx6-75.165@1,cx6-75.165@0,6)F: 3 cell polys, area 6.7796 == |det| ok  [composite]
+  #33 (cx6-90.150@1,cx6-90.150@0,6)F: 3 cell polys, area 7.3301 == |det| ok  [composite]
+  #34 (cx6-105.135@1,cx6-105.135@0,6)F: 3 cell polys, area 7.6762 == |det| ok  [composite]
+  #35 (cx4-60.120@1,cx4-60.120@0,cx4-60.120@1,cx4-60.120@0)S2: 1 cell polys, area 0.8660 == |det| ok  [composite]
+  #36 (cx4-60.120@1,cx4-60.120@1,cx4-60.120@0,cx4-60.120@0)A: 2 cell polys, area 1.7321 == |det| ok  [composite]
+  #37 (cx4-75.105@1,cx4-60.120@1,cx4-75.105@0,cx4-60.120@0)F: 4 cell polys, area 3.6639 == |det| ok  [composite]
+  #38 (cx4-75.105@1,cx4-75.105@0,cx4-60.120@0,cx4-60.120@1)F: 2 cell polys, area 1.8320 == |det| ok  [composite]
+  #39 (cx4-75.105@1,cx4-75.105@0,cx4-60.120@1,cx4-60.120@0)F: 2 cell polys, area 1.8320 == |det| ok  [composite]
+  #40 (cx4-75.105@1,cx4-75.105@0,cx4-75.105@1,cx4-75.105@0)S2: 1 cell polys, area 0.9659 == |det| ok  [composite]
+  #41 (cx4-75.105@1,cx4-75.105@1,cx4-75.105@0,cx4-75.105@0)A: 2 cell polys, area 1.9319 == |det| ok  [composite]
+[regular-isotoxal-z24 k=1]  solutions 41  developed 41  usesComposite 30  failures 0  -> ../../experiments/results/regular-isotoxal-z24-k1.cells.json

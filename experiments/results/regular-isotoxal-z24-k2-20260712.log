@@ -1,0 +1,11 @@
+=== k=2 SOLVE+PRUNE Sun Jul 12 11:44:45 CEST 2026 ===
+[11:44:45] build (MAXNUM=2 PALETTE=regular-isotoxal-z24)
+[11:44:46] PHASE 1  solve (C++ DFS, all k<=2)
+[11:44:46]   raw blocks: 407  (0s)
+[11:44:46] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 41
+  k=2 : 249
+total kept: 290
+[11:44:46]   (0s)
+[11:44:46] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[11:44:46] DONE  total 0s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-regular-isotoxal-z24-k2/ctrnact-cells-k2.json
