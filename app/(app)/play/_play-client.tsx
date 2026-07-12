@@ -23,7 +23,7 @@ import { resolveAlphaDegs } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ParamSliderPanel } from "@/components/param-slider-panel";
 import { pickStratified } from "@/lib/utils/pickStratified";
-import { polygonClassLabel } from "@/lib/utils/tilingLabel";
+import { polygonClassLabel, polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 
 // Higher-k demo shards held out of the eager main atlas (convex k3, isotoxal k3/k4). We pull them all into
@@ -209,6 +209,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		fa.set(resolveAlphaDegs(paramCell, fa.values));
 	}, [selected?.canonicalKey, paramCell]);
 
+	// The Islamic construction is only defined for the regular/star classes. When the selection moves to a
+	// class that doesn't support it (convex-irregular, isotoxal), force the toggle off — otherwise the
+	// render path would keep drawing the fill for a tiling whose sidebar no longer offers the control.
+	useEffect(() => {
+		if (selected && !polygonClassSupportsIslamic(selected.family) && useConfiguration.getState().isIslamic) {
+			useConfiguration.getState().set({ isIslamic: false });
+		}
+	}, [selected]);
+
 	// useCatalogueSelection seeds selection at mount; the atlas list arrives AFTER mount (async fetch),
 	// so apply the requested key (or the first entry) once the atlas lands.
 	useEffect(() => {
@@ -277,8 +286,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			} else {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
-				// Circle Packing only exists for regular-only tilings; ignore its key otherwise.
-				if (field && !(field === "circlePacking" && !c.isTilingRegularOnly)) {
+				// Circle Packing only exists for regular-only tilings, and Islamic only for the regular/star
+				// classes; ignore their keys where the sidebar hides the matching control.
+				const blocked =
+					(field === "circlePacking" && !c.isTilingRegularOnly) ||
+					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected.family));
+				if (field && !blocked) {
 					e.preventDefault();
 					c.set({ [field]: !c[field] } as Partial<ConfigurationState>);
 				}
@@ -286,7 +299,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [selectRandom, step]);
+	}, [selectRandom, step, selected]);
 
 	// Inversive (experimental) view: a WebGL overlay renders the same cell through a conformal map.
 	const inversive = useConfiguration((s) => s.inversive);

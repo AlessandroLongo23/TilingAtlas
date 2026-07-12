@@ -9,7 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { CertificationBadge, OracleBadge } from "@/components/ui/certification-badge";
-import { polygonClassLabel } from "@/lib/utils/tilingLabel";
+import { polygonClassLabel, polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { CatalogueListPanel } from "./catalogue-list-panel";
 
@@ -30,6 +30,8 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
 	const [advancedOpen, setAdvancedOpen] = useState(false);
+	// Islamic construction only applies to the regular and star classes (see polygonClassSupportsIslamic).
+	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected.family);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -135,14 +137,16 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 								onCheckedChange={(v) => setCfg({ circlePacking: v })}
 							/>
 						) : null}
-						<Checkbox
-							id="isIslamic"
-							label="Islamic"
-							shortcut="I"
-							checked={cfg.isIslamic}
-							onCheckedChange={(v) => setCfg({ isIslamic: v })}
-						/>
-						{cfg.isIslamic ? (
+						{islamicSupported ? (
+							<Checkbox
+								id="isIslamic"
+								label="Islamic"
+								shortcut="I"
+								checked={cfg.isIslamic}
+								onCheckedChange={(v) => setCfg({ isIslamic: v })}
+							/>
+						) : null}
+						{islamicSupported && cfg.isIslamic ? (
 							<div className="space-y-2 pl-7">
 								<Slider
 									id="islamicAngle"

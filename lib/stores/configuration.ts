@@ -109,7 +109,9 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	exportGraph: false,
 
 	isIslamic: false,
-	islamicAngle: 30, // θ from the edge normal (0 ⇒ meet at centroid, 90 ⇒ meet at vertices); ~30 shows a clear star
+	// Ray tilt from the tile edge, degrees: 0 ⇒ parallel to the edge (original tiling), 90 ⇒ along the
+	// perpendicular (dual tiling); 45 is the mid star. Mapped to the contact angle in islamicTipsAngleFromSlider.
+	islamicAngle: 45,
 
 	islamicAnimate: false,
 	circlePacking: false,

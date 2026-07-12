@@ -4,7 +4,7 @@ import { Vector } from '@/classes';
 import { Cyclotomic } from "../Cyclotomic";
 import type { CyclotomicRing } from "../Cyclotomic";
 import { tolerance } from "@/utils/tolerance";
-import { islamicAnglesForHalfways } from "@/utils/islamicNoise";
+import { islamicAnglesForHalfways, islamicTipsAngleFromSlider } from "@/utils/islamicNoise";
 import { exactPolygonsOverlap } from "../algorithm/exact/exactOverlap";
 import { type Marker, tipPoint } from "@/utils/islamicArrangement";
 
@@ -641,7 +641,7 @@ export class Polygon {
 
     showIslamicFilled = (ctx, opacity: number = 0.80, customColor: number | null = null) => {
         const cfg = useConfiguration.getState();
-        const baseAngle = cfg.islamicAngle * Math.PI / 180;
+        const baseAngle = islamicTipsAngleFromSlider(cfg.islamicAngle);
         let angle: number | number[] = baseAngle;
         if (cfg.islamicAnimate) {
             angle = islamicAnglesForHalfways(ctx, this.halfways);

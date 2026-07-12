@@ -1,6 +1,6 @@
 import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
 import type { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
-import { islamicAnglesForHalfways } from '@/utils/islamicNoise';
+import { islamicAnglesForHalfways, islamicTipsAngleFromSlider } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
@@ -271,7 +271,7 @@ export class Tiling {
     drawIslamicVertexRegions = (ctx, opacity: number = 1): void => {
         const cfg = useConfiguration.getState();
         const animate = cfg.islamicAnimate;
-        const baseAngle = cfg.islamicAngle * Math.PI / 180;
+        const baseAngle = islamicTipsAngleFromSlider(cfg.islamicAngle);
 
         const tipsCache = new Map<Polygon, Vector[]>();
         const getTips = (tile: Polygon): Vector[] => {

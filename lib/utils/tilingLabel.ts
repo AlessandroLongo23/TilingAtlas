@@ -16,3 +16,10 @@ export function polygonClassLabel(family: string | null | undefined): string {
 	if (family?.includes("α")) return "isotoxal polygons";
 	return family?.includes("*") ? "star polygons" : "regular polygons";
 }
+
+// The Islamic/Hankin construction is only wired up for the regular and star polygon classes. The
+// convex-irregular ("cx") and isotoxal ("α") families are excluded — same token test as the labeller,
+// so the two stay in lockstep — until their edge geometry is folded into the construction.
+export function polygonClassSupportsIslamic(family: string | null | undefined): boolean {
+	return !family?.includes("cx") && !family?.includes("α");
+}
