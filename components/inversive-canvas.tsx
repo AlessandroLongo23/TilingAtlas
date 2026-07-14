@@ -149,7 +149,9 @@ void main() {
 					minD = min(minD, segDist(q, prev, cur));
 					prev = cur;
 				}
-				if (inside) fill = hsb2rgb(hue / 360.0, 0.36, 1.0);
+				// s=0.40, b=1.0 — the same HSB fill the raster paths use (Tiling.show, drawPolygons), now that
+				// they too paint opaque. Anything else here and the two views drift apart on colour.
+				if (inside) fill = hsb2rgb(hue / 360.0, 0.40, 1.0);
 			}
 		}
 	}

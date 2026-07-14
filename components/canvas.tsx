@@ -412,7 +412,7 @@ export function Canvas({
 
 				for (const n of patch.nodes) {
 					g.push();
-					g.fill(n.hue ?? 0, 40, 100, 0.8);
+					g.fill(n.hue ?? 0, 40, 100, 1.0);
 					g.beginShape();
 					for (const v of n.vertices) g.vertex(v.x, v.y);
 					g.endShape(g.CLOSE);

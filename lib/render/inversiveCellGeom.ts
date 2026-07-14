@@ -106,7 +106,7 @@ export function buildCellGeom(cell: TranslationalCellData | null): CellGeom | nu
 			area2 += a.x * b.y - b.x * a.y;
 		}
 		const area = Math.abs(area2) * 0.5;
-		const [pr, pg, pb] = hsb2rgb(hue / 360, 0.36, 1);
+		const [pr, pg, pb] = hsb2rgb(hue / 360, 0.4, 1);
 		avgR += pr * area;
 		avgG += pg * area;
 		avgB += pb * area;

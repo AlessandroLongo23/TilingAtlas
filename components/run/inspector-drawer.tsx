@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Copy, Check } from "lucide-react";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { Slider } from "@/components/ui/slider";
-import { polygonHue, hsbToHsla, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import { polygonHue, hsbToHsla, TILE_FILL_ALPHA, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { FoundTiling } from "@/lib/services/runsService";
 import { cn } from "@/lib/utils/cn";
 
@@ -172,7 +172,7 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 											>
 												<span
 													className="inline-block size-3 rounded-[3px] border border-black/30"
-													style={{ background: hsbToHsla(polygonHue(c.n), 40, 100, 0.9) }}
+													style={{ background: hsbToHsla(polygonHue(c.n), 40, 100, TILE_FILL_ALPHA) }}
 												/>
 												<span className="text-fg-secondary">{ngonName(c.n)}</span>
 												<span className="font-mono text-fg-muted tabular-nums">×{c.count}</span>

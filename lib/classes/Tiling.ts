@@ -72,7 +72,7 @@ export class Tiling {
                     ? Vector.distance(node.centroid, node.halfways[0])
                     : 0;
                 if (radius > 0) {
-                    ctx.fill(node.hue, 40, 100 / opacity, 0.80 * opacity);
+                    ctx.fill(node.hue, 40, 100 / opacity, 1.0 * opacity);
                     ctx.ellipse(node.centroid.x, node.centroid.y, radius * 2, radius * 2);
                 }
             }
@@ -94,7 +94,10 @@ export class Tiling {
             // getState, no DOM read — the fill (hue) is the only thing that varies per tile.
             const showFill = cfg.showPolygonFill;
             const fillV = 100 / opacity;
-            const fillA = 0.80 * opacity;
+            // Tiles are painted OPAQUE: at α<1 the near-black surface bleeds through and drops every fill's
+            // perceived lightness by ~0.13 (that is the whole reason the inversive view looked brighter —
+            // its shader writes alpha 1). `opacity` still multiplies, so the layer fade-in is unaffected.
+            const fillA = 1.0 * opacity;
             for (let i = 0; i < this.nodes.length; i++) {
                 const node = this.nodes[i];
                 if (cull && !cull(node.centroid)) continue;
@@ -155,7 +158,7 @@ export class Tiling {
         ctx.push();
         ctx.noStroke();
         for (const { face, hue } of colored) {
-            ctx.fill(hue, 40, 100 / opacity, 0.80 * opacity);
+            ctx.fill(hue, 40, 100 / opacity, 1.0 * opacity);
             ctx.beginShape();
             for (const v of face.vertices) ctx.vertex(v.x, v.y);
             ctx.endShape(ctx.CLOSE);
@@ -345,7 +348,7 @@ export class Tiling {
             const armsArr = ordered.map(armsOf);
             const hue = vertexFigureHue(ordered.map(c => c.tile.n));
 
-            ctx.fill(hue, 40, 100 / opacity, 0.80 * opacity);
+            ctx.fill(hue, 40, 100 / opacity, 1.0 * opacity);
             ctx.beginShape();
             for (let i = 0; i < ordered.length; i++) {
                 ctx.vertex(armsArr[i].cwArm.x, armsArr[i].cwArm.y);

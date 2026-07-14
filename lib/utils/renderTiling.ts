@@ -5,6 +5,9 @@ export interface RawPolygon {
 	vertices: { x: number; y: number }[];
 	/** star tile ({n|α}: n points, 2n vertices) — colored by the star hue, not the regular ramp. */
 	star?: boolean;
+	/** Explicit fill hue (degrees), overriding both the star and by-side-count ramps. Used by polyominoes,
+	 *  whose boundary side count doesn't distinguish the pieces — a per-piece identity hue does. */
+	hue?: number;
 }
 
 export interface TranslationalCellData {
@@ -19,6 +22,7 @@ interface CellPolyData {
 	vertices?: (number[] | { x: number; y: number })[];
 	n?: number;
 	star?: boolean;
+	hue?: number;
 }
 
 interface BaseCell {
@@ -36,113 +40,73 @@ function mapRange(value: number, fromLow: number, fromHigh: number, toLow: numbe
 }
 
 export function polygonHue(n: number) {
-	return mapRange(Math.log(n), Math.log(3), Math.log(40), 0, 300);
+	return mapRange(Math.log(n), Math.log(3), Math.log(30), 0, 360);
 }
 
-// A composite/decomposable tile shares its side count with a regular polygon — a rhombus (two glued
-// equilateral triangles) is a quadrilateral like the square; a skewed hexagon has six sides like the
-// regular one — so the by-side-count ramp above paints the two identically. Detect genuine regularity
-// (equal sides AND equal angles) and rotate everything else to the complementary side of the wheel:
-// a regular n-gon and its irregular sibling then read as different colours (square→orange vs
-// rhombus→blue, regular hexagon→green vs skewed hexagon→violet) while side count stays legible within
-// each family. Star tiles are excluded — they keep starHue().
-const IRREGULAR_HUE_SHIFT = 180;
+// An irregular tile shares its side count with a regular polygon — a rhombus is a quadrilateral like the
+// square, a skewed hexagon has six sides like the regular one — so the by-side-count ramp above paints
+// the two identically. Separate them by drifting the hue DOWN the wheel (toward red) in proportion to how
+// far the outline is from regular. The drift is continuous and vanishes at regularity, which is the point:
+// the parametric families flex their tiles through the regular shape (the play-page α slider takes the
+// 4α rhombus to an exact square at α=90°), and a tile whose shape converges on the square must have its
+// colour converge on the square's. A hard regular/irregular branch made that a ~170° hue snap.
+//
+// The span is deliberately small. The regular ramp is log-spaced and crowded (3→0°, 4→45°, 5→80°, 6→108°,
+// 8→153°, 12→217°: only 35° from square to pentagon), so a bigger drift would walk an irregular tile
+// straight onto another regular polygon's colour. Cost of the small span: a moderately skewed tile reads
+// close to its regular sibling — mitigated by the sqrt easing, which spends most of the span on the first
+// few degrees of skew. Star tiles are excluded; they keep starHue().
+const IRREGULAR_HUE_SPAN = 22;
 
-export function isRegularPolygon(vertices: { x: number; y: number }[]): boolean {
-	const n = vertices.length;
-	if (n < 3) return false;
-	let side0 = -1;
-	let angle0 = -1;
-	for (let i = 0; i < n; i++) {
-		const prev = vertices[(i - 1 + n) % n];
-		const cur = vertices[i];
-		const next = vertices[(i + 1) % n];
-		const side = Math.hypot(next.x - cur.x, next.y - cur.y);
-		if (side < 1e-9) return false;
-		if (side0 < 0) side0 = side;
-		else if (Math.abs(side - side0) > 1e-3 * side0) return false;
-		const ax = prev.x - cur.x, ay = prev.y - cur.y;
-		const bx = next.x - cur.x, by = next.y - cur.y;
-		const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
-		if (la < 1e-9 || lb < 1e-9) return false;
-		const angle = Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb))));
-		if (angle0 < 0) angle0 = angle;
-		else if (Math.abs(angle - angle0) > 1e-2) return false;
-	}
-	return true;
-}
+// Defect normalisers: the distortion that earns the FULL span. 60° of RMS angular deviation from the
+// regular interior angle (a 60°/120° rhombus sits at 30°, i.e. half a span), or a relative RMS edge
+// spread of 0.30 (a 2:1 rectangle sits at 0.33, just past a full span).
+const ANGLE_FULL_DEFECT_DEG = 60;
+const EDGE_FULL_DEFECT = 0.3;
 
-// Convex isotoxal tiles (equilateral 2n-gons whose interior angles alternate α ≤ β < 180 — the convex
-// sibling of the star) share their side count with every other same-n isotoxal tile, so the by-side-count
-// ramp above would paint an isotoxal hexagon at 90°/150° identically to one at 60°/180⁻. Nudge the base
-// hue by where α sits inside its valid interval — the same trick starHue() plays with a star's apex angle
-// — so two same-n isotoxal tiles of different sharpness (and the live play-page slider as it flexes α)
-// read as distinct colours. Centred (mid-interval keeps the base hue), clamped to ±ISOTOXAL_ANGLE_HUE_SPAN
-// so the nudge stays well inside the ±180 irregular band and, for the side counts that share tilings
-// (4/6/8/12, ≥33° apart on the ramp), never crosses into a neighbouring side count's colour.
-const ISOTOXAL_ANGLE_HUE_SPAN = 12;
-
-// The smaller alternating interior angle α of a convex isotoxal 2n-gon, in degrees. NaN when the outline
-// isn't a convex isotoxal tile: odd side count, unequal edges, a reflex corner (that's a star — coloured
-// by the star path, not here), angles that don't fall into two strictly-alternating classes, or the
-// degenerate regular case (α = β). Float trig, display-only.
-export function isotoxalCharAngleDeg(vertices: { x: number; y: number }[]): number {
+// How far an outline is from the regular polygon on the same side count, in [0,1]: 0 iff equilateral AND
+// equiangular (⟺ regular), rising with distortion and saturating at 1. Both terms are needed — angles
+// alone would score a rectangle as regular, edges alone would score a rhombus as regular. Continuous in
+// the vertices, and a function of the outline ALONE, so a given shape gets the same colour in every
+// tiling it appears in. Float trig, display-only.
+export function regularityDefect(vertices: { x: number; y: number }[]): number {
 	const m = vertices.length;
-	if (m < 4 || m % 2 !== 0) return NaN;
-	let side0 = -1;
-	let crossSign = 0;
-	let evenAng = -1;
-	let oddAng = -1;
+	if (m < 3) return 1;
+	const thetaReg = 180 - 360 / m;
+	const edges: number[] = [];
+	let angSq = 0;
 	for (let i = 0; i < m; i++) {
 		const prev = vertices[(i - 1 + m) % m];
 		const cur = vertices[i];
 		const next = vertices[(i + 1) % m];
 		const side = Math.hypot(next.x - cur.x, next.y - cur.y);
-		if (side < 1e-9) return NaN;
-		if (side0 < 0) side0 = side;
-		else if (Math.abs(side - side0) > 1e-3 * side0) return NaN;
+		if (side < 1e-9) return 1; // degenerate outline — treat as maximally irregular
+		edges.push(side);
 		const ax = prev.x - cur.x, ay = prev.y - cur.y;
 		const bx = next.x - cur.x, by = next.y - cur.y;
 		const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
-		if (la < 1e-9 || lb < 1e-9) return NaN;
-		// Convexity: every corner must turn the same way (all cross products one sign). A mixed sign is a
-		// reflex dent ⇒ the tile is a star, not a convex isotoxal, and is handled by the star path.
-		const cross = ax * by - ay * bx;
-		if (Math.abs(cross) > 1e-9) {
-			const s = cross > 0 ? 1 : -1;
-			if (crossSign === 0) crossSign = s;
-			else if (s !== crossSign) return NaN;
-		}
+		if (la < 1e-9 || lb < 1e-9) return 1;
 		const ang = (Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)))) * 180) / Math.PI;
-		if (i % 2 === 0) {
-			if (evenAng < 0) evenAng = ang;
-			else if (Math.abs(ang - evenAng) > 0.5) return NaN;
-		} else {
-			if (oddAng < 0) oddAng = ang;
-			else if (Math.abs(ang - oddAng) > 0.5) return NaN;
-		}
+		angSq += (ang - thetaReg) ** 2;
 	}
-	if (evenAng < 0 || oddAng < 0 || Math.abs(evenAng - oddAng) < 0.5) return NaN; // regular / degenerate
-	return Math.min(evenAng, oddAng);
+	const angleDefect = Math.sqrt(angSq / m) / ANGLE_FULL_DEFECT_DEG;
+	const meanEdge = edges.reduce((a, b) => a + b, 0) / m;
+	const edgeVar = edges.reduce((a, e) => a + (e - meanEdge) ** 2, 0) / m;
+	const edgeDefect = Math.sqrt(edgeVar) / meanEdge / EDGE_FULL_DEFECT;
+	return Math.min(1, Math.hypot(angleDefect, edgeDefect));
 }
 
-// Fill hue for a plain (non-star) tile: the regular by-side-count ramp, rotated to its complement when
-// the tile isn't actually regular, then nudged by the isotoxal angle when the tile is a convex isotoxal.
+// Fill hue for a plain (non-star) tile: the regular by-side-count ramp, drifted down the wheel by the
+// outline's distance from regular. A regular tile lands exactly on its ramp hue; a flexing tile slides
+// smoothly onto it as it regularises. sqrt easing so a small skew already shows.
 export function polygonFillHue(vertices: { x: number; y: number }[]): number {
 	const base = polygonHue(vertices.length);
-	if (isRegularPolygon(vertices)) return base;
-	const irregular = (base + IRREGULAR_HUE_SHIFT) % 360;
-	const alpha = isotoxalCharAngleDeg(vertices);
-	if (!Number.isFinite(alpha)) return irregular;
-	// α ∈ (max(0, C−180), C/2) with C = α + β = 360 − 360/n; map that open interval onto [−SPAN, +SPAN].
-	const n = vertices.length / 2;
-	const c = 360 - 360 / n;
-	const aLo = Math.max(0, c - 180);
-	const aHi = c / 2;
-	if (aHi - aLo < 1e-6) return irregular;
-	const t = Math.min(1, Math.max(0, (alpha - aLo) / (aHi - aLo)));
-	const shift = (t - 0.5) * 2 * ISOTOXAL_ANGLE_HUE_SPAN;
-	return (((irregular + shift) % 360) + 360) % 360;
+	const defect = regularityDefect(vertices);
+	// Float noise on an exactly-regular outline would otherwise wrap a base hue of 0 (the triangle) round
+	// to 359.99…; at this threshold the drift is < 0.001°, well under any perceptible step.
+	if (defect < 1e-9) return base;
+	const shift = IRREGULAR_HUE_SPAN * Math.sqrt(defect);
+	return (((base - shift) % 360) + 360) % 360;
 }
 
 // Star tiles use the original StarPolygon.calculateHue ramp (lib/classes/polygons/StarPolygon.ts):
@@ -190,6 +154,12 @@ export function starApexAngleDeg(vertices: { x: number; y: number }[]): number {
 	return Number.isFinite(min) ? (min * 180) / Math.PI : NaN;
 }
 
+// Tiles are painted OPAQUE. At α<1 the near-black surface bleeds through and drops every fill's perceived
+// lightness by ~0.13 — that was the whole reason the inversive view (whose shader writes alpha 1) looked
+// brighter and more vivid than everything else. Shared by the thumbnails, the figures and the VC cards so
+// a catalogue thumbnail is the colour you get on the play canvas.
+export const TILE_FILL_ALPHA = 1;
+
 export function hsbToHsla(h: number, s: number, b: number, a: number) {
 	const sf = s / 100;
 	const bf = b / 100;
@@ -225,7 +195,7 @@ export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 			const b = verts[(i + 1) % verts.length];
 			edges.push(Math.hypot(b.x - a.x, b.y - a.y));
 		}
-		polys.push({ n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)) });
+		polys.push({ n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)), hue: poly.hue });
 	}
 	if (polys.length === 0 || edges.length === 0) return null;
 	edges.sort((a, b) => a - b);
@@ -263,6 +233,7 @@ export function expandToViewport(
 			out.push({
 				n: poly.n,
 				star: poly.star,
+				hue: poly.hue,
 				vertices: poly.vertices.map((v) => ({ x: v.x + ox, y: v.y + oy })),
 			});
 		}
@@ -305,7 +276,8 @@ export function drawPolygons(
 	scale: number,
 ) {
 	for (const poly of polygons) {
-		ctx.fillStyle = hsbToHsla(poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices), 40, 100, 0.9);
+		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
+		ctx.fillStyle = hsbToHsla(hue, 40, 100, TILE_FILL_ALPHA);
 		ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
 		ctx.lineWidth = 1 / scale;
 		ctx.beginPath();
@@ -409,4 +381,36 @@ export function renderTilingToDataUrl(
 	const ok = renderTilingToContext(ctx, size, size, opts);
 	if (!ok) return null;
 	return canvas.toDataURL(type);
+}
+
+/**
+ * Render a fixed FIGURE — a single prototile, or the tiles fanned around one vertex — fit to ~`fill` of a
+ * square frame. The `polygons` branch of renderTilingToContext scales by a fixed pxPerEdge, so a lone
+ * shape lands tiny (huge margins) or clipped depending on its side count; here we size pxPerEdge from the
+ * figure's own bounding box so the framing is consistent whatever the tile count or edge length. For a
+ * repeating tiling use renderTilingToDataUrl with a translationalCell instead — that path already fills
+ * the viewport. Returns a data URL, or null off the main thread / for an empty figure.
+ */
+export function renderFigureToDataUrl(
+	polygons: RawPolygon[],
+	size = 1024,
+	fill = 0.9,
+	background = "#1e1e22",
+	type = "image/png",
+): string | null {
+	if (typeof document === "undefined" || polygons.length === 0) return null;
+	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	for (const p of polygons) {
+		for (const v of p.vertices) {
+			if (v.x < minX) minX = v.x;
+			if (v.x > maxX) maxX = v.x;
+			if (v.y < minY) minY = v.y;
+			if (v.y > maxY) maxY = v.y;
+		}
+	}
+	const span = Math.max(maxX - minX, maxY - minY, 1e-6);
+	// renderTilingToContext scales by pxPerEdge / medianEdge and centres on the bbox, so pick pxPerEdge to
+	// map the figure's larger bbox dimension onto fill*size.
+	const pxPerEdge = (polygonsMedianEdge(polygons) * fill * size) / span;
+	return renderTilingToDataUrl({ polygons, pxPerEdge, background }, size, type);
 }

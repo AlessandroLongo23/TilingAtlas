@@ -47,10 +47,10 @@ export class GenericPolygon extends Polygon {
     }
 
     calculateHue = () => {
-        // Regular by-side-count ramp, rotated to its complement for irregular (composite/decomposable)
-        // tiles so a rhombus doesn't read as a square, nor a skewed hexagon as a regular one. Shared
-        // with the thumbnail render path (lib/utils/renderTiling) so both stay in step. Star tiles get
-        // their hue overwritten with starHue() by the caller after construction.
+        // Regular by-side-count ramp, drifted down the wheel in proportion to how far the outline is from
+        // regular, so a rhombus doesn't read as a square yet slides continuously onto the square's hue as
+        // it flexes into one. Shared with the thumbnail render path (lib/utils/renderTiling) so both stay
+        // in step. Star tiles get their hue overwritten with starHue() by the caller after construction.
         this.hue = polygonFillHue(this.vertices);
     }
 

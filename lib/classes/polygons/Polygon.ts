@@ -443,7 +443,7 @@ export class Polygon {
             this.showIslamicLines(ctx, opacity);
         } else {
             if (cfg.showPolygonFill) {
-                ctx.fill(customColor || this.hue, 40, 100 / opacity, 0.80 * opacity);
+                ctx.fill(customColor || this.hue, 40, 100 / opacity, 1.0 * opacity);
             } else {
                 ctx.noFill();
             }
@@ -616,7 +616,7 @@ export class Polygon {
         ctx.push();
         ctx.strokeWeight(1 / zoom);
         ctx.stroke(0, 0, 0, 0.22 * opacity);              // faint outline
-        ctx.fill(this.hue, 40, 100 / opacity, 0.22 * opacity); // dim fill
+        ctx.fill(this.hue, 40, 100 / opacity, 1.0 * opacity); // full-strength fill
         ctx.beginShape();
         for (let i = 0; i < this.vertices.length; i++) ctx.vertex(this.vertices[i].x, this.vertices[i].y);
         ctx.endShape(ctx.CLOSE);
@@ -650,7 +650,7 @@ export class Polygon {
 
         ctx.push();
         ctx.noStroke();
-        ctx.fill(customColor ?? this.hue, 40, 100 / opacity, 0.80 * opacity);
+        ctx.fill(customColor ?? this.hue, 40, 100 / opacity, 1.0 * opacity);
         ctx.beginShape();
         for (let i = 0; i < this.halfways.length; i++) {
             ctx.vertex(this.halfways[i].x, this.halfways[i].y);
