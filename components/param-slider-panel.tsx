@@ -1,7 +1,7 @@
 "use client";
 
 import { useFamilyAlphas } from "@/stores/familyAlphas";
-import { resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { ALPHA_STEP_DEG, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 
 const GREEK = ["α", "β", "γ", "δ", "ε"];
 const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
@@ -30,9 +30,9 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 					</span>
 					<input
 						type="range"
-						min={p.alpha0Deg + p.deltaRangeDeg[0]}
-						max={p.alpha0Deg + p.deltaRangeDeg[1]}
-						step={0.1}
+						min={p.alphaRangeDegOpen[0]}
+						max={p.alphaRangeDegOpen[1]}
+						step={ALPHA_STEP_DEG}
 						value={effAlphas[j]}
 						onChange={(e) => setAlphaAt(j, Number(e.target.value))}
 						className="w-56 accent-violet-400"

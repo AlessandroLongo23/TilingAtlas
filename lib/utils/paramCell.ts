@@ -18,14 +18,28 @@ export interface ParametricCellData {
 	params: {
 		name: string;
 		alpha0Deg: number; // this parameter's angle at δ_j = 0 (the exported representative)
-		deltaRangeDeg: [number, number]; // slider range, trimmed inside the open validity interval
-		alphaRangeDegOpen: [number, number]; // mathematical (open) validity interval, for display
+		deltaRangeDeg: [number, number]; // exporter's 0.4°-padded range — superseded here by ALPHA_EPS_DEG, unused
+		alphaRangeDegOpen: [number, number]; // mathematical (open) validity interval — the slider domain
 		defaultAlphaDeg: number;
 		tile?: string; // the isotoxal tile this parameter flexes (e.g. "cx6-90.150")
 	}[];
 	cellPolygons: { n: number; star?: boolean; vertices: ParamTerm[][] }[];
 	basis: [ParamTerm[], ParamTerm[]];
 }
+
+/** Slider grid for the free angles, in degrees. Every open endpoint the exporters emit is a multiple of
+ *  15°, so this grid lands exactly on both ends of every family's range. */
+export const ALPHA_STEP_DEG = 0.5;
+
+/**
+ * The validity interval is OPEN: at either endpoint the family degenerates (a tile collapses to zero
+ * area — the basis stays non-singular, so nothing blows up, but the limit is not a member of the family).
+ * The exporters keep the slider 0.4° clear of the ends, which is visible in the readout (89.6° on a
+ * (30°, 90°) family). Instead we let the slider span the closed interval and nudge the *evaluated* angle
+ * this far inside: at 1e-3° the collapsing tile's area is ~1e-5 — invisible at any zoom — while every
+ * rendered tiling stays strictly inside the proven region.
+ */
+const ALPHA_EPS_DEG = 1e-3;
 
 /** m·δ for a scalar (single-param) or vector (multi-param) exponent. */
 function mDotDelta(m: number | number[], deltas: number[]): number {
@@ -48,10 +62,17 @@ function evalTerms(terms: ParamTerm[], deltas: number[]): [number, number] {
 	return [x, y];
 }
 
-/** Per-parameter δ (radians) from the angle values. Accepts a single number (1-param) or an array. */
+/** Per-parameter δ (radians) from the angle values. Accepts a single number (1-param) or an array.
+ *  Angles are held ALPHA_EPS_DEG inside the open interval, so an endpoint slider position evaluates just
+ *  short of the degenerate limit rather than on it. Interior angles pass through untouched. */
 function deltasFor(pc: ParametricCellData, alphaDeg: number | number[]): number[] {
 	const alphas = Array.isArray(alphaDeg) ? alphaDeg : [alphaDeg];
-	return pc.params.map((p, j) => (((alphas[j] ?? p.defaultAlphaDeg) - p.alpha0Deg) * Math.PI) / 180);
+	return pc.params.map((p, j) => {
+		const [lo, hi] = p.alphaRangeDegOpen;
+		const a = alphas[j] ?? p.defaultAlphaDeg;
+		const inside = Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
+		return ((inside - p.alpha0Deg) * Math.PI) / 180;
+	});
 }
 
 /** Evaluate the family at a slider position (one number for 1-param, an array for N-param); parseBaseCell-ready. */
@@ -67,10 +88,12 @@ export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | num
 	};
 }
 
-/** Clamp one parameter's angle into its slider range. */
+/** Snap one parameter's angle to the slider grid and clamp it into the family's range. Snapping matters
+ *  because a value carried over from another family (resolveAlphaDegs reuses the tuple) can land off-grid. */
 export function clampAlphaAt(pc: ParametricCellData, paramIndex: number, alphaDeg: number): number {
-	const p = pc.params[paramIndex];
-	return Math.min(p.alpha0Deg + p.deltaRangeDeg[1], Math.max(p.alpha0Deg + p.deltaRangeDeg[0], alphaDeg));
+	const [lo, hi] = pc.params[paramIndex].alphaRangeDegOpen;
+	const snapped = Math.round(alphaDeg / ALPHA_STEP_DEG) * ALPHA_STEP_DEG;
+	return Math.min(hi, Math.max(lo, snapped));
 }
 
 /** Back-compat single-parameter clamp (first parameter). */
