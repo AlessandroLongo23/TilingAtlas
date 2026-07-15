@@ -17,7 +17,13 @@ import {
 	su11Rebase,
 	foldTileCenter,
 	pickClickAnchor,
+	wythoffFaces,
+	schwarzCorners,
+	wythoffVertex,
+	tileHue,
+	uniformDescriptor,
 	type Complex,
+	type Rings,
 } from "@/lib/render/hyperbolic";
 
 // Reference values from the verified (2,p,q) Schwarz-triangle geometry, computed independently to
@@ -270,5 +276,96 @@ describe("mobius / mobiusInverse (disk automorphisms)", () => {
 		]) {
 			expect(Math.hypot(...Object.values(mobius(z, b, theta)) as [number, number])).toBeLessThan(1);
 		}
+	});
+});
+
+describe("wythoffFaces (per-corner face sizes)", () => {
+	// [group p, q, rings, expected {O,V,E} face sizes, name]
+	const CASES: Array<[number, number, Rings, [number, number, number], string]> = [
+		[7, 3, [true, true, false], [14, 3, 0], "t{7,3}=3.14.14"],
+		[7, 3, [false, true, false], [7, 3, 0], "r{7,3}=3.7.3.7"],
+		[7, 3, [false, true, true], [7, 6, 0], "t{3,7}=6.6.7"],
+		[7, 3, [true, false, true], [7, 3, 4], "rr{7,3}=3.4.7.4"],
+		[7, 3, [true, true, true], [14, 6, 4], "tr{7,3}=4.6.14"],
+		[8, 3, [true, true, true], [16, 6, 4], "tr{8,3}=4.6.16"],
+		[5, 4, [true, true, false], [10, 4, 0], "t{5,4}=4.10.10"],
+		[5, 4, [false, true, false], [5, 4, 0], "r{5,4}=4.5.4.5"],
+		[5, 4, [false, true, true], [5, 8, 0], "t{4,5}=5.8.8"],
+		[5, 4, [true, false, true], [5, 4, 4], "rr{5,4}=4.4.5.4"],
+		[5, 4, [true, true, true], [10, 8, 4], "tr{5,4}=4.8.10"],
+		[7, 3, [true, false, false], [7, 0, 0], "{7,3} regular"],
+	];
+	for (const [p, q, rings, expected, name] of CASES) {
+		it(`derives ${name}`, () => {
+			const f = wythoffFaces(p, q, rings);
+			expect([f.nO, f.nV, f.nE]).toEqual(expected);
+		});
+	}
+	it("distinct nonzero sizes match the vertex config's distinct polygons", () => {
+		const f = wythoffFaces(7, 3, [true, false, true]); // 3.4.7.4 → {3,4,7}
+		const distinct = new Set([f.nO, f.nV, f.nE].filter((n) => n > 0));
+		expect(distinct).toEqual(new Set([7, 3, 4]));
+	});
+});
+
+describe("schwarzCorners", () => {
+	it("places O at the origin, E on +x at rIn, V at circumradius/angle π/p", () => {
+		const { rIn, rC } = mirrorParams(7, 3);
+		const { O, V, E } = schwarzCorners(7, 3);
+		expect(near(O.x, 0) && near(O.y, 0)).toBe(true);
+		expect(near(E.x, rIn) && near(E.y, 0)).toBe(true);
+		expect(near(V.x, rC * Math.cos(Math.PI / 7))).toBe(true);
+		expect(near(V.y, rC * Math.sin(Math.PI / 7))).toBe(true);
+	});
+});
+
+describe("wythoffVertex", () => {
+	const onRealAxis = (z: Complex) => near(z.y, 0, 1e-6);
+	const onDiameter = (z: Complex, ang: number) => near(z.x * Math.sin(ang) - z.y * Math.cos(ang), 0, 1e-6);
+	const onEdgeCircle = (z: Complex, a: number, rho: number) => near(Math.hypot(z.x - a, z.y) - rho, 0, 1e-5);
+
+	it("rectified [0,1,0] sits at the edge midpoint E", () => {
+		const { rIn } = mirrorParams(7, 3);
+		const w = wythoffVertex(7, 3, [false, true, false]);
+		expect(near(w.x, rIn) && near(w.y, 0)).toBe(true);
+	});
+	it("truncated [1,1,0] lies on the edge circle and the π/2p bisector", () => {
+		const { edgeA, edgeRho } = mirrorParams(7, 3);
+		const w = wythoffVertex(7, 3, [true, true, false]);
+		expect(onEdgeCircle(w, edgeA, edgeRho)).toBe(true);
+		expect(onDiameter(w, Math.PI / (2 * 7))).toBe(true);
+	});
+	it("trunc-dual [0,1,1] lies on the real axis (mirror A) and inside the disk", () => {
+		const w = wythoffVertex(7, 3, [false, true, true]);
+		expect(onRealAxis(w)).toBe(true);
+		expect(Math.hypot(w.x, w.y)).toBeLessThan(1);
+	});
+	it("rhombi [1,0,1] lies on the π/p diameter (mirror B)", () => {
+		const w = wythoffVertex(7, 3, [true, false, true]);
+		expect(onDiameter(w, Math.PI / 7)).toBe(true);
+	});
+	it("omnitruncated [1,1,1] lies strictly inside T, off all three mirrors", () => {
+		const { edgeA, edgeRho } = mirrorParams(7, 3);
+		const w = wythoffVertex(7, 3, [true, true, true]);
+		expect(onRealAxis(w)).toBe(false);
+		expect(onDiameter(w, Math.PI / 7)).toBe(false);
+		expect(onEdgeCircle(w, edgeA, edgeRho)).toBe(false);
+		expect(Math.hypot(w.x, w.y)).toBeLessThan(1);
+	});
+});
+
+describe("tileHue + uniformDescriptor", () => {
+	it("gives a stable, distinct hue per polygon side count", () => {
+		expect(tileHue(3)).toBe(tileHue(3));
+		expect(tileHue(3)).not.toBe(tileHue(4));
+		expect(tileHue(14)).toBeGreaterThanOrEqual(0);
+		expect(tileHue(14)).toBeLessThan(360);
+	});
+	it("descriptor lists the tile types with hues and a valid Wythoff vertex", () => {
+		const d = uniformDescriptor(7, 3, [true, true, true]); // 4.6.14
+		const sizes = d.tiles.map((t) => t.sides).sort((a, b) => a - b);
+		expect(sizes).toEqual([4, 6, 14]);
+		expect(d.tiles.find((t) => t.sides === 4)!.corner).toBe("E");
+		expect(Math.hypot(d.wythoff.x, d.wythoff.y)).toBeLessThan(1);
 	});
 });

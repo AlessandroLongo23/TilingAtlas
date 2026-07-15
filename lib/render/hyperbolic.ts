@@ -292,3 +292,177 @@ export function mobiusInverse(w: Complex, b: Complex, theta: number): Complex {
 	const den: Complex = { x: 1 - cbw.x, y: -cbw.y };
 	return cdiv(num, den);
 }
+
+// ── Uniform (Wythoffian) hyperbolic tilings ─────────────────────────────────────────────────────
+// The regular {p,q} above is one point in a family: the uniform tilings of the (2,p,q) triangle group,
+// obtained by ringing subsets of the three mirrors (Coxeter–Dynkin, linear diagram A—p—B—q—C). Every
+// such tiling shares the same fundamental Schwarz triangle T (corners O, V, E below) and the same fold;
+// only which polygons fill T, and where the generating vertex sits, change. All pure + testable here.
+
+/** Coxeter–Dynkin ring flags on the linear diagram A—p—B—q—C (A face mirror, B edge mirror, C vertex mirror). */
+export type Rings = [boolean, boolean, boolean];
+
+export interface WythoffFaces {
+	/** face at corner O (p-fold centre), 0 if none */ nO: number;
+	/** face at corner V (q-fold vertex), 0 if none */ nV: number;
+	/** face at corner E (order-2 edge midpoint), 0 if none */ nE: number;
+}
+
+/**
+ * Side counts of the faces centred at the three Schwarz-triangle corners of the uniform tiling with the
+ * given ring pattern. A corner where both incident mirrors are ringed carries a 2·order-gon (truncation);
+ * exactly one ringed carries an order-gon; none carries no face. The order-2 corner E degenerates: a lone
+ * ring there is a 2-gon (an edge, not a face), so E only carries a genuine square when both A and C ring.
+ */
+export function wythoffFaces(p: number, q: number, rings: Rings): WythoffFaces {
+	const [a, b, c] = rings;
+	const nO = a && b ? 2 * p : a || b ? p : 0;
+	const nV = b && c ? 2 * q : b || c ? q : 0;
+	const nE = a && c ? 4 : 0;
+	return { nO, nV, nE };
+}
+
+export interface SchwarzCorners { O: Complex; V: Complex; E: Complex; }
+
+/** The three Poincaré-disk corners of the {p,q} fundamental Schwarz triangle (same frame as mirrorParams). */
+export function schwarzCorners(p: number, q: number): SchwarzCorners {
+	const { rIn, rC } = mirrorParams(p, q);
+	const a = Math.PI / p;
+	return { O: { x: 0, y: 0 }, E: { x: rIn, y: 0 }, V: { x: rC * Math.cos(a), y: rC * Math.sin(a) } };
+}
+
+/** Hyperbolic distance between two Poincaré-disk points. */
+function hypDist(u: Complex, v: Complex): number {
+	const dx = u.x - v.x, dy = u.y - v.y;
+	const num = dx * dx + dy * dy;
+	const du = 1 - (u.x * u.x + u.y * u.y);
+	const dv = 1 - (v.x * v.x + v.y * v.y);
+	return Math.acosh(1 + (2 * num) / (du * dv));
+}
+
+/** Reflect a disk point across the diameter through the origin at angle `ang`. */
+function reflectDiameter(z: Complex, ang: number): Complex {
+	const c = Math.cos(2 * ang), s = Math.sin(2 * ang);
+	return { x: c * z.x + s * z.y, y: s * z.x - c * z.y };
+}
+
+/** Reflect a disk point across the edge geodesic — inversion in the circle (cx,0), radius rho. */
+function reflectEdgeCircle(z: Complex, cx: number, rho: number): Complex {
+	const dx = z.x - cx, dy = z.y;
+	const d2 = dx * dx + dy * dy || 1e-18;
+	const k = (rho * rho) / d2;
+	return { x: cx + k * dx, y: k * dy };
+}
+
+/** Hyperbolic distance from a disk point to a mirror geodesic (0 on the mirror). Half the distance to its reflection. */
+function distToMirror(z: Complex, mirror: "A" | "B" | "C", p: number, edgeA: number, edgeRho: number): number {
+	const r =
+		mirror === "A" ? reflectDiameter(z, 0)
+		: mirror === "B" ? reflectDiameter(z, Math.PI / p)
+		: reflectEdgeCircle(z, edgeA, edgeRho);
+	return 0.5 * hypDist(z, r);
+}
+
+// Scan [0,1] for the first sign change of f∘pt, then bisect that bracket. Robust to multiple roots and to
+// f not being sign-definite at the endpoints. Returns the endpoint of least |f| if f never changes sign.
+function findRoot(pt: (t: number) => Complex, f: (z: Complex) => number): Complex {
+	const N = 512;
+	let prev = f(pt(0));
+	let lo = 0, hi = 1, bracketed = false;
+	for (let i = 1; i <= N; i++) {
+		const t = i / N;
+		const ft = f(pt(t));
+		if (prev === 0) return pt((i - 1) / N);
+		if (prev * ft < 0) { lo = (i - 1) / N; hi = t; bracketed = true; break; }
+		prev = ft;
+	}
+	if (!bracketed) return Math.abs(f(pt(0))) <= Math.abs(f(pt(1))) ? pt(0) : pt(1);
+	for (let i = 0; i < 60; i++) {
+		const mid = (lo + hi) / 2;
+		if (f(pt(lo)) * f(pt(mid)) <= 0) hi = mid; else lo = mid;
+	}
+	return pt((lo + hi) / 2);
+}
+
+/**
+ * The Wythoff generating vertex for `rings`: the point lying ON every unringed mirror and equidistant from
+ * the ringed ones. One ring ⇒ a corner (intersection of the two unringed mirrors). Two rings ⇒ a point on
+ * the single unringed mirror, found by 1-D root-finding the equidistance condition. Three rings (omnitruncated)
+ * ⇒ the incenter, found by descending the variance of the three mirror distances. Exact enough for rendering.
+ */
+export function wythoffVertex(p: number, q: number, rings: Rings): Complex {
+	const [a, b, c] = rings;
+	const { rIn, edgeA, edgeRho } = mirrorParams(p, q);
+	const corners = schwarzCorners(p, q);
+	const dA = (z: Complex) => distToMirror(z, "A", p, edgeA, edgeRho);
+	const dB = (z: Complex) => distToMirror(z, "B", p, edgeA, edgeRho);
+	const dC = (z: Complex) => distToMirror(z, "C", p, edgeA, edgeRho);
+
+	// One ring: W is where the two unringed mirrors meet.
+	if (a && !b && !c) return corners.V; // unringed B,C ⇒ B∩C = V
+	if (!a && !b && c) return corners.O; // unringed A,B ⇒ A∩B = O   (regular {q,p}; unused, kept for totality)
+	if (!a && b && !c) return { x: rIn, y: 0 }; // unringed A,C ⇒ A∩C = E (rectified)
+
+	// Two rings: root-find on the one unringed mirror.
+	if (a && b && !c) {
+		// truncated: on C (edge circle), on the A|B bisector diameter (angle π/2p). Intersect ray with the circle.
+		const ang = Math.PI / (2 * p);
+		return findRoot(
+			(t) => ({ x: t * Math.cos(ang), y: t * Math.sin(ang) }),
+			(z) => Math.hypot(z.x - edgeA, z.y) - edgeRho,
+		);
+	}
+	if (!a && b && c) {
+		// trunc-dual: on A (real axis), equidistant from B and C.
+		return findRoot((t) => ({ x: t * 0.999, y: 0 }), (z) => dB(z) - dC(z));
+	}
+	if (a && !b && c) {
+		// rhombi: on B (π/p diameter), equidistant from A and C.
+		const ang = Math.PI / p;
+		return findRoot((t) => ({ x: t * 0.999 * Math.cos(ang), y: t * 0.999 * Math.sin(ang) }), (z) => dA(z) - dC(z));
+	}
+
+	// Three rings (omnitruncated): incenter — minimise the variance of (dA, dB, dC) from the centroid.
+	const variance = (z: Complex): number => {
+		const x = [dA(z), dB(z), dC(z)];
+		const m = (x[0] + x[1] + x[2]) / 3;
+		return (x[0] - m) ** 2 + (x[1] - m) ** 2 + (x[2] - m) ** 2;
+	};
+	let z: Complex = { x: (corners.O.x + corners.V.x + corners.E.x) / 3, y: (corners.O.y + corners.V.y + corners.E.y) / 3 };
+	const h = 1e-5;
+	for (let i = 0; i < 600; i++) {
+		const gx = (variance({ x: z.x + h, y: z.y }) - variance({ x: z.x - h, y: z.y })) / (2 * h);
+		const gy = (variance({ x: z.x, y: z.y + h }) - variance({ x: z.x, y: z.y - h })) / (2 * h);
+		const step = 0.25;
+		const nz = { x: z.x - step * gx, y: z.y - step * gy };
+		z = nz;
+		if (gx * gx + gy * gy < 1e-24) break;
+	}
+	return z;
+}
+
+/** Stable hue (degrees) for an n-gon, so a given polygon reads the same colour across tilings. */
+export function tileHue(sides: number): number {
+	return (((sides * 47) % 360) + 360) % 360;
+}
+
+export interface UniformTile { corner: "O" | "V" | "E"; sides: number; hue: number; }
+export interface UniformDescriptor {
+	p: number;
+	q: number;
+	rings: Rings;
+	wythoff: Complex;
+	corners: SchwarzCorners;
+	tiles: UniformTile[]; // only corners that carry a face
+}
+
+/** Full derived descriptor a renderer needs for a non-snub uniform {p,q} tiling. */
+export function uniformDescriptor(p: number, q: number, rings: Rings): UniformDescriptor {
+	const f = wythoffFaces(p, q, rings);
+	const corners = schwarzCorners(p, q);
+	const tiles: UniformTile[] = [];
+	if (f.nO > 0) tiles.push({ corner: "O", sides: f.nO, hue: tileHue(f.nO) });
+	if (f.nV > 0) tiles.push({ corner: "V", sides: f.nV, hue: tileHue(f.nV) });
+	if (f.nE > 0) tiles.push({ corner: "E", sides: f.nE, hue: tileHue(f.nE) });
+	return { p, q, rings, wythoff: wythoffVertex(p, q, rings), corners, tiles };
+}
