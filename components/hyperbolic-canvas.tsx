@@ -219,6 +219,8 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 				gl.uniform2f(U.uSnubAis, g.snub.ais.x, g.snub.ais.y);
 				gl.uniform2f(U.uSnubBs, g.snub.bs.x, g.snub.bs.y);
 				gl.uniform2f(U.uSnubBis, g.snub.bis.x, g.snub.bis.y);
+				gl.uniform2f(U.uSnubN, g.snub.n.x, g.snub.n.y);
+				gl.uniform2f(U.uSnubB2s, g.snub.b2s.x, g.snub.b2s.y);
 			}
 
 			gl.drawArrays(gl.TRIANGLES, 0, 6);

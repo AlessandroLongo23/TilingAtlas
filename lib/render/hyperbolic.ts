@@ -574,6 +574,8 @@ export interface SnubData {
 	/** s rotated −2π/p about O (the other p-gon neighbour). */ ais: Complex;
 	/** s rotated +2π/q about V (a q-gon neighbour). */ bs: Complex;
 	/** s rotated −2π/q about V (the other q-gon neighbour). */ bis: Complex;
+	/** The 5th neighbour, s rotated π about the edge midpoint E (= b·a·s) — the triangle–triangle edge. */ n: Complex;
+	/** s rotated +4π/q about V (= b²·s) — the q-gon vertex opposite s, for the far square edges (q ≥ 4). */ b2s: Complex;
 	/** The common edge length (p-gon = q-gon = snub-triangle). */ edge: number;
 }
 
@@ -592,6 +594,7 @@ export function snubData(p: number, q: number): SnubData {
 	const V = corners.V, E = corners.E;
 	const A = su11RotationAbout(O, (2 * Math.PI) / p), Ai = su11Inverse(A);
 	const B = su11RotationAbout(V, (2 * Math.PI) / q), Bi = su11Inverse(B);
+	const C2 = su11RotationAbout(corners.E, Math.PI); // π-rotation about the edge midpoint (the 2-fold centre)
 	const ap = (z: Complex) => su11Apply(A, z);
 	const aip = (z: Complex) => su11Apply(Ai, z);
 	const bp = (z: Complex) => su11Apply(B, z);
@@ -616,7 +619,7 @@ export function snubData(p: number, q: number): SnubData {
 		bu = nu; bv = nv; span *= 0.6;
 	}
 	const s = bary(bu, bv);
-	return { s, as: ap(s), ais: aip(s), bs: bp(s), bis: bip(s), edge: hypDist(s, ap(s)) };
+	return { s, as: ap(s), ais: aip(s), bs: bp(s), bis: bip(s), n: su11Apply(C2, s), b2s: bp(bp(s)), edge: hypDist(s, ap(s)) };
 }
 
 /** Hyperbolic midpoint of two Poincaré-disk points (the point on the geodesic uv at half the distance). */

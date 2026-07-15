@@ -63,6 +63,8 @@ uniform vec2 uSnubAs;    // s rotated +2π/p about O
 uniform vec2 uSnubAis;   // s rotated −2π/p about O
 uniform vec2 uSnubBs;    // s rotated +2π/q about V
 uniform vec2 uSnubBis;   // s rotated −2π/q about V
+uniform vec2 uSnubN;     // 5th neighbour (π-rotation of s about E) — the triangle–triangle edge
+uniform vec2 uSnubB2s;   // q-gon vertex opposite s (= b²·s) — for the far square edges when q ≥ 4
 
 out vec4 frag;
 
@@ -113,6 +115,14 @@ float segDistGeo(vec2 z, vec2 p1, vec2 p2) {
 	float t = dot(z - p1, d) / max(dot(d, d), 1e-9);
 	if (t < -0.12 || t > 1.12) return 1e9;
 	return edgeDistGeo(z, p1, p2);
+}
+
+// z inside the convex geodesic quad p0-p1-p2-p3 — the ref-point side of all four edges.
+bool inQuad(vec2 z, vec2 ref, vec2 p0, vec2 p1, vec2 p2, vec2 p3) {
+	return sideGeo(z, p0, p1) * sideGeo(ref, p0, p1) > 0.0
+	    && sideGeo(z, p1, p2) * sideGeo(ref, p1, p2) > 0.0
+	    && sideGeo(z, p2, p3) * sideGeo(ref, p2, p3) > 0.0
+	    && sideGeo(z, p3, p0) * sideGeo(ref, p3, p0) > 0.0;
 }
 
 // Inverse of the SU(1,1) view [[a,b],[b̄,ā]] (det 1) is [[ā,−b],[−b̄,a]], so V⁻¹(z)=(ā z − b)/(−b̄ z + a).
@@ -214,28 +224,30 @@ void main() {
 		        && sideGeo(z, uSnubS, uSnubAs) * sideGeo(O, uSnubS, uSnubAs) > 0.0;
 		bool inQ = false;
 		if (uNTiles == 3) {
+			// q-gon (q ≥ 4) is a convex polygon s → bs → b²s → b⁻¹s: inside = V-side of all four edges. Testing
+			// only the two edges at s would spill past the far side into the neighbouring triangles.
 			float wa = 2.0 * PI / uP; float ca = cos(wa), sa = sin(wa);
-			vec2 zr = vec2(ca * z.x - sa * z.y, sa * z.x + ca * z.y);
-			bool q1 = sideGeo(z, uSnubBis, uSnubS) * sideGeo(uCornerV, uSnubBis, uSnubS) > 0.0
-			       && sideGeo(z, uSnubS, uSnubBs) * sideGeo(uCornerV, uSnubS, uSnubBs) > 0.0;
-			bool q2 = sideGeo(zr, uSnubBis, uSnubS) * sideGeo(uCornerV, uSnubBis, uSnubS) > 0.0
-			       && sideGeo(zr, uSnubS, uSnubBs) * sideGeo(uCornerV, uSnubS, uSnubBs) > 0.0;
-			inQ = q1 || q2;
+			vec2 zr = vec2(ca * z.x - sa * z.y, sa * z.x + ca * z.y); // rotate +2π/p to test the V' q-gon as V's
+			inQ = inQuad(z, uCornerV, uSnubS, uSnubBs, uSnubB2s, uSnubBis)
+			   || inQuad(zr, uCornerV, uSnubS, uSnubBs, uSnubB2s, uSnubBis);
 		}
 		int reg = inP ? 0 : (inQ ? 1 : 2);
 		hueDeg = reg == 0 ? uTileHue.x : reg == 1 ? uTileHue.y : uTileHue.z;
 		vec2 centreFrame = reg == 0 ? O : reg == 1 ? uCornerV : z;
 		vec2 cw = cdiv(cmul(A, centreFrame) + B, cmul(C, centreFrame) + D);
 		tr = clamp(length(viewForward(cw)), 0.0, 1.0);
-		// Strokes: every edge meets the snub vertex s (fold symmetry maps each edge to one at s) plus the two
-		// snub-triangle third edges. Segment-clipped so the geodesics don't spray past the vertices.
+		// Strokes: the 5 edges at s (fold symmetry maps every edge to one at s) — two p-gon (as, ais), two
+		// q-gon (bs, bis), and the triangle–triangle edge (n) — plus the three snub-triangle third edges
+		// closing {s,as,bis}, {s,ais,n}, {s,n,bs}. Segment-clipped so geodesics don't spray past the vertices.
 		float ie = 1e9;
-		ie = min(ie, segDistGeo(z, uSnubAis, uSnubS)); // p-gon edge
-		ie = min(ie, segDistGeo(z, uSnubS, uSnubAs));  // p-gon edge
-		ie = min(ie, segDistGeo(z, uSnubS, uSnubBs));  // q-gon edge
-		ie = min(ie, segDistGeo(z, uSnubS, uSnubBis)); // q-gon edge
-		ie = min(ie, segDistGeo(z, uSnubAs, uSnubBis));// snub-triangle third edge (a·s — b⁻¹·s)
-		ie = min(ie, segDistGeo(z, uSnubAis, uSnubBs));// snub-triangle third edge (a⁻¹·s — b·s)
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubAs));
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubAis));
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubBs));
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubBis));
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubN));
+		ie = min(ie, segDistGeo(z, uSnubAs, uSnubBis));  // triangle {s, as, bis}
+		ie = min(ie, segDistGeo(z, uSnubAis, uSnubN));   // triangle {s, ais, n}
+		ie = min(ie, segDistGeo(z, uSnubN, uSnubBs));    // triangle {s, n, bs}
 		lineCov = uStrokePx > 0.0 ? (1.0 - smoothstep(halfW - pwf, halfW + pwf, ie)) : 0.0;
 	} else if (uNTiles > 1) {
 		float ysign = z.y < 0.0 ? -1.0 : 1.0;
@@ -351,13 +363,15 @@ export interface HyperbolicUniforms {
 	uSnubAis: WebGLUniformLocation | null;
 	uSnubBs: WebGLUniformLocation | null;
 	uSnubBis: WebGLUniformLocation | null;
+	uSnubN: WebGLUniformLocation | null;
+	uSnubB2s: WebGLUniformLocation | null;
 }
 
 const UNIFORM_NAMES: (keyof HyperbolicUniforms)[] = [
 	"uRes", "uDpr", "uMa", "uMb", "uP", "uEdgeA", "uEdgeRho",
 	"uShadeMode", "uParityOffset", "uHue", "uStrokePx", "uStrokeMode", "uSurface", "uLine", "uParityA", "uParityB",
 	"uNTiles", "uWythoff", "uFootA", "uFootB", "uFootC", "uCornerV", "uRin", "uOcc", "uTileHue",
-	"uSnub", "uSnubS", "uSnubAs", "uSnubAis", "uSnubBs", "uSnubBis",
+	"uSnub", "uSnubS", "uSnubAs", "uSnubAis", "uSnubBs", "uSnubBis", "uSnubN", "uSnubB2s",
 ];
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
