@@ -215,57 +215,78 @@ export function foldTileCenter(w: Complex, p: number, edgeA: number, edgeRho: nu
 }
 
 /**
- * Click-to-anchor snap point for a click at world point `w`: the nearest of the containing tile's centre,
- * its p vertices (circumradius r_c, at angles π/p + 2πk/p), or its p edge midpoints (inradius r_in, at
- * angles 2πk/p — the reference edge sits on +x). Folds `w` to the central tile, builds the features in
- * that frame, maps them back through the fold's inverse, and returns the closest to `w`. Vertices/edges
- * are shared between tiles, so the returned world point is the same whichever adjacent tile `w` folds to.
+ * Click-to-anchor snap point for a click at world point `w`: the nearest REAL feature of the uniform tiling —
+ * a tile centroid (corners O / V / E, only the occupied ones), a vertex (the single Wythoff-vertex orbit), or
+ * an edge midpoint (a perpendicular foot of W, i.e. the halfway point of a tiling edge, INCLUDING an edge
+ * between two different tile types). Folds `w` into the central {p,q} cell, builds every feature incident to
+ * that cell as the dihedral-D_p orbit about O of the base points, maps them back through the fold's inverse,
+ * and returns the closest to `w`. Features are shared between adjacent tiles, so the returned world point is
+ * the same whichever cell `w` folds to. Snub tilings (chiral, rotation-subgroup only) keep the earlier
+ * regular-{p,q} centre/vertex/edge-midpoint approximation — their real feet/vertices live on a different path.
  */
-export function pickClickAnchor(
-	w: Complex,
-	p: number,
-	rIn: number,
-	rC: number,
-	edgeA: number,
-	edgeRho: number,
-	maxIter = 64,
-): Complex {
+export function pickClickAnchor(w: Complex, g: HyperbolicUniformValues, maxIter = 64): Complex {
+	const { p, edgeA, edgeRho } = g;
 	const wedge = (2 * Math.PI) / p;
 	const cross = su11CrossEdge(edgeA, edgeRho);
 	const rho2 = edgeRho * edgeRho;
+	// Fold `w` into the central p-gon cell (rotations by 2π/p about O + edge crossings). Valid for every tiling
+	// in the (2,p,q) family, snub included, since `cross` is a rotation-subgroup element (two reflections).
 	let z: Complex = { x: w.x, y: w.y };
-	let g = su11Identity();
+	let fold = su11Identity();
 	for (let i = 0; i < maxIter; i++) {
 		if (z.x * z.x + z.y * z.y < 1e-18) break;
 		const m = Math.round(Math.atan2(z.y, z.x) / wedge);
 		const rot = su11Rotation(-wedge * m);
-		const zr = su11Apply(rot, z);
-		g = su11Mul(rot, g);
-		z = zr;
-		if ((zr.x - edgeA) * (zr.x - edgeA) + zr.y * zr.y < rho2) {
-			z = su11Apply(cross, zr);
-			g = su11Mul(cross, g);
+		z = su11Apply(rot, z);
+		fold = su11Mul(rot, fold);
+		if ((z.x - edgeA) * (z.x - edgeA) + z.y * z.y < rho2) {
+			z = su11Apply(cross, z);
+			fold = su11Mul(cross, fold);
 		} else {
 			break;
 		}
 	}
-	const gi = su11Inverse(g);
-	// Candidate features in the central-tile frame: centre, edge midpoints, vertices.
-	const feats: Complex[] = [{ x: 0, y: 0 }];
-	for (let k = 0; k < p; k++) {
-		const em = wedge * k;
-		feats.push({ x: rIn * Math.cos(em), y: rIn * Math.sin(em) });
-		const vt = wedge * k + Math.PI / p;
-		feats.push({ x: rC * Math.cos(vt), y: rC * Math.sin(vt) });
+	const foldInv = su11Inverse(fold);
+
+	// Base features in the central-cell frame (the fundamental wedge). Non-snub: the actual uniform-tiling
+	// features — occupied tile centroids O/V/E, the Wythoff vertex W, and the real edge midpoints (a foot
+	// carries an edge only when it is distinct from W). Snub: the regular-{p,q} approximation, whose D_p orbit
+	// below reproduces the previous centre + p vertices (r_c) + p edge midpoints (r_in) candidate set exactly.
+	const base: Complex[] = [];
+	if (g.snub) {
+		base.push({ x: 0, y: 0 });
+		base.push({ x: g.rIn, y: 0 });
+		base.push({ x: g.rC * Math.cos(Math.PI / p), y: g.rC * Math.sin(Math.PI / p) });
+	} else {
+		const W = g.wythoff;
+		if (g.occ[0]) base.push({ x: 0, y: 0 }); // O — p-gon centroid
+		if (g.occ[1]) base.push(g.cornerV); // V — q-gon centroid
+		if (g.occ[2]) base.push({ x: g.rIn, y: 0 }); // E — square centroid
+		base.push(W); // the single vertex orbit
+		for (const foot of [g.footA, g.footB, g.footC]) {
+			// A foot is a real edge midpoint only when W lies off that mirror (foot ≠ W); matches the shader.
+			if ((foot.x - W.x) ** 2 + (foot.y - W.y) ** 2 > 1e-8) base.push(foot);
+		}
 	}
-	let best = feats[0];
+
+	// Dihedral-D_p orbit about O (p rotations × the mirror-A reflection) of every base feature fills the central
+	// cell with all its incident copies, so the true nearest feature to a point inside the cell is a candidate.
+	let best: Complex = base[0];
 	let bestD = Infinity;
-	for (const f of feats) {
-		const world = su11Apply(gi, f);
-		const d = (world.x - w.x) * (world.x - w.x) + (world.y - w.y) * (world.y - w.y);
-		if (d < bestD) {
-			bestD = d;
-			best = world;
+	for (const f of base) {
+		for (let s = 0; s < 2; s++) {
+			const bx = f.x;
+			const by = s === 0 ? f.y : -f.y; // reflect across mirror A (the real axis)
+			for (let k = 0; k < p; k++) {
+				const c = Math.cos(wedge * k);
+				const sn = Math.sin(wedge * k);
+				const world = su11Apply(foldInv, { x: c * bx - sn * by, y: sn * bx + c * by });
+				const d = (world.x - w.x) ** 2 + (world.y - w.y) ** 2;
+				if (d < bestD) {
+					bestD = d;
+					best = world;
+				}
+			}
 		}
 	}
 	return best;

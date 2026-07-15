@@ -23,6 +23,7 @@ import {
 	tileHue,
 	uniformDescriptor,
 	wythoffFeet,
+	hyperbolicUniformValues,
 	snubData,
 	type Complex,
 	type Rings,
@@ -220,12 +221,15 @@ describe("foldTileCenter", () => {
 	});
 });
 
-describe("pickClickAnchor (snap to centre / vertex / edge midpoint)", () => {
+describe("pickClickAnchor (snap to centroid / vertex / edge midpoint)", () => {
+	// Regular {5,4}: the generalized snapper must reduce exactly to the old regular-{p,q} behaviour — the
+	// p-gon centre O, the p vertices at r_c (angle π/p), and the p edge midpoints at r_in (on +x).
 	const p = 5, q = 4;
-	const { rIn, rC, edgeA, edgeRho } = mirrorParams(p, q);
+	const { rIn, rC } = mirrorParams(p, q);
+	const gReg = hyperbolicUniformValues({ p, q, rings: [true, false, false] });
 
-	it("snaps a central click to the tile centre", () => {
-		const a = pickClickAnchor({ x: 0.02, y: -0.01 }, p, rIn, rC, edgeA, edgeRho);
+	it("snaps a central click to the tile centroid", () => {
+		const a = pickClickAnchor({ x: 0.02, y: -0.01 }, gReg);
 		expect(near(a.x, 0, 1e-6)).toBe(true);
 		expect(near(a.y, 0, 1e-6)).toBe(true);
 	});
@@ -234,16 +238,55 @@ describe("pickClickAnchor (snap to centre / vertex / edge midpoint)", () => {
 		const va = Math.PI / p;
 		const vertex = { x: rC * Math.cos(va), y: rC * Math.sin(va) };
 		const near95 = { x: vertex.x * 0.95, y: vertex.y * 0.95 };
-		const a = pickClickAnchor(near95, p, rIn, rC, edgeA, edgeRho);
+		const a = pickClickAnchor(near95, gReg);
 		expect(near(a.x, vertex.x, 1e-6)).toBe(true);
 		expect(near(a.y, vertex.y, 1e-6)).toBe(true);
 	});
 
 	it("snaps a click near an edge midpoint to that midpoint (inradius r_in on +x)", () => {
 		const mid = { x: rIn, y: 0 };
-		const a = pickClickAnchor({ x: rIn * 0.96, y: 0.01 }, p, rIn, rC, edgeA, edgeRho);
+		const a = pickClickAnchor({ x: rIn * 0.96, y: 0.01 }, gReg);
 		expect(near(a.x, mid.x, 1e-6)).toBe(true);
 		expect(near(a.y, mid.y, 1e-6)).toBe(true);
+	});
+
+	// Uniform tiling with THREE distinct tiles: rhombi {7,3} = heptagon (O) · triangle (V) · square (E).
+	// The regular snapper offered none of the V/E centroids nor the between-different-tiles edge midpoints.
+	describe("multi-tile (rhombitri {7,3}: heptagon O, triangle V, square E)", () => {
+		const rings: Rings = [true, false, true];
+		const g = hyperbolicUniformValues({ p: 7, q: 3, rings });
+		const feet = wythoffFeet(7, 3, rings);
+
+		it("snaps to the q-gon (triangle) centroid at corner V", () => {
+			const V = g.cornerV;
+			const a = pickClickAnchor({ x: V.x * 0.97, y: V.y * 0.97 }, g);
+			expect(near(a.x, V.x, 1e-6)).toBe(true);
+			expect(near(a.y, V.y, 1e-6)).toBe(true);
+		});
+
+		it("snaps to the square centroid at corner E", () => {
+			const E = { x: g.rIn, y: 0 };
+			const a = pickClickAnchor({ x: E.x * 0.985, y: 0.004 }, g);
+			expect(near(a.x, E.x, 1e-6)).toBe(true);
+			expect(near(a.y, E.y, 1e-6)).toBe(true);
+		});
+
+		it("snaps to the halfway point of the heptagon|square edge (foot on mirror A)", () => {
+			// footA is the midpoint of the O|E edge — the boundary between two DIFFERENT tiles (heptagon, square).
+			const fA = feet.fA;
+			expect(Math.hypot(fA.x - g.wythoff.x, fA.y - g.wythoff.y)).toBeGreaterThan(1e-3); // it is a real edge
+			const click = { x: fA.x + (g.wythoff.x - fA.x) * 0.06, y: fA.y + (g.wythoff.y - fA.y) * 0.06 };
+			const a = pickClickAnchor(click, g);
+			expect(near(a.x, fA.x, 1e-6)).toBe(true);
+			expect(near(a.y, fA.y, 1e-6)).toBe(true);
+		});
+
+		it("snaps to a real tiling vertex (the Wythoff-vertex orbit)", () => {
+			const W = g.wythoff;
+			const a = pickClickAnchor({ x: W.x * 0.97, y: W.y * 0.97 }, g);
+			expect(near(a.x, W.x, 1e-6)).toBe(true);
+			expect(near(a.y, W.y, 1e-6)).toBe(true);
+		});
 	});
 });
 

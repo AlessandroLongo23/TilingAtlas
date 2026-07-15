@@ -154,7 +154,7 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 			if (cfg.hyperbolicClick) {
 				const clickDisk = { x: cfg.hyperbolicClick.x / R, y: cfg.hyperbolicClick.y / R };
 				const wClick = su11ApplyInverse(viewRef.current, clickDisk);
-				centerAnimRef.current = pickClickAnchor(wClick, g.p, g.rIn, g.rC, g.edgeA, g.edgeRho);
+				centerAnimRef.current = pickClickAnchor(wClick, g);
 				useConfiguration.setState({ hyperbolicClick: null });
 			}
 			if (centerAnimRef.current) {
