@@ -11,32 +11,40 @@ export interface UseExpandableGroupsResult {
  * Controls the open/closed state of a list of groups whose identities can change
  * over time (e.g. loaded async). Each group starts at `defaultOpen`; user toggles
  * are stored as overrides so groups added later inherit the default.
+ *
+ * `defaultOpen` may be a per-id predicate when different rows want different initial
+ * states (e.g. top-level categories closed, their subsections open).
  */
 export function useExpandableGroups<T>(
 	groups: T[],
 	getId: (g: T) => string,
-	defaultOpen = true,
+	defaultOpen: boolean | ((id: string) => boolean) = true,
 ): UseExpandableGroupsResult {
 	const [overrides, setOverrides] = useState<Record<string, boolean>>({});
 
 	const ids = useMemo(() => groups.map(getId), [groups, getId]);
 
+	const isOpenByDefault = useCallback(
+		(id: string) => (typeof defaultOpen === "function" ? defaultOpen(id) : defaultOpen),
+		[defaultOpen],
+	);
+
 	const expanded = useMemo(() => {
 		const out: Record<string, boolean> = {};
 		for (const id of ids) {
-			out[id] = overrides[id] ?? defaultOpen;
+			out[id] = overrides[id] ?? isOpenByDefault(id);
 		}
 		return out;
-	}, [ids, overrides, defaultOpen]);
+	}, [ids, overrides, isOpenByDefault]);
 
 	const toggle = useCallback(
 		(id: string) => {
 			setOverrides((prev) => {
-				const current = prev[id] ?? defaultOpen;
+				const current = prev[id] ?? isOpenByDefault(id);
 				return { ...prev, [id]: !current };
 			});
 		},
-		[defaultOpen],
+		[isOpenByDefault],
 	);
 
 	const toggleAll = useCallback(
