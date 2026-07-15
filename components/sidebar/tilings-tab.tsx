@@ -31,6 +31,10 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 	// Islamic construction only applies to the regular and star classes (see polygonClassSupportsIslamic).
 	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected);
+	// A hyperbolic {p,q} tiling renders in the Poincaré disk; its only view control is the shading mode.
+	const isHyperbolic = !!selected?.schlafli;
+	// Two-tone parity needs a 2-colourable tiling: an even number of tiles at each vertex, i.e. q even.
+	const parityAllowed = !!selected?.schlafli && selected.schlafli[1] % 2 === 0;
 
 	return (
 		<div className="h-full flex flex-col">
@@ -98,7 +102,7 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 					onChange={(v) => setCfg({ lineWidth: v })}
 					min={0}
 					max={5}
-					step={0.5}
+					step={0.25}
 				/>
 
 				<SidebarSection title="Advanced options" open={advancedOpen} onOpenChange={setAdvancedOpen}>
@@ -119,6 +123,16 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 							shortcut="P"
 							checked={cfg.showPolygonPoints}
 							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
+						/>
+						{/* Radial wave on a tiling change (lib/utils/tilingTransition.ts). Ignored — the swap stays
+						    instant — under Islamic / symmetry-elements / inversive, whose draw paths have no
+						    per-tile scale, and under prefers-reduced-motion. */}
+						<Checkbox
+							id="tilingTransition"
+							label="Transition animation"
+							shortcut="T"
+							checked={cfg.tilingTransition}
+							onCheckedChange={(v) => setCfg({ tilingTransition: v })}
 						/>
 						{cfg.isTilingRegularOnly ? (
 							<Checkbox
@@ -172,14 +186,64 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 							checked={cfg.showFundamentalDomain}
 							onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
 						/>
-						<Checkbox
-							id="inversive"
-							label="Inversive view"
-							shortcut="V"
-							checked={cfg.inversive}
-							onCheckedChange={(v) => setCfg({ inversive: v })}
-						/>
-						{cfg.inversive ? (
+						{isHyperbolic ? (
+							<div className="space-y-2">
+								<span className="text-[11px] text-fg-muted">Hyperbolic shading</span>
+								{parityAllowed ? (
+									<div className="flex gap-2">
+										<Button
+											variant={cfg.hyperbolicShading === "tiles" ? "primary" : "secondary"}
+											size="sm"
+											classes="flex-1"
+											onClick={() => setCfg({ hyperbolicShading: "tiles" })}
+										>
+											Tiles
+										</Button>
+										<Button
+											variant={cfg.hyperbolicShading === "parity" ? "primary" : "secondary"}
+											size="sm"
+											classes="flex-1"
+											onClick={() => setCfg({ hyperbolicShading: "parity" })}
+										>
+											Parity
+										</Button>
+									</div>
+								) : (
+									<p className="text-[11px] text-fg-disabled">
+										Coloured tiles — two-tone parity needs an even number of tiles per vertex (q even).
+									</p>
+								)}
+								<span className="text-[11px] text-fg-muted">Edge width</span>
+								<div className="flex gap-2">
+									<Button
+										variant={cfg.hyperbolicLineMode === "geometry" ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ hyperbolicLineMode: "geometry" })}
+									>
+										Geometry
+									</Button>
+									<Button
+										variant={cfg.hyperbolicLineMode === "constant" ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ hyperbolicLineMode: "constant" })}
+									>
+										Constant
+									</Button>
+								</div>
+							</div>
+						) : null}
+						{!isHyperbolic ? (
+							<Checkbox
+								id="inversive"
+								label="Inversive view"
+								shortcut="V"
+								checked={cfg.inversive}
+								onCheckedChange={(v) => setCfg({ inversive: v })}
+							/>
+						) : null}
+						{!isHyperbolic && cfg.inversive ? (
 							<div className="space-y-2 pl-7">
 								<div className="flex gap-2">
 									<Button

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Maximize, Minimize } from "lucide-react";
+import { Camera, Maximize, Minimize } from "lucide-react";
+import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
+import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
@@ -222,6 +224,27 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		}
 	}, [selected]);
 
+	// A hyperbolic {p,q} tiling swaps the flat p5 renderer for the Poincaré-disk WebGL view. Set the
+	// store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off Euclidean-
+	// only render modes so their now-hidden sidebar controls can't leave a stale render behind.
+	const isHyperbolic = !!selected?.schlafli;
+	useEffect(() => {
+		const cfg = useConfiguration.getState();
+		if (isHyperbolic) {
+			// Two-tone parity is only defined for 2-colourable tilings (q even); force it off otherwise.
+			const parityOk = selected?.schlafli ? selected.schlafli[1] % 2 === 0 : false;
+			cfg.set({
+				hyperbolic: true,
+				isIslamic: false,
+				circlePacking: false,
+				isTilingRegularOnly: false,
+				...(!parityOk && cfg.hyperbolicShading === "parity" ? { hyperbolicShading: "tiles" as const } : {}),
+			});
+		} else if (cfg.hyperbolic) {
+			cfg.set({ hyperbolic: false });
+		}
+	}, [isHyperbolic, selected]);
+
 	// useCatalogueSelection seeds selection at mount; the atlas list arrives AFTER mount (async fetch),
 	// so apply the requested key (or the first entry) once the atlas lands.
 	useEffect(() => {
@@ -273,6 +296,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			d: "showFundamentalDomain",
 			v: "inversive",
 			c: "circlePacking",
+			t: "tilingTransition",
 		};
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -297,6 +321,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					e.preventDefault();
 					useImmersive.getState().set(false);
 				}
+			} else if ((e.key === "y" || e.key === "Y") && !!selected?.schlafli && selected.schlafli[1] % 2 === 0) {
+				// "Y" cycles the hyperbolic shading (coloured tiles ⇄ two-tone parity) — only for a hyperbolic
+				// tiling whose vertices have an even tile count (q even), the 2-colourable case.
+				e.preventDefault();
+				const c = useConfiguration.getState();
+				c.set({ hyperbolicShading: c.hyperbolicShading === "tiles" ? "parity" : "tiles" });
 			} else {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
@@ -376,7 +406,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					symmetryData={symmetryData}
 					showTilingRuleInput={false}
 				/>
-				{inversive ? (
+				{/* Exactly one WebGL overlay at a time: the Poincaré disk for a hyperbolic tiling, else the
+				    inversive conformal view when toggled on. The flat p5 Canvas above stays mounted as the
+				    pointer/pan input layer beneath whichever overlay is active. */}
+				{isHyperbolic && selected?.schlafli ? (
+					<HyperbolicCanvas width={size.w} height={size.h} schlafli={selected.schlafli} />
+				) : inversive ? (
 					<InversiveCanvas
 						width={size.w}
 						height={size.h}
@@ -401,6 +436,25 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				>
 					{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
 				</button>
+				{/* Screenshot: canvas.tsx runs the capture (createGraphics patch → preview modal) when it sees
+				    takeScreenshot flip; hovering frames the crop region via screenshotButtonHover. Sits just
+				    below the fullscreen toggle in the same top-right stack. Hidden until the capture is ready. */}
+				{SCREENSHOT_BUTTONS_ENABLED ? (
+					<button
+						type="button"
+						onClick={() => useConfiguration.getState().set({ takeScreenshot: true })}
+						onMouseEnter={() => useConfiguration.getState().set({ screenshotButtonHover: true })}
+						onMouseLeave={() => useConfiguration.getState().set({ screenshotButtonHover: false })}
+						title="Screenshot"
+						aria-label="Take screenshot"
+						className={cn(
+							"absolute right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
+							symmetryBadgeShown ? "top-32" : "top-16",
+						)}
+					>
+						<Camera size={16} />
+					</button>
+				) : null}
 			</div>
 		</div>
 	);

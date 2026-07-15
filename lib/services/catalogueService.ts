@@ -27,6 +27,11 @@ export interface CatalogueTiling {
 	// One-parameter family entries (Reference shelf only): the proven parametric cell that drives
 	// the /play alpha slider (lib/utils/paramCell.ts). Certified catalogue tilings never carry this.
 	paramCell?: ParametricCellData;
+	// Hyperbolic shelf only: the {p,q} Schläfli symbol. Its presence routes /play + the sidebar/library
+	// thumbnails to the Poincaré-disk renderer instead of the Euclidean cell path. Carried through from
+	// ReferenceTiling by referenceToCatalogue. Absent for every Euclidean tiling.
+	schlafli?: [number, number];
+	geometry?: "euclidean" | "hyperbolic";
 }
 
 // Pure transform: collapse found_tilings (a tiling is rediscovered once per run that finds it) into

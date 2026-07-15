@@ -17,14 +17,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project goal (the mission — durable)
 
-Enumerate **all and only** the edge-to-edge k-uniform tilings of the plane for a chosen polygon set,
-with *provable* completeness and correctness — every decisive test in exact arithmetic (ℚ(ζ_N); float
-only for render/broadphase). Acceptance targets (regular polygons): k=1..6 → **11 / 20 / 61 / 151 /
-332 / 673** (OEIS A068599; the per-tiling oracle is the Soto-Sánchez JSON — match *which* tilings,
-not just how many). Then: higher k, then star/parametric polygon families. The thesis's claimed
-contribution is **provable exhaustiveness** (Galebach's counts have no completeness proof), so:
-**completeness beats speed — any cap/filter/budget that could drop a tiling must be logged loudly,
-never silent.**
+Create an atlas of tilings that presents a complete catalogue of hyberbolic, euclidian, spherical tilings
+ 
+
+## The engine — what "the algorithm" means (durable; added 2026-07-12, AL directive)
+
+Unless AL says otherwise, **"the algorithm" / "our algorithm" / "the engine" / "the solver" means the
+Čtrnáct combinatorial engine at `tools/ctrnact-oracle/`** — NOT the TS lattice/PeriodSolver code. This
+is the current primary enumeration method (thesis pivot 2026-07-10, `docs/thesis-pivot-ctrnact-2026-07-10.md`).
+
+- **What it is.** Marek Čtrnáct's combinatorial dual-search ("čtrnáct" = Czech for 14; his original was
+  hardcoded to k=14), ported to a C++ pipeline. It searches *duals* of k-uniform tilings by gluing
+  vertex-figure half-edges (Conway symbols), checks each vertex closes to a divisor of 360°, and prunes
+  isomorphic duplicates (WL/DFA canonical form). It touches geometry only at the end (develop) — no
+  per-node cyclotomic arithmetic, which is why it reaches k=16 in hours where the lattice method stalled at k=3.
+- **Palette-driven.** The tile alphabet is data: `alphabets/palettes/*.json` → `alphabets/gen_alphabet.py`
+  builds the alphabet the C++ solver loads. Existing palettes: `regular`, `regular-z24`, `star{18,20,24,...}`,
+  `isotoxal-*`, `composite-convex`, `composite-decomp`, `combined-z24`. A new tile family is mostly a new
+  palette + a bounded `gen_alphabet.py` generalization — no search rewrite. See the composite-tiles spec
+  (`docs/superpowers/specs/2026-07-11-composable-tiles-design.md`) for the template.
+- **Pipeline.** `eu_solver` (raw) → `eu_pruner` (dedup) → `eu_develop` (exact ℤ[ζ₁₂] geometry, `{T1,T2,Seed}`
+  cells). Run: `cd tools/ctrnact-oracle && make PALETTE=<name>` then `PALETTE=<name> ./run-oracle.sh <k>`.
+  Regular palette reproduces A068599 to k=16 (k=1 = 10, octagon-blind; re-add t1002 by hand).
+- **Guard.** `make check-regular` must stay byte-identical after any engine edit — the load-bearing
+  regression proving an alphabet/engine change did not disturb the regular catalog.
+- **The TS `PeriodSolver` / `LatticeEnumerator` / `KUniformityChecker` path is AL's OWN prior lattice
+  method, now SUPERSEDED.** It stalled at k=3 and carries a proven negative result (HNF incompleteness on
+  mixed √2/√3 cells). Kept as a characterized-barrier thesis result and an independent k≤3 cross-check —
+  NOT the engine to extend for new work unless AL names it. `scripts/th10-scout.ts` belongs to this legacy path.
 
 ## Session start — read these BEFORE coding
 
@@ -86,7 +106,7 @@ This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16
 
 **State & data.** Zustand owns client state (13 slices under `lib/stores/`: configuration, audio, debug, modal, …). TanStack Query owns server data (`lib/query/` provider + key factory). Supabase is accessed through three clients in `lib/supabase/`: browser, server, session (SSR), plus a service-role factory used only by pipeline routes.
 
-**Algorithm pipeline.** `lib/algorithm/` is the core domain — `pipeline-core` composes `generatePolygons` → `generateVCs` → `generateVCsWithCompatibilityGraph` etc., with results gzip-batched to Supabase Storage via `pipelineStorageFormat`. `run-pipeline.ts` is the CLI entry. `lib/classes/` holds the domain TS classes (polygons, algorithm types, exact arithmetic: `Cyclotomic.ts`, `algorithm/exact/Surd.ts`). The live enumeration path is `algorithm/PeriodSolver.ts` + `algorithm/LatticeEnumerator.ts` + `algorithm/KUniformityChecker.ts` — see `docs/DEVELOPMENT_NOTES.md`.
+**Algorithm pipeline.** `lib/algorithm/` is the core domain — `pipeline-core` composes `generatePolygons` → `generateVCs` → `generateVCsWithCompatibilityGraph` etc., with results gzip-batched to Supabase Storage via `pipelineStorageFormat`. `run-pipeline.ts` is the CLI entry. `lib/classes/` holds the domain TS classes (polygons, algorithm types, exact arithmetic: `Cyclotomic.ts`, `algorithm/exact/Surd.ts`). `algorithm/PeriodSolver.ts` + `algorithm/LatticeEnumerator.ts` + `algorithm/KUniformityChecker.ts` are AL's **legacy lattice engine** — superseded 2026-07 by the Čtrnáct engine (`tools/ctrnact-oracle/`; see the "The engine" section above and `docs/thesis-pivot-ctrnact-2026-07-10.md`). They remain the k≤3 cross-check and a characterized-barrier thesis result, NOT the primary enumerator. Narrative in `docs/DEVELOPMENT_NOTES.md`.
 
 **Server-only import hazards.** `lib/classes/algorithm/TilingGenerator.ts` and all of `lib/classes/generator/*` are **intentionally not re-exported from `@/classes`** — they import `node:fs` or reference pre-Zustand store names. Import them directly from their specific files, and only in server-only contexts. A client component pulling them through the barrel will break the build.
 

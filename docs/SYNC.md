@@ -1045,3 +1045,33 @@ one audit overclaim (H3/FB-8: sharding is multiset- not byte-identical), all fix
 enumerator reproduces the engine pruned set EXACTLY at k≤3 (10/20/61); soundness checked to k≤6, k=4 capped.
 `classical-citations-audit.md` (4 citations correctly applied) + `trust-map.md` (geometer's homework = 4 tier-G
 lemmas, not 27pp). Deliverable A complete-as-written, 0 OPEN; human review of tier-G is the next gate. NOTES §56. — CC
+
+**2026-07-13 — CC → AL — Scaled (sides 1-2-3) class shipped; two flat-corner-model walls characterized.**
+Generalized `doubled` → `scaled` kind (side-s N-gon = degenerate sN-gon, p=s). Shipped k=1=16, k=2=71 distinct
+size-mixers to /library + /play (source "scaled"). Wall 1: scale ≥3 recurs the same geometry on many supercells
+(90 raw→45 distinct at k=1); fixed with an EXACT ℤ[ζ₁₂] congruence dedup (validated pure-1/2/3→10/10/9). Wall 2:
+`EU_NCBUDGET` grows with k — doubled default-budget 8 is incomplete from k=4 (…/991 vs true …/1064); k=5 needs the
+budget ladder, NOT yet certified. Committed Doubled k≤4 unaffected. Detail: NOTES §57. — CC
+
+**2026-07-13 — CC → AL — Doubled retired into a Scaled facet; doubled k=4 certified = 1064; k=5 parked.**
+Removed the Doubled shelf class; sides 1-2 now a *Side lengths* sub-class facet (Sides 1–2 / Sides 1–3) on the
+Scaled class in the library sidebar, before the k facet (URL `scaleset`). "Sides 1–2" reproduces old Doubled
+6/41 at k=1/2 exactly. Deleted the doubled atlas + build script. Budget-fixpoint: doubled k=4 = 1064 certified
+(budgets 12/13/14 agree, 0 warns). k=5 dumped/parked — ladder + resume in `experiments/results/doubled-budget-ladder.md`.
+Build green. Detail: NOTES §57 follow-up. — CC
+
+**2026-07-13 — CC → AL — Tetrominoes: a new tile FAMILY (not regular-derived) on the existing engine; k=1 shipped.**
+New `polyomino` kind in `gen_alphabet.py` (angle word from cells; corners 90/180/270 = 3/6/9 at D=12; ℤ[ζ₁₂]
+Gaussian-integer geometry). NO engine rewrite — flat corners = `scaled`, reflex = the star-dent path. k=1: 39
+raw, **area-cert 39/39 PASS** → validated exact dedup (rotations-only ⇒ chirality-distinguished, S≠Z) = **27
+distinct** (26 mirror-merged). ⚑ a second quick dedup gave 30 — NOT certified until a hand k=1 anchor resolves it.
+NO external oracle exists (k-uniform theory is regular-only; Myers/Kaplan are single-tile isohedral) — counts are
+observations. Shipped to /library + /play as class "Polyominoes"/sub-class "Tetrominoes", Tetris hues. Alphabet
+68370 vertexdefs (34× scaled-123) ⇒ k≥3 likely prohibitive; k=2 running. `make check-regular` byte-identical. NOTES §58. — CC
+
+**2026-07-15 — CC → AL — Hyperbolic {p,q} tilings in the Poincaré disk (display-only, off the engine).**
+New `hyperbolic` tile class + 4 hand-authored tilings ({7,3}/{8,3}/{5,4}/{4,5}) in /library + /play, drawn by a WebGL2
+shader folding each pixel into the (2,p,q) fundamental domain. Pan = incremental SU(1,1) view re-based each frame
+(screen-centre tile → origin) so precision holds under unlimited panning; wheel rotates, click snaps to nearest
+centre/vertex/edge-midpoint; per-tile colour by tile-centre distance, parity only for q-even. Pure maths unit-tested
+(29); `make check-regular` untouched. NOTES §59. — CC

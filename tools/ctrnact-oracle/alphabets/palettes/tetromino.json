@@ -1,0 +1,16 @@
+{
+  "name": "tetromino",
+  "D": 12,
+  "pinnedLegacy": false,
+  "maxValence": 4,
+  "comment": "The seven one-sided tetrominoes (the Tetris set: I O T S Z J L). Each is a union of unit squares, modeled as a degenerate unit-edge polygon whose boundary word uses only 90° (D/4=3), 180° flat (D/2=6) and 270° reflex (3D/4=9) corners; edges point E/N/W/S = ζ₁₂ powers {0,3,6,9} (Gaussian-integer directions), so the exact geometry lives in the same ℤ[ζ₁₂] ring as the scaled palette. Flat and reflex corners are noncounting, so the only COUNTING vertices are 90·90·90·90 (a cross, 4 tiles) and 90·90·180 (a T, 3 tiles); 2-corner junctions (180·180 aligned, 270·90 notch) are noncounting mid-edge points. Chirality is DISTINGUISHED here (all 7 pieces present, S≠Z, J≠L) — a deliberate departure from the A068599 mirror-merge convention. EXPLORATORY: no external oracle exists for k-uniform tetromino tilings (searched: k-uniform theory is regular-polygon-only; Myers/Kaplan cover single-tile isohedral, not mixed protosets), so counts are observations to be cross-checked, not a validated target. See docs/DEVELOPMENT_NOTES.md.",
+  "tiles": [
+    { "kind": "polyomino", "name": "I", "famchar": "i", "cells": [[0,0],[1,0],[2,0],[3,0]] },
+    { "kind": "polyomino", "name": "O", "famchar": "o", "cells": [[0,0],[1,0],[0,1],[1,1]] },
+    { "kind": "polyomino", "name": "T", "famchar": "t", "cells": [[0,0],[1,0],[2,0],[1,1]] },
+    { "kind": "polyomino", "name": "S", "famchar": "s", "cells": [[0,0],[1,0],[1,1],[2,1]] },
+    { "kind": "polyomino", "name": "Z", "famchar": "z", "cells": [[1,0],[2,0],[0,1],[1,1]] },
+    { "kind": "polyomino", "name": "J", "famchar": "j", "cells": [[0,0],[1,0],[2,0],[0,1]] },
+    { "kind": "polyomino", "name": "L", "famchar": "l", "cells": [[0,0],[1,0],[2,0],[2,1]] }
+  ]
+}

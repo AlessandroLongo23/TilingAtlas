@@ -3848,3 +3848,226 @@ Files: `docs/ctrnact-completeness/{skeleton.tex,skeleton.pdf,audit-deliverable-B
 classical-citations-audit.md,trust-map.md,checks/{verify_finite.py,README.md}}`,
 `tools/ctrnact-oracle/alphabets/gen_alphabet.py` (A6 cert), `scripts/p3-nkey-crosscheck.ts`,
 experiment logs `experiments/results/ctrnact-k8-*,ctrnact-nodrop-k{3,4}-2026-07-12.log`.
+
+## 57. The `scaled` tile kind (sides 1-2-3), scale-≥3 supercell duplication, and two completeness walls the flat-corner model exposes (2026-07-13, session 29)
+
+Generalized the `doubled` kind to a `scaled` kind: a side-*s* regular N-gon is a degenerate sN-gon with
+unit edges, boundary word (real corner θ_N, then *s−1* flat 180° corners), so `L=sN`, `p=s`. `s=1` ≡
+regular, `s=2` ≡ doubled. One `gen_alphabet.py` branch (real class at pos 0 + *s−1* flat classes),
+`min_len` gated to admit noncounting flat-flat junctions, palette `regular-scaled-123` (12 tiles =
+{3,4,6,12}×{1,2,3}), and a develop branch reusing the doubled `EU_FACES` path. k=1/k=2 run clean and
+area-certify 100% (90/355 raw duals). `make check-regular` untouched.
+
+**Wall 1 — scale-≥3 supercell/dual explosion (the WL pruner does NOT merge it).** Two flat corners per
+side at *s=3* make the noncounting flat-flat vertices free: they don't pin the fundamental-domain size,
+so the SAME geometric tiling recurs on many torus sizes, each a distinct WL-canonical dual. At k=1
+pure-scale-3, 44 raw duals are just ~9 geometries — e.g. the ×3 triangular tiling (3⁶) appears 9 times
+across cell areas 7.79·{1,2,3,4}; the ×3 square 5 times across 9·{1,2,4}. Scale ≤2 is immune (1 flat/side
+is rigid — verified: pure-scale-1 and pure-scale-2 each canonicalize to exactly 10 = the octagon-blind
+regular k=1 count, a clean bijection, which is why the committed Doubled shelf never needed this). Fix:
+an EXACT congruence dedup on the integer ℤ[ζ₁₂] coordinates the cells already store — the 24 grid
+symmetries are exact integer maps (×ζ = `[a,b,c,d]→[−d,a,b+d,c]`; conjugate = `→[a+c,b,−c,−b−d]`), so
+congruent tilings (incl. supercells) get byte-identical keys; keep the smallest-cell (primitive)
+representative, log the merge loudly. Validated pure-1/2/3 → 10/10/9 and self-consistent totals. A
+float patch key was tried first and abandoned: fixed 30°-rotation canonicalization rounds √3 coordinates
+inconsistently and over-split the 9 triangular reps into 8 keys. (Same exact-dedup lesson as the
+composite shelf, §55 — the float heuristic is never enough once flat/supercell freedom enters.)
+
+**Wall 1 corollary — k-conflict.** Because a supercell dual carries inflated per-dual `kcnt`, one
+geometry appears at several k at once (e.g. `3₃` labeled both k=1 and k=2). The global dedup assigns each
+distinct geometry the k of its min-cell (primitive) representative = the true orbit count, and logs every
+conflict. So the raw oracle's per-k counts for this class are NOT geometric k without the dedup.
+
+**Wall 2 — the noncounting-vertex budget (`EU_NCBUDGET`) requirement grows with k.** The engine's loud
+completeness guard caps noncounting vertex types (default 8). It's not binding for doubled at k≤3, but
+from k=4 it silently costs tilings: budget 8 gives doubled `26/81/332/991` (warns 15.7k×), budget 9 gives
+`26/81/334/1035` (still warns), while the committed atlas's `…/1064` needed budget ≥10. So k=3 stabilizes
+at 9, k=4 at ≥10, k=5 higher — certifying k=5 means climbing the budget ladder to a fixpoint (two
+consecutive budgets with identical catalogs), ~8 min/run. Same root cause as Wall 1: proliferating
+noncounting flat vertices. The committed Doubled k≤4 atlas is fine (built at a sufficient budget); k=5 is
+NOT yet certified.
+
+**Shipped.** Scaled 1-2-3 class: **k=1 = 16, k=2 = 71** distinct genuine size-mixers (174 raw duals →
+87 after collapsing supercells), all exact-area-certified, wired into `/library` + `/play` via the unified
+tile-class registry (source `"scaled"`; 6 edits in `referenceAtlas.ts`, both pages inherit it). Includes
+`3.3₂.3₃` — a single 1-uniform tiling using triangles at all three side lengths.
+
+**Follow-up (same session, AL-directed).** Retired the Doubled shelf class outright — it is now the
+**"Sides 1–2"** value of a new *Side lengths* sub-class facet on the Scaled class (library sidebar, before
+the vertex-count facet; `scaledScaleSet` filter + `scaledMaxScaleOf` helper parsing the family subscripts;
+URL key `scaleset`). "Sides 1–2" (no side-3 tile) reproduces the old Doubled counts EXACTLY (6/41 at
+k=1/2 — a clean cross-check), "Sides 1–3" is the 10/30 genuinely new scale-3 tilings. Deleted
+`public/reference-atlas-doubled.json` and `scripts/build-doubled-atlas.ts` (superseded). Also **certified
+doubled k=4 = 1064** by budget-fixpoint (budgets 12/13/14 identical, 0 warns; budget 11 gives 1063, an
+off-by-one edge). k=5 dumped/parked (still climbing at budget 10); ladder + resume recipe logged in
+`experiments/results/doubled-budget-ladder.md`. Open: higher k for the scaled class needs the budget
+ladder AND the exact dedup already in place.
+
+**Follow-up 2 (same session).** Fixed a regression the retirement introduced: deleting the Doubled atlas
+dropped the platform's sides-1-2 coverage to k=2 (the scaled palette had only been run to k=2), even
+though the doubled palette is complete + certified to k=4. `build-scaled-atlas.ts` now UNIONS the
+highest-k run of BOTH palettes — `regular-doubled` (rigid, complete to k=4, supplies sides-1-2) and
+`regular-scaled-123` (supplies side-3-bearing tilings) — and the exact congruence dedup merges the
+sides-1-2 tilings the scaled palette also produces (ids prefixed d-/s- to stay unique). Shelf is now
+**16/71/212/762** (k=1..4): the Sides 1–2 facet = 6/41/212/762 (the certified doubled catalog), Sides
+1–3 = 10/30/0/0 (scaled k≤2; k=3/4 side-3 tilings still pending the scaled budget ladder). Also added the
+scaled tiles to the Tiles page (a `scaled` prototile family, {3,4,6,12}×{2,3} as degenerate sN-gons) and
+a `Scaled` palette to the Configs page (1398 overlap-free vertex figures via `export_vertex_configs.py`
+`--only`). Files: `lib/tiles/prototiles.ts`, `app/(app)/tiles/_tiles-client.tsx`, `components/prototile-card.tsx`,
+`lib/configs/vertexConfigs.ts`, `tools/ctrnact-oracle/alphabets/export_vertex_configs.py`,
+`public/vertex-configs/regular-scaled-123.json`.
+
+Files: `tools/ctrnact-oracle/alphabets/gen_alphabet.py` (`scaled` kind), `.../palettes/regular-scaled-123.json`,
+`.../run-oracle.sh` (develop branch), `scripts/build-scaled-atlas.ts` (exact ℤ[ζ₁₂] congruence dedup),
+`lib/services/referenceAtlas.ts` (registry), `public/reference-atlas-scaled.json`, logs
+`experiments/results/{scaled-atlas-build,doubled-k5*,doubled-k5-budget{9,10}}-2026-07-13.log`.
+
+## 58. The `polyomino` tile kind (tetrominoes) — a new tile FAMILY on the existing engine, and the first k-uniform enumeration with no oracle to check it against (2026-07-13, session 30)
+
+AL directive: add the seven one-sided tetrominoes (the Tetris set I O T S Z J L) as a new tile family,
+starting from k=1, with the results on the Library and Play pages under a superclass "Polyominoes",
+subclass "Tetrominoes". This is the first family that is NOT built from regular polygons or their
+degenerate/star variants — it is unions of unit squares.
+
+**It fits the engine with no rewrite, because the two ingredients already existed.** A tetromino is a
+degenerate unit-edge polygon whose corners are only 90° / 180° / 270° (= 3 / 6 / 9 units at D=12). The
+flat 180° corner is exactly the `scaled` model; the reflex 270° corner is exactly what the STAR palettes
+already develop (a star's dent is reflex). Nothing in the combinatorial layer assumes convexity, and
+`eu_develop` turns by each corner's `CLASS_UNITS` with no convexity assumption anywhere. So a tetromino
+is a new tile *kind*, not a new engine. Edges point E/N/W/S = ζ₁₂ powers {0,3,6,9}, so every vertex is a
+Gaussian integer (verified: b=c=0 on all developed coordinates) and the exact geometry lives in the same
+ℤ[ζ₁₂] ring `scaled` runs on. `gen_alphabet.py` gained a `polyomino` kind that derives the boundary
+angle word from the piece's `cells` (a small CCW tracer: left turn → 90, straight → 180, right → 270),
+plus `min_len` gated to admit the noncounting 2-corner junctions. Palette `tetromino` (7 pieces, cells
+only). One line in `run-oracle.sh`. `make check-regular` stayed byte-identical (10/20/61/151/332/673).
+
+**The vertex model has only TWO counting types.** A vertex counts toward k where ≥3 tiles meet (AL: same
+convention as always). Since every reflex 270° is filled by a single 90° (2 tiles → noncounting) and
+180°+180° is an aligned mid-edge (2 tiles → noncounting), the ONLY counting configurations that exist are
+90·90·90·90 (a "+" cross, 4 tiles) and 90·90·180 (a "T", 3 tiles). So k is carried entirely by the
+symmetry ORBITS of crosses and T's, not by a zoo of vertex types the way 3.4.6.4 vs 3.3.4.3.4 is for
+regulars. Well-posed, just a coarser lens; the orbit definition still sees piece identity (a symmetry
+can't map an L onto a T).
+
+**Chirality is DISTINGUISHED — a deliberate departure from the settled mirror-merge convention.** AL:
+keep all seven pieces, so S≠Z and J≠L, and a tiling and its mirror are counted separately. This is the
+first family that does not follow the A068599 "mirror pairs merge" rule (§ settled-decisions). There is
+no oracle here that either agrees or disagrees, so the choice is purely a stated definition.
+
+**No oracle exists — researched, not assumed.** The thesis's spine is provable exhaustiveness validated
+against a per-tiling oracle (Soto-Sánchez / A068599 for regulars). For k-uniform edge-to-edge tetromino
+tilings there is no published complete count. The three adjacent literatures each miss the target: (a)
+k-uniform / Archimedean theory is defined ONLY for regular polygons (every source: "a tiling by regular
+polygons is k-uniform if…"); (b) Joseph Myers' and Craig Kaplan's polyomino work classifies by ISOHEDRAL
+number = TILE orbits, and is MONOHEDRAL (single piece), never a mixed protoset; (c) Korn–Pak /
+Bělohoubek–Slavík count tilings of bounded RECTANGLES, a finite-board problem. The intersection this
+family needs is unclaimed. So counts here are observations, not a validated target — the family
+demonstrates the METHOD generalizes, and the intended independent check is a hand-proved k=1 anchor (see
+Open). Finiteness per k is plausible by the bounded-fundamental-domain argument but is NOT cited for this
+family — treat as open. Sources logged in the SYNC entry.
+
+**k=1 result.** Solve → 76 raw blocks; prune → 39; develop → **area-cert 39/39 PASS** (the exact
+ℤ[ζ₁₂] geometry reconstructed every reflex-cornered tiling, Σ face area = |det Λ|). The 39 is the raw
+WL-dedup count and is heavily inflated by supercell duplication — the SAME geometry recurs on
+fundamental domains of 4, 8, 16 cells (the I-piece's length-4 edges are the multi-flat trigger, exactly
+Wall 1 from §57). `scripts/build-tetromino-atlas.ts` applies the validated exact ℤ[ζ₁₂] congruence dedup
+(the same `canonKey` proven 10/10/9 on scaled) but ROTATIONS-ONLY (12 syms, orientation-preserving ⇒
+chirality-distinguished) with the piece letter folded into the per-face fingerprint: **39 raw → 27
+distinct** (chirality-distinguished, shipped), 26 if mirrors are merged (so exactly one chiral pair, the
+rest achiral). Breakdown is chirality-symmetric (S=Z=4, J=L=1, O·S=O·Z=2), 19 monohedral + 8 mixed — a
+good internal-consistency sign. ⚑ CAVEAT: a quick independent HNF-based square-grid dedup gave 30, not
+27 — the two methods disagree, so the exact count is NOT yet trustworthy and needs the hand k=1 anchor to
+certify. The validated `canonKey` (27) is the better estimate; the discrepancy is logged, not papered over.
+
+**k-reach read (the "how far can we push" answer AL asked for).** Vertexdef alphabet sizes: regular 44,
+regular-doubled 413, regular-scaled-123 2026, star24 5739, **tetromino 68370**. That is ~12× star24 and
+~34× scaled-123, and scaled-123 already stalled at k=3. k=1 solved in 41s. So: k=1 solid, k=2 is a real
+run (attempted this session), k≥3 likely prohibitive without a faster method or heavy compute.
+
+**Platform.** Source `"polyomino"`, tile-class `"Polyominoes"` in the shared `referenceAtlas` registry
+(one source branch + one label + one bestEffort fetch of `public/reference-atlas-polyomino.json`), so
+BOTH /library and /play inherit it. Sub-class facet "Polyomino order" (Tetrominoes today; extensible)
+mirrors the scaled `scaleset` facet. The Tetris identity hue per piece (I=190 O=51 T=282 S=125 Z=4 J=230
+L=30, chroma/brightness = the app default) was threaded through `RawPolygon.hue` → `drawPolygons` AND the
+cell-render path (`parseBaseCell`/`expandToViewport`) so pieces read correctly on the Tiles page AND in
+Library/Play thumbnails — side count can't tell tetrominoes apart (all 8- or 10-gons), so a per-piece
+identity colour is the correct call, not a workaround. The 7 pieces are also on the Tiles page as a new
+`polyomino` prototile family.
+
+⚑ Open. (1) A hand-proved k=1 anchor is the intended external check and the way to resolve the 27-vs-30
+dedup discrepancy — cheap and it converts "the engine says so" into "we proved it." (2) k=2 feasibility
+(running this session). (3) Finiteness-per-k for this family is unproven. (4) Pre-existing shelf wart:
+the Star / Lattice / Wallpaper facets show for the scaled AND polyomino classes even though those
+polygon-set families carry no such attributes (a dead control against the "hide irrelevant facets"
+ethos) — matched scaled's behaviour rather than fixing both, flag for a separate cleanup.
+
+Files: `tools/ctrnact-oracle/alphabets/gen_alphabet.py` (`polyomino` kind + boundary tracer),
+`.../palettes/tetromino.json`, `.../run-oracle.sh` (develop branch), `scripts/build-tetromino-atlas.ts`
+(rotations-only exact dedup), `lib/services/referenceAtlas.ts` (registry + `polyominoOrder` facet),
+`components/reference-shelf.tsx` (sub-class facet), `lib/tiles/prototiles.ts` (`polyomino` prototiles +
+`hue`), `lib/utils/renderTiling.ts` (`hue` threaded), `public/reference-atlas-polyomino.json` (27),
+logs `experiments/results/{tetromino-atlas-build,tetromino-k2-run}.log`.
+
+## 59. Hyperbolic {p,q} tilings in the Poincaré disk — a display-only render class, decoupled from the enumeration engine (2026-07-15, session 31)
+
+AL directive: add hyperbolic tilings as a library/play feature, rendered in the Poincaré disk by a shader,
+with pan but not zoom. This is a RENDERING feature, deliberately kept OFF the enumeration engine. The four
+{p,q} tilings are hand-authored (`public/reference-atlas-hyperbolic.json`, source `"hyperbolic"`, discoverer
+Coxeter), carry no completeness claim, and never touch A068599 / `make check-regular` / the exact ℚ(ζ) path.
+Float is correct here (the mission already allows float for render). The four: {7,3}, {8,3}, {5,4}, {4,5},
+all satisfying the hyperbolic condition 1/p + 1/q < 1/2.
+
+**The renderer.** A WebGL2 full-screen-quad fragment shader (`lib/render/hyperbolicShader.ts`), in the
+spirit of the inversive overlay. Per pixel: map to the disk, apply the inverse view isometry, then FOLD into
+the fundamental domain of the (2,p,q) triangle group. Reduce the angle into the reference edge wedge
+(rotation), then invert across the tile-edge geodesic (a circle orthogonal to the unit circle) whenever the
+point sits on the far side, until it lands in the central tile, counting crossings (`step`). Colour by tile,
+stroke the geodesic edges.
+
+**Geometry (verified, `lib/render/hyperbolic.ts`, unit-tested).** For the (2,p,q) Schwarz triangle:
+inradius r_in = tanh(acosh(cos(π/q)/sin(π/p))/2), circumradius r_c = tanh(acosh(cot(π/p)cot(π/q))/2). The
+edge geodesic is the circle orthogonal to the unit circle with centre a = (r_in+1/r_in)/2 and radius
+ρ = (1/r_in−r_in)/2 (a²=ρ²+1, a−ρ=r_in). {6,4} lands on the clean √2−1 / √2 / 1 anchor. ⚑ The load-bearing
+bug: the tile interior is the ORIGIN side of the edge circle (dd > ρ²) because the circle centre lies BEYOND
+the tile, so the fold's inside/outside test is inverted from the naive reading. Getting it backwards renders
+only the central tile (spent a round on it).
+
+**Pan = incremental SU(1,1) view, re-based every frame.** The first cut (tanh of the total pixel offset) is
+boundary-hypersensitive and warps direction near the rim. Replaced with an SU(1,1) view matrix that composes
+the per-frame drag as a SCREEN-space translation, so drag direction follows the mouse under any rotation
+(`su11Mul/Translation/Rotation/Normalize`). The precision fix is the key idea: each frame, RE-BASE by folding
+the world point at the screen centre back to the central tile and absorbing that symmetry into the view
+(`su11Rebase`). This bounds the matrix entries however far you pan, the hyperbolic analogue of the Euclidean
+lattice wrap, and kills the float blow-up that otherwise smears the disk after a long pan. Re-basing also
+anchors the colouring to the screen centre.
+
+**Per-tile colour, flat but smooth.** Not the integer `step` (rings/bands, and it flips under re-base). The
+shader tracks the fold's inverse as a 2×2 Möbius matrix and recovers the tile CENTRE (B/D), maps it through
+the view, and dims by its continuous screen radius: one flat colour per tile, smooth tile-to-tile and under
+pan, brightest at the centre. Two-tone **parity** is offered ONLY when the tiling is 2-colourable, i.e. q
+even ({5,4} of the four). It is made pan-invariant by accumulating the re-base's crossings into a parity
+offset that cancels the tile re-labelling, so each tile keeps its black/white value across pans.
+
+**Interaction.** Wheel ROTATES the disc (zoom is meaningless in H²). Click SNAPS the camera to the nearest of
+the clicked tile's centre / vertex / edge-midpoint (`pickClickAnchor`) and eases it to the centre. Re-basing
+runs even mid-ease (transforming the target by the re-base symmetry), so rapid clicking can no longer starve
+it back into the precision artifacts. Edge width toggles geometry-scaled (thick at centre, thin at rim) vs
+constant screen width. Thumbnails render one frame via `toDataURL`, then drop the GL context.
+
+**Platform.** `"hyperbolic"` source + `"Hyperbolic"` tile-class in the shared `referenceAtlas` registry (one
+source branch + one label + one bestEffort fetch), so BOTH /library and /play inherit it. `schlafli` is
+carried through `CatalogueTiling`/`referenceToCatalogue` (the load-bearing seam: dropping it means the
+overlay never mounts). The flat p5 canvas stays as the pointer/pan input layer, blanked and zoom-disabled via
+a `hyperbolic` config flag; the WebGL overlay mounts mutually exclusive with the inversive one.
+
+⚑ Open. (1) Float-only render, fine per the mission, but the geometry is not exact ℚ(ζ) (never claimed). (2)
+Same pre-existing shelf wart as scaled/polyomino: the Star/Lattice/Wallpaper facets still show for the
+hyperbolic class though it carries none, flagged for the shared facet cleanup. (3) The four tilings are a
+hand-picked sample, not an enumeration; a parametrised {p,q} browser is future work.
+
+Files: `lib/render/hyperbolic.ts` (pure maths, 29 tests), `lib/render/hyperbolicShader.ts` (GLSL),
+`components/hyperbolic-canvas.tsx` (view loop + re-base + input), `components/hyperbolic-thumbnail.tsx`,
+`public/reference-atlas-hyperbolic.json` (4 entries), `tests/hyperbolic.test.ts`; wired through
+`lib/services/{referenceAtlas,catalogueService}.ts`, `lib/stores/configuration.ts`, `components/canvas.tsx`
+(gates + wheel-rotate + click routing), `app/(app)/play/_play-client.tsx`, `components/reference-card.tsx`,
+`components/sidebar/{catalogue-list-panel,tilings-tab}.tsx`.

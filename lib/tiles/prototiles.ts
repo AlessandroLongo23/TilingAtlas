@@ -14,7 +14,7 @@ import { generateFamily } from '@/lib/classes/algorithm/composable/generateFamil
 import { tileVertices } from '@/lib/classes/algorithm/composable/convexTiles';
 import { enumerateConvexIsotoxal, isotoxalVertices } from '@/lib/isotoxal/enumerate';
 
-export type TileFamily = 'regular' | 'convex' | 'star' | 'isotoxal' | 'isotoxalFull';
+export type TileFamily = 'regular' | 'convex' | 'star' | 'isotoxal' | 'isotoxalFull' | 'scaled' | 'polyomino';
 
 export interface Prototile {
   id: string;
@@ -29,6 +29,13 @@ export interface Prototile {
   badges: string[];
   /** Non-convex star — the renderer colors it on the star hue ramp. */
   star?: boolean;
+  /** Optional card render scale override (px per unit edge). Used by scaled tiles, whose side-3
+   *  dodecagon spans ~6 units and would clip the card at the default 28. */
+  pxPerEdge?: number;
+  /** Explicit fill hue (degrees) overriding the geometric by-side-count ramp. Polyominoes use it: every
+   *  tetromino except the O shares a 10-unit boundary, so side count can't tell them apart — a per-piece
+   *  identity hue (the Tetris palette) does. Chroma/brightness stay the app default. */
+  hue?: number;
 }
 
 export const FAMILY_LABELS: Record<TileFamily, string> = {
@@ -37,6 +44,8 @@ export const FAMILY_LABELS: Record<TileFamily, string> = {
   star: 'Star',
   isotoxal: 'Isotoxal',
   isotoxalFull: 'Isotoxal (unified)',
+  scaled: 'Scaled',
+  polyomino: 'Polyomino',
 };
 
 // ── Regular ────────────────────────────────────────────────────────────────────────────────────
@@ -123,6 +132,48 @@ export function convexPrototiles(): Prototile[] {
   }));
 }
 
+// ── Scaled (regular {3,4,6,12} at side length 2 and 3, as degenerate sN-gons) ─────────────────────
+
+/** Degenerate sN-gon: the regular N-gon of edge length s, each edge subdivided into s unit segments.
+ *  sN boundary vertices — N real corners (angle θ_N) + s-1 flat 180° corners per side. This is exactly
+ *  how the Čtrnáct `scaled` palette carries a side-s tile (unit edges, flat corners noncounting). */
+export function scaledVertices(n: number, s: number): { x: number; y: number }[] {
+  const R = s / (2 * Math.sin(Math.PI / n)); // circumradius for edge length s
+  const corners = Array.from({ length: n }, (_, i) => {
+    const a = (2 * Math.PI * i) / n - Math.PI / 2;
+    return { x: R * Math.cos(a), y: R * Math.sin(a) };
+  });
+  const verts: { x: number; y: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const A = corners[i], B = corners[(i + 1) % n];
+    for (let j = 0; j < s; j++) {
+      const t = j / s; // A (real corner) then s-1 collinear subdivision (flat) points
+      verts.push({ x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t });
+    }
+  }
+  return verts; // s·n vertices
+}
+
+/** {3,4,6,12} at side lengths 2 and 3 (side 1 = the Regular family). Each is a degenerate sN-gon. */
+export const SCALED_SIDES = [3, 4, 6, 12] as const;
+export const SCALED_SCALES = [2, 3] as const;
+
+export function scaledPrototiles(): Prototile[] {
+  const out: Prototile[] = [];
+  for (const s of SCALED_SCALES) for (const n of SCALED_SIDES) {
+    out.push({
+      id: `scaled-${n}-${s}`,
+      family: 'scaled',
+      name: `Side-${s} ${REGULAR_NAMES[n] ?? `${n}-gon`}`,
+      sideCount: s * n,
+      vertices: scaledVertices(n, s),
+      badges: [`side ${s}`, `= ${s * n}-gon`],
+      pxPerEdge: 12, // side-3 dodecagon spans ~6 units; keep the whole family in-card
+    });
+  }
+  return out;
+}
+
 // ── Isotoxal (convex, two alternating angles) ────────────────────────────────────────────────────
 
 export function isotoxalPrototiles(gridN: number): Prototile[] {
@@ -161,12 +212,81 @@ export function isotoxalFullPrototiles(gridN: number): Prototile[] {
   );
 }
 
+// ── Polyomino (unions of unit squares — the Tetris family to start) ──────────────────────────────
+
+/** Trace the outer boundary of a polyomino as a unit-edge loop, CCW, every grid point on the boundary
+ *  kept as a vertex (so straight runs carry flat 180° corners, just like the scaled degenerate model;
+ *  concave notches carry reflex 270° corners, like a star's dents). Cells are unit squares keyed by their
+ *  bottom-left integer corner. Assumes a simply-connected polyomino with no diagonal pinch (true for all
+ *  tetrominoes): then every boundary vertex has exactly one outgoing directed edge, so the walk is a
+ *  function. Interior kept on the left ⇒ CCW. */
+function polyominoBoundary(cells: [number, number][]): { x: number; y: number }[] {
+  const key = (x: number, y: number) => `${x},${y}`;
+  const has = new Set(cells.map(([x, y]) => key(x, y)));
+  const next = new Map<string, [number, number]>(); // start grid vertex -> end grid vertex
+  for (const [x, y] of cells) {
+    if (!has.has(key(x, y - 1))) next.set(key(x, y), [x + 1, y]); // bottom edge, heading +x
+    if (!has.has(key(x + 1, y))) next.set(key(x + 1, y), [x + 1, y + 1]); // right edge, heading +y
+    if (!has.has(key(x, y + 1))) next.set(key(x + 1, y + 1), [x, y + 1]); // top edge, heading -x
+    if (!has.has(key(x - 1, y))) next.set(key(x, y + 1), [x, y]); // left edge, heading -y
+  }
+  const start = cells.reduce((a, b) => (b[1] < a[1] || (b[1] === a[1] && b[0] < a[0]) ? b : a));
+  const startKey = key(start[0], start[1]); // bottom-left cell's bottom-left corner is on the boundary
+  const verts: { x: number; y: number }[] = [];
+  let cur = startKey;
+  let guard = 0;
+  do {
+    const [px, py] = cur.split(',').map(Number);
+    verts.push({ x: px, y: py });
+    const nxt = next.get(cur);
+    if (!nxt) break;
+    cur = key(nxt[0], nxt[1]);
+  } while (cur !== startKey && guard++ < 1000);
+  return verts;
+}
+
+/** The seven one-sided tetrominoes as they appear in the game, each in its spawn orientation (+y is up,
+ *  matching the renderer's flipped axis). Hue is the piece's Tetris identity colour; the app's fixed
+ *  chroma/brightness (S=40, B=100 in HSB) are kept, so only the hue matches the game. NB: the enumeration
+ *  convention MERGES mirror pairs, so S≡Z and J≡L collapse to five FREE tetrominoes for the engine — the
+ *  seven shown here are for visual inspection, not the solver's tile count. */
+const TETROMINOES: { letter: string; hue: number; cells: [number, number][] }[] = [
+  { letter: 'I', hue: 190, cells: [[0, 0], [1, 0], [2, 0], [3, 0]] }, // cyan
+  { letter: 'O', hue: 51, cells: [[0, 0], [1, 0], [0, 1], [1, 1]] }, // yellow
+  { letter: 'T', hue: 282, cells: [[0, 0], [1, 0], [2, 0], [1, 1]] }, // purple
+  { letter: 'S', hue: 125, cells: [[0, 0], [1, 0], [1, 1], [2, 1]] }, // green
+  { letter: 'Z', hue: 4, cells: [[1, 0], [2, 0], [0, 1], [1, 1]] }, // red
+  { letter: 'J', hue: 230, cells: [[0, 0], [1, 0], [2, 0], [0, 1]] }, // blue
+  { letter: 'L', hue: 30, cells: [[0, 0], [1, 0], [2, 0], [2, 1]] }, // orange
+];
+
+export function polyominoPrototiles(): Prototile[] {
+  return TETROMINOES.map(({ letter, hue, cells }) => {
+    const verts = polyominoBoundary(cells);
+    const xs = verts.map((v) => v.x), ys = verts.map((v) => v.y);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    return {
+      id: `poly-${letter}`,
+      family: 'polyomino' as const,
+      name: `${letter}-tetromino`,
+      sideCount: verts.length,
+      vertices: verts.map((v) => ({ x: v.x - cx, y: v.y - cy })),
+      badges: ['tetromino'],
+      hue,
+      pxPerEdge: 18, // the I bar spans 4 units; keep the whole family in-card at one unit length
+    };
+  });
+}
+
 // ── Aggregate ────────────────────────────────────────────────────────────────────────────────────
 
 /** All prototiles across families; isotoxal is enumerated on the given grid. */
 export function allPrototiles(isotoxalGridN: number): Prototile[] {
   return [
     ...regularPrototiles(),
+    ...scaledPrototiles(),
+    ...polyominoPrototiles(),
     ...convexPrototiles(),
     ...starPrototiles(),
     ...isotoxalPrototiles(isotoxalGridN),

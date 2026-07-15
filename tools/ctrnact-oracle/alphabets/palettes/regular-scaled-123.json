@@ -1,0 +1,20 @@
+{
+  "name": "regular-scaled-123",
+  "D": 12,
+  "pinnedLegacy": false,
+  "comment": "Regular {3,4,6,12} at side lengths 1, 2 AND 3 together — the superclass of the regular-doubled (sides 1-2) palette. A side-s N-gon is modeled as a degenerate sN-gon with unit edges whose boundary word is (real corner θ_N = D/2 - D/N, then s-1 flat 180° corners = D/2), i.e. L=sN, p=s. Flat corners are noncounting, so a (flat,flat) mid-edge abutment of two same-scale tiles is not a k-vertex. s=1 is the plain regular tile, s=2 reproduces the doubled kind. Exploratory demo: NO external oracle (not A068599), counts are observations. The kept catalog is filtered to genuine size-mixers (a T-junction present) — single-scale regular tilings at any scale are dropped. See docs/DEVELOPMENT_NOTES.md.",
+  "tiles": [
+    { "kind": "regular", "n": 3,  "name": "3",    "famchar": "3" },
+    { "kind": "regular", "n": 4,  "name": "4",    "famchar": "4" },
+    { "kind": "regular", "n": 6,  "name": "6",    "famchar": "6" },
+    { "kind": "regular", "n": 12, "name": "12",   "famchar": "c" },
+    { "kind": "scaled", "n": 3,  "scale": 2, "name": "3s2",  "famchar": "t" },
+    { "kind": "scaled", "n": 4,  "scale": 2, "name": "4s2",  "famchar": "q" },
+    { "kind": "scaled", "n": 6,  "scale": 2, "name": "6s2",  "famchar": "h" },
+    { "kind": "scaled", "n": 12, "scale": 2, "name": "12s2", "famchar": "w" },
+    { "kind": "scaled", "n": 3,  "scale": 3, "name": "3s3",  "famchar": "a" },
+    { "kind": "scaled", "n": 4,  "scale": 3, "name": "4s3",  "famchar": "b" },
+    { "kind": "scaled", "n": 6,  "scale": 3, "name": "6s3",  "famchar": "e" },
+    { "kind": "scaled", "n": 12, "scale": 3, "name": "12s3", "famchar": "g" }
+  ]
+}

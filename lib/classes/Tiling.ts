@@ -2,6 +2,7 @@ import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflect
 import type { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { islamicAnglesForHalfways, islamicTipsAngleFromSlider } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
+import { WAVE_MIN_SCALE } from "@/lib/utils/tilingTransition";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
 import { extractFaces, colorFacesByMarkerThenTile, type TileLite, type TileColoredFace, type Marker, type Segment } from "@/utils/islamicArrangement";
@@ -46,12 +47,14 @@ export class Tiling {
         opacity: number = 1,
         circlePacking: boolean = false,
         cull?: (c: Vector) => boolean,
+        scaleOf?: (c: Vector) => number,
     ): void => {
         // Read config ONCE per draw, not once per tile. The plain path below used to delegate to
         // Polygon.show, which re-read Zustand state AND queried the DOM ("dark" class) for every tile
         // every frame — the dominant cost at zoomed-out tile counts. Stroke is uniform across tiles, so
         // set it once here; only the per-tile fill (hue) varies inside the loop. `cull`, when given,
-        // skips tiles outside the viewport (see makeVisibilityCull in canvas.tsx).
+        // skips tiles outside the viewport (see makeVisibilityCull in canvas.tsx). `scaleOf`, when given,
+        // shrinks each tile toward its own centroid (see makeWaveScale) — the selection transition.
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
         const lineWidthValue = cfg.lineWidth;
@@ -68,8 +71,10 @@ export class Tiling {
             for (let i = 0; i < this.nodes.length; i++) {
                 const node = this.nodes[i];
                 if (cull && !cull(node.centroid)) continue;
+                const s = scaleOf ? scaleOf(node.centroid) : 1;
+                if (s < WAVE_MIN_SCALE) continue;
                 const radius = node.halfways?.length > 0
-                    ? Vector.distance(node.centroid, node.halfways[0])
+                    ? Vector.distance(node.centroid, node.halfways[0]) * s
                     : 0;
                 if (radius > 0) {
                     ctx.fill(node.hue, 40, 100 / opacity, 1.0 * opacity);
@@ -101,14 +106,28 @@ export class Tiling {
             for (let i = 0; i < this.nodes.length; i++) {
                 const node = this.nodes[i];
                 if (cull && !cull(node.centroid)) continue;
+                // Selection transition: the tile is drawn scaled about its own centroid. s === 1 is the
+                // normal path (no per-vertex arithmetic); below WAVE_MIN_SCALE it has collapsed to a point
+                // and is dropped, so it doesn't linger as a dot of stroke.
+                const s = scaleOf ? scaleOf(node.centroid) : 1;
+                if (s < WAVE_MIN_SCALE) continue;
                 if (showFill) ctx.fill(node.hue, 40, fillV, fillA);
                 else ctx.noFill();
                 const vs = node.vertices;
                 ctx.beginShape();
-                for (let k = 0; k < vs.length; k++) ctx.vertex(vs[k].x, vs[k].y);
+                if (s >= 1) {
+                    for (let k = 0; k < vs.length; k++) ctx.vertex(vs[k].x, vs[k].y);
+                } else {
+                    const cx = node.centroid.x, cy = node.centroid.y;
+                    for (let k = 0; k < vs.length; k++) {
+                        ctx.vertex(cx + (vs[k].x - cx) * s, cy + (vs[k].y - cy) * s);
+                    }
+                }
                 ctx.endShape(ctx.CLOSE);
             }
-            if (showPolygonPoints) {
+            // Points sit on the untransformed outline, so they'd float off a scaled tile — hide them for
+            // the duration of a transition.
+            if (showPolygonPoints && !scaleOf) {
                 const r = 5 / zoom;
                 for (let i = 0; i < this.nodes.length; i++) {
                     const node = this.nodes[i];

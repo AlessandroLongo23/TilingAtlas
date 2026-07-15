@@ -11,7 +11,21 @@ import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { starHue, starApexAngleDeg } from "@/lib/utils/renderTiling";
+import {
+	TILING_TRANSITION_IN_MS,
+	TILING_TRANSITION_OUT_MS,
+	prefersReducedMotion,
+	waveTileScale,
+} from "@/lib/utils/tilingTransition";
 import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import {
+	screenToWorld,
+	worldToScreen,
+	pickSnapTarget,
+	inversiveScreenToWorld,
+	reduceToOriginCell,
+	type LensParams,
+} from "@/lib/utils/canvasPick";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
@@ -39,6 +53,13 @@ interface CanvasProps {
 // below is sized against ZOOM_MIN — keep them in step.
 const ZOOM_MIN = 20;
 const ZOOM_MAX = 150;
+
+// Left-click-to-centre. A left press starts a drag-pan; on release we treat it as a click (and centre the
+// clicked tile) only if the pointer moved less than CLICK_DRAG_THRESHOLD_PX since press — beyond that it was
+// a pan. CLICK_SNAP_RADIUS_PX is the screen-space reach for snapping to a tiling vertex (else the containing
+// tile's centroid); see pickSnapTarget.
+const CLICK_DRAG_THRESHOLD_PX = 5;
+const CLICK_SNAP_RADIUS_PX = 12;
 
 // Per-axis safety backstop on the replicated grid. Sized so it never limits a real screen-fill at the
 // zoom floor (worst realistic case ~126 cells/axis for a skewed cell on a 4K-at-100% display at
@@ -86,6 +107,38 @@ function makeVisibilityCull(
 		const sy = oy + zoom * (sin * c.x - cos * c.y);
 		return sx >= -limX && sx <= limX && sy >= -limY && sy <= limY;
 	};
+}
+
+// The selection transition's per-tile scale, as a function of the tile's WORLD centroid. The wave is
+// radial in SCREEN space — it leaves the canvas centre and reaches the far corner at the end of the phase
+// — so it stays uniform in every direction no matter how the view is panned, zoomed or rotated. Uses the
+// same world -> centered-screen map as makeVisibilityCull, so the two agree on where a tile is.
+function makeWaveScale(
+	phase: "in" | "out", p: number, zoom: number, rotation: number, offset: Vector, width: number, height: number,
+): (c: Vector) => number {
+	const cos = Math.cos(rotation), sin = Math.sin(rotation);
+	const ox = offset.x, oy = offset.y;
+	// Normalise by the half-diagonal: the wavefront has swept every visible tile, corners included, at p=1.
+	const dmax = Math.max(1, Math.hypot(width / 2, height / 2));
+	return (c: Vector) => {
+		const sx = ox + zoom * (cos * c.x + sin * c.y);
+		const sy = oy + zoom * (sin * c.x - cos * c.y);
+		return waveTileScale(phase, Math.hypot(sx, sy) / dmax, p);
+	};
+}
+
+// The transition scales tiles about their centroids in the plain (and circle-packing) draw path. The
+// Islamic construction and the symmetry-elements overlay are drawn by different code that has no notion of
+// a per-tile scale, and the inversive view doesn't use this canvas at all — in those modes a selection just
+// swaps, as it did before. Reduced-motion always wins over the toggle.
+function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): boolean {
+	return (
+		cfg.tilingTransition &&
+		!cfg.isIslamic &&
+		!cfg.showSymmetryElements &&
+		!cfg.inversive &&
+		!prefersReducedMotion()
+	);
 }
 
 // How many lattice copies (per axis, each side of origin) are needed to cover the viewport plus a
@@ -219,8 +272,21 @@ export function Canvas({
 	const prevTileCountRef = useRef(-1);
 	const prevVcsSigRef = useRef<string>("");
 	const grabRef = useRef(false);
+	// Screen coords of the last left press, or null if the press didn't start on the canvas. Read on release
+	// to tell a click (centre the tile) from a drag (pan) by how far the pointer travelled.
+	const pressPosRef = useRef<{ x: number; y: number } | null>(null);
 	// Last applied rotation (degrees); drives the pivot-on-nearest-vertex compensation in the draw loop.
 	const prevRotationRef = useRef<number | null>(null);
+
+	// Selection transition (lib/utils/tilingTransition.ts). `outgoingRef` holds the tiling that is on its
+	// way out — it keeps its own cell, because the draw loop must wrap and cull it against the lattice it
+	// was built from, not the incoming one. The incoming grid is built at selection time (the cost is paid
+	// either way) and simply waits its turn, so the out -> in handover costs no frame.
+	const transitionRef = useRef<{ phase: "out" | "in"; start: number } | null>(null);
+	const outgoingRef = useRef<{ tiling: Tiling; cell: TranslationalCellData } | null>(null);
+	// The tiling the current grid belongs to, WITHOUT the parametric-alpha signature that translationalCellId
+	// carries: dragging an α slider rebuilds the grid every frame and must NOT read as a new selection.
+	const prevBaseIdRef = useRef<string | null>(null);
 
 	const prevRef = useRef({
 		rulestring: "",
@@ -264,7 +330,18 @@ export function Canvas({
 				const cfg = readCfg();
 				const ctrl = cfg.controls;
 				const { translationalCell: staticCell, translationalCellId: baseId, paramCell: pc, width: W, height: H } = propsRef.current;
+				// No geometry yet (cold load before the first tiling resolves): blank rather than crash in
+				// buildTilingFromCell, which dereferences a null cell.
+				if (!staticCell && !pc) {
+					tilingRef.current = null;
+					activeCellRef.current = null;
+					return;
+				}
 				const prev = prevRef.current;
+				// Captured before the rebuild below overwrites them: what is on screen right now. A selection
+				// change hands this pair to the outgoing (collapsing) slot.
+				const shownTiling = tilingRef.current;
+				const shownCell = activeCellRef.current;
 
 				// Resolve the cell to draw. Rigid tiling: the static prop. Parametric family: evaluate the
 				// cell at the store's current slider tuple — an imperative read, so dragging a slider never
@@ -314,6 +391,23 @@ export function Canvas({
 				const cellChanged =
 					!!tc && (prev.translationalCellId !== tcId || grew || shrankAtRest);
 
+				// A NEW TILING was selected — as opposed to an α-slider tick or a zoom-driven regrid, which
+				// also change tcId/the grid but must never animate. Hand what is on screen to the outgoing
+				// slot and start the wave. If a collapse is already running, leave it be: that is the one the
+				// user can actually see, and only the (not yet shown) incoming grid is superseded.
+				if (!!tc && baseId !== prevBaseIdRef.current) {
+					const canAnimate =
+						prevBaseIdRef.current !== null && !!shownTiling && !!shownCell && transitionsEnabled(cfg);
+					if (!canAnimate) {
+						transitionRef.current = null;
+						outgoingRef.current = null;
+					} else if (transitionRef.current?.phase !== "out") {
+						outgoingRef.current = { tiling: shownTiling, cell: shownCell };
+						transitionRef.current = { phase: "out", start: p5.millis() };
+					}
+					prevBaseIdRef.current = baseId;
+				}
+
 				if (!tilingRef.current || ruleChanged || cellChanged) {
 					try {
 						if (cfg.debugView) debugManager.reset();
@@ -358,10 +452,13 @@ export function Canvas({
 			};
 
 			const drawTiling = (
-				cfg: ReturnType<typeof readCfg>, tiling: Tiling, cull?: (c: Vector) => boolean,
+				cfg: ReturnType<typeof readCfg>,
+				tiling: Tiling,
+				cull?: (c: Vector) => boolean,
+				scaleOf?: (c: Vector) => number,
 			) => {
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
-				else tiling.show(p5, cfg.showPolygonPoints, 1, cfg.circlePacking, cull);
+				else tiling.show(p5, cfg.showPolygonPoints, 1, cfg.circlePacking, cull, scaleOf);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 			};
 
@@ -447,7 +544,8 @@ export function Canvas({
 						targetOffset: cfg.controls.offset.copy(),
 					},
 				});
-				ensureTiling();
+				// The hyperbolic (and inversive) views paint via their own WebGL overlay; skip the flat grid build.
+				if (!cfg.hyperbolic) ensureTiling();
 			};
 
 			p5.draw = () => {
@@ -460,9 +558,45 @@ export function Canvas({
 				// Inversive view: the WebGL overlay (InversiveCanvas) draws the tiling instead. Keep the p5
 				// canvas as the input layer — the ease/rotation/drag bookkeeping below still runs so panning
 				// and rotation keep flowing into the store — but skip the (now wasted) grid build and tile draw.
+				// Both WebGL overlays (inversive conformal, hyperbolic disk) paint the tiling themselves; the
+				// flat p5 grid build + tile draw are skipped for either. The p5 canvas stays mounted only as the
+				// pan/pointer input layer, so the ease/drag bookkeeping below still runs.
 				const inversive = cfg.inversive;
-				if (!inversive) ensureTiling();
-				const tiling = tilingRef.current;
+				const hyperbolic = cfg.hyperbolic;
+				const skipFlat = inversive || hyperbolic;
+				if (!skipFlat) ensureTiling();
+
+				// Advance the selection transition. Phase "out" collapses the OUTGOING tiling into its
+				// centroids, centre-first; when it lands, the (already built) incoming grid takes over and
+				// phase "in" grows it back out the same way. Two phases in sequence — the new tiling never
+				// starts appearing before the old one is gone.
+				let wavePhase: "in" | "out" | null = null;
+				let waveP = 0;
+				const tr = transitionRef.current;
+				if (tr && !transitionsEnabled(cfg)) {
+					// Toggled off (or Islamic/symmetry/inversive switched on) mid-flight: drop straight to the
+					// finished state rather than freezing the tiles at whatever scale they had reached.
+					transitionRef.current = null;
+					outgoingRef.current = null;
+				} else if (tr) {
+					const dur = tr.phase === "out" ? TILING_TRANSITION_OUT_MS : TILING_TRANSITION_IN_MS;
+					const elapsed = (p5.millis() - tr.start) / dur;
+					if (elapsed < 1) {
+						wavePhase = tr.phase;
+						waveP = elapsed;
+					} else if (tr.phase === "out") {
+						outgoingRef.current = null;
+						transitionRef.current = { phase: "in", start: p5.millis() };
+						wavePhase = "in";
+						waveP = 0;
+					} else {
+						transitionRef.current = null;
+					}
+				}
+				// While the old tiling collapses it is what's on screen, so it — and the lattice it was built
+				// from — is what the wrap, the cull and the draw below all work against.
+				const outgoing = wavePhase === "out" ? outgoingRef.current : null;
+				const tiling = outgoing ? outgoing.tiling : tilingRef.current;
 
 				const { width: w, height: h } = propsRef.current;
 				if (w !== prevRef.current.width || h !== prevRef.current.height) {
@@ -477,16 +611,20 @@ export function Canvas({
 					// the grid was actually built from (the live alpha cell for a parametric family), so the
 					// wrap lattice matches the drawn geometry.
 					const rot = (cfg.rotation || 0) * Math.PI / 180;
-					const tc = activeCellRef.current;
+					const tc = outgoing ? outgoing.cell : activeCellRef.current;
 
 					// Rotate about the screen centre, not the world origin: when the angle changes by Δθ,
 					// rotate the stored pan offset by the same Δθ. That holds the world point under the
 					// viewport centre fixed there, so the pattern spins around the middle of the screen no
 					// matter how it's been panned. (To keep wc under centre: O_new = R(Δθ)·O_old — exact
 					// for any Δθ, and wrap-proof since it never leaves the drawn frame.)
+					// The hyperbolic view applies rotation directly as θ inside its shader's Möbius map and derives
+					// its pan vector from the RAW offset, so rotating the pan offset here too would double-count.
+					// Skip the compensation in hyperbolic mode (the inversive view still needs it — it reads the
+					// raw uOffset + uRot and relies on this to hold the centre fixed under rotation).
 					const rotDeg = cfg.rotation || 0;
 					const prevRotDeg = prevRotationRef.current;
-					if (prevRotDeg !== null && prevRotDeg !== rotDeg) {
+					if (!hyperbolic && prevRotDeg !== null && prevRotDeg !== rotDeg) {
 						const dTheta = rot - prevRotDeg * Math.PI / 180;
 						const cd = Math.cos(dTheta), sd = Math.sin(dTheta);
 						const rotateAboutCentre = (o: Vector) => {
@@ -500,9 +638,9 @@ export function Canvas({
 					}
 					prevRotationRef.current = rotDeg;
 
-					// Everything below paints tiles onto the p5 canvas; the inversive overlay owns painting
-					// in that mode, so skip it (the rotation compensation above still ran).
-					if (!inversive) {
+					// Everything below paints tiles onto the p5 canvas; a WebGL overlay owns painting in the
+					// inversive/hyperbolic modes, so skip it (the rotation compensation above still ran).
+					if (!skipFlat) {
 					let drawOffset = ctrl.offset;
 					if (tc) {
 						const { v1, v2, det } = latticeBasisFromCell(tc);
@@ -531,8 +669,13 @@ export function Canvas({
 						tc && tiling
 							? makeVisibilityCull(tiling.maxRadius ?? 0, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
 							: undefined;
+					// The wave rides on the same view transform, so it stays radial about the canvas centre under
+					// any pan/zoom/rotation.
+					const wave = wavePhase
+						? makeWaveScale(wavePhase, waveP, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
+						: undefined;
 					if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
-					else drawTiling(cfg, tiling, cull);
+					else drawTiling(cfg, tiling, cull, wave);
 					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
 					if (symmetryActive) {
 						drawSymmetryElements(p5, sd, {
@@ -557,11 +700,11 @@ export function Canvas({
 					ctrl.targetOffset.add(Vector.sub(mouse, prevMouse));
 				}
 
-				if (cfg.takeScreenshot) {
+				if (cfg.takeScreenshot && tiling) {
 					takeScreenshotImpl(cfg, tiling);
 					useConfiguration.setState({ takeScreenshot: false });
 				}
-				if (cfg.exportGraph) {
+				if (cfg.exportGraph && tiling) {
 					tiling.exportGraph();
 					useConfiguration.setState({ exportGraph: false });
 				}
@@ -582,18 +725,113 @@ export function Canvas({
 					event.stopPropagation();
 					ctrl.targetOffset.set(new Vector(0, 0));
 					useConfiguration.setState({ controls: { ...ctrl, targetZoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, 50)) } });
+					// Hyperbolic: also recentre the disk view (right-click resets, as in the flat view).
+					if (cfg.hyperbolic) useConfiguration.setState({ hyperbolicResetView: true });
 					return;
 				}
 				grabRef.current = true;
+				pressPosRef.current = { x: p5.mouseX, y: p5.mouseY };
+			};
+
+			// Centre the view on the tile under the cursor, in both the flat and inversive views. Operates in
+			// the TARGET frame (targetOffset/targetZoom), the convention the wheel and middle-click handlers
+			// use, so it composes with an in-flight ease. Each branch inverts the click to a world point, hit-
+			// tests with pickSnapTarget, then re-solves the offset so the picked tile lands at the centre.
+			const centreOnClick = () => {
+				const cfg = readCfg();
+				// Hyperbolic view: hand the click (centred CSS px) to the disk overlay, which owns the view
+				// isometry and folds the clicked tile's centre to the screen centre.
+				if (cfg.hyperbolic) {
+					useConfiguration.setState({
+						hyperbolicClick: { x: p5.mouseX - p5.width / 2, y: p5.mouseY - p5.height / 2 },
+					});
+					return;
+				}
+				if (transitionRef.current) return; // mid selection-transition the shown tiling is the outgoing one
+				const ctrl = cfg.controls;
+				const zoom = ctrl.targetZoom;
+				const rot = ((cfg.rotation || 0) * Math.PI) / 180;
+				const mx = p5.mouseX - p5.width / 2;
+				const my = p5.mouseY - p5.height / 2;
+
+				if (cfg.inversive) {
+					// The inversive view skips ensureTiling (its geometry lives in InversiveCanvas' own data textures),
+					// so tilingRef/activeCellRef can be stale after a selection or slider change made while inversive.
+					// Resolve the current cell fresh from the props and build a small local patch to hit-test against.
+					const { translationalCell: staticCell, paramCell: pc } = propsRef.current;
+					const cell = pc
+						? evaluateParamCell(pc, resolveAlphaDegs(pc, useFamilyAlphas.getState().values))
+						: staticCell;
+					if (!cell) return;
+					const { v1, v2 } = latticeBasisFromCell(cell);
+
+					// Replicate the shader's per-pixel inverse (lens then affine) to find the world point under the
+					// cursor. The lens uniforms are rebuilt from config exactly as InversiveCanvas builds them (sigma is
+					// the 0.5 it hardcodes) — keep this in step with that file.
+					const kinvMag = Math.exp(-0.5);
+					const tau = ((cfg.mobiusTwist || 0) * Math.PI) / 180;
+					const lens: LensParams = {
+						mode: cfg.inversiveMode === "mobius" ? 1 : 0,
+						R: cfg.inversiveRadiusFrac * Math.min(p5.width, p5.height) * 0.5,
+						kinv: { x: kinvMag * Math.cos(-tau), y: kinvMag * Math.sin(-tau) },
+					};
+					const w0 = inversiveScreenToWorld(mx, my, lens, ctrl.targetOffset, zoom, rot);
+					// Find the TILE the click lands in — the one containing the world point under the cursor — and take
+					// its centroid. NO vertex snapping here (radius 0): the user is selecting a whole tile to send to
+					// infinity, and snapping to a vertex, which several tiles share, makes "which tile surrounds the
+					// image" ambiguous — and near the singular centre, where the lens magnification diverges, it would
+					// snap to a vertex almost every time. reduceToOriginCell first brings the click (which the lens can
+					// map far from the origin) into the cell the local patch covers.
+					const patch = buildTilingFromCell(cell, 2, 2);
+					const qw = reduceToOriginCell(w0, v1, v2);
+					const hit = pickSnapTarget(qw, patch.nodes, patch.maxRadius ?? 0, 0);
+					if (!hit) return;
+					// Put the tile's centroid at the affine origin v = 0, the centre of the inversion. The lens then
+					// carries it out to infinity, so the clicked tile becomes the one that surrounds the whole image.
+					// Same affine solve as the flat view (offset = -zoom.Rt.p); the lens plays no part in the centring.
+					const sp = worldToScreen(hit.x, hit.y, { x: 0, y: 0 }, zoom, rot);
+					ctrl.targetOffset.set(new Vector(-sp.x, -sp.y));
+					return;
+				}
+
+				// Flat view. wrap-reduce the offset so the inverted click lands in the built base grid, then shift
+				// targetOffset by the snapped point's on-screen position — moving that (visible) tile to the centre
+				// with a bounded pan.
+				const tiling = tilingRef.current;
+				const tc = activeCellRef.current;
+				if (!tiling || !tc) return;
+				const { v1, v2, det } = latticeBasisFromCell(tc);
+				const { draw } = wrapOffset(ctrl.targetOffset, v1, v2, det, zoom, rot);
+				const c = screenToWorld(mx, my, draw, zoom, rot);
+				const hit = pickSnapTarget(c, tiling.nodes, tiling.maxRadius ?? 0, CLICK_SNAP_RADIUS_PX / zoom);
+				if (!hit) return;
+				const s = worldToScreen(hit.x, hit.y, draw, zoom, rot);
+				ctrl.targetOffset.sub(new Vector(s.x, s.y));
 			};
 
 			p5.mouseReleased = () => {
 				grabRef.current = false;
+				const press = pressPosRef.current;
+				pressPosRef.current = null;
+				if (!press) return;
+				if (Math.hypot(p5.mouseX - press.x, p5.mouseY - press.y) < CLICK_DRAG_THRESHOLD_PX) {
+					centreOnClick();
+				}
 			};
 
 			p5.mouseWheel = (event?: WheelEvent) => {
 				if (event && event.target !== p5.canvas) return;
 				const cfg = readCfg();
+				// Hyperbolic view has no zoom (the disk radius is fixed), so the wheel rotates the disc instead.
+				// The overlay folds this rotation into its view; panning stays screen-relative, so drag
+				// direction still follows the mouse under any rotation.
+				if (cfg.hyperbolic) {
+					if (event) {
+						const dir = event.deltaY > 0 ? 1 : -1;
+						useConfiguration.setState({ rotation: (cfg.rotation || 0) + dir * 4 });
+					}
+					return;
+				}
 				const ctrl = cfg.controls;
 				const mouse = new Vector(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2);
 				const world = Vector.sub(mouse, ctrl.targetOffset).scale(1 / ctrl.targetZoom);

@@ -1,7 +1,12 @@
 "use client";
 
+import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
+import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
+import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
+import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
+import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import {
 	isMaximal,
 	partitionKeyOf,
@@ -49,10 +54,43 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 		onClick && "cursor-pointer text-left",
 	);
 
+	const openScreenshot = useScreenshotPreview((s) => s.open);
+	const handleScreenshot = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		const dataUrl = renderTilingToDataUrl(
+			{ translationalCell: tiling.renderCell, pxPerEdge: 48, background: "#1e1e22" },
+			1024,
+		);
+		if (!dataUrl) return;
+		const safe = (tiling.id || tiling.family).replace(/[/\\?%*:|"<>]+/g, "-").replace(/^-+|-+$/g, "") || "tiling";
+		openScreenshot({
+			imageDataUrl: dataUrl,
+			filename: `${safe}.png`,
+			rulestring: tiling.family,
+			groupId: null,
+			allowSupabaseUpload: false,
+		});
+	};
+
 	const content = (
 		<>
 			<div className="relative aspect-square bg-surface-raised">
-				<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
+				{tiling.schlafli ? (
+					<HyperbolicThumbnail schlafli={tiling.schlafli} />
+				) : (
+					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
+				)}
+				{SCREENSHOT_BUTTONS_ENABLED && !tiling.schlafli ? (
+					<button
+						type="button"
+						onClick={handleScreenshot}
+						title="Screenshot"
+						aria-label="Take screenshot"
+						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+					>
+						<Camera size={13} />
+					</button>
+				) : null}
 			</div>
 			<div className="flex flex-col px-2.5 py-2 gap-1.5">
 				<div className="flex flex-wrap items-center gap-1">

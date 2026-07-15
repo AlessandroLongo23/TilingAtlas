@@ -128,15 +128,75 @@ static vector<Vec> seeds_mod_lattice(const vector<Vec>& positions, const Vec& T1
 }
 
 // ===================== developer =====================
-struct DevResult { Vec T1, T2; vector<Vec> seeds; bool ok; string err; };
-static DevResult develop(const vector<int>& rneig, const vector<int>& lvert, const vector<int>& glue, int sign) {
+struct Face { int tile; vector<Vec> verts; };  // one tile: index into TILE_NAME + boundary verts (exact ℤ[ζ₁₂])
+struct DevResult { Vec T1, T2; vector<Vec> seeds; bool ok; string err; vector<Face> faces; bool areaOk = false; };
+
+// Partition the DEVELOPED darts into faces (tiles). The quotient is symmetry-folded — a k=1 tiling can
+// have a single self-looped dart — so each quotient dart h appears at many directions d; the geometric
+// dart is the key (h*12+d) in `placed`. Face traversal is checkpart's walk (free → glue[rneig[free]])
+// lifted to (h,d): from (h,d), rf=rneig[h] has direction d+sign·CLASS_UNITS[cls[rf]] (as in develop's
+// star), then glue crosses the edge to (glue[rf], dir+6). Face corners = the free-dart positions; the
+// face's tile = CLASS_TILE[cls[rf]] (constant over the face — condition 1, verified). Each geometric
+// dart lies on exactly one face, so faces partition `placed` and Σ area = |det Λ| (the area cert).
+// Doubled tiles work unchanged: flat corners are collinear verts the shoelace absorbs.
+static void extractFaces(DevResult& res, const std::unordered_map<int, Vec>& placed,
+                         const vector<int>& rneig, const vector<int>& cls, const vector<int>& glue,
+                         int sign, const Vec& T1, const Vec& T2) {
+	cd tA = zfloat(T1), tB = zfloat(T2);
+	double detA = std::abs(tA.real() * tB.imag() - tA.imag() * tB.real());
+	auto shoelace = [&](const vector<Vec>& vs) -> double {
+		double A = 0; int n = (int)vs.size();
+		for (int i = 0; i < n; i++) { cd p = zfloat(vs[i]), q = zfloat(vs[(i + 1) % n]); A += p.real() * q.imag() - p.imag() * q.real(); }
+		return std::abs(A) / 2.0;
+	};
+	int n_darts = (int)rneig.size();
+	std::unordered_set<int> seen;
+	double areaSum = 0; bool ok = true;
+	for (auto& kv : placed) {
+		if (seen.count(kv.first)) continue;
+		int h0 = kv.first / 12, d0 = kv.first % 12;
+		vector<Vec> verts; int tile = -1;
+		int h = h0, d = d0;
+		Vec P = kv.second;                 // start at this dart's developed position; accumulate along edges
+		for (int s = 0;; s++) {
+			if (s > 64) { ok = false; break; }
+			if (s > 0 && seen.count(h * 12 + d)) { ok = false; break; }
+			seen.insert(h * 12 + d);
+			verts.push_back(P);
+			int rf = rneig[h]; if (rf < 0 || rf >= n_darts) { ok = false; break; }
+			int t = CLASS_TILE[cls[rf]];
+			if (tile < 0) tile = t; else if (t != tile) { ok = false; break; }
+			int dr = (((d + sign * CLASS_UNITS[cls[rf]]) % 12) + 12) % 12;
+			int nh = glue[rf]; if (nh < 0 || nh >= n_darts) { ok = false; break; }
+			P = zadd(P, ZK[dr]);           // cross edge rf to the next corner (accumulate, don't look up)
+			h = nh; d = (dr + 6) % 12;
+			if (h == h0 && d == d0) break;
+		}
+		if (!ok) break;
+		if (verts.size() < 3) { ok = false; break; }
+		Face f; f.tile = tile; f.verts = std::move(verts);
+		areaSum += shoelace(f.verts);
+		res.faces.push_back(std::move(f));
+	}
+	res.areaOk = ok && std::abs(areaSum - detA) < 1e-6 * std::max(1.0, detA);
+	if (std::getenv("EU_FACES_DEBUG"))
+		std::fprintf(stderr, "    [faces] ok=%d areaSum=%.6f detΛ=%.6f nfaces=%zu\n", ok, areaSum, detA, res.faces.size());
+}
+
+static DevResult develop(const vector<int>& rneig, const vector<int>& cls,
+                         const vector<int>& glue, int sign, bool wantFaces) {
+	// Turn by the incident corner's true interior angle, read from its corner CLASS
+	// (CLASS_UNITS[cls]) rather than derived from the polygon size (angunits(lvert)).
+	// For the regular palette cls is bijective with lvert and CLASS_UNITS[cls]==angunits(n),
+	// so this is byte-identical there; for doubled tiles it yields the correct per-corner
+	// turn (real θ_N vs flat 180°), which angunits(lvert) cannot express.
 	auto star = [&](int h0, int d0, vector<std::pair<int,int>>& seq) -> bool {
 		seq.clear();
 		int cur = h0, d = d0;
 		for (int i = 0; i < 60; i++) {
 			seq.push_back({cur, d});
 			int r = rneig[cur];
-			d = (((d + sign * angunits(lvert[r])) % 12) + 12) % 12;
+			d = (((d + sign * CLASS_UNITS[cls[r]]) % 12) + 12) % 12;
 			cur = r;
 			if (cur == h0 && d == d0) return true;
 		}
@@ -177,7 +237,9 @@ static DevResult develop(const vector<int>& rneig, const vector<int>& lvert, con
 	vector<Vec> allpos; allpos.reserve(placed.size());
 	for (auto& kv : placed) allpos.push_back(kv.second);
 	vector<Vec> seeds = seeds_mod_lattice(allpos, T1, T2);
-	return {T1, T2, seeds, true, ""};
+	DevResult res{T1, T2, seeds, true, ""};
+	if (wantFaces) extractFaces(res, placed, rneig, cls, glue, sign, T1, T2);
+	return res;
 }
 
 // ===================== block IO + driver =====================
@@ -204,10 +266,11 @@ static string tes_id(const string& tes) {
 static void jstr(std::ostream& o, const string& s) { o << '"'; for (char c : s) { if (c == '"' || c == '\\') o << '\\'; o << c; } o << '"'; }
 static void jvec(std::ostream& o, const Vec& v) { o << '[' << v[0] << ',' << v[1] << ',' << v[2] << ',' << v[3] << ']'; }
 
-struct Rec { int k; string id; Vec T1, T2; vector<Vec> seeds; };
+struct Rec { int k; string id; Vec T1, T2; vector<Vec> seeds; vector<Face> faces; bool areaOk; };
 
 int main(int argc, char** argv) {
 	std::fesetround(FE_TONEAREST);
+	bool wantFaces = std::getenv("EU_FACES") != nullptr; // emit tile polygons + area certificate (doubled/render)
 	int kmin = 1, kmax = 8, sign = 1; string pruned = "work/out/pruned", out;
 	for (int i = 1; i < argc; i++) {
 		string a = argv[i];
@@ -241,11 +304,15 @@ int main(int argc, char** argv) {
 				if (tesLine < 0) continue;
 				string tes = b[tesLine].substr(9); size_t z = tes.find_first_not_of(" \t"); tes = (z==std::string::npos)?"":tes.substr(z);
 				string tid = tes_id(tes);
-				int kk = (int)std::count(b[0].begin(), b[0].end(), '(');
+				// Counting-vertex k = the eupruned_<k> file this block came from (the pruner
+				// already grouped by the Myers counting convention). The old '('-count shortcut
+				// equals this ONLY when every vertex counts (regular palette); for the doubled
+				// palette it would also count noncounting flat-flat (mid-edge) vertices.
+				int kk = k;
 				Graph gph = decode(b[0], b[4]);
-				DevResult dr = develop(gph.rneig, gph.lvert, gph.glue, sign);
+				DevResult dr = develop(gph.rneig, gph.cls, gph.glue, sign, wantFaces);
 				if (!dr.ok) { errors++; std::fprintf(stderr, "  ERR %-32s %s\n", tid.c_str(), dr.err.c_str()); continue; }
-				records.push_back({kk, tid, dr.T1, dr.T2, dr.seeds});
+				records.push_back({kk, tid, dr.T1, dr.T2, dr.seeds, dr.faces, dr.areaOk});
 				perK[kk]++;
 			}
 		}
@@ -261,13 +328,27 @@ int main(int argc, char** argv) {
 		of << ",\"T2\":"; jvec(of, r.T2);
 		of << ",\"Seed\":[";
 		for (size_t s = 0; s < r.seeds.size(); s++) { if (s) of << ','; jvec(of, r.seeds[s]); }
-		of << "]}";
+		of << "]";
+		if (wantFaces) {
+			of << ",\"areaOk\":" << (r.areaOk ? "true" : "false") << ",\"faces\":[";
+			for (size_t fi = 0; fi < r.faces.size(); fi++) {
+				if (fi) of << ',';
+				of << "{\"tile\":"; jstr(of, TILE_NAME[r.faces[fi].tile]); of << ",\"verts\":[";
+				for (size_t vi = 0; vi < r.faces[fi].verts.size(); vi++) { if (vi) of << ','; jvec(of, r.faces[fi].verts[vi]); }
+				of << "]}";
+			}
+			of << "]";
+		}
+		of << "}";
 	}
 	of << ']';
 	of.close();
 	std::fprintf(stderr, "developed %zu tilings -> %s\n", records.size(), out.c_str());
 	vector<int> ks; for (auto& kv : perK) ks.push_back(kv.first); std::sort(ks.begin(), ks.end());
 	for (int k : ks) std::fprintf(stderr, "  k=%d : %ld\n", k, perK[k]);
+	if (wantFaces) { long ao = 0; for (auto& r : records) if (r.areaOk) ao++;
+		std::fprintf(stderr, "area-cert (float Σface=|detΛ|): %ld/%zu tilings PASS%s\n", ao, records.size(),
+		             ao == (long)records.size() ? "" : "  ⚑ SOME FAILED"); }
 	if (errors) std::fprintf(stderr, "DEVELOP ERRORS: %ld\n", errors);
 	return 0;
 }

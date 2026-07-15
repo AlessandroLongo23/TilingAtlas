@@ -41,6 +41,7 @@ export const CONFIG_PALETTES: { name: string; label: string; blurb: string }[] =
 	{ name: "star24", label: "Regular + star", blurb: "+ star (concave isotoxal) tiles" },
 	{ name: "isotoxal-star60-z24", label: "Combined (reduced)", blurb: "regular + isotoxal + large-point stars" },
 	{ name: "isotoxal-star-z24", label: "Combined (full)", blurb: "regular + isotoxal + all stars" },
+	{ name: "regular-scaled-123", label: "Scaled", blurb: "regular {3,4,6,12} at sides 1, 2, 3" },
 ];
 
 const cache = new Map<string, PaletteConfigs>();

@@ -16,7 +16,7 @@ import {
 // The vertex-configuration alphabet, per palette, as cards — the middle layer between "the palette" (a
 // handful of tiles) and "the tilings" (the Library). Each card fans a config's tiles around the vertex so
 // the counts become something you can scroll. Only realizable (non-overlapping) figures are shipped.
-const PAGE_SIZE = 60;
+const PAGE_SIZE = 24;
 const KIND_LABEL: Record<TileKind, { label: string; cls: string }> = {
 	regular: { label: "regular", cls: "text-sky-400" },
 	"convex-isotoxal": { label: "convex isotoxal", cls: "text-purple-400" },
@@ -106,7 +106,7 @@ export function ConfigsClient() {
 			</PageSidebar>
 
 			<main className="relative flex-1 overflow-y-auto p-5">
-				<div className="flex items-center gap-3 mb-1 flex-wrap">
+				<div className="flex items-center gap-3 mb-4 flex-wrap">
 					<Grid3x3 size={18} className="text-accent" />
 					<h1 className="text-base font-semibold text-fg">Vertex configurations</h1>
 					{data ? (
@@ -116,12 +116,6 @@ export function ConfigsClient() {
 						</span>
 					) : null}
 				</div>
-				<p className="text-xs text-fg-muted max-w-3xl mb-4 leading-relaxed">
-					The <span className="text-fg-secondary">{meta?.label}</span> palette&rsquo;s alphabet — every way its
-					corners meet at one point summing to 360°. Each card fans the tiles around the vertex (the dot). These
-					are candidate vertex-<em>figures</em>, not tilings; the solver is what assembles them into the tilings in
-					the Library.
-				</p>
 
 				{loading ? (
 					<div className="flex items-center gap-2 text-fg-muted text-sm py-16 justify-center">
@@ -133,14 +127,20 @@ export function ConfigsClient() {
 					</div>
 				) : data ? (
 					<>
-						<div className="grid gap-3 mb-4" style={gridStyle}>
+						<Pagination
+							totalItems={data.configs.length}
+							pageSize={PAGE_SIZE}
+							currentPage={page}
+							onPageChange={setPage}
+						/>
+						<div className="grid gap-3 my-4" style={gridStyle}>
 							{pageConfigs.map((cfg, i) => {
 								const idx = (page - 1) * PAGE_SIZE + i;
 								const kinds = kindsOf(cfg.polys);
 								return (
 									<div
 										key={idx}
-										className="flex flex-col rounded-lg border border-line bg-surface-overlay/30 overflow-hidden"
+										className="group flex flex-col rounded-lg border border-line bg-surface-overlay/30 overflow-hidden"
 									>
 										<div className="relative aspect-square bg-surface-raised">
 											<VertexConfigCard config={cfg} />

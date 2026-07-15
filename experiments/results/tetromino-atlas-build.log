@@ -1,0 +1,6 @@
+=== build-tetromino-atlas (7 one-sided tetrominoes, chirality-distinguished) ===
+  loaded 39 developed tilings from tools/ctrnact-oracle/run-k1-tetromino/ctrnact-cells-k1.json
+  39 area-certified raw duals → 27 DISTINCT tilings (merged 12 supercell/dual duplicates); 0 area-cert skipped
+  chirality-distinguished (rotations only, shipped): 27   |   mirror-merged (full 24 syms, reference): 26
+    k=1: raw 39 → distinct 27
+  wrote → public/reference-atlas-polyomino.json (40.2 KB), 0.77s

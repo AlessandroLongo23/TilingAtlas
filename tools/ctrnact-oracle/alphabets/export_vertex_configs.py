@@ -47,9 +47,12 @@ OUT_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "..", "public", "verte
 # palette file -> the ones shown on /configs. Every palette is PRUNED to overlap-free configs only: an
 # overlapping figure can't be realized, so it's dropped entirely (not shipped, not counted, not mentioned).
 # The full 278k union thus ships as its ~31.7k realizable configs.
-PALETTES = ["regular-z24", "star24", "regular-isotoxal-z24", "isotoxal-star60-z24", "isotoxal-star-z24"]
+PALETTES = ["regular-z24", "star24", "regular-isotoxal-z24", "isotoxal-star60-z24",
+            "isotoxal-star-z24", "regular-scaled-123"]
 
-KIND_OF = {"regular": "regular", "composite": "convex-isotoxal", "star": "star"}
+# scaled/doubled tiles are (degenerate) regular polygons — render on the regular hue.
+KIND_OF = {"regular": "regular", "composite": "convex-isotoxal", "star": "star",
+           "doubled": "regular", "scaled": "regular"}
 
 
 def angle_word_units(tile, D):
@@ -60,6 +63,11 @@ def angle_word_units(tile, D):
         aU = tile.alphaU
         dU = D - D // tile.n - aU
         return [aU if i % 2 == 0 else dU for i in range(2 * tile.n)]
+    if tile.kind in ("scaled", "doubled"):
+        # side-s N-gon as a degenerate sN-gon: one real corner θ_N then s-1 flat 180° corners per side
+        s = getattr(tile, "scale", 2)
+        thetaU = D // 2 - D // tile.n
+        return [thetaU if i % s == 0 else D // 2 for i in range(s * tile.n)]
     return list(tile.angles)  # composite
 
 
@@ -184,6 +192,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sanity", help="render a PNG of the first configs for this palette instead of emitting JSON")
     ap.add_argument("--stats", help="count overlap-free configs for one palette without emitting geometry")
+    ap.add_argument("--only", help="export just this one palette (leaves the others' committed JSON untouched)")
     args = ap.parse_args()
     if args.sanity:
         sanity_render(args.sanity)
@@ -192,7 +201,7 @@ def main():
         stats_only(args.stats)
         return
     print("=== export vertex-config alphabets (with overlap check) ===")
-    for p in PALETTES:
+    for p in ([args.only] if args.only else PALETTES):
         export_palette(p)
 
 

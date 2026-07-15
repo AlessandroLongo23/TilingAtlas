@@ -27,10 +27,15 @@ export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "doubled";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "hyperbolic";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
-	renderCell: TranslationalCellData; // float, parseBaseCell-ready
+	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
+	// Hyperbolic shelf only: the Schläfli symbol {p,q} of a regular hyperbolic tiling. Its presence marks
+	// the entry as hyperbolic — the /play view swaps to the Poincaré-disk renderer and the thumbnail path
+	// renders a disk. Absent (and geometry "euclidean"/undefined) for every Euclidean tiling.
+	schlafli?: [number, number];
+	geometry?: "euclidean" | "hyperbolic";
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
 	preview?: boolean; // ctrnact-star only: from a PARTIAL (still-running) solve — incomplete, uncertified
@@ -47,6 +52,9 @@ export interface ReferenceTiling {
 	// Convex-irregular shelf only: true iff every composite tile it uses dissects into regular pieces (the
 	// decomposable palette); false iff it uses a non-decomposable composite. Absent on every other source.
 	decomposableOnly?: boolean;
+	// Polyomino shelf only: which polyomino ORDER this tiling's tiles belong to — the sub-class facet
+	// (Tetrominoes now; Pentominoes etc. later). Absent on every other source.
+	polyominoOrder?: "tetromino";
 	// Isotoxal shelf only: true iff the tiling uses a convex isotoxal tile NOT expressible on ζ₁₂ (i.e. not
 	// one of the 60/120 rhombus, 90/150 hexagon, 120/150 octagon the convex-irregular enumeration already reached)
 	// — the genuinely new tilings the ζ₂₄ grid unlocks. Absent on every other source.
@@ -84,15 +92,17 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "doubled";
+export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "hyperbolic";
 // The ONE source-driven tile classifier, shared by /library and /play. Source wins when present;
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
 // matches the legacy polygonClassLabel, so the two pages agree with or without a source.
 export function tileClassOf(t: { family: string; source?: ReferenceTiling["source"] }): TileClass {
+	if (t.source === "hyperbolic") return "hyperbolic";
 	if (t.source === "mixed") return "mixed";
 	if (t.source === "isotoxal") return "isotoxal";
 	if (t.source === "composable") return "convex";
-	if (t.source === "doubled") return "doubled";
+	if (t.source === "scaled") return "scaled";
+	if (t.source === "polyomino") return "polyomino";
 	if (t.family.includes("cx")) return "convex";
 	if (t.family.includes("α")) return "isotoxal";
 	return t.family.includes("*") ? "star" : "regular";
@@ -101,15 +111,39 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "doubled"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "hyperbolic"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
 	convex: { short: "Convex irregular", long: "Convex irregular polygons" },
 	isotoxal: { short: "Isotoxal", long: "Isotoxal polygons" },
 	mixed: { short: "Mixed", long: "Mixed polygons" },
-	doubled: { short: "Doubled", long: "Doubled polygons" },
+	scaled: { short: "Scaled", long: "Scaled polygons (sides 1–3)" },
+	polyomino: { short: "Polyominoes", long: "Polyominoes (Tetris pieces)" },
+	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic {p,q} tilings (Poincaré disk)" },
 };
+
+// Scaled shelf only: the max side length (scale) a tiling uses, recovered from its family subscripts
+// (₂/₃). Drives the sub-class facet — "Sides 1–2" (max 2, the former Doubled class) vs "Sides 1–3" (uses
+// a side-3 tile). Null for every non-scaled tiling (so the facet excludes them, matching the M/partition
+// exclude-the-unclassified ethos).
+export function scaledMaxScaleOf(t: { family: string; source?: ReferenceTiling["source"] }): number | null {
+	if (t.source !== "scaled") return null;
+	let max = 1;
+	for (const tok of t.family.split(".")) {
+		const m = /^\d+([₁₂₃₄₅₆₇₈₉]+)$/.exec(tok);
+		if (m) max = Math.max(max, +[...m[1]].map((c) => "₀₁₂₃₄₅₆₇₈₉".indexOf(c)).join(""));
+	}
+	return max;
+}
+
+// Polyomino shelf only: the polyomino ORDER a tiling belongs to (its sub-class facet). Read straight from
+// the build-stamped field — null for every non-polyomino tiling (so the facet excludes them, matching the
+// M/partition exclude-the-unclassified ethos). Only "tetromino" exists today; pentominoes etc. extend this.
+export function polyominoOrderOf(t: Pick<ReferenceTiling, "source" | "polyominoOrder">): "tetromino" | null {
+	if (t.source !== "polyomino") return null;
+	return t.polyominoOrder ?? null;
+}
 
 // The star folds present in a family (unique, ascending). "3.4*.6*" → [4,6]. Empty for regular.
 export function starFoldsOf(t: Pick<ReferenceTiling, "family">): number[] {
@@ -154,6 +188,12 @@ export function isMaximal(t: Pick<ReferenceTiling, "m" | "k">): boolean {
 export interface ReferenceFilter {
 	kValue?: number; // single vertex-orbit count; unset = every k
 	tileClass?: TileClass; // regular polygons only / star-bearing only / composite-tile demo
+	// Scaled shelf sub-class: "s12" keeps only tilings within sides {1,2} (the former Doubled class);
+	// "s123" keeps only tilings that use a side-3 tile. Non-scaled tilings never match while this is active.
+	scaledScaleSet?: "s12" | "s123";
+	// Polyomino shelf sub-class: keep only tilings whose tiles are of this polyomino order ("tetromino" today).
+	// Non-polyomino tilings never match while this is active.
+	polyominoOrder?: "tetromino";
 	// Convex-irregular shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
 	// Any tiling outside that class (decomposableOnly undefined) is EXCLUDED while this is active.
 	convexDecomp?: "decomposable" | "non-decomposable";
@@ -174,6 +214,15 @@ export interface ReferenceFilter {
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
 	if (f.kValue != null && t.k !== f.kValue) return false;
 	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
+	if (f.scaledScaleSet) {
+		const ms = scaledMaxScaleOf(t);
+		if (ms == null) return false; // non-scaled tilings never match the scale-set facet
+		if (f.scaledScaleSet === "s12" && ms > 2) return false;
+		if (f.scaledScaleSet === "s123" && ms < 3) return false;
+	}
+	if (f.polyominoOrder) {
+		if (polyominoOrderOf(t) !== f.polyominoOrder) return false; // non-polyomino tilings never match the order facet
+	}
 	if (f.convexDecomp) {
 		if (t.decomposableOnly == null) return false; // tilings outside the convex-irregular class never match this facet
 		if (f.convexDecomp === "decomposable" && !t.decomposableOnly) return false;
@@ -228,6 +277,8 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		runIds: [],
 		exactSource: r.exactSource,
 		paramCell: r.paramCell,
+		schlafli: r.schlafli,
+		geometry: r.geometry,
 	};
 }
 
@@ -253,10 +304,12 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-composable.json"),
 		bestEffort("/reference-atlas-isotoxal.json"),
 		bestEffort("/reference-atlas-mixed.json"),
-		bestEffort("/reference-atlas-doubled.json"),
+		bestEffort("/reference-atlas-scaled.json"),
+		bestEffort("/reference-atlas-polyomino.json"),
+		bestEffort("/reference-atlas-hyperbolic.json"),
 	])
-		.then(([base, composable, isotoxal, mixed, doubled]) => {
-			const data = [...base, ...composable, ...isotoxal, ...mixed, ...doubled];
+		.then(([base, composable, isotoxal, mixed, scaled, polyomino, hyperbolic]) => {
+			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...hyperbolic];
 			cache = data;
 			inflight = null;
 			return data;

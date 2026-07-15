@@ -1,0 +1,197 @@
+=== doubled palette experiment — 2026-07-12 23:09:09 ===
+--- PHASE 0: generate alphabet (gen_alphabet.py --certify) ---
+[gen] palette=regular-doubled D=12 tiles=8 classes=12 configs=234
+[cert] A6: 413 entries pairwise non-isomorphic PASS
+[gen] wrote tables/regular-doubled/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (413 entries)
+--- certs.txt tail ---
+(d3,d3,d3,d3,d3,d3)F: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)F: |Aut|=12, free action PASS
+(d3,d3,d3,d3,d3,d3)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+A6: 413 entries pairwise non-isomorphic (iso_key) PASS
+--- PHASE 1-3: solve -> prune -> develop, maxk=2 ---
+(eval):4: command not found: timeout
+exit: 0
+--- PHASE 1-3: solve -> prune -> develop, maxk=2 (23:09:41) ---
+[23:09:41] build (MAXNUM=2 PALETTE=regular-doubled)
+[23:09:44] PHASE 1  solve (C++ DFS, all k<=2)
+[23:09:44]   raw blocks: 162  (0s)
+[23:09:44] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+total kept: 107
+[23:09:45]   (1s)
+[23:09:45] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS: real θ_N + flat 180°) -> cells
+developed 107 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled/ctrnact-cells-k2.json
+  k=1 : 14
+  k=2 : 40
+  k=3 : 21
+  k=4 : 8
+  k=5 : 9
+  k=6 : 9
+  k=7 : 4
+  k=8 : 2
+[23:09:45]   (0s)
+[23:09:45] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled/ctrnact-cells-k2.json
+=== run-oracle exit: 0 ===
+--- regular eu_develop parity after kk fix ---
+IDENTICAL vs HEAD original (regular unaffected by kk fix)
+--- doubled re-run (corrected k labels) ---
+  k=1 : 26
+  k=2 : 81
+developed 107 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled/ctrnact-cells-k2.json
+  k=1 : 26
+  k=2 : 81
+[23:11:42] DONE  total 0s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled/ctrnact-cells-k2.json
+--- area certificate (ctrnact-recon-check) on doubled cells ---
+Loaded 107 tilings from /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled/ctrnact-cells-k2.json
+
+=== per-k certification ===
+  ✗ k=1: 17/26 certified  (9 FAIL)
+  ✗ k=2: 54/81 certified  (27 FAIL)
+
+=== TOTAL: 71/107 certified in 1.5s ===
+
+⚑ k=1 failures (9); first 9:
+    ctrnact-01_3h-3cm-1: no faces reconstructed (ctrnact-01_3h-3cm-1)
+    ctrnact-01_4q-3bo-1: no faces reconstructed (ctrnact-01_4q-3bo-1)
+    ctrnact-01_h-2bb_3cb-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-01_h-2bb_3cb-1)
+    ctrnact-01_q-2as_3bp-1: no faces reconstructed (ctrnact-01_q-2as_3bp-1)
+    ctrnact-01_qhw-2ah_2aj_2az_3aq-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-01_qhw-2ah_2aj_2az_3aq-1)
+    ctrnact-01_th-2am_2ap_2ay_5df-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-01_th-2am_2ap_2ay_5df-1)
+    ctrnact-01_th-2ax_4fw-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-01_th-2ax_4fw-1)
+    ctrnact-01_tqh-2aq_2az_4gh-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-01_tqh-2aq_2az_4gh-1)
+    ctrnact-01_tw-2aa_2af_3al-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-01_tw-2aa_2af_3al-1)
+⚑ k=2 failures (27); first 15:
+    ctrnact-02_34h-3cf_4ff-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_34h-3cf_4ff-1)
+    ctrnact-02_36h-3ch_4fl-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_36h-3ch_4fl-1)
+    ctrnact-02_3h-4fa_4gq-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_3h-4fa_4gq-1)
+    ctrnact-02_3h-4gr_5ct-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_3h-4gr_5ct-1)
+    ctrnact-02_3qh-2az_4eo_4gc-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_3qh-2az_4eo_4gc-1)
+    ctrnact-02_3th-2am_2ay_4cr_5dc-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_3th-2am_2ay_4cr_5dc-1)
+    ctrnact-02_3th-2ax_4fu_4gq-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_3th-2ax_4fu_4gq-1)
+    ctrnact-02_3th-3bu_4gu-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_3th-3bu_4gu-1)
+    ctrnact-02_3w-2aa_3aj_4bn-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_3w-2aa_3aj_4bn-1)
+    ctrnact-02_4q-2as_3bo_3bp-1: no faces reconstructed (ctrnact-02_4q-2as_3bo_3bp-1)
+    ctrnact-02_q-2as_2au_2av_3bp_4el-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_q-2as_2au_2av_3bp_4el-1)
+    ctrnact-02_q-2as_2au_3bp_4ei-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_q-2as_2au_3bp_4ei-1)
+    ctrnact-02_th-2al_2ap_2ax_5de_6bq-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_th-2al_2ap_2ax_5de_6bq-1)
+    ctrnact-02_th-2al_2ay_2bb_4fw_4go-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_th-2al_2ay_2bb_4fw_4go-1)
+    ctrnact-02_th-2am_2an_2ay_2bb_4go_5de-1: face areas ≠ |det Λ| — incomplete reconstruction (ctrnact-02_th-2am_2an_2ay_2bb_4go_5de-1)
+
+=== VALIDATION SUMMARY 23:18:00 ===
+k=1: 26 distinct  |  k=2: 81 distinct  (combinatorial solver+pruner, exact WL dedup)
+Cross-check vs regular oracle: pure-regular subset of k=1 = 10 tilings =
+   exactly the octagon-blind regular k=1 catalogue (11 - t1002). PASS.
+Anchor: Pythagorean two-square tiling present = ctrnact-01_4q-3bo-1 (unit sq + side-2 sq). PASS.
+16 new k=1 tilings involve side-2 tiles (fam chars t/q/h/w = d3/d4/d6/d12).
+check-regular: byte-identical golden (regular path untouched).
+eu_develop regular output: byte-identical to HEAD (CLASS_UNITS[cls] swap + kk=k are no-ops on regular).
+
+OPEN — geometry/rendering:
+ - Area certificate (reconstructOracleCellExact) is REGULAR-UNIT-ONLY: faceFromGap maps each
+   angular wedge to a UNIT RegularPolygon, cannot represent a side-2 tile (4x area) or a flat
+   180deg wedge (returns null). So its 36 'failures' on doubled cells are ARTIFACTS, not overlaps.
+ - Same regular reconstructor is what the app renders from {T1,T2,Seed}, so doubled tilings
+   cannot be rendered without doubled-aware face extraction (develop -> faces).
+ - Enumeration count (26) rests on: exact combinatorial dedup + regular-subset oracle match +
+   Pythagorean anchor + the convex-tile flatness realizability argument. A doubled-aware area
+   certificate is NOT yet run.
+
+=== regenerate k=1 cells WITH faces + area cert 23:41:05 ===
+[23:41:05] build (MAXNUM=1 PALETTE=regular-doubled)
+[23:41:06] PHASE 1  solve (C++ DFS, all k<=1)
+[23:41:06]   raw blocks: 30  (0s)
+[23:41:06] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+total kept: 26
+[23:41:06]   (0s)
+[23:41:06] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 26 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k1-regular-doubled/ctrnact-cells-k1.json
+  k=1 : 26
+area-cert (float Σface=|detΛ|): 26/26 tilings PASS
+[23:41:06]   (0s)
+[23:41:06] DONE  total 0s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k1-regular-doubled/ctrnact-cells-k1.json
+
+=== k=2 run WITH faces 23:53:20 ===
+[23:53:20] build (MAXNUM=2 PALETTE=regular-doubled)
+[23:53:21] PHASE 1  solve (C++ DFS, all k<=2)
+[23:53:21]   raw blocks: 162  (0s)
+[23:53:21] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+total kept: 107
+[23:53:21]   (0s)
+[23:53:21] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 107 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled/ctrnact-cells-k2.json
+  k=1 : 26
+  k=2 : 81
+area-cert (float Σface=|detΛ|): 107/107 tilings PASS
+[23:53:21]   (0s)
+[23:53:21] DONE  total 0s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled/ctrnact-cells-k2.json
+
+=== k=3 run WITH faces 23:54:07 ===
+[23:54:07] build (MAXNUM=3 PALETTE=regular-doubled)
+[23:54:08] PHASE 1  solve (C++ DFS, all k<=3)
+[23:54:12]   raw blocks: 886  (4s)
+[23:54:12] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+total kept: 441
+[23:54:12]   (0s)
+[23:54:12] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 441 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-regular-doubled/ctrnact-cells-k3.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+area-cert (float Σface=|detΛ|): 441/441 tilings PASS
+[23:54:12]   (0s)
+[23:54:12] DONE  total 4s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-regular-doubled/ctrnact-cells-k3.json
+
+=== k=4 run WITH faces 00:06:09 ===
+[00:06:09] build (MAXNUM=4 PALETTE=regular-doubled)
+[00:06:09] PHASE 1  solve (C++ DFS, all k<=4)
+[00:07:10]   raw blocks: 3779  (61s)
+[00:07:10] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+total kept: 1505
+[00:07:10]   (0s)
+[00:07:10] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 1505 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-regular-doubled/ctrnact-cells-k4.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+area-cert (float Σface=|detΛ|): 1505/1505 tilings PASS
+[00:07:10]   (0s)
+[00:07:10] DONE  total 61s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-regular-doubled/ctrnact-cells-k4.json
+
+=== FINAL SUMMARY 2026-07-13 ===
+Doubled (side-1 + side-2 regular {3,4,6,12}) k-uniform counts, exact area-certified:
+  k=1: 26   k=2: 81   k=3: 334   k=4: 1064   (Σ 1505, all Σface=|detΛ| in ℚ(ζ₂₄))
+  k=1 = 10 regular (octagon-blind oracle match) + 16 mixed-size; Pythagorean 4q present.
+Guards: make check-regular byte-identical; eu_develop default output byte-identical to HEAD.
+Atlas: public/reference-atlas-doubled.json (1505 tilings, 4.57 MB, source=doubled).
+App: 'Doubled' class on BOTH /library and /play via unified tileClassOf + TILE_CLASS registry.
+     (same change also fixed 'Mixed' which was mislabeled as isotoxal on /play.)
+Engine: palette regular-doubled.json + gen_alphabet kind:doubled + eu_develop EU_FACES; solver/pruner unchanged.
+
+=== CORRECTED (pure-regular filtered) 2026-07-13 ===
+Doubled class = tilings using >=1 side-2 tile (pure-regular dropped, per the star/composable export convention):
+  k=1: 16   k=2: 61   k=3: 273   k=4: 913   (Σ 1263 shipped)
+  dropped pure-regular: 10/20/61/151 = 242 (exactly the octagon-blind regular counts A068599 → confirms subset = regular family)
+  Atlas public/reference-atlas-doubled.json now 1263 tilings, 3.9 MB, all family contains ₂.
+
+=== FINAL (T-junction filter) 2026-07-13 ===
+Doubled class = genuine mixed-scale tilings (has a T-junction: a corner on another tile's edge interior).
+  k=1: 6   k=2: 41   k=3: 212   k=4: 762   (Σ 1021 shipped, all exact area-certified)
+  Composition: mixed(side1+side2) 4/34/180/665 = 883; case-b pure-side2 T-junction 2/7/32/97 = 138.
+  Dropped 484 single-scale regular tilings (no T-junction):
+    pure-regular 10/20/61/151 = 242  +  case-a scaled-side2 10/20/61/151 = 242.
+    Both subsets match the regular counts EXACTLY (bijection with A068599 octagon-blind) — pipeline cross-check.
+  Atlas public/reference-atlas-doubled.json = 1021 tilings, 2.76 MB.

@@ -5,6 +5,7 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
+import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -97,7 +98,9 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 												)}
 											>
 												<div className="relative aspect-square bg-surface-raised">
-													{t.renderCell ? (
+													{t.schlafli ? (
+														<HyperbolicThumbnail schlafli={t.schlafli} />
+													) : t.renderCell ? (
 														<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
 													) : null}
 													{t.paramCell ? (

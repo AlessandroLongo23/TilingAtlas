@@ -1,0 +1,16 @@
+{
+  "name": "regular-doubled",
+  "D": 12,
+  "pinnedLegacy": false,
+  "comment": "Regular {3,4,6,12} side-1 tiles PLUS their side-2 variants, 12-direction (octagon-blind). A side-2 N-gon is modeled as a degenerate 2N-gon with unit edges whose boundary alternates (real corner θ_N = D/2 - D/N, flat 180° corner = D/2); rotational structure comes from L=2N with p=2 (same mechanism as an isotoxal star n*). The flat corner is noncounting, so a (flat,flat) mid-edge abutment of two side-2 tiles is not a k-vertex. Exploratory demo: NO external oracle (not A068599), counts are observations. See docs/DEVELOPMENT_NOTES.md.",
+  "tiles": [
+    { "kind": "regular", "n": 3,  "name": "3",   "famchar": "3" },
+    { "kind": "regular", "n": 4,  "name": "4",   "famchar": "4" },
+    { "kind": "regular", "n": 6,  "name": "6",   "famchar": "6" },
+    { "kind": "regular", "n": 12, "name": "12",  "famchar": "c" },
+    { "kind": "doubled", "n": 3,  "name": "d3",  "famchar": "t" },
+    { "kind": "doubled", "n": 4,  "name": "d4",  "famchar": "q" },
+    { "kind": "doubled", "n": 6,  "name": "d6",  "famchar": "h" },
+    { "kind": "doubled", "n": 12, "name": "d12", "famchar": "w" }
+  ]
+}

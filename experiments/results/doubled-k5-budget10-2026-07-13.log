@@ -1,0 +1,22 @@
+[01:02:58] build (MAXNUM=5 PALETTE=regular-doubled)
+[01:02:59] PHASE 1  solve (C++ DFS, all k<=5)
+EU_NCBUDGET WARNING: noncounting-vertex budget (10) bound the search 89307 time(s). COMPLETENESS NOT CERTIFIED for this run — re-run with EU_NCBUDGET=11 and require identical catalogs (budget-fixpoint certificate).
+[01:11:06]   raw blocks: 14656  (487s)
+[01:11:06] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1054
+  k=5 : 3283
+total kept: 4778
+[01:11:07]   (1s)
+[01:11:07] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 4778 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5b10-regular-doubled/ctrnact-cells-k5.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1054
+  k=5 : 3283
+area-cert (float Σface=|detΛ|): 4778/4778 tilings PASS
+[01:11:07]   (0s)
+[01:11:07] DONE  total 488s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5b10-regular-doubled/ctrnact-cells-k5.json

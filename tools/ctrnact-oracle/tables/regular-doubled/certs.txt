@@ -1,0 +1,2480 @@
+# certificates for palette=regular-doubled (gen_alphabet.py)
+(d12~,d12~)S2: lneig∘rneig=id PASS
+(d12~,d12~)S2: mirro involution PASS
+(d12~,d12~)S2: mirro∘rneig=lneig∘mirro PASS
+(d12~,d12~)S2: cls[mirro]=cls[rneig] PASS
+(d12~,d12~)S2: |Aut|=1, free action PASS
+(d12~,d12~)S2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d12~,d12~)R2: lneig∘rneig=id PASS
+(d12~,d12~)R2: mirro involution PASS
+(d12~,d12~)R2: mirro∘rneig=lneig∘mirro PASS
+(d12~,d12~)R2: cls[mirro]=cls[rneig] PASS
+(d12~,d12~)R2: |Aut|=2, free action PASS
+(d12~,d12~)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d12~,d12~)Aa: lneig∘rneig=id PASS
+(d12~,d12~)Aa: mirro involution PASS
+(d12~,d12~)Aa: mirro∘rneig=lneig∘mirro PASS
+(d12~,d12~)Aa: cls[mirro]=cls[rneig] PASS
+(d12~,d12~)Aa: |Aut|=2, free action PASS
+(d12~,d12~)Aa: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d12~,d12~)Ab: lneig∘rneig=id PASS
+(d12~,d12~)Ab: mirro involution PASS
+(d12~,d12~)Ab: mirro∘rneig=lneig∘mirro PASS
+(d12~,d12~)Ab: cls[mirro]=cls[rneig] PASS
+(d12~,d12~)Ab: |Aut|=2, free action PASS
+(d12~,d12~)Ab: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d12~,d12~)F: lneig∘rneig=id PASS
+(d12~,d12~)F: mirro involution PASS
+(d12~,d12~)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d12~)F: cls[mirro]=cls[rneig] PASS
+(d12~,d12~)F: |Aut|=4, free action PASS
+(d12~,d12~)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d12~,d3~)A: lneig∘rneig=id PASS
+(d12~,d3~)A: mirro involution PASS
+(d12~,d3~)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3~)A: cls[mirro]=cls[rneig] PASS
+(d12~,d3~)A: |Aut|=1, free action PASS
+(d12~,d3~)A: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d12~,d3~)F: lneig∘rneig=id PASS
+(d12~,d3~)F: mirro involution PASS
+(d12~,d3~)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3~)F: cls[mirro]=cls[rneig] PASS
+(d12~,d3~)F: |Aut|=2, free action PASS
+(d12~,d3~)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d12~,d4~)A: lneig∘rneig=id PASS
+(d12~,d4~)A: mirro involution PASS
+(d12~,d4~)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,d4~)A: cls[mirro]=cls[rneig] PASS
+(d12~,d4~)A: |Aut|=1, free action PASS
+(d12~,d4~)A: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d12~,d4~)F: lneig∘rneig=id PASS
+(d12~,d4~)F: mirro involution PASS
+(d12~,d4~)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d4~)F: cls[mirro]=cls[rneig] PASS
+(d12~,d4~)F: |Aut|=2, free action PASS
+(d12~,d4~)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d12~,d6~)A: lneig∘rneig=id PASS
+(d12~,d6~)A: mirro involution PASS
+(d12~,d6~)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,d6~)A: cls[mirro]=cls[rneig] PASS
+(d12~,d6~)A: |Aut|=1, free action PASS
+(d12~,d6~)A: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d12~,d6~)F: lneig∘rneig=id PASS
+(d12~,d6~)F: mirro involution PASS
+(d12~,d6~)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d6~)F: cls[mirro]=cls[rneig] PASS
+(d12~,d6~)F: |Aut|=2, free action PASS
+(d12~,d6~)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3~,d3~)S2: lneig∘rneig=id PASS
+(d3~,d3~)S2: mirro involution PASS
+(d3~,d3~)S2: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3~)S2: cls[mirro]=cls[rneig] PASS
+(d3~,d3~)S2: |Aut|=1, free action PASS
+(d3~,d3~)S2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3~,d3~)R2: lneig∘rneig=id PASS
+(d3~,d3~)R2: mirro involution PASS
+(d3~,d3~)R2: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3~)R2: cls[mirro]=cls[rneig] PASS
+(d3~,d3~)R2: |Aut|=2, free action PASS
+(d3~,d3~)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3~,d3~)Aa: lneig∘rneig=id PASS
+(d3~,d3~)Aa: mirro involution PASS
+(d3~,d3~)Aa: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3~)Aa: cls[mirro]=cls[rneig] PASS
+(d3~,d3~)Aa: |Aut|=2, free action PASS
+(d3~,d3~)Aa: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3~,d3~)Ab: lneig∘rneig=id PASS
+(d3~,d3~)Ab: mirro involution PASS
+(d3~,d3~)Ab: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3~)Ab: cls[mirro]=cls[rneig] PASS
+(d3~,d3~)Ab: |Aut|=2, free action PASS
+(d3~,d3~)Ab: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3~,d3~)F: lneig∘rneig=id PASS
+(d3~,d3~)F: mirro involution PASS
+(d3~,d3~)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3~)F: cls[mirro]=cls[rneig] PASS
+(d3~,d3~)F: |Aut|=4, free action PASS
+(d3~,d3~)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4~,d3~)A: lneig∘rneig=id PASS
+(d4~,d3~)A: mirro involution PASS
+(d4~,d3~)A: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3~)A: cls[mirro]=cls[rneig] PASS
+(d4~,d3~)A: |Aut|=1, free action PASS
+(d4~,d3~)A: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4~,d3~)F: lneig∘rneig=id PASS
+(d4~,d3~)F: mirro involution PASS
+(d4~,d3~)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3~)F: cls[mirro]=cls[rneig] PASS
+(d4~,d3~)F: |Aut|=2, free action PASS
+(d4~,d3~)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4~,d4~)S2: lneig∘rneig=id PASS
+(d4~,d4~)S2: mirro involution PASS
+(d4~,d4~)S2: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4~)S2: cls[mirro]=cls[rneig] PASS
+(d4~,d4~)S2: |Aut|=1, free action PASS
+(d4~,d4~)S2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4~,d4~)R2: lneig∘rneig=id PASS
+(d4~,d4~)R2: mirro involution PASS
+(d4~,d4~)R2: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4~)R2: cls[mirro]=cls[rneig] PASS
+(d4~,d4~)R2: |Aut|=2, free action PASS
+(d4~,d4~)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4~,d4~)Aa: lneig∘rneig=id PASS
+(d4~,d4~)Aa: mirro involution PASS
+(d4~,d4~)Aa: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4~)Aa: cls[mirro]=cls[rneig] PASS
+(d4~,d4~)Aa: |Aut|=2, free action PASS
+(d4~,d4~)Aa: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4~,d4~)Ab: lneig∘rneig=id PASS
+(d4~,d4~)Ab: mirro involution PASS
+(d4~,d4~)Ab: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4~)Ab: cls[mirro]=cls[rneig] PASS
+(d4~,d4~)Ab: |Aut|=2, free action PASS
+(d4~,d4~)Ab: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4~,d4~)F: lneig∘rneig=id PASS
+(d4~,d4~)F: mirro involution PASS
+(d4~,d4~)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4~)F: cls[mirro]=cls[rneig] PASS
+(d4~,d4~)F: |Aut|=4, free action PASS
+(d4~,d4~)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6~,d3~)A: lneig∘rneig=id PASS
+(d6~,d3~)A: mirro involution PASS
+(d6~,d3~)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3~)A: cls[mirro]=cls[rneig] PASS
+(d6~,d3~)A: |Aut|=1, free action PASS
+(d6~,d3~)A: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6~,d3~)F: lneig∘rneig=id PASS
+(d6~,d3~)F: mirro involution PASS
+(d6~,d3~)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3~)F: cls[mirro]=cls[rneig] PASS
+(d6~,d3~)F: |Aut|=2, free action PASS
+(d6~,d3~)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6~,d4~)A: lneig∘rneig=id PASS
+(d6~,d4~)A: mirro involution PASS
+(d6~,d4~)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,d4~)A: cls[mirro]=cls[rneig] PASS
+(d6~,d4~)A: |Aut|=1, free action PASS
+(d6~,d4~)A: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6~,d4~)F: lneig∘rneig=id PASS
+(d6~,d4~)F: mirro involution PASS
+(d6~,d4~)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d4~)F: cls[mirro]=cls[rneig] PASS
+(d6~,d4~)F: |Aut|=2, free action PASS
+(d6~,d4~)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6~,d6~)S2: lneig∘rneig=id PASS
+(d6~,d6~)S2: mirro involution PASS
+(d6~,d6~)S2: mirro∘rneig=lneig∘mirro PASS
+(d6~,d6~)S2: cls[mirro]=cls[rneig] PASS
+(d6~,d6~)S2: |Aut|=1, free action PASS
+(d6~,d6~)S2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6~,d6~)R2: lneig∘rneig=id PASS
+(d6~,d6~)R2: mirro involution PASS
+(d6~,d6~)R2: mirro∘rneig=lneig∘mirro PASS
+(d6~,d6~)R2: cls[mirro]=cls[rneig] PASS
+(d6~,d6~)R2: |Aut|=2, free action PASS
+(d6~,d6~)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6~,d6~)Aa: lneig∘rneig=id PASS
+(d6~,d6~)Aa: mirro involution PASS
+(d6~,d6~)Aa: mirro∘rneig=lneig∘mirro PASS
+(d6~,d6~)Aa: cls[mirro]=cls[rneig] PASS
+(d6~,d6~)Aa: |Aut|=2, free action PASS
+(d6~,d6~)Aa: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6~,d6~)Ab: lneig∘rneig=id PASS
+(d6~,d6~)Ab: mirro involution PASS
+(d6~,d6~)Ab: mirro∘rneig=lneig∘mirro PASS
+(d6~,d6~)Ab: cls[mirro]=cls[rneig] PASS
+(d6~,d6~)Ab: |Aut|=2, free action PASS
+(d6~,d6~)Ab: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6~,d6~)F: lneig∘rneig=id PASS
+(d6~,d6~)F: mirro involution PASS
+(d6~,d6~)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d6~)F: cls[mirro]=cls[rneig] PASS
+(d6~,d6~)F: |Aut|=4, free action PASS
+(d6~,d6~)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(12,12,3)A: lneig∘rneig=id PASS
+(12,12,3)A: mirro involution PASS
+(12,12,3)A: mirro∘rneig=lneig∘mirro PASS
+(12,12,3)A: cls[mirro]=cls[rneig] PASS
+(12,12,3)A: |Aut|=1, free action PASS
+(12,12,3)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(12,12,3)F: lneig∘rneig=id PASS
+(12,12,3)F: mirro involution PASS
+(12,12,3)F: mirro∘rneig=lneig∘mirro PASS
+(12,12,3)F: cls[mirro]=cls[rneig] PASS
+(12,12,3)F: |Aut|=2, free action PASS
+(12,12,3)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(12,6,4)F: lneig∘rneig=id PASS
+(12,6,4)F: mirro involution PASS
+(12,6,4)F: mirro∘rneig=lneig∘mirro PASS
+(12,6,4)F: cls[mirro]=cls[rneig] PASS
+(12,6,4)F: |Aut|=1, free action PASS
+(12,6,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(6,6,6)S3: lneig∘rneig=id PASS
+(6,6,6)S3: mirro involution PASS
+(6,6,6)S3: mirro∘rneig=lneig∘mirro PASS
+(6,6,6)S3: cls[mirro]=cls[rneig] PASS
+(6,6,6)S3: |Aut|=1, free action PASS
+(6,6,6)S3: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(6,6,6)R3: lneig∘rneig=id PASS
+(6,6,6)R3: mirro involution PASS
+(6,6,6)R3: mirro∘rneig=lneig∘mirro PASS
+(6,6,6)R3: cls[mirro]=cls[rneig] PASS
+(6,6,6)R3: |Aut|=2, free action PASS
+(6,6,6)R3: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(6,6,6)A: lneig∘rneig=id PASS
+(6,6,6)A: mirro involution PASS
+(6,6,6)A: mirro∘rneig=lneig∘mirro PASS
+(6,6,6)A: cls[mirro]=cls[rneig] PASS
+(6,6,6)A: |Aut|=1, free action PASS
+(6,6,6)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(6,6,6)F: lneig∘rneig=id PASS
+(6,6,6)F: mirro involution PASS
+(6,6,6)F: mirro∘rneig=lneig∘mirro PASS
+(6,6,6)F: cls[mirro]=cls[rneig] PASS
+(6,6,6)F: |Aut|=6, free action PASS
+(6,6,6)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d12,12,3)F: lneig∘rneig=id PASS
+(d12,12,3)F: mirro involution PASS
+(d12,12,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,12,3)F: cls[mirro]=cls[rneig] PASS
+(d12,12,3)F: |Aut|=1, free action PASS
+(d12,12,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12,6,4)F: lneig∘rneig=id PASS
+(d12,6,4)F: mirro involution PASS
+(d12,6,4)F: mirro∘rneig=lneig∘mirro PASS
+(d12,6,4)F: cls[mirro]=cls[rneig] PASS
+(d12,6,4)F: |Aut|=1, free action PASS
+(d12,6,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12,d12,3)A: lneig∘rneig=id PASS
+(d12,d12,3)A: mirro involution PASS
+(d12,d12,3)A: mirro∘rneig=lneig∘mirro PASS
+(d12,d12,3)A: cls[mirro]=cls[rneig] PASS
+(d12,d12,3)A: |Aut|=1, free action PASS
+(d12,d12,3)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12,d12,3)F: lneig∘rneig=id PASS
+(d12,d12,3)F: mirro involution PASS
+(d12,d12,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d12,3)F: cls[mirro]=cls[rneig] PASS
+(d12,d12,3)F: |Aut|=2, free action PASS
+(d12,d12,3)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12,d12,d3)A: lneig∘rneig=id PASS
+(d12,d12,d3)A: mirro involution PASS
+(d12,d12,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d12,d12,d3)A: cls[mirro]=cls[rneig] PASS
+(d12,d12,d3)A: |Aut|=1, free action PASS
+(d12,d12,d3)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12,d12,d3)F: lneig∘rneig=id PASS
+(d12,d12,d3)F: mirro involution PASS
+(d12,d12,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d12,d3)F: cls[mirro]=cls[rneig] PASS
+(d12,d12,d3)F: |Aut|=2, free action PASS
+(d12,d12,d3)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12,d3,12)F: lneig∘rneig=id PASS
+(d12,d3,12)F: mirro involution PASS
+(d12,d3,12)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,12)F: cls[mirro]=cls[rneig] PASS
+(d12,d3,12)F: |Aut|=1, free action PASS
+(d12,d3,12)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12,d4,6)F: lneig∘rneig=id PASS
+(d12,d4,6)F: mirro involution PASS
+(d12,d4,6)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d4,6)F: cls[mirro]=cls[rneig] PASS
+(d12,d4,6)F: |Aut|=1, free action PASS
+(d12,d4,6)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12,d6,4)F: lneig∘rneig=id PASS
+(d12,d6,4)F: mirro involution PASS
+(d12,d6,4)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d6,4)F: cls[mirro]=cls[rneig] PASS
+(d12,d6,4)F: |Aut|=1, free action PASS
+(d12,d6,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12,d6,d4)F: lneig∘rneig=id PASS
+(d12,d6,d4)F: mirro involution PASS
+(d12,d6,d4)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d6,d4)F: cls[mirro]=cls[rneig] PASS
+(d12,d6,d4)F: |Aut|=1, free action PASS
+(d12,d6,d4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12~,4,4)A: lneig∘rneig=id PASS
+(d12~,4,4)A: mirro involution PASS
+(d12~,4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,4,4)A: cls[mirro]=cls[rneig] PASS
+(d12~,4,4)A: |Aut|=1, free action PASS
+(d12~,4,4)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12~,4,4)F: lneig∘rneig=id PASS
+(d12~,4,4)F: mirro involution PASS
+(d12~,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,4,4)F: cls[mirro]=cls[rneig] PASS
+(d12~,4,4)F: |Aut|=2, free action PASS
+(d12~,4,4)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12~,6,3)F: lneig∘rneig=id PASS
+(d12~,6,3)F: mirro involution PASS
+(d12~,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,6,3)F: cls[mirro]=cls[rneig] PASS
+(d12~,6,3)F: |Aut|=1, free action PASS
+(d12~,6,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12~,d3,6)F: lneig∘rneig=id PASS
+(d12~,d3,6)F: mirro involution PASS
+(d12~,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d12~,d3,6)F: |Aut|=1, free action PASS
+(d12~,d3,6)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12~,d4,4)F: lneig∘rneig=id PASS
+(d12~,d4,4)F: mirro involution PASS
+(d12~,d4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d4,4)F: cls[mirro]=cls[rneig] PASS
+(d12~,d4,4)F: |Aut|=1, free action PASS
+(d12~,d4,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12~,d4,d4)A: lneig∘rneig=id PASS
+(d12~,d4,d4)A: mirro involution PASS
+(d12~,d4,d4)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,d4,d4)A: cls[mirro]=cls[rneig] PASS
+(d12~,d4,d4)A: |Aut|=1, free action PASS
+(d12~,d4,d4)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12~,d4,d4)F: lneig∘rneig=id PASS
+(d12~,d4,d4)F: mirro involution PASS
+(d12~,d4,d4)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d4,d4)F: cls[mirro]=cls[rneig] PASS
+(d12~,d4,d4)F: |Aut|=2, free action PASS
+(d12~,d4,d4)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d12~,d6,3)F: lneig∘rneig=id PASS
+(d12~,d6,3)F: mirro involution PASS
+(d12~,d6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d6,3)F: cls[mirro]=cls[rneig] PASS
+(d12~,d6,3)F: |Aut|=1, free action PASS
+(d12~,d6,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d12~,d6,d3)F: lneig∘rneig=id PASS
+(d12~,d6,d3)F: mirro involution PASS
+(d12~,d6,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d6,d3)F: cls[mirro]=cls[rneig] PASS
+(d12~,d6,d3)F: |Aut|=1, free action PASS
+(d12~,d6,d3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,12,12)A: lneig∘rneig=id PASS
+(d3,12,12)A: mirro involution PASS
+(d3,12,12)A: mirro∘rneig=lneig∘mirro PASS
+(d3,12,12)A: cls[mirro]=cls[rneig] PASS
+(d3,12,12)A: |Aut|=1, free action PASS
+(d3,12,12)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,12,12)F: lneig∘rneig=id PASS
+(d3,12,12)F: mirro involution PASS
+(d3,12,12)F: mirro∘rneig=lneig∘mirro PASS
+(d3,12,12)F: cls[mirro]=cls[rneig] PASS
+(d3,12,12)F: |Aut|=2, free action PASS
+(d3,12,12)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3~,4,4)A: lneig∘rneig=id PASS
+(d3~,4,4)A: mirro involution PASS
+(d3~,4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d3~,4,4)A: cls[mirro]=cls[rneig] PASS
+(d3~,4,4)A: |Aut|=1, free action PASS
+(d3~,4,4)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3~,4,4)F: lneig∘rneig=id PASS
+(d3~,4,4)F: mirro involution PASS
+(d3~,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,4,4)F: cls[mirro]=cls[rneig] PASS
+(d3~,4,4)F: |Aut|=2, free action PASS
+(d3~,4,4)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3~,6,3)F: lneig∘rneig=id PASS
+(d3~,6,3)F: mirro involution PASS
+(d3~,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,6,3)F: cls[mirro]=cls[rneig] PASS
+(d3~,6,3)F: |Aut|=1, free action PASS
+(d3~,6,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3~,d3,6)F: lneig∘rneig=id PASS
+(d3~,d3,6)F: mirro involution PASS
+(d3~,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d3~,d3,6)F: |Aut|=1, free action PASS
+(d3~,d3,6)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d4,12,6)F: lneig∘rneig=id PASS
+(d4,12,6)F: mirro involution PASS
+(d4,12,6)F: mirro∘rneig=lneig∘mirro PASS
+(d4,12,6)F: cls[mirro]=cls[rneig] PASS
+(d4,12,6)F: |Aut|=1, free action PASS
+(d4,12,6)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d4,d3~,4)F: lneig∘rneig=id PASS
+(d4,d3~,4)F: mirro involution PASS
+(d4,d3~,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3~,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d3~,4)F: |Aut|=1, free action PASS
+(d4,d3~,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d4,d4,d3~)A: lneig∘rneig=id PASS
+(d4,d4,d3~)A: mirro involution PASS
+(d4,d4,d3~)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3~)A: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3~)A: |Aut|=1, free action PASS
+(d4,d4,d3~)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d4,d4,d3~)F: lneig∘rneig=id PASS
+(d4,d4,d3~)F: mirro involution PASS
+(d4,d4,d3~)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3~)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3~)F: |Aut|=2, free action PASS
+(d4,d4,d3~)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d4~,4,4)A: lneig∘rneig=id PASS
+(d4~,4,4)A: mirro involution PASS
+(d4~,4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d4~,4,4)A: cls[mirro]=cls[rneig] PASS
+(d4~,4,4)A: |Aut|=1, free action PASS
+(d4~,4,4)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d4~,4,4)F: lneig∘rneig=id PASS
+(d4~,4,4)F: mirro involution PASS
+(d4~,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,4,4)F: cls[mirro]=cls[rneig] PASS
+(d4~,4,4)F: |Aut|=2, free action PASS
+(d4~,4,4)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d4~,6,3)F: lneig∘rneig=id PASS
+(d4~,6,3)F: mirro involution PASS
+(d4~,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,6,3)F: cls[mirro]=cls[rneig] PASS
+(d4~,6,3)F: |Aut|=1, free action PASS
+(d4~,6,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d4~,d3,6)F: lneig∘rneig=id PASS
+(d4~,d3,6)F: mirro involution PASS
+(d4~,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d4~,d3,6)F: |Aut|=1, free action PASS
+(d4~,d3,6)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d4~,d4,4)F: lneig∘rneig=id PASS
+(d4~,d4,4)F: mirro involution PASS
+(d4~,d4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4,4)F: cls[mirro]=cls[rneig] PASS
+(d4~,d4,4)F: |Aut|=1, free action PASS
+(d4~,d4,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d4~,d4,d4)A: lneig∘rneig=id PASS
+(d4~,d4,d4)A: mirro involution PASS
+(d4~,d4,d4)A: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4,d4)A: cls[mirro]=cls[rneig] PASS
+(d4~,d4,d4)A: |Aut|=1, free action PASS
+(d4~,d4,d4)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d4~,d4,d4)F: lneig∘rneig=id PASS
+(d4~,d4,d4)F: mirro involution PASS
+(d4~,d4,d4)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d4,d4)F: cls[mirro]=cls[rneig] PASS
+(d4~,d4,d4)F: |Aut|=2, free action PASS
+(d4~,d4,d4)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6,12,4)F: lneig∘rneig=id PASS
+(d6,12,4)F: mirro involution PASS
+(d6,12,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,12,4)F: cls[mirro]=cls[rneig] PASS
+(d6,12,4)F: |Aut|=1, free action PASS
+(d6,12,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6,6,6)A: lneig∘rneig=id PASS
+(d6,6,6)A: mirro involution PASS
+(d6,6,6)A: mirro∘rneig=lneig∘mirro PASS
+(d6,6,6)A: cls[mirro]=cls[rneig] PASS
+(d6,6,6)A: |Aut|=1, free action PASS
+(d6,6,6)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6,6,6)F: lneig∘rneig=id PASS
+(d6,6,6)F: mirro involution PASS
+(d6,6,6)F: mirro∘rneig=lneig∘mirro PASS
+(d6,6,6)F: cls[mirro]=cls[rneig] PASS
+(d6,6,6)F: |Aut|=2, free action PASS
+(d6,6,6)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6,d3~,3)F: lneig∘rneig=id PASS
+(d6,d3~,3)F: mirro involution PASS
+(d6,d3~,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3~,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3~,3)F: |Aut|=1, free action PASS
+(d6,d3~,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6,d3~,d3)F: lneig∘rneig=id PASS
+(d6,d3~,d3)F: mirro involution PASS
+(d6,d3~,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3~,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3~,d3)F: |Aut|=1, free action PASS
+(d6,d3~,d3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6,d4,12)F: lneig∘rneig=id PASS
+(d6,d4,12)F: mirro involution PASS
+(d6,d4,12)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,12)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,12)F: |Aut|=1, free action PASS
+(d6,d4,12)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6,d4~,3)F: lneig∘rneig=id PASS
+(d6,d4~,3)F: mirro involution PASS
+(d6,d4~,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4~,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d4~,3)F: |Aut|=1, free action PASS
+(d6,d4~,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6,d4~,d3)F: lneig∘rneig=id PASS
+(d6,d4~,d3)F: mirro involution PASS
+(d6,d4~,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4~,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d4~,d3)F: |Aut|=1, free action PASS
+(d6,d4~,d3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6,d6,6)A: lneig∘rneig=id PASS
+(d6,d6,6)A: mirro involution PASS
+(d6,d6,6)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,6)A: cls[mirro]=cls[rneig] PASS
+(d6,d6,6)A: |Aut|=1, free action PASS
+(d6,d6,6)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6,d6,6)F: lneig∘rneig=id PASS
+(d6,d6,6)F: mirro involution PASS
+(d6,d6,6)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,6)F: cls[mirro]=cls[rneig] PASS
+(d6,d6,6)F: |Aut|=2, free action PASS
+(d6,d6,6)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6,d6,d6)S3: lneig∘rneig=id PASS
+(d6,d6,d6)S3: mirro involution PASS
+(d6,d6,d6)S3: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,d6)S3: cls[mirro]=cls[rneig] PASS
+(d6,d6,d6)S3: |Aut|=1, free action PASS
+(d6,d6,d6)S3: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6,d6,d6)R3: lneig∘rneig=id PASS
+(d6,d6,d6)R3: mirro involution PASS
+(d6,d6,d6)R3: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,d6)R3: cls[mirro]=cls[rneig] PASS
+(d6,d6,d6)R3: |Aut|=2, free action PASS
+(d6,d6,d6)R3: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6,d6,d6)A: lneig∘rneig=id PASS
+(d6,d6,d6)A: mirro involution PASS
+(d6,d6,d6)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,d6)A: cls[mirro]=cls[rneig] PASS
+(d6,d6,d6)A: |Aut|=1, free action PASS
+(d6,d6,d6)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6,d6,d6)F: lneig∘rneig=id PASS
+(d6,d6,d6)F: mirro involution PASS
+(d6,d6,d6)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,d6)F: cls[mirro]=cls[rneig] PASS
+(d6,d6,d6)F: |Aut|=6, free action PASS
+(d6,d6,d6)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d6~,4,4)A: lneig∘rneig=id PASS
+(d6~,4,4)A: mirro involution PASS
+(d6~,4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,4,4)A: cls[mirro]=cls[rneig] PASS
+(d6~,4,4)A: |Aut|=1, free action PASS
+(d6~,4,4)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6~,4,4)F: lneig∘rneig=id PASS
+(d6~,4,4)F: mirro involution PASS
+(d6~,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,4,4)F: cls[mirro]=cls[rneig] PASS
+(d6~,4,4)F: |Aut|=2, free action PASS
+(d6~,4,4)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6~,6,3)F: lneig∘rneig=id PASS
+(d6~,6,3)F: mirro involution PASS
+(d6~,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,6,3)F: cls[mirro]=cls[rneig] PASS
+(d6~,6,3)F: |Aut|=1, free action PASS
+(d6~,6,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6~,d3,6)F: lneig∘rneig=id PASS
+(d6~,d3,6)F: mirro involution PASS
+(d6~,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d6~,d3,6)F: |Aut|=1, free action PASS
+(d6~,d3,6)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6~,d4,4)F: lneig∘rneig=id PASS
+(d6~,d4,4)F: mirro involution PASS
+(d6~,d4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d4,4)F: cls[mirro]=cls[rneig] PASS
+(d6~,d4,4)F: |Aut|=1, free action PASS
+(d6~,d4,4)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6~,d4,d4)A: lneig∘rneig=id PASS
+(d6~,d4,d4)A: mirro involution PASS
+(d6~,d4,d4)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,d4,d4)A: cls[mirro]=cls[rneig] PASS
+(d6~,d4,d4)A: |Aut|=1, free action PASS
+(d6~,d4,d4)A: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6~,d4,d4)F: lneig∘rneig=id PASS
+(d6~,d4,d4)F: mirro involution PASS
+(d6~,d4,d4)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d4,d4)F: cls[mirro]=cls[rneig] PASS
+(d6~,d4,d4)F: |Aut|=2, free action PASS
+(d6~,d4,d4)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d6~,d6,3)F: lneig∘rneig=id PASS
+(d6~,d6,3)F: mirro involution PASS
+(d6~,d6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d6,3)F: cls[mirro]=cls[rneig] PASS
+(d6~,d6,3)F: |Aut|=1, free action PASS
+(d6~,d6,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d6~,d6,d3)F: lneig∘rneig=id PASS
+(d6~,d6,d3)F: mirro involution PASS
+(d6~,d6,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d6,d3)F: cls[mirro]=cls[rneig] PASS
+(d6~,d6,d3)F: |Aut|=1, free action PASS
+(d6~,d6,d3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(12,3,4,3)A: lneig∘rneig=id PASS
+(12,3,4,3)A: mirro involution PASS
+(12,3,4,3)A: mirro∘rneig=lneig∘mirro PASS
+(12,3,4,3)A: cls[mirro]=cls[rneig] PASS
+(12,3,4,3)A: |Aut|=1, free action PASS
+(12,3,4,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(12,3,4,3)F: lneig∘rneig=id PASS
+(12,3,4,3)F: mirro involution PASS
+(12,3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(12,3,4,3)F: cls[mirro]=cls[rneig] PASS
+(12,3,4,3)F: |Aut|=2, free action PASS
+(12,3,4,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(12,4,3,3)F: lneig∘rneig=id PASS
+(12,4,3,3)F: mirro involution PASS
+(12,4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(12,4,3,3)F: cls[mirro]=cls[rneig] PASS
+(12,4,3,3)F: |Aut|=1, free action PASS
+(12,4,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(4,4,4,4)S4: lneig∘rneig=id PASS
+(4,4,4,4)S4: mirro involution PASS
+(4,4,4,4)S4: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)S4: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)S4: |Aut|=1, free action PASS
+(4,4,4,4)S4: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(4,4,4,4)R4: lneig∘rneig=id PASS
+(4,4,4,4)R4: mirro involution PASS
+(4,4,4,4)R4: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)R4: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)R4: |Aut|=2, free action PASS
+(4,4,4,4)R4: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(4,4,4,4)S2a: lneig∘rneig=id PASS
+(4,4,4,4)S2a: mirro involution PASS
+(4,4,4,4)S2a: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)S2a: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)S2a: |Aut|=2, free action PASS
+(4,4,4,4)S2a: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(4,4,4,4)S2b: lneig∘rneig=id PASS
+(4,4,4,4)S2b: mirro involution PASS
+(4,4,4,4)S2b: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)S2b: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)S2b: |Aut|=2, free action PASS
+(4,4,4,4)S2b: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(4,4,4,4)R2: lneig∘rneig=id PASS
+(4,4,4,4)R2: mirro involution PASS
+(4,4,4,4)R2: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)R2: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)R2: |Aut|=4, free action PASS
+(4,4,4,4)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(4,4,4,4)Aa: lneig∘rneig=id PASS
+(4,4,4,4)Aa: mirro involution PASS
+(4,4,4,4)Aa: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)Aa: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)Aa: |Aut|=2, free action PASS
+(4,4,4,4)Aa: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(4,4,4,4)Ab: lneig∘rneig=id PASS
+(4,4,4,4)Ab: mirro involution PASS
+(4,4,4,4)Ab: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)Ab: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)Ab: |Aut|=2, free action PASS
+(4,4,4,4)Ab: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(4,4,4,4)F: lneig∘rneig=id PASS
+(4,4,4,4)F: mirro involution PASS
+(4,4,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(4,4,4,4)F: cls[mirro]=cls[rneig] PASS
+(4,4,4,4)F: |Aut|=8, free action PASS
+(4,4,4,4)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(6,3,6,3)S2: lneig∘rneig=id PASS
+(6,3,6,3)S2: mirro involution PASS
+(6,3,6,3)S2: mirro∘rneig=lneig∘mirro PASS
+(6,3,6,3)S2: cls[mirro]=cls[rneig] PASS
+(6,3,6,3)S2: |Aut|=1, free action PASS
+(6,3,6,3)S2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(6,3,6,3)R2: lneig∘rneig=id PASS
+(6,3,6,3)R2: mirro involution PASS
+(6,3,6,3)R2: mirro∘rneig=lneig∘mirro PASS
+(6,3,6,3)R2: cls[mirro]=cls[rneig] PASS
+(6,3,6,3)R2: |Aut|=2, free action PASS
+(6,3,6,3)R2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(6,3,6,3)Aa: lneig∘rneig=id PASS
+(6,3,6,3)Aa: mirro involution PASS
+(6,3,6,3)Aa: mirro∘rneig=lneig∘mirro PASS
+(6,3,6,3)Aa: cls[mirro]=cls[rneig] PASS
+(6,3,6,3)Aa: |Aut|=2, free action PASS
+(6,3,6,3)Aa: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(6,3,6,3)Ab: lneig∘rneig=id PASS
+(6,3,6,3)Ab: mirro involution PASS
+(6,3,6,3)Ab: mirro∘rneig=lneig∘mirro PASS
+(6,3,6,3)Ab: cls[mirro]=cls[rneig] PASS
+(6,3,6,3)Ab: |Aut|=2, free action PASS
+(6,3,6,3)Ab: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(6,3,6,3)F: lneig∘rneig=id PASS
+(6,3,6,3)F: mirro involution PASS
+(6,3,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(6,3,6,3)F: cls[mirro]=cls[rneig] PASS
+(6,3,6,3)F: |Aut|=4, free action PASS
+(6,3,6,3)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(6,4,3,4)A: lneig∘rneig=id PASS
+(6,4,3,4)A: mirro involution PASS
+(6,4,3,4)A: mirro∘rneig=lneig∘mirro PASS
+(6,4,3,4)A: cls[mirro]=cls[rneig] PASS
+(6,4,3,4)A: |Aut|=1, free action PASS
+(6,4,3,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(6,4,3,4)F: lneig∘rneig=id PASS
+(6,4,3,4)F: mirro involution PASS
+(6,4,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(6,4,3,4)F: cls[mirro]=cls[rneig] PASS
+(6,4,3,4)F: |Aut|=2, free action PASS
+(6,4,3,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(6,4,4,3)F: lneig∘rneig=id PASS
+(6,4,4,3)F: mirro involution PASS
+(6,4,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(6,4,4,3)F: cls[mirro]=cls[rneig] PASS
+(6,4,4,3)F: |Aut|=1, free action PASS
+(6,4,4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(6,6,3,3)A: lneig∘rneig=id PASS
+(6,6,3,3)A: mirro involution PASS
+(6,6,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(6,6,3,3)A: cls[mirro]=cls[rneig] PASS
+(6,6,3,3)A: |Aut|=1, free action PASS
+(6,6,3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(6,6,3,3)F: lneig∘rneig=id PASS
+(6,6,3,3)F: mirro involution PASS
+(6,6,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(6,6,3,3)F: cls[mirro]=cls[rneig] PASS
+(6,6,3,3)F: |Aut|=2, free action PASS
+(6,6,3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,3,4,3)A: lneig∘rneig=id PASS
+(d12,3,4,3)A: mirro involution PASS
+(d12,3,4,3)A: mirro∘rneig=lneig∘mirro PASS
+(d12,3,4,3)A: cls[mirro]=cls[rneig] PASS
+(d12,3,4,3)A: |Aut|=1, free action PASS
+(d12,3,4,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,3,4,3)F: lneig∘rneig=id PASS
+(d12,3,4,3)F: mirro involution PASS
+(d12,3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,3,4,3)F: cls[mirro]=cls[rneig] PASS
+(d12,3,4,3)F: |Aut|=2, free action PASS
+(d12,3,4,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,3,d4,3)A: lneig∘rneig=id PASS
+(d12,3,d4,3)A: mirro involution PASS
+(d12,3,d4,3)A: mirro∘rneig=lneig∘mirro PASS
+(d12,3,d4,3)A: cls[mirro]=cls[rneig] PASS
+(d12,3,d4,3)A: |Aut|=1, free action PASS
+(d12,3,d4,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,3,d4,3)F: lneig∘rneig=id PASS
+(d12,3,d4,3)F: mirro involution PASS
+(d12,3,d4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,3,d4,3)F: cls[mirro]=cls[rneig] PASS
+(d12,3,d4,3)F: |Aut|=2, free action PASS
+(d12,3,d4,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,4,3,3)F: lneig∘rneig=id PASS
+(d12,4,3,3)F: mirro involution PASS
+(d12,4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,4,3,3)F: cls[mirro]=cls[rneig] PASS
+(d12,4,3,3)F: |Aut|=1, free action PASS
+(d12,4,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,4,d3,3)F: lneig∘rneig=id PASS
+(d12,4,d3,3)F: mirro involution PASS
+(d12,4,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,4,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d12,4,d3,3)F: |Aut|=1, free action PASS
+(d12,4,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d3,3,4)F: lneig∘rneig=id PASS
+(d12,d3,3,4)F: mirro involution PASS
+(d12,d3,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,3,4)F: cls[mirro]=cls[rneig] PASS
+(d12,d3,3,4)F: |Aut|=1, free action PASS
+(d12,d3,3,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d3,4,3)F: lneig∘rneig=id PASS
+(d12,d3,4,3)F: mirro involution PASS
+(d12,d3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,4,3)F: cls[mirro]=cls[rneig] PASS
+(d12,d3,4,3)F: |Aut|=1, free action PASS
+(d12,d3,4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d3,4,d3)A: lneig∘rneig=id PASS
+(d12,d3,4,d3)A: mirro involution PASS
+(d12,d3,4,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,4,d3)A: cls[mirro]=cls[rneig] PASS
+(d12,d3,4,d3)A: |Aut|=1, free action PASS
+(d12,d3,4,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,d3,4,d3)F: lneig∘rneig=id PASS
+(d12,d3,4,d3)F: mirro involution PASS
+(d12,d3,4,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,4,d3)F: cls[mirro]=cls[rneig] PASS
+(d12,d3,4,d3)F: |Aut|=2, free action PASS
+(d12,d3,4,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,d3,d3,4)F: lneig∘rneig=id PASS
+(d12,d3,d3,4)F: mirro involution PASS
+(d12,d3,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d12,d3,d3,4)F: |Aut|=1, free action PASS
+(d12,d3,d3,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d3,d4,3)F: lneig∘rneig=id PASS
+(d12,d3,d4,3)F: mirro involution PASS
+(d12,d3,d4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,d4,3)F: cls[mirro]=cls[rneig] PASS
+(d12,d3,d4,3)F: |Aut|=1, free action PASS
+(d12,d3,d4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d3,d4,d3)A: lneig∘rneig=id PASS
+(d12,d3,d4,d3)A: mirro involution PASS
+(d12,d3,d4,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,d4,d3)A: cls[mirro]=cls[rneig] PASS
+(d12,d3,d4,d3)A: |Aut|=1, free action PASS
+(d12,d3,d4,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,d3,d4,d3)F: lneig∘rneig=id PASS
+(d12,d3,d4,d3)F: mirro involution PASS
+(d12,d3,d4,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d3,d4,d3)F: cls[mirro]=cls[rneig] PASS
+(d12,d3,d4,d3)F: |Aut|=2, free action PASS
+(d12,d3,d4,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12,d4,3,3)F: lneig∘rneig=id PASS
+(d12,d4,3,3)F: mirro involution PASS
+(d12,d4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d4,3,3)F: cls[mirro]=cls[rneig] PASS
+(d12,d4,3,3)F: |Aut|=1, free action PASS
+(d12,d4,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d4,3,d3)F: lneig∘rneig=id PASS
+(d12,d4,3,d3)F: mirro involution PASS
+(d12,d4,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d4,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d12,d4,3,d3)F: |Aut|=1, free action PASS
+(d12,d4,3,d3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d4,d3,3)F: lneig∘rneig=id PASS
+(d12,d4,d3,3)F: mirro involution PASS
+(d12,d4,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d4,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d12,d4,d3,3)F: |Aut|=1, free action PASS
+(d12,d4,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12,d4,d3,d3)F: lneig∘rneig=id PASS
+(d12,d4,d3,d3)F: mirro involution PASS
+(d12,d4,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12,d4,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d12,d4,d3,d3)F: |Aut|=1, free action PASS
+(d12,d4,d3,d3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12~,3,3,3)A: lneig∘rneig=id PASS
+(d12~,3,3,3)A: mirro involution PASS
+(d12~,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d12~,3,3,3)A: |Aut|=1, free action PASS
+(d12~,3,3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12~,3,3,3)F: lneig∘rneig=id PASS
+(d12~,3,3,3)F: mirro involution PASS
+(d12~,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d12~,3,3,3)F: |Aut|=2, free action PASS
+(d12~,3,3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12~,3,d3,3)A: lneig∘rneig=id PASS
+(d12~,3,d3,3)A: mirro involution PASS
+(d12~,3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d12~,3,d3,3)A: |Aut|=1, free action PASS
+(d12~,3,d3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12~,3,d3,3)F: lneig∘rneig=id PASS
+(d12~,3,d3,3)F: mirro involution PASS
+(d12~,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d12~,3,d3,3)F: |Aut|=2, free action PASS
+(d12~,3,d3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12~,d3,3,3)F: lneig∘rneig=id PASS
+(d12~,d3,3,3)F: mirro involution PASS
+(d12~,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d12~,d3,3,3)F: |Aut|=1, free action PASS
+(d12~,d3,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12~,d3,3,d3)A: lneig∘rneig=id PASS
+(d12~,d3,3,d3)A: mirro involution PASS
+(d12~,d3,3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3,3,d3)A: cls[mirro]=cls[rneig] PASS
+(d12~,d3,3,d3)A: |Aut|=1, free action PASS
+(d12~,d3,3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12~,d3,3,d3)F: lneig∘rneig=id PASS
+(d12~,d3,3,d3)F: mirro involution PASS
+(d12~,d3,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d12~,d3,3,d3)F: |Aut|=2, free action PASS
+(d12~,d3,3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12~,d3,d3,3)F: lneig∘rneig=id PASS
+(d12~,d3,d3,3)F: mirro involution PASS
+(d12~,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d12~,d3,d3,3)F: |Aut|=1, free action PASS
+(d12~,d3,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d12~,d3,d3,d3)A: lneig∘rneig=id PASS
+(d12~,d3,d3,d3)A: mirro involution PASS
+(d12~,d3,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d12~,d3,d3,d3)A: |Aut|=1, free action PASS
+(d12~,d3,d3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d12~,d3,d3,d3)F: lneig∘rneig=id PASS
+(d12~,d3,d3,d3)F: mirro involution PASS
+(d12~,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d12~,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d12~,d3,d3,d3)F: |Aut|=2, free action PASS
+(d12~,d3,d3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,12,3,4)F: lneig∘rneig=id PASS
+(d3,12,3,4)F: mirro involution PASS
+(d3,12,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,12,3,4)F: cls[mirro]=cls[rneig] PASS
+(d3,12,3,4)F: |Aut|=1, free action PASS
+(d3,12,3,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3,12,4,3)F: lneig∘rneig=id PASS
+(d3,12,4,3)F: mirro involution PASS
+(d3,12,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,12,4,3)F: cls[mirro]=cls[rneig] PASS
+(d3,12,4,3)F: |Aut|=1, free action PASS
+(d3,12,4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3,12,d3,4)A: lneig∘rneig=id PASS
+(d3,12,d3,4)A: mirro involution PASS
+(d3,12,d3,4)A: mirro∘rneig=lneig∘mirro PASS
+(d3,12,d3,4)A: cls[mirro]=cls[rneig] PASS
+(d3,12,d3,4)A: |Aut|=1, free action PASS
+(d3,12,d3,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,12,d3,4)F: lneig∘rneig=id PASS
+(d3,12,d3,4)F: mirro involution PASS
+(d3,12,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,12,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d3,12,d3,4)F: |Aut|=2, free action PASS
+(d3,12,d3,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,4,12,3)F: lneig∘rneig=id PASS
+(d3,4,12,3)F: mirro involution PASS
+(d3,4,12,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,4,12,3)F: cls[mirro]=cls[rneig] PASS
+(d3,4,12,3)F: |Aut|=1, free action PASS
+(d3,4,12,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3,4,6,4)A: lneig∘rneig=id PASS
+(d3,4,6,4)A: mirro involution PASS
+(d3,4,6,4)A: mirro∘rneig=lneig∘mirro PASS
+(d3,4,6,4)A: cls[mirro]=cls[rneig] PASS
+(d3,4,6,4)A: |Aut|=1, free action PASS
+(d3,4,6,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,4,6,4)F: lneig∘rneig=id PASS
+(d3,4,6,4)F: mirro involution PASS
+(d3,4,6,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,4,6,4)F: cls[mirro]=cls[rneig] PASS
+(d3,4,6,4)F: |Aut|=2, free action PASS
+(d3,4,6,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,6,3,6)A: lneig∘rneig=id PASS
+(d3,6,3,6)A: mirro involution PASS
+(d3,6,3,6)A: mirro∘rneig=lneig∘mirro PASS
+(d3,6,3,6)A: cls[mirro]=cls[rneig] PASS
+(d3,6,3,6)A: |Aut|=1, free action PASS
+(d3,6,3,6)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,6,3,6)F: lneig∘rneig=id PASS
+(d3,6,3,6)F: mirro involution PASS
+(d3,6,3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d3,6,3,6)F: cls[mirro]=cls[rneig] PASS
+(d3,6,3,6)F: |Aut|=2, free action PASS
+(d3,6,3,6)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,6,4,4)F: lneig∘rneig=id PASS
+(d3,6,4,4)F: mirro involution PASS
+(d3,6,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,6,4,4)F: cls[mirro]=cls[rneig] PASS
+(d3,6,4,4)F: |Aut|=1, free action PASS
+(d3,6,4,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3,6,6,3)F: lneig∘rneig=id PASS
+(d3,6,6,3)F: mirro involution PASS
+(d3,6,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,6,6,3)F: cls[mirro]=cls[rneig] PASS
+(d3,6,6,3)F: |Aut|=1, free action PASS
+(d3,6,6,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3,6,d3,6)S2: lneig∘rneig=id PASS
+(d3,6,d3,6)S2: mirro involution PASS
+(d3,6,d3,6)S2: mirro∘rneig=lneig∘mirro PASS
+(d3,6,d3,6)S2: cls[mirro]=cls[rneig] PASS
+(d3,6,d3,6)S2: |Aut|=1, free action PASS
+(d3,6,d3,6)S2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,6,d3,6)R2: lneig∘rneig=id PASS
+(d3,6,d3,6)R2: mirro involution PASS
+(d3,6,d3,6)R2: mirro∘rneig=lneig∘mirro PASS
+(d3,6,d3,6)R2: cls[mirro]=cls[rneig] PASS
+(d3,6,d3,6)R2: |Aut|=2, free action PASS
+(d3,6,d3,6)R2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,6,d3,6)Aa: lneig∘rneig=id PASS
+(d3,6,d3,6)Aa: mirro involution PASS
+(d3,6,d3,6)Aa: mirro∘rneig=lneig∘mirro PASS
+(d3,6,d3,6)Aa: cls[mirro]=cls[rneig] PASS
+(d3,6,d3,6)Aa: |Aut|=2, free action PASS
+(d3,6,d3,6)Aa: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,6,d3,6)Ab: lneig∘rneig=id PASS
+(d3,6,d3,6)Ab: mirro involution PASS
+(d3,6,d3,6)Ab: mirro∘rneig=lneig∘mirro PASS
+(d3,6,d3,6)Ab: cls[mirro]=cls[rneig] PASS
+(d3,6,d3,6)Ab: |Aut|=2, free action PASS
+(d3,6,d3,6)Ab: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,6,d3,6)F: lneig∘rneig=id PASS
+(d3,6,d3,6)F: mirro involution PASS
+(d3,6,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d3,6,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d3,6,d3,6)F: |Aut|=4, free action PASS
+(d3,6,d3,6)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,d3,12,4)F: lneig∘rneig=id PASS
+(d3,d3,12,4)F: mirro involution PASS
+(d3,d3,12,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,12,4)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,12,4)F: |Aut|=1, free action PASS
+(d3,d3,12,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3,d3,6,6)A: lneig∘rneig=id PASS
+(d3,d3,6,6)A: mirro involution PASS
+(d3,d3,6,6)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,6,6)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,6,6)A: |Aut|=1, free action PASS
+(d3,d3,6,6)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3,d3,6,6)F: lneig∘rneig=id PASS
+(d3,d3,6,6)F: mirro involution PASS
+(d3,d3,6,6)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,6,6)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,6,6)F: |Aut|=2, free action PASS
+(d3,d3,6,6)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,3,3,3)A: lneig∘rneig=id PASS
+(d3~,3,3,3)A: mirro involution PASS
+(d3~,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3~,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d3~,3,3,3)A: |Aut|=1, free action PASS
+(d3~,3,3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,3,3,3)F: lneig∘rneig=id PASS
+(d3~,3,3,3)F: mirro involution PASS
+(d3~,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3~,3,3,3)F: |Aut|=2, free action PASS
+(d3~,3,3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,3,d3,3)A: lneig∘rneig=id PASS
+(d3~,3,d3,3)A: mirro involution PASS
+(d3~,3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3~,3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d3~,3,d3,3)A: |Aut|=1, free action PASS
+(d3~,3,d3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,3,d3,3)F: lneig∘rneig=id PASS
+(d3~,3,d3,3)F: mirro involution PASS
+(d3~,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3~,3,d3,3)F: |Aut|=2, free action PASS
+(d3~,3,d3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,d3,3,3)F: lneig∘rneig=id PASS
+(d3~,d3,3,3)F: mirro involution PASS
+(d3~,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3~,d3,3,3)F: |Aut|=1, free action PASS
+(d3~,d3,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3~,d3,3,d3)A: lneig∘rneig=id PASS
+(d3~,d3,3,d3)A: mirro involution PASS
+(d3~,d3,3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3,3,d3)A: cls[mirro]=cls[rneig] PASS
+(d3~,d3,3,d3)A: |Aut|=1, free action PASS
+(d3~,d3,3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,d3,3,d3)F: lneig∘rneig=id PASS
+(d3~,d3,3,d3)F: mirro involution PASS
+(d3~,d3,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d3~,d3,3,d3)F: |Aut|=2, free action PASS
+(d3~,d3,3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,d3,d3,3)F: lneig∘rneig=id PASS
+(d3~,d3,d3,3)F: mirro involution PASS
+(d3~,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3~,d3,d3,3)F: |Aut|=1, free action PASS
+(d3~,d3,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d3~,d3,d3,d3)A: lneig∘rneig=id PASS
+(d3~,d3,d3,d3)A: mirro involution PASS
+(d3~,d3,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d3~,d3,d3,d3)A: |Aut|=1, free action PASS
+(d3~,d3,d3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d3~,d3,d3,d3)F: lneig∘rneig=id PASS
+(d3~,d3,d3,d3)F: mirro involution PASS
+(d3~,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d3~,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d3~,d3,d3,d3)F: |Aut|=2, free action PASS
+(d3~,d3,d3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,12,3,3)F: lneig∘rneig=id PASS
+(d4,12,3,3)F: mirro involution PASS
+(d4,12,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,12,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,12,3,3)F: |Aut|=1, free action PASS
+(d4,12,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,12,d3,3)F: lneig∘rneig=id PASS
+(d4,12,d3,3)F: mirro involution PASS
+(d4,12,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,12,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,12,d3,3)F: |Aut|=1, free action PASS
+(d4,12,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,3,12,3)A: lneig∘rneig=id PASS
+(d4,3,12,3)A: mirro involution PASS
+(d4,3,12,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,3,12,3)A: cls[mirro]=cls[rneig] PASS
+(d4,3,12,3)A: |Aut|=1, free action PASS
+(d4,3,12,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,3,12,3)F: lneig∘rneig=id PASS
+(d4,3,12,3)F: mirro involution PASS
+(d4,3,12,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,3,12,3)F: cls[mirro]=cls[rneig] PASS
+(d4,3,12,3)F: |Aut|=2, free action PASS
+(d4,3,12,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,4,4,4)A: lneig∘rneig=id PASS
+(d4,4,4,4)A: mirro involution PASS
+(d4,4,4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d4,4,4,4)A: cls[mirro]=cls[rneig] PASS
+(d4,4,4,4)A: |Aut|=1, free action PASS
+(d4,4,4,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,4,4,4)F: lneig∘rneig=id PASS
+(d4,4,4,4)F: mirro involution PASS
+(d4,4,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,4,4,4)F: cls[mirro]=cls[rneig] PASS
+(d4,4,4,4)F: |Aut|=2, free action PASS
+(d4,4,4,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,4,6,3)F: lneig∘rneig=id PASS
+(d4,4,6,3)F: mirro involution PASS
+(d4,4,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,4,6,3)F: cls[mirro]=cls[rneig] PASS
+(d4,4,6,3)F: |Aut|=1, free action PASS
+(d4,4,6,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,4,d4,4)S2: lneig∘rneig=id PASS
+(d4,4,d4,4)S2: mirro involution PASS
+(d4,4,d4,4)S2: mirro∘rneig=lneig∘mirro PASS
+(d4,4,d4,4)S2: cls[mirro]=cls[rneig] PASS
+(d4,4,d4,4)S2: |Aut|=1, free action PASS
+(d4,4,d4,4)S2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4,4,d4,4)R2: lneig∘rneig=id PASS
+(d4,4,d4,4)R2: mirro involution PASS
+(d4,4,d4,4)R2: mirro∘rneig=lneig∘mirro PASS
+(d4,4,d4,4)R2: cls[mirro]=cls[rneig] PASS
+(d4,4,d4,4)R2: |Aut|=2, free action PASS
+(d4,4,d4,4)R2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4,4,d4,4)Aa: lneig∘rneig=id PASS
+(d4,4,d4,4)Aa: mirro involution PASS
+(d4,4,d4,4)Aa: mirro∘rneig=lneig∘mirro PASS
+(d4,4,d4,4)Aa: cls[mirro]=cls[rneig] PASS
+(d4,4,d4,4)Aa: |Aut|=2, free action PASS
+(d4,4,d4,4)Aa: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4,4,d4,4)Ab: lneig∘rneig=id PASS
+(d4,4,d4,4)Ab: mirro involution PASS
+(d4,4,d4,4)Ab: mirro∘rneig=lneig∘mirro PASS
+(d4,4,d4,4)Ab: cls[mirro]=cls[rneig] PASS
+(d4,4,d4,4)Ab: |Aut|=2, free action PASS
+(d4,4,d4,4)Ab: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4,4,d4,4)F: lneig∘rneig=id PASS
+(d4,4,d4,4)F: mirro involution PASS
+(d4,4,d4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,4,d4,4)F: cls[mirro]=cls[rneig] PASS
+(d4,4,d4,4)F: |Aut|=4, free action PASS
+(d4,4,d4,4)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4,6,3,4)F: lneig∘rneig=id PASS
+(d4,6,3,4)F: mirro involution PASS
+(d4,6,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,6,3,4)F: cls[mirro]=cls[rneig] PASS
+(d4,6,3,4)F: |Aut|=1, free action PASS
+(d4,6,3,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,6,4,3)F: lneig∘rneig=id PASS
+(d4,6,4,3)F: mirro involution PASS
+(d4,6,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,6,4,3)F: cls[mirro]=cls[rneig] PASS
+(d4,6,4,3)F: |Aut|=1, free action PASS
+(d4,6,4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,6,d3,4)F: lneig∘rneig=id PASS
+(d4,6,d3,4)F: mirro involution PASS
+(d4,6,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,6,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d4,6,d3,4)F: |Aut|=1, free action PASS
+(d4,6,d3,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,6,d4,3)A: lneig∘rneig=id PASS
+(d4,6,d4,3)A: mirro involution PASS
+(d4,6,d4,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,6,d4,3)A: cls[mirro]=cls[rneig] PASS
+(d4,6,d4,3)A: |Aut|=1, free action PASS
+(d4,6,d4,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,6,d4,3)F: lneig∘rneig=id PASS
+(d4,6,d4,3)F: mirro involution PASS
+(d4,6,d4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,6,d4,3)F: cls[mirro]=cls[rneig] PASS
+(d4,6,d4,3)F: |Aut|=2, free action PASS
+(d4,6,d4,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d3,12,3)F: lneig∘rneig=id PASS
+(d4,d3,12,3)F: mirro involution PASS
+(d4,d3,12,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,12,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,12,3)F: |Aut|=1, free action PASS
+(d4,d3,12,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,d3,12,d3)A: lneig∘rneig=id PASS
+(d4,d3,12,d3)A: mirro involution PASS
+(d4,d3,12,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,12,d3)A: cls[mirro]=cls[rneig] PASS
+(d4,d3,12,d3)A: |Aut|=1, free action PASS
+(d4,d3,12,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d3,12,d3)F: lneig∘rneig=id PASS
+(d4,d3,12,d3)F: mirro involution PASS
+(d4,d3,12,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,12,d3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,12,d3)F: |Aut|=2, free action PASS
+(d4,d3,12,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d3,3,12)F: lneig∘rneig=id PASS
+(d4,d3,3,12)F: mirro involution PASS
+(d4,d3,3,12)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,3,12)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,3,12)F: |Aut|=1, free action PASS
+(d4,d3,3,12)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,d3,4,6)F: lneig∘rneig=id PASS
+(d4,d3,4,6)F: mirro involution PASS
+(d4,d3,4,6)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,4,6)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,4,6)F: |Aut|=1, free action PASS
+(d4,d3,4,6)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,d3,6,4)F: lneig∘rneig=id PASS
+(d4,d3,6,4)F: mirro involution PASS
+(d4,d3,6,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,6,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,6,4)F: |Aut|=1, free action PASS
+(d4,d3,6,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,d3,d3,12)F: lneig∘rneig=id PASS
+(d4,d3,d3,12)F: mirro involution PASS
+(d4,d3,d3,12)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d3,12)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d3,12)F: |Aut|=1, free action PASS
+(d4,d3,d3,12)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,d3,d4,6)A: lneig∘rneig=id PASS
+(d4,d3,d4,6)A: mirro involution PASS
+(d4,d3,d4,6)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d4,6)A: cls[mirro]=cls[rneig] PASS
+(d4,d3,d4,6)A: |Aut|=1, free action PASS
+(d4,d3,d4,6)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d3,d4,6)F: lneig∘rneig=id PASS
+(d4,d3,d4,6)F: mirro involution PASS
+(d4,d3,d4,6)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d4,6)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d4,6)F: |Aut|=2, free action PASS
+(d4,d3,d4,6)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d4,4,4)A: lneig∘rneig=id PASS
+(d4,d4,4,4)A: mirro involution PASS
+(d4,d4,4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,4,4)A: cls[mirro]=cls[rneig] PASS
+(d4,d4,4,4)A: |Aut|=1, free action PASS
+(d4,d4,4,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d4,4,4)F: lneig∘rneig=id PASS
+(d4,d4,4,4)F: mirro involution PASS
+(d4,d4,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,4,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,4,4)F: |Aut|=2, free action PASS
+(d4,d4,4,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d4,6,3)F: lneig∘rneig=id PASS
+(d4,d4,6,3)F: mirro involution PASS
+(d4,d4,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,6,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,6,3)F: |Aut|=1, free action PASS
+(d4,d4,6,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,d4,d3,6)F: lneig∘rneig=id PASS
+(d4,d4,d3,6)F: mirro involution PASS
+(d4,d4,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3,6)F: |Aut|=1, free action PASS
+(d4,d4,d3,6)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4,d4,d4,4)A: lneig∘rneig=id PASS
+(d4,d4,d4,4)A: mirro involution PASS
+(d4,d4,d4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,4)A: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,4)A: |Aut|=1, free action PASS
+(d4,d4,d4,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d4,d4,4)F: lneig∘rneig=id PASS
+(d4,d4,d4,4)F: mirro involution PASS
+(d4,d4,d4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,4)F: |Aut|=2, free action PASS
+(d4,d4,d4,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4,d4,d4,d4)S4: lneig∘rneig=id PASS
+(d4,d4,d4,d4)S4: mirro involution PASS
+(d4,d4,d4,d4)S4: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)S4: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)S4: |Aut|=1, free action PASS
+(d4,d4,d4,d4)S4: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4,d4,d4,d4)R4: lneig∘rneig=id PASS
+(d4,d4,d4,d4)R4: mirro involution PASS
+(d4,d4,d4,d4)R4: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)R4: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)R4: |Aut|=2, free action PASS
+(d4,d4,d4,d4)R4: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4,d4,d4,d4)S2a: lneig∘rneig=id PASS
+(d4,d4,d4,d4)S2a: mirro involution PASS
+(d4,d4,d4,d4)S2a: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)S2a: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)S2a: |Aut|=2, free action PASS
+(d4,d4,d4,d4)S2a: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4,d4,d4,d4)S2b: lneig∘rneig=id PASS
+(d4,d4,d4,d4)S2b: mirro involution PASS
+(d4,d4,d4,d4)S2b: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)S2b: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)S2b: |Aut|=2, free action PASS
+(d4,d4,d4,d4)S2b: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4,d4,d4,d4)R2: lneig∘rneig=id PASS
+(d4,d4,d4,d4)R2: mirro involution PASS
+(d4,d4,d4,d4)R2: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)R2: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)R2: |Aut|=4, free action PASS
+(d4,d4,d4,d4)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4,d4,d4,d4)Aa: lneig∘rneig=id PASS
+(d4,d4,d4,d4)Aa: mirro involution PASS
+(d4,d4,d4,d4)Aa: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)Aa: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)Aa: |Aut|=2, free action PASS
+(d4,d4,d4,d4)Aa: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4,d4,d4,d4)Ab: lneig∘rneig=id PASS
+(d4,d4,d4,d4)Ab: mirro involution PASS
+(d4,d4,d4,d4)Ab: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)Ab: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)Ab: |Aut|=2, free action PASS
+(d4,d4,d4,d4)Ab: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d4,d4,d4,d4)F: lneig∘rneig=id PASS
+(d4,d4,d4,d4)F: mirro involution PASS
+(d4,d4,d4,d4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d4,d4)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d4,d4)F: |Aut|=8, free action PASS
+(d4,d4,d4,d4)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d4~,3,3,3)A: lneig∘rneig=id PASS
+(d4~,3,3,3)A: mirro involution PASS
+(d4~,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4~,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d4~,3,3,3)A: |Aut|=1, free action PASS
+(d4~,3,3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4~,3,3,3)F: lneig∘rneig=id PASS
+(d4~,3,3,3)F: mirro involution PASS
+(d4~,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4~,3,3,3)F: |Aut|=2, free action PASS
+(d4~,3,3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4~,3,d3,3)A: lneig∘rneig=id PASS
+(d4~,3,d3,3)A: mirro involution PASS
+(d4~,3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4~,3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d4~,3,d3,3)A: |Aut|=1, free action PASS
+(d4~,3,d3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4~,3,d3,3)F: lneig∘rneig=id PASS
+(d4~,3,d3,3)F: mirro involution PASS
+(d4~,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4~,3,d3,3)F: |Aut|=2, free action PASS
+(d4~,3,d3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4~,d3,3,3)F: lneig∘rneig=id PASS
+(d4~,d3,3,3)F: mirro involution PASS
+(d4~,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4~,d3,3,3)F: |Aut|=1, free action PASS
+(d4~,d3,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4~,d3,3,d3)A: lneig∘rneig=id PASS
+(d4~,d3,3,d3)A: mirro involution PASS
+(d4~,d3,3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3,3,d3)A: cls[mirro]=cls[rneig] PASS
+(d4~,d3,3,d3)A: |Aut|=1, free action PASS
+(d4~,d3,3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4~,d3,3,d3)F: lneig∘rneig=id PASS
+(d4~,d3,3,d3)F: mirro involution PASS
+(d4~,d3,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d4~,d3,3,d3)F: |Aut|=2, free action PASS
+(d4~,d3,3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4~,d3,d3,3)F: lneig∘rneig=id PASS
+(d4~,d3,d3,3)F: mirro involution PASS
+(d4~,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4~,d3,d3,3)F: |Aut|=1, free action PASS
+(d4~,d3,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d4~,d3,d3,d3)A: lneig∘rneig=id PASS
+(d4~,d3,d3,d3)A: mirro involution PASS
+(d4~,d3,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d4~,d3,d3,d3)A: |Aut|=1, free action PASS
+(d4~,d3,d3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d4~,d3,d3,d3)F: lneig∘rneig=id PASS
+(d4~,d3,d3,d3)F: mirro involution PASS
+(d4~,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4~,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d4~,d3,d3,d3)F: |Aut|=2, free action PASS
+(d4~,d3,d3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,3,6,3)A: lneig∘rneig=id PASS
+(d6,3,6,3)A: mirro involution PASS
+(d6,3,6,3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,3,6,3)A: cls[mirro]=cls[rneig] PASS
+(d6,3,6,3)A: |Aut|=1, free action PASS
+(d6,3,6,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,3,6,3)F: lneig∘rneig=id PASS
+(d6,3,6,3)F: mirro involution PASS
+(d6,3,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,3,6,3)F: cls[mirro]=cls[rneig] PASS
+(d6,3,6,3)F: |Aut|=2, free action PASS
+(d6,3,6,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,3,d6,3)S2: lneig∘rneig=id PASS
+(d6,3,d6,3)S2: mirro involution PASS
+(d6,3,d6,3)S2: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d6,3)S2: cls[mirro]=cls[rneig] PASS
+(d6,3,d6,3)S2: |Aut|=1, free action PASS
+(d6,3,d6,3)S2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,3,d6,3)R2: lneig∘rneig=id PASS
+(d6,3,d6,3)R2: mirro involution PASS
+(d6,3,d6,3)R2: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d6,3)R2: cls[mirro]=cls[rneig] PASS
+(d6,3,d6,3)R2: |Aut|=2, free action PASS
+(d6,3,d6,3)R2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,3,d6,3)Aa: lneig∘rneig=id PASS
+(d6,3,d6,3)Aa: mirro involution PASS
+(d6,3,d6,3)Aa: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d6,3)Aa: cls[mirro]=cls[rneig] PASS
+(d6,3,d6,3)Aa: |Aut|=2, free action PASS
+(d6,3,d6,3)Aa: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,3,d6,3)Ab: lneig∘rneig=id PASS
+(d6,3,d6,3)Ab: mirro involution PASS
+(d6,3,d6,3)Ab: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d6,3)Ab: cls[mirro]=cls[rneig] PASS
+(d6,3,d6,3)Ab: |Aut|=2, free action PASS
+(d6,3,d6,3)Ab: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,3,d6,3)F: lneig∘rneig=id PASS
+(d6,3,d6,3)F: mirro involution PASS
+(d6,3,d6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d6,3)F: cls[mirro]=cls[rneig] PASS
+(d6,3,d6,3)F: |Aut|=4, free action PASS
+(d6,3,d6,3)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,4,3,4)A: lneig∘rneig=id PASS
+(d6,4,3,4)A: mirro involution PASS
+(d6,4,3,4)A: mirro∘rneig=lneig∘mirro PASS
+(d6,4,3,4)A: cls[mirro]=cls[rneig] PASS
+(d6,4,3,4)A: |Aut|=1, free action PASS
+(d6,4,3,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,4,3,4)F: lneig∘rneig=id PASS
+(d6,4,3,4)F: mirro involution PASS
+(d6,4,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,4,3,4)F: cls[mirro]=cls[rneig] PASS
+(d6,4,3,4)F: |Aut|=2, free action PASS
+(d6,4,3,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,4,4,3)F: lneig∘rneig=id PASS
+(d6,4,4,3)F: mirro involution PASS
+(d6,4,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,4,4,3)F: cls[mirro]=cls[rneig] PASS
+(d6,4,4,3)F: |Aut|=1, free action PASS
+(d6,4,4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,4,d3,4)A: lneig∘rneig=id PASS
+(d6,4,d3,4)A: mirro involution PASS
+(d6,4,d3,4)A: mirro∘rneig=lneig∘mirro PASS
+(d6,4,d3,4)A: cls[mirro]=cls[rneig] PASS
+(d6,4,d3,4)A: |Aut|=1, free action PASS
+(d6,4,d3,4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,4,d3,4)F: lneig∘rneig=id PASS
+(d6,4,d3,4)F: mirro involution PASS
+(d6,4,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,4,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d6,4,d3,4)F: |Aut|=2, free action PASS
+(d6,4,d3,4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,4,d4,3)F: lneig∘rneig=id PASS
+(d6,4,d4,3)F: mirro involution PASS
+(d6,4,d4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,4,d4,3)F: cls[mirro]=cls[rneig] PASS
+(d6,4,d4,3)F: |Aut|=1, free action PASS
+(d6,4,d4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,6,3,3)F: lneig∘rneig=id PASS
+(d6,6,3,3)F: mirro involution PASS
+(d6,6,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,6,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,6,3,3)F: |Aut|=1, free action PASS
+(d6,6,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,6,d3,3)F: lneig∘rneig=id PASS
+(d6,6,d3,3)F: mirro involution PASS
+(d6,6,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,6,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,6,d3,3)F: |Aut|=1, free action PASS
+(d6,6,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d3,3,6)F: lneig∘rneig=id PASS
+(d6,d3,3,6)F: mirro involution PASS
+(d6,d3,3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,3,6)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,3,6)F: |Aut|=1, free action PASS
+(d6,d3,3,6)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d3,4,4)F: lneig∘rneig=id PASS
+(d6,d3,4,4)F: mirro involution PASS
+(d6,d3,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,4,4)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,4,4)F: |Aut|=1, free action PASS
+(d6,d3,4,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d3,6,3)F: lneig∘rneig=id PASS
+(d6,d3,6,3)F: mirro involution PASS
+(d6,d3,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,6,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,6,3)F: |Aut|=1, free action PASS
+(d6,d3,6,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d3,6,d3)A: lneig∘rneig=id PASS
+(d6,d3,6,d3)A: mirro involution PASS
+(d6,d3,6,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,6,d3)A: cls[mirro]=cls[rneig] PASS
+(d6,d3,6,d3)A: |Aut|=1, free action PASS
+(d6,d3,6,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d3,6,d3)F: lneig∘rneig=id PASS
+(d6,d3,6,d3)F: mirro involution PASS
+(d6,d3,6,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,6,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,6,d3)F: |Aut|=2, free action PASS
+(d6,d3,6,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d3,d3,6)F: lneig∘rneig=id PASS
+(d6,d3,d3,6)F: mirro involution PASS
+(d6,d3,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d3,6)F: |Aut|=1, free action PASS
+(d6,d3,d3,6)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d3,d4,4)F: lneig∘rneig=id PASS
+(d6,d3,d4,4)F: mirro involution PASS
+(d6,d3,d4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d4,4)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d4,4)F: |Aut|=1, free action PASS
+(d6,d3,d4,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d3,d6,3)A: lneig∘rneig=id PASS
+(d6,d3,d6,3)A: mirro involution PASS
+(d6,d3,d6,3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d6,3)A: cls[mirro]=cls[rneig] PASS
+(d6,d3,d6,3)A: |Aut|=1, free action PASS
+(d6,d3,d6,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d3,d6,3)F: lneig∘rneig=id PASS
+(d6,d3,d6,3)F: mirro involution PASS
+(d6,d3,d6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d6,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d6,3)F: |Aut|=2, free action PASS
+(d6,d3,d6,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d3,d6,d3)S2: lneig∘rneig=id PASS
+(d6,d3,d6,d3)S2: mirro involution PASS
+(d6,d3,d6,d3)S2: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d6,d3)S2: cls[mirro]=cls[rneig] PASS
+(d6,d3,d6,d3)S2: |Aut|=1, free action PASS
+(d6,d3,d6,d3)S2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,d3,d6,d3)R2: lneig∘rneig=id PASS
+(d6,d3,d6,d3)R2: mirro involution PASS
+(d6,d3,d6,d3)R2: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d6,d3)R2: cls[mirro]=cls[rneig] PASS
+(d6,d3,d6,d3)R2: |Aut|=2, free action PASS
+(d6,d3,d6,d3)R2: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,d3,d6,d3)Aa: lneig∘rneig=id PASS
+(d6,d3,d6,d3)Aa: mirro involution PASS
+(d6,d3,d6,d3)Aa: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d6,d3)Aa: cls[mirro]=cls[rneig] PASS
+(d6,d3,d6,d3)Aa: |Aut|=2, free action PASS
+(d6,d3,d6,d3)Aa: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,d3,d6,d3)Ab: lneig∘rneig=id PASS
+(d6,d3,d6,d3)Ab: mirro involution PASS
+(d6,d3,d6,d3)Ab: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d6,d3)Ab: cls[mirro]=cls[rneig] PASS
+(d6,d3,d6,d3)Ab: |Aut|=2, free action PASS
+(d6,d3,d6,d3)Ab: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,d3,d6,d3)F: lneig∘rneig=id PASS
+(d6,d3,d6,d3)F: mirro involution PASS
+(d6,d3,d6,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d6,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d6,d3)F: |Aut|=4, free action PASS
+(d6,d3,d6,d3)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d6,d4,3,4)F: lneig∘rneig=id PASS
+(d6,d4,3,4)F: mirro involution PASS
+(d6,d4,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,3,4)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,3,4)F: |Aut|=1, free action PASS
+(d6,d4,3,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d4,3,d4)A: lneig∘rneig=id PASS
+(d6,d4,3,d4)A: mirro involution PASS
+(d6,d4,3,d4)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,3,d4)A: cls[mirro]=cls[rneig] PASS
+(d6,d4,3,d4)A: |Aut|=1, free action PASS
+(d6,d4,3,d4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d4,3,d4)F: lneig∘rneig=id PASS
+(d6,d4,3,d4)F: mirro involution PASS
+(d6,d4,3,d4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,3,d4)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,3,d4)F: |Aut|=2, free action PASS
+(d6,d4,3,d4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d4,4,3)F: lneig∘rneig=id PASS
+(d6,d4,4,3)F: mirro involution PASS
+(d6,d4,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,4,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,4,3)F: |Aut|=1, free action PASS
+(d6,d4,4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d4,4,d3)F: lneig∘rneig=id PASS
+(d6,d4,4,d3)F: mirro involution PASS
+(d6,d4,4,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,4,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,4,d3)F: |Aut|=1, free action PASS
+(d6,d4,4,d3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d4,d3,4)F: lneig∘rneig=id PASS
+(d6,d4,d3,4)F: mirro involution PASS
+(d6,d4,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,d3,4)F: |Aut|=1, free action PASS
+(d6,d4,d3,4)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d4,d3,d4)A: lneig∘rneig=id PASS
+(d6,d4,d3,d4)A: mirro involution PASS
+(d6,d4,d3,d4)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,d3,d4)A: cls[mirro]=cls[rneig] PASS
+(d6,d4,d3,d4)A: |Aut|=1, free action PASS
+(d6,d4,d3,d4)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d4,d3,d4)F: lneig∘rneig=id PASS
+(d6,d4,d3,d4)F: mirro involution PASS
+(d6,d4,d3,d4)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,d3,d4)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,d3,d4)F: |Aut|=2, free action PASS
+(d6,d4,d3,d4)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d4,d4,3)F: lneig∘rneig=id PASS
+(d6,d4,d4,3)F: mirro involution PASS
+(d6,d4,d4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,d4,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,d4,3)F: |Aut|=1, free action PASS
+(d6,d4,d4,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d4,d4,d3)F: lneig∘rneig=id PASS
+(d6,d4,d4,d3)F: mirro involution PASS
+(d6,d4,d4,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d4,d4,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d4,d4,d3)F: |Aut|=1, free action PASS
+(d6,d4,d4,d3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d6,3,3)A: lneig∘rneig=id PASS
+(d6,d6,3,3)A: mirro involution PASS
+(d6,d6,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,3,3)A: cls[mirro]=cls[rneig] PASS
+(d6,d6,3,3)A: |Aut|=1, free action PASS
+(d6,d6,3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d6,3,3)F: lneig∘rneig=id PASS
+(d6,d6,3,3)F: mirro involution PASS
+(d6,d6,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d6,3,3)F: |Aut|=2, free action PASS
+(d6,d6,3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d6,d3,3)F: lneig∘rneig=id PASS
+(d6,d6,d3,3)F: mirro involution PASS
+(d6,d6,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d6,d3,3)F: |Aut|=1, free action PASS
+(d6,d6,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6,d6,d3,d3)A: lneig∘rneig=id PASS
+(d6,d6,d3,d3)A: mirro involution PASS
+(d6,d6,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d6,d6,d3,d3)A: |Aut|=1, free action PASS
+(d6,d6,d3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6,d6,d3,d3)F: lneig∘rneig=id PASS
+(d6,d6,d3,d3)F: mirro involution PASS
+(d6,d6,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d6,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d6,d3,d3)F: |Aut|=2, free action PASS
+(d6,d6,d3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,3,3,3)A: lneig∘rneig=id PASS
+(d6~,3,3,3)A: mirro involution PASS
+(d6~,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d6~,3,3,3)A: |Aut|=1, free action PASS
+(d6~,3,3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,3,3,3)F: lneig∘rneig=id PASS
+(d6~,3,3,3)F: mirro involution PASS
+(d6~,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6~,3,3,3)F: |Aut|=2, free action PASS
+(d6~,3,3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,3,d3,3)A: lneig∘rneig=id PASS
+(d6~,3,d3,3)A: mirro involution PASS
+(d6~,3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d6~,3,d3,3)A: |Aut|=1, free action PASS
+(d6~,3,d3,3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,3,d3,3)F: lneig∘rneig=id PASS
+(d6~,3,d3,3)F: mirro involution PASS
+(d6~,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d6~,3,d3,3)F: |Aut|=2, free action PASS
+(d6~,3,d3,3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,d3,3,3)F: lneig∘rneig=id PASS
+(d6~,d3,3,3)F: mirro involution PASS
+(d6~,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6~,d3,3,3)F: |Aut|=1, free action PASS
+(d6~,d3,3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6~,d3,3,d3)A: lneig∘rneig=id PASS
+(d6~,d3,3,d3)A: mirro involution PASS
+(d6~,d3,3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3,3,d3)A: cls[mirro]=cls[rneig] PASS
+(d6~,d3,3,d3)A: |Aut|=1, free action PASS
+(d6~,d3,3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,d3,3,d3)F: lneig∘rneig=id PASS
+(d6~,d3,3,d3)F: mirro involution PASS
+(d6~,d3,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d6~,d3,3,d3)F: |Aut|=2, free action PASS
+(d6~,d3,3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,d3,d3,3)F: lneig∘rneig=id PASS
+(d6~,d3,d3,3)F: mirro involution PASS
+(d6~,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d6~,d3,d3,3)F: |Aut|=1, free action PASS
+(d6~,d3,d3,3)F: 8 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7] (legacy prefix rule holds)
+(d6~,d3,d3,d3)A: lneig∘rneig=id PASS
+(d6~,d3,d3,d3)A: mirro involution PASS
+(d6~,d3,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d6~,d3,d3,d3)A: |Aut|=1, free action PASS
+(d6~,d3,d3,d3)A: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(d6~,d3,d3,d3)F: lneig∘rneig=id PASS
+(d6~,d3,d3,d3)F: mirro involution PASS
+(d6~,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6~,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d6~,d3,d3,d3)F: |Aut|=2, free action PASS
+(d6~,d3,d3,d3)F: 4 Aut-orbits, reps=[0, 1, 2, 3] (legacy prefix rule holds)
+(4,3,4,3,3)A: lneig∘rneig=id PASS
+(4,3,4,3,3)A: mirro involution PASS
+(4,3,4,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(4,3,4,3,3)A: cls[mirro]=cls[rneig] PASS
+(4,3,4,3,3)A: |Aut|=1, free action PASS
+(4,3,4,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(4,3,4,3,3)F: lneig∘rneig=id PASS
+(4,3,4,3,3)F: mirro involution PASS
+(4,3,4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(4,3,4,3,3)F: cls[mirro]=cls[rneig] PASS
+(4,3,4,3,3)F: |Aut|=2, free action PASS
+(4,3,4,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(4,4,3,3,3)A: lneig∘rneig=id PASS
+(4,4,3,3,3)A: mirro involution PASS
+(4,4,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(4,4,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(4,4,3,3,3)A: |Aut|=1, free action PASS
+(4,4,3,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(4,4,3,3,3)F: lneig∘rneig=id PASS
+(4,4,3,3,3)F: mirro involution PASS
+(4,4,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(4,4,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(4,4,3,3,3)F: |Aut|=2, free action PASS
+(4,4,3,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(6,3,3,3,3)A: lneig∘rneig=id PASS
+(6,3,3,3,3)A: mirro involution PASS
+(6,3,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(6,3,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(6,3,3,3,3)A: |Aut|=1, free action PASS
+(6,3,3,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(6,3,3,3,3)F: lneig∘rneig=id PASS
+(6,3,3,3,3)F: mirro involution PASS
+(6,3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(6,3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(6,3,3,3,3)F: |Aut|=2, free action PASS
+(6,3,3,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,3,4,4,3)A: lneig∘rneig=id PASS
+(d3,3,4,4,3)A: mirro involution PASS
+(d3,3,4,4,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,3,4,4,3)A: cls[mirro]=cls[rneig] PASS
+(d3,3,4,4,3)A: |Aut|=1, free action PASS
+(d3,3,4,4,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,3,4,4,3)F: lneig∘rneig=id PASS
+(d3,3,4,4,3)F: mirro involution PASS
+(d3,3,4,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,3,4,4,3)F: cls[mirro]=cls[rneig] PASS
+(d3,3,4,4,3)F: |Aut|=2, free action PASS
+(d3,3,4,4,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,3,6,3,3)F: lneig∘rneig=id PASS
+(d3,3,6,3,3)F: mirro involution PASS
+(d3,3,6,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,3,6,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,3,6,3,3)F: |Aut|=1, free action PASS
+(d3,3,6,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,4,3,3,4)A: lneig∘rneig=id PASS
+(d3,4,3,3,4)A: mirro involution PASS
+(d3,4,3,3,4)A: mirro∘rneig=lneig∘mirro PASS
+(d3,4,3,3,4)A: cls[mirro]=cls[rneig] PASS
+(d3,4,3,3,4)A: |Aut|=1, free action PASS
+(d3,4,3,3,4)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,4,3,3,4)F: lneig∘rneig=id PASS
+(d3,4,3,3,4)F: mirro involution PASS
+(d3,4,3,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,4,3,3,4)F: cls[mirro]=cls[rneig] PASS
+(d3,4,3,3,4)F: |Aut|=2, free action PASS
+(d3,4,3,3,4)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,4,3,4,3)F: lneig∘rneig=id PASS
+(d3,4,3,4,3)F: mirro involution PASS
+(d3,4,3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,4,3,4,3)F: cls[mirro]=cls[rneig] PASS
+(d3,4,3,4,3)F: |Aut|=1, free action PASS
+(d3,4,3,4,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,4,4,3,3)F: lneig∘rneig=id PASS
+(d3,4,4,3,3)F: mirro involution PASS
+(d3,4,4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,4,4,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,4,4,3,3)F: |Aut|=1, free action PASS
+(d3,4,4,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,4,4,d3,3)A: lneig∘rneig=id PASS
+(d3,4,4,d3,3)A: mirro involution PASS
+(d3,4,4,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,4,4,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,4,4,d3,3)A: |Aut|=1, free action PASS
+(d3,4,4,d3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,4,4,d3,3)F: lneig∘rneig=id PASS
+(d3,4,4,d3,3)F: mirro involution PASS
+(d3,4,4,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,4,4,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,4,4,d3,3)F: |Aut|=2, free action PASS
+(d3,4,4,d3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,4,d3,4,3)F: lneig∘rneig=id PASS
+(d3,4,d3,4,3)F: mirro involution PASS
+(d3,4,d3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,4,d3,4,3)F: cls[mirro]=cls[rneig] PASS
+(d3,4,d3,4,3)F: |Aut|=1, free action PASS
+(d3,4,d3,4,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,6,3,3,3)F: lneig∘rneig=id PASS
+(d3,6,3,3,3)F: mirro involution PASS
+(d3,6,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,6,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,6,3,3,3)F: |Aut|=1, free action PASS
+(d3,6,3,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,6,3,d3,3)F: lneig∘rneig=id PASS
+(d3,6,3,d3,3)F: mirro involution PASS
+(d3,6,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,6,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,6,3,d3,3)F: |Aut|=1, free action PASS
+(d3,6,3,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,6,d3,3,3)A: lneig∘rneig=id PASS
+(d3,6,d3,3,3)A: mirro involution PASS
+(d3,6,d3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,6,d3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,6,d3,3,3)A: |Aut|=1, free action PASS
+(d3,6,d3,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,6,d3,3,3)F: lneig∘rneig=id PASS
+(d3,6,d3,3,3)F: mirro involution PASS
+(d3,6,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,6,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,6,d3,3,3)F: |Aut|=2, free action PASS
+(d3,6,d3,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,3,6,3)A: lneig∘rneig=id PASS
+(d3,d3,3,6,3)A: mirro involution PASS
+(d3,d3,3,6,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,6,3)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,6,3)A: |Aut|=1, free action PASS
+(d3,d3,3,6,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,3,6,3)F: lneig∘rneig=id PASS
+(d3,d3,3,6,3)F: mirro involution PASS
+(d3,d3,3,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,6,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,6,3)F: |Aut|=2, free action PASS
+(d3,d3,3,6,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,4,3,4)A: lneig∘rneig=id PASS
+(d3,d3,4,3,4)A: mirro involution PASS
+(d3,d3,4,3,4)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,4,3,4)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,4,3,4)A: |Aut|=1, free action PASS
+(d3,d3,4,3,4)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,4,3,4)F: lneig∘rneig=id PASS
+(d3,d3,4,3,4)F: mirro involution PASS
+(d3,d3,4,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,4,3,4)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,4,3,4)F: |Aut|=2, free action PASS
+(d3,d3,4,3,4)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,4,4,3)F: lneig∘rneig=id PASS
+(d3,d3,4,4,3)F: mirro involution PASS
+(d3,d3,4,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,4,4,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,4,4,3)F: |Aut|=1, free action PASS
+(d3,d3,4,4,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,d3,4,d3,4)A: lneig∘rneig=id PASS
+(d3,d3,4,d3,4)A: mirro involution PASS
+(d3,d3,4,d3,4)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,4,d3,4)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,4,d3,4)A: |Aut|=1, free action PASS
+(d3,d3,4,d3,4)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,4,d3,4)F: lneig∘rneig=id PASS
+(d3,d3,4,d3,4)F: mirro involution PASS
+(d3,d3,4,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,4,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,4,d3,4)F: |Aut|=2, free action PASS
+(d3,d3,4,d3,4)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,6,3,3)F: lneig∘rneig=id PASS
+(d3,d3,6,3,3)F: mirro involution PASS
+(d3,d3,6,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,6,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,6,3,3)F: |Aut|=1, free action PASS
+(d3,d3,6,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,d3,6,d3,3)F: lneig∘rneig=id PASS
+(d3,d3,6,d3,3)F: mirro involution PASS
+(d3,d3,6,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,6,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,6,d3,3)F: |Aut|=1, free action PASS
+(d3,d3,6,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,d3,d3,4,4)A: lneig∘rneig=id PASS
+(d3,d3,d3,4,4)A: mirro involution PASS
+(d3,d3,d3,4,4)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,4,4)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,4,4)A: |Aut|=1, free action PASS
+(d3,d3,d3,4,4)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,d3,4,4)F: lneig∘rneig=id PASS
+(d3,d3,d3,4,4)F: mirro involution PASS
+(d3,d3,d3,4,4)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,4,4)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,4,4)F: |Aut|=2, free action PASS
+(d3,d3,d3,4,4)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,d3,6,3)F: lneig∘rneig=id PASS
+(d3,d3,d3,6,3)F: mirro involution PASS
+(d3,d3,d3,6,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,6,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,6,3)F: |Aut|=1, free action PASS
+(d3,d3,d3,6,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d3,d3,d3,d3,6)A: lneig∘rneig=id PASS
+(d3,d3,d3,d3,6)A: mirro involution PASS
+(d3,d3,d3,d3,6)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,6)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,6)A: |Aut|=1, free action PASS
+(d3,d3,d3,d3,6)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d3,d3,d3,d3,6)F: lneig∘rneig=id PASS
+(d3,d3,d3,d3,6)F: mirro involution PASS
+(d3,d3,d3,d3,6)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,6)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,6)F: |Aut|=2, free action PASS
+(d3,d3,d3,d3,6)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,3,4,3,3)F: lneig∘rneig=id PASS
+(d4,3,4,3,3)F: mirro involution PASS
+(d4,3,4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,3,4,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,3,4,3,3)F: |Aut|=1, free action PASS
+(d4,3,4,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,3,d3,4,3)F: lneig∘rneig=id PASS
+(d4,3,d3,4,3)F: mirro involution PASS
+(d4,3,d3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,3,d3,4,3)F: cls[mirro]=cls[rneig] PASS
+(d4,3,d3,4,3)F: |Aut|=1, free action PASS
+(d4,3,d3,4,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,3,d4,3,3)A: lneig∘rneig=id PASS
+(d4,3,d4,3,3)A: mirro involution PASS
+(d4,3,d4,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,3,d4,3,3)A: cls[mirro]=cls[rneig] PASS
+(d4,3,d4,3,3)A: |Aut|=1, free action PASS
+(d4,3,d4,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,3,d4,3,3)F: lneig∘rneig=id PASS
+(d4,3,d4,3,3)F: mirro involution PASS
+(d4,3,d4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,3,d4,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,3,d4,3,3)F: |Aut|=2, free action PASS
+(d4,3,d4,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,4,3,3,3)F: lneig∘rneig=id PASS
+(d4,4,3,3,3)F: mirro involution PASS
+(d4,4,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,4,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,4,3,3,3)F: |Aut|=1, free action PASS
+(d4,4,3,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,4,3,d3,3)F: lneig∘rneig=id PASS
+(d4,4,3,d3,3)F: mirro involution PASS
+(d4,4,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,4,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,4,3,d3,3)F: |Aut|=1, free action PASS
+(d4,4,3,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,4,d3,3,3)F: lneig∘rneig=id PASS
+(d4,4,d3,3,3)F: mirro involution PASS
+(d4,4,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,4,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,4,d3,3,3)F: |Aut|=1, free action PASS
+(d4,4,d3,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,4,d3,d3,3)F: lneig∘rneig=id PASS
+(d4,4,d3,d3,3)F: mirro involution PASS
+(d4,4,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,4,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,4,d3,d3,3)F: |Aut|=1, free action PASS
+(d4,4,d3,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,3,3,4)F: lneig∘rneig=id PASS
+(d4,d3,3,3,4)F: mirro involution PASS
+(d4,d3,3,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,3,3,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,3,3,4)F: |Aut|=1, free action PASS
+(d4,d3,3,3,4)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,3,4,3)F: lneig∘rneig=id PASS
+(d4,d3,3,4,3)F: mirro involution PASS
+(d4,d3,3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,3,4,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,3,4,3)F: |Aut|=1, free action PASS
+(d4,d3,3,4,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,3,d3,4)F: lneig∘rneig=id PASS
+(d4,d3,3,d3,4)F: mirro involution PASS
+(d4,d3,3,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,3,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,3,d3,4)F: |Aut|=1, free action PASS
+(d4,d3,3,d3,4)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,3,d4,3)F: lneig∘rneig=id PASS
+(d4,d3,3,d4,3)F: mirro involution PASS
+(d4,d3,3,d4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,3,d4,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,3,d4,3)F: |Aut|=1, free action PASS
+(d4,d3,3,d4,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,4,3,3)F: lneig∘rneig=id PASS
+(d4,d3,4,3,3)F: mirro involution PASS
+(d4,d3,4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,4,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,4,3,3)F: |Aut|=1, free action PASS
+(d4,d3,4,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,4,3,d3)F: lneig∘rneig=id PASS
+(d4,d3,4,3,d3)F: mirro involution PASS
+(d4,d3,4,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,4,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,4,3,d3)F: |Aut|=1, free action PASS
+(d4,d3,4,3,d3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,4,d3,3)F: lneig∘rneig=id PASS
+(d4,d3,4,d3,3)F: mirro involution PASS
+(d4,d3,4,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,4,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,4,d3,3)F: |Aut|=1, free action PASS
+(d4,d3,4,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,d3,3,4)F: lneig∘rneig=id PASS
+(d4,d3,d3,3,4)F: mirro involution PASS
+(d4,d3,d3,3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d3,3,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d3,3,4)F: |Aut|=1, free action PASS
+(d4,d3,d3,3,4)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,d3,4,3)F: lneig∘rneig=id PASS
+(d4,d3,d3,4,3)F: mirro involution PASS
+(d4,d3,d3,4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d3,4,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d3,4,3)F: |Aut|=1, free action PASS
+(d4,d3,d3,4,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,d3,4,d3)F: lneig∘rneig=id PASS
+(d4,d3,d3,4,d3)F: mirro involution PASS
+(d4,d3,d3,4,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d3,4,d3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d3,4,d3)F: |Aut|=1, free action PASS
+(d4,d3,d3,4,d3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,d3,d3,4)F: lneig∘rneig=id PASS
+(d4,d3,d3,d3,4)F: mirro involution PASS
+(d4,d3,d3,d3,4)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d3,d3,4)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d3,d3,4)F: |Aut|=1, free action PASS
+(d4,d3,d3,d3,4)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,d3,d4,3)A: lneig∘rneig=id PASS
+(d4,d3,d3,d4,3)A: mirro involution PASS
+(d4,d3,d3,d4,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d3,d4,3)A: cls[mirro]=cls[rneig] PASS
+(d4,d3,d3,d4,3)A: |Aut|=1, free action PASS
+(d4,d3,d3,d4,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d3,d3,d4,3)F: lneig∘rneig=id PASS
+(d4,d3,d3,d4,3)F: mirro involution PASS
+(d4,d3,d3,d4,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d3,d4,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d3,d4,3)F: |Aut|=2, free action PASS
+(d4,d3,d3,d4,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d3,d4,3,3)A: lneig∘rneig=id PASS
+(d4,d3,d4,3,3)A: mirro involution PASS
+(d4,d3,d4,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d4,3,3)A: cls[mirro]=cls[rneig] PASS
+(d4,d3,d4,3,3)A: |Aut|=1, free action PASS
+(d4,d3,d4,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d3,d4,3,3)F: lneig∘rneig=id PASS
+(d4,d3,d4,3,3)F: mirro involution PASS
+(d4,d3,d4,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d4,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d4,3,3)F: |Aut|=2, free action PASS
+(d4,d3,d4,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d3,d4,d3,3)F: lneig∘rneig=id PASS
+(d4,d3,d4,d3,3)F: mirro involution PASS
+(d4,d3,d4,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d4,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d4,d3,3)F: |Aut|=1, free action PASS
+(d4,d3,d4,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d3,d4,d3,d3)A: lneig∘rneig=id PASS
+(d4,d3,d4,d3,d3)A: mirro involution PASS
+(d4,d3,d4,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d4,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d4,d3,d4,d3,d3)A: |Aut|=1, free action PASS
+(d4,d3,d4,d3,d3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d3,d4,d3,d3)F: lneig∘rneig=id PASS
+(d4,d3,d4,d3,d3)F: mirro involution PASS
+(d4,d3,d4,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d3,d4,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d4,d3,d4,d3,d3)F: |Aut|=2, free action PASS
+(d4,d3,d4,d3,d3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,3,3,3)A: lneig∘rneig=id PASS
+(d4,d4,3,3,3)A: mirro involution PASS
+(d4,d4,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d4,d4,3,3,3)A: |Aut|=1, free action PASS
+(d4,d4,3,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,3,3,3)F: lneig∘rneig=id PASS
+(d4,d4,3,3,3)F: mirro involution PASS
+(d4,d4,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,3,3,3)F: |Aut|=2, free action PASS
+(d4,d4,3,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,3,d3,3)A: lneig∘rneig=id PASS
+(d4,d4,3,d3,3)A: mirro involution PASS
+(d4,d4,3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d4,d4,3,d3,3)A: |Aut|=1, free action PASS
+(d4,d4,3,d3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,3,d3,3)F: lneig∘rneig=id PASS
+(d4,d4,3,d3,3)F: mirro involution PASS
+(d4,d4,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,3,d3,3)F: |Aut|=2, free action PASS
+(d4,d4,3,d3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,d3,3,3)F: lneig∘rneig=id PASS
+(d4,d4,d3,3,3)F: mirro involution PASS
+(d4,d4,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3,3,3)F: |Aut|=1, free action PASS
+(d4,d4,d3,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d4,d3,3,d3)A: lneig∘rneig=id PASS
+(d4,d4,d3,3,d3)A: mirro involution PASS
+(d4,d4,d3,3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3,3,d3)A: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3,3,d3)A: |Aut|=1, free action PASS
+(d4,d4,d3,3,d3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,d3,3,d3)F: lneig∘rneig=id PASS
+(d4,d4,d3,3,d3)F: mirro involution PASS
+(d4,d4,d3,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3,3,d3)F: |Aut|=2, free action PASS
+(d4,d4,d3,3,d3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,d3,d3,3)F: lneig∘rneig=id PASS
+(d4,d4,d3,d3,3)F: mirro involution PASS
+(d4,d4,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3,d3,3)F: |Aut|=1, free action PASS
+(d4,d4,d3,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d4,d4,d3,d3,d3)A: lneig∘rneig=id PASS
+(d4,d4,d3,d3,d3)A: mirro involution PASS
+(d4,d4,d3,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3,d3,d3)A: |Aut|=1, free action PASS
+(d4,d4,d3,d3,d3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d4,d4,d3,d3,d3)F: lneig∘rneig=id PASS
+(d4,d4,d3,d3,d3)F: mirro involution PASS
+(d4,d4,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d4,d4,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d4,d4,d3,d3,d3)F: |Aut|=2, free action PASS
+(d4,d4,d3,d3,d3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,3,3,3,3)A: lneig∘rneig=id PASS
+(d6,3,3,3,3)A: mirro involution PASS
+(d6,3,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,3,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d6,3,3,3,3)A: |Aut|=1, free action PASS
+(d6,3,3,3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,3,3,3,3)F: lneig∘rneig=id PASS
+(d6,3,3,3,3)F: mirro involution PASS
+(d6,3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,3,3,3,3)F: |Aut|=2, free action PASS
+(d6,3,3,3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,3,d3,3,3)F: lneig∘rneig=id PASS
+(d6,3,d3,3,3)F: mirro involution PASS
+(d6,3,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,3,d3,3,3)F: |Aut|=1, free action PASS
+(d6,3,d3,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d6,3,d3,d3,3)A: lneig∘rneig=id PASS
+(d6,3,d3,d3,3)A: mirro involution PASS
+(d6,3,d3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d6,3,d3,d3,3)A: |Aut|=1, free action PASS
+(d6,3,d3,d3,3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,3,d3,d3,3)F: lneig∘rneig=id PASS
+(d6,3,d3,d3,3)F: mirro involution PASS
+(d6,3,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,3,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,3,d3,d3,3)F: |Aut|=2, free action PASS
+(d6,3,d3,d3,3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,d3,3,3,3)F: lneig∘rneig=id PASS
+(d6,d3,3,3,3)F: mirro involution PASS
+(d6,d3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,3,3,3)F: |Aut|=1, free action PASS
+(d6,d3,3,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d6,d3,3,3,d3)A: lneig∘rneig=id PASS
+(d6,d3,3,3,d3)A: mirro involution PASS
+(d6,d3,3,3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,3,3,d3)A: cls[mirro]=cls[rneig] PASS
+(d6,d3,3,3,d3)A: |Aut|=1, free action PASS
+(d6,d3,3,3,d3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,d3,3,3,d3)F: lneig∘rneig=id PASS
+(d6,d3,3,3,d3)F: mirro involution PASS
+(d6,d3,3,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,3,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,3,3,d3)F: |Aut|=2, free action PASS
+(d6,d3,3,3,d3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,d3,3,d3,3)F: lneig∘rneig=id PASS
+(d6,d3,3,d3,3)F: mirro involution PASS
+(d6,d3,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,3,d3,3)F: |Aut|=1, free action PASS
+(d6,d3,3,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d6,d3,d3,3,3)F: lneig∘rneig=id PASS
+(d6,d3,d3,3,3)F: mirro involution PASS
+(d6,d3,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d3,3,3)F: |Aut|=1, free action PASS
+(d6,d3,d3,3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d6,d3,d3,3,d3)F: lneig∘rneig=id PASS
+(d6,d3,d3,3,d3)F: mirro involution PASS
+(d6,d3,d3,3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d3,3,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d3,3,d3)F: |Aut|=1, free action PASS
+(d6,d3,d3,3,d3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d6,d3,d3,d3,3)F: lneig∘rneig=id PASS
+(d6,d3,d3,d3,3)F: mirro involution PASS
+(d6,d3,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d3,d3,3)F: |Aut|=1, free action PASS
+(d6,d3,d3,d3,3)F: 10 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] (legacy prefix rule holds)
+(d6,d3,d3,d3,d3)A: lneig∘rneig=id PASS
+(d6,d3,d3,d3,d3)A: mirro involution PASS
+(d6,d3,d3,d3,d3)A: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d3,d3,d3)A: cls[mirro]=cls[rneig] PASS
+(d6,d3,d3,d3,d3)A: |Aut|=1, free action PASS
+(d6,d3,d3,d3,d3)A: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(d6,d3,d3,d3,d3)F: lneig∘rneig=id PASS
+(d6,d3,d3,d3,d3)F: mirro involution PASS
+(d6,d3,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d6,d3,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d6,d3,d3,d3,d3)F: |Aut|=2, free action PASS
+(d6,d3,d3,d3,d3)F: 5 Aut-orbits, reps=[0, 1, 2, 3, 4] (legacy prefix rule holds)
+(3,3,3,3,3,3)S6: lneig∘rneig=id PASS
+(3,3,3,3,3,3)S6: mirro involution PASS
+(3,3,3,3,3,3)S6: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)S6: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)S6: |Aut|=1, free action PASS
+(3,3,3,3,3,3)S6: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(3,3,3,3,3,3)R6: lneig∘rneig=id PASS
+(3,3,3,3,3,3)R6: mirro involution PASS
+(3,3,3,3,3,3)R6: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)R6: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)R6: |Aut|=2, free action PASS
+(3,3,3,3,3,3)R6: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(3,3,3,3,3,3)S3a: lneig∘rneig=id PASS
+(3,3,3,3,3,3)S3a: mirro involution PASS
+(3,3,3,3,3,3)S3a: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)S3a: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)S3a: |Aut|=2, free action PASS
+(3,3,3,3,3,3)S3a: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(3,3,3,3,3,3)S3b: lneig∘rneig=id PASS
+(3,3,3,3,3,3)S3b: mirro involution PASS
+(3,3,3,3,3,3)S3b: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)S3b: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)S3b: |Aut|=2, free action PASS
+(3,3,3,3,3,3)S3b: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(3,3,3,3,3,3)S2: lneig∘rneig=id PASS
+(3,3,3,3,3,3)S2: mirro involution PASS
+(3,3,3,3,3,3)S2: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)S2: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)S2: |Aut|=1, free action PASS
+(3,3,3,3,3,3)S2: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(3,3,3,3,3,3)R3: lneig∘rneig=id PASS
+(3,3,3,3,3,3)R3: mirro involution PASS
+(3,3,3,3,3,3)R3: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)R3: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)R3: |Aut|=4, free action PASS
+(3,3,3,3,3,3)R3: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(3,3,3,3,3,3)R2: lneig∘rneig=id PASS
+(3,3,3,3,3,3)R2: mirro involution PASS
+(3,3,3,3,3,3)R2: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)R2: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)R2: |Aut|=6, free action PASS
+(3,3,3,3,3,3)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(3,3,3,3,3,3)Aa: lneig∘rneig=id PASS
+(3,3,3,3,3,3)Aa: mirro involution PASS
+(3,3,3,3,3,3)Aa: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)Aa: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)Aa: |Aut|=2, free action PASS
+(3,3,3,3,3,3)Aa: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(3,3,3,3,3,3)Ab: lneig∘rneig=id PASS
+(3,3,3,3,3,3)Ab: mirro involution PASS
+(3,3,3,3,3,3)Ab: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)Ab: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)Ab: |Aut|=2, free action PASS
+(3,3,3,3,3,3)Ab: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(3,3,3,3,3,3)F: lneig∘rneig=id PASS
+(3,3,3,3,3,3)F: mirro involution PASS
+(3,3,3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(3,3,3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(3,3,3,3,3,3)F: |Aut|=12, free action PASS
+(3,3,3,3,3,3)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3,3,3,3,3,3)A: lneig∘rneig=id PASS
+(d3,3,3,3,3,3)A: mirro involution PASS
+(d3,3,3,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,3,3,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,3,3,3,3,3)A: |Aut|=1, free action PASS
+(d3,3,3,3,3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,3,3,3,3,3)F: lneig∘rneig=id PASS
+(d3,3,3,3,3,3)F: mirro involution PASS
+(d3,3,3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,3,3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,3,3,3,3,3)F: |Aut|=2, free action PASS
+(d3,3,3,3,3,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,3,3,d3,3,3)S2: lneig∘rneig=id PASS
+(d3,3,3,d3,3,3)S2: mirro involution PASS
+(d3,3,3,d3,3,3)S2: mirro∘rneig=lneig∘mirro PASS
+(d3,3,3,d3,3,3)S2: cls[mirro]=cls[rneig] PASS
+(d3,3,3,d3,3,3)S2: |Aut|=1, free action PASS
+(d3,3,3,d3,3,3)S2: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,3,3,d3,3,3)R2: lneig∘rneig=id PASS
+(d3,3,3,d3,3,3)R2: mirro involution PASS
+(d3,3,3,d3,3,3)R2: mirro∘rneig=lneig∘mirro PASS
+(d3,3,3,d3,3,3)R2: cls[mirro]=cls[rneig] PASS
+(d3,3,3,d3,3,3)R2: |Aut|=2, free action PASS
+(d3,3,3,d3,3,3)R2: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,3,3,d3,3,3)Aa: lneig∘rneig=id PASS
+(d3,3,3,d3,3,3)Aa: mirro involution PASS
+(d3,3,3,d3,3,3)Aa: mirro∘rneig=lneig∘mirro PASS
+(d3,3,3,d3,3,3)Aa: cls[mirro]=cls[rneig] PASS
+(d3,3,3,d3,3,3)Aa: |Aut|=2, free action PASS
+(d3,3,3,d3,3,3)Aa: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,3,3,d3,3,3)Ab: lneig∘rneig=id PASS
+(d3,3,3,d3,3,3)Ab: mirro involution PASS
+(d3,3,3,d3,3,3)Ab: mirro∘rneig=lneig∘mirro PASS
+(d3,3,3,d3,3,3)Ab: cls[mirro]=cls[rneig] PASS
+(d3,3,3,d3,3,3)Ab: |Aut|=2, free action PASS
+(d3,3,3,d3,3,3)Ab: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,3,3,d3,3,3)F: lneig∘rneig=id PASS
+(d3,3,3,d3,3,3)F: mirro involution PASS
+(d3,3,3,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,3,3,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,3,3,d3,3,3)F: |Aut|=4, free action PASS
+(d3,3,3,d3,3,3)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,3,d3,3,3,3)A: lneig∘rneig=id PASS
+(d3,3,d3,3,3,3)A: mirro involution PASS
+(d3,3,d3,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,3,d3,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,3,d3,3,3,3)A: |Aut|=1, free action PASS
+(d3,3,d3,3,3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,3,d3,3,3,3)F: lneig∘rneig=id PASS
+(d3,3,d3,3,3,3)F: mirro involution PASS
+(d3,3,d3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,3,d3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,3,d3,3,3,3)F: |Aut|=2, free action PASS
+(d3,3,d3,3,3,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,3,d3,3,d3,3)S3: lneig∘rneig=id PASS
+(d3,3,d3,3,d3,3)S3: mirro involution PASS
+(d3,3,d3,3,d3,3)S3: mirro∘rneig=lneig∘mirro PASS
+(d3,3,d3,3,d3,3)S3: cls[mirro]=cls[rneig] PASS
+(d3,3,d3,3,d3,3)S3: |Aut|=1, free action PASS
+(d3,3,d3,3,d3,3)S3: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,3,d3,3,d3,3)R3: lneig∘rneig=id PASS
+(d3,3,d3,3,d3,3)R3: mirro involution PASS
+(d3,3,d3,3,d3,3)R3: mirro∘rneig=lneig∘mirro PASS
+(d3,3,d3,3,d3,3)R3: cls[mirro]=cls[rneig] PASS
+(d3,3,d3,3,d3,3)R3: |Aut|=2, free action PASS
+(d3,3,d3,3,d3,3)R3: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,3,d3,3,d3,3)A: lneig∘rneig=id PASS
+(d3,3,d3,3,d3,3)A: mirro involution PASS
+(d3,3,d3,3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,3,d3,3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,3,d3,3,d3,3)A: |Aut|=1, free action PASS
+(d3,3,d3,3,d3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,3,d3,3,d3,3)F: lneig∘rneig=id PASS
+(d3,3,d3,3,d3,3)F: mirro involution PASS
+(d3,3,d3,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,3,d3,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,3,d3,3,d3,3)F: |Aut|=6, free action PASS
+(d3,3,d3,3,d3,3)F: 2 Aut-orbits, reps=[0, 1] (legacy prefix rule holds)
+(d3,d3,3,3,3,3)A: lneig∘rneig=id PASS
+(d3,d3,3,3,3,3)A: mirro involution PASS
+(d3,d3,3,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,3,3,3)A: |Aut|=1, free action PASS
+(d3,d3,3,3,3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,3,3,3,3)F: lneig∘rneig=id PASS
+(d3,d3,3,3,3,3)F: mirro involution PASS
+(d3,d3,3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,3,3,3)F: |Aut|=2, free action PASS
+(d3,d3,3,3,3,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,3,d3,3,3)F: lneig∘rneig=id PASS
+(d3,d3,3,d3,3,3)F: mirro involution PASS
+(d3,d3,3,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,d3,3,3)F: |Aut|=1, free action PASS
+(d3,d3,3,d3,3,3)F: 12 Aut-orbits, reps=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] (legacy prefix rule holds)
+(d3,d3,3,d3,d3,3)S2: lneig∘rneig=id PASS
+(d3,d3,3,d3,d3,3)S2: mirro involution PASS
+(d3,d3,3,d3,d3,3)S2: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,d3,d3,3)S2: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,d3,d3,3)S2: |Aut|=1, free action PASS
+(d3,d3,3,d3,d3,3)S2: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,3,d3,d3,3)R2: lneig∘rneig=id PASS
+(d3,d3,3,d3,d3,3)R2: mirro involution PASS
+(d3,d3,3,d3,d3,3)R2: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,d3,d3,3)R2: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,d3,d3,3)R2: |Aut|=2, free action PASS
+(d3,d3,3,d3,d3,3)R2: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,3,d3,d3,3)Aa: lneig∘rneig=id PASS
+(d3,d3,3,d3,d3,3)Aa: mirro involution PASS
+(d3,d3,3,d3,d3,3)Aa: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,d3,d3,3)Aa: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,d3,d3,3)Aa: |Aut|=2, free action PASS
+(d3,d3,3,d3,d3,3)Aa: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,3,d3,d3,3)Ab: lneig∘rneig=id PASS
+(d3,d3,3,d3,d3,3)Ab: mirro involution PASS
+(d3,d3,3,d3,d3,3)Ab: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,d3,d3,3)Ab: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,d3,d3,3)Ab: |Aut|=2, free action PASS
+(d3,d3,3,d3,d3,3)Ab: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,3,d3,d3,3)F: lneig∘rneig=id PASS
+(d3,d3,3,d3,d3,3)F: mirro involution PASS
+(d3,d3,3,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,3,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,3,d3,d3,3)F: |Aut|=4, free action PASS
+(d3,d3,3,d3,d3,3)F: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,d3,3,3,3)A: lneig∘rneig=id PASS
+(d3,d3,d3,3,3,3)A: mirro involution PASS
+(d3,d3,d3,3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,3,3,3)A: |Aut|=1, free action PASS
+(d3,d3,d3,3,3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,3,3,3)F: lneig∘rneig=id PASS
+(d3,d3,d3,3,3,3)F: mirro involution PASS
+(d3,d3,d3,3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,3,3,3)F: |Aut|=2, free action PASS
+(d3,d3,d3,3,3,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,3,d3,3)A: lneig∘rneig=id PASS
+(d3,d3,d3,3,d3,3)A: mirro involution PASS
+(d3,d3,d3,3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,3,d3,3)A: |Aut|=1, free action PASS
+(d3,d3,d3,3,d3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,3,d3,3)F: lneig∘rneig=id PASS
+(d3,d3,d3,3,d3,3)F: mirro involution PASS
+(d3,d3,d3,3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,3,d3,3)F: |Aut|=2, free action PASS
+(d3,d3,d3,3,d3,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,d3,3,3)A: lneig∘rneig=id PASS
+(d3,d3,d3,d3,3,3)A: mirro involution PASS
+(d3,d3,d3,d3,3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,3,3)A: |Aut|=1, free action PASS
+(d3,d3,d3,d3,3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,d3,3,3)F: lneig∘rneig=id PASS
+(d3,d3,d3,d3,3,3)F: mirro involution PASS
+(d3,d3,d3,d3,3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,3,3)F: |Aut|=2, free action PASS
+(d3,d3,d3,d3,3,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,3)A: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,3)A: mirro involution PASS
+(d3,d3,d3,d3,d3,3)A: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,3)A: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,3)A: |Aut|=1, free action PASS
+(d3,d3,d3,d3,d3,3)A: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,3)F: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,3)F: mirro involution PASS
+(d3,d3,d3,d3,d3,3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,3)F: |Aut|=2, free action PASS
+(d3,d3,d3,d3,d3,3)F: 6 Aut-orbits, reps=[0, 1, 2, 3, 4, 5] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)S6: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)S6: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)S6: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)S6: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)S6: |Aut|=1, free action PASS
+(d3,d3,d3,d3,d3,d3)S6: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)R6: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)R6: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)R6: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)R6: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)R6: |Aut|=2, free action PASS
+(d3,d3,d3,d3,d3,d3)R6: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)S3a: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)S3a: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)S3a: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)S3a: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)S3a: |Aut|=2, free action PASS
+(d3,d3,d3,d3,d3,d3)S3a: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)S3b: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)S3b: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)S3b: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)S3b: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)S3b: |Aut|=2, free action PASS
+(d3,d3,d3,d3,d3,d3)S3b: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)S2: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)S2: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)S2: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)S2: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)S2: |Aut|=1, free action PASS
+(d3,d3,d3,d3,d3,d3)S2: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)R3: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)R3: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)R3: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)R3: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)R3: |Aut|=4, free action PASS
+(d3,d3,d3,d3,d3,d3)R3: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)R2: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)R2: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)R2: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)R2: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)R2: |Aut|=6, free action PASS
+(d3,d3,d3,d3,d3,d3)R2: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)Aa: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)Aa: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)Aa: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)Aa: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)Aa: |Aut|=2, free action PASS
+(d3,d3,d3,d3,d3,d3)Aa: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)Ab: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)Ab: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)Ab: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)Ab: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)Ab: |Aut|=2, free action PASS
+(d3,d3,d3,d3,d3,d3)Ab: 3 Aut-orbits, reps=[0, 1, 2] (legacy prefix rule holds)
+(d3,d3,d3,d3,d3,d3)F: lneig∘rneig=id PASS
+(d3,d3,d3,d3,d3,d3)F: mirro involution PASS
+(d3,d3,d3,d3,d3,d3)F: mirro∘rneig=lneig∘mirro PASS
+(d3,d3,d3,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
+(d3,d3,d3,d3,d3,d3)F: |Aut|=12, free action PASS
+(d3,d3,d3,d3,d3,d3)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
+A6: 413 entries pairwise non-isomorphic (iso_key) PASS

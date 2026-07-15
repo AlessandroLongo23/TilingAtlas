@@ -46,3 +46,4 @@ static const std::vector<int> CLASS_PREV = {0,1,2,3};
 static const std::vector<int> CLASS_TILE = {0,1,2,3};
 static const std::vector<std::string> CLASS_DISP = {"3","4","6","12"};
 static const std::vector<std::string> TILE_FAM = {"3","4","6","c"};
+static const std::vector<std::string> TILE_NAME = {"3","4","6","12"};

@@ -39,6 +39,11 @@ if [ "$PALETTE" = regular ]; then
   t2=$(date +%s)
   python3 "$HERE/develop.py" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" --out "$CELLS"
   log "  ($(( $(date +%s)-t2 ))s)"
+elif [ "$PALETTE" = regular-doubled ] || [ "$PALETTE" = regular-scaled-123 ] || [ "$PALETTE" = tetromino ]; then
+  log "PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells"
+  t2=$(date +%s)
+  EU_FACES=1 "$HERE/eu_develop$SFX" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" --out "$CELLS"
+  log "  ($(( $(date +%s)-t2 ))s)"
 else
   log "PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)"
 fi

@@ -1,0 +1,2 @@
+[03:02:41] build (MAXNUM=2 PALETTE=tetromino)
+[03:02:44] PHASE 1  solve (C++ DFS, all k<=2)

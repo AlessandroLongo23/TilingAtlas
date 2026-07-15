@@ -44,6 +44,10 @@ export interface ConfigurationState {
 	showFundamentalDomain: boolean;
 	debugView: boolean;
 
+	// Radial wave transition on a tiling change: the old tiling collapses into its centroids from the
+	// canvas centre outward, then the new one grows back out the same way. See lib/utils/tilingTransition.ts.
+	tilingTransition: boolean;
+
 	// Screenshot / export
 	screenshotButtonHover: boolean;
 	takeScreenshot: boolean;
@@ -64,6 +68,19 @@ export interface ConfigurationState {
 	inversiveMode: "inversion" | "mobius";
 	inversiveRadiusFrac: number; // lens radius as a fraction of min(w,h)/2
 	mobiusTwist: number; // loxodromic spiral angle, degrees (0 ⇒ pure source/sink flow)
+
+	// Hyperbolic view: set true by /play when a {p,q} hyperbolic tiling is selected. Swaps the flat p5
+	// render for the Poincaré-disk WebGL renderer (components/hyperbolic-canvas.tsx). While on, the p5
+	// canvas draws nothing (kept only as the pan input layer) and the mouse wheel is inert (pan, no zoom).
+	hyperbolic: boolean;
+	hyperbolicShading: "tiles" | "parity"; // coloured tiles + edges, or two-tone reflection parity
+	// Edge stroke width: "geometry" scales with the tiles (thick near the centre, thinner toward the rim),
+	// "constant" holds a fixed screen width everywhere.
+	hyperbolicLineMode: "geometry" | "constant";
+	// Transient input signals from the p5 input layer to the Poincaré-disk overlay (consumed + cleared by
+	// it). A click (centred CSS px) requests centring the clicked tile; the reset flag returns to identity.
+	hyperbolicClick: { x: number; y: number } | null;
+	hyperbolicResetView: boolean;
 
 	// Color params
 	colorParams: ColorParams;
@@ -103,6 +120,8 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showFundamentalDomain: false,
 	debugView: false,
 
+	tilingTransition: false,
+
 	screenshotButtonHover: false,
 	takeScreenshot: false,
 	exportGraphButtonHover: false,
@@ -121,6 +140,12 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	inversiveMode: "inversion",
 	inversiveRadiusFrac: 0.42,
 	mobiusTwist: 60,
+
+	hyperbolic: false,
+	hyperbolicShading: "tiles",
+	hyperbolicLineMode: "geometry",
+	hyperbolicClick: null,
+	hyperbolicResetView: false,
 
 	colorParams: { a: 180, b: 0 },
 

@@ -48,12 +48,47 @@ def _word_period(w):
             return p
     return L
 
+def _poly_boundary(cells):
+    """CCW outer boundary of a polyomino (unit squares keyed by bottom-left corner) as a loop of grid
+    vertices, EVERY grid point on the boundary kept (straight runs carry flat 180° corners, notches carry
+    reflex 270°). Simply-connected, no diagonal pinch (holds for all polyominoes we use) ⇒ each boundary
+    vertex has one outgoing directed edge, so the walk is a function. Interior on the left ⇒ CCW."""
+    has = {(x, y) for x, y in cells}
+    nxt = {}
+    for x, y in cells:
+        if (x, y - 1) not in has: nxt[(x, y)] = (x + 1, y)          # bottom edge, heading +x
+        if (x + 1, y) not in has: nxt[(x + 1, y)] = (x + 1, y + 1)  # right edge, heading +y
+        if (x, y + 1) not in has: nxt[(x + 1, y + 1)] = (x, y + 1)  # top edge, heading -x
+        if (x - 1, y) not in has: nxt[(x, y + 1)] = (x, y)          # left edge, heading -y
+    start = min(cells, key=lambda c: (c[1], c[0]))
+    sk = (start[0], start[1])
+    verts, cur, g = [], sk, 0
+    while True:
+        verts.append(cur)
+        cur = nxt[cur]
+        g += 1
+        if cur == sk or g > 100000:
+            break
+    return verts
+
+def polyomino_angle_word(cells, D):
+    """Cyclic interior-angle word (D-units) around a polyomino boundary: 90°→D/4, 180°→D/2, 270°→3D/4,
+    classified by the signed turn (left=convex, straight=flat, right=reflex) of a CCW traversal."""
+    v = _poly_boundary(cells)
+    m = len(v)
+    w = []
+    for i in range(m):
+        px, py = v[(i - 1) % m]; cx, cy = v[i]; nx, ny = v[(i + 1) % m]
+        cross = (cx - px) * (ny - cy) - (cy - py) * (nx - cx)
+        w.append(D // 4 if cross > 0 else (3 * D // 4 if cross < 0 else D // 2))
+    return w
+
 # ---------------------------------------------------------------- palette
 
 class Tile:
     def __init__(self, tid, spec):
         self.tid = tid
-        self.kind = spec["kind"]              # "regular" | "star" | "composite"
+        self.kind = spec["kind"]              # "regular" | "star" | "composite" | "doubled" | "scaled"
         self.name = spec["name"]              # display token base, e.g. "6" or "6*p2"/"6*d16"
         self.famchar = spec["famchar"]        # family char(s) for output filenames
         if self.kind == "regular":
@@ -65,6 +100,21 @@ class Tile:
             self.alphaU = spec["alphaU"]      # point angle in 2pi/D units
             self.L = 2 * self.n
             self.p = 2
+        elif self.kind == "doubled":          # side-2 regular N-gon as a degenerate 2N-gon
+            self.n = spec["n"]                # underlying regular polygon side count N
+            self.L = 2 * self.n               # boundary word length: 2N unit edges
+            self.p = 2                        # word period: (real corner, flat 180° corner)
+        elif self.kind == "scaled":           # side-s regular N-gon as a degenerate sN-gon (doubled ≡ s=2)
+            self.n = spec["n"]                # underlying regular polygon side count N
+            self.scale = spec["scale"]        # side length s (>=1); s=1 ≡ regular, s=2 ≡ doubled
+            self.L = self.scale * self.n      # boundary word length: sN unit edges
+            self.p = self.scale               # word period: (real corner, then s-1 flat 180° corners)
+        elif self.kind == "polyomino":        # union of unit squares; boundary = unit-edge {90,180,270}-gon
+            self.cells = spec["cells"]        # unit squares, bottom-left integer corners
+            self.angles = spec["angles"]      # cyclic interior-angle word in D-units (from polyomino_angle_word)
+            self.n = len(self.angles)         # boundary vertex count (perimeter in unit edges)
+            self.L = self.n
+            self.p = _word_period(self.angles)  # corner classes = fundamental-period positions
         else:                                 # composite
             self.angles = spec["angles"]      # cyclic interior-angle word in D units
             self.n = len(self.angles)
@@ -84,6 +134,8 @@ def load_palette(path):
     D = spec["D"]
     tiles, classes = [], []
     for t in spec["tiles"]:
+        if t.get("kind") == "polyomino" and "angles" not in t:
+            t["angles"] = polyomino_angle_word(t["cells"], D)  # derive the boundary angle word from cells
         tile = Tile(len(tiles), t)
         tiles.append(tile)
         if tile.kind == "regular":
@@ -102,6 +154,32 @@ def load_palette(path):
             cd = CornerClass(len(classes), tile, 1, dU, f"{tile.n}*d{dU}")
             cd.is_point = False
             classes.append(cd)
+        elif tile.kind == "doubled":  # two classes: real corner (D/2 - D/N) + flat 180° corner (D/2)
+            thetaU = D // 2 - D // tile.n
+            assert (D // 2 - D / tile.n) == thetaU, f"doubled {tile.name} off the 2pi/{D} grid"
+            cr = CornerClass(len(classes), tile, 0, thetaU, tile.name)        # real corner
+            cr.is_point = False
+            classes.append(cr)
+            cf = CornerClass(len(classes), tile, 1, D // 2, f"{tile.name}~")  # flat noncounting corner (180°)
+            cf.is_point = False
+            classes.append(cf)
+        elif tile.kind == "scaled":  # p=s classes: real corner (pos 0) + (s-1) flat 180° corners
+            thetaU = D // 2 - D // tile.n
+            assert (D // 2 - D / tile.n) == thetaU, f"scaled {tile.name} off the 2pi/{D} grid"
+            cr = CornerClass(len(classes), tile, 0, thetaU, tile.name)        # real corner
+            cr.is_point = False
+            classes.append(cr)
+            for pos in range(1, tile.scale):                                 # s-1 flat 180° corners along each side
+                cf = CornerClass(len(classes), tile, pos, D // 2, f"{tile.name}~{pos}")
+                cf.is_point = False
+                classes.append(cf)
+        elif tile.kind == "polyomino":  # one class per fundamental-period boundary position (90/180/270)
+            assert sum(tile.angles) == (tile.n - 2) * (D // 2), \
+                f"polyomino {tile.name} angle sum {sum(tile.angles)} != {(tile.n-2)*(D//2)}"
+            for pos in range(tile.p):
+                cc = CornerClass(len(classes), tile, pos, tile.angles[pos], f"{tile.name}.{pos}")
+                cc.is_point = False
+                classes.append(cc)
         else:  # composite
             assert sum(tile.angles) == (tile.n - 2) * (D // 2), \
                 f"composite {tile.name} angle sum {sum(tile.angles)} != {(tile.n-2)*(D//2)}"
@@ -597,6 +675,7 @@ def class_tables_cxx(D, tiles, classes, maxL):
     s += "static const std::vector<int> CLASS_TILE = " + cxx_intlist([c.tile.tid for c in classes]) + ";\n"
     s += "static const std::vector<std::string> CLASS_DISP = " + cxx_strlist([c.disp for c in classes]) + ";\n"
     s += "static const std::vector<std::string> TILE_FAM = " + cxx_strlist([t.famchar for t in tiles]) + ";\n"
+    s += "static const std::vector<std::string> TILE_NAME = " + cxx_strlist([t.name for t in tiles]) + ";\n"
     return s
 
 # ---------------------------------------------------------------- star naming (systematic)
@@ -619,7 +698,9 @@ def main():
     spec, D, tiles, classes = load_palette(args.palette)
     palette_name = spec["name"]
     pinned = spec.get("pinnedLegacy", False)
-    min_len = 2 if any(t.kind == "star" for t in tiles) else 3
+    # min_len=2 admits noncounting 2-corner vertices: star dent-fill points, and the
+    # (flat,flat) mid-edge junction where two side-2 (doubled) tiles abut edge-to-edge.
+    min_len = 2 if any(t.kind in ("star", "doubled", "scaled", "polyomino") for t in tiles) else 3
     configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24))
     # Optional geometric pre-filter (EU_PRUNE_OVERLAP=1): drop vertex configs whose PLACED tiles physically
     # overlap. The solver is combinatorial (no geometry), so an overlapping figure would otherwise seed

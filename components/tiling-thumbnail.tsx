@@ -58,6 +58,7 @@ export function TilingThumbnail({
 						polys = rawPolygons.map((p) => ({
 							n: p.n ?? p.vertices.length,
 							vertices: p.vertices,
+							hue: p.hue,
 						}));
 					} else if (encodedTiling?.seed) {
 						// eslint-disable-next-line @typescript-eslint/no-explicit-any

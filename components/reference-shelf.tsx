@@ -69,6 +69,19 @@ const ISOTOXAL_SHAPE_OPTIONS: { value: "all" | "alpha" | "alpha-beta"; label: st
 	{ value: "alpha", label: "α-family" },
 	{ value: "alpha-beta", label: "α, β-family" },
 ];
+// Scaled-shelf sub-class facet: which side lengths the tiling spans. "Sides 1–2" is the former Doubled
+// class (no side-3 tile); "Sides 1–3" is the tilings that use a side-3 tile. Shown only for the scaled class.
+const SCALE_SET_OPTIONS: { value: "all" | "s12" | "s123"; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "s12", label: "Sides 1–2" },
+	{ value: "s123", label: "Sides 1–3" },
+];
+// Polyomino-shelf sub-class facet: which polyomino ORDER the tiles belong to. Only "Tetrominoes" exists
+// today (the Tetris set); pentominoes etc. extend this. Shown only for the polyomino class.
+const POLY_ORDER_OPTIONS: { value: "all" | "tetromino"; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "tetromino", label: "Tetrominoes" },
+];
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -149,6 +162,10 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (param === "rigid" || param === "family") f.parametric = param;
 	const iso = sp.get("iso");
 	if (iso === "alpha" || iso === "alpha-beta") f.isotoxalShape = iso;
+	const scaleSet = sp.get("scaleset");
+	if (scaleSet === "s12" || scaleSet === "s123") f.scaledScaleSet = scaleSet;
+	const polyOrder = sp.get("polyorder");
+	if (polyOrder === "tetromino") f.polyominoOrder = polyOrder;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
 	if (groups?.length) f.wallpaperGroups = groups;
 	const lattices = list("lattice")?.filter((s): s is LatticeShape => (LATTICE_ORDER as string[]).includes(s));
@@ -185,6 +202,8 @@ function serializeView(v: ViewState): string {
 	if (f.starFolds?.length) p.set("folds", f.starFolds.join(","));
 	if (f.parametric) p.set("param", f.parametric);
 	if (f.isotoxalShape) p.set("iso", f.isotoxalShape);
+	if (f.scaledScaleSet) p.set("scaleset", f.scaledScaleSet);
+	if (f.polyominoOrder) p.set("polyorder", f.polyominoOrder);
 	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
 	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
 	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
@@ -403,6 +422,10 @@ export function ReferenceShelf() {
 		if (v !== "convex") next.convexDecomp = undefined;
 		// The isotoxal Shape facet only means something inside the isotoxal class — drop it otherwise.
 		if (v !== "isotoxal") next.isotoxalShape = undefined;
+		// The scale-set (sides 1-2 / 1-3) facet only means something inside the scaled class — drop it otherwise.
+		if (v !== "scaled") next.scaledScaleSet = undefined;
+		// The polyomino-order facet only means something inside the polyomino class — drop it otherwise.
+		if (v !== "polyomino") next.polyominoOrder = undefined;
 		if (v === "regular") {
 			next.starFolds = undefined;
 			next.parametric = undefined;
@@ -420,6 +443,10 @@ export function ReferenceShelf() {
 	};
 	const setConvexDecomp = (v: "all" | "decomposable" | "non-decomposable") =>
 		setFilters({ ...filters, convexDecomp: v === "all" ? undefined : v });
+	const setScaledScaleSet = (v: "all" | "s12" | "s123") =>
+		setFilters({ ...filters, scaledScaleSet: v === "all" ? undefined : v });
+	const setPolyominoOrder = (v: "all" | "tetromino") =>
+		setFilters({ ...filters, polyominoOrder: v === "all" ? undefined : v });
 
 	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
 	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
@@ -525,12 +552,16 @@ export function ReferenceShelf() {
 	const showLattice = tileClass !== "star" && !isDemo && availableShapes.length > 0;
 	const showConvex = tileClass === "convex";
 	const showIsotoxalShape = tileClass === "isotoxal";
+	const showScaledScaleSet = tileClass === "scaled";
+	const showPolyominoOrder = tileClass === "polyomino";
 
 	const activeFilterCount =
 		(filters.kValue != null ? 1 : 0) +
 		(filters.tileClass ? 1 : 0) +
 		(filters.convexDecomp ? 1 : 0) +
 		(filters.isotoxalShape ? 1 : 0) +
+		(filters.scaledScaleSet ? 1 : 0) +
+		(filters.polyominoOrder ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -610,6 +641,40 @@ export function ReferenceShelf() {
 							/>
 							<p className="text-[10px] text-fg-disabled">
 								How many of the tile’s angles flex independently.
+							</p>
+						</FilterGroup>
+					) : null}
+
+					{showScaledScaleSet ? (
+						<FilterGroup
+							title="Side lengths"
+							summary={filters.scaledScaleSet === "s12" ? "1–2" : filters.scaledScaleSet === "s123" ? "1–3" : null}
+							note="scaling factors"
+						>
+							<ButtonGroup
+								options={SCALE_SET_OPTIONS}
+								selected={filters.scaledScaleSet ?? "all"}
+								onChange={setScaledScaleSet}
+							/>
+							<p className="text-[10px] text-fg-disabled">
+								Sides 1–2 is the former Doubled class; 1–3 adds a side-3 tile.
+							</p>
+						</FilterGroup>
+					) : null}
+
+					{showPolyominoOrder ? (
+						<FilterGroup
+							title="Polyomino order"
+							summary={filters.polyominoOrder === "tetromino" ? "tetromino" : null}
+							note="piece family"
+						>
+							<ButtonGroup
+								options={POLY_ORDER_OPTIONS}
+								selected={filters.polyominoOrder ?? "all"}
+								onChange={setPolyominoOrder}
+							/>
+							<p className="text-[10px] text-fg-disabled">
+								The seven Tetris pieces. More polyomino families to come.
 							</p>
 						</FilterGroup>
 					) : null}

@@ -16,6 +16,8 @@ type FamilyFilter = TileFamily | "all";
 const FAMILY_OPTIONS: { value: FamilyFilter; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "regular", label: FAMILY_LABELS.regular },
+	{ value: "scaled", label: FAMILY_LABELS.scaled },
+	{ value: "polyomino", label: FAMILY_LABELS.polyomino },
 	{ value: "convex", label: FAMILY_LABELS.convex },
 	{ value: "star", label: FAMILY_LABELS.star },
 	{ value: "isotoxal", label: FAMILY_LABELS.isotoxal },

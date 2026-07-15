@@ -1,0 +1,17 @@
+=== build-scaled-atlas (side-1 + side-2 + side-3 regular {3,4,6,12}) ===
+  loaded 1505 developed tilings from tools/ctrnact-oracle/run-k4-regular-doubled/ctrnact-cells-k4.json
+  loaded 355 developed tilings from tools/ctrnact-oracle/run-k2-regular-scaled-123/ctrnact-cells-k2.json
+  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (4.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (4₂.4₃) — kept min-cell rep
+  dropped 665 single-scale regular tilings (no T-junction); 0 area-cert skipped
+  T-junction mixers: 1195 raw duals → 1061 DISTINCT geometries (merged 134 supercell/dual duplicates)
+    k=1: raw 32 → distinct 16
+    k=2: raw 189 → distinct 71
+    k=3: raw 212 → distinct 212
+    k=4: raw 762 → distinct 762
+  wrote → public/reference-atlas-scaled.json (3446.7 KB), 37.62s

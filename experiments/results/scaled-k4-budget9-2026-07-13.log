@@ -1,0 +1,3 @@
+[01:35:01] build (MAXNUM=4 PALETTE=regular-scaled-123)
+[01:35:01] PHASE 1  solve (C++ DFS, all k<=4)
+./run-oracle.sh: line 29: 23599 Terminated: 15          "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
