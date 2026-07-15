@@ -113,8 +113,8 @@ float edgeDistGeo(vec2 z, vec2 p1, vec2 p2) {
 float segDistGeo(vec2 z, vec2 p1, vec2 p2) {
 	vec2 d = p2 - p1;
 	float t = dot(z - p1, d) / max(dot(d, d), 1e-9);
-	if (t < -0.12 || t > 1.12) return 1e9;
-	return edgeDistGeo(z, p1, p2);
+	if (t < 0.0 || t > 1.0) return 1e9; // clip exactly at the endpoints — the per-vertex disks round the joins,
+	return edgeDistGeo(z, p1, p2);       // so no overshoot spur is needed to bridge to the vertex.
 }
 
 // z inside the convex geodesic quad p0-p1-p2-p3 — the ref-point side of all four edges.
