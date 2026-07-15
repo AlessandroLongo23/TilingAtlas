@@ -10,6 +10,8 @@
 
 Spec: `docs/superpowers/specs/2026-07-16-command-scrub-parametric-angles-design.md`
 
+> **Branch note (2026-07-16):** this plan was drafted against `feat/marek-vault`, which carries a rotation-easing commit (`3a28f7a`: `ROTATE_DAMP`, a `controls.rotation` target/live split, wheel detents). It is being built on `feat/parametric-angle-scrub` (off master), where that commit does **not** exist — rotation is applied directly, un-eased. The angle target/live ease added here is fully self-contained (it parallels the rotation pattern but references none of its code), so the feature is unaffected; only Task 3/4 *anchor locations* and a couple of inserted code comments were corrected to master's simpler `canvas.tsx`. "Same smoothing as rotation" means the same exponential-lerp algorithm, not a dependency on rotation being eased on this branch.
+
 ---
 
 ## File map
@@ -199,12 +201,13 @@ import { evaluateParamCell, resolveAlphaDegs, clampAlphaOnly, type ParametricCel
 
 - [ ] **Step 2: Add the sensitivity + damp constants**
 
-`components/canvas.tsx` — directly after line 67 (`const ROTATE_DAMP = 0.2; ...`) insert:
+`components/canvas.tsx` — directly after `const DEGENERATE_DET = 1e-9;` (the module-constant block, ~line 70) insert:
 
 ```ts
 // Command+drag angle scrub for parametric families. ALPHA_DEG_PER_PX: degrees of free-angle change per
 // pixel of mouse movement (α on horizontal delta, β on vertical). ALPHA_DAMP: per-frame ease of the live
-// angle toward the target tuple, matching ROTATE_DAMP so the flat and inversive views settle in step.
+// angle toward the target tuple (exponential lerp — the flywheel glide feel), so the flat and inversive
+// views settle in step.
 const ALPHA_DEG_PER_PX = 0.25;
 const ALPHA_DAMP = 0.2;
 ```
@@ -226,12 +229,12 @@ const renderAlphas = (pc: ParametricCellData): number[] => {
 
 - [ ] **Step 4: Ease `live` every frame in the draw loop**
 
-`components/canvas.tsx` — the rotation ease block ends at line 613 (`}`), immediately before `p5.clear();` at line 615. Insert this block between them (after line 613, before line 615):
+`components/canvas.tsx` — in `p5.draw`, find the offset-dampening line `ctrl.offset.add(Vector.sub(ctrl.targetOffset, ctrl.offset).scale(ctrl.dampening));` (~line 555), immediately followed by `p5.clear();` (~line 557). Insert this block between them (after the offset-dampening line, before `p5.clear();`):
 
 ```ts
 				// Ease the live parametric angle(s) toward the target tuple (familyAlphas.values — the slider
-				// position or the Command+drag scrub), the same flywheel glide rotation uses, but per-parameter
-				// and clamped (never wrapped). Runs every frame in every view (before the skipFlat check) because
+				// position or the Command+drag scrub) with an exponential per-frame lerp, per-parameter and
+				// clamped (never wrapped). Runs every frame in every view (before the skipFlat check) because
 				// both the flat grid and the inversive overlay render from `live`. A null/length-mismatched `live`
 				// (mount, or a selection change via resetLive) seeds from the target this frame with no ease.
 				{
@@ -308,7 +311,7 @@ git commit -m "feat(canvas): ease parametric alpha via live tuple; render flat g
 
 - [ ] **Step 1: Add the cursor-tracking ref**
 
-`components/canvas.tsx` — after line 305 (`const scrollAccumRef = useRef(0);`) insert:
+`components/canvas.tsx` — after `const prevRotationRef = useRef<number | null>(null);` (~line 279, the last ref before the selection-transition refs) insert:
 
 ```ts
 	// True while WE'VE set the canvas cursor to "move" for an active Command-scrub, so we only reset the
@@ -318,7 +321,7 @@ git commit -m "feat(canvas): ease parametric alpha via live tuple; render flat g
 
 - [ ] **Step 2: Add the keyup/blur cursor-reset effect**
 
-`components/canvas.tsx` — after the `propsRef` effect (ends line 334) insert:
+`components/canvas.tsx` — after the `propsRef` effect (the `useEffect` that assigns `propsRef.current`, ends ~line 305) insert:
 
 ```ts
 	// Clear the Command-scrub "move" cursor when Command is released (or the window blurs) without another
@@ -343,7 +346,7 @@ git commit -m "feat(canvas): ease parametric alpha via live tuple; render flat g
 
 - [ ] **Step 3: Add the `p5.mouseMoved` scrub handler**
 
-`components/canvas.tsx` — after the `p5.mouseWheel = …` handler closes (line 922, the `};`) insert:
+`components/canvas.tsx` — after the `p5.mouseWheel` handler's closing `};` (~line 844), before the `},` that closes the sketch factory (the `}, [], );` that ends the `useP5` call), insert:
 
 ```ts
 				// Command + move (no button): scrub the parametric angle(s). α on horizontal delta, β on vertical,
