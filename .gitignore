@@ -99,3 +99,12 @@ tools/ctrnact-oracle/eu_solver.*
 tools/ctrnact-oracle/eu_pruner.*
 tools/ctrnact-oracle/eu_develop.*
 !tools/ctrnact-oracle/eu_*.cpp
+
+# Marek vault — raw Discord chat + generated archive/media stay local on EVERY branch.
+# (marek-vault/.gitignore also covers these; these root rules guard branches that don't
+# have the vault checked out, so the private DM can't be committed from anywhere.)
+marek-vault/_raw/
+marek-vault/archive/
+marek-vault/attachments/
+# Direct-API DM fetcher automates a user account (ToS-sensitive) — never commit it.
+scripts/fetch-discord-dm.mjs
