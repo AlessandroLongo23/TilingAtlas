@@ -17,7 +17,7 @@ import {
 	prefersReducedMotion,
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
-import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegs, clampAlphaOnly, type ParametricCellData } from "@/lib/utils/paramCell";
 import {
 	screenToWorld,
 	worldToScreen,
@@ -68,6 +68,13 @@ const CLICK_SNAP_RADIUS_PX = 12;
 // (tile density), not this cap.
 const MAX_FILL_RADIUS = 144;
 const DEGENERATE_DET = 1e-9;
+
+// Command+drag angle scrub for parametric families. ALPHA_DEG_PER_PX: degrees of free-angle change per
+// pixel of mouse movement (α on horizontal delta, β on vertical). ALPHA_DAMP: per-frame ease of the live
+// angle toward the target tuple (exponential lerp — the flywheel glide feel), so the flat and inversive
+// views settle in step.
+const ALPHA_DEG_PER_PX = 0.25;
+const ALPHA_DAMP = 0.2;
 
 // The lattice basis (two world-space translation vectors) of a translational cell, plus its
 // determinant. Single source of truth so fill-radius, wrap, and replication never disagree.
@@ -326,6 +333,16 @@ export function Canvas({
 			const p5 = p5Raw as any;
 			const readCfg = () => useConfiguration.getState();
 
+			// The angle tuple the render/pick path should draw for a parametric family: the eased LIVE tuple
+			// when it exists (Command+drag or slider glide), else the resolved target. Bypasses resolveAlphaDegs'
+			// 0.5° grid snap so the continuous ease stays smooth; `live` is always in range (seeded from
+			// resolveAlphaDegs and eased monotonically toward it — no overshoot), and deltasFor still holds it
+			// inside the open interval.
+			const renderAlphas = (pc: ParametricCellData): number[] => {
+				const fa = useFamilyAlphas.getState();
+				return fa.live && fa.live.length === pc.params.length ? fa.live : resolveAlphaDegs(pc, fa.values);
+			};
+
 			const ensureTiling = () => {
 				const cfg = readCfg();
 				const ctrl = cfg.controls;
@@ -351,7 +368,7 @@ export function Canvas({
 				let tc = staticCell;
 				let tcId = baseId;
 				if (pc) {
-					const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+					const alphas = renderAlphas(pc);
 					tcId = `${baseId ?? ""}@a=${alphas.map((a) => a.toFixed(2)).join(",")}`;
 					tc =
 						tcId === prev.translationalCellId && activeCellRef.current
@@ -553,6 +570,29 @@ export function Canvas({
 				const ctrl = cfg.controls;
 				ctrl.zoom += (ctrl.targetZoom - ctrl.zoom) * ctrl.dampening;
 				ctrl.offset.add(Vector.sub(ctrl.targetOffset, ctrl.offset).scale(ctrl.dampening));
+
+				// Ease the live parametric angle(s) toward the target tuple (familyAlphas.values — the slider
+				// position or the Command+drag scrub) with an exponential per-frame lerp, per-parameter and
+				// clamped (never wrapped). Runs every frame in every view (before the skipFlat check) because
+				// both the flat grid and the inversive overlay render from `live`. A null/length-mismatched `live`
+				// (mount, or a selection change via resetLive) seeds from the target this frame with no ease.
+				{
+					const pc = propsRef.current.paramCell;
+					if (pc) {
+						const fa = useFamilyAlphas.getState();
+						const target = resolveAlphaDegs(pc, fa.values);
+						const live = fa.live;
+						if (!live || live.length !== target.length) {
+							fa.live = target.slice();
+						} else {
+							for (let i = 0; i < target.length; i++) {
+								const d = target[i] - live[i];
+								if (Math.abs(d) < 0.01) live[i] = target[i];
+								else live[i] += d * ALPHA_DAMP;
+							}
+						}
+					}
+				}
 
 				p5.clear();
 				// Inversive view: the WebGL overlay (InversiveCanvas) draws the tiling instead. Keep the p5
@@ -760,7 +800,7 @@ export function Canvas({
 					// Resolve the current cell fresh from the props and build a small local patch to hit-test against.
 					const { translationalCell: staticCell, paramCell: pc } = propsRef.current;
 					const cell = pc
-						? evaluateParamCell(pc, resolveAlphaDegs(pc, useFamilyAlphas.getState().values))
+						? evaluateParamCell(pc, renderAlphas(pc))
 						: staticCell;
 					if (!cell) return;
 					const { v1, v2 } = latticeBasisFromCell(cell);
