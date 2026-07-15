@@ -422,23 +422,34 @@ export function wythoffVertex(p: number, q: number, rings: Rings): Complex {
 		return findRoot((t) => ({ x: t * 0.999 * Math.cos(ang), y: t * 0.999 * Math.sin(ang) }), (z) => dA(z) - dC(z));
 	}
 
-	// Three rings (omnitruncated): incenter — minimise the variance of (dA, dB, dC) from the centroid.
+	// Three rings (omnitruncated): incenter — equidistant from all three mirrors. Coarse-to-fine search over
+	// barycentric coordinates on the Euclidean corner triangle (which contains the smaller hyperbolic one),
+	// minimising the variance of the three mirror distances. Bounded, so it cannot diverge outside T like a
+	// free gradient step can.
+	const { O, V, E } = corners;
+	const bary = (u: number, v: number): Complex => ({
+		x: O.x + u * (V.x - O.x) + v * (E.x - O.x),
+		y: O.y + u * (V.y - O.y) + v * (E.y - O.y),
+	});
 	const variance = (z: Complex): number => {
-		const x = [dA(z), dB(z), dC(z)];
-		const m = (x[0] + x[1] + x[2]) / 3;
-		return (x[0] - m) ** 2 + (x[1] - m) ** 2 + (x[2] - m) ** 2;
+		const x0 = dA(z), x1 = dB(z), x2 = dC(z);
+		const m = (x0 + x1 + x2) / 3;
+		return (x0 - m) ** 2 + (x1 - m) ** 2 + (x2 - m) ** 2;
 	};
-	let z: Complex = { x: (corners.O.x + corners.V.x + corners.E.x) / 3, y: (corners.O.y + corners.V.y + corners.E.y) / 3 };
-	const h = 1e-5;
-	for (let i = 0; i < 600; i++) {
-		const gx = (variance({ x: z.x + h, y: z.y }) - variance({ x: z.x - h, y: z.y })) / (2 * h);
-		const gy = (variance({ x: z.x, y: z.y + h }) - variance({ x: z.x, y: z.y - h })) / (2 * h);
-		const step = 0.25;
-		const nz = { x: z.x - step * gx, y: z.y - step * gy };
-		z = nz;
-		if (gx * gx + gy * gy < 1e-24) break;
+	let bu = 1 / 3, bv = 1 / 3, span = 1 / 3;
+	for (let iter = 0; iter < 44; iter++) {
+		let best = Infinity, nu = bu, nv = bv;
+		for (let i = -4; i <= 4; i++) {
+			for (let j = -4; j <= 4; j++) {
+				const u = bu + (i / 4) * span, v = bv + (j / 4) * span;
+				if (u <= 1e-6 || v <= 1e-6 || u + v >= 1 - 1e-6) continue;
+				const val = variance(bary(u, v));
+				if (val < best) { best = val; nu = u; nv = v; }
+			}
+		}
+		bu = nu; bv = nv; span *= 0.5;
 	}
-	return z;
+	return bary(bu, bv);
 }
 
 /** Stable hue (degrees) for an n-gon, so a given polygon reads the same colour across tilings. */
@@ -465,4 +476,37 @@ export function uniformDescriptor(p: number, q: number, rings: Rings): UniformDe
 	if (f.nV > 0) tiles.push({ corner: "V", sides: f.nV, hue: tileHue(f.nV) });
 	if (f.nE > 0) tiles.push({ corner: "E", sides: f.nE, hue: tileHue(f.nE) });
 	return { p, q, rings, wythoff: wythoffVertex(p, q, rings), corners, tiles };
+}
+
+/** Hyperbolic midpoint of two Poincaré-disk points (the point on the geodesic uv at half the distance). */
+function hypMidpoint(u: Complex, v: Complex): Complex {
+	const T = su11Translation(u); // sends 0 → u; its inverse sends u → 0
+	const v0 = su11ApplyInverse(T, v);
+	const len = Math.hypot(v0.x, v0.y);
+	if (len < 1e-12) return { x: u.x, y: u.y };
+	const rMid = Math.tanh(0.5 * Math.atanh(Math.min(len, 1 - 1e-15)));
+	const m0 = { x: (v0.x / len) * rMid, y: (v0.y / len) * rMid };
+	return su11Apply(T, m0);
+}
+
+export interface WythoffFeet {
+	/** foot of the perpendicular from W onto mirror A (real axis) — endpoint of the O|E tile edge */ fA: Complex;
+	/** foot onto mirror B (π/p diameter) — endpoint of the O|V tile edge */ fB: Complex;
+	/** foot onto mirror C (edge circle) — endpoint of the V|E tile edge */ fC: Complex;
+}
+
+/**
+ * The three perpendicular feet of the Wythoff vertex W on the mirrors A, B, C. Each internal tile edge of
+ * the uniform tiling runs from W to one foot (a tiling edge crosses a mirror perpendicularly), so these are
+ * the endpoints the shader needs to split the Schwarz triangle into per-tile regions. Foot = hyperbolic
+ * midpoint of W and its reflection across the mirror.
+ */
+export function wythoffFeet(p: number, q: number, rings: Rings): WythoffFeet {
+	const { edgeA, edgeRho } = mirrorParams(p, q);
+	const w = wythoffVertex(p, q, rings);
+	return {
+		fA: hypMidpoint(w, reflectDiameter(w, 0)),
+		fB: hypMidpoint(w, reflectDiameter(w, Math.PI / p)),
+		fC: hypMidpoint(w, reflectEdgeCircle(w, edgeA, edgeRho)),
+	};
 }

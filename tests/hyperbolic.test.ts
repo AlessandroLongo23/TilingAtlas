@@ -22,6 +22,7 @@ import {
 	wythoffVertex,
 	tileHue,
 	uniformDescriptor,
+	wythoffFeet,
 	type Complex,
 	type Rings,
 } from "@/lib/render/hyperbolic";
@@ -352,6 +353,32 @@ describe("wythoffVertex", () => {
 		expect(onEdgeCircle(w, edgeA, edgeRho)).toBe(false);
 		expect(Math.hypot(w.x, w.y)).toBeLessThan(1);
 	});
+
+	// Incenter: the generating vertex must be EQUIDISTANT from the three mirrors, and inside the Schwarz
+	// triangle (bounded by A: y≥0, B: below the π/p diameter, C: origin side of the edge circle). A weaker
+	// "off all mirrors" check silently accepted a diverged point outside T — this pins the real property.
+	for (const [p, q] of [[7, 3], [8, 3], [5, 4]] as Array<[number, number]>) {
+		it(`omnitruncated [1,1,1] {${p},${q}} incenter is equidistant from A,B,C and inside T`, () => {
+			const { edgeA, edgeRho, rIn } = mirrorParams(p, q);
+			const w = wythoffVertex(p, q, [true, true, true]);
+			// distances to the three mirrors, via the half-reflection-distance identity.
+			const half = (u: Complex, v: Complex) => {
+				const dx = u.x - v.x, dy = u.y - v.y;
+				const du = 1 - (u.x * u.x + u.y * u.y), dv = 1 - (v.x * v.x + v.y * v.y);
+				return 0.5 * Math.acosh(1 + (2 * (dx * dx + dy * dy)) / (du * dv));
+			};
+			const refDia = (z: Complex, ang: number) => ({ x: Math.cos(2 * ang) * z.x + Math.sin(2 * ang) * z.y, y: Math.sin(2 * ang) * z.x - Math.cos(2 * ang) * z.y });
+			const refCir = (z: Complex) => { const dx = z.x - edgeA, d2 = dx * dx + z.y * z.y; const k = (edgeRho * edgeRho) / d2; return { x: edgeA + k * dx, y: k * z.y }; };
+			const dA = half(w, refDia(w, 0)), dB = half(w, refDia(w, Math.PI / p)), dC = half(w, refCir(w));
+			expect(Math.abs(dA - dB)).toBeLessThan(1e-3);
+			expect(Math.abs(dB - dC)).toBeLessThan(1e-3);
+			// inside T
+			expect(w.y).toBeGreaterThan(0); // above mirror A (the x-axis)
+			expect(w.x * Math.sin(Math.PI / p) - w.y * Math.cos(Math.PI / p)).toBeGreaterThan(0); // inside the π/p wedge
+			expect(Math.hypot(w.x - edgeA, w.y)).toBeGreaterThan(edgeRho); // origin side of edge circle
+			void rIn;
+		});
+	}
 });
 
 describe("tileHue + uniformDescriptor", () => {
@@ -367,5 +394,26 @@ describe("tileHue + uniformDescriptor", () => {
 		expect(sizes).toEqual([4, 6, 14]);
 		expect(d.tiles.find((t) => t.sides === 4)!.corner).toBe("E");
 		expect(Math.hypot(d.wythoff.x, d.wythoff.y)).toBeLessThan(1);
+	});
+});
+
+describe("wythoffFeet", () => {
+	// A foot must lie on its mirror: on A (y=0), on B (π/p diameter), on C (edge circle).
+	const onA = (z: Complex) => near(z.y, 0, 1e-6);
+	const onB = (z: Complex, p: number) => near(z.x * Math.sin(Math.PI / p) - z.y * Math.cos(Math.PI / p), 0, 1e-6);
+	const onC = (z: Complex, a: number, rho: number) => near(Math.hypot(z.x - a, z.y) - rho, 0, 1e-5);
+
+	it("omnitruncated [1,1,1] feet lie on their mirrors and inside the disk", () => {
+		const { edgeA, edgeRho } = mirrorParams(7, 3);
+		const { fA, fB, fC } = wythoffFeet(7, 3, [true, true, true]);
+		expect(onA(fA)).toBe(true);
+		expect(onB(fB, 7)).toBe(true);
+		expect(onC(fC, edgeA, edgeRho)).toBe(true);
+		for (const f of [fA, fB, fC]) expect(Math.hypot(f.x, f.y)).toBeLessThan(1);
+	});
+	it("rhombi [1,0,1] foot on B coincides with W (W already on mirror B ⇒ degenerate O|V edge)", () => {
+		const w = uniformDescriptor(7, 3, [true, false, true]).wythoff;
+		const { fB } = wythoffFeet(7, 3, [true, false, true]);
+		expect(near(fB.x, w.x, 1e-5) && near(fB.y, w.y, 1e-5)).toBe(true);
 	});
 });

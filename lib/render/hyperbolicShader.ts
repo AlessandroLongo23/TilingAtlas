@@ -41,6 +41,19 @@ uniform vec3 uLine;      // edge stroke / dark tone
 uniform vec3 uParityA;   // parity mode: even tiles
 uniform vec3 uParityB;   // parity mode: odd tiles
 
+// Uniform (Wythoffian) tilings. uNTiles == 1 ⇒ legacy regular {p,q} path (everything below is skipped, so
+// the four regular entries render byte-identically). uNTiles > 1 ⇒ fold one reflection further to the
+// Schwarz triangle and classify the pixel into a tile type by the Wythoff-vertex → perpendicular-foot edges.
+uniform int uNTiles;     // occupied tile types: 1 (regular), 2, or 3
+uniform vec2 uWythoff;   // Wythoff generating vertex, fundamental frame
+uniform vec2 uFootA;     // perpendicular foot of W on mirror A (real axis) — O|E tile-edge endpoint
+uniform vec2 uFootB;     // foot on mirror B (π/p diameter) — O|V tile-edge endpoint
+uniform vec2 uFootC;     // foot on mirror C (edge circle) — V|E tile-edge endpoint
+uniform vec2 uCornerV;   // Schwarz corner V (O is the origin, E is (uRin,0))
+uniform float uRin;      // Schwarz corner E x-coordinate (tile inradius)
+uniform vec3 uOcc;       // occupancy (1/0) of the faces at corners O, V, E
+uniform vec3 uTileHue;   // hue (deg) of the faces at O, V, E
+
 out vec4 frag;
 
 vec3 hsb2rgb(float h, float s, float v) {
@@ -52,6 +65,35 @@ vec2 cmul(vec2 a, vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y *
 vec2 cdiv(vec2 a, vec2 b) {
 	float d = dot(b, b) + 1e-12;
 	return vec2(a.x * b.x + a.y * b.y, a.y * b.x - a.x * b.y) / d;
+}
+
+// Signed side of z relative to the geodesic through disk points p1,p2 (0 on the geodesic). The geodesic is
+// the circle orthogonal to the unit circle; its centre c solves p·c = (1+|p|²)/2. Returns |z|²−2 z·c + 1.
+// Near-singular determinant ⇒ the geodesic is a diameter; fall back to the straight-chord cross product.
+float sideGeo(vec2 z, vec2 p1, vec2 p2) {
+	float k1 = 0.5 * (1.0 + dot(p1, p1));
+	float k2 = 0.5 * (1.0 + dot(p2, p2));
+	float det = p1.x * p2.y - p1.y * p2.x;
+	if (abs(det) < 1e-7) {
+		vec2 d = p2 - p1;
+		return d.x * (z.y - p1.y) - d.y * (z.x - p1.x);
+	}
+	vec2 c = vec2(k1 * p2.y - k2 * p1.y, k2 * p1.x - k1 * p2.x) / det;
+	return dot(z, z) - 2.0 * dot(z, c) + 1.0;
+}
+
+// Euclidean distance from z to that geodesic (its circle, or the chord for a diameter) — for stroke AA.
+float edgeDistGeo(vec2 z, vec2 p1, vec2 p2) {
+	float k1 = 0.5 * (1.0 + dot(p1, p1));
+	float k2 = 0.5 * (1.0 + dot(p2, p2));
+	float det = p1.x * p2.y - p1.y * p2.x;
+	if (abs(det) < 1e-7) {
+		vec2 d = p2 - p1;
+		return abs(d.x * (z.y - p1.y) - d.y * (z.x - p1.x)) / (length(d) + 1e-9);
+	}
+	vec2 c = vec2(k1 * p2.y - k2 * p1.y, k2 * p1.x - k1 * p2.x) / det;
+	float r = sqrt(max(dot(c, c) - 1.0, 0.0));
+	return abs(length(z - c) - r);
 }
 
 // Inverse of the SU(1,1) view [[a,b],[b̄,ā]] (det 1) is [[ā,−b],[−b̄,a]], so V⁻¹(z)=(ā z − b)/(−b̄ z + a).
@@ -140,15 +182,78 @@ void main() {
 	vec2 tileCentre = viewForward(cdiv(B, D));
 	float tr = clamp(length(tileCentre), 0.0, 1.0);
 
+	// Uniform tilings: fold the reference kite one reflection further (z.y → |z.y|) into the Schwarz triangle,
+	// classify by the Wythoff-vertex → foot tile-edges, recolour per tile type, dim per uniform-tile centre,
+	// and stroke only the CHOSEN region's own bounding edges (so extended geodesics don't spray extra lines).
+	float hueDeg = uHue;
+	if (uNTiles > 1) {
+		float ysign = z.y < 0.0 ? -1.0 : 1.0;
+		vec2 zf = vec2(z.x, abs(z.y));
+		vec2 W = uWythoff, O = vec2(0.0), Vc = uCornerV, Ec = vec2(uRin, 0.0);
+		bool pA = distance(W, uFootA) > 1e-4;
+		bool pB = distance(W, uFootB) > 1e-4;
+		bool pC = distance(W, uFootC) > 1e-4;
+		bool occO = uOcc.x > 0.5, occV = uOcc.y > 0.5, occE = uOcc.z > 0.5;
+		float sA = sideGeo(zf, W, uFootA);
+		float sB = sideGeo(zf, W, uFootB);
+		float sC = sideGeo(zf, W, uFootC);
+		// A face at corner X owns the pixels on X's side of every present tile-edge separating X from another
+		// occupied corner. O borders V via edge B and E via edge A; V borders E via edge C.
+		bool inO = true;
+		if (occV && pB) inO = inO && (sB * sideGeo(O, W, uFootB) > 0.0);
+		if (occE && pA) inO = inO && (sA * sideGeo(O, W, uFootA) > 0.0);
+		bool inV = true;
+		if (occO && pB) inV = inV && (sB * sideGeo(Vc, W, uFootB) > 0.0);
+		if (occE && pC) inV = inV && (sC * sideGeo(Vc, W, uFootC) > 0.0);
+		bool inE = true;
+		if (occO && pA) inE = inE && (sA * sideGeo(Ec, W, uFootA) > 0.0);
+		if (occV && pC) inE = inE && (sC * sideGeo(Ec, W, uFootC) > 0.0);
+		// Which corner won (0=O,1=V,2=E,-1=fallback), the region's frame-centre, and its own bounding edges.
+		int reg = -1;
+		vec2 centreFrame = vec2(0.0);
+		float ie = 1e9;
+		if (occO && inO) {
+			reg = 0; centreFrame = O;
+			if (occV && pB) ie = min(ie, edgeDistGeo(zf, W, uFootB));
+			if (occE && pA) ie = min(ie, edgeDistGeo(zf, W, uFootA));
+		} else if (occV && inV) {
+			reg = 1; centreFrame = vec2(Vc.x, ysign * Vc.y);
+			if (occO && pB) ie = min(ie, edgeDistGeo(zf, W, uFootB));
+			if (occE && pC) ie = min(ie, edgeDistGeo(zf, W, uFootC));
+		} else if (occE && inE) {
+			reg = 2; centreFrame = Ec;
+			if (occO && pA) ie = min(ie, edgeDistGeo(zf, W, uFootA));
+			if (occV && pC) ie = min(ie, edgeDistGeo(zf, W, uFootC));
+		} else {
+			// Fallback (thin ties near a vertex): nearest occupied corner in the fundamental frame.
+			float best = 1e9;
+			if (occO && distance(zf, O)  < best) { best = distance(zf, O);  reg = 0; centreFrame = O; }
+			if (occV && distance(zf, Vc) < best) { best = distance(zf, Vc); reg = 1; centreFrame = vec2(Vc.x, ysign * Vc.y); }
+			if (occE && distance(zf, Ec) < best) { best = distance(zf, Ec); reg = 2; centreFrame = Ec; }
+		}
+		// Same-type edges lie ALONG the unringed mirror (W sits on it): two like faces meet there. Stroke it
+		// only inside a face NOT centred on that mirror — the region check clips it, so forms with no same-type
+		// adjacency (e.g. rectified) never see it. Each mirror is the geodesic through its two corners.
+		if (!pA && reg == 1) ie = min(ie, edgeDistGeo(zf, O, Ec));  // mirror A (through O,E) within a V-face
+		if (!pB && reg == 2) ie = min(ie, edgeDistGeo(zf, O, Vc));  // mirror B (through O,V) within an E-face
+		if (!pC && reg == 0) ie = min(ie, edgeDistGeo(zf, Vc, Ec)); // mirror C (through V,E) within an O-face
+		hueDeg = reg == 0 ? uTileHue.x : reg == 1 ? uTileHue.y : uTileHue.z;
+		// Per-uniform-tile flat dim: map the region's own centre (frame → world → screen) so a tile straddling
+		// several regular-{p,q} cells keeps ONE brightness instead of a seam-patchwork.
+		vec2 cw = cdiv(cmul(A, centreFrame) + B, cmul(C, centreFrame) + D);
+		tr = clamp(length(viewForward(cw)), 0.0, 1.0);
+		lineCov = uStrokePx > 0.0 ? (1.0 - smoothstep(halfW - pwf, halfW + pwf, ie)) : 0.0;
+	}
+
 	vec3 baseFill;
-	if (uShadeMode == 1) {
+	if (uShadeMode == 1 && uNTiles == 1) {
 		// Two-tone parity (only offered when q is even ⇒ the tiling is 2-colourable). uParityOffset tracks
 		// the re-base's crossings so each tile keeps its black/white value however the view has panned.
 		baseFill = mod(float(step) + uParityOffset, 2.0) < 0.5 ? uParityA : uParityB;
 	} else {
 		// Quadratic falloff: tiles near the centre stay bright, only the outer ones darken toward the rim.
 		float dim = 1.0 - 0.5 * tr * tr;
-		baseFill = hsb2rgb(uHue / 360.0, 0.40, 1.0) * dim;
+		baseFill = hsb2rgb(hueDeg / 360.0, 0.40, 1.0) * dim;
 	}
 	// Points that never reached the central tile (the boundary limit set) blend to the surface.
 	if (!converged) baseFill = mix(baseFill, uSurface, 0.6);
@@ -180,11 +285,21 @@ export interface HyperbolicUniforms {
 	uLine: WebGLUniformLocation | null;
 	uParityA: WebGLUniformLocation | null;
 	uParityB: WebGLUniformLocation | null;
+	uNTiles: WebGLUniformLocation | null;
+	uWythoff: WebGLUniformLocation | null;
+	uFootA: WebGLUniformLocation | null;
+	uFootB: WebGLUniformLocation | null;
+	uFootC: WebGLUniformLocation | null;
+	uCornerV: WebGLUniformLocation | null;
+	uRin: WebGLUniformLocation | null;
+	uOcc: WebGLUniformLocation | null;
+	uTileHue: WebGLUniformLocation | null;
 }
 
 const UNIFORM_NAMES: (keyof HyperbolicUniforms)[] = [
 	"uRes", "uDpr", "uMa", "uMb", "uP", "uEdgeA", "uEdgeRho",
 	"uShadeMode", "uParityOffset", "uHue", "uStrokePx", "uStrokeMode", "uSurface", "uLine", "uParityA", "uParityB",
+	"uNTiles", "uWythoff", "uFootA", "uFootB", "uFootC", "uCornerV", "uRin", "uOcc", "uTileHue",
 ];
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
