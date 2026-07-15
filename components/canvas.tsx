@@ -35,6 +35,7 @@ import { ColorPad } from "./ui/color-pad";
 import { useP5 } from "@/lib/hooks/useP5";
 import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "./canvas-overlays";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
+import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 
 interface CanvasProps {
 	width?: number;
@@ -45,6 +46,7 @@ interface CanvasProps {
 	 *  `familyAlphas` (an imperative read, so dragging a slider never re-renders React). */
 	paramCell?: ParametricCellData | null;
 	symmetryData?: SymmetryData | null;
+	orbitData?: OrbitData | null;
 	showTilingRuleInput?: boolean;
 }
 
@@ -208,7 +210,7 @@ function wrapOffset(
 	};
 }
 
-function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number): Tiling {
+function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number, orbitData?: OrbitData | null): Tiling {
 	const ri = Math.max(1, Math.min(MAX_FILL_RADIUS, Ri || 1));
 	const rj = Math.max(1, Math.min(MAX_FILL_RADIUS, Rj || 1));
 	const polyArray = cellData.p ?? cellData.cellPolygons ?? [];
@@ -248,6 +250,7 @@ function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: nu
 		if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
 		poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
 		basePolys.push(poly);
+		if (orbitData) poly.orbitOfCorner = poly.vertices.map((v) => orbitData.orbitAt(v.x, v.y));
 		const c = poly.centroid;
 		for (const vv of poly.vertices) {
 			const d = Math.hypot(vv.x - c.x, vv.y - c.y);
@@ -273,6 +276,7 @@ export function Canvas({
 	translationalCellId = null,
 	paramCell = null,
 	symmetryData = null,
+	orbitData = null,
 	showTilingRuleInput = true,
 }: CanvasProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -299,6 +303,9 @@ export function Canvas({
 	// Accumulated wheel scroll (normalized px) not yet converted to rotation detents. Carries the sub-step
 	// remainder between wheel events so rotation tracks total scroll distance, not the wheel-event count.
 	const scrollAccumRef = useRef(0);
+	// The orbitData the current grid's orbit ids were built from. orbitData arrives asynchronously (the hook
+	// computes it after selection), so the grid rebuilds once when it changes to attach ids to base polygons.
+	const prevOrbitDataRef = useRef<OrbitData | null>(null);
 
 	// Selection transition (lib/utils/tilingTransition.ts). `outgoingRef` holds the tiling that is on its
 	// way out — it keeps its own cell, because the draw loop must wrap and cull it against the lattice it
@@ -321,10 +328,10 @@ export function Canvas({
 		Rj: -1,
 	});
 
-	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData });
+	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData });
 	useEffect(() => {
-		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData };
-	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData]);
+		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData };
+	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData]);
 
 	const [canvasError, setCanvasError] = useState<string | null>(null);
 	const [tileCount, setTileCount] = useState(0);
@@ -413,6 +420,11 @@ export function Canvas({
 				const cellChanged =
 					!!tc && (prev.translationalCellId !== tcId || grew || shrankAtRest);
 
+				// orbitData arrives asynchronously (the hook computes it after selection); rebuild once when it
+				// changes so buildTilingFromCell can attach the orbit ids to the base polygons.
+				const orbitData = propsRef.current.orbitData ?? null;
+				const orbitChanged = orbitData !== prevOrbitDataRef.current;
+
 				// A NEW TILING was selected — as opposed to an α-slider tick or a zoom-driven regrid, which
 				// also change tcId/the grid but must never animate. Hand what is on screen to the outgoing
 				// slot and start the wave. If a collapse is already running, leave it be: that is the one the
@@ -430,11 +442,11 @@ export function Canvas({
 					prevBaseIdRef.current = baseId;
 				}
 
-				if (!tilingRef.current || ruleChanged || cellChanged) {
+				if (!tilingRef.current || ruleChanged || cellChanged || orbitChanged) {
 					try {
 						if (cfg.debugView) debugManager.reset();
 
-						const t = buildTilingFromCell(tc, Ri, Rj);
+						const t = buildTilingFromCell(tc, Ri, Rj, orbitData);
 						tilingRef.current = t;
 
 						const regularOnly = t.nodes.length > 0 && t.nodes.every((n) => n instanceof RegularPolygon);
@@ -467,6 +479,7 @@ export function Canvas({
 						prev.translationalCellId = tcId;
 						prev.Ri = Ri;
 						prev.Rj = Rj;
+						prevOrbitDataRef.current = orbitData;
 					} catch (e) {
 						setCanvasError(e instanceof Error ? e.message : String(e));
 					}
@@ -479,9 +492,17 @@ export function Canvas({
 				cull?: (c: Vector) => boolean,
 				scaleOf?: (c: Vector) => number,
 			) => {
+				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic;
+				const opacity = orbitMode ? 0.3 : 1;
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
-				else tiling.show(p5, cfg.showPolygonPoints, 1, cfg.circlePacking, cull, scaleOf);
+				else tiling.show(p5, cfg.showPolygonPoints, opacity, cfg.circlePacking, cull, scaleOf);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
+				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
+				// selection transition (scaleOf active) so they don't float off the shrinking outline.
+				if (orbitMode && !scaleOf) {
+					const dark = document.documentElement.classList.contains("dark");
+					tiling.drawVertexOrbits(p5, dark, cull);
+				}
 			};
 
 			const drawScreenshotOverlay = () => {
