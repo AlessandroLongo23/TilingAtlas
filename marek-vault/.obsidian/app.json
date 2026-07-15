@@ -1,0 +1,8 @@
+{
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "relative",
+  "useMarkdownLinks": false,
+  "attachmentFolderPath": "attachments",
+  "showUnsupportedFiles": true,
+  "showFrontmatter": true
+}

@@ -1,0 +1,13 @@
+# Marek vault — keep the raw conversation local, commit only curated notes.
+# See docs/superpowers/specs/2026-07-16-marek-discord-vault-design.md
+
+# Raw DiscordChatExporter output + everything generated from it
+_raw/
+archive/
+attachments/
+
+# Obsidian volatile state (keep app.json tracked, ignore the rest)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/data.json
