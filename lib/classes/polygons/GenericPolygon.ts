@@ -85,6 +85,7 @@ export class GenericPolygon extends Polygon {
         p.angle = this.angle;
         p.hue = this.hue;
         p.isStar = this.isStar;
+        p.orbitOfCorner = this.orbitOfCorner;
         p.dir = this.dir.copy();
         p.vertices = this.vertices.map((v) => new Vector(v.x + dx, v.y + dy));
         p.halfways = this.halfways.map((v) => new Vector(v.x + dx, v.y + dy));

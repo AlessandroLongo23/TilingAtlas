@@ -52,3 +52,18 @@ describe("orbitsFromExactSource", () => {
     expect(orbitsFromExactSource(ring, "bad", bad)).toBeNull();
   });
 });
+
+// append to tests/orbits-from-exact-source.test.ts
+import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
+import { Vector } from "@/classes/Vector";
+
+describe("GenericPolygon orbitOfCorner", () => {
+  it("carries orbitOfCorner through translatedCopy", () => {
+    const square = GenericPolygon.fromVertices([
+      new Vector(0, 0), new Vector(1, 0), new Vector(1, 1), new Vector(0, 1),
+    ]);
+    square.orbitOfCorner = [0, 1, 0, 1];
+    const moved = square.translatedCopy(5, 5);
+    expect(moved.orbitOfCorner).toEqual([0, 1, 0, 1]);
+  });
+});
