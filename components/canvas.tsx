@@ -284,6 +284,9 @@ export function Canvas({
 	const pressPosRef = useRef<{ x: number; y: number } | null>(null);
 	// Last applied rotation (degrees); drives the pivot-on-nearest-vertex compensation in the draw loop.
 	const prevRotationRef = useRef<number | null>(null);
+	// True while WE'VE set the canvas cursor to "move" for an active Command-scrub, so we only reset the
+	// cursor we own (not one a future pan/grab handler might set).
+	const scrubCursorRef = useRef(false);
 
 	// Selection transition (lib/utils/tilingTransition.ts). `outgoingRef` holds the tiling that is on its
 	// way out — it keeps its own cell, because the draw loop must wrap and cull it against the lattice it
@@ -310,6 +313,25 @@ export function Canvas({
 	useEffect(() => {
 		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData };
 	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData]);
+
+	// Clear the Command-scrub "move" cursor when Command is released (or the window blurs) without another
+	// mouse move to clear it in mouseMoved. Cosmetic: the scrub itself is driven entirely by mouseMoved.
+	useEffect(() => {
+		const clear = () => {
+			const c = containerRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
+			if (c) c.style.cursor = "";
+			scrubCursorRef.current = false;
+		};
+		const onKeyUp = (e: KeyboardEvent) => {
+			if (e.key === "Meta" || !e.metaKey) clear();
+		};
+		window.addEventListener("keyup", onKeyUp);
+		window.addEventListener("blur", clear);
+		return () => {
+			window.removeEventListener("keyup", onKeyUp);
+			window.removeEventListener("blur", clear);
+		};
+	}, []);
 
 	const [canvasError, setCanvasError] = useState<string | null>(null);
 	const [tileCount, setTileCount] = useState(0);
@@ -881,6 +903,36 @@ export function Canvas({
 				const newScreen = Vector.add(Vector.scale(world, z), ctrl.targetOffset);
 				ctrl.targetOffset.add(Vector.sub(mouse, newScreen));
 				useConfiguration.setState({ controls: { ...ctrl, targetZoom: z } });
+			};
+
+			// Command + move (no button): scrub the parametric angle(s). α on horizontal delta, β on vertical,
+			// relative (movementX/Y) so pressing Command never snaps the value — only actual motion moves it.
+			// Continuous, clamped to each parameter's range (never wrapped); the draw loop eases the live
+			// value behind it. Writes the TARGET (familyAlphas.values), so the slider thumbs track instantly.
+			// Inert unless a parametric family is selected. Re-renders only the small ParamSliderPanel (it
+			// alone subscribes to `values`), exactly like a slider drag.
+			p5.mouseMoved = (event?: MouseEvent) => {
+				if (!event || event.target !== p5.canvas) return;
+				const pc = propsRef.current.paramCell;
+				if (!event.metaKey || !pc) {
+					if (scrubCursorRef.current) {
+						p5.canvas.style.cursor = "";
+						scrubCursorRef.current = false;
+					}
+					return;
+				}
+				if (!scrubCursorRef.current) {
+					p5.canvas.style.cursor = "move";
+					scrubCursorRef.current = true;
+				}
+				const dx = event.movementX || 0;
+				const dy = event.movementY || 0;
+				if (dx === 0 && dy === 0) return;
+				const fa = useFamilyAlphas.getState();
+				const next = resolveAlphaDegs(pc, fa.values); // fresh array (map) — safe to mutate
+				next[0] = clampAlphaOnly(pc, 0, next[0] + dx * ALPHA_DEG_PER_PX);
+				if (pc.params.length >= 2) next[1] = clampAlphaOnly(pc, 1, next[1] - dy * ALPHA_DEG_PER_PX);
+				fa.set(next);
 			};
 		},
 		[],
