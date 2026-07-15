@@ -47,6 +47,7 @@ export interface ConfigurationState {
 	showWallpaperGroup: boolean;
 	showSymmetryElements: boolean;
 	showFundamentalDomain: boolean;
+	showVertexOrbits: boolean;
 	debugView: boolean;
 
 	// Radial wave transition on a tiling change: the old tiling collapses into its centroids from the
@@ -124,6 +125,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showWallpaperGroup: false,
 	showSymmetryElements: false,
 	showFundamentalDomain: false,
+	showVertexOrbits: false,
 	debugView: false,
 
 	tilingTransition: false,
