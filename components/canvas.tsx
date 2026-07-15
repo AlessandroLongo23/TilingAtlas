@@ -498,10 +498,12 @@ export function Canvas({
 				else tiling.show(p5, cfg.showPolygonPoints, opacity, cfg.circlePacking, cull, scaleOf);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
-				// selection transition (scaleOf active) so they don't float off the shrinking outline.
+				// selection transition (scaleOf active) so they don't float off the shrinking outline. `k`
+				// (orbit count) sets the equidistant hue spacing; defaults to 1 (single color) when the
+				// tiling carries no orbit data.
 				if (orbitMode && !scaleOf) {
-					const dark = document.documentElement.classList.contains("dark");
-					tiling.drawVertexOrbits(p5, dark, cull);
+					const k = propsRef.current.orbitData?.k ?? 1;
+					tiling.drawVertexOrbits(p5, k, cull);
 				}
 			};
 
