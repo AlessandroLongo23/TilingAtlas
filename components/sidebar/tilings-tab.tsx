@@ -125,6 +125,18 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 							checked={cfg.showPolygonPoints}
 							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
 						/>
+						{/* Vertex-orbit dots are computed from the exact cell (KUniformityChecker.vertexOrbits),
+						    which has no hyperbolic counterpart yet — Euclidean-only, like the sibling flat-canvas
+						    overlays below. */}
+						{!isHyperbolic ? (
+							<Checkbox
+								id="showVertexOrbits"
+								label="Show Vertex Orbits"
+								shortcut="O"
+								checked={cfg.showVertexOrbits}
+								onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
+							/>
+						) : null}
 						{/* Radial wave on a tiling change (lib/utils/tilingTransition.ts). Ignored — the swap stays
 						    instant — under Islamic / symmetry-elements / inversive, whose draw paths have no
 						    per-tile scale, and under prefers-reduced-motion. Hidden in hyperbolic: the WebGL disk
