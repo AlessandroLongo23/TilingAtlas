@@ -13,6 +13,11 @@ export interface Controls {
 	targetZoom: number;
 	offset: Vector;
 	targetOffset: Vector;
+	// Live CURRENT rotation (degrees) that every render path reads. It eases toward the top-level
+	// `rotation` target (the slider value; the wheel advances it in 5° detents) along the shortest arc,
+	// so wheel/slider changes glide in like a flywheel settling into a notch. Mutated in place (no
+	// per-frame setState); kept continuous (not wrapped) so consumers only ever see small per-frame deltas.
+	rotation: number;
 	dampening: number;
 }
 
@@ -103,6 +108,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 		targetZoom: 50,
 		offset: new Vector(0, 0),
 		targetOffset: new Vector(0, 0),
+		rotation: 0,
 		dampening: 0.2,
 	},
 	lineWidth: 1,

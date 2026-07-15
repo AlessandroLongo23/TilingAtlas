@@ -54,6 +54,25 @@ interface CanvasProps {
 const ZOOM_MIN = 20;
 const ZOOM_MAX = 150;
 
+// Wheel rotation (hyperbolic wheel; flat/inversive Shift+wheel). The angle advances in fixed detents
+// as a function of how far you scroll (not how many wheel events fire — a trackpad emits dozens per
+// gesture): every ROTATE_PX_PER_STEP pixels of accumulated scroll steps the target by ROTATE_SNAP_DEG.
+// The live angle then eases into the detent, so a gentle scroll nudges one notch and a hard flick (or a
+// trackpad's momentum tail) rolls through many like a spinning wheel. Lower ROTATE_PX_PER_STEP = more
+// sensitive. The at-rest angle is always a multiple of ROTATE_SNAP_DEG.
+const ROTATE_SNAP_DEG = 5; // detent size — the angle snaps to multiples of this
+const ROTATE_PX_PER_STEP = 30; // pixels of scroll per detent (sensitivity knob)
+const ROTATE_DAMP = 0.2; // per-frame ease of the live angle toward the target detent
+// Fold the rotation target into [0, 360) for the slider readout. The live `controls.rotation` stays
+// continuous, so no render path ever sees a 360° jump in its per-frame delta.
+const wrap360 = (deg: number) => ((deg % 360) + 360) % 360;
+// Shortest signed angular distance (degrees) for a raw difference, mapped to [-180, 180); lets the live
+// angle take the short way round when the wrapped target jumps across the 0/360 seam.
+const shortestDeltaDeg = (diff: number) => ((diff % 360) + 540) % 360 - 180;
+// Normalize a wheel event's deltaY to approximate pixels so sensitivity matches across a pixel-mode
+// trackpad and a line/page-mode mouse wheel. deltaMode: 0 = pixel, 1 = line (~16px), 2 = page.
+const wheelDeltaPx = (e: WheelEvent) => e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 800 : 1);
+
 // Left-click-to-centre. A left press starts a drag-pan; on release we treat it as a click (and centre the
 // clicked tile) only if the pointer moved less than CLICK_DRAG_THRESHOLD_PX since press — beyond that it was
 // a pan. CLICK_SNAP_RADIUS_PX is the screen-space reach for snapping to a tiling vertex (else the containing
@@ -277,6 +296,9 @@ export function Canvas({
 	const pressPosRef = useRef<{ x: number; y: number } | null>(null);
 	// Last applied rotation (degrees); drives the pivot-on-nearest-vertex compensation in the draw loop.
 	const prevRotationRef = useRef<number | null>(null);
+	// Accumulated wheel scroll (normalized px) not yet converted to rotation detents. Carries the sub-step
+	// remainder between wheel events so rotation tracks total scroll distance, not the wheel-event count.
+	const scrollAccumRef = useRef(0);
 
 	// Selection transition (lib/utils/tilingTransition.ts). `outgoingRef` holds the tiling that is on its
 	// way out — it keeps its own cell, because the draw loop must wrap and cull it against the lattice it
@@ -367,7 +389,7 @@ export function Canvas({
 				if (tc) {
 					const { v1, v2, det } = latticeBasisFromCell(tc);
 					const zoomForFill = Math.min(ctrl.zoom, ctrl.targetZoom);
-					const rot = (cfg.rotation || 0) * Math.PI / 180;
+					const rot = (ctrl.rotation || 0) * Math.PI / 180;
 					({ Ri, Rj } = computeFillRadii(v1, v2, det, zoomForFill, W, H, rot));
 				}
 
@@ -542,6 +564,9 @@ export function Canvas({
 						...cfg.controls,
 						targetZoom: cfg.controls.zoom,
 						targetOffset: cfg.controls.offset.copy(),
+						// Start the live rotation at the slider value so a remount (view switch) with a non-zero
+						// rotation shows it immediately instead of easing up from 0.
+						rotation: cfg.rotation || 0,
 					},
 				});
 				// The hyperbolic (and inversive) views paint via their own WebGL overlay; skip the flat grid build.
@@ -553,6 +578,16 @@ export function Canvas({
 				const ctrl = cfg.controls;
 				ctrl.zoom += (ctrl.targetZoom - ctrl.zoom) * ctrl.dampening;
 				ctrl.offset.add(Vector.sub(ctrl.targetOffset, ctrl.offset).scale(ctrl.dampening));
+				// Ease the live rotation toward the target detent (cfg.rotation — the slider value, or the wheel's
+				// accumulated 5° steps) along the shortest arc, so it glides in like a flywheel settling into a
+				// notch. Snap once within a hair to stop perpetual micro-updates and keep the value bounded; the
+				// snap is a whole number of turns off the target, which is identity for the periodic consumers
+				// (overlays + pan-compensation use cos/sin of the per-frame delta).
+				{
+					const dRot = shortestDeltaDeg((cfg.rotation || 0) - ctrl.rotation);
+					if (Math.abs(dRot) < 0.05) ctrl.rotation = cfg.rotation || 0;
+					else ctrl.rotation += dRot * ROTATE_DAMP;
+				}
 
 				p5.clear();
 				// Inversive view: the WebGL overlay (InversiveCanvas) draws the tiling instead. Keep the p5
@@ -610,7 +645,7 @@ export function Canvas({
 					// copy count stays bounded; the wrap jump is a whole period -> invisible. Use the cell
 					// the grid was actually built from (the live alpha cell for a parametric family), so the
 					// wrap lattice matches the drawn geometry.
-					const rot = (cfg.rotation || 0) * Math.PI / 180;
+					const rot = (ctrl.rotation || 0) * Math.PI / 180;
 					const tc = outgoing ? outgoing.cell : activeCellRef.current;
 
 					// Rotate about the screen centre, not the world origin: when the angle changes by Δθ,
@@ -622,7 +657,7 @@ export function Canvas({
 					// its pan vector from the RAW offset, so rotating the pan offset here too would double-count.
 					// Skip the compensation in hyperbolic mode (the inversive view still needs it — it reads the
 					// raw uOffset + uRot and relies on this to hold the centre fixed under rotation).
-					const rotDeg = cfg.rotation || 0;
+					const rotDeg = ctrl.rotation || 0;
 					const prevRotDeg = prevRotationRef.current;
 					if (!hyperbolic && prevRotDeg !== null && prevRotDeg !== rotDeg) {
 						const dTheta = rot - prevRotDeg * Math.PI / 180;
@@ -750,7 +785,7 @@ export function Canvas({
 				if (transitionRef.current) return; // mid selection-transition the shown tiling is the outgoing one
 				const ctrl = cfg.controls;
 				const zoom = ctrl.targetZoom;
-				const rot = ((cfg.rotation || 0) * Math.PI) / 180;
+				const rot = ((ctrl.rotation || 0) * Math.PI) / 180;
 				const mx = p5.mouseX - p5.width / 2;
 				const my = p5.mouseY - p5.height / 2;
 
@@ -818,18 +853,38 @@ export function Canvas({
 					centreOnClick();
 				}
 			};
+			// Advance the rotation target by whole 5° detents as a function of total scroll DISTANCE, not the
+			// number of wheel events (a trackpad fires dozens per gesture). Accumulate normalized scroll px and
+			// emit one detent per ROTATE_PX_PER_STEP; the draw loop eases the live angle into it.
+			const stepFromWheel = (event: WheelEvent) => {
+				scrollAccumRef.current += wheelDeltaPx(event);
+				let steps = 0;
+				while (scrollAccumRef.current >= ROTATE_PX_PER_STEP) {
+					steps++;
+					scrollAccumRef.current -= ROTATE_PX_PER_STEP;
+				}
+				while (scrollAccumRef.current <= -ROTATE_PX_PER_STEP) {
+					steps--;
+					scrollAccumRef.current += ROTATE_PX_PER_STEP;
+				}
+				if (steps === 0) return;
+				const rot = useConfiguration.getState().rotation || 0;
+				useConfiguration.setState({ rotation: wrap360(rot + steps * ROTATE_SNAP_DEG) });
+			};
 
 			p5.mouseWheel = (event?: WheelEvent) => {
 				if (event && event.target !== p5.canvas) return;
 				const cfg = readCfg();
-				// Hyperbolic view has no zoom (the disk radius is fixed), so the wheel rotates the disc instead.
-				// The overlay folds this rotation into its view; panning stays screen-relative, so drag
-				// direction still follows the mouse under any rotation.
+				// Hyperbolic view has no zoom (the disk radius is fixed), so the wheel spins the disc instead.
+				// The overlay folds the per-frame rotation change into its view; panning stays screen-relative,
+				// so drag direction still follows the mouse under any rotation.
 				if (cfg.hyperbolic) {
-					if (event) {
-						const dir = event.deltaY > 0 ? 1 : -1;
-						useConfiguration.setState({ rotation: (cfg.rotation || 0) + dir * 4 });
-					}
+					if (event) stepFromWheel(event);
+					return;
+				}
+				// Flat/inversive view: the wheel alone zooms, Shift+wheel spins the view in the same 5° detents.
+				if (event?.shiftKey) {
+					stepFromWheel(event);
 					return;
 				}
 				const ctrl = cfg.controls;

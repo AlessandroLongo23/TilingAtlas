@@ -333,10 +333,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
 				// Circle Packing only exists for regular-only tilings, and Islamic only for the regular/star
-				// classes; ignore their keys where the sidebar hides the matching control.
+				// classes; symmetry elements / fundamental domain / transition are flat-canvas only and hidden
+				// in hyperbolic. Ignore each key where the sidebar hides the matching control.
+				const isHyperbolic = !!selected?.wythoff;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
-					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected));
+					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
+					((field === "showSymmetryElements" || field === "showFundamentalDomain" || field === "tilingTransition") && isHyperbolic);
 				if (field && !blocked) {
 					e.preventDefault();
 					c.set({ [field]: !c[field] } as Partial<ConfigurationState>);

@@ -675,3 +675,88 @@ export function wythoffFeet(p: number, q: number, rings: Rings): WythoffFeet {
 		fC: hypMidpoint(w, reflectEdgeCircle(w, edgeA, edgeRho)),
 	};
 }
+
+// ── Feature points for the "show polygon points" overlay ────────────────────────────────────────
+// The Euclidean canvas marks each tile's centroid (red), edge midpoints (green), and vertices (blue)
+// (lib/classes/polygons/Polygon.ts). The Poincaré-disk shader reproduces this by folding each pixel into
+// the fundamental cell and testing its distance to these markers, so we hand it the markers of ONE central
+// cell in the same fundamental frame it folds into. Shared features (a vertex belongs to several tiles) are
+// listed once; the shader sees the right nearest marker whichever cell a pixel folds to.
+
+/** Upper bound on markers per tiling — matches the shader's uPoints[] array length. */
+export const MAX_FEATURE_POINTS = 32;
+
+/** 0 = centroid (red), 1 = edge midpoint (green), 2 = vertex (blue). Matches Polygon.show's draw order. */
+export type PointKind = 0 | 1 | 2;
+export interface HyperbolicFeaturePoint { pos: Complex; kind: PointKind; }
+
+/**
+ * Klein-model average of disk points — a stable interior "centre" marker for a hyperbolic polygon (the
+ * Poincaré centroid has no closed form; the Klein centroid does and sits inside the tile, which is all a
+ * marker dot needs). Maps each point to the Klein disk (k = 2z/(1+|z|²)), averages, and maps back.
+ */
+export function hypCentroid(points: Complex[]): Complex {
+	let kx = 0, ky = 0;
+	for (const z of points) {
+		const s = 2 / (1 + z.x * z.x + z.y * z.y); // Poincaré → Klein
+		kx += s * z.x;
+		ky += s * z.y;
+	}
+	kx /= points.length;
+	ky /= points.length;
+	const d = 1 + Math.sqrt(Math.max(1 - (kx * kx + ky * ky), 0)); // Klein → Poincaré
+	return { x: kx / d, y: ky / d };
+}
+
+/**
+ * The centroid / edge-midpoint / vertex markers of the central cell, in the fundamental fold frame. Regular
+ * and uniform tilings fold across mirror A (the real axis), so each off-axis marker is packed with its ±y
+ * copy; snub tilings are chiral (no reflection), so their real neighbour vertices, triangle centroids, and
+ * edge midpoints are used directly. Coincident same-kind markers (on-axis mirrors, shared corners) are
+ * de-duplicated, and the list is capped at MAX_FEATURE_POINTS.
+ */
+export function hyperbolicFeaturePoints(g: HyperbolicUniformValues): HyperbolicFeaturePoint[] {
+	const out: HyperbolicFeaturePoint[] = [];
+	const push = (pos: Complex, kind: PointKind) => out.push({ pos, kind });
+	const pushMirrored = (pos: Complex, kind: PointKind) => {
+		push(pos, kind);
+		push({ x: pos.x, y: -pos.y }, kind);
+	};
+
+	if (g.snub) {
+		const s = g.snub;
+		// Vertices: the real snub-vertex neighbours incident to the central cell.
+		for (const v of [s.s, s.as, s.ais, s.bs, s.bis, s.n, s.b2s]) push(v, 2);
+		// Centroids: p-gon at O, q-gon at V, and the three snub triangles about s.
+		push({ x: 0, y: 0 }, 0);
+		push(g.cornerV, 0);
+		push(hypCentroid([s.s, s.as, s.bis]), 0);
+		push(hypCentroid([s.s, s.ais, s.n]), 0);
+		push(hypCentroid([s.s, s.n, s.bs]), 0);
+		// Edge midpoints: the 5 edges meeting at s + the 3 snub-triangle third edges.
+		const edges: Array<[Complex, Complex]> = [
+			[s.s, s.as], [s.s, s.ais], [s.s, s.bs], [s.s, s.bis], [s.s, s.n],
+			[s.as, s.bis], [s.ais, s.n], [s.n, s.bs],
+		];
+		for (const [a, b] of edges) push(hypMidpoint(a, b), 1);
+	} else {
+		const W = g.wythoff;
+		// Centroids at the occupied Schwarz corners (O = p-gon, V = q-gon, E = square).
+		if (g.occ[0]) pushMirrored({ x: 0, y: 0 }, 0);
+		if (g.occ[1]) pushMirrored(g.cornerV, 0);
+		if (g.occ[2]) pushMirrored({ x: g.rIn, y: 0 }, 0);
+		// Vertices: the single Wythoff-vertex orbit.
+		pushMirrored(W, 2);
+		// Edge midpoints: a foot carries an edge only when W lies off that mirror (foot ≠ W).
+		for (const foot of [g.footA, g.footB, g.footC]) {
+			if ((foot.x - W.x) ** 2 + (foot.y - W.y) ** 2 > 1e-8) pushMirrored(foot, 1);
+		}
+	}
+
+	const dedup: HyperbolicFeaturePoint[] = [];
+	for (const f of out) {
+		if (dedup.some((e) => e.kind === f.kind && (e.pos.x - f.pos.x) ** 2 + (e.pos.y - f.pos.y) ** 2 < 1e-12)) continue;
+		dedup.push(f);
+	}
+	return dedup.slice(0, MAX_FEATURE_POINTS);
+}

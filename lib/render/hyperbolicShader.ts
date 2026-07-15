@@ -7,7 +7,8 @@
 // edgeRho) whenever the point lies outside it, iterating until it lands inside the central tile. The
 // mirror parameters come from lib/render/hyperbolic.ts (mirrorParams). Pan is a hyperbolic translation:
 // per pixel we apply the inverse disk automorphism M⁻¹(z)=e^{-iθ}… with translation uB (from panToB) and
-// rotation uTheta. Zoom is intentionally absent — the disk radius is fixed at 0.5·min(w,h).
+// rotation uTheta. Zoom is intentionally absent — the disk radius is 0.5·min(w,h), less a uPadPx inset
+// (0 unless set, e.g. the thumbnail) that keeps the disk clear of the viewport edges.
 //
 // Antialiasing: the fold is discontinuous, so the pixel footprint is measured on the CONTINUOUS pre-fold
 // disk coord z0 (fwidth) and carried into the fundamental frame by the accumulated inversion Jacobian
@@ -23,9 +24,18 @@ precision highp float;
 
 #define PI 3.14159265358979323846
 #define MAX_ITER 48
+#define MAX_POINTS 32
+// Feature-dot styling. Each dot carries a black border POINT_BORDER_CSS CSS px wide. The dots fade out
+// (fill + border together) before the disk boundary so the dense limit set near the rim stays clean:
+// full opacity in to POINT_FADE_START, then a steep-but-smooth falloff to zero by POINT_FADE_END, both in
+// disk-radius units (|zScreen| ∈ [0,1)).
+#define POINT_BORDER_CSS 1.0
+#define POINT_FADE_START 0.78
+#define POINT_FADE_END 0.94
 
 uniform vec2 uRes;       // CSS pixel size (w, h)
 uniform float uDpr;      // device pixel ratio
+uniform float uPadPx;    // disk inset (CSS px): shrinks the radius so the disk clears the viewport edges
 uniform vec2 uMa;        // SU(1,1) view isometry: a (complex)
 uniform vec2 uMb;        // SU(1,1) view isometry: b (complex); acts z ↦ (a z + b)/(b̄ z + ā)
 uniform float uP;        // p (polygon side count)
@@ -40,6 +50,7 @@ uniform vec3 uSurface;   // background + out-of-disk
 uniform vec3 uLine;      // edge stroke / dark tone
 uniform vec3 uParityA;   // parity mode: even tiles
 uniform vec3 uParityB;   // parity mode: odd tiles
+uniform int uShowFill;   // 1 = coloured/parity fill, 0 = no fill (tiles paint uSurface, edges kept)
 
 // Uniform (Wythoffian) tilings. uNTiles == 1 ⇒ legacy regular {p,q} path (everything below is skipped, so
 // the four regular entries render byte-identically). uNTiles > 1 ⇒ fold one reflection further to the
@@ -65,6 +76,14 @@ uniform vec2 uSnubBs;    // s rotated +2π/q about V
 uniform vec2 uSnubBis;   // s rotated −2π/q about V
 uniform vec2 uSnubN;     // 5th neighbour (π-rotation of s about E) — the triangle–triangle edge
 uniform vec2 uSnubB2s;   // q-gon vertex opposite s (= b²·s) — for the far square edges when q ≥ 4
+
+// Feature-point overlay ("show polygon points"): markers of the central cell in the fundamental fold frame,
+// classified by kind. Guarded by uShowPoints so the default (off) costs nothing.
+uniform int uShowPoints;      // 0 = off, 1 = draw markers
+uniform int uNumPoints;       // valid entries in uPoints/uPointKind
+uniform vec2 uPoints[MAX_POINTS];  // marker positions, fundamental frame
+uniform int uPointKind[MAX_POINTS];// 0 = centroid, 1 = edge midpoint, 2 = vertex
+uniform float uPointRadius;   // marker radius, device px
 
 out vec4 frag;
 
@@ -144,7 +163,7 @@ void main() {
 	// Centred CSS pixel, y up (disk convention).
 	vec2 fragCss = gl_FragCoord.xy / uDpr;
 	vec2 s = vec2(fragCss.x - uRes.x * 0.5, uRes.y * 0.5 - fragCss.y);
-	float R = 0.5 * min(uRes.x, uRes.y);
+	float R = max(0.5 * min(uRes.x, uRes.y) - uPadPx, 1.0);
 	vec2 zScreen = s / R;
 	if (dot(zScreen, zScreen) >= 1.0) { frag = vec4(uSurface, 1.0); return; }
 
@@ -199,9 +218,12 @@ void main() {
 	// Footprint carried into the fundamental frame: fundamental (edgeDist) units per screen pixel.
 	float pwf = jac * pw0;
 	float edgeDist = length(z - c) - uEdgeRho;   // >0 in the tile interior, 0 on the edge geodesic
-	// Geometry mode: a fixed fraction of the tile edge (fundamental units) — thick near the centre where
-	// tiles are large, thin toward the rim as they shrink. Constant mode: scale by pwf so the stroke keeps
-	// a fixed SCREEN width. The AA transition band is always one pixel (pwf).
+	// Geometry mode: a fixed width in FUNDAMENTAL units (uStrokePx·uEdgeRho) — thick near the centre where
+	// tiles are large, thinning toward the rim as they shrink. Its on-screen width is halfW/pwf, depending
+	// only on pwf (the re-base-invariant screen→fundamental scale), so it stays SMOOTH under panning. Do NOT
+	// key the taper off jac: it is not invariant under the per-frame re-base that keeps panning stable, so
+	// the stroke width would jump on every re-base. Constant mode: scale by pwf so the stroke keeps a fixed
+	// SCREEN width. The AA transition band is always one pixel (pwf).
 	float halfW = uStrokeMode == 1 ? uStrokePx * pwf : uStrokePx * uEdgeRho;
 	float lineCov = uStrokePx > 0.0 ? (1.0 - smoothstep(halfW - pwf, halfW + pwf, edgeDist)) : 0.0;
 
@@ -328,6 +350,9 @@ void main() {
 		float dim = 1.0 - 0.5 * tr * tr;
 		baseFill = hsb2rgb(hueDeg / 360.0, 0.40, 1.0) * dim;
 	}
+	// No fill: tiles paint the background (edges kept) — the Euclidean noFill() semantics. The caller sends a
+	// light uLine in dark theme so the strokes stay visible on the dark surface.
+	if (uShowFill == 0) baseFill = uSurface;
 	// Points that never reached the central tile (the boundary limit set) blend to the surface.
 	if (!converged) baseFill = mix(baseFill, uSurface, 0.6);
 	// Sub-pixel tiles near the boundary: fade fill toward the surface and dissolve strokes, so the dense
@@ -337,6 +362,45 @@ void main() {
 	lineCov *= (1.0 - rim);
 
 	vec3 col = mix(baseFill, uLine, lineCov);
+
+	// Feature-point overlay: mark this pixel's nearest centroid (red), edge midpoint (green), and vertex
+	// (blue) in the folded fundamental frame. Radius is in device px (·pwf → fundamental units) so the dots
+	// stay a fixed screen size. Each dot is a black-bordered disk that fades out before the disk edge (see
+	// POINT_FADE_*), so the dense boundary limit set stays clean instead of a speckled rim.
+	if (uShowPoints == 1) {
+		float dR = 1e9, dG = 1e9, dB = 1e9;
+		for (int i = 0; i < MAX_POINTS; i++) {
+			if (i >= uNumPoints) break;
+			float d = distance(z, uPoints[i]);
+			int k = uPointKind[i];
+			if (k == 0) dR = min(dR, d);
+			else if (k == 1) dG = min(dG, d);
+			else dB = min(dB, d);
+		}
+		float rad = uPointRadius * pwf;                 // outer radius (incl. border), fundamental units
+		float aa = pwf;
+		float bw = POINT_BORDER_CSS * uDpr * pwf;        // black border, fixed screen width
+		float radIn = max(rad - bw, 0.0);                // coloured-centre radius
+		// Opacity falloff: fade fill + border together with the disk radius, and keep the sub-pixel rim
+		// fade so dots never smear into the boundary limit set.
+		float sr = length(zScreen);
+		float fade = (1.0 - rim) * (1.0 - smoothstep(POINT_FADE_START, POINT_FADE_END, sr));
+		// Per kind: black silhouette (the border) first, then the coloured centre on top. Vertex (blue) is
+		// painted last so it wins where kinds overlap.
+		float ringR = (1.0 - smoothstep(rad   - aa, rad   + aa, dR)) * fade;
+		float fillR = (1.0 - smoothstep(radIn - aa, radIn + aa, dR)) * fade;
+		col = mix(col, vec3(0.0), ringR);
+		col = mix(col, vec3(1.0, 0.0, 0.0), fillR); // centroid
+		float ringG = (1.0 - smoothstep(rad   - aa, rad   + aa, dG)) * fade;
+		float fillG = (1.0 - smoothstep(radIn - aa, radIn + aa, dG)) * fade;
+		col = mix(col, vec3(0.0), ringG);
+		col = mix(col, vec3(0.0, 1.0, 0.0), fillG); // edge midpoint
+		float ringB = (1.0 - smoothstep(rad   - aa, rad   + aa, dB)) * fade;
+		float fillB = (1.0 - smoothstep(radIn - aa, radIn + aa, dB)) * fade;
+		col = mix(col, vec3(0.0), ringB);
+		col = mix(col, vec3(0.0, 0.0, 1.0), fillB); // vertex (on top)
+	}
+
 	frag = vec4(col, 1.0);
 }
 `;
@@ -344,6 +408,7 @@ void main() {
 export interface HyperbolicUniforms {
 	uRes: WebGLUniformLocation | null;
 	uDpr: WebGLUniformLocation | null;
+	uPadPx: WebGLUniformLocation | null;
 	uMa: WebGLUniformLocation | null;
 	uMb: WebGLUniformLocation | null;
 	uP: WebGLUniformLocation | null;
@@ -358,6 +423,7 @@ export interface HyperbolicUniforms {
 	uLine: WebGLUniformLocation | null;
 	uParityA: WebGLUniformLocation | null;
 	uParityB: WebGLUniformLocation | null;
+	uShowFill: WebGLUniformLocation | null;
 	uNTiles: WebGLUniformLocation | null;
 	uWythoff: WebGLUniformLocation | null;
 	uFootA: WebGLUniformLocation | null;
@@ -375,13 +441,19 @@ export interface HyperbolicUniforms {
 	uSnubBis: WebGLUniformLocation | null;
 	uSnubN: WebGLUniformLocation | null;
 	uSnubB2s: WebGLUniformLocation | null;
+	uShowPoints: WebGLUniformLocation | null;
+	uNumPoints: WebGLUniformLocation | null;
+	uPoints: WebGLUniformLocation | null;
+	uPointKind: WebGLUniformLocation | null;
+	uPointRadius: WebGLUniformLocation | null;
 }
 
 const UNIFORM_NAMES: (keyof HyperbolicUniforms)[] = [
-	"uRes", "uDpr", "uMa", "uMb", "uP", "uEdgeA", "uEdgeRho",
-	"uShadeMode", "uParityOffset", "uHue", "uStrokePx", "uStrokeMode", "uSurface", "uLine", "uParityA", "uParityB",
+	"uRes", "uDpr", "uPadPx", "uMa", "uMb", "uP", "uEdgeA", "uEdgeRho",
+	"uShadeMode", "uParityOffset", "uHue", "uStrokePx", "uStrokeMode", "uSurface", "uLine", "uParityA", "uParityB", "uShowFill",
 	"uNTiles", "uWythoff", "uFootA", "uFootB", "uFootC", "uCornerV", "uRin", "uOcc", "uTileHue",
 	"uSnub", "uSnubS", "uSnubAs", "uSnubAis", "uSnubBs", "uSnubBis", "uSnubN", "uSnubB2s",
+	"uShowPoints", "uNumPoints", "uPoints", "uPointKind", "uPointRadius",
 ];
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
