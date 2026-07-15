@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData as InversiveCellData } from "@/lib/utils/renderTiling";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
+import { useVertexOrbits } from "@/lib/hooks/useVertexOrbits";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import {
 	loadComposableAtlasShard,
@@ -194,6 +195,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// memoized per canonicalKey; drives the two canvas overlays. Null while loading / for tilings with
 	// no exact cell.
 	const symmetryData = useSymmetryData(selected);
+
+	// Vertex-orbit ids for the selected tiling (exactSource → orbitsFromExactSource), memoized per
+	// canonicalKey; drives the "Show Vertex Orbits" overlay. Null while loading / for tilings with no
+	// exact cell.
+	const orbitData = useVertexOrbits(selected);
 
 	// Free-angle family entries carry a proven parametric cell — each parameter becomes a live slider (a
 	// separable isotoxal family has one per independent tile). The rendered cell is re-evaluated at the
@@ -409,6 +415,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					translationalCellId={renderCellId}
 					paramCell={paramCell ?? null}
 					symmetryData={symmetryData}
+					orbitData={orbitData}
 					showTilingRuleInput={false}
 				/>
 				{/* Exactly one WebGL overlay at a time: the Poincaré disk for a hyperbolic tiling, else the
