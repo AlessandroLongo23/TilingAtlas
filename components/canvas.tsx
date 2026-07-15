@@ -17,7 +17,7 @@ import {
 	prefersReducedMotion,
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
-import { evaluateParamCell, resolveAlphaDegs, clampAlphaOnly, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, type ParametricCellData } from "@/lib/utils/paramCell";
 import {
 	screenToWorld,
 	worldToScreen,
@@ -362,7 +362,7 @@ export function Canvas({
 			// inside the open interval.
 			const renderAlphas = (pc: ParametricCellData): number[] => {
 				const fa = useFamilyAlphas.getState();
-				return fa.live && fa.live.length === pc.params.length ? fa.live : resolveAlphaDegs(pc, fa.values);
+				return fa.live && fa.live.length === pc.params.length ? fa.live : resolveAlphaDegsRaw(pc, fa.values);
 			};
 
 			const ensureTiling = () => {
@@ -602,7 +602,7 @@ export function Canvas({
 					const pc = propsRef.current.paramCell;
 					if (pc) {
 						const fa = useFamilyAlphas.getState();
-						const target = resolveAlphaDegs(pc, fa.values);
+						const target = resolveAlphaDegsRaw(pc, fa.values);
 						const live = fa.live;
 						if (!live || live.length !== target.length) {
 							fa.live = target.slice();
@@ -929,10 +929,13 @@ export function Canvas({
 				const dy = event.movementY || 0;
 				if (dx === 0 && dy === 0) return;
 				const fa = useFamilyAlphas.getState();
-				const next = resolveAlphaDegs(pc, fa.values); // fresh array (map) — safe to mutate
-				next[0] = clampAlphaOnly(pc, 0, next[0] + dx * ALPHA_DEG_PER_PX);
-				if (pc.params.length >= 2) next[1] = clampAlphaOnly(pc, 1, next[1] - dy * ALPHA_DEG_PER_PX);
-				fa.set(next);
+				const cur = resolveAlphaDegsRaw(pc, fa.values); // clamp-only, off-grid — the continuous scrub base
+				const next = cur.slice();
+				next[0] = clampAlphaOnly(pc, 0, cur[0] + dx * ALPHA_DEG_PER_PX);
+				if (pc.params.length >= 2) next[1] = clampAlphaOnly(pc, 1, cur[1] - dy * ALPHA_DEG_PER_PX);
+				// Skip the store write (and the ParamSliderPanel re-render) when nothing actually moved — a pure
+				// off-axis move on a 1-param family, or scrubbing while already pinned at a range endpoint.
+				if (next[0] !== cur[0] || (pc.params.length >= 2 && next[1] !== cur[1])) fa.set(next);
 			};
 		},
 		[],

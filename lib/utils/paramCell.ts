@@ -124,3 +124,13 @@ export function resolveAlphaDegs(pc: ParametricCellData, stored: number[] | null
 		return v != null && Number.isFinite(v) ? clampAlphaAt(pc, j, v) : p.defaultAlphaDeg;
 	});
 }
+
+/** Like resolveAlphaDegs but clamps WITHOUT the 0.5° grid snap — for the continuous Command-scrub seed and
+ *  the eased render tuple, which must stay off-grid to sweep smoothly. Missing/non-finite entries fall back
+ *  to the parameter default; length always follows pc.params. */
+export function resolveAlphaDegsRaw(pc: ParametricCellData, stored: number[] | null | undefined): number[] {
+	return pc.params.map((p, j) => {
+		const v = stored?.[j];
+		return v != null && Number.isFinite(v) ? clampAlphaOnly(pc, j, v) : p.defaultAlphaDeg;
+	});
+}
