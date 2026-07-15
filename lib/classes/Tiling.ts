@@ -129,6 +129,11 @@ export class Tiling {
             // the duration of a transition.
             if (showPolygonPoints && !scaleOf) {
                 const r = 5 / zoom;
+                // Always a black border, independent of the tile line-stroke setting (push/pop so it does
+                // not leak into later draws — this is off the hot path, only when points are shown).
+                ctx.push();
+                ctx.stroke(0, 0, 0);
+                ctx.strokeWeight(1 / zoom);
                 for (let i = 0; i < this.nodes.length; i++) {
                     const node = this.nodes[i];
                     if (cull && !cull(node.centroid)) continue;
@@ -139,6 +144,7 @@ export class Tiling {
                     ctx.fill(240, 100, 100);
                     for (const v of node.vertices) ctx.ellipse(v.x, v.y, r);
                 }
+                ctx.pop();
             }
         }
 
