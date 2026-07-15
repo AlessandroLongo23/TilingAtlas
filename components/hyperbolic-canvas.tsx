@@ -57,6 +57,7 @@ export function HyperbolicCanvas({ width, height, schlafli }: HyperbolicCanvasPr
 	// The accumulated view isometry and the pan/rotation state we last folded into it.
 	const viewRef = useRef<Su11>(su11Identity());
 	const prevOffsetRef = useRef<{ x: number; y: number } | null>(null);
+	const prevTargetOffsetRef = useRef<{ x: number; y: number } | null>(null);
 	const prevRotRef = useRef<number | null>(null);
 	// World-space centre of a clicked tile that we are easing toward the screen centre (null when idle).
 	const centerAnimRef = useRef<Complex | null>(null);
@@ -69,6 +70,7 @@ export function HyperbolicCanvas({ width, height, schlafli }: HyperbolicCanvasPr
 	useEffect(() => {
 		viewRef.current = su11Identity();
 		prevOffsetRef.current = null;
+		prevTargetOffsetRef.current = null;
 		prevRotRef.current = null;
 		centerAnimRef.current = null;
 		parityOffsetRef.current = 0;
@@ -114,22 +116,32 @@ export function HyperbolicCanvas({ width, height, schlafli }: HyperbolicCanvasPr
 				centerAnimRef.current = null;
 				parityOffsetRef.current = 0;
 				prevOffsetRef.current = { x: ctrl.offset.x, y: ctrl.offset.y };
+				prevTargetOffsetRef.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
 				prevRotRef.current = rotDeg;
 				useConfiguration.setState({ hyperbolicResetView: false });
 			} else {
 				if (prevOffsetRef.current === null) prevOffsetRef.current = { x: ctrl.offset.x, y: ctrl.offset.y };
+				if (prevTargetOffsetRef.current === null) prevTargetOffsetRef.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
 				if (prevRotRef.current === null) prevRotRef.current = rotDeg;
-				// Pan: compose the per-frame drag (in disk units) as a screen-space translation of the view.
-				// Both the offset and the shader's screen coord are y-down, so no sign flip. A manual drag
-				// cancels an in-flight click-to-centre ease.
+				// A genuine pan gesture MOVES targetOffset (live pointer input); the eased `offset` also drifts
+				// while merely SETTLING toward a fixed target after a click (a click may carry up to the 5px
+				// click-drag threshold of creep, or land before a prior pan settled). Distinguish them so that
+				// settle drift is not mistaken for a drag and does not abort the click-to-centre ease.
+				const dragging =
+					Math.hypot(ctrl.targetOffset.x - prevTargetOffsetRef.current.x, ctrl.targetOffset.y - prevTargetOffsetRef.current.y) > 1e-4;
+				prevTargetOffsetRef.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
+				// Pan: compose the per-frame drift (in disk units) as a screen-space translation of the view.
+				// Both the offset and the shader's screen coord are y-down, so no sign flip.
 				const dx = (ctrl.offset.x - prevOffsetRef.current.x) / R;
 				const dy = (ctrl.offset.y - prevOffsetRef.current.y) / R;
 				prevOffsetRef.current = { x: ctrl.offset.x, y: ctrl.offset.y };
 				const dLen = Math.hypot(dx, dy);
-				if (dLen > 1e-5) {
+				// While a click-to-centre ease is running, ignore pure settle drift (target not moving) so it
+				// neither fights nor aborts the ease; a real drag (target moving) both pans and cancels it.
+				if (dLen > 1e-5 && !(centerAnimRef.current && !dragging)) {
 					const s = Math.min(dLen, 0.9) / dLen; // clamp a single frame so a fast drag can't push |delta| ≥ 1
 					viewRef.current = su11Normalize(su11Mul(su11Translation({ x: dx * s, y: dy * s }), viewRef.current));
-					centerAnimRef.current = null;
+					if (dragging) centerAnimRef.current = null;
 				}
 				// Rotation: compose the per-frame change about the screen centre.
 				const dRot = ((rotDeg - prevRotRef.current) * Math.PI) / 180;
