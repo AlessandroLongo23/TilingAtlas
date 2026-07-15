@@ -49,6 +49,9 @@ export interface ConfigurationState {
 	showFundamentalDomain: boolean;
 	showVertexOrbits: boolean;
 	debugView: boolean;
+	// Flat view: draw the plain coloured-tile fill/stroke with the WebGL2 renderer
+	// (components/euclidean-canvas.tsx) instead of p5 immediate mode. Dev flag until parity is reached.
+	euclideanShader: boolean;
 
 	// Radial wave transition on a tiling change: the old tiling collapses into its centroids from the
 	// canvas centre outward, then the new one grows back out the same way. See lib/utils/tilingTransition.ts.
@@ -127,6 +130,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showFundamentalDomain: false,
 	showVertexOrbits: false,
 	debugView: false,
+	euclideanShader: false,
 
 	tilingTransition: false,
 

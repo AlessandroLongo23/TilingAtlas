@@ -42,6 +42,8 @@ import { useP5 } from "@/lib/hooks/useP5";
 import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "./canvas-overlays";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
+import { EuclideanCanvas } from "./euclidean-canvas";
+import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
 interface CanvasProps {
 	width?: number;
@@ -140,6 +142,17 @@ function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): 
 		!cfg.inversive &&
 		!prefersReducedMotion()
 	);
+}
+
+// The flat WebGL renderer owns the tile fill only in the plain coloured-tile mode; every other mode
+// (islamic/circle-packing/symmetry) and the other two views keep the p5/analytic paths. One predicate so
+// the React mount gate and the per-frame skipFill decision can never drift.
+function isFlatShaderActive(cfg: {
+	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean;
+	isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+}): boolean {
+	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic &&
+		!cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
 }
 
 function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number, orbitData?: OrbitData | null): Tiling {
@@ -279,6 +292,17 @@ export function Canvas({
 	const showFundamentalDomain = useConfiguration((s) => s.showFundamentalDomain);
 	const showSymmetryInfo = (showSymmetryElements || showFundamentalDomain) && !!symmetryData;
 	const isDualRule = selectedRule.includes("*");
+	// Narrow subscriptions (the `*Sel` suffix) feeding the EuclideanCanvas mount gate: each is its own
+	// selector so a change to one re-renders this component to (un)mount the shader canvas.
+	const euclideanShader = useConfiguration((s) => s.euclideanShader);
+	const isIslamicSel = useConfiguration((s) => s.isIslamic);
+	const circlePackingSel = useConfiguration((s) => s.circlePacking);
+	const inversiveSel = useConfiguration((s) => s.inversive);
+	const hyperbolicSel = useConfiguration((s) => s.hyperbolic);
+	const euclideanShaderActive = isFlatShaderActive({
+		euclideanShader, inversive: inversiveSel, hyperbolic: hyperbolicSel,
+		isIslamic: isIslamicSel, circlePacking: circlePackingSel, showSymmetryElements,
+	});
 
 	useP5(
 		containerRef,
@@ -423,11 +447,12 @@ export function Canvas({
 				tiling: Tiling,
 				cull?: (c: Vector) => boolean,
 				scaleOf?: (c: Vector) => number,
+				skipFill?: boolean,
 			) => {
 				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic;
 				const opacity = orbitMode ? 0.3 : 1;
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
-				else tiling.show(p5, cfg.showPolygonPoints, opacity, cfg.circlePacking, cull, scaleOf);
+				else tiling.show(p5, cfg.showPolygonPoints, opacity, cfg.circlePacking, cull, scaleOf, skipFill);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
 				// selection transition (scaleOf active) so they don't float off the shrinking outline. `k`
@@ -664,8 +689,9 @@ export function Canvas({
 					const wave = wavePhase
 						? makeWaveScale(wavePhase, waveP, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
 						: undefined;
+					const shaderFill = isFlatShaderActive(cfg);
 					if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
-					else drawTiling(cfg, tiling, cull, wave);
+					else drawTiling(cfg, tiling, cull, wave, shaderFill);
 					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
 					if (symmetryActive) {
 						drawSymmetryElements(p5, sd, {
@@ -858,9 +884,18 @@ export function Canvas({
 
 	return (
 		<div className="relative h-full w-full bg-surface-base">
+			{euclideanShaderActive ? (
+				<EuclideanCanvas
+					width={width}
+					height={height}
+					translationalCell={translationalCell as unknown as FlatCellData | null}
+					translationalCellId={translationalCellId}
+					paramCell={paramCell}
+				/>
+			) : null}
 			<div
 				ref={containerRef}
-				className="cursor-pointer"
+				className="relative z-[1] cursor-pointer"
 				role="application"
 				onContextMenu={(e) => e.preventDefault()}
 			/>

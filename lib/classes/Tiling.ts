@@ -49,6 +49,7 @@ export class Tiling {
         circlePacking: boolean = false,
         cull?: (c: Vector) => boolean,
         scaleOf?: (c: Vector) => number,
+        skipFill: boolean = false,
     ): void => {
         // Read config ONCE per draw, not once per tile. The plain path below used to delegate to
         // Polygon.show, which re-read Zustand state AND queried the DOM ("dark" class) for every tile
@@ -112,7 +113,7 @@ export class Tiling {
                 // and is dropped, so it doesn't linger as a dot of stroke.
                 const s = scaleOf ? scaleOf(node.centroid) : 1;
                 if (s < WAVE_MIN_SCALE) continue;
-                if (showFill) ctx.fill(node.hue, 40, fillV, fillA);
+                if (showFill && !skipFill) ctx.fill(node.hue, 40, fillV, fillA);
                 else ctx.noFill();
                 const vs = node.vertices;
                 ctx.beginShape();
