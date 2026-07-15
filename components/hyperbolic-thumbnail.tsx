@@ -53,6 +53,14 @@ function renderToDataUrl(wythoff: WythoffSpec, size: number): string | null {
 	gl.uniform1f(U.uRin, g.rIn);
 	gl.uniform3f(U.uOcc, g.occ[0], g.occ[1], g.occ[2]);
 	gl.uniform3f(U.uTileHue, g.tileHue[0], g.tileHue[1], g.tileHue[2]);
+	gl.uniform1i(U.uSnub, g.snub ? 1 : 0);
+	if (g.snub) {
+		gl.uniform2f(U.uSnubS, g.snub.s.x, g.snub.s.y);
+		gl.uniform2f(U.uSnubAs, g.snub.as.x, g.snub.as.y);
+		gl.uniform2f(U.uSnubAis, g.snub.ais.x, g.snub.ais.y);
+		gl.uniform2f(U.uSnubBs, g.snub.bs.x, g.snub.bs.y);
+		gl.uniform2f(U.uSnubBis, g.snub.bis.x, g.snub.bis.y);
+	}
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 
 	const url = canvas.toDataURL("image/png");

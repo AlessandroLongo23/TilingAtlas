@@ -52,7 +52,17 @@ uniform vec2 uFootC;     // foot on mirror C (edge circle) — V|E tile-edge end
 uniform vec2 uCornerV;   // Schwarz corner V (O is the origin, E is (uRin,0))
 uniform float uRin;      // Schwarz corner E x-coordinate (tile inradius)
 uniform vec3 uOcc;       // occupancy (1/0) of the faces at corners O, V, E
-uniform vec3 uTileHue;   // hue (deg) of the faces at O, V, E
+uniform vec3 uTileHue;   // hue (deg) of the faces at O, V, E (snub: [p-gon, q-gon, triangle])
+
+// Snub tilings (chiral, rotation subgroup only). uSnub == 1 ⇒ classify the fold-kite coord directly (NO
+// y-reflection, which would flip handedness) into p-gon / q-gon / triangle by the snub vertex and its
+// polygon-neighbours. uNTiles is 2 (q = 3: q-gon is another triangle) or 3 (q ≥ 4: distinct q-gon).
+uniform int uSnub;
+uniform vec2 uSnubS;     // snub generating vertex
+uniform vec2 uSnubAs;    // s rotated +2π/p about O
+uniform vec2 uSnubAis;   // s rotated −2π/p about O
+uniform vec2 uSnubBs;    // s rotated +2π/q about V
+uniform vec2 uSnubBis;   // s rotated −2π/q about V
 
 out vec4 frag;
 
@@ -94,6 +104,15 @@ float edgeDistGeo(vec2 z, vec2 p1, vec2 p2) {
 	vec2 c = vec2(k1 * p2.y - k2 * p1.y, k2 * p1.x - k1 * p2.x) / det;
 	float r = sqrt(max(dot(c, c) - 1.0, 0.0));
 	return abs(length(z - c) - r);
+}
+
+// Distance to the geodesic SEGMENT p1–p2 (not the infinite geodesic): a Euclidean slab test on the chord
+// clips the extension, so an edge's stroke does not spray a line across the rest of the tiling.
+float segDistGeo(vec2 z, vec2 p1, vec2 p2) {
+	vec2 d = p2 - p1;
+	float t = dot(z - p1, d) / max(dot(d, d), 1e-9);
+	if (t < -0.12 || t > 1.12) return 1e9;
+	return edgeDistGeo(z, p1, p2);
 }
 
 // Inverse of the SU(1,1) view [[a,b],[b̄,ā]] (det 1) is [[ā,−b],[−b̄,a]], so V⁻¹(z)=(ā z − b)/(−b̄ z + a).
@@ -186,7 +205,39 @@ void main() {
 	// classify by the Wythoff-vertex → foot tile-edges, recolour per tile type, dim per uniform-tile centre,
 	// and stroke only the CHOSEN region's own bounding edges (so extended geodesics don't spray extra lines).
 	float hueDeg = uHue;
-	if (uNTiles > 1) {
+	if (uSnub == 1) {
+		// Snub: work in the kite coord z (no reflection — chiral). The p-gon at O is bounded within the wedge
+		// by the two edges meeting at s (to a·s and a⁻¹·s); test the origin side of both. The q-gon (q ≥ 4)
+		// sits at the two wedge corners V and V' = a⁻¹V; test V's directly and V' by rotating z by +2π/p.
+		vec2 O = vec2(0.0);
+		bool inP = sideGeo(z, uSnubAis, uSnubS) * sideGeo(O, uSnubAis, uSnubS) > 0.0
+		        && sideGeo(z, uSnubS, uSnubAs) * sideGeo(O, uSnubS, uSnubAs) > 0.0;
+		bool inQ = false;
+		if (uNTiles == 3) {
+			float wa = 2.0 * PI / uP; float ca = cos(wa), sa = sin(wa);
+			vec2 zr = vec2(ca * z.x - sa * z.y, sa * z.x + ca * z.y);
+			bool q1 = sideGeo(z, uSnubBis, uSnubS) * sideGeo(uCornerV, uSnubBis, uSnubS) > 0.0
+			       && sideGeo(z, uSnubS, uSnubBs) * sideGeo(uCornerV, uSnubS, uSnubBs) > 0.0;
+			bool q2 = sideGeo(zr, uSnubBis, uSnubS) * sideGeo(uCornerV, uSnubBis, uSnubS) > 0.0
+			       && sideGeo(zr, uSnubS, uSnubBs) * sideGeo(uCornerV, uSnubS, uSnubBs) > 0.0;
+			inQ = q1 || q2;
+		}
+		int reg = inP ? 0 : (inQ ? 1 : 2);
+		hueDeg = reg == 0 ? uTileHue.x : reg == 1 ? uTileHue.y : uTileHue.z;
+		vec2 centreFrame = reg == 0 ? O : reg == 1 ? uCornerV : z;
+		vec2 cw = cdiv(cmul(A, centreFrame) + B, cmul(C, centreFrame) + D);
+		tr = clamp(length(viewForward(cw)), 0.0, 1.0);
+		// Strokes: every edge meets the snub vertex s (fold symmetry maps each edge to one at s) plus the two
+		// snub-triangle third edges. Segment-clipped so the geodesics don't spray past the vertices.
+		float ie = 1e9;
+		ie = min(ie, segDistGeo(z, uSnubAis, uSnubS)); // p-gon edge
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubAs));  // p-gon edge
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubBs));  // q-gon edge
+		ie = min(ie, segDistGeo(z, uSnubS, uSnubBis)); // q-gon edge
+		ie = min(ie, segDistGeo(z, uSnubAs, uSnubBis));// snub-triangle third edge (a·s — b⁻¹·s)
+		ie = min(ie, segDistGeo(z, uSnubAis, uSnubBs));// snub-triangle third edge (a⁻¹·s — b·s)
+		lineCov = uStrokePx > 0.0 ? (1.0 - smoothstep(halfW - pwf, halfW + pwf, ie)) : 0.0;
+	} else if (uNTiles > 1) {
 		float ysign = z.y < 0.0 ? -1.0 : 1.0;
 		vec2 zf = vec2(z.x, abs(z.y));
 		vec2 W = uWythoff, O = vec2(0.0), Vc = uCornerV, Ec = vec2(uRin, 0.0);
@@ -294,12 +345,19 @@ export interface HyperbolicUniforms {
 	uRin: WebGLUniformLocation | null;
 	uOcc: WebGLUniformLocation | null;
 	uTileHue: WebGLUniformLocation | null;
+	uSnub: WebGLUniformLocation | null;
+	uSnubS: WebGLUniformLocation | null;
+	uSnubAs: WebGLUniformLocation | null;
+	uSnubAis: WebGLUniformLocation | null;
+	uSnubBs: WebGLUniformLocation | null;
+	uSnubBis: WebGLUniformLocation | null;
 }
 
 const UNIFORM_NAMES: (keyof HyperbolicUniforms)[] = [
 	"uRes", "uDpr", "uMa", "uMb", "uP", "uEdgeA", "uEdgeRho",
 	"uShadeMode", "uParityOffset", "uHue", "uStrokePx", "uStrokeMode", "uSurface", "uLine", "uParityA", "uParityB",
 	"uNTiles", "uWythoff", "uFootA", "uFootB", "uFootC", "uCornerV", "uRin", "uOcc", "uTileHue",
+	"uSnub", "uSnubS", "uSnubAs", "uSnubAis", "uSnubBs", "uSnubBis",
 ];
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {

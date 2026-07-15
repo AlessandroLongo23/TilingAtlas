@@ -23,6 +23,7 @@ import {
 	tileHue,
 	uniformDescriptor,
 	wythoffFeet,
+	snubData,
 	type Complex,
 	type Rings,
 } from "@/lib/render/hyperbolic";
@@ -416,4 +417,25 @@ describe("wythoffFeet", () => {
 		const { fB } = wythoffFeet(7, 3, [true, false, true]);
 		expect(near(fB.x, w.x, 1e-5) && near(fB.y, w.y, 1e-5)).toBe(true);
 	});
+});
+
+describe("snubData (chiral snub generating vertex)", () => {
+	const hyp = (u: Complex, v: Complex) => {
+		const dx = u.x - v.x, dy = u.y - v.y, du = 1 - (u.x * u.x + u.y * u.y), dv = 1 - (v.x * v.x + v.y * v.y);
+		return Math.acosh(1 + (2 * (dx * dx + dy * dy)) / (du * dv));
+	};
+	for (const [p, q] of [[7, 3], [8, 3], [5, 4]] as Array<[number, number]>) {
+		it(`sr{${p},${q}}: p-gon, q-gon and snub-triangle edges are all equal`, () => {
+			const d = snubData(p, q);
+			const Lp = hyp(d.s, d.as); // p-gon edge (s to a·s)
+			const Lq = hyp(d.s, d.bs); // q-gon edge (s to b·s)
+			const Lt = hyp(d.as, d.bis); // snub-triangle third edge (a·s to b⁻¹·s)
+			expect(Math.abs(Lp - Lq)).toBeLessThan(1e-4);
+			expect(Math.abs(Lp - Lt)).toBeLessThan(1e-4);
+			expect(Math.abs(Lp - d.edge)).toBeLessThan(1e-9);
+			// s is off the mirrors (chiral): not on the real axis, inside the disk.
+			expect(Math.abs(d.s.y)).toBeGreaterThan(1e-3);
+			expect(Math.hypot(d.s.x, d.s.y)).toBeLessThan(1);
+		});
+	}
 });

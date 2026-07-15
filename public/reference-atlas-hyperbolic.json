@@ -214,5 +214,39 @@
 		"discoverer": "Coxeter",
 		"note": "Truncated tetrapentagonal tiling tr{5,4} — vertex figure 4.8.10 (square, octagon, decagon). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
 		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
+	},
+
+	{
+		"id": "hyp-sr-7-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.3.3.3.7",
+		"wythoff": { "p": 7, "q": 3, "rings": [true, true, true], "snub": true },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Snub triheptagonal tiling sr{7,3} — vertex figure 3.3.3.3.7 (four triangles, one heptagon). Uniform and chiral: non-isohedral, vertex-transitive, no mirror symmetry. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-sr-8-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.3.3.3.8",
+		"wythoff": { "p": 8, "q": 3, "rings": [true, true, true], "snub": true },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Snub trioctagonal tiling sr{8,3} — vertex figure 3.3.3.3.8 (four triangles, one octagon). Uniform and chiral: non-isohedral, vertex-transitive, no mirror symmetry. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-sr-5-4",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.3.4.3.5",
+		"wythoff": { "p": 5, "q": 4, "rings": [true, true, true], "snub": true },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Snub tetrapentagonal tiling sr{5,4} — vertex figure 3.3.4.3.5 (three triangles, one square, one pentagon). Uniform and chiral: non-isohedral, vertex-transitive, no mirror symmetry. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
 	}
 ]
