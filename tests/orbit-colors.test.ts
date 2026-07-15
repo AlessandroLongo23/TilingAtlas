@@ -1,28 +1,34 @@
-// tests/orbit-colors.test.ts
 import { describe, it, expect } from "vitest";
-import { hexToHsb, ORBIT_COLORS_HSB, orbitColor } from "@/lib/utils/orbitColors";
+import { orbitColor, ORBIT_SAT, ORBIT_BRI } from "@/lib/utils/orbitColors";
 
 describe("orbitColors", () => {
-  it("converts Okabe-Ito blue (0072B2) to HSB ~ (202, 100, 70)", () => {
-    const { h, s, b } = hexToHsb("0072B2");
-    expect(h).toBeGreaterThanOrEqual(200);
-    expect(h).toBeLessThanOrEqual(204);
-    expect(s).toBe(100);
-    expect(b).toBe(70);
+  it("spreads hues equidistantly around the wheel by orbit id / k", () => {
+    expect(orbitColor(0, 4)).toEqual({ h: 0, s: ORBIT_SAT, b: ORBIT_BRI });
+    expect(orbitColor(1, 4)).toEqual({ h: 90, s: ORBIT_SAT, b: ORBIT_BRI });
+    expect(orbitColor(2, 4)).toEqual({ h: 180, s: ORBIT_SAT, b: ORBIT_BRI });
+    expect(orbitColor(3, 4)).toEqual({ h: 270, s: ORBIT_SAT, b: ORBIT_BRI });
   });
 
-  it("has 7 colorblind-safe orbit colors", () => {
-    expect(ORBIT_COLORS_HSB).toHaveLength(7);
-    for (const c of ORBIT_COLORS_HSB) {
-      expect(c.h).toBeGreaterThanOrEqual(0);
-      expect(c.h).toBeLessThanOrEqual(360);
-      expect(c.s).toBeGreaterThanOrEqual(0);
-      expect(c.b).toBeGreaterThanOrEqual(0);
+  it("uses the tile-default saturation and brightness at every k", () => {
+    expect(ORBIT_SAT).toBe(40);
+    expect(ORBIT_BRI).toBe(100);
+    for (let k = 1; k <= 8; k++) {
+      for (let i = 0; i < k; i++) {
+        const c = orbitColor(i, k);
+        expect(c.s).toBe(40);
+        expect(c.b).toBe(100);
+        expect(c.h).toBeGreaterThanOrEqual(0);
+        expect(c.h).toBeLessThan(360);
+      }
     }
   });
 
-  it("cycles orbit ids past the palette length and clamps negatives", () => {
-    expect(orbitColor(7)).toEqual(orbitColor(0));
-    expect(orbitColor(-1)).toEqual(orbitColor(6));
+  it("folds out-of-range / negative ids back into [0, k)", () => {
+    expect(orbitColor(4, 4)).toEqual(orbitColor(0, 4));
+    expect(orbitColor(-1, 4)).toEqual(orbitColor(3, 4));
+  });
+
+  it("single orbit (k=1) → hue 0", () => {
+    expect(orbitColor(0, 1)).toEqual({ h: 0, s: 40, b: 100 });
   });
 });

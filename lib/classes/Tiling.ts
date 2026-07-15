@@ -155,25 +155,25 @@ export class Tiling {
     }
 
     /** Vertex-orbit overlay: one filled dot per tiling vertex, colored by its orbit id
-     *  (node.orbitOfCorner), with a theme-colored outline. Constant on-screen size (world radius /
-     *  zoom). `dark` picks the outline: white on a dark theme, black on a light one. Nodes with no
-     *  orbit data fall back to a single color (orbit 0). Drawn inside the world transform, on top of
-     *  the tiles; the caller suppresses it during the selection transition and in Islamic mode. */
-    drawVertexOrbits = (ctx, dark: boolean, cull?: (c: Vector) => boolean): void => {
+     *  (node.orbitOfCorner) with an equidistant hue among `k` orbits, at the tile-default S/B, and a
+     *  black outline. Constant on-screen size (world radius / zoom). Nodes with no orbit data fall back
+     *  to a single color (orbit 0 of k=1). Drawn inside the world transform, on top of the tiles; the
+     *  caller suppresses it during the selection transition and in Islamic mode. */
+    drawVertexOrbits = (ctx, k: number, cull?: (c: Vector) => boolean): void => {
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
         const diameter = 8 / zoom;
         ctx.strokeWeight(1.5 / zoom);
-        ctx.stroke(0, 0, dark ? 100 : 0); // HSB: white on dark theme, black on light
+        ctx.stroke(0, 0, 0); // always a black outline
         for (let i = 0; i < this.nodes.length; i++) {
             const node = this.nodes[i];
             if (cull && !cull(node.centroid)) continue;
             const oc = node.orbitOfCorner;
             const vs = node.vertices;
             for (let c = 0; c < vs.length; c++) {
-                const o = oc ? oc[c] : 0; // no orbit data → single neutral color (orbit 0)
+                const o = oc ? oc[c] : 0; // no orbit data → single color (orbit 0)
                 if (o < 0) continue; // corner is not a tiling vertex (e.g. star dent-fill)
-                const col = orbitColor(o);
+                const col = orbitColor(o, k);
                 ctx.fill(col.h, col.s, col.b);
                 ctx.ellipse(vs[c].x, vs[c].y, diameter, diameter);
             }
