@@ -101,6 +101,15 @@ export function clampAlpha(pc: ParametricCellData, alphaDeg: number): number {
 	return clampAlphaAt(pc, 0, alphaDeg);
 }
 
+/** Clamp one parameter's angle into the family's range WITHOUT snapping to the slider grid. For the
+ *  continuous Command+drag scrub, where the 0.5° snap that clampAlphaAt applies would make the sweep
+ *  stair-step. The evaluated angle is still held ALPHA_EPS_DEG inside the open interval downstream in
+ *  deltasFor, so storing exactly lo/hi is safe. */
+export function clampAlphaOnly(pc: ParametricCellData, paramIndex: number, alphaDeg: number): number {
+	const [lo, hi] = pc.params[paramIndex].alphaRangeDegOpen;
+	return Math.min(hi, Math.max(lo, alphaDeg));
+}
+
 /**
  * Resolve the effective per-parameter angles for a family from the persisted store values. One value
  * per parameter (α, β, …): reuse the stored value clamped into THIS family's valid range if present and
