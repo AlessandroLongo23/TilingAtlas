@@ -681,18 +681,22 @@ git commit -m "feat(canvas): compute + pass orbitData in Play"
 ## Task 9: The toggle checkbox
 
 **Files:**
-- Modify: `components/sidebar/tilings-tab.tsx` (the "Advanced options" `SidebarSection`, near the `showPolygonPoints` checkbox ~line 121-127)
+- Modify: `components/sidebar/tilings-tab.tsx` (the "Advanced options" `SidebarSection`, directly after the `showPolygonPoints` `Checkbox` — locate it by content; a concurrent change shifted line numbers)
 
-- [ ] **Step 1: Add the checkbox** directly after the `showPolygonPoints` `Checkbox`:
+- [ ] **Step 1: Add the checkbox** directly after the `showPolygonPoints` `Checkbox`.
+
+Orbit dots are Euclidean-only, so gate the checkbox with `!isHyperbolic` exactly as the sibling flat-only controls (symmetry elements, fundamental domain) already are in this file. `isHyperbolic` is already defined in the component (`const isHyperbolic = !!selected?.wythoff;`). `showPolygonPoints` itself is NOT gated (it now works in hyperbolic too); the orbit checkbox IS:
 
 ```tsx
-					<Checkbox
-						id="showVertexOrbits"
-						label="Show Vertex Orbits"
-						shortcut="O"
-						checked={cfg.showVertexOrbits}
-						onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
-					/>
+					{!isHyperbolic ? (
+						<Checkbox
+							id="showVertexOrbits"
+							label="Show Vertex Orbits"
+							shortcut="O"
+							checked={cfg.showVertexOrbits}
+							onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
+						/>
+					) : null}
 ```
 
 - [ ] **Step 2: Verify it type-checks**
