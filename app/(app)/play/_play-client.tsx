@@ -227,12 +227,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// A hyperbolic {p,q} tiling swaps the flat p5 renderer for the Poincaré-disk WebGL view. Set the
 	// store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off Euclidean-
 	// only render modes so their now-hidden sidebar controls can't leave a stale render behind.
-	const isHyperbolic = !!selected?.schlafli;
+	const isHyperbolic = !!selected?.wythoff;
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isHyperbolic) {
-			// Two-tone parity is only defined for 2-colourable tilings (q even); force it off otherwise.
-			const parityOk = selected?.schlafli ? selected.schlafli[1] % 2 === 0 : false;
+			// Two-tone parity is only defined for the REGULAR 2-colourable tilings (q even); the uniform forms
+			// are multi-tile-type, so force it off for them and for odd q.
+			const w = selected?.wythoff;
+			const parityOk = !!w && w.rings[0] && !w.rings[1] && !w.rings[2] && w.q % 2 === 0;
 			cfg.set({
 				hyperbolic: true,
 				isIslamic: false,
@@ -321,7 +323,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					e.preventDefault();
 					useImmersive.getState().set(false);
 				}
-			} else if ((e.key === "y" || e.key === "Y") && !!selected?.schlafli && selected.schlafli[1] % 2 === 0) {
+			} else if ((e.key === "y" || e.key === "Y") && !!selected?.wythoff && selected.wythoff.rings[0] && !selected.wythoff.rings[1] && !selected.wythoff.rings[2] && selected.wythoff.q % 2 === 0) {
 				// "Y" cycles the hyperbolic shading (coloured tiles ⇄ two-tone parity) — only for a hyperbolic
 				// tiling whose vertices have an even tile count (q even), the 2-colourable case.
 				e.preventDefault();
@@ -409,8 +411,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				{/* Exactly one WebGL overlay at a time: the Poincaré disk for a hyperbolic tiling, else the
 				    inversive conformal view when toggled on. The flat p5 Canvas above stays mounted as the
 				    pointer/pan input layer beneath whichever overlay is active. */}
-				{isHyperbolic && selected?.schlafli ? (
-					<HyperbolicCanvas width={size.w} height={size.h} schlafli={selected.schlafli} />
+				{isHyperbolic && selected?.wythoff ? (
+					<HyperbolicCanvas width={size.w} height={size.h} wythoff={selected.wythoff} />
 				) : inversive ? (
 					<InversiveCanvas
 						width={size.w}

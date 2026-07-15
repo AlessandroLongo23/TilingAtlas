@@ -98,8 +98,8 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 												)}
 											>
 												<div className="relative aspect-square bg-surface-raised">
-													{t.schlafli ? (
-														<HyperbolicThumbnail schlafli={t.schlafli} />
+													{t.wythoff ? (
+														<HyperbolicThumbnail wythoff={t.wythoff} />
 													) : t.renderCell ? (
 														<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
 													) : null}

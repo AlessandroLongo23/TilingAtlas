@@ -3,56 +3,216 @@
 		"id": "hyp-7-3",
 		"source": "hyperbolic",
 		"k": 1,
-		"family": "7,3",
+		"family": "{7,3}",
 		"schlafli": [7, 3],
+		"wythoff": { "p": 7, "q": 3, "rings": [true, false, false] },
 		"geometry": "hyperbolic",
 		"discoverer": "Coxeter",
-		"note": "Order-3 heptagonal tiling {7,3} — three regular heptagons meet at each vertex. The basis of Escher's Circle Limit woodcuts. Rendered in the Poincaré disk (float).",
-		"renderCell": {
-			"cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }],
-			"basis": [[1, 0], [0, 1]]
-		}
+		"note": "Order-3 heptagonal tiling {7,3} — three regular heptagons meet at each vertex. The basis of Escher's Circle Limit woodcuts. Regular (isohedral). Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
 	},
 	{
 		"id": "hyp-8-3",
 		"source": "hyperbolic",
 		"k": 1,
-		"family": "8,3",
+		"family": "{8,3}",
 		"schlafli": [8, 3],
+		"wythoff": { "p": 8, "q": 3, "rings": [true, false, false] },
 		"geometry": "hyperbolic",
 		"discoverer": "Coxeter",
-		"note": "Order-3 octagonal tiling {8,3} — three regular octagons meet at each vertex. Large, open octagons. Rendered in the Poincaré disk (float).",
-		"renderCell": {
-			"cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }],
-			"basis": [[1, 0], [0, 1]]
-		}
+		"note": "Order-3 octagonal tiling {8,3} — three regular octagons meet at each vertex. Large, open octagons. Regular (isohedral). Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }], "basis": [[1, 0], [0, 1]] }
 	},
 	{
 		"id": "hyp-5-4",
 		"source": "hyperbolic",
 		"k": 1,
-		"family": "5,4",
+		"family": "{5,4}",
 		"schlafli": [5, 4],
+		"wythoff": { "p": 5, "q": 4, "rings": [true, false, false] },
 		"geometry": "hyperbolic",
 		"discoverer": "Coxeter",
-		"note": "Order-4 pentagonal tiling {5,4} — four regular pentagons meet at each vertex. Rendered in the Poincaré disk (float).",
-		"renderCell": {
-			"cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }],
-			"basis": [[1, 0], [0, 1]]
-		}
+		"note": "Order-4 pentagonal tiling {5,4} — four regular pentagons meet at each vertex. Regular (isohedral). Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
 	},
 	{
 		"id": "hyp-4-5",
 		"source": "hyperbolic",
 		"k": 1,
-		"family": "4,5",
+		"family": "{4,5}",
 		"schlafli": [4, 5],
+		"wythoff": { "p": 4, "q": 5, "rings": [true, false, false] },
 		"geometry": "hyperbolic",
 		"discoverer": "Coxeter",
-		"note": "Order-5 square tiling {4,5} — five squares meet at each vertex. A curved, dense grid. Rendered in the Poincaré disk (float).",
-		"renderCell": {
-			"cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 140 }],
-			"basis": [[1, 0], [0, 1]]
-		}
+		"note": "Order-5 square tiling {4,5} — five squares meet at each vertex. A curved, dense grid. Regular (isohedral). Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 140 }], "basis": [[1, 0], [0, 1]] }
+	},
+
+	{
+		"id": "hyp-t-7-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.14.14",
+		"wythoff": { "p": 7, "q": 3, "rings": [true, true, false] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated order-3 heptagonal tiling t{7,3} — vertex figure 3.14.14 (one triangle, two tetradecagons). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-r-7-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.7.3.7",
+		"wythoff": { "p": 7, "q": 3, "rings": [false, true, false] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Triheptagonal tiling r{7,3} — vertex figure 3.7.3.7, triangles and heptagons alternating. Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-tq-7-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "6.6.7",
+		"wythoff": { "p": 7, "q": 3, "rings": [false, true, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated order-7 triangular tiling t{3,7} — vertex figure 6.6.7 (two hexagons, one heptagon). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-rr-7-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.4.7.4",
+		"wythoff": { "p": 7, "q": 3, "rings": [true, false, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Rhombitriheptagonal tiling rr{7,3} — vertex figure 3.4.7.4 (triangle, square, heptagon, square). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-tr-7-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "4.6.14",
+		"wythoff": { "p": 7, "q": 3, "rings": [true, true, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated triheptagonal tiling tr{7,3} — vertex figure 4.6.14 (square, hexagon, tetradecagon). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
+	},
+
+	{
+		"id": "hyp-t-8-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.16.16",
+		"wythoff": { "p": 8, "q": 3, "rings": [true, true, false] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated order-3 octagonal tiling t{8,3} — vertex figure 3.16.16 (one triangle, two hexadecagons). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-r-8-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.8.3.8",
+		"wythoff": { "p": 8, "q": 3, "rings": [false, true, false] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Trioctagonal tiling r{8,3} — vertex figure 3.8.3.8, triangles and octagons alternating. Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-tq-8-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "6.6.8",
+		"wythoff": { "p": 8, "q": 3, "rings": [false, true, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated order-8 triangular tiling t{3,8} — vertex figure 6.6.8 (two hexagons, one octagon). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-rr-8-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "3.4.8.4",
+		"wythoff": { "p": 8, "q": 3, "rings": [true, false, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Rhombitrioctagonal tiling rr{8,3} — vertex figure 3.4.8.4 (triangle, square, octagon, square). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-tr-8-3",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "4.6.16",
+		"wythoff": { "p": 8, "q": 3, "rings": [true, true, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated trioctagonal tiling tr{8,3} — vertex figure 4.6.16 (square, hexagon, hexadecagon). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 40 }], "basis": [[1, 0], [0, 1]] }
+	},
+
+	{
+		"id": "hyp-t-5-4",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "4.10.10",
+		"wythoff": { "p": 5, "q": 4, "rings": [true, true, false] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated order-4 pentagonal tiling t{5,4} — vertex figure 4.10.10 (one square, two decagons). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-r-5-4",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "4.5.4.5",
+		"wythoff": { "p": 5, "q": 4, "rings": [false, true, false] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Tetrapentagonal tiling r{5,4} — vertex figure 4.5.4.5, squares and pentagons alternating. Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-tq-5-4",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "5.8.8",
+		"wythoff": { "p": 5, "q": 4, "rings": [false, true, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated order-5 square tiling t{4,5} — vertex figure 5.8.8 (one pentagon, two octagons). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-rr-5-4",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "4.4.5.4",
+		"wythoff": { "p": 5, "q": 4, "rings": [true, false, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Rhombitetrapentagonal tiling rr{5,4} — vertex figure 4.4.5.4 (square, square, pentagon, square). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
+	},
+	{
+		"id": "hyp-tr-5-4",
+		"source": "hyperbolic",
+		"k": 1,
+		"family": "4.8.10",
+		"wythoff": { "p": 5, "q": 4, "rings": [true, true, true] },
+		"geometry": "hyperbolic",
+		"discoverer": "Coxeter",
+		"note": "Truncated tetrapentagonal tiling tr{5,4} — vertex figure 4.8.10 (square, octagon, decagon). Uniform: non-isohedral, vertex-transitive. Rendered in the Poincaré disk (float).",
+		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 320 }], "basis": [[1, 0], [0, 1]] }
 	}
 ]

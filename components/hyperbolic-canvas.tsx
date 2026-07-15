@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { createHyperbolicProgram } from "@/lib/render/hyperbolicShader";
 import {
+	hyperbolicUniformValues,
 	isHyperbolic,
-	mirrorParams,
 	pickClickAnchor,
 	su11Apply,
 	su11ApplyInverse,
@@ -18,6 +18,7 @@ import {
 	su11Translation,
 	type Complex,
 	type Su11,
+	type WythoffSpec,
 } from "@/lib/render/hyperbolic";
 
 // The hyperbolic view. A WebGL2 full-screen quad renders a regular {p,q} tiling in the Poincaré disk:
@@ -31,26 +32,22 @@ import {
 interface HyperbolicCanvasProps {
 	width: number;
 	height: number;
-	schlafli: [number, number];
+	wythoff: WythoffSpec;
 }
 
-// Deterministic per-tiling hue so the four {p,q} entries read distinctly. Tunable.
-function hueFor(p: number, q: number): number {
-	return (p * 97 + q * 31) % 360;
-}
-
-export function HyperbolicCanvas({ width, height, schlafli }: HyperbolicCanvasProps) {
+export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const sizeRef = useRef({ width, height });
 	sizeRef.current = { width, height };
 
-	// Mirror params + hue for the current {p,q}, recomputed only when the symbol changes. null when the
-	// symbol is not hyperbolic (guards a bad palette entry — the loop then renders background only).
+	// All shader inputs for the current tiling, recomputed only when the spec changes. null when {p,q} is
+	// not hyperbolic (guards a bad palette entry — the loop then renders background only).
+	const specKey = `${wythoff.p},${wythoff.q},${wythoff.rings.join("")},${wythoff.snub ? 1 : 0}`;
 	const geom = useMemo(() => {
-		const [p, q] = schlafli;
-		if (!isHyperbolic(p, q)) return null;
-		return { p, q, ...mirrorParams(p, q), hue: hueFor(p, q) };
-	}, [schlafli]);
+		if (!isHyperbolic(wythoff.p, wythoff.q)) return null;
+		return hyperbolicUniformValues(wythoff);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [specKey]);
 	const geomRef = useRef(geom);
 	geomRef.current = geom;
 
@@ -74,7 +71,8 @@ export function HyperbolicCanvas({ width, height, schlafli }: HyperbolicCanvasPr
 		prevRotRef.current = null;
 		centerAnimRef.current = null;
 		parityOffsetRef.current = 0;
-	}, [schlafli]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [specKey]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -204,6 +202,16 @@ export function HyperbolicCanvas({ width, height, schlafli }: HyperbolicCanvasPr
 			gl.uniform3f(U.uLine, 0.05, 0.05, 0.07);
 			gl.uniform3f(U.uParityA, 0.9, 0.9, 0.92);
 			gl.uniform3f(U.uParityB, 0.12, 0.12, 0.14);
+			// Uniform-tiling classifier inputs (uNTiles==1 ⇒ the regular path ignores all of these).
+			gl.uniform1i(U.uNTiles, g.nTiles);
+			gl.uniform2f(U.uWythoff, g.wythoff.x, g.wythoff.y);
+			gl.uniform2f(U.uFootA, g.footA.x, g.footA.y);
+			gl.uniform2f(U.uFootB, g.footB.x, g.footB.y);
+			gl.uniform2f(U.uFootC, g.footC.x, g.footC.y);
+			gl.uniform2f(U.uCornerV, g.cornerV.x, g.cornerV.y);
+			gl.uniform1f(U.uRin, g.rIn);
+			gl.uniform3f(U.uOcc, g.occ[0], g.occ[1], g.occ[2]);
+			gl.uniform3f(U.uTileHue, g.tileHue[0], g.tileHue[1], g.tileHue[2]);
 
 			gl.drawArrays(gl.TRIANGLES, 0, 6);
 		};

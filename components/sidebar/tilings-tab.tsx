@@ -31,10 +31,11 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 	const [advancedOpen, setAdvancedOpen] = useState(false);
 	// Islamic construction only applies to the regular and star classes (see polygonClassSupportsIslamic).
 	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected);
-	// A hyperbolic {p,q} tiling renders in the Poincaré disk; its only view control is the shading mode.
-	const isHyperbolic = !!selected?.schlafli;
-	// Two-tone parity needs a 2-colourable tiling: an even number of tiles at each vertex, i.e. q even.
-	const parityAllowed = !!selected?.schlafli && selected.schlafli[1] % 2 === 0;
+	// A hyperbolic tiling renders in the Poincaré disk; its only view control is the shading mode.
+	const isHyperbolic = !!selected?.wythoff;
+	// Two-tone parity needs a REGULAR 2-colourable tiling (q even); the uniform forms are multi-tile-type.
+	const parityAllowed =
+		!!selected?.wythoff && selected.wythoff.rings[0] && !selected.wythoff.rings[1] && !selected.wythoff.rings[2] && selected.wythoff.q % 2 === 0;
 
 	return (
 		<div className="h-full flex flex-col">

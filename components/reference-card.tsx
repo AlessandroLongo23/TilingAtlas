@@ -75,12 +75,12 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 	const content = (
 		<>
 			<div className="relative aspect-square bg-surface-raised">
-				{tiling.schlafli ? (
-					<HyperbolicThumbnail schlafli={tiling.schlafli} />
+				{tiling.wythoff ? (
+					<HyperbolicThumbnail wythoff={tiling.wythoff} />
 				) : (
 					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
 				)}
-				{SCREENSHOT_BUTTONS_ENABLED && !tiling.schlafli ? (
+				{SCREENSHOT_BUTTONS_ENABLED && !tiling.wythoff ? (
 					<button
 						type="button"
 						onClick={handleScreenshot}

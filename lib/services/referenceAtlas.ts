@@ -31,10 +31,14 @@ export interface ReferenceTiling {
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
-	// Hyperbolic shelf only: the Schläfli symbol {p,q} of a regular hyperbolic tiling. Its presence marks
-	// the entry as hyperbolic — the /play view swaps to the Poincaré-disk renderer and the thumbnail path
-	// renders a disk. Absent (and geometry "euclidean"/undefined) for every Euclidean tiling.
+	// Hyperbolic shelf only: the Schläfli symbol {p,q} of a regular hyperbolic tiling. Kept as the card
+	// label for the regular entries; routing now keys on `wythoff` (present on EVERY hyperbolic entry) or
+	// geometry === "hyperbolic". Absent (and geometry "euclidean"/undefined) for every Euclidean tiling.
 	schlafli?: [number, number];
+	// Hyperbolic shelf only: the Wythoff descriptor (triangle group {p,q} + Coxeter–Dynkin rings). Regular
+	// {p,q} = rings [true,false,false]; the uniform/Archimedean forms ring more mirrors. Drives the
+	// Poincaré-disk renderer (lib/render/hyperbolic.ts uniformDescriptor). Present on all hyperbolic entries.
+	wythoff?: { p: number; q: number; rings: [boolean, boolean, boolean]; snub?: boolean };
 	geometry?: "euclidean" | "hyperbolic";
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
@@ -278,6 +282,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		exactSource: r.exactSource,
 		paramCell: r.paramCell,
 		schlafli: r.schlafli,
+		wythoff: r.wythoff,
 		geometry: r.geometry,
 	};
 }

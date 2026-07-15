@@ -302,6 +302,14 @@ export function mobiusInverse(w: Complex, b: Complex, theta: number): Complex {
 /** Coxeter–Dynkin ring flags on the linear diagram A—p—B—q—C (A face mirror, B edge mirror, C vertex mirror). */
 export type Rings = [boolean, boolean, boolean];
 
+/** A hyperbolic tiling's identity: the triangle group {p,q} + which mirrors are ringed (+ snub). Regular = [1,0,0]. */
+export interface WythoffSpec {
+	p: number;
+	q: number;
+	rings: Rings;
+	snub?: boolean;
+}
+
 export interface WythoffFaces {
 	/** face at corner O (p-fold centre), 0 if none */ nO: number;
 	/** face at corner V (q-fold vertex), 0 if none */ nV: number;
@@ -476,6 +484,54 @@ export function uniformDescriptor(p: number, q: number, rings: Rings): UniformDe
 	if (f.nV > 0) tiles.push({ corner: "V", sides: f.nV, hue: tileHue(f.nV) });
 	if (f.nE > 0) tiles.push({ corner: "E", sides: f.nE, hue: tileHue(f.nE) });
 	return { p, q, rings, wythoff: wythoffVertex(p, q, rings), corners, tiles };
+}
+
+/** Everything the Poincaré-disk shader needs for one tiling, derived from its Wythoff spec. Shared by the
+ * interactive canvas and the static thumbnail so the two render paths cannot drift. */
+export interface HyperbolicUniformValues {
+	p: number;
+	edgeA: number;
+	edgeRho: number;
+	rIn: number;
+	rC: number;
+	nTiles: number;
+	wythoff: Complex;
+	footA: Complex;
+	footB: Complex;
+	footC: Complex;
+	cornerV: Complex;
+	occ: [number, number, number]; // 1/0 occupancy of faces at corners O, V, E
+	tileHue: [number, number, number]; // hue (deg) of faces at O, V, E
+	hue: number; // single-hue fallback (uNTiles==1 path / uHue)
+}
+
+export function hyperbolicUniformValues(spec: WythoffSpec): HyperbolicUniformValues {
+	const { p, q, rings } = spec;
+	const mp = mirrorParams(p, q);
+	const desc = uniformDescriptor(p, q, rings);
+	const feet = wythoffFeet(p, q, rings);
+	const hueByCorner = (c: "O" | "V" | "E") => desc.tiles.find((t) => t.corner === c)?.hue ?? 0;
+	const occ: [number, number, number] = [
+		desc.tiles.some((t) => t.corner === "O") ? 1 : 0,
+		desc.tiles.some((t) => t.corner === "V") ? 1 : 0,
+		desc.tiles.some((t) => t.corner === "E") ? 1 : 0,
+	];
+	return {
+		p,
+		edgeA: mp.edgeA,
+		edgeRho: mp.edgeRho,
+		rIn: mp.rIn,
+		rC: mp.rC,
+		nTiles: desc.tiles.length,
+		wythoff: desc.wythoff,
+		footA: feet.fA,
+		footB: feet.fB,
+		footC: feet.fC,
+		cornerV: desc.corners.V,
+		occ,
+		tileHue: [hueByCorner("O"), hueByCorner("V"), hueByCorner("E")],
+		hue: desc.tiles[0]?.hue ?? 0,
+	};
 }
 
 /** Hyperbolic midpoint of two Poincaré-disk points (the point on the geodesic uv at half the distance). */
