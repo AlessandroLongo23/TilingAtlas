@@ -1075,3 +1075,10 @@ shader folding each pixel into the (2,p,q) fundamental domain. Pan = incremental
 (screen-centre tile → origin) so precision holds under unlimited panning; wheel rotates, click snaps to nearest
 centre/vertex/edge-midpoint; per-tile colour by tile-centre distance, parity only for q-even. Pure maths unit-tested
 (29); `make check-regular` untouched. NOTES §59. — CC
+
+**2026-07-15 — CC → AL — Uniform (non-isohedral) hyperbolic tilings: shelf 4 → 22.**
+Added the uniform/Archimedean siblings of the three §59 groups: 15 non-snub + 3 chiral snub. Identity is now a
+`wythoff` descriptor `{p,q,rings,snub}`; all geometry derived in pure code (face-size rule, Wythoff point/feet,
+snub-vertex solve), 58 tests. Shader gains a Schwarz-triangle fold + foot classifier (non-snub) and a rotation-
+subgroup fold + snub classifier (chiral), verified by a headless-Chrome harness (AL caught a snub 5th-edge bug;
+fixed). Regular 4 byte-identical, display-only. Branch `feat/uniform-hyperbolic-tilings`, NOTES §60. — CC
