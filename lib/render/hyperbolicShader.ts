@@ -233,9 +233,11 @@ void main() {
 		}
 		int reg = inP ? 0 : (inQ ? 1 : 2);
 		hueDeg = reg == 0 ? uTileHue.x : reg == 1 ? uTileHue.y : uTileHue.z;
-		vec2 centreFrame = reg == 0 ? O : reg == 1 ? uCornerV : z;
-		vec2 cw = cdiv(cmul(A, centreFrame) + B, cmul(C, centreFrame) + D);
-		tr = clamp(length(viewForward(cw)), 0.0, 1.0);
+		// Dim: the p-gon lives inside ONE {p,q} cell, so a flat per-tile shade is seam-safe; the square and
+		// triangles straddle fold cells, where a per-cell tile-centre jumps at the seam (the lighter wedge AL
+		// saw) — dim those by the continuous screen radius instead.
+		if (reg == 0) { vec2 cw = cdiv(cmul(A, O) + B, cmul(C, O) + D); tr = clamp(length(viewForward(cw)), 0.0, 1.0); }
+		else tr = clamp(length(zScreen), 0.0, 1.0);
 		// Strokes: the 5 edges at s (fold symmetry maps every edge to one at s) — two p-gon (as, ais), two
 		// q-gon (bs, bis), and the triangle–triangle edge (n) — plus the three snub-triangle third edges
 		// closing {s,as,bis}, {s,ais,n}, {s,n,bs}. Segment-clipped so geodesics don't spray past the vertices.
@@ -248,6 +250,14 @@ void main() {
 		ie = min(ie, segDistGeo(z, uSnubAs, uSnubBis));  // triangle {s, as, bis}
 		ie = min(ie, segDistGeo(z, uSnubAis, uSnubN));   // triangle {s, ais, n}
 		ie = min(ie, segDistGeo(z, uSnubN, uSnubBs));    // triangle {s, n, bs}
+		// Round the joins: a small disk at each vertex caps the segment-clipped ends, so edges meet cleanly
+		// instead of leaving a perpendicular-cutoff notch at every vertex.
+		ie = min(ie, distance(z, uSnubS));
+		ie = min(ie, distance(z, uSnubAs));
+		ie = min(ie, distance(z, uSnubAis));
+		ie = min(ie, distance(z, uSnubBs));
+		ie = min(ie, distance(z, uSnubBis));
+		ie = min(ie, distance(z, uSnubN));
 		lineCov = uStrokePx > 0.0 ? (1.0 - smoothstep(halfW - pwf, halfW + pwf, ie)) : 0.0;
 	} else if (uNTiles > 1) {
 		float ysign = z.y < 0.0 ? -1.0 : 1.0;
