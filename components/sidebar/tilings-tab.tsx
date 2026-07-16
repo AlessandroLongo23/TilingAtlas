@@ -263,16 +263,28 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 									>
 										Möbius
 									</Button>
+									<Button
+										variant={cfg.inversiveMode === "spiral" ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ inversiveMode: "spiral" })}
+									>
+										Spiral
+									</Button>
 								</div>
-								<Slider
-									id="inversiveRadius"
-									label="Lens radius"
-									value={cfg.inversiveRadiusFrac}
-									onChange={(v) => setCfg({ inversiveRadiusFrac: v })}
-									min={0.1}
-									max={1}
-									step={0.01}
-								/>
+								{/* Lens radius has no meaning for a single-centre spiral; it becomes the pole
+								    separation for the two-centre (Droste) spiral. */}
+								{!(cfg.inversiveMode === "spiral" && !cfg.spiralDouble) ? (
+									<Slider
+										id="inversiveRadius"
+										label={cfg.inversiveMode === "spiral" ? "Pole separation" : "Lens radius"}
+										value={cfg.inversiveRadiusFrac}
+										onChange={(v) => setCfg({ inversiveRadiusFrac: v })}
+										min={0.1}
+										max={1}
+										step={0.01}
+									/>
+								) : null}
 								{cfg.inversiveMode === "mobius" ? (
 									<Slider
 										id="mobiusTwist"
@@ -284,6 +296,56 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 										step={1}
 										unit="°"
 									/>
+								) : null}
+								{cfg.inversiveMode === "spiral" ? (
+									<>
+										<div className="flex gap-2">
+											<Button
+												variant={!cfg.spiralDouble ? "primary" : "secondary"}
+												size="sm"
+												classes="flex-1"
+												onClick={() => setCfg({ spiralDouble: false })}
+											>
+												1 center
+											</Button>
+											<Button
+												variant={cfg.spiralDouble ? "primary" : "secondary"}
+												size="sm"
+												classes="flex-1"
+												onClick={() => setCfg({ spiralDouble: true })}
+											>
+												2 centers
+											</Button>
+										</div>
+										<Slider
+											id="spiralArmA"
+											label="Arm a"
+											value={cfg.spiralArmA}
+											onChange={(v) => setCfg({ spiralArmA: Math.round(v) })}
+											min={-6}
+											max={6}
+											step={1}
+										/>
+										<Slider
+											id="spiralArmB"
+											label="Arm b"
+											value={cfg.spiralArmB}
+											onChange={(v) => setCfg({ spiralArmB: Math.round(v) })}
+											min={-6}
+											max={6}
+											step={1}
+										/>
+										<Slider
+											id="spiralPitch"
+											label="Pitch"
+											value={cfg.spiralPitch}
+											onChange={(v) => setCfg({ spiralPitch: v })}
+											min={-80}
+											max={80}
+											step={1}
+											unit="°"
+										/>
+									</>
 								) : null}
 							</div>
 						) : null}
