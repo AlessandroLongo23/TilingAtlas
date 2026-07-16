@@ -40,6 +40,9 @@ export class Polygon {
      *  n-gon of the same edge-count `n` (e.g. 4*_{π/4} vs the square), which `n` alone cannot. Drives
      *  corner-aware VC tokens and the star-gated exact overlap predicate. Undefined ⇒ regular. */
     isStar?: boolean;
+    /** Orbit id per vertex (index-aligned to `vertices`); -1 = not a tiling vertex. Set by
+     *  buildTilingFromCell for the vertex-orbit overlay; undefined when no orbit data is available. */
+    orbitOfCorner?: number[];
 
     constructor(n: number = 3) {
         this.n = n;

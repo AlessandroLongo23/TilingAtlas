@@ -351,7 +351,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			g.uniform1f(U.uDpr, dpr);
 			g.uniform2f(U.uOffset, ctrl.offset.x, ctrl.offset.y);
 			g.uniform1f(U.uZoom, ctrl.zoom);
-			g.uniform1f(U.uRot, ((cfg.rotation || 0) * Math.PI) / 180);
+			g.uniform1f(U.uRot, ((ctrl.rotation || 0) * Math.PI) / 180);
 			g.uniform1i(U.uMode, cfg.inversiveMode === "spiral" ? 2 : cfg.inversiveMode === "mobius" ? 1 : 0);
 			g.uniform1f(U.uR, R);
 			g.uniform2f(U.uKinv, kinvMag * Math.cos(-tau), kinvMag * Math.sin(-tau));

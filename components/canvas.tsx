@@ -35,6 +35,7 @@ import { ColorPad } from "./ui/color-pad";
 import { useP5 } from "@/lib/hooks/useP5";
 import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "./canvas-overlays";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
+import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 
 interface CanvasProps {
 	width?: number;
@@ -45,6 +46,7 @@ interface CanvasProps {
 	 *  `familyAlphas` (an imperative read, so dragging a slider never re-renders React). */
 	paramCell?: ParametricCellData | null;
 	symmetryData?: SymmetryData | null;
+	orbitData?: OrbitData | null;
 	showTilingRuleInput?: boolean;
 }
 
@@ -53,6 +55,25 @@ interface CanvasProps {
 // below is sized against ZOOM_MIN — keep them in step.
 const ZOOM_MIN = 20;
 const ZOOM_MAX = 150;
+
+// Wheel rotation (hyperbolic wheel; flat/inversive Shift+wheel). The angle advances in fixed detents
+// as a function of how far you scroll (not how many wheel events fire — a trackpad emits dozens per
+// gesture): every ROTATE_PX_PER_STEP pixels of accumulated scroll steps the target by ROTATE_SNAP_DEG.
+// The live angle then eases into the detent, so a gentle scroll nudges one notch and a hard flick (or a
+// trackpad's momentum tail) rolls through many like a spinning wheel. Lower ROTATE_PX_PER_STEP = more
+// sensitive. The at-rest angle is always a multiple of ROTATE_SNAP_DEG.
+const ROTATE_SNAP_DEG = 5; // detent size — the angle snaps to multiples of this
+const ROTATE_PX_PER_STEP = 30; // pixels of scroll per detent (sensitivity knob)
+const ROTATE_DAMP = 0.2; // per-frame ease of the live angle toward the target detent
+// Fold the rotation target into [0, 360) for the slider readout. The live `controls.rotation` stays
+// continuous, so no render path ever sees a 360° jump in its per-frame delta.
+const wrap360 = (deg: number) => ((deg % 360) + 360) % 360;
+// Shortest signed angular distance (degrees) for a raw difference, mapped to [-180, 180); lets the live
+// angle take the short way round when the wrapped target jumps across the 0/360 seam.
+const shortestDeltaDeg = (diff: number) => ((diff % 360) + 540) % 360 - 180;
+// Normalize a wheel event's deltaY to approximate pixels so sensitivity matches across a pixel-mode
+// trackpad and a line/page-mode mouse wheel. deltaMode: 0 = pixel, 1 = line (~16px), 2 = page.
+const wheelDeltaPx = (e: WheelEvent) => e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 800 : 1);
 
 // Left-click-to-centre. A left press starts a drag-pan; on release we treat it as a click (and centre the
 // clicked tile) only if the pointer moved less than CLICK_DRAG_THRESHOLD_PX since press — beyond that it was
@@ -196,7 +217,7 @@ function wrapOffset(
 	};
 }
 
-function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number): Tiling {
+function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number, orbitData?: OrbitData | null): Tiling {
 	const ri = Math.max(1, Math.min(MAX_FILL_RADIUS, Ri || 1));
 	const rj = Math.max(1, Math.min(MAX_FILL_RADIUS, Rj || 1));
 	const polyArray = cellData.p ?? cellData.cellPolygons ?? [];
@@ -236,6 +257,7 @@ function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: nu
 		if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
 		poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
 		basePolys.push(poly);
+		if (orbitData) poly.orbitOfCorner = poly.vertices.map((v) => orbitData.orbitAt(v.x, v.y));
 		const c = poly.centroid;
 		for (const vv of poly.vertices) {
 			const d = Math.hypot(vv.x - c.x, vv.y - c.y);
@@ -261,6 +283,7 @@ export function Canvas({
 	translationalCellId = null,
 	paramCell = null,
 	symmetryData = null,
+	orbitData = null,
 	showTilingRuleInput = true,
 }: CanvasProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -287,6 +310,12 @@ export function Canvas({
 	// True while WE'VE set the canvas cursor to "move" for an active Command-scrub, so we only reset the
 	// cursor we own (not one a future pan/grab handler might set).
 	const scrubCursorRef = useRef(false);
+	// Accumulated wheel scroll (normalized px) not yet converted to rotation detents. Carries the sub-step
+	// remainder between wheel events so rotation tracks total scroll distance, not the wheel-event count.
+	const scrollAccumRef = useRef(0);
+	// The orbitData the current grid's orbit ids were built from. orbitData arrives asynchronously (the hook
+	// computes it after selection), so the grid rebuilds once when it changes to attach ids to base polygons.
+	const prevOrbitDataRef = useRef<OrbitData | null>(null);
 
 	// Selection transition (lib/utils/tilingTransition.ts). `outgoingRef` holds the tiling that is on its
 	// way out — it keeps its own cell, because the draw loop must wrap and cull it against the lattice it
@@ -309,10 +338,10 @@ export function Canvas({
 		Rj: -1,
 	});
 
-	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData });
+	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData });
 	useEffect(() => {
-		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData };
-	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData]);
+		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData };
+	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData]);
 
 	// Clear the Command-scrub "move" cursor when Command is released (or the window blurs) without another
 	// mouse move to clear it in mouseMoved. Cosmetic: the scrub itself is driven entirely by mouseMoved.
@@ -406,7 +435,7 @@ export function Canvas({
 				if (tc) {
 					const { v1, v2, det } = latticeBasisFromCell(tc);
 					const zoomForFill = Math.min(ctrl.zoom, ctrl.targetZoom);
-					const rot = (cfg.rotation || 0) * Math.PI / 180;
+					const rot = (ctrl.rotation || 0) * Math.PI / 180;
 					({ Ri, Rj } = computeFillRadii(v1, v2, det, zoomForFill, W, H, rot));
 				}
 
@@ -430,6 +459,11 @@ export function Canvas({
 				const cellChanged =
 					!!tc && (prev.translationalCellId !== tcId || grew || shrankAtRest);
 
+				// orbitData arrives asynchronously (the hook computes it after selection); rebuild once when it
+				// changes so buildTilingFromCell can attach the orbit ids to the base polygons.
+				const orbitData = propsRef.current.orbitData ?? null;
+				const orbitChanged = orbitData !== prevOrbitDataRef.current;
+
 				// A NEW TILING was selected — as opposed to an α-slider tick or a zoom-driven regrid, which
 				// also change tcId/the grid but must never animate. Hand what is on screen to the outgoing
 				// slot and start the wave. If a collapse is already running, leave it be: that is the one the
@@ -447,11 +481,11 @@ export function Canvas({
 					prevBaseIdRef.current = baseId;
 				}
 
-				if (!tilingRef.current || ruleChanged || cellChanged) {
+				if (!tilingRef.current || ruleChanged || cellChanged || orbitChanged) {
 					try {
 						if (cfg.debugView) debugManager.reset();
 
-						const t = buildTilingFromCell(tc, Ri, Rj);
+						const t = buildTilingFromCell(tc, Ri, Rj, orbitData);
 						tilingRef.current = t;
 
 						const regularOnly = t.nodes.length > 0 && t.nodes.every((n) => n instanceof RegularPolygon);
@@ -484,6 +518,7 @@ export function Canvas({
 						prev.translationalCellId = tcId;
 						prev.Ri = Ri;
 						prev.Rj = Rj;
+						prevOrbitDataRef.current = orbitData;
 					} catch (e) {
 						setCanvasError(e instanceof Error ? e.message : String(e));
 					}
@@ -496,9 +531,17 @@ export function Canvas({
 				cull?: (c: Vector) => boolean,
 				scaleOf?: (c: Vector) => number,
 			) => {
+				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic;
+				const opacity = orbitMode ? 0.3 : 1;
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
-				else tiling.show(p5, cfg.showPolygonPoints, 1, cfg.circlePacking, cull, scaleOf);
+				else tiling.show(p5, cfg.showPolygonPoints, opacity, cfg.circlePacking, cull, scaleOf);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
+				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
+				// selection transition (scaleOf active) so they don't float off the shrinking outline.
+				if (orbitMode && !scaleOf) {
+					const dark = document.documentElement.classList.contains("dark");
+					tiling.drawVertexOrbits(p5, dark, cull);
+				}
 			};
 
 			const drawScreenshotOverlay = () => {
@@ -581,6 +624,9 @@ export function Canvas({
 						...cfg.controls,
 						targetZoom: cfg.controls.zoom,
 						targetOffset: cfg.controls.offset.copy(),
+						// Start the live rotation at the slider value so a remount (view switch) with a non-zero
+						// rotation shows it immediately instead of easing up from 0.
+						rotation: cfg.rotation || 0,
 					},
 				});
 				// The hyperbolic (and inversive) views paint via their own WebGL overlay; skip the flat grid build.
@@ -592,6 +638,16 @@ export function Canvas({
 				const ctrl = cfg.controls;
 				ctrl.zoom += (ctrl.targetZoom - ctrl.zoom) * ctrl.dampening;
 				ctrl.offset.add(Vector.sub(ctrl.targetOffset, ctrl.offset).scale(ctrl.dampening));
+				// Ease the live rotation toward the target detent (cfg.rotation — the slider value, or the wheel's
+				// accumulated 5° steps) along the shortest arc, so it glides in like a flywheel settling into a
+				// notch. Snap once within a hair to stop perpetual micro-updates and keep the value bounded; the
+				// snap is a whole number of turns off the target, which is identity for the periodic consumers
+				// (overlays + pan-compensation use cos/sin of the per-frame delta).
+				{
+					const dRot = shortestDeltaDeg((cfg.rotation || 0) - ctrl.rotation);
+					if (Math.abs(dRot) < 0.05) ctrl.rotation = cfg.rotation || 0;
+					else ctrl.rotation += dRot * ROTATE_DAMP;
+				}
 
 				// Ease the live parametric angle(s) toward the target tuple (familyAlphas.values — the slider
 				// position or the Command+drag scrub) with an exponential per-frame lerp, per-parameter and
@@ -672,7 +728,7 @@ export function Canvas({
 					// copy count stays bounded; the wrap jump is a whole period -> invisible. Use the cell
 					// the grid was actually built from (the live alpha cell for a parametric family), so the
 					// wrap lattice matches the drawn geometry.
-					const rot = (cfg.rotation || 0) * Math.PI / 180;
+					const rot = (ctrl.rotation || 0) * Math.PI / 180;
 					const tc = outgoing ? outgoing.cell : activeCellRef.current;
 
 					// Rotate about the screen centre, not the world origin: when the angle changes by Δθ,
@@ -684,7 +740,7 @@ export function Canvas({
 					// its pan vector from the RAW offset, so rotating the pan offset here too would double-count.
 					// Skip the compensation in hyperbolic mode (the inversive view still needs it — it reads the
 					// raw uOffset + uRot and relies on this to hold the centre fixed under rotation).
-					const rotDeg = cfg.rotation || 0;
+					const rotDeg = ctrl.rotation || 0;
 					const prevRotDeg = prevRotationRef.current;
 					if (!hyperbolic && prevRotDeg !== null && prevRotDeg !== rotDeg) {
 						const dTheta = rot - prevRotDeg * Math.PI / 180;
@@ -812,7 +868,7 @@ export function Canvas({
 				if (transitionRef.current) return; // mid selection-transition the shown tiling is the outgoing one
 				const ctrl = cfg.controls;
 				const zoom = ctrl.targetZoom;
-				const rot = ((cfg.rotation || 0) * Math.PI) / 180;
+				const rot = ((ctrl.rotation || 0) * Math.PI) / 180;
 				const mx = p5.mouseX - p5.width / 2;
 				const my = p5.mouseY - p5.height / 2;
 
@@ -880,18 +936,38 @@ export function Canvas({
 					centreOnClick();
 				}
 			};
+			// Advance the rotation target by whole 5° detents as a function of total scroll DISTANCE, not the
+			// number of wheel events (a trackpad fires dozens per gesture). Accumulate normalized scroll px and
+			// emit one detent per ROTATE_PX_PER_STEP; the draw loop eases the live angle into it.
+			const stepFromWheel = (event: WheelEvent) => {
+				scrollAccumRef.current += wheelDeltaPx(event);
+				let steps = 0;
+				while (scrollAccumRef.current >= ROTATE_PX_PER_STEP) {
+					steps++;
+					scrollAccumRef.current -= ROTATE_PX_PER_STEP;
+				}
+				while (scrollAccumRef.current <= -ROTATE_PX_PER_STEP) {
+					steps--;
+					scrollAccumRef.current += ROTATE_PX_PER_STEP;
+				}
+				if (steps === 0) return;
+				const rot = useConfiguration.getState().rotation || 0;
+				useConfiguration.setState({ rotation: wrap360(rot + steps * ROTATE_SNAP_DEG) });
+			};
 
 			p5.mouseWheel = (event?: WheelEvent) => {
 				if (event && event.target !== p5.canvas) return;
 				const cfg = readCfg();
-				// Hyperbolic view has no zoom (the disk radius is fixed), so the wheel rotates the disc instead.
-				// The overlay folds this rotation into its view; panning stays screen-relative, so drag
-				// direction still follows the mouse under any rotation.
+				// Hyperbolic view has no zoom (the disk radius is fixed), so the wheel spins the disc instead.
+				// The overlay folds the per-frame rotation change into its view; panning stays screen-relative,
+				// so drag direction still follows the mouse under any rotation.
 				if (cfg.hyperbolic) {
-					if (event) {
-						const dir = event.deltaY > 0 ? 1 : -1;
-						useConfiguration.setState({ rotation: (cfg.rotation || 0) + dir * 4 });
-					}
+					if (event) stepFromWheel(event);
+					return;
+				}
+				// Flat/inversive view: the wheel alone zooms, Shift+wheel spins the view in the same 5° detents.
+				if (event?.shiftKey) {
+					stepFromWheel(event);
 					return;
 				}
 				const ctrl = cfg.controls;

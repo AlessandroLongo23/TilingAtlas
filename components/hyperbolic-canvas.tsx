@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { createHyperbolicProgram } from "@/lib/render/hyperbolicShader";
 import {
+	hyperbolicFeaturePoints,
 	hyperbolicUniformValues,
 	isHyperbolic,
+	MAX_FEATURE_POINTS,
 	pickClickAnchor,
 	su11Apply,
 	su11ApplyInverse,
@@ -35,6 +37,10 @@ interface HyperbolicCanvasProps {
 	wythoff: WythoffSpec;
 }
 
+// Inset (CSS px) shrinking the disk radius so it clears the top bar and the viewport bottom instead of
+// touching them. Fed to the shader as uPadPx and mirrored into the pan/click scale R below so both agree.
+const DISK_PAD_PX = 24;
+
 export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const sizeRef = useRef({ width, height });
@@ -50,6 +56,24 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 	}, [specKey]);
 	const geomRef = useRef(geom);
 	geomRef.current = geom;
+
+	// Feature markers for the "show polygon points" overlay, packed once per tiling into the flat arrays the
+	// shader's uPoints[]/uPointKind[] uniforms expect (fundamental-frame positions + kind). View-independent,
+	// so recomputed only when the spec changes; the render loop uploads them only while the toggle is on.
+	const pointData = useMemo(() => {
+		if (!geom) return null;
+		const feats = hyperbolicFeaturePoints(geom);
+		const pos = new Float32Array(MAX_FEATURE_POINTS * 2);
+		const kind = new Int32Array(MAX_FEATURE_POINTS);
+		feats.forEach((f, i) => {
+			pos[2 * i] = f.pos.x;
+			pos[2 * i + 1] = f.pos.y;
+			kind[i] = f.kind;
+		});
+		return { pos, kind, count: feats.length };
+	}, [geom]);
+	const pointDataRef = useRef(pointData);
+	pointDataRef.current = pointData;
 
 	// The accumulated view isometry and the pan/rotation state we last folded into it.
 	const viewRef = useRef<Su11>(su11Identity());
@@ -105,8 +129,8 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;
-			const R = 0.5 * Math.min(w, h);
-			const rotDeg = cfg.rotation || 0;
+			const R = Math.max(0.5 * Math.min(w, h) - DISK_PAD_PX, 1);
+			const rotDeg = ctrl.rotation || 0;
 
 			// Right-click reset (or tiling change): return to the centred identity view.
 			if (cfg.hyperbolicResetView) {
@@ -186,6 +210,7 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 
 			gl.uniform2f(U.uRes, w, h);
 			gl.uniform1f(U.uDpr, dpr);
+			gl.uniform1f(U.uPadPx, DISK_PAD_PX);
 			gl.uniform2f(U.uMa, view.a.x, view.a.y);
 			gl.uniform2f(U.uMb, view.b.x, view.b.y);
 			gl.uniform1f(U.uP, g.p);
@@ -194,12 +219,29 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 			gl.uniform1i(U.uShadeMode, cfg.hyperbolicShading === "parity" ? 1 : 0);
 			gl.uniform1f(U.uParityOffset, parityOffsetRef.current);
 			gl.uniform1f(U.uHue, g.hue);
-			// Magnitude is scaled per mode: geometry = a fraction of the tile edge, constant = screen px.
+			// Match Geometry and Constant at the same slider value so toggling doesn't force a re-adjust.
+			// Constant holds a flat CONSTANT_PX·lineWidth device-px stroke everywhere. Geometry keeps a fixed
+			// width in FUNDAMENTAL units (halfW = uStrokePx·uEdgeRho in the shader) — smooth under panning because
+			// its on-screen width tracks only the re-base-invariant tile-scale, reading as a stroke proportional
+			// to each tile's on-screen size: matched to the constant width at the centre (× CENTER_BOOST so the
+			// centre sits a touch heavier), tapering naturally as tiles shrink toward the rim. Dividing uStrokePx
+			// by edgeRho·R·dpr cancels the shader's ·uEdgeRho and the canvas scale, so the match holds per tiling.
+			const CONSTANT_PX = 1.0; // constant-mode half-width (device px) at lineWidth = 1
+			const CENTER_BOOST = 4.0; // geometry centre weight relative to constant
 			const constantWidth = cfg.hyperbolicLineMode === "constant";
 			gl.uniform1i(U.uStrokeMode, constantWidth ? 1 : 0);
-			gl.uniform1f(U.uStrokePx, cfg.lineWidth * (constantWidth ? 1.2 : 0.03));
+			const strokePx = constantWidth
+				? cfg.lineWidth * CONSTANT_PX
+				: (cfg.lineWidth * CONSTANT_PX * CENTER_BOOST) / Math.max(g.edgeRho * R * dpr, 1e-4);
+			gl.uniform1f(U.uStrokePx, strokePx);
 			gl.uniform3f(U.uSurface, dark ? 0.08 : 0.96, dark ? 0.09 : 0.96, dark ? 0.11 : 0.97);
-			gl.uniform3f(U.uLine, 0.05, 0.05, 0.07);
+			// Fill toggle: off ⇒ tiles paint uSurface (edges kept), matching the Euclidean noFill(). With no
+			// fill on a dark canvas the near-black stroke would vanish, so switch to a light stroke there —
+			// the same rule as Polygon.show (lib/classes/polygons/Polygon.ts).
+			const showFill = cfg.showPolygonFill;
+			gl.uniform1i(U.uShowFill, showFill ? 1 : 0);
+			const lightStroke = !showFill && dark;
+			gl.uniform3f(U.uLine, lightStroke ? 0.9 : 0.05, lightStroke ? 0.9 : 0.05, lightStroke ? 0.92 : 0.07);
 			gl.uniform3f(U.uParityA, 0.9, 0.9, 0.92);
 			gl.uniform3f(U.uParityB, 0.12, 0.12, 0.14);
 			// Uniform-tiling classifier inputs (uNTiles==1 ⇒ the regular path ignores all of these).
@@ -221,6 +263,20 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 				gl.uniform2f(U.uSnubBis, g.snub.bis.x, g.snub.bis.y);
 				gl.uniform2f(U.uSnubN, g.snub.n.x, g.snub.n.y);
 				gl.uniform2f(U.uSnubB2s, g.snub.b2s.x, g.snub.b2s.y);
+			}
+
+			// Points overlay: upload the packed markers only while the toggle is on (default off ⇒ zero cost).
+			// Radius fixed at ~3 CSS px (× dpr for the device-px space the shader measures pwf in).
+			const pd = pointDataRef.current;
+			const showPoints = cfg.showPolygonPoints && !!pd;
+			gl.uniform1i(U.uShowPoints, showPoints ? 1 : 0);
+			if (showPoints && pd) {
+				gl.uniform1i(U.uNumPoints, pd.count);
+				gl.uniform2fv(U.uPoints, pd.pos);
+				gl.uniform1iv(U.uPointKind, pd.kind);
+				gl.uniform1f(U.uPointRadius, 3.0 * dpr);
+			} else {
+				gl.uniform1i(U.uNumPoints, 0);
 			}
 
 			gl.drawArrays(gl.TRIANGLES, 0, 6);

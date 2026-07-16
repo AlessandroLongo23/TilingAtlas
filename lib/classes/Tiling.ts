@@ -6,6 +6,7 @@ import { WAVE_MIN_SCALE } from "@/lib/utils/tilingTransition";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
 import { extractFaces, colorFacesByMarkerThenTile, type TileLite, type TileColoredFace, type Marker, type Segment } from "@/utils/islamicArrangement";
+import { orbitColor } from "@/lib/utils/orbitColors";
 
 export type VCWithOccurrences = { vc: VertexConfiguration; occurrences: number };
 
@@ -129,6 +130,11 @@ export class Tiling {
             // the duration of a transition.
             if (showPolygonPoints && !scaleOf) {
                 const r = 5 / zoom;
+                // Always a black border, independent of the tile line-stroke setting (push/pop so it does
+                // not leak into later draws — this is off the hot path, only when points are shown).
+                ctx.push();
+                ctx.stroke(0, 0, 0);
+                ctx.strokeWeight(1 / zoom);
                 for (let i = 0; i < this.nodes.length; i++) {
                     const node = this.nodes[i];
                     if (cull && !cull(node.centroid)) continue;
@@ -139,12 +145,39 @@ export class Tiling {
                     ctx.fill(240, 100, 100);
                     for (const v of node.vertices) ctx.ellipse(v.x, v.y, r);
                 }
+                ctx.pop();
             }
         }
 
         const showDualConnectionsValue = cfg.showDualConnections;
         if (showDualConnectionsValue)
             this.drawDualConnections(ctx);
+    }
+
+    /** Vertex-orbit overlay: one filled dot per tiling vertex, colored by its orbit id
+     *  (node.orbitOfCorner), with a theme-colored outline. Constant on-screen size (world radius /
+     *  zoom). `dark` picks the outline: white on a dark theme, black on a light one. Nodes with no
+     *  orbit data fall back to a single color (orbit 0). Drawn inside the world transform, on top of
+     *  the tiles; the caller suppresses it during the selection transition and in Islamic mode. */
+    drawVertexOrbits = (ctx, dark: boolean, cull?: (c: Vector) => boolean): void => {
+        const cfg = useConfiguration.getState();
+        const zoom = cfg.controls.zoom;
+        const diameter = 8 / zoom;
+        ctx.strokeWeight(1.5 / zoom);
+        ctx.stroke(0, 0, dark ? 100 : 0); // HSB: white on dark theme, black on light
+        for (let i = 0; i < this.nodes.length; i++) {
+            const node = this.nodes[i];
+            if (cull && !cull(node.centroid)) continue;
+            const oc = node.orbitOfCorner;
+            const vs = node.vertices;
+            for (let c = 0; c < vs.length; c++) {
+                const o = oc ? oc[c] : 0; // no orbit data → single neutral color (orbit 0)
+                if (o < 0) continue; // corner is not a tiling vertex (e.g. star dent-fill)
+                const col = orbitColor(o);
+                ctx.fill(col.h, col.s, col.b);
+                ctx.ellipse(vs[c].x, vs[c].y, diameter, diameter);
+            }
+        }
     }
 
     /** Star-tiling Islamic fill: color each cell of the whole-tiling construction arrangement by the

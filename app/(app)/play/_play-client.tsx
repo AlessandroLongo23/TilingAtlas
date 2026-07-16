@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData as InversiveCellData } from "@/lib/utils/renderTiling";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
+import { useVertexOrbits } from "@/lib/hooks/useVertexOrbits";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import {
 	loadComposableAtlasShard,
@@ -195,6 +196,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// no exact cell.
 	const symmetryData = useSymmetryData(selected);
 
+	// Vertex-orbit ids for the selected tiling (exactSource → orbitsFromExactSource), memoized per
+	// canonicalKey; drives the "Show Vertex Orbits" overlay. Null while loading / for tilings with no
+	// exact cell.
+	const orbitData = useVertexOrbits(selected);
+
 	// Free-angle family entries carry a proven parametric cell — each parameter becomes a live slider (a
 	// separable isotoxal family has one per independent tile). The rendered cell is re-evaluated at the
 	// slider tuple (evaluateParamCell — a real tiling at every position; the formal closure is
@@ -300,6 +306,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			v: "inversive",
 			c: "circlePacking",
 			t: "tilingTransition",
+			o: "showVertexOrbits",
 		};
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -334,10 +341,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
 				// Circle Packing only exists for regular-only tilings, and Islamic only for the regular/star
-				// classes; ignore their keys where the sidebar hides the matching control.
+				// classes; symmetry elements / fundamental domain / transition / vertex orbits are flat-canvas
+				// only and hidden in hyperbolic. Ignore each key where the sidebar hides the matching control.
+				const isHyperbolic = !!selected?.wythoff;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
-					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected));
+					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
+					((field === "showSymmetryElements" || field === "showFundamentalDomain" || field === "tilingTransition" || field === "showVertexOrbits") && isHyperbolic);
 				if (field && !blocked) {
 					e.preventDefault();
 					c.set({ [field]: !c[field] } as Partial<ConfigurationState>);
@@ -407,6 +417,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					translationalCellId={renderCellId}
 					paramCell={paramCell ?? null}
 					symmetryData={symmetryData}
+					orbitData={orbitData}
 					showTilingRuleInput={false}
 				/>
 				{/* Exactly one WebGL overlay at a time: the Poincaré disk for a hyperbolic tiling, else the

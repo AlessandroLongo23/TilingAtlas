@@ -25,6 +25,9 @@ import {
 	wythoffFeet,
 	hyperbolicUniformValues,
 	snubData,
+	hypCentroid,
+	hyperbolicFeaturePoints,
+	MAX_FEATURE_POINTS,
 	type Complex,
 	type Rings,
 } from "@/lib/render/hyperbolic";
@@ -481,4 +484,86 @@ describe("snubData (chiral snub generating vertex)", () => {
 			expect(Math.hypot(d.s.x, d.s.y)).toBeLessThan(1);
 		});
 	}
+});
+
+describe("hypCentroid (Klein-model average)", () => {
+	it("returns the point itself for a singleton", () => {
+		const c = hypCentroid([{ x: 0.3, y: -0.2 }]);
+		expect(near(c.x, 0.3, 1e-9)).toBe(true);
+		expect(near(c.y, -0.2, 1e-9)).toBe(true);
+	});
+
+	it("puts the average of a mirror-symmetric pair on the axis of symmetry", () => {
+		const c = hypCentroid([{ x: 0.4, y: 0.25 }, { x: 0.4, y: -0.25 }]);
+		expect(near(c.y, 0, 1e-9)).toBe(true);
+		expect(c.x).toBeGreaterThan(0); // between the two points, off the origin
+		expect(Math.hypot(c.x, c.y)).toBeLessThan(1);
+	});
+
+	it("keeps a triangle centroid strictly inside the disk", () => {
+		const tri = [{ x: 0.5, y: 0.1 }, { x: 0.2, y: 0.6 }, { x: -0.3, y: 0.2 }];
+		const c = hypCentroid(tri);
+		expect(Math.hypot(c.x, c.y)).toBeLessThan(1);
+	});
+});
+
+describe("hyperbolicFeaturePoints (fundamental-frame markers for the points overlay)", () => {
+	const inDisk = (pts: { pos: Complex }[]) => pts.every((f) => Math.hypot(f.pos.x, f.pos.y) < 1);
+	const byKind = (pts: { pos: Complex; kind: number }[], k: number) => pts.filter((f) => f.kind === k);
+
+	it("regular {5,4}: one centroid at O, the vertex orbit, one edge midpoint at (rIn,0)", () => {
+		const p = 5, q = 4;
+		const { rIn, rC } = mirrorParams(p, q);
+		const g = hyperbolicUniformValues({ p, q, rings: [true, false, false] });
+		const pts = hyperbolicFeaturePoints(g);
+
+		expect(inDisk(pts)).toBe(true);
+		expect(pts.length).toBeLessThanOrEqual(MAX_FEATURE_POINTS);
+
+		const centroids = byKind(pts, 0);
+		expect(centroids.length).toBe(1);
+		expect(near(centroids[0].pos.x, 0, 1e-9) && near(centroids[0].pos.y, 0, 1e-9)).toBe(true);
+
+		const edges = byKind(pts, 1);
+		expect(edges.length).toBe(1); // fA = E = (rIn,0); fB, fC coincide with W and carry no edge
+		expect(near(edges[0].pos.x, rIn, 1e-6) && near(edges[0].pos.y, 0, 1e-6)).toBe(true);
+
+		const verts = byKind(pts, 2);
+		const va = Math.PI / p;
+		const vx = rC * Math.cos(va), vy = rC * Math.sin(va);
+		expect(verts.length).toBe(2); // W and its ±y mirror
+		expect(verts.every((f) => near(Math.abs(f.pos.x), vx, 1e-6) && near(Math.abs(f.pos.y), vy, 1e-6))).toBe(true);
+		expect(verts.some((f) => f.pos.y > 0) && verts.some((f) => f.pos.y < 0)).toBe(true);
+	});
+
+	it("rhombitri {7,3}: centroids at all three occupied corners, all three kinds present", () => {
+		const g = hyperbolicUniformValues({ p: 7, q: 3, rings: [true, false, true] });
+		const pts = hyperbolicFeaturePoints(g);
+
+		expect(inDisk(pts)).toBe(true);
+		expect(pts.length).toBeLessThanOrEqual(MAX_FEATURE_POINTS);
+		expect(byKind(pts, 0).length).toBeGreaterThan(0);
+		expect(byKind(pts, 1).length).toBeGreaterThan(0);
+		expect(byKind(pts, 2).length).toBeGreaterThan(0);
+
+		const centroids = byKind(pts, 0);
+		const has = (x: number, y: number) => centroids.some((f) => near(f.pos.x, x, 1e-6) && near(f.pos.y, y, 1e-6));
+		expect(has(0, 0)).toBe(true); // O — heptagon
+		expect(has(g.rIn, 0)).toBe(true); // E — square
+		expect(centroids.some((f) => near(Math.abs(f.pos.x), Math.abs(g.cornerV.x), 1e-6) && near(Math.abs(f.pos.y), Math.abs(g.cornerV.y), 1e-6))).toBe(true); // V — triangle
+	});
+
+	it("snub sr{7,3}: all three kinds, vertices include the snub point, within the cap", () => {
+		const g = hyperbolicUniformValues({ p: 7, q: 3, rings: [true, true, true], snub: true });
+		const pts = hyperbolicFeaturePoints(g);
+
+		expect(inDisk(pts)).toBe(true);
+		expect(pts.length).toBeLessThanOrEqual(MAX_FEATURE_POINTS);
+		expect(byKind(pts, 0).length).toBeGreaterThan(0);
+		expect(byKind(pts, 1).length).toBeGreaterThan(0);
+		expect(byKind(pts, 2).length).toBeGreaterThan(0);
+
+		const s = g.snub!.s;
+		expect(byKind(pts, 2).some((f) => near(f.pos.x, s.x, 1e-9) && near(f.pos.y, s.y, 1e-9))).toBe(true);
+	});
 });

@@ -19,6 +19,11 @@ interface CatalogueListPanelProps {
 	onSelect?: (t: CatalogueTiling) => void;
 }
 
+// Initial expand state: top-level class categories (`c:…`) start collapsed so the picker opens as a short
+// list of headings; their k-subsections (`k:…`) start open so unrolling a class reveals its thumbnails
+// straight away rather than another layer of closed rows.
+const defaultOpenById = (id: string) => id.startsWith("k:");
+
 // Class order + labels come from the shared registry (referenceAtlas TILE_CLASS_ORDER / TILE_CLASS_LABEL),
 // the same source /library uses — so a new class appears here automatically. A class section only appears
 // when it has tilings.
@@ -58,7 +63,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		}
 		return ids;
 	}, [byClass]);
-	const { expanded, toggle } = useExpandableGroups(nodeIds, (id) => id);
+	const { expanded, toggle } = useExpandableGroups(nodeIds, (id) => id, defaultOpenById);
 
 	return (
 		<div className="flex flex-col gap-2">

@@ -42,6 +42,9 @@ function renderToDataUrl(wythoff: WythoffSpec, size: number): string | null {
 	gl.uniform1i(U.uStrokeMode, 1); // constant 1px stroke for the small static preview
 	gl.uniform3f(U.uSurface, dark ? 0.08 : 0.96, dark ? 0.09 : 0.96, dark ? 0.11 : 0.97);
 	gl.uniform3f(U.uLine, 0.05, 0.05, 0.07);
+	gl.uniform1i(U.uShowFill, 1); // previews always render filled, point-free tiles
+	gl.uniform1i(U.uShowPoints, 0);
+	gl.uniform1i(U.uNumPoints, 0);
 	gl.uniform3f(U.uParityA, 0.9, 0.9, 0.92);
 	gl.uniform3f(U.uParityB, 0.12, 0.12, 0.14);
 	gl.uniform1i(U.uNTiles, g.nTiles);

@@ -125,16 +125,31 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 							checked={cfg.showPolygonPoints}
 							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
 						/>
+						{/* Vertex-orbit dots are computed from the exact cell (KUniformityChecker.vertexOrbits),
+						    which has no hyperbolic counterpart yet — Euclidean-only, like the sibling flat-canvas
+						    overlays below. */}
+						{!isHyperbolic ? (
+							<Checkbox
+								id="showVertexOrbits"
+								label="Show Vertex Orbits"
+								shortcut="O"
+								checked={cfg.showVertexOrbits}
+								onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
+							/>
+						) : null}
 						{/* Radial wave on a tiling change (lib/utils/tilingTransition.ts). Ignored — the swap stays
 						    instant — under Islamic / symmetry-elements / inversive, whose draw paths have no
-						    per-tile scale, and under prefers-reduced-motion. */}
-						<Checkbox
-							id="tilingTransition"
-							label="Transition animation"
-							shortcut="T"
-							checked={cfg.tilingTransition}
-							onCheckedChange={(v) => setCfg({ tilingTransition: v })}
-						/>
+						    per-tile scale, and under prefers-reduced-motion. Hidden in hyperbolic: the WebGL disk
+						    renderer swaps instantly and has no per-tile scale to animate. */}
+						{!isHyperbolic ? (
+							<Checkbox
+								id="tilingTransition"
+								label="Transition animation"
+								shortcut="T"
+								checked={cfg.tilingTransition}
+								onCheckedChange={(v) => setCfg({ tilingTransition: v })}
+							/>
+						) : null}
 						{cfg.isTilingRegularOnly ? (
 							<Checkbox
 								id="circlePacking"
@@ -173,20 +188,26 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 								/>
 							</div>
 						) : null}
-						<Checkbox
-							id="showSymmetryElements"
-							label="Symmetry elements"
-							shortcut="S"
-							checked={cfg.showSymmetryElements}
-							onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
-						/>
-						<Checkbox
-							id="showFundamentalDomain"
-							label="Fundamental domain"
-							shortcut="D"
-							checked={cfg.showFundamentalDomain}
-							onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
-						/>
+						{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
+						    path, which is skipped in hyperbolic (canvas.tsx) — hide them there. */}
+						{!isHyperbolic ? (
+							<>
+								<Checkbox
+									id="showSymmetryElements"
+									label="Symmetry elements"
+									shortcut="S"
+									checked={cfg.showSymmetryElements}
+									onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
+								/>
+								<Checkbox
+									id="showFundamentalDomain"
+									label="Fundamental domain"
+									shortcut="D"
+									checked={cfg.showFundamentalDomain}
+									onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
+								/>
+							</>
+						) : null}
 						{isHyperbolic ? (
 							<div className="space-y-2">
 								<span className="text-[11px] text-fg-muted">Hyperbolic shading</span>
