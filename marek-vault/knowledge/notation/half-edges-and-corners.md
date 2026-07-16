@@ -7,9 +7,9 @@ sources: ["tools/ctrnact-oracle/reference/algorithm.txt (Marek, Part 1)"]
 
 # Half-edges and corners
 
-> Terminology note: the repo's CLAUDE.md calls these "Conway symbols" as shorthand. Marek's own
-> write-up calls them **half-edge labels** and **corners**. This note uses his terms; if a chat
-> message says "Conway symbol," it means this labelling.
+> Terminology note, corrected 2026-07-16: "Conway symbol" is Marek's genuine term for the *gluing*
+> notation built from these labels (his extension of the doily notation in *The Symmetries of
+> Things*), see [[conway-symbol]]. This note covers the labels themselves: half-edges and corners.
 
 Seeded from
 [../../../tools/ctrnact-oracle/reference/algorithm.txt](../../../tools/ctrnact-oracle/reference/algorithm.txt),
@@ -52,16 +52,21 @@ same way, but mirror vertices have their half-edges labelled in reverse (hence t
 
 ## Symmetric vertices
 
-For symmetric vertices the numbering is richer — symmetry identifies some half-edges/corners, so the
-label set is smaller or carries the symmetry class. The `(3,6,3,6)F` case in `algorithm.txt` works
-this through; capture the details here once I've read past the first page and asked Marek.
+Symmetry identifies half-edges, so a symmetric tile contributes fewer distinct labels. In the chat's
+`(a^3,b^2)` example the axis mirrors edges 0↔3 and 1↔2 and self-mirrors 4, so only one of each
+mirrored pair appears in the final symbol. Full walkthrough in [[conway-symbol]]; the TES markers
+`*n` and `|n` carry the same data ([[tes-format]]).
 
 ## Why this matters
 
-The solver grows a candidate dual by matching a corner of one vertex against a compatible corner of
-another (half-edge to half-edge). The corner strings are literally what gets glued and later
-canonicalised — see [[dual-search]] and [[canonical-form]].
+The solver grows a candidate by pairing half-edges (see [[dual-search]]); the corner strings are what
+the weaving chains into vertices. Reading them is the key to reading his code and files.
 
 ## From the chat
 
-- 
+- Corner syntax confirmed live: `0/1` = "vertex between edge 0 and edge 1," dashes separate corners, a
+  missing final dash closes the cycle; with polygon types it reads `0/1(A)-`.
+  ![[archive/2026-07-14#^msg-1526600787197952186]] ![[archive/2026-07-15#^msg-1527054744068161666]]
+- Multi-tile labels use primes (`0'`, `0''`) and `@n` beyond three tiles ([[tes-format]]).
+- His skeleton for `(a^3,b^2)` symmetric case, exactly this notation:
+  ![[archive/2026-07-15#^msg-1527054931604013067]]

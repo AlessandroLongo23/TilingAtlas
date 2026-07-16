@@ -17,15 +17,20 @@ curated notes I build on top of it. Open this folder as a vault in Obsidian.
 
 ## Folders
 
-- `knowledge/notation/` — Conway symbols, vertex configurations, palette JSON, the "čtrnáct" naming.
-- `knowledge/algorithm/` — the combinatorial engine: dual-search, half-edge gluing, canonical form,
-  the develop stage.
-- `knowledge/concepts/` — the tilings theory itself (k-uniform, vertex configs, duals).
-- `knowledge/scripts/` — one annotated note per script he sends, linked to the source message and file.
+- `knowledge/notation/` — how he writes tilings: the [[conway-symbol]], TES files, solution formats.
+- `knowledge/algorithm/` — **STS**, the Synthetic Tiling Searcher (his name for the engine): the
+  search, the edge-length solver, dedup vs canonization, the many-main.cpp workflow.
+- `knowledge/concepts/` — the theory: his six-level [[classification]], [[hybrid-identities]],
+  [[hyperbolic-tilings]], k-uniform counts.
+- `knowledge/scripts/` — one annotated note per script he sends, plus a catalogue of all files
+  received.
 - `knowledge/glossary.md` — quick term → one-line definition → link to the deep note.
-- `questions/` — what I still don't understand and want to ask him.
+- `people/` — who's who and [[contacts|who to contact, how, and why]].
+- `ideas/` — his [[marek-list-of-ideas|list of ideas]] and our working [[roadmap]].
+- `questions/` — research problems + what I still need him to explain.
 - `templates/` — note templates (see below).
-- `archive/`, `attachments/`, `_raw/` — generated / raw, all gitignored.
+- `archive/`, `attachments/`, `_raw/` — generated / raw, all gitignored. Files he sends outside
+  Discord (zips, the classification PowerPoint, datasets) sit at the vault root, also local-only.
 
 ## How to get the chat in here
 

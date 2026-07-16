@@ -6,6 +6,20 @@ _raw/
 archive/
 attachments/
 
+# Raw materials dropped at the vault root (scripts/datasets/slides Marek sends outside Discord).
+# His shared files stay local; only curated .md notes are committed.
+/*.txt
+/*.cpp
+/*.py
+/*.tes
+/*.ppt
+/*.pptx
+/*.zip
+/*.pdf
+/*.jar
+/solutions/
+/planar_tilings-main/
+
 # Obsidian volatile state (keep app.json tracked, ignore the rest)
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json

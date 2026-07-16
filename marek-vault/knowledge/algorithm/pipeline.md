@@ -50,4 +50,10 @@ alphabet/engine change didn't disturb the regular catalogue.
 
 ## From the chat
 
-- 
+- This three-stage port mirrors his actual workflow: search (`main_*.cpp` variants,
+  [[main-cpp-workflow]]) → dedup ([[canonical-form]]) → convert for display (`Tes_Maker` scripts →
+  TES → HyperRogue, [[tes-format]]). The repo's develop stage plays the role his converter plays,
+  with exact ℤ[ζ₁₂] arithmetic instead of TES geometry.
+- His raw solutions are deliberately display-agnostic; someone once rendered the Euclidean ones as
+  browser SVGs. "Always start from the raw data and build the decoder around it."
+  ![[archive/2026-07-13#^msg-1526181188568354856]]

@@ -43,4 +43,16 @@ tessellation systems," not just Euclidean — worth pressing him on for the hype
 
 ## From the chat
 
-- 
+- His own counts run to **k=18 complete** (4,177,507 tilings; ~17.5 GB of solution files); the limit
+  is disk space, not the algorithm. Full table in [[solution-file-format]].
+- He also skips 4.8.8 ("cannot be used for anything apart from that one uniform tiling"), so his k=1
+  is 10 too. ![[archive/2026-07-13#^msg-1526148830356181074]]
+- **A068599's higher terms come from STS itself**, so they can't be used to cross-check STS.
+  ![[archive/2026-07-14#^msg-1526689846838562877]]
+- Galebach (k≤7 before Marek) had a similar algorithm but never got past 7; nobody knows why. See
+  [[contacts]].
+- k-uniform Euclidean tilings are "a special case of hybrids existing outside of hyperbolic space"
+  ([[classification]]); and in hyperbolic space one configuration doesn't imply uniform
+  ([[hyperbolic-tilings]]).
+- He wants k refined to exclude degenerate (2-tile, dent) vertices, converging with Myers's
+  convention. ![[archive/2026-07-14#^msg-1526666323818713211]]

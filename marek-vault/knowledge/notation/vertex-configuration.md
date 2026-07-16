@@ -52,4 +52,14 @@ corners are labelled relative to its symmetry — see [[half-edges-and-corners]]
 
 ## From the chat
 
-- 
+- **Symmetry is mandatory, not an optimisation.** He started STS with only F (asymmetrical) vertices;
+  it failed. The heptomino cut into domino/tromino/domino is his counterexample: without symmetry the
+  Conway symbol can't be built without wrongly splitting a tile into two orbits. See [[dual-search]].
+  ![[archive/2026-07-14#^msg-1526694055331893369]]
+- **Configuration vs combination matters everywhere:** the edge length depends only on the
+  combination, so configurations of the same combination can mix in one tiling ([[hyperbolic-tilings]]).
+  His hybrid-identity lists are lists of *combinations*, not configurations ([[hybrid-identities]]).
+- The `_o` marker on solution files flags chiral batches; chiral vertices enter the search in both
+  chiralities ([[canonical-form]]). ![[archive/2026-07-13#^msg-1526147883546575009]]
+- Vertices with just **two** tiles occur in his more complex families (I asked about Myers's
+  ≥3-polygon convention); he'd consider excluding them from k. ![[archive/2026-07-14#^msg-1526666323818713211]]
