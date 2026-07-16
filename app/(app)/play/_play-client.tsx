@@ -342,11 +342,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				const c = useConfiguration.getState();
 				// Circle Packing only exists for regular-only tilings, and Islamic only for the regular/star
 				// classes; symmetry elements / fundamental domain / transition / vertex orbits are flat-canvas
-				// only and hidden in hyperbolic. Ignore each key where the sidebar hides the matching control.
+				// only and hidden in hyperbolic; vertex orbits also need the tiling's exact cell (the sidebar
+				// disables the checkbox without one). Ignore each key where the sidebar hides/disables the control.
 				const isHyperbolic = !!selected?.wythoff;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
+					(field === "showVertexOrbits" && !selected?.exactSource) ||
 					((field === "showSymmetryElements" || field === "showFundamentalDomain" || field === "tilingTransition" || field === "showVertexOrbits") && isHyperbolic);
 				if (field && !blocked) {
 					e.preventDefault();

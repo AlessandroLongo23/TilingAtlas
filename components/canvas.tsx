@@ -492,15 +492,17 @@ export function Canvas({
 				scaleOf?: (c: Vector) => number,
 				skipFill?: boolean,
 			) => {
-				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic;
+				// Orbit mode requires actual orbit data (only tilings with an exact cell carry it — the
+				// Regular shelf). Without data the toggle is inert here (no dim, no dots) and the sidebar
+				// disables the checkbox, so a persisted ON flag never shows a meaningless one-color overlay.
+				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic && propsRef.current.orbitData != null;
 				const opacity = orbitMode ? 0.3 : 1;
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
 				else tiling.show(p5, cfg.showPolygonPoints, opacity, cfg.circlePacking, cull, scaleOf, skipFill);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
 				// selection transition (scaleOf active) so they don't float off the shrinking outline. `k`
-				// (orbit count) sets the equidistant hue spacing; defaults to 1 (single color) when the
-				// tiling carries no orbit data.
+				// (orbit count) sets the equidistant hue spacing.
 				if (orbitMode && !scaleOf) {
 					const k = propsRef.current.orbitData?.k ?? 1;
 					tiling.drawVertexOrbits(p5, k, cull);

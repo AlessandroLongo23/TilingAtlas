@@ -127,13 +127,16 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 						/>
 						{/* Vertex-orbit dots are computed from the exact cell (KUniformityChecker.vertexOrbits),
 						    which has no hyperbolic counterpart yet — Euclidean-only, like the sibling flat-canvas
-						    overlays below. */}
+						    overlays below. Disabled when the tiling carries no exactSource (the lazy-shard shelves:
+						    scaled/isotoxal/mixed/convex/polyomino) — without an exact cell there are no orbit ids
+						    to color by, and the canvas is inert then too (canvas.tsx orbitMode). */}
 						{!isHyperbolic ? (
 							<Checkbox
 								id="showVertexOrbits"
 								label="Show Vertex Orbits"
 								shortcut="O"
 								checked={cfg.showVertexOrbits}
+								disabled={!selected?.exactSource}
 								onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
 							/>
 						) : null}
