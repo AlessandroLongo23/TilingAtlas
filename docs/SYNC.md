@@ -1117,3 +1117,10 @@ The 2×2 log→lattice map was a shear — seamless but not conformal; hex (1,6)
 Now `world = cmul(K, log w − V)`, `K = (a·v1+b·v2)/(2πi)` (his matchSeg pair), pan = strip-space
 `tiling_V` (dolly+spin, pole locked), Pitch slider removed. Hex t1001 (1,6) reproduces his flower,
 verified headless. NOTES §63; spec corrected in place. — CC
+
+**2026-07-16 (CC, later).** Second-round review response, all in `../thesis/`: thm:smallkexact
+demoted to bracket [5,7]/[6,15]/[7,23] + attainment (its "exactly 5,6,7" didn't follow —
+SMALLK_W_BOUND.md §5b carried the same bad inference, correction appended there as §7);
+downstream claims rewritten (abstract, §1.3/1.4/1.5, ch.4/5/8/10, conclusion, App. C);
+thm:weight proof now derives |C_e| ≤ |V(Q)| with the weakening explicit; crefnames capitalized;
+notation P disambiguated; k=18 marked p.c. Build: 178pp, 0 undef/??. Ack text still AL's.

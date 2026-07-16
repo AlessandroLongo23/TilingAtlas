@@ -204,3 +204,15 @@ oracle measurement (92/92 tilings).
   the re-run of k ≤ 3 at the proven config.
 - NOT claimed: anything at k ≥ 4 (the pgg document owns that regime); star families
   (dent-fill bookkeeping changes L1's graph substrate — see TH-3).
+
+## 7. Correction (2026-07-16, CC): §5b's exactness inference does not follow
+
+§5b claims "combined with §3's global upper bounds, the maxima over all k ≤ 3 tilings are
+exactly 5, 6, 7." §3's upper bounds cover only the RIGID branches (hex 6/8/10, square 3/6/7,
+both with acknowledged census slack); the non-rigid branch (§4) is bounded only by its radii
+7/15/23, with the max-6 figure an oracle measurement. So the proven statement is a bracket,
+[5,7], [6,15], [7,23], with the lower ends attained (§5b's certificates are sound). Exactness
+is measured, not proven; closing it needs the unclaimed tightenings of the ledger (snub
+uniqueness, census shaving, ST-6 sweep). Caught by the second-round external review of the
+thesis; the referee passes of §6 missed it. The thesis (thm:smallkexact, Appendix C) now
+states bracket + attainment. The per-branch radii and the §5 consumption are unaffected.
