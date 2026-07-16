@@ -65,9 +65,16 @@ export interface ConfigurationState {
 	// same tiling. Lens fixed at screen centre; panning slides the world under it. See components/
 	// inversive-canvas.tsx and lib/render/inversiveCell.ts.
 	inversive: boolean;
-	inversiveMode: "inversion" | "mobius";
-	inversiveRadiusFrac: number; // lens radius as a fraction of min(w,h)/2
+	inversiveMode: "inversion" | "mobius" | "spiral";
+	inversiveRadiusFrac: number; // lens radius as a fraction of min(w,h)/2 (spiral+double ⇒ pole separation)
 	mobiusTwist: number; // loxodromic spiral angle, degrees (0 ⇒ pure source/sink flow)
+	// Spiral lens (inversiveMode "spiral"): the complex-exponential map of Kaplan's spiral tilings. The
+	// seam (spiralArmA·v₁ + spiralArmB·v₂) becomes the 2π wrap; pitch leans the rings into logarithmic
+	// spirals; spiralDouble adds the second pole (Droste). See lib/render/spiralMap.ts.
+	spiralArmA: number; // integer seam component along v₁
+	spiralArmB: number; // integer seam component along v₂
+	spiralPitch: number; // spiral lean, degrees (0 ⇒ concentric rings)
+	spiralDouble: boolean; // false ⇒ one center, true ⇒ two centers (Droste)
 
 	// Hyperbolic view: set true by /play when a {p,q} hyperbolic tiling is selected. Swaps the flat p5
 	// render for the Poincaré-disk WebGL renderer (components/hyperbolic-canvas.tsx). While on, the p5
@@ -140,6 +147,10 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	inversiveMode: "inversion",
 	inversiveRadiusFrac: 0.42,
 	mobiusTwist: 60,
+	spiralArmA: 1,
+	spiralArmB: 0,
+	spiralPitch: 30,
+	spiralDouble: false,
 
 	hyperbolic: false,
 	hyperbolicShading: "tiles",

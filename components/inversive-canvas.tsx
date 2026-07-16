@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { buildCellGeom } from "@/lib/render/inversiveCellGeom";
+import { spiralLogToLattice } from "@/lib/render/spiralMap";
 import { evaluateParamCell, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -44,9 +45,11 @@ uniform float uDpr;     // device pixel ratio
 uniform vec2 uOffset;   // pan offset, centred CSS px (y down, matches p5)
 uniform float uZoom;    // px per world unit
 uniform float uRot;     // rotation, radians
-uniform int uMode;      // 0 = circle inversion, 1 = Mobius (loxodromic)
-uniform float uR;       // lens radius, CSS px
+uniform int uMode;      // 0 = circle inversion, 1 = Mobius (loxodromic), 2 = spiral (complex log)
+uniform float uR;       // lens radius, CSS px (spiral + double ⇒ pole separation)
 uniform vec2 uKinv;     // inverse multiplier (complex) for the Mobius map
+uniform int uSpiralDouble;   // spiral: 0 = one center, 1 = two centers (Droste)
+uniform vec4 uLogToLattice;  // spiral: row-major 2×2 mapping (ln|w|, arg w) → lattice (a, b)
 
 uniform mat2 uMinv;     // world -> lattice (a, b)
 uniform vec2 uV1;       // lattice basis vectors (world)
@@ -90,31 +93,59 @@ void main() {
 	vec2 fragCss = gl_FragCoord.xy / uDpr;
 	vec2 s = vec2(fragCss.x - uRes.x * 0.5, uRes.y * 0.5 - fragCss.y);
 
-	// Undo the lens map g: content shown at pixel s comes from view pixel g^{-1}(s).
-	vec2 v;
-	if (uMode == 0) {
-		float r2 = max(dot(s, s), 1.0);
-		v = (uR * uR) * s / r2;
+	// Undo the view map: content shown at pixel s comes from world point f(s). Inversion and Möbius invert
+	// a lens; the spiral (uMode 2) is the complex-log of Kaplan's exponential spiral tilings. uMode is a
+	// uniform, so these branches are uniform control flow — the dFdx/dFdy footprints inside stay defined.
+	vec2 world;
+	float pwRaw;
+	if (uMode == 2) {
+		// Sample point w: pole at screen centre, pan moves it, ring density folded into uLogToLattice.
+		vec2 w = (s - uOffset) / max(0.5 * min(uRes.x, uRes.y), 1.0);
+		if (uSpiralDouble == 1) {
+			vec2 P = vec2(uR / max(0.5 * min(uRes.x, uRes.y), 1.0), 0.0);
+			w = cdiv(w - P, w + P);   // Möbius: P → 0, −P → ∞ (two poles)
+		}
+		float rr = 0.5 * log(max(dot(w, w), 1e-30));   // ln|w|
+		float th = atan(w.y, w.x) + uRot;              // arg w; rotation spins the whole spiral
+		// latt = M·(r, θ); world = latt·(v1, v2). M's θ-column is the seam (a,b), so θ+2π ⇒ +lattice vector,
+		// which is why the atan branch cut at θ=±π closes seamlessly onto the same tile.
+		vec2 latt = vec2(uLogToLattice.x * rr + uLogToLattice.y * th,
+		                 uLogToLattice.z * rr + uLogToLattice.w * th);
+		world = latt.x * uV1 + latt.y * uV2;
+		// Footprint on the CONTINUOUS coord w (log is conformal, so the (r,θ) step is isotropic = |dw|/|w|),
+		// carried into world through the map's two columns. Measuring on w rather than the folded world keeps
+		// the branch cut from spiking dFdx into a one-pixel radial seam.
+		float pw_w = max(length(dFdx(w)), length(dFdy(w)));
+		float stepRT = pw_w / max(length(w), 1e-6);
+		vec2 colR = uLogToLattice.x * uV1 + uLogToLattice.z * uV2;
+		vec2 colT = uLogToLattice.y * uV1 + uLogToLattice.w * uV2;
+		pwRaw = stepRT * max(length(colR), length(colT));
 	} else {
-		vec2 a = vec2(uR, 0.0);
-		vec2 m = cmul(uKinv, cdiv(s - a, s + a));
-		v = cmul(a, cdiv(vec2(1.0, 0.0) + m, vec2(1.0, 0.0) - m));
+		vec2 v;
+		if (uMode == 0) {
+			float r2 = max(dot(s, s), 1.0);
+			v = (uR * uR) * s / r2;
+		} else {
+			vec2 a = vec2(uR, 0.0);
+			vec2 m = cmul(uKinv, cdiv(s - a, s + a));
+			v = cmul(a, cdiv(vec2(1.0, 0.0) + m, vec2(1.0, 0.0) - m));
+		}
+		// Undo affine (pan/zoom/rotate + y-flip): world = Rt * ((v - offset) / zoom), Rt an involution.
+		vec2 u = (v - uOffset) / uZoom;
+		float c = cos(uRot), sn = sin(uRot);
+		world = vec2(c * u.x + sn * u.y, sn * u.x - c * u.y);
+		pwRaw = max(length(dFdx(world)), length(dFdy(world)));
 	}
-
-	// Undo affine (pan/zoom/rotate + y-flip): world = Rt * ((v - offset) / zoom), Rt an involution.
-	vec2 u = (v - uOffset) / uZoom;
-	float c = cos(uRot), sn = sin(uRot);
-	vec2 world = vec2(c * u.x + sn * u.y, sn * u.x - c * u.y);
 
 	// Reduce into the fundamental parallelogram at the origin, then test the 3×3 block of copies.
 	vec2 ab = uMinv * world;
 	vec2 baseAB = floor(ab);
 	vec2 qw = world - (baseAB.x * uV1 + baseAB.y * uV2);
 
-	// Local world-units-per-pixel. Strokes stay a constant SCREEN width (uStrokePx * pwRaw) so they never
-	// fatten into a ring near the centre; pwRaw itself drives the density fade + centre blend below. The
-	// bbox-cull margin is bounded so the per-pixel work stays cheap where one pixel spans many cells.
-	float pwRaw = max(length(dFdx(world)), length(dFdy(world)));
+	// Local world-units-per-pixel (pwRaw, from the branch above). Strokes stay a constant SCREEN width
+	// (uStrokePx * pwRaw) so they never fatten into a ring near the centre; pwRaw also drives the density
+	// fade + centre blend below. The bbox-cull margin is bounded so per-pixel work stays cheap where one
+	// pixel spans many cells.
 	float cellScale = 0.5 * (length(uV1) + length(uV2));
 	// Stroke half-width in WORLD units (a fraction of the tile edge), so it scales with the tiles under the
 	// map: compressed near the centre, it shrinks with them and dissolves on its own — no fade, no ring.
@@ -243,6 +274,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 
 		for (const name of [
 			"uRes", "uDpr", "uOffset", "uZoom", "uRot", "uMode", "uR", "uKinv",
+			"uSpiralDouble", "uLogToLattice",
 			"uMinv", "uV1", "uV2", "uVerts", "uVertsW", "uMeta", "uPolyCount",
 			"uStrokePx", "uSurface", "uLine", "uAvg", "uFeature",
 		]) {
@@ -308,17 +340,24 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			const kinvMag = Math.exp(-sigma);
 			const dark = document.documentElement.classList.contains("dark");
 			const [m00, m01, m10, m11] = geom.minv;
+				// Spiral log→lattice matrix. Ring density tracks zoom (default 50 ⇒ 1), so the wheel tightens
+				// or loosens the rings. Rebuilt each frame — a tiny CPU calc that depends on live zoom.
+				const spiral = spiralLogToLattice(
+					cfg.spiralArmA, cfg.spiralArmB, cfg.spiralPitch, ctrl.zoom / 50,
+				);
 
-			const U = uniformsRef.current;
+				const U = uniformsRef.current;
 			g.uniform2f(U.uRes, w, h);
 			g.uniform1f(U.uDpr, dpr);
 			g.uniform2f(U.uOffset, ctrl.offset.x, ctrl.offset.y);
 			g.uniform1f(U.uZoom, ctrl.zoom);
 			g.uniform1f(U.uRot, ((cfg.rotation || 0) * Math.PI) / 180);
-			g.uniform1i(U.uMode, cfg.inversiveMode === "mobius" ? 1 : 0);
+			g.uniform1i(U.uMode, cfg.inversiveMode === "spiral" ? 2 : cfg.inversiveMode === "mobius" ? 1 : 0);
 			g.uniform1f(U.uR, R);
 			g.uniform2f(U.uKinv, kinvMag * Math.cos(-tau), kinvMag * Math.sin(-tau));
-			g.uniformMatrix2fv(U.uMinv, false, [m00, m10, m01, m11]);
+			g.uniform1i(U.uSpiralDouble, cfg.spiralDouble ? 1 : 0);
+				g.uniform4f(U.uLogToLattice, spiral.m[0], spiral.m[1], spiral.m[2], spiral.m[3]);
+				g.uniformMatrix2fv(U.uMinv, false, [m00, m10, m01, m11]);
 			g.uniform2f(U.uV1, geom.v1[0], geom.v1[1]);
 			g.uniform2f(U.uV2, geom.v2[0], geom.v2[1]);
 			g.uniform1i(U.uVertsW, geom.vertsW);
