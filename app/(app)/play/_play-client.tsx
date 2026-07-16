@@ -213,6 +213,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (!paramCell) return;
 		const fa = useFamilyAlphas.getState();
 		fa.set(resolveAlphaDegs(paramCell, fa.values));
+		fa.resetLive(); // reseed the eased render tuple for the NEW family — never glide across two families
 	}, [selected?.canonicalKey, paramCell]);
 
 	// The Islamic construction is only defined for the regular/star classes. When the selection moves to a
