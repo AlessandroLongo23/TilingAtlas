@@ -49,6 +49,7 @@ export class Tiling {
         circlePacking: boolean = false,
         cull?: (c: Vector) => boolean,
         scaleOf?: (c: Vector) => number,
+        skipFill: boolean = false,
     ): void => {
         // Read config ONCE per draw, not once per tile. The plain path below used to delegate to
         // Polygon.show, which re-read Zustand state AND queried the DOM ("dark" class) for every tile
@@ -104,27 +105,29 @@ export class Tiling {
             // perceived lightness by ~0.13 (that is the whole reason the inversive view looked brighter —
             // its shader writes alpha 1). `opacity` still multiplies, so the layer fade-in is unaffected.
             const fillA = 1.0 * opacity;
-            for (let i = 0; i < this.nodes.length; i++) {
-                const node = this.nodes[i];
-                if (cull && !cull(node.centroid)) continue;
-                // Selection transition: the tile is drawn scaled about its own centroid. s === 1 is the
-                // normal path (no per-vertex arithmetic); below WAVE_MIN_SCALE it has collapsed to a point
-                // and is dropped, so it doesn't linger as a dot of stroke.
-                const s = scaleOf ? scaleOf(node.centroid) : 1;
-                if (s < WAVE_MIN_SCALE) continue;
-                if (showFill) ctx.fill(node.hue, 40, fillV, fillA);
-                else ctx.noFill();
-                const vs = node.vertices;
-                ctx.beginShape();
-                if (s >= 1) {
-                    for (let k = 0; k < vs.length; k++) ctx.vertex(vs[k].x, vs[k].y);
-                } else {
-                    const cx = node.centroid.x, cy = node.centroid.y;
-                    for (let k = 0; k < vs.length; k++) {
-                        ctx.vertex(cx + (vs[k].x - cx) * s, cy + (vs[k].y - cy) * s);
+            if (!skipFill) {
+                for (let i = 0; i < this.nodes.length; i++) {
+                    const node = this.nodes[i];
+                    if (cull && !cull(node.centroid)) continue;
+                    // Selection transition: the tile is drawn scaled about its own centroid. s === 1 is the
+                    // normal path (no per-vertex arithmetic); below WAVE_MIN_SCALE it has collapsed to a point
+                    // and is dropped, so it doesn't linger as a dot of stroke.
+                    const s = scaleOf ? scaleOf(node.centroid) : 1;
+                    if (s < WAVE_MIN_SCALE) continue;
+                    if (showFill) ctx.fill(node.hue, 40, fillV, fillA);
+                    else ctx.noFill();
+                    const vs = node.vertices;
+                    ctx.beginShape();
+                    if (s >= 1) {
+                        for (let k = 0; k < vs.length; k++) ctx.vertex(vs[k].x, vs[k].y);
+                    } else {
+                        const cx = node.centroid.x, cy = node.centroid.y;
+                        for (let k = 0; k < vs.length; k++) {
+                            ctx.vertex(cx + (vs[k].x - cx) * s, cy + (vs[k].y - cy) * s);
+                        }
                     }
+                    ctx.endShape(ctx.CLOSE);
                 }
-                ctx.endShape(ctx.CLOSE);
             }
             // Points sit on the untransformed outline, so they'd float off a scaled tile — hide them for
             // the duration of a transition.
@@ -155,25 +158,25 @@ export class Tiling {
     }
 
     /** Vertex-orbit overlay: one filled dot per tiling vertex, colored by its orbit id
-     *  (node.orbitOfCorner), with a theme-colored outline. Constant on-screen size (world radius /
-     *  zoom). `dark` picks the outline: white on a dark theme, black on a light one. Nodes with no
-     *  orbit data fall back to a single color (orbit 0). Drawn inside the world transform, on top of
-     *  the tiles; the caller suppresses it during the selection transition and in Islamic mode. */
-    drawVertexOrbits = (ctx, dark: boolean, cull?: (c: Vector) => boolean): void => {
+     *  (node.orbitOfCorner) with an equidistant hue among `k` orbits, at the tile-default S/B, and a
+     *  black outline. Constant on-screen size (world radius / zoom). Nodes with no orbit data fall back
+     *  to a single color (orbit 0 of k=1). Drawn inside the world transform, on top of the tiles; the
+     *  caller suppresses it during the selection transition and in Islamic mode. */
+    drawVertexOrbits = (ctx, k: number, cull?: (c: Vector) => boolean): void => {
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
         const diameter = 8 / zoom;
         ctx.strokeWeight(1.5 / zoom);
-        ctx.stroke(0, 0, dark ? 100 : 0); // HSB: white on dark theme, black on light
+        ctx.stroke(0, 0, 0); // always a black outline
         for (let i = 0; i < this.nodes.length; i++) {
             const node = this.nodes[i];
             if (cull && !cull(node.centroid)) continue;
             const oc = node.orbitOfCorner;
             const vs = node.vertices;
             for (let c = 0; c < vs.length; c++) {
-                const o = oc ? oc[c] : 0; // no orbit data → single neutral color (orbit 0)
+                const o = oc ? oc[c] : 0; // no orbit data → single color (orbit 0)
                 if (o < 0) continue; // corner is not a tiling vertex (e.g. star dent-fill)
-                const col = orbitColor(o);
+                const col = orbitColor(o, k);
                 ctx.fill(col.h, col.s, col.b);
                 ctx.ellipse(vs[c].x, vs[c].y, diameter, diameter);
             }
