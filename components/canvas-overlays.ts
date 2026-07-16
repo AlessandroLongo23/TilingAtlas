@@ -37,8 +37,39 @@ export function drawTilingPlain(p5: P5, tiling: { nodes: { vertices: Vec2[] }[] 
 	p5.pop();
 }
 
-export function drawFundamentalDomain(p5: P5, data: SymmetryData) {
+// World point currently under the SCREEN CENTRE: invert the canvas transform
+// screen = (W/2+off.x, H/2+off.y) + Rot(rot)·(zoom·wx, −zoom·wy) at screen = (W/2, H/2).
+function worldUnderCentre(view: OverlayView): Vec2 {
+	const { zoom, rotation: rot, offset } = view;
+	const c = Math.cos(rot), s = Math.sin(rot);
+	const px = -offset.x, py = -offset.y;
+	const rx = c * px + s * py, ry = -s * px + c * py;
+	return { x: rx / zoom, y: -ry / zoom };
+}
+
+// The whole-lattice-vector translate (m·c1 + n·c2, integer m,n) that brings `anchor` to its copy nearest
+// the world point under the screen centre. The symmetry analysis anchors the FD/cell polygons at ONE
+// fixed world spot, and the pan wrap only keeps that spot within ~a cell of the centre — for a large
+// cell that can be the corner of the screen. Round-reduction in LATTICE coordinates picks the nearest
+// copy under any pan/rotation (same convention as canvas.tsx wrapOffset). Degenerate basis → no move.
+export function fdSnapTranslate(view: OverlayView, cell: [Vec2, Vec2], anchor: Vec2): Vec2 {
+	const [c1, c2] = cell;
+	const det = c1.x * c2.y - c1.y * c2.x;
+	if (Math.abs(det) < 1e-12) return { x: 0, y: 0 };
+	const w = worldUnderCentre(view);
+	const dx = w.x - anchor.x, dy = w.y - anchor.y;
+	const m = Math.round((dx * c2.y - dy * c2.x) / det);
+	const n = Math.round((-dx * c1.y + dy * c1.x) / det);
+	return { x: m * c1.x + n * c2.x, y: m * c1.y + n * c2.y };
+}
+
+export function drawFundamentalDomain(p5: P5, data: SymmetryData, view: OverlayView) {
 	p5.push();
+	// Snap the whole group (cell + subdivision + FD) to the lattice copy nearest the view centre. ONE
+	// shared translate keeps it coherent — the FD stays inside its cell. cellOrigin is the documented
+	// anchor the cellPolygon is centred on.
+	const t = fdSnapTranslate(view, data.cell, data.cellOrigin);
+	p5.translate(t.x, t.y);
 	// the drawn cell — the primitive parallelogram (hexagonal → 60° rhombus, cm/cmm → mirror rhombus); a
 	// thin neutral outline.
 	p5.noFill();

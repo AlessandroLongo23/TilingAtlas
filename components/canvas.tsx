@@ -774,15 +774,18 @@ export function Canvas({
 							: null;
 					if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
 					else drawTiling(cfg, tiling, cull, wave, shaderFill, hoverWorld);
-					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
+					// Shared by both overlays: the FD uses it to snap to the lattice copy nearest the view
+					// centre; the symmetry elements to replicate across the visible world rectangle.
+					const overlayView = {
+						zoom: ctrl.zoom,
+						rotation: rot,
+						offset: { x: drawOffset.x, y: drawOffset.y },
+						width: p5.width,
+						height: p5.height,
+					};
+					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd, overlayView);
 					if (symmetryActive) {
-						drawSymmetryElements(p5, sd, {
-							zoom: ctrl.zoom,
-							rotation: rot,
-							offset: { x: drawOffset.x, y: drawOffset.y },
-							width: p5.width,
-							height: p5.height,
-						});
+						drawSymmetryElements(p5, sd, overlayView);
 					}
 					p5.pop();
 
