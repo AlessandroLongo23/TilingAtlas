@@ -91,7 +91,7 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 				<Checkbox
 					id="showPolygonFill"
 					label="Polygon fill"
-					shortcut="F"
+					shortcut="B"
 					checked={cfg.showPolygonFill}
 					onCheckedChange={(v) => setCfg({ showPolygonFill: v })}
 				/>

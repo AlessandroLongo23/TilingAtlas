@@ -298,7 +298,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	useEffect(() => {
 		// Shortcut key → the boolean config field it toggles (matches the Kbd badges in the sidebar).
 		const TOGGLES: Record<string, keyof ConfigurationState> = {
-			f: "showPolygonFill",
+			b: "showPolygonFill",
 			p: "showPolygonPoints",
 			i: "isIslamic",
 			s: "showSymmetryElements",
@@ -321,7 +321,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			} else if (e.key === "ArrowRight") {
 				e.preventDefault();
 				step(1);
-			} else if (e.key === "h" || e.key === "H") {
+			} else if (e.key === "f" || e.key === "F") {
 				// Toggle immersive (fullscreen-canvas) mode: hides the header + sidebar.
 				e.preventDefault();
 				useImmersive.getState().toggle();
@@ -442,7 +442,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				<button
 					type="button"
 					onClick={() => useImmersive.getState().toggle()}
-					title={immersive ? "Exit fullscreen (H or Esc)" : "Fullscreen canvas (H)"}
+					title={immersive ? "Exit fullscreen (F or Esc)" : "Fullscreen canvas (F)"}
 					aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
 					aria-pressed={immersive}
 					className={cn(
