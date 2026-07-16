@@ -17,6 +17,13 @@ export interface CellMesh {
 	fillVerts: Float32Array; // 2 floats per vertex, triangles (x0,y0, x1,y1, ...)
 	fillHue: Float32Array; // 1 float per vertex, hue in degrees
 	fillVertexCount: number; // = fillVerts.length / 2
+	// Stroke: each polygon edge -> a quad (2 triangles, 6 verts). Each stroke vert carries the edge-point
+	// world position (strokePos), the world-space unit normal of the edge (strokeNorm), and a side flag
+	// (strokeSide, +1 / -1) telling the vertex shader which way to push by half the screen stroke width.
+	strokePos: Float32Array;  // 2 floats/vert
+	strokeNorm: Float32Array; // 2 floats/vert
+	strokeSide: Float32Array; // 1 float/vert
+	strokeVertexCount: number;
 	v1: [number, number];
 	v2: [number, number];
 	det: number;
@@ -59,10 +66,48 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		}
 	}
 
+	// Stroke quads: one quad per edge. For edge (a,b), the left-normal nrm (world space); the vertex shader
+	// offsets each corner by side * halfWidthScreen along the edge normal (constant screen width).
+	// Butt-end quad per edge (no miter joins at corners) — a deliberate M1 simplification, fine at the thin
+	// default stroke width.
+	let sTri = 0;
+	for (const poly of base.polys) sTri += poly.vertices.length; // n edges -> n quads -> 2n triangles
+	const strokePos = new Float32Array(sTri * 6 * 2);
+	const strokeNorm = new Float32Array(sTri * 6 * 2);
+	const strokeSide = new Float32Array(sTri * 6);
+	let si = 0;
+	const pushStroke = (px: number, py: number, nx: number, ny: number, side: number) => {
+		strokePos[si * 2] = px; strokePos[si * 2 + 1] = py;
+		strokeNorm[si * 2] = nx; strokeNorm[si * 2 + 1] = ny;
+		strokeSide[si] = side;
+		si++;
+	};
+	for (const poly of base.polys) {
+		const vs = poly.vertices;
+		for (let k = 0; k < vs.length; k++) {
+			const a = vs[k];
+			const b = vs[(k + 1) % vs.length];
+			const dx = b.x - a.x, dy = b.y - a.y;
+			const len = Math.hypot(dx, dy) || 1;
+			const nx = -dy / len, ny = dx / len; // left normal of the edge direction (world space)
+			// Two triangles over { a-, a+, b-, b+ }: (a-, a+, b-) and (b-, a+, b+).
+			pushStroke(a.x, a.y, nx, ny, -1);
+			pushStroke(a.x, a.y, nx, ny, +1);
+			pushStroke(b.x, b.y, nx, ny, -1);
+			pushStroke(b.x, b.y, nx, ny, -1);
+			pushStroke(a.x, a.y, nx, ny, +1);
+			pushStroke(b.x, b.y, nx, ny, +1);
+		}
+	}
+
 	return {
 		fillVerts,
 		fillHue,
 		fillVertexCount: vi,
+		strokePos,
+		strokeNorm,
+		strokeSide,
+		strokeVertexCount: si,
 		v1: [v1x, v1y],
 		v2: [v2x, v2y],
 		det,

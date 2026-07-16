@@ -59,6 +59,43 @@ void main() {
 }
 `;
 
+const STROKE_VERT = `#version 300 es
+in vec2 aPos;
+in vec2 aNorm;    // world-space edge normal
+in float aSide;   // +1 / -1
+in vec2 aInst;
+uniform vec2 uOffset;
+uniform float uZoom;
+uniform float uRot;
+uniform vec2 uV1;
+uniform vec2 uV2;
+uniform vec2 uHalf;
+uniform float uHalfStrokePx;  // half stroke width, CSS px
+void main() {
+	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	float c = cos(uRot), s = sin(uRot);
+	// Same centred-screen map as the fill.
+	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
+	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
+	// Carry the edge normal through the SAME linear map (no translation), renormalise in screen space,
+	// push by half the stroke width -> constant CSS-px outline at any zoom.
+	float nsx = uZoom * (c * aNorm.x + s * aNorm.y);
+	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
+	float nl = length(vec2(nsx, nsy));
+	vec2 n = nl > 0.0 ? vec2(nsx, nsy) / nl : vec2(0.0);
+	sx += aSide * uHalfStrokePx * n.x;
+	sy += aSide * uHalfStrokePx * n.y;
+	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
+}
+`;
+
+const STROKE_FRAG = `#version 300 es
+precision highp float;
+uniform vec3 uStroke;
+out vec4 frag;
+void main() { frag = vec4(uStroke, 1.0); }
+`;
+
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
 	const sh = gl.createShader(type);
 	if (!sh) return null;
@@ -81,6 +118,12 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 	const instBufRef = useRef<WebGLBuffer | null>(null);
 	const uniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
 	const attribsRef = useRef<Record<string, number>>({});
+	const strokeProgRef = useRef<WebGLProgram | null>(null);
+	const strokePosBufRef = useRef<WebGLBuffer | null>(null);
+	const strokeNormBufRef = useRef<WebGLBuffer | null>(null);
+	const strokeSideBufRef = useRef<WebGLBuffer | null>(null);
+	const strokeUniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
+	const strokeAttribsRef = useRef<Record<string, number>>({});
 	const meshRef = useRef<CellMesh | null>(null);
 	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
 	const sizeRef = useRef({ width, height });
@@ -97,6 +140,12 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillVerts, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, hueBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillHue, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, strokePosBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokePos, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, strokeNormBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeNorm, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, strokeSideBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeSide, gl.STATIC_DRAW);
 		meshRef.current = mesh;
 		instRef.current = { Ri: -1, Rj: -1, count: 0 }; // force an instance rebuild for the new basis
 	};
@@ -132,6 +181,30 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		posBufRef.current = gl.createBuffer();
 		hueBufRef.current = gl.createBuffer();
 		instBufRef.current = gl.createBuffer();
+
+		const strokeVs = compile(gl, gl.VERTEX_SHADER, STROKE_VERT);
+		const strokeFs = compile(gl, gl.FRAGMENT_SHADER, STROKE_FRAG);
+		if (!strokeVs || !strokeFs) return;
+		const strokeProg = gl.createProgram();
+		gl.attachShader(strokeProg, strokeVs);
+		gl.attachShader(strokeProg, strokeFs);
+		gl.linkProgram(strokeProg);
+		if (!gl.getProgramParameter(strokeProg, gl.LINK_STATUS)) {
+			console.error("euclidean stroke program link failed:", gl.getProgramInfoLog(strokeProg));
+			return;
+		}
+		strokeProgRef.current = strokeProg;
+
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke"]) {
+			strokeUniformsRef.current[name] = gl.getUniformLocation(strokeProg, name);
+		}
+		for (const name of ["aPos", "aNorm", "aSide", "aInst"]) {
+			strokeAttribsRef.current[name] = gl.getAttribLocation(strokeProg, name);
+		}
+
+		strokePosBufRef.current = gl.createBuffer();
+		strokeNormBufRef.current = gl.createBuffer();
+		strokeSideBufRef.current = gl.createBuffer();
 
 		let raf = 0;
 		const render = () => {
@@ -206,7 +279,53 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			g.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
 			g.uniform2f(U.uHalf, w / 2, h / 2);
 
-			g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
+			if (cfg.showPolygonFill) {
+				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
+			}
+
+			if (cfg.lineWidth > 0 && mesh.strokeVertexCount > 0) {
+				// Blend stays enabled across frames deliberately: both fragment shaders write alpha 1.0, so
+				// SRC_ALPHA blending is identity today; keeping it on future-proofs a per-tile-opacity fill
+				// without a state-toggle dance.
+				g.enable(g.BLEND);
+				g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
+				// No VAOs: both programs share the default VAO and the instance buffer, so EVERY attribute must
+				// be fully rebound (bindBuffer + vertexAttribPointer + vertexAttribDivisor) before its own draw
+				// every frame. Do NOT skip rebinding as a "nothing changed" perf shortcut — the two programs'
+				// attribute locations aren't guaranteed disjoint, so a skipped rebind would corrupt
+				// divisor/pointer state across passes.
+				g.useProgram(strokeProgRef.current);
+				const SA = strokeAttribsRef.current, SU = strokeUniformsRef.current;
+				g.bindBuffer(g.ARRAY_BUFFER, strokePosBufRef.current);
+				g.enableVertexAttribArray(SA.aPos);
+				g.vertexAttribPointer(SA.aPos, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aPos, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, strokeNormBufRef.current);
+				g.enableVertexAttribArray(SA.aNorm);
+				g.vertexAttribPointer(SA.aNorm, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aNorm, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, strokeSideBufRef.current);
+				g.enableVertexAttribArray(SA.aSide);
+				g.vertexAttribPointer(SA.aSide, 1, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aSide, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
+				g.enableVertexAttribArray(SA.aInst);
+				g.vertexAttribPointer(SA.aInst, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aInst, 1);
+				g.uniform2f(SU.uOffset, draw.x, draw.y);
+				g.uniform1f(SU.uZoom, ctrl.zoom);
+				g.uniform1f(SU.uRot, rot);
+				g.uniform2f(SU.uV1, mesh.v1[0], mesh.v1[1]);
+				g.uniform2f(SU.uV2, mesh.v2[0], mesh.v2[1]);
+				g.uniform2f(SU.uHalf, w / 2, h / 2);
+				g.uniform1f(SU.uHalfStrokePx, cfg.lineWidth * 0.5); // p5 strokeWeight(lineWidth/zoom) => lineWidth px
+				const dark = document.documentElement.classList.contains("dark");
+				const lightStroke = !cfg.showPolygonFill && dark; // matches Tiling.show white-stroke case
+				if (lightStroke) g.uniform3f(SU.uStroke, 1, 1, 1);
+				else g.uniform3f(SU.uStroke, 0, 0, 0);
+				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.strokeVertexCount, instRef.current.count);
+				g.useProgram(progRef.current); // restore the fill program for next frame's fill pass
+			}
 		};
 		raf = requestAnimationFrame(render);
 
@@ -218,8 +337,15 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			if (posBufRef.current) gl.deleteBuffer(posBufRef.current);
 			if (hueBufRef.current) gl.deleteBuffer(hueBufRef.current);
 			if (instBufRef.current) gl.deleteBuffer(instBufRef.current);
+			if (strokeProgRef.current) gl.deleteProgram(strokeProgRef.current);
+			gl.deleteShader(strokeVs);
+			gl.deleteShader(strokeFs);
+			if (strokePosBufRef.current) gl.deleteBuffer(strokePosBufRef.current);
+			if (strokeNormBufRef.current) gl.deleteBuffer(strokeNormBufRef.current);
+			if (strokeSideBufRef.current) gl.deleteBuffer(strokeSideBufRef.current);
 			glRef.current = null;
 			progRef.current = null;
+			strokeProgRef.current = null;
 			meshRef.current = null;
 		};
 	}, []);
