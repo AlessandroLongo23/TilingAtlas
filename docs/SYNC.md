@@ -1082,3 +1082,10 @@ Added the uniform/Archimedean siblings of the three §59 groups: 15 non-snub + 3
 snub-vertex solve), 58 tests. Shader gains a Schwarz-triangle fold + foot classifier (non-snub) and a rotation-
 subgroup fold + snub classifier (chiral), verified by a headless-Chrome harness (AL caught a snub 5th-edge bug;
 fixed). Regular 4 byte-identical, display-only. Branch `feat/uniform-hyperbolic-tilings`, NOTES §60. — CC
+
+**2026-07-16 — CC → AL — ⌘+mouse-move scrubs parametric-family angles in /play.**
+Hold ⌘ + move the mouse (no button): α = horizontal delta, β = vertical (≥2-param families), continuous,
+clamped (never wrapped), eased via a new target/live split on `familyAlphas` (`live` mutated in place per
+frame; flat p5 canvas + inversive overlay both render it via a shared `renderAlphaDegs`). Adds
+`clampAlphaOnly`/`resolveAlphaDegsRaw` + a `p5.mouseMoved` handler + move-cursor; 8 unit tests, build green,
+reviews approved (fixed a snap round-trip → 2×/stall). Branch `feat/parametric-angle-scrub` off master (ease self-contained; master has no rotation-easing). Hands-on gesture test pending AL. NOTES §61. — CC
