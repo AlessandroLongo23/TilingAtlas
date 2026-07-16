@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { buildCellGeom } from "@/lib/render/inversiveCellGeom";
-import { spiralLogToLattice } from "@/lib/render/spiralMap";
+import { spiralSimilarity } from "@/lib/render/spiralMap";
 import { evaluateParamCell, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -49,7 +49,8 @@ uniform int uMode;      // 0 = circle inversion, 1 = Mobius (loxodromic), 2 = sp
 uniform float uR;       // lens radius, CSS px (spiral + double ⇒ pole separation)
 uniform vec2 uKinv;     // inverse multiplier (complex) for the Mobius map
 uniform int uSpiralDouble;   // spiral: 0 = one center, 1 = two centers (Droste)
-uniform vec4 uLogToLattice;  // spiral: row-major 2×2 mapping (ln|w|, arg w) → lattice (a, b)
+uniform vec2 uSpiralK;       // spiral: complex K = (a·v1+b·v2)/(2πi); world = cmul(K, log w − V)
+uniform vec2 uSpiralV;       // spiral: strip-space pan (x = dolly, y = spin; zoom + rotation folded in)
 
 uniform mat2 uMinv;     // world -> lattice (a, b)
 uniform vec2 uV1;       // lattice basis vectors (world)
@@ -99,27 +100,24 @@ void main() {
 	vec2 world;
 	float pwRaw;
 	if (uMode == 2) {
-		// Sample point w: pole at screen centre, pan moves it, ring density folded into uLogToLattice.
-		vec2 w = (s - uOffset) / max(0.5 * min(uRes.x, uRes.y), 1.0);
+		// Kaplan's spiral (tactile-js/spirals): world = K·(log w − V), K = (a·v1+b·v2)/(2πi) — the inverse
+		// of the SIMILARITY taking the seam onto the vertical 2π segment. One complex multiplication: no
+		// shear, tiles keep their shape. Pole locked to the screen centre; pan/zoom/rotation act in STRIP
+		// space via V (x = self-similar dolly, y = spin), matching his tiling_V.
+		vec2 w = s / max(0.5 * min(uRes.x, uRes.y), 1.0);
 		if (uSpiralDouble == 1) {
 			vec2 P = vec2(uR / max(0.5 * min(uRes.x, uRes.y), 1.0), 0.0);
 			w = cdiv(w - P, w + P);   // Möbius: P → 0, −P → ∞ (two poles)
 		}
-		float rr = 0.5 * log(max(dot(w, w), 1e-30));   // ln|w|
-		float th = atan(w.y, w.x) + uRot;              // arg w; rotation spins the whole spiral
-		// latt = M·(r, θ); world = latt·(v1, v2). M's θ-column is the seam (a,b), so θ+2π ⇒ +lattice vector,
-		// which is why the atan branch cut at θ=±π closes seamlessly onto the same tile.
-		vec2 latt = vec2(uLogToLattice.x * rr + uLogToLattice.y * th,
-		                 uLogToLattice.z * rr + uLogToLattice.w * th);
-		world = latt.x * uV1 + latt.y * uV2;
-		// Footprint on the CONTINUOUS coord w (log is conformal, so the (r,θ) step is isotropic = |dw|/|w|),
-		// carried into world through the map's two columns. Measuring on w rather than the folded world keeps
-		// the branch cut from spiking dFdx into a one-pixel radial seam.
+		// merc = log w. θ+2π ⇒ world += cmul(K,(0,2π)) = a·v1+b·v2, a lattice translation — which is why
+		// the atan branch cut at θ = ±π closes seamlessly onto the same tile.
+		vec2 merc = vec2(0.5 * log(max(dot(w, w), 1e-30)), atan(w.y, w.x));
+		world = cmul(uSpiralK, merc - uSpiralV);
+		// Footprint on the CONTINUOUS coord w: log is conformal (isotropic step |dw|/|w|) and K a
+		// similarity, so the world footprint is just |K|·|dw|/|w|. Measuring on w rather than the folded
+		// world keeps the branch cut from spiking dFdx into a one-pixel radial seam.
 		float pw_w = max(length(dFdx(w)), length(dFdy(w)));
-		float stepRT = pw_w / max(length(w), 1e-6);
-		vec2 colR = uLogToLattice.x * uV1 + uLogToLattice.z * uV2;
-		vec2 colT = uLogToLattice.y * uV1 + uLogToLattice.w * uV2;
-		pwRaw = stepRT * max(length(colR), length(colT));
+		pwRaw = length(uSpiralK) * pw_w / max(length(w), 1e-6);
 	} else {
 		vec2 v;
 		if (uMode == 0) {
@@ -274,7 +272,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 
 		for (const name of [
 			"uRes", "uDpr", "uOffset", "uZoom", "uRot", "uMode", "uR", "uKinv",
-			"uSpiralDouble", "uLogToLattice",
+			"uSpiralDouble", "uSpiralK", "uSpiralV",
 			"uMinv", "uV1", "uV2", "uVerts", "uVertsW", "uMeta", "uPolyCount",
 			"uStrokePx", "uSurface", "uLine", "uAvg", "uFeature",
 		]) {
@@ -340,11 +338,16 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			const kinvMag = Math.exp(-sigma);
 			const dark = document.documentElement.classList.contains("dark");
 			const [m00, m01, m10, m11] = geom.minv;
-				// Spiral log→lattice matrix. Ring density tracks zoom (default 50 ⇒ 1), so the wheel tightens
-				// or loosens the rings. Rebuilt each frame — a tiny CPU calc that depends on live zoom.
-				const spiral = spiralLogToLattice(
-					cfg.spiralArmA, cfg.spiralArmB, cfg.spiralPitch, ctrl.zoom / 50,
-				);
+				// Spiral similarity K = (a·v1+b·v2)/(2πi) — Kaplan's tiling_T inverse, built from the CELL's
+				// actual lattice. Pan/zoom/rotation act in STRIP space (his tiling_V): drag = (dolly, spin)
+				// scaled 2π per half-viewport (his TWO_PI/(HEIGHT/2)), wheel-zoom = ln-dolly (self-similar),
+				// rotation = spin. Rebuilt each frame — a tiny CPU calc over live controls.
+				const spiral = spiralSimilarity(cfg.spiralArmA, cfg.spiralArmB, geom.v1, geom.v2);
+				const stripSc = (2 * Math.PI) / Math.max(0.5 * Math.min(w, h), 1);
+				const spiralV: [number, number] = [
+					ctrl.offset.x * stripSc - Math.log(Math.max(ctrl.zoom, 1) / 50),
+					-ctrl.offset.y * stripSc - ((ctrl.rotation || 0) * Math.PI) / 180,
+				];
 
 				const U = uniformsRef.current;
 			g.uniform2f(U.uRes, w, h);
@@ -356,7 +359,8 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			g.uniform1f(U.uR, R);
 			g.uniform2f(U.uKinv, kinvMag * Math.cos(-tau), kinvMag * Math.sin(-tau));
 			g.uniform1i(U.uSpiralDouble, cfg.spiralDouble ? 1 : 0);
-				g.uniform4f(U.uLogToLattice, spiral.m[0], spiral.m[1], spiral.m[2], spiral.m[3]);
+				g.uniform2f(U.uSpiralK, spiral.k[0], spiral.k[1]);
+				g.uniform2f(U.uSpiralV, spiralV[0], spiralV[1]);
 				g.uniformMatrix2fv(U.uMinv, false, [m00, m10, m01, m11]);
 			g.uniform2f(U.uV1, geom.v1[0], geom.v1[1]);
 			g.uniform2f(U.uV2, geom.v2[0], geom.v2[1]);

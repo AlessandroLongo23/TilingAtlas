@@ -4228,3 +4228,25 @@ with a 2-orbit vertex partition; `translatedCopy` carries `orbitOfCorner`). Buil
 4 failing suite files predate the feature (verified identical at the pre-feature commit). Review found one
 real bug — the O shortcut badge was dead (TOGGLES never wired); fixed with hyperbolic/no-data guards.
 Feature commits `203b7e2..a787bd0` + `2c0ce95` (colors) + `f0c721e` (no-data inert/disabled).
+
+## §63 — Spiral lens corrected: the general 2×2 was a shear; Kaplan's map is a similarity (2026-07-16)
+
+**The failed idea, for the record.** The first spiral implementation mapped the log coordinate
+`(ln|w|, arg w)` into lattice coordinates through a general 2×2: θ-column = seam `(a,b)/2π`, r-column =
+unimodular complement (extended Euclid) · density + a pitch shear. Seam closure held (the branch cut
+lands on a lattice vector), so it LOOKED right on near-square lattices at (1,0) — but the map is not
+complex-linear: a general real 2×2 shears the tiling before exp. AL compared the hex tiling at (1,6)
+against Kaplan's own tool and the outputs diverged badly (thin smeared arms vs. his nested-hexagon
+flower). Root cause read directly from `tactile-js/spirals/spirals.js`: his `tiling_T` is
+`matchSeg(0→2πi) ∘ matchSeg(0→v)⁻¹` — the unique SIMILARITY carrying `v = A·t1 + B·t2` onto the
+vertical 2π segment. One complex multiplication. There is no free radial column and no pitch: the lean
+and ring spacing are intrinsic to (a,b) and the lattice. My "Pitch" slider was an invented knob and is
+removed.
+
+**Fix.** `spiralSimilarity(a,b,v1,v2)` returns `K = S/(2πi)`; shader does `world = cmul(K, log w − V)`.
+Pan also corrected to his `tiling_V` semantics: a strip-space translation (drag = dolly + spin, wheel =
+ln-dolly, pole locked to centre) — the old screen-space pole translation made the singularity wander
+under drag. Footprint simplifies to `|K|·|dw|/|w|` (conformal). Verified headless: t1001 hex at (1,6)
+reproduces Kaplan's flower; 11 unit tests incl. an explicit similarity (conformality) check. Spec
+updated in place with a correction note. Deliberate deviation kept: analytic point-location instead of
+his FBO texture sampling; his colour-permutation factor `rv` ≡ 1 for our translation-invariant fills.

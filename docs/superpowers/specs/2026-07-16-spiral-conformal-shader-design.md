@@ -27,81 +27,77 @@ approach C (render-to-texture then resample) were both rejected: B duplicates ~1
 point-location and AA machinery; C reintroduces the raster blur the analytic shader exists to avoid and
 worsens center aliasing.
 
-## The map
+## The map (corrected 2026-07-16 — replicates Kaplan's tactile-js/spirals exactly)
 
-Let `s` be the centred CSS pixel (complex), `w = (s − offset) / σ` with σ derived from the zoom control.
+> **Correction.** The first implementation mapped `(r, θ)` to lattice coordinates through a general 2×2
+> (θ-column = seam, r-column = unimodular complement · density + a pitch shear). That map is seamless
+> but NOT conformal — a general real-linear map shears the tiling before exp, so tiles lose their shape
+> and the output diverges from Kaplan's (visibly wrong on a hex lattice at (1,6)). His transform is
+> `matchSeg(0→2πi) ∘ matchSeg(0→v)⁻¹`: the unique **similarity** carrying the seam onto the vertical 2π
+> segment — one complex multiplication, no free radial column, no pitch. Sections below describe the
+> corrected design; the old construction is kept only in this note as the characterized failure.
 
-Single center:
+Let `s` be the centred CSS pixel (complex), `w = s / σ` with σ = half the viewport minor axis. The pole
+is locked to the screen centre. Single center:
 ```
-r = ln|w|
-θ = arg(w) = atan2(w.y, w.x)
+merc = log w = (ln|w|, arg w)
+world = K · (merc − V)          // complex multiplication; K = (a·v₁ + b·v₂) / (2πi)
 ```
-Two centers (Droste): pre-compose the Möbius that sends the two poles to 0 and ∞ — the sub-expression
-already present in the Möbius branch (line 100):
+Two centers (Droste): pre-compose the Möbius sending the two poles to 0 and ∞, then identical:
 ```
-mob = (w − P) / (w + P),   P = (sep, 0)     // sep from the Lens-radius slider
-r = ln|mob|,  θ = arg(mob)                   // identical from here on
-```
-
-Then map `(r, θ)` to lattice coordinates and reconstruct world:
-```
-abLattice = uLogToLattice · (r, θ)ᵀ
-world     = abLattice.x · v₁ + abLattice.y · v₂
+w ← (w − P) / (w + P),   P = (sep, 0)      // sep from the Pole-separation slider
 ```
 
-`uLogToLattice` is a 2×2 built on the CPU (see helper below). Its **θ-column is `(a,b)`**, so advancing
-θ by 2π advances world by `a·v₁ + b·v₂` — a genuine lattice translation. The only seam risk in the whole
-map is the `atan2` branch cut at θ = ±π; there θ jumps by 2π, world jumps by the lattice vector, and
-point-location returns the same tile on both sides. So **the map is seamless for any `(a,b)` and any
-lattice**, single or double center — the branch cut is the only discontinuity and it lands on a lattice
-vector by construction. The r-direction has no branch cut, so its column is free; we still set it to a
-real lattice vector (the complement below) so the rings align with the tiling's own period.
+`K` is the inverse of the similarity taking the seam `S = a·v₁ + b·v₂` to `(0, 2π)`: advancing θ by 2π
+advances world by exactly `cmul(K, (0,2π)) = S`, a lattice translation, so the `atan2` branch cut at
+θ = ±π is the map's only discontinuity and it closes onto the same tile — **seamless for any `(a,b)`
+and any lattice**, single or double center. Because K is a single complex number the map is conformal:
+tiles keep their shape, and the spiral's lean and ring spacing are **intrinsic to `(a,b)` and the
+lattice** — there is deliberately no pitch/density knob, matching Kaplan's tool.
+
+`V` is Kaplan's `tiling_V`: a translation in strip space applied before K. Pan, zoom, and rotation all
+act through it — drag-x = self-similar dolly, drag-y/rotation = spin (scaled 2π per half-viewport, his
+`TWO_PI/(HEIGHT/2)`), wheel-zoom folds in as `V.x −= ln(zoom/50)`. The pole never moves.
+
+One knowing deviation: Kaplan renders by sampling an FBO texture of the translational unit; we keep the
+analytic point-location backend (crisp strokes at any magnification). His `rv` colour-permutation factor
+(rank of `p1^A·p2^B`) is 1 for us — our cell colourings are translation-invariant by construction.
 
 ## The CPU helper (unit-tested)
 
 `lib/render/spiralMap.ts` — pure math, no WebGL:
 
 ```
-spiralLogToLattice(a, b, pitchDeg, radialDensity) -> [m00, m01, m10, m11]   // row-major 2×2, latt = M·(r,θ)
+spiralSimilarity(a, b, v1, v2) -> { k: [Kx, Ky], seam: [Sx, Sy], arms: gcd(|a|,|b|) }
 ```
 
-- `g = gcd(|a|, |b|)`; primitive seam `(pa, pb) = (a/g, b/g)`. `g==0` (a=b=0) is degenerate → fall back
-  to a=1, b=0.
-- complement `(c, d)` via extended Euclid so that `pa·d − pb·c = 1` (det ±1 with the primitive seam).
-- θ-column = `(a, b) / (2π)`  — the seam (guarantees closure at the branch cut).
-- r-column = `(c, d)·radialDensity + θ-column·k(pitchDeg)` — the complement sets ring spacing; the
-  `k(pitch)` shear adds angular drift per unit radius, leaning the concentric rings into logarithmic
-  spirals (the Droste twist). Crucially the shear is added to the **r-column only**, never the θ-column,
-  so seamlessness is untouched at any pitch.
-
-Arm count follows Kaplan's `(a,b)` parametrization; when `g>1` the strip is `g` primitive cells wide,
-which is the arm-multiplication mechanism. The UI labels the integers "Arm a/b" but does not hard-promise
-"exactly a arms" until verified empirically in the app.
+`K = S/(2πi) = (S.y, −S.x)/(2π)`. Degenerate guards: `a=b=0`, or a ~zero seam from a collinear basis,
+fall back to seam `v₁`. Arm count follows Kaplan's `(a,b)` parametrization; `gcd>1` widens the strip to
+`g` primitive cells (the arm-multiplication mechanism).
 
 ## UI and state
 
-Mode row at [tilings-tab.tsx:249](../../../components/sidebar/tilings-tab.tsx#L249) gains a third button,
+Mode row in [tilings-tab.tsx](../../../components/sidebar/tilings-tab.tsx) gains a third button,
 **Spiral**, beside Inversion / Möbius. When Spiral is active the controls are: `Arm a` and `Arm b`
-integer steppers (default 1, 0 → plain single wind), a `Pitch` slider, and a `1 center / 2 centers`
-toggle. In 2-center mode the existing **Lens radius** slider is relabelled to pole separation and feeds
-`uR`. Rotation rotates the spiral (adds a constant to θ), zoom sets ring density / self-similar scale,
-pan translates the pole(s).
+integer steppers (default 1, 0 → plain single wind) and a `1 center / 2 centers` toggle. In 2-center
+mode the existing **Lens radius** slider is relabelled to pole separation and feeds `uR`. No pitch
+slider (see the correction note). Drag = dolly + spin in strip space; wheel = dolly; rotation = spin.
 
-Config additions to [configuration.ts:68](../../../lib/stores/configuration.ts#L68):
-`inversiveMode` gains `"spiral"`; new fields `spiralArmA: number` (1), `spiralArmB: number` (0),
-`spiralPitch: number` (degrees, default mid), `spiralDouble: boolean` (false).
+Config additions to [configuration.ts](../../../lib/stores/configuration.ts): `inversiveMode` gains
+`"spiral"`; new fields `spiralArmA: number` (1), `spiralArmB: number` (0), `spiralDouble: boolean`
+(false).
 
-New shader uniforms: `uMode==2`, `uLogToLattice` (mat2), `uSpiralDouble` (int), reusing `uR` for pole
-separation and `uKinv`/`uOffset`/`uZoom` plumbing already uploaded each frame.
+Shader uniforms: `uMode==2`, `uSpiralK` (vec2, complex K), `uSpiralV` (vec2, strip pan), `uSpiralDouble`
+(int), reusing `uR` for pole separation.
 
 ## Testing
 
-- `tests/spiral-map.test.ts` (Vitest, no WebGL): `M·(0, 2π) == (a, b)` (seam closure) for several
-  `(a,b)`; complement determinant is ±1; `a=1,b=0 → M·(0,2π)==(1,0)`; `gcd(a,b)>1` handled; degenerate
-  `a=b=0` falls back without NaN.
+- `tests/spiral-map.test.ts` (Vitest, no WebGL): seam closure `cmul(K, (0,2π)) == a·v₁+b·v₂` on square
+  AND hex bases; similarity check (orthogonal equal-norm columns — the conformality that the first
+  implementation lacked); `gcd` arm factor; degenerate `(0,0)` and collinear-basis fallbacks.
 - `pnpm build` (the workflow gate — type-checks the shader wiring and UI).
-- Drive `/play`: select a square/hex tiling, toggle Spiral, and eyeball arm counts against `(a,b)`,
-  seam continuity across the branch cut, single vs. double center, and pitch lean.
+- Drive `/play`: hexagonal t1001 at (1, 6) must reproduce Kaplan's nested-hexagon flower (verified
+  headless 2026-07-16); drag must spin/dolly with the pole locked to centre.
 
 ## Out of scope
 

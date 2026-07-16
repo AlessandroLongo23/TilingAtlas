@@ -1,82 +1,57 @@
-// CPU side of the spiral conformal lens (components/inversive-canvas.tsx, uMode == 2). Builds the 2×2
-// that maps the complex-log coordinate (r, θ) = (ln|w|, arg w) into the tiling's lattice coordinates,
-// so the shader can reconstruct a world point and hand it to the existing analytic point-location.
+// CPU side of the spiral conformal lens (components/inversive-canvas.tsx, uMode == 2). Port of the
+// transform in Craig Kaplan's spiral-tilings demo (tactile-js/spirals/spirals.js):
 //
-// The one invariant that makes the spiral seamless: the θ-column is the integer seam vector (a, b), so
-// advancing θ by 2π moves world by a·v₁ + b·v₂ — a genuine lattice translation. The atan2 branch cut at
-// θ = ±π is then the only discontinuity in the map, and it lands on a lattice vector, so point-location
-// returns the same tile on both sides. See docs/superpowers/specs/2026-07-16-spiral-conformal-shader-design.md.
+//   tiling_T = matchSeg((0,0) → (0,2π)) ∘ matchSeg((0,0) → v)⁻¹,   v = a·t1 + b·t2
+//
+// i.e. the unique SIMILARITY (one complex multiplication — rotation + uniform scale, no shear) that
+// carries the seam lattice vector onto the vertical segment of length 2π. The shader runs the inverse:
+// world = K · (log w − V), with K = S/(2πi) as a complex number. Because the map is complex-linear,
+// tiles keep their shape (conformality), and because K·(0,2π) = S exactly, the atan2 branch cut at
+// θ = ±π lands on a lattice translation — seamless for any (a,b). There is deliberately NO extra knob
+// (pitch/density): the spiral's lean and ring spacing are fully determined by (a,b) and the lattice,
+// exactly as in Kaplan's tool. See docs/superpowers/specs/2026-07-16-spiral-conformal-shader-design.md.
 
 const TAU = Math.PI * 2;
 
-export interface SpiralMatrix {
-	/** Row-major 2×2, latt = M·(r, θ): latA = m[0]·r + m[1]·θ, latB = m[2]·r + m[3]·θ. */
-	m: [number, number, number, number];
-	/** Primitive seam direction (a, b)/gcd — a lattice vector. */
-	primitive: [number, number];
-	/** Unimodular complement (c, d) with primitive × complement det = ±1 — the radial direction. */
-	complement: [number, number];
-	/** gcd(|a|, |b|): the seam is this many primitive cells wide, the arm-multiplication factor. */
+export interface SpiralSimilarity {
+	/** K = S/(2πi) as a complex number (x + iy), world units: world = cmul(K, (ln|w|, arg w) − V). */
+	k: [number, number];
+	/** The seam S = a·v₁ + b·v₂ (world) — one full turn of θ advances world by exactly this. */
+	seam: [number, number];
+	/** gcd(|a|,|b|): the seam spans this many primitive lattice steps (arm-multiplication factor). */
 	arms: number;
 }
 
-// Extended Euclid: returns [g, x, y] with a·x + b·y = g and g ≥ 0. Integer inputs.
-function egcd(a: number, b: number): [number, number, number] {
-	let oldR = a, r = b;
-	let oldS = 1, s = 0;
-	let oldT = 0, t = 1;
-	while (r !== 0) {
-		const q = Math.floor(oldR / r);
-		[oldR, r] = [r, oldR - q * r];
-		[oldS, s] = [s, oldS - q * s];
-		[oldT, t] = [t, oldT - q * t];
-	}
-	if (oldR < 0) { oldR = -oldR; oldS = -oldS; oldT = -oldT; }
-	return [oldR, oldS, oldT];
+function gcd(a: number, b: number): number {
+	a = Math.abs(a); b = Math.abs(b);
+	while (b !== 0) [a, b] = [b, a % b];
+	return a;
 }
 
 /**
- * Build the log→lattice matrix for a spiral with seam (a, b), a pitch shear, and a radial density.
+ * Build the inverse spiral similarity for seam (a, b) over the lattice basis (v1, v2).
  *
- * @param a integer seam component along v₁
- * @param b integer seam component along v₂ (a = b = 0 falls back to the plain 1,0 spiral)
- * @param pitchDeg spiral lean: 0 ⇒ concentric rings, ±→ logarithmic spirals. Shear is added to the
- *                 r-column ONLY, so the seam (θ-column) is untouched and closure holds at any pitch.
- * @param radialDensity scales the r-column — larger ⇒ tighter ring spacing.
+ * Degenerate guards: a = b = 0, or a seam of ~zero length (collinear basis), falls back to (1, 0)
+ * so the shader never sees a singular map.
  */
-export function spiralLogToLattice(
+export function spiralSimilarity(
 	a: number,
 	b: number,
-	pitchDeg: number,
-	radialDensity = 1,
-): SpiralMatrix {
+	v1: [number, number],
+	v2: [number, number],
+): SpiralSimilarity {
 	let ai = Math.round(a);
 	let bi = Math.round(b);
-	if (ai === 0 && bi === 0) { ai = 1; bi = 0; } // degenerate seam → plain single wind
+	if (ai === 0 && bi === 0) { ai = 1; bi = 0; }
 
-	const g = egcd(Math.abs(ai), Math.abs(bi))[0]; // gcd(|a|,|b|), always ≥ 1 here
-	const pa = ai / g, pb = bi / g; // primitive seam (coprime)
+	let sx = ai * v1[0] + bi * v2[0];
+	let sy = ai * v1[1] + bi * v2[1];
+	if (sx * sx + sy * sy < 1e-18) { ai = 1; bi = 0; sx = v1[0]; sy = v1[1]; }
 
-	// Complement (c, d) with pa·d − pb·c = 1. From pa·x + pb·y = 1 set d = x, c = −y.
-	// `+ 0` normalises −0 → 0 so the lattice vector compares cleanly.
-	const [, x, y] = egcd(pa, pb);
-	const c = -y + 0, d = x + 0;
-
-	// θ-column = seam (a, b) / 2π — advancing θ by 2π moves lattice coords by exactly (a, b).
-	const thetaX = ai / TAU;
-	const thetaY = bi / TAU;
-
-	// r-column = complement·density + θ-column·shear. The shear leans the concentric rings (complement
-	// direction) toward the seam direction as radius grows, i.e. the Droste twist.
-	const pitch = Math.max(-85, Math.min(85, pitchDeg));
-	const k = Math.tan((pitch * Math.PI) / 180);
-	const rX = c * radialDensity + thetaX * k;
-	const rY = d * radialDensity + thetaY * k;
-
+	// K = S/(2πi) = −i·S/(2π) = (S.y, −S.x)/(2π). Then cmul(K, (0, 2π)) = i·K·2π = S — the seam closure.
 	return {
-		m: [rX, thetaX, rY, thetaY],
-		primitive: [pa, pb],
-		complement: [c, d],
-		arms: g,
+		k: [sy / TAU, -sx / TAU],
+		seam: [sx, sy],
+		arms: gcd(ai, bi) || 1,
 	};
 }

@@ -1103,3 +1103,17 @@ black outline, tiling dimmed. Ids from KUniformityChecker.vertexOrbits on exactS
 (frame alignment measured across all 2720 records; index order provably unreliable). Shelves without
 exactSource (scaled/isotoxal/mixed/convex/polyomino) carry no orbit data → toggle disabled, canvas inert.
 Commits 203b7e2..a787bd0, 2c0ce95, f0c721e; detail NOTES §62. — CC
+
+**2026-07-16 — CC → TA+AL — TH-10 lands IN-THESIS (AL call) + review-driven fixes; 14 thesis files edited on top of TA's uncommitted work.**
+New: §5.3.1 (thm:smallk 5.25/5.26 + AL's elegance verdict), Appendix C (adapted SMALLK_W_BOUND v2, ~5pp),
+§8.5 proven-pool runs (honest grade: C2 by theorem, C1/C3 still fast-path oracle-anchored), conj:tightweight
+rescoped to k≥4 (was refuted at k=1 by its own data: s*=5>4, witness 4.6.12), abstract/contributions (DD chain
+now contribution 3), rem:singleton repaired (monogonal⇒uniform IS classical), rem:weightfactor (12k factor-2
+note), Table 8.5 re-sourced (OEIS ends k=13; Marek p.c.: later impl reaches 18, agrees at 16). TA: reconcile
+before committing — abstract/intro/results/discussion/correctness/algorithm/conclusion/notation all touched. — CC
+
+**2026-07-16 — CC → AL — Spiral lens corrected to Kaplan's exact construction (similarity, no pitch).**
+The 2×2 log→lattice map was a shear — seamless but not conformal; hex (1,6) diverged from his tool.
+Now `world = cmul(K, log w − V)`, `K = (a·v1+b·v2)/(2πi)` (his matchSeg pair), pan = strip-space
+`tiling_V` (dolly+spin, pole locked), Pitch slider removed. Hex t1001 (1,6) reproduces his flower,
+verified headless. NOTES §63; spec corrected in place. — CC

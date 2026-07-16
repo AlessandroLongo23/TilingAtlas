@@ -359,16 +359,6 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 											max={6}
 											step={1}
 										/>
-										<Slider
-											id="spiralPitch"
-											label="Pitch"
-											value={cfg.spiralPitch}
-											onChange={(v) => setCfg({ spiralPitch: v })}
-											min={-80}
-											max={80}
-											step={1}
-											unit="°"
-										/>
 									</>
 								) : null}
 							</div>

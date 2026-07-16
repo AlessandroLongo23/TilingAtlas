@@ -1,78 +1,61 @@
 import { describe, it, expect } from "vitest";
-import { spiralLogToLattice } from "@/lib/render/spiralMap";
+import { spiralSimilarity } from "@/lib/render/spiralMap";
 
 const TAU = Math.PI * 2;
 
-// The matrix maps (r, θ) → lattice (a, b): latA = m[0]·r + m[1]·θ, latB = m[2]·r + m[3]·θ.
-function applyM(m: [number, number, number, number], r: number, theta: number): [number, number] {
-	return [m[0] * r + m[1] * theta, m[2] * r + m[3] * theta];
+// Complex multiply, matching the shader's cmul.
+function cmul(a: [number, number], b: [number, number]): [number, number] {
+	return [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
 }
 
-describe("spiralLogToLattice", () => {
-	// The load-bearing invariant: advancing θ by one full turn must move world by exactly the seam
-	// lattice vector (a,b). That is what closes the atan2 branch cut with no gash, for any (a,b).
+const SQUARE: [[number, number], [number, number]] = [[1, 0], [0, 1]];
+// Hexagonal lattice basis (60° between equal-length vectors) — Kaplan's IH01 case.
+const HEX: [[number, number], [number, number]] = [[1, 0], [0.5, Math.sqrt(3) / 2]];
+
+describe("spiralSimilarity", () => {
+	// The load-bearing invariant: one full turn of θ must advance world by exactly the seam
+	// S = a·v1 + b·v2 — that closes the atan2 branch cut onto a lattice translation, for any (a,b).
 	it.each([
-		[1, 0],
-		[0, 1],
-		[2, 3],
-		[3, -2],
-		[-1, 2],
-		[2, 4], // gcd 2
-		[-3, -6], // gcd 3, both negative
-	])("seam closes: M·(0, 2π) == (a,b) for (%i, %i)", (a, b) => {
-		const { m } = spiralLogToLattice(a, b, 0, 1);
-		const [da, db] = applyM(m, 0, TAU);
-		expect(da).toBeCloseTo(a, 9);
-		expect(db).toBeCloseTo(b, 9);
-	});
-
-	it("θ-column is independent of pitch (shear only touches the r-column)", () => {
-		const flat = spiralLogToLattice(2, 3, 0, 1).m;
-		const leaned = spiralLogToLattice(2, 3, 40, 1).m;
-		// θ-column = m[1], m[3]
-		expect(leaned[1]).toBeCloseTo(flat[1], 12);
-		expect(leaned[3]).toBeCloseTo(flat[3], 12);
-		// r-column = m[0], m[2] must change with pitch
-		expect(leaned[0]).not.toBeCloseTo(flat[0], 6);
-	});
-
-	it("primitive/complement form a unimodular basis (det ±1)", () => {
-		for (const [a, b] of [[1, 0], [0, 1], [2, 3], [3, -2], [2, 4], [-3, -6]]) {
-			const { primitive, complement } = spiralLogToLattice(a, b, 0, 1);
-			const det = primitive[0] * complement[1] - primitive[1] * complement[0];
-			expect(Math.abs(det)).toBe(1);
+		[1, 0], [0, 1], [1, 6], [2, 3], [3, -2], [-1, 2], [2, 4],
+	])("seam closes on both bases: cmul(K, (0,2π)) == a·v1+b·v2 for (%i, %i)", (a, b) => {
+		for (const [v1, v2] of [SQUARE, HEX]) {
+			const { k, seam } = spiralSimilarity(a, b, v1, v2);
+			const [dx, dy] = cmul(k, [0, TAU]);
+			expect(dx).toBeCloseTo(a * v1[0] + b * v2[0], 9);
+			expect(dy).toBeCloseTo(a * v1[1] + b * v2[1], 9);
+			expect(seam[0]).toBeCloseTo(a * v1[0] + b * v2[0], 12);
+			expect(seam[1]).toBeCloseTo(a * v1[1] + b * v2[1], 12);
 		}
 	});
 
+	// Conformality is structural: the map is a single complex number (rotation + uniform scale). The
+	// two real columns of the induced 2×2 must be orthogonal with equal norm — no shear, no anisotropy.
+	it("is a similarity: orthogonal equal-norm columns", () => {
+		const { k } = spiralSimilarity(1, 6, HEX[0], HEX[1]);
+		const colR = cmul(k, [1, 0]); // image of the r direction
+		const colT = cmul(k, [0, 1]); // image of the θ direction
+		const dot = colR[0] * colT[0] + colR[1] * colT[1];
+		const nR = Math.hypot(...colR);
+		const nT = Math.hypot(...colT);
+		expect(dot).toBeCloseTo(0, 12);
+		expect(nR).toBeCloseTo(nT, 12);
+	});
+
 	it("reports the arm-multiplication factor gcd(|a|,|b|)", () => {
-		expect(spiralLogToLattice(1, 0, 0, 1).arms).toBe(1);
-		expect(spiralLogToLattice(2, 3, 0, 1).arms).toBe(1);
-		expect(spiralLogToLattice(2, 4, 0, 1).arms).toBe(2);
-		expect(spiralLogToLattice(-3, -6, 0, 1).arms).toBe(3);
+		expect(spiralSimilarity(1, 0, ...SQUARE).arms).toBe(1);
+		expect(spiralSimilarity(1, 6, ...SQUARE).arms).toBe(1);
+		expect(spiralSimilarity(2, 4, ...SQUARE).arms).toBe(2);
+		expect(spiralSimilarity(-3, -6, ...SQUARE).arms).toBe(3);
 	});
 
-	it("a=1,b=0 at pitch 0 gives the plain single-wind matrix", () => {
-		const { m, complement } = spiralLogToLattice(1, 0, 0, 1);
-		expect(complement).toEqual([0, 1]);
-		// r-column = complement = (0,1); θ-column = (1,0)/2π
-		expect(m[0]).toBeCloseTo(0, 12);
-		expect(m[2]).toBeCloseTo(1, 12);
-		expect(m[1]).toBeCloseTo(1 / TAU, 12);
-		expect(m[3]).toBeCloseTo(0, 12);
+	it("degenerate a=b=0 falls back to seam v1 without NaN", () => {
+		const { k, seam } = spiralSimilarity(0, 0, ...HEX);
+		expect(seam).toEqual([1, 0]);
+		for (const v of k) expect(Number.isFinite(v)).toBe(true);
 	});
 
-	it("radialDensity scales the r-column", () => {
-		const a = spiralLogToLattice(1, 0, 0, 1).m;
-		const b = spiralLogToLattice(1, 0, 0, 3).m;
-		expect(b[2]).toBeCloseTo(a[2] * 3, 9);
-	});
-
-	it("degenerate a=b=0 falls back to (1,0) without NaN", () => {
-		const { m, primitive } = spiralLogToLattice(0, 0, 0, 1);
-		expect(primitive).toEqual([1, 0]);
-		for (const v of m) expect(Number.isFinite(v)).toBe(true);
-		const [da, db] = applyM(m, 0, TAU);
-		expect(da).toBeCloseTo(1, 9);
-		expect(db).toBeCloseTo(0, 9);
+	it("collinear basis making the seam ~zero falls back to v1", () => {
+		const { seam } = spiralSimilarity(1, -1, [1, 0], [1, 0]); // v1 == v2 ⇒ S = 0
+		expect(seam).toEqual([1, 0]);
 	});
 });

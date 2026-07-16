@@ -78,11 +78,11 @@ export interface ConfigurationState {
 	inversiveRadiusFrac: number; // lens radius as a fraction of min(w,h)/2 (spiral+double ⇒ pole separation)
 	mobiusTwist: number; // loxodromic spiral angle, degrees (0 ⇒ pure source/sink flow)
 	// Spiral lens (inversiveMode "spiral"): the complex-exponential map of Kaplan's spiral tilings. The
-	// seam (spiralArmA·v₁ + spiralArmB·v₂) becomes the 2π wrap; pitch leans the rings into logarithmic
-	// spirals; spiralDouble adds the second pole (Droste). See lib/render/spiralMap.ts.
+	// seam (spiralArmA·v₁ + spiralArmB·v₂) becomes the 2π wrap via a SIMILARITY, so the lean and ring
+	// spacing are intrinsic to (a,b) — no pitch knob, matching Kaplan's tool. spiralDouble adds the
+	// second pole (Droste). See lib/render/spiralMap.ts.
 	spiralArmA: number; // integer seam component along v₁
 	spiralArmB: number; // integer seam component along v₂
-	spiralPitch: number; // spiral lean, degrees (0 ⇒ concentric rings)
 	spiralDouble: boolean; // false ⇒ one center, true ⇒ two centers (Droste)
 
 	// Hyperbolic view: set true by /play when a {p,q} hyperbolic tiling is selected. Swaps the flat p5
@@ -161,7 +161,6 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	mobiusTwist: 60,
 	spiralArmA: 1,
 	spiralArmB: 0,
-	spiralPitch: 30,
 	spiralDouble: false,
 
 	hyperbolic: false,
