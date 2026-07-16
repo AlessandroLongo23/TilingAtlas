@@ -4183,3 +4183,48 @@ gesture testing (feel, sensitivity, sign) is pending AL — synthetic events don
 Tuning knobs (one-line constants in `canvas.tsx`): `ALPHA_DEG_PER_PX` (0.25), `ALPHA_DAMP` (0.2), sign
 (right=+α, up=+β). Files: `lib/utils/paramCell.ts`, `lib/stores/familyAlphas.ts`, `components/canvas.tsx`,
 `components/inversive-canvas.tsx`, `components/param-slider-panel.tsx`, `app/(app)/play/_play-client.tsx`.
+
+## 62. Vertex-orbit dots in /play — orbit-colored vertices from the exact cell, and the shard-coverage wall (2026-07-16, session 34)
+
+Marek's suggestion: a toggle that marks every vertex with a dot colored by its orbit under the tiling's
+symmetry group — k colors for a k-uniform tiling — with the tiling fill dimmed underneath. Landed on
+`feat/vertex-orbit-dots`, merged to master in the 07-16 reconciliation. Spec
+`docs/superpowers/specs/2026-07-15-vertex-orbit-highlighting-design.md`; plan
+`docs/superpowers/plans/2026-07-15-vertex-orbit-dots.md`. Hyperbolic deferred by decision: the disk view
+renders uniform (Wythoffian) tilings, which are vertex-transitive — one orbit, so orbit coloring is
+degenerate there until k-uniform hyperbolic exists (the natural implementation is in-shader, distance to
+the Wythoff point in the folded frame).
+
+**Design.** Orbit ids come from the existing exact gate — `KUniformityChecker.vertexOrbits` on the
+tiling's `exactSource`, computed in-browser once per selection (`lib/services/orbitsFromExactSource.ts` +
+`lib/hooks/useVertexOrbits.ts`, mirroring the symmetry-overlay pattern). The service returns a
+position-keyed lookup `orbitAt(x,y)` built from the checker's replicated block; `buildTilingFromCell`
+stamps `orbitOfCorner` onto each BASE polygon and `translatedCopy` shares it by reference — orbit is
+lattice-invariant, so every replica inherits for free and the draw loop never looks anything up.
+
+**Two load-bearing facts (measured, not assumed).** (1) Index alignment between `renderCell` and the
+reconstructed exact cell does NOT hold: `reconstructOracleCell` orders faces by face-trace + shape-group
+Map, unrelated to renderCell order. (2) Absolute POSITION alignment DOES hold: across all 2720
+euclidean-with-exactSource records (k=1..7, galebach + ctrnact), every renderCell vertex matches an exact
+block vertex at 1e-4 quantization and the matched orbit count equals the certified k every time. So the
+lookup keys on absolute position; no lattice reduction needed (only base-cell corners are ever queried).
+
+**Colors (AL pivot mid-review).** First cut used the Okabe–Ito 7-color palette (thesis-figure parity);
+AL replaced it with equidistant hues — orbit i of k gets h = i·360/k at the tile-default S=40/B=100
+(`lib/utils/orbitColors.ts`) — so k orbits get k distinct hues at any k. Outline always black, matching
+the polygon-points dots.
+
+**The coverage wall.** Only the Regular shelf carries `exactSource` (2720 records). The lazy shards —
+scaled (1061), isotoxal, mixed, composable, polyomino (~7.5k tilings) — carry ONLY the float renderCell +
+k: no exact cell, no m/partition. Float→exact snapping is unsound (ℤ[ζ] dense in ℂ, §12.5), so runtime
+recovery is impossible; orbit dots there would be a lying single color (AL hit exactly this on a scaled
+k=4). Decision (AL): the toggle is DISABLED without exactSource (sidebar checkbox + O key + canvas all
+inert). Follow-up if wanted: the shard builders already hold the exact cells (`build-scaled-atlas.ts`
+decodes `{T1,T2,faces}` in ℤ[ζ₁₂] to make renderCell) — emitting exactSource there and validating the
+checker on non-unit-edge ring-24 cells would light up the on-grid shelves. Off-grid isotoxal stays out.
+
+**Verification.** 7 unit tests (equidistant palette; the service on an embedded t2001 fixture returns k=2
+with a 2-orbit vertex partition; `translatedCopy` carries `orbitOfCorner`). Build green at every step; the
+4 failing suite files predate the feature (verified identical at the pre-feature commit). Review found one
+real bug — the O shortcut badge was dead (TOGGLES never wired); fixed with hyperbolic/no-data guards.
+Feature commits `203b7e2..a787bd0` + `2c0ce95` (colors) + `f0c721e` (no-data inert/disabled).

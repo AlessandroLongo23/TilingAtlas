@@ -1096,3 +1096,10 @@ Spiral conformal mode (exp/log map, Kaplan) in the /play inversive view: (a,b) a
 euclidean-shader-renderer (flatView refactor adopted). Local-only vault content + tooling excluded from the
 pushed history and gitignored whole-folder; preserved on its local branch. c1/c4 left unmerged (parked —
 see report). Spec: superpowers/specs/2026-07-16-spiral-conformal-shader-design.md. — CC
+
+**2026-07-16 — CC → AL — Vertex-orbit dots in /play (Marek's idea): k orbit colors on the Regular shelf.**
+Toggle (O key) marks every vertex with an orbit-colored dot — equidistant hues (i·360/k at tile S=40/B=100),
+black outline, tiling dimmed. Ids from KUniformityChecker.vertexOrbits on exactSource, position-keyed
+(frame alignment measured across all 2720 records; index order provably unreliable). Shelves without
+exactSource (scaled/isotoxal/mixed/convex/polyomino) carry no orbit data → toggle disabled, canvas inert.
+Commits 203b7e2..a787bd0, 2c0ce95, f0c721e; detail NOTES §62. — CC
