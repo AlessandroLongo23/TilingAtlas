@@ -134,3 +134,14 @@ export function resolveAlphaDegsRaw(pc: ParametricCellData, stored: number[] | n
 		return v != null && Number.isFinite(v) ? clampAlphaOnly(pc, j, v) : p.defaultAlphaDeg;
 	});
 }
+
+/** The angle tuple to RENDER for a parametric family: the eased `live` tuple when present and correctly
+ *  sized, else the resolved (clamp-only, unsnapped) target. Single source shared by the flat p5 canvas and
+ *  the inversive overlay, so the two render paths can never drift apart. */
+export function renderAlphaDegs(
+	pc: ParametricCellData,
+	live: number[] | null | undefined,
+	stored: number[] | null | undefined,
+): number[] {
+	return live && live.length === pc.params.length ? live : resolveAlphaDegsRaw(pc, stored);
+}

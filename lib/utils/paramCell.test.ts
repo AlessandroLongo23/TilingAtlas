@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clampAlphaOnly, clampAlphaAt, resolveAlphaDegsRaw, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { clampAlphaOnly, clampAlphaAt, resolveAlphaDegsRaw, resolveAlphaDegs, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 
 // Minimal fixture: clampAlphaOnly only reads params[i].alphaRangeDegOpen.
 const PC = (lo: number, hi: number): ParametricCellData => ({
@@ -35,5 +35,17 @@ describe("resolveAlphaDegsRaw", () => {
 		expect(resolveAlphaDegsRaw(pc, [10])).toEqual([30]);
 		expect(resolveAlphaDegsRaw(pc, null)).toEqual([60]);  // default (lo+hi)/2
 		expect(resolveAlphaDegsRaw(pc, [NaN])).toEqual([60]);
+	});
+});
+
+describe("renderAlphaDegs", () => {
+	it("returns the live tuple when present and correctly sized (unsnapped, ignoring the target)", () => {
+		const pc = PC(30, 90);
+		expect(renderAlphaDegs(pc, [47.37], [50])).toEqual([47.37]);
+	});
+	it("falls back to the clamp-only resolved target when live is null or the wrong length", () => {
+		const pc = PC(30, 90);
+		expect(renderAlphaDegs(pc, null, [47.37])).toEqual([47.37]);       // no live yet → raw target
+		expect(renderAlphaDegs(pc, [1, 2], [47.37])).toEqual([47.37]);     // stale length → raw target
 	});
 });

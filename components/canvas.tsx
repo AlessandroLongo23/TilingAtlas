@@ -17,7 +17,7 @@ import {
 	prefersReducedMotion,
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
-import { evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import {
 	screenToWorld,
 	worldToScreen,
@@ -362,7 +362,7 @@ export function Canvas({
 			// inside the open interval.
 			const renderAlphas = (pc: ParametricCellData): number[] => {
 				const fa = useFamilyAlphas.getState();
-				return fa.live && fa.live.length === pc.params.length ? fa.live : resolveAlphaDegsRaw(pc, fa.values);
+				return renderAlphaDegs(pc, fa.live, fa.values);
 			};
 
 			const ensureTiling = () => {

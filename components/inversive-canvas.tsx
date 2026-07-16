@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { buildCellGeom } from "@/lib/render/inversiveCellGeom";
-import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
@@ -274,7 +274,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			const pc = paramCellRef.current;
 			if (pc && vertsTexRef.current && metaTexRef.current) {
 				const fa = useFamilyAlphas.getState();
-				const alphas = fa.live && fa.live.length === pc.params.length ? fa.live : resolveAlphaDegsRaw(pc, fa.values);
+				const alphas = renderAlphaDegs(pc, fa.live, fa.values);
 				const sig = alphas.map((a) => a.toFixed(2)).join(",");
 				if (sig !== lastSigRef.current) {
 					lastSigRef.current = sig;
