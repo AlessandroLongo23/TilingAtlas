@@ -101,6 +101,15 @@ export function clampAlpha(pc: ParametricCellData, alphaDeg: number): number {
 	return clampAlphaAt(pc, 0, alphaDeg);
 }
 
+/** Clamp one parameter's angle into the family's range WITHOUT snapping to the slider grid. For the
+ *  continuous Command+drag scrub, where the 0.5° snap that clampAlphaAt applies would make the sweep
+ *  stair-step. The evaluated angle is still held ALPHA_EPS_DEG inside the open interval downstream in
+ *  deltasFor, so storing exactly lo/hi is safe. */
+export function clampAlphaOnly(pc: ParametricCellData, paramIndex: number, alphaDeg: number): number {
+	const [lo, hi] = pc.params[paramIndex].alphaRangeDegOpen;
+	return Math.min(hi, Math.max(lo, alphaDeg));
+}
+
 /**
  * Resolve the effective per-parameter angles for a family from the persisted store values. One value
  * per parameter (α, β, …): reuse the stored value clamped into THIS family's valid range if present and
@@ -114,4 +123,25 @@ export function resolveAlphaDegs(pc: ParametricCellData, stored: number[] | null
 		const v = stored?.[j];
 		return v != null && Number.isFinite(v) ? clampAlphaAt(pc, j, v) : p.defaultAlphaDeg;
 	});
+}
+
+/** Like resolveAlphaDegs but clamps WITHOUT the 0.5° grid snap — for the continuous Command-scrub seed and
+ *  the eased render tuple, which must stay off-grid to sweep smoothly. Missing/non-finite entries fall back
+ *  to the parameter default; length always follows pc.params. */
+export function resolveAlphaDegsRaw(pc: ParametricCellData, stored: number[] | null | undefined): number[] {
+	return pc.params.map((p, j) => {
+		const v = stored?.[j];
+		return v != null && Number.isFinite(v) ? clampAlphaOnly(pc, j, v) : p.defaultAlphaDeg;
+	});
+}
+
+/** The angle tuple to RENDER for a parametric family: the eased `live` tuple when present and correctly
+ *  sized, else the resolved (clamp-only, unsnapped) target. Single source shared by the flat p5 canvas and
+ *  the inversive overlay, so the two render paths can never drift apart. */
+export function renderAlphaDegs(
+	pc: ParametricCellData,
+	live: number[] | null | undefined,
+	stored: number[] | null | undefined,
+): number[] {
+	return live && live.length === pc.params.length ? live : resolveAlphaDegsRaw(pc, stored);
 }

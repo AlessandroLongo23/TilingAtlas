@@ -4133,3 +4133,53 @@ output (the whole uniform path is gated on `uNTiles > 1` / `uSnub`). Files: `lib
 (+wythoffFaces/schwarzCorners/wythoffVertex/wythoffFeet/tileHue/uniformDescriptor/snubData/hyperbolicUniformValues),
 `lib/render/hyperbolicShader.ts` (Schwarz-triangle fold + Wythoff classifier + snub path), the two components,
 `public/reference-atlas-hyperbolic.json` (22 entries), plus the routing files from §59.
+
+## 61. Command+mouse-move angle scrub for parametric families — a target/live ease on the shared store (2026-07-16, session 33)
+
+**What shipped.** Holding ⌘ and moving the mouse (no button) over the /play canvas now sets a Euclidean
+parametric tiling's free angle(s): the horizontal mouse delta drives α, the vertical drives β (only on
+≥2-parameter isotoxal families). The mapping is RELATIVE (`event.movementX/Y`), so pressing ⌘ never snaps
+the value to the cursor — only actual motion moves it; releasing ⌘ or leaving the canvas freezes it.
+Continuous/proportional (Δangle = delta_px · `ALPHA_DEG_PER_PX`, default 0.25°/px), clamped to each
+parameter's open validity interval, never wrapped. A `move` cursor shows while ⌘ is held over a parametric
+tiling (reset on keyup/blur). AL's request; brainstormed spec + plan in
+`docs/superpowers/{specs,plans}/2026-07-16-command-scrub-parametric-angles.*`.
+
+**Architecture — a target/live split on `familyAlphas`.** Mirrors the rotation control's two-value pattern
+(a target the input writes, a live value the render eases toward), but on the SHARED `familyAlphas` store,
+not a canvas-local ref: both the flat p5 canvas and the inversive WebGL overlay render parametric families
+from that store, so a canvas-local live value would leave the inversive view rendering the un-eased target
+and desyncing. `values` stays the target (slider + scrub write it); new non-reactive `live` is eased toward
+it each frame in the always-mounted flat-canvas draw loop (`live[i] += (target − live[i])·ALPHA_DAMP`,
+ALPHA_DAMP 0.2), mutated IN PLACE with no `setState` — the only reactive subscriber, `ParamSliderPanel`,
+selects `values`, so per-frame `live` writes trigger zero React re-renders (the same in-place-mutation
+discipline `controls` zoom/offset use). Both renderers read `live`; `resetLive()` on selection change forces
+a reseed so `live` never glides across two unrelated families (the length-mismatch guard alone misses a
+switch between two same-arity families).
+
+**Clamp-only resolvers (the subtle bug the review caught).** The scrub must stay OFF the slider's 0.5° grid
+to sweep continuously, so it clamps via `clampAlphaOnly` (no snap) rather than `clampAlphaAt`. The first cut
+still SEEDED the scrub and the ease target through the snapping `resolveAlphaDegs`, so each off-grid value
+was re-snapped on the next read — and with 0.25°/px landing on grid midpoints, `Math.round`'s round-half-up
+bias made a slow rightward drag move 2× intended while a slow leftward drag STALLED. Fix: `resolveAlphaDegsRaw`
+(clamp-only resolve) for the scrub seed and the ease target; the snapping resolver survives only for the
+selection reconcile. A shared `renderAlphaDegs(pc, live, values)` now centralizes the live-vs-target read so
+the flat and inversive paths cannot drift. The `ParamSliderPanel` readout was also switched to the raw value
+so the number shown matches what a scrub actually renders (was up to 0.25° off).
+
+**Branch caveat.** Built on `feat/parametric-angle-scrub` off master, which LACKS the rotation-easing commit
+(`3a28f7a`, which lives on `feat/marek-vault`). So there is no rotation target/live scaffolding to share —
+the angle ease is self-contained (same exponential-lerp feel). The plan was drafted against marek-vault and
+re-anchored to master's simpler `canvas.tsx`; the inserted code is unchanged. "Same smoothing as rotation"
+means the same algorithm, not a dependency on rotation being eased on this branch.
+
+**Verification.** `pnpm build` clean; 8 new unit tests (`clampAlphaOnly`, `resolveAlphaDegsRaw`,
+`renderAlphaDegs`, `familyAlphas` set/resetLive) green; the full suite has ZERO new failures (the 12 failing
+tests are all in an unrelated `.claude/worktrees/` copy, outside this diff). Two-stage code review (spec +
+quality) plus a final full-diff review returned approve after the snap fix + the readout/DRY minors. p5 2.x
+binds `pointermove` to `window`, and the inversive overlay is `pointerEvents:none`, so the ⌘-move event
+reaches the flat p5 canvas beneath either overlay — the scrub works in the inversive view too. INTERACTIVE
+gesture testing (feel, sensitivity, sign) is pending AL — synthetic events don't carry `movementX/Y`.
+Tuning knobs (one-line constants in `canvas.tsx`): `ALPHA_DEG_PER_PX` (0.25), `ALPHA_DAMP` (0.2), sign
+(right=+α, up=+β). Files: `lib/utils/paramCell.ts`, `lib/stores/familyAlphas.ts`, `components/canvas.tsx`,
+`components/inversive-canvas.tsx`, `components/param-slider-panel.tsx`, `app/(app)/play/_play-client.tsx`.

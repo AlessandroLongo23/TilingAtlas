@@ -1,7 +1,7 @@
 "use client";
 
 import { useFamilyAlphas } from "@/stores/familyAlphas";
-import { ALPHA_STEP_DEG, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { ALPHA_STEP_DEG, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 
 const GREEK = ["α", "β", "γ", "δ", "ε"];
 const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
@@ -13,10 +13,10 @@ const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
 // hot path (the same trick that keeps the rotation slider smooth).
 export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData }) {
 	const familyAlphas = useFamilyAlphas((s) => s.values);
-	const effAlphas = resolveAlphaDegs(paramCell, familyAlphas);
+	const effAlphas = resolveAlphaDegsRaw(paramCell, familyAlphas);
 
 	const setAlphaAt = (j: number, v: number) => {
-		const next = resolveAlphaDegs(paramCell, useFamilyAlphas.getState().values);
+		const next = resolveAlphaDegsRaw(paramCell, useFamilyAlphas.getState().values);
 		next[j] = v;
 		useFamilyAlphas.getState().set(next);
 	};
