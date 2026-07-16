@@ -161,13 +161,40 @@ export class Tiling {
      *  (node.orbitOfCorner) with an equidistant hue among `k` orbits, at the tile-default S/B, and a
      *  black outline. Constant on-screen size (world radius / zoom). Nodes with no orbit data fall back
      *  to a single color (orbit 0 of k=1). Drawn inside the world transform, on top of the tiles; the
-     *  caller suppresses it during the selection transition and in Islamic mode. */
-    drawVertexOrbits = (ctx, k: number, cull?: (c: Vector) => boolean): void => {
+     *  caller suppresses it during the selection transition and in Islamic mode.
+     *
+     *  `hover` (mouse in world coords, or null): hovering a dot grows EVERY dot of that orbit to 2×
+     *  radius so one orbit can be picked out at high k. The hit-test uses the BASE radius, so the
+     *  hovered state depends only on cursor-vs-base-dot — deterministic, no grow/shrink flicker at the
+     *  boundary — and the grown dots are drawn last, above their unhovered neighbours. */
+    drawVertexOrbits = (ctx, k: number, cull?: (c: Vector) => boolean, hover?: { x: number; y: number } | null): void => {
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
         const diameter = 8 / zoom;
+
+        // Hover pass: which orbit (if any) owns a base-radius dot under the cursor.
+        let hoverOrbit = -1;
+        if (hover) {
+            const r2 = (diameter / 2) * (diameter / 2);
+            outer: for (let i = 0; i < this.nodes.length; i++) {
+                const node = this.nodes[i];
+                if (cull && !cull(node.centroid)) continue;
+                const oc = node.orbitOfCorner;
+                const vs = node.vertices;
+                for (let c = 0; c < vs.length; c++) {
+                    const o = oc ? oc[c] : 0;
+                    if (o < 0) continue;
+                    const dx = vs[c].x - hover.x, dy = vs[c].y - hover.y;
+                    if (dx * dx + dy * dy <= r2) { hoverOrbit = o; break outer; }
+                }
+            }
+        }
+
         ctx.strokeWeight(1.5 / zoom);
         ctx.stroke(0, 0, 0); // always a black outline
+        // Draw pass: unhovered dots now; the hovered orbit's centres are collected (flat x,y pairs) and
+        // drawn after, at 2× radius, so they sit on top.
+        const grown: number[] = [];
         for (let i = 0; i < this.nodes.length; i++) {
             const node = this.nodes[i];
             if (cull && !cull(node.centroid)) continue;
@@ -176,9 +203,21 @@ export class Tiling {
             for (let c = 0; c < vs.length; c++) {
                 const o = oc ? oc[c] : 0; // no orbit data → single color (orbit 0)
                 if (o < 0) continue; // corner is not a tiling vertex (e.g. star dent-fill)
+                if (o === hoverOrbit) {
+                    grown.push(vs[c].x, vs[c].y);
+                    continue;
+                }
                 const col = orbitColor(o, k);
                 ctx.fill(col.h, col.s, col.b);
                 ctx.ellipse(vs[c].x, vs[c].y, diameter, diameter);
+            }
+        }
+        if (hoverOrbit >= 0 && grown.length > 0) {
+            const col = orbitColor(hoverOrbit, k);
+            ctx.fill(col.h, col.s, col.b);
+            const grownDiameter = diameter * 2;
+            for (let i = 0; i < grown.length; i += 2) {
+                ctx.ellipse(grown[i], grown[i + 1], grownDiameter, grownDiameter);
             }
         }
     }

@@ -491,6 +491,7 @@ export function Canvas({
 				cull?: (c: Vector) => boolean,
 				scaleOf?: (c: Vector) => number,
 				skipFill?: boolean,
+				hoverWorld?: { x: number; y: number } | null,
 			) => {
 				// Orbit mode requires actual orbit data (only tilings with an exact cell carry it — the
 				// Regular shelf). Without data the toggle is inert here (no dim, no dots) and the sidebar
@@ -505,7 +506,7 @@ export function Canvas({
 				// (orbit count) sets the equidistant hue spacing.
 				if (orbitMode && !scaleOf) {
 					const k = propsRef.current.orbitData?.k ?? 1;
-					tiling.drawVertexOrbits(p5, k, cull);
+					tiling.drawVertexOrbits(p5, k, cull, hoverWorld);
 				}
 			};
 
@@ -758,8 +759,18 @@ export function Canvas({
 						? makeWaveScale(wavePhase, waveP, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
 						: undefined;
 					const shaderFill = isFlatShaderActive(cfg);
+					// Mouse in world coords for the orbit-dot hover (grow the hovered orbit, Tiling.
+					// drawVertexOrbits). Inverts the SAME frame transform the dots are drawn with (wrapped
+					// drawOffset + eased zoom/rot), so the hit-test matches what's on screen. Null when the
+					// pointer is off the canvas or the overlay is off.
+					const overCanvas =
+						p5.mouseX >= 0 && p5.mouseX <= p5.width && p5.mouseY >= 0 && p5.mouseY <= p5.height;
+					const hoverWorld =
+						cfg.showVertexOrbits && overCanvas
+							? screenToWorld(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2, drawOffset, ctrl.zoom, rot)
+							: null;
 					if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
-					else drawTiling(cfg, tiling, cull, wave, shaderFill);
+					else drawTiling(cfg, tiling, cull, wave, shaderFill, hoverWorld);
 					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd);
 					if (symmetryActive) {
 						drawSymmetryElements(p5, sd, {
