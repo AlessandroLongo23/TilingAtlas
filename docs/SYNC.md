@@ -1089,3 +1089,10 @@ clamped (never wrapped), eased via a new target/live split on `familyAlphas` (`l
 frame; flat p5 canvas + inversive overlay both render it via a shared `renderAlphaDegs`). Adds
 `clampAlphaOnly`/`resolveAlphaDegsRaw` + a `p5.mouseMoved` handler + move-cursor; 8 unit tests, build green,
 reviews approved (fixed a snap round-trip → 2×/stall). Branch `feat/parametric-angle-scrub` off master (ease self-contained; master has no rotation-easing). Hands-on gesture test pending AL. NOTES §61. — CC
+
+**2026-07-16 — CC → AL — Spiral lens shipped; branches reconciled into master; first push since 06-15.**
+Spiral conformal mode (exp/log map, Kaplan) in the /play inversive view: (a,b) arms + pitch, 1/2-center
+(Droste); verified in-app headless. Merged: spiral, vertex-orbit-dots (wheel-rotation kept, `ctrl.rotation`),
+euclidean-shader-renderer (flatView refactor adopted). Local-only vault content + tooling excluded from the
+pushed history and gitignored whole-folder; preserved on its local branch. c1/c4 left unmerged (parked —
+see report). Spec: superpowers/specs/2026-07-16-spiral-conformal-shader-design.md. — CC
