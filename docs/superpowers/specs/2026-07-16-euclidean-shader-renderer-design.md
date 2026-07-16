@@ -196,6 +196,15 @@ ships nothing until Islamic is done — explicitly rejected in the brainstorm.
   are.
 - No new rendering features. This is a faithful port of the existing flat view, not a redesign.
 
+## Known M1 limitations
+
+- The selection-transition wave is disabled while the shader owns the fill (M2 ports it to the GPU);
+  with the flag on, selections swap instantly, same as the inversive/islamic/symmetry modes already do.
+- `buildCellMesh` honors an explicit per-polygon `hue` override (for polyominoes); p5's
+  `buildTilingFromCell` does not. No current data producer emits `hue`, so there's no live difference,
+  but flag-on vs flag-off would diverge for such tiles if one ever does — a pre-existing asymmetry
+  inherited from `inversiveCellGeom`.
+
 ## Settled decisions (do NOT re-litigate)
 
 1. Retained-mode (TS computes, shader draws), NOT per-pixel analytic like the other two views.

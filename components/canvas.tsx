@@ -133,13 +133,16 @@ function makeWaveScale(
 // The transition scales tiles about their centroids in the plain (and circle-packing) draw path. The
 // Islamic construction and the symmetry-elements overlay are drawn by different code that has no notion of
 // a per-tile scale, and the inversive view doesn't use this canvas at all — in those modes a selection just
-// swaps, as it did before. Reduced-motion always wins over the toggle.
+// swaps, as it did before. Likewise when the flat WebGL renderer owns the fill (isFlatShaderActive): p5
+// draws no tile bodies to scale, so the wave would silently no-op while EuclideanCanvas jump-cuts to the
+// new mesh — disable it until M2 ports the wave to the shader. Reduced-motion always wins over the toggle.
 function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): boolean {
 	return (
 		cfg.tilingTransition &&
 		!cfg.isIslamic &&
 		!cfg.showSymmetryElements &&
 		!cfg.inversive &&
+		!isFlatShaderActive(cfg) &&
 		!prefersReducedMotion()
 	);
 }
