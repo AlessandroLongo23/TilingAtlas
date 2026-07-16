@@ -17,7 +17,7 @@ import {
 	prefersReducedMotion,
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
-import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import {
 	screenToWorld,
 	worldToScreen,
@@ -68,6 +68,13 @@ const CLICK_SNAP_RADIUS_PX = 12;
 // (tile density), not this cap.
 const MAX_FILL_RADIUS = 144;
 const DEGENERATE_DET = 1e-9;
+
+// Command+drag angle scrub for parametric families. ALPHA_DEG_PER_PX: degrees of free-angle change per
+// pixel of mouse movement (α on horizontal delta, β on vertical). ALPHA_DAMP: per-frame ease of the live
+// angle toward the target tuple (exponential lerp — the flywheel glide feel), so the flat and inversive
+// views settle in step.
+const ALPHA_DEG_PER_PX = 0.25;
+const ALPHA_DAMP = 0.2;
 
 // The lattice basis (two world-space translation vectors) of a translational cell, plus its
 // determinant. Single source of truth so fill-radius, wrap, and replication never disagree.
@@ -277,6 +284,9 @@ export function Canvas({
 	const pressPosRef = useRef<{ x: number; y: number } | null>(null);
 	// Last applied rotation (degrees); drives the pivot-on-nearest-vertex compensation in the draw loop.
 	const prevRotationRef = useRef<number | null>(null);
+	// True while WE'VE set the canvas cursor to "move" for an active Command-scrub, so we only reset the
+	// cursor we own (not one a future pan/grab handler might set).
+	const scrubCursorRef = useRef(false);
 
 	// Selection transition (lib/utils/tilingTransition.ts). `outgoingRef` holds the tiling that is on its
 	// way out — it keeps its own cell, because the draw loop must wrap and cull it against the lattice it
@@ -304,6 +314,25 @@ export function Canvas({
 		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData };
 	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData]);
 
+	// Clear the Command-scrub "move" cursor when Command is released (or the window blurs) without another
+	// mouse move to clear it in mouseMoved. Cosmetic: the scrub itself is driven entirely by mouseMoved.
+	useEffect(() => {
+		const clear = () => {
+			const c = containerRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
+			if (c) c.style.cursor = "";
+			scrubCursorRef.current = false;
+		};
+		const onKeyUp = (e: KeyboardEvent) => {
+			if (e.key === "Meta" || !e.metaKey) clear();
+		};
+		window.addEventListener("keyup", onKeyUp);
+		window.addEventListener("blur", clear);
+		return () => {
+			window.removeEventListener("keyup", onKeyUp);
+			window.removeEventListener("blur", clear);
+		};
+	}, []);
+
 	const [canvasError, setCanvasError] = useState<string | null>(null);
 	const [tileCount, setTileCount] = useState(0);
 	const [vcs, setVcs] = useState<Tiling["vcs"]>([]);
@@ -325,6 +354,16 @@ export function Canvas({
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const p5 = p5Raw as any;
 			const readCfg = () => useConfiguration.getState();
+
+			// The angle tuple the render/pick path should draw for a parametric family: the eased LIVE tuple
+			// when it exists (Command+drag or slider glide), else the resolved target. Bypasses resolveAlphaDegs'
+			// 0.5° grid snap so the continuous ease stays smooth; `live` is always in range (seeded from
+			// resolveAlphaDegs and eased monotonically toward it — no overshoot), and deltasFor still holds it
+			// inside the open interval.
+			const renderAlphas = (pc: ParametricCellData): number[] => {
+				const fa = useFamilyAlphas.getState();
+				return renderAlphaDegs(pc, fa.live, fa.values);
+			};
 
 			const ensureTiling = () => {
 				const cfg = readCfg();
@@ -351,7 +390,7 @@ export function Canvas({
 				let tc = staticCell;
 				let tcId = baseId;
 				if (pc) {
-					const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+					const alphas = renderAlphas(pc);
 					tcId = `${baseId ?? ""}@a=${alphas.map((a) => a.toFixed(2)).join(",")}`;
 					tc =
 						tcId === prev.translationalCellId && activeCellRef.current
@@ -553,6 +592,29 @@ export function Canvas({
 				const ctrl = cfg.controls;
 				ctrl.zoom += (ctrl.targetZoom - ctrl.zoom) * ctrl.dampening;
 				ctrl.offset.add(Vector.sub(ctrl.targetOffset, ctrl.offset).scale(ctrl.dampening));
+
+				// Ease the live parametric angle(s) toward the target tuple (familyAlphas.values — the slider
+				// position or the Command+drag scrub) with an exponential per-frame lerp, per-parameter and
+				// clamped (never wrapped). Runs every frame in every view (before the skipFlat check) because
+				// both the flat grid and the inversive overlay render from `live`. A null/length-mismatched `live`
+				// (mount, or a selection change via resetLive) seeds from the target this frame with no ease.
+				{
+					const pc = propsRef.current.paramCell;
+					if (pc) {
+						const fa = useFamilyAlphas.getState();
+						const target = resolveAlphaDegsRaw(pc, fa.values);
+						const live = fa.live;
+						if (!live || live.length !== target.length) {
+							fa.live = target.slice();
+						} else {
+							for (let i = 0; i < target.length; i++) {
+								const d = target[i] - live[i];
+								if (Math.abs(d) < 0.01) live[i] = target[i];
+								else live[i] += d * ALPHA_DAMP;
+							}
+						}
+					}
+				}
 
 				p5.clear();
 				// Inversive view: the WebGL overlay (InversiveCanvas) draws the tiling instead. Keep the p5
@@ -760,7 +822,7 @@ export function Canvas({
 					// Resolve the current cell fresh from the props and build a small local patch to hit-test against.
 					const { translationalCell: staticCell, paramCell: pc } = propsRef.current;
 					const cell = pc
-						? evaluateParamCell(pc, resolveAlphaDegs(pc, useFamilyAlphas.getState().values))
+						? evaluateParamCell(pc, renderAlphas(pc))
 						: staticCell;
 					if (!cell) return;
 					const { v1, v2 } = latticeBasisFromCell(cell);
@@ -841,6 +903,39 @@ export function Canvas({
 				const newScreen = Vector.add(Vector.scale(world, z), ctrl.targetOffset);
 				ctrl.targetOffset.add(Vector.sub(mouse, newScreen));
 				useConfiguration.setState({ controls: { ...ctrl, targetZoom: z } });
+			};
+
+			// Command + move (no button): scrub the parametric angle(s). α on horizontal delta, β on vertical,
+			// relative (movementX/Y) so pressing Command never snaps the value — only actual motion moves it.
+			// Continuous, clamped to each parameter's range (never wrapped); the draw loop eases the live
+			// value behind it. Writes the TARGET (familyAlphas.values), so the slider thumbs track instantly.
+			// Inert unless a parametric family is selected. Re-renders only the small ParamSliderPanel (it
+			// alone subscribes to `values`), exactly like a slider drag.
+			p5.mouseMoved = (event?: MouseEvent) => {
+				if (!event || event.target !== p5.canvas) return;
+				const pc = propsRef.current.paramCell;
+				if (!event.metaKey || !pc) {
+					if (scrubCursorRef.current) {
+						p5.canvas.style.cursor = "";
+						scrubCursorRef.current = false;
+					}
+					return;
+				}
+				if (!scrubCursorRef.current) {
+					p5.canvas.style.cursor = "move";
+					scrubCursorRef.current = true;
+				}
+				const dx = event.movementX || 0;
+				const dy = event.movementY || 0;
+				if (dx === 0 && dy === 0) return;
+				const fa = useFamilyAlphas.getState();
+				const cur = resolveAlphaDegsRaw(pc, fa.values); // clamp-only, off-grid — the continuous scrub base
+				const next = cur.slice();
+				next[0] = clampAlphaOnly(pc, 0, cur[0] + dx * ALPHA_DEG_PER_PX);
+				if (pc.params.length >= 2) next[1] = clampAlphaOnly(pc, 1, cur[1] - dy * ALPHA_DEG_PER_PX);
+				// Skip the store write (and the ParamSliderPanel re-render) when nothing actually moved — a pure
+				// off-axis move on a 1-param family, or scrubbing while already pinned at a range endpoint.
+				if (next[0] !== cur[0] || (pc.params.length >= 2 && next[1] !== cur[1])) fa.set(next);
 			};
 		},
 		[],
