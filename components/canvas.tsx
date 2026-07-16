@@ -1061,7 +1061,7 @@ export function Canvas({
 			) : null}
 
 			{canvasError ? (
-				<div className="absolute inset-0 flex items-center justify-center pointer-events-none text-center text-fg text-sm px-8">
+				<div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none text-center text-fg text-sm px-8">
 					{canvasError}
 				</div>
 			) : null}

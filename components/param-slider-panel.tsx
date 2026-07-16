@@ -22,7 +22,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	};
 
 	return (
-		<div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col gap-2 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
+		<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
 			{paramCell.params.map((p, j) => (
 				<div key={j} className="flex items-center gap-3">
 					<span className="text-xs font-medium text-violet-400 whitespace-nowrap w-24">
