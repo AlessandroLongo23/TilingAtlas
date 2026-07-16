@@ -265,6 +265,9 @@ export function Canvas({
 	// The orbitData the current grid's orbit ids were built from. orbitData arrives asynchronously (the hook
 	// computes it after selection), so the grid rebuilds once when it changes to attach ids to base polygons.
 	const prevOrbitDataRef = useRef<OrbitData | null>(null);
+	// Per-orbit hover-grow scales (Tiling.drawVertexOrbits eases these toward 2/1 each frame). Caller-owned
+	// so the animation survives the grid rebuilds that reconstruct the Tiling (regrids, alpha-scrub ticks).
+	const orbitHoverScalesRef = useRef<number[]>([]);
 
 	// Selection transition (lib/utils/tilingTransition.ts). `outgoingRef` holds the tiling that is on its
 	// way out — it keeps its own cell, because the draw loop must wrap and cull it against the lattice it
@@ -506,7 +509,7 @@ export function Canvas({
 				// (orbit count) sets the equidistant hue spacing.
 				if (orbitMode && !scaleOf) {
 					const k = propsRef.current.orbitData?.k ?? 1;
-					tiling.drawVertexOrbits(p5, k, cull, hoverWorld);
+					tiling.drawVertexOrbits(p5, k, cull, hoverWorld, orbitHoverScalesRef.current);
 				}
 			};
 

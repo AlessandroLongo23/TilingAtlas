@@ -10,6 +10,11 @@ import { orbitColor } from "@/lib/utils/orbitColors";
 
 export type VCWithOccurrences = { vc: VertexConfiguration; occurrences: number };
 
+// Orbit-dot hover (drawVertexOrbits): radius factor the hovered orbit grows toward, and the per-frame
+// ease toward it (same damp idiom as the pan/zoom/rotation eases).
+const ORBIT_HOVER_GROW = 2;
+const ORBIT_HOVER_DAMP = 0.2;
+
 export class Tiling {
     nodes: Polygon[];
     anchorNodes: Polygon[];
@@ -163,11 +168,19 @@ export class Tiling {
      *  to a single color (orbit 0 of k=1). Drawn inside the world transform, on top of the tiles; the
      *  caller suppresses it during the selection transition and in Islamic mode.
      *
-     *  `hover` (mouse in world coords, or null): hovering a dot grows EVERY dot of that orbit to 2×
+     *  `hover` (mouse in world coords, or null): hovering a dot grows EVERY dot of that orbit toward 2×
      *  radius so one orbit can be picked out at high k. The hit-test uses the BASE radius, so the
      *  hovered state depends only on cursor-vs-base-dot — deterministic, no grow/shrink flicker at the
-     *  boundary — and the grown dots are drawn last, above their unhovered neighbours. */
-    drawVertexOrbits = (ctx, k: number, cull?: (c: Vector) => boolean, hover?: { x: number; y: number } | null): void => {
+     *  boundary. Growth is EASED: `scales` (caller-owned, one entry per orbit) lerps toward the target
+     *  each frame — caller-owned so the animation survives the grid rebuilds that reconstruct this
+     *  Tiling (regrids, alpha ticks). Enlarged dots draw last, above their at-rest neighbours. */
+    drawVertexOrbits = (
+        ctx,
+        k: number,
+        cull?: (c: Vector) => boolean,
+        hover?: { x: number; y: number } | null,
+        scales?: number[],
+    ): void => {
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
         const diameter = 8 / zoom;
@@ -190,11 +203,25 @@ export class Tiling {
             }
         }
 
+        // Ease each orbit's scale toward its target (grown when hovered, 1 at rest) — the same
+        // per-frame exponential-lerp idiom as the pan/zoom/rotation eases, snapped when within a hair
+        // so settled orbits take the cheap at-rest path below. A size change (new tiling) resets to 1.
+        const s = scales ?? [];
+        if (s.length !== k) {
+            s.length = k;
+            for (let o = 0; o < k; o++) s[o] = 1;
+        }
+        for (let o = 0; o < k; o++) {
+            const target = o === hoverOrbit ? ORBIT_HOVER_GROW : 1;
+            const d = target - s[o];
+            s[o] = Math.abs(d) < 0.01 ? target : s[o] + d * ORBIT_HOVER_DAMP;
+        }
+
         ctx.strokeWeight(1.5 / zoom);
         ctx.stroke(0, 0, 0); // always a black outline
-        // Draw pass: unhovered dots now; the hovered orbit's centres are collected (flat x,y pairs) and
-        // drawn after, at 2× radius, so they sit on top.
-        const grown: number[] = [];
+        // Two passes: at-rest dots first; any enlarged dots (a growing orbit, plus a still-shrinking
+        // previous one) are collected as (x, y, orbit) triples and drawn after, so they sit on top.
+        const enlarged: number[] = [];
         for (let i = 0; i < this.nodes.length; i++) {
             const node = this.nodes[i];
             if (cull && !cull(node.centroid)) continue;
@@ -203,8 +230,8 @@ export class Tiling {
             for (let c = 0; c < vs.length; c++) {
                 const o = oc ? oc[c] : 0; // no orbit data → single color (orbit 0)
                 if (o < 0) continue; // corner is not a tiling vertex (e.g. star dent-fill)
-                if (o === hoverOrbit) {
-                    grown.push(vs[c].x, vs[c].y);
+                if (o < k && s[o] > 1.001) {
+                    enlarged.push(vs[c].x, vs[c].y, o);
                     continue;
                 }
                 const col = orbitColor(o, k);
@@ -212,13 +239,12 @@ export class Tiling {
                 ctx.ellipse(vs[c].x, vs[c].y, diameter, diameter);
             }
         }
-        if (hoverOrbit >= 0 && grown.length > 0) {
-            const col = orbitColor(hoverOrbit, k);
+        for (let i = 0; i < enlarged.length; i += 3) {
+            const o = enlarged[i + 2];
+            const col = orbitColor(o, k);
             ctx.fill(col.h, col.s, col.b);
-            const grownDiameter = diameter * 2;
-            for (let i = 0; i < grown.length; i += 2) {
-                ctx.ellipse(grown[i], grown[i + 1], grownDiameter, grownDiameter);
-            }
+            const d = diameter * s[o];
+            ctx.ellipse(enlarged[i], enlarged[i + 1], d, d);
         }
     }
 
