@@ -66,3 +66,26 @@ describe("buildCellMesh", () => {
 		expect(buildCellMesh({ p: [{ v: squareVerts, n: 4 }], b: [[1, 0], [2, 0]] })).toBeNull(); // det 0
 	});
 });
+
+describe("buildCellMesh stroke geometry", () => {
+	it("emits two triangles (6 verts) per polygon edge as a quad", () => {
+		const mesh = buildCellMesh(cell)!;
+		// Square: 4 edges * 6 stroke verts = 24 stroke verts -> 48 position floats.
+		expect(mesh.strokeVertexCount).toBe(24);
+		expect(mesh.strokePos.length).toBe(48);
+		expect(mesh.strokeNorm.length).toBe(48);
+		expect(mesh.strokeSide.length).toBe(24);
+	});
+
+	it("edge 0's quad has the correct left-normal, positions, and side flags", () => {
+		const mesh = buildCellMesh(cell)!;
+		// Edge (-0.5,-0.5)->(0.5,-0.5): left normal (0,1); verts [a,a,b,b,a,b].
+		expect(Array.from(mesh.strokePos.slice(0, 12))).toEqual([
+			-0.5, -0.5,  -0.5, -0.5,  0.5, -0.5,  0.5, -0.5,  -0.5, -0.5,  0.5, -0.5,
+		]);
+		// `+ 0` canonicalises signed zero: nx = -dy/len is -0 for this horizontal edge (dy=0), identical to
+		// +0 in the shader. A real left-normal sign error would flip ny to -1 and still fail here.
+		expect(Array.from(mesh.strokeNorm.slice(0, 4)).map((v) => v + 0)).toEqual([0, 1, 0, 1]);
+		expect(Array.from(mesh.strokeSide.slice(0, 6))).toEqual([-1, 1, -1, -1, 1, 1]);
+	});
+});

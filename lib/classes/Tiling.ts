@@ -105,27 +105,29 @@ export class Tiling {
             // perceived lightness by ~0.13 (that is the whole reason the inversive view looked brighter —
             // its shader writes alpha 1). `opacity` still multiplies, so the layer fade-in is unaffected.
             const fillA = 1.0 * opacity;
-            for (let i = 0; i < this.nodes.length; i++) {
-                const node = this.nodes[i];
-                if (cull && !cull(node.centroid)) continue;
-                // Selection transition: the tile is drawn scaled about its own centroid. s === 1 is the
-                // normal path (no per-vertex arithmetic); below WAVE_MIN_SCALE it has collapsed to a point
-                // and is dropped, so it doesn't linger as a dot of stroke.
-                const s = scaleOf ? scaleOf(node.centroid) : 1;
-                if (s < WAVE_MIN_SCALE) continue;
-                if (showFill && !skipFill) ctx.fill(node.hue, 40, fillV, fillA);
-                else ctx.noFill();
-                const vs = node.vertices;
-                ctx.beginShape();
-                if (s >= 1) {
-                    for (let k = 0; k < vs.length; k++) ctx.vertex(vs[k].x, vs[k].y);
-                } else {
-                    const cx = node.centroid.x, cy = node.centroid.y;
-                    for (let k = 0; k < vs.length; k++) {
-                        ctx.vertex(cx + (vs[k].x - cx) * s, cy + (vs[k].y - cy) * s);
+            if (!skipFill) {
+                for (let i = 0; i < this.nodes.length; i++) {
+                    const node = this.nodes[i];
+                    if (cull && !cull(node.centroid)) continue;
+                    // Selection transition: the tile is drawn scaled about its own centroid. s === 1 is the
+                    // normal path (no per-vertex arithmetic); below WAVE_MIN_SCALE it has collapsed to a point
+                    // and is dropped, so it doesn't linger as a dot of stroke.
+                    const s = scaleOf ? scaleOf(node.centroid) : 1;
+                    if (s < WAVE_MIN_SCALE) continue;
+                    if (showFill) ctx.fill(node.hue, 40, fillV, fillA);
+                    else ctx.noFill();
+                    const vs = node.vertices;
+                    ctx.beginShape();
+                    if (s >= 1) {
+                        for (let k = 0; k < vs.length; k++) ctx.vertex(vs[k].x, vs[k].y);
+                    } else {
+                        const cx = node.centroid.x, cy = node.centroid.y;
+                        for (let k = 0; k < vs.length; k++) {
+                            ctx.vertex(cx + (vs[k].x - cx) * s, cy + (vs[k].y - cy) * s);
+                        }
                     }
+                    ctx.endShape(ctx.CLOSE);
                 }
-                ctx.endShape(ctx.CLOSE);
             }
             // Points sit on the untransformed outline, so they'd float off a scaled tile — hide them for
             // the duration of a transition.
