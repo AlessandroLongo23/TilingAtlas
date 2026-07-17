@@ -1,64 +1,80 @@
 {
   "nodes": [
     {
+      "key": "degenerate:⊥",
+      "label": "⊥ non-tiling",
+      "chirality": "achiral",
+      "resolved": false,
+      "kind": "degenerate"
+    },
+    {
       "key": "[[1,0,-2,-2],[0,2,3,2],[0,0,-1,-2],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,1,0,-1],[0,1,2,1]]",
       "label": "ctrnact-01_3c-3a-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
       "key": "[[0,1,0,0],[0,0,0,1],[0,0,0,0]]",
       "label": "ctrnact-01_3-6a-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
       "key": "[[1,0,-2,-1],[0,1,1,0],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,0,1,0]]",
       "label": "ctrnact-01_34-5e-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
       "key": "[[0,1,0,-1],[0,0,1,0],[0,0,0,0]]",
       "label": "ctrnact-01_4-4n-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
       "key": "[[0,2,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,1],[0,1,0,1]]",
       "label": "ctrnact-01_36-4f-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
       "key": "[[1,0,-2,-3],[0,1,1,1],[0,0,-2,-3],[0,0,-2,-2],[0,0,-1,-2],[0,0,-1,0],[0,0,0,0],[0,0,0,1]]",
       "label": "ctrnact-01_346-4l-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
       "key": "[[0,1,0,-1],[0,0,1,1],[0,0,0,-1],[0,0,0,0]]",
       "label": "ctrnact-01_34-5c-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
       "key": "[[0,1,0,1],[0,0,0,3],[0,0,0,0],[0,0,0,1]]",
       "label": "ctrnact-01_6-3d-1",
       "chirality": "achiral",
-      "resolved": true
+      "resolved": true,
+      "kind": "uniform"
     },
     {
-      "key": "unresolved:4.8.8",
-      "label": "unresolved(4.8.8)",
+      "key": "uncat:4.8.8",
+      "label": "4.8.8",
       "chirality": "achiral",
-      "resolved": false
+      "resolved": false,
+      "kind": "uncatalogued"
     }
   ],
   "edges": [
     {
       "family": "ctrnact-isotoxal-family-k1-01",
-      "from": "[[1,0,-2,-2],[0,2,3,2],[0,0,-1,-2],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,1,0,-1],[0,1,2,1]]",
+      "from": "degenerate:⊥",
       "to": "[[1,0,-2,-2],[0,2,3,2],[0,0,-1,-2],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,1,0,-1],[0,1,2,1]]",
       "alphaRange": [
         120.001,
@@ -69,7 +85,7 @@
     {
       "family": "ctrnact-isotoxal-family-k1-01",
       "from": "[[1,0,-2,-2],[0,2,3,2],[0,0,-1,-2],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,1,0,-1],[0,1,2,1]]",
-      "to": "[[1,0,-2,-2],[0,2,3,2],[0,0,-1,-2],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,1,0,-1],[0,1,2,1]]",
+      "to": "degenerate:⊥",
       "alphaRange": [
         149.99999999991468,
         179.999
@@ -218,7 +234,7 @@
     },
     {
       "family": "ctrnact-isotoxal-family-k1-14",
-      "from": "[[0,2,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,1],[0,1,0,1]]",
+      "from": "degenerate:⊥",
       "to": "[[0,2,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,1],[0,1,0,1]]",
       "alphaRange": [
         60.001,
@@ -229,16 +245,26 @@
     {
       "family": "ctrnact-isotoxal-family-k1-14",
       "from": "[[0,2,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,1],[0,1,0,1]]",
-      "to": "[[0,2,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,1],[0,1,0,1]]",
+      "to": "degenerate:⊥",
       "alphaRange": [
         119.99999999991473,
+        179.4337835740069
+      ],
+      "flexdim": 1
+    },
+    {
+      "family": "ctrnact-isotoxal-family-k1-14",
+      "from": "degenerate:⊥",
+      "to": "degenerate:⊥",
+      "alphaRange": [
+        179.4337835740069,
         179.999
       ],
       "flexdim": 1
     },
     {
       "family": "ctrnact-isotoxal-family-k1-15",
-      "from": "[[0,1,0,1],[0,0,0,3],[0,0,0,0],[0,0,0,1]]",
+      "from": "degenerate:⊥",
       "to": "[[0,1,0,1],[0,0,0,3],[0,0,0,0],[0,0,0,1]]",
       "alphaRange": [
         60.001,
@@ -249,7 +275,7 @@
     {
       "family": "ctrnact-isotoxal-family-k1-15",
       "from": "[[0,1,0,1],[0,0,0,3],[0,0,0,0],[0,0,0,1]]",
-      "to": "[[0,1,0,1],[0,0,0,3],[0,0,0,0],[0,0,0,1]]",
+      "to": "degenerate:⊥",
       "alphaRange": [
         119.99999999991473,
         179.999
@@ -258,8 +284,8 @@
     },
     {
       "family": "ctrnact-isotoxal-family-k1-16",
-      "from": "unresolved:4.8.8",
-      "to": "unresolved:4.8.8",
+      "from": "degenerate:⊥",
+      "to": "uncat:4.8.8",
       "alphaRange": [
         90.001,
         134.99999999991468
@@ -268,8 +294,8 @@
     },
     {
       "family": "ctrnact-isotoxal-family-k1-16",
-      "from": "unresolved:4.8.8",
-      "to": "unresolved:4.8.8",
+      "from": "uncat:4.8.8",
+      "to": "degenerate:⊥",
       "alphaRange": [
         134.99999999991468,
         179.999
@@ -277,6 +303,7 @@
       "flexdim": 1
     }
   ],
-  "h1": 19,
-  "unresolved": 1
+  "h1": 16,
+  "h1NoDegenerate": 11,
+  "unresolved": 2
 }

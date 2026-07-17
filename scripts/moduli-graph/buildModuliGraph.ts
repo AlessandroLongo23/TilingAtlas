@@ -13,4 +13,8 @@ const graph = assembleGraph(families, loadCatalogueKeys(CyclotomicRing.create(24
 mkdirSync('experiments/results', { recursive: true });
 writeFileSync('experiments/results/moduli-graph.json', JSON.stringify(graph, null, 2));
 const chiral = graph.nodes.filter((n) => n.chirality !== 'achiral').length;
-console.log(`families=${families.length} nodes=${graph.nodes.length} edges=${graph.edges.length} H1=${graph.h1} unresolved=${graph.unresolved} chiral=${chiral}`);
+const degenerate = graph.nodes.filter((n) => n.kind === 'degenerate').length;
+console.log(
+  `families=${families.length} nodes=${graph.nodes.length} edges=${graph.edges.length} ` +
+  `H1(with ⊥)=${graph.h1} H1(without ⊥)=${graph.h1NoDegenerate} degenerate=${degenerate} chiral=${chiral}`,
+);
