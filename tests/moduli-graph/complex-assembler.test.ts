@@ -5,10 +5,11 @@ import { assembleGraph } from '../../scripts/moduli-graph/graphAssembler';
 import { loadCatalogueKeys } from '../../scripts/moduli-graph/catalogueKeys';
 import { CyclotomicRing } from '@/classes/Cyclotomic';
 import { homology, type CellComplex } from '../../scripts/moduli-graph/chainComplex';
+import type { ParametricCellData } from '@/lib/utils/paramCell';
 
 const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
 const recs = (Array.isArray(atlas) ? atlas : atlas.records) as {
-  k?: number; source?: string; family?: string; paramCell?: { params?: unknown[] };
+  id: string; k?: number; source?: string; family?: string; paramCell?: ParametricCellData;
 }[];
 const twoParam = (fam: string) =>
   recs.filter((r) => r.k === 2 && r.source === 'isotoxal' && r.family === fam && r.paramCell?.params?.length === 2);
