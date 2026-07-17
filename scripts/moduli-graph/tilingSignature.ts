@@ -1,9 +1,21 @@
 import type { FloatTiling } from './types';
 
-const EPS = 1e-6;
-const key2 = (x: number, y: number) => `${Math.round(x / EPS)},${Math.round(y / EPS)}`;
-
-export function tilingSignature(t: FloatTiling): string {
+/**
+ * Oriented vertex-configuration fingerprint of a tiling.
+ *
+ * `eps` is a vertex-weld tolerance: corners within `eps` are treated as one vertex.
+ * The default 1e-3 merges the ~1e-5 sliver left when a family is evaluated just inside
+ * a degenerate endpoint (a tile collapsed but not to exactly zero area), while staying
+ * far below the unit spacing of genuine distinct vertices. `dedup` (default true) returns
+ * the SET of distinct vertex configurations, so the fingerprint is independent of how
+ * large a fundamental domain the cell spans — a doubled cell signs like its primitive.
+ * Catalogue tilings and deformed family node states must be signed with the same options
+ * for their signatures to be comparable.
+ */
+export function tilingSignature(t: FloatTiling, opts: { eps?: number; dedup?: boolean } = {}): string {
+  const eps = opts.eps ?? 1e-3;
+  const dedup = opts.dedup ?? true;
+  const key2 = (x: number, y: number) => `${Math.round(x / eps)},${Math.round(y / eps)}`;
   type Inc = { n: number; cx: number; cy: number };
   const at = new Map<string, { x: number; y: number; inc: Inc[] }>();
   for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) {
@@ -32,8 +44,8 @@ export function tilingSignature(t: FloatTiling): string {
   for (const v of at.values()) {
     const a = (v.x * t.basis[1][1] - v.y * t.basis[1][0]) / det;
     const b = (t.basis[0][0] * v.y - t.basis[0][1] * v.x) / det;
-    const fa = a - Math.floor(a + EPS), fb = b - Math.floor(b + EPS);
-    const orbit = `${Math.round(fa / EPS)},${Math.round(fb / EPS)}`;
+    const fa = a - Math.floor(a + eps), fb = b - Math.floor(b + eps);
+    const orbit = `${Math.round(fa / eps)},${Math.round(fb / eps)}`;
     const cur = rep.get(orbit);
     if (!cur || v.inc.length > cur.inc.length) rep.set(orbit, v);
   }
@@ -43,7 +55,8 @@ export function tilingSignature(t: FloatTiling): string {
     const ordered = inc.slice().sort((p, q) => Math.atan2(p.cy - y, p.cx - x) - Math.atan2(q.cy - y, q.cx - x));
     seqs.push(minRotation(ordered.map((p) => p.n)).join('.'));
   }
-  return seqs.sort().join(';');
+  const arr = dedup ? [...new Set(seqs)] : seqs;
+  return arr.sort().join(';');
 }
 
 function minRotation(ns: number[]): number[] {
