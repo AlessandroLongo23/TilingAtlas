@@ -172,7 +172,18 @@ model decision. Recorded here so the next slice starts from the corrected pictur
   shared `⊥` node — the one-point compactification of the degenerate locus — distinct from every real
   tiling, including the excluded octagon (which stays its own `uncatalogued` node because it is a
   genuine tiling). Node kinds: `uniform` | `uncatalogued` | `degenerate`. H₁ is reported both with `⊥`
-  (16) and without it (11); the figure can show or hide `⊥`.
+  (19) and without it (11); the figure can show or hide `⊥`.
+- **A fully-collapsed endpoint is a ⊥ limit too, not a dropped node (AL caught, 2026-07-17).** The ⊥
+  model has two entry paths that must be handled symmetrically: a *flattened* endpoint (positive area,
+  180° corners, non-regular) and a *fully collapsed* endpoint (every tile shrinks below the area
+  filter, leaving an empty tiling). The first already routed to ⊥; the second was still being
+  *discarded* by a leftover pre-⊥ guard (`if (t.polys.length === 0) continue;`), and a unit test
+  asserted that drop as correct. Effect: single-tile families like `4α` (k1-09, k1-10), whose one
+  square collapses at both ends and is the regular 4⁴ tiling only at α=90°, produced **zero edges** —
+  the whole family vanished, and with it the ⊥—4⁴—⊥ relation. Fix: emit the collapsed endpoint (empty
+  poly list); the resolver already treats a tiling with no vertex configurations as a non-tiling
+  limit → ⊥. This restored both families and lifted H₁(with ⊥) from 16 to 19; H₁(genuine tilings) is
+  unchanged at 11 because these families connect 4⁴ only to ⊥, never to a second genuine tiling.
 
 ## Known limitations carried forward (from final review)
 

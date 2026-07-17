@@ -36,9 +36,30 @@ describe('k=1 isotoxal slice', () => {
   });
 
   it('reports first homology both with and without the degenerate node', () => {
-    expect(g.h1).toBe(16);
+    expect(g.h1).toBe(19);
     expect(g.h1NoDegenerate).toBe(11);
   });
+});
+
+describe('single-tile 4α families connect ⊥ to 4⁴ through the α=90° square', () => {
+  // Regression for the dropped-collapse bug: k1-09/k1-10 (family 4α) collapse to zero area at both
+  // endpoints and pass through the regular square 4⁴ at α=90°. Their ⊥—4⁴—⊥ relation vanished because
+  // fully-collapsed (empty) endpoints were discarded instead of routed to ⊥ — the whole family had no
+  // edges. Both must now form a ⊥—4⁴—⊥ bigon.
+  for (const id of ['ctrnact-isotoxal-family-k1-09', 'ctrnact-isotoxal-family-k1-10']) {
+    it(`${id.replace('ctrnact-isotoxal-family-', '')} forms a ⊥—4⁴—⊥ bigon`, () => {
+      const g = assembleGraph([pick(id)], idx);
+      const deg = g.nodes.find((n) => n.kind === 'degenerate');
+      const uni = g.nodes.filter((n) => n.kind === 'uniform');
+      expect(deg).toBeTruthy();
+      expect(uni).toHaveLength(1);
+      expect(uni[0].label).toBe('ctrnact-01_4-4n-1'); // 4⁴
+      expect(g.edges).toHaveLength(2);
+      expect(g.edges.every((e) => e.from === deg!.key || e.to === deg!.key)).toBe(true);
+      expect(g.h1).toBe(1); // ⊥ + 4⁴ + two edges = one loop
+      expect(g.h1NoDegenerate).toBe(0); // no genuine-tiling cycle
+    });
+  }
 });
 
 describe('degenerate endpoints are not mislabeled as uniform tilings', () => {

@@ -233,6 +233,46 @@
       "flexdim": 1
     },
     {
+      "family": "ctrnact-isotoxal-family-k1-09",
+      "from": "degenerate:⊥",
+      "to": "[[0,1,0,-1],[0,0,1,0],[0,0,0,0]]",
+      "alphaRange": [
+        0.001,
+        90.00000000008527
+      ],
+      "flexdim": 1
+    },
+    {
+      "family": "ctrnact-isotoxal-family-k1-09",
+      "from": "[[0,1,0,-1],[0,0,1,0],[0,0,0,0]]",
+      "to": "degenerate:⊥",
+      "alphaRange": [
+        90.00000000008527,
+        179.999
+      ],
+      "flexdim": 1
+    },
+    {
+      "family": "ctrnact-isotoxal-family-k1-10",
+      "from": "degenerate:⊥",
+      "to": "[[0,1,0,-1],[0,0,1,0],[0,0,0,0]]",
+      "alphaRange": [
+        0.001,
+        90.00000000008527
+      ],
+      "flexdim": 1
+    },
+    {
+      "family": "ctrnact-isotoxal-family-k1-10",
+      "from": "[[0,1,0,-1],[0,0,1,0],[0,0,0,0]]",
+      "to": "degenerate:⊥",
+      "alphaRange": [
+        90.00000000008527,
+        179.999
+      ],
+      "flexdim": 1
+    },
+    {
       "family": "ctrnact-isotoxal-family-k1-14",
       "from": "degenerate:⊥",
       "to": "[[0,2,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,1],[0,1,0,1]]",
@@ -303,7 +343,7 @@
       "flexdim": 1
     }
   ],
-  "h1": 16,
+  "h1": 19,
   "h1NoDegenerate": 11,
   "unresolved": 2
 }

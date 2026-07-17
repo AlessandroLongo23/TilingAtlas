@@ -33,15 +33,24 @@ describe('extractNodes does not fire on non-flexing regular tiles', () => {
   });
 });
 
-describe('extractNodes skips endpoints that collapse to nothing', () => {
-  // k1-09 (4α) is a single-tile family: at each open endpoint the one tile collapses to zero
-  // area, leaving no tiling. Those are not real limits and must not become (empty) nodes.
+describe('extractNodes emits collapsed endpoints as degenerate (⊥) limits', () => {
+  // k1-09 (4α) is a single-tile family: at each open endpoint the one tile collapses to zero area,
+  // leaving an EMPTY tiling. Under the one-point-compactification (⊥) model a zero-area collapse is a
+  // genuine degenerate limit, so both endpoints must still be emitted (empty, non-regular) — the
+  // resolver routes an empty tiling to ⊥. Dropping them silently deletes the ⊥—4⁴—⊥ relation (the
+  // α=90° square between two collapses), which is exactly the bug this guards.
   const f = (Array.isArray(atlas) ? atlas : atlas.records).find(
     (r: any) => r.id === 'ctrnact-isotoxal-family-k1-09',
   );
 
-  it('emits no endpoint node when the only tile collapses (k1-09)', () => {
-    const ends = extractNodes(f.paramCell).filter((n) => n.kind === 'endpoint');
-    expect(ends).toHaveLength(0);
+  it('emits both endpoints (empty, non-regular) plus the α=90° interior square (k1-09)', () => {
+    const nodes = extractNodes(f.paramCell);
+    const ends = nodes.filter((n) => n.kind === 'endpoint');
+    const interior = nodes.filter((n) => n.kind === 'interior');
+    expect(ends).toHaveLength(2);
+    expect(ends.every((n) => n.tiling.polys.length === 0)).toBe(true);
+    expect(ends.every((n) => n.regular === false)).toBe(true);
+    expect(interior).toHaveLength(1);
+    expect(Math.abs(interior[0].alpha - 90)).toBeLessThan(2);
   });
 });
