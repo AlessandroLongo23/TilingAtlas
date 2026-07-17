@@ -36,4 +36,9 @@ export interface ModuliComplex {
   chi: number;                                       // genuine subcomplex (⊥ removed) — the headline
   betti: [number, number, number];                   // genuine subcomplex
   full: { chi: number; betti: [number, number, number] }; // with ⊥ and its incident cells
+  // Families whose 2-cell has a zero ∂₂ column: its boundary edges cancel, so the square folds onto
+  // itself (an internal parameter-symmetry) OR it genuinely closes a surface by itself (a one-face
+  // torus). The two are indistinguishable without per-generator verification, so each such face
+  // contributes an UNVERIFIED b₂ generator — surfaced here rather than silently trusted in the count.
+  degenerateFaces: string[];
 }

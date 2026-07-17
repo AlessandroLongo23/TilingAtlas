@@ -31,6 +31,15 @@ describe('assembleComplex — a single genuine-boundary face', () => {
     expect(c.faces.length).toBe(1);
     expect(c.betti[2]).toBe(0);
   });
+
+  it('flags self-folding faces (zero-∂2, internal square symmetry) across the two-parameter cluster', () => {
+    // Families whose (α₁,α₂) square has two identical tiles fold onto themselves: ∂2(face) ≡ 0. That
+    // passes the ∂1∂2=0 guard but is an UNVERIFIED b2 generator (self-fold vs lone torus) and must be
+    // surfaced, not silently counted. (A 4α family with two DIFFERENT rhombi does not fold.)
+    const all = recs.filter((r) => r.k === 2 && r.source === 'isotoxal' && r.paramCell?.params?.length === 2);
+    const c = assembleComplex(all);
+    expect(c.degenerateFaces.length).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('k=1 regression: the homology engine reproduces H1=15 on the k=1 graph', () => {

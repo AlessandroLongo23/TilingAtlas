@@ -72,11 +72,26 @@ export function assembleComplex(families: FamilyRecord[]): ModuliComplex {
 
   const full = homology({ nodes: nodeMeta.map((n) => n.key), edges, faces });
   const genuine = homology(inducedGenuine(nodeMeta, edges, faces));
+  // A face whose signed boundary edges cancel to nothing (∂₂ column ≡ 0) folds onto itself or closes a
+  // surface alone; either way it is an UNVERIFIED b₂ generator. Surface which families do this.
+  const degenerateFaces = faces
+    .map((face, fi) => ({ fi, zero: hasZeroBoundary(face) }))
+    .filter((x) => x.zero)
+    .map((x) => faceMeta[x.fi].family);
   return {
     nodes: nodeMeta, edges: edgeMeta, faces: faceMeta,
     chi: genuine.chi, betti: genuine.betti,
     full: { chi: full.chi, betti: full.betti },
+    degenerateFaces,
   };
+}
+
+/** True iff the face's signed boundary is the zero 1-chain (every edge cancels) — a degenerate/self-
+ *  folding attaching map or a lone surface, ambiguous without per-generator verification. */
+function hasZeroBoundary(face: FaceEdge[]): boolean {
+  const net = new Map<number, number>();
+  for (const { edge, sign } of face) net.set(edge, (net.get(edge) ?? 0) + sign);
+  return [...net.values()].every((v) => v === 0);
 }
 
 /** The subcomplex induced on the genuine (non-⊥) nodes: drop ⊥, every edge incident to it, and every
