@@ -220,3 +220,24 @@ text above where they conflict.
   surface rather than a chain artifact. Making the cluster invariants thesis-defensible is the next
   slice: per-generator verification + deciding whether boundary node-coincidence is geometrically real
   or an over-merge of the canonical key.
+
+### Final-review findings (open, feed the next slice)
+
+Adversarial review of `complexAssembler`/`twoCellExtractor` (stitching, orientation signs, induced
+subcomplex, determinism all verified correct). Three soundness gaps remain:
+
+- **Self-folding faces (zero-∂₂) inflate `full` b₂ — now surfaced, not fixed.** A family whose (α₁,α₂)
+  square has an internal symmetry (two identical tiles) folds onto itself, so ∂₂(face) ≡ 0. That passes
+  the ∂₁∂₂=0 guard but reads as a 2-sphere; two of the thirteen `full` b₂ generators (families k2-82,
+  k2-83) are these artifacts. Cannot auto-drop — a lone one-face torus also has ∂₂=0 — so `assembleComplex`
+  now REPORTS them (`degenerateFaces`) and the CLI prints them. The genuine headline avoids them only
+  because they also touch ⊥; a self-folding face NOT touching ⊥ would inject a spurious b₂ into the
+  headline. The real fix is sampling each square's interior fold-crease as 1-cells (toward approach C).
+- **Single-midpoint edge fingerprint is not injective.** Two arcs sharing endpoints and one congruent
+  midpoint false-merge (spurious gluing → inflated b₂); a shared arc two families parametrise
+  differently false-splits (a real surface-closing gluing silently fails → b₂ too low). No miscount
+  reproduced on the 24 records, but the genuine `b₂=6` rests on this identity. Harden with multi-sample
+  edge fingerprints or exact arc identity.
+- **Self-loop edge sign is always +1 (latent).** A side whose two endpoint tilings are congruent is a
+  self-loop; the orientation test then can't give −1. Zero self-loops in the current data, so latent —
+  fix before any data that produces one.
