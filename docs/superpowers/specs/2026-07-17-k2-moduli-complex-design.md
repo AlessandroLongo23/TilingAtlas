@@ -100,9 +100,12 @@ identity is a **canonical geometric key**, not an exact algebraic one:
 
 The record note claims independent sliders ⇒ valid domain is the full (0,180)² square. Edge-length
 compatibility between the two tiles could couple them and carve the valid region smaller. So per
-family, evaluate a grid over the domain and confirm it tiles validly throughout (regular tiles,
-closure, no overlap). A family that fails the grid check is flagged as a non-product exception and
-escalated toward exact stratification (approach C), not forced into a square.
+family, evaluate a grid over the domain and confirm it tiles validly throughout. "Valid" means
+edge-to-edge closure (every vertex figure sums to 360°), NOT regularity: an isotoxal family tiles by
+non-regular tiles at every interior point (regular only at the α=90 point), so a regularity test would
+false-fail a perfectly valid interior. A family that fails edge-to-edge closure in some sub-region is
+flagged as a non-product exception and escalated toward exact stratification (approach C), not forced
+into a square.
 
 ## Edge gluing identity
 
