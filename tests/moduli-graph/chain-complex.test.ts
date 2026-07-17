@@ -28,18 +28,24 @@ const disjoint: CellComplex = {
   ],
 };
 
+// A "face" whose boundary is an open path a→b→c, not a cycle: ∂1∂2 ≠ 0. Must be rejected — without the
+// guard the engine silently returns betti [1,-1,0]. Guards the boundary-stitching in twoCellExtractor.
+const openFace: CellComplex = {
+  nodes: ['a', 'b', 'c'],
+  edges: [[0, 1], [1, 2]],
+  faces: [[{ edge: 0, sign: 1 }, { edge: 1, sign: 1 }]],
+};
+
 describe('homology of small complexes', () => {
   it('a single square is a disk', () => {
     const h = homology(square);
     expect(h.betti).toEqual([1, 0, 0]);
     expect(h.chi).toBe(1);
-    expect(h.selfCheckOK).toBe(true);
   });
   it('four edges with no face is a circle (b1=1)', () => {
     const h = homology(ring);
     expect(h.betti).toEqual([1, 1, 0]);
     expect(h.chi).toBe(0);
-    expect(h.selfCheckOK).toBe(true);
   });
   it('two squares sharing an edge is still a disk', () => {
     const h = homology(twoSquares);
@@ -50,5 +56,8 @@ describe('homology of small complexes', () => {
     const h = homology(disjoint);
     expect(h.betti).toEqual([2, 0, 0]);
     expect(h.chi).toBe(2);
+  });
+  it('rejects a face whose boundary is not a closed cycle (∂1∂2 ≠ 0)', () => {
+    expect(() => homology(openFace)).toThrow(/not a closed cycle|∂1∂2/);
   });
 });

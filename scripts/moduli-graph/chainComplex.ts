@@ -1,7 +1,11 @@
 // Cellular chain complex C2 →∂2 C1 →∂1 C0 over a CW complex, and its rational homology.
 // Betti numbers come from exact integer matrix ranks (computed mod two large primes and cross-checked);
 // rank over ℚ equals rank over 𝔽_p for all but finitely many p, so agreement of two primes is decisive.
-// χ = V − E + F is a pure count and must equal b0 − b1 + b2 (the built-in self-check).
+//
+// The Betti formula is valid only for a genuine chain complex — ∂1∘∂2 = 0, i.e. every face boundary is a
+// closed cycle. χ = V−E+F ALWAYS equals b0−b1+b2 algebraically (it is an identity, not a check), so it
+// cannot detect a malformed boundary. `homology` therefore VALIDATES ∂1∘∂2 = 0 up front and throws on a
+// non-cycle face — that (not a χ tautology) is the real guardrail against a mis-stitched boundary.
 
 export interface FaceEdge { edge: number; sign: 1 | -1 }
 export interface CellComplex {
@@ -13,7 +17,6 @@ export interface Homology {
   V: number; E: number; F: number;
   chi: number;
   betti: [number, number, number];
-  selfCheckOK: boolean;
 }
 
 // Two primes with p² < 2⁵³ so products stay exact in double precision (a 31-bit prime would overflow
@@ -61,6 +64,25 @@ function rankQ(rows: number[][], cols: number): number {
 
 export function homology(cx: CellComplex): Homology {
   const V = cx.nodes.length, E = cx.edges.length, F = cx.faces.length;
+  // Guard: edge endpoints in range (a bad index would otherwise corrupt ∂1 silently).
+  cx.edges.forEach(([from, to], e) => {
+    if (from < 0 || from >= V || to < 0 || to >= V) throw new Error(`edge ${e} references a node out of range [${from},${to}] (V=${V})`);
+  });
+  // Guard: ∂1∘∂2 = 0 — each face boundary is a closed cycle, i.e. its net node incidence is zero
+  // (Σ sign at `to`, −sign at `from`, over the boundary edges). This is the condition the Betti formula
+  // needs; a mis-stitched boundary (open path, duplicated/mis-signed edge) violates it and would give
+  // silent wrong numbers. Throw, naming the face, exactly as rankQ throws on prime disagreement.
+  cx.faces.forEach((face, f) => {
+    const net = new Map<number, number>();
+    for (const { edge, sign } of face) {
+      const pair = cx.edges[edge];
+      if (!pair) throw new Error(`face ${f} references a non-existent edge ${edge} (E=${E})`);
+      const [from, to] = pair;
+      net.set(to, (net.get(to) ?? 0) + sign);
+      net.set(from, (net.get(from) ?? 0) - sign);
+    }
+    for (const [node, v] of net) if (v !== 0) throw new Error(`face ${f} boundary is not a closed cycle (∂1∂2 ≠ 0 at node ${node})`);
+  });
   // ∂1 as V×E (rows = nodes): column e has −1 at from, +1 at to.
   const d1: number[][] = Array.from({ length: V }, () => new Array(E).fill(0));
   cx.edges.forEach(([from, to], e) => { d1[from][e] -= 1; d1[to][e] += 1; });
@@ -73,6 +95,6 @@ export function homology(cx: CellComplex): Homology {
   const b0 = V - r1;
   const b1 = (E - r1) - r2;
   const b2 = F - r2;
-  const chi = V - E + F;
-  return { V, E, F, chi, betti: [b0, b1, b2], selfCheckOK: chi === b0 - b1 + b2 };
+  if (b1 < 0 || b2 < 0) throw new Error(`negative Betti number (b=[${b0},${b1},${b2}]) — malformed complex`);
+  return { V, E, F, chi: V - E + F, betti: [b0, b1, b2] };
 }

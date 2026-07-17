@@ -22,11 +22,12 @@ export interface ResolvedNode { key: string; label: string; chirality: Chirality
 export interface Cell2 { family: string; boundary: string[]; productOK: boolean; }
 
 // The assembled k=2 sub-complex plus its homology, as emitted by complexAssembler / buildModuliComplex.
+// No validity flag: `homology` throws on a malformed boundary (∂1∂2 ≠ 0), so a returned complex is valid
+// by construction; a χ = b0−b1+b2 field would be a tautology and is deliberately omitted.
 export interface ModuliComplex {
   nodes: { key: string; label: string; kind: NodeKind; handed: boolean }[];
   edges: { family: string; from: string; to: string }[];
   faces: Cell2[];
   chi: number;
   betti: [number, number, number];
-  selfCheckOK: boolean;
 }
