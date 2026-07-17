@@ -15,3 +15,18 @@ export type NodeKind = 'uniform' | 'uncatalogued' | 'flattened' | 'degenerate';
 export type NodeRole = 'boundary' | 'landmark' | 'branch';
 export interface NodeState { alpha: number; tiling: FloatTiling; kind: 'endpoint' | 'interior'; regular: boolean; }
 export interface ResolvedNode { key: string; label: string; chirality: Chirality; resolved: boolean; kind: NodeKind; }
+// A 2-cell: a two-parameter family developed as a square. `boundary` is the ordered closed cycle of
+// node keys around the square (corners plus any interior nodes a side subdivides into). `family` is the
+// atlas id. `productOK` records whether the (α₁,α₂) grid validity check passed (false ⇒ non-product,
+// flagged for exact stratification, out of this slice's scope).
+export interface Cell2 { family: string; boundary: string[]; productOK: boolean; }
+
+// The assembled k=2 sub-complex plus its homology, as emitted by complexAssembler / buildModuliComplex.
+export interface ModuliComplex {
+  nodes: { key: string; label: string; kind: NodeKind; handed: boolean }[];
+  edges: { family: string; from: string; to: string }[];
+  faces: Cell2[];
+  chi: number;
+  betti: [number, number, number];
+  selfCheckOK: boolean;
+}
