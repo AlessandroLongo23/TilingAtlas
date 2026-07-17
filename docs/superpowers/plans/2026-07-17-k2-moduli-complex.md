@@ -303,9 +303,11 @@ import { describe, it, expect } from 'vitest';
 import { nodeCanonicalKey } from '../../scripts/moduli-graph/nodeCanonicalKey';
 import type { FloatTiling } from '../../scripts/moduli-graph/types';
 
-// A deliberately chiral single-tile "tiling": an L-shaped pentomino outline (no reflection symmetry).
-const L: [number, number][] = [[0, 0], [2, 0], [2, 1], [1, 1], [1, 2], [0, 2]];
-const chiral: FloatTiling = { polys: [{ n: 6, verts: L }], basis: [[3, 0], [0, 3]] };
+// A scalene triangle — the canonical 2D chiral shape: sides 3, 2√2, √5 all distinct, so no reflection
+// maps it to itself and its mirror is NOT superimposable by any rotation+translation. (An L-hexomino
+// looks asymmetric but is reflection-symmetric across its diagonal — achiral — so it is the WRONG fixture.)
+const scalene: [number, number][] = [[0, 0], [3, 0], [1, 2]];
+const chiral: FloatTiling = { polys: [{ n: 3, verts: scalene }], basis: [[4, 0], [0, 3]] };
 const mirror = (t: FloatTiling): FloatTiling => ({
   polys: t.polys.map((p) => ({ n: p.n, verts: p.verts.map(([x, y]) => [x, -y] as [number, number]) })),
   basis: [[t.basis[0][0], -t.basis[0][1]], [t.basis[1][0], -t.basis[1][1]]],
@@ -345,12 +347,11 @@ Expected: FAIL — `nodeCanonicalKey` not found.
 
 - [ ] **Step 3: Write the implementation**
 
-The reflection-sensitive discriminant: a signed, rotation/scale-invariant scalar. Reflect the tiling and
-compare the chirality-blind `flattenKey`; they always agree (flattenKey is reflection-invariant), so it
-cannot detect handedness. Instead use a signed invariant: the scale-normalised signed sum of consecutive
-tile-centroid cross products in angle-sorted order about the cell centroid. It is invariant under
-rotation and uniform scale, and flips sign under reflection. `handed` iff it is non-negligible AND the
-mirror's blind key equals ours (same shape, opposite orientation).
+Chirality is NOT a signed-area sign. A single tile's signed area is nonzero for ANY polygon (the square's
+is 2), so a signed-orientation scalar wrongly flags the achiral square as chiral. The correct test is
+whether the tiling is congruent to its mirror by a DIRECT isometry: build a canonical form under direct
+similarity (`directKey`, reflection NOT quotiented) and compare it to the mirror's. Shape distinctness
+still comes from the proven reflection-blind `flattenKey`; `directKey` only supplies the handedness bit.
 
 ```ts
 // scripts/moduli-graph/nodeCanonicalKey.ts
@@ -359,61 +360,59 @@ import { effectiveVerts } from './geometry';
 import { flattenKey } from './flattenKey';
 
 const EPS = 1e-6;
+const Q = 1e4; // quantise aligned coords to 1e-4; distinct tilings differ by far more than this
 
 function effTiles(t: FloatTiling): [number, number][][] {
   return t.polys.map((p) => effectiveVerts(p.verts)).filter((v) => v.length >= 3);
 }
-function centroid(v: [number, number][]): [number, number] {
-  let x = 0, y = 0; for (const p of v) { x += p[0]; y += p[1]; } return [x / v.length, y / v.length];
+function mirror(t: FloatTiling): FloatTiling {
+  return {
+    polys: t.polys.map((p) => ({ n: p.n, star: p.star, verts: p.verts.map(([x, y]) => [x, -y] as [number, number]) })),
+    basis: [[t.basis[0][0], -t.basis[0][1]], [t.basis[1][0], -t.basis[1][1]]],
+  };
 }
-function scaleUnit(tiles: [number, number][][]): number {
+
+/** Canonical form of the effective-vertex point set under DIRECT similarity: centre at the centroid,
+ *  scale by the shortest edge, then the lexicographically smallest serialisation over every anchor
+ *  alignment (each non-central point rotated onto +x). Reflection is NOT quotiented, so a chiral tiling
+ *  and its mirror differ while an achiral one matches its mirror. */
+function directKey(t: FloatTiling): string {
+  const tiles = effTiles(t);
+  const pts: [number, number][] = [];
+  for (const v of tiles) for (const p of v) pts.push([p[0], p[1]]);
+  if (pts.length === 0) return 'degenerate:⊥';
   let s = Infinity;
   for (const v of tiles) for (let i = 0; i < v.length; i++) {
     const q = v[(i + 1) % v.length];
     s = Math.min(s, Math.hypot(v[i][0] - q[0], v[i][1] - q[1]));
   }
-  return Number.isFinite(s) && s > 0 ? s : 1;
-}
-
-/** Signed orientation scalar: rotation/scale invariant, sign flips under reflection. Σ of consecutive
- *  centroid cross products (about the tile-centroid mean), normalised by the scale unit squared. */
-function orient(t: FloatTiling): number {
-  const tiles = effTiles(t);
-  if (tiles.length < 2) {
-    // single tile: use its own signed vertex cross-sum instead
-    const v = tiles[0] ?? [];
-    if (v.length < 3) return 0;
-    const g = centroid(v), s2 = scaleUnit(tiles) ** 2;
-    let acc = 0;
-    for (let i = 0; i < v.length; i++) {
-      const a = [v[i][0] - g[0], v[i][1] - g[1]], b = [v[(i + 1) % v.length][0] - g[0], v[(i + 1) % v.length][1] - g[1]];
-      acc += a[0] * b[1] - a[1] * b[0];
-    }
-    return acc / s2;
+  if (!Number.isFinite(s) || s <= 0) s = 1;
+  const gx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+  const gy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+  const centered = pts.map(([x, y]): [number, number] => [(x - gx) / s, (y - gy) / s]);
+  let best: string | null = null;
+  for (const a of centered) {
+    const r = Math.hypot(a[0], a[1]);
+    if (r < EPS) continue;
+    const th = Math.atan2(a[1], a[0]);
+    const c = Math.cos(-th), sn = Math.sin(-th);
+    const ser = centered
+      .map(([x, y]) => `${Math.round((x * c - y * sn) * Q)},${Math.round((x * sn + y * c) * Q)}`)
+      .sort()
+      .join(';');
+    if (best === null || ser < best) best = ser;
   }
-  const cs = tiles.map(centroid);
-  const g: [number, number] = [cs.reduce((s, c) => s + c[0], 0) / cs.length, cs.reduce((s, c) => s + c[1], 0) / cs.length];
-  const ang = cs.map((c) => Math.atan2(c[1] - g[1], c[0] - g[0]));
-  const order = cs.map((_, i) => i).sort((i, j) => ang[i] - ang[j]);
-  const s2 = scaleUnit(tiles) ** 2;
-  let acc = 0;
-  for (let k = 0; k < order.length; k++) {
-    const a = cs[order[k]], b = cs[order[(k + 1) % order.length]];
-    acc += (a[0] - g[0]) * (b[1] - g[1]) - (a[1] - g[1]) * (b[0] - g[0]);
-  }
-  return acc / s2;
+  return best ?? 'degenerate:⊥';
 }
 
 export interface CanonicalKey { key: string; handed: boolean; blind: string; }
 
 export function nodeCanonicalKey(t: FloatTiling): CanonicalKey {
   if (effTiles(t).length === 0) return { key: 'degenerate:⊥', handed: false, blind: 'degenerate:⊥' };
-  const blind = flattenKey(t);      // reflection-invariant similarity fingerprint (the shape)
-  const o = orient(t);              // signed orientation scalar
-  const handed = Math.abs(o) > EPS; // non-symmetric ⇒ chirality is real
-  // Direct-similarity key: shape + sign of orientation. Achiral (o≈0) ⇒ sign-agnostic, so a tiling and
-  // its mirror share the key; chiral ⇒ the sign splits the two hands.
-  const hand = handed ? (o > 0 ? 'R' : 'L') : 'a';
+  const blind = flattenKey(t);              // reflection-blind shape fingerprint
+  const dk = directKey(t), dkm = directKey(mirror(t));
+  const handed = dk !== dkm;                // chiral ⇔ no direct isometry onto the mirror
+  const hand = handed ? (dk < dkm ? '0' : '1') : 'a';
   return { key: `${blind}|${hand}`, handed, blind };
 }
 ```
@@ -421,8 +420,8 @@ export function nodeCanonicalKey(t: FloatTiling): CanonicalKey {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pnpm vitest run tests/moduli-graph/node-canonical-key.test.ts`
-Expected: PASS (4 tests). If the chiral L-case's `orient` sign is unstable, widen the L asymmetry in
-the fixture (it must have no reflection symmetry) — do not loosen `EPS` below 1e-6.
+Expected: PASS (4 tests). If rotation invariance is flaky at a quantisation boundary, coarsen `Q`
+(e.g. 1e3) — distinct unit-regular tilings still differ by far more; do not touch `EPS`.
 
 - [ ] **Step 5: Commit**
 
