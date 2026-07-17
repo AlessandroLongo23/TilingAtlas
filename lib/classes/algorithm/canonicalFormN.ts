@@ -30,8 +30,13 @@ const W: Vec[] = [];
 { let w: Vec = [1, 0, 0, 0]; for (let i = 0; i < 12; i++) { W.push(w); w = mulw(w); } }
 
 type Gm = { f: boolean; j: number };
-const G24: Gm[] = [];
-for (const f of [false, true]) for (let j = 0; j < 12; j++) G24.push({ f, j });
+const buildG = (reflect: boolean): Gm[] => {
+	const g: Gm[] = [];
+	for (const f of reflect ? [false, true] : [false]) for (let j = 0; j < 12; j++) g.push({ f, j });
+	return g;
+};
+const G_FULL = buildG(true); // D₁₂ — reflection-inclusive (existing behaviour)
+const G_ROT = buildG(false); // C₁₂ — rotation-only (chirality-sensitive)
 const applyG = (g: Gm, v: Vec): Vec => { let x = g.f ? conj(v) : v; for (let i = 0; i < g.j; i++) x = mulw(x); return x; };
 const sigma = (g: Gm, k: number) => (g.f ? (((g.j - k) % 12) + 12) % 12 : (g.j + k) % 12);
 const word = (ks: number[]) => ks.reduce((acc, k) => acc | (1 << (11 - k)), 0);
@@ -113,14 +118,14 @@ const cmpArr = (a: number[], b: number[]) => {
 const cmpMat = (a: Vec[], b: Vec[]) => { for (let i = 0; i < a.length; i++) { const c = cmpVec(a[i], b[i]); if (c) return c; } return 0; };
 
 /** The canonical matrix (Definition N of the note): rows = HNF lattice basis then sorted seed reps. */
-function canonicalMatrix(symbol: Vec[]): Vec[] {
+function canonicalMatrix(symbol: Vec[], G: Gm[]): Vec[] {
 	let H = hnf([symbol[0].slice(), symbol[1].slice()]);
 	if (H.length !== 2) throw new Error('N: degenerate lattice');
 	let S = uniqSort(symbol.slice(2).map((s) => rep(s.slice(), H)));
 	[H, S] = maximize(H, S);
 	const st = stars(H, S);
 	const listOf = (g: Gm) => S.map((s) => word(st.get(key(s))!.map((k) => sigma(g, k)))).sort((a, b) => a - b);
-	const lists = G24.map((g) => ({ g, L: listOf(g) }));
+	const lists = G.map((g) => ({ g, L: listOf(g) }));
 	let bestL = lists[0].L;
 	for (const e of lists) if (cmpArr(e.L, bestL) < 0) bestL = e.L;
 	const Gmin = lists.filter((e) => cmpArr(e.L, bestL) === 0).map((e) => e.g);
@@ -155,7 +160,17 @@ function encToVec(enc: { n: string[]; d: string }): Vec {
 export function nKeyOfSymbol(rows: Vec[]): string | null {
 	try {
 		if (rows.length < 3) return null;
-		return JSON.stringify(canonicalMatrix(rows.map((r) => r.slice())));
+		return JSON.stringify(canonicalMatrix(rows.map((r) => r.slice()), G_FULL));
+	} catch {
+		return null;
+	}
+}
+
+/** Chirality-sensitive canonical key: congruence up to direct similarity (C₁₂ rotations, no reflection). */
+export function nKeyOfSymbolDirect(rows: Vec[]): string | null {
+	try {
+		if (rows.length < 3) return null;
+		return JSON.stringify(canonicalMatrix(rows.map((r) => r.slice()), G_ROT));
 	} catch {
 		return null;
 	}
