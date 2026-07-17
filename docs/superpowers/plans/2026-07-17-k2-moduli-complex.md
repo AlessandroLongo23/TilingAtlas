@@ -83,18 +83,24 @@ const disjoint: CellComplex = {
   ],
 };
 
+// A "face" whose boundary is an open path a→b→c, not a cycle: ∂1∂2 ≠ 0. Must be rejected — without the
+// guard the engine silently returns betti [1,-1,0]. Guards the boundary-stitching in twoCellExtractor.
+const openFace: CellComplex = {
+  nodes: ['a', 'b', 'c'],
+  edges: [[0, 1], [1, 2]],
+  faces: [[{ edge: 0, sign: 1 }, { edge: 1, sign: 1 }]],
+};
+
 describe('homology of small complexes', () => {
   it('a single square is a disk', () => {
     const h = homology(square);
     expect(h.betti).toEqual([1, 0, 0]);
     expect(h.chi).toBe(1);
-    expect(h.selfCheckOK).toBe(true);
   });
   it('four edges with no face is a circle (b1=1)', () => {
     const h = homology(ring);
     expect(h.betti).toEqual([1, 1, 0]);
     expect(h.chi).toBe(0);
-    expect(h.selfCheckOK).toBe(true);
   });
   it('two squares sharing an edge is still a disk', () => {
     const h = homology(twoSquares);
@@ -105,6 +111,9 @@ describe('homology of small complexes', () => {
     const h = homology(disjoint);
     expect(h.betti).toEqual([2, 0, 0]);
     expect(h.chi).toBe(2);
+  });
+  it('rejects a face whose boundary is not a closed cycle (∂1∂2 ≠ 0)', () => {
+    expect(() => homology(openFace)).toThrow(/not a closed cycle|∂1∂2/);
   });
 });
 ```
@@ -121,7 +130,11 @@ Expected: FAIL — `homology` / `chainComplex` not found.
 // Cellular chain complex C2 →∂2 C1 →∂1 C0 over a CW complex, and its rational homology.
 // Betti numbers come from exact integer matrix ranks (computed mod two large primes and cross-checked);
 // rank over ℚ equals rank over 𝔽_p for all but finitely many p, so agreement of two primes is decisive.
-// χ = V − E + F is a pure count and must equal b0 − b1 + b2 (the built-in self-check).
+//
+// The Betti formula is valid only for a genuine chain complex — ∂1∘∂2 = 0, i.e. every face boundary is a
+// closed cycle. χ = V−E+F ALWAYS equals b0−b1+b2 algebraically (an identity, not a check), so it cannot
+// detect a malformed boundary. `homology` VALIDATES ∂1∘∂2 = 0 up front and throws on a non-cycle face —
+// that is the real guardrail against a mis-stitched boundary.
 
 export interface FaceEdge { edge: number; sign: 1 | -1 }
 export interface CellComplex {
@@ -133,7 +146,6 @@ export interface Homology {
   V: number; E: number; F: number;
   chi: number;
   betti: [number, number, number];
-  selfCheckOK: boolean;
 }
 
 // Two primes with p² < 2⁵³ so products stay exact in double precision (a 31-bit prime would overflow
@@ -181,6 +193,24 @@ function rankQ(rows: number[][], cols: number): number {
 
 export function homology(cx: CellComplex): Homology {
   const V = cx.nodes.length, E = cx.edges.length, F = cx.faces.length;
+  // Guard: edge endpoints in range (a bad index would otherwise corrupt ∂1 silently).
+  cx.edges.forEach(([from, to], e) => {
+    if (from < 0 || from >= V || to < 0 || to >= V) throw new Error(`edge ${e} references a node out of range [${from},${to}] (V=${V})`);
+  });
+  // Guard: ∂1∘∂2 = 0 — each face boundary is a closed cycle, i.e. its net node incidence is zero
+  // (Σ sign at `to`, −sign at `from`). A mis-stitched boundary violates it and would give silent wrong
+  // numbers; throw, naming the face, exactly as rankQ throws on prime disagreement.
+  cx.faces.forEach((face, f) => {
+    const net = new Map<number, number>();
+    for (const { edge, sign } of face) {
+      const pair = cx.edges[edge];
+      if (!pair) throw new Error(`face ${f} references a non-existent edge ${edge} (E=${E})`);
+      const [from, to] = pair;
+      net.set(to, (net.get(to) ?? 0) + sign);
+      net.set(from, (net.get(from) ?? 0) - sign);
+    }
+    for (const [node, v] of net) if (v !== 0) throw new Error(`face ${f} boundary is not a closed cycle (∂1∂2 ≠ 0 at node ${node})`);
+  });
   // ∂1 as V×E (rows = nodes): column e has −1 at from, +1 at to.
   const d1: number[][] = Array.from({ length: V }, () => new Array(E).fill(0));
   cx.edges.forEach(([from, to], e) => { d1[from][e] -= 1; d1[to][e] += 1; });
@@ -193,8 +223,8 @@ export function homology(cx: CellComplex): Homology {
   const b0 = V - r1;
   const b1 = (E - r1) - r2;
   const b2 = F - r2;
-  const chi = V - E + F;
-  return { V, E, F, chi, betti: [b0, b1, b2], selfCheckOK: chi === b0 - b1 + b2 };
+  if (b1 < 0 || b2 < 0) throw new Error(`negative Betti number (b=[${b0},${b1},${b2}]) — malformed complex`);
+  return { V, E, F, chi: V - E + F, betti: [b0, b1, b2] };
 }
 ```
 
@@ -229,13 +259,14 @@ Append to `scripts/moduli-graph/types.ts`:
 export interface Cell2 { family: string; boundary: string[]; productOK: boolean; }
 
 // The assembled k=2 sub-complex plus its homology, as emitted by complexAssembler / buildModuliComplex.
+// No validity flag: `homology` throws on a malformed boundary (∂1∂2 ≠ 0), so a returned complex is valid
+// by construction; a χ = b0−b1+b2 field would be a tautology and is deliberately omitted.
 export interface ModuliComplex {
   nodes: { key: string; label: string; kind: NodeKind; handed: boolean }[];
   edges: { family: string; from: string; to: string }[];
   faces: Cell2[];
   chi: number;
   betti: [number, number, number];
-  selfCheckOK: boolean;
 }
 ```
 
@@ -570,13 +601,11 @@ describe('assembleComplex', () => {
   // One face assembles to ONE 2-cell whose boundary map may be degenerate: at a 4α corner both squares
   // collapse to zero area, so all four corners are the same ⊥ node and the four sides become loops at ⊥.
   // The resulting space is therefore NOT necessarily a disk — a single face can give b=[1,3,0] (χ=−2).
-  // So assert the invariants that ALWAYS hold (one face; the self-check; χ consistency), and LOG the
-  // discovered betti rather than hard-coding a triple whose value depends on how the boundary degenerates.
-  it('assembles exactly one face and the χ self-check holds', () => {
-    const c = assembleComplex([one4a]);
+  // So do NOT hard-code a triple. The real guard is inside homology(): it throws if the stitched boundary
+  // is not a closed cycle (∂1∂2 ≠ 0), so assembleComplex not throwing IS the validity check. Log the betti.
+  it('assembles exactly one face with a valid (∂1∂2=0) boundary', () => {
+    const c = assembleComplex([one4a]); // throws inside homology() if the stitched boundary is not a cycle
     expect(c.faces.length).toBe(1);
-    expect(c.selfCheckOK).toBe(true);
-    expect(c.chi).toBe(c.betti[0] - c.betti[1] + c.betti[2]);
     console.log(`single 4α face: V=${c.nodes.length} E=${c.edges.length} χ=${c.chi} betti=[${c.betti.join(',')}]`);
   });
   // A face whose boundary IS embedded (distinct corners) is a genuine disk — exercised on a synthetic
@@ -658,18 +687,18 @@ export function assembleComplex(families: FamilyRecord[]): ModuliComplex {
   }
 
   const cx: CellComplex = { nodes: nodeMeta.map((n) => n.key), edges, faces };
-  const h = homology(cx);
-  return { nodes: nodeMeta, edges: edgeMeta, faces: faceMeta, chi: h.chi, betti: h.betti, selfCheckOK: h.selfCheckOK };
+  const h = homology(cx); // throws if any face boundary is not a closed cycle (∂1∂2 ≠ 0)
+  return { nodes: nodeMeta, edges: edgeMeta, faces: faceMeta, chi: h.chi, betti: h.betti };
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pnpm vitest run tests/moduli-graph/complex-assembler.test.ts`
-Expected: PASS. One face, `selfCheckOK` true, `χ == b₀−b₁+b₂`. The logged betti reflects the degenerate
-boundary (4α corners collapse to a shared ⊥), so `b₁` may be positive — that is correct, not a bug. A
-real bug shows as `selfCheckOK === false` (mismatched edge orientation in the boundary loop) or a thrown
-rank-disagreement (a prime hit an invariant factor — swap the primes in `chainComplex.ts`).
+Expected: PASS. One face; the logged betti reflects the degenerate boundary (4α corners collapse to a
+shared ⊥), so `b₁` may be positive — that is correct, not a bug. A real bug surfaces as a THROW from
+homology(): "face … boundary is not a closed cycle" (a mis-stitched boundary loop) or a rank
+disagreement (a prime hit an invariant factor — swap the primes in `chainComplex.ts`).
 
 - [ ] **Step 5: Add the k=1 regression test**
 
@@ -695,7 +724,6 @@ describe('k=1 regression: the homology engine reproduces H1=15 on the k=1 graph'
     const h = homology(cx);
     expect(h.betti[1]).toBe(g.h1NoDegenerate); // both 15 — engine agrees with the cyclomatic number
     expect(h.betti[1]).toBe(15);
-    expect(h.selfCheckOK).toBe(true);
   });
 });
 ```
@@ -732,24 +760,26 @@ const recs = (Array.isArray(atlas) ? atlas : atlas.records) as any[];
 const cluster = recs.filter((r) => r.k === 2 && r.source === 'isotoxal'
   && r.paramCell?.params?.length === 2 && ['4α', '4.4α'].includes(r.family));
 
+// assembleComplex throws if any stitched face boundary is not a closed cycle (∂1∂2 ≠ 0) — a clean run is
+// itself the validity certificate, so there is no separate self-check flag to test.
 const c = assembleComplex(cluster);
 mkdirSync('experiments/results', { recursive: true });
 writeFileSync('experiments/results/moduli-complex-k2.json', JSON.stringify(c, null, 2));
 const nonProduct = c.faces.filter((f) => !f.productOK).map((f) => f.family);
 console.log(
   `families=${cluster.length} V=${c.nodes.length} E=${c.edges.length} F=${c.faces.length} ` +
-  `χ=${c.chi} betti=[${c.betti.join(',')}] selfCheck=${c.selfCheckOK}` +
+  `χ=${c.chi} betti=[${c.betti.join(',')}]` +
   (nonProduct.length ? ` non-product=${nonProduct.join(',')}` : ''),
 );
-if (!c.selfCheckOK) process.exit(1);
 ```
 
 - [ ] **Step 2: Run it**
 
 Run: `pnpm tsx scripts/moduli-graph/buildModuliComplex.ts`
-Expected: prints `V=… E=… F=16 χ=… betti=[…] selfCheck=true` (16 = 12 `4α` + 4 `4.4α` faces), writes
+Expected: prints `V=… E=… F=16 χ=… betti=[…]` (16 = 12 `4α` + 4 `4.4α` faces), writes
 `experiments/results/moduli-complex-k2.json`. Record the betti triple in the run log — it is the slice's
-result. `selfCheck=true` is mandatory; a false exits non-zero.
+result. A malformed boundary throws (non-zero exit) naming the offending face; a clean run is the
+validity certificate.
 
 - [ ] **Step 3: Build**
 
@@ -773,10 +803,12 @@ git commit -m "feat(moduli-graph): CLI — assemble the 4α/4.4α k=2 sub-comple
 - **A face is a disk ONLY if its boundary is embedded.** When corners collapse to a shared ⊥ (every 4α
   corner does — both squares vanish), the attaching map is not injective and a single face can carry
   `b₁ > 0`. So predicted triples are asserted only on synthetic complexes with distinct corners
-  (`chain-complex.test.ts`); on real families assert `selfCheckOK` + χ-consistency and LOG the betti.
+  (`chain-complex.test.ts`); on real families assert `assembleComplex` does not throw (∂₁∂₂=0 holds) and
+  LOG the betti.
   The cluster's numbers come out of the CLI run — record them, do not hard-code them.
-- **`selfCheckOK` is the guardrail.** Any task whose assembled complex reports `selfCheckOK=false` has a
-  boundary-map bug; stop and fix before moving on.
+- **The ∂1∂2=0 validation is the guardrail.** `homology()` throws when a face boundary is not a closed
+  cycle ("face … not a closed cycle") — that is the real check, because χ = b₀−b₁+b₂ is an algebraic
+  identity, not a check. If `assembleComplex` throws, the stitched boundary is wrong; stop and fix.
 - **No silent product-square claim.** If a family's `productOK` is false, the CLI prints it under
   `non-product=…`; that family's face is still emitted (a square best-effort) but the flag must surface.
 - **Do not commit the six pre-staged theory files** (`CLAUDE.md`, `app/(app)/theory/*`,

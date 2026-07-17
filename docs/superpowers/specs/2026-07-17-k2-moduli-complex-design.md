@@ -58,8 +58,11 @@ Compute:
 - **χ = V − E + F** exactly (integers).
 - **Rational Betti numbers** via fraction-free rank of the two matrices: `r₁ = rank ∂₁`, `r₂ = rank ∂₂`,
   then `b₀ = V − r₁`, `b₁ = (E − r₁) − r₂`, `b₂ = F − r₂`.
-- **Self-check**: `χ == b₀ − b₁ + b₂` must hold. If it fails, a boundary map is wrong. This identity
-  is the built-in defensibility gate.
+- **Boundary validation (the real gate)**: `χ == b₀ − b₁ + b₂` is an algebraic IDENTITY — it holds for
+  any V,E,F,r₁,r₂, so it is not a check (an early draft wrongly treated it as one). The condition the
+  Betti formula actually needs is `∂₁∘∂₂ = 0`: every face boundary is a closed cycle. The engine
+  validates this up front (net node incidence zero per face) and throws on a non-cycle face — that is the
+  guardrail against a mis-stitched boundary, plus edge-index and non-negative-Betti guards.
 
 `b₀` = connected components, `b₁` = deformation loops not filled by a face, `b₂` = closed surfaces
 (a torus in moduli space ⇒ `b₂ ≥ 1`). Torsion via Smith normal form over ℤ is a later refinement; χ
@@ -117,8 +120,8 @@ machinery as nodes where the midpoint is cyclotomic, signature otherwise.
   k=1-catalogue cross-check.
 - `twoCellExtractor` — from a two-param paramCell, produce the four boundary slices (as 1-param
   families) and four corner states, plus the product-square grid check.
-- `chainComplex` — assemble ∂₁, ∂₂; compute integer χ and rational Betti via fraction-free rank; run
-  the χ self-check.
+- `chainComplex` — assemble ∂₁, ∂₂; compute integer χ and rational Betti via fraction-free rank; validate
+  `∂₁∘∂₂ = 0` (throw on a non-cycle face).
 - Validate on the 12 `4α` families (two independent squares — the simplest case, hand-checkable) and
   the 4 `4.4α` families. Deliver correct H₀/H₁/H₂/χ for that sub-complex.
 
@@ -135,32 +138,33 @@ New in `scripts/moduli-graph/`:
   on `geometry`, `tilingSignature`, `catalogueKeys` (cross-check only).
 - `twoCellExtractor.ts` — boundary slices, corners, product-square grid check. Depends on `paramCell`,
   `geometry`, `nodeExtractor`.
-- `chainComplex.ts` — ∂₁/∂₂ assembly, fraction-free rank, χ + Betti + self-check. Self-contained
+- `chainComplex.ts` — ∂₁/∂₂ assembly, fraction-free rank, χ + Betti + `∂₁∂₂=0` validation. Self-contained
   integer linear algebra, no external deps.
 - `complexAssembler.ts` — assemble 0/1/2-cells with canonical-key identity + edge gluing; emit
   `ModuliComplex`.
-- extend `types.ts` — `Cell2`, `ModuliComplex` (`{ nodes, edges, faces, chi, betti:[b0,b1,b2],
-  selfCheckOK }`).
+- extend `types.ts` — `Cell2`, `ModuliComplex` (`{ nodes, edges, faces, chi, betti:[b0,b1,b2] }`).
 - CLI `buildModuliComplex.ts`.
 
 ## Testing
 
-- `chain-complex.test.ts` — hand-checked homology on synthetic complexes: one square → `b=[1,0,0]`,
-  `χ=1`; two squares sharing one edge → `b=[1,0,0]`, `χ=1`; a ring of four edges with no face (annulus)
-  → `b₁=1`; a face-glued torus if constructed → `b=[1,2,1]`, `χ=0`; n disjoint squares → `b₀=n`. Every
-  case asserts `χ == b₀−b₁+b₂`.
+- `chain-complex.test.ts` — hand-checked homology on synthetic complexes with EMBEDDED (distinct-corner)
+  boundaries: one square → `b=[1,0,0]`, `χ=1`; two squares sharing one edge → `b=[1,0,0]`, `χ=1`; a ring
+  of four edges with no face (annulus) → `b₁=1`; n disjoint squares → `b₀=n`. Plus a malformed open-path
+  face → `homology` throws (the ∂₁∂₂ guard).
 - `node-canonical-key.test.ts` — rotation/translation/uniform-scale give the same key; a chiral pair is
   flagged `handed` with distinct oriented keys; two genuinely different tilings get different keys; a
   node whose geometric key matches the k=1 catalogue attaches the expected `nKeyOfSymbolDirect`
   cross-check.
 - `two-cell.test.ts` — a `4α` two-param family extracts to four boundary slices + four corners; the
-  product-square grid check passes on it; the assembled single-face complex has `b=[1,0,0]`, `χ=1`.
+  product-square grid check passes on it; the assembled single-face complex validates (`∂₁∂₂=0`, no
+  throw) with its betti LOGGED, not asserted — the 4α corners collapse to a shared ⊥, so a single face
+  need not be a disk (its boundary attaching map is degenerate).
 - **Regression** — feed the *existing* k=1 graph's nodes and edges (its float-signature identity,
   unchanged) into `chainComplex` with `F=0` (no faces) and reproduce the genuine-tiling `H₁ = 15`.
   This isolates and validates the new linear-algebra layer (∂₁ rank, Betti) against the old cyclomatic
-  number `E − V + C`, holding node identity fixed. Swapping in the new exact-ℤ[ζ₂₄] identity is a
-  *separate* test: it may legitimately split chirality-merged nodes and change the count, so it asserts
-  internal consistency (`χ == b₀−b₁+b₂`, exact key invariances) rather than the literal `15`.
+  number `E − V + C`, holding node identity fixed. Swapping in the new geometric canonical-key identity
+  is a *separate* test: it may legitimately split chirality-tracked nodes and change the count, so it
+  asserts the key invariances (rotation/scale → same key, chiral split) rather than the literal `15`.
 
 ## Risks
 
@@ -177,8 +181,8 @@ New in `scripts/moduli-graph/`:
 
 - Approach A (combinatorial product complex), not B (sampled nerve) or C (exact stratification).
   Escalate individual families to C only when the product-square check fails.
-- Deliverable is verified invariants (χ, ℚ-Betti, self-check); the figure illustrates and is a later
-  spec. Full torsion is deferred.
+- Deliverable is verified invariants (χ, ℚ-Betti, with a real `∂₁∂₂=0` boundary validation — NOT the
+  χ=b₀−b₁+b₂ identity, which is vacuous); the figure illustrates and is a later spec. Torsion is deferred.
 - This spec is scoped to the `4α`/`4.4α` cluster to validate the framework; all-24 scaling is a
   follow-on.
 - Node identity is a direct-similarity geometric canonical key (chirality tracked, no silent merges),
