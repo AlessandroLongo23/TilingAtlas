@@ -191,3 +191,32 @@ New in `scripts/moduli-graph/`:
 - Node identity is a direct-similarity geometric canonical key (chirality tracked, no silent merges),
   NOT an intrinsic exact ℤ[ζ₂₄] key — the shipped atlas is float-only and float→exact recognition is out
   of scope (AL, 2026-07-17). Exactness enters only as an optional catalogue-match cross-check.
+
+## Implementation outcome and corrections (2026-07-17)
+
+What the build actually settled, after probing real families. These SUPERSEDE the pre-implementation
+text above where they conflict.
+
+- **⊥ handling = Option A (genuine-tiling subcomplex), AL directive.** Homology is reported on the
+  subcomplex induced by dropping ⊥, every edge incident to it, and every face touching such an edge —
+  the headline — with the full (with-⊥) numbers kept alongside. This extends the k=1 with/without-⊥
+  convention and removes the spurious 2-spheres that a ⊥-collapsed boundary would otherwise create.
+- **Edge identity must include the midpoint tiling.** Keying a 1-cell by its endpoint pair alone
+  collapsed a face's four distinct sides into one edge, making ∂₂(face)=0 (a false sphere). `twoCellExtractor`
+  now emits the boundary as 1-cells each carrying the tiling MIDWAY along the side; edges are keyed by
+  (endpoint pair + mid canonical key), which keeps the four sides distinct and glues a side shared by
+  two faces (the source of genuine H₂).
+- **Validation target is `3.3.3.3.4α`, not `4α`.** Scout of the 24 two-parameter families: only the
+  twelve `4α` families are all-⊥ on their boundary (both rhombi collapse at every corner) — the worst
+  possible target and the one the plan named. `4.4α`, `3.3.3.3.4α`, `4.4.4α` have four genuine uniform-
+  tiling corners. A single `3.3.3.3.4α` face develops to a clean disk: genuine `b=[1,0,0]`, χ=1 — the
+  hand-checkable validation that the 2-cell machinery is correct.
+- **What is validated vs not.** VALIDATED: the homology engine (rank verified against a Bareiss oracle;
+  ∂₁∂₂=0 guard), the node key (rotation/scale invariance + chirality split), a single face as a disk,
+  and the k=1 `H₁=15` regression through the engine. NOT YET DEFENSIBLE: the multi-face cluster numbers
+  (full 24 two-param: genuine `χ=7 b=[12,11,6]`, full `χ=−11 b=[3,27,13]`). Residual `b₁` can carry
+  boundary node-coincidence (a single `4.4α` face already shows `b=[1,3,0]` though a family is a disk),
+  and each `b₂` generator needs per-generator verification that the faces genuinely glue into a closed
+  surface rather than a chain artifact. Making the cluster invariants thesis-defensible is the next
+  slice: per-generator verification + deciding whether boundary node-coincidence is geometrically real
+  or an over-merge of the canonical key.
