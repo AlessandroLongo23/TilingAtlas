@@ -152,3 +152,35 @@ Run `pnpm build` after the code lands (the workflow rule: build, not just lint/t
 - **Monodromy at loop nodes.** When both endpoints resolve to the same node, check whether they agree
   as oriented cells or differ by a period-lattice shift that is not a symmetry. Record it; do not
   block on it for this slice.
+
+## Post-implementation corrections (2026-07-17)
+
+Two things the original plan got wrong, caught during implementation and the final review, plus AL's
+model decision. Recorded here so the next slice starts from the corrected picture.
+
+- **Endpoint degeneracy has two modes, not one.** The plan modelled a degenerate endpoint as "a tile
+  collapses to zero area, drop it." A tile can instead **flatten** (its corners go collinear at ~180°)
+  while keeping positive area, so the area filter never drops it and the vertex-config signature counts
+  it by its stored side count — a dodecagon that is geometrically a hexagon signed as `3.12.12` and was
+  mislabeled. Fix: `geometry.ts:effectiveVerts` drops ~180° corners; the signature and the regularity
+  defect both operate on effective corners.
+- **Signature match is necessary, not sufficient.** The combinatorial signature cannot certify
+  congruence, so a state is accepted as a catalogue tiling only if it is a *genuine tiling*: every
+  vertex configuration closes to 360° (`configAngleSum`) AND every tile is regular (`tilingDefect`).
+  This gate applies to endpoints too, not just interior nodes (the original miss).
+- **Degenerate limits collapse to one node (AL, 2026-07-17).** Every non-tiling limit maps to a single
+  shared `⊥` node — the one-point compactification of the degenerate locus — distinct from every real
+  tiling, including the excluded octagon (which stays its own `uncatalogued` node because it is a
+  genuine tiling). Node kinds: `uniform` | `uncatalogued` | `degenerate`. H₁ is reported both with `⊥`
+  (16) and without it (11); the figure can show or hide `⊥`.
+
+## Known limitations carried forward (from final review)
+
+- **Signature is star-blind.** `star` is threaded through `FloatPoly` but the signature ignores it, so a
+  star polygon and a convex polygon of the same vertex count sign identically. Harmless for the
+  regular-only k=1 slice; must be fixed before pointing the pipeline at the star/isotoxal catalogues.
+- **Signature can silently drop a rim orbit.** An orbit whose only in-window representatives have `<3`
+  incidences is dropped. Fine for the ten small catalogue cells (distinctness holds); size the window
+  against the cell, or assert a full representative, before trusting it on larger cells.
+- **`eps` is dimensionally overloaded** (world-distance weld and lattice-fraction tolerance share one
+  value); correct only because k=1 cells are O(1)-sized.
