@@ -64,13 +64,17 @@ export function extractTwoCell(pc: ParametricCellData): TwoCell {
   const boundary: NodeState[] = [];
   for (const s of sides) boundary.push(...s.slice(1));
 
-  // Product-square grid check: interior tiles validly throughout.
+  // Product-square grid check: is the interior a valid tiling throughout the (α₁,α₂) square? The proxy is
+  // edge-to-edge closure (vertex angle-sums = 360°), NOT regularity — an isotoxal family tiles by
+  // non-regular tiles everywhere except the α=90 regular point, so `tilingDefect` (deviation from a
+  // REGULAR polygon) is large across a valid interior and is the wrong measure. A family whose validity
+  // genuinely breaks in a sub-region (non-product) fails `isEdgeToEdge` there and is flagged.
   let productOK = true;
   const N = 5;
   for (let i = 1; i < N && productOK; i++) for (let j = 1; j < N && productOK; j++) {
     const a1 = lo1 + ((hi1 - lo1) * i) / N, a2 = lo2 + ((hi2 - lo2) * j) / N;
     const t = at(a1, a2);
-    if (t.polys.length === 0 || tilingDefect(t.polys) > REGULAR_TOL) productOK = false;
+    if (t.polys.length === 0 || !isEdgeToEdge(t)) productOK = false;
   }
   return { corners, boundary, productOK };
 }
