@@ -63,8 +63,11 @@ for (const n of g.nodes) {
   const o = Math.hypot(x - cx, y - cy) || 1;
   const lx = n.kind === 'degenerate' ? x : x + ((x - cx) / o) * 22;
   const ly = n.kind === 'degenerate' ? y + 26 : y + ((y - cy) / o) * 22;
+  // a halo ring marks a branch (crossroad): a node where ≥3 family-arcs meet, the points that carry H₁.
+  if (n.role === 'branch') parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12.5" fill="none" stroke="#3b82c4" stroke-width="1.2" opacity="0.6"/>`);
+  const r = n.kind === 'degenerate' ? 9 : n.role === 'branch' ? 8 : 7;
   parts.push(
-    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${n.kind === 'degenerate' ? 9 : 7}" fill="${fill}" stroke="${line}" stroke-width="2"${dash}/>`,
+    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${fill}" stroke="${line}" stroke-width="2"${dash}/>`,
     `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="13" font-family="ui-monospace,monospace" text-anchor="middle" dominant-baseline="middle" fill="${n.kind === 'uncatalogued' ? '#cc3333' : '#1f2937'}">${label(n)}</text>`,
   );
 }
@@ -77,6 +80,7 @@ const html =
   `<p style="max-width:${W}px;padding:0 20px 20px;line-height:1.5">nodes=${g.nodes.length} edges=${g.edges.length} ` +
   `H₁=${g.h1} (with ⊥), ${g.h1NoDegenerate} (genuine tilings only). Solid blue = a deformation between genuine ` +
   `tilings; loops at a node = leave-and-return self-deformations; grey dashed spokes run to ⊥, the shared ` +
-  `non-tiling limit. Dashed red = 4.8.8, the octagon tiling deliberately excluded from the catalogue.</p></body>`;
+  `non-tiling limit. Dashed red = 4.8.8, the octagon tiling deliberately excluded from the catalogue. ` +
+  `A blue halo marks a branch point (≥3 arcs meet); haloless regular nodes are degree-2 landmarks.</p></body>`;
 writeFileSync('experiments/results/moduli-graph.html', html);
 console.log('wrote experiments/results/moduli-graph.html');

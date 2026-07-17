@@ -5,70 +5,100 @@
       "label": "⊥ non-tiling",
       "chirality": "achiral",
       "resolved": false,
-      "kind": "degenerate"
+      "kind": "degenerate",
+      "role": "boundary",
+      "degree": 14,
+      "flexdim": 1
     },
     {
       "key": "[[1,0,-2,-2],[0,2,3,2],[0,0,-1,-2],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,1,0,-1],[0,1,2,1]]",
       "label": "ctrnact-01_3c-3a-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "landmark",
+      "degree": 2,
+      "flexdim": 1
     },
     {
       "key": "[[0,1,0,0],[0,0,0,1],[0,0,0,0]]",
       "label": "ctrnact-01_3-6a-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "branch",
+      "degree": 6,
+      "flexdim": 1
     },
     {
       "key": "[[1,0,-2,-1],[0,1,1,0],[0,0,-1,-1],[0,0,0,-1],[0,0,0,0],[0,0,1,0]]",
       "label": "ctrnact-01_34-5e-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "landmark",
+      "degree": 2,
+      "flexdim": 1
     },
     {
       "key": "[[0,1,0,-1],[0,0,1,0],[0,0,0,0]]",
       "label": "ctrnact-01_4-4n-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "branch",
+      "degree": 16,
+      "flexdim": 1
     },
     {
       "key": "[[0,2,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,1],[0,1,0,1]]",
       "label": "ctrnact-01_36-4f-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "branch",
+      "degree": 4,
+      "flexdim": 1
     },
     {
       "key": "[[1,0,-2,-3],[0,1,1,1],[0,0,-2,-3],[0,0,-2,-2],[0,0,-1,-2],[0,0,-1,0],[0,0,0,0],[0,0,0,1]]",
       "label": "ctrnact-01_346-4l-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "landmark",
+      "degree": 2,
+      "flexdim": 1
     },
     {
       "key": "[[0,1,0,-1],[0,0,1,1],[0,0,0,-1],[0,0,0,0]]",
       "label": "ctrnact-01_34-5c-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "branch",
+      "degree": 4,
+      "flexdim": 1
     },
     {
       "key": "[[0,1,0,1],[0,0,0,3],[0,0,0,0],[0,0,0,1]]",
       "label": "ctrnact-01_6-3d-1",
       "chirality": "achiral",
       "resolved": true,
-      "kind": "uniform"
+      "kind": "uniform",
+      "role": "landmark",
+      "degree": 2,
+      "flexdim": 1
     },
     {
       "key": "uncat:4.8.8",
       "label": "4.8.8",
       "chirality": "achiral",
       "resolved": false,
-      "kind": "uncatalogued"
+      "kind": "uncatalogued",
+      "role": "landmark",
+      "degree": 2,
+      "flexdim": 1
     }
   ],
   "edges": [

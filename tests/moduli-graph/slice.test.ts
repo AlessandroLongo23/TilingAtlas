@@ -39,6 +39,26 @@ describe('k=1 isotoxal slice', () => {
     expect(g.h1).toBe(19);
     expect(g.h1NoDegenerate).toBe(11);
   });
+
+  it('tags nodes with a structural role: crossroads are branch, degree-2 tilings are landmarks, ⊥ is boundary', () => {
+    const byLabel = (l: string) => g.nodes.find((n) => n.label === l)!;
+    // ≥3 family-arcs meet → branch (crossroad). 4⁴ (self-loops + two ⊥ arcs), 3⁶ (three families),
+    // 3.6.3.6 and 3.3.3.4.4 (two families each) all branch.
+    for (const l of ['ctrnact-01_4-4n-1', 'ctrnact-01_3-6a-1', 'ctrnact-01_36-4f-1', 'ctrnact-01_34-5c-1']) {
+      expect(byLabel(l).role).toBe('branch');
+      expect(byLabel(l).degree).toBeGreaterThanOrEqual(3);
+    }
+    // one family passes through → degree-2 landmark (topologically an edge subdivision)
+    for (const l of ['ctrnact-01_3c-3a-1', 'ctrnact-01_34-5e-1', 'ctrnact-01_346-4l-1', 'ctrnact-01_6-3d-1']) {
+      expect(byLabel(l).role).toBe('landmark');
+      expect(byLabel(l).degree).toBe(2);
+    }
+    const deg = g.nodes.find((n) => n.kind === 'degenerate')!;
+    expect(deg.role).toBe('boundary');
+    expect(deg.degree).toBe(14);
+    // every node in the single-parameter slice has local moduli dimension 1
+    expect(g.nodes.every((n) => n.flexdim === 1)).toBe(true);
+  });
 });
 
 describe('single-tile 4α families connect ⊥ to 4⁴ through the α=90° square', () => {
