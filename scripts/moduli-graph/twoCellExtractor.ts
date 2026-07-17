@@ -1,4 +1,3 @@
-// scripts/moduli-graph/twoCellExtractor.ts
 import { evaluateParamCell, type ParametricCellData } from '@/lib/utils/paramCell';
 import type { FloatTiling, NodeState } from './types';
 import { polyArea, tilingDefect, REGULAR_TOL } from './geometry';
@@ -18,12 +17,12 @@ const isEdgeToEdge = (t: FloatTiling): boolean => {
 };
 
 /** Sweep a 1-parameter path `evalAt(a): FloatTiling` over [lo,hi]: two endpoint states plus interior
- *  regular edge-to-edge minima, ordered by a. Mirrors nodeExtractor's logic along an arbitrary slice. */
-function sweep(evalAt: (a: number) => FloatTiling, lo: number, hi: number): NodeState[] {
-  const out: NodeState[] = [];
+ *  regular edge-to-edge minima, ordered ascending by a. Mirrors nodeExtractor's logic along a slice. */
+function sweepNodes(evalAt: (a: number) => FloatTiling, lo: number, hi: number): NodeState[] {
+  const ends: NodeState[] = [];
   for (const a of [lo + EPS, hi - EPS]) {
     const t = cleaned(evalAt(a));
-    out.push({ alpha: a, tiling: t, kind: 'endpoint', regular: t.polys.length > 0 && tilingDefect(t.polys) < REGULAR_TOL });
+    ends.push({ alpha: a, tiling: t, kind: 'endpoint', regular: t.polys.length > 0 && tilingDefect(t.polys) < REGULAR_TOL });
   }
   const step = 0.5, xs: number[] = [], ys: number[] = [];
   for (let a = lo + step; a < hi; a += step) { xs.push(a); ys.push(tilingDefect(evalAt(a).polys)); }
@@ -39,36 +38,54 @@ function sweep(evalAt: (a: number) => FloatTiling, lo: number, hi: number): Node
       if (tilingDefect(t.polys) < REGULAR_TOL && isEdgeToEdge(t)) mids.push({ alpha: a, tiling: t, kind: 'interior', regular: true });
     }
   }
-  // endpoints first two entries; splice interior nodes in ascending-a order between them
-  const [start, end] = out;
-  return [start, ...mids.sort((p, q) => p.alpha - q.alpha), end];
+  return [ends[0], ...mids.sort((p, q) => p.alpha - q.alpha), ends[1]];
 }
 
-export interface TwoCell { corners: NodeState[]; boundary: NodeState[]; productOK: boolean; }
+/** One boundary 1-cell: the two endpoint node-states plus the tiling MIDWAY between them along the side.
+ *  The mid tiling is the edge's identity — two boundary segments are the same 1-cell iff their mid
+ *  tilings are congruent (up to direct similarity), which distinguishes the four distinct sides of a face
+ *  and glues a side shared by two faces. */
+export interface BoundaryEdge { from: NodeState; to: NodeState; mid: FloatTiling; }
+export interface TwoCell { corners: NodeState[]; boundary: BoundaryEdge[]; productOK: boolean; }
 
-/** Develop a two-parameter family as a square 2-cell. Sides in CCW order:
- *  (α₂=lo, α₁: lo→hi), (α₁=hi, α₂: lo→hi), (α₂=hi, α₁: hi→lo), (α₁=lo, α₂: hi→lo). */
+function sideEdges(evalAt: (a: number) => FloatTiling, nodes: NodeState[]): BoundaryEdge[] {
+  const es: BoundaryEdge[] = [];
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const a = nodes[i], b = nodes[i + 1];
+    es.push({ from: a, to: b, mid: cleaned(evalAt((a.alpha + b.alpha) / 2)) });
+  }
+  return es;
+}
+const reverseSide = (es: BoundaryEdge[]): BoundaryEdge[] =>
+  es.slice().reverse().map((e) => ({ from: e.to, to: e.from, mid: e.mid }));
+
+/**
+ * Develop a two-parameter family as a square 2-cell. The boundary is one closed CCW loop of 1-cells,
+ * stitched from the four sides (α₂=lo, α₁:lo→hi) → (α₁=hi, α₂:lo→hi) → (α₂=hi, α₁:hi→lo) →
+ * (α₁=lo, α₂:hi→lo); adjacent sides share a corner node, so the loop closes. Each side may subdivide at
+ * an interior regular node.
+ */
 export function extractTwoCell(pc: ParametricCellData): TwoCell {
   const [lo1, hi1] = pc.params[0].alphaRangeDegOpen;
   const [lo2, hi2] = pc.params[1].alphaRangeDegOpen;
   const at = (a1: number, a2: number) => cleaned(toFloat(evaluateParamCell(pc, [a1, a2])));
 
-  const sides: NodeState[][] = [
-    sweep((a1) => at(a1, lo2 + EPS), lo1, hi1),
-    sweep((a2) => at(hi1 - EPS, a2), lo2, hi2),
-    sweep((a1) => at(a1, hi2 - EPS), lo1, hi1).reverse(),
-    sweep((a2) => at(lo1 + EPS, a2), lo2, hi2).reverse(),
-  ];
-  const corners = sides.map((s) => s[0]);
-  // Stitch: drop each side's first state (it repeats the previous side's last), leaving one closed loop.
-  const boundary: NodeState[] = [];
-  for (const s of sides) boundary.push(...s.slice(1));
+  const e0 = (a1: number) => at(a1, lo2 + EPS);
+  const e1 = (a2: number) => at(hi1 - EPS, a2);
+  const e2 = (a1: number) => at(a1, hi2 - EPS);
+  const e3 = (a2: number) => at(lo1 + EPS, a2);
+  const s0 = sideEdges(e0, sweepNodes(e0, lo1, hi1));
+  const s1 = sideEdges(e1, sweepNodes(e1, lo2, hi2));
+  const s2 = reverseSide(sideEdges(e2, sweepNodes(e2, lo1, hi1)));
+  const s3 = reverseSide(sideEdges(e3, sweepNodes(e3, lo2, hi2)));
+  const boundary = [...s0, ...s1, ...s2, ...s3];
+  const corners = [s0[0].from, s1[0].from, s2[0].from, s3[0].from];
 
   // Product-square grid check: is the interior a valid tiling throughout the (α₁,α₂) square? The proxy is
   // edge-to-edge closure (vertex angle-sums = 360°), NOT regularity — an isotoxal family tiles by
-  // non-regular tiles everywhere except the α=90 regular point, so `tilingDefect` (deviation from a
-  // REGULAR polygon) is large across a valid interior and is the wrong measure. A family whose validity
-  // genuinely breaks in a sub-region (non-product) fails `isEdgeToEdge` there and is flagged.
+  // non-regular tiles everywhere except the α=90 point, so `tilingDefect` (deviation from a REGULAR
+  // polygon) is large across a valid interior and is the wrong measure. A family whose validity genuinely
+  // breaks in a sub-region fails `isEdgeToEdge` there and is flagged non-product.
   let productOK = true;
   const N = 5;
   for (let i = 1; i < N && productOK; i++) for (let j = 1; j < N && productOK; j++) {

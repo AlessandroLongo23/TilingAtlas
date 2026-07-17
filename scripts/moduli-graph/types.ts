@@ -24,10 +24,16 @@ export interface Cell2 { family: string; boundary: string[]; productOK: boolean;
 // The assembled k=2 sub-complex plus its homology, as emitted by complexAssembler / buildModuliComplex.
 // No validity flag: `homology` throws on a malformed boundary (∂1∂2 ≠ 0), so a returned complex is valid
 // by construction; a χ = b0−b1+b2 field would be a tautology and is deliberately omitted.
+//
+// Homology is reported twice, mirroring the k=1 convention (H1 with and without ⊥). The HEADLINE `chi`
+// and `betti` are the GENUINE-tiling subcomplex: the ⊥ non-tiling node, every edge incident to it, and
+// every face touching such an edge are removed, so a 2-cell bounded entirely by degenerate limits (which
+// would otherwise read as a spurious sphere) contributes nothing. `full` keeps the with-⊥ numbers.
 export interface ModuliComplex {
   nodes: { key: string; label: string; kind: NodeKind; handed: boolean }[];
   edges: { family: string; from: string; to: string }[];
   faces: Cell2[];
-  chi: number;
-  betti: [number, number, number];
+  chi: number;                                       // genuine subcomplex (⊥ removed) — the headline
+  betti: [number, number, number];                   // genuine subcomplex
+  full: { chi: number; betti: [number, number, number] }; // with ⊥ and its incident cells
 }
