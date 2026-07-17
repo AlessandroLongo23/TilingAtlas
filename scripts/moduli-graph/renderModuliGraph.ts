@@ -58,7 +58,7 @@ for (const [k, es] of groups) {
 for (const n of g.nodes) {
   const [x, y] = pos.get(n.key)!;
   const fill = n.kind === 'uniform' ? '#1f2937' : '#fafafa';
-  const line = n.kind === 'degenerate' ? '#8a8f99' : n.kind === 'uncatalogued' ? '#cc3333' : '#1f2937';
+  const line = n.kind === 'degenerate' ? '#8a8f99' : n.kind === 'uncatalogued' ? '#cc3333' : n.kind === 'flattened' ? '#3f9d78' : '#1f2937';
   const dash = n.kind === 'uniform' ? '' : ' stroke-dasharray="3"';
   const o = Math.hypot(x - cx, y - cy) || 1;
   const lx = n.kind === 'degenerate' ? x : x + ((x - cx) / o) * 22;
@@ -68,7 +68,7 @@ for (const n of g.nodes) {
   const r = n.kind === 'degenerate' ? 9 : n.role === 'branch' ? 8 : 7;
   parts.push(
     `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${fill}" stroke="${line}" stroke-width="2"${dash}/>`,
-    `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="13" font-family="ui-monospace,monospace" text-anchor="middle" dominant-baseline="middle" fill="${n.kind === 'uncatalogued' ? '#cc3333' : '#1f2937'}">${label(n)}</text>`,
+    `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="13" font-family="ui-monospace,monospace" text-anchor="middle" dominant-baseline="middle" fill="${n.kind === 'uncatalogued' ? '#cc3333' : n.kind === 'flattened' ? '#2f8f6b' : '#1f2937'}">${label(n)}</text>`,
   );
 }
 

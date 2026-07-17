@@ -2,7 +2,11 @@ export type Vec = number[];                 // [a0,a1,a2,a3] over {1,ω,ω²,ω�
 export interface FloatPoly { n: number; star?: boolean; verts: [number, number][]; }
 export interface FloatTiling { polys: FloatPoly[]; basis: [[number, number], [number, number]]; }
 export type Chirality = 'achiral' | 'L' | 'R';
-export type NodeKind = 'uniform' | 'uncatalogued' | 'degenerate';
+// `uniform`: an edge-to-edge catalogue tiling. `uncatalogued`: an edge-to-edge genuine tiling with no
+// catalogue match (the excluded octagon 4.8.8). `flattened`: a non-edge-to-edge genuine tiling of
+// regular polygons of two sizes, reached when a tile's corner flattens to 180° (a real tiling, merged
+// up to direct similarity). `degenerate`: the ⊥ non-tiling — a tile collapsed to zero area, nothing left.
+export type NodeKind = 'uniform' | 'uncatalogued' | 'flattened' | 'degenerate';
 // Structural role in the moduli space, orthogonal to `kind` (which records catalogue status). A node is
 // a `branch` point (crossroad) when ≥3 family-arcs meet there — the deformation can leave in more than
 // one independent direction; a `landmark` is a degree-2 pass-through kept because it is a named tiling

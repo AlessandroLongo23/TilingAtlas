@@ -185,7 +185,29 @@ model decision. Recorded here so the next slice starts from the corrected pictur
   limit → ⊥. This restored both families and lifted H₁(with ⊥) from 16 to 19; H₁(genuine tilings) is
   unchanged at 11 because these families connect 4⁴ only to ⊥, never to a second genuine tiling.
 
+- **Flattening endpoints are real tilings, not ⊥ (AL caught, 2026-07-17).** The ⊥-merge over-reached. An
+  endpoint has THREE outcomes, not two: a zero-area *collapse* (a tile shrinks to nothing, e.g. 4α) is a
+  true non-tiling → ⊥; a *flatten* (a tile's corner reaches 180° and it becomes a LARGER regular polygon
+  of twice the edge, e.g. a dodecagon → a hexagon) keeps the plane fully tiled and is a genuine tiling —
+  by regular polygons of two sizes, non-edge-to-edge (the small tile's corner meets the middle of the
+  large tile's edge, a T-junction, so it has no valid vertex figure and matches no catalogue entry). The
+  earlier code dumped both into ⊥ because `vertexConfigs` assumes edge-to-edge and returns `[]` at a
+  T-junction. Fix: a new `flattened` node kind. A state with regular tiles but no valid vertex figure is
+  a flatten limit, keyed up to DIRECT similarity by `flattenKey` (scale-normalised tile multiset +
+  Gauss-reduced lattice invariants + centroid-distance spectrum) so the same limit from different
+  families — or one family's two ends — merges to one node. Also required fixing `nodeExtractor`: the
+  interior-node finder must require a valid edge-to-edge vertex figure, else it fires spuriously on the
+  flattening plateau near an endpoint (where the effective tiles are regular over a whole α-range). k=1
+  result: four flatten nodes (`3.3.6²`, `3.3.3²`, `3².3².6`, `4.4²`), each a bigon with its interior
+  tiling; ⊥ now reached only by the two 4α collapse families. H₁ 19→18 (with ⊥), 11→15 (genuine tilings,
+  the four flatten bigons are genuine-tiling cycles).
+
 ## Known limitations carried forward (from final review)
+
+- **`flattenKey` is chirality-blind.** Built from pairwise distances and `|lattice|` invariants, so it
+  merges a flatten limit with its mirror. None of the k=1 flatten limits is chiral, so this is currently
+  exact; a chiral non-edge-to-edge limit would be wrongly merged with its mirror and must get an oriented
+  key before the star/isotoxal slices (same deferred-handedness caveat as the uniform resolver).
 
 - **Signature is star-blind.** `star` is threaded through `FloatPoly` but the signature ignores it, so a
   star polygon and a convex polygon of the same vertex count sign identically. Harmless for the

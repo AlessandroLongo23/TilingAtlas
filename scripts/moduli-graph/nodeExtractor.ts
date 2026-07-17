@@ -1,6 +1,15 @@
 import { evaluateParamCell, type ParametricCellData } from '@/lib/utils/paramCell';
 import type { FloatTiling, NodeState } from './types';
 import { polyArea, tilingDefect, REGULAR_TOL } from './geometry';
+import { vertexConfigs, configAngleSum } from './tilingSignature';
+
+/** A genuine edge-to-edge tiling: every vertex figure closes to 360°. Distinguishes a real interior
+ *  uniform node from the flattening plateau near an endpoint, where the effective tiles are regular but
+ *  the tiling is non-edge-to-edge (no valid vertex figure). */
+const isEdgeToEdge = (t: FloatTiling): boolean => {
+  const cfgs = vertexConfigs(t);
+  return cfgs.length > 0 && cfgs.every((c) => Math.abs(configAngleSum(c) - 360) < 1);
+};
 
 type EvalPoly = { n: number; star?: boolean; vertices: [number, number][] };
 
@@ -31,8 +40,11 @@ export function extractNodes(pc: ParametricCellData): NodeState[] {
   }
 
   // Interior nodes: local minima of the whole-tiling defect, refined by golden-section search, kept
-  // only if the refined state is genuinely regular (every effective tile regular). These are regular
-  // by construction of the acceptance gate.
+  // only if the refined state is a genuine EDGE-TO-EDGE uniform tiling (regular tiles AND a valid vertex
+  // figure). The edge-to-edge test is what rejects the flattening plateau: approaching a flatten
+  // endpoint, once a tile's corners cross the 180° threshold its effective form is regular over a whole
+  // α-range, so tilingDefect dips to ~0 and the minimum-finder fires — but that state is non-edge-to-edge
+  // and is not a node (the flatten limit is captured at the endpoint, not as a spurious interior point).
   const step = 0.5, xs: number[] = [], ys: number[] = [];
   for (let a = lo + step; a < hi; a += step) { xs.push(a); ys.push(tilingDefect(toFloat(evaluateParamCell(pc, a)).polys)); }
   for (let i = 1; i < xs.length - 1; i++) {
@@ -44,7 +56,7 @@ export function extractNodes(pc: ParametricCellData): NodeState[] {
       }
       const a = (a0 + a1) / 2;
       const t = toFloat(evaluateParamCell(pc, a));
-      if (tilingDefect(t.polys) < REGULAR_TOL) out.push({ alpha: a, tiling: t, kind: 'interior', regular: true });
+      if (tilingDefect(t.polys) < REGULAR_TOL && isEdgeToEdge(t)) out.push({ alpha: a, tiling: t, kind: 'interior', regular: true });
     }
   }
   return out;
