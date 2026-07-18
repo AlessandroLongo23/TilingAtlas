@@ -10,7 +10,6 @@ const mk = (n: bigint, d: bigint): Frac => {
   if (n === 0n) return { n: 0n, d: 1n };
   const g = gcd(n, d); return { n: n / g, d: d / g };
 };
-const add = (a: Frac, b: Frac) => mk(a.n * b.d + b.n * a.d, a.d * b.d);
 const sub = (a: Frac, b: Frac) => mk(a.n * b.d - b.n * a.d, a.d * b.d);
 const mul = (a: Frac, b: Frac) => mk(a.n * b.n, a.d * b.d);
 const div = (a: Frac, b: Frac) => mk(a.n * b.d, a.d * b.n);
@@ -63,7 +62,16 @@ export function nullSpace(rows: number[][], cols: number): number[][] {
     }
     let lcm = 1n;
     for (const f of x) lcm = (lcm / gcd(lcm, f.d)) * f.d;
-    basis.push(x.map((f) => Number((f.n * lcm) / f.d)));
+    // Clear denominators to integers. Elimination is exact BigInt; the ONLY precision hazard is this cast
+    // to Number. ∂1 is totally unimodular (entries ±1) and the ∂2 kernels here are trivial, so entries
+    // stay tiny — but a large-coefficient 2-cycle could exceed 2^53. Throw loud rather than silently
+    // round (the Hadamard bound at F≈24 can top MAX_SAFE); switch to BigInt output if this ever fires.
+    const SAFE = 9007199254740991n;
+    basis.push(x.map((f) => {
+      const val = (f.n * lcm) / f.d;
+      if (val > SAFE || val < -SAFE) throw new Error(`null-vector entry ${val} exceeds Number.MAX_SAFE_INTEGER — switch exactLinAlg to BigInt output`);
+      return Number(val);
+    }));
   }
   return basis;
 }
