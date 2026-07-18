@@ -93,9 +93,12 @@ export function buildCellComplex(families: FamilyRecord[]): BuiltComplex {
 
   // Edge margin: among distinct edges sharing an endpoint pair, the fewest sample positions that differ.
   // A margin of 1 means a single sample distinguishes two edges — a near-collision worth flagging.
+  // Computed on the GENUINE subcomplex only (skip ⊥-incident pairs): those edges are dropped from the
+  // headline homology, so a thin margin there does not touch the certified result.
   const byPair = new Map<string, string[][]>(); // endpoint pair -> list of sample-key arrays
   for (const key of edgeIndex.keys()) {
     const [pair, fp] = key.split('||');
+    if (pair.includes(DEG)) continue; // ⊥-incident edge — not part of the genuine subcomplex
     const arr = byPair.get(pair) ?? [];
     arr.push(fp.split('>'));
     byPair.set(pair, arr);
