@@ -1124,3 +1124,67 @@ SMALLK_W_BOUND.md §5b carried the same bad inference, correction appended there
 downstream claims rewritten (abstract, §1.3/1.4/1.5, ch.4/5/8/10, conclusion, App. C);
 thm:weight proof now derives |C_e| ≤ |V(Q)| with the weakening explicit; crefnames capitalized;
 notation P disambiguated; k=18 marked p.c. Build: 178pp, 0 undef/??. Ack text still AL's.
+
+**2026-07-16 (CC, later) — fig:orbit-intro regenerated with vertex-orbit circles.**
+Two new EXPLANATORY entries in `figures/build.ts` (orbit-intro-{1u,2u}: t1003/t2003, byNGon +
+`markers: true`) delivered to `../thesis/figures/generated/explanatory/`; the two \includegraphics
+paths in `../thesis/figures/fig-orbit-intro.tex` flipped to them (AL authorized the cross-repo
+edit). Captions untouched — TA may want a "vertices marked by orbit color" sentence. Uncommitted. — CC
+
+**2026-07-16 (CC, later) — /theory page returns: the 11 uniform tilings, live WebGL cards.**
+Resurrected the removed markdown machinery (9376408^) + rehype-raw custom tags; new
+`interactive-tiling-preview-card` (per-card controls, /play feel via shared `lib/render/viewControls.ts`
++ `flatTilingGL.ts` — GLSL now single-sourced with euclidean-canvas). Content
+`public/theory/uniform-tilings.md`; cells embedded from atlas t1001–t1011. Verified headless
+(CDP: pan/zoom/rotate/reset/expand/play-link). Uncommitted; NOTES §64. — CC
+
+**2026-07-16 (CC, later) — Thesis final-pass fixes (AL-authorized cross-repo edits): star k=2 honesty + bib repairs.**
+Star claim corrected in 7 places (abstract/intro/engine/results ×2/conclusion/discussion): engine returns 65 at k=2
+(20 regular + 34/34 in-ring Myers + 7 family instances + 4 triple-reviewed candidate omissions, per
+`star-ctrnact-setup-2026-07-10.log` + `star-adversarial-review-2026-07-11.log`); discussion's stale future tense fixed.
+Bib: bajpai authors (were confabulated), grunbaum2009error, kattemölle JMP 66.5, sommerville 1906, soto author order,
+STS entry pinned to `resources/tilings0425.pdf` (dated 25 Apr 2022); "gives me hope" now cites the solver README. — CC
+
+**2026-07-16 (CC, later) — Appendix A de-noted (cheap form) + A068599 shorthand fixed.**
+New "Provenance and form" preamble in `app-proof.tex` (defines "the brief"/"deliverable B", ledger-wins reading rule);
+stale tags fixed (A6 "to be added"→"added in round 3; passing", A3–A5 "unaudited"→"audited in round 3", audit-hooks
+"none is discharged yet"→discharged, cref §10.5). Both "A068599 through k=16" remarks now split 13/15/16 per Table 8.5.
+Rebuilt clean: 182 pp., 0 undefined refs, no new overfulls. — CC
+
+**2026-07-16 (CC, evening) — figures/tables final pass: gallery overflow fixed + star-extras plate.**
+Gallery pages of figs 8.5–8.8 overflowed `\textheight` and the caption overprinted the running
+footer: tiles shrunk to `0.92\linewidth` (generated tex + `galleryTex` in `figures/build.ts`, regen-stable).
+New thesis fig 8.12 (p. 80): the four k=2 star candidate omissions, rendered from the existing
+`run-star-k2b6` SVGs via new `tools/ctrnact-oracle/svg_to_tikz.py` (thesis palette, auto coverage-clip).
+Thesis rebuilt clean: 182 pp., 0 undefined refs, overfulls unchanged (10). — CC
+
+**2026-07-16 (CC, night) — De-AI prose pass over all 18 thesis chapters (AL-directed, per `writing-style.md`).**
+~170 targeted edits: epigram labels and "A, not B"/"not X but Y" pivots rewritten (flagship: results.tex "Caps are
+jitter" item), ~90 hence/thus/therefore/moreover/namely → so/that is/restructure, "worth + verb-ing" hedges and
+genuinely/really intensifiers cut, 2 performative fragments removed ("The results, in one breath", "grades are sacred").
+Value/grade contrasts kept ("measured, not proven", "δ≤34, not ≤36"). Brace/env balance verified against pre-edit
+snapshot; no TeX on this machine, next rebuild should confirm. Backup in CC scratchpad `thesis-backup-pre-deai/`. — CC
+
+**2026-07-16 (CC, late) — chapter 6 gets its figures: the abstract vertex and the three-stage pipeline.**
+New hand figures 6.1 (half-edges, gluings, worked on 3.12²: symbol `[0](1)` quoted from
+`run-k1-regular` pruned output) and 6.2 (solve→prune→develop with the real k=1 counts
+11 raw → 10 canonical → 10 cells), grounded on the 0425 manuscript + the oracle run outputs.
+Thesis rebuilt: 184 pp., 0 undefined refs; digest-hash overfull in §8.4 reworded away. — CC
+
+**2026-07-16 (CC, later) — "rather than" density cut, AL follow-up to the de-AI pass.**
+51 → 14 instances (max 2 per chapter, was 8 in engine-proof alone): reworded with varied forms (instead of /
+in place of / and not / never by / restructure). Kept only numeric comparisons ("slope ≈2 rather than 24") and
+a few load-bearing ones ("asserted rather than argued", "by ruling rather than by omission"). Braces re-verified. — CC
+
+**2026-07-16 (CC, night) — Approval page signed.** Ink isolated from AL's handwritten signature + date scans
+(luminance-ramp alpha, grid lines removed) → `figures/{signature,date}-ink.png`; `\namesigdate` in
+`Setup/Settings.tex` now sets both onto the dotted lines. Rebuilt clean: 184 pp., 0 undefined refs. — CC
+
+**2026-07-18 (CC) — k=2 deformation complex + cluster verification.** Extended the moduli graph to a
+2-complex: 24 two-parameter isotoxal families as 2-cells (product squares), chain-complex homology with a
+real ∂₁∂₂=0 guard (the χ=b₀−b₁+b₂ "self-check" was a tautology), then a verification slice — multi-sample
+edge fingerprints, measured node/edge separation margins, exact-ℚ generator extraction, and a
+dart-rotation manifold classifier. Certified result for the **2-parameter-family subcomplex** (not the
+full k=2 space): genuine `betti=[12,11,6]`, H₂ = **2 genuine spheres + 4 pinched-spheres (zero tori)** — the
+χ'-alone classifier had faked tori/genus from even-χ' pinches. Branch `moduli-graph`, spec
+`docs/superpowers/specs/2026-07-18-k2-verification-design.md`; 68/68 tests, build clean. — CC

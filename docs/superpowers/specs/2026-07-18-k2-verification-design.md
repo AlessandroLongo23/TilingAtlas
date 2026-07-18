@@ -147,3 +147,34 @@ Modify:
   (out of scope, flagged).
 - Self-folding faces are CLASSIFIED (surface word) this slice; repairing the CW model by subdividing a
   genuine pinch is deferred to a further slice.
+
+## Certified outcome (implemented 2026-07-18)
+
+Built as six TDD modules under `scripts/moduli-graph/` (`edgeFingerprint`, `exactLinAlg`,
+`homologyGenerators`, `surfaceClassify`, `margins`, `verifyComplex`) + CLI `buildVerifiedComplex.ts`;
+68/68 moduli-graph tests pass, build clean. Certified result for the 24-family two-parameter subcomplex
+(`experiments/results/moduli-complex-k2-verified.json`):
+
+- **Scope (load-bearing):** homology of the **2-parameter-family subcomplex** — those families as 2-cells
+  plus their induced boundary 1-skeleton — NOT the full k=2 moduli space; the 74 one-parameter k=2
+  families are not added as independent 1-cells. Quote it that way, never as "the k=2 moduli space."
+- **Faces:** 24 families → 12 genuine faces (six pillow pairs); one self-folding (zero-∂₂) face, k2-83, is
+  ⊥-incident and excluded from the genuine subcomplex; all 24 are product-valid.
+- **Invariants:** genuine `χ=7`, `betti=[12,11,6]`. Node margin 1 (edge-normalised, ε≈1e-4 ⇒ ~10⁴×);
+  genuine edge margin 2 differing samples, zero near-collisions.
+- **H₂ = 2 genuine spheres + 4 pinched-spheres, ZERO tori.** The four χ'∈{1,0,−1,−2} generators are all
+  pillows pinched at 1–4 vertex identifications, caught by the dart-rotation manifold check — the χ'-alone
+  classifier had mislabelled the even-χ' ones as "torus"/"genus-2" (false positives, corrected). So
+  `betti[2]=6` is NOT six closed surfaces: two genuine spheres, four non-manifold pinched-spheres.
+- **H₁ = 11**, exact rank; presented as a bare count (H₁ has no pinched-torus failure mode, so no per-loop
+  surface check). Interpreting the 11 loops is future work.
+
+Corrections found during implementation (adversarial review, each fixed): the χ=b₀−b₁+b₂ "self-check" was
+a tautology → replaced by ∂₁∂₂=0 validation (in the k=2 framework spec); exactLinAlg's Number() cast
+guarded against >2⁵³ overflow; homologyGenerators self-guarded; classifySurface switched to signed
+coefficients and then to a real manifold check; edge margin computed on the genuine subcomplex.
+
+**Deferred (next slice):** repairing the CW model by subdividing the pinched pillows into proper cells
+(exact-stratification territory) so the pinched-spheres become honest cells; adding the 74 one-parameter
+families as 1-cells to get the full k=2 moduli-space homology; interpreting the 11 H₁ loops; torsion (ℤ/2,
+Smith normal form) which would surface any non-orientable strata.
