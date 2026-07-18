@@ -18,8 +18,19 @@ function boundaryMatrices(cx: CellComplex): { d1: number[][]; d2: number[][] } {
 const support = (v: number[]): number[] => v.map((x, i) => [x, i]).filter(([x]) => x !== 0).map(([, i]) => i);
 
 export function homologyGenerators(cx: CellComplex): Generators {
-  const E = cx.edges.length, F = cx.faces.length;
+  const V = cx.nodes.length, E = cx.edges.length, F = cx.faces.length;
   const { d1, d2 } = boundaryMatrices(cx);
+
+  // Self-guard: the H1 = ker∂1/im∂2 construction is only valid when im∂2 ⊆ ker∂1, i.e. ∂1∘∂2 = 0. The
+  // assembler already routes complexes through homology() (which validates this), but this is a public
+  // export, so re-check here rather than return silently-wrong generators on a mis-stitched boundary.
+  for (let f = 0; f < F; f++) {
+    for (let vtx = 0; vtx < V; vtx++) {
+      let acc = 0;
+      for (let e = 0; e < E; e++) acc += d1[vtx][e] * d2[e][f];
+      if (acc !== 0) throw new Error(`∂1∂2 ≠ 0 at face ${f}, node ${vtx} — boundary is not a cycle`);
+    }
+  }
 
   // H2 = ker ∂2 (no ∂3). Each null vector is a face-combination that is a 2-cycle.
   const h2vecs = F === 0 ? [] : nullSpace(d2, F);
