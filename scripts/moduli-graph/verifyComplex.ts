@@ -28,5 +28,11 @@ export function verifyComplex(families: FamilyRecord[]): VerificationReport {
     nearCollisions: complex.nearCollisions,
     h2, h1,
     chi: complex.chi, betti: complex.betti,
+    accounting: {
+      families: complex.faces.length,                                    // two-parameter families = 2-cells
+      genuineFaces: cx.faces.length,                                     // faces surviving into the genuine subcomplex
+      selfFoldingFaces: complex.degenerateFaces,                        // zero-∂2 faces (excluded if ⊥-incident)
+      nonProductFaces: complex.faces.filter((f) => !f.productOK).map((f) => f.family),
+    },
   };
 }

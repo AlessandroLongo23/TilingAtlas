@@ -50,4 +50,9 @@ export interface VerificationReport {
   h2: { faces: string[]; surface: string; chi: number }[];  // families per generator + classified surface
   h1: { edges: number; nodeLoop: string[] }[];              // size + the node loop it traces
   chi: number; betti: [number, number, number];
+  // Cell accounting for the certified artifact — how the 24 two-parameter families reduce to the genuine
+  // faces the homology is read from. NOTE: this is the 2-PARAMETER-family subcomplex (those families as
+  // 2-cells + their induced boundary 1-skeleton), NOT the full k=2 moduli space; the 74 one-parameter
+  // k=2 families are not added as independent 1-cells here.
+  accounting: { families: number; genuineFaces: number; selfFoldingFaces: string[]; nonProductFaces: string[] };
 }
