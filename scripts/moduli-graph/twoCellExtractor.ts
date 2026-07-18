@@ -41,23 +41,25 @@ function sweepNodes(evalAt: (a: number) => FloatTiling, lo: number, hi: number):
   return [ends[0], ...mids.sort((p, q) => p.alpha - q.alpha), ends[1]];
 }
 
-/** One boundary 1-cell: the two endpoint node-states plus the tiling MIDWAY between them along the side.
- *  The mid tiling is the edge's identity — two boundary segments are the same 1-cell iff their mid
- *  tilings are congruent (up to direct similarity), which distinguishes the four distinct sides of a face
- *  and glues a side shared by two faces. */
-export interface BoundaryEdge { from: NodeState; to: NodeState; mid: FloatTiling; }
+export const EDGE_SAMPLES = 5; // K interior samples per 1-cell
+
+/** One boundary 1-cell: endpoints plus K tilings sampled evenly along the side (its multi-sample identity;
+ *  see edgeFingerprint). Two segments are the same 1-cell iff endpoints and the K-sample sequence match. */
+export interface BoundaryEdge { from: NodeState; to: NodeState; samples: FloatTiling[]; }
 export interface TwoCell { corners: NodeState[]; boundary: BoundaryEdge[]; productOK: boolean; }
 
 function sideEdges(evalAt: (a: number) => FloatTiling, nodes: NodeState[]): BoundaryEdge[] {
   const es: BoundaryEdge[] = [];
   for (let i = 0; i < nodes.length - 1; i++) {
     const a = nodes[i], b = nodes[i + 1];
-    es.push({ from: a, to: b, mid: cleaned(evalAt((a.alpha + b.alpha) / 2)) });
+    const samples = Array.from({ length: EDGE_SAMPLES }, (_, k) =>
+      cleaned(evalAt(a.alpha + ((b.alpha - a.alpha) * (k + 1)) / (EDGE_SAMPLES + 1))));
+    es.push({ from: a, to: b, samples });
   }
   return es;
 }
 const reverseSide = (es: BoundaryEdge[]): BoundaryEdge[] =>
-  es.slice().reverse().map((e) => ({ from: e.to, to: e.from, mid: e.mid }));
+  es.slice().reverse().map((e) => ({ from: e.to, to: e.from, samples: e.samples.slice().reverse() }));
 
 /**
  * Develop a two-parameter family as a square 2-cell. The boundary is one closed CCW loop of 1-cells,

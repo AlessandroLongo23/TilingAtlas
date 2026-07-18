@@ -1,6 +1,7 @@
 import type { ParametricCellData } from '@/lib/utils/paramCell';
 import { extractTwoCell, type BoundaryEdge } from './twoCellExtractor';
 import { nodeCanonicalKey } from './nodeCanonicalKey';
+import { edgeFingerprint } from './edgeFingerprint';
 import { homology, type CellComplex, type FaceEdge } from './chainComplex';
 import type { ModuliComplex, NodeState } from './types';
 
@@ -41,7 +42,7 @@ export function assembleComplex(families: FamilyRecord[]): ModuliComplex {
     const ai = nodeId(be.from), bi = nodeId(be.to);
     const fromKey = nodeMeta[ai].key, toKey = nodeMeta[bi].key;
     const pair = fromKey < toKey ? `${fromKey}::${toKey}` : `${toKey}::${fromKey}`;
-    const key = `${pair}||${nodeCanonicalKey(be.mid).key}`; // endpoints + mid identity; NOT family-scoped
+    const key = `${pair}||${edgeFingerprint(be.samples, fromKey, toKey)}`; // endpoints + multi-sample identity
     let idx = edgeIndex.get(key);
     if (idx === undefined) {
       idx = edges.length;
