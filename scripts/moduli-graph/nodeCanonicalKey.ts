@@ -79,3 +79,38 @@ export function nodeCanonicalKey(t: FloatTiling): CanonicalKey {
   const hand = handed ? (dk < dkm ? '0' : '1') : 'a';
   return { key: `${blind}|${hand}`, handed, blind };
 }
+
+/** The numeric aligned+sorted coordinate vector behind directKey's best alignment (pre-quantisation) —
+ *  a comparable feature vector for the separation-margin report. The tile-vertex point set is augmented
+ *  with the two lattice-basis endpoints (anchored at the first vertex) so that tilings sharing a
+ *  fundamental-domain tile shape but differing in their period lattice — which `nodeCanonicalKey` (via
+ *  flattenKey's Gauss-reduced lattice + centroid spectrum) treats as DISTINCT nodes — separate here too;
+ *  without the lattice the vertex-only feature collides for such pairs and the margin reads a false 0.
+ *  Empty for the ⊥ tiling. */
+export function canonicalCoords(t: FloatTiling): number[] {
+  const tiles = effTiles(t);
+  const pts: [number, number][] = [];
+  for (const v of tiles) for (const p of v) pts.push([p[0], p[1]]);
+  if (pts.length === 0) return [];
+  let s = Infinity;
+  for (const v of tiles) for (let i = 0; i < v.length; i++) {
+    const q = v[(i + 1) % v.length]; s = Math.min(s, Math.hypot(v[i][0] - q[0], v[i][1] - q[1]));
+  }
+  if (!Number.isFinite(s) || s <= 0) s = 1;
+  const anchor = pts[0]; // encode the period lattice as two points offset from a fixed vertex
+  pts.push([anchor[0] + t.basis[0][0], anchor[1] + t.basis[0][1]]);
+  pts.push([anchor[0] + t.basis[1][0], anchor[1] + t.basis[1][1]]);
+  const gx = pts.reduce((a, p) => a + p[0], 0) / pts.length, gy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+  const centered = pts.map(([x, y]): [number, number] => [(x - gx) / s, (y - gy) / s]);
+  let best: number[] | null = null, bestKey: string | null = null;
+  for (const a of centered) {
+    const r = Math.hypot(a[0], a[1]); if (r < EPS) continue;
+    const th = Math.atan2(a[1], a[0]), c = Math.cos(-th), sn = Math.sin(-th);
+    const rot = centered.map(([x, y]): [number, number] => [x * c - y * sn, x * sn + y * c]);
+    rot.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+    const flat = rot.flat();
+    const key = flat.map((x) => Math.round(x * Q)).join(',');
+    if (bestKey === null || key < bestKey) { bestKey = key; best = flat; }
+  }
+  return best ?? [];
+}

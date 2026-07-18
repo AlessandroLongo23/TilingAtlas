@@ -42,3 +42,12 @@ export interface ModuliComplex {
   // contributes an UNVERIFIED b₂ generator — surfaced here rather than silently trusted in the count.
   degenerateFaces: string[];
 }
+
+export interface VerificationReport {
+  nodeMargin: number;   // min L∞ distance between distinct-key nodes' canonicalCoords (∞ if none comparable)
+  edgeMargin: number;   // min # of differing samples between distinct edges sharing an endpoint pair (∞ if none)
+  nearCollisions: string[];               // human notes on any margin within a few ε / a single sample
+  h2: { faces: string[]; surface: string; chi: number }[];  // families per generator + classified surface
+  h1: { edges: number; nodeLoop: string[] }[];              // size + the node loop it traces
+  chi: number; betti: [number, number, number];
+}
