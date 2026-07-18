@@ -102,7 +102,7 @@ Uses **SvelteKit-style `PUBLIC_*`** names, not `NEXT_PUBLIC_*`. `next.config.ts`
 
 This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16 App Router + React 19. The port preserves the original layer boundaries rather than rewriting them idiomatically — understanding those boundaries matters more than understanding Next conventions.
 
-**Routing.** Route groups under `app/(app)/` share the app-shell layout (`Nav` + store bootstrap). Top-level routes: `/library`, `/lab` (+ `/lab/[hash]/{polygons,vcs,seeds,expanded-seeds,tilings}`), `/play`. (The `/theory` markdown page was removed 2026-06 — it documented the superseded wallpaper-fitting method; the historical write-ups live in `../resources/drafts/`, the implemented method in `docs/DEVELOPMENT_NOTES.md`.) Seven pipeline API handlers live under `app/api/pipeline/*/`. Next 16 replaces `middleware.ts` with `proxy.ts` at the root — that's where pipeline auth is enforced.
+**Routing.** Route groups under `app/(app)/` share the app-shell layout (`Nav` + store bootstrap). Top-level routes: `/library`, `/lab` (+ `/lab/[hash]/{polygons,vcs,seeds,expanded-seeds,tilings}`), `/play`, `/theory`. (The original `/theory` method write-up was removed 2026-06 — it documented the superseded wallpaper-fitting method; the historical write-ups live in `../resources/drafts/`, the implemented method in `docs/DEVELOPMENT_NOTES.md`. The route returned 2026-07 as a mathematical-background page: markdown from `public/theory/uniform-tilings.md` with interactive tiling cards embedded via `<tiling-card>` tags.) Seven pipeline API handlers live under `app/api/pipeline/*/`. Next 16 replaces `middleware.ts` with `proxy.ts` at the root — that's where pipeline auth is enforced.
 
 **State & data.** Zustand owns client state (13 slices under `lib/stores/`: configuration, audio, debug, modal, …). TanStack Query owns server data (`lib/query/` provider + key factory). Supabase is accessed through three clients in `lib/supabase/`: browser, server, session (SSR), plus a service-role factory used only by pipeline routes.
 
@@ -110,7 +110,7 @@ This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16
 
 **Server-only import hazards.** `lib/classes/algorithm/TilingGenerator.ts` and all of `lib/classes/generator/*` are **intentionally not re-exported from `@/classes`** — they import `node:fs` or reference pre-Zustand store names. Import them directly from their specific files, and only in server-only contexts. A client component pulling them through the barrel will break the build.
 
-**Rendering primitives.** p5.js is wrapped by `lib/hooks/useP5.ts` (Strict-Mode safe) with domain variants `useVcCanvas`, `usePolygonsCanvas`. Chart.js goes through `react-chartjs-2`. (The `react-markdown` theory-rendering stack was removed with the `/theory` page, 2026-06; its npm deps linger in `package.json` until pruned.)
+**Rendering primitives.** p5.js is wrapped by `lib/hooks/useP5.ts` (Strict-Mode safe) with domain variants `useVcCanvas`, `usePolygonsCanvas`. Chart.js goes through `react-chartjs-2`. The `react-markdown` stack (remark-math/rehype-katex/rehype-raw) renders `/theory`, with custom markdown tags mapped to React components. The flat WebGL pipeline is shared: GLSL + `FlatCellRenderer` in `lib/render/flatTilingGL.ts`, interaction constants/math in `lib/render/viewControls.ts` — both `euclidean-canvas.tsx` (/play) and `interactive-tiling-preview-card.tsx` (/theory) draw and feel through them.
 
 **UI.** `components/ui/` is 14 primitives — Modal and Tabs via Radix, the rest hand-rolled. Domain components in `components/*.tsx`.
 
@@ -137,7 +137,9 @@ Cowork); do not edit those two folders.** All three are under git (`resources/` 
   Mutable, disposable, regenerable from the ledgers; overwrite freely. Never write history here.
 
 - The algorithm's prose description lives in the thesis (`../thesis/chapters/algorithm.tex`), not in
-  the app. Don't recreate an in-app theory page.
+  the app. Don't recreate an in-app write-up of the *method*. (The `/theory` page re-added 2026-07 is
+  different in kind: it teaches the mathematical background — the 11 uniform tilings — with interactive
+  previews, AL directive. Keep method prose out of it.)
 
 ## Migration history
 
