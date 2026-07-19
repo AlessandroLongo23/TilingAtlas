@@ -1,7 +1,9 @@
-// GLSL for the Islamic WebGL view (components/islamic-canvas.tsx). Draws the whole pooled A/B/C
-// arrangement mesh (lib/render/buildIslamicMesh.ts) in one non-instanced pass. The world→clip transform
-// is byte-identical to the flat renderer's FILL_VERT (lib/render/flatTilingGL.ts) — keep the two in step
-// so the WebGL fill registers exactly under p5's overlays and matches drawIslamicStarFill.
+// GLSL for the Islamic WebGL view (components/islamic-canvas.tsx). Draws the origin-cell A/B/C arrangement
+// mesh (lib/render/buildIslamicMesh.ts) INSTANCED across the viewport: the CPU builds one cell's faces,
+// the vertex shader replicates it by aInst = (i,j) lattice offset, so a slider rebuild costs one cell, not
+// the whole zoom. The world→clip transform (after the aInst offset) is byte-identical to the flat
+// renderer's FILL_VERT (lib/render/flatTilingGL.ts) — keep the two in step so the WebGL fill registers
+// exactly under p5's overlays and matches drawIslamicStarFill.
 
 // Fill: per-vertex hue + class. Class 0 = A → the tile hue (rotated by the global hue ring, same s/b as
 // every other fill path). Class 1 = B, class 2 = C → the two shared background colours (uniforms, so
@@ -10,16 +12,20 @@ export const ISLAMIC_FILL_VERT = `#version 300 es
 in vec2 aPos;
 in float aHue;
 in float aClass;
+in vec2 aInst;          // per-instance lattice cell (i,j)
 uniform vec2 uOffset;   // wrapped pan, centred CSS px, y down
 uniform float uZoom;
 uniform float uRot;
+uniform vec2 uV1;
+uniform vec2 uV2;
 uniform vec2 uHalf;     // canvas CSS half-size (w/2, h/2)
 out float vHue;
 out float vClass;
 void main() {
+	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
 	float c = cos(uRot), s = sin(uRot);
-	float sx = uOffset.x + uZoom * (c * aPos.x + s * aPos.y);
-	float sy = uOffset.y + uZoom * (s * aPos.x - c * aPos.y);
+	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
+	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
 	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
 	vHue = aHue;
 	vClass = aClass;
@@ -49,20 +55,25 @@ void main() {
 `;
 
 // Stroke: butt quads pushed by half the screen stroke width along the (screen-space) edge normal, so the
-// border stays a constant CSS width at any zoom. Same math as flatTilingGL's STROKE_VERT, sans instancing.
+// border stays a constant CSS width at any zoom. Same math as flatTilingGL's STROKE_VERT, instanced by
+// aInst like the fill above (the normal is a direction, so aInst does not shift it).
 export const ISLAMIC_STROKE_VERT = `#version 300 es
 in vec2 aPos;
 in vec2 aNorm;
 in float aSide;
+in vec2 aInst;
 uniform vec2 uOffset;
 uniform float uZoom;
 uniform float uRot;
+uniform vec2 uV1;
+uniform vec2 uV2;
 uniform vec2 uHalf;
 uniform float uHalfStrokePx;
 void main() {
+	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
 	float c = cos(uRot), s = sin(uRot);
-	float sx = uOffset.x + uZoom * (c * aPos.x + s * aPos.y);
-	float sy = uOffset.y + uZoom * (s * aPos.x - c * aPos.y);
+	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
+	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
 	float nsx = uZoom * (c * aNorm.x + s * aNorm.y);
 	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
 	float nl = length(vec2(nsx, nsy));
