@@ -1,11 +1,12 @@
 import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
 import type { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
-import { islamicAnglesForHalfways, islamicTipsAngleFromSlider } from '@/utils/islamicNoise';
+import { islamicAnglesForHalfways, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
 import { WAVE_MIN_SCALE } from "@/lib/utils/tilingTransition";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
-import { extractFaces, colorFacesByMarkerThenTile, type TileLite, type TileColoredFace, type Marker, type Segment } from "@/utils/islamicArrangement";
+import { extractFaces, colorFacesAbc, type AbcFace, type Marker, type Segment, type Face } from "@/utils/islamicArrangement";
+import { buildIslamicInterlace, twoColorFaces, type Band } from "@/utils/islamicInterlace";
 import { orbitColor } from "@/lib/utils/orbitColors";
 
 export type VCWithOccurrences = { vc: VertexConfiguration; occurrences: number };
@@ -36,7 +37,12 @@ export class Tiling {
 
     // Cached Islamic star-fill: the colored arrangement cells + the raw construction segments (for the
     // border lines), recomputed only when the tiling's node set or the angle changes, not per frame.
-    private islamicFillCache?: { nodesRef: Polygon[]; theta: number; colored: TileColoredFace[]; segments: Segment[] };
+    private islamicFillCache?: { nodesRef: Polygon[]; theta: number; offset: number; count: number; abc: AbcFace[]; degenerate: boolean; segments: Segment[] };
+    // Cached interlace bands (woven over/under strips). Geometry depends only on the node set, angle,
+    // band width, gap and chirality; the strap colour is applied at draw time, so it is not a cache key.
+    private islamicInterlaceCache?: { nodesRef: Polygon[]; theta: number; offset: number; count: number; bandWidth: number; chirality: boolean; weave: boolean; bands: Band[] };
+    // Cached checkerboard: the 2-coloured arrangement faces + the construction segments (for borders).
+    private islamicCheckerCache?: { nodesRef: Polygon[]; theta: number; offset: number; count: number; faces: Face[]; colors: number[]; segments: Segment[] };
 
     constructor() {
         this.nodes = [];
@@ -65,6 +71,8 @@ export class Tiling {
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
         const lineWidthValue = cfg.lineWidth;
+        // Global hue rotation (the sidebar hue ring) — applied to every TILE FILL below, read once per draw.
+        const hueOff = cfg.hueOffset || 0;
         if (lineWidthValue <= 0) {
             ctx.noStroke();
         } else {
@@ -84,23 +92,29 @@ export class Tiling {
                     ? Vector.distance(node.centroid, node.halfways[0]) * s
                     : 0;
                 if (radius > 0) {
-                    ctx.fill(node.hue, 40, 100 / opacity, 1.0 * opacity);
+                    ctx.fill((node.hue + hueOff) % 360, 40, 100 / opacity, 1.0 * opacity);
                     ctx.ellipse(node.centroid.x, node.centroid.y, radius * 2, radius * 2);
                 }
             }
         } else if (cfg.isIslamic) {
-            if (this.nodes.some((n) => n.isStar)) {
-                // Star tiling: fill each arrangement cell with its source tile's colour, then the black
-                // construction lines as cell borders. No base underneath (redundant and costly). Cells
-                // span tiles (dent triangles form where a star's rays meet a neighbour's at the shared
-                // edge), so the fill works over the whole tiling's arrangement, not per tile — hence the
-                // whole-tiling arrangement is (deliberately) NOT viewport-culled.
-                this.drawIslamicStarFill(ctx, opacity);
-            } else {
-                // Dentless tiling: keep the previous regular Islamic fill.
-                this.drawIslamicVertexRegions(ctx, opacity);
-                for (const node of this.nodes) node.showIslamicFilled(ctx, opacity);
-            }
+            // Every Islamic tiling (star and regular alike) goes through the shape-agnostic ray
+            // construction: fill each arrangement cell with its source tile's colour, then the black
+            // construction lines as cell borders. This is the one path the Edge-Offset and Ray-Stops-At
+            // sliders feed. Cells span tiles (dent triangles form where a star's rays meet a neighbour's
+            // at the shared edge), so the fill works over the whole tiling's arrangement, not per tile —
+            // hence the whole-tiling arrangement is (deliberately) NOT viewport-culled.
+            // Decoration style. 'interlace'/'outline' weave the construction lines into straps (they need
+            // a clean 4-valent crossing per edge midpoint, so they ignore the edge-offset / ray-stops
+            // sliders); 'checkerboard' two-colours the arrangement faces; 'plain' is the classic fill.
+            // While the angle is animating, the strap styles fall back to plain (no per-frame rebuild).
+            const style = cfg.islamicAnimate ? "plain" : cfg.islamicStyle;
+            if (style === "interlace") this.drawIslamicInterlace(ctx, opacity, true, false);
+            else if (style === "outline") this.drawIslamicInterlace(ctx, opacity, false, false);
+            else if (style === "emboss") this.drawIslamicInterlace(ctx, opacity, true, true);
+            else if (style === "checkerboard") this.drawIslamicCheckerboard(ctx, opacity);
+            // skipFill ⇒ the WebGL IslamicCanvas owns the plain A/B/C fill (isIslamicShaderActive in
+            // canvas.tsx); p5 draws nothing so the two never double-paint. Decorative styles are unaffected.
+            else if (!skipFill) this.drawIslamicStarFill(ctx, opacity);
         } else {
             // Hot path: inline fill + shape, reusing the stroke set once above. No push/pop, no per-tile
             // getState, no DOM read — the fill (hue) is the only thing that varies per tile.
@@ -119,7 +133,7 @@ export class Tiling {
                     // and is dropped, so it doesn't linger as a dot of stroke.
                     const s = scaleOf ? scaleOf(node.centroid) : 1;
                     if (s < WAVE_MIN_SCALE) continue;
-                    if (showFill) ctx.fill(node.hue, 40, fillV, fillA);
+                    if (showFill) ctx.fill((node.hue + hueOff) % 360, 40, fillV, fillA);
                     else ctx.noFill();
                     const vs = node.vertices;
                     ctx.beginShape();
@@ -248,37 +262,50 @@ export class Tiling {
         }
     }
 
-    /** Star-tiling Islamic fill: color each cell of the whole-tiling construction arrangement by the
-     *  source tile that contains it, then draw the construction lines as black cell borders. Cached
-     *  per (node set, angle) — a static view just redraws the cache, so panning stays smooth. */
+    /** Star-tiling Islamic fill (A/B/C): the star-body cells (A) keep their source tile's hue; the two
+     *  background classes take the shared Fill Color B (side fields) and C (the edge-centre diamonds that
+     *  open once Edge Offset > 0). See colorFacesAbc — the split is a bipartite 2-colouring of the
+     *  background, so at Edge Offset 0 it degrades to A + B. Then the construction lines as black cell
+     *  borders. Cached per (node set, angle, offset, count); B/C are applied at draw time, so recolouring
+     *  never rebuilds geometry (like the global hue offset). A static view just redraws the cache. */
     drawIslamicStarFill = (ctx, opacity: number = 1): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
+        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100; // 0–1 fraction of half-edge
+        const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
         const cache = this.islamicFillCache;
         // Animated mode re-picks the per-edge angle every frame, so it can't be cached.
-        const fresh = cache && !cfg.islamicAnimate && cache.nodesRef === this.nodes && cache.theta === theta;
+        const fresh = cache && !cfg.islamicAnimate && cache.nodesRef === this.nodes
+            && cache.theta === theta && cache.offset === offset && cache.count === count;
         if (!fresh) {
-            const angle = (theta * Math.PI) / 180;
+            const angle = islamicNormalAngleFromSlider(cfg.islamicAngle);
             const segments: Segment[] = [];
-            const tiles: TileLite[] = [];
             const markers: Marker[] = [];
             for (const node of this.nodes) {
                 if (!node.vertices || !node.halfways) continue;
                 const a: number | number[] = cfg.islamicAnimate ? islamicAnglesForHalfways(ctx, node.halfways) : angle;
-                for (const s of node.calculateIslamicSegments(a)) segments.push(s);
-                tiles.push({ vertices: node.vertices, hue: node.hue });
+                for (const s of node.calculateIslamicSegments(a, offset, count)) segments.push(s);
                 for (const m of node.islamicMarkers()) markers.push(m);
             }
-            const colored = colorFacesByMarkerThenTile(extractFaces(segments), markers, tiles);
-            this.islamicFillCache = { nodesRef: this.nodes, theta, colored, segments };
+            // Transversal crossings appear once offset > 0 (converging split rays cross their sibling)
+            // or count > 1 (rays pass through each other), so the arrangement must split them; at the
+            // classic offset 0 / count 1 rays only stop on contact, so the cheaper path stays.
+            const { faces: abc, degenerate } = colorFacesAbc(extractFaces(segments, offset > 0 || count > 1), markers);
+            this.islamicFillCache = { nodesRef: this.nodes, theta, offset, count, abc, degenerate, segments };
         }
-        const { colored, segments } = this.islamicFillCache!;
+        const { abc, degenerate, segments } = this.islamicFillCache!;
 
-        // Colored cells, using the same fill params as the plain tiling so 90° is pixel-identical.
+        // A cells use the same fill params as the plain tiling so 90° is pixel-identical; B/C are the two
+        // shared background colours (CSS hex, drawn as-is like the checkerboard). When the split is
+        // degenerate (A in both parities), everything non-A falls back to B — a clean two-tone.
+        const hueOff = cfg.hueOffset || 0;
+        const colorB = cfg.islamicFillColorB, colorC = cfg.islamicFillColorC;
         ctx.push();
         ctx.noStroke();
-        for (const { face, hue } of colored) {
-            ctx.fill(hue, 40, 100 / opacity, 1.0 * opacity);
+        for (const { face, klass, hue } of abc) {
+            if (klass === "A") ctx.fill((hue + hueOff) % 360, 40, 100 / opacity, 1.0 * opacity);
+            else if (klass === "C" && !degenerate) ctx.fill(colorC);
+            else ctx.fill(colorB);
             ctx.beginShape();
             for (const v of face.vertices) ctx.vertex(v.x, v.y);
             ctx.endShape(ctx.CLOSE);
@@ -292,6 +319,136 @@ export class Tiling {
             ctx.noFill();
             ctx.strokeWeight(lw / cfg.controls.zoom);
             ctx.stroke(0, 0, 0);
+            for (const [from, to] of segments) ctx.line(from.x, from.y, to.x, to.y);
+            ctx.pop();
+        }
+    }
+
+    /** Interlace style: weave the construction lines into over/under straps. Same pooled segments as the
+     *  star fill (with a clean single crossing per edge midpoint — offset/count forced off), turned into
+     *  woven straps by buildIslamicInterlace, cached per (node set, angle, width, chirality). Rendered as
+     *  a solid fill (each strap tucks fully under at crossings) plus a border stroke whose breaks along
+     *  the over strand's edge are what read as over/under. */
+    drawIslamicInterlace = (ctx, opacity: number = 1, weave: boolean = true, emboss: boolean = false): void => {
+        const cfg = useConfiguration.getState();
+        const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
+        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+        const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
+        const bandWidth = cfg.islamicBandWidth;
+        const chirality = cfg.islamicChirality;
+        const cache = this.islamicInterlaceCache;
+        const fresh = cache && cache.nodesRef === this.nodes && cache.theta === theta
+            && cache.offset === offset && cache.count === count
+            && cache.bandWidth === bandWidth && cache.chirality === chirality && cache.weave === weave;
+        if (!fresh) {
+            const angle = islamicNormalAngleFromSlider(cfg.islamicAngle);
+            const segments: Segment[] = [];
+            let lenSum = 0, lenCount = 0;
+            for (const node of this.nodes) {
+                if (!node.vertices || !node.halfways) continue;
+                for (const s of node.calculateIslamicSegments(angle, offset, count)) {
+                    segments.push(s);
+                    lenSum += Vector.distance(s[0], s[1]);
+                    lenCount++;
+                }
+            }
+            const median = lenCount ? lenSum / lenCount : 1; // mean segment length, the band-width scale
+            const width = Math.max(1e-6, bandWidth * median);
+            // Off-midpoint contact (offset > 0) or pass-through rays (count > 1) put real crossings mid-
+            // segment, so the weave graph must split them; the clean construction (offset 0, count 1) needn't.
+            const splitCrossings = offset > 0 || count > 1;
+            const { bands } = buildIslamicInterlace(segments, { width, startUnder: chirality, squareCap: true, weave, splitCrossings });
+            this.islamicInterlaceCache = { nodesRef: this.nodes, theta, offset, count, bandWidth, chirality, weave, bands };
+        }
+        const { bands } = this.islamicInterlaceCache!;
+        const zoom = cfg.controls.zoom;
+
+        // Fill pass: solid straps. They overlap at crossings (the under one tucks beneath), but a single
+        // fill colour makes the overlap invisible — the border pass is what shows the weave. Emboss uses a
+        // mid tone so the lit/shadowed edges read as a raised bevel.
+        ctx.push();
+        ctx.noStroke();
+        if (emboss) ctx.fill(40, 28, 74, opacity); else ctx.fill(40, 12, 96, opacity);
+        for (const b of bands) {
+            ctx.beginShape();
+            for (const v of b.fill) ctx.vertex(v.x, v.y);
+            ctx.endShape(ctx.CLOSE);
+        }
+        ctx.pop();
+
+        // Border pass: stroke each strap's edges. An under strand's edges stop on the over strand's edge,
+        // so the over strand reads as continuous and the under strand as passing beneath it.
+        const bw = cfg.islamicOutlineWidth;
+        if (emboss) {
+            // Light each edge by its outward normal: the light-facing side highlights, the away side
+            // shadows, so each strap reads as a raised ribbon (Kaplan's emboss).
+            const light = { x: -0.6, y: 0.8 }; // fixed world light, upper-left
+            ctx.push();
+            ctx.noFill();
+            ctx.strokeCap(ctx.ROUND);
+            ctx.strokeWeight(Math.max(bw, 1.5) / zoom);
+            for (const b of bands) for (const s of b.outline) {
+                if (s.n.x * light.x + s.n.y * light.y > 0) ctx.stroke(45, 10, 100, opacity); // highlight
+                else ctx.stroke(35, 45, 26, opacity);                                        // shadow
+                ctx.line(s.a.x, s.a.y, s.b.x, s.b.y);
+            }
+            ctx.pop();
+        } else if (bw > 0) {
+            ctx.push();
+            ctx.noFill();
+            ctx.strokeCap(ctx.ROUND);
+            ctx.strokeWeight(bw / zoom);
+            ctx.stroke(28, 22, 14, opacity); // dark warm border
+            for (const b of bands) for (const s of b.outline) ctx.line(s.a.x, s.a.y, s.b.x, s.b.y);
+            ctx.pop();
+        }
+    }
+
+    /** Checkerboard style: two-colour the arrangement faces (the zellij field). Reuses the star fill's
+     *  pooled segments and face extraction (so it respects the edge-offset / ray-stops sliders), a
+     *  bipartite 2-colouring, then the construction lines as borders. Cached per (node set, angle,
+     *  offset, count). */
+    drawIslamicCheckerboard = (ctx, opacity: number = 1): void => {
+        const cfg = useConfiguration.getState();
+        const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
+        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+        const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
+        const cache = this.islamicCheckerCache;
+        const fresh = cache && cache.nodesRef === this.nodes && cache.theta === theta
+            && cache.offset === offset && cache.count === count;
+        if (!fresh) {
+            const angle = islamicNormalAngleFromSlider(cfg.islamicAngle);
+            const segments: Segment[] = [];
+            for (const node of this.nodes) {
+                if (!node.vertices || !node.halfways) continue;
+                for (const s of node.calculateIslamicSegments(angle, offset, count)) segments.push(s);
+            }
+            const faces = extractFaces(segments, offset > 0 || count > 1);
+            const colors = twoColorFaces(faces);
+            this.islamicCheckerCache = { nodesRef: this.nodes, theta, offset, count, faces, colors, segments };
+        }
+        const { faces, colors, segments } = this.islamicCheckerCache!;
+        const colorA = cfg.islamicCheckerColorA;
+        const colorB = cfg.islamicCheckerColorB;
+
+        // User-chosen two-colour field (zellij). p5 parses the CSS hex strings directly (independent of
+        // the HSB colour mode). Islamic swaps are instant, so opacity is 1 here and need not tint the hex.
+        ctx.push();
+        ctx.noStroke();
+        for (let i = 0; i < faces.length; i++) {
+            ctx.fill(colors[i] === 0 ? colorA : colorB);
+            ctx.beginShape();
+            for (const v of faces[i].vertices) ctx.vertex(v.x, v.y);
+            ctx.endShape(ctx.CLOSE);
+        }
+        ctx.pop();
+
+        const lw = cfg.lineWidth;
+        if (lw > 0) {
+            ctx.push();
+            ctx.noFill();
+            ctx.strokeWeight(lw / cfg.controls.zoom);
+            ctx.stroke(0, 0, 0, opacity);
             for (const [from, to] of segments) ctx.line(from.x, from.y, to.x, to.y);
             ctx.pop();
         }
@@ -468,7 +625,7 @@ export class Tiling {
             const armsArr = ordered.map(armsOf);
             const hue = vertexFigureHue(ordered.map(c => c.tile.n));
 
-            ctx.fill(hue, 40, 100 / opacity, 1.0 * opacity);
+            ctx.fill((hue + (cfg.hueOffset || 0)) % 360, 40, 100 / opacity, 1.0 * opacity);
             ctx.beginShape();
             for (let i = 0; i < ordered.length; i++) {
                 ctx.vertex(armsArr[i].cwArm.x, armsArr[i].cwArm.y);
