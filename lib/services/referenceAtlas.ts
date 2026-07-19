@@ -142,7 +142,7 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	polyomino: { short: "Polyominoes", long: "Polyominoes (Tetris pieces)" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
 	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic {p,q} tilings (Poincaré disk)" },
-	spherical: { short: "Spherical", long: "Spherical {p,q} tilings (Platonic solids)" },
+	spherical: { short: "Spherical", long: "Spherical tilings (Platonic, Archimedean & Johnson solids)" },
 };
 
 // The geometry axis — the /play catalogue's top-level split (Euclidean / hyperbolic / spherical), one

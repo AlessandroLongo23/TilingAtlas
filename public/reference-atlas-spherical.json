@@ -1,205 +1,992 @@
 [
-	{
-		"id": "sph-3-3",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.3.3",
-		"schlafli": [3, 3],
-		"spherical": { "p": 3, "q": 3, "solid": "tetrahedron" },
-		"geometry": "spherical",
-		"discoverer": "Pythagoreans",
-		"note": "Tetrahedron {3,3}: 4 triangular faces, 3 at each vertex. The self-dual Platonic solid; the finite (1/p+1/q>1/2) counterpart of a regular {p,q} tiling.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "sph-4-3",
-		"source": "spherical",
-		"k": 1,
-		"family": "4.4.4",
-		"schlafli": [4, 3],
-		"spherical": { "p": 4, "q": 3, "solid": "cube" },
-		"geometry": "spherical",
-		"discoverer": "Pythagoreans",
-		"note": "Cube {4,3}: 6 square faces, 3 at each vertex. Dual of the octahedron.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "sph-3-4",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.3.3.3",
-		"schlafli": [3, 4],
-		"spherical": { "p": 3, "q": 4, "solid": "octahedron" },
-		"geometry": "spherical",
-		"discoverer": "Theaetetus",
-		"note": "Octahedron {3,4}: 8 triangular faces, 4 at each vertex. Dual of the cube.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "sph-5-3",
-		"source": "spherical",
-		"k": 1,
-		"family": "5.5.5",
-		"schlafli": [5, 3],
-		"spherical": { "p": 5, "q": 3, "solid": "dodecahedron" },
-		"geometry": "spherical",
-		"discoverer": "Pythagoreans",
-		"note": "Dodecahedron {5,3}: 12 pentagonal faces, 3 at each vertex. Dual of the icosahedron.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "sph-3-5",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.3.3.3.3",
-		"schlafli": [3, 5],
-		"spherical": { "p": 3, "q": 5, "solid": "icosahedron" },
-		"geometry": "spherical",
-		"discoverer": "Theaetetus",
-		"note": "Icosahedron {3,5}: 20 triangular faces, 5 at each vertex. Dual of the dodecahedron.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-truncated-tetrahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.6.6",
-		"spherical": { "solid": "truncated-tetrahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Truncated tetrahedron 3.6.6: 4 triangles + 4 hexagons. The tetrahedron with its corners cut to one-third depth.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-cuboctahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.4.3.4",
-		"spherical": { "solid": "cuboctahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Cuboctahedron 3.4.3.4: 8 triangles + 6 squares. The rectification of the cube (and octahedron); its vertices are the cube's edge midpoints.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-truncated-cube",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.8.8",
-		"spherical": { "solid": "truncated-cube" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Truncated cube 3.8.8: 8 triangles + 6 octagons. The cube with its 8 corners cut off.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-truncated-octahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "4.6.6",
-		"spherical": { "solid": "truncated-octahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Truncated octahedron 4.6.6: 6 squares + 8 hexagons. The only Archimedean solid that also tiles 3-space by translation (the permutohedron).",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-rhombicuboctahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.4.4.4",
-		"spherical": { "solid": "rhombicuboctahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Rhombicuboctahedron 3.4.4.4: 8 triangles + 18 squares. The cube's faces pushed out, the gaps filled with squares (cantellation).",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-truncated-cuboctahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "4.6.8",
-		"spherical": { "solid": "truncated-cuboctahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Truncated cuboctahedron 4.6.8: 12 squares + 8 hexagons + 6 octagons. Also called the great rhombicuboctahedron.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-snub-cube",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.3.3.3.4",
-		"spherical": { "solid": "snub-cube" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Snub cube 3.3.3.3.4: 32 triangles + 6 squares. A chiral solid — shown here in one of its two mirror-image forms.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-icosidodecahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.5.3.5",
-		"spherical": { "solid": "icosidodecahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Icosidodecahedron 3.5.3.5: 20 triangles + 12 pentagons. The rectification of the icosahedron (and dodecahedron).",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-truncated-dodecahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.10.10",
-		"spherical": { "solid": "truncated-dodecahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Truncated dodecahedron 3.10.10: 20 triangles + 12 decagons. The dodecahedron with its corners cut off.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-truncated-icosahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "5.6.6",
-		"spherical": { "solid": "truncated-icosahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Truncated icosahedron 5.6.6: 12 pentagons + 20 hexagons. The soccer-ball / buckyball shape.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-rhombicosidodecahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.4.5.4",
-		"spherical": { "solid": "rhombicosidodecahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Rhombicosidodecahedron 3.4.5.4: 20 triangles + 30 squares + 12 pentagons. The cantellation of the dodecahedron.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-truncated-icosidodecahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "4.6.10",
-		"spherical": { "solid": "truncated-icosidodecahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Truncated icosidodecahedron 4.6.10: 30 squares + 20 hexagons + 12 decagons. The largest Archimedean solid (120 vertices); also called the great rhombicosidodecahedron.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	},
-	{
-		"id": "arch-snub-dodecahedron",
-		"source": "spherical",
-		"k": 1,
-		"family": "3.3.3.3.5",
-		"spherical": { "solid": "snub-dodecahedron" },
-		"geometry": "spherical",
-		"discoverer": "Archimedes",
-		"note": "Snub dodecahedron 3.3.3.3.5: 80 triangles + 12 pentagons. A chiral solid — shown here in one of its two mirror-image forms.",
-		"renderCell": { "cellPolygons": [{ "n": 4, "vertices": [[0, 0], [1, 0], [1, 1], [0, 1]], "hue": 200 }], "basis": [[1, 0], [0, 1]] }
-	}
+ {
+  "id": "sph-3-3",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3",
+  "schlafli": [
+   3,
+   3
+  ],
+  "spherical": {
+   "p": 3,
+   "q": 3,
+   "solid": "tetrahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Pythagoreans",
+  "note": "Tetrahedron {3,3}: 4 triangular faces, 3 at each vertex. The self-dual Platonic solid; the finite (1/p+1/q>1/2) counterpart of a regular {p,q} tiling.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-4-3",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.4.4",
+  "schlafli": [
+   4,
+   3
+  ],
+  "spherical": {
+   "p": 4,
+   "q": 3,
+   "solid": "cube"
+  },
+  "geometry": "spherical",
+  "discoverer": "Pythagoreans",
+  "note": "Cube {4,3}: 6 square faces, 3 at each vertex. Dual of the octahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-3-4",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.3",
+  "schlafli": [
+   3,
+   4
+  ],
+  "spherical": {
+   "p": 3,
+   "q": 4,
+   "solid": "octahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Theaetetus",
+  "note": "Octahedron {3,4}: 8 triangular faces, 4 at each vertex. Dual of the cube.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-5-3",
+  "source": "spherical",
+  "k": 1,
+  "family": "5.5.5",
+  "schlafli": [
+   5,
+   3
+  ],
+  "spherical": {
+   "p": 5,
+   "q": 3,
+   "solid": "dodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Pythagoreans",
+  "note": "Dodecahedron {5,3}: 12 pentagonal faces, 3 at each vertex. Dual of the icosahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-3-5",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.3.3",
+  "schlafli": [
+   3,
+   5
+  ],
+  "spherical": {
+   "p": 3,
+   "q": 5,
+   "solid": "icosahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Theaetetus",
+  "note": "Icosahedron {3,5}: 20 triangular faces, 5 at each vertex. Dual of the dodecahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-truncated-tetrahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.6.6",
+  "spherical": {
+   "solid": "truncated-tetrahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Truncated tetrahedron 3.6.6: 4 triangles + 4 hexagons. The tetrahedron with its corners cut to one-third depth.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-cuboctahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.4.3.4",
+  "spherical": {
+   "solid": "cuboctahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Cuboctahedron 3.4.3.4: 8 triangles + 6 squares. The rectification of the cube (and octahedron); its vertices are the cube's edge midpoints.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-truncated-cube",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.8.8",
+  "spherical": {
+   "solid": "truncated-cube"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Truncated cube 3.8.8: 8 triangles + 6 octagons. The cube with its 8 corners cut off.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-truncated-octahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.6.6",
+  "spherical": {
+   "solid": "truncated-octahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Truncated octahedron 4.6.6: 6 squares + 8 hexagons. The only Archimedean solid that also tiles 3-space by translation (the permutohedron).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-rhombicuboctahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.4.4.4",
+  "spherical": {
+   "solid": "rhombicuboctahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Rhombicuboctahedron 3.4.4.4: 8 triangles + 18 squares. The cube's faces pushed out, the gaps filled with squares (cantellation).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-truncated-cuboctahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.6.8",
+  "spherical": {
+   "solid": "truncated-cuboctahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Truncated cuboctahedron 4.6.8: 12 squares + 8 hexagons + 6 octagons. Also called the great rhombicuboctahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-snub-cube",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.3.4",
+  "spherical": {
+   "solid": "snub-cube"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Snub cube 3.3.3.3.4: 32 triangles + 6 squares. A chiral solid \u2014 shown here in one of its two mirror-image forms.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-icosidodecahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.5.3.5",
+  "spherical": {
+   "solid": "icosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Icosidodecahedron 3.5.3.5: 20 triangles + 12 pentagons. The rectification of the icosahedron (and dodecahedron).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-truncated-dodecahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.10.10",
+  "spherical": {
+   "solid": "truncated-dodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Truncated dodecahedron 3.10.10: 20 triangles + 12 decagons. The dodecahedron with its corners cut off.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-truncated-icosahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "5.6.6",
+  "spherical": {
+   "solid": "truncated-icosahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Truncated icosahedron 5.6.6: 12 pentagons + 20 hexagons. The soccer-ball / buckyball shape.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-rhombicosidodecahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.4.5.4",
+  "spherical": {
+   "solid": "rhombicosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Rhombicosidodecahedron 3.4.5.4: 20 triangles + 30 squares + 12 pentagons. The cantellation of the dodecahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-truncated-icosidodecahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.6.10",
+  "spherical": {
+   "solid": "truncated-icosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Truncated icosidodecahedron 4.6.10: 30 squares + 20 hexagons + 12 decagons. The largest Archimedean solid (120 vertices); also called the great rhombicosidodecahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "arch-snub-dodecahedron",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.3.5",
+  "spherical": {
+   "solid": "snub-dodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Archimedes",
+  "note": "Snub dodecahedron 3.3.3.3.5: 80 triangles + 12 pentagons. A chiral solid \u2014 shown here in one of its two mirror-image forms.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-j27",
+  "source": "spherical",
+  "k": 2,
+  "family": "3.4.3.4 / 3.3.4.4",
+  "spherical": {
+   "solid": "triangular-orthobicupola"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Triangular orthobicupola (Johnson solid J27): 8 triangles + 6 squares, V12 E24 F14. The 2-orbit \u201cortho\u201d twin of the cuboctahedron \u2014 same face counts, but half its vertices are adjacent-square 3.3.4.4 (the cuboctahedron is all alternating 3.4.3.4). Developed by the \u010ctrn\u00e1ct engine at k=2.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-j37",
+  "source": "spherical",
+  "k": 2,
+  "family": "3.4.4.4 (two orbits)",
+  "spherical": {
+   "solid": "pseudo-rhombicuboctahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Miller / Askinuze; Johnson J37",
+  "note": "Pseudo-rhombicuboctahedron / elongated square gyrobicupola (Johnson solid J37): 8 triangles + 18 squares, V24 E48 F26. Every vertex is 3.4.4.4 yet it is not vertex-transitive \u2014 two orbits, one square cupola rotated 45\u00b0. The classic \u201clocally but not globally uniform\u201d polyhedron. Developed by the \u010ctrn\u00e1ct engine at k=2.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ }
 ]
