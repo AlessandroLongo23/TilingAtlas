@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
-import { buildCellGeom } from "@/lib/render/inversiveCellGeom";
-import { spiralSimilarity } from "@/lib/render/spiralMap";
+import { averageFill, buildCellGeom } from "@/lib/render/inversiveCellGeom";
+import { spiralSimilarity, wrapStripDrift } from "@/lib/render/spiralMap";
 import { evaluateParamCell, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -61,9 +61,10 @@ uniform sampler2D uMeta;    // RGBA32F, 2 texels/poly: [start,count,hue,0], [min
 uniform int uPolyCount;
 
 uniform float uStrokePx;
+uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); hsb2rgb wraps via mod
 uniform vec3 uSurface;
 uniform vec3 uLine;
-uniform vec3 uAvg;      // cell average fill; the unresolvable centre blends to this
+uniform vec3 uAvg;      // cell average fill (already hue-shifted CPU-side); the unresolvable centre blends to this
 uniform float uFeature; // median tile-edge length (world); the fade/blend track this, not the cell period
 
 out vec4 frag;
@@ -180,7 +181,7 @@ void main() {
 				}
 				// s=0.40, b=1.0 — the same HSB fill the raster paths use (Tiling.show, drawPolygons), now that
 				// they too paint opaque. Anything else here and the two views drift apart on colour.
-				if (inside) fill = hsb2rgb(hue / 360.0, 0.40, 1.0);
+				if (inside) fill = hsb2rgb((hue + uHueOffset) / 360.0, 0.40, 1.0);
 			}
 		}
 	}
@@ -229,7 +230,11 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 	const vertsTexRef = useRef<WebGLTexture | null>(null);
 	const metaTexRef = useRef<WebGLTexture | null>(null);
 	const uniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
-	const geomRef = useRef<{ minv: [number, number, number, number]; v1: [number, number]; v2: [number, number]; vertsW: number; polyCount: number; avg: [number, number, number]; feature: number } | null>(null);
+	const geomRef = useRef<{ minv: [number, number, number, number]; v1: [number, number]; v2: [number, number]; vertsW: number; polyCount: number; avg: [number, number, number]; hueAreas: Float32Array; feature: number } | null>(null);
+	// Hue-shifted uAvg, cached per (offset, geometry) — recomputed only when the ring or the cell changes.
+	const avgCacheRef = useRef<{ off: number; hueAreas: Float32Array; avg: [number, number, number] } | null>(null);
+	// Last render-loop timestamp for the velocity-pad drift integration (0 = no previous frame).
+	const lastTRef = useRef(0);
 	const sizeRef = useRef({ width, height });
 	sizeRef.current = { width, height };
 	// Latest paramCell for the render loop (read imperatively so the loop never re-subscribes), plus the
@@ -274,7 +279,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			"uRes", "uDpr", "uOffset", "uZoom", "uRot", "uMode", "uR", "uKinv",
 			"uSpiralDouble", "uSpiralK", "uSpiralV",
 			"uMinv", "uV1", "uV2", "uVerts", "uVertsW", "uMeta", "uPolyCount",
-			"uStrokePx", "uSurface", "uLine", "uAvg", "uFeature",
+			"uStrokePx", "uHueOffset", "uSurface", "uLine", "uAvg", "uFeature",
 		]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
@@ -312,7 +317,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 					if (built) {
 						uploadFloatTex(g, vertsTexRef.current, built.verts, built.vertsW, built.vertsH);
 						uploadFloatTex(g, metaTexRef.current, built.meta, built.polyCount * 2, 1);
-						geomRef.current = { minv: built.minv, v1: built.v1, v2: built.v2, vertsW: built.vertsW, polyCount: built.polyCount, avg: built.avg, feature: built.feature };
+						geomRef.current = { minv: built.minv, v1: built.v1, v2: built.v2, vertsW: built.vertsW, polyCount: built.polyCount, avg: built.avg, hueAreas: built.hueAreas, feature: built.feature };
 					}
 				}
 			}
@@ -344,9 +349,27 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 				// rotation = spin. Rebuilt each frame — a tiny CPU calc over live controls.
 				const spiral = spiralSimilarity(cfg.spiralArmA, cfg.spiralArmB, geom.v1, geom.v2);
 				const stripSc = (2 * Math.PI) / Math.max(0.5 * Math.min(w, h), 1);
+				// Velocity pad: integrate the strip-space drift (dt clamped so a backgrounded tab doesn't
+				// jump on return), then wrap modulo the strip lattice — an exact world-lattice translation,
+				// invisible — so an animation left running never grows V into float32 jitter in merc − V.
+				// The drift object is store state mutated in place (the `controls` pattern), surviving
+				// remounts. See docs/superpowers/specs/2026-07-16-spiral-velocity-pad-design.md.
+				const now = performance.now();
+				const dt = lastTRef.current > 0 ? Math.min((now - lastTRef.current) / 1000, 0.05) : 0;
+				lastTRef.current = now;
+				const vel = cfg.spiralVel;
+				const drift = cfg.spiralDrift;
+				if (cfg.inversiveMode === "spiral" && (vel.x !== 0 || vel.y !== 0)) {
+					const [wx, wy] = wrapStripDrift(
+						[drift.x + vel.x * dt, drift.y + vel.y * dt],
+						spiral.k, geom.v1, geom.v2,
+					);
+					drift.x = wx;
+					drift.y = wy;
+				}
 				const spiralV: [number, number] = [
-					ctrl.offset.x * stripSc - Math.log(Math.max(ctrl.zoom, 1) / 50),
-					-ctrl.offset.y * stripSc - ((ctrl.rotation || 0) * Math.PI) / 180,
+					ctrl.offset.x * stripSc - Math.log(Math.max(ctrl.zoom, 1) / 50) + drift.x,
+					-ctrl.offset.y * stripSc - ((ctrl.rotation || 0) * Math.PI) / 180 + drift.y,
 				];
 
 				const U = uniformsRef.current;
@@ -369,9 +392,21 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 			// Stroke half-width as a fraction of the tile edge (uStrokePx * uFeature in the shader). The
 			// "Line stroke" slider scales it; 0 → no strokes.
 			g.uniform1f(U.uStrokePx, cfg.lineWidth * 0.028);
+			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
 			g.uniform3f(U.uSurface, dark ? 0.08 : 0.96, dark ? 0.09 : 0.96, dark ? 0.11 : 0.97);
 			g.uniform3f(U.uLine, 0.05, 0.05, 0.07);
-			g.uniform3f(U.uAvg, geom.avg[0], geom.avg[1], geom.avg[2]);
+			// uAvg must be averaged AFTER the hue rotation (rotating the averaged RGB would be wrong);
+			// cached per (offset, cell) so the per-frame cost is two comparisons while the ring is idle.
+			let avg = geom.avg;
+			if (cfg.hueOffset) {
+				const cache = avgCacheRef.current;
+				if (cache && cache.off === cfg.hueOffset && cache.hueAreas === geom.hueAreas) avg = cache.avg;
+				else {
+					avg = averageFill(geom.hueAreas, cfg.hueOffset);
+					avgCacheRef.current = { off: cfg.hueOffset, hueAreas: geom.hueAreas, avg };
+				}
+			}
+			g.uniform3f(U.uAvg, avg[0], avg[1], avg[2]);
 			g.uniform1f(U.uFeature, geom.feature);
 
 			g.activeTexture(g.TEXTURE0);
@@ -414,7 +449,7 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 		}
 		uploadFloatTex(gl, vTex, geom.verts, geom.vertsW, geom.vertsH);
 		uploadFloatTex(gl, mTex, geom.meta, geom.polyCount * 2, 1);
-		geomRef.current = { minv: geom.minv, v1: geom.v1, v2: geom.v2, vertsW: geom.vertsW, polyCount: geom.polyCount, avg: geom.avg, feature: geom.feature };
+		geomRef.current = { minv: geom.minv, v1: geom.v1, v2: geom.v2, vertsW: geom.vertsW, polyCount: geom.polyCount, avg: geom.avg, hueAreas: geom.hueAreas, feature: geom.feature };
 	}, [translationalCellId, translationalCell, paramCell]);
 
 	return (

@@ -55,3 +55,38 @@ export function spiralSimilarity(
 		arms: gcd(ai, bi) || 1,
 	};
 }
+
+/**
+ * Reduce a strip-space drift (the velocity pad's integrated V offset) modulo the strip lattice.
+ *
+ * The world lattice (v1, v2) pulls back through world = K·(merc − V) to the strip lattice
+ * (v1/K, v2/K): shifting V by an integer combination of those shifts world by the SAME integer
+ * combination of (v1, v2) — an exact lattice translation, invisible. Wrapping every frame keeps the
+ * drift bounded within one strip cell, so an animation left running never grows V into float32
+ * jitter in the shader's merc − V.
+ *
+ * A singular strip basis (degenerate K or collinear v1, v2) returns the drift unchanged.
+ */
+export function wrapStripDrift(
+	drift: [number, number],
+	k: [number, number],
+	v1: [number, number],
+	v2: [number, number],
+): [number, number] {
+	// u = v/K (complex division): the world basis expressed in strip space.
+	const d = k[0] * k[0] + k[1] * k[1];
+	if (d < 1e-18) return drift;
+	const u1: [number, number] = [(v1[0] * k[0] + v1[1] * k[1]) / d, (v1[1] * k[0] - v1[0] * k[1]) / d];
+	const u2: [number, number] = [(v2[0] * k[0] + v2[1] * k[1]) / d, (v2[1] * k[0] - v2[0] * k[1]) / d];
+
+	const det = u1[0] * u2[1] - u2[0] * u1[1];
+	if (Math.abs(det) < 1e-12) return drift;
+
+	// drift = a·u1 + b·u2; subtract the nearest integer combination.
+	const a = (drift[0] * u2[1] - u2[0] * drift[1]) / det;
+	const b = (u1[0] * drift[1] - drift[0] * u1[1]) / det;
+	const ra = Math.round(a);
+	const rb = Math.round(b);
+	if (ra === 0 && rb === 0) return drift;
+	return [drift[0] - ra * u1[0] - rb * u2[0], drift[1] - ra * u1[1] - rb * u2[1]];
+}
