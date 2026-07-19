@@ -1,0 +1,17 @@
+2D Bravais-lattice diagrams
+===========================
+
+Files: oblique.svg, rectangular.svg, rhombic.svg, square.svg, hexagonal.svg
+
+Author:  Officer781 (Wikimedia Commons)
+License: CC BY-SA 4.0 — https://creativecommons.org/licenses/by-sa/4.0
+Source:  Wikimedia Commons, "Bravais lattice" article (2-D lattice table)
+         https://commons.wikimedia.org/wiki/File:2d_mp.svg
+         https://commons.wikimedia.org/wiki/File:2d_op_rectangular.svg
+         https://commons.wikimedia.org/wiki/File:2d_oc_rectangular.svg
+         https://commons.wikimedia.org/wiki/File:2d_tp.svg
+         https://commons.wikimedia.org/wiki/File:2d_hp.svg
+
+The files are used unmodified. Renamed locally to the app's LatticeShape values
+(2d_mp→oblique, 2d_op_rectangular→rectangular, 2d_oc_rectangular→rhombic,
+2d_tp→square, 2d_hp→hexagonal). Re-fetch with scripts/fetch-lattice-diagrams.sh.
