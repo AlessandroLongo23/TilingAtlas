@@ -33,7 +33,7 @@ The base fills are already retained-mode on the GPU. The premise "everything is 
 therefore only half true. Pan/zoom/rotate on the plain views are already fast. What is slow is a
 specific defect (P0 below) and the un-ported decorative + overlay elements.
 
-## P0: Edge Offset drag is slow in the plain-Islamic path
+## P0 (LANDED 2026-07-19): Edge Offset drag was slow in the plain-Islamic path
 
 Symptom (AL, 2026-07-19): moving the Edge Offset slider in the plain Islamic construction is
 "incredibly slow"; the reload/redraw on that change lags badly. Offset = 0 is smooth.
@@ -56,20 +56,33 @@ offset > 0.
 - The rebuild is synchronous on the main thread with no debounce, so every intermediate slider value
   pays the full cost.
 
-Fix (this is M4 done properly, per the spec's own words "built over one fundamental domain (plus a
-margin ...) and instanced like the base cell"):
+Fixed in three commits, in increasing structural depth:
 
-1. Build the A/B/C arrangement over ONE fundamental domain plus a boundary margin for faces/straps
-   that cross the cell edge, then instance it across the viewport in the shader like
-   `euclidean-canvas.tsx` does. An Edge Offset drag then rebuilds one cell's arrangement; the
-   O(segments²) crossing-split now runs over a handful of segments.
-2. Debounce the mesh rebuild during a continuous slider drag (rebuild on a short trailing timer or at
-   drag end), so intermediate values do not each trigger a full rebuild.
+1. `78ddc9a` — grid broad-phase for the crossing split. `buildArrangement`'s O(segments²) all-pairs
+   scan (the branch offset > 0 / count > 1 reaches) became a spatial-grid ~O(n) pass, output
+   byte-identical (candidates sorted so crossing points are created in the same order). Also throttled
+   the mesh rebuild to one per 100 ms during a continuous drag.
+2. `a438019` — instanced over one cell. The rebuild still ran the arrangement over the WHOLE viewport,
+   so it grew with zoom-out and stayed laggy when zoomed far out. Now the arrangement is built over a
+   fixed `PATCH_MARGIN` patch and only the origin-cell representatives are kept (each periodic face's
+   centre reduces to exactly one lattice cell); the shader instances them across the viewport
+   (`aInst = i,j`; `world = aPos + i·v1 + j·v2`), same as `euclidean-canvas.tsx`. No clipping needed —
+   representatives partition the plane, so instances tile with no gaps and no double-paint. New
+   `buildInstancedIslamicMesh` + `latticeCellOf` in `buildIslamicMesh.ts`, `aInst`/`uV1`/`uV2` added to
+   the `islamicGL` fill+stroke vertex shaders.
 
-The margin/clipping for straps that leave the cell is the real engineering nuance and the one part
-that is not free; it is a known, scoped problem the spec already anticipated. Recommendation: pull
-this forward ahead of the strict milestone order, because it fixes a shipped regression on a
-user-facing control rather than porting a new element.
+Per-rebuild cost, square cell, offset > 0 (bench), by zoom-out level:
+
+| viewport | committed gridded (whole-view) | instanced (fixed patch) |
+|---|---|---|
+| 49 cells | 4 ms | 3 ms |
+| 225 cells (≈ default zoom) | 18 ms | 3 ms |
+| 625 cells | 47 ms | 3 ms |
+| 1681 cells (zoomed out) | 127 ms | 4 ms |
+
+The instanced rebuild is flat in zoom (that is the fix); denser multi-tile cells widen the gap. 66
+islamic tests green, build clean. In-app smoothness confirmed by AL. This is M4-plain done properly;
+the decorative styles (M4-rest) are still whole-patch p5 and will inherit the same instancing.
 
 ## Remaining elements still on p5, by milestone
 
