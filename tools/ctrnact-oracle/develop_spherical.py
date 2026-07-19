@@ -100,6 +100,18 @@ def solve_rho(config):
             lo = mid
     return 0.5 * (lo + hi)
 
+def solve_rho_common(configs, tol=1e-6):
+    """Common edge arc-length rho closing EVERY vertex config (each Σ angle = 2π at the same rho).
+    For k=1 that is just solve_rho. For k>1 all orbits share edges, so a single rho must close
+    all of them — two different configs close at different rho (generic), so this returns None
+    unless the configs coincide there. Returns rho or None (no equal-edge realization)."""
+    rhos = [solve_rho(c) for c in configs]
+    if any(r is None for r in rhos):
+        return None
+    if max(rhos) - min(rhos) > tol:
+        return None
+    return sum(rhos) / len(rhos)
+
 # ----------------------------------------------------------------------------- SO(3) frames
 def Rz(a):
     c, s = math.cos(a), math.sin(a)
@@ -265,26 +277,31 @@ def tes_id(tes):
     n = parts[3].rsplit(" ", 1)[1].replace(".tes", "")
     return "ctrnact-%s-%s-%s" % (nn_fam, filesig.replace(" ", "_"), n)
 
-def parse_config(vertypeline):
+def parse_configs(vertypeline):
+    """All per-orbit vertex configs on the header line (one per vertex type, k configs for k-uniform)."""
     import re
-    m = re.match(r"\(([0-9,]+)\)", vertypeline)
-    return [int(x) for x in m.group(1).split(",")]
+    return [[int(x) for x in g.split(",")] for g in re.findall(r"\(([0-9,]+)\)", vertypeline)]
 
 def decode_block(b):
-    """Reuse pruner.decode() -> copies of the quotient arrays + the vertex config."""
+    """Reuse pruner.decode() -> copies of the quotient arrays + the per-orbit vertex configs."""
     pr.decode(b[0] + "\n", b[1] + "\n", b[3] + "\n", b[4] + "\n")
     return {
         "rneig": list(pr.rneig), "glue": list(pr.glue), "lvert": list(pr.lvert),
-        "config": parse_config(b[0]),
+        "configs": parse_configs(b[0]),
         "id": tes_id([l for l in b if l.startswith("TES file:")][0].split(":", 1)[1].strip()),
     }
 
 def develop_block(b):
     dec = decode_block(b)
-    config = dec["config"]
-    rho = solve_rho(config)
+    configs = dec["configs"]
+    cfg_str = " + ".join(".".join(map(str, c)) for c in configs)
+    rho = solve_rho_common(configs)
     if rho is None:
-        return None, {"id": dec["id"], "config": config, "reason": "no spherical vertex figure"}
+        # distinguish "no spherical figure at all" from "no common edge length across orbits"
+        reason = ("no spherical vertex figure" if any(solve_rho(c) is None for c in configs)
+                  else "no common edge length (orbit configs close at different rho)")
+        return None, {"id": dec["id"], "config": cfg_str, "reason": reason}
+    last = "unknown"
     for sign in (1, -1):
         try:
             V, E, F = develop_sphere(dec["rneig"], dec["glue"], dec["lvert"], rho, sign=sign)
@@ -294,14 +311,14 @@ def develop_block(b):
         ok, res = check_realized(V, E, F)
         if ok:
             rec = {
-                "id": dec["id"], "vertexConfig": ".".join(map(str, config)),
+                "id": dec["id"], "vertexConfig": cfg_str, "k": len(configs),
                 "vertices": [[float(x) for x in v] for v in V],
                 "faces": [list(map(int, ring)) for ring in F],
                 "realized": True, "residual": res,
             }
             return rec, None
         last = "not regular: %r" % res
-    return None, {"id": dec["id"], "config": config, "reason": last}
+    return None, {"id": dec["id"], "config": cfg_str, "reason": last}
 
 # ----------------------------------------------------------------------------- driver
 def gather_blocks(pruned, kmin, kmax):
