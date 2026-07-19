@@ -49,12 +49,15 @@ export function ToggleButton({
 	children,
 	disabled,
 	onClick,
+	// Forwarded so consumers like the Base UI Tooltip trigger can anchor to the real <button>.
+	ref,
 	...rest
 }: ToggleButtonProps) {
 	return (
 		<button
 			type="button"
 			{...rest}
+			ref={ref}
 			aria-pressed={pressed}
 			disabled={disabled}
 			aria-disabled={disabled}

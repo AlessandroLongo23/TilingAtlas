@@ -8,6 +8,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { ToggleButton } from "@/components/ui/toggle-button";
 import { Pagination } from "@/components/ui/pagination";
 import { ReferenceCard } from "@/components/reference-card";
+import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import {
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
@@ -778,6 +779,10 @@ export function ReferenceShelf() {
 									// A selected lattice greys out (and blocks) every group it can't host — the disabled
 									// styling + not-allowed cursor + aria-disabled come from ToggleButton.
 									disabled: selectedLattice ? !isGroupOnLattice(g, selectedLattice) : false,
+									// Wikipedia cell diagram(s) on hover/focus; opens into the main pane, not off-edge.
+									tooltip: <WallpaperGroupTooltip group={g} />,
+									tooltipSide: "right" as const,
+									tooltipDelay: 0,
 								}))}
 								selected={filters.wallpaperGroups ?? []}
 								onChange={toggleGroup}

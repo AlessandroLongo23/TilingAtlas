@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   viewBox="-25 -25 590 362"
+   preserveAspectRatio="xMidYMid meet"
+   id="svg3040"
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="Wallpaper_group_diagram_cmm_rhombic.svg">
+  <metadata
+     id="metadata3213">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3211" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1190"
+     inkscape:window-height="844"
+     id="namedview3209"
+     showgrid="false"
+     inkscape:zoom="1.3592669"
+     inkscape:cx="361.37949"
+     inkscape:cy="210.5717"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g3047" />
+  <!-- Wikimedia Bug #4388: title>Wallpaper group cmm</title -->
+  <desc
+     id="desc3042">
+This is the structure diagram of the walpaper group cmm
+
+I, the creator of this work, hereby release it into the public domain.
+This applies worldwide.
+
+In case this is not legally possible, I grant anyone the right
+to use this work for any purpose, without any conditions.
+</desc>
+  <clipPath
+     id="tile">
+    <polygon
+       points="0,312 360,312 540,0 180,0"
+       id="polygon3045" />
+  </clipPath>
+  <g
+     id="g3047"
+     transform="matrix(0.82425971,0.44735595,-0.47687679,0.77323428,145.68975,-87.630386)"
+     style="fill:none;stroke:#000000;stroke-width:3.25265694">
+    <polygon
+       points="270,156 0,312 360,312 "
+       id="polygon3059"
+       style="fill:#cccccc;stroke:#999999;stroke-width:3.25265694"
+       transform="matrix(0.5,-0.8660254,-0.8660254,-0.5,265.20893,472.50762)" />
+    <polygon
+       points="270,156 0,312 360,312 "
+       id="polygon3065"
+       style="fill:#cccccc;stroke:#999999;stroke-width:3.25265694"
+       transform="matrix(-1,0,0,-1,535.009,316.50762)" />
+    <g
+       style="fill:#ffff00;stroke:#999999;stroke-width:3.25265694"
+       id="g3088"
+       transform="translate(-4.9909951,4.5076142)">
+      <polygon
+         points="270,156 0,312 360,312 "
+         id="polygon3083"
+         transform="matrix(-0.5,0.8660254,0.8660254,0.5,269.80007,-156)">
+        <desc
+           id="desc3159">xxx</desc>
+      </polygon>
+    </g>
+    <polygon
+       points="270,156 0,312 360,312 "
+       id="polygon3089"
+       style="fill:#ffff00;stroke:#999999;stroke-width:3.25265694"
+       transform="translate(-4.9909951,4.5076142)" />
+    <g
+       id="g3093"
+       style="stroke:#990000;stroke-width:3.25265694;stroke-dasharray:16.2632849, 10.84218993"
+       transform="translate(-4.9909951,4.5076142)">
+      <desc
+         id="desc3095">Line(s) of glide reflection</desc>
+      <line
+         x1="180"
+         y1="312"
+         x2="90"
+         y2="156"
+         id="line3097"
+         style="stroke-width:3.25265694" />
+      <line
+         x1="360"
+         y1="0"
+         x2="450"
+         y2="156"
+         id="line3099"
+         style="stroke-width:3.25265694" />
+    </g>
+    <g
+       id="g3101"
+       style="stroke:#000099;stroke-width:3.25265694;stroke-dasharray:16.2632849, 10.84218993"
+       transform="translate(-4.9909951,4.5076142)">
+      <desc
+         id="desc3103">Line(s) of glide reflection</desc>
+      <line
+         x1="90"
+         y1="156"
+         x2="360"
+         y2="0"
+         id="line3105"
+         style="stroke-width:3.25265694" />
+      <line
+         x1="180"
+         y1="312"
+         x2="450"
+         y2="156"
+         id="line3107"
+         style="stroke-width:3.25265694" />
+    </g>
+    <g
+       id="g3173"
+       style="fill:#ff0000;stroke-width:3.25265694"
+       transform="matrix(0.20906077,-0.99764393,0.93613285,0.3160456,62.275299,381.44961)"
+       inkscape:transform-center-x="-4.413637"
+       inkscape:transform-center-y="-0.066997053">
+      <desc
+         id="desc3175">Center(s) of twofold rotation</desc>
+      <g
+         id="g3177"
+         style="stroke:#ffffff;stroke-width:9.75797081">
+        <polygon
+           points="0,20 -10,0 0,-20 10,0 "
+           transform="matrix(0.70710678,0.70710678,-0.70710678,0.70710678,270,156)"
+           id="polygon3179"
+           style="stroke-width:9.75797081" />
+      </g>
+      <g
+         id="g3181"
+         style="stroke-width:3.25265694">
+        <polygon
+           points="0,20 -10,0 0,-20 10,0 "
+           transform="matrix(0.70710678,0.70710678,-0.70710678,0.70710678,270,156)"
+           id="polygon3183"
+           style="stroke-width:3.25265694" />
+      </g>
+    </g>
+    <polygon
+       points="0,20 -10,0 0,-20 10,0 "
+       transform="matrix(0.82577084,-0.53696347,0.5038563,0.88335352,-0.65180667,312.97369)"
+       id="polygon3165-0"
+       style="fill:#0000ff;stroke:#000000;stroke-width:3.25265694"
+       inkscape:transform-center-x="-4.0744539"
+       inkscape:transform-center-y="8.2578893" />
+    <polygon
+       points="-10,0 0,-20 10,0 0,20 "
+       transform="matrix(0.82577087,-0.53696349,0.50385631,0.88335353,536.37439,3.1214843)"
+       id="polygon3165-0-8"
+       style="fill:#0000ff;stroke:#000000;stroke-width:3.25265694"
+       inkscape:transform-center-x="-7.0942598"
+       inkscape:transform-center-y="4.9879614" />
+    <polygon
+       points="10,0 0,20 -10,0 0,-20 "
+       transform="matrix(0.82577087,-0.53696349,0.50385631,0.88335353,175.97415,6.6932777)"
+       id="polygon3165-0-82"
+       style="fill:#0000ff;stroke:#000000;stroke-width:3.25265694"
+       inkscape:transform-center-x="-7.0942598"
+       inkscape:transform-center-y="4.9879614" />
+    <polygon
+       points="10,0 0,20 -10,0 0,-20 "
+       transform="matrix(0.82577087,-0.53696349,0.50385631,0.88335353,353.77314,315.32415)"
+       id="polygon3165-0-4"
+       style="fill:#0000ff;stroke:#000000;stroke-width:3.25265694"
+       inkscape:transform-center-x="-7.0942598"
+       inkscape:transform-center-y="4.9879614" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:3.25265694"
+       inkscape:connector-curvature="0"
+       id="path3216"
+       d="m 290.8376,209.16979 m -12.57337,20.20704 36.35842,-21.03523 -11.21167,-19.37885 m -3.48377,14.94823 5.60583,9.68943" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:3.25265694"
+       inkscape:connector-curvature="0"
+       id="path3216-1"
+       d="m 238.29275,109.1544 m 12.76932,-20.069418 -36.57379,20.659068 11.03516,19.47976 m 3.62586,-14.90464 -5.51757,-9.73989" />
+  </g>
+</svg>

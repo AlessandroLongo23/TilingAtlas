@@ -2,6 +2,7 @@
 
 import type { ComponentType, Key, ReactNode } from "react";
 import { ToggleButton } from "./toggle-button";
+import { Tooltip } from "./tooltip";
 import { cn } from "@/lib/utils/cn";
 
 export interface ButtonGroupOption<T> {
@@ -13,6 +14,12 @@ export interface ButtonGroupOption<T> {
 	classes?: string;
 	/** React key — defaults to `String(value)`, override when values aren't primitive. */
 	key?: Key;
+	/** Rich tooltip shown on hover/focus of this button. Omit for no tooltip. */
+	tooltip?: ReactNode;
+	/** Side the tooltip opens toward. Default `top`. */
+	tooltipSide?: "top" | "right" | "bottom" | "left";
+	/** Hover delay before the tooltip opens, in ms. Omit for the Tooltip default (400); 0 = instant. */
+	tooltipDelay?: number;
 }
 
 type CommonProps<T> = {
@@ -56,19 +63,34 @@ export function ButtonGroup<T>(props: ButtonGroupProps<T>) {
 
 	return (
 		<div className={cn("flex", wrap ? "flex-wrap" : "", gap, classes)}>
-			{options.map((opt) => (
-				<ToggleButton
-					key={opt.key ?? String(opt.value)}
-					variant={variant}
-					size={size}
-					pressed={isPressed(opt.value)}
-					onPressedChange={() => props.onChange(opt.value)}
-					disabled={opt.disabled}
-					icon={opt.icon}
-					label={opt.label}
-					classes={opt.classes}
-				/>
-			))}
+			{options.map((opt) => {
+				const key = opt.key ?? String(opt.value);
+				const button = (
+					<ToggleButton
+						key={key}
+						variant={variant}
+						size={size}
+						pressed={isPressed(opt.value)}
+						onPressedChange={() => props.onChange(opt.value)}
+						disabled={opt.disabled}
+						icon={opt.icon}
+						label={opt.label}
+						classes={opt.classes}
+					/>
+				);
+				return opt.tooltip != null ? (
+					<Tooltip
+						key={key}
+						content={opt.tooltip}
+						side={opt.tooltipSide ?? "top"}
+						delay={opt.tooltipDelay}
+					>
+						{button}
+					</Tooltip>
+				) : (
+					button
+				);
+			})}
 		</div>
 	);
 }
