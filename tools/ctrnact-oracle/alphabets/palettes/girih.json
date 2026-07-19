@@ -1,0 +1,14 @@
+{
+  "name": "girih",
+  "D": 20,
+  "pinnedLegacy": false,
+  "maxValence": 12,
+  "comment": "The five Islamic girih tiles (Lu & Steinhardt 2007), fivefold D=20 grid (1 unit = 18deg). Regular decagon + pentagon, plus three composite tiles: the wide rhombus (torange, 72/108), the elongated hexagon (bobbin/shesh band, 72/144), and the non-convex bowtie (sormeh dan, 72/72/216 with a 216deg REFLEX corner = 12 units). Angles are interior-angle words in D-units, sum = (n-2)*(D/2). Solve+prune only (develop is zeta24-only, cannot render fivefold). See docs/ISLAMIC_TILINGS.md. NOTE: the reflex bowtie needs gen_alphabet.py min_len=2 (reflex-composite gate) so the valence-2 notch-fill vertex (bowtie 216 + decagon 144 = 360) is admitted.",
+  "tiles": [
+    { "kind": "regular",   "n": 10, "name": "10", "famchar": "a" },
+    { "kind": "regular",   "n": 5,  "name": "5",  "famchar": "5" },
+    { "kind": "composite", "name": "rhomb-4.6.4.6",      "angles": [4, 6, 4, 6],          "famchar": "r" },
+    { "kind": "composite", "name": "bobbin-4.8.8.4.8.8",  "angles": [4, 8, 8, 4, 8, 8],    "famchar": "b" },
+    { "kind": "composite", "name": "bowtie-4.4.12.4.4.12", "angles": [4, 4, 12, 4, 4, 12], "famchar": "w" }
+  ]
+}
