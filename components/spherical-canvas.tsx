@@ -83,13 +83,16 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 		camera.lookAt(0, 0, 0);
 		cameraRef.current = camera;
 
-		// Light rig — shades the wireframe tubes' 3D form (MeshStandardMaterial), and stands ready for a
-		// future textured/PBR surface. Kept modest so a bright tile-hue albedo doesn't blow out. Inert on
-		// the solid sphere (MeshBasicMaterial ignores lights).
-		const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.55);
-		const dir = new THREE.DirectionalLight(0xffffff, 0.55);
+		// Light rig — shades every lit material: the wireframe/weave tubes and, in Realistic mode, the carved
+		// sphere and the raised Islamic relief tiles. Boosted from the original 0.55/0.55 (+ a small ambient)
+		// so lit tile hues read as brightly as the unlit flat modes; roughness 0.9 keeps specular soft so the
+		// extra intensity doesn't clip on saturated hues. Inert on the unlit solid sphere / flat Islamic fill
+		// (MeshBasicMaterial ignores lights). Starting values — tuned by eye.
+		const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.85);
+		const dir = new THREE.DirectionalLight(0xffffff, 0.8);
 		dir.position.set(3, 4, 5);
-		scene.add(hemi, dir);
+		const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+		scene.add(hemi, dir, ambient);
 
 		const controls = new ArcballControls(camera, canvas, scene);
 		controls.enablePan = false; // keep the sphere centred (no panning, per design)
@@ -315,13 +318,14 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 			fillColorC: cfg.islamicFillColorC,
 			checkerColorA: cfg.islamicCheckerColorA,
 			checkerColorB: cfg.islamicCheckerColorB,
+			relief: cfg.sphericalRealistic, // Realistic + Islamic ⇒ raised, lit tiles instead of the flat shell
 		});
 		if (fill) {
 			scene.add(fill.object);
 			fillRef.current = fill;
 		}
 		return clear;
-	}, [poly, isIslamic, islamicFill, islamicStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, wireframe, weaveFlat]);
+	}, [poly, isIslamic, islamicFill, islamicStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, wireframe, weaveFlat, realistic]);
 
 	if (errored) {
 		return (
