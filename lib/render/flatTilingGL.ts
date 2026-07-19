@@ -66,14 +66,21 @@ export const FILL_FRAG = `#version 300 es
 precision highp float;
 in float vHue;
 uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); hsb2rgb wraps via mod
+uniform float uFillDim;   // 0 = full colour; 1 fades the tile toward uDimTarget for vertex-orbit mode (M3).
+                          // Default 0 keeps every other consumer (theory cards, FlatCellRenderer) untouched.
+uniform vec3 uDimTarget;  // the surface background colour to fade toward when dimming (theme-dependent)
 out vec4 frag;
 vec3 hsb2rgb(float h, float s, float v) {
 	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
 	return v * mix(vec3(1.0), k, s);
 }
 void main() {
-	// s=0.40, b=1.0, opaque — matches Tiling.show and the inversive shader so the views agree on colour.
-	frag = vec4(hsb2rgb((vHue + uHueOffset) / 360.0, 0.40, 1.0), 1.0);
+	// s=0.40, b=1.0 — matches Tiling.show and the inversive shader so the views agree on colour. In orbit
+	// mode (uFillDim=1) the tile fades to 0.3 of its colour over the surface background, OPAQUELY: p5 draws
+	// the fill at alpha 0.3 over its background, which is exactly mix(bg, tile, 0.3). Doing it as an opaque
+	// mix (not a translucent fragment) sidesteps the premultiplied-alpha double-fade on this alpha canvas.
+	vec3 tile = hsb2rgb((vHue + uHueOffset) / 360.0, 0.40, 1.0);
+	frag = vec4(mix(uDimTarget, tile, 1.0 - 0.7 * uFillDim), 1.0);
 }
 `;
 
@@ -128,8 +135,10 @@ void main() {
 export const STROKE_FRAG = `#version 300 es
 precision highp float;
 uniform vec3 uStroke;
+uniform float uStrokeDim; // 0 = opaque; 1 fades the outline toward uDimTarget (vertex-orbit mode, with the fill)
+uniform vec3 uDimTarget;  // surface background to fade toward when dimming (matches the fill)
 out vec4 frag;
-void main() { frag = vec4(uStroke, 1.0); }
+void main() { frag = vec4(mix(uDimTarget, uStroke, 1.0 - 0.7 * uStrokeDim), 1.0); }
 `;
 
 // Points (showPolygonPoints): each centroid/halfway/vertex is a quad billboarded to a constant CSS-px
@@ -175,6 +184,63 @@ void main() {
 	if (alpha <= 0.0) discard;
 	float ring = smoothstep(0.6, 0.72, d);  // dark rim, matching the p5 dot's 1px black border
 	frag = vec4(mix(vColor, vec3(0.0), ring), alpha);
+}
+`;
+
+// Vertex-orbit dots (M3, showVertexOrbits): the GPU port of Tiling.drawVertexOrbits. Same billboarded
+// disk as POINTS, but coloured by orbit id (hue = id·360/k, matching orbitColor) and grown per orbit on
+// hover: uOrbitScale[id] scales the disk radius (1 at rest, up to ORBIT_HOVER_GROW when the orbit is
+// hovered). Instanced by the fill's lattice grid. MAX_ORBITS caps the scale array; the index is clamped.
+export const ORBIT_MAX = 32;
+export const ORBIT_VERT = `#version 300 es
+in vec2 aPos;
+in vec2 aCorner;   // unit-quad corner in [-1,1]
+in float aOrbit;   // orbit id
+in vec2 aInst;
+uniform vec2 uOffset;
+uniform float uZoom;
+uniform float uRot;
+uniform vec2 uV1;
+uniform vec2 uV2;
+uniform vec2 uHalf;
+uniform float uRadiusPx;          // base disk radius, CSS px
+uniform float uK;                 // orbit count, for the equidistant hue
+uniform float uOrbitScale[${ORBIT_MAX}]; // per-orbit hover-grow scale (1 at rest)
+out vec2 vCorner;
+out float vHue;
+void main() {
+	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	float c = cos(uRot), s = sin(uRot);
+	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
+	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
+	int oi = int(aOrbit + 0.5);
+	oi = oi < 0 ? 0 : (oi > ${ORBIT_MAX - 1} ? ${ORBIT_MAX - 1} : oi);
+	float r = uRadiusPx * uOrbitScale[oi];
+	sx += aCorner.x * r;
+	sy += aCorner.y * r;
+	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
+	vCorner = aCorner;
+	vHue = uK > 0.0 ? (aOrbit * 360.0 / uK) : 0.0;
+}
+`;
+
+export const ORBIT_FRAG = `#version 300 es
+precision highp float;
+in vec2 vCorner;
+in float vHue;
+out vec4 frag;
+vec3 hsb2rgb(float h, float s, float v) {
+	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+	return v * mix(vec3(1.0), k, s);
+}
+void main() {
+	float d = length(vCorner);
+	float aa = fwidth(d);
+	float alpha = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
+	if (alpha <= 0.0) discard;
+	vec3 col = hsb2rgb(vHue / 360.0, 0.40, 1.0);  // orbitColor(id,k): S=40, B=100
+	float ring = smoothstep(0.62, 0.76, d);       // black outline, echoing drawVertexOrbits' 1.5px stroke
+	frag = vec4(mix(col, vec3(0.0), ring), alpha);
 }
 `;
 

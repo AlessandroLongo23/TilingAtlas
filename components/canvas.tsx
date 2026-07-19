@@ -59,6 +59,7 @@ import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { EuclideanCanvas } from "./euclidean-canvas";
 import { IslamicCanvas } from "./islamic-canvas";
+import { setOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
 interface CanvasProps {
@@ -478,15 +479,19 @@ export function Canvas({
 				// disables the checkbox, so a persisted ON flag never shows a meaningless one-color overlay.
 				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic && propsRef.current.orbitData != null;
 				const opacity = orbitMode ? 0.3 : 1;
+				// Under the flat shader (M3), EuclideanCanvas owns the orbit dots and the tile dim. Publish the
+				// mouse-world so it can hit-test the hovered orbit, and skip p5's own dot draw below (skipFill).
+				// Off the shader, clear the bridge so a stale position can't grow a dot the shader isn't drawing.
+				setOrbitHoverWorld(orbitMode && !scaleOf && skipFill ? (hoverWorld ?? null) : null);
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
 				// skipFill ⇒ the flat WebGL renderer owns the fill AND (M1b) the points; p5 draws neither, so
 				// pass showPolygonPoints false to suppress its dot loop (the shader draws the dots instead).
 				else tiling.show(p5, cfg.showPolygonPoints && !skipFill, opacity, cfg.circlePacking, cull, scaleOf, skipFill);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
-				// selection transition (scaleOf active) so they don't float off the shrinking outline. `k`
-				// (orbit count) sets the equidistant hue spacing.
-				if (orbitMode && !scaleOf) {
+				// selection transition (scaleOf active) so they don't float off the shrinking outline, and when
+				// the shader owns them (skipFill — M3). `k` (orbit count) sets the equidistant hue spacing.
+				if (orbitMode && !scaleOf && !skipFill) {
 					const k = propsRef.current.orbitData?.k ?? 1;
 					tiling.drawVertexOrbits(p5, k, cull, hoverWorld, orbitHoverScalesRef.current);
 				}
@@ -1003,6 +1008,7 @@ export function Canvas({
 					translationalCell={translationalCell as unknown as FlatCellData | null}
 					translationalCellId={translationalCellId}
 					paramCell={paramCell}
+					orbitData={orbitData}
 				/>
 			) : null}
 			{islamicShaderActive ? (

@@ -42,6 +42,7 @@ only headed/real-GPU numbers count.
 | M1 (done) | Plain coloured tiles: fill + constant-width stroke, instanced | [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx), [flatTilingGL.ts](../../../lib/render/flatTilingGL.ts), [buildCellMesh.ts](../../../lib/render/buildCellMesh.ts) | `euclideanShader` — **ON by default since 2026-07-19** |
 | M1b (done) | Polygon points (centroid/halfway/vertex dots) | same + `POINTS_VERT/FRAG` | same flag |
 | M2 (done) | Selection-transition wave: collapse-then-grow on tiling change | `uWavePhase`/`uWaveP` + `aCentroid` in `FILL_VERT`/`STROKE_VERT`, `fillCentroid`/`strokeCentroid` in `buildCellMesh`, transition state machine in [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx) | `tilingTransition` (live) |
+| M3 (done) | Vertex-orbit dots + tile dim, hover-grow | `ORBIT_VERT`/`ORBIT_FRAG` + `uFillDim`/`uStrokeDim` in [flatTilingGL.ts](../../../lib/render/flatTilingGL.ts), [buildOrbitDotMesh.ts](../../../lib/render/buildOrbitDotMesh.ts), [orbitHoverBridge.ts](../../../lib/render/orbitHoverBridge.ts) | `showVertexOrbits` (live) |
 | M4-plain (done, uncommitted) | Plain Islamic A/B/C fill + black construction lines | [islamic-canvas.tsx](../../../components/islamic-canvas.tsx), [islamicGL.ts](../../../lib/render/islamicGL.ts), [buildIslamicMesh.ts](../../../lib/render/buildIslamicMesh.ts) | `isIslamicShaderActive`: `islamicStyle==='plain' && !animate` |
 
 The base fills are already retained-mode on the GPU. The premise "everything is on p5 and slow" is
@@ -101,8 +102,8 @@ the decorative styles (M4-rest) are still whole-patch p5 and will inherit the sa
 
 ## Remaining elements still on p5, by milestone
 
-Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. M1b and M2 done; **next is M3**.
-Cost column is per-frame while the relevant mode/toggle is active.
+Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. M1b, M2 and M3 done; **next is
+M4-rest** (Islamic decoration). Cost column is per-frame while the relevant mode/toggle is active.
 
 ### M1b: points
 | Element | Toggle | Source | Status |
@@ -143,13 +144,28 @@ shared `FILL_VERT`/`STROKE_VERT` change is backward-compatible with `FlatCellRen
 cards): they never set `uWavePhase` (defaults 0) nor bind `aCentroid`, so the wave branch is dead there.
 Verified with `scripts/wave-capture.mjs` (collapse/grow frames) + the theory cards still paint.
 
-### M3: vertex-orbit dots ("showOrb")
-| Element | Toggle | Source | Cost |
+### M3: vertex-orbit dots ("showOrb") (DONE 2026-07-19)
+| Element | Toggle | Source | Status |
 |---|---|---|---|
-| One coloured dot per vertex, hue by orbit, hover-grow | `showVertexOrbits` (live) | [Tiling.ts:191](../../../lib/classes/Tiling.ts#L191) | 2–3 passes over every corner/frame |
+| One coloured dot per vertex, hue by orbit, hover-grow | `showVertexOrbits` (live) | [Tiling.ts:191](../../../lib/classes/Tiling.ts#L191) | **DONE**, dots + tile dim ported to the shader |
 
-Instanced disks with orbit id as a per-vertex attribute; hover-grow via a uniform. Shares the M1b
-disk shader. Only draws for Regular-shelf tilings that carry orbit data.
+Instanced disks (`ORBIT_VERT`/`ORBIT_FRAG`, the billboarded SDF disk of M1b) coloured by orbit id:
+`buildOrbitDotMesh` walks the fundamental cell's corners, tagging each with `orbitData.orbitAt(x,y)`
+(orbit membership is lattice-periodic, so one cell instances to the whole partition; corners with orbit
+-1, e.g. star dents, are dropped). Hue = `id·360/uK` (matching `orbitColor`), a black rim, drawn on top
+of the fill. Hover-grow: the p5 canvas owns the pointer, so it publishes the mouse in WORLD coords to a
+module singleton (`orbitHoverBridge`); the shader hit-tests it against the base-cell dots reduced modulo
+the lattice, then eases a per-orbit radius scale (`uOrbitScale[]`, capped at `ORBIT_MAX`) toward 2x for
+the hovered orbit, the same lerp `drawVertexOrbits` runs.
+
+Orbit mode also DIMS the tiles to 0.3 (p5 draws them at opacity 0.3). The shader does it as an OPAQUE
+`mix(surfaceBg, tile, 0.3)` on the fill and stroke, not a translucent fragment: this alpha canvas is
+`premultipliedAlpha:false`, so a 0.3-alpha fill over the transparent clear double-fades to ~0.09 (the
+first attempt looked washed-out grey). `uDimTarget` is read from the surface background so the fade is
+theme-correct (pale over light, dark over dark). p5's own `drawVertexOrbits` is suppressed when the
+shader owns the dots (`skipFill`), so nothing double-draws. `uFillDim`/`uStrokeDim` default 0, keeping
+`FlatCellRenderer` / the theory cards opaque and untouched. Verified with `scripts/orbit-capture.mjs`
+(p5-vs-GPU parity + a hover frame) against a k=7 Regular-shelf tiling.
 
 ### M4-rest: Islamic decoration (the end goal, and after P0 the main speed win)
 | Element | Toggle | Source | Cost |
