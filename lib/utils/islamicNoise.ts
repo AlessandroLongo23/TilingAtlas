@@ -48,3 +48,13 @@ export const islamicAnglesForHalfways = (ctx: { noise: (x: number, y: number, z:
 // the old `a = slider` mapping only reached a ∈ [0, π/2] (dual → mid-star), never the original tiling.
 export const islamicTipsAngleFromSlider = (sliderDeg: number): number =>
     (180 - 2 * Math.min(Math.max(sliderDeg, 0), 90)) * Math.PI / 180;
+
+// Same slider, for the OTHER construction family: calculateIslamicSegments / constructTileStraps take the
+// ray angle measured FROM THE INWARD NORMAL, not the tip full-angle. The slider is measured from the EDGE
+// (0° = along the edge ⇒ straps retrace the tiling, 90° = perpendicular ⇒ dual), so from-normal is its
+// complement: 90° − slider. This is the SAME convention islamicTipsAngleFromSlider encodes (its a/2 = 90° −
+// slider); the segment builders just needed it stated explicitly and were passing the raw slider instead,
+// so they agreed with the tips/fold/spherical paths only at 45° and inverted at the endpoints. Single
+// source of truth — every from-normal consumer routes through here.
+export const islamicNormalAngleFromSlider = (sliderDeg: number): number =>
+    (90 - Math.min(Math.max(sliderDeg, 0), 90)) * Math.PI / 180;

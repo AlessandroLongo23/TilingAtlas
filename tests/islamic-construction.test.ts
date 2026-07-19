@@ -154,6 +154,132 @@ describe("calculateIslamicSegments — 4-pointed star (the shape the old code br
     });
 });
 
+describe("calculateIslamicSegments — edge offset (converging symmetric split)", () => {
+    it("keeps both rays at the midpoint when offset is 0 (default unchanged)", () => {
+        const hex = regularPolygon(6);
+        const base = hex.calculateIslamicSegments((25 * Math.PI) / 180);
+        const zero = hex.calculateIslamicSegments((25 * Math.PI) / 180, 0, 1);
+        expect(zero.length).toBe(base.length);
+        for (let i = 0; i < base.length; i++) {
+            expect(Vector.distance(zero[i][0], base[i][0])).toBeLessThan(TOL);
+            expect(Vector.distance(zero[i][1], base[i][1])).toBeLessThan(TOL);
+        }
+    });
+
+    it("splits an edge's two rays to symmetric origins M ± d·ê, both on the edge", () => {
+        const hex = regularPolygon(6);
+        const frac = 0.5; // 50% of the half-edge
+        const segs = hex.calculateIslamicSegments((25 * Math.PI) / 180, frac, 1);
+        expect(segs.length).toBe(12);
+        for (let i = 0; i < 6; i++) {
+            const v0 = hex.vertices[i];
+            const v1 = hex.vertices[(i + 1) % 6];
+            const d = frac * 0.5 * Vector.distance(v0, v1);
+            const M = hex.halfways[i];
+            const o1 = segs[2 * i][0];
+            const o2 = segs[2 * i + 1][0];
+            // two distinct origins, symmetric about the midpoint, each a distance d from it, on the edge
+            expect(Math.abs(Vector.distance(o1, M) - d)).toBeLessThan(TOL);
+            expect(Math.abs(Vector.distance(o2, M) - d)).toBeLessThan(TOL);
+            const mid = new Vector((o1.x + o2.x) / 2, (o1.y + o2.y) / 2);
+            expect(Vector.distance(mid, M)).toBeLessThan(TOL); // symmetric about M
+            expect(distToSegment(o1, v0, v1)).toBeLessThan(TOL);
+            expect(distToSegment(o2, v0, v1)).toBeLessThan(TOL);
+        }
+    });
+
+    it("converges: the two rays of an edge cross forward, off the midpoint ('they meet')", () => {
+        const hex = regularPolygon(6);
+        const segs = hex.calculateIslamicSegments((25 * Math.PI) / 180, 0.5, 1);
+        for (let i = 0; i < 6; i++) {
+            const [o1, e1] = segs[2 * i];
+            const [o2, e2] = segs[2 * i + 1];
+            const d1 = Vector.sub(e1, o1);
+            const d2 = Vector.sub(e2, o2);
+            const denom = Vector.cross(d1, d2);
+            expect(Math.abs(denom)).toBeGreaterThan(TOL); // not parallel
+            const diff = Vector.sub(o2, o1);
+            const t1 = Vector.cross(diff, d2) / denom;
+            const t2 = Vector.cross(diff, d1) / denom;
+            expect(t1).toBeGreaterThan(TOL); // crossing is forward on both rays
+            expect(t2).toBeGreaterThan(TOL);
+        }
+    });
+
+    it("keeps mirror symmetry: the split preserves the hexagon's reflection across the x-axis", () => {
+        const hex = regularPolygon(6);
+        const segs = hex.calculateIslamicSegments((28 * Math.PI) / 180, 0.5, 1);
+        const ends = segs.map(([, e]) => e);
+        for (const e of ends) {
+            const mirrored = new Vector(e.x, -e.y);
+            expect(ends.some((o) => Vector.distance(o, mirrored) < 1e-4)).toBe(true);
+        }
+    });
+
+    it("still closes at a moderate offset for the robust shapes (octagon, hexagon)", () => {
+        for (const poly of [regularPolygon(8), regularPolygon(6)]) {
+            const segs = poly.calculateIslamicSegments((30 * Math.PI) / 180, 0.25, 1);
+            expect(segs.length).toBe(2 * poly.halfways.length);
+            for (let i = 0; i < segs.length; i++) {
+                const end = segs[i][1];
+                const lands = segs.some((s, j) => j !== i && distToSegment(end, s[0], s[1]) < 1e-6);
+                expect(lands).toBe(true);
+            }
+        }
+    });
+
+    it("never drops a ray — the fallback keeps the count complete even for the fragile square", () => {
+        // A square's apex, slid toward a corner, can leave a ray with no partner-covered crossing; the
+        // fallback clamps it to its nearest crossing so nothing vanishes and the count stays complete.
+        for (const th of [25, 36, 45]) {
+            for (const f of [0.2, 0.4, 0.5]) {
+                const segs = regularPolygon(4).calculateIslamicSegments((th * Math.PI) / 180, f, 1);
+                expect(segs.length).toBe(8);
+                for (const [, to] of segs) expect(isFinite(to.x) && isFinite(to.y)).toBe(true);
+            }
+        }
+    });
+});
+
+describe("calculateIslamicSegments — intersection count", () => {
+    it("count = 1 is identical to the default (single-arg) call", () => {
+        const oct = regularPolygon(8);
+        const base = oct.calculateIslamicSegments((40 * Math.PI) / 180);
+        const one = oct.calculateIslamicSegments((40 * Math.PI) / 180, 0, 1);
+        expect(one.length).toBe(base.length);
+        for (let i = 0; i < base.length; i++) {
+            expect(Vector.distance(one[i][1], base[i][1])).toBeLessThan(TOL);
+        }
+    });
+
+    it("count = 2 extends rays past the first crossing (never shorter, some longer)", () => {
+        const oct = regularPolygon(8);
+        const th = (40 * Math.PI) / 180;
+        const s1 = oct.calculateIslamicSegments(th, 0, 1);
+        const s2 = oct.calculateIslamicSegments(th, 0, 2);
+        expect(s2.length).toBe(s1.length);
+        let someLonger = false;
+        for (let i = 0; i < s1.length; i++) {
+            const l1 = Vector.distance(s1[i][0], s1[i][1]);
+            const l2 = Vector.distance(s2[i][0], s2[i][1]);
+            expect(l2).toBeGreaterThan(l1 - TOL);
+            if (l2 > l1 + TOL) someLonger = true;
+        }
+        expect(someLonger).toBe(true);
+    });
+
+    it("clamps to the last crossing — no ray is dropped or runs to infinity at count = 3", () => {
+        for (const poly of [regularPolygon(8), regularPolygon(4), fourStar(0.45)]) {
+            const segs = poly.calculateIslamicSegments((35 * Math.PI) / 180, 0, 3);
+            expect(segs.length).toBe(2 * poly.halfways.length); // none dropped
+            for (const [from, to] of segs) {
+                expect(isFinite(to.x) && isFinite(to.y)).toBe(true);
+                expect(Vector.distance(from, to)).toBeLessThan(10); // finite, bounded
+            }
+        }
+    });
+});
+
 describe("Polygon.islamicMarkers", () => {
     it("gives a regular tile only its centroid", () => {
         const hex = regularPolygon(6);

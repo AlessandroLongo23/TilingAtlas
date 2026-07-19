@@ -4,7 +4,7 @@ import { Vector } from '@/classes';
 import { Cyclotomic } from "../Cyclotomic";
 import type { CyclotomicRing } from "../Cyclotomic";
 import { tolerance } from "@/utils/tolerance";
-import { islamicAnglesForHalfways, islamicTipsAngleFromSlider } from "@/utils/islamicNoise";
+import { islamicAnglesForHalfways, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from "@/utils/islamicNoise";
 import { exactPolygonsOverlap } from "../algorithm/exact/exactOverlap";
 import { type Marker, tipPoint } from "@/utils/islamicArrangement";
 
@@ -496,17 +496,32 @@ export class Polygon {
 
     /**
      * Correct, shape-agnostic Islamic/Hankin line construction (replaces `calculateIslamicTips`, which
-     * assumed a regular convex n-gon). For each edge, two rays leave the edge midpoint at ±theta from
-     * the TRUE inward edge-normal; each ray stops at its nearest forward intersection with any OTHER
-     * ray of the tile. Returns one `[midpoint, endpoint]` segment per ray (2·edges total). Works for
+     * assumed a regular convex n-gon). For each edge, two rays leave the edge at ±theta from the TRUE
+     * inward edge-normal; each ray stops at the `intersectionCount`-th forward crossing with any OTHER
+     * ray of the tile. Returns one `[origin, endpoint]` segment per ray (2·edges total). Works for
      * non-convex star tiles, where the old closed form put tips outside the tile.
      *
      * `theta` is measured from the inward normal: 0 ⇒ along the normal (all meetings collapse to the
      * centroid), π/2 ⇒ along the edge. Accepts a per-edge array (animated angle) or a scalar.
+     *
+     * `edgeOffsetFrac` ∈ [0, 1] slides the two rays' origins symmetrically outward from the midpoint
+     * along the edge (Kaplan's polygons-in-contact generalization): 0 ⇒ both at the midpoint (the
+     * classic construction), 1 ⇒ the two origins reach the edge's two vertices. The split keeps the
+     * tiling's mirror symmetry and opens the extra edge polygons.
+     *
+     * `intersectionCount` ∈ {1, 2, 3, …} lets a ray pass through the first N−1 crossings and stop at
+     * the N-th (1 ⇒ the classic "stop on first contact"). A ray with fewer than N qualifying crossings
+     * clamps to its last one, so it still terminates on another ray's body.
      */
-    calculateIslamicSegments = (angle: number | number[]): [Vector, Vector][] => {
+    calculateIslamicSegments = (
+        angle: number | number[],
+        edgeOffsetFrac: number = 0,
+        intersectionCount: number = 1,
+    ): [Vector, Vector][] => {
         const nEdges = this.halfways.length;
         const eps = 1e-9;
+        const frac = Math.min(Math.max(edgeOffsetFrac, 0), 1);
+        const nStop = Math.max(1, Math.round(intersectionCount));
         // Two inward rays per edge, at ±theta from the true inward edge-normal.
         const origins: Vector[] = [];
         const dirs: Vector[] = [];
@@ -520,22 +535,36 @@ export class Polygon {
             let nrm = new Vector(-edge.y, edge.x).normalize();
             if (nrm.dot(Vector.sub(this.centroid, this.halfways[i])) < 0) nrm = nrm.scale(-1);
             const a = Array.isArray(angle) ? angle[i] : angle;
-            origins.push(this.halfways[i], this.halfways[i]);
-            dirs.push(Vector.rotate(nrm, a), Vector.rotate(nrm, -a));
+            const dPlus = Vector.rotate(nrm, a);
+            const dMinus = Vector.rotate(nrm, -a);
+            // Converging symmetric split (Kaplan's polygons-in-contact offset): the two origins slide
+            // symmetrically along the edge to M ± d·ê, and each ray starts from the side OPPOSITE its
+            // lean — the ray leaning +ê roots at M − d·ê, the ray leaning −ê roots at M + d·ê — so the
+            // two rays cross ("meet") just off the midpoint while BOTH roots stay ON the edge. The split
+            // is mirror-symmetric across the edge normal. At frac 0 both origins collapse to the midpoint
+            // and this is byte-identical to the classic construction (same ray order, dPlus then dMinus).
+            const eHat = edge.normalize();
+            const shift = Vector.scale(eHat, frac * 0.5 * Vector.distance(v0, v1));
+            const oRight = Vector.add(this.halfways[i], shift); // toward +ê (v1)
+            const oLeft = Vector.sub(this.halfways[i], shift);  // toward −ê (v0)
+            const plusLeansPlus = dPlus.dot(eHat) >= dMinus.dot(eHat);
+            origins.push(plusLeansPlus ? oLeft : oRight, plusLeansPlus ? oRight : oLeft);
+            dirs.push(dPlus, dMinus);
             edgeOf.push(i, i);
         }
         const R = dirs.length;
 
-        // Growing-line simulation. Every ray grows at unit speed from its midpoint and stops the instant
-        // its tip touches ANOTHER ray's already-drawn body. This is the closure-correct reading of "stop
-        // at the first intersection": a bare nearest-crossing stops a ray on the partner's DISCARDED tail
-        // (the partner reaches that point only AFTER it has itself terminated), which leaves visible gaps.
-        // Build one arrival event per (ray, crossing) and resolve them in time order.
+        // Growing-line simulation. Every ray grows at unit speed from its origin. Each crossing with
+        // another ray's already-drawn body is a "qualifying" arrival; a ray stops at its N-th such
+        // arrival. This is the closure-correct reading of the count: a bare nearest-crossing stops a
+        // ray on the partner's DISCARDED tail (the partner reaches that point only AFTER it has itself
+        // terminated), which leaves visible gaps. Build one arrival event per (ray, crossing) and
+        // resolve them in time order.
         type Arrival = { time: number; ray: number; partner: number; partnerTime: number };
         const arrivals: Arrival[] = [];
         for (let i = 0; i < R; i++) {
             for (let j = i + 1; j < R; j++) {
-                if (edgeOf[i] === edgeOf[j]) continue; // siblings share the origin
+                if (edgeOf[i] === edgeOf[j]) continue; // siblings never cross forward (they diverge)
                 const denom = Vector.cross(dirs[i], dirs[j]);
                 if (Math.abs(denom) < eps) continue; // parallel
                 const diff = Vector.sub(origins[j], origins[i]);
@@ -549,13 +578,26 @@ export class Polygon {
         arrivals.sort((a, b) => a.time - b.time);
 
         const stop = new Array<number>(R).fill(Infinity);
+        const hits = new Array<number>(R).fill(0);
+        const lastHit = new Array<number>(R).fill(Infinity);
+        const nearest = new Array<number>(R).fill(Infinity); // nearest forward crossing, coverage aside
         for (const ev of arrivals) {
-            if (stop[ev.ray] <= ev.time + eps) continue; // this ray already terminated at/before here
+            if (ev.time < nearest[ev.ray]) nearest[ev.ray] = ev.time;
+            if (isFinite(stop[ev.ray])) continue; // this ray already terminated
             // The partner's body covers the crossing iff the partner reached it no later than we did
             // (partnerTime ≤ time) and was still alive there (it did not stop before partnerTime).
             if (ev.partnerTime <= ev.time + eps && stop[ev.partner] >= ev.partnerTime - eps) {
-                stop[ev.ray] = ev.time;
+                hits[ev.ray]++;
+                lastHit[ev.ray] = ev.time;
+                if (hits[ev.ray] >= nStop) stop[ev.ray] = ev.time; // committed at the N-th crossing
             }
+        }
+        // Clamp so a ray is never dropped: prefer its last partner-covered crossing (fewer than N of
+        // them), else its nearest forward crossing at all. An off-midpoint apex can skew a ray so no
+        // partner covers it (squares are the fragile case); this keeps the line rooted and complete.
+        for (let i = 0; i < R; i++) {
+            if (isFinite(stop[i])) continue;
+            stop[i] = isFinite(lastHit[i]) ? lastHit[i] : nearest[i];
         }
 
         const segments: [Vector, Vector][] = [];
@@ -631,9 +673,11 @@ export class Polygon {
         if (this.offScreen(ctx) || !this.vertices || !this.halfways) return;
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
-        let angle: number | number[] = Math.min(Math.max(cfg.islamicAngle, 0), 90) * Math.PI / 180;
+        let angle: number | number[] = islamicNormalAngleFromSlider(cfg.islamicAngle);
         if (cfg.islamicAnimate) angle = islamicAnglesForHalfways(ctx, this.halfways);
-        const segments = this.calculateIslamicSegments(angle);
+        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+        const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
+        const segments = this.calculateIslamicSegments(angle, offset, count);
         ctx.push();
         ctx.noFill();
         ctx.strokeWeight(Math.max(cfg.lineWidth, 1) * 2.5 / zoom); // slightly thicker than the base
@@ -653,7 +697,8 @@ export class Polygon {
 
         ctx.push();
         ctx.noStroke();
-        ctx.fill(customColor ?? this.hue, 40, 100 / opacity, 1.0 * opacity);
+        // Tile-hue fill → the global hue ring rotates it like every other fill path.
+        ctx.fill(((customColor ?? this.hue) + (cfg.hueOffset || 0)) % 360, 40, 100 / opacity, 1.0 * opacity);
         ctx.beginShape();
         for (let i = 0; i < this.halfways.length; i++) {
             ctx.vertex(this.halfways[i].x, this.halfways[i].y);
