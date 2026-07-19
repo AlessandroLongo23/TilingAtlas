@@ -1,16 +1,34 @@
-import { fetchRandomTilingCell } from "@/lib/services/campaignService";
-import { createClient } from "@/lib/supabase/server";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { LandingTilingBackground } from "@/components/landing-tiling-background";
-import { Button } from "@/components/ui/button";
+import { LandingActions } from "@/components/landing-actions";
 
 export const dynamic = "force-dynamic";
+
+// The background is a random tiling from the same library the user browses
+// (public/reference-atlas.json → every entry carries a renderCell). Parse once per server
+// process, then pick a fresh cell per request (force-dynamic).
+let libraryCellsCache: TranslationalCellData[] | null = null;
+
+async function loadLibraryCells(): Promise<TranslationalCellData[]> {
+	if (libraryCellsCache) return libraryCellsCache;
+	const file = path.join(process.cwd(), "public", "reference-atlas.json");
+	const raw = await readFile(file, "utf8");
+	const atlas = JSON.parse(raw) as Array<{ renderCell?: TranslationalCellData | null }>;
+	libraryCellsCache = atlas
+		.map((e) => e.renderCell)
+		.filter((c): c is TranslationalCellData => !!c);
+	return libraryCellsCache;
+}
 
 export default async function HomePage() {
 	let cell: TranslationalCellData | null = null;
 	try {
-		const sb = await createClient();
-		cell = await fetchRandomTilingCell(sb);
+		const cells = await loadLibraryCells();
+		if (cells.length > 0) {
+			cell = cells[Math.floor(Math.random() * cells.length)];
+		}
 	} catch (e) {
 		console.error("Landing: failed to load tiling for background", e);
 	}
@@ -21,22 +39,16 @@ export default async function HomePage() {
 				<LandingTilingBackground translationalCell={cell} />
 			) : null}
 			<div className="absolute inset-0 bg-black/55 pointer-events-none" />
-			<div className="relative max-w-md w-full rounded-lg overflow-hidden backdrop-blur-md shadow-xl border border-line bg-surface-overlay/40">
+			<div className="relative max-w-lg w-full rounded-lg overflow-hidden backdrop-blur-md shadow-xl border border-line bg-surface-overlay/40">
 				<div className="absolute inset-0 bg-linear-to-br from-zinc-800/50 via-zinc-900/50 to-black/50" />
 				<div className="relative z-10 p-8 md:p-10">
 					<h1 className="text-fg text-3xl md:text-4xl font-medium tracking-tight">
-						Welcome to <span className="font-bold text-accent">Tiling Atlas</span>
+						Welcome to <span className="font-bold text-accent whitespace-nowrap">Tiling Atlas</span>
 					</h1>
 					<p className="mt-3 text-fg-secondary text-sm md:text-base font-light">
 						Explore a variety of interactive tiling patterns
 					</p>
-					<div className="mt-8 flex flex-col gap-3">
-						<Button href="/play" variant="primary" size="md" fullWidth label="Start Exploring" />
-						<div className="flex gap-2">
-							<Button href="/library" variant="secondary" size="md" fullWidth label="Library" />
-							<Button href="/history" variant="secondary" size="md" fullWidth label="History" />
-						</div>
-					</div>
+					<LandingActions />
 				</div>
 			</div>
 		</div>
