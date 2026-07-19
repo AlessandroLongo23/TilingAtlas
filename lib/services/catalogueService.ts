@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
+import type { WallpaperGroup, LatticeShape } from "@/lib/classes/symmetry/types";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
 // method wrote found_tilings — torus today, orbifold later (DESIGN INTENT, gated on the Phase-1
@@ -38,6 +39,15 @@ export interface CatalogueTiling {
 	// to the Poincaré disk. Carried through from ReferenceTiling by referenceToCatalogue.
 	spherical?: { p?: number; q?: number; solid: string };
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
+	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
+	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their
+	// multiplicities, descending, summing to k. Absent when the source has no per-orbit config data.
+	m?: number;
+	partition?: number[];
+	// Exact wallpaper classification — REGULAR Euclidean tilings only (star tiles are non-convex ⇒ omitted,
+	// NOTES §9.4). Absent for star tilings and for every hyperbolic/spherical entry.
+	wallpaperGroup?: WallpaperGroup;
+	latticeShape?: LatticeShape;
 }
 
 // Pure transform: collapse found_tilings (a tiling is rediscovered once per run that finds it) into
