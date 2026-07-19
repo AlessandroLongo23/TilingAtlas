@@ -90,7 +90,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 									open={expanded[`k:${g.cls}:${kk.k}`]}
 									onOpenChange={() => toggle(`k:${g.cls}:${kk.k}`)}
 								>
-									<div className="grid grid-cols-2 gap-2 pt-2">
+									<div className="grid grid-cols-2 gap-2 p-1.5 pt-2">
 										{kk.list.map((t) => (
 											<button
 												key={t.canonicalKey}
@@ -99,7 +99,13 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 												title={`${t.canonicalKey} · {${t.family}}`}
 												className={cn(
 													"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden cursor-pointer",
-													t.canonicalKey === selectedKey ? "border-accent ring-1 ring-accent/40" : "border-line",
+													// Selected: a high-contrast fg ring held off the tile by a surface-chrome gap
+													// (ring-offset) so it reads clearly on any tiling. fg (not a fixed black) keeps it
+													// visible in both themes: near-black in light, near-white in dark — a fixed black
+													// would vanish against the dark chrome panel in dark mode.
+													t.canonicalKey === selectedKey
+														? "border-fg ring-2 ring-fg ring-offset-2 ring-offset-surface-chrome"
+														: "border-line",
 												)}
 											>
 												<div className="relative aspect-square bg-surface-raised">
