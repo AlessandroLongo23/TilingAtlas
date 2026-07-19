@@ -2,7 +2,6 @@
 
 import { memo, useEffect, useMemo, useRef } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
@@ -120,75 +119,80 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		return () => window.clearTimeout(id);
 	}, [selectedKey, selectedClassId, selectedKId, openGroups]);
 
+	// The k-bucket accordions for one class group — the inner tree shared by both layouts below.
+	const renderKGroups = (g: (typeof byClass)[number]) =>
+		g.ks.map((kk) => (
+			<SidebarSection
+				key={`k:${g.cls}:${kk.k}`}
+				flush
+				padded={false}
+				title={`k = ${kk.k}`}
+				summary={kk.list.length}
+				open={expanded[`k:${g.cls}:${kk.k}`]}
+				onOpenChange={() => toggle(`k:${g.cls}:${kk.k}`)}
+			>
+				<div className="grid grid-cols-2 gap-2 p-1.5 pt-2">
+					{kk.list.map((t) => (
+						<button
+							key={t.canonicalKey}
+							ref={t.canonicalKey === selectedKey ? selectedBtnRef : null}
+							type="button"
+							onClick={() => onSelect?.(t)}
+							title={`${t.canonicalKey} · {${t.family}}`}
+							className={cn(
+								"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden cursor-pointer",
+								// Selected: a high-contrast fg ring held off the tile by a surface-chrome gap
+								// (ring-offset) so it reads clearly on any tiling. fg (not a fixed black) keeps it
+								// visible in both themes: near-black in light, near-white in dark — a fixed black
+								// would vanish against the dark chrome panel in dark mode.
+								t.canonicalKey === selectedKey
+									? "border-fg ring-2 ring-fg ring-offset-2 ring-offset-surface-chrome"
+									: "border-line",
+							)}
+						>
+							<div className="relative aspect-square bg-surface-raised">
+								{t.spherical ? (
+									<SphericalThumbnail solidId={t.spherical.solid} />
+								) : t.wythoff ? (
+									<HyperbolicThumbnail wythoff={t.wythoff} />
+								) : t.renderCell ? (
+									<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
+								) : null}
+								{t.paramCell ? (
+									<span
+										title="One-parameter family (adjustable α)"
+										className="absolute top-1 left-1 inline-flex h-4 w-4 items-center justify-center rounded text-[10px] font-bold leading-none bg-white text-black ring-1 ring-black/20 shadow-sm dark:bg-black dark:text-white dark:ring-white/20"
+									>
+										α
+									</span>
+								) : null}
+							</div>
+						</button>
+					))}
+				</div>
+			</SidebarSection>
+		));
+
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="sticky top-0 z-10 p-3 bg-surface-overlay">
-				<SectionHeading count={items.length}>Catalogue</SectionHeading>
-			</div>
 			<div className="p-3 flex flex-col gap-2">
-				{byClass.map((g) => (
-					<SidebarSection
-						key={`c:${g.cls}`}
-						title={TILE_CLASS_LABEL[g.cls].long}
-						summary={g.count}
-						open={expanded[`c:${g.cls}`]}
-						onOpenChange={() => toggle(`c:${g.cls}`)}
-					>
-						<div className="flex flex-col gap-2 pt-2">
-							{g.ks.map((kk) => (
-								<SidebarSection
-									key={`k:${g.cls}:${kk.k}`}
-									flush
-									padded={false}
-									title={`k = ${kk.k}`}
-									summary={kk.list.length}
-									open={expanded[`k:${g.cls}:${kk.k}`]}
-									onOpenChange={() => toggle(`k:${g.cls}:${kk.k}`)}
-								>
-									<div className="grid grid-cols-2 gap-2 p-1.5 pt-2">
-										{kk.list.map((t) => (
-											<button
-												key={t.canonicalKey}
-												ref={t.canonicalKey === selectedKey ? selectedBtnRef : null}
-												type="button"
-												onClick={() => onSelect?.(t)}
-												title={`${t.canonicalKey} · {${t.family}}`}
-												className={cn(
-													"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden cursor-pointer",
-													// Selected: a high-contrast fg ring held off the tile by a surface-chrome gap
-													// (ring-offset) so it reads clearly on any tiling. fg (not a fixed black) keeps it
-													// visible in both themes: near-black in light, near-white in dark — a fixed black
-													// would vanish against the dark chrome panel in dark mode.
-													t.canonicalKey === selectedKey
-														? "border-fg ring-2 ring-fg ring-offset-2 ring-offset-surface-chrome"
-														: "border-line",
-												)}
-											>
-												<div className="relative aspect-square bg-surface-raised">
-													{t.spherical ? (
-														<SphericalThumbnail solidId={t.spherical.solid} />
-													) : t.wythoff ? (
-														<HyperbolicThumbnail wythoff={t.wythoff} />
-													) : t.renderCell ? (
-														<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
-													) : null}
-													{t.paramCell ? (
-														<span
-															title="One-parameter family (adjustable α)"
-															className="absolute top-1 left-1 inline-flex h-4 w-4 items-center justify-center rounded text-[10px] font-bold leading-none bg-white text-black ring-1 ring-black/20 shadow-sm dark:bg-black dark:text-white dark:ring-white/20"
-														>
-															α
-														</span>
-													) : null}
-												</div>
-											</button>
-										))}
-									</div>
-								</SidebarSection>
-							))}
-						</div>
-					</SidebarSection>
-				))}
+				{/* When the geometry filter leaves a single tile class (every hyperbolic/spherical tiling shares
+				    one class), drop the redundant class accordion and show its k-buckets straight under the
+				    geometry toggle — the geometry IS the top layer here, so a lone "Hyperbolic ▸" wrapper would
+				    just be a second identical layer. The multi-class Euclidean list keeps the class → k tree. */}
+				{byClass.length === 1
+					? renderKGroups(byClass[0])
+					: byClass.map((g) => (
+							<SidebarSection
+								key={`c:${g.cls}`}
+								title={TILE_CLASS_LABEL[g.cls].long}
+								summary={g.count}
+								open={expanded[`c:${g.cls}`]}
+								onOpenChange={() => toggle(`c:${g.cls}`)}
+							>
+								<div className="flex flex-col gap-2 pt-2">{renderKGroups(g)}</div>
+							</SidebarSection>
+						))}
 			</div>
 		</div>
 	);

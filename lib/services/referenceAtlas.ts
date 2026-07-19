@@ -145,6 +145,23 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	spherical: { short: "Spherical", long: "Spherical {p,q} tilings (Platonic solids)" },
 };
 
+// The geometry axis — the /play catalogue's top-level split (Euclidean / hyperbolic / spherical), one
+// level above the tile-class tree. Derived from the render-routing flags the canvases already key on
+// (spherical wins, then wythoff), NOT the optional `geometry` field (not reliably populated). Same
+// precedence as _play-client's canvas swap, so the toggle and the rendered view can never disagree.
+export type Geometry = "euclidean" | "hyperbolic" | "spherical";
+export function geometryOf(t: { wythoff?: unknown; spherical?: unknown }): Geometry {
+	if (t.spherical) return "spherical";
+	if (t.wythoff) return "hyperbolic";
+	return "euclidean";
+}
+export const GEOMETRY_ORDER: Geometry[] = ["euclidean", "hyperbolic", "spherical"];
+export const GEOMETRY_LABEL: Record<Geometry, string> = {
+	euclidean: "Euclidean",
+	hyperbolic: "Hyperbolic",
+	spherical: "Spherical",
+};
+
 // Scaled shelf only: the max side length (scale) a tiling uses, recovered from its family subscripts
 // (₂/₃). Drives the sub-class facet — "Sides 1–2" (max 2, the former Doubled class) vs "Sides 1–3" (uses
 // a side-3 tile). Null for every non-scaled tiling (so the facet excludes them, matching the M/partition
@@ -215,6 +232,10 @@ export function isMaximal(t: Pick<ReferenceTiling, "m" | "k">): boolean {
 }
 
 export interface ReferenceFilter {
+	// The geometry axis — the library's top-level split, one level above tileClass. When set, only tilings
+	// of this geometry match. The Euclidean-only sub-filters (tileClass, star, lattice, wallpaper group)
+	// are meaningless off the plane, so the shelf hides them for hyperbolic/spherical.
+	geometry?: Geometry;
 	kValue?: number; // single vertex-orbit count; unset = every k
 	tileClass?: TileClass; // regular polygons only / star-bearing only / composite-tile demo
 	// Scaled shelf sub-class: "s12" keeps only tilings within sides {1,2} (the former Doubled class);
@@ -244,6 +265,7 @@ export interface ReferenceFilter {
 }
 
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
+	if (f.geometry && geometryOf(t) !== f.geometry) return false;
 	if (f.kValue != null && t.k !== f.kValue) return false;
 	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
 	if (f.scaledScaleSet) {
@@ -316,6 +338,10 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		wythoff: r.wythoff,
 		spherical: r.spherical,
 		geometry: r.geometry,
+		m: r.m,
+		partition: r.partition,
+		wallpaperGroup: r.wallpaperGroup,
+		latticeShape: r.latticeShape,
 	};
 }
 

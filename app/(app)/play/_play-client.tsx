@@ -9,6 +9,7 @@ import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { Sidebar } from "@/components/sidebar";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import { cn } from "@/lib/utils/cn";
@@ -524,19 +525,25 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
 				{/* Fullscreen toggle: collapses the header + sidebar. Stays visible while immersive so it can
 				    exit. Drops below the symmetry-info badge (also top-right) when that's shown. */}
-				<button
-					type="button"
-					onClick={() => useImmersive.getState().toggle()}
-					title={immersive ? "Exit fullscreen (F or Esc)" : "Fullscreen canvas (F)"}
-					aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
-					aria-pressed={immersive}
-					className={cn(
-						"absolute right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
-						symmetryBadgeShown ? "top-20" : "top-4",
-					)}
+				<Tooltip
+					label={immersive ? "Exit fullscreen" : "Fullscreen canvas"}
+					shortcut={immersive ? "F or Esc" : "F"}
+					side="left"
+					delay={0}
 				>
-					{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
-				</button>
+					<button
+						type="button"
+						onClick={() => useImmersive.getState().toggle()}
+						aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
+						aria-pressed={immersive}
+						className={cn(
+							"absolute right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
+							symmetryBadgeShown ? "top-20" : "top-4",
+						)}
+					>
+						{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
+					</button>
+				</Tooltip>
 				{/* Screenshot: canvas.tsx runs the capture (createGraphics patch → preview modal) when it sees
 				    takeScreenshot flip; hovering frames the crop region via screenshotButtonHover. Sits just
 				    below the fullscreen toggle in the same top-right stack. Hidden until the capture is ready. */}

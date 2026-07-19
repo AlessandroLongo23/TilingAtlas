@@ -1,709 +1,87 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
-import { useConfiguration } from "@/stores/configuration";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
-import { Kbd } from "@/components/ui/kbd";
-import { HueRing } from "@/components/ui/hue-ring";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
-import { tileClassOf, TILE_CLASS_LABEL } from "@/lib/services/referenceAtlas";
+import { useEffect, useState } from "react";
+import { Tabs } from "@/components/ui/tabs";
+import type { Geometry } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
-import { CatalogueListPanel } from "./catalogue-list-panel";
-import { SpiralVelocityPad } from "@/components/spiral-velocity-pad";
+import { NavHeader } from "./nav-header";
+import { CatalogueTab } from "./catalogue-tab";
+import { OptionsTab } from "./options-tab";
 
-// The /play sidebar: selected-tiling metadata, the cell-relevant render toggles, and the
-// catalogue picker. The rulestring playground controls (parameter/Islamic) and the legacy_tilings
-// browse were retired in the pure-viewer port (FRONTEND_ROADMAP.md Phase 3).
+// The /play sidebar composition: a persistent nav header (metadata + prev/random/next) over a
+// Catalogue/Options tab pair. Both panels stay mounted (keepMounted) so switching tabs never rebuilds
+// the catalogue's thumbnail canvases, and each keeps its own scroll position. Geometry is the
+// catalogue's top-level split, owned by the parent (it scopes random/step too) and threaded through.
 interface TilingsTabProps {
-	tilings: CatalogueTiling[];
 	selected: CatalogueTiling | null;
 	onSelect?: (t: CatalogueTiling) => void;
 	onRandom?: () => void;
 	onPrev?: () => void;
 	onNext?: () => void;
+	geometry: Geometry;
+	/** The active geometry's tilings — feeds the catalogue list and the nav count. */
+	geometryList: CatalogueTiling[];
+	geometryCounts: Record<Geometry, number>;
+	onGeometryChange: (g: Geometry) => void;
 }
 
-export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNext }: TilingsTabProps) {
-	const cfg = useConfiguration();
-	const setCfg = cfg.set;
-	// Islamic construction applies to the regular, star, and islamic classes (see polygonClassSupportsIslamic),
-	// plus EVERY hyperbolic tiling — the Poincaré-disk shader draws the strapwork for regular, uniform, and snub.
-	const islamicSupported = !!selected && (polygonClassSupportsIslamic(selected) || !!selected.wythoff);
-	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
-	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
-	const isIslamicClass = !!selected && tileClassOf(selected) === "islamic";
-	// A hyperbolic tiling renders in the Poincaré disk; its only view control is the shading mode.
-	const isHyperbolic = !!selected?.wythoff;
-	// A spherical (Platonic {p,q}) tiling renders in the three.js sphere view, which owns its own
-	// rotate/zoom input — so the flat-canvas overlays (symmetry, orbits, transition, inversive) don't apply.
-	const isSpherical = !!selected?.spherical;
-	// Two-tone parity needs a REGULAR 2-colourable tiling (q even); the uniform forms are multi-tile-type.
-	const parityAllowed =
-		!!selected?.wythoff && selected.wythoff.rings[0] && !selected.wythoff.rings[1] && !selected.wythoff.rings[2] && selected.wythoff.q % 2 === 0;
+const TABS = ["Catalogue", "View options"];
+// Bare-key shortcuts that jump straight to a tab, shown as a keycap on each trigger. C = Catalogue,
+// V = View options (V freed from the Inversive toggle, which moved to X; C freed by hiding Circle Packing).
+const TAB_SHORTCUTS: Record<string, string> = { [TABS[0]]: "C", [TABS[1]]: "V" };
 
+export function TilingsTab({
+	selected,
+	onSelect,
+	onRandom,
+	onPrev,
+	onNext,
+	geometry,
+	geometryList,
+	geometryCounts,
+	onGeometryChange,
+}: TilingsTabProps) {
+	const [tab, setTab] = useState(TABS[0]);
+	// C / V jump to a tab, matching the keycaps on the triggers. Same guards as the /play canvas
+	// shortcuts (skip modifier chords and typing targets) so they don't fire mid-text-entry. Tab state
+	// is local to this component, so the listener lives here rather than in the canvas keydown handler.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = e.target as HTMLElement | null;
+			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			const k = e.key.toLowerCase();
+			if (k === "c") {
+				e.preventDefault();
+				setTab(TABS[0]);
+			} else if (k === "v") {
+				e.preventDefault();
+				setTab(TABS[1]);
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, []);
 	return (
 		<div className="h-full flex flex-col">
-			<div className="p-3 flex-shrink-0 border-b border-line bg-surface-overlay/40 flex flex-col gap-3">
-				{selected ? (
-					<div className="flex flex-col gap-1.5">
-						<span className="text-xs font-mono text-fg-secondary" title={`{${selected.family}}`}>
-							k={selected.k} · {TILE_CLASS_LABEL[tileClassOf(selected)].long}
-						</span>
-						<span className="text-[10px] font-mono text-fg-disabled truncate" title={selected.canonicalKey}>
-							{selected.canonicalKey}
-						</span>
-					</div>
-				) : (
-					<span className="text-xs text-fg-muted">Select a tiling below.</span>
-				)}
-
-				<div className="flex items-stretch gap-2">
-					<Button
-						variant="secondary"
-						size="icon"
-						icon={ChevronLeft}
-						onClick={onPrev}
-						disabled={!onPrev || tilings.length < 2}
-						title="Previous tiling (←)"
-						aria-label="Previous tiling"
-					/>
-					<Button
-						variant="secondary"
-						size="sm"
-						classes="flex-1"
-						icon={Shuffle}
-						onClick={onRandom}
-						disabled={!onRandom || tilings.length < 2}
-						title="Pick a random tiling (R)"
-					>
-						<span className="flex items-center gap-2">
-							Random tiling
-							<Kbd>R</Kbd>
-						</span>
-					</Button>
-					<Button
-						variant="secondary"
-						size="icon"
-						icon={ChevronRight}
-						onClick={onNext}
-						disabled={!onNext || tilings.length < 2}
-						title="Next tiling (→)"
-						aria-label="Next tiling"
-					/>
-				</div>
-			</div>
-
-			<div className="flex-1 overflow-y-auto" data-sidebar-scroll>
-				{/* Every render/view toggle lives in this one flat section, presented like the catalogue
-				    below (sticky SectionHeading over scrolling content) — the old collapsed "Advanced
-				    options" split is gone. It scrolls with the catalogue so the inversive/spiral stack
-				    can't outgrow the viewport. */}
-				<div className="flex flex-col gap-2 border-b border-line">
-					<div className="sticky top-0 z-10 p-3 bg-surface-overlay">
-						<SectionHeading>View options</SectionHeading>
-					</div>
-					<div className="p-3 pt-0 space-y-2">
-						{/* The global fill flag. Hidden in spherical — there the Fill/Wireframe pair (below) is the
-						    view's own mutually-exclusive fill control, driven by sphericalWireframe. */}
-						{!isSpherical ? (
-							<Checkbox
-								id="showPolygonFill"
-								label="Polygon fill"
-								shortcut="B"
-								checked={cfg.showPolygonFill}
-								onCheckedChange={(v) => setCfg({ showPolygonFill: v })}
+			<NavHeader selected={selected} count={geometryList.length} onRandom={onRandom} onPrev={onPrev} onNext={onNext} />
+			<div className="flex-1 min-h-0">
+				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted>
+					{(t) =>
+						t === "Catalogue" ? (
+							<CatalogueTab
+								items={geometryList}
+								selectedKey={selected?.canonicalKey ?? null}
+								onSelect={onSelect}
+								geometry={geometry}
+								geometryCounts={geometryCounts}
+								onGeometryChange={onGeometryChange}
 							/>
-						) : null}
-						<Slider
-							id="lineWidth"
-							label="Line stroke"
-							value={cfg.lineWidth}
-							onChange={(v) => setCfg({ lineWidth: v })}
-							min={0}
-							max={5}
-							step={0.25}
-						/>
-						{/* Global hue rotation for every tile fill (all views + thumbnails) — preserves the
-						    pairwise hue distances between tiles while cycling the palette. */}
-						<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
-						{/* Flat-view rotation. Hidden in spherical — that view rotates by quaternion (the
-						    ArcballControls trackball), so this angle slider has no effect there. */}
-						{!isSpherical ? (
-							<Slider
-								id="rotation"
-								label="Rotation"
-								value={cfg.rotation}
-								onChange={(v) => setCfg({ rotation: v })}
-								min={0}
-								max={360}
-								step={1}
-								unit="°"
-							/>
-						) : null}
-						<Checkbox
-							id="showPolygonPoints"
-							label="Show Polygon Points"
-							shortcut="P"
-							checked={cfg.showPolygonPoints}
-							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
-						/>
-						{/* Vertex-orbit dots are computed from the exact cell (KUniformityChecker.vertexOrbits),
-						    which has no hyperbolic counterpart yet — Euclidean-only, like the sibling flat-canvas
-						    overlays below. Disabled when the tiling carries no exactSource (the lazy-shard shelves:
-						    scaled/isotoxal/mixed/convex/polyomino) — without an exact cell there are no orbit ids
-						    to color by, and the canvas is inert then too (canvas.tsx orbitMode). */}
-						{!isHyperbolic && !isSpherical ? (
-							<Checkbox
-								id="showVertexOrbits"
-								label="Show Vertex Orbits"
-								shortcut="O"
-								checked={cfg.showVertexOrbits}
-								disabled={!selected?.exactSource}
-								onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
-							/>
-						) : null}
-						{/* Radial wave on a tiling change (lib/utils/tilingTransition.ts). Ignored — the swap stays
-						    instant — under Islamic / symmetry-elements / inversive, whose draw paths have no
-						    per-tile scale, and under prefers-reduced-motion. Hidden in hyperbolic: the WebGL disk
-						    renderer swaps instantly and has no per-tile scale to animate. */}
-						{!isHyperbolic && !isSpherical ? (
-							<Checkbox
-								id="tilingTransition"
-								label="Transition animation"
-								shortcut="T"
-								checked={cfg.tilingTransition}
-								onCheckedChange={(v) => setCfg({ tilingTransition: v })}
-							/>
-						) : null}
-						{cfg.isTilingRegularOnly ? (
-							<Checkbox
-								id="circlePacking"
-								label="Circle Packing"
-								shortcut="C"
-								checked={cfg.circlePacking}
-								onCheckedChange={(v) => setCfg({ circlePacking: v })}
-							/>
-						) : null}
-						{isIslamicClass && !cfg.isIslamic ? (
-							<button
-								type="button"
-								onClick={() => setCfg({ isIslamic: true })}
-								className="w-full text-left rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-[11px] text-fg-muted hover:border-line-strong hover:text-fg transition-colors"
-							>
-								This is an underlying Islamic tessellation. Turn on the{" "}
-								<span className="text-fg">Islamic construction</span> <Kbd>I</Kbd> to reveal the star pattern.
-							</button>
-						) : null}
-						{islamicSupported ? (
-							<Checkbox
-								id="isIslamic"
-								label="Islamic"
-								shortcut="I"
-								checked={cfg.isIslamic}
-								onCheckedChange={(v) => setCfg({ isIslamic: v })}
-							/>
-						) : null}
-						{islamicSupported && cfg.isIslamic ? (
-							<div className="space-y-2 pl-7">
-								{isSpherical ? (
-									<>
-										<div className="grid grid-cols-3 gap-2">
-											{(
-												[
-													["plain", "Plain"],
-													["checkerboard", "Checkerboard"],
-													["interlace", "Interlace"],
-												] as const
-											).map(([val, label]) => {
-												// The sphere renders anything that isn't checkerboard or interlace as the A/B/C plain fill,
-												// so Plain stays lit for those.
-												const active =
-													val === "checkerboard"
-														? cfg.islamicStyle === "checkerboard"
-														: val === "interlace"
-															? cfg.islamicStyle === "interlace"
-															: cfg.islamicStyle !== "checkerboard" && cfg.islamicStyle !== "interlace";
-												return (
-													<Button key={val} variant={active ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicStyle: val })}>
-														{label}
-													</Button>
-												);
-											})}
-										</div>
-										<p className="text-[11px] text-fg-muted">
-											{cfg.islamicStyle === "interlace"
-												? "Over/under woven straps on the sphere surface. Turn off Polygon fill for just the outlined straps; the angle slider sets the weave."
-												: "Filled cells + star lines (the underlying tiling is hidden). Turn off Polygon fill for just the lines; turn on Wireframe to make the lines rigid 3D bars."}
-										</p>
-									</>
-								) : isHyperbolic ? (
-									<p className="text-[11px] text-fg-muted">
-										Star lines only — the strapwork carries the linework in the Poincaré disk. Turn off Fill for a pure
-										pattern. Weave / style options apply to flat tilings.
-									</p>
-								) : (
-								<div className="grid grid-cols-2 gap-2">
-									{(
-										[
-											["plain", "Plain"],
-											["interlace", "Interlace"],
-											["outline", "Outline"],
-											["emboss", "Emboss"],
-											["checkerboard", "Checkerboard"],
-										] as const
-									).map(([val, label]) => (
-										<Button
-											key={val}
-											variant={cfg.islamicStyle === val ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ islamicStyle: val })}
-										>
-											{label}
-										</Button>
-									))}
-								</div>
-								)}
-								<Slider
-									id="islamicAngle"
-									label="Islamic Angle"
-									value={cfg.islamicAngle}
-									onChange={(v) => setCfg({ islamicAngle: v })}
-									min={0}
-									max={90}
-									step={1}
-									unit="°"
-								/>
-								{/* Bonner's acute/median/obtuse families for the regular-polygon system, in this
-								    slider's from-normal convention (30 / 45 / 60). */}
-								<div className="flex gap-2">
-									<Button variant={cfg.islamicAngle === 30 ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicAngle: 30 })}>
-										Acute
-									</Button>
-									<Button variant={cfg.islamicAngle === 45 ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicAngle: 45 })}>
-										Median
-									</Button>
-									<Button variant={cfg.islamicAngle === 60 ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicAngle: 60 })}>
-										Obtuse
-									</Button>
-								</div>
-								{isSpherical && cfg.islamicStyle === "interlace" ? (
-									<Slider
-										id="islamicWeaveWidth"
-										label="Strap Width"
-										value={cfg.islamicBandWidth}
-										onChange={(v) => setCfg({ islamicBandWidth: v })}
-										min={0.05}
-										max={0.6}
-										step={0.05}
-									/>
-								) : null}
-								{/* Solid 3D ribbons (Interlace + Wireframe): woven over/under relief, or flat coplanar bands. */}
-								{isSpherical && cfg.islamicStyle === "interlace" && cfg.sphericalWireframe ? (
-									<div className="space-y-2">
-										<span className="text-[11px] text-fg-muted">Ribbons</span>
-										<div className="flex gap-2">
-											<Button
-												variant={!cfg.sphericalWeaveFlat ? "primary" : "secondary"}
-												size="sm"
-												classes="flex-1"
-												onClick={() => setCfg({ sphericalWeaveFlat: false })}
-											>
-												Woven
-											</Button>
-											<Button
-												variant={cfg.sphericalWeaveFlat ? "primary" : "secondary"}
-												size="sm"
-												classes="flex-1"
-												onClick={() => setCfg({ sphericalWeaveFlat: true })}
-											>
-												Flat
-											</Button>
-										</div>
-									</div>
-								) : null}
-								{!isSpherical && !isHyperbolic && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss") ? (
-									<>
-										<Slider
-											id="islamicBandWidth"
-											label="Band Width"
-											value={cfg.islamicBandWidth}
-											onChange={(v) => setCfg({ islamicBandWidth: v })}
-											min={0.05}
-											max={0.6}
-											step={0.05}
-										/>
-										<Slider
-											id="islamicOutlineWidth"
-											label="Border Width"
-											value={cfg.islamicOutlineWidth}
-											onChange={(v) => setCfg({ islamicOutlineWidth: v })}
-											min={0}
-											max={5}
-											step={0.25}
-										/>
-										<Checkbox
-											id="islamicChirality"
-											label="Flip Weave"
-											checked={cfg.islamicChirality}
-											onCheckedChange={(v) => setCfg({ islamicChirality: v })}
-										/>
-									</>
-								) : null}
-								{!isSpherical && !isHyperbolic && cfg.islamicStyle === "checkerboard" ? (
-									<div className="flex gap-2">
-										<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-											Color A
-											<input
-												type="color"
-												value={cfg.islamicCheckerColorA}
-												onChange={(e) => setCfg({ islamicCheckerColorA: e.target.value })}
-												className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-											/>
-										</label>
-										<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-											Color B
-											<input
-												type="color"
-												value={cfg.islamicCheckerColorB}
-												onChange={(e) => setCfg({ islamicCheckerColorB: e.target.value })}
-												className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-											/>
-										</label>
-									</div>
-								) : null}
-								{/* A/B/C plain fill: star bodies keep their tile hue; B = side fields, C = the edge-centre
-								    diamonds (only visible once Edge Offset > 0). */}
-								{!isSpherical && !isHyperbolic && cfg.islamicStyle === "plain" ? (
-									<div className="flex gap-2">
-										<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-											Field B
-											<input
-												type="color"
-												value={cfg.islamicFillColorB}
-												onChange={(e) => setCfg({ islamicFillColorB: e.target.value })}
-												className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-											/>
-										</label>
-										<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-											Diamond C
-											<input
-												type="color"
-												value={cfg.islamicFillColorC}
-												onChange={(e) => setCfg({ islamicFillColorC: e.target.value })}
-												className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-											/>
-										</label>
-									</div>
-								) : null}
-								{/* Construction knobs, shown for every style. For interlace/outline these weave too —
-								    off-midpoint contact (edge offset) is Bonner's two-point family, canonically interwoven.
-								    Edge offset now works in hyperbolic too (it shifts each contact along the edge geodesic). */}
-								<Slider
-									id="islamicEdgeOffset"
-									label="Edge Offset"
-									value={cfg.islamicEdgeOffset}
-									onChange={(v) => setCfg({ islamicEdgeOffset: v })}
-									min={0}
-									max={100}
-									step={5}
-									unit="%"
-								/>
-								{/* Ray-stops-at (intersection count) is unsupported in the hyperbolic shader — first contact only. */}
-								{!isHyperbolic ? (
-								<Slider
-									id="islamicIntersectionCount"
-									label="Ray Stops At"
-									value={cfg.islamicIntersectionCount}
-									onChange={(v) => setCfg({ islamicIntersectionCount: v })}
-									min={1}
-									max={3}
-									step={1}
-								/>
-								) : null}
-								{!isSpherical && !isHyperbolic ? (
-								<Checkbox
-									id="islamicAnimate"
-									label="Animate Grid"
-									checked={cfg.islamicAnimate}
-									onCheckedChange={(v) => setCfg({ islamicAnimate: v })}
-								/>
-								) : null}
-							</div>
-						) : null}
-						{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
-						    path, which is skipped in hyperbolic (canvas.tsx) — hide them there. */}
-						{!isHyperbolic && !isSpherical ? (
-							<>
-								<Checkbox
-									id="showSymmetryElements"
-									label="Symmetry elements"
-									shortcut="S"
-									checked={cfg.showSymmetryElements}
-									onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
-								/>
-								<Checkbox
-									id="showFundamentalDomain"
-									label="Fundamental domain"
-									shortcut="D"
-									checked={cfg.showFundamentalDomain}
-									onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
-								/>
-							</>
-						) : null}
-						{isHyperbolic ? (
-							<div className="space-y-2">
-								<span className="text-[11px] text-fg-muted">Hyperbolic shading</span>
-								{parityAllowed ? (
-									<div className="flex gap-2">
-										<Button
-											variant={cfg.hyperbolicShading === "tiles" ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ hyperbolicShading: "tiles" })}
-										>
-											Tiles
-										</Button>
-										<Button
-											variant={cfg.hyperbolicShading === "parity" ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ hyperbolicShading: "parity" })}
-										>
-											Parity
-										</Button>
-									</div>
-								) : (
-									<p className="text-[11px] text-fg-disabled">
-										Coloured tiles — two-tone parity needs an even number of tiles per vertex (q even).
-									</p>
-								)}
-								<span className="text-[11px] text-fg-muted">Edge width</span>
-								<div className="flex gap-2">
-									<Button
-										variant={cfg.hyperbolicLineMode === "geometry" ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ hyperbolicLineMode: "geometry" })}
-									>
-										Perspective
-									</Button>
-									<Button
-										variant={cfg.hyperbolicLineMode === "constant" ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ hyperbolicLineMode: "constant" })}
-									>
-										Flat
-									</Button>
-								</div>
-							</div>
-						) : null}
-						{isSpherical ? (
-							<div className="space-y-2">
-								<p className="text-[11px] text-fg-muted leading-relaxed">
-									Drag the sphere to rotate it freely in any direction (no poles — every symmetry is reachable).
-									Scroll to zoom.
-								</p>
-								{/* Fill vs Wireframe: two views of one boolean (sphericalWireframe), so exactly one is
-								    ever on. Checking either flips the pair. Fill = solid sphere / filled Islamic cells;
-								    Wireframe = hollow tube skeleton / rigid lines, no fill. Keys B / W. */}
-								<Checkbox
-									id="sphericalFill"
-									label="Fill"
-									shortcut="B"
-									checked={!cfg.sphericalWireframe}
-									onCheckedChange={(v) => setCfg({ sphericalWireframe: !v })}
-								/>
-								{/* Realistic: shade the solid sphere as if the tiling lines were carved into it (faces
-								    raised, edges sunk into a smooth SDF groove, lit as matte stone). Fill only — no
-								    meaning for the hollow wireframe. */}
-								{!cfg.sphericalWireframe ? (
-									<div className="pl-7">
-										<Checkbox
-											id="sphericalRealistic"
-											label="Realistic"
-											checked={cfg.sphericalRealistic}
-											onCheckedChange={(v) => setCfg({ sphericalRealistic: v })}
-										/>
-									</div>
-								) : null}
-								<Checkbox
-									id="sphericalWireframe"
-									label="Wireframe"
-									shortcut="W"
-									checked={cfg.sphericalWireframe}
-									onCheckedChange={(v) => setCfg({ sphericalWireframe: v })}
-								/>
-								{cfg.sphericalWireframe ? (
-									<div className="space-y-2 pl-7">
-										<span className="text-[11px] text-fg-muted">Section</span>
-										<div className="flex gap-2">
-											<Button
-												variant={cfg.sphericalWireSection === "tube" ? "primary" : "secondary"}
-												size="sm"
-												classes="flex-1"
-												onClick={() => setCfg({ sphericalWireSection: "tube" })}
-											>
-												Tube
-											</Button>
-											<Button
-												variant={cfg.sphericalWireSection === "rect" ? "primary" : "secondary"}
-												size="sm"
-												classes="flex-1"
-												onClick={() => setCfg({ sphericalWireSection: "rect" })}
-											>
-												Rectangle
-											</Button>
-										</div>
-										<Slider
-											id="sphericalWireThickness"
-											label="Thickness"
-											value={cfg.sphericalWireThickness}
-											onChange={(v) => setCfg({ sphericalWireThickness: v })}
-											min={0.005}
-											max={0.15}
-											step={0.005}
-										/>
-										{cfg.sphericalWireSection === "rect" ? (
-											<>
-												<Slider
-													id="sphericalWireHeight"
-													label="Height"
-													value={cfg.sphericalWireHeight}
-													onChange={(v) => setCfg({ sphericalWireHeight: v })}
-													min={0.005}
-													max={0.15}
-													step={0.005}
-												/>
-												<Slider
-													id="sphericalWireBevel"
-													label="Bevel"
-													value={cfg.sphericalWireBevel}
-													onChange={(v) => setCfg({ sphericalWireBevel: v })}
-													min={0}
-													max={1}
-													step={0.05}
-												/>
-											</>
-										) : null}
-									</div>
-								) : null}
-							</div>
-						) : null}
-						{!isHyperbolic && !isSpherical ? (
-							<Checkbox
-								id="inversive"
-								label="Inversive view"
-								shortcut="V"
-								checked={cfg.inversive}
-								onCheckedChange={(v) => setCfg({ inversive: v })}
-							/>
-						) : null}
-						{!isHyperbolic && !isSpherical && cfg.inversive ? (
-							<div className="space-y-2 pl-7">
-								<div className="flex gap-2">
-									<Button
-										variant={cfg.inversiveMode === "inversion" ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ inversiveMode: "inversion" })}
-									>
-										Inversion
-									</Button>
-									<Button
-										variant={cfg.inversiveMode === "mobius" ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ inversiveMode: "mobius" })}
-									>
-										Möbius
-									</Button>
-									<Button
-										variant={cfg.inversiveMode === "spiral" ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ inversiveMode: "spiral" })}
-									>
-										Spiral
-									</Button>
-								</div>
-								{/* Lens radius has no meaning for a single-centre spiral; it becomes the pole
-								    separation for the two-centre (Droste) spiral. */}
-								{!(cfg.inversiveMode === "spiral" && !cfg.spiralDouble) ? (
-									<Slider
-										id="inversiveRadius"
-										label={cfg.inversiveMode === "spiral" ? "Pole separation" : "Lens radius"}
-										value={cfg.inversiveRadiusFrac}
-										onChange={(v) => setCfg({ inversiveRadiusFrac: v })}
-										min={0.1}
-										max={1}
-										step={0.01}
-									/>
-								) : null}
-								{cfg.inversiveMode === "mobius" ? (
-									<Slider
-										id="mobiusTwist"
-										label="Spiral twist"
-										value={cfg.mobiusTwist}
-										onChange={(v) => setCfg({ mobiusTwist: v })}
-										min={0}
-										max={180}
-										step={1}
-										unit="°"
-									/>
-								) : null}
-								{cfg.inversiveMode === "spiral" ? (
-									<>
-										<div className="flex gap-2">
-											<Button
-												variant={!cfg.spiralDouble ? "primary" : "secondary"}
-												size="sm"
-												classes="flex-1"
-												onClick={() => setCfg({ spiralDouble: false })}
-											>
-												1 center
-											</Button>
-											<Button
-												variant={cfg.spiralDouble ? "primary" : "secondary"}
-												size="sm"
-												classes="flex-1"
-												onClick={() => setCfg({ spiralDouble: true })}
-											>
-												2 centers
-											</Button>
-										</div>
-										<Slider
-											id="spiralArmA"
-											label="Arm a"
-											value={cfg.spiralArmA}
-											onChange={(v) => setCfg({ spiralArmA: Math.round(v) })}
-											min={-6}
-											max={6}
-											step={1}
-										/>
-										<Slider
-											id="spiralArmB"
-											label="Arm b"
-											value={cfg.spiralArmB}
-											onChange={(v) => setCfg({ spiralArmB: Math.round(v) })}
-											min={-6}
-											max={6}
-											step={1}
-										/>
-										{/* Velocity pad: hold a zoom/rotation rate — the spiral animates without dragging. */}
-										<SpiralVelocityPad />
-									</>
-								) : null}
-							</div>
-						) : null}
-					</div>
-				</div>
-
-				<CatalogueListPanel items={tilings} selectedKey={selected?.canonicalKey ?? null} onSelect={onSelect} />
+						) : (
+							<OptionsTab selected={selected} />
+						)
+					}
+				</Tabs>
 			</div>
 		</div>
 	);

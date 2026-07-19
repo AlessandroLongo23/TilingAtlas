@@ -9,6 +9,7 @@ import { ToggleButton } from "@/components/ui/toggle-button";
 import { Pagination } from "@/components/ui/pagination";
 import { ReferenceCard } from "@/components/reference-card";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
+import { LatticeTooltip } from "@/components/lattice-diagram";
 import {
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
@@ -18,14 +19,19 @@ import {
 	partitionKeyOf,
 	starFoldsOf,
 	tileClassOf,
+	geometryOf,
+	GEOMETRY_ORDER,
+	GEOMETRY_LABEL,
 	TILE_CLASS_ORDER,
 	TILE_CLASS_LABEL,
 	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
 	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
 	type Certification,
+	type Geometry,
 	type ReferenceTiling,
 	type ReferenceFilter,
 	type TileClass,
+	type IslamicSystem,
 } from "@/lib/services/referenceAtlas";
 import {
 	WALLPAPER_GROUPS,
@@ -46,10 +52,20 @@ import {
 // k=4 you see M ∈ {2,3,4}, never a dead M=1 button.
 // Derived from the shared registry (referenceAtlas TILE_CLASS_ORDER/LABEL) — the SAME source /play's
 // catalogue groups read, so the two pages' class axes can never drift.
+// The geometry axis is the top-level split now, so hyperbolic/spherical are their OWN geometries — not
+// tile classes. Drop them from the class chips; the remaining classes are all Euclidean and only ever
+// show while the Euclidean geometry is selected.
 const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = [
 	{ value: "all", label: "All" },
-	...TILE_CLASS_ORDER.map((c) => ({ value: c, label: TILE_CLASS_LABEL[c].short })),
+	...TILE_CLASS_ORDER.filter((c) => c !== "hyperbolic" && c !== "spherical").map((c) => ({
+		value: c,
+		label: TILE_CLASS_LABEL[c].short,
+	})),
 ];
+const GEOMETRY_OPTIONS: { value: Geometry; label: string }[] = GEOMETRY_ORDER.map((g) => ({
+	value: g,
+	label: GEOMETRY_LABEL[g],
+}));
 // Convex-irregular-shelf facet: the whole demo, only decomposable-family tilings, or only the ones that
 // reach for a non-decomposable composite. Shown only while the convex-irregular tile class is selected.
 const DECOMP_OPTIONS: { value: "all" | "decomposable" | "non-decomposable"; label: string }[] = [
@@ -83,6 +99,19 @@ const POLY_ORDER_OPTIONS: { value: "all" | "tetromino"; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "tetromino", label: "Tetrominoes" },
 ];
+// Islamic-shelf sub-class facet: Bonner's design system (the underlying tile kit). Shown only for the
+// Islamic class. See docs/ISLAMIC_TILINGS.md.
+const ISLAMIC_SYSTEM_OPTIONS: { value: "all" | IslamicSystem; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "regular", label: "Regular" },
+	{ value: "fourfold-a", label: "Fourfold A" },
+	{ value: "fourfold-b", label: "Fourfold B" },
+	{ value: "fivefold", label: "Fivefold" },
+	{ value: "sevenfold", label: "Sevenfold" },
+	{ value: "nonsystematic", label: "Nonsystematic" },
+	{ value: "dual-level", label: "Dual-level" },
+];
+const ISLAMIC_SYSTEM_VALUES = ISLAMIC_SYSTEM_OPTIONS.map((o) => o.value).filter((v): v is IslamicSystem => v !== "all");
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -148,8 +177,17 @@ function parseViewState(sp: URLSearchParams): ViewState {
 
 	const k = num("k");
 	if (k != null) f.kValue = k;
+	// Geometry is the top-level axis; default euclidean when the link omits it.
+	const geo = sp.get("geo");
+	f.geometry = geo === "hyperbolic" || geo === "spherical" ? geo : "euclidean";
 	const cls = sp.get("class");
-	if (cls && (TILE_CLASS_VALUES as string[]).includes(cls)) f.tileClass = cls as TileClass;
+	if (cls === "hyperbolic" || cls === "spherical") {
+		// Back-compat: geometry used to be a tile-class chip. Promote an old link's class to the geometry
+		// axis and leave tileClass unset.
+		f.geometry = cls;
+	} else if (cls && (TILE_CLASS_VALUES as string[]).includes(cls)) {
+		f.tileClass = cls as TileClass;
+	}
 	const decomp = sp.get("decomp");
 	if (decomp === "decomposable" || decomp === "non-decomposable") f.convexDecomp = decomp;
 	const m = num("m");
@@ -167,6 +205,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (scaleSet === "s12" || scaleSet === "s123") f.scaledScaleSet = scaleSet;
 	const polyOrder = sp.get("polyorder");
 	if (polyOrder === "tetromino") f.polyominoOrder = polyOrder;
+	const islamicSystem = sp.get("islamicsystem");
+	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem)) f.islamicSystem = islamicSystem as IslamicSystem;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
 	if (groups?.length) f.wallpaperGroups = groups;
 	const lattices = list("lattice")?.filter((s): s is LatticeShape => (LATTICE_ORDER as string[]).includes(s));
@@ -195,6 +235,8 @@ function serializeView(v: ViewState): string {
 	const p = new URLSearchParams();
 	const f = v.filters;
 	if (f.kValue != null) p.set("k", String(f.kValue));
+	// Euclidean is the default, so only non-euclidean geometries need a URL param.
+	if (f.geometry && f.geometry !== "euclidean") p.set("geo", f.geometry);
 	if (f.tileClass) p.set("class", f.tileClass);
 	if (f.convexDecomp) p.set("decomp", f.convexDecomp);
 	if (f.mValue != null) p.set("m", String(f.mValue));
@@ -205,6 +247,7 @@ function serializeView(v: ViewState): string {
 	if (f.isotoxalShape) p.set("iso", f.isotoxalShape);
 	if (f.scaledScaleSet) p.set("scaleset", f.scaledScaleSet);
 	if (f.polyominoOrder) p.set("polyorder", f.polyominoOrder);
+	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
 	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
 	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
 	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
@@ -427,6 +470,15 @@ export function ReferenceShelf() {
 		if (v !== "scaled") next.scaledScaleSet = undefined;
 		// The polyomino-order facet only means something inside the polyomino class — drop it otherwise.
 		if (v !== "polyomino") next.polyominoOrder = undefined;
+		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
+		if (v !== "islamic") next.islamicSystem = undefined;
+		if (v === "islamic") {
+			// The Islamic tessellations carry no m/partition/wallpaper/star-fold classification yet.
+			next.starFolds = undefined;
+			next.parametric = undefined;
+			next.wallpaperGroups = undefined;
+			next.latticeShapes = undefined;
+		}
 		if (v === "regular") {
 			next.starFolds = undefined;
 			next.parametric = undefined;
@@ -448,6 +500,8 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, scaledScaleSet: v === "all" ? undefined : v });
 	const setPolyominoOrder = (v: "all" | "tetromino") =>
 		setFilters({ ...filters, polyominoOrder: v === "all" ? undefined : v });
+	const setIslamicSystem = (v: "all" | IslamicSystem) =>
+		setFilters({ ...filters, islamicSystem: v === "all" ? undefined : v });
 
 	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
 	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
@@ -473,6 +527,27 @@ export function ReferenceShelf() {
 	const toggleDiscoverer = (d: string) => toggleIn("discoverers", filters.discoverers ?? [], d);
 	const toggleCert = (c: Certification) => toggleIn("certifications", filters.certifications ?? [], c);
 
+	// The active geometry (default euclidean) — the top-level axis. Off the plane, the Euclidean-only
+	// sub-filters (tile class, star, lattice, wallpaper group, M/partition) are hidden.
+	const geometry = filters.geometry ?? "euclidean";
+	const isEuclidean = geometry === "euclidean";
+	// Switch geometry: clear every Euclidean-only filter (they mean nothing off the plane) and reset k —
+	// a k valid in one geometry (e.g. a Euclidean k=2) may filter the new one to zero.
+	const setGeometry = (g: Geometry) => {
+		if (g === geometry) return;
+		setFilters(
+			g === "euclidean"
+				? { ...filters, geometry: g, kValue: undefined, mValue: undefined, partitionKey: undefined, maximalOnly: undefined }
+				: {
+						geometry: g,
+						// keep the cross-geometry axes (provenance + search); drop everything Euclidean-only
+						discoverers: filters.discoverers,
+						certifications: filters.certifications,
+						query: filters.query,
+					},
+		);
+	};
+
 	// ── option sets: only offer filters some in-scope tiling can actually satisfy ──
 	// The k's a given tile class actually covers. Faceted, so Star/Convex-irregular (k=1..3 today) never show
 	// a dead k=10 button. The lazy higher-k tiers (8/9/10) are all regular Čtrnáct, so they're offered
@@ -490,10 +565,24 @@ export function ReferenceShelf() {
 		},
 		[tilings],
 	);
-	const kChips = useMemo(
-		() => [...kValuesForClass(filters.tileClass)].sort((a, b) => a - b),
-		[kValuesForClass, filters.tileClass],
-	);
+	const kChips = useMemo(() => {
+		const s = new Set<number>();
+		if (tilings)
+			for (const t of tilings) {
+				if (geometryOf(t) !== geometry) continue;
+				if (isEuclidean && filters.tileClass && tileClassOf(t) !== filters.tileClass) continue;
+				s.add(t.k);
+			}
+		// The lazy higher-k tiers are all Euclidean; offer their chips up front (before the shard is fetched)
+		// only under the Euclidean geometry, faceted by the class in scope.
+		if (isEuclidean) {
+			const cls = filters.tileClass;
+			if (!cls || cls === "regular") for (const k of HIGHER_K) s.add(k);
+			if (!cls || cls === "convex") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
+			if (!cls || cls === "isotoxal") for (const k of ISOTOXAL_HIGHER_K) s.add(k);
+		}
+		return [...s].sort((a, b) => a - b);
+	}, [tilings, geometry, isEuclidean, filters.tileClass]);
 
 	// M chips are faceted to the current view MINUS M/partition: at k=4 they resolve to {2,3,4}.
 	const mOptions = useMemo(() => {
@@ -547,22 +636,29 @@ export function ReferenceShelf() {
 	const tileClass = filters.tileClass ?? "all";
 	// The convex-irregular + isotoxal demo shelves carry no m/partition/wallpaper/star-fold classification.
 	const isDemo = tileClass === "convex" || tileClass === "isotoxal";
-	const showM = filters.kValue != null && !isDemo;
-	const showStar = tileClass !== "regular" && !isDemo && availableFolds.length > 0;
-	const showGroup = tileClass !== "star" && !isDemo && availableGroups.length > 0;
-	const showLattice = tileClass !== "star" && !isDemo && availableShapes.length > 0;
+	// Tile class, M/partition, star, lattice, and wallpaper group are all Euclidean-only — a hyperbolic
+	// {p,q} or spherical Platonic tiling has no wallpaper group, no lattice, no star fold. Off the plane
+	// only k, discoverer, certification, and search survive.
+	const showM = isEuclidean && filters.kValue != null && !isDemo;
+	const showStar = isEuclidean && tileClass !== "regular" && !isDemo && availableFolds.length > 0;
+	const showGroup = isEuclidean && tileClass !== "star" && !isDemo && availableGroups.length > 0;
+	const showLattice = isEuclidean && tileClass !== "star" && !isDemo && availableShapes.length > 0;
 	const showConvex = tileClass === "convex";
 	const showIsotoxalShape = tileClass === "isotoxal";
 	const showScaledScaleSet = tileClass === "scaled";
 	const showPolyominoOrder = tileClass === "polyomino";
+	const showIslamicSystem = tileClass === "islamic";
 
 	const activeFilterCount =
+		// Euclidean is the default, so it doesn't read as an active filter; hyperbolic/spherical do.
+		(filters.geometry && filters.geometry !== "euclidean" ? 1 : 0) +
 		(filters.kValue != null ? 1 : 0) +
 		(filters.tileClass ? 1 : 0) +
 		(filters.convexDecomp ? 1 : 0) +
 		(filters.isotoxalShape ? 1 : 0) +
 		(filters.scaledScaleSet ? 1 : 0) +
 		(filters.polyominoOrder ? 1 : 0) +
+		(filters.islamicSystem ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -595,7 +691,7 @@ export function ReferenceShelf() {
 					<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
 					{activeFilterCount > 0 ? (
 						<button
-							onClick={() => setFilters({})}
+							onClick={() => setFilters({ geometry: "euclidean" })}
 							className="flex items-center gap-1 text-xs text-fg-muted hover:text-danger transition-colors"
 						>
 							<X size={11} /> Clear ({activeFilterCount})
@@ -611,9 +707,17 @@ export function ReferenceShelf() {
 						className="w-full rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-xs text-fg placeholder:text-fg-disabled focus:border-line-strong focus:outline-none"
 					/>
 
-					<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
-						<ButtonGroup options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
+					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
+						<ButtonGroup options={GEOMETRY_OPTIONS} selected={geometry} onChange={setGeometry} />
 					</FilterGroup>
+
+					{/* Tile class is a Euclidean-only axis — hyperbolic/spherical are their own geometries, each a
+					    single class, so the chip row would just be one dead option there. */}
+					{isEuclidean ? (
+						<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
+							<ButtonGroup options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
+						</FilterGroup>
+					) : null}
 
 					{showConvex ? (
 						<FilterGroup
@@ -680,6 +784,23 @@ export function ReferenceShelf() {
 						</FilterGroup>
 					) : null}
 
+					{showIslamicSystem ? (
+						<FilterGroup
+							title="Design system"
+							summary={filters.islamicSystem ?? null}
+							note="Bonner's tile kits"
+						>
+							<ButtonGroup
+								options={ISLAMIC_SYSTEM_OPTIONS}
+								selected={filters.islamicSystem ?? "all"}
+								onChange={setIslamicSystem}
+							/>
+							<p className="text-[10px] text-fg-disabled">
+								The underlying tessellation’s tile set. Toggle the Islamic construction in Play to see the strapwork.
+							</p>
+						</FilterGroup>
+					) : null}
+
 					<FilterGroup title="Vertex count (k)" summary={filters.kValue ?? null}>
 						<ButtonGroup
 							options={[
@@ -689,13 +810,17 @@ export function ReferenceShelf() {
 							selected={filters.kValue ?? ALL_NUM}
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
 						/>
-						<ToggleButton
-							size="sm"
-							pressed={!!filters.maximalOnly}
-							onPressedChange={toggleMaximal}
-							label="Maximal (M = k)"
-							classes="mt-1 self-start"
-						/>
+						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
+						    the plane. */}
+						{isEuclidean ? (
+							<ToggleButton
+								size="sm"
+								pressed={!!filters.maximalOnly}
+								onPressedChange={toggleMaximal}
+								label="Maximal (M = k)"
+								classes="mt-1 self-start"
+							/>
+						) : null}
 						{tileClass === "convex" && kChips.some((k) => k >= 3) ? (
 							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 3 loads on demand.</p>
 						) : kChips.some((k) => k >= 8) ? (
@@ -758,7 +883,14 @@ export function ReferenceShelf() {
 							note="pick one"
 						>
 							<ButtonGroup
-								options={availableShapes.map((s) => ({ value: s, label: s }))}
+								options={availableShapes.map((s) => ({
+									value: s,
+									label: s,
+									// Wikipedia Bravais-lattice diagram on hover/focus.
+									tooltip: <LatticeTooltip lattice={s} />,
+									tooltipSide: "right" as const,
+									tooltipDelay: 0,
+								}))}
 								selected={selectedLattice ?? null}
 								onChange={selectShape}
 							/>
@@ -895,7 +1027,7 @@ export function ReferenceShelf() {
 						<Library size={40} className="text-fg-disabled mb-4" />
 						<p className="text-fg-muted font-medium">No tilings match the current filters.</p>
 						{activeFilterCount > 0 ? (
-							<button onClick={() => setFilters({})} className="text-accent hover:underline text-sm mt-1">
+							<button onClick={() => setFilters({ geometry: "euclidean" })} className="text-accent hover:underline text-sm mt-1">
 								Clear filters
 							</button>
 						) : null}
