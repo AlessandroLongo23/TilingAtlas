@@ -1237,3 +1237,12 @@ Wireframe now extrudes each strap into a lit closed solid; over/under is real ra
 ramp is smoothstep-eased. New `sphericalWeaveFlat` toggle flattens the relief (coplanar bands, no
 z-fight — shared cream material + radial normals). Detail: DEVELOPMENT_NOTES §65; committed the whole
 spherical renderer subsystem (co-mingled shared UI/routing along with it). — CC
+
+**2026-07-19 (CC) — Working-tree scope-commit sweep + branch consolidation.** Split the accumulated
+uncommitted tree into 16 scoped commits (`c7f36aa`..`edb9c50`): Hankin edge-offset/intersection-count
+construction (`c7f36aa`), hyperbolic Islamic strap shader (`30b8251`), raster decoration styles + A/B/C
+fill (`b76c00f`), global hue-ring offset (`18a4990`), inversive velocity-pad drift (`96880a4`), /theory
+Islamic+uniform pages (`a2cb29e`), oracle spherical/reflex closure + girih/spherical palettes (`c36dd60`,
+`5216ebe`), atlas build pipeline (`eabab94`), k2 figure data (`b747bd4`), landing local-atlas background
+(`7591490`), 8 MB girih developed-cells dump (`edb9c50`). Detail: DEVELOPMENT_NOTES latest §.
+`moduli-graph` fast-forwarded into `master`, pushed to origin, branch deleted. — CC
