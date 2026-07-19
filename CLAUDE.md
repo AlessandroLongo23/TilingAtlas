@@ -81,6 +81,7 @@ To SEE a change in the real running app, drive it with Playwright and screenshot
 - Needs the dev server up: `pnpm dev` (port 3000). Next 16 refuses a second dev server for the same dir, so reuse the running one; if it is wedged (no HTTP response), kill it and restart.
 - Drive any store flag from the page via the dev-only `window.__stores` hook (attached in `lib/stores/configuration.ts`) — this is how to exercise a flag with no UI, e.g. the flat-shader path: `--setup "window.__stores.configuration.setState({ euclideanShader: true, showPolygonPoints: true })"`.
 - For parity checks, capture flag-on vs flag-off at the same viewport and compare the two PNGs (how M1b was verified).
+- Frame-time / FPS: `node scripts/measure-fps.mjs` samples RAF deltas across store scenarios (default: `showPolygonPoints` on/off at min zoom, p5 vs GPU). **Run it HEADED (the default) — headless Chromium uses software WebGL (SwiftShader) and makes the shader path look ~15× slower than it is; only trust WebGL perf from a headed run, and check the printed `webgl renderer` is a real GPU, not SwiftShader.** RAF delta is capped at the display refresh (e.g. 8.3ms on a 120Hz panel), so "at the cap" means the frame budget is not the bottleneck.
 
 ## Commands
 
