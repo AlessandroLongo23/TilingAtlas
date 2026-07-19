@@ -17,6 +17,7 @@ import type { TranslationalCellData as InversiveCellData } from "@/lib/utils/ren
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import { useVertexOrbits } from "@/lib/hooks/useVertexOrbits";
+import { buildTilingSpec } from "@/lib/services/tilingSpec";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import {
 	loadComposableAtlasShard,
@@ -246,6 +247,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// canonicalKey; drives the "Show Vertex Orbits" overlay. Null while loading / for tilings with no
 	// exact cell.
 	const orbitData = useVertexOrbits(selected);
+	// The geometry-aware spec for the info card. Rebuilt only when the selection or its live analyses
+	// change — never per frame. Null while nothing is selected.
+	const tilingSpec = useMemo(
+		() => (selected ? buildTilingSpec(selected, symmetryData, orbitData) : null),
+		[selected, symmetryData, orbitData],
+	);
 
 	// Free-angle family entries carry a proven parametric cell — each parameter becomes a live slider (a
 	// separable isotoxal family has one per independent tile). The rendered cell is re-evaluated at the
@@ -500,6 +507,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					paramCell={paramCell ?? null}
 					symmetryData={symmetryData}
 					orbitData={orbitData}
+					spec={tilingSpec}
 					showTilingRuleInput={false}
 				/>
 				{/* Exactly one WebGL overlay at a time: the three.js sphere for a spherical tiling (it owns its

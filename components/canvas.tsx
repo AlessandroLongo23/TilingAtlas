@@ -49,6 +49,7 @@ import {
 } from "@/lib/render/viewControls";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
+import type { TilingSpec } from "@/lib/services/tilingSpec";
 import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
 import { ColorPad } from "./ui/color-pad";
@@ -70,6 +71,8 @@ interface CanvasProps {
 	paramCell?: ParametricCellData | null;
 	symmetryData?: SymmetryData | null;
 	orbitData?: OrbitData | null;
+	/** Geometry-aware spec for the info card (built in the play client). Null while loading. */
+	spec?: TilingSpec | null;
 	showTilingRuleInput?: boolean;
 }
 
@@ -179,6 +182,7 @@ export function Canvas({
 	paramCell = null,
 	symmetryData = null,
 	orbitData = null,
+	spec = null,
 	showTilingRuleInput = true,
 }: CanvasProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -194,7 +198,6 @@ export function Canvas({
 	// config store (no selector), so an unconditional setState here would re-render the entire tiling
 	// catalogue every frame.
 	const prevRegularOnlyRef = useRef<boolean | null>(null);
-	const prevTileCountRef = useRef(-1);
 	const prevVcsSigRef = useRef<string>("");
 	const grabRef = useRef(false);
 	// Screen coords of the last left press, or null if the press didn't start on the canvas. Read on release
@@ -275,7 +278,6 @@ export function Canvas({
 		canvasErrorRef.current = msg;
 		setCanvasError(msg);
 	};
-	const [tileCount, setTileCount] = useState(0);
 	const [vcs, setVcs] = useState<Tiling["vcs"]>([]);
 
 	const debugEnabled = useDebug((s) => s.isEnabled);
@@ -442,12 +444,8 @@ export function Canvas({
 						}
 						if (cfg.debugView) updateDebugStore();
 						showCanvasError(null);
-						// The tile-count + VC overlay is informational; re-render it only when the numbers
-						// actually change, so a slider drag doesn't re-render the overlay every frame for nothing.
-						if (t.nodes.length !== prevTileCountRef.current) {
-							prevTileCountRef.current = t.nodes.length;
-							setTileCount(t.nodes.length);
-						}
+						// The VC overlay is informational; re-render it only when the configs actually change,
+						// so a slider drag doesn't re-render the overlay every frame for nothing.
 						const nextVcs = t.vcs ?? [];
 						const vcsSig = JSON.stringify(nextVcs);
 						if (vcsSig !== prevVcsSigRef.current) {
@@ -1022,7 +1020,7 @@ export function Canvas({
 				onContextMenu={(e) => e.preventDefault()}
 			/>
 			<div className="absolute top-4 left-4 z-20">
-				<TilingInfo tileCount={tileCount} vcs={vcs} />
+				<TilingInfo spec={spec} vcs={vcs} />
 			</div>
 
 			{showSymmetryInfo ? (
