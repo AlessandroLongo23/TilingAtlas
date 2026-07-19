@@ -23,6 +23,34 @@ export function latticeBasisFromCell(cellData: TranslationalCellData): { v1: Vec
 	return { v1, v2, det: v1.x * v2.y - v2.x * v1.y };
 }
 
+// The cell content's bounding box in LATTICE coordinates (world = a*v1 + b*v2). The cell's polygons are
+// stored in raw world coordinates and are NOT reduced to hug their anchor — a cell can sit whole periods
+// away from the origin — so the fill radii must know where the content actually is. View-invariant
+// (rotation/zoom apply the same linear map to points and basis, so a,b are unchanged).
+export interface LatticeExtent { aMin: number; aMax: number; bMin: number; bMax: number }
+
+// Lattice extent from a world-space AABB (parseBaseCell already computes one). The world->lattice map is
+// linear, so its extremes over the box are attained at the four corners; the result bounds the extent of
+// every content vertex.
+export function latticeExtentFromBounds(
+	minX: number, maxX: number, minY: number, maxY: number,
+	v1: { x: number; y: number }, v2: { x: number; y: number }, det: number,
+): LatticeExtent {
+	if (Math.abs(det) < DEGENERATE_DET) return { aMin: 0, aMax: 0, bMin: 0, bMax: 0 };
+	let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity;
+	for (const x of [minX, maxX]) {
+		for (const y of [minY, maxY]) {
+			const a = (x * v2.y - y * v2.x) / det;
+			const b = (-x * v1.y + y * v1.x) / det;
+			if (a < aMin) aMin = a;
+			if (a > aMax) aMax = a;
+			if (b < bMin) bMin = b;
+			if (b > bMax) bMax = b;
+		}
+	}
+	return { aMin, aMax, bMin, bMax };
+}
+
 // The two on-screen (pixel-space) lattice vectors for the world basis, mirroring the canvas transform
 // world -> scale(zoom) -> flip-y -> rotate(theta). So e(v) = Rot(theta)·(zoom*vx, -zoom*vy). At
 // theta=0 this is the plain (zoom*vx, -zoom*vy). Fill-radius and wrap both reduce against these, so a
@@ -33,12 +61,19 @@ export function screenLatticeVectors(v1: Vector, v2: Vector, zoom: number, rotat
 	return { e1: e(v1), e2: e(v2) };
 }
 
-// How many lattice copies (per axis, each side of origin) are needed to cover the viewport plus a
-// one-cell margin. We transform the four screen corners into lattice coords via M^{-1} (columns of M
-// are the on-screen lattice vectors e1, e2) and take the worst case. The +1 absorbs the half-cell wrap
-// shift and the cell's own extent past its anchor.
+// How many lattice copies (per axis, each side of origin) are needed to cover the viewport. We transform
+// the four screen corners into lattice coords via M^{-1} (columns of M are the on-screen lattice vectors
+// e1, e2) and take the worst case maxA/maxB. Coverage argument: a viewport point at lattice coord `a` is
+// drawn by the (unique) copy i with a - i inside the content's own lattice extent [aMin, aMax]; since we
+// only know the interval i falls in, the grid must contain ALL of [a - aMax, a - aMin]. Over |a| <=
+// maxA + 0.5 (the wrapOffset residual shifts the viewport by up to half a period per axis) that needs
+// Ri >= maxA + 0.5 + max(-aMin, aMax). The former fixed "+1" margin assumed the content hugs its anchor
+// (pad ~ 0.5) — false in general (cells are stored wherever the pipeline left them, whole periods from
+// the origin), which is exactly what left uncovered corner wedges on skewed/displaced cells. The +1 in
+// the clamp is safety: stroke quads overhang the fill AABB by half a screen stroke width, plus fp slop.
 export function computeFillRadii(
 	v1: Vector, v2: Vector, det: number, zoomForFill: number, width: number, height: number, rotation: number,
+	extent: LatticeExtent,
 ): { Ri: number; Rj: number } {
 	if (Math.abs(det) < DEGENERATE_DET || zoomForFill <= 0) return { Ri: 6, Rj: 6 };
 	const { e1, e2 } = screenLatticeVectors(v1, v2, zoomForFill, rotation);
@@ -53,8 +88,10 @@ export function computeFillRadii(
 			if (Math.abs(b) > maxB) maxB = Math.abs(b);
 		}
 	}
+	const padA = Math.max(-extent.aMin, extent.aMax, 0);
+	const padB = Math.max(-extent.bMin, extent.bMax, 0);
 	const clamp = (n: number) => Math.max(1, Math.min(MAX_FILL_RADIUS, Math.ceil(n) + 1));
-	return { Ri: clamp(maxA), Rj: clamp(maxB) };
+	return { Ri: clamp(maxA + 0.5 + padA), Rj: clamp(maxB + 0.5 + padB) };
 }
 
 // Reduce the (pixel-space) pan offset modulo the on-screen lattice {e1, e2} into the centered
