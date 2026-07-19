@@ -1,0 +1,17 @@
+=== build-islamic-atlas (curated historical tessellations) ===
+  isl-4a-488  4.8.8  Σarea=5.8284 |detΛ|=5.8284 vconfigs=[4.8.8]
+  isl-5f-bobbin  6  Σarea=2.1266 |detΛ|=2.1266 vconfigs=[6.6.6]
+  isl-5f-rhombus  4  Σarea=0.9511 |detΛ|=0.9511 vconfigs=[4.4.4.4]
+  isl-5f-bowtie  6  Σarea=1.3143 |detΛ|=1.3143 vconfigs=[6.6.6]
+  isl-7f-parallelohex  6  Σarea=2.5386 |detΛ|=2.5386 vconfigs=[6.6.6]
+  isl-4b-parallelohex  6  Σarea=2.5549 |detΛ|=2.5549 vconfigs=[6.6.6]
+  isl-reg-3.4.6.4  3.4.6.4  (reused t1006)
+  isl-reg-4.6.12  4.6.12  (reused t1003)
+  isl-reg-3.12.12  3.12.12  (reused t1004)
+  isl-reg-3.6.3.6  3.6.3.6  (reused t1007)
+  developed girih: 182 distinct primitive tilings imported (908 non-primitive supercells dropped, 3 curated duplicates dropped, 0 failed coverage; 4494 developed → 3586 primitive → 185 reps → 182 non-curated → 182)
+    k=1: 1
+    k=2: 23
+    k=3: 55
+    k=4: 103
+  wrote 192 Islamic tilings (0 skipped) → public/reference-atlas-islamic.json (312.8 KB), elapsed 31.27s
