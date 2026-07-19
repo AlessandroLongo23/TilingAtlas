@@ -186,7 +186,11 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showFundamentalDomain: false,
 	showVertexOrbits: false,
 	debugView: false,
-	euclideanShader: false,
+	// On by default: the flat plain-tile view renders through the WebGL2 renderer (M1 fill+stroke, M1b
+	// points). Verified at parity with the p5 path across regular/star/parametric/dense/dark tilings
+	// (docs/superpowers/specs/2026-07-19-euclidean-gpu-port-roadmap.md). p5 stays the fallback for every
+	// other mode (islamic/circle-packing/symmetry) and as the input/overlay layer.
+	euclideanShader: true,
 
 	tilingTransition: false,
 

@@ -24,6 +24,8 @@ import {
 	loadReferenceAtlasShard,
 	referenceToCatalogue,
 	tileClassOf,
+	geometryOf,
+	type Geometry,
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
 } from "@/lib/services/referenceAtlas";
@@ -192,6 +194,48 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	const { selected, setSelected } = useCatalogueSelection(sorted, requestedKey);
 
+	// Geometry is the catalogue's top-level split AND a browse mode: random/prev/next roam only within the
+	// active geometry, and switching it jumps the canvas to that geometry's first tiling. The toggle state
+	// follows the selection (see the sync effect below), so a deep-link or "R" that lands on another
+	// geometry flips it automatically. Default euclidean — the bulk of the atlas and the initial selection.
+	const [geometry, setGeometry] = useState<Geometry>("euclidean");
+	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
+	// merges in). Derived once per atlas change, not per geometry switch.
+	const geometryCounts = useMemo(() => {
+		const c: Record<Geometry, number> = { euclidean: 0, hyperbolic: 0, spherical: 0 };
+		for (const t of sorted) c[geometryOf(t)] += 1;
+		return c;
+	}, [sorted]);
+	// The active geometry's slice, in the same (k, key) order — the catalogue list, the nav count, and the
+	// scope for random/prev/next all read this.
+	const geometryList = useMemo(() => sorted.filter((t) => geometryOf(t) === geometry), [sorted, geometry]);
+	// Dev-only: expose the catalogue selection so the Playwright visual/parity tools (see CLAUDE.md) can
+	// pick specific tilings, e.g. window.__play.select(window.__play.list.find(t => t.star)).
+	useEffect(() => {
+		if (process.env.NODE_ENV === "production" || typeof window === "undefined") return;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(window as any).__play = { list: geometryList, select: setSelected, selected };
+	}, [geometryList, setSelected, selected]);
+	// Switch geometry from the toggle: set the mode and jump to that geometry's first tiling so the canvas
+	// follows. Reads `sorted` (not `geometryList`, which still holds the OLD geometry this render).
+	const onGeometryChange = useCallback(
+		(g: Geometry) => {
+			if (g === geometry) return;
+			setGeometry(g);
+			const first = sorted.find((t) => geometryOf(t) === g);
+			if (first) setSelected(first);
+		},
+		[geometry, sorted, setSelected],
+	);
+	// Keep the toggle in sync with the selection's geometry — covers deep-links, the initial atlas load, and
+	// any path that sets `selected` outside the toggle. When the toggle drives the change, `selected` is
+	// already in `g`, so this is a no-op.
+	useEffect(() => {
+		if (!selected) return;
+		const g = geometryOf(selected);
+		if (g !== geometry) setGeometry(g);
+	}, [selected, geometry]);
+
 	// Exact wallpaper-symmetry analysis of the selected tiling (fetched cell_codec → analyzeSymmetry),
 	// memoized per canonicalKey; drives the two canvas overlays. Null while loading / for tilings with
 	// no exact cell.
@@ -288,24 +332,24 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// uniformly within it. Excludes the current selection so the view always changes. Client-only, so
 	// Math.random is fine.
 	const selectRandom = useCallback(() => {
-		const pick = pickStratified(sorted, {
+		const pick = pickStratified(geometryList, {
 			bucketOf: (t) => `${tileClassOf(t)}::${t.k}`,
 			keyOf: (t) => t.canonicalKey,
 			excludeKey: selected?.canonicalKey ?? null,
 		});
 		if (pick) setSelected(pick);
-	}, [sorted, selected, setSelected]);
+	}, [geometryList, selected, setSelected]);
 
 	// Step through the linear `sorted` order (k, then key), wrapping at both ends so arrow-key browsing
 	// never dead-ends. From no selection, forward lands on the first entry and backward on the last.
 	const step = useCallback(
 		(dir: -1 | 1) => {
-			if (sorted.length === 0) return;
-			const idx = selected ? sorted.findIndex((t) => t.canonicalKey === selected.canonicalKey) : -1;
-			const next = idx === -1 ? (dir === 1 ? 0 : sorted.length - 1) : (idx + dir + sorted.length) % sorted.length;
-			setSelected(sorted[next]);
+			if (geometryList.length === 0) return;
+			const idx = selected ? geometryList.findIndex((t) => t.canonicalKey === selected.canonicalKey) : -1;
+			const next = idx === -1 ? (dir === 1 ? 0 : geometryList.length - 1) : (idx + dir + geometryList.length) % geometryList.length;
+			setSelected(geometryList[next]);
 		},
-		[sorted, selected, setSelected],
+		[geometryList, selected, setSelected],
 	);
 
 	// Stable handlers so the memoized Sidebar doesn't re-render on every parametric-angle slider tick
@@ -324,8 +368,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			i: "isIslamic",
 			s: "showSymmetryElements",
 			d: "showFundamentalDomain",
-			v: "inversive",
-			c: "circlePacking",
+			// C and V are the Catalogue / View-options tab shortcuts now (handled in tilings-tab). Inversive
+			// moved off V to X; Circle Packing (was C) is hidden, so it has no key.
+			x: "inversive",
 			t: "tilingTransition",
 			o: "showVertexOrbits",
 		};
@@ -434,12 +479,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				)}
 			>
 				<Sidebar
-					tilings={sorted}
 					selected={selected}
 					onSelect={setSelected}
 					onRandom={selectRandom}
 					onPrev={onPrev}
 					onNext={onNext}
+					geometry={geometry}
+					geometryList={geometryList}
+					geometryCounts={geometryCounts}
+					onGeometryChange={onGeometryChange}
 				/>
 			</div>
 			<div ref={canvasWrapRef} className="flex-1 min-w-0 relative">

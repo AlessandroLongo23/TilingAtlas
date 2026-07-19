@@ -22,11 +22,24 @@ The technique is settled: **retained-mode** (TypeScript triangulates the geometr
 rasterises it via instanced draws), NOT the per-pixel fold shader the hyperbolic view uses. See
 "Technique" below for why, and why the 3D goal reinforces it.
 
+## Flag flipped ON by default (2026-07-19)
+
+`euclideanShader` now defaults true, so the flat plain-tile view renders through the WebGL2 path for
+everyone (p5 stays the fallback for islamic/circle-packing/symmetry and as the input/overlay layer).
+Trigger: `showPolygonPoints` on the p5 path was measured (Apple M5, headed Chromium, real GPU) at
++39 ms/frame at min zoom, dropping 120→21 fps; the M1b GPU points cost ~0 ms (stay pinned at the
+120 fps refresh cap). Before flipping, a Playwright parity sweep (`scripts/parity-sweep.mjs`) confirmed
+the shader matches p5 on a star (star hue + concave star-shaped fan), a parametric family (α cell path),
+a dense k=3, and dark-theme outline-only (white stroke). `tilingTransition` is already off by default,
+so the not-yet-ported selection wave (M2) costs nothing today. Measurement caveat: headless Chromium
+renders WebGL in software (SwiftShader) and is ~15× too slow, so only headed/real-GPU numbers count.
+
 ## What is already on the GPU
 
 | Milestone | Element | Code | Gate |
 |---|---|---|---|
-| M1 (done) | Plain coloured tiles: fill + constant-width stroke, instanced | [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx), [flatTilingGL.ts](../../../lib/render/flatTilingGL.ts), [buildCellMesh.ts](../../../lib/render/buildCellMesh.ts) | `euclideanShader` dev flag (default off) |
+| M1 (done) | Plain coloured tiles: fill + constant-width stroke, instanced | [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx), [flatTilingGL.ts](../../../lib/render/flatTilingGL.ts), [buildCellMesh.ts](../../../lib/render/buildCellMesh.ts) | `euclideanShader` — **ON by default since 2026-07-19** |
+| M1b (done) | Polygon points (centroid/halfway/vertex dots) | same + `POINTS_VERT/FRAG` | same flag |
 | M4-plain (done, uncommitted) | Plain Islamic A/B/C fill + black construction lines | [islamic-canvas.tsx](../../../components/islamic-canvas.tsx), [islamicGL.ts](../../../lib/render/islamicGL.ts), [buildIslamicMesh.ts](../../../lib/render/buildIslamicMesh.ts) | `isIslamicShaderActive`: `islamicStyle==='plain' && !animate` |
 
 The base fills are already retained-mode on the GPU. The premise "everything is on p5 and slow" is
