@@ -73,6 +73,15 @@ is the current primary enumeration method (thesis pivot 2026-07-10, `docs/thesis
 
 After every code change, run `pnpm build` to check for errors and warnings before reporting the task complete. `pnpm lint` and `pnpm test` are not substitutes — only a full build surfaces the real issues.
 
+## Visual inspection (Playwright — the default tool)
+
+To SEE a change in the real running app, drive it with Playwright and screenshot it, then Read the PNG back. Playwright (`playwright` ^1.61, Chromium already installed) is the default visual-inspection tool — prefer it over guessing or asking AL to check.
+
+- Helper: `node scripts/visual-check.mjs --out /tmp/shot.png` (defaults to `http://localhost:3000/play`). Flags: `--url`, `--setup "<js>"` (evaluated in the page after load), `--wait <ms>`, `--width`/`--height`, `--selector`. It waits for `domcontentloaded` + the selector — NOT `networkidle`, which never settles because the dev server holds an HMR socket open — lets a few RAF frames paint, then writes the PNG.
+- Needs the dev server up: `pnpm dev` (port 3000). Next 16 refuses a second dev server for the same dir, so reuse the running one; if it is wedged (no HTTP response), kill it and restart.
+- Drive any store flag from the page via the dev-only `window.__stores` hook (attached in `lib/stores/configuration.ts`) — this is how to exercise a flag with no UI, e.g. the flat-shader path: `--setup "window.__stores.configuration.setState({ euclideanShader: true, showPolygonPoints: true })"`.
+- For parity checks, capture flag-on vs flag-off at the same viewport and compare the two PNGs (how M1b was verified).
+
 ## Commands
 
 - `pnpm dev` — Next dev server (Turbopack)
