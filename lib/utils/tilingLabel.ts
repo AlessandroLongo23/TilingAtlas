@@ -4,9 +4,12 @@
 // capability gate below, kept class-based so it stays in lockstep with that classifier.
 import { tileClassOf, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 
-// The Islamic/Hankin construction is wired only for the regular and star tile classes; convex-irregular,
-// isotoxal, mixed, and doubled are excluded until their edge geometry is folded into the construction.
+// The flat Hankin construction (Polygon.calculateIslamicSegments) is shape-agnostic — it reads only
+// vertices, edge midpoints, centroid, and per-edge inward normals — so it applies to every flat and
+// spherical tile class the catalogue ships. Scaled tiles carry their T-junctions as flat 180° corners
+// (scripts/build-scaled-atlas.ts), so `halfways` already holds one midpoint per unit sub-edge and the
+// construction emits a ray-pair ("V") at each. Only "hyperbolic" is excluded here: it draws its
+// strapwork through the Poincaré-disk shader, gated separately by `selected.wythoff` at the call sites.
 export function polygonClassSupportsIslamic(t: { family: string; source?: ReferenceTiling["source"] }): boolean {
-	const c = tileClassOf(t);
-	return c === "regular" || c === "star";
+	return tileClassOf(t) !== "hyperbolic";
 }
