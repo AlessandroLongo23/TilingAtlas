@@ -163,15 +163,16 @@ function isFlatShaderActive(cfg: {
 		!cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
 }
 
-// Euclidean Islamic PLAIN fill renders through the WebGL IslamicCanvas (components/islamic-canvas.tsx)
-// instead of p5 immediate mode — the same gate decides the React mount and the per-frame skipFill, so
-// p5 never double-paints. The decorative styles (interlace/outline/emboss/checkerboard) and the animated
-// motif stay on p5, and a rulestring tiling with no translational cell also stays on p5.
+// Euclidean Islamic PLAIN and CHECKERBOARD fills render through the WebGL IslamicCanvas
+// (components/islamic-canvas.tsx) instead of p5 immediate mode — the same gate decides the React mount and
+// the per-frame skipFill, so p5 never double-paints. The strap styles (interlace/outline/emboss) and the
+// animated motif stay on p5, and a rulestring tiling with no translational cell also stays on p5.
 function isIslamicShaderActive(cfg: {
 	isIslamic: boolean; islamicAnimate: boolean; islamicStyle: string;
 	hyperbolic: boolean; spherical: boolean; inversive: boolean;
 }): boolean {
-	return cfg.isIslamic && !cfg.islamicAnimate && cfg.islamicStyle === "plain"
+	return cfg.isIslamic && !cfg.islamicAnimate
+		&& (cfg.islamicStyle === "plain" || cfg.islamicStyle === "checkerboard")
 		&& !cfg.hyperbolic && !cfg.spherical && !cfg.inversive;
 }
 

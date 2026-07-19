@@ -111,9 +111,9 @@ export class Tiling {
             if (style === "interlace") this.drawIslamicInterlace(ctx, opacity, true, false);
             else if (style === "outline") this.drawIslamicInterlace(ctx, opacity, false, false);
             else if (style === "emboss") this.drawIslamicInterlace(ctx, opacity, true, true);
-            else if (style === "checkerboard") this.drawIslamicCheckerboard(ctx, opacity);
-            // skipFill ⇒ the WebGL IslamicCanvas owns the plain A/B/C fill (isIslamicShaderActive in
-            // canvas.tsx); p5 draws nothing so the two never double-paint. Decorative styles are unaffected.
+            // skipFill ⇒ the WebGL IslamicCanvas owns the plain A/B/C fill OR the checkerboard
+            // (isIslamicShaderActive in canvas.tsx); p5 draws nothing so the two never double-paint.
+            else if (style === "checkerboard") { if (!skipFill) this.drawIslamicCheckerboard(ctx, opacity); }
             else if (!skipFill) this.drawIslamicStarFill(ctx, opacity);
         } else {
             // Hot path: inline fill + shape, reusing the stroke set once above. No push/pop, no per-tile

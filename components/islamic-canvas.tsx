@@ -6,9 +6,10 @@ import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { computeFillRadii, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, ISLAMIC_STROKE_VERT, ISLAMIC_STROKE_FRAG, hexToRgb } from "@/lib/render/islamicGL";
-import { buildInstancedIslamicMesh, type IslamicMesh } from "@/lib/render/buildIslamicMesh";
+import { buildInstancedIslamicMesh, buildInstancedCheckerMesh, type IslamicMesh } from "@/lib/render/buildIslamicMesh";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { extractFaces, colorFacesAbc, type Segment, type Marker } from "@/utils/islamicArrangement";
+import { twoColorFaces } from "@/lib/utils/islamicInterlace";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import { Vector } from "@/classes/Vector";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
@@ -114,7 +115,7 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 		fillProgRef.current = fillProg;
 		strokeProgRef.current = strokeProg;
 
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uColorB", "uColorC", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
 		for (const n of ["aPos", "aHue", "aClass", "aInst"]) fillA.current[n] = gl.getAttribLocation(fillProg, n);
 		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uOpacity"]) strokeU.current[n] = gl.getUniformLocation(strokeProg, n);
 		for (const n of ["aPos", "aNorm", "aSide", "aInst"]) strokeA.current[n] = gl.getAttribLocation(strokeProg, n);
@@ -154,6 +155,9 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 			const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
 			const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
 			const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
+			// Which decorative style this canvas owns. "checkerboard" builds a two-colour face mesh; anything
+			// else here is the plain A/B/C fill (the gate in canvas.tsx only mounts this canvas for those two).
+			const style = cfg.islamicStyle === "checkerboard" ? "checkerboard" : "plain";
 
 			// Layer 1: the fixed-size patch. Only a new tiling rebuilds it — a slider drag and every
 			// pan/zoom reuse these nodes. Constant size, so this never scales with the zoom.
@@ -165,14 +169,14 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 			// Layer 2: the origin-cell A/B/C mesh, keyed on the slider geometry. Throttled so a continuous
 			// drag rebuilds at most once per MESH_REBUILD_THROTTLE_MS; a structural rebuild (meshSigRef null:
 			// new tiling / new patch) bypasses the throttle so it paints at once.
-			const meshSig = `${theta}|${offset}|${count}`;
+			const meshSig = `${style}|${theta}|${offset}|${count}`;
 			if (meshSig !== meshSigRef.current && patchRef.current) {
 				const structural = meshSigRef.current === null;
 				const now = performance.now();
 				if (structural || now - lastRebuildRef.current >= MESH_REBUILD_THROTTLE_MS) {
 					lastRebuildRef.current = now;
 					meshSigRef.current = meshSig;
-					upload(buildMeshFromPatch(patchRef.current, islamicNormalAngleFromSlider(theta), offset, count, meta.v1, meta.v2));
+					upload(buildMeshFromPatch(patchRef.current, style, islamicNormalAngleFromSlider(theta), offset, count, meta.v1, meta.v2));
 				}
 				// else: leave meshSigRef stale; the next frame past the throttle window rebuilds to the latest value.
 			}
@@ -216,10 +220,20 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 			g.uniform2f(FU.uV2, meta.v2.x, meta.v2.y);
 			g.uniform2f(FU.uHalf, w / 2, h / 2);
 			g.uniform1f(FU.uHueOffset, cfg.hueOffset || 0);
-			const [br, bg, bb] = hexToRgb(cfg.islamicFillColorB);
-			const [cr, cg, cb] = hexToRgb(cfg.islamicFillColorC);
-			g.uniform3f(FU.uColorB, br, bg, bb);
-			g.uniform3f(FU.uColorC, cr, cg, cb);
+			// Checkerboard reads colours A/B from the checker palette; plain reads B/C from the A/B/C palette.
+			if (style === "checkerboard") {
+				const [ar, ag, ab] = hexToRgb(cfg.islamicCheckerColorA);
+				const [br, bg, bb] = hexToRgb(cfg.islamicCheckerColorB);
+				g.uniform3f(FU.uColorA, ar, ag, ab);
+				g.uniform3f(FU.uColorB, br, bg, bb);
+				g.uniform1i(FU.uMode, 1);
+			} else {
+				const [br, bg, bb] = hexToRgb(cfg.islamicFillColorB);
+				const [cr, cg, cb] = hexToRgb(cfg.islamicFillColorC);
+				g.uniform3f(FU.uColorB, br, bg, bb);
+				g.uniform3f(FU.uColorC, cr, cg, cb);
+				g.uniform1i(FU.uMode, 0);
+			}
 			g.uniform1f(FU.uOpacity, 1);
 			g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
 
@@ -269,8 +283,8 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 // Tiling.drawIslamicStarFill's pooling exactly (same clamps, same splitCrossings rule) so the shader fill is
 // the same geometry the p5 path drew. The patch is prebuilt/cached by the caller.
 function buildMeshFromPatch(
-	patch: ReturnType<typeof buildTilingFromCell>, angle: number, offset: number, count: number,
-	v1: Vector, v2: Vector,
+	patch: ReturnType<typeof buildTilingFromCell>, style: "plain" | "checkerboard",
+	angle: number, offset: number, count: number, v1: Vector, v2: Vector,
 ): IslamicMesh {
 	const segments: Segment[] = [];
 	const markers: Marker[] = [];
@@ -279,6 +293,13 @@ function buildMeshFromPatch(
 		for (const s of node.calculateIslamicSegments(angle, offset, count)) segments.push(s);
 		for (const m of node.islamicMarkers()) markers.push(m);
 	}
-	const { faces, degenerate } = colorFacesAbc(extractFaces(segments, offset > 0 || count > 1), markers);
+	const split = offset > 0 || count > 1;
+	if (style === "checkerboard") {
+		// Same pooled faces as the plain fill, bipartite two-coloured (twoColorFaces), reusing drawIslamicCheckerboard's rule.
+		const faces = extractFaces(segments, split);
+		const colors = twoColorFaces(faces);
+		return buildInstancedCheckerMesh(faces, colors, segments, [v1.x, v1.y], [v2.x, v2.y]);
+	}
+	const { faces, degenerate } = colorFacesAbc(extractFaces(segments, split), markers);
 	return buildInstancedIslamicMesh(faces, segments, degenerate, [v1.x, v1.y], [v2.x, v2.y]);
 }

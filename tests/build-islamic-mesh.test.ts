@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { Vector } from "@/classes";
-import { buildIslamicMesh, buildInstancedIslamicMesh, latticeCellOf } from "@/lib/render/buildIslamicMesh";
+import { buildIslamicMesh, buildInstancedIslamicMesh, buildInstancedCheckerMesh, latticeCellOf } from "@/lib/render/buildIslamicMesh";
 import { hexToRgb } from "@/lib/render/islamicGL";
-import type { AbcFace, Segment } from "@/utils/islamicArrangement";
+import type { AbcFace, Face, Segment } from "@/utils/islamicArrangement";
 
 const sq = (cx: number, cy: number, r: number): Vector[] => [
 	new Vector(cx - r, cy - r), new Vector(cx + r, cy - r), new Vector(cx + r, cy + r), new Vector(cx - r, cy + r),
@@ -95,6 +95,36 @@ describe("buildInstancedIslamicMesh", () => {
 		// The kept face is the centred square (centroid 0,0): its first fan vertex is the centroid (0,0).
 		expect(m.fillVerts[0]).toBeCloseTo(0);
 		expect(m.fillVerts[1]).toBeCloseTo(0);
+	});
+});
+
+describe("buildInstancedCheckerMesh", () => {
+	const v1: [number, number] = [1, 0], v2: [number, number] = [0, 1];
+	// The same 3×3 grid, but as plain Faces with a per-face two-colour index. Only the origin rep survives,
+	// and it must carry ITS colour in fillClass (0/1), not the A/B/C classes.
+	const faces: Face[] = [];
+	const colors: number[] = [];
+	for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+		faces.push({ vertices: sq(i, j, 0.3) });
+		colors.push((i + j) & 1); // a checker parity so the origin cell is colour 0
+	}
+	const segments: Segment[] = [[new Vector(-0.1, 0), new Vector(0.1, 0)]];
+
+	it("keeps the origin-cell face and carries its two-colour index in fillClass", () => {
+		const m = buildInstancedCheckerMesh(faces, colors, segments, v1, v2);
+		expect(m.fillVertexCount).toBe(12); // one square only
+		// origin face (i=j=0) has colour (0+0)&1 = 0 → fillClass 0 on every vertex
+		for (let k = 0; k < 12; k++) expect(m.fillClass[k]).toBe(0);
+	});
+
+	it("maps colour index 1 to fillClass 1", () => {
+		// Shift the parity so the origin cell is colour 1.
+		const c1 = faces.map((_, idx) => {
+			const i = Math.floor(idx / 3) - 1, j = (idx % 3) - 1;
+			return ((i + j) & 1) ^ 1;
+		});
+		const m = buildInstancedCheckerMesh(faces, c1, segments, v1, v2);
+		for (let k = 0; k < 12; k++) expect(m.fillClass[k]).toBe(1);
 	});
 });
 

@@ -37,8 +37,10 @@ precision highp float;
 in float vHue;
 in float vClass;
 uniform float uHueOffset;
+uniform vec3 uColorA;   // checkerboard colour A (uMode 1); unused in plain mode
 uniform vec3 uColorB;
 uniform vec3 uColorC;
+uniform int uMode;      // 0 = plain A/B/C, 1 = checkerboard two-colour
 uniform float uOpacity;
 out vec4 frag;
 vec3 hsb2rgb(float h, float s, float v) {
@@ -47,7 +49,9 @@ vec3 hsb2rgb(float h, float s, float v) {
 }
 void main() {
 	vec3 rgb;
-	if (vClass < 0.5) rgb = hsb2rgb(mod(vHue + uHueOffset, 360.0) / 360.0, 0.40, 1.0); // A: tile hue
+	if (uMode == 1) {
+		rgb = vClass < 0.5 ? uColorA : uColorB;                                        // checkerboard 0/1
+	} else if (vClass < 0.5) rgb = hsb2rgb(mod(vHue + uHueOffset, 360.0) / 360.0, 0.40, 1.0); // A: tile hue
 	else if (vClass < 1.5) rgb = uColorB;                                              // B: side field
 	else rgb = uColorC;                                                                // C: edge diamond
 	frag = vec4(rgb, uOpacity);

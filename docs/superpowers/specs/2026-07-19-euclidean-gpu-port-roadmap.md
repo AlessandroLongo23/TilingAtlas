@@ -43,7 +43,8 @@ only headed/real-GPU numbers count.
 | M1b (done) | Polygon points (centroid/halfway/vertex dots) | same + `POINTS_VERT/FRAG` | same flag |
 | M2 (done) | Selection-transition wave: collapse-then-grow on tiling change | `uWavePhase`/`uWaveP` + `aCentroid` in `FILL_VERT`/`STROKE_VERT`, `fillCentroid`/`strokeCentroid` in `buildCellMesh`, transition state machine in [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx) | `tilingTransition` (live) |
 | M3 (done) | Vertex-orbit dots + tile dim, hover-grow | `ORBIT_VERT`/`ORBIT_FRAG` + `uFillDim`/`uStrokeDim` in [flatTilingGL.ts](../../../lib/render/flatTilingGL.ts), [buildOrbitDotMesh.ts](../../../lib/render/buildOrbitDotMesh.ts), [orbitHoverBridge.ts](../../../lib/render/orbitHoverBridge.ts) | `showVertexOrbits` (live) |
-| M4-plain (done, uncommitted) | Plain Islamic A/B/C fill + black construction lines | [islamic-canvas.tsx](../../../components/islamic-canvas.tsx), [islamicGL.ts](../../../lib/render/islamicGL.ts), [buildIslamicMesh.ts](../../../lib/render/buildIslamicMesh.ts) | `isIslamicShaderActive`: `islamicStyle==='plain' && !animate` |
+| M4-plain (done) | Plain Islamic A/B/C fill + black construction lines | [islamic-canvas.tsx](../../../components/islamic-canvas.tsx), [islamicGL.ts](../../../lib/render/islamicGL.ts), [buildIslamicMesh.ts](../../../lib/render/buildIslamicMesh.ts) | `isIslamicShaderActive`: plain, `!animate` |
+| M4-checker (done) | Checkerboard (zellij two-tone) fill + borders | same + `buildInstancedCheckerMesh`, `uMode` in `ISLAMIC_FILL_FRAG` | `isIslamicShaderActive`: checkerboard, `!animate` |
 
 The base fills are already retained-mode on the GPU. The premise "everything is on p5 and slow" is
 therefore only half true. Pan/zoom/rotate on the plain views are already fast. What is slow is a
@@ -102,8 +103,9 @@ the decorative styles (M4-rest) are still whole-patch p5 and will inherit the sa
 
 ## Remaining elements still on p5, by milestone
 
-Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. M1b, M2 and M3 done; **next is
-M4-rest** (Islamic decoration). Cost column is per-frame while the relevant mode/toggle is active.
+Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. M1b, M2, M3 done; **M4-rest in
+progress** (checkerboard done; interlace/outline/emboss next; animated deferred). Cost column is per-frame
+while the relevant mode/toggle is active.
 
 ### M1b: points
 | Element | Toggle | Source | Status |
@@ -168,18 +170,30 @@ shader owns the dots (`skipFill`), so nothing double-draws. `uFillDim`/`uStrokeD
 (p5-vs-GPU parity + a hover frame) against a k=7 Regular-shelf tiling.
 
 ### M4-rest: Islamic decoration (the end goal, and after P0 the main speed win)
-| Element | Toggle | Source | Cost |
+| Element | Toggle | Source | Status |
 |---|---|---|---|
-| Interlace / outline / emboss straps | `islamicStyle` (live) | `drawIslamicInterlace` [Tiling.ts:332](../../../lib/classes/Tiling.ts#L332) + `buildIslamicInterlace` | geom cached; per-frame p5 emit over all bands + outlines |
-| Checkerboard (zellij two-tone) | `islamicStyle` (live) | `drawIslamicCheckerboard` [Tiling.ts:411](../../../lib/classes/Tiling.ts#L411) + `twoColorFaces` | geom cached; per-frame face + segment emit |
-| Animated motif | `islamicAnimate` (live) | `drawIslamicStarFill` animate path ~278 | full geometry rebuild every frame (worst) |
+| Checkerboard (zellij two-tone) | `islamicStyle` (live) | `drawIslamicCheckerboard` [Tiling.ts:411](../../../lib/classes/Tiling.ts#L411) + `twoColorFaces` | **DONE 2026-07-19** |
+| Interlace / outline / emboss straps | `islamicStyle` (live) | `drawIslamicInterlace` [Tiling.ts:332](../../../lib/classes/Tiling.ts#L332) + `buildIslamicInterlace` | still p5 (next) |
+| Animated motif | `islamicAnimate` (live) | `drawIslamicStarFill` animate path ~278 | deferred (per-frame, non-periodic → defeats instancing) |
 
-Extend `buildIslamicMesh` to emit strap-band geometry (from `buildIslamicInterlace`'s bands) and
-checkerboard faces (from `twoColorFaces`), reusing the proven [islamicGL.ts](../../../lib/render/islamicGL.ts) /
-[islamic-canvas.tsx](../../../components/islamic-canvas.tsx) stack. Arrangement logic stays in TS. The animated motif still
-rebuilds its buffer per frame (only the draw moves to GPU), so its win is smaller than the static
-styles', but eliminating the p5 emit still helps. Do this on top of the P0 instancing so decoration
-inherits the one-cell rebuild.
+**Checkerboard (done):** `buildInstancedCheckerMesh` reuses the plain path's origin-cell filtering but the
+fill is `twoColorFaces`'s bipartite two-colouring instead of A/B/C; each kept face carries its colour index
+(0/1) in `fillClass`, and `ISLAMIC_FILL_FRAG` gains a `uMode`: mode 1 maps class 0→colour A, 1→colour B
+(uniforms), mode 0 stays the A/B/C path. The gate (`isIslamicShaderActive`) and the p5 skip
+(`Tiling.show`) now cover checkerboard as well as plain, so p5 never double-paints. Playwright-verified
+pixel-identical to p5 on two lattices (composable-k1, composable-k2), no parity seam across instances
+(the lattice preserves the bipartite parity, same periodicity assumption the plain A/B/C path relies on).
+
+**Interlace/outline/emboss (next):** `buildIslamicInterlace` returns one `Band` per edge, each a convex
+`fill` quad (fan-triangulatable) plus per-segment `outline` with world normals. Port as a strap-fill mesh
+(one solid colour, or emboss mid-tone) + a border mesh whose per-vertex colour is baked at build time (dark
+warm, or emboss highlight/shadow from `n·light`, world-fixed so it's periodic and instances cleanly). The
+over/under illusion is already baked into the outline endpoints by `buildBands`, so the GPU just strokes
+them. Reuse the [islamic-canvas.tsx](../../../components/islamic-canvas.tsx) stack + the P0 instancing.
+
+**Animated motif (deferred):** `drawIslamicStarFill`'s animate path re-picks a per-edge angle every frame
+from noise, so the pattern is NOT lattice-periodic and can't be instanced from one cell. Porting it means
+a whole-patch rebuild per frame (only the draw moves to GPU) for a small win; left on p5 for now.
 
 ### M5: overlays and misc (last; the gate to retiring p5)
 | Element | Toggle | Source | Cost |

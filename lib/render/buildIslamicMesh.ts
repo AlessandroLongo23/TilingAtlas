@@ -9,7 +9,8 @@
 // kites, convex fields) are convex. A genuinely concave, non-star-shaped background face (possible on
 // fivefold/girih tile sets, not yet in scope) would need ear-clipping instead.
 
-import type { AbcFace, Segment } from "@/utils/islamicArrangement";
+import type { Vector } from "@/classes/Vector";
+import type { AbcFace, Face, Segment } from "@/utils/islamicArrangement";
 
 export interface IslamicMesh {
 	fillVerts: Float32Array;  // 2 floats/vert, triangles
@@ -33,18 +34,22 @@ function classNum(klass: "A" | "B" | "C", degenerate: boolean): number {
 	return 1;
 }
 
-export function buildIslamicMesh(abc: AbcFace[], segments: Segment[], degenerate: boolean): IslamicMesh {
-	// Fill: fan each face from its centroid into face.vertices.length triangles.
+// One flat-shaded face for the assembler: its polygon plus the two per-vertex fill channels the shader
+// reads — `hue` (used by class A only) and `cls` (the fill-class / colour index).
+interface FillFace { vertices: Vector[]; hue: number; cls: number; }
+
+// Fan-triangulate a list of faces (from their centroids) and emit one butt quad per construction segment.
+// Shared by the A/B/C plain fill and the checkerboard two-colour fill — they differ only in how each face's
+// (hue, cls) is chosen, computed by the caller.
+function assembleMesh(faces: FillFace[], segments: Segment[]): IslamicMesh {
 	let triCount = 0;
-	for (const f of abc) triCount += f.face.vertices.length;
+	for (const f of faces) triCount += f.vertices.length;
 	const fillVerts = new Float32Array(triCount * 3 * 2);
 	const fillHue = new Float32Array(triCount * 3);
 	const fillClass = new Float32Array(triCount * 3);
 
 	let vi = 0;
-	for (const { face, klass, hue } of abc) {
-		const vs = face.vertices;
-		const cls = classNum(klass, degenerate);
+	for (const { vertices: vs, hue, cls } of faces) {
 		let cx = 0, cy = 0;
 		for (const v of vs) { cx += v.x; cy += v.y; }
 		cx /= vs.length; cy /= vs.length;
@@ -85,6 +90,13 @@ export function buildIslamicMesh(abc: AbcFace[], segments: Segment[], degenerate
 	};
 }
 
+export function buildIslamicMesh(abc: AbcFace[], segments: Segment[], degenerate: boolean): IslamicMesh {
+	return assembleMesh(
+		abc.map(({ face, klass, hue }) => ({ vertices: face.vertices, hue, cls: classNum(klass, degenerate) })),
+		segments,
+	);
+}
+
 // The lattice cell (i,j) a world point falls in = round of its (v1,v2) coordinates. A face/segment
 // "belongs" to the cell its centre reduces to.
 export function latticeCellOf(
@@ -123,4 +135,27 @@ export function buildInstancedIslamicMesh(
 		return i === 0 && j === 0;
 	});
 	return buildIslamicMesh(keptFaces, keptSegs, degenerate);
+}
+
+// Checkerboard (zellij) instanced mesh: like buildInstancedIslamicMesh but the fill is the bipartite
+// two-colouring (twoColorFaces) instead of the A/B/C classes. Each kept face carries its colour index
+// (0/1) in fillClass; the fill shader maps 0→colour A, 1→colour B (uniforms). `colors[i]` is the colour of
+// `faces[i]` (parallel arrays, as twoColorFaces returns). Segments are the same black construction lines.
+export function buildInstancedCheckerMesh(
+	faces: Face[], colors: number[], segments: Segment[],
+	v1: readonly [number, number], v2: readonly [number, number],
+): IslamicMesh {
+	const kept: FillFace[] = [];
+	for (let fi = 0; fi < faces.length; fi++) {
+		const vs = faces[fi].vertices;
+		let cx = 0, cy = 0;
+		for (const v of vs) { cx += v.x; cy += v.y; }
+		const [i, j] = latticeCellOf(cx / vs.length, cy / vs.length, v1, v2);
+		if (i === 0 && j === 0) kept.push({ vertices: vs, hue: 0, cls: colors[fi] === 0 ? 0 : 1 });
+	}
+	const keptSegs = segments.filter(([a, b]) => {
+		const [i, j] = latticeCellOf((a.x + b.x) / 2, (a.y + b.y) / 2, v1, v2);
+		return i === 0 && j === 0;
+	});
+	return assembleMesh(kept, keptSegs);
 }
