@@ -624,7 +624,7 @@ export function verifyComplex(families: FamilyRecord[]): VerificationReport {
   const nMargin = nodeMargin(complex.nodeCoords);
 
   const h2 = gens.h2.map((g) => {
-    const s = classifySurface(cx, g.faces);
+    const s = classifySurface(cx, g.coeffs);   // signed coefficient vector, NOT the support
     const fams = [...new Set(g.faces.map((fi) => faceFamily[fi]))];
     return { faces: fams, surface: s.name, chi: s.chi };
   });
