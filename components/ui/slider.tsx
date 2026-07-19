@@ -1,8 +1,12 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface SliderProps {
 	id?: string;
 	label?: string;
+	/** Optional discoverability hint rendered beside the label (e.g. the gesture that also drives this value). */
+	hint?: ReactNode;
 	value: number;
 	onChange: (value: number) => void;
 	min?: number;
@@ -15,6 +19,7 @@ interface SliderProps {
 export function Slider({
 	id,
 	label,
+	hint,
 	value,
 	onChange,
 	min = 1,
@@ -26,11 +31,14 @@ export function Slider({
 	return (
 		<div className="grid w-full gap-2">
 			{label ? (
-				<div className="flex flex-row justify-between items-center">
-					<label htmlFor={id} className="text-sm font-medium text-fg-secondary">
-						{label}
-					</label>
-					<span className="text-xs text-accent font-medium">
+				<div className="flex flex-row justify-between items-center gap-2">
+					<div className="flex items-center gap-1.5 min-w-0">
+						<label htmlFor={id} className="text-sm font-medium text-fg-secondary">
+							{label}
+						</label>
+						{hint}
+					</div>
+					<span className="text-xs text-accent font-medium whitespace-nowrap">
 						{value} {unit}
 					</span>
 				</div>
