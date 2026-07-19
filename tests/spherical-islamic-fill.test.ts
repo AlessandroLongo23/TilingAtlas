@@ -193,6 +193,7 @@ describe("buildIslamicFill — relief mode", () => {
 		const fill = buildIslamicFill(bySolid("tetrahedron"), opts)!;
 		const mesh = fill.object.children[0] as THREE.Mesh;
 		expect(mesh.material).toBeInstanceOf(THREE.MeshBasicMaterial);
+		expect((mesh.material as THREE.Material).side).toBe(THREE.DoubleSide);
 		const { min, max } = radii(fill);
 		expect(min).toBeCloseTo(1, 4);
 		expect(max).toBeCloseTo(1, 4);
@@ -206,6 +207,9 @@ describe("buildIslamicFill — relief mode", () => {
 		expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
 		expect(mat.flatShading).toBe(true);
 		expect(mat.vertexColors).toBe(true);
+		expect(mat.side).toBe(THREE.FrontSide); // FrontSide makes cell winding load-bearing — guard it
+		expect(mat.roughness).toBeCloseTo(0.9);
+		expect(mat.metalness).toBe(0);
 
 		const rFlat = radii(flat);
 		const rRelief = radii(relief);

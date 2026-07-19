@@ -304,9 +304,9 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 
 	let material: THREE.Material;
 	if (relief) {
-		// computeVertexNormals on the non-indexed mesh gives per-facet normals; with flatShading the beveled
-		// rim of each tile catches the light and every cell boundary stays a crisp crease (the tile edge).
-		geom.computeVertexNormals();
+		// flatShading derives each facet's normal from screen-space position derivatives (no normal attribute
+		// needed), so the beveled rim of every raised cell catches the light and each cell boundary reads as a
+		// crisp crease — the tile edge.
 		material = new THREE.MeshStandardMaterial({
 			vertexColors: true,
 			side: THREE.FrontSide, // raised tiles form a closed opaque shell — near occludes far
