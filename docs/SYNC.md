@@ -1259,3 +1259,13 @@ spherical branch (`6f80bc7`); TS invariant cross-check vs authored `PLATONIC_SOL
 only — atlas UI untouched; developed JSON is render-ready for a later wire-in. Note: the design pivoted
 relaxation → geodesic development (relaxation needs the unfolded graph, which for k=1 the ρ-solve closes
 analytically). Spec/plan: `docs/superpowers/specs|plans/2026-07-{19,20}-spherical-k1-developer*`. — CC
+
+**2026-07-20 (CC) — Spherical developer extended to k=2: two Johnson twins.** `develop_spherical.py`
+now handles k>1 (`solve_rho_common`: all orbit configs must close at one edge length, else no equal-edge
+tiling). Of **132** k=2 blocks exactly **2** realize — J27 triangular orthobicupola (6·3.4.3.4 + 6·3.3.4.4,
+V12E24F14) and J37 pseudo-rhombicuboctahedron (24·3.4.4.4 two orbits, V24E48F26), the gyro-twins of the
+cuboctahedron / rhombicuboctahedron; the other 130 mix two figures with no common ρ. External check:
+both are catalogued Johnson solids (there is NO general "2-uniform spherical" table, so validation is
+Johnson-catalogue + internal Euler/regularity/closure + the common-ρ argument for the 130). k=2 Vitest
+asserts both by true cyclic vertex config (the 3.3.4.4 vertices prove J27 ≠ cuboctahedron). Also fixed a
+latent tsc error in the k=1 test (fixture cast). Commits after `6b176a6`. — CC
