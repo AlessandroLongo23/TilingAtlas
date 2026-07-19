@@ -81,6 +81,12 @@ export function reliefHeight(px: number, py: number, boundary: Vector[], depth: 
 const TARGET_SEG = 0.05;
 const MAX_SUBDIV = 24;
 
+// Relief (Realistic Islamic) tuning. RELIEF_DEPTH is the radial bulge in sphere-radius units (compare the
+// carved sphere's DEFAULT_CARVE_DEPTH = 0.022); RELIEF_BEVEL is the 2D-gnomonic width of the ramp from a
+// cell boundary up to full depth. Tuned by eye in a later task.
+const RELIEF_DEPTH = 0.03;
+const RELIEF_BEVEL = 0.16;
+
 // Default fill fields (the store's islamicFillColorB/C and islamicCheckerColorA/B defaults) — used when the
 // caller doesn't pass them.
 const DEFAULT_COLOR_B = "#e7dcc0";
@@ -99,6 +105,8 @@ export interface IslamicFillOptions {
 	fillColorC?: string; // A/B/C edge-diamond colour (CSS hex)
 	checkerColorA?: string; // checkerboard field A (CSS hex) — the centre-cell parity
 	checkerColorB?: string; // checkerboard field B (CSS hex)
+	/** Realistic mode: raise each cell into a lit, beveled tile (relief) instead of the flat unlit shell. */
+	relief?: boolean;
 }
 
 export interface IslamicFill {
@@ -114,6 +122,7 @@ interface Cell {
 	tris: Array<[Vector, Vector, Vector]>;
 	klass: number;
 	aHue: number;
+	boundary: Vector[]; // the cell's 2D boundary polygon (face-plane), for relief height
 }
 
 // Triangulate one fill cell. The regions the star lines cut are frequently NON-CONVEX — star bodies and side
@@ -153,6 +162,7 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 	// arrangement must inject them as vertices — same rule as the flat renderer.
 	const splitCrossings = frac > 0 || nCount > 1;
 	const isChecker = opts.style === "checkerboard";
+	const relief = opts.relief ?? false;
 
 	const faceData = sphericalIslamicFaceData(poly, {
 		angleRad: opts.angleRad,
@@ -184,7 +194,7 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 			if (vs.length < 3) return;
 			const tris = triangulateFillCell(vs);
 			if (tris.length === 0) return;
-			cells.push({ tris, klass, aHue });
+			cells.push({ tris, klass, aHue, boundary: vs });
 			baseTris += tris.length;
 		};
 		if (isChecker) {
@@ -245,7 +255,7 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 		};
 
 		for (const cell of cells) {
-			const { tris, klass, aHue } = cell;
+			const { tris, klass, aHue, boundary } = cell;
 			for (const [t0, t1, t2] of tris) {
 				// One triangle of the cell's triangulation, barycentrically subdivided at level L (t0 the apex).
 				const ax = t0.x;
@@ -258,7 +268,17 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 					for (let b = 0; b <= L - a; b++) {
 						const s = a / L;
 						const t = b / L;
-						grid[a][b] = to3(ax + s * ux + t * wx, ay + s * uy + t * wy);
+						const gx = ax + s * ux + t * wx;
+						const gy = ay + s * uy + t * wy;
+						let p = to3(gx, gy);
+						if (relief) {
+							const h = reliefHeight(gx, gy, boundary, RELIEF_DEPTH, RELIEF_BEVEL);
+							if (h !== 0) {
+								const f = (radius + h) / radius;
+								p = [p[0] * f, p[1] * f, p[2] * f];
+							}
+						}
+						grid[a][b] = p;
 					}
 				}
 				for (let a = 0; a < L; a++) {
@@ -282,9 +302,23 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 	const colorAttr = new THREE.BufferAttribute(new Float32Array(triCount * 9), 3);
 	geom.setAttribute("color", colorAttr);
 
-	// DoubleSide: the cells tile the whole sphere into an opaque shell (near side occludes far). Unlit — flat
-	// tile colours.
-	const material = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+	let material: THREE.Material;
+	if (relief) {
+		// computeVertexNormals on the non-indexed mesh gives per-facet normals; with flatShading the beveled
+		// rim of each tile catches the light and every cell boundary stays a crisp crease (the tile edge).
+		geom.computeVertexNormals();
+		material = new THREE.MeshStandardMaterial({
+			vertexColors: true,
+			side: THREE.FrontSide, // raised tiles form a closed opaque shell — near occludes far
+			roughness: 0.9,
+			metalness: 0.0,
+			flatShading: true,
+		});
+	} else {
+		// DoubleSide: the flat cells tile the whole sphere into an opaque shell (near side occludes far).
+		// Unlit — flat tile colours.
+		material = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+	}
 
 	// The two fixed cell colours (class 1 / class 2) — plain: the A/B/C background fields; checkerboard: the
 	// two checker fields (class 1 = the centre-cell parity). Neither rotates with the hue ring.

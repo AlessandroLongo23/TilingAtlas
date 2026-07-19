@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
+import * as THREE from "three";
 import { PLATONIC_SOLIDS, type Polyhedron } from "@/lib/render/platonicSolids";
 import { sphericalIslamicFaceData } from "@/lib/render/sphericalIslamic";
-import { triangulateFillCell, reliefHeight } from "@/lib/render/sphericalIslamicFill";
+import { triangulateFillCell, reliefHeight, buildIslamicFill } from "@/lib/render/sphericalIslamicFill";
 import { extractFaces, colorFacesAbc, pointInPolygon, signedArea, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
 import { polygonHue } from "@/lib/utils/renderTiling";
 import { Vector } from "@/classes/Vector";
@@ -169,5 +170,49 @@ describe("reliefHeight — 0 on the boundary, ramps to depth in the interior", (
 
 	it("degenerate bevel (<= 0) gives full depth off the boundary", () => {
 		expect(reliefHeight(0, 0, square, depth, 0)).toBeCloseTo(depth, 9);
+	});
+});
+
+describe("buildIslamicFill — relief mode", () => {
+	const opts = { angleRad: (45 * Math.PI) / 180 };
+
+	function radii(fill: NonNullable<ReturnType<typeof buildIslamicFill>>): { min: number; max: number; count: number } {
+		const mesh = fill.object.children[0] as THREE.Mesh;
+		const pos = (mesh.geometry as THREE.BufferGeometry).getAttribute("position");
+		let min = Infinity;
+		let max = -Infinity;
+		for (let i = 0; i < pos.count; i++) {
+			const r = Math.hypot(pos.getX(i), pos.getY(i), pos.getZ(i));
+			if (r < min) min = r;
+			if (r > max) max = r;
+		}
+		return { min, max, count: pos.count };
+	}
+
+	it("flat mode (default): all vertices on the sphere, unlit MeshBasicMaterial", () => {
+		const fill = buildIslamicFill(bySolid("tetrahedron"), opts)!;
+		const mesh = fill.object.children[0] as THREE.Mesh;
+		expect(mesh.material).toBeInstanceOf(THREE.MeshBasicMaterial);
+		const { min, max } = radii(fill);
+		expect(min).toBeCloseTo(1, 4);
+		expect(max).toBeCloseTo(1, 4);
+	});
+
+	it("relief mode: boundary vertices stay on the sphere, interior pushed out, lit flat-shaded material", () => {
+		const flat = buildIslamicFill(bySolid("tetrahedron"), opts)!;
+		const relief = buildIslamicFill(bySolid("tetrahedron"), { ...opts, relief: true })!;
+		const mesh = relief.object.children[0] as THREE.Mesh;
+		const mat = mesh.material as THREE.MeshStandardMaterial;
+		expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
+		expect(mat.flatShading).toBe(true);
+		expect(mat.vertexColors).toBe(true);
+
+		const rFlat = radii(flat);
+		const rRelief = radii(relief);
+		// Same tessellation (same vertex count), just displaced.
+		expect(rRelief.count).toBe(rFlat.count);
+		// The lowest points (cell boundaries) are still on the unit sphere; the highest bulge outward.
+		expect(rRelief.min).toBeCloseTo(1, 3);
+		expect(rRelief.max).toBeGreaterThan(1.01);
 	});
 });
