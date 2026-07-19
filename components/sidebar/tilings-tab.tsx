@@ -96,7 +96,7 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 				</div>
 			</div>
 
-			<div className="flex-1 overflow-y-auto">
+			<div className="flex-1 overflow-y-auto" data-sidebar-scroll>
 				{/* Every render/view toggle lives in this one flat section, presented like the catalogue
 				    below (sticky SectionHeading over scrolling content) — the old collapsed "Advanced
 				    options" split is gone. It scrolls with the catalogue so the inversive/spiral stack

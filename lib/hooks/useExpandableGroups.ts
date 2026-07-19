@@ -3,6 +3,8 @@ import { useCallback, useMemo, useState } from "react";
 export interface UseExpandableGroupsResult {
 	expanded: Record<string, boolean>;
 	toggle: (id: string) => void;
+	/** Force the given ids open (idempotent). Ids not currently closed are left untouched. */
+	openGroups: (ids: string[]) => void;
 	toggleAll: (open: boolean) => void;
 	allExpanded: boolean;
 }
@@ -47,6 +49,20 @@ export function useExpandableGroups<T>(
 		[isOpenByDefault],
 	);
 
+	const openGroups = useCallback((ids: string[]) => {
+		setOverrides((prev) => {
+			let changed = false;
+			const next = { ...prev };
+			for (const id of ids) {
+				if (next[id] !== true) {
+					next[id] = true;
+					changed = true;
+				}
+			}
+			return changed ? next : prev;
+		});
+	}, []);
+
 	const toggleAll = useCallback(
 		(open: boolean) => {
 			setOverrides(() => {
@@ -60,5 +76,5 @@ export function useExpandableGroups<T>(
 
 	const allExpanded = ids.length > 0 && ids.every((id) => expanded[id]);
 
-	return { expanded, toggle, toggleAll, allExpanded };
+	return { expanded, toggle, openGroups, toggleAll, allExpanded };
 }

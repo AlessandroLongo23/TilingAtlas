@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
@@ -24,6 +24,38 @@ interface CatalogueListPanelProps {
 // list of headings; their k-subsections (`k:…`) start open so unrolling a class reveals its thumbnails
 // straight away rather than another layer of closed rows.
 const defaultOpenById = (id: string) => id.startsWith("k:");
+
+// Scroll the sidebar so the just-selected tile is comfortably in view, then pulse it once to draw the eye
+// after a jump (R / arrows / deep link). Only scrolls when it isn't already visible — respecting a top
+// inset so it never lands under the sticky "Catalogue" heading, and never a jarring recenter when the tile
+// was already on screen (e.g. you clicked it). Honors prefers-reduced-motion (instant scroll, no pulse).
+const TOP_INSET = 48;
+function revealTile(el: HTMLElement) {
+	const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	const behavior: ScrollBehavior = reduce ? "auto" : "smooth";
+	const parent = el.closest<HTMLElement>("[data-sidebar-scroll]");
+	if (parent) {
+		const er = el.getBoundingClientRect();
+		const pr = parent.getBoundingClientRect();
+		if (er.top < pr.top + TOP_INSET) {
+			parent.scrollBy({ top: er.top - pr.top - TOP_INSET, behavior });
+		} else if (er.bottom > pr.bottom) {
+			parent.scrollBy({ top: er.bottom - pr.bottom + 8, behavior });
+		}
+	} else {
+		el.scrollIntoView({ block: "nearest", behavior });
+	}
+	if (reduce) return;
+	// A one-shot accent outline that radiates and fades. Outline (not box-shadow) so it doesn't replace the
+	// persistent selection ring; no fill:forwards, so it reverts to `outline: none` when done.
+	el.animate(
+		[
+			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-accent) l c h / 0.9)", outlineOffset: "2px" },
+			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-accent) l c h / 0)", outlineOffset: "7px" },
+		],
+		{ duration: 650, easing: "ease-out" },
+	);
+}
 
 // Class order + labels come from the shared registry (referenceAtlas TILE_CLASS_ORDER / TILE_CLASS_LABEL),
 // the same source /library uses — so a new class appears here automatically. A class section only appears
@@ -64,7 +96,29 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		}
 		return ids;
 	}, [byClass]);
-	const { expanded, toggle } = useExpandableGroups(nodeIds, (id) => id, defaultOpenById);
+	const { expanded, toggle, openGroups } = useExpandableGroups(nodeIds, (id) => id, defaultOpenById);
+
+	// The node ids (class + k) that hold the selected tiling — used to auto-open its sections on selection.
+	const selectedTile = useMemo(
+		() => (selectedKey ? items.find((t) => t.canonicalKey === selectedKey) ?? null : null),
+		[items, selectedKey],
+	);
+	const selectedClassId = selectedTile ? `c:${tileClassOf(selectedTile)}` : null;
+	const selectedKId = selectedTile ? `k:${tileClassOf(selectedTile)}:${selectedTile.k}` : null;
+
+	// Reveal the current tiling in the picker on every selection change. A collapsed section unmounts its
+	// thumbnails, so both the class and its k row must open before the tile exists to scroll to; wait out the
+	// expand animation (0.15s, sidebar-section.tsx) + remount, then scroll it into view and pulse it. The ref
+	// below is attached only to the selected button, so it points at the right tile once mounted.
+	const selectedBtnRef = useRef<HTMLButtonElement | null>(null);
+	useEffect(() => {
+		if (!selectedClassId || !selectedKId) return;
+		openGroups([selectedClassId, selectedKId]);
+		const id = window.setTimeout(() => {
+			if (selectedBtnRef.current) revealTile(selectedBtnRef.current);
+		}, 170);
+		return () => window.clearTimeout(id);
+	}, [selectedKey, selectedClassId, selectedKId, openGroups]);
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -95,6 +149,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 										{kk.list.map((t) => (
 											<button
 												key={t.canonicalKey}
+												ref={t.canonicalKey === selectedKey ? selectedBtnRef : null}
 												type="button"
 												onClick={() => onSelect?.(t)}
 												title={`${t.canonicalKey} · {${t.family}}`}
