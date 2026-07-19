@@ -23,8 +23,9 @@ interface OptionsTabProps {
 export function OptionsTab({ selected }: OptionsTabProps) {
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
-	// Islamic construction applies to the regular, star, and islamic classes (see polygonClassSupportsIslamic),
-	// plus EVERY hyperbolic tiling — the Poincaré-disk shader draws the strapwork for regular, uniform, and snub.
+	// Islamic construction applies to every flat and spherical class (see polygonClassSupportsIslamic — the
+	// shape-agnostic Hankin construction handles them all), plus EVERY hyperbolic tiling, whose Poincaré-disk
+	// shader draws the strapwork for regular, uniform, and snub.
 	const islamicSupported = !!selected && (polygonClassSupportsIslamic(selected) || !!selected.wythoff);
 	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.

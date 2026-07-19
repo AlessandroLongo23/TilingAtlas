@@ -275,9 +275,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		fa.resetLive(); // reseed the eased render tuple for the NEW family — never glide across two families
 	}, [selected?.canonicalKey, paramCell]);
 
-	// The Islamic construction is defined for the regular/star/islamic classes. When the selection moves to a
-	// class that doesn't support it (convex-irregular, isotoxal), force the toggle off — otherwise the
-	// render path would keep drawing the fill for a tiling whose sidebar no longer offers the control.
+	// The Islamic construction applies to every flat/spherical class now, so this force-off only fires for a
+	// selection that supports it via neither the class gate nor `wythoff` — effectively never for the shipped
+	// catalogue. Kept as a safety net so the render path can't draw the fill for a tiling whose sidebar hides
+	// the control.
 	useEffect(() => {
 		if (selected && !polygonClassSupportsIslamic(selected) && !selected.wythoff && useConfiguration.getState().isIslamic) {
 			useConfiguration.getState().set({ isIslamic: false });
@@ -424,10 +425,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			} else {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
-				// Circle Packing only exists for regular-only tilings, and Islamic only for the regular/star
-				// classes; symmetry elements / fundamental domain / transition / vertex orbits are flat-canvas
-				// only and hidden in hyperbolic; vertex orbits also need the tiling's exact cell (the sidebar
-				// disables the checkbox without one). Ignore each key where the sidebar hides/disables the control.
+				// Circle Packing only exists for regular-only tilings, and Islamic applies to every flat/spherical
+				// class (hyperbolic draws it through its own shader); symmetry elements / fundamental domain /
+				// transition / vertex orbits are flat-canvas only and hidden in hyperbolic; vertex orbits also need
+				// the tiling's exact cell (the sidebar disables the checkbox without one). Ignore each key where the
+				// sidebar hides/disables the control.
 				const isHyperbolic = !!selected?.wythoff;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
