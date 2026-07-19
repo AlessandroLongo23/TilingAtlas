@@ -988,5 +988,485 @@
     ]
    ]
   }
+ },
+ {
+  "id": "sph-triangular-prism",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.4.4",
+  "spherical": {
+   "solid": "triangular-prism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Triangular prism (4.4.3): 2 triangles + 3 squares. The simplest prism; a regular n-gonal prism is inscribable for every n.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-pentagonal-prism",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.4.5",
+  "spherical": {
+   "solid": "pentagonal-prism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Pentagonal prism (4.4.5): 2 pentagons + 5 squares.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-hexagonal-prism",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.4.6",
+  "spherical": {
+   "solid": "hexagonal-prism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Hexagonal prism (4.4.6): 2 hexagons + 6 squares.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-octagonal-prism",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.4.8",
+  "spherical": {
+   "solid": "octagonal-prism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Octagonal prism (4.4.8): 2 octagons + 8 squares.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-decagonal-prism",
+  "source": "spherical",
+  "k": 1,
+  "family": "4.4.10",
+  "spherical": {
+   "solid": "decagonal-prism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Decagonal prism (4.4.10): 2 decagons + 10 squares.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-square-antiprism",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.4",
+  "spherical": {
+   "solid": "square-antiprism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Square antiprism (3.3.3.4): 2 squares + 8 triangles. The n-gonal antiprism is inscribable for every n.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-pentagonal-antiprism",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.5",
+  "spherical": {
+   "solid": "pentagonal-antiprism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Pentagonal antiprism (3.3.3.5): 2 pentagons + 10 triangles.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-hexagonal-antiprism",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.6",
+  "spherical": {
+   "solid": "hexagonal-antiprism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Hexagonal antiprism (3.3.3.6): 2 hexagons + 12 triangles.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-octagonal-antiprism",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.8",
+  "spherical": {
+   "solid": "octagonal-antiprism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Octagonal antiprism (3.3.3.8): 2 octagons + 16 triangles.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-decagonal-antiprism",
+  "source": "spherical",
+  "k": 1,
+  "family": "3.3.3.10",
+  "spherical": {
+   "solid": "decagonal-antiprism"
+  },
+  "geometry": "spherical",
+  "discoverer": "Kepler (prisms & antiprisms)",
+  "note": "Decagonal antiprism (3.3.3.10): 2 decagons + 20 triangles.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
  }
 ]

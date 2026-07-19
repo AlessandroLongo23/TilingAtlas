@@ -6,8 +6,14 @@
 import { PLATONIC_SOLIDS, type Polyhedron } from "./platonicSolids";
 import { ARCHIMEDEAN_SOLIDS } from "./archimedeanSolids";
 import { JOHNSON_SOLIDS } from "./johnsonSolids";
+import { PRISM_ANTIPRISM_SOLIDS } from "./prismSolids";
 
-export const SPHERICAL_SOLIDS: Polyhedron[] = [...PLATONIC_SOLIDS, ...ARCHIMEDEAN_SOLIDS, ...JOHNSON_SOLIDS];
+export const SPHERICAL_SOLIDS: Polyhedron[] = [
+	...PLATONIC_SOLIDS,
+	...ARCHIMEDEAN_SOLIDS,
+	...PRISM_ANTIPRISM_SOLIDS,
+	...JOHNSON_SOLIDS,
+];
 
 const BY_ID = new Map(SPHERICAL_SOLIDS.map((s) => [s.id, s]));
 

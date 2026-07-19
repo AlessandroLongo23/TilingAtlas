@@ -24,10 +24,12 @@ describe("spherical catalogue ↔ solid registry wiring", () => {
 		expect(unresolved, "catalogue entries with no matching solid").toEqual([]);
 	});
 
-	it("the registry holds the 18 classical solids + the 2 k=2 Johnson twins (20 total)", () => {
-		expect(SPHERICAL_SOLIDS.length).toBe(20);
+	it("the registry holds 18 classical + 10 prisms/antiprisms + 2 k=2 Johnson twins (30 total)", () => {
+		expect(SPHERICAL_SOLIDS.length).toBe(30);
 		expect(polyhedronForId("triangular-orthobicupola")).not.toBeNull();
 		expect(polyhedronForId("pseudo-rhombicuboctahedron")).not.toBeNull();
+		expect(polyhedronForId("decagonal-prism")).not.toBeNull();
+		expect(polyhedronForId("square-antiprism")).not.toBeNull();
 	});
 
 	it("solid ids are unique", () => {
