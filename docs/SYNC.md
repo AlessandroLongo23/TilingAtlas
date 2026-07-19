@@ -1246,3 +1246,16 @@ Islamic+uniform pages (`a2cb29e`), oracle spherical/reflex closure + girih/spher
 `5216ebe`), atlas build pipeline (`eabab94`), k2 figure data (`b747bd4`), landing local-atlas background
 (`7591490`), 8 MB girih developed-cells dump (`edb9c50`). Detail: DEVELOPMENT_NOTES latest §.
 `moduli-graph` fast-forwarded into `master`, pushed to origin, branch deleted. — CC
+
+**2026-07-20 (CC) — Spherical k=1 developer: engine proven end-to-end on the sphere.** New
+`tools/ctrnact-oracle/develop_spherical.py` (`7edf385`) develops the k=1 positive-defect search output
+into polyhedra on S² — reuses `pruner.decode()` (spherical vertexdef tables swapped for the regular
+ones), solves the edge arc-length ρ from the vertex-angle-sum closure, and floods the dart-instance
+orbit under {rneig, glue} in SO(3). All **28/28** k=1 blocks realize to distinct known uniform solids
+(5 Platonic + 13 Archimedean + 5 prisms + 5 antiprisms), 0 non-realizable, 0 duplicates — so the
+pruner's uncertified 28 is confirmed correct here despite the A6 warning. `run-oracle.sh` Phase 3
+spherical branch (`6f80bc7`); TS invariant cross-check vs authored `PLATONIC_SOLIDS`/`ARCHIMEDEAN_SOLIDS`
+(`7b7fbbf`, 28/28 bijection, passes). `make check-regular` still byte-identical. Validation artifact
+only — atlas UI untouched; developed JSON is render-ready for a later wire-in. Note: the design pivoted
+relaxation → geodesic development (relaxation needs the unfolded graph, which for k=1 the ρ-solve closes
+analytically). Spec/plan: `docs/superpowers/specs|plans/2026-07-{19,20}-spherical-k1-developer*`. — CC
