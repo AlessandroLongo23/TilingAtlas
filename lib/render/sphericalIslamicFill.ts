@@ -43,6 +43,39 @@ function hsb2rgb(hueDeg: number, s: number, v: number): [number, number, number]
 	return [m(k(0)), m(k(4)), m(k(2))];
 }
 
+// Squared distance from point (px,py) to segment (ax,ay)-(bx,by).
+function pointSegDist2(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+	const dx = bx - ax;
+	const dy = by - ay;
+	const len2 = dx * dx + dy * dy;
+	let t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+	t = t < 0 ? 0 : t > 1 ? 1 : t;
+	const cx = ax + t * dx;
+	const cy = ay + t * dy;
+	const ex = px - cx;
+	const ey = py - cy;
+	return ex * ex + ey * ey;
+}
+
+// Radial relief height at a face-plane point for a cell with 2D boundary `boundary`. Returns 0 on the
+// boundary (so neighbouring cells meet flush — no cracks) and ramps via smoothstep up to `depth` once the
+// point is more than `bevel` (in 2D gnomonic units) inside the cell. `depth` is in sphere-radius units;
+// `bevel` is in the same 2D units as `boundary`. Pure — unit-tested; used by the relief displacement below.
+export function reliefHeight(px: number, py: number, boundary: Vector[], depth: number, bevel: number): number {
+	if (boundary.length < 2) return 0;
+	let d2 = Infinity;
+	for (let i = 0; i < boundary.length; i++) {
+		const a = boundary[i];
+		const b = boundary[(i + 1) % boundary.length];
+		const dd = pointSegDist2(px, py, a.x, a.y, b.x, b.y);
+		if (dd < d2) d2 = dd;
+	}
+	const d = Math.sqrt(d2);
+	const t = bevel <= 0 ? 1 : Math.min(1, d / bevel);
+	const s = t * t * (3 - 2 * t); // smoothstep(0,1,t)
+	return depth * s;
+}
+
 // Target arc length of a fill triangle edge (radians) — sets how finely each cell is subdivided so the
 // surface and silhouette read as smooth. Only angle/offset/count slider drags re-tessellate.
 const TARGET_SEG = 0.05;

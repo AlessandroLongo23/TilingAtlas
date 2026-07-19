@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { PLATONIC_SOLIDS, type Polyhedron } from "@/lib/render/platonicSolids";
 import { sphericalIslamicFaceData } from "@/lib/render/sphericalIslamic";
-import { triangulateFillCell } from "@/lib/render/sphericalIslamicFill";
+import { triangulateFillCell, reliefHeight } from "@/lib/render/sphericalIslamicFill";
 import { extractFaces, colorFacesAbc, pointInPolygon, signedArea, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
 import { polygonHue } from "@/lib/utils/renderTiling";
 import { Vector } from "@/classes/Vector";
@@ -137,4 +137,37 @@ describe("sphericalIslamicFaceData — edge offset still partitions", () => {
 			}
 		});
 	}
+});
+
+describe("reliefHeight — 0 on the boundary, ramps to depth in the interior", () => {
+	// Unit square centred at the origin (side 1), CCW. Nearest-boundary distance at the centre is 0.5.
+	const square = [new Vector(-0.5, -0.5), new Vector(0.5, -0.5), new Vector(0.5, 0.5), new Vector(-0.5, 0.5)];
+	const depth = 0.03;
+	const bevel = 0.2;
+
+	it("is 0 exactly on a boundary vertex", () => {
+		expect(reliefHeight(-0.5, -0.5, square, depth, bevel)).toBeCloseTo(0, 9);
+	});
+
+	it("is 0 at the midpoint of a boundary edge", () => {
+		expect(reliefHeight(0, -0.5, square, depth, bevel)).toBeCloseTo(0, 9);
+	});
+
+	it("reaches full depth well inside the bevel band (centre, dist 0.5 > bevel 0.2)", () => {
+		expect(reliefHeight(0, 0, square, depth, bevel)).toBeCloseTo(depth, 9);
+	});
+
+	it("is a monotonic non-decreasing ramp moving inward from an edge", () => {
+		const a = reliefHeight(0, -0.45, square, depth, bevel); // near edge
+		const b = reliefHeight(0, -0.35, square, depth, bevel);
+		const c = reliefHeight(0, -0.25, square, depth, bevel);
+		expect(a).toBeLessThan(b);
+		expect(b).toBeLessThan(c);
+		expect(a).toBeGreaterThanOrEqual(0);
+		expect(c).toBeLessThanOrEqual(depth + 1e-9);
+	});
+
+	it("degenerate bevel (<= 0) gives full depth off the boundary", () => {
+		expect(reliefHeight(0, 0, square, depth, 0)).toBeCloseTo(depth, 9);
+	});
 });
