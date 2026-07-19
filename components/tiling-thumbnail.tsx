@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useConfiguration } from "@/stores/configuration";
 import { AlgorithmTiling } from "@/classes/algorithm/Tiling";
 import {
 	type RawPolygon,
@@ -29,6 +30,9 @@ export function TilingThumbnail({
 }: TilingThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [hasError, setHasError] = useState(false);
+	// Global hue ring: subscribed LIVE, so every mounted thumbnail redraws on each drag tick — the
+	// deliberate exact-colors choice (vs a cheap CSS hue-rotate approximation); revisit if it janks.
+	const hueOffset = useConfiguration((s) => s.hueOffset);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -69,6 +73,7 @@ export function TilingThumbnail({
 					translationalCell,
 					polygons: polys,
 					pxPerEdge,
+					hueOffsetDeg: hueOffset,
 				});
 			} catch (e) {
 				console.warn("TilingThumbnail render error:", e);
@@ -97,7 +102,7 @@ export function TilingThumbnail({
 			io.disconnect();
 			ro.disconnect();
 		};
-	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge]);
+	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, hueOffset]);
 
 	if (hasError) {
 		return (

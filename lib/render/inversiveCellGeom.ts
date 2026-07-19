@@ -27,10 +27,14 @@ export interface CellGeom {
 	v1: [number, number];
 	v2: [number, number];
 	avg: [number, number, number]; // area-weighted average fill colour (the centre blends to this)
+	/** Per-polygon [hue (deg), area] pairs — lets the canvas recompute `avg` under a hue offset
+	 *  (rotating hues THEN averaging RGB; rotating the averaged RGB would be wrong). */
+	hueAreas: Float32Array;
 	feature: number; // median tile-edge length (world) — the resolution scale the centre fade tracks
 }
 
 // Matches the shader's hsb2rgb(hue/360, s, v); used to precompute the average fill colour on the CPU.
+// Periodic in h with period 1 (the mod 6), so an offset hue needs no explicit wrap.
 function hsb2rgb(h: number, s: number, v: number): [number, number, number] {
 	const f = (n: number) => {
 		const k = Math.min(Math.max(Math.abs(((h * 6 + n) % 6) - 3) - 1, 0), 1);
@@ -64,6 +68,7 @@ export function buildCellGeom(cell: TranslationalCellData | null): CellGeom | nu
 
 	let vi = 0;
 	let avgR = 0, avgG = 0, avgB = 0, avgW = 0;
+	const hueAreas = new Float32Array(polyCount * 2);
 	for (let p = 0; p < polyCount; p++) {
 		const poly = base.polys[p];
 		const start = vi;
@@ -111,6 +116,8 @@ export function buildCellGeom(cell: TranslationalCellData | null): CellGeom | nu
 		avgG += pg * area;
 		avgB += pb * area;
 		avgW += area;
+		hueAreas[p * 2] = hue;
+		hueAreas[p * 2 + 1] = area;
 
 		const m = p * 2 * 4;
 		meta[m] = start;
@@ -133,6 +140,22 @@ export function buildCellGeom(cell: TranslationalCellData | null): CellGeom | nu
 		v1: [v1x, v1y],
 		v2: [v2x, v2y],
 		avg: avgW > 0 ? [avgR / avgW, avgG / avgW, avgB / avgW] : [0.5, 0.5, 0.5],
+		hueAreas,
 		feature: base.medianEdge,
 	};
+}
+
+/** Area-weighted average fill under a global hue offset — the offset counterpart of the `avg` field.
+ *  ≤ MAX_POLYS iterations; cheap enough for the render loop to call when the ring moves. */
+export function averageFill(hueAreas: Float32Array, hueOffsetDeg: number): [number, number, number] {
+	let r = 0, g = 0, b = 0, w = 0;
+	for (let i = 0; i < hueAreas.length; i += 2) {
+		const [pr, pg, pb] = hsb2rgb((hueAreas[i] + hueOffsetDeg) / 360, 0.4, 1);
+		const area = hueAreas[i + 1];
+		r += pr * area;
+		g += pg * area;
+		b += pb * area;
+		w += area;
+	}
+	return w > 0 ? [r / w, g / w, b / w] : [0.5, 0.5, 0.5];
 }

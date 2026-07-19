@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useConfiguration } from "@/stores/configuration";
 import { createHyperbolicProgram } from "@/lib/render/hyperbolicShader";
 import { hyperbolicUniformValues, isHyperbolic, type WythoffSpec } from "@/lib/render/hyperbolic";
 
@@ -15,7 +16,7 @@ interface HyperbolicThumbnailProps {
 	size?: number;
 }
 
-function renderToDataUrl(wythoff: WythoffSpec, size: number): string | null {
+function renderToDataUrl(wythoff: WythoffSpec, size: number, hueOffset = 0): string | null {
 	if (!isHyperbolic(wythoff.p, wythoff.q)) return null;
 	const g = hyperbolicUniformValues(wythoff);
 	const canvas = document.createElement("canvas");
@@ -38,6 +39,7 @@ function renderToDataUrl(wythoff: WythoffSpec, size: number): string | null {
 	gl.uniform1f(U.uEdgeRho, g.edgeRho);
 	gl.uniform1i(U.uShadeMode, 0);
 	gl.uniform1f(U.uHue, g.hue);
+	gl.uniform1f(U.uHueOffset, hueOffset);
 	gl.uniform1f(U.uStrokePx, 1.0);
 	gl.uniform1i(U.uStrokeMode, 1); // constant 1px stroke for the small static preview
 	gl.uniform3f(U.uSurface, dark ? 0.08 : 0.96, dark ? 0.09 : 0.96, dark ? 0.11 : 0.97);
@@ -83,6 +85,9 @@ export function HyperbolicThumbnail({ wythoff, size = 256 }: HyperbolicThumbnail
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
 	const specKey = `${wythoff.p},${wythoff.q},${wythoff.rings.join("")},${wythoff.snub ? 1 : 0}`;
+	// Global hue ring: subscribed LIVE — every visible disk preview re-renders (fresh GL context +
+	// data URL) per drag tick. The deliberate exact-colors choice; revisit if it janks.
+	const hueOffset = useConfiguration((s) => s.hueOffset);
 
 	useEffect(() => {
 		const el = holderRef.current;
@@ -92,7 +97,7 @@ export function HyperbolicThumbnail({ wythoff, size = 256 }: HyperbolicThumbnail
 			if (done) return;
 			done = true;
 			try {
-				const dataUrl = renderToDataUrl(wythoff, size);
+				const dataUrl = renderToDataUrl(wythoff, size, hueOffset);
 				if (dataUrl) setUrl(dataUrl);
 				else setFailed(true);
 			} catch (e) {
@@ -111,7 +116,7 @@ export function HyperbolicThumbnail({ wythoff, size = 256 }: HyperbolicThumbnail
 		io.observe(el);
 		return () => io.disconnect();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [specKey, size]);
+	}, [specKey, size, hueOffset]);
 
 	if (failed) {
 		return (
