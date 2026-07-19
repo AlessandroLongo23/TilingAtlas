@@ -4345,3 +4345,52 @@ Lesson (carried from earlier this session, where the fill fold-over and washed-c
 diagnosed slowly by tuple math): every interlace iteration here was verified by a headless SwiftShader
 render first. The kites, the cutting-vs-layering fix, the offset breakage, the solid volume and the
 flat toggle each landed in one pass because the render, not a tuple assertion, was the check.
+
+## §66 — Hyperbolic Islamic styles: interlace weave + checkerboard, in the fold shader (2026-07-19, session 35)
+
+The disk `islamicStyle` was stuck on `plain` (the sidebar admitted it: "Weave / style options apply to
+flat tilings"). Brought `interlace` and `checkerboard` to the Poincaré-disk fold shader
+(`lib/render/hyperbolicShader.ts`), the two AL asked for. Spec:
+`docs/superpowers/specs/2026-07-19-hyperbolic-islamic-interlace-checkerboard-design.md`. (First half of
+the session was three fixes to the existing `plain` path — uniform/snub strapwork rebuilt on the
+per-tile Wythoff rosette, the snub q-gon wedge straddle, and the radial-dim grid readthrough at the 90°
+dual; those are the `hyperbolicIslamicPatch.ts` rewrite and the `dim = f(screen radius)` change.)
+
+Checkerboard was easy and fits the fold: it's the parity of the global crossing count O→pixel over ALL
+straps (new `crossAll`), `uCheckerA/uCheckerB`, dimmed by screen radius. Even-degree arrangement ⇒
+bipartite ⇒ the parity is a proper 2-colouring; the star lines still draw on top. Clean across the whole
+disk, no seams.
+
+Interlace was the hard one and the whole difficulty is the FOLD. Straps are edge-midpoint→star-tip rays
+(`constructTileStraps`); for the clean construction each strap's only crossing is its ORIGIN (a shared
+edge midpoint, 4-valent) and its tip is a 2-valent bend — so ONE over/under bit per strap suffices. But
+the fold renders every tile from the CENTRAL tile's frame, so every crossing sits on the central tile's
+edge and its over partner is the NEIGHBOUR strand across the fold, absent from a central-only set. Chain
+of failures, each caught by a SwiftShader render (never by reasoning — I mis-guessed the geometry twice):
+(1) a single min-layer pick lost the under-strand's borders (same hue ⇒ invisible); switched to two
+distance accumulators, over-band occludes under. (2) Still flat, because with only central straps no
+over strap is near the under one at M. Tried a disc-around-origin hack — read as decorative notches, not
+a weave. (3) Real fix: `hyperbolicInterlaceData` now appends, per central edge midpoint, the 2 NEIGHBOUR
+stubs sharing that origin (from the same 1-ring `buildRegularPatch` + `buildInterlaceMap` +
+`assignOverUnder`), so the crossing is genuinely 4-valent in-frame — 4p straps total, ≤ 64. Every pixel
+folds to the central tile and a stub only comes within a band right at its origin M (far elsewhere), so
+both sides of the edge draw the identical completed crossing: a true X-weave, no seam. (4) STILL flat —
+`segDistGeo` clips at segment ends and returns 1e9, so a central-side pixel projecting beyond the stub
+missed the very cap that occludes. Fixed by the capped distance `min(segDistGeo, dist to A, dist to B)`
+(the same trick the stroke uses). Flip Weave (`islamicChirality` → `startUnder`) inverts every bit; the
+render confirmed the break curls flip.
+
+Regular {p,q} weaves via the stub completion (verified {4,5}, {5,4}). Uniform/snub can't take stubs —
+their fold adds `uStrapReflect` (a Schwarz-triangle reflection), and in that reflected frame a neighbour
+stub's origin-vs-tip test doesn't match the unfolded crossing (empirically: everything classified over,
+all flat). So they get a FALLBACK (`uWeaveFallback`): with no over partner in the set, break the under
+strand within a disc of its OWN crossing origin (`underOrg`, the uStrapA end). That draws a woven notch
+at each crossing without the partner — not as crisp as the stub-completed regular break, but it reads as
+over/under. The central-only arrangement (`hyperbolicInterlaceData`, no stubs for non-regular) gives a
+consistent non-degenerate weave (checked: truncated/rectified/omnitruncated/snub all ~half under, not
+degenerate). Result: omnitruncated tr{5,4} and snub sr{5,4} weave richly (two/three tile hues, notches
+at every crossing); truncated/rectified at boundary-tracing angles have few real crossings so read
+near-flat (correct — nothing to weave there). The fallback is gated (`uWeaveFallback == 0` for regular),
+so the clean regular weave is untouched. Tests in `tests/hyperbolic-islamic-patch.test.ts` pin the 4p
+regular strap count, the flip-inverts-every-flag chirality, the uniform central-only strap set, and that
+uniform/snub weaves stay non-degenerate.
