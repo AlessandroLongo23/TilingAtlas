@@ -16,8 +16,8 @@ import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIsla
 // there are no poles). It owns its own input — z-10 above the p5 layer's z-[1], ArcballControls consumes
 // drag (rotate) + wheel (zoom); panning is off so the sphere stays centred.
 //
-// Three looks: the SOLID sphere (a baked equirectangular tiling texture on a UV sphere — flat surface
-// edges, stroke slider, PBR-ready); the WIREFRAME skeleton (the tiling edges as hollow 3D tube bars); and
+// Three looks: the SOLID sphere (the tiling drawn procedurally per fragment on a UV sphere — flat surface
+// edges, stroke slider, pixel-sharp at any zoom); the WIREFRAME skeleton (the tiling edges as hollow 3D tube bars); and
 // the ISLAMIC construction (the star pattern as a hollow line structure, no base surface — flat ribbons, or
 // rigid tube bars when Wireframe is also on, which makes the LINES rigid rather than adding tiling edges).
 // The <canvas> is created imperatively per mount (a canvas holds one WebGL context for life; forceContextLoss
@@ -87,7 +87,7 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 		// sphere and the raised Islamic relief tiles. Boosted from the original 0.55/0.55 (+ a small ambient)
 		// so lit tile hues read as brightly as the unlit flat modes; roughness 0.9 keeps specular soft so the
 		// extra intensity doesn't clip on saturated hues. Inert on the unlit solid sphere / flat Islamic fill
-		// (MeshBasicMaterial ignores lights). Starting values — tuned by eye.
+		// (their RawShaderMaterial / MeshBasicMaterial ignore lights). Starting values — tuned by eye.
 		const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.85);
 		const dir = new THREE.DirectionalLight(0xffffff, 0.8);
 		dir.position.set(3, 4, 5);
@@ -205,7 +205,7 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 		const dark = document.documentElement.classList.contains("dark");
 		const c = contentRef.current;
 		if (c) {
-			if (c.kind === "sphere") c.sphere.rebake({ hueOffset, lineWidth, dark });
+			if (c.kind === "sphere") c.sphere.recolor({ hueOffset, lineWidth, dark });
 			else c.wire.setColor(hueOffset);
 		}
 		// The Islamic overlay + cell fill live in their own refs (independent of the base content) — recolour too.

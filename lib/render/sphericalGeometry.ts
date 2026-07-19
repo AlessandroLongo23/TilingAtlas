@@ -1,9 +1,9 @@
-// Pure geometry helpers for the spherical renderer's TEXTURE bake. The tiling is drawn by baking an
-// equirectangular albedo texture and mapping it onto a plain UV sphere (see sphericalTextureBaker.ts): each
-// texel classifies its direction against the solid's face normals — the face is argmax(dot(dir, n_i)), an
-// edge is where the top two faces are near-tied. So the only geometry the renderer needs from a Polyhedron
-// is the set of outward face normals (+ the adjacent-normal dot, which fixes a constant angular edge width
-// across solids). No three.js here — these are pure and unit-tested like lib/render/hyperbolic.ts.
+// Pure geometry helpers for the spherical renderer. The tiling is drawn PROCEDURALLY on a plain UV sphere
+// (see sphericalTilingShader.ts): each fragment classifies its surface direction against the solid's face
+// normals — the face is argmax(dot(dir, n_i)), an edge is where the top two faces are near-tied. So the only
+// geometry the renderer needs from a Polyhedron is the set of outward face normals (+ the adjacent-normal
+// dot, which fixes a constant angular edge width across solids). No three.js here — these are pure and
+// unit-tested like lib/render/hyperbolic.ts.
 
 import type { Polyhedron, Vec3 } from "./platonicSolids";
 

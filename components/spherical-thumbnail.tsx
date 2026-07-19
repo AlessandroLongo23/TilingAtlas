@@ -53,8 +53,8 @@ function renderToDataUrl(solidId: string, size: number, hueOffset = 0): string |
 
 	const dark = document.documentElement.classList.contains("dark");
 	const lineWidth = useConfiguration.getState().lineWidth;
-	// A smaller bake than the interactive view — the still is tiny, and this keeps a grid of previews cheap.
-	const sphere = createSphere(renderer, polyhedronForId(solidId), { hueOffset, lineWidth, dark, textureSize: 1024 });
+	// The tiling is drawn procedurally per fragment (no bake), so a still is just one render — sharp and cheap.
+	const sphere = createSphere(renderer, polyhedronForId(solidId), { hueOffset, lineWidth, dark });
 	if (!sphere) return null;
 	scene.add(sphere.mesh);
 	try {
