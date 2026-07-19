@@ -246,7 +246,7 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 										classes="flex-1"
 										onClick={() => setCfg({ hyperbolicLineMode: "geometry" })}
 									>
-										Geometry
+										Perspective
 									</Button>
 									<Button
 										variant={cfg.hyperbolicLineMode === "constant" ? "primary" : "secondary"}
@@ -254,7 +254,7 @@ export function TilingsTab({ tilings, selected, onSelect, onRandom, onPrev, onNe
 										classes="flex-1"
 										onClick={() => setCfg({ hyperbolicLineMode: "constant" })}
 									>
-										Constant
+										Flat
 									</Button>
 								</div>
 							</div>
