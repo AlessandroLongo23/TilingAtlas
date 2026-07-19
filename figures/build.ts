@@ -75,6 +75,18 @@ const EXPLANATORY: ExplanatoryEntry[] = [
 		opts: { strategy: 'byNGon' },
 		note: 'G2 Panel B underlay: clean 3.4.6.4 patch (reflective, mixed) for TA to draw a reflection axis along edges/bisectors/centroid lines.',
 	},
+	{
+		id: 'orbit-intro-1u',
+		tCode: 't1003',
+		opts: { strategy: 'byNGon', markers: true },
+		note: 'fig:orbit-intro (a): 4.6.12 with vertex-orbit circles — one orbit, one dot color everywhere.',
+	},
+	{
+		id: 'orbit-intro-2u',
+		tCode: 't2003',
+		opts: { strategy: 'byNGon', markers: true },
+		note: 'fig:orbit-intro (b): [3³.4²; 4⁴] with vertex-orbit circles — two orbits, two dot colors.',
+	},
 ];
 
 function latexmk(texFile: string): Promise<void> {
@@ -114,12 +126,15 @@ function galleryTex(k: number, entries: TilingFigureEntry[], caveat?: string): s
 	for (let i = 0; i < entries.length; i += PER_PAGE) pages.push(entries.slice(i, i + PER_PAGE));
 	pages.forEach((page, pi) => {
 		lines.push('\\begin{figure}[p]', '\\centering');
+		// Full-height pages (5 rows) overflow \textheight and the caption collides with the
+		// running footer; 0.92\linewidth reclaims ~40pt. Short pages (k=1's 3 rows) keep full width.
+		const imgWidth = page.length > 12 ? '0.92\\linewidth' : '\\linewidth';
 		page.forEach((e, i) => {
 			const label = e.tCode ? `\\texttt{${texEscape(e.tCode)}}` : '(unmatched)';
 			lines.push(
 				`\\begin{subfigure}{0.235\\textwidth}`,
 				`\\centering`,
-				`\\includegraphics[width=\\linewidth]{figures/generated/k${k}/${e.id}.pdf}`,
+				`\\includegraphics[width=${imgWidth}]{figures/generated/k${k}/${e.id}.pdf}`,
 				`\\caption*{${label}\\\\{\\tiny ${e.vcLabelTex}}}`,
 				`\\end{subfigure}${(i + 1) % COLS === 0 ? '' : '\\hfill'}`
 			);
