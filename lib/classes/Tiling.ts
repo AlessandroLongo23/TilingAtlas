@@ -107,12 +107,13 @@ export class Tiling {
             // a clean 4-valent crossing per edge midpoint, so they ignore the edge-offset / ray-stops
             // sliders); 'checkerboard' two-colours the arrangement faces; 'plain' is the classic fill.
             // While the angle is animating, the strap styles fall back to plain (no per-frame rebuild).
+            // skipFill ⇒ a WebGL canvas owns this style (isIslamicShaderActive/isStrapShaderActive in
+            // canvas.tsx: plain + checkerboard on IslamicCanvas, the straps on StrapCanvas); p5 draws
+            // nothing so the two never double-paint. The animated motif always stays on p5.
             const style = cfg.islamicAnimate ? "plain" : cfg.islamicStyle;
-            if (style === "interlace") this.drawIslamicInterlace(ctx, opacity, true, false);
-            else if (style === "outline") this.drawIslamicInterlace(ctx, opacity, false, false);
-            else if (style === "emboss") this.drawIslamicInterlace(ctx, opacity, true, true);
-            // skipFill ⇒ the WebGL IslamicCanvas owns the plain A/B/C fill OR the checkerboard
-            // (isIslamicShaderActive in canvas.tsx); p5 draws nothing so the two never double-paint.
+            if (style === "interlace") { if (!skipFill) this.drawIslamicInterlace(ctx, opacity, true, false); }
+            else if (style === "outline") { if (!skipFill) this.drawIslamicInterlace(ctx, opacity, false, false); }
+            else if (style === "emboss") { if (!skipFill) this.drawIslamicInterlace(ctx, opacity, true, true); }
             else if (style === "checkerboard") { if (!skipFill) this.drawIslamicCheckerboard(ctx, opacity); }
             else if (!skipFill) this.drawIslamicStarFill(ctx, opacity);
         } else {

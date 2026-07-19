@@ -37,10 +37,10 @@ precision highp float;
 in float vHue;
 in float vClass;
 uniform float uHueOffset;
-uniform vec3 uColorA;   // checkerboard colour A (uMode 1); unused in plain mode
+uniform vec3 uColorA;   // checkerboard colour A (uMode 1) / solid strap-body colour (uMode 2)
 uniform vec3 uColorB;
 uniform vec3 uColorC;
-uniform int uMode;      // 0 = plain A/B/C, 1 = checkerboard two-colour
+uniform int uMode;      // 0 = plain A/B/C, 1 = checkerboard two-colour, 2 = solid (strap bodies)
 uniform float uOpacity;
 out vec4 frag;
 vec3 hsb2rgb(float h, float s, float v) {
@@ -49,9 +49,9 @@ vec3 hsb2rgb(float h, float s, float v) {
 }
 void main() {
 	vec3 rgb;
-	if (uMode == 1) {
-		rgb = vClass < 0.5 ? uColorA : uColorB;                                        // checkerboard 0/1
-	} else if (vClass < 0.5) rgb = hsb2rgb(mod(vHue + uHueOffset, 360.0) / 360.0, 0.40, 1.0); // A: tile hue
+	if (uMode == 2) rgb = uColorA;                                                     // solid strap body
+	else if (uMode == 1) rgb = vClass < 0.5 ? uColorA : uColorB;                       // checkerboard 0/1
+	else if (vClass < 0.5) rgb = hsb2rgb(mod(vHue + uHueOffset, 360.0) / 360.0, 0.40, 1.0); // A: tile hue
 	else if (vClass < 1.5) rgb = uColorB;                                              // B: side field
 	else rgb = uColorC;                                                                // C: edge diamond
 	frag = vec4(rgb, uOpacity);
@@ -94,6 +94,47 @@ uniform vec3 uStroke;
 uniform float uOpacity;
 out vec4 frag;
 void main() { frag = vec4(uStroke, uOpacity); }
+`;
+
+// Strap border (interlace/outline/emboss). Same constant-CSS-width butt quad as ISLAMIC_STROKE_VERT, but
+// the colour is per-vertex (aColor) so a single instanced draw can carry both the emboss highlight and
+// shadow edges (baked from each segment's world normal at build time). aInst instances it like the fill.
+export const STRAP_BORDER_VERT = `#version 300 es
+in vec2 aPos;
+in vec2 aNorm;
+in float aSide;
+in vec3 aColor;
+in vec2 aInst;
+uniform vec2 uOffset;
+uniform float uZoom;
+uniform float uRot;
+uniform vec2 uV1;
+uniform vec2 uV2;
+uniform vec2 uHalf;
+uniform float uHalfStrokePx;
+out vec3 vColor;
+void main() {
+	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	float c = cos(uRot), s = sin(uRot);
+	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
+	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
+	float nsx = uZoom * (c * aNorm.x + s * aNorm.y);
+	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
+	float nl = length(vec2(nsx, nsy));
+	vec2 n = nl > 0.0 ? vec2(nsx, nsy) / nl : vec2(0.0);
+	sx += aSide * uHalfStrokePx * n.x;
+	sy += aSide * uHalfStrokePx * n.y;
+	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
+	vColor = aColor;
+}
+`;
+
+export const STRAP_BORDER_FRAG = `#version 300 es
+precision highp float;
+in vec3 vColor;
+uniform float uOpacity;
+out vec4 frag;
+void main() { frag = vec4(vColor, uOpacity); }
 `;
 
 // Parse a CSS hex colour (#rgb or #rrggbb) to normalised [r,g,b] in 0..1. Falls back to mid-grey.

@@ -59,6 +59,7 @@ import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { EuclideanCanvas } from "./euclidean-canvas";
 import { IslamicCanvas } from "./islamic-canvas";
+import { StrapCanvas } from "./strap-canvas";
 import { setOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
@@ -165,14 +166,26 @@ function isFlatShaderActive(cfg: {
 
 // Euclidean Islamic PLAIN and CHECKERBOARD fills render through the WebGL IslamicCanvas
 // (components/islamic-canvas.tsx) instead of p5 immediate mode — the same gate decides the React mount and
-// the per-frame skipFill, so p5 never double-paints. The strap styles (interlace/outline/emboss) and the
-// animated motif stay on p5, and a rulestring tiling with no translational cell also stays on p5.
+// the per-frame skipFill, so p5 never double-paints. The strap styles are on the sibling StrapCanvas (see
+// isStrapShaderActive); only the animated motif and a rulestring tiling with no translational cell stay on p5.
 function isIslamicShaderActive(cfg: {
 	isIslamic: boolean; islamicAnimate: boolean; islamicStyle: string;
 	hyperbolic: boolean; spherical: boolean; inversive: boolean;
 }): boolean {
 	return cfg.isIslamic && !cfg.islamicAnimate
 		&& (cfg.islamicStyle === "plain" || cfg.islamicStyle === "checkerboard")
+		&& !cfg.hyperbolic && !cfg.spherical && !cfg.inversive;
+}
+
+// Euclidean Islamic INTERLACE / OUTLINE / EMBOSS straps render through the WebGL StrapCanvas
+// (components/strap-canvas.tsx). Same gate shape as isIslamicShaderActive, for the three strap styles; when
+// active p5 skips its own drawIslamicInterlace (via skipFill) so the two never double-paint.
+function isStrapShaderActive(cfg: {
+	isIslamic: boolean; islamicAnimate: boolean; islamicStyle: string;
+	hyperbolic: boolean; spherical: boolean; inversive: boolean;
+}): boolean {
+	return cfg.isIslamic && !cfg.islamicAnimate
+		&& (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")
 		&& !cfg.hyperbolic && !cfg.spherical && !cfg.inversive;
 }
 
@@ -310,6 +323,11 @@ export function Canvas({
 	const islamicStyleSel = useConfiguration((s) => s.islamicStyle);
 	const islamicAnimateSel = useConfiguration((s) => s.islamicAnimate);
 	const islamicShaderActive = !!translationalCell && isIslamicShaderActive({
+		isIslamic: isIslamicSel, islamicAnimate: islamicAnimateSel, islamicStyle: islamicStyleSel,
+		hyperbolic: hyperbolicSel, spherical: sphericalSel, inversive: inversiveSel,
+	});
+	// Islamic strap styles (interlace/outline/emboss) → WebGL StrapCanvas. Same subscriptions; needs a cell.
+	const strapShaderActive = !!translationalCell && isStrapShaderActive({
 		isIslamic: isIslamicSel, islamicAnimate: islamicAnimateSel, islamicStyle: islamicStyleSel,
 		hyperbolic: hyperbolicSel, spherical: sphericalSel, inversive: inversiveSel,
 	});
@@ -757,7 +775,7 @@ export function Canvas({
 					// transient active-cell ref — so p5 skips its plain fill exactly when IslamicCanvas is
 					// mounted (never leaving a blank), and a rulestring tiling with no cell stays on p5.
 					const shaderFill = isFlatShaderActive(cfg)
-						|| (isIslamicShaderActive(cfg) && !!propsRef.current.translationalCell);
+						|| ((isIslamicShaderActive(cfg) || isStrapShaderActive(cfg)) && !!propsRef.current.translationalCell);
 					// Mouse in world coords for the orbit-dot hover (grow the hovered orbit, Tiling.
 					// drawVertexOrbits). Inverts the SAME frame transform the dots are drawn with (wrapped
 					// drawOffset + eased zoom/rot), so the hit-test matches what's on screen. Null when the
@@ -1014,6 +1032,14 @@ export function Canvas({
 			) : null}
 			{islamicShaderActive ? (
 				<IslamicCanvas
+					width={width}
+					height={height}
+					translationalCell={translationalCell as unknown as FlatCellData | null}
+					translationalCellId={translationalCellId}
+				/>
+			) : null}
+			{strapShaderActive ? (
+				<StrapCanvas
 					width={width}
 					height={height}
 					translationalCell={translationalCell as unknown as FlatCellData | null}

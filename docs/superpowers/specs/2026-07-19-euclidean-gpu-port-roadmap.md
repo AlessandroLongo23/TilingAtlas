@@ -45,6 +45,7 @@ only headed/real-GPU numbers count.
 | M3 (done) | Vertex-orbit dots + tile dim, hover-grow | `ORBIT_VERT`/`ORBIT_FRAG` + `uFillDim`/`uStrokeDim` in [flatTilingGL.ts](../../../lib/render/flatTilingGL.ts), [buildOrbitDotMesh.ts](../../../lib/render/buildOrbitDotMesh.ts), [orbitHoverBridge.ts](../../../lib/render/orbitHoverBridge.ts) | `showVertexOrbits` (live) |
 | M4-plain (done) | Plain Islamic A/B/C fill + black construction lines | [islamic-canvas.tsx](../../../components/islamic-canvas.tsx), [islamicGL.ts](../../../lib/render/islamicGL.ts), [buildIslamicMesh.ts](../../../lib/render/buildIslamicMesh.ts) | `isIslamicShaderActive`: plain, `!animate` |
 | M4-checker (done) | Checkerboard (zellij two-tone) fill + borders | same + `buildInstancedCheckerMesh`, `uMode` in `ISLAMIC_FILL_FRAG` | `isIslamicShaderActive`: checkerboard, `!animate` |
+| M4-strap (done) | Interlace / outline / emboss straps | [strap-canvas.tsx](../../../components/strap-canvas.tsx), [buildIslamicStrapMesh.ts](../../../lib/render/buildIslamicStrapMesh.ts), `STRAP_BORDER` + `uMode 2` in [islamicGL.ts](../../../lib/render/islamicGL.ts) | `isStrapShaderActive`: interlace/outline/emboss, `!animate` |
 
 The base fills are already retained-mode on the GPU. The premise "everything is on p5 and slow" is
 therefore only half true. Pan/zoom/rotate on the plain views are already fast. What is slow is a
@@ -103,8 +104,9 @@ the decorative styles (M4-rest) are still whole-patch p5 and will inherit the sa
 
 ## Remaining elements still on p5, by milestone
 
-Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. M1b, M2, M3 done; **M4-rest in
-progress** (checkerboard done; interlace/outline/emboss next; animated deferred). Cost column is per-frame
+Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. M1b, M2, M3 done; M4-rest done
+(checkerboard + interlace/outline/emboss; only the animated motif is deferred, by design). **Next is M5**
+(overlays: fundamental domain, symmetry lines, dual connections, circle packing). Cost column is per-frame
 while the relevant mode/toggle is active.
 
 ### M1b: points
@@ -173,7 +175,7 @@ shader owns the dots (`skipFill`), so nothing double-draws. `uFillDim`/`uStrokeD
 | Element | Toggle | Source | Status |
 |---|---|---|---|
 | Checkerboard (zellij two-tone) | `islamicStyle` (live) | `drawIslamicCheckerboard` [Tiling.ts:411](../../../lib/classes/Tiling.ts#L411) + `twoColorFaces` | **DONE 2026-07-19** |
-| Interlace / outline / emboss straps | `islamicStyle` (live) | `drawIslamicInterlace` [Tiling.ts:332](../../../lib/classes/Tiling.ts#L332) + `buildIslamicInterlace` | still p5 (next) |
+| Interlace / outline / emboss straps | `islamicStyle` (live) | `drawIslamicInterlace` [Tiling.ts:332](../../../lib/classes/Tiling.ts#L332) + `buildIslamicInterlace` | **DONE 2026-07-19** |
 | Animated motif | `islamicAnimate` (live) | `drawIslamicStarFill` animate path ~278 | deferred (per-frame, non-periodic → defeats instancing) |
 
 **Checkerboard (done):** `buildInstancedCheckerMesh` reuses the plain path's origin-cell filtering but the
@@ -184,12 +186,20 @@ fill is `twoColorFaces`'s bipartite two-colouring instead of A/B/C; each kept fa
 pixel-identical to p5 on two lattices (composable-k1, composable-k2), no parity seam across instances
 (the lattice preserves the bipartite parity, same periodicity assumption the plain A/B/C path relies on).
 
-**Interlace/outline/emboss (next):** `buildIslamicInterlace` returns one `Band` per edge, each a convex
-`fill` quad (fan-triangulatable) plus per-segment `outline` with world normals. Port as a strap-fill mesh
-(one solid colour, or emboss mid-tone) + a border mesh whose per-vertex colour is baked at build time (dark
-warm, or emboss highlight/shadow from `n·light`, world-fixed so it's periodic and instances cleanly). The
-over/under illusion is already baked into the outline endpoints by `buildBands`, so the GPU just strokes
-them. Reuse the [islamic-canvas.tsx](../../../components/islamic-canvas.tsx) stack + the P0 instancing.
+**Interlace/outline/emboss (done):** `buildIslamicInterlace` returns one `Band` per edge, each a convex
+`fill` quad plus per-segment `outline` with world normals. `buildInstancedStrapMesh` keeps the origin-cell
+reps (by fill centroid), triangulates the quads for the solid strap body, and emits one butt quad per
+outline segment carrying a BAKED per-vertex colour: dark warm for interlace/outline, or the emboss
+highlight/shadow chosen from `n·light` (world-fixed, so periodic and instanced cleanly). The over/under
+illusion is already baked into the outline endpoints by `buildBands`, so the GPU just strokes them; the
+fill colour and border width are draw-time uniforms. Two shaders in [islamicGL.ts](../../../lib/render/islamicGL.ts):
+`ISLAMIC_FILL` gains `uMode 2` (solid body colour), and `STRAP_BORDER_VERT/FRAG` is the per-vertex-colour
+border. This lives in a SEPARATE [strap-canvas.tsx](../../../components/strap-canvas.tsx) (a sibling of
+IslamicCanvas, its own gate `isStrapShaderActive`) rather than another branch of the plain/checker canvas,
+because straps are a different mesh shape and that file was mid-refactor next door; the patch/instance/
+throttle plumbing is duplicated for now (factor a shared hook once the colour refactor there settles).
+Playwright-verified against genuine-p5 references for all three styles (interlace weave, flat outline,
+raised emboss ribbons).
 
 **Animated motif (deferred):** `drawIslamicStarFill`'s animate path re-picks a per-edge angle every frame
 from noise, so the pattern is NOT lattice-periodic and can't be instanced from one cell. Porting it means
