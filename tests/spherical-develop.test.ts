@@ -111,7 +111,7 @@ function planarity(pts: Vec3[]): number {
 }
 
 describe("spherical k=1 developer output", () => {
-	const records = cells as DevCell[];
+	const records = cells as unknown as DevCell[];
 	const targets = buildTargets();
 
 	it("has 28 developed records", () => {

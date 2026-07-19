@@ -107,7 +107,7 @@ function assertRegular(r: DevCell) {
 }
 
 describe("spherical k=2 developer output", () => {
-	const records = cells as DevCell[];
+	const records = cells as unknown as DevCell[];
 
 	it("realizes exactly 2 of the 132 k=2 blocks (both gyro-twin Johnson solids)", () => {
 		expect(records.length).toBe(2);
