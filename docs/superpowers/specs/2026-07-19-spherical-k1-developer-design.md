@@ -22,10 +22,24 @@ plane reproduces the classical uniform polyhedra on the sphere.*
 - **Match test:** metric + combinatorial invariants (vertex config, Euler V−E+F=2,
   face-size multiset, all-edges-equal and all-faces-regular within a float tolerance).
   Not exact coordinates — frame/scale/handedness differences are expected and ignored.
-- **Embedding method:** energy relaxation on S². Chosen over incremental geodesic
-  development and Wythoff construction because it is the least code, geometry-agnostic,
-  extends to k≥2 unchanged, and its failure-to-converge cleanly flags non-realizable maps
-  and A6 pruner duplicates as diagnostics.
+- **Embedding method:** geodesic development on S². (Superseded the initial energy-relaxation
+  pick during planning — see "Method correction" below. Relaxation cannot stand alone: it
+  needs the *unfolded* graph, but the pruned block is the symmetry-quotient, so an
+  unfolding/development pass is unavoidable. For k=1 that pass closes analytically via a
+  single edge-length solve, making relaxation redundant.) The realizability/A6 signal is
+  preserved — it comes from *closure failure* rather than relaxation stalling.
+
+### Method correction (during planning)
+
+The k=1 pruned block encodes the polyhedron as a symmetry-quotient (a cube is `(4,4,4)`
+with a single vertex type, not 8 vertices). Energy relaxation needs the *actual* graph, so
+an unfolding pass is required regardless. For k=1 every vertex shares one config, so a single
+1-D solve for the edge length ρ (the spherical face angles around a vertex must sum to 2π)
+fixes the metric, and the flood-fill then closes by discrete Gauss–Bonnet. That development
+IS the answer; relaxation would only re-derive residual ≈ 0. So the developer mirrors
+`develop.py`'s dart-instance flood-fill with SO(3) rotations (by ρ) in place of ℤ[ζ₁₂]
+translations, and reports non-realizability when the flood-fill fails to close consistently
+or the developed faces are not regular.
 - **Language split:** combinatorial reconstruction stays in Python (reuse the proven
   `pruner.decode()`, do not re-port). The new geometry (relaxation + emit) is Python
   (numpy), beside `develop.py`. The cross-check against the authored solids is a TS Vitest
@@ -57,8 +71,8 @@ plane reproduces the classical uniform polyhedra on the sphere.*
 eu_solver.spherical → eu_pruner.spherical → out/pruned/eupruned_01_*.txt        (already works)
                                                         │
               develop_spherical.py  (NEW, beside develop.py)
-                ├─ reuse pruner.decode()  →  abstract map (vertices, edges, faces)   [geometry-agnostic]
-                ├─ spherical Laplacian init  →  energy relaxation on S² (numpy)       [the new geometry]
+                ├─ reuse pruner.decode()  →  quotient half-edge arrays               [geometry-agnostic]
+                ├─ solve edge length ρ  →  SO(3) geodesic flood-fill (develop.py analog)  [the new geometry]
                 ├─ emit spherical-cells-k1.json  (render-ready records)
                 └─ emit spherical-develop-report.txt  (realizability + A6 audit)
                                                         │
@@ -79,40 +93,43 @@ Two output artifacts:
 
 Per pruned block:
 
-1. **Reconstruct the abstract map** (reuse `pruner.decode()`, geometry-free).
-   - Combinatorial vertices = the `rneig`-orbits (the star-walk `develop.py` uses, minus
-     angle accumulation). Assign each orbit an integer id.
-   - Edges = the `glue` pairs: dart `h` and `glue[h]` cross a shared edge, so their two
-     vertices are edge-adjacent.
-   - Faces = the polygon cycles from the Conway build (algorithm.txt Part 2), traced as
-     cycles of the face permutation on darts. Emit each face as an ordered vertex-id ring.
+1. **Decode the quotient** (reuse `pruner.decode()`, geometry-free). Gives the folded
+   half-edge arrays `rneig, lneig, mirro, lvert, glue, label` and the vertex config. This is
+   the symmetry-QUOTIENT (one vertex type for the whole solid), not the geometric graph — the
+   geometric vertices/edges/faces are produced by the development in step 3, exactly as
+   `develop.py` unfolds the quotient into the actual (Euclidean) tiling. The face permutation
+   on darts is `F(h) = glue[rneig[h]]` (the Conway polygon-build of algorithm.txt Part 2);
+   its orbits become faces once developed.
    - Face sizes and per-vertex config fall out of this. Sanity: every face ring length
      equals its polygon size; Euler V−E+F must equal 2 (χ=2 sphere) before embedding.
 
-2. **Initialize on the unit sphere.** Random points on S², then a few rounds of spherical
-   Laplacian smoothing (each vertex → normalized mean of its graph neighbors). Enough for
-   these small (≤ ~120-vertex) symmetric k=1 graphs.
+2. **Solve the edge length ρ.** All k=1 vertices share one config `(p1,...,pd)`. The interior
+   angle of a regular spherical `p`-gon with edge arc-length ρ is a monotone function
+   `angle_p(rho)` (computed numerically: build the regular spherical p-gon of edge ρ from its
+   circumradius via `sin(rho/2) = sin(r)*sin(pi/p)`, measure the vertex angle from adjacent
+   edge tangents). Solve `sum_i angle_pi(rho) = 2*pi` for ρ by bisection on (0, pi); the sum
+   is monotone decreasing in ρ, so bisection is unconditional. No root ⇒ the config has no
+   spherical vertex figure (reject).
 
-3. **Relax.** Minimize `E = Σ_edges (‖vᵢ−vⱼ‖ − L)² + w · Σ_faces planarity`, where:
-   - every vertex is constrained to the unit sphere (project gradient to the tangent plane,
-     renormalize each step);
-   - `L` = current mean edge length (scale is free; only edge *equality* is enforced);
-   - planarity(face) = Σ over face vertices of squared distance to the face's best-fit plane.
-   - Plain projected gradient descent; no scipy dependency. Fixed step or simple line search.
-   - Converged when residual edge-length coefficient of variation AND max planarity error
-     both fall below `tol` (default 1e-6).
+3. **Develop by SO(3) flood-fill** (mirror `develop.py`'s BFS/`star`, swap the geometry). State
+   is (dart `h`, frame `R` in SO(3)); the geometric vertex position is `R * z_hat`. `star(h,R)`
+   walks `rneig` around the vertex, rotating the frame about the local vertical by `angle_p(rho)`
+   per corner, enumerating the darts sharing that vertex position. Crossing a glued edge
+   (`h -> glue[h]`) advances the frame by the fixed edge rotation (geodesic step ρ about the
+   shared-edge axis). BFS from `(0, I)`; dedup geometric vertices by position within `tol`
+   (default 1e-6). Edges = `glue` pairs; faces = orbits of `F(h)=glue[rneig[h]]`, each emitted
+   as an ordered ring of geometric-vertex ids.
 
-4. **Emit or reject.**
-   - Converged below `tol` → emit the Polyhedron record.
-   - Stuck above `tol` after all restarts → flag the block *non-realizable*, emit a report
-     line only. (A genuine uniform polyhedron drives E→0; an A6 artifact or an unrealizable
-     regular-faced map cannot.)
+4. **Verify closure or reject.** Realized iff: every revisited dart lands on its existing
+   position within `tol`; V-E+F = 2; every developed face is a regular polygon (edges equal,
+   coplanar) within `tol`. Realized -> emit the Polyhedron record. Any failure -> flag the
+   block *non-realizable*, emit a report line only. (A genuine uniform polyhedron closes
+   exactly; an A6 artifact or an unrealizable map yields an inconsistent revisit or a
+   non-regular face.)
 
-**Local-minimum risk.** Projected gradient descent can stall in a shallow local minimum on
-a *realizable* map and produce a false "non-realizable". Mitigation: N random restarts
-(default 8) before declaring non-realizable; at k=1 the target set is the known closed list,
-so any block that fails all restarts is logged loudly for manual inspection, never silently
-dropped. This is the one place the artifact could lie, so the report makes it explicit.
+**Guard.** The BFS is bounded by a hard pop cap (default 200k, as in `develop.py`); hitting it
+means non-closure and is reported, never silently truncated. At k=1 the target set is the known
+closed list, so any block that fails to close is logged loudly for manual inspection.
 
 ## Validation (`tests/spherical-develop.test.ts`)
 
