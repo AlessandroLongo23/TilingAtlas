@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Vector } from "@/classes";
 import { signedArea, pointInPolygon, lineIntersect, tipPoint } from "@/utils/islamicArrangement";
-import { extractFaces } from "@/utils/islamicArrangement";
+import { extractFaces, buildArrangement } from "@/utils/islamicArrangement";
 import { colorFaces, colorFacesBySourceTile, HUE } from "@/utils/islamicArrangement";
 
 describe("islamicArrangement geometry helpers", () => {
@@ -57,6 +57,33 @@ describe("extractFaces", () => {
         ]);
         expect(faces.length).toBe(4);
         for (const f of faces) expect(signedArea(f.vertices)).toBeGreaterThan(0); // CCW, outer dropped
+    });
+
+    it("splits transversally crossing segments at the crossing (splitCrossings = true)", () => {
+        // Unit square boundary + both diagonals. The diagonals cross transversally at the centre,
+        // which is NOT an endpoint of any segment — the case the count>1 construction introduces and
+        // the T-junction-only tracer misses. With the crossing split it yields four triangles.
+        const segments = [
+            seg(-1, -1, 1, -1), seg(1, -1, 1, 1), seg(1, 1, -1, 1), seg(-1, 1, -1, -1), // boundary
+            seg(-1, -1, 1, 1), seg(1, -1, -1, 1), // diagonals crossing at the origin
+        ];
+        const faces = extractFaces(segments, true);
+        expect(faces.length).toBe(4);
+        for (const f of faces) expect(f.vertices.length).toBe(3); // triangles corner–corner–centre
+    });
+
+    it("finds a crossing between long segments that span many grid cells (grid broad-phase)", () => {
+        // Guards the spatial-grid broad-phase in buildArrangement(splitCrossings): a long horizontal and
+        // long vertical segment cross at the origin; the two short segments pull the mean length (and thus
+        // the grid cell) far below the long ones, so the long segments span many cells. The crossing is
+        // only found if each segment is binned into EVERY cell its bounding box covers, not just its ends.
+        const { pts } = buildArrangement([
+            seg(-10, 0, 10, 0), seg(0, -10, 0, 10),   // long crossing pair
+            seg(5, 5, 5.1, 5), seg(-5, -5, -5.1, -5), // short segments shrink the mean length
+        ], true);
+        // Endpoints (8) + the origin crossing = 9. Without the crossing split (or with a grid that misses
+        // it) the origin vertex is absent.
+        expect(pts.some((p) => Math.abs(p.x) < 1e-6 && Math.abs(p.y) < 1e-6)).toBe(true);
     });
 });
 

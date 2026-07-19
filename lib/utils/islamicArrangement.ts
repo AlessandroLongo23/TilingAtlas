@@ -69,12 +69,38 @@ export function buildArrangement(segments: Segment[], splitCrossings: boolean = 
         if (i !== j) raw.push([i, j]);
     }
 
-    // 1b. Interior transversal crossings become vertices so step 2 splits both segments there.
+    // 1b. Interior transversal crossings become vertices so step 2 splits both segments there. A spatial
+    //     grid over the segments' bounding boxes keeps this near-linear instead of O(edges²): a real
+    //     crossing means the two segments overlap in space, so they share a grid cell and the pair is
+    //     still tested. Candidates are sorted ascending, so the crossing points are created in the same
+    //     order the old all-pairs loop created them (byte-identical output). This is the path
+    //     edge-offset>0 / intersection-count>1 take; the un-gridded O(edges²) version was the Edge Offset
+    //     drag bottleneck (offset 0 skips this block entirely, which is why only offset>0 was slow).
     if (splitCrossings) {
+        let lenSum0 = 0;
+        for (const [a, b] of raw) lenSum0 += Vector.distance(pts[a], pts[b]);
+        const xcell = raw.length ? Math.max(1e-6, lenSum0 / raw.length) : 1;
+        const cellsOf = (P: Vector, Q: Vector): string[] => {
+            const gx0 = Math.floor(Math.min(P.x, Q.x) / xcell), gx1 = Math.floor(Math.max(P.x, Q.x) / xcell);
+            const gy0 = Math.floor(Math.min(P.y, Q.y) / xcell), gy1 = Math.floor(Math.max(P.y, Q.y) / xcell);
+            const keys: string[] = [];
+            for (let gx = gx0; gx <= gx1; gx++) for (let gy = gy0; gy <= gy1; gy++) keys.push(`${gx},${gy}`);
+            return keys;
+        };
+        const xgrid = new Map<string, number[]>();
+        for (let e = 0; e < raw.length; e++)
+            for (const k of cellsOf(pts[raw[e][0]], pts[raw[e][1]])) {
+                let arr = xgrid.get(k); if (!arr) { arr = []; xgrid.set(k, arr); } arr.push(e);
+            }
         for (let a = 0; a < raw.length; a++) {
             const [a0, a1] = raw[a];
             const P1 = pts[a0], D1 = Vector.sub(pts[a1], P1);
-            for (let b = a + 1; b < raw.length; b++) {
+            const cand = new Set<number>();
+            for (const k of cellsOf(P1, pts[a1])) {
+                const arr = xgrid.get(k); if (!arr) continue;
+                for (const b of arr) if (b > a) cand.add(b);
+            }
+            for (const b of [...cand].sort((x, y) => x - y)) {
                 const [b0, b1] = raw[b];
                 if (a0 === b0 || a0 === b1 || a1 === b0 || a1 === b1) continue; // share an endpoint
                 const P2 = pts[b0], D2 = Vector.sub(pts[b1], P2);
