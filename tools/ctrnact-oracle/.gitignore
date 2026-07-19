@@ -20,3 +20,4 @@ _import_scratch/
 __pycache__/
 *.pyc
 .maxnum-*
+check-k*/
