@@ -34,6 +34,11 @@ export interface ConfigurationState {
 	// Canvas controls (read in p5 draw loops)
 	controls: Controls;
 	lineWidth: number;
+	// Global hue rotation (degrees, 0–359) applied to every TILE FILL at draw time — all render paths
+	// (flat p5 + WebGL, hyperbolic disk, inversive, Islamic fills) and the catalogue thumbnails shift
+	// together, preserving the pairwise hue distances between tiles. Overlays (orbit dots, symmetry
+	// elements, parity two-tone) keep their own colors. Set by the hue ring (components/ui/hue-ring.tsx).
+	hueOffset: number;
 	speed: number;
 	parameter: number;
 	transformSteps: number;
@@ -66,7 +71,21 @@ export interface ConfigurationState {
 	// Islamic / rendering variants
 	isIslamic: boolean;
 	islamicAngle: number;
+	islamicEdgeOffset: number;        // % of the half-edge the ray origins slide outward (0 = midpoint)
+	islamicIntersectionCount: number; // ray stops at the N-th crossing (1 = first contact, max 3)
 	islamicAnimate: boolean;
+	// Decoration style for the Islamic construction. 'plain' = colored cells + border lines (the classic
+	// look); 'interlace' = woven over/under bands. ('outline'/'checkerboard' are reserved for later slices.)
+	islamicStyle: 'plain' | 'interlace' | 'outline' | 'emboss' | 'checkerboard';
+	islamicBandWidth: number;         // interlace strap width, as a fraction of the median segment length
+	islamicOutlineWidth: number;      // interlace strap border stroke, in screen px (0 = no border)
+	islamicChirality: boolean;        // flips which strand rides over at every crossing (the two chiralities)
+	islamicCheckerColorA: string;     // checkerboard field colour A (CSS hex)
+	islamicCheckerColorB: string;     // checkerboard field colour B (CSS hex)
+	// Plain-fill A/B/C: star bodies (A) keep their tile hue; the two background classes take these shared
+	// colours. B = the side fields, C = the small edge-centre diamonds (only present once Edge Offset > 0).
+	islamicFillColorB: string;        // A/B/C fill: side-field colour (CSS hex)
+	islamicFillColorC: string;        // A/B/C fill: edge-centre diamond colour (CSS hex)
 	circlePacking: boolean;
 	isTilingRegularOnly: boolean;
 
@@ -84,6 +103,13 @@ export interface ConfigurationState {
 	spiralArmA: number; // integer seam component along v₁
 	spiralArmB: number; // integer seam component along v₂
 	spiralDouble: boolean; // false ⇒ one center, true ⇒ two centers (Droste)
+	// Velocity pad (components/spiral-velocity-pad.tsx): a persistent strip-space velocity (dV/dt,
+	// strip-units/s; x = dolly ⇒ zoom, y = spin ⇒ rotation) written by the pad on drag, and the drift
+	// it integrates. The drift is mutated IN PLACE by the InversiveCanvas render loop (the `controls`
+	// pattern — no per-frame setState) and wrapped modulo the strip lattice so it stays bounded; see
+	// wrapStripDrift in lib/render/spiralMap.ts.
+	spiralVel: { x: number; y: number };
+	spiralDrift: { x: number; y: number };
 
 	// Hyperbolic view: set true by /play when a {p,q} hyperbolic tiling is selected. Swaps the flat p5
 	// render for the Poincaré-disk WebGL renderer (components/hyperbolic-canvas.tsx). While on, the p5
@@ -97,6 +123,28 @@ export interface ConfigurationState {
 	// it). A click (centred CSS px) requests centring the clicked tile; the reset flag returns to identity.
 	hyperbolicClick: { x: number; y: number } | null;
 	hyperbolicResetView: boolean;
+
+	// Spherical view: set true by /play when a Platonic {p,q} tiling is selected. Swaps the flat p5 render
+	// for the three.js sphere renderer (components/spherical-canvas.tsx), which owns its own pointer input
+	// (ArcballControls free rotation + zoom). While on, the p5 canvas draws nothing (blanked like hyperbolic).
+	spherical: boolean;
+	// Spherical wireframe mode: drop the solid textured sphere and render ONLY the tiling edges as 3D
+	// tubes — a hollow skeleton. `section` picks the cross-section (round tube vs rectangular bar);
+	// `thickness` is the line width (tube radius / bar width along the surface); `height` is the bar's
+	// radial depth (rectangular section only). See components/spherical-canvas.tsx + lib/render/sphericalWireframe.ts.
+	sphericalWireframe: boolean;
+	sphericalWireSection: "tube" | "rect";
+	sphericalWireThickness: number;
+	sphericalWireHeight: number;
+	sphericalWireBevel: number; // rectangular section only: chamfer size as a fraction (0 = sharp corners)
+	// Spherical "realistic" mode: keep the solid textured sphere, but shade it like the tiling lines were
+	// CARVED into the surface — faces raised, edges sunk into a smooth SDF-fillet groove, lit as matte stone.
+	// Driven live from the same edge-distance field the texture baker uses. Solid sphere only (no effect in
+	// wireframe / Islamic modes). See lib/render/sphericalCarvedMaterial.ts.
+	sphericalRealistic: boolean;
+	// Interlace + Wireframe (solid 3D ribbons): false = the woven over/under relief (ribbons ride out/in at
+	// crossings); true = flat ribbons, still 3D solids but coplanar on the sphere (no over/under undulation).
+	sphericalWeaveFlat: boolean;
 
 	// Color params
 	colorParams: ColorParams;
@@ -123,6 +171,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 		dampening: 0.2,
 	},
 	lineWidth: 1,
+	hueOffset: 0,
 	speed: 20,
 	parameter: 45,
 	transformSteps: 5,
@@ -147,11 +196,23 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	exportGraph: false,
 
 	isIslamic: false,
-	// Ray tilt from the tile edge, degrees: 0 ⇒ parallel to the edge (original tiling), 90 ⇒ along the
-	// perpendicular (dual tiling); 45 is the mid star. Mapped to the contact angle in islamicTipsAngleFromSlider.
+	// Ray tilt from the tile edge, degrees: 0 ⇒ parallel to the edge (original tiling — toggling Islamic here
+	// is a no-op), 90 ⇒ along the perpendicular (dual tiling); 45 is the mid star. Every geometry honours this:
+	// the tips/fold/spherical paths via islamicTipsAngleFromSlider, the segment paths (flat + hyperbolic mesh)
+	// via islamicNormalAngleFromSlider (the from-normal complement, 90° − slider).
 	islamicAngle: 45,
+	islamicEdgeOffset: 0,
+	islamicIntersectionCount: 1,
 
 	islamicAnimate: false,
+	islamicStyle: 'plain',
+	islamicBandWidth: 0.25,
+	islamicOutlineWidth: 1.5,
+	islamicChirality: false,
+	islamicCheckerColorA: '#e7dcc0',
+	islamicCheckerColorB: '#3a4a52',
+	islamicFillColorB: '#e7dcc0',
+	islamicFillColorC: '#3a4a52',
 	circlePacking: false,
 	isTilingRegularOnly: false,
 
@@ -162,12 +223,23 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	spiralArmA: 1,
 	spiralArmB: 0,
 	spiralDouble: false,
+	spiralVel: { x: 0, y: 0 },
+	spiralDrift: { x: 0, y: 0 },
 
 	hyperbolic: false,
 	hyperbolicShading: "tiles",
 	hyperbolicLineMode: "geometry",
 	hyperbolicClick: null,
 	hyperbolicResetView: false,
+
+	spherical: false,
+	sphericalWireframe: false,
+	sphericalWireSection: "tube",
+	sphericalWireThickness: 0.025,
+	sphericalWireHeight: 0.025,
+	sphericalWireBevel: 0.25,
+	sphericalRealistic: false,
+	sphericalWeaveFlat: false,
 
 	colorParams: { a: 180, b: 0 },
 

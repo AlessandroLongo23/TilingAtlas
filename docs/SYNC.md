@@ -1188,3 +1188,52 @@ dart-rotation manifold classifier. Certified result for the **2-parameter-family
 full k=2 space): genuine `betti=[12,11,6]`, H₂ = **2 genuine spheres + 4 pinched-spheres (zero tori)** — the
 χ'-alone classifier had faked tori/genus from even-χ' pinches. Branch `moduli-graph`, spec
 `docs/superpowers/specs/2026-07-18-k2-verification-design.md`; 68/68 tests, build clean. — CC
+
+**2026-07-18 (CC) — Islamic tilings: curated category + girih engine enumeration.** New `islamic` tile
+class (library/play chip + by-system sub-facet), 9 validated tessellations across 5 Bonner families
+(scripts/build-islamic-atlas.ts + a coverage validator), the Hankin construction extended to the class
+with a /play nudge, and a `/theory/islamic` page. Research note `docs/ISLAMIC_TILINGS.md`. Then ran the
+Čtrnáct engine on the girih kit (new `girih.json`, D=20): **k=1..4 = 18/138/685/3653** distinct k-uniform
+tilings (combinatorial; develop is ζ₂₄-only so uncertified). One guarded engine edit (`gen_alphabet.py`
+reflex-composite `min_len`) — `make check-regular` byte-identical. Detail:
+`experiments/results/girih-enumeration-2026-07-18.md`. — CC
+
+**2026-07-18 (CC, later) — girih tilings developed + in the library.** Wrote `develop_girih.py`, a
+self-contained float developer for arbitrary D (the C++ `eu_develop` is ℤ[ζ₁₂]-only): reuses the proven
+combinatorial `decode`, flood-fills in `complex<double>` on the 18° grid, extracts fundamental-domain tile
+faces, area-cert gated. All 841 k≤3 girih tilings develop with the area cert PASS. `build-islamic-atlas.ts`
+dedups to **93 distinct tilings**, re-validates each via the coverage checker, and imports them (`source:
+"islamic"`, `islamicSystem:"fivefold"`, `discoverer:"Čtrnáct engine"`) — including the decagon-and-bowtie
+ring-of-ten-stars hand-curation couldn't reach. Library now 103 Islamic tilings; build green. New file, no
+existing developer/palette touched. — CC
+
+**2026-07-18 (CC, later) — girih pushed to k=4.** k=4 solve run in parallel (`run-oracle-parallel.sh`, 8
+workers, 118s) — counts **18/138/685/3653**, byte-identical to serial (cross-check). All 4494 k≤4 tilings
+develop with area-cert PASS; deduped to **205 distinct** (8/26/59/112 at k=1..4), each coverage-validated,
+imported. Library now **215 Islamic tilings** (205 engine-developed + 10 curated); build green. k=5 attempted
+but serial DFS ran >1h without finishing (~18k tilings projected) — deferred. — CC
+
+**2026-07-18 (CC, later) — CORRECTION: girih supercell inflation fixed.** AL spotted a "k=4" girih tiling
+that was visibly k=1. Root cause: the raw pruned counts (18/138/685/3653) over-count — 908/4494 developed
+tilings are **non-primitive supercells** (translation symmetry finer than the cell → mislabeled k), a side
+effect of the `min_len=2` valence-2 admission the reflex bowtie needs (regular palette unaffected, still
+A068599). `build-islamic-atlas.ts` now drops supercells (tile-identity-keyed period test) before dedup →
+**185 distinct PRIMITIVE tilings** (4/23/55/103 at k=1..4), verified lossless. Library now 195 Islamic
+tilings; build green. The primitive count, not the raw pruned count, is the true distinct-tiling number. — CC
+
+**2026-07-18 (CC, later) — CORRECTION: girih k=1 cross-set duplicates removed.** AL spotted the library
+listing the same k=1 tilings twice: `isl-girih-k1-003` == curated `isl-5f-rhombus`, `isl-girih-k1-004` ==
+`isl-5f-bowtie`. The engine dedup ran only within its own set, never against the 10 hand-curated cells.
+Three of the four k=1 primitives (single-tile bobbin/rhombus/bowtie) are congruent to curated entries.
+`build-islamic-atlas.ts` now fingerprints tilings congruence-invariantly (k, sorted tile areas, |detΛ| —
+side count can't split bobbin/bowtie, both n=6) and drops engine tilings matching a curated one, keeping the
+named curated version. **182 engine ship** (1/23/55/103; surviving k=1 is the new bobbin+bowtie cell), **192
+Islamic total**, 0 fingerprint collisions across all 192. Enumeration count unchanged (185 distinct
+primitive); build green. — CC
+
+**2026-07-19 (CC) — Spherical Islamic interlace: solid 3D ribbons + Woven/Flat toggle.** Interlace +
+Wireframe now extrudes each strap into a lit closed solid; over/under is real radial separation
+(`SOLID_LIFT` 0.03 > half-thickness 0.014), the occluder ball is gone so the whole cage shows, and the
+ramp is smoothstep-eased. New `sphericalWeaveFlat` toggle flattens the relief (coplanar bands, no
+z-fight — shared cream material + radial normals). Detail: DEVELOPMENT_NOTES §65; committed the whole
+spherical renderer subsystem (co-mingled shared UI/routing along with it). — CC

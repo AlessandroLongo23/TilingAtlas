@@ -274,10 +274,11 @@ export function drawPolygons(
 	ctx: CanvasRenderingContext2D,
 	polygons: RawPolygon[],
 	scale: number,
+	hueOffsetDeg = 0,
 ) {
 	for (const poly of polygons) {
 		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
-		ctx.fillStyle = hsbToHsla(hue, 40, 100, TILE_FILL_ALPHA);
+		ctx.fillStyle = hsbToHsla((hue + hueOffsetDeg) % 360, 40, 100, TILE_FILL_ALPHA);
 		ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
 		ctx.lineWidth = 1 / scale;
 		ctx.beginPath();
@@ -296,6 +297,8 @@ export interface RenderTilingOptions {
 	polygons?: RawPolygon[];
 	pxPerEdge: number;
 	background?: string;
+	/** Global fill-hue rotation (degrees, the sidebar hue ring). Omitted ⇒ 0 (figures, cards). */
+	hueOffsetDeg?: number;
 }
 
 /**
@@ -309,7 +312,7 @@ export function renderTilingToContext(
 	H: number,
 	opts: RenderTilingOptions,
 ): boolean {
-	const { background = "#1e1e22", pxPerEdge } = opts;
+	const { background = "#1e1e22", pxPerEdge, hueOffsetDeg = 0 } = opts;
 	ctx.fillStyle = background;
 	ctx.fillRect(0, 0, W, H);
 
@@ -336,7 +339,7 @@ export function renderTilingToContext(
 		ctx.translate(W / 2, H / 2);
 		ctx.scale(scale, -scale);
 		ctx.translate(-cellCx, -cellCy);
-		drawPolygons(ctx, polys, scale);
+		drawPolygons(ctx, polys, scale, hueOffsetDeg);
 		ctx.restore();
 		return true;
 	}
@@ -361,7 +364,7 @@ export function renderTilingToContext(
 	ctx.translate(W / 2, H / 2);
 	ctx.scale(scale, -scale);
 	ctx.translate(-cx, -cy);
-	drawPolygons(ctx, polys, scale);
+	drawPolygons(ctx, polys, scale, hueOffsetDeg);
 	ctx.restore();
 	return true;
 }

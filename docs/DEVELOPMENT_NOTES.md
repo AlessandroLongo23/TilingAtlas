@@ -4250,3 +4250,98 @@ under drag. Footprint simplifies to `|K|·|dw|/|w|` (conformal). Verified headle
 reproduces Kaplan's flower; 11 unit tests incl. an explicit similarity (conformality) check. Spec
 updated in place with a correction note. Deliberate deviation kept: analytic point-location instead of
 his FBO texture sampling; his colour-permutation factor `rv` ≡ 1 for our translation-invariant fills.
+
+## §64 — /theory returns as a mathematical-background page; interactive tiling cards (2026-07-16)
+
+AL directive (overrides the 2026-06 "no in-app theory page" note, which targeted the stale METHOD
+write-up — CLAUDE.md updated to say so): a new `/theory` teaching the 11 uniform tilings, using the
+tilingLife machinery, with live shader previews. Machinery resurrected from `9376408^` (page,
+`markdown-renderer`, `theory-sidebar`, `tableOfContents`) — the deps were never pruned, so it was a
+checkout + two edits: `rehype-raw` in the plugin chain and a `components` prop, so authored tags like
+`<tiling-card tiling="t1005">` render live React. Content: `public/theory/uniform-tilings.md`
+(17 multisets → 21 cyclic types → 15 realizable → 11 uniform, G&S §2.1; octagon-rigidity and
+snub-hexagonal-chirality notes tie to our settled decisions). RSC embeds the 11 render cells
+(t1001–t1011, ≈8 KB) from the atlas at build time — no 13 MB client fetch.
+
+`interactive-tiling-preview-card`: rounded square, own WebGL2 context + per-instance controls
+(the global-store pattern can't serve 11 concurrent views), /play's exact feel — drag pan, wheel
+zoom-to-cursor, Shift+wheel 5° detents, right-click reset, eased. Click-to-activate via focus
+(inherently exclusive; inert cards pass wheel to the page). Expand button → col-span-full at 4:3
+(motion FLIP); deep-link button → `/play?source=reference&tiling=<id>`. To make "same feel" a
+structural fact, /play's interaction constants + math moved to `lib/render/viewControls.ts` and the
+GLSL + a `FlatCellRenderer` to `lib/render/flatTilingGL.ts`; canvas.tsx/euclidean-canvas.tsx now
+import them (move-only edits over AL's in-flight diff).
+
+Two runtime lessons. (1) A canvas holds ONE WebGL context forever: teardown + `loseContext()` then
+re-`getContext()` on the same node returns the dead context — Strict Mode's double-mount hit this
+immediately (AL's console: "flat shader compile failed: null"). Fix: create the canvas element per
+setup, IntersectionObserver-gated (11 cards vs the ~8–16 live-context browser cap; measured 1–2 live
+at rest). (2) Seed the pivot-compensation's `prevRotation` to the initial angle, not null — a null
+seed silently drops the first frame's rotation slice from the pan offset (caught by the new
+`view-controls` tests; 19 tests + an atlas/markdown contract guard in `theory-uniform-cells`).
+
+Verified end-to-end headless (CDP driver, screenshots): all 11 cards paint, activate, pan/zoom/
+rotate/reset, expand to 4:3, deep-link correctly; inactive cards scroll the page; zero console
+errors. `pnpm build` green (/theory prerenders static). Full vitest: my 4 files green; 4 failing
+files (figure-emitters, star-general-path, oracle-symmetry-{catalogue,resolve}) fail identically at
+pristine HEAD in a clean worktree — pre-existing, not from this work.
+
+§64 addendum (same session): AL flagged that expansion FLIPped only the expanding card — siblings
+and the prose below snapped (FLIP is transforms-only; the real reflow is instant, and siblings never
+re-render so never re-measure). Fix in two halves, one shared spring (`CARD_LAYOUT_SPRING`):
+`LayoutGroup` around each grid's cards makes every card FLIP when any re-renders, and the card-grid
+became `AnimatedCardGrid` — a ResizeObserver feeds the grid's true height into a motion-animated
+real `height` on the wrapper, so document flow itself eases and the prose is genuinely pushed
+(the deliberate animate-a-layout-property exception; one element, rare interaction).
+`useReducedMotion` zeroes all of it. Frame-recorder verification (CDP): paragraph/sibling/width move
+in ~8 ms steps over ~30 frames, max step 35 px at spring peak — no snap.
+
+## §65 — Spherical Islamic interlace: flat straps to woven 3D ribbons (2026-07-18)
+
+Ported the flat Islamic interlace (`lib/utils/islamicInterlace.ts`) onto the sphere and iterated it
+into a solid 3D basket weave. The whole spherical renderer (`lib/render/spherical*.ts`, the three.js
+sphere view) is still one uncommitted feature; this note covers the interlace strand of it.
+
+Global weave graph (`sphericalInterlace.ts`). The over/under lives entirely at the shared polyhedron
+edge-midpoints: each carries 4 ray-ends (two per adjacent face), a 4-valent crossing. A per-face pass
+sees only 2 of the 4 and weaves nothing, so the graph must be global. Pool every face's construction
+rays (`sphericalIslamicRaySegments` roots adjacent faces at the identical midpoint, so they dedupe),
+sort each vertex's ends CCW in its tangent frame, assign over/under by angular-sort parity (a 1:1 port
+of the flat `assignOverUnder`), then offset each ray into a band by running the flat corner/mitre/butt
+math in the endpoint's local 2D tangent frame and mapping corners back with `normalize(pos + x·u +
+y·v)`. At edge offset 0 / count 1 the crossings sit at the shared endpoints; once the contact slides
+off-midpoint (offset > 0) or rays pass through (count > 1) the real crossings land mid-arc, and
+`splitAtCrossings` injects them as shared vertices (great-circle plane-normal cross product, param via
+`atan2(dot(X,tang), dot(X,O))`; the same X from both rays dedupes to one 4-valent vertex). The kite
+bug: the fill quad's sides `A.fL→B.fL` mismatched the outline `A.fL→B.fR`, so the dark border cut
+diagonally across each strap. Fixed by swapping B's corners: `fillCorners = [A.fL, A.fR, B.fR, B.fL]`.
+
+Over/under by HEIGHT, not cutting (AL directive: draw one strand then the other on top, no need to cut
+the one below). Dropped the under-strand trim. Each edge-end gets a level: +1 over, −1 under at a
+4-valent crossing, 0 at tips and bends so a strand's height stays continuous where it turns. The mesh
+(`sphericalIslamicWeaveMesh.ts`) ramps the strap radius A→B by `level·LIFT_STEP`, so the over body
+just covers the under.
+
+Solid 3D ribbons (Interlace + Wireframe). AL wanted that combo to render real volume. Since Fill and
+Wireframe are one boolean (`islamicFill = !wireframe`), "interlace + wireframe" is exactly the old
+outline-only branch, so I replaced it with `buildSolidWeave`: extrude each band's mitred quad into a
+closed solid (outer shell, inner shell, two side walls, two end caps, real normals) lit by the scene
+rig (`MeshStandardMaterial`, cream). The over/under is now genuine radial separation: over rides to
+`r(1+0.03)`, under sinks to `r(1−0.03)`, each ±0.014 thick. The load-bearing invariant is `SOLID_LIFT
+> SOLID_HALF_THICK` (0.03 > 0.014), so the over ribbon's underside clears the under ribbon's top at
+every crossing (gap ~0.03). Removed the occluder ball (AL: so you can see all the ribbons): opaque
+solids depth-sort, so the far side shows through the gaps as the whole cage. Smoothed the undulation.
+The level ramp was linear, a triangle wave with sharp peaks at crossings; `smooth01` (smoothstep, zero
+slope at both ends) rounds the peaks, and the length subdivision went 0.05 → 0.03 rad so the eased
+curve renders smooth rather than faceted.
+
+Woven/Flat toggle (`sphericalWeaveFlat`, default Woven). Flat sets the lift to 0, so every band sits
+coplanar on the sphere: still a solid 3D ribbon, still no ball. Coplanar crossings do NOT z-fight,
+because all ribbons share one cream material with radial normals, so overlapping top faces shade
+identically and the crossing reads as a clean merged junction. UI: a two-button Ribbons row shown only
+in solid mode (spherical + interlace + wireframe).
+
+Lesson (carried from earlier this session, where the fill fold-over and washed-colour bugs were both
+diagnosed slowly by tuple math): every interlace iteration here was verified by a headless SwiftShader
+render first. The kites, the cutting-vs-layering fix, the offset breakage, the solid volume and the
+flat toggle each landed in one pass because the render, not a tuple assertion, was the check.

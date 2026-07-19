@@ -7,10 +7,10 @@ import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { useLegacyTilingStore } from "@/stores/legacyTilingStore";
 import { Vector } from "@/classes/Vector";
 import { Tiling } from "@/classes/Tiling";
-import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
-import { starHue, starApexAngleDeg } from "@/lib/utils/renderTiling";
+import { parseBaseCell } from "@/lib/utils/renderTiling";
+import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import {
 	TILING_TRANSITION_IN_MS,
 	TILING_TRANSITION_OUT_MS,
@@ -28,12 +28,25 @@ import {
 } from "@/lib/utils/canvasPick";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import {
-	MAX_FILL_RADIUS,
 	latticeBasisFromCell,
+	latticeExtentFromBounds,
 	screenLatticeVectors,
 	computeFillRadii,
 	wrapOffset,
+	type LatticeExtent,
 } from "@/lib/render/flatView";
+import {
+	ZOOM_MIN,
+	ZOOM_MAX,
+	ZOOM_RESET,
+	ZOOM_WHEEL_FACTOR,
+	ROTATE_SNAP_DEG,
+	ROTATE_PX_PER_STEP,
+	ROTATE_DAMP,
+	wrap360,
+	shortestDeltaDeg,
+	wheelDeltaPx,
+} from "@/lib/render/viewControls";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
 import { PieChart } from "./pie-chart";
@@ -44,6 +57,7 @@ import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "./
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { EuclideanCanvas } from "./euclidean-canvas";
+import { IslamicCanvas } from "./islamic-canvas";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
 interface CanvasProps {
@@ -59,30 +73,9 @@ interface CanvasProps {
 	showTilingRuleInput?: boolean;
 }
 
-// Play-mode zoom bounds (screen px per world unit). Wheel and reset clamp to [ZOOM_MIN, ZOOM_MAX].
-// Lowering ZOOM_MIN lets the user zoom further out; fill radius scales as 1/zoom, so MAX_FILL_RADIUS
-// below is sized against ZOOM_MIN — keep them in step.
-const ZOOM_MIN = 20;
-const ZOOM_MAX = 150;
-
-// Wheel rotation (hyperbolic wheel; flat/inversive Shift+wheel). The angle advances in fixed detents
-// as a function of how far you scroll (not how many wheel events fire — a trackpad emits dozens per
-// gesture): every ROTATE_PX_PER_STEP pixels of accumulated scroll steps the target by ROTATE_SNAP_DEG.
-// The live angle then eases into the detent, so a gentle scroll nudges one notch and a hard flick (or a
-// trackpad's momentum tail) rolls through many like a spinning wheel. Lower ROTATE_PX_PER_STEP = more
-// sensitive. The at-rest angle is always a multiple of ROTATE_SNAP_DEG.
-const ROTATE_SNAP_DEG = 5; // detent size — the angle snaps to multiples of this
-const ROTATE_PX_PER_STEP = 30; // pixels of scroll per detent (sensitivity knob)
-const ROTATE_DAMP = 0.2; // per-frame ease of the live angle toward the target detent
-// Fold the rotation target into [0, 360) for the slider readout. The live `controls.rotation` stays
-// continuous, so no render path ever sees a 360° jump in its per-frame delta.
-const wrap360 = (deg: number) => ((deg % 360) + 360) % 360;
-// Shortest signed angular distance (degrees) for a raw difference, mapped to [-180, 180); lets the live
-// angle take the short way round when the wrapped target jumps across the 0/360 seam.
-const shortestDeltaDeg = (diff: number) => ((diff % 360) + 540) % 360 - 180;
-// Normalize a wheel event's deltaY to approximate pixels so sensitivity matches across a pixel-mode
-// trackpad and a line/page-mode mouse wheel. deltaMode: 0 = pixel, 1 = line (~16px), 2 = page.
-const wheelDeltaPx = (e: WheelEvent) => e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 800 : 1);
+// The zoom bounds, wheel-rotation detents, and angle/wheel normalization helpers moved to
+// lib/render/viewControls.ts (imported above) so the theory-page preview cards share the exact
+// interaction constants — keep any feel-tuning there.
 
 // Left-click-to-centre. A left press starts a drag-pan; on release we treat it as a click (and centre the
 // clicked tile) only if the pointer moved less than CLICK_DRAG_THRESHOLD_PX since press — beyond that it was
@@ -159,70 +152,23 @@ function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): 
 // (islamic/circle-packing/symmetry) and the other two views keep the p5/analytic paths. One predicate so
 // the React mount gate and the per-frame skipFill decision can never drift.
 function isFlatShaderActive(cfg: {
-	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean;
+	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean; spherical: boolean;
 	isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
 }): boolean {
-	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic &&
+	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical &&
 		!cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
 }
 
-function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number, orbitData?: OrbitData | null): Tiling {
-	const ri = Math.max(1, Math.min(MAX_FILL_RADIUS, Ri || 1));
-	const rj = Math.max(1, Math.min(MAX_FILL_RADIUS, Rj || 1));
-	const polyArray = cellData.p ?? cellData.cellPolygons ?? [];
-	const basisRaw = cellData.b ?? cellData.basis ?? [[1, 0], [0, 1]];
-	const [v1x, v1y] = basisRaw[0];
-	const [v2x, v2y] = basisRaw[1];
-
-	const t = new Tiling();
-	t.nodes = [];
-
-	// Build each distinct base tile ONCE. fromVertices is the expensive part (per-vertex angle, side
-	// lengths, centroid, hue classification); every replicated cell is the same base tile translated by
-	// i·v1 + j·v2, so the grid loop below clones by translation (translatedCopy) rather than
-	// reconstructing each copy from scratch — the reconstruction is identical work for a shape that only
-	// shifted. This is what keeps the parametric-angle slider (which rebuilds the whole grid every tick)
-	// interactive: the cost drops from O(gridCells · perTileRebuild) to O(baseTiles · perTileRebuild)
-	// plus a cheap per-copy vertex shift.
-	//
-	// maxRadius = largest centroid→vertex distance (world units). The draw-time off-screen cull tests
-	// each tile by its CENTROID; a tile whose centroid is off-screen can still have a vertex on-screen,
-	// but never further than this radius — so culling with a margin of zoom·maxRadius provably never
-	// drops a partially-visible tile. It is translation-invariant, so the base tiles carry the global max.
-	let maxRadius = 0;
-	const basePolys: GenericPolygon[] = [];
-	for (const polyData of polyArray) {
-		const rawVerts = polyData.v ?? polyData.vertices ?? [];
-		const vertices = rawVerts.map((v) =>
-			Array.isArray(v) ? new Vector(v[0], v[1]) : new Vector(v.x, v.y),
-		);
-		if (vertices.length < 3) continue;
-		const poly = GenericPolygon.fromVertices(vertices);
-		// GenericPolygon colors by the regular log ramp; a star tile ({n}: n points, 2n vertices, or an
-		// explicit `star` flag) uses the original StarPolygon hue instead.
-		const nn = (polyData as { n?: number }).n ?? vertices.length;
-		const isStar =
-			(polyData as { star?: boolean }).star === true || (nn >= 3 && vertices.length === 2 * nn);
-		if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
-		poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
-		basePolys.push(poly);
-		if (orbitData) poly.orbitOfCorner = poly.vertices.map((v) => orbitData.orbitAt(v.x, v.y));
-		const c = poly.centroid;
-		for (const vv of poly.vertices) {
-			const d = Math.hypot(vv.x - c.x, vv.y - c.y);
-			if (d > maxRadius) maxRadius = d;
-		}
-	}
-
-	for (let i = -ri; i <= ri; i++) {
-		for (let j = -rj; j <= rj; j++) {
-			const ox = i * v1x + j * v2x;
-			const oy = i * v1y + j * v2y;
-			for (const base of basePolys) t.nodes.push(base.translatedCopy(ox, oy));
-		}
-	}
-	t.maxRadius = maxRadius;
-	return t;
+// Euclidean Islamic PLAIN fill renders through the WebGL IslamicCanvas (components/islamic-canvas.tsx)
+// instead of p5 immediate mode — the same gate decides the React mount and the per-frame skipFill, so
+// p5 never double-paints. The decorative styles (interlace/outline/emboss/checkerboard) and the animated
+// motif stay on p5, and a rulestring tiling with no translational cell also stays on p5.
+function isIslamicShaderActive(cfg: {
+	isIslamic: boolean; islamicAnimate: boolean; islamicStyle: string;
+	hyperbolic: boolean; spherical: boolean; inversive: boolean;
+}): boolean {
+	return cfg.isIslamic && !cfg.islamicAnimate && cfg.islamicStyle === "plain"
+		&& !cfg.hyperbolic && !cfg.spherical && !cfg.inversive;
 }
 
 export function Canvas({
@@ -290,6 +236,13 @@ export function Canvas({
 		Rj: -1,
 	});
 
+	// Content lattice extent for the fill radii, cached by cell object identity (the evaluated cell object
+	// is replaced exactly when its geometry changes; parseBaseCell walks every polygon — not per-frame work).
+	const cellExtentRef = useRef<{ cell: unknown; extent: LatticeExtent }>({
+		cell: null,
+		extent: { aMin: 0, aMax: 0, bMin: 0, bMax: 0 },
+	});
+
 	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData });
 	useEffect(() => {
 		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData };
@@ -315,6 +268,13 @@ export function Canvas({
 	}, []);
 
 	const [canvasError, setCanvasError] = useState<string | null>(null);
+	// Mirror of canvasError readable inside the p5 draw closure (which would otherwise close over a stale
+	// value). Lets the WebGL modes clear a stuck error without a per-frame setState — see the skipFlat clear.
+	const canvasErrorRef = useRef<string | null>(null);
+	const showCanvasError = (msg: string | null) => {
+		canvasErrorRef.current = msg;
+		setCanvasError(msg);
+	};
 	const [tileCount, setTileCount] = useState(0);
 	const [vcs, setVcs] = useState<Tiling["vcs"]>([]);
 
@@ -335,9 +295,19 @@ export function Canvas({
 	const circlePackingSel = useConfiguration((s) => s.circlePacking);
 	const inversiveSel = useConfiguration((s) => s.inversive);
 	const hyperbolicSel = useConfiguration((s) => s.hyperbolic);
+	const sphericalSel = useConfiguration((s) => s.spherical);
 	const euclideanShaderActive = isFlatShaderActive({
-		euclideanShader, inversive: inversiveSel, hyperbolic: hyperbolicSel,
+		euclideanShader, inversive: inversiveSel, hyperbolic: hyperbolicSel, spherical: sphericalSel,
 		isIslamic: isIslamicSel, circlePacking: circlePackingSel, showSymmetryElements,
+	});
+	// Islamic PLAIN fill → WebGL IslamicCanvas. Needs its own narrow subscriptions (style/animate) so a
+	// style switch re-renders this component to (un)mount the canvas, and a translational cell to build
+	// the patch from (rulestring tilings without one stay on p5). Mirrors the per-frame shaderFill gate.
+	const islamicStyleSel = useConfiguration((s) => s.islamicStyle);
+	const islamicAnimateSel = useConfiguration((s) => s.islamicAnimate);
+	const islamicShaderActive = !!translationalCell && isIslamicShaderActive({
+		isIslamic: isIslamicSel, islamicAnimate: islamicAnimateSel, islamicStyle: islamicStyleSel,
+		hyperbolic: hyperbolicSel, spherical: sphericalSel, inversive: inversiveSel,
 	});
 
 	useP5(
@@ -391,15 +361,24 @@ export function Canvas({
 				}
 				activeCellRef.current = tc;
 
-				// Auto-fill: size the replicated grid to cover the viewport + 1-cell margin. Use the
-				// most-zoomed-out point of any in-flight zoom ease (min of current/target) so the grid is
-				// never momentarily undersized during a zoom-out (which would flash black corners).
+				// Auto-fill: size the replicated grid to cover the viewport, accounting for where the cell's
+				// content actually sits in lattice coordinates (see computeFillRadii). Use the most-zoomed-out
+				// point of any in-flight zoom ease (min of current/target) so the grid is never momentarily
+				// undersized during a zoom-out (which would flash black corners).
 				let Ri = prev.Ri, Rj = prev.Rj;
 				if (tc) {
 					const { v1, v2, det } = latticeBasisFromCell(tc);
+					const cached = cellExtentRef.current;
+					if (cached.cell !== tc) {
+						const parsed = parseBaseCell(tc as FlatCellData);
+						cached.extent = parsed
+							? latticeExtentFromBounds(parsed.minX, parsed.maxX, parsed.minY, parsed.maxY, v1, v2, det)
+							: { aMin: 0, aMax: 0, bMin: 0, bMax: 0 };
+						cached.cell = tc;
+					}
 					const zoomForFill = Math.min(ctrl.zoom, ctrl.targetZoom);
 					const rot = (ctrl.rotation || 0) * Math.PI / 180;
-					({ Ri, Rj } = computeFillRadii(v1, v2, det, zoomForFill, W, H, rot));
+					({ Ri, Rj } = computeFillRadii(v1, v2, det, zoomForFill, W, H, rot, cached.extent));
 				}
 
 				const ruleChanged =
@@ -462,7 +441,7 @@ export function Canvas({
 							});
 						}
 						if (cfg.debugView) updateDebugStore();
-						setCanvasError(null);
+						showCanvasError(null);
 						// The tile-count + VC overlay is informational; re-render it only when the numbers
 						// actually change, so a slider drag doesn't re-render the overlay every frame for nothing.
 						if (t.nodes.length !== prevTileCountRef.current) {
@@ -483,7 +462,7 @@ export function Canvas({
 						prev.Rj = Rj;
 						prevOrbitDataRef.current = orbitData;
 					} catch (e) {
-						setCanvasError(e instanceof Error ? e.message : String(e));
+						showCanvasError(e instanceof Error ? e.message : String(e));
 					}
 				}
 			};
@@ -560,7 +539,7 @@ export function Canvas({
 
 				for (const n of patch.nodes) {
 					g.push();
-					g.fill(n.hue ?? 0, 40, 100, 1.0);
+					g.fill(((n.hue ?? 0) + (cfg.hueOffset || 0)) % 360, 40, 100, 1.0);
 					g.beginShape();
 					for (const v of n.vertices) g.vertex(v.x, v.y);
 					g.endShape(g.CLOSE);
@@ -598,8 +577,8 @@ export function Canvas({
 						rotation: cfg.rotation || 0,
 					},
 				});
-				// The hyperbolic (and inversive) views paint via their own WebGL overlay; skip the flat grid build.
-				if (!cfg.hyperbolic) ensureTiling();
+				// The hyperbolic / spherical (and inversive) views paint via their own WebGL overlay; skip the flat grid build.
+				if (!cfg.hyperbolic && !cfg.spherical) ensureTiling();
 			};
 
 			p5.draw = () => {
@@ -650,8 +629,14 @@ export function Canvas({
 				// pan/pointer input layer, so the ease/drag bookkeeping below still runs.
 				const inversive = cfg.inversive;
 				const hyperbolic = cfg.hyperbolic;
-				const skipFlat = inversive || hyperbolic;
+				const spherical = cfg.spherical;
+				const skipFlat = inversive || hyperbolic || spherical;
 				if (!skipFlat) ensureTiling();
+				// A WebGL overlay now owns the frame, so ensureTiling — the only place that clears canvasError —
+				// no longer runs. Drop any stale error here so a transient flat-canvas error (e.g. the cold-load
+				// null-tiling frame before cfg.hyperbolic/spherical flipped true) can't stay pinned on top of the
+				// disk/sphere. Guarded by the ref so this is a no-op setState-free path once cleared.
+				else if (canvasErrorRef.current) showCanvasError(null);
 
 				// Advance the selection transition. Phase "out" collapses the OUTGOING tiling into its
 				// centroids, centre-first; when it lands, the (already built) incoming grid takes over and
@@ -761,7 +746,12 @@ export function Canvas({
 					const wave = wavePhase
 						? makeWaveScale(wavePhase, waveP, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
 						: undefined;
-					const shaderFill = isFlatShaderActive(cfg);
+					// skipFill for show(): the flat WebGL renderer OR the Islamic WebGL canvas owns the fill.
+					// The Islamic gate keys on the SAME prop (translationalCell) the React mount does — not the
+					// transient active-cell ref — so p5 skips its plain fill exactly when IslamicCanvas is
+					// mounted (never leaving a blank), and a rulestring tiling with no cell stays on p5.
+					const shaderFill = isFlatShaderActive(cfg)
+						|| (isIslamicShaderActive(cfg) && !!propsRef.current.translationalCell);
 					// Mouse in world coords for the orbit-dot hover (grow the hovered orbit, Tiling.
 					// drawVertexOrbits). Inverts the SAME frame transform the dots are drawn with (wrapped
 					// drawOffset + eased zoom/rot), so the hit-test matches what's on screen. Null when the
@@ -772,8 +762,12 @@ export function Canvas({
 						cfg.showVertexOrbits && overCanvas
 							? screenToWorld(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2, drawOffset, ctrl.zoom, rot)
 							: null;
-					if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
-					else drawTiling(cfg, tiling, cull, wave, shaderFill, hoverWorld);
+					// tiling is null in the cold-load window (no cell resolved yet) — ensureTiling sets it null and
+					// returns, and the cull above already guards on it. Draw nothing rather than deref null.show().
+					if (tiling) {
+						if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
+						else drawTiling(cfg, tiling, cull, wave, shaderFill, hoverWorld);
+					}
 					// Shared by both overlays: the FD uses it to snap to the lattice copy nearest the view
 					// centre; the symmetry elements to replicate across the visible world rectangle.
 					const overlayView = {
@@ -792,7 +786,7 @@ export function Canvas({
 					if (cfg.screenshotButtonHover) drawScreenshotOverlay();
 					}
 				} catch (e) {
-					setCanvasError(e instanceof Error ? e.message : String(e));
+					showCanvasError(e instanceof Error ? e.message : String(e));
 				}
 
 				if (grabRef.current) {
@@ -825,7 +819,7 @@ export function Canvas({
 					event.preventDefault();
 					event.stopPropagation();
 					ctrl.targetOffset.set(new Vector(0, 0));
-					useConfiguration.setState({ controls: { ...ctrl, targetZoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, 50)) } });
+					useConfiguration.setState({ controls: { ...ctrl, targetZoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, ZOOM_RESET)) } });
 					// Hyperbolic: also recentre the disk view (right-click resets, as in the flat view).
 					if (cfg.hyperbolic) useConfiguration.setState({ hyperbolicResetView: true });
 					return;
@@ -957,8 +951,8 @@ export function Canvas({
 				const mouse = new Vector(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2);
 				const world = Vector.sub(mouse, ctrl.targetOffset).scale(1 / ctrl.targetZoom);
 				let z = ctrl.targetZoom;
-				if (event && event.deltaY > 0) z = Math.max(z / 1.1, ZOOM_MIN);
-				else if (event && event.deltaY < 0) z = Math.min(z * 1.1, ZOOM_MAX);
+				if (event && event.deltaY > 0) z = Math.max(z / ZOOM_WHEEL_FACTOR, ZOOM_MIN);
+				else if (event && event.deltaY < 0) z = Math.min(z * ZOOM_WHEEL_FACTOR, ZOOM_MAX);
 				const newScreen = Vector.add(Vector.scale(world, z), ctrl.targetOffset);
 				ctrl.targetOffset.add(Vector.sub(mouse, newScreen));
 				useConfiguration.setState({ controls: { ...ctrl, targetZoom: z } });
@@ -1009,6 +1003,14 @@ export function Canvas({
 					translationalCell={translationalCell as unknown as FlatCellData | null}
 					translationalCellId={translationalCellId}
 					paramCell={paramCell}
+				/>
+			) : null}
+			{islamicShaderActive ? (
+				<IslamicCanvas
+					width={width}
+					height={height}
+					translationalCell={translationalCell as unknown as FlatCellData | null}
+					translationalCellId={translationalCellId}
 				/>
 			) : null}
 			<div

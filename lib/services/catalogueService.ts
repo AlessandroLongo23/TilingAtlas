@@ -33,7 +33,11 @@ export interface CatalogueTiling {
 	// thumbnails to the Poincaré-disk renderer instead of the Euclidean cell path. Carried through from
 	// ReferenceTiling by referenceToCatalogue. Present on every hyperbolic entry, absent for Euclidean.
 	wythoff?: { p: number; q: number; rings: [boolean, boolean, boolean]; snub?: boolean };
-	geometry?: "euclidean" | "hyperbolic";
+	// Spherical shelf only: the {p,q} Schläfli symbol of a Platonic solid. Its presence routes /play + the
+	// thumbnails to the three.js sphere renderer (components/spherical-canvas.tsx), the way wythoff routes
+	// to the Poincaré disk. Carried through from ReferenceTiling by referenceToCatalogue.
+	spherical?: { p?: number; q?: number; solid: string };
+	geometry?: "euclidean" | "hyperbolic" | "spherical";
 }
 
 // Pure transform: collapse found_tilings (a tiling is rediscovered once per run that finds it) into

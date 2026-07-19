@@ -7,6 +7,7 @@ import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
+import { SphericalCanvas } from "@/components/spherical-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
@@ -222,11 +223,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		fa.resetLive(); // reseed the eased render tuple for the NEW family — never glide across two families
 	}, [selected?.canonicalKey, paramCell]);
 
-	// The Islamic construction is only defined for the regular/star classes. When the selection moves to a
+	// The Islamic construction is defined for the regular/star/islamic classes. When the selection moves to a
 	// class that doesn't support it (convex-irregular, isotoxal), force the toggle off — otherwise the
 	// render path would keep drawing the fill for a tiling whose sidebar no longer offers the control.
 	useEffect(() => {
-		if (selected && !polygonClassSupportsIslamic(selected) && useConfiguration.getState().isIslamic) {
+		if (selected && !polygonClassSupportsIslamic(selected) && !selected.wythoff && useConfiguration.getState().isIslamic) {
 			useConfiguration.getState().set({ isIslamic: false });
 		}
 	}, [selected]);
@@ -235,16 +236,36 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off Euclidean-
 	// only render modes so their now-hidden sidebar controls can't leave a stale render behind.
 	const isHyperbolic = !!selected?.wythoff;
+	// A spherical (Platonic {p,q}) tiling swaps the flat p5 renderer for the three.js sphere view. Set the
+	// store flag (canvas.tsx reads it to blank the flat layer) and force off the other render modes so their
+	// now-hidden sidebar controls can't leave a stale render behind. The sphere renderer owns its own input.
+	const isSpherical = !!selected?.spherical;
+	useEffect(() => {
+		const cfg = useConfiguration.getState();
+		if (isSpherical) {
+			// Islamic is NOT force-cleared here — the sphere canvas renders the construction as great-circle
+			// ribbons, and polygonClassSupportsIslamic now admits the spherical class, so the toggle persists.
+			cfg.set({
+				spherical: true,
+				hyperbolic: false,
+				inversive: false,
+				circlePacking: false,
+				isTilingRegularOnly: false,
+			});
+		} else if (cfg.spherical) {
+			cfg.set({ spherical: false });
+		}
+	}, [isSpherical, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isHyperbolic) {
 			// Two-tone parity is only defined for the REGULAR 2-colourable tilings (q even); the uniform forms
-			// are multi-tile-type, so force it off for them and for odd q.
+			// are multi-tile-type, so force it off for them and for odd q. Islamic strapwork now works for
+			// EVERY hyperbolic tiling (regular, uniform, snub), so isIslamic is never force-cleared here.
 			const w = selected?.wythoff;
 			const parityOk = !!w && w.rings[0] && !w.rings[1] && !w.rings[2] && w.q % 2 === 0;
 			cfg.set({
 				hyperbolic: true,
-				isIslamic: false,
 				circlePacking: false,
 				isTilingRegularOnly: false,
 				...(!parityOk && cfg.hyperbolicShading === "parity" ? { hyperbolicShading: "tiles" as const } : {}),
@@ -312,6 +333,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			const el = e.target as HTMLElement | null;
 			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			// Spherical view: Fill/Wireframe is a single mutually-exclusive toggle (the quaternion trackball
+			// owns rotation, so the flat overlays don't apply). Both W and B flip it — W = Wireframe, B = Fill,
+			// either key swaps the pair. Intercept before the flat toggles so B here means the spherical fill,
+			// not the global Polygon-fill flag (which is hidden in this view).
+			if (!!selected?.spherical && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {
+				e.preventDefault();
+				const c = useConfiguration.getState();
+				c.set({ sphericalWireframe: !c.sphericalWireframe });
+				return;
+			}
 			if (e.key === "r" || e.key === "R") {
 				e.preventDefault();
 				selectRandom();
@@ -347,7 +378,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				const isHyperbolic = !!selected?.wythoff;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
-					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
+					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected) && !isHyperbolic) ||
 					(field === "showVertexOrbits" && !selected?.exactSource) ||
 					((field === "showSymmetryElements" || field === "showFundamentalDomain" || field === "tilingTransition" || field === "showVertexOrbits") && isHyperbolic);
 				if (field && !blocked) {
@@ -422,10 +453,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					orbitData={orbitData}
 					showTilingRuleInput={false}
 				/>
-				{/* Exactly one WebGL overlay at a time: the Poincaré disk for a hyperbolic tiling, else the
-				    inversive conformal view when toggled on. The flat p5 Canvas above stays mounted as the
-				    pointer/pan input layer beneath whichever overlay is active. */}
-				{isHyperbolic && selected?.wythoff ? (
+				{/* Exactly one WebGL overlay at a time: the three.js sphere for a spherical tiling (it owns its
+				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
+				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
+				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
+				{isSpherical && selected?.spherical ? (
+					<SphericalCanvas width={size.w} height={size.h} solidId={selected.spherical.solid} />
+				) : isHyperbolic && selected?.wythoff ? (
+					// The infinite fold-shader tiling — it now also renders the Islamic A/B/C fill per pixel
+					// (crossing-parity) for regular {p,q}, so there's no separate mesh view: same dimming,
+					// exact geodesic arcs, full rim.
 					<HyperbolicCanvas width={size.w} height={size.h} wythoff={selected.wythoff} />
 				) : inversive ? (
 					<InversiveCanvas

@@ -27,7 +27,7 @@ export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "hyperbolic";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "hyperbolic" | "spherical";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
@@ -39,7 +39,15 @@ export interface ReferenceTiling {
 	// {p,q} = rings [true,false,false]; the uniform/Archimedean forms ring more mirrors. Drives the
 	// Poincaré-disk renderer (lib/render/hyperbolic.ts uniformDescriptor). Present on all hyperbolic entries.
 	wythoff?: { p: number; q: number; rings: [boolean, boolean, boolean]; snub?: boolean };
-	geometry?: "euclidean" | "hyperbolic";
+	// Spherical shelf only: the Schläfli symbol {p,q} of a Platonic solid rendered as a spherical tiling
+	// (the finite, 1/p + 1/q > 1/2 end of the regular {p,q} family). Its presence — like wythoff for the
+	// hyperbolic disk — routes /play + the thumbnails to the three.js sphere renderer
+	// (components/spherical-canvas.tsx). Absent for every Euclidean and hyperbolic tiling.
+	// `solid` (required) is the stable Polyhedron id the renderer routes on — Platonic AND Archimedean
+	// solids resolve by it (Archimedean have no {p,q}). p/q are the Schläfli symbol, present for the
+	// Platonic solids only (display).
+	spherical?: { p?: number; q?: number; solid: string };
+	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
 	preview?: boolean; // ctrnact-star only: from a PARTIAL (still-running) solve — incomplete, uncertified
@@ -59,6 +67,9 @@ export interface ReferenceTiling {
 	// Polyomino shelf only: which polyomino ORDER this tiling's tiles belong to — the sub-class facet
 	// (Tetrominoes now; Pentominoes etc. later). Absent on every other source.
 	polyominoOrder?: "tetromino";
+	// Islamic shelf only: which of Bonner's design systems the underlying tessellation belongs to — the
+	// sub-class facet (see docs/ISLAMIC_TILINGS.md). Absent on every other source.
+	islamicSystem?: IslamicSystem;
 	// Isotoxal shelf only: true iff the tiling uses a convex isotoxal tile NOT expressible on ζ₁₂ (i.e. not
 	// one of the 60/120 rhombus, 90/150 hexagon, 120/150 octagon the convex-irregular enumeration already reached)
 	// — the genuinely new tilings the ζ₂₄ grid unlocks. Absent on every other source.
@@ -96,17 +107,22 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "hyperbolic";
+export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "hyperbolic" | "spherical";
+// Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
+// underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
+export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
 // The ONE source-driven tile classifier, shared by /library and /play. Source wins when present;
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
 // matches the legacy polygonClassLabel, so the two pages agree with or without a source.
 export function tileClassOf(t: { family: string; source?: ReferenceTiling["source"] }): TileClass {
 	if (t.source === "hyperbolic") return "hyperbolic";
+	if (t.source === "spherical") return "spherical";
 	if (t.source === "mixed") return "mixed";
 	if (t.source === "isotoxal") return "isotoxal";
 	if (t.source === "composable") return "convex";
 	if (t.source === "scaled") return "scaled";
 	if (t.source === "polyomino") return "polyomino";
+	if (t.source === "islamic") return "islamic";
 	if (t.family.includes("cx")) return "convex";
 	if (t.family.includes("α")) return "isotoxal";
 	return t.family.includes("*") ? "star" : "regular";
@@ -115,7 +131,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "hyperbolic"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
@@ -124,7 +140,9 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	mixed: { short: "Mixed", long: "Mixed polygons" },
 	scaled: { short: "Scaled", long: "Scaled polygons (sides 1–3)" },
 	polyomino: { short: "Polyominoes", long: "Polyominoes (Tetris pieces)" },
+	islamic: { short: "Islamic", long: "Islamic geometric systems" },
 	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic {p,q} tilings (Poincaré disk)" },
+	spherical: { short: "Spherical", long: "Spherical {p,q} tilings (Platonic solids)" },
 };
 
 // Scaled shelf only: the max side length (scale) a tiling uses, recovered from its family subscripts
@@ -147,6 +165,13 @@ export function scaledMaxScaleOf(t: { family: string; source?: ReferenceTiling["
 export function polyominoOrderOf(t: Pick<ReferenceTiling, "source" | "polyominoOrder">): "tetromino" | null {
 	if (t.source !== "polyomino") return null;
 	return t.polyominoOrder ?? null;
+}
+
+// Islamic shelf sub-facet: which Bonner design system the tiling belongs to — the build-stamped field,
+// null for every non-Islamic tiling (so the facet excludes them, matching the exclude-the-unclassified ethos).
+export function islamicSystemOf(t: Pick<ReferenceTiling, "source" | "islamicSystem">): IslamicSystem | null {
+	if (t.source !== "islamic") return null;
+	return t.islamicSystem ?? null;
 }
 
 // The star folds present in a family (unique, ascending). "3.4*.6*" → [4,6]. Empty for regular.
@@ -198,6 +223,9 @@ export interface ReferenceFilter {
 	// Polyomino shelf sub-class: keep only tilings whose tiles are of this polyomino order ("tetromino" today).
 	// Non-polyomino tilings never match while this is active.
 	polyominoOrder?: "tetromino";
+	// Islamic shelf sub-class: keep only tilings in this Bonner design system. Non-Islamic tilings never
+	// match while this is active.
+	islamicSystem?: IslamicSystem;
 	// Convex-irregular shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
 	// Any tiling outside that class (decomposableOnly undefined) is EXCLUDED while this is active.
 	convexDecomp?: "decomposable" | "non-decomposable";
@@ -226,6 +254,9 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	}
 	if (f.polyominoOrder) {
 		if (polyominoOrderOf(t) !== f.polyominoOrder) return false; // non-polyomino tilings never match the order facet
+	}
+	if (f.islamicSystem) {
+		if (islamicSystemOf(t) !== f.islamicSystem) return false; // non-Islamic tilings never match the system facet
 	}
 	if (f.convexDecomp) {
 		if (t.decomposableOnly == null) return false; // tilings outside the convex-irregular class never match this facet
@@ -283,6 +314,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		paramCell: r.paramCell,
 		schlafli: r.schlafli,
 		wythoff: r.wythoff,
+		spherical: r.spherical,
 		geometry: r.geometry,
 	};
 }
@@ -311,10 +343,12 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-mixed.json"),
 		bestEffort("/reference-atlas-scaled.json"),
 		bestEffort("/reference-atlas-polyomino.json"),
+		bestEffort("/reference-atlas-islamic.json"),
 		bestEffort("/reference-atlas-hyperbolic.json"),
+		bestEffort("/reference-atlas-spherical.json"),
 	])
-		.then(([base, composable, isotoxal, mixed, scaled, polyomino, hyperbolic]) => {
-			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...hyperbolic];
+		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical]) => {
+			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...hyperbolic, ...spherical];
 			cache = data;
 			inflight = null;
 			return data;
