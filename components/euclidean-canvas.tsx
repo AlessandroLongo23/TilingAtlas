@@ -9,6 +9,11 @@ import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import {
+	TILING_TRANSITION_IN_MS,
+	TILING_TRANSITION_OUT_MS,
+	prefersReducedMotion,
+} from "@/lib/utils/tilingTransition";
 
 // The flat (Euclidean) view, retained-mode. TS builds the fundamental cell's triangles once
 // (buildCellMesh); the vertex shader replicates the cell with per-instance lattice offsets (i*v1 + j*v2)
@@ -33,6 +38,7 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 	const progRef = useRef<WebGLProgram | null>(null);
 	const posBufRef = useRef<WebGLBuffer | null>(null);
 	const hueBufRef = useRef<WebGLBuffer | null>(null);
+	const centroidBufRef = useRef<WebGLBuffer | null>(null);
 	const instBufRef = useRef<WebGLBuffer | null>(null);
 	const uniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
 	const attribsRef = useRef<Record<string, number>>({});
@@ -40,6 +46,7 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 	const strokePosBufRef = useRef<WebGLBuffer | null>(null);
 	const strokeNormBufRef = useRef<WebGLBuffer | null>(null);
 	const strokeSideBufRef = useRef<WebGLBuffer | null>(null);
+	const strokeCentroidBufRef = useRef<WebGLBuffer | null>(null);
 	const strokeUniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
 	const strokeAttribsRef = useRef<Record<string, number>>({});
 	const pointsProgRef = useRef<WebGLProgram | null>(null);
@@ -53,6 +60,19 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 	const sizeRef = useRef({ width, height });
 	sizeRef.current = { width, height };
 
+	// Selection-transition wave (M2), the shader port of makeWaveScale/transitionRef in canvas.tsx. When a
+	// NEW static tiling is picked, the current mesh COLLAPSES to its centroids (phase "out"), then the
+	// incoming one GROWS back out (phase "in"), both driven by the fill/stroke vertex shaders' uWavePhase/
+	// uWaveP. Only one mesh is ever on the GPU: the incoming is built and stashed here, then uploaded at the
+	// out->in handover — so no second buffer set is needed. Static tilings and param->static switches animate;
+	// static->param and param->param still jump-cut (the loop's param path owns those, no regression).
+	const transitionRef = useRef<{ phase: "out" | "in"; start: number } | null>(null);
+	const pendingMeshRef = useRef<CellMesh | null>(null);
+	// The last translationalCellId the mesh effect saw, so it animates only on a genuine selection change
+	// (id changed) and not on a same-id re-render that merely recreates the cell object (matches the p5
+	// baseId check in canvas.tsx). Starts null so the first tiling loads without a wave.
+	const prevCellIdRef = useRef<string | null>(null);
+
 	const paramCellRef = useRef(paramCell);
 	paramCellRef.current = paramCell;
 	const lastSigRef = useRef<string | null>(null);
@@ -64,12 +84,16 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillVerts, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, hueBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillHue, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, centroidBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillCentroid, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, strokePosBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokePos, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, strokeNormBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeNorm, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, strokeSideBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeSide, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, strokeCentroidBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeCentroid, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, pointsPosBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointPos, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, pointsCornerBufRef.current);
@@ -101,15 +125,16 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		progRef.current = prog;
 		gl.useProgram(prog);
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uWavePhase", "uWaveP"]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
-		for (const name of ["aPos", "aHue", "aInst"]) {
+		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
 			attribsRef.current[name] = gl.getAttribLocation(prog, name);
 		}
 
 		posBufRef.current = gl.createBuffer();
 		hueBufRef.current = gl.createBuffer();
+		centroidBufRef.current = gl.createBuffer();
 		instBufRef.current = gl.createBuffer();
 
 		const strokeVs = compileShader(gl, gl.VERTEX_SHADER, STROKE_VERT);
@@ -125,16 +150,17 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		}
 		strokeProgRef.current = strokeProg;
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP"]) {
 			strokeUniformsRef.current[name] = gl.getUniformLocation(strokeProg, name);
 		}
-		for (const name of ["aPos", "aNorm", "aSide", "aInst"]) {
+		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
 			strokeAttribsRef.current[name] = gl.getAttribLocation(strokeProg, name);
 		}
 
 		strokePosBufRef.current = gl.createBuffer();
 		strokeNormBufRef.current = gl.createBuffer();
 		strokeSideBufRef.current = gl.createBuffer();
+		strokeCentroidBufRef.current = gl.createBuffer();
 
 		const pointsVs = compileShader(gl, gl.VERTEX_SHADER, POINTS_VERT);
 		const pointsFs = compileShader(gl, gl.FRAGMENT_SHADER, POINTS_FRAG);
@@ -170,8 +196,10 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			const cfg = useConfiguration.getState();
 
 			// Parametric family: rebuild the cell mesh when the slider tuple changes (imperative, no React).
+			// Suppressed while a selection wave is running (transitionRef non-null) so a stray alpha tick can't
+			// clobber the collapsing/growing mesh mid-transition; the effect owns the mesh for the wave's duration.
 			const pc = paramCellRef.current;
-			if (pc) {
+			if (pc && !transitionRef.current) {
 				const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
 				const sig = alphas.map((a) => a.toFixed(2)).join(",");
 				if (sig !== lastSigRef.current) {
@@ -179,6 +207,29 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 					const mesh = buildCellMesh(evaluateParamCell(pc, alphas));
 					if (mesh) uploadMesh(g, mesh);
 				}
+			}
+
+			// Advance the selection wave. Phase "out" collapses the current mesh; at p>=1 the stashed incoming
+			// mesh is uploaded and phase "in" grows it back. wavePhaseInt (0/+1/-1) + waveP feed the shaders.
+			let wavePhaseInt = 0;
+			let waveP = 0;
+			const tr = transitionRef.current;
+			if (tr && !cfg.tilingTransition) {
+				// Toggled off mid-flight: land on the incoming tiling at once (mirrors canvas.tsx).
+				if (pendingMeshRef.current) { uploadMesh(g, pendingMeshRef.current); pendingMeshRef.current = null; }
+				transitionRef.current = null;
+			} else if (tr) {
+				const dur = tr.phase === "out" ? TILING_TRANSITION_OUT_MS : TILING_TRANSITION_IN_MS;
+				const elapsed = (performance.now() - tr.start) / dur;
+				if (tr.phase === "out") {
+					if (elapsed >= 1) {
+						if (pendingMeshRef.current) { uploadMesh(g, pendingMeshRef.current); pendingMeshRef.current = null; }
+						transitionRef.current = { phase: "in", start: performance.now() };
+						wavePhaseInt = 1; waveP = 0;
+					} else { wavePhaseInt = -1; waveP = elapsed; }
+				} else if (elapsed >= 1) {
+					transitionRef.current = null;
+				} else { wavePhaseInt = 1; waveP = elapsed; }
 			}
 
 			const mesh = meshRef.current;
@@ -221,6 +272,10 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			g.enableVertexAttribArray(A.aHue);
 			g.vertexAttribPointer(A.aHue, 1, g.FLOAT, false, 0, 0);
 			g.vertexAttribDivisor(A.aHue, 0);
+			g.bindBuffer(g.ARRAY_BUFFER, centroidBufRef.current);
+			g.enableVertexAttribArray(A.aCentroid);
+			g.vertexAttribPointer(A.aCentroid, 2, g.FLOAT, false, 0, 0);
+			g.vertexAttribDivisor(A.aCentroid, 0);
 			g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
 			g.enableVertexAttribArray(A.aInst);
 			g.vertexAttribPointer(A.aInst, 2, g.FLOAT, false, 0, 0);
@@ -233,6 +288,8 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			g.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
 			g.uniform2f(U.uHalf, w / 2, h / 2);
 			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
+			g.uniform1i(U.uWavePhase, wavePhaseInt);
+			g.uniform1f(U.uWaveP, waveP);
 
 			if (cfg.showPolygonFill) {
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
@@ -263,6 +320,10 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 				g.enableVertexAttribArray(SA.aSide);
 				g.vertexAttribPointer(SA.aSide, 1, g.FLOAT, false, 0, 0);
 				g.vertexAttribDivisor(SA.aSide, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, strokeCentroidBufRef.current);
+				g.enableVertexAttribArray(SA.aCentroid);
+				g.vertexAttribPointer(SA.aCentroid, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aCentroid, 0);
 				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
 				g.enableVertexAttribArray(SA.aInst);
 				g.vertexAttribPointer(SA.aInst, 2, g.FLOAT, false, 0, 0);
@@ -273,6 +334,8 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 				g.uniform2f(SU.uV1, mesh.v1[0], mesh.v1[1]);
 				g.uniform2f(SU.uV2, mesh.v2[0], mesh.v2[1]);
 				g.uniform2f(SU.uHalf, w / 2, h / 2);
+				g.uniform1i(SU.uWavePhase, wavePhaseInt);
+				g.uniform1f(SU.uWaveP, waveP);
 				g.uniform1f(SU.uHalfStrokePx, cfg.lineWidth * 0.5); // p5 strokeWeight(lineWidth/zoom) => lineWidth px
 				const dark = document.documentElement.classList.contains("dark");
 				const lightStroke = !cfg.showPolygonFill && dark; // matches Tiling.show white-stroke case
@@ -284,8 +347,10 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 
 			// Points pass (showPolygonPoints): instanced disks at each centroid/halfway/vertex, screen-
 			// constant radius, coloured red/green/blue with a dark rim — matching Tiling.show's p5 dots,
-			// which canvas.tsx now skips when this shader is active. Same instance grid as the fill.
-			if (cfg.showPolygonPoints && mesh.pointVertexCount > 0) {
+			// which canvas.tsx now skips when this shader is active. Same instance grid as the fill. Hidden
+			// while a wave runs (wavePhaseInt != 0): the dots sit on the UNscaled outline, so they'd float off
+			// a collapsing tile — Tiling.show suppresses them the same way (`showPolygonPoints && !scaleOf`).
+			if (cfg.showPolygonPoints && wavePhaseInt === 0 && mesh.pointVertexCount > 0) {
 				g.enable(g.BLEND);
 				g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
 				g.useProgram(pointsProgRef.current);
@@ -326,6 +391,7 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			gl.deleteShader(fs);
 			if (posBufRef.current) gl.deleteBuffer(posBufRef.current);
 			if (hueBufRef.current) gl.deleteBuffer(hueBufRef.current);
+			if (centroidBufRef.current) gl.deleteBuffer(centroidBufRef.current);
 			if (instBufRef.current) gl.deleteBuffer(instBufRef.current);
 			if (strokeProgRef.current) gl.deleteProgram(strokeProgRef.current);
 			gl.deleteShader(strokeVs);
@@ -333,6 +399,7 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			if (strokePosBufRef.current) gl.deleteBuffer(strokePosBufRef.current);
 			if (strokeNormBufRef.current) gl.deleteBuffer(strokeNormBufRef.current);
 			if (strokeSideBufRef.current) gl.deleteBuffer(strokeSideBufRef.current);
+			if (strokeCentroidBufRef.current) gl.deleteBuffer(strokeCentroidBufRef.current);
 			if (pointsProgRef.current) gl.deleteProgram(pointsProgRef.current);
 			gl.deleteShader(pointsVs);
 			gl.deleteShader(pointsFs);
@@ -348,13 +415,34 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 	}, []);
 
 	// (Re)build the static-cell mesh when the selected tiling changes (parametric handled in the loop).
+	// When there is already a tiling on screen, play the selection wave (M2) instead of jump-cutting: keep
+	// the current mesh uploaded so the render loop can COLLAPSE it (phase "out"), and stash the incoming
+	// mesh in pendingMeshRef for the loop to upload and GROW at the handover. First load, reduced-motion,
+	// and a disabled toggle upload straight away. Fires on a switch FROM a param family too (paramCell just
+	// went null), so param->static also animates; static->param / param->param stay jump-cuts (loop-owned).
 	useEffect(() => {
+		const isNewSelection = translationalCellId !== prevCellIdRef.current;
+		prevCellIdRef.current = translationalCellId;
 		if (paramCell) return;
 		const gl = glRef.current;
 		if (!gl || !posBufRef.current) return;
 		const mesh = buildCellMesh(translationalCell);
-		if (mesh) uploadMesh(gl, mesh);
-		else meshRef.current = null;
+		if (!mesh) { meshRef.current = null; return; }
+		const canAnimate =
+			isNewSelection && !!meshRef.current
+			&& useConfiguration.getState().tilingTransition && !prefersReducedMotion();
+		if (!canAnimate) {
+			uploadMesh(gl, mesh);
+			transitionRef.current = null;
+			pendingMeshRef.current = null;
+			return;
+		}
+		// Supersede the incoming mesh but let an already-running collapse finish (mirrors canvas.tsx: only the
+		// not-yet-shown incoming is replaced); otherwise start a fresh collapse of what's currently on screen.
+		pendingMeshRef.current = mesh;
+		if (transitionRef.current?.phase !== "out") {
+			transitionRef.current = { phase: "out", start: performance.now() };
+		}
 	}, [translationalCellId, translationalCell, paramCell]);
 
 	return (

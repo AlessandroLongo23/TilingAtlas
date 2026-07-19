@@ -16,6 +16,11 @@ import {
 export interface CellMesh {
 	fillVerts: Float32Array; // 2 floats per vertex, triangles (x0,y0, x1,y1, ...)
 	fillHue: Float32Array; // 1 float per vertex, hue in degrees
+	// Per fill-vertex, the centroid (fan apex = vertex-average) of the polygon that vertex belongs to.
+	// The selection-transition wave (M2) scales each tile about this point in the vertex shader; leaving
+	// it here means fill and stroke collapse about the exact same centre and stay registered. Unused when
+	// the wave is off (uWavePhase == 0), so the theory cards / FlatCellRenderer ignore it harmlessly.
+	fillCentroid: Float32Array; // 2 floats/vert
 	fillVertexCount: number; // = fillVerts.length / 2
 	// Stroke: each polygon edge -> a quad (2 triangles, 6 verts). Each stroke vert carries the edge-point
 	// world position (strokePos), the world-space unit normal of the edge (strokeNorm), and a side flag
@@ -23,6 +28,7 @@ export interface CellMesh {
 	strokePos: Float32Array;  // 2 floats/vert
 	strokeNorm: Float32Array; // 2 floats/vert
 	strokeSide: Float32Array; // 1 float/vert
+	strokeCentroid: Float32Array; // 2 floats/vert — same tile fan apex as fillCentroid, for the wave
 	strokeVertexCount: number;
 	// Points (showPolygonPoints): per centroid/halfway/vertex a screen-constant disk drawn as a quad (6
 	// verts). Each vert carries the point's world position (pointPos), a unit-quad corner in [-1,1]
@@ -57,6 +63,7 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 
 	const fillVerts = new Float32Array(triCount * 3 * 2);
 	const fillHue = new Float32Array(triCount * 3);
+	const fillCentroid = new Float32Array(triCount * 3 * 2);
 
 	let vi = 0; // vertex index into the flat buffers
 	for (const poly of base.polys) {
@@ -71,10 +78,14 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		for (let k = 0; k < vs.length; k++) {
 			const a = vs[k];
 			const b = vs[(k + 1) % vs.length];
-			// Triangle (centroid, a, b).
-			fillVerts[vi * 2] = cx; fillVerts[vi * 2 + 1] = cy; fillHue[vi] = hue; vi++;
-			fillVerts[vi * 2] = a.x; fillVerts[vi * 2 + 1] = a.y; fillHue[vi] = hue; vi++;
-			fillVerts[vi * 2] = b.x; fillVerts[vi * 2 + 1] = b.y; fillHue[vi] = hue; vi++;
+			// Triangle (centroid, a, b). Every vertex carries the fan-apex centroid so the wave shader can
+			// scale the whole triangle about it (vertex 0 already IS the centroid; a/b need it too).
+			fillVerts[vi * 2] = cx; fillVerts[vi * 2 + 1] = cy; fillHue[vi] = hue;
+			fillCentroid[vi * 2] = cx; fillCentroid[vi * 2 + 1] = cy; vi++;
+			fillVerts[vi * 2] = a.x; fillVerts[vi * 2 + 1] = a.y; fillHue[vi] = hue;
+			fillCentroid[vi * 2] = cx; fillCentroid[vi * 2 + 1] = cy; vi++;
+			fillVerts[vi * 2] = b.x; fillVerts[vi * 2 + 1] = b.y; fillHue[vi] = hue;
+			fillCentroid[vi * 2] = cx; fillCentroid[vi * 2 + 1] = cy; vi++;
 		}
 	}
 
@@ -87,15 +98,21 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	const strokePos = new Float32Array(sTri * 6 * 2);
 	const strokeNorm = new Float32Array(sTri * 6 * 2);
 	const strokeSide = new Float32Array(sTri * 6);
+	const strokeCentroid = new Float32Array(sTri * 6 * 2);
 	let si = 0;
+	let scx = 0, scy = 0; // the current polygon's fan apex, set per poly below
 	const pushStroke = (px: number, py: number, nx: number, ny: number, side: number) => {
 		strokePos[si * 2] = px; strokePos[si * 2 + 1] = py;
 		strokeNorm[si * 2] = nx; strokeNorm[si * 2 + 1] = ny;
 		strokeSide[si] = side;
+		strokeCentroid[si * 2] = scx; strokeCentroid[si * 2 + 1] = scy;
 		si++;
 	};
 	for (const poly of base.polys) {
 		const vs = poly.vertices;
+		scx = 0; scy = 0;
+		for (const v of vs) { scx += v.x; scy += v.y; }
+		scx /= vs.length; scy /= vs.length;
 		for (let k = 0; k < vs.length; k++) {
 			const a = vs[k];
 			const b = vs[(k + 1) % vs.length];
@@ -146,10 +163,12 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	return {
 		fillVerts,
 		fillHue,
+		fillCentroid,
 		fillVertexCount: vi,
 		strokePos,
 		strokeNorm,
 		strokeSide,
+		strokeCentroid,
 		strokeVertexCount: si,
 		pointPos,
 		pointCorner,

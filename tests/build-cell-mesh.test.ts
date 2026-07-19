@@ -27,6 +27,30 @@ describe("buildCellMesh", () => {
 		expect(Array.from(mesh.fillVerts.slice(0, 6))).toEqual([0, 0, -0.5, -0.5, 0.5, -0.5]);
 	});
 
+	it("carries the tile fan-apex centroid on every fill and stroke vertex (the wave's scale centre)", () => {
+		const mesh = buildCellMesh(cell)!;
+		// One centroid pair per fill vertex; the centred square's fan apex is (0,0), shared by all 3 verts
+		// of every triangle — so the whole buffer is zeros and matches the triangle apex (fillVerts vertex 0).
+		expect(mesh.fillCentroid.length).toBe(mesh.fillVerts.length);
+		for (let i = 0; i < mesh.fillCentroid.length; i++) expect(mesh.fillCentroid[i]).toBe(0);
+		// The stroke centroid mirrors the fill's: same apex on every stroke vertex, same length as strokePos.
+		expect(mesh.strokeCentroid.length).toBe(mesh.strokePos.length);
+		for (let i = 0; i < mesh.strokeCentroid.length; i++) expect(mesh.strokeCentroid[i]).toBe(0);
+	});
+
+	it("centroid is the vertex-average (fan apex), including for a displaced tile", () => {
+		// Square shifted so its vertex-average is (2, 0): every centroid entry must read (2, 0).
+		const shifted = { p: [{ v: squareVerts.map(([x, y]) => [x + 2, y]), n: 4 }], b: [[1, 0], [0, 1]] };
+		const mesh = buildCellMesh(shifted)!;
+		for (let i = 0; i < mesh.fillCentroid.length; i += 2) {
+			expect(mesh.fillCentroid[i]).toBeCloseTo(2, 12);
+			expect(mesh.fillCentroid[i + 1]).toBeCloseTo(0, 12);
+		}
+		// Fan apex (triangle vertex 0) equals the stored centroid — the two are the same point by construction.
+		expect(mesh.fillVerts[0]).toBeCloseTo(mesh.fillCentroid[0], 12);
+		expect(mesh.fillVerts[1]).toBeCloseTo(mesh.fillCentroid[1], 12);
+	});
+
 	it("assigns the regular fill hue to every vertex of the square", () => {
 		const mesh = buildCellMesh(cell)!;
 		const expected = polygonFillHue(squareVerts.map(([x, y]) => ({ x, y })));

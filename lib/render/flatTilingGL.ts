@@ -9,21 +9,52 @@ import { Vector } from "@/classes/Vector";
 import type { CellMesh } from "@/lib/render/buildCellMesh";
 import { computeFillRadii, wrapOffset } from "@/lib/render/flatView";
 
+// Selection-transition wave (M2), shared by the fill and stroke vertex shaders. A transcription of
+// waveTileScale + WAVE_MIN_SCALE in lib/utils/tilingTransition.ts — KEEP THE TWO IN STEP. `phase` is +1
+// grow-in / -1 collapse-out (0 = inactive, handled at the call site); `u` is the tile centroid's
+// normalised screen distance from the canvas centre; `p` the phase progress in [0,1]. Returns the tile's
+// [0,1] scale about its centroid. WAVE_MIN_SCALE (0.02) is applied by the caller so the tile is dropped
+// (zero-area) rather than lingering as a stroke speck.
+const WAVE_GLSL = `
+float waveTileScale(int phase, float u, float p) {
+	float travel = 0.8; // WAVE_TRAVEL
+	float local = clamp((p - clamp(u, 0.0, 1.0) * travel) / (1.0 - travel), 0.0, 1.0);
+	float eased = local < 0.5 ? 4.0 * local * local * local : 1.0 - pow(-2.0 * local + 2.0, 3.0) / 2.0;
+	return phase > 0 ? eased : 1.0 - eased;
+}
+`;
+
 export const FILL_VERT = `#version 300 es
 in vec2 aPos;
 in float aHue;
 in vec2 aInst;
+in vec2 aCentroid;      // tile fan-apex centroid, for the selection-transition wave
 uniform vec2 uOffset;   // wrapped pan, centred CSS px, y down
 uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
 uniform vec2 uHalf;     // canvas CSS half-size (w/2, h/2)
+uniform int uWavePhase; // 0 inactive, +1 grow-in, -1 collapse-out
+uniform float uWaveP;   // wave phase progress [0,1]
 out float vHue;
+${WAVE_GLSL}
 void main() {
 	// Transcribes flatWorldToClip in lib/render/flatView.ts — keep the two in step.
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
 	float c = cos(uRot), s = sin(uRot);
+	vec2 pos = aPos;
+	if (uWavePhase != 0) {
+		// Scale the tile about its centroid. u = centroid's screen distance from centre / half-diagonal,
+		// so the wave stays radial about the canvas centre under any pan/zoom/rotation (matches makeWaveScale).
+		vec2 wc = aCentroid + aInst.x * uV1 + aInst.y * uV2;
+		float csx = uOffset.x + uZoom * (c * wc.x + s * wc.y);
+		float csy = uOffset.y + uZoom * (s * wc.x - c * wc.y);
+		float dmax = max(1.0, length(uHalf));
+		float scale = waveTileScale(uWavePhase, length(vec2(csx, csy)) / dmax, uWaveP);
+		if (scale < 0.02) scale = 0.0; // WAVE_MIN_SCALE: collapse to a point (zero-area triangle)
+		pos = aCentroid + scale * (aPos - aCentroid);
+	}
+	vec2 world = pos + aInst.x * uV1 + aInst.y * uV2;
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
 	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
@@ -51,6 +82,7 @@ in vec2 aPos;
 in vec2 aNorm;    // world-space edge normal
 in float aSide;   // +1 / -1
 in vec2 aInst;
+in vec2 aCentroid;            // tile fan-apex centroid, for the selection-transition wave
 uniform vec2 uOffset;
 uniform float uZoom;
 uniform float uRot;
@@ -58,9 +90,26 @@ uniform vec2 uV1;
 uniform vec2 uV2;
 uniform vec2 uHalf;
 uniform float uHalfStrokePx;  // half stroke width, CSS px
+uniform int uWavePhase;       // 0 inactive, +1 grow-in, -1 collapse-out
+uniform float uWaveP;         // wave phase progress [0,1]
+${WAVE_GLSL}
 void main() {
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
 	float c = cos(uRot), s = sin(uRot);
+	vec2 pos = aPos;
+	// The outline follows the SCALED tile (its position scales), but its width stays constant CSS px —
+	// exactly as p5 draws the transition (strokeWeight is fixed; only the polygon it outlines shrinks).
+	// strokeMul kills the outline push once the tile has collapsed, so no stroke speck lingers at the centroid.
+	float strokeMul = 1.0;
+	if (uWavePhase != 0) {
+		vec2 wc = aCentroid + aInst.x * uV1 + aInst.y * uV2;
+		float csx = uOffset.x + uZoom * (c * wc.x + s * wc.y);
+		float csy = uOffset.y + uZoom * (s * wc.x - c * wc.y);
+		float dmax = max(1.0, length(uHalf));
+		float scale = waveTileScale(uWavePhase, length(vec2(csx, csy)) / dmax, uWaveP);
+		if (scale < 0.02) { scale = 0.0; strokeMul = 0.0; } // WAVE_MIN_SCALE: drop the tile entirely
+		pos = aCentroid + scale * (aPos - aCentroid);
+	}
+	vec2 world = pos + aInst.x * uV1 + aInst.y * uV2;
 	// Same centred-screen map as the fill.
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
@@ -70,8 +119,8 @@ void main() {
 	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
 	float nl = length(vec2(nsx, nsy));
 	vec2 n = nl > 0.0 ? vec2(nsx, nsy) / nl : vec2(0.0);
-	sx += aSide * uHalfStrokePx * n.x;
-	sy += aSide * uHalfStrokePx * n.y;
+	sx += aSide * uHalfStrokePx * strokeMul * n.x;
+	sy += aSide * uHalfStrokePx * strokeMul * n.y;
 	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
 }
 `;

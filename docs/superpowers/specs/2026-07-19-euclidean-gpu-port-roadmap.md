@@ -30,9 +30,10 @@ Trigger: `showPolygonPoints` on the p5 path was measured (Apple M5, headed Chrom
 +39 ms/frame at min zoom, dropping 120→21 fps; the M1b GPU points cost ~0 ms (stay pinned at the
 120 fps refresh cap). Before flipping, a Playwright parity sweep (`scripts/parity-sweep.mjs`) confirmed
 the shader matches p5 on a star (star hue + concave star-shaped fan), a parametric family (α cell path),
-a dense k=3, and dark-theme outline-only (white stroke). `tilingTransition` is already off by default,
-so the not-yet-ported selection wave (M2) costs nothing today. Measurement caveat: headless Chromium
-renders WebGL in software (SwiftShader) and is ~15× too slow, so only headed/real-GPU numbers count.
+a dense k=3, and dark-theme outline-only (white stroke). The selection wave (M2) landed 2026-07-19 and
+now plays on the shader path (it costs nothing while idle: the wave branch is gated on `uWavePhase != 0`).
+Measurement caveat: headless Chromium renders WebGL in software (SwiftShader) and is ~15× too slow, so
+only headed/real-GPU numbers count.
 
 ## What is already on the GPU
 
@@ -40,6 +41,7 @@ renders WebGL in software (SwiftShader) and is ~15× too slow, so only headed/re
 |---|---|---|---|
 | M1 (done) | Plain coloured tiles: fill + constant-width stroke, instanced | [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx), [flatTilingGL.ts](../../../lib/render/flatTilingGL.ts), [buildCellMesh.ts](../../../lib/render/buildCellMesh.ts) | `euclideanShader` — **ON by default since 2026-07-19** |
 | M1b (done) | Polygon points (centroid/halfway/vertex dots) | same + `POINTS_VERT/FRAG` | same flag |
+| M2 (done) | Selection-transition wave: collapse-then-grow on tiling change | `uWavePhase`/`uWaveP` + `aCentroid` in `FILL_VERT`/`STROKE_VERT`, `fillCentroid`/`strokeCentroid` in `buildCellMesh`, transition state machine in [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx) | `tilingTransition` (live) |
 | M4-plain (done, uncommitted) | Plain Islamic A/B/C fill + black construction lines | [islamic-canvas.tsx](../../../components/islamic-canvas.tsx), [islamicGL.ts](../../../lib/render/islamicGL.ts), [buildIslamicMesh.ts](../../../lib/render/buildIslamicMesh.ts) | `isIslamicShaderActive`: `islamicStyle==='plain' && !animate` |
 
 The base fills are already retained-mode on the GPU. The premise "everything is on p5 and slow" is
@@ -99,8 +101,8 @@ the decorative styles (M4-rest) are still whole-patch p5 and will inherit the sa
 
 ## Remaining elements still on p5, by milestone
 
-Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. Cost column is per-frame
-while the relevant mode/toggle is active.
+Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5. M1b and M2 done; **next is M3**.
+Cost column is per-frame while the relevant mode/toggle is active.
 
 ### M1b: points
 | Element | Toggle | Source | Status |
@@ -112,14 +114,34 @@ Polygon points are instanced screen-constant disks (unit-quad billboards, SDF di
 fragment shader), coloured red/green/blue like the p5 dots, sharing the fill's instance grid. The disk
 shader is the reusable base for M3's orbit dots. Construction-point *labels* stay on p5 for now (text).
 
-### M2: selection-transition wave
-| Element | Toggle | Source | Cost |
+### M2: selection-transition wave (DONE 2026-07-19)
+| Element | Toggle | Source | Status |
 |---|---|---|---|
-| Radial collapse/grow on tiling change | `tilingTransition` (live) | `makeWaveScale` in [canvas.tsx](../../../components/canvas.tsx) | per-instance scale |
+| Radial collapse/grow on tiling change | `tilingTransition` (live) | `makeWaveScale` in [canvas.tsx](../../../components/canvas.tsx) | **DONE**, ported to the fill+stroke vertex shaders |
 
-Currently disabled whenever the shader owns the fill (`transitionsEnabled` returns false), so the
-effect is silently lost under the flag. Port as a per-instance centroid scale in the fill vertex
-shader driven by `wavePhase`/`waveP` uniforms.
+The wave is a per-vertex scale about the tile's fan-apex centroid, driven by `uWavePhase` (0/+1/-1) and
+`uWaveP` (phase progress) in `FILL_VERT` and `STROKE_VERT`. `buildCellMesh` now emits `fillCentroid` /
+`strokeCentroid` (the vertex-average, same point for fill and stroke so the two collapse together). The
+GLSL `waveTileScale` is a transcription of `waveTileScale` in [tilingTransition.ts](../../../lib/utils/tilingTransition.ts)
+(kept in step by comment), and `WAVE_MIN_SCALE` (0.02) drops a collapsed tile to zero area (no lingering
+stroke speck; the constant-width outline push is zeroed at the cutoff). The stroke follows the scaled
+tile but keeps constant screen width, matching p5. Points are suppressed for the transition's duration
+(they sit on the un-scaled outline), exactly as `Tiling.show` skips them when `scaleOf` is set.
+
+The two-phase collapse-then-grow lives entirely in [euclidean-canvas.tsx](../../../components/euclidean-canvas.tsx):
+on a genuine selection change (id changed) the current mesh COLLAPSES (phase "out"), then the incoming
+mesh (built and stashed in `pendingMeshRef`, not uploaded) is uploaded at the out→in handover and GROWS
+(phase "in"). Only ONE mesh is ever on the GPU, so no second buffer set is needed. This runs independently
+of the p5 `transitionRef` machine (which stays disabled under the shader). Toggling `tilingTransition` off
+mid-flight lands on the incoming tiling at once.
+
+Scope: static-cell tilings animate, and so do param→static switches (a bonus: `paramCell` just went
+null, so the effect fires and collapses the outgoing param mesh). **Static→param and param→param still
+jump-cut**: those are owned by the render-loop's α-rebuild path, and threading the collapse through it
+would risk an α-timing race for little visible gain. No regression: they jump-cut before M2 too. The
+shared `FILL_VERT`/`STROKE_VERT` change is backward-compatible with `FlatCellRenderer` (the theory
+cards): they never set `uWavePhase` (defaults 0) nor bind `aCentroid`, so the wave branch is dead there.
+Verified with `scripts/wave-capture.mjs` (collapse/grow frames) + the theory cards still paint.
 
 ### M3: vertex-orbit dots ("showOrb")
 | Element | Toggle | Source | Cost |
