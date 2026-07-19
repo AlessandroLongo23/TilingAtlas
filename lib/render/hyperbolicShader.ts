@@ -44,12 +44,15 @@ uniform float uEdgeRho;  // edge-geodesic circle radius
 uniform int uShadeMode;  // 0 = coloured tiles + edges, 1 = two-tone parity
 uniform float uParityOffset; // 0/1: absolute-parity correction, cancels the re-base's tile re-labelling
 uniform float uHue;      // tile hue, degrees
+uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); hsb2rgb wraps via mod
 uniform float uStrokePx; // stroke width control (0 = no strokes)
 uniform int uStrokeMode; // 0 = geometry (fraction of the tile edge), 1 = constant screen width
 uniform vec3 uSurface;   // background + out-of-disk
 uniform vec3 uLine;      // edge stroke / dark tone
 uniform vec3 uParityA;   // parity mode: even tiles
 uniform vec3 uParityB;   // parity mode: odd tiles
+uniform vec3 uIslamicB;  // Islamic A/B/C fill: B side field colour
+uniform vec3 uIslamicC;  // Islamic A/B/C fill: C edge-diamond colour
 uniform int uShowFill;   // 1 = coloured/parity fill, 0 = no fill (tiles paint uSurface, edges kept)
 
 // Uniform (Wythoffian) tilings. uNTiles == 1 ⇒ legacy regular {p,q} path (everything below is skipped, so
@@ -84,6 +87,36 @@ uniform int uNumPoints;       // valid entries in uPoints/uPointKind
 uniform vec2 uPoints[MAX_POINTS];  // marker positions, fundamental frame
 uniform int uPointKind[MAX_POINTS];// 0 = centroid, 1 = edge midpoint, 2 = vertex
 uniform float uPointRadius;   // marker radius, device px
+
+// Islamic strapwork overlay (all hyperbolic tilings). The polygons-in-contact star motif is the same
+// regular-tile rosette everywhere (uniform and snub faces are regular polygons), so in the fundamental
+// frame it is a short list of geodesic strap segments uStrapA[i]→uStrapB[i] (see islamicStrapSegments in
+// lib/render/hyperbolic.ts). uStrapReflect folds the pixel to the upper-half Schwarz triangle for
+// regular/uniform tilings; snub is chiral and tests the kite coord directly. Off (uIslamic 0) ⇒ no cost.
+#define MAX_STRAP 64
+#define MAX_TILES 6
+uniform int uIslamic;      // 0 = off, 1 = draw strapwork
+uniform int uStrapReflect; // 1 = test (z.x, |z.y|) (regular/uniform); 0 = test z (snub, chiral)
+uniform int uStrapCount;   // valid entries in uStrapA/uStrapB
+uniform vec2 uStrapA[MAX_STRAP]; // strap segment starts (fundamental frame)
+uniform vec2 uStrapB[MAX_STRAP]; // strap segment ends
+uniform int uStrapTile[MAX_STRAP]; // A/B/C fill: which tile (index into uTileCentre/uTileHueA) each strap bounds
+uniform int uTileCount;            // number of tile types touching the fundamental domain (1 regular, ≤3 uniform, ≤5 snub)
+uniform vec2 uTileCentre[MAX_TILES]; // each tile's centre (fundamental frame) — the crossing-parity source point
+uniform float uTileHueA[MAX_TILES];  // each tile's hue (deg) for its A star body
+
+// Islamic decoration style. 0 = plain (A/B/C fill + thin star lines), 1 = interlace (woven over/under
+// bands), 2 = checkerboard (2-tone faces by global crossing parity). Off (uIslamic 0) ignores all of these.
+uniform int uIslamicStyle;
+uniform vec3 uCheckerA;    // checkerboard field colour A (even parity)
+uniform vec3 uCheckerB;    // checkerboard field colour B (odd parity)
+uniform float uBandHalf;   // interlace ribbon HALF-width, fundamental units (tapers toward the rim like geometry strokes)
+// interlace weave: 1 = this strap dives UNDER at its edge-midpoint (origin, uStrapA) end, 0 = over/none.
+// Each clean strap has exactly one crossing (its origin); the tip (uStrapB) end is a 2-valent bend.
+uniform int uStrapUnder[MAX_STRAP];
+// interlace: 0 = regular {p,q} (crossings completed by neighbour stubs ⇒ clean over-band break); 1 =
+// uniform/snub (no stubs ⇒ also break the under strand at a disc around its own crossing origin).
+uniform int uWeaveFallback;
 
 out vec4 frag;
 
@@ -134,6 +167,51 @@ float segDistGeo(vec2 z, vec2 p1, vec2 p2) {
 	float t = dot(z - p1, d) / max(dot(d, d), 1e-9);
 	if (t < 0.0 || t > 1.0) return 1e9; // clip exactly at the endpoints — the per-vertex disks round the joins,
 	return edgeDistGeo(z, p1, p2);       // so no overshoot spur is needed to bridge to the vertex.
+}
+
+// Does the geodesic O→z cross the strap arc a–b? O is the origin here (the folded tile centre), so the
+// path O→z is a straight radius (diameters ARE geodesics). The origin is always on the +side of every
+// geodesic (sideGeo(O)=|0|²−0+1=1), so z is beyond the strap iff sideGeo(z)<0; and the arc spans the ray
+// iff its endpoints straddle the line O–z (cross(z,a)·cross(z,b)<0). Both tests are exact and share the
+// strap's geodesic with the stroke (segDistGeo), so the A/B/C fill boundary sits exactly on the drawn arc.
+bool pathCrossesStrap(vec2 z, vec2 a, vec2 b) {
+	float d1 = z.x * a.y - z.y * a.x;
+	float d2 = z.x * b.y - z.y * b.x;
+	if (d1 * d2 >= 0.0) return false;   // a,b on the same side of ray O→z ⇒ the arc doesn't span it
+	return sideGeo(z, a, b) < 0.0;      // z on the far side of the strap's geodesic (O is always the +side)
+}
+
+// Same crossing test from an ARBITRARY source P — uniform/snub stars sit at Schwarz corners, not the origin,
+// so the path P→z is a general geodesic arc. Two geodesic SEGMENTS cross iff P,z straddle the strap's
+// geodesic AND a,b straddle the path's geodesic (both via sideGeo). Reduces to pathCrossesStrap when P = O.
+bool pathCrossesStrapFrom(vec2 P, vec2 z, vec2 a, vec2 b) {
+	if (sideGeo(P, a, b) * sideGeo(z, a, b) >= 0.0) return false;
+	return sideGeo(a, P, z) * sideGeo(b, P, z) < 0.0;
+}
+
+// Count strap crossings on the geodesic from centre P to z, counting ONLY straps that bound tile "want"
+// (A/B/C parity for that tile). 0  means z is in that tile's star body. Mixing tile types would corrupt the
+// count — a path from the p-gon centre must ignore the q-gon's straps — which is why straps carry a tag.
+int crossFromTile(vec2 P, vec2 z, int want) {
+	int cr = 0;
+	for (int i = 0; i < MAX_STRAP; i++) {
+		if (i >= uStrapCount) break;
+		if (uStrapTile[i] != want) continue;
+		if (pathCrossesStrapFrom(P, z, uStrapA[i], uStrapB[i])) cr++;
+	}
+	return cr;
+}
+
+// Total strap crossings on the geodesic O→z over ALL straps (tag ignored) — the checkerboard 2-colouring.
+// Every strap is a boundary of the star arrangement, so the parity of this count is a proper 2-colouring
+// of the faces (even-degree everywhere ⇒ bipartite). Constant per fold-tile, so the whole disk 2-colours.
+int crossAll(vec2 P, vec2 z) {
+	int cr = 0;
+	for (int i = 0; i < MAX_STRAP; i++) {
+		if (i >= uStrapCount) break;
+		if (pathCrossesStrapFrom(P, z, uStrapA[i], uStrapB[i])) cr++;
+	}
+	return cr;
 }
 
 // z inside the convex geodesic quad p0-p1-p2-p3 — the ref-point side of all four edges.
@@ -340,15 +418,60 @@ void main() {
 		lineCov = uStrokePx > 0.0 ? (1.0 - smoothstep(halfW - pwf, halfW + pwf, ie)) : 0.0;
 	}
 
+	// Islamic strap-test coord: regular {p,q} tests the raw fold coord (uStrapReflect 0); uniform tilings
+	// fold once more to the upper-half Schwarz triangle (uStrapReflect 1) so a single upper-half copy of each
+	// off-axis tile (e.g. the q-gon at V) covers its mirror twin below the axis — used by BOTH the A/B/C fill
+	// and the stroke so their star boundaries coincide. Snub is chiral (uStrapReflect 0, tests z directly).
+	vec2 zk = uStrapReflect == 1 ? vec2(z.x, abs(z.y)) : z;
+
+	// Radial dim, hoisted so the interlace ribbon section can reuse it. Non-Islamic: FLAT per {p,q} tile
+	// (keyed off the tile centre's screen radius tr) so each tile is one shade. Islamic: keyed off the pixel's
+	// own screen radius so the strapwork's cells don't read the original tiling back as a lightness grid
+	// (AL: visible at the dual, angle 90°) — continuous across cells, still darkening toward the rim.
+	float dim = uIslamic == 1 ? (1.0 - 0.5 * dot(zScreen, zScreen)) : (1.0 - 0.5 * tr * tr);
 	vec3 baseFill;
 	if (uShadeMode == 1 && uNTiles == 1) {
 		// Two-tone parity (only offered when q is even ⇒ the tiling is 2-colourable). uParityOffset tracks
 		// the re-base's crossings so each tile keeps its black/white value however the view has panned.
 		baseFill = mod(float(step) + uParityOffset, 2.0) < 0.5 ? uParityA : uParityB;
 	} else {
-		// Quadratic falloff: tiles near the centre stay bright, only the outer ones darken toward the rim.
-		float dim = 1.0 - 0.5 * tr * tr;
-		baseFill = hsb2rgb(hueDeg / 360.0, 0.40, 1.0) * dim;
+		// Quadratic falloff, brightest at the centre. Non-Islamic: FLAT per {p,q} tile (keyed off the tile
+		// centre's screen radius, tr) so each tile is one shade. Islamic: the star/octagon cells of the
+		// strapwork do NOT align with the fold's tiles — a per-tile shade seams a cell that straddles several
+		// tiles and the ORIGINAL tiling reads back through as a lightness grid (AL: visible at the dual, angle
+		// 90°). Key the Islamic fade off the pixel's own screen radius instead: continuous across cells, so no
+		// original-tile grid survives while the pattern still darkens toward the rim. (dim hoisted above.)
+		// Islamic A/B/C fill — regular, uniform, AND snub, unified. Each tile type touching the fundamental
+		// domain has its own star at its centre uTileCentre[j]; a pixel is in tile j's star iff the crossing
+		// parity from that centre (counting ONLY tile j's straps) is 0, and it then takes that tile's hue.
+		// This is exactly the LOCAL polygons-in-contact rule: every tile behaves identically, independent of
+		// its neighbours — the tag is what keeps them independent. Background: for a single tile type (regular)
+		// the parity gives B (odd) vs C (even edge diamonds); across several tile types the global 2-colouring
+		// is ambiguous, so the background is one tone (B) — which colorFacesAbc also collapses to (degenerate).
+		if (uIslamic == 1 && uIslamicStyle == 2) {
+			// Checkerboard: 2-colour the faces by the parity of the global crossing count O→pixel. Ignores the
+			// star bodies (no A hue) — the woven-face zellij look. The thin star lines still draw on top below.
+			baseFill = ((crossAll(vec2(0.0), zk) & 1) == 0 ? uCheckerA : uCheckerB) * dim;
+		} else if (uIslamic == 1 && uIslamicStyle == 1) {
+			// Interlace: the ribbons are drawn in the stroke section over a flat single-colour ground (the B field).
+			baseFill = uIslamicB * dim;
+		} else if (uIslamic == 1) {
+			// Plain: A/B/C star fill. Each tile type has its star at uTileCentre[j]; a pixel is in tile j's star
+			// iff the crossing parity from that centre (only tile j's straps) is 0, and it takes that tile's hue.
+			int starTile = -1;
+			int c0 = 0;
+			for (int j = 0; j < MAX_TILES; j++) {
+				if (j >= uTileCount) break;
+				int c = crossFromTile(uTileCentre[j], zk, j);
+				if (j == 0) c0 = c;
+				if (c == 0) { starTile = j; break; }
+			}
+			if (starTile >= 0) baseFill = hsb2rgb((uTileHueA[starTile] + uHueOffset) / 360.0, 0.40, 1.0) * dim; // A
+			else if (uTileCount == 1) baseFill = (c0 % 2 == 1) ? uIslamicB * dim : uIslamicC * dim;              // regular B/C
+			else baseFill = uIslamicB * dim;                                                                     // uniform/snub background
+		} else {
+			baseFill = hsb2rgb((hueDeg + uHueOffset) / 360.0, 0.40, 1.0) * dim;
+		}
 	}
 	// No fill: tiles paint the background (edges kept) — the Euclidean noFill() semantics. The caller sends a
 	// light uLine in dark theme so the strokes stay visible on the dark surface.
@@ -362,6 +485,70 @@ void main() {
 	lineCov *= (1.0 - rim);
 
 	vec3 col = mix(baseFill, uLine, lineCov);
+
+	// Islamic strapwork (all hyperbolic tilings). Regular/uniform fold the pixel to the upper-half Schwarz
+	// triangle (uStrapReflect); snub tests the chiral kite coord directly.
+	if (uIslamic == 1 && uIslamicStyle == 1) {
+		// INTERLACE: promote the strap field to woven bands. Each strap is OVER (layer 0) near its tip
+		// (uStrapB, a 2-valent bend) and takes uStrapUnder at its crossing origin (uStrapA). Track the nearest
+		// OVER strap and nearest UNDER strap separately. The over ribbon draws on top in full; the under ribbon
+		// draws ONLY outside the over band, so its two side borders stop exactly on the over band's edge — that
+		// interrupted border, not a colour change, is what reads as the weave (both ribbons share the tile hue).
+		float dOver = 1e9, dUnder = 1e9, underOrg = 1e9;
+		int tileOver = 0, tileUnder = 0;
+		for (int i = 0; i < MAX_STRAP; i++) {
+			if (i >= uStrapCount) break;
+			// Capped distance (segment + both endpoint discs), like the stroke: the endpoint disc is what lets a
+			// neighbour stub OCCLUDE across its crossing origin M — a central-tile pixel projects beyond the stub,
+			// so segDistGeo alone (clipped at the ends) would miss the very cap that completes the woven break.
+			float dA = distance(zk, uStrapA[i]), dB = distance(zk, uStrapB[i]);
+			float d = min(segDistGeo(zk, uStrapA[i], uStrapB[i]), min(dA, dB));
+			if (d > uBandHalf + pwf) continue;
+			int layer = (dA < dB) ? uStrapUnder[i] : 0;
+			if (layer == 0) { if (d < dOver) { dOver = d; tileOver = uStrapTile[i]; } }
+			else if (d < dUnder) { dUnder = d; tileUnder = uStrapTile[i]; underOrg = dA; } // dA = distance to its crossing origin M
+		}
+		float coreHalf = max(uBandHalf - halfW, 0.0);   // ribbon core, inside its uLine border
+		float aa = 1.0 - rim;
+		col = baseFill;
+		// UNDER ribbon first, occluded by the nearest OVER band (occ = 1 outside it, 0 within). The over strand
+		// at each crossing includes the neighbour stub straddling the shared edge, so the under strand's two side
+		// borders stop exactly on the over band's edge — a true woven break, no colour change needed.
+		if (dUnder < uBandHalf + pwf) {
+			vec3 ribU = hsb2rgb((uTileHueA[tileUnder] + uHueOffset) / 360.0, 0.40, 1.0) * dim;
+			// Regular {p,q} completes every crossing with a neighbour stub, so the over band alone breaks the under
+			// strand cleanly. Uniform/snub (uWeaveFallback == 1) have no stubs — the over partner is a mirror-fold
+			// neighbour absent from the set — so ALSO break the under strand within a disc of its own crossing
+			// origin M (underOrg). That gives a woven notch at each crossing without the partner drawn: not as
+			// crisp as the stub-completed regular weave, but it reads as over/under rather than flat.
+			float occ = smoothstep(uBandHalf - pwf, uBandHalf + pwf, dOver);
+			if (uWeaveFallback == 1) occ *= smoothstep(uBandHalf - pwf, uBandHalf + pwf, underOrg);
+			float band = (1.0 - smoothstep(uBandHalf - pwf, uBandHalf + pwf, dUnder)) * occ * aa;
+			float core = (1.0 - smoothstep(coreHalf   - pwf, coreHalf   + pwf, dUnder)) * occ * aa;
+			col = mix(col, uLine, band);
+			col = mix(col, ribU, core);
+		}
+		// OVER ribbon on top, full width (its borders run unbroken through every crossing).
+		if (dOver < uBandHalf + pwf) {
+			vec3 ribO = hsb2rgb((uTileHueA[tileOver] + uHueOffset) / 360.0, 0.40, 1.0) * dim;
+			float band = (1.0 - smoothstep(uBandHalf - pwf, uBandHalf + pwf, dOver)) * aa;
+			float core = (1.0 - smoothstep(coreHalf   - pwf, coreHalf   + pwf, dOver)) * aa;
+			col = mix(col, uLine, band);
+			col = mix(col, ribO, core);
+		}
+	} else if (uIslamic == 1) {
+		// Plain + checkerboard: thin star line-stroke over the fill, taking the nearest strap. RE-MIXES from
+		// baseFill (dropping the tile-edge lineCov), so the star straps carry the linework — matching the
+		// spherical canvas. Turn off the fill (uShowFill) for a pure star pattern.
+		float ds = 1e9;
+		for (int i = 0; i < MAX_STRAP; i++) {
+			if (i >= uStrapCount) break;
+			ds = min(ds, segDistGeo(zk, uStrapA[i], uStrapB[i]));
+			ds = min(ds, min(distance(zk, uStrapA[i]), distance(zk, uStrapB[i])));
+		}
+		float strapCov = (1.0 - smoothstep(halfW - pwf, halfW + pwf, ds)) * (1.0 - rim);
+		col = mix(baseFill, uLine, strapCov);
+	}
 
 	// Feature-point overlay: mark this pixel's nearest centroid (red), edge midpoint (green), and vertex
 	// (blue) in the folded fundamental frame. Radius is in device px (·pwf → fundamental units) so the dots
@@ -417,12 +604,15 @@ export interface HyperbolicUniforms {
 	uShadeMode: WebGLUniformLocation | null;
 	uParityOffset: WebGLUniformLocation | null;
 	uHue: WebGLUniformLocation | null;
+	uHueOffset: WebGLUniformLocation | null;
 	uStrokePx: WebGLUniformLocation | null;
 	uStrokeMode: WebGLUniformLocation | null;
 	uSurface: WebGLUniformLocation | null;
 	uLine: WebGLUniformLocation | null;
 	uParityA: WebGLUniformLocation | null;
 	uParityB: WebGLUniformLocation | null;
+	uIslamicB: WebGLUniformLocation | null;
+	uIslamicC: WebGLUniformLocation | null;
 	uShowFill: WebGLUniformLocation | null;
 	uNTiles: WebGLUniformLocation | null;
 	uWythoff: WebGLUniformLocation | null;
@@ -446,14 +636,32 @@ export interface HyperbolicUniforms {
 	uPoints: WebGLUniformLocation | null;
 	uPointKind: WebGLUniformLocation | null;
 	uPointRadius: WebGLUniformLocation | null;
+	uIslamic: WebGLUniformLocation | null;
+	uStrapReflect: WebGLUniformLocation | null;
+	uStrapCount: WebGLUniformLocation | null;
+	uStrapA: WebGLUniformLocation | null;
+	uStrapB: WebGLUniformLocation | null;
+	uStrapTile: WebGLUniformLocation | null;
+	uTileCount: WebGLUniformLocation | null;
+	uTileCentre: WebGLUniformLocation | null;
+	uTileHueA: WebGLUniformLocation | null;
+	uIslamicStyle: WebGLUniformLocation | null;
+	uCheckerA: WebGLUniformLocation | null;
+	uCheckerB: WebGLUniformLocation | null;
+	uBandHalf: WebGLUniformLocation | null;
+	uStrapUnder: WebGLUniformLocation | null;
+	uWeaveFallback: WebGLUniformLocation | null;
 }
 
 const UNIFORM_NAMES: (keyof HyperbolicUniforms)[] = [
 	"uRes", "uDpr", "uPadPx", "uMa", "uMb", "uP", "uEdgeA", "uEdgeRho",
-	"uShadeMode", "uParityOffset", "uHue", "uStrokePx", "uStrokeMode", "uSurface", "uLine", "uParityA", "uParityB", "uShowFill",
+	"uShadeMode", "uParityOffset", "uHue", "uHueOffset", "uStrokePx", "uStrokeMode", "uSurface", "uLine", "uParityA", "uParityB", "uIslamicB", "uIslamicC", "uShowFill",
 	"uNTiles", "uWythoff", "uFootA", "uFootB", "uFootC", "uCornerV", "uRin", "uOcc", "uTileHue",
 	"uSnub", "uSnubS", "uSnubAs", "uSnubAis", "uSnubBs", "uSnubBis", "uSnubN", "uSnubB2s",
 	"uShowPoints", "uNumPoints", "uPoints", "uPointKind", "uPointRadius",
+	"uIslamic", "uStrapReflect", "uStrapCount", "uStrapA", "uStrapB",
+	"uStrapTile", "uTileCount", "uTileCentre", "uTileHueA",
+	"uIslamicStyle", "uCheckerA", "uCheckerB", "uBandHalf", "uStrapUnder", "uWeaveFallback",
 ];
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {

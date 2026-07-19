@@ -28,8 +28,12 @@ import {
 	hypCentroid,
 	hyperbolicFeaturePoints,
 	MAX_FEATURE_POINTS,
+	islamicStrap,
+	islamicStrapSegments,
+	strapReflect,
 	type Complex,
 	type Rings,
+	type WythoffSpec,
 } from "@/lib/render/hyperbolic";
 
 // Reference values from the verified (2,p,q) Schwarz-triangle geometry, computed independently to
@@ -565,5 +569,130 @@ describe("hyperbolicFeaturePoints (fundamental-frame markers for the points over
 
 		const s = g.snub!.s;
 		expect(byKind(pts, 2).some((f) => near(f.pos.x, s.x, 1e-9) && near(f.pos.y, s.y, 1e-9))).toBe(true);
+	});
+});
+
+describe("islamicStrap (regular {p,q} polygons-in-contact segment)", () => {
+	// P on the O–V diameter (mirror B, angle π/p): x·sin − y·cos = 0.
+	const onDiameter = (z: Complex, ang: number) => near(z.x * Math.sin(ang) - z.y * Math.cos(ang), 0, 1e-6);
+
+	for (const [p, q] of [[7, 3], [8, 3], [5, 4], [6, 4]] as Array<[number, number]>) {
+		it(`{${p},${q}}: E is the edge midpoint (rIn, 0)`, () => {
+			const { rIn } = mirrorParams(p, q);
+			const { E } = islamicStrap(p, q, 45);
+			expect(near(E.x, rIn) && near(E.y, 0)).toBe(true);
+		});
+
+		it(`{${p},${q}}: slider 0° ⇒ tip at the vertex V (original tiling)`, () => {
+			const { V } = schwarzCorners(p, q);
+			const { P } = islamicStrap(p, q, 0);
+			expect(near(P.x, V.x, 1e-6) && near(P.y, V.y, 1e-6)).toBe(true);
+		});
+
+		it(`{${p},${q}}: slider 90° ⇒ tip at the centre O (dual tiling)`, () => {
+			const { P } = islamicStrap(p, q, 90);
+			expect(near(P.x, 0) && near(P.y, 0)).toBe(true);
+		});
+
+		it(`{${p},${q}}: interior slider ⇒ tip on the O–V mirror, strictly between O and V`, () => {
+			const { rC } = mirrorParams(p, q);
+			for (const slider of [20, 45, 70]) {
+				const { P } = islamicStrap(p, q, slider);
+				expect(onDiameter(P, Math.PI / p)).toBe(true);
+				const r = Math.hypot(P.x, P.y);
+				expect(r).toBeGreaterThan(0);       // off the centre
+				expect(r).toBeLessThan(rC + 1e-9);   // not past the vertex
+				expect(r).toBeLessThan(1);           // inside the disk
+			}
+		});
+
+		it(`{${p},${q}}: the tip retracts monotonically toward O as the slider opens 0°→90°`, () => {
+			const radii = [0, 30, 60, 90].map((s) => {
+				const { P } = islamicStrap(p, q, s);
+				return Math.hypot(P.x, P.y);
+			});
+			for (let i = 1; i < radii.length; i++) expect(radii[i]).toBeLessThan(radii[i - 1]);
+		});
+	}
+});
+
+describe("islamicStrapSegments (uniform + snub strapwork)", () => {
+	const R: Rings = [true, false, false];
+	const near2 = (a: Complex, b: Complex, eps = 1e-5) => Math.abs(a.x - b.x) < eps && Math.abs(a.y - b.y) < eps;
+
+	it("regular {p,q} [1,0,0]: islamicStrap's segment plus its mirror-A twin", () => {
+		for (const [p, q] of [[7, 3], [5, 4], [8, 3]] as Array<[number, number]>) {
+			for (const slider of [20, 45, 70]) {
+				const segs = islamicStrapSegments({ p, q, rings: R }, slider);
+				// The fundamental segment E→P, followed by its real-axis (mirror-A) twin. The shader tests z
+				// directly (no |z.y| fold), so both mates are emitted; E lies on the axis so E == mirror(E).
+				expect(segs.length).toBe(2);
+				const { E, P } = islamicStrap(p, q, slider);
+				expect(near2(segs[0].a, E)).toBe(true);
+				expect(near2(segs[0].b, P)).toBe(true);
+				expect(near2(segs[1].a, { x: E.x, y: -E.y })).toBe(true);
+				expect(near2(segs[1].b, { x: P.x, y: -P.y })).toBe(true);
+			}
+		}
+	});
+
+	it("strapReflect: false for all — segments are expressed in the full kite, tested as z", () => {
+		expect(strapReflect({ p: 7, q: 3, rings: R })).toBe(false);
+		expect(strapReflect({ p: 7, q: 3, rings: [false, true, false] })).toBe(false);
+		expect(strapReflect({ p: 7, q: 3, rings: [true, true, true], snub: true })).toBe(false);
+	});
+
+	// Uniform tilings: every segment start sits on a wythoff foot (edge midpoint) at offset 0, and every
+	// segment stays inside the disk. Continuity: each present foot is the start of ≥1 segment.
+	for (const rings of [[false, true, false], [true, true, false], [true, false, true], [true, true, true]] as Rings[]) {
+		const spec: WythoffSpec = { p: 7, q: 3, rings };
+		it(`{7,3} rings ${rings.map(Number).join("")}: non-empty, all segments in-disk`, () => {
+			const segs = islamicStrapSegments(spec, 45);
+			expect(segs.length).toBeGreaterThan(0);
+			for (const seg of segs) {
+				expect(Math.hypot(seg.a.x, seg.a.y)).toBeLessThan(1);
+				expect(Math.hypot(seg.b.x, seg.b.y)).toBeLessThan(1);
+			}
+		});
+	}
+
+	it("{7,3} omnitruncated [1,1,1]: 3 feet × … segments; slider 0 pushes tips to tile vertices (W)", () => {
+		const spec: WythoffSpec = { p: 7, q: 3, rings: [true, true, true] };
+		// At slider 0 the strap tips (segment.b) collapse onto the shared vertex W (original tiling); the
+		// segments become degenerate (start ≈ end near W). At slider 90 tips reach the tile centres.
+		const s0 = islamicStrapSegments(spec, 0);
+		const s90 = islamicStrapSegments(spec, 90);
+		// 3 regions × 2 feet = 6 fundamental segments, each with its mirror-A twin ⇒ 12.
+		expect(s0.length).toBe(12);
+		expect(s90.length).toBe(12);
+		// slider 90: every tip lands at a region centre O/V/E — or, for a mirror-A twin, the reflected V.
+		const V = schwarzCorners(7, 3).V;
+		const centres: Complex[] = [{ x: 0, y: 0 }, V, { x: V.x, y: -V.y }, { x: mirrorParams(7, 3).rIn, y: 0 }];
+		for (const seg of s90) {
+			const hitsCentre = centres.some((c) => Math.hypot(seg.b.x - c.x, seg.b.y - c.y) < 1e-4);
+			expect(hitsCentre).toBe(true);
+		}
+	});
+
+	it("edge offset slides the contact off the foot but keeps the segment count", () => {
+		const spec: WythoffSpec = { p: 7, q: 3, rings: [true, true, true] };
+		const base = islamicStrapSegments(spec, 45, 0);
+		const shifted = islamicStrapSegments(spec, 45, 40);
+		expect(shifted.length).toBe(base.length);
+		// Every contact moved (two-point family): no shifted start coincides with its unshifted start.
+		let moved = 0;
+		for (let i = 0; i < base.length; i++) if (!near2(base[i].a, shifted[i].a, 1e-4)) moved++;
+		expect(moved).toBe(base.length);
+	});
+
+	it("snub sr{7,3} produces a non-empty, in-disk segment set within the shader cap", () => {
+		const spec: WythoffSpec = { p: 7, q: 3, rings: [true, true, true], snub: true };
+		const segs = islamicStrapSegments(spec, 45);
+		expect(segs.length).toBeGreaterThan(0);
+		expect(segs.length).toBeLessThanOrEqual(32); // MAX_STRAP
+		for (const seg of segs) {
+			expect(Math.hypot(seg.a.x, seg.a.y)).toBeLessThan(1);
+			expect(Math.hypot(seg.b.x, seg.b.y)).toBeLessThan(1);
+		}
 	});
 });

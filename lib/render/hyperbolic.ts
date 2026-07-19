@@ -9,6 +9,8 @@
 // orthogonal to the unit circle, centred on the +x axis. All formulas are the standard hyperbolic
 // right-triangle identities (Coxeter); distances become Euclidean disk radii via r = tanh(d/2).
 
+import { islamicTipsAngleFromSlider } from "@/utils/islamicNoise";
+
 export interface Complex {
 	x: number;
 	y: number;
@@ -50,6 +52,222 @@ export function mirrorParams(p: number, q: number): MirrorParams {
 	const edgeRho = (1 / rIn - rIn) / 2;
 	return { rIn, rC, edgeA, edgeRho };
 }
+
+/**
+ * The single polygons-in-contact (Hankin) strap segment of a regular {p,q} tiling, in the fundamental
+ * Schwarz triangle (upper-half representative). Because the star motif has the tile's full D_p symmetry,
+ * one geodesic segment E→P generates the whole pattern under the fold: E = (rIn, 0) is the edge midpoint;
+ * the strap leaves E at the contact angle set by the shared `islamicAngle` slider and terminates at P,
+ * where it meets the O–V mirror (the diameter at angle π/p). The shader reflects a folded pixel to the
+ * upper half and strokes this segment (see lib/render/hyperbolicShader.ts, uStrapE/uStrapP).
+ *
+ * Angle convention matches the flat REGULAR path via islamicTipsAngleFromSlider (a = π − 2·slider), so
+ * the endpoints agree: slider 0° ⇒ P = V (tips on vertices → original tiling); slider 90° ⇒ P = O (tips
+ * collapse to the centre → dual tiling). Between the endpoints the strap follows the true hyperbolic
+ * geodesic. Derivation and endpoint proofs: docs/superpowers/specs/2026-07-18-hyperbolic-islamic-strapwork-design.md.
+ */
+export function islamicStrap(p: number, q: number, sliderDeg: number): { E: Complex; P: Complex } {
+	const { rIn } = mirrorParams(p, q);
+	const E: Complex = { x: rIn, y: 0 };
+	const beta = islamicTipsAngleFromSlider(sliderDeg) / 2; // ∈ [0, π/2]
+	const sb = Math.sin(beta);
+	if (sb < 1e-9) return { E, P: { x: 0, y: 0 } }; // inward-normal limit ⇒ tip at the centre O
+	// Geodesic through E with Euclidean (= conformal) tangent (−cos β, sin β): its circle is orthogonal to
+	// the unit circle, so the centre κ = E + λ·(sin β, cos β) with λ from 2·κ·E = 1 + rIn² (orthogonality).
+	const lambda = (1 - rIn * rIn) / (2 * rIn * sb);
+	const kx = rIn + lambda * sb;
+	const ky = lambda * Math.cos(beta);
+	// Intersect that geodesic with the O–V diameter d = (cos π/p, sin π/p). Substituting X = u·d gives
+	// u² − 2u(d·κ) + 1 = 0 (using |κ|² − radius² = 1); the two roots multiply to 1, so take the in-disk one.
+	const ang = Math.PI / p;
+	const dx = Math.cos(ang), dy = Math.sin(ang);
+	const dk = dx * kx + dy * ky;
+	const u = dk - Math.sign(dk) * Math.sqrt(Math.max(dk * dk - 1, 0));
+	return { E, P: { x: u * dx, y: u * dy } };
+}
+
+// --- Geodesic kernel for the general strapwork (uniform + snub) ------------------------------------
+// A geodesic is stored as c0·(|z|²+1) + c1·x + c2·y = 0. This ONE form covers both circles orthogonal to
+// the unit circle (c0 ≠ 0) and diameters through the origin (c0 = 0), so the strap construction never
+// special-cases the two. All three builders are cross products in the (|z|²+1, x, y) coordinate.
+export interface Geodesic { c0: number; c1: number; c2: number; }
+
+/** Geodesic through two disk points (cross product of their rows). */
+export function geodesicThroughPoints(a: Complex, b: Complex): Geodesic {
+	const ra = a.x * a.x + a.y * a.y + 1, rb = b.x * b.x + b.y * b.y + 1;
+	return { c0: a.x * b.y - a.y * b.x, c1: a.y * rb - ra * b.y, c2: ra * b.x - a.x * rb };
+}
+
+/** Geodesic through `p` whose Euclidean (= conformal) tangent there is `t`. Row 2 encodes tangent ⟂ gradient. */
+export function geodesicThroughPointTangent(p: Complex, t: Complex): Geodesic {
+	const rp = p.x * p.x + p.y * p.y + 1, pt = 2 * (p.x * t.x + p.y * t.y);
+	return { c0: p.x * t.y - p.y * t.x, c1: p.y * pt - rp * t.y, c2: rp * t.x - p.x * pt };
+}
+
+/** Unit tangent at `p` of the geodesic p→toward (perpendicular to the conic gradient, oriented toward `toward`). */
+export function geodesicTangentAt(p: Complex, toward: Complex): Complex {
+	const g = geodesicThroughPoints(p, toward);
+	const gx = 2 * g.c0 * p.x + g.c1, gy = 2 * g.c0 * p.y + g.c2; // gradient at p
+	let tx = -gy, ty = gx;
+	const l = Math.hypot(tx, ty) || 1;
+	tx /= l; ty /= l;
+	if ((toward.x - p.x) * tx + (toward.y - p.y) * ty < 0) { tx = -tx; ty = -ty; }
+	return { x: tx, y: ty };
+}
+
+/** In-disk intersection of two geodesics, or null. Both are ⟂ the unit circle, so their radical line runs
+ *  through the origin; parametrise it and take the |z| < 1 root (the two roots multiply to 1). */
+export function geodesicIntersect(g: Geodesic, h: Geodesic): Complex | null {
+	// Two diameters both pass through the origin, so they meet there (radical line vanishes below — handle
+	// first). Coincident diameters (proportional (c1,c2)) share no isolated point.
+	if (Math.abs(g.c0) < 1e-14 && Math.abs(h.c0) < 1e-14) {
+		return Math.abs(g.c1 * h.c2 - g.c2 * h.c1) < 1e-14 ? null : { x: 0, y: 0 };
+	}
+	const lx = g.c0 * h.c1 - h.c0 * g.c1, ly = g.c0 * h.c2 - h.c0 * g.c2;
+	let dx = -ly, dy = lx;
+	const dl = Math.hypot(dx, dy);
+	if (dl < 1e-14) return null; // parallel or coincident
+	dx /= dl; dy /= dl;
+	// Solve A·τ² + B·τ + A = 0 along z = τ·(dx,dy), using whichever geodesic is a genuine circle (c0 ≠ 0).
+	const use = Math.abs(g.c0) >= 1e-14 ? g : h;
+	const A = use.c0, B = use.c1 * dx + use.c2 * dy;
+	const disc = B * B - 4 * A * A;
+	if (disc < 0) return null;
+	const sq = Math.sqrt(disc);
+	let best: Complex | null = null, bestR = Infinity;
+	for (const tau of [(-B + sq) / (2 * A), (-B - sq) / (2 * A)]) {
+		const r = Math.abs(tau);
+		if (r < 1 - 1e-9 && r < bestR) { bestR = r; best = { x: tau * dx, y: tau * dy }; }
+	}
+	return best;
+}
+
+/** Point at signed hyperbolic distance `dist` from `from`, along the geodesic toward `toward`. */
+export function geodesicMove(from: Complex, toward: Complex, dist: number): Complex {
+	const T = su11Translation(from);
+	const q0 = su11ApplyInverse(T, toward);
+	const l = Math.hypot(q0.x, q0.y);
+	if (l < 1e-14) return { x: from.x, y: from.y };
+	const r = Math.tanh(dist / 2); // signed: dist < 0 moves the opposite way
+	return su11Apply(T, { x: (q0.x / l) * r, y: (q0.y / l) * r });
+}
+
+export interface StrapSegment { a: Complex; b: Complex; tile?: number }
+
+// A/B/C fill data for the fold shader: every tile touching the fundamental domain, plus the strapwork with
+// each segment TAGGED by the tile it belongs to. The shader classifies a folded pixel by counting crossings
+// of the geodesic (tile centre)→pixel against THAT tile's straps only — mixing tile types corrupts the
+// parity (the multi-tile blob bug). `centers`/`hues` are parallel; `straps[i].tile` indexes into them.
+export interface IslamicTileData { centers: Complex[]; hues: number[]; straps: StrapSegment[] }
+
+/** One polygons-in-contact strap segment inside a regular tile: from contact point `M` (on an edge whose
+ *  far vertex is `vertex`), leaving at contact angle β toward the tile interior, to the strap vertex where
+ *  it meets the tile-centre→vertex bisector. `offsetFrac` slides the contact off the edge midpoint AWAY from
+ *  `vertex` — i.e. the ray leaning toward `vertex` roots on the OPPOSITE side, matching the flat two-point
+ *  construction (Polygon.calculateIslamicSegments: "the ray leaning +ê roots at M − d·ê"), so the ray and
+ *  its mirror mate cross just off the midpoint. Returns null if the geometry degenerates. */
+function tileStrapSegment(midpoint: Complex, center: Complex, vertex: Complex, beta: number, offsetFrac: number): StrapSegment | null {
+	let M = midpoint;
+	if (offsetFrac > 0) M = geodesicMove(midpoint, vertex, -offsetFrac * hypDist(midpoint, vertex));
+	const n = geodesicTangentAt(M, center); // inward normal (toward the tile centre)
+	const e = geodesicTangentAt(M, vertex); // along the edge, toward the shared vertex
+	const cb = Math.cos(beta), sb = Math.sin(beta);
+	const t = { x: cb * n.x + sb * e.x, y: cb * n.y + sb * e.y };
+	const S = geodesicIntersect(geodesicThroughPointTangent(M, t), geodesicThroughPoints(center, vertex));
+	return S ? { a: M, b: S } : null;
+}
+
+/** All strap segments of a hyperbolic tiling in the fundamental fold frame, for the shader to stroke. The
+ *  motif is the same regular-tile rosette everywhere (uniform and snub tiles are regular polygons); only
+ *  the fold frame differs (uniform reflects to the upper half, snub is chiral — see `strapReflect`). */
+export function islamicStrapSegments(spec: WythoffSpec, sliderDeg: number, offsetPct: number = 0): StrapSegment[] {
+	const beta = islamicTipsAngleFromSlider(sliderDeg) / 2;
+	const offset = Math.min(Math.max(offsetPct, 0), 100) / 100 * 0.98; // 0.98: never quite reach the vertex
+	return spec.snub ? snubStrapSegments(spec, beta, offset) : uniformStrapSegments(spec, beta, offset);
+}
+
+/** Whether the shader must fold the pixel to the upper-half Schwarz triangle (test (z.x,|z.y|)) before
+ *  matching strap segments. Now always false: both uniform (mirror-A twins emitted explicitly) and snub
+ *  (chiral) express the full kite pattern directly, so the pixel is tested as-is. Kept as a function so the
+ *  canvas/shader contract is explicit and a future fold-based optimisation has a single seam. */
+export function strapReflect(_spec: WythoffSpec): boolean {
+	return false;
+}
+
+// Uniform/Wythoffian (and regular): the three tile regions O, V, E meet at the Wythoff vertex W. Each present
+// region borders two tiling edges (its two feet); a foot on mirror X is the midpoint of the edge W—reflect_X(W)
+// (see wythoffFeet), so that edge's two endpoints are exactly W and its X-reflection. Emit BOTH rays of the
+// edge — one leaning toward each endpoint, each rooted (under offset) on the OPPOSITE side so the contact
+// slides ALONG the edge — matching the flat two-point construction. The shader tests z directly; wedge
+// rotation + edge inversions replicate the rest. A blanket mirror-A twin was wrong: it is the correct mate
+// only for A-crossing edges, which is exactly why multi-tile forms and the offset direction misbehaved.
+function uniformStrapSegments(spec: WythoffSpec, beta: number, offset: number): StrapSegment[] {
+	const { p, q, rings } = spec;
+	const W = wythoffVertex(p, q, rings);
+	const feet = wythoffFeet(p, q, rings);
+	const corners = schwarzCorners(p, q);
+	const { edgeA, edgeRho } = mirrorParams(p, q);
+	const has = (c: "O" | "V" | "E") => uniformDescriptor(p, q, rings).tiles.some((t) => t.corner === c);
+	// The edge's OTHER endpoint is W reflected across the mirror the foot lies on (A: real axis, B: π/p
+	// diameter, C: edge circle) — the same reflections wythoffFeet used to place the foot as their midpoint.
+	const otherA = reflectDiameter(W, 0);
+	const otherB = reflectDiameter(W, Math.PI / p);
+	const otherC = reflectEdgeCircle(W, edgeA, edgeRho);
+	const edges: Array<{ center: Complex; foot: Complex; other: Complex }> = [];
+	if (has("O")) edges.push({ center: corners.O, foot: feet.fA, other: otherA }, { center: corners.O, foot: feet.fB, other: otherB });
+	if (has("V")) edges.push({ center: corners.V, foot: feet.fB, other: otherB }, { center: corners.V, foot: feet.fC, other: otherC });
+	if (has("E")) edges.push({ center: corners.E, foot: feet.fA, other: otherA }, { center: corners.E, foot: feet.fC, other: otherC });
+	const present = (f: Complex) => (f.x - W.x) ** 2 + (f.y - W.y) ** 2 > 1e-8; // foot ≠ W ⇒ that edge exists
+	const segs: StrapSegment[] = [];
+	for (const e of edges) {
+		if (!present(e.foot)) continue;
+		for (const vertex of [W, e.other]) {
+			const seg = tileStrapSegment(e.foot, e.center, vertex, beta, offset);
+			if (seg) segs.push(seg);
+		}
+	}
+	return segs;
+}
+
+// Snub sr{p,q}: chiral, no mirror. Enumerate the tiles touching the central kite — the p-gon (centre O),
+// the q-gon (centre V), and the three snub triangles about s — and emit a strap segment from every edge
+// midpoint toward BOTH of the edge's endpoint vertices (no reflection to generate the second ray).
+function snubStrapSegments(spec: WythoffSpec, beta: number, offset: number): StrapSegment[] {
+	const { p, q } = spec;
+	const s = snubData(p, q);
+	const O: Complex = { x: 0, y: 0 };
+	const V = schwarzCorners(p, q).V;
+	// Each tile as (centre, ordered vertex ring). p-gon/q-gon: the two edges at s (both, since the kite's
+	// edge could be either); triangles: the full 3-cycle.
+	const tiles: Array<{ center: Complex; verts: Complex[]; closed: boolean }> = [
+		{ center: O, verts: [s.ais, s.s, s.as], closed: false },
+		{ center: V, verts: [s.bis, s.s, s.bs], closed: false },
+		{ center: hypCentroid([s.s, s.as, s.bis]), verts: [s.s, s.as, s.bis], closed: true },
+		{ center: hypCentroid([s.s, s.ais, s.n]), verts: [s.s, s.ais, s.n], closed: true },
+		{ center: hypCentroid([s.s, s.n, s.bs]), verts: [s.s, s.n, s.bs], closed: true },
+	];
+	const segs: StrapSegment[] = [];
+	for (const tile of tiles) {
+		const n = tile.verts.length;
+		const edges = tile.closed ? n : n - 1;
+		for (let i = 0; i < edges; i++) {
+			const u = tile.verts[i], v = tile.verts[(i + 1) % n];
+			const M = hypMidpoint(u, v);
+			for (const vertex of [u, v]) {
+				const seg = tileStrapSegment(M, tile.center, vertex, beta, offset);
+				if (seg) segs.push(seg);
+			}
+		}
+	}
+	return segs;
+}
+
+// ── Per-tile TAGGED strap data for the A/B/C fold-shader fill ────────────────────────────────────────
+// Moved to lib/render/hyperbolicIslamicPatch.ts (uniformIslamicData / snubIslamicData): the tile data now
+// builds each fundamental tile as a real regular polygon (Wythoff-vertex orbit) and runs the faithful
+// constructTileStraps on it — the same per-tile rosette the regular path, the flat Polygon.calculateIslamicSegments,
+// and the spherical buildIslamicPattern use. The earlier Wythoff-foot builder here emitted only the two edges
+// at the generating vertex, so the rosette never closed (broken chevrons, bare tiles showing through).
 
 /**
  * Map the accumulated pixel pan `offset` to a disk-translation vector `b` (|b| < 1). The magnitude is
@@ -361,7 +579,7 @@ export function schwarzCorners(p: number, q: number): SchwarzCorners {
 }
 
 /** Hyperbolic distance between two Poincaré-disk points. */
-function hypDist(u: Complex, v: Complex): number {
+export function hypDist(u: Complex, v: Complex): number {
 	const dx = u.x - v.x, dy = u.y - v.y;
 	const num = dx * dx + dy * dy;
 	const du = 1 - (u.x * u.x + u.y * u.y);
@@ -370,13 +588,13 @@ function hypDist(u: Complex, v: Complex): number {
 }
 
 /** Reflect a disk point across the diameter through the origin at angle `ang`. */
-function reflectDiameter(z: Complex, ang: number): Complex {
+export function reflectDiameter(z: Complex, ang: number): Complex {
 	const c = Math.cos(2 * ang), s = Math.sin(2 * ang);
 	return { x: c * z.x + s * z.y, y: s * z.x - c * z.y };
 }
 
 /** Reflect a disk point across the edge geodesic — inversion in the circle (cx,0), radius rho. */
-function reflectEdgeCircle(z: Complex, cx: number, rho: number): Complex {
+export function reflectEdgeCircle(z: Complex, cx: number, rho: number): Complex {
 	const dx = z.x - cx, dy = z.y;
 	const d2 = dx * dx + dy * dy || 1e-18;
 	const k = (rho * rho) / d2;
@@ -511,6 +729,7 @@ export function uniformDescriptor(p: number, q: number, rings: Rings): UniformDe
  * interactive canvas and the static thumbnail so the two render paths cannot drift. */
 export interface HyperbolicUniformValues {
 	p: number;
+	q: number;
 	edgeA: number;
 	edgeRho: number;
 	rIn: number;
@@ -546,6 +765,7 @@ export function hyperbolicUniformValues(spec: WythoffSpec): HyperbolicUniformVal
 		const qDistinct = q >= 4;
 		return {
 			p,
+			q,
 			edgeA: mp.edgeA,
 			edgeRho: mp.edgeRho,
 			rIn: mp.rIn,
@@ -565,6 +785,7 @@ export function hyperbolicUniformValues(spec: WythoffSpec): HyperbolicUniformVal
 	}
 	return {
 		p,
+		q,
 		edgeA: mp.edgeA,
 		edgeRho: mp.edgeRho,
 		rIn: mp.rIn,
@@ -644,7 +865,7 @@ export function snubData(p: number, q: number): SnubData {
 }
 
 /** Hyperbolic midpoint of two Poincaré-disk points (the point on the geodesic uv at half the distance). */
-function hypMidpoint(u: Complex, v: Complex): Complex {
+export function hypMidpoint(u: Complex, v: Complex): Complex {
 	const T = su11Translation(u); // sends 0 → u; its inverse sends u → 0
 	const v0 = su11ApplyInverse(T, v);
 	const len = Math.hypot(v0.x, v0.y);

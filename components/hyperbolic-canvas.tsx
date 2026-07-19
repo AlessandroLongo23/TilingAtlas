@@ -19,9 +19,15 @@ import {
 	su11Rotation,
 	su11Translation,
 	type Complex,
+	type IslamicTileData,
 	type Su11,
 	type WythoffSpec,
 } from "@/lib/render/hyperbolic";
+import { buildRegularPatch, constructTileStraps, uniformIslamicData, snubIslamicData, hyperbolicInterlaceData } from "@/lib/render/hyperbolicIslamicPatch";
+import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
+import { hexToRgb } from "@/lib/render/islamicGL";
+
+const MAX_TILES = 6; // must match hyperbolicShader.ts MAX_TILES
 
 // The hyperbolic view. A WebGL2 full-screen quad renders a regular {p,q} tiling in the Poincaré disk:
 // the fragment shader folds each pixel into the fundamental Schwarz triangle of the (2,p,q) group (see
@@ -40,6 +46,10 @@ interface HyperbolicCanvasProps {
 // Inset (CSS px) shrinking the disk radius so it clears the top bar and the viewport bottom instead of
 // touching them. Fed to the shader as uPadPx and mirrored into the pan/click scale R below so both agree.
 const DISK_PAD_PX = 24;
+
+// Must match MAX_STRAP in lib/render/hyperbolicShader.ts (the strap-segment uniform-array size). Sized for
+// the largest fundamental-domain rosette set: omnitruncated tr{8,3} = 16-gon(32)+6-gon(12)+square(8) = 52.
+const MAX_STRAP_SEGS = 64;
 
 export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -74,6 +84,78 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 	}, [geom]);
 	const pointDataRef = useRef(pointData);
 	pointDataRef.current = pointData;
+
+	// Islamic strapwork segments, packed into the flat arrays uStrapA[]/uStrapB[] expect. Depends on the
+	// tiling and the two live construction sliders (contact angle + edge offset), so recomputed when any of
+	// those change; the render loop uploads it only while the Islamic toggle is on.
+	const islamicAngle = useConfiguration((s) => s.islamicAngle);
+	const islamicEdgeOffset = useConfiguration((s) => s.islamicEdgeOffset);
+	const islamicCount = useConfiguration((s) => s.islamicIntersectionCount);
+	const islamicStyle = useConfiguration((s) => s.islamicStyle);
+	const islamicChirality = useConfiguration((s) => s.islamicChirality);
+	const strapData = useMemo(() => {
+		if (!geom) return null;
+		// Per-tile TAGGED strap data for the fold-shader A/B/C fill. Every tile touching the fundamental domain
+		// contributes its centre + hue + its own straps (tagged by tile index); the shader classifies a pixel by
+		// the crossing parity from each tile's centre, counting ONLY that tile's straps — the local
+		// polygons-in-contact rule, each tile independent. REGULAR {p,q}: one tile, the full central rosette
+		// (2·p segments) built by the faithful growing-ray construction (islamicNormalAngleFromSlider maps the
+		// from-edge slider to the from-normal angle it wants). UNIFORM/SNUB: the ≤3 / ≤5 tiles from hyperbolic.ts.
+		// Regular {p,q} tests the raw fold coord (reflect 0); uniform folds once more to the upper-half Schwarz
+		// triangle (reflect 1) so a single upper-half copy of each off-axis tile covers its mirror twin; snub is
+		// chiral (reflect 0). All three build the SAME faithful per-tile rosette (constructTileStraps).
+		const isRegular = wythoff.rings[0] && !wythoff.rings[1] && !wythoff.rings[2] && !wythoff.snub;
+		const reflect = !isRegular && !wythoff.snub;
+		let data: IslamicTileData;
+		if (isRegular) {
+			const central = buildRegularPatch(wythoff.p, wythoff.q, 0)[0];
+			const theta = islamicNormalAngleFromSlider(islamicAngle);
+			const frac = Math.min(Math.max(islamicEdgeOffset, 0), 100) / 100;
+			const nStop = Math.min(Math.max(Math.round(islamicCount), 1), 3);
+			data = {
+				centers: [{ x: 0, y: 0 }],
+				hues: [geom.hue],
+				straps: constructTileStraps(central, theta, frac, nStop).map(([a, b]) => ({ a, b, tile: 0 })),
+			};
+		} else if (wythoff.snub) {
+			data = snubIslamicData(wythoff, islamicAngle, islamicEdgeOffset, islamicCount);
+		} else {
+			data = uniformIslamicData(wythoff, islamicAngle, islamicEdgeOffset, islamicCount);
+		}
+		// Interlace uploads an AUGMENTED strap set: the central rosette PLUS the neighbour stubs that complete
+		// each edge-midpoint crossing (regular {p,q} only) — so the shader sees genuine 4-valent crossings and
+		// the over-band occlusion draws a real X-weave. Other styles upload just the central straps.
+		const under = new Int32Array(MAX_STRAP_SEGS);
+		let packStraps = data.straps;
+		if (islamicStyle === "interlace") {
+			const il = hyperbolicInterlaceData(wythoff, data.straps, islamicAngle, islamicEdgeOffset, islamicCount, islamicChirality);
+			packStraps = il.straps;
+			for (let i = 0; i < Math.min(il.straps.length, MAX_STRAP_SEGS); i++) under[i] = il.under[i] ?? 0;
+		}
+		const straps = packStraps.slice(0, MAX_STRAP_SEGS);
+		const a = new Float32Array(MAX_STRAP_SEGS * 2);
+		const b = new Float32Array(MAX_STRAP_SEGS * 2);
+		const tile = new Int32Array(MAX_STRAP_SEGS);
+		straps.forEach((s, i) => {
+			a[2 * i] = s.a.x; a[2 * i + 1] = s.a.y;
+			b[2 * i] = s.b.x; b[2 * i + 1] = s.b.y;
+			tile[i] = s.tile ?? 0;
+		});
+		const tileCount = Math.min(data.centers.length, MAX_TILES);
+		const centers = new Float32Array(MAX_TILES * 2);
+		const hues = new Float32Array(MAX_TILES);
+		for (let j = 0; j < tileCount; j++) {
+			centers[2 * j] = data.centers[j].x; centers[2 * j + 1] = data.centers[j].y;
+			hues[j] = data.hues[j];
+		}
+		// Band width is a fraction of the median CENTRAL strap length (stable regardless of the stubs).
+		const lens = data.straps.map((s) => Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y)).sort((x, y) => x - y);
+		const medianLen = lens.length ? lens[Math.floor(lens.length / 2)] : 0.1;
+		return { a, b, tile, count: straps.length, centers, hues, tileCount, reflect, under, medianLen, weaveFallback: !isRegular };
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [specKey, islamicAngle, islamicEdgeOffset, islamicCount, islamicStyle, islamicChirality]);
+	const strapDataRef = useRef(strapData);
+	strapDataRef.current = strapData;
 
 	// The accumulated view isometry and the pan/rotation state we last folded into it.
 	const viewRef = useRef<Su11>(su11Identity());
@@ -219,6 +301,7 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 			gl.uniform1i(U.uShadeMode, cfg.hyperbolicShading === "parity" ? 1 : 0);
 			gl.uniform1f(U.uParityOffset, parityOffsetRef.current);
 			gl.uniform1f(U.uHue, g.hue);
+			gl.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
 			// Match Geometry and Constant at the same slider value so toggling doesn't force a re-adjust.
 			// Constant holds a flat CONSTANT_PX·lineWidth device-px stroke everywhere. Geometry keeps a fixed
 			// width in FUNDAMENTAL units (halfW = uStrokePx·uEdgeRho in the shader) — smooth under panning because
@@ -277,6 +360,44 @@ export function HyperbolicCanvas({ width, height, wythoff }: HyperbolicCanvasPro
 				gl.uniform1f(U.uPointRadius, 3.0 * dpr);
 			} else {
 				gl.uniform1i(U.uNumPoints, 0);
+			}
+
+			// Islamic strapwork overlay: all hyperbolic tilings now. Off ⇒ uIslamic 0, so the default view
+			// pays nothing. The segments are prepacked (strapData memo) and re-uploaded each frame from the ref.
+			const sd = strapDataRef.current;
+			const islamicOn = cfg.isIslamic && !!sd;
+			gl.uniform1i(U.uIslamic, islamicOn ? 1 : 0);
+			if (islamicOn && sd) {
+				// Uniform tilings fold once more to the upper-half Schwarz triangle so one upper-half copy of each
+				// off-axis tile covers its mirror twin; regular/snub test the kite coord directly (see strapData).
+				gl.uniform1i(U.uStrapReflect, sd.reflect ? 1 : 0);
+				gl.uniform1i(U.uStrapCount, sd.count);
+				gl.uniform2fv(U.uStrapA, sd.a);
+				gl.uniform2fv(U.uStrapB, sd.b);
+				gl.uniform1iv(U.uStrapTile, sd.tile);
+				gl.uniform1i(U.uTileCount, sd.tileCount);
+				gl.uniform2fv(U.uTileCentre, sd.centers);
+				gl.uniform1fv(U.uTileHueA, sd.hues);
+				// A/B/C background colours — same palette as the flat view; the shader dims them per tile like
+				// class A. C (edge diamonds) only appears for a single tile type (regular); uniform/snub use B.
+				const [br, bg, bb] = hexToRgb(cfg.islamicFillColorB);
+				const [cr, cg, cb] = hexToRgb(cfg.islamicFillColorC);
+				gl.uniform3f(U.uIslamicB, br, bg, bb);
+				gl.uniform3f(U.uIslamicC, cr, cg, cb);
+				// Decoration style: plain (A/B/C fill + thin lines) / interlace (woven bands) / checkerboard.
+				const styleId = cfg.islamicStyle === "interlace" ? 1 : cfg.islamicStyle === "checkerboard" ? 2 : 0;
+				gl.uniform1i(U.uIslamicStyle, styleId);
+				const [kar, kag, kab] = hexToRgb(cfg.islamicCheckerColorA);
+				const [kbr, kbg, kbb] = hexToRgb(cfg.islamicCheckerColorB);
+				gl.uniform3f(U.uCheckerA, kar, kag, kab);
+				gl.uniform3f(U.uCheckerB, kbr, kbg, kbb);
+				// Ribbon half-width in fundamental units: a fraction of the median strap length, so the band
+				// tapers toward the rim like a geometry-mode stroke. Only meaningful for interlace.
+				gl.uniform1f(U.uBandHalf, 0.5 * cfg.islamicBandWidth * sd.medianLen);
+				gl.uniform1iv(U.uStrapUnder, sd.under);
+				// Regular {p,q} weaves via neighbour stubs (clean over-band break); uniform/snub have no stubs, so
+				// the shader also breaks under strands at a disc round their own crossing origin (woven notch).
+				gl.uniform1i(U.uWeaveFallback, sd.weaveFallback ? 1 : 0);
 			}
 
 			gl.drawArrays(gl.TRIANGLES, 0, 6);
