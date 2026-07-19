@@ -61,6 +61,23 @@ describe("buildCellMesh", () => {
 		expect(mesh.v2).toEqual([0, 1]);
 	});
 
+	it("returns the content's lattice extent (centred unit square)", () => {
+		const mesh = buildCellMesh(cell)!;
+		expect(mesh.extent).toEqual({ aMin: -0.5, aMax: 0.5, bMin: -0.5, bMax: 0.5 });
+	});
+
+	it("extent tracks content displaced from the anchor (the corner-wedge case)", () => {
+		const displaced = {
+			p: [{ v: squareVerts.map(([x, y]) => [x + 2, y + 1]), n: 4 }],
+			b: [[1, 0], [0, 1]],
+		};
+		const mesh = buildCellMesh(displaced)!;
+		expect(mesh.extent.aMin).toBeCloseTo(1.5, 12);
+		expect(mesh.extent.aMax).toBeCloseTo(2.5, 12);
+		expect(mesh.extent.bMin).toBeCloseTo(0.5, 12);
+		expect(mesh.extent.bMax).toBeCloseTo(1.5, 12);
+	});
+
 	it("returns null for an empty / degenerate cell", () => {
 		expect(buildCellMesh({ p: [], b: [[1, 0], [0, 1]] })).toBeNull();
 		expect(buildCellMesh({ p: [{ v: squareVerts, n: 4 }], b: [[1, 0], [2, 0]] })).toBeNull(); // det 0
@@ -87,5 +104,37 @@ describe("buildCellMesh stroke geometry", () => {
 		// +0 in the shader. A real left-normal sign error would flip ny to -1 and still fail here.
 		expect(Array.from(mesh.strokeNorm.slice(0, 4)).map((v) => v + 0)).toEqual([0, 1, 0, 1]);
 		expect(Array.from(mesh.strokeSide.slice(0, 6))).toEqual([-1, 1, -1, -1, 1, 1]);
+	});
+});
+
+describe("buildCellMesh point geometry", () => {
+	it("emits a 6-vert disk quad per centroid/halfway/vertex", () => {
+		const mesh = buildCellMesh(cell)!;
+		// square: 1 centroid + 4 halfways + 4 vertices = 9 points × 6 verts = 54.
+		expect(mesh.pointVertexCount).toBe(54);
+		expect(mesh.pointPos.length).toBe(108);
+		expect(mesh.pointCorner.length).toBe(108);
+		expect(mesh.pointColor.length).toBe(162);
+	});
+
+	it("orders points centroid→halfways→vertices and colours them red/green/blue", () => {
+		const mesh = buildCellMesh(cell)!;
+		const posAt = (v: number) => Array.from(mesh.pointPos.slice(v * 2, v * 2 + 2));
+		const colAt = (v: number) => Array.from(mesh.pointColor.slice(v * 3, v * 3 + 3));
+		// vert 0 = centroid of the centred square at (0,0), red.
+		expect(posAt(0)).toEqual([0, 0]);
+		expect(colAt(0)).toEqual([1, 0, 0]);
+		// vert 6 = first halfway (midpoint of edge 0), green.
+		expect(posAt(6)).toEqual([0, -0.5]);
+		expect(colAt(6)).toEqual([0, 1, 0]);
+		// vert 30 = first vertex, blue.
+		expect(colAt(30)).toEqual([0, 0, 1]);
+	});
+
+	it("each disk quad's corners are the unit [-1,1] quad (2 triangles)", () => {
+		const mesh = buildCellMesh(cell)!;
+		expect(Array.from(mesh.pointCorner.slice(0, 12))).toEqual([
+			-1, -1,  1, -1,  1, 1,  -1, -1,  1, 1,  -1, 1,
+		]);
 	});
 });

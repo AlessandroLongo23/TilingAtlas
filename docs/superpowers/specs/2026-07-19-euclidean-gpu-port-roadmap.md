@@ -90,13 +90,14 @@ Strict spec order (AL choice, 2026-07-19): M1b → M2 → M3 → M4-rest → M5.
 while the relevant mode/toggle is active.
 
 ### M1b: points
-| Element | Toggle | Source | Cost |
+| Element | Toggle | Source | Status |
 |---|---|---|---|
-| Polygon points (centroid/halfway/vertex dots) | `showPolygonPoints` (live) | `Tiling.show` points block ~153 | O(verts) ellipses/frame |
-| Construction-point labels (c#/h#/v#) | `showConstructionPoints` (dev/rare) | [Tiling.ts:492](../../../lib/classes/Tiling.ts#L492) | bounded to the anchor cell |
+| Polygon points (centroid/halfway/vertex dots) | `showPolygonPoints` (live) | `Tiling.show` points block ~153 | **DONE** (`POINTS_VERT/FRAG` in flatTilingGL, `buildCellMesh` point buffers, points pass in euclidean-canvas; p5 skips them when the shader owns the fill) |
+| Construction-point labels (c#/h#/v#) | `showConstructionPoints` (dev/rare) | [Tiling.ts:492](../../../lib/classes/Tiling.ts#L492) | still p5 (text labels, lowest priority) |
 
-Port as instanced screen-constant disks (one small shader; shared with M3). Labels are text, lowest
-priority.
+Polygon points are instanced screen-constant disks (unit-quad billboards, SDF disk + dark rim in the
+fragment shader), coloured red/green/blue like the p5 dots, sharing the fill's instance grid. The disk
+shader is the reusable base for M3's orbit dots. Construction-point *labels* stay on p5 for now (text).
 
 ### M2: selection-transition wave
 | Element | Toggle | Source | Cost |

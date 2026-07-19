@@ -481,7 +481,9 @@ export function Canvas({
 				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic && propsRef.current.orbitData != null;
 				const opacity = orbitMode ? 0.3 : 1;
 				if (cfg.exportGraphButtonHover) tiling.showGraph(p5);
-				else tiling.show(p5, cfg.showPolygonPoints, opacity, cfg.circlePacking, cull, scaleOf, skipFill);
+				// skipFill ⇒ the flat WebGL renderer owns the fill AND (M1b) the points; p5 draws neither, so
+				// pass showPolygonPoints false to suppress its dot loop (the shader draws the dots instead).
+				else tiling.show(p5, cfg.showPolygonPoints && !skipFill, opacity, cfg.circlePacking, cull, scaleOf, skipFill);
 				if (cfg.showConstructionPoints) tiling.drawConstructionPoints(p5);
 				// Orbit dots ride on the same world transform, above the (dimmed) tiles. Skipped during the
 				// selection transition (scaleOf active) so they don't float off the shrinking outline. `k`

@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { buildCellMesh, type CellMesh } from "@/lib/render/buildCellMesh";
 import { computeFillRadii, wrapOffset } from "@/lib/render/flatView";
+import { FILL_VERT, FILL_FRAG, STROKE_VERT, STROKE_FRAG, POINTS_VERT, POINTS_FRAG, compileShader } from "@/lib/render/flatTilingGL";
 import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
@@ -23,91 +24,8 @@ interface EuclideanCanvasProps {
 	paramCell?: ParametricCellData | null;
 }
 
-const VERT = `#version 300 es
-in vec2 aPos;
-in float aHue;
-in vec2 aInst;
-uniform vec2 uOffset;   // wrapped pan, centred CSS px, y down
-uniform float uZoom;
-uniform float uRot;
-uniform vec2 uV1;
-uniform vec2 uV2;
-uniform vec2 uHalf;     // canvas CSS half-size (w/2, h/2)
-out float vHue;
-void main() {
-	// Transcribes flatWorldToClip in lib/render/flatView.ts — keep the two in step.
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
-	float c = cos(uRot), s = sin(uRot);
-	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
-	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
-	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
-	vHue = aHue;
-}
-`;
-
-const FRAG = `#version 300 es
-precision highp float;
-in float vHue;
-out vec4 frag;
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
-void main() {
-	// s=0.40, b=1.0, opaque — matches Tiling.show and the inversive shader so the views agree on colour.
-	frag = vec4(hsb2rgb(vHue / 360.0, 0.40, 1.0), 1.0);
-}
-`;
-
-const STROKE_VERT = `#version 300 es
-in vec2 aPos;
-in vec2 aNorm;    // world-space edge normal
-in float aSide;   // +1 / -1
-in vec2 aInst;
-uniform vec2 uOffset;
-uniform float uZoom;
-uniform float uRot;
-uniform vec2 uV1;
-uniform vec2 uV2;
-uniform vec2 uHalf;
-uniform float uHalfStrokePx;  // half stroke width, CSS px
-void main() {
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
-	float c = cos(uRot), s = sin(uRot);
-	// Same centred-screen map as the fill.
-	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
-	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
-	// Carry the edge normal through the SAME linear map (no translation), renormalise in screen space,
-	// push by half the stroke width -> constant CSS-px outline at any zoom.
-	float nsx = uZoom * (c * aNorm.x + s * aNorm.y);
-	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
-	float nl = length(vec2(nsx, nsy));
-	vec2 n = nl > 0.0 ? vec2(nsx, nsy) / nl : vec2(0.0);
-	sx += aSide * uHalfStrokePx * n.x;
-	sy += aSide * uHalfStrokePx * n.y;
-	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
-}
-`;
-
-const STROKE_FRAG = `#version 300 es
-precision highp float;
-uniform vec3 uStroke;
-out vec4 frag;
-void main() { frag = vec4(uStroke, 1.0); }
-`;
-
-function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
-	const sh = gl.createShader(type);
-	if (!sh) return null;
-	gl.shaderSource(sh, src);
-	gl.compileShader(sh);
-	if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-		console.error("euclidean shader compile failed:", gl.getShaderInfoLog(sh));
-		gl.deleteShader(sh);
-		return null;
-	}
-	return sh;
-}
+// The GLSL sources + compile helper moved to lib/render/flatTilingGL.ts (imported above) so the
+// theory-page preview cards render through the exact same shaders — edit them there.
 
 export function EuclideanCanvas({ width, height, translationalCell, translationalCellId, paramCell = null }: EuclideanCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -124,6 +42,12 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 	const strokeSideBufRef = useRef<WebGLBuffer | null>(null);
 	const strokeUniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
 	const strokeAttribsRef = useRef<Record<string, number>>({});
+	const pointsProgRef = useRef<WebGLProgram | null>(null);
+	const pointsPosBufRef = useRef<WebGLBuffer | null>(null);
+	const pointsCornerBufRef = useRef<WebGLBuffer | null>(null);
+	const pointsColorBufRef = useRef<WebGLBuffer | null>(null);
+	const pointsUniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
+	const pointsAttribsRef = useRef<Record<string, number>>({});
 	const meshRef = useRef<CellMesh | null>(null);
 	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
 	const sizeRef = useRef({ width, height });
@@ -146,6 +70,12 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeNorm, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, strokeSideBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeSide, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, pointsPosBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointPos, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, pointsCornerBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointCorner, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, pointsColorBufRef.current);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointColor, gl.STATIC_DRAW);
 		meshRef.current = mesh;
 		instRef.current = { Ri: -1, Rj: -1, count: 0 }; // force an instance rebuild for the new basis
 	};
@@ -157,8 +87,8 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		if (!gl) { console.error("euclidean view: WebGL2 unavailable"); return; }
 		glRef.current = gl;
 
-		const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-		const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+		const vs = compileShader(gl, gl.VERTEX_SHADER, FILL_VERT);
+		const fs = compileShader(gl, gl.FRAGMENT_SHADER, FILL_FRAG);
 		if (!vs || !fs) return;
 		const prog = gl.createProgram();
 		gl.attachShader(prog, vs);
@@ -171,7 +101,7 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		progRef.current = prog;
 		gl.useProgram(prog);
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset"]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst"]) {
@@ -182,8 +112,8 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		hueBufRef.current = gl.createBuffer();
 		instBufRef.current = gl.createBuffer();
 
-		const strokeVs = compile(gl, gl.VERTEX_SHADER, STROKE_VERT);
-		const strokeFs = compile(gl, gl.FRAGMENT_SHADER, STROKE_FRAG);
+		const strokeVs = compileShader(gl, gl.VERTEX_SHADER, STROKE_VERT);
+		const strokeFs = compileShader(gl, gl.FRAGMENT_SHADER, STROKE_FRAG);
 		if (!strokeVs || !strokeFs) return;
 		const strokeProg = gl.createProgram();
 		gl.attachShader(strokeProg, strokeVs);
@@ -205,6 +135,30 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 		strokePosBufRef.current = gl.createBuffer();
 		strokeNormBufRef.current = gl.createBuffer();
 		strokeSideBufRef.current = gl.createBuffer();
+
+		const pointsVs = compileShader(gl, gl.VERTEX_SHADER, POINTS_VERT);
+		const pointsFs = compileShader(gl, gl.FRAGMENT_SHADER, POINTS_FRAG);
+		if (!pointsVs || !pointsFs) return;
+		const pointsProg = gl.createProgram();
+		gl.attachShader(pointsProg, pointsVs);
+		gl.attachShader(pointsProg, pointsFs);
+		gl.linkProgram(pointsProg);
+		if (!gl.getProgramParameter(pointsProg, gl.LINK_STATUS)) {
+			console.error("euclidean points program link failed:", gl.getProgramInfoLog(pointsProg));
+			return;
+		}
+		pointsProgRef.current = pointsProg;
+
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uRadiusPx"]) {
+			pointsUniformsRef.current[name] = gl.getUniformLocation(pointsProg, name);
+		}
+		for (const name of ["aPos", "aCorner", "aColor", "aInst"]) {
+			pointsAttribsRef.current[name] = gl.getAttribLocation(pointsProg, name);
+		}
+
+		pointsPosBufRef.current = gl.createBuffer();
+		pointsCornerBufRef.current = gl.createBuffer();
+		pointsColorBufRef.current = gl.createBuffer();
 
 		let raf = 0;
 		const render = () => {
@@ -243,7 +197,7 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			const v2 = new Vector(mesh.v2[0], mesh.v2[1]);
 
 			// Instance grid: (i,j) over the visible lattice range. Rebuild only when the radius changes.
-			const { Ri, Rj } = computeFillRadii(v1, v2, mesh.det, ctrl.zoom, w, h, rot);
+			const { Ri, Rj } = computeFillRadii(v1, v2, mesh.det, ctrl.zoom, w, h, rot, mesh.extent);
 			if (Ri !== instRef.current.Ri || Rj !== instRef.current.Rj) {
 				const inst: number[] = [];
 				for (let i = -Ri; i <= Ri; i++) for (let j = -Rj; j <= Rj; j++) inst.push(i, j);
@@ -278,6 +232,7 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			g.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
 			g.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
 			g.uniform2f(U.uHalf, w / 2, h / 2);
+			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
 
 			if (cfg.showPolygonFill) {
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
@@ -326,6 +281,41 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.strokeVertexCount, instRef.current.count);
 				g.useProgram(progRef.current); // restore the fill program for next frame's fill pass
 			}
+
+			// Points pass (showPolygonPoints): instanced disks at each centroid/halfway/vertex, screen-
+			// constant radius, coloured red/green/blue with a dark rim — matching Tiling.show's p5 dots,
+			// which canvas.tsx now skips when this shader is active. Same instance grid as the fill.
+			if (cfg.showPolygonPoints && mesh.pointVertexCount > 0) {
+				g.enable(g.BLEND);
+				g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
+				g.useProgram(pointsProgRef.current);
+				const PA = pointsAttribsRef.current, PU = pointsUniformsRef.current;
+				g.bindBuffer(g.ARRAY_BUFFER, pointsPosBufRef.current);
+				g.enableVertexAttribArray(PA.aPos);
+				g.vertexAttribPointer(PA.aPos, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(PA.aPos, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, pointsCornerBufRef.current);
+				g.enableVertexAttribArray(PA.aCorner);
+				g.vertexAttribPointer(PA.aCorner, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(PA.aCorner, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, pointsColorBufRef.current);
+				g.enableVertexAttribArray(PA.aColor);
+				g.vertexAttribPointer(PA.aColor, 3, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(PA.aColor, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
+				g.enableVertexAttribArray(PA.aInst);
+				g.vertexAttribPointer(PA.aInst, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(PA.aInst, 1);
+				g.uniform2f(PU.uOffset, draw.x, draw.y);
+				g.uniform1f(PU.uZoom, ctrl.zoom);
+				g.uniform1f(PU.uRot, rot);
+				g.uniform2f(PU.uV1, mesh.v1[0], mesh.v1[1]);
+				g.uniform2f(PU.uV2, mesh.v2[0], mesh.v2[1]);
+				g.uniform2f(PU.uHalf, w / 2, h / 2);
+				g.uniform1f(PU.uRadiusPx, 2.5); // p5 drew a 5px-diameter dot (5/zoom world units)
+				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.pointVertexCount, instRef.current.count);
+				g.useProgram(progRef.current); // restore the fill program for next frame's fill pass
+			}
 		};
 		raf = requestAnimationFrame(render);
 
@@ -343,9 +333,16 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 			if (strokePosBufRef.current) gl.deleteBuffer(strokePosBufRef.current);
 			if (strokeNormBufRef.current) gl.deleteBuffer(strokeNormBufRef.current);
 			if (strokeSideBufRef.current) gl.deleteBuffer(strokeSideBufRef.current);
+			if (pointsProgRef.current) gl.deleteProgram(pointsProgRef.current);
+			gl.deleteShader(pointsVs);
+			gl.deleteShader(pointsFs);
+			if (pointsPosBufRef.current) gl.deleteBuffer(pointsPosBufRef.current);
+			if (pointsCornerBufRef.current) gl.deleteBuffer(pointsCornerBufRef.current);
+			if (pointsColorBufRef.current) gl.deleteBuffer(pointsColorBufRef.current);
 			glRef.current = null;
 			progRef.current = null;
 			strokeProgRef.current = null;
+			pointsProgRef.current = null;
 			meshRef.current = null;
 		};
 	}, []);

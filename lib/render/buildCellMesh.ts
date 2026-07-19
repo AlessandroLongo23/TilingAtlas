@@ -4,7 +4,7 @@
 // the viewport, so only ONE cell is triangulated regardless of zoom. Fan-from-centroid is valid for
 // every catalogue tile: regular tiles are convex and star tiles are star-shaped from their centre.
 
-import { DEGENERATE_DET } from "@/lib/render/flatView";
+import { DEGENERATE_DET, latticeExtentFromBounds, type LatticeExtent } from "@/lib/render/flatView";
 import {
 	parseBaseCell,
 	polygonFillHue,
@@ -24,9 +24,21 @@ export interface CellMesh {
 	strokeNorm: Float32Array; // 2 floats/vert
 	strokeSide: Float32Array; // 1 float/vert
 	strokeVertexCount: number;
+	// Points (showPolygonPoints): per centroid/halfway/vertex a screen-constant disk drawn as a quad (6
+	// verts). Each vert carries the point's world position (pointPos), a unit-quad corner in [-1,1]
+	// (pointCorner — the SDF disk + border are computed from it in the fragment shader), and the point's
+	// RGB colour (pointColor: centroid red, halfway green, vertex blue, matching Tiling.show). Instanced by
+	// the same lattice grid as the fill.
+	pointPos: Float32Array;    // 2 floats/vert
+	pointCorner: Float32Array; // 2 floats/vert
+	pointColor: Float32Array;  // 3 floats/vert
+	pointVertexCount: number;
 	v1: [number, number];
 	v2: [number, number];
 	det: number;
+	// Content bounding box in lattice coordinates — feeds computeFillRadii so the instance grid reaches
+	// the viewport even when the cell's polygons sit periods away from their anchor.
+	extent: LatticeExtent;
 }
 
 export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | null {
@@ -100,6 +112,37 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		}
 	}
 
+	// Point disks: centroid + edge-midpoints (halfways) + vertices, each a 6-vert quad for a screen-
+	// constant dot. Shared vertices/halfways between adjacent polygons are emitted per polygon (harmless
+	// overdraw — the disks are opaque and identical), mirroring Tiling.show's per-node loop.
+	const QUAD: readonly [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]];
+	let pCount = 0;
+	for (const poly of base.polys) pCount += 1 + 2 * poly.vertices.length; // centroid + n halfways + n vertices
+	const pointPos = new Float32Array(pCount * 6 * 2);
+	const pointCorner = new Float32Array(pCount * 6 * 2);
+	const pointColor = new Float32Array(pCount * 6 * 3);
+	let ptv = 0;
+	const pushPoint = (px: number, py: number, r: number, g: number, b: number) => {
+		for (const [qx, qy] of QUAD) {
+			pointPos[ptv * 2] = px; pointPos[ptv * 2 + 1] = py;
+			pointCorner[ptv * 2] = qx; pointCorner[ptv * 2 + 1] = qy;
+			pointColor[ptv * 3] = r; pointColor[ptv * 3 + 1] = g; pointColor[ptv * 3 + 2] = b;
+			ptv++;
+		}
+	};
+	for (const poly of base.polys) {
+		const vs = poly.vertices;
+		let cx = 0, cy = 0;
+		for (const v of vs) { cx += v.x; cy += v.y; }
+		cx /= vs.length; cy /= vs.length;
+		pushPoint(cx, cy, 1, 0, 0); // centroid: red
+		for (let k = 0; k < vs.length; k++) {
+			const a = vs[k], b = vs[(k + 1) % vs.length];
+			pushPoint((a.x + b.x) / 2, (a.y + b.y) / 2, 0, 1, 0); // halfway (edge midpoint): green
+		}
+		for (const v of vs) pushPoint(v.x, v.y, 0, 0, 1); // vertex: blue
+	}
+
 	return {
 		fillVerts,
 		fillHue,
@@ -108,8 +151,16 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		strokeNorm,
 		strokeSide,
 		strokeVertexCount: si,
+		pointPos,
+		pointCorner,
+		pointColor,
+		pointVertexCount: ptv,
 		v1: [v1x, v1y],
 		v2: [v2x, v2y],
 		det,
+		extent: latticeExtentFromBounds(
+			base.minX, base.maxX, base.minY, base.maxY,
+			{ x: v1x, y: v1y }, { x: v2x, y: v2y }, det,
+		),
 	};
 }
