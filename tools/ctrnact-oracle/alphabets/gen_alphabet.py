@@ -207,8 +207,17 @@ def cyclic_reps(words):
             reps.append(list(key))
     return reps
 
-def enum_configs(D, classes, min_len, max_len):
+def enum_configs(D, classes, min_len, max_len, closure="euclidean"):
     """All cyclic words of corner classes with unit sum == D, up to rotation+reflection.
+
+    Closure modes. "euclidean" (default, all pinned/star/composite palettes): a vertex
+    closes when its interior angles sum to EXACTLY a full turn (total == D) — flat plane.
+    "positive-defect" (spherical palette): a vertex closes with STRICTLY POSITIVE angular
+    defect (0 < total < D), so discrete Gauss–Bonnet forces the glued closed map onto a
+    sphere (χ=2) rather than a torus. In that mode a valid word is NOT a dead end — a longer
+    word is a different, still-valid defect vertex (3.3.3 vs 3.3.3.3 vs 3.3.3.3.3 are the
+    tetra/octa/icosa figures), so we emit and keep recursing; and a step that would reach a
+    full turn exactly (nxt == D, a flat Euclidean vertex) is pruned, not accepted.
 
     PROVEN word constraint (point-adjacency lemma, not a heuristic): no two star-POINT
     corners may be cyclically adjacent. Proof: two adjacent point corners at a vertex v
@@ -226,19 +235,29 @@ def enum_configs(D, classes, min_len, max_len):
     unit = {c.cid: c.units for c in classes}
     pt = {c.cid: getattr(c, "is_point", False) for c in classes}
     cids = sorted(unit, key=lambda k: (-unit[k], k))
+    spherical = (closure == "positive-defect")
     def rec(word, total):
-        if len(word) >= min_len and total == D:
-            if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
-                out.append(list(word))
-            return
+        if spherical:
+            if len(word) >= min_len and 0 < total < D:
+                if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
+                    out.append(list(word))
+                # fall through: a longer word is a distinct, still-valid defect vertex
+        else:
+            if len(word) >= min_len and total == D:
+                if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
+                    out.append(list(word))
+                return
         if total >= D or len(word) >= max_len:
             return
         for cid in cids:
             if word and pt[word[-1]] and pt[cid]:   # point-adjacency lemma
                 continue
             word.append(cid)
-            if total + unit[cid] <= D:
-                rec(word, total + unit[cid])
+            nxt = total + unit[cid]
+            # euclidean reaches a full turn (nxt <= D); spherical stays strictly under it
+            # (nxt < D) so a flat vertex (defect 0) is never developed.
+            if (nxt < D) if spherical else (nxt <= D):
+                rec(word, nxt)
             word.pop()
     rec([], 0)
     return cyclic_reps(out)
@@ -698,10 +717,15 @@ def main():
     spec, D, tiles, classes = load_palette(args.palette)
     palette_name = spec["name"]
     pinned = spec.get("pinnedLegacy", False)
-    # min_len=2 admits noncounting 2-corner vertices: star dent-fill points, and the
-    # (flat,flat) mid-edge junction where two side-2 (doubled) tiles abut edge-to-edge.
-    min_len = 2 if any(t.kind in ("star", "doubled", "scaled", "polyomino") for t in tiles) else 3
-    configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24))
+    # min_len=2 admits noncounting 2-corner vertices: star dent-fill points, the (flat,flat) mid-edge
+    # junction where two side-2 (doubled) tiles abut edge-to-edge, and — for a palette carrying a REFLEX
+    # composite tile (a corner > D/2, e.g. the girih bowtie's 216° notch) — the valence-2 vertex where that
+    # notch is filled by a single convex corner (bowtie 216° + decagon 144° = 360°). Without this, such
+    # tilings are silently dropped. Gated on reflex composites specifically, so pure-regular and the existing
+    # all-convex composite palettes keep min_len=3 and stay byte-identical (make check-regular unaffected).
+    has_reflex_composite = any(t.kind == "composite" and any(a > D // 2 for a in t.angles) for t in tiles)
+    min_len = 2 if (any(t.kind in ("star", "doubled", "scaled", "polyomino") for t in tiles) or has_reflex_composite) else 3
+    configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), spec.get("closure", "euclidean"))
     # Optional geometric pre-filter (EU_PRUNE_OVERLAP=1): drop vertex configs whose PLACED tiles physically
     # overlap. The solver is combinatorial (no geometry), so an overlapping figure would otherwise seed
     # geometrically-impossible tilings; an overlapping figure appears in zero real tilings, so dropping it is
@@ -822,13 +846,32 @@ def main():
     # these structures (deterministic + connected: the BFS trace signature from a start
     # dart determines the structure; minimizing over starts makes it canonical).
     a6 = {}
+    a6_collisions = []
     for e in entries:
         key = iso_key(e)
-        assert key not in a6, \
-            f"A6 FAIL: entries {a6[key]} and {e.symbol} are isomorphic colored structures"
-        a6[key] = e.symbol
-    cert_lines.append(f"A6: {len(entries)} entries pairwise non-isomorphic (iso_key) PASS")
-    print(f"[cert] A6: {len(entries)} entries pairwise non-isomorphic PASS")
+        if key in a6:
+            # Pinned palettes (regular) MUST stay collision-free — this is a hard soundness
+            # gate for the pruner. Non-pinned experimental palettes (e.g. spherical) may
+            # legitimately collide: on the sphere several valences of one tile (3.3.3 /
+            # 3.3.3.3 / 3.3.3.3.3) exist, and their maximally-symmetric folds quotient the
+            # valence away to the same colored structure. That never happens on the plane
+            # (one all-triangle vertex). Report loudly and continue so the collision can be
+            # studied; the pruner's dedup is then NOT trusted for such palettes.
+            assert not pinned, \
+                f"A6 FAIL: entries {a6[key]} and {e.symbol} are isomorphic colored structures"
+            a6_collisions.append((a6[key], e.symbol))
+        else:
+            a6[key] = e.symbol
+    if a6_collisions:
+        print(f"[cert] A6 WARNING (non-pinned palette): {len(a6_collisions)} isomorphic-fold "
+              f"collisions — pruner dedup unreliable here:")
+        for a, b in a6_collisions:
+            print(f"        {a}  ~=  {b}")
+    a6_ok = len(a6_collisions) == 0
+    cert_lines.append(f"A6: {len(entries)} entries, {len(a6_collisions)} iso-fold collisions "
+                      f"({'pairwise non-isomorphic PASS' if a6_ok else 'WARN non-pinned'})")
+    print(f"[cert] A6: {len(entries)} entries, "
+          f"{'pairwise non-isomorphic PASS' if a6_ok else str(len(a6_collisions)) + ' collisions WARN'}")
     emit(args.out, D, tiles, classes, entries, cert_lines, palette_name)
     print(f"[gen] wrote {args.out}/{{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt}}"
           f" ({len(entries)} entries)")
