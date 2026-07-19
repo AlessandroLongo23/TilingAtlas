@@ -44,6 +44,12 @@ elif [ "$PALETTE" = regular-doubled ] || [ "$PALETTE" = regular-scaled-123 ] || 
   t2=$(date +%s)
   EU_FACES=1 "$HERE/eu_develop$SFX" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" --out "$CELLS"
   log "  ($(( $(date +%s)-t2 ))s)"
+elif [ "$PALETTE" = spherical ]; then
+  log "PHASE 3  develop (spherical geodesic, SO(3) flood-fill) -> polyhedra + realizability report"
+  t2=$(date +%s)
+  python3 "$HERE/develop_spherical.py" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" \
+    --out "$CELLS" --report "$OUT/spherical-develop-report.txt"
+  log "  ($(( $(date +%s)-t2 ))s)"
 else
   log "PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)"
 fi
