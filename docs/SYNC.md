@@ -1281,3 +1281,15 @@ inscribable regular-faced polyhedron (mixed configs share ρ iff they share a ci
 failures across all k); Catalan solids are out of scope (irregular faces, not engine-representable).
 Perf: memoized solve_rho + guard 200k→1500 made k≥5 develop in ~1s. Commits after the prism/antiprism
 batch. — CC
+
+**2026-07-20 (CC) — Hyperbolic developer, foundations laid + engine now enumerates hyperbolic vertices.**
+Started the third geometry (branch `feat/hyperbolic-developer`, design spec 3370fb1). Three verified
+bricks: (1) the hyperbolic edge-length solver `lib/render/hyperbolicDevelop.ts` (9a96131), Σα(nᵢ,ℓ)=2π,
+the arcmedge/spherical-ρ twin; (2) `placePolygonOnEdge` (590593e), the mixed-tile primitive a reflection
+can't do; (3) negative-defect closure mode in gen_alphabet.py + hyperbolic palette (ba1581f). Verified:
+all 2699 enumerated configs have Euclidean sum >360°, all 8 known atlas families for {3,4,5,6,8} appear,
+`make check-regular` byte-identical (A068599 intact). Solver runs at k=1 (1610→1241 blocks) but that is
+combinatorial over-production — necessary-not-sufficient, no external oracle (web-confirmed; port notes
+hold). Next arc: the dart-frame developer consuming solver blocks (SU(1,1) flood-fill + realizability
+filter) → unified renderer that keeps the current fold-shader crispness. Detail: marek-vault
+knowledge/algorithm/hyperbolic-developer.md. — CC
