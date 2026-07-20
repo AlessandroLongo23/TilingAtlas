@@ -50,6 +50,12 @@ elif [ "$PALETTE" = spherical ]; then
   python3 "$HERE/develop_spherical.py" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" \
     --out "$CELLS" --report "$OUT/spherical-develop-report.txt"
   log "  ($(( $(date +%s)-t2 ))s)"
+elif [ "$PALETTE" = hyperbolic ]; then
+  log "PHASE 3  develop (hyperbolic geodesic, SU(1,1) flood-fill) -> Poincaré patches + report"
+  t2=$(date +%s)
+  python3 "$HERE/develop_hyperbolic.py" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" \
+    --boundR "${HYP_BOUNDR:-0.85}" --out "$CELLS" --report "$OUT/hyperbolic-develop-report.txt"
+  log "  ($(( $(date +%s)-t2 ))s)"
 else
   log "PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)"
 fi
