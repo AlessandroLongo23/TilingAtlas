@@ -84,13 +84,21 @@ def interior_angle(p, rho):
     t2 = tangent(v0, vm)
     return math.acos(max(-1.0, min(1.0, np.dot(t1, t2))))
 
+_RHO_CACHE = {}
+
 def solve_rho(config):
     """Edge arc-length rho solving Σ_i interior_angle(p_i, rho) = 2π (positive-defect closure).
-    Monotone increasing in rho; root exists iff Σ flat angles < 2π (the spherical condition)."""
+    Monotone increasing in rho; root exists iff Σ flat angles < 2π (the spherical condition).
+    Depends only on the angle multiset, so memoize by sorted config — the same few dozen configs
+    recur across thousands of blocks, and the 200-step bisection is the develop hot path at high k."""
+    key = tuple(sorted(config))
+    if key in _RHO_CACHE:
+        return _RHO_CACHE[key]
     def f(rho):
         return sum(interior_angle(p, rho) for p in config) - 2 * math.pi
     lo, hi = 1e-7, 2 * math.pi / max(config) - 1e-7
     if f(lo) >= 0 or f(hi) <= 0:
+        _RHO_CACHE[key] = None
         return None
     for _ in range(200):
         mid = 0.5 * (lo + hi)
@@ -98,7 +106,8 @@ def solve_rho(config):
             hi = mid
         else:
             lo = mid
-    return 0.5 * (lo + hi)
+    _RHO_CACHE[key] = 0.5 * (lo + hi)
+    return _RHO_CACHE[key]
 
 def solve_rho_common(configs, tol=1e-6):
     """Common edge arc-length rho closing EVERY vertex config (each Σ angle = 2π at the same rho).
@@ -139,7 +148,12 @@ def _key_inst(h, R):
     return (h, round(pos[0] / TOL), round(pos[1] / TOL), round(pos[2] / TOL),
             round(hx[0] / TOL), round(hx[1] / TOL), round(hx[2] / TOL))
 
-def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=200000):
+def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500):
+    # guard bounds the flood-fill. A convex regular-faced polyhedron in this palette has at most 2E dart-
+    # instances: 360 for the k=1 truncated icosidodecahedron (V120), and ≤240 for every k≥3 solid (the
+    # rhombicosidodecahedron family, V≤60). 1500 is ~6× headroom over the largest realizable case while
+    # cutting a NON-closing map (passes the common-rho filter, never closes) off ~130× sooner than 200k —
+    # what makes k≥5 develop in seconds instead of timing out. k=1 (V120) is developed via its own run.
     """Flood-fill the instance orbit under {rneig, glue}. Returns (V, E, F) with V a list of
     unit positions, E a set of undirected vertex-id pairs, F a list of vertex-id rings."""
     M = Medge(rho)
