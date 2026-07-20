@@ -24,7 +24,7 @@ describe("polygonClassSupportsIslamic — open to every flat class", () => {
 		});
 	}
 
-	it("excludes hyperbolic (drawn by the Poincaré-disk shader, gated by wythoff)", () => {
+	it("excludes hyperbolic (its developed Poincaré-disk renderer has no Islamic construction)", () => {
 		expect(polygonClassSupportsIslamic({ family: "{7,3}", source: "hyperbolic" })).toBe(false);
 	});
 });

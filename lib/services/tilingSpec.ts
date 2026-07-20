@@ -118,19 +118,6 @@ export function buildTilingSpec(
 		};
 	}
 
-	if (geometry === "hyperbolic" && selected.wythoff) {
-		const { p, q, rings, snub } = selected.wythoff;
-		return {
-			geometry: "hyperbolic",
-			label: `{${p},${q}}`,
-			coxeter: `[${p},${q}]`,
-			orbifold: reflectionOrbifold(p, q),
-			rings,
-			snub: !!snub,
-			...base,
-		};
-	}
-
 	// Euclidean. Prefer the live exact symmetry analysis; fall back to the build-computed fields; derive
 	// the orbifold from whichever group we have if the analysis didn't supply one.
 	const wallpaperGroup = symmetryData?.group ?? selected.wallpaperGroup ?? null;

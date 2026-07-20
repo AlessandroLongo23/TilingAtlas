@@ -30,16 +30,13 @@ export interface CatalogueTiling {
 	paramCell?: ParametricCellData;
 	// Hyperbolic shelf only: the {p,q} Schläfli symbol (regular entries; kept as the card label).
 	schlafli?: [number, number];
-	// Hyperbolic shelf only: the Wythoff descriptor. Its presence routes /play + the sidebar/library
-	// thumbnails to the Poincaré-disk renderer instead of the Euclidean cell path. Carried through from
-	// ReferenceTiling by referenceToCatalogue. Present on every hyperbolic entry, absent for Euclidean.
-	wythoff?: { p: number; q: number; rings: [boolean, boolean, boolean]; snub?: boolean };
-	// Hyperbolic shelf, engine-developed entries: id of a developed Poincaré patch (public/hyperbolic-
-	// developed.json). Its presence routes /play + thumbnails to the explicit-geometry developed renderer.
-	// Carried through from ReferenceTiling by referenceToCatalogue. Mutually exclusive with wythoff.
+	// Hyperbolic shelf: id of a developed Poincaré patch (public/hyperbolic-developed.json). Its presence
+	// routes /play + the sidebar/library thumbnails to the per-pixel Poincaré-disk renderer instead of the
+	// Euclidean cell path. Carried through from ReferenceTiling by referenceToCatalogue. Present on every
+	// hyperbolic entry, absent for Euclidean.
 	developed?: { patch: string };
 	// Spherical shelf only: the {p,q} Schläfli symbol of a Platonic solid. Its presence routes /play + the
-	// thumbnails to the three.js sphere renderer (components/spherical-canvas.tsx), the way wythoff routes
+	// thumbnails to the three.js sphere renderer (components/spherical-canvas.tsx), the way developed routes
 	// to the Poincaré disk. Carried through from ReferenceTiling by referenceToCatalogue.
 	spherical?: { p?: number; q?: number; solid: string };
 	geometry?: "euclidean" | "hyperbolic" | "spherical";

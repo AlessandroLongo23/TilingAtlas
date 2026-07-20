@@ -12,7 +12,7 @@ import {
 	solveEdgeLength,
 	placePolygonOnEdge,
 } from "@/lib/render/hyperbolicDevelop";
-import { buildRegularPatch } from "@/lib/render/hyperbolicIslamicPatch";
+import { buildRegularPatch } from "@/lib/render/hyperbolicRegularPatch";
 import { hypDist, type Complex } from "@/lib/render/hyperbolic";
 
 const centroid = (verts: Complex[]): Complex => {

@@ -80,12 +80,14 @@ export interface ConfigurationState {
 	islamicBandWidth: number;         // interlace strap width, as a fraction of the median segment length
 	islamicOutlineWidth: number;      // interlace strap border stroke, in screen px (0 = no border)
 	islamicChirality: boolean;        // flips which strand rides over at every crossing (the two chiralities)
-	islamicCheckerColorA: string;     // checkerboard field colour A (CSS hex)
-	islamicCheckerColorB: string;     // checkerboard field colour B (CSS hex)
+	// Region fills are hue-only — saturation/lightness are locked to the tile palette (HSL 100%/80% ≡
+	// HSB 0.40/1.0), like the hue-shift ring — so a fill is always a tile-palette colour, never off-palette.
+	islamicCheckerHueA: number;       // checkerboard field A: hue° (0–360)
+	islamicCheckerHueB: number;       // checkerboard field B: hue°
 	// Plain-fill A/B/C: star bodies (A) keep their tile hue; the two background classes take these shared
-	// colours. B = the side fields, C = the small edge-centre diamonds (only present once Edge Offset > 0).
-	islamicFillColorB: string;        // A/B/C fill: side-field colour (CSS hex)
-	islamicFillColorC: string;        // A/B/C fill: edge-centre diamond colour (CSS hex)
+	// hues. B = the side fields, C = the small edge-centre diamonds (only present once Edge Offset > 0).
+	islamicFillHueB: number;          // A/B/C fill: side-field hue°
+	islamicFillHueC: number;          // A/B/C fill: edge-centre diamond hue°
 	circlePacking: boolean;
 	isTilingRegularOnly: boolean;
 
@@ -112,10 +114,9 @@ export interface ConfigurationState {
 	spiralDrift: { x: number; y: number };
 
 	// Hyperbolic view: set true by /play when a {p,q} hyperbolic tiling is selected. Swaps the flat p5
-	// render for the Poincaré-disk WebGL renderer (components/hyperbolic-canvas.tsx). While on, the p5
-	// canvas draws nothing (kept only as the pan input layer) and the mouse wheel is inert (pan, no zoom).
+	// render for the Poincaré-disk WebGL renderer (components/hyperbolic-developed-canvas.tsx). While on, the
+	// p5 canvas draws nothing (kept only as the pan input layer) and the mouse wheel is inert (pan, no zoom).
 	hyperbolic: boolean;
-	hyperbolicShading: "tiles" | "parity"; // coloured tiles + edges, or two-tone reflection parity
 	// Edge stroke width: "geometry" scales with the tiles (thick near the centre, thinner toward the rim),
 	// "constant" holds a fixed screen width everywhere.
 	hyperbolicLineMode: "geometry" | "constant";
@@ -142,6 +143,14 @@ export interface ConfigurationState {
 	// Driven live from the same edge-distance field the texture baker uses. Solid sphere only (no effect in
 	// wireframe / Islamic modes). See lib/render/sphericalCarvedMaterial.ts.
 	sphericalRealistic: boolean;
+	// Spherical "polyhedron" mode: replace the round tiling sphere with the TRUE flat-faced solid — real
+	// facets, corners and edges — lit by the scene so each face reads as 3D, keeping the per-polygon hue.
+	// Solid Fill only (mutually exclusive with Realistic; no effect in wireframe / Islamic modes).
+	// See lib/render/sphericalPolyhedron.ts.
+	sphericalPolyhedron: boolean;
+	// Spherical camera projection: false = perspective (foreshortened, the default), true = orthographic
+	// (parallel projection — no perspective distortion, the "isometric" solid look). See spherical-canvas.tsx.
+	sphericalOrthographic: boolean;
 	// Interlace + Wireframe (solid 3D ribbons): false = the woven over/under relief (ribbons ride out/in at
 	// crossings); true = flat ribbons, still 3D solids but coplanar on the sphere (no over/under undulation).
 	sphericalWeaveFlat: boolean;
@@ -213,10 +222,10 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	islamicBandWidth: 0.25,
 	islamicOutlineWidth: 1.5,
 	islamicChirality: false,
-	islamicCheckerColorA: '#e7dcc0',
-	islamicCheckerColorB: '#3a4a52',
-	islamicFillColorB: '#e7dcc0',
-	islamicFillColorC: '#3a4a52',
+	islamicCheckerHueA: 45,   // pastel yellow — the hue of the former '#e7dcc0' default at the locked S/L
+	islamicCheckerHueB: 200,  // pastel sky-blue — the hue of the former '#3a4a52' default
+	islamicFillHueB: 45,
+	islamicFillHueC: 200,
 	circlePacking: false,
 	isTilingRegularOnly: false,
 
@@ -231,7 +240,6 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	spiralDrift: { x: 0, y: 0 },
 
 	hyperbolic: false,
-	hyperbolicShading: "tiles",
 	hyperbolicLineMode: "geometry",
 	hyperbolicClick: null,
 	hyperbolicResetView: false,
@@ -243,6 +251,8 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	sphericalWireHeight: 0.025,
 	sphericalWireBevel: 0.25,
 	sphericalRealistic: false,
+	sphericalPolyhedron: false,
+	sphericalOrthographic: false,
 	sphericalWeaveFlat: false,
 
 	colorParams: { a: 180, b: 0 },

@@ -41,23 +41,6 @@ describe("buildTilingSpec", () => {
 		expect(spec.latticeShape).toBe("square");
 	});
 
-	it("hyperbolic: Coxeter + orbifold from {p,q}", () => {
-		const t: CatalogueTiling = {
-			...base,
-			canonicalKey: "h",
-			k: 1,
-			family: "{7,3}",
-			wythoff: { p: 7, q: 3, rings: [true, false, false] },
-		};
-		const spec = buildTilingSpec(t, null, null);
-		if (spec.geometry !== "hyperbolic") throw new Error("geometry");
-		expect(spec.label).toBe("{7,3}");
-		expect(spec.coxeter).toBe("[7,3]");
-		expect(spec.orbifold).toBe("*732");
-		expect(spec.rings).toEqual([true, false, false]);
-		expect(spec.snub).toBe(false);
-	});
-
 	it("spherical Platonic: point group + V/E/F via Euler", () => {
 		const t: CatalogueTiling = {
 			...base,

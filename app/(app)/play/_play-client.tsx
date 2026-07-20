@@ -6,7 +6,6 @@ import { Camera, Maximize, Minimize } from "lucide-react";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
-import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { Sidebar } from "@/components/sidebar";
@@ -276,20 +275,19 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		fa.resetLive(); // reseed the eased render tuple for the NEW family — never glide across two families
 	}, [selected?.canonicalKey, paramCell]);
 
-	// The Islamic construction applies to every flat/spherical class now, so this force-off only fires for a
-	// selection that supports it via neither the class gate nor `wythoff` — effectively never for the shipped
-	// catalogue. Kept as a safety net so the render path can't draw the fill for a tiling whose sidebar hides
-	// the control.
+	// The Islamic construction applies to every flat/spherical class; the developed hyperbolic renderer does
+	// not draw it. Force the fill off for any selection whose class doesn't support it, so a stale render can't
+	// linger when the sidebar hides the control.
 	useEffect(() => {
-		if (selected && !polygonClassSupportsIslamic(selected) && !selected.wythoff && useConfiguration.getState().isIslamic) {
+		if (selected && !polygonClassSupportsIslamic(selected) && useConfiguration.getState().isIslamic) {
 			useConfiguration.getState().set({ isIslamic: false });
 		}
 	}, [selected]);
 
-	// A hyperbolic {p,q} tiling swaps the flat p5 renderer for the Poincaré-disk WebGL view. Set the
-	// store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off Euclidean-
-	// only render modes so their now-hidden sidebar controls can't leave a stale render behind.
-	const isHyperbolic = !!selected?.wythoff || !!selected?.developed;
+	// An engine-developed hyperbolic tiling swaps the flat p5 renderer for the per-pixel Poincaré-disk shader.
+	// Set the store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off
+	// Euclidean-only render modes so their now-hidden sidebar controls can't leave a stale render behind.
+	const isHyperbolic = !!selected?.developed;
 	// A spherical (Platonic {p,q}) tiling swaps the flat p5 renderer for the three.js sphere view. Set the
 	// store flag (canvas.tsx reads it to blank the flat layer) and force off the other render modes so their
 	// now-hidden sidebar controls can't leave a stale render behind. The sphere renderer owns its own input.
@@ -313,17 +311,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isHyperbolic) {
-			// Two-tone parity is only defined for the REGULAR 2-colourable tilings (q even); the uniform forms
-			// are multi-tile-type, so force it off for them and for odd q. Islamic strapwork now works for
-			// EVERY hyperbolic tiling (regular, uniform, snub), so isIslamic is never force-cleared here.
-			const w = selected?.wythoff;
-			const parityOk = !!w && w.rings[0] && !w.rings[1] && !w.rings[2] && w.q % 2 === 0;
-			cfg.set({
-				hyperbolic: true,
-				circlePacking: false,
-				isTilingRegularOnly: false,
-				...(!parityOk && cfg.hyperbolicShading === "parity" ? { hyperbolicShading: "tiles" as const } : {}),
-			});
+			cfg.set({ hyperbolic: true, circlePacking: false, isTilingRegularOnly: false });
 		} else if (cfg.hyperbolic) {
 			cfg.set({ hyperbolic: false });
 		}
@@ -417,12 +405,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					e.preventDefault();
 					useImmersive.getState().set(false);
 				}
-			} else if ((e.key === "y" || e.key === "Y") && !!selected?.wythoff && selected.wythoff.rings[0] && !selected.wythoff.rings[1] && !selected.wythoff.rings[2] && selected.wythoff.q % 2 === 0) {
-				// "Y" cycles the hyperbolic shading (coloured tiles ⇄ two-tone parity) — only for a hyperbolic
-				// tiling whose vertices have an even tile count (q even), the 2-colourable case.
-				e.preventDefault();
-				const c = useConfiguration.getState();
-				c.set({ hyperbolicShading: c.hyperbolicShading === "tiles" ? "parity" : "tiles" });
 			} else {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
@@ -431,7 +413,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				// transition / vertex orbits are flat-canvas only and hidden in hyperbolic; vertex orbits also need
 				// the tiling's exact cell (the sidebar disables the checkbox without one). Ignore each key where the
 				// sidebar hides/disables the control.
-				const isHyperbolic = !!selected?.wythoff || !!selected?.developed;
+				const isHyperbolic = !!selected?.developed;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected) && !isHyperbolic) ||
@@ -522,11 +504,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
 					// regular-faced tilings the (2,p,q) fold shader cannot.
 					<HyperbolicDevelopedCanvas width={size.w} height={size.h} patchId={selected.developed.patch} />
-				) : isHyperbolic && selected?.wythoff ? (
-					// The infinite fold-shader tiling — it now also renders the Islamic A/B/C fill per pixel
-					// (crossing-parity) for regular {p,q}, so there's no separate mesh view: same dimming,
-					// exact geodesic arcs, full rim.
-					<HyperbolicCanvas width={size.w} height={size.h} wythoff={selected.wythoff} />
 				) : inversive ? (
 					<InversiveCanvas
 						width={size.w}

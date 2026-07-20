@@ -6,6 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
 import { HueRing } from "@/components/ui/hue-ring";
+import { Reveal } from "@/components/ui/reveal";
+import { Toggle } from "@/components/ui/toggle";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
@@ -26,18 +28,16 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// Islamic construction applies to every flat and spherical class (see polygonClassSupportsIslamic — the
 	// shape-agnostic Hankin construction handles them all), plus EVERY hyperbolic tiling, whose Poincaré-disk
 	// shader draws the strapwork for regular, uniform, and snub.
-	const islamicSupported = !!selected && (polygonClassSupportsIslamic(selected) || !!selected.wythoff);
+	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected);
 	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
 	const isIslamicClass = !!selected && tileClassOf(selected) === "islamic";
-	// A hyperbolic tiling renders in the Poincaré disk; its only view control is the shading mode.
-	const isHyperbolic = !!selected?.wythoff;
+	// An engine-developed hyperbolic tiling renders in the Poincaré disk via the per-pixel shader, which
+	// honours the edge-width toggle below.
+	const isHyperbolic = !!selected?.developed;
 	// A spherical (Platonic {p,q}) tiling renders in the three.js sphere view, which owns its own
 	// rotate/zoom input — so the flat-canvas overlays (symmetry, orbits, transition, inversive) don't apply.
 	const isSpherical = !!selected?.spherical;
-	// Two-tone parity needs a REGULAR 2-colourable tiling (q even); the uniform forms are multi-tile-type.
-	const parityAllowed =
-		!!selected?.wythoff && selected.wythoff.rings[0] && !selected.wythoff.rings[1] && !selected.wythoff.rings[2] && selected.wythoff.q % 2 === 0;
 
 	return (
 		<div className="h-full overflow-y-auto" data-sidebar-scroll>
@@ -162,7 +162,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ isIslamic: v })}
 						/>
 					) : null}
-					{islamicSupported && cfg.isIslamic ? (
+					{islamicSupported ? (
+						<Reveal show={cfg.isIslamic}>
 						<div className="space-y-2 pl-7">
 							{isSpherical ? (
 								<>
@@ -274,7 +275,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									Obtuse
 								</Button>
 							</div>
-							{isSpherical && cfg.islamicStyle === "interlace" ? (
+							<Reveal show={isSpherical && cfg.islamicStyle === "interlace"}>
 								<Slider
 									id="islamicWeaveWidth"
 									label="Strap Width"
@@ -284,9 +285,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									max={0.6}
 									step={0.05}
 								/>
-							) : null}
+							</Reveal>
 							{/* Solid 3D ribbons (Interlace + Wireframe): woven over/under relief, or flat coplanar bands. */}
-							{isSpherical && cfg.islamicStyle === "interlace" && cfg.sphericalWireframe ? (
+							<Reveal show={isSpherical && cfg.islamicStyle === "interlace" && cfg.sphericalWireframe}>
 								<div className="space-y-2">
 									<span className="text-[11px] text-fg-muted">Ribbons</span>
 									<div className="flex gap-2">
@@ -308,10 +309,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										</Button>
 									</div>
 								</div>
-							) : null}
-							{(!isSpherical && !isHyperbolic && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")) ||
-							(isHyperbolic && cfg.islamicStyle === "interlace") ? (
-								<>
+							</Reveal>
+							<Reveal show={(!isSpherical && !isHyperbolic && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")) ||
+							(isHyperbolic && cfg.islamicStyle === "interlace")}>
+								<div className="space-y-2">
 									<Slider
 										id="islamicBandWidth"
 										label="Band Width"
@@ -339,54 +340,33 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										checked={cfg.islamicChirality}
 										onCheckedChange={(v) => setCfg({ islamicChirality: v })}
 									/>
-								</>
-							) : null}
-							{!isSpherical && cfg.islamicStyle === "checkerboard" ? (
-								<div className="flex gap-2">
-									<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-										Color A
-										<input
-											type="color"
-											value={cfg.islamicCheckerColorA}
-											onChange={(e) => setCfg({ islamicCheckerColorA: e.target.value })}
-											className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-										/>
-									</label>
-									<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-										Color B
-										<input
-											type="color"
-											value={cfg.islamicCheckerColorB}
-											onChange={(e) => setCfg({ islamicCheckerColorB: e.target.value })}
-											className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-										/>
-									</label>
 								</div>
-							) : null}
+							</Reveal>
+							<Reveal show={!isSpherical && cfg.islamicStyle === "checkerboard"}>
+								{/* Hue only — the two checker fields live in the tile palette (locked S/L), same ring
+								    control as the global hue shift. */}
+								<div className="flex gap-3">
+									<div className="flex-1 min-w-0">
+										<HueRing label="Field A" size={76} value={cfg.islamicCheckerHueA} onChange={(v) => setCfg({ islamicCheckerHueA: v })} />
+									</div>
+									<div className="flex-1 min-w-0">
+										<HueRing label="Field B" size={76} value={cfg.islamicCheckerHueB} onChange={(v) => setCfg({ islamicCheckerHueB: v })} />
+									</div>
+								</div>
+							</Reveal>
 							{/* A/B/C plain fill: star bodies keep their tile hue; B = side fields, C = the edge-centre
 							    diamonds (only visible once Edge Offset > 0). */}
-							{!isSpherical && !isHyperbolic && cfg.islamicStyle === "plain" ? (
-								<div className="flex gap-2">
-									<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-										Field B
-										<input
-											type="color"
-											value={cfg.islamicFillColorB}
-											onChange={(e) => setCfg({ islamicFillColorB: e.target.value })}
-											className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-										/>
-									</label>
-									<label className="flex-1 flex items-center justify-between gap-2 text-xs text-fg-secondary">
-										Diamond C
-										<input
-											type="color"
-											value={cfg.islamicFillColorC}
-											onChange={(e) => setCfg({ islamicFillColorC: e.target.value })}
-											className="h-6 w-10 cursor-pointer rounded border border-line bg-transparent"
-										/>
-									</label>
+							<Reveal show={!isSpherical && !isHyperbolic && cfg.islamicStyle === "plain"}>
+								{/* Hue only — B/C are backgrounds in the tile palette (locked S/L), same ring as hue shift. */}
+								<div className="flex gap-3">
+									<div className="flex-1 min-w-0">
+										<HueRing label="Sides (B)" size={76} value={cfg.islamicFillHueB} onChange={(v) => setCfg({ islamicFillHueB: v })} />
+									</div>
+									<div className="flex-1 min-w-0">
+										<HueRing label="Diamond (C)" size={76} value={cfg.islamicFillHueC} onChange={(v) => setCfg({ islamicFillHueC: v })} />
+									</div>
 								</div>
-							) : null}
+							</Reveal>
 							{/* Construction knobs, shown for every style. For interlace/outline these weave too —
 							    off-midpoint contact (edge offset) is Bonner's two-point family, canonically interwoven.
 							    Edge offset now works in hyperbolic too (it shifts each contact along the edge geodesic). */}
@@ -421,6 +401,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							/>
 							) : null}
 						</div>
+						</Reveal>
 					) : null}
 					{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
 					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there. */}
@@ -444,31 +425,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{isHyperbolic ? (
 						<div className="space-y-2">
-							<span className="text-[11px] text-fg-muted">Hyperbolic shading</span>
-							{parityAllowed ? (
-								<div className="flex gap-2">
-									<Button
-										variant={cfg.hyperbolicShading === "tiles" ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ hyperbolicShading: "tiles" })}
-									>
-										Tiles
-									</Button>
-									<Button
-										variant={cfg.hyperbolicShading === "parity" ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ hyperbolicShading: "parity" })}
-									>
-										Parity
-									</Button>
-								</div>
-							) : (
-								<p className="text-[11px] text-fg-disabled">
-									Coloured tiles — two-tone parity needs an even number of tiles per vertex (q even).
-								</p>
-							)}
 							<span className="text-[11px] text-fg-muted">Edge width</span>
 							<div className="flex gap-2">
 								<Button
@@ -496,20 +452,20 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								Drag the sphere to rotate it freely in any direction (no poles — every symmetry is reachable).
 								Scroll to zoom.
 							</p>
-							{/* Fill vs Wireframe: two views of one boolean (sphericalWireframe), so exactly one is
-							    ever on. Checking either flips the pair. Fill = solid sphere / filled Islamic cells;
-							    Wireframe = hollow tube skeleton / rigid lines, no fill. Keys B / W. */}
-							<Checkbox
-								id="sphericalFill"
-								label="Fill"
-								shortcut="B"
-								checked={!cfg.sphericalWireframe}
-								onCheckedChange={(v) => setCfg({ sphericalWireframe: !v })}
+							{/* Fill vs Wireframe: one mutually-exclusive choice (sphericalWireframe), so exactly one is
+							    ever on. Fill = solid sphere / flat polyhedron / filled Islamic cells; Wireframe = hollow
+							    tube skeleton, no fill. Keys B / W flip it either way. */}
+							<Toggle
+								id="sphericalFillMode"
+								leftValue="fill"
+								rightValue="wireframe"
+								value={cfg.sphericalWireframe ? "wireframe" : "fill"}
+								onChange={(v) => setCfg({ sphericalWireframe: v === "wireframe" })}
 							/>
-							{/* Realistic: shade the solid sphere as if the tiling lines were carved into it (faces
-							    raised, edges sunk into a smooth SDF groove, lit as matte stone). Fill only — no
-							    meaning for the hollow wireframe. */}
-							{!cfg.sphericalWireframe ? (
+							{/* Realistic: shade the round sphere as if the tiling lines were CARVED into it (faces
+							    raised, edges sunk into a smooth SDF groove, lit as matte stone). Round-sphere Fill
+							    only — no meaning for the wireframe or the flat Polyhedron, so hidden for both. */}
+							<Reveal show={!cfg.sphericalWireframe && !cfg.sphericalPolyhedron}>
 								<div className="pl-7">
 									<Checkbox
 										id="sphericalRealistic"
@@ -518,15 +474,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										onCheckedChange={(v) => setCfg({ sphericalRealistic: v })}
 									/>
 								</div>
-							) : null}
-							<Checkbox
-								id="sphericalWireframe"
-								label="Wireframe"
-								shortcut="W"
-								checked={cfg.sphericalWireframe}
-								onCheckedChange={(v) => setCfg({ sphericalWireframe: v })}
-							/>
-							{cfg.sphericalWireframe ? (
+							</Reveal>
+							<Reveal show={cfg.sphericalWireframe}>
 								<div className="space-y-2 pl-7">
 									<span className="text-[11px] text-fg-muted">Section</span>
 									<div className="flex gap-2">
@@ -556,8 +505,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										max={0.15}
 										step={0.005}
 									/>
-									{cfg.sphericalWireSection === "rect" ? (
-										<>
+									<Reveal show={cfg.sphericalWireSection === "rect"}>
+										<div className="space-y-2">
 											<Slider
 												id="sphericalWireHeight"
 												label="Height"
@@ -576,10 +525,29 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 												max={1}
 												step={0.05}
 											/>
-										</>
-									) : null}
+										</div>
+									</Reveal>
 								</div>
-							) : null}
+							</Reveal>
+							{/* Polyhedron: a "flatten" modifier, not a Fill sub-style — it works with EITHER base. With
+							    Fill it swaps the round sphere for the TRUE flat-faced solid (lit facets + dark edge
+							    tubes); with Wireframe it makes the tube bars straight chords instead of curved arcs. */}
+							<Checkbox
+								id="sphericalPolyhedron"
+								label="Polyhedron"
+								checked={cfg.sphericalPolyhedron}
+								onCheckedChange={(v) => setCfg({ sphericalPolyhedron: v })}
+							/>
+							{/* Camera projection: perspective (foreshortened) vs orthographic (parallel, the flat
+							    "isometric" solid look). One or the other, so a single toggle. */}
+							<Toggle
+								id="sphericalProjection"
+								label="Projection"
+								leftValue="perspective"
+								rightValue="orthographic"
+								value={cfg.sphericalOrthographic ? "orthographic" : "perspective"}
+								onChange={(v) => setCfg({ sphericalOrthographic: v === "orthographic" })}
+							/>
 						</div>
 					) : null}
 					{!isHyperbolic && !isSpherical ? (
@@ -591,7 +559,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ inversive: v })}
 						/>
 					) : null}
-					{!isHyperbolic && !isSpherical && cfg.inversive ? (
+					{!isHyperbolic && !isSpherical ? (
+						<Reveal show={cfg.inversive}>
 						<div className="space-y-2 pl-7">
 							<div className="flex gap-2">
 								<Button
@@ -621,7 +590,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							</div>
 							{/* Lens radius has no meaning for a single-centre spiral; it becomes the pole
 							    separation for the two-centre (Droste) spiral. */}
-							{!(cfg.inversiveMode === "spiral" && !cfg.spiralDouble) ? (
+							<Reveal show={!(cfg.inversiveMode === "spiral" && !cfg.spiralDouble)}>
 								<Slider
 									id="inversiveRadius"
 									label={cfg.inversiveMode === "spiral" ? "Pole separation" : "Lens radius"}
@@ -631,8 +600,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									max={1}
 									step={0.01}
 								/>
-							) : null}
-							{cfg.inversiveMode === "mobius" ? (
+							</Reveal>
+							<Reveal show={cfg.inversiveMode === "mobius"}>
 								<Slider
 									id="mobiusTwist"
 									label="Spiral twist"
@@ -643,9 +612,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									step={1}
 									unit="°"
 								/>
-							) : null}
-							{cfg.inversiveMode === "spiral" ? (
-								<>
+							</Reveal>
+							<Reveal show={cfg.inversiveMode === "spiral"}>
+								<div className="space-y-2">
 									<div className="flex gap-2">
 										<Button
 											variant={!cfg.spiralDouble ? "primary" : "secondary"}
@@ -684,9 +653,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									/>
 									{/* Velocity pad: hold a zoom/rotation rate — the spiral animates without dragging. */}
 									<SpiralVelocityPad />
-								</>
-							) : null}
+								</div>
+							</Reveal>
 						</div>
+						</Reveal>
 					) : null}
 				</div>
 			</div>

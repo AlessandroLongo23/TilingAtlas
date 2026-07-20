@@ -8,8 +8,8 @@ import { tileClassOf, type ReferenceTiling } from "@/lib/services/referenceAtlas
 // vertices, edge midpoints, centroid, and per-edge inward normals — so it applies to every flat and
 // spherical tile class the catalogue ships. Scaled tiles carry their T-junctions as flat 180° corners
 // (scripts/build-scaled-atlas.ts), so `halfways` already holds one midpoint per unit sub-edge and the
-// construction emits a ray-pair ("V") at each. Only "hyperbolic" is excluded here: it draws its
-// strapwork through the Poincaré-disk shader, gated separately by `selected.wythoff` at the call sites.
+// construction emits a ray-pair ("V") at each. Only "hyperbolic" is excluded here: its developed
+// per-pixel Poincaré-disk renderer does not draw the Islamic construction.
 export function polygonClassSupportsIslamic(t: { family: string; source?: ReferenceTiling["source"] }): boolean {
 	return tileClassOf(t) !== "hyperbolic";
 }

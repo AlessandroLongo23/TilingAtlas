@@ -3,7 +3,6 @@
 import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
@@ -81,12 +80,10 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
 				) : tiling.developed ? (
 					<HyperbolicDevelopedThumbnail patch={tiling.developed.patch} />
-				) : tiling.wythoff ? (
-					<HyperbolicThumbnail wythoff={tiling.wythoff} />
 				) : (
 					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
 				)}
-				{SCREENSHOT_BUTTONS_ENABLED && !tiling.wythoff && !tiling.developed && !tiling.spherical ? (
+				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical ? (
 					<button
 						type="button"
 						onClick={handleScreenshot}
