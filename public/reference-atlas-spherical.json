@@ -894,102 +894,6 @@
   }
  },
  {
-  "id": "sph-j27",
-  "source": "spherical",
-  "k": 2,
-  "family": "3.4.3.4 / 3.3.4.4",
-  "spherical": {
-   "solid": "triangular-orthobicupola"
-  },
-  "geometry": "spherical",
-  "discoverer": "Norman Johnson (1966)",
-  "note": "Triangular orthobicupola (Johnson solid J27): 8 triangles + 6 squares, V12 E24 F14. The 2-orbit \u201cortho\u201d twin of the cuboctahedron \u2014 same face counts, but half its vertices are adjacent-square 3.3.4.4 (the cuboctahedron is all alternating 3.4.3.4). Developed by the \u010ctrn\u00e1ct engine at k=2.",
-  "renderCell": {
-   "cellPolygons": [
-    {
-     "n": 4,
-     "vertices": [
-      [
-       0,
-       0
-      ],
-      [
-       1,
-       0
-      ],
-      [
-       1,
-       1
-      ],
-      [
-       0,
-       1
-      ]
-     ],
-     "hue": 200
-    }
-   ],
-   "basis": [
-    [
-     1,
-     0
-    ],
-    [
-     0,
-     1
-    ]
-   ]
-  }
- },
- {
-  "id": "sph-j37",
-  "source": "spherical",
-  "k": 2,
-  "family": "3.4.4.4 (two orbits)",
-  "spherical": {
-   "solid": "pseudo-rhombicuboctahedron"
-  },
-  "geometry": "spherical",
-  "discoverer": "Miller / Askinuze; Johnson J37",
-  "note": "Pseudo-rhombicuboctahedron / elongated square gyrobicupola (Johnson solid J37): 8 triangles + 18 squares, V24 E48 F26. Every vertex is 3.4.4.4 yet it is not vertex-transitive \u2014 two orbits, one square cupola rotated 45\u00b0. The classic \u201clocally but not globally uniform\u201d polyhedron. Developed by the \u010ctrn\u00e1ct engine at k=2.",
-  "renderCell": {
-   "cellPolygons": [
-    {
-     "n": 4,
-     "vertices": [
-      [
-       0,
-       0
-      ],
-      [
-       1,
-       0
-      ],
-      [
-       1,
-       1
-      ],
-      [
-       0,
-       1
-      ]
-     ],
-     "hue": 200
-    }
-   ],
-   "basis": [
-    [
-     1,
-     0
-    ],
-    [
-     0,
-     1
-    ]
-   ]
-  }
- },
- {
   "id": "sph-triangular-prism",
   "source": "spherical",
   "k": 1,
@@ -1432,6 +1336,582 @@
   "geometry": "spherical",
   "discoverer": "Kepler (prisms & antiprisms)",
   "note": "Decagonal antiprism (3.3.3.10): 2 decagons + 20 triangles.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-triangular-orthobicupola",
+  "source": "spherical",
+  "k": 2,
+  "family": "3...3...4...4 / 3...4...3...4",
+  "spherical": {
+   "solid": "triangular-orthobicupola"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Triangular orthobicupola (Johnson solid J27): 8 triangles + 6 squares. The 2-orbit \u201cortho\u201d twin of the cuboctahedron \u2014 same faces, but with adjacent-square 3.3.4.4 vertices the cuboctahedron lacks.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-pseudo-rhombicuboctahedron",
+  "source": "spherical",
+  "k": 2,
+  "family": "3...4...4...4",
+  "spherical": {
+   "solid": "pseudo-rhombicuboctahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Pseudo-rhombicuboctahedron / elongated square gyrobicupola (Johnson solid J37): every vertex 3.4.4.4 yet not vertex-transitive \u2014 two orbits, one square cupola rotated 45\u00b0. The classic locally-but-not-globally-uniform solid.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-tridiminished-icosahedron",
+  "source": "spherical",
+  "k": 3,
+  "family": "3...3...3...5 / 3...5...5",
+  "spherical": {
+   "solid": "tridiminished-icosahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Tridiminished icosahedron (Johnson solid J63): 5 triangles + 3 pentagons. The icosahedron with three pentagonal pyramids removed; remaining vertices stay on the icosahedron's circumsphere.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-diminished-icosahedron",
+  "source": "spherical",
+  "k": 3,
+  "family": "3...3...3...3...3 / 3...3...3...5",
+  "spherical": {
+   "solid": "diminished-icosahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Diminished icosahedron / gyroelongated pentagonal pyramid (Johnson solid J11): 15 triangles + 1 pentagon. The icosahedron with one pentagonal pyramid removed.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-elongated-square-cupola",
+  "source": "spherical",
+  "k": 3,
+  "family": "3...4...4...4 / 4...4...8",
+  "spherical": {
+   "solid": "elongated-square-cupola"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Elongated square cupola (Johnson solid J19): 4 triangles + 13 squares + 1 octagon. Half of the rhombicuboctahedron (a square cupola on an octagonal prism); inscribable in the same sphere.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-pentagonal-orthobirotunda",
+  "source": "spherical",
+  "k": 3,
+  "family": "3...3...5...5 / 3...5...3...5",
+  "spherical": {
+   "solid": "pentagonal-orthobirotunda"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Pentagonal orthobirotunda (Johnson solid J34): 20 triangles + 12 pentagons. The 2-orbit ortho twin of the icosidodecahedron (one rotunda rotated 36\u00b0), with 3.3.5.5 seam vertices.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-parabidiminished-rhombicosidodecahedron",
+  "source": "spherical",
+  "k": 3,
+  "family": "3...4...5...4 / 4...5...1.0",
+  "spherical": {
+   "solid": "parabidiminished-rhombicosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Parabidiminished rhombicosidodecahedron (Johnson solid J80): 10 triangles + 20 squares + 10 pentagons + 2 decagons. Two opposite pentagonal cupolas removed from the rhombicosidodecahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-metabidiminished-icosahedron",
+  "source": "spherical",
+  "k": 4,
+  "family": "3...3...3...3...3 / 3...3...3...5 / 3...5...5",
+  "spherical": {
+   "solid": "metabidiminished-icosahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Metabidiminished icosahedron (Johnson solid J62): 10 triangles + 2 pentagons. Two non-opposite pentagonal pyramids removed from the icosahedron (opposite removal gives the pentagonal antiprism instead).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-parabigyrate-rhombicosidodecahedron",
+  "source": "spherical",
+  "k": 4,
+  "family": "3...4...4...5 / 3...4...5...4",
+  "spherical": {
+   "solid": "parabigyrate-rhombicosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Parabigyrate rhombicosidodecahedron (Johnson solid J73): the rhombicosidodecahedron with two opposite pentagonal cupolas each rotated 36\u00b0 \u2014 same faces, two rings of 3.4.4.5 seam vertices.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-gyrate-diminished-rhombicosidodecahedron",
+  "source": "spherical",
+  "k": 7,
+  "family": "3...4...4...5 / 3...4...5...4 / 4...5...1.0",
+  "spherical": {
+   "solid": "gyrate-diminished-rhombicosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Gyrate diminished rhombicosidodecahedron (Johnson solid J77 or J78): one pentagonal cupola removed and another rotated 36\u00b0 \u2014 one decagon plus a ring of 3.4.4.5 gyrate-seam vertices.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-diminished-rhombicosidodecahedron",
+  "source": "spherical",
+  "k": 7,
+  "family": "3...4...5...4 / 4...5...1.0",
+  "spherical": {
+   "solid": "diminished-rhombicosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Diminished rhombicosidodecahedron (Johnson solid J76): 15 triangles + 25 squares + 11 pentagons + 1 decagon. One pentagonal cupola removed from the rhombicosidodecahedron.",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "sph-gyrate-rhombicosidodecahedron",
+  "source": "spherical",
+  "k": 8,
+  "family": "3...4...4...5 / 3...4...5...4",
+  "spherical": {
+   "solid": "gyrate-rhombicosidodecahedron"
+  },
+  "geometry": "spherical",
+  "discoverer": "Norman Johnson (1966)",
+  "note": "Gyrate rhombicosidodecahedron (Johnson solid J72): the rhombicosidodecahedron with a single pentagonal cupola rotated 36\u00b0 \u2014 same faces as the Archimedean solid, one ring of 3.4.4.5 seam vertices.",
   "renderCell": {
    "cellPolygons": [
     {
