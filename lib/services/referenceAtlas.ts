@@ -39,6 +39,12 @@ export interface ReferenceTiling {
 	// {p,q} = rings [true,false,false]; the uniform/Archimedean forms ring more mirrors. Drives the
 	// Poincaré-disk renderer (lib/render/hyperbolic.ts uniformDescriptor). Present on all hyperbolic entries.
 	wythoff?: { p: number; q: number; rings: [boolean, boolean, boolean]; snub?: boolean };
+	// Hyperbolic shelf, engine-developed entries: the id of a developed Poincaré patch in
+	// public/hyperbolic-developed.json (from the Čtrnáct SU(1,1) developer, tools/ctrnact-oracle/
+	// develop_hyperbolic.py). Its presence — like `wythoff`, but for arbitrary regular-faced tilings the
+	// (2,p,q) fold shader cannot draw — routes /play + thumbnails to the explicit-geometry renderer
+	// (components/hyperbolic-developed-canvas.tsx). Mutually exclusive with `wythoff`.
+	developed?: { patch: string };
 	// Spherical shelf only: the Schläfli symbol {p,q} of a Platonic solid rendered as a spherical tiling
 	// (the finite, 1/p + 1/q > 1/2 end of the regular {p,q} family). Its presence — like wythoff for the
 	// hyperbolic disk — routes /play + the thumbnails to the three.js sphere renderer
@@ -150,9 +156,9 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // (spherical wins, then wythoff), NOT the optional `geometry` field (not reliably populated). Same
 // precedence as _play-client's canvas swap, so the toggle and the rendered view can never disagree.
 export type Geometry = "euclidean" | "hyperbolic" | "spherical";
-export function geometryOf(t: { wythoff?: unknown; spherical?: unknown }): Geometry {
+export function geometryOf(t: { wythoff?: unknown; spherical?: unknown; developed?: unknown }): Geometry {
 	if (t.spherical) return "spherical";
-	if (t.wythoff) return "hyperbolic";
+	if (t.wythoff || t.developed) return "hyperbolic";
 	return "euclidean";
 }
 export const GEOMETRY_ORDER: Geometry[] = ["euclidean", "hyperbolic", "spherical"];
@@ -336,6 +342,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		paramCell: r.paramCell,
 		schlafli: r.schlafli,
 		wythoff: r.wythoff,
+		developed: r.developed,
 		spherical: r.spherical,
 		geometry: r.geometry,
 		m: r.m,

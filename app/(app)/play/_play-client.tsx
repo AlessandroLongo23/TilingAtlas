@@ -7,6 +7,7 @@ import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
+import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -288,7 +289,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// A hyperbolic {p,q} tiling swaps the flat p5 renderer for the Poincaré-disk WebGL view. Set the
 	// store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off Euclidean-
 	// only render modes so their now-hidden sidebar controls can't leave a stale render behind.
-	const isHyperbolic = !!selected?.wythoff;
+	const isHyperbolic = !!selected?.wythoff || !!selected?.developed;
 	// A spherical (Platonic {p,q}) tiling swaps the flat p5 renderer for the three.js sphere view. Set the
 	// store flag (canvas.tsx reads it to blank the flat layer) and force off the other render modes so their
 	// now-hidden sidebar controls can't leave a stale render behind. The sphere renderer owns its own input.
@@ -430,7 +431,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				// transition / vertex orbits are flat-canvas only and hidden in hyperbolic; vertex orbits also need
 				// the tiling's exact cell (the sidebar disables the checkbox without one). Ignore each key where the
 				// sidebar hides/disables the control.
-				const isHyperbolic = !!selected?.wythoff;
+				const isHyperbolic = !!selected?.wythoff || !!selected?.developed;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected) && !isHyperbolic) ||
@@ -451,11 +452,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the canvas fills the window.
 	const immersive = useImmersive((s) => s.immersive);
-	// The symmetry-info badge (a Canvas overlay) also sits top-right; when it's shown, drop the fullscreen
-	// toggle below it so the two never overlap.
-	const showSymmetryElements = useConfiguration((s) => s.showSymmetryElements);
-	const showFundamentalDomain = useConfiguration((s) => s.showFundamentalDomain);
-	const symmetryBadgeShown = (showSymmetryElements || showFundamentalDomain) && !!symmetryData;
+	// The symmetry-info badge (a Canvas overlay) also sits top-right, but it insets itself left of this
+	// fixed-width control column (see canvas.tsx `right-16`), so the two never overlap — the controls keep
+	// their natural corner position regardless of how tall the badge grows with its cell diagram(s).
 	// Leave immersive mode when navigating away from /play, so a collapsed header/sidebar never persists
 	// onto another route (which has no toggle to restore them).
 	useEffect(() => () => useImmersive.getState().set(false), []);
@@ -518,6 +517,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
 				{isSpherical && selected?.spherical ? (
 					<SphericalCanvas width={size.w} height={size.h} solidId={selected.spherical.solid} />
+				) : selected?.developed ? (
+					// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
+					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
+					// regular-faced tilings the (2,p,q) fold shader cannot.
+					<HyperbolicDevelopedCanvas width={size.w} height={size.h} patchId={selected.developed.patch} />
 				) : isHyperbolic && selected?.wythoff ? (
 					// The infinite fold-shader tiling — it now also renders the Islamic A/B/C fill per pixel
 					// (crossing-parity) for regular {p,q}, so there's no separate mesh view: same dimming,
@@ -534,7 +538,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				) : null}
 				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
 				{/* Fullscreen toggle: collapses the header + sidebar. Stays visible while immersive so it can
-				    exit. Drops below the symmetry-info badge (also top-right) when that's shown. */}
+				    exit. Keeps the top-right corner; the symmetry-info badge insets itself to the left of this
+				    control column (canvas.tsx), so they never overlap however tall the badge grows. */}
 				<Tooltip
 					label={immersive ? "Exit fullscreen" : "Fullscreen canvas"}
 					shortcut={immersive ? "F or Esc" : "F"}
@@ -547,8 +552,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
 						aria-pressed={immersive}
 						className={cn(
-							"absolute right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
-							symmetryBadgeShown ? "top-20" : "top-4",
+							"absolute top-4 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
 						)}
 					>
 						{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
@@ -566,8 +570,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						title="Screenshot"
 						aria-label="Take screenshot"
 						className={cn(
-							"absolute right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
-							symmetryBadgeShown ? "top-32" : "top-16",
+							"absolute top-16 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
 						)}
 					>
 						<Camera size={16} />
