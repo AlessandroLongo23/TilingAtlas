@@ -236,27 +236,47 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean"):
     pt = {c.cid: getattr(c, "is_point", False) for c in classes}
     cids = sorted(unit, key=lambda k: (-unit[k], k))
     spherical = (closure == "positive-defect")
+    hyperbolic = (closure == "negative-defect")
+
+    # "negative-defect" (hyperbolic palette): a vertex closes with STRICTLY NEGATIVE angular defect
+    # (total > D), the mirror image of the spherical case. The EUCLIDEAN interior angles overfill a full
+    # turn, so the actual angles — which shrink monotonically with hyperbolic edge length — close to
+    # exactly 2pi at the forced edge length (see lib/render/hyperbolicDevelop.ts / hyp_realize.py). Like
+    # the spherical mode a valid word is NOT a dead end: {3,7} vs {3,8} vs {3,9} (seven, eight, nine
+    # triangles) are all distinct valid vertices, so we emit and KEEP recursing past a full turn — the
+    # enumeration is bounded only by max_len (the palette/valence cap), which is the real hyperbolic
+    # finiteness knob (there is no total-angle bound; ℤ[ζ] density does not apply to a combinatorial count).
+    # This gates the geometry-agnostic solver only; realizability at one shared edge length and
+    # combinatorial closure are decided downstream (necessary, not sufficient — docs/hyperbolic-port-notes).
     def rec(word, total):
         if spherical:
             if len(word) >= min_len and 0 < total < D:
                 if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
                     out.append(list(word))
                 # fall through: a longer word is a distinct, still-valid defect vertex
+        elif hyperbolic:
+            if len(word) >= min_len and total > D:
+                if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
+                    out.append(list(word))
+                # fall through: a longer word is a distinct, larger hyperbolic vertex
         else:
             if len(word) >= min_len and total == D:
                 if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
                     out.append(list(word))
                 return
-        if total >= D or len(word) >= max_len:
+        if len(word) >= max_len:
+            return
+        if not hyperbolic and total >= D:  # euclidean/spherical prune at or past a full turn
             return
         for cid in cids:
             if word and pt[word[-1]] and pt[cid]:   # point-adjacency lemma
                 continue
             word.append(cid)
             nxt = total + unit[cid]
-            # euclidean reaches a full turn (nxt <= D); spherical stays strictly under it
-            # (nxt < D) so a flat vertex (defect 0) is never developed.
-            if (nxt < D) if spherical else (nxt <= D):
+            # euclidean reaches a full turn (nxt <= D); spherical stays strictly under it (nxt < D) so a
+            # flat vertex is never developed; hyperbolic overshoots freely (bounded only by max_len).
+            ok = (nxt < D) if spherical else (True if hyperbolic else (nxt <= D))
+            if ok:
                 rec(word, nxt)
             word.pop()
     rec([], 0)

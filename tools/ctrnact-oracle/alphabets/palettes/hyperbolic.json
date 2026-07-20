@@ -1,0 +1,14 @@
+{
+  "name": "hyperbolic",
+  "D": 240,
+  "closure": "negative-defect",
+  "maxValence": 6,
+  "comment": "Hyperbolic palette (first tractable slice): regular {3,4,5,6,8}-gons at D=240, valence<=6. closure=negative-defect admits vertex figures whose EUCLIDEAN interior angles sum to STRICTLY MORE than a full turn (angular defect < 0). In the hyperbolic plane the actual angles shrink with edge length, so an overfilled Euclidean vertex closes to exactly 2pi at the forced edge length (lib/render/hyperbolicDevelop.ts). Discrete Gauss-Bonnet then forces the glued map onto a genus>=2 surface. D=240 = lcm(2n) over n in {3,4,5,6,8}, so interior angles D(n-2)/(2n) are integers: {3:40, 4:60, 5:72, 6:80, 8:90}, full turn 240. Covers atlas base groups {8,3} and {5,4}; {7,3} needs a heptagon (D divisible by 14) added later. Hyperbolic k=1 is INFINITE; the finiteness knob is the palette + maxValence cap, NOT a total-angle bound. Enumeration keeps recursing past a full turn, so {8,3},{8,4},{8,5},{8,6} (3..6 octagons) are all distinct valid vertices. Geometry-agnostic-engine TEST only: solver+pruner run combinatorially; develop is the separate TS SU(1,1) developer. Not pinned.",
+  "tiles": [
+    { "kind": "regular", "n": 3, "name": "3", "famchar": "3" },
+    { "kind": "regular", "n": 4, "name": "4", "famchar": "4" },
+    { "kind": "regular", "n": 5, "name": "5", "famchar": "5" },
+    { "kind": "regular", "n": 6, "name": "6", "famchar": "6" },
+    { "kind": "regular", "n": 8, "name": "8", "famchar": "8" }
+  ]
+}
