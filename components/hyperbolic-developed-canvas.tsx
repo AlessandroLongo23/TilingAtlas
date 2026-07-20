@@ -10,25 +10,25 @@ import {
 	su11Rotation,
 	su11Apply,
 	su11ApplyInverse,
-	su11Inverse,
+	hypMidpoint,
 	type Su11,
 	type Complex,
 } from "@/lib/render/hyperbolic";
-import { buildTilingGL, rebaseView, anchorPoint, type HyperbolicTilingGL } from "@/lib/render/hyperbolicGroup";
-import {
-	createDevelopedProgram,
-	buildDevelopedUniforms,
-	type DevelopedUniformData,
-} from "@/lib/render/hyperbolicDevelopedShader";
-import { loadDevelopedPatches } from "@/lib/render/hyperbolicDevelopedDraw";
+import { loadDevelopedPatches, drawDevelopedPatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { prepareShaderTiling } from "@/lib/render/hyperbolicReduce";
+import { su11Inverse } from "@/lib/render/hyperbolic";
+import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 
-// Interactive view of an engine-developed hyperbolic tiling, drawn per-pixel on the GPU (Poincaré disk).
-// It reduces each pixel into a fundamental domain by the tiling's symmetry-group generators
-// (lib/render/hyperbolicGroup.ts) and colours it by the fundamental tile it lands in — so it draws ANY
-// developed tiling, infinitely, pixel-perfect to the rim. The p5 canvas underneath writes controls.offset;
-// here we fold the per-frame delta into an SU(1,1) view and re-base every frame so the matrix never blows up.
+// Interactive view of an engine-developed hyperbolic tiling. It reduces each PIXEL into the fundamental
+// domain with the exact deck generators from the develop (lib/render/hyperbolicReduce.ts) and colours it —
+// a per-pixel WebGL renderer that fills the WHOLE disk to the rim, with no symmetry-group reconstruction
+// (which made the old shader fragile) and no orbit swap. If WebGL2 is unavailable it falls back to the
+// explicit-polygon 2D renderer (robust but with a thin sub-pixel rim). The p5 canvas underneath captures
+// the pan gestures; this canvas is an input-transparent overlay.
 
 const DISK_PAD_PX = 24;
+const MAX_CENTER_R = 0.9995; // clamp only against numerical blow-up at the ideal boundary; panning is otherwise free
 
 interface Props {
 	width: number;
@@ -38,9 +38,15 @@ interface Props {
 
 export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const glDataRef = useRef<HyperbolicTilingGL | null>(null);
-	const uniRef = useRef<DevelopedUniformData | null>(null);
-	const uniVersionRef = useRef(0); // bumped when uniRef changes, so the loop re-uploads the static arrays
+	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
+	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null); // set only in the 2D fallback path
+	const devRef = useRef<HyperbolicDeveloper | null>(null); // click-feature snapping + fallback draw
+	const readyRef = useRef(false); // shader tiling uploaded (perPixel) or developer ready (2D)
+	// (tile, residual) camera data: the certified side pairings fold the camera basepoint back into the
+	// Dirichlet domain whenever panning carries it out, so the view isometry stays a few units from the
+	// identity FOREVER — float32 uniforms never degrade and panning is unlimited.
+	const anchorRef = useRef<{ gens: Su11[]; r: number } | null>(null);
+	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
 	const viewRef = useRef<Su11>(su11Identity());
 	const prevOffset = useRef<{ x: number; y: number } | null>(null);
 	const prevTargetOffset = useRef<{ x: number; y: number } | null>(null);
@@ -51,27 +57,56 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 		sizeRef.current = { width, height };
 	}, [width, height]);
 
-	// Load the patch and build its symmetry group + shader uniforms when the tiling changes.
+	// Acquire the drawing context once (WebGL2 preferred; 2D fallback).
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
+		if (gl) {
+			try {
+				glRef.current = new HyperbolicPerPixelRenderer(gl);
+			} catch (e) {
+				console.warn("hyperbolic per-pixel renderer unavailable, falling back to 2D:", e);
+				glRef.current = null;
+			}
+		}
+		if (!glRef.current) ctx2dRef.current = canvas.getContext("2d");
+		return () => {
+			glRef.current?.dispose();
+			glRef.current = null;
+			ctx2dRef.current = null;
+		};
+	}, []);
+
+	// Load the patch, build its developer, and (perPixel) upload its reduction generators + field.
 	useEffect(() => {
 		let alive = true;
+		readyRef.current = false;
 		loadDevelopedPatches().then((map) => {
 			if (!alive) return;
-			const patch = map[patchId];
-			if (!patch) {
-				glDataRef.current = null;
-				uniRef.current = null;
-				return;
-			}
-			const verts = patch.vertices.map(([x, y]) => ({ x, y }));
-			const gl = buildTilingGL(verts, patch.faces);
-			glDataRef.current = gl;
-			uniRef.current = buildDevelopedUniforms(gl);
-			uniVersionRef.current++;
+			const patch = map[patchId] ?? null;
+			const meta = patch ? { id: patch.id, name: patch.name, config: patch.config, edge: patch.edge } : null;
+			metaRef.current = meta;
+			devRef.current = patch?.darts ? new HyperbolicDeveloper(patch.darts, patch.edge) : null;
 			viewRef.current = su11Identity();
 			prevOffset.current = null;
 			prevTargetOffset.current = null;
 			prevRot.current = null;
 			centerAnim.current = null;
+			anchorRef.current = null;
+			if (patch?.darts && glRef.current && meta) {
+				// Build the certified Dirichlet reduction (side pairings + total field) once, then upload.
+				const st = prepareShaderTiling(patch.darts, patch.edge, meta);
+				if (st) {
+					glRef.current.setTiling(st);
+					anchorRef.current = { gens: st.domain.gens, r: Math.min(0.97, st.domain.rPEu + 0.05) };
+					readyRef.current = true;
+				} else {
+					readyRef.current = false; // certificate failed (loud) — leave the baked patch visible
+				}
+			} else {
+				readyRef.current = !!patch?.darts;
+			}
 		});
 		return () => {
 			alive = false;
@@ -81,22 +116,12 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		const gl = canvas.getContext("webgl2", { antialias: true, premultipliedAlpha: false });
-		if (!gl) {
-			console.error("developed hyperbolic view: WebGL2 unavailable");
-			return;
-		}
-		const prog = createDevelopedProgram(gl);
-		if (!prog) return;
-		const U = prog.uniforms;
-		let uploadedVersion = -1;
 
 		let raf = 0;
 		const render = () => {
 			raf = requestAnimationFrame(render);
-			const uni = uniRef.current;
-			const gd = glDataRef.current;
-			if (!uni || !gd) return;
+			const meta = metaRef.current;
+			if (!meta || !readyRef.current) return;
 			const { width: w, height: h } = sizeRef.current;
 			if (w <= 0 || h <= 0) return;
 
@@ -107,12 +132,16 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 				canvas.width = bw;
 				canvas.height = bh;
 			}
-			gl.viewport(0, 0, bw, bh);
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;
-			const R = Math.max(0.5 * Math.min(w, h) - DISK_PAD_PX, 1);
+			const Rcss = Math.max(0.5 * Math.min(w, h) - DISK_PAD_PX, 1); // disk radius in CSS px (pan units)
 			const rotDeg = ctrl.rotation || 0;
+
+			const clampApply = (next: Su11) => {
+				const c = su11ApplyInverse(next, { x: 0, y: 0 });
+				if (c.x * c.x + c.y * c.y <= MAX_CENTER_R * MAX_CENTER_R) viewRef.current = next;
+			};
 
 			if (cfg.hyperbolicResetView) {
 				viewRef.current = su11Identity();
@@ -125,23 +154,16 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 				if (prevOffset.current === null) prevOffset.current = { x: ctrl.offset.x, y: ctrl.offset.y };
 				if (prevTargetOffset.current === null) prevTargetOffset.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
 				if (prevRot.current === null) prevRot.current = rotDeg;
-				// A genuine DRAG moves targetOffset (live pointer input); the eased `offset` also drifts while
-				// merely SETTLING toward a fixed target after a click (a click carries up to the ~5px click-drag
-				// threshold of creep, or lands before a prior pan settled). Distinguish them so settle-drift is
-				// not mistaken for a drag and does not abort the click-to-centre ease before it reaches the middle.
 				const dragging =
 					Math.hypot(ctrl.targetOffset.x - prevTargetOffset.current.x, ctrl.targetOffset.y - prevTargetOffset.current.y) > 1e-4;
 				prevTargetOffset.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
-				// Pan: per-frame drift in disk units, composed as a screen-space translation of the view.
-				const dx = (ctrl.offset.x - prevOffset.current.x) / R;
-				const dy = (ctrl.offset.y - prevOffset.current.y) / R;
+				const dx = (ctrl.offset.x - prevOffset.current.x) / Rcss;
+				const dy = (ctrl.offset.y - prevOffset.current.y) / Rcss;
 				prevOffset.current = { x: ctrl.offset.x, y: ctrl.offset.y };
 				const dLen = Math.hypot(dx, dy);
-				// While a click-to-centre ease runs, ignore pure settle-drift (target not moving) so it neither
-				// fights nor aborts the ease; a real drag (target moving) both pans and cancels it.
 				if (dLen > 1e-5 && !(centerAnim.current && !dragging)) {
 					const sc = Math.min(dLen, 0.9) / dLen;
-					viewRef.current = su11Normalize(su11Mul(su11Translation({ x: dx * sc, y: dy * sc }), viewRef.current));
+					clampApply(su11Normalize(su11Mul(su11Translation({ x: dx * sc, y: dy * sc }), viewRef.current)));
 					if (dragging) centerAnim.current = null;
 				}
 				const dRot = ((rotDeg - prevRot.current) * Math.PI) / 180;
@@ -151,90 +173,121 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 				}
 			}
 
-			// Click-to-anchor: snap the click to the nearest tiling feature (vertex / edge midpoint / tile
-			// centroid) and ease THAT to the disk centre — not the raw pixel. Only for clicks inside the disk.
+			// Click-to-anchor: snap the click to the nearest tiling feature (developed on demand) and ease it
+			// to the disk centre.
 			if (cfg.hyperbolicClick) {
-				const clickDisk = { x: cfg.hyperbolicClick.x / R, y: cfg.hyperbolicClick.y / R };
+				const clickDisk = { x: cfg.hyperbolicClick.x / Rcss, y: cfg.hyperbolicClick.y / Rcss };
 				useConfiguration.setState({ hyperbolicClick: null });
-				if (clickDisk.x * clickDisk.x + clickDisk.y * clickDisk.y < 0.998) {
+				const dev = devRef.current;
+				if (dev && clickDisk.x * clickDisk.x + clickDisk.y * clickDisk.y < 0.998) {
+					const local = dev.develop(meta, viewRef.current, 0.75, 4000);
 					const world = su11ApplyInverse(viewRef.current, clickDisk);
-					centerAnim.current = anchorPoint(gd, world);
+					let best: Complex | null = null;
+					let bd = Infinity;
+					const consider = (c: Complex) => {
+						const d = (c.x - world.x) ** 2 + (c.y - world.y) ** 2;
+						if (d < bd) {
+							bd = d;
+							best = c;
+						}
+					};
+					for (const f of local.faces) {
+						let cx = 0;
+						let cy = 0;
+						for (const idx of f) {
+							const v = local.vertices[idx];
+							consider({ x: v[0], y: v[1] });
+							cx += v[0];
+							cy += v[1];
+						}
+						consider({ x: cx / f.length, y: cy / f.length });
+						for (let i = 0; i < f.length; i++) {
+							const a = local.vertices[f[i]];
+							const b = local.vertices[f[(i + 1) % f.length]];
+							consider(hypMidpoint({ x: a[0], y: a[1] }, { x: b[0], y: b[1] }));
+						}
+					}
+					if (best) centerAnim.current = best;
 				}
 			}
-			// Click-to-centre ease: nudge the anchored feature toward the disk centre with a screen-space
-			// left-translation each frame, until it is within a pixel of the middle.
 			if (centerAnim.current) {
 				const sp = su11Apply(viewRef.current, centerAnim.current);
 				if (Math.hypot(sp.x, sp.y) > 1e-3) {
-					viewRef.current = su11Normalize(su11Mul(su11Translation({ x: -sp.x * 0.2, y: -sp.y * 0.2 }), viewRef.current));
+					clampApply(su11Normalize(su11Mul(su11Translation({ x: -sp.x * 0.2, y: -sp.y * 0.2 }), viewRef.current)));
 				} else {
 					centerAnim.current = null;
 				}
 			}
 
-			// Re-base EVERY frame (even mid-ease) so the view matrix never grows unbounded — rapid clicking
-			// keeps an ease alive continuously, which would otherwise starve the re-basing and bring back the
-			// near-rim precision artifacts. Re-basing is a tiling symmetry (view' = view·g), image-invariant,
-			// but it moves the anchor's screen position; carry the anchor through S = view'⁻¹·view (= g⁻¹) so
-			// the ease target holds steady on screen and the animation neither jitters nor is knocked off course.
-			{
-				const before = viewRef.current;
-				const rebased = rebaseView(gd, before);
-				viewRef.current = rebased;
-				if (centerAnim.current) {
-					const S = su11Normalize(su11Mul(su11Inverse(rebased), before));
-					centerAnim.current = su11Apply(S, centerAnim.current);
+			// Re-anchor: fold the camera basepoint back into the Dirichlet domain via the side pairings.
+			// V ← V·g⁻¹ renders the IDENTICAL image (the tiling is Γ-invariant) with a small view matrix,
+			// so unlimited panning never accumulates float error (the (tile, residual) camera).
+			const anchor = anchorRef.current;
+			if (anchor) {
+				let c = su11ApplyInverse(viewRef.current, { x: 0, y: 0 });
+				for (let i = 0; i < 64 && Math.hypot(c.x, c.y) > anchor.r; i++) {
+					let bestG: Su11 | null = null;
+					let bestC: Complex | null = null;
+					let bestR = Math.hypot(c.x, c.y) - 1e-12;
+					for (const g of anchor.gens) {
+						const q = su11Apply(g, c);
+						const qr = Math.hypot(q.x, q.y);
+						if (qr < bestR) {
+							bestR = qr;
+							bestG = g;
+							bestC = q;
+						}
+					}
+					if (!bestG || !bestC) break; // basepoint already in the closed domain
+					viewRef.current = su11Normalize(su11Mul(viewRef.current, su11Inverse(bestG)));
+					// keep the click-anchor target pointing at the same world feature under the new labels
+					if (centerAnim.current) centerAnim.current = su11Apply(bestG, centerAnim.current);
+					c = bestC;
 				}
 			}
+
 			const view = viewRef.current;
 			const dark = document.documentElement.classList.contains("dark");
-
-			// Static per-tiling arrays: upload once per tiling change.
-			if (uploadedVersion !== uniVersionRef.current) {
-				gl.uniform2f(U.uO, uni.o[0], uni.o[1]);
-				gl.uniform1f(U.uOInvDen, uni.oInvDen);
-				gl.uniform1i(U.uNGen, uni.nGen);
-				gl.uniform4fv(U.uGenInv, uni.genInv);
-				gl.uniform2fv(U.uSite, uni.site);
-				gl.uniform1fv(U.uSiteInvDen, uni.siteInvDen);
-				gl.uniform1i(U.uNTile, uni.nTile);
-				gl.uniform1fv(U.uTileHue, uni.tileHue);
-				gl.uniform2fv(U.uTileCentroid, uni.tileCentroid);
-				gl.uniform1iv(U.uTileEdgeOff, uni.tileEdgeOff);
-				gl.uniform1iv(U.uTileEdgeCount, uni.tileEdgeCount);
-				gl.uniform4fv(U.uEdge, uni.edge);
-				uploadedVersion = uniVersionRef.current;
+			const gl = glRef.current;
+			if (gl) {
+				gl.draw({
+					view,
+					R: Rcss * dpr,
+					cx: bw / 2,
+					cy: bh / 2,
+					canvasH: bh,
+					dark,
+					showFill: cfg.showPolygonFill,
+					hueOffset: cfg.hueOffset || 0,
+					strokePx: Math.max(cfg.lineWidth, 0.5) * dpr * 1.1,
+					taper: cfg.hyperbolicLineMode !== "constant",
+				});
+			} else {
+				// 2D fallback: explicit developed polygons (robust, thin sub-pixel rim).
+				const ctx = ctx2dRef.current;
+				const dev = devRef.current;
+				if (!ctx || !dev) return;
+				const patch: DevelopedPatch = dev.develop(meta, view, 0.99, 12000);
+				ctx.clearRect(0, 0, bw, bh);
+				drawDevelopedPatch(ctx, patch, view, {
+					R: Rcss * dpr,
+					cx: bw / 2,
+					cy: bh / 2,
+					dark,
+					frame: false,
+					showFill: cfg.showPolygonFill,
+					hueOffset: cfg.hueOffset || 0,
+					strokePx: Math.max(cfg.lineWidth, 0.5) * dpr * 1.1,
+					taper: cfg.hyperbolicLineMode !== "constant",
+				});
 			}
-
-			gl.uniform2f(U.uRes, w, h);
-			gl.uniform1f(U.uDpr, dpr);
-			gl.uniform1f(U.uPadPx, DISK_PAD_PX);
-			gl.uniform2f(U.uMa, view.a.x, view.a.y);
-			gl.uniform2f(U.uMb, view.b.x, view.b.y);
-			gl.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
-			gl.uniform1i(U.uDark, dark ? 1 : 0);
-			gl.uniform3f(U.uSurface, dark ? 0.08 : 0.976, dark ? 0.067 : 0.973, dark ? 0.051 : 0.961);
-			gl.uniform3f(U.uLine, dark ? 0.0 : 0.067, dark ? 0.0 : 0.067, dark ? 0.0 : 0.043);
-			gl.uniform1i(U.uShowFill, cfg.showPolygonFill ? 1 : 0);
-			// Stroke: geometry (perspective) keeps a constant hyperbolic width that tapers toward the rim like
-			// the tiles; constant keeps a fixed device-px width. Driven by the shared options-tab toggle.
-			gl.uniform1i(U.uStrokeMode, cfg.hyperbolicLineMode === "constant" ? 1 : 0);
-			gl.uniform1f(U.uStrokePx, Math.max(cfg.lineWidth, 0.5) * 1.1 * dpr);
-			gl.uniform1f(U.uStrokeGeom, Math.max(cfg.lineWidth, 0.5) * 0.02);
-
-			gl.drawArrays(gl.TRIANGLES, 0, 6);
 		};
 		raf = requestAnimationFrame(render);
 		return () => {
 			cancelAnimationFrame(raf);
-			gl.deleteProgram(prog.program);
-			gl.deleteShader(prog.vs);
-			gl.deleteShader(prog.fs);
-			gl.deleteBuffer(prog.quad);
 		};
 	}, []);
 
-	// Absolute overlay over the input-only p5 canvas (which captures the pan gestures driving controls.offset).
 	return (
 		<canvas
 			ref={canvasRef}

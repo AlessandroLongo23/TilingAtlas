@@ -48,7 +48,7 @@ describe("certified Dirichlet domain (deck group of a developed hyperbolic tilin
 		const bad: string[] = [];
 		for (const p of atlas) {
 			const dom = buildDirichletDomain(p.darts as Darts, p.edge);
-			if (!dom.certified) {
+			if (dom.certified !== true) {
 				bad.push(`${p.id}: ${dom.reason}`);
 				continue;
 			}
@@ -74,8 +74,8 @@ describe("certified Dirichlet domain (deck group of a developed hyperbolic tilin
 	it.each(samples)("greedy fold lands inside D̄ from every deep point for %s", (id) => {
 		const p = byId(id);
 		const dom = buildDirichletDomain(p.darts as Darts, p.edge);
-		expect(dom.certified, !dom.certified ? (dom as { reason: string }).reason : "").toBe(true);
-		if (!dom.certified) return;
+		expect(dom.certified, dom.certified !== true ? (dom as { reason: string }).reason : "").toBe(true);
+		if (dom.certified !== true) return;
 		let maxIters = 0;
 		for (const w0 of samplePoints(300, 0.999)) {
 			const { w, iters } = foldIntoDomain(dom.gens, w0, dom.rInEu);
@@ -89,7 +89,7 @@ describe("certified Dirichlet domain (deck group of a developed hyperbolic tilin
 		const p = byId("hyp-k2-3-3-4-3-4-4__3-3-4-3-4-4");
 		const dom = buildDirichletDomain(p.darts as Darts, p.edge);
 		expect(dom.certified).toBe(true);
-		if (!dom.certified) return;
+		if (dom.certified !== true) return;
 		// g(0) must itself fold back to ~0 (0's orbit reduces to 0, the unique orbit point in D's interior)
 		for (const g of dom.gens) {
 			const img = su11Apply(g, { x: 0, y: 0 });

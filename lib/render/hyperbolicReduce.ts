@@ -128,7 +128,7 @@ export function prepareShaderTiling(
 	opts: { fieldRes?: number } = {},
 ): ShaderTiling | null {
 	const dom = buildDirichletDomain(darts, edge);
-	if (!dom.certified) {
+	if (dom.certified !== true) {
 		console.error(`hyperbolic reducer: Dirichlet certificate FAILED for ${meta.id}: ${dom.reason}`);
 		return null;
 	}

@@ -2,30 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
-import { buildTilingGL } from "@/lib/render/hyperbolicGroup";
-import {
-	createDevelopedProgram,
-	buildDevelopedUniforms,
-	type DevelopedProgram,
-	type DevelopedUniformData,
-} from "@/lib/render/hyperbolicDevelopedShader";
-import { loadDevelopedPatches, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { su11Identity } from "@/lib/render/hyperbolic";
+import { loadDevelopedPatches, drawDevelopedPatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
+import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 
 // Static Poincaré-disk preview of an engine-developed hyperbolic tiling for the library grid and /play
-// sidebar. Renders ONE frame at the identity (centred) view through the SAME per-pixel shader as the
-// interactive canvas — full disk to the rim, single source of truth for the look — and, like the euclidean
-// and spherical thumbnails, re-renders live on hue-ring drags and stroke-option changes. Lazy via
-// IntersectionObserver.
-//
-// ONE shared, persistent offscreen WebGL2 context renders every thumbnail in turn (a fresh context per
-// thumbnail churns past the browser's live-context cap and blanks some previews). The per-patch symmetry
-// group is expensive to build, so its shader uniforms are cached by patch id — a hue/stroke change only
-// re-uploads the handful of dynamic uniforms and redraws, never rebuilds the group.
+// sidebar. It renders ONE frame with the SAME per-pixel renderer as the interactive canvas — reduce each
+// pixel into the fundamental domain and colour it — so the preview fills the whole disk to the rim and
+// matches the /play view exactly. One shared offscreen WebGL2 canvas renders every thumbnail in turn; the
+// per-tiling reduction generators + field are cached so hue/stroke drags just re-draw (no rebuild). Falls
+// back to the explicit-polygon 2D renderer where WebGL2 is unavailable. Lazy via IntersectionObserver.
 
-let glCtx: WebGL2RenderingContext | null = null;
-let glProg: DevelopedProgram | null = null;
+// Shared offscreen surfaces (module singletons — thumbnails render one at a time).
 let glCanvas: HTMLCanvasElement | null = null;
-const uniformCache = new Map<string, DevelopedUniformData>();
+let glRenderer: HyperbolicPerPixelRenderer | null | undefined; // undefined = untried, null = unavailable
+let thumbCanvas2d: HTMLCanvasElement | null = null; // 2D fallback
+const tilingCache = new Map<string, ShaderTiling | null>(); // null = certificate failed → 2D fallback
 
 interface ThumbOpts {
 	hueOffset: number;
@@ -34,67 +28,93 @@ interface ThumbOpts {
 	lineWidth: number;
 }
 
-function renderThumb(patch: DevelopedPatch, size: number, opts: ThumbOpts): string | null {
+function ensureRenderer(size: number): HyperbolicPerPixelRenderer | null {
 	if (!glCanvas) glCanvas = document.createElement("canvas");
 	if (glCanvas.width !== size) {
 		glCanvas.width = size;
 		glCanvas.height = size;
 	}
-	if (!glCtx || glCtx.isContextLost()) {
-		glCtx = glCanvas.getContext("webgl2", { antialias: true, premultipliedAlpha: false, preserveDrawingBuffer: true });
-		glProg = glCtx ? createDevelopedProgram(glCtx) : null;
+	if (glRenderer === undefined) {
+		const gl = glCanvas.getContext("webgl2", { alpha: true, premultipliedAlpha: true, preserveDrawingBuffer: true });
+		if (!gl) {
+			glRenderer = null;
+		} else {
+			try {
+				glRenderer = new HyperbolicPerPixelRenderer(gl);
+			} catch {
+				glRenderer = null;
+			}
+		}
 	}
-	const gl = glCtx;
-	const prog = glProg;
-	if (!gl || !prog) return null;
-	gl.useProgram(prog.program);
+	return glRenderer ?? null;
+}
 
-	// Group extraction is expensive and hue/stroke-independent — build once per patch, cache the uniforms.
-	let uni = uniformCache.get(patch.id);
-	if (!uni) {
-		const glData = buildTilingGL(
-			patch.vertices.map(([x, y]) => ({ x, y })),
-			patch.faces,
+function renderThumbGL(patch: DevelopedPatch, size: number, opts: ThumbOpts): string | null {
+	if (!patch.darts) return null;
+	const r = ensureRenderer(size);
+	if (!r || !glCanvas) return null;
+	let st = tilingCache.get(patch.id);
+	if (st === undefined) {
+		st = prepareShaderTiling(
+			patch.darts,
+			patch.edge,
+			{ id: patch.id, name: patch.name, config: patch.config, edge: patch.edge },
+			{ fieldRes: 512 },
 		);
-		uni = buildDevelopedUniforms(glData);
-		uniformCache.set(patch.id, uni);
+		tilingCache.set(patch.id, st);
 	}
-	const U = prog.uniforms;
+	if (!st) return null; // certificate failed (loud in prepareShaderTiling) → 2D fallback
+	r.setTiling(st);
 	const dark = document.documentElement.classList.contains("dark");
-	const lw = Math.max(opts.lineWidth, 0.5);
-
-	gl.viewport(0, 0, size, size);
-	// per-tiling static arrays (cheap uniform uploads; the shared context serves many patches)
-	gl.uniform2f(U.uO, uni.o[0], uni.o[1]);
-	gl.uniform1f(U.uOInvDen, uni.oInvDen);
-	gl.uniform1i(U.uNGen, uni.nGen);
-	gl.uniform4fv(U.uGenInv, uni.genInv);
-	gl.uniform2fv(U.uSite, uni.site);
-	gl.uniform1fv(U.uSiteInvDen, uni.siteInvDen);
-	gl.uniform1i(U.uNTile, uni.nTile);
-	gl.uniform1fv(U.uTileHue, uni.tileHue);
-	gl.uniform2fv(U.uTileCentroid, uni.tileCentroid);
-	gl.uniform1iv(U.uTileEdgeOff, uni.tileEdgeOff);
-	gl.uniform1iv(U.uTileEdgeCount, uni.tileEdgeCount);
-	gl.uniform4fv(U.uEdge, uni.edge);
-	// view + theme (fixed identity view — no pan)
-	gl.uniform2f(U.uRes, size, size);
-	gl.uniform1f(U.uDpr, 1);
-	gl.uniform1f(U.uPadPx, 4);
-	gl.uniform2f(U.uMa, 1, 0);
-	gl.uniform2f(U.uMb, 0, 0);
-	gl.uniform1i(U.uDark, dark ? 1 : 0);
-	gl.uniform3f(U.uSurface, dark ? 0.08 : 0.976, dark ? 0.067 : 0.973, dark ? 0.051 : 0.961);
-	gl.uniform3f(U.uLine, dark ? 0.0 : 0.067, dark ? 0.0 : 0.067, dark ? 0.0 : 0.043);
-	// live hue + stroke options — the same fields the interactive canvas reads (dpr = 1 at thumbnail scale)
-	gl.uniform1f(U.uHueOffset, opts.hueOffset || 0);
-	gl.uniform1i(U.uShowFill, opts.showFill ? 1 : 0);
-	gl.uniform1i(U.uStrokeMode, opts.lineMode === "constant" ? 1 : 0);
-	gl.uniform1f(U.uStrokePx, lw * 1.1);
-	gl.uniform1f(U.uStrokeGeom, lw * 0.02);
-	gl.drawArrays(gl.TRIANGLES, 0, 6);
-
+	r.draw({
+		view: su11Identity(),
+		R: size / 2 - 4,
+		cx: size / 2,
+		cy: size / 2,
+		canvasH: size,
+		dark,
+		showFill: opts.showFill,
+		hueOffset: opts.hueOffset || 0,
+		strokePx: Math.max(opts.lineWidth, 0.5) * 1.1,
+		taper: opts.lineMode !== "constant",
+	});
 	return glCanvas.toDataURL("image/png");
+}
+
+function renderThumb2d(patch: DevelopedPatch, size: number, opts: ThumbOpts): string | null {
+	if (!thumbCanvas2d) thumbCanvas2d = document.createElement("canvas");
+	if (thumbCanvas2d.width !== size) {
+		thumbCanvas2d.width = size;
+		thumbCanvas2d.height = size;
+	}
+	const ctx = thumbCanvas2d.getContext("2d");
+	if (!ctx) return null;
+	const dark = document.documentElement.classList.contains("dark");
+	ctx.clearRect(0, 0, size, size);
+	const drawn = patch.darts
+		? new HyperbolicDeveloper(patch.darts, patch.edge).develop(
+				{ id: patch.id, name: patch.name, config: patch.config, edge: patch.edge },
+				su11Identity(),
+				0.99,
+				5000,
+			)
+		: patch;
+	drawDevelopedPatch(ctx, drawn, su11Identity(), {
+		R: size / 2 - 4,
+		cx: size / 2,
+		cy: size / 2,
+		dark,
+		frame: true,
+		showFill: opts.showFill,
+		hueOffset: opts.hueOffset || 0,
+		strokePx: Math.max(opts.lineWidth, 0.5) * 1.1,
+		taper: opts.lineMode !== "constant",
+	});
+	return thumbCanvas2d.toDataURL("image/png");
+}
+
+function renderThumb(patch: DevelopedPatch, size: number, opts: ThumbOpts): string | null {
+	return renderThumbGL(patch, size, opts) ?? renderThumb2d(patch, size, opts);
 }
 
 interface Props {
@@ -107,7 +127,7 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
 	// Live config — re-render the preview on hue-ring drags and stroke-option changes, exactly as the
-	// euclidean and spherical thumbnails redraw on the hue ring. Cheap: the group is cached per patch.
+	// euclidean and spherical thumbnails redraw on the hue ring. Cheap: the reduction field is cached per patch.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
 	const showFill = useConfiguration((s) => s.showPolygonFill);
 	const lineMode = useConfiguration((s) => s.hyperbolicLineMode);
@@ -135,8 +155,6 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 				}
 			});
 		};
-		// Re-runs whenever a dep changes (hue/stroke). A new observer fires immediately if in view — so a
-		// visible thumbnail redraws at once, an off-screen one waits until it scrolls in (no wasted work).
 		const io = new IntersectionObserver(
 			(entries) => {
 				if (!entries[0].isIntersecting) return;
