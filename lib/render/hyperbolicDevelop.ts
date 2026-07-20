@@ -80,14 +80,6 @@ export function solveEdgeLength(config: number[], tol = 1e-12): number | null {
 	return 0.5 * (lo + hi);
 }
 
-/** Circumradius of a regular `sides`-gon with hyperbolic edge length `edgeLen`.
- *  cosh(ℓ) = cosh²R − sinh²R·cos(2π/m) ⇒ cosh²R = (cosh ℓ − c)/(1 − c), c = cos(2π/m). */
-function circumradius(sides: number, edgeLen: number): number {
-	const c = Math.cos(TWO_PI / sides);
-	const C2 = (Math.cosh(edgeLen) - c) / (1 - c);
-	return Math.acosh(Math.sqrt(Math.max(1, C2)));
-}
-
 /** SU(1,1) rotation by `theta` about a disk point (translate the centre to O, rotate, translate back). */
 function rotationAbout(center: Complex, theta: number): Su11 {
 	const T = su11Translation(center);
@@ -114,32 +106,38 @@ export function placePolygonOnEdge(a: Complex, b: Complex, sides: number, avoid:
 	const towardNeg: Complex = { x: m.x - perp.x * 0.1, y: m.y - perp.y * 0.1 };
 	const wedge = TWO_PI / sides;
 
-	let best: { verts: Complex[]; d: number } | null = null;
+	// Four candidates (two sides × two senses); exactly two send a → b (the polygons on either side of the
+	// edge), the other two are wrong-sense. Rank by how well the m-fold rotation sends a → b, then among the
+	// well-fitting ones take the polygon on the FAR side of the edge from `avoid`. Ranking (not a hard
+	// threshold) keeps the flood-fill robust to the numerical drift that accumulates over many placements.
+	const cands: { verts: Complex[]; err: number; d: number }[] = [];
 	for (const toward of [towardPos, towardNeg]) {
 		const center = geodesicMove(m, toward, apothem);
 		for (const sign of [1, -1]) {
 			const rot = rotationAbout(center, sign * wedge);
 			const mapped = su11Apply(rot, a);
 			const err = Math.hypot(mapped.x - b.x, mapped.y - b.y);
-			if (err > 1e-6) continue; // this (side, sense) does not send a → b: not the polygon on this edge
 			const verts: Complex[] = [a];
 			let v = a;
 			for (let i = 1; i < sides; i++) {
 				v = su11Apply(rot, v);
 				verts.push(v);
 			}
-			// centroid distance from `avoid`: pick the polygon on the far side of the edge.
-			let cx = 0, cy = 0;
-			for (const p of verts) {
-				cx += p.x;
-				cy += p.y;
-			}
-			cx /= sides;
-			cy /= sides;
-			const d = Math.hypot(cx - avoid.x, cy - avoid.y);
-			if (!best || d > best.d) best = { verts, d };
+			const c = eucCentroid(verts);
+			cands.push({ verts, err, d: Math.hypot(c.x - avoid.x, c.y - avoid.y) });
 		}
 	}
-	if (!best) throw new Error(`placePolygonOnEdge: no ${sides}-gon fits edge (${a.x},${a.y})-(${b.x},${b.y})`);
-	return best.verts;
+	const fit = cands.filter((c) => c.err < 1e-3);
+	const pool = fit.length ? fit : [cands.reduce((m2, c) => (c.err < m2.err ? c : m2))];
+	return pool.reduce((m2, c) => (c.d > m2.d ? c : m2)).verts;
+}
+
+/** Euclidean centroid of Poincaré points (a stable dedup/anchor key, not the hyperbolic centre). */
+function eucCentroid(verts: Complex[]): Complex {
+	let x = 0, y = 0;
+	for (const v of verts) {
+		x += v.x;
+		y += v.y;
+	}
+	return { x: x / verts.length, y: y / verts.length };
 }
