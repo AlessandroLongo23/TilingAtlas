@@ -1293,3 +1293,14 @@ combinatorial over-production — necessary-not-sufficient, no external oracle (
 hold). Next arc: the dart-frame developer consuming solver blocks (SU(1,1) flood-fill + realizability
 filter) → unified renderer that keeps the current fold-shader crispness. Detail: marek-vault
 knowledge/algorithm/hyperbolic-developer.md. — CC
+
+**2026-07-20 (CC) — Hyperbolic engine tilings now render in the atlas (full pipeline live).**
+Built the SU(1,1) developer (tools/ctrnact-oracle/develop_hyperbolic.py): decodes solver blocks, embeds
+them in the Poincaré disk (frames in SU(1,1), rneig=Rot(α), glue=edge involution, forced edge length
+Σα=2π), no closure → bounded patch. Verified {8,3} → exact octagons (edge err 1.4e-14); mixed configs
+work (3.8.3.8, 6.6.8, 5.8.8, 3.4.8.4). All 1241 k=1 blocks develop. Wired into the atlas: 15 curated
+engine tilings (public/hyperbolic-developed.json) replace the 22 Wythoff placeholders; new explicit-
+geometry renderer (lib/render/hyperbolicDevelopedDraw.ts + components/hyperbolic-developed-canvas.tsx)
+draws geodesic polygons and REUSES the store-driven SU(1,1) pan, so navigation is unchanged. Playwright-
+verified in /play (3.4.8.4 renders, pan works, shelf=15); pnpm build green. Commits on
+feat/hyperbolic-developer. Detail: marek-vault knowledge/algorithm/hyperbolic-developer.md. — CC
