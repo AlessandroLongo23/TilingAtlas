@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
 import type { VCWithOccurrences } from "@/classes/Tiling";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
+import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
 import { Button } from "./ui/button";
 
@@ -32,17 +33,6 @@ function Row({ label, value, muted }: { label: string; value: ReactNode; muted?:
 				{value}
 			</span>
 		</div>
-	);
-}
-
-// Three Coxeter–Dynkin nodes; filled when the corresponding mirror is ringed (active).
-function RingDiagram({ rings }: { rings: [boolean, boolean, boolean] }) {
-	return (
-		<span className="inline-flex items-center gap-0.5 font-mono">
-			{rings.map((on, i) => (
-				<span key={i}>{on ? "●" : "○"}</span>
-			))}
-		</span>
 	);
 }
 
@@ -83,11 +73,15 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 						{/* Header: Schläfli / vertex-config label + geometry (+ solid name for spherical) */}
 						<div className="flex flex-col gap-0.5">
 							<div className="flex items-baseline justify-between gap-3">
-								<span className="font-mono text-sm font-semibold text-fg">{spec.label}</span>
+								<span className="font-mono text-sm font-semibold text-fg" title={spec.label}>
+									{compactVertexConfig(spec.label)}
+								</span>
 								<span className="text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
 							</div>
 							{spec.geometry === "spherical" ? (
 								<span className="text-xs text-fg-secondary">{spec.solidName}</span>
+							) : spec.geometry === "hyperbolic" ? (
+								<span className="text-xs text-fg-secondary">Poincaré disk</span>
 							) : null}
 						</div>
 
@@ -112,21 +106,40 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 							</div>
 						) : null}
 
-						{/* Symmetry — Hyperbolic */}
+						{/* Tiles — Hyperbolic (always; the honest tile/edge facts moved off the card) */}
 						{spec.geometry === "hyperbolic" ? (
+							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+								<SectionTitle>Tiles</SectionTitle>
+								{spec.schlafli ? (
+									<Row
+										label="Schläfli"
+										value={<span className="font-mono">{`{${spec.schlafli[0]},${spec.schlafli[1]}}`}</span>}
+									/>
+								) : null}
+								{spec.faces.length > 0 ? (
+									<Row label="Face sizes" value={<span className="font-mono">{`{${spec.faces.join(",")}}`}</span>} />
+								) : null}
+								{spec.valence > 0 ? <Row label="Valence (d)" value={spec.valence} /> : null}
+								{spec.edge != null ? (
+									<Row label="Edge length ℓ" value={<span className="font-mono">{spec.edge.toFixed(3)}</span>} />
+								) : null}
+							</div>
+						) : null}
+
+						{/* Symmetry — Hyperbolic: ONLY for regular {p,q}. Non-regular configs get no Coxeter row (we
+						    do not invert the vertex config into a Wythoff symbol). */}
+						{spec.geometry === "hyperbolic" && spec.coxeter ? (
 							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
 								<SectionTitle>Symmetry</SectionTitle>
 								<Row
-									label="Group"
+									label="Coxeter"
 									value={
 										<span className="font-mono">
 											<span>{spec.coxeter}</span>
-											<span className="ml-1.5 text-fg-muted">{spec.orbifold}</span>
+											{spec.orbifold ? <span className="ml-1.5 text-fg-muted">{spec.orbifold}</span> : null}
 										</span>
 									}
 								/>
-								<Row label="Coxeter–Dynkin" value={<RingDiagram rings={spec.rings} />} />
-								{spec.snub ? <Row label="Form" value="snub" /> : null}
 							</div>
 						) : null}
 
@@ -160,6 +173,14 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 						<div className="border-t border-line pt-3">
 							<OrbitSection spec={spec} />
 						</div>
+
+						{/* Provenance — Hyperbolic. The atlas "discoverer" string, relabelled so it reads as what
+						    rendered the tiling, not who first found it (these {p,q} tilings are classical). */}
+						{spec.geometry === "hyperbolic" && spec.provenance ? (
+							<div className="border-t border-line pt-3">
+								<p className="text-xs text-fg-muted">Rendered by {spec.provenance}</p>
+							</div>
+						) : null}
 
 						{/* Vertex-configuration thumbnails — Euclidean only */}
 						{spec.geometry === "euclidean" && vcs.length > 0 ? (

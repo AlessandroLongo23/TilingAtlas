@@ -30,6 +30,11 @@ export interface CatalogueTiling {
 	paramCell?: ParametricCellData;
 	// Hyperbolic shelf only: the {p,q} Schläfli symbol (regular entries; kept as the card label).
 	schlafli?: [number, number];
+	// Hyperbolic shelf only: the forced edge length ℓ of the developed patch, and the provenance string
+	// (a "rendered by" note, not a historical discoverer). Both surface in the /play info panel, not the
+	// card. Carried through from ReferenceTiling by referenceToCatalogue.
+	edge?: number;
+	discoverer?: string;
 	// Hyperbolic shelf: id of a developed Poincaré patch (public/hyperbolic-developed.json). Its presence
 	// routes /play + the sidebar/library thumbnails to the per-pixel Poincaré-disk renderer instead of the
 	// Euclidean cell path. Carried through from ReferenceTiling by referenceToCatalogue. Present on every

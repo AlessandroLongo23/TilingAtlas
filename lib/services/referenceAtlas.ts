@@ -40,6 +40,10 @@ export interface ReferenceTiling {
 	// thumbnails to the per-pixel Poincaré-disk renderer (components/hyperbolic-developed-canvas.tsx). Every
 	// hyperbolic catalogue entry carries it.
 	developed?: { patch: string };
+	// Hyperbolic shelf: the forced edge length ℓ of the developed patch (the ℓ solving Σ α(pᵢ,ℓ)=2π),
+	// merged from public/hyperbolic-developed.json at load. Always a scalar — one edge length per tiling,
+	// even at k>1 — and the coordinate that distinguishes members of a family, since H² has no similarity.
+	edge?: number;
 	// Spherical shelf only: the Schläfli symbol {p,q} of a Platonic solid rendered as a spherical tiling
 	// (the finite, 1/p + 1/q > 1/2 end of the regular {p,q} family). Its presence — like developed for the
 	// hyperbolic disk — routes /play + the thumbnails to the three.js sphere renderer
@@ -142,7 +146,7 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	scaled: { short: "Scaled", long: "Scaled polygons (sides 1–3)" },
 	polyomino: { short: "Polyominoes", long: "Polyominoes (Tetris pieces)" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
-	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic {p,q} tilings (Poincaré disk)" },
+	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic {p,q} tilings" },
 	spherical: { short: "Spherical", long: "Spherical tilings (uniform polyhedra & Johnson solids)" },
 };
 
@@ -162,6 +166,49 @@ export const GEOMETRY_LABEL: Record<Geometry, string> = {
 	hyperbolic: "Hyperbolic",
 	spherical: "Spherical",
 };
+
+// Hyperbolic display parameters read straight off the vertex configuration (`family` is the full cyclic
+// config, e.g. "3.8.3.8"): the valence d = number of tiles at the vertex, the face-size set p, and — when
+// a single size fills the vertex — the Schläfli symbol {p,d} of the regular tiling. The forced edge length
+// ℓ is NOT combinatorial (it comes from the developed patch, see ReferenceTiling.edge). Returns null if the
+// config doesn't parse as a dot-separated list of polygon sizes.
+export function hyperbolicParams(
+	family: string,
+): { faces: number[]; valence: number; schlafli: [number, number] | null } | null {
+	const toks = family.split(".").map((t) => Number(t));
+	if (!toks.length || toks.some((n) => !Number.isInteger(n) || n < 3)) return null;
+	const faces = [...new Set(toks)].sort((a, b) => a - b);
+	return { faces, valence: toks.length, schlafli: faces.length === 1 ? [faces[0], toks.length] : null };
+}
+
+const SUPERSCRIPT_DIGIT: Record<string, string> = {
+	"0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
+};
+
+// Compact vertex-config notation for display (the standard Grünbaum–Shephard superscript form): run-length
+// encode CONSECUTIVE identical faces as exponents, preserving cyclic order — "3.3.3.3.3.3.3.3" → "3⁸",
+// "3.3.4.3.4.4" → "3².4.3.4²". Exponents collapse ADJACENT runs ONLY, never a global tally: two tilings
+// that share a face multiset but differ in arrangement (3.3.4.3.4 vs 3.3.3.4.4) must keep distinct labels.
+// The string is encoded as stored (no re-rotation), so the label's identity is untouched. Any family that
+// is not a pure dot-separated integer config (star "*", convex "cx", isotoxal "α") passes through unchanged.
+//
+// k≥2 families list one vertex config per orbit, joined with " + " (e.g. "4.3.3.3.3.3 + 4.3.3.3.3.3").
+// Each orbit's config is compacted independently and the orbits are rejoined with semicolons — the standard
+// separator for a k-uniform tiling's distinct vertex types, read clearly against the dots inside each
+// config → "4.3⁵; 4.3⁵".
+export function compactVertexConfig(family: string): string {
+	if (family.includes(" + ")) return family.split(" + ").map(compactVertexConfig).join("; ");
+	const toks = family.split(".");
+	if (toks.length < 2 || toks.some((t) => !/^\d+$/.test(t))) return family;
+	const out: string[] = [];
+	for (let i = 0; i < toks.length; ) {
+		let run = 1;
+		while (i + run < toks.length && toks[i + run] === toks[i]) run++;
+		out.push(run > 1 ? toks[i] + [...String(run)].map((d) => SUPERSCRIPT_DIGIT[d]).join("") : toks[i]);
+		i += run;
+	}
+	return out.join(".");
+}
 
 // Scaled shelf only: the max side length (scale) a tiling uses, recovered from its family subscripts
 // (₂/₃). Drives the sub-class facet — "Sides 1–2" (max 2, the former Doubled class) vs "Sides 1–3" (uses
@@ -336,6 +383,8 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		exactSource: r.exactSource,
 		paramCell: r.paramCell,
 		schlafli: r.schlafli,
+		edge: r.edge,
+		discoverer: r.discoverer,
 		developed: r.developed,
 		spherical: r.spherical,
 		geometry: r.geometry,
@@ -373,8 +422,20 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-islamic.json"),
 		bestEffort("/reference-atlas-hyperbolic.json"),
 		bestEffort("/reference-atlas-spherical.json"),
+		fetch("/hyperbolic-developed.json")
+			.then((res) => (res.ok ? (res.json() as Promise<Array<{ id: string; edge?: number }>>) : []))
+			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
-		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical]) => {
+		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, devPatches]) => {
+			// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
+			// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
+			const edgeById = new Map<string, number | undefined>(
+				(devPatches as Array<{ id: string; edge?: number }>).map((p) => [p.id, p.edge]),
+			);
+			for (const t of hyperbolic) {
+				const e = edgeById.get(t.developed?.patch ?? t.id);
+				if (typeof e === "number") t.edge = e;
+			}
 			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...hyperbolic, ...spherical];
 			cache = data;
 			inflight = null;

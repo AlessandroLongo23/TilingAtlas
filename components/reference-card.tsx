@@ -9,6 +9,7 @@ import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import {
+	compactVertexConfig,
 	isMaximal,
 	partitionKeyOf,
 	starFoldsOf,
@@ -39,6 +40,7 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 	// Degrees of freedom = independent sliders in Play. 2+ (α, β, …) get their own badge.
 	const dof = tiling.paramCell?.params?.length ?? (isFamily ? 1 : 0);
 	const GREEK = ["α", "β", "γ", "δ", "ε"];
+	const isHyperbolic = tileClassOf(tiling) === "hyperbolic";
 	const isConvex = tileClassOf(tiling) === "convex";
 	const isIsotoxal = tileClassOf(tiling) === "isotoxal";
 	const isMixed = tileClassOf(tiling) === "mixed";
@@ -186,25 +188,41 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 						</span>
 					))}
 				</div>
-				<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
-					{tiling.discoverer}
-				</p>
-				<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
-					k={tiling.k} · {TILE_CLASS_LABEL[tileClassOf(tiling)].long}
-				</p>
-				{classLabel || tiling.wallpaperGroup ? (
-					<p
-						className="text-[10px] text-fg-muted font-mono leading-tight"
-						title={`${classLabel ? `${tiling.m} distinct vertex configuration(s)${partitionKey ? `, multiplicities ${tiling.partition?.join("·")}` : ""}` : ""}${tiling.wallpaperGroup ? ` · wallpaper group ${tiling.wallpaperGroup} (${tiling.latticeShape})` : ""}`.trim()}
-					>
-						{classLabel}
-						{classLabel && tiling.wallpaperGroup ? " · " : null}
-						{tiling.wallpaperGroup ? <span className="text-sky-400/80">{tiling.wallpaperGroup}</span> : null}
-					</p>
-				) : null}
-				<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
-					{tiling.id}
-				</p>
+				{isHyperbolic ? (
+					// User-facing face: the vertex configuration is the headline, geometry the muted sub-line.
+					// Everything technical (valence, edge length ℓ, engine provenance, Poincaré-disk model, the
+					// dev id) lives in the /play info panel, not here.
+					<>
+						<p className="text-sm text-fg font-mono leading-tight" title={`vertex configuration ${tiling.family}`}>
+							{compactVertexConfig(tiling.family)}
+						</p>
+						<p className="text-[10px] text-fg-muted leading-tight">
+							k={tiling.k} · {TILE_CLASS_LABEL[tileClassOf(tiling)].short}
+						</p>
+					</>
+				) : (
+					<>
+						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
+							{tiling.discoverer}
+						</p>
+						<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
+							k={tiling.k} · {TILE_CLASS_LABEL[tileClassOf(tiling)].long}
+						</p>
+						{classLabel || tiling.wallpaperGroup ? (
+							<p
+								className="text-[10px] text-fg-muted font-mono leading-tight"
+								title={`${classLabel ? `${tiling.m} distinct vertex configuration(s)${partitionKey ? `, multiplicities ${tiling.partition?.join("·")}` : ""}` : ""}${tiling.wallpaperGroup ? ` · wallpaper group ${tiling.wallpaperGroup} (${tiling.latticeShape})` : ""}`.trim()}
+							>
+								{classLabel}
+								{classLabel && tiling.wallpaperGroup ? " · " : null}
+								{tiling.wallpaperGroup ? <span className="text-sky-400/80">{tiling.wallpaperGroup}</span> : null}
+							</p>
+						) : null}
+						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
+							{tiling.id}
+						</p>
+					</>
+				)}
 			</div>
 		</>
 	);

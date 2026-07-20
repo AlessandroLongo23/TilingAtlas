@@ -6,7 +6,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { ORBIFOLD_SIGNATURE } from "@/lib/classes/symmetry/types";
-import { geometryOf } from "@/lib/services/referenceAtlas";
+import { geometryOf, hyperbolicParams } from "@/lib/services/referenceAtlas";
 
 // Edge- and tile-orbit extraction does not exist yet (AL owns that logic). Until it does, buildTilingSpec
 // leaves both fields null and the card renders a muted "not computed" row. When the extractor lands, fill
@@ -40,10 +40,16 @@ export interface EuclideanSpec extends BaseSpec {
 
 export interface HyperbolicSpec extends BaseSpec {
 	geometry: "hyperbolic";
-	coxeter: string; // "[7,3]"
-	orbifold: string; // full reflection group, "*732"
-	rings: [boolean, boolean, boolean]; // Coxeter–Dynkin ring states
-	snub: boolean;
+	faces: number[]; // distinct tile face-sizes at the vertex, e.g. [3,4,8]
+	valence: number; // tiles meeting at the vertex (the vertex-config length, d)
+	edge: number | null; // forced edge length ℓ of the developed patch
+	provenance: string | null; // "rendered by" note (the atlas discoverer string, relocated off the card)
+	// Rigorous symmetry — REGULAR {p,q} entries ONLY. Deriving a Coxeter symbol from a bare vertex
+	// configuration (3.4.8.4, 3.8.3.8, …) is a Wythoff-inverse we do NOT perform, so non-regular configs
+	// leave these null and the panel omits the Symmetry section rather than fabricating it.
+	schlafli: [number, number] | null; // "{8,3}"
+	coxeter: string | null; // "[8,3]"
+	orbifold: string | null; // full reflection group, "*832"
 }
 
 export interface SphericalSpec extends BaseSpec {
@@ -114,6 +120,25 @@ export function buildTilingSpec(
 			pointGroup: platonic ? platonicPointGroup(p, q) : null,
 			orbifold: platonic ? reflectionOrbifold(p, q) : null,
 			counts: platonic ? platonicCounts(p, q) : null,
+			...base,
+		};
+	}
+
+	if (geometry === "hyperbolic") {
+		// Honest subset only. faces/valence/edge come straight from the data; the Schläfli/Coxeter/orbifold
+		// trio is derived ONLY when the config is a single regular face size (schlafli non-null).
+		const hp = hyperbolicParams(selected.family);
+		const schlafli = selected.schlafli ?? hp?.schlafli ?? null;
+		return {
+			geometry: "hyperbolic",
+			label: selected.family,
+			faces: hp?.faces ?? [],
+			valence: hp?.valence ?? 0,
+			edge: selected.edge ?? null,
+			provenance: selected.discoverer ?? null,
+			schlafli,
+			coxeter: schlafli ? `[${schlafli[0]},${schlafli[1]}]` : null,
+			orbifold: schlafli ? reflectionOrbifold(schlafli[0], schlafli[1]) : null,
 			...base,
 		};
 	}
