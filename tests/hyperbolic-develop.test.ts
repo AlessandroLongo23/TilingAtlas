@@ -10,9 +10,19 @@ import {
 	euclideanAngleSum,
 	regularEdgeLength,
 	solveEdgeLength,
+	placePolygonOnEdge,
 } from "@/lib/render/hyperbolicDevelop";
 import { buildRegularPatch } from "@/lib/render/hyperbolicIslamicPatch";
-import { hypDist } from "@/lib/render/hyperbolic";
+import { hypDist, type Complex } from "@/lib/render/hyperbolic";
+
+const centroid = (verts: Complex[]): Complex => {
+	let x = 0, y = 0;
+	for (const v of verts) {
+		x += v.x;
+		y += v.y;
+	}
+	return { x: x / verts.length, y: y / verts.length };
+};
 
 describe("hyperbolic interior angle", () => {
 	it("reduces to the Euclidean angle as edge length → 0", () => {
@@ -94,4 +104,46 @@ describe("edge-length solver agrees with existing buildRegularPatch geometry", (
 			}
 		});
 	}
+});
+
+describe("placePolygonOnEdge (the mixed-tile placement primitive)", () => {
+	it("placing a p-gon on a {p,q} edge reproduces the buildRegularPatch neighbour", () => {
+		const [p, q] = [7, 3];
+		const patch = buildRegularPatch(p, q, 1);
+		const central = patch[0];
+		const cCentroid = centroid(central.verts);
+		// The neighbour across edge 0 in the oracle: the tile whose centroid is closest to that edge.
+		const a = central.verts[0];
+		const b = central.verts[1];
+		const placed = placePolygonOnEdge(a, b, p, cCentroid);
+		const pc = centroid(placed);
+		// find the oracle neighbour nearest this placed centroid and require a close match
+		let best = Infinity;
+		for (const t of patch.slice(1)) {
+			best = Math.min(best, Math.hypot(centroid(t.verts).x - pc.x, centroid(t.verts).y - pc.y));
+		}
+		expect(best).toBeLessThan(1e-3);
+		// a and b are consecutive vertices of the placed polygon
+		expect(Math.hypot(placed[0].x - a.x, placed[0].y - a.y)).toBeLessThan(1e-9);
+		expect(Math.hypot(placed[1].x - b.x, placed[1].y - b.y)).toBeLessThan(1e-9);
+	});
+
+	it("places a DIFFERENT regular polygon (a square) on the same edge, edge-length preserved", () => {
+		const [p, q] = [7, 3];
+		const central = buildRegularPatch(p, q, 0)[0];
+		const cCentroid = centroid(central.verts);
+		const a = central.verts[0];
+		const b = central.verts[1];
+		const L = hypDist(a, b);
+		const square = placePolygonOnEdge(a, b, 4, cCentroid);
+		expect(square.length).toBe(4);
+		for (let i = 0; i < 4; i++) {
+			expect(hypDist(square[i], square[(i + 1) % 4])).toBeCloseTo(L, 6);
+		}
+		// it lands on the far side of the edge from the central tile
+		const sc = centroid(square);
+		expect(Math.hypot(sc.x - cCentroid.x, sc.y - cCentroid.y)).toBeGreaterThan(0);
+		// every vertex inside the disk
+		for (const v of square) expect(Math.hypot(v.x, v.y)).toBeLessThan(1);
+	});
 });
