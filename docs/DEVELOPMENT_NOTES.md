@@ -4394,3 +4394,54 @@ near-flat (correct — nothing to weave there). The fallback is gated (`uWeaveFa
 so the clean regular weave is untouched. Tests in `tests/hyperbolic-islamic-patch.test.ts` pin the 4p
 regular strap count, the flip-inverts-every-flag chirality, the uniform central-only strap set, and that
 uniform/snub weaves stay non-degenerate.
+
+## §67 — Hyperbolic per-pixel renderer: certified Dirichlet reduction ends the holes (2026-07-21)
+
+AL flagged black holes in several k=2 hyperbolic tilings (/play + thumbnails) and mandated a
+theory-grounded rebuild: robust for ANY tiling (future shapes included), shader-based, pixel-sharp,
+infinite pan without precision loss. Research first (web survey), then implementation.
+
+**Diagnosis (measured, CPU harness mimicking the shader exactly).** The old reducer took the 16
+nearest deck frames as generators and reduced each pixel by greedy |w|-minimisation into a fixed
+0.66-radius lookup field. On the four worst k=2 tilings 7–17 % of disk pixels ended STUCK: no
+generator improved |w|, yet the point was far outside the field (final |w| up to 0.99). Uncapping
+the generator set did not help — the develop-radius heuristic itself missed required elements. Root
+cause: nothing guaranteed the generator set contained the complete side pairings of a fundamental
+domain, and nothing sized the field to that domain. The k=1 tilings worked by luck (small domains).
+
+**Theory (the load-bearing citations).** (1) Voight, *Computing fundamental domains for Fuchsian
+groups*, 2009 (arXiv:0802.0196), Prop. 4.4 + Alg. 4.7: greedy distance reduction over the COMPLETE
+side-pairing set of a Dirichlet domain terminates inside the closed domain — a spurious local
+minimum is impossible; and a Dirichlet domain computed from an orbit enumerated complete to radius
+2·R_D + δ is exact (the cut-off lemma — any omitted orbit point's bisector stays ≥ R_complete/2 >
+R_D from the basepoint). (2) von Gagern's TU München thesis (2014) renders hyperbolic ornaments
+per-pixel by exactly this reverse lookup, and warns the id texture must be sampled nearest-neighbour
+(linear filtering across a domain boundary blends far-apart sources). (3) Celińska-Kopczyńska &
+Kopczyński (arXiv:2404.09039) + HyperRogue: represent the camera as (discrete group word × small
+residual isometry) and renormalise — float error stays bounded for unlimited walks. (4) hypertiling
+(SciPost Codebases 34): fixed-grid coordinate dedup fails near the rim — motivates the conformally
+scaled dedup grid the deep develop uses.
+
+**Implementation.** `lib/render/hyperbolicDirichlet.ts` — orbit Γ·0 from seed-dart deck frames
+(deep develop, scaled dedup, `extendTo` reports capped fills loudly); Dirichlet cell as a Euclidean
+half-plane intersection in the KLEIN model, where the bisector of 0 and orbit point q is the chord
+x·u = |q|_Poincaré (elegant: the chord offset IS the Poincaré radius); certificate loop grows the
+develop until 2·R_D + 0.1 ≤ R_complete (all 59 shipped tilings certify; worst R_D 2.87, 24 sides,
+< 300 ms); side pairings = supporting bisectors ∪ inverses. `hyperbolicReduce.ts` — TOTAL field
+bake over [-rTex, rTex]², rTex = tanh((R_D + 0.15)/2), adaptive res (≤ 2048): locate → fold →
+locate → nearest-resolved copy post-pass; zero deep-unresolved texels asserted for the atlas.
+`hyperbolicPerPixelGL.ts` — loop exits on "no generator improves" (that IS membership, per Voight),
+id via texelFetch (nearest), edge distance manually bilinear, unconverged rim residue re-aims to an
+interior sample (NEVER background — no black pixel can be emitted). Canvas — after pan/rotation the
+view folds its basepoint back into D via the same side pairings (V ← V·g⁻¹ renders the identical
+image, Γ-invariance), so the SU(1,1) uniform never grows: 500-frame continuous drag verified crisp.
+Certificate failure (future exotic tiling) → loud console.error + 2D-polygon fallback, never silent.
+
+Tests: `hyperbolic-dirichlet.test.ts` (all-59 certification; fold-lands-in-D̄ property from deep
+random points incl. the 4 hole tilings; generators reduce the orbit of 0 to 0),
+`hyperbolic-reduce.test.ts` (field totality; agreement vs direct develop ≥ 0.99 to r = 0.95 — the
+old test allowed 0.97 at r ≤ 0.8, which HID the holes). Playwright: 4 worst tilings + long-pan all
+clean. Full suite: 1226 pass; 4 pre-existing failures in star/oracle/hue lanes (files last touched
+18a4990/b974dd5/4f061ac/4b5199f, no hyperbolic imports — not this change). pnpm build green.
+Gotcha for the record: tsconfig has `strict: false`, and non-strict TS does NOT narrow boolean-
+literal discriminants via truthiness — use `!== true` on the certificate union.

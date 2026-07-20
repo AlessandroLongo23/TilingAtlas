@@ -1304,3 +1304,12 @@ geometry renderer (lib/render/hyperbolicDevelopedDraw.ts + components/hyperbolic
 draws geodesic polygons and REUSES the store-driven SU(1,1) pan, so navigation is unchanged. Playwright-
 verified in /play (3.4.8.4 renders, pan works, shelf=15); pnpm build green. Commits on
 feat/hyperbolic-developer. Detail: marek-vault knowledge/algorithm/hyperbolic-developer.md. — CC
+
+**2026-07-21 (CC) — Hyperbolic per-pixel renderer made provably hole-free (certified Dirichlet reduction).**
+k=2 tilings showed 7–17 % background holes: the heuristic 16-generator set + fixed 0.66 field radius
+stuck greedy reduction at local minima (measured; the true k=2 Dirichlet domains reach Poincaré radius
+0.89 with up-to-24 side pairings). Rebuilt on theory (Voight 2009, von Gagern 2014): certified Dirichlet
+domain + complete side pairings + total lookup field + (tile, residual) camera re-anchor = unlimited pan,
+no float decay. All 59 certify; suite + build green; Playwright-verified (4 worst tilings + 500-frame
+pan). Commits 5716c9e..cd6295c on feat/hyperbolic-developer. Detail: NOTES §67, plan
+docs/superpowers/plans/2026-07-21-hyperbolic-certified-dirichlet-renderer.md. — CC
