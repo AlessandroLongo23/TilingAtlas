@@ -8,6 +8,7 @@ import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, v
 import { extractFaces, colorFacesAbc, type AbcFace, type Marker, type Segment, type Face } from "@/utils/islamicArrangement";
 import { buildIslamicInterlace, twoColorFaces, type Band } from "@/utils/islamicInterlace";
 import { orbitColor } from "@/lib/utils/orbitColors";
+import { ringColor } from "@/lib/render/hueRing";
 
 export type VCWithOccurrences = { vc: VertexConfiguration; occurrences: number };
 
@@ -297,10 +298,11 @@ export class Tiling {
         const { abc, degenerate, segments } = this.islamicFillCache!;
 
         // A cells use the same fill params as the plain tiling so 90° is pixel-identical; B/C are the two
-        // shared background colours (CSS hex, drawn as-is like the checkerboard). When the split is
-        // degenerate (A in both parities), everything non-A falls back to B — a clean two-tone.
+        // shared background hues, rendered at the tile palette's locked S/L via ringColor (an hsl() string
+        // p5 parses directly). When the split is degenerate (A in both parities), everything non-A falls
+        // back to B — a clean two-tone.
         const hueOff = cfg.hueOffset || 0;
-        const colorB = cfg.islamicFillColorB, colorC = cfg.islamicFillColorC;
+        const colorB = ringColor(cfg.islamicFillHueB), colorC = ringColor(cfg.islamicFillHueC);
         ctx.push();
         ctx.noStroke();
         for (const { face, klass, hue } of abc) {
@@ -429,11 +431,12 @@ export class Tiling {
             this.islamicCheckerCache = { nodesRef: this.nodes, theta, offset, count, faces, colors, segments };
         }
         const { faces, colors, segments } = this.islamicCheckerCache!;
-        const colorA = cfg.islamicCheckerColorA;
-        const colorB = cfg.islamicCheckerColorB;
+        const colorA = ringColor(cfg.islamicCheckerHueA);
+        const colorB = ringColor(cfg.islamicCheckerHueB);
 
-        // User-chosen two-colour field (zellij). p5 parses the CSS hex strings directly (independent of
-        // the HSB colour mode). Islamic swaps are instant, so opacity is 1 here and need not tint the hex.
+        // User-chosen two-colour field (zellij), each a tile-palette hue at the locked S/L. p5 parses the
+        // hsl() strings directly (independent of the HSB colour mode). Islamic swaps are instant, so
+        // opacity is 1 here and need not tint the colour.
         ctx.push();
         ctx.noStroke();
         for (let i = 0; i < faces.length; i++) {

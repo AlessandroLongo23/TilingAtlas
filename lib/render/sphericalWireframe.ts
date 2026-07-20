@@ -6,7 +6,7 @@
 
 import * as THREE from "three";
 import type { Polyhedron } from "./platonicSolids";
-import { edgeArcs } from "./sphericalGeometry";
+import { edgeArcs, straightEdges } from "./sphericalGeometry";
 import { polygonHue } from "@/lib/utils/renderTiling";
 
 type V3 = [number, number, number];
@@ -39,6 +39,8 @@ export interface WireframeOptions {
 	bevel?: number; // rectangular chamfer as a fraction 0..1 of half the smaller dimension (rect only)
 	hueOffset?: number;
 	radius?: number;
+	straight?: boolean; // straight chord bars (the polyhedron's real edges) instead of curved great-circle arcs
+	color?: [number, number, number]; // fixed display RGB, overrides the hue (e.g. the flat solid's dark edges)
 }
 
 export interface Wireframe {
@@ -185,8 +187,10 @@ export function buildTubeSkeleton(
 	opts: WireframeOptions = {},
 ): Wireframe {
 	const material = new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.0, side: THREE.DoubleSide });
+	// A fixed `color` (the flat solid's dark edges) overrides the tiling hue and ignores the hue-ring offset.
+	const fixed = opts.color;
 	const applyColor = (hueOffset: number) => {
-		const [r, g, b] = hsb2rgb(baseHue + hueOffset, 0.4, 1.0);
+		const [r, g, b] = fixed ?? hsb2rgb(baseHue + hueOffset, 0.4, 1.0);
 		material.color.setRGB(r, g, b, THREE.SRGBColorSpace);
 	};
 	applyColor(opts.hueOffset ?? 0);
@@ -237,5 +241,9 @@ export function buildWireframe(poly: Polyhedron | null, opts: WireframeOptions =
 	if (!poly) return null;
 	const radius = opts.radius ?? 1;
 	const baseHue = polygonHue(poly.faces[0].length);
-	return buildTubeSkeleton((extend) => edgeArcs(poly, 28, radius, extend), baseHue, opts);
+	// straight ⇒ the polyhedron's real chord edges (Polyhedron + Wireframe); else the curved great-circle arcs.
+	const arcsFor = opts.straight
+		? (extend: number) => straightEdges(poly, radius, extend)
+		: (extend: number) => edgeArcs(poly, 28, radius, extend);
+	return buildTubeSkeleton(arcsFor, baseHue, opts);
 }

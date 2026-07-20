@@ -212,8 +212,9 @@ centroid or tip marker) → the source tile's hue; **B** and **C** = the two bac
 is a bipartite 2-colouring of the arrangement faces over shared edges — the parity the A cells occupy is
 **C** (the small edge-centre diamonds), the other parity is **B** (the side fields). Implemented in
 `colorFacesAbc` (`lib/utils/islamicArrangement.ts`), drawn by `Tiling.drawIslamicStarFill`; the two shared
-colours are `islamicFillColorB`/`islamicFillColorC` and apply at draw time, so recolouring never rebuilds
-geometry.
+background classes are hues (`islamicFillHueB`/`islamicFillHueC`), picked by hue rings and rendered at the
+tile palette's locked S/L (HSL 100%/80%) so a fill is always a tile-palette colour — they apply at draw
+time, so recolouring never rebuilds geometry.
 
 Why the split needs the edge offset: at **Edge Offset 0** the two rays on an edge share one origin, so
 there is no diamond — C is empty and the fill degrades to A + B (two-tone). At **Edge Offset > 0** the

@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, Library, Gamepad2, Shapes, Grid3x3 } from "lucide-react"; // History icon commented out with its nav link below
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
+import { Kbd } from "@/components/ui/kbd";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
@@ -18,9 +20,29 @@ const LINKS = [
 
 export function Nav() {
 	const pathname = usePathname();
+	const router = useRouter();
 	// Immersive (fullscreen-canvas) mode collapses the header. Kept in the layout (not unmounted) and
 	// animated so entering/exiting is a smooth 300ms slide, matching the sidebar collapse on /play.
 	const immersive = useImmersive((s) => s.immersive);
+
+	// Number keys 1–5 jump to the matching nav link (in visible order). Same guard pattern as the /play
+	// key handler: skip modifier combos so browser Cmd/Ctrl+number keeps switching tabs, and skip while
+	// typing in a form field or contenteditable.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = e.target as HTMLElement | null;
+			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			const idx = Number(e.key) - 1;
+			const link = LINKS[idx];
+			if (link) {
+				e.preventDefault();
+				router.push(link.href);
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [router]);
 
 	return (
 		<nav
@@ -36,13 +58,14 @@ export function Nav() {
 			<div className="h-5 border-l border-line-subtle mr-3" />
 
 			<div className="flex items-center gap-1">
-				{LINKS.map((link) => {
+				{LINKS.map((link, i) => {
 					const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
 					const Icon = link.icon;
 					return (
 						<Link
 							key={link.href}
 							href={link.href}
+							title={`${link.label} (${i + 1})`}
 							className={cn(
 								"group flex items-center gap-1.5 px-3 py-1.5 rounded-control transition-colors",
 								isActive
@@ -52,6 +75,7 @@ export function Nav() {
 						>
 							<Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
 							<span className="text-xs font-medium">{link.label}</span>
+							<Kbd>{i + 1}</Kbd>
 						</Link>
 					);
 				})}

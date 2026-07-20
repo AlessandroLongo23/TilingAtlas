@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PLATONIC_SOLIDS, polyhedronForSchlafli, type Polyhedron, type Vec3 } from "@/lib/render/platonicSolids";
-import { classifyFace, edgeArcs, faceNormals, maxAdjacentNormalDot, vertexPoints } from "@/lib/render/sphericalGeometry";
+import { classifyFace, edgeArcs, faceNormals, flatSolidTriangles, maxAdjacentNormalDot, solidEdges, straightEdges, vertexPoints } from "@/lib/render/sphericalGeometry";
 
 // Expected combinatorics of the 5 Platonic solids: {p,q}, V, E, F. Euler: V − E + F = 2.
 const EXPECTED = [
@@ -133,6 +133,109 @@ describe.each(EXPECTED)("face normals for $id", (e) => {
 		const adjDot = maxAdjacentNormalDot(normals);
 		expect(adjDot).toBeGreaterThan(-1);
 		expect(adjDot).toBeLessThan(1);
+	});
+});
+
+describe.each(EXPECTED)("flat-solid facets for $id", (e) => {
+	const poly = polyhedronForSchlafli(e.p, e.q)!;
+	const R = 1.5;
+	// A fan triangulation emits (len − 2) triangles per face; every face is a p-gon here.
+	const triCount = poly.faces.reduce((sum, f) => sum + (f.length - 2), 0);
+
+	it("emits a non-indexed triangle soup, one fan per face, all on the sphere", () => {
+		const { positions, faceSizes } = flatSolidTriangles(poly, R);
+		expect(positions).toHaveLength(triCount * 9); // 3 verts × 3 coords per triangle
+		expect(faceSizes).toHaveLength(triCount);
+		for (let i = 0; i < positions.length / 3; i++) {
+			expect(Math.hypot(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2])).toBeCloseTo(R, 5);
+		}
+	});
+
+	it("labels every triangle with its source face's vertex count", () => {
+		const { faceSizes } = flatSolidTriangles(poly);
+		for (const s of faceSizes) expect(s).toBe(e.p);
+		expect(faceSizes.filter((s) => s === e.p)).toHaveLength(triCount);
+	});
+
+	it("orients every triangle outward (normal points away from the centre)", () => {
+		const { positions } = flatSolidTriangles(poly, 1);
+		for (let t = 0; t < positions.length / 9; t++) {
+			const a: Vec3 = [positions[t * 9], positions[t * 9 + 1], positions[t * 9 + 2]];
+			const b: Vec3 = [positions[t * 9 + 3], positions[t * 9 + 4], positions[t * 9 + 5]];
+			const c: Vec3 = [positions[t * 9 + 6], positions[t * 9 + 7], positions[t * 9 + 8]];
+			const ab: Vec3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+			const ac: Vec3 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+			const n: Vec3 = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
+			const centroid: Vec3 = [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3];
+			// (b−a)×(c−a) is the CCW-front normal; for an outward-facing triangle it agrees with the radial dir.
+			expect(n[0] * centroid[0] + n[1] * centroid[1] + n[2] * centroid[2]).toBeGreaterThan(0);
+		}
+	});
+
+	it("each triangle's three vertices are coplanar with the source face centroid", () => {
+		// A fan triangle lies in its face plane, so its normal is parallel to the face's radial normal.
+		const { positions } = flatSolidTriangles(poly, 1);
+		const normals = faceNormals(poly);
+		for (let t = 0; t < positions.length / 9; t++) {
+			const a: Vec3 = [positions[t * 9], positions[t * 9 + 1], positions[t * 9 + 2]];
+			const b: Vec3 = [positions[t * 9 + 3], positions[t * 9 + 4], positions[t * 9 + 5]];
+			const c: Vec3 = [positions[t * 9 + 6], positions[t * 9 + 7], positions[t * 9 + 8]];
+			const ab: Vec3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+			const ac: Vec3 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+			const n: Vec3 = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
+			const nl = norm(n);
+			expect(nl).toBeGreaterThan(1e-6); // non-degenerate triangle
+			// |cos angle| between the triangle normal and SOME face normal must be ~1 (parallel).
+			const best = normals.reduce((m, fn) => Math.max(m, Math.abs((n[0] * fn[0] + n[1] * fn[1] + n[2] * fn[2]) / nl)), 0);
+			expect(best).toBeCloseTo(1, 6);
+		}
+	});
+});
+
+describe.each(EXPECTED)("solid edges for $id", (e) => {
+	const poly = polyhedronForSchlafli(e.p, e.q)!;
+
+	it("returns one deduped index pair per unique edge", () => {
+		const edges = solidEdges(poly);
+		expect(edges).toHaveLength(e.E);
+		const seen = new Set(edges.map(([a, b]) => (a < b ? `${a}-${b}` : `${b}-${a}`)));
+		expect(seen.size).toBe(e.E); // no duplicates
+	});
+
+	it("every edge's endpoints share a face", () => {
+		for (const [a, b] of solidEdges(poly)) {
+			const shared = poly.faces.some((f) => {
+				const ia = f.indexOf(a);
+				if (ia < 0) return false;
+				return f[(ia + 1) % f.length] === b || f[(ia - 1 + f.length) % f.length] === b;
+			});
+			expect(shared).toBe(true);
+		}
+	});
+});
+
+describe.each(EXPECTED)("straight edges for $id", (e) => {
+	const poly = polyhedronForSchlafli(e.p, e.q)!;
+	const R = 1.3;
+
+	it("returns one straight chord (2 points) per unique edge, endpoints on the sphere", () => {
+		const chords = straightEdges(poly, R);
+		expect(chords).toHaveLength(e.E);
+		for (const ch of chords) {
+			expect(ch).toHaveLength(6); // exactly 2 points → straight, not a sampled arc
+			expect(Math.hypot(ch[0], ch[1], ch[2])).toBeCloseTo(R, 5);
+			expect(Math.hypot(ch[3], ch[4], ch[5])).toBeCloseTo(R, 5);
+		}
+	});
+
+	it("extends each end past the vertices along the chord", () => {
+		const plain = straightEdges(poly, R, 0);
+		const ext = straightEdges(poly, R, 0.1);
+		for (let i = 0; i < plain.length; i++) {
+			const lp = Math.hypot(plain[i][3] - plain[i][0], plain[i][4] - plain[i][1], plain[i][5] - plain[i][2]);
+			const le = Math.hypot(ext[i][3] - ext[i][0], ext[i][4] - ext[i][1], ext[i][5] - ext[i][2]);
+			expect(le).toBeCloseTo(lp + 0.2, 5); // 0.1 past each of the two ends
+		}
 	});
 });
 

@@ -5,7 +5,8 @@ import { useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { computeFillRadii, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
-import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, ISLAMIC_STROKE_VERT, ISLAMIC_STROKE_FRAG, hexToRgb } from "@/lib/render/islamicGL";
+import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, ISLAMIC_STROKE_VERT, ISLAMIC_STROKE_FRAG } from "@/lib/render/islamicGL";
+import { tileHueRgb01 } from "@/lib/render/hueRing";
 import { buildInstancedIslamicMesh, buildInstancedCheckerMesh, type IslamicMesh } from "@/lib/render/buildIslamicMesh";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { extractFaces, colorFacesAbc, type Segment, type Marker } from "@/utils/islamicArrangement";
@@ -222,14 +223,14 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 			g.uniform1f(FU.uHueOffset, cfg.hueOffset || 0);
 			// Checkerboard reads colours A/B from the checker palette; plain reads B/C from the A/B/C palette.
 			if (style === "checkerboard") {
-				const [ar, ag, ab] = hexToRgb(cfg.islamicCheckerColorA);
-				const [br, bg, bb] = hexToRgb(cfg.islamicCheckerColorB);
+				const [ar, ag, ab] = tileHueRgb01(cfg.islamicCheckerHueA);
+				const [br, bg, bb] = tileHueRgb01(cfg.islamicCheckerHueB);
 				g.uniform3f(FU.uColorA, ar, ag, ab);
 				g.uniform3f(FU.uColorB, br, bg, bb);
 				g.uniform1i(FU.uMode, 1);
 			} else {
-				const [br, bg, bb] = hexToRgb(cfg.islamicFillColorB);
-				const [cr, cg, cb] = hexToRgb(cfg.islamicFillColorC);
+				const [br, bg, bb] = tileHueRgb01(cfg.islamicFillHueB);
+				const [cr, cg, cb] = tileHueRgb01(cfg.islamicFillHueC);
 				g.uniform3f(FU.uColorB, br, bg, bb);
 				g.uniform3f(FU.uColorC, cr, cg, cb);
 				g.uniform1i(FU.uMode, 0);

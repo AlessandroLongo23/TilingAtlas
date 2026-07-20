@@ -169,3 +169,86 @@ export function vertexPoints(poly: Polyhedron, radius = 1): Vec3[] {
 		return [n[0] * radius, n[1] * radius, n[2] * radius];
 	});
 }
+
+// The TRUE flat facets of the solid (not the round sphere) as a non-indexed triangle soup — one fan per
+// face, ready to hand to a flat-shaded BufferGeometry. Every vertex is normalised onto the sphere of
+// `radius`; for a Platonic/Archimedean solid all vertices share one circumradius, so this is a UNIFORM
+// scale that keeps the flat facets intact (a per-vertex normalise would only distort a solid whose corners
+// sat at mixed radii — none here do). Fan triangulation (v0,vk,vk+1) is valid because every face is a
+// convex regular polygon. `positions` is the flattened xyz (9 floats per triangle); `faceSizes[t]` is the
+// source face's vertex count for triangle t, so the mesh builder can colour by polygon size.
+export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: Float32Array; faceSizes: number[] } {
+	const unit = poly.vertices.map((v) => {
+		const n = normalize(v);
+		return [n[0] * radius, n[1] * radius, n[2] * radius] as Vec3;
+	});
+	const triCount = poly.faces.reduce((sum, f) => sum + (f.length - 2), 0);
+	const positions = new Float32Array(triCount * 9);
+	const faceSizes: number[] = new Array(triCount);
+	let p = 0;
+	let t = 0;
+	for (const f of poly.faces) {
+		const a = unit[f[0]];
+		for (let k = 1; k < f.length - 1; k++) {
+			let b = unit[f[k]];
+			let c = unit[f[k + 1]];
+			// Orient the triangle OUTWARD: the face vertex ring is not guaranteed CCW-outward (the cube's is
+			// inward), so (b−a)×(c−a) may point at the centre — which back-face-culls the facet and makes the
+			// solid look see-through. Swap b/c when the normal opposes the outward (radial) direction.
+			const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+			const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+			const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+			if (nx * a[0] + ny * a[1] + nz * a[2] < 0) {
+				const tmp = b;
+				b = c;
+				c = tmp;
+			}
+			positions[p++] = a[0]; positions[p++] = a[1]; positions[p++] = a[2];
+			positions[p++] = b[0]; positions[p++] = b[1]; positions[p++] = b[2];
+			positions[p++] = c[0]; positions[p++] = c[1]; positions[p++] = c[2];
+			faceSizes[t++] = f.length;
+		}
+	}
+	return { positions, faceSizes };
+}
+
+// The unique polyhedron edges as STRAIGHT chords (2 points each) between the normalised vertices — the flat
+// solid's real edges, ready to feed the tube skeleton (buildTubeSkeleton) exactly like edgeArcs, but straight
+// instead of curved. `extend` (in the same length units as `radius`) overshoots each end along the chord so
+// adjacent tube bars overlap into a filled joint at every corner, matching edgeArcs' overshoot. This is what
+// makes Wireframe + Polyhedron draw straight bars, and the flat solid's own edge tubes straight.
+export function straightEdges(poly: Polyhedron, radius = 1, extend = 0): Float32Array[] {
+	const unit = poly.vertices.map((v) => {
+		const n = normalize(v);
+		return [n[0] * radius, n[1] * radius, n[2] * radius] as Vec3;
+	});
+	return solidEdges(poly).map(([a, b]) => {
+		const A = unit[a];
+		const B = unit[b];
+		const d = normalize([B[0] - A[0], B[1] - A[1], B[2] - A[2]]);
+		return new Float32Array([
+			A[0] - d[0] * extend, A[1] - d[1] * extend, A[2] - d[2] * extend,
+			B[0] + d[0] * extend, B[1] + d[1] * extend, B[2] + d[2] * extend,
+		]);
+	});
+}
+
+// The unique polyhedron edges as vertex-index pairs (each shared by two faces, deduped) — the flat solid's
+// corners/creases, drawn as straight LineSegments between the normalised vertices. Same dedup key as
+// edgeArcs, but returns the endpoints as indices rather than sampled great-circle arcs (a flat facet's edge
+// is a straight chord, not an arc).
+export function solidEdges(poly: Polyhedron): [number, number][] {
+	const seen = new Set<string>();
+	const edges: [number, number][] = [];
+	for (const f of poly.faces) {
+		for (let k = 0; k < f.length; k++) {
+			const a = f[k];
+			const b = f[(k + 1) % f.length];
+			const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+			if (seen.has(key)) continue;
+			seen.add(key);
+			edges.push([a, b]);
+		}
+	}
+	return edges;
+}

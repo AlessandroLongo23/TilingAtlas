@@ -24,7 +24,6 @@ import * as THREE from "three";
 import { Vector } from "@/classes/Vector";
 import { extractFaces, colorFacesAbc, pointInPolygon, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
 import { twoColorFaces } from "@/lib/utils/islamicInterlace";
-import { hexToRgb } from "./islamicGL";
 import type { Polyhedron } from "./platonicSolids";
 import { sphericalIslamicFaceData, type FaceFillData } from "./sphericalIslamic";
 import { polygonHue } from "@/lib/utils/renderTiling";
@@ -87,10 +86,10 @@ const MAX_SUBDIV = 24;
 const RELIEF_DEPTH = 0.03;
 const RELIEF_BEVEL = 0.16;
 
-// Default fill fields (the store's islamicFillColorB/C and islamicCheckerColorA/B defaults) — used when the
-// caller doesn't pass them.
-const DEFAULT_COLOR_B = "#e7dcc0";
-const DEFAULT_COLOR_C = "#3a4a52";
+// Default fill hues (the store's islamicFillHueB/C and islamicCheckerHueA/B defaults) — used when the
+// caller doesn't pass them. Rendered at the tile palette's locked S/L (see hsb2rgb above).
+const DEFAULT_HUE_B = 45;
+const DEFAULT_HUE_C = 200;
 
 export interface IslamicFillOptions {
 	angleRad: number;
@@ -101,10 +100,10 @@ export interface IslamicFillOptions {
 	/** "checkerboard" 2-colours every cell with the two checker colours; anything else is the A/B/C plain
 	 *  fill (star bodies in the tile hue + two background fields). */
 	style?: string;
-	fillColorB?: string; // A/B/C side-field colour (CSS hex)
-	fillColorC?: string; // A/B/C edge-diamond colour (CSS hex)
-	checkerColorA?: string; // checkerboard field A (CSS hex) — the centre-cell parity
-	checkerColorB?: string; // checkerboard field B (CSS hex)
+	fillHueB?: number; // A/B/C side-field hue° (S/L locked to the tile palette)
+	fillHueC?: number; // A/B/C edge-diamond hue°
+	checkerHueA?: number; // checkerboard field A hue° — the centre-cell parity
+	checkerHueB?: number; // checkerboard field B hue°
 	/** Realistic mode: raise each cell into a lit, beveled tile (relief) instead of the flat unlit shell. */
 	relief?: boolean;
 }
@@ -322,10 +321,10 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 
 	// The two fixed cell colours (class 1 / class 2) — plain: the A/B/C background fields; checkerboard: the
 	// two checker fields (class 1 = the centre-cell parity). Neither rotates with the hue ring.
-	const fixed1 = isChecker ? (opts.checkerColorA ?? DEFAULT_COLOR_B) : (opts.fillColorB ?? DEFAULT_COLOR_B);
-	const fixed2 = isChecker ? (opts.checkerColorB ?? DEFAULT_COLOR_C) : (opts.fillColorC ?? DEFAULT_COLOR_C);
-	const bLin = new THREE.Color().setRGB(...hexToRgb(fixed1), THREE.SRGBColorSpace);
-	const cLin = new THREE.Color().setRGB(...hexToRgb(fixed2), THREE.SRGBColorSpace);
+	const fixed1 = isChecker ? (opts.checkerHueA ?? DEFAULT_HUE_B) : (opts.fillHueB ?? DEFAULT_HUE_B);
+	const fixed2 = isChecker ? (opts.checkerHueB ?? DEFAULT_HUE_C) : (opts.fillHueC ?? DEFAULT_HUE_C);
+	const bLin = new THREE.Color().setRGB(...hsb2rgb(fixed1, 0.4, 1.0), THREE.SRGBColorSpace);
+	const cLin = new THREE.Color().setRGB(...hsb2rgb(fixed2, 0.4, 1.0), THREE.SRGBColorSpace);
 
 	const scratch = new THREE.Color();
 	const applyColor = (hueOffset: number) => {

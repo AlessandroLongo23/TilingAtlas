@@ -53,6 +53,7 @@ import type { TilingSpec } from "@/lib/services/tilingSpec";
 import { PieChart } from "./pie-chart";
 import { Input } from "./ui/input";
 import { ColorPad } from "./ui/color-pad";
+import { WallpaperGroupDiagrams } from "./wallpaper-group-diagram";
 import { useP5 } from "@/lib/hooks/useP5";
 import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "./canvas-overlays";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
@@ -1057,14 +1058,19 @@ export function Canvas({
 			</div>
 
 			{showSymmetryInfo ? (
-				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-1 rounded-lg bg-surface-overlay/90 px-3 py-2 text-right">
-					<span className="text-sm font-bold leading-none text-fg">
-						Group <span className="font-mono">{symmetryData.group}</span>
-						<span className="ml-1.5 font-mono font-normal text-fg-muted">{symmetryData.orbifold}</span>
-					</span>
-					<span className="text-xs capitalize leading-none text-fg-muted">
-						{symmetryData.latticeShape} lattice
-					</span>
+				<div className="absolute top-4 right-16 z-20 flex flex-col items-end gap-2 rounded-lg bg-surface-overlay/90 px-3 py-2 text-right">
+					<div className="flex flex-col items-end gap-1">
+						<span className="text-sm font-bold leading-none text-fg">
+							Group <span className="font-mono">{symmetryData.group}</span>
+							<span className="ml-1.5 font-mono font-normal text-fg-muted">{symmetryData.orbifold}</span>
+						</span>
+						<span className="text-xs capitalize leading-none text-fg-muted">
+							{symmetryData.latticeShape} lattice
+						</span>
+					</div>
+					{/* The SAME Wikipedia cell diagram(s) the library sidebar shows, inline and always visible —
+					    no hover needed. Smaller square than the sidebar tooltip so the HUD stays compact. */}
+					<WallpaperGroupDiagrams group={symmetryData.group} size={84} />
 				</div>
 			) : null}
 
