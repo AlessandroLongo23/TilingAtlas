@@ -1269,3 +1269,15 @@ both are catalogued Johnson solids (there is NO general "2-uniform spherical" ta
 Johnson-catalogue + internal Euler/regularity/closure + the common-ρ argument for the 130). k=2 Vitest
 asserts both by true cyclic vertex config (the 3.3.4.4 vertices prove J27 ≠ cuboctahedron). Also fixed a
 latent tsc error in the k=1 test (fixture cast). Commits after `6b176a6`. — CC
+
+**2026-07-20 (CC) — Spherical shelf pushed to the feasibility ceiling: 40 tilings, Johnson to k=8.**
+Ran the spherical search+developer up per k until infeasible: solve+prune+develop is feasible through
+**k=8** (solve 180s); **k=9 solve >10min** = the wall. Realized (inscribable) counts: k=3:5, k=4:2,
+k=5:0, k=6:0, k=7:2, k=8:1. Added all of them plus the earlier prism/antiprism families → spherical
+shelf **40** (18 uniform classical + 10 prism/antiprism + 12 inscribable Johnson: J11/J19/J27/J34/J37/
+J62/J63/J72/J73/J76/J80 + a J77/J78 gyrate-diminished). Key facts established: the developer finds ANY
+inscribable regular-faced polyhedron (mixed configs share ρ iff they share a circumsphere — verified
+3.4.5.4 ≡ 4.5.10 at ρ=0.4517); the common-ρ filter is a perfect realizability predictor here (0
+failures across all k); Catalan solids are out of scope (irregular faces, not engine-representable).
+Perf: memoized solve_rho + guard 200k→1500 made k≥5 develop in ~1s. Commits after the prism/antiprism
+batch. — CC
