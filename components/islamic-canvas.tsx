@@ -291,7 +291,7 @@ function buildMeshFromPatch(
 	const markers: Marker[] = [];
 	for (const node of patch.nodes) {
 		if (!node.vertices || !node.halfways) continue;
-		for (const s of node.calculateIslamicSegments(angle, offset, count)) segments.push(s);
+		for (const s of node.calculateIslamicSegments(angle, offset, count, true)) segments.push(s);
 		for (const m of node.islamicMarkers()) markers.push(m);
 	}
 	const split = offset > 0 || count > 1;

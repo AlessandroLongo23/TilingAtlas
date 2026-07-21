@@ -356,7 +356,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onChange={(v) => setCfg({ islamicEdgeOffset: v })}
 								min={0}
 								max={100}
-								step={5}
+								step={1}
 								unit="%"
 							/>
 							{/* Ray-stops-at (intersection count) is first-contact only in the hyperbolic bake. */}

@@ -27,7 +27,9 @@ export interface LandingData {
 	libraryMosaic: TranslationalCellData[];
 	playPatch: { id: string; cell: TranslationalCellData };
 	capHyperbolicPatch: string;
+	capHyperbolicId: string;
 	capSphericalSolid: string;
+	capSphericalId: string;
 	dateSeed: number;
 }
 
@@ -114,12 +116,10 @@ export async function loadLandingData(): Promise<LandingData> {
 	const stars = legible.filter((e) => (e.family ?? "").includes("*"));
 	const playSource = stars.length > 0 ? pick(stars, rand) : pick(legible, rand);
 
-	const capHyperbolicPatch =
-		hyperbolic.find((e) => !!e.developed?.patch)?.developed?.patch ?? "";
-	const capSphericalSolid =
-		spherical.find((e) => e.spherical?.solid === "truncated-icosahedron")?.spherical?.solid ??
-		spherical.find((e) => !!e.spherical?.solid)?.spherical?.solid ??
-		"";
+	const capHypEntry = hyperbolic.find((e) => !!e.developed?.patch);
+	const capSphEntry =
+		spherical.find((e) => e.spherical?.solid === "truncated-icosahedron") ??
+		spherical.find((e) => !!e.spherical?.solid);
 
 	return {
 		wallCell: t1003.renderCell,
@@ -131,8 +131,10 @@ export async function loadLandingData(): Promise<LandingData> {
 		specimenEntries,
 		libraryMosaic,
 		playPatch: { id: playSource.id, cell: playSource.renderCell },
-		capHyperbolicPatch,
-		capSphericalSolid,
+		capHyperbolicPatch: capHypEntry?.developed?.patch ?? "",
+		capHyperbolicId: capHypEntry?.id ?? "",
+		capSphericalSolid: capSphEntry?.spherical?.solid ?? "",
+		capSphericalId: capSphEntry?.id ?? "",
 		dateSeed,
 	};
 }

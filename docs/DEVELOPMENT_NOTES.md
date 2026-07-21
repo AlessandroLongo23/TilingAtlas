@@ -4595,3 +4595,20 @@ every dual-cell edge (thick at the junctions and at the chord-exact midpoint M �
 description). Measured on the true wall: G max 12 → 2 bytes after tightening the bound to 0.08 rad
 (TESS_MAX_RAD, max 24 pieces). Worst-case re-bakes: 30 ms coarse notch, 158 ms full-res settle
 (was 94 ms — still invisible). 50/50 tests, Playwright-verified on hyp-4x6 at AL's config.
+
+## §72 — The Atlas Wall landing (2026-07-21)
+
+The welcome-card landing is gone. The landing is now a full-viewport 4.6.12 tiling (t1003) whose
+cells ARE the navigation: dodecagons are doors (Play, Library, Theory, Parquet, plus dashed
+"in preparation" doors for Aperiodic and Substitution), hexagons are muted catalog specimens
+deep-linked via /play?tiling=<id>, a date-seeded specimen of the day is the one colored cell,
+and the edges carry a spherical cap (truncated icosahedron) and a Poincaré-disk cap with live
+counts. Masthead counts are read from the atlas JSONs at request time (4,596 / 59 / 40 — the
+4,596 matches the /library eager-shard sum exactly). Server-rendered SVG, so every link works
+before hydration; client islands are only the cover-crop scaler and the two cap thumbnails.
+Design research (catalog-site survey + landing-page survey, two subagents) and the approved spec
+live in docs/superpowers/specs/2026-07-21-landing-atlas-wall-design.md; plan in
+docs/superpowers/plans/2026-07-21-landing-atlas-wall.md. Hat outline taken verbatim from
+Kaplan's hatviz (hex coords), Penrose sun constructed from the real rhomb adjacencies.
+Deferred (spec "out of scope"): stroke-curling into the caps, View Transitions door morph,
+pannable Play door, true D(x)-driven parquet animation, mid-k specimen curation.

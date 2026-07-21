@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Library, Gamepad2, Shapes, Grid3x3 } from "lucide-react"; // History icon commented out with its nav link below
+import { BookOpen, Library, Gamepad2, Shapes, Grid3x3, Waves } from "lucide-react"; // History icon commented out with its nav link below
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 import { Kbd } from "@/components/ui/kbd";
@@ -15,6 +15,7 @@ const LINKS = [
 	{ href: "/library", label: "Library", icon: Library },
 	{ href: "/play", label: "Play", icon: Gamepad2 },
 	{ href: "/theory", label: "Theory", icon: BookOpen },
+	{ href: "/parquet", label: "Parquet", icon: Waves },
 	// { href: "/history", label: "History", icon: History }, // hidden from header (route still exists)
 ];
 

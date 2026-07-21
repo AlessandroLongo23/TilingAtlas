@@ -174,14 +174,6 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 							<OrbitSection spec={spec} />
 						</div>
 
-						{/* Provenance — Hyperbolic. The atlas "discoverer" string, relabelled so it reads as what
-						    rendered the tiling, not who first found it (these {p,q} tilings are classical). */}
-						{spec.geometry === "hyperbolic" && spec.provenance ? (
-							<div className="border-t border-line pt-3">
-								<p className="text-xs text-fg-muted">Rendered by {spec.provenance}</p>
-							</div>
-						) : null}
-
 						{/* Vertex-configuration thumbnails — Euclidean only */}
 						{spec.geometry === "euclidean" && vcs.length > 0 ? (
 							<div className="border-t border-line pt-3">

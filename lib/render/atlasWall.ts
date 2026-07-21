@@ -154,6 +154,84 @@ export function buildWallCells(
 	return cells;
 }
 
+export interface BoxPolygon {
+	n: number;
+	vertices: { x: number; y: number }[];
+}
+
+/**
+ * Expand an atlas entry's unit cell to cover a square box (centre tx,ty, half-side `radius`) at a
+ * fixed pixels-per-edge scale — the specimen/door miniature renderer. The caller clips to the
+ * host cell's shape; this only guarantees coverage of the box.
+ */
+export function renderCellIntoBox(
+	cell: TranslationalCellData,
+	tx: number,
+	ty: number,
+	radius: number,
+	pxPerEdge: number,
+): BoxPolygon[] {
+	const base = parseBaseCell(cell);
+	if (!base) return [];
+	const scale = pxPerEdge / base.medianEdge;
+	const cellCx = (base.minX + base.maxX) / 2;
+	const cellCy = (base.minY + base.maxY) / 2;
+	const half = radius / scale;
+	const margin = Math.hypot(base.maxX - base.minX, base.maxY - base.minY) * 0.5;
+	const [[v1x, v1y], [v2x, v2y]] = base.basis;
+
+	const out: BoxPolygon[] = [];
+	const inView = (i: number, j: number) => {
+		const ox = i * v1x + j * v2x;
+		const oy = i * v1y + j * v2y;
+		return (
+			base.maxX + ox >= cellCx - half - margin &&
+			base.minX + ox <= cellCx + half + margin &&
+			base.maxY + oy >= cellCy - half - margin &&
+			base.minY + oy <= cellCy + half + margin
+		);
+	};
+	const emit = (i: number, j: number) => {
+		const ox = i * v1x + j * v2x;
+		const oy = i * v1y + j * v2y;
+		for (const poly of base.polys) {
+			out.push({
+				n: poly.n,
+				vertices: poly.vertices.map((v) => ({
+					x: (v.x + ox - cellCx) * scale + tx,
+					y: -(v.y + oy - cellCy) * scale + ty,
+				})),
+			});
+		}
+	};
+	if (inView(0, 0)) emit(0, 0);
+	for (let rr = 1; rr <= 60; rr++) {
+		let added = 0;
+		for (let i = -rr; i <= rr; i++) {
+			for (let j = -rr; j <= rr; j++) {
+				if (Math.max(Math.abs(i), Math.abs(j)) !== rr) continue;
+				if (inView(i, j)) {
+					emit(i, j);
+					added++;
+				}
+			}
+		}
+		if (added === 0) break;
+	}
+	return out;
+}
+
+// The library's polygon palette (log-scaled hue over n∈[3,40]) — same mapping the old landing
+// background and the thumbnails use, so wall specimens match the shelves they link into.
+export function polygonFill(n: number, alpha: number): string {
+	const hue = ((Math.log(Math.max(3, n)) - Math.log(3)) / (Math.log(40) - Math.log(3))) * 300;
+	const s = 40 / 100;
+	const b = 100 / 100;
+	const l = b * (1 - s / 2);
+	const sl = l === 0 || l === 1 ? 0 : (b - l) / Math.min(l, 1 - l);
+	return `hsla(${hue.toFixed(1)}, ${(sl * 100).toFixed(1)}%, ${(l * 100).toFixed(1)}%, ${alpha})`;
+}
+
 export interface WallDoorSpec {
 	id: string;
 	href: string;
@@ -168,6 +246,8 @@ export interface WallPlan {
 	daily: WallPolygon;
 	/** Other fully-visible hexagons, muted renders. */
 	specimens: WallPolygon[];
+	/** Dodecagons that are neither doors nor reserved — extra-faint specimens so the wall has no holes. */
+	bigSpecimens: WallPolygon[];
 	/** ~1 in 20 squares carries a vertex-configuration glyph linking into /theory. */
 	glyphs: { cell: WallPolygon; text: string }[];
 }
@@ -252,6 +332,7 @@ export function planWall(cells: WallCells, opts: WallPlanOptions): WallPlan {
 		}
 	}
 	const specimens = hexes.filter((p) => p.key !== daily.key);
+	const bigSpecimens = cells.dodecagons.filter((p) => fullyInside(p) && !used.has(p.key));
 
 	// Glyphs: every ~20th fully-visible square by PRNG order, cycling the provided texts.
 	const sqs = cells.squares.filter((p) => fullyInside(p) && !inExclude(p) && !nearDoor(p));
@@ -266,5 +347,5 @@ export function planWall(cells: WallCells, opts: WallPlanOptions): WallPlan {
 		text: opts.glyphTexts[i % Math.max(1, opts.glyphTexts.length)] ?? "",
 	}));
 
-	return { doors, reserved, daily, specimens, glyphs };
+	return { doors, reserved, daily, specimens, bigSpecimens, glyphs };
 }
