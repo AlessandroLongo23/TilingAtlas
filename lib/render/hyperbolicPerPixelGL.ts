@@ -8,7 +8,7 @@
 // certificate accepts — regular, mixed, k-uniform alike — and fills the disk to the rim.
 
 import type { Su11 } from "@/lib/render/hyperbolic";
-import { EDGE_SCALE, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
+import { EDGE_SCALE, type ShaderTiling, type TileField } from "@/lib/render/hyperbolicReduce";
 
 const MAX_GENS = 128; // uniform array bound; side pairings ∪ inverses (measured ≤ ~48 across the atlas)
 // Perspective-stroke law (AL-tuned final): exact conformal exponent (1.0 = constant hyperbolic
@@ -30,6 +30,11 @@ uniform sampler2D uField;
 uniform float uRTex;       // field half-extent (covers the Dirichlet domain + collar)
 uniform float uRIn;        // domain inradius: |w| below this ⇒ inside, reduction can stop
 uniform float uRes;        // field resolution (texels per side)
+uniform sampler2D uIslamicField; // plain-style Hankin field (same square as uField, own res)
+uniform float uIslamicOn;  // 1 = colour/stroke by the Islamic construction instead of the tiles
+uniform float uResI;       // Islamic field resolution
+uniform vec3 uColB;        // Islamic background colour (B side fields)
+uniform vec3 uColC;        // Islamic edge-diamond colour (C)
 uniform vec3 uBg;          // disk background (theme)
 uniform vec3 uStroke;      // stroke colour
 uniform float uHueOffset;  // global hue rotation (deg)
@@ -103,6 +108,26 @@ void main() {
 	float sides = floor(fn.r * 255.0 + 0.5);
 	float distByte = mix(mix(f00.g, f10.g, fr.x), mix(f01.g, f11.g, fr.x), fr.y);
 
+	// Islamic plain mode: the SAME fold + square, sampled from the Hankin field — face class nearest
+	// (like the tile id), construction-line distance manually bilinear, face barycenter for the depth
+	// shade. sn/distByte then drive fill, dim, and stroke below in place of the tile field.
+	vec4 sn = fn;
+	float cls = 0.0;
+	if (uIslamicOn > 0.5) {
+		vec2 stI = clamp((w / uRTex) * 0.5 + 0.5, 0.0, 1.0) * uResI - 0.5;
+		vec2 iI = floor(stI);
+		vec2 frI = stI - iI;
+		ivec2 q00 = ivec2(clamp(iI, vec2(0.0), vec2(uResI - 1.0)));
+		ivec2 q11 = ivec2(clamp(iI + 1.0, vec2(0.0), vec2(uResI - 1.0)));
+		vec4 g00 = texelFetch(uIslamicField, q00, 0);
+		vec4 g10 = texelFetch(uIslamicField, ivec2(q11.x, q00.y), 0);
+		vec4 g01 = texelFetch(uIslamicField, ivec2(q00.x, q11.y), 0);
+		vec4 g11 = texelFetch(uIslamicField, q11, 0);
+		sn = frI.x < 0.5 ? (frI.y < 0.5 ? g00 : g01) : (frI.y < 0.5 ? g10 : g11);
+		distByte = mix(mix(g00.g, g10.g, frI.x), mix(g01.g, g11.g, frI.x), frI.y);
+		cls = floor(sn.r * 255.0 + 0.5);
+	}
+
 	// PER-TILE depth: transport the baked tile barycenter through the inverse fold word to world
 	// space, project to screen, and shade the whole tile by ITS radius — one flat shade per tile
 	// (byte-matched to the 2D developed-draw / euclidean / spherical fill convention). The barycenter
@@ -111,13 +136,17 @@ void main() {
 	if (reaimed) {
 		dep = 1.0; // sub-pixel rim residue: the correct limit shade
 	} else {
-		vec2 cFund = vec2(fn.b, fn.a) * 2.0 - 1.0;
+		vec2 cFund = vec2(sn.b, sn.a) * 2.0 - 1.0; // tile barycenter — or FACE barycenter in Islamic mode
 		vec2 cWorld = su11(ma, mb, cFund);
 		vec2 cScreen = su11(va, vb, cWorld);
 		dep = min(length(cScreen), 1.0);
 	}
 	float dim = 1.0 - 0.5 * dep * dep;
-	vec3 fill = uShowFill > 0.5 ? hsb2rgb(mod(sides * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0) * dim : uBg;
+	// class A (star body) keeps its tile's hue (the hue ring rotates it); B/C take the two shared
+	// background colours, fixed like the euclid plain fill.
+	vec3 tileCol = hsb2rgb(mod(sides * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0);
+	if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
+	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
 
 	// stroke: the stored edge distance is HYPERBOLIC (isometry-invariant), so "inside the stroke" =
 	// hypEdge ≤ h with h a constant hyperbolic half-width — an equidistant band around each geodesic.
@@ -158,6 +187,11 @@ export interface PerPixelDrawParams {
 	hueOffset: number;
 	strokePx: number;
 	taper: boolean;
+	/** Colour/stroke by the baked Islamic plain field (needs a prior setIslamicField). */
+	islamic?: boolean;
+	/** Islamic background colours, linear [r,g,b] 0..1 (B side fields / C edge diamonds). */
+	islamicColB?: [number, number, number];
+	islamicColC?: [number, number, number];
 }
 
 export class HyperbolicPerPixelRenderer {
@@ -165,9 +199,12 @@ export class HyperbolicPerPixelRenderer {
 	private prog: WebGLProgram;
 	private quad: WebGLBuffer;
 	private tex: WebGLTexture;
+	private texIslamic: WebGLTexture;
 	private u: Record<string, WebGLUniformLocation | null> = {};
 	private aPos: number;
 	private numGens = 0;
+	private hasIslamic = false;
+	private rTexCur = 0; // the current tiling's field extent — an Islamic field must match it
 	private disposed = false;
 
 	constructor(gl: WebGL2RenderingContext) {
@@ -190,6 +227,7 @@ export class HyperbolicPerPixelRenderer {
 		for (const n of [
 			"uCenter", "uR", "uView", "uGens", "uNumGens", "uField", "uRTex", "uRIn", "uRes", "uBg",
 			"uStroke", "uHueOffset", "uStrokePx", "uShowFill", "uTaper",
+			"uIslamicField", "uIslamicOn", "uResI", "uColB", "uColC",
 		]) {
 			this.u[n] = gl.getUniformLocation(prog, n);
 		}
@@ -198,6 +236,15 @@ export class HyperbolicPerPixelRenderer {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.quad);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); // one big triangle
 		this.tex = gl.createTexture();
+		this.texIslamic = gl.createTexture();
+		// keep the sampler complete even before any Islamic bake is uploaded (it is only ever read
+		// behind uIslamicOn, but an incomplete texture is undefined behaviour on some drivers)
+		gl.bindTexture(gl.TEXTURE_2D, this.texIslamic);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 	}
 
 	/** Upload a prepared tiling: certified side-pairing generators + the total fundamental field. */
@@ -220,6 +267,33 @@ export class HyperbolicPerPixelRenderer {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		this.rTexCur = t.field.rTex;
+		this.hasIslamic = false; // an Islamic field belongs to ONE tiling — re-upload after setTiling
+	}
+
+	/** Upload (or clear, with null) the baked Islamic plain field for the CURRENT tiling. */
+	setIslamicField(f: TileField | null): void {
+		const gl = this.gl;
+		if (!f) {
+			this.hasIslamic = false;
+			return;
+		}
+		if (Math.abs(f.rTex - this.rTexCur) > 1e-9) {
+			console.error(
+				`hyperbolic per-pixel renderer: Islamic field rTex ${f.rTex} does not match the tiling's ${this.rTexCur} — stale bake ignored`,
+			);
+			this.hasIslamic = false;
+			return;
+		}
+		gl.useProgram(this.prog);
+		gl.uniform1f(this.u.uResI, f.res);
+		gl.bindTexture(gl.TEXTURE_2D, this.texIslamic);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, f.res, f.res, 0, gl.RGBA, gl.UNSIGNED_BYTE, f.data);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		this.hasIslamic = true;
 	}
 
 	draw(p: PerPixelDrawParams): void {
@@ -243,7 +317,18 @@ export class HyperbolicPerPixelRenderer {
 		gl.uniform1f(this.u.uStrokePx, p.strokePx); // 0 = no stroke (callers floor nonzero widths)
 		gl.uniform1f(this.u.uShowFill, p.showFill ? 1 : 0);
 		gl.uniform1f(this.u.uTaper, p.taper ? 1 : 0);
+		const islamicOn = !!p.islamic && this.hasIslamic;
+		gl.uniform1f(this.u.uIslamicOn, islamicOn ? 1 : 0);
+		if (islamicOn) {
+			const cb = p.islamicColB ?? [0.85, 0.85, 0.85];
+			const cc = p.islamicColC ?? [0.7, 0.7, 0.7];
+			gl.uniform3f(this.u.uColB, cb[0], cb[1], cb[2]);
+			gl.uniform3f(this.u.uColC, cc[0], cc[1], cc[2]);
+		}
 
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_2D, this.texIslamic);
+		gl.uniform1i(this.u.uIslamicField, 1);
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.tex);
 		gl.uniform1i(this.u.uField, 0);
@@ -261,5 +346,6 @@ export class HyperbolicPerPixelRenderer {
 		gl.deleteProgram(this.prog);
 		gl.deleteBuffer(this.quad);
 		gl.deleteTexture(this.tex);
+		gl.deleteTexture(this.texIslamic);
 	}
 }

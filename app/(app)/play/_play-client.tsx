@@ -275,9 +275,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		fa.resetLive(); // reseed the eased render tuple for the NEW family — never glide across two families
 	}, [selected?.canonicalKey, paramCell]);
 
-	// The Islamic construction applies to every flat/spherical class; the developed hyperbolic renderer does
-	// not draw it. Force the fill off for any selection whose class doesn't support it, so a stale render can't
-	// linger when the sidebar hides the control.
+	// The Islamic construction now applies to EVERY class (hyperbolic included — the developed renderer
+	// bakes the plain Hankin field, lib/render/hyperbolicIslamic.ts). This guard only fires if a future
+	// class opts out of polygonClassSupportsIslamic, so a stale render can't linger when the sidebar
+	// hides the control.
 	useEffect(() => {
 		if (selected && !polygonClassSupportsIslamic(selected) && useConfiguration.getState().isIslamic) {
 			useConfiguration.getState().set({ isIslamic: false });
@@ -408,15 +409,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			} else {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
-				// Circle Packing only exists for regular-only tilings, and Islamic applies to every flat/spherical
-				// class (hyperbolic draws it through its own shader); symmetry elements / fundamental domain /
-				// transition / vertex orbits are flat-canvas only and hidden in hyperbolic; vertex orbits also need
-				// the tiling's exact cell (the sidebar disables the checkbox without one). Ignore each key where the
-				// sidebar hides/disables the control.
+				// Circle Packing only exists for regular-only tilings, and Islamic applies to every class
+				// (hyperbolic bakes the plain Hankin field into its per-pixel shader); symmetry elements /
+				// fundamental domain / transition / vertex orbits are flat-canvas only and hidden in hyperbolic;
+				// vertex orbits also need the tiling's exact cell (the sidebar disables the checkbox without
+				// one). Ignore each key where the sidebar hides/disables the control.
 				const isHyperbolic = !!selected?.developed;
 				const blocked =
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
-					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected) && !isHyperbolic) ||
+					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
 					(field === "showVertexOrbits" && !selected?.exactSource) ||
 					((field === "showSymmetryElements" || field === "showFundamentalDomain" || field === "tilingTransition" || field === "showVertexOrbits") && isHyperbolic);
 				if (field && !blocked) {

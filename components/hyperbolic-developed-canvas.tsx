@@ -16,9 +16,12 @@ import {
 } from "@/lib/render/hyperbolic";
 import { loadDevelopedPatches, drawDevelopedPatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
-import { prepareShaderTiling } from "@/lib/render/hyperbolicReduce";
+import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
+import { getIslamicField } from "@/lib/render/hyperbolicIslamic";
 import { su11Inverse } from "@/lib/render/hyperbolic";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
+import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
+import { tileHueRgb01 } from "@/lib/render/hueRing";
 
 // Interactive view of an engine-developed hyperbolic tiling. It reduces each PIXEL into the fundamental
 // domain with the exact deck generators from the develop (lib/render/hyperbolicReduce.ts) and colours it —
@@ -47,6 +50,14 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	// identity FOREVER — float32 uniforms never degrade and panning is unlimited.
 	const anchorRef = useRef<{ gens: Su11[]; r: number } | null>(null);
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
+	const stRef = useRef<ShaderTiling | null>(null); // the prepared reduction — the Islamic bake reuses it
+	const patchRef = useRef<DevelopedPatch | null>(null);
+	// Islamic plain field bookkeeping: key of the field currently uploaded to the renderer + a trailing
+	// throttle so an angle-slider drag rebakes a few times per second (drawing the stale field between).
+	const islamicKey = useRef<string | null>(null);
+	const islamicOk = useRef(false);
+	const islamicLastBake = useRef(0);
+	const islamic2dWarned = useRef(false);
 	const viewRef = useRef<Su11>(su11Identity());
 	const prevOffset = useRef<{ x: number; y: number } | null>(null);
 	const prevTargetOffset = useRef<{ x: number; y: number } | null>(null);
@@ -87,6 +98,10 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			const patch = map[patchId] ?? null;
 			const meta = patch ? { id: patch.id, name: patch.name, config: patch.config, edge: patch.edge } : null;
 			metaRef.current = meta;
+			patchRef.current = patch;
+			stRef.current = null;
+			islamicKey.current = null;
+			islamicOk.current = false;
 			devRef.current = patch?.darts ? new HyperbolicDeveloper(patch.darts, patch.edge) : null;
 			viewRef.current = su11Identity();
 			prevOffset.current = null;
@@ -99,6 +114,7 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 				const st = prepareShaderTiling(patch.darts, patch.edge, meta);
 				if (st) {
 					glRef.current.setTiling(st);
+					stRef.current = st;
 					anchorRef.current = { gens: st.domain.gens, r: Math.min(0.97, st.domain.rPEu + 0.05) };
 					readyRef.current = true;
 				} else {
@@ -269,6 +285,30 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			const dark = document.documentElement.classList.contains("dark");
 			const gl = glRef.current;
 			if (gl) {
+				// Islamic plain field: bake (cached per tiling+angle) and upload when the wanted key
+				// changes. Trailing throttle — an angle drag rebakes ~4×/s and draws the stale field in
+				// between; the RAF loop retries every frame, so the final slider value always lands.
+				let islamicActive = false;
+				if (cfg.isIslamic && stRef.current && patchRef.current?.darts) {
+					const key = `${meta.id}|${Math.round(cfg.islamicAngle)}`;
+					if (islamicKey.current !== key) {
+						const now = performance.now();
+						if (islamicKey.current === null || now - islamicLastBake.current > 250) {
+							islamicLastBake.current = now;
+							const field = getIslamicField(
+								stRef.current,
+								patchRef.current.darts,
+								patchRef.current.edge,
+								meta,
+								islamicNormalAngleFromSlider(cfg.islamicAngle),
+							);
+							gl.setIslamicField(field);
+							islamicKey.current = key;
+							islamicOk.current = !!field;
+						}
+					}
+					islamicActive = islamicOk.current;
+				}
 				gl.draw({
 					view,
 					R: Rcss * dpr,
@@ -280,8 +320,15 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 					hueOffset: cfg.hueOffset || 0,
 					strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr * 1.1, // 0 = no stroke
 					taper: cfg.hyperbolicLineMode !== "constant",
+					islamic: islamicActive,
+					islamicColB: tileHueRgb01(cfg.islamicFillHueB),
+					islamicColC: tileHueRgb01(cfg.islamicFillHueC),
 				});
 			} else {
+				if (cfg.isIslamic && !islamic2dWarned.current) {
+					islamic2dWarned.current = true;
+					console.info("hyperbolic 2D fallback: the Islamic construction needs the WebGL2 per-pixel renderer");
+				}
 				// 2D fallback: explicit developed polygons (robust, thin sub-pixel rim).
 				const ctx = ctx2dRef.current;
 				const dev = devRef.current;

@@ -1328,3 +1328,10 @@ so halfW = uStrokePx·0.5·(1−r²) — the true conformal law (was the ad-hoc 
 the centre, metric-exact thinning to the rim; 2D fallback gets the per-tile (1−dep²) sibling. Also
 committed the pre-existing developedDraw WIP (DrawOpts) the earlier canvas commits already depended
 on. Tests 35/35, build green, Playwright-verified. — CC
+
+**2026-07-21 (CC) — Hyperbolic Islamic, plain style.** Hankin's construction now runs on the
+developed renderer: geodesic rays (Kaplan–Salesin absolute geometry), flat arrangement machinery
+reused verbatim in the Klein model, A/B faces + line distance baked as a second Γ-invariant field
+over the Dirichlet domain — angle slider live, all 59 tilings bake clean. Plain only (offset /
+count / interlace / checkerboard are follow-ups). Tests 46/46, build green (NODE heap bumped to
+8 GB — worker ceiling, not a type error), Playwright-verified. NOTES §70. — CC

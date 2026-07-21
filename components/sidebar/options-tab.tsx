@@ -25,9 +25,9 @@ interface OptionsTabProps {
 export function OptionsTab({ selected }: OptionsTabProps) {
 	const cfg = useConfiguration();
 	const setCfg = cfg.set;
-	// Islamic construction applies to every flat and spherical class (see polygonClassSupportsIslamic — the
-	// shape-agnostic Hankin construction handles them all), plus EVERY hyperbolic tiling, whose Poincaré-disk
-	// shader draws the strapwork for regular, uniform, and snub.
+	// Islamic construction applies to every class (see polygonClassSupportsIslamic — the shape-agnostic
+	// Hankin construction handles them all). Hyperbolic tilings run it as geodesic rays baked into the
+	// developed per-pixel renderer (plain style, lib/render/hyperbolicIslamic.ts).
 	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected);
 	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
@@ -198,35 +198,12 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								</>
 							) : isHyperbolic ? (
 								<>
-									<div className="grid grid-cols-3 gap-2">
-										{(
-											[
-												["plain", "Plain"],
-												["interlace", "Interlace"],
-												["checkerboard", "Checkerboard"],
-											] as const
-										).map(([val, label]) => {
-											// Outline/emboss aren't offered on the disk (the fold shader renders them as plain), so
-											// Plain stays lit for those too.
-											const active =
-												val === "interlace"
-													? cfg.islamicStyle === "interlace"
-													: val === "checkerboard"
-														? cfg.islamicStyle === "checkerboard"
-														: cfg.islamicStyle !== "interlace" && cfg.islamicStyle !== "checkerboard";
-											return (
-												<Button key={val} variant={active ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicStyle: val })}>
-													{label}
-												</Button>
-											);
-										})}
-									</div>
+									{/* v1 of the developed-renderer construction: the PLAIN fill only. Interlace and
+									    checkerboard return once the baked field carries a weave parity (follow-ups in
+									    docs/superpowers/specs/2026-07-21-hyperbolic-islamic-plain-design.md). */}
 									<p className="text-[11px] text-fg-muted">
-										{cfg.islamicStyle === "interlace"
-											? "Woven over/under straps in the Poincaré disk. Set Band Width + Flip Weave below; turn off Fill for pure ribbons."
-											: cfg.islamicStyle === "checkerboard"
-												? "Two-tone woven faces, bordered by the star lines. Pick the two field colours below."
-												: "Filled star cells + lines (the underlying tiling is hidden). Turn off Fill for just the star lines."}
+										Filled star cells + geodesic construction lines (the underlying tiling is hidden).
+										Turn off Fill for just the star lines.
 									</p>
 								</>
 							) : (
@@ -310,8 +287,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									</div>
 								</div>
 							</Reveal>
-							<Reveal show={(!isSpherical && !isHyperbolic && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")) ||
-							(isHyperbolic && cfg.islamicStyle === "interlace")}>
+							{/* Strap-style knobs are flat-only — the hyperbolic developed renderer draws the plain
+							    fill exclusively in v1. */}
+							<Reveal show={!isSpherical && !isHyperbolic && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")}>
 								<div className="space-y-2">
 									<Slider
 										id="islamicBandWidth"
@@ -355,21 +333,25 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								</div>
 							</Reveal>
 							{/* A/B/C plain fill: star bodies keep their tile hue; B = side fields, C = the edge-centre
-							    diamonds (only visible once Edge Offset > 0). */}
-							<Reveal show={!isSpherical && !isHyperbolic && cfg.islamicStyle === "plain"}>
+							    diamonds (only visible once Edge Offset > 0 — hidden in hyperbolic, whose v1 fixes the
+							    offset at 0 so C never opens). Hyperbolic always shows B (its only style is plain). */}
+							<Reveal show={!isSpherical && (isHyperbolic || cfg.islamicStyle === "plain")}>
 								{/* Hue only — B/C are backgrounds in the tile palette (locked S/L), same ring as hue shift. */}
 								<div className="flex gap-3">
 									<div className="flex-1 min-w-0">
 										<HueRing label="Sides (B)" size={76} value={cfg.islamicFillHueB} onChange={(v) => setCfg({ islamicFillHueB: v })} />
 									</div>
-									<div className="flex-1 min-w-0">
-										<HueRing label="Diamond (C)" size={76} value={cfg.islamicFillHueC} onChange={(v) => setCfg({ islamicFillHueC: v })} />
-									</div>
+									{!isHyperbolic ? (
+										<div className="flex-1 min-w-0">
+											<HueRing label="Diamond (C)" size={76} value={cfg.islamicFillHueC} onChange={(v) => setCfg({ islamicFillHueC: v })} />
+										</div>
+									) : null}
 								</div>
 							</Reveal>
-							{/* Construction knobs, shown for every style. For interlace/outline these weave too —
-							    off-midpoint contact (edge offset) is Bonner's two-point family, canonically interwoven.
-							    Edge offset now works in hyperbolic too (it shifts each contact along the edge geodesic). */}
+							{/* Construction knobs. For interlace/outline these weave too — off-midpoint contact (edge
+							    offset) is Bonner's two-point family, canonically interwoven. The hyperbolic developed
+							    bake fixes offset 0 in v1 (the classic single-contact construction) — hidden there. */}
+							{!isHyperbolic ? (
 							<Slider
 								id="islamicEdgeOffset"
 								label="Edge Offset"
@@ -380,7 +362,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								step={5}
 								unit="%"
 							/>
-							{/* Ray-stops-at (intersection count) is unsupported in the hyperbolic shader — first contact only. */}
+							) : null}
+							{/* Ray-stops-at (intersection count) is first-contact only in the hyperbolic bake. */}
 							{!isHyperbolic ? (
 							<Slider
 								id="islamicIntersectionCount"

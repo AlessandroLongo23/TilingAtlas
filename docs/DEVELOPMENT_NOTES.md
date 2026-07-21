@@ -4492,3 +4492,51 @@ conformal factor (shader + 2D fallback), i.e. halfW = uStrokePx·0.5·(1−r²)^
 §69 final: AL settled on the EXACT metric law (γ = 1.0) with a 3× overall perspective boost —
 halfW = uStrokePx·0.5·3·(1−r²) — hand-tuned in-place; shader and 2D fallback agree. Slider 0 =
 no stroke (a GL-side Math.max(strokePx, 0.5) floor was resurrecting hairlines; removed).
+
+## §70 — Islamic construction on the hyperbolic shelf: the plain fill (2026-07-21)
+
+AL's next feature after the certified renderer: the Islamic construction, feature by feature,
+starting with the plain style the euclidean and spherical shelves already have. Research verdict
+first (AL asked before building): no new system needed. Kaplan & Salesin, *Islamic star patterns in
+absolute geometry* (ACM TOG 23(2), 2004) prove Hankin's polygons-in-contact construction — the exact
+recipe `Polygon.calculateIslamicSegments` implements flat — is valid verbatim in absolute geometry:
+rays leave each edge midpoint at the contact angle and become geodesics. The three 2026-07-18/19
+hyperbolic Islamic specs targeted the (2,p,q) fold shader that left with the Wythoff renderer; this
+rebuilds the feature on the developed pipeline (spec:
+docs/superpowers/specs/2026-07-21-hyperbolic-islamic-plain-design.md).
+
+Two model tricks made the port small (lib/render/hyperbolicIslamic.ts, ~450 lines):
+
+* KLEIN. Geodesics are straight chords in the Klein model and geodesic ordering survives, so the
+  entire flat arrangement machinery (lib/utils/islamicArrangement.ts — crossings, T-junctions, face
+  tracing, colorFacesAbc) runs UNCHANGED on Klein coordinates (scaled ×256 so the 1e-5 vertex
+  quantum sits ~2 orders below the smallest bake-depth feature). Only metric quantities are
+  hyperbolic: midpoints (hypMidpoint), the contact tilt (conformal ⇒ a plain rotation of the
+  Poincaré tangent), ray arrival times in the growing-ray race (hypDist), stroke distances.
+* Γ-INVARIANCE. The construction is canonical per tile ⇒ commutes with every isometry ⇒ bakes over
+  the Dirichlet fundamental domain and samples after the shader's fold with the base field's exact
+  soundness. Baked as a SECOND field texture (same [-rTex,rTex]² square, res ≤ 1024): R = face class
+  (A star body / B side field / C diamond), G = hyp distance to the nearest construction line
+  (EDGE_SCALE convention ⇒ the whole §69 stroke pipeline applies untouched), B/A = the containing
+  FACE's equivariant barycenter (per-face depth shade, no seams across tiles or the domain edge).
+  Bake discipline mirrors hyperbolicReduce texel-for-texel (fold-for-cracks, ring post-pass, loud
+  deep-unresolved error) plus a nearest-boundary sliver fallback the face arrangement needs.
+
+Shader: uIslamicOn switches fill to class colours (A keeps the tile hue via the base field's sides
+channel — star bodies always lie inside their tile; B/C are the islamicFillHueB/C uniforms, hue-ring
+exempt like euclid) and stroke to the Islamic G channel — tile edges vanish, construction lines
+carry the linework. Off ⇒ byte-identical. Canvas bakes per (tiling, angle°) with a 250 ms trailing
+throttle + shared cache; 2D fallback and thumbnails stay base-only (no thumbnail shows Islamic on
+any shelf). polygonClassSupportsIslamic now admits every class; options-tab hyperbolic branch is
+plain-only v1 (angle slider + Bonner presets; offset/count/styles hidden — follow-ups).
+
+Verified: tests/hyperbolic-islamic.test.ts (11) — Klein round-trips, segment equivariance under the
+tiling's own gens, rosette closure with zero dangling rays, slider-0 retraces the tiling, field
+totality + valid classes across ALL 59, tile centres are class A, and the G channel equals the
+GLOBAL nearest-line distance (the containing-face-boundary shortcut proven sound; the one red herring
+was the TEST's reference pool developing too shallow a patch). All 46 hyperbolic tests green.
+Playwright: 3-6-4-6 at 45°/66° (proper 6/4-point stars), {8,8} lines-only, off-regression.
+
+Rider: pnpm build now sets NODE_OPTIONS=--max-old-space-size=8192 — the repo's type graph already
+sat at Next's TS worker ~4 GB default ceiling and this feature's new module tipped it over (bare
+`tsc --noEmit` passes; the baseline build without the feature still fit). Not a type error.
