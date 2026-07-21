@@ -90,8 +90,7 @@ export function createCarvedSphereMaterial(opts: CarvedMaterialOptions): CarvedM
 				`#include <begin_vertex>
 				vCarveDir = normalize(position);
 				int carveVB;
-				float carveVSep;
-				transformed += vCarveDir * carveHeight(sphClassify(vCarveDir, carveVB, carveVSep));`,
+				transformed += vCarveDir * carveHeight(sphClassify(vCarveDir, carveVB));`,
 			);
 
 		// Fragment: paint the procedural albedo (face hue, tinted darker in-hue inside the groove, plus AO
@@ -102,11 +101,10 @@ export function createCarvedSphereMaterial(opts: CarvedMaterialOptions): CarvedM
 			.replace(
 				"#include <map_fragment>",
 				`int carveFB;
-				float carveSep;
-				float carveGv = sphClassify(normalize(vCarveDir), carveFB, carveSep);
+				float carveGv = sphClassify(normalize(vCarveDir), carveFB);
 				vec3 carveFace = sphFaceColor(carveFB);
 				// Groove tint: darker IN the face hue (a shadowed dip, not a painted gash), then the AO shoulder.
-				vec3 carveAlbedo = mix(carveFace, carveFace * 0.72, sphEdge(carveGv, carveSep));
+				vec3 carveAlbedo = mix(carveFace, carveFace * 0.72, sphEdge(carveGv));
 				carveAlbedo *= mix(1.0, 1.0 - uCarveAoStrength, carveShade(carveGv));
 				// diffuseColor is linear working space; sphFaceColor is a display value, so linearise.
 				diffuseColor = vec4(sphSRGBToLinear(carveAlbedo), opacity);`,

@@ -61,25 +61,39 @@ vec3 sphSRGBToLinear(vec3 c) {
 	return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
 }
 
-// Classify a surface direction: the largest dot is the containing face (best), the gap to the second (sec)
-// measures nearness to their shared edge. Normalise the gap by the two exit-normals' separation so it reads
-// as a roughly uniform ARC distance across every solid and edge type (without it, edges between
-// near-parallel normals render visibly thicker). Returns g = gap/sep; writes the winning face index to best
-// and the raw separation to sep. sep is handed back (not kept local) because the runner-up face, and so
-// sep, flips identity along each face's interior bisector curves, and sphEdge needs the raw (continuous)
-// gap = g*sep there to keep its anti-alias feather from spiking (see sphEdge below).
-float sphClassify(vec3 dir, out int best, out float sep) {
-	float m1 = -2.0, m2 = -2.0;
-	int b = 0, s = 0;
+// Classify a surface direction: the containing face (best) is the largest dot — the face the outward ray
+// exits through — and the return value g is the normalised angular distance to the NEAREST tiling edge (0 on
+// an edge, growing into the face). g is the MIN over every other face f of the gap (m1 − dot_f) divided by
+// that pair's exit-normal separation |N_best − N_f|; the per-pair normalisation makes g a roughly uniform
+// arc distance across every solid and edge type (without it, edges between near-parallel normals render
+// visibly thicker).
+//
+// Taking the true min over all faces — not "the second-highest dot divided by ITS separation" — is what
+// keeps the edge band a clean uniform-width stroke through every vertex. The old single-runner-up form
+// clipped each edge band at the curve where the runner-up flips (dot_A == dot_C near a vertex): past that
+// curve it silently measured distance to a DIFFERENT edge with a different separation, notching/stepping the
+// stroke. The min is also CONTINUOUS across those flip curves (min of smooth terms), so fwidth(g) in sphEdge
+// no longer spikes into faint phantom lines reaching into the face interior.
+float sphClassify(vec3 dir, out int best) {
+	// Pass 1: the containing face (largest dot).
+	float m1 = -2.0;
+	int b = 0;
 	for (int i = 0; i < SPH_MAX_FACES; i++) {
 		if (i >= uSphFaceCount) break;
 		float d = dot(dir, uSphFace[i].xyz);
-		if (d > m1) { m2 = m1; s = b; m1 = d; b = i; }
-		else if (d > m2) { m2 = d; s = i; }
+		if (d > m1) { m1 = d; b = i; }
 	}
 	best = b;
-	sep = max(length(uSphFace[b].xyz - uSphFace[s].xyz), 1e-4);
-	return (m1 - m2) / sep;
+	// Pass 2: min normalised gap to any OTHER face = distance to the nearest edge.
+	vec3 Nb = uSphFace[b].xyz;
+	float g = 1e9;
+	for (int i = 0; i < SPH_MAX_FACES; i++) {
+		if (i >= uSphFaceCount) break;
+		if (i == b) continue;
+		float sep = max(length(Nb - uSphFace[i].xyz), 1e-4);
+		g = min(g, (m1 - dot(dir, uSphFace[i].xyz)) / sep);
+	}
+	return g;
 }
 
 // The face's fill hue (with the global hue-ring offset applied), matching the flat Euclidean tiles.
@@ -92,14 +106,8 @@ vec3 sphFaceColor(int best) {
 // gives a pixel-exact feather at any zoom — the whole point of going procedural. MUST NOT be included in a
 // vertex stage (fwidth is fragment-only). Append it after TILING_GLSL_CORE in fragment shaders.
 export const TILING_GLSL_EDGE = /* glsl */ `
-float sphEdge(float g, float sep) {
-	// AA on the CONTINUOUS raw gap (g*sep), NOT on g. g = gap/sep is discontinuous wherever the runner-up
-	// face flips identity: the interior bisector curves that run from every vertex toward each face's centre,
-	// where sep jumps while the raw gap does not. fwidth(g) spikes on those curves and balloons the smoothstep
-	// band into faint phantom edge lines reaching into the face interior (the "edges of one polygon extend
-	// into the next" artefact). fwidth(g*sep)/sep is the same one-pixel feather away from the bisectors but
-	// stays bounded across them, so the phantom lines vanish and true edges are unchanged.
-	float aa = fwidth(g * sep) / sep + 1e-5;
+float sphEdge(float g) {
+	float aa = fwidth(g) + 1e-5;
 	return 1.0 - smoothstep(uSphEdgeWidth - aa, uSphEdgeWidth + aa, g);
 }
 `;
