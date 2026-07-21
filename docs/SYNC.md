@@ -1313,3 +1313,11 @@ domain + complete side pairings + total lookup field + (tile, residual) camera r
 no float decay. All 59 certify; suite + build green; Playwright-verified (4 worst tilings + 500-frame
 pan). Commits 5716c9e..cd6295c on feat/hyperbolic-developer. Detail: NOTES §67, plan
 docs/superpowers/plans/2026-07-21-hyperbolic-certified-dirichlet-renderer.md. — CC
+
+**2026-07-21 (CC) — Hyperbolic renderer polish: y-axis, per-tile shading, pan probes.** AL follow-up on
+the Dirichlet renderer: (1) drag + click were y-mirrored (store is y-down, disk y-up) — negated at the
+seam; the "pan blocks in one direction" report is this inversion (vertical targets recede under the
+natural gesture) — headless probes (drag matrices, 1500-frame runs) show 0 clamp rejections and no
+mechanical freeze. (2) Per-tile flat depth shading restored: field B/A now carry the tile's hyperbolic
+barycenter (Minkowski mean — equivariant, so fold branches agree exactly); the shader transports it
+through the tracked inverse fold word. Tests 35/35, build green, Playwright-verified. NOTES §68. — CC

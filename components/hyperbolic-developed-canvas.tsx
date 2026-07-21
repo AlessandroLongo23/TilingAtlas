@@ -138,9 +138,22 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			const Rcss = Math.max(0.5 * Math.min(w, h) - DISK_PAD_PX, 1); // disk radius in CSS px (pan units)
 			const rotDeg = ctrl.rotation || 0;
 
+			// dev-only pan diagnostics (window.__hypDebug), same spirit as the __stores hook
+			const dbgHost = window as unknown as { __hypDebug?: Record<string, unknown> };
+			const dbg: Record<string, unknown> =
+				process.env.NODE_ENV !== "production"
+					? (dbgHost.__hypDebug ??= { frames: 0, applied: 0, rejected: 0, folds: 0, view: null, center: null })
+					: {};
+			dbg.frames = ((dbg.frames as number) ?? 0) + 1;
+
 			const clampApply = (next: Su11) => {
 				const c = su11ApplyInverse(next, { x: 0, y: 0 });
-				if (c.x * c.x + c.y * c.y <= MAX_CENTER_R * MAX_CENTER_R) viewRef.current = next;
+				if (c.x * c.x + c.y * c.y <= MAX_CENTER_R * MAX_CENTER_R) {
+					viewRef.current = next;
+					dbg.applied = (dbg.applied as number) + 1;
+				} else {
+					dbg.rejected = (dbg.rejected as number) + 1;
+				}
 			};
 
 			if (cfg.hyperbolicResetView) {
@@ -158,7 +171,9 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 					Math.hypot(ctrl.targetOffset.x - prevTargetOffset.current.x, ctrl.targetOffset.y - prevTargetOffset.current.y) > 1e-4;
 				prevTargetOffset.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
 				const dx = (ctrl.offset.x - prevOffset.current.x) / Rcss;
-				const dy = (ctrl.offset.y - prevOffset.current.y) / Rcss;
+				// store offsets are centred CSS px with y DOWN; the disk world is y UP (the shader maps
+				// gl_FragCoord y-up) — negate so dragging down moves the tiling down, not mirrored.
+				const dy = -(ctrl.offset.y - prevOffset.current.y) / Rcss;
 				prevOffset.current = { x: ctrl.offset.x, y: ctrl.offset.y };
 				const dLen = Math.hypot(dx, dy);
 				if (dLen > 1e-5 && !(centerAnim.current && !dragging)) {
@@ -176,7 +191,8 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			// Click-to-anchor: snap the click to the nearest tiling feature (developed on demand) and ease it
 			// to the disk centre.
 			if (cfg.hyperbolicClick) {
-				const clickDisk = { x: cfg.hyperbolicClick.x / Rcss, y: cfg.hyperbolicClick.y / Rcss };
+				// click comes in centred CSS px, y down (canvas.tsx) — flip to the disk's y-up frame.
+				const clickDisk = { x: cfg.hyperbolicClick.x / Rcss, y: -cfg.hyperbolicClick.y / Rcss };
 				useConfiguration.setState({ hyperbolicClick: null });
 				const dev = devRef.current;
 				if (dev && clickDisk.x * clickDisk.x + clickDisk.y * clickDisk.y < 0.998) {
@@ -243,8 +259,11 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 					// keep the click-anchor target pointing at the same world feature under the new labels
 					if (centerAnim.current) centerAnim.current = su11Apply(bestG, centerAnim.current);
 					c = bestC;
+					dbg.folds = (dbg.folds as number) + 1;
 				}
 			}
+			dbg.view = { a: { ...viewRef.current.a }, b: { ...viewRef.current.b } };
+			dbg.center = su11ApplyInverse(viewRef.current, { x: 0, y: 0 });
 
 			const view = viewRef.current;
 			const dark = document.documentElement.classList.contains("dark");

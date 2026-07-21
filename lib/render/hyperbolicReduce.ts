@@ -68,10 +68,33 @@ function geodesicPts(a: Complex, b: Complex, n: number): Complex[] {
 interface BakeTile {
 	poly: [number, number][];
 	sides: number;
+	center: Complex; // hyperbolic barycenter (equivariant) — drives the per-tile depth shade
 	x0: number;
 	x1: number;
 	y0: number;
 	y1: number;
+}
+
+/**
+ * Hyperbolic barycenter of a set of Poincaré-disk points: the Minkowski mean on the hyperboloid,
+ * normalised back to it. EQUIVARIANT under every isometry (isometries are linear on the hyperboloid),
+ * for ANY polygon shape — so the per-tile shade computed from it is identical no matter which
+ * fundamental copy of the tile a pixel folds into (no shading seams across the domain boundary).
+ */
+export function hypBarycenter(pts: [number, number][]): Complex {
+	let X = 0;
+	let Y = 0;
+	let T = 0;
+	for (const [x, y] of pts) {
+		const r2 = x * x + y * y;
+		const s = Math.max(1 - r2, 1e-12);
+		X += (2 * x) / s;
+		Y += (2 * y) / s;
+		T += (1 + r2) / s;
+	}
+	const n = Math.sqrt(Math.max(T * T - X * X - Y * Y, 1e-18));
+	const t = T / n;
+	return { x: X / n / (1 + t), y: Y / n / (1 + t) };
 }
 
 function pointInPoly(poly: [number, number][], x: number, y: number): boolean {
@@ -98,7 +121,8 @@ function distSq(px: number, py: number, ax: number, ay: number, bx: number, by: 
 
 export interface TileField {
 	/** RGBA bytes, row-major res×res. R = tile side count (never 0 after the bake post-pass).
-	 *  G = hyperbolic distance to the tile boundary, ×EDGE_SCALE, clamped to 255. */
+	 *  G = hyperbolic distance to the tile boundary, ×EDGE_SCALE, clamped to 255.
+	 *  B/A = the tile's hyperbolic barycenter (x, y) quantised over [-1,1] — the per-tile depth marker. */
 	data: Uint8Array;
 	res: number;
 	/** The field covers [-rTex, rTex]²; texel (i,j) centre ↦ q = ((i,j)+0.5)/res·2·rTex − rTex. */
@@ -162,7 +186,7 @@ export function prepareShaderTiling(
 			y0 = Math.min(y0, y);
 			y1 = Math.max(y1, y);
 		}
-		tiles.push({ poly, sides: face.length, x0, x1, y0, y1 });
+		tiles.push({ poly, sides: face.length, center: hypBarycenter(raw), x0, x1, y0, y1 });
 	}
 	const GRID = 64;
 	const grid: number[][] = Array.from({ length: GRID * GRID }, () => []);
@@ -200,9 +224,11 @@ export function prepareShaderTiling(
 		opts.fieldRes ??
 		Math.max(384, Math.min(2048, Math.ceil((4 * rTex) / ((1 - rTex * rTex) * 0.008))));
 	const data = new Uint8Array(res * res * 4);
+	const resolved = new Uint8Array(res * res); // bake bookkeeping only (B/A carry the tile centre)
 	const unresolvedIdx: number[] = [];
 	let unresolvedDeep = 0;
 	const deepR = 0.95 * rTex;
+	const q8 = (v: number) => Math.max(0, Math.min(255, Math.round(((v + 1) / 2) * 255)));
 	for (let j = 0; j < res; j++) {
 		const y = ((j + 0.5) / res) * 2 * rTex - rTex;
 		for (let i = 0; i < res; i++) {
@@ -233,7 +259,12 @@ export function prepareShaderTiling(
 			const conf = 2 / Math.max(1 - (px * px + py * py), 1e-6);
 			data[o] = t.sides;
 			data[o + 1] = Math.min(255, Math.round(Math.sqrt(edgeSq) * conf * EDGE_SCALE));
-			data[o + 3] = 255;
+			// per-tile depth marker: the tile's hyperbolic barycenter, quantised over [-1,1]. The shader
+			// transports it back through the inverse fold word and shades the whole tile by ITS screen
+			// radius — one flat shade per tile, the app-wide fill convention.
+			data[o + 2] = q8(t.center.x);
+			data[o + 3] = q8(t.center.y);
+			resolved[o / 4] = 1;
 		}
 	}
 	// post-pass: unresolved texels copy the nearest resolved texel (ring search) so the field is TOTAL
@@ -250,10 +281,11 @@ export function prepareShaderTiling(
 					const jj = j + dj;
 					if (ii < 0 || jj < 0 || ii >= res || jj >= res) continue;
 					const oo = (jj * res + ii) * 4;
-					if (data[oo + 3] === 255 && data[oo] > 0) {
+					if (resolved[oo / 4]) {
 						data[o] = data[oo];
 						data[o + 1] = data[oo + 1];
-						data[o + 3] = 255;
+						data[o + 2] = data[oo + 2];
+						data[o + 3] = data[oo + 3];
 						done = true;
 					}
 				}

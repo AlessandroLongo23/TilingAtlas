@@ -4445,3 +4445,29 @@ clean. Full suite: 1226 pass; 4 pre-existing failures in star/oracle/hue lanes (
 18a4990/b974dd5/4f061ac/4b5199f, no hyperbolic imports — not this change). pnpm build green.
 Gotcha for the record: tsconfig has `strict: false`, and non-strict TS does NOT narrow boolean-
 literal discriminants via truthiness — use `!== true` on the certificate union.
+
+## §68 — Renderer polish: y-flip at the store seam, equivariant per-tile shading (2026-07-21)
+
+AL's field report on §67: pan "blocks" in a direction, y-drag inverted, per-tile shading gone.
+
+**Pan block = the y-inversion.** Instrumented the canvas (dev-only `window.__hypDebug`: applied /
+rejected / fold counters) and drove headless gesture matrices — pointer drags in all directions,
+tap-then-drag, wheel bursts, 30-drag long hauls: 0 clamp rejections, view never froze, folds fired
+throughout. There is no mechanical block. What blocks is PERCEPTION under the inversion: the store's
+offset/click are centred CSS px with y DOWN, the disk world is y UP (the shader maps gl_FragCoord
+y-up), and the deltas were passed through unsigned — so the natural vertical gesture moved content
+the wrong way and a vertical target recedes forever ("cannot move in that direction"). Fix: negate y
+for the drag delta and the click coordinate at the store→disk seam, nowhere else.
+
+**Per-tile shading.** §67's shader dimmed by PIXEL screen radius (a smooth gradient); the app-wide
+fill convention (2D developed-draw, euclidean, spherical) is one flat shade per TILE, dimmed by the
+tile centre's screen radius. Restored in the per-pixel path: the field's B/A channels now carry the
+tile's hyperbolic barycenter (Minkowski mean on the hyperboloid, quantised over [-1,1]). The mean is
+EQUIVARIANT under every isometry and any polygon shape, which is the load-bearing property: pixels
+of one world tile that fold through different words into different fundamental copies transport the
+SAME world point back — no shading seams across the Dirichlet boundary (a Euclidean vertex-mean
+would seam; test pins equivariance to 1e-9). The shader accumulates the inverse fold word Minv
+(one SU(1,1) product per fold step), places the barycenter in world space, projects through the
+view, and dims the whole tile by that radius; stroke taper uses the same per-tile depth. The bake's
+resolved flag moved from the alpha channel to a side mask. Playwright: shading matches the old
+look, drag-down moves content down, thumbnails inherit both fixes.

@@ -57,24 +57,33 @@ void main() {
 
 	// Dirichlet reduction over the COMPLETE side pairings. Exit on "no generator improves" — with a
 	// complete set that IS membership in the closed domain (Voight 2009), not a stuck local minimum.
+	// Alongside w we accumulate the INVERSE fold word Minv ∈ SU(1,1): it transports the baked tile
+	// barycenter back to world space for the per-tile depth shade.
+	vec2 ma = vec2(1.0, 0.0), mb = vec2(0.0, 0.0);
 	for (int it = 0; it < 96; it++) {
 		float wr2 = dot(w, w);
 		if (wr2 <= uRIn * uRIn) break;
 		float bestR2 = wr2 - 1e-9;
 		vec2 best = w;
-		bool found = false;
+		int bestG = -1;
 		for (int g = 0; g < ${MAX_GENS}; g++) {
 			if (g >= uNumGens) break;
 			vec2 q = su11(uGens[g].xy, uGens[g].zw, w);
 			float qr2 = dot(q, q);
-			if (qr2 < bestR2) { bestR2 = qr2; best = q; found = true; }
+			if (qr2 < bestR2) { bestR2 = qr2; best = q; bestG = g; }
 		}
-		if (!found) break; // inside the closed domain
+		if (bestG < 0) break; // inside the closed domain
 		w = best;
+		// Minv <- Minv ∘ g⁻¹, with g⁻¹ = (conj(ga), −gb)
+		vec2 ga = uGens[bestG].xy, gb = uGens[bestG].zw;
+		vec2 na = cmul(ma, cconj(ga)) - cmul(mb, cconj(gb));
+		vec2 nb = cmul(mb, ga) - cmul(ma, gb);
+		ma = na; mb = nb;
 	}
 	// unconverged sub-pixel rim residue (iteration cap): re-aim to a valid interior sample — a
 	// plausible tile colour in the same direction, NEVER the background (no black holes, ever).
-	if (dot(w, w) > uRTex * uRTex) w = normalize(w) * uRIn * 0.9;
+	bool reaimed = false;
+	if (dot(w, w) > uRTex * uRTex) { w = normalize(w) * uRIn * 0.9; reaimed = true; }
 
 	// field sampling: side count from the NEAREST texel (id must not interpolate across tile borders),
 	// edge distance manually bilinear from the same four texels (smooth strokes).
@@ -91,7 +100,19 @@ void main() {
 	float sides = floor(fn.r * 255.0 + 0.5);
 	float distByte = mix(mix(f00.g, f10.g, fr.x), mix(f01.g, f11.g, fr.x), fr.y);
 
-	float dep = sqrt(r2);
+	// PER-TILE depth: transport the baked tile barycenter through the inverse fold word to world
+	// space, project to screen, and shade the whole tile by ITS radius — one flat shade per tile
+	// (byte-matched to the 2D developed-draw / euclidean / spherical fill convention). The barycenter
+	// is the Minkowski mean (equivariant), so pixels folding through different words agree exactly.
+	float dep;
+	if (reaimed) {
+		dep = 1.0; // sub-pixel rim residue: the correct limit shade
+	} else {
+		vec2 cFund = vec2(fn.b, fn.a) * 2.0 - 1.0;
+		vec2 cWorld = su11(ma, mb, cFund);
+		vec2 cScreen = su11(va, vb, cWorld);
+		dep = min(length(cScreen), 1.0);
+	}
 	float dim = 1.0 - 0.5 * dep * dep;
 	vec3 fill = uShowFill > 0.5 ? hsb2rgb(mod(sides * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0) * dim : uBg;
 

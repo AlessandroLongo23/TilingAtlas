@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
-import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
+import { hypBarycenter, prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { foldIntoDomain } from "@/lib/render/hyperbolicDirichlet";
-import { su11Identity, type Complex, type Su11 } from "@/lib/render/hyperbolic";
+import { su11Apply, su11Identity, type Complex, type Su11 } from "@/lib/render/hyperbolic";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 
 interface ShippedPatch extends DevelopedPatch {
@@ -170,6 +170,31 @@ describe("per-pixel shader inputs (certified Dirichlet reduction + total field)"
 		const { match, total } = agreement(id, 0.95, 600);
 		expect(total).toBeGreaterThan(300);
 		expect(match / total, `${id}: ${match}/${total}`).toBeGreaterThan(0.99);
+	});
+
+	// The per-tile depth marker must be EQUIVARIANT: bary(g·pts) = g(bary(pts)) for every isometry,
+	// else tiles cut by the Dirichlet boundary would show shading seams between fold branches.
+	it("hyperbolic barycenter commutes with the tiling's isometries", () => {
+		const p = byId("hyp-k2-3-3-4-3-4-4__3-3-4-3-4-4");
+		const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 128 });
+		expect(st).not.toBeNull();
+		const pts: [number, number][] = [
+			[0.1, 0.2],
+			[0.35, -0.15],
+			[-0.2, 0.4],
+			[0.05, -0.45],
+			[-0.38, -0.1],
+		];
+		const b0 = hypBarycenter(pts);
+		for (const g of st!.domain.gens.slice(0, 8)) {
+			const moved = pts.map((q) => {
+				const m = su11Apply(g, { x: q[0], y: q[1] });
+				return [m.x, m.y] as [number, number];
+			});
+			const bg = hypBarycenter(moved);
+			const gb = su11Apply(g, b0);
+			expect(Math.hypot(bg.x - gb.x, bg.y - gb.y)).toBeLessThan(1e-9);
+		}
 	});
 
 	it("agrees across the whole atlas (all 59)", { timeout: 120_000 }, () => {
