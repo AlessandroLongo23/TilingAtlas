@@ -47,9 +47,10 @@ uniform vec3 uSphLineColor;
 void main() {
 	vec3 dir = normalize(vLocal);
 	int best;
-	float g = sphClassify(dir, best);
+	float sep;
+	float g = sphClassify(dir, best, sep);
 	vec3 faceCol = sphFaceColor(best);
-	vec3 col = mix(faceCol, uSphLineColor, sphEdge(g));
+	vec3 col = mix(faceCol, uSphLineColor, sphEdge(g, sep));
 	// RawShaderMaterial output is verbatim (three appends no colour-space/tonemapping chunk), and the scene
 	// uses the default NoToneMapping + sRGB output — so write the DISPLAY value directly. This is exactly the
 	// pixel the old MeshBasic + baked map produced (baker linearised, MeshBasic re-encoded → net identity).

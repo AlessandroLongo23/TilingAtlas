@@ -64,8 +64,11 @@ vec3 sphSRGBToLinear(vec3 c) {
 // Classify a surface direction: the largest dot is the containing face (best), the gap to the second (sec)
 // measures nearness to their shared edge. Normalise the gap by the two exit-normals' separation so it reads
 // as a roughly uniform ARC distance across every solid and edge type (without it, edges between
-// near-parallel normals render visibly thicker). Returns g; writes the winning face index to best.
-float sphClassify(vec3 dir, out int best) {
+// near-parallel normals render visibly thicker). Returns g = gap/sep; writes the winning face index to best
+// and the raw separation to sep. sep is handed back (not kept local) because the runner-up face, and so
+// sep, flips identity along each face's interior bisector curves, and sphEdge needs the raw (continuous)
+// gap = g*sep there to keep its anti-alias feather from spiking (see sphEdge below).
+float sphClassify(vec3 dir, out int best, out float sep) {
 	float m1 = -2.0, m2 = -2.0;
 	int b = 0, s = 0;
 	for (int i = 0; i < SPH_MAX_FACES; i++) {
@@ -75,7 +78,7 @@ float sphClassify(vec3 dir, out int best) {
 		else if (d > m2) { m2 = d; s = i; }
 	}
 	best = b;
-	float sep = max(length(uSphFace[b].xyz - uSphFace[s].xyz), 1e-4);
+	sep = max(length(uSphFace[b].xyz - uSphFace[s].xyz), 1e-4);
 	return (m1 - m2) / sep;
 }
 
@@ -89,8 +92,14 @@ vec3 sphFaceColor(int best) {
 // gives a pixel-exact feather at any zoom — the whole point of going procedural. MUST NOT be included in a
 // vertex stage (fwidth is fragment-only). Append it after TILING_GLSL_CORE in fragment shaders.
 export const TILING_GLSL_EDGE = /* glsl */ `
-float sphEdge(float g) {
-	float aa = fwidth(g) + 1e-5;
+float sphEdge(float g, float sep) {
+	// AA on the CONTINUOUS raw gap (g*sep), NOT on g. g = gap/sep is discontinuous wherever the runner-up
+	// face flips identity: the interior bisector curves that run from every vertex toward each face's centre,
+	// where sep jumps while the raw gap does not. fwidth(g) spikes on those curves and balloons the smoothstep
+	// band into faint phantom edge lines reaching into the face interior (the "edges of one polygon extend
+	// into the next" artefact). fwidth(g*sep)/sep is the same one-pixel feather away from the bisectors but
+	// stays bounded across them, so the phantom lines vanish and true edges are unchanged.
+	float aa = fwidth(g * sep) / sep + 1e-5;
 	return 1.0 - smoothstep(uSphEdgeWidth - aa, uSphEdgeWidth + aa, g);
 }
 `;
