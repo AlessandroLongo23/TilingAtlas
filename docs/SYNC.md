@@ -1335,3 +1335,11 @@ reused verbatim in the Klein model, A/B faces + line distance baked as a second 
 over the Dirichlet domain — angle slider live, all 59 tilings bake clean. Plain only (offset /
 count / interlace / checkerboard are follow-ups). Tests 46/46, build green (NODE heap bumped to
 8 GB — worker ceiling, not a type error), Playwright-verified. NOTES §70. — CC
+
+**2026-07-21 (CC) — Islamic edge offset + C diamonds (hyperbolic).** Bonner's two-point family on
+the developed renderer: roots slide by hyp arc length, C = the contact diamonds, classified
+geometrically (marker containment + per-texel Voronoi in merged faces + wall-less global fallback)
+instead of parity — continuous at every slider end stop (89↔90, 99↔100 per-notch > 0.96; the exact
+offset-100 vertex snap regularised at 99.8 %). Rays are tile-local (Klein exit cap) so the
+unclosable regime degrades cleanly; all 59 bake valid at offsets 0/50. Tests 50/50, build green,
+Playwright-verified. NOTES §71. — CC

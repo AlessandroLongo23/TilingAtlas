@@ -4550,3 +4550,38 @@ so they skip classification (each was folding, ~45 k folds on deep domains) and 
 copy. Worst-case full-res re-bake 1230 → 94 ms; per-notch re-bake 5–22 ms. The canvas now bakes
 EVERY notch immediately at 256² (lands the same frame) and silently refines to full res after
 200 ms of slider quiet. All 46 hyperbolic tests green; G-channel test validates the adaptive tess.
+
+## §71 — Islamic edge offset + the C diamonds, with continuity at the slider end stops (2026-07-21)
+
+AL: add Bonner's edge offset and the Diamond (C) colour wheel to the hyperbolic plain fill, with
+colour continuity at the edge cases (angle 89↔90, offset 95↔100). The offset itself is small: the
+two roots slide from the midpoint by hyperbolic arc length along the edge geodesic (frac·half-edge,
+1 ⇒ the tiling vertices), each ray leaning toward the far side — the flat converging-split contract.
+The interesting work was making the CLASSIFICATION continuous where the construction degenerates:
+
+* Parity-C is out. colorFacesAbc's global 2-colouring re-anchors when the star bodies degenerate and
+  flips whole regions (measured 45 % of texels between angle 89 and 90). The hyperbolic bake now
+  classifies geometrically: A = face holds a tile centre, C = face strictly holds an edge contact
+  (the diamond that opens around it), B = rest. Local, Γ-invariant, and continuous — C shrinks to
+  nothing as the offset closes; nothing exists to flip at the stops. Exact-degenerate marker-on-
+  boundary cases (θ = 0, offset 0) get EMPTY marker sets — their continuous limits.
+* Rays are strictly tile-local: each is capped at its own tile's Klein chord-polygon exit. In the
+  hyperbolic UNCLOSABLE regime (fat tiles at extreme sliders — geodesics diverge, Kaplan–Salesin
+  note the possibility) rays used to terminate on accidental far-away crossings and shred the
+  arrangement into pendants ({3,8} at offset 50 %: ONE bounded face, 577 dead texels).
+* Pendants are pruned to the last junction (the arrangement becomes a closed subdivision, faces
+  simple), and texels in wall-less territory fall back to the GLOBAL nearest-marker Voronoi — the
+  continuous limit of the face classes as walls vanish; the marker doubles as the equivariant depth
+  anchor. All 59 tilings now bake valid fields at offsets 0 and 50 %.
+* Faces holding BOTH marker kinds (the star∪diamond merge just below offset ~95 %) resolve per
+  texel by nearest contained marker, so the merge/split bifurcation morphs instead of popping
+  (A/B/C histograms now smooth across 0.9 → 1.0).
+* The one irreducible snap — roots coinciding with the tiling vertices at EXACTLY 100 %, which
+  re-closes the topology (8 % of texels in the last percent vs the ~1.5 %/percent smooth rate) — is
+  regularised: the bake caps the effective offset at 99.8 %, sub-pixel from the true endpoint.
+
+Tests (15): offset equivariance, closure at offsets, C present at 40 %/absent at 0, per-notch
+continuity (89↔90 > 0.96, 99↔100 > 0.97, 0↔5 > 0.95), the doubly degenerate corner (90° + 100 %),
+all-59 totality at two offsets. Playwright: two-point pattern with blue C diamonds at offset 40;
+offset 95 vs 100 near-identical (100 the cleaner). Options-tab: Edge Offset + Diamond (C) wheel now
+live for hyperbolic.

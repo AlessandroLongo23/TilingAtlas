@@ -333,25 +333,22 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								</div>
 							</Reveal>
 							{/* A/B/C plain fill: star bodies keep their tile hue; B = side fields, C = the edge-centre
-							    diamonds (only visible once Edge Offset > 0 — hidden in hyperbolic, whose v1 fixes the
-							    offset at 0 so C never opens). Hyperbolic always shows B (its only style is plain). */}
+							    diamonds (only visible once Edge Offset > 0). Hyperbolic always shows this (its only
+							    style is plain). */}
 							<Reveal show={!isSpherical && (isHyperbolic || cfg.islamicStyle === "plain")}>
 								{/* Hue only — B/C are backgrounds in the tile palette (locked S/L), same ring as hue shift. */}
 								<div className="flex gap-3">
 									<div className="flex-1 min-w-0">
 										<HueRing label="Sides (B)" size={76} value={cfg.islamicFillHueB} onChange={(v) => setCfg({ islamicFillHueB: v })} />
 									</div>
-									{!isHyperbolic ? (
-										<div className="flex-1 min-w-0">
-											<HueRing label="Diamond (C)" size={76} value={cfg.islamicFillHueC} onChange={(v) => setCfg({ islamicFillHueC: v })} />
-										</div>
-									) : null}
+									<div className="flex-1 min-w-0">
+										<HueRing label="Diamond (C)" size={76} value={cfg.islamicFillHueC} onChange={(v) => setCfg({ islamicFillHueC: v })} />
+									</div>
 								</div>
 							</Reveal>
 							{/* Construction knobs. For interlace/outline these weave too — off-midpoint contact (edge
-							    offset) is Bonner's two-point family, canonically interwoven. The hyperbolic developed
-							    bake fixes offset 0 in v1 (the classic single-contact construction) — hidden there. */}
-							{!isHyperbolic ? (
+							    offset) is Bonner's two-point family, canonically interwoven. In hyperbolic the two
+							    roots slide by hyperbolic arc length along the edge geodesic. */}
 							<Slider
 								id="islamicEdgeOffset"
 								label="Edge Offset"
@@ -362,7 +359,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								step={5}
 								unit="%"
 							/>
-							) : null}
 							{/* Ray-stops-at (intersection count) is first-contact only in the hyperbolic bake. */}
 							{!isHyperbolic ? (
 							<Slider

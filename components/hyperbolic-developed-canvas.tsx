@@ -296,7 +296,8 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 				// resolution. Both bakes hit the per-(tiling, angle, res) cache on revisits.
 				let islamicActive = false;
 				if (cfg.isIslamic && stRef.current && patchRef.current?.darts) {
-					const key = `${meta.id}|${Math.round(cfg.islamicAngle)}`;
+					const offsetPct = Math.round(Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100));
+					const key = `${meta.id}|${Math.round(cfg.islamicAngle)}|${offsetPct}`;
 					const now = performance.now();
 					const fullRes = Math.min(stRef.current.field.res, 1024);
 					const bake = (res: number) => {
@@ -306,6 +307,7 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 							patchRef.current!.edge,
 							meta,
 							islamicNormalAngleFromSlider(cfg.islamicAngle),
+							offsetPct / 100,
 							{ fieldRes: res },
 						);
 						gl.setIslamicField(field);
