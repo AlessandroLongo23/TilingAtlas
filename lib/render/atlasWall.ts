@@ -153,3 +153,118 @@ export function buildWallCells(
 	}
 	return cells;
 }
+
+export interface WallDoorSpec {
+	id: string;
+	href: string;
+	label: string;
+	sublabel?: string;
+}
+
+export interface WallPlan {
+	doors: { spec: WallDoorSpec; cell: WallPolygon }[];
+	reserved: { spec: WallDoorSpec; cell: WallPolygon }[];
+	/** Hexagon for the specimen of the day (full color at rest). */
+	daily: WallPolygon;
+	/** Other fully-visible hexagons, muted renders. */
+	specimens: WallPolygon[];
+	/** ~1 in 20 squares carries a vertex-configuration glyph linking into /theory. */
+	glyphs: { cell: WallPolygon; text: string }[];
+}
+
+export interface WallPlanOptions {
+	width: number;
+	height: number;
+	seed: number;
+	doorSpecs: WallDoorSpec[];
+	reservedSpecs: WallDoorSpec[];
+	/** Canvas-fraction anchors, one per door then per reserved door, in order. */
+	anchors: { x: number; y: number }[];
+	/** Masthead rect in canvas fractions — door centroids must stay out of it. */
+	exclude: { x: number; y: number; w: number; h: number };
+	glyphTexts: string[];
+}
+
+// Deterministic PRNG so a (cells, opts) pair always yields the same wall. The daily seed comes
+// from the UTC date upstream; per-request variety is the caller's choice of seed.
+function mulberry32(seed: number) {
+	let a = seed >>> 0;
+	return () => {
+		a |= 0;
+		a = (a + 0x6d2b79f5) | 0;
+		let t = Math.imul(a ^ (a >>> 15), 1 | a);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
+export function planWall(cells: WallCells, opts: WallPlanOptions): WallPlan {
+	const { width, height, exclude } = opts;
+	const rand = mulberry32(opts.seed);
+
+	const fullyInside = (p: WallPolygon) =>
+		p.cx - p.r >= 0 && p.cx + p.r <= width && p.cy - p.r >= 0 && p.cy + p.r <= height;
+	const inExclude = (p: WallPolygon) =>
+		p.cx >= exclude.x * width &&
+		p.cx <= (exclude.x + exclude.w) * width &&
+		p.cy >= exclude.y * height &&
+		p.cy <= (exclude.y + exclude.h) * height;
+
+	// Doors: greedily take the unused eligible dodecagon nearest each anchor.
+	const eligible = cells.dodecagons.filter((p) => fullyInside(p) && !inExclude(p));
+	const used = new Set<string>();
+	const specs = [...opts.doorSpecs, ...opts.reservedSpecs];
+	const picks: { spec: WallDoorSpec; cell: WallPolygon }[] = [];
+	specs.forEach((spec, i) => {
+		const anchor = opts.anchors[i] ?? { x: 0.5, y: 0.5 };
+		const ax = anchor.x * width;
+		const ay = anchor.y * height;
+		let best: WallPolygon | null = null;
+		let bestD = Infinity;
+		for (const p of eligible) {
+			if (used.has(p.key)) continue;
+			const d = Math.hypot(p.cx - ax, p.cy - ay);
+			if (d < bestD) {
+				bestD = d;
+				best = p;
+			}
+		}
+		if (best) {
+			used.add(best.key);
+			picks.push({ spec, cell: best });
+		}
+	});
+	const doors = picks.slice(0, opts.doorSpecs.length);
+	const reserved = picks.slice(opts.doorSpecs.length);
+
+	// Hexagons touching a door stay quiet so door labels breathe; the rest are specimens.
+	const nearDoor = (p: WallPolygon) =>
+		picks.some((d) => Math.hypot(p.cx - d.cell.cx, p.cy - d.cell.cy) < d.cell.r + p.r * 0.4);
+	const hexes = cells.hexagons.filter((p) => fullyInside(p) && !nearDoor(p));
+	const dailyTarget = { x: 0.62 * width, y: 0.55 * height };
+	let daily = hexes[0];
+	let dailyD = Infinity;
+	for (const p of hexes) {
+		const d = Math.hypot(p.cx - dailyTarget.x, p.cy - dailyTarget.y);
+		if (d < dailyD) {
+			dailyD = d;
+			daily = p;
+		}
+	}
+	const specimens = hexes.filter((p) => p.key !== daily.key);
+
+	// Glyphs: every ~20th fully-visible square by PRNG order, cycling the provided texts.
+	const sqs = cells.squares.filter((p) => fullyInside(p) && !inExclude(p) && !nearDoor(p));
+	const shuffled = [...sqs];
+	for (let i = shuffled.length - 1; i > 0; i--) {
+		const j = Math.floor(rand() * (i + 1));
+		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+	}
+	const glyphCount = Math.max(1, Math.floor(sqs.length / 20));
+	const glyphs = shuffled.slice(0, glyphCount).map((cell, i) => ({
+		cell,
+		text: opts.glyphTexts[i % Math.max(1, opts.glyphTexts.length)] ?? "",
+	}));
+
+	return { doors, reserved, daily, specimens, glyphs };
+}
