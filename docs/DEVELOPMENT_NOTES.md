@@ -4585,3 +4585,13 @@ continuity (89↔90 > 0.96, 99↔100 > 0.97, 0↔5 > 0.95), the doubly degenerat
 all-59 totality at two offsets. Playwright: two-point pattern with blue C diamonds at offset 40;
 offset 95 vs 100 near-identical (100 the cleaner). Options-tab: Edge Offset + Diamond (C) wheel now
 live for hyperbolic.
+
+§71 addendum — the slider-90 stroke pinch (AL report). At angle 90 the construction lines are whole
+apothems — the longest UNBROKEN arcs the construction produces (nothing crosses them) — and the
+adaptive distance tessellation (≤ 0.35 rad per chord) gave each ONE chord. The stored G is measured
+to the chord, which sags from the true arc by (Δθ/8)·chord ≈ 12 bytes mid-arc, while the stroke's
+visibility threshold at typical widths is ~6 bytes: the band pinched out at the quarter points of
+every dual-cell edge (thick at the junctions and at the chord-exact midpoint M — AL's exact
+description). Measured on the true wall: G max 12 → 2 bytes after tightening the bound to 0.08 rad
+(TESS_MAX_RAD, max 24 pieces). Worst-case re-bakes: 30 ms coarse notch, 158 ms full-res settle
+(was 94 ms — still invisible). 50/50 tests, Playwright-verified on hyp-4x6 at AL's config.

@@ -38,7 +38,12 @@ import { Vector } from "@/classes/Vector";
 export const KLEIN_SCALE = 256;
 
 const COLLAR = 0.15; // must match hyperbolicReduce (the field square the shader samples)
-const SEG_T = 8; // geodesic tessellation of a face boundary for the stroke-distance channel
+const SEG_T = 24; // max pieces per face-boundary arc for the stroke-distance channel
+// Max angular span per tessellation piece. Sagitta ≈ (Δθ/8)·chord, and the stroke's visibility
+// threshold is a few bytes of G — at 0.35 rad the LONG unbroken walls of the slider-90 construction
+// (whole apothems, ~0.28 rad, ONE chord) sagged ~12 bytes mid-arc and visibly pinched the stroke at
+// the quarter points of every dual-cell edge (AL's report). 0.08 rad keeps the error under ~1 byte.
+const TESS_MAX_RAD = 0.08;
 
 /** Poincaré → Klein (same disk, same ideal boundary). */
 export function poincareToKlein(p: Complex): Complex {
@@ -269,9 +274,10 @@ export function islamicSegmentsForTile(
 }
 
 /** Poincaré geodesic arc a→b as a short ADAPTIVE polyline (the in-disk arc of the orthogonal
- *  circle). Pieces are chosen by angular span (sagitta/chord ≈ Δθ/8, so 0.35 rad keeps the chord
- *  within ~4 % of the arc — a few bytes at EDGE_SCALE): the many near-straight arrangement edges
- *  emit ONE segment instead of `maxN`, which is what keeps the full-res texel loop affordable. */
+ *  circle). Pieces are chosen by angular span (TESS_MAX_RAD each, sagitta/chord ≈ Δθ/8): the many
+ *  near-straight arrangement edges emit ONE segment instead of `maxN`, which is what keeps the
+ *  full-res texel loop affordable, while long unbroken walls get enough pieces that the stored
+ *  line distance never sags visibly (see TESS_MAX_RAD). */
 function geodesicPts(a: Complex, b: Complex, maxN: number): Complex[] {
 	const det = a.x * b.y - a.y * b.x;
 	if (Math.abs(det) < 1e-9) return [a, b]; // diameter — exactly straight
@@ -286,7 +292,7 @@ function geodesicPts(a: Complex, b: Complex, maxN: number): Complex[] {
 	// of the two arcs pick the one inside the disk (the short one for an orthogonal circle)
 	const midShort = { x: cx + rr * Math.cos(ta + d / 2), y: cy + rr * Math.sin(ta + d / 2) };
 	if (Math.hypot(midShort.x, midShort.y) > 1) d = d > 0 ? d - 2 * Math.PI : d + 2 * Math.PI;
-	const n = Math.max(1, Math.min(maxN, Math.ceil(Math.abs(d) / 0.35)));
+	const n = Math.max(1, Math.min(maxN, Math.ceil(Math.abs(d) / TESS_MAX_RAD)));
 	const out: Complex[] = [];
 	for (let i = 0; i <= n; i++) {
 		const t = ta + d * (i / n);
