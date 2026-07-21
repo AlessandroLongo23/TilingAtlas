@@ -13,7 +13,7 @@ import { EDGE_SCALE, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 const MAX_GENS = 128; // uniform array bound; side pairings ∪ inverses (measured ≤ ~48 across the atlas)
 // Perspective-stroke bias: exponent on the conformal factor (1−r²). 1.0 = exact constant hyperbolic
 // width; < 1 biases heavier (slower thinning toward the rim). AL-tuned.
-const STROKE_GAMMA = "0.7";
+const STROKE_GAMMA = "0.4";
 
 const VERT = `#version 300 es
 in vec2 aPos;
@@ -240,7 +240,7 @@ export class HyperbolicPerPixelRenderer {
 		gl.uniform3f(this.u.uBg, bg[0], bg[1], bg[2]);
 		gl.uniform3f(this.u.uStroke, stroke[0], stroke[1], stroke[2]);
 		gl.uniform1f(this.u.uHueOffset, p.hueOffset);
-		gl.uniform1f(this.u.uStrokePx, Math.max(p.strokePx, 0.5));
+		gl.uniform1f(this.u.uStrokePx, p.strokePx); // 0 = no stroke (callers floor nonzero widths)
 		gl.uniform1f(this.u.uShowFill, p.showFill ? 1 : 0);
 		gl.uniform1f(this.u.uTaper, p.taper ? 1 : 0);
 

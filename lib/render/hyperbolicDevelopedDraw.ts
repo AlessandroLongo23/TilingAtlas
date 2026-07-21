@@ -134,10 +134,10 @@ export function drawDevelopedPatch(
 		ctx.strokeStyle = edgeCol;
 		const baseW = opts.strokePx ?? Math.max(1, R * 0.006);
 		// Perspective width: the conformal factor (1 − r²) at the tile's centre, biased by the same
-		// STROKE_GAMMA = 0.7 as the shader (1.0 = exact constant hyperbolic width; < 1 heavier rim).
+		// STROKE_GAMMA = 0.4 as the shader (1.0 = exact constant hyperbolic width; < 1 heavier rim).
 		// baseW ≤ 0 (slider at 0) = no stroke at all — the 0.35 floor must not resurrect it.
 		const drawStroke = baseW > 0.01;
-		ctx.lineWidth = drawStroke ? (opts.taper ? Math.max(0.35, baseW * Math.pow(1 - dep * dep, 0.7)) : baseW) : 0;
+		ctx.lineWidth = drawStroke ? (opts.taper ? Math.max(0.35, baseW * Math.pow(1 - dep * dep, 0.1)) : baseW) : 0;
 		ctx.lineJoin = "round";
 		ctx.beginPath();
 		let started = false;
