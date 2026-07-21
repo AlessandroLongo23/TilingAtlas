@@ -335,10 +335,16 @@ export function planWall(cells: WallCells, opts: WallPlanOptions): WallPlan {
 	const nearDoor = (p: WallPolygon) =>
 		picks.some((d) => Math.hypot(p.cx - d.cell.cx, p.cy - d.cell.cy) < d.cell.r + p.r * 0.4);
 	const hexes = cells.hexagons.filter((p) => fullyInside(p) && !nearDoor(p));
-	const dailyTarget = { x: 0.62 * width, y: 0.55 * height };
-	let daily = hexes[0];
+	// Below center-left: clear of the Play door's label zone at the larger tile scale. The daily
+	// cell also carries a two-line label, so it needs a clearance ring: never adjacent to a door.
+	const dailyTarget = { x: 0.52 * width, y: 0.62 * height };
+	const dailyClear = hexes.filter((p) =>
+		picks.every((d) => Math.hypot(p.cx - d.cell.cx, p.cy - d.cell.cy) > d.cell.r + p.r * 1.35),
+	);
+	const dailyPool = dailyClear.length > 0 ? dailyClear : hexes;
+	let daily = dailyPool[0];
 	let dailyD = Infinity;
-	for (const p of hexes) {
+	for (const p of dailyPool) {
 		const d = Math.hypot(p.cx - dailyTarget.x, p.cy - dailyTarget.y);
 		if (d < dailyD) {
 			dailyD = d;

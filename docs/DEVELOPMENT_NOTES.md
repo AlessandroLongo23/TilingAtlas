@@ -4630,3 +4630,16 @@ their refresh cap, idle and under hover sweep, at 2x.
 Incident, logged for honesty: a diagnostic command in this session included a stray `git stash`
 that parked AL's uncommitted hyperbolic-developer work for ~20 min (the landing briefly showed
 "15 hyperbolic" from the HEAD file). Restored intact via `git stash pop`; nothing lost.
+
+## §74 — Atlas Wall iteration two (2026-07-21, AL feedback)
+
+Three changes from AL's review. (1) The two-frame load pop is gone: the cover-fit transform is
+now applied by a synchronous inline <script> that is the canvas div's FIRST child, so it runs
+during HTML parse before the SVG streams in; React only re-applies on resize
+(suppressHydrationWarning on the div, since the script sets a style React never rendered).
+(2) The spherical/hyperbolic caps stopped floating over the wall and became real in-wall doors:
+two more dodecagons in the plan, thumbnails clipped into their cells via HTML layers
+(pointer-events none; the SVG door <a> owns the click; :has(:hover) brightens). (3) Tiles up
+from 46 to 54 px/edge with door anchors pulled toward the center; the daily specimen gained a
+clearance ring (never adjacent to a door) and draws last so its label sits above door frames;
+portrait crop anchor moved to 0.19 so the masthead survives on phones.

@@ -4,26 +4,32 @@ import { useEffect, useRef } from "react";
 import styles from "./atlas-wall.module.css";
 
 // Cover-fits the fixed 1920x1200 design canvas to the viewport (scale = max of the two ratios,
-// centered, overflow cropped). Pre-hydration the CSS fallback shows the canvas centered at 1:1,
-// which is a static crop — acceptable no-JS behavior; every link still works.
+// centered; portrait anchors on the masthead/Library column instead of dead center). The initial
+// transform is applied by a SYNCHRONOUS inline script during HTML parse — before first paint —
+// otherwise the page flashes two frames: the unscaled crop, then the fitted wall. React only
+// takes over for resizes.
+
+function applyTransform(el: HTMLElement) {
+	const vw = window.innerWidth;
+	const vh = window.innerHeight;
+	const s = Math.max(vw / 1920, vh / 1200);
+	const anchorX = vw / vh < 0.9 ? 0.19 : 0.5;
+	el.style.left = "0";
+	el.style.top = "0";
+	el.style.transformOrigin = "0 0";
+	el.style.transform = `translate(${vw / 2 - anchorX * 1920 * s}px, ${vh / 2 - 0.5 * 1200 * s}px) scale(${s})`;
+}
+
+// String twin of applyTransform for the pre-paint inline script. Kept tiny and dependency-free.
+const INIT_SCRIPT = `(function(){var el=document.getElementById("atlas-wall-canvas");if(!el)return;var vw=window.innerWidth,vh=window.innerHeight,s=Math.max(vw/1920,vh/1200),ax=vw/vh<0.9?0.19:0.5;el.style.left="0";el.style.top="0";el.style.transformOrigin="0 0";el.style.transform="translate("+(vw/2-ax*1920*s)+"px,"+(vh/2-0.5*1200*s)+"px) scale("+s+")";})();`;
+
 export function AtlasWallScaler({ children }: { children: React.ReactNode }) {
 	const ref = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
 		const el = ref.current;
 		if (!el) return;
-		const apply = () => {
-			const vw = window.innerWidth;
-			const vh = window.innerHeight;
-			const s = Math.max(vw / 1920, vh / 1200);
-			// Portrait crops to a narrow slice; anchor it on the masthead/Library/Theory column
-			// instead of the wall's center (where the two reserved doors happen to live).
-			const anchorX = vw / vh < 0.9 ? 0.24 : 0.5;
-			el.style.left = "0";
-			el.style.top = "0";
-			el.style.transformOrigin = "0 0";
-			el.style.transform = `translate(${vw / 2 - anchorX * 1920 * s}px, ${vh / 2 - 0.5 * 1200 * s}px) scale(${s})`;
-		};
+		const apply = () => applyTransform(el);
 		apply();
 		window.addEventListener("resize", apply);
 		return () => window.removeEventListener("resize", apply);
@@ -31,7 +37,10 @@ export function AtlasWallScaler({ children }: { children: React.ReactNode }) {
 
 	return (
 		<div className={styles.viewport}>
-			<div ref={ref} className={styles.canvas}>
+			{/* suppressHydrationWarning: the pre-paint script below sets an inline style React never rendered */}
+			<div ref={ref} id="atlas-wall-canvas" className={styles.canvas} suppressHydrationWarning>
+				{/* first child on purpose: must execute before the SVG below it streams in and paints */}
+				<script dangerouslySetInnerHTML={{ __html: INIT_SCRIPT }} />
 				{children}
 			</div>
 		</div>

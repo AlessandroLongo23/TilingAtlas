@@ -22,7 +22,7 @@ import styles from "./atlas-wall.module.css";
 
 const W = 1920;
 const H = 1200;
-const PX_PER_EDGE = 46;
+const PX_PER_EDGE = 54;
 
 const fmt = (v: number) => Math.round(v * 100) / 100;
 
@@ -182,10 +182,28 @@ function DoorContent({ spec, cell, data }: { spec: WallDoorSpec; cell: WallPolyg
 			</>
 		);
 	}
-	// parquet: the strip lives OUTSIDE this SVG, in a composited HTML layer (see ParquetLayer) —
-	// animating a group inside the wall SVG forces engines without composited SVG transforms
-	// (WebKit) to repaint the entire stage every frame.
+	// parquet, spherical, hyperbolic: their content lives OUTSIDE this SVG in clipped HTML layers
+	// (ParquetLayer / CapLayer) — the strip because animating inside the wall SVG forces engines
+	// without composited SVG transforms (WebKit) to repaint the whole stage every frame, the caps
+	// because their thumbnails are client-rendered canvases.
 	return null;
+}
+
+// A geometry cap as an in-wall door interior: the sphere / Poincaré-disk thumbnail clipped to its
+// dodecagon cell. pointer-events stay off; the SVG door <a> underneath owns the click.
+function CapLayer({ cell, kind, children }: { cell: WallPolygon; kind: "spherical" | "hyperbolic"; children: React.ReactNode }) {
+	const { cx, cy, r } = cell;
+	const clip = cell.vertices
+		.map((v) => `${fmt(v.x - cx + r)}px ${fmt(v.y - cy + r)}px`)
+		.join(", ");
+	return (
+		<div
+			className={`${styles.capLayer} ${kind === "spherical" ? styles.capSpherical : styles.capHyperbolic}`}
+			style={{ left: fmt(cx - r), top: fmt(cy - r), width: fmt(r * 2), height: fmt(r * 2), clipPath: `polygon(${clip})` }}
+		>
+			{children}
+		</div>
+	);
 }
 
 // The parquet door's drifting strip as its own clipped HTML layer: the animation runs on a
@@ -239,6 +257,8 @@ export function AtlasWall({ data }: { data: LandingData }) {
 		{ id: "library", href: "/library", label: "Library", sublabel: `${data.euclideanCount.toLocaleString("en-US")} tilings` },
 		{ id: "theory", href: "/theory", label: "Theory", sublabel: "the eleven uniform" },
 		{ id: "parquet", href: "/parquet", label: "Parquet", sublabel: "deformations" },
+		{ id: "spherical", href: `/play?tiling=${encodeURIComponent(data.capSphericalId)}`, label: "Spherical", sublabel: `${data.sphericalCount} tilings` },
+		{ id: "hyperbolic", href: `/play?tiling=${encodeURIComponent(data.capHyperbolicId)}`, label: "Hyperbolic", sublabel: `${data.hyperbolicCount} tilings` },
 	];
 	const reservedSpecs: WallDoorSpec[] = [
 		{ id: "aperiodic", href: "/theory", label: "Aperiodic", sublabel: "in preparation" },
@@ -252,12 +272,14 @@ export function AtlasWall({ data }: { data: LandingData }) {
 		doorSpecs,
 		reservedSpecs,
 		anchors: [
-			{ x: 0.68, y: 0.36 },
-			{ x: 0.33, y: 0.66 },
-			{ x: 0.2, y: 0.84 },
-			{ x: 0.82, y: 0.68 },
-			{ x: 0.52, y: 0.87 },
-			{ x: 0.55, y: 0.13 },
+			{ x: 0.64, y: 0.38 },
+			{ x: 0.4, y: 0.64 },
+			{ x: 0.24, y: 0.42 },
+			{ x: 0.72, y: 0.68 },
+			{ x: 0.14, y: 0.62 },
+			{ x: 0.86, y: 0.48 },
+			{ x: 0.52, y: 0.86 },
+			{ x: 0.56, y: 0.15 },
 		],
 		exclude: { x: 0, y: 0, w: 0.36, h: 0.32 },
 		glyphTexts: ["3.4.6.4", "4.6.12", "3.6.3.6", "3.3.4.3.4", "3.12.12", "4.8.8"],
@@ -321,26 +343,6 @@ export function AtlasWall({ data }: { data: LandingData }) {
 					);
 				})}
 
-				{/* specimen of the day: the one colored cell at rest */}
-				<a href={`/play?tiling=${encodeURIComponent(daily.id)}`} className={styles.specimen} aria-label={`Tiling of the day: ${daily.id}`}>
-					<clipPath id="aw-daily">
-						<path d={polyPath(plan.daily.vertices)} />
-					</clipPath>
-					<g clipPath="url(#aw-daily)">
-						<CellArt cell={daily.cell} cx={plan.daily.cx} cy={plan.daily.cy} radius={plan.daily.r * 1.05} pxPerEdge={16} />
-					</g>
-					<path d={polyPath(plan.daily.vertices)} fill="none" stroke="var(--color-accent)" strokeWidth={1.8} />
-					<LabelWash
-						cx={plan.daily.cx}
-						top={plan.daily.cy + plan.daily.r + 4}
-						label={`${daily.id} one of ${daily.kCount} at k ${daily.k}`}
-					/>
-					<text className={styles.dailyLabel} x={fmt(plan.daily.cx)} y={fmt(plan.daily.cy + plan.daily.r + 16)}>
-						<tspan className={styles.dailyLabelId}>{daily.id}</tspan>
-						{` · one of ${daily.kCount.toLocaleString("en-US")} at k = ${daily.k}`}
-					</text>
-				</a>
-
 				{/* doors */}
 				{plan.doors.map(({ spec, cell }) => {
 					const id = clipId(cell.key);
@@ -392,6 +394,27 @@ export function AtlasWall({ data }: { data: LandingData }) {
 						</text>
 					</g>
 				))}
+
+				{/* specimen of the day: the one colored cell at rest. Drawn last so its label always
+				    sits above door frames. */}
+				<a href={`/play?tiling=${encodeURIComponent(daily.id)}`} className={styles.specimen} aria-label={`Tiling of the day: ${daily.id}`}>
+					<clipPath id="aw-daily">
+						<path d={polyPath(plan.daily.vertices)} />
+					</clipPath>
+					<g clipPath="url(#aw-daily)">
+						<CellArt cell={daily.cell} cx={plan.daily.cx} cy={plan.daily.cy} radius={plan.daily.r * 1.05} pxPerEdge={16} />
+					</g>
+					<path d={polyPath(plan.daily.vertices)} fill="none" stroke="var(--color-accent)" strokeWidth={1.8} />
+					<LabelWash
+						cx={plan.daily.cx}
+						top={plan.daily.cy + plan.daily.r + 4}
+						label={`${daily.id} one of ${daily.kCount} at k ${daily.k}`}
+					/>
+					<text className={styles.dailyLabel} x={fmt(plan.daily.cx)} y={fmt(plan.daily.cy + plan.daily.r + 16)}>
+						<tspan className={styles.dailyLabelId}>{daily.id}</tspan>
+						{` · one of ${daily.kCount.toLocaleString("en-US")} at k = ${daily.k}`}
+					</text>
+				</a>
 			</svg>
 
 			{/* the drifting parquet strip, composited outside the wall SVG */}
@@ -399,6 +422,22 @@ export function AtlasWall({ data }: { data: LandingData }) {
 				.filter((d) => d.spec.id === "parquet")
 				.map(({ cell }) => (
 					<ParquetLayer key="parquet-layer" cell={cell} />
+				))}
+
+			{/* the geometry caps, clipped into their own door cells */}
+			{plan.doors
+				.filter((d) => d.spec.id === "spherical")
+				.map(({ cell }) => (
+					<CapLayer key="cap-spherical" cell={cell} kind="spherical">
+						<SphericalThumbnail solidId={data.capSphericalSolid} size={Math.round(cell.r * 2)} />
+					</CapLayer>
+				))}
+			{plan.doors
+				.filter((d) => d.spec.id === "hyperbolic")
+				.map(({ cell }) => (
+					<CapLayer key="cap-hyperbolic" cell={cell} kind="hyperbolic">
+						<HyperbolicDevelopedThumbnail patch={data.capHyperbolicPatch} size={Math.round(cell.r * 2)} />
+					</CapLayer>
 				))}
 
 			{/* masthead */}
@@ -428,33 +467,6 @@ export function AtlasWall({ data }: { data: LandingData }) {
 				</div>
 			</header>
 
-			{/* curvature caps */}
-			<a
-				className={styles.cap}
-				style={{ left: 48, top: 468 }}
-				href={`/play?tiling=${encodeURIComponent(data.capSphericalId)}`}
-				aria-label={`${data.sphericalCount} spherical tilings`}
-			>
-				<div className={styles.capDisk}>
-					<SphericalThumbnail solidId={data.capSphericalSolid} size={210} />
-				</div>
-				<div className={styles.capLabel}>
-					<span className={styles.capCount}>{data.sphericalCount}</span> spherical
-				</div>
-			</a>
-			<a
-				className={styles.cap}
-				style={{ right: 48, top: 468 }}
-				href={`/play?tiling=${encodeURIComponent(data.capHyperbolicId)}`}
-				aria-label={`${data.hyperbolicCount} hyperbolic tilings`}
-			>
-				<div className={styles.capDisk}>
-					<HyperbolicDevelopedThumbnail patch={data.capHyperbolicPatch} size={210} />
-				</div>
-				<div className={styles.capLabel}>
-					<span className={styles.capCount}>{data.hyperbolicCount}</span> hyperbolic
-				</div>
-			</a>
 		</>
 	);
 }

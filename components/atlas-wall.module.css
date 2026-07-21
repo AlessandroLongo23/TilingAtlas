@@ -305,56 +305,27 @@
 	color: var(--color-fg);
 }
 
-/* --- caps --- */
+/* --- geometry caps: in-wall door interiors (clipped client thumbnails) --- */
 
-.cap {
+.capLayer {
 	position: absolute;
-	display: block;
-	text-align: center;
-	text-decoration: none;
-	cursor: pointer;
-}
-
-.capDisk {
-	width: 210px;
-	height: 210px;
-	border-radius: 50%;
-	overflow: hidden;
-	border: 1.5px solid color-mix(in oklab, var(--color-fg) 45%, transparent);
-	background: var(--color-surface);
+	pointer-events: none;
+	opacity: 0.8;
+	transition: opacity 240ms ease;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	filter: saturate(0.15) opacity(0.75);
-	transition: filter 240ms ease, border-color 240ms ease, transform 240ms ease;
 }
 
-.cap:hover .capDisk,
-.cap:focus-visible .capDisk {
-	filter: saturate(1) opacity(1);
-	border-color: var(--color-accent);
-	transform: scale(1.03);
-}
-
-.capDisk img {
+.capLayer img {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
 }
 
-.capLabel {
-	margin-top: 10px;
-	font-size: 12px;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-	color: var(--color-fg-muted);
-}
-
-.cap:hover .capLabel {
-	color: var(--color-accent);
-}
-
-.capCount {
-	font-weight: 600;
-	color: var(--color-fg);
+.viewport:has(a[data-door="spherical"]:hover) .capSpherical,
+.viewport:has(a[data-door="spherical"]:focus-visible) .capSpherical,
+.viewport:has(a[data-door="hyperbolic"]:hover) .capHyperbolic,
+.viewport:has(a[data-door="hyperbolic"]:focus-visible) .capHyperbolic {
+	opacity: 1;
 }
