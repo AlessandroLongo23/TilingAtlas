@@ -1343,3 +1343,9 @@ instead of parity — continuous at every slider end stop (89↔90, 99↔100 per
 offset-100 vertex snap regularised at 99.8 %). Rays are tile-local (Klein exit cap) so the
 unclosable regime degrades cleanly; all 59 bake valid at offsets 0/50. Tests 50/50, build green,
 Playwright-verified. NOTES §71. — CC
+
+**2026-07-21 — CC.** Atlas Wall landing landed (`f480ff3`): the landing page is now a live 4.6.12
+tiling — dodecagon doors into Play/Library/Theory/Parquet (+2 reserved), hexagon specimens
+deep-linked into /play, date-seeded tiling of the day, spherical/hyperbolic caps, live counts
+(4,596/59/40). Spec + plan in docs/superpowers/{specs,plans}/2026-07-21-landing-atlas-wall*;
+narrative in DEVELOPMENT_NOTES §72.
