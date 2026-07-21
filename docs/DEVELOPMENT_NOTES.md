@@ -4540,3 +4540,13 @@ Playwright: 3-6-4-6 at 45°/66° (proper 6/4-point stars), {8,8} lines-only, off
 Rider: pnpm build now sets NODE_OPTIONS=--max-old-space-size=8192 — the repo's type graph already
 sat at Next's TS worker ~4 GB default ceiling and this feature's new module tipped it over (bare
 `tsc --noEmit` passes; the baseline build without the feature still fit). Not a type error.
+
+§70 addendum — throttle removed (AL). The 250 ms angle throttle guarded the CPU bake, not the
+shader — so the right fix was making the bake cheap, not pacing it. Three changes: (1) the develop
+is angle-independent → cached per tiling (LRU 8); (2) face-boundary tessellation is adaptive by
+angular span (near-straight arrangement edges emit one chord, sagitta ≤ ~4 %); (3) the square's
+corner texels (|w| > rTex) are NEVER sampled — the shader re-aims any reduced point past rTex —
+so they skip classification (each was folding, ~45 k folds on deep domains) and fill by radial
+copy. Worst-case full-res re-bake 1230 → 94 ms; per-notch re-bake 5–22 ms. The canvas now bakes
+EVERY notch immediately at 256² (lands the same frame) and silently refines to full res after
+200 ms of slider quiet. All 46 hyperbolic tests green; G-channel test validates the adaptive tess.

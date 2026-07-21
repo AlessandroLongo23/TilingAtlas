@@ -32,6 +32,8 @@ import { tileHueRgb01 } from "@/lib/render/hueRing";
 
 const DISK_PAD_PX = 24;
 const MAX_CENTER_R = 0.9995; // clamp only against numerical blow-up at the ideal boundary; panning is otherwise free
+const ISLAMIC_DRAG_RES = 256; // in-drag Islamic bake res — every slider notch lands the same frame
+const ISLAMIC_SETTLE_MS = 200; // stable angle re-bakes at full res after this quiet window
 
 interface Props {
 	width: number;
@@ -52,10 +54,13 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
 	const stRef = useRef<ShaderTiling | null>(null); // the prepared reduction — the Islamic bake reuses it
 	const patchRef = useRef<DevelopedPatch | null>(null);
-	// Islamic plain field bookkeeping: key of the field currently uploaded to the renderer + a trailing
-	// throttle so an angle-slider drag rebakes a few times per second (drawing the stale field between).
+	// Islamic plain field bookkeeping. Every angle change bakes IMMEDIATELY at a coarse resolution
+	// (fast enough to land in the same frame — the develop is cached, only rays + arrangement + a
+	// 256² texel loop re-run), then the stable angle silently refines to full resolution. No throttle:
+	// the slider reads live at every notch.
 	const islamicKey = useRef<string | null>(null);
 	const islamicOk = useRef(false);
+	const islamicRes = useRef(0); // res of the uploaded field (coarse during a drag)
 	const islamicLastBake = useRef(0);
 	const islamic2dWarned = useRef(false);
 	const viewRef = useRef<Su11>(su11Identity());
@@ -285,27 +290,34 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			const dark = document.documentElement.classList.contains("dark");
 			const gl = glRef.current;
 			if (gl) {
-				// Islamic plain field: bake (cached per tiling+angle) and upload when the wanted key
-				// changes. Trailing throttle — an angle drag rebakes ~4×/s and draws the stale field in
-				// between; the RAF loop retries every frame, so the final slider value always lands.
+				// Islamic plain field: a NEW angle bakes right away at ISLAMIC_DRAG_RES (cached develop —
+				// the whole rebake is a few tens of ms, so each slider notch lands the frame it happens);
+				// once the angle sits still for ISLAMIC_SETTLE_MS the same field re-bakes at full
+				// resolution. Both bakes hit the per-(tiling, angle, res) cache on revisits.
 				let islamicActive = false;
 				if (cfg.isIslamic && stRef.current && patchRef.current?.darts) {
 					const key = `${meta.id}|${Math.round(cfg.islamicAngle)}`;
+					const now = performance.now();
+					const fullRes = Math.min(stRef.current.field.res, 1024);
+					const bake = (res: number) => {
+						const field = getIslamicField(
+							stRef.current!,
+							patchRef.current!.darts!,
+							patchRef.current!.edge,
+							meta,
+							islamicNormalAngleFromSlider(cfg.islamicAngle),
+							{ fieldRes: res },
+						);
+						gl.setIslamicField(field);
+						islamicKey.current = key;
+						islamicOk.current = !!field;
+						islamicRes.current = res;
+						islamicLastBake.current = now;
+					};
 					if (islamicKey.current !== key) {
-						const now = performance.now();
-						if (islamicKey.current === null || now - islamicLastBake.current > 250) {
-							islamicLastBake.current = now;
-							const field = getIslamicField(
-								stRef.current,
-								patchRef.current.darts,
-								patchRef.current.edge,
-								meta,
-								islamicNormalAngleFromSlider(cfg.islamicAngle),
-							);
-							gl.setIslamicField(field);
-							islamicKey.current = key;
-							islamicOk.current = !!field;
-						}
+						bake(Math.min(ISLAMIC_DRAG_RES, fullRes));
+					} else if (islamicOk.current && islamicRes.current < fullRes && now - islamicLastBake.current > ISLAMIC_SETTLE_MS) {
+						bake(fullRes);
 					}
 					islamicActive = islamicOk.current;
 				}

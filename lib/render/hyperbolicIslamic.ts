@@ -217,17 +217,13 @@ export function islamicSegmentsForTile(polyP: Complex[], theta: number, label = 
 	return segments;
 }
 
-/** Poincaré geodesic arc a→b as a short polyline (the in-disk arc of the orthogonal circle). */
-function geodesicPts(a: Complex, b: Complex, n: number): Complex[] {
+/** Poincaré geodesic arc a→b as a short ADAPTIVE polyline (the in-disk arc of the orthogonal
+ *  circle). Pieces are chosen by angular span (sagitta/chord ≈ Δθ/8, so 0.35 rad keeps the chord
+ *  within ~4 % of the arc — a few bytes at EDGE_SCALE): the many near-straight arrangement edges
+ *  emit ONE segment instead of `maxN`, which is what keeps the full-res texel loop affordable. */
+function geodesicPts(a: Complex, b: Complex, maxN: number): Complex[] {
 	const det = a.x * b.y - a.y * b.x;
-	if (Math.abs(det) < 1e-9) {
-		const out: Complex[] = [];
-		for (let i = 0; i <= n; i++) {
-			const t = i / n;
-			out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-		}
-		return out;
-	}
+	if (Math.abs(det) < 1e-9) return [a, b]; // diameter — exactly straight
 	const r1 = (a.x * a.x + a.y * a.y + 1) / 2;
 	const r2 = (b.x * b.x + b.y * b.y + 1) / 2;
 	const cx = (r1 * b.y - r2 * a.y) / det;
@@ -239,6 +235,7 @@ function geodesicPts(a: Complex, b: Complex, n: number): Complex[] {
 	// of the two arcs pick the one inside the disk (the short one for an orthogonal circle)
 	const midShort = { x: cx + rr * Math.cos(ta + d / 2), y: cy + rr * Math.sin(ta + d / 2) };
 	if (Math.hypot(midShort.x, midShort.y) > 1) d = d > 0 ? d - 2 * Math.PI : d + 2 * Math.PI;
+	const n = Math.max(1, Math.min(maxN, Math.ceil(Math.abs(d) / 0.35)));
 	const out: Complex[] = [];
 	for (let i = 0; i <= n; i++) {
 		const t = ta + d * (i / n);
@@ -256,6 +253,30 @@ function distSq(px: number, py: number, ax: number, ay: number, bx: number, by: 
 	const qx = ax + t * dx;
 	const qy = ay + t * dy;
 	return (px - qx) ** 2 + (py - qy) ** 2;
+}
+
+// Angle-independent develop cache (the expensive step of a re-bake). Small LRU — a patch for a deep
+// k=2 domain is a few MB.
+const patchCache = new Map<string, DevelopedPatch>();
+const PATCH_CACHE_CAP = 8;
+
+function getBakePatch(
+	darts: Darts,
+	edge: number,
+	meta: { id: string; name: string; config: string; edge: number },
+	boundEu: number,
+): DevelopedPatch {
+	const key = `${meta.id}|${boundEu.toFixed(6)}`;
+	const hit = patchCache.get(key);
+	if (hit) return hit;
+	const dev = new HyperbolicDeveloper(darts, edge, { deepDedup: true });
+	const patch = dev.develop(meta, { a: { x: 1, y: 0 }, b: { x: 0, y: 0 } }, boundEu, 400_000);
+	if (patchCache.size >= PATCH_CACHE_CAP) {
+		const oldest = patchCache.keys().next().value;
+		if (oldest !== undefined) patchCache.delete(oldest);
+	}
+	patchCache.set(key, patch);
+	return patch;
 }
 
 interface FaceRec {
@@ -287,12 +308,13 @@ export function prepareIslamicField(
 	const rTex = st.field.rTex;
 	const res = opts.fieldRes ?? Math.min(st.field.res, 1024);
 
-	// ---- develop the same patch the base bake uses: every face touching the square closes inside it
+	// ---- develop the same patch the base bake uses: every face touching the square closes inside it.
+	// The patch is angle-INDEPENDENT, so it is cached per tiling — an angle-slider drag re-runs only
+	// the rays + arrangement + texel loop.
 	let rMaxTile = 0;
 	for (const p of darts.lvert) rMaxTile = Math.max(rMaxTile, Math.asinh(Math.sinh(edge / 2) / Math.sin(Math.PI / p)));
 	const boundEu = Math.min(0.9995, Math.tanh((st.domain.RD + COLLAR + 2 * rMaxTile + 0.2) / 2));
-	const dev = new HyperbolicDeveloper(darts, edge, { deepDedup: true });
-	const patch: DevelopedPatch = dev.develop(meta, { a: { x: 1, y: 0 }, b: { x: 0, y: 0 } }, boundEu, 400_000);
+	const patch = getBakePatch(darts, edge, meta, boundEu);
 
 	// ---- per-tile Hankin rays → pooled scaled-Klein arrangement --------------------------------------
 	const segments: Segment[] = [];
@@ -407,18 +429,28 @@ export function prepareIslamicField(
 	const data = new Uint8Array(res * res * 4);
 	const resolved = new Uint8Array(res * res);
 	const unresolvedIdx: number[] = [];
+	const cornerIdx: number[] = [];
 	let unresolvedDeep = 0;
 	const deepR = 0.95 * rTex;
+	// The shader re-aims any reduced point with |w| > rTex before sampling, so texels OUTSIDE the
+	// disk of radius rTex (the square's corners) are never read. Skip their (expensive: the patch
+	// ends before them, so every one would fold) classification and fill them by radial copy — on
+	// the deepest domains this is most of the full-res bake time.
+	const rSampled = rTex + (2 * (2 * rTex)) / res; // two texels of bilinear margin
 	const q8 = (v: number) => Math.max(0, Math.min(255, Math.round(((v + 1) / 2) * 255)));
 	for (let j = 0; j < res; j++) {
 		const y = ((j + 0.5) / res) * 2 * rTex - rTex;
 		for (let i = 0; i < res; i++) {
 			const x = ((i + 0.5) / res) * 2 * rTex - rTex;
 			const o = (j * res + i) * 4;
+			if (x * x + y * y > rSampled * rSampled) {
+				cornerIdx.push(o);
+				continue;
+			}
 			let px = x;
 			let py = y;
-			let ri = x * x + y * y < 0.9995 ? locate(px, py) : -1;
-			if (ri < 0 && x * x + y * y < 0.9995) {
+			let ri = locate(px, py);
+			if (ri < 0) {
 				const { w } = foldIntoDomain(gensSu, { x, y }, st.rInEu);
 				px = w.x;
 				py = w.y;
@@ -469,6 +501,23 @@ export function prepareIslamicField(
 			}
 		}
 	}
+	// corner texels: copy from the same direction on the sampled disk (the shader's own re-aim
+	// direction), O(1) each — cheap totality for texels that are never actually read
+	for (const o of cornerIdx) {
+		const idx = o / 4;
+		const i = idx % res;
+		const j = (idx - i) / res;
+		const x = ((i + 0.5) / res) * 2 * rTex - rTex;
+		const y = ((j + 0.5) / res) * 2 * rTex - rTex;
+		const s = (rTex * 0.995) / Math.hypot(x, y);
+		const ii = Math.max(0, Math.min(res - 1, Math.floor(((x * s) / rTex / 2 + 0.5) * res)));
+		const jj = Math.max(0, Math.min(res - 1, Math.floor(((y * s) / rTex / 2 + 0.5) * res)));
+		const oo = (jj * res + ii) * 4;
+		data[o] = data[oo];
+		data[o + 1] = data[oo + 1];
+		data[o + 2] = data[oo + 2];
+		data[o + 3] = data[oo + 3];
+	}
 	if (unresolvedDeep > 0) {
 		console.error(
 			`hyperbolicIslamic: ${unresolvedDeep} unresolved texels DEEP inside the field for ${meta.id} — bake coverage bug`,
@@ -479,7 +528,7 @@ export function prepareIslamicField(
 
 // ---- shared cache (canvas + any future consumer): one bake per (tiling, slider notch, res) ----------
 const fieldCache = new Map<string, TileField | null>();
-const CACHE_CAP = 48;
+const CACHE_CAP = 16; // full-res entries are ~4 MB; re-bakes are ≤ ~100 ms, so a small cache suffices
 
 /** Cached plain-field lookup, keyed by tiling id + integer slider angle (degrees FROM NORMAL). */
 export function getIslamicField(
