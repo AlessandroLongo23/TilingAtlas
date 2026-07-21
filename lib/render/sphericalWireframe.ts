@@ -5,9 +5,15 @@
 // adjacent bars overlap into a filled joint — no sphere caps. Client-only (imports three); sweep is arrays.
 
 import * as THREE from "three";
+import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Polyhedron } from "./platonicSolids";
 import { edgeArcs, straightEdges } from "./sphericalGeometry";
+import { unionTubeParts } from "./manifoldUnion";
 import { polygonHue } from "@/lib/utils/renderTiling";
+
+// Crease angle for the unioned wireframe: edges sharper than this become a hard seam, gentler ones stay smooth.
+// The tube's own facets (≤ 22.5° at 16 sides) stay smooth; the weld seams where bars meet (≫ this) turn crisp.
+const WELD_CREASE_ANGLE = (40 * Math.PI) / 180;
 
 type V3 = [number, number, number];
 
@@ -41,6 +47,7 @@ export interface WireframeOptions {
 	radius?: number;
 	straight?: boolean; // straight chord bars (the polyhedron's real edges) instead of curved great-circle arcs
 	color?: [number, number, number]; // fixed display RGB, overrides the hue (e.g. the flat solid's dark edges)
+	union?: boolean; // boolean-union the bars into one welded solid (clean joints) instead of raw overlap
 }
 
 export interface Wireframe {
@@ -176,6 +183,64 @@ function rectProfile(thickness: number, height: number, bevelFrac: number): [num
 	];
 }
 
+// One bar as a WELDED, watertight, consistently-wound capped tube — the input the boolean union needs
+// (Manifold rejects the render sweeps above: their rings aren't shared / the rect strips leave open edges).
+// One ring of the cross-section polygon `ring2D` per arc sample, quad walls between consecutive rings, and a
+// triangle-fan lid over each mouth. Positions only — the union recomputes normals with a crease threshold, so
+// the round tube stays smooth while the weld seams turn crisp. The winding (wall a,c,b/b,c,d; start cap
+// center,u,v; finish cap center,v,u) is the orientation Manifold validates as a positive-volume solid.
+function sweepRingPart(arc: Float32Array, ring2D: [number, number][]): { pos: Float32Array; idx: Uint32Array } {
+	const n = arc.length / 3;
+	const { P, R, S } = framesOf(arc);
+	const M = ring2D.length;
+	const pos: number[] = [];
+	const idx: number[] = [];
+	for (let i = 0; i < n; i++) {
+		for (const [cx, cy] of ring2D) {
+			pos.push(
+				P[i][0] + cx * S[i][0] + cy * R[i][0],
+				P[i][1] + cx * S[i][1] + cy * R[i][1],
+				P[i][2] + cx * S[i][2] + cy * R[i][2],
+			);
+		}
+	}
+	for (let i = 0; i < n - 1; i++) {
+		for (let j = 0; j < M; j++) {
+			const a = i * M + j;
+			const b = i * M + ((j + 1) % M);
+			const c = (i + 1) * M + j;
+			const d = (i + 1) * M + ((j + 1) % M);
+			idx.push(a, c, b, b, c, d);
+		}
+	}
+	const cap = (i: number, start: boolean) => {
+		const center = pos.length / 3;
+		pos.push(P[i][0], P[i][1], P[i][2]);
+		const ring = i * M;
+		for (let j = 0; j < M; j++) {
+			const u = ring + j;
+			const v = ring + ((j + 1) % M);
+			if (start) idx.push(center, u, v);
+			else idx.push(center, v, u);
+		}
+	};
+	cap(0, true);
+	cap(n - 1, false);
+	return { pos: new Float32Array(pos), idx: new Uint32Array(idx) };
+}
+
+// The cross-section polygon for the union sweep: an M-gon of the tube radius, or the rect/bevel profile.
+function unionRing(section: WireSection, thickness: number, height: number, bevel: number): [number, number][] {
+	if (section === "tube") {
+		const M = 16;
+		return Array.from({ length: M }, (_, j) => {
+			const a = (2 * Math.PI * j) / M;
+			return [thickness * Math.cos(a), thickness * Math.sin(a)] as [number, number];
+		});
+	}
+	return rectProfile(thickness, height, bevel);
+}
+
 // Sweep an arbitrary set of great-circle arcs into a rigid tube/rect skeleton. `arcsFor(extend)` supplies
 // the arcs for a given per-joint overshoot (recomputed on each rebuild because the overshoot tracks the bar
 // thickness). Used by buildWireframe (arcs = the tiling edges) AND by the Islamic pattern (arcs = the star
@@ -198,16 +263,22 @@ export function buildTubeSkeleton(
 	const group = new THREE.Group();
 	let tube: THREE.Mesh | null = null;
 
-	const rebuild = (o: WireframeOptions) => {
+	const swap = (geom: THREE.BufferGeometry) => {
 		if (tube) {
 			group.remove(tube);
 			(tube.geometry as THREE.BufferGeometry).dispose();
-			tube = null;
 		}
+		tube = new THREE.Mesh(geom, material);
+		group.add(tube);
+	};
+
+	// Raw overlap: every bar swept independently, merged into one buffer. Fast and synchronous; used for the
+	// Islamic construction lines and as the fallback if the union kernel fails to load. The overlapping bars
+	// self-fill the joints imperfectly (the open-mouth "butterflies" at a vertex).
+	const rebuildRaw = (o: WireframeOptions) => {
 		const section = o.section ?? "tube";
 		const thickness = Math.max(0.001, o.thickness ?? 0.025);
 		const height = Math.max(0.001, o.height ?? thickness);
-		// Overshoot each joint by ~the bar width so adjacent bars overlap into a filled joint (no caps).
 		const extend = thickness * 0.9;
 		const arcs = arcsFor(extend);
 		const out: Sweep = { pos: [], nor: [], idx: [] };
@@ -221,16 +292,69 @@ export function buildTubeSkeleton(
 		geom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(out.pos), 3));
 		geom.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(out.nor), 3));
 		geom.setIndex(new THREE.BufferAttribute(new Uint32Array(out.idx), 1));
-		tube = new THREE.Mesh(geom, material);
-		group.add(tube);
+		swap(geom);
 	};
-	rebuild(opts);
+
+	// Boolean union: each bar as a watertight solid, unioned by Manifold into ONE welded mesh so the joints are
+	// clean seams. Async (WASM); a `seq` guard drops any result a newer rebuild has superseded, and the old mesh
+	// stays on screen until the new one is ready. Overshoot a full radius so the bars overlap through the shared
+	// vertex and the union actually merges them.
+	let seq = 0;
+	const rebuildUnion = (o: WireframeOptions) => {
+		const section = o.section ?? "tube";
+		const thickness = Math.max(0.001, o.thickness ?? 0.025);
+		const height = Math.max(0.001, o.height ?? thickness);
+		// Only a whisker of overshoot: the bars are fat enough to overlap at the shared vertex on their own, so
+		// the union merges them without a long stub poking past the joint (which the union can't fully trim and
+		// would leave as a small spike). Just enough to avoid the two arcs' endpoints landing exactly coincident.
+		const crossExtent = section === "tube" ? thickness : 0.5 * Math.hypot(thickness, height);
+		const extend = crossExtent * 0.12;
+		const ring2D = unionRing(section, thickness, height, o.bevel ?? 0);
+		const parts = arcsFor(extend).map((arc) => sweepRingPart(arc, ring2D));
+		const mySeq = ++seq;
+		unionTubeParts(parts)
+			.then((res) => {
+				if (mySeq !== seq) return; // superseded by a later rebuild
+				const indexed = new THREE.BufferGeometry();
+				indexed.setAttribute("position", new THREE.BufferAttribute(res.position, 3));
+				indexed.setIndex(new THREE.BufferAttribute(res.index, 1));
+				// Smooth along the tubes, hard crease at the weld seams.
+				const geom = toCreasedNormals(indexed, WELD_CREASE_ANGLE);
+				indexed.dispose();
+				swap(geom);
+			})
+			.catch((err) => {
+				if (mySeq !== seq) return;
+				console.warn("[sphericalWireframe] boolean union unavailable, showing raw bars:", err);
+				rebuildRaw(o);
+			});
+	};
+
+	// Union rebuilds are debounced: a thickness/bevel drag fires setGeometry rapidly, but each union is a few
+	// hundred ms, so only the settled value is computed.
+	let debTimer: ReturnType<typeof setTimeout> | null = null;
+	const setGeometry = (o: WireframeOptions) => {
+		if (!opts.union) {
+			rebuildRaw(o);
+			return;
+		}
+		if (debTimer) clearTimeout(debTimer);
+		debTimer = setTimeout(() => {
+			debTimer = null;
+			rebuildUnion(o);
+		}, 90);
+	};
+
+	if (opts.union) rebuildUnion(opts);
+	else rebuildRaw(opts);
 
 	return {
 		object: group,
-		setGeometry: rebuild,
+		setGeometry,
 		setColor: applyColor,
 		dispose: () => {
+			seq++; // cancel any in-flight union swap
+			if (debTimer) clearTimeout(debTimer);
 			if (tube) (tube.geometry as THREE.BufferGeometry).dispose();
 			material.dispose();
 		},
@@ -245,5 +369,6 @@ export function buildWireframe(poly: Polyhedron | null, opts: WireframeOptions =
 	const arcsFor = opts.straight
 		? (extend: number) => straightEdges(poly, radius, extend)
 		: (extend: number) => edgeArcs(poly, 28, radius, extend);
-	return buildTubeSkeleton(arcsFor, baseHue, opts);
+	// The wireframe unions its bars into one welded solid for clean joints; the Islamic pattern keeps raw bars.
+	return buildTubeSkeleton(arcsFor, baseHue, { ...opts, union: true });
 }
