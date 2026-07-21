@@ -39,28 +39,38 @@
 	cursor: pointer;
 }
 
-.specimenArt {
-	filter: saturate(0.1) opacity(0.3);
-	transition: filter 220ms ease;
+/* Muting is a paper-colored veil path over the art, NOT an SVG filter: dozens of live filter
+ * groups made every hover repaint rasterize through filter surfaces (measured 58ms worst frames
+ * at 2x). A veil is one plain path whose opacity animates — cheap in every engine, theme-aware
+ * for free. */
+
+.veil {
+	fill: var(--color-surface);
+	pointer-events: none;
+	transition: opacity 220ms ease;
 }
 
-.specimen:hover .specimenArt,
-.specimen:focus-visible .specimenArt {
-	filter: saturate(1) opacity(1);
+.veilHex {
+	opacity: 0.9;
 }
 
-.specimenDailyArt {
-	filter: none;
+.veilFaint {
+	opacity: 0.94;
 }
 
-.specimenArtFaint {
-	filter: saturate(0.05) opacity(0.15);
-	transition: filter 220ms ease;
+/* A black veil dims but doesn't desaturate, so dark mode needs a heavier hand to keep the
+ * resting wall ink-like instead of camouflage-mottled. */
+:global(.dark) .veilHex {
+	opacity: 0.94;
 }
 
-.specimen:hover .specimenArtFaint,
-.specimen:focus-visible .specimenArtFaint {
-	filter: saturate(1) opacity(1);
+:global(.dark) .veilFaint {
+	opacity: 0.965;
+}
+
+.specimen:hover .veil,
+.specimen:focus-visible .veil {
+	opacity: 0;
 }
 
 .dailyLabel {
@@ -99,14 +109,13 @@
 	stroke-width: 2.2;
 }
 
-.doorArt {
-	filter: saturate(0.28) opacity(0.78);
-	transition: filter 240ms ease;
+.veilDoor {
+	opacity: 0.32;
 }
 
-.door:hover .doorArt,
-.door:focus-visible .doorArt {
-	filter: saturate(1) opacity(1);
+.door:hover .veilDoor,
+.door:focus-visible .veilDoor {
+	opacity: 0;
 }
 
 .doorLabel {
@@ -185,10 +194,37 @@
 	fill: var(--color-accent);
 }
 
-/* --- parquet drift: the page's only resting motion --- */
+/* --- parquet drift: the page's only resting motion ---
+ * Lives in its own clipped HTML layer, not inside the wall SVG: engines without composited SVG
+ * transforms (WebKit) would otherwise repaint the whole stage every frame (measured 115ms spikes). */
+
+.parquetLayer {
+	position: absolute;
+	pointer-events: none;
+	opacity: 0.62;
+	transition: opacity 240ms ease;
+	color: var(--color-fg);
+}
+
+.viewport:has(a[data-door="parquet"]:hover) .parquetLayer,
+.viewport:has(a[data-door="parquet"]:focus-visible) .parquetLayer {
+	opacity: 1;
+}
+
+.parquetCenter {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
 
 .parquetDrift {
 	animation: parquet-drift 26s ease-in-out infinite alternate;
+	will-change: transform;
+}
+
+.parquetDrift svg {
+	display: block;
 }
 
 @keyframes parquet-drift {

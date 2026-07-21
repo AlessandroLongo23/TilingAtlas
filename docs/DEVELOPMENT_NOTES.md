@@ -4612,3 +4612,21 @@ docs/superpowers/plans/2026-07-21-landing-atlas-wall.md. Hat outline taken verba
 Kaplan's hatviz (hex coords), Penrose sun constructed from the real rhomb adjacencies.
 Deferred (spec "out of scope"): stroke-curling into the caps, View Transitions door morph,
 pannable Play door, true D(x)-driven parquet animation, mid-k specimen curation.
+
+## §73 — Atlas Wall performance: 24 MB of SVG was the frame rate (2026-07-21)
+
+AL reported very low frame rate on the new landing. Measured (headed Playwright, RAF deltas):
+idle was at the 120 Hz cap, hover sweeps hit 58 ms worst frames at 2x DPR, WebKit idled with
+periodic 115 ms spikes — but the real finding was the payload: 24 MB of HTML, 62,865 SVG paths.
+`renderCellIntoBox` emitted every polygon of every overscanned cell copy (margin = one full cell
+diagonal), mostly outside the clip. Three fixes: (1) per-polygon bbox culling in the miniature
+renderer — 62.9k → 13.8k paths, 24 MB → 5.4 MB; (2) resting-state muting is now a paper-colored
+veil path per cell instead of per-group SVG `filter` (dozens of live filter surfaces made every
+hover repaint expensive; a veil is one path whose opacity animates, theme-aware for free, with
+`.dark` needing heavier opacities since a black veil dims without desaturating); (3) the parquet
+drift moved out of the wall SVG into its own clip-pathed, composited HTML layer (WebKit does not
+composite SVG-internal transforms and repainted the stage every frame). After: both engines at
+their refresh cap, idle and under hover sweep, at 2x.
+Incident, logged for honesty: a diagnostic command in this session included a stray `git stash`
+that parked AL's uncommitted hyperbolic-developer work for ~20 min (the landing briefly showed
+"15 hyperbolic" from the HEAD file). Restored intact via `git stash pop`; nothing lost.

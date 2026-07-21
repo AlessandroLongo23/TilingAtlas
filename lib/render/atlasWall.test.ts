@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { buildWallCells, planWall, type WallDoorSpec } from "./atlasWall";
+import { buildWallCells, planWall, renderCellIntoBox, type WallDoorSpec } from "./atlasWall";
 
 // The wall is driven by the real 4.6.12 atlas entry (t1003) — same file the page loads.
 const atlas = JSON.parse(readFileSync("public/reference-atlas.json", "utf8"));
@@ -111,6 +111,25 @@ describe("planWall", () => {
 		expect(plan.daily.vertices.length).toBe(6);
 		expect(plan.specimens.some((s) => s.key === plan.daily.key)).toBe(false);
 		expect(plan.specimens.length).toBeGreaterThan(10);
+	});
+
+	it("renderCellIntoBox culls polygons outside the box", () => {
+		const polys = renderCellIntoBox(t1003.renderCell, 500, 500, 60, 16);
+		expect(polys.length).toBeGreaterThan(0);
+		for (const p of polys) {
+			let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+			for (const v of p.vertices) {
+				minX = Math.min(minX, v.x);
+				maxX = Math.max(maxX, v.x);
+				minY = Math.min(minY, v.y);
+				maxY = Math.max(maxY, v.y);
+			}
+			// every emitted polygon's bbox intersects the 60px box around (500,500)
+			expect(maxX).toBeGreaterThanOrEqual(440);
+			expect(minX).toBeLessThanOrEqual(560);
+			expect(maxY).toBeGreaterThanOrEqual(440);
+			expect(minY).toBeLessThanOrEqual(560);
+		}
 	});
 
 	it("glyph squares carry the provided texts", () => {

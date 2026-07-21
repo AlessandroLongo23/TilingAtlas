@@ -191,17 +191,31 @@ export function renderCellIntoBox(
 			base.minY + oy <= cellCy + half + margin
 		);
 	};
+	// Per-polygon culling: a cell INSTANCE can straddle the box while most of its polygons land far
+	// outside the clip. Without this the landing page shipped 62k paths (24 MB of HTML) — the
+	// overscan margin is one full cell diagonal in every direction, so the waste dominates.
 	const emit = (i: number, j: number) => {
 		const ox = i * v1x + j * v2x;
 		const oy = i * v1y + j * v2y;
 		for (const poly of base.polys) {
-			out.push({
-				n: poly.n,
-				vertices: poly.vertices.map((v) => ({
-					x: (v.x + ox - cellCx) * scale + tx,
-					y: -(v.y + oy - cellCy) * scale + ty,
-				})),
-			});
+			const vertices = poly.vertices.map((v) => ({
+				x: (v.x + ox - cellCx) * scale + tx,
+				y: -(v.y + oy - cellCy) * scale + ty,
+			}));
+			let pMinX = Infinity, pMaxX = -Infinity, pMinY = Infinity, pMaxY = -Infinity;
+			for (const v of vertices) {
+				if (v.x < pMinX) pMinX = v.x;
+				if (v.x > pMaxX) pMaxX = v.x;
+				if (v.y < pMinY) pMinY = v.y;
+				if (v.y > pMaxY) pMaxY = v.y;
+			}
+			if (
+				pMaxX < tx - radius || pMinX > tx + radius ||
+				pMaxY < ty - radius || pMinY > ty + radius
+			) {
+				continue;
+			}
+			out.push({ n: poly.n, vertices });
 		}
 	};
 	if (inView(0, 0)) emit(0, 0);

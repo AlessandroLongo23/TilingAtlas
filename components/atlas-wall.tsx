@@ -182,7 +182,16 @@ function DoorContent({ spec, cell, data }: { spec: WallDoorSpec; cell: WallPolyg
 			</>
 		);
 	}
-	// parquet
+	// parquet: the strip lives OUTSIDE this SVG, in a composited HTML layer (see ParquetLayer) —
+	// animating a group inside the wall SVG forces engines without composited SVG transforms
+	// (WebKit) to repaint the entire stage every frame.
+	return null;
+}
+
+// The parquet door's drifting strip as its own clipped HTML layer: the animation runs on a
+// composited element, so no engine repaints the wall for it.
+function ParquetLayer({ cell }: { cell: WallPolygon }) {
+	const { cx, cy, r } = cell;
 	const instance = TILINGS.square.build(16, 4);
 	const tiles = buildDeformedTiling(instance, {
 		from: PARQUET_PRESETS.straight.edge,
@@ -191,20 +200,31 @@ function DoorContent({ spec, cell, data }: { spec: WallDoorSpec; cell: WallPolyg
 		d: D_PROFILES.ramp,
 	});
 	const model = buildParquetSvgModel(tiles.map((t) => t.outline));
-	const [vbX, vbY, vbW, vbH] = model.viewBox.split(" ").map(Number);
+	const [, , vbW, vbH] = model.viewBox.split(" ").map(Number);
 	const scale = (r * 1.7) / vbH;
-	// Center the strip so the straight→pinwheel transition zone is what the door shows at rest.
-	const tx = cx - (vbW * scale) / 2 - vbX * scale;
-	const ty = cy - (vbH * scale) / 2 - vbY * scale;
-	// Drift wraps the SCALED group, so the keyframe's px are door-space px, not strip units.
+	const clip = cell.vertices
+		.map((v) => `${fmt(v.x - cx + r)}px ${fmt(v.y - cy + r)}px`)
+		.join(", ");
 	return (
-		<g className={styles.parquetDrift}>
-			<g transform={`translate(${fmt(tx)} ${fmt(ty)}) scale(${fmt(scale)})`}>
-				{model.tilePaths.map((d, i) => (
-					<path key={i} d={d} fill="none" stroke="currentColor" strokeWidth={1.4 / scale} />
-				))}
-			</g>
-		</g>
+		<div
+			className={styles.parquetLayer}
+			style={{ left: fmt(cx - r), top: fmt(cy - r), width: fmt(r * 2), height: fmt(r * 2), clipPath: `polygon(${clip})` }}
+		>
+			<div className={styles.parquetCenter}>
+				<div className={styles.parquetDrift}>
+					<svg
+						width={fmt(vbW * scale)}
+						height={fmt(vbH * scale)}
+						viewBox={model.viewBox}
+						aria-hidden="true"
+					>
+						{model.tilePaths.map((d, i) => (
+							<path key={i} d={d} fill="none" stroke="var(--color-fg)" strokeWidth={1.4 / scale} />
+						))}
+					</svg>
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -273,9 +293,10 @@ export function AtlasWall({ data }: { data: LandingData }) {
 							<clipPath id={id}>
 								<path d={polyPath(p.vertices)} />
 							</clipPath>
-							<g className={styles.specimenArtFaint} clipPath={`url(#${id})`}>
-								<CellArt cell={entry.cell} cx={p.cx} cy={p.cy} radius={p.r * 1.2} pxPerEdge={18} />
+							<g clipPath={`url(#${id})`}>
+								<CellArt cell={entry.cell} cx={p.cx} cy={p.cy} radius={p.r * 1.05} pxPerEdge={18} />
 							</g>
+							<path className={`${styles.veil} ${styles.veilFaint}`} d={polyPath(p.vertices)} />
 							<path d={polyPath(p.vertices)} fill="none" stroke="color-mix(in oklab, var(--color-fg) 42%, transparent)" strokeWidth={1.1} />
 						</a>
 					);
@@ -291,9 +312,10 @@ export function AtlasWall({ data }: { data: LandingData }) {
 							<clipPath id={id}>
 								<path d={polyPath(p.vertices)} />
 							</clipPath>
-							<g className={styles.specimenArt} clipPath={`url(#${id})`}>
-								<CellArt cell={entry.cell} cx={p.cx} cy={p.cy} radius={p.r * 1.2} pxPerEdge={16} />
+							<g clipPath={`url(#${id})`}>
+								<CellArt cell={entry.cell} cx={p.cx} cy={p.cy} radius={p.r * 1.05} pxPerEdge={16} />
 							</g>
+							<path className={`${styles.veil} ${styles.veilHex}`} d={polyPath(p.vertices)} />
 							<path d={polyPath(p.vertices)} fill="none" stroke="color-mix(in oklab, var(--color-fg) 42%, transparent)" strokeWidth={1.1} />
 						</a>
 					);
@@ -304,8 +326,8 @@ export function AtlasWall({ data }: { data: LandingData }) {
 					<clipPath id="aw-daily">
 						<path d={polyPath(plan.daily.vertices)} />
 					</clipPath>
-					<g className={styles.specimenDailyArt} clipPath="url(#aw-daily)">
-						<CellArt cell={daily.cell} cx={plan.daily.cx} cy={plan.daily.cy} radius={plan.daily.r * 1.2} pxPerEdge={16} />
+					<g clipPath="url(#aw-daily)">
+						<CellArt cell={daily.cell} cx={plan.daily.cx} cy={plan.daily.cy} radius={plan.daily.r * 1.05} pxPerEdge={16} />
 					</g>
 					<path d={polyPath(plan.daily.vertices)} fill="none" stroke="var(--color-accent)" strokeWidth={1.8} />
 					<LabelWash
@@ -323,14 +345,15 @@ export function AtlasWall({ data }: { data: LandingData }) {
 				{plan.doors.map(({ spec, cell }) => {
 					const id = clipId(cell.key);
 					return (
-						<a key={spec.id} href={spec.href} className={styles.door} aria-label={`${spec.label} — ${spec.sublabel ?? ""}`}>
+						<a key={spec.id} href={spec.href} data-door={spec.id} className={styles.door} aria-label={`${spec.label} — ${spec.sublabel ?? ""}`}>
 							<path className={styles.doorFrame} d={polyPath(cell.vertices)} />
 							<clipPath id={id}>
 								<path d={polyPath(cell.vertices)} />
 							</clipPath>
-							<g className={styles.doorArt} clipPath={`url(#${id})`} color="var(--color-fg)">
+							<g clipPath={`url(#${id})`} color="var(--color-fg)">
 								<DoorContent spec={spec} cell={cell} data={data} />
 							</g>
+							<path className={`${styles.veil} ${styles.veilDoor}`} d={polyPath(cell.vertices)} />
 							<LabelWash cx={cell.cx} top={cell.cy + cell.r + 10} label={spec.label} sublabel={spec.sublabel} />
 							<text className={styles.doorLabel} x={fmt(cell.cx)} y={fmt(cell.cy + cell.r + 26)}>
 								{spec.label}
@@ -370,6 +393,13 @@ export function AtlasWall({ data }: { data: LandingData }) {
 					</g>
 				))}
 			</svg>
+
+			{/* the drifting parquet strip, composited outside the wall SVG */}
+			{plan.doors
+				.filter((d) => d.spec.id === "parquet")
+				.map(({ cell }) => (
+					<ParquetLayer key="parquet-layer" cell={cell} />
+				))}
 
 			{/* masthead */}
 			<header className={styles.masthead}>
