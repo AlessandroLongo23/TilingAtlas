@@ -278,7 +278,7 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 					dark,
 					showFill: cfg.showPolygonFill,
 					hueOffset: cfg.hueOffset || 0,
-					strokePx: Math.max(cfg.lineWidth, 0.5) * dpr * 1.1,
+					strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr * 1.1, // 0 = no stroke
 					taper: cfg.hyperbolicLineMode !== "constant",
 				});
 			} else {
@@ -296,7 +296,7 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 					frame: false,
 					showFill: cfg.showPolygonFill,
 					hueOffset: cfg.hueOffset || 0,
-					strokePx: Math.max(cfg.lineWidth, 0.5) * dpr * 1.1,
+					strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr * 1.1, // 0 = no stroke
 					taper: cfg.hyperbolicLineMode !== "constant",
 				});
 			}

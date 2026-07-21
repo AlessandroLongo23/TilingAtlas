@@ -75,7 +75,7 @@ function renderThumbGL(patch: DevelopedPatch, size: number, opts: ThumbOpts): st
 		dark,
 		showFill: opts.showFill,
 		hueOffset: opts.hueOffset || 0,
-		strokePx: Math.max(opts.lineWidth, 0.5) * 1.1,
+		strokePx: opts.lineWidth <= 0 ? 0 : Math.max(opts.lineWidth, 0.5) * 1.1, // 0 = no stroke
 		taper: opts.lineMode !== "constant",
 	});
 	return glCanvas.toDataURL("image/png");
@@ -107,7 +107,7 @@ function renderThumb2d(patch: DevelopedPatch, size: number, opts: ThumbOpts): st
 		frame: true,
 		showFill: opts.showFill,
 		hueOffset: opts.hueOffset || 0,
-		strokePx: Math.max(opts.lineWidth, 0.5) * 1.1,
+		strokePx: opts.lineWidth <= 0 ? 0 : Math.max(opts.lineWidth, 0.5) * 1.1, // 0 = no stroke
 		taper: opts.lineMode !== "constant",
 	});
 	return thumbCanvas2d.toDataURL("image/png");

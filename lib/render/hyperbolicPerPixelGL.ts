@@ -129,7 +129,8 @@ void main() {
 	float hypEdge = distByte * 255.0 / ${EDGE_SCALE}.0;
 	float edgePx = hypEdge * (1.0 - r2) * uR * 0.5;
 	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? pow(1.0 - r2, ${STROKE_GAMMA}) : 1.0);
-	float strokeAmt = 1.0 - smoothstep(halfW - 1.0, halfW + 1.0, edgePx);
+	// slider at 0 = NO stroke: the AA band alone would still ink a ~50% hairline at halfW = 0
+	float strokeAmt = uStrokePx > 0.01 ? 1.0 - smoothstep(halfW - 1.0, halfW + 1.0, edgePx) : 0.0;
 	frag = vec4(mix(fill, uStroke, strokeAmt), 1.0);
 }`;
 
