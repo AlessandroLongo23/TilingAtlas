@@ -1321,3 +1321,10 @@ natural gesture) — headless probes (drag matrices, 1500-frame runs) show 0 cla
 mechanical freeze. (2) Per-tile flat depth shading restored: field B/A now carry the tile's hyperbolic
 barycenter (Minkowski mean — equivariant, so fold branches agree exactly); the shader transports it
 through the tracked inverse fold word. Tests 35/35, build green, Playwright-verified. NOTES §68. — CC
+
+**2026-07-21 (CC) — Geometric stroke width.** Perspective line mode now draws a band of constant
+HYPERBOLIC width around each geodesic edge: the field already stores exact hyperbolic edge distance,
+so halfW = uStrokePx·0.5·(1−r²) — the true conformal law (was the ad-hoc 1−0.55·dep taper). Thick at
+the centre, metric-exact thinning to the rim; 2D fallback gets the per-tile (1−dep²) sibling. Also
+committed the pre-existing developedDraw WIP (DrawOpts) the earlier canvas commits already depended
+on. Tests 35/35, build green, Playwright-verified. — CC

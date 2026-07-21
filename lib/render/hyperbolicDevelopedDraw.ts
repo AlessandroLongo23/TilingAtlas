@@ -8,6 +8,7 @@
 // Pure drawing (no React, no store) so it is shared by the interactive canvas and the static thumbnail.
 
 import { type Complex, type Su11, su11Apply, tileHue } from "@/lib/render/hyperbolic";
+import { tileHueRgb01 } from "@/lib/render/hueRing";
 
 export interface DevelopedPatch {
 	id: string;
@@ -17,6 +18,9 @@ export interface DevelopedPatch {
 	vertices: [number, number][];
 	faces: number[][];
 	tiles: number;
+	/** Quotient half-edge structure (the darts) — present on the baked catalogue patches so the client can
+	 *  re-develop the tiling on the fly (fill-to-rim under the view). Absent on the client's own output. */
+	darts?: { rneig: number[]; glue: number[]; lvert: number[]; seed: number };
 }
 
 /** Circle orthogonal to the unit circle through disk points a,b, or null for a diameter (a,b,0 collinear). */
@@ -70,6 +74,14 @@ export interface DrawOpts {
 	dark: boolean;
 	/** Draw the surrounding disk boundary + background (true for the main view, false for a transparent thumbnail). */
 	frame?: boolean;
+	/** false = edges only (fill each tile with the surface colour). Default true. */
+	showFill?: boolean;
+	/** global hue rotation (deg) from the hue ring. */
+	hueOffset?: number;
+	/** stroke width in device px. Default ~R·0.006. */
+	strokePx?: number;
+	/** true = taper the stroke toward the rim with the tiles (geometry line mode). */
+	taper?: boolean;
 }
 
 /** Draw the patch under `view` (an SU(1,1) isometry: identity = centred). Clips to the disk so nothing
@@ -108,13 +120,22 @@ export function drawDevelopedPatch(
 		}
 		ccx /= sides;
 		ccy /= sides;
+		// PER-TILE depth: one shade per tile, dimmed by its centre's screen radius (dim = 1 − 0.5·r²) —
+		// byte-identical to the shader / euclidean / spherical fill (HSB(h,0.40,1.0)·dim, theme-independent).
 		const dep = Math.min(1, Math.hypot(ccx, ccy));
-		const hue = tileHue(sides);
-		const light = dark ? 22 + 26 * (1 - dep) : 44 + 32 * (1 - dep);
-		const sat = dark ? 38 : 46;
-		ctx.fillStyle = `hsl(${hue} ${sat}% ${light}%)`;
+		const dim = 1 - 0.5 * dep * dep;
+		const [fr, fg, fb] = tileHueRgb01(tileHue(sides) + (opts.hueOffset ?? 0));
+		ctx.fillStyle =
+			opts.showFill === false
+				? dark
+					? "#14110d"
+					: "#faf8f5"
+				: `rgb(${Math.round(fr * dim * 255)},${Math.round(fg * dim * 255)},${Math.round(fb * dim * 255)})`;
 		ctx.strokeStyle = edgeCol;
-		ctx.lineWidth = Math.max(1, R * 0.006);
+		const baseW = opts.strokePx ?? Math.max(1, R * 0.006);
+		// Perspective width = constant HYPERBOLIC width: screen px scale by the conformal factor
+		// (1 − r²) at the tile's centre (per-tile approximation of the shader's exact per-pixel law).
+		ctx.lineWidth = opts.taper ? Math.max(0.35, baseW * (1 - dep * dep)) : baseW;
 		ctx.lineJoin = "round";
 		ctx.beginPath();
 		let started = false;

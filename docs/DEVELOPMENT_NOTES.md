@@ -4471,3 +4471,17 @@ would seam; test pins equivariance to 1e-9). The shader accumulates the inverse 
 view, and dims the whole tile by that radius; stroke taper uses the same per-tile depth. The bake's
 resolved flag moved from the alpha channel to a side mask. Playwright: shading matches the old
 look, drag-down moves content down, thumbnails inherit both fixes.
+
+## §69 — Stroke width follows the metric (2026-07-21)
+
+AL: make the stroke follow the geometry — thick mid-disk, thin at the rim, computed from the
+curvature, not eyeballed. The field's G channel already stores the exact HYPERBOLIC distance to the
+tile boundary (isometry-invariant), so the right definition is one line: the stroke is the
+equidistant band {hypEdge ≤ h} around each geodesic edge, h constant. Calibrating h so the band
+reads uStrokePx device px at the disk centre gives h = uStrokePx/uR, and converting both sides of
+the comparison to screen px through the local conformal factor (px = hyp·(1−r²)·uR/2) yields
+halfW = uStrokePx·0.5·(1−r²) — replacing the previous ad-hoc linear taper (1−0.55·dep). Flat mode
+(constant screen px) unchanged. The 2D fallback approximates per tile with (1−dep²) at the tile
+centre. Note the branch repair rider: lib/render/hyperbolicDevelopedDraw.ts's uncommitted DrawOpts
+WIP (hueOffset/showFill/strokePx/taper) predated this session but was already referenced by the
+committed canvas/thumbnail code — committed here so the branch is self-contained.

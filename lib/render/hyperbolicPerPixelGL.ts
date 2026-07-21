@@ -116,10 +116,15 @@ void main() {
 	float dim = 1.0 - 0.5 * dep * dep;
 	vec3 fill = uShowFill > 0.5 ? hsb2rgb(mod(sides * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0) * dim : uBg;
 
-	// stroke: hyperbolic edge distance (isometry-invariant) converted to screen px at this pixel.
+	// stroke: the stored edge distance is HYPERBOLIC (isometry-invariant), so "inside the stroke" =
+	// hypEdge ≤ h with h a constant hyperbolic half-width — an equidistant band around each geodesic.
+	// Both sides convert to screen px via the local conformal factor: px = hyp · (1−r²) · uR/2.
+	// h is calibrated so the band reads uStrokePx device px at the disk centre (h = uStrokePx/uR),
+	// giving halfW = uStrokePx·0.5·(1−r²): the EXACT metric thinning toward the rim (perspective
+	// mode). Flat mode keeps a constant screen width instead.
 	float hypEdge = distByte * 255.0 / ${EDGE_SCALE}.0;
 	float edgePx = hypEdge * (1.0 - r2) * uR * 0.5;
-	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? (1.0 - 0.55 * dep) : 1.0);
+	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? (1.0 - r2) : 1.0);
 	float strokeAmt = 1.0 - smoothstep(halfW - 1.0, halfW + 1.0, edgePx);
 	frag = vec4(mix(fill, uStroke, strokeAmt), 1.0);
 }`;
