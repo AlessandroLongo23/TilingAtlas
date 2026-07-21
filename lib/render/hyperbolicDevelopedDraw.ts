@@ -133,9 +133,9 @@ export function drawDevelopedPatch(
 				: `rgb(${Math.round(fr * dim * 255)},${Math.round(fg * dim * 255)},${Math.round(fb * dim * 255)})`;
 		ctx.strokeStyle = edgeCol;
 		const baseW = opts.strokePx ?? Math.max(1, R * 0.006);
-		// Perspective width = constant HYPERBOLIC width: screen px scale by the conformal factor
-		// (1 − r²) at the tile's centre (per-tile approximation of the shader's exact per-pixel law).
-		ctx.lineWidth = opts.taper ? Math.max(0.35, baseW * (1 - dep * dep)) : baseW;
+		// Perspective width: the conformal factor (1 − r²) at the tile's centre, biased by the same
+		// STROKE_GAMMA = 0.7 as the shader (1.0 = exact constant hyperbolic width; < 1 heavier rim).
+		ctx.lineWidth = opts.taper ? Math.max(0.35, baseW * Math.pow(1 - dep * dep, 0.7)) : baseW;
 		ctx.lineJoin = "round";
 		ctx.beginPath();
 		let started = false;

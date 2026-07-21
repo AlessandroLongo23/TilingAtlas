@@ -11,6 +11,9 @@ import type { Su11 } from "@/lib/render/hyperbolic";
 import { EDGE_SCALE, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 
 const MAX_GENS = 128; // uniform array bound; side pairings ∪ inverses (measured ≤ ~48 across the atlas)
+// Perspective-stroke bias: exponent on the conformal factor (1−r²). 1.0 = exact constant hyperbolic
+// width; < 1 biases heavier (slower thinning toward the rim). AL-tuned.
+const STROKE_GAMMA = "0.7";
 
 const VERT = `#version 300 es
 in vec2 aPos;
@@ -120,11 +123,12 @@ void main() {
 	// hypEdge ≤ h with h a constant hyperbolic half-width — an equidistant band around each geodesic.
 	// Both sides convert to screen px via the local conformal factor: px = hyp · (1−r²) · uR/2.
 	// h is calibrated so the band reads uStrokePx device px at the disk centre (h = uStrokePx/uR),
-	// giving halfW = uStrokePx·0.5·(1−r²): the EXACT metric thinning toward the rim (perspective
-	// mode). Flat mode keeps a constant screen width instead.
+	// so perspective mode thins by the conformal factor raised to STROKE_GAMMA: 1.0 = the exact
+	// metric width, lower = biased heavier toward the rim (AL tuned; still monotone and
+	// geometry-shaped). Flat mode keeps a constant screen width instead.
 	float hypEdge = distByte * 255.0 / ${EDGE_SCALE}.0;
 	float edgePx = hypEdge * (1.0 - r2) * uR * 0.5;
-	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? (1.0 - r2) : 1.0);
+	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? pow(1.0 - r2, ${STROKE_GAMMA}) : 1.0);
 	float strokeAmt = 1.0 - smoothstep(halfW - 1.0, halfW + 1.0, edgePx);
 	frag = vec4(mix(fill, uStroke, strokeAmt), 1.0);
 }`;

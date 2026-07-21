@@ -4485,3 +4485,6 @@ halfW = uStrokePx·0.5·(1−r²) — replacing the previous ad-hoc linear taper
 centre. Note the branch repair rider: lib/render/hyperbolicDevelopedDraw.ts's uncommitted DrawOpts
 WIP (hueOffset/showFill/strokePx/taper) predated this session but was already referenced by the
 committed canvas/thumbnail code — committed here so the branch is self-contained.
+
+§69 addendum: AL judged the exact metric width too thin — bias exponent STROKE_GAMMA = 0.7 on the
+conformal factor (shader + 2D fallback), i.e. halfW = uStrokePx·0.5·(1−r²)^0.7. 1.0 recovers exact.
