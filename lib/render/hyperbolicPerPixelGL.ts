@@ -11,9 +11,9 @@ import type { Su11 } from "@/lib/render/hyperbolic";
 import { EDGE_SCALE, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 
 const MAX_GENS = 128; // uniform array bound; side pairings ∪ inverses (measured ≤ ~48 across the atlas)
-// Perspective-stroke bias: exponent on the conformal factor (1−r²). 1.0 = exact constant hyperbolic
-// width; < 1 biases heavier (slower thinning toward the rim). AL-tuned.
-const STROKE_GAMMA = "0.4";
+// Perspective-stroke law (AL-tuned final): exact conformal exponent (1.0 = constant hyperbolic
+// width) with a 3× overall boost in the shader's halfW — metric-true thinning, thicker base.
+const STROKE_GAMMA = "1.0";
 
 const VERT = `#version 300 es
 in vec2 aPos;
@@ -128,7 +128,7 @@ void main() {
 	// geometry-shaped). Flat mode keeps a constant screen width instead.
 	float hypEdge = distByte * 255.0 / ${EDGE_SCALE}.0;
 	float edgePx = hypEdge * (1.0 - r2) * uR * 0.5;
-	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? pow(1.0 - r2, ${STROKE_GAMMA}) : 1.0);
+	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? 3.0 *pow(1.0 - r2, ${STROKE_GAMMA}) : 1.0);
 	// slider at 0 = NO stroke: the AA band alone would still ink a ~50% hairline at halfW = 0
 	float strokeAmt = uStrokePx > 0.01 ? 1.0 - smoothstep(halfW - 1.0, halfW + 1.0, edgePx) : 0.0;
 	frag = vec4(mix(fill, uStroke, strokeAmt), 1.0);

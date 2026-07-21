@@ -133,11 +133,11 @@ export function drawDevelopedPatch(
 				: `rgb(${Math.round(fr * dim * 255)},${Math.round(fg * dim * 255)},${Math.round(fb * dim * 255)})`;
 		ctx.strokeStyle = edgeCol;
 		const baseW = opts.strokePx ?? Math.max(1, R * 0.006);
-		// Perspective width: the conformal factor (1 − r²) at the tile's centre, biased by the same
-		// STROKE_GAMMA = 0.4 as the shader (1.0 = exact constant hyperbolic width; < 1 heavier rim).
+		// Perspective width: the exact conformal factor (1 − r²) at the tile's centre with the same
+		// 3× overall boost as the shader (AL-tuned final law: metric-exact thinning, thicker base).
 		// baseW ≤ 0 (slider at 0) = no stroke at all — the 0.35 floor must not resurrect it.
 		const drawStroke = baseW > 0.01;
-		ctx.lineWidth = drawStroke ? (opts.taper ? Math.max(0.35, baseW * Math.pow(1 - dep * dep, 0.1)) : baseW) : 0;
+		ctx.lineWidth = drawStroke ? (opts.taper ? Math.max(0.35, baseW * 3 * Math.pow(1 - dep * dep, 1.0)) : baseW) : 0;
 		ctx.lineJoin = "round";
 		ctx.beginPath();
 		let started = false;

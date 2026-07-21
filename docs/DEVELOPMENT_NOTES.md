@@ -4488,3 +4488,7 @@ committed canvas/thumbnail code — committed here so the branch is self-contain
 
 §69 addendum: AL judged the exact metric width too thin — bias exponent STROKE_GAMMA = 0.7 on the
 conformal factor (shader + 2D fallback), i.e. halfW = uStrokePx·0.5·(1−r²)^0.7. 1.0 recovers exact.
+
+§69 final: AL settled on the EXACT metric law (γ = 1.0) with a 3× overall perspective boost —
+halfW = uStrokePx·0.5·3·(1−r²) — hand-tuned in-place; shader and 2D fallback agree. Slider 0 =
+no stroke (a GL-side Math.max(strokePx, 0.5) floor was resurrecting hairlines; removed).
