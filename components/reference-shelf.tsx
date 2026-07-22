@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { RangeInput } from "@/components/ui/range-input";
 import { ReferenceCard } from "@/components/reference-card";
 import { cn } from "@/lib/utils/cn";
+import type { FreedrawGrid } from "@/lib/freedraw/pattern";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
 import {
@@ -127,6 +128,15 @@ const FREEDRAW_KIND_OPTIONS: { value: "all" | FreedrawKind; label: string }[] = 
 	{ value: "holes", label: "Has holes" },
 ];
 const FREEDRAW_KIND_VALUES = FREEDRAW_KIND_OPTIONS.map((o) => o.value).filter((v): v is FreedrawKind => v !== "all");
+// Freedraw-shelf grid facet, one level above the tile kind: which lattice the edge subset decorates.
+// Shown only for the freedraw class, ordered before Tile kind — first the board, then the pieces.
+const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "square", label: "Squares" },
+	{ value: "triangle", label: "Triangles" },
+	{ value: "ts", label: "Tri + square" },
+];
+const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -224,6 +234,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem)) f.islamicSystem = islamicSystem as IslamicSystem;
 	const freedrawKind = sp.get("fdkind");
 	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind)) f.freedrawKind = freedrawKind as FreedrawKind;
+	const freedrawGrid = sp.get("fdgrid");
+	if (freedrawGrid && (FREEDRAW_GRID_VALUES as string[]).includes(freedrawGrid)) f.freedrawGrid = freedrawGrid as FreedrawGrid;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
 	if (groups?.length) f.wallpaperGroups = groups;
 	const lattices = list("lattice")?.filter((s): s is LatticeShape => (LATTICE_ORDER as string[]).includes(s));
@@ -266,6 +278,7 @@ function serializeView(v: ViewState): string {
 	if (f.polyominoOrder) p.set("polyorder", f.polyominoOrder);
 	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
 	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
+	if (f.freedrawGrid) p.set("fdgrid", f.freedrawGrid);
 	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
 	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
 	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
@@ -514,8 +527,11 @@ export function ReferenceShelf() {
 		if (v !== "polyomino") next.polyominoOrder = undefined;
 		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
 		if (v !== "islamic") next.islamicSystem = undefined;
-		// The freedraw tile-kind facet only means something inside the freedraw class — drop it otherwise.
-		if (v !== "freedraw") next.freedrawKind = undefined;
+		// The freedraw tile-kind and grid facets only mean something inside the freedraw class — drop them otherwise.
+		if (v !== "freedraw") {
+			next.freedrawKind = undefined;
+			next.freedrawGrid = undefined;
+		}
 		if (v === "freedraw") {
 			// Freedraw faces are not tiles in the Grünbaum & Shephard sense, so none of the uniform-tiling
 			// classification applies: no M/partition, no star folds, no α-family, no wallpaper group or lattice.
@@ -559,6 +575,8 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, islamicSystem: v === "all" ? undefined : v });
 	const setFreedrawKind = (v: "all" | FreedrawKind) =>
 		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
+	const setFreedrawGrid = (v: "all" | FreedrawGrid) =>
+		setFilters({ ...filters, freedrawGrid: v === "all" ? undefined : v });
 
 	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
 	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
@@ -723,6 +741,7 @@ export function ReferenceShelf() {
 		(filters.polyominoOrder ? 1 : 0) +
 		(filters.islamicSystem ? 1 : 0) +
 		(filters.freedrawKind ? 1 : 0) +
+		(filters.freedrawGrid ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -875,6 +894,33 @@ export function ReferenceShelf() {
 					) : null}
 
 					{showFreedrawKind ? (
+						<FilterGroup
+							title="Grid"
+							summary={
+								filters.freedrawGrid === "square"
+									? "squares"
+									: filters.freedrawGrid === "triangle"
+										? "triangles"
+										: filters.freedrawGrid === "ts"
+											? "tri + square"
+											: null
+							}
+							note="the decorated lattice"
+						>
+							<OptionWall
+								columns={3}
+								options={FREEDRAW_GRID_OPTIONS}
+								selected={filters.freedrawGrid ?? "all"}
+								onChange={setFreedrawGrid}
+							/>
+							<GroupNote>
+								Which lattice the drawn edges decorate. Square patterns tile with polyominoes, triangular
+								ones with polyiamonds — plus strips and unbounded sheets on either board.
+							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					{showFreedrawKind ? (
 						<FilterGroup title="Tile kind" summary={filters.freedrawKind ?? null} note="faces of the edge set">
 							<OptionWall
 								columns={2}
@@ -883,8 +929,8 @@ export function ReferenceShelf() {
 								onChange={setFreedrawKind}
 							/>
 							<GroupNote>
-								A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino, an
-								infinite strip, or a sheet unbounded in both directions.
+								A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino or
+								polyiamond, an infinite strip, or a sheet unbounded in both directions.
 							</GroupNote>
 						</FilterGroup>
 					) : null}

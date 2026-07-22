@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Library, Play, Shapes, Grid3x3, Waves } from "lucide-react"; // History icon commented out with its nav link below
+import { BookOpen, Library, PenLine, Play, Shapes, Grid3x3, Waves } from "lucide-react"; // History icon commented out with its nav link below
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 import { Kbd } from "@/components/ui/kbd";
@@ -16,6 +16,7 @@ const LINKS = [
 	{ href: "/play", label: "Play", icon: Play },
 	{ href: "/theory", label: "Theory", icon: BookOpen },
 	{ href: "/parquet", label: "Parquet", icon: Waves },
+	{ href: "/freedraw", label: "Freedraw", icon: PenLine },
 	// { href: "/history", label: "History", icon: History }, // hidden from header (route still exists)
 ];
 
@@ -26,7 +27,7 @@ export function Nav() {
 	// animated so entering/exiting is a smooth 300ms slide, matching the sidebar collapse on /play.
 	const immersive = useImmersive((s) => s.immersive);
 
-	// Number keys 1–5 jump to the matching nav link (in visible order). Same guard pattern as the /play
+	// Number keys 1–7 jump to the matching nav link (in visible order). Same guard pattern as the /play
 	// key handler: skip modifier combos so browser Cmd/Ctrl+number keeps switching tabs, and skip while
 	// typing in a form field or contenteditable.
 	useEffect(() => {

@@ -4,7 +4,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
-import type { FreedrawPattern } from "@/lib/freedraw/pattern";
+import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 
 // The Reference (Oracle) shelf — a DISPLAY-ONLY atlas of known k-uniform tilings from the literature,
 // deliberately kept OFF the certified-results catalogue (§0: the site never produces the claim; these
@@ -287,11 +287,24 @@ export function matchesFreedrawKind(s: FreedrawStats, kind: FreedrawKind): boole
 	return s.withHoles > 0;
 }
 
+// The freedraw shelf's GRID facet — which lattice the edge subset decorates. One level above the tile
+// kind: first say which board the game is played on, then what the pieces are.
+export function freedrawGridOf(t: Pick<ReferenceTiling, "freedraw">): FreedrawGrid | null {
+	return t.freedraw ? gridOf(t.freedraw) : null;
+}
+
 // The card / search label for a freedraw pattern: what its faces ARE, since there is no vertex
-// configuration to name it by. "1 strip + 2 polyominoes", "1 unbounded · holes".
-export function freedrawFamilyLabel(s: FreedrawStats): string {
+// configuration to name it by. "1 strip + 2 polyominoes", "1 unbounded · holes". The finite noun
+// follows the grid: polyomino on squares, polyiamond on triangles, polyform on the combined grid.
+export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
+	const noun =
+		grid === "triangle"
+			? (["polyiamond", "polyiamonds"] as const)
+			: grid === "ts"
+				? (["polyform", "polyforms"] as const)
+				: (["polyomino", "polyominoes"] as const);
 	const parts: string[] = [];
-	if (s.finite) parts.push(`${s.finite} ${s.finite === 1 ? "polyomino" : "polyominoes"}`);
+	if (s.finite) parts.push(`${s.finite} ${s.finite === 1 ? noun[0] : noun[1]}`);
 	if (s.strips) parts.push(`${s.strips} ${s.strips === 1 ? "strip" : "strips"}`);
 	if (s.unbounded) parts.push(`${s.unbounded} unbounded`);
 	return (parts.join(" + ") || "empty") + (s.withHoles ? " · holes" : "");
@@ -356,6 +369,9 @@ export interface ReferenceFilter {
 	// Freedraw shelf sub-class: keep only patterns whose faces are all finite / include a strip / include an
 	// unbounded sheet / include a polyomino with holes. Non-freedraw tilings never match while this is active.
 	freedrawKind?: FreedrawKind;
+	// Freedraw shelf sub-class, one level above the kind: which grid the edge subset decorates. Non-freedraw
+	// tilings never match while this is active.
+	freedrawGrid?: FreedrawGrid;
 	// Convex-irregular shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
 	// Any tiling outside that class (decomposableOnly undefined) is EXCLUDED while this is active.
 	convexDecomp?: "decomposable" | "non-decomposable";
@@ -392,6 +408,9 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	if (f.freedrawKind) {
 		const s = freedrawStatsOf(t);
 		if (!s || !matchesFreedrawKind(s, f.freedrawKind)) return false; // non-freedraw never matches the kind facet
+	}
+	if (f.freedrawGrid) {
+		if (freedrawGridOf(t) !== f.freedrawGrid) return false; // non-freedraw never matches the grid facet
 	}
 	if (f.convexDecomp) {
 		if (t.decomposableOnly == null) return false; // tilings outside the convex-irregular class never match this facet
@@ -473,18 +492,24 @@ const FREEDRAW_EMPTY_CELL = { cellPolygons: [], basis: [[1, 0], [0, 1]] } as unk
 function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 	const stats = summarise(analyseFaces(p));
 	freedrawStatsCache.set(p.id, stats);
+	const grid = gridOf(p);
+	// Certification tracks how each SLICE was obtained. Square k ≤ 3 and triangle k = 1 were enumerated
+	// independently here AND reproduced from Čtrnáct's solver — matched counts, hence "reproduced".
+	// Square k = 4, triangle k ≥ 2, and the whole combined grid exist only as decodes of his
+	// certificates (the decoder is validated bijectively on the slices above, and the combined grid's
+	// digon-free slice reproduces the known 4/7/17 uniform square-triangle tilings, but no independent
+	// enumeration reaches the rest), so they carry "candidate" until something independent does.
+	const verified = grid === "square" ? p.k <= 3 : grid === "triangle" ? p.k <= 1 : false;
 	return {
 		id: p.id,
 		source: "freedraw",
 		k: p.k,
-		family: freedrawFamilyLabel(stats),
+		family: freedrawFamilyLabel(stats, grid),
 		renderCell: FREEDRAW_EMPTY_CELL,
 		freedraw: p,
 		geometry: "euclidean",
 		discoverer: "Marek Čtrnáct",
-		// Enumerated here and cross-checked against Čtrnáct's own solver (13 at k=1, 153 at k=2) — a matched
-		// count, not a completeness proof of ours. That is exactly what "reproduced" means on this axis.
-		certification: "reproduced",
+		certification: verified ? "reproduced" : "candidate",
 	};
 }
 
@@ -515,11 +540,24 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-islamic.json"),
 		bestEffort("/reference-atlas-hyperbolic.json"),
 		bestEffort("/reference-atlas-spherical.json"),
-		// Freedraw is adapted from its own raw catalogue, not a reference-atlas-*.json (see freedrawToReference).
-		fetch("/freedraw/solutions.json")
-			.then((res) => (res.ok ? (res.json() as Promise<FreedrawPattern[]>) : []))
-			.then((ps) => ps.map(freedrawToReference))
-			.catch(() => [] as ReferenceTiling[]),
+		// Freedraw is adapted from its own raw catalogues, not a reference-atlas-*.json (see
+		// freedrawToReference). Six files: the verified square k<=3 base, the square k=4 extension,
+		// the triangular-grid catalogue, and the combined-grid (squares + triangles) patches per k —
+		// merged here so /library and /play see one shelf.
+		Promise.all(
+			[
+				"/freedraw/solutions.json",
+				"/freedraw/solutions-k4.json",
+				"/freedraw/tri-solutions.json",
+				"/freedraw/ts-solutions-k1.json",
+				"/freedraw/ts-solutions-k2.json",
+				"/freedraw/ts-solutions-k3.json",
+			].map((url) =>
+				fetch(url)
+					.then((res) => (res.ok ? (res.json() as Promise<FreedrawPattern[]>) : []))
+					.catch(() => [] as FreedrawPattern[]),
+			),
+		).then((lists) => lists.flat().map(freedrawToReference)),
 		fetch("/hyperbolic-developed.json")
 			.then((res) => (res.ok ? (res.json() as Promise<Array<{ id: string; edge?: number }>>) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
