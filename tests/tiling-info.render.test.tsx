@@ -17,6 +17,7 @@ describe("TilingInfo spec card", () => {
 			wallpaperGroup: "p6m",
 			orbifold: "*632",
 			latticeShape: "hexagonal",
+			freedraw: null,
 			k: 7,
 			m: 3,
 			partition: [5, 1, 1],

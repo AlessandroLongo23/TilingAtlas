@@ -44,6 +44,10 @@ export interface CatalogueTiling {
 	// thumbnails to the three.js sphere renderer (components/spherical-canvas.tsx), the way developed routes
 	// to the Poincaré disk. Carried through from ReferenceTiling by referenceToCatalogue.
 	spherical?: { p?: number; q?: number; solid: string };
+	// Freedraw shelf only: the periodic square-grid edge subset this entry IS. Its presence routes /play +
+	// the thumbnails to the 2D grid renderer — freedraw has no polygon cell, so `renderCell` is a throwaway
+	// and is never drawn. NOTE its `k` counts GRID-POINT orbits, not vertex orbits (see ReferenceTiling).
+	freedraw?: import("@/lib/freedraw/pattern").FreedrawPattern;
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
 	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their

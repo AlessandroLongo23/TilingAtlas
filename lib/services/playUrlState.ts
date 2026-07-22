@@ -32,6 +32,11 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	sym: { field: "showSymmetryElements", kind: "bool" },
 	dom: { field: "showFundamentalDomain", kind: "bool" },
 	hline: { field: "hyperbolicLineMode", kind: "enum", values: ["geometry", "constant"] },
+	// freedraw view (fd*) — `lw` above is shared, so the stroke needs no key of its own
+	fdfill: { field: "freedrawFill", kind: "enum", values: ["none", "rank", "orbit"] },
+	fdgrid: { field: "freedrawScaffold", kind: "bool" },
+	fdlat: { field: "freedrawLattice", kind: "bool" },
+	fdorb: { field: "freedrawVertices", kind: "bool" },
 	// Islamic construction
 	i: { field: "isIslamic", kind: "bool" },
 	istyle: {

@@ -3,6 +3,8 @@ import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
+import { analyseFaces, summarise } from "@/lib/freedraw/faces";
+import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 
 // The Reference (Oracle) shelf — a DISPLAY-ONLY atlas of known k-uniform tilings from the literature,
 // deliberately kept OFF the certified-results catalogue (§0: the site never produces the claim; these
@@ -27,7 +29,7 @@ export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "hyperbolic" | "spherical";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "hyperbolic" | "spherical";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
@@ -53,6 +55,16 @@ export interface ReferenceTiling {
 	// solids resolve by it (Archimedean have no {p,q}). p/q are the Schläfli symbol, present for the
 	// Platonic solids only (display).
 	spherical?: { p?: number; q?: number; solid: string };
+	// Freedraw shelf only: the periodic edge subset of the square grid this entry IS (lib/freedraw/pattern.ts).
+	// Its presence routes /play + the thumbnails to the 2D grid renderer, the way `developed` routes to the
+	// Poincaré disk — freedraw has no polygon cell at all (an infinite strip has no vertex list, an annulus
+	// is not star-shaped), so `renderCell` is a throwaway here and is never drawn.
+	//
+	// CAVEAT ON k. For a freedraw entry `k` counts GRID-POINT orbits of the decoration, including grid points
+	// with no drawn edge — NOT vertex orbits of a uniform tiling. It shares the k axis with everything else
+	// so the two are browsable together, but every surface that shows it (card sub-line, /play nav header +
+	// info panel, the catalogue tree's k rows) must say "grid points", never "vertices".
+	freedraw?: FreedrawPattern;
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
@@ -113,7 +125,7 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "hyperbolic" | "spherical";
+export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "hyperbolic" | "spherical";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
@@ -129,6 +141,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 	if (t.source === "scaled") return "scaled";
 	if (t.source === "polyomino") return "polyomino";
 	if (t.source === "islamic") return "islamic";
+	if (t.source === "freedraw") return "freedraw";
 	if (t.family.includes("cx")) return "convex";
 	if (t.family.includes("α")) return "isotoxal";
 	return t.family.includes("*") ? "star" : "regular";
@@ -137,7 +150,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
@@ -147,6 +160,7 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	scaled: { short: "Scaled", long: "Scaled polygons" },
 	polyomino: { short: "Polyominoes", long: "Polyominoes" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
+	freedraw: { short: "Freedraw", long: "Freedraw edge patterns" },
 	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic tilings" },
 	spherical: { short: "Spherical", long: "Spherical tilings" },
 };
@@ -240,6 +254,49 @@ export function islamicSystemOf(t: Pick<ReferenceTiling, "source" | "islamicSyst
 	return t.islamicSystem ?? null;
 }
 
+// ── Freedraw ──────────────────────────────────────────────────────────────────────────────────────
+// The freedraw shelf's tile-kind facet. A freedraw "tile" is whatever face falls out of the drawn edge
+// set, so it can be a finite polyomino (rank 0), an infinite strip (rank 1), or a two-dimensionally
+// unbounded sheet (rank 2) — the one axis that says what kind of object a pattern actually produces.
+export type FreedrawKind = "finite" | "strip" | "unbounded" | "holes";
+export interface FreedrawStats {
+	faceOrbits: number;
+	finite: number;
+	strips: number;
+	unbounded: number;
+	withHoles: number;
+}
+
+// analyseFaces is O(a·d) and every shipped pattern has a·d ≤ 8, but the shelf filter runs over the whole
+// atlas on every keystroke — so memoise per pattern id rather than re-flooding 166 patterns per render.
+const freedrawStatsCache = new Map<string, FreedrawStats>();
+
+export function freedrawStatsOf(t: Pick<ReferenceTiling, "id" | "freedraw">): FreedrawStats | null {
+	if (!t.freedraw) return null;
+	const hit = freedrawStatsCache.get(t.id);
+	if (hit) return hit;
+	const stats = summarise(analyseFaces(t.freedraw));
+	freedrawStatsCache.set(t.id, stats);
+	return stats;
+}
+
+export function matchesFreedrawKind(s: FreedrawStats, kind: FreedrawKind): boolean {
+	if (kind === "finite") return s.strips === 0 && s.unbounded === 0;
+	if (kind === "strip") return s.strips > 0;
+	if (kind === "unbounded") return s.unbounded > 0;
+	return s.withHoles > 0;
+}
+
+// The card / search label for a freedraw pattern: what its faces ARE, since there is no vertex
+// configuration to name it by. "1 strip + 2 polyominoes", "1 unbounded · holes".
+export function freedrawFamilyLabel(s: FreedrawStats): string {
+	const parts: string[] = [];
+	if (s.finite) parts.push(`${s.finite} ${s.finite === 1 ? "polyomino" : "polyominoes"}`);
+	if (s.strips) parts.push(`${s.strips} ${s.strips === 1 ? "strip" : "strips"}`);
+	if (s.unbounded) parts.push(`${s.unbounded} unbounded`);
+	return (parts.join(" + ") || "empty") + (s.withHoles ? " · holes" : "");
+}
+
 // The star folds present in a family (unique, ascending). "3.4*.6*" → [4,6]. Empty for regular.
 export function starFoldsOf(t: Pick<ReferenceTiling, "family">): number[] {
 	const folds = new Set<number>();
@@ -296,6 +353,9 @@ export interface ReferenceFilter {
 	// Islamic shelf sub-class: keep only tilings in this Bonner design system. Non-Islamic tilings never
 	// match while this is active.
 	islamicSystem?: IslamicSystem;
+	// Freedraw shelf sub-class: keep only patterns whose faces are all finite / include a strip / include an
+	// unbounded sheet / include a polyomino with holes. Non-freedraw tilings never match while this is active.
+	freedrawKind?: FreedrawKind;
 	// Convex-irregular shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
 	// Any tiling outside that class (decomposableOnly undefined) is EXCLUDED while this is active.
 	convexDecomp?: "decomposable" | "non-decomposable";
@@ -328,6 +388,10 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	}
 	if (f.islamicSystem) {
 		if (islamicSystemOf(t) !== f.islamicSystem) return false; // non-Islamic tilings never match the system facet
+	}
+	if (f.freedrawKind) {
+		const s = freedrawStatsOf(t);
+		if (!s || !matchesFreedrawKind(s, f.freedrawKind)) return false; // non-freedraw never matches the kind facet
 	}
 	if (f.convexDecomp) {
 		if (t.decomposableOnly == null) return false; // tilings outside the convex-irregular class never match this facet
@@ -393,6 +457,34 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		partition: r.partition,
 		wallpaperGroup: r.wallpaperGroup,
 		latticeShape: r.latticeShape,
+		freedraw: r.freedraw,
+	};
+}
+
+// Freedraw patterns ship as their own catalogue (public/freedraw/solutions.json — the same file the
+// standalone /freedraw page reads), not as a pre-baked reference-atlas-*.json. There is nothing to bake:
+// the pattern IS the record, and wrapping it in a build script would only duplicate 16 kB and give the two
+// copies a way to drift. So the adaptation happens here, at load, the way the hyperbolic `edge` merge does.
+//
+// `renderCell` is a deliberate throwaway — every consumer that would draw it branches on `freedraw` first
+// (thumbnails, /play canvas), exactly as they branch on `developed`/`spherical`.
+const FREEDRAW_EMPTY_CELL = { cellPolygons: [], basis: [[1, 0], [0, 1]] } as unknown as TranslationalCellData;
+
+function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
+	const stats = summarise(analyseFaces(p));
+	freedrawStatsCache.set(p.id, stats);
+	return {
+		id: p.id,
+		source: "freedraw",
+		k: p.k,
+		family: freedrawFamilyLabel(stats),
+		renderCell: FREEDRAW_EMPTY_CELL,
+		freedraw: p,
+		geometry: "euclidean",
+		discoverer: "Marek Čtrnáct",
+		// Enumerated here and cross-checked against Čtrnáct's own solver (13 at k=1, 153 at k=2) — a matched
+		// count, not a completeness proof of ours. That is exactly what "reproduced" means on this axis.
+		certification: "reproduced",
 	};
 }
 
@@ -423,11 +515,16 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-islamic.json"),
 		bestEffort("/reference-atlas-hyperbolic.json"),
 		bestEffort("/reference-atlas-spherical.json"),
+		// Freedraw is adapted from its own raw catalogue, not a reference-atlas-*.json (see freedrawToReference).
+		fetch("/freedraw/solutions.json")
+			.then((res) => (res.ok ? (res.json() as Promise<FreedrawPattern[]>) : []))
+			.then((ps) => ps.map(freedrawToReference))
+			.catch(() => [] as ReferenceTiling[]),
 		fetch("/hyperbolic-developed.json")
 			.then((res) => (res.ok ? (res.json() as Promise<Array<{ id: string; edge?: number }>>) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
-		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, devPatches]) => {
+		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, freedraw, devPatches]) => {
 			// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
 			// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
 			const edgeById = new Map<string, number | undefined>(
@@ -437,7 +534,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 				const e = edgeById.get(t.developed?.patch ?? t.id);
 				if (typeof e === "number") t.edge = e;
 			}
-			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...hyperbolic, ...spherical];
+			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...freedraw, ...hyperbolic, ...spherical];
 			cache = data;
 			inflight = null;
 			return data;

@@ -38,6 +38,12 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// A spherical (Platonic {p,q}) tiling renders in the three.js sphere view, which owns its own
 	// rotate/zoom input — so the flat-canvas overlays (symmetry, orbits, transition, inversive) don't apply.
 	const isSpherical = !!selected?.spherical;
+	// A freedraw pattern renders on its own 2D grid canvas. It is the strictest case: there are no tiles at
+	// all, so EVERY control above — fill, stroke, hue, rotation, points, orbits, symmetry, inversive — is
+	// dead, and the three freedraw-specific ones below take their place.
+	const isFreedraw = !!selected?.freedraw;
+	// Flat-canvas overlays: only meaningful when the p5 layer is actually the thing painting.
+	const isFlat = !isHyperbolic && !isSpherical && !isFreedraw;
 
 	return (
 		// Opaque: the sidebar wall's line colour lives on an ancestor, and a transparent panel would
@@ -47,9 +53,84 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 			    split is gone, and the "View options" heading with it (the tab already carries that label). */}
 			<div className="flex flex-col gap-2">
 				<div className="p-3 space-y-2">
+					{/* Freedraw: the whole control set for the 2D grid view. Fill colours each unit CELL by the
+					    face it belongs to (there are no tiles to fill); the scaffold shows the grid edges that
+					    are NOT drawn; orbits dots the grid points by their symmetry orbit, which is what the
+					    pattern's k actually counts. */}
+					{isFreedraw ? (
+						<div className="space-y-2">
+							<span className="text-[11px] text-fg-muted">Cell fill</span>
+							<div className="grid grid-cols-3 gap-2">
+								{(
+									[
+										["none", "None"],
+										["rank", "By kind"],
+										["orbit", "By tile"],
+									] as const
+								).map(([val, label]) => (
+									<Button
+										key={val}
+										variant={cfg.freedrawFill === val ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ freedrawFill: val })}
+									>
+										{label}
+									</Button>
+								))}
+							</div>
+							<p className="text-[11px] text-fg-muted leading-relaxed">
+								{cfg.freedrawFill === "rank"
+									? "Coloured by tile kind — finite polyomino, infinite strip, or unbounded sheet."
+									: cfg.freedrawFill === "orbit"
+										? "One hue per distinct tile. Cells sharing a colour are the same face."
+										: "Bare line art: only the drawn edges."}
+							</p>
+							{/* The shared Line stroke field, placed here so it sits with the fill. Here it multiplies
+							    the zoom-proportional weight of the drawn edges; 0 drops them, leaving just the fill. */}
+							<Slider
+								id="lineWidth"
+								label="Line stroke"
+								value={cfg.lineWidth}
+								onChange={(v) => setCfg({ lineWidth: v })}
+								min={0}
+								max={5}
+								step={0.25}
+							/>
+							<Checkbox
+								id="freedrawScaffold"
+								label="Grid scaffold"
+								checked={cfg.freedrawScaffold}
+								onCheckedChange={(v) => setCfg({ freedrawScaffold: v })}
+							/>
+							{/* The period lattice: the fundamental cell tinted, its translates outlined. Shows the
+							    figure as that one cell stamped out over and over. */}
+							<Checkbox
+								id="freedrawLattice"
+								label="Period lattice"
+								checked={cfg.freedrawLattice}
+								onCheckedChange={(v) => setCfg({ freedrawLattice: v })}
+							/>
+							<Checkbox
+								id="freedrawVertices"
+								label="Grid-point orbits"
+								shortcut="O"
+								checked={cfg.freedrawVertices}
+								onCheckedChange={(v) => setCfg({ freedrawVertices: v })}
+							/>
+							<Reveal show={cfg.freedrawVertices}>
+								<p className="pl-7 text-[11px] text-fg-muted leading-relaxed">
+									Hover a dot to grow every grid point in its orbit.
+								</p>
+							</Reveal>
+							<p className="text-[11px] text-fg-muted leading-relaxed">
+								Drag to pan, scroll to zoom, double-click to refit.
+							</p>
+						</div>
+					) : null}
 					{/* The global fill flag. Hidden in spherical — there the Fill/Wireframe pair (below) is the
 					    view's own mutually-exclusive fill control, driven by sphericalWireframe. */}
-					{!isSpherical ? (
+					{!isSpherical && !isFreedraw ? (
 						<Checkbox
 							id="showPolygonFill"
 							label="Polygon fill"
@@ -58,15 +139,19 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ showPolygonFill: v })}
 						/>
 					) : null}
-					<Slider
-						id="lineWidth"
-						label="Line stroke"
-						value={cfg.lineWidth}
-						onChange={(v) => setCfg({ lineWidth: v })}
-						min={0}
-						max={5}
-						step={0.25}
-					/>
+					{/* Freedraw renders its own copy of this slider inside its block above, so the stroke sits
+					    with the fill it belongs to. Same store field either way — only the position differs. */}
+					{!isFreedraw ? (
+						<Slider
+							id="lineWidth"
+							label="Line stroke"
+							value={cfg.lineWidth}
+							onChange={(v) => setCfg({ lineWidth: v })}
+							min={0}
+							max={5}
+							step={0.25}
+						/>
+					) : null}
 					{isHyperbolic ? (
 						<div className="flex gap-2">
 							<Button
@@ -88,13 +173,16 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						</div>
 					) : null}
 					{/* Global hue rotation for every tile fill (all views + thumbnails) — preserves the
-					    pairwise hue distances between tiles while cycling the palette. */}
-					<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
+					    pairwise hue distances between tiles while cycling the palette. Freedraw colours cells
+					    by face, off its own golden-angle walk, so this ring has nothing to rotate there. */}
+					{!isFreedraw ? (
+						<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
+					) : null}
 					{/* Flat-view rotation. Hidden in spherical — that view rotates by quaternion (the
 					    ArcballControls trackball), so this angle slider has no effect there. The hint reveals the
 					    canvas gesture that also drives this value: flat/inversive spin the view with Shift+scroll
 					    (bare scroll zooms there), while the hyperbolic disk has no zoom, so a bare scroll rotates. */}
-					{!isSpherical ? (
+					{!isSpherical && !isFreedraw ? (
 						<Slider
 							id="rotation"
 							label="Rotation"
@@ -118,19 +206,21 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							unit="°"
 						/>
 					) : null}
-					<Checkbox
-						id="showPolygonPoints"
-						label="Show Polygon Points"
-						shortcut="P"
-						checked={cfg.showPolygonPoints}
-						onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
-					/>
+					{!isFreedraw ? (
+						<Checkbox
+							id="showPolygonPoints"
+							label="Show Polygon Points"
+							shortcut="P"
+							checked={cfg.showPolygonPoints}
+							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
+						/>
+					) : null}
 					{/* Vertex-orbit dots are computed from the exact cell (KUniformityChecker.vertexOrbits),
 					    which has no hyperbolic counterpart yet — Euclidean-only, like the sibling flat-canvas
 					    overlays below. Disabled when the tiling carries no exactSource (the lazy-shard shelves:
 					    scaled/isotoxal/mixed/convex/polyomino) — without an exact cell there are no orbit ids
 					    to color by, and the canvas is inert then too (canvas.tsx orbitMode). */}
-					{!isHyperbolic && !isSpherical ? (
+					{isFlat ? (
 						<Checkbox
 							id="showVertexOrbits"
 							label="Show Vertex Orbits"
@@ -144,7 +234,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    instant — under Islamic / symmetry-elements / inversive, whose draw paths have no
 					    per-tile scale, and under prefers-reduced-motion. Hidden in hyperbolic: the WebGL disk
 					    renderer swaps instantly and has no per-tile scale to animate. */}
-					{!isHyperbolic && !isSpherical ? (
+					{isFlat ? (
 						<Checkbox
 							id="tilingTransition"
 							label="Transition animation"
@@ -427,7 +517,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
 					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there. */}
-					{!isHyperbolic && !isSpherical ? (
+					{isFlat ? (
 						<>
 							<Checkbox
 								id="showSymmetryElements"
@@ -549,7 +639,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							/>
 						</div>
 					) : null}
-					{!isHyperbolic && !isSpherical ? (
+					{isFlat ? (
 						<Checkbox
 							id="inversive"
 							label="Inversive view"
@@ -558,7 +648,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ inversive: v })}
 						/>
 					) : null}
-					{!isHyperbolic && !isSpherical ? (
+					{isFlat ? (
 						<Reveal show={cfg.inversive}>
 						<div className="space-y-2 pl-7">
 							<div className="flex gap-2">

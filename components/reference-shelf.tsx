@@ -9,6 +9,7 @@ import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { RangeInput } from "@/components/ui/range-input";
 import { ReferenceCard } from "@/components/reference-card";
+import { cn } from "@/lib/utils/cn";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
 import {
@@ -28,6 +29,7 @@ import {
 	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
 	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
 	type Certification,
+	type FreedrawKind,
 	type Geometry,
 	type ReferenceTiling,
 	type ReferenceFilter,
@@ -113,6 +115,18 @@ const ISLAMIC_SYSTEM_OPTIONS: { value: "all" | IslamicSystem; label: string }[] 
 	{ value: "dual-level", label: "Dual-level" },
 ];
 const ISLAMIC_SYSTEM_VALUES = ISLAMIC_SYSTEM_OPTIONS.map((o) => o.value).filter((v): v is IslamicSystem => v !== "all");
+// Freedraw-shelf sub-class facet: what KIND of faces the pattern produces. A freedraw "tile" is whatever
+// face falls out of the drawn edge set, so it can be a finite polyomino, an infinite strip, or a sheet
+// unbounded in both directions — the one axis that says what a pattern actually makes. Shown only for the
+// freedraw class. See lib/freedraw/faces.ts.
+const FREEDRAW_KIND_OPTIONS: { value: "all" | FreedrawKind; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "finite", label: "All finite" },
+	{ value: "strip", label: "Has strip" },
+	{ value: "unbounded", label: "Has unbounded" },
+	{ value: "holes", label: "Has holes" },
+];
+const FREEDRAW_KIND_VALUES = FREEDRAW_KIND_OPTIONS.map((o) => o.value).filter((v): v is FreedrawKind => v !== "all");
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -153,7 +167,7 @@ const CERT_VALUES = CERT_OPTIONS.map((o) => o.value);
 // the query string: a reload restores the exact view, and the "Copy link" button hands a friend a link
 // that reproduces it. parseViewState and serializeView are inverse — add a field to one, add it to the
 // other. Keys are short and stable (they're a shared URL contract): k, class, decomp, m, partition,
-// maximal, folds, param, iso, group, lattice, by, cert, polygon, q + page, size, cols.
+// maximal, folds, param, iso, fdkind, group, lattice, by, cert, polygon, q + page, size, cols.
 interface ViewState {
 	filters: ReferenceFilter;
 	page: number;
@@ -208,6 +222,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (polyOrder === "tetromino") f.polyominoOrder = polyOrder;
 	const islamicSystem = sp.get("islamicsystem");
 	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem)) f.islamicSystem = islamicSystem as IslamicSystem;
+	const freedrawKind = sp.get("fdkind");
+	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind)) f.freedrawKind = freedrawKind as FreedrawKind;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
 	if (groups?.length) f.wallpaperGroups = groups;
 	const lattices = list("lattice")?.filter((s): s is LatticeShape => (LATTICE_ORDER as string[]).includes(s));
@@ -249,6 +265,7 @@ function serializeView(v: ViewState): string {
 	if (f.scaledScaleSet) p.set("scaleset", f.scaledScaleSet);
 	if (f.polyominoOrder) p.set("polyorder", f.polyominoOrder);
 	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
+	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
 	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
 	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
 	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
@@ -261,14 +278,30 @@ function serializeView(v: ViewState): string {
 	return p.toString();
 }
 
-// A flat, always-visible filter group: a static heading (optional accent summary + right-aligned note)
-// over its controls. Replaces the old collapsible SidebarSection in this shelf.
-// A caption row inside a filter group — one more cell in the wall, so the sub-groups it separates
-// stay flush with everything else.
+// ── the panel's type ramp ─────────────────────────────────────────────────────────────────────────
+// Three sizes, no more. 14px semibold = a group heading; 12px medium = an option cell (OptionWall's
+// own class); 11px regular = EVERY small annotation. That last slot used to be three separate
+// treatments — a 10px uppercase tracked note on the right of the heading, a 10px sentence-case
+// sub-label, and 10px prose — which is what made the panel read as four typefaces stacked in one
+// column. One constant now, so they can't drift apart again.
+// text-fg-muted, not fg-disabled: at 11px the disabled ink (neutral-600 on neutral-900) was unreadable
+// in dark, and /play's options panel already annotates at 11px muted.
+const META = "text-[11px] font-normal leading-snug text-fg-muted";
+
+// Structure sits on the wall's mortar; content sits on its tiles. A group heading and a sub-label are
+// structure, so they carry NO cell fill — the line colour shows through and the seam between two
+// groups widens into the band that names the next one. Separation and heading become one gesture, and
+// every diamond stays where it was: they're born at four rounded cell corners meeting, which only ever
+// happens inside the option grids, and those are untouched.
+
+// A caption row inside a filter group — a thinner echo of the group heading, same mortar band.
 function SubLabel({ children }: { children: ReactNode }) {
-	return (
-		<span className="ta-wall-cell bg-surface-chrome px-3 py-1 text-[10px] text-fg-disabled">{children}</span>
-	);
+	return <span className={cn(META, "px-3 pt-2.5 pb-1.5 font-medium")}>{children}</span>;
+}
+
+// An explanatory line under a group's controls. This one IS content, so it stays a tile.
+function GroupNote({ children }: { children: ReactNode }) {
+	return <p className={cn("ta-wall-cell bg-surface-chrome px-3 py-2", META, "leading-relaxed")}>{children}</p>;
 }
 
 function FilterGroup({
@@ -283,15 +316,13 @@ function FilterGroup({
 	children: ReactNode;
 }) {
 	return (
-		// A group of the sidebar wall: a header row, then its option grids, each a cell block. The
-		// 1px gaps are the only separation — no rules, no padding, no gutters.
-		<section className="flex flex-col gap-px">
-			<div className="ta-wall-cell bg-surface-chrome flex h-8 items-center justify-between gap-2 px-3">
-				<h3 className="text-xs font-medium text-fg-secondary">
+		<section className="flex flex-col gap-px pt-4">
+			<div className="flex items-baseline justify-between gap-2 px-3 pb-2">
+				<h3 className="text-sm font-semibold tracking-tight text-fg">
 					{title}
-					{summary ? <span className="ml-1.5 font-normal text-fg">{summary}</span> : null}
+					{summary ? <span className={cn(META, "ml-1.5")}>{summary}</span> : null}
 				</h3>
-				{note ? <span className="text-[10px] uppercase tracking-wide text-fg-disabled">{note}</span> : null}
+				{note ? <span className={cn(META, "shrink-0")}>{note}</span> : null}
 			</div>
 			{children}
 		</section>
@@ -483,6 +514,19 @@ export function ReferenceShelf() {
 		if (v !== "polyomino") next.polyominoOrder = undefined;
 		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
 		if (v !== "islamic") next.islamicSystem = undefined;
+		// The freedraw tile-kind facet only means something inside the freedraw class — drop it otherwise.
+		if (v !== "freedraw") next.freedrawKind = undefined;
+		if (v === "freedraw") {
+			// Freedraw faces are not tiles in the Grünbaum & Shephard sense, so none of the uniform-tiling
+			// classification applies: no M/partition, no star folds, no α-family, no wallpaper group or lattice.
+			next.mValue = undefined;
+			next.partitionKey = undefined;
+			next.maximalOnly = undefined;
+			next.starFolds = undefined;
+			next.parametric = undefined;
+			next.wallpaperGroups = undefined;
+			next.latticeShapes = undefined;
+		}
 		if (v === "islamic") {
 			// The Islamic tessellations carry no m/partition/wallpaper/star-fold classification yet.
 			next.starFolds = undefined;
@@ -513,6 +557,8 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, polyominoOrder: v === "all" ? undefined : v });
 	const setIslamicSystem = (v: "all" | IslamicSystem) =>
 		setFilters({ ...filters, islamicSystem: v === "all" ? undefined : v });
+	const setFreedrawKind = (v: "all" | FreedrawKind) =>
+		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
 
 	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
 	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
@@ -645,20 +691,26 @@ export function ReferenceShelf() {
 	const selectedLattice = filters.latticeShapes?.[0];
 
 	const tileClass = filters.tileClass ?? "all";
-	// The convex-irregular + isotoxal demo shelves carry no m/partition/wallpaper/star-fold classification.
-	const isDemo = tileClass === "convex" || tileClass === "isotoxal";
+	// Classes carrying NO vertex-configuration classification — no M/partition, no star folds, no wallpaper
+	// group or lattice. The convex-irregular + isotoxal demo shelves (their builds don't compute it) and
+	// freedraw (whose faces aren't tiles in the Grünbaum & Shephard sense, so none of that theory applies).
+	const isUnclassified = tileClass === "convex" || tileClass === "isotoxal" || tileClass === "freedraw";
 	// Tile class, M/partition, star, lattice, and wallpaper group are all Euclidean-only — a hyperbolic
 	// {p,q} or spherical Platonic tiling has no wallpaper group, no lattice, no star fold. Off the plane
 	// only k, discoverer, certification, and search survive.
-	const showM = isEuclidean && filters.kValue != null && !isDemo;
-	const showStar = isEuclidean && tileClass !== "regular" && !isDemo && availableFolds.length > 0;
-	const showGroup = isEuclidean && tileClass !== "star" && !isDemo && availableGroups.length > 0;
-	const showLattice = isEuclidean && tileClass !== "star" && !isDemo && availableShapes.length > 0;
+	const showM = isEuclidean && filters.kValue != null && !isUnclassified;
+	const showStar = isEuclidean && tileClass !== "regular" && !isUnclassified && availableFolds.length > 0;
+	const showGroup = isEuclidean && tileClass !== "star" && !isUnclassified && availableGroups.length > 0;
+	const showLattice = isEuclidean && tileClass !== "star" && !isUnclassified && availableShapes.length > 0;
 	const showConvex = tileClass === "convex";
 	const showIsotoxalShape = tileClass === "isotoxal";
 	const showScaledScaleSet = tileClass === "scaled";
 	const showPolyominoOrder = tileClass === "polyomino";
 	const showIslamicSystem = tileClass === "islamic";
+	const showFreedrawKind = tileClass === "freedraw";
+	// Freedraw's k counts GRID-POINT orbits of the decoration, not vertex orbits of a tiling. It shares the
+	// axis so the two are browsable together; the heading is what keeps them from reading as one quantity.
+	const kGroupTitle = showFreedrawKind ? "Grid-point orbits (k)" : "Vertex count (k)";
 
 	const activeFilterCount =
 		// Euclidean is the default, so it doesn't read as an active filter; hyperbolic/spherical do.
@@ -670,6 +722,7 @@ export function ReferenceShelf() {
 		(filters.scaledScaleSet ? 1 : 0) +
 		(filters.polyominoOrder ? 1 : 0) +
 		(filters.islamicSystem ? 1 : 0) +
+		(filters.freedrawKind ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -702,9 +755,9 @@ export function ReferenceShelf() {
 				    so the 1px gaps between them are the only rules, and the diamonds fall out wherever
 				    a vertical gap crosses a horizontal one — which in a grid of option cells is
 				    everywhere. Same mechanism as the /play catalogue (globals.css, .ta-wall). */}
-				<div className="ta-wall ta-wall-dense flex flex-col gap-px text-sm">
+				<div className="ta-wall ta-wall-dense flex flex-col gap-px pb-4 text-sm">
 					<div className="ta-wall-cell bg-surface-chrome flex h-9 items-center justify-between px-3">
-						<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
+						<span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">Filters</span>
 						{activeFilterCount > 0 ? (
 							<button
 								onClick={() => setFilters({ geometry: "euclidean" })}
@@ -719,7 +772,7 @@ export function ReferenceShelf() {
 						value={filters.query ?? ""}
 						onChange={(e) => setFilters({ ...filters, query: e.target.value })}
 						placeholder="Search id or family…"
-						className="ta-wall-cell bg-surface-chrome w-full px-3 py-2 text-xs text-fg placeholder:text-fg-disabled focus:outline-none focus:bg-surface-raised"
+						className="ta-wall-cell bg-surface-chrome w-full px-3 py-2 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:bg-surface-raised"
 					/>
 
 					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
@@ -761,9 +814,9 @@ export function ReferenceShelf() {
 								selected={filters.isotoxalShape ?? "all"}
 								onChange={setIsotoxalShape}
 							/>
-							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
+							<GroupNote>
 								How many of the tile’s angles flex independently.
-							</p>
+							</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -779,9 +832,9 @@ export function ReferenceShelf() {
 								selected={filters.scaledScaleSet ?? "all"}
 								onChange={setScaledScaleSet}
 							/>
-							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
+							<GroupNote>
 								Sides 1–2 is the former Doubled class; 1–3 adds a side-3 tile.
-							</p>
+							</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -797,9 +850,9 @@ export function ReferenceShelf() {
 								selected={filters.polyominoOrder ?? "all"}
 								onChange={setPolyominoOrder}
 							/>
-							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
+							<GroupNote>
 								The seven Tetris pieces. More polyomino families to come.
-							</p>
+							</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -815,13 +868,28 @@ export function ReferenceShelf() {
 								selected={filters.islamicSystem ?? "all"}
 								onChange={setIslamicSystem}
 							/>
-							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
+							<GroupNote>
 								The underlying tessellation’s tile set. Toggle the Islamic construction in Play to see the strapwork.
-							</p>
+							</GroupNote>
 						</FilterGroup>
 					) : null}
 
-					<FilterGroup title="Vertex count (k)" summary={filters.kValue ?? null}>
+					{showFreedrawKind ? (
+						<FilterGroup title="Tile kind" summary={filters.freedrawKind ?? null} note="faces of the edge set">
+							<OptionWall
+								columns={2}
+								options={FREEDRAW_KIND_OPTIONS}
+								selected={filters.freedrawKind ?? "all"}
+								onChange={setFreedrawKind}
+							/>
+							<GroupNote>
+								A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino, an
+								infinite strip, or a sheet unbounded in both directions.
+							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					<FilterGroup title={kGroupTitle} summary={filters.kValue ?? null}>
 						<OptionWall
 							columns={6}
 							options={[
@@ -832,8 +900,8 @@ export function ReferenceShelf() {
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
 						/>
 						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
-						    the plane. */}
-						{isEuclidean ? (
+						    the plane, and none for freedraw (whose k isn't a vertex-orbit count at all). */}
+						{isEuclidean && !showFreedrawKind ? (
 							<OptionWall
 								columns={1}
 								options={[{ value: "maximal", label: "Maximal (M = k)" }]}
@@ -841,10 +909,15 @@ export function ReferenceShelf() {
 								onChange={toggleMaximal}
 							/>
 						) : null}
-						{tileClass === "convex" && kChips.some((k) => k >= 3) ? (
-							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">k ≥ 3 loads on demand.</p>
+						{showFreedrawKind ? (
+							<GroupNote>
+								Orbits of GRID POINTS under the pattern&apos;s own symmetry group — including points with no
+								drawn edge. Not vertex orbits of a tiling.
+							</GroupNote>
+						) : tileClass === "convex" && kChips.some((k) => k >= 3) ? (
+							<GroupNote>k ≥ 3 loads on demand.</GroupNote>
 						) : kChips.some((k) => k >= 8) ? (
-							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
+							<GroupNote>k ≥ 8 loads on demand.</GroupNote>
 						) : null}
 					</FilterGroup>
 
@@ -921,8 +994,8 @@ export function ReferenceShelf() {
 					{showGroup ? (
 						<FilterGroup
 							title="Wallpaper group"
-							summary={filters.wallpaperGroups?.length ? `${filters.wallpaperGroups.length} sel` : null}
-							note={selectedLattice ? `on ${selectedLattice}` : "regular"}
+							summary={filters.wallpaperGroups?.length ? `${filters.wallpaperGroups.length} selected` : null}
+							note={selectedLattice ? `on ${selectedLattice}` : "all lattices"}
 						>
 							<OptionWall
 								multi

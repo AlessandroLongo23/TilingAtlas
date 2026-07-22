@@ -158,10 +158,10 @@ function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): 
 // (islamic/circle-packing/symmetry) and the other two views keep the p5/analytic paths. One predicate so
 // the React mount gate and the per-frame skipFill decision can never drift.
 function isFlatShaderActive(cfg: {
-	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean; spherical: boolean;
+	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean; spherical: boolean; freedraw: boolean;
 	isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
 }): boolean {
-	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical &&
+	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw &&
 		!cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
 }
 
@@ -314,8 +314,12 @@ export function Canvas({
 	const inversiveSel = useConfiguration((s) => s.inversive);
 	const hyperbolicSel = useConfiguration((s) => s.hyperbolic);
 	const sphericalSel = useConfiguration((s) => s.spherical);
+	// Freedraw draws on its own 2D canvas (components/freedraw-play-canvas.tsx) and carries no polygon cell,
+	// so the flat shader must not mount over it — it would build a patch from the throwaway empty cell.
+	const freedrawSel = useConfiguration((s) => s.freedraw);
 	const euclideanShaderActive = isFlatShaderActive({
 		euclideanShader, inversive: inversiveSel, hyperbolic: hyperbolicSel, spherical: sphericalSel,
+		freedraw: freedrawSel,
 		isIslamic: isIslamicSel, circlePacking: circlePackingSel, showSymmetryElements,
 	});
 	// Islamic PLAIN fill → WebGL IslamicCanvas. Needs its own narrow subscriptions (style/animate) so a
@@ -602,8 +606,8 @@ export function Canvas({
 						rotation: cfg.rotation || 0,
 					},
 				});
-				// The hyperbolic / spherical (and inversive) views paint via their own WebGL overlay; skip the flat grid build.
-				if (!cfg.hyperbolic && !cfg.spherical) ensureTiling();
+				// The hyperbolic / spherical / freedraw (and inversive) views paint via their own overlay; skip the flat grid build.
+				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw) ensureTiling();
 			};
 
 			p5.draw = () => {
@@ -655,7 +659,9 @@ export function Canvas({
 				const inversive = cfg.inversive;
 				const hyperbolic = cfg.hyperbolic;
 				const spherical = cfg.spherical;
-				const skipFlat = inversive || hyperbolic || spherical;
+				// Freedraw is the same deal on a 2D canvas: it paints the pattern itself and there is no polygon
+				// cell to build a flat grid from, so the p5 layer stays blank underneath it.
+				const skipFlat = inversive || hyperbolic || spherical || cfg.freedraw;
 				if (!skipFlat) ensureTiling();
 				// A WebGL overlay now owns the frame, so ensureTiling — the only place that clears canvasError —
 				// no longer runs. Drop any stale error here so a transient flat-canvas error (e.g. the cold-load

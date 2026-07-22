@@ -1,0 +1,10 @@
+{
+  "name": "tri-square",
+  "D": 12,
+  "pinnedLegacy": false,
+  "comment": "The regular palette restricted to triangles and squares. Enumerates the edge-to-edge k-uniform tilings that use only {3, 4}. Built 2026-07-22 as an independent cross-check of Marek's pt_triangles_squares_edges solver: the digon-free (nothing-drawn) solutions of his combined freedraw search ARE exactly these tilings, and he reports 4 / 7 / 17 at k = 1 / 2 / 3. Same mirror-merge convention on both sides (A068599 style), so the counts are directly comparable. See experiments/results/freedraw-pt-run-2026-07-22.md.",
+  "tiles": [
+    { "kind": "regular", "n": 3, "name": "3", "famchar": "3" },
+    { "kind": "regular", "n": 4, "name": "4", "famchar": "4" }
+  ]
+}

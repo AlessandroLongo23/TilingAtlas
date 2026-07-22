@@ -158,6 +158,20 @@ export interface ConfigurationState {
 	// crossings); true = flat ribbons, still 3D solids but coplanar on the sphere (no over/under undulation).
 	sphericalWeaveFlat: boolean;
 
+	// Freedraw view: set true by /play when a freedraw pattern is selected. Swaps the flat p5 render for the
+	// 2D grid renderer (components/freedraw-play-canvas.tsx), which owns its own pan/zoom. While on, the p5
+	// canvas draws nothing (blanked like hyperbolic/spherical). A freedraw pattern has no polygon cell, so
+	// none of the flat overlays — symmetry, fundamental domain, orbits, Islamic, inversive — apply.
+	freedraw: boolean;
+	// Freedraw cell fill: "none" leaves the line art bare, "rank" colours each cell by what KIND of face it
+	// belongs to (finite / strip / unbounded), "orbit" gives every distinct face its own hue.
+	freedrawFill: "none" | "rank" | "orbit";
+	freedrawScaffold: boolean; // thin lines for the whole grid, including the edges that are NOT drawn
+	freedrawVertices: boolean; // dots at grid points coloured by orbit — makes the k-uniformity visible
+	// Period-lattice overlay: tints the fundamental cell and outlines its translates, so the pattern reads
+	// as that one cell stamped out across the plane. See lib/freedraw/render.ts drawLattice.
+	freedrawLattice: boolean;
+
 	// Color params
 	colorParams: ColorParams;
 
@@ -257,6 +271,12 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	sphericalPolyhedron: false,
 	sphericalOrthographic: false,
 	sphericalWeaveFlat: false,
+
+	freedraw: false,
+	freedrawFill: "rank",
+	freedrawScaffold: true,
+	freedrawVertices: false,
+	freedrawLattice: false,
 
 	colorParams: { a: 180, b: 0 },
 

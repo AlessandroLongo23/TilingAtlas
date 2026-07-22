@@ -106,12 +106,16 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		g.ks.map((kk) => {
 			const id = `k:${g.cls}:${kk.k}`;
 			const open = expanded[id];
+			// Freedraw shares the k axis but not its meaning: there k counts GRID-POINT orbits of the
+			// decoration, not vertex orbits of a tiling. Say so on the row rather than letting a bare "k = 2"
+			// imply the two are the same quantity.
+			const kLabel = g.cls === "freedraw" ? `k = ${kk.k} grid points` : `k = ${kk.k}`;
 			return (
 				// The wrapper is what bounds the sticky header: pinned while its own bucket is on screen,
 				// pushed off by the next one. Transparent, so the wall's line colour still fills its gaps.
 				<div key={id} className="flex flex-col gap-px">
 					<TreeRow
-						label={`k = ${kk.k}`}
+						label={kLabel}
 						count={kk.list.length}
 						open={open}
 						depth={single ? 0 : 1}

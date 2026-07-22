@@ -8,6 +8,7 @@ import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
+import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
@@ -395,6 +396,29 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// store flag (canvas.tsx reads it to blank the flat layer) and force off the other render modes so their
 	// now-hidden sidebar controls can't leave a stale render behind. The sphere renderer owns its own input.
 	const isSpherical = !!selected?.spherical;
+	// A freedraw pattern swaps the flat p5 renderer for the 2D grid view. It has no polygon cell at all, so
+	// force off every mode that would try to draw one and every overlay derived from tiles — the Options tab
+	// hides those controls, and this keeps a stale render from surviving the switch.
+	const isFreedraw = !!selected?.freedraw;
+	useEffect(() => {
+		const cfg = useConfiguration.getState();
+		if (isFreedraw) {
+			cfg.set({
+				freedraw: true,
+				hyperbolic: false,
+				spherical: false,
+				inversive: false,
+				circlePacking: false,
+				isTilingRegularOnly: false,
+				isIslamic: false,
+				showSymmetryElements: false,
+				showFundamentalDomain: false,
+				showVertexOrbits: false,
+			});
+		} else if (cfg.freedraw) {
+			cfg.set({ freedraw: false });
+		}
+	}, [isFreedraw, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isSpherical) {
@@ -483,6 +507,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// owns rotation, so the flat overlays don't apply). Both W and B flip it — W = Wireframe, B = Fill,
 			// either key swaps the pair. Intercept before the flat toggles so B here means the spherical fill,
 			// not the global Polygon-fill flag (which is hidden in this view).
+			// Freedraw: O toggles ITS orbit dots (freedrawVertices), not the flat canvas's showVertexOrbits.
+			// Same key, same idea — orbits of whatever the view is actually made of. Intercepted before the
+			// TOGGLES table, which is dead here (a freedraw pattern has no tiles for any of it to act on).
+			if (!!selected?.freedraw && (e.key === "o" || e.key === "O")) {
+				e.preventDefault();
+				const c = useConfiguration.getState();
+				c.set({ freedrawVertices: !c.freedrawVertices });
+				return;
+			}
 			if (!!selected?.spherical && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
@@ -517,7 +550,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				// vertex orbits also need the tiling's exact cell (the sidebar disables the checkbox without
 				// one). Ignore each key where the sidebar hides/disables the control.
 				const isHyperbolic = !!selected?.developed;
+				// A freedraw pattern has no tiles, so EVERY toggle in this table is a dead control there (the
+				// Options tab hides them all and shows the freedraw fill/grid/orbit trio instead).
 				const blocked =
+					!!selected?.freedraw ||
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
 					(field === "showVertexOrbits" && !selected?.exactSource) ||
@@ -602,6 +638,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
 				{isSpherical && selected?.spherical ? (
 					<SphericalCanvas width={size.w} height={size.h} solidId={selected.spherical.solid} />
+				) : selected?.freedraw ? (
+					// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
+					// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
+					<FreedrawPlayCanvas pattern={selected.freedraw} />
 				) : selected?.developed ? (
 					// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
 					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary

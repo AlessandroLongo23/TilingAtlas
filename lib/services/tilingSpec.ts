@@ -7,6 +7,7 @@ import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { ORBIFOLD_SIGNATURE } from "@/lib/classes/symmetry/types";
 import { geometryOf, hyperbolicParams } from "@/lib/services/referenceAtlas";
+import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 
 // Edge- and tile-orbit extraction does not exist yet (AL owns that logic). Until it does, buildTilingSpec
 // leaves both fields null and the card renders a muted "not computed" row. When the extractor lands, fill
@@ -31,11 +32,28 @@ interface BaseSpec extends OrbitCounts {
 	label: string;
 }
 
+// Freedraw facts, present ONLY on a freedraw entry. It stays inside EuclideanSpec rather than becoming a
+// fourth union member because freedraw IS Euclidean — geometryOf says so, and the geometry toggle groups it
+// with the plane. What changes is the vocabulary: `k` counts grid-point orbits (not vertex orbits), and the
+// "tiles" are faces of the drawn edge set, which may be unbounded.
+export interface FreedrawFacts {
+	/** Period lattice in Hermite normal form: (a,0) and (b,d); index a·d. */
+	lattice: { a: number; b: number; d: number };
+	/** Per-face kind counts (finite polyominoes / strips / unbounded sheets / faces with holes). */
+	finite: number;
+	strips: number;
+	unbounded: number;
+	withHoles: number;
+}
+
 export interface EuclideanSpec extends BaseSpec {
 	geometry: "euclidean";
 	wallpaperGroup: string | null; // e.g. "p6m"
 	orbifold: string | null; // Conway signature, e.g. "*632"
 	latticeShape: string | null; // e.g. "hexagonal"
+	// Present iff this is a freedraw pattern. Its presence also RELABELS the orbit section — see
+	// components/tiling-info.tsx — because k means grid points there, not vertices.
+	freedraw: FreedrawFacts | null;
 }
 
 export interface HyperbolicSpec extends BaseSpec {
@@ -149,12 +167,27 @@ export function buildTilingSpec(
 	const orbifold =
 		symmetryData?.orbifold ?? (wallpaperGroup ? ORBIFOLD_SIGNATURE[wallpaperGroup] : null);
 	const latticeShape = symmetryData?.latticeShape ?? selected.latticeShape ?? null;
+	// Freedraw: the face analysis IS the tile data (there is no vertex configuration and no wallpaper
+	// classification), so `faceOrbits` gets a real value here instead of the flagged "not computed".
+	const p = selected.freedraw;
+	const stats = p ? summarise(analyseFaces(p)) : null;
 	return {
 		geometry: "euclidean",
 		label: selected.family,
 		wallpaperGroup,
 		orbifold,
 		latticeShape,
+		freedraw:
+			p && stats
+				? {
+						lattice: { a: p.a, b: p.b, d: p.d },
+						finite: stats.finite,
+						strips: stats.strips,
+						unbounded: stats.unbounded,
+						withHoles: stats.withHoles,
+					}
+				: null,
 		...base,
+		faceOrbits: stats ? stats.faceOrbits : base.faceOrbits,
 	};
 }

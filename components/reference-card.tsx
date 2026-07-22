@@ -5,11 +5,13 @@ import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
+import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import {
 	compactVertexConfig,
+	freedrawStatsOf,
 	isMaximal,
 	partitionKeyOf,
 	starFoldsOf,
@@ -44,6 +46,8 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 	const isConvex = tileClassOf(tiling) === "convex";
 	const isIsotoxal = tileClassOf(tiling) === "isotoxal";
 	const isMixed = tileClassOf(tiling) === "mixed";
+	const isFreedraw = !!tiling.freedraw;
+	const freedrawStats = freedrawStatsOf(tiling);
 	const folds = tileClassOf(tiling) === "star" || isMixed ? starFoldsOf(tiling) : [];
 	const partitionKey = partitionKeyOf(tiling);
 	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
@@ -86,12 +90,16 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 			<div className="relative aspect-square bg-surface-raised">
 				{tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
+				) : tiling.freedraw ? (
+					<FreedrawThumbnail pattern={tiling.freedraw} />
 				) : tiling.developed ? (
 					<HyperbolicDevelopedThumbnail patch={tiling.developed.patch} />
 				) : (
 					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
 				)}
-				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical ? (
+				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
+				    along with the two non-Euclidean renderers. */}
+				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw ? (
 					<button
 						type="button"
 						onClick={handleScreenshot}
@@ -167,6 +175,37 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 							Mixed
 						</span>
 					) : null}
+					{/* Freedraw kind chips: what the faces ARE. A strip or an unbounded sheet is the whole point
+					    of the class — these are not tiles in the Grünbaum & Shephard sense — so they get a
+					    badge rather than being buried in the sub-line. */}
+					{isFreedraw && freedrawStats ? (
+						<>
+							{freedrawStats.strips > 0 ? (
+								<span
+									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
+									title="Contains a tile that is an infinite strip"
+								>
+									strip
+								</span>
+							) : null}
+							{freedrawStats.unbounded > 0 ? (
+								<span
+									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
+									title="Contains a tile unbounded in both directions"
+								>
+									∞
+								</span>
+							) : null}
+							{freedrawStats.withHoles > 0 ? (
+								<span
+									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
+									title="Contains a polyomino with holes"
+								>
+									holes
+								</span>
+							) : null}
+						</>
+					) : null}
 					{tiling.preview ? (
 						<span className="inline-flex items-center border border-dashed border-line-strong bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted" title="from a still-running solve — partial">
 							preview
@@ -204,6 +243,24 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 						</p>
 						<p className="text-[10px] text-fg-muted leading-tight">
 							k={tiling.k} · {TILE_CLASS_LABEL[tileClassOf(tiling)].short}
+						</p>
+					</>
+				) : isFreedraw ? (
+					// Freedraw: the face composition is the headline (there is no vertex configuration to name it
+					// by), and k is spelled out as grid-point orbits — the same axis as everywhere else, a
+					// different quantity. See ReferenceTiling.freedraw.
+					<>
+						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
+							{tiling.discoverer}
+						</p>
+						<p className="text-xs text-fg-secondary font-mono leading-tight" title={tiling.family}>
+							{tiling.family}
+						</p>
+						<p className="text-[10px] text-fg-muted leading-tight" title="grid-point orbits of the decoration, not vertex orbits of a tiling">
+							k={tiling.k} grid-point orbits
+						</p>
+						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
+							{tiling.id}
 						</p>
 					</>
 				) : (

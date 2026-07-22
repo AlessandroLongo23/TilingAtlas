@@ -27,4 +27,10 @@ describe("polygonClassSupportsIslamic — open to every flat class", () => {
 	it("excludes hyperbolic (its developed Poincaré-disk renderer has no Islamic construction)", () => {
 		expect(polygonClassSupportsIslamic({ family: "{7,3}", source: "hyperbolic" })).toBe(false);
 	});
+
+	// The Hankin construction needs a tile: vertices, edge midpoints, a centroid, inward normals. A freedraw
+	// face has none of those — it can be an infinite strip or an annulus — so there is nothing to run it on.
+	it("excludes freedraw (its faces are not tiles — no vertices, no centroid)", () => {
+		expect(polygonClassSupportsIslamic({ family: "1 strip", source: "freedraw" })).toBe(false);
+	});
 });

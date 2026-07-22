@@ -11,6 +11,10 @@ import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 // tilings run the same construction with geodesic rays (Kaplan & Salesin 2004, absolute geometry),
 // baked over the Dirichlet domain by lib/render/hyperbolicIslamic.ts for the per-pixel renderer.
 // Kept as a function (not a constant) so a future class can opt out without touching call sites.
-export function polygonClassSupportsIslamic(_t: { family: string; source?: ReferenceTiling["source"] }): boolean {
-	return true;
+//
+// Freedraw is the one class that DOES opt out. The construction needs tiles — vertices, edge midpoints, a
+// centroid, inward normals — and a freedraw face has none of that: it can be an infinite strip or an
+// annulus, with no vertex list and no centroid. There is nothing for Hankin to run on.
+export function polygonClassSupportsIslamic(t: { family: string; source?: ReferenceTiling["source"] }): boolean {
+	return t.source !== "freedraw";
 }

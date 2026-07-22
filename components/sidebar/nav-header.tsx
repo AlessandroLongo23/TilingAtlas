@@ -40,8 +40,11 @@ export function NavHeader({ selected, count, onRandom, onPrev, onNext }: NavHead
 			<div className={cn(CELL, "px-3 py-2.5 flex flex-col gap-1")}>
 				{selected ? (
 					<>
+						{/* Freedraw's k counts grid-point orbits, not vertex orbits — spelled out so the shared
+						    axis never reads as the same quantity. */}
 						<span className="text-xs font-mono text-fg-secondary" title={`{${selected.family}}`}>
-							k={selected.k} · {TILE_CLASS_LABEL[tileClassOf(selected)].long}
+							k={selected.k}
+							{selected.freedraw ? " grid pts" : null} · {TILE_CLASS_LABEL[tileClassOf(selected)].long}
 						</span>
 						<span className="text-[10px] font-mono text-fg-disabled truncate" title={selected.canonicalKey}>
 							{selected.canonicalKey}

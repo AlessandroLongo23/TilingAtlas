@@ -1349,3 +1349,10 @@ tiling — dodecagon doors into Play/Library/Theory/Parquet (+2 reserved), hexag
 deep-linked into /play, date-seeded tiling of the day, spherical/hyperbolic caps, live counts
 (4,596/59/40). Spec + plan in docs/superpowers/{specs,plans}/2026-07-21-landing-atlas-wall*;
 narrative in DEVELOPMENT_NOTES §72.
+
+**2026-07-22 — CC.** Freedraw is a tile class now: Marek's 166 patterns (13 at k=1, 153 at k=2) browse
+in /library and /play beside every other tiling, Euclidean, after Islamic, faceted by tile kind
+(finite / strip / unbounded / holes). No polygon cell, so they route to a fourth canvas the way
+hyperbolic/spherical do, and they are the first class to opt out of the Islamic gate. Their k counts
+GRID-POINT orbits, not vertex orbits — relabelled at every surface, never silently shared. Standalone
+/freedraw kept, hidden from the header. Narrative in DEVELOPMENT_NOTES §77.

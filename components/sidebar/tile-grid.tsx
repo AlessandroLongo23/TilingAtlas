@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
+import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
@@ -212,6 +213,8 @@ function Tile({
 			<div className="relative aspect-square bg-surface-raised">
 				{t.spherical ? (
 					<SphericalThumbnail solidId={t.spherical.solid} />
+				) : t.freedraw ? (
+					<FreedrawThumbnail pattern={t.freedraw} />
 				) : t.developed ? (
 					<HyperbolicDevelopedThumbnail patch={t.developed.patch} />
 				) : t.renderCell ? (
