@@ -4893,3 +4893,125 @@ unshareable link. `907fba4` is the buildable snapshot of both strands; they coul
 because `faces.ts` does not compile without `pattern.ts`.
 
 Spec: `docs/superpowers/specs/2026-07-22-freedraw-tile-filter-design.md`.
+
+## §80 — Vertex configuration is not an identifier in H², and two wrong tools before the right one (2026-07-22)
+
+AL, reading the hyperbolic shelf: "you have (6.4.4.4) with k=2, but only one with k=1; there are two.
+The 3.7.3.7 tiling is missing (?)". First claim correct, second not: `hyp-3-7-3-7` shipped in `9b1e643`.
+The first one exposed two shipping bugs and, on the way, two of my own that are worth more than the fixes.
+
+**Bug 1, real: the export deduped by vertex configuration.** `export_hyperbolic_atlas.py` kept, per
+canonical config, the map that developed fullest. That is a Euclidean reflex. In E² the vertex figure
+all but determines the tiling; in H² it does not, and the whole shelf is H². The engine had found two
+distinct maps for 4.4.4.6 and shipped one. Settled by minimal Delaney–Dress symbol (below): 4.4.4.6
+carries **two distinct 1-uniform tilings** (minimal symbols of size 4 and 8) plus a k=2 tiling with the
+same figure. AL was right.
+
+**Bug 2, real: the tileability gate is a size filter wearing a validity filter's clothes.** It measures
+the patch developed to boundR=0.95 and demands 40 faces. That disk holds 24 faces of {8,3} and FOUR of
+{8,4}: the regular tilings fail their own atlas's admission test, and only reach the shelf because the
+`hyp-r*` single-tile runs used `--min-faces 30` and the shipped patches were baked at a kinder radius.
+Twelve sampled records the gate rejects were re-developed to 0.995: all twelve fill the disk and pass
+`check_patch` (every edge exactly ℓ, every face a regular polygon). `hyp-p7` yields 1547 developed k=1
+records and the gate passes 39. Whatever the shelf's contents are, they are not "the tilings".
+
+**Wrong tool 1: the quotient darts are an orbifold quotient, not the tiling.** The obvious dedup key
+looked like the `{rneig, glue, lvert}` arrays. They collide: 6.4.6.4 and 6.4.6.4.6.4 have byte-identical
+dart structures (`rneig=[1,0], glue=[1,0], lvert=[4,6]`). The quotient records the rneig cycle, not how
+many times the vertex wraps before closing, and the wrap count is exactly what separates those two.
+Anything keyed on the darts alone silently merges them.
+
+**Wrong tool 2, and the one that cost the session: canonical r-ball codes over the developed patch.**
+Build the patch as a map, BFS-label every dart within distance r of a root under (σ = step round the
+vertex, α = cross the edge), minimise over root darts and both orientations. It looked airtight and it
+passed real regressions: all 42 shipped k=1 entries yield exactly one code at every radius (root
+independence), one record developed to 0.99/0.995/0.998 gives code sets in subset relation at every
+shared radius, and the rigid tilings never split (18 regular {p,q} and 10 Wythoffian each appeared once).
+On the strength of that I claimed four shipped k=2 entries really had ≥3 vertex orbits, and that the
+palette holds 2595 distinct tilings. **Both were wrong.** The minimal D-symbol says true k equals the
+shipped label for all 58 entries that compute, `hyp-k2-4-4-4-6__4-4-4-6` included. The ball codes
+distinguish balls that are in fact isomorphic, so they over-count orbits and over-split tilings; the
+2595 collapses by an unknown factor. AL caught it from the shape of the output, not the method: one
+vertex figure carrying 283 "distinct k=1 tilings" is not credible, and k=2 (208) below k=1 (2081) is
+backwards against the Euclidean series 11/20/61/151/332/673.
+
+**The lesson, since the regressions did not catch it.** Root independence and depth consistency both
+test the invariant against ITSELF. Neither asks whether two different presentations of one tiling agree,
+which is the only property that matters for dedup. The repo's own Euclidean run had the counterexample
+in it the whole time: 93 naive k=1 D-symbol candidates collapse to exactly 11 = A068599(1) under minimal
+image (`experiments/delaney-dress/FINDINGS.md`). Sub-symmetry encodings are the normal case, not an edge
+case, and any identity that has a radius in it will fail on them somewhere.
+
+**Right tool: the minimal Delaney–Dress symbol, already in the repo and already validated.**
+`experiments/delaney-dress/dsymbol.py` (axioms DS0–DS4, Algorithm-8 canonical form, `vertex_orbits`,
+curvature) plus the minimal-image partition refinement. Its minimal image is the tiling under its FULL
+symmetry group, so the {1,2}-orbit count is k exactly, not a lower bound, and the canonical form is a
+complete isomorphism invariant with no radius anywhere. `tools/ctrnact-oracle/dsymbol_from_darts.py`
+builds the symbol from a block: chambers are (dart, side), σ2 swaps the side, σ1 steps to `rneig`, σ0
+crosses via `glue`, `m01` is the face size and **`m12` is the tiling's valence, not the quotient cycle
+length** — which is precisely what tells 6.4.6.4 from 6.4.6.4.6.4, recovered by matching the quotient's
+face-size cycle against the block's orbit configs. Axiom DS4 (m a positive-integer multiple of the cycle
+length) IS the wrap count. Two required details: restrict to the seed component first, because blocks
+carry darts the developer never reaches and a symbol over the whole array fails DS0; and the symbol built
+this way is deliberately non-minimal, so `minimal_image` is not optional. Verified shape: single chamber
+for regular {p,q}, 2 for quasiregular, 3–4 for truncated, 58 distinct minimal forms over the 59 shipped
+with no collisions.
+
+**Also recorded, independent of all the above: `develop_patch` does not test injectivity.** It keys an
+instance on (quotient dart, position, heading), so it dedups a dart against ITSELF at a repeated frame
+but keeps two DIFFERENT darts landing on one frame. Nothing upstream rejects that fold; `check_patch`
+only validates edge lengths, face regularity and in-disk. A separate angle-sum test (incident face angles
+at every vertex must total exactly 2π, since the position-keyed vertex dedup merges the two sheets and
+inflates the sum) found zero folds in 1461 p7 records, so the gap is theoretical here, but the docstring
+claim that a clean return means an embedding is false. A fold whose sheets are misaligned stays invisible
+to that test too.
+
+**Shipped: nothing.** `public/reference-atlas-hyperbolic.json` and `public/hyperbolic-developed.json` are
+back at the 59. A 2595-entry rebuild was written and reverted once the count proved unsound.
+
+**Open.** (1) Rebuild identity and k on minimal D-symbols and re-count; the honest number for the palette
+is unknown. (2) `canonical_form`/`validate` times out on 1 of 59 symbols, so it needs a faster path before
+a 6000-block run. (3) Scope inconsistency to fix while re-counting: k=1 came from `hyp-p7` = {3..8} while
+k≥3 came only from the `hyp-k2` probe = {3,4,6} with its develop capped at 25000 of 51573 pruned blocks,
+so counts across k are not comparable. (4) If the shelf ever ships at scale, the catalogue must carry the
+quotient darts and not baked geometry: every renderer already re-develops from the darts, and at ~1000
+tilings the baked vertices are a 10 MB eager fetch against 0.2 MB.
+
+Log: `experiments/results/hyperbolic-identity-2026-07-22.log`. The ball-code module
+`tools/ctrnact-oracle/hyperbolic_identity.py` is kept as the characterised failure, not as the method.
+
+## §81 — Freedraw grows two grids: the certificate decoder replaces enumeration (2026-07-22)
+
+Marek cannot emit bitmasks or SVG from his PT solver; what he emits is the certificate (Conway
+half-edge notation, the same ancestry as our oracle's pruner). So the atlas now reads the
+certificate directly. `tools/ctrnact-oracle/develop_freedraw.py` parses the site-symmetry-folded
+vertex-figure tables (chiral sites carry a starred copy block, mirrored sites star-label partners
+in place, the mirror axis found by the corner condition, wrong axes self-destruct), builds the glue
+map the way `pruner.py` does, and develops by the star-walk BFS keyed on (half-edge, direction).
+About 1 ms per solution against 189 ms for the enumerator: the decoder is O(certificate), and for
+the combined grid it is the only route at all.
+
+Square and triangle grids emit bitmasks on their fixed lattice; triangle cells are tripled-centroid
+encoded so D6 acts linearly and the pose/shape classifier stays grid-agnostic. The combined
+triangles+squares grid has no lattice, which is the reason this decoder exists: positions are exact
+Z[zeta12] 4-tuples, the period lattice is Gauss-reduced from key revisits, and the placed keys
+themselves form the quotient cell complex whose face walk emits explicit per-period patches
+(vertices, edges, polygon rings) that a new patch renderer instances over an arbitrary T1/T2 basis.
+Two failures worth keeping: the seed vertex's own star registered as a clash until `expanded[pos]`
+moved after the star loop, and torus Euler "failed" at V−E+F=−2 until digons were counted (each
+drawn geometric edge is two tiling edges plus one digon face).
+
+Validation is bijective wherever Marek's own outputs exist: square 1420/1420 at k≤3, square k=4
+7848/7848, triangle 5059/5059, combined 18201/18201 with glue completeness, face closure and torus
+Euler holding on every solution. The one external anchor for the combined grid: its digon-free
+slice is 4/7/17, exactly the known uniform and k-uniform square-triangle tilings, with correct
+geometry. Certification follows the evidence: square k≤3 and triangle k=1 stay "reproduced"
+(independently enumerated here), everything decode-only ships as "candidate".
+
+Surfaced everywhere (`e4a9e37`): /library gains a Grid facet above Tile kind, the /play catalogue
+tree gains a grid level inside the freedraw class (class, then grid, then k: the only depth-2
+path), family labels say polyomino / polyiamond / polyform by grid, and /freedraw joins the header
+nav (AL's call, reversing §77's "hidden"). 32,528 patterns across three grids. ts-solutions-k3.json
+is 19.8 MB, committed on AL's instruction; regenerable in about 20 s from the certificates.
+
+Log: `experiments/results/freedraw-notation-decode-2026-07-22.md`.

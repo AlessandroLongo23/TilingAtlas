@@ -1369,3 +1369,16 @@ Marek's "filter out infinite cells" and AL's "tetrominoes only" in one selection
 Size chips derive from the grid+k slice, since sizes are gappy (square k=4 runs 2–8 then 12–14).
 Filter state is a shareable link. Killed a k≤3 coincidence on the way: equal-area ≠ monohedral, first
 counterexample `fd-4-2524`. NOTES §79, spec `2026-07-22-freedraw-tile-filter-design.md`.
+
+**2026-07-22 — CC → AL/TA.** AL spotted that 4.4.4.6 has two 1-uniform hyperbolic tilings while the
+atlas showed one. Confirmed by minimal Delaney–Dress symbol: the export deduped by vertex CONFIGURATION,
+which identifies a tiling in E² and does not in H². Second bug: the tileability gate measures a
+boundR=0.95 patch and demands 40 faces, but that disk holds 4 faces of {8,4}, so it rejects genuine
+tilings including the regulars. Two of my own identity methods failed first, including a retracted
+2595-tiling count. Nothing shipped, atlas still 59. NOTES §80.
+
+**2026-07-22 — CC.** The freedraw shelf spans three grids now: Marek's certificates decode straight
+to geometry (`develop_freedraw.py`), adding square k=4, the triangle grid, and the combined
+triangles+squares grid as exact ℤ[ζ₁₂] patches — 32,528 patterns, bijective against every slice
+Marek enumerated, digon-free combined slice = the known 4/7/17. Decode-only slices ship as
+"candidate". /freedraw joins the header (`e4a9e37`). NOTES §81.
