@@ -5,11 +5,13 @@ import {
 	DEFAULT_FILTER,
 	matches,
 	parseFilter,
+	regularActive,
 	serializeFilter,
 	sizeOptions,
 	type FreedrawFilter,
 } from "./filter";
 import type { FreedrawPattern } from "./pattern";
+import { classifyRegular, type RegularInfo } from "./regular";
 
 /** A summary standing in for a pattern, so the predicate can be tested without building a tiling. */
 const stats = (over: Partial<FaceSummary> = {}): FaceSummary => ({
@@ -117,6 +119,34 @@ describe("sizeOptions", () => {
 	});
 });
 
+describe("matches — the regular-polygon axes", () => {
+	// A minimal RegularInfo stub; matches() only reads kinds / allRegular / allUnit.
+	const reg = (kinds: number[], allRegular: boolean, allUnit: boolean) =>
+		({ perFace: [], kinds: new Set(kinds), allRegular, allUnit }) as unknown as RegularInfo;
+	const s = stats({ finite: 1, sizes: [1] });
+
+	it("requires and excludes individual polygons", () => {
+		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } }), reg([3, 6], true, true))).toBe(true);
+		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } }), reg([3, 4], true, true))).toBe(false);
+		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 4: "exclude" } }), reg([3, 6], true, true))).toBe(true);
+		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 4: "exclude" } }), reg([3, 4], true, true))).toBe(false);
+	});
+
+	it("gates on regularity", () => {
+		expect(matches(s, filter({ regularity: "unit" }), reg([3], true, true))).toBe(true);
+		expect(matches(s, filter({ regularity: "unit" }), reg([3], true, false))).toBe(false);
+		expect(matches(s, filter({ regularity: "regular" }), reg([4], true, false))).toBe(true);
+		expect(matches(s, filter({ regularity: "regular" }), reg([], false, false))).toBe(false);
+	});
+
+	it("needs RegularInfo when an axis is active, and ignores it otherwise", () => {
+		// No RegularInfo but a polygon required -> cannot pass.
+		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 3: "require" } }))).toBe(false);
+		// No regular axes -> the summary-only call still works.
+		expect(matches(s, filter({ finite: "require" }))).toBe(true);
+	});
+});
+
 describe("URL codec", () => {
 	const round = (f: FreedrawFilter) => parseFilter(new URLSearchParams(serializeFilter(f)));
 
@@ -128,6 +158,9 @@ describe("URL codec", () => {
 			filter({ unbounded: "require", strip: "exclude", finite: "require", holes: "exclude" }),
 			filter({ finite: "require", sizes: [4, 5, 12], sizeMode: "any" }),
 			filter({ grid: "triangle", k: 2, strip: "exclude", finite: "require", sizes: [6] }),
+			filter({ grid: "ts", regularity: "unit" }),
+			filter({ grid: "ts", regularity: "regular", polygons: { 3: "require", 4: "any", 6: "require", 12: "exclude" } }),
+			filter({ grid: "ts", polygons: { 3: "exclude", 4: "require", 6: "any", 12: "require" } }),
 		];
 		for (const f of cases) expect(round(f)).toEqual(f);
 	});
@@ -164,8 +197,14 @@ const load = (file: string): FreedrawPattern[] | null =>
 		? (JSON.parse(readFileSync(`${CATALOGUE}/${file}`, "utf8")) as FreedrawPattern[])
 		: null;
 
-const count = (patterns: FreedrawPattern[], f: Partial<FreedrawFilter>) =>
-	patterns.filter((p) => matches(summarise(analyseFaces(p)), filter(f))).length;
+const count = (patterns: FreedrawPattern[], f: Partial<FreedrawFilter>) => {
+	const full = filter(f);
+	return patterns.filter((p) => {
+		const a = analyseFaces(p);
+		const reg = regularActive(full) ? classifyRegular(p, a) : undefined;
+		return matches(summarise(a), full, reg);
+	}).length;
+};
 
 describe("the shipped catalogue", () => {
 	const square = load("solutions.json");
@@ -204,5 +243,46 @@ describe("the shipped catalogue", () => {
 				count(all, { strip: "require" }) +
 				count(all, { strip: "exclude", unbounded: "require" }),
 		).toBe(all.length);
+	});
+});
+
+describe("the combined-grid catalogue — regular-polygon filter", () => {
+	const ts = [load("ts-solutions-k1.json"), load("ts-solutions-k2.json"), load("ts-solutions-k3.json")];
+	const have = ts.every(Boolean);
+	const all = have ? (ts.flat() as FreedrawPattern[]) : [];
+	const only = (n: number): Partial<FreedrawFilter> => {
+		const polygons = { ...DEFAULT_FILTER.polygons };
+		for (const m of [3, 4, 6, 12] as const) polygons[m] = m === n ? "require" : "exclude";
+		return { regularity: "unit", polygons };
+	};
+
+	it.skipIf(!have)("counts every edge-to-edge tiling by regular polygons", () => {
+		// 4 + 10 + 22 across k = 1..3, measured against the corrected boundary walk.
+		expect(count(all, { regularity: "unit" })).toBe(36);
+	});
+
+	it.skipIf(!have)("admits dilations when regularity is 'regular', not 'unit'", () => {
+		// allRegular is 4 + 11 + 27; the extra 5 over allUnit are the side-2 and mixed-scale tilings.
+		expect(count(all, { regularity: "regular" })).toBe(42);
+	});
+
+	it.skipIf(!have)("isolates the honeycomb as the only all-hexagon tiling", () => {
+		expect(count(all, only(6))).toBe(1);
+	});
+
+	it.skipIf(!have)("reproduces the tri-square oracle on the squares+triangles slice", () => {
+		// Edge-to-edge, no hexagon, no dodecagon: every tile is a unit triangle or square. This is the
+		// classical k-uniform {3,4} catalogue, so it must match the tri-square oracle palette: 4/7/17.
+		const polygons = { 3: "any", 4: "any", 6: "exclude", 12: "exclude" } as const;
+		expect(count(all, { regularity: "unit", polygons })).toBe(28); // 4 + 7 + 17
+	});
+
+	it.skipIf(!have)("finds no dodecagon anywhere below k=4", () => {
+		expect(count(all, only(12))).toBe(0);
+		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 12: "require" } })).toBe(0);
+	});
+
+	it.skipIf(!have)("counts patterns merely CONTAINING a hexagon, dilations and mixtures included", () => {
+		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } })).toBe(56);
 	});
 });

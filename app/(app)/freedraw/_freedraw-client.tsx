@@ -6,11 +6,12 @@ import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Pagination } from "@/components/ui/pagination";
 import { Switch } from "@/components/ui/switch";
-import { analyseFaces, rankLabel, summarise } from "@/lib/freedraw/faces";
+import { analyseFaces, rankLabel, summarise, type FaceAnalysis } from "@/lib/freedraw/faces";
 import {
 	DEFAULT_FILTER,
 	matches,
 	parseFilter,
+	regularActive,
 	serializeFilter,
 	sizeOptions,
 	type FreedrawFilter,
@@ -18,6 +19,7 @@ import {
 	type Tri,
 } from "@/lib/freedraw/filter";
 import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw/regular";
 import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
 import { cn } from "@/lib/utils/cn";
 
@@ -54,6 +56,19 @@ const SIZE_MODE_OPTIONS: { value: SizeMode; label: string }[] = [
 	{ value: "all", label: "all of" },
 	{ value: "any", label: "any of" },
 ];
+
+// The regular-polygon filter. Every k-uniform tiling dissects onto a triangle/square grid (the octagon
+// excepted — 135° has no such dissection), so these patterns contain the k-uniform tilings as the
+// subfamily where every tile is regular. "unit" is that subfamily exactly (edge-to-edge); "regular"
+// also keeps dilations. Each polygon is a has/none/any chip. The dodecagon needs interior grid points,
+// so it does not appear below freedraw k=4 and its chip is honestly empty on the shipped catalogue.
+const REGULARITY_OPTIONS: { value: FreedrawFilter["regularity"]; label: string }[] = [
+	{ value: "any", label: "any tiles" },
+	{ value: "regular", label: "all regular" },
+	{ value: "unit", label: "k-uniform" },
+];
+
+const POLYGON_LABEL: Record<RegularKind, string> = { 3: "△ 3", 4: "▢ 4", 6: "⬡ 6", 12: "12-gon" };
 
 const FILL_OPTIONS = FILL_MODES.map(({ value, label }) => ({ value, label: label.toLowerCase() }));
 
@@ -118,10 +133,14 @@ export function FreedrawClient() {
 	}, []);
 
 	// Face analysis is cheap (linear in the fundamental domain), so classify the whole catalogue once
-	// and keep the summaries around as the filter/sort keys.
+	// and keep the summaries around as the filter/sort keys. The analysis object is kept too — the
+	// regular-polygon classifier is memoised on it, computed lazily only when a polygon axis is live.
 	const rows = useMemo(() => {
 		if (!all) return [];
-		return all.map((p) => ({ pattern: p, stats: summarise(analyseFaces(p)) }));
+		return all.map((p) => {
+			const analysis = analyseFaces(p);
+			return { pattern: p, stats: summarise(analysis), analysis };
+		});
 	}, [all]);
 
 	// The grid + k slice, which is both what the tile filter runs over and what the size chips are drawn
@@ -138,10 +157,12 @@ export function FreedrawClient() {
 
 	const sizes = useMemo(() => sizeOptions(slice.map((r) => r.stats)), [slice]);
 
-	const shown = useMemo(
-		() => slice.filter(({ stats }) => matches(stats, filter)),
-		[slice, filter],
-	);
+	const shown = useMemo(() => {
+		const needReg = regularActive(filter);
+		return slice.filter(({ stats, pattern, analysis }) =>
+			matches(stats, filter, needReg ? classifyRegular(pattern, analysis) : undefined),
+		);
+	}, [slice, filter]);
 
 	const pageRows = useMemo(
 		() => shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
@@ -202,6 +223,9 @@ export function FreedrawClient() {
 				? filter.sizes.filter((s) => s !== n)
 				: [...filter.sizes, n].sort((a, b) => a - b),
 		});
+
+	const setPolygon = (n: RegularKind, v: Tri) =>
+		update({ polygons: { ...filter.polygons, [n]: v } });
 
 	const resetFilters = () => {
 		setFilter({ ...DEFAULT_FILTER, grid: filter.grid });
@@ -291,6 +315,33 @@ export function FreedrawClient() {
 						)}
 					</div>
 				)}
+
+				{/* Row 2b — the regular-polygon filter. This is the bridge to the classical catalogue: the
+				    "k-uniform" mode keeps only edge-to-edge tilings by regular polygons, and the per-polygon
+				    chips select a composition ("triangles and dodecagons, no squares"). */}
+				<div className="mt-2 flex items-center gap-x-4 gap-y-2 flex-wrap text-sm">
+					<label className="flex items-center gap-2 text-text-secondary">
+						regularity
+						<ButtonGroup
+							options={REGULARITY_OPTIONS}
+							selected={filter.regularity}
+							onChange={(regularity) => update({ regularity })}
+							size="sm"
+						/>
+					</label>
+					<span className="text-text-secondary">polygons</span>
+					{REGULAR_KINDS.map((n) => (
+						<label key={n} className="flex items-center gap-1.5 text-text-secondary">
+							{POLYGON_LABEL[n]}
+							<ButtonGroup
+								options={TRI_OPTIONS}
+								selected={filter.polygons[n]}
+								onChange={(v) => setPolygon(n, v)}
+								size="sm"
+							/>
+						</label>
+					))}
+				</div>
 
 				{/* Row 3 — how it is drawn. */}
 				<div className="mt-2 flex items-center gap-5 flex-wrap text-sm">

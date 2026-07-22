@@ -31,6 +31,7 @@ import {
 	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
 	type Certification,
 	type FreedrawKind,
+	type FreedrawRegular,
 	type Geometry,
 	type ReferenceTiling,
 	type ReferenceFilter,
@@ -137,6 +138,20 @@ const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = 
 	{ value: "ts", label: "Tri + square" },
 ];
 const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
+// Freedraw-shelf regular-polygon facet — the bridge to the classical catalogue. Every k-uniform tiling
+// dissects onto a triangle/square grid (octagon excepted), so "k-uniform" is the subfamily where every
+// tile is an edge-to-edge regular polygon. The full has/none/any composition tool is on /freedraw; the
+// shelf offers the common single-select cases. The dodecagon has no chip: it needs interior grid points
+// and so does not appear below freedraw k=4, absent from the whole shelf catalogue.
+const FREEDRAW_REGULAR_OPTIONS: { value: "all" | FreedrawRegular; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "unit", label: "k-uniform" },
+	{ value: "regular", label: "All regular (+ dilations)" },
+	{ value: "tri", label: "Has a triangle" },
+	{ value: "square", label: "Has a square" },
+	{ value: "hex", label: "Has a hexagon" },
+];
+const FREEDRAW_REGULAR_VALUES = FREEDRAW_REGULAR_OPTIONS.map((o) => o.value).filter((v): v is FreedrawRegular => v !== "all");
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -236,6 +251,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind)) f.freedrawKind = freedrawKind as FreedrawKind;
 	const freedrawGrid = sp.get("fdgrid");
 	if (freedrawGrid && (FREEDRAW_GRID_VALUES as string[]).includes(freedrawGrid)) f.freedrawGrid = freedrawGrid as FreedrawGrid;
+	const freedrawRegular = sp.get("fdreg");
+	if (freedrawRegular && (FREEDRAW_REGULAR_VALUES as string[]).includes(freedrawRegular)) f.freedrawRegular = freedrawRegular as FreedrawRegular;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
 	if (groups?.length) f.wallpaperGroups = groups;
 	const lattices = list("lattice")?.filter((s): s is LatticeShape => (LATTICE_ORDER as string[]).includes(s));
@@ -279,6 +296,7 @@ function serializeView(v: ViewState): string {
 	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
 	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
 	if (f.freedrawGrid) p.set("fdgrid", f.freedrawGrid);
+	if (f.freedrawRegular) p.set("fdreg", f.freedrawRegular);
 	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
 	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
 	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
@@ -527,10 +545,12 @@ export function ReferenceShelf() {
 		if (v !== "polyomino") next.polyominoOrder = undefined;
 		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
 		if (v !== "islamic") next.islamicSystem = undefined;
-		// The freedraw tile-kind and grid facets only mean something inside the freedraw class — drop them otherwise.
+		// The freedraw tile-kind, grid and regular-polygon facets only mean something inside the freedraw
+		// class — drop them otherwise.
 		if (v !== "freedraw") {
 			next.freedrawKind = undefined;
 			next.freedrawGrid = undefined;
+			next.freedrawRegular = undefined;
 		}
 		if (v === "freedraw") {
 			// Freedraw faces are not tiles in the Grünbaum & Shephard sense, so none of the uniform-tiling
@@ -577,6 +597,8 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
 	const setFreedrawGrid = (v: "all" | FreedrawGrid) =>
 		setFilters({ ...filters, freedrawGrid: v === "all" ? undefined : v });
+	const setFreedrawRegular = (v: "all" | FreedrawRegular) =>
+		setFilters({ ...filters, freedrawRegular: v === "all" ? undefined : v });
 
 	// ── multi-select setters (empty ⇒ undefined so the filter clears and the active-count stays honest) ──
 	const toggleIn = <T,>(key: keyof ReferenceFilter, cur: readonly T[], v: T) => {
@@ -742,6 +764,7 @@ export function ReferenceShelf() {
 		(filters.islamicSystem ? 1 : 0) +
 		(filters.freedrawKind ? 1 : 0) +
 		(filters.freedrawGrid ? 1 : 0) +
+		(filters.freedrawRegular ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -931,6 +954,29 @@ export function ReferenceShelf() {
 							<GroupNote>
 								A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino or
 								polyiamond, an infinite strip, or a sheet unbounded in both directions.
+							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					{showFreedrawKind ? (
+						<FilterGroup
+							title="Regular polygons"
+							summary={
+								FREEDRAW_REGULAR_OPTIONS.find((o) => o.value === filters.freedrawRegular)?.label ?? null
+							}
+							note="the k-uniform bridge"
+						>
+							<OptionWall
+								columns={2}
+								options={FREEDRAW_REGULAR_OPTIONS}
+								selected={filters.freedrawRegular ?? "all"}
+								onChange={setFreedrawRegular}
+							/>
+							<GroupNote>
+								Every k-uniform tiling dissects onto a triangle/square grid, so these patterns contain the
+								k-uniform tilings as the case where every tile is a regular polygon. “k-uniform” keeps the
+								edge-to-edge ones; the dodecagon needs a bigger period and appears only above k = 3. For a
+								full has/none/any composition (say triangles and dodecagons, no squares), use /freedraw.
 							</GroupNote>
 						</FilterGroup>
 					) : null}

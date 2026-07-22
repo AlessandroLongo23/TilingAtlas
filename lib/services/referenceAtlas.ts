@@ -5,6 +5,7 @@ import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import { classifyRegular, type RegularKind } from "@/lib/freedraw/regular";
 
 // The Reference (Oracle) shelf — a DISPLAY-ONLY atlas of known k-uniform tilings from the literature,
 // deliberately kept OFF the certified-results catalogue (§0: the site never produces the claim; these
@@ -66,6 +67,11 @@ export interface ReferenceTiling {
 	// info panel, the catalogue tree's k rows) must say "grid points", never "vertices".
 	freedraw?: FreedrawPattern;
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
+	// Hyperbolic shelf: which of the tilings sharing this vertex figure this one is, and how many there
+	// are. In H2 the figure does not determine the tiling — 4.4.6.4.6.6 carries fourteen distinct ones —
+	// so without an index the catalogue shows a run of identically labelled rows. Absent when unique.
+	variant?: number;
+	variants?: number;
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
 	preview?: boolean; // ctrnact-star only: from a PARTIAL (still-running) solve — incomplete, uncertified
@@ -287,6 +293,39 @@ export function matchesFreedrawKind(s: FreedrawStats, kind: FreedrawKind): boole
 	return s.withHoles > 0;
 }
 
+// The freedraw REGULAR-POLYGON facet — the bridge to the classical catalogue. Every k-uniform tiling
+// dissects onto a triangle/square grid (octagon excepted), so the freedraw catalogue contains the
+// k-uniform tilings as the subfamily where every tile is a regular polygon. The single-select shelf
+// facet covers the common questions; the full has/none/any composition tool lives on /freedraw.
+//   "unit"     — every tile an edge-to-edge regular polygon (the classical k-uniform tilings)
+//   "regular"  — every tile regular, dilations allowed
+//   "tri"/"square"/"hex"  — contains at least one such regular tile, at any scale
+export type FreedrawRegular = "unit" | "regular" | "tri" | "square" | "hex";
+interface FreedrawRegularStats {
+	allUnit: boolean;
+	allRegular: boolean;
+	kinds: Set<RegularKind>;
+}
+const freedrawRegularCache = new Map<string, FreedrawRegularStats>();
+
+export function freedrawRegularOf(t: Pick<ReferenceTiling, "id" | "freedraw">): FreedrawRegularStats | null {
+	if (!t.freedraw) return null;
+	const hit = freedrawRegularCache.get(t.id);
+	if (hit) return hit;
+	const r = classifyRegular(t.freedraw, analyseFaces(t.freedraw));
+	const stats = { allUnit: r.allUnit, allRegular: r.allRegular, kinds: r.kinds };
+	freedrawRegularCache.set(t.id, stats);
+	return stats;
+}
+
+export function matchesFreedrawRegular(s: FreedrawRegularStats, facet: FreedrawRegular): boolean {
+	if (facet === "unit") return s.allUnit;
+	if (facet === "regular") return s.allRegular;
+	if (facet === "tri") return s.kinds.has(3);
+	if (facet === "square") return s.kinds.has(4);
+	return s.kinds.has(6); // "hex"
+}
+
 // The freedraw shelf's GRID facet — which lattice the edge subset decorates. One level above the tile
 // kind: first say which board the game is played on, then what the pieces are.
 export function freedrawGridOf(t: Pick<ReferenceTiling, "freedraw">): FreedrawGrid | null {
@@ -372,6 +411,9 @@ export interface ReferenceFilter {
 	// Freedraw shelf sub-class, one level above the kind: which grid the edge subset decorates. Non-freedraw
 	// tilings never match while this is active.
 	freedrawGrid?: FreedrawGrid;
+	// Freedraw shelf facet: keep only patterns that are tilings by regular polygons (the k-uniform
+	// subfamily), or that contain a given regular polygon. Non-freedraw tilings never match while active.
+	freedrawRegular?: FreedrawRegular;
 	// Convex-irregular shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
 	// Any tiling outside that class (decomposableOnly undefined) is EXCLUDED while this is active.
 	convexDecomp?: "decomposable" | "non-decomposable";
@@ -411,6 +453,10 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	}
 	if (f.freedrawGrid) {
 		if (freedrawGridOf(t) !== f.freedrawGrid) return false; // non-freedraw never matches the grid facet
+	}
+	if (f.freedrawRegular) {
+		const r = freedrawRegularOf(t);
+		if (!r || !matchesFreedrawRegular(r, f.freedrawRegular)) return false; // non-freedraw never matches
 	}
 	if (f.convexDecomp) {
 		if (t.decomposableOnly == null) return false; // tilings outside the convex-irregular class never match this facet
