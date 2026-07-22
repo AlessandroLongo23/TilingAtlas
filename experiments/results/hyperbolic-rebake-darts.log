@@ -1,0 +1,27 @@
+=== dart re-bake Mon Jul 20 22:16:18 CEST 2026 ===
+[22:16:18] START hyp-p7 k<=1
+hyperbolic develop report (k=1..1, boundR=0.95)
+blocks in    : 1547
+developed    : 1547
+not developed: 0
+
+hyp-p7 k<=1: raw=1959 pruned=1547 developed=1547  (9s)
+[22:16:27] DONE  hyp-p7  rc=0  cells=1547
+[22:16:27] START hyp-r3 k<=1
+hyperbolic develop report (k=1..1, boundR=0.95)
+blocks in    : 6
+developed    : 6
+not developed: 0
+
+hyp-r3 k<=1: raw=6 pruned=6 developed=6  (3s)
+[22:16:30] DONE  hyp-r3  rc=0  cells=6
+[22:16:30] START hyp-k2 k<=2
+hyperbolic develop report (k=1..2, boundR=0.95)
+blocks in    : 51573
+developed    : 5005
+not developed: 46568
+   46568  no common edge length
+
+hyp-k2 k<=2: raw=114239 pruned=51573 developed=5005  (40s)
+[22:17:10] DONE  hyp-k2  rc=0  cells=5005
+[22:17:10] ALL DONE

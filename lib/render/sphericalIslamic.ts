@@ -15,6 +15,7 @@
 // isometry of the solid). Pure tuple math, no three.js — unit-tested like sphericalGeometry.ts.
 
 import type { Polyhedron, Vec3 } from "./platonicSolids";
+import { resolveRayStops, type RayCrossing } from "@/lib/utils/islamicRayStops";
 
 type V3 = Vec3;
 
@@ -93,6 +94,7 @@ function computeFaceRays(
 	frac: number,
 	nStop: number,
 	eps: number,
+	trim: boolean,
 ): { origins: V3[]; tangents: V3[]; stops: number[]; C: V3 } {
 	// Face centroid direction — the inward side every edge-normal points toward.
 	let c: V3 = [0, 0, 0];
@@ -149,46 +151,69 @@ function computeFaceRays(
 
 	const R = origins.length;
 
-	// Growing-line simulation (1:1 with the flat construction, arc length in place of line length).
-	type Arrival = { time: number; ray: number; partner: number; partnerTime: number };
-	const arrivals: Arrival[] = [];
+	// Boundary great-circle planes of this face, for containing each ray inside its own face. The Islamic
+	// construction is defined per face — a ray belongs to the face it roots in and must not leave it. The
+	// growing-line stop below accepts a forward crossing anywhere out to ~180° of arc, which is fine when the
+	// nearest crossing is a real in-face one, but breaks when two rays are near-parallel great circles: their
+	// only forward crossing is then way across the sphere, and the ray gets drawn to it (the long stray line
+	// seen on the decagonal prism's square band faces at ~38–39°). exitArc caps a ray where it leaves the face
+	// boundary; the clamp below applies it, so a runaway stop is replaced by the in-face chord instead.
+	const bPlane: V3[] = [];
+	const bCos: number[] = [];
+	for (let k = 0; k < nEdges; k++) {
+		const A = unit[face[k]];
+		const B = unit[face[(k + 1) % nEdges]];
+		bPlane.push(normalize(cross(A, B)));
+		bCos.push(dot(A, B));
+	}
+	const exitArc = (i: number): number => {
+		let best = Infinity;
+		for (let k = 0; k < nEdges; k++) {
+			const line = cross(planeN[i], bPlane[k]);
+			if (len(line) < eps) continue; // ray coplanar with this boundary edge — no transversal exit
+			const A = unit[face[k]];
+			const B = unit[face[(k + 1) % nEdges]];
+			for (const sgn of [1, -1] as const) {
+				const X = normalize(scale(line, sgn));
+				const s = signedArc(origins[i], tangents[i], X);
+				if (s <= eps || s >= Math.PI) continue;
+				// X lies on the minor arc A→B iff it is no farther (larger dot) from either endpoint than the
+				// endpoints are from each other — i.e. it does not overshoot past A or B.
+				if (dot(X, A) >= bCos[k] - 1e-7 && dot(X, B) >= bCos[k] - 1e-7 && s < best) best = s;
+			}
+		}
+		return best;
+	};
+
+	// Every forward crossing of each ray with every OTHER ray (siblings excluded — they diverge), sorted by
+	// arc distance. Two great circles meet at ±line; at most one point is forward for both rays.
+	const xs: RayCrossing[][] = Array.from({ length: R }, () => []);
 	for (let i = 0; i < R; i++) {
 		for (let j = i + 1; j < R; j++) {
-			if (edgeOf[i] === edgeOf[j]) continue; // siblings diverge, never cross forward
+			if (edgeOf[i] === edgeOf[j]) continue;
 			const line = cross(planeN[i], planeN[j]);
 			if (len(line) < eps) continue; // coincident/parallel great-circle planes
-			// The two great circles meet at ±line; at most one is forward for both rays.
 			for (const sgn of [1, -1] as const) {
 				const X = normalize(scale(line, sgn));
 				const si = signedArc(origins[i], tangents[i], X);
 				const sj = signedArc(origins[j], tangents[j], X);
 				if (si > eps && si < Math.PI && sj > eps && sj < Math.PI) {
-					arrivals.push({ time: si, ray: i, partner: j, partnerTime: sj });
-					arrivals.push({ time: sj, ray: j, partner: i, partnerTime: si });
+					xs[i].push({ t: si, j, tj: sj });
+					xs[j].push({ t: sj, j: i, tj: si });
 					break;
 				}
 			}
 		}
 	}
-	arrivals.sort((a, b) => a.time - b.time);
+	for (const list of xs) list.sort((a, b) => a.t - b.t);
 
-	const stop = new Array<number>(R).fill(Infinity);
-	const hits = new Array<number>(R).fill(0);
-	const lastHit = new Array<number>(R).fill(Infinity);
-	const nearest = new Array<number>(R).fill(Infinity);
-	for (const ev of arrivals) {
-		if (ev.time < nearest[ev.ray]) nearest[ev.ray] = ev.time;
-		if (isFinite(stop[ev.ray])) continue;
-		if (ev.partnerTime <= ev.time + eps && stop[ev.partner] >= ev.partnerTime - eps) {
-			hits[ev.ray]++;
-			lastHit[ev.ray] = ev.time;
-			if (hits[ev.ray] >= nStop) stop[ev.ray] = ev.time;
-		}
-	}
-	for (let i = 0; i < R; i++) {
-		if (isFinite(stop[i])) continue;
-		stop[i] = isFinite(lastHit[i]) ? lastHit[i] : nearest[i];
-	}
+	// Cap each ray where it exits its own face (contains runaways, see exitArc), then resolve every ray's stop
+	// with resolveRayStops: the same growing-line rule as the flat renderer (Pass 1) plus the opt-in overshoot
+	// trim (Pass 2). On the sphere the cap makes a ray with no covered crossing fall back to its in-face chord
+	// rather than run away. See lib/utils/islamicRayStops for the full rationale.
+	const cap = new Array<number>(R);
+	for (let i = 0; i < R; i++) cap[i] = exitArc(i);
+	const stop = resolveRayStops(xs, nStop, cap, eps, trim);
 
 	return { origins, tangents, stops: stop, C };
 }
@@ -208,7 +233,8 @@ export function sphericalIslamicArcs(poly: Polyhedron, opts: SphericalIslamicOpt
 	const out: Float32Array[] = [];
 
 	for (const face of poly.faces) {
-		const { origins, tangents, stops } = computeFaceRays(unit, face, angle, frac, nStop, eps);
+		// trim = true: these are the DRAWN lines, where an overshoot stub past a crossing is the visible defect.
+		const { origins, tangents, stops } = computeFaceRays(unit, face, angle, frac, nStop, eps, true);
 		for (let i = 0; i < origins.length; i++) {
 			const s1 = stops[i];
 			if (!isFinite(s1) || s1 <= eps) continue; // no partner ever caught it (or zero-length) — drop
@@ -243,7 +269,9 @@ export function sphericalIslamicRaySegments(poly: Polyhedron, opts: SphericalIsl
 	const unit = poly.vertices.map(normalize);
 	const out: Array<[V3, V3]> = [];
 	for (const face of poly.faces) {
-		const { origins, tangents, stops } = computeFaceRays(unit, face, angle, frac, nStop, eps);
+		// trim = false: the interlace weave needs clean shared crossings; a trimmed T-junction has odd degree
+		// and would break the over/under assignment. The weave carries the crossing, so no stub shows anyway.
+		const { origins, tangents, stops } = computeFaceRays(unit, face, angle, frac, nStop, eps, false);
 		for (let i = 0; i < origins.length; i++) {
 			const s1 = stops[i];
 			if (!isFinite(s1) || s1 <= eps) continue;
@@ -283,7 +311,8 @@ export function sphericalIslamicFaceData(poly: Polyhedron, opts: SphericalIslami
 	const out: FaceFillData[] = [];
 
 	for (const face of poly.faces) {
-		const { origins, tangents, stops, C } = computeFaceRays(unit, face, angle, frac, nStop, eps);
+		// trim = true: the fill traces cells from these rays; an overshoot stub cuts a spurious sliver cell.
+		const { origins, tangents, stops, C } = computeFaceRays(unit, face, angle, frac, nStop, eps, true);
 		// Orthonormal tangent frame at the centroid (u, v ⟂ C), with a well-conditioned reference axis.
 		const ref: V3 = Math.abs(C[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
 		const u = normalize(cross(C, ref));

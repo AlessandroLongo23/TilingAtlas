@@ -25,7 +25,7 @@ import {
 	hypDist,
 	hypMidpoint,
 } from "@/lib/render/hyperbolic";
-import { EDGE_SCALE, hypBarycenter, type ShaderTiling, type TileField } from "@/lib/render/hyperbolicReduce";
+import { EDGE_SCALE, fillNearestResolved, hypBarycenter, type ShaderTiling, type TileField } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
 import { foldIntoDomain } from "@/lib/render/hyperbolicDirichlet";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
@@ -721,30 +721,10 @@ export function prepareIslamicField(
 			resolved[o / 4] = 1;
 		}
 	}
-	for (const o of unresolvedIdx) {
-		const idx = o / 4;
-		const i = idx % res;
-		const j = (idx - i) / res;
-		let done = false;
-		for (let ring = 1; ring < res && !done; ring++) {
-			for (let dj = -ring; dj <= ring && !done; dj++) {
-				for (let di = -ring; di <= ring && !done; di++) {
-					if (Math.max(Math.abs(di), Math.abs(dj)) !== ring) continue;
-					const ii = i + di;
-					const jj = j + dj;
-					if (ii < 0 || jj < 0 || ii >= res || jj >= res) continue;
-					const oo = (jj * res + ii) * 4;
-					if (resolved[oo / 4]) {
-						data[o] = data[oo];
-						data[o + 1] = data[oo + 1];
-						data[o + 2] = data[oo + 2];
-						data[o + 3] = data[oo + 3];
-						done = true;
-					}
-				}
-			}
-		}
-	}
+	// unresolved texels copy their nearest resolved texel so the field is TOTAL — a distance transform
+	// (O(res²)), replacing the per-texel ring search whose O(unresolved·ring²) froze the offset slider for
+	// seconds per notch on deep tilings. Same helper the base bake uses.
+	fillNearestResolved(data, resolved, unresolvedIdx, res);
 	// corner texels: copy from the same direction on the sampled disk (the shader's own re-aim
 	// direction), O(1) each — cheap totality for texels that are never actually read
 	for (const o of cornerIdx) {

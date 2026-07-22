@@ -8,8 +8,8 @@
   "developed": {
    "patch": "hyp-8-8-8"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Order-3 octagonal {8,3} \u2014 engine-developed hyperbolic tiling, vertex configuration 8.8.8. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (156 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Order-3 octagonal {8,3} — engine-developed hyperbolic tiling, vertex configuration 8.8.8. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (156 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -56,8 +56,8 @@
   "developed": {
    "patch": "hyp-5-5-5-5"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Order-4 pentagonal {5,4} \u2014 engine-developed hyperbolic tiling, vertex configuration 5.5.5.5. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (148 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Order-4 pentagonal {5,4} — engine-developed hyperbolic tiling, vertex configuration 5.5.5.5. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (148 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -104,8 +104,8 @@
   "developed": {
    "patch": "hyp-4x5"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Order-5 square {4,5} \u2014 engine-developed hyperbolic tiling, vertex configuration 4.4.4.4.4. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (185 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Order-5 square {4,5} — engine-developed hyperbolic tiling, vertex configuration 4.4.4.4.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (185 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -152,8 +152,8 @@
   "developed": {
    "patch": "hyp-6-6-6-6"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Order-4 hexagonal {6,4} \u2014 engine-developed hyperbolic tiling, vertex configuration 6.6.6.6. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (88 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Order-4 hexagonal {6,4} — engine-developed hyperbolic tiling, vertex configuration 6.6.6.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (88 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -200,8 +200,8 @@
   "developed": {
    "patch": "hyp-8x4"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Order-4 octagonal {8,4} \u2014 engine-developed hyperbolic tiling, vertex configuration 8.8.8.8. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (36 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Order-4 octagonal {8,4} — engine-developed hyperbolic tiling, vertex configuration 8.8.8.8. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (36 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -248,8 +248,8 @@
   "developed": {
    "patch": "hyp-4x6"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Order-6 square {4,6} \u2014 engine-developed hyperbolic tiling, vertex configuration 4.4.4.4.4.4. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (132 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Order-6 square {4,6} — engine-developed hyperbolic tiling, vertex configuration 4.4.4.4.4.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (132 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -296,8 +296,8 @@
   "developed": {
    "patch": "hyp-3-8-3-8"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Trioctagonal 3.8.3.8 \u2014 engine-developed hyperbolic tiling, vertex configuration 3.8.3.8. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (140 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Trioctagonal 3.8.3.8 — engine-developed hyperbolic tiling, vertex configuration 3.8.3.8. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (140 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -344,8 +344,8 @@
   "developed": {
    "patch": "hyp-4-5-4-5"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Tetrapentagonal 4.5.4.5 \u2014 engine-developed hyperbolic tiling, vertex configuration 4.5.4.5. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (132 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Tetrapentagonal 4.5.4.5 — engine-developed hyperbolic tiling, vertex configuration 4.5.4.5. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (132 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -392,8 +392,8 @@
   "developed": {
    "patch": "hyp-4-6-4-6"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Tetrahexagonal 4.6.4.6 \u2014 engine-developed hyperbolic tiling, vertex configuration 4.6.4.6. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (142 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Tetrahexagonal 4.6.4.6 — engine-developed hyperbolic tiling, vertex configuration 4.6.4.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (142 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -440,8 +440,8 @@
   "developed": {
    "patch": "hyp-3-4-8-4"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Rhombitrioctagonal 3.4.8.4 \u2014 engine-developed hyperbolic tiling, vertex configuration 3.4.8.4. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (143 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Rhombitrioctagonal 3.4.8.4 — engine-developed hyperbolic tiling, vertex configuration 3.4.8.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (143 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -488,8 +488,8 @@
   "developed": {
    "patch": "hyp-6-6-8"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Trihexagonal-octagonal 6.6.8 \u2014 engine-developed hyperbolic tiling, vertex configuration 6.6.8. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (128 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Trihexagonal-octagonal 6.6.8 — engine-developed hyperbolic tiling, vertex configuration 6.6.8. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (128 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -536,8 +536,8 @@
   "developed": {
    "patch": "hyp-5-8-8"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Truncated order-4 pentagonal 5.8.8 \u2014 engine-developed hyperbolic tiling, vertex configuration 5.8.8. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (143 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Truncated order-4 pentagonal 5.8.8 — engine-developed hyperbolic tiling, vertex configuration 5.8.8. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (143 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -584,8 +584,8 @@
   "developed": {
    "patch": "hyp-3x4-8"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Snub 3.3.3.3.8 \u2014 engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.8. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (220 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Snub 3.3.3.3.8 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.8. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (220 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -632,8 +632,8 @@
   "developed": {
    "patch": "hyp-4-4-5-4"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "4.4.5.4 \u2014 engine-developed hyperbolic tiling, vertex configuration 4.4.5.4. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (160 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.5.4 — engine-developed hyperbolic tiling, vertex configuration 4.4.5.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (160 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {
@@ -680,8 +680,2120 @@
   "developed": {
    "patch": "hyp-5x5"
   },
-  "discoverer": "\u010ctrn\u00e1ct engine (SU(1,1) developer)",
-  "note": "Order-5 pentagonal {5,5} \u2014 engine-developed hyperbolic tiling, vertex configuration 5.5.5.5.5. Enumerated by the \u010ctrn\u00e1ct combinatorial engine (negative-defect closure) and developed to exact Poincar\u00e9-disk geometry by the SU(1,1) flood-fill developer (75 tiles shown).",
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "Order-5 pentagonal {5,5} — engine-developed hyperbolic tiling, vertex configuration 5.5.5.5.5. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (75 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-6-8-8",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "6.8.8",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-6-8-8"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "6.8.8 — engine-developed hyperbolic tiling, vertex configuration 6.8.8. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (50 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-6-4-6",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.6.4.6",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-6-4-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.6.4.6 — engine-developed hyperbolic tiling, vertex configuration 3.6.4.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (128 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-4-4-4-6",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "4.4.4.6",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-4-4-4-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.4.6 — engine-developed hyperbolic tiling, vertex configuration 4.4.4.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (126 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-4-5-4-6",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "4.5.4.6",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-4-5-4-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.5.4.6 — engine-developed hyperbolic tiling, vertex configuration 4.5.4.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (61 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-4-3-5",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.4.3.5",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-4-3-5"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.4.3.5 — engine-developed hyperbolic tiling, vertex configuration 3.3.4.3.5. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (393 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-4-3-6",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.4.3.6",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-4-3-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.4.3.6 — engine-developed hyperbolic tiling, vertex configuration 3.3.4.3.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (204 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-5-3-5",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.5.3.5",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-5-3-5"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.5.3.5 — engine-developed hyperbolic tiling, vertex configuration 3.3.5.3.5. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (165 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-5-3-6",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.5.3.6",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-5-3-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.5.3.6 — engine-developed hyperbolic tiling, vertex configuration 3.3.5.3.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (109 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-4-4-4-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.4.4.4.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-4-4-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.4.4.4.4 — engine-developed hyperbolic tiling, vertex configuration 3.4.4.4.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (78 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-3-3-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.3.3.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-3-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.3.3.4 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.3.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (290 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-3-3-5",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.3.3.5",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-3-3-5"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.3.3.5 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.3.5. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (152 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-3-3-6",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.3.3.6",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-3-3-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.3.3.6 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.3.6. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (113 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-4-3-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.4.3.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-4-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.4.3.4 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.4.3.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (110 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-3-4-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.3.4.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-3-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.3.4.4 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.4.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (106 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-4-3-5",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.4.3.5",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-4-3-5"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.4.3.5 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.4.3.5. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (75 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-4-3-4-3-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.4.3.4.3.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-4-3-4-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.4.3.4.3.4 — engine-developed hyperbolic tiling, vertex configuration 3.4.3.4.3.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (69 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-4-3-4-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.4.3.4.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-4-3-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.4.3.4.4 — engine-developed hyperbolic tiling, vertex configuration 3.3.4.3.4.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (63 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-4-4-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.4.4.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-4-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.4.4.4 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.4.4.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (61 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-6-6-7",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "6.6.7",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-6-6-7"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "6.6.7 — engine-developed hyperbolic tiling, vertex configuration 6.6.7. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (259 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-7-7-7",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "7.7.7",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-7-7-7"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "7.7.7 — engine-developed hyperbolic tiling, vertex configuration 7.7.7. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (54 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-4-7-4",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.4.7.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-4-7-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.4.7.4 — engine-developed hyperbolic tiling, vertex configuration 3.4.7.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (602 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-7-3-7",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.7.3.7",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-7-3-7"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.7.3.7 — engine-developed hyperbolic tiling, vertex configuration 3.7.3.7. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (262 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-4-4-4-7",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "4.4.4.7",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-4-4-4-7"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.4.7 — engine-developed hyperbolic tiling, vertex configuration 4.4.4.7. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (81 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-3-7",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.3.7",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-3-7"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.3.7 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.7. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (931 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-4-3-7",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.4.3.7",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-4-3-7"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.4.3.7 — engine-developed hyperbolic tiling, vertex configuration 3.3.4.3.7. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (150 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-3-3-3-3",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.3.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-3-3-3-3"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.3.3.3.3 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (126 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-3-3-3-3-3-3-3-3",
+  "source": "hyperbolic",
+  "k": 1,
+  "family": "3.3.3.3.3.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-3-3-3-3-3-3-3-3"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "3.3.3.3.3.3.3.3 — engine-developed hyperbolic tiling, vertex configuration 3.3.3.3.3.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (64 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-4-6-6__3-6-4-6",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "6.4.6.3 + 6.6.4.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-4-6-6__3-6-4-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "6.4.6.3 + 6.6.4.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 6.4.6.3 + 6.6.4.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (133 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-4-6__3-3-3-4-6",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "6.4.3.3.3 + 6.4.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-4-6__3-3-3-4-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "6.4.3.3.3 + 6.4.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 6.4.3.3.3 + 6.4.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (196 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-4-3-4-4__3-4-3-4-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.4.3.4.3 + 4.4.3.4.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-4-3-4-4__3-4-3-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.3.4.3 + 4.4.3.4.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.4.3.4.3 + 4.4.3.4.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (203 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-4-4-4__3-4-3-4-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.4.3.4.3 + 4.4.4.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-4-4-4__3-4-3-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.3.4.3 + 4.4.4.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.4.3.4.3 + 4.4.4.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (192 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-4-4-4-4__3-4-4-4-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.4.4.4.3 + 4.4.4.4.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-4-4-4-4__3-4-4-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.4.4.3 + 4.4.4.4.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.4.4.4.3 + 4.4.4.4.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (80 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-3-3-4__3-3-3-3-3-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.3.3.3.3.3 + 4.3.3.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-3-3-4__3-3-3-3-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.3.3.3.3.3 + 4.3.3.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.3.3.3.3.3 + 4.3.3.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (284 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-4-3-4__3-3-4-3-3-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.3.3.4.3.3 + 4.3.4.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-4-3-4__3-3-4-3-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.3.3.4.3.3 + 4.3.4.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.3.3.4.3.3 + 4.3.4.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (106 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-3-4-4__3-3-3-4-3-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.3.4.3.3.3 + 4.4.3.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-3-4-4__3-3-3-4-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.3.4.3.3.3 + 4.4.3.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.3.4.3.3.3 + 4.4.3.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (100 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-4-3-4__3-3-3-4-3-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.3.4.3.3.3 + 4.3.4.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-4-3-4__3-3-3-4-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.3.4.3.3.3 + 4.3.4.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.3.4.3.3.3 + 4.3.4.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (98 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-4-3-4-4__3-3-4-3-4-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.4.3.4.3.3 + 4.4.3.4.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-4-3-4-4__3-3-4-3-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.3.4.3.3 + 4.4.3.4.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.4.3.4.3.3 + 4.4.3.4.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (64 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-4-3-4-4__3-4-3-4-3-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.3.4.3.4.3 + 4.4.3.4.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-4-3-4-4__3-4-3-4-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.3.4.3.4.3 + 4.4.3.4.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.3.4.3.4.3 + 4.4.3.4.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (60 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-4-4-4__3-3-4-3-4-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.4.3.4.3.3 + 4.4.4.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-4-4-4__3-3-4-3-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.3.4.3.3 + 4.4.4.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.4.3.4.3.3 + 4.4.4.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (60 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-4-4-4__3-3-3-4-4-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.4.4.3.3.3 + 4.4.4.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-4-4-4__3-3-3-4-4-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.4.4.3.3.3 + 4.4.4.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.4.4.3.3.3 + 4.4.4.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (62 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-4-4-4__3-4-3-4-3-4",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "4.3.4.3.4.3 + 4.4.4.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-4-4-4__3-4-3-4-3-4"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "4.3.4.3.4.3 + 4.4.4.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 4.3.4.3.4.3 + 4.4.4.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (54 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-4-4-4-6__4-4-4-6",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "6.4.4.4 + 6.4.4.4",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-4-4-4-6__4-4-4-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "6.4.4.4 + 6.4.4.4 — engine-developed k=2 hyperbolic tiling, vertex configuration 6.4.4.4 + 6.4.4.4. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (126 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-3-3-6__3-3-3-3-3-6",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "6.3.3.3.3.3 + 6.3.3.3.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-3-3-6__3-3-3-3-3-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "6.3.3.3.3.3 + 6.3.3.3.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 6.3.3.3.3.3 + 6.3.3.3.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (115 tiles shown).",
+  "renderCell": {
+   "cellPolygons": [
+    {
+     "n": 4,
+     "vertices": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     "hue": 200
+    }
+   ],
+   "basis": [
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "hyp-k2-3-3-3-4-6-4__3-3-4-3-4-6",
+  "source": "hyperbolic",
+  "k": 2,
+  "family": "6.4.3.3.3.4 + 6.4.3.4.3.3",
+  "geometry": "hyperbolic",
+  "developed": {
+   "patch": "hyp-k2-3-3-3-4-6-4__3-3-4-3-4-6"
+  },
+  "discoverer": "Čtrnáct engine (SU(1,1) developer)",
+  "note": "6.4.3.3.3.4 + 6.4.3.4.3.3 — engine-developed k=2 hyperbolic tiling, vertex configuration 6.4.3.3.3.4 + 6.4.3.4.3.3. Enumerated by the Čtrnáct combinatorial engine (negative-defect closure) and developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer (41 tiles shown).",
   "renderCell": {
    "cellPolygons": [
     {

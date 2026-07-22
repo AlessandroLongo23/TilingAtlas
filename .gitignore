@@ -104,3 +104,8 @@ tools/ctrnact-oracle/eu_develop.*
 marek-vault/
 scripts/import-marek-chat.mjs
 scripts/fetch-discord-dm.mjs
+
+# ctrnact-oracle solver output — regenerable from the palettes + `make PALETTE=…`, and hundreds of MB.
+tools/ctrnact-oracle/tables/
+tools/ctrnact-oracle/scratch-*/
+tools/ctrnact-oracle/*.err

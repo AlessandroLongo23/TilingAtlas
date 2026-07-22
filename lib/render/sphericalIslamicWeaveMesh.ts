@@ -1,8 +1,13 @@
-// Renders the spherical Islamic interlace (lib/render/sphericalInterlace.ts) as woven straps on the sphere
-// surface: a cream strap BODY per ray (subdivided quad, projected to the sphere) plus dark BORDER ribbons.
-// The over/under illusion is entirely in the borders — an under strand's sides are trimmed to the over
-// strand's edge (done in sphericalInterlace), so drawing bodies (cream, overlaps invisible) then borders
-// (dark, lifted just above) on the surface reproduces the flat "interlace" look wrapped onto the ball.
+// Renders the spherical Islamic straps (lib/render/sphericalInterlace.ts) on the sphere surface: a cream
+// strap BODY per ray (subdivided quad, projected to the sphere) plus a dark BORDER ring grown outward from
+// the body, both in radians of arc. Two styles come out of the same geometry, separated only by which of the
+// two the radial offset puts on top:
+//
+//   INTERLACE (weave on)  — border above its own body; the over/under is the level ramp, so an over strand's
+//                           body rides out past the under strand's border and breaks it. The flat interlace.
+//   OUTLINE   (weave off) — every level 0, border below the bodies; at each crossing the two straps' bodies
+//                           paint over the other's border, leaving only the silhouette of the ribbon union.
+//
 // Client-only (imports three).
 
 import * as THREE from "three";
@@ -13,9 +18,8 @@ import { buildSphericalInterlace, type SphBand, type SphInterlaceOptions } from 
 type V3 = [number, number, number];
 
 const LIFT_STEP = 0.004; // radius delta per weave level (over = +1 → higher, under = −1 → lower)
-const BORDER_EPS = 0.0015; // border floats just above its own body so it reads on top
+const BORDER_EPS = 0.0015; // radial gap between a strap's border ring and its own body (sign set by the style)
 const DEFAULT_BODY = "#f5ebd7"; // matches the flat interlace strap body (HSB 40,12,96)
-const BORDER_HALF = 0.006; // border ribbon half-width (radians of arc)
 const BODY_SEG = 0.05; // target arc length of a body sub-quad — sets the length subdivision
 
 // Solid mode (interlace + wireframe): each strap becomes a real 3D ribbon with thickness. The over/under
@@ -37,9 +41,6 @@ function smooth01(t: number): number {
 function nrm(a: V3): V3 {
 	const n = Math.hypot(a[0], a[1], a[2]) || 1;
 	return [a[0] / n, a[1] / n, a[2] / n];
-}
-function crs(a: V3, b: V3): V3 {
-	return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 function dot(a: V3, b: V3): number {
 	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -216,27 +217,35 @@ export function buildIslamicWeave(poly: Polyhedron | null, opts: IslamicWeaveOpt
 		}
 	}
 
-	// Border ribbons: each outline segment swept into a thin flat ribbon along its great-circle arc, lifted
-	// just above the bodies. Trimmed under-strand segments simply stop short — that break is the weave.
+	// Border rings: each outline segment is the quad between the fill boundary (a→b) and the outer ring
+	// (oa→ob), sized in radians of arc by the Border Width slider — world-space geometry that keeps its
+	// proportion to the band, not a fixed-width sweep. The inner edge is the SAME slerp the body's side edge
+	// uses, so fill and border abut with no seam.
+	//
+	// The radial gap decides which paints over which, and that is the whole difference between the two strap
+	// styles. INTERLACE lifts the border just ABOVE its own body, so each strap reads outlined and the weave
+	// comes from the level ramp (an over strand's body rides out past the under strand's border). OUTLINE has
+	// no weave — every level is 0 — so it sinks the border just BELOW the bodies instead: at each crossing the
+	// two straps' bodies paint over the other's border, and what survives is union(outer rings) \ union(fill
+	// rings), the silhouette of the ribbon network. Same trick as the flat border-first draw order, expressed
+	// as radius because on the sphere depth, not draw order, decides.
+	const borderEps = opts.weave !== false ? BORDER_EPS : -BORDER_EPS;
 	const borderPos: number[] = [];
-	const sweep = (a: V3, b: V3, la: number, lb: number) => {
+	const ring = (a: V3, b: V3, oa: V3, ob: V3, la: number, lb: number) => {
 		const seg = Math.max(1, Math.round(arcAngle(a, b) / BODY_SEG));
-		let prev: { l: V3; r: V3 } | null = null;
+		let prev: { i: V3; o: V3 } | null = null;
 		for (let i = 0; i <= seg; i++) {
 			const f = i / seg;
-			const p = nrm(slerp(a, b, f));
-			const pa = nrm(slerp(a, b, Math.max(0, i - 1) / seg));
-			const pb = nrm(slerp(a, b, Math.min(seg, i + 1) / seg));
-			const tan = nrm([pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]]);
-			const side = nrm(crs(tan, p)); // surface tangent ⟂ the arc
-			const rr = radius * (1 + (la + (lb - la) * f) * LIFT_STEP) + radius * BORDER_EPS; // ramp with the body, just above it
-			const L: V3 = [(p[0] + side[0] * BORDER_HALF) * rr, (p[1] + side[1] * BORDER_HALF) * rr, (p[2] + side[2] * BORDER_HALF) * rr];
-			const R: V3 = [(p[0] - side[0] * BORDER_HALF) * rr, (p[1] - side[1] * BORDER_HALF) * rr, (p[2] - side[2] * BORDER_HALF) * rr];
-			if (prev) borderPos.push(...prev.l, ...prev.r, ...L, ...prev.r, ...R, ...L);
-			prev = { l: L, r: R };
+			const pi = nrm(slerp(a, b, f));
+			const po = nrm(slerp(oa, ob, f));
+			const rr = radius * (1 + (la + (lb - la) * f) * LIFT_STEP + borderEps); // ramp with the body, offset off it
+			const I: V3 = [pi[0] * rr, pi[1] * rr, pi[2] * rr];
+			const O: V3 = [po[0] * rr, po[1] * rr, po[2] * rr];
+			if (prev) borderPos.push(...prev.i, ...prev.o, ...O, ...prev.i, ...O, ...I);
+			prev = { i: I, o: O };
 		}
 	};
-	for (const { outline } of bands) for (const s of outline) sweep(s.a, s.b, s.la, s.lb);
+	for (const { outline } of bands) for (const s of outline) ring(s.a, s.b, s.oa, s.ob, s.la, s.lb);
 
 	const group = new THREE.Group();
 	const materials: THREE.Material[] = [];

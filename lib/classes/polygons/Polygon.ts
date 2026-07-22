@@ -7,6 +7,7 @@ import { tolerance } from "@/utils/tolerance";
 import { islamicAnglesForHalfways, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from "@/utils/islamicNoise";
 import { exactPolygonsOverlap } from "../algorithm/exact/exactOverlap";
 import { type Marker, tipPoint } from "@/utils/islamicArrangement";
+import { resolveRayStops, type RayCrossing } from "@/utils/islamicRayStops";
 
 export class Polygon {
     n: number;
@@ -512,11 +513,17 @@ export class Polygon {
      * `intersectionCount` ∈ {1, 2, 3, …} lets a ray pass through the first N−1 crossings and stop at
      * the N-th (1 ⇒ the classic "stop on first contact"). A ray with fewer than N qualifying crossings
      * clamps to its last one, so it still terminates on another ray's body.
+     *
+     * `trimOvershoots` pulls a ray back to the crossing it should have stopped at when the growing-line let it
+     * sail past (irregular tile / edge offset make crossing distances unequal — the little stub past a
+     * crossing). Safe only for the DRAWN lines and the cell fill; leave it off for the interlace straps, whose
+     * weave needs clean shared crossings (see resolveRayStops).
      */
     calculateIslamicSegments = (
         angle: number | number[],
         edgeOffsetFrac: number = 0,
         intersectionCount: number = 1,
+        trimOvershoots: boolean = false,
     ): [Vector, Vector][] => {
         const nEdges = this.halfways.length;
         const eps = 1e-9;
@@ -554,51 +561,57 @@ export class Polygon {
         }
         const R = dirs.length;
 
-        // Growing-line simulation. Every ray grows at unit speed from its origin. Each crossing with
-        // another ray's already-drawn body is a "qualifying" arrival; a ray stops at its N-th such
-        // arrival. This is the closure-correct reading of the count: a bare nearest-crossing stops a
-        // ray on the partner's DISCARDED tail (the partner reaches that point only AFTER it has itself
-        // terminated), which leaves visible gaps. Build one arrival event per (ray, crossing) and
-        // resolve them in time order.
-        type Arrival = { time: number; ray: number; partner: number; partnerTime: number };
-        const arrivals: Arrival[] = [];
+        // Build each ray's forward crossings, then hand them to resolveRayStops (shared with the spherical
+        // port so the rule stays identical). Pass 1 is the growing-line: a ray stops at its N-th crossing with
+        // a partner that arrived no later and is still alive there. Gap-free by construction — a ray only ever
+        // ends ON a partner's body, never on its discarded tail (which would dangle and leave a visible gap).
+        // On a regular tile at offset 0 every crossing is symmetric, so both rays of a crossing stop together
+        // and this matches the classic construction. With trimOvershoots on (the drawn lines and the cell fill)
+        // resolveRayStops runs a second, conservative pass that pulls a ray back off the little stub it leaves
+        // past an asymmetric crossing (irregular tile or edge offset make the two arrival distances unequal),
+        // but only when nothing else ends on the removed tail, so the trim can never open a gap. Crossings are
+        // recorded on BOTH rays (xs[i] and xs[j]) — resolveRayStops relies on that. Rays are unbounded in the
+        // plane (cap = +Infinity); the spherical port passes a face-exit cap instead.
+        const xs: RayCrossing[][] = Array.from({ length: R }, () => []);
         for (let i = 0; i < R; i++) {
             for (let j = i + 1; j < R; j++) {
                 if (edgeOf[i] === edgeOf[j]) continue; // siblings never cross forward (they diverge)
                 const denom = Vector.cross(dirs[i], dirs[j]);
-                if (Math.abs(denom) < eps) continue; // parallel
+                if (Math.abs(denom) < eps) {
+                    // Parallel — but COLLINEAR AND HEAD-ON is a real meeting, not a miss. It happens at one
+                    // exact contact angle per corner: slider 90° − interior/2 (half the exterior angle), where
+                    // the ray off edge i and the ray off edge i+1 both lie on the chord joining the two edge
+                    // midpoints. 30° for a 120° corner (hexagon), 45° for a square, 60° for a triangle, 15° for
+                    // a 12-gon — and 30/45/60 are exactly the Acute/Median/Obtuse presets. Skipping it made the
+                    // construction DISCONTINUOUS in the angle: each ray sailed the whole chord to the far
+                    // midpoint instead of stopping halfway, so every segment doubled (and every chord was
+                    // emitted twice, once per direction). Since the interlace strap width is a fraction of the
+                    // mean segment length, the straps doubled in width at that one slider step.
+                    // Two rays growing head-on at unit speed touch at the midpoint of the gap between their
+                    // origins — which is the limit of the non-parallel crossing from both sides, so recording
+                    // it here makes the whole family continuous. Same-direction parallels are still skipped:
+                    // one runs inside the other and they never meet.
+                    if (dirs[i].dot(dirs[j]) >= 0) continue; // parallel, same heading — never meets
+                    const gap = Vector.sub(origins[j], origins[i]);
+                    const gapLen = gap.mag();
+                    if (gapLen < eps) continue; // coincident origins — no gap to halve
+                    if (Math.abs(Vector.cross(gap, dirs[i])) > eps * gapLen) continue; // parallel but offset
+                    if (gap.dot(dirs[i]) <= eps) continue; // j sits behind i — they diverge, not converge
+                    const half = gapLen / 2;
+                    xs[i].push({ t: half, j, tj: half });
+                    xs[j].push({ t: half, j: i, tj: half });
+                    continue;
+                }
                 const diff = Vector.sub(origins[j], origins[i]);
                 const ti = Vector.cross(diff, dirs[j]) / denom;
                 const tj = Vector.cross(diff, dirs[i]) / denom;
                 if (ti <= eps || tj <= eps) continue; // both rays must reach it going forward
-                arrivals.push({ time: ti, ray: i, partner: j, partnerTime: tj });
-                arrivals.push({ time: tj, ray: j, partner: i, partnerTime: ti });
+                xs[i].push({ t: ti, j, tj });
+                xs[j].push({ t: tj, j: i, tj: ti });
             }
         }
-        arrivals.sort((a, b) => a.time - b.time);
-
-        const stop = new Array<number>(R).fill(Infinity);
-        const hits = new Array<number>(R).fill(0);
-        const lastHit = new Array<number>(R).fill(Infinity);
-        const nearest = new Array<number>(R).fill(Infinity); // nearest forward crossing, coverage aside
-        for (const ev of arrivals) {
-            if (ev.time < nearest[ev.ray]) nearest[ev.ray] = ev.time;
-            if (isFinite(stop[ev.ray])) continue; // this ray already terminated
-            // The partner's body covers the crossing iff the partner reached it no later than we did
-            // (partnerTime ≤ time) and was still alive there (it did not stop before partnerTime).
-            if (ev.partnerTime <= ev.time + eps && stop[ev.partner] >= ev.partnerTime - eps) {
-                hits[ev.ray]++;
-                lastHit[ev.ray] = ev.time;
-                if (hits[ev.ray] >= nStop) stop[ev.ray] = ev.time; // committed at the N-th crossing
-            }
-        }
-        // Clamp so a ray is never dropped: prefer its last partner-covered crossing (fewer than N of
-        // them), else its nearest forward crossing at all. An off-midpoint apex can skew a ray so no
-        // partner covers it (squares are the fragile case); this keeps the line rooted and complete.
-        for (let i = 0; i < R; i++) {
-            if (isFinite(stop[i])) continue;
-            stop[i] = isFinite(lastHit[i]) ? lastHit[i] : nearest[i];
-        }
+        for (const list of xs) list.sort((a, b) => a.t - b.t);
+        const stop = resolveRayStops(xs, nStop, new Array<number>(R).fill(Infinity), eps, trimOvershoots);
 
         const segments: [Vector, Vector][] = [];
         for (let i = 0; i < R; i++) {
@@ -677,7 +690,7 @@ export class Polygon {
         if (cfg.islamicAnimate) angle = islamicAnglesForHalfways(ctx, this.halfways);
         const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
         const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
-        const segments = this.calculateIslamicSegments(angle, offset, count);
+        const segments = this.calculateIslamicSegments(angle, offset, count, true); // drawn lines — trim overshoots
         ctx.push();
         ctx.noFill();
         ctx.strokeWeight(Math.max(cfg.lineWidth, 1) * 2.5 / zoom); // slightly thicker than the base

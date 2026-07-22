@@ -286,7 +286,7 @@ export class Tiling {
             for (const node of this.nodes) {
                 if (!node.vertices || !node.halfways) continue;
                 const a: number | number[] = cfg.islamicAnimate ? islamicAnglesForHalfways(ctx, node.halfways) : angle;
-                for (const s of node.calculateIslamicSegments(a, offset, count)) segments.push(s);
+                for (const s of node.calculateIslamicSegments(a, offset, count, true)) segments.push(s); // fill — trim overshoots
                 for (const m of node.islamicMarkers()) markers.push(m);
             }
             // Transversal crossings appear once offset > 0 (converging split rays cross their sibling)
@@ -421,7 +421,7 @@ export class Tiling {
             const segments: Segment[] = [];
             for (const node of this.nodes) {
                 if (!node.vertices || !node.halfways) continue;
-                for (const s of node.calculateIslamicSegments(angle, offset, count)) segments.push(s);
+                for (const s of node.calculateIslamicSegments(angle, offset, count, true)) segments.push(s); // checkerboard fill — trim overshoots
             }
             const faces = extractFaces(segments, offset > 0 || count > 1);
             const colors = twoColorFaces(faces);

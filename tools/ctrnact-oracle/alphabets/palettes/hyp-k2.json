@@ -1,0 +1,27 @@
+{
+  "name": "hyp-k2",
+  "D": 24,
+  "closure": "negative-defect",
+  "maxValence": 6,
+  "comment": "{3,4,6} for a bounded k=2 probe",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    }
+  ]
+}

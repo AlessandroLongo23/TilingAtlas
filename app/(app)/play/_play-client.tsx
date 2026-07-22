@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Camera, Maximize, Minimize } from "lucide-react";
+import { Camera, Check, Link2, Maximize, Minimize } from "lucide-react";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
@@ -32,6 +32,7 @@ import {
 	ISOTOXAL_SHARD_KS,
 } from "@/lib/services/referenceAtlas";
 import { resolveAlphaDegs } from "@/lib/utils/paramCell";
+import { parsePlayState, serializePlayState } from "@/lib/services/playUrlState";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ParamSliderPanel } from "@/components/param-slider-panel";
 import { pickStratified } from "@/lib/utils/pickStratified";
@@ -45,15 +46,41 @@ const KNOWN_HIGHER_TIERS: { source: "composable" | "isotoxal"; k: number }[] = [
 	...ISOTOXAL_SHARD_KS.map((k) => ({ source: "isotoxal" as const, k })),
 ];
 
+// Trailing debounce on the URL mirror. WebKit caps history.replaceState at 100 calls / 30s, then throws
+// SecurityError and DISABLES the method for a while — so the rate has to stay under it, one call per
+// 300ms (github.com/sveltejs/kit/issues/365). The sliders here (islamicAngle, hueOffset, the spherical
+// wire knobs) fire per pointermove, so an undebounced mirror would trip it in a single drag. Trailing
+// means a drag writes nothing until it settles; sustained interaction caps at 75 writes / 30s.
+const URL_MIRROR_DEBOUNCE_MS = 400;
+
 interface PlayClientProps {
 	tilings: CatalogueTiling[];
 }
 
 export function PlayClient({ tilings }: PlayClientProps) {
 	const searchParams = useSearchParams();
-	const requestedKey = searchParams.get("tiling");
 	const canvasWrapRef = useRef<HTMLDivElement | null>(null);
 	const [size, setSize] = useState({ w: 0, h: 0 });
+
+	// ── URL ⇆ view state (spec: docs/superpowers/specs/2026-07-22-play-url-state-design.md) ──
+	// Parse the URL exactly once, on mount. After this the query string is WRITE-only (the mirror effect
+	// below), so browser back/forward inside the page is not a state source — same contract as the
+	// library shelf.
+	const [initialUrl] = useState(() => parsePlayState(searchParams));
+	const requestedKey = initialUrl.tiling;
+	// Guards the mirror against firing before the link has been applied (which would overwrite the link
+	// with defaults). Effects run in declaration order, so the apply below already precedes the mirror;
+	// the ref makes that independent of ordering.
+	const hydrated = useRef(false);
+
+	// Apply the link. parsePlayState returns the WHOLE whitelist — the URL's value where present, the
+	// store default everywhere else — so a bare /play always means the default view and a visitor with a
+	// warm store from an earlier session sees what the link says, not what they left behind.
+	useEffect(() => {
+		useConfiguration.getState().set(initialUrl.config);
+		if (initialUrl.alphas) useFamilyAlphas.getState().set(initialUrl.alphas);
+		hydrated.current = true;
+	}, [initialUrl]);
 
 	// The working list is ALWAYS the oracle atlas (lazy-fetched client-side, mapped to the
 	// CatalogueTiling shape) — /play browses every tiling however you arrive (direct nav or a library
@@ -274,6 +301,81 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		fa.set(resolveAlphaDegs(paramCell, fa.values));
 		fa.resetLive(); // reseed the eased render tuple for the NEW family — never glide across two families
 	}, [selected?.canonicalKey, paramCell]);
+
+	// Build the query string for the CURRENT view, read imperatively from the stores. Alphas only travel
+	// for a parametric selection: familyAlphas deliberately persists across selections, so a rigid tiling
+	// would otherwise carry a stale tuple from whatever family you passed through.
+	const selectedKey = selected?.canonicalKey ?? null;
+	const hasParamCell = !!paramCell;
+	const currentQuery = useCallback(
+		() =>
+			serializePlayState(
+				useConfiguration.getState(),
+				hasParamCell ? useFamilyAlphas.getState().values : null,
+				selectedKey,
+			),
+		[hasParamCell, selectedKey],
+	);
+
+	// Mirror the view into the URL without navigating, so a reload restores it. replaceState (not
+	// router.replace) keeps this off the Next router — no server-component re-run, no history spam.
+	//
+	// The subscription is IMPERATIVE on purpose: useConfiguration() has no selector, so the hook form
+	// would re-render this page (catalogue list included) on every option change. Same reasoning that put
+	// familyAlphas in its own store.
+	const lastWritten = useRef<string | null>(null);
+	useEffect(() => {
+		if (!hydrated.current) return;
+		let timer: ReturnType<typeof setTimeout> | null = null;
+		const write = () => {
+			timer = null;
+			const q = currentQuery();
+			// Skip a no-op write: several store fields that never reach the URL still fire subscribers
+			// (hyperbolicClick on every canvas click, the screenshot hover flags), and each redundant
+			// replaceState eats into WebKit's budget for no gain.
+			if (q === lastWritten.current) return;
+			lastWritten.current = q;
+			window.history.replaceState(null, "", q ? `${window.location.pathname}?${q}` : window.location.pathname);
+		};
+		const schedule = () => {
+			if (timer) clearTimeout(timer);
+			timer = setTimeout(write, URL_MIRROR_DEBOUNCE_MS);
+		};
+		schedule(); // the selection changed (R / arrows / a deep link resolving) — keep `tiling` honest
+		const unsubConfig = useConfiguration.subscribe(schedule);
+		const unsubAlphas = useFamilyAlphas.subscribe(schedule);
+		return () => {
+			if (timer) clearTimeout(timer);
+			unsubConfig();
+			unsubAlphas();
+		};
+	}, [currentQuery]);
+
+	// Share: copy a link to exactly this view. Serializes fresh rather than reading window.location.href,
+	// so a slider moved less than URL_MIRROR_DEBOUNCE_MS ago is still included — the debounce then only
+	// ever serves reload-restore, never the clipboard.
+	const [shared, setShared] = useState(false);
+	const shareResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const copyLink = useCallback(() => {
+		const q = currentQuery();
+		const url = `${window.location.origin}${window.location.pathname}${q ? `?${q}` : ""}`;
+		navigator.clipboard
+			.writeText(url)
+			.then(() => {
+				setShared(true);
+				if (shareResetRef.current) clearTimeout(shareResetRef.current);
+				shareResetRef.current = setTimeout(() => setShared(false), 1500);
+			})
+			.catch(() => {
+				/* clipboard blocked (insecure origin or denied permission) — silently no-op */
+			});
+	}, [currentQuery]);
+	useEffect(
+		() => () => {
+			if (shareResetRef.current) clearTimeout(shareResetRef.current);
+		},
+		[],
+	);
 
 	// The Islamic construction now applies to EVERY class (hyperbolic included — the developed renderer
 	// bakes the plain Hankin field, lib/render/hyperbolicIslamic.ts). This guard only fires if a future
@@ -536,9 +638,25 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
 					</button>
 				</Tooltip>
+				{/* Share: copies a link carrying every view option plus the selected tiling — the URL the
+				    mirror effect keeps live. Second slot in the same top-right control column; the
+				    symmetry-info badge insets itself left of that column (canvas.tsx `right-16`), so they
+				    never overlap however tall the badge grows. */}
+				<Tooltip label={shared ? "Link copied" : "Copy link to this view"} side="left" delay={0}>
+					<button
+						type="button"
+						onClick={copyLink}
+						aria-label="Copy link to this view"
+						className={cn(
+							"absolute top-16 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
+						)}
+					>
+						{shared ? <Check size={16} className="text-success" /> : <Link2 size={16} />}
+					</button>
+				</Tooltip>
 				{/* Screenshot: canvas.tsx runs the capture (createGraphics patch → preview modal) when it sees
-				    takeScreenshot flip; hovering frames the crop region via screenshotButtonHover. Sits just
-				    below the fullscreen toggle in the same top-right stack. Hidden until the capture is ready. */}
+				    takeScreenshot flip; hovering frames the crop region via screenshotButtonHover. Third slot
+				    in the top-right stack, below Share. Hidden until the capture is ready. */}
 				{SCREENSHOT_BUTTONS_ENABLED ? (
 					<button
 						type="button"
@@ -548,7 +666,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						title="Screenshot"
 						aria-label="Take screenshot"
 						className={cn(
-							"absolute top-16 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
+							"absolute top-28 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
 						)}
 					>
 						<Camera size={16} />

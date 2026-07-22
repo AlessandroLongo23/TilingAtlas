@@ -1,0 +1,39 @@
+{
+  "name": "hyp-mv8",
+  "D": 240,
+  "closure": "negative-defect",
+  "maxValence": 8,
+  "comment": "base, deeper valence (up to 8)",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 5,
+      "name": "5",
+      "famchar": "5"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    }
+  ]
+}

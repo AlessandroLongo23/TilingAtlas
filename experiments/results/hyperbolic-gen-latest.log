@@ -1,0 +1,3 @@
+run: PALETTE=hyperbolic ./run-oracle.sh 2  (enumerates k=1 and k=2)
+[18:42:15] build (MAXNUM=2 PALETTE=hyperbolic)
+[18:42:16] PHASE 1  solve (C++ DFS, all k<=2)

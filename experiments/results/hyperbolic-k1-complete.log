@@ -1,0 +1,16 @@
+run: PALETTE=hyperbolic ./run-oracle.sh 1  (k=1 only, full develop)
+[18:48:04] build (MAXNUM=1 PALETTE=hyperbolic)
+[18:48:05] PHASE 1  solve (C++ DFS, all k<=1)
+[18:48:05]   raw blocks: 1610  (0s)
+[18:48:05] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 1241
+total kept: 1241
+[18:48:05]   (0s)
+[18:48:05] PHASE 3  develop (hyperbolic geodesic, SU(1,1) flood-fill) -> Poincaré patches + report
+hyperbolic develop report (k=1..1, boundR=0.85)
+blocks in    : 1241
+developed    : 1241
+not developed: 0
+
+[18:48:06]   (1s)
+[18:48:06] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/scratch-hyp-k1/ctrnact-cells-k1.json

@@ -1,0 +1,27 @@
+{
+  "name": "hyp-deep",
+  "D": 24,
+  "closure": "negative-defect",
+  "maxValence": 10,
+  "comment": "small palette, high valence -> {p,q} sweep",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    }
+  ]
+}

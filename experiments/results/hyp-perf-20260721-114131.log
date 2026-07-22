@@ -1,0 +1,188 @@
+# hyperbolic perf probe  2026-07-21T09:41:32.382Z
+# out: experiments/results/hyp-perf-20260721-114131.log
+webgl renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)
+hyperbolic tilings: 59
+heap start: 252.2 MB
+
+## PHASE A — base bake (select each tiling, worst main-thread block during load)
+idx  maxBlock  sumBlock  n   name
+  0        0ms       0ms  0  
+  1       59ms      59ms  1  
+  2       87ms      87ms  1  
+  3       64ms      64ms  1  
+  4       76ms      76ms  1  
+  5       62ms      62ms  1  
+  6       79ms      79ms  1  
+  7       63ms      63ms  1  
+  8       69ms      69ms  1  
+  9       60ms      60ms  1  
+ 10      204ms     267ms  2    <== SLOW
+ 11       62ms      62ms  1  
+ 12      244ms     311ms  2    <== SLOW
+ 13       75ms      75ms  1  
+ 14      225ms     290ms  2    <== SLOW
+ 15       70ms      70ms  1  
+ 16      198ms     264ms  2    <- notable
+ 17       65ms      65ms  1  
+ 18      272ms     348ms  2    <== SLOW
+ 19       84ms      84ms  1  
+ 20      273ms     351ms  2    <== SLOW
+ 21       82ms      82ms  1  
+ 22      301ms     396ms  2    <== SLOW
+ 23       83ms      83ms  1  
+ 24      233ms     300ms  2    <== SLOW
+ 25       72ms      72ms  1  
+ 26      202ms     263ms  2    <== SLOW
+ 27       62ms      62ms  1  
+ 28      238ms     305ms  2    <== SLOW
+ 29       67ms      67ms  1  
+ 30      208ms     266ms  2    <== SLOW
+ 31       75ms      75ms  1  
+ 32      278ms     340ms  2    <== SLOW
+ 33       96ms      96ms  1  
+ 34      249ms     364ms  2    <== SLOW
+ 35       93ms      93ms  1  
+ 36      302ms     394ms  2    <== SLOW
+ 37      101ms     101ms  1    <- notable
+ 38      338ms     435ms  2    <== SLOW
+ 39       94ms      94ms  1  
+ 40      362ms     467ms  2    <== SLOW
+ 41      271ms     271ms  1    <== SLOW
+ 42      215ms     279ms  2    <== SLOW
+ 43       83ms      83ms  1  
+ 44      221ms     344ms  2    <== SLOW
+ 45      165ms     165ms  1    <- notable
+ 46      279ms     402ms  2    <== SLOW
+ 47     3883ms    3883ms  1    <== SLOW
+ 48     2309ms    2309ms  1    <== SLOW
+ 49      248ms     385ms  2    <== SLOW
+ 50     2094ms    2094ms  1    <== SLOW
+ 51      310ms     374ms  2    <== SLOW
+ 52   373567ms  373567ms  1    <== SLOW
+ 53      755ms     951ms  2    <== SLOW
+ 54      195ms     264ms  2    <- notable
+ 55       67ms      67ms  1  
+ 56      223ms     306ms  2    <== SLOW
+ 57       83ms      83ms  1  
+ 58      110ms     190ms  2    <- notable
+heap after Phase A: 281.6 MB (Δ 29.4)
+
+## PHASE B — Islamic ON first bake (develop→arrangement→field, synchronous)
+idx  maxBlock  sumBlock  n   name
+  0        0ms       0ms  0  
+  1        0ms       0ms  0  
+  2        0ms       0ms  0  
+  3        0ms       0ms  0  
+  4        0ms       0ms  0  
+  5        0ms       0ms  0  
+  6        0ms       0ms  0  
+  7        0ms       0ms  0  
+  8        0ms       0ms  0  
+  9        0ms       0ms  0  
+ 10       56ms      56ms  1  
+ 11        0ms       0ms  0  
+ 12        0ms       0ms  0  
+ 13        0ms       0ms  0  
+ 14        0ms       0ms  0  
+ 15        0ms       0ms  0  
+ 16        0ms       0ms  0  
+ 17        0ms       0ms  0  
+ 18        0ms       0ms  0  
+ 19        0ms       0ms  0  
+ 20        0ms       0ms  0  
+ 21        0ms       0ms  0  
+ 22        0ms       0ms  0  
+ 23        0ms       0ms  0  
+ 24        0ms       0ms  0  
+ 25        0ms       0ms  0  
+ 26        0ms       0ms  0  
+ 27        0ms       0ms  0  
+ 28        0ms       0ms  0  
+ 29        0ms       0ms  0  
+ 30        0ms       0ms  0  
+ 31        0ms       0ms  0  
+ 32        0ms       0ms  0  
+ 33        0ms       0ms  0  
+ 34        0ms       0ms  0  
+ 35       63ms      63ms  1  
+ 36        0ms       0ms  0  
+ 37        0ms       0ms  0  
+ 38        0ms       0ms  0  
+ 39        0ms       0ms  0  
+ 40        0ms       0ms  0  
+ 41       85ms      85ms  1  
+ 42        0ms       0ms  0  
+ 43        0ms       0ms  0  
+ 44        0ms       0ms  0  
+ 45       65ms      65ms  1  
+ 46       52ms      52ms  1  
+ 47      207ms     374ms  2    <- notable
+ 48      108ms     108ms  1  
+ 49       51ms      51ms  1  
+ 50      123ms     123ms  1  
+ 51        0ms       0ms  0  
+ 52      129ms     186ms  2  
+ 53       55ms      55ms  1  
+ 54        0ms       0ms  0  
+ 55        0ms       0ms  0  
+ 56        0ms       0ms  0  
+ 57        0ms       0ms  0  
+ 58        0ms       0ms  0  
+heap after Phase B: 282.7 MB (Δ from start 30.5)
+
+## PHASE C — angle+offset sweep on the 6 worst Islamic tilings
+[console.error] hyperbolicIslamic: 30 unresolved texels DEEP inside the field for hyp-k2-3-3-3-4-4-4__3-3-3-4-4-4 — bake coverage bug
+[console.error] hyperbolicIslamic: 1120 unresolved texels DEEP inside the field for hyp-k2-3-3-3-4-4-4__3-3-3-4-4-4 — bake coverage bug
+                                             worst notch block: 3899ms
+    a10=129  a25=120  a40=99  a55=109  a70=106  a85=142  a90=118  o20=864  o50=1592  o80=3899  o99=2161
+                                             worst notch block: 4765ms
+    a10=141  a25=127  a40=132  a55=125  a70=134  a85=146  a90=137  o20=2047  o50=3831  o80=4687  o99=4765
+                                             worst notch block: 2952ms
+    a10=146  a25=123  a40=131  a55=114  a70=143  a85=138  a90=148  o20=1262  o50=2318  o80=2838  o99=2952
+[console.error] hyperbolicIslamic: 35 unresolved texels DEEP inside the field for hyp-k2-3-3-3-4-4-4__3-3-4-3-4-4 — bake coverage bug
+                                             worst notch block: 2029ms
+    a10=122  a25=114  a40=122  a55=109  a70=121  a85=120  a90=140  o20=868  o50=1609  o80=1970  o99=2029
+                                             worst notch block: 328ms
+    a10=98  a25=73  a40=66  a55=64  a70=58  a85=82  a90=62  o20=186  o50=263  o80=319  o99=328
+                                             worst notch block: 576ms
+    a10=0  a25=66  a40=0  a55=62  a70=55  a85=66  a90=54  o20=262  o50=455  o80=555  o99=576
+
+## PHASE D — thumbnail re-render storm (hue slider with catalogue grid open)
+visible hyperbolic thumbnails in DOM: 59
+  hueOffset=30: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  hueOffset=60: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  hueOffset=90: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  hueOffset=120: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  hueOffset=150: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  hueOffset=180: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  hueOffset=210: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  hueOffset=240: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  lineWidth=1: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  lineWidth=3: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  lineWidth=5: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  lineWidth=8: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+  lineWidth=2: maxBlock 0ms  sumBlock 0ms  (0 tasks)
+heap after Phase D: 436.8 MB (Δ from start 184.6)
+
+## SUMMARY
+worst base-bake blocks:
+  373567ms  
+   3883ms  
+   2309ms  
+   2094ms  
+    755ms  
+    362ms  
+    338ms  
+    310ms  
+worst Islamic first-bake blocks:
+    207ms  
+    129ms  
+    123ms  
+    108ms  
+     85ms  
+     65ms  
+     63ms  
+     56ms  
+heap: start 252.2MB  afterBase 281.6MB  afterIslamic 282.7MB  afterThumbs 436.8MB
+
+wrote experiments/results/hyp-perf-20260721-114131.json

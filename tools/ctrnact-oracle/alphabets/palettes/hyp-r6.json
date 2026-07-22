@@ -1,0 +1,15 @@
+{
+  "name": "hyp-r6",
+  "D": 12,
+  "closure": "negative-defect",
+  "maxValence": 12,
+  "comment": "single-tile [6] high-valence regular sweep",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    }
+  ]
+}

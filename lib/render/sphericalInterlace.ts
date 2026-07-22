@@ -43,11 +43,12 @@ const key = (p: V3): string => `${Math.round(p[0] * 1e6)},${Math.round(p[1] * 1e
 
 // Split every ray at the points where it crosses another ray in BOTH their interiors (transversal
 // great-circle crossings). At edge offset 0 / intersection-count 1 the weave crossings sit at the shared
-// ray endpoints (the dedup in buildSphericalInterlace already makes them 4-valent), so no split is needed.
-// But once the contact point slides off the midpoint (offset > 0) or rays pass through each other (count > 1),
-// the real crossings land mid-arc — and being endpoint-only, the graph would miss them and weave nothing.
-// Injecting them as shared vertices turns each into a proper 4-valent crossing (the two rays' X is computed
-// identically from both, so it dedupes). This is the spherical twin of buildArrangement's splitCrossings.
+// ray endpoints (the dedup in buildSphericalInterlace already makes them 4-valent), so no split is needed —
+// rays are contained in their own face by computeFaceRays' exit clamp, so they never cross another face's
+// rays mid-body. But once the contact point slides off the midpoint (offset > 0) or rays pass through each
+// other (count > 1), the real crossings land mid-arc — and being endpoint-only, the graph would miss them and
+// weave nothing. Injecting them as shared vertices turns each into a proper 4-valent crossing (the two rays' X
+// is computed identically from both, so it dedupes). This is the spherical twin of buildArrangement's splitCrossings.
 function splitAtCrossings(rays: Array<[V3, V3]>): Array<[V3, V3]> {
 	const N = rays.length;
 	const pn = rays.map(([O, E]) => norm3(cross(O, E))); // great-circle plane normal
@@ -106,6 +107,8 @@ interface WEdge {
 export interface SphInterlaceOptions extends SphericalIslamicOptions {
 	/** Full band width in radians of arc. */
 	width: number;
+	/** Border ring thickness added OUTSIDE each side, in radians of arc (default 0). Same ruler as `width`. */
+	border?: number;
 	/** Chirality seed: flips every crossing's over/under. */
 	startUnder?: boolean;
 	/** Tip treatment: true (default) extends the cap by width/2, false = butt. */
@@ -119,13 +122,16 @@ export interface SphInterlaceOptions extends SphericalIslamicOptions {
 // outline — otherwise the border cuts diagonally across the fill). Bodies butt straight through every
 // crossing (no cut); the over/under is carried by HEIGHT instead — `levelA`/`levelB` lift each end at a
 // crossing (+1 over, −1 under, 0 neutral) so the over strand's body simply covers the under strand there.
-// `outline` is the border segments to stroke; each carries the level at its two ends so the border ramps
-// with the body. Points are on the unit sphere (the mesh scales them by the per-level radius).
+// `outline` is the border ring: `a`→`b` on the FILL boundary plus `oa`→`ob`, the same segment on the OUTER
+// ring `border` radians further out. The quad between the two is the border — real geometry on the sphere, in
+// the same arc-length units as the band, not a fixed-width sweep. Each segment carries the level at its two
+// ends so the border ramps with the body. Points are on the unit sphere (the mesh scales them by the
+// per-level radius).
 export interface SphBand {
 	fillCorners: [V3, V3, V3, V3];
 	levelA: number;
 	levelB: number;
-	outline: Array<{ a: V3; b: V3; la: number; lb: number }>;
+	outline: Array<{ a: V3; b: V3; oa: V3; ob: V3; la: number; lb: number }>;
 }
 
 const endUnder = (e: WEdge, end: 0 | 1): boolean => (end === 0 ? e.underA : e.underB);
@@ -192,7 +198,11 @@ interface Corners {
 // sphere via normalize(pos + x·u + y·v). Bodies butt straight through every crossing now (no trimming — the
 // weave is done by height), so this is just: degree-1 cap, ≥4 crossing → butt, else a mitre against the
 // angular neighbours.
-function cornersAt(verts: WVertex[], vi: number, ei: number, end: 0 | 1, h: number, square: boolean): Corners {
+//
+// `hw` is the ring being built — `h` for the fill boundary, `h + border` for the outer edge of the border
+// ring — so the whole corner construction runs twice per edge-end and the quad between the two rings IS the
+// border, exactly as in the flat buildBands.
+function cornersAt(verts: WVertex[], vi: number, ei: number, end: 0 | 1, h: number, hw: number, square: boolean): Corners {
 	const vt = verts[vi];
 	const ends = vt.ends;
 	const deg = ends.length;
@@ -203,11 +213,14 @@ function cornersAt(verts: WVertex[], vi: number, ei: number, end: 0 | 1, h: numb
 
 	const meDir = dir2(me.angle);
 	const nMe = leftNormal(meDir);
-	const buttL = Vector.scale(nMe, h);
-	const buttR = Vector.scale(nMe, -h);
+	const buttL = Vector.scale(nMe, hw);
+	const buttR = Vector.scale(nMe, -hw);
 
 	if (deg === 1) {
-		const ext = square ? Vector.scale(meDir, -h) : new Vector(0, 0);
+		// Square cap extends by this ring's own half-width, butt cap by the ring's offset from the fill (0 for
+		// the fill ring, `border` for the outer). Either way the outer cap sits `border` beyond the inner one, so
+		// the two rings stay flush at a star tip and the cap's border quad has area even with a butt cap.
+		const ext = Vector.scale(meDir, -(square ? hw : hw - h));
 		return { fL: map(Vector.add(buttL, ext)), fR: map(Vector.add(buttR, ext)), tip: true };
 	}
 	if (deg >= 4) return { fL: map(buttL), fR: map(buttR), tip: false }; // crossing: butt straight through
@@ -218,7 +231,7 @@ function cornersAt(verts: WVertex[], vi: number, ei: number, end: 0 | 1, h: numb
 	const joinPoint = (ea: WEnd, eb: WEnd): Vector | null => {
 		const da = dir2(ea.angle);
 		const db = dir2(eb.angle);
-		return lineIntersect(Vector.scale(leftNormal(da), h), da, Vector.scale(leftNormal(db), -h), db);
+		return lineIntersect(Vector.scale(leftNormal(da), hw), da, Vector.scale(leftNormal(db), -hw), db);
 	};
 	const fL = joinPoint(me, next) ?? buttL;
 	const fR = joinPoint(prev, me) ?? buttR;
@@ -238,7 +251,9 @@ function levelForEnd(verts: WVertex[], e: WEdge, vi: number, end: 0 | 1): number
 export function buildSphericalInterlace(poly: Polyhedron, opts: SphInterlaceOptions): { bands: SphBand[]; degenerate: boolean } {
 	const raw = sphericalIslamicRaySegments(poly, opts);
 	// Off-midpoint contact (offset > 0) or pass-through rays (count > 1) put the real weave crossings mid-arc,
-	// so split there to surface them as 4-valent vertices — same rule as the fill's splitCrossings.
+	// so split there to surface them as 4-valent vertices — same rule as the fill's splitCrossings. At the
+	// default construction rays are contained in their own face (computeFaceRays' exit clamp), so every crossing
+	// already sits at a shared endpoint and no split is needed.
 	const split = (opts.edgeOffsetFrac ?? 0) > 1e-9 || (opts.intersectionCount ?? 1) > 1;
 	const rays = split ? splitAtCrossings(raw) : raw;
 
@@ -282,22 +297,25 @@ export function buildSphericalInterlace(poly: Polyhedron, opts: SphInterlaceOpti
 	const degenerate = assignOverUnder(verts, edges, opts.startUnder ?? false);
 
 	const h = opts.width / 2;
+	const hOuter = h + Math.max(0, opts.border ?? 0);
 	const square = opts.squareCap !== false;
 	const weave = !degenerate && opts.weave !== false;
 
 	const bands: SphBand[] = [];
 	for (let ei = 0; ei < edges.length; ei++) {
 		const e = edges[ei];
-		const A = cornersAt(verts, e.ia, ei, 0, h, square);
-		const B = cornersAt(verts, e.ib, ei, 1, h, square);
+		const A = cornersAt(verts, e.ia, ei, 0, h, h, square);
+		const B = cornersAt(verts, e.ib, ei, 1, h, h, square);
+		const Ao = cornersAt(verts, e.ia, ei, 0, h, hOuter, square);
+		const Bo = cornersAt(verts, e.ib, ei, 1, h, hOuter, square);
 		const levelA = weave ? levelForEnd(verts, e, e.ia, 0) : 0;
 		const levelB = weave ? levelForEnd(verts, e, e.ib, 1) : 0;
-		const outline: Array<{ a: V3; b: V3; la: number; lb: number }> = [
-			{ a: A.fL, b: B.fR, la: levelA, lb: levelB }, // the two long sides (edge-left of A meets edge-right of B)
-			{ a: A.fR, b: B.fL, la: levelA, lb: levelB },
+		const outline: SphBand["outline"] = [
+			{ a: A.fL, b: B.fR, oa: Ao.fL, ob: Bo.fR, la: levelA, lb: levelB }, // the two long sides (edge-left of A meets edge-right of B)
+			{ a: A.fR, b: B.fL, oa: Ao.fR, ob: Bo.fL, la: levelA, lb: levelB },
 		];
-		if (A.tip) outline.push({ a: A.fL, b: A.fR, la: levelA, lb: levelA });
-		if (B.tip) outline.push({ a: B.fL, b: B.fR, la: levelB, lb: levelB });
+		if (A.tip) outline.push({ a: A.fL, b: A.fR, oa: Ao.fL, ob: Ao.fR, la: levelA, lb: levelA });
+		if (B.tip) outline.push({ a: B.fL, b: B.fR, oa: Bo.fL, ob: Bo.fR, la: levelB, lb: levelB });
 		bands.push({ fillCorners: [A.fL, A.fR, B.fR, B.fL], levelA, levelB, outline });
 	}
 

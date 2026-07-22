@@ -142,6 +142,60 @@ export interface ShaderTiling {
 }
 
 /**
+ * Fill every unresolved texel with the value of a Chebyshev-nearest RESOLVED texel, so the baked field is
+ * total (the shader can never sample a black hole). One 8-connected multi-source BFS seeded from all
+ * resolved texels: on an unweighted 8-connected grid, graph distance == Chebyshev distance, so a texel's
+ * first arrival carries a nearest source. O(res²) total, vs the old per-texel ring search's
+ * O(unresolved · ring²) which blocked the main thread for minutes on deep-domain tilings (the corners +
+ * rim of the sampled square are unresolved, and there are hundreds of thousands of them at res 2048).
+ * Ties (equidistant sources with different values) resolve to whichever BFS wave arrived first — a
+ * sub-pixel boundary choice, invisible in the field. Mutates `data` in place.
+ */
+export function fillNearestResolved(data: Uint8Array, resolved: Uint8Array, unresolvedIdx: number[], res: number): void {
+	if (unresolvedIdx.length === 0) return;
+	const total = res * res;
+	const src = new Int32Array(total).fill(-1); // nearest resolved texel index per texel (-1 = unreached)
+	const queue = new Int32Array(total); // each texel enqueues at most once → total slots suffice
+	let head = 0;
+	let tail = 0;
+	for (let p = 0; p < total; p++) {
+		if (resolved[p]) {
+			src[p] = p;
+			queue[tail++] = p;
+		}
+	}
+	if (tail === 0) return; // no resolved texel to copy from — leave the field untouched
+	while (head < tail) {
+		const p = queue[head++];
+		const s = src[p];
+		const pi = p % res;
+		const pj = (p - pi) / res;
+		for (let dj = -1; dj <= 1; dj++) {
+			const jj = pj + dj;
+			if (jj < 0 || jj >= res) continue;
+			for (let di = -1; di <= 1; di++) {
+				if (di === 0 && dj === 0) continue;
+				const ii = pi + di;
+				if (ii < 0 || ii >= res) continue;
+				const np = jj * res + ii;
+				if (src[np] !== -1) continue;
+				src[np] = s;
+				queue[tail++] = np;
+			}
+		}
+	}
+	for (const o of unresolvedIdx) {
+		const s = src[o >> 2];
+		if (s < 0) continue;
+		const so = s << 2;
+		data[o] = data[so];
+		data[o + 1] = data[so + 1];
+		data[o + 2] = data[so + 2];
+		data[o + 3] = data[so + 3];
+	}
+}
+
+/**
  * Build everything the per-pixel renderer needs for one tiling. Returns null (with a loud
  * console.error) when the Dirichlet certificate fails — callers fall back to the 2D polygon path.
  */
@@ -267,31 +321,10 @@ export function prepareShaderTiling(
 			resolved[o / 4] = 1;
 		}
 	}
-	// post-pass: unresolved texels copy the nearest resolved texel (ring search) so the field is TOTAL
-	for (const o of unresolvedIdx) {
-		const idx = o / 4;
-		const i = idx % res;
-		const j = (idx - i) / res;
-		let done = false;
-		for (let ring = 1; ring < res && !done; ring++) {
-			for (let dj = -ring; dj <= ring && !done; dj++) {
-				for (let di = -ring; di <= ring && !done; di++) {
-					if (Math.max(Math.abs(di), Math.abs(dj)) !== ring) continue;
-					const ii = i + di;
-					const jj = j + dj;
-					if (ii < 0 || jj < 0 || ii >= res || jj >= res) continue;
-					const oo = (jj * res + ii) * 4;
-					if (resolved[oo / 4]) {
-						data[o] = data[oo];
-						data[o + 1] = data[oo + 1];
-						data[o + 2] = data[oo + 2];
-						data[o + 3] = data[oo + 3];
-						done = true;
-					}
-				}
-			}
-		}
-	}
+	// post-pass: unresolved texels copy the nearest resolved texel so the field is TOTAL (a distance
+	// transform — O(res²), vs the old per-texel ring search's O(unresolved·ring²) that blocked the main
+	// thread for minutes on deep-domain tilings).
+	fillNearestResolved(data, resolved, unresolvedIdx, res);
 	if (unresolvedDeep > 0) {
 		console.error(
 			`hyperbolic reducer: ${unresolvedDeep} unresolved texels DEEP inside the field for ${meta.id} — bake coverage bug`,

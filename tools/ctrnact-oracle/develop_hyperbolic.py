@@ -30,7 +30,7 @@ sys.path.insert(0, _HERE)
 # palette tables at the hyperbolic alphabet. install_palette mutates pruner's globals, so re-calling it
 # after import overrides the spherical default the module set at import time.
 import develop_spherical as ds
-ds.install_palette("hyperbolic")
+ds.install_palette("hyperbolic")  # default; main() re-installs per --palette so custom alphabets decode
 
 TOL = 1e-4       # position dedup grid
 ANGTOL = 1e-3    # heading dedup grid
@@ -252,6 +252,15 @@ def develop_block(b, boundR=0.9):
         "vertices": [[float(x), float(y)] for (x, y) in verts],
         "faces": [list(map(int, ring)) for ring in F],
         "tiles": len(F), "residual": res,
+        # Quotient half-edge structure (the darts) so the TS client can RE-DEVELOP the tiling to any
+        # radius, re-centred on the view, without reconstructing the symmetry group. These are the exact
+        # combinatorial input to develop_patch above; seed 0 is the dart the flood-fill starts from.
+        "darts": {
+            "rneig": list(map(int, dec["rneig"])),
+            "glue": list(map(int, dec["glue"])),
+            "lvert": list(map(int, dec["lvert"])),
+            "seed": 0,
+        },
     }
     return rec, None
 
@@ -326,11 +335,13 @@ def main():
     ap.add_argument("--kmax", type=int, default=1)
     ap.add_argument("--boundR", type=float, default=0.9)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--palette", default="hyperbolic", help="which tables/<palette> alphabet to decode against")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
     if args.selftest:
         _selftest()
         return
+    ds.install_palette(args.palette)  # decode against this palette's generated alphabet, not the default
     run(args.pruned, args.out, args.report, args.kmin, args.kmax, args.boundR, args.limit)
 
 

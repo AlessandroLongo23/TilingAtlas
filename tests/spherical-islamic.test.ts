@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { PLATONIC_SOLIDS, type Polyhedron, type Vec3 } from "@/lib/render/platonicSolids";
-import { sphericalIslamicArcs } from "@/lib/render/sphericalIslamic";
+import { PRISM_ANTIPRISM_SOLIDS } from "@/lib/render/prismSolids";
+import { sphericalIslamicArcs, sphericalIslamicRaySegments } from "@/lib/render/sphericalIslamic";
 
 // The 5 solids with their edge counts. Every face contributes 2 rays per edge, and each edge is shared by
 // two faces, so a fully-populated construction (no dropped rays — guaranteed by the D_n symmetry of a
@@ -137,4 +138,42 @@ describe("sphericalIslamicArcs — intersection count never drops a ray", () => 
 			expect(arcs.length).toBe(4 * 30);
 		});
 	}
+});
+
+// A construction ray belongs to the face it roots in and must never leave it — computeFaceRays clamps each
+// ray at its face-boundary exit. Without that clamp, near-parallel rays on the prism/antiprism band faces find
+// their only forward crossing far across the sphere and get drawn to it: the long stray line reported on the
+// decagonal prism at 38–39°. A ray contained in its face cannot be longer than that face's angular diameter,
+// so the max ray arc over the whole solid must stay within its largest face's diameter.
+function maxFaceDiameter(poly: Polyhedron): number {
+	const unit = poly.vertices.map(normalize);
+	let d = 0;
+	for (const f of poly.faces)
+		for (let i = 0; i < f.length; i++)
+			for (let j = i + 1; j < f.length; j++)
+				d = Math.max(d, Math.acos(Math.min(1, Math.max(-1, unit[f[i]][0] * unit[f[j]][0] + unit[f[i]][1] * unit[f[j]][1] + unit[f[i]][2] * unit[f[j]][2]))));
+	return d;
+}
+function maxRayArc(poly: Polyhedron, angleDeg: number): number {
+	const rays = sphericalIslamicRaySegments(poly, { angleRad: (angleDeg * Math.PI) / 180 });
+	let mx = 0;
+	for (const [O, E] of rays) mx = Math.max(mx, Math.acos(Math.min(1, Math.max(-1, O[0] * E[0] + O[1] * E[1] + O[2] * E[2]))));
+	return mx;
+}
+
+describe("sphericalIslamicRaySegments — rays stay inside their face (no runaway stop)", () => {
+	for (const poly of PRISM_ANTIPRISM_SOLIDS) {
+		it(`${poly.id}: every ray arc ≤ its face diameter across 30–50°`, () => {
+			const cap = maxFaceDiameter(poly) + 1e-6;
+			for (let a = 30; a <= 50; a++) expect(maxRayArc(poly, a), `runaway ray at ${a}°`).toBeLessThanOrEqual(cap);
+		});
+	}
+
+	it("decagonal-prism: the 38–39° stray-line ray is bounded (regression)", () => {
+		// Pre-fix these two angles produced a ~2.4–2.9 rad (≈160°) ray shooting across the cap; the cap face
+		// diameter is ≈2.5 rad, and a contained band-face ray here is well under 0.5 rad.
+		const poly = PRISM_ANTIPRISM_SOLIDS.find((p) => p.id === "decagonal-prism")!;
+		expect(maxRayArc(poly, 38)).toBeLessThan(0.6);
+		expect(maxRayArc(poly, 39)).toBeLessThan(0.6);
+	});
 });

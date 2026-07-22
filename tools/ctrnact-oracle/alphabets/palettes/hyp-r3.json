@@ -1,0 +1,15 @@
+{
+  "name": "hyp-r3",
+  "D": 12,
+  "closure": "negative-defect",
+  "maxValence": 12,
+  "comment": "single-tile [3] high-valence regular sweep",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    }
+  ]
+}

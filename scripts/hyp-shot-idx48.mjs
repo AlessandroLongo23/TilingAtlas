@@ -1,0 +1,20 @@
+import { chromium } from "playwright";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const OUT = "/private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/b1e8a838-0019-43de-8b62-feb59727d36e/scratchpad";
+const browser = await chromium.launch({ headless: false, args: ["--use-gl=angle"] });
+const page = await browser.newPage({ viewport: { width: 1000, height: 1000 }, deviceScaleFactor: 2 });
+page.on("console", (m) => { const t = m.text(); if (/bake coverage/i.test(t)) console.error("[console]", t.slice(0, 150)); });
+await page.goto("http://localhost:3000/play", { waitUntil: "domcontentloaded", timeout: 120000 });
+await page.waitForSelector("canvas", { timeout: 60000 });
+await page.click('button:has-text("Hyperbolic")', { timeout: 30000 });
+await page.waitForFunction(() => window.__play?.list?.length > 0, { timeout: 30000 });
+// find the exact patch id the user hit
+const idx = await page.evaluate(() => window.__play.list.findIndex((t) => t.developed?.patch === "hyp-k2-3-3-3-4-4-4__3-3-4-3-4-4"));
+console.log("target list index:", idx);
+await page.evaluate((i) => window.__play.select(window.__play.list[i]), idx);
+await sleep(2500);
+await page.evaluate(() => window.__stores.configuration.setState({ isIslamic: true, islamicAngle: 45, islamicEdgeOffset: 0 }));
+await sleep(3000);
+await page.screenshot({ path: `${OUT}/idx48-islamic.png` });
+console.log("wrote idx48-islamic.png");
+await browser.close();

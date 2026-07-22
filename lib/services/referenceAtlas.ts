@@ -37,8 +37,9 @@ export interface ReferenceTiling {
 	schlafli?: [number, number];
 	// Hyperbolic shelf: the id of a developed Poincaré patch in public/hyperbolic-developed.json (from the
 	// Čtrnáct SU(1,1) developer, tools/ctrnact-oracle/develop_hyperbolic.py). Its presence routes /play +
-	// thumbnails to the per-pixel Poincaré-disk renderer (components/hyperbolic-developed-canvas.tsx). Every
-	// hyperbolic catalogue entry carries it.
+	// thumbnails to the explicit-geometry renderer (components/hyperbolic-developed-canvas.tsx), which
+	// re-develops the tiling from the patch's baked darts, centred on the view, filling the disk to the rim.
+	// Every hyperbolic catalogue entry carries it.
 	developed?: { patch: string };
 	// Hyperbolic shelf: the forced edge length ℓ of the developed patch (the ℓ solving Σ α(pᵢ,ℓ)=2π),
 	// merged from public/hyperbolic-developed.json at load. Always a scalar — one edge length per tiling,
@@ -143,11 +144,11 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	convex: { short: "Convex irregular", long: "Convex irregular polygons" },
 	isotoxal: { short: "Isotoxal", long: "Isotoxal polygons" },
 	mixed: { short: "Mixed", long: "Mixed polygons" },
-	scaled: { short: "Scaled", long: "Scaled polygons (sides 1–3)" },
-	polyomino: { short: "Polyominoes", long: "Polyominoes (Tetris pieces)" },
+	scaled: { short: "Scaled", long: "Scaled polygons" },
+	polyomino: { short: "Polyominoes", long: "Polyominoes" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
-	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic {p,q} tilings" },
-	spherical: { short: "Spherical", long: "Spherical tilings (uniform polyhedra & Johnson solids)" },
+	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic tilings" },
+	spherical: { short: "Spherical", long: "Spherical tilings" },
 };
 
 // The geometry axis — the /play catalogue's top-level split (Euclidean / hyperbolic / spherical), one
