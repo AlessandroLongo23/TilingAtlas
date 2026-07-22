@@ -542,18 +542,68 @@ const PATCH_SYM: [number, number, number, number][] = (() => {
 	return out;
 })();
 
-/** World-coordinate vertices of one component's polygons (with the ring offsets applied). */
+/**
+ * World-coordinate vertices of one component's tile, laid out CONNECTED.
+ *
+ * The catch: the developer emits one cell per cell-orbit at its fundamental-domain position, so the
+ * cells of a single tile can sit a full period apart with no shared corner — a 2-square domino whose
+ * two squares are linked only through a period translation. Fingerprinting those raw positions gives a
+ * different "shape" to every congruent domino, which is the bug this fixes. So flood-fill the cells
+ * across shared edges first, assigning each a lift that makes it adjacent to its neighbour, then read
+ * the points off the reassembled tile. Each half-edge is keyed by its two vertex indices and the offset
+ * between them, which is period-invariant, so the two cells across an internal edge always match; a
+ * boundary edge appears once (its far cell is another component) and is never crossed.
+ */
 function componentPoints(patch: FreedrawPatch, comp: number): [number, number][] {
 	const [t1x, t1y] = patch.T1;
 	const [t2x, t2y] = patch.T2;
+	const idxs: number[] = [];
+	for (let pi = 0; pi < patch.polys.length; pi++) if (patch.polyComp[pi] === comp) idxs.push(pi);
+
+	// Half-edges of one poly: for each edge, the lower-indexed endpoint u, its offset, and a key shared
+	// by the same undirected edge on the neighbouring cell.
+	const halfEdges = (pi: number) => {
+		const ring = patch.polys[pi];
+		const out: { key: string; u: number; offU: [number, number] }[] = [];
+		for (let i = 0; i < ring.length; i++) {
+			const [va, ax, ay] = ring[i];
+			const [vb, bx, by] = ring[(i + 1) % ring.length];
+			const [u, offU, offV] =
+				va < vb ? [va, [ax, ay], [bx, by]] : [vb, [bx, by], [ax, ay]];
+			const uu = u as number;
+			const o = offU as [number, number];
+			const ov = offV as [number, number];
+			out.push({ key: `${Math.min(va, vb)},${Math.max(va, vb)},${ov[0] - o[0]},${ov[1] - o[1]}`, u: uu, offU: o });
+		}
+		return out;
+	};
+
+	const index = new Map<string, { pi: number; u: number; offU: [number, number] }[]>();
+	for (const pi of idxs)
+		for (const e of halfEdges(pi)) (index.get(e.key) ?? index.set(e.key, []).get(e.key)!).push({ pi, u: e.u, offU: e.offU });
+
+	const lift = new Map<number, [number, number]>([[idxs[0], [0, 0]]]);
+	const queue = [idxs[0]];
+	for (let qi = 0; qi < queue.length; qi++) {
+		const pi = queue[qi];
+		const [lx, ly] = lift.get(pi)!;
+		for (const e of halfEdges(pi)) {
+			for (const m of index.get(e.key) ?? []) {
+				if (m.pi === pi || lift.has(m.pi)) continue;
+				// e's endpoint u sits at e.offU + L; the neighbour's same endpoint at m.offU + Lm. Equate.
+				lift.set(m.pi, [lx + e.offU[0] - m.offU[0], ly + e.offU[1] - m.offU[1]]);
+				queue.push(m.pi);
+			}
+		}
+	}
+
 	const pts: [number, number][] = [];
-	for (let pi = 0; pi < patch.polys.length; pi++) {
-		if (patch.polyComp[pi] !== comp) continue;
+	for (const pi of idxs) {
+		const [lx, ly] = lift.get(pi) ?? [0, 0];
 		for (const [vi, ox, oy] of patch.polys[pi]) {
-			pts.push([
-				patch.verts[vi][0] + ox * t1x + oy * t2x,
-				patch.verts[vi][1] + ox * t1y + oy * t2y,
-			]);
+			const x = ox + lx;
+			const y = oy + ly;
+			pts.push([patch.verts[vi][0] + x * t1x + y * t2x, patch.verts[vi][1] + x * t1y + y * t2y]);
 		}
 	}
 	return pts;

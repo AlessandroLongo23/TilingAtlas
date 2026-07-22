@@ -50,6 +50,18 @@ describe("classifyPatchFaces — combined-grid shape/pose", () => {
 		expect(c.poseCount).toBeLessThan(18);
 	});
 
+	it.skipIf(!k2)("merges dominoes emitted a period apart into one shape", () => {
+		// fdts-2-00041: two 2-square dominoes (comps 3,4) whose squares are emitted a full period apart,
+		// with no shared corner, plus two 2-triangle rhombi (comps 2,7) likewise split. Before the
+		// connected reconstruction each got its own shape from its raw offsets; now congruent tiles merge.
+		const c = classifyPatchFaces((byId(k2, "fdts-2-00041") as FreedrawPattern).patch!);
+		expect(c.shapeCount).toBe(3); // 4 unit triangles, 2 rhombi, 2 dominoes
+		expect(c.shape[3]).toBe(c.shape[4]); // the two dominoes share a shape
+		expect(c.shape[2]).toBe(c.shape[7]); // the two rhombi share a shape
+		expect(c.shape[3]).not.toBe(c.shape[2]); // domino ≠ rhombus
+		expect(c.pose[3]).not.toBe(c.pose[4]); // ...but they are posed differently
+	});
+
 	it.skipIf(!k2)("keeps shape no finer than pose everywhere at k=2", () => {
 		// Shape merges poses, so shapeCount <= poseCount for every pattern — the invariant that makes
 		// toggling shape->pose a split, never a reshuffle.
