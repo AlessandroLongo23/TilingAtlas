@@ -3,6 +3,7 @@
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ALPHA_STEP_DEG, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { Kbd } from "@/components/ui/kbd";
+import { RangeInput } from "@/components/ui/range-input";
 import { useMetaKeyLabel } from "@/lib/hooks/useMetaKeyLabel";
 
 const GREEK = ["α", "β", "γ", "δ", "ε"];
@@ -35,14 +36,13 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 						<span className="text-xs font-medium text-accent whitespace-nowrap w-24">
 							{(GREEK[j] ?? `α${j + 1}`)} = {effAlphas[j].toFixed(1)}°
 						</span>
-						<input
-							type="range"
+						<RangeInput
 							min={p.alphaRangeDegOpen[0]}
 							max={p.alphaRangeDegOpen[1]}
 							step={ALPHA_STEP_DEG}
 							value={effAlphas[j]}
-							onChange={(e) => setAlphaAt(j, Number(e.target.value))}
-							className="w-56 accent-accent"
+							onChange={(v) => setAlphaAt(j, v)}
+							className="w-56"
 							aria-label={`family angle ${GREEK_NAMES[j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
 						/>
 						<span className="text-[10px] text-fg-muted whitespace-nowrap font-mono">

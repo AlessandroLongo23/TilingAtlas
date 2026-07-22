@@ -168,7 +168,7 @@ export function TilingModalContent() {
 				>
 					<Filter size={18} className={showFilters ? "text-accent" : ""} />
 					{activeFiltersCount > 0 ? (
-						<span className="absolute -top-1 -right-1 bg-accent text-accent-contrast text-xs rounded-full w-4 h-4 flex items-center justify-center">
+						<span className="absolute -top-1 -right-1 bg-accent text-accent-contrast text-xs w-4 h-4 flex items-center justify-center">
 							{activeFiltersCount}
 						</span>
 					) : null}

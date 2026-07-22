@@ -110,7 +110,7 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 						}}
 					/>
 					<div
-						className="absolute w-3.5 h-3.5 bg-white border-2 border-line-subtle rounded-full z-20 pointer-events-none"
+						className="absolute w-3.5 h-3.5 bg-white border-2 border-line-subtle z-20 pointer-events-none"
 						style={{
 							left: position.x,
 							top: position.y,

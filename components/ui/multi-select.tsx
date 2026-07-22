@@ -52,9 +52,9 @@ export function MultiSelect({
 						key={option.id}
 						onClick={() => toggle(option.id)}
 						className={cn(
-							"px-3 py-1 text-xs rounded-full transition-all border select-none cursor-pointer",
+							"px-3 py-1 text-xs transition-all border select-none cursor-pointer",
 							selected.includes(option.id)
-								? "bg-accent-subtle text-accent border-line-focus hover:bg-accent-subtle"
+								? "bg-fg text-fg-inverse border-fg hover:bg-fg"
 								: "bg-surface-overlay/80 text-fg-muted border-line hover:bg-surface-overlay/50 hover:text-fg-secondary",
 						)}
 					>

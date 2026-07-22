@@ -43,6 +43,9 @@ interface InteractiveTilingPreviewCardProps {
 	tilingId?: string;
 	/** Accessible name for the card, e.g. "3.3.4.3.4 · snub square". Not rendered visually. */
 	title?: string;
+	/** Lattice periods across the card at reset zoom. Wider cards want more, or the patch reads as
+	 *  a crop of one tile instead of a tiling. Default 3 (the /theory prose cards). */
+	homePeriods?: number;
 	className?: string;
 }
 
@@ -54,8 +57,11 @@ const HOME_PERIODS = 3;
 // curve everywhere is what makes the reflow read as a single movement instead of three.
 export const CARD_LAYOUT_SPRING = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-export function InteractiveTilingPreviewCard({ cell, tilingId, title, className }: InteractiveTilingPreviewCardProps) {
+export function InteractiveTilingPreviewCard({ cell, tilingId, title, homePeriods = HOME_PERIODS, className }: InteractiveTilingPreviewCardProps) {
 	const hostRef = useRef<HTMLDivElement | null>(null);
+	// In a ref, not the GL effect's deps: changing it must not tear down and rebuild the context.
+	const periodsRef = useRef(homePeriods);
+	periodsRef.current = homePeriods;
 	const cellRef = useRef(cell);
 	cellRef.current = cell;
 	const controlsRef = useRef<CardControls | null>(null);
@@ -139,7 +145,7 @@ export function InteractiveTilingPreviewCard({ cell, tilingId, title, className 
 					v1: { x: mesh.v1[0], y: mesh.v1[1] },
 					v2: { x: mesh.v2[0], y: mesh.v2[1] },
 				};
-				homeZoomRef.current = defaultZoomForCell(basisRef.current.v1, basisRef.current.v2, w, HOME_PERIODS);
+				homeZoomRef.current = defaultZoomForCell(basisRef.current.v1, basisRef.current.v2, w, periodsRef.current);
 				controlsRef.current = makeCardControls(homeZoomRef.current);
 			}
 			const ctrl = controlsRef.current;
@@ -253,7 +259,7 @@ export function InteractiveTilingPreviewCard({ cell, tilingId, title, className 
 		// Recompute the home zoom for the current width — the card may have expanded since mount.
 		const basis = basisRef.current;
 		const w = hostRef.current?.clientWidth ?? 0;
-		if (basis && w > 0) homeZoomRef.current = defaultZoomForCell(basis.v1, basis.v2, w, HOME_PERIODS);
+		if (basis && w > 0) homeZoomRef.current = defaultZoomForCell(basis.v1, basis.v2, w, periodsRef.current);
 		resetCardControls(ctrl, homeZoomRef.current);
 	};
 

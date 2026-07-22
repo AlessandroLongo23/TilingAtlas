@@ -21,6 +21,20 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
+  /* Squared design system: Tailwind's OWN radius scale is zeroed too, so every built-in
+     rounded-{sm..3xl} utility in the codebase renders square without touching call sites.
+     rounded-full is NOT var-driven in Tailwind v4 — the few deliberate circles (spinners,
+     the hue wheel) keep using it; decorative uses were swept out of the components. */
+  --radius: 0;
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+
   /* Surfaces → bg-surface, bg-surface-raised, bg-surface-chrome, bg-surface-overlay, bg-surface-sunken */
   --color-surface:         var(--color-surface-base);
   --color-surface-raised:  var(--color-surface-raised);
@@ -97,6 +111,289 @@ body {
   scrollbar-width: none;
 }
 
+/* Tracked range (2026-07-22) — the .ta-range successor used by <RangeInput>. The track, fill,
+   tick marks and thumb are ordinary DOM elements; the native input lies transparent on top and
+   keeps every pointer, keyboard and a11y behaviour. Position is one inherited custom property,
+   --f (0..1), so the fill and thumb can never drift out of sync.
+   Geometry mirrors the native control: a 12px thumb travels centre-6px … centre-(width-6px),
+   which is exactly where the tick marks land. The fill is a full-width bar scaled from the left
+   — off by at most 6px from the true thumb centre, and that error is always hidden underneath
+   the 12px thumb, which is why it can be a composited scaleX instead of an animated width. */
+/* No width here on purpose: unlayered rules beat Tailwind's `@layer utilities`, so a width in
+   this block would silently override the w-* class a caller passes (as .ta-range did). Width
+   comes from RangeInput's className, which defaults to w-full. */
+.ta-track {
+  position: relative;
+  display: block;
+  height: 14px;
+  cursor: pointer;
+}
+.ta-track-line,
+.ta-track-fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  margin-top: -1px;
+  pointer-events: none;
+}
+.ta-track-line {
+  background: var(--color-border-default);
+}
+.ta-track-fill {
+  background: var(--color-text-primary);
+  transform-origin: left center;
+  transform: scaleX(var(--f, 0));
+}
+/* One mark per reachable value, drawn only when there are few enough to read (see RangeInput).
+   The box is inset 5.5px so the marks straddle the thumb-centre positions; the period is
+   (box - 1px) / --ticks, i.e. the travel span divided by the number of intervals. */
+.ta-track-ticks {
+  position: absolute;
+  top: 50%;
+  left: 5.5px;
+  width: calc(100% - 11px);
+  height: 6px;
+  margin-top: -3px;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-border-strong) 0 1px,
+    transparent 1px calc((100% - 1px) / var(--ticks, 1))
+  );
+}
+.ta-track-travel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% - 12px);
+  height: 100%;
+  pointer-events: none;
+  transform: translateX(calc(var(--f, 0) * 100%));
+}
+.ta-track-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  background: var(--color-text-primary);
+}
+/* Stepped values would otherwise jump the thumb a whole interval at a time. The glide is capped
+   at one step of travel, so it smooths the jump without ever trailing the pointer by more. */
+.ta-track-fill,
+.ta-track-travel {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-track-fill,
+  .ta-track-travel {
+    transition: none;
+  }
+}
+.ta-track-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  opacity: 0;
+  cursor: inherit;
+}
+.ta-track-input::-webkit-slider-runnable-track {
+  height: 2px;
+  background: transparent;
+}
+.ta-track-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: none;
+  background: transparent;
+}
+.ta-track-input::-moz-range-track {
+  height: 2px;
+  background: transparent;
+}
+.ta-track-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.ta-track:has(.ta-track-input:focus-visible) .ta-track-thumb {
+  outline: 1px solid var(--color-text-primary);
+  outline-offset: 3px;
+}
+.ta-track:has(.ta-track-input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Squared monochrome range input — pilot of the squared w/b design system (2026-07-22).
+   Superseded by .ta-track above for single-value sliders; still the dual-thumb track.
+   .ta-range draws its own 2px square-ended track (filled share via the --fill custom property,
+   set inline by the component) and a 12px square thumb in the foreground colour, so the control
+   is pure black-on-paper in light mode and white-on-black in dark. No radii anywhere.
+   .ta-range-overlay is the stacked dual-thumb variant: the input is invisible and click-through
+   except for its thumb (the track is drawn by the component underneath). */
+.ta-range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 14px;
+  background: transparent;
+  cursor: pointer;
+}
+.ta-range::-webkit-slider-runnable-track {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    var(--color-text-primary) var(--fill, 0%),
+    var(--color-border-default) var(--fill, 0%)
+  );
+}
+.ta-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  background: var(--color-text-primary);
+  border: none;
+  border-radius: 0;
+}
+.ta-range::-moz-range-track {
+  height: 2px;
+  background: var(--color-border-default);
+}
+.ta-range::-moz-range-progress {
+  height: 2px;
+  background: var(--color-text-primary);
+}
+.ta-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--color-text-primary);
+  border: none;
+  border-radius: 0;
+}
+.ta-range:focus-visible {
+  outline: none;
+}
+.ta-range:focus-visible::-webkit-slider-thumb {
+  outline: 1px solid var(--color-text-primary);
+  outline-offset: 3px;
+}
+.ta-range:focus-visible::-moz-range-thumb {
+  outline: 1px solid var(--color-text-primary);
+  outline-offset: 3px;
+}
+.ta-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.ta-range-overlay {
+  pointer-events: none;
+}
+.ta-range-overlay::-webkit-slider-runnable-track {
+  background: none;
+}
+.ta-range-overlay::-moz-range-track {
+  background: none;
+}
+.ta-range-overlay::-moz-range-progress {
+  background: none;
+}
+.ta-range-overlay::-webkit-slider-thumb {
+  pointer-events: auto;
+}
+.ta-range-overlay::-moz-range-thumb {
+  pointer-events: auto;
+}
+
+/* The wall grid (2026-07-22): cells sit on a line-coloured container, separated by 1px gaps that
+   read as hairlines. Every cell carries a few px of corner radius — at each interior intersection
+   the four rounded corners let the container colour surface as a small four-petal star (the
+   line-intersection ornament, à la firecrawl.dev). That radius is the ONE sanctioned exception to
+   the radius-0 rule: it exists to draw the star, not to round corners; at this size the corner
+   itself reads as square. Cells must set an OPAQUE background or the hairlines bleed through.
+   The radius is a variable so dense chrome (the /play sidebar: 28–36px rows) can shrink it — what
+   reads as a square corner on a card starts to read as a rounded one on a small button. */
+.ta-wall {
+  background-color: var(--color-border-subtle);
+}
+.ta-wall-cell {
+  border-radius: var(--ta-cell-radius, 4px);
+}
+.ta-wall-dense {
+  --ta-cell-radius: 3px;
+}
+
+/* A tab on the wall (2026-07-22). Unselected options carry the chrome fill every other header row
+   in the panel uses, so the strip sits flush with its surroundings; the selected one goes to the
+   extreme of the theme's own direction — pure white in light, pure black in dark — so it reads as
+   the sheet lifted clear of the chrome rather than as a block of ink dropped on top of it. Hover
+   takes an unselected cell partway there, live but never mistakable for selected.
+   State comes off the attributes the controls already publish — Radix's data-state for the tab
+   pair, aria-pressed for the segmented geometry picker — so nothing has to thread a prop. */
+.ta-tab {
+  --ta-tab-on: var(--palette-white);
+  background-color: var(--color-surface-chrome);
+}
+:where(.dark) .ta-tab {
+  --ta-tab-on: var(--palette-black);
+}
+/* Hover moves the cell the OTHER way — toward the wall's line colour, away from the fill selection
+   takes. Chrome and pure white/black are only ~5 lightness apart, so a hover mixed between them
+   lands on top of the selected state; pushing it the opposite direction keeps all three readable. */
+.ta-tab:hover:not([data-state="active"]):not([aria-pressed="true"]) {
+  background-color: color-mix(in oklab, var(--color-surface-chrome), var(--color-border-subtle) 75%);
+}
+.ta-tab[data-state="active"],
+.ta-tab[aria-pressed="true"] {
+  background-color: var(--ta-tab-on);
+}
+
+/* A wall with lanes, without lane cells (2026-07-22). The /play tile grid builds its lanes out of
+   real cells, which it can afford: fixed pitch, two columns, virtualised. A ragged grid with a
+   user-settable column count can't, so here each cell draws its own 1px outline and the container's
+   background fills the space between. Two neighbours therefore read line | panel | line — the same
+   double rule — and at each four-corner crossing the cells' rounded corners open the same diamond.
+   The lane is the gap minus the two outlines. */
+.ta-lanes {
+  gap: 8px;
+}
+.ta-lane-cell {
+  border-radius: var(--ta-cell-radius, 4px);
+  /* Colour through a variable so a cell can darken its own hairline on hover from a utility class —
+     these rules are unlayered and would otherwise beat any Tailwind outline-* the caller passes. */
+  outline: 1px solid var(--ta-lane-color, var(--color-border-subtle));
+}
+
+/* A pinned row of the wall (the /play catalogue's sticky class/k headers). While stuck, the 1px wall
+   gaps above and below it have scrolling content behind them, not the wall's own background, so the
+   row paints those two hairlines itself. Two shadows per side because the line token is translucent
+   in dark: chrome behind, line in front — exactly how the gap composites everywhere else. The row
+   also drops the cell radius, or the scrolling content shows through at the four corners. */
+.ta-sticky-rule {
+  border-radius: 0;
+  box-shadow:
+    0 1px 0 0 var(--color-border-subtle),
+    0 -1px 0 0 var(--color-border-subtle),
+    0 1px 0 0 var(--color-surface-chrome),
+    0 -1px 0 0 var(--color-surface-chrome);
+}
+
 /* Thumbnail loading (2026-07-22) — see lib/render/thumbnailQueue.ts for why previews arrive late.
    The skeleton fills the preview slot while its bake is queued or running; the preview then fades in
    ON TOP of it (opaque media over an opaque placeholder), so there is no muddy 50/50 cross-fade.
@@ -107,9 +404,11 @@ body {
    a travelling shimmer band: 25 sweeps at once fight the wall's hairline grid, whereas opacity
    breathing reads as "working" without adding direction.
 
-   This class carries ONLY the animation. The placeholder keeps its fill after loading (hidden under
-   the opaque preview) and just drops this class — so it never blinks to card-white for the duration
-   of the fade, and no unmount timer is needed. */
+   This class carries ONLY the pulse. Once the preview lands the placeholder crossfades out under it
+   (.ta-fade-out, same duration as the preview's .ta-fade-in) — so it never blinks to card-white for
+   the duration of the fade, and no unmount timer is needed. It has to go: the hyperbolic and
+   spherical previews are transparent PNGs, and a placeholder left painted shows through them as a
+   grey plate. */
 @keyframes ta-skeleton-pulse {
   0%,
   100% {
@@ -138,9 +437,26 @@ body {
   animation: ta-fade-in var(--duration-slow) var(--ease-out) both;
 }
 
+@keyframes ta-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.ta-fade-out {
+  animation: ta-fade-out var(--duration-slow) var(--ease-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ta-skeleton,
   .ta-fade-in {
     animation: none;
+  }
+  /* No animation, but the end state still has to hold — otherwise the placeholder stays opaque. */
+  .ta-fade-out {
+    animation: none;
+    opacity: 0;
   }
 }

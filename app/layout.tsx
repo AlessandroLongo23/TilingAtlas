@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tiling Atlas",
+  title: "The Tiling Atlas",
   description: "Explore uniform tilings of the plane",
 };
 

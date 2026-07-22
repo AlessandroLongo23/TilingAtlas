@@ -70,15 +70,15 @@ export function PipelineProgressDialog() {
 								{message || "Starting…"}
 							</p>
 
-							<div className="h-2 rounded-full bg-surface-overlay/60 overflow-hidden">
+							<div className="h-2 bg-surface-overlay/60 overflow-hidden">
 								{progress !== null ? (
 									<div
-										className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300 ease-out"
+										className="h-full bg-fg transition-all duration-300 ease-out"
 										style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
 									/>
 								) : (
 									<div
-										className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full"
+										className="h-full bg-fg"
 										style={{ width: "40%", marginLeft: "-20%", animation: "progressIndeterminate 1.5s ease-in-out infinite" }}
 									/>
 								)}

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils/cn";
+import { RangeInput } from "@/components/ui/range-input";
 
 export type KMode = "upto" | "specific";
 
@@ -66,13 +67,13 @@ export function KSelector({
 
 			{mode === "upto" ? (
 				<div className="flex items-center gap-3">
-					<input
-						type="range"
+					<RangeInput
 						min={1}
 						max={K_MAX}
 						value={uptoK}
-						onChange={(e) => onUptoKChange(Number(e.target.value))}
-						className="w-32 accent-accent"
+						onChange={onUptoKChange}
+						className="w-32"
+						aria-label="maximum k"
 					/>
 					<span className="text-sm text-fg-secondary">
 						k = 1 … <span className="text-accent font-semibold">{uptoK}</span>

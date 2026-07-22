@@ -12,19 +12,11 @@ interface SwitchProps extends Omit<ComponentProps<"button">, "className" | "onCh
 	classes?: string;
 }
 
+// Track box + knob edge. Both sizes are picked so the knob sits in a uniform 3px gutter:
+// (track height − 2px border − thumb) / 2 = 3px at sm (20−2−12) and md (24−2−16).
 const TRACK: Record<Size, string> = {
-	sm: "w-9 h-5",
-	md: "w-12 h-6",
-};
-
-const THUMB: Record<Size, string> = {
-	sm: "w-3 h-3 top-1",
-	md: "w-4 h-4 top-1",
-};
-
-const THUMB_OFFSET: Record<Size, { on: string; off: string }> = {
-	sm: { on: "right-1", off: "left-1" },
-	md: { on: "right-1", off: "left-1" },
+	sm: "w-9 h-5 [--sw-thumb:12px]",
+	md: "w-12 h-6 [--sw-thumb:16px]",
 };
 
 export function Switch({
@@ -49,20 +41,45 @@ export function Switch({
 				if (!e.defaultPrevented) onCheckedChange?.(!checked);
 			}}
 			className={cn(
-				"relative rounded-pill transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+				// Squared w/b design system: a rectangle, no radii. ON is a solid fg track carrying a
+				// surface-coloured square knob (pure inversion); OFF an outlined track with a muted knob.
+				"group relative border focus:outline-none focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+				"transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]",
 				TRACK[size],
-				checked ? "bg-accent-subtle" : "bg-surface-overlay/60",
+				checked ? "bg-fg border-fg" : "bg-transparent border-line-strong",
 				disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+				!disabled && !checked ? "hover:border-fg" : "",
 				classes,
 			)}
 		>
+			{/* Travel corridor. Its width IS the knob's travel — the padding box (which excludes the
+			    border) less the two 3px gutters and the knob itself — so `translate-x-full` parks the
+			    knob flush against the far gutter at any size, with no hardcoded offsets to drift.
+			    The glide lives here because it must: the old left-1 ⇄ right-1 swap interpolated from
+			    `auto`, which CSS cannot animate, so the knob teleported. Centring is flexbox rather
+			    than `top-1`, so the knob is exactly centred instead of the old 4px-above/2px-below. */}
 			<span
+				aria-hidden="true"
 				className={cn(
-					"absolute rounded-full transition-all",
-					THUMB[size],
-					checked ? `bg-accent ${THUMB_OFFSET[size].on}` : `bg-fg-muted ${THUMB_OFFSET[size].off}`,
+					"pointer-events-none absolute top-0 left-[3px] flex h-full items-center",
+					"w-[calc(100%_-_6px_-_var(--sw-thumb))]",
+					"transition-[translate] duration-[var(--duration-fast)] ease-[var(--ease-out)] motion-reduce:transition-none",
+					checked ? "translate-x-full" : "translate-x-0",
 				)}
-			/>
+			>
+				{/* Pressing stretches the knob toward where it is about to go — a tactile confirm of
+				    the hit that is over in 120ms. Origin flips with state so it never stretches
+				    backwards out of the track. */}
+				<span
+					className={cn(
+						"block h-[var(--sw-thumb)] w-[var(--sw-thumb)] shrink-0",
+						"transition-[scale,background-color] duration-[var(--duration-fast)] ease-[var(--ease-out)] motion-reduce:transition-none",
+						checked ? "origin-right bg-surface" : "origin-left bg-fg-muted",
+						disabled ? "" : "group-active:scale-x-110 motion-reduce:group-active:scale-x-100",
+						!disabled && !checked ? "group-hover:bg-fg" : "",
+					)}
+				/>
+			</span>
 		</button>
 	);
 }

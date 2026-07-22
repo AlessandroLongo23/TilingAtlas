@@ -87,7 +87,7 @@ export function TilesClient() {
 				<div className="flex items-center gap-3 mb-1">
 					<Shapes size={18} className="text-accent" />
 					<h1 className="text-base font-semibold text-fg">Prototiles</h1>
-					<span className="text-xs px-2 py-0.5 rounded-full bg-surface-overlay border border-line text-fg-muted">
+					<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted">
 						{tiles.length} shapes
 					</span>
 				</div>

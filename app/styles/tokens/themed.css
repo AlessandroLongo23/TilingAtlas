@@ -16,36 +16,39 @@
   --color-text-muted:     var(--palette-neutral-500);
   --color-text-disabled:  var(--palette-neutral-400);
   --color-text-inverse:   var(--palette-neutral-50);
-  --color-text-accent:    var(--palette-green-700);
+  --color-text-accent:    var(--palette-neutral-900);
 
   /* ─────────── Borders ─────────── */
   --color-border-subtle:  var(--palette-neutral-200);
   --color-border-default: var(--palette-neutral-300);
   --color-border-strong:  var(--palette-neutral-400);
-  --color-border-focus:   var(--palette-green-600);
+  --color-border-focus:   var(--palette-neutral-900);
 
-  /* ─────────── Accent / brand ─────────── */
-  --color-accent:          var(--palette-green-600);
-  --color-accent-hover:    var(--palette-green-700);
-  --color-accent-active:   var(--palette-green-800);
-  --color-accent-subtle:   oklch(from var(--palette-green-500) l c h / 0.14);
+  /* ─────────── Accent / brand ───────────
+     Monochrome design system (2026-07-22): the accent IS the foreground. Selection and emphasis
+     are carried by ink weight and inversion, never by hue. Only danger keeps a hue (red means
+     destructive, not brand). Success/info/warning collapse to neutrals for the same reason. */
+  --color-accent:          var(--palette-neutral-900);
+  --color-accent-hover:    var(--palette-neutral-700);
+  --color-accent-active:   var(--palette-neutral-600);
+  --color-accent-subtle:   oklch(from var(--palette-neutral-900) l c h / 0.08);
   --color-accent-contrast: var(--palette-white);
 
   /* ─────────── Status ─────────── */
   --color-danger:         var(--palette-red-600);
   --color-danger-subtle:  oklch(from var(--palette-red-500) l c h / 0.14);
-  --color-success:        var(--palette-green-600);
-  --color-success-subtle: oklch(from var(--palette-green-500) l c h / 0.14);
-  --color-warning:        var(--palette-amber-600);
-  --color-warning-subtle: oklch(from var(--palette-amber-500) l c h / 0.18);
-  --color-info:           var(--palette-blue-600);
-  --color-info-subtle:    oklch(from var(--palette-blue-500) l c h / 0.14);
+  --color-success:        var(--palette-neutral-900);
+  --color-success-subtle: oklch(from var(--palette-neutral-900) l c h / 0.08);
+  --color-warning:        var(--palette-neutral-700);
+  --color-warning-subtle: oklch(from var(--palette-neutral-900) l c h / 0.06);
+  --color-info:           var(--palette-neutral-700);
+  --color-info-subtle:    oklch(from var(--palette-neutral-900) l c h / 0.06);
 
   /* ─────────── Interactive state overlays ─────────── */
   --color-hover-overlay:    oklch(from var(--palette-neutral-900) l c h / 0.06);
   --color-active-overlay:   oklch(from var(--palette-neutral-900) l c h / 0.10);
-  --color-selected-overlay: oklch(from var(--palette-green-500) l c h / 0.12);
-  --color-focus-ring:       var(--palette-green-600);
+  --color-selected-overlay: oklch(from var(--palette-neutral-900) l c h / 0.10);
+  --color-focus-ring:       var(--palette-neutral-900);
 
   /* ─────────── Shadows (color-tinted) ─────────── */
   --shadow-sm: 0 1px 2px oklch(from var(--palette-neutral-900) l c h / 0.06);
@@ -74,36 +77,36 @@
   --color-text-muted:     var(--palette-neutral-400);
   --color-text-disabled:  var(--palette-neutral-600);
   --color-text-inverse:   var(--palette-neutral-950);
-  --color-text-accent:    var(--palette-green-400);
+  --color-text-accent:    var(--palette-neutral-50);
 
   /* Borders */
   --color-border-subtle:  oklch(from var(--palette-neutral-700) l c h / 0.5);
   --color-border-default: var(--palette-neutral-700);
   --color-border-strong:  var(--palette-neutral-600);
-  --color-border-focus:   var(--palette-green-400);
+  --color-border-focus:   var(--palette-neutral-50);
 
-  /* Accent */
-  --color-accent:          var(--palette-green-400);
-  --color-accent-hover:    var(--palette-green-300);
-  --color-accent-active:   var(--palette-green-200);
-  --color-accent-subtle:   oklch(from var(--palette-green-400) l c h / 0.14);
+  /* Accent — monochrome: the accent is the foreground (see the light block's note). */
+  --color-accent:          var(--palette-neutral-50);
+  --color-accent-hover:    var(--palette-neutral-200);
+  --color-accent-active:   var(--palette-neutral-300);
+  --color-accent-subtle:   oklch(from var(--palette-white) l c h / 0.10);
   --color-accent-contrast: var(--palette-neutral-950);
 
   /* Status */
   --color-danger:         var(--palette-red-400);
   --color-danger-subtle:  oklch(from var(--palette-red-400) l c h / 0.16);
-  --color-success:        var(--palette-green-400);
-  --color-success-subtle: oklch(from var(--palette-green-400) l c h / 0.16);
-  --color-warning:        var(--palette-amber-400);
-  --color-warning-subtle: oklch(from var(--palette-amber-400) l c h / 0.18);
-  --color-info:           var(--palette-blue-400);
-  --color-info-subtle:    oklch(from var(--palette-blue-400) l c h / 0.16);
+  --color-success:        var(--palette-neutral-50);
+  --color-success-subtle: oklch(from var(--palette-white) l c h / 0.10);
+  --color-warning:        var(--palette-neutral-200);
+  --color-warning-subtle: oklch(from var(--palette-white) l c h / 0.08);
+  --color-info:           var(--palette-neutral-200);
+  --color-info-subtle:    oklch(from var(--palette-white) l c h / 0.08);
 
   /* Overlays */
   --color-hover-overlay:    oklch(from var(--palette-white) l c h / 0.06);
   --color-active-overlay:   oklch(from var(--palette-white) l c h / 0.10);
-  --color-selected-overlay: oklch(from var(--palette-green-400) l c h / 0.14);
-  --color-focus-ring:       var(--palette-green-400);
+  --color-selected-overlay: oklch(from var(--palette-white) l c h / 0.12);
+  --color-focus-ring:       var(--palette-neutral-50);
 
   /* Shadows — darker, more pronounced */
   --shadow-sm: 0 1px 2px oklch(from var(--palette-black) l c h / 0.35);

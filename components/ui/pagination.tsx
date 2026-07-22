@@ -79,49 +79,51 @@ export function Pagination({
 			<span className="text-xs text-fg-muted tabular-nums whitespace-nowrap">
 				{startItem}–{endItem} of {totalItems}
 			</span>
-			<div className="flex items-center gap-1">
+			{/* One joined wall strip: every element is a cell separated by hairlines, with the
+			    ta-wall-cell radius drawing the little intersection stars between them. */}
+			<div className="ta-wall inline-flex items-stretch gap-px p-px">
 				<PageBtn onClick={() => goto(1)} disabled={currentPage <= 1} aria-label="First page">
 					<ChevronsLeft size={14} />
 				</PageBtn>
 				<PageBtn onClick={() => goto(currentPage - 1)} disabled={currentPage <= 1} aria-label="Previous page">
 					<ChevronLeft size={14} />
 				</PageBtn>
-				<span className="flex items-center gap-1 mx-1">
-					<label htmlFor="pagination-page-input" className="sr-only">Page number</label>
-					<input
-						id="pagination-page-input"
-						type="number"
-						min={1}
-						max={totalPages}
-						className="w-10 h-7 px-1 rounded-md border border-line bg-surface-overlay/50 text-fg text-xs font-medium tabular-nums text-center hover:bg-surface-overlay/50 focus:outline-none focus:border-line-focus focus:bg-surface-overlay/80 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-						value={focused ? inputValue : currentPage}
-						onFocus={() => {
-							setFocused(true);
-							setInputValue(String(currentPage));
-						}}
-						onBlur={() => {
-							submitPage();
-							setFocused(false);
-						}}
-						onChange={(e) => setInputValue(e.currentTarget.value)}
-						onKeyDown={handleKeyDown}
-						aria-label="Current page"
-					/>
-					<span className="text-fg-muted text-xs whitespace-nowrap">of {totalPages}</span>
+				<label htmlFor="pagination-page-input" className="sr-only">Page number</label>
+				<input
+					id="pagination-page-input"
+					type="number"
+					min={1}
+					max={totalPages}
+					className="ta-wall-cell w-10 h-7 px-1 bg-surface text-fg text-xs font-medium tabular-nums text-center hover:bg-surface-raised focus:outline-none focus:bg-surface-raised transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+					value={focused ? inputValue : currentPage}
+					onFocus={() => {
+						setFocused(true);
+						setInputValue(String(currentPage));
+					}}
+					onBlur={() => {
+						submitPage();
+						setFocused(false);
+					}}
+					onChange={(e) => setInputValue(e.currentTarget.value)}
+					onKeyDown={handleKeyDown}
+					aria-label="Current page"
+				/>
+				<span className="ta-wall-cell flex items-center h-7 px-2 bg-surface text-fg-muted text-xs whitespace-nowrap">
+					of {totalPages}
 				</span>
 				{visiblePages.map((p, i) =>
 					p === null ? (
-						<span key={`ellipsis-${i}`} className="flex items-center justify-center w-5 h-7 text-fg-disabled text-xs pointer-events-none">…</span>
+						<span key={`ellipsis-${i}`} className="ta-wall-cell flex items-center justify-center w-5 h-7 bg-surface text-fg-disabled text-xs pointer-events-none">…</span>
 					) : (
 						<button
 							key={p}
 							onClick={() => goto(p)}
 							aria-current={currentPage === p ? "page" : undefined}
 							className={cn(
-								"flex items-center justify-center min-w-7 h-7 px-1 rounded-md border text-xs font-medium tabular-nums transition-all cursor-pointer",
+								"ta-wall-cell flex items-center justify-center min-w-7 h-7 px-1 text-xs font-medium tabular-nums transition-colors cursor-pointer",
 								currentPage === p
-									? "bg-accent-subtle text-accent border-line-focus hover:bg-accent-subtle"
-									: "bg-surface-overlay/50 text-fg-muted border-line hover:bg-surface-overlay/50 hover:text-fg-secondary",
+									? "bg-fg text-fg-inverse hover:bg-fg"
+									: "bg-surface text-fg-muted hover:bg-surface-raised hover:text-fg-secondary",
 							)}
 						>
 							{p}
@@ -143,7 +145,7 @@ function PageBtn({ children, ...rest }: React.ComponentProps<"button">) {
 	return (
 		<button
 			{...rest}
-			className="flex items-center justify-center w-7 h-7 rounded-md border border-line bg-surface-overlay/50 text-fg-muted hover:bg-surface-overlay/50 hover:text-fg-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+			className="ta-wall-cell flex items-center justify-center w-7 h-7 bg-surface text-fg-muted hover:bg-surface-raised hover:text-fg-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 		>
 			{children}
 		</button>

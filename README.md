@@ -1,4 +1,4 @@
-# Tiling Atlas
+# The Tiling Atlas
 
 A Next.js 16 app for exploring uniform tilings of the plane. Ported from a
 SvelteKit codebase (see [../TilingAtlas](../TilingAtlas) tagged

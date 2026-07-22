@@ -116,13 +116,16 @@
   --font-weight-semibold: 600;
   --font-weight-bold:     700;
 
-  /* ─────────── Radius ─────────── */
+  /* ─────────── Radius ───────────
+     Squared design system (2026-07-22): every radius is 0. The scale's names survive so call
+     sites and semantic aliases keep compiling; only the values changed. --radius-full stays for
+     the few functional circles (spinners, the hue wheel) that opt in deliberately. */
   --radius-none: 0;
-  --radius-xs:   0.125rem;  /* 2  */
-  --radius-sm:   0.25rem;   /* 4  */
-  --radius-md:   0.5rem;    /* 8  */
-  --radius-lg:   0.75rem;   /* 12 */
-  --radius-xl:   1rem;      /* 16 */
+  --radius-xs:   0;
+  --radius-sm:   0;
+  --radius-md:   0;
+  --radius-lg:   0;
+  --radius-xl:   0;
   --radius-full: 9999px;
 
   /* ─────────── Motion ─────────── */

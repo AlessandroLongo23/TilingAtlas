@@ -19,11 +19,13 @@
   --space-20: var(--size-20);
   --space-24: var(--size-24);
 
-  /* ─────────── Radii (semantic) ─────────── */
+  /* ─────────── Radii (semantic) ───────────
+     Squared design system: all four resolve to 0 (pills included — badges and toggles are
+     rectangles now). Kept as a layer so a future radius change stays one edit. */
   --radius-control: var(--radius-md);   /* buttons, inputs, small controls */
   --radius-surface: var(--radius-lg);   /* cards, panels */
   --radius-overlay: var(--radius-xl);   /* modals, popovers */
-  --radius-pill:    var(--radius-full); /* badges, toggles */
+  --radius-pill:    var(--radius-none); /* badges, toggles */
 
   /* ─────────── Typography (semantic) ─────────── */
   --font-sans: var(--font-family-sans);

@@ -47,7 +47,7 @@ function CopyButton({ text }: { text: string }) {
 			className="shrink-0 p-1 rounded text-fg-muted hover:text-fg hover:bg-surface-overlay/60 transition-colors"
 			title="Copy"
 		>
-			{copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+			{copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
 		</button>
 	);
 }

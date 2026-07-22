@@ -17,9 +17,11 @@ interface ToggleButtonProps extends Omit<ComponentProps<"button">, "className" |
 	classes?: string;
 }
 
+// Squared w/b design system: both shapes are sharp rectangles now; the variant prop survives so
+// call sites don't churn (and so a future distinction stays cheap).
 const SHAPE: Record<Variant, string> = {
-	chip: "rounded-control",
-	pill: "rounded-pill",
+	chip: "",
+	pill: "",
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
@@ -32,9 +34,10 @@ const ICON_SIZE: Record<Size, string> = {
 	md: "w-4 h-4",
 };
 
+// Selected = full inversion (fg fill, inverse text) — the monochrome replacement for the green tint.
 const STATE_CLASSES = {
-	on: "bg-accent-subtle border-line-focus text-accent hover:bg-accent-subtle",
-	off: "bg-surface-overlay/40 border-line text-fg-muted hover:text-fg-secondary hover:border-line-strong",
+	on: "bg-fg border-fg text-fg-inverse hover:bg-fg",
+	off: "bg-transparent border-line text-fg-muted hover:text-fg hover:border-fg",
 };
 
 export function ToggleButton({
@@ -66,7 +69,7 @@ export function ToggleButton({
 				if (!e.defaultPrevented) onPressedChange?.(!pressed);
 			}}
 			className={cn(
-				"inline-flex items-center justify-center font-medium border transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+				"inline-flex items-center justify-center font-medium border transition-colors duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
 				SHAPE[variant],
 				SIZE_CLASSES[size],
 				pressed ? STATE_CLASSES.on : STATE_CLASSES.off,

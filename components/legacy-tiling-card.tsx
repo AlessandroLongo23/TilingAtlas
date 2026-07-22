@@ -57,7 +57,7 @@ export function LegacyTilingCard({
 					) : null}
 					{isDual ? (
 						<div className="absolute top-0 right-1">
-							<span className="text-xs font-medium text-fg group-hover:text-fg bg-surface-overlay rounded-full px-2 py-[2px]">
+							<span className="text-xs font-medium text-fg group-hover:text-fg bg-surface-overlay px-2 py-[2px]">
 								Dual
 							</span>
 						</div>

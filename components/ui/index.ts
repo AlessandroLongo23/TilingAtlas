@@ -1,8 +1,9 @@
 export { Button } from "./button";
 export { Input } from "./input";
 export { Toggle } from "./toggle";
-export { Checkbox } from "./checkbox";
+export { Checkbox, CheckboxBox } from "./checkbox";
 export { Slider } from "./slider";
+export { RangeInput } from "./range-input";
 export { RangeSlider } from "./range-slider";
 export { Modal } from "./modal";
 export { Tabs } from "./tabs";

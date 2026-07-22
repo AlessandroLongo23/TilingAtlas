@@ -16,11 +16,11 @@ function safeFilename(name: string): string {
 // One prototile SHAPE as a card — a single polygon through the real thumbnail renderer. Mirrors the
 // ReferenceCard shell (same wrapper/thumb/meta classes) so the gallery reads like the Library.
 const BADGE_STYLE: Record<string, string> = {
-	decomposable: "border-teal-400/30 bg-teal-400/10 text-teal-400",
-	"non-decomp": "border-amber-400/30 bg-amber-400/10 text-amber-400",
-	"ζ₁₂": "border-indigo-400/30 bg-indigo-400/10 text-indigo-400",
-	convex: "border-purple-400/30 bg-purple-400/10 text-purple-400",
-	star: "border-rose-400/30 bg-rose-400/10 text-rose-400",
+	decomposable: "border-line bg-transparent text-fg-secondary",
+	"non-decomp": "border-dashed border-line-strong bg-transparent text-fg-muted",
+	"ζ₁₂": "border-line bg-transparent text-fg-muted",
+	convex: "border-line bg-transparent text-fg-muted",
+	star: "border-line bg-transparent text-fg-muted",
 };
 
 export function PrototileCard({ tile }: { tile: Prototile }) {
@@ -63,13 +63,13 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 			</div>
 			<div className="flex flex-col px-2.5 py-2 gap-1.5">
 				<div className="flex flex-wrap items-center gap-1">
-					<span className="inline-flex items-center rounded-full border border-line-strong bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
+					<span className="inline-flex items-center border border-line-strong bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
 						{FAMILY_LABELS[tile.family]}
 					</span>
 					{tile.badges.map((b) => (
 						<span
 							key={b}
-							className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${
+							className={`inline-flex items-center border px-1.5 py-0.5 text-[10px] font-medium ${
 								BADGE_STYLE[b] ?? "border-line-strong bg-surface-raised text-fg-muted"
 							}`}
 						>

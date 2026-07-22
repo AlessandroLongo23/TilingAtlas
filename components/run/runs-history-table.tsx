@@ -94,7 +94,7 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 			<div className="mb-4 flex items-center gap-2">
 				<Radio size={16} className="text-accent" />
 				<h1 className="text-base font-semibold text-fg">Run history</h1>
-				<span className="rounded-full bg-surface-overlay px-2 py-0.5 text-xs tabular-nums text-fg-muted">
+				<span className="bg-surface-overlay px-2 py-0.5 text-xs tabular-nums text-fg-muted">
 					{runs.length}
 				</span>
 			</div>

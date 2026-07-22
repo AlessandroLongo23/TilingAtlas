@@ -52,7 +52,7 @@ function CopyChip({ text, label = "copy" }: { text: string; label?: string }) {
 			}
 			className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-fg-muted hover:text-fg hover:bg-surface-overlay/60 transition-colors"
 		>
-			{copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+			{copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
 			{copied ? "copied" : label}
 		</button>
 	);
@@ -191,7 +191,7 @@ export function RunView({
 							{elapsedMs != null ? ` · ${fmtDuration(elapsedMs)}` : ""}
 						</Badge>
 						<span
-							className={cn("inline-flex items-center gap-1 text-[10px]", connected ? "text-emerald-400" : "text-fg-disabled")}
+							className={cn("inline-flex items-center gap-1 text-[10px]", connected ? "text-success" : "text-fg-disabled")}
 							title={connected ? "Realtime connected" : "Connecting…"}
 						>
 							{connected ? <Wifi size={11} /> : <WifiOff size={11} />}
@@ -211,9 +211,9 @@ export function RunView({
 						</span>
 					}
 				>
-					<div className="h-2 rounded-full bg-surface-overlay/60 overflow-hidden">
+					<div className="h-2 bg-surface-overlay/60 overflow-hidden">
 						<div
-							className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500 ease-out"
+							className="h-full bg-fg transition-all duration-500 ease-out"
 							style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
 						/>
 					</div>
@@ -277,7 +277,7 @@ export function RunView({
 							<Stat
 								label="timeouts"
 								value={
-									<span className={run.timeouts === 0 ? "text-emerald-400" : "text-danger"}>
+									<span className={run.timeouts === 0 ? "text-success" : "text-danger"}>
 										{run.timeouts}
 										{run.timeouts === 0 ? " ✓" : ""}
 									</span>
@@ -289,7 +289,7 @@ export function RunView({
 								label="certified"
 								value={
 									run.certified ? (
-										<span className="text-emerald-400">yes ✓</span>
+										<span className="text-success">yes ✓</span>
 									) : (
 										<span className="text-fg-muted">no</span>
 									)
@@ -300,8 +300,8 @@ export function RunView({
 							className={cn(
 								"mt-3 rounded-lg px-3 py-2 text-xs",
 								run.certified
-									? "bg-emerald-400/10 text-emerald-400"
-									: "bg-yellow-400/10 text-yellow-500",
+									? "bg-success-subtle text-success"
+									: "bg-warning-subtle text-warning",
 							)}
 						>
 							{run.certified
@@ -392,7 +392,7 @@ export function RunView({
 													<td className="py-1.5 pr-3 text-fg-secondary">{s.digest ?? "—"}</td>
 													<td className="py-1.5 pr-3">
 														{cmp === "match" ? (
-															<span className="text-emerald-400">✓ match</span>
+															<span className="text-success">✓ match</span>
 														) : cmp === "differ" ? (
 															<span className="text-danger">✗ differs</span>
 														) : (
@@ -401,7 +401,7 @@ export function RunView({
 													</td>
 													<td className="py-1.5">
 														{s.certified ? (
-															<span className="text-emerald-400">✓ cert</span>
+															<span className="text-success">✓ cert</span>
 														) : s.incomplete ? (
 															<span className="text-danger">incompl.</span>
 														) : (

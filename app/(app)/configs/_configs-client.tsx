@@ -18,9 +18,9 @@ import {
 // the counts become something you can scroll. Only realizable (non-overlapping) figures are shipped.
 const PAGE_SIZE = 24;
 const KIND_LABEL: Record<TileKind, { label: string; cls: string }> = {
-	regular: { label: "regular", cls: "text-sky-400" },
-	"convex-isotoxal": { label: "convex isotoxal", cls: "text-purple-400" },
-	star: { label: "star", cls: "text-rose-400" },
+	regular: { label: "regular", cls: "text-fg-secondary" },
+	"convex-isotoxal": { label: "convex isotoxal", cls: "text-fg-muted" },
+	star: { label: "star", cls: "text-fg-muted" },
 };
 
 function kindsOf(polys: { kind: TileKind }[]): TileKind[] {
@@ -110,7 +110,7 @@ export function ConfigsClient() {
 					<Grid3x3 size={18} className="text-accent" />
 					<h1 className="text-base font-semibold text-fg">Vertex configurations</h1>
 					{data ? (
-						<span className="text-xs px-2 py-0.5 rounded-full bg-surface-overlay border border-line text-fg-muted font-mono">
+						<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted font-mono">
 							{data.counts.tiles} tiles · {data.counts.classes} corners ·{" "}
 							<span className="text-accent">{data.counts.configs.toLocaleString()} configs</span>
 						</span>
@@ -152,7 +152,7 @@ export function ConfigsClient() {
 											<p className="text-[9px] text-fg-disabled leading-tight">
 												{cfg.corners.length} corners
 												{kinds.length > 1 ? (
-													<span className="text-amber-400"> · mixed</span>
+													<span className="text-fg-muted"> · mixed</span>
 												) : (
 													<span className={KIND_LABEL[kinds[0]].cls}> · {KIND_LABEL[kinds[0]].label}</span>
 												)}

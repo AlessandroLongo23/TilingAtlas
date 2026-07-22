@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent } from "react";
+import { RangeInput } from "./range-input";
 
 type SingleValue = number;
 type RangeValue = [number, number];
@@ -17,6 +17,9 @@ interface RangeSliderProps {
 	unit?: string;
 }
 
+// Squared w/b design system: single-value branches are a RangeInput (2px square-ended track, 12px
+// square fg thumb, ticks for short value sets); the dual-thumb branch draws its own flat track and
+// selected span and stacks two .ta-range-overlay inputs on top — invisible except for their thumbs.
 export function RangeSlider({
 	id,
 	label,
@@ -33,22 +36,19 @@ export function RangeSlider({
 	const rangeMax = isRange ? (value as RangeValue)[1] : max;
 	const isCollapsed = isRange && rangeMin === rangeMax;
 
-	const handleCollapsedInput = (e: ChangeEvent<HTMLInputElement>) => {
-		const v = Number(e.target.value);
+	const handleCollapsedInput = (v: number) => {
 		const current = rangeMin;
 		if (v > current) onChange([current, v]);
 		else if (v < current) onChange([v, current]);
 		else onChange([v, v]);
 	};
 
-	const handleLowInput = (e: ChangeEvent<HTMLInputElement>) => {
-		const v = Number(e.target.value);
+	const handleLowInput = (v: number) => {
 		const high = (value as RangeValue)[1];
 		onChange([Math.min(v, high), high]);
 	};
 
-	const handleHighInput = (e: ChangeEvent<HTMLInputElement>) => {
-		const v = Number(e.target.value);
+	const handleHighInput = (v: number) => {
 		const low = (value as RangeValue)[0];
 		onChange([low, Math.max(v, low)]);
 	};
@@ -67,65 +67,61 @@ export function RangeSlider({
 			{label ? (
 				<div className="flex flex-row justify-between items-center">
 					<label htmlFor={id} className="text-xs font-medium text-fg-muted">{label}</label>
-					<span className="text-[10px] text-accent font-medium tabular-nums">{displayValue}</span>
+					<span className="text-[10px] text-fg font-medium tabular-nums">{displayValue}</span>
 				</div>
 			) : null}
 
 			{isRange && isCollapsed ? (
-				<input
+				<RangeInput
 					id={id}
-					type="range"
 					value={rangeMin}
 					onChange={handleCollapsedInput}
 					min={min}
 					max={max}
 					step={step}
 					disabled={disabled}
-					className="range-track w-full h-1.5 rounded-full appearance-none cursor-pointer bg-surface-overlay/60 accent-accent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
 					aria-label="Exact value"
 				/>
 			) : isRange ? (
 				<div className="relative w-full h-5 flex items-center">
-					<div className="absolute h-1.5 rounded-full bg-surface-overlay/60 w-full pointer-events-none" aria-hidden="true" />
+					<div className="absolute h-[2px] bg-line w-full pointer-events-none" aria-hidden="true" />
 					<div
-						className="absolute h-1.5 rounded-full bg-accent-subtle pointer-events-none transition-all"
+						className="absolute h-[2px] bg-fg pointer-events-none"
 						style={{ left: `${lowPercent}%`, width: `${highPercent - lowPercent}%` }}
 						aria-hidden="true"
 					/>
 					<input
 						type="range"
-						className="range-thumb absolute w-full h-1.5 rounded-full appearance-none cursor-pointer bg-transparent accent-transparent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						className="ta-range ta-range-overlay absolute"
 						min={min}
 						max={max}
 						step={step}
 						value={rangeMin}
-						onChange={handleLowInput}
+						onChange={(e) => handleLowInput(Number(e.target.value))}
 						disabled={disabled}
 						aria-label="Range minimum"
 					/>
 					<input
 						type="range"
-						className="range-thumb absolute w-full h-1.5 rounded-full appearance-none cursor-pointer bg-transparent accent-transparent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						className="ta-range ta-range-overlay absolute"
 						min={min}
 						max={max}
 						step={step}
 						value={rangeMax}
-						onChange={handleHighInput}
+						onChange={(e) => handleHighInput(Number(e.target.value))}
 						disabled={disabled}
 						aria-label="Range maximum"
 					/>
 				</div>
 			) : (
-				<input
+				<RangeInput
 					id={id}
-					type="range"
 					value={value as SingleValue}
-					onChange={(e) => onChange(Number(e.target.value))}
+					onChange={onChange}
 					min={min}
 					max={max}
 					step={step}
 					disabled={disabled}
-					className="range-track w-full h-1.5 rounded-full appearance-none cursor-pointer bg-surface-overlay/60 accent-accent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
 				/>
 			)}
 		</div>

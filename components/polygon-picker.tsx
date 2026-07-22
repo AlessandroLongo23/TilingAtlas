@@ -6,6 +6,7 @@ import type { GeneratorParameters } from "@/classes";
 import { generatePolygons } from "@/lib/algorithm/pipeline-core";
 import { categoryOptions } from "@/stores/constants";
 import { cn } from "@/lib/utils/cn";
+import { CheckboxBox } from "@/components/ui/checkbox";
 
 interface PolygonPickerProps {
 	selectedNames: string[];
@@ -27,10 +28,10 @@ const TAG_LABEL: Record<string, string> = {
 
 const TAG_COLOR: Record<string, string> = {
 	[PolygonType.REGULAR]: "text-info bg-info-subtle",
-	[PolygonType.STAR_REGULAR]: "text-yellow-400 bg-yellow-400/10",
-	[PolygonType.STAR_PARAMETRIC]: "text-pink-400 bg-pink-400/10",
-	[PolygonType.EQUILATERAL]: "text-emerald-400 bg-emerald-400/10",
-	[PolygonType.GENERIC]: "text-violet-400 bg-violet-400/10",
+	[PolygonType.STAR_REGULAR]: "text-fg-secondary bg-surface-overlay/60",
+	[PolygonType.STAR_PARAMETRIC]: "text-fg-secondary bg-surface-overlay/60",
+	[PolygonType.EQUILATERAL]: "text-fg-secondary bg-surface-overlay/60",
+	[PolygonType.GENERIC]: "text-fg-secondary bg-surface-overlay/60",
 	[PolygonType.DUAL]: "text-fg-muted bg-fg-muted/10",
 };
 
@@ -118,7 +119,7 @@ export function PolygonPicker({
 				<span className="text-xs text-fg-muted">
 					Pool: <span className="text-fg-secondary">{polygonPool.length}</span> polygons
 				</span>
-				<span className="text-xs px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-line-focus">
+				<span className="text-xs px-2 py-0.5 bg-accent-subtle text-accent border border-line-focus">
 					{selectedNames.length} selected
 				</span>
 			</div>
@@ -132,11 +133,10 @@ export function PolygonPicker({
 				return (
 					<div key={type} className="border border-line rounded-lg overflow-hidden">
 						<div className="flex items-center gap-2 px-3 py-2 bg-surface-overlay/50">
-							<input
-								type="checkbox"
+							<CheckboxBox
+								size="sm"
 								checked={enabled}
-								onChange={() => toggleCategoryEnabled(type)}
-								className="h-3.5 w-3.5 rounded border-line-strong bg-surface-overlay accent-accent"
+								onCheckedChange={() => toggleCategoryEnabled(type)}
 							/>
 							<span className="text-xs font-medium text-fg-secondary flex-1">{label}</span>
 							{enabled ? (
@@ -160,7 +160,7 @@ export function PolygonPicker({
 										allSelected
 											? "text-accent hover:text-fg-muted"
 											: someSelected
-												? "text-yellow-400 hover:text-accent"
+												? "text-fg hover:text-fg"
 												: "text-fg-muted hover:text-fg-secondary",
 									)}
 								>

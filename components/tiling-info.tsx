@@ -65,18 +65,25 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 		>
-			<Button variant="secondary" size="icon" icon={Info} aria-label="Tiling information" />
+			{/* Sits over the tiling canvas — needs an opaque fill, not the variant's transparent one. */}
+			<Button
+				variant="secondary"
+				size="icon"
+				icon={Info}
+				aria-label="Tiling information"
+				classes="bg-surface-raised hover:bg-surface-raised shadow-sm"
+			/>
 
 			{isHovered && spec ? (
 				<div className="absolute left-0 top-10 z-50 min-w-56 max-w-[340px] rounded-lg border border-line bg-surface-overlay/95 p-3 shadow-xl backdrop-blur-sm">
 					<div className="flex flex-col gap-3">
 						{/* Header: Schläfli / vertex-config label + geometry (+ solid name for spherical) */}
 						<div className="flex flex-col gap-0.5">
-							<div className="flex items-baseline justify-between gap-3">
-								<span className="font-mono text-sm font-semibold text-fg" title={spec.label}>
+							<div className="flex min-w-0 items-baseline justify-between gap-3">
+								<span className="min-w-0 truncate font-mono text-sm font-semibold text-fg" title={spec.label}>
 									{compactVertexConfig(spec.label)}
 								</span>
-								<span className="text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
+								<span className="shrink-0 text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
 							</div>
 							{spec.geometry === "spherical" ? (
 								<span className="text-xs text-fg-secondary">{spec.solidName}</span>

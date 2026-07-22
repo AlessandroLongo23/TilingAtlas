@@ -58,11 +58,11 @@ export function TilingCard({ tiling, density = "comfortable", onClick }: TilingC
 		? "text-[8px] px-1 py-0.5 rounded text-info bg-info-subtle"
 		: "text-[10px] px-1.5 py-0.5 rounded text-info bg-info-subtle";
 	const badgeRegClass = isCompact
-		? "text-[8px] px-1 py-0.5 rounded text-emerald-400 bg-emerald-400/10"
-		: "text-[10px] px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-400/10";
+		? "text-[8px] px-1 py-0.5 rounded text-success bg-success-subtle"
+		: "text-[10px] px-1.5 py-0.5 rounded text-success bg-success-subtle";
 	const badgeStarClass = isCompact
-		? "text-[8px] px-1 py-0.5 rounded text-yellow-400 bg-yellow-400/10"
-		: "text-[10px] px-1.5 py-0.5 rounded text-yellow-400 bg-yellow-400/10";
+		? "text-[8px] px-1 py-0.5 rounded text-warning bg-warning-subtle"
+		: "text-[10px] px-1.5 py-0.5 rounded text-warning bg-warning-subtle";
 
 	const pxPerEdge = isCompact ? 16 : 22;
 

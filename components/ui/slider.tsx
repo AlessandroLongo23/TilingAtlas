@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 
+import { RangeInput } from "./range-input";
+
 interface SliderProps {
 	id?: string;
 	label?: string;
@@ -16,6 +18,8 @@ interface SliderProps {
 	unit?: string;
 }
 
+// Squared w/b design system: label + value readout above a RangeInput (2px square-ended track,
+// 12px square fg thumb, ticks when the value set is short enough — see components/ui/range-input).
 export function Slider({
 	id,
 	label,
@@ -38,21 +42,19 @@ export function Slider({
 						</label>
 						{hint}
 					</div>
-					<span className="text-xs text-accent font-medium whitespace-nowrap">
+					<span className="text-xs text-fg font-medium tabular-nums whitespace-nowrap">
 						{value} {unit}
 					</span>
 				</div>
 			) : null}
-			<input
+			<RangeInput
 				id={id}
-				type="range"
 				value={value}
-				onChange={(e) => onChange(Number(e.target.value))}
+				onChange={onChange}
 				min={min}
 				max={max}
 				step={step}
 				disabled={disabled}
-				className="w-full h-2 rounded-full appearance-none cursor-pointer bg-surface-overlay/70 accent-accent focus:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-raised disabled:cursor-not-allowed disabled:opacity-50 transition-all"
 			/>
 		</div>
 	);
