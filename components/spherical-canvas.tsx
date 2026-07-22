@@ -37,7 +37,8 @@ const CAMERA_DISTANCE = 3.2;
 // projection toggles (only the perspective foreshortening changes, not the framing).
 const ORTHO_HALF_HEIGHT = 1.33;
 // Maps the shared islamicBandWidth slider (a fraction, flat default 0.25) to the sphere strap's arc width in
-// radians — 0.25 → 0.09 rad, the tuned default look.
+// radians — 0.25 → 0.09 rad, the tuned default look. The Border Width slider goes through the SAME factor, so
+// the border/band ratio on the sphere is identical to the flat one for any pair of slider values.
 const WEAVE_WIDTH_FACTOR = 0.36;
 
 type SphericalCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
@@ -328,7 +329,11 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 	const islamicIntersectionCount = useConfiguration((s) => s.islamicIntersectionCount);
 	const islamicStyle = useConfiguration((s) => s.islamicStyle);
 	const islamicBandWidth = useConfiguration((s) => s.islamicBandWidth);
+	const islamicOutlineWidth = useConfiguration((s) => s.islamicOutlineWidth);
 	const weaveFlat = useConfiguration((s) => s.sphericalWeaveFlat);
+	// Interlace and Outline are the two STRAP styles: same band + border geometry, differing only in whether
+	// the crossings weave. Both are drawn by buildIslamicWeave and neither wants the plain star-line overlay.
+	const isStrapStyle = islamicStyle === "interlace" || islamicStyle === "outline";
 	useEffect(() => {
 		const scene = sceneRef.current;
 		if (!scene) return;
@@ -340,8 +345,8 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 			}
 		};
 		clear();
-		// Interlace draws its own dark strap borders — the plain star-line ribbons would double them, so skip.
-		if (!isIslamic || islamicStyle === "interlace") return;
+		// The strap styles draw their own dark borders — the plain star-line ribbons would double them, so skip.
+		if (!isIslamic || isStrapStyle) return;
 		const pattern = buildIslamicPattern(poly, {
 			angleRad: (Math.min(Math.max(islamicAngle, 0), 90) * Math.PI) / 180,
 			edgeOffsetFrac: Math.min(Math.max(islamicEdgeOffset, 0), 100) / 100,
@@ -362,7 +367,7 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 			islamicRef.current = pattern;
 		}
 		return clear;
-	}, [poly, isIslamic, islamicStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, lineWidth, wireframe, section, thickness, wireHeight, bevel]);
+	}, [poly, isIslamic, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, lineWidth, wireframe, section, thickness, wireHeight, bevel]);
 
 	// Islamic cell fill: the regions the star lines cut, coloured by cell shape and laid on the sphere just
 	// under the lines. Gated by the spherical Fill/Wireframe toggle (the two are mutually exclusive): Fill
@@ -391,18 +396,24 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 		const angleRad = (Math.min(Math.max(islamicAngle, 0), 90) * Math.PI) / 180;
 		const edgeOffsetFrac = Math.min(Math.max(islamicEdgeOffset, 0), 100) / 100;
 
-		if (islamicStyle === "interlace") {
-			// Woven straps + trimmed borders. Not gated by Polygon fill — the borders always show; the fill
-			// toggle only decides whether the cream strap BODIES are drawn (filled weave) or just the outlines.
+		if (isStrapStyle) {
+			// Straps + border rings. Not gated by Polygon fill — the borders always show; the fill toggle only
+			// decides whether the cream strap BODIES are drawn (filled straps) or just the outlines.
+			const outlineStyle = islamicStyle === "outline";
 			const weave = buildIslamicWeave(poly, {
 				angleRad,
 				edgeOffsetFrac,
 				intersectionCount: islamicIntersectionCount,
+				// Both widths go through the same factor, so band:border matches the flat renderer's ratio.
 				width: Math.max(0.02, islamicBandWidth * WEAVE_WIDTH_FACTOR), // strap width in radians of arc
+				border: Math.max(0, islamicOutlineWidth * WEAVE_WIDTH_FACTOR), // border ring, grown outward
+				// Outline crosses its straps flat: no over/under, so the border sinks under the bodies and the
+				// crossings paint it out, leaving the silhouette of the ribbon union.
+				weave: !outlineStyle,
 				showBodies: islamicFill,
 				// Wireframe ON ⇒ extrude the straps into lit 3D ribbons, over/under separated radially.
 				solid: wireframe,
-				solidFlat: weaveFlat, // flat coplanar ribbons instead of the woven relief
+				solidFlat: outlineStyle || weaveFlat, // flat coplanar ribbons instead of the woven relief
 				dark: document.documentElement.classList.contains("dark"),
 			});
 			if (weave) {
@@ -430,7 +441,7 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 			fillRef.current = fill;
 		}
 		return clear;
-	}, [poly, isIslamic, islamicFill, islamicStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, wireframe, weaveFlat, realistic]);
+	}, [poly, isIslamic, islamicFill, islamicStyle, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, islamicOutlineWidth, wireframe, weaveFlat, realistic]);
 
 	if (errored) {
 		return (

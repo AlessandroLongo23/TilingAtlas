@@ -30,9 +30,9 @@ interface ReferenceCardProps {
 // Certification is the thesis's headline axis: "proven" (our method certifies the level complete) is a
 // strictly stronger claim than "reproduced" (matches published counts) or "candidate" (unestablished).
 const CERT_STYLE: Record<Certification, { label: string; cls: string }> = {
-	proven: { label: "Proven", cls: "border-emerald-400/30 bg-emerald-400/10 text-emerald-400" },
+	proven: { label: "Proven", cls: "border-fg bg-fg text-fg-inverse" },
 	reproduced: { label: "Reproduced", cls: "border-line-strong bg-surface-raised text-fg-muted" },
-	candidate: { label: "Candidate", cls: "border-amber-400/30 bg-amber-400/10 text-amber-400" },
+	candidate: { label: "Candidate", cls: "border-dashed border-line-strong bg-transparent text-fg-muted" },
 };
 
 export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
@@ -52,8 +52,14 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 		tiling.m != null
 			? `M${tiling.m}${isMaximal(tiling) ? " · Kröt" : partitionKey ? ` · ${partitionKey}` : ""}`
 			: null;
+	// A cell of the library's laned wall: it draws its own hairline (ta-lane-cell), the grid's 8px
+	// gap supplies the lane between neighbours, and the cell radius opens the diamonds where four
+	// corners meet.
 	const wrapperClass = cn(
-		"relative flex flex-col rounded-lg border border-line bg-surface-overlay/30 hover:border-line-strong hover:bg-surface-overlay/50 transition-colors overflow-hidden group",
+		// surface-raised, not surface: the lane between cells is the page's own background, so the card
+		// has to sit a step above it or the lane reads as part of the card. Hover darkens the hairline
+		// rather than the fill — in a layout made of lines, that is the louder signal anyway.
+		"ta-lane-cell relative flex flex-col bg-surface-raised hover:[--ta-lane-color:var(--color-line-strong)] transition-all overflow-hidden group",
 		onClick && "cursor-pointer text-left",
 	);
 
@@ -102,7 +108,7 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 					{tiling.certification ? (
 						<span
 							className={cn(
-								"inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+								"inline-flex items-center border px-1.5 py-0.5 text-[10px] font-medium",
 								CERT_STYLE[tiling.certification].cls,
 							)}
 							title={`Completeness: ${tiling.certification}`}
@@ -113,17 +119,17 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 					{isConvex ? (
 						<>
 							<span
-								className="inline-flex items-center rounded-full border border-indigo-400/30 bg-indigo-400/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400"
+								className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
 								title={tiling.note ?? "Tiling built from convex-irregular unit-edge tiles (exact ℤ[ζ₂₄] distinct-count dedup)"}
 							>
 								Convex irregular
 							</span>
 							<span
 								className={cn(
-									"inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+									"inline-flex items-center border px-1.5 py-0.5 text-[10px] font-medium",
 									tiling.decomposableOnly
-										? "border-teal-400/30 bg-teal-400/10 text-teal-400"
-										: "border-amber-400/30 bg-amber-400/10 text-amber-400",
+										? "border-line bg-transparent text-fg-secondary"
+										: "border-dashed border-line-strong bg-transparent text-fg-muted",
 								)}
 								title={
 									tiling.decomposableOnly
@@ -138,14 +144,14 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 					{isIsotoxal ? (
 						<>
 							<span
-								className="inline-flex items-center rounded-full border border-purple-400/30 bg-purple-400/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-400"
+								className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
 								title={tiling.note ?? "Tiling using a convex isotoxal tile (two alternating angles, ζ₂₄ grid)"}
 							>
 								Isotoxal
 							</span>
 							{tiling.offGrid ? (
 								<span
-									className="inline-flex items-center rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-400"
+									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
 									title="Uses an isotoxal tile not expressible on the ζ₁₂ grid — a tiling the 30°-grid enumeration could not reach"
 								>
 									off-grid
@@ -155,33 +161,33 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 					) : null}
 					{isMixed ? (
 						<span
-							className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-400"
+							className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
 							title={tiling.note ?? "Convex isotoxal tile AND a concave star tile in one tiling (area-certified)"}
 						>
 							Mixed
 						</span>
 					) : null}
 					{tiling.preview ? (
-						<span className="inline-flex items-center rounded-full border border-orange-400/30 bg-orange-400/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-400" title="from a still-running solve — partial">
+						<span className="inline-flex items-center border border-dashed border-line-strong bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted" title="from a still-running solve — partial">
 							preview
 						</span>
 					) : null}
 					{dof >= 2 ? (
 						<span
-							className="inline-flex items-center gap-0.5 rounded-full border border-fuchsia-400/40 bg-fuchsia-400/15 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-300"
+							className="inline-flex items-center gap-0.5 border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
 							title={`${dof}-parameter family — ${GREEK.slice(0, dof).join(", ")} vary independently (${dof} sliders in Play)`}
 						>
 							{GREEK.slice(0, dof).join(" ")}
 						</span>
 					) : isFamily ? (
-						<span className="inline-flex items-center rounded-full border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[10px] font-medium text-violet-400" title="one-parameter family — α slider in Play">
+						<span className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted" title="one-parameter family — α slider in Play">
 							α
 						</span>
 					) : null}
 					{folds.map((n) => (
 						<span
 							key={n}
-							className="inline-flex items-center rounded-full border border-rose-400/25 bg-rose-400/10 px-1.5 py-0.5 text-[10px] font-medium text-rose-400"
+							className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
 							title={`${n}-pointed star polygon`}
 						>
 							{n}★
@@ -215,7 +221,7 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 							>
 								{classLabel}
 								{classLabel && tiling.wallpaperGroup ? " · " : null}
-								{tiling.wallpaperGroup ? <span className="text-sky-400/80">{tiling.wallpaperGroup}</span> : null}
+								{tiling.wallpaperGroup ? <span className="text-fg-muted">{tiling.wallpaperGroup}</span> : null}
 							</p>
 						) : null}
 						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>

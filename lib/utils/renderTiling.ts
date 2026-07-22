@@ -25,7 +25,7 @@ interface CellPolyData {
 	hue?: number;
 }
 
-interface BaseCell {
+export interface BaseCell {
 	polys: RawPolygon[];
 	basis: [[number, number], [number, number]];
 	minX: number;

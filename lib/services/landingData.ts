@@ -1,140 +1,140 @@
-// Server-only loader for the Atlas Wall landing page. Reads the static atlas JSONs from public/
-// with node:fs (same pattern as the old landing page) and serves the wall's inputs: the t1003
-// stage cell, the eleven uniform tilings, live shelf counts, and per-request specimen picks.
-// NOT re-exported from any barrel — importing this in a client component breaks the build.
-
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { TranslationalCellData } from "@/classes/algorithm/types";
+import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import {
+	type ReferenceTiling,
+	compactVertexConfig,
+	geometryOf,
+} from "@/lib/services/referenceAtlas";
 
-interface AtlasEntry {
-	id: string;
-	k?: number;
-	family?: string;
-	renderCell?: TranslationalCellData | null;
-	developed?: { patch?: string };
-	spherical?: { solid?: string };
-}
+// Server-only data loader for the landing page (app/page.tsx). Reads the EAGER atlas files — the
+// same set loadReferenceAtlas fetches client-side for /library, minus the lazy k≥8 shards — so the
+// landing's headline counts are exactly the library's scope and can never disagree with it.
+// Parsed files are cached per server process; the random picks (hero specimen, mosaic) are fresh
+// per call, and the page is force-dynamic, so every request gets a new specimen.
+//
+// NOT re-exported from any barrel: imports node:fs, so it must only be pulled by server code.
 
-export interface LandingData {
-	wallCell: TranslationalCellData;
-	uniform11: { id: string; family: string; cell: TranslationalCellData }[];
-	euclideanCount: number;
-	hyperbolicCount: number;
-	sphericalCount: number;
-	dailyEntry: { id: string; k: number; kCount: number; cell: TranslationalCellData };
-	specimenEntries: { id: string; cell: TranslationalCellData }[];
-	libraryMosaic: TranslationalCellData[];
-	playPatch: { id: string; cell: TranslationalCellData };
-	capHyperbolicPatch: string;
-	capHyperbolicId: string;
-	capSphericalSolid: string;
-	capSphericalId: string;
-	dateSeed: number;
-}
-
-// The eager Euclidean shelf files merged by the /library view (lib/services/referenceAtlas.ts) —
-// the masthead count must match what the library actually shows.
-const EUCLIDEAN_FILES = [
-	"reference-atlas.json",
+const EAGER_ATLAS_FILES = [
+	"reference-atlas.json", // required
 	"reference-atlas-composable.json",
 	"reference-atlas-isotoxal.json",
 	"reference-atlas-mixed.json",
 	"reference-atlas-scaled.json",
 	"reference-atlas-polyomino.json",
 	"reference-atlas-islamic.json",
+	"reference-atlas-hyperbolic.json",
+	"reference-atlas-spherical.json",
 ];
 
-let cache: {
-	base: AtlasEntry[];
-	euclideanCount: number;
-	hyperbolic: AtlasEntry[];
-	spherical: AtlasEntry[];
-} | null = null;
+export interface LandingCounts {
+	euclidean: number;
+	hyperbolic: number;
+	spherical: number;
+	total: number;
+}
 
-async function readAtlas(file: string): Promise<AtlasEntry[]> {
-	try {
-		const raw = await readFile(path.join(process.cwd(), "public", file), "utf8");
-		const parsed = JSON.parse(raw);
-		return Array.isArray(parsed) ? (parsed as AtlasEntry[]) : [];
-	} catch (e) {
-		console.warn(`landingData: ${file} unavailable —`, e);
-		return [];
+export interface LandingSpecimen {
+	id: string;
+	/** Compact display label (Grünbaum–Shephard superscript form of the family string). */
+	label: string;
+	k: number;
+	cell: TranslationalCellData;
+}
+
+export interface LandingData {
+	counts: LandingCounts;
+	/** Rotation pool for the hero: distinct random Euclidean specimens; the client cycles through
+	 *  them with the radial-wave transition. First entry is the one on stage at load. */
+	heroPool: LandingSpecimen[];
+	/** 3×3 mosaic for the Library card — distinct random Euclidean entries. */
+	mosaic: LandingSpecimen[];
+	/** The 11 uniform tilings (Galebach k=1 regular shelf), ordered by id — the Theory ring. */
+	uniformEleven: LandingSpecimen[];
+	/** Cell for the Play card's interactive patch (4.6.12, the truncated trihexagonal). */
+	play: LandingSpecimen;
+	/** Developed-patch id for the Hyperbolic card thumbnail. */
+	hyperbolicPatch: string | null;
+	/** Solid id for the Spherical card thumbnail. */
+	sphericalSolid: string | null;
+}
+
+let atlasCache: ReferenceTiling[] | null = null;
+
+async function loadEagerAtlas(): Promise<ReferenceTiling[]> {
+	if (atlasCache) return atlasCache;
+	const dir = path.join(process.cwd(), "public");
+	const parts = await Promise.all(
+		EAGER_ATLAS_FILES.map(async (name, i) => {
+			try {
+				const raw = await readFile(path.join(dir, name), "utf8");
+				return JSON.parse(raw) as ReferenceTiling[];
+			} catch (e) {
+				// The base atlas is a hard dependency; every shard degrades to an empty merge,
+				// mirroring loadReferenceAtlas's best-effort semantics.
+				if (i === 0) throw e;
+				return [] as ReferenceTiling[];
+			}
+		}),
+	);
+	atlasCache = parts.flat();
+	return atlasCache;
+}
+
+export function countsOf(atlas: ReferenceTiling[]): LandingCounts {
+	const counts = { euclidean: 0, hyperbolic: 0, spherical: 0, total: atlas.length };
+	for (const t of atlas) counts[geometryOf(t)]++;
+	return counts;
+}
+
+function toSpecimen(t: ReferenceTiling): LandingSpecimen {
+	return { id: t.id, label: compactVertexConfig(t.family), k: t.k, cell: t.renderCell };
+}
+
+/** The 11 uniform tilings: the Galebach k=1 regular shelf, ordered by id (t1001…t1011). */
+export function pickUniformEleven(atlas: ReferenceTiling[]): ReferenceTiling[] {
+	return atlas
+		.filter((t) => t.source === "galebach" && t.k === 1 && !t.family.includes("*"))
+		.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Distinct random picks (Fisher–Yates prefix) — rng injectable for tests. */
+export function pickDistinct<T>(pool: T[], n: number, rng: () => number = Math.random): T[] {
+	const arr = [...pool];
+	const take = Math.min(n, arr.length);
+	for (let i = 0; i < take; i++) {
+		const j = i + Math.floor(rng() * (arr.length - i));
+		[arr[i], arr[j]] = [arr[j], arr[i]];
 	}
+	return arr.slice(0, take);
 }
 
-async function loadFiles() {
-	if (cache) return cache;
-	const [base, ...rest] = await Promise.all(EUCLIDEAN_FILES.map(readAtlas));
-	const hyperbolic = await readAtlas("reference-atlas-hyperbolic.json");
-	const spherical = await readAtlas("reference-atlas-spherical.json");
-	cache = {
-		base,
-		euclideanCount: base.length + rest.reduce((sum, a) => sum + a.length, 0),
-		hyperbolic,
-		spherical,
-	};
-	return cache;
-}
+export async function loadLandingData(rng: () => number = Math.random): Promise<LandingData> {
+	const atlas = await loadEagerAtlas();
+	const euclidean = atlas.filter((t) => geometryOf(t) === "euclidean" && t.renderCell);
 
-function pick<T>(arr: T[], rand: () => number): T {
-	return arr[Math.floor(rand() * arr.length)];
-}
+	const eleven = pickUniformEleven(atlas);
+	// Hero pool: every drawable Euclidean entry. The mosaic re-picks independently — a duplicate
+	// between the pools is harmless and rare.
+	const heroPool = pickDistinct(euclidean, 14, rng);
+	const mosaic = pickDistinct(euclidean, 9, rng);
 
-export async function loadLandingData(): Promise<LandingData> {
-	const { base, euclideanCount, hyperbolic, spherical } = await loadFiles();
+	// 4.6.12 (t1003) is the Play card's demo patch — big dodecagons read well at card size.
+	const play = atlas.find((t) => t.id === "t1003") ?? eleven[0] ?? heroPool[0];
 
-	const withCell = base.filter((e): e is AtlasEntry & { renderCell: TranslationalCellData } => !!e.renderCell);
-	const t1003 = withCell.find((e) => e.id === "t1003");
-	if (!t1003) throw new Error("landingData: t1003 (4.6.12) missing from reference-atlas.json");
-
-	const uniform11 = withCell
-		.filter((e) => /^t10(0[1-9]|1[01])$/.test(e.id))
-		.map((e) => ({ id: e.id, family: e.family ?? "", cell: e.renderCell }));
-
-	// Daily specimen: date-seeded from the legible pool (small unit cells render honestly inside
-	// one hexagon). Shared by everyone that UTC day, so it has a citable identity.
-	const now = new Date();
-	const dateSeed =
-		now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
-	const legible = withCell.filter((e) => {
-		const polys = e.renderCell.p ?? e.renderCell.cellPolygons ?? [];
-		return polys.length > 0 && polys.length <= 12;
-	});
-	const daily = legible[dateSeed % legible.length];
-	const dailyK = daily.k ?? 1;
-	const kCount = base.filter((e) => e.k === dailyK).length;
-
-	// Per-request picks (Math.random is fine here: the page is force-dynamic and variety is a feature).
-	const rand = Math.random;
-	const specimenEntries = Array.from({ length: 80 }, () => {
-		const e = pick(legible, rand);
-		return { id: e.id, cell: e.renderCell };
-	});
-	const libraryMosaic = Array.from({ length: 9 }, () => pick(legible, rand).renderCell);
-
-	const stars = legible.filter((e) => (e.family ?? "").includes("*"));
-	const playSource = stars.length > 0 ? pick(stars, rand) : pick(legible, rand);
-
-	const capHypEntry = hyperbolic.find((e) => !!e.developed?.patch);
-	const capSphEntry =
-		spherical.find((e) => e.spherical?.solid === "truncated-icosahedron") ??
-		spherical.find((e) => !!e.spherical?.solid);
+	const hypSeven = atlas.find((t) => t.developed && t.family === "7.7.7");
+	const hypFirst = atlas.find((t) => t.developed);
+	// The truncated icosahedron (the football) is the most instantly readable sphere at card size.
+	const sphBall = atlas.find((t) => t.spherical?.solid === "truncated-icosahedron");
+	const sphFirst = atlas.find((t) => t.spherical);
 
 	return {
-		wallCell: t1003.renderCell,
-		uniform11,
-		euclideanCount,
-		hyperbolicCount: hyperbolic.length,
-		sphericalCount: spherical.length,
-		dailyEntry: { id: daily.id, k: dailyK, kCount, cell: daily.renderCell },
-		specimenEntries,
-		libraryMosaic,
-		playPatch: { id: playSource.id, cell: playSource.renderCell },
-		capHyperbolicPatch: capHypEntry?.developed?.patch ?? "",
-		capHyperbolicId: capHypEntry?.id ?? "",
-		capSphericalSolid: capSphEntry?.spherical?.solid ?? "",
-		capSphericalId: capSphEntry?.id ?? "",
-		dateSeed,
+		counts: countsOf(atlas),
+		heroPool: heroPool.map(toSpecimen),
+		mosaic: mosaic.map(toSpecimen),
+		uniformEleven: eleven.map(toSpecimen),
+		play: toSpecimen(play),
+		hyperbolicPatch: (hypSeven ?? hypFirst)?.developed?.patch ?? null,
+		sphericalSolid: (sphBall ?? sphFirst)?.spherical?.solid ?? null,
 	};
 }

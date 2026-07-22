@@ -40,7 +40,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	const isSpherical = !!selected?.spherical;
 
 	return (
-		<div className="h-full overflow-y-auto" data-sidebar-scroll>
+		// Opaque: the sidebar wall's line colour lives on an ancestor, and a transparent panel would
+		// show it through every gap in this tab's own padding.
+		<div className="h-full overflow-y-auto bg-surface-chrome" data-sidebar-scroll>
 			{/* Every render/view toggle lives in this one flat section — the old collapsed "Advanced options"
 			    split is gone, and the "View options" heading with it (the tab already carries that label). */}
 			<div className="flex flex-col gap-2">
@@ -65,6 +67,26 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						max={5}
 						step={0.25}
 					/>
+					{isHyperbolic ? (
+						<div className="flex gap-2">
+							<Button
+								variant={cfg.hyperbolicLineMode === "geometry" ? "primary" : "secondary"}
+								size="sm"
+								classes="flex-1"
+								onClick={() => setCfg({ hyperbolicLineMode: "geometry" })}
+							>
+								Perspective
+							</Button>
+							<Button
+								variant={cfg.hyperbolicLineMode === "constant" ? "primary" : "secondary"}
+								size="sm"
+								classes="flex-1"
+								onClick={() => setCfg({ hyperbolicLineMode: "constant" })}
+							>
+								Flat
+							</Button>
+						</div>
+					) : null}
 					{/* Global hue rotation for every tile fill (all views + thumbnails) — preserves the
 					    pairwise hue distances between tiles while cycling the palette. */}
 					<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
@@ -167,22 +189,21 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<div className="space-y-2 pl-7">
 							{isSpherical ? (
 								<>
-									<div className="grid grid-cols-3 gap-2">
+									<div className="grid grid-cols-2 gap-2">
 										{(
 											[
 												["plain", "Plain"],
 												["checkerboard", "Checkerboard"],
 												["interlace", "Interlace"],
+												["outline", "Outline"],
 											] as const
 										).map(([val, label]) => {
-											// The sphere renders anything that isn't checkerboard or interlace as the A/B/C plain fill,
-											// so Plain stays lit for those.
+											// The sphere renders anything that isn't one of the three named styles as the A/B/C plain
+											// fill, so Plain stays lit for those (emboss has no spherical path).
 											const active =
-												val === "checkerboard"
-													? cfg.islamicStyle === "checkerboard"
-													: val === "interlace"
-														? cfg.islamicStyle === "interlace"
-														: cfg.islamicStyle !== "checkerboard" && cfg.islamicStyle !== "interlace";
+												val === "plain"
+													? cfg.islamicStyle !== "checkerboard" && cfg.islamicStyle !== "interlace" && cfg.islamicStyle !== "outline"
+													: cfg.islamicStyle === val;
 											return (
 												<Button key={val} variant={active ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicStyle: val })}>
 													{label}
@@ -193,7 +214,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<p className="text-[11px] text-fg-muted">
 										{cfg.islamicStyle === "interlace"
 											? "Over/under woven straps on the sphere surface. Turn off Polygon fill for just the outlined straps; the angle slider sets the weave."
-											: "Filled cells + star lines (the underlying tiling is hidden). Turn off Polygon fill for just the lines; turn on Wireframe to make the lines rigid 3D bars."}
+											: cfg.islamicStyle === "outline"
+												? "The same straps crossed flat — the border survives only on the outside of the ribbon network, so the pattern reads as one silhouette."
+												: "Filled cells + star lines (the underlying tiling is hidden). Turn off Polygon fill for just the lines; turn on Wireframe to make the lines rigid 3D bars."}
 									</p>
 								</>
 							) : isHyperbolic ? (
@@ -252,16 +275,29 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									Obtuse
 								</Button>
 							</div>
-							<Reveal show={isSpherical && cfg.islamicStyle === "interlace"}>
-								<Slider
-									id="islamicWeaveWidth"
-									label="Strap Width"
-									value={cfg.islamicBandWidth}
-									onChange={(v) => setCfg({ islamicBandWidth: v })}
-									min={0.05}
-									max={0.6}
-									step={0.05}
-								/>
+							{/* Both strap styles share the band + border geometry, in radians of arc through one factor —
+							    so a given Band/Border pair reads at the same proportion on the sphere as on the plane. */}
+							<Reveal show={isSpherical && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline")}>
+								<div className="space-y-2">
+									<Slider
+										id="islamicWeaveWidth"
+										label="Strap Width"
+										value={cfg.islamicBandWidth}
+										onChange={(v) => setCfg({ islamicBandWidth: v })}
+										min={0.05}
+										max={0.6}
+										step={0.05}
+									/>
+									<Slider
+										id="islamicWeaveBorderWidth"
+										label="Border Width"
+										value={cfg.islamicOutlineWidth}
+										onChange={(v) => setCfg({ islamicOutlineWidth: v })}
+										min={0}
+										max={0.5}
+										step={0.05}
+									/>
+								</div>
 							</Reveal>
 							{/* Solid 3D ribbons (Interlace + Wireframe): woven over/under relief, or flat coplanar bands. */}
 							<Reveal show={isSpherical && cfg.islamicStyle === "interlace" && cfg.sphericalWireframe}>
@@ -297,7 +333,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										value={cfg.islamicBandWidth}
 										onChange={(v) => setCfg({ islamicBandWidth: v })}
 										min={0.05}
-										max={0.6}
+										max={0.5}
 										step={0.05}
 									/>
 									{/* Border Width is a ring grown outward from the band, on the SAME ruler as Band Width
@@ -408,29 +444,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
 							/>
 						</>
-					) : null}
-					{isHyperbolic ? (
-						<div className="space-y-2">
-							<span className="text-[11px] text-fg-muted">Edge width</span>
-							<div className="flex gap-2">
-								<Button
-									variant={cfg.hyperbolicLineMode === "geometry" ? "primary" : "secondary"}
-									size="sm"
-									classes="flex-1"
-									onClick={() => setCfg({ hyperbolicLineMode: "geometry" })}
-								>
-									Perspective
-								</Button>
-								<Button
-									variant={cfg.hyperbolicLineMode === "constant" ? "primary" : "secondary"}
-									size="sm"
-									classes="flex-1"
-									onClick={() => setCfg({ hyperbolicLineMode: "constant" })}
-								>
-									Flat
-								</Button>
-							</div>
-						</div>
 					) : null}
 					{isSpherical ? (
 						<div className="space-y-2">

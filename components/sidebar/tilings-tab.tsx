@@ -63,7 +63,10 @@ export function TilingsTab({
 		return () => window.removeEventListener("keydown", onKey);
 	}, []);
 	return (
-		<div className="h-full flex flex-col">
+		// The sidebar is one wall: this container paints the line colour and every row below is an
+		// opaque cell, so the 1px gaps between them are the only rules in the panel — and where a
+		// vertical gap crosses a horizontal one, four rounded corners open the little diamond.
+		<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px">
 			<NavHeader selected={selected} count={geometryList.length} onRandom={onRandom} onPrev={onPrev} onNext={onNext} />
 			<div className="flex-1 min-h-0">
 				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted>

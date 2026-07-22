@@ -39,10 +39,13 @@ describe("TilingInfo spec card", () => {
 		const spec: TilingSpec = {
 			geometry: "hyperbolic",
 			label: "{7,3}",
+			faces: [7],
+			valence: 3,
+			edge: 0.5663,
+			provenance: null,
+			schlafli: [7, 3],
 			coxeter: "[7,3]",
 			orbifold: "*732",
-			rings: [true, false, false],
-			snub: false,
 			...orbits,
 		};
 		render(<TilingInfo spec={spec} />);
@@ -72,8 +75,8 @@ describe("TilingInfo spec card", () => {
 
 	it("renders nothing expanded until hovered", () => {
 		const spec: TilingSpec = {
-			geometry: "hyperbolic", label: "{7,3}", coxeter: "[7,3]", orbifold: "*732",
-			rings: [true, false, false], snub: false, ...orbits,
+			geometry: "hyperbolic", label: "{7,3}", faces: [7], valence: 3, edge: 0.5663,
+			provenance: null, schlafli: [7, 3], coxeter: "[7,3]", orbifold: "*732", ...orbits,
 		};
 		render(<TilingInfo spec={spec} />);
 		expect(screen.queryByText("[7,3]")).not.toBeInTheDocument();

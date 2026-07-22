@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Library, Link2, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { ToggleButton } from "@/components/ui/toggle-button";
+import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
+import { RangeInput } from "@/components/ui/range-input";
 import { ReferenceCard } from "@/components/reference-card";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
@@ -262,6 +263,14 @@ function serializeView(v: ViewState): string {
 
 // A flat, always-visible filter group: a static heading (optional accent summary + right-aligned note)
 // over its controls. Replaces the old collapsible SidebarSection in this shelf.
+// A caption row inside a filter group — one more cell in the wall, so the sub-groups it separates
+// stay flush with everything else.
+function SubLabel({ children }: { children: ReactNode }) {
+	return (
+		<span className="ta-wall-cell bg-surface-chrome px-3 py-1 text-[10px] text-fg-disabled">{children}</span>
+	);
+}
+
 function FilterGroup({
 	title,
 	summary,
@@ -274,11 +283,13 @@ function FilterGroup({
 	children: ReactNode;
 }) {
 	return (
-		<section className="flex flex-col gap-2 border-t border-line-subtle pt-3 first:border-t-0 first:pt-0">
-			<div className="flex items-baseline justify-between gap-2">
+		// A group of the sidebar wall: a header row, then its option grids, each a cell block. The
+		// 1px gaps are the only separation — no rules, no padding, no gutters.
+		<section className="flex flex-col gap-px">
+			<div className="ta-wall-cell bg-surface-chrome flex h-8 items-center justify-between gap-2 px-3">
 				<h3 className="text-xs font-medium text-fg-secondary">
 					{title}
-					{summary ? <span className="ml-1.5 font-normal text-accent">{summary}</span> : null}
+					{summary ? <span className="ml-1.5 font-normal text-fg">{summary}</span> : null}
 				</h3>
 				{note ? <span className="text-[10px] uppercase tracking-wide text-fg-disabled">{note}</span> : null}
 			</div>
@@ -687,35 +698,39 @@ export function ReferenceShelf() {
 	return (
 		<div className="flex flex-1 min-h-0 overflow-hidden">
 			<PageSidebar>
-				<div className="flex items-center justify-between px-3 pt-3">
-					<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
-					{activeFilterCount > 0 ? (
-						<button
-							onClick={() => setFilters({ geometry: "euclidean" })}
-							className="flex items-center gap-1 text-xs text-fg-muted hover:text-danger transition-colors"
-						>
-							<X size={11} /> Clear ({activeFilterCount})
-						</button>
-					) : null}
-				</div>
-				<div className="p-3 flex flex-col gap-4 text-sm">
+				{/* The filter panel is one wall: every row an opaque cell on a line-coloured container,
+				    so the 1px gaps between them are the only rules, and the diamonds fall out wherever
+				    a vertical gap crosses a horizontal one — which in a grid of option cells is
+				    everywhere. Same mechanism as the /play catalogue (globals.css, .ta-wall). */}
+				<div className="ta-wall ta-wall-dense flex flex-col gap-px text-sm">
+					<div className="ta-wall-cell bg-surface-chrome flex h-9 items-center justify-between px-3">
+						<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
+						{activeFilterCount > 0 ? (
+							<button
+								onClick={() => setFilters({ geometry: "euclidean" })}
+								className="flex cursor-pointer items-center gap-1 text-xs text-fg-muted hover:text-danger transition-colors"
+							>
+								<X size={11} /> Clear ({activeFilterCount})
+							</button>
+						) : null}
+					</div>
 					<input
 						type="text"
 						value={filters.query ?? ""}
 						onChange={(e) => setFilters({ ...filters, query: e.target.value })}
 						placeholder="Search id or family…"
-						className="w-full rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-xs text-fg placeholder:text-fg-disabled focus:border-line-strong focus:outline-none"
+						className="ta-wall-cell bg-surface-chrome w-full px-3 py-2 text-xs text-fg placeholder:text-fg-disabled focus:outline-none focus:bg-surface-raised"
 					/>
 
 					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
-						<ButtonGroup options={GEOMETRY_OPTIONS} selected={geometry} onChange={setGeometry} />
+						<OptionWall columns={3} options={GEOMETRY_OPTIONS} selected={geometry} onChange={setGeometry} />
 					</FilterGroup>
 
 					{/* Tile class is a Euclidean-only axis — hyperbolic/spherical are their own geometries, each a
 					    single class, so the chip row would just be one dead option there. */}
 					{isEuclidean ? (
 						<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
-							<ButtonGroup options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
+							<OptionWall columns={3} options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
 						</FilterGroup>
 					) : null}
 
@@ -725,7 +740,8 @@ export function ReferenceShelf() {
 							summary={filters.convexDecomp ?? null}
 							note="exact ℤ[ζ] distinct counts"
 						>
-							<ButtonGroup
+							<OptionWall
+								columns={3}
 								options={DECOMP_OPTIONS}
 								selected={filters.convexDecomp ?? "all"}
 								onChange={setConvexDecomp}
@@ -739,12 +755,13 @@ export function ReferenceShelf() {
 							summary={filters.isotoxalShape === "alpha" ? "α" : filters.isotoxalShape === "alpha-beta" ? "α, β" : null}
 							note="free angles"
 						>
-							<ButtonGroup
+							<OptionWall
+								columns={3}
 								options={ISOTOXAL_SHAPE_OPTIONS}
 								selected={filters.isotoxalShape ?? "all"}
 								onChange={setIsotoxalShape}
 							/>
-							<p className="text-[10px] text-fg-disabled">
+							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
 								How many of the tile’s angles flex independently.
 							</p>
 						</FilterGroup>
@@ -756,12 +773,13 @@ export function ReferenceShelf() {
 							summary={filters.scaledScaleSet === "s12" ? "1–2" : filters.scaledScaleSet === "s123" ? "1–3" : null}
 							note="scaling factors"
 						>
-							<ButtonGroup
+							<OptionWall
+								columns={3}
 								options={SCALE_SET_OPTIONS}
 								selected={filters.scaledScaleSet ?? "all"}
 								onChange={setScaledScaleSet}
 							/>
-							<p className="text-[10px] text-fg-disabled">
+							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
 								Sides 1–2 is the former Doubled class; 1–3 adds a side-3 tile.
 							</p>
 						</FilterGroup>
@@ -773,12 +791,13 @@ export function ReferenceShelf() {
 							summary={filters.polyominoOrder === "tetromino" ? "tetromino" : null}
 							note="piece family"
 						>
-							<ButtonGroup
+							<OptionWall
+								columns={2}
 								options={POLY_ORDER_OPTIONS}
 								selected={filters.polyominoOrder ?? "all"}
 								onChange={setPolyominoOrder}
 							/>
-							<p className="text-[10px] text-fg-disabled">
+							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
 								The seven Tetris pieces. More polyomino families to come.
 							</p>
 						</FilterGroup>
@@ -790,22 +809,24 @@ export function ReferenceShelf() {
 							summary={filters.islamicSystem ?? null}
 							note="Bonner's tile kits"
 						>
-							<ButtonGroup
+							<OptionWall
+								columns={2}
 								options={ISLAMIC_SYSTEM_OPTIONS}
 								selected={filters.islamicSystem ?? "all"}
 								onChange={setIslamicSystem}
 							/>
-							<p className="text-[10px] text-fg-disabled">
+							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">
 								The underlying tessellation’s tile set. Toggle the Islamic construction in Play to see the strapwork.
 							</p>
 						</FilterGroup>
 					) : null}
 
 					<FilterGroup title="Vertex count (k)" summary={filters.kValue ?? null}>
-						<ButtonGroup
+						<OptionWall
+							columns={6}
 							options={[
-								{ value: ALL_NUM, label: "All", classes: "px-2.5" },
-								...kChips.map((k) => ({ value: k, label: k, classes: "w-8" })),
+								{ value: ALL_NUM, label: "All" },
+								...kChips.map((k) => ({ value: k, label: k })),
 							]}
 							selected={filters.kValue ?? ALL_NUM}
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
@@ -813,35 +834,36 @@ export function ReferenceShelf() {
 						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
 						    the plane. */}
 						{isEuclidean ? (
-							<ToggleButton
-								size="sm"
-								pressed={!!filters.maximalOnly}
-								onPressedChange={toggleMaximal}
-								label="Maximal (M = k)"
-								classes="mt-1 self-start"
+							<OptionWall
+								columns={1}
+								options={[{ value: "maximal", label: "Maximal (M = k)" }]}
+								selected={filters.maximalOnly ? "maximal" : null}
+								onChange={toggleMaximal}
 							/>
 						) : null}
 						{tileClass === "convex" && kChips.some((k) => k >= 3) ? (
-							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 3 loads on demand.</p>
+							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">k ≥ 3 loads on demand.</p>
 						) : kChips.some((k) => k >= 8) ? (
-							<p className="mt-1 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
+							<p className="ta-wall-cell bg-surface-chrome px-3 py-1.5 text-[10px] text-fg-disabled">k ≥ 8 loads on demand.</p>
 						) : null}
 					</FilterGroup>
 
 					{showM ? (
 						<FilterGroup title="Distinct configs (M)" summary={filters.mValue ?? null} note="M ≤ k">
-							<ButtonGroup
+							<OptionWall
+								columns={6}
 								options={[
-									{ value: ALL_NUM, label: "All", classes: "px-2.5" },
-									...mOptions.map((m) => ({ value: m, label: m, classes: "w-8" })),
+									{ value: ALL_NUM, label: "All" },
+									...mOptions.map((m) => ({ value: m, label: m })),
 								]}
 								selected={filters.mValue ?? ALL_NUM}
 								onChange={(v) => setMValue(v === ALL_NUM ? undefined : v)}
 							/>
 							{partitionOptions.length > 0 ? (
-								<div className="mt-1 flex flex-col gap-1.5">
-									<span className="text-[10px] text-fg-disabled">Partition (multiplicity group)</span>
-									<ButtonGroup
+								<>
+									<SubLabel>Partition (multiplicity group)</SubLabel>
+									<OptionWall
+										columns={4}
 										options={[
 											{ value: ALL_STR, label: "All", key: "__all__" },
 											...partitionOptions.map((p) => ({ value: p.key, label: p.key })),
@@ -849,30 +871,28 @@ export function ReferenceShelf() {
 										selected={filters.partitionKey ?? ALL_STR}
 										onChange={(v) => setPartitionKey(v === ALL_STR ? undefined : v)}
 									/>
-								</div>
+								</>
 							) : null}
 						</FilterGroup>
 					) : null}
 
 					{showStar ? (
 						<FilterGroup title="Star" note="star polygons">
-							<div className="flex flex-col gap-1.5">
-								<span className="text-[10px] text-fg-disabled">Fold (n-pointed)</span>
-								<ButtonGroup
-									multi
-									options={availableFolds.map((n) => ({ value: n, label: `${n}★`, classes: "px-2" }))}
-									selected={filters.starFolds ?? []}
-									onChange={toggleFold}
-								/>
-							</div>
-							<div className="mt-1 flex flex-col gap-1.5">
-								<span className="text-[10px] text-fg-disabled">Shape</span>
-								<ButtonGroup
-									options={PARAM_OPTIONS}
-									selected={filters.parametric ?? "all"}
-									onChange={setParametric}
-								/>
-							</div>
+							<SubLabel>Fold (n-pointed)</SubLabel>
+							<OptionWall
+								multi
+								columns={5}
+								options={availableFolds.map((n) => ({ value: n, label: `${n}★` }))}
+								selected={filters.starFolds ?? []}
+								onChange={toggleFold}
+							/>
+							<SubLabel>Shape</SubLabel>
+							<OptionWall
+								columns={3}
+								options={PARAM_OPTIONS}
+								selected={filters.parametric ?? "all"}
+								onChange={setParametric}
+							/>
 						</FilterGroup>
 					) : null}
 
@@ -882,7 +902,8 @@ export function ReferenceShelf() {
 							summary={selectedLattice ?? null}
 							note="pick one"
 						>
-							<ButtonGroup
+							<OptionWall
+								columns={3}
 								options={availableShapes.map((s) => ({
 									value: s,
 									label: s,
@@ -903,13 +924,14 @@ export function ReferenceShelf() {
 							summary={filters.wallpaperGroups?.length ? `${filters.wallpaperGroups.length} sel` : null}
 							note={selectedLattice ? `on ${selectedLattice}` : "regular"}
 						>
-							<ButtonGroup
+							<OptionWall
 								multi
+								columns={4}
 								options={availableGroups.map((g) => ({
 									value: g,
 									label: g,
 									// A selected lattice greys out (and blocks) every group it can't host — the disabled
-									// styling + not-allowed cursor + aria-disabled come from ToggleButton.
+									// styling + not-allowed cursor + aria-disabled come from OptionWall.
 									disabled: selectedLattice ? !isGroupOnLattice(g, selectedLattice) : false,
 									// Wikipedia cell diagram(s) on hover/focus; opens into the main pane, not off-edge.
 									tooltip: <WallpaperGroupTooltip group={g} />,
@@ -926,8 +948,9 @@ export function ReferenceShelf() {
 						title="Discoverer"
 						summary={filters.discoverers?.length ? `${filters.discoverers.length} selected` : null}
 					>
-						<ButtonGroup
+						<OptionWall
 							multi
+							columns={2}
 							options={DISCOVERER_OPTIONS}
 							selected={filters.discoverers ?? []}
 							onChange={toggleDiscoverer}
@@ -938,8 +961,9 @@ export function ReferenceShelf() {
 						title="Certification"
 						summary={filters.certifications?.length ? filters.certifications.join(", ") : null}
 					>
-						<ButtonGroup
+						<OptionWall
 							multi
+							columns={3}
 							options={CERT_OPTIONS}
 							selected={filters.certifications ?? []}
 							onChange={toggleCert}
@@ -953,14 +977,14 @@ export function ReferenceShelf() {
 			    document ~1000px below the app shell (a phantom black scroll region). */}
 			<main className="relative flex-1 overflow-y-auto p-5">
 				<div className="flex items-center gap-3 mb-5">
-					<Library size={18} className="text-sky-400" />
+					<Library size={18} className="text-fg-secondary" />
 					<h1 className="text-base font-semibold text-fg">Tiling Library</h1>
-					<span className="text-xs px-2 py-0.5 rounded-full bg-surface-overlay border border-line text-fg-muted">
+					<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted">
 						{filtered.length} tilings
 					</span>
 					{loadingShards.size > 0 ? (
 						<span className="flex items-center gap-1.5 text-xs text-fg-muted">
-							<Loader2 size={12} className="animate-spin text-sky-400" />
+							<Loader2 size={12} className="animate-spin text-fg-muted" />
 							loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
 						</span>
 					) : null}
@@ -977,38 +1001,37 @@ export function ReferenceShelf() {
 							title="Copy a link to this filtered view"
 							className="flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2 py-1 text-xs text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:border-line-strong focus:outline-none"
 						>
-							{copied ? <Check size={12} className="text-emerald-400" /> : <Link2 size={12} />}
+							{copied ? <Check size={12} className="text-success" /> : <Link2 size={12} />}
 							{copied ? "Copied" : "Copy link"}
 						</button>
 						<label className="flex items-center gap-2 text-xs text-fg-muted">
 							Columns
-							<input
-								type="range"
+							<RangeInput
 								min={COLUMN_PRESETS[0]}
 								max={COLUMN_PRESETS[COLUMN_PRESETS.length - 1]}
 								step={1}
 								value={gridColumns}
-								onChange={(e) => setGridColumns(Number(e.target.value))}
+								onChange={setGridColumns}
 								aria-label="Grid columns"
-								className="w-24 h-1.5 rounded-full appearance-none cursor-pointer bg-surface-overlay/70 accent-accent focus:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40"
+								className="w-24"
 							/>
 							<span className="w-3 text-center tabular-nums font-medium text-accent">{gridColumns}</span>
 						</label>
-						<label className="flex items-center gap-2 text-xs text-fg-muted">
-							Per page
-							<select
-								value={pageSize}
-								onChange={(e) => setPageSize(Number(e.target.value))}
-								aria-label="Items per page"
-								className="rounded-md border border-line bg-surface-raised px-2 py-1 text-xs text-fg cursor-pointer focus:border-line-strong focus:outline-none"
-							>
-								{PAGE_SIZE_OPTIONS.map((n) => (
-									<option key={n} value={n}>
-										{n}
-									</option>
-								))}
-							</select>
-						</label>
+						<div
+							role="group"
+							aria-label="Items per page"
+							className="flex items-center gap-2 text-xs text-fg-muted"
+						>
+							<span>Per page</span>
+							<ButtonGroup
+								options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
+								selected={pageSize}
+								onChange={setPageSize}
+								gap="gap-1"
+								wrap={false}
+								classes="[&>button]:w-8 [&>button]:px-0 tabular-nums"
+							/>
+						</div>
 					</div>
 				</div>
 
@@ -1019,7 +1042,7 @@ export function ReferenceShelf() {
 					</div>
 				) : tilings === null ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center text-fg-muted">
-						<Loader2 size={28} className="animate-spin mb-3 text-sky-400" />
+						<Loader2 size={28} className="animate-spin mb-3 text-fg-muted" />
 						<p className="text-sm">Loading tiling library…</p>
 					</div>
 				) : filtered.length === 0 ? (
@@ -1040,7 +1063,7 @@ export function ReferenceShelf() {
 							currentPage={currentPage}
 							onPageChange={setCurrentPage}
 						/>
-						<div className="grid gap-3 mt-4" style={gridStyle}>
+						<div className="ta-lanes grid mt-4" style={gridStyle}>
 							{paginated.map((tiling) => (
 								<ReferenceCard
 									key={tiling.id}

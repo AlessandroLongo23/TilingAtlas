@@ -1,15 +1,12 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef } from "react";
-import { SidebarSection } from "@/components/ui/sidebar-section";
+import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
-import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
-import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
-import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { TileGrid } from "./tile-grid";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
 // thumbnail + badge. Click selects (renders large on the canvas)
@@ -24,37 +21,10 @@ interface CatalogueListPanelProps {
 // straight away rather than another layer of closed rows.
 const defaultOpenById = (id: string) => id.startsWith("k:");
 
-// Scroll the sidebar so the just-selected tile is comfortably in view, then pulse it once to draw the eye
-// after a jump (R / arrows / deep link). Only scrolls when it isn't already visible — respecting a top
-// inset so it never lands under the sticky "Catalogue" heading, and never a jarring recenter when the tile
-// was already on screen (e.g. you clicked it). Honors prefers-reduced-motion (instant scroll, no pulse).
-const TOP_INSET = 48;
-function revealTile(el: HTMLElement) {
-	const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-	const behavior: ScrollBehavior = reduce ? "auto" : "smooth";
-	const parent = el.closest<HTMLElement>("[data-sidebar-scroll]");
-	if (parent) {
-		const er = el.getBoundingClientRect();
-		const pr = parent.getBoundingClientRect();
-		if (er.top < pr.top + TOP_INSET) {
-			parent.scrollBy({ top: er.top - pr.top - TOP_INSET, behavior });
-		} else if (er.bottom > pr.bottom) {
-			parent.scrollBy({ top: er.bottom - pr.bottom + 8, behavior });
-		}
-	} else {
-		el.scrollIntoView({ block: "nearest", behavior });
-	}
-	if (reduce) return;
-	// A one-shot accent outline that radiates and fades. Outline (not box-shadow) so it doesn't replace the
-	// persistent selection ring; no fill:forwards, so it reverts to `outline: none` when done.
-	el.animate(
-		[
-			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-accent) l c h / 0.9)", outlineOffset: "2px" },
-			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-accent) l c h / 0)", outlineOffset: "7px" },
-		],
-		{ duration: 650, easing: "ease-out" },
-	);
-}
+// Row height for both header levels; the nested one parks one hairline below the outer one so an open
+// path reads as an indented tree pinned to the top of the scrollport.
+const ROW_H = 36;
+const NESTED_TOP = ROW_H + 1;
 
 // Class order + labels come from the shared registry (referenceAtlas TILE_CLASS_ORDER / TILE_CLASS_LABEL),
 // the same source /library uses — so a new class appears here automatically. A class section only appears
@@ -97,6 +67,20 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	}, [byClass]);
 	const { expanded, toggle, openGroups } = useExpandableGroups(nodeIds, (id) => id, defaultOpenById);
 
+	// One width for every bucket. Measured here rather than per grid so that a single commit gives
+	// them ALL their real heights: a scroll target computed while some buckets were still zero-height
+	// lands somewhere else entirely once they settle.
+	const listRef = useRef<HTMLDivElement | null>(null);
+	const [width, setWidth] = useState(0);
+	useLayoutEffect(() => {
+		const el = listRef.current;
+		if (!el) return;
+		setWidth(el.getBoundingClientRect().width);
+		const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+		ro.observe(el);
+		return () => ro.disconnect();
+	}, []);
+
 	// The node ids (class + k) that hold the selected tiling — used to auto-open its sections on selection.
 	const selectedTile = useMemo(
 		() => (selectedKey ? items.find((t) => t.canonicalKey === selectedKey) ?? null : null),
@@ -105,95 +89,110 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	const selectedClassId = selectedTile ? `c:${tileClassOf(selectedTile)}` : null;
 	const selectedKId = selectedTile ? `k:${tileClassOf(selectedTile)}:${selectedTile.k}` : null;
 
-	// Reveal the current tiling in the picker on every selection change. A collapsed section unmounts its
-	// thumbnails, so both the class and its k row must open before the tile exists to scroll to; wait out the
-	// expand animation (0.15s, sidebar-section.tsx) + remount, then scroll it into view and pulse it. The ref
-	// below is attached only to the selected button, so it points at the right tile once mounted.
-	const selectedBtnRef = useRef<HTMLButtonElement | null>(null);
+	// Open the path to the current tiling on every selection change; the bucket's TileGrid handles the
+	// scroll and the pulse itself (with the tiles virtualised, the target row may not be mounted yet, so
+	// there is no element to scroll to — only a row index).
 	useEffect(() => {
 		if (!selectedClassId || !selectedKId) return;
 		openGroups([selectedClassId, selectedKId]);
-		const id = window.setTimeout(() => {
-			if (selectedBtnRef.current) revealTile(selectedBtnRef.current);
-		}, 170);
-		return () => window.clearTimeout(id);
 	}, [selectedKey, selectedClassId, selectedKId, openGroups]);
 
-	// The k-bucket accordions for one class group — the inner tree shared by both layouts below.
-	const renderKGroups = (g: (typeof byClass)[number]) =>
-		g.ks.map((kk) => (
-			<SidebarSection
-				key={`k:${g.cls}:${kk.k}`}
-				flush
-				padded={false}
-				title={`k = ${kk.k}`}
-				summary={kk.list.length}
-				open={expanded[`k:${g.cls}:${kk.k}`]}
-				onOpenChange={() => toggle(`k:${g.cls}:${kk.k}`)}
-			>
-				<div className="grid grid-cols-2 gap-2 p-1.5 pt-2">
-					{kk.list.map((t) => (
-						<button
-							key={t.canonicalKey}
-							ref={t.canonicalKey === selectedKey ? selectedBtnRef : null}
-							type="button"
-							onClick={() => onSelect?.(t)}
-							title={`${t.canonicalKey} · {${t.family}}`}
-							className={cn(
-								"relative flex flex-col rounded-lg border bg-surface-overlay/30 hover:border-line-strong transition-colors overflow-hidden cursor-pointer",
-								// Selected: a high-contrast fg ring held off the tile by a surface-chrome gap
-								// (ring-offset) so it reads clearly on any tiling. fg (not a fixed black) keeps it
-								// visible in both themes: near-black in light, near-white in dark — a fixed black
-								// would vanish against the dark chrome panel in dark mode.
-								t.canonicalKey === selectedKey
-									? "border-fg ring-2 ring-fg ring-offset-2 ring-offset-surface-chrome"
-									: "border-line",
-							)}
-						>
-							<div className="relative aspect-square bg-surface-raised">
-								{t.spherical ? (
-									<SphericalThumbnail solidId={t.spherical.solid} />
-								) : t.developed ? (
-									<HyperbolicDevelopedThumbnail patch={t.developed.patch} />
-								) : t.renderCell ? (
-									<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
-								) : null}
-								{t.paramCell ? (
-									<span
-										title="One-parameter family (adjustable α)"
-										className="absolute top-1 left-1 inline-flex h-4 w-4 items-center justify-center rounded text-[10px] font-bold leading-none bg-white text-black ring-1 ring-black/20 shadow-sm dark:bg-black dark:text-white dark:ring-white/20"
-									>
-										α
-									</span>
-								) : null}
-							</div>
-						</button>
-					))}
+	// When the geometry filter leaves a single tile class (every hyperbolic/spherical tiling shares one),
+	// drop the redundant class level and pin the k rows at the top instead — the geometry IS the top layer
+	// there, so a lone "Hyperbolic ▸" wrapper would just be a second identical one.
+	const single = byClass.length === 1;
+
+	const kSections = (g: (typeof byClass)[number]) =>
+		g.ks.map((kk) => {
+			const id = `k:${g.cls}:${kk.k}`;
+			const open = expanded[id];
+			return (
+				// The wrapper is what bounds the sticky header: pinned while its own bucket is on screen,
+				// pushed off by the next one. Transparent, so the wall's line colour still fills its gaps.
+				<div key={id} className="flex flex-col gap-px">
+					<TreeRow
+						label={`k = ${kk.k}`}
+						count={kk.list.length}
+						open={open}
+						depth={single ? 0 : 1}
+						onToggle={() => toggle(id)}
+					/>
+					{open ? (
+						<TileGrid
+							items={kk.list}
+							selectedKey={selectedKey}
+							onSelect={onSelect}
+							revealKey={selectedKey}
+							width={width}
+						/>
+					) : null}
 				</div>
-			</SidebarSection>
-		));
+			);
+		});
 
 	return (
-		<div className="flex flex-col gap-2">
-			<div className="p-3 flex flex-col gap-2">
-				{/* When the geometry filter leaves a single tile class (every hyperbolic/spherical tiling shares
-				    one class), drop the redundant class accordion and show its k-buckets straight under the
-				    geometry toggle — the geometry IS the top layer here, so a lone "Hyperbolic ▸" wrapper would
-				    just be a second identical layer. The multi-class Euclidean list keeps the class → k tree. */}
-				{byClass.length === 1
-					? renderKGroups(byClass[0])
-					: byClass.map((g) => (
-							<SidebarSection
-								key={`c:${g.cls}`}
-								title={TILE_CLASS_LABEL[g.cls].long}
-								summary={g.count}
-								open={expanded[`c:${g.cls}`]}
-								onOpenChange={() => toggle(`c:${g.cls}`)}
-							>
-								<div className="flex flex-col gap-2 pt-2">{renderKGroups(g)}</div>
-							</SidebarSection>
-						))}
-			</div>
+		// The list is a wall: rows stacked edge to edge, the 1px gaps between them the only rules.
+		<div ref={listRef} className="ta-wall flex flex-col gap-px">
+			{byClass.map((g) => {
+				if (single) return <Fragment key={g.cls}>{kSections(g)}</Fragment>;
+				const id = `c:${g.cls}`;
+				return (
+					<div key={id} className="flex flex-col gap-px">
+						<TreeRow
+							label={TILE_CLASS_LABEL[g.cls].long}
+							count={g.count}
+							open={expanded[id]}
+							depth={0}
+							onToggle={() => toggle(id)}
+						/>
+						{expanded[id] ? kSections(g) : null}
+					</div>
+				);
+			})}
 		</div>
 	);
 });
+
+// A node of the open path. Sticky: scrolling into a bucket of 1,472 tilings used to strand you there
+// with no way back to the top of the list, so the headers you opened stay pinned — indented by depth —
+// and clicking one collapses it.
+function TreeRow({
+	label,
+	count,
+	open,
+	depth,
+	onToggle,
+}: {
+	label: string;
+	count: number;
+	open: boolean;
+	depth: 0 | 1;
+	onToggle: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onToggle}
+			aria-expanded={open}
+			className={cn(
+				// ta-sticky-rule (globals.css): a pinned row paints its own hairlines, since the wall's
+				// gaps have scrolling tiles behind them while it is stuck.
+				"ta-sticky-rule bg-surface-chrome sticky flex items-center justify-between gap-2 pr-3 text-left cursor-pointer",
+				"hover:bg-surface-sunken dark:hover:bg-surface-overlay transition-colors",
+				"focus:outline-none focus-visible:relative focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
+				depth === 0 ? "pl-3 z-20" : "pl-7 z-10",
+			)}
+			style={{ height: ROW_H, top: depth === 0 ? 0 : NESTED_TOP }}
+		>
+			<span className="text-xs font-medium text-fg-secondary truncate">
+				{label}
+				<span className="ml-1.5 text-fg tabular-nums">{count}</span>
+			</span>
+			{open ? (
+				<ChevronDown size={13} className="text-fg-muted shrink-0" />
+			) : (
+				<ChevronRight size={13} className="text-fg-muted shrink-0" />
+			)}
+		</button>
+	);
+}
