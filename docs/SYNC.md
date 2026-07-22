@@ -1362,3 +1362,10 @@ Renamed to Orbit and added the two groupings it was standing in for, as a refine
 Shape (rotations + mirrors merged) / Pose (orientation kept) / Orbit. Strips and unbounded sheets need
 no special case — F = P + T with P the period subgroup and T the flood fill's transversal names any
 face at any rank. 6 tests + a 1420-pattern invariant sweep (0 violations, 75 ms). NOTES §78.
+
+**2026-07-22 — CC.** Freedraw tile filter is three-state per face class (has / none / any) instead of
+one chip out of five, plus a size sub-filter on the finite class with all-of / any-of semantics —
+Marek's "filter out infinite cells" and AL's "tetrominoes only" in one selection each (`907fba4`).
+Size chips derive from the grid+k slice, since sizes are gappy (square k=4 runs 2–8 then 12–14).
+Filter state is a shareable link. Killed a k≤3 coincidence on the way: equal-area ≠ monohedral, first
+counterexample `fd-4-2524`. NOTES §79, spec `2026-07-22-freedraw-tile-filter-design.md`.

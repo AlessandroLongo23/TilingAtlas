@@ -4841,3 +4841,55 @@ per face before it runs, instead of building an `hsl()` per visible grid square 
 Still failing, still not mine to fix: `lib/services/playUrlState.test.ts` asserts 39 URL params
 against a tree that has 43. Pre-existing — HEAD and the working tree have the same key count, and
 this change only widened the `fdfill` enum. Left for AL to set the intended number.
+
+## §79 — The tile filter becomes three-state, and gains an area axis (2026-07-22)
+
+Marek, on Discord: "Seeing that you can know the exact number and kinds of cells, that would be
+pretty important for filtering these patterns on higher k… or filter out infinite cells." AL:
+"you could, for example, filter for tetrominos only. Or pentominos." Then AL's own refinement —
+"for each type (unbounded, stripe, and finite), we could have a three state toggle: has to contain
+it, doesn't have to contain it, doesn't matter."
+
+Half of the ask was already shipped and half was impossible. "Filter out infinite cells" was the
+`all finite` chip. But the chips were single-choice, so the row could say "has a strip" and could
+never say "a strip is fine, an unbounded sheet is not". Three states per class fixes exactly that,
+and the two gestures AL named become one selection each: unbounded has + finite has + sizes {4},
+strips left alone; and unbounded none + strips none + finite has + sizes {5}.
+
+The size sub-filter needed a decision the two framings disagreed on. "Tetrominoes only" means EVERY
+finite tile has area 4; Marek's browsing use means at least one does. Both are wanted, so `sizeMode`
+carries it, and the control is live only under finite:has — under `none` there is nothing to size,
+and under `any` the reading would be "no finite tiles, or else all of them tetrominoes", which is a
+question nobody asked and a vacuous `every` waiting to happen.
+
+The chips are derived from the data, not a hardcoded range. Sizes are sparse and gappy: square k ≤ 3
+stops at 11 with no 7 among the uniform patterns, square k = 4 runs 2–8 and then jumps to 12–14, and
+the triangle grid reaches 24. A 1..8 + "9+" bucket would have hidden the k = 4 tail and made "only
+9-ominoes" unaskable. They come from the grid+k slice alone, never from the filtered rows — chips
+computed after the size filter vanish as you pick them.
+
+Measured before designing any of it: `analyseFaces` is 6 µs per pattern, 72 ms over all 14,327
+shipped patterns. The scaling worry I had raised in conversation — that face analysis would not
+survive higher k — was wrong by two orders of magnitude, and the honest correction is that the
+thumbnails were always the cost, which pagination had already fixed.
+
+A side result worth keeping. At square k ≤ 3 the 95 patterns whose finite tiles all have equal area
+are EXACTLY the 95 that are monohedral up to congruence, which looked like it might be a small
+theorem. It is not: at square k = 4 it is 177 against 170, on the triangle grid 432 against 402. The
+smallest witness is `fd-4-2524`, an 8 × 2 period whose four faces are all tetrominoes in two distinct
+congruence classes. Equal area is strictly weaker than one shape; k ≤ 3 was simply too small to show
+it. That is why the size filter and a future shape-class filter stay different controls.
+
+Filter state round-trips through the query string (parsed once on mount, written one-way via
+`replaceState`, the ReferenceShelf pattern), so a selection is a link to paste at Marek. /freedraw
+stays statically prerendered behind a Suspense boundary. `lib/freedraw/filter.ts` is pure and tested
+without React, including regression counts against the shipped catalogues.
+
+Collision worth recording: this landed while AL was live-editing the same files to add the combined
+triangles+squares grid. `FreedrawGrid` gained a third member mid-session, which broke two exhaustive
+`Record<FreedrawGrid, …>` tables in the client. The URL codec now validates the grid against an
+exhaustive record, so a fourth grid fails to compile here rather than silently becoming an
+unshareable link. `907fba4` is the buildable snapshot of both strands; they could not be separated
+because `faces.ts` does not compile without `pattern.ts`.
+
+Spec: `docs/superpowers/specs/2026-07-22-freedraw-tile-filter-design.md`.
