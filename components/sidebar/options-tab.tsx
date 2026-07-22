@@ -300,7 +300,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										max={0.6}
 										step={0.05}
 									/>
-									{/* Border Width strokes the flat/spherical band edge; the disk reuses its line-stroke width. */}
+									{/* Border Width is a ring grown outward from the band, on the SAME ruler as Band Width
+									    (a fraction of the median segment length) — not a pixel stroke, so it keeps its
+									    proportion to the band at any zoom. The disk reuses its line-stroke width. */}
 									{!isHyperbolic ? (
 										<Slider
 											id="islamicOutlineWidth"
@@ -308,8 +310,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											value={cfg.islamicOutlineWidth}
 											onChange={(v) => setCfg({ islamicOutlineWidth: v })}
 											min={0}
-											max={5}
-											step={0.25}
+											max={0.5}
+											step={0.05}
 										/>
 									) : null}
 									<Checkbox

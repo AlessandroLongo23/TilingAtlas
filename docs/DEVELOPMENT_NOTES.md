@@ -4643,3 +4643,53 @@ two more dodecagons in the plan, thumbnails clipped into their cells via HTML la
 from 46 to 54 px/edge with door anchors pulled toward the center; the daily specimen gained a
 clearance ring (never adjacent to a door) and draws last so its label sits above door frames;
 portrait crop anchor moved to 0.19 so the masthead survives on phones.
+
+## §75 — Islamic straps: the outline style became a silhouette, the border became a layer (2026-07-22)
+
+AL, on the Euclidean Play view: the `outline` strap style was wrong ("I think it was meant to be
+something else"), drawing every strap border straight through every intersection instead of just
+the outside of the ribbon network; and for both `outline` and `interlace` the border should be an
+additional layer rather than a stroke, so its scale stays relative to the band under zoom instead
+of pinned to screen pixels.
+
+Both collapse into one mechanism. `buildBands` now runs its corner logic TWICE per edge-end —
+once at half-width `h` (the fill boundary), once at `h + border` — and the quad between the two
+rings is the border, real world-space geometry. Draw order flips: all border quads first, then all
+fills. In `outline` (`weave: false`) that IS the fix — each crossing strap's body paints over the
+other's border, so what survives is `union(outer rings) \ union(fill rings)`, the silhouette of
+the ribbon union. No polygon boolean, no new code path.
+
+The load-bearing detail: an under strand's FILL is now clipped too, where before it tucked through
+unbroken and "the stroke did the work". Both rings clip against the same line — the over strand's
+OUTER border — so under-fill, over-border and over-fill abut with zero overlap and the border can
+be painted before every fill without needing a per-crossing draw order (which does not exist: the
+weave is not a total order). Emboss folded in for the same reason it always shared this path; a
+`EMBOSS_MIN_BORDER` floor keeps the bevel alive at slider 0.
+
+`islamicOutlineWidth` changed units: screen px (0–5, default 1.5) → the same ruler as
+`islamicBandWidth`, a fraction of the median construction-segment length, grown outward so the
+cream body keeps its width. The store is not persisted, so no migration. Because the border is now
+geometry, dragging it rebuilds the cell mesh — it joined `meshSig` under the existing throttle.
+`STRAP_BORDER_VERT` shed `aNorm`/`aSide`/`uHalfStrokePx` and is now the fill transform plus a
+per-vertex colour.
+
+Two corrections to what I told AL while planning. (1) I claimed the p5 fallback would diverge under
+"Animate Grid"; wrong — `Tiling.show` forces `style = "plain"` when `islamicAnimate` is on, so that
+path never reaches the interlace. The p5 mirror is actually reached when a tiling has no
+translational cell (canvas.tsx gates `shaderFill` on `!!translationalCell`), i.e. rulestring
+tilings. Porting it was still right, for that reason. Its pixels are UNVERIFIED — I could not force
+that state from the dev store hook; it is a direct mirror over the same shared geometry, nothing
+more. (2) Spherical was dropped from scope after reading it: `sphericalIslamicWeaveMesh` already
+sweeps its border as world-space ribbon geometry, and the sphere has no `outline` style at all
+(its weave is done by radius level, not trimming), so there was nothing to port.
+
+Latent bug found while writing tests: butt caps (`squareCap: false`) produced a zero-area border
+quad, so a butt-ended strap got no border across its end — the cap extension has to be the ring's
+OFFSET from the fill, not its half-width. Square caps were unaffected, and the app only uses those,
+so it never showed.
+
+Verified: build + `tsc --noEmit` clean; interlace/strap-mesh/webgl-pipeline suites pass; outline,
+interlace and emboss captured under Playwright, plus a 3x zoom pair confirming the border holds its
+proportion, and a band-0.05/border-0.1 extreme that degrades gracefully. Seven test files fail in
+the full suite (hue-ring, figure-emitters, islamic-gate, dsym-generator, star-general-path, two
+oracle-symmetry) — all fail identically with these changes stashed, none touch strap code.

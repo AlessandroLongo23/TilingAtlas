@@ -8,7 +8,7 @@ import { compileShader } from "@/lib/render/flatTilingGL";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, STRAP_BORDER_VERT, STRAP_BORDER_FRAG } from "@/lib/render/islamicGL";
 import { buildInstancedStrapMesh, type StrapMesh } from "@/lib/render/buildIslamicStrapMesh";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
-import { buildIslamicInterlace, type OutlineSeg } from "@/lib/utils/islamicInterlace";
+import { buildIslamicInterlace, strapWidthScale, EMBOSS_MIN_BORDER, type OutlineSeg } from "@/lib/utils/islamicInterlace";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import { Vector } from "@/classes/Vector";
 import type { Segment } from "@/utils/islamicArrangement";
@@ -72,8 +72,6 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 	const borderProgRef = useRef<WebGLProgram | null>(null);
 	const fillPosRef = useRef<WebGLBuffer | null>(null);
 	const bPosRef = useRef<WebGLBuffer | null>(null);
-	const bNormRef = useRef<WebGLBuffer | null>(null);
-	const bSideRef = useRef<WebGLBuffer | null>(null);
 	const bColorRef = useRef<WebGLBuffer | null>(null);
 	const instBufRef = useRef<WebGLBuffer | null>(null);
 	const fillU = useRef<Record<string, WebGLUniformLocation | null>>({});
@@ -127,21 +125,17 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 
 		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
 		for (const n of ["aPos", "aInst"]) fillA.current[n] = gl.getAttribLocation(fillProg, n);
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uOpacity"]) borderU.current[n] = gl.getUniformLocation(borderProg, n);
-		for (const n of ["aPos", "aNorm", "aSide", "aColor", "aInst"]) borderA.current[n] = gl.getAttribLocation(borderProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uOpacity"]) borderU.current[n] = gl.getUniformLocation(borderProg, n);
+		for (const n of ["aPos", "aColor", "aInst"]) borderA.current[n] = gl.getAttribLocation(borderProg, n);
 
 		fillPosRef.current = gl.createBuffer();
 		bPosRef.current = gl.createBuffer();
-		bNormRef.current = gl.createBuffer();
-		bSideRef.current = gl.createBuffer();
 		bColorRef.current = gl.createBuffer();
 		instBufRef.current = gl.createBuffer();
 
 		const upload = (mesh: StrapMesh) => {
 			gl.bindBuffer(gl.ARRAY_BUFFER, fillPosRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.fillVerts, gl.STATIC_DRAW);
 			gl.bindBuffer(gl.ARRAY_BUFFER, bPosRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.borderPos, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, bNormRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.borderNorm, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, bSideRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.borderSide, gl.STATIC_DRAW);
 			gl.bindBuffer(gl.ARRAY_BUFFER, bColorRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.borderColor, gl.STATIC_DRAW);
 			meshRef.current = mesh;
 		};
@@ -167,20 +161,23 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 			const chirality = cfg.islamicChirality;
 			const style: StrapStyle = (cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss") ? cfg.islamicStyle : "interlace";
 			const { weave, emboss } = STRAP_STYLES[style];
+			// Border thickness is now band geometry, not a stroke uniform, so it joins the mesh signature.
+			// Emboss keeps a floor so the bevel never vanishes when the slider is dragged to zero.
+			const borderWidth = emboss ? Math.max(cfg.islamicOutlineWidth, EMBOSS_MIN_BORDER) : cfg.islamicOutlineWidth;
 
 			if (!patchBuiltRef.current) {
 				patchBuiltRef.current = true;
 				patchRef.current = buildTilingFromCell(cell as unknown as AlgoCellData, PATCH_MARGIN, PATCH_MARGIN);
 				meshSigRef.current = null;
 			}
-			const meshSig = `${style}|${theta}|${offset}|${count}|${bandWidth}|${chirality}`;
+			const meshSig = `${style}|${theta}|${offset}|${count}|${bandWidth}|${borderWidth}|${chirality}`;
 			if (meshSig !== meshSigRef.current && patchRef.current) {
 				const structural = meshSigRef.current === null;
 				const now = performance.now();
 				if (structural || now - lastRebuildRef.current >= MESH_REBUILD_THROTTLE_MS) {
 					lastRebuildRef.current = now;
 					meshSigRef.current = meshSig;
-					upload(buildStrapMeshFromPatch(patchRef.current, islamicNormalAngleFromSlider(theta), offset, count, bandWidth, chirality, weave, emboss, meta.v1, meta.v2));
+					upload(buildStrapMeshFromPatch(patchRef.current, islamicNormalAngleFromSlider(theta), offset, count, bandWidth, borderWidth, chirality, weave, emboss, meta.v1, meta.v2));
 				}
 			}
 			const mesh = meshRef.current;
@@ -207,6 +204,26 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 			g.enable(g.BLEND);
 			g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
 
+			// BORDER FIRST, then the bodies. In the interlace/emboss styles nothing overlaps (an under strand
+			// stops on the over strand's outer border line) so the order is free; in the OUTLINE style it is
+			// the whole trick — each crossing strap's body paints over the other's border, leaving only the
+			// silhouette of the ribbon union instead of every border crossing every intersection.
+			if (mesh.borderVertexCount > 0) {
+				g.useProgram(borderProgRef.current);
+				const BA = borderA.current, BU = borderU.current;
+				g.bindBuffer(g.ARRAY_BUFFER, bPosRef.current); g.enableVertexAttribArray(BA.aPos); g.vertexAttribPointer(BA.aPos, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aPos, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, bColorRef.current); g.enableVertexAttribArray(BA.aColor); g.vertexAttribPointer(BA.aColor, 3, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aColor, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current); g.enableVertexAttribArray(BA.aInst); g.vertexAttribPointer(BA.aInst, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aInst, 1);
+				g.uniform2f(BU.uOffset, draw.x, draw.y);
+				g.uniform1f(BU.uZoom, ctrl.zoom);
+				g.uniform1f(BU.uRot, rot);
+				g.uniform2f(BU.uV1, meta.v1.x, meta.v1.y);
+				g.uniform2f(BU.uV2, meta.v2.x, meta.v2.y);
+				g.uniform2f(BU.uHalf, w / 2, h / 2);
+				g.uniform1f(BU.uOpacity, 1);
+				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.borderVertexCount, instRef.current.count);
+			}
+
 			// Strap body fill: one solid colour (ISLAMIC_FILL mode 2). Only aPos + aInst are bound; aHue/aClass
 			// stay disabled (mode 2 ignores them).
 			g.useProgram(fillProgRef.current);
@@ -224,28 +241,6 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 			g.uniform1i(FU.uMode, 2);
 			g.uniform1f(FU.uOpacity, 1);
 			g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
-
-			// Strap border: per-vertex colour (dark, or emboss highlight/shadow). Width follows islamicOutlineWidth
-			// (emboss uses at least 1.5 px, matching p5). Non-emboss with outline width 0 draws no border.
-			const outlineW = emboss ? Math.max(cfg.islamicOutlineWidth, 1.5) : cfg.islamicOutlineWidth;
-			if (outlineW > 0 && mesh.borderVertexCount > 0) {
-				g.useProgram(borderProgRef.current);
-				const BA = borderA.current, BU = borderU.current;
-				g.bindBuffer(g.ARRAY_BUFFER, bPosRef.current); g.enableVertexAttribArray(BA.aPos); g.vertexAttribPointer(BA.aPos, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aPos, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, bNormRef.current); g.enableVertexAttribArray(BA.aNorm); g.vertexAttribPointer(BA.aNorm, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aNorm, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, bSideRef.current); g.enableVertexAttribArray(BA.aSide); g.vertexAttribPointer(BA.aSide, 1, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aSide, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, bColorRef.current); g.enableVertexAttribArray(BA.aColor); g.vertexAttribPointer(BA.aColor, 3, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aColor, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current); g.enableVertexAttribArray(BA.aInst); g.vertexAttribPointer(BA.aInst, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(BA.aInst, 1);
-				g.uniform2f(BU.uOffset, draw.x, draw.y);
-				g.uniform1f(BU.uZoom, ctrl.zoom);
-				g.uniform1f(BU.uRot, rot);
-				g.uniform2f(BU.uV1, meta.v1.x, meta.v1.y);
-				g.uniform2f(BU.uV2, meta.v2.x, meta.v2.y);
-				g.uniform2f(BU.uHalf, w / 2, h / 2);
-				g.uniform1f(BU.uHalfStrokePx, outlineW * 0.5);
-				g.uniform1f(BU.uOpacity, 1);
-				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.borderVertexCount, instRef.current.count);
-			}
 		};
 		raf = requestAnimationFrame(render);
 
@@ -253,7 +248,7 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 			cancelAnimationFrame(raf);
 			gl.deleteProgram(fillProg);
 			gl.deleteProgram(borderProg);
-			for (const b of [fillPosRef, bPosRef, bNormRef, bSideRef, bColorRef, instBufRef]) if (b.current) gl.deleteBuffer(b.current);
+			for (const b of [fillPosRef, bPosRef, bColorRef, instBufRef]) if (b.current) gl.deleteBuffer(b.current);
 			glRef.current = null; fillProgRef.current = null; borderProgRef.current = null; meshRef.current = null;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -270,26 +265,24 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 
 // Pool the fixed patch's construction segments (same clamps/splitCrossings as drawIslamicInterlace), weave
 // them into bands, and keep the origin-cell representatives as an instanced strap mesh. The band width is
-// bandWidth × the mean segment length over the patch (≈ the whole tiling's mean, since segments are
-// periodic), matching p5's scale.
+// bandWidth × strapWidthScale (the median segment length over the patch ≈ the whole tiling's, since segments
+// are periodic) — the same shared helper p5 uses, so the two renderers can't drift apart.
 function buildStrapMeshFromPatch(
 	patch: ReturnType<typeof buildTilingFromCell>, angle: number, offset: number, count: number,
-	bandWidth: number, chirality: boolean, weave: boolean, emboss: boolean, v1: Vector, v2: Vector,
+	bandWidth: number, borderWidth: number, chirality: boolean, weave: boolean, emboss: boolean, v1: Vector, v2: Vector,
 ): StrapMesh {
 	const segments: Segment[] = [];
-	let lenSum = 0, lenCount = 0;
 	for (const node of patch.nodes) {
 		if (!node.vertices || !node.halfways) continue;
-		for (const s of node.calculateIslamicSegments(angle, offset, count)) {
-			segments.push(s);
-			lenSum += Vector.distance(s[0], s[1]);
-			lenCount++;
-		}
+		for (const s of node.calculateIslamicSegments(angle, offset, count)) segments.push(s);
 	}
-	const median = lenCount ? lenSum / lenCount : 1;
-	const width = Math.max(1e-6, bandWidth * median);
+	const scale = strapWidthScale(segments);
+	const width = Math.max(1e-6, bandWidth * scale);
+	// The border rides the SAME length scale as the band, so the two sliders read on one ruler and the
+	// ratio between them survives any zoom. It grows outward: the band stays the cream body's full width.
+	const border = Math.max(0, borderWidth * scale);
 	const splitCrossings = offset > 0 || count > 1;
-	const { bands } = buildIslamicInterlace(segments, { width, startUnder: chirality, squareCap: true, weave, splitCrossings });
+	const { bands } = buildIslamicInterlace(segments, { width, border, startUnder: chirality, squareCap: true, weave, splitCrossings });
 
 	// Border colour per segment: dark warm, or (emboss) a highlight/shadow chosen from the world normal vs
 	// the fixed light — baked here so instancing carries it (the normal is translation-invariant).

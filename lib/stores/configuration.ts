@@ -78,7 +78,10 @@ export interface ConfigurationState {
 	// look); 'interlace' = woven over/under bands. ('outline'/'checkerboard' are reserved for later slices.)
 	islamicStyle: 'plain' | 'interlace' | 'outline' | 'emboss' | 'checkerboard';
 	islamicBandWidth: number;         // interlace strap width, as a fraction of the median segment length
-	islamicOutlineWidth: number;      // interlace strap border stroke, in screen px (0 = no border)
+	// Strap border ring, grown OUTWARD from the band, on the same ruler as islamicBandWidth (a fraction of
+	// the median segment length) — so the two are directly comparable and their ratio holds at any zoom.
+	// It is band geometry, not a stroke: dragging it rebuilds the mesh. 0 = no border.
+	islamicOutlineWidth: number;
 	islamicChirality: boolean;        // flips which strand rides over at every crossing (the two chiralities)
 	// Region fills are hue-only — saturation/lightness are locked to the tile palette (HSL 100%/80% ≡
 	// HSB 0.40/1.0), like the hue-shift ring — so a fill is always a tile-palette colour, never off-palette.
@@ -220,7 +223,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	islamicAnimate: false,
 	islamicStyle: 'plain',
 	islamicBandWidth: 0.25,
-	islamicOutlineWidth: 1.5,
+	islamicOutlineWidth: 0.015,
 	islamicChirality: false,
 	islamicCheckerHueA: 45,   // pastel yellow — the hue of the former '#e7dcc0' default at the locked S/L
 	islamicCheckerHueB: 200,  // pastel sky-blue — the hue of the former '#3a4a52' default

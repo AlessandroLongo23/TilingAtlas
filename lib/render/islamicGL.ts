@@ -96,13 +96,14 @@ out vec4 frag;
 void main() { frag = vec4(uStroke, uOpacity); }
 `;
 
-// Strap border (interlace/outline/emboss). Same constant-CSS-width butt quad as ISLAMIC_STROKE_VERT, but
-// the colour is per-vertex (aColor) so a single instanced draw can carry both the emboss highlight and
-// shadow edges (baked from each segment's world normal at build time). aInst instances it like the fill.
+// Strap border (interlace/outline/emboss). The border is real WORLD-SPACE geometry — a quad between the
+// band's fill ring and its outer ring, built on the CPU — so this is just the fill transform with a
+// per-vertex colour (aColor), which lets one instanced draw carry both the emboss highlight and shadow
+// edges (baked from each segment's world normal at build time). aInst instances it like the fill.
+// It used to push a constant-CSS-width butt quad off a normal; that kept the border a fixed pixel size, so
+// zooming out fattened it relative to the band it wrapped. World-space keeps the two proportional.
 export const STRAP_BORDER_VERT = `#version 300 es
 in vec2 aPos;
-in vec2 aNorm;
-in float aSide;
 in vec3 aColor;
 in vec2 aInst;
 uniform vec2 uOffset;
@@ -111,19 +112,12 @@ uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
 uniform vec2 uHalf;
-uniform float uHalfStrokePx;
 out vec3 vColor;
 void main() {
 	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
 	float c = cos(uRot), s = sin(uRot);
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
-	float nsx = uZoom * (c * aNorm.x + s * aNorm.y);
-	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
-	float nl = length(vec2(nsx, nsy));
-	vec2 n = nl > 0.0 ? vec2(nsx, nsy) / nl : vec2(0.0);
-	sx += aSide * uHalfStrokePx * n.x;
-	sy += aSide * uHalfStrokePx * n.y;
 	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
 	vColor = aColor;
 }

@@ -1,9 +1,9 @@
 // Retained-mode geometry for the Islamic INTERLACE / OUTLINE / EMBOSS styles (M4-rest), the GPU port of
 // Tiling.drawIslamicInterlace. buildIslamicInterlace already turns the pooled construction segments into
 // woven `Band`s (one per interlace edge): each band is a convex `fill` quad (the solid strap body) plus a
-// few `outline` border segments carrying a world-space normal. The over/under illusion is baked into the
-// outline endpoints (an under strand's side edges stop on the over strand's edge), so the GPU just fills
-// the quads and strokes the borders — no weave logic in the shader.
+// few `outline` border segments, each spanning the fill ring to the outer ring and carrying a world-space
+// normal. The over/under illusion is baked into the ring endpoints (an under strand's side edges stop on
+// the over strand's outer border line), so the GPU just fills quads — no weave logic in the shader.
 //
 // Like the plain A/B/C path this keeps only the ORIGIN-CELL representatives (a band whose fill centroid
 // reduces to the origin lattice cell) and lets the shader instance them (aInst = i,j; world = aPos +
@@ -18,11 +18,11 @@ export interface StrapMesh {
 	// Strap bodies: fan of triangles, drawn in one solid colour (a fill uniform). No per-vertex colour.
 	fillVerts: Float32Array;   // 2 floats/vert
 	fillVertexCount: number;
-	// Strap borders: one butt quad per outline segment, each vertex carrying a baked colour (dark warm for
-	// interlace/outline, or the emboss highlight/shadow chosen from the segment's normal vs the light).
+	// Strap borders: one WORLD-SPACE quad per outline segment, spanning the fill ring (a→b) to the outer
+	// ring (oa→ob), each vertex carrying a baked colour (dark warm for interlace/outline, or the emboss
+	// highlight/shadow chosen from the segment's normal vs the light). World-space, not a screen-px stroke,
+	// so the border keeps its proportion to the band at every zoom.
 	borderPos: Float32Array;   // 2 floats/vert
-	borderNorm: Float32Array;  // 2 floats/vert
-	borderSide: Float32Array;  // 1 float/vert
 	borderColor: Float32Array; // 3 floats/vert
 	borderVertexCount: number;
 }
@@ -62,39 +62,29 @@ export function buildInstancedStrapMesh(
 		}
 	}
 
-	// Border: one butt quad per outline segment (same push scheme as the construction-line strokes), each
-	// vertex tagged with the segment's baked colour.
+	// Border: one quad per outline segment, [a, b, ob, oa] — the fill-ring edge and its outer-ring partner —
+	// triangulated by its diagonal, each vertex tagged with the segment's baked colour. Winding is free
+	// (face culling is off). At border 0 the two rings coincide and every quad is degenerate, i.e. no border.
 	let segCount = 0;
 	for (const b of kept) segCount += b.outline.length;
 	const borderPos = new Float32Array(segCount * 6 * 2);
-	const borderNorm = new Float32Array(segCount * 6 * 2);
-	const borderSide = new Float32Array(segCount * 6);
 	const borderColor = new Float32Array(segCount * 6 * 3);
 	let si = 0;
-	const push = (px: number, py: number, nx: number, ny: number, side: number, col: readonly [number, number, number]) => {
-		borderPos[si * 2] = px; borderPos[si * 2 + 1] = py;
-		borderNorm[si * 2] = nx; borderNorm[si * 2 + 1] = ny;
-		borderSide[si] = side;
+	const push = (p: Vector, col: readonly [number, number, number]) => {
+		borderPos[si * 2] = p.x; borderPos[si * 2 + 1] = p.y;
 		borderColor[si * 3] = col[0]; borderColor[si * 3 + 1] = col[1]; borderColor[si * 3 + 2] = col[2];
 		si++;
 	};
 	for (const b of kept) {
 		for (const s of b.outline) {
-			const dx = s.b.x - s.a.x, dy = s.b.y - s.a.y;
-			const len = Math.hypot(dx, dy) || 1;
-			const nx = -dy / len, ny = dx / len; // left normal of the segment direction
 			const col = borderColorOf(s);
-			push(s.a.x, s.a.y, nx, ny, -1, col);
-			push(s.a.x, s.a.y, nx, ny, +1, col);
-			push(s.b.x, s.b.y, nx, ny, -1, col);
-			push(s.b.x, s.b.y, nx, ny, -1, col);
-			push(s.a.x, s.a.y, nx, ny, +1, col);
-			push(s.b.x, s.b.y, nx, ny, +1, col);
+			push(s.a, col); push(s.b, col); push(s.ob, col);
+			push(s.a, col); push(s.ob, col); push(s.oa, col);
 		}
 	}
 
 	return {
 		fillVerts, fillVertexCount: fi,
-		borderPos, borderNorm, borderSide, borderColor, borderVertexCount: si,
+		borderPos, borderColor, borderVertexCount: si,
 	};
 }

@@ -6,8 +6,13 @@ import type { Band } from "@/lib/utils/islamicInterlace";
 const quad = (cx: number, cy: number, r: number): Vector[] => [
 	new Vector(cx - r, cy - r), new Vector(cx + r, cy - r), new Vector(cx + r, cy + r), new Vector(cx - r, cy + r),
 ];
-const seg = (ax: number, ay: number, bx: number, by: number, nx: number, ny: number) =>
-	({ a: new Vector(ax, ay), b: new Vector(bx, by), n: new Vector(nx, ny) });
+// An outline segment plus its outer-ring partner, offset by `d` along the segment's outward normal.
+const seg = (ax: number, ay: number, bx: number, by: number, nx: number, ny: number, d = 0.05) =>
+	({
+		a: new Vector(ax, ay), b: new Vector(bx, by),
+		oa: new Vector(ax + nx * d, ay + ny * d), ob: new Vector(bx + nx * d, by + ny * d),
+		n: new Vector(nx, ny),
+	});
 
 describe("buildInstancedStrapMesh", () => {
 	// A 3×3 grid of unit-cell strap bands (fill quad + one border segment each). Only the origin-cell
@@ -21,7 +26,7 @@ describe("buildInstancedStrapMesh", () => {
 	it("keeps only the origin-cell band; a quad fans to 2 triangles (6 fill verts)", () => {
 		const m = buildInstancedStrapMesh(bands, v1, v2, () => [0.5, 0.5, 0.5]);
 		expect(m.fillVertexCount).toBe(6);   // one quad → 2 tris (not 9 × 6)
-		expect(m.borderVertexCount).toBe(6); // one segment → one butt quad
+		expect(m.borderVertexCount).toBe(6); // one segment → one fill-ring-to-outer-ring quad
 	});
 
 	it("bakes the per-segment border colour on every border vertex", () => {

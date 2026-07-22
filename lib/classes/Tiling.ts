@@ -6,7 +6,7 @@ import { WAVE_MIN_SCALE } from "@/lib/utils/tilingTransition";
 import { useConfiguration } from "@/stores/configuration";
 import { sortPointsByAngleAndDistance, isWithinTolerance, deduplicatePolygons, vertexFigureHue } from '@/utils';
 import { extractFaces, colorFacesAbc, type AbcFace, type Marker, type Segment, type Face } from "@/utils/islamicArrangement";
-import { buildIslamicInterlace, twoColorFaces, type Band } from "@/utils/islamicInterlace";
+import { buildIslamicInterlace, strapWidthScale, twoColorFaces, EMBOSS_MIN_BORDER, type Band } from "@/utils/islamicInterlace";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { ringColor } from "@/lib/render/hueRing";
 
@@ -41,7 +41,7 @@ export class Tiling {
     private islamicFillCache?: { nodesRef: Polygon[]; theta: number; offset: number; count: number; abc: AbcFace[]; degenerate: boolean; segments: Segment[] };
     // Cached interlace bands (woven over/under strips). Geometry depends only on the node set, angle,
     // band width, gap and chirality; the strap colour is applied at draw time, so it is not a cache key.
-    private islamicInterlaceCache?: { nodesRef: Polygon[]; theta: number; offset: number; count: number; bandWidth: number; chirality: boolean; weave: boolean; bands: Band[] };
+    private islamicInterlaceCache?: { nodesRef: Polygon[]; theta: number; offset: number; count: number; bandWidth: number; borderWidth: number; chirality: boolean; weave: boolean; bands: Band[] };
     // Cached checkerboard: the 2-coloured arrangement faces + the construction segments (for borders).
     private islamicCheckerCache?: { nodesRef: Polygon[]; theta: number; offset: number; count: number; faces: Face[]; colors: number[]; segments: Segment[] };
 
@@ -329,46 +329,70 @@ export class Tiling {
 
     /** Interlace style: weave the construction lines into over/under straps. Same pooled segments as the
      *  star fill (with a clean single crossing per edge midpoint — offset/count forced off), turned into
-     *  woven straps by buildIslamicInterlace, cached per (node set, angle, width, chirality). Rendered as
-     *  a solid fill (each strap tucks fully under at crossings) plus a border stroke whose breaks along
-     *  the over strand's edge are what read as over/under. */
+     *  woven straps by buildIslamicInterlace, cached per (node set, angle, width, border, chirality).
+     *  Rendered as a world-space border ring, then the solid bodies over it — the same two passes and the
+     *  same order as the GL path in strap-canvas.tsx, which this must match when islamicAnimate flips
+     *  rendering back to p5. */
     drawIslamicInterlace = (ctx, opacity: number = 1, weave: boolean = true, emboss: boolean = false): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
         const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
         const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
         const bandWidth = cfg.islamicBandWidth;
+        const borderWidth = emboss ? Math.max(cfg.islamicOutlineWidth, EMBOSS_MIN_BORDER) : cfg.islamicOutlineWidth;
         const chirality = cfg.islamicChirality;
         const cache = this.islamicInterlaceCache;
         const fresh = cache && cache.nodesRef === this.nodes && cache.theta === theta
             && cache.offset === offset && cache.count === count
-            && cache.bandWidth === bandWidth && cache.chirality === chirality && cache.weave === weave;
+            && cache.bandWidth === bandWidth && cache.borderWidth === borderWidth
+            && cache.chirality === chirality && cache.weave === weave;
         if (!fresh) {
             const angle = islamicNormalAngleFromSlider(cfg.islamicAngle);
             const segments: Segment[] = [];
-            let lenSum = 0, lenCount = 0;
             for (const node of this.nodes) {
                 if (!node.vertices || !node.halfways) continue;
-                for (const s of node.calculateIslamicSegments(angle, offset, count)) {
-                    segments.push(s);
-                    lenSum += Vector.distance(s[0], s[1]);
-                    lenCount++;
-                }
+                for (const s of node.calculateIslamicSegments(angle, offset, count)) segments.push(s);
             }
-            const median = lenCount ? lenSum / lenCount : 1; // mean segment length, the band-width scale
-            const width = Math.max(1e-6, bandWidth * median);
+            const scale = strapWidthScale(segments);
+            const width = Math.max(1e-6, bandWidth * scale);
+            // Border on the same length scale as the band, grown outward — so the two sliders read on one
+            // ruler and their ratio survives any zoom, instead of a fixed pixel stroke that fattens as you
+            // zoom out. Must match buildStrapMeshFromPatch in strap-canvas.tsx.
+            const border = Math.max(0, borderWidth * scale);
             // Off-midpoint contact (offset > 0) or pass-through rays (count > 1) put real crossings mid-
             // segment, so the weave graph must split them; the clean construction (offset 0, count 1) needn't.
             const splitCrossings = offset > 0 || count > 1;
-            const { bands } = buildIslamicInterlace(segments, { width, startUnder: chirality, squareCap: true, weave, splitCrossings });
-            this.islamicInterlaceCache = { nodesRef: this.nodes, theta, offset, count, bandWidth, chirality, weave, bands };
+            const { bands } = buildIslamicInterlace(segments, { width, border, startUnder: chirality, squareCap: true, weave, splitCrossings });
+            this.islamicInterlaceCache = { nodesRef: this.nodes, theta, offset, count, bandWidth, borderWidth, chirality, weave, bands };
         }
         const { bands } = this.islamicInterlaceCache!;
-        const zoom = cfg.controls.zoom;
 
-        // Fill pass: solid straps. They overlap at crossings (the under one tucks beneath), but a single
-        // fill colour makes the overlap invisible — the border pass is what shows the weave. Emboss uses a
-        // mid tone so the lit/shadowed edges read as a raised bevel.
+        // Border pass FIRST: each outline segment is a quad spanning the band's fill ring to its outer ring.
+        // In interlace/emboss nothing overlaps (an under strand stops on the over strand's outer border
+        // line) so the order is free; in the OUTLINE style it is the whole trick — the bodies drawn next
+        // cover every border that falls inside a crossing strap, leaving the silhouette of the ribbon union.
+        // Emboss lights each edge by its outward normal (light-facing highlights, away side shadows), so a
+        // strap reads as a raised ribbon (Kaplan's emboss).
+        const light = { x: -0.6, y: 0.8 }; // fixed world light, upper-left
+        ctx.push();
+        ctx.noStroke();
+        if (!emboss) ctx.fill(28, 22, 14, opacity); // dark warm border
+        for (const b of bands) for (const s of b.outline) {
+            if (emboss) {
+                if (s.n.x * light.x + s.n.y * light.y > 0) ctx.fill(45, 10, 100, opacity); // highlight
+                else ctx.fill(35, 45, 26, opacity);                                        // shadow
+            }
+            ctx.beginShape();
+            ctx.vertex(s.a.x, s.a.y);
+            ctx.vertex(s.b.x, s.b.y);
+            ctx.vertex(s.ob.x, s.ob.y);
+            ctx.vertex(s.oa.x, s.oa.y);
+            ctx.endShape(ctx.CLOSE);
+        }
+        ctx.pop();
+
+        // Body pass: solid straps. In the outline style they overlap at crossings, but a single fill colour
+        // makes the overlap invisible. Emboss uses a mid tone so the lit/shadowed rings read as a bevel.
         ctx.push();
         ctx.noStroke();
         if (emboss) ctx.fill(40, 28, 74, opacity); else ctx.fill(40, 12, 96, opacity);
@@ -378,33 +402,6 @@ export class Tiling {
             ctx.endShape(ctx.CLOSE);
         }
         ctx.pop();
-
-        // Border pass: stroke each strap's edges. An under strand's edges stop on the over strand's edge,
-        // so the over strand reads as continuous and the under strand as passing beneath it.
-        const bw = cfg.islamicOutlineWidth;
-        if (emboss) {
-            // Light each edge by its outward normal: the light-facing side highlights, the away side
-            // shadows, so each strap reads as a raised ribbon (Kaplan's emboss).
-            const light = { x: -0.6, y: 0.8 }; // fixed world light, upper-left
-            ctx.push();
-            ctx.noFill();
-            ctx.strokeCap(ctx.ROUND);
-            ctx.strokeWeight(Math.max(bw, 1.5) / zoom);
-            for (const b of bands) for (const s of b.outline) {
-                if (s.n.x * light.x + s.n.y * light.y > 0) ctx.stroke(45, 10, 100, opacity); // highlight
-                else ctx.stroke(35, 45, 26, opacity);                                        // shadow
-                ctx.line(s.a.x, s.a.y, s.b.x, s.b.y);
-            }
-            ctx.pop();
-        } else if (bw > 0) {
-            ctx.push();
-            ctx.noFill();
-            ctx.strokeCap(ctx.ROUND);
-            ctx.strokeWeight(bw / zoom);
-            ctx.stroke(28, 22, 14, opacity); // dark warm border
-            for (const b of bands) for (const s of b.outline) ctx.line(s.a.x, s.a.y, s.b.x, s.b.y);
-            ctx.pop();
-        }
     }
 
     /** Checkerboard style: two-colour the arrangement faces (the zellij field). Reuses the star fill's

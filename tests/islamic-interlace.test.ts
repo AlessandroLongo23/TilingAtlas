@@ -83,7 +83,7 @@ describe("buildIslamicInterlace band geometry", () => {
         expect(near(1 + h, -h)).toBe(true);  // outer (convex) miter
     });
 
-    it("tucks the under strand fully under and breaks its outline on the over edge", () => {
+    it("stops the under strand — fill AND border — on the over strand's outer border line", () => {
         const w = 0.4, h = 0.2;
         // Perpendicular X at the origin. startUnder=false seeds the first edge ((0,0)->(1,0), horizontal)
         // OVER, so the vertical strand is UNDER.
@@ -95,15 +95,57 @@ describe("buildIslamicInterlace band geometry", () => {
         const outPts = bands.flatMap((b) => b.outline.flatMap((s) => [s.a, s.b]));
         const near = (pts: Vector[], x: number, y: number) =>
             pts.some((p) => Math.abs(p.x - x) < 1e-9 && Math.abs(p.y - y) < 1e-9);
-        // The under (vertical) strand's FILL runs to the crossing centre (y = 0) — it tucks fully under.
-        expect(near(fillPts, 0.2, 0)).toBe(true);
-        expect(near(fillPts, -0.2, 0)).toBe(true);
-        // Its OUTLINE stops on the over strand's edge (y = h): the break follows the over edge exactly.
+        // Both of the under (vertical) strand's rings stop on the over strand's edge (y = h; at border 0
+        // the outer ring coincides with the fill ring). The fill must NOT run through to the crossing
+        // centre: the border is painted before every fill, so an unclipped body would repaint over the
+        // over strand's border quad and erase the weave.
+        expect(near(fillPts, 0.2, h)).toBe(true);
+        expect(near(fillPts, -0.2, h)).toBe(true);
+        expect(near(fillPts, 0.2, 0)).toBe(false);
         expect(near(outPts, 0.2, h)).toBe(true);
         expect(near(outPts, -0.2, h)).toBe(true);
         // The over (horizontal) strand runs straight through: fill and outline reach the crossing at y=±h.
         expect(near(fillPts, 0, h)).toBe(true);
         expect(near(outPts, 0, h)).toBe(true);
+    });
+
+    it("offsets the outer ring by `border`, leaving the fill ring where it was", () => {
+        const w = 0.4, bd = 0.05;
+        const { bands } = buildIslamicInterlace([seg(0, 0, 2, 0)], { width: w, border: bd, startUnder: false, squareCap: false });
+        const poly = bands[0].fill;
+        // The band grows OUTWARD: the cream body keeps its full width, the border rides outside it.
+        expect(Math.abs(signedArea(poly))).toBeCloseTo(w * 2, 9);
+        expect(Math.max(...poly.map((p) => p.y))).toBeCloseTo(w / 2, 9);
+        // Each side quad spans w/2 → w/2 + border; the butt cap spans x = 0 → −border.
+        const sides = bands[0].outline.filter((s) => Math.abs(s.a.y - s.b.y) < 1e-9);
+        expect(sides.length).toBe(2);
+        for (const s of sides) {
+            expect(Math.abs(s.oa.y)).toBeCloseTo(w / 2 + bd, 9);
+            expect(Math.abs(s.ob.y)).toBeCloseTo(w / 2 + bd, 9);
+            expect(Math.abs(s.a.y)).toBeCloseTo(w / 2, 9);
+        }
+        const capPts = bands[0].outline.filter((s) => Math.abs(s.a.y - s.b.y) > 1e-9).flatMap((s) => [s.oa, s.ob]);
+        expect(capPts.length).toBeGreaterThan(0);
+        for (const p of capPts) expect(Math.min(p.x, 2 - p.x)).toBeCloseTo(-bd, 9);
+    });
+
+    it("pushes the under-strand break out to h + border, not to the fill edge", () => {
+        const w = 0.4, h = 0.2, bd = 0.05;
+        const { bands } = buildIslamicInterlace(
+            [seg(0, 0, 1, 0), seg(0, 0, -1, 0), seg(0, 0, 0, 1), seg(0, 0, 0, -1)],
+            { width: w, border: bd, startUnder: false, squareCap: false },
+        );
+        const near = (pts: Vector[], x: number, y: number) =>
+            pts.some((p) => Math.abs(p.x - x) < 1e-9 && Math.abs(p.y - y) < 1e-9);
+        const fillPts = bands.flatMap((b) => b.fill);
+        // Under strand's body ends flush against the OUTER edge of the over strand's border quad, so the
+        // three regions (under fill │ over border │ over fill) abut with no overlap at any draw order.
+        expect(near(fillPts, 0.2, h + bd)).toBe(true);
+        expect(near(fillPts, 0.2, h)).toBe(false);
+        // Its outer ring stops on the same line — the two rings clip together, so the quad's end edge lies
+        // along the over strand's border rather than cutting across it.
+        const outerPts = bands.flatMap((b) => b.outline.flatMap((s) => [s.oa, s.ob]));
+        expect(near(outerPts, 0.2 + bd, h + bd)).toBe(true);
     });
 
     it("aligns the under-strand break to the over edge at an OBLIQUE crossing too", () => {

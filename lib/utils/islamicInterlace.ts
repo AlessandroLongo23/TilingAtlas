@@ -68,23 +68,38 @@ export function buildInterlaceMap(segments: Segment[], splitCrossings: boolean =
     return { vertices, edges, vertexOf };
 }
 
-/** One border segment of a strap, with its unit OUTWARD normal (pointing away from the strap fill) so
- *  the emboss style can light each edge — highlight where it faces the light, shadow where it faces away. */
-export interface OutlineSeg { a: Vector; b: Vector; n: Vector; }
+/**
+ * One border segment of a strap: `a`→`b` on the INNER ring (the fill boundary) plus `oa`→`ob`, the same
+ * segment on the OUTER ring, `border` further out. The two together bound a quad — the border is drawn as
+ * that filled quad, in world units, not as a stroke, so it scales with zoom like the band it wraps. `n` is
+ * the unit OUTWARD normal (pointing away from the strap fill) so the emboss style can light each edge —
+ * highlight where it faces the light, shadow where it faces away. At `border: 0` the rings coincide.
+ */
+export interface OutlineSeg { a: Vector; b: Vector; oa: Vector; ob: Vector; n: Vector; }
 
 export interface Band {
-    // Full-length strap polygon: butt through every crossing (an under strand tucks fully beneath the
-    // over strand rather than being trimmed), mitred at bends, capped at tips. Drawn as a solid fill.
+    // Strap body polygon at half-width `width/2`: mitred at bends, capped at tips, butt through a crossing
+    // it runs OVER. Where it runs UNDER it stops on the over strand's OUTER border line, so the body never
+    // overlaps the over strand's border quad — that is what lets the border be painted first and the fills
+    // second without a per-crossing draw order.
     fill: Vector[];
-    // Border segments to stroke. The over/under illusion lives here: an under strand's two side edges
-    // stop exactly on the over strand's edge line (parallel to the over strand at any crossing angle),
-    // while the over strand's edges run through unbroken. This is what "makes the stroke do the work".
+    // Border ring segments, one quad each (see OutlineSeg). The over/under illusion lives here: an under
+    // strand's two side edges stop exactly on the over strand's outer border line (parallel to the over
+    // strand at any crossing angle), while the over strand's edges run through unbroken.
     outline: OutlineSeg[];
 }
+
+/**
+ * Emboss is a bevel, not an option: floor its border so dragging the width slider to 0 doesn't flatten it.
+ * Same units as `islamicBandWidth` — a fraction of the median construction-segment length. Shared by the p5
+ * path (Tiling.drawIslamicInterlace) and the GL path (strap-canvas), which must agree.
+ */
+export const EMBOSS_MIN_BORDER = 0.01;
 
 export interface InterlaceParams {
     width: number;           // full band width, world units
     startUnder: boolean;     // chirality seed
+    border?: number;         // border ring thickness added OUTSIDE each side, world units (default 0)
     squareCap?: boolean;     // tip treatment: true (default) extends the cap by width/2, false = butt
     weave?: boolean;         // true (default) breaks under strands for over/under; false = flat outlined straps
     splitCrossings?: boolean; // split transversal crossings (edge offset > 0 or intersection-count > 1)
@@ -157,72 +172,86 @@ export function assignOverUnder(map: InterlaceMap, startUnder: boolean): { degen
  * Offset every edge into a band. Each edge yields one closed strip polygon `[Aleft, Bleft, Bright,
  * Aright]`, whose corners are the join points computed per incident vertex: a square/butt cap at a
  * degree-1 tip, a mitre at a degree-2 bend, and at a crossing the over strand runs straight through
- * while the under strand is trimmed back to the over boundary (minus `gap`). Requires `assignOverUnder`
- * to have run so the over/under state per edge-end is known.
+ * while the under strand is trimmed back to the over strand's outer border line. Requires
+ * `assignOverUnder` to have run so the over/under state per edge-end is known.
+ *
+ * The same corner logic runs TWICE per edge-end, at half-width `h` (the fill boundary) and at `h +
+ * border` (the outer edge of the border ring); the quad between the two rings is the border. Both rings
+ * clip an under strand against the SAME line — the over strand's OUTER boundary — so under-fill,
+ * over-border and over-fill abut with no overlap, and the border can be painted before every fill
+ * without a per-crossing draw order. That ordering is also what makes the no-weave 'outline' style read
+ * as a silhouette: nothing is clipped there, so each crossing strap's fill covers the other's border
+ * and only `union(outer rings) \ union(fill rings)` survives.
  */
 const leftNormal = (d: Vector): Vector => new Vector(-d.y, d.x); // rotate +90°
 
-/** Per-edge-end corner data: the FILL corners (left/right of the outgoing dir), the OUTLINE corners
- *  (same as fill, except an under strand's are clipped to the over strand's edge), and whether this end
- *  is a tip (its outline gets a cap) — a crossing end never caps, which is what leaves the weave break. */
-interface EndCorners { fL: Vector; fR: Vector; oL: Vector; oR: Vector; tip: boolean; }
+/** One ring's corners at an edge-end: left/right of the outgoing dir, already clipped where the strand
+ *  runs under, plus whether this end is a tip (its ring gets a cap) — a crossing end never caps, which
+ *  is what leaves the weave break. */
+interface RingCorners { L: Vector; R: Vector; tip: boolean; }
 
-export function buildBands(map: InterlaceMap, params: { width: number; squareCap?: boolean; weave?: boolean }): Band[] {
+export function buildBands(map: InterlaceMap, params: { width: number; border?: number; squareCap?: boolean; weave?: boolean }): Band[] {
     const h = params.width / 2;
+    const border = Math.max(0, params.border ?? 0);
+    const hOuter = h + border;
     const square = params.squareCap !== false;
     const weave = params.weave !== false;
     const { vertices, edges, vertexOf } = map;
 
     // Join point of the wedge between two consecutive ends (`ea` CCW-earlier, `eb` CCW-later): intersect
     // ea's left-offset line with eb's right-offset line. Null (collinear/parallel offsets) → caller butts.
-    const joinPoint = (pos: Vector, ea: InterlaceEnd, eb: InterlaceEnd): Vector | null => {
-        const pA = Vector.add(pos, Vector.scale(leftNormal(ea.dir), h));
-        const pB = Vector.add(pos, Vector.scale(leftNormal(eb.dir), -h));
+    const joinPoint = (pos: Vector, ea: InterlaceEnd, eb: InterlaceEnd, hw: number): Vector | null => {
+        const pA = Vector.add(pos, Vector.scale(leftNormal(ea.dir), hw));
+        const pB = Vector.add(pos, Vector.scale(leftNormal(eb.dir), -hw));
         return lineIntersect(pA, ea.dir, pB, eb.dir);
     };
 
-    const corners = (vi: number, k: number): EndCorners => {
+    // `hw` is the ring being built (h or hOuter); the under-strand clip line is always at hOuter, so both
+    // rings stop on the same line and the border quad's end edge lies flush along the over strand's border.
+    const corners = (vi: number, k: number, hw: number): RingCorners => {
         const vert = vertices[vi];
         const ends = vert.ends;
         const deg = ends.length;
         const me = ends[k];
         const pos = vert.pos;
         const nMe = leftNormal(me.dir);
-        const buttL = Vector.add(pos, Vector.scale(nMe, h));
-        const buttR = Vector.add(pos, Vector.scale(nMe, -h));
+        const buttL = Vector.add(pos, Vector.scale(nMe, hw));
+        const buttR = Vector.add(pos, Vector.scale(nMe, -hw));
 
         if (deg === 1) {
-            const ext = square ? Vector.scale(me.dir, -h) : new Vector(0, 0); // extend the cap outward
-            const fL = Vector.add(buttL, ext), fR = Vector.add(buttR, ext);
-            return { fL, fR, oL: fL, oR: fR, tip: true };
+            // A square cap extends by this ring's own half-width, a butt cap by the ring's offset from the
+            // fill (0 for the fill ring, `border` for the outer). Either way the outer cap sits `border`
+            // beyond the inner one, so the 45° corner edge between them is shared exactly with the two side
+            // quads — no gap at a star tip, and a butt cap still gets a border across its end.
+            const ext = Vector.scale(me.dir, -(square ? hw : hw - h));
+            return { L: Vector.add(buttL, ext), R: Vector.add(buttR, ext), tip: true };
         }
 
-        // 4-valent (or higher even) crossing. The FILL always runs straight through (butt at pos), so an
-        // under strand tucks fully beneath the over strand. For the OUTLINE, the over strand runs through
-        // unbroken, while the under strand's side edges are clipped to the over strand's near edge — the
-        // break follows the over edge exactly, at any crossing angle.
+        // 4-valent (or higher even) crossing. The over strand runs straight through, both rings butt at
+        // `pos`. The under strand's rings are both clipped to the over strand's OUTER border line — the
+        // break follows that line exactly, at any crossing angle.
         if (deg >= 4) {
             const meUnder = endUnder(edges[me.edge], me.end);
-            // Over strand, or the 'outline' style (no weave): straps cross flat, all borders drawn full.
-            if (!meUnder || !weave) return { fL: buttL, fR: buttR, oL: buttL, oR: buttR, tip: false };
+            // Over strand, or the 'outline' style (no weave): straps cross flat, nothing is clipped.
+            if (!meUnder || !weave) return { L: buttL, R: buttR, tip: false };
             const over = ends.find((x) => !endUnder(edges[x.edge], x.end));
-            if (!over) return { fL: buttL, fR: buttR, oL: buttL, oR: buttR, tip: false };
+            if (!over) return { L: buttL, R: buttR, tip: false };
             const nOver = leftNormal(over.dir);
             const s = me.dir.dot(nOver);
-            if (Math.abs(s) < 1e-9) return { fL: buttL, fR: buttR, oL: buttL, oR: buttR, tip: false };
-            // The over edge the under strand meets first, coming from its body (+me.dir side of pos).
-            const edgePt = Vector.add(pos, Vector.scale(nOver, Math.sign(s) * h));
-            const oL = lineIntersect(buttL, me.dir, edgePt, over.dir) ?? buttL;
-            const oR = lineIntersect(buttR, me.dir, edgePt, over.dir) ?? buttR;
-            return { fL: buttL, fR: buttR, oL, oR, tip: false };
+            if (Math.abs(s) < 1e-9) return { L: buttL, R: buttR, tip: false };
+            // The over border's outer edge the under strand meets first, coming from its body.
+            const edgePt = Vector.add(pos, Vector.scale(nOver, Math.sign(s) * hOuter));
+            const L = lineIntersect(buttL, me.dir, edgePt, over.dir) ?? buttL;
+            const R = lineIntersect(buttR, me.dir, edgePt, over.dir) ?? buttR;
+            return { L, R, tip: false };
         }
 
         // Degree 2 (bend) or degree 3 (odd/degenerate): plain mitre against the angular neighbours.
         const next = ends[(k + 1) % deg];
         const prev = ends[(k - 1 + deg) % deg];
-        const fL = joinPoint(pos, me, next) ?? buttL;
-        const fR = joinPoint(pos, prev, me) ?? buttR;
-        return { fL, fR, oL: fL, oR: fR, tip: false };
+        const L = joinPoint(pos, me, next, hw) ?? buttL;
+        const R = joinPoint(pos, prev, me, hw) ?? buttR;
+        return { L, R, tip: false };
     };
 
     const bands: Band[] = [];
@@ -231,30 +260,50 @@ export function buildBands(map: InterlaceMap, params: { width: number; squareCap
         const va = vertexOf.get(e.keyA)!, vb = vertexOf.get(e.keyB)!;
         const ka = vertices[va].ends.findIndex((x) => x.edge === ei && x.end === 0);
         const kb = vertices[vb].ends.findIndex((x) => x.edge === ei && x.end === 1);
-        const A = corners(va, ka);
-        const B = corners(vb, kb);
+        const A = corners(va, ka, h);
+        const B = corners(vb, kb, h);
+        const Ao = corners(va, ka, hOuter);
+        const Bo = corners(vb, kb, hOuter);
         // Edge-oriented ring [Aleft, Bleft, Bright, Aright]: at end 0 edge-left = outgoing-left; at end 1
         // the outgoing dir is reversed, so edge-left = outgoing-right.
-        const fill = [A.fL, B.fR, B.fL, A.fR];
+        const fill = [A.L, B.R, B.L, A.R];
         const uAB = Vector.sub(e.b, e.a).normalize();
         const nL = leftNormal(uAB); // outward normal of the edge-left side; the edge-right side is -nL
         const outline: OutlineSeg[] = [
-            { a: A.oL, b: B.oR, n: nL },
-            { a: A.oR, b: B.oL, n: Vector.scale(nL, -1) },
+            { a: A.L, b: B.R, oa: Ao.L, ob: Bo.R, n: nL },
+            { a: A.R, b: B.L, oa: Ao.R, ob: Bo.L, n: Vector.scale(nL, -1) },
         ];
         // End caps only at genuine tips (never at a crossing); their outward normal is along the strap axis.
-        if (A.tip) outline.push({ a: A.fL, b: A.fR, n: Vector.scale(uAB, -1) });
-        if (B.tip) outline.push({ a: B.fL, b: B.fR, n: uAB });
+        if (A.tip) outline.push({ a: A.L, b: A.R, oa: Ao.L, ob: Ao.R, n: Vector.scale(uAB, -1) });
+        if (B.tip) outline.push({ a: B.L, b: B.R, oa: Bo.L, ob: Bo.R, n: uAB });
         bands.push({ fill, outline });
     }
     return bands;
+}
+
+/**
+ * The length scale the `islamicBandWidth` fraction multiplies: the MEDIAN construction-segment length over
+ * the pooled segments. Single source of truth for the p5 path (Tiling.drawIslamicInterlace) and the GL path
+ * (strap-canvas), which must agree or the two renderers draw different strap widths for the same settings.
+ *
+ * Median, not mean, and the store comment always said so. A mean lets one tile family resize every strap in
+ * the tiling: an irregular tiling whose tiles have very different segment lengths, or any tile sitting at a
+ * degenerate contact angle, drags the global scale with it. On a regular tiling every segment is the same
+ * length, so median and mean are identical and this changes nothing.
+ */
+export function strapWidthScale(segments: Segment[]): number {
+    if (segments.length === 0) return 1;
+    const lens = segments.map(([a, b]) => Vector.distance(a, b)).sort((x, y) => x - y);
+    const mid = lens.length >> 1;
+    const median = lens.length % 2 ? lens[mid] : (lens[mid - 1] + lens[mid]) / 2;
+    return median > 0 ? median : 1;
 }
 
 /** Full pipeline: build the map, assign the weave, offset into bands. */
 export function buildIslamicInterlace(segments: Segment[], params: InterlaceParams): { bands: Band[]; degenerate: boolean } {
     const map = buildInterlaceMap(segments, params.splitCrossings);
     const { degenerate } = assignOverUnder(map, params.startUnder);
-    const bands = buildBands(map, { width: params.width, squareCap: params.squareCap, weave: params.weave });
+    const bands = buildBands(map, { width: params.width, border: params.border, squareCap: params.squareCap, weave: params.weave });
     return { bands, degenerate };
 }
 
