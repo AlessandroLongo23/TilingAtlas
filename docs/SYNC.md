@@ -1356,3 +1356,9 @@ in /library and /play beside every other tiling, Euclidean, after Islamic, facet
 hyperbolic/spherical do, and they are the first class to opt out of the Islamic gate. Their k counts
 GRID-POINT orbits, not vertex orbits — relabelled at every surface, never silently shared. Standalone
 /freedraw kept, hidden from the header. Narrative in DEVELOPMENT_NOTES §77.
+
+**2026-07-22 — CC.** Freedraw cell fill was colouring FACE ORBITS and labelling them tiles (`ee75878`).
+Renamed to Orbit and added the two groupings it was standing in for, as a refinement ladder: Kind /
+Shape (rotations + mirrors merged) / Pose (orientation kept) / Orbit. Strips and unbounded sheets need
+no special case — F = P + T with P the period subgroup and T the flood fill's transversal names any
+face at any rank. 6 tests + a 1420-pattern invariant sweep (0 violations, 75 ms). NOTES §78.

@@ -4778,3 +4778,66 @@ Build and tsc clean; `lib/freedraw/faces.test.ts` 9/9.
 Not fixed, flagged: `tests/islamic-gate.test.ts:27` asserts the Islamic gate excludes hyperbolic,
 which stopped being true when hyperbolic Islamic landed in `9b1e643`. Stale test, pre-existing
 failure, left for AL to decide.
+
+## §78 — The freedraw fill was colouring orbits and calling them tiles (2026-07-22)
+
+AL, on the Cell fill control: "I'm not really sure that by tile is correct, because what I think you
+are showing is by orbit, not really by tile."
+
+Correct. `fillMode: "orbit"` coloured each cell by `face.id`, and `analyseFaces` indexes faces by
+connected component ON THE TORUS — one entry per lattice coset. Two faces therefore shared a colour
+exactly when a period-lattice translation carried one onto the other. That is the face orbit. A
+figure with four congruent squares sitting in four orbits drew four colours and called them four
+tiles. The data model had it right all along (`summarise` already says `faceOrbits`); only the UI
+copy lied, on the chip and on the /freedraw card badge.
+
+AL asked for two more groupings, and they complete a refinement ladder — each mode splits the one
+to its left, never merges, so stepping rightward reads as a subdivision:
+
+  Kind   rank alone: finite polyomino / infinite strip / unbounded sheet
+  Shape  congruent — a 1×3 and a 3×1 are one shape, rotations and mirrors merged
+  Pose   congruent AND identically turned — 1×3 and 3×1 part company, but every 3×1 in the
+         figure stays one colour no matter which orbit it sits in
+  Orbit  what the fill has always drawn
+
+The interesting part is that "shape" has to mean something for a strip and for an unbounded sheet,
+neither of which has a polyomino to compare. It does, and the flood fill had already computed
+everything needed to name it. The pattern is L-periodic, so L permutes the faces; if a cell c and
+c + ℓ both lie in a face F then F and F + ℓ share a cell, and two faces that share a cell are
+equal, so ℓ stabilises F. Distinct cells of F therefore sit in distinct L-cosets unless they differ
+by a period, which is exactly
+
+    F = P + T,   P the face's period subgroup, T the fill's one-lift-per-coset transversal.
+
+So (P, T mod P) names F completely at every rank, and comparing two faces is comparing that pair up
+to the group in question. No rank-0 special case, no bounded-window approximation, and the strip and
+the sheet fall out of the same code as the domino. The three ranks differ only in what "mod P" means
+— nothing for rank 0, one coordinate mod the generator in a basis completed from the strip direction
+for rank 1, and the HNF quotient Z²/P for rank 2.
+
+Canonicalisation minimises over "slide lift e onto the origin". That is complete rather than a
+heuristic: any translation identifying two faces carries some cell of one onto a cell of the other,
+so the winning candidate is always among those |T|. It matters for rank 2, where |Z²/P| = det(L)·|T|
+and walking the whole quotient would be quadratic for no gain.
+
+Mirrors merge in Shape — the same call as §12.8's chirality decision, so an L-tetromino and a J
+share a colour.
+
+Verified twice over. Six new tests, the load-bearing two being four L-tetrominoes of both
+handednesses on a 4×4 torus (one shape, four poses — rotations and reflections both merging) and
+two height-1 strips in different orbits (one pose — the rank-1 path). Then a sweep of all 1420
+catalogue patterns asserting shapeCount ≤ poseCount ≤ orbits and that no pose class straddles two
+shape classes: 0 violations, 75 ms for the whole catalogue, so the classification is nowhere near a
+perf concern. Visually on fd-3-1182, which collapses 14 orbits → 3 poses → 2 shapes: Shape paints
+every 3-bar one hue and every single cell another; Pose splits the vertical bars from the horizontal
+ones; Orbit fans the singles out into twelve. Class indices are assigned in face order, so a face
+keeps its hue as you step down the ladder and the change reads as a split, not a reshuffle.
+
+Two by-products. Labels and help text moved into one `FILL_MODES` table in `lib/freedraw/render.ts`,
+because /play's options tab and the /freedraw browser had already drifted ("By tile" vs "by tile")
+and were about to drift further with five modes. And the cell loop now resolves one colour string
+per face before it runs, instead of building an `hsl()` per visible grid square per frame.
+
+Still failing, still not mine to fix: `lib/services/playUrlState.test.ts` asserts 39 URL params
+against a tree that has 43. Pre-existing — HEAD and the working tree have the same key count, and
+this change only widened the `fdfill` enum. Left for AL to set the intended number.
