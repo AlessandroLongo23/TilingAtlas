@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyseFaces, classifyFaces, summarise } from "./faces";
+import { analyseFaces, classifyFaces, rankLabel, summarise } from "./faces";
 import { coset, degree, type FreedrawPattern } from "./pattern";
 
 const pat = (
@@ -172,7 +172,29 @@ describe("classifyFaces", () => {
 describe("summarise", () => {
 	it("splits the face orbits by kind", () => {
 		const s = summarise(analyseFaces(pat(1, 0, 2, [0, 1], [0, 0])));
-		expect(s).toEqual({ faceOrbits: 1, finite: 0, strips: 1, unbounded: 0, withHoles: 0 });
+		expect(s).toEqual({
+			faceOrbits: 1,
+			finite: 0,
+			strips: 1,
+			unbounded: 0,
+			withHoles: 0,
+			sizes: [],
+		});
+	});
+
+	it("reports the area of each finite tile, ascending", () => {
+		// A 3x3 period cut into single cells except one horizontal domino along the bottom. The period
+		// has to be 3 wide for that domino to stay finite: on a 2-wide one the pair meets itself around
+		// the torus and comes out a strip.
+		const s = summarise(
+			analyseFaces(fromGroups(3, 3, (x, y) => (y === 0 && x < 2 ? 0 : 1 + x + 3 * y))),
+		);
+		expect(s.finite).toBe(8);
+		expect(s.sizes).toEqual([1, 1, 1, 1, 1, 1, 1, 2]);
+	});
+
+	it("leaves sizes empty when nothing is finite", () => {
+		expect(summarise(analyseFaces(pat(1, 0, 1, [0], [0]))).sizes).toEqual([]);
 	});
 });
 
@@ -187,5 +209,76 @@ describe("degree", () => {
 		// Horizontal lines only: every grid point has an east and a west edge.
 		const p = pat(1, 0, 1, [1], [0]);
 		expect(degree(p, 0, 0)).toBe(2);
+	});
+});
+
+// ── triangular grid ───────────────────────────────────────────────────────────────────────────────
+const tpat = (
+	a: number,
+	b: number,
+	d: number,
+	h: number[],
+	v: number[],
+	w: number[],
+): FreedrawPattern => ({
+	id: "tt",
+	k: 1,
+	a,
+	b,
+	d,
+	h,
+	v,
+	w,
+	orbit: new Array(a * d).fill(0),
+	grid: "triangle",
+});
+
+describe("analyseFaces on the triangular grid", () => {
+	it("calls the empty pattern one unbounded face over both cell halves", () => {
+		const { faces, cellFace } = analyseFaces(tpat(1, 0, 1, [0], [0], [0]));
+		expect(faces).toHaveLength(1);
+		expect(faces[0].rank).toBe(2);
+		expect(cellFace).toHaveLength(2); // up and down triangle share the face
+	});
+
+	it("splits the fully drawn grid into the up and the down triangle", () => {
+		const { faces } = analyseFaces(tpat(1, 0, 1, [1], [1], [1]));
+		expect(faces).toHaveLength(2);
+		for (const f of faces) {
+			expect(f.rank).toBe(0);
+			expect(f.cells).toBe(1);
+			expect(f.holes).toBe(0);
+		}
+	});
+
+	it("reads rows of triangles between horizontal lines as one strip", () => {
+		// Only the h edges drawn: the up/down triangles of each row chain into an infinite strip.
+		const { faces } = analyseFaces(tpat(1, 0, 1, [1], [0], [0]));
+		expect(faces).toHaveLength(1);
+		expect(faces[0].rank).toBe(1);
+		expect(faces[0].period).toEqual([1, 0]);
+		expect(faces[0].cells).toBe(2); // one up + one down triangle per period
+	});
+
+	it("cuts the plane into unit rhombi when v and w are drawn", () => {
+		// v and w drawn, h open: each up triangle joins only its down partner across the open h edge...
+		// wait -- U(x,y) and D(x,y-1) share h(x,y); with h open and v,w drawn that pair is the rhombus.
+		const { faces } = analyseFaces(tpat(1, 0, 1, [0], [1], [1]));
+		expect(faces).toHaveLength(1);
+		expect(faces[0].rank).toBe(0);
+		expect(faces[0].cells).toBe(2);
+	});
+
+	it("labels tri tiles polyiamond", () => {
+		expect(rankLabel(0, "triangle")).toBe("polyiamond");
+		expect(rankLabel(0)).toBe("polyomino");
+	});
+});
+
+describe("degree on the triangular grid", () => {
+	it("counts all six edges at a fully drawn vertex", () => {
+		const p = tpat(1, 0, 1, [1], [1], [1]);
+		expect(degree(p, 0, 0)).toBe(6);
+		expect(degree(p, 4, -2)).toBe(6);
 	});
 });

@@ -14,9 +14,48 @@
 //   h[c] — the unit edge from vertex c east to c + (1,0)
 //   v[c] — the unit edge from vertex c north to c + (0,1)
 // Cells (the unit squares) share the same index scheme via their lower-left vertex.
+//
+// TRIANGULAR GRID (grid: "triangle", from Marek's triangles solver via develop_freedraw.py): the same
+// HNF lattice, but its integer basis (e1, e2) sits at 60° in the plane, every vertex has SIX edges in
+// three axes, and each lattice cell splits into an up triangle U and a down triangle D:
+//   h[c] — the edge from vertex c along e1 to c + (1,0)
+//   v[c] — the edge along e2 to c + (0,1)
+//   w[c] — the "downhill diagonal" to c + (1,-1)
+//   U(x,y) has corners (x,y), (x+1,y), (x,y+1);   D(x,y) has corners (x+1,y), (x,y+1), (x+1,y+1);
+//   the two share the w edge based at (x, y+1).
+
+export type FreedrawGrid = "square" | "triangle" | "ts";
+
+/**
+ * COMBINED GRID (grid: "ts"): squares and triangles mixed, so there is NO fixed lattice to index a
+ * bitmask into — the underlying square-triangle tiling varies per solution. The developer
+ * (tools/ctrnact-oracle/develop_freedraw.py --grid ts) emits explicit geometry instead: one period
+ * of vertices, edges and polygon faces, each endpoint a (vertex index, integer T1/T2 offset) pair.
+ * A record with `patch` carries 1x1 dummy lattice fields so the bitmask type stays total.
+ */
+export interface FreedrawPatch {
+	/** Period translations, world coordinates. */
+	T1: [number, number];
+	T2: [number, number];
+	/** Vertex positions of one fundamental domain, world coordinates. */
+	verts: [number, number][];
+	/** Grid-point orbit label per vertex — the patch's version of `orbit`. */
+	vorbit: number[];
+	/** [vi, vj, offX, offY, drawn]: segment verts[vi] -> verts[vj] + offX*T1 + offY*T2. */
+	edges: [number, number, number, number, number][];
+	/** Polygon rings: [vi, offX, offY] per corner, offsets relative to the ring's anchor corner. */
+	polys: [number, number, number][][];
+	/** Tile component (face orbit) id per polygon. */
+	polyComp: number[];
+	/** Per component: 0 finite, 1 strip, 2 unbounded — the same holonomy ranks as the fixed grids. */
+	compRank: (0 | 1 | 2)[];
+	compCells: number[];
+	compHoles: number[];
+	stats: { faceOrbits: number; finite: number; strips: number; unbounded: number; withHoles: number };
+}
 
 export interface FreedrawPattern {
-	/** Stable catalogue id, e.g. "fd-2-017". */
+	/** Stable catalogue id, e.g. "fd-2-017" (square), "fdt-2-0017" (triangle), "fdts-2-00017" (combined). */
 	id: string;
 	/** Number of grid-point orbits under the pattern's symmetry group. */
 	k: number;
@@ -24,13 +63,21 @@ export interface FreedrawPattern {
 	a: number;
 	b: number;
 	d: number;
-	/** East edge drawn, per lattice coset. Length a*d. */
+	/** East / e1 edge drawn, per lattice coset. Length a*d. */
 	h: number[];
-	/** North edge drawn, per lattice coset. Length a*d. */
+	/** North / e2 edge drawn, per lattice coset. Length a*d. */
 	v: number[];
+	/** Triangle grid only: the (1,-1) diagonal edge, per lattice coset. Length a*d. */
+	w?: number[];
 	/** Grid-point orbit label in [0, k), per lattice coset. Length a*d. */
 	orbit: number[];
+	/** Which grid the bits decorate. Absent = "square" (the original catalogue predates the field). */
+	grid?: FreedrawGrid;
+	/** Combined grid only: the explicit per-period geometry. Present exactly when grid === "ts". */
+	patch?: FreedrawPatch;
 }
+
+export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? "square";
 
 export const cosetCount = (p: Pick<FreedrawPattern, "a" | "d">) => p.a * p.d;
 
@@ -52,9 +99,14 @@ export const drawnEast = (p: FreedrawPattern, x: number, y: number) => p.h[coset
 /** Is the unit edge from (x, y) north to (x, y+1) drawn? */
 export const drawnNorth = (p: FreedrawPattern, x: number, y: number) => p.v[coset(p, x, y)] === 1;
 
+/** Triangle grid only: is the diagonal edge from (x, y) to (x+1, y-1) drawn? */
+export const drawnDiag = (p: FreedrawPattern, x: number, y: number) =>
+	(p.w ?? [])[coset(p, x, y)] === 1;
+
 /**
- * Number of drawn edges at grid point (x, y) — 0, 2, 3 or 4 by construction. This is the vertex's
- * type; the four bits (E, N, W, S) are exactly the Carcassonne-tile type Marek draws by hand.
+ * Number of drawn edges at grid point (x, y) — never exactly 1 by construction. On the square grid
+ * this is 0..4 over the four compass edges (the Carcassonne-tile type Marek draws by hand); on the
+ * triangular grid it is 0..6 over the three axes and their opposites.
  */
 export function degree(p: FreedrawPattern, x: number, y: number): number {
 	let n = 0;
@@ -62,6 +114,10 @@ export function degree(p: FreedrawPattern, x: number, y: number): number {
 	if (drawnNorth(p, x, y)) n++;
 	if (drawnEast(p, x - 1, y)) n++;
 	if (drawnNorth(p, x, y - 1)) n++;
+	if (gridOf(p) === "triangle") {
+		if (drawnDiag(p, x, y)) n++;
+		if (drawnDiag(p, x - 1, y + 1)) n++;
+	}
 	return n;
 }
 

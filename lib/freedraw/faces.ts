@@ -16,7 +16,16 @@
 // For rank-0 faces the Euler characteristic of the closed polyomino gives the hole count directly,
 // which is the other thing Marek wanted ("polyominoes with holes would be easily accessible here").
 
-import { type FreedrawPattern, coset, cosetCount, drawnEast, drawnNorth } from "./pattern";
+import {
+	type FreedrawGrid,
+	type FreedrawPattern,
+	coset,
+	cosetCount,
+	drawnDiag,
+	drawnEast,
+	drawnNorth,
+	gridOf,
+} from "./pattern";
 
 export interface FaceInfo {
 	/** Index into FaceAnalysis.faces; also the value stored in cellFace. */
@@ -25,19 +34,29 @@ export interface FaceInfo {
 	rank: 0 | 1 | 2;
 	/** Cells of the face per fundamental domain. For rank 0 this is the polyomino's area. */
 	cells: number;
-	/** Holes in the closed polyomino (1 - Euler characteristic). Always 0 when rank > 0. */
+	/** Holes in the closed polyomino/polyiamond (1 - Euler characteristic). Always 0 when rank > 0. */
 	holes: number;
-	/** Primitive period vector for rank 1; null otherwise. The strip's direction. */
+	/** Primitive period vector for rank 1; null otherwise. The strip's direction, in lattice coords. */
 	period: [number, number] | null;
-	/** One lifted cell per lattice coset of the face. With `periods`, a complete description — see below. */
+	/**
+	 * One lifted cell per lattice coset of the face. With `periods`, a complete description — see below.
+	 * Square: the cell's lower-left corner. Triangle: the cell's TRIPLED CENTROID — an up triangle at
+	 * (x, y) is stored as (3x+1, 3y+1) and a down one as (3x+2, 3y+2). That turns the mixed cell set
+	 * into plain Z² points on which the grid's point group acts LINEARLY, so the pose/shape machinery
+	 * below runs identically on both grids; only the symmetry table differs.
+	 */
 	lifts: [number, number][];
-	/** The lift mismatches the flood fill met. They generate the face's period subgroup P. */
+	/** The lift mismatches the flood fill met (same encoding as lifts). They generate the period subgroup P. */
 	periods: [number, number][];
 }
 
 export interface FaceAnalysis {
+	grid: FreedrawGrid;
 	faces: FaceInfo[];
-	/** Face id per lattice coset, so a renderer can colour any cell by one lookup. */
+	/**
+	 * Face id per cell, for renderer lookup. Square: one entry per lattice coset. Triangle: two per
+	 * coset — [2c] the up triangle, [2c+1] the down triangle.
+	 */
 	cellFace: Int32Array;
 }
 
@@ -99,6 +118,31 @@ function holeCount(cells: [number, number][]): number {
  * run on load for a whole catalogue page rather than being baked into the data file.
  */
 export function analyseFaces(p: FreedrawPattern): FaceAnalysis {
+	if (p.patch) return analysePatch(p);
+	return gridOf(p) === "triangle" ? analyseTriangle(p) : analyseSquare(p);
+}
+
+/**
+ * Combined-grid records carry their face classification pre-baked (the developer computed the same
+ * holonomy ranks offline, since there is no fixed lattice to flood here). Synthesize the analysis
+ * from it so every consumer of summarise()/rankLabel() works unchanged. lifts/periods stay empty:
+ * shape/pose classification is undefined for patches and the renderer falls back to orbit colours.
+ */
+function analysePatch(p: FreedrawPattern): FaceAnalysis {
+	const patch = p.patch!;
+	const faces: FaceInfo[] = patch.compRank.map((rank, i) => ({
+		id: i,
+		rank,
+		cells: patch.compCells[i],
+		holes: patch.compHoles[i],
+		period: null,
+		lifts: [],
+		periods: [],
+	}));
+	return { grid: "ts", faces, cellFace: new Int32Array(0) };
+}
+
+function analyseSquare(p: FreedrawPattern): FaceAnalysis {
 	const n = cosetCount(p);
 	const cellFace = new Int32Array(n).fill(-1);
 	const faces: FaceInfo[] = [];
@@ -159,7 +203,115 @@ export function analyseFaces(p: FreedrawPattern): FaceAnalysis {
 		});
 	}
 
-	return { faces, cellFace };
+	return { grid: "square", faces, cellFace };
+}
+
+// Triangle-cell adjacency (see pattern.ts for the U/D geometry): each neighbour step names the raw
+// target cell and the drawn edge that would block it. U(x,y) meets D(x,y-1) across h(x,y),
+// D(x-1,y) across v(x,y), and its rhombus partner D(x,y) across the shared diagonal w at (x,y+1);
+// D(x,y) mirrors those from the other side.
+function analyseTriangle(p: FreedrawPattern): FaceAnalysis {
+	const n = cosetCount(p);
+	const cellFace = new Int32Array(2 * n).fill(-1);
+	const faces: FaceInfo[] = [];
+	const liftX = new Int32Array(2 * n);
+	const liftY = new Int32Array(2 * n);
+	const enc = (x: number, y: number, t: number): [number, number] => [3 * x + 1 + t, 3 * y + 1 + t];
+
+	for (let start = 0; start < 2 * n; start++) {
+		if (cellFace[start] !== -1) continue;
+		const id = faces.length;
+		const sc = start >> 1;
+		const st = start & 1;
+		const sx = sc % p.a;
+		const sy = Math.floor(sc / p.a);
+		cellFace[start] = id;
+		liftX[start] = sx;
+		liftY[start] = sy;
+
+		const periods: [number, number][] = [];
+		const lifted: [number, number][] = [enc(sx, sy, st)];
+		const queue: number[] = [start];
+		for (let qi = 0; qi < queue.length; qi++) {
+			const cell = queue[qi];
+			const t = cell & 1;
+			const x = liftX[cell];
+			const y = liftY[cell];
+			const steps: [number, number, number, boolean][] =
+				t === 0
+					? [
+							[x, y - 1, 1, drawnEast(p, x, y)],
+							[x - 1, y, 1, drawnNorth(p, x, y)],
+							[x, y, 1, drawnDiag(p, x, y + 1)],
+						]
+					: [
+							[x, y + 1, 0, drawnEast(p, x, y + 1)],
+							[x + 1, y, 0, drawnNorth(p, x + 1, y)],
+							[x, y, 0, drawnDiag(p, x, y + 1)],
+						];
+			for (const [nx, ny, nt, blocked] of steps) {
+				if (blocked) continue;
+				const ncell = 2 * coset(p, nx, ny) + nt;
+				if (cellFace[ncell] === -1) {
+					cellFace[ncell] = id;
+					liftX[ncell] = nx;
+					liftY[ncell] = ny;
+					lifted.push(enc(nx, ny, nt));
+					queue.push(ncell);
+				} else {
+					const dx = nx - liftX[ncell];
+					const dy = ny - liftY[ncell];
+					if (dx !== 0 || dy !== 0) periods.push([3 * dx, 3 * dy]);
+				}
+			}
+		}
+
+		const rank = spanRank(periods);
+		let period: [number, number] | null = null;
+		if (rank === 1) {
+			// Periods are stored tripled (the lifts' encoding); report the true lattice vector.
+			const g = rank1Generator(periods);
+			period = [g[0] / 3, g[1] / 3];
+		}
+		faces.push({
+			id,
+			rank,
+			cells: lifted.length,
+			holes: rank === 0 ? holeCountTriangle(lifted) : 0,
+			period,
+			lifts: lifted,
+			periods,
+		});
+	}
+
+	return { grid: "triangle", faces, cellFace };
+}
+
+/** Holes in a connected polyiamond: 1 - (V - E + F) over its decoded triangles. */
+function holeCountTriangle(encCells: [number, number][]): number {
+	const verts = new Set<string>();
+	const edges = new Set<string>();
+	for (const [ex, ey] of encCells) {
+		const t = ((ex % 3) + 3) % 3 === 1 ? 0 : 1;
+		const x = (ex - 1 - t) / 3;
+		const y = (ey - 1 - t) / 3;
+		if (t === 0) {
+			verts.add(`${x},${y}`);
+			verts.add(`${x + 1},${y}`);
+			verts.add(`${x},${y + 1}`);
+			edges.add(`h${x},${y}`);
+			edges.add(`v${x},${y}`);
+			edges.add(`w${x},${y + 1}`);
+		} else {
+			verts.add(`${x + 1},${y}`);
+			verts.add(`${x},${y + 1}`);
+			verts.add(`${x + 1},${y + 1}`);
+			edges.add(`v${x + 1},${y}`);
+			edges.add(`h${x},${y + 1}`);
+			edges.add(`w${x},${y + 1}`);
+		}
+	}
+	return 1 - (verts.size - edges.size + encCells.length);
 }
 
 // ── shape classification ──────────────────────────────────────────────────────────────────────────
@@ -282,10 +434,36 @@ const D4: [number, number, number, number][] = [
 	[0, -1, -1, 0],
 ];
 
+/**
+ * The 12 symmetries of the triangular grid in its own (e1, e2) basis: powers of the 60° rotation
+ * (x, y) -> (-y, x + y) times the mirror (x, y) -> (x + y, -y). Acting on tripled centroids these
+ * permute the triangle cells, so the same lifts/periods machinery serves both grids.
+ */
+const D6: [number, number, number, number][] = (() => {
+	const rot: [number, number, number, number] = [0, -1, 1, 1];
+	const mir: [number, number, number, number] = [1, 1, 0, -1];
+	const mul = (
+		m: [number, number, number, number],
+		n: [number, number, number, number],
+	): [number, number, number, number] => [
+		m[0] * n[0] + m[1] * n[2],
+		m[0] * n[1] + m[1] * n[3],
+		m[2] * n[0] + m[3] * n[2],
+		m[2] * n[1] + m[3] * n[3],
+	];
+	const out: [number, number, number, number][] = [];
+	let r: [number, number, number, number] = [1, 0, 0, 1];
+	for (let i = 0; i < 6; i++) {
+		out.push(r, mul(r, mir));
+		r = mul(rot, r);
+	}
+	return out;
+})();
+
 /** Canonical name of a face up to translation AND the grid symmetries: its congruence class. */
-function shapeKey(f: FaceInfo): string {
+function shapeKey(f: FaceInfo, grid: FreedrawGrid): string {
 	let best: string | null = null;
-	for (const [a, b, c, d] of D4) {
+	for (const [a, b, c, d] of grid === "triangle" ? D6 : D4) {
 		const move = ([x, y]: [number, number]): [number, number] => [a * x + b * y, c * x + d * y];
 		const key = poseKey({ ...f, lifts: f.lifts.map(move), periods: f.periods.map(move) });
 		if (best === null || key < best) best = key;
@@ -324,7 +502,7 @@ export function classifyFaces(a: FaceAnalysis): FaceClasses {
 		});
 	};
 	const pose = index(a.faces.map(poseKey));
-	const shape = index(a.faces.map(shapeKey));
+	const shape = index(a.faces.map((f) => shapeKey(f, a.grid)));
 	const out: FaceClasses = {
 		pose,
 		shape,
@@ -336,20 +514,42 @@ export function classifyFaces(a: FaceAnalysis): FaceClasses {
 }
 
 /** Human-readable tile kind for the UI and for catalogue filters. */
-export const rankLabel = (rank: 0 | 1 | 2) =>
-	rank === 0 ? "polyomino" : rank === 1 ? "strip" : "unbounded";
+export const rankLabel = (rank: 0 | 1 | 2, grid: FreedrawGrid = "square") =>
+	rank === 0
+		? grid === "triangle"
+			? "polyiamond"
+			: grid === "ts"
+				? "polyform"
+				: "polyomino"
+		: rank === 1
+			? "strip"
+			: "unbounded";
+
+export interface FaceSummary {
+	faceOrbits: number;
+	finite: number;
+	strips: number;
+	unbounded: number;
+	withHoles: number;
+	/** Area of each finite face, ascending. Empty when the pattern has no finite tile. */
+	sizes: number[];
+}
 
 /** Summary used as a sort/filter key over the catalogue. */
-export function summarise(a: FaceAnalysis) {
+export function summarise(a: FaceAnalysis): FaceSummary {
 	let finite = 0;
 	let strips = 0;
 	let unbounded = 0;
 	let withHoles = 0;
+	const sizes: number[] = [];
 	for (const f of a.faces) {
-		if (f.rank === 0) finite++;
-		else if (f.rank === 1) strips++;
+		if (f.rank === 0) {
+			finite++;
+			sizes.push(f.cells);
+		} else if (f.rank === 1) strips++;
 		else unbounded++;
 		if (f.holes > 0) withHoles++;
 	}
-	return { faceOrbits: a.faces.length, finite, strips, unbounded, withHoles };
+	sizes.sort((x, y) => x - y);
+	return { faceOrbits: a.faces.length, finite, strips, unbounded, withHoles, sizes };
 }

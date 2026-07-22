@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { FreedrawClient } from "./_freedraw-client";
 
 // Freedraw viewer. The catalogue is a static JSON file under public/, no atlas data and no Supabase,
@@ -10,5 +11,13 @@ import { FreedrawClient } from "./_freedraw-client";
 export const dynamic = "force-static";
 
 export default function FreedrawPage() {
-	return <FreedrawClient />;
+	// The client reads the query string (useSearchParams) to restore the tile filter from a shared link,
+	// which client-renders the tree up to the nearest Suspense boundary. /library does the same for
+	// ReferenceShelf. The fallback is null because the client's own "Loading the catalogue…" takes over
+	// the moment it hydrates, and the JSON fetch dominates either way.
+	return (
+		<Suspense fallback={null}>
+			<FreedrawClient />
+		</Suspense>
+	);
 }
