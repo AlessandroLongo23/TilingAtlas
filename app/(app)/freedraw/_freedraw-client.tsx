@@ -6,7 +6,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Switch } from "@/components/ui/switch";
 import { analyseFaces, rankLabel, summarise } from "@/lib/freedraw/faces";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
-import type { FillMode } from "@/lib/freedraw/render";
+import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
 import { cn } from "@/lib/utils/cn";
 
 type KindFilter = "all" | "strip" | "unbounded" | "finite" | "holes";
@@ -26,11 +26,7 @@ const KIND_OPTIONS: { value: KindFilter; label: string }[] = [
 	{ value: "holes", label: "has holes" },
 ];
 
-const FILL_OPTIONS: { value: FillMode; label: string }[] = [
-	{ value: "none", label: "none" },
-	{ value: "rank", label: "by kind" },
-	{ value: "orbit", label: "by tile" },
-];
+const FILL_OPTIONS = FILL_MODES.map(({ value, label }) => ({ value, label: label.toLowerCase() }));
 
 export function FreedrawClient() {
 	const [all, setAll] = useState<FreedrawPattern[] | null>(null);
@@ -156,7 +152,9 @@ export function FreedrawClient() {
 								<div className="px-1.5 py-1 text-[11px] leading-tight text-text-muted">
 									<div className="text-text-secondary">{pattern.id}</div>
 									<div>
-										{stats.faceOrbits} tile{stats.faceOrbits === 1 ? "" : "s"}
+										{/* Orbits, not tiles: the count is of face orbits under the period lattice, so a figure
+									    with four congruent squares in four orbits reads 4 here. */}
+									{stats.faceOrbits} orbit{stats.faceOrbits === 1 ? "" : "s"}
 										{stats.strips > 0 && " · strip"}
 										{stats.unbounded > 0 && " · ∞"}
 										{stats.withHoles > 0 && " · holes"}

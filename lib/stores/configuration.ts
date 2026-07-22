@@ -163,9 +163,11 @@ export interface ConfigurationState {
 	// canvas draws nothing (blanked like hyperbolic/spherical). A freedraw pattern has no polygon cell, so
 	// none of the flat overlays — symmetry, fundamental domain, orbits, Islamic, inversive — apply.
 	freedraw: boolean;
-	// Freedraw cell fill: "none" leaves the line art bare, "rank" colours each cell by what KIND of face it
-	// belongs to (finite / strip / unbounded), "orbit" gives every distinct face its own hue.
-	freedrawFill: "none" | "rank" | "orbit";
+	// Freedraw cell fill, coarse to fine — see FillMode in lib/freedraw/render.ts. "none" leaves the line
+	// art bare; "rank" colours by tile KIND (finite / strip / unbounded); "shape" by congruence class,
+	// counting rotations and mirrors as one shape; "pose" splits those by orientation; "orbit" is finest,
+	// one hue per face orbit of the period lattice.
+	freedrawFill: "none" | "rank" | "shape" | "pose" | "orbit";
 	freedrawScaffold: boolean; // thin lines for the whole grid, including the edges that are NOT drawn
 	freedrawVertices: boolean; // dots at grid points coloured by orbit — makes the k-uniformity visible
 	// Period-lattice overlay: tints the fundamental cell and outlines its translates, so the pattern reads

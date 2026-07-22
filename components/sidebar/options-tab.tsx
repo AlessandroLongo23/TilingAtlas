@@ -8,6 +8,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { HueRing } from "@/components/ui/hue-ring";
 import { Reveal } from "@/components/ui/reveal";
 import { Toggle } from "@/components/ui/toggle";
+import { FILL_MODES } from "@/lib/freedraw/render";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
@@ -60,31 +61,23 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					{isFreedraw ? (
 						<div className="space-y-2">
 							<span className="text-[11px] text-fg-muted">Cell fill</span>
-							<div className="grid grid-cols-3 gap-2">
-								{(
-									[
-										["none", "None"],
-										["rank", "By kind"],
-										["orbit", "By tile"],
-									] as const
-								).map(([val, label]) => (
+							{/* Coarse to fine: each mode is a refinement of the one to its left, so moving right
+							    only ever splits a colour. See FillMode / classifyFaces. */}
+							<div className="grid grid-cols-5 gap-1">
+								{FILL_MODES.map(({ value, label }) => (
 									<Button
-										key={val}
-										variant={cfg.freedrawFill === val ? "primary" : "secondary"}
+										key={value}
+										variant={cfg.freedrawFill === value ? "primary" : "secondary"}
 										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ freedrawFill: val })}
+										classes="flex-1 px-0"
+										onClick={() => setCfg({ freedrawFill: value })}
 									>
 										{label}
 									</Button>
 								))}
 							</div>
 							<p className="text-[11px] text-fg-muted leading-relaxed">
-								{cfg.freedrawFill === "rank"
-									? "Coloured by tile kind — finite polyomino, infinite strip, or unbounded sheet."
-									: cfg.freedrawFill === "orbit"
-										? "One hue per distinct tile. Cells sharing a colour are the same face."
-										: "Bare line art: only the drawn edges."}
+								{FILL_MODES.find((m) => m.value === cfg.freedrawFill)?.help}
 							</p>
 							{/* The shared Line stroke field, placed here so it sits with the fill. Here it multiplies
 							    the zoom-proportional weight of the drawn edges; 0 drops them, leaving just the fill. */}

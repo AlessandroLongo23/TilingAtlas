@@ -8,7 +8,7 @@
 // case then renders correctly with no special-casing, and the whole thing is line art, so 2D canvas is
 // fast enough and a tenth of the code. Promoting it to the GL path later is mechanical.
 
-import { analyseFaces, type FaceAnalysis } from "./faces";
+import { analyseFaces, classifyFaces, type FaceAnalysis } from "./faces";
 import { coset, type FreedrawPattern } from "./pattern";
 
 export interface FreedrawView {
@@ -19,7 +19,44 @@ export interface FreedrawView {
 	scale: number;
 }
 
-export type FillMode = "none" | "orbit" | "rank";
+/**
+ * How much two cells must have in common to share a colour, coarse to fine. Each mode is a refinement
+ * of the one before it, so moving right only ever splits a colour in two — see classifyFaces.
+ *
+ *   rank   the tile's kind: finite polyomino, infinite strip, unbounded sheet
+ *   shape  congruent tiles, counting rotations and mirrors as the same shape
+ *   pose   congruent AND identically turned: a 1x3 and a 3x1 part company
+ *   orbit  carried onto each other by a translation OF THE PERIOD LATTICE
+ */
+export type FillMode = "none" | "rank" | "shape" | "pose" | "orbit";
+
+/**
+ * Chip label and gloss per fill mode, in ladder order. Lives here rather than in either sidebar so
+ * /play's options tab and the freedraw browser can't drift apart on what the modes are called.
+ */
+export const FILL_MODES: { value: FillMode; label: string; help: string }[] = [
+	{ value: "none", label: "None", help: "Bare line art: only the drawn edges." },
+	{
+		value: "rank",
+		label: "Kind",
+		help: "By tile kind: finite polyomino, infinite strip, or unbounded sheet.",
+	},
+	{
+		value: "shape",
+		label: "Shape",
+		help: "One hue per shape. A 1×3 and a 3×1 share a colour — rotations and mirrors count as the same tile.",
+	},
+	{
+		value: "pose",
+		label: "Pose",
+		help: "Shape and orientation. A 1×3 and a 3×1 now differ, but every 3×1 in the figure stays one colour.",
+	},
+	{
+		value: "orbit",
+		label: "Orbit",
+		help: "One hue per face orbit. Two tiles share a colour only when a period translation carries one onto the other.",
+	},
+];
 
 export interface FreedrawStyle {
 	fillMode: FillMode;
@@ -134,14 +171,19 @@ export function drawFreedraw(
 	ctx.fillRect(0, 0, width, height);
 
 	if (style.fillMode !== "none") {
+		// One colour per face, resolved before the cell loop — the loop runs over every visible grid
+		// square, and building an hsl() string in there was the frame's whole cost.
 		const alpha = style.showVertices ? ORBIT_MODE_FILL_ALPHA : 1;
+		const classes =
+			style.fillMode === "shape" || style.fillMode === "pose" ? classifyFaces(analysis) : null;
+		const fill = analysis.faces.map((f) =>
+			style.fillMode === "rank"
+				? rankColour(f.rank, style.dark, alpha)
+				: orbitColour(classes ? classes[style.fillMode as "shape" | "pose"][f.id] : f.id, style.dark, alpha),
+		);
 		for (let y = span.y0; y <= span.y1; y++) {
 			for (let x = span.x0; x <= span.x1; x++) {
-				const face = analysis.faces[analysis.cellFace[coset(pattern, x, y)]];
-				ctx.fillStyle =
-					style.fillMode === "rank"
-						? rankColour(face.rank, style.dark, alpha)
-						: orbitColour(face.id, style.dark, alpha);
+				ctx.fillStyle = fill[analysis.cellFace[coset(pattern, x, y)]];
 				// +1px on the far edges so neighbouring cells of one face never show a seam.
 				ctx.fillRect(sx(x), sy(y + 1), scale + 1, scale + 1);
 			}
