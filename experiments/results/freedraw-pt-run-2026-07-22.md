@@ -114,6 +114,73 @@ bearing) solutions, which nothing external covers yet.
 that the ambient tiling varies per solution, so an edge bitmask has nothing to index into here. This
 case needs vertex positions carried with each solution (ℤ[ζ₁₂], 4 integers per point).
 
+## Combined grid: Marek's bug-fix build (same evening, 21:17)
+
+He shipped a corrected `pt_triangles_squares_edges.exe` (SHA-256 `799e33f8…`, 492 032 bytes) replacing
+the first one (`db51b95c…`, 484 864 bytes). Rerun at k ≤ 3, then re-decoded.
+
+| k | old build | new build | change |
+|---|-----------|-----------|--------|
+| 1 | 56 | **52** | −4 |
+| 2 | 1294 | **1098** | −196 |
+| 3 | 16 851 | **13 568** | −3283 |
+| total | 18 201 | **14 718** | −3483 |
+
+### Where the bug lived
+
+Splitting by tile alphabet localises it completely:
+
+| alphabet | old | new |
+|----------|-----|-----|
+| `A2A3A4` (triangles + squares + digons) | 11 696 | **8213** |
+| `A2A3` (triangles + digons) | 5058 | 5058 |
+| `A2A4` (squares + digons) | 1419 | 1419 |
+| `A3`, `A4`, `A3A4` (digon-free) | 28 | 28 |
+
+Every one of the 3483 lost solutions used triangles AND squares AND digons. The pure slices are
+untouched, and they still agree with the standalone solvers exactly: 5058 + 1 = 5059 triangle, and
+1419 + 1 = 1420 square. The digon-free anchor is unchanged at **4 / 7 / 17**.
+
+### The fix is purely subtractive
+
+Comparing patch JSON directly is unsound — PT's representative labelling is nondeterministic, and a
+control (two runs of the *same* new exe, decoded) differs in 10 patches at k=2 and 310 at k=3 with
+identical counts. So the old-vs-new comparison was redone on a labelling-independent fingerprint:
+period area, vertex/edge/face counts, sorted polygon corner counts, sorted total and drawn vertex
+degrees, and the sorted (rank, cells, holes) triples of the tile components.
+
+| k | old classes | new classes | surplus in shared classes | members in classes that vanished | members in NEW classes |
+|---|-------------|-------------|---------------------------|----------------------------------|------------------------|
+| 1 | 46 | 44 | 0 | 4 | **0** |
+| 2 | 709 | 622 | 0 | 196 | **0** |
+| 3 | 7099 | 5798 | 0 | 3283 | **0** |
+
+Every fingerprint class present in both builds keeps exactly the same membership; the losses are 2 /
+87 / 1301 whole classes disappearing; nothing new appears anywhere. **So the old build was not
+double-counting** — duplicates would have shown as surplus inside shared classes. It was emitting
+entire families that the fix removed outright. The new catalogue is a strict sub-catalogue of the old.
+
+Note this also retires an earlier claim: "18 201/18 201 develop, all distinct" was never evidence
+against duplicates, because patch JSON is labelling-dependent and two encodings of one tiling would
+have looked distinct. There is still **no canonical form for combined-grid patches**, so the
+catalogue cannot self-check for duplicates. That is the open gap on this grid.
+
+### Re-decode and reship
+
+```
+$ develop_freedraw.py <new solver dir> --grid ts --out public/freedraw/ts-solutions.json
+parsed 14718 certificates
+developed 14718/14718 (0 failed, 0 with >1 clean variant)
+digon-free per k: {1: 4, 2: 7, 3: 17}
+wrote ts-solutions-k1.json:    52 patches, 0.0 MB
+wrote ts-solutions-k2.json:  1098 patches, 1.0 MB
+wrote ts-solutions-k3.json: 13568 patches, 16.0 MB     (was 19.8 MB)
+```
+
+14 s. Freedraw across all grids now totals **29 045** patterns (was 32 528): square 9268 + triangle
+5059 + combined 14 718. Verified live on /library (29 045 tilings). 40 freedraw unit tests pass;
+`pnpm build` clean.
+
 ## Agreement with the zip Marek sent
 
 `solver_squares_edges.zip` contains k ≤ 3 only: 13 + 153 + 1254 = 1420.
