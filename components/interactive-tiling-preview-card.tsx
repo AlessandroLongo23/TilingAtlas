@@ -87,6 +87,30 @@ export function InteractiveTilingPreviewCard({ cell, tilingId, title, className 
 		let visible = false;
 		let broken = false; // latched on unrecoverable failure so the observer stops retrying
 
+		// TEMPORARY (stroke-invisible investigation, /theory?gldebug=1). Reports what the stroke pass
+		// actually issued, plus the GL error state and the attribute locations the two programs were
+		// linked with — enough to tell "stroke pass never ran" from "ran but drew nothing".
+		const debug = typeof location !== "undefined" && location.search.includes("gldebug");
+		let badge: HTMLDivElement | null = null;
+		let frame = 0;
+		const sample = (bw: number, bh: number) => {
+			if (!gl || !renderer) return;
+			const err = gl.getError();
+			const d = renderer.lastDraw;
+			if (!badge) {
+				badge = document.createElement("div");
+				badge.className = "absolute left-1 top-1 z-20 rounded bg-black/80 px-1.5 py-1 font-mono text-[10px] leading-tight text-lime-300";
+				badge.style.whiteSpace = "pre";
+				host.prepend(badge);
+			}
+			badge.textContent = [
+				`buf ${bw}x${bh} dpr${(window.devicePixelRatio || 1).toFixed(2)}`,
+				`stroke verts ${d?.strokeVerts ?? "?"} px ${d?.strokePx ?? "?"} inst ${d?.instances ?? "?"}`,
+				`attribs ${renderer.attribReport()}`,
+				`glErr ${err}`,
+			].join("\n");
+		};
+
 		const teardown = () => {
 			cancelAnimationFrame(raf);
 			raf = 0;
@@ -138,6 +162,8 @@ export function InteractiveTilingPreviewCard({ cell, tilingId, title, className 
 				// euclidean-canvas.tsx (its white-stroke case only exists for fill-off in dark mode).
 				strokeRGB: [0, 0, 0],
 			});
+
+			if (debug && frame++ % 30 === 0) sample(bw, bh);
 		};
 
 		const setup = () => {

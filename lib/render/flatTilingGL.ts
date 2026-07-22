@@ -297,9 +297,11 @@ export class FlatCellRenderer {
 	private posBuf: WebGLBuffer;
 	private hueBuf: WebGLBuffer;
 	private instBuf: WebGLBuffer;
+	private centroidBuf: WebGLBuffer;
 	private strokePosBuf: WebGLBuffer;
 	private strokeNormBuf: WebGLBuffer;
 	private strokeSideBuf: WebGLBuffer;
+	private strokeCentroidBuf: WebGLBuffer;
 	private fillU: Record<string, WebGLUniformLocation | null> = {};
 	private fillA: Record<string, number> = {};
 	private strokeU: Record<string, WebGLUniformLocation | null> = {};
@@ -307,6 +309,9 @@ export class FlatCellRenderer {
 	private mesh: CellMesh | null = null;
 	private inst = { Ri: -1, Rj: -1, count: 0 };
 	private disposed = false;
+	// TEMPORARY (stroke-invisible investigation): what the last draw() actually issued, so the theory
+	// card's ?gldebug overlay can report whether the stroke pass ran at all. Remove with that overlay.
+	lastDraw: { fillVerts: number; strokeVerts: number; instances: number; strokePx: number } | null = null;
 
 	// Throws on shader/link failure so callers can fall back (e.g. a static placeholder card).
 	constructor(gl: WebGL2RenderingContext) {
@@ -317,25 +322,42 @@ export class FlatCellRenderer {
 		this.fillProg = fillProg;
 		this.strokeProg = strokeProg;
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset"]) {
+		// uWavePhase/uWaveP are set explicitly (to "wave off") rather than left at their default-zero,
+		// and aCentroid is bound even though the wave is off here: both shaders declare aCentroid as an
+		// active attribute, and leaving an active attribute's array disabled is the one thing this
+		// renderer did that euclidean-canvas.tsx's pipeline does not. Some drivers tolerate it; others
+		// drop the draw, which showed up as strokeless (flat-filled) theory cards on Apple/ANGLE Metal
+		// while /play — which binds aCentroid in both passes — rendered correctly on the same GPU.
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uWavePhase", "uWaveP"]) {
 			this.fillU[name] = gl.getUniformLocation(fillProg, name);
 		}
-		for (const name of ["aPos", "aHue", "aInst"]) {
+		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
 			this.fillA[name] = gl.getAttribLocation(fillProg, name);
 		}
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP"]) {
 			this.strokeU[name] = gl.getUniformLocation(strokeProg, name);
 		}
-		for (const name of ["aPos", "aNorm", "aSide", "aInst"]) {
+		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
 			this.strokeA[name] = gl.getAttribLocation(strokeProg, name);
 		}
 
 		this.posBuf = gl.createBuffer();
 		this.hueBuf = gl.createBuffer();
 		this.instBuf = gl.createBuffer();
+		this.centroidBuf = gl.createBuffer();
 		this.strokePosBuf = gl.createBuffer();
 		this.strokeNormBuf = gl.createBuffer();
 		this.strokeSideBuf = gl.createBuffer();
+		this.strokeCentroidBuf = gl.createBuffer();
+	}
+
+	// TEMPORARY (stroke-invisible investigation): the linked attribute locations for both programs.
+	// A -1 for any stroke attribute means the driver dropped it, which collapses every stroke quad to
+	// zero width and renders the tiles as flat fills. Remove with the ?gldebug overlay.
+	attribReport(): string {
+		const f = ["aPos", "aHue", "aInst", "aCentroid"].map((n) => `${n}=${this.fillA[n]}`).join(" ");
+		const s = ["aPos", "aNorm", "aSide", "aInst", "aCentroid"].map((n) => `${n}=${this.strokeA[n]}`).join(" ");
+		return `fill  ${f}\nstroke ${s}`;
 	}
 
 	uploadMesh(mesh: CellMesh): void {
@@ -344,6 +366,10 @@ export class FlatCellRenderer {
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillVerts, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.hueBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillHue, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.centroidBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.fillCentroid, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.strokeCentroidBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeCentroid, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.strokePosBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokePos, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.strokeNormBuf);
@@ -394,6 +420,10 @@ export class FlatCellRenderer {
 			gl.enableVertexAttribArray(A.aHue);
 			gl.vertexAttribPointer(A.aHue, 1, gl.FLOAT, false, 0, 0);
 			gl.vertexAttribDivisor(A.aHue, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.centroidBuf);
+			gl.enableVertexAttribArray(A.aCentroid);
+			gl.vertexAttribPointer(A.aCentroid, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aCentroid, 0);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.instBuf);
 			gl.enableVertexAttribArray(A.aInst);
 			gl.vertexAttribPointer(A.aInst, 2, gl.FLOAT, false, 0, 0);
@@ -405,6 +435,8 @@ export class FlatCellRenderer {
 			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
 			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
 			gl.uniform1f(U.uHueOffset, p.hueOffsetDeg ?? 0);
+			gl.uniform1i(U.uWavePhase, 0); // this renderer never runs the selection wave
+			gl.uniform1f(U.uWaveP, 0);
 			gl.drawArraysInstanced(gl.TRIANGLES, 0, mesh.fillVertexCount, this.inst.count);
 		}
 
@@ -425,6 +457,10 @@ export class FlatCellRenderer {
 			gl.enableVertexAttribArray(A.aSide);
 			gl.vertexAttribPointer(A.aSide, 1, gl.FLOAT, false, 0, 0);
 			gl.vertexAttribDivisor(A.aSide, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.strokeCentroidBuf);
+			gl.enableVertexAttribArray(A.aCentroid);
+			gl.vertexAttribPointer(A.aCentroid, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aCentroid, 0);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.instBuf);
 			gl.enableVertexAttribArray(A.aInst);
 			gl.vertexAttribPointer(A.aInst, 2, gl.FLOAT, false, 0, 0);
@@ -437,7 +473,17 @@ export class FlatCellRenderer {
 			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
 			gl.uniform1f(U.uHalfStrokePx, p.lineWidth * 0.5);
 			gl.uniform3f(U.uStroke, p.strokeRGB[0], p.strokeRGB[1], p.strokeRGB[2]);
+			gl.uniform1i(U.uWavePhase, 0);
+			gl.uniform1f(U.uWaveP, 0);
 			gl.drawArraysInstanced(gl.TRIANGLES, 0, mesh.strokeVertexCount, this.inst.count);
+			this.lastDraw = {
+				fillVerts: p.showFill ? mesh.fillVertexCount : 0,
+				strokeVerts: mesh.strokeVertexCount,
+				instances: this.inst.count,
+				strokePx: p.lineWidth,
+			};
+		} else {
+			this.lastDraw = { fillVerts: p.showFill ? mesh.fillVertexCount : 0, strokeVerts: 0, instances: this.inst.count, strokePx: p.lineWidth };
 		}
 	}
 
@@ -450,9 +496,11 @@ export class FlatCellRenderer {
 		gl.deleteBuffer(this.posBuf);
 		gl.deleteBuffer(this.hueBuf);
 		gl.deleteBuffer(this.instBuf);
+		gl.deleteBuffer(this.centroidBuf);
 		gl.deleteBuffer(this.strokePosBuf);
 		gl.deleteBuffer(this.strokeNormBuf);
 		gl.deleteBuffer(this.strokeSideBuf);
+		gl.deleteBuffer(this.strokeCentroidBuf);
 		this.mesh = null;
 	}
 }
