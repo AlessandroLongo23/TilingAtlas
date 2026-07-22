@@ -314,12 +314,17 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											step={0.05}
 										/>
 									) : null}
-									<Checkbox
-										id="islamicChirality"
-										label="Flip Weave"
-										checked={cfg.islamicChirality}
-										onCheckedChange={(v) => setCfg({ islamicChirality: v })}
-									/>
+									{/* Chirality seeds the over/under alternation, so it only means anything where there
+									    IS a weave. The outline style crosses its straps flat (weave off — buildBands
+									    never consults the over/under state), which makes this a dead control there. */}
+									<Reveal show={cfg.islamicStyle !== "outline"}>
+										<Checkbox
+											id="islamicChirality"
+											label="Flip Weave"
+											checked={cfg.islamicChirality}
+											onCheckedChange={(v) => setCfg({ islamicChirality: v })}
+										/>
+									</Reveal>
 								</div>
 							</Reveal>
 							<Reveal show={!isSpherical && cfg.islamicStyle === "checkerboard"}>
