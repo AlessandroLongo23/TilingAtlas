@@ -18,6 +18,7 @@
 
 import {
 	type FreedrawGrid,
+	type FreedrawPatch,
 	type FreedrawPattern,
 	coset,
 	cosetCount,
@@ -510,6 +511,112 @@ export function classifyFaces(a: FaceAnalysis): FaceClasses {
 		shapeCount: new Set(shape).size,
 	};
 	classCache.set(a, out);
+	return out;
+}
+
+// ── shape/pose for combined-grid patches ────────────────────────────────────────────────────────────
+// The fixed-grid poseKey/shapeKey above run off FaceInfo.lifts, which patches don't have (there is no
+// lattice to lift into). So classify a patch component straight from its polygon GEOMETRY in world
+// coordinates. Two components share a POSE when one is a pure translate of the other, and a SHAPE when
+// they are congruent under translation + rotation + reflection. This is what makes "shape" colour every
+// triangle alike and every square alike, instead of the per-component fallback that gave each of the
+// (e.g.) 18 tile orbits its own hue.
+
+// Cluster tolerance. Patch coordinates are sums of 0.5 and √3/2 ≈ 0.866, and the smallest gap between
+// distinct tile vertices is ~0.5, so rounding to 1e-3 matches congruent points without merging distinct
+// ones — even after a 30° rotation introduces fresh irrationals.
+const patchRound = (v: number) => Math.round(v * 1000) / 1000;
+
+// 24 congruences to try for a SHAPE key: 12 rotations in 30° steps (the tile edges lie in 30°-multiple
+// directions, so a coarser step would miss real congruences and a finer one is unnecessary) times the
+// x-axis reflection. Precomputed once.
+const PATCH_SYM: [number, number, number, number][] = (() => {
+	const out: [number, number, number, number][] = [];
+	for (let k = 0; k < 12; k++) {
+		const a = (k * Math.PI) / 6;
+		const c = Math.cos(a);
+		const s = Math.sin(a);
+		out.push([c, -s, s, c]); // rotation
+		out.push([c, s, s, -c]); // rotation ∘ reflection
+	}
+	return out;
+})();
+
+/** World-coordinate vertices of one component's polygons (with the ring offsets applied). */
+function componentPoints(patch: FreedrawPatch, comp: number): [number, number][] {
+	const [t1x, t1y] = patch.T1;
+	const [t2x, t2y] = patch.T2;
+	const pts: [number, number][] = [];
+	for (let pi = 0; pi < patch.polys.length; pi++) {
+		if (patch.polyComp[pi] !== comp) continue;
+		for (const [vi, ox, oy] of patch.polys[pi]) {
+			pts.push([
+				patch.verts[vi][0] + ox * t1x + oy * t2x,
+				patch.verts[vi][1] + ox * t1y + oy * t2y,
+			]);
+		}
+	}
+	return pts;
+}
+
+/** Translation-invariant fingerprint of a point set: recentre on the mean, round, dedupe, sort. */
+function translationKey(pts: [number, number][]): string {
+	const n = pts.length || 1;
+	let mx = 0;
+	let my = 0;
+	for (const [x, y] of pts) {
+		mx += x;
+		my += y;
+	}
+	mx /= n;
+	my /= n;
+	const seen = new Set<string>();
+	for (const [x, y] of pts) seen.add(`${patchRound(x - mx)},${patchRound(y - my)}`);
+	return [...seen].sort().join(" ");
+}
+
+/** Congruence fingerprint: the smallest translation key over all 24 rotations/reflections. */
+function congruenceKey(pts: [number, number][]): string {
+	let best: string | null = null;
+	for (const [a, b, c, d] of PATCH_SYM) {
+		const key = translationKey(pts.map(([x, y]) => [a * x + b * y, c * x + d * y]));
+		if (best === null || key < best) best = key;
+	}
+	return best as string;
+}
+
+const patchClassCache = new WeakMap<FreedrawPatch, FaceClasses>();
+
+/**
+ * Group a patch's tile components by pose and by shape, from their real geometry. Non-finite components
+ * (strips, sheets) are period-truncated, so their point set depends on the emitted representative and
+ * this classifies them by that unit — an approximation, but never worse than the per-component fallback
+ * it replaces, and finite tiles (the overwhelming majority, and the ones the user sees mis-coloured) are
+ * exact. Memoised on the patch object.
+ */
+export function classifyPatchFaces(patch: FreedrawPatch): FaceClasses {
+	const hit = patchClassCache.get(patch);
+	if (hit) return hit;
+	const index = (keys: string[]): number[] => {
+		const seen = new Map<string, number>();
+		return keys.map((k) => {
+			const at = seen.get(k);
+			if (at !== undefined) return at;
+			seen.set(k, seen.size);
+			return seen.size - 1;
+		});
+	};
+	const nComp = patch.compRank.length;
+	const points = Array.from({ length: nComp }, (_, c) => componentPoints(patch, c));
+	const pose = index(points.map(translationKey));
+	const shape = index(points.map(congruenceKey));
+	const out: FaceClasses = {
+		pose,
+		shape,
+		poseCount: new Set(pose).size,
+		shapeCount: new Set(shape).size,
+	};
+	patchClassCache.set(patch, out);
 	return out;
 }
 

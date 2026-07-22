@@ -8,7 +8,7 @@
 // case then renders correctly with no special-casing, and the whole thing is line art, so 2D canvas is
 // fast enough and a tenth of the code. Promoting it to the GL path later is mechanical.
 
-import { analyseFaces, classifyFaces, type FaceAnalysis } from "./faces";
+import { analyseFaces, classifyFaces, classifyPatchFaces, type FaceAnalysis } from "./faces";
 import { coset, gridOf, type FreedrawPattern } from "./pattern";
 
 export interface FreedrawView {
@@ -302,8 +302,8 @@ export function drawFreedraw(
 /**
  * Combined-grid patches: explicit per-period geometry instanced over the T1/T2 lattice — the same
  * move as the fixed grids (draw one period's cells, stamp it across the view), with the lattice now
- * an arbitrary 2x2 basis instead of HNF-on-a-known-grid. Fills colour polygons by tile component;
- * shape/pose (undefined for patches) fall back to the component colouring.
+ * an arbitrary 2x2 basis instead of HNF-on-a-known-grid. Fills colour polygons by tile component, or by
+ * shape/pose via classifyPatchFaces (congruent tiles share a hue), or by rank.
  */
 function drawPatchPattern(
 	ctx: CanvasRenderingContext2D,
@@ -364,9 +364,14 @@ function drawPatchPattern(
 
 	if (style.fillMode !== "none") {
 		const alpha = style.showVertices ? ORBIT_MODE_FILL_ALPHA : 1;
-		const byRank = style.fillMode === "rank";
+		// shape/pose merge congruent (resp. identically-posed) tiles from the patch geometry; orbit and
+		// the default keep one hue per tile component; rank colours by finite/strip/unbounded.
+		const classes =
+			style.fillMode === "shape" || style.fillMode === "pose" ? classifyPatchFaces(patch) : null;
 		const compFill = patch.compRank.map((r, i) =>
-			byRank ? rankColour(r, style.dark, alpha) : orbitColour(i, style.dark, alpha),
+			style.fillMode === "rank"
+				? rankColour(r, style.dark, alpha)
+				: orbitColour(classes ? classes[style.fillMode as "shape" | "pose"][i] : i, style.dark, alpha),
 		);
 		for (let n = n0; n <= n1; n++) {
 			for (let m = m0; m <= m1; m++) {
