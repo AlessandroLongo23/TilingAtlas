@@ -1037,6 +1037,7 @@ export function Canvas({
 					height={height}
 					translationalCell={translationalCell as unknown as FlatCellData | null}
 					translationalCellId={translationalCellId}
+					paramCell={paramCell}
 				/>
 			) : null}
 			{strapShaderActive ? (
@@ -1045,6 +1046,7 @@ export function Canvas({
 					height={height}
 					translationalCell={translationalCell as unknown as FlatCellData | null}
 					translationalCellId={translationalCellId}
+					paramCell={paramCell}
 				/>
 			) : null}
 			<div

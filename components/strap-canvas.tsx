@@ -10,6 +10,8 @@ import { buildInstancedStrapMesh, type StrapMesh } from "@/lib/render/buildIslam
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { buildIslamicInterlace, strapWidthScale, EMBOSS_MIN_BORDER, type OutlineSeg } from "@/lib/utils/islamicInterlace";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
+import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { Segment } from "@/utils/islamicArrangement";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
@@ -31,6 +33,11 @@ interface StrapCanvasProps {
 	height: number;
 	translationalCell: FlatCellData | null;
 	translationalCellId: string | null;
+	// Parametric family: `translationalCell` is the ALPHA-INDEPENDENT base cell (see _play-client's
+	// renderCell), so this canvas must derive the live cell from the slider tuple itself, exactly as
+	// EuclideanCanvas does. Without it the straps pin to the family's base angle while the tiling
+	// underneath moves.
+	paramCell?: ParametricCellData | null;
 }
 
 interface CellMeta { v1: Vector; v2: Vector; det: number; extent: LatticeExtent }
@@ -65,7 +72,7 @@ const EMBOSS_HIGHLIGHT = hsb01(45, 10, 100);
 const EMBOSS_SHADOW = hsb01(35, 45, 26);
 const EMBOSS_LIGHT = { x: -0.6, y: 0.8 }; // fixed world light, upper-left
 
-export function StrapCanvas({ width, height, translationalCell, translationalCellId }: StrapCanvasProps) {
+export function StrapCanvas({ width, height, translationalCell, translationalCellId, paramCell = null }: StrapCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const fillProgRef = useRef<WebGLProgram | null>(null);
@@ -84,6 +91,12 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 	sizeRef.current = { width, height };
 	const cellRef = useRef<FlatCellData | null>(translationalCell);
 	cellRef.current = translationalCell;
+	const paramCellRef = useRef(paramCell);
+	paramCellRef.current = paramCell;
+	// Parametric family only: the cell evaluated at the current slider tuple, and the tuple's signature.
+	// Everything downstream (basis, patch, bands) is derived from this rather than the base cell.
+	const liveCellRef = useRef<FlatCellData | null>(null);
+	const alphaSigRef = useRef<string | null>(null);
 
 	const metaRef = useRef<CellMeta | null>(null);
 	const patchRef = useRef<ReturnType<typeof buildTilingFromCell> | null>(null);
@@ -98,7 +111,9 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 		patchBuiltRef.current = false;
 		meshSigRef.current = null;
 		instRef.current = { Ri: -1, Rj: -1, count: 0 };
-	}, [translationalCellId, translationalCell]);
+		liveCellRef.current = null;
+		alphaSigRef.current = null; // force the first frame to evaluate the family at its current tuple
+	}, [translationalCellId, translationalCell, paramCell]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -144,11 +159,32 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 		const render = () => {
 			raf = requestAnimationFrame(render);
 			const g = glRef.current;
-			const meta = metaRef.current;
-			const cell = cellRef.current;
-			if (!g || !meta || !cell) return;
+			const baseCell = cellRef.current;
+			if (!g || !baseCell) return;
 			const { width: w, height: h } = sizeRef.current;
 			if (w <= 0 || h <= 0) return;
+
+			// Parametric family: re-derive the cell whenever the slider tuple moves. The alpha changes the
+			// tile geometry AND the lattice basis, so the whole chain below it is invalidated — basis, patch,
+			// bands, instance grid. Must run before `meta` is read. Rigid tilings skip this entirely.
+			const pc = paramCellRef.current;
+			if (pc) {
+				const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+				const sig = alphas.map((a) => a.toFixed(2)).join(",");
+				if (sig !== alphaSigRef.current) {
+					alphaSigRef.current = sig;
+					const live = evaluateParamCell(pc, alphas) as unknown as FlatCellData;
+					liveCellRef.current = live;
+					const cm = buildCellMesh(live);
+					if (cm) metaRef.current = { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent };
+					patchBuiltRef.current = false;
+					meshSigRef.current = null;
+					instRef.current = { Ri: -1, Rj: -1, count: 0 };
+				}
+			}
+			const cell = liveCellRef.current ?? baseCell;
+			const meta = metaRef.current;
+			if (!meta) return;
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;

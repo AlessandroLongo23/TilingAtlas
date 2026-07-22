@@ -4693,3 +4693,36 @@ interlace and emboss captured under Playwright, plus a 3x zoom pair confirming t
 proportion, and a band-0.05/border-0.1 extreme that degrades gracefully. Seven test files fail in
 the full suite (hue-ring, figure-emitters, islamic-gate, dsym-generator, star-general-path, two
 oracle-symmetry) — all fail identically with these changes stashed, none touch strap code.
+
+## §76 — Islamic decoration follows the parametric slider (2026-07-22)
+
+AL: with the Islamic toggle on, moving a parametric family's angle slider did nothing.
+
+Not a cache-invalidation problem. `_play-client` passes `renderCell` — explicitly the
+ALPHA-INDEPENDENT base cell — to every canvas, and its own comment says the canvases "derive the
+live cell from `paramCell` + the store's `familyAlphas` in their own draw loops". `EuclideanCanvas`
+and `InversiveCanvas` do. `IslamicCanvas` and `StrapCanvas` never got that treatment: canvas.tsx
+handed them `translationalCell`/`translationalCellId` and nothing else. On a parametric family the
+base cell is non-null, which is exactly what makes `isIslamicShaderActive`/`isStrapShaderActive`
+mount the WebGL canvas and set `skipFill` — so p5 (whose caches DO key on node identity and would
+have followed alpha) draws nothing, and the WebGL canvas builds its patch and mesh from the base
+cell with no alpha input. Decoration pinned to the family's base angle while the tiling under it
+moved.
+
+Fix mirrors EuclideanCanvas: both canvases take `paramCell`, resolve the tuple from
+`useFamilyAlphas` in the RAF loop, and rebuild when the signature changes. The one thing worth
+writing down: alpha moves the LATTICE BASIS as well as the tile geometry, so the invalidation
+cascade is basis → patch → mesh → instance grid, and it has to run BEFORE `meta` is read at the top
+of the loop (the guard line that used to destructure `metaRef.current` was moved below the alpha
+block for this reason). Rigid tilings skip the block entirely, so their path is byte-identical.
+
+Deliberately NOT optimised yet, per AL ("implement it as it should be right now, we'll optimize
+later"). The cost is real and known: unlike EuclideanCanvas, which rebuilds only a cell mesh per
+tick, these rebuild the whole PATCH_MARGIN=3 patch (7x7 cells) plus the planar arrangement, and the
+patch build sits outside the existing 100 ms mesh throttle. Expect the decoration to lag the tiling
+during a drag. Options when we come back to it: throttle the patch too, drop the decoration during
+an active drag, or cache patches per alpha bucket.
+
+Verified on ctrnact-isotoxal-family-k3-01 (Playwright, two alphas per style): interlace straps and
+the checkerboard arrangement both track the slider, pattern clean and periodic at full frame. Build
+and tsc clean.
