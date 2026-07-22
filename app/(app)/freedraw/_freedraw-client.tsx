@@ -60,8 +60,8 @@ const SIZE_MODE_OPTIONS: { value: SizeMode; label: string }[] = [
 // The regular-polygon filter. Every k-uniform tiling dissects onto a triangle/square grid (the octagon
 // excepted — 135° has no such dissection), so these patterns contain the k-uniform tilings as the
 // subfamily where every tile is regular. "unit" is that subfamily exactly (edge-to-edge); "regular"
-// also keeps dilations. Each polygon is a has/none/any chip. The dodecagon needs interior grid points,
-// so it does not appear below freedraw k=4 and its chip is honestly empty on the shipped catalogue.
+// also keeps dilations. Each polygon is a has/none/any chip. The dodecagon needs a large period, so it
+// first appears at k=3 (two 3.12.12 tilings) — its chip is nearly empty but not idle.
 const REGULARITY_OPTIONS: { value: FreedrawFilter["regularity"]; label: string }[] = [
 	{ value: "any", label: "any tiles" },
 	{ value: "regular", label: "all regular" },

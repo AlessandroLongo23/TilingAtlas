@@ -543,44 +543,56 @@ const PATCH_SYM: [number, number, number, number][] = (() => {
 })();
 
 /**
- * World-coordinate vertices of one component's tile, laid out CONNECTED.
+ * Lay one component's cells out CONNECTED, returning a lift (period offset) per poly index.
  *
- * The catch: the developer emits one cell per cell-orbit at its fundamental-domain position, so the
- * cells of a single tile can sit a full period apart with no shared corner — a 2-square domino whose
- * two squares are linked only through a period translation. Fingerprinting those raw positions gives a
- * different "shape" to every congruent domino, which is the bug this fixes. So flood-fill the cells
- * across shared edges first, assigning each a lift that makes it adjacent to its neighbour, then read
- * the points off the reassembled tile. Each half-edge is keyed by its two vertex indices and the offset
- * between them, which is period-invariant, so the two cells across an internal edge always match; a
- * boundary edge appears once (its far cell is another component) and is never crossed.
+ * The catch this solves: the developer emits one cell per cell-orbit at its fundamental-domain
+ * position, so the cells of a single tile can sit a full period apart with no shared corner — a
+ * 2-square domino whose two squares are linked only through a period translation, or a hexagon whose
+ * six triangles are scattered. Reading geometry off those raw positions gives a wrong shape and breaks
+ * any boundary walk. So flood-fill the cells across shared UNDRAWN edges, assigning each a lift that
+ * makes it adjacent to its neighbour.
+ *
+ * Only undrawn edges are crossed, and that restriction is load-bearing, not a nicety: a tile with one
+ * copy per period (the honeycomb — one hexagon per period) borders PERIODIC COPIES OF ITSELF across its
+ * drawn boundary, so those boundary edges also match another cell of the same component. Crossing them
+ * would fold a neighbour onto this tile and scatter the layout. A drawn edge is a boundary by
+ * definition; never step over it. Each half-edge is keyed by its two vertex indices and the
+ * period-invariant offset between them, so the two cells across a shared edge always match.
+ *
+ * Shared by componentPoints (shape/pose classification) and regular.ts (regular-polygon detection).
  */
-function componentPoints(patch: FreedrawPatch, comp: number): [number, number][] {
-	const [t1x, t1y] = patch.T1;
-	const [t2x, t2y] = patch.T2;
+export function componentLifts(patch: FreedrawPatch, comp: number): Map<number, [number, number]> {
 	const idxs: number[] = [];
 	for (let pi = 0; pi < patch.polys.length; pi++) if (patch.polyComp[pi] === comp) idxs.push(pi);
+	if (idxs.length === 0) return new Map();
 
-	// Half-edges of one poly: for each edge, the lower-indexed endpoint u, its offset, and a key shared
-	// by the same undirected edge on the neighbouring cell.
+	const drawn = new Map<string, boolean>();
+	for (const [a, b, dx, dy, d] of patch.edges) {
+		drawn.set(`${a},${b},${dx},${dy}`, d === 1);
+		drawn.set(`${b},${a},${-dx},${-dy}`, d === 1);
+	}
+
+	// Undrawn half-edges of one poly: for each edge, the lower-indexed endpoint's offset and a key shared
+	// by the same undirected edge on the neighbouring cell. Drawn edges are tile boundaries — omitted, so
+	// the flood never crosses them.
 	const halfEdges = (pi: number) => {
 		const ring = patch.polys[pi];
-		const out: { key: string; u: number; offU: [number, number] }[] = [];
+		const out: { key: string; offU: [number, number] }[] = [];
 		for (let i = 0; i < ring.length; i++) {
 			const [va, ax, ay] = ring[i];
 			const [vb, bx, by] = ring[(i + 1) % ring.length];
-			const [u, offU, offV] =
-				va < vb ? [va, [ax, ay], [bx, by]] : [vb, [bx, by], [ax, ay]];
-			const uu = u as number;
+			if (drawn.get(`${va},${vb},${bx - ax},${by - ay}`)) continue;
+			const [offU, offV] = va < vb ? [[ax, ay], [bx, by]] : [[bx, by], [ax, ay]];
 			const o = offU as [number, number];
 			const ov = offV as [number, number];
-			out.push({ key: `${Math.min(va, vb)},${Math.max(va, vb)},${ov[0] - o[0]},${ov[1] - o[1]}`, u: uu, offU: o });
+			out.push({ key: `${Math.min(va, vb)},${Math.max(va, vb)},${ov[0] - o[0]},${ov[1] - o[1]}`, offU: o });
 		}
 		return out;
 	};
 
-	const index = new Map<string, { pi: number; u: number; offU: [number, number] }[]>();
+	const index = new Map<string, { pi: number; offU: [number, number] }[]>();
 	for (const pi of idxs)
-		for (const e of halfEdges(pi)) (index.get(e.key) ?? index.set(e.key, []).get(e.key)!).push({ pi, u: e.u, offU: e.offU });
+		for (const e of halfEdges(pi)) (index.get(e.key) ?? index.set(e.key, []).get(e.key)!).push({ pi, offU: e.offU });
 
 	const lift = new Map<number, [number, number]>([[idxs[0], [0, 0]]]);
 	const queue = [idxs[0]];
@@ -590,15 +602,23 @@ function componentPoints(patch: FreedrawPatch, comp: number): [number, number][]
 		for (const e of halfEdges(pi)) {
 			for (const m of index.get(e.key) ?? []) {
 				if (m.pi === pi || lift.has(m.pi)) continue;
-				// e's endpoint u sits at e.offU + L; the neighbour's same endpoint at m.offU + Lm. Equate.
+				// e's endpoint sits at e.offU + L; the neighbour's same endpoint at m.offU + Lm. Equate.
 				lift.set(m.pi, [lx + e.offU[0] - m.offU[0], ly + e.offU[1] - m.offU[1]]);
 				queue.push(m.pi);
 			}
 		}
 	}
+	return lift;
+}
 
+/** World-coordinate vertices of one component's tile, reassembled connected via componentLifts. */
+function componentPoints(patch: FreedrawPatch, comp: number): [number, number][] {
+	const [t1x, t1y] = patch.T1;
+	const [t2x, t2y] = patch.T2;
+	const lift = componentLifts(patch, comp);
 	const pts: [number, number][] = [];
-	for (const pi of idxs) {
+	for (let pi = 0; pi < patch.polys.length; pi++) {
+		if (patch.polyComp[pi] !== comp) continue;
 		const [lx, ly] = lift.get(pi) ?? [0, 0];
 		for (const [vi, ox, oy] of patch.polys[pi]) {
 			const x = ox + lx;

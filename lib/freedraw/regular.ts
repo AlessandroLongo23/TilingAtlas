@@ -23,7 +23,7 @@
 // unit triangles and squares no dissection happens, so its grid points are its vertices and freedraw k
 // equals classical k.
 
-import type { FaceAnalysis, FaceInfo } from "./faces";
+import { componentLifts, type FaceAnalysis, type FaceInfo } from "./faces";
 import { coset, gridOf, type FreedrawGrid, type FreedrawPattern } from "./pattern";
 
 /** Regular polygons reachable on a triangle/square grid. The octagon provably cannot appear. */
@@ -175,7 +175,14 @@ function regularOfFace(p: FreedrawPattern, grid: FreedrawGrid, face: FaceInfo): 
 	return cycle ? regularOf(cycle) : null;
 }
 
-/** Combined grid: the patch already carries explicit geometry, so the same walk runs on its polys. */
+/**
+ * Combined grid: the patch carries explicit geometry, so the same drawn-boundary walk runs on its
+ * polys — but only after reassembling the tile. The developer emits scattered cells (a hexagon's six
+ * triangles can sit a period apart), so componentLifts lifts each poly into a connected layout first;
+ * without it a hexagon's boundary edges never close into one cycle and the tile reads as non-regular.
+ * The drawn lookup keys on the offset DIFFERENCE along an edge, which the lift leaves unchanged, so it
+ * still resolves; only the world positions carry the lift.
+ */
 function regularOfPatch(p: FreedrawPattern, comp: number): RegularFace | null {
 	const patch = p.patch;
 	if (!patch) return null;
@@ -189,16 +196,18 @@ function regularOfPatch(p: FreedrawPattern, comp: number): RegularFace | null {
 		patch.verts[vi][0] + ox * patch.T1[0] + oy * patch.T2[0],
 		patch.verts[vi][1] + ox * patch.T1[1] + oy * patch.T2[1],
 	];
+	const lift = componentLifts(patch, comp);
 	const edges: [Pt, Pt][] = [];
 	for (let pi = 0; pi < patch.polys.length; pi++) {
 		if (patch.polyComp[pi] !== comp) continue;
+		const [lx, ly] = lift.get(pi) ?? [0, 0];
 		const ring = patch.polys[pi];
 		for (let i = 0; i < ring.length; i++) {
 			const a = ring[i];
 			const b = ring[(i + 1) % ring.length];
 			const hit = drawn.get(`${a[0]},${b[0]},${b[1] - a[1]},${b[2] - a[2]}`);
 			if (hit === undefined) return null;
-			if (hit) edges.push([pos(a[0], a[1], a[2]), pos(b[0], b[1], b[2])]);
+			if (hit) edges.push([pos(a[0], a[1] + lx, a[2] + ly), pos(b[0], b[1] + lx, b[2] + ly)]);
 		}
 	}
 	const cycle = walkBoundary(edges, (q) => `${q[0].toFixed(4)},${q[1].toFixed(4)}`);

@@ -141,8 +141,9 @@ const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v
 // Freedraw-shelf regular-polygon facet — the bridge to the classical catalogue. Every k-uniform tiling
 // dissects onto a triangle/square grid (octagon excepted), so "k-uniform" is the subfamily where every
 // tile is an edge-to-edge regular polygon. The full has/none/any composition tool is on /freedraw; the
-// shelf offers the common single-select cases. The dodecagon has no chip: it needs interior grid points
-// and so does not appear below freedraw k=4, absent from the whole shelf catalogue.
+// shelf offers the common single-select cases (all-regular, k-uniform, or contains a given polygon). A
+// dodecagon needs a large period and first appears at k=3, so the shelf's has-a-hexagon/triangle/square
+// chips cover the common cases and the full composition (incl. dodecagons) lives on /freedraw.
 const FREEDRAW_REGULAR_OPTIONS: { value: "all" | FreedrawRegular; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "unit", label: "k-uniform" },
@@ -975,8 +976,8 @@ export function ReferenceShelf() {
 							<GroupNote>
 								Every k-uniform tiling dissects onto a triangle/square grid, so these patterns contain the
 								k-uniform tilings as the case where every tile is a regular polygon. “k-uniform” keeps the
-								edge-to-edge ones; the dodecagon needs a bigger period and appears only above k = 3. For a
-								full has/none/any composition (say triangles and dodecagons, no squares), use /freedraw.
+								edge-to-edge ones; the dodecagon needs a large period and first appears at k = 3 (as 3.12.12).
+								For a full has/none/any composition (say triangles and dodecagons, no squares), use /freedraw.
 							</GroupNote>
 						</FilterGroup>
 					) : null}

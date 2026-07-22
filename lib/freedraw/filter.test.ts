@@ -257,13 +257,13 @@ describe("the combined-grid catalogue — regular-polygon filter", () => {
 	};
 
 	it.skipIf(!have)("counts every edge-to-edge tiling by regular polygons", () => {
-		// 4 + 10 + 22 across k = 1..3, measured against the corrected boundary walk.
-		expect(count(all, { regularity: "unit" })).toBe(36);
+		// 4 + 11 + 28 across k = 1..3 (allUnit), against the undrawn-flood reconstruction.
+		expect(count(all, { regularity: "unit" })).toBe(43);
 	});
 
 	it.skipIf(!have)("admits dilations when regularity is 'regular', not 'unit'", () => {
-		// allRegular is 4 + 11 + 27; the extra 5 over allUnit are the side-2 and mixed-scale tilings.
-		expect(count(all, { regularity: "regular" })).toBe(42);
+		// allRegular is 5 + 12 + 36; the extra 10 over allUnit are the side-2 and mixed-scale tilings.
+		expect(count(all, { regularity: "regular" })).toBe(53);
 	});
 
 	it.skipIf(!have)("isolates the honeycomb as the only all-hexagon tiling", () => {
@@ -277,12 +277,14 @@ describe("the combined-grid catalogue — regular-polygon filter", () => {
 		expect(count(all, { regularity: "unit", polygons })).toBe(28); // 4 + 7 + 17
 	});
 
-	it.skipIf(!have)("finds no dodecagon anywhere below k=4", () => {
-		expect(count(all, only(12))).toBe(0);
-		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 12: "require" } })).toBe(0);
+	it.skipIf(!have)("finds the 3.12.12 dodecagon tilings — two, both at k=3", () => {
+		// Dodecagons need a large period; the first appear at k=3 (two 3.12.12 patterns). Both surface
+		// under a bare "require a dodecagon", and both are edge-to-edge.
+		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 12: "require" } })).toBe(2);
+		expect(count(all, only(12))).toBe(0); // ...but none is ONLY dodecagons — each also has triangles
 	});
 
 	it.skipIf(!have)("counts patterns merely CONTAINING a hexagon, dilations and mixtures included", () => {
-		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } })).toBe(56);
+		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } })).toBe(88);
 	});
 });

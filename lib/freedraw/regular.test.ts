@@ -68,28 +68,43 @@ describe("the combined-grid catalogue", () => {
 	const k3 = load("ts-solutions-k3.json");
 
 	it.skipIf(!k1)("finds the four 1-uniform triangle-square tilings at k=1", () => {
-		const hits = allRegular(k1 as FreedrawPattern[]);
+		// The edge-to-edge {3,4} tilings: 3^6, 4^4, and the two arrangements of 3^3.4^2 / 3^2.4.3.4.
+		// (allRegular at k=1 is five — a side-2 dilation of 4^4 rides along, kept out by allUnit.)
+		const hits = (k1 as FreedrawPattern[]).filter(
+			(p) => info(p).allUnit && ["3", "4", "3,4"].includes(kindKey(p)),
+		);
 		expect(hits).toHaveLength(4);
-		// 3^6, 4^4, and the two arrangements of 3^3.4^2 / 3^2.4.3.4.
 		expect(hits.map(kindKey).sort()).toEqual(["3", "3,4", "3,4", "4"]);
 	});
 
 	it.skipIf(!k2)("finds exactly ONE tiling by regular hexagons", () => {
 		// The honeycomb is the unique edge-to-edge tiling by regular hexagons, so any count above one
 		// means the boundary walk is cancelling drawn edges it should be crossing. It reported seven
-		// before the walk keyed on drawn-status.
+		// before the walk keyed on drawn-status, and dropped to zero when the flood-fill folded the
+		// hexagon's periodic neighbours onto it — the undrawn-only flood fixed both.
 		const hex = allRegular(k2 as FreedrawPattern[]).filter((p) => kindKey(p) === "6");
 		expect(hex).toHaveLength(1);
 	});
 
-	it.skipIf(!k2)("treats a tile with slits as no polygon at all", () => {
+	it.skipIf(!k2)("reassembles a hexagon that tiles one-per-period", () => {
+		// fdts-2-00648 is the honeycomb: a single 6-triangle hexagon per period whose drawn boundary is
+		// shared with periodic copies of ITSELF. The flood-fill must not cross that boundary, or it folds
+		// a neighbour onto the tile and the hexagon dissolves. fdts-2-00653 is the same grid with a drawn
+		// spoke reaching in — a slit, so its boundary is not a simple cycle and it is no polygon.
 		const all = k2 as FreedrawPattern[];
 		const clean = all.find((p) => p.id === "fdts-2-00648") as FreedrawPattern;
 		const slit = all.find((p) => p.id === "fdts-2-00653") as FreedrawPattern;
-		// Same underlying grid and the same single 6-cell component; the second has drawn spokes
-		// reaching into it, so its boundary is not a simple cycle.
 		expect(info(clean).perFace).toEqual([{ n: 6, side: 1 }]);
 		expect(info(slit).perFace).toEqual([null]);
+	});
+
+	it.skipIf(!k2)("recognises a hexagon whose six triangles are emitted scattered", () => {
+		// fdts-2-00088 mixes unit triangles, unit squares and a hexagon (3/4/6) — a k-uniform tiling. Its
+		// hexagon's six triangles are emitted a period apart, so it was missed until the flood reassembled
+		// them.
+		const p = (k2 as FreedrawPattern[]).find((x) => x.id === "fdts-2-00088") as FreedrawPattern;
+		expect(info(p).allUnit).toBe(true);
+		expect(kindKey(p)).toBe("3,4,6");
 	});
 
 	it.skipIf(!k1 || !k2 || !k3)("reproduces the tri-square oracle on the {3,4} slice", () => {
@@ -103,12 +118,15 @@ describe("the combined-grid catalogue", () => {
 		expect(slice(k3 as FreedrawPattern[])).toBe(17);
 	});
 
-	it.skipIf(!k1 || !k2 || !k3)("has no dodecagon below k=4", () => {
-		// A 12-gon dissects into 6 squares + 12 triangles and carries interior grid points, so it
-		// cannot surface at these k. The 12 chip is legitimately empty on the shipped catalogue.
-		for (const set of [k1, k2, k3] as FreedrawPattern[][]) {
-			expect(set.some((p) => info(p).kinds.has(12))).toBe(false);
-		}
+	it.skipIf(!k1 || !k2 || !k3)("finds the 3.12.12 dodecagon tilings at k=3, none below", () => {
+		// A 12-gon dissects into 6 squares + 12 triangles and needs a large period, so it first appears at
+		// k=3: two patterns, both 3.12.12 (a triangle and two dodecagons per vertex). (An earlier claim
+		// that no dodecagon appears below k=4 was an artefact of the pre-flood detector missing them.)
+		expect((k1 as FreedrawPattern[]).some((p) => info(p).kinds.has(12))).toBe(false);
+		expect((k2 as FreedrawPattern[]).some((p) => info(p).kinds.has(12))).toBe(false);
+		const dod = (k3 as FreedrawPattern[]).filter((p) => info(p).kinds.has(12));
+		expect(dod).toHaveLength(2);
+		for (const p of dod) expect(kindKey(p)).toBe("3,12");
 	});
 
 	// allRegular counts dilations too — a tiling by side-2 squares is a tiling by regular polygons,
@@ -116,23 +134,22 @@ describe("the combined-grid catalogue", () => {
 	// catalogue, so both are pinned: the gap IS the dilation family.
 	it.skipIf(!k2)("counts every tiling by regular polygons at k=2", () => {
 		const hits = allRegular(k2 as FreedrawPattern[]);
-		expect(hits).toHaveLength(11);
-		expect(hits.filter((p) => info(p).allUnit)).toHaveLength(10);
+		expect(hits).toHaveLength(12);
+		expect(hits.filter((p) => info(p).allUnit)).toHaveLength(11);
 	});
 
 	it.skipIf(!k3)("counts every tiling by regular polygons at k=3", () => {
 		const hits = allRegular(k3 as FreedrawPattern[]);
-		expect(hits).toHaveLength(27);
-		expect(hits.filter((p) => info(p).allUnit)).toHaveLength(22);
+		expect(hits).toHaveLength(36);
+		expect(hits.filter((p) => info(p).allUnit)).toHaveLength(28);
 	});
 
 	it.skipIf(!k3)("separates dilations from edge-to-edge tilings", () => {
-		// The five extras at k=3 each carry at least one tile whose sides span more than one grid edge.
-		// Two are pure dilations of 4^4; the other three mix scales — a unit tile beside a bigger one —
-		// which is a tiling by regular polygons but NOT edge-to-edge. Neither kind is classically
-		// k-uniform, which is why the {3,4} oracle check above filters on allUnit rather than allRegular.
+		// The eight extras at k=3 each carry at least one tile whose sides span more than one grid edge:
+		// pure dilations of 4^4 and mixed-scale tilings (a unit tile beside a bigger one). Neither kind is
+		// classically k-uniform, which is why the {3,4} oracle check filters on allUnit not allRegular.
 		const dilated = allRegular(k3 as FreedrawPattern[]).filter((p) => !info(p).allUnit);
-		expect(dilated).toHaveLength(5);
+		expect(dilated).toHaveLength(8);
 		for (const p of dilated) {
 			expect(info(p).perFace.some((f) => f && f.side > 1)).toBe(true);
 		}
