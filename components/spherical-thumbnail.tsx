@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { createSphere } from "@/lib/render/sphericalScene";
+import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
+import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
 
 // A static 3D preview of a spherical tiling for the library grid and /play sidebar. Renders ONE frame with
 // the same scene builder as the interactive view (single source of truth for the look) and reads it to a
@@ -79,17 +81,22 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 		const el = holderRef.current;
 		if (!el) return;
 		let done = false;
+		let cancelJob: (() => void) | null = null;
 		const draw = () => {
 			if (done) return;
 			done = true;
-			try {
-				const dataUrl = renderToDataUrl(solidId, size, hueOffset);
-				if (dataUrl) setUrl(dataUrl);
-				else setFailed(true);
-			} catch (e) {
-				console.warn("SphericalThumbnail render error:", e);
-				setFailed(true);
-			}
+			// Building the scene + rendering is synchronous, so it goes through the shared frame-paced
+			// queue rather than firing alongside every other card's bake in one task.
+			cancelJob = enqueueThumbnailRender(() => {
+				try {
+					const dataUrl = renderToDataUrl(solidId, size, hueOffset);
+					if (dataUrl) setUrl(dataUrl);
+					else setFailed(true);
+				} catch (e) {
+					console.warn("SphericalThumbnail render error:", e);
+					setFailed(true);
+				}
+			});
 		};
 		const io = new IntersectionObserver(
 			(entries) => {
@@ -100,7 +107,10 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 			{ rootMargin: "300px" },
 		);
 		io.observe(el);
-		return () => io.disconnect();
+		return () => {
+			io.disconnect();
+			cancelJob?.();
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [specKey, size, hueOffset]);
 
@@ -113,10 +123,15 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 	}
 
 	return (
-		<div ref={holderRef} className="w-full h-full">
+		<div ref={holderRef} className="relative w-full h-full">
+			<ThumbnailSkeleton done={url != null} />
 			{url ? (
 				// eslint-disable-next-line @next/next/no-img-element
-				<img src={url} alt={`${solidId} spherical tiling`} className="w-full h-full rounded block object-cover" />
+				<img
+					src={url}
+					alt={`${solidId} spherical tiling`}
+					className="ta-fade-in relative w-full h-full rounded block object-cover"
+				/>
 			) : null}
 		</div>
 	);

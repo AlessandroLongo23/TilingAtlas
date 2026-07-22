@@ -15,3 +15,4 @@ export { ColorPad } from "./color-pad";
 export type { ColorParams } from "./color-pad";
 export { AngleFilterBlock } from "./angle-filter-block";
 export { Tooltip } from "./tooltip";
+export { ThumbnailSkeleton } from "./thumbnail-skeleton";

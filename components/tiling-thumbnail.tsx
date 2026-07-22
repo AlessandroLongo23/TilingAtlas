@@ -8,6 +8,9 @@ import {
 	type TranslationalCellData,
 	renderTilingToContext,
 } from "@/lib/utils/renderTiling";
+import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
+import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
+import { cn } from "@/lib/utils/cn";
 
 interface EncodedTiling {
 	seed?: unknown;
@@ -30,6 +33,9 @@ export function TilingThumbnail({
 }: TilingThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [hasError, setHasError] = useState(false);
+	// Flips true after the first successful draw and never flips back — a hue-ring drag or a resize
+	// redraws the canvas in place, and re-showing the skeleton for those would strobe the whole grid.
+	const [drawn, setDrawn] = useState(false);
 	// Global hue ring: subscribed LIVE, so every mounted thumbnail redraws on each drag tick — the
 	// deliberate exact-colors choice (vs a cheap CSS hue-rotate approximation); revisit if it janks.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
@@ -75,21 +81,36 @@ export function TilingThumbnail({
 					pxPerEdge,
 					hueOffsetDeg: hueOffset,
 				});
+				setDrawn(true);
 			} catch (e) {
 				console.warn("TilingThumbnail render error:", e);
 				setHasError(true);
 			}
 		};
 
+		// Every draw goes through the shared frame-paced queue: a grid mounts dozens of these and their
+		// observers all fire in one callback batch, so drawing inline would block the frame for the
+		// whole page. Resizes queue too, so a window drag repaints the grid card-by-card. Overwriting
+		// cancelJob can orphan an earlier pending job, which is harmless — draw() no-ops once disposed.
+		let cancelJob: (() => void) | null = null;
+		const queueDraw = () => {
+			cancelJob = enqueueThumbnailRender(draw);
+		};
+
 		const ro = new ResizeObserver(() => {
-			if (observed) draw();
+			// ResizeObserver delivers an initial callback the moment we observe. That first one is the
+			// size we already drew at, so skip it — otherwise every card would draw twice on mount.
+			if (!observed) {
+				observed = true;
+				return;
+			}
+			queueDraw();
 		});
 
 		const io = new IntersectionObserver(
 			(entries) => {
 				if (!entries[0].isIntersecting) return;
-				observed = true;
-				draw();
+				queueDraw();
 				ro.observe(canvas);
 				io.disconnect();
 			},
@@ -101,6 +122,7 @@ export function TilingThumbnail({
 			disposed = true;
 			io.disconnect();
 			ro.disconnect();
+			cancelJob?.();
 		};
 	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, hueOffset]);
 
@@ -112,5 +134,16 @@ export function TilingThumbnail({
 		);
 	}
 
-	return <canvas ref={canvasRef} className="w-full h-full rounded block" />;
+	// The canvas stays mounted and laid out at all times — draw() sizes it from getBoundingClientRect,
+	// so it cannot be conditionally rendered. It is held transparent until the first draw lands and the
+	// skeleton shows through from behind.
+	return (
+		<div className="relative w-full h-full">
+			<ThumbnailSkeleton done={drawn} />
+			<canvas
+				ref={canvasRef}
+				className={cn("relative w-full h-full rounded block", drawn ? "ta-fade-in" : "opacity-0")}
+			/>
+		</div>
+	);
 }

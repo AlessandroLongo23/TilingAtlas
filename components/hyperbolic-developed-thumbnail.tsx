@@ -7,6 +7,8 @@ import { loadDevelopedPatches, drawDevelopedPatch, type DevelopedPatch } from "@
 import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
+import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
+import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
 
 // Static Poincaré-disk preview of an engine-developed hyperbolic tiling for the library grid and /play
 // sidebar. It renders ONE frame with the SAME per-pixel renderer as the interactive canvas — reduce each
@@ -137,7 +139,10 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 		const el = wrapRef.current;
 		if (!el) return;
 		let disposed = false;
+		let cancelJob: (() => void) | null = null;
 		const draw = () => {
+			// The patch fetch is async and shared across every card, so it runs OUTSIDE the queue — only
+			// the synchronous bake below is frame-paced. See lib/render/thumbnailQueue.ts.
 			loadDevelopedPatches().then((map) => {
 				if (disposed) return;
 				const p = map[patch];
@@ -145,14 +150,17 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 					setFailed(true);
 					return;
 				}
-				try {
-					const dataUrl = renderThumb(p, size, { hueOffset, showFill, lineMode, lineWidth });
-					if (dataUrl) setUrl(dataUrl);
-					else setFailed(true);
-				} catch (e) {
-					console.warn("HyperbolicDevelopedThumbnail render error:", e);
-					setFailed(true);
-				}
+				cancelJob = enqueueThumbnailRender(() => {
+					if (disposed) return;
+					try {
+						const dataUrl = renderThumb(p, size, { hueOffset, showFill, lineMode, lineWidth });
+						if (dataUrl) setUrl(dataUrl);
+						else setFailed(true);
+					} catch (e) {
+						console.warn("HyperbolicDevelopedThumbnail render error:", e);
+						setFailed(true);
+					}
+				});
 			});
 		};
 		const io = new IntersectionObserver(
@@ -167,6 +175,9 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 		return () => {
 			disposed = true;
 			io.disconnect();
+			// Drop a pending bake when the card unmounts (pagination, filter change) — otherwise the
+			// queue keeps grinding through 512² fields for cards that no longer exist.
+			cancelJob?.();
 		};
 	}, [patch, size, hueOffset, showFill, lineMode, lineWidth]);
 
@@ -178,11 +189,18 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 		);
 	}
 
+	// The skeleton holds the slot until the bake lands, then the disk fades in over it. `url` is never
+	// reset once set, so a hue-ring drag swaps the image in place without flashing the skeleton back.
 	return (
-		<div ref={wrapRef} className="w-full h-full">
+		<div ref={wrapRef} className="relative w-full h-full">
+			<ThumbnailSkeleton done={url != null} />
 			{url ? (
 				// eslint-disable-next-line @next/next/no-img-element
-				<img src={url} alt={`hyperbolic tiling ${patch}`} className="w-full h-full rounded block object-cover" />
+				<img
+					src={url}
+					alt={`hyperbolic tiling ${patch}`}
+					className="ta-fade-in relative w-full h-full rounded block object-cover"
+				/>
 			) : null}
 		</div>
 	);

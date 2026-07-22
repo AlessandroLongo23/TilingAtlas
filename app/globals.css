@@ -96,3 +96,51 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Thumbnail loading (2026-07-22) — see lib/render/thumbnailQueue.ts for why previews arrive late.
+   The skeleton fills the preview slot while its bake is queued or running; the preview then fades in
+   ON TOP of it (opaque media over an opaque placeholder), so there is no muddy 50/50 cross-fade.
+
+   The placeholder's fill (bg-surface-overlay, set by <ThumbnailSkeleton>) is deliberately NOT
+   surface-raised: raised is pure white in light mode, so a pulse on it would be invisible against the
+   card. Overlay is neutral-100 light / neutral-800 dark — legible in both themes. A pulse rather than
+   a travelling shimmer band: 25 sweeps at once fight the wall's hairline grid, whereas opacity
+   breathing reads as "working" without adding direction.
+
+   This class carries ONLY the animation. The placeholder keeps its fill after loading (hidden under
+   the opaque preview) and just drops this class — so it never blinks to card-white for the duration
+   of the fade, and no unmount timer is needed. */
+@keyframes ta-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.ta-skeleton {
+  animation: ta-skeleton-pulse 1.6s var(--ease-standard) infinite;
+}
+
+/* An animation, not a transition: this class is applied at the same moment the element first paints
+   (or leaves opacity-0), and an animation runs on mount without the two-frame class-swap dance a
+   transition needs. `both` holds the from-state before the first frame and the to-state after. */
+@keyframes ta-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ta-fade-in {
+  animation: ta-fade-in var(--duration-slow) var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ta-skeleton,
+  .ta-fade-in {
+    animation: none;
+  }
+}
