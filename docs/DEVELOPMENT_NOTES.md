@@ -5015,3 +5015,38 @@ nav (AL's call, reversing §77's "hidden"). 32,528 patterns across three grids. 
 is 19.8 MB, committed on AL's instruction; regenerable in about 20 s from the certificates.
 
 Log: `experiments/results/freedraw-notation-decode-2026-07-22.md`.
+
+## §82 — The combined grid was 3483 solutions too big, and "all distinct" proved nothing (2026-07-22)
+
+Marek shipped a corrected `pt_triangles_squares_edges.exe` (`799e33f8`, was `db51b95c`). Rerun at
+k≤3 and re-decoded: 56/1294/16851 → 52/1098/13568, so freedraw across all grids drops 32,528 →
+29,045. §81's combined-grid figures are superseded; everything it says about the decoder stands.
+
+The loss is entirely inside the `A2A3A4` alphabet, 11,696 → 8213. Solutions using only triangles and
+digons (5058) or only squares and digons (1419) are untouched, and still reconcile exactly with the
+standalone solvers — 5058 + 1 = 5059, 1419 + 1 = 1420. The digon-free anchor is unchanged at 4/7/17.
+So the bug lived only where all three letters meet, which is also the only region no other build
+covers.
+
+I nearly reported that the fix adds tilings as well as removing them: comparing patch JSON showed 12
+"new" records at k=2 and 354 at k=3. That comparison is invalid. PT's representative labelling is
+nondeterministic, and the control — two runs of the *same* new exe, both decoded — differs in 10
+patches at k=2 and 310 at k=3 with identical counts. The apparent novelty was the noise floor.
+
+Redone on a labelling-independent fingerprint (period area, V/E/F, sorted polygon corner counts,
+sorted total and drawn vertex degrees, sorted component rank/cells/holes): every fingerprint class
+present in both builds keeps *identical* membership, 2/87/1301 whole classes vanish, and zero new
+classes appear anywhere. Duplicates would have shown as surplus inside shared classes. There is none,
+so the old build was emitting whole families of invalid tilings rather than double-counting, and the
+new catalogue is a strict sub-catalogue of the old.
+
+The methodological lesson is the one worth keeping. §81 recorded "18201/18201 develop, all distinct"
+among its validations. That claim was empty: patch JSON is labelling-dependent, so two encodings of a
+single tiling look distinct, and the check could never have detected the duplicates it appeared to
+rule out. **There is still no canonical form for combined-grid patches.** Square and triangle grids
+have one (the bitmask canonicalised under p4m/p6m), which is exactly why their bijection checks mean
+something. The combined catalogue cannot currently self-check for duplicates at all; its only
+external evidence remains the 4/7/17 digon-free anchor. That is the open gap on this grid, and it
+should close before any combined-grid count is quoted anywhere citable.
+
+Log: `experiments/results/freedraw-pt-run-2026-07-22.md` (`553bec7`).

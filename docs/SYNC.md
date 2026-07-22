@@ -1382,3 +1382,10 @@ to geometry (`develop_freedraw.py`), adding square k=4, the triangle grid, and t
 triangles+squares grid as exact ℤ[ζ₁₂] patches — 32,528 patterns, bijective against every slice
 Marek enumerated, digon-free combined slice = the known 4/7/17. Decode-only slices ship as
 "candidate". /freedraw joins the header (`e4a9e37`). NOTES §81.
+
+**2026-07-22 — CC.** Marek's corrected combined solver drops the triangles+squares catalogue
+18,201 → 14,718 (freedraw atlas-wide 32,528 → 29,045); re-decoded and reshipped (`553bec7`). Loss is
+entirely in the A2A3A4 alphabet; pure slices and the 4/7/17 digon-free anchor are untouched. A
+fingerprint diff shows the fix is strictly subtractive, NOT deduplication — which also retires §81's
+"all distinct" as evidence, since patch JSON is labelling-dependent. No canonical form exists for
+combined-grid patches yet: that catalogue cannot self-check for duplicates. NOTES §82.
