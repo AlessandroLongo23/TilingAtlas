@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "build": "tsx scripts/gen-landing-data.ts && NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "landing:data": "tsx scripts/gen-landing-data.ts",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
