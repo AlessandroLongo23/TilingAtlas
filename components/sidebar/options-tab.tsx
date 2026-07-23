@@ -93,6 +93,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<Checkbox
 								id="freedrawScaffold"
 								label="Grid scaffold"
+								shortcut="G"
 								checked={cfg.freedrawScaffold}
 								onCheckedChange={(v) => setCfg({ freedrawScaffold: v })}
 							/>
@@ -101,6 +102,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<Checkbox
 								id="freedrawLattice"
 								label="Period lattice"
+								shortcut="P"
 								checked={cfg.freedrawLattice}
 								onCheckedChange={(v) => setCfg({ freedrawLattice: v })}
 							/>

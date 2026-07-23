@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import {
 	su11Identity,
@@ -14,7 +14,7 @@ import {
 	type Su11,
 	type Complex,
 } from "@/lib/render/hyperbolic";
-import { loadDevelopedPatches, drawDevelopedPatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { getIslamicField } from "@/lib/render/hyperbolicIslamic";
@@ -45,6 +45,10 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null); // set only in the 2D fallback path
+	// Per-PATCH renderer choice, not just per-machine: a patch stamped `certified: false` (or whose
+	// reduction fails at runtime) draws through the 2D developed renderer. A canvas that has yielded a
+	// webgl2 context can never yield a 2d one, so flipping modes re-mounts the element via `key`.
+	const [use2d, setUse2d] = useState(false);
 	const devRef = useRef<HyperbolicDeveloper | null>(null); // click-feature snapping + fallback draw
 	const readyRef = useRef(false); // shader tiling uploaded (perPixel) or developer ready (2D)
 	// (tile, residual) camera data: the certified side pairings fold the camera basepoint back into the
@@ -53,7 +57,7 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	const anchorRef = useRef<{ gens: Su11[]; r: number } | null>(null);
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
 	const stRef = useRef<ShaderTiling | null>(null); // the prepared reduction — the Islamic bake reuses it
-	const patchRef = useRef<DevelopedPatch | null>(null);
+	const patchRef = useRef<CataloguePatch | null>(null);
 	// Islamic plain field bookkeeping. Every angle change bakes IMMEDIATELY at a coarse resolution
 	// (fast enough to land in the same frame — the develop is cached, only rays + arrangement + a
 	// 256² texel loop re-run), then the stable angle silently refines to full resolution. No throttle:
@@ -73,17 +77,19 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 		sizeRef.current = { width, height };
 	}, [width, height]);
 
-	// Acquire the drawing context once (WebGL2 preferred; 2D fallback).
+	// Acquire the drawing context (WebGL2 preferred; 2D when unavailable OR when the patch forces it).
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
-		if (gl) {
-			try {
-				glRef.current = new HyperbolicPerPixelRenderer(gl);
-			} catch (e) {
-				console.warn("hyperbolic per-pixel renderer unavailable, falling back to 2D:", e);
-				glRef.current = null;
+		if (!use2d) {
+			const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
+			if (gl) {
+				try {
+					glRef.current = new HyperbolicPerPixelRenderer(gl);
+				} catch (e) {
+					console.warn("hyperbolic per-pixel renderer unavailable, falling back to 2D:", e);
+					glRef.current = null;
+				}
 			}
 		}
 		if (!glRef.current) ctx2dRef.current = canvas.getContext("2d");
@@ -92,9 +98,12 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			glRef.current = null;
 			ctx2dRef.current = null;
 		};
-	}, []);
+	}, [use2d]);
 
 	// Load the patch, build its developer, and (perPixel) upload its reduction generators + field.
+	// Re-runs when `use2d` flips: the flip re-mounts the canvas and re-acquires the context, and this
+	// effect then binds the patch to whichever renderer came up. Each patch settles in ≤1 extra pass —
+	// setUse2d is only called when the value actually changes.
 	useEffect(() => {
 		let alive = true;
 		readyRef.current = false;
@@ -114,7 +123,14 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			prevRot.current = null;
 			centerAnim.current = null;
 			anchorRef.current = null;
-			if (patch?.darts && glRef.current && meta) {
+			// Stamped un-certifiable → 2D. Stamped/unstamped certifiable while stuck in 2D mode (the
+			// PREVIOUS patch forced it) → back to GL. Either flip re-mounts the canvas and re-runs this.
+			const want2d = patch?.certified === false;
+			if (patch?.darts && want2d !== use2d && !(ctx2dRef.current && !glRef.current && want2d)) {
+				setUse2d(want2d);
+				if (want2d) return; // context is still webgl2 this pass; the re-run binds 2D
+			}
+			if (patch?.darts && glRef.current && meta && !want2d) {
 				// Build the certified Dirichlet reduction (side pairings + total field) once, then upload.
 				const st = prepareShaderTiling(patch.darts, patch.edge, meta);
 				if (st) {
@@ -123,7 +139,8 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 					anchorRef.current = { gens: st.domain.gens, r: Math.min(0.97, st.domain.rPEu + 0.05) };
 					readyRef.current = true;
 				} else {
-					readyRef.current = false; // certificate failed (loud) — leave the baked patch visible
+					// Certificate failed at runtime (loud in prepareShaderTiling) — draw via the 2D path.
+					setUse2d(true);
 				}
 			} else {
 				readyRef.current = !!patch?.darts;
@@ -132,7 +149,7 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 		return () => {
 			alive = false;
 		};
-	}, [patchId]);
+	}, [patchId, use2d]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -366,10 +383,13 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 		return () => {
 			cancelAnimationFrame(raf);
 		};
-	}, []);
+	}, [use2d]);
 
 	return (
 		<canvas
+			// A mode flip must yield a FRESH element: a canvas that has produced a webgl2 context can
+			// never produce a 2d one. The render loop re-binds through the same `use2d` dependency.
+			key={use2d ? "2d" : "gl"}
 			ref={canvasRef}
 			className="absolute inset-0 h-full w-full"
 			style={{ pointerEvents: "none", width: "100%", height: "100%" }}

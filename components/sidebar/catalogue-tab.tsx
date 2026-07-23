@@ -52,8 +52,10 @@ export function CatalogueTab({ items, selectedKey, onSelect, geometry, geometryC
 				})}
 			</div>
 			{/* Opaque: the wall's line colour lives on an ancestor, so a transparent scroll region
-			    would show it wherever the list runs out. */}
-			<div className="flex-1 overflow-y-auto bg-surface-chrome" data-sidebar-scroll>
+			    would show it wherever the list runs out. `isolate` pins the sticky headers' z-index
+			    contest (catalogue-list-panel.tsx) inside this scroller, so raising them above the tile
+			    ring can never reach the canvas overlay buttons next door. */}
+			<div className="isolate flex-1 overflow-y-auto bg-surface-chrome" data-sidebar-scroll>
 				<CatalogueListPanel items={items} selectedKey={selectedKey} onSelect={onSelect} />
 			</div>
 		</div>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { su11Identity } from "@/lib/render/hyperbolic";
-import { loadDevelopedPatches, drawDevelopedPatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
@@ -51,8 +51,9 @@ function ensureRenderer(size: number): HyperbolicPerPixelRenderer | null {
 	return glRenderer ?? null;
 }
 
-function renderThumbGL(patch: DevelopedPatch, size: number, opts: ThumbOpts): string | null {
+function renderThumbGL(patch: CataloguePatch, size: number, opts: ThumbOpts): string | null {
 	if (!patch.darts) return null;
+	if (patch.certified === false) return null; // stamped un-certifiable: skip straight to the 2D bake
 	const r = ensureRenderer(size);
 	if (!r || !glCanvas) return null;
 	let st = tilingCache.get(patch.id);
@@ -83,7 +84,7 @@ function renderThumbGL(patch: DevelopedPatch, size: number, opts: ThumbOpts): st
 	return glCanvas.toDataURL("image/png");
 }
 
-function renderThumb2d(patch: DevelopedPatch, size: number, opts: ThumbOpts): string | null {
+function renderThumb2d(patch: CataloguePatch, size: number, opts: ThumbOpts): string | null {
 	if (!thumbCanvas2d) thumbCanvas2d = document.createElement("canvas");
 	if (thumbCanvas2d.width !== size) {
 		thumbCanvas2d.width = size;
@@ -93,14 +94,12 @@ function renderThumb2d(patch: DevelopedPatch, size: number, opts: ThumbOpts): st
 	if (!ctx) return null;
 	const dark = document.documentElement.classList.contains("dark");
 	ctx.clearRect(0, 0, size, size);
-	const drawn = patch.darts
-		? new HyperbolicDeveloper(patch.darts, patch.edge).develop(
-				{ id: patch.id, name: patch.name, config: patch.config, edge: patch.edge },
-				su11Identity(),
-				0.99,
-				5000,
-			)
-		: patch;
+	const drawn = new HyperbolicDeveloper(patch.darts, patch.edge).develop(
+		{ id: patch.id, name: patch.name, config: patch.config, edge: patch.edge },
+		su11Identity(),
+		0.99,
+		5000,
+	);
 	drawDevelopedPatch(ctx, drawn, su11Identity(), {
 		R: size / 2 - 4,
 		cx: size / 2,
@@ -115,7 +114,7 @@ function renderThumb2d(patch: DevelopedPatch, size: number, opts: ThumbOpts): st
 	return thumbCanvas2d.toDataURL("image/png");
 }
 
-function renderThumb(patch: DevelopedPatch, size: number, opts: ThumbOpts): string | null {
+function renderThumb(patch: CataloguePatch, size: number, opts: ThumbOpts): string | null {
 	return renderThumbGL(patch, size, opts) ?? renderThumb2d(patch, size, opts);
 }
 

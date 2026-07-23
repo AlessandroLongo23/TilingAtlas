@@ -270,7 +270,14 @@ def run(pruned, out_path, report_path, kmin=1, kmax=1, boundR=0.9, limit=None):
     if limit:
         blocks = blocks[:limit]
     records, failed = [], []
-    for b in blocks:
+    import time as _t
+    _t0 = _t.time()
+    for i, b in enumerate(blocks):
+        if i and i % 2000 == 0:
+            el = _t.time() - _t0
+            print("  develop %d/%d  %.0fs elapsed, ~%.0fs left, %d developed"
+                  % (i, len(blocks), el, el / i * (len(blocks) - i), len(records)),
+                  file=sys.stderr, flush=True)
         rec, err = develop_block(b, boundR=boundR)
         (records if rec else failed).append(rec or err)
     records.sort(key=lambda r: (r["k"], -r["tiles"], r["id"]))

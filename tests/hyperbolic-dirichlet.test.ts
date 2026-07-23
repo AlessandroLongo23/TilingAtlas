@@ -6,8 +6,11 @@ import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { buildDirichletDomain, foldIntoDomain, type DirichletDomain } from "@/lib/render/hyperbolicDirichlet";
 import { su11Apply, type Complex } from "@/lib/render/hyperbolic";
 
+import { sampleAtlas } from "./hyperbolic-sample";
+
 interface ShippedPatch extends DevelopedPatch {
 	darts?: Darts;
+	certified?: boolean;
 }
 const atlas: ShippedPatch[] = JSON.parse(
 	readFileSync(join(__dirname, "..", "public", "hyperbolic-developed.json"), "utf8"),
@@ -44,19 +47,33 @@ function samplePoints(n: number, rMax: number, seed = 7): Complex[] {
 }
 
 describe("certified Dirichlet domain (deck group of a developed hyperbolic tiling)", () => {
-	it("certifies every shipped tiling with a bounded side-pairing set", () => {
+	// The shelf is thousands of tilings; exhaustive certification runs offline
+	// (scripts/stamp-hyperbolic-certification.ts stamps `certified` on every patch). Here: a seeded
+	// sample of the stamped-certifiable set must certify with sane caps, and a sample of the stamped
+	// UN-certifiable set must really fail — stamp accuracy in both directions. Caps re-measured on the
+	// 2026-07 shelf: max gens 128, max RD 3.77 among all certified.
+	it("certifies a deterministic sample of stamped-certifiable tilings", { timeout: 120_000 }, () => {
 		const bad: string[] = [];
-		for (const p of atlas) {
+		for (const p of sampleAtlas(atlas.filter((x) => x.certified !== false), 80)) {
 			const dom = buildDirichletDomain(p.darts as Darts, p.edge);
 			if (dom.certified !== true) {
 				bad.push(`${p.id}: ${dom.reason}`);
 				continue;
 			}
-			if (dom.gens.length > 128) bad.push(`${p.id}: ${dom.gens.length} gens`);
-			if (dom.RD > 3.5) bad.push(`${p.id}: RD=${dom.RD}`);
+			if (dom.gens.length > 160) bad.push(`${p.id}: ${dom.gens.length} gens`);
+			if (dom.RD > 4.0) bad.push(`${p.id}: RD=${dom.RD}`);
 			if (!(dom.rInHyp > 0)) bad.push(`${p.id}: rIn=${dom.rInHyp}`);
 		}
 		expect(bad, bad.join("; ")).toEqual([]);
+	});
+
+	it("stamped un-certifiable tilings really do fail (the stamp is honest)", { timeout: 120_000 }, () => {
+		const un = atlas.filter((x) => x.certified === false);
+		if (un.length === 0) return; // unstamped legacy shelf
+		for (const p of sampleAtlas(un, 25)) {
+			const dom = buildDirichletDomain(p.darts as Darts, p.edge);
+			expect(dom.certified, `${p.id} is stamped certified:false but certifies`).not.toBe(true);
+		}
 	});
 
 	// The Voight guarantee, asserted: greedy reduction over the COMPLETE side-pairing set terminates

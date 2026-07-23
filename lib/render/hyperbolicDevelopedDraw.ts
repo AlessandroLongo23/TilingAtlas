@@ -10,6 +10,41 @@
 import { type Complex, type Su11, su11Apply, tileHue } from "@/lib/render/hyperbolic";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 
+export interface Darts {
+	rneig: number[];
+	glue: number[];
+	lvert: number[];
+	seed: number;
+}
+
+/**
+ * A row of the shipped catalogue (public/hyperbolic-developed.json): the tiling's quotient half-edge
+ * structure and its forced edge length, with NO baked geometry.
+ *
+ * The file used to carry developed vertices/faces as well, but every render path — the per-pixel
+ * Dirichlet renderer, the 2D fallback, the thumbnails, the Islamic bake — re-develops from the darts
+ * under the current view anyway, so the baked copy was dead weight that nothing read. At ~1000 tilings
+ * it would also have been a 10 MB eager fetch against 0.2 MB for the darts.
+ */
+export interface CataloguePatch {
+	id: string;
+	name: string;
+	config: string;
+	edge: number;
+	/** Tiles in the reference development — a size hint for the UI, not geometry. */
+	tiles: number;
+	darts: Darts;
+	/**
+	 * Per-pixel renderability, stamped by scripts/stamp-hyperbolic-certification.ts. False means
+	 * buildDirichletDomain refuses this tiling (its deck orbit needs developing past the float64 safety
+	 * rim — the big-ℓ tail lands at Rdev ≈ 11 > 10.6) and clients go straight to the 2D developed
+	 * renderer instead of paying the ~0.2–1 s doomed certification attempt. Capability metadata, not
+	 * catalog policy: the tiling itself is real and ships. Absent = untried (legacy file) → attempt.
+	 */
+	certified?: boolean;
+}
+
+/** Developed geometry: what HyperbolicDeveloper.develop() hands back, and what drawDevelopedPatch draws. */
 export interface DevelopedPatch {
 	id: string;
 	name: string;
@@ -18,9 +53,7 @@ export interface DevelopedPatch {
 	vertices: [number, number][];
 	faces: number[][];
 	tiles: number;
-	/** Quotient half-edge structure (the darts) — present on the baked catalogue patches so the client can
-	 *  re-develop the tiling on the fly (fill-to-rim under the view). Absent on the client's own output. */
-	darts?: { rneig: number[]; glue: number[]; lvert: number[]; seed: number };
+	darts?: Darts;
 }
 
 /** Circle orthogonal to the unit circle through disk points a,b, or null for a diameter (a,b,0 collinear). */
@@ -168,13 +201,13 @@ export function drawDevelopedPatch(
 	}
 }
 
-let _cache: Promise<Record<string, DevelopedPatch>> | null = null;
+let _cache: Promise<Record<string, CataloguePatch>> | null = null;
 
-/** Load and index the developed-patch catalogue (public/hyperbolic-developed.json) by id, once. */
-export function loadDevelopedPatches(): Promise<Record<string, DevelopedPatch>> {
+/** Load and index the tiling catalogue (public/hyperbolic-developed.json) by id, once. */
+export function loadDevelopedPatches(): Promise<Record<string, CataloguePatch>> {
 	if (!_cache) {
 		_cache = fetch("/hyperbolic-developed.json")
-			.then((r) => r.json() as Promise<DevelopedPatch[]>)
+			.then((r) => r.json() as Promise<CataloguePatch[]>)
 			.then((arr) => Object.fromEntries(arr.map((p) => [p.id, p])));
 	}
 	return _cache;

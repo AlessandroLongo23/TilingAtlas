@@ -242,7 +242,9 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 							{compactVertexConfig(tiling.family)}
 						</p>
 						<p className="text-[10px] text-fg-muted leading-tight">
-							k={tiling.k} · {TILE_CLASS_LABEL[tileClassOf(tiling)].short}
+							k={tiling.k} ·{" "}
+							{tiling.variants && tiling.variants > 1 ? `${tiling.variant} of ${tiling.variants} · ` : ""}
+							{TILE_CLASS_LABEL[tileClassOf(tiling)].short}
 						</p>
 					</>
 				) : isFreedraw ? (

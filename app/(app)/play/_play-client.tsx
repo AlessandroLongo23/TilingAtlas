@@ -499,6 +499,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			t: "tilingTransition",
 			o: "showVertexOrbits",
 		};
+		// The freedraw view's own trio, shadowing the table above whenever a freedraw pattern is selected.
+		const FREEDRAW_TOGGLES: Record<string, keyof ConfigurationState> = {
+			g: "freedrawScaffold",
+			p: "freedrawLattice",
+			o: "freedrawVertices",
+		};
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			const el = e.target as HTMLElement | null;
@@ -508,12 +514,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// either key swaps the pair. Intercept before the flat toggles so B here means the spherical fill,
 			// not the global Polygon-fill flag (which is hidden in this view).
 			// Freedraw: O toggles ITS orbit dots (freedrawVertices), not the flat canvas's showVertexOrbits.
-			// Same key, same idea — orbits of whatever the view is actually made of. Intercepted before the
-			// TOGGLES table, which is dead here (a freedraw pattern has no tiles for any of it to act on).
-			if (!!selected?.freedraw && (e.key === "o" || e.key === "O")) {
+			// Same key, same idea — orbits of whatever the view is actually made of. G and P do the same for
+			// the scaffold and the period lattice. All three are intercepted before the TOGGLES table, which
+			// is dead here (a freedraw pattern has no tiles for any of it to act on) — so P meaning the
+			// lattice in this view never fights showPolygonPoints.
+			const freedrawField = !!selected?.freedraw ? FREEDRAW_TOGGLES[e.key.toLowerCase()] : undefined;
+			if (freedrawField) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
-				c.set({ freedrawVertices: !c.freedrawVertices });
+				c.set({ [freedrawField]: !c[freedrawField] } as Partial<ConfigurationState>);
 				return;
 			}
 			if (!!selected?.spherical && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {

@@ -75,7 +75,11 @@ export function Pagination({
 	if (totalPages <= 1) return null;
 
 	return (
-		<div className="flex items-center justify-between gap-4 select-none">
+		// `relative` anchors the absolutely-positioned sr-only <label> below to THIS row, not to <html>.
+		// Without a positioned ancestor the label's containing block is the document, so it sits at its
+		// static offset deep inside a scroll pane and stretches <html> that far — a phantom scroll region
+		// of empty space below the content. Owning it here means no caller has to remember the `relative`.
+		<div className="relative flex items-center justify-between gap-4 select-none">
 			<span className="text-xs text-fg-muted tabular-nums whitespace-nowrap">
 				{startItem}–{endItem} of {totalItems}
 			</span>

@@ -227,7 +227,12 @@ function TreeRow({
 				"ta-sticky-rule bg-surface-chrome sticky flex items-center justify-between gap-2 pr-3 text-left cursor-pointer",
 				"hover:bg-surface-sunken dark:hover:bg-surface-overlay transition-colors",
 				"focus:outline-none focus-visible:relative focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
-				depth === 0 ? "pl-3 z-20" : depth === 1 ? "pl-7 z-10" : "pl-11 z-[5]",
+				// Every level sits ABOVE a tile's z-10 selection/hover ring (tile-grid.tsx): the ring and
+				// these headers share one stacking context, so a header at the ring's own z-10 only tied it
+				// and — later in DOM order — the ring won, bleeding its outline up over the pinned k-row. Keep
+				// the depth order (class over grid over k) but start it past 10. The scroller isolates this
+				// context (catalogue-tab.tsx), so these values never reach the canvas overlay buttons.
+				depth === 0 ? "pl-3 z-40" : depth === 1 ? "pl-7 z-30" : "pl-11 z-20",
 			)}
 			style={{ height: ROW_H, top: depth === 0 ? 0 : depth === 1 ? NESTED_TOP : NESTED_TOP * 2 }}
 		>

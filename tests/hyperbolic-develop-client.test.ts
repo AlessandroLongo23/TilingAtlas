@@ -13,6 +13,17 @@ const atlas: ShippedPatch[] = JSON.parse(
 	readFileSync(join(__dirname, "..", "public", "hyperbolic-developed.json"), "utf8"),
 );
 
+/** Reference geometry from the PYTHON developer (tools/ctrnact-oracle/develop_hyperbolic.py), frozen so
+ *  the cross-implementation check survives the catalogue dropping its baked vertices/faces. */
+const golden: ShippedPatch[] = JSON.parse(
+	readFileSync(join(__dirname, "fixtures", "hyperbolic-golden-patches.json"), "utf8"),
+);
+const goldenById = (id: string) => {
+	const p = golden.find((x) => x.id === id);
+	if (!p) throw new Error(`golden ${id} missing`);
+	return p;
+};
+
 const byId = (id: string) => {
 	const p = atlas.find((x) => x.id === id);
 	if (!p) throw new Error(`patch ${id} not in atlas`);
@@ -107,9 +118,12 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 		// (2) all inside the disk
 		for (const v of out.vertices) expect(Math.hypot(v[0], v[1])).toBeLessThan(1);
 
-		// (3) central face-size multiset matches the shipped patch (same tiling, rotation/truncation-robust)
-		const shippedVerts = p.vertices as [number, number][];
-		expect(centralFaceSig(out.vertices, out.faces)).toBe(centralFaceSig(shippedVerts, p.faces));
+		// (3) central face-size multiset matches the PYTHON developer's patch for the same tiling
+		// (rotation/truncation-robust) — the cross-implementation check.
+		const ref = goldenById(id);
+		expect(centralFaceSig(out.vertices, out.faces)).toBe(
+			centralFaceSig(ref.vertices as [number, number][], ref.faces),
+		);
 	});
 
 	it("fills a wider disk when asked (fill-to-rim: more tiles at a larger bound)", () => {

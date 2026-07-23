@@ -31,8 +31,10 @@ interface BakedPatch {
 	faces: number[][];
 }
 
+// Baked geometry from the Python developer. The shipped catalogue carries only the quotient darts now
+// (every renderer re-develops from them), so the generator-extraction tests read a frozen fixture.
 const PATCHES: BakedPatch[] = JSON.parse(
-	readFileSync(join(process.cwd(), "public/hyperbolic-developed.json"), "utf8"),
+	readFileSync(join(process.cwd(), "tests/fixtures/hyperbolic-golden-patches.json"), "utf8"),
 );
 const byId = (id: string) => {
 	const p = PATCHES.find((x) => x.id === id);

@@ -1,0 +1,45 @@
+{
+  "name": "hyp-p7k2",
+  "D": 1680,
+  "closure": "negative-defect",
+  "maxValence": 6,
+  "comment": "hyp-p7 palette ({3..8}) run at k<=2 \u2014 closes the \u00a780 scope gap (k=1 was {3..8} but k=2 only {3,4,6})",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 5,
+      "name": "5",
+      "famchar": "5"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 7,
+      "name": "7",
+      "famchar": "7"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    }
+  ]
+}

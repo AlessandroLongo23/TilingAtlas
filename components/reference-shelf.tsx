@@ -321,14 +321,14 @@ function serializeView(v: ViewState): string {
 const META = "text-[11px] font-normal leading-snug text-fg-muted";
 
 // Structure sits on the wall's mortar; content sits on its tiles. A group heading and a sub-label are
-// structure, so they carry NO cell fill — the line colour shows through and the seam between two
-// groups widens into the band that names the next one. Separation and heading become one gesture, and
-// every diamond stays where it was: they're born at four rounded cell corners meeting, which only ever
-// happens inside the option grids, and those are untouched.
+// structure, but they carry the SAME chrome fill the option cells use (AL, 2026-07-23) — the title band
+// reads as the lighter gray of an unselected tab, not the darker line colour, so a heading is flush with
+// the controls it names rather than dropping into the seam. The 1px wall gaps above and below still rule
+// each band off; every diamond stays where it was, born only where four rounded option-cell corners meet.
 
-// A caption row inside a filter group — a thinner echo of the group heading, same mortar band.
+// A caption row inside a filter group — a thinner echo of the group heading, same chrome band.
 function SubLabel({ children }: { children: ReactNode }) {
-	return <span className={cn(META, "px-3 pt-2.5 pb-1.5 font-medium")}>{children}</span>;
+	return <span className={cn("bg-surface-chrome", META, "px-3 pt-2.5 pb-1.5 font-medium")}>{children}</span>;
 }
 
 // An explanatory line under a group's controls. This one IS content, so it stays a tile.
@@ -348,8 +348,8 @@ function FilterGroup({
 	children: ReactNode;
 }) {
 	return (
-		<section className="flex flex-col gap-px pt-4">
-			<div className="flex items-baseline justify-between gap-2 px-3 pb-2">
+		<section className="flex flex-col gap-px">
+			<div className="bg-surface-chrome flex items-baseline justify-between gap-2 px-3 pt-4 pb-2">
 				<h3 className="text-sm font-semibold tracking-tight text-fg">
 					{title}
 					{summary ? <span className={cn(META, "ml-1.5")}>{summary}</span> : null}
