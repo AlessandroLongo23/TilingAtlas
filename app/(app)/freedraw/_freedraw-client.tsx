@@ -29,11 +29,11 @@ const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 	{ value: "ts", label: "triangles + squares" },
 ];
 
-// k ranges per grid track what the catalogues hold: squares to k=4, triangles and the combined grid
-// to k=3.
+// k ranges per grid track what the catalogues hold: squares to k=5, triangles to k=4, the combined
+// grid to k=3.
 const K_OPTIONS: Record<FreedrawGrid, { value: number; label: string }[]> = {
-	square: [0, 1, 2, 3, 4].map((k) => ({ value: k, label: k ? `k = ${k}` : "all k" })),
-	triangle: [0, 1, 2, 3].map((k) => ({ value: k, label: k ? `k = ${k}` : "all k" })),
+	square: [0, 1, 2, 3, 4, 5].map((k) => ({ value: k, label: k ? `k = ${k}` : "all k" })),
+	triangle: [0, 1, 2, 3, 4].map((k) => ({ value: k, label: k ? `k = ${k}` : "all k" })),
 	ts: [0, 1, 2, 3].map((k) => ({ value: k, label: k ? `k = ${k}` : "all k" })),
 };
 
@@ -73,18 +73,18 @@ const POLYGON_LABEL: Record<RegularKind, string> = { 3: "△ 3", 4: "▢ 4", 6: 
 const FILL_OPTIONS = FILL_MODES.map(({ value, label }) => ({ value, label: label.toLowerCase() }));
 
 // Thumbnails per page. Every mounted thumbnail is a live canvas with a ResizeObserver; the square
-// catalogue is 9268 entries, so the grid HAS to window them — this is the knob.
+// catalogue is 53060 entries (k≤5), so the grid HAS to window them — this is the knob.
 const PAGE_SIZE = 240;
 
 const HEADER: Record<FreedrawGrid, string> = {
 	square:
 		"Periodic edge subsets of the square grid with no dead ends; tiles are whatever faces fall out " +
 		"and may be infinite. k ≤ 3 (13 / 153 / 1254) enumerated independently AND reproduced from " +
-		"Čtrnáct's solver; k = 4 (7848) decoded from his certificates only.",
+		"Čtrnáct's solver; k = 4 (7848) and k = 5 (43792) decoded from his certificates only.",
 	triangle:
 		"The same game on the triangular grid: six edges per vertex, tiles are polyiamonds, strips or " +
-		"sheets. k = 1 (19) verified against an independent enumeration; k = 2 (357) and k = 3 (4683) " +
-		"decoded from Čtrnáct's certificates only.",
+		"sheets. k = 1 (19) verified against an independent enumeration; k = 2 (357), k = 3 (4683) and " +
+		"k = 4 (39662) decoded from Čtrnáct's certificates only.",
 	ts:
 		"The combined triangles-and-squares grid. Records arrive as patches with their face " +
 		"classification pre-baked, since there is no fixed lattice to flood.",
@@ -120,7 +120,9 @@ export function FreedrawClient() {
 				r.ok ? (r.json() as Promise<FreedrawPattern[]>) : Promise.reject(new Error(`HTTP ${r.status}`)),
 			),
 			fetchCatalogue("/freedraw/solutions-k4.json"),
+			fetchCatalogue("/freedraw/solutions-k5.json"),
 			fetchCatalogue("/freedraw/tri-solutions.json"),
+			fetchCatalogue("/freedraw/tri-solutions-k4.json"),
 			fetchCatalogue("/freedraw/ts-solutions-k1.json"),
 			fetchCatalogue("/freedraw/ts-solutions-k2.json"),
 			fetchCatalogue("/freedraw/ts-solutions-k3.json"),

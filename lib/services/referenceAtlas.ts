@@ -587,14 +587,16 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-hyperbolic.json"),
 		bestEffort("/reference-atlas-spherical.json"),
 		// Freedraw is adapted from its own raw catalogues, not a reference-atlas-*.json (see
-		// freedrawToReference). Six files: the verified square k<=3 base, the square k=4 extension,
-		// the triangular-grid catalogue, and the combined-grid (squares + triangles) patches per k —
-		// merged here so /library and /play see one shelf.
+		// freedrawToReference). The verified square k<=3 base, the square k=4/k=5 extensions, the
+		// triangular-grid catalogue (k<=3 plus the k=4 extension), and the combined-grid (squares +
+		// triangles) patches per k — merged here so /library and /play see one shelf.
 		Promise.all(
 			[
 				"/freedraw/solutions.json",
 				"/freedraw/solutions-k4.json",
+				"/freedraw/solutions-k5.json",
 				"/freedraw/tri-solutions.json",
+				"/freedraw/tri-solutions-k4.json",
 				"/freedraw/ts-solutions-k1.json",
 				"/freedraw/ts-solutions-k2.json",
 				"/freedraw/ts-solutions-k3.json",

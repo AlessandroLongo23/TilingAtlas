@@ -181,6 +181,29 @@ wrote ts-solutions-k3.json: 13568 patches, 16.0 MB     (was 19.8 MB)
 5059 + combined 14 718. Verified live on /library (29 045 tilings). 40 freedraw unit tests pass;
 `pnpm build` clean.
 
+## One k higher: square k=5, triangle k=4 (2026-07-23)
+
+AL asked to push each family up one k. The two cheap grids (bitmask format, ~150 B/pattern) went in;
+the combined grid was deferred (its patch format is ~1.2 KB/pattern, so k=4 would be ~150 MB and needs
+a storage rethink first).
+
+| grid | k | certificates | solver | decoded | JSON |
+|---|---|--------------|--------|---------|------|
+| square | 5 | 43 792 | 8.0 s | 43 792/43 792, 0 failed | 7.6 MB |
+| triangle | 4 | 39 662 | 23.0 s | 39 662/39 662, 0 failed | 6.2 MB |
+
+Both are decode-only — the independent enumerator (`fd_enum2.py`) reaches square k≤3 and triangle
+k=1, no further — so they ship as certification "candidate". `develop_freedraw.py` developed every
+certificate with zero block-level failures (the "multiple table variants" are mirror-axis
+disambiguations that converge to one canonical form; no duplicates). Files:
+`public/freedraw/solutions-k5.json` (ids `fd-5-00001…`) and `tri-solutions-k4.json` (`fdt-4-00001…`,
+each record tagged `grid: "triangle"`).
+
+Freedraw across the atlas is now **112 499** patterns: square 53 060 (k≤5), triangle 44 721 (k≤4),
+combined 14 718 (k≤3). Both new slices render correctly on /freedraw (square k=5 on the unit grid,
+triangle k=4 on the 60° lattice with polyiamond tiles); /library and /play pick them up through the
+shared loader, and the k-chips derive from the data so k=5/k=4 appear automatically.
+
 ## Agreement with the zip Marek sent
 
 `solver_squares_edges.zip` contains k ≤ 3 only: 13 + 153 + 1254 = 1420.
