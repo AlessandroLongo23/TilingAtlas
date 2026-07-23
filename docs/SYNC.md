@@ -1389,3 +1389,12 @@ entirely in the A2A3A4 alphabet; pure slices and the 4/7/17 digon-free anchor ar
 fingerprint diff shows the fix is strictly subtractive, NOT deduplication — which also retires §81's
 "all distinct" as evidence, since patch JSON is labelling-dependent. No canonical form exists for
 combined-grid patches yet: that catalogue cannot self-check for duplicates. NOTES §82.
+
+**2026-07-23 — CC.** Freedraw goes spherical: Marek shipped solvers for all five Platonic solids as
+freedraw bases. Ran them, then re-enumerated each independently on the polyhedron (symmetry group as
+vertex perms; brute-force the E≤12 solids, non-identity elements for the two E=30). Both engines agree
+to the unit at every k incl. the achiral/chiral split — tetra 5, octa 49, cube 17, dodeca 3654, icosa
+1,588,329 (k=12 = 1,569,679, all chiral). Shipped the render foundation (`icoFreedraw.ts`,
+`ico-freedraw-canvas.tsx`, `public/freedraw-ico/`) + a theory library (/theory is now an index) with a
+freedraw method page in AL's voice (`d58c8fd`, `cad5955`). Detail: `experiments/results/freedraw-ico-run-2026-07-23.md`.
+NB: the /freedraw spherical UI integration is in flight in the working tree (not mine, uncommitted).
