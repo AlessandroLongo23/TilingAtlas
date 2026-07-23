@@ -43,5 +43,5 @@ export default async function IslamicTheoryPage() {
 	const [content, cells] = await Promise.all([loadTheoryMarkdown(), loadIslamicCells()]);
 	const flatToc = extractTableOfContents(content);
 	const sections = structureTableOfContents(flatToc);
-	return <TheoryClient content={content} sections={sections} cells={cells} />;
+	return <TheoryClient content={content} sections={sections} cells={cells} currentSlug="islamic" />;
 }

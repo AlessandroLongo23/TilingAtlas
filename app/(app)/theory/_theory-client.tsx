@@ -5,6 +5,7 @@ import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Components } from "react-markdown";
 import { PageSidebar } from "@/components/page-sidebar";
 import { TheorySidebar, type TheorySection } from "@/components/theory-sidebar";
+import { TheoryArticleNav } from "@/components/theory-article-nav";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { InteractiveTilingPreviewCard, CARD_LAYOUT_SPRING } from "@/components/interactive-tiling-preview-card";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -14,6 +15,8 @@ interface TheoryClientProps {
 	sections: TheorySection[];
 	/** Atlas id -> render cell for the tilings the markdown embeds via `<tiling-card tiling="…">`. */
 	cells: Record<string, TranslationalCellData>;
+	/** The current article's slug, for the sidebar article switcher. */
+	currentSlug: string;
 }
 
 // Props rehype-raw hands the custom markdown elements (lowercase HTML attributes pass through as-is).
@@ -67,7 +70,7 @@ function AnimatedCardGrid({ cols, children }: { cols?: string; children?: React.
 	);
 }
 
-export function TheoryClient({ content, sections, cells }: TheoryClientProps) {
+export function TheoryClient({ content, sections, cells, currentSlug }: TheoryClientProps) {
 	const [targetSection, setTargetSection] = useState("");
 	const [activeSection, setActiveSection] = useState("");
 	const progressRef = useRef<HTMLDivElement | null>(null);
@@ -106,12 +109,19 @@ export function TheoryClient({ content, sections, cells }: TheoryClientProps) {
 
 	return (
 		<div className="flex h-full min-h-0 w-full overflow-hidden">
-			<PageSidebar>
-				<TheorySidebar
-					sections={sections}
-					activeSection={activeSection}
-					onSectionSelect={setTargetSection}
-				/>
+			<PageSidebar scrollable={false}>
+				<div className="flex h-full min-h-0 flex-col">
+					<div className="shrink-0 border-b border-line-subtle pb-2">
+						<TheoryArticleNav currentSlug={currentSlug} />
+					</div>
+					<div className="min-h-0 flex-1">
+						<TheorySidebar
+							sections={sections}
+							activeSection={activeSection}
+							onSectionSelect={setTargetSection}
+						/>
+					</div>
+				</div>
 			</PageSidebar>
 
 			<div className="w-full min-w-0 flex flex-col overflow-hidden">

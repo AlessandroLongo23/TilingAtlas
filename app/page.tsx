@@ -56,15 +56,15 @@ export default async function HomePage() {
 					<span aria-hidden="true" className="mx-1">
 						·
 					</span>
-					<Link href="/theory#tilings-vertices-and-notation" className="text-fg-secondary hover:text-fg transition-colors">
+					<Link href="/theory/uniform-tilings#tilings-vertices-and-notation" className="text-fg-secondary hover:text-fg transition-colors">
 						What is a tiling?
 					</Link>
 					<span aria-hidden="true">·</span>
-					<Link href="/theory#the-three-regular-tilings" className="text-fg-secondary hover:text-fg transition-colors">
+					<Link href="/theory/uniform-tilings#the-three-regular-tilings" className="text-fg-secondary hover:text-fg transition-colors">
 						The eleven uniform tilings
 					</Link>
 					<span aria-hidden="true">·</span>
-					<Link href="/theory#why-exactly-eleven" className="text-fg-secondary hover:text-fg transition-colors">
+					<Link href="/theory/uniform-tilings#why-exactly-eleven" className="text-fg-secondary hover:text-fg transition-colors">
 						Why exactly eleven?
 					</Link>
 				</p>
