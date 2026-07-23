@@ -1398,3 +1398,16 @@ to the unit at every k incl. the achiral/chiral split — tetra 5, octa 49, cube
 `ico-freedraw-canvas.tsx`, `public/freedraw-ico/`) + a theory library (/theory is now an index) with a
 freedraw method page in AL's voice (`d58c8fd`, `cad5955`). Detail: `experiments/results/freedraw-ico-run-2026-07-23.md`.
 NB: the /freedraw spherical UI integration is in flight in the working tree (not mine, uncommitted).
+
+**2026-07-23 — CC.** Hyperbolic shelf rebuilt on exact identity and SHIPPED: 6345 tilings (1555 k=1,
+4790 k=2; was 59). Identity/k = minimal D-symbol from block darts at the forced ℓ, validated by the
+Euclidean collapse 11→10 / 24→20 = A068599; `minimal_image` exponential blowup fixed (38 s → 1 ms).
+Renderability stamped per patch (3265 per-pixel, 3080 on the 2D path — float64 rim cap, not math);
+(k,p,v) sweep harness fills `experiments/results/hyp-sweep/` with per-cell complete enumerations.
+Detail: NOTES §82. NB: several suites fail on clean HEAD (pre-existing/freedraw-in-flight), not shelf.
+
+**2026-07-23 — CC (2).** "Add them ALL" (AL): shelf now **28,453 hyperbolic tilings** (12,168 k=1,
+16,285 k=2) — union of all completed (k,p,v) sweep boxes, bridged via six maximal-cell reruns with
+darts. Fixed AL's ghost-card /library bug: 12 duplicate ids from the exporter (dup React keys corrupt
+reconciliation); two id guards + `tests/atlas-id-unique.test.ts`. Gate + stamp parallelised (100 s /
+21 min). 63/63 tests, build clean. Detail: NOTES §83. Timeout cells + k≥3 remain unenumerated.

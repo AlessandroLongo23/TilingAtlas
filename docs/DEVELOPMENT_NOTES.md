@@ -5050,3 +5050,219 @@ external evidence remains the 4/7/17 digon-free anchor. That is the open gap on 
 should close before any combined-grid count is quoted anywhere citable.
 
 Log: `experiments/results/freedraw-pt-run-2026-07-22.md` (`553bec7`).
+
+## §83 — The landing page dragged all of public/ into the Vercel function (2026-07-23)
+
+The Vercel deploy failed: the root serverless function ("index") measured 250.12 MB uncompressed,
+over the 250 MB limit. The whole of `public/` is 255 MB, and the function was almost exactly that —
+not a coincidence. The trace file `.next/server/app/page.js.nft.json` listed 127 `public/` files
+totalling 254.3 MB, including the 74 MB k10 atlas shard, 34 MB k9, 25 MB vertex-configs — none of
+which the page reads.
+
+Root cause: `lib/services/landingData.ts` read the eager atlas set with a *variable* path,
+`readFile(path.join(dir, name))` over a `.map`. `@vercel/nft` cannot constant-fold `name`, so it
+falls back to globbing the entire `public/**` tree into the function. The control case proves the
+mechanism: the theory pages read a *literal* path (`path.join(process.cwd(), "public",
+"reference-atlas.json")`) and their traces carry exactly 2 public refs each. Constant path → one
+file; variable path → the whole directory.
+
+The band-aid Vercel suggests (`VERCEL_SUPPORT_LARGE_FUNCTIONS=1`) ships a 254 MB Lambda and was
+rejected — cold starts, and no headroom for the next shard. There was also a second, independent
+cost hiding behind the first: the page is `force-dynamic`, so it read and parsed ~23 MB of atlas
+JSON on *every* homepage request, only to compute three counts and pick ~37 render cells.
+
+Fix (both problems at once). A build-time generator, `scripts/gen-landing-data.ts`, reads the atlas
+once and bakes `lib/services/landing-data.generated.json`: the geometry counts, a capped
+deterministic seed sample of drawable Euclidean specimens (24; see §84 for why only a seed), the 11
+uniform picks, and the fixed play/hyperbolic/spherical thumbnails. The runtime loader imports that file (so it is bundled with the
+function, never read from disk) and only shuffles the pool per request, preserving the
+fresh-specimen-per-request behaviour. Pure logic moved to `lib/services/landing-core.ts` so the
+generator and the runtime share it without a circular import back onto the generated output.
+`pnpm build` runs the generator first (explicit `&&` chain, not a `prebuild` hook — pnpm 10 leaves
+`enable-pre-post-scripts` unset). A belt-and-suspenders guard in `next.config.ts`,
+`outputFileTracingExcludes: { "*": ["public/**"] }`, keeps any future variable-path read from
+re-globbing the tree; it is safe because nothing reads `public/` inside a runtime function (theory
+pages read it at build, statically), and `public/` static assets are served from the CDN regardless
+of the function trace. Kept `native-engine/**` out of the exclude list — `nativeFill.ts` execs a
+binary from there via `process.cwd()`, though only on the opt-in legacy `PeriodSolver` path.
+
+Verified: post-build, the root function traces 0 public files (0 MB, was 254.3 MB), 0 across every
+function trace; the 228 KB payload is inlined in the server chunk and does not leak into the client
+bundle; the landing page still renders live specimens. Tests: `tests/landing-core.test.ts` (new,
+payload logic on a synthetic atlas) + `tests/landing-data.test.ts` (unchanged contract, real files).
+
+## §82 — The D-symbol shelf ships: 6345 hyperbolic tilings, identity anchored to A068599 (2026-07-23)
+
+§80 ended with the identity instrument named but unproven and the shelf held at 59. Today the
+instrument was finished, validated against the one external truth available, and the shelf rebuilt.
+
+**Three fixes made `dsymbol_from_darts.analyse` production-grade.** (1) `minimal_image`'s refinement
+loop nested signature tuples 4× deeper per round — exponential in rounds; the timing-out symbol
+(`hyp-k2-3-3-3-4-4-4__3-3-3-4-4-4`, 38 s) computes in 1 ms once each round re-indexes classes to dense
+ints. (2) Valences now come from geometry: one lap of a quotient cycle sweeps its interior-angle sum at
+the forced ℓ, and the wrap count is 2π over that. The old orbit-config string matching was AMBIGUOUS
+exactly when a k≥2 block carries two orbits whose cycles are rotations of each other with different
+wraps (the 6.4.6.4 / 6.4.6.4.6.4 trap in a new coat); the angle route cannot be. (3) `analyse` returns
+per-orbit vertex figures read back through the quotient projection, so the exporter never re-derives
+them from patches.
+
+**The validation §80 demanded: the same code path, run where the answer is known.** `interior_angle(p,
+l=0)` degenerates to the Euclidean angle, so the whole identity stack runs on Euclidean blocks
+unchanged. The regular palette's RAW pre-pruning solver output — many presentations per tiling —
+collapses to exactly 10 at k=1 and 20 at k=2: A068599 octagon-blind, no collisions, no invalids. That
+is the collapse property (different presentations of one tiling merging) that root-independence and
+depth-consistency never tested. Also verified: all 59 shipped blocks give 59 distinct keys with k
+matching their labels, and every same-key class shares one edge length (6361 classes, 0 conflicts).
+
+**The exporter now decides identity before geometry.** Dedup is a dict on the canonical key; the gate
+develops one candidate per CLASS, not per block (101 s for 6337 classes, then 4 s warm). Two more
+size-filters-in-validity-clothing fell out of its first run: the 24-face floor killed {7,6} (cells of
+edge 2.39 close 18 faces at boundR 0.995 — the §80 bug one ring further out; floor now 4), and the 6°
+empty-arc cap tripped on cell-sized rim gaps of octagon-heavy tilings — re-measured at 0.998 those arcs
+are exactly 0.0° while a genuine hole would persist at any depth (verified on 4 of the 126 affected
+classes; the gate now retries arc-only failures deeper). After both: zero classes with a valid symbol
+fail to develop, which is what Dress realization predicts. A structural invariant is asserted in the
+report: minimal image only MERGES, so a k≤2 block can never yield k>2 — every k=4 entry in the reverted
+2595 run was a ball-code fiction.
+
+**Shipped (AL /goal directive): 6345 tilings — 1555 k=1, 4790 k=2, 59 legacy ids preserved, variants
+numbered per figure.** Scope, stated plainly: k=1 complete over {3..8} valence ≤ 6, k=2 complete over
+{3,4,6} valence ≤ 6, regular families to valence 8 (hyp-r*). The k=2 palette asymmetry stands — the
+full-palette run (hyp-p7k2) was aborted by AL at ~4 h CPU mid-solve — and is now MEASURED rather than
+guessed: `hyp_sweep.py` fills a (k, p, v) cube cell by cell, each cell a complete enumeration with
+counts by true k, per-tiling records and phase timings (`experiments/results/hyp-sweep/`). The k=2
+column grows ~3-4× per +1 valence; k2/k1 runs 5-37×, so the Euclidean 11→20 intuition does not
+transfer to H².
+
+**Renderability is metadata, not catalog policy.** buildDirichletDomain refuses 3080 of 6345 — all one
+reason: big-ℓ tilings need the deck orbit developed past tanh(Rdev/2) > 0.99995 (Rdev ≈ 11 > 10.6),
+where float64 Poincaré positions collide in the 1e-6 dedup grid. `scripts/stamp-hyperbolic-
+certification.ts` stamps `certified` per patch (3265 true / 3080 false, 1057 s); stamped-false patches
+skip the doomed ~0.2–1 s attempt and draw via the 2D developed renderer. The /play canvas re-mounts
+between webgl2 and 2d per patch (`key={use2d}` — one canvas can never yield both contexts). Playwright
+caught the bug the first wiring had: a RUNTIME certification failure flipped to 2D, the reconciliation
+read `certified === undefined`, flipped back, and oscillated — blank canvas forever; fixed by
+remembering runtime failures per patch id. Both paths verified visually on /play (hyp-3-6-4-6 per-pixel,
+hyp-3-3-8-3-8-8 2D) and /library shows 6345 with correct "1 of 2" variant chips on 3⁴.4².
+
+**Tests at shelf scale.** The three suites that iterated the whole atlas per patch (dirichlet, reduce,
+develop-client — 18+ min at 6345) now check a seeded deterministic sample (`tests/hyperbolic-sample.ts`)
+plus stamp honesty in both directions; exhaustive certification lives in the stamp script. Caps
+re-measured: max gens 128, max RD 3.77 among certified (test caps 160 / 4.0). Triage note: hue-ring,
+figure-emitters, playUrlState, dsym-generator, star-general-path, islamic-gate and the two
+oracle-symmetry suites all fail on a CLEAN HEAD worktree — pre-existing or AL's in-flight freedraw
+work, not the shelf.
+
+**Open.** (1) A rim-safe (matrix-keyed) Dirichlet developer would lift the 0.99995 cap and move the
+3080 to the per-pixel path. (2) Sweep cells store figures/ℓ/key-hash but NOT darts, so promoting a
+sweep cell to the shelf still means re-running its pipeline; store darts to make cells promotable.
+(3) Timed-out sweep cells (first: k2-p5-v8 at 500k+ raw blocks) need selective reruns with bigger caps.
+(4) The k=3 layer of the cube is queued but its big cells will mostly cap out at 900 s.
+
+## §84 — Every tiling can reach the banner without shipping 13.5 MB of cells (2026-07-23)
+
+(Follows §83. Section numbering collided with a concurrent D-symbol entry that reused §82 — left as
+found, append-only.) §83's fix baked a capped pool into the function. AL pushed back: is there really
+no way to give *every* tiling a chance in the hero banner, not just a per-deploy sample? There is —
+the cap conflated two costs that differ by 500×. Choosing *which* of 4,596 Euclidean tilings to show
+needs only an id list: 274 KB raw, 25 KB gzipped, trivially shippable. Drawing them needs their render
+cells: 13.5 MB, which is exactly what must stay out of the function. Baking whole cells into the pool
+dragged "cheap to pick" down to "expensive to ship," so I capped it. Separate the two and the cap
+dissolves.
+
+`scripts/gen-landing-data.ts` now also emits, into public/ (static, CDN-served, excluded from every
+function trace): `hero-index.json`, the ids of all 4,596 drawable Euclidean tilings; and
+`hero-cells/<id>.json`, one self-contained specimen (~3 KB) per id (4,596 files, ~23 MB, regenerated
+each build, gitignored). The bundled payload keeps only a 24-specimen seed pool for the instant first
+paint. `components/landing/hero-rotator.tsx` renders from the seed pool immediately, fetches the index
+once, then keeps a 3-deep lookahead queue warm by lazy-fetching random cells; the rotation and shuffle
+consume the queue. Missing files (dev before a build) fail quietly and the hero stays on the seed pool.
+The page stays force-dynamic; first paint is server-rendered from the seed, so no LCP or no-JS
+regression.
+
+Verified: post-build the root function still traces 0 public files; a Playwright drive of 30 shuffles
+showed 14 of 15 distinct caption ids coming from beyond the 24-id seed pool (ctrnact, composable,
+tet-ctrnact, plain t#### all appeared), and a fresh page load surfaced a k=4 d-ctrnact decomposition
+tiling — proof the full atlas is reachable, not just the baked sample.
+
+## §83 — "Add them ALL": 28,453 tilings, and the ghost-card bug that found an id collision (2026-07-23)
+
+AL's directive after seeing the sweep diff (22,108 tilings in completed cells absent from the 6345
+shelf): ship everything. Done the same afternoon: **28,453 hyperbolic tilings live on /library + /play
+(12,168 k=1, 16,285 k=2)** — the union of every COMPLETED sweep box, bridged by re-running the six
+maximal cells with darts kept (k1: p8v7, p7v8; k2: p4v8, p5v7, p6v6, p8v5 — the frontier of completed
+cells covers the union; ~7 min in parallel). Machinery that made it an afternoon: the exporter gate
+fans uncached measurements over a process pool (63 s warm + 37 s gate for 22k new classes, vs ~2 h
+serial), and the certification stamp runs 8 slices (21 min; 14,106 per-pixel / 14,347 on the 2D path —
+same single cause, the float64 rim cap). 63/63 tests, build clean, both pages verified at scale.
+
+**The bug AL caught by eye: ghost hyperbolic cards stuck on other geometry facets in /library.** Repro:
+27 grid children for a 25-item page, ghosts surviving pagination; console: React "two children with the
+same key". The 6345 export had shipped 12 DUPLICATE ids — the exporter's suffix logic guarded new-vs-new
+collisions only, so a new tiling sharing a figure with a legacy one and sorting earlier (smaller ℓ)
+claimed the bare `hyp-<figure>` id that the legacy entry then reclaimed. Duplicate keys corrupt React
+reconciliation and orphan card DOM across filter switches — the data bug WAS the UI bug. Two guards now:
+every shipped id is reserved up front (also: a retired id is never recycled to a different tiling — deep
+links), and a shipped id is handed back at most once per run even from a poisoned input (the first fix
+alone still re-emitted the 12 from the corrupted shelf — inputs must be assumed dirty).
+`tests/atlas-id-unique.test.ts` asserts id uniqueness within AND across every reference shelf file.
+
+**Scope now.** Complete boxes only, honestly stated: all k≤2 tilings over {3..p}×valence≤v for every
+completed sweep cell — the frontier being (p8,v7)+(p7,v8) at k=1 and (p4,v8)+(p5,v7)+(p6,v6)+(p8,v5) at
+k=2. NOT included (nothing else is enumerated): the timeout cells k1-p8v8, k2-{p5v8, p6v7, p7v6, p8v6}
+(500k/289k/201k raw blocks at the 900 s cap — each holds thousands more tilings), and all k≥3.
+The sweep resumes in background for the remaining cells; the shelf can absorb any box later via the
+same bridge in one command.
+
+## §85 — Interval sliders for the hyperbolic shelf, and the phantom sidebar scroll (2026-07-23)
+
+AL's ask: filter the /library hyperbolic section by valence, palette and edge length with a
+dual-handle version of the squared range slider, including the tricky coincident-handle rule —
+with min and max on the same value, a press left of them moves the min, right of them moves the
+max, and a press dead-on is ambiguous, so nothing moves until the drag direction resolves it.
+
+**No data work was needed.** Edge length ℓ was already merged onto every hyperbolic entry at load
+(`referenceAtlas` reads it from hyperbolic-developed.json), and valence/palette parse out of the
+family label as maxima over the vertex figures — deliberately the same axes the (k,p,v) sweep
+enumerates by, so a slider's upper bound reads exactly as a sweep cell's (p, v). Cached per id
+(`hyperbolicFacetsOf`); the matcher gets three inclusive-interval fields (`hypValence`,
+`hypPolygon`, `hypEdge`) that exclude non-hyperbolic entries while active, and the shelf round-trips
+them through the URL (`valence=3,5` &c., accepted only under `geo=hyperbolic`).
+
+**The component** (`components/ui/interval-slider.tsx`) shares RangeInput's .ta-track anatomy but
+handles pointers itself — no pair of stacked native inputs can express the tie-break, because the
+top input always eats the press. The decision logic is three pure exported functions (chooseBound /
+applyBound / quantize, tested in tests/interval-slider.test.ts): nearest bound wins, ties stay
+"pending" until 3px of drag pick a direction, bounds clamp coincident instead of crossing. Thumbs
+are ARIA sliders (arrow keys, Home/End). Verified live with Playwright: valence hi-handle 8→4
+filtered 28,453→171 with the URL following, and all four coincident-case gestures behave per spec.
+
+**The trap worth remembering:** .ta-track-travel is a full-track-width box translated by up to its
+own width, and a transformed element's overflow is SCROLLABLE overflow even when invisible and
+pointer-inert — the new sliders gave the whole sidebar a ~230px phantom horizontal scroll (AL
+caught it by eye). Fix at the root: inside .ta-ival the track is an inline-size container and the
+travel is thumb-sized, riding `translateX(f · (100cqi − 12px))`, so it never leaves the track;
+PageSidebar also pins `overflow-x-hidden` now (with only overflow-y set, overflow-x computes to
+auto). RangeInput's own travel still overflows its box — harmless in its current homes, but any
+future .ta-track inside a scroll container wants the same container-unit treatment.
+
+## §86 — Variant grouping on the shelf, and the card learns where it is clickable (2026-07-23)
+
+Follow-on from §85, same afternoon. Most hyperbolic figures carry many tilings (6.8⁴ ; 6.8⁴ alone
+has 138), so browsing page after page of identical labels was noise. A "Group variants" toggle in
+the /library header (hyperbolic geometry only, `grouped=1` in the URL) collapses tilings sharing
+(k, vertex configuration) into ONE card with a ‹ n/N › pager bottom-right; the 28,453 tilings fold
+to 3,280 family cards. Grouping is display-layer only — `filtered` is untouched, pagination just
+runs over card groups — and only hyperbolic entries collapse: a Euclidean "family" is the TILE
+inventory, not the vertex configuration, so grouping it would lump genuinely different tilings.
+Members ride in variant order, NOT id order — the exporter's base-25 suffixes sort "-ba" before
+"-c", which would shuffle 100+-variant families. The pager shows the position within the CURRENT
+members (an interval filter can drop variants mid-family); the sub-line keeps the global "v of V"
+identity. Thumbnail click opens the variant being shown.
+
+Second half (all library cards, AL's ask): only the THUMBNAIL is clickable now. The card was one
+big role=button; the button role moved onto the thumbnail div, the bottom section is inert, and the
+cursor says which is which (pointer vs default). The hover hairline follows: on interactive cards
+it keys on `:has(.card-thumb:hover)`, so hovering the dead bottom section no longer promises a
+click it won't honour. Verified headless: cursor split, bottom click stays on /library, thumbnail
+click navigates to the paged-to variant, toggle round-trips through the URL.

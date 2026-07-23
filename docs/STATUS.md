@@ -20,6 +20,26 @@ Two tiers. Do not mix them.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
 
+## Frontier (2026-07-23) — the hyperbolic shelf on exact identity
+
+- ★★★ **SHIPPED: 28,453 hyperbolic tilings on /library + /play** (was 59 this morning, 6345 midday;
+  AL "Add them ALL" 2026-07-23, NOTES §83). Union of every COMPLETED (k,p,v) sweep box; 12,168 k=1 +
+  16,285 k=2; 14,106 per-pixel / 14,347 2D-path. NOT enumerated: the five timeout cells (k1-p8v8,
+  k2-{p5v8,p6v7,p7v6,p8v6}) and all k≥3. Ghost-card /library bug = 12 duplicate exporter ids →
+  fixed + `tests/atlas-id-unique.test.ts`.
+  Identity/k = canonical minimal Delaney–Dress symbol from the block darts at the forced ℓ
+  (`tools/ctrnact-oracle/dsymbol_from_darts.py`), validated by the Euclidean collapse
+  11→10 / 24→20 = A068599 run through the SAME code at l=0. 59 legacy ids preserved; variants
+  numbered per figure; k exact (1555 k=1, 4790 k=2). Scope stated in NOTES §82: k=1 {3..8}·v≤6,
+  k=2 {3,4,6}·v≤6, regulars to v8. Renderability = stamped metadata (3265 per-pixel, 3080 on the
+  2D path — float64 rim cap, not math).
+- ★★ **(k,p,v) sweep filling** `experiments/results/hyp-sweep/` (AL directive): per-cell COMPLETE
+  enumerations with counts by true k, tiling lists, timings; 900 s cap, resumable. Display layer
+  (per-k tables, count/time-vs-k curves) pending sweep completion.
+- Gates: `pnpm vitest run tests/hyperbolic-*.test.ts` (sampled suites + stamp honesty); the stamp
+  script re-runs after every export. Known-failing on clean HEAD (NOT shelf): hue-ring,
+  figure-emitters, playUrlState, dsym-generator, star-general-path, islamic-gate, oracle-symmetry×2.
+
 ## Frontier (2026-07-11) — the weight-law program
 
 - ★★★ **k=3 CANDIDATE STAGE (C2) CLOSED at the proven pool** (2026-07-11; wording corrected
