@@ -205,7 +205,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 		rotation: 0,
 		dampening: 0.2,
 	},
-	lineWidth: 1,
+	lineWidth: 1.5,
 	hueOffset: 0,
 	speed: 20,
 	parameter: 45,
@@ -245,8 +245,8 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	islamicAnimate: false,
 	islamicStyle: 'plain',
-	islamicBandWidth: 0.25,
-	islamicOutlineWidth: 0.015,
+	islamicBandWidth: 0.3,
+	islamicOutlineWidth: 0.1,
 	islamicChirality: false,
 	islamicCheckerHueA: 45,   // pastel yellow — the hue of the former '#e7dcc0' default at the locked S/L
 	islamicCheckerHueB: 200,  // pastel sky-blue — the hue of the former '#3a4a52' default
@@ -283,7 +283,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	freedraw: false,
 	freedrawFill: "rank",
-	freedrawScaffold: true,
+	freedrawScaffold: false,
 	freedrawVertices: false,
 	freedrawLattice: false,
 

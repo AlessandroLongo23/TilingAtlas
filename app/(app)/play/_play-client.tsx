@@ -29,6 +29,7 @@ import {
 	loadSphericalFreedrawAtlas,
 	referenceToCatalogue,
 	tileClassOf,
+	compareCatalogueDisplayOrder,
 	geometryOf,
 	type Geometry,
 	COMPOSABLE_SHARD_KS,
@@ -218,11 +219,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	const working = refList ?? tilings;
 
-	// Deterministic default (lowest k, then key) so the first paint is stable, not random.
-	const sorted = useMemo(
-		() => [...working].sort((a, b) => a.k - b.k || (a.canonicalKey < b.canonicalKey ? -1 : 1)),
-		[working],
-	);
+	// The catalogue's ONE canonical order — the same class → sub → k → key order the sidebar renders (see
+	// compareCatalogueDisplayOrder). Making this THE order means arrow-key / prev-next browsing steps through
+	// the visible list, and the default first paint + a geometry switch both land on that geometry's first
+	// sidebar row. Deterministic (never random), so the first paint is still stable.
+	const sorted = useMemo(() => [...working].sort(compareCatalogueDisplayOrder), [working]);
 
 	const { selected, setSelected } = useCatalogueSelection(sorted, requestedKey);
 
@@ -238,8 +239,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		for (const t of sorted) c[geometryOf(t)] += 1;
 		return c;
 	}, [sorted]);
-	// The active geometry's slice, in the same (k, key) order — the catalogue list, the nav count, and the
-	// scope for random/prev/next all read this.
+	// The active geometry's slice, in the same class → sub → k → key display order — the catalogue list, the
+	// nav count, and the scope for random/prev/next all read this.
 	const geometryList = useMemo(() => sorted.filter((t) => geometryOf(t) === geometry), [sorted, geometry]);
 	// Dev-only: expose the catalogue selection so the Playwright visual/parity tools (see CLAUDE.md) can
 	// pick specific tilings, e.g. window.__play.select(window.__play.list.find(t => t.star)).
@@ -496,8 +497,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (pick) setSelected(pick);
 	}, [geometryList, selected, setSelected]);
 
-	// Step through the linear `sorted` order (k, then key), wrapping at both ends so arrow-key browsing
-	// never dead-ends. From no selection, forward lands on the first entry and backward on the last.
+	// Step through `geometryList` in its display order (the sidebar's class → sub → k → key), wrapping at both
+	// ends so arrow-key browsing never dead-ends. From no selection, forward lands on the first entry and
+	// backward on the last.
 	const step = useCallback(
 		(dir: -1 | 1) => {
 			if (geometryList.length === 0) return;

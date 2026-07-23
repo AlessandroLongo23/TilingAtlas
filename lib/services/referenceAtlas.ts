@@ -179,6 +179,31 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	spherical: { short: "Spherical", long: "Spherical tilings" },
 };
 
+// The freedraw sub-axis — the one layer between class and k, and ONLY the freedraw class has it: for PLANAR
+// freedraw it is which grid the edge subset decorates, for SPHERICAL freedraw which Platonic solid. Every
+// other class shares the anonymous "" spine (no sub row). `subOf` and this order are the single source of
+// truth for BOTH the sidebar tree (catalogue-list-panel) and the linear browse order below, so the two
+// can't drift. SUB_LABEL (display names) stays in the panel — that's presentation, not ordering.
+export const SUB_ORDER = ["", "square", "triangle", "ts", "tetrahedron", "octahedron", "cube", "dodecahedron", "icosahedron"];
+export function subOf(t: { sphericalFreedraw?: { solid: string }; freedraw?: FreedrawPattern }): string {
+	return t.sphericalFreedraw ? t.sphericalFreedraw.solid : t.freedraw ? gridOf(t.freedraw) : "";
+}
+
+// The catalogue's canonical linear order — the SAME order the /play sidebar renders top-to-bottom, so
+// arrow-key / prev-next browsing steps through the visible list rather than a differently-sorted one.
+// Sort key: tile class (TILE_CLASS_ORDER) → freedraw sub-axis (SUB_ORDER) → k ascending → canonicalKey.
+// The sidebar re-groups this same order into its tree, so within each (class, sub, k) bucket both land on
+// canonicalKey order and agree exactly. Used by /play to sort the browse array feeding both the picker and
+// the stepper, so ←/→ steps through the visible list.
+export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTiling): number {
+	const cls = TILE_CLASS_ORDER.indexOf(tileClassOf(a)) - TILE_CLASS_ORDER.indexOf(tileClassOf(b));
+	if (cls) return cls;
+	const sub = SUB_ORDER.indexOf(subOf(a)) - SUB_ORDER.indexOf(subOf(b));
+	if (sub) return sub;
+	if (a.k !== b.k) return a.k - b.k;
+	return a.canonicalKey < b.canonicalKey ? -1 : a.canonicalKey > b.canonicalKey ? 1 : 0;
+}
+
 // The geometry axis — the /play catalogue's top-level split (Euclidean / hyperbolic / spherical), one
 // level above the tile-class tree. Derived from the render-routing flags the canvases already key on
 // (spherical wins, then developed), NOT the optional `geometry` field (not reliably populated). Same

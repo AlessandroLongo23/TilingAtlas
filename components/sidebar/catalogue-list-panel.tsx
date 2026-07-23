@@ -3,8 +3,7 @@
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
-import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, type TileClass } from "@/lib/services/referenceAtlas";
-import { gridOf, type FreedrawGrid } from "@/lib/freedraw/pattern";
+import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { TileGrid } from "./tile-grid";
@@ -31,11 +30,12 @@ const NESTED_TOP = ROW_H + 1;
 // the same source /library uses — so a new class appears here automatically. A class section only appears
 // when it has tilings.
 
-// The freedraw class alone carries an extra layer between class and k. For PLANAR freedraw (euclidean)
-// it is WHICH GRID the edge subset decorates; for SPHERICAL freedraw it is WHICH SOLID. Both live under
-// the one "freedraw" class, but never in the same list — the catalogue is filtered to one geometry first,
-// so a given list shows only grid subs (euclidean) or only solid subs (spherical). sub = "" is the spine
-// every other class uses (no row rendered for it).
+// The freedraw class alone carries an extra layer between class and k (SUB_ORDER / subOf, shared from
+// referenceAtlas so this tree and the linear browse order can't drift). For PLANAR freedraw (euclidean) it
+// is WHICH GRID the edge subset decorates; for SPHERICAL freedraw WHICH SOLID. Both live under the one
+// "freedraw" class, but never in the same list — the catalogue is filtered to one geometry first, so a given
+// list shows only grid subs (euclidean) or only solid subs (spherical). sub = "" is the spine every other
+// class uses (no row rendered for it). SUB_LABEL below is the display name — presentation, so it stays here.
 const SUB_LABEL: Record<string, string> = {
 	square: "Square grid",
 	triangle: "Triangle grid",
@@ -46,9 +46,6 @@ const SUB_LABEL: Record<string, string> = {
 	dodecahedron: "Dodecahedron",
 	icosahedron: "Icosahedron",
 };
-const SUB_ORDER = ["", "square", "triangle", "ts", "tetrahedron", "octahedron", "cube", "dodecahedron", "icosahedron"];
-const subOf = (t: CatalogueTiling): string =>
-	t.sphericalFreedraw ? t.sphericalFreedraw.solid : t.freedraw ? (gridOf(t.freedraw) as FreedrawGrid) : "";
 
 // Memoized: the catalogue's inputs (items/selectedKey/onSelect) don't change while a sidebar
 // slider is dragged, but its parent TilingsTab subscribes to the WHOLE config store, so it re-renders on
