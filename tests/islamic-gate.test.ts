@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 
 // The gate feeds three UI sites: the sidebar checkbox, the force-off effect, and the `I` shortcut.
-// It must now admit every flat/spherical class and exclude only hyperbolic (its own shader path).
+// It now admits every flat/spherical/hyperbolic class (hyperbolic gained a Hankin-in-absolute-geometry
+// construction on the developed renderer, 54ad1e7) and excludes only freedraw, whose faces are not tiles.
 type GateInput = Parameters<typeof polygonClassSupportsIslamic>[0];
 
 describe("polygonClassSupportsIslamic — open to every flat class", () => {
@@ -17,16 +18,14 @@ describe("polygonClassSupportsIslamic — open to every flat class", () => {
 		["polyomino", { family: "L-tetromino", source: "polyomino" }],
 		["islamic", { family: "girih-bobbin", source: "islamic" }],
 		["spherical", { family: "{4,3}", source: "spherical" }],
+		// Hyperbolic now has a Hankin construction in absolute geometry on the developed renderer.
+		["hyperbolic", { family: "{7,3}", source: "hyperbolic" }],
 	];
 	for (const [name, t] of enabled) {
 		it(`enables Islamic for ${name}`, () => {
 			expect(polygonClassSupportsIslamic(t)).toBe(true);
 		});
 	}
-
-	it("excludes hyperbolic (its developed Poincaré-disk renderer has no Islamic construction)", () => {
-		expect(polygonClassSupportsIslamic({ family: "{7,3}", source: "hyperbolic" })).toBe(false);
-	});
 
 	// The Hankin construction needs a tile: vertices, edge midpoints, a centroid, inward normals. A freedraw
 	// face has none of those — it can be an infinite strip or an annulus — so there is nothing to run it on.

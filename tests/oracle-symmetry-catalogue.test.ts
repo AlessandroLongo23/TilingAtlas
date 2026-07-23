@@ -3,8 +3,13 @@ import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
 import { symmetryFromExactSource } from '@/lib/services/oracleSymmetry';
 import { WALLPAPER_GROUPS, ORBIFOLD_SIGNATURE } from '@/lib/classes/symmetry/types';
 import { _polyAreaForTest } from '@/lib/classes/symmetry/WallpaperSymmetry';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { loadOracle } from '../scripts/oracle-match';
-import ctrnact from '../figures/data/ctrnact.json';
+
+// figures/data/ctrnact.json is ~60 MB; a static JSON `import` exceeds Vite's rust→napi string limit
+// and makes the whole file fail to collect (0 tests). Load it via fs at runtime — node parses it fine.
+const ctrnact = JSON.parse(readFileSync(path.join(process.cwd(), 'figures/data/ctrnact.json'), 'utf8'));
 
 // Fast guard for the browser reconstruction → analyze path: all galebach k=1 (minus t1002) + a slice of
 // ctrnact k=7 must classify to a valid group with an area-exact FD. The full 2722-entry gate is

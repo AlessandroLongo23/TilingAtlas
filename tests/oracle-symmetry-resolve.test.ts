@@ -3,9 +3,14 @@ import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
 import { symmetryFromExactSource } from '@/lib/services/oracleSymmetry';
 import { WALLPAPER_GROUPS } from '@/lib/classes/symmetry/types';
 import type { SerializedCell } from '@/classes/algorithm/cellCodec';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { loadOracle } from '../scripts/oracle-match';
-import ctrnact from '../figures/data/ctrnact.json';
 import catalogue from '../figures/data/catalogue-k1-3.json';
+
+// figures/data/ctrnact.json is ~60 MB; a static JSON `import` exceeds Vite's rust→napi string limit
+// and makes the whole file fail to collect (0 tests). Load it via fs at runtime — node parses it fine.
+const ctrnact = JSON.parse(readFileSync(path.join(process.cwd(), 'figures/data/ctrnact.json'), 'utf8'));
 
 describe('symmetryFromExactSource', () => {
 	const ring = CyclotomicRing.create(24);

@@ -50,8 +50,9 @@ describe("thumbPosition", () => {
 describe("arcPath", () => {
 	it("spans endpoints on the circle with the clockwise sweep flag", () => {
 		const d = arcPath(48, 48, 38, 0, 5);
-		// Starts at the top (48, 10), sweep=1, small arc.
-		expect(d.startsWith("M 48 10 A 38 38 0 0 1 ")).toBe(true);
+		// Starts at the top (48, 10), sweep=1, small arc. Coords are toFixed(3) (quantized to kill an
+		// SSR/client hydration mismatch — see hueRing.ts), so the endpoints read as "48.000 10.000".
+		expect(d.startsWith("M 48.000 10.000 A 38 38 0 0 1 ")).toBe(true);
 	});
 
 	it("uses the large-arc flag past 180°", () => {

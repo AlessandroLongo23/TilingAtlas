@@ -64,8 +64,9 @@ describe('SVG emitter', () => {
 		// 0.25mm at 8mm/edge = 0.03125 model units; marker 0.9mm = 0.1125
 		expect(svg).toContain('stroke-width="0.03125"');
 		expect(svg).toContain('r="0.1125"');
-		// app-consistent fill: polygonHue(4)=33.3° at S=40/B=100 (lib/utils/renderTiling.ts)
-		expect(svg).toContain('<polygon points="0,0 1,0 1,1 0,1" fill="#FFD299"');
+		// app-consistent fill: polygonHue(4)≈44.98° at S=40/B=100 (lib/utils/renderTiling.ts, after the
+		// continuous-hue color refresh in 43fd70a)
+		expect(svg).toContain('<polygon points="0,0 1,0 1,1 0,1" fill="#FFE599"');
 	});
 });
 
