@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { Fragment, useId, useState, type ReactNode } from "react";
 import { OptionWall } from "@/components/ui/option-wall";
 import type { Tri } from "@/lib/freedraw/filter";
 import { cn } from "@/lib/utils/cn";
@@ -13,15 +14,68 @@ export type FreedrawGeometry = "planar" | "spherical";
 // full-width as a row of equal-height COLUMNS, each column a stack of filter groups — one cohesive block,
 // not a scatter of free-floating cards.
 
-// The whole bar: one line-coloured container spanning the full width. A slim strip on top (count / reset),
-// then the columns row underneath.
-export function WallBar({ top, children }: { top?: ReactNode; children: ReactNode }) {
+// The whole bar: one line-coloured container spanning the full width. A slim strip on top — the "Filters"
+// title, the count / reset (`top`), and a chevron — doubles as the collapse toggle. The columns row lives
+// under it and, when collapsed, retracts upward under the strip (grid-rows 1fr→0fr + a small translate/fade)
+// so the list + preview get the room back. Both freedraw arms share this, so both collapse identically.
+export function WallBar({
+	top,
+	title = "Filters",
+	children,
+}: {
+	top?: ReactNode;
+	title?: string;
+	children: ReactNode;
+}) {
+	const [open, setOpen] = useState(true);
+	const toggle = () => setOpen((o) => !o);
+	const bodyId = useId();
 	return (
 		<div className="ta-wall ta-wall-dense flex w-full flex-col gap-px overflow-hidden rounded">
-			{top ? (
-				<div className="ta-wall-cell bg-surface-chrome flex h-8 items-center justify-end gap-3 px-3 text-xs">{top}</div>
-			) : null}
-			<div className="flex items-stretch gap-px">{children}</div>
+			<div className="ta-wall-cell bg-surface-chrome flex h-8 items-center gap-3 px-3 text-xs">
+				<button
+					type="button"
+					onClick={toggle}
+					aria-expanded={open}
+					aria-controls={bodyId}
+					className="cursor-pointer font-semibold uppercase tracking-[0.08em] text-fg-muted transition-colors hover:text-fg-secondary"
+				>
+					{title}
+				</button>
+				<div className="ml-auto flex items-center gap-3">{top}</div>
+				<button
+					type="button"
+					onClick={toggle}
+					aria-expanded={open}
+					aria-controls={bodyId}
+					aria-label={open ? "Collapse filters" : "Expand filters"}
+					className="-mr-1 flex cursor-pointer items-center p-1 text-fg-muted transition-colors hover:text-fg-secondary"
+				>
+					<ChevronDown
+						size={14}
+						className={cn(
+							"transition-transform duration-200 ease-out motion-reduce:transition-none",
+							open ? "" : "-rotate-90",
+						)}
+					/>
+				</button>
+			</div>
+			<div
+				id={bodyId}
+				className="grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none"
+				style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+			>
+				<div className="overflow-hidden">
+					<div
+						className={cn(
+							"flex items-stretch gap-px transition duration-200 ease-out motion-reduce:transition-none",
+							open ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0",
+						)}
+					>
+						{children}
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
