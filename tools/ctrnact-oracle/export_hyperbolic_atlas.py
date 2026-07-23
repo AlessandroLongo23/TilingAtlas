@@ -44,6 +44,7 @@ import argparse
 import hashlib
 import json
 import math
+import multiprocessing as mp
 import os
 import sys
 import time
@@ -198,6 +199,39 @@ def gate(rec, args, cache):
     return False, nfaces, arc
 
 
+def _warm_one(job):
+    """Worker: measure ONE record at one radius and return (content_key, [nfaces, arc, fold]).
+    Runs in a forked process; the parent merges results into the shared gate cache. Only the gate's
+    FIRST stage is warmed — the rare arc-retry happens in the parent afterwards, already cheap."""
+    rec, boundR, min_faces = job
+    deep = deep_develop(rec, boundR)
+    nfaces, arc = len(deep["faces"]), max_empty_arc(deep)
+    fold = fold_excess(deep, rec["edgeLength"])
+    return content_key(rec, boundR), [nfaces, arc, fold]
+
+
+def warm_cache_parallel(recs, args, cache, jobs=None):
+    """Fan the uncached first-stage gate measurements across cores. The gate is pure per-record work
+    (develop + point-in-polygon sampling), so this is embarrassingly parallel; 22k new classes at
+    ~0.3 s each would otherwise be a two-hour single-threaded wall."""
+    todo = [r for r in recs if content_key(r, args.gate_boundr) not in cache]
+    if not todo:
+        return
+    jobs = jobs or max(2, (os.cpu_count() or 4) - 2)
+    print(f"    warming the gate cache: {len(todo)} measurements on {jobs} workers…", flush=True)
+    t0 = time.time()
+    with mp.Pool(jobs) as pool:
+        for i, (ck, m) in enumerate(
+                pool.imap_unordered(_warm_one, ((r, args.gate_boundr, args.min_faces) for r in todo),
+                                    chunksize=16)):
+            cache[ck] = m
+            if i and i % 2000 == 0:
+                el = time.time() - t0
+                print(f"    warm {i}/{len(todo)}  {el:.0f}s elapsed, ~{el / i * (len(todo) - i):.0f}s left",
+                      flush=True)
+    print(f"    warm done in {time.time() - t0:.0f}s", flush=True)
+
+
 def id_for(orbits, k):
     if k == 1:
         return "hyp-" + "-".join(map(str, orbits[0]))
@@ -289,6 +323,11 @@ def main():
     if args.gate_cache and os.path.exists(args.gate_cache):
         cache = json.load(open(args.gate_cache))
         cache = {k: v for k, v in cache.items() if isinstance(v, list)}   # drop the old boolean format
+    # Warm the cache for each class's FIRST candidate in parallel; the sequential loop below then
+    # mostly reads the cache. Fallback candidates (a class whose best rec fails the gate) stay cold —
+    # empirically that set is empty.
+    warm_cache_parallel([sorted(recs, key=lambda r: -len(r["faces"]))[0] for recs in kept.values()],
+                        args, cache)
     tilings, gate_failed = [], []
     t0 = time.time()
     for i, (key, recs) in enumerate(sorted(kept.items())):
@@ -330,7 +369,13 @@ def main():
             shipped_id_by_key[ident["key"]] = p["id"]
 
     out_patches, out_entries, matched = [], [], set()
-    used_ids = set() if args.rebuild else {p["id"] for p in developed}
+    # EVERY shipped id is reserved up front, in BOTH modes. Without this, a NEW tiling that shares a
+    # vertex figure with a shipped one and sorts earlier (smaller ℓ) claims the bare `hyp-<figure>` id,
+    # and the shipped tiling then reclaims the same id — 12 duplicate ids shipped on 2026-07-23, and
+    # React's duplicate-key corruption stranded ghost cards across /library facet switches (AL repro).
+    # A shipped id also must never be RECYCLED to a different tiling: /play deep links point at it.
+    used_ids = {p["id"] for p in developed}
+    handed_back = set()                     # shipped ids already given back THIS run (one owner each)
     rows = []
     withheld = [r for r in tilings
                 if r["_id"]["k"] > args.max_k and r["_id"]["key"] not in shipped_id_by_key]
@@ -341,8 +386,14 @@ def main():
         if ident["key"] in withheld_keys:
             continue
         prev_id = shipped_id_by_key.get(ident["key"])
+        if prev_id is not None and prev_id in handed_back:
+            # A poisoned input (the 2026-07-23 duplicate-id shelf) can map TWO distinct tilings' keys
+            # to one shipped id. The first claimant in sort order keeps it; this one gets a fresh
+            # suffixed id — never re-emit a duplicate, even when the input carries one.
+            prev_id = None
         if prev_id is not None:
             matched.add(prev_id)
+            handed_back.add(prev_id)
             if not args.rebuild:
                 continue                                   # append mode: already shipped, nothing to do
             pid = prev_id                                  # rebuild: hand the tiling back its id
@@ -428,7 +479,7 @@ def main():
     else:
         patches, entries = developed + out_patches, reference + out_entries
     json.dump(patches, open(args.developed, "w"), ensure_ascii=False)
-    json.dump(entries, open(args.reference, "w"), ensure_ascii=False, indent=1)
+    json.dump(entries, open(args.reference, "w"), ensure_ascii=False)   # compact: ~20 % off a 25 MB file
     print(f"\nwrote {args.developed} ({len(patches)} patches)")
     print(f"wrote {args.reference} ({len(entries)} entries)")
 

@@ -1,0 +1,33 @@
+{
+  "name": "hyp-s-p6v7",
+  "D": 120,
+  "closure": "negative-defect",
+  "maxValence": 7,
+  "comment": "sweep cell palette: regular {3..6}, valence <= 7 (hyp_sweep.py)",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 5,
+      "name": "5",
+      "famchar": "5"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    }
+  ]
+}

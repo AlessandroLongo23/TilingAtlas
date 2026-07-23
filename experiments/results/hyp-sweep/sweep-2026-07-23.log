@@ -1,0 +1,139 @@
+[13:30:12] sweep start: 108 cells (k in [1, 2, 3], p in [3, 4, 5, 6, 7, 8], v in [3, 4, 5, 6, 7, 8]), 900s cap per cell -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/hyp-sweep
+[13:30:15] [1/108] k=1 p=3 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.1s prune 0.1s count 0.0s]  (0.0 min total)
+[13:30:17] [2/108] k=1 p=3 v=4: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.1s prune 0.2s count 0.0s]  (0.1 min total)
+[13:30:20] [3/108] k=1 p=4 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.1s prune 0.1s count 0.0s]  (0.1 min total)
+[13:30:23] [4/108] k=1 p=3 v=5: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.2 min total)
+[13:30:25] [5/108] k=1 p=4 v=4: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.2s prune 0.1s count 0.0s]  (0.2 min total)
+[13:30:28] [6/108] k=1 p=5 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.3 min total)
+[13:30:31] [7/108] k=1 p=3 v=6: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.2s prune 0.3s count 0.0s]  (0.3 min total)
+[13:30:34] [8/108] k=1 p=4 v=5: 4 tilings (by k: {'1': 4}) from 4 pruned / 5 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.4 min total)
+[13:30:36] [9/108] k=1 p=5 v=4: 3 tilings (by k: {'1': 3}) from 3 pruned / 3 raw  [build 2s solve 0.1s prune 0.1s count 0.0s]  (0.4 min total)
+[13:30:39] [10/108] k=1 p=6 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.5 min total)
+[13:30:42] [11/108] k=1 p=3 v=7: 1 tilings (by k: {'1': 1}) from 1 pruned / 1 raw  [build 3s solve 0.2s prune 0.2s count 0.0s]  (0.5 min total)
+[13:30:45] [12/108] k=1 p=4 v=6: 21 tilings (by k: {'1': 21}) from 21 pruned / 27 raw  [build 3s solve 0.2s prune 0.2s count 0.0s]  (0.6 min total)
+[13:30:48] [13/108] k=1 p=5 v=5: 13 tilings (by k: {'1': 13}) from 13 pruned / 15 raw  [build 3s solve 0.2s prune 0.2s count 0.0s]  (0.6 min total)
+[13:30:51] [14/108] k=1 p=6 v=4: 22 tilings (by k: {'1': 22}) from 22 pruned / 26 raw  [build 2s solve 0.2s prune 0.3s count 0.0s]  (0.7 min total)
+[13:30:54] [15/108] k=1 p=7 v=3: 2 tilings (by k: {'1': 2}) from 2 pruned / 2 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.7 min total)
+[13:30:57] [16/108] k=1 p=3 v=8: 2 tilings (by k: {'1': 2}) from 2 pruned / 2 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.8 min total)
+[13:31:00] [17/108] k=1 p=4 v=7: 63 tilings (by k: {'1': 63}) from 63 pruned / 90 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.8 min total)
+[13:31:03] [18/108] k=1 p=5 v=6: 62 tilings (by k: {'1': 62}) from 62 pruned / 78 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (0.8 min total)
+[13:31:06] [19/108] k=1 p=6 v=5: 85 tilings (by k: {'1': 85}) from 85 pruned / 112 raw  [build 2s solve 0.3s prune 0.2s count 0.0s]  (0.9 min total)
+[13:31:09] [20/108] k=1 p=7 v=4: 39 tilings (by k: {'1': 39}) from 39 pruned / 44 raw  [build 2s solve 0.2s prune 0.3s count 0.0s]  (0.9 min total)
+[13:31:12] [21/108] k=1 p=8 v=3: 7 tilings (by k: {'1': 7}) from 7 pruned / 7 raw  [build 2s solve 0.2s prune 0.2s count 0.0s]  (1.0 min total)
+[13:31:15] [22/108] k=1 p=4 v=8: 176 tilings (by k: {'1': 176}) from 176 pruned / 262 raw  [build 2s solve 0.2s prune 0.2s count 0.1s]  (1.0 min total)
+[13:31:18] [23/108] k=1 p=5 v=7: 187 tilings (by k: {'1': 187}) from 187 pruned / 268 raw  [build 2s solve 0.3s prune 0.3s count 0.1s]  (1.1 min total)
+[13:31:21] [24/108] k=1 p=6 v=6: 338 tilings (by k: {'1': 338}) from 338 pruned / 453 raw  [build 3s solve 0.3s prune 0.2s count 0.1s]  (1.2 min total)
+[13:31:24] [25/108] k=1 p=7 v=5: 126 tilings (by k: {'1': 126}) from 126 pruned / 159 raw  [build 3s solve 0.3s prune 0.2s count 0.1s]  (1.2 min total)
+[13:31:27] [26/108] k=1 p=8 v=4: 87 tilings (by k: {'1': 87}) from 87 pruned / 96 raw  [build 2s solve 0.3s prune 0.2s count 0.0s]  (1.3 min total)
+[13:31:31] [27/108] k=1 p=5 v=8: 581 tilings (by k: {'1': 581}) from 581 pruned / 829 raw  [build 3s solve 0.3s prune 0.2s count 0.3s]  (1.3 min total)
+[13:31:35] [28/108] k=1 p=6 v=7: 1256 tilings (by k: {'1': 1256}) from 1256 pruned / 1823 raw  [build 3s solve 0.4s prune 0.3s count 0.6s]  (1.4 min total)
+[13:31:39] [29/108] k=1 p=7 v=6: 482 tilings (by k: {'1': 482}) from 482 pruned / 618 raw  [build 3s solve 0.3s prune 0.2s count 0.3s]  (1.4 min total)
+[13:31:42] [30/108] k=1 p=8 v=5: 331 tilings (by k: {'1': 331}) from 331 pruned / 413 raw  [build 3s solve 0.3s prune 0.2s count 0.2s]  (1.5 min total)
+[13:31:54] [31/108] k=1 p=6 v=8: 4796 tilings (by k: {'1': 4796}) from 4796 pruned / 6871 raw  [build 5s solve 3.5s prune 0.3s count 2.6s]  (1.7 min total)
+[13:32:01] [32/108] k=1 p=7 v=7: 1708 tilings (by k: {'1': 1708}) from 1708 pruned / 2372 raw  [build 5s solve 1.0s prune 0.3s count 1.1s]  (1.8 min total)
+[13:32:07] [33/108] k=1 p=8 v=6: 1547 tilings (by k: {'1': 1547}) from 1547 pruned / 1959 raw  [build 4s solve 0.9s prune 0.4s count 0.8s]  (1.9 min total)
+[13:32:54] [34/108] k=1 p=7 v=8: 6815 tilings (by k: {'1': 6815}) from 6815 pruned / 9451 raw  [build 16s solve 25.2s prune 0.6s count 5.9s]  (2.7 min total)
+[13:33:42] [35/108] k=1 p=8 v=7: 7061 tilings (by k: {'1': 7061}) from 7061 pruned / 9056 raw  [build 11s solve 29.8s prune 0.7s count 6.3s]  (3.5 min total)
+[13:48:42] [36/108] k=1 p=8 v=8: TIMEOUT after 900s (raw so far: 27950)
+[13:48:46] [37/108] k=2 p=3 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 3s solve 0.4s prune 0.3s count 0.0s]  (18.6 min total)
+[13:48:49] [38/108] k=2 p=3 v=4: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 3s solve 0.2s prune 0.2s count 0.0s]  (18.6 min total)
+[13:48:52] [39/108] k=2 p=4 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.3s prune 0.2s count 0.0s]  (18.7 min total)
+[13:48:55] [40/108] k=2 p=3 v=5: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 3s solve 0.3s prune 0.2s count 0.0s]  (18.7 min total)
+[13:48:58] [41/108] k=2 p=4 v=4: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 3s solve 0.3s prune 0.2s count 0.0s]  (18.8 min total)
+[13:49:01] [42/108] k=2 p=5 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.2s prune 0.3s count 0.0s]  (18.8 min total)
+[13:49:04] [43/108] k=2 p=3 v=6: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 2s solve 0.2s prune 0.3s count 0.0s]  (18.9 min total)
+[13:49:08] [44/108] k=2 p=4 v=5: 13 tilings (by k: {'1': 4, '2': 9}) from 37 pruned / 61 raw  [build 3s solve 0.3s prune 0.4s count 0.0s]  (18.9 min total)
+[13:49:11] [45/108] k=2 p=5 v=4: 5 tilings (by k: {'1': 3, '2': 2}) from 28 pruned / 46 raw  [build 3s solve 0.2s prune 0.3s count 0.0s]  (19.0 min total)
+[13:49:14] [46/108] k=2 p=6 v=3: 0 tilings (by k: {}) from 0 pruned / 0 raw  [build 3s solve 0.2s prune 0.2s count 0.0s]  (19.0 min total)
+[13:49:17] [47/108] k=2 p=3 v=7: 1 tilings (by k: {'1': 1}) from 1 pruned / 1 raw  [build 3s solve 0.2s prune 0.2s count 0.0s]  (19.1 min total)
+[13:49:21] [48/108] k=2 p=4 v=6: 124 tilings (by k: {'1': 21, '2': 103}) from 782 pruned / 1641 raw  [build 3s solve 0.4s prune 0.3s count 0.2s]  (19.1 min total)
+[13:49:24] [49/108] k=2 p=5 v=5: 39 tilings (by k: {'1': 13, '2': 26}) from 428 pruned / 841 raw  [build 3s solve 0.3s prune 0.3s count 0.1s]  (19.2 min total)
+[13:49:28] [50/108] k=2 p=6 v=4: 43 tilings (by k: {'1': 22, '2': 21}) from 255 pruned / 440 raw  [build 3s solve 0.3s prune 0.3s count 0.1s]  (19.3 min total)
+[13:49:31] [51/108] k=2 p=7 v=3: 2 tilings (by k: {'1': 2}) from 4 pruned / 6 raw  [build 3s solve 0.3s prune 0.2s count 0.0s]  (19.3 min total)
+[13:49:35] [52/108] k=2 p=3 v=8: 2 tilings (by k: {'1': 2}) from 2 pruned / 2 raw  [build 3s solve 0.3s prune 0.3s count 0.0s]  (19.4 min total)
+[13:49:41] [53/108] k=2 p=4 v=7: 836 tilings (by k: {'1': 63, '2': 773}) from 6988 pruned / 17505 raw  [build 3s solve 1.1s prune 0.5s count 2.0s]  (19.5 min total)
+[13:49:50] [54/108] k=2 p=5 v=6: 427 tilings (by k: {'1': 62, '2': 365}) from 6203 pruned / 13216 raw  [build 4s solve 2.0s prune 0.6s count 2.0s]  (19.6 min total)
+[13:49:56] [55/108] k=2 p=6 v=5: 439 tilings (by k: {'1': 85, '2': 354}) from 5111 pruned / 10053 raw  [build 4s solve 1.0s prune 0.4s count 1.2s]  (19.7 min total)
+[13:50:00] [56/108] k=2 p=7 v=4: 62 tilings (by k: {'1': 39, '2': 23}) from 469 pruned / 861 raw  [build 3s solve 0.3s prune 0.2s count 0.1s]  (19.8 min total)
+[13:50:04] [57/108] k=2 p=8 v=3: 7 tilings (by k: {'1': 7}) from 18 pruned / 22 raw  [build 4s solve 0.3s prune 0.2s count 0.0s]  (19.9 min total)
+[13:50:49] [58/108] k=2 p=4 v=8: 6530 tilings (by k: {'1': 176, '2': 6354}) from 63925 pruned / 168855 raw  [build 3s solve 14.1s prune 7.2s count 20.5s]  (20.6 min total)
+[13:51:53] [59/108] k=2 p=5 v=7: 3614 tilings (by k: {'1': 187, '2': 3427}) from 58674 pruned / 129055 raw  [build 3s solve 43.2s prune 2.4s count 15.2s]  (21.7 min total)
+[13:56:21] [60/108] k=2 p=6 v=6: 6010 tilings (by k: {'1': 338, '2': 5672}) from 94058 pruned / 189718 raw  [build 3s solve 239.4s prune 2.9s count 23.5s]  (26.2 min total)
+[13:56:30] [61/108] k=2 p=7 v=5: 550 tilings (by k: {'1': 126, '2': 424}) from 8581 pruned / 17507 raw  [build 3s solve 3.3s prune 0.4s count 1.9s]  (26.3 min total)
+[13:56:35] [62/108] k=2 p=8 v=4: 171 tilings (by k: {'1': 87, '2': 84}) from 1810 pruned / 3330 raw  [build 3s solve 0.5s prune 0.3s count 0.4s]  (26.4 min total)
+[14:11:35] [63/108] k=2 p=5 v=8: TIMEOUT after 900s (raw so far: 501686)
+[14:26:35] [64/108] k=2 p=6 v=7: TIMEOUT after 900s (raw so far: 288951)
+[14:41:35] [65/108] k=2 p=7 v=6: TIMEOUT after 900s (raw so far: 201467)
+[14:43:35] [66/108] k=2 p=8 v=5: 2655 tilings (by k: {'1': 331, '2': 2324}) from 49274 pruned / 91620 raw  [build 4s solve 103.0s prune 1.4s count 11.4s]  (73.4 min total)
+[14:56:45] sweep paused by CC for the ship-ALL bridge (resumable: completed cells are skipped on rerun)
+[15:38:01] sweep resumed after ship-ALL (completed cells skip; remaining: k2 frontier timeouts re-attempt at the same cap, then the k=3 layer)
+[15:38:01] sweep start: 108 cells (k in [1, 2, 3], p in [3, 4, 5, 6, 7, 8], v in [3, 4, 5, 6, 7, 8]), 900s cap per cell -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/hyp-sweep
+[15:38:01] [1/108] k=1 p=3 v=3: exists, skipping
+[15:38:01] [2/108] k=1 p=3 v=4: exists, skipping
+[15:38:01] [3/108] k=1 p=4 v=3: exists, skipping
+[15:38:01] [4/108] k=1 p=3 v=5: exists, skipping
+[15:38:01] [5/108] k=1 p=4 v=4: exists, skipping
+[15:38:01] [6/108] k=1 p=5 v=3: exists, skipping
+[15:38:01] [7/108] k=1 p=3 v=6: exists, skipping
+[15:38:01] [8/108] k=1 p=4 v=5: exists, skipping
+[15:38:01] [9/108] k=1 p=5 v=4: exists, skipping
+[15:38:01] [10/108] k=1 p=6 v=3: exists, skipping
+[15:38:01] [11/108] k=1 p=3 v=7: exists, skipping
+[15:38:01] [12/108] k=1 p=4 v=6: exists, skipping
+[15:38:01] [13/108] k=1 p=5 v=5: exists, skipping
+[15:38:01] [14/108] k=1 p=6 v=4: exists, skipping
+[15:38:01] [15/108] k=1 p=7 v=3: exists, skipping
+[15:38:01] [16/108] k=1 p=3 v=8: exists, skipping
+[15:38:01] [17/108] k=1 p=4 v=7: exists, skipping
+[15:38:01] [18/108] k=1 p=5 v=6: exists, skipping
+[15:38:01] [19/108] k=1 p=6 v=5: exists, skipping
+[15:38:01] [20/108] k=1 p=7 v=4: exists, skipping
+[15:38:01] [21/108] k=1 p=8 v=3: exists, skipping
+[15:38:01] [22/108] k=1 p=4 v=8: exists, skipping
+[15:38:01] [23/108] k=1 p=5 v=7: exists, skipping
+[15:38:01] [24/108] k=1 p=6 v=6: exists, skipping
+[15:38:01] [25/108] k=1 p=7 v=5: exists, skipping
+[15:38:01] [26/108] k=1 p=8 v=4: exists, skipping
+[15:38:01] [27/108] k=1 p=5 v=8: exists, skipping
+[15:38:01] [28/108] k=1 p=6 v=7: exists, skipping
+[15:38:01] [29/108] k=1 p=7 v=6: exists, skipping
+[15:38:01] [30/108] k=1 p=8 v=5: exists, skipping
+[15:38:01] [31/108] k=1 p=6 v=8: exists, skipping
+[15:38:01] [32/108] k=1 p=7 v=7: exists, skipping
+[15:38:01] [33/108] k=1 p=8 v=6: exists, skipping
+[15:38:01] [34/108] k=1 p=7 v=8: exists, skipping
+[15:38:01] [35/108] k=1 p=8 v=7: exists, skipping
+[15:38:01] [36/108] k=1 p=8 v=8: exists, skipping
+[15:38:01] [37/108] k=2 p=3 v=3: exists, skipping
+[15:38:01] [38/108] k=2 p=3 v=4: exists, skipping
+[15:38:01] [39/108] k=2 p=4 v=3: exists, skipping
+[15:38:01] [40/108] k=2 p=3 v=5: exists, skipping
+[15:38:01] [41/108] k=2 p=4 v=4: exists, skipping
+[15:38:01] [42/108] k=2 p=5 v=3: exists, skipping
+[15:38:01] [43/108] k=2 p=3 v=6: exists, skipping
+[15:38:01] [44/108] k=2 p=4 v=5: exists, skipping
+[15:38:01] [45/108] k=2 p=5 v=4: exists, skipping
+[15:38:01] [46/108] k=2 p=6 v=3: exists, skipping
+[15:38:01] [47/108] k=2 p=3 v=7: exists, skipping
+[15:38:01] [48/108] k=2 p=4 v=6: exists, skipping
+[15:38:01] [49/108] k=2 p=5 v=5: exists, skipping
+[15:38:01] [50/108] k=2 p=6 v=4: exists, skipping
+[15:38:01] [51/108] k=2 p=7 v=3: exists, skipping
+[15:38:01] [52/108] k=2 p=3 v=8: exists, skipping
+[15:38:01] [53/108] k=2 p=4 v=7: exists, skipping
+[15:38:01] [54/108] k=2 p=5 v=6: exists, skipping
+[15:38:01] [55/108] k=2 p=6 v=5: exists, skipping
+[15:38:01] [56/108] k=2 p=7 v=4: exists, skipping
+[15:38:01] [57/108] k=2 p=8 v=3: exists, skipping
+[15:38:01] [58/108] k=2 p=4 v=8: exists, skipping
+[15:38:01] [59/108] k=2 p=5 v=7: exists, skipping
+[15:38:01] [60/108] k=2 p=6 v=6: exists, skipping
+[15:38:01] [61/108] k=2 p=7 v=5: exists, skipping
+[15:38:01] [62/108] k=2 p=8 v=4: exists, skipping
+[15:38:01] [63/108] k=2 p=5 v=8: exists, skipping
+[15:38:01] [64/108] k=2 p=6 v=7: exists, skipping
+[15:38:01] [65/108] k=2 p=7 v=6: exists, skipping
+[15:38:01] [66/108] k=2 p=8 v=5: exists, skipping
+[15:53:01] [67/108] k=2 p=6 v=8: TIMEOUT after 900s (raw so far: 169225)
+[16:08:01] [68/108] k=2 p=7 v=7: TIMEOUT after 900s (raw so far: 134737)
+[16:23:02] [69/108] k=2 p=8 v=6: TIMEOUT after 900s (raw so far: 136929)

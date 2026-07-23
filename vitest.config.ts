@@ -6,6 +6,13 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
+    // Several suites are CPU-bound exact-arithmetic / enumeration tests (fuzz, hyperbolic develop over
+    // all shipped patches, freedraw combined-grid, oracle classification) that legitimately run 10–20s.
+    // Under the default 16-way file parallelism they oversubscribe the CPU, so wall-time inflates and
+    // the 5s default timeout trips them intermittently. 60s gives finite tests headroom under load
+    // without letting a genuinely hung test block for too long.
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
   },
   resolve: {
     // Order matters: most specific aliases first so `@/classes/Foo` resolves to

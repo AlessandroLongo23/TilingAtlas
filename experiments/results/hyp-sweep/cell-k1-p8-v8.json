@@ -1,0 +1,13 @@
+{
+ "k": 1,
+ "p": 8,
+ "v": 8,
+ "palette": "hyp-s-p8v8",
+ "status": "timeout",
+ "t": {
+  "build": 59.12050986289978,
+  "solve": 840.9503371715546
+ },
+ "raw_blocks": 27950,
+ "tilings": []
+}

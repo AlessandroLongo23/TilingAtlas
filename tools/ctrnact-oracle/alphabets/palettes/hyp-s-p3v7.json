@@ -1,0 +1,15 @@
+{
+  "name": "hyp-s-p3v7",
+  "D": 6,
+  "closure": "negative-defect",
+  "maxValence": 7,
+  "comment": "sweep cell palette: regular {3..3}, valence <= 7 (hyp_sweep.py)",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    }
+  ]
+}

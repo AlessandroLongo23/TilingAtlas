@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
 import { su11Identity, su11Mul, su11Translation, su11Normalize, su11Apply, hypDist, type Complex } from "@/lib/render/hyperbolic";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { sampleAtlas } from "./hyperbolic-sample";
 
 interface ShippedPatch extends DevelopedPatch {
 	darts?: Darts;
@@ -153,9 +154,11 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 		}
 	});
 
-	it("every shipped patch develops hole-free (all 59)", () => {
+	it("a deterministic sample of shipped patches develops hole-free", { timeout: 120_000 }, () => {
+		// Was "all 59"; the shelf is thousands now (D-symbol re-count), so this checks a seeded sample —
+		// the same sampling the dirichlet/reduce suites use (tests/hyperbolic-sample.ts).
 		const bad: string[] = [];
-		for (const p of atlas) {
+		for (const p of sampleAtlas(atlas, 80)) {
 			const dev = new HyperbolicDeveloper(p.darts as Darts, p.edge);
 			const out = dev.develop({ id: p.id, name: p.name, config: p.config, edge: p.edge }, su11Identity(), 0.99, 20000);
 			if (coverMiss(out.vertices, out.faces) > 0) bad.push(p.id);

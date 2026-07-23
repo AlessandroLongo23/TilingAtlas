@@ -1,3 +1,4 @@
 hyp-p7k2 (palette {3..8}, maxValence 6, D=1680) at k<=2, boundR=0.95 — closes the §80 scope gap
 started 09:16:32. Pipeline: gen_alphabet -> eu_solver -> eu_pruner -> develop_hyperbolic.
 The {3,4,6} probe (hyp-k2) had 51573 pruned blocks -> 5005 developed; this palette doubles the tile set, so expect a large multiple of that.
+aborted by AL at 13:20:54 after ~4h wall, 566k raw blocks emitted (solve phase incomplete: k=2 families still enumerating). Partial output kept in scratch-hyp-p7k2/out.

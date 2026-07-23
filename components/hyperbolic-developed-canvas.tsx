@@ -49,6 +49,10 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	// reduction fails at runtime) draws through the 2D developed renderer. A canvas that has yielded a
 	// webgl2 context can never yield a 2d one, so flipping modes re-mounts the element via `key`.
 	const [use2d, setUse2d] = useState(false);
+	// Patches whose reduction failed AT RUNTIME (unstamped file, or a stamp gone stale). Without this
+	// memory the mode reconciliation reads `certified === undefined`, decides GL is wanted, flips back,
+	// fails again — an oscillation that leaves the canvas permanently blank (caught 2026-07-23).
+	const runtimeUncertified = useRef<Set<string>>(new Set());
 	const devRef = useRef<HyperbolicDeveloper | null>(null); // click-feature snapping + fallback draw
 	const readyRef = useRef(false); // shader tiling uploaded (perPixel) or developer ready (2D)
 	// (tile, residual) camera data: the certified side pairings fold the camera basepoint back into the
@@ -125,7 +129,7 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			anchorRef.current = null;
 			// Stamped un-certifiable → 2D. Stamped/unstamped certifiable while stuck in 2D mode (the
 			// PREVIOUS patch forced it) → back to GL. Either flip re-mounts the canvas and re-runs this.
-			const want2d = patch?.certified === false;
+			const want2d = patch?.certified === false || runtimeUncertified.current.has(patchId);
 			if (patch?.darts && want2d !== use2d && !(ctx2dRef.current && !glRef.current && want2d)) {
 				setUse2d(want2d);
 				if (want2d) return; // context is still webgl2 this pass; the re-run binds 2D
@@ -139,7 +143,8 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 					anchorRef.current = { gens: st.domain.gens, r: Math.min(0.97, st.domain.rPEu + 0.05) };
 					readyRef.current = true;
 				} else {
-					// Certificate failed at runtime (loud in prepareShaderTiling) — draw via the 2D path.
+					// Certificate failed at runtime (loud in prepareShaderTiling) — remember it, then 2D.
+					runtimeUncertified.current.add(patchId);
 					setUse2d(true);
 				}
 			} else {

@@ -1,0 +1,21 @@
+{
+  "name": "hyp-s-p4v8",
+  "D": 24,
+  "closure": "negative-defect",
+  "maxValence": 8,
+  "comment": "sweep cell palette: regular {3..4}, valence <= 8 (hyp_sweep.py)",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    }
+  ]
+}

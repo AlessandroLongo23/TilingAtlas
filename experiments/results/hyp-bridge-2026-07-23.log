@@ -1,0 +1,43 @@
+bridge for ship-ALL (14:58:16): six maximal completed sweep cells re-run with darts kept.
+k1: p8v7, p7v8; k2: p4v8, p5v7, p6v6, p8v5 — union covers every completed cell.
+hyperbolic develop report (k=1..1, boundR=0.95)
+blocks in    : 6815
+developed    : 6815
+not developed: 0
+
+hyp-s-p7v8 k<=1: raw=9451 pruned=6815 developed=6815  (173s)
+hyperbolic develop report (k=1..1, boundR=0.95)
+blocks in    : 7061
+developed    : 7061
+not developed: 0
+
+hyp-s-p8v7 k<=1: raw=9056 pruned=7061 developed=7061  (176s)
+hyperbolic develop report (k=1..2, boundR=0.95)
+blocks in    : 63925
+developed    : 6530
+not developed: 57395
+   57395  no common edge length
+
+hyp-s-p4v8 k<=2: raw=168855 pruned=63925 developed=6530  (181s)
+hyperbolic develop report (k=1..2, boundR=0.95)
+blocks in    : 58674
+developed    : 3614
+not developed: 55060
+   55060  no common edge length
+
+hyp-s-p5v7 k<=2: raw=129055 pruned=58674 developed=3614  (223s)
+hyperbolic develop report (k=1..2, boundR=0.95)
+blocks in    : 49274
+developed    : 2655
+not developed: 46619
+   46619  no common edge length
+
+hyp-s-p8v5 k<=2: raw=91620 pruned=49274 developed=2655  (276s)
+hyperbolic develop report (k=1..2, boundR=0.95)
+blocks in    : 94058
+developed    : 6010
+not developed: 88048
+   88048  no common edge length
+
+hyp-s-p6v6 k<=2: raw=189718 pruned=94058 developed=6010  (403s)
+bridge done 15:04:59
