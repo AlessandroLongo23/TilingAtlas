@@ -31,16 +31,24 @@ const NESTED_TOP = ROW_H + 1;
 // the same source /library uses — so a new class appears here automatically. A class section only appears
 // when it has tilings.
 
-// The freedraw class alone carries an extra layer between class and k: WHICH GRID the edge subset
-// decorates. sub = "" is the spine every other class uses (no row rendered for it).
+// The freedraw class alone carries an extra layer between class and k. For PLANAR freedraw (euclidean)
+// it is WHICH GRID the edge subset decorates; for SPHERICAL freedraw it is WHICH SOLID. Both live under
+// the one "freedraw" class, but never in the same list — the catalogue is filtered to one geometry first,
+// so a given list shows only grid subs (euclidean) or only solid subs (spherical). sub = "" is the spine
+// every other class uses (no row rendered for it).
 const SUB_LABEL: Record<string, string> = {
 	square: "Square grid",
 	triangle: "Triangle grid",
 	ts: "Triangle + square grid",
+	tetrahedron: "Tetrahedron",
+	octahedron: "Octahedron",
+	cube: "Cube",
+	dodecahedron: "Dodecahedron",
+	icosahedron: "Icosahedron",
 };
-const SUB_ORDER = ["", "square", "triangle", "ts"];
+const SUB_ORDER = ["", "square", "triangle", "ts", "tetrahedron", "octahedron", "cube", "dodecahedron", "icosahedron"];
 const subOf = (t: CatalogueTiling): string =>
-	t.freedraw ? (gridOf(t.freedraw) as FreedrawGrid) : "";
+	t.sphericalFreedraw ? t.sphericalFreedraw.solid : t.freedraw ? (gridOf(t.freedraw) as FreedrawGrid) : "";
 
 // Memoized: the catalogue's inputs (items/selectedKey/onSelect) don't change while a sidebar
 // slider is dragged, but its parent TilingsTab subscribes to the WHOLE config store, so it re-renders on
@@ -122,19 +130,26 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		openGroups(selectedSubId ? [selectedClassId, selectedSubId, selectedKId] : [selectedClassId, selectedKId]);
 	}, [selectedKey, selectedClassId, selectedSubId, selectedKId, openGroups]);
 
-	// When the geometry filter leaves a single tile class (every hyperbolic/spherical tiling shares one),
-	// drop the redundant class level and pin the k rows at the top instead — the geometry IS the top layer
-	// there, so a lone "Hyperbolic ▸" wrapper would just be a second identical one.
+	// When the geometry filter leaves a single tile class (hyperbolic is always one; spherical is one until
+	// its freedraw shelf loads, then it splits into Spherical + Freedraw), drop the redundant class level and
+	// pin the k rows at the top — the geometry IS the top layer, so a lone "Hyperbolic ▸" wrapper would just
+	// be a second identical one. With two or more classes the class headers render normally.
 	const single = byClass.length === 1;
 
 	const kSections = (cls: TileClass, sub: string, ks: { k: number; list: CatalogueTiling[] }[], depth: 0 | 1 | 2) =>
 		ks.map((kk) => {
 			const id = `k:${cls}:${sub}:${kk.k}`;
 			const open = expanded[id];
-			// Freedraw shares the k axis but not its meaning: there k counts GRID-POINT orbits of the
-			// decoration, not vertex orbits of a tiling. Say so on the row rather than letting a bare "k = 2"
-			// imply the two are the same quantity.
-			const kLabel = cls === "freedraw" ? `k = ${kk.k} grid points` : `k = ${kk.k}`;
+			// Freedraw shares the k axis but not its meaning. For PLANAR freedraw k counts GRID-POINT orbits of
+			// the decoration; for SPHERICAL freedraw it counts VERTEX orbits of the solid. Either way it is not
+			// the vertex-orbit count of a uniform tiling in the way the other classes mean it, so name it on the
+			// row rather than letting a bare "k = 2" imply the quantities are the same.
+			const kLabel =
+				cls === "freedraw"
+					? kk.list[0]?.sphericalFreedraw
+						? `k = ${kk.k} vertex orbits`
+						: `k = ${kk.k} grid points`
+					: `k = ${kk.k}`;
 			return (
 				// The wrapper is what bounds the sticky header: pinned while its own bucket is on screen,
 				// pushed off by the next one. Transparent, so the wall's line colour still fills its gaps.

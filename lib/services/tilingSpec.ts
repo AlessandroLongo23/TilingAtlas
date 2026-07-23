@@ -142,6 +142,21 @@ export function buildTilingSpec(
 		};
 	}
 
+	// Spherical freedraw: a drawn edge subset of a Platonic solid. It has no {p,q} vertex figure (the tiles
+	// are the regions the drawn edges cut out), so the point-group / orbifold / V-E-F trio stays null; the
+	// honest card is just the solid it lives on. k here counts VERTEX orbits (see ReferenceTiling).
+	if (geometry === "spherical" && selected.sphericalFreedraw) {
+		return {
+			geometry: "spherical",
+			label: selected.family,
+			solidName: prettySolid(selected.sphericalFreedraw.solid),
+			pointGroup: null,
+			orbifold: null,
+			counts: null,
+			...base,
+		};
+	}
+
 	if (geometry === "hyperbolic") {
 		// Honest subset only. faces/valence/edge come straight from the data; the Schläfli/Coxeter/orbifold
 		// trio is derived ONLY when the config is a single regular face size (schlafli non-null).

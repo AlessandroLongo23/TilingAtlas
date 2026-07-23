@@ -43,8 +43,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// all, so EVERY control above — fill, stroke, hue, rotation, points, orbits, symmetry, inversive — is
 	// dead, and the three freedraw-specific ones below take their place.
 	const isFreedraw = !!selected?.freedraw;
+	// A spherical-freedraw pattern renders on the self-contained three.js ico-freedraw canvas (its own
+	// ArcballControls, its own fixed edge tubes and golden-angle tile colours). Like planar freedraw it has no
+	// tiles/cell for the shared controls to touch — only the two Display controls the /freedraw arm carries
+	// (polyhedron/sphere + grid) apply, so every other control is hidden for it.
+	const isSphericalFreedraw = !!selected?.sphericalFreedraw;
 	// Flat-canvas overlays: only meaningful when the p5 layer is actually the thing painting.
-	const isFlat = !isHyperbolic && !isSpherical && !isFreedraw;
+	const isFlat = !isHyperbolic && !isSpherical && !isFreedraw && !isSphericalFreedraw;
 
 	return (
 		// Opaque: the sidebar wall's line colour lives on an ancestor, and a transparent panel would
@@ -125,7 +130,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{/* The global fill flag. Hidden in spherical — there the Fill/Wireframe pair (below) is the
 					    view's own mutually-exclusive fill control, driven by sphericalWireframe. */}
-					{!isSpherical && !isFreedraw ? (
+					{!isSpherical && !isFreedraw && !isSphericalFreedraw ? (
 						<Checkbox
 							id="showPolygonFill"
 							label="Polygon fill"
@@ -136,7 +141,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{/* Freedraw renders its own copy of this slider inside its block above, so the stroke sits
 					    with the fill it belongs to. Same store field either way — only the position differs. */}
-					{!isFreedraw ? (
+					{!isFreedraw && !isSphericalFreedraw ? (
 						<Slider
 							id="lineWidth"
 							label="Line stroke"
@@ -170,14 +175,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					{/* Global hue rotation for every tile fill (all views + thumbnails) — preserves the
 					    pairwise hue distances between tiles while cycling the palette. Freedraw colours cells
 					    by face, off its own golden-angle walk, so this ring has nothing to rotate there. */}
-					{!isFreedraw ? (
+					{!isFreedraw && !isSphericalFreedraw ? (
 						<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
 					) : null}
 					{/* Flat-view rotation. Hidden in spherical — that view rotates by quaternion (the
 					    ArcballControls trackball), so this angle slider has no effect there. The hint reveals the
 					    canvas gesture that also drives this value: flat/inversive spin the view with Shift+scroll
 					    (bare scroll zooms there), while the hyperbolic disk has no zoom, so a bare scroll rotates. */}
-					{!isSpherical && !isFreedraw ? (
+					{!isSpherical && !isFreedraw && !isSphericalFreedraw ? (
 						<Slider
 							id="rotation"
 							label="Rotation"
@@ -201,7 +206,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							unit="°"
 						/>
 					) : null}
-					{!isFreedraw ? (
+					{!isFreedraw && !isSphericalFreedraw ? (
 						<Checkbox
 							id="showPolygonPoints"
 							label="Show Polygon Points"
@@ -631,6 +636,42 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								rightValue="orthographic"
 								value={cfg.sphericalOrthographic ? "orthographic" : "perspective"}
 								onChange={(v) => setCfg({ sphericalOrthographic: v === "orthographic" })}
+							/>
+						</div>
+					) : null}
+					{/* Spherical freedraw: the two Display controls the /freedraw spherical arm carries, and nothing
+					    else — the ico-freedraw canvas colours its own tiles and draws its own fixed edge tubes, so
+					    fill / stroke / hue / rotation / points / orbits have nothing to act on. Polyhedron/Sphere
+					    swaps flat facets for the round sphere; Grid draws the solid's full edge lattice faintly. */}
+					{isSphericalFreedraw ? (
+						<div className="space-y-2">
+							<p className="text-[11px] text-fg-muted leading-relaxed">
+								Drag to rotate the solid freely; scroll to zoom.
+							</p>
+							<span className="text-[11px] text-fg-muted">Display</span>
+							<div className="flex gap-2">
+								<Button
+									variant={cfg.sphericalFreedrawMode === "polyhedron" ? "primary" : "secondary"}
+									size="sm"
+									classes="flex-1"
+									onClick={() => setCfg({ sphericalFreedrawMode: "polyhedron" })}
+								>
+									Polyhedron
+								</Button>
+								<Button
+									variant={cfg.sphericalFreedrawMode === "sphere" ? "primary" : "secondary"}
+									size="sm"
+									classes="flex-1"
+									onClick={() => setCfg({ sphericalFreedrawMode: "sphere" })}
+								>
+									Sphere
+								</Button>
+							</div>
+							<Checkbox
+								id="sphericalFreedrawGrid"
+								label="Grid"
+								checked={cfg.sphericalFreedrawGrid}
+								onCheckedChange={(v) => setCfg({ sphericalFreedrawGrid: v })}
 							/>
 						</div>
 					) : null}

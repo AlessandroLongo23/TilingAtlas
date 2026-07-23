@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { Vector } from "@/classes/Vector";
+import type { IcoMode } from "@/lib/render/icoFreedraw";
 
 export interface SelectedTiling {
 	name: string;
@@ -174,6 +175,12 @@ export interface ConfigurationState {
 	// as that one cell stamped out across the plane. See lib/freedraw/render.ts drawLattice.
 	freedrawLattice: boolean;
 
+	// Spherical freedraw (Platonic-solid freedraw on /play): the two Display controls the /freedraw spherical
+	// arm exposes. `mode` swaps the flat-faced polyhedron for the round sphere (curved patches + arc edges);
+	// `grid` draws the solid's full edge grid faintly under the pattern. See components/freedraw/ico-freedraw-canvas.tsx.
+	sphericalFreedrawMode: IcoMode;
+	sphericalFreedrawGrid: boolean;
+
 	// Color params
 	colorParams: ColorParams;
 
@@ -279,6 +286,9 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	freedrawScaffold: true,
 	freedrawVertices: false,
 	freedrawLattice: false,
+
+	sphericalFreedrawMode: "polyhedron",
+	sphericalFreedrawGrid: false,
 
 	colorParams: { a: 180, b: 0 },
 

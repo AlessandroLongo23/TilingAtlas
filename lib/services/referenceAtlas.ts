@@ -6,6 +6,8 @@ import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types"
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { classifyRegular, type RegularKind } from "@/lib/freedraw/regular";
+import type { IcoPattern } from "@/lib/render/icoFreedraw";
+import { ICO_SOLIDS, ICO_SOLID_BY_ID, icoSolidKs } from "@/lib/render/icoSolids";
 
 // The Reference (Oracle) shelf — a DISPLAY-ONLY atlas of known k-uniform tilings from the literature,
 // deliberately kept OFF the certified-results catalogue (§0: the site never produces the claim; these
@@ -66,6 +68,12 @@ export interface ReferenceTiling {
 	// so the two are browsable together, but every surface that shows it (card sub-line, /play nav header +
 	// info panel, the catalogue tree's k rows) must say "grid points", never "vertices".
 	freedraw?: FreedrawPattern;
+	// Spherical freedraw shelf only: Čtrnáct's freedraw on a Platonic solid (tools/ctrnact-oracle, decoded to
+	// public/freedraw-ico/{solid}-k{k}.json). Its presence routes /play + the thumbnails to the three.js
+	// ico-freedraw renderer (components/freedraw/ico-freedraw-canvas.tsx) the way `spherical` routes to the
+	// solid sphere and `freedraw` to the 2D grid — `renderCell` is a throwaway here, never drawn. `solid` is
+	// the Polyhedron id the renderer resolves vertices from; `k` counts VERTEX orbits (not grid points).
+	sphericalFreedraw?: { solid: string; k: number; pattern: IcoPattern };
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Hyperbolic shelf: which of the tilings sharing this vertex figure this one is, and how many there
 	// are. In H2 the figure does not determine the tiling — 4.4.6.4.6.6 carries fourteen distinct ones —
@@ -176,8 +184,8 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // (spherical wins, then developed), NOT the optional `geometry` field (not reliably populated). Same
 // precedence as _play-client's canvas swap, so the toggle and the rendered view can never disagree.
 export type Geometry = "euclidean" | "hyperbolic" | "spherical";
-export function geometryOf(t: { spherical?: unknown; developed?: unknown }): Geometry {
-	if (t.spherical) return "spherical";
+export function geometryOf(t: { spherical?: unknown; sphericalFreedraw?: unknown; developed?: unknown }): Geometry {
+	if (t.spherical || t.sphericalFreedraw) return "spherical";
 	if (t.developed) return "hyperbolic";
 	return "euclidean";
 }
@@ -523,6 +531,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		wallpaperGroup: r.wallpaperGroup,
 		latticeShape: r.latticeShape,
 		freedraw: r.freedraw,
+		sphericalFreedraw: r.sphericalFreedraw,
 	};
 }
 
@@ -557,6 +566,60 @@ function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 		discoverer: "Marek Čtrnáct",
 		certification: verified ? "reproduced" : "candidate",
 	};
+}
+
+// Adapt one spherical-freedraw pattern (a drawn edge subset of a Platonic solid) to a reference tiling.
+// `canonicalKey` prefixes the solid so per-solid ids that repeat (each solid was enumerated independently,
+// so "fdi-1-00001" exists on tetra AND icosa) stay globally unique. Like the planar freedraw, `renderCell`
+// is a throwaway — every consumer branches on `sphericalFreedraw` first (thumbnail, /play overlay).
+function sphericalFreedrawToReference(solid: string, k: number, p: IcoPattern): ReferenceTiling {
+	const cfg = ICO_SOLID_BY_ID.get(solid);
+	return {
+		id: `sfd-${solid}-${p.id}`,
+		source: "freedraw",
+		k: p.k,
+		family: `${cfg?.schlafli ?? solid} · ${p.nTiles} tile${p.nTiles === 1 ? "" : "s"}${p.achiral ? "" : " · chiral"}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		sphericalFreedraw: { solid, k, pattern: p },
+		geometry: "spherical",
+		discoverer: "Marek Čtrnáct",
+		// Decoded from Marek's certificates like the planar higher-k slices; no independent enumeration here.
+		certification: "candidate",
+	};
+}
+
+// Spherical freedraw is loaded LAZILY, separate from the base atlas: ~19.5k patterns across 30
+// public/freedraw-ico/{solid}-k{k}.json files (~10 MB, of which the two icosahedron k6/k8 shards are ~9.9 MB).
+// /play calls this only once the Spherical geometry is entered (or a deep-link to an sfd- key arrives), so a
+// visit that never opens spherical freedraw never pays for it. Module-cached; the fetch list comes from the
+// shared ICO_SOLIDS manifest, so it never probes for a file that does not exist.
+let sfCache: ReferenceTiling[] | null = null;
+let sfInflight: Promise<ReferenceTiling[]> | null = null;
+
+export async function loadSphericalFreedrawAtlas(): Promise<ReferenceTiling[]> {
+	if (sfCache) return sfCache;
+	if (sfInflight) return sfInflight;
+	sfInflight = Promise.all(
+		ICO_SOLIDS.flatMap((s) =>
+			icoSolidKs(s).map((k) =>
+				fetch(`/freedraw-ico/${s.id}-k${k}.json`)
+					.then((res) => (res.ok ? (res.json() as Promise<IcoPattern[]>) : []))
+					.catch(() => [] as IcoPattern[])
+					.then((pats) => pats.map((p) => sphericalFreedrawToReference(s.id, k, p))),
+			),
+		),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			sfCache = data;
+			sfInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			sfInflight = null;
+			throw err;
+		});
+	return sfInflight;
 }
 
 // Lazy client-side fetch of the static atlas. Cached across mode toggles so the ~4MB payload is pulled

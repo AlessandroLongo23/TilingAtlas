@@ -48,6 +48,10 @@ export interface CatalogueTiling {
 	// the thumbnails to the 2D grid renderer — freedraw has no polygon cell, so `renderCell` is a throwaway
 	// and is never drawn. NOTE its `k` counts GRID-POINT orbits, not vertex orbits (see ReferenceTiling).
 	freedraw?: import("@/lib/freedraw/pattern").FreedrawPattern;
+	// Spherical freedraw shelf only: Čtrnáct's freedraw on a Platonic solid. Its presence routes /play + the
+	// thumbnails to the three.js ico-freedraw renderer, the way `spherical` routes to the solid sphere.
+	// `renderCell` is a throwaway; `k` counts VERTEX orbits (see ReferenceTiling.sphericalFreedraw).
+	sphericalFreedraw?: { solid: string; k: number; pattern: import("@/lib/render/icoFreedraw").IcoPattern };
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
 	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their

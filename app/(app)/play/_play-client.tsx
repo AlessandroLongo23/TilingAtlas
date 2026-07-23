@@ -9,6 +9,7 @@ import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
+import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
@@ -25,6 +26,7 @@ import {
 	loadIsotoxalAtlasShard,
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
+	loadSphericalFreedrawAtlas,
 	referenceToCatalogue,
 	tileClassOf,
 	geometryOf,
@@ -266,6 +268,30 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (g !== geometry) setGeometry(g);
 	}, [selected, geometry]);
 
+	// Spherical freedraw (~19.5k patterns, ~10 MB across 30 shards) is deliberately NOT in the base atlas —
+	// loading it up front would tax every /play visit for a shelf many never open. Pull it once the Spherical
+	// geometry is entered, or when a deep-link to an "sfd-…" key arrives, then background-merge it (deduped by
+	// key) so it joins the browse tree under Spherical → Freedraw and the requested key resolves. The loader
+	// is module-cached, so re-running this on every geometry change is free after the first fetch.
+	useEffect(() => {
+		if (geometry !== "spherical" && !requestedKey?.startsWith("sfd-")) return;
+		let alive = true;
+		loadSphericalFreedrawAtlas()
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [geometry, requestedKey]);
+
 	// Exact wallpaper-symmetry analysis of the selected tiling (fetched cell_codec → analyzeSymmetry),
 	// memoized per canonicalKey; drives the two canvas overlays. Null while loading / for tilings with
 	// no exact cell.
@@ -396,6 +422,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// store flag (canvas.tsx reads it to blank the flat layer) and force off the other render modes so their
 	// now-hidden sidebar controls can't leave a stale render behind. The sphere renderer owns its own input.
 	const isSpherical = !!selected?.spherical;
+	// A spherical-freedraw pattern is a drawn edge subset of a Platonic solid — a three.js overlay like the
+	// Platonic sphere, but with no polygon cell of its own. It shares the sphere's flat-layer blanking (below)
+	// while routing to its own IcoFreedrawCanvas in the dispatch chain.
+	const isSphericalFreedraw = !!selected?.sphericalFreedraw;
 	// A freedraw pattern swaps the flat p5 renderer for the 2D grid view. It has no polygon cell at all, so
 	// force off every mode that would try to draw one and every overlay derived from tiles — the Options tab
 	// hides those controls, and this keeps a stale render from surviving the switch.
@@ -421,7 +451,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	}, [isFreedraw, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
-		if (isSpherical) {
+		// Spherical freedraw rides the same flag: it too is a three.js overlay that must blank the flat p5 layer.
+		if (isSpherical || isSphericalFreedraw) {
 			// Islamic is NOT force-cleared here — the sphere canvas renders the construction as great-circle
 			// ribbons, and polygonClassSupportsIslamic now admits the spherical class, so the toggle persists.
 			cfg.set({
@@ -434,7 +465,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		} else if (cfg.spherical) {
 			cfg.set({ spherical: false });
 		}
-	}, [isSpherical, selected]);
+	}, [isSpherical, isSphericalFreedraw, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isHyperbolic) {
@@ -579,6 +610,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	// Inversive (experimental) view: a WebGL overlay renders the same cell through a conformal map.
 	const inversive = useConfiguration((s) => s.inversive);
+	// Spherical-freedraw Display controls (View options tab): mode = polyhedron/sphere, grid = faint edge grid.
+	const sphericalFreedrawMode = useConfiguration((s) => s.sphericalFreedrawMode);
+	const sphericalFreedrawGrid = useConfiguration((s) => s.sphericalFreedrawGrid);
 
 	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the canvas fills the window.
 	const immersive = useImmersive((s) => s.immersive);
@@ -647,6 +681,19 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
 				{isSpherical && selected?.spherical ? (
 					<SphericalCanvas width={size.w} height={size.h} solidId={selected.spherical.solid} />
+				) : selected?.sphericalFreedraw ? (
+					// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with
+					// ArcballControls (drag to rotate, wheel to zoom) — the same self-contained renderer the
+					// /freedraw spherical arm uses. Mode (polyhedron/sphere) and grid come from the View options tab,
+					// the same two controls the /freedraw arm carries; it owns its own pointer input.
+					<IcoFreedrawCanvas
+						width={size.w}
+						height={size.h}
+						pattern={selected.sphericalFreedraw.pattern}
+						solidId={selected.sphericalFreedraw.solid}
+						mode={sphericalFreedrawMode}
+						showGrid={sphericalFreedrawGrid}
+					/>
 				) : selected?.freedraw ? (
 					// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
 					// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.

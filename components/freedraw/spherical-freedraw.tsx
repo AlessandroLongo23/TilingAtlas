@@ -16,6 +16,7 @@ import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-t
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import type { IcoMode, IcoPattern } from "@/lib/render/icoFreedraw";
+import { ICO_SOLIDS, icoSolidKs } from "@/lib/render/icoSolids";
 import { cn } from "@/lib/utils/cn";
 
 // The spherical arm of /freedraw — Marek Čtrnáct's freedraw on the Platonic solids, laid out like the
@@ -24,36 +25,14 @@ import { cn } from "@/lib/utils/cn";
 // counts the vertex orbits. Each solid's catalogue was enumerated independently and matched to Marek's
 // solver to the unit.
 
-interface SolidCfg {
-	id: string;
-	label: string;
-	schlafli: string;
-	counts: Record<number, number>;
-}
-
-// counts per k, from the independent enumeration (= Marek's solver, cross-checked to the unit).
-const SOLIDS: SolidCfg[] = [
-	{ id: "tetrahedron", label: "tetra", schlafli: "{3,3}", counts: { 1: 3, 2: 2 } },
-	{ id: "octahedron", label: "octa", schlafli: "{3,4}", counts: { 1: 5, 2: 8, 3: 15, 4: 12, 5: 2, 6: 7 } },
-	{ id: "cube", label: "cube", schlafli: "{4,3}", counts: { 1: 4, 2: 5, 3: 4, 4: 3, 6: 1 } },
-	{
-		id: "dodecahedron",
-		label: "dodeca",
-		schlafli: "{5,3}",
-		counts: { 1: 2, 2: 5, 3: 7, 4: 15, 5: 7, 6: 26, 7: 51, 8: 10, 10: 236, 12: 472 },
-	},
-	{
-		id: "icosahedron",
-		label: "icosa",
-		schlafli: "{3,5}",
-		counts: { 1: 5, 2: 39, 3: 61, 4: 257, 5: 257, 6: 6727, 8: 11304 },
-	},
-];
+// The solid manifest (ids, labels, per-k counts) is the shared source of truth in lib/render/icoSolids.ts,
+// so this arm and the /play catalogue loader never drift on which files exist.
+const SOLIDS = ICO_SOLIDS;
 
 const DEFAULT_SOLID = "icosahedron";
 
 /** A solid's available k values, ascending. */
-const kListOf = (s: SolidCfg) => Object.keys(s.counts).map(Number).sort((a, b) => a - b);
+const kListOf = icoSolidKs;
 
 const MODE_OPTIONS: { value: IcoMode; label: string }[] = [
 	{ value: "polyhedron", label: "Polyhedron" },
