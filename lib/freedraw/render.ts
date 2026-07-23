@@ -74,9 +74,9 @@ export interface FreedrawStyle {
 	/** Period-lattice overlay: the fundamental cell tinted, and its translates outlined across the view. */
 	showLattice: boolean;
 	/**
-	 * Multiplier on the drawn-edge stroke. The base weight is proportional to the zoom (so the line art
-	 * keeps its proportions as you zoom); this scales it, and 0 drops the stroke entirely — the same
-	 * contract as the flat canvas's Line stroke slider, which reads the same store field.
+	 * Drawn-edge stroke width in CSS px, constant at every zoom, and 0 drops the stroke entirely — the
+	 * exact same contract as the flat canvas's Line stroke slider (uHalfStrokePx = lineWidth/2), which
+	 * reads the same store field. At lineWidth 1 a freedraw edge is 1 px, matching a normal tiling's edge.
 	 */
 	lineWidth: number;
 	dark: boolean;
@@ -286,9 +286,9 @@ export function drawFreedraw(
 			}
 		}
 		ctx.strokeStyle = style.dark ? "#f2f4f8" : "#101318";
-		// Zoom-proportional base weight, scaled by the slider. The clamp keeps the line art readable at both
-		// ends of the zoom range; the multiplier is what the Line stroke control moves.
-		ctx.lineWidth = Math.max(1.4, Math.min(6, scale * 0.11)) * style.lineWidth;
+		// Constant CSS-px width, matching the flat canvas's outline (lineWidth px at any zoom) so a
+		// freedraw edge and a normal tiling edge read the same weight at the same slider value.
+		ctx.lineWidth = style.lineWidth;
 		ctx.lineCap = "round";
 		ctx.stroke();
 	}
@@ -414,7 +414,8 @@ function drawPatchPattern(
 			ctx.lineWidth = 1;
 		} else {
 			ctx.strokeStyle = style.dark ? "#f2f4f8" : "#101318";
-			ctx.lineWidth = Math.max(1.4, Math.min(6, scale * 0.11)) * style.lineWidth;
+			// Constant CSS-px width, matching the flat canvas — see the fixed-grid branch above.
+			ctx.lineWidth = style.lineWidth;
 			ctx.lineCap = "round";
 		}
 		ctx.stroke();

@@ -110,7 +110,7 @@ export interface IcoOptions {
 	radius?: number; // sphere radius (default 1)
 	hueOffset?: number;
 	dark?: boolean;
-	edgeThickness?: number; // drawn-edge tube radius (default 0.014)
+	edgeThickness?: number; // drawn-edge tube radius (default 0.006 = buildFlatSolid's edgeRadius(1))
 	showGrid?: boolean; // draw ALL of the solid's edges faintly (the underlying grid)
 	allEdges?: [number, number][]; // the full edge list (vertex-index pairs), for showGrid
 }
@@ -176,7 +176,9 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	const radius = opts.radius ?? 1;
 	const mode: IcoMode = opts.mode ?? "polyhedron";
 	const dark = opts.dark ?? true;
-	const thickness = opts.edgeThickness ?? 0.014;
+	// Same edge-tube builder and radius as a normal spherical solid (buildFlatSolid → edgeRadius(1) = 0.006),
+	// so a freedraw drawn edge and a normal tiling edge read the same weight at stroke width 1.
+	const thickness = opts.edgeThickness ?? 0.006;
 	const V = rawVertices.map(nrm);
 
 	const group = new THREE.Group();
