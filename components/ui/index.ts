@@ -5,6 +5,7 @@ export { Checkbox, CheckboxBox } from "./checkbox";
 export { Slider } from "./slider";
 export { RangeInput } from "./range-input";
 export { RangeSlider } from "./range-slider";
+export { IntervalSlider } from "./interval-slider";
 export { Modal } from "./modal";
 export { Tabs } from "./tabs";
 export { Pagination } from "./pagination";

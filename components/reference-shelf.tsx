@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Library, Link2, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { IntervalSlider } from "@/components/ui/interval-slider";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { RangeInput } from "@/components/ui/range-input";
+import { Switch } from "@/components/ui/switch";
 import { ReferenceCard } from "@/components/reference-card";
 import { cn } from "@/lib/utils/cn";
 import type { FreedrawGrid } from "@/lib/freedraw/pattern";
@@ -21,6 +23,7 @@ import {
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
+	hyperbolicFacetsOf,
 	tileClassOf,
 	geometryOf,
 	GEOMETRY_ORDER,
@@ -199,6 +202,17 @@ interface ViewState {
 	page: number;
 	pageSize: number;
 	gridColumns: number;
+	// Group tilings sharing a vertex configuration + k into one card with a ‹ n/N › pager (hyperbolic
+	// shelf, where one figure carries up to hundreds of tilings). URL key "grouped" — "group" is taken
+	// by the wallpaper-group filter.
+	groupVariants: boolean;
+}
+
+// One card of the (possibly grouped) shelf: the tilings it cycles through, in variant order. A
+// singleton for every ungrouped entry.
+interface CardGroup {
+	key: string;
+	members: ReferenceTiling[];
 }
 
 function parseViewState(sp: URLSearchParams): ViewState {
@@ -215,6 +229,14 @@ function parseViewState(sp: URLSearchParams): ViewState {
 		const items = v.split(",").map((s) => s.trim()).filter(Boolean);
 		return items.length ? items : undefined;
 	};
+	// "lo,hi" → an inclusive interval; anything malformed (wrong arity, NaN, inverted) is dropped.
+	const ival = (key: string): [number, number] | undefined => {
+		const v = sp.get(key);
+		if (!v) return undefined;
+		const parts = v.split(",").map(Number);
+		if (parts.length !== 2 || !parts.every(Number.isFinite) || parts[0] > parts[1]) return undefined;
+		return [parts[0], parts[1]];
+	};
 
 	const k = num("k");
 	if (k != null) f.kValue = k;
@@ -228,6 +250,16 @@ function parseViewState(sp: URLSearchParams): ViewState {
 		f.geometry = cls;
 	} else if (cls && (TILE_CLASS_VALUES as string[]).includes(cls)) {
 		f.tileClass = cls as TileClass;
+	}
+	// The hyperbolic interval facets only mean something on the hyperbolic shelf — under any other
+	// geometry an active one would just filter the view to zero, so drop them from foreign links.
+	if (f.geometry === "hyperbolic") {
+		const valence = ival("valence");
+		if (valence) f.hypValence = valence;
+		const palette = ival("palette");
+		if (palette) f.hypPolygon = palette;
+		const edge = ival("edge");
+		if (edge) f.hypEdge = edge;
 	}
 	const decomp = sp.get("decomp");
 	if (decomp === "decomposable" || decomp === "non-decomposable") f.convexDecomp = decomp;
@@ -275,6 +307,7 @@ function parseViewState(sp: URLSearchParams): ViewState {
 		page: page != null && page >= 1 ? Math.floor(page) : 1,
 		pageSize: size != null && PAGE_SIZE_OPTIONS.includes(size) ? size : DEFAULT_PAGE_SIZE,
 		gridColumns: cols != null ? Math.min(6, Math.max(3, Math.floor(cols))) : 5,
+		groupVariants: sp.get("grouped") === "1",
 	};
 }
 
@@ -285,6 +318,9 @@ function serializeView(v: ViewState): string {
 	// Euclidean is the default, so only non-euclidean geometries need a URL param.
 	if (f.geometry && f.geometry !== "euclidean") p.set("geo", f.geometry);
 	if (f.tileClass) p.set("class", f.tileClass);
+	if (f.hypValence) p.set("valence", f.hypValence.join(","));
+	if (f.hypPolygon) p.set("palette", f.hypPolygon.join(","));
+	if (f.hypEdge) p.set("edge", f.hypEdge.map((n) => String(Math.round(n * 100) / 100)).join(","));
 	if (f.convexDecomp) p.set("decomp", f.convexDecomp);
 	if (f.mValue != null) p.set("m", String(f.mValue));
 	if (f.partitionKey) p.set("partition", f.partitionKey);
@@ -307,6 +343,7 @@ function serializeView(v: ViewState): string {
 	if (v.page > 1) p.set("page", String(v.page));
 	if (v.pageSize !== DEFAULT_PAGE_SIZE) p.set("size", String(v.pageSize));
 	if (v.gridColumns !== 5) p.set("cols", String(v.gridColumns));
+	if (v.groupVariants) p.set("grouped", "1");
 	return p.toString();
 }
 
@@ -334,6 +371,47 @@ function SubLabel({ children }: { children: ReactNode }) {
 // An explanatory line under a group's controls. This one IS content, so it stays a tile.
 function GroupNote({ children }: { children: ReactNode }) {
 	return <p className={cn("ta-wall-cell bg-surface-chrome px-3 py-2", META, "leading-relaxed")}>{children}</p>;
+}
+
+// A filter cell holding one IntervalSlider plus its live readout — the hyperbolic Valence / Palette /
+// Edge-length groups. The readout is muted at the full data span (no filter) and foreground ink once
+// the interval is narrowed, mirroring how the other groups signal an active selection.
+function IntervalFilterCell({
+	value,
+	min,
+	max,
+	step,
+	active,
+	onChange,
+	ariaLabel,
+	format = (n: number) => String(n),
+}: {
+	value: [number, number];
+	min: number;
+	max: number;
+	step: number;
+	active: boolean;
+	onChange: (v: [number, number]) => void;
+	ariaLabel: string;
+	format?: (n: number) => string;
+}) {
+	return (
+		<div className="ta-wall-cell bg-surface-chrome flex flex-col gap-1 px-3 pt-2 pb-2.5">
+			<div className="flex justify-end">
+				<span className={cn("text-[10px] font-medium tabular-nums", active ? "text-fg" : "text-fg-muted")}>
+					{format(value[0])} – {format(value[1])}
+				</span>
+			</div>
+			<IntervalSlider
+				value={value}
+				onChange={onChange}
+				min={min}
+				max={max}
+				step={step}
+				aria-label={ariaLabel}
+			/>
+		</div>
+	);
 }
 
 function FilterGroup({
@@ -373,6 +451,7 @@ export function ReferenceShelf() {
 	const [gridColumns, setGridColumns] = useState(initialView.gridColumns);
 	const [pageSize, setPageSize] = useState(initialView.pageSize);
 	const [currentPage, setCurrentPage] = useState(initialView.page);
+	const [groupVariants, setGroupVariants] = useState(initialView.groupVariants);
 	const [copied, setCopied] = useState(false);
 	const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [loadedShards, setLoadedShards] = useState<Set<number>>(new Set());
@@ -401,15 +480,15 @@ export function ReferenceShelf() {
 			return;
 		}
 		setCurrentPage(1);
-	}, [filters, pageSize]);
+	}, [filters, pageSize, groupVariants]);
 
 	// Mirror the whole view into the URL without navigating — a reload restores it and "Copy link" hands
 	// a friend the exact same view. replaceState (not router.replace) keeps this off the Next router, so
 	// it neither re-runs the server component nor spams history; useSearchParams is read once on mount.
 	useEffect(() => {
-		const q = serializeView({ filters, page: currentPage, pageSize, gridColumns });
+		const q = serializeView({ filters, page: currentPage, pageSize, gridColumns, groupVariants });
 		window.history.replaceState(null, "", q ? `${window.location.pathname}?${q}` : window.location.pathname);
-	}, [filters, currentPage, pageSize, gridColumns]);
+	}, [filters, currentPage, pageSize, gridColumns, groupVariants]);
 
 	const copyLink = useCallback(() => {
 		navigator.clipboard
@@ -635,7 +714,18 @@ export function ReferenceShelf() {
 		if (g === geometry) return;
 		setFilters(
 			g === "euclidean"
-				? { ...filters, geometry: g, kValue: undefined, mValue: undefined, partitionKey: undefined, maximalOnly: undefined }
+				? {
+						...filters,
+						geometry: g,
+						kValue: undefined,
+						mValue: undefined,
+						partitionKey: undefined,
+						maximalOnly: undefined,
+						// the hyperbolic interval facets mean nothing on the plane
+						hypValence: undefined,
+						hypPolygon: undefined,
+						hypEdge: undefined,
+					}
 				: {
 						geometry: g,
 						// keep the cross-geometry axes (provenance + search); drop everything Euclidean-only
@@ -708,6 +798,43 @@ export function ReferenceShelf() {
 			.sort((a, b) => a.m - b.m || (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
 	}, [tilings, filters]);
 
+	// Data bounds for the hyperbolic interval sliders (valence / palette / edge length ℓ), derived from
+	// the loaded hyperbolic shelf. The edge span is rounded outward to the slider's 0.01 step so the raw
+	// extremes stay reachable. Null until the atlas is in (the groups just don't render yet).
+	const hypBounds = useMemo(() => {
+		if (!tilings) return null;
+		let vMin = Infinity, vMax = -Infinity;
+		let pMin = Infinity, pMax = -Infinity;
+		let eMin = Infinity, eMax = -Infinity;
+		for (const t of tilings) {
+			const hf = hyperbolicFacetsOf(t);
+			if (hf) {
+				if (hf.valence < vMin) vMin = hf.valence;
+				if (hf.valence > vMax) vMax = hf.valence;
+				if (hf.polygon < pMin) pMin = hf.polygon;
+				if (hf.polygon > pMax) pMax = hf.polygon;
+			}
+			if (t.source === "hyperbolic" && t.edge != null) {
+				if (t.edge < eMin) eMin = t.edge;
+				if (t.edge > eMax) eMax = t.edge;
+			}
+		}
+		if (!Number.isFinite(vMin) || !Number.isFinite(eMin)) return null;
+		return {
+			valence: [vMin, vMax] as [number, number],
+			polygon: [pMin, pMax] as [number, number],
+			edge: [Math.floor(eMin * 100) / 100, Math.ceil(eMax * 100) / 100] as [number, number],
+		};
+	}, [tilings]);
+
+	// An interval slider back at the full data span IS "no filter" — store undefined so the active
+	// count, the Clear button and the URL stay honest.
+	const setHypInterval = (
+		key: "hypValence" | "hypPolygon" | "hypEdge",
+		v: [number, number],
+		full: [number, number],
+	) => setFilters({ ...filters, [key]: v[0] <= full[0] && v[1] >= full[1] ? undefined : v });
+
 	const availableFolds = useMemo(() => {
 		if (!tilings) return [];
 		const s = new Set<number>();
@@ -766,6 +893,9 @@ export function ReferenceShelf() {
 		(filters.freedrawKind ? 1 : 0) +
 		(filters.freedrawGrid ? 1 : 0) +
 		(filters.freedrawRegular ? 1 : 0) +
+		(filters.hypValence ? 1 : 0) +
+		(filters.hypPolygon ? 1 : 0) +
+		(filters.hypEdge ? 1 : 0) +
 		(filters.mValue != null ? 1 : 0) +
 		(filters.partitionKey != null ? 1 : 0) +
 		(filters.maximalOnly ? 1 : 0) +
@@ -784,9 +914,39 @@ export function ReferenceShelf() {
 			.sort((a, b) => a.k - b.k || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 	}, [tilings, filters]);
 
+	// The card list, one group per card. Grouping collapses HYPERBOLIC entries sharing (k, vertex
+	// configuration) — the shelf where one figure carries up to hundreds of variants — into a single
+	// card the ReferenceCard pager cycles through; everything else stays a singleton (a Euclidean
+	// "family" is the tile inventory, not the vertex configuration, so collapsing it would lump
+	// genuinely different tilings). Members ride in variant order (the exporter's ℓ-ascending index),
+	// not id order — base-25 suffixes ("-ba" < "-c") would shuffle them.
+	const displayGroups = useMemo<CardGroup[]>(() => {
+		if (!groupVariants) return filtered.map((t) => ({ key: t.id, members: [t] }));
+		const byKey = new Map<string, CardGroup>();
+		const order: CardGroup[] = [];
+		for (const t of filtered) {
+			if (t.source !== "hyperbolic") {
+				order.push({ key: t.id, members: [t] });
+				continue;
+			}
+			const key = `hyp|${t.k}|${t.family}`;
+			let g = byKey.get(key);
+			if (!g) {
+				g = { key, members: [] };
+				byKey.set(key, g);
+				order.push(g);
+			}
+			g.members.push(t);
+		}
+		for (const g of order)
+			if (g.members.length > 1)
+				g.members.sort((a, b) => (a.variant ?? 0) - (b.variant ?? 0) || (a.id < b.id ? -1 : 1));
+		return order;
+	}, [filtered, groupVariants]);
+
 	const paginated = useMemo(
-		() => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-		[filtered, currentPage, pageSize],
+		() => displayGroups.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+		[displayGroups, currentPage, pageSize],
 	);
 
 	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
@@ -1014,6 +1174,69 @@ export function ReferenceShelf() {
 						) : null}
 					</FilterGroup>
 
+					{/* Hyperbolic-only interval facets. Valence and palette are the sweep's own axes (most edges
+					    at any vertex, largest polygon in any figure), so their upper bounds read exactly as an
+					    enumeration cell's (p, v). Edge length ℓ is the hyperbolic shape coordinate — H² has no
+					    similarity, so ℓ separates tilings the vertex figure alone cannot. */}
+					{geometry === "hyperbolic" && hypBounds ? (
+						<>
+							<FilterGroup
+								title="Valence"
+								summary={filters.hypValence ? `${filters.hypValence[0]} – ${filters.hypValence[1]}` : null}
+								note="max edges per vertex"
+							>
+								<IntervalFilterCell
+									value={filters.hypValence ?? hypBounds.valence}
+									active={!!filters.hypValence}
+									min={hypBounds.valence[0]}
+									max={hypBounds.valence[1]}
+									step={1}
+									onChange={(v) => setHypInterval("hypValence", v, hypBounds.valence)}
+									ariaLabel="Valence"
+								/>
+							</FilterGroup>
+
+							<FilterGroup
+								title="Palette"
+								summary={filters.hypPolygon ? `${filters.hypPolygon[0]} – ${filters.hypPolygon[1]}` : null}
+								note="largest polygon"
+							>
+								<IntervalFilterCell
+									value={filters.hypPolygon ?? hypBounds.polygon}
+									active={!!filters.hypPolygon}
+									min={hypBounds.polygon[0]}
+									max={hypBounds.polygon[1]}
+									step={1}
+									onChange={(v) => setHypInterval("hypPolygon", v, hypBounds.polygon)}
+									ariaLabel="Palette"
+								/>
+							</FilterGroup>
+
+							<FilterGroup
+								title="Edge length"
+								summary={
+									filters.hypEdge ? `${filters.hypEdge[0].toFixed(2)} – ${filters.hypEdge[1].toFixed(2)}` : null
+								}
+								note="forced ℓ"
+							>
+								<IntervalFilterCell
+									value={filters.hypEdge ?? hypBounds.edge}
+									active={!!filters.hypEdge}
+									min={hypBounds.edge[0]}
+									max={hypBounds.edge[1]}
+									step={0.01}
+									onChange={(v) => setHypInterval("hypEdge", v, hypBounds.edge)}
+									ariaLabel="Edge length"
+									format={(n) => n.toFixed(2)}
+								/>
+								<GroupNote>
+									The edge length ℓ forced by the vertex figures (Σα = 2π). H² has no similarity, so ℓ is a
+									shape coordinate — it separates tilings the figure alone cannot.
+								</GroupNote>
+							</FilterGroup>
+						</>
+					) : null}
+
 					{showM ? (
 						<FilterGroup title="Distinct configs (M)" summary={filters.mValue ?? null} note="M ≤ k">
 							<OptionWall
@@ -1148,6 +1371,11 @@ export function ReferenceShelf() {
 					<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted">
 						{filtered.length} tilings
 					</span>
+					{groupVariants && geometry === "hyperbolic" ? (
+						<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted">
+							{displayGroups.length} families
+						</span>
+					) : null}
 					{loadingShards.size > 0 ? (
 						<span className="flex items-center gap-1.5 text-xs text-fg-muted">
 							<Loader2 size={12} className="animate-spin text-fg-muted" />
@@ -1161,6 +1389,19 @@ export function ReferenceShelf() {
 					) : null}
 
 					<div className="ml-auto flex items-center gap-4">
+						{/* Group-variants toggle — hyperbolic only, where one vertex configuration carries up to
+						    hundreds of tilings; the card then pages through them in place. */}
+						{geometry === "hyperbolic" ? (
+							<span className="flex items-center gap-2 text-xs text-fg-muted">
+								Group variants
+								<Switch
+									size="sm"
+									checked={groupVariants}
+									onCheckedChange={setGroupVariants}
+									aria-label="Group tilings sharing a vertex configuration"
+								/>
+							</span>
+						) : null}
 						<button
 							type="button"
 							onClick={copyLink}
@@ -1224,23 +1465,24 @@ export function ReferenceShelf() {
 				) : (
 					<>
 						<Pagination
-							totalItems={filtered.length}
+							totalItems={displayGroups.length}
 							pageSize={pageSize}
 							currentPage={currentPage}
 							onPageChange={setCurrentPage}
 						/>
 						<div className="ta-lanes grid mt-4" style={gridStyle}>
-							{paginated.map((tiling) => (
+							{paginated.map((g) => (
 								<ReferenceCard
-									key={tiling.id}
-									tiling={tiling}
+									key={g.key}
+									tiling={g.members[0]}
+									group={g.members}
 									onClick={(t) => router.push(`/play?source=reference&tiling=${encodeURIComponent(t.id)}`)}
 								/>
 							))}
 						</div>
 						<div className="mt-4">
 							<Pagination
-								totalItems={filtered.length}
+								totalItems={displayGroups.length}
 								pageSize={pageSize}
 								currentPage={currentPage}
 								onPageChange={setCurrentPage}

@@ -397,6 +397,36 @@ export function isMaximal(t: Pick<ReferenceTiling, "m" | "k">): boolean {
 	return t.m != null && t.m === t.k;
 }
 
+// ── hyperbolic interval facets (2026-07-23) ───────────────────────────────────────────────────────
+// The scalars behind the /library hyperbolic sliders, parsed from the family label ("3.4.4.8 +
+// 3.4.8.4"). Both are MAXIMA over the k vertex figures — the same axes the (k,p,v) sweep enumerates
+// by (palette p = largest polygon anywhere, valence v = most edges at any vertex) — so a slider's
+// upper bound reads exactly as a sweep cell's bound. Cached per id: the matcher runs over all 28k+
+// entries on every filter keystroke, and the label never changes after load.
+const hypFacetCache = new Map<string, { valence: number; polygon: number } | null>();
+export function hyperbolicFacetsOf(
+	t: Pick<ReferenceTiling, "id" | "source" | "family">,
+): { valence: number; polygon: number } | null {
+	if (t.source !== "hyperbolic") return null;
+	const cached = hypFacetCache.get(t.id);
+	if (cached !== undefined) return cached;
+	let valence = 0;
+	let polygon = 0;
+	for (const figure of t.family.split("+")) {
+		const ns = figure
+			.split(".")
+			.map((s) => Number(s.trim()))
+			.filter((n) => Number.isInteger(n) && n >= 3);
+		if (ns.length) {
+			valence = Math.max(valence, ns.length);
+			polygon = Math.max(polygon, ...ns);
+		}
+	}
+	const facets = valence >= 3 ? { valence, polygon } : null;
+	hypFacetCache.set(t.id, facets);
+	return facets;
+}
+
 export interface ReferenceFilter {
 	// The geometry axis — the library's top-level split, one level above tileClass. When set, only tilings
 	// of this geometry match. The Euclidean-only sub-filters (tileClass, star, lattice, wallpaper group)
@@ -437,6 +467,12 @@ export interface ReferenceFilter {
 	certifications?: Certification[]; // proven / reproduced / candidate
 	polygonNames?: string[]; // each must appear in the tiling's family label
 	query?: string; // free-text substring match on id or family (e.g. "4j5_5b2" or "3.6")
+	// Hyperbolic shelf facets, each an inclusive interval [lo, hi] driven by an IntervalSlider. The
+	// scalars are hyperbolicFacetsOf (valence/polygon maxima over the vertex figures) and the merged
+	// forced edge length ℓ. Non-hyperbolic tilings never match while one of these is active.
+	hypValence?: [number, number]; // most edges at any vertex (v of the sweep)
+	hypPolygon?: [number, number]; // largest polygon in any figure (palette p of the sweep)
+	hypEdge?: [number, number]; // forced edge length ℓ (Poincaré metric)
 }
 
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
@@ -492,6 +528,20 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	}
 	if (f.wallpaperGroups?.length && (t.wallpaperGroup == null || !f.wallpaperGroups.includes(t.wallpaperGroup))) return false;
 	if (f.latticeShapes?.length && (t.latticeShape == null || !f.latticeShapes.includes(t.latticeShape))) return false;
+	// Hyperbolic interval facets: an active one excludes everything outside the hyperbolic shelf (or
+	// missing the scalar) — same never-silently-pass ethos as M/partition above.
+	if (f.hypValence || f.hypPolygon) {
+		const hf = hyperbolicFacetsOf(t);
+		if (!hf) return false;
+		if (f.hypValence && (hf.valence < f.hypValence[0] || hf.valence > f.hypValence[1])) return false;
+		if (f.hypPolygon && (hf.polygon < f.hypPolygon[0] || hf.polygon > f.hypPolygon[1])) return false;
+	}
+	if (f.hypEdge) {
+		// The slider's bounds are the data's min/max rounded outward to 0.01, and ε absorbs the float
+		// dust of 0.01-stepped stops, so an entry sitting exactly on a bound always matches.
+		if (t.source !== "hyperbolic" || t.edge == null) return false;
+		if (t.edge < f.hypEdge[0] - 1e-9 || t.edge > f.hypEdge[1] + 1e-9) return false;
+	}
 	if (f.discoverers?.length && !f.discoverers.includes(t.discoverer)) return false;
 	if (f.certifications?.length && (t.certification == null || !f.certifications.includes(t.certification))) return false;
 	if (f.polygonNames?.length) {

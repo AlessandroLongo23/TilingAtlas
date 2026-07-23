@@ -1,6 +1,7 @@
 "use client";
 
-import { Camera } from "lucide-react";
+import { useState } from "react";
+import { Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
@@ -26,6 +27,10 @@ import {
 // enumeration level, orthogonal to who discovered it). A "family" one-parameter tiling gets an α chip.
 interface ReferenceCardProps {
 	tiling: ReferenceTiling;
+	// Group-variants mode (the shelf's toggle): every tiling sharing this card's vertex configuration
+	// and k, in variant order. When longer than 1 the card shows one member at a time with a
+	// ‹ n/N › pager bottom-right; the thumbnail click opens the member currently shown.
+	group?: ReferenceTiling[];
 	onClick?: (t: ReferenceTiling) => void;
 }
 
@@ -37,7 +42,13 @@ const CERT_STYLE: Record<Certification, { label: string; cls: string }> = {
 	candidate: { label: "Candidate", cls: "border-dashed border-line-strong bg-transparent text-fg-muted" },
 };
 
-export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
+export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceCardProps) {
+	// The variant pager. rawIdx is clamped, not reset, when a filter shrinks the group under the same
+	// card key — the shelf remounts the card (new key) only when the group's identity changes.
+	const [rawIdx, setRawIdx] = useState(0);
+	const members = group && group.length > 1 ? group : null;
+	const idx = members ? Math.min(rawIdx, members.length - 1) : 0;
+	const tiling = members ? members[idx] : baseTiling;
 	const isFamily = Array.isArray(tiling.alphaRange);
 	// Degrees of freedom = independent sliders in Play. 2+ (α, β, …) get their own badge.
 	const dof = tiling.paramCell?.params?.length ?? (isFamily ? 1 : 0);
@@ -63,8 +74,12 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 		// surface-raised, not surface: the lane between cells is the page's own background, so the card
 		// has to sit a step above it or the lane reads as part of the card. Hover darkens the hairline
 		// rather than the fill — in a layout made of lines, that is the louder signal anyway.
-		"ta-lane-cell relative flex flex-col bg-surface-raised hover:[--ta-lane-color:var(--color-line-strong)] transition-all overflow-hidden group",
-		onClick && "cursor-pointer text-left",
+		// Only the THUMBNAIL is clickable (AL, 2026-07-23), so on interactive cards the hover signal
+		// tracks the thumbnail alone — hovering the inert bottom section changes nothing.
+		"ta-lane-cell relative flex flex-col bg-surface-raised transition-all overflow-hidden group text-left",
+		onClick
+			? "has-[.card-thumb:hover]:[--ta-lane-color:var(--color-line-strong)]"
+			: "hover:[--ta-lane-color:var(--color-line-strong)]",
 	);
 
 	const openScreenshot = useScreenshotPreview((s) => s.open);
@@ -85,9 +100,52 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 		});
 	};
 
+	// ‹ n/N › — position within the group's CURRENT members (a narrowing filter can drop variants, so
+	// this is the browse position; the sub-line's "v of V" stays the tiling's global variant identity).
+	const pager = members ? (
+		<span className="flex shrink-0 items-center gap-0.5 text-[10px] tabular-nums text-fg-muted">
+			<button
+				type="button"
+				aria-label="Previous variant"
+				className="cursor-pointer p-0.5 transition-colors hover:text-fg"
+				onClick={() => setRawIdx((idx - 1 + members.length) % members.length)}
+			>
+				<ChevronLeft size={12} />
+			</button>
+			<span>
+				{idx + 1}/{members.length}
+			</span>
+			<button
+				type="button"
+				aria-label="Next variant"
+				className="cursor-pointer p-0.5 transition-colors hover:text-fg"
+				onClick={() => setRawIdx((idx + 1) % members.length)}
+			>
+				<ChevronRight size={12} />
+			</button>
+		</span>
+	) : null;
+
 	const content = (
 		<>
-			<div className="relative aspect-square bg-surface-raised">
+			{/* The one clickable region: pointer cursor + role=button here, default cursor below. */}
+			<div
+				className={cn("card-thumb relative aspect-square bg-surface-raised", onClick && "cursor-pointer")}
+				{...(onClick
+					? {
+							role: "button",
+							tabIndex: 0,
+							"aria-label": `Open ${tiling.family} in Play`,
+							onClick: () => onClick(tiling),
+							onKeyDown: (e: React.KeyboardEvent) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									onClick(tiling);
+								}
+							},
+						}
+					: {})}
+			>
 				{tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
 				) : tiling.freedraw ? (
@@ -111,7 +169,7 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 					</button>
 				) : null}
 			</div>
-			<div className="flex flex-col px-2.5 py-2 gap-1.5">
+			<div className="flex flex-col px-2.5 py-2 gap-1.5 cursor-default">
 				<div className="flex flex-wrap items-center gap-1">
 					{tiling.certification ? (
 						<span
@@ -241,11 +299,15 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 						<p className="text-sm text-fg font-mono leading-tight" title={`vertex configuration ${tiling.family}`}>
 							{compactVertexConfig(tiling.family)}
 						</p>
-						<p className="text-[10px] text-fg-muted leading-tight">
-							k={tiling.k} ·{" "}
-							{tiling.variants && tiling.variants > 1 ? `${tiling.variant} of ${tiling.variants} · ` : ""}
-							{TILE_CLASS_LABEL[tileClassOf(tiling)].short}
-						</p>
+						<div className="flex items-end justify-between gap-2">
+							<p className="text-[10px] text-fg-muted leading-tight">
+								k={tiling.k} ·{" "}
+								{/* grouped: the pager already says n/N, so the "v of V" sub-line segment would repeat it */}
+								{tiling.variants && tiling.variants > 1 && !members ? `${tiling.variant} of ${tiling.variants} · ` : ""}
+								{TILE_CLASS_LABEL[tileClassOf(tiling)].short}
+							</p>
+							{pager}
+						</div>
 					</>
 				) : isFreedraw ? (
 					// Freedraw: the face composition is the headline (there is no vertex configuration to name it
@@ -292,23 +354,5 @@ export function ReferenceCard({ tiling, onClick }: ReferenceCardProps) {
 		</>
 	);
 
-	if (onClick) {
-		return (
-			<div
-				className={wrapperClass}
-				role="button"
-				tabIndex={0}
-				onClick={() => onClick(tiling)}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						e.preventDefault();
-						onClick(tiling);
-					}
-				}}
-			>
-				{content}
-			</div>
-		);
-	}
 	return <div className={wrapperClass}>{content}</div>;
 }

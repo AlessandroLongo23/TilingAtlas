@@ -238,6 +238,57 @@ body {
   opacity: 0.45;
 }
 
+/* IntervalSlider (2026-07-23) — the dual-thumb .ta-track. Same track, ticks and thumb metrics; the
+   differences are the fill (the selected span runs --lo→--hi instead of 0→--f) and the thumbs being
+   the focusable controls themselves (no native input can express the coincident-handle drag rule),
+   so the focus ring keys on the thumb, not on a hidden input. touch-action:none lets the track own
+   horizontal touch drags instead of fighting the sidebar scroll. */
+.ta-ival {
+  touch-action: none;
+  container-type: inline-size;
+}
+/* .ta-track-travel is a full-track-width box translated by up to its own width, so at high values it
+   sticks out past the track — invisible and pointer-inert, but real SCROLLABLE overflow, which gave
+   the /library sidebar a phantom horizontal scroll (AL, 2026-07-23). Inside .ta-ival the track is a
+   size container, so the travel can be thumb-sized and ride on container units instead: it never
+   leaves the track, and the composited-transform glide is unchanged. */
+.ta-ival > .ta-track-travel {
+  width: 12px;
+  transform: translateX(calc(var(--f, 0) * (100cqi - 12px)));
+}
+.ta-ival-fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  margin-top: -1px;
+  pointer-events: none;
+  background: var(--color-text-primary);
+  transform-origin: left center;
+  /* translateX %s resolve against the untransformed box, so this is start=lo, span=hi−lo. Like
+     .ta-track-fill it is full-track-width based (thumb centres travel inset 6px); the ≤6px end
+     error hides under the 12px thumbs. */
+  transform: translateX(calc(var(--lo, 0) * 100%)) scaleX(calc(var(--hi, 1) - var(--lo, 0)));
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-ival-fill {
+    transition: none;
+  }
+}
+.ta-ival-thumb {
+  pointer-events: auto;
+}
+.ta-ival-thumb:focus-visible {
+  outline: 1px solid var(--color-text-primary);
+  outline-offset: 3px;
+}
+.ta-ival-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 /* Squared monochrome range input — pilot of the squared w/b design system (2026-07-22).
    Superseded by .ta-track above for single-value sliders; still the dual-thumb track.
    .ta-range draws its own 2px square-ended track (filled share via the --fill custom property,

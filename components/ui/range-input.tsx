@@ -9,8 +9,9 @@ const MAX_TICK_INTERVALS = 20;
 
 /** Number of intervals to mark, or null when the value set is too large — or too irregular — to
  *  mark honestly. A range whose span is not a whole number of steps (min 0, max 10, step 3) has
- *  an off-grid last value, and evenly spaced marks would lie about where the thumb can land. */
-function tickIntervals(min: number, max: number, step: number): number | null {
+ *  an off-grid last value, and evenly spaced marks would lie about where the thumb can land.
+ *  Exported for IntervalSlider, which shares the .ta-track tick geometry. */
+export function tickIntervals(min: number, max: number, step: number): number | null {
 	if (!(step > 0) || !(max > min)) return null;
 	const intervals = (max - min) / step;
 	const whole = Math.round(intervals);
