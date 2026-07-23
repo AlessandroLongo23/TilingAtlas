@@ -90,20 +90,53 @@ const HEADER: Record<FreedrawGrid, string> = {
 		"classification pre-baked, since there is no fixed lattice to flood.",
 };
 
-/** Fetch one catalogue file, tolerating absence (an empty list, never a broken page). */
-const fetchCatalogue = (url: string): Promise<FreedrawPattern[]> =>
-	fetch(url)
-		.then((r) => (r.ok ? (r.json() as Promise<FreedrawPattern[]>) : []))
-		.catch(() => [] as FreedrawPattern[]);
+// Which catalogue files hold each grid's slices, and which k each covers. The page loads LAZILY: only
+// the files for the selected grid+k are fetched and classified, so opening square k=5 pulls one 7.6MB
+// file, not the whole ~35MB / 112k-pattern atlas. Cached module-wide, so switching back is instant.
+const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[] }[]> = {
+	square: [
+		{ url: "/freedraw/solutions.json", ks: [1, 2, 3] },
+		{ url: "/freedraw/solutions-k4.json", ks: [4] },
+		{ url: "/freedraw/solutions-k5.json", ks: [5] },
+	],
+	triangle: [
+		{ url: "/freedraw/tri-solutions.json", ks: [1, 2, 3] },
+		{ url: "/freedraw/tri-solutions-k4.json", ks: [4] },
+	],
+	ts: [
+		{ url: "/freedraw/ts-solutions-k1.json", ks: [1] },
+		{ url: "/freedraw/ts-solutions-k2.json", ks: [2] },
+		{ url: "/freedraw/ts-solutions-k3.json", ks: [3] },
+	],
+};
+
+/** The catalogue files needed to show a grid+k slice (k = 0 means every k for that grid). */
+const filesFor = (grid: FreedrawGrid, k: number): string[] =>
+	CATALOGUE[grid].filter((f) => k === 0 || f.ks.includes(k)).map((f) => f.url);
+
+// url -> loaded patterns. Populated on demand and kept for the session so re-opening a slice is instant.
+const catalogueCache = new Map<string, FreedrawPattern[]>();
+
+/** Fetch one catalogue file into the cache, tolerating absence (an empty list, never a broken page). */
+const loadFile = (url: string): Promise<void> =>
+	catalogueCache.has(url)
+		? Promise.resolve()
+		: fetch(url)
+				.then((r) => (r.ok ? (r.json() as Promise<FreedrawPattern[]>) : []))
+				.catch(() => [] as FreedrawPattern[])
+				.then((d) => {
+					catalogueCache.set(url, d);
+				});
 
 export function FreedrawClient() {
 	const searchParams = useSearchParams();
 	// Read the URL exactly once, on mount; from then on we only WRITE it (replaceState below), the way
 	// ReferenceShelf does. Browser back/forward inside the page is therefore not a filter-state source.
 	const [initialFilter] = useState(() => parseFilter(searchParams));
-	const [all, setAll] = useState<FreedrawPattern[] | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [filter, setFilter] = useState<FreedrawFilter>(initialFilter);
+	// Bumped when a needed catalogue file finishes loading, to re-derive the slice from the mutable cache.
+	const [loadTick, setLoadTick] = useState(0);
 	const [page, setPage] = useState(1);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [fillMode, setFillMode] = useState<FillMode>("rank");
@@ -111,55 +144,43 @@ export function FreedrawClient() {
 	const [showVertices, setShowVertices] = useState(false);
 	const [showLattice, setShowLattice] = useState(false);
 
+	// Fetch only the files the current grid+k needs, on demand. Switching grid or k triggers this; files
+	// already cached resolve instantly and re-tick so the slice recomputes.
 	useEffect(() => {
 		let live = true;
-		// The base square catalogue (k<=3, also consumed by /library) is required; the k=4, triangle and
-		// combined-grid extensions are freedraw-page-only files and merge in best-effort.
-		Promise.all([
-			fetch("/freedraw/solutions.json").then((r) =>
-				r.ok ? (r.json() as Promise<FreedrawPattern[]>) : Promise.reject(new Error(`HTTP ${r.status}`)),
-			),
-			fetchCatalogue("/freedraw/solutions-k4.json"),
-			fetchCatalogue("/freedraw/solutions-k5.json"),
-			fetchCatalogue("/freedraw/tri-solutions.json"),
-			fetchCatalogue("/freedraw/tri-solutions-k4.json"),
-			fetchCatalogue("/freedraw/ts-solutions-k1.json"),
-			fetchCatalogue("/freedraw/ts-solutions-k2.json"),
-			fetchCatalogue("/freedraw/ts-solutions-k3.json"),
-		])
-			.then((lists) => live && setAll(lists.flat()))
+		const urls = filesFor(filter.grid, filter.k);
+		Promise.all(urls.map(loadFile))
+			.then(() => live && setLoadTick((n) => n + 1))
 			.catch((e: Error) => live && setError(e.message));
 		return () => {
 			live = false;
 		};
-	}, []);
+	}, [filter.grid, filter.k]);
 
-	// Face analysis is cheap (linear in the fundamental domain), so classify the whole catalogue once
-	// and keep the summaries around as the filter/sort keys. The analysis object is kept too — the
-	// regular-polygon classifier is memoised on it, computed lazily only when a polygon axis is live.
-	const rows = useMemo(() => {
-		if (!all) return [];
-		return all.map((p) => {
-			const analysis = analyseFaces(p);
-			return { pattern: p, stats: summarise(analysis), analysis };
-		});
-	}, [all]);
+	// The grid + k slice, classified. ONLY this slice is analysed — the win over classifying all 112k
+	// patterns up front. null while its files are still loading. Deriving the size chips from the SLICE
+	// rather than from `shown` is deliberate: chips computed after the size filter would vanish as you
+	// picked them, reshuffling the row under the cursor. loadTick is a dep so it recomputes on load.
+	const slice = useMemo(() => {
+		const urls = filesFor(filter.grid, filter.k);
+		if (!urls.every((u) => catalogueCache.has(u))) return null;
+		const out: { pattern: FreedrawPattern; stats: ReturnType<typeof summarise>; analysis: ReturnType<typeof analyseFaces> }[] = [];
+		for (const u of urls) {
+			for (const p of catalogueCache.get(u) ?? []) {
+				if (gridOf(p) === filter.grid && (!filter.k || p.k === filter.k)) {
+					const analysis = analyseFaces(p);
+					out.push({ pattern: p, stats: summarise(analysis), analysis });
+				}
+			}
+		}
+		return out;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [filter.grid, filter.k, loadTick]);
 
-	// The grid + k slice, which is both what the tile filter runs over and what the size chips are drawn
-	// from. Deriving the chips from the SLICE rather than from `shown` is deliberate: chips computed
-	// after the size filter would vanish as you picked them, reshuffling the row under the cursor.
-	const slice = useMemo(
-		() =>
-			rows.filter(
-				({ pattern }) =>
-					gridOf(pattern) === filter.grid && (!filter.k || pattern.k === filter.k),
-			),
-		[rows, filter.grid, filter.k],
-	);
-
-	const sizes = useMemo(() => sizeOptions(slice.map((r) => r.stats)), [slice]);
+	const sizes = useMemo(() => sizeOptions((slice ?? []).map((r) => r.stats)), [slice]);
 
 	const shown = useMemo(() => {
+		if (!slice) return [];
 		const needReg = regularActive(filter);
 		return slice.filter(({ stats, pattern, analysis }) =>
 			matches(stats, filter, needReg ? classifyRegular(pattern, analysis) : undefined),
@@ -241,9 +262,6 @@ export function FreedrawClient() {
 	if (error) {
 		return <div className="p-8 text-danger">Could not load the freedraw catalogue: {error}</div>;
 	}
-	if (!all) {
-		return <div className="p-8 text-text-muted">Loading the freedraw catalogue…</div>;
-	}
 
 	return (
 		<div className="flex flex-col h-full min-h-0">
@@ -274,7 +292,7 @@ export function FreedrawClient() {
 						</label>
 					))}
 					<span className="text-text-muted ml-auto tabular-nums">
-						{shown.length} of {slice.length}
+						{slice === null ? "loading…" : `${shown.length} of ${slice.length}`}
 					</span>
 				</div>
 
@@ -377,6 +395,7 @@ export function FreedrawClient() {
 
 			<div className="flex-1 min-h-0 flex">
 				<div className="flex-1 min-w-0 overflow-y-auto p-4">
+					{slice === null && <div className="p-8 text-text-muted">Loading the {filter.grid} catalogue…</div>}
 					<div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
 						{pageRows.map(({ pattern, stats }) => (
 							<button
