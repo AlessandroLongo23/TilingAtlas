@@ -598,6 +598,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				c.set({ [colorsField]: !c[colorsField] } as Partial<ConfigurationState>);
 				return;
 			}
+			// Spherical freedraw: one overlay, one key. G = the faint edge grid — the same letter the planar
+			// scaffold uses above, and the one both /freedraw arms bind.
+			if (!!selected?.sphericalFreedraw && (e.key === "g" || e.key === "G")) {
+				e.preventDefault();
+				const c = useConfiguration.getState();
+				c.set({ sphericalFreedrawGrid: !c.sphericalFreedrawGrid });
+				return;
+			}
 			if (!!selected?.spherical && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {
 				e.preventDefault();
 				const c = useConfiguration.getState();

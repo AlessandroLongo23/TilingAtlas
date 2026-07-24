@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { Fragment, useId, useState, type ReactNode } from "react";
+import { Kbd } from "@/components/ui/kbd";
 import { OptionWall } from "@/components/ui/option-wall";
 import type { Tri } from "@/lib/freedraw/filter";
 import { cn } from "@/lib/utils/cn";
@@ -202,20 +203,34 @@ export function TriMatrix({ rows }: { rows: TriRow[] }) {
 }
 
 // A standalone on/off cell for an independent boolean (the display toggles). Lit when on, exactly like a
-// selected tab; nothing else in the row moves when it flips.
-export function ToggleCell({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+// selected tab; nothing else in the row moves when it flips. `shortcut` shows the key that also flips it
+// (bound by the page through useToggleShortcuts) as a keycap badge — the same badge, on the same keys, as
+// the matching checkbox in /play's View options tab.
+export function ToggleCell({
+	label,
+	on,
+	onClick,
+	shortcut,
+}: {
+	label: string;
+	on: boolean;
+	onClick: () => void;
+	shortcut?: string;
+}) {
 	return (
 		<button
 			type="button"
 			aria-pressed={on}
+			aria-keyshortcuts={shortcut}
 			onClick={onClick}
 			className={cn(
-				"ta-tab ta-wall-cell flex min-h-8 cursor-pointer items-center justify-center px-2.5 text-xs font-medium leading-tight transition-colors",
+				"ta-tab ta-wall-cell flex min-h-8 cursor-pointer items-center justify-center gap-1.5 px-2.5 text-xs font-medium leading-tight transition-colors",
 				"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
 				on ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
 			)}
 		>
 			{label}
+			{shortcut ? <Kbd>{shortcut}</Kbd> : null}
 		</button>
 	);
 }

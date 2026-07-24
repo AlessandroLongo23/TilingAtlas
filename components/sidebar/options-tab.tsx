@@ -796,6 +796,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<Checkbox
 								id="sphericalFreedrawGrid"
 								label="Grid"
+								shortcut="G"
 								checked={cfg.sphericalFreedrawGrid}
 								onCheckedChange={(v) => setCfg({ sphericalFreedrawGrid: v })}
 							/>

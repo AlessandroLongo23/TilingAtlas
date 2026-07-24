@@ -1,9 +1,11 @@
 "use client";
 
+import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ColorsCanvas } from "@/components/colors/colors-canvas";
 import { ToggleCell, WallBar, WallColumn, WallGroup, WallSubLabel } from "@/components/freedraw/filter-wall";
+import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import {
@@ -16,6 +18,8 @@ import {
 	type ColorsGrid,
 } from "@/lib/colors/pattern";
 import type { ColorsStyle } from "@/lib/colors/render";
+import { useToggleShortcuts } from "@/lib/hooks/useToggleShortcuts";
+import { serializePlayState } from "@/lib/services/playUrlState";
 import { cn } from "@/lib/utils/cn";
 
 // The colored-tiling workbench: the /freedraw layout (filter wall over a paginated thumbnail grid
@@ -125,6 +129,27 @@ export function ColorsClient() {
 		[showEdges],
 	);
 
+	// The overlay keys, identical to /play's colors view (COLORS_TOGGLES there): G = tile edges,
+	// P = period lattice, O = colored-vertex orbits. Each control shows its key as a Kbd badge.
+	useToggleShortcuts({
+		g: () => setShowEdges((v) => !v),
+		p: () => setShowLattice((v) => !v),
+		o: () => setShowVertices((v) => !v),
+	});
+
+	// The /play deep link for the selection. Every colored pattern is in the base reference atlas (keyed by
+	// its id), so `tiling` alone resolves; the three overlay toggles ride along through the shared
+	// serializer so the viewer opens showing what the preview shows. Defaults are omitted by design.
+	const playHref = useMemo(() => {
+		if (!selected) return null;
+		const q = serializePlayState(
+			{ colorsEdges: showEdges, colorsLattice: showLattice, colorsVertices: showVertices },
+			null,
+			selected.id,
+		);
+		return q ? `/play?${q}` : "/play";
+	}, [selected, showEdges, showLattice, showVertices]);
+
 	const setKAndReset = (next: number) => {
 		setK(next);
 		setPage(1);
@@ -176,9 +201,9 @@ export function ColorsClient() {
 						<WallGroup title="Display">
 							<WallSubLabel>Overlays</WallSubLabel>
 							<div className="grid grid-cols-3 gap-px">
-								<ToggleCell label="Edges" on={showEdges} onClick={() => setShowEdges(!showEdges)} />
-								<ToggleCell label="Lattice" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
-								<ToggleCell label="Orbits" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
+								<ToggleCell label="Edges" shortcut="G" on={showEdges} onClick={() => setShowEdges(!showEdges)} />
+								<ToggleCell label="Lattice" shortcut="P" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
+								<ToggleCell label="Orbits" shortcut="O" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
 							</div>
 						</WallGroup>
 					</WallColumn>
@@ -236,6 +261,9 @@ export function ColorsClient() {
 								<div className="font-semibold text-text-primary">{selected.id}</div>
 								<div className="text-text-muted text-xs">drag to pan, wheel to zoom, double-click to reset</div>
 							</div>
+							{playHref && (
+								<Button href={playHref} variant="secondary" size="sm" icon={Play} label="Open in play" fullWidth />
+							)}
 							<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
 								<dt className="text-text-muted">colored vertex classes</dt>
 								<dd className="text-text-secondary">k = {selected.k}</dd>

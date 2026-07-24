@@ -1,5 +1,6 @@
 "use client";
 
+import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
@@ -13,8 +14,10 @@ import {
 	WallSubLabel,
 } from "@/components/freedraw/filter-wall";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
+import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
+import { useToggleShortcuts } from "@/lib/hooks/useToggleShortcuts";
 import type { IcoMode, IcoPattern } from "@/lib/render/icoFreedraw";
 import { ICO_SOLIDS, icoSolidKs } from "@/lib/render/icoSolids";
 import { cn } from "@/lib/utils/cn";
@@ -129,6 +132,20 @@ export function SphericalFreedraw({
 		[patterns, pageRows, selectedId],
 	);
 
+	// This arm has one overlay, so it carries one key: G = the faint edge grid, the same letter the grid
+	// scaffold uses on the planar arm and in /play. Polyhedron/Sphere has no key (it is a mode, not an
+	// overlay, and /play's Options tab gives it none either).
+	useToggleShortcuts({ g: () => setShowGrid((v) => !v) });
+
+	// The /play deep link for the selection. Spherical freedraw is NOT in /play's base atlas — the loader
+	// there fires on the "sfd-" key prefix, which is exactly the key referenceAtlas mints per solid
+	// (sphericalFreedrawToReference), so build it the same way. The mode/grid toggles have no URL params in
+	// PLAY_PARAMS, so only the key travels; /play carries its own copies in the View options tab.
+	const playHref = useMemo(
+		() => (selected ? `/play?tiling=${encodeURIComponent(`sfd-${solidId}-${selected.id}`)}` : null),
+		[selected, solidId],
+	);
+
 	const switchSolid = (id: string) => {
 		const next = SOLIDS.find((s) => s.id === id)!;
 		setSolidId(id);
@@ -182,7 +199,7 @@ export function SphericalFreedraw({
 						<WallGroup title="Display">
 							<OptionWall columns={2} options={MODE_OPTIONS} selected={mode} onChange={(v) => setMode(v)} />
 							<WallSubLabel>Overlays</WallSubLabel>
-							<ToggleCell label="Grid" on={showGrid} onClick={() => setShowGrid(!showGrid)} />
+							<ToggleCell label="Grid" shortcut="G" on={showGrid} onClick={() => setShowGrid(!showGrid)} />
 						</WallGroup>
 					</WallColumn>
 				</WallBar>
@@ -246,6 +263,9 @@ export function SphericalFreedraw({
 								<div className="font-mono font-semibold text-text-primary">{selected.id}</div>
 								<div className="text-text-muted text-xs">drag to rotate, wheel to zoom</div>
 							</div>
+							{playHref && (
+								<Button href={playHref} variant="secondary" size="sm" icon={Play} label="Open in play" fullWidth />
+							)}
 							<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
 								<dt className="text-text-muted">solid</dt>
 								<dd className="text-text-secondary">

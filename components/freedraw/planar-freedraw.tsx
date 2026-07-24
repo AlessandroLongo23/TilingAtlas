@@ -1,5 +1,6 @@
 "use client";
 
+import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
@@ -14,6 +15,7 @@ import {
 	WallGroup,
 	WallSubLabel,
 } from "@/components/freedraw/filter-wall";
+import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { analyseFaces, rankLabel, summarise } from "@/lib/freedraw/faces";
@@ -31,6 +33,8 @@ import {
 import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw/regular";
 import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
+import { useToggleShortcuts } from "@/lib/hooks/useToggleShortcuts";
+import { serializePlayState } from "@/lib/services/playUrlState";
 import { cn } from "@/lib/utils/cn";
 
 const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
@@ -208,6 +212,34 @@ export function PlanarFreedraw({
 		[fillMode, showScaffold],
 	);
 
+	// The overlay keys, identical to /play's freedraw view (FREEDRAW_TOGGLES there): G = grid scaffold,
+	// P = period lattice, O = grid-point orbits. Each control shows its key as a Kbd badge. The fill mode
+	// carries no key — it has none in /play's Options tab either.
+	useToggleShortcuts({
+		g: () => setShowScaffold((v) => !v),
+		p: () => setShowLattice((v) => !v),
+		o: () => setShowVertices((v) => !v),
+	});
+
+	// The /play deep link for the selection. Every planar freedraw pattern is in the base reference atlas
+	// (keyed by its id — the same files this page reads), so `tiling` alone resolves; the fill mode and the
+	// three overlays ride along through the shared serializer so the viewer opens showing what the preview
+	// shows. Defaults are omitted by design, so a default view yields a bare /play?tiling=…
+	const playHref = useMemo(() => {
+		if (!selected) return null;
+		const q = serializePlayState(
+			{
+				freedrawFill: fillMode,
+				freedrawScaffold: showScaffold,
+				freedrawLattice: showLattice,
+				freedrawVertices: showVertices,
+			},
+			null,
+			selected.pattern.id,
+		);
+		return q ? `/play?${q}` : "/play";
+	}, [selected, fillMode, showScaffold, showLattice, showVertices]);
+
 	// Mirror the filter into the URL without navigating, so a reload restores the view and the address
 	// bar is the share link. replaceState keeps this off the Next router: no server round-trip, no
 	// history spam. Same pattern as components/reference-shelf.tsx.
@@ -361,9 +393,9 @@ export function PlanarFreedraw({
 							<OptionWall columns={3} options={FILL_OPTIONS} selected={fillMode} onChange={setFillMode} />
 							<WallSubLabel>Overlays</WallSubLabel>
 							<div className="grid grid-cols-3 gap-px">
-								<ToggleCell label="Grid" on={showScaffold} onClick={() => setShowScaffold(!showScaffold)} />
-								<ToggleCell label="Lattice" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
-								<ToggleCell label="Orbits" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
+								<ToggleCell label="Grid" shortcut="G" on={showScaffold} onClick={() => setShowScaffold(!showScaffold)} />
+								<ToggleCell label="Lattice" shortcut="P" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
+								<ToggleCell label="Orbits" shortcut="O" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
 							</div>
 						</WallGroup>
 					</WallColumn>
@@ -425,6 +457,9 @@ export function PlanarFreedraw({
 									drag to pan, wheel to zoom, double-click to reset
 								</div>
 							</div>
+							{playHref && (
+								<Button href={playHref} variant="secondary" size="sm" icon={Play} label="Open in play" fullWidth />
+							)}
 							<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
 								<dt className="text-text-muted">grid-point orbits</dt>
 								<dd className="text-text-secondary">k = {selected.pattern.k}</dd>
