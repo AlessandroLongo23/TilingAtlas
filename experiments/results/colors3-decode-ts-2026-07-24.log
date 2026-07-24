@@ -1,0 +1,24 @@
+[12:48:39] parsed 24349 certificate blocks from /Users/alessandro/Desktop/University/Thesis/TilingAtlas/materials/corpora/triangles+squares_3_colors (grid ts, 3 colors, alphabet ['A3', 'A4', 'B3', 'B4', 'C3', 'C4'])
+[12:48:40]   developed 2000/24349  (1s, ETA 10s)
+[12:48:41]   developed 4000/24349  (2s, ETA 12s)
+[12:48:42]   developed 6000/24349  (4s, ETA 11s)
+[12:48:44]   developed 8000/24349  (5s, ETA 11s)
+[12:48:46]   developed 10000/24349  (7s, ETA 10s)
+[12:48:47]   developed 12000/24349  (8s, ETA 8s)
+[12:48:48]   developed 14000/24349  (10s, ETA 7s)
+[12:48:50]   developed 16000/24349  (11s, ETA 6s)
+[12:48:51]   developed 18000/24349  (12s, ETA 4s)
+[12:48:52]   developed 20000/24349  (13s, ETA 3s)
+[12:48:53]   developed 22000/24349  (14s, ETA 2s)
+[12:48:55]   developed 24000/24349  (16s, ETA 0s)
+[12:48:55] developed 24349/24349 blocks, 0 with disagreeing table variants
+[12:48:55] blocks per k (main): {1: 78, 2: 1332, 3: 19548}
+[12:48:55] blocks per k (o):    {1: 12, 2: 211, 3: 3168}
+[12:48:55] blocks using 1 color(s): {1: 12, 2: 21, 3: 51} = 84
+[12:48:55] blocks using 2 color(s): {1: 57, 2: 708, 3: 5451} = 6216
+[12:48:55] blocks using 3 color(s): {1: 21, 2: 814, 3: 17214} = 18049
+[12:48:55] surjective filter: 18049/24349 use all 3 colors (the rest re-embed the smaller catalogues)
+[12:48:55] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/ts-3-k1.json: 21 colorings, 0.01 MB
+[12:48:55] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/ts-3-k2.json: 814 colorings, 0.68 MB
+[12:48:58] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/ts-3-k3.json: 17214 colorings, 20.04 MB
+[12:48:58] total distinct colorings by k: {1: 21, 2: 814, 3: 17214}

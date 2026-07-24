@@ -1,0 +1,132 @@
+[10:34:11] parsed 27479 certificate blocks from /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/91a857cc-2a89-4a18-8f18-4fdf57148846/scratchpad/colors/solver_squares_2_colors
+[10:34:12]   developed 2000/27479  (1s, ETA 16s)
+[10:34:13]   developed 4000/27479  (3s, ETA 16s)
+[10:34:15]   developed 6000/27479  (5s, ETA 16s)
+[10:34:18]   developed 8000/27479  (7s, ETA 18s)
+[10:34:20]   developed 10000/27479  (10s, ETA 17s)
+[10:34:22]   developed 12000/27479  (12s, ETA 15s)
+[10:34:24]   developed 14000/27479  (14s, ETA 13s)
+[10:34:26]   developed 16000/27479  (16s, ETA 11s)
+[10:34:29]   developed 18000/27479  (18s, ETA 9s)
+[10:34:32]   developed 20000/27479  (21s, ETA 8s)
+[10:34:34]   developed 22000/27479  (24s, ETA 6s)
+[10:34:37]   developed 24000/27479  (26s, ETA 4s)
+[10:34:39]   developed 26000/27479  (28s, ETA 2s)
+[10:34:41] developed 27479/27479 blocks, 0 with disagreeing table variants
+[10:34:41] blocks per k (main): {1: 8, 2: 51, 3: 297, 4: 1245, 5: 4515, 6: 20736}
+[10:34:41] blocks per k (o):    {1: 0, 2: 2, 3: 12, 4: 47, 5: 210, 6: 356}
+[10:34:51] convention rot             : distinct per k (all blocks) {1: 8, 2: 53, 3: 309, 4: 1292, 5: 4725, 6: 21092}, 0 dups
+[10:34:51]                              distinct per k (main only)  {1: 8, 2: 51, 3: 297, 4: 1245, 5: 4515, 6: 20736}
+[10:35:12] convention rot+mirror      : distinct per k (all blocks) {1: 8, 2: 53, 3: 309, 4: 1292, 5: 4725, 6: 21092}, 0 dups
+[10:35:12]                              distinct per k (main only)  {1: 8, 2: 51, 3: 297, 4: 1245, 5: 4515, 6: 20736}
+[10:35:32] convention rot+swap        : distinct per k (all blocks) {1: 5, 2: 30, 3: 169, 4: 689, 5: 2485, 6: 10774}, 13327 dups
+[10:35:32]                              distinct per k (main only)  {1: 5, 2: 29, 3: 159, 4: 649, 5: 2317, 6: 10496}
+[10:36:12] convention rot+mirror+swap : distinct per k (all blocks) {1: 5, 2: 30, 3: 166, 4: 673, 5: 2426, 6: 10681}, 13498 dups
+[10:36:12]                              distinct per k (main only)  {1: 5, 2: 29, 3: 159, 4: 649, 5: 2317, 6: 10496}
+[10:36:34] o-file adjacent pairs: 10 swap-related of 311; chiral blocks: 627/627 in o files, 0 in main files
+[10:36:55] atlas dedup (rot+mirror, colors labeled): 27479 distinct, 0 folded
+[10:37:46] parsed 27479 certificate blocks from /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/91a857cc-2a89-4a18-8f18-4fdf57148846/scratchpad/colors/solver_squares_2_colors
+[10:37:48]   developed 2000/27479  (1s, ETA 15s)
+[10:37:49]   developed 4000/27479  (3s, ETA 16s)
+[10:37:51]   developed 6000/27479  (4s, ETA 16s)
+[10:37:54]   developed 8000/27479  (7s, ETA 17s)
+[10:37:56]   developed 10000/27479  (9s, ETA 16s)
+[10:37:58]   developed 12000/27479  (11s, ETA 15s)
+[10:38:00]   developed 14000/27479  (13s, ETA 13s)
+[10:38:02]   developed 16000/27479  (15s, ETA 11s)
+[10:38:04]   developed 18000/27479  (17s, ETA 9s)
+[10:38:06]   developed 20000/27479  (20s, ETA 7s)
+[10:38:08]   developed 22000/27479  (22s, ETA 5s)
+[10:38:11]   developed 24000/27479  (24s, ETA 4s)
+[10:38:13]   developed 26000/27479  (27s, ETA 2s)
+[10:38:15] developed 27479/27479 blocks, 0 with disagreeing table variants
+[10:38:15] blocks per k (main): {1: 8, 2: 51, 3: 297, 4: 1245, 5: 4515, 6: 20736}
+[10:38:15] blocks per k (o):    {1: 0, 2: 2, 3: 12, 4: 47, 5: 210, 6: 356}
+[10:38:25] convention rot             : distinct per k (all blocks) {1: 8, 2: 53, 3: 309, 4: 1292, 5: 4725, 6: 21092}, 0 dups
+[10:38:25]                              distinct per k (main only)  {1: 8, 2: 51, 3: 297, 4: 1245, 5: 4515, 6: 20736}
+[10:38:46] convention rot+mirror      : distinct per k (all blocks) {1: 8, 2: 53, 3: 309, 4: 1292, 5: 4725, 6: 21092}, 0 dups
+[10:38:46]                              distinct per k (main only)  {1: 8, 2: 51, 3: 297, 4: 1245, 5: 4515, 6: 20736}
+[10:39:07] convention rot+swap        : distinct per k (all blocks) {1: 5, 2: 30, 3: 169, 4: 689, 5: 2485, 6: 10774}, 13327 dups
+[10:39:07]                              distinct per k (main only)  {1: 5, 2: 29, 3: 159, 4: 649, 5: 2317, 6: 10496}
+[10:39:51] convention rot+mirror+swap : distinct per k (all blocks) {1: 5, 2: 30, 3: 166, 4: 673, 5: 2426, 6: 10681}, 13498 dups
+[10:39:51]                              distinct per k (main only)  {1: 5, 2: 29, 3: 159, 4: 649, 5: 2317, 6: 10496}
+[10:40:12] o-file adjacent pairs: 10 swap-related of 311; chiral blocks: 627/627 in o files, 0 in main files
+[10:40:33] atlas dedup (rot+mirror, colors labeled): 27479 distinct, 0 folded
+[10:40:33] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-2-k1.json: 8 colorings, 0.00 MB
+[10:40:33] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-2-k2.json: 53 colorings, 0.01 MB
+[10:40:33] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-2-k3.json: 309 colorings, 0.06 MB
+[10:40:33] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-2-k4.json: 1292 colorings, 0.31 MB
+[10:40:33] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-2-k5.json: 4725 colorings, 1.31 MB
+[10:40:33] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-2-k6.json: 21092 colorings, 6.67 MB
+[10:40:33] total distinct colorings by k: {1: 8, 2: 53, 3: 309, 4: 1292, 5: 4725, 6: 21092}
+[11:41:49] parsed 70147 certificate blocks from ../../materials/corpora/triangles_2_colors (grid triangle)
+[11:41:51]   developed 2000/70147  (2s, ETA 66s)
+[11:41:53]   developed 4000/70147  (5s, ETA 76s)
+[11:41:56]   developed 6000/70147  (7s, ETA 78s)
+[11:42:00]   developed 8000/70147  (11s, ETA 85s)
+[11:42:04]   developed 10000/70147  (15s, ETA 91s)
+[11:42:06]   developed 12000/70147  (17s, ETA 83s)
+[11:42:10]   developed 14000/70147  (21s, ETA 84s)
+[11:42:14]   developed 16000/70147  (26s, ETA 87s)
+[11:42:20]   developed 18000/70147  (31s, ETA 90s)
+[11:42:23]   developed 20000/70147  (34s, ETA 86s)
+[11:42:29]   developed 22000/70147  (41s, ETA 89s)
+[11:42:37]   developed 24000/70147  (48s, ETA 92s)
+[11:42:44]   developed 26000/70147  (55s, ETA 93s)
+[11:42:52]   developed 28000/70147  (63s, ETA 95s)
+[11:42:59]   developed 30000/70147  (71s, ETA 94s)
+[11:43:05]   developed 32000/70147  (76s, ETA 91s)
+[11:43:09]   developed 34000/70147  (80s, ETA 85s)
+[11:43:13]   developed 36000/70147  (84s, ETA 80s)
+[11:43:18]   developed 38000/70147  (89s, ETA 75s)
+[11:43:22]   developed 40000/70147  (93s, ETA 70s)
+[11:43:26]   developed 42000/70147  (97s, ETA 65s)
+[11:43:30]   developed 44000/70147  (102s, ETA 60s)
+[11:43:36]   developed 46000/70147  (107s, ETA 56s)
+[11:43:43]   developed 48000/70147  (115s, ETA 53s)
+[11:43:50]   developed 50000/70147  (121s, ETA 49s)
+[11:43:57]   developed 52000/70147  (128s, ETA 45s)
+[11:44:05]   developed 54000/70147  (136s, ETA 41s)
+[11:44:11]   developed 56000/70147  (142s, ETA 36s)
+[11:44:18]   developed 58000/70147  (149s, ETA 31s)
+[11:44:20]   developed 60000/70147  (151s, ETA 26s)
+[11:44:22]   developed 62000/70147  (153s, ETA 20s)
+[11:44:25]   developed 64000/70147  (156s, ETA 15s)
+[11:44:27]   developed 66000/70147  (158s, ETA 10s)
+[11:44:29]   developed 68000/70147  (161s, ETA 5s)
+[11:44:32]   developed 70000/70147  (163s, ETA 0s)
+[11:44:32] developed 70147/70147 blocks, 0 with disagreeing table variants
+[11:44:33] blocks per k (main): {1: 9, 2: 46, 3: 429, 4: 1361, 5: 6670, 6: 40397}
+[11:44:33] blocks per k (o):    {1: 0, 2: 8, 3: 127, 4: 641, 5: 2985, 6: 17474}
+[11:45:36] convention rot             : distinct per k (all blocks) {1: 9, 2: 54, 3: 556, 4: 2002, 5: 9655, 6: 57871}, 0 dups
+[11:45:36]                              distinct per k (main only)  {1: 9, 2: 46, 3: 429, 4: 1361, 5: 6670, 6: 40397}
+[11:47:39] convention rot+mirror      : distinct per k (all blocks) {1: 9, 2: 54, 3: 556, 4: 2002, 5: 9655, 6: 57871}, 0 dups
+[11:47:39]                              distinct per k (main only)  {1: 9, 2: 46, 3: 429, 4: 1361, 5: 6670, 6: 40397}
+[11:49:37] convention rot+swap        : distinct per k (all blocks) {1: 6, 2: 33, 3: 326, 4: 1195, 5: 5679, 6: 33642}, 29266 dups
+[11:49:37]                              distinct per k (main only)  {1: 6, 2: 28, 3: 230, 4: 721, 5: 3426, 6: 20495}
+[11:53:32] convention rot+mirror+swap : distinct per k (all blocks) {1: 6, 2: 32, 3: 298, 4: 1055, 5: 4956, 6: 29395}, 34405 dups
+[11:53:32]                              distinct per k (main only)  {1: 6, 2: 28, 3: 230, 4: 721, 5: 3426, 6: 20495}
+[11:55:34] chiral blocks: 21235/21235 in o files, 0 in main files
+[11:57:44] atlas dedup (rot+mirror, colors labeled): 70147 distinct, 0 folded
+[11:57:45] wrote ../../public/colors/tri-2-k1.json: 9 colorings, 0.00 MB
+[11:57:45] wrote ../../public/colors/tri-2-k2.json: 54 colorings, 0.01 MB
+[11:57:45] wrote ../../public/colors/tri-2-k3.json: 556 colorings, 0.14 MB
+[11:57:45] wrote ../../public/colors/tri-2-k4.json: 2002 colorings, 0.59 MB
+[11:57:45] wrote ../../public/colors/tri-2-k5.json: 9655 colorings, 3.29 MB
+[11:57:46] wrote ../../public/colors/tri-2-k6.json: 57871 colorings, 22.96 MB
+[11:57:46] total distinct colorings by k: {1: 9, 2: 54, 3: 556, 4: 2002, 5: 9655, 6: 57871}
+[11:57:48] parsed 13320 certificate blocks from ../../materials/corpora/triangles+squares_2_colors (grid ts)
+[11:57:49]   developed 2000/13320  (1s, ETA 8s)
+[11:57:51]   developed 4000/13320  (3s, ETA 8s)
+[11:57:53]   developed 6000/13320  (5s, ETA 6s)
+[11:57:54]   developed 8000/13320  (7s, ETA 4s)
+[11:57:56]   developed 10000/13320  (8s, ETA 3s)
+[11:57:57]   developed 12000/13320  (10s, ETA 1s)
+[11:57:59] developed 13320/13320 blocks, 0 with disagreeing table variants
+[11:57:59] blocks per k (main): {1: 25, 2: 219, 3: 1588, 4: 9542}
+[11:57:59] blocks per k (o):    {1: 2, 2: 31, 3: 263, 4: 1650}
+[11:57:59] wrote ../../public/colors/ts-2-k1.json: 27 colorings, 0.01 MB
+[11:57:59] wrote ../../public/colors/ts-2-k2.json: 250 colorings, 0.20 MB
+[11:57:59] wrote ../../public/colors/ts-2-k3.json: 1851 colorings, 2.01 MB
+[11:58:01] wrote ../../public/colors/ts-2-k4.json: 11192 colorings, 15.01 MB
+[11:58:01] total distinct colorings by k: {1: 27, 2: 250, 3: 1851, 4: 11192}

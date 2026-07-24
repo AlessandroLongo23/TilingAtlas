@@ -1,0 +1,53 @@
+[12:48:39] parsed 61491 certificate blocks from /Users/alessandro/Desktop/University/Thesis/TilingAtlas/materials/corpora/triangles_3_colors (grid triangle, 3 colors, alphabet ['A3', 'B3', 'C3'])
+[12:48:41]   developed 2000/61491  (2s, ETA 50s)
+[12:48:43]   developed 4000/61491  (4s, ETA 54s)
+[12:48:45]   developed 6000/61491  (5s, ETA 48s)
+[12:48:46]   developed 8000/61491  (7s, ETA 46s)
+[12:48:48]   developed 10000/61491  (9s, ETA 44s)
+[12:48:50]   developed 12000/61491  (11s, ETA 43s)
+[12:48:52]   developed 14000/61491  (13s, ETA 43s)
+[12:48:54]   developed 16000/61491  (15s, ETA 42s)
+[12:48:57]   developed 18000/61491  (17s, ETA 41s)
+[12:48:59]   developed 20000/61491  (19s, ETA 40s)
+[12:49:01]   developed 22000/61491  (22s, ETA 39s)
+[12:49:05]   developed 24000/61491  (25s, ETA 39s)
+[12:49:09]   developed 26000/61491  (29s, ETA 40s)
+[12:49:12]   developed 28000/61491  (33s, ETA 39s)
+[12:49:15]   developed 30000/61491  (36s, ETA 38s)
+[12:49:17]   developed 32000/61491  (37s, ETA 34s)
+[12:49:18]   developed 34000/61491  (39s, ETA 31s)
+[12:49:20]   developed 36000/61491  (41s, ETA 29s)
+[12:49:24]   developed 38000/61491  (44s, ETA 27s)
+[12:49:27]   developed 40000/61491  (48s, ETA 26s)
+[12:49:29]   developed 42000/61491  (50s, ETA 23s)
+[12:49:32]   developed 44000/61491  (52s, ETA 21s)
+[12:49:34]   developed 46000/61491  (54s, ETA 18s)
+[12:49:36]   developed 48000/61491  (56s, ETA 16s)
+[12:49:38]   developed 50000/61491  (58s, ETA 13s)
+[12:49:39]   developed 52000/61491  (60s, ETA 11s)
+[12:49:41]   developed 54000/61491  (61s, ETA 8s)
+[12:49:42]   developed 56000/61491  (63s, ETA 6s)
+[12:49:45]   developed 58000/61491  (66s, ETA 4s)
+[12:49:47]   developed 60000/61491  (68s, ETA 2s)
+[12:49:49] developed 61491/61491 blocks, 0 with disagreeing table variants
+[12:49:49] blocks per k (main): {1: 30, 2: 264, 3: 6185, 4: 32139}
+[12:49:49] blocks per k (o):    {1: 3, 2: 43, 3: 1932, 4: 20895}
+[12:49:49] blocks using 1 color(s): {1: 3} = 3
+[12:49:49] blocks using 2 color(s): {1: 21, 2: 162, 3: 1668, 4: 6006} = 7857
+[12:49:49] blocks using 3 color(s): {1: 9, 2: 145, 3: 6449, 4: 47028} = 53631
+[12:50:13] convention rot               : distinct per k (all blocks) {1: 33, 2: 307, 3: 8117, 4: 53034}, 0 dups
+[12:50:13]                                distinct per k (main only)  {1: 30, 2: 264, 3: 6185, 4: 32139}
+[12:51:01] convention rot+mirror        : distinct per k (all blocks) {1: 33, 2: 307, 3: 8117, 4: 53034}, 0 dups
+[12:51:01]                                distinct per k (main only)  {1: 30, 2: 264, 3: 6185, 4: 32139}
+[12:53:00] convention rot+relabel       : distinct per k (all blocks) {1: 8, 2: 74, 3: 1723, 4: 12503}, 47183 dups
+[12:53:00]                                distinct per k (main only)  {1: 7, 2: 59, 3: 1099, 4: 5629}
+[12:56:57] convention rot+mirror+relabel: distinct per k (all blocks) {1: 8, 2: 69, 3: 1440, 4: 9228}, 50746 dups
+[12:56:57]                                distinct per k (main only)  {1: 7, 2: 59, 3: 1099, 4: 5629}
+[12:58:42] chiral blocks: 22873/22873 in o files, 0 in main files
+[12:58:42] surjective filter: 53631/61491 use all 3 colors (the rest re-embed the smaller catalogues)
+[12:59:34] atlas dedup (rot+mirror, colors labeled): 53631 distinct, 0 folded
+[12:59:35] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/tri-3-k1.json: 9 colorings, 0.00 MB
+[12:59:35] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/tri-3-k2.json: 145 colorings, 0.03 MB
+[12:59:35] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/tri-3-k3.json: 6449 colorings, 1.76 MB
+[12:59:35] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/tri-3-k4.json: 47028 colorings, 14.54 MB
+[12:59:35] total distinct colorings by k: {1: 9, 2: 145, 3: 6449, 4: 47028}

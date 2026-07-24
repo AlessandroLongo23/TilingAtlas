@@ -5311,7 +5311,7 @@ still our own `tools/ctrnact-oracle` given a palette of two same-shape squares �
 Details and per-k tables: `experiments/results/colors-decode-2026-07-24.md` and
 `colors3-decode-2026-07-24.md`.
 
-## §87 — The (k,p,v) sweep completes, and what the table says (2026-07-24)
+## §88 — The (k,p,v) sweep completes, and what the table says (2026-07-24)
 
 All 108 cells attempted: **82 enumerated, 26 censored at the cap** (the k=3 pass ran overnight;
 an idle-sleep killed it once at 88/108, so the relaunch now carries a `caffeinate` held on the

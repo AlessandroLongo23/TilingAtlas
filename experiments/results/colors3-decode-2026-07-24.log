@@ -1,0 +1,47 @@
+[12:48:37] parsed 48694 certificate blocks from /Users/alessandro/Desktop/University/Thesis/TilingAtlas/materials/corpora/squares_3_colors (grid square, 3 colors, alphabet ['A4', 'B4', 'C4'])
+[12:48:38]   developed 2000/48694  (1s, ETA 18s)
+[12:48:39]   developed 4000/48694  (2s, ETA 20s)
+[12:48:40]   developed 6000/48694  (3s, ETA 22s)
+[12:48:41]   developed 8000/48694  (5s, ETA 24s)
+[12:48:43]   developed 10000/48694  (6s, ETA 23s)
+[12:48:44]   developed 12000/48694  (7s, ETA 21s)
+[12:48:45]   developed 14000/48694  (8s, ETA 20s)
+[12:48:46]   developed 16000/48694  (9s, ETA 19s)
+[12:48:47]   developed 18000/48694  (11s, ETA 18s)
+[12:48:49]   developed 20000/48694  (12s, ETA 17s)
+[12:48:50]   developed 22000/48694  (13s, ETA 16s)
+[12:48:51]   developed 24000/48694  (15s, ETA 15s)
+[12:48:53]   developed 26000/48694  (16s, ETA 14s)
+[12:48:54]   developed 28000/48694  (17s, ETA 13s)
+[12:48:56]   developed 30000/48694  (19s, ETA 12s)
+[12:48:57]   developed 32000/48694  (20s, ETA 11s)
+[12:48:58]   developed 34000/48694  (22s, ETA 9s)
+[12:49:00]   developed 36000/48694  (23s, ETA 8s)
+[12:49:01]   developed 38000/48694  (24s, ETA 7s)
+[12:49:03]   developed 40000/48694  (26s, ETA 6s)
+[12:49:05]   developed 42000/48694  (28s, ETA 4s)
+[12:49:06]   developed 44000/48694  (29s, ETA 3s)
+[12:49:07]   developed 46000/48694  (31s, ETA 2s)
+[12:49:09]   developed 48000/48694  (32s, ETA 0s)
+[12:49:09] developed 48694/48694 blocks, 0 with disagreeing table variants
+[12:49:09] blocks per k (main): {1: 30, 2: 438, 3: 4720, 4: 43113}
+[12:49:09] blocks per k (o):    {1: 0, 2: 6, 3: 75, 4: 312}
+[12:49:09] blocks using 1 color(s): {1: 3} = 3
+[12:49:09] blocks using 2 color(s): {1: 18, 2: 159, 3: 927, 4: 3876} = 4980
+[12:49:09] blocks using 3 color(s): {1: 9, 2: 285, 3: 3868, 4: 39549} = 43711
+[12:49:20] convention rot               : distinct per k (all blocks) {1: 30, 2: 444, 3: 4795, 4: 43425}, 0 dups
+[12:49:20]                                distinct per k (main only)  {1: 30, 2: 438, 3: 4720, 4: 43113}
+[12:49:43] convention rot+mirror        : distinct per k (all blocks) {1: 30, 2: 444, 3: 4795, 4: 43425}, 0 dups
+[12:49:43]                                distinct per k (main only)  {1: 30, 2: 438, 3: 4720, 4: 43113}
+[12:50:37] convention rot+relabel       : distinct per k (all blocks) {1: 8, 2: 89, 3: 886, 4: 7509}, 40202 dups
+[12:50:37]                                distinct per k (main only)  {1: 8, 2: 87, 3: 857, 4: 7404}
+[12:52:26] convention rot+mirror+relabel: distinct per k (all blocks) {1: 8, 2: 88, 3: 873, 4: 7461}, 40264 dups
+[12:52:26]                                distinct per k (main only)  {1: 8, 2: 87, 3: 857, 4: 7404}
+[12:52:48] chiral blocks: 393/393 in o files, 0 in main files
+[12:52:48] surjective filter: 43711/48694 use all 3 colors (the rest re-embed the smaller catalogues)
+[12:53:08] atlas dedup (rot+mirror, colors labeled): 43711 distinct, 0 folded
+[12:53:08] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-3-k1.json: 9 colorings, 0.00 MB
+[12:53:08] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-3-k2.json: 285 colorings, 0.05 MB
+[12:53:08] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-3-k3.json: 3868 colorings, 0.86 MB
+[12:53:08] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/colors/squares-3-k4.json: 39549 colorings, 10.21 MB
+[12:53:08] total distinct colorings by k: {1: 9, 2: 285, 3: 3868, 4: 39549}

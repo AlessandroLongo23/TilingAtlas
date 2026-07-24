@@ -1411,3 +1411,10 @@ Detail: NOTES §82. NB: several suites fail on clean HEAD (pre-existing/freedraw
 darts. Fixed AL's ghost-card /library bug: 12 duplicate ids from the exporter (dup React keys corrupt
 reconciliation); two id guards + `tests/atlas-id-unique.test.ts`. Gate + stamp parallelised (100 s /
 21 min). 63/63 tests, build clean. Detail: NOTES §83. Timeout cells + k≥3 remain unenumerated.
+
+**2026-07-24 — CC.** New class shipped: **colored tilings**, 226,337 of them — periodic colorings of
+the square / triangle / square+triangle grids in 2 and 3 colors, decoded from Marek's PT certificates
+(`develop_colors.py`, 245,480 blocks, zero failures). k = colored vertex classes. Conventions
+re-derived per grid: mirrors merge, colors labeled, `_o_` = chiral. n-color corpora re-embed the
+smaller ones, so only surjective solutions ship. Surfaces: /colors, /library (`cocount`), /play tree.
+Certification "candidate" — no independent enumeration yet. Detail: NOTES §87.
