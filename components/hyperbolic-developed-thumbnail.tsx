@@ -121,9 +121,16 @@ function renderThumb(patch: CataloguePatch, size: number, opts: ThumbOpts): stri
 interface Props {
 	patch: string;
 	size?: number;
+	/**
+	 * The patch record itself, when the caller already has it. Skips loadDevelopedPatches entirely —
+	 * which is how a page that shows a HANDFUL of tilings (the /theory figures) avoids pulling the
+	 * whole 11.6 MB catalogue into the browser just to read three entries out of it. The library and
+	 * /play, which need the map anyway, keep passing the id alone.
+	 */
+	data?: CataloguePatch;
 }
 
-export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
+export function HyperbolicDevelopedThumbnail({ patch, size = 256, data }: Props) {
 	const wrapRef = useRef<HTMLDivElement>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
@@ -141,8 +148,9 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 		let cancelJob: (() => void) | null = null;
 		const draw = () => {
 			// The patch fetch is async and shared across every card, so it runs OUTSIDE the queue — only
-			// the synchronous bake below is frame-paced. See lib/render/thumbnailQueue.ts.
-			loadDevelopedPatches().then((map) => {
+			// the synchronous bake below is frame-paced. See lib/render/thumbnailQueue.ts. A caller that
+			// supplied `data` resolves immediately and never touches the network.
+			(data ? Promise.resolve({ [patch]: data }) : loadDevelopedPatches()).then((map) => {
 				if (disposed) return;
 				const p = map[patch];
 				if (!p) {
@@ -178,7 +186,7 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256 }: Props) {
 			// queue keeps grinding through 512² fields for cards that no longer exist.
 			cancelJob?.();
 		};
-	}, [patch, size, hueOffset, showFill, lineMode, lineWidth]);
+	}, [patch, size, data, hueOffset, showFill, lineMode, lineWidth]);
 
 	if (failed) {
 		return (

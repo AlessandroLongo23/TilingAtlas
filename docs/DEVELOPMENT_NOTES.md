@@ -5339,3 +5339,38 @@ keeping: censored cells are hatched and carry no number (a cap is not a count, a
 the magnitude ramp would have read as "few"); p is an ORDERED quantity, so series colour is a
 single-hue ordinal ramp rather than categorical hues, validated against both surfaces; the growth
 charts drop boxes whose count never rises, since a flat line and a 3-vs-4-second wobble plot nothing.
+
+## §89 — A theory page for the hyperbolic enumeration, and the title that was never styled (2026-07-24)
+
+AL: write a theory page on why we enumerate hyperbolic tilings the way we do and where we hit the cap.
+Shipped as `/theory/hyperbolic` ("Why the hyperbolic catalogue stops where it does"), reading
+`public/theory/hyperbolic-enumeration.md`. Seven sections: the infinitude of {p,q} (so the question
+needs bounds before it has an answer), the (k,p,v) box, why a vertex configuration does not name a
+hyperbolic tiling, the Delaney–Dress symbol as the identity that does, why the search runs on
+combinatorics rather than geometry, the sweep numbers, and what the cap is made of.
+
+**Scope call, flagged rather than assumed.** CLAUDE.md says method prose belongs in the thesis and
+must stay out of /theory. The page is written as the MATHEMATICS of the problem (curvature forces ℓ;
+the figure is not a complete invariant; the symbol is; growth rates) plus the measured results. The
+pipeline itself — binaries, palettes, file formats, make targets — stays out, and the standing rule
+stands. If AL wants the implementation write-up in-app too, that is a different page and his call.
+
+**New markdown tag `<hyperbolic-card patch=… label=… caption=…>`** rendering a Poincaré figure with a
+caption and a link into /play. Static by design: a hyperbolic view is a per-pixel WebGL2 reduction
+holding its own context, and an article embeds several. `HyperbolicDevelopedThumbnail` gained an
+optional `data` prop so the route can hand it the patch record directly — the page is force-static, so
+it reads the 11.6 MB developed catalogue at BUILD time and ships the browser only the four patches it
+shows. Same discipline the uniform-tilings route uses for its cells.
+
+**The central figure is the 4.4.4.6 pair** (`hyp-4-4-4-6`, `hyp-4-4-4-6-b`): one vertex configuration,
+one forced edge length 0.6974, two distinct tilings that agree at the centre and diverge by the third
+ring. Verified by eye before it was written about, because the paragraph is worthless if the two
+pictures look the same. `tests/theory-hyperbolic-cards.test.ts` pins every embedded patch id AND the
+numbers the prose quotes (the pair really is distinct with equal ℓ; 4.6⁷ really carries 147 tilings at
+ℓ = 2.8628) — stale prose fails a test instead of quietly lying.
+
+**Found while checking the render: no theory page ever styled its `h1`.** Article titles inherited
+body type, 16px/400, so every title rendered smaller and lighter than its own section headings
+(36px/700). Pre-existing on all four articles; fixed once in `markdown-renderer` (48px/700, balanced,
+no top margin). Also local: the article's `[&_img]` prose rule (one-third width, bordered, centred)
+was shrinking the rendered disks, overridden inside the figure card rather than loosened globally.

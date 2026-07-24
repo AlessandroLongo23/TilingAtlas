@@ -30,6 +30,11 @@ export const THEORY_ARTICLES: TheoryArticle[] = [
 		title: "Islamic geometric patterns",
 		blurb: "The design systems behind Islamic star patterns: the tessellations underneath, with interactive previews of the curated tilings.",
 	},
+	{
+		slug: "hyperbolic",
+		title: "Why the hyperbolic catalogue stops where it does",
+		blurb: "The hyperbolic tilings never run out, so the enumeration is bounded by palette, valence and uniformity. What identifies a tiling when its vertex configuration cannot, and where the search hits its limit.",
+	},
 ];
 
 export const theoryArticle = (slug: string): TheoryArticle | undefined =>

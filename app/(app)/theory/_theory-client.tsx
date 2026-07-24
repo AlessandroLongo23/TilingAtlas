@@ -8,6 +8,8 @@ import { TheorySidebar, type TheorySection } from "@/components/theory-sidebar";
 import { TheoryArticleNav } from "@/components/theory-article-nav";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { InteractiveTilingPreviewCard, CARD_LAYOUT_SPRING } from "@/components/interactive-tiling-preview-card";
+import { HyperbolicFigureCard } from "@/components/hyperbolic-figure-card";
+import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 interface TheoryClientProps {
@@ -15,6 +17,11 @@ interface TheoryClientProps {
 	sections: TheorySection[];
 	/** Atlas id -> render cell for the tilings the markdown embeds via `<tiling-card tiling="…">`. */
 	cells: Record<string, TranslationalCellData>;
+	/**
+	 * Patch id -> developed record for the tilings the markdown embeds via `<hyperbolic-card patch="…">`.
+	 * Only the ones an article actually shows — the full catalogue is 11.6 MB.
+	 */
+	patches?: Record<string, CataloguePatch>;
 	/** The current article's slug, for the sidebar article switcher. */
 	currentSlug: string;
 }
@@ -25,6 +32,12 @@ interface TilingCardTagProps {
 	tiling?: string;
 	title?: string;
 	subtitle?: string;
+}
+
+interface HyperbolicCardTagProps {
+	patch?: string;
+	label?: string;
+	caption?: string;
 }
 
 // The grid a run of tiling cards renders into, built so a card expansion moves EVERYTHING smoothly:
@@ -70,7 +83,7 @@ function AnimatedCardGrid({ cols, children }: { cols?: string; children?: React.
 	);
 }
 
-export function TheoryClient({ content, sections, cells, currentSlug }: TheoryClientProps) {
+export function TheoryClient({ content, sections, cells, patches, currentSlug }: TheoryClientProps) {
 	const [targetSection, setTargetSection] = useState("");
 	const [activeSection, setActiveSection] = useState("");
 	const progressRef = useRef<HTMLDivElement | null>(null);
@@ -99,13 +112,27 @@ export function TheoryClient({ content, sections, cells, currentSlug }: TheoryCl
 				}
 				return <InteractiveTilingPreviewCard cell={cell} tilingId={tiling} title={title} />;
 			},
+			// <hyperbolic-card patch="hyp-4-4-4-6" label="4.4.4.6" caption="…">
+			// A Poincaré-disk figure. Static by design (see HyperbolicFigureCard) — the interactive view
+			// of the same tiling is one click away in /play.
+			"hyperbolic-card": ({ patch, label, caption }: HyperbolicCardTagProps) => {
+				const record = patch ? patches?.[patch] : undefined;
+				if (!record) {
+					return (
+						<div className="not-prose flex aspect-square items-center justify-center border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+							Unknown patch id: {patch ?? "(none)"}
+						</div>
+					);
+				}
+				return <HyperbolicFigureCard patchId={patch} patch={record} label={label} caption={caption} />;
+			},
 			// <card-grid cols="3"> … </card-grid> — a responsive grid for a run of cards. Mapped to a
 			// component (rather than authored classes) so Tailwind never needs to scan the markdown,
 			// and so expansion can animate the whole neighbourhood (see AnimatedCardGrid).
 			"card-grid": AnimatedCardGrid,
 		};
 		return map as unknown as Components;
-	}, [cells]);
+	}, [cells, patches]);
 
 	return (
 		<div className="flex h-full min-h-0 w-full overflow-hidden">

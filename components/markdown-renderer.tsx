@@ -93,7 +93,10 @@ export function MarkdownRenderer({
 			<div className="max-w-4xl mx-auto px-6 md:px-10 py-6 md:py-8">
 				<article
 					className={cn(
-						// Headings
+						// Headings. h1 is the article title, once, at the top: it had no rule at all, so it
+						// inherited body type and every page's title rendered SMALLER and lighter than its own
+						// section headings. It carries no border (the h2 rule owns that) and no top margin.
+						"[&_h1]:text-5xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:text-fg [&_h1]:mt-0 [&_h1]:mb-8 [&_h1]:text-balance",
 						"[&_h2]:text-4xl [&_h2]:font-bold [&_h2]:text-fg [&_h2]:mb-10 [&_h2]:mt-24 [&_h2]:pb-4 [&_h2]:border-b [&_h2]:border-line-focus [&_h2]:cursor-pointer",
 						"[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:text-fg [&_h3]:mb-4 [&_h3]:mt-16 [&_h3]:cursor-pointer",
 						"[&_h4]:text-xl [&_h4]:font-medium [&_h4]:text-fg [&_h4]:mb-3 [&_h4]:mt-8 [&_h4]:cursor-pointer",
