@@ -18,6 +18,7 @@ describe("TilingInfo spec card", () => {
 			orbifold: "*632",
 			latticeShape: "hexagonal",
 			freedraw: null,
+			colors: null,
 			k: 7,
 			m: 3,
 			partition: [5, 1, 1],

@@ -18,7 +18,10 @@ import { useConfiguration, type ConfigurationState } from "@/stores/configuratio
 type Spec =
 	| { field: keyof ConfigurationState; kind: "bool" }
 	| { field: keyof ConfigurationState; kind: "num"; min: number; max: number; int?: true }
-	| { field: keyof ConfigurationState; kind: "enum"; values: readonly string[] };
+	| { field: keyof ConfigurationState; kind: "enum"; values: readonly string[] }
+	// A tile-color palette: comma-joined entries, each a hue (0–359) or "cream"/"dark" — the colors
+	// view's per-color picker. Any malformed entry invalidates the whole param (never a mixed guess).
+	| { field: keyof ConfigurationState; kind: "palette" };
 
 export const PLAY_PARAMS: Record<string, Spec> = {
 	// global
@@ -37,6 +40,11 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	fdgrid: { field: "freedrawScaffold", kind: "bool" },
 	fdlat: { field: "freedrawLattice", kind: "bool" },
 	fdorb: { field: "freedrawVertices", kind: "bool" },
+	// colored-square view (co*) — the freedraw trio's shape, minus the fill mode
+	coedge: { field: "colorsEdges", kind: "bool" },
+	colat: { field: "colorsLattice", kind: "bool" },
+	coorb: { field: "colorsVertices", kind: "bool" },
+	copal: { field: "colorsPalette", kind: "palette" },
 	// Islamic construction
 	i: { field: "isIslamic", kind: "bool" },
 	istyle: {
@@ -105,6 +113,13 @@ export function parsePlayState(sp: URLSearchParams): PlayUrlState {
 		}
 		if (spec.kind === "bool") {
 			config[spec.field] = raw === "1" ? true : raw === "0" ? false : fallback;
+		} else if (spec.kind === "palette") {
+			const parts = raw.split(",").map((t) => {
+				if (t === "cream" || t === "dark") return t;
+				const n = Number(t);
+				return Number.isInteger(n) && n >= 0 && n <= 359 ? n : null;
+			});
+			config[spec.field] = parts.length && parts.every((p) => p !== null) ? parts : fallback;
 		} else if (spec.kind === "num") {
 			const n = Number(raw);
 			if (!Number.isFinite(n)) {
@@ -145,7 +160,10 @@ export function serializePlayState(
 	const cfg = config as unknown as Record<string, unknown>;
 	for (const [key, spec] of Object.entries(PLAY_PARAMS)) {
 		const value = cfg[spec.field];
-		if (value === undefined || value === def[spec.field]) continue;
+		if (value === undefined) continue;
+		// Palettes are arrays: compare (and emit) by their joined string, since a parse round-trip
+		// yields a fresh array that is value-equal to the default but not reference-equal.
+		if (spec.kind === "palette" ? String(value) === String(def[spec.field]) : value === def[spec.field]) continue;
 		p.set(key, spec.kind === "bool" ? (value ? "1" : "0") : String(value));
 	}
 

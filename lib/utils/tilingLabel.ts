@@ -12,9 +12,11 @@ import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 // baked over the Dirichlet domain by lib/render/hyperbolicIslamic.ts for the per-pixel renderer.
 // Kept as a function (not a constant) so a future class can opt out without touching call sites.
 //
-// Freedraw is the one class that DOES opt out. The construction needs tiles — vertices, edge midpoints, a
-// centroid, inward normals — and a freedraw face has none of that: it can be an infinite strip or an
-// annulus, with no vertex list and no centroid. There is nothing for Hankin to run on.
+// Freedraw and colors are the classes that DO opt out. The construction needs tiles — vertices, edge
+// midpoints, a centroid, inward normals — and a freedraw face has none of that: it can be an infinite
+// strip or an annulus, with no vertex list and no centroid. A colored tiling's squares would qualify
+// geometrically, but the class renders on its own 2D canvas where the construction never runs, so the
+// checkbox would be a dead control there.
 export function polygonClassSupportsIslamic(t: { family: string; source?: ReferenceTiling["source"] }): boolean {
-	return t.source !== "freedraw";
+	return t.source !== "freedraw" && t.source !== "colors";
 }

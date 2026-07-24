@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
 import type { VCWithOccurrences } from "@/classes/Tiling";
+import { colorLetter } from "@/lib/colors/pattern";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
@@ -41,10 +42,16 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 	// Freedraw's k counts GRID-POINT orbits of the decoration — grid points with no drawn edge included —
 	// not vertex orbits of a tiling. Same axis, different quantity, so it never borrows the "Vertices" label.
 	const isFreedraw = spec.geometry === "euclidean" && !!spec.freedraw;
+	// Colors' k is a vertex-orbit count, but of the COLORED tiling (orbits under color-preserving
+	// symmetry only), so it gets its own label rather than borrowing the bare "Vertices".
+	const isColors = spec.geometry === "euclidean" && !!spec.colors;
 	return (
 		<div className="flex flex-col gap-1.5">
 			<SectionTitle>Orbits</SectionTitle>
-			<Row label={isFreedraw ? "Grid points (k)" : "Vertices (k)"} value={spec.k ?? "—"} />
+			<Row
+				label={isFreedraw ? "Grid points (k)" : isColors ? "Colored vertices (k)" : "Vertices (k)"}
+				value={spec.k ?? "—"}
+			/>
 			{spec.m != null ? (
 				<Row
 					label="VC types (m)"
@@ -139,6 +146,45 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 									}
 								/>
 								<Row label="Lattice index" value={spec.freedraw.lattice.a * spec.freedraw.lattice.d} />
+							</div>
+						) : null}
+
+						{/* Tiles — Colored squares: the color census of one period plus the folded colored
+						    vertex figures, the certificate's own vocabulary for this class. */}
+						{spec.geometry === "euclidean" && spec.colors ? (
+							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+								<SectionTitle>Coloring</SectionTitle>
+								<Row
+									label="Grid"
+									value={
+										spec.colors.grid === "square"
+											? "squares"
+											: spec.colors.grid === "triangle"
+												? "triangles"
+												: "triangles + squares"
+									}
+								/>
+								{spec.colors.census.map((n, i) => (
+									<Row key={i} label={`${colorLetter(i)} cells / period`} value={n} />
+								))}
+								<Row
+									label="Period lattice"
+									value={
+										<span className="font-mono whitespace-nowrap">
+											{spec.colors.patch
+												? `T1 (${spec.colors.patch.T1[0]}, ${spec.colors.patch.T1[1]}), T2 (${spec.colors.patch.T2[0]}, ${spec.colors.patch.T2[1]})`
+												: `(${spec.colors.lattice.a},0) (${spec.colors.lattice.b},${spec.colors.lattice.d})`}
+										</span>
+									}
+								/>
+								<Row label="Cells / period" value={spec.colors.cells} />
+								{spec.colors.vcs.map((vc, i) => (
+									<Row
+										key={i}
+										label={i === 0 ? "Vertex figures" : ""}
+										value={<span className="font-mono whitespace-nowrap">{vc}</span>}
+									/>
+								))}
 							</div>
 						) : null}
 

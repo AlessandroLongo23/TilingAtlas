@@ -86,7 +86,7 @@ export const cosetCount = (p: Pick<FreedrawPattern, "a" | "d">) => p.a * p.d;
  * (b, d) generator, then x modulo a using the (a, 0) generator. Works for negative coordinates:
  * Math.floor gives the correct rounding direction, unlike a bare `%`.
  */
-export function coset(p: FreedrawPattern, x: number, y: number): number {
+export function coset(p: Pick<FreedrawPattern, "a" | "b" | "d">, x: number, y: number): number {
 	const q = Math.floor(y / p.d);
 	const j = y - q * p.d;
 	const i = ((x - q * p.b) % p.a + p.a) % p.a;

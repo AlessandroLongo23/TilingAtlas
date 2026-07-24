@@ -175,6 +175,19 @@ export interface ConfigurationState {
 	// as that one cell stamped out across the plane. See lib/freedraw/render.ts drawLattice.
 	freedrawLattice: boolean;
 
+	// Colored-tiling view: set true by /play when a colored square pattern is selected. Same contract as
+	// `freedraw` above — swaps the flat p5 render for the colors renderer (components/colors-play-canvas.tsx),
+	// which owns its own pan/zoom; while on, the p5 canvas draws nothing. The three overlays mirror the
+	// freedraw trio: tile edges / period lattice / colored-vertex orbit dots.
+	colors: boolean;
+	colorsEdges: boolean; // stroke the grid lines — every one is a real tile boundary in this class
+	colorsVertices: boolean; // dots at vertices coloured by colored-vertex orbit — makes k visible
+	colorsLattice: boolean; // period-lattice overlay: fundamental cell tinted, translates dashed
+	// One entry per tile color: a hue (degrees) or the two specials no hue reaches — "cream" (the warm
+	// near-white) and "dark" (its almost-black complement). An array so a 3+-color catalogue only grows
+	// it. See lib/colors/render.ts ColorChoice/cellFill.
+	colorsPalette: (number | "cream" | "dark")[];
+
 	// Spherical freedraw (Platonic-solid freedraw on /play): the two Display controls the /freedraw spherical
 	// arm exposes. `mode` swaps the flat-faced polyhedron for the round sphere (curved patches + arc edges);
 	// `grid` draws the solid's full edge grid faintly under the pattern. See components/freedraw/ico-freedraw-canvas.tsx.
@@ -286,6 +299,12 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	freedrawScaffold: false,
 	freedrawVertices: false,
 	freedrawLattice: false,
+
+	colors: false,
+	colorsEdges: true,
+	colorsVertices: false,
+	colorsLattice: false,
+	colorsPalette: ["cream", 215, 15],
 
 	sphericalFreedrawMode: "polyhedron",
 	sphericalFreedrawGrid: false,

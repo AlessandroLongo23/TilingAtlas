@@ -3,6 +3,15 @@ import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
+import {
+	colorsGridOf as colorsPatternGridOf,
+	colorCensus,
+	COLORS_CATALOGUES,
+	colorCountOf,
+	colorLetter,
+	type ColorPattern,
+	type ColorsGrid,
+} from "@/lib/colors/pattern";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { classifyRegular, type RegularKind } from "@/lib/freedraw/regular";
@@ -32,7 +41,7 @@ export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "hyperbolic" | "spherical";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
@@ -68,6 +77,13 @@ export interface ReferenceTiling {
 	// so the two are browsable together, but every surface that shows it (card sub-line, /play nav header +
 	// info panel, the catalogue tree's k rows) must say "grid points", never "vertices".
 	freedraw?: FreedrawPattern;
+	// Colored-tiling shelf only: a periodic 2-coloring of the square grid (lib/colors/pattern.ts, decoded
+	// from Čtrnáct's PT certificates to public/colors/squares-2-k*.json). Its presence routes /play + the
+	// thumbnails to the colors renderer the way `freedraw` routes to the grid view — `renderCell` is a
+	// throwaway, never drawn. Here `k` counts COLORED VERTEX classes: vertex orbits under the symmetries
+	// that preserve the coloring — real vertex orbits (unlike freedraw's grid points), but of the COLORED
+	// tiling, so every surface labels them "colored vertices".
+	colors?: ColorPattern;
 	// Spherical freedraw shelf only: Čtrnáct's freedraw on a Platonic solid (tools/ctrnact-oracle, decoded to
 	// public/freedraw-ico/{solid}-k{k}.json). Its presence routes /play + the thumbnails to the three.js
 	// ico-freedraw renderer (components/freedraw/ico-freedraw-canvas.tsx) the way `spherical` routes to the
@@ -139,7 +155,7 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "hyperbolic" | "spherical";
+export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
@@ -156,6 +172,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 	if (t.source === "polyomino") return "polyomino";
 	if (t.source === "islamic") return "islamic";
 	if (t.source === "freedraw") return "freedraw";
+	if (t.source === "colors") return "colors";
 	if (t.family.includes("cx")) return "convex";
 	if (t.family.includes("α")) return "isotoxal";
 	return t.family.includes("*") ? "star" : "regular";
@@ -164,7 +181,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
@@ -175,6 +192,7 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	polyomino: { short: "Polyominoes", long: "Polyominoes" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
 	freedraw: { short: "Freedraw", long: "Freedraw edge patterns" },
+	colors: { short: "Colored", long: "Colored tilings" },
 	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic tilings" },
 	spherical: { short: "Spherical", long: "Spherical tilings" },
 };
@@ -184,9 +202,35 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // other class shares the anonymous "" spine (no sub row). `subOf` and this order are the single source of
 // truth for BOTH the sidebar tree (catalogue-list-panel) and the linear browse order below, so the two
 // can't drift. SUB_LABEL (display names) stays in the panel — that's presentation, not ordering.
-export const SUB_ORDER = ["", "square", "triangle", "ts", "tetrahedron", "octahedron", "cube", "dodecahedron", "icosahedron"];
-export function subOf(t: { sphericalFreedraw?: { solid: string }; freedraw?: FreedrawPattern }): string {
-	return t.sphericalFreedraw ? t.sphericalFreedraw.solid : t.freedraw ? gridOf(t.freedraw) : "";
+export const SUB_ORDER = [
+	"",
+	"square",
+	"triangle",
+	"ts",
+	// Colors: grid-major, then palette size — "square-2" is every 2-coloring of the 4^4 grid.
+	"square-2",
+	"square-3",
+	"triangle-2",
+	"triangle-3",
+	"ts-2",
+	"ts-3",
+	"tetrahedron",
+	"octahedron",
+	"cube",
+	"dodecahedron",
+	"icosahedron",
+];
+export function subOf(t: {
+	sphericalFreedraw?: { solid: string };
+	freedraw?: FreedrawPattern;
+	colors?: ColorPattern;
+}): string {
+	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
+	if (t.freedraw) return gridOf(t.freedraw);
+	// The colors class splits on grid AND palette size — an n-coloring of the square grid is a
+	// different catalogue from a 2-coloring, not a deeper k of the same one.
+	if (t.colors) return `${colorsPatternGridOf(t.colors)}-${colorCountOf(t.colors)}`;
+	return "";
 }
 
 // The catalogue's canonical linear order — the SAME order the /play sidebar renders top-to-bottom, so
@@ -474,6 +518,12 @@ export interface ReferenceFilter {
 	// Freedraw shelf sub-class, one level above the kind: which grid the edge subset decorates. Non-freedraw
 	// tilings never match while this is active.
 	freedrawGrid?: FreedrawGrid;
+	// Colors shelf sub-class: which grid the coloring lives on. Non-colors tilings never match while
+	// this is active.
+	colorsGrid?: ColorsGrid;
+	// Colors shelf sub-class: how many colors the palette has (2 or 3 so far). Non-colors tilings never
+	// match while this is active.
+	colorsCount?: number;
 	// Freedraw shelf facet: keep only patterns that are tilings by regular polygons (the k-uniform
 	// subfamily), or that contain a given regular polygon. Non-freedraw tilings never match while active.
 	freedrawRegular?: FreedrawRegular;
@@ -522,6 +572,12 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	}
 	if (f.freedrawGrid) {
 		if (freedrawGridOf(t) !== f.freedrawGrid) return false; // non-freedraw never matches the grid facet
+	}
+	if (f.colorsGrid) {
+		if (colorsGridOf(t) !== f.colorsGrid) return false; // non-colors never matches the grid facet
+	}
+	if (f.colorsCount) {
+		if (colorsCountOf(t) !== f.colorsCount) return false; // non-colors never matches the palette facet
 	}
 	if (f.freedrawRegular) {
 		const r = freedrawRegularOf(t);
@@ -606,6 +662,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		wallpaperGroup: r.wallpaperGroup,
 		latticeShape: r.latticeShape,
 		freedraw: r.freedraw,
+		colors: r.colors,
 		sphericalFreedraw: r.sphericalFreedraw,
 	};
 }
@@ -640,6 +697,47 @@ function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 		geometry: "euclidean",
 		discoverer: "Marek Čtrnáct",
 		certification: verified ? "reproduced" : "candidate",
+	};
+}
+
+// The colors shelf's GRID facet — the same axis planar freedraw carries, one level above k.
+export function colorsGridOf(t: Pick<ReferenceTiling, "colors">): ColorsGrid | null {
+	return t.colors ? colorsPatternGridOf(t.colors) : null;
+}
+
+/** The colors shelf's PALETTE-SIZE facet: 2 or 3 colors (null for every other class). */
+export function colorsCountOf(t: Pick<ReferenceTiling, "colors">): number | null {
+	return t.colors ? colorCountOf(t.colors) : null;
+}
+
+// The card / search label for a colored tiling: the color census of one period — there is no vertex
+// configuration to name it by (the coloring is the identity, the underlying grid is the sub-axis).
+// "·" as the separator, NOT " + ": compactVertexConfig treats " + " as the k≥2 orbit separator and
+// would rewrite the label with semicolons on the /play header.
+export function colorsFamilyLabel(p: ColorPattern): string {
+	const census = colorCensus(p)
+		.map((n, i) => `${n}${colorLetter(i)}`)
+		.join(" · ");
+	return `${census} per period`;
+}
+
+// Adapt one colored-square pattern to a reference tiling. Like freedraw, the pattern ships as its own
+// raw catalogue (public/colors/squares-2-k*.json, the same files /colors reads) — the pattern IS the
+// record, so the adaptation happens at load rather than through a build script that could drift.
+function colorsToReference(p: ColorPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "colors",
+		k: p.k,
+		family: colorsFamilyLabel(p),
+		renderCell: FREEDRAW_EMPTY_CELL,
+		colors: p,
+		geometry: "euclidean",
+		discoverer: "Marek Čtrnáct",
+		// Decoded from Marek's certificates and internally consistent (develop closure, per-cell color
+		// agreement, orbit count = k on all 27,479), with the k=1 slice verified by hand — but no
+		// independent enumeration of this class exists anywhere yet, so every slice is "candidate".
+		certification: "candidate",
 	};
 }
 
@@ -744,11 +842,20 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 					.catch(() => [] as FreedrawPattern[]),
 			),
 		).then((lists) => lists.flat().map(freedrawToReference)),
+		// Colored tilings: every shipped catalogue (grid × palette size × k), the same raw files the
+		// standalone /colors page reads — COLORS_CATALOGUES is the one list both go through.
+		Promise.all(
+			COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json`)).map((url) =>
+				fetch(url)
+					.then((res) => (res.ok ? (res.json() as Promise<ColorPattern[]>) : []))
+					.catch(() => [] as ColorPattern[]),
+			),
+		).then((lists) => lists.flat().map(colorsToReference)),
 		fetch("/hyperbolic-developed.json")
 			.then((res) => (res.ok ? (res.json() as Promise<Array<{ id: string; edge?: number }>>) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
-		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, freedraw, devPatches]) => {
+		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, freedraw, colors, devPatches]) => {
 			// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
 			// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
 			const edgeById = new Map<string, number | undefined>(
@@ -758,7 +865,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 				const e = edgeById.get(t.developed?.patch ?? t.id);
 				if (typeof e === "number") t.edge = e;
 			}
-			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...freedraw, ...hyperbolic, ...spherical];
+			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...freedraw, ...colors, ...hyperbolic, ...spherical];
 			cache = data;
 			inflight = null;
 			return data;

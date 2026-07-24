@@ -8,6 +8,7 @@ import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { ORBIFOLD_SIGNATURE } from "@/lib/classes/symmetry/types";
 import { geometryOf, hyperbolicParams } from "@/lib/services/referenceAtlas";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
+import { colorCensus, colorsGridOf } from "@/lib/colors/pattern";
 
 // Edge- and tile-orbit extraction does not exist yet (AL owns that logic). Until it does, buildTilingSpec
 // leaves both fields null and the card renders a muted "not computed" row. When the extractor lands, fill
@@ -46,6 +47,25 @@ export interface FreedrawFacts {
 	withHoles: number;
 }
 
+// Colored-tiling facts, present ONLY on a colored-square entry. Same placement logic as FreedrawFacts:
+// colors IS Euclidean, but its k counts COLORED vertex classes and its "tiles" are colored unit squares,
+// so the vocabulary shifts without changing the union.
+export interface ColorsFacts {
+	/** Which grid the coloring lives on. */
+	grid: "square" | "triangle" | "ts";
+	/** Period lattice in Hermite normal form: (a,0) and (b,d). Meaningless (1×1 dummy) when `patch`
+	 * is present — the combined grid has no fixed lattice. */
+	lattice: { a: number; b: number; d: number };
+	/** Cells per period: a·d on squares, 2·a·d on triangles, the patch's polygon count on ts. */
+	cells: number;
+	/** Combined grid only: the true world-coordinate period basis. */
+	patch: { T1: [number, number]; T2: [number, number] } | null;
+	/** Cells per period per color, indexed by color id (A, B, C, …). */
+	census: number[];
+	/** One folded colored vertex figure per orbit, e.g. "(A4, B4)D4a". */
+	vcs: string[];
+}
+
 export interface EuclideanSpec extends BaseSpec {
 	geometry: "euclidean";
 	wallpaperGroup: string | null; // e.g. "p6m"
@@ -54,6 +74,8 @@ export interface EuclideanSpec extends BaseSpec {
 	// Present iff this is a freedraw pattern. Its presence also RELABELS the orbit section — see
 	// components/tiling-info.tsx — because k means grid points there, not vertices.
 	freedraw: FreedrawFacts | null;
+	// Present iff this is a colored square tiling. Relabels the orbit section to "colored vertices".
+	colors: ColorsFacts | null;
 }
 
 export interface HyperbolicSpec extends BaseSpec {
@@ -186,6 +208,9 @@ export function buildTilingSpec(
 	// classification), so `faceOrbits` gets a real value here instead of the flagged "not computed".
 	const p = selected.freedraw;
 	const stats = p ? summarise(analyseFaces(p)) : null;
+	// Colors: the record carries its own orbit counts (the certificate's tile/edge orbit census), so the
+	// "not computed" fallbacks get real values, like freedraw's faceOrbits.
+	const cp = selected.colors;
 	return {
 		geometry: "euclidean",
 		label: selected.family,
@@ -202,7 +227,18 @@ export function buildTilingSpec(
 						withHoles: stats.withHoles,
 					}
 				: null,
+		colors: cp
+			? {
+					grid: colorsGridOf(cp),
+					lattice: { a: cp.a, b: cp.b, d: cp.d },
+					cells: cp.patch ? cp.patch.polys.length : colorsGridOf(cp) === "triangle" ? cp.a * cp.d * 2 : cp.a * cp.d,
+					patch: cp.patch ? { T1: cp.patch.T1, T2: cp.patch.T2 } : null,
+					census: colorCensus(cp),
+					vcs: cp.vcs,
+				}
+			: null,
 		...base,
-		faceOrbits: stats ? stats.faceOrbits : base.faceOrbits,
+		faceOrbits: cp ? cp.tileOrbits : stats ? stats.faceOrbits : base.faceOrbits,
+		edgeOrbits: cp ? cp.edgeOrbits : base.edgeOrbits,
 	};
 }

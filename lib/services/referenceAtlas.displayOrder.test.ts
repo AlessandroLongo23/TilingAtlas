@@ -59,4 +59,30 @@ describe("compareCatalogueDisplayOrder", () => {
 		});
 		expect(keys([cubeK2, octaK3])).toEqual(["fd-octa-3", "fd-cube-2"]);
 	});
+
+	// The colored-tiling class sits between freedraw and hyperbolic in TILE_CLASS_ORDER.
+	it("orders the colors class after freedraw", () => {
+		const colK1 = T({ canonicalKey: "col-1-00001", k: 1, source: "colors" });
+		const fdK5 = T({ canonicalKey: "fd-5-0001", k: 5, source: "freedraw" });
+		expect(keys([colK1, fdK5])).toEqual(["fd-5-0001", "col-1-00001"]);
+	});
+
+	// Colors carries the same grid sub-axis as planar freedraw (SUB_ORDER: square < triangle < ts),
+	// sitting between class and k — a square coloring at k=6 precedes a triangle coloring at k=1.
+	it("orders the colors grid sub-axis before k", () => {
+		const sq = { cells: [0], orbit: [0], vcs: [], tileOrbits: 1, edgeOrbits: 1, a: 1, b: 0, d: 1 };
+		const sqK6 = T({
+			canonicalKey: "col-6-00001",
+			k: 6,
+			source: "colors",
+			colors: { ...sq, id: "col-6-00001", k: 6 },
+		});
+		const triK1 = T({
+			canonicalKey: "colt-1-00001",
+			k: 1,
+			source: "colors",
+			colors: { ...sq, id: "colt-1-00001", k: 1, grid: "triangle" },
+		});
+		expect(keys([triK1, sqK6])).toEqual(["col-6-00001", "colt-1-00001"]);
+	});
 });

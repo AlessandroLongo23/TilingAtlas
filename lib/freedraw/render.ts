@@ -128,14 +128,14 @@ export function fitView(width: number, height: number, cells: number): FreedrawV
 // Guard against pathological zoom-out: at most this many grid units are ever iterated per axis.
 const MAX_SPAN = 400;
 
-interface Span {
+export interface Span {
 	x0: number;
 	x1: number;
 	y0: number;
 	y1: number;
 }
 
-function visibleSpan(
+export function visibleSpan(
 	width: number,
 	height: number,
 	view: FreedrawView,
@@ -501,10 +501,13 @@ function drawPatchPattern(
  * Together they cut the plane into copies of the parallelogram (0,0), (a,0), (a+b,d), (b,d), which is
  * exactly the tile of pattern data the whole figure is stamped out of.
  */
-function drawLattice(
+// Exported with structural param types: the colored-square catalogue (lib/colors) shares the HNF
+// lattice fields and the orbit array with FreedrawPattern, so its renderer reuses these two overlays
+// wholesale instead of porting the shear/hover care a second time.
+export function drawLattice(
 	ctx: CanvasRenderingContext2D,
-	p: FreedrawPattern,
-	style: FreedrawStyle,
+	p: Pick<FreedrawPattern, "a" | "b" | "d">,
+	style: Pick<FreedrawStyle, "dark">,
 	px: (x: number, y: number) => number,
 	py: (y: number) => number,
 	span: Span,
@@ -558,11 +561,11 @@ function drawLattice(
  * dot in its orbit grow together, easing in and out. Growth is what makes the orbit legible — it answers
  * "which other points are the same as this one" without a legend.
  */
-function drawOrbitDots(
+export function drawOrbitDots(
 	ctx: CanvasRenderingContext2D,
-	p: FreedrawPattern,
+	p: Pick<FreedrawPattern, "a" | "b" | "d" | "orbit" | "k">,
 	view: FreedrawView,
-	style: FreedrawStyle,
+	style: Pick<FreedrawStyle, "dark">,
 	px: (x: number, y: number) => number,
 	py: (y: number) => number,
 	bx: number,

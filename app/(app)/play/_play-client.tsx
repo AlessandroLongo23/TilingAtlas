@@ -9,6 +9,7 @@ import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
+import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -431,6 +432,28 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// force off every mode that would try to draw one and every overlay derived from tiles — the Options tab
 	// hides those controls, and this keeps a stale render from surviving the switch.
 	const isFreedraw = !!selected?.freedraw;
+	// A colored tiling is the same shape of thing: its own 2D canvas, no polygon cell, so it force-clears
+	// every mode and tile-derived overlay the flat renderer would otherwise try to draw.
+	const isColors = !!selected?.colors;
+	useEffect(() => {
+		const cfg = useConfiguration.getState();
+		if (isColors) {
+			cfg.set({
+				colors: true,
+				hyperbolic: false,
+				spherical: false,
+				inversive: false,
+				circlePacking: false,
+				isTilingRegularOnly: false,
+				isIslamic: false,
+				showSymmetryElements: false,
+				showFundamentalDomain: false,
+				showVertexOrbits: false,
+			});
+		} else if (cfg.colors) {
+			cfg.set({ colors: false });
+		}
+	}, [isColors, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isFreedraw) {
@@ -538,6 +561,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			p: "freedrawLattice",
 			o: "freedrawVertices",
 		};
+		// The colors view's trio, on the same three keys: G = tile edges, P = period lattice, O = orbit dots.
+		const COLORS_TOGGLES: Record<string, keyof ConfigurationState> = {
+			g: "colorsEdges",
+			p: "colorsLattice",
+			o: "colorsVertices",
+		};
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			const el = e.target as HTMLElement | null;
@@ -556,6 +585,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
 				c.set({ [freedrawField]: !c[freedrawField] } as Partial<ConfigurationState>);
+				return;
+			}
+			// Colors: same interception, same reasoning — a coloring has no tiles for the flat table to act on.
+			const colorsField = !!selected?.colors ? COLORS_TOGGLES[e.key.toLowerCase()] : undefined;
+			if (colorsField) {
+				e.preventDefault();
+				const c = useConfiguration.getState();
+				c.set({ [colorsField]: !c[colorsField] } as Partial<ConfigurationState>);
 				return;
 			}
 			if (!!selected?.spherical && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {
@@ -596,6 +633,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				// Options tab hides them all and shows the freedraw fill/grid/orbit trio instead).
 				const blocked =
 					!!selected?.freedraw ||
+					!!selected?.colors ||
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
 					(field === "showVertexOrbits" && !selected?.exactSource) ||
@@ -700,6 +738,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
 					// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
 					<FreedrawPlayCanvas pattern={selected.freedraw} />
+				) : selected?.colors ? (
+					// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
+					// contract as freedraw (no polygon cell, owns its pan/zoom).
+					<ColorsPlayCanvas pattern={selected.colors} />
 				) : selected?.developed ? (
 					// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
 					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary

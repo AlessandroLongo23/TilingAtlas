@@ -44,7 +44,7 @@ export function NavHeader({ selected, count, onRandom, onPrev, onNext }: NavHead
 						    axis never reads as the same quantity. */}
 						<span className="text-xs font-mono text-fg-secondary" title={`{${selected.family}}`}>
 							k={selected.k}
-							{selected.freedraw ? " grid pts" : null} · {TILE_CLASS_LABEL[tileClassOf(selected)].long}
+							{selected.freedraw ? " grid pts" : selected.colors ? " colored verts" : null} · {TILE_CLASS_LABEL[tileClassOf(selected)].long}
 						</span>
 						<span className="text-[10px] font-mono text-fg-disabled truncate" title={selected.canonicalKey}>
 							{selected.canonicalKey}

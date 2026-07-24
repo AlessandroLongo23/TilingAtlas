@@ -12,6 +12,7 @@ import { RangeInput } from "@/components/ui/range-input";
 import { Switch } from "@/components/ui/switch";
 import { ReferenceCard } from "@/components/reference-card";
 import { cn } from "@/lib/utils/cn";
+import type { ColorsGrid } from "@/lib/colors/pattern";
 import type { FreedrawGrid } from "@/lib/freedraw/pattern";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
@@ -141,6 +142,22 @@ const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = 
 	{ value: "ts", label: "Tri + square" },
 ];
 const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
+// Colors-shelf grid facet — the same axis, shown only for the colored class.
+const COLORS_GRID_OPTIONS: { value: "all" | ColorsGrid; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "square", label: "Squares" },
+	{ value: "triangle", label: "Triangles" },
+	{ value: "ts", label: "Tri + square" },
+];
+const COLORS_GRID_VALUES = COLORS_GRID_OPTIONS.map((o) => o.value).filter((v): v is ColorsGrid => v !== "all");
+// Colors-shelf palette-size facet: how many colors the solutions use. Each (grid, size) pair is its own
+// catalogue — an n-color run's solutions all use every one of its n colors.
+const COLORS_COUNT_OPTIONS: { value: "all" | number; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: 2, label: "2 colors" },
+	{ value: 3, label: "3 colors" },
+];
+const COLORS_COUNT_VALUES = COLORS_COUNT_OPTIONS.map((o) => o.value).filter((v): v is number => v !== "all");
 // Freedraw-shelf regular-polygon facet — the bridge to the classical catalogue. Every k-uniform tiling
 // dissects onto a triangle/square grid (octagon excepted), so "k-uniform" is the subfamily where every
 // tile is an edge-to-edge regular polygon. The full has/none/any composition tool is on /freedraw; the
@@ -284,6 +301,10 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind)) f.freedrawKind = freedrawKind as FreedrawKind;
 	const freedrawGrid = sp.get("fdgrid");
 	if (freedrawGrid && (FREEDRAW_GRID_VALUES as string[]).includes(freedrawGrid)) f.freedrawGrid = freedrawGrid as FreedrawGrid;
+	const colorsGrid = sp.get("cogrid");
+	if (colorsGrid && (COLORS_GRID_VALUES as string[]).includes(colorsGrid)) f.colorsGrid = colorsGrid as ColorsGrid;
+	const colorsCount = Number(sp.get("cocount"));
+	if (COLORS_COUNT_VALUES.includes(colorsCount)) f.colorsCount = colorsCount;
 	const freedrawRegular = sp.get("fdreg");
 	if (freedrawRegular && (FREEDRAW_REGULAR_VALUES as string[]).includes(freedrawRegular)) f.freedrawRegular = freedrawRegular as FreedrawRegular;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
@@ -333,6 +354,8 @@ function serializeView(v: ViewState): string {
 	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
 	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
 	if (f.freedrawGrid) p.set("fdgrid", f.freedrawGrid);
+	if (f.colorsGrid) p.set("cogrid", f.colorsGrid);
+	if (f.colorsCount) p.set("cocount", String(f.colorsCount));
 	if (f.freedrawRegular) p.set("fdreg", f.freedrawRegular);
 	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
 	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
@@ -632,6 +655,22 @@ export function ReferenceShelf() {
 			next.freedrawGrid = undefined;
 			next.freedrawRegular = undefined;
 		}
+		// The colors grid / palette-size facets only mean something inside the colored class — drop them
+		// otherwise.
+		if (v !== "colors") {
+			next.colorsGrid = undefined;
+			next.colorsCount = undefined;
+		}
+		if (v === "colors") {
+			// A coloring is classified by its colored vertex classes, not the uniform-tiling axes.
+			next.mValue = undefined;
+			next.partitionKey = undefined;
+			next.maximalOnly = undefined;
+			next.starFolds = undefined;
+			next.parametric = undefined;
+			next.wallpaperGroups = undefined;
+			next.latticeShapes = undefined;
+		}
 		if (v === "freedraw") {
 			// Freedraw faces are not tiles in the Grünbaum & Shephard sense, so none of the uniform-tiling
 			// classification applies: no M/partition, no star folds, no α-family, no wallpaper group or lattice.
@@ -677,6 +716,10 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
 	const setFreedrawGrid = (v: "all" | FreedrawGrid) =>
 		setFilters({ ...filters, freedrawGrid: v === "all" ? undefined : v });
+	const setColorsGrid = (v: "all" | ColorsGrid) =>
+		setFilters({ ...filters, colorsGrid: v === "all" ? undefined : v });
+	const setColorsCount = (v: "all" | number) =>
+		setFilters({ ...filters, colorsCount: v === "all" ? undefined : v });
 	const setFreedrawRegular = (v: "all" | FreedrawRegular) =>
 		setFilters({ ...filters, freedrawRegular: v === "all" ? undefined : v });
 
@@ -876,6 +919,7 @@ export function ReferenceShelf() {
 	const showPolyominoOrder = tileClass === "polyomino";
 	const showIslamicSystem = tileClass === "islamic";
 	const showFreedrawKind = tileClass === "freedraw";
+	const showColorsGrid = tileClass === "colors";
 	// Freedraw's k counts GRID-POINT orbits of the decoration, not vertex orbits of a tiling. It shares the
 	// axis so the two are browsable together; the heading is what keeps them from reading as one quantity.
 	const kGroupTitle = showFreedrawKind ? "Grid-point orbits (k)" : "Vertex count (k)";
@@ -892,6 +936,8 @@ export function ReferenceShelf() {
 		(filters.islamicSystem ? 1 : 0) +
 		(filters.freedrawKind ? 1 : 0) +
 		(filters.freedrawGrid ? 1 : 0) +
+		(filters.colorsGrid ? 1 : 0) +
+		(filters.colorsCount ? 1 : 0) +
 		(filters.freedrawRegular ? 1 : 0) +
 		(filters.hypValence ? 1 : 0) +
 		(filters.hypPolygon ? 1 : 0) +
@@ -1100,6 +1146,52 @@ export function ReferenceShelf() {
 							<GroupNote>
 								Which lattice the drawn edges decorate. Square patterns tile with polyominoes, triangular
 								ones with polyiamonds — plus strips and unbounded sheets on either board.
+							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					{showColorsGrid ? (
+						<FilterGroup
+							title="Grid"
+							summary={
+								filters.colorsGrid === "square"
+									? "squares"
+									: filters.colorsGrid === "triangle"
+										? "triangles"
+										: filters.colorsGrid === "ts"
+											? "tri + square"
+											: null
+							}
+							note="the colored board"
+						>
+							<OptionWall
+								columns={3}
+								options={COLORS_GRID_OPTIONS}
+								selected={filters.colorsGrid ?? "all"}
+								onChange={setColorsGrid}
+							/>
+							<GroupNote>
+								Which grid the coloring lives on: squares, triangles, or the mixed square-triangle
+								tilings (each of those a different underlying tessellation per solution).
+							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					{showColorsGrid ? (
+						<FilterGroup
+							title="Colors"
+							summary={filters.colorsCount ? `${filters.colorsCount} colors` : null}
+							note="palette size"
+						>
+							<OptionWall
+								columns={3}
+								options={COLORS_COUNT_OPTIONS}
+								selected={filters.colorsCount ?? "all"}
+								onChange={setColorsCount}
+							/>
+							<GroupNote>
+								How many colors the tiles carry. Every solution in a catalogue uses all of them — the
+								2-colorings are not repeated inside the 3-color one.
 							</GroupNote>
 						</FilterGroup>
 					) : null}

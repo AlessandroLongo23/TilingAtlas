@@ -34,6 +34,8 @@ describe("playUrlState", () => {
 					? Math.round((spec.min + spec.max) / 2)
 					: (spec.min + spec.max) / 2;
 				view[spec.field] = mid === def[spec.field] ? spec.max : mid;
+			} else if (spec.kind === "palette") {
+				view[spec.field] = [40, "dark"];
 			} else {
 				view[spec.field] = spec.values.find((v) => v !== def[spec.field]);
 			}
@@ -42,7 +44,12 @@ describe("playUrlState", () => {
 		const qs = serializePlayState(view, null, null);
 		const { config } = parse(qs);
 		for (const spec of Object.values(PLAY_PARAMS)) {
-			expect(config[spec.field], `field ${String(spec.field)} (key round-trip)`).toBe(view[spec.field]);
+			// Palettes are arrays, rebuilt by parse — value equality is the round-trip contract there.
+			if (spec.kind === "palette") {
+				expect(config[spec.field], `field ${String(spec.field)} (key round-trip)`).toEqual(view[spec.field]);
+			} else {
+				expect(config[spec.field], `field ${String(spec.field)} (key round-trip)`).toBe(view[spec.field]);
+			}
 		}
 	});
 
@@ -96,6 +103,6 @@ describe("playUrlState", () => {
 	it("keeps URL keys unique", () => {
 		const fields = Object.values(PLAY_PARAMS).map((s) => s.field);
 		expect(new Set(fields).size).toBe(fields.length);
-		expect(Object.keys(PLAY_PARAMS)).toHaveLength(43);
+		expect(Object.keys(PLAY_PARAMS)).toHaveLength(47);
 	});
 });

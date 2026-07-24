@@ -16,10 +16,8 @@ interface CatalogueListPanelProps {
 	onSelect?: (t: CatalogueTiling) => void;
 }
 
-// Initial expand state: top-level class categories (`c:…`) start collapsed so the picker opens as a short
-// list of headings; their grid subsections (`s:…`, freedraw only) and k-subsections (`k:…`) start open so
-// unrolling a class reveals its thumbnails straight away rather than another layer of closed rows.
-const defaultOpenById = (id: string) => id.startsWith("k:") || id.startsWith("s:");
+// Initial expand state: EVERY row starts collapsed, nested ones included (class `c:…`, grid `s:…`,
+// k `k:…`), so the picker opens as a short list of headings and each level is unrolled by hand.
 
 // Row height for both header levels; the nested one parks one hairline below the outer one so an open
 // path reads as an indented tree pinned to the top of the scrollport.
@@ -40,6 +38,13 @@ const SUB_LABEL: Record<string, string> = {
 	square: "Square grid",
 	triangle: "Triangle grid",
 	ts: "Triangle + square grid",
+	// Colors splits the same grids again by palette size — each is its own catalogue.
+	"square-2": "Square grid, 2 colors",
+	"square-3": "Square grid, 3 colors",
+	"triangle-2": "Triangle grid, 2 colors",
+	"triangle-3": "Triangle grid, 3 colors",
+	"ts-2": "Triangle + square, 2 colors",
+	"ts-3": "Triangle + square, 3 colors",
 	tetrahedron: "Tetrahedron",
 	octahedron: "Octahedron",
 	cube: "Cube",
@@ -91,7 +96,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		}
 		return ids;
 	}, [byClass]);
-	const { expanded, toggle, openGroups } = useExpandableGroups(nodeIds, (id) => id, defaultOpenById);
+	const { expanded, toggle, openGroups } = useExpandableGroups(nodeIds, (id) => id, false);
 
 	// One width for every bucket. Measured here rather than per grid so that a single commit gives
 	// them ALL their real heights: a scroll target computed while some buckets were still zero-height
@@ -122,8 +127,17 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	// Open the path to the current tiling on every selection change; the bucket's TileGrid handles the
 	// scroll and the pulse itself (with the tiles virtualised, the target row may not be mounted yet, so
 	// there is no element to scroll to — only a row index).
+	//
+	// The page's FIRST selection is exempt: /play picks one as soon as the catalogue resolves, and
+	// revealing it would leave the panel opened to a class the visitor never asked for, against the
+	// everything-collapsed default. Later changes (random, ←/→, a click) still unroll their path.
+	const revealedFirst = useRef(false);
 	useEffect(() => {
 		if (!selectedClassId || !selectedKId) return;
+		if (!revealedFirst.current) {
+			revealedFirst.current = true;
+			return;
+		}
 		openGroups(selectedSubId ? [selectedClassId, selectedSubId, selectedKId] : [selectedClassId, selectedKId]);
 	}, [selectedKey, selectedClassId, selectedSubId, selectedKId, openGroups]);
 
@@ -146,7 +160,9 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 					? kk.list[0]?.sphericalFreedraw
 						? `k = ${kk.k} vertex orbits`
 						: `k = ${kk.k} grid points`
-					: `k = ${kk.k}`;
+					: cls === "colors"
+						? `k = ${kk.k} colored vertices`
+						: `k = ${kk.k}`;
 			return (
 				// The wrapper is what bounds the sticky header: pinned while its own bucket is on screen,
 				// pushed off by the next one. Transparent, so the wall's line colour still fills its gaps.

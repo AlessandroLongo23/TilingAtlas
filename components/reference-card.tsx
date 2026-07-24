@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
+import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
@@ -150,6 +151,8 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
 				) : tiling.freedraw ? (
 					<FreedrawThumbnail pattern={tiling.freedraw} />
+				) : tiling.colors ? (
+					<ColorsThumbnail pattern={tiling.colors} />
 				) : tiling.developed ? (
 					<HyperbolicDevelopedThumbnail patch={tiling.developed.patch} />
 				) : (
@@ -157,7 +160,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				)}
 				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
 				    along with the two non-Euclidean renderers. */}
-				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw ? (
+				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw && !tiling.colors ? (
 					<button
 						type="button"
 						onClick={handleScreenshot}
@@ -322,6 +325,23 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 						</p>
 						<p className="text-[10px] text-fg-muted leading-tight" title="grid-point orbits of the decoration, not vertex orbits of a tiling">
 							k={tiling.k} grid-point orbits
+						</p>
+						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
+							{tiling.id}
+						</p>
+					</>
+				) : tiling.colors ? (
+					// Colors: the color census is the headline (every vertex is 4.4.4.4 — the coloring is the
+					// identity), and k is spelled out as colored vertex classes. See ReferenceTiling.colors.
+					<>
+						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
+							{tiling.discoverer}
+						</p>
+						<p className="text-xs text-fg-secondary font-mono leading-tight" title={tiling.family}>
+							{tiling.family}
+						</p>
+						<p className="text-[10px] text-fg-muted leading-tight" title="vertex classes under color-preserving symmetry">
+							k={tiling.k} colored vertices
 						</p>
 						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
 							{tiling.id}

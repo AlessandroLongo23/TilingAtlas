@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
+import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -223,6 +224,8 @@ function Tile({
 					/>
 				) : t.freedraw ? (
 					<FreedrawThumbnail pattern={t.freedraw} />
+				) : t.colors ? (
+					<ColorsThumbnail pattern={t.colors} live />
 				) : t.developed ? (
 					<HyperbolicDevelopedThumbnail patch={t.developed.patch} />
 				) : t.renderCell ? (

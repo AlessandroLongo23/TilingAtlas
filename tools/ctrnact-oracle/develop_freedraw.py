@@ -663,7 +663,9 @@ class PatchComplex:
                 raise DevelopError("face walk did not close")
             if o != (0, 0):
                 raise DevelopError("face walk returned with a lattice offset")
-            want = {"A3": 3, "A4": 4}[tile]
+            # Face size straight from the letter's digits — "A3"/"A4" here, and the colored alphabet's
+            # "B3"/"B4" when develop_colors.py drives this same complex.
+            want = int(tile[1:])
             if len(cyc) != want:
                 raise DevelopError(f"{tile} face has {len(cyc)} corners")
             fid = len(faces)
