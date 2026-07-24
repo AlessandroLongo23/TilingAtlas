@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { loadLandingData } from "@/lib/services/landingData";
 import { HeroRotator } from "@/components/landing/hero-rotator";
+import { HeroSpecimenProvider } from "@/components/landing/hero-specimen";
 import { LandingButtons } from "@/components/landing/landing-buttons";
 import { CollectionCard } from "@/components/landing/collection-card";
 import { CompletenessBadge } from "@/components/landing/completeness-badge";
@@ -9,7 +10,7 @@ import { TheoryRing } from "@/components/landing/theory-ring";
 import { ParquetMini } from "@/components/landing/parquet-mini";
 import { HyperbolicMini, SphericalMini } from "@/components/landing/geometry-minis";
 import { HatMini, PenroseMini } from "@/components/landing/coming-soon-minis";
-import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
+import { TilingThumbnail } from "@/components/tiling-thumbnail";
 
 // The landing page (spec: docs/superpowers/specs/2026-07-22-landing-page-design.md).
 // Conventional skeleton, catalog material: every visual is a real render from the atlas, every
@@ -28,25 +29,27 @@ export default async function HomePage() {
 			{/* P1+P2 — hero: drifting live specimen rotating through a pool every 10 s with the
 			    radial-wave transition, masthead over a legibility scrim, citable caption. */}
 			<section className="relative min-h-[520px] h-[68vh] flex items-center overflow-hidden">
-				<HeroRotator specimens={data.heroPool} />
-				<div
-					aria-hidden="true"
-					className="absolute inset-y-0 left-0 w-full md:w-[46rem] bg-linear-to-r from-surface via-surface/85 via-55% to-transparent pointer-events-none"
-				/>
-				<div className="relative z-10 px-6 md:px-12 max-w-2xl">
-					<h1 className="text-4xl md:text-5xl font-semibold tracking-tight">The Tiling Atlas</h1>
-					<p className="mt-4 text-base md:text-lg text-fg-secondary">
-						A catalogue of tilings of the plane, the sphere, and the hyperbolic plane.
-					</p>
-					<p className="mt-3 text-sm text-fg-secondary">
-						<Link href="/library" className="hover:text-fg transition-colors">
-							Over {Math.floor(counts.total / 1000) * 1000} tilings
-						</Link>
-					</p>
-					<div className="mt-8">
-						<LandingButtons />
+				<HeroSpecimenProvider initialId={data.heroPool[0]?.id ?? null}>
+					<HeroRotator specimens={data.heroPool} />
+					<div
+						aria-hidden="true"
+						className="absolute inset-y-0 left-0 w-full md:w-[46rem] bg-linear-to-r from-surface via-surface/85 via-55% to-transparent pointer-events-none"
+					/>
+					<div className="relative z-10 px-6 md:px-12 max-w-2xl">
+						<h1 className="text-4xl md:text-5xl font-semibold tracking-tight">The Tiling Atlas</h1>
+						<p className="mt-4 text-base md:text-lg text-fg-secondary">
+							A catalogue of tilings of the plane, the sphere, and the hyperbolic plane.
+						</p>
+						<p className="mt-3 text-sm text-fg-secondary">
+							<Link href="/library" className="hover:text-fg transition-colors">
+								Over {Math.floor(counts.total / 1000) * 1000} tilings
+							</Link>
+						</p>
+						<div className="mt-8">
+							<LandingButtons />
+						</div>
 					</div>
-				</div>
+				</HeroSpecimenProvider>
 			</section>
 
 			{/* P6 — start here: three quiet deep links for the newcomer. */}
@@ -85,25 +88,21 @@ export default async function HomePage() {
 					<CollectionCard
 						title="Play"
 						span="2x2"
-						titleHref="/play"
-						blurb="Pan, zoom and rotate any tiling in the catalogue. This patch is live: click it, then drag."
-						count={`${fmt(counts.total)} tilings`}
+						subtitle={`${fmt(counts.total)} tilings`}
+						href={`/play?source=reference&tiling=${encodeURIComponent(data.play.id)}`}
+						description="Explore any tiling in the atlas from the interactive viewer."
 						badge={<CompletenessBadge tone="complete" label="all three geometries" />}
 					>
-						<InteractiveTilingPreviewCard
-							cell={data.play.cell}
-							tilingId={data.play.id}
-							title="4.6.12, the truncated trihexagonal tiling"
-							homePeriods={5}
-							className="w-full h-full rounded-none border-0"
-						/>
+						<div className="absolute inset-0">
+							<TilingThumbnail translationalCell={data.play.cell} pxPerEdge={44} />
+						</div>
 					</CollectionCard>
 
 					<CollectionCard
 						title="Library"
+						subtitle={`${fmt(counts.euclidean)} Euclidean tilings`}
 						href="/library"
-						blurb="Every tiling on a filterable shelf: geometry, tile class, symmetry."
-						count={`${fmt(counts.euclidean)} Euclidean tilings`}
+						description="Every tiling on a filterable shelf: geometry, tile class, symmetry."
 						badge={<CompletenessBadge tone="complete" label="complete through k = 6" />}
 					>
 						<LibraryMosaic tilings={data.mosaic} />
@@ -111,20 +110,20 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Theory"
+						subtitle="Undersand the concepts"
 						href="/theory"
-						blurb="Why the angles must fit, and why exactly eleven uniform tilings exist."
-						count="the 11 uniform tilings"
+						description="Why the angles must fit, and why exactly eleven uniform tilings exist."
 						badge={<CompletenessBadge tone="proven" label="exactly 11, proven" />}
 					>
 						<TheoryRing tilings={data.uniformEleven} />
 					</CollectionCard>
 
 					<CollectionCard
-						title="Parquet"
+						title="Parquet deformations"
 						span="2x1"
+						subtitle=""
 						href="/parquet"
-						blurb="Tilings that deform across a strip, in the tradition of Huff and Hofstadter."
-						count="deformations"
+						description="Tilings that deform across a strip, in the tradition of Huff and Hofstadter."
 						badge={<CompletenessBadge tone="infinite" label="infinite family" />}
 					>
 						<ParquetMini />
@@ -132,9 +131,9 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Hyperbolic"
+						subtitle={`${fmt(counts.hyperbolic)} tilings`}
 						href="/library?geo=hyperbolic"
-						blurb="Tilings of the hyperbolic plane, developed into the Poincaré disk."
-						count={`${fmt(counts.hyperbolic)} tilings`}
+						description="Tilings of the hyperbolic plane, developed into the Poincaré disk."
 						badge={<CompletenessBadge tone="infinite" label="infinite family" />}
 					>
 						{data.hyperbolicPatch ? <HyperbolicMini patch={data.hyperbolicPatch} /> : null}
@@ -142,9 +141,9 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Spherical"
+						subtitle={`${fmt(counts.spherical)} tilings`}
 						href="/library?geo=spherical"
-						blurb="Platonic and Archimedean solids as tilings of the sphere."
-						count={`${fmt(counts.spherical)} tilings`}
+						description="Platonic and Archimedean solids as tilings of the sphere."
 						badge={<CompletenessBadge tone="finite" label="finite catalogue" />}
 					>
 						{data.sphericalSolid ? <SphericalMini solidId={data.sphericalSolid} /> : null}
@@ -152,19 +151,19 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Aperiodic"
+						subtitle="page not built yet"
 						comingSoon
-						blurb="The hat and its relatives. Tilings that never repeat."
-						count="in preparation"
-					>
+						description="The hat and its relatives. Tilings that never repeat."
+						>
 						<HatMini />
 					</CollectionCard>
 
 					<CollectionCard
 						title="Substitution"
+						subtitle="page not built yet"
 						comingSoon
-						blurb="Penrose and the subdivision families."
-						count="in preparation"
-					>
+						description="Penrose and the subdivision families."
+						>
 						<PenroseMini />
 					</CollectionCard>
 				</div>

@@ -49,6 +49,12 @@ export interface LandingPayload {
 	euclideanPool: LandingSpecimen[];
 	uniformEleven: LandingSpecimen[];
 	play: LandingSpecimen;
+	/** Renderable developed-patch ids the Hyperbolic card picks one from per request (one representative
+	 *  per vertex-config family, so successive reloads look different, not two near-identical 7.7.7s). */
+	hyperbolicPool: string[];
+	/** Distinct spherical solid ids the Spherical card picks one from per request. */
+	sphericalPool: string[];
+	/** Stable fallbacks used only if the pool is empty (kept from the original fixed picks). */
 	hyperbolicPatch: string | null;
 	sphericalSolid: string | null;
 }
@@ -114,6 +120,11 @@ function mulberry32(seed: number): () => number {
 const POOL_SIZE = 24;
 const POOL_SEED = 0x7ee1a71a;
 
+// The Hyperbolic card rotates through one representative patch per family, capped and shuffled
+// deterministically so the committed pool is stable across rebuilds.
+const HYP_POOL_SIZE = 64;
+const HYP_POOL_SEED = 0x3c6ef372;
+
 /** Build the runtime payload from the full atlas — counts over every geometry, a capped drawable
  *  Euclidean pool, the fixed uniform/play/thumbnail picks. Pure; used by the build-time generator. */
 export function buildLandingPayload(
@@ -126,12 +137,31 @@ export function buildLandingPayload(
 	);
 
 	const eleven = pickUniformEleven(atlas);
-	// 4.6.12 (t1003) is the Play card's demo patch — big dodecagons read well at card size.
+	// 4.6.12 (t1003) is the Play card's fallback patch — big dodecagons read well at card size. The
+	// runtime re-picks the Play specimen from euclideanPool per request, so this is only the seed.
 	const play = atlas.find((t) => t.id === "t1003") ?? eleven[0] ?? euclideanDrawable[0];
 
+	// Hyperbolic pool: one representative patch per vertex-config family (7.7.7, 3.3.3.3.7, 4.4.4.5, …),
+	// so the card shows a genuinely different tiling each reload instead of near-identical siblings.
+	const hypByFamily = new Map<string, string>();
+	for (const t of atlas) {
+		const patch = t.developed?.patch;
+		if (patch && !hypByFamily.has(t.family)) hypByFamily.set(t.family, patch);
+	}
+	const hyperbolicPool = pickDistinct([...hypByFamily.values()], HYP_POOL_SIZE, mulberry32(HYP_POOL_SEED));
+	// The truncated icosahedron (the football) is the most instantly readable sphere at card size — the
+	// fallback if the pool is empty.
 	const hypSeven = atlas.find((t) => t.developed && t.family === "7.7.7");
 	const hypFirst = atlas.find((t) => t.developed);
-	// The truncated icosahedron (the football) is the most instantly readable sphere at card size.
+
+	// Spherical pool: every distinct solid the catalogue carries (Platonic, Archimedean, prisms,
+	// Johnson), in first-appearance order — all 40 render from their id alone.
+	const sphBySolid = new Set<string>();
+	for (const t of atlas) {
+		const solid = t.spherical?.solid;
+		if (solid) sphBySolid.add(solid);
+	}
+	const sphericalPool = [...sphBySolid];
 	const sphBall = atlas.find((t) => t.spherical?.solid === "truncated-icosahedron");
 	const sphFirst = atlas.find((t) => t.spherical);
 
@@ -140,6 +170,8 @@ export function buildLandingPayload(
 		euclideanPool,
 		uniformEleven: eleven.map(toSpecimen),
 		play: toSpecimen(play),
+		hyperbolicPool,
+		sphericalPool,
 		hyperbolicPatch: (hypSeven ?? hypFirst)?.developed?.patch ?? null,
 		sphericalSolid: (sphBall ?? sphFirst)?.spherical?.solid ?? null,
 	};

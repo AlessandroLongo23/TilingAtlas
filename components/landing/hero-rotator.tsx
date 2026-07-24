@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { ExternalLink, Shuffle } from "lucide-react";
+import { Shuffle } from "lucide-react";
 import {
 	drawPolygons,
 	expandToViewport,
@@ -18,6 +17,7 @@ import {
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
 import type { LandingSpecimen } from "@/lib/services/landingData";
+import { usePublishHeroSpecimen } from "./hero-specimen";
 
 // The hero's living background. Three behaviours on top of the static specimen render:
 //  - a slow drift in one fixed direction. The pattern is periodic, so the steady state is ONE
@@ -27,7 +27,8 @@ import type { LandingSpecimen } from "@/lib/services/landingData";
 //    (lib/utils/tilingTransition.ts): the outgoing tiling collapses into its centroids centre-outward,
 //    the incoming one grows back the same way. During the wave the frame is vector-drawn so each tile
 //    can scale about its own centroid;
-//  - the caption follows the specimen on stage: id, compact config, k, and the Play deep link.
+//  - the caption follows the specimen on stage: id, compact config, k. The id is published to the
+//    hero context so the "Start exploring" button opens whatever is on stage right now.
 // prefers-reduced-motion disables drift and auto-rotation, and makes shuffle swap instantly.
 //
 // The `specimens` prop is only the baked SEED pool — enough to paint instantly with zero fetch. After
@@ -115,6 +116,12 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 	// The shuffle request channel: the button flips this, the rAF loop (or the reduced-motion poll)
 	// picks it up.
 	const shuffleRef = useRef(false);
+	const publishSpecimen = usePublishHeroSpecimen();
+
+	// Keep the hero CTA pointed at whatever is on stage.
+	useEffect(() => {
+		if (specimen) publishSpecimen(specimen.id);
+	}, [specimen, publishSpecimen]);
 
 	useEffect(() => {
 		const host = hostRef.current;
@@ -394,13 +401,6 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 					<span className="max-w-[38vw] sm:max-w-none truncate">
 						{specimen.id} <span className="hidden sm:inline">· {specimen.label} </span>· k&nbsp;=&nbsp;{specimen.k}
 					</span>
-					<Link
-						href={`/play?source=reference&tiling=${encodeURIComponent(specimen.id)}`}
-						className="inline-flex items-center gap-1 text-fg-muted hover:text-fg transition-colors"
-					>
-						<ExternalLink size={11} aria-hidden="true" />
-						<span>open in Play</span>
-					</Link>
 					<button
 						type="button"
 						onClick={() => {

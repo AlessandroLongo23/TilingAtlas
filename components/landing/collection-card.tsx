@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
+import { WipBadge, WipTape } from "@/components/landing/work-in-progress";
 
 // The collections-grid card frame (spec P3/P4/P8). Media sits slightly desaturated at rest and
-// wakes on hover — the only hover motion the landing allows. Coming-soon cards are inert:
-// dashed border, muted media, no link.
+// wakes on hover — the only hover motion the landing allows. Coming-soon cards are inert: no
+// link, media faded back, hazard tape and a caution chip over the top.
 
 // How many wall cells the card claims. Below `sm` the wall is a single column and everything
 // collapses to 1×1 — a 2-wide span there would mint an implicit second column and break the grid.
@@ -16,9 +17,9 @@ const SPAN_CLASSES = {
 
 interface CollectionCardProps {
 	title: string;
-	blurb: string;
 	/** Small line under the title, e.g. "4,596 tilings". */
-	count?: string;
+	subtitle?: string;
+	description: string;
 	badge?: ReactNode;
 	href?: string;
 	/** Link only the title, keeping the frame plain — for cards whose media is itself interactive. */
@@ -29,20 +30,25 @@ interface CollectionCardProps {
 	children: ReactNode;
 }
 
-export function CollectionCard({ title, blurb, count, badge, href, titleHref, comingSoon, span = "1x1", children }: CollectionCardProps) {
+export function CollectionCard({ title, subtitle, description, badge, href, titleHref, comingSoon, span = "1x1", children }: CollectionCardProps) {
 	const body = (
 		<>
 			{/* The media takes whatever height the text block leaves, so a 2×2 card gets a big canvas
 			    and a 2×1 a wide letterbox — no aspect ratio to fight the row track. */}
-			<div
-				className={cn(
-					"relative flex-1 min-h-0 bg-surface-raised overflow-hidden",
-					comingSoon
-						? "opacity-65"
-						: "saturate-[0.88] opacity-95 transition-[filter,opacity] duration-300 group-hover:saturate-100 group-hover:opacity-100",
-				)}
-			>
-				{children}
+			<div className="relative flex-1 min-h-0 bg-surface-raised overflow-hidden">
+				{/* The fade lives on an inner layer, not on the media box, so the tape stacked over it
+				    stays at full strength — a 65%-opacity hazard stripe is not a hazard stripe. */}
+				<div
+					className={cn(
+						"absolute inset-0",
+						comingSoon
+							? "opacity-45"
+							: "saturate-[0.88] opacity-95 transition-[filter,opacity] duration-300 group-hover:saturate-100 group-hover:opacity-100",
+					)}
+				>
+					{children}
+				</div>
+				{comingSoon ? <WipTape /> : null}
 			</div>
 			<div className="flex flex-col gap-1.5 p-3.5">
 				<div className="flex items-baseline justify-between gap-2">
@@ -55,15 +61,17 @@ export function CollectionCard({ title, blurb, count, badge, href, titleHref, co
 							title
 						)}
 					</h3>
-					{badge}
+					{/* A coming-soon card wears the caution chip whatever the call site passed — there is
+					    no completeness to report on a collection that has not been enumerated yet. */}
+					{comingSoon ? <WipBadge /> : badge}
 				</div>
-				{count ? <p className="text-xs font-mono text-fg-muted">{count}</p> : null}
+				{subtitle ? <p className="text-xs font-mono text-fg-muted">{subtitle}</p> : null}
 				{/* Exactly two lines, always — `line-clamp-2` caps it and `min-h-[2lh]` floors it. The
-				    text block is what the media height is left over from, so a blurb that wraps to one
+				    text block is what the media height is left over from, so a description that wraps to one
 				    line on one card and three on its neighbour would hand them different-sized canvases
-				    on the same row. Keep blurbs inside two lines at the narrowest 1×1 column (lg, ~230px
+				    on the same row. Keep descriptions inside two lines at the narrowest 1×1 column (lg, ~230px
 				    of text width) or the clamp will eat the tail. */}
-				<p className="text-xs text-fg-secondary leading-relaxed line-clamp-2 min-h-[2lh]">{blurb}</p>
+				<p className="text-xs text-fg-secondary leading-relaxed line-clamp-2 min-h-[2lh]">{description}</p>
 			</div>
 		</>
 	);

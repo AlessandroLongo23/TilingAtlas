@@ -73,6 +73,8 @@
   --color-warning-subtle: var(--color-warning-subtle);
   --color-info:           var(--color-info);
   --color-info-subtle:    var(--color-info-subtle);
+  --color-caution:        var(--color-caution);
+  --color-caution-ink:    var(--color-caution-ink);
 
   /* Radii → rounded-control, rounded-surface, rounded-overlay, rounded-pill */
   --radius-control: var(--radius-control);
@@ -388,6 +390,18 @@ body {
 }
 .ta-wall-dense {
   --ta-cell-radius: 3px;
+}
+
+/* Hazard tape for the collections that have no page yet (2026-07-24). Stripes run at 45° inside
+   the band; the band itself is rotated and over-hangs both card edges by the component, so the
+   two rotations compose and the tape reads as draped across the cell rather than drawn on it.
+   The period is in px, not %, so the stripe pitch stays constant whatever the cell is wide. */
+.ta-hazard-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--color-caution-ink) 0 9px,
+    var(--color-caution) 9px 18px
+  );
 }
 
 /* A tab on the wall (2026-07-22). Unselected options carry the chrome fill every other header row

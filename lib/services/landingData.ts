@@ -35,13 +35,19 @@ export async function loadLandingData(rng: () => number = Math.random): Promise<
 	const heroPool = pickDistinct(LANDING.euclideanPool, 14, rng);
 	const mosaic = pickDistinct(LANDING.euclideanPool, 9, rng);
 
+	// The Play/Hyperbolic/Spherical thumbnails re-deal per request too (page.tsx is force-dynamic), so
+	// the three collection previews change on every reload instead of always showing the baked picks.
+	const play = pickDistinct(LANDING.euclideanPool, 1, rng)[0] ?? LANDING.play;
+	const hyperbolicPatch = pickDistinct(LANDING.hyperbolicPool, 1, rng)[0] ?? LANDING.hyperbolicPatch;
+	const sphericalSolid = pickDistinct(LANDING.sphericalPool, 1, rng)[0] ?? LANDING.sphericalSolid;
+
 	return {
 		counts: LANDING.counts,
 		heroPool,
 		mosaic,
 		uniformEleven: LANDING.uniformEleven,
-		play: LANDING.play,
-		hyperbolicPatch: LANDING.hyperbolicPatch,
-		sphericalSolid: LANDING.sphericalSolid,
+		play,
+		hyperbolicPatch,
+		sphericalSolid,
 	};
 }

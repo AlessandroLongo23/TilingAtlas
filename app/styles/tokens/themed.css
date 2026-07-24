@@ -44,6 +44,14 @@
   --color-info:           var(--palette-neutral-700);
   --color-info-subtle:    oklch(from var(--palette-neutral-900) l c h / 0.06);
 
+  /* ─────────── Caution (hazard tape) ───────────
+     The one sanctioned breach of the monochrome rule besides danger, and it is deliberately NOT
+     themed: barricade tape is a physical object laid over the page, not a themed surface, so it
+     carries the same yellow/black in light and dark (a caution stripe that blends into its
+     surroundings has stopped being a caution stripe). Reserved for "this is not built yet". */
+  --color-caution:     var(--palette-amber-400);
+  --color-caution-ink: var(--palette-neutral-950);
+
   /* ─────────── Interactive state overlays ─────────── */
   --color-hover-overlay:    oklch(from var(--palette-neutral-900) l c h / 0.06);
   --color-active-overlay:   oklch(from var(--palette-neutral-900) l c h / 0.10);
