@@ -5374,3 +5374,138 @@ body type, 16px/400, so every title rendered smaller and lighter than its own se
 (36px/700). Pre-existing on all four articles; fixed once in `markdown-renderer` (48px/700, balanced,
 no top margin). Also local: the article's `[&_img]` prose rule (one-third width, bordered, centred)
 was shrinking the rendered disks, overridden inside the figure card rather than loosened globally.
+
+## §90 — Hyperbolic edge systems: freedraw moved to H², rendered on the developed shelf's shader (2026-07-24)
+
+AL: "we have the renderer and decoders for the Euclidean edge/colors tilings, add hyperbolic edge
+tilings." Marek dropped `materials/solvers/edges/solver_edges_667.zip` (after the materials README was
+written, so it is not catalogued there): `pt_edges_667.exe` + 140 certificate files, base tiling **6.6.7**
+(the truncated order-7 triangular tiling), alphabet A2 (digon) / A6 / A7, **85,716 certificates** at
+k ∈ {1,5,7,8,9,12,13,14}. k has gaps (no 2/3/4/6/10/11) and k=12/13 ship without their `_o_` chiral
+files — flagged to AL, likely Riemann–Hurwitz index constraints on subgroups of the (2,3,7) group, not
+verified; worth a thesis paragraph and a question to Marek.
+
+**The decoder is a bridge, not a rewrite** (`tools/ctrnact-oracle/develop_hyp_edges.py`). Marek's
+certificate format is grid-independent, so the freedraw front end (`develop_freedraw.py`'s
+parser/`VTable`/`Block` glue port) and the hyperbolic back end (`develop_hyperbolic.py`'s SU(1,1)
+develop) compose with ~60 lines between them: the site-group rotation order comes from the hyperbolic
+angle sum `2π / Σ α(listed, ℓ)` instead of the Euclidean `12 // (30°-units sum)` (a heptagon has no
+rational angle in 30° units), and α per dart is read off `VTable.step` in radians. The digon needs no
+case — `α(2, ℓ) = 2·asin(cos(π/2)/cosh(ℓ/2)) = 0`, exactly as `180 − 360/n` gave 0 in the plane. Two
+subtleties cost a round: (1) the quotient face cycle FOLDS by its own rotational stabiliser, so a
+hexagon all of whose corners are one orbit closes after one step — the walk keys on the polygon size
+being a multiple of the cycle length, not equal to it; (2) the merged-tile classifier floods the
+DEVELOPED faces (dart, frame), not quotient darts, since the same fold collapses distinct instances.
+5,703 certs (all k≤9 + samples of 12/13/14) develop clean: 0 failures, 0 ambiguous mirror axes, edge
+residual 8.5e-12, every face a 6- or 7-gon. Finite tiles cap at 284 base faces; a cap=400 vs cap=4000
+run leaves every "unbounded" verdict unchanged, so the finite/unbounded split is trustworthy.
+
+**The drawn bit is not stored** — it is recoverable as `drawn[h] ⇔ lvert[h]==2 || lvert[rneig[h]]==2`
+(h's edge is a digon side iff the polygon on either side of it is a digon), asserted per certificate
+rather than trusted. Shipped record: `{id, k, base, config, edge, darts:{rneig,glue,lvert,orbit,
+tileOrbit,seed}, stats}`.
+
+**The renderer is the developed shelf's per-pixel shader, not a new one — that is the whole point.**
+The first pass drew edge patterns with the 2D developer (`HyperbolicDeveloper.developEdges` +
+`drawDevelopedEdgePatch`). It worked but had exactly the three faults AL then named: it broke apart and
+drifted after a few drags, did not fill to the disk rim, and was slow (CPU). The fix was to route them
+through `HyperbolicPerPixelRenderer` — the SAME reducer the 28,453 developed tilings use — because the
+Dirichlet reduction only cares about the deck group, which the decorated darts define. New
+`prepareEdgeShaderTiling` bakes an EDGE field (R = merged-tile orbit → fill hue, G = distance to nearest
+drawn edge → bold stroke, B = distance to nearest undrawn edge → faint scaffold; depth is per-pixel
+screen radius, so no barycenter needs storing), and a `uEdgeMode` branch in the fragment shader reads
+those channels and strokes two layers. `buildDirichletDomain` learned to SKIP digons in its rMaxTile
+loop (they were `return certified:false`) — the only change to the shared path, and the developed shelf
+renders byte-identically after it. Result: fills to the rim pixel-wise, pans infinitely and drift-free
+(the (tile, residual) re-anchoring through the side pairings, verified stable after 14 same-direction
+drags), on the GPU. The 2D path stays as the WebGL-unavailable / cert-failed fallback.
+
+**Surfaced like spherical freedraw** (its exact precedent): `source: "freedraw"`, `geometry:
+"hyperbolic"`, own field `hypEdges`, base tiling as the sub-axis (`hyp-667`). One `SUB_ORDER` entry,
+one `geometryOf`/`subOf` branch, an adapter + lazy loader in `referenceAtlas.ts`. Eager k≤9 (~3.5 MB)
+loads on entering the Hyperbolic geometry; k=12/13/14 are per-k lazy shards. **/library gained its first
+non-Euclidean class facet** (AL: "split normal and freedraw, they sit in one list"): under a
+non-Euclidean geometry the class chips appear only when >1 class is present, labelled Uniform / Edge
+patterns. A race surfaced and was fixed — the base atlas load does `setTilings(d)` (a REPLACE), so the
+edge-pattern merge had to wait for `tilings` to be non-null or it was clobbered. `/play` picker gets the
+`6.6.7 edges` sub-row; View options show fill / hue / line stroke / perspective-flat / base-tiling
+scaffold (no Islamic — `polygonClassSupportsIslamic` already excludes source freedraw).
+
+**Certification "candidate", and weaker than Euclidean freedraw's.** Nothing independent enumerates
+this class (H² has no lattice to enumerate over), so the anchors are the internal consistency battery
+and the digon-free slice — which here is a SINGLE k=1 certificate developing to the plain 6.6.7, versus
+4–17 anchor tilings for the Euclidean combined grid.
+
+**Running the other twelve solvers (same session).** The claim above that the other edge binaries "do
+not run here" was the materials README's, and AL corrected it: they DO run, under an extracted Homebrew
+`wine-stable` (x86_64 through Rosetta 2, de-quarantined, no sudo — the workaround a prior session found
+for the Euclidean solvers, `experiments/results/freedraw-pt-run-2026-07-22.md`). Each `pt_<tag>.exe`
+wants a folder `solver_<tag>/` in CWD and reads kmin/kmax on stdin. Ran all twelve regular {p,q}
+hyperbolic bases — {3,7} {3,8} {4,5} {4,6} {5,4} {5,5} {6,4} {6,5} {7,3} {7,4} {8,3} {8,4} (the
+`3_5` one is spherical, 5 triangles = 300° < 360, skipped) — decoded by the SAME `develop_hyp_edges.py`
+with one `BASES` row each, **0 failures**. They explode much faster than the Euclidean grids: {3,7} is
+47 → 468 → 29,448 → 912,074 certificates (k=4 alone is 1 GB of text), so **k≤2 is the shipped depth** —
+enough that the shelf is a real multi-base catalogue (13 bases) rather than one. Raw corpora persisted to
+`materials/corpora/` (gitignored). Verified {4,5} and {8,3} render through the edge shader like 6.6.7.
+
+**The loader went per-base manifest-driven.** `HYP_EDGES_BASES` gained `eagerKs`/`lazyKs` arrays, so
+each base carries its own k policy: 6.6.7 runs deep (eager k≤9, lazy k=12/13), the {p,q} bases carry
+k≤2 (eager, except {6,5}'s 5.8 MB k=2 lazy). `hypEdgesLazyShardsForK(k)` drives both the /library k-chip
+and the /play deep-link shard fetches (replacing the global `HYPERBOLIC_EDGES_SHARD_KS`). Card family
+labels read through `hypEdgesBaseLabel` so "{7,3}" shows on the card and the tree alike (the baked record
+`config` is the ASCII "7^3").
+
+**Size, held to a budget.** Full 6.6.7 was 175 MB (k14 alone 114 MB). Dropped k14 and the two explosive
+{p,q} k=2 slices ({3,8} 13 MB, {4,6} 42 MB) — regenerable from the corpora — landing the whole shelf at
+**73 MB (8 MB eager, 66 MB lazy)**. The dropped depths are a `run_solvers.sh` + `decode_bases.sh` away if
+AL wants them; the two scripts and the wine setup live in the session scratchpad, the `.exe`s in
+`materials/solvers/edges/`.
+
+**Deepened the slow growers (AL: "you could have gone higher").** The q=3 / small-q bases barely branch,
+so k≤2 undersold them. Measured the actual growth and pushed each base to the k where its slice stays a
+few MB: {7,3} 2·2·27·31·211·342·**3047** (k≤7, glacial), {8,3} 4·15·118·607·2137·**12514** (k≤6), {5,4}
+2·47·576·**3562** (k≤4; k=5 is 60k, dropped), {7,4} 2·126·**542** (k≤3; k=4 is 51k), {6,4} 16·387·**9869**
+(k≤3). Big tails lazy ({8,3}k6 14 MB, {6,4}k3 8 MB, {7,3}k7 / {5,4}k4 / {6,5}k2 ≈ 3–6 MB each). The
+high-valence bases stay shallow — {8,4} k=3 is 50k, {4,5}/{3,8}/{4,6} explode at k=2. Shelf now **45,203
+hyperbolic tilings**; footprint **107 MB (12 MB eager, 95 MB lazy)** — the lazy weight is dominated by
+6.6.7 k12/13 (60 MB), which AL can drop for a much lighter repo if the deep 6.6.7 tail isn't wanted.
+
+## §91 — Colored tilings in H² and on S²: the colors class leaves the plane (2026-07-25)
+
+Marek sent three more solvers — `platonic_colors`, `3_7_colors`, `7_3_colors` — the colors class (§87)
+moved off the Euclidean grid: 3-colorings of the {3,7}/{7,3} hyperbolic tilings and of the five Platonic
+solids. Same object as the square/triangle colorings (every face a real tile, `k` = colored vertex
+orbits), same certificate format, so the same composition trick that built the hyperbolic edge systems
+(§90) built these — with the digon dropped, since a coloring has no drawn/undrawn split.
+
+**Two decoders, both short.** `develop_hyp_colors.py` = the colors front end (freedraw parser + the
+letter→index map) glued to `develop_hyp_edges`'s SU(1,1) develop; `develop_sph_colors.py` = the same
+front end glued to `develop_spherical`'s SO(3) flood-fill. The only new piece each is the alphabet: for
+{p,q} the letters are colored p-gons {A{p}, B{p}, …}, all sharing `interior_angle(p, ℓ)`, with ℓ/ρ forced
+by the vertex closure q·angle = 2π. The vertex-table bridge (rotation order = 2π / Σ α) is **geometry-agnostic** —
+identical for the disk and the sphere, only the angle values differ — so it was literally reused.
+Every face's color is the letter on its quotient darts; `emit` ships a `faceColor` array beside the darts
+(hyperbolic) or a self-contained `{vertices, faces, faceColor, edges}` polyhedron (spherical). 0 develop
+failures across all three corpora; the spherical develops verify Euler χ=2 + regular faces (residual ~1e-16).
+
+**Rendered on the shaders already there.** Hyperbolic colors reuse the per-pixel disk reducer verbatim:
+`developColors` returns the edge-patch shape with `faceOrbit` = color index and every edge marked drawn,
+so `prepareEdgeShaderTiling({colors:true})` bakes R = color, and a new `uColorsMode` in the fragment
+shader fills R through a palette uniform instead of a hue. Same three properties AL asked for on the edges
+(fills to the rim, infinite drift-free pan, GPU). Spherical colors reuse icoFreedraw's face-push + arc
+helpers in a new `buildSphColors` (three.js), the sibling of the spherical-freedraw canvas. The whole
+colors class — Euclidean, hyperbolic, spherical — shares ONE palette (cream/blue/terracotta) and one
+control (`configuration.colorsPalette`), resolved to RGB by a new `paletteRgb255`. **Colour-space gotcha:**
+three.js reads a raw BufferAttribute colour as linear-working-space, so an sRGB palette value came out
+over-brightened (cream → grey, terracotta → washed); `setRGB(..., SRGBColorSpace)` on each palette entry
+fixes it and the solids read the intended colours.
+
+**Surfacing** is the exact parallel of the edge systems: colors CLASS, hyperbolic / spherical geometry,
+base ({3,7}/{7,3}) or solid as the sub-axis (`hyc-*` / `spc-*`), lazy per-base/solid eager slices +
+per-k lazy shards, "Colorings" chip in the non-Euclidean class facet. Only surjective 3-colorings ship
+(the monochrome ones ARE the plain uniform/solid; the 2-colorings re-embed, once per letter pair). Depth
+tracks growth and drops the explosive tails: {3,7} k1–2 (k3 is 57k / 50 MB, dropped), {7,3} k3–11 (k12 is
+64k / 71 MB, dropped), all five solids to where each slice stays reasonable (icosa k8 = 10k / 11 MB
+dropped). Shipped: **~19.5k colorings, 25 MB (16 MB hyperbolic, 9 MB spherical)** — a few MB eager. Every
+render path verified in the browser (both disk bases, cube/octa/icosa solids, thumbnails, no regression on
+the edge systems the `developEdges` refactor touched). Detail + the decoders in `tools/ctrnact-oracle/`.

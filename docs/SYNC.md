@@ -1418,3 +1418,32 @@ the square / triangle / square+triangle grids in 2 and 3 colors, decoded from Ma
 re-derived per grid: mirrors merge, colors labeled, `_o_` = chiral. n-color corpora re-embed the
 smaller ones, so only surjective solutions ship. Surfaces: /colors, /library (`cocount`), /play tree.
 Certification "candidate" — no independent enumeration yet. Detail: NOTES §87.
+
+**2026-07-24 — CC.** New shelf: **hyperbolic edge systems** (freedraw in H²) — Marek's `pt_edges_667.exe`
+corpus (base 6.6.7, alphabet A2/A6/A7, 85,716 certs). Decoder `tools/ctrnact-oracle/develop_hyp_edges.py`
+COMPOSES the freedraw certificate front end (parser/VTable/glue) with the develop_hyperbolic SU(1,1) back
+end — one bridge (rotation order from hyperbolic angles). 5,703 dev-checked, 0 failures, edge residual
+1e-11. Rendered on the SAME per-pixel shader as the developed shelf: new `prepareEdgeShaderTiling` +
+edge-mode branch (R=merged-tile orbit, G=drawn-edge dist, B=scaffold dist) → fills to the rim, infinite
+drift-free pan, GPU. Dirichlet builder now tolerates digons. Surfaces: freedraw class × hyperbolic
+geometry, base as sub-axis; /library gained a class facet (Uniform / Edge patterns). Certification
+"candidate" (no independent enumeration; H² has no lattice). Detail: NOTES §90.
+
+**2026-07-24 — CC (2).** Ran Marek's OTHER edge solvers (AL: "run the other solvers in materials"). The
+`.exe`s are Windows x64; ran them under an extracted Homebrew `wine-stable` via Rosetta 2 (no sudo — the
+method a prior session found for the Euclidean ones). Twelve regular {p,q} hyperbolic bases now on the
+shelf ({3,7}…{8,4}), decoded k≤2 by the SAME `develop_hyp_edges.py` (a `BASES` row each), 0 failures.
+They explode fast (k=3 of {3,7} is 912k certs / 1 GB) so k≤2 is the shipped depth; corpora persisted to
+`materials/corpora/` (gitignored). Loader is now per-base manifest-driven (`HYP_EDGES_BASES[i].eagerKs/
+lazyKs`). Shipped footprint bounded to **73 MB** (8 MB eager, 66 MB lazy) — dropped 6.6.7 k14 (114 MB)
+and the two explosive k=2 slices ({3,8}/{4,6}, ~10/42 MB). Hyperbolic geometry: 37,565 tilings. Detail:
+NOTES §90.
+
+**2026-07-25 · CC.** The colors class left the plane: 3-colorings of {3,7}/{7,3} in H² and of the five
+Platonic solids (Marek's `3_7_colors`/`7_3_colors`/`platonic_colors`). Two short decoders glue the colors
+front end to §90's SU(1,1) develop and `develop_spherical`'s SO(3) flood-fill — the vertex-table bridge is
+geometry-agnostic, reused as-is; 0 failures, spherical develops verify Euler χ=2. Hyperbolic colors reuse
+the per-pixel disk shader (new `uColorsMode` fills a color-index field through the palette); spherical
+reuse icoFreedraw's helpers in `buildSphColors`. Colors CLASS × hyperbolic/spherical geometry, base/solid
+sub-axis, surjective-only. Shipped **~19.5k colorings, 25 MB** (16 hyp + 9 sph). Browser-verified, no
+regression. Detail: NOTES §91.
