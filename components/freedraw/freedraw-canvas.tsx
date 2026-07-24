@@ -63,6 +63,12 @@ export function FreedrawCanvas({
 	// Per-orbit hover-grow scales, eased toward their targets inside drawFreedraw. Owned here so the ease
 	// survives across frames; a fresh array each draw would restart the growth every time.
 	const orbitScalesRef = useRef<number[]>([]);
+	// The element's live CSS box, and the latest draw. `draw` reads the REF, not the state: the observer
+	// below redraws through it the moment the box changes, so a resize lands in the same frame the browser
+	// paints the new box. Going through state alone put the redraw a render late and the browser rescaled
+	// the old bitmap into the new box — the tiling stretched, then snapped back (see lib/render/canvasSize.ts).
+	const boxRef = useRef({ w: 0, h: 0 });
+	const drawRef = useRef<() => void>(() => {});
 
 	// Track the element's CSS size; the canvas backing store is sized from it times the DPR.
 	useEffect(() => {
@@ -70,7 +76,10 @@ export function FreedrawCanvas({
 		if (!el) return;
 		const ro = new ResizeObserver(([entry]) => {
 			const r = entry.contentRect;
-			setSize({ w: Math.round(r.width), h: Math.round(r.height) });
+			const box = { w: Math.round(r.width), h: Math.round(r.height) };
+			boxRef.current = box;
+			drawRef.current(); // repaint at the new size now; the re-fit below follows on the next render
+			setSize(box);
 		});
 		ro.observe(el);
 		return () => ro.disconnect();
@@ -83,12 +92,13 @@ export function FreedrawCanvas({
 
 	const draw = useCallback(() => {
 		const el = canvasRef.current;
-		if (!el || !view || size.w === 0 || size.h === 0) return;
+		const { w: cw, h: ch } = boxRef.current;
+		if (!el || !view || cw === 0 || ch === 0) return;
 		const dpr = window.devicePixelRatio || 1;
 		// Only resize when it actually changed — assigning width/height clears the backing store, so doing
 		// it every frame would flash the canvas empty under the hover loop below.
-		const w = Math.round(size.w * dpr);
-		const h = Math.round(size.h * dpr);
+		const w = Math.round(cw * dpr);
+		const h = Math.round(ch * dpr);
 		if (el.width !== w || el.height !== h) {
 			el.width = w;
 			el.height = h;
@@ -98,8 +108,8 @@ export function FreedrawCanvas({
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		drawFreedraw(
 			ctx,
-			size.w,
-			size.h,
+			cw,
+			ch,
 			pattern,
 			view,
 			{ ...style, dark },
@@ -107,7 +117,8 @@ export function FreedrawCanvas({
 			hoverRef.current,
 			orbitScalesRef.current,
 		);
-	}, [pattern, view, size.w, size.h, style, dark, analysis]);
+	}, [pattern, view, style, dark, analysis]);
+	drawRef.current = draw;
 
 	useEffect(() => {
 		draw();

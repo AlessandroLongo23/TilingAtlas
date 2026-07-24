@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { measureBox } from "@/lib/render/canvasSize";
 import { createSphere, type Sphere } from "@/lib/render/sphericalScene";
 import { buildFlatSolid, type FlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { buildWireframe, type Wireframe } from "@/lib/render/sphericalWireframe";
@@ -24,9 +25,9 @@ import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIsla
 // The <canvas> is created imperatively per mount (a canvas holds one WebGL context for life; forceContextLoss
 // on teardown would poison a reused node across a StrictMode remount).
 
+// No width/height props: the host element fills its parent by CSS and the render loop measures it every
+// frame (lib/render/canvasSize.ts), so the drawing buffer never trails a layout transition.
 interface SphericalCanvasProps {
-	width: number;
-	height: number;
 	/** Stable solid id ("tetrahedron", "cuboctahedron", …) — the routing key for Platonic + Archimedean. */
 	solidId: string;
 }
@@ -91,13 +92,16 @@ function applyCameraAspect(camera: SphericalCamera, w: number, h: number): void 
 	camera.updateProjectionMatrix();
 }
 
-export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps) {
+export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 	const poly = useMemo(() => polyhedronForId(solidId), [solidId]);
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 	const sceneRef = useRef<THREE.Scene | null>(null);
 	const cameraRef = useRef<SphericalCamera | null>(null);
 	const controlsRef = useRef<ArcballControls | null>(null);
+	// Last host box the renderer was sized to. Cleared to force a re-apply when the projection toggle
+	// swaps in a fresh camera; the render loop owns every other update.
+	const boxRef = useRef({ w: 0, h: 0 });
 	const rafRef = useRef<number | null>(null);
 	const contentRef = useRef<Content | null>(null);
 	const islamicRef = useRef<IslamicPattern | null>(null);
@@ -171,6 +175,16 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 		const animate = () => {
 			const controls = controlsRef.current;
 			const cam = cameraRef.current;
+			// Track the host box here, in the loop, rather than through a React size prop: a size that
+			// arrives a render later gets rescaled into the new box while a layout transition (the /play
+			// fullscreen toggle) is running, which reads as the sphere squashing and springing back.
+			// See lib/render/canvasSize.ts.
+			const { w, h } = measureBox(host);
+			if (w > 0 && h > 0 && (w !== boxRef.current.w || h !== boxRef.current.h)) {
+				boxRef.current = { w, h };
+				renderer.setSize(w, h, false);
+				if (cam) applyCameraAspect(cam, w, h);
+			}
 			if (controls) controls.update();
 			if (cam) renderer.render(scene, cam);
 			rafRef.current = requestAnimationFrame(animate);
@@ -292,15 +306,12 @@ export function SphericalCanvas({ width, height, solidId }: SphericalCanvasProps
 		c.wire.setGeometry({ section, thickness, height: wireHeight, bevel });
 	}, [section, thickness, wireHeight, bevel]);
 
-	// Resize with the parent's measured width/height (guard the 0×0 first paint). Re-fits whichever camera is
-	// live — perspective aspect or orthographic frustum — and also re-runs after a projection toggle swaps it.
+	// A projection toggle swaps in a fresh camera, which starts with no aspect applied. Drop the tracked box
+	// so the render loop re-fits it (perspective aspect or orthographic frustum) on its next frame; plain
+	// resizes need nothing here — the loop measures the host itself.
 	useEffect(() => {
-		const renderer = rendererRef.current;
-		const camera = cameraRef.current;
-		if (!renderer || !camera || width <= 0 || height <= 0) return;
-		renderer.setSize(width, height, false);
-		applyCameraAspect(camera, width, height);
-	}, [width, height, orthographic]);
+		boxRef.current = { w: 0, h: 0 };
+	}, [orthographic]);
 
 	// Hue ring + Line-stroke slider. Solid sphere: re-bake the surface texture in place. Wireframe: recolour
 	// the tubes (stroke doesn't apply — thickness is its own control). Both are cheap, so drags stay live.

@@ -62,6 +62,7 @@ import { EuclideanCanvas } from "./euclidean-canvas";
 import { IslamicCanvas } from "./islamic-canvas";
 import { StrapCanvas } from "./strap-canvas";
 import { setOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
+import { measureBox } from "@/lib/render/canvasSize";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
 interface CanvasProps {
@@ -159,10 +160,10 @@ function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): 
 // the React mount gate and the per-frame skipFill decision can never drift.
 function isFlatShaderActive(cfg: {
 	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean; spherical: boolean; freedraw: boolean;
-	isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+	colors: boolean; isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
 }): boolean {
 	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw &&
-		!cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
+		!cfg.colors && !cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
 }
 
 // Euclidean Islamic PLAIN and CHECKERBOARD fills render through the WebGL IslamicCanvas
@@ -202,6 +203,10 @@ export function Canvas({
 	showTilingRuleInput = true,
 }: CanvasProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
+	// The element every renderer here fills. The p5 canvas measures IT each frame instead of taking the
+	// width/height props, which lag a React render behind the layout (see lib/render/canvasSize.ts). The
+	// props stay the first-paint size and the fallback for a host that measures 0.
+	const rootRef = useRef<HTMLDivElement | null>(null);
 
 	const tilingRef = useRef<Tiling | null>(null);
 	// The cell the current grid was built from — the static prop for a rigid tiling, or the live
@@ -317,9 +322,11 @@ export function Canvas({
 	// Freedraw draws on its own 2D canvas (components/freedraw-play-canvas.tsx) and carries no polygon cell,
 	// so the flat shader must not mount over it — it would build a patch from the throwaway empty cell.
 	const freedrawSel = useConfiguration((s) => s.freedraw);
+	// Colors rides the same rule: its own 2D canvas, no polygon cell for the flat shader to build from.
+	const colorsSel = useConfiguration((s) => s.colors);
 	const euclideanShaderActive = isFlatShaderActive({
 		euclideanShader, inversive: inversiveSel, hyperbolic: hyperbolicSel, spherical: sphericalSel,
-		freedraw: freedrawSel,
+		freedraw: freedrawSel, colors: colorsSel,
 		isIslamic: isIslamicSel, circlePacking: circlePackingSel, showSymmetryElements,
 	});
 	// Islamic PLAIN fill → WebGL IslamicCanvas. Needs its own narrow subscriptions (style/animate) so a
@@ -343,6 +350,11 @@ export function Canvas({
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const p5 = p5Raw as any;
 			const readCfg = () => useConfiguration.getState();
+			// The size p5's canvas should be right now, straight off the DOM (see rootRef).
+			const hostBox = () => {
+				const { w, h } = measureBox(rootRef.current);
+				return w > 0 && h > 0 ? { w, h } : { w: propsRef.current.width, h: propsRef.current.height };
+			};
 
 			// The angle tuple the render/pick path should draw for a parametric family: the eased LIVE tuple
 			// when it exists (Command+drag or slider glide), else the resolved target. Bypasses resolveAlphaDegs'
@@ -357,7 +369,11 @@ export function Canvas({
 			const ensureTiling = () => {
 				const cfg = readCfg();
 				const ctrl = cfg.controls;
-				const { translationalCell: staticCell, translationalCellId: baseId, paramCell: pc, width: W, height: H } = propsRef.current;
+				const { translationalCell: staticCell, translationalCellId: baseId, paramCell: pc } = propsRef.current;
+				// Viewport size for the fill radii: p5's own canvas, resized from the live host box at the top
+				// of draw. The width/height props lag a React render behind, which would undersize the grid
+				// mid-transition and flash empty corners.
+				const W = p5.width, H = p5.height;
 				// No geometry yet (cold load before the first tiling resolves): blank rather than crash in
 				// buildTilingFromCell, which dereferences a null cell.
 				if (!staticCell && !pc) {
@@ -592,8 +608,10 @@ export function Canvas({
 			};
 
 			p5.setup = () => {
-				const { width: w, height: h } = propsRef.current;
+				const { w, h } = hostBox();
 				p5.createCanvas(w, h);
+				prevRef.current.width = w;
+				prevRef.current.height = h;
 				p5.colorMode(p5.HSB, 360, 100, 100);
 				const cfg = readCfg();
 				useConfiguration.setState({
@@ -606,8 +624,8 @@ export function Canvas({
 						rotation: cfg.rotation || 0,
 					},
 				});
-				// The hyperbolic / spherical / freedraw (and inversive) views paint via their own overlay; skip the flat grid build.
-				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw) ensureTiling();
+				// The hyperbolic / spherical / freedraw / colors (and inversive) views paint via their own overlay; skip the flat grid build.
+				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.colors) ensureTiling();
 			};
 
 			p5.draw = () => {
@@ -649,6 +667,17 @@ export function Canvas({
 					}
 				}
 
+				// Size from the live host box, not from the width/height props: a size that arrives through
+				// React state is a render behind, so while the fullscreen toggle animates the layout the p5
+				// canvas would sit smaller than its container and the overlays would drift off the shader fill
+				// underneath. p5's draw runs in the same rAF slot the WebGL loops do, so both agree per frame.
+				const { w, h } = hostBox();
+				if (w > 0 && h > 0 && (w !== prevRef.current.width || h !== prevRef.current.height)) {
+					p5.resizeCanvas(w, h);
+					prevRef.current.width = w;
+					prevRef.current.height = h;
+				}
+
 				p5.clear();
 				// Inversive view: the WebGL overlay (InversiveCanvas) draws the tiling instead. Keep the p5
 				// canvas as the input layer — the ease/rotation/drag bookkeeping below still runs so panning
@@ -659,9 +688,9 @@ export function Canvas({
 				const inversive = cfg.inversive;
 				const hyperbolic = cfg.hyperbolic;
 				const spherical = cfg.spherical;
-				// Freedraw is the same deal on a 2D canvas: it paints the pattern itself and there is no polygon
-				// cell to build a flat grid from, so the p5 layer stays blank underneath it.
-				const skipFlat = inversive || hyperbolic || spherical || cfg.freedraw;
+				// Freedraw and colors are the same deal on a 2D canvas: they paint the pattern themselves and
+				// there is no polygon cell to build a flat grid from, so the p5 layer stays blank underneath.
+				const skipFlat = inversive || hyperbolic || spherical || cfg.freedraw || cfg.colors;
 				if (!skipFlat) ensureTiling();
 				// A WebGL overlay now owns the frame, so ensureTiling — the only place that clears canvasError —
 				// no longer runs. Drop any stale error here so a transient flat-canvas error (e.g. the cold-load
@@ -700,13 +729,6 @@ export function Canvas({
 				// from — is what the wrap, the cull and the draw below all work against.
 				const outgoing = wavePhase === "out" ? outgoingRef.current : null;
 				const tiling = outgoing ? outgoing.tiling : tilingRef.current;
-
-				const { width: w, height: h } = propsRef.current;
-				if (w !== prevRef.current.width || h !== prevRef.current.height) {
-					p5.resizeCanvas(w, h);
-					prevRef.current.width = w;
-					prevRef.current.height = h;
-				}
 
 				try {
 					// Wrap the pan offset modulo the lattice so panning feels infinite while the drawn
@@ -1026,11 +1048,9 @@ export function Canvas({
 	);
 
 	return (
-		<div className="relative h-full w-full bg-surface-base">
+		<div ref={rootRef} className="relative h-full w-full bg-surface-base">
 			{euclideanShaderActive ? (
 				<EuclideanCanvas
-					width={width}
-					height={height}
 					translationalCell={translationalCell as unknown as FlatCellData | null}
 					translationalCellId={translationalCellId}
 					paramCell={paramCell}
@@ -1039,8 +1059,6 @@ export function Canvas({
 			) : null}
 			{islamicShaderActive ? (
 				<IslamicCanvas
-					width={width}
-					height={height}
 					translationalCell={translationalCell as unknown as FlatCellData | null}
 					translationalCellId={translationalCellId}
 					paramCell={paramCell}
@@ -1048,8 +1066,6 @@ export function Canvas({
 			) : null}
 			{strapShaderActive ? (
 				<StrapCanvas
-					width={width}
-					height={height}
 					translationalCell={translationalCell as unknown as FlatCellData | null}
 					translationalCellId={translationalCellId}
 					paramCell={paramCell}

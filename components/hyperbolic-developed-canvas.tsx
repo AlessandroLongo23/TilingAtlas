@@ -20,6 +20,7 @@ import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicR
 import { getIslamicField } from "@/lib/render/hyperbolicIslamic";
 import { su11Inverse } from "@/lib/render/hyperbolic";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
+import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 
@@ -35,13 +36,13 @@ const MAX_CENTER_R = 0.9995; // clamp only against numerical blow-up at the idea
 const ISLAMIC_DRAG_RES = 256; // in-drag Islamic bake res — every slider notch lands the same frame
 const ISLAMIC_SETTLE_MS = 200; // stable angle re-bakes at full res after this quiet window
 
+// No width/height props: the canvas fills its parent by CSS and measures itself in the render loop
+// (syncCanvasSize) — see lib/render/canvasSize.ts.
 interface Props {
-	width: number;
-	height: number;
 	patchId: string;
 }
 
-export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
+export function HyperbolicDevelopedCanvas({ patchId }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null); // set only in the 2D fallback path
@@ -76,10 +77,6 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 	const prevTargetOffset = useRef<{ x: number; y: number } | null>(null);
 	const prevRot = useRef<number | null>(null);
 	const centerAnim = useRef<Complex | null>(null);
-	const sizeRef = useRef({ width, height });
-	useEffect(() => {
-		sizeRef.current = { width, height };
-	}, [width, height]);
 
 	// Acquire the drawing context (WebGL2 preferred; 2D when unavailable OR when the patch forces it).
 	useEffect(() => {
@@ -165,16 +162,11 @@ export function HyperbolicDevelopedCanvas({ width, height, patchId }: Props) {
 			raf = requestAnimationFrame(render);
 			const meta = metaRef.current;
 			if (!meta || !readyRef.current) return;
-			const { width: w, height: h } = sizeRef.current;
+			// Measured every frame from the element itself, so the backing store tracks a transitioning layout
+			// exactly instead of trailing a React render behind it (lib/render/canvasSize.ts).
+			const { w, h, dpr } = syncCanvasSize(canvas);
 			if (w <= 0 || h <= 0) return;
-
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr);
-			const bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) {
-				canvas.width = bw;
-				canvas.height = bh;
-			}
+			const bw = canvas.width, bh = canvas.height; // backing-store px (CSS px x dpr)
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;

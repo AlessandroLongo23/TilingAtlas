@@ -5,6 +5,7 @@ import { useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { computeFillRadii, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
+import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, ISLAMIC_STROKE_VERT, ISLAMIC_STROKE_FRAG } from "@/lib/render/islamicGL";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 import { buildInstancedIslamicMesh, buildInstancedCheckerMesh, type IslamicMesh } from "@/lib/render/buildIslamicMesh";
@@ -27,9 +28,10 @@ import type { TranslationalCellData as AlgoCellData } from "@/classes/algorithm/
 // double-paint); the decorative styles and the animated motif stay on p5. Shares flatView's transform +
 // flatTilingGL's compile helper, so the fill registers exactly under p5's overlays like EuclideanCanvas.
 
+// No width/height props: the canvas fills its parent by CSS and measures itself in the render loop
+// (syncCanvasSize), the same contract as EuclideanCanvas — see lib/render/canvasSize.ts for why a size
+// routed through React state visibly stretches the tiling during a layout transition.
 interface IslamicCanvasProps {
-	width: number;
-	height: number;
 	translationalCell: FlatCellData | null;
 	translationalCellId: string | null;
 	// Parametric family: `translationalCell` is the ALPHA-INDEPENDENT base cell (see _play-client's
@@ -55,7 +57,7 @@ const INSTANCE_MARGIN = 2;
 // change meshSig, so they never rebuild — only the instance grid and uniforms update.
 const MESH_REBUILD_THROTTLE_MS = 100;
 
-export function IslamicCanvas({ width, height, translationalCell, translationalCellId, paramCell = null }: IslamicCanvasProps) {
+export function IslamicCanvas({ translationalCell, translationalCellId, paramCell = null }: IslamicCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const fillProgRef = useRef<WebGLProgram | null>(null);
@@ -73,8 +75,6 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 	const strokeA = useRef<Record<string, number>>({});
 	const meshRef = useRef<IslamicMesh | null>(null);
 
-	const sizeRef = useRef({ width, height });
-	sizeRef.current = { width, height };
 	const cellRef = useRef<FlatCellData | null>(translationalCell);
 	cellRef.current = translationalCell;
 	const paramCellRef = useRef(paramCell);
@@ -160,7 +160,9 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 			const g = glRef.current;
 			const baseCell = cellRef.current;
 			if (!g || !baseCell) return;
-			const { width: w, height: h } = sizeRef.current;
+			// Measured every frame from the element itself, so the backing store tracks a transitioning layout
+			// exactly instead of trailing a React render behind it (lib/render/canvasSize.ts).
+			const { w, h } = syncCanvasSize(canvas);
 			if (w <= 0 || h <= 0) return;
 
 			// Parametric family: re-derive the cell whenever the slider tuple moves. The alpha changes the
@@ -220,10 +222,7 @@ export function IslamicCanvas({ width, height, translationalCell, translationalC
 			const mesh = meshRef.current;
 			if (!mesh) return;
 
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-			g.viewport(0, 0, bw, bh);
+			g.viewport(0, 0, canvas.width, canvas.height);
 
 			// Instance grid over the visible lattice range (+ margin for the reach of origin-cell reps).
 			// Rebuilt only when the radius changes; a pan never touches it.

@@ -5,6 +5,7 @@ import { useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { computeFillRadii, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
+import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, STRAP_BORDER_VERT, STRAP_BORDER_FRAG } from "@/lib/render/islamicGL";
 import { buildInstancedStrapMesh, type StrapMesh } from "@/lib/render/buildIslamicStrapMesh";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
@@ -28,9 +29,9 @@ import type { TranslationalCellData as AlgoCellData } from "@/classes/algorithm/
 // NOTE (duplication): the patch/instance/throttle plumbing mirrors IslamicCanvas. Factor a shared hook once
 // the Islamic-colour refactor next door settles.
 
+// No width/height props: the canvas fills its parent by CSS and measures itself in the render loop
+// (syncCanvasSize), the same contract as EuclideanCanvas — see lib/render/canvasSize.ts.
 interface StrapCanvasProps {
-	width: number;
-	height: number;
 	translationalCell: FlatCellData | null;
 	translationalCellId: string | null;
 	// Parametric family: `translationalCell` is the ALPHA-INDEPENDENT base cell (see _play-client's
@@ -72,7 +73,7 @@ const EMBOSS_HIGHLIGHT = hsb01(45, 10, 100);
 const EMBOSS_SHADOW = hsb01(35, 45, 26);
 const EMBOSS_LIGHT = { x: -0.6, y: 0.8 }; // fixed world light, upper-left
 
-export function StrapCanvas({ width, height, translationalCell, translationalCellId, paramCell = null }: StrapCanvasProps) {
+export function StrapCanvas({ translationalCell, translationalCellId, paramCell = null }: StrapCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const fillProgRef = useRef<WebGLProgram | null>(null);
@@ -87,8 +88,6 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 	const borderA = useRef<Record<string, number>>({});
 	const meshRef = useRef<StrapMesh | null>(null);
 
-	const sizeRef = useRef({ width, height });
-	sizeRef.current = { width, height };
 	const cellRef = useRef<FlatCellData | null>(translationalCell);
 	cellRef.current = translationalCell;
 	const paramCellRef = useRef(paramCell);
@@ -161,7 +160,9 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 			const g = glRef.current;
 			const baseCell = cellRef.current;
 			if (!g || !baseCell) return;
-			const { width: w, height: h } = sizeRef.current;
+			// Measured every frame from the element itself, so the backing store tracks a transitioning layout
+			// exactly instead of trailing a React render behind it (lib/render/canvasSize.ts).
+			const { w, h } = syncCanvasSize(canvas);
 			if (w <= 0 || h <= 0) return;
 
 			// Parametric family: re-derive the cell whenever the slider tuple moves. The alpha changes the
@@ -219,10 +220,7 @@ export function StrapCanvas({ width, height, translationalCell, translationalCel
 			const mesh = meshRef.current;
 			if (!mesh) return;
 
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-			g.viewport(0, 0, bw, bh);
+			g.viewport(0, 0, canvas.width, canvas.height);
 
 			const fr = computeFillRadii(meta.v1, meta.v2, meta.det, ctrl.zoom, w, h, rot, meta.extent);
 			const Ri = fr.Ri + INSTANCE_MARGIN, Rj = fr.Rj + INSTANCE_MARGIN;

@@ -5,6 +5,7 @@ import { useConfiguration } from "@/stores/configuration";
 import { buildCellMesh, type CellMesh } from "@/lib/render/buildCellMesh";
 import { buildOrbitDotMesh, type OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
 import { computeFillRadii, wrapOffset } from "@/lib/render/flatView";
+import { syncCanvasSize } from "@/lib/render/canvasSize";
 import {
 	FILL_VERT, FILL_FRAG, STROKE_VERT, STROKE_FRAG, POINTS_VERT, POINTS_FRAG,
 	ORBIT_VERT, ORBIT_FRAG, ORBIT_MAX, compileShader,
@@ -43,9 +44,10 @@ function parseRgb(s: string): [number, number, number] {
 // same configuration store the p5 canvas writes, and shares flatView.ts's transform, so p5's overlays
 // (drawn on top) register on the shader fill.
 
+// No width/height props: the canvas fills its parent by CSS and measures itself inside the render loop
+// (syncCanvasSize), so the backing store always matches the box being painted. Sizing it from React state
+// instead made the tiling stretch and snap back while the /play fullscreen toggle animated the layout.
 interface EuclideanCanvasProps {
-	width: number;
-	height: number;
 	translationalCell: TranslationalCellData | null;
 	translationalCellId: string | null;
 	paramCell?: ParametricCellData | null;
@@ -55,7 +57,7 @@ interface EuclideanCanvasProps {
 // The GLSL sources + compile helper moved to lib/render/flatTilingGL.ts (imported above) so the
 // theory-page preview cards render through the exact same shaders — edit them there.
 
-export function EuclideanCanvas({ width, height, translationalCell, translationalCellId, paramCell = null, orbitData = null }: EuclideanCanvasProps) {
+export function EuclideanCanvas({ translationalCell, translationalCellId, paramCell = null, orbitData = null }: EuclideanCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const progRef = useRef<WebGLProgram | null>(null);
@@ -92,8 +94,6 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 	orbitDataRef.current = orbitData;
 	const meshRef = useRef<CellMesh | null>(null);
 	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
-	const sizeRef = useRef({ width, height });
-	sizeRef.current = { width, height };
 
 	// Selection-transition wave (M2), the shader port of makeWaveScale/transitionRef in canvas.tsx. When a
 	// NEW static tiling is picked, the current mesh COLLAPSES to its centroids (phase "out"), then the
@@ -307,13 +307,11 @@ export function EuclideanCanvas({ width, height, translationalCell, translationa
 
 			const mesh = meshRef.current;
 			if (!mesh) return;
-			const { width: w, height: h } = sizeRef.current;
+			// Measure here, not from props: during a layout transition (the fullscreen toggle) the element grows
+			// every frame, and a backing store sized a render later would be rescaled into the new box.
+			const { w, h } = syncCanvasSize(canvas);
 			if (w <= 0 || h <= 0) return;
-
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-			g.viewport(0, 0, bw, bh);
+			g.viewport(0, 0, canvas.width, canvas.height);
 
 			const ctrl = cfg.controls;
 			const rot = ((ctrl.rotation || 0) * Math.PI) / 180;

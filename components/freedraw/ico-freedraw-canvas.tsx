@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useMemo } from "react";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { measureBox } from "@/lib/render/canvasSize";
 import { solidEdges } from "@/lib/render/sphericalGeometry";
 import { buildIcoFreedraw, type IcoPattern, type IcoFreedraw, type IcoMode } from "@/lib/render/icoFreedraw";
 
@@ -14,9 +15,9 @@ import { buildIcoFreedraw, type IcoPattern, type IcoFreedraw, type IcoMode } fro
 // exactly one pattern's coloured tiles + drawn-edge tubes and rebuilds when the pattern, solid, mode or
 // grid changes.
 
+// No width/height props: the host element fills its parent by CSS and the render loop measures it every
+// frame (lib/render/canvasSize.ts), so the drawing buffer never trails a layout transition.
 interface Props {
-	width: number;
-	height: number;
 	pattern: IcoPattern;
 	mode: IcoMode;
 	showGrid: boolean;
@@ -26,7 +27,7 @@ interface Props {
 
 const CAMERA_DISTANCE = 3.2;
 
-export function IcoFreedrawCanvas({ width, height, pattern, mode, showGrid, solidId }: Props) {
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId }: Props) {
 	const solid = useMemo(() => polyhedronForId(solidId), [solidId]);
 	const solidEdgeList = useMemo<[number, number][]>(() => (solid ? solidEdges(solid) : []), [solid]);
 	const hostRef = useRef<HTMLDivElement | null>(null);
@@ -93,9 +94,21 @@ export function IcoFreedrawCanvas({ width, height, pattern, mode, showGrid, soli
 		controls.setGizmosVisible(false);
 		controlsRef.current = controls;
 
+		let box = { w: 0, h: 0 };
 		const animate = () => {
 			controlsRef.current?.update();
 			const cam = cameraRef.current;
+			// Measured in the loop, not taken from props: a size arriving a React render later would be
+			// rescaled into the new box while a layout transition runs (lib/render/canvasSize.ts).
+			const { w, h } = measureBox(host);
+			if (w > 0 && h > 0 && (w !== box.w || h !== box.h)) {
+				box = { w, h };
+				renderer.setSize(w, h, false);
+				if (cam) {
+					cam.aspect = w / h;
+					cam.updateProjectionMatrix();
+				}
+			}
 			if (cam) renderer.render(scene, cam);
 			rafRef.current = requestAnimationFrame(animate);
 		};
@@ -142,16 +155,6 @@ export function IcoFreedrawCanvas({ width, height, pattern, mode, showGrid, soli
 			if (contentRef.current === content) contentRef.current = null;
 		};
 	}, [pattern, mode, showGrid, solid, solidEdgeList]);
-
-	// Resize with the measured parent size.
-	useEffect(() => {
-		const renderer = rendererRef.current;
-		const camera = cameraRef.current;
-		if (!renderer || !camera || width <= 0 || height <= 0) return;
-		renderer.setSize(width, height, false);
-		camera.aspect = width / height;
-		camera.updateProjectionMatrix();
-	}, [width, height]);
 
 	if (errored) {
 		return (

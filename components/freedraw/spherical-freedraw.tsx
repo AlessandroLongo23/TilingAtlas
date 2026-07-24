@@ -78,7 +78,6 @@ export function SphericalFreedraw({
 	const [loadTick, setLoadTick] = useState(0);
 
 	const hostRef = useRef<HTMLDivElement | null>(null);
-	const [size, setSize] = useState({ w: 0, h: 0 });
 
 	// Fetch the selected solid+k slice on demand; an already-cached file needs no fetch. setState only ever
 	// fires in the async callback, never synchronously in the effect body.
@@ -120,16 +119,6 @@ export function SphericalFreedraw({
 		if (k) q.set("sk", String(k));
 		window.history.replaceState(null, "", `${window.location.pathname}?${q.toString()}`);
 	}, [solidId, k]);
-
-	// Measure the preview host so the interactive canvas gets real pixel dimensions.
-	useEffect(() => {
-		const el = hostRef.current;
-		if (!el) return;
-		const ro = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
-		ro.observe(el);
-		setSize({ w: el.clientWidth, h: el.clientHeight });
-		return () => ro.disconnect();
-	}, [selectedId, patterns]);
 
 	const pageRows = useMemo(
 		() => (patterns ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
@@ -246,8 +235,6 @@ export function SphericalFreedraw({
 						<div ref={hostRef} className="relative aspect-square border-b border-line-subtle overflow-hidden bg-bg-subtle">
 							<IcoFreedrawCanvas
 								key={`${solidId}-${selected.id}`}
-								width={size.w}
-								height={size.h}
 								pattern={selected}
 								mode={mode}
 								showGrid={showGrid}

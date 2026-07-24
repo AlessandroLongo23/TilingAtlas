@@ -64,8 +64,11 @@ interface PlayClientProps {
 
 export function PlayClient({ tilings }: PlayClientProps) {
 	const searchParams = useSearchParams();
-	const canvasWrapRef = useRef<HTMLDivElement | null>(null);
-	const [size, setSize] = useState({ w: 0, h: 0 });
+	// No measured-size state here on purpose: every renderer below (p5, the flat/Islamic/inversive/
+	// hyperbolic WebGL canvases, the three.js sphere) measures its own host box inside its frame loop —
+	// see lib/render/canvasSize.ts. Routing the size through React made the tiling stretch and snap back
+	// while the fullscreen toggle animated the layout, and re-rendered this whole tree (sidebar included)
+	// on every frame of the animation.
 
 	// ── URL ⇆ view state (spec: docs/superpowers/specs/2026-07-22-play-url-state-design.md) ──
 	// Parse the URL exactly once, on mount. After this the query string is WRITE-only (the mirror effect
@@ -668,19 +671,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const renderCell = (selected?.renderCell ?? null) as TranslationalCellData | null;
 	const renderCellId = selected?.canonicalKey ?? null;
 
-	useEffect(() => {
-		const el = canvasWrapRef.current;
-		if (!el) return;
-		const ro = new ResizeObserver((entries) => {
-			for (const entry of entries) {
-				const { width, height } = entry.contentRect;
-				setSize({ w: Math.floor(width), h: Math.floor(height) });
-			}
-		});
-		ro.observe(el);
-		return () => ro.disconnect();
-	}, []);
-
 	return (
 		<div className="flex-1 flex min-h-0 overflow-hidden">
 			{/* Immersive mode collapses this wrapper's width to 0 (the sidebar stays mounted, just clipped),
@@ -703,10 +693,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					onGeometryChange={onGeometryChange}
 				/>
 			</div>
-			<div ref={canvasWrapRef} className="flex-1 min-w-0 relative">
+			<div className="flex-1 min-w-0 relative">
 				<Canvas
-					width={size.w}
-					height={size.h}
 					translationalCell={renderCell}
 					translationalCellId={renderCellId}
 					paramCell={paramCell ?? null}
@@ -720,15 +708,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
 				{isSpherical && selected?.spherical ? (
-					<SphericalCanvas width={size.w} height={size.h} solidId={selected.spherical.solid} />
+					<SphericalCanvas solidId={selected.spherical.solid} />
 				) : selected?.sphericalFreedraw ? (
 					// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with
 					// ArcballControls (drag to rotate, wheel to zoom) — the same self-contained renderer the
 					// /freedraw spherical arm uses. Mode (polyhedron/sphere) and grid come from the View options tab,
 					// the same two controls the /freedraw arm carries; it owns its own pointer input.
 					<IcoFreedrawCanvas
-						width={size.w}
-						height={size.h}
 						pattern={selected.sphericalFreedraw.pattern}
 						solidId={selected.sphericalFreedraw.solid}
 						mode={sphericalFreedrawMode}
@@ -746,11 +732,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
 					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
 					// regular-faced tilings the (2,p,q) fold shader cannot.
-					<HyperbolicDevelopedCanvas width={size.w} height={size.h} patchId={selected.developed.patch} />
+					<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
 				) : inversive ? (
 					<InversiveCanvas
-						width={size.w}
-						height={size.h}
 						translationalCell={renderCell as unknown as InversiveCellData | null}
 						translationalCellId={renderCellId}
 						paramCell={paramCell ?? null}

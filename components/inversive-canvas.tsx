@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { averageFill, buildCellGeom } from "@/lib/render/inversiveCellGeom";
 import { spiralSimilarity, wrapStripDrift } from "@/lib/render/spiralMap";
+import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { evaluateParamCell, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -18,9 +19,9 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 // It reads pan/zoom/rotation from the same configuration store the p5 canvas writes, so the p5 canvas
 // (mounted underneath, input-only while inversive is on) keeps driving panning with no new input code.
 
+// No width/height props: the canvas fills its parent by CSS and measures itself in the render loop
+// (syncCanvasSize) — see lib/render/canvasSize.ts.
 interface InversiveCanvasProps {
-	width: number;
-	height: number;
 	translationalCell: TranslationalCellData | null;
 	translationalCellId: string | null;
 	/** Free-angle family cell. When present, the geometry is rebuilt in the render loop from the store's
@@ -223,7 +224,7 @@ function uploadFloatTex(
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 }
 
-export function InversiveCanvas({ width, height, translationalCell, translationalCellId, paramCell = null }: InversiveCanvasProps) {
+export function InversiveCanvas({ translationalCell, translationalCellId, paramCell = null }: InversiveCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const progRef = useRef<WebGLProgram | null>(null);
@@ -235,8 +236,6 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 	const avgCacheRef = useRef<{ off: number; hueAreas: Float32Array; avg: [number, number, number] } | null>(null);
 	// Last render-loop timestamp for the velocity-pad drift integration (0 = no previous frame).
 	const lastTRef = useRef(0);
-	const sizeRef = useRef({ width, height });
-	sizeRef.current = { width, height };
 	// Latest paramCell for the render loop (read imperatively so the loop never re-subscribes), plus the
 	// last slider signature we uploaded geometry for. Reset on any selection/family change so a new family
 	// always rebuilds even if its slider tuple stringifies the same as the previous one.
@@ -324,17 +323,11 @@ export function InversiveCanvas({ width, height, translationalCell, translationa
 
 			const geom = geomRef.current;
 			if (!geom) return;
-			const { width: w, height: h } = sizeRef.current;
+			// Measured every frame from the element itself, so the backing store tracks a transitioning layout
+			// exactly instead of trailing a React render behind it (lib/render/canvasSize.ts).
+			const { w, h, dpr } = syncCanvasSize(canvas);
 			if (w <= 0 || h <= 0) return;
-
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr);
-			const bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) {
-				canvas.width = bw;
-				canvas.height = bh;
-			}
-			g.viewport(0, 0, bw, bh);
+			g.viewport(0, 0, canvas.width, canvas.height);
 
 			const ctrl = cfg.controls;
 			const R = cfg.inversiveRadiusFrac * Math.min(w, h) * 0.5;
