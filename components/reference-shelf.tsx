@@ -328,7 +328,10 @@ function parseViewState(sp: URLSearchParams): ViewState {
 		page: page != null && page >= 1 ? Math.floor(page) : 1,
 		pageSize: size != null && PAGE_SIZE_OPTIONS.includes(size) ? size : DEFAULT_PAGE_SIZE,
 		gridColumns: cols != null ? Math.min(6, Math.max(3, Math.floor(cols))) : 5,
-		groupVariants: sp.get("grouped") === "1",
+		// On by default (hyperbolic is the only shelf it affects, and there a family of hundreds of
+		// variants should arrive as one card). So the param encodes the OFF state; "1" is still read
+		// for links shared before the default flipped.
+		groupVariants: sp.get("grouped") !== "0",
 	};
 }
 
@@ -366,7 +369,7 @@ function serializeView(v: ViewState): string {
 	if (v.page > 1) p.set("page", String(v.page));
 	if (v.pageSize !== DEFAULT_PAGE_SIZE) p.set("size", String(v.pageSize));
 	if (v.gridColumns !== 5) p.set("cols", String(v.gridColumns));
-	if (v.groupVariants) p.set("grouped", "1");
+	if (!v.groupVariants) p.set("grouped", "0");
 	return p.toString();
 }
 
