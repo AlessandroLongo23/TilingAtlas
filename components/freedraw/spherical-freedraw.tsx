@@ -17,7 +17,8 @@ import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-t
 import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
-import { useToggleShortcuts } from "@/lib/hooks/useToggleShortcuts";
+import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
+import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import type { IcoMode, IcoPattern } from "@/lib/render/icoFreedraw";
 import { ICO_SOLIDS, icoSolidKs } from "@/lib/render/icoSolids";
 import { cn } from "@/lib/utils/cn";
@@ -81,6 +82,7 @@ export function SphericalFreedraw({
 	const [loadTick, setLoadTick] = useState(0);
 
 	const hostRef = useRef<HTMLDivElement | null>(null);
+	const gridRef = useRef<HTMLDivElement | null>(null);
 
 	// Fetch the selected solid+k slice on demand; an already-cached file needs no fetch. setState only ever
 	// fires in the async callback, never synchronously in the effect body.
@@ -132,10 +134,22 @@ export function SphericalFreedraw({
 		[patterns, pageRows, selectedId],
 	);
 
+	// Arrow keys walk the grid: ←/→ by one, ↑/↓ by a row. The index is into the whole solid+k slice, so
+	// stepping off a page pulls the next one in.
+	useGridArrowNav({
+		gridRef,
+		count: patterns?.length ?? 0,
+		index: selected ? (patterns ?? []).findIndex((p) => p.id === selected.id) : -1,
+		onMove: (next) => {
+			setSelectedId((patterns ?? [])[next].id);
+			setPage(Math.floor(next / PAGE_SIZE) + 1);
+		},
+	});
+
 	// This arm has one overlay, so it carries one key: G = the faint edge grid, the same letter the grid
 	// scaffold uses on the planar arm and in /play. Polyhedron/Sphere has no key (it is a mode, not an
 	// overlay, and /play's Options tab gives it none either).
-	useToggleShortcuts({ g: () => setShowGrid((v) => !v) });
+	useKeyShortcuts({ g: () => setShowGrid((v) => !v) });
 
 	// The /play deep link for the selection. Spherical freedraw is NOT in /play's base atlas — the loader
 	// there fires on the "sfd-" key prefix, which is exactly the key referenceAtlas mints per solid
@@ -208,11 +222,12 @@ export function SphericalFreedraw({
 			<div className="flex-1 min-h-0 flex">
 				<div className="flex-1 min-w-0 overflow-y-auto p-4">
 					{patterns === null && <div className="p-8 text-text-muted">Loading the {solid.label} catalogue…</div>}
-					<div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
+					<div ref={gridRef} className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
 						{pageRows.map((pattern) => (
 							<button
 								key={pattern.id}
 								type="button"
+								data-selected={selected?.id === pattern.id ? "" : undefined}
 								onClick={() => setSelectedId(pattern.id)}
 								className={cn(
 									"rounded-md overflow-hidden border text-left transition-colors",

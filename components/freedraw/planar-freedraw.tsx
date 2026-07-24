@@ -2,7 +2,7 @@
 
 import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
 import {
 	type FreedrawGeometry,
@@ -33,7 +33,8 @@ import {
 import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw/regular";
 import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
-import { useToggleShortcuts } from "@/lib/hooks/useToggleShortcuts";
+import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
+import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { serializePlayState } from "@/lib/services/playUrlState";
 import { cn } from "@/lib/utils/cn";
 
@@ -143,6 +144,7 @@ export function PlanarFreedraw({
 	const [showScaffold, setShowScaffold] = useState(true);
 	const [showVertices, setShowVertices] = useState(false);
 	const [showLattice, setShowLattice] = useState(false);
+	const gridRef = useRef<HTMLDivElement | null>(null);
 
 	// Fetch only the files the current grid+k needs, on demand. Switching grid or k triggers this; files
 	// already cached resolve instantly and re-tick so the slice recomputes.
@@ -212,10 +214,22 @@ export function PlanarFreedraw({
 		[fillMode, showScaffold],
 	);
 
+	// Arrow keys walk the grid: ←/→ by one, ↑/↓ by a row. The index is into `shown` (the filtered list),
+	// not the visible page, so stepping off a page pulls the next one in.
+	useGridArrowNav({
+		gridRef,
+		count: shown.length,
+		index: selected ? shown.findIndex((r) => r.pattern.id === selected.pattern.id) : -1,
+		onMove: (next) => {
+			setSelectedId(shown[next].pattern.id);
+			setPage(Math.floor(next / PAGE_SIZE) + 1);
+		},
+	});
+
 	// The overlay keys, identical to /play's freedraw view (FREEDRAW_TOGGLES there): G = grid scaffold,
 	// P = period lattice, O = grid-point orbits. Each control shows its key as a Kbd badge. The fill mode
 	// carries no key — it has none in /play's Options tab either.
-	useToggleShortcuts({
+	useKeyShortcuts({
 		g: () => setShowScaffold((v) => !v),
 		p: () => setShowLattice((v) => !v),
 		o: () => setShowVertices((v) => !v),
@@ -405,11 +419,12 @@ export function PlanarFreedraw({
 			<div className="flex-1 min-h-0 flex">
 				<div className="flex-1 min-w-0 overflow-y-auto p-4">
 					{slice === null && <div className="p-8 text-text-muted">Loading the {filter.grid} catalogue…</div>}
-					<div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
+					<div ref={gridRef} className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
 						{pageRows.map(({ pattern, stats }) => (
 							<button
 								key={pattern.id}
 								type="button"
+								data-selected={selected?.pattern.id === pattern.id ? "" : undefined}
 								onClick={() => setSelectedId(pattern.id)}
 								className={cn(
 									"rounded-md overflow-hidden border text-left transition-colors",

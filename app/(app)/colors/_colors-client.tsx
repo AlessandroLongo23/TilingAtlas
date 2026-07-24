@@ -2,7 +2,7 @@
 
 import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ColorsCanvas } from "@/components/colors/colors-canvas";
 import { ToggleCell, WallBar, WallColumn, WallGroup, WallSubLabel } from "@/components/freedraw/filter-wall";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import {
 	type ColorsGrid,
 } from "@/lib/colors/pattern";
 import type { ColorsStyle } from "@/lib/colors/render";
-import { useToggleShortcuts } from "@/lib/hooks/useToggleShortcuts";
+import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
+import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { serializePlayState } from "@/lib/services/playUrlState";
 import { cn } from "@/lib/utils/cn";
 
@@ -85,6 +86,7 @@ export function ColorsClient() {
 	const [showEdges, setShowEdges] = useState(true);
 	const [showLattice, setShowLattice] = useState(false);
 	const [showVertices, setShowVertices] = useState(false);
+	const gridRef = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
 		let live = true;
@@ -129,9 +131,21 @@ export function ColorsClient() {
 		[showEdges],
 	);
 
+	// Arrow keys walk the grid: ←/→ by one, ↑/↓ by a row. The index is into the whole filtered slice, so
+	// stepping off a page pulls the next one in; the page follows the selection.
+	useGridArrowNav({
+		gridRef,
+		count: slice?.length ?? 0,
+		index: selected ? (slice ?? []).findIndex((p) => p.id === selected.id) : -1,
+		onMove: (next) => {
+			setSelectedId((slice ?? [])[next].id);
+			setPage(Math.floor(next / PAGE_SIZE) + 1);
+		},
+	});
+
 	// The overlay keys, identical to /play's colors view (COLORS_TOGGLES there): G = tile edges,
 	// P = period lattice, O = colored-vertex orbits. Each control shows its key as a Kbd badge.
-	useToggleShortcuts({
+	useKeyShortcuts({
 		g: () => setShowEdges((v) => !v),
 		p: () => setShowLattice((v) => !v),
 		o: () => setShowVertices((v) => !v),
@@ -213,11 +227,12 @@ export function ColorsClient() {
 			<div className="flex-1 min-h-0 flex">
 				<div className="flex-1 min-w-0 overflow-y-auto p-4">
 					{slice === null && <div className="p-8 text-text-muted">Loading the colored-tiling catalogue…</div>}
-					<div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
+					<div ref={gridRef} className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
 						{pageRows.map((p) => (
 							<button
 								key={p.id}
 								type="button"
+								data-selected={selected?.id === p.id ? "" : undefined}
 								onClick={() => setSelectedId(p.id)}
 								className={cn(
 									"rounded-md overflow-hidden border text-left transition-colors",

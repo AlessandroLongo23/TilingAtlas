@@ -204,7 +204,7 @@ export function TriMatrix({ rows }: { rows: TriRow[] }) {
 
 // A standalone on/off cell for an independent boolean (the display toggles). Lit when on, exactly like a
 // selected tab; nothing else in the row moves when it flips. `shortcut` shows the key that also flips it
-// (bound by the page through useToggleShortcuts) as a keycap badge — the same badge, on the same keys, as
+// (bound by the page through useKeyShortcuts) as a keycap badge — the same badge, on the same keys, as
 // the matching checkbox in /play's View options tab.
 export function ToggleCell({
 	label,
