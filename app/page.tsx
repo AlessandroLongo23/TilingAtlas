@@ -112,7 +112,7 @@ export default async function HomePage() {
 						title="Theory"
 						subtitle="Undersand the concepts"
 						href="/theory"
-						description="Why the angles must fit, and why exactly eleven uniform tilings exist."
+						description="In the theory section, you can learn about the geometric concepts behind tilings."
 						badge={<CompletenessBadge tone="proven" label="exactly 11, proven" />}
 					>
 						<TheoryRing tilings={data.uniformEleven} />
