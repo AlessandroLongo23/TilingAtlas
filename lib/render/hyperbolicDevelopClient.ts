@@ -30,6 +30,30 @@ export interface Darts {
 	glue: number[];
 	lvert: number[];
 	seed: number;
+	/** Edge-pattern shelf only (tools/ctrnact-oracle/develop_hyp_edges.py): the MERGED-TILE orbit each
+	 *  quotient dart belongs to — quotient faces glued across an undrawn edge share an id. Colours the
+	 *  developed faces so one merged tile reads as one region. Absent on plain hyperbolic tilings. */
+	tileOrbit?: number[];
+	/** Colored-tiling shelf only (tools/ctrnact-oracle/develop_hyp_colors.py): the COLOR index (0=A, 1=B,
+	 *  …) of the base face each quotient dart belongs to — constant along a quotient face. Fills each
+	 *  developed face with its solver-assigned color; every edge is a real tile boundary. Absent otherwise. */
+	faceColor?: number[];
+}
+
+/** A developed edge-pattern patch: base faces coloured by MERGED TILE plus the edge list with per-edge
+ *  drawn flags. drawDevelopedEdgePatch consumes it. `edges[i] = [v0, v1, drawn]` over `vertices`. */
+export interface DevelopedEdgePatch {
+	id: string;
+	name: string;
+	config: string;
+	edge: number;
+	vertices: [number, number][];
+	faces: number[][];
+	/** Merged-tile orbit id per face (parallel to `faces`) — the fill colour key. */
+	faceOrbit: number[];
+	/** [v0, v1, drawn]: geodesic segment vertices[v0]→vertices[v1]; drawn=1 bold, 0 faint scaffold. */
+	edges: [number, number, number][];
+	tiles: number;
 }
 
 const TOL = 1e-4; // position dedup grid (matches develop_hyperbolic.py)
@@ -90,6 +114,15 @@ export class HyperbolicDeveloper {
 	 *  the rendering paths stay byte-identical with the Python developer. */
 	private readonly deepDedup: boolean;
 
+	// Edge-pattern shelf only: the merged-tile orbit per quotient dart (undefined for plain tilings). An
+	// edge's drawn/undrawn status is recovered from lvert alone — a dart's edge is a digon side iff the
+	// polygon on either side of it is a digon (size 2) — so the boolean is not stored separately.
+	private readonly tileOrbit?: number[];
+
+	// Colored-tiling shelf only: the color index per quotient dart (constant along a base face). When
+	// present, developColors() fills each developed face by ITS color; every edge is a tile boundary.
+	private readonly faceColor?: number[];
+
 	constructor(darts: Darts, edgeLength: number, opts: { deepDedup?: boolean } = {}) {
 		this.rneig = darts.rneig;
 		this.glue = darts.glue;
@@ -98,6 +131,14 @@ export class HyperbolicDeveloper {
 		this.l = edgeLength;
 		this.Med = medge(edgeLength);
 		this.deepDedup = opts.deepDedup ?? false;
+		this.tileOrbit = darts.tileOrbit;
+		this.faceColor = darts.faceColor;
+	}
+
+	/** True when dart h's edge is a DRAWN edge (a digon side): the polygon on either side of h is a digon.
+	 *  Matches develop_hyp_edges.py's `drawn[h] == lvert[h]==2 || lvert[rneig[h]]==2`. */
+	private isDrawn(h: number): boolean {
+		return this.lvert[h] === 2 || this.lvert[this.rneig[h]] === 2;
 	}
 
 	private alpha(h: number): number {
@@ -438,5 +479,120 @@ export class HyperbolicDeveloper {
 			);
 		}
 		return { id: meta.id, name: meta.name, config: meta.config, edge: meta.edge, vertices, faces, tiles: faces.length };
+	}
+
+	/**
+	 * Edge-pattern develop: the same prune+extend-under-view as develop(), but the payload colours base
+	 * faces by MERGED-TILE orbit (darts.tileOrbit) and returns the edge list with per-edge drawn flags,
+	 * for drawDevelopedEdgePatch. Digon faces (2-rings, the drawn-edge markers) are dropped like every
+	 * other sub-triangle ring; the drawn edges themselves come back in `edges`, not as faces.
+	 */
+	developEdges(
+		meta: { id: string; name: string; config: string; edge: number },
+		view: Su11,
+		boundR = 0.99,
+		maxInsts = 12000,
+	): DevelopedEdgePatch {
+		return this.developFaced(meta, view, boundR, maxInsts, false);
+	}
+
+	/**
+	 * Colored-tiling develop: identical to developEdges, but each base face's `faceOrbit` carries its
+	 * COLOR index (darts.faceColor) instead of a merged-tile orbit, and EVERY edge is marked drawn (in a
+	 * coloring every {p,q} edge is a real tile boundary — there is no undrawn scaffold). The render path
+	 * then fills faces through the atlas palette and strokes every edge bold.
+	 */
+	developColors(
+		meta: { id: string; name: string; config: string; edge: number },
+		view: Su11,
+		boundR = 0.99,
+		maxInsts = 12000,
+	): DevelopedEdgePatch {
+		return this.developFaced(meta, view, boundR, maxInsts, true);
+	}
+
+	private developFaced(
+		meta: { id: string; name: string; config: string; edge: number },
+		view: Su11,
+		boundR: number,
+		maxInsts: number,
+		colors: boolean,
+	): DevelopedEdgePatch {
+		const center = su11ApplyInverse(view, { x: 0, y: 0 });
+		const moved = this.lastCenter === null || Math.hypot(center.x - this.lastCenter.x, center.y - this.lastCenter.y) > 1e-4;
+		this.lastCenter = center;
+		const capped = this.H.length >= maxInsts;
+		this.prune(view, Math.min(boundR + 0.05, 1.05), moved && capped ? Math.floor(maxInsts * 0.85) : maxInsts);
+		this.extend(view, boundR, maxInsts);
+
+		const remap = new Map<number, number>();
+		const vertices: [number, number][] = [];
+		const pushV = (v: number): number => {
+			let nv = remap.get(v);
+			if (nv === undefined) {
+				nv = vertices.length;
+				vertices.push(this.verts[v]);
+				remap.set(v, nv);
+			}
+			return nv;
+		};
+
+		// Faces: trace the base polygon around each instance (next dart = gl[rn[i]]), keep the visible ones,
+		// colour each by the merged-tile orbit of its seed dart (constant along a base face).
+		const faces: number[][] = [];
+		const faceOrbit: number[] = [];
+		const seen = new Set<string>();
+		for (let start = 0; start < this.H.length; start++) {
+			const ringV: number[] = [];
+			let idx = start;
+			let ok = false;
+			for (let step = 0; step < 64; step++) {
+				ringV.push(this.vid[idx]);
+				const r = this.rn[idx];
+				const nxt = r >= 0 ? this.gl[r] : -1;
+				if (nxt < 0) break;
+				idx = nxt;
+				if (idx === start) {
+					ok = true;
+					break;
+				}
+			}
+			if (!ok || ringV.length < 3) continue;
+			let best: string | null = null;
+			for (let i = 0; i < ringV.length; i++) {
+				const rot = ringV.slice(i).concat(ringV.slice(0, i)).join(",");
+				if (best === null || rot < best) best = rot;
+			}
+			if (best === null || seen.has(best)) continue;
+			seen.add(best);
+			if (!this.faceVisible(view, ringV)) continue;
+			faces.push(ringV.map(pushV));
+			faceOrbit.push(
+				colors ? (this.faceColor ? this.faceColor[this.H[start]] : 0) : this.tileOrbit ? this.tileOrbit[this.H[start]] : 0,
+			);
+		}
+
+		// Edges: each instance's glue neighbour is the far end of its edge. Dedup by unordered global vid
+		// pair; keep only edges both of whose endpoints landed on a visible face (so nothing draws outside
+		// the shaded region). Drawn/undrawn from lvert.
+		const edges: [number, number, number][] = [];
+		const seenE = new Set<string>();
+		for (let i = 0; i < this.H.length; i++) {
+			const g = this.gl[i];
+			if (g < 0) continue;
+			const a = this.vid[i];
+			const b = this.vid[g];
+			if (a === b) continue;
+			const key = a < b ? `${a},${b}` : `${b},${a}`;
+			if (seenE.has(key)) continue;
+			seenE.add(key);
+			const na = remap.get(a);
+			const nb = remap.get(b);
+			if (na === undefined || nb === undefined) continue;
+			// Colors: every edge is a tile boundary (bold). Edges: drawn iff the dart's edge is a digon side.
+			edges.push([na, nb, colors ? 1 : this.isDrawn(this.H[i]) ? 1 : 0]);
+		}
+
+		return { id: meta.id, name: meta.name, config: meta.config, edge: meta.edge, vertices, faces, faceOrbit, edges, tiles: faces.length };
 	}
 }

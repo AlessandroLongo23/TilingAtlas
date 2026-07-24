@@ -50,6 +50,29 @@ const SUB_LABEL: Record<string, string> = {
 	cube: "Cube",
 	dodecahedron: "Dodecahedron",
 	icosahedron: "Icosahedron",
+	// Hyperbolic edge systems: one sub per base tiling.
+	"hyp-667": "6.6.7 edges",
+	"hyp-37": "{3,7} edges",
+	"hyp-38": "{3,8} edges",
+	"hyp-45": "{4,5} edges",
+	"hyp-46": "{4,6} edges",
+	"hyp-54": "{5,4} edges",
+	"hyp-55": "{5,5} edges",
+	"hyp-64": "{6,4} edges",
+	"hyp-65": "{6,5} edges",
+	"hyp-73": "{7,3} edges",
+	"hyp-74": "{7,4} edges",
+	"hyp-83": "{8,3} edges",
+	"hyp-84": "{8,4} edges",
+	// Hyperbolic colored tilings: one sub per base {p,q}.
+	"hyc-37": "{3,7} colored",
+	"hyc-73": "{7,3} colored",
+	// Spherical colored tilings: one sub per Platonic solid.
+	"spc-tetrahedron": "Tetrahedron colored",
+	"spc-octahedron": "Octahedron colored",
+	"spc-cube": "Cube colored",
+	"spc-dodecahedron": "Dodecahedron colored",
+	"spc-icosahedron": "Icosahedron colored",
 };
 
 // Memoized: the catalogue's inputs (items/selectedKey/onSelect) don't change while a sidebar
@@ -157,7 +180,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			// row rather than letting a bare "k = 2" imply the quantities are the same.
 			const kLabel =
 				cls === "freedraw"
-					? kk.list[0]?.sphericalFreedraw
+					? kk.list[0]?.sphericalFreedraw || kk.list[0]?.hypEdges
 						? `k = ${kk.k} vertex orbits`
 						: `k = ${kk.k} grid points`
 					: cls === "colors"

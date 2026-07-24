@@ -125,9 +125,12 @@ export function buildDirichletDomain(
 
 	// flood-fill connectivity margin: any instance with vertex in B(R) is reachable through instances
 	// with vertices in B(R + 2·rMaxTile) (walk the tiles crossed by the geodesic 0 → vertex).
+	// rMaxTile bounds the flood-fill margin by the largest tile in-radius. Digons (p = 2, the edge-pattern
+	// drawn-edge markers) are geometrically degenerate — interior angle 0, no proper face — so they are
+	// skipped, not rejected: the deck group and the margin are set by the real polygons around them.
 	let rMaxTile = 0;
 	for (const p of darts.lvert) {
-		if (!(p >= 3)) return { certified: false, reason: `non-polygonal face size ${p} in lvert` };
+		if (p < 3) continue;
 		rMaxTile = Math.max(rMaxTile, Math.asinh(Math.sinh(edge / 2) / Math.sin(Math.PI / p)));
 	}
 	const M = 2 * rMaxTile + 0.15;

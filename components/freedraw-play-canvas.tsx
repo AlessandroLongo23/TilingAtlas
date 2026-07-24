@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
 import { useConfiguration } from "@/stores/configuration";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
@@ -24,13 +24,25 @@ export function FreedrawPlayCanvas({ pattern }: { pattern: FreedrawPattern }) {
 		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth }),
 		[fillMode, showScaffold, showVertices, showLattice, lineWidth],
 	);
+	// The SAME store field the flat canvas spins on, so the Rotation slider means one thing across the
+	// app and the `rot` URL param already round-trips it. Stable setter: the canvas re-subscribes its
+	// wheel listener when this identity changes.
+	const rotation = useConfiguration((s) => s.rotation);
+	const setRotation = useCallback((deg: number) => useConfiguration.getState().set({ rotation: deg }), []);
 
 	// 24 cells across the shorter side. fitView measures against min(w,h), so on a wide /play canvas a
 	// smaller count blows one period up to fill the screen and the pattern's repeat stops reading; this is
 	// roughly the zoom at which several periods sit in view in both directions.
 	return (
 		<div className="absolute inset-0 z-10">
-			<FreedrawCanvas pattern={pattern} style={style} cells={24} interactive />
+			<FreedrawCanvas
+				pattern={pattern}
+				style={style}
+				cells={24}
+				interactive
+				rotation={rotation}
+				onRotationChange={setRotation}
+			/>
 		</div>
 	);
 }

@@ -29,6 +29,47 @@ const ringFallbackHue = (i: number): number => {
 	return typeof d === "number" ? d : 42;
 };
 
+// View rotation about the canvas centre. Every 2D view spins off the SAME store field — the flat p5/WebGL
+// canvas, the freedraw grid and the colors field — so the control is defined once here and rendered from
+// whichever block is showing. Only one instance is ever mounted at a time, which is what keeps the shared
+// `id` (and its label's htmlFor) unique. `gesture` is the canvas move that also drives the value: the flat
+// and 2D views zoom on a bare scroll and spin on Shift+scroll, while the hyperbolic disk has no zoom, so a
+// bare scroll rotates it.
+function RotationSlider({
+	value,
+	onChange,
+	gesture,
+}: {
+	value: number;
+	onChange: (v: number) => void;
+	gesture: "shift-scroll" | "scroll";
+}) {
+	return (
+		<Slider
+			id="rotation"
+			label="Rotation"
+			hint={
+				<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
+					{gesture === "shift-scroll" ? (
+						<>
+							<Kbd>Shift</Kbd>
+							<span>+ scroll</span>
+						</>
+					) : (
+						<span>scroll</span>
+					)}
+				</span>
+			}
+			value={value}
+			onChange={onChange}
+			min={0}
+			max={360}
+			step={1}
+			unit="°"
+		/>
+	);
+}
+
 // The Options tab: every render/view toggle for the selected tiling. This is the ONLY sidebar piece
 // that subscribes to the configuration store, so a slider drag re-renders here and nowhere else (the
 // Catalogue tab and nav header take plain props). Controls are keyed off the selected tiling's own
@@ -51,21 +92,38 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// rotate/zoom input — so the flat-canvas overlays (symmetry, orbits, transition, inversive) don't apply.
 	const isSpherical = !!selected?.spherical;
 	// A freedraw pattern renders on its own 2D grid canvas. It is the strictest case: there are no tiles at
-	// all, so EVERY control above — fill, stroke, hue, rotation, points, orbits, symmetry, inversive — is
-	// dead, and the three freedraw-specific ones below take their place.
+	// all, so almost every control above — fill, hue, points, orbits, symmetry, inversive — is dead, and the
+	// freedraw block below takes their place. Line stroke and rotation are the exceptions: that canvas draws
+	// real strokes and spins about its centre like any other view, so its block renders those two itself.
 	const isFreedraw = !!selected?.freedraw;
 	// A spherical-freedraw pattern renders on the self-contained three.js ico-freedraw canvas (its own
 	// ArcballControls, its own fixed edge tubes and golden-angle tile colours). Like planar freedraw it has no
 	// tiles/cell for the shared controls to touch — only the two Display controls the /freedraw arm carries
 	// (polyhedron/sphere + grid) apply, so every other control is hidden for it.
 	const isSphericalFreedraw = !!selected?.sphericalFreedraw;
-	// A colored tiling renders on its own 2D canvas like freedraw: no tiles, no polygon cell, so
-	// the shared fill/stroke/hue/rotation/points controls are all dead and its own trio takes their place.
+	// A colored tiling renders on its own 2D canvas like freedraw: no tiles, no polygon cell, so the shared
+	// fill/stroke/hue/points controls are all dead and its own palette + trio take their place. Rotation
+	// still applies (the field spins about the canvas centre), rendered inside that block.
 	const isColors = !!selected?.colors;
+	// A hyperbolic edge-system pattern renders in the Poincaré disk via the SAME per-pixel shader as the
+	// developed tilings, so it shares their disk controls (fill, hue, line stroke, perspective/flat line
+	// mode) — plus a scaffold toggle for the faint undrawn base tiling. It is NOT a flat p5 view.
+	const isHyperbolicEdges = !!selected?.hypEdges;
+	// A hyperbolic COLORED tiling renders in the disk via the same per-pixel shader in colors mode — it shares
+	// the disk line controls, and (like the Euclidean colors) carries the palette pickers instead of fill/hue.
+	const isHyperbolicColors = !!selected?.hypColors;
+	// A spherical COLORED tiling renders on the three.js canvas like spherical freedraw: only the
+	// polyhedron/sphere mode toggle + the palette apply.
+	const isSphColors = !!selected?.sphColors;
+	// Any colored tiling (Euclidean grid, hyperbolic disk, or spherical solid): all carry the palette pickers.
+	const isAnyColors = isColors || isHyperbolicColors || isSphColors;
+	const isHyperbolicDisk = isHyperbolic || isHyperbolicEdges || isHyperbolicColors;
 	// One picker per color of the SELECTED pattern (2 or 3 today), read off the record rather than the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
 	// remembers every slot.
-	const colorCount = selected?.colors ? colorCountOf(selected.colors) : 2;
+	const colorCount = selected?.colors
+		? colorCountOf(selected.colors)
+		: selected?.hypColors?.colors ?? selected?.sphColors?.pattern.colors ?? 2;
 	// Every palette read goes through paletteFor, so a store array left short by an older `copal=` URL
 	// still fills the pickers; writes go back through the same dense array, keeping slots the current
 	// pattern does not use.
@@ -76,7 +134,67 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 		setCfg({ colorsPalette: next });
 	};
 	// Flat-canvas overlays: only meaningful when the p5 layer is actually the thing painting.
-	const isFlat = !isHyperbolic && !isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors;
+	const isFlat =
+		!isHyperbolic && !isHyperbolicEdges && !isHyperbolicColors && !isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors;
+
+	// One picker per tile color — shared by every colored view (Euclidean grid, hyperbolic disk, spherical
+	// solid): a hue ring plus the two swatches no hue reaches (cream + its near-black complement).
+	const palettePickers = (
+		<div className="flex gap-2">
+			{Array.from({ length: colorCount }, (_, i) => {
+				const name = colorLetter(i);
+				const choice = pal[i];
+				const setChoice = (c: ColorChoice) => writePalette((next) => (next[i] = c));
+				return (
+					// A swap goes BETWEEN each adjacent pair, so it is emitted alongside the column on its right.
+					<Fragment key={name}>
+						{i > 0 ? (
+							<div className="flex flex-col justify-center">
+								<button
+									type="button"
+									title={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}
+									aria-label={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}
+									onClick={() =>
+										writePalette((next) => {
+											[next[i - 1], next[i]] = [pal[i], pal[i - 1]];
+										})
+									}
+									className="flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
+								>
+									<ArrowLeftRight size={13} />
+								</button>
+							</div>
+						) : null}
+						<div className="flex-1 min-w-0 space-y-1.5">
+							<HueRing
+								label={colorCount > 2 ? name : `Color ${name}`}
+								size={colorCount > 2 ? 62 : 76}
+								value={typeof choice === "number" ? choice : ringFallbackHue(i)}
+								onChange={setChoice}
+							/>
+							<div className="grid grid-cols-2 gap-1">
+								{(["cream", "dark"] as const).map((s) => (
+									<button
+										key={s}
+										type="button"
+										aria-pressed={choice === s}
+										title={s === "cream" ? "Cream — the warm near-white" : "Dark — the almost-black complement"}
+										onClick={() => setChoice(s)}
+										className={
+											choice === s
+												? "h-6 rounded border border-fg ring-1 ring-fg"
+												: "h-6 rounded border border-line hover:border-line-strong"
+										}
+										style={{ background: cellFill(s, false) }}
+									/>
+								))}
+							</div>
+						</div>
+					</Fragment>
+				);
+			})}
+		</div>
+	);
 
 	return (
 		// Opaque: the sidebar wall's line colour lives on an ancestor, and a transparent panel would
@@ -122,6 +240,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								max={5}
 								step={0.25}
 							/>
+							{/* The grid spins about the canvas centre, same field and same 5° detents as the flat
+							    view — placed here so it sits with the other controls this view actually has. */}
+							<RotationSlider
+								value={cfg.rotation}
+								onChange={(v) => setCfg({ rotation: v })}
+								gesture="shift-scroll"
+							/>
 							<Checkbox
 								id="freedrawScaffold"
 								label="Grid scaffold"
@@ -151,7 +276,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								</p>
 							</Reveal>
 							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag to pan, scroll to zoom, double-click to refit.
+								Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
 							</p>
 						</div>
 					) : null}
@@ -162,67 +287,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    catalogue grows this column without new controls. */}
 					{isColors ? (
 						<div className="space-y-2">
-							<div className="flex gap-2">
-								{Array.from({ length: colorCount }, (_, i) => {
-									const name = colorLetter(i);
-									const choice = pal[i];
-									const setChoice = (c: ColorChoice) => writePalette((next) => (next[i] = c));
-									return (
-										// A swap goes BETWEEN each adjacent pair, so it is emitted alongside the column
-										// on its right rather than as extra entries in the palette map.
-										<Fragment key={name}>
-											{i > 0 ? (
-												// justify-center over the full column height parks the button on the rings'
-												// centerline: the label row above and the swatch row below are near enough
-												// the same height that the column's midpoint IS the ring's.
-												<div className="flex flex-col justify-center">
-													<button
-														type="button"
-														title={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}
-														aria-label={`Swap Color ${colorLetter(i - 1)} and Color ${name}`}
-														onClick={() =>
-															writePalette((next) => {
-																[next[i - 1], next[i]] = [pal[i], pal[i - 1]];
-															})
-														}
-														className="flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
-													>
-														<ArrowLeftRight size={13} />
-													</button>
-												</div>
-											) : null}
-											<div className="flex-1 min-w-0 space-y-1.5">
-												<HueRing
-													// Three columns leave no room for "Color C" beside the degree
-													// readout — it wrapped and shoved that ring half a row down,
-													// off the centerline the swap buttons sit on.
-													label={colorCount > 2 ? name : `Color ${name}`}
-													size={colorCount > 2 ? 62 : 76}
-													value={typeof choice === "number" ? choice : ringFallbackHue(i)}
-													onChange={setChoice}
-												/>
-												<div className="grid grid-cols-2 gap-1">
-													{(["cream", "dark"] as const).map((s) => (
-														<button
-															key={s}
-															type="button"
-															aria-pressed={choice === s}
-															title={s === "cream" ? "Cream — the warm near-white" : "Dark — the almost-black complement"}
-															onClick={() => setChoice(s)}
-															className={
-																choice === s
-																	? "h-6 rounded border border-fg ring-1 ring-fg"
-																	: "h-6 rounded border border-line hover:border-line-strong"
-															}
-															style={{ background: cellFill(s, false) }}
-														/>
-													))}
-												</div>
-											</div>
-										</Fragment>
-									);
-								})}
-							</div>
+							{palettePickers}
+							{/* The color field spins about the canvas centre, off the same store field as every
+							    other view. */}
+							<RotationSlider
+								value={cfg.rotation}
+								onChange={(v) => setCfg({ rotation: v })}
+								gesture="shift-scroll"
+							/>
 							<Checkbox
 								id="colorsEdges"
 								label="Tile edges"
@@ -250,13 +322,26 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								</p>
 							</Reveal>
 							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag to pan, scroll to zoom, double-click to refit.
+								Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
 							</p>
+						</div>
+					) : null}
+					{/* Hyperbolic + spherical colorings carry the same palette pickers as the Euclidean colors, but
+					    their view controls (disk line stroke / Perspective-Flat below, or the polyhedron/sphere
+					    toggle in the spherical block) live with the other geometry controls, not here. */}
+					{isHyperbolicColors || isSphColors ? (
+						<div className="space-y-2">
+							{palettePickers}
+							{isHyperbolicColors ? (
+								<p className="text-[11px] text-fg-muted leading-relaxed">
+									Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
+								</p>
+							) : null}
 						</div>
 					) : null}
 					{/* The global fill flag. Hidden in spherical — there the Fill/Wireframe pair (below) is the
 					    view's own mutually-exclusive fill control, driven by sphericalWireframe. */}
-					{!isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors ? (
+					{!isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors ? (
 						<Checkbox
 							id="showPolygonFill"
 							label="Polygon fill"
@@ -267,7 +352,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{/* Freedraw renders its own copy of this slider inside its block above, so the stroke sits
 					    with the fill it belongs to. Same store field either way — only the position differs. */}
-					{!isFreedraw && !isSphericalFreedraw && !isColors ? (
+					{!isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors ? (
 						<Slider
 							id="lineWidth"
 							label="Line stroke"
@@ -278,7 +363,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							step={0.25}
 						/>
 					) : null}
-					{isHyperbolic ? (
+					{isHyperbolicDisk ? (
 						<div className="flex gap-2">
 							<Button
 								variant={cfg.hyperbolicLineMode === "geometry" ? "primary" : "secondary"}
@@ -298,41 +383,35 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							</Button>
 						</div>
 					) : null}
+					{/* Edge patterns get the drawn tile boundaries either way; the scaffold reveals the faint
+					    undrawn edges of the underlying 6.6.7 base tiling, the same "Grid scaffold" toggle the
+					    planar freedraw view carries (shared store flag). */}
+					{isHyperbolicEdges ? (
+						<Checkbox
+							id="freedrawScaffold"
+							label="Base tiling scaffold"
+							shortcut="G"
+							checked={cfg.freedrawScaffold}
+							onCheckedChange={(v) => setCfg({ freedrawScaffold: v })}
+						/>
+					) : null}
 					{/* Global hue rotation for every tile fill (all views + thumbnails) — preserves the
 					    pairwise hue distances between tiles while cycling the palette. Freedraw colours cells
 					    by face, off its own golden-angle walk, so this ring has nothing to rotate there. */}
-					{!isFreedraw && !isSphericalFreedraw && !isColors ? (
+					{!isFreedraw && !isSphericalFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
 						<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
 					) : null}
 					{/* Flat-view rotation. Hidden in spherical — that view rotates by quaternion (the
-					    ArcballControls trackball), so this angle slider has no effect there. The hint reveals the
-					    canvas gesture that also drives this value: flat/inversive spin the view with Shift+scroll
-					    (bare scroll zooms there), while the hyperbolic disk has no zoom, so a bare scroll rotates. */}
-					{!isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors ? (
-						<Slider
-							id="rotation"
-							label="Rotation"
-							hint={
-								<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
-									{!isHyperbolic ? (
-										<>
-											<Kbd>Shift</Kbd>
-											<span>+ scroll</span>
-										</>
-									) : (
-										<span>scroll</span>
-									)}
-								</span>
-							}
+					    ArcballControls trackball), so this angle slider has no effect there. Freedraw and colors
+					    render their own copy inside their blocks above, next to the controls they belong with. */}
+					{!isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors ? (
+						<RotationSlider
 							value={cfg.rotation}
 							onChange={(v) => setCfg({ rotation: v })}
-							min={0}
-							max={360}
-							step={1}
-							unit="°"
+							gesture={isHyperbolicDisk ? "scroll" : "shift-scroll"}
 						/>
 					) : null}
-					{!isFreedraw && !isSphericalFreedraw && !isColors ? (
+					{!isFreedraw && !isSphericalFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
 						<Checkbox
 							id="showPolygonPoints"
 							label="Show Polygon Points"
@@ -769,7 +848,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    else — the ico-freedraw canvas colours its own tiles and draws its own fixed edge tubes, so
 					    fill / stroke / hue / rotation / points / orbits have nothing to act on. Polyhedron/Sphere
 					    swaps flat facets for the round sphere; Grid draws the solid's full edge lattice faintly. */}
-					{isSphericalFreedraw ? (
+					{isSphericalFreedraw || isSphColors ? (
 						<div className="space-y-2">
 							<p className="text-[11px] text-fg-muted leading-relaxed">
 								Drag to rotate the solid freely; scroll to zoom.
@@ -793,13 +872,17 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									Sphere
 								</Button>
 							</div>
-							<Checkbox
-								id="sphericalFreedrawGrid"
-								label="Grid"
-								shortcut="G"
-								checked={cfg.sphericalFreedrawGrid}
-								onCheckedChange={(v) => setCfg({ sphericalFreedrawGrid: v })}
-							/>
+							{/* Spherical freedraw has a drawn/undrawn split, so it offers a faint base-grid toggle; a
+							    coloring has every edge as a real tile boundary, so there is nothing extra to reveal. */}
+							{isSphericalFreedraw ? (
+								<Checkbox
+									id="sphericalFreedrawGrid"
+									label="Grid"
+									shortcut="G"
+									checked={cfg.sphericalFreedrawGrid}
+									onCheckedChange={(v) => setCfg({ sphericalFreedrawGrid: v })}
+								/>
+							) : null}
 						</div>
 					) : null}
 					{isFlat ? (

@@ -10,7 +10,14 @@ import {
 	drawColors,
 	fitColorsView,
 } from "@/lib/colors/render";
-import { wheelDeltaPx } from "@/lib/render/viewControls";
+import { useEasedRotation } from "@/lib/hooks/useEasedRotation";
+import {
+	accumulateDetents,
+	ROTATE_SNAP_DEG,
+	unrotateScreen,
+	wheelDeltaPx,
+	wrap360,
+} from "@/lib/render/viewControls";
 import { cn } from "@/lib/utils/cn";
 
 // The colored-tiling canvas: FreedrawCanvas's shell (DPR-aware backing store, drag pan, wheel zoom
@@ -28,6 +35,10 @@ interface Props {
 	/** Grid cells across the shorter side at the default zoom. */
 	cells?: number;
 	interactive?: boolean;
+	/** View rotation about the canvas centre, DEGREES — the /play Rotation slider. Eased toward. */
+	rotation?: number;
+	/** New target angle from Shift+scroll (5° detents). Omit and the gesture is off. */
+	onRotationChange?: (deg: number) => void;
 	classes?: string;
 }
 
@@ -36,6 +47,8 @@ export function ColorsCanvas({
 	style = DEFAULT_COLORS_STYLE,
 	cells = 12,
 	interactive = false,
+	rotation = 0,
+	onRotationChange,
 	classes,
 }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -48,6 +61,13 @@ export function ColorsCanvas({
 	// changed — the same contract FreedrawCanvas uses (and lib/render/canvasSize.ts explains).
 	const boxRef = useRef({ w: 0, h: 0 });
 	const drawRef = useRef<() => void>(() => {});
+	// View rotation — the freedraw canvas's arrangement exactly: an eased live angle in a ref (its frame
+	// loop lives in the hook), injected per draw, and undone on every pointer vector, since input arrives
+	// rotated while the view maths stays upright.
+	const rotRef = useEasedRotation(rotation, drawRef);
+	const radNow = useCallback(() => (rotRef.current * Math.PI) / 180, [rotRef]);
+	// Sub-detent scroll remainder, carried between wheel events.
+	const scrollAccumRef = useRef(0);
 
 	useEffect(() => {
 		const el = canvasRef.current;
@@ -81,15 +101,26 @@ export function ColorsCanvas({
 		const ctx = el.getContext("2d");
 		if (!ctx) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		drawColors(ctx, cw, ch, pattern, view, { ...style, dark }, hoverRef.current, orbitScalesRef.current);
-	}, [pattern, view, style, dark]);
+		drawColors(
+			ctx,
+			cw,
+			ch,
+			pattern,
+			// Live angle injected per draw, so a refit can rebuild the view without touching the rotation.
+			{ ...view, rot: radNow() },
+			{ ...style, dark },
+			hoverRef.current,
+			orbitScalesRef.current,
+		);
+	}, [pattern, view, style, dark, radNow]);
 	drawRef.current = draw;
 
 	useEffect(() => {
 		draw();
 	}, [draw]);
 
-	// Frame loop only while the orbit dots are up on an interactive canvas (the hover ease needs it).
+	// Frame loop only while the orbit dots are up on an interactive canvas (the hover ease needs it); a
+	// view mid-turn runs its own inside useEasedRotation.
 	const animate = interactive && style.showVertices;
 	useEffect(() => {
 		if (!animate) return;
@@ -111,20 +142,22 @@ export function ColorsCanvas({
 	const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		if (!interactive) return;
 		if (drag.current) {
-			const dx = e.clientX - drag.current.x;
-			const dy = e.clientY - drag.current.y;
+			// Undo the view rotation on the drag delta so the pattern follows the cursor at any angle.
+			const d = unrotateScreen(e.clientX - drag.current.x, e.clientY - drag.current.y, radNow());
 			drag.current = { x: e.clientX, y: e.clientY };
 			hoverRef.current = null;
-			setView((v) => (v ? { ...v, cx: v.cx - dx / v.scale, cy: v.cy + dy / v.scale } : v));
+			setView((v) => (v ? { ...v, cx: v.cx - d.x / v.scale, cy: v.cy + d.y / v.scale } : v));
 			return;
 		}
 		const v = view;
 		if (!v) return;
 		const rect = e.currentTarget.getBoundingClientRect();
-		hoverRef.current = {
-			x: v.cx + (e.clientX - rect.left - rect.width / 2) / v.scale,
-			y: v.cy - (e.clientY - rect.top - rect.height / 2) / v.scale,
-		};
+		const p = unrotateScreen(
+			e.clientX - rect.left - rect.width / 2,
+			e.clientY - rect.top - rect.height / 2,
+			radNow(),
+		);
+		hoverRef.current = { x: v.cx + p.x / v.scale, y: v.cy - p.y / v.scale };
 	};
 	const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		if (!interactive) return;
@@ -140,9 +173,19 @@ export function ColorsCanvas({
 		if (!el || !interactive) return;
 		const onWheel = (e: WheelEvent) => {
 			e.preventDefault();
+			// Shift+wheel spins the view in 5° detents; the bare wheel zooms toward the cursor.
+			if (e.shiftKey && onRotationChange) {
+				const { steps, accum } = accumulateDetents(scrollAccumRef.current, wheelDeltaPx(e));
+				scrollAccumRef.current = accum;
+				if (steps !== 0) onRotationChange(wrap360(rotation + steps * ROTATE_SNAP_DEG));
+				return;
+			}
 			const rect = el.getBoundingClientRect();
-			const px = e.clientX - rect.left - rect.width / 2;
-			const py = e.clientY - rect.top - rect.height / 2;
+			const { x: px, y: py } = unrotateScreen(
+				e.clientX - rect.left - rect.width / 2,
+				e.clientY - rect.top - rect.height / 2,
+				radNow(),
+			);
 			setView((v) => {
 				if (!v) return v;
 				const delta = wheelDeltaPx(e);
@@ -158,7 +201,15 @@ export function ColorsCanvas({
 		};
 		el.addEventListener("wheel", onWheel, { passive: false });
 		return () => el.removeEventListener("wheel", onWheel);
-	}, [interactive]);
+		// `rotation` in the deps so a detent adds to the current target — see the freedraw canvas.
+	}, [interactive, onRotationChange, rotation, radNow]);
+
+	// Double-click puts the whole view back: pan, zoom and angle.
+	const refit = () => {
+		if (size.w <= 0) return;
+		setView(fitColorsView(size.w, size.h, cells));
+		onRotationChange?.(0);
+	};
 
 	return (
 		<canvas
@@ -167,7 +218,7 @@ export function ColorsCanvas({
 			onPointerMove={onPointerMove}
 			onPointerUp={onPointerUp}
 			onPointerLeave={onPointerLeave}
-			onDoubleClick={() => size.w > 0 && setView(fitColorsView(size.w, size.h, cells))}
+			onDoubleClick={refit}
 			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing", classes)}
 		/>
 	);

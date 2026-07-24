@@ -201,6 +201,138 @@ export function drawDevelopedPatch(
 	}
 }
 
+/** A developed hyperbolic EDGE pattern: base faces coloured by merged-tile orbit, plus the edge list
+ *  with per-edge drawn flags. What HyperbolicDeveloper.developEdges() hands back. */
+export interface DevelopedEdgePatch {
+	id: string;
+	name: string;
+	config: string;
+	edge: number;
+	vertices: [number, number][];
+	faces: number[][];
+	faceOrbit: number[];
+	edges: [number, number, number][];
+	tiles: number;
+}
+
+/** Draw a developed hyperbolic edge pattern under `view`. Two layers, matching the /freedraw look moved
+ *  to the Poincaré disk: fill each base face by its MERGED-TILE orbit hue (so one tile reads as one
+ *  region), then stroke edges — drawn edges bold (the tile boundaries the user "drew"), undrawn edges a
+ *  faint scaffold (the underlying uniform tiling). `showFill=false` drops the fill for a line-only view;
+ *  `showScaffold=false` hides the undrawn grid. */
+export function drawDevelopedEdgePatch(
+	ctx: CanvasRenderingContext2D,
+	patch: DevelopedEdgePatch,
+	view: Su11,
+	opts: DrawOpts & {
+		showScaffold?: boolean;
+		/** Colored-tiling mode: fill each face by `palette[faceOrbit]` (the color index) instead of a
+		 *  merged-tile orbit hue. Every edge is already flagged drawn=1 by developColors, so all strokes
+		 *  are bold and the scaffold pass draws nothing. RGB 0..255 per color. */
+		palette?: [number, number, number][];
+	},
+): void {
+	const { R, cx, cy, dark } = opts;
+	const V = patch.vertices;
+	const tv: Complex[] = new Array(V.length);
+	for (let i = 0; i < V.length; i++) tv[i] = su11Apply(view, { x: V[i][0], y: V[i][1] });
+	const toPx = (p: Complex): [number, number] => [cx + p.x * R, cy - p.y * R];
+	const bg = dark ? "#14110d" : "#faf8f5";
+
+	ctx.save();
+	ctx.beginPath();
+	ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+	if (opts.frame) {
+		ctx.fillStyle = bg;
+		ctx.fill();
+	}
+	ctx.clip();
+
+	// Fill pass: one hue per merged-tile orbit, dimmed toward the rim exactly like drawDevelopedPatch.
+	const showFill = opts.showFill !== false;
+	for (let fi = 0; fi < patch.faces.length; fi++) {
+		const face = patch.faces[fi];
+		const sides = face.length;
+		let ccx = 0;
+		let ccy = 0;
+		for (const idx of face) {
+			ccx += tv[idx].x;
+			ccy += tv[idx].y;
+		}
+		ccx /= sides;
+		ccy /= sides;
+		const dep = Math.min(1, Math.hypot(ccx, ccy));
+		// Colors mode dims less toward the rim (pale fills stay legible), matching the shader's colors branch.
+		const dim = opts.palette ? 1 - 0.28 * dep * dep : 1 - 0.5 * dep * dep;
+		const [fr, fg, fb] = opts.palette
+			? (opts.palette[patch.faceOrbit[fi]] ?? opts.palette[opts.palette.length - 1]).map((c) => c / 255) as [number, number, number]
+			: tileHueRgb01(tileHue(patch.faceOrbit[fi] + 2) + (opts.hueOffset ?? 0));
+		ctx.beginPath();
+		let started = false;
+		for (let i = 0; i < sides; i++) {
+			const pts = geodesicPts(tv[face[i]], tv[face[(i + 1) % sides]], SEG);
+			for (const p of pts) {
+				const [px, py] = toPx(p);
+				if (!started) {
+					ctx.moveTo(px, py);
+					started = true;
+				} else {
+					ctx.lineTo(px, py);
+				}
+			}
+		}
+		ctx.closePath();
+		ctx.fillStyle = showFill
+			? `rgb(${Math.round(fr * dim * 255)},${Math.round(fg * dim * 255)},${Math.round(fb * dim * 255)})`
+			: bg;
+		ctx.fill();
+	}
+
+	// Edge pass: drawn edges bold (tile boundaries), undrawn edges a faint scaffold (the base tiling).
+	const showScaffold = opts.showScaffold !== false;
+	const drawnCol = dark ? "#000" : "#111";
+	const scaffoldCol = dark ? "#4a4436" : "#c9c2b4";
+	const baseW = opts.strokePx ?? Math.max(1, R * 0.006);
+	if (baseW > 0.01) {
+		ctx.lineJoin = "round";
+		ctx.lineCap = "round";
+		for (let pass = 0; pass < 2; pass++) {
+			const drawnPass = pass === 1; // scaffold first, drawn edges on top
+			if (drawnPass ? false : !showScaffold) continue;
+			ctx.strokeStyle = drawnPass ? drawnCol : scaffoldCol;
+			for (const [a, b, drawn] of patch.edges) {
+				if ((drawn === 1) !== drawnPass) continue;
+				const mid = { x: (tv[a].x + tv[b].x) / 2, y: (tv[a].y + tv[b].y) / 2 };
+				const dep = Math.min(1, Math.hypot(mid.x, mid.y));
+				const w = drawnPass ? baseW * 3 : baseW * 1.2;
+				ctx.lineWidth = opts.taper ? Math.max(0.35, w * Math.pow(1 - dep * dep, 1.0)) : w;
+				const pts = geodesicPts(tv[a], tv[b], SEG);
+				ctx.beginPath();
+				let started = false;
+				for (const p of pts) {
+					const [px, py] = toPx(p);
+					if (!started) {
+						ctx.moveTo(px, py);
+						started = true;
+					} else {
+						ctx.lineTo(px, py);
+					}
+				}
+				ctx.stroke();
+			}
+		}
+	}
+	ctx.restore();
+
+	if (opts.frame) {
+		ctx.beginPath();
+		ctx.arc(cx, cy, R, 0, 2 * Math.PI);
+		ctx.strokeStyle = dark ? "#3a342b" : "#222";
+		ctx.lineWidth = Math.max(1.5, R * 0.008);
+		ctx.stroke();
+	}
+}
+
 let _cache: Promise<Record<string, CataloguePatch>> | null = null;
 
 /** Load and index the tiling catalogue (public/hyperbolic-developed.json) by id, once. */

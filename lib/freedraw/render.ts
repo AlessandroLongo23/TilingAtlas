@@ -17,6 +17,14 @@ export interface FreedrawView {
 	cy: number;
 	/** Pixels per grid unit. */
 	scale: number;
+	/**
+	 * View rotation about the canvas CENTRE, radians, applied as a context transform at draw time. Same
+	 * sense as the flat WebGL view's uRot (positive turns clockwise on screen), so one angle means one
+	 * turn across every renderer and the /play Rotation slider drives them all alike. fitView leaves it
+	 * out on purpose: the canvas component injects the live eased angle per frame, so a refit never
+	 * fights the rotation state.
+	 */
+	rot?: number;
 }
 
 // Lattice basis per grid: world = (x + bx*y, by*y). Square is the identity; the triangular lattice
@@ -135,6 +143,36 @@ export interface Span {
 	y1: number;
 }
 
+/**
+ * The extent a rotated view has to COVER: the bounding box of a width x height canvas turned back into
+ * the upright frame. Every span/instance range below is computed upright and the context transform does
+ * the turning, so this is the only place the rotation costs anything — at 45° it iterates about twice
+ * the cells, which is exactly the extra grid the rotated corners eat.
+ */
+export function rotatedExtent(width: number, height: number, rot: number): { w: number; h: number } {
+	if (!rot) return { w: width, h: height };
+	const c = Math.abs(Math.cos(rot));
+	const s = Math.abs(Math.sin(rot));
+	return { w: width * c + height * s, h: width * s + height * c };
+}
+
+/**
+ * Turn the context about the canvas centre for a rotated view, on a SAVED state — the caller restores.
+ * It saves even at rot 0 so every draw path has one balanced save/restore rather than a conditional one.
+ */
+export function beginViewRotation(
+	ctx: CanvasRenderingContext2D,
+	width: number,
+	height: number,
+	rot: number,
+): void {
+	ctx.save();
+	if (!rot) return;
+	ctx.translate(width / 2, height / 2);
+	ctx.rotate(rot);
+	ctx.translate(-width / 2, -height / 2);
+}
+
 export function visibleSpan(
 	width: number,
 	height: number,
@@ -189,16 +227,22 @@ export function drawFreedraw(
 		return;
 	}
 	const { scale } = view;
+	const rot = view.rot ?? 0;
 	const { bx, by } = basisOf(pattern);
 	const tri = gridOf(pattern) === "triangle";
 	// Lattice (x, y) -> screen px, through the world basis. On the square grid this is the old sx/sy.
 	const px = (x: number, y: number) => width / 2 + (x + bx * y - view.cx) * scale;
 	const py = (y: number) => height / 2 - (by * y - view.cy) * scale;
-	const span = visibleSpan(width, height, view, bx, by);
+	// Span against the ROTATED extent: px/py stay upright and the context turns them, so a spun view
+	// still has grid out to the corners it swept in.
+	const ext = rotatedExtent(width, height, rot);
+	const span = visibleSpan(ext.w, ext.h, view, bx, by);
 
+	// Background first, unrotated — it fills the real canvas rect whatever the view angle is.
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = style.dark ? "#12151a" : "#ffffff";
 	ctx.fillRect(0, 0, width, height);
+	beginViewRotation(ctx, width, height, rot);
 
 	if (style.fillMode !== "none") {
 		// One colour per face, resolved before the cell loop — the loop runs over every visible grid
@@ -297,6 +341,8 @@ export function drawFreedraw(
 
 	if (style.showVertices)
 		drawOrbitDots(ctx, pattern, view, style, px, py, bx, by, span, hover, orbitScales);
+
+	ctx.restore(); // the view rotation
 }
 
 /**
@@ -317,6 +363,7 @@ function drawPatchPattern(
 ): void {
 	const patch = pattern.patch!;
 	const { scale } = view;
+	const rot = view.rot ?? 0;
 	const [t1x, t1y] = patch.T1;
 	const [t2x, t2y] = patch.T2;
 	const det = t1x * t2y - t1y * t2x;
@@ -328,9 +375,11 @@ function drawPatchPattern(
 	ctx.fillRect(0, 0, width, height);
 	if (Math.abs(det) < 1e-9) return;
 
-	// Instance range: invert the basis at the view corners, pad by the patch's own diameter.
-	const halfW = width / (2 * scale);
-	const halfH = height / (2 * scale);
+	// Instance range: invert the basis at the corners of the ROTATED extent (the box a spun view sweeps),
+	// pad by the patch's own diameter.
+	const ext = rotatedExtent(width, height, rot);
+	const halfW = ext.w / (2 * scale);
+	const halfH = ext.h / (2 * scale);
 	const inv = (wx: number, wy: number): [number, number] => [
 		(wx * t2y - wy * t2x) / det,
 		(t1x * wy - t1y * wx) / det,
@@ -358,6 +407,8 @@ function drawPatchPattern(
 	n1 = Math.ceil(n1) + PAD;
 	// Runaway guard, same spirit as MAX_SPAN.
 	if ((m1 - m0 + 1) * (n1 - n0 + 1) > 4000) return;
+
+	beginViewRotation(ctx, width, height, rot);
 
 	const vx = (vi: number, ox: number, oy: number) => patch.verts[vi][0] + ox * t1x + oy * t2x;
 	const vy = (vi: number, ox: number, oy: number) => patch.verts[vi][1] + ox * t1y + oy * t2y;
@@ -492,6 +543,8 @@ function drawPatchPattern(
 			}
 		}
 	}
+
+	ctx.restore(); // the view rotation
 }
 
 /**

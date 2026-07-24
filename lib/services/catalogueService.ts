@@ -56,6 +56,15 @@ export interface CatalogueTiling {
 	// thumbnails to the three.js ico-freedraw renderer, the way `spherical` routes to the solid sphere.
 	// `renderCell` is a throwaway; `k` counts VERTEX orbits (see ReferenceTiling.sphericalFreedraw).
 	sphericalFreedraw?: { solid: string; k: number; pattern: import("@/lib/render/icoFreedraw").IcoPattern };
+	// Hyperbolic edge-system shelf only: Čtrnáct's freedraw moved to H². Its presence routes /play + the
+	// thumbnails to the developed-edge renderer (HyperbolicDeveloper.developEdges + drawDevelopedEdgePatch),
+	// the way `developed` routes to the Poincaré disk. `renderCell` is a throwaway; `k` counts vertex orbits.
+	hypEdges?: import("@/lib/freedraw/hyp-edges").HypEdgesPattern;
+	// Hyperbolic colored-tiling shelf only: an n-coloring of a regular {p,q} tiling. Its presence routes
+	// /play + thumbnails to the per-pixel disk shader in colors mode. `k` counts colored vertex orbits.
+	hypColors?: import("@/lib/colors/hyp-colors").HypColorsPattern;
+	// Spherical colored-tiling shelf only: an n-coloring of a Platonic solid → three.js SphericalColorsCanvas.
+	sphColors?: { solid: string; k: number; pattern: import("@/lib/colors/sph-colors").SphColorsPattern };
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
 	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their

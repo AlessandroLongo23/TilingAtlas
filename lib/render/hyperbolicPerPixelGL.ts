@@ -41,6 +41,11 @@ uniform float uHueOffset;  // global hue rotation (deg)
 uniform float uStrokePx;   // stroke width, device px
 uniform float uShowFill;   // 1 fill by tile, 0 flat background
 uniform float uTaper;      // 1 taper the stroke toward the rim
+uniform float uEdgeMode;   // 1 = edge-pattern field: R=orbit, G=drawn-edge dist, B=scaffold dist
+uniform float uScaffold;   // edge mode: 1 = also stroke the faint undrawn base-tiling grid
+uniform vec3 uStrokeSca;   // edge mode: scaffold stroke colour
+uniform float uColorsMode; // 1 = colored-tiling field (R=color index): fill from uPalette, all edges bold
+uniform vec3 uPalette[4];  // colors mode: RGB per color index (0=A, 1=B, …)
 out vec4 frag;
 
 vec2 cmul(vec2 a, vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x); }
@@ -107,6 +112,35 @@ void main() {
 	vec4 fn = fr.x < 0.5 ? (fr.y < 0.5 ? f00 : f01) : (fr.y < 0.5 ? f10 : f11);
 	float sides = floor(fn.r * 255.0 + 0.5);
 	float distByte = mix(mix(f00.g, f10.g, fr.x), mix(f01.g, f11.g, fr.x), fr.y);
+
+	// Edge-pattern mode: same reduce + field, different channels. R=merged-tile orbit (nearest, no
+	// interpolation across tiles), G=distance to the nearest DRAWN edge (bold), B=distance to the nearest
+	// UNDRAWN edge (the faint base-tiling scaffold). Depth is per-pixel (screen radius) — no barycenter is
+	// stored in edge mode. Two stroke layers: scaffold first, drawn edges on top.
+	if (uEdgeMode > 0.5) {
+		float orbit = floor(fn.r * 255.0 + 0.5);
+		// Colors mode dims LESS toward the rim than edge mode: the palette fills are pale (cream) and a
+		// heavy dim reads as muddy, so keep them legible while still giving the disk some depth.
+		float dim = uColorsMode > 0.5 ? 1.0 - 0.28 * r2 : 1.0 - 0.5 * r2;
+		vec3 tileCol = uColorsMode > 0.5
+			? uPalette[int(clamp(orbit, 0.0, 3.0))]
+			: hsb2rgb(mod((orbit + 2.0) * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0);
+		vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
+		float hypD = mix(mix(f00.g, f10.g, fr.x), mix(f01.g, f11.g, fr.x), fr.y) * 255.0 / ${EDGE_SCALE}.0;
+		float hypS = mix(mix(f00.b, f10.b, fr.x), mix(f01.b, f11.b, fr.x), fr.y) * 255.0 / ${EDGE_SCALE}.0;
+		float conf = (1.0 - r2) * uR * 0.5;
+		float edgePxD = hypD * conf;
+		float edgePxS = hypS * conf;
+		float taperF = uTaper > 0.5 ? pow(1.0 - r2, ${STROKE_GAMMA}) : 1.0;
+		float halfD = uStrokePx * 0.5 * (uTaper > 0.5 ? 3.0 * taperF : 1.0);        // drawn: bold
+		float halfS = uStrokePx * 0.5 * (uTaper > 0.5 ? 1.2 * taperF : 0.4);        // scaffold: thin
+		float amtD = uStrokePx > 0.01 ? 1.0 - smoothstep(halfD - 1.0, halfD + 1.0, edgePxD) : 0.0;
+		float amtS = (uScaffold > 0.5 && uStrokePx > 0.01) ? 1.0 - smoothstep(halfS - 1.0, halfS + 1.0, edgePxS) : 0.0;
+		vec3 col = mix(fill, uStrokeSca, amtS);
+		col = mix(col, uStroke, amtD);
+		frag = vec4(col, 1.0);
+		return;
+	}
 
 	// Islamic plain mode: the SAME fold + square, sampled from the Hankin field — face class nearest
 	// (like the tile id), construction-line distance manually bilinear, face barycenter for the depth
@@ -192,6 +226,15 @@ export interface PerPixelDrawParams {
 	/** Islamic background colours, linear [r,g,b] 0..1 (B side fields / C edge diamonds). */
 	islamicColB?: [number, number, number];
 	islamicColC?: [number, number, number];
+	/** Edge-pattern mode: the field is an edge-pattern bake (prepareEdgeShaderTiling). */
+	edgeMode?: boolean;
+	/** Edge mode: also stroke the faint undrawn base-tiling grid. */
+	scaffold?: boolean;
+	/** Colored-tiling mode: the field is a colors bake (R=color index) — fill from `palette`, every edge
+	 *  bold. Set edgeMode too (colors reuses the edge field format). */
+	colorsMode?: boolean;
+	/** Colors mode: RGB (0..1) per color index. Up to 4 entries; short arrays are padded with the last. */
+	palette?: [number, number, number][];
 }
 
 export class HyperbolicPerPixelRenderer {
@@ -228,6 +271,7 @@ export class HyperbolicPerPixelRenderer {
 			"uCenter", "uR", "uView", "uGens", "uNumGens", "uField", "uRTex", "uRIn", "uRes", "uBg",
 			"uStroke", "uHueOffset", "uStrokePx", "uShowFill", "uTaper",
 			"uIslamicField", "uIslamicOn", "uResI", "uColB", "uColC",
+			"uEdgeMode", "uScaffold", "uStrokeSca", "uColorsMode", "uPalette",
 		]) {
 			this.u[n] = gl.getUniformLocation(prog, n);
 		}
@@ -325,6 +369,22 @@ export class HyperbolicPerPixelRenderer {
 			gl.uniform3f(this.u.uColB, cb[0], cb[1], cb[2]);
 			gl.uniform3f(this.u.uColC, cc[0], cc[1], cc[2]);
 		}
+		gl.uniform1f(this.u.uEdgeMode, p.edgeMode ? 1 : 0);
+		gl.uniform1f(this.u.uScaffold, p.scaffold ? 1 : 0);
+		gl.uniform1f(this.u.uColorsMode, p.colorsMode ? 1 : 0);
+		if (p.colorsMode && p.palette && p.palette.length) {
+			const pal = new Float32Array(4 * 3);
+			for (let i = 0; i < 4; i++) {
+				const c = p.palette[Math.min(i, p.palette.length - 1)];
+				pal[i * 3] = c[0];
+				pal[i * 3 + 1] = c[1];
+				pal[i * 3 + 2] = c[2];
+			}
+			gl.uniform3fv(this.u.uPalette, pal);
+		}
+		// scaffold stroke: a muted line, lighter than the bold drawn stroke, per theme
+		const sca = p.dark ? [0x4a / 255, 0x44 / 255, 0x36 / 255] : [0xc9 / 255, 0xc2 / 255, 0xb4 / 255];
+		gl.uniform3f(this.u.uStrokeSca, sca[0], sca[1], sca[2]);
 
 		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D, this.texIslamic);

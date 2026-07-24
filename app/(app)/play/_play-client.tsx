@@ -7,7 +7,10 @@ import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
+import { HyperbolicEdgesCanvas } from "@/components/hyperbolic-edges-canvas";
+import { HyperbolicColorsCanvas } from "@/components/hyperbolic-colors-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
+import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
@@ -28,14 +31,24 @@ import {
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
 	loadSphericalFreedrawAtlas,
+	loadHyperbolicEdgesAtlas,
+	loadHyperbolicEdgesShard,
+	loadHyperbolicColorsAtlas,
+	loadHyperbolicColorsShard,
+	loadSphericalColorsAtlas,
+	loadSphericalColorsShard,
 	referenceToCatalogue,
 	tileClassOf,
 	compareCatalogueDisplayOrder,
 	geometryOf,
 	type Geometry,
+	type ReferenceTiling,
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
 } from "@/lib/services/referenceAtlas";
+import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
+import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
+import { sphColorsLazyShardsForK, SPH_COLORS_SOLIDS } from "@/lib/colors/sph-colors";
 import { resolveAlphaDegs } from "@/lib/utils/paramCell";
 import { parsePlayState, serializePlayState } from "@/lib/services/playUrlState";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
@@ -297,6 +310,82 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 	}, [geometry, requestedKey]);
 
+	// Hyperbolic edge systems: same lazy pattern as spherical freedraw. The eager k ≤ 9 slice (~3.6 MB)
+	// loads once the Hyperbolic geometry is entered (or a deep-link to an "he…" key arrives); the dense
+	// high-k shards (k = 12/13/14) are pulled per-k by loadHyperbolicEdgesShard when their k row is opened.
+	useEffect(() => {
+		if (geometry !== "hyperbolic" && !requestedKey?.startsWith("he")) return;
+		let alive = true;
+		const merge = (data: Awaited<ReturnType<typeof loadHyperbolicEdgesAtlas>>) => {
+			if (!alive || data.length === 0) return;
+			setRefList((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.canonicalKey));
+				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+				return add.length ? [...base, ...add] : base;
+			});
+		};
+		loadHyperbolicEdgesAtlas().then(merge).catch(() => {});
+		// A deep-link to a lazy-shard he… key (he667-13-…, he46-2-…) also needs its shard fetched so the key
+		// resolves. Attempt only when that (base, k) is actually a lazy shard.
+		const m = requestedKey?.match(/^he(\d+)-(\d+)-/);
+		if (m && hypEdgesLazyShardsForK(Number(m[2])).some((s) => s.base === m[1])) {
+			loadHyperbolicEdgesShard(m[1], Number(m[2])).then(merge).catch(() => {});
+		}
+		return () => {
+			alive = false;
+		};
+	}, [geometry, requestedKey]);
+
+	// Colored tilings in H² and on S² — the same lazy pattern. The per-base/solid eager slices load once the
+	// matching geometry is entered (or a deep-link "hc…"/"sc…" key arrives); dense shards load per-k below.
+	useEffect(() => {
+		if (geometry !== "hyperbolic" && !requestedKey?.startsWith("hc")) return;
+		let alive = true;
+		const merge = (data: ReferenceTiling[]) => {
+			if (!alive || data.length === 0) return;
+			setRefList((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.canonicalKey));
+				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+				return add.length ? [...base, ...add] : base;
+			});
+		};
+		loadHyperbolicColorsAtlas().then(merge).catch(() => {});
+		const m = requestedKey?.match(/^hc(\d+)-(\d+)-/);
+		if (m && hypColorsLazyShardsForK(Number(m[2])).some((s) => s.base === m[1])) {
+			loadHyperbolicColorsShard(m[1], Number(m[2])).then(merge).catch(() => {});
+		}
+		return () => {
+			alive = false;
+		};
+	}, [geometry, requestedKey]);
+
+	useEffect(() => {
+		if (geometry !== "spherical" && !requestedKey?.startsWith("sc")) return;
+		let alive = true;
+		const merge = (data: ReferenceTiling[]) => {
+			if (!alive || data.length === 0) return;
+			setRefList((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.canonicalKey));
+				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+				return add.length ? [...base, ...add] : base;
+			});
+		};
+		loadSphericalColorsAtlas().then(merge).catch(() => {});
+		const m = requestedKey?.match(/^sc([a-z]+)-(\d+)-/);
+		if (m) {
+			const solid = SPH_COLORS_SOLIDS.find((s) => s.id.startsWith(m![1]));
+			if (solid && sphColorsLazyShardsForK(Number(m[2])).some((s) => s.solid === solid.id)) {
+				loadSphericalColorsShard(solid.id, Number(m[2])).then(merge).catch(() => {});
+			}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [geometry, requestedKey]);
+
 	// Exact wallpaper-symmetry analysis of the selected tiling (fetched cell_codec → analyzeSymmetry),
 	// memoized per canonicalKey; drives the two canvas overlays. Null while loading / for tilings with
 	// no exact cell.
@@ -423,6 +512,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Set the store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off
 	// Euclidean-only render modes so their now-hidden sidebar controls can't leave a stale render behind.
 	const isHyperbolic = !!selected?.developed;
+	// A hyperbolic edge-system pattern is Čtrnáct's freedraw moved to H². Like the developed tiling it rides
+	// the `hyperbolic` store flag (blank the flat p5 layer, disable zoom) but routes to its own 2D
+	// developed-edge canvas instead of the per-pixel shader.
+	const isHyperbolicEdges = !!selected?.hypEdges;
+	// A hyperbolic COLORED tiling (colors class, hyperbolic geometry): rides the `hyperbolic` store flag like
+	// the developed tilings and edge systems, but routes to the per-pixel disk shader in colors mode.
+	const isHyperbolicColors = !!selected?.hypColors;
+	// A spherical COLORED tiling (colors class, spherical geometry): a three.js overlay like the sphere/ico.
+	const isSphColors = !!selected?.sphColors;
 	// A spherical (Platonic {p,q}) tiling swaps the flat p5 renderer for the three.js sphere view. Set the
 	// store flag (canvas.tsx reads it to blank the flat layer) and force off the other render modes so their
 	// now-hidden sidebar controls can't leave a stale render behind. The sphere renderer owns its own input.
@@ -479,7 +577,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		// Spherical freedraw rides the same flag: it too is a three.js overlay that must blank the flat p5 layer.
-		if (isSpherical || isSphericalFreedraw) {
+		if (isSpherical || isSphericalFreedraw || isSphColors) {
 			// Islamic is NOT force-cleared here — the sphere canvas renders the construction as great-circle
 			// ribbons, and polygonClassSupportsIslamic now admits the spherical class, so the toggle persists.
 			cfg.set({
@@ -492,15 +590,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		} else if (cfg.spherical) {
 			cfg.set({ spherical: false });
 		}
-	}, [isSpherical, isSphericalFreedraw, selected]);
+	}, [isSpherical, isSphericalFreedraw, isSphColors, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
-		if (isHyperbolic) {
+		// Hyperbolic edges + colors ride the same flag as the developed tilings: blank the flat layer, disable zoom.
+		if (isHyperbolic || isHyperbolicEdges || isHyperbolicColors) {
 			cfg.set({ hyperbolic: true, circlePacking: false, isTilingRegularOnly: false });
 		} else if (cfg.hyperbolic) {
 			cfg.set({ hyperbolic: false });
 		}
-	}, [isHyperbolic, selected]);
+	}, [isHyperbolic, isHyperbolicEdges, isHyperbolicColors, selected]);
 
 	// useCatalogueSelection seeds selection at mount; the atlas list arrives AFTER mount (async fetch),
 	// so apply the requested key (or the first entry) once the atlas lands.
@@ -604,6 +703,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
 				c.set({ sphericalFreedrawGrid: !c.sphericalFreedrawGrid });
+				return;
+			}
+			// Hyperbolic edge system: G toggles the base-tiling scaffold (the faint undrawn edges), the same
+			// letter every other freedraw scaffold uses. Its canvas reads freedrawScaffold, so flip that. This
+			// is a distinct branch because a hyp-edge pattern lives in the `hypEdges` field, not `freedraw`, so
+			// the FREEDRAW_TOGGLES table above never sees it.
+			if (!!selected?.hypEdges && (e.key === "g" || e.key === "G")) {
+				e.preventDefault();
+				const c = useConfiguration.getState();
+				c.set({ freedrawScaffold: !c.freedrawScaffold });
 				return;
 			}
 			if (!!selected?.spherical && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {
@@ -736,6 +845,20 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
 					// contract as freedraw (no polygon cell, owns its pan/zoom).
 					<ColorsPlayCanvas pattern={selected.colors} />
+				) : selected?.sphColors ? (
+					// Spherical colored tiling: an n-coloring of a Platonic solid on its own three.js canvas with
+					// ArcballControls, the exact sibling of the ico-freedraw sphere. Mode (polyhedron/sphere) comes
+					// from the View options tab; it owns its own pointer input.
+					<SphericalColorsCanvas pattern={selected.sphColors.pattern} mode={sphericalFreedrawMode} />
+				) : selected?.hypColors ? (
+					// Hyperbolic colored tiling: an n-coloring of a {p,q} tiling, the per-pixel disk shader in colors
+					// mode — fills to the rim, infinite drift-free pan, GPU, exactly like the edge systems.
+					<HyperbolicColorsCanvas pattern={selected.hypColors} />
+				) : selected?.hypEdges ? (
+					// Hyperbolic edge system: Čtrnáct's freedraw in H². Re-develops the darts under the view and
+					// draws the merged-tile fill + drawn/scaffold strokes, with the same store-driven pan as the
+					// developed tiling. Always 2D (the edge field is not baked for the per-pixel renderer).
+					<HyperbolicEdgesCanvas pattern={selected.hypEdges} />
 				) : selected?.developed ? (
 					// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
 					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary

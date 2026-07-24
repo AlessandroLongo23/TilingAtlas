@@ -26,9 +26,9 @@ export interface IcoPattern {
 	vorbit?: number[];
 }
 
-type V3 = [number, number, number];
+export type V3 = [number, number, number];
 
-function nrm(a: V3): V3 {
+export function nrm(a: V3): V3 {
 	const n = Math.hypot(a[0], a[1], a[2]) || 1;
 	return [a[0] / n, a[1] / n, a[2] / n];
 }
@@ -61,7 +61,7 @@ export function tileColor(tileIndex: number, tileCount: number, hueOffset = 0): 
 }
 
 // A great-circle arc between two unit vertices (slerp), radius `radius`, `extend` overshoots each end.
-function greatCircleArc(u: V3, v: V3, segments: number, radius: number, extend = 0): Float32Array {
+export function greatCircleArc(u: V3, v: V3, segments: number, radius: number, extend = 0): Float32Array {
 	const out = new Float32Array((segments + 1) * 3);
 	const omega = Math.acos(Math.max(-1, Math.min(1, dot(u, v))));
 	const sinOmega = Math.sin(omega);
@@ -90,7 +90,7 @@ function greatCircleArc(u: V3, v: V3, segments: number, radius: number, extend =
 }
 
 // A straight chord between two unit vertices (the flat solid's real edge), extended along the chord.
-function straightArc(u: V3, v: V3, radius: number, extend = 0): Float32Array {
+export function straightArc(u: V3, v: V3, radius: number, extend = 0): Float32Array {
 	const a: V3 = [u[0] * radius, u[1] * radius, u[2] * radius];
 	const b: V3 = [v[0] * radius, v[1] * radius, v[2] * radius];
 	const d = nrm([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
@@ -145,7 +145,7 @@ function pushSphericalTri(positions: number[], normals: number[], colors: number
 // A flat polygon face (any ring length), fan-triangulated with the polygon's single OUTWARD plane
 // normal. Winding is irrelevant: the material is DoubleSide and every vertex carries this explicit
 // normal, so the facet shades flat and correctly regardless of ring orientation.
-function pushFlatFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3) {
+export function pushFlatFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3) {
 	const P = ring.map((v) => [v[0] * radius, v[1] * radius, v[2] * radius] as V3);
 	let n = nrm(cross(sub(P[1], P[0]), sub(P[2], P[0])));
 	if (dot(n, P[0]) < 0) n = [-n[0], -n[1], -n[2]]; // outward
@@ -161,7 +161,7 @@ function pushFlatFace(positions: number[], normals: number[], colors: number[], 
 // A curved spherical face (any ring length): fan-triangulate on the unit sphere, each fan triangle a
 // subdivided spherical patch. Fan triangles share the diagonal from ring[0], evaluated identically on
 // both sides, so no cracks.
-function pushSphericalFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3) {
+export function pushSphericalFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3) {
 	const U = ring.map(nrm);
 	// outward test on the flat polygon; if inward, reverse so sub-triangles wind outward
 	let fn = cross(sub(U[1], U[0]), sub(U[2], U[0]));

@@ -6,8 +6,10 @@
 
 import { coset } from "@/lib/freedraw/pattern";
 import {
+	beginViewRotation,
 	drawLattice,
 	drawOrbitDots,
+	rotatedExtent,
 	visibleSpan,
 	type FreedrawView,
 } from "@/lib/freedraw/render";
@@ -65,6 +67,44 @@ export function cellFill(choice: ColorChoice, dark: boolean, alpha = 1): string 
 	return dark ? `hsl(${choice} 42% 58% / ${alpha})` : `hsl(${choice} 48% 48% / ${alpha})`;
 }
 
+// The (h, s%, l%) of one palette slot per theme — the SAME numbers cellFill bakes into its hsl strings,
+// factored out so the non-Euclidean colored shelves (hyperbolic disk shader, spherical three.js) fill by
+// the exact colors the Euclidean /colors canvas uses. Every colored tiling across the atlas therefore
+// shares one palette and one palette control (configuration.colorsPalette).
+function cellHsl(choice: ColorChoice, dark: boolean): [number, number, number] {
+	if (choice === "cream") return dark ? [42, 18, 24] : [42, 52, 88];
+	if (choice === "dark") return dark ? [222, 14, 21] : [222, 20, 14];
+	return dark ? [choice, 42, 58] : [choice, 48, 48];
+}
+
+function hslToRgb255(h: number, s: number, l: number): [number, number, number] {
+	const S = s / 100;
+	const L = l / 100;
+	const c = (1 - Math.abs(2 * L - 1)) * S;
+	const hp = (((h % 360) + 360) % 360) / 60;
+	const x = c * (1 - Math.abs((hp % 2) - 1));
+	let r = 0;
+	let g = 0;
+	let b = 0;
+	if (hp < 1) [r, g, b] = [c, x, 0];
+	else if (hp < 2) [r, g, b] = [x, c, 0];
+	else if (hp < 3) [r, g, b] = [0, c, x];
+	else if (hp < 4) [r, g, b] = [0, x, c];
+	else if (hp < 5) [r, g, b] = [x, 0, c];
+	else [r, g, b] = [c, 0, x];
+	const m = L - c / 2;
+	return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+}
+
+/** The palette a pattern with `n` colors renders through, as RGB 0..255 per color index — the shared
+ *  source for the hyperbolic disk shader (÷255 → 0..1) and the spherical three.js builder. */
+export function paletteRgb255(n: number, palette: readonly ColorChoice[] | undefined, dark: boolean): [number, number, number][] {
+	return paletteFor(n, palette).map((c) => {
+		const [h, s, l] = cellHsl(c, dark);
+		return hslToRgb255(h, s, l);
+	});
+}
+
 // While the orbit dots are up the fill dims, same move (and same constant) as the freedraw canvas.
 const ORBIT_MODE_FILL_ALPHA = 0.4;
 
@@ -88,17 +128,25 @@ export function drawColors(
 		return;
 	}
 	const { scale } = view;
+	const rot = view.rot ?? 0;
 	const tri = colorsGridOf(p) === "triangle";
 	// Lattice basis: square identity, triangle with e2 at 60° — the freedraw map exactly.
 	const bx = tri ? 0.5 : 0;
 	const by = tri ? SQRT3_2 : 1;
 	const px = (x: number, y: number) => width / 2 + (x + bx * y - view.cx) * scale;
 	const py = (y: number) => height / 2 - (by * y - view.cy) * scale;
-	const span = visibleSpan(width, height, view, bx, by);
+	// Span against the rotated extent — see rotatedExtent: the maths stays upright, the context turns.
+	const ext = rotatedExtent(width, height, rot);
+	const span = visibleSpan(ext.w, ext.h, view, bx, by);
+
+	// The DPR the caller left on the transform, read BEFORE the view rotation composes into it (after
+	// which .a is dpr·cos θ, and 0 at a quarter turn). The square path's pixel snapping below needs it.
+	const dpr = ctx.getTransform().a || 1;
 
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = style.dark ? "#12151a" : "#ffffff";
 	ctx.fillRect(0, 0, width, height);
+	beginViewRotation(ctx, width, height, rot);
 
 	const alpha = style.showVertices ? ORBIT_MODE_FILL_ALPHA : 1;
 	const pal = paletteFor(colorCountOf(p), style.palette);
@@ -112,7 +160,8 @@ export function drawColors(
 		// thumbnail cell sizes that read as the grid sliding off the colors) and the strokes sit
 		// exactly on the fill boundaries at every zoom and DPR. Square-only: the skewed triangle basis
 		// has no axis-aligned lattice to snap to, so that path keeps freedraw's hairline-stroke trick.
-		const dpr = ctx.getTransform().a || 1;
+		// Under a view rotation the snapped grid is no longer the device grid (nothing is), but the
+		// coordinates stay shared between the two passes, which is what keeps the seams closed.
 		const snap = (v: number) => Math.round(v * dpr) / dpr;
 		const xs: number[] = [];
 		const ys: number[] = [];
@@ -217,6 +266,8 @@ export function drawColors(
 
 	if (style.showVertices)
 		drawOrbitDots(ctx, p, view, style, px, py, bx, by, span, hover, orbitScales);
+
+	ctx.restore(); // the view rotation
 }
 
 // Stronger than freedraw's scaffold (these are tile edges, not construction lines), but still
@@ -240,6 +291,7 @@ function drawColorsPatch(
 ): void {
 	const patch = p.patch!;
 	const { scale } = view;
+	const rot = view.rot ?? 0;
 	const [t1x, t1y] = patch.T1;
 	const [t2x, t2y] = patch.T2;
 	const det = t1x * t2y - t1y * t2x;
@@ -251,9 +303,10 @@ function drawColorsPatch(
 	ctx.fillRect(0, 0, width, height);
 	if (Math.abs(det) < 1e-9) return;
 
-	// Instance range: invert the basis at the view corners, pad by the patch's own diameter.
-	const halfW = width / (2 * scale);
-	const halfH = height / (2 * scale);
+	// Instance range: invert the basis at the corners of the rotated extent, pad by the patch's diameter.
+	const ext = rotatedExtent(width, height, rot);
+	const halfW = ext.w / (2 * scale);
+	const halfH = ext.h / (2 * scale);
 	const inv = (wx: number, wy: number): [number, number] => [
 		(wx * t2y - wy * t2x) / det,
 		(t1x * wy - t1y * wx) / det,
@@ -281,6 +334,8 @@ function drawColorsPatch(
 	n1 = Math.ceil(n1) + PAD;
 	// Runaway guard, same spirit as the fixed grids' MAX_SPAN.
 	if ((m1 - m0 + 1) * (n1 - n0 + 1) > 4000) return;
+
+	beginViewRotation(ctx, width, height, rot);
 
 	const vx = (vi: number, ox: number, oy: number) => patch.verts[vi][0] + ox * t1x + oy * t2x;
 	const vy = (vi: number, ox: number, oy: number) => patch.verts[vi][1] + ox * t1y + oy * t2y;
@@ -415,6 +470,8 @@ function drawColorsPatch(
 			}
 		}
 	}
+
+	ctx.restore(); // the view rotation
 }
 
 // The freedraw orbit-dot hue walk (vertexColour there), restated locally: golden-angle hues against

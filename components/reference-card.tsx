@@ -5,6 +5,9 @@ import { Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
+import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnail";
+import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbnail";
+import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
@@ -149,6 +152,12 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 			>
 				{tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
+				) : tiling.sphColors ? (
+					<SphericalColorsThumbnail pattern={tiling.sphColors.pattern} mode="polyhedron" />
+				) : tiling.hypColors ? (
+					<HyperbolicColorsThumbnail pattern={tiling.hypColors} />
+				) : tiling.hypEdges ? (
+					<HyperbolicEdgesThumbnail pattern={tiling.hypEdges} />
 				) : tiling.freedraw ? (
 					<FreedrawThumbnail pattern={tiling.freedraw} />
 				) : tiling.colors ? (
@@ -160,7 +169,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				)}
 				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
 				    along with the two non-Euclidean renderers. */}
-				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw && !tiling.colors ? (
+				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw && !tiling.colors && !tiling.hypEdges ? (
 					<button
 						type="button"
 						onClick={handleScreenshot}

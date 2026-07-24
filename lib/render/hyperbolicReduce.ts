@@ -14,7 +14,7 @@
 // no magic constants tuned to k=1 tilings.
 
 import { type Complex, type Su11 } from "@/lib/render/hyperbolic";
-import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
+import { HyperbolicDeveloper, type Darts, type DevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopClient";
 import {
 	buildDirichletDomain,
 	foldIntoDomain,
@@ -329,6 +329,172 @@ export function prepareShaderTiling(
 		console.error(
 			`hyperbolic reducer: ${unresolvedDeep} unresolved texels DEEP inside the field for ${meta.id} — bake coverage bug`,
 		);
+	}
+
+	return {
+		gens,
+		field: { data, res, rTex },
+		rInEu: dom.rInEu,
+		domain: dom,
+		bake: { unresolved: unresolvedIdx.length, unresolvedDeep, res },
+	};
+}
+
+// ----------------------------------------------------------------------------- edge-pattern field
+interface BakeEdgeTile {
+	fillPoly: [number, number][]; // all sides tessellated — for point-in-tile
+	drawnSegs: number[]; // flat [ax,ay,bx,by …] of the DRAWN sides (bold stroke)
+	scaffoldSegs: number[]; // flat […] of the UNDRAWN sides (faint grid stroke)
+	orbit: number; // merged-tile orbit — the fill hue key
+	x0: number;
+	x1: number;
+	y0: number;
+	y1: number;
+}
+
+/**
+ * The edge-pattern twin of prepareShaderTiling. The Dirichlet reduction is IDENTICAL (same darts, same
+ * deck group, so the per-pixel reducer folds and fills to the rim, infinitely, exactly as for the plain
+ * hyperbolic shelf). Only the field changes: instead of (tile side count, one edge distance, barycenter),
+ * each texel carries
+ *   R = merged-tile orbit (fill hue),
+ *   G = hyperbolic distance to the nearest DRAWN edge of its base face (the bold tile boundary),
+ *   B = hyperbolic distance to the nearest UNDRAWN edge (the faint base-tiling scaffold),
+ *   A = 255 (unused).
+ * Depth shading is per-pixel (screen radius) in edge mode, so no barycenter needs storing. The drawn /
+ * undrawn distances are each continuous across face boundaries (a shared edge is the same kind on both
+ * sides), so the shader's bilinear read of G/B is sound just as it is for the plain field.
+ */
+export function prepareEdgeShaderTiling(
+	darts: Darts,
+	edge: number,
+	meta: { id: string; name: string; config: string; edge: number },
+	opts: { fieldRes?: number; colors?: boolean } = {},
+): ShaderTiling | null {
+	const dom = buildDirichletDomain(darts, edge);
+	if (dom.certified !== true) {
+		console.error(`hyperbolic edge reducer: Dirichlet certificate FAILED for ${meta.id}: ${dom.reason}`);
+		return null;
+	}
+
+	let rMaxTile = 0;
+	for (const p of darts.lvert) if (p >= 3) rMaxTile = Math.max(rMaxTile, Math.asinh(Math.sinh(edge / 2) / Math.sin(Math.PI / p)));
+	const rTex = Math.tanh((dom.RD + COLLAR) / 2);
+	const boundEu = Math.min(0.9995, Math.tanh((dom.RD + COLLAR + 2 * rMaxTile + 0.2) / 2));
+	const dev = new HyperbolicDeveloper(darts, edge, { deepDedup: true });
+	// Colors: faceOrbit carries the COLOR index and every edge is a tile boundary (all in drawnSegs). The
+	// bake is otherwise byte-identical, so the same field format serves both — the shader keys R on a
+	// palette in colors mode instead of a hue.
+	const view0 = { a: { x: 1, y: 0 }, b: { x: 0, y: 0 } };
+	const patch: DevelopedEdgePatch = opts.colors
+		? dev.developColors(meta, view0, boundEu, 400_000)
+		: dev.developEdges(meta, view0, boundEu, 400_000);
+
+	// per-side drawn flag: an edge's two endpoints key its drawn bit
+	const drawnOf = new Map<string, number>();
+	for (const [a, b, drawn] of patch.edges) drawnOf.set(a < b ? `${a},${b}` : `${b},${a}`, drawn);
+
+	const tiles: BakeEdgeTile[] = [];
+	for (let fi = 0; fi < patch.faces.length; fi++) {
+		const ring = patch.faces[fi];
+		const fillPoly: [number, number][] = [];
+		const drawnSegs: number[] = [];
+		const scaffoldSegs: number[] = [];
+		for (let i = 0; i < ring.length; i++) {
+			const u = ring[i];
+			const v = ring[(i + 1) % ring.length];
+			const a = { x: patch.vertices[u][0], y: patch.vertices[u][1] };
+			const b = { x: patch.vertices[v][0], y: patch.vertices[v][1] };
+			const pts = geodesicPts(a, b, SEG);
+			const drawn = drawnOf.get(u < v ? `${u},${v}` : `${v},${u}`) === 1;
+			for (let k = 0; k < pts.length - 1; k++) {
+				fillPoly.push([pts[k].x, pts[k].y]);
+				const seg = drawn ? drawnSegs : scaffoldSegs;
+				seg.push(pts[k].x, pts[k].y, pts[k + 1].x, pts[k + 1].y);
+			}
+		}
+		let x0 = Infinity;
+		let x1 = -Infinity;
+		let y0 = Infinity;
+		let y1 = -Infinity;
+		for (const [x, y] of fillPoly) {
+			x0 = Math.min(x0, x);
+			x1 = Math.max(x1, x);
+			y0 = Math.min(y0, y);
+			y1 = Math.max(y1, y);
+		}
+		tiles.push({ fillPoly, drawnSegs, scaffoldSegs, orbit: patch.faceOrbit[fi], x0, x1, y0, y1 });
+	}
+
+	const GRID = 64;
+	const grid: number[][] = Array.from({ length: GRID * GRID }, () => []);
+	const bin = (v: number) => Math.max(0, Math.min(GRID - 1, Math.floor(((v + 1) / 2) * GRID)));
+	for (let ti = 0; ti < tiles.length; ti++) {
+		const t = tiles[ti];
+		for (let gy = bin(t.y0); gy <= bin(t.y1); gy++) for (let gx = bin(t.x0); gx <= bin(t.x1); gx++) grid[gy * GRID + gx].push(ti);
+	}
+	const locate = (x: number, y: number): number => {
+		const cell = grid[bin(y) * GRID + bin(x)];
+		for (const ti of cell) {
+			const t = tiles[ti];
+			if (x < t.x0 || x > t.x1 || y < t.y0 || y > t.y1) continue;
+			if (pointInPoly(t.fillPoly, x, y)) return ti;
+		}
+		return -1;
+	};
+	const nearest = (segs: number[], px: number, py: number): number => {
+		let best = Infinity;
+		for (let k = 0; k < segs.length; k += 4) best = Math.min(best, distSq(px, py, segs[k], segs[k + 1], segs[k + 2], segs[k + 3]));
+		return best;
+	};
+
+	const gensSu = dom.gens;
+	const gens = new Float32Array(gensSu.length * 4);
+	for (let i = 0; i < gensSu.length; i++) {
+		gens[i * 4] = gensSu[i].a.x;
+		gens[i * 4 + 1] = gensSu[i].a.y;
+		gens[i * 4 + 2] = gensSu[i].b.x;
+		gens[i * 4 + 3] = gensSu[i].b.y;
+	}
+
+	const res = opts.fieldRes ?? Math.max(384, Math.min(2048, Math.ceil((4 * rTex) / ((1 - rTex * rTex) * 0.008))));
+	const data = new Uint8Array(res * res * 4);
+	const resolved = new Uint8Array(res * res);
+	const unresolvedIdx: number[] = [];
+	let unresolvedDeep = 0;
+	const deepR = 0.95 * rTex;
+	const distByte = (dsq: number, conf: number) => (dsq === Infinity ? 255 : Math.min(255, Math.round(Math.sqrt(dsq) * conf * EDGE_SCALE)));
+	for (let j = 0; j < res; j++) {
+		const y = ((j + 0.5) / res) * 2 * rTex - rTex;
+		for (let i = 0; i < res; i++) {
+			const x = ((i + 0.5) / res) * 2 * rTex - rTex;
+			const o = (j * res + i) * 4;
+			let px = x;
+			let py = y;
+			let ti = x * x + y * y < 0.9995 ? locate(px, py) : -1;
+			if (ti < 0 && x * x + y * y < 0.9995) {
+				const { w } = foldIntoDomain(gensSu, { x, y }, dom.rInEu);
+				px = w.x;
+				py = w.y;
+				ti = locate(px, py);
+			}
+			if (ti < 0) {
+				unresolvedIdx.push(o);
+				if (x * x + y * y < deepR * deepR) unresolvedDeep++;
+				continue;
+			}
+			const t = tiles[ti];
+			const conf = 2 / Math.max(1 - (px * px + py * py), 1e-6);
+			data[o] = Math.min(255, t.orbit);
+			data[o + 1] = distByte(nearest(t.drawnSegs, px, py), conf);
+			data[o + 2] = distByte(nearest(t.scaffoldSegs, px, py), conf);
+			data[o + 3] = 255;
+			resolved[o / 4] = 1;
+		}
+	}
+	fillNearestResolved(data, resolved, unresolvedIdx, res);
+	if (unresolvedDeep > 0) {
+		console.error(`hyperbolic edge reducer: ${unresolvedDeep} unresolved texels DEEP inside the field for ${meta.id} — bake coverage bug`);
 	}
 
 	return {

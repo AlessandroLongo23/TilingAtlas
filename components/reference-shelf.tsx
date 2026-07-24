@@ -14,6 +14,9 @@ import { ReferenceCard } from "@/components/reference-card";
 import { cn } from "@/lib/utils/cn";
 import type { ColorsGrid } from "@/lib/colors/pattern";
 import type { FreedrawGrid } from "@/lib/freedraw/pattern";
+import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
+import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
+import { sphColorsLazyShardsForK } from "@/lib/colors/sph-colors";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
 import {
@@ -21,6 +24,12 @@ import {
 	loadReferenceAtlasShard,
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
+	loadHyperbolicEdgesAtlas,
+	loadHyperbolicEdgesShard,
+	loadHyperbolicColorsAtlas,
+	loadHyperbolicColorsShard,
+	loadSphericalColorsAtlas,
+	loadSphericalColorsShard,
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
@@ -71,6 +80,15 @@ const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = [
 		label: TILE_CLASS_LABEL[c].short,
 	})),
 ];
+// Chip labels for the non-Euclidean class facet, where the geometry name is already the header: under
+// Hyperbolic, "Hyperbolic" would be a redundant chip, so the developed uniform tilings read as "Uniform"
+// and Čtrnáct's edge patterns (the freedraw class here) as "Edge patterns".
+const NONEUC_CLASS_LABEL: Partial<Record<TileClass, string>> = {
+	hyperbolic: "Uniform",
+	freedraw: "Edge patterns",
+	colors: "Colorings",
+};
+const noneucClassLabel = (c: TileClass): string => NONEUC_CLASS_LABEL[c] ?? TILE_CLASS_LABEL[c].short;
 const GEOMETRY_OPTIONS: { value: Geometry; label: string }[] = GEOMETRY_ORDER.map((g) => ({
 	value: g,
 	label: GEOMETRY_LABEL[g],
@@ -539,6 +557,10 @@ export function ReferenceShelf() {
 	// records into `tilings`, so every derived facet (k chips, filtered, pagination) picks them up. A
 	// failed shard is sticky (won't refetch until Clear) and surfaces an inline error by the count.
 	useEffect(() => {
+		// Euclidean-only: the k≥8 shards are reference-atlas-k{k}.json (Čtrnáct Euclidean). Off the plane the
+		// same k selects hyperbolic-edge shards instead (below), so don't fetch a 15–73 MB Euclidean file for
+		// a hyperbolic view that would filter every record out by geometry.
+		if (filters.geometry && filters.geometry !== "euclidean") return;
 		const k = filters.kValue;
 		if (k == null || k < 8) return;
 		if (loadedShards.has(k) || loadingShards.has(k) || shardErrors.has(k)) return;
@@ -557,6 +579,82 @@ export function ReferenceShelf() {
 				}),
 			);
 	}, [filters.kValue, loadedShards, loadingShards, shardErrors]);
+
+	// Hyperbolic edge systems (freedraw class, hyperbolic geometry): lazy like the k≥8 shards, but off the
+	// plane. The eager k ≤ 9 slice loads once the Hyperbolic geometry is entered; the dense k = 12/13/14
+	// shards load when their k chip is selected. All merged into `tilings` (deduped by id) so every derived
+	// facet — class chips, k chips, counts — picks them up.
+	const [heLoaded, setHeLoaded] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		if (filters.geometry !== "hyperbolic") return;
+		// Wait for the base atlas: its own load does setTilings(d) (a REPLACE), so a merge that landed first
+		// would be clobbered. Gating on `tilings` and depending on it re-runs the merge once the base is in.
+		if (!tilings) return;
+		let alive = true;
+		const merge = (data: ReferenceTiling[], token: string) => {
+			if (!alive || !data.length) return;
+			setTilings((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.id));
+				const add = data.filter((t) => !have.has(t.id));
+				return add.length ? [...base, ...add] : base;
+			});
+			setHeLoaded((s) => new Set(s).add(token));
+		};
+		if (!heLoaded.has("eager")) loadHyperbolicEdgesAtlas().then((d) => merge(d, "eager")).catch(() => {});
+		// Selecting a k chip pulls every base's lazy (base, k) shard for that k — 6.6.7's k=12/13, the
+		// high-valence bases' k=2.
+		const k = filters.kValue;
+		if (k != null) {
+			for (const { base } of hypEdgesLazyShardsForK(k)) {
+				const token = `${base}-${k}`;
+				if (!heLoaded.has(token)) loadHyperbolicEdgesShard(base, k).then((d) => merge(d, token)).catch(() => {});
+			}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [filters.geometry, filters.kValue, heLoaded, tilings]);
+
+	// Colored tilings in H² and on S² — the same lazy shape as the edge systems. The eager per-base/solid
+	// slices load once their geometry is entered (making the "Colorings" class chip appear); dense shards load
+	// when their k chip is selected. Merged into `tilings` (deduped by id).
+	const [colLoaded, setColLoaded] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		const geo = filters.geometry;
+		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
+		let alive = true;
+		const merge = (data: ReferenceTiling[], token: string) => {
+			if (!alive || !data.length) return;
+			setTilings((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.id));
+				const add = data.filter((t) => !have.has(t.id));
+				return add.length ? [...base, ...add] : base;
+			});
+			setColLoaded((s) => new Set(s).add(token));
+		};
+		const k = filters.kValue;
+		if (geo === "hyperbolic") {
+			if (!colLoaded.has("hc-eager")) loadHyperbolicColorsAtlas().then((d) => merge(d, "hc-eager")).catch(() => {});
+			if (k != null)
+				for (const { base } of hypColorsLazyShardsForK(k)) {
+					const token = `hc-${base}-${k}`;
+					if (!colLoaded.has(token)) loadHyperbolicColorsShard(base, k).then((d) => merge(d, token)).catch(() => {});
+				}
+		} else {
+			if (!colLoaded.has("sc-eager")) loadSphericalColorsAtlas().then((d) => merge(d, "sc-eager")).catch(() => {});
+			if (k != null)
+				for (const { solid } of sphColorsLazyShardsForK(k)) {
+					const token = `sc-${solid}-${k}`;
+					if (!colLoaded.has(token)) loadSphericalColorsShard(solid, k).then((d) => merge(d, token)).catch(() => {});
+				}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [filters.geometry, filters.kValue, colLoaded, tilings]);
 
 	// Lazy convex-irregular k≥3 shards. The demo keeps k≤2 in the main atlas and splits each higher k into
 	// public/reference-atlas-composable-k{k}.json (COMPOSABLE_HIGHER_K). Fetch a shard when it's in view:
@@ -804,7 +902,7 @@ export function ReferenceShelf() {
 		if (tilings)
 			for (const t of tilings) {
 				if (geometryOf(t) !== geometry) continue;
-				if (isEuclidean && filters.tileClass && tileClassOf(t) !== filters.tileClass) continue;
+				if (filters.tileClass && tileClassOf(t) !== filters.tileClass) continue; // facet k by class in any geometry
 				s.add(t.k);
 			}
 		// The lazy higher-k tiers are all Euclidean; offer their chips up front (before the shard is fetched)
@@ -905,6 +1003,22 @@ export function ReferenceShelf() {
 	const selectedLattice = filters.latticeShapes?.[0];
 
 	const tileClass = filters.tileClass ?? "all";
+	// The classes actually present in the current NON-Euclidean geometry. The hyperbolic shelf now carries
+	// two — developed uniform tilings and Čtrnáct's edge patterns (freedraw) — so a class facet splits them
+	// instead of one mixed list. Empty on the plane (Euclidean uses the full CLASS_OPTIONS wall).
+	const geometryClasses = useMemo(() => {
+		if (!tilings || isEuclidean) return [] as TileClass[];
+		const s = new Set<TileClass>();
+		for (const t of tilings) if (geometryOf(t) === geometry) s.add(tileClassOf(t));
+		return TILE_CLASS_ORDER.filter((c) => s.has(c));
+	}, [tilings, geometry, isEuclidean]);
+	const geometryClassOptions = useMemo(
+		() => [
+			{ value: "all" as const, label: "All" },
+			...geometryClasses.map((c) => ({ value: c, label: noneucClassLabel(c) })),
+		],
+		[geometryClasses],
+	);
 	// Classes carrying NO vertex-configuration classification — no M/partition, no star folds, no wallpaper
 	// group or lattice. The convex-irregular + isotoxal demo shelves (their builds don't compute it) and
 	// freedraw (whose faces aren't tiles in the Grünbaum & Shephard sense, so none of that theory applies).
@@ -921,8 +1035,14 @@ export function ReferenceShelf() {
 	const showScaledScaleSet = tileClass === "scaled";
 	const showPolyominoOrder = tileClass === "polyomino";
 	const showIslamicSystem = tileClass === "islamic";
-	const showFreedrawKind = tileClass === "freedraw";
-	const showColorsGrid = tileClass === "colors";
+	// Freedraw's grid / tile-kind / regular-polygon facets describe the EUCLIDEAN grids (square/triangle/ts).
+	// Hyperbolic edge patterns are the freedraw class too, but on a hyperbolic base — those grid facets mean
+	// nothing there, so keep them Euclidean-only.
+	const showFreedrawKind = isEuclidean && tileClass === "freedraw";
+	// The grid/palette facets describe the EUCLIDEAN color catalogues (square/triangle/ts × 2/3). The
+	// hyperbolic and spherical colorings are the colors class too, but on a {p,q} / Platonic base — those
+	// grid facets mean nothing there, so keep them Euclidean-only (they group by base in the /play tree).
+	const showColorsGrid = isEuclidean && tileClass === "colors";
 	// Freedraw's k counts GRID-POINT orbits of the decoration, not vertex orbits of a tiling. It shares the
 	// axis so the two are browsable together; the heading is what keeps them from reading as one quantity.
 	const kGroupTitle = showFreedrawKind ? "Grid-point orbits (k)" : "Vertex count (k)";
@@ -1031,11 +1151,19 @@ export function ReferenceShelf() {
 						<OptionWall columns={3} options={GEOMETRY_OPTIONS} selected={geometry} onChange={setGeometry} />
 					</FilterGroup>
 
-					{/* Tile class is a Euclidean-only axis — hyperbolic/spherical are their own geometries, each a
-					    single class, so the chip row would just be one dead option there. */}
+					{/* Tile class. On the plane it is the full class wall. Off the plane it appears only when the
+					    geometry actually holds more than one class — the hyperbolic shelf now splits into the
+					    developed uniform tilings and Čtrnáct's edge patterns, so this facet keeps them apart. */}
 					{isEuclidean ? (
 						<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
 							<OptionWall columns={3} options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
+						</FilterGroup>
+					) : geometryClasses.length > 1 ? (
+						<FilterGroup
+							title="Tile class"
+							summary={filters.tileClass ? noneucClassLabel(filters.tileClass) : null}
+						>
+							<OptionWall columns={3} options={geometryClassOptions} selected={tileClass} onChange={setTileClass} />
 						</FilterGroup>
 					) : null}
 
@@ -1273,7 +1401,7 @@ export function ReferenceShelf() {
 					    at any vertex, largest polygon in any figure), so their upper bounds read exactly as an
 					    enumeration cell's (p, v). Edge length ℓ is the hyperbolic shape coordinate — H² has no
 					    similarity, so ℓ separates tilings the vertex figure alone cannot. */}
-					{geometry === "hyperbolic" && hypBounds ? (
+					{geometry === "hyperbolic" && hypBounds && tileClass !== "freedraw" ? (
 						<>
 							<FilterGroup
 								title="Valence"

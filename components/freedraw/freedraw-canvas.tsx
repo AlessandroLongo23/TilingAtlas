@@ -10,7 +10,14 @@ import {
 	type FreedrawStyle,
 	type FreedrawView,
 } from "@/lib/freedraw/render";
-import { wheelDeltaPx } from "@/lib/render/viewControls";
+import { useEasedRotation } from "@/lib/hooks/useEasedRotation";
+import {
+	accumulateDetents,
+	ROTATE_SNAP_DEG,
+	unrotateScreen,
+	wheelDeltaPx,
+	wrap360,
+} from "@/lib/render/viewControls";
 import { cn } from "@/lib/utils/cn";
 
 // Zoom bounds are deliberately NOT the ones in lib/render/viewControls.ts. There a world unit is a
@@ -41,6 +48,16 @@ interface Props {
 	cells?: number;
 	/** Pan with drag, zoom with the wheel. Off for gallery thumbnails. */
 	interactive?: boolean;
+	/**
+	 * View rotation about the canvas centre, DEGREES — the /play Rotation slider's value. The live angle
+	 * eases toward it, so a slider drag and a wheel detent both glide.
+	 */
+	rotation?: number;
+	/**
+	 * Called with the new target angle when Shift+scroll spins the view (5° detents, as everywhere else).
+	 * Omit and the gesture is off — a canvas whose rotation nobody owns can't move it.
+	 */
+	onRotationChange?: (deg: number) => void;
 	classes?: string;
 }
 
@@ -49,6 +66,8 @@ export function FreedrawCanvas({
 	style = DEFAULT_STYLE,
 	cells = 12,
 	interactive = false,
+	rotation = 0,
+	onRotationChange,
 	classes,
 }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -69,6 +88,15 @@ export function FreedrawCanvas({
 	// the old bitmap into the new box — the tiling stretched, then snapped back (see lib/render/canvasSize.ts).
 	const boxRef = useRef({ w: 0, h: 0 });
 	const drawRef = useRef<() => void>(() => {});
+	// View rotation. The live angle eases toward the prop in a ref, and useEasedRotation owns the frame
+	// loop that carries it there (redrawing through drawRef). Every pointer handler below reads the angle
+	// back as radians to undo the turn, since input arrives in the rotated frame while the pan/zoom/hover
+	// maths all live in the upright one.
+	const rotRef = useEasedRotation(rotation, drawRef);
+	const radNow = useCallback(() => (rotRef.current * Math.PI) / 180, [rotRef]);
+	// Sub-detent scroll remainder, carried between wheel events so a spin tracks total scroll distance
+	// rather than the wheel-event count (a trackpad fires dozens per gesture).
+	const scrollAccumRef = useRef(0);
 
 	// Track the element's CSS size; the canvas backing store is sized from it times the DPR.
 	useEffect(() => {
@@ -111,13 +139,15 @@ export function FreedrawCanvas({
 			cw,
 			ch,
 			pattern,
-			view,
+			// The live angle is injected per draw rather than stored in `view`, so a refit (double-click,
+			// a new pattern) can rebuild the view without touching the rotation.
+			{ ...view, rot: radNow() },
 			{ ...style, dark },
 			analysis,
 			hoverRef.current,
 			orbitScalesRef.current,
 		);
-	}, [pattern, view, style, dark, analysis]);
+	}, [pattern, view, style, dark, analysis, radNow]);
 	drawRef.current = draw;
 
 	useEffect(() => {
@@ -126,7 +156,8 @@ export function FreedrawCanvas({
 
 	// The orbit-dot hover eases over several frames, so it needs a frame loop — a redraw per pointermove
 	// would freeze the growth the moment the cursor stops. Runs ONLY while the dots are up on an
-	// interactive canvas; a gallery of 166 static thumbnails never enters it.
+	// interactive canvas; a gallery of 166 static thumbnails never enters it. (A view mid-turn has its own
+	// loop inside useEasedRotation.)
 	const animate = interactive && style.showVertices;
 	useEffect(() => {
 		if (!animate) return;
@@ -149,22 +180,25 @@ export function FreedrawCanvas({
 	const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		if (!interactive) return;
 		if (drag.current) {
-			const dx = e.clientX - drag.current.x;
-			const dy = e.clientY - drag.current.y;
+			// Undo the view rotation on the drag delta, so the pattern follows the cursor at any angle.
+			const d = unrotateScreen(e.clientX - drag.current.x, e.clientY - drag.current.y, radNow());
 			drag.current = { x: e.clientX, y: e.clientY };
 			// Panning, not pointing — drop the hover so a dot doesn't stay grown under a moving canvas.
 			hoverRef.current = null;
-			setView((v) => (v ? { ...v, cx: v.cx - dx / v.scale, cy: v.cy + dy / v.scale } : v));
+			setView((v) => (v ? { ...v, cx: v.cx - d.x / v.scale, cy: v.cy + d.y / v.scale } : v));
 			return;
 		}
-		// Screen → world, the inverse of the sx/sy the renderer draws with (y flips: world y grows upward).
+		// Screen → world, the inverse of the sx/sy the renderer draws with (y flips: world y grows upward),
+		// with the view rotation undone first.
 		const v = view;
 		if (!v) return;
 		const rect = e.currentTarget.getBoundingClientRect();
-		hoverRef.current = {
-			x: v.cx + (e.clientX - rect.left - rect.width / 2) / v.scale,
-			y: v.cy - (e.clientY - rect.top - rect.height / 2) / v.scale,
-		};
+		const p = unrotateScreen(
+			e.clientX - rect.left - rect.width / 2,
+			e.clientY - rect.top - rect.height / 2,
+			radNow(),
+		);
+		hoverRef.current = { x: v.cx + p.x / v.scale, y: v.cy - p.y / v.scale };
 	};
 	const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		if (!interactive) return;
@@ -175,15 +209,28 @@ export function FreedrawCanvas({
 		hoverRef.current = null;
 	};
 
-	// Wheel zoom toward the cursor: keep the world point under the pointer fixed on screen.
+	// Wheel zoom toward the cursor: keep the world point under the pointer fixed on screen. Shift+wheel
+	// spins the view instead, in the same 5° detents as the flat canvas.
 	useEffect(() => {
 		const el = canvasRef.current;
 		if (!el || !interactive) return;
 		const onWheel = (e: WheelEvent) => {
 			e.preventDefault();
+			// Steps the TARGET (the prop), not the live angle — the ease then glides into the new detent.
+			if (e.shiftKey && onRotationChange) {
+				const { steps, accum } = accumulateDetents(scrollAccumRef.current, wheelDeltaPx(e));
+				scrollAccumRef.current = accum;
+				if (steps !== 0) onRotationChange(wrap360(rotation + steps * ROTATE_SNAP_DEG));
+				return;
+			}
 			const rect = el.getBoundingClientRect();
-			const px = e.clientX - rect.left - rect.width / 2;
-			const py = e.clientY - rect.top - rect.height / 2;
+			// Zoom pivots on the world point under the cursor, so the pointer offset goes back through the
+			// view rotation first — otherwise a spun view zooms toward the wrong place.
+			const { x: px, y: py } = unrotateScreen(
+				e.clientX - rect.left - rect.width / 2,
+				e.clientY - rect.top - rect.height / 2,
+				radNow(),
+			);
 			setView((v) => {
 				if (!v) return v;
 				const delta = wheelDeltaPx(e);
@@ -199,7 +246,16 @@ export function FreedrawCanvas({
 		};
 		el.addEventListener("wheel", onWheel, { passive: false });
 		return () => el.removeEventListener("wheel", onWheel);
-	}, [interactive]);
+		// `rotation` is in here so the detent handler adds to the CURRENT target; re-subscribing a wheel
+		// listener per 5° step costs nothing, and the sub-detent remainder lives in a ref that survives it.
+	}, [interactive, onRotationChange, rotation, radNow]);
+
+	// Double-click is "put it back": pan, zoom AND angle, so a refit never leaves the view tilted.
+	const refit = () => {
+		if (size.w <= 0) return;
+		setView(fitView(size.w, size.h, cells));
+		onRotationChange?.(0);
+	};
 
 	return (
 		<canvas
@@ -208,7 +264,7 @@ export function FreedrawCanvas({
 			onPointerMove={onPointerMove}
 			onPointerUp={onPointerUp}
 			onPointerLeave={onPointerLeave}
-			onDoubleClick={() => size.w > 0 && setView(fitView(size.w, size.h, cells))}
+			onDoubleClick={refit}
 			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing", classes)}
 		/>
 	);

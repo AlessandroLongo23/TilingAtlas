@@ -82,6 +82,17 @@ export function accumulateDetents(accum: number, deltaPx: number): { steps: numb
 	return { steps, accum: a };
 }
 
+// Undo a view rotation on a SCREEN vector — an offset from the canvas centre, or a drag delta. The 2D
+// canvases (freedraw, colors) draw through a ctx.rotate(θ) about their centre, so pointer input arrives
+// in the rotated frame while their pan/zoom/hover maths all live in the upright one; every handler
+// funnels its screen vector through here first. Inverse of the same [[c,-s],[s,c]] the flat WebGL view
+// applies as uRot, so a given angle means the same turn in every renderer.
+export function unrotateScreen(x: number, y: number, rad: number): { x: number; y: number } {
+	if (!rad) return { x, y };
+	const c = Math.cos(rad), s = Math.sin(rad);
+	return { x: c * x + s * y, y: c * y - s * x };
+}
+
 // Rotate the stored pan offset by Δθ (radians) about the screen centre. When the view angle changes,
 // applying the same rotation to the offset holds the world point under the viewport centre fixed
 // there, so the pattern spins around the middle of the screen no matter how it's been panned.

@@ -14,7 +14,28 @@ import {
 } from "@/lib/colors/pattern";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import {
+	hypEdgesBaseLabel,
+	hypEdgesFamilyLabel,
+	hypEdgesLazyShardsForK,
+	hypEdgesSub,
+	HYP_EDGES_BASES,
+	type HypEdgesPattern,
+} from "@/lib/freedraw/hyp-edges";
 import { classifyRegular, type RegularKind } from "@/lib/freedraw/regular";
+import {
+	hypColorsBaseLabel,
+	hypColorsFamilyLabel,
+	hypColorsSub,
+	HYP_COLORS_BASES,
+	type HypColorsPattern,
+} from "@/lib/colors/hyp-colors";
+import {
+	sphColorsFamilyLabel,
+	sphColorsSub,
+	SPH_COLORS_SOLIDS,
+	type SphColorsPattern,
+} from "@/lib/colors/sph-colors";
 import type { IcoPattern } from "@/lib/render/icoFreedraw";
 import { ICO_SOLIDS, ICO_SOLID_BY_ID, icoSolidKs } from "@/lib/render/icoSolids";
 
@@ -90,6 +111,25 @@ export interface ReferenceTiling {
 	// solid sphere and `freedraw` to the 2D grid — `renderCell` is a throwaway here, never drawn. `solid` is
 	// the Polyhedron id the renderer resolves vertices from; `k` counts VERTEX orbits (not grid points).
 	sphericalFreedraw?: { solid: string; k: number; pattern: IcoPattern };
+	// Hyperbolic edge-system shelf only: Čtrnáct's freedraw moved to H² (tools/ctrnact-oracle/develop_hyp_edges.py,
+	// decoded to public/hyperbolic-edges/e<base>-k<k>.json). Its presence routes /play + the thumbnails to the
+	// developed-edge renderer (HyperbolicDeveloper.developEdges + drawDevelopedEdgePatch) the way `freedraw`
+	// routes to the 2D grid and `developed` to the Poincaré disk. Lives in the freedraw CLASS but the HYPERBOLIC
+	// geometry, with the base tiling as the sub-axis — the exact parallel of spherical freedraw (freedraw class,
+	// spherical geometry, solid sub-axis). `renderCell` is a throwaway. `k` counts vertex orbits.
+	hypEdges?: HypEdgesPattern;
+	// Hyperbolic colored-tiling shelf only: an n-coloring of a regular {p,q} hyperbolic tiling
+	// (tools/ctrnact-oracle/develop_hyp_colors.py → public/hyperbolic-colors/c<base>-k<k>.json). Its presence
+	// routes /play + thumbnails to the per-pixel disk shader in colors mode (HyperbolicColorsCanvas). Lives in
+	// the COLORS class, HYPERBOLIC geometry, with the base {p,q} as the sub-axis — the exact parallel of the
+	// edge systems. `renderCell` is a throwaway; `k` counts colored vertex orbits.
+	hypColors?: HypColorsPattern;
+	// Spherical colored-tiling shelf only: an n-coloring of a Platonic solid
+	// (tools/ctrnact-oracle/develop_sph_colors.py → public/spherical-colors/<solid>-k<k>.json). Its presence
+	// routes /play + thumbnails to the three.js SphericalColorsCanvas the way `sphericalFreedraw` routes to the
+	// ico renderer. Colors class, SPHERICAL geometry, solid sub-axis. `renderCell` is a throwaway; `k` counts
+	// colored vertex orbits.
+	sphColors?: { solid: string; k: number; pattern: SphColorsPattern };
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Hyperbolic shelf: which of the tilings sharing this vertex figure this one is, and how many there
 	// are. In H2 the figure does not determine the tiling — 4.4.6.4.6.6 carries fourteen distinct ones —
@@ -219,13 +259,26 @@ export const SUB_ORDER = [
 	"cube",
 	"dodecahedron",
 	"icosahedron",
+	// Hyperbolic edge systems: one sub per base tiling. "hyp-" namespaced so it can't collide with a grid.
+	...HYP_EDGES_BASES.map((b) => `hyp-${b.id}`),
+	// Hyperbolic colored tilings: one sub per base {p,q}. "hyc-" namespaced.
+	...HYP_COLORS_BASES.map((b) => `hyc-${b.id}`),
+	// Spherical colored tilings: one sub per Platonic solid. "spc-" namespaced so it can't collide with the
+	// spherical-freedraw solid subs (bare solid names).
+	...SPH_COLORS_SOLIDS.map((s) => `spc-${s.id}`),
 ];
 export function subOf(t: {
 	sphericalFreedraw?: { solid: string };
 	freedraw?: FreedrawPattern;
 	colors?: ColorPattern;
+	hypEdges?: HypEdgesPattern;
+	hypColors?: HypColorsPattern;
+	sphColors?: { pattern: SphColorsPattern };
 }): string {
 	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
+	if (t.hypEdges) return hypEdgesSub(t.hypEdges);
+	if (t.hypColors) return hypColorsSub(t.hypColors);
+	if (t.sphColors) return sphColorsSub(t.sphColors.pattern);
 	if (t.freedraw) return gridOf(t.freedraw);
 	// The colors class splits on grid AND palette size — an n-coloring of the square grid is a
 	// different catalogue from a 2-coloring, not a deeper k of the same one.
@@ -253,9 +306,16 @@ export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTil
 // (spherical wins, then developed), NOT the optional `geometry` field (not reliably populated). Same
 // precedence as _play-client's canvas swap, so the toggle and the rendered view can never disagree.
 export type Geometry = "euclidean" | "hyperbolic" | "spherical";
-export function geometryOf(t: { spherical?: unknown; sphericalFreedraw?: unknown; developed?: unknown }): Geometry {
-	if (t.spherical || t.sphericalFreedraw) return "spherical";
-	if (t.developed) return "hyperbolic";
+export function geometryOf(t: {
+	spherical?: unknown;
+	sphericalFreedraw?: unknown;
+	sphColors?: unknown;
+	developed?: unknown;
+	hypEdges?: unknown;
+	hypColors?: unknown;
+}): Geometry {
+	if (t.spherical || t.sphericalFreedraw || t.sphColors) return "spherical";
+	if (t.developed || t.hypEdges || t.hypColors) return "hyperbolic";
 	return "euclidean";
 }
 export const GEOMETRY_ORDER: Geometry[] = ["euclidean", "hyperbolic", "spherical"];
@@ -664,6 +724,9 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		freedraw: r.freedraw,
 		colors: r.colors,
 		sphericalFreedraw: r.sphericalFreedraw,
+		hypEdges: r.hypEdges,
+		hypColors: r.hypColors,
+		sphColors: r.sphColors,
 	};
 }
 
@@ -759,6 +822,239 @@ function sphericalFreedrawToReference(solid: string, k: number, p: IcoPattern): 
 		// Decoded from Marek's certificates like the planar higher-k slices; no independent enumeration here.
 		certification: "candidate",
 	};
+}
+
+// Adapt one hyperbolic edge-system pattern to a reference tiling. Like spherical freedraw it ships as
+// its own raw catalogue (public/hyperbolic-edges/e<base>-k<k>.json) and carries its own render field, so
+// the adaptation happens at load rather than through a build script that could drift. `renderCell` is a
+// throwaway — every consumer branches on `hypEdges` first (thumbnail, /play canvas).
+function hypEdgesToReference(p: HypEdgesPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "freedraw",
+		k: p.k,
+		family: `${hypEdgesBaseLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypEdgesFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		hypEdges: p,
+		edge: p.edge,
+		geometry: "hyperbolic",
+		discoverer: "Marek Čtrnáct",
+		// Decoded from Marek's certificates and internally consistent (develop closure, edge-length residual
+		// ~1e-11, every face a regular polygon at the forced ℓ), but nothing independent enumerates this class
+		// — H² has no lattice to enumerate over — so every slice is "candidate".
+		certification: "candidate",
+	};
+}
+
+// Hyperbolic edge systems, loaded LAZILY the way spherical freedraw is: /play + /library pull each base's
+// EAGER k slices (small — a few MB total) only once the Hyperbolic geometry is entered (or a deep-link to
+// an he… key arrives), so a visit that never opens the hyperbolic shelf never pays for it. The eager set
+// is per-base (HYP_EDGES_BASES[i].eagerKs) — 6.6.7 runs deep, the regular {p,q} bases carry k≤2. Dense
+// shards (a base's lazyKs) load separately via loadHyperbolicEdgesShard. Module-cached.
+let heCache: ReferenceTiling[] | null = null;
+let heInflight: Promise<ReferenceTiling[]> | null = null;
+
+export async function loadHyperbolicEdgesAtlas(): Promise<ReferenceTiling[]> {
+	if (heCache) return heCache;
+	if (heInflight) return heInflight;
+	heInflight = Promise.all(
+		HYP_EDGES_BASES.flatMap((b) =>
+			b.eagerKs.map((k) =>
+				fetch(`/hyperbolic-edges/e${b.id}-k${k}.json`)
+					.then((res) => (res.ok ? (res.json() as Promise<HypEdgesPattern[]>) : []))
+					.catch(() => [] as HypEdgesPattern[])
+					.then((pats) => pats.map(hypEdgesToReference)),
+			),
+		),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			heCache = data;
+			heInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			heInflight = null;
+			throw err;
+		});
+	return heInflight;
+}
+
+// Dense per-(base, k) shards (each base's lazyKs — 6.6.7's k=12/13, the high-valence bases' k=2). Fetched
+// only when that k comes into view, so a heavy shard never loads unless opened. Cached per (base, k).
+const heShardCache = new Map<string, ReferenceTiling[]>();
+const heShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+export async function loadHyperbolicEdgesShard(base: string, k: number): Promise<ReferenceTiling[]> {
+	const key = `${base}-${k}`;
+	const cached = heShardCache.get(key);
+	if (cached) return cached;
+	const existing = heShardInflight.get(key);
+	if (existing) return existing;
+	const p = fetch(`/hyperbolic-edges/e${base}-k${k}.json`)
+		.then((res) => (res.ok ? (res.json() as Promise<HypEdgesPattern[]>) : []))
+		.catch(() => [] as HypEdgesPattern[])
+		.then((pats) => {
+			const data = pats.map(hypEdgesToReference);
+			heShardCache.set(key, data);
+			heShardInflight.delete(key);
+			return data;
+		})
+		.catch((err) => {
+			heShardInflight.delete(key);
+			throw err;
+		});
+	heShardInflight.set(key, p);
+	return p;
+}
+
+// ── Colored tilings in H² and on S² ──────────────────────────────────────────────────────────────
+// Same shape as the edge systems: each ships as its own raw catalogue and carries its own render field,
+// so the adaptation happens at load. Colors CLASS, hyperbolic / spherical geometry, base as sub-axis.
+function hypColorsToReference(p: HypColorsPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "colors",
+		k: p.k,
+		family: `${hypColorsBaseLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypColorsFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		hypColors: p,
+		edge: p.edge,
+		geometry: "hyperbolic",
+		discoverer: "Marek Čtrnáct",
+		// Decoded from Marek's certificates, internally consistent (develop closure, every face a regular {p}
+		// at the forced ℓ), only surjective colorings kept — but nothing independent enumerates the class, so
+		// every slice is "candidate".
+		certification: "candidate",
+	};
+}
+
+function sphColorsToReference(p: SphColorsPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "colors",
+		k: p.k,
+		family: `${p.chiral ? "chiral · " : ""}${sphColorsFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		sphColors: { solid: p.solid, k: p.k, pattern: p },
+		geometry: "spherical",
+		discoverer: "Marek Čtrnáct",
+		certification: "candidate",
+	};
+}
+
+// Hyperbolic colored tilings, loaded LAZILY like the edge systems: the per-base EAGER k slices load once
+// the Hyperbolic geometry is entered; dense high-k shards (a base's lazyKs) load via loadHyperbolicColorsShard.
+let hcCache: ReferenceTiling[] | null = null;
+let hcInflight: Promise<ReferenceTiling[]> | null = null;
+
+export async function loadHyperbolicColorsAtlas(): Promise<ReferenceTiling[]> {
+	if (hcCache) return hcCache;
+	if (hcInflight) return hcInflight;
+	hcInflight = Promise.all(
+		HYP_COLORS_BASES.flatMap((b) =>
+			b.eagerKs.map((k) =>
+				fetch(`/hyperbolic-colors/c${b.id}-k${k}.json`)
+					.then((res) => (res.ok ? (res.json() as Promise<HypColorsPattern[]>) : []))
+					.catch(() => [] as HypColorsPattern[])
+					.then((pats) => pats.map(hypColorsToReference)),
+			),
+		),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			hcCache = data;
+			hcInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			hcInflight = null;
+			throw err;
+		});
+	return hcInflight;
+}
+
+const hcShardCache = new Map<string, ReferenceTiling[]>();
+const hcShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+export async function loadHyperbolicColorsShard(base: string, k: number): Promise<ReferenceTiling[]> {
+	const key = `${base}-${k}`;
+	const cached = hcShardCache.get(key);
+	if (cached) return cached;
+	const existing = hcShardInflight.get(key);
+	if (existing) return existing;
+	const p = fetch(`/hyperbolic-colors/c${base}-k${k}.json`)
+		.then((res) => (res.ok ? (res.json() as Promise<HypColorsPattern[]>) : []))
+		.catch(() => [] as HypColorsPattern[])
+		.then((pats) => {
+			const data = pats.map(hypColorsToReference);
+			hcShardCache.set(key, data);
+			hcShardInflight.delete(key);
+			return data;
+		})
+		.catch((err) => {
+			hcShardInflight.delete(key);
+			throw err;
+		});
+	hcShardInflight.set(key, p);
+	return p;
+}
+
+// Spherical colored tilings, loaded LAZILY like spherical freedraw: the per-solid EAGER k slices load once
+// the Spherical geometry is entered; dense shards (a solid's lazyKs) load via loadSphericalColorsShard.
+let scCache: ReferenceTiling[] | null = null;
+let scInflight: Promise<ReferenceTiling[]> | null = null;
+
+export async function loadSphericalColorsAtlas(): Promise<ReferenceTiling[]> {
+	if (scCache) return scCache;
+	if (scInflight) return scInflight;
+	scInflight = Promise.all(
+		SPH_COLORS_SOLIDS.flatMap((s) =>
+			s.eagerKs.map((k) =>
+				fetch(`/spherical-colors/${s.id}-k${k}.json`)
+					.then((res) => (res.ok ? (res.json() as Promise<SphColorsPattern[]>) : []))
+					.catch(() => [] as SphColorsPattern[])
+					.then((pats) => pats.map(sphColorsToReference)),
+			),
+		),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			scCache = data;
+			scInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			scInflight = null;
+			throw err;
+		});
+	return scInflight;
+}
+
+const scShardCache = new Map<string, ReferenceTiling[]>();
+const scShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+export async function loadSphericalColorsShard(solid: string, k: number): Promise<ReferenceTiling[]> {
+	const key = `${solid}-${k}`;
+	const cached = scShardCache.get(key);
+	if (cached) return cached;
+	const existing = scShardInflight.get(key);
+	if (existing) return existing;
+	const p = fetch(`/spherical-colors/${solid}-k${k}.json`)
+		.then((res) => (res.ok ? (res.json() as Promise<SphColorsPattern[]>) : []))
+		.catch(() => [] as SphColorsPattern[])
+		.then((pats) => {
+			const data = pats.map(sphColorsToReference);
+			scShardCache.set(key, data);
+			scShardInflight.delete(key);
+			return data;
+		})
+		.catch((err) => {
+			scShardInflight.delete(key);
+			throw err;
+		});
+	scShardInflight.set(key, p);
+	return p;
 }
 
 // Spherical freedraw is loaded LAZILY, separate from the base atlas: ~19.5k patterns across 30

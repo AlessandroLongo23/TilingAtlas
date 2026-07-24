@@ -4,10 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
+import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
+import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbnail";
+import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
@@ -215,6 +218,12 @@ function Tile({
 			<div className="relative aspect-square bg-surface-raised">
 				{t.spherical ? (
 					<SphericalThumbnail solidId={t.spherical.solid} />
+				) : t.sphColors ? (
+					<SphericalColorsThumbnail pattern={t.sphColors.pattern} mode="polyhedron" />
+				) : t.hypColors ? (
+					<HyperbolicColorsThumbnail pattern={t.hypColors} />
+				) : t.hypEdges ? (
+					<HyperbolicEdgesThumbnail pattern={t.hypEdges} />
 				) : t.sphericalFreedraw ? (
 					<SphereFreedrawThumbnail
 						pattern={t.sphericalFreedraw.pattern}
