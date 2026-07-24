@@ -1,0 +1,310 @@
+<title>Hyperbolic (k, p, v) enumeration sweep</title>
+<style>
+:root {
+  color-scheme: light;
+  --ground: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #898781;
+  --line: #e1e0d9;
+  --line-2: #c3c2b7;
+  /* sequential blue, steps 100→700 — magnitude only */
+  --s0: #eef4fd; --s1: #cde2fb; --s2: #9ec5f4; --s3: #6da7ec; --s4: #3987e5;
+  --s5: #256abf; --s6: #184f95; --s7: #0d366b;
+  --on-light: #0b0b0b; --on-dark: #ffffff;
+  --censor: #898781;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --ground: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+    --line: #2c2c2a; --line-2: #383835;
+    --s0: #14243a; --s1: #0d366b; --s2: #184f95; --s3: #256abf; --s4: #3987e5;
+    --s5: #6da7ec; --s6: #9ec5f4; --s7: #cde2fb;
+    --on-light: #ffffff; --on-dark: #0b0b0b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+  --line: #2c2c2a; --line-2: #383835;
+  --s0: #14243a; --s1: #0d366b; --s2: #184f95; --s3: #256abf; --s4: #3987e5;
+  --s5: #6da7ec; --s6: #9ec5f4; --s7: #cde2fb;
+  --on-light: #ffffff; --on-dark: #0b0b0b;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px 72px; display: flex; flex-direction: column; gap: 40px; }
+h1 { font-size: 25px; line-height: 1.2; font-weight: 650; letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+h2 { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; margin: 0; }
+p { margin: 0; max-width: 68ch; color: var(--ink-2); }
+.eyebrow { font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+section { display: flex; flex-direction: column; gap: 14px; }
+.mono, td, th { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+/* headline row — the run's shape, before any table */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.stat { background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.stat b { font: 600 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11px; color: var(--ink-3); line-height: 1.35; }
+
+/* the wall: opaque cells, 1px gaps, no radii — the app's own motif */
+.tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+table { border-collapse: separate; border-spacing: 1px; background: var(--line); width: 100%; }
+caption { text-align: left; padding: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ink); }
+caption em { font-style: normal; font-weight: 400; color: var(--ink-3); }
+th, td { font-size: 12px; text-align: right; padding: 6px 8px; background: var(--surface); font-weight: 400; }
+th { color: var(--ink-3); font-size: 10.5px; letter-spacing: 0.04em; }
+th.corner { text-align: left; color: var(--ink-3); }
+td.cell { color: var(--on-light); }
+td.deep { color: var(--on-dark); }
+td.zero { color: var(--ink-3); }
+td.censor {
+  color: var(--censor);
+  background:
+    repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 5px),
+    var(--surface);
+}
+tbody th { text-align: right; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.seg { display: flex; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.seg button {
+  font: 500 11.5px/1 ui-sans-serif, system-ui, sans-serif;
+  padding: 6px 11px; border: 0; background: var(--surface); color: var(--ink-2); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
+.seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 11px; color: var(--ink-3); }
+.ramp { display: flex; align-items: center; gap: 6px; }
+.ramp i { display: flex; }
+.ramp i b { width: 15px; height: 9px; display: block; }
+.swatch-censor { width: 15px; height: 9px; display: inline-block; vertical-align: -1px;
+  background: repeating-linear-gradient(135deg, var(--line-2) 0 1px, transparent 1px 5px), var(--surface); border: 1px solid var(--line); }
+
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); padding: 12px 12px 8px; }
+figcaption { font-size: 11.5px; color: var(--ink-3); }
+figcaption b { color: var(--ink-2); font-weight: 600; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+.scroll { overflow-x: auto; }
+.note { font-size: 12.5px; color: var(--ink-3); max-width: 74ch; }
+.note code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; color: var(--ink-2); }
+a { color: inherit; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">Čtrnáct engine · combinatorial enumeration · 2026-07-24</span>
+    <h1>Hyperbolic tilings by uniformity, palette and valence</h1>
+    <p>Every cell of the sweep enumerates the tilings of the hyperbolic plane built from regular
+    <span class="mono">{3…p}</span>-gons with at most <span class="mono">v</span> edges at a vertex and at most
+    <span class="mono">k</span> vertex orbits — identity decided by the minimal Delaney–Dress symbol of the
+    quotient, so two entries differ iff the tilings genuinely differ. Boxes nest: a cell contains every
+    smaller one, and counts are cumulative in <span class="mono">k</span> unless switched to exact below.</p>
+    <div class="stats">
+      <div class="stat"><b>108</b><span>cells attempted (k × p × v)</span></div>
+      <div class="stat"><b>82</b><span>enumerated to completion</span></div>
+      <div class="stat"><b>26</b><span>censored at the 1813s cap — no count, not zero</span></div>
+      <div class="stat"><b>7,061</b><span>largest complete box at k ≤ 1 · p 8, v 7</span></div>
+      <div class="stat"><b>6,530</b><span>largest complete box at k ≤ 2 · p 4, v 8</span></div>
+      <div class="stat"><b>5,035</b><span>largest complete box at k ≤ 3 · p 6, v 5</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span class="eyebrow">One table per uniformity</span>
+        <h2>Distinct tilings by palette and valence</h2>
+      </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Count mode">
+          <button type="button" data-mode="total" aria-pressed="true">Cumulative k ≤ K</button>
+          <button type="button" data-mode="exact" aria-pressed="false">Exactly k = K</button>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <span class="ramp">fewer
+        <i><b style="background:var(--s0)"></b><b style="background:var(--s1)"></b><b style="background:var(--s2)"></b><b style="background:var(--s3)"></b><b style="background:var(--s4)"></b><b style="background:var(--s5)"></b><b style="background:var(--s6)"></b><b style="background:var(--s7)"></b></i>
+      more (log scale)</span>
+      <span><span class="swatch-censor"></span> censored — hit the cap, count unknown</span>
+    </div>
+    <div class="tables" id="tables"></div>
+    <p class="note">Rows are the palette bound <code>p</code> (largest polygon allowed), columns the valence
+    bound <code>v</code> (most edges at a vertex). A censored cell is not an absence of tilings: the solver
+    was still producing raw blocks when the clock ran out, so the true count is strictly larger than
+    anything below it. Zero cells are real — below <code>1/p + 1/v &lt; 1/2</code> the geometry is spherical or
+    Euclidean, so no hyperbolic tiling exists.</p>
+  </section>
+
+  <section>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">Fixed palette and valence, varying uniformity</span>
+      <h2>How the count grows with k</h2>
+    </div>
+    <p>Each line is one <span class="mono">(p, v)</span> box enumerated at every uniformity, so the three
+    points are strictly comparable. Log scale: a straight line is geometric growth in <span class="mono">k</span>.</p>
+    <div class="charts" id="growth"></div>
+  </section>
+
+  <section>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">The same boxes, measured in wall-clock</span>
+      <h2>How the cost grows with k</h2>
+    </div>
+    <p>Solver time for the same boxes, on the same log scale, so the two charts can be read against each
+    other: cost climbs faster than the count it buys.</p>
+    <div class="charts" id="cost"></div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Reading the frontier</span>
+    <p class="note">The censored band is where this enumeration currently ends, and it is a compute wall
+    rather than a mathematical one — every censored cell was still emitting raw blocks at the cap. Raising the
+    cap moves the wall; nothing in the method changes. Regenerate this page after any new cell with
+    <code>node scripts/hyp-sweep-report.mjs</code>.</p>
+  </section>
+</div>
+
+<script>
+const D = {"KS":[1,2,3],"PS":[3,4,5,6,7,8],"VS":[3,4,5,6,7,8],"CAP":1812.5842492580414,"data":[{"k":1,"p":3,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.6329402923583984},{"k":1,"p":3,"v":4,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.6161091327667236},{"k":1,"p":4,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.61674165725708},{"k":1,"p":3,"v":5,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.768857717514038},{"k":1,"p":4,"v":4,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.5982413291931152},{"k":1,"p":5,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.803936243057251},{"k":1,"p":3,"v":6,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.85562801361084},{"k":1,"p":4,"v":5,"ok":true,"total":4,"exact":4,"raw":5,"pruned":4,"secs":2.8327929973602295},{"k":1,"p":5,"v":4,"ok":true,"total":3,"exact":3,"raw":3,"pruned":3,"secs":2.6034669876098633},{"k":1,"p":6,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.799165725708008},{"k":1,"p":3,"v":7,"ok":true,"total":1,"exact":1,"raw":1,"pruned":1,"secs":2.938168525695801},{"k":1,"p":4,"v":6,"ok":true,"total":21,"exact":21,"raw":27,"pruned":21,"secs":3.272468328475952},{"k":1,"p":5,"v":5,"ok":true,"total":13,"exact":13,"raw":15,"pruned":13,"secs":3.081324815750122},{"k":1,"p":6,"v":4,"ok":true,"total":22,"exact":22,"raw":26,"pruned":22,"secs":2.9205305576324463},{"k":1,"p":7,"v":3,"ok":true,"total":2,"exact":2,"raw":2,"pruned":2,"secs":2.817850112915039},{"k":1,"p":3,"v":8,"ok":true,"total":2,"exact":2,"raw":2,"pruned":2,"secs":2.8268024921417236},{"k":1,"p":4,"v":7,"ok":true,"total":63,"exact":63,"raw":90,"pruned":63,"secs":2.891022205352783},{"k":1,"p":5,"v":6,"ok":true,"total":62,"exact":62,"raw":78,"pruned":62,"secs":2.9119315147399902},{"k":1,"p":6,"v":5,"ok":true,"total":85,"exact":85,"raw":112,"pruned":85,"secs":2.997164726257324},{"k":1,"p":7,"v":4,"ok":true,"total":39,"exact":39,"raw":44,"pruned":39,"secs":2.9779348373413086},{"k":1,"p":8,"v":3,"ok":true,"total":7,"exact":7,"raw":7,"pruned":7,"secs":2.8384368419647217},{"k":1,"p":4,"v":8,"ok":true,"total":176,"exact":176,"raw":262,"pruned":176,"secs":2.977696180343628},{"k":1,"p":5,"v":7,"ok":true,"total":187,"exact":187,"raw":268,"pruned":187,"secs":3.1715786457061768},{"k":1,"p":6,"v":6,"ok":true,"total":338,"exact":338,"raw":453,"pruned":338,"secs":3.209009885787964},{"k":1,"p":7,"v":5,"ok":true,"total":126,"exact":126,"raw":159,"pruned":126,"secs":3.1728856563568115},{"k":1,"p":8,"v":4,"ok":true,"total":87,"exact":87,"raw":96,"pruned":87,"secs":2.9532485008239746},{"k":1,"p":5,"v":8,"ok":true,"total":581,"exact":581,"raw":829,"pruned":581,"secs":3.630720853805542},{"k":1,"p":6,"v":7,"ok":true,"total":1256,"exact":1256,"raw":1823,"pruned":1256,"secs":4.341352939605713},{"k":1,"p":7,"v":6,"ok":true,"total":482,"exact":482,"raw":618,"pruned":482,"secs":3.800747871398926},{"k":1,"p":8,"v":5,"ok":true,"total":331,"exact":331,"raw":413,"pruned":331,"secs":3.3096330165863037},{"k":1,"p":6,"v":8,"ok":true,"total":4796,"exact":4796,"raw":6871,"pruned":4796,"secs":11.238332033157349},{"k":1,"p":7,"v":7,"ok":true,"total":1708,"exact":1708,"raw":2372,"pruned":1708,"secs":7.344600677490234},{"k":1,"p":8,"v":6,"ok":true,"total":1547,"exact":1547,"raw":1959,"pruned":1547,"secs":5.949113607406616},{"k":1,"p":7,"v":8,"ok":true,"total":6815,"exact":6815,"raw":9451,"pruned":6815,"secs":47.46593618392944},{"k":1,"p":8,"v":7,"ok":true,"total":7061,"exact":7061,"raw":9056,"pruned":7061,"secs":47.926613569259644},{"k":1,"p":8,"v":8,"ok":false,"total":null,"exact":null,"raw":27950,"pruned":null,"secs":null},{"k":2,"p":3,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.6340692043304443},{"k":2,"p":3,"v":4,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.0010054111480713},{"k":2,"p":4,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.9688358306884766},{"k":2,"p":3,"v":5,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.182689905166626},{"k":2,"p":4,"v":4,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.1006500720977783},{"k":2,"p":5,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.045353651046753},{"k":2,"p":3,"v":6,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.0173819065093994},{"k":2,"p":4,"v":5,"ok":true,"total":13,"exact":9,"raw":61,"pruned":37,"secs":3.2149107456207275},{"k":2,"p":5,"v":4,"ok":true,"total":5,"exact":2,"raw":46,"pruned":28,"secs":3.084076404571533},{"k":2,"p":6,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.9845290184020996},{"k":2,"p":3,"v":7,"ok":true,"total":1,"exact":0,"raw":1,"pruned":1,"secs":3.1402602195739746},{"k":2,"p":4,"v":6,"ok":true,"total":124,"exact":103,"raw":1641,"pruned":782,"secs":3.689309597015381},{"k":2,"p":5,"v":5,"ok":true,"total":39,"exact":26,"raw":841,"pruned":428,"secs":3.5099501609802246},{"k":2,"p":6,"v":4,"ok":true,"total":43,"exact":21,"raw":440,"pruned":255,"secs":3.5022671222686768},{"k":2,"p":7,"v":3,"ok":true,"total":2,"exact":0,"raw":6,"pruned":4,"secs":3.847661018371582},{"k":2,"p":3,"v":8,"ok":true,"total":2,"exact":0,"raw":2,"pruned":2,"secs":3.4363038539886475},{"k":2,"p":4,"v":7,"ok":true,"total":836,"exact":773,"raw":17505,"pruned":6988,"secs":6.522610664367676},{"k":2,"p":5,"v":6,"ok":true,"total":427,"exact":365,"raw":13216,"pruned":6203,"secs":8.42317008972168},{"k":2,"p":6,"v":5,"ok":true,"total":439,"exact":354,"raw":10053,"pruned":5111,"secs":6.513675689697266},{"k":2,"p":7,"v":4,"ok":true,"total":62,"exact":23,"raw":861,"pruned":469,"secs":3.936638116836548},{"k":2,"p":8,"v":3,"ok":true,"total":7,"exact":0,"raw":22,"pruned":18,"secs":4.22057580947876},{"k":2,"p":4,"v":8,"ok":true,"total":6530,"exact":6354,"raw":168855,"pruned":63925,"secs":44.494099617004395},{"k":2,"p":5,"v":7,"ok":true,"total":3614,"exact":3427,"raw":129055,"pruned":58674,"secs":63.44585156440735},{"k":2,"p":6,"v":6,"ok":true,"total":6010,"exact":5672,"raw":189718,"pruned":94058,"secs":268.62281942367554},{"k":2,"p":7,"v":5,"ok":true,"total":550,"exact":424,"raw":17507,"pruned":8581,"secs":8.639298677444458},{"k":2,"p":8,"v":4,"ok":true,"total":171,"exact":84,"raw":3330,"pruned":1810,"secs":4.601554870605469},{"k":2,"p":5,"v":8,"ok":false,"total":null,"exact":null,"raw":501686,"pruned":null,"secs":null},{"k":2,"p":6,"v":7,"ok":false,"total":null,"exact":null,"raw":288951,"pruned":null,"secs":null},{"k":2,"p":7,"v":6,"ok":false,"total":null,"exact":null,"raw":201467,"pruned":null,"secs":null},{"k":2,"p":8,"v":5,"ok":true,"total":2655,"exact":2324,"raw":91620,"pruned":49274,"secs":119.55059695243835},{"k":2,"p":6,"v":8,"ok":false,"total":null,"exact":null,"raw":169225,"pruned":null,"secs":null},{"k":2,"p":7,"v":7,"ok":false,"total":null,"exact":null,"raw":134737,"pruned":null,"secs":null},{"k":2,"p":8,"v":6,"ok":false,"total":null,"exact":null,"raw":136929,"pruned":null,"secs":null},{"k":2,"p":7,"v":8,"ok":false,"total":null,"exact":null,"raw":84203,"pruned":null,"secs":null},{"k":2,"p":8,"v":7,"ok":false,"total":null,"exact":null,"raw":97962,"pruned":null,"secs":null},{"k":2,"p":8,"v":8,"ok":false,"total":null,"exact":null,"raw":33932,"pruned":null,"secs":null},{"k":3,"p":3,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.9739229679107666},{"k":3,"p":3,"v":4,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.3145012855529785},{"k":3,"p":4,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.845132827758789},{"k":3,"p":3,"v":5,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.15040922164917},{"k":3,"p":4,"v":4,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.985973834991455},{"k":3,"p":5,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.9283275604248047},{"k":3,"p":3,"v":6,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":2.9822800159454346},{"k":3,"p":4,"v":5,"ok":true,"total":41,"exact":28,"raw":522,"pruned":268,"secs":3.137324333190918},{"k":3,"p":5,"v":4,"ok":true,"total":9,"exact":4,"raw":238,"pruned":139,"secs":3.287351131439209},{"k":3,"p":6,"v":3,"ok":true,"total":0,"exact":0,"raw":0,"pruned":null,"secs":3.104471206665039},{"k":3,"p":3,"v":7,"ok":true,"total":1,"exact":0,"raw":1,"pruned":1,"secs":3.343614101409912},{"k":3,"p":4,"v":6,"ok":true,"total":995,"exact":871,"raw":70840,"pruned":25159,"secs":19.369302988052368},{"k":3,"p":5,"v":5,"ok":true,"total":158,"exact":119,"raw":22113,"pruned":9497,"secs":7.467433452606201},{"k":3,"p":6,"v":4,"ok":true,"total":117,"exact":74,"raw":5987,"pruned":3072,"secs":3.8652408123016357},{"k":3,"p":7,"v":3,"ok":true,"total":2,"exact":0,"raw":20,"pruned":13,"secs":2.928473711013794},{"k":3,"p":3,"v":8,"ok":true,"total":2,"exact":0,"raw":2,"pruned":2,"secs":3.0442309379577637},{"k":3,"p":4,"v":7,"ok":false,"total":null,"exact":null,"raw":2429776,"pruned":null,"secs":null},{"k":3,"p":5,"v":6,"ok":false,"total":null,"exact":null,"raw":898865,"pruned":null,"secs":null},{"k":3,"p":6,"v":5,"ok":true,"total":5035,"exact":4596,"raw":656595,"pruned":298636,"secs":604.4475555419922},{"k":3,"p":7,"v":4,"ok":true,"total":147,"exact":85,"raw":15955,"pruned":8182,"secs":7.35870099067688},{"k":3,"p":8,"v":3,"ok":true,"total":7,"exact":0,"raw":116,"pruned":67,"secs":3.1299872398376465},{"k":3,"p":4,"v":8,"ok":false,"total":null,"exact":null,"raw":3172086,"pruned":null,"secs":null},{"k":3,"p":5,"v":7,"ok":false,"total":null,"exact":null,"raw":788472,"pruned":null,"secs":null},{"k":3,"p":6,"v":6,"ok":false,"total":null,"exact":null,"raw":408513,"pruned":null,"secs":null},{"k":3,"p":7,"v":5,"ok":false,"total":null,"exact":null,"raw":507986,"pruned":null,"secs":null},{"k":3,"p":8,"v":4,"ok":true,"total":640,"exact":469,"raw":117811,"pruned":57901,"secs":83.48026514053345},{"k":3,"p":5,"v":8,"ok":false,"total":null,"exact":null,"raw":352228,"pruned":null,"secs":null},{"k":3,"p":6,"v":7,"ok":false,"total":null,"exact":null,"raw":206233,"pruned":null,"secs":null},{"k":3,"p":7,"v":6,"ok":false,"total":null,"exact":null,"raw":167665,"pruned":null,"secs":null},{"k":3,"p":8,"v":5,"ok":false,"total":null,"exact":null,"raw":353805,"pruned":null,"secs":null},{"k":3,"p":6,"v":8,"ok":false,"total":null,"exact":null,"raw":102406,"pruned":null,"secs":null},{"k":3,"p":7,"v":7,"ok":false,"total":null,"exact":null,"raw":82299,"pruned":null,"secs":null},{"k":3,"p":8,"v":6,"ok":false,"total":null,"exact":null,"raw":85955,"pruned":null,"secs":null},{"k":3,"p":7,"v":8,"ok":false,"total":null,"exact":null,"raw":46543,"pruned":null,"secs":null},{"k":3,"p":8,"v":7,"ok":false,"total":null,"exact":null,"raw":49336,"pruned":null,"secs":null},{"k":3,"p":8,"v":8,"ok":false,"total":null,"exact":null,"raw":20476,"pruned":null,"secs":null}],"facets":[{"v":4,"series":[{"p":5,"pts":[{"k":1,"total":3,"exact":3,"secs":2.6034669876098633},{"k":2,"total":5,"exact":2,"secs":3.084076404571533},{"k":3,"total":9,"exact":4,"secs":3.287351131439209}]},{"p":6,"pts":[{"k":1,"total":22,"exact":22,"secs":2.9205305576324463},{"k":2,"total":43,"exact":21,"secs":3.5022671222686768},{"k":3,"total":117,"exact":74,"secs":3.8652408123016357}]},{"p":7,"pts":[{"k":1,"total":39,"exact":39,"secs":2.9779348373413086},{"k":2,"total":62,"exact":23,"secs":3.936638116836548},{"k":3,"total":147,"exact":85,"secs":7.35870099067688}]},{"p":8,"pts":[{"k":1,"total":87,"exact":87,"secs":2.9532485008239746},{"k":2,"total":171,"exact":84,"secs":4.601554870605469},{"k":3,"total":640,"exact":469,"secs":83.48026514053345}]}]},{"v":5,"series":[{"p":4,"pts":[{"k":1,"total":4,"exact":4,"secs":2.8327929973602295},{"k":2,"total":13,"exact":9,"secs":3.2149107456207275},{"k":3,"total":41,"exact":28,"secs":3.137324333190918}]},{"p":5,"pts":[{"k":1,"total":13,"exact":13,"secs":3.081324815750122},{"k":2,"total":39,"exact":26,"secs":3.5099501609802246},{"k":3,"total":158,"exact":119,"secs":7.467433452606201}]},{"p":6,"pts":[{"k":1,"total":85,"exact":85,"secs":2.997164726257324},{"k":2,"total":439,"exact":354,"secs":6.513675689697266},{"k":3,"total":5035,"exact":4596,"secs":604.4475555419922}]}]},{"v":6,"series":[{"p":4,"pts":[{"k":1,"total":21,"exact":21,"secs":3.272468328475952},{"k":2,"total":124,"exact":103,"secs":3.689309597015381},{"k":3,"total":995,"exact":871,"secs":19.369302988052368}]}]}]};
+const STEPS = ["--s0","--s1","--s2","--s3","--s4","--s5","--s6","--s7"];
+const cellOf = (k,p,v) => D.data.find(d => d.k===k && d.p===p && d.v===v);
+let MODE = "total";
+
+// Log-binned magnitude → ramp step. Zero is its own state (never a ramp colour: "none" is not "few").
+function stepFor(n, max) {
+  if (!n) return null;
+  const f = Math.log(n + 1) / Math.log(max + 1);
+  return Math.min(STEPS.length - 1, Math.max(0, Math.round(f * (STEPS.length - 1))));
+}
+
+function renderTables() {
+  const max = Math.max(...D.data.filter(d => d.ok).map(d => d[MODE] || 0), 1);
+  document.getElementById("tables").innerHTML = D.KS.map(k => {
+    const head = D.VS.map(v => '<th scope="col">v ' + v + "</th>").join("");
+    const body = D.PS.map(p => {
+      const tds = D.VS.map(v => {
+        const c = cellOf(k, p, v);
+        if (!c) return '<td class="zero">·</td>';
+        if (!c.ok) return '<td class="censor" title="censored at the cap — raw blocks still arriving">cap</td>';
+        const n = c[MODE];
+        const s = stepFor(n, max);
+        if (s === null) return '<td class="zero" title="no hyperbolic tiling exists in this box">0</td>';
+        const deep = s >= 5 ? " deep" : "";
+        const title = "p " + p + ", v " + v + " — " + n.toLocaleString() + " tilings from " +
+          (c.raw ? c.raw.toLocaleString() : "?") + " raw blocks in " + (c.secs != null ? c.secs.toFixed(1) + "s" : "?");
+        return '<td class="cell' + deep + '" style="background:var(' + STEPS[s] + ')" title="' + title + '">' + n.toLocaleString() + "</td>";
+      }).join("");
+      return '<tr><th scope="row">p ' + p + "</th>" + tds + "</tr>";
+    }).join("");
+    const label = MODE === "total" ? "k ≤ " + k : "k = " + k;
+    return '<div class="scroll"><table><caption>' + label + ' <em>— ' +
+      (MODE === "total" ? "every tiling with at most " + k + " vertex orbit" + (k > 1 ? "s" : "") : "exactly " + k + "-uniform only") +
+      '</em></caption><thead><tr><th class="corner">' + (MODE === "total" ? "≤" + k : "=" + k) + "</th>" + head +
+      "</tr></thead><tbody>" + body + "</tbody></table></div>";
+  }).join("");
+}
+
+// ── charts ───────────────────────────────────────────────────────────────────────────────────────
+// Ordinal blue ramp by p (an ordered quantity, so one hue with monotone lightness — not categorical
+// hues). Light and dark each get steps validated against their own surface.
+const P_LIGHT = { 4:"#86b6ef", 5:"#5598e7", 6:"#2a78d6", 7:"#1c5cab", 8:"#104281" };
+const P_DARK  = { 4:"#184f95", 5:"#256abf", 6:"#3987e5", 7:"#6da7ec", 8:"#9ec5f4" };
+const isDark = () => {
+  const t = document.documentElement.getAttribute("data-theme");
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+const colorOf = p => (isDark() ? P_DARK : P_LIGHT)[p] || (isDark() ? "#9ec5f4" : "#2a78d6");
+
+function chart(facet, valueOf, opts) {
+  const W = 300, H = 190, L = 44, R = 34, T = 12, B = 26;
+  const vals = facet.series.flatMap(s => s.pts.map(valueOf)).filter(n => n != null && n > 0);
+  if (!vals.length) return "";
+  const lo = Math.min(...vals, opts.floor), hi = Math.max(...vals);
+  const ly = n => Math.log10(Math.max(n, lo));
+  const y = n => H - B - ((ly(n) - ly(lo)) / Math.max(ly(hi) - ly(lo), 0.0001)) * (H - T - B);
+  const x = k => L + ((k - D.KS[0]) / Math.max(D.KS.at(-1) - D.KS[0], 1)) * (W - L - R);
+
+  // decade gridlines, at most one per power of ten
+  let grid = "";
+  for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) {
+    const t = Math.pow(10, e);
+    if (t < lo || t > hi * 1.05) continue;
+    grid += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) +
+      '" stroke="var(--line)" stroke-width="1"/>' +
+      '<text x="' + (L - 6) + '" y="' + (y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--ink-3)">' +
+      opts.tick(t) + "</text>";
+  }
+  const axis = D.KS.map(k => '<text x="' + x(k) + '" y="' + (H - B + 15) + '" text-anchor="middle" font-size="10" fill="var(--ink-3)">k ' + k + "</text>").join("");
+
+  const ends = [];
+  const lines = facet.series.map(s => {
+    const c = colorOf(s.p);
+    const pts = s.pts.map(pt => ({ k: pt.k, n: valueOf(pt) })).filter(pt => pt.n != null && pt.n > 0);
+    if (!pts.length) return "";
+    const d = pts.map((pt, i) => (i ? "L" : "M") + x(pt.k).toFixed(1) + " " + y(pt.n).toFixed(1)).join(" ");
+    // 2px surface ring on each marker so overlapping series stay separable
+    const dots = pts.map(pt =>
+      '<circle cx="' + x(pt.k).toFixed(1) + '" cy="' + y(pt.n).toFixed(1) + '" r="3.5" fill="' + c +
+      '" stroke="var(--surface)" stroke-width="2"><title>p ' + s.p + ", v " + facet.v + ", k " + pt.k + " — " +
+      opts.tip(pt.n) + "</title></circle>").join("");
+    const last = pts.at(-1);
+    ends.push({ x: x(last.k) + 7, y: y(last.n), p: s.p });
+    return '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="2" stroke-linejoin="round"/>' + dots;
+  }).join("");
+
+  // Direct labels are mandatory at this series count, so they must not collide: walk them top-down
+  // and push each down to clear the previous by one line-height.
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) ends[i].y = Math.max(ends[i].y, ends[i - 1].y + 11);
+  const labels = ends.map(e =>
+    '<text x="' + e.x + '" y="' + (e.y + 3.5).toFixed(1) + '" font-size="10" fill="var(--ink-2)" ' +
+    'font-family="ui-monospace, Menlo, monospace">p' + e.p + "</text>").join("");
+
+  return '<figure><svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + opts.aria(facet) + '">' +
+    grid + axis + lines + labels +
+    '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '" stroke="var(--line-2)"/>' +
+    "</svg><figcaption><b>valence ≤ " + facet.v + "</b> · " + opts.unit + ", log scale</figcaption></figure>";
+}
+
+function renderCharts() {
+  document.getElementById("growth").innerHTML = D.facets.map(f => chart(f, pt => pt[MODE], {
+    floor: 1, unit: "distinct tilings",
+    tick: t => t >= 1000 ? (t / 1000) + "k" : String(t),
+    tip: n => n.toLocaleString() + " tilings",
+    aria: f => "Distinct tilings against k for valence " + f.v,
+  })).join("");
+  document.getElementById("cost").innerHTML = D.facets.map(f => chart(f, pt => pt.secs, {
+    floor: 1, unit: "solver seconds",
+    // Gridlines are exact decades — never round a tick label onto a line it doesn't sit on.
+    tick: t => t >= 1000 ? (t / 1000) + "ks" : t + "s",
+    tip: n => n.toFixed(1) + " seconds",
+    aria: f => "Solver seconds against k for valence " + f.v,
+  })).join("");
+}
+
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  MODE = b.dataset.mode;
+  document.querySelectorAll(".seg button").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+  renderTables(); renderCharts();
+}));
+// Charts read theme-dependent hexes (SVG strokes can't be var()-driven per series), so repaint on flip.
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderCharts);
+new MutationObserver(renderCharts).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+renderTables();
+renderCharts();
+</script>

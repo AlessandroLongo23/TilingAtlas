@@ -1,0 +1,13 @@
+{
+ "k": 3,
+ "p": 6,
+ "v": 6,
+ "palette": "hyp-s-p6v6",
+ "status": "timeout",
+ "t": {
+  "build": 2.9787986278533936,
+  "solve": 897.0858490467072
+ },
+ "raw_blocks": 408513,
+ "tilings": []
+}

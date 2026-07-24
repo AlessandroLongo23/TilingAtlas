@@ -5266,3 +5266,76 @@ cursor says which is which (pointer vs default). The hover hairline follows: on 
 it keys on `:has(.card-thumb:hover)`, so hovering the dead bottom section no longer promises a
 click it won't honour. Verified headless: cursor split, bottom click stays on /library, thumbnail
 click navigates to the paged-to variant, toggle round-trips through the URL.
+
+## §87 — A new class: colored tilings, and the day it went from 2 colors to 3 (2026-07-24)
+
+Marek sent `_colors.zip` in the morning and `3colors.zip` after lunch, so this section covers both
+halves of the same day. The object is new to the atlas: a periodic COLORING of a fixed grid, where
+k counts colored vertex classes — vertex orbits under the symmetries that preserve the coloring —
+and the vertex figure is a color word, `(A4, B4)D4a` being the checkerboard vertex. Nothing here is
+a proper coloring; all-A is a valid k=1 solution.
+
+The decoder (`tools/ctrnact-oracle/develop_colors.py`) imports the parser, vertex tables, glue and
+star-walk develop from `develop_freedraw.py` untouched. The whole difference is the alphabet —
+`{A4, B4}` instead of freedraw's `{A2 digon, A4 square}`, two squares distinguished only by letter —
+and the emitter: no drawn-edge bit, instead the corner crossed while star-walking a sector IS the
+tile filling that quadrant, so every cell is claimed up to four times and all claims must agree.
+That per-cell agreement is a consistency check freedraw never had, and it passed on all 245,480
+blocks across six corpora, alongside developed-orbit-count = certificate k = filename k.
+
+Conventions were settled the freedraw way — canonicalize under each candidate quotient and see which
+makes Marek's counts a bijection. Mirror pairs merge (adding mirrors folds nothing, corpus-wide) and
+colors stay LABELED (folding relabelings collapses ~83%). The `_o_` files are exactly the chiral
+solutions, verified per grid: 627/627, 21,235/21,235, 393/393, 22,873/22,873 chiral inside them, and
+zero chiral blocks in any main file. The triangle grid needed a canonical form of its own: cells
+indexed 2·coset + up/down, transformed through TRIPLED CENTROIDS (3x+m, 3y+m), the encoding on which
+D6 acts linearly. The combined square-triangle grid has no cell lattice at all, so it develops in
+exact ℤ[ζ₁₂] and reuses freedraw's PatchComplex quotient — face-walk closure and torus Euler passed
+on all of it, zero digons.
+
+The 3-color drop taught one thing worth remembering: an n-color corpus CONTAINS every smaller
+coloring, once per choice of letters, and the file-name token says which (`A4B4C4` vs `A4B4`). The
+pair-token subsets reproduce the shipped 2-color counts exactly — 8/53/309/1292 on squares,
+9/54/556/2002 on triangles — which is a second solver run agreeing with the first, the only external
+check this class has had so far. So the n-color catalogues ship SURJECTIVE solutions only; the rest
+would put every 2-coloring in the atlas three more times. `--colors n` is an axis on the decoder,
+not a fork: the letter is the color index, alphabets are registered per count to `MAX_COLORS = 4`,
+and the binary swap became S_n.
+
+Shipped: 226,337 colorings over grid × palette size, `public/colors/{squares,tri,ts}-{2,3}-k*.json`,
+97 MB — the size flag of this batch, and the reason a 4-color drop needs gzipped or chunked assets
+first. The class carries certification "candidate" everywhere: internally consistent, dedup-identical
+to Marek's, k=1 verified by hand, but no independent enumeration exists. The cheapest real check is
+still our own `tools/ctrnact-oracle` given a palette of two same-shape squares — if it reproduces
+8/53/309/1292 the class earns an independent count, and 3 colors becomes a palette edit there too.
+Details and per-k tables: `experiments/results/colors-decode-2026-07-24.md` and
+`colors3-decode-2026-07-24.md`.
+
+## §87 — The (k,p,v) sweep completes, and what the table says (2026-07-24)
+
+All 108 cells attempted: **82 enumerated, 26 censored at the cap** (the k=3 pass ran overnight;
+an idle-sleep killed it once at 88/108, so the relaunch now carries a `caffeinate` held on the
+sweep pid). The three layers are internally consistent — a cell (K,p,v) counts every tiling with
+k ≤ K, and its `by_k` split matches the lower layers in all 20 cases where both exist. That is 20
+independent reproductions of the k=1 and k=2 counts from a *different* palette build, which is a
+stronger check than any single run's self-consistency.
+
+**Frontier of complete boxes:** 7,061 at k≤1 (p8, v7), 6,530 at k≤2 (p4, v8), 5,035 at k≤3 (p6, v5).
+Censoring is a compute wall, not a mathematical one: every censored cell was still emitting raw
+blocks when the clock ran out, so its true count is strictly larger than any complete cell below it.
+Cost climbs faster than the count it buys — p6v5 at k≤3 spent 509 s of solve to reach 5,035, while
+the same box at k≤2 took under 20 s for 439.
+
+**The k=3 layer is enumerated but NOT shipped.** Twelve k=3 cells completed, holding **6,246 exactly
+3-uniform tilings** (4,596 of them in p6v5 alone) that exist nowhere on /library or /play — the shelf
+is still k≤2. Shipping them needs the same bridge as §83 (re-run the maximal complete cells with
+darts kept → export → certify → stamp), which is hours of compute and a catalogue-scale data change,
+so it waits for AL's call rather than being assumed from the earlier "Add them ALL".
+
+**The report** (`scripts/hyp-sweep-report.mjs` → `experiments/results/hyp-sweep/report.html`) is the
+display layer AL specified: one p×v table per k with a cumulative/exact-k toggle, and count-vs-k plus
+cost-vs-k growth charts at fixed (p,v). Zero-dep, regenerable, self-contained. Design notes worth
+keeping: censored cells are hatched and carry no number (a cap is not a count, and colouring one on
+the magnitude ramp would have read as "few"); p is an ORDERED quantity, so series colour is a
+single-hue ordinal ramp rather than categorical hues, validated against both surfaces; the growth
+charts drop boxes whose count never rises, since a flat line and a 3-vs-4-second wobble plot nothing.

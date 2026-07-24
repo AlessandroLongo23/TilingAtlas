@@ -1,0 +1,110 @@
+[08:38:15] sweep start: 108 cells (k in [1, 2, 3], p in [3, 4, 5, 6, 7, 8], v in [3, 4, 5, 6, 7, 8]), 900s cap per cell -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/hyp-sweep
+[08:38:15] [1/108] k=1 p=3 v=3: exists, skipping
+[08:38:15] [2/108] k=1 p=3 v=4: exists, skipping
+[08:38:15] [3/108] k=1 p=4 v=3: exists, skipping
+[08:38:15] [4/108] k=1 p=3 v=5: exists, skipping
+[08:38:15] [5/108] k=1 p=4 v=4: exists, skipping
+[08:38:15] [6/108] k=1 p=5 v=3: exists, skipping
+[08:38:15] [7/108] k=1 p=3 v=6: exists, skipping
+[08:38:15] [8/108] k=1 p=4 v=5: exists, skipping
+[08:38:15] [9/108] k=1 p=5 v=4: exists, skipping
+[08:38:15] [10/108] k=1 p=6 v=3: exists, skipping
+[08:38:15] [11/108] k=1 p=3 v=7: exists, skipping
+[08:38:15] [12/108] k=1 p=4 v=6: exists, skipping
+[08:38:15] [13/108] k=1 p=5 v=5: exists, skipping
+[08:38:15] [14/108] k=1 p=6 v=4: exists, skipping
+[08:38:15] [15/108] k=1 p=7 v=3: exists, skipping
+[08:38:15] [16/108] k=1 p=3 v=8: exists, skipping
+[08:38:15] [17/108] k=1 p=4 v=7: exists, skipping
+[08:38:15] [18/108] k=1 p=5 v=6: exists, skipping
+[08:38:15] [19/108] k=1 p=6 v=5: exists, skipping
+[08:38:15] [20/108] k=1 p=7 v=4: exists, skipping
+[08:38:15] [21/108] k=1 p=8 v=3: exists, skipping
+[08:38:15] [22/108] k=1 p=4 v=8: exists, skipping
+[08:38:15] [23/108] k=1 p=5 v=7: exists, skipping
+[08:38:15] [24/108] k=1 p=6 v=6: exists, skipping
+[08:38:15] [25/108] k=1 p=7 v=5: exists, skipping
+[08:38:15] [26/108] k=1 p=8 v=4: exists, skipping
+[08:38:15] [27/108] k=1 p=5 v=8: exists, skipping
+[08:38:15] [28/108] k=1 p=6 v=7: exists, skipping
+[08:38:15] [29/108] k=1 p=7 v=6: exists, skipping
+[08:38:15] [30/108] k=1 p=8 v=5: exists, skipping
+[08:38:15] [31/108] k=1 p=6 v=8: exists, skipping
+[08:38:15] [32/108] k=1 p=7 v=7: exists, skipping
+[08:38:15] [33/108] k=1 p=8 v=6: exists, skipping
+[08:38:15] [34/108] k=1 p=7 v=8: exists, skipping
+[08:38:15] [35/108] k=1 p=8 v=7: exists, skipping
+[08:38:15] [36/108] k=1 p=8 v=8: exists, skipping
+[08:38:15] [37/108] k=2 p=3 v=3: exists, skipping
+[08:38:15] [38/108] k=2 p=3 v=4: exists, skipping
+[08:38:15] [39/108] k=2 p=4 v=3: exists, skipping
+[08:38:15] [40/108] k=2 p=3 v=5: exists, skipping
+[08:38:15] [41/108] k=2 p=4 v=4: exists, skipping
+[08:38:15] [42/108] k=2 p=5 v=3: exists, skipping
+[08:38:15] [43/108] k=2 p=3 v=6: exists, skipping
+[08:38:15] [44/108] k=2 p=4 v=5: exists, skipping
+[08:38:15] [45/108] k=2 p=5 v=4: exists, skipping
+[08:38:15] [46/108] k=2 p=6 v=3: exists, skipping
+[08:38:15] [47/108] k=2 p=3 v=7: exists, skipping
+[08:38:15] [48/108] k=2 p=4 v=6: exists, skipping
+[08:38:15] [49/108] k=2 p=5 v=5: exists, skipping
+[08:38:15] [50/108] k=2 p=6 v=4: exists, skipping
+[08:38:15] [51/108] k=2 p=7 v=3: exists, skipping
+[08:38:15] [52/108] k=2 p=3 v=8: exists, skipping
+[08:38:15] [53/108] k=2 p=4 v=7: exists, skipping
+[08:38:15] [54/108] k=2 p=5 v=6: exists, skipping
+[08:38:15] [55/108] k=2 p=6 v=5: exists, skipping
+[08:38:15] [56/108] k=2 p=7 v=4: exists, skipping
+[08:38:15] [57/108] k=2 p=8 v=3: exists, skipping
+[08:38:15] [58/108] k=2 p=4 v=8: exists, skipping
+[08:38:15] [59/108] k=2 p=5 v=7: exists, skipping
+[08:38:15] [60/108] k=2 p=6 v=6: exists, skipping
+[08:38:15] [61/108] k=2 p=7 v=5: exists, skipping
+[08:38:15] [62/108] k=2 p=8 v=4: exists, skipping
+[08:38:15] [63/108] k=2 p=5 v=8: exists, skipping
+[08:38:15] [64/108] k=2 p=6 v=7: exists, skipping
+[08:38:15] [65/108] k=2 p=7 v=6: exists, skipping
+[08:38:15] [66/108] k=2 p=8 v=5: exists, skipping
+[08:38:15] [67/108] k=2 p=6 v=8: exists, skipping
+[08:38:15] [68/108] k=2 p=7 v=7: exists, skipping
+[08:38:15] [69/108] k=2 p=8 v=6: exists, skipping
+[08:38:15] [70/108] k=2 p=7 v=8: exists, skipping
+[08:38:15] [71/108] k=2 p=8 v=7: exists, skipping
+[08:38:15] [72/108] k=2 p=8 v=8: exists, skipping
+[08:38:15] [73/108] k=3 p=3 v=3: exists, skipping
+[08:38:15] [74/108] k=3 p=3 v=4: exists, skipping
+[08:38:15] [75/108] k=3 p=4 v=3: exists, skipping
+[08:38:15] [76/108] k=3 p=3 v=5: exists, skipping
+[08:38:15] [77/108] k=3 p=4 v=4: exists, skipping
+[08:38:15] [78/108] k=3 p=5 v=3: exists, skipping
+[08:38:15] [79/108] k=3 p=3 v=6: exists, skipping
+[08:38:15] [80/108] k=3 p=4 v=5: exists, skipping
+[08:38:15] [81/108] k=3 p=5 v=4: exists, skipping
+[08:38:15] [82/108] k=3 p=6 v=3: exists, skipping
+[08:38:15] [83/108] k=3 p=3 v=7: exists, skipping
+[08:38:15] [84/108] k=3 p=4 v=6: exists, skipping
+[08:38:15] [85/108] k=3 p=5 v=5: exists, skipping
+[08:38:15] [86/108] k=3 p=6 v=4: exists, skipping
+[08:38:15] [87/108] k=3 p=7 v=3: exists, skipping
+[08:38:15] [88/108] k=3 p=3 v=8: exists, skipping
+[09:08:30] [89/108] k=3 p=4 v=7: TIMEOUT after 1813s (raw so far: 2429776)
+[09:23:31] [90/108] k=3 p=5 v=6: TIMEOUT after 900s (raw so far: 898865)
+[09:33:36] [91/108] k=3 p=6 v=5: 5035 tilings (by k: {'1': 85, '2': 354, '3': 4596}) from 298636 pruned / 656595 raw  [build 3s solve 509.2s prune 15.7s count 76.4s]  (55.3 min total)
+[09:33:43] [92/108] k=3 p=7 v=4: 147 tilings (by k: {'1': 39, '2': 23, '3': 85}) from 8182 pruned / 15955 raw  [build 3s solve 2.1s prune 0.4s count 1.7s]  (55.5 min total)
+[09:33:46] [93/108] k=3 p=8 v=3: 7 tilings (by k: {'1': 7}) from 67 pruned / 116 raw  [build 3s solve 0.3s prune 0.3s count 0.0s]  (55.5 min total)
+[09:48:52] [94/108] k=3 p=4 v=8: TIMEOUT after 900s (raw so far: 3172086)
+[10:03:52] [95/108] k=3 p=5 v=7: TIMEOUT after 900s (raw so far: 788472)
+[10:18:53] [96/108] k=3 p=6 v=6: TIMEOUT after 900s (raw so far: 408513)
+[10:33:53] [97/108] k=3 p=7 v=5: TIMEOUT after 900s (raw so far: 507986)
+[10:35:17] [98/108] k=3 p=8 v=4: 640 tilings (by k: {'1': 87, '2': 84, '3': 469}) from 57901 pruned / 117811 raw  [build 3s solve 65.6s prune 1.9s count 13.0s]  (117.0 min total)
+[10:50:17] [99/108] k=3 p=5 v=8: TIMEOUT after 900s (raw so far: 352228)
+[11:05:17] [100/108] k=3 p=6 v=7: TIMEOUT after 900s (raw so far: 206233)
+[11:20:17] [101/108] k=3 p=7 v=6: TIMEOUT after 900s (raw so far: 167665)
+[11:35:18] [102/108] k=3 p=8 v=5: TIMEOUT after 900s (raw so far: 353805)
+[11:50:18] [103/108] k=3 p=6 v=8: TIMEOUT after 900s (raw so far: 102406)
+[12:05:18] [104/108] k=3 p=7 v=7: TIMEOUT after 900s (raw so far: 82299)
+[12:20:18] [105/108] k=3 p=8 v=6: TIMEOUT after 900s (raw so far: 85955)
+[12:35:18] [106/108] k=3 p=7 v=8: TIMEOUT after 900s (raw so far: 46543)
+[12:50:18] [107/108] k=3 p=8 v=7: TIMEOUT after 900s (raw so far: 49336)
+[13:05:18] [108/108] k=3 p=8 v=8: TIMEOUT after 900s (raw so far: 20476)
+[13:05:18] sweep done in 267.1 min
