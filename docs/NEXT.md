@@ -13,7 +13,10 @@ theorem-certification lines are retired — history lives in `docs/SYNC.md` and 
   when revisited — n=10 (ζ₄₀) + n≥13 rings; viewport-culled deep-zoom explorer (depth 4+ in a window, drops
   the tile budget); Web-Worker build to kill the depth-change hitch; the R₂¹ rose seed / self-similar limit —
   lives in SYNC 2026-07-25 + the spec's non-goals (`superpowers/specs/2026-07-25-subrosa-editor-design.md`).
-  NEXT: **explore other symmetric-tiling construction methods** (scoping with AL now). Standing flag
+  NEXT (in progress): **`/multigrid` shipped** — de Bruijn multigrid constructor (Penrose, Ammann–Beenker,
+  …; live phason editor, n=4–10), the projection counterpart to Sub Rosa (`superpowers/specs/2026-07-25-multigrid-constructor-design.md`).
+  Possible follow-ups: the duality split-view (grid ↔ dual) and Girih/Hankin (the other high-value
+  construction method). Standing flag
   (pre-Sub-Rosa, unverified): `edges_667` ships non-contiguous k (2,3,4,6,10,11 absent from Marek's files) —
   a sample presented as a catalogue; label it honestly and ask Marek for the missing k + k=12/13 chiral files.
 - **Alessandro** — collaborator pipeline: what to request next from Marek (missing 6.6.7 k values first),

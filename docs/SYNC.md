@@ -1510,3 +1510,13 @@ is about the self-similar limit, not gap-free iteration (skipped, like the rose 
 rings ℤ[ζ₁₆],ℤ[ζ₃₂] in `Cyclotomic.ts` (n=6 reuses ζ₂₄) + a wrapping symmetry selector. Child counts
 n=4→[40,56] n=6→[140,240,276] n=8→[336,616,800,864]; depth-2 gap/overlap-free (over 0, area exact);
 seamless 12/16-fold flowers (Playwright, 1680/5376 tiles). 40/40 vitest, build clean. n=10/n≥13 next.
+
+**2026-07-25 · CC.** New **`/multigrid`** shelf — quasiperiodic rhombic tilings by **de Bruijn's
+multigrid (dual) method**, the projection counterpart to Sub Rosa's substitution. n grid-line families
+dualize to a 2n-fold rhombic tiling; each corner is `V(K)=ΣKⱼeⱼ` with K∈ℤⁿ the exact integer index
+vector, so topology is integer equality and positions are crack-free float — **no CyclotomicRing
+needed** (single-pass, no composition). Live **phason editor**: per-γⱼ sliders, dragging one flips the
+tiling; presets Symmetric (2n-fold) / Randomize. Reuses the batched `SubRosaGL` renderer + pan/zoom.
+n=4..10 (8–20-fold): Ammann–Beenker, Penrose, 12-fold, … Verified — edge-to-edge (over 0, one loop,
+integer-K keyed), Penrose/AB prototiles + areas, 10-fold symmetric preset; Playwright shots of all
+three. 12/12 vitest, build clean. Spec: `superpowers/specs/2026-07-25-multigrid-constructor-design.md`.
