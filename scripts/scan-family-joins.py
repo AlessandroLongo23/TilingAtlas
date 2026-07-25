@@ -43,7 +43,6 @@ from collections import Counter, defaultdict
 
 ZERO_AREA = 1e-7  # a tile below this at an endpoint counts as collapsed
 PATCH_R = 5.0  # radius of the congruence-check patch, in unit-edge lengths
-PATCH_N = 4  # lattice translates per basis direction
 SAMPLES = [0.2, 0.35, 0.5, 0.65, 0.8]  # interior u-values for the duplicate scan
 FLEX_SAMPLES = 7  # interior samples used to decide whether a tile flexes
 
@@ -110,6 +109,25 @@ def min_tile_area(polys):
 _patch_cache = {}
 
 
+def patch_translates(basis, polys, radius):
+    """How many lattice steps per direction are needed for the patch to COVER a disc of `radius`.
+
+    Derived from the lattice, never a fixed constant. A fixed count silently truncates the patch whenever
+    the cell is large relative to the radius, and then two truncated neighbourhoods are compared instead of
+    two discs — which both HIDES real differences (a false duplicate) and INVENTS them (a false mismatch,
+    since the two families' cells truncate at different places). Both were observed on the isotoxal k4
+    shelf before this was derived.
+
+    h is the spacing between adjacent lattice lines in the worst direction (|det| / the longer basis
+    vector), so ceil((radius + cell extent) / h) steps reach past the disc in every direction.
+    """
+    det = abs(basis[0].real * basis[1].imag - basis[1].real * basis[0].imag)
+    longest = max(abs(basis[0]), abs(basis[1]))
+    h = det / longest if longest > 0 else 1.0
+    extent = max((abs(z) for p in polys for z in p["v"]), default=0.0)
+    return int(math.ceil((radius + 2 * extent) / max(h, 1e-9))) + 1
+
+
 def patch_fingerprints(fid, pc, alphas):
     """Set of radial fingerprints, one per choice of anchor tile (the largest-n tile in the cell). Two
     tilings are congruent-with-anchor-matching iff the sets intersect."""
@@ -117,13 +135,17 @@ def patch_fingerprints(fid, pc, alphas):
     if key in _patch_cache:
         return _patch_cache[key]
     polys, basis = cell_at(pc, alphas)
-    pts = []
-    for i in range(-PATCH_N, PATCH_N + 1):
-        for j in range(-PATCH_N, PATCH_N + 1):
-            t = i * basis[0] + j * basis[1]
-            for p in polys:
-                vv = [z + t for z in p["v"]]
-                pts.append((p["n"], round(abs(signed_area(vv)), 6), centroid(vv)))
+    n = patch_translates(basis, polys, PATCH_R)
+    extent = max((abs(z) for p in polys for z in p["v"]), default=0.0)
+    reach = PATCH_R + 2 * extent
+    # The bounding box that GUARANTEES coverage can be large (N≈23 on some k4 cells), but only the
+    # translates whose cell can actually reach the disc matter — a count that depends on the disc and the
+    # cell area, not on N. Skipping the rest before touching any polygon is what keeps the corrected,
+    # coverage-safe patch as cheap as the old truncated one.
+    cells = [t for i in range(-n, n + 1) for j in range(-n, n + 1)
+             if abs(t := i * basis[0] + j * basis[1]) <= reach]
+    pre = [(p["n"], round(abs(signed_area(p["v"])), 6), centroid(p["v"])) for p in polys]
+    pts = [(pn, pa, pc0 + t) for t in cells for pn, pa, pc0 in pre]
     anchor = max(p["n"] for p in polys)
     out = set()
     for p in polys:
@@ -380,7 +402,7 @@ def main(atlas_path, plan_path):
             f"face of a validity box, which this scanner does not model)")
     by_id = {f["id"]: f for f in atlas}
     say(f"scanning {len(atlas)} single-parameter families")
-    say(f"patch congruence: R={PATCH_R}, {2 * PATCH_N + 1}x{2 * PATCH_N + 1} lattice translates")
+    say(f"patch congruence: R={PATCH_R}, translate count derived per family from its lattice")
     say()
 
     # ── duplicates first. A family and its α-reversal share both endpoints, so quotienting them is a
@@ -503,6 +525,12 @@ def main(atlas_path, plan_path):
                 continue
             ca, cea = canon(a[0], a[3])
             cb, ceb = canon(b[0], b[3])
+            # A merge needs two DISTINCT families meeting at a limit. If both branches collapse to the same
+            # duplicate representative they are one family, and "merging" them splices it to a reversed copy
+            # of ITSELF — a slider of twice the true range that sweeps out and back. That shipped for three
+            # isotoxal families while the congruence patch was still truncated (so the duplicate went
+            # undetected), and the seam tests could not catch it: the halves ARE congruent at the join,
+            # trivially, because they are the same family. See §101.
             if ca == cb:
                 continue
             merge_edges.add(tuple(sorted([(ca, cea), (cb, ceb)])))

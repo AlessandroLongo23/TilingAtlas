@@ -1,23 +1,9 @@
 {
- "ctrnact-isotoxal-family-k3-641": {
-  "to": "ctrnact-isotoxal-family-k3-632",
+ "ctrnact-isotoxal-family-k2-05": {
+  "to": "ctrnact-isotoxal-family-k2-04",
   "uOf": {
    "m": 1,
-   "c": 60
-  }
- },
- "ctrnact-isotoxal-family-k4-3885": {
-  "to": "ctrnact-isotoxal-family-k4-3840",
-  "uOf": {
-   "m": 1,
-   "c": 60
-  }
- },
- "ctrnact-isotoxal-family-k4-3890": {
-  "to": "ctrnact-isotoxal-family-k4-3845",
-  "uOf": {
-   "m": 1,
-   "c": 60
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k2-11": {
@@ -34,11 +20,67 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k2-32": {
+  "to": "ctrnact-isotoxal-family-k2-31",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k2-84": {
   "to": "ctrnact-isotoxal-family-k2-77",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k2-85": {
+  "to": "ctrnact-isotoxal-family-k2-79",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k2-86": {
+  "to": "ctrnact-isotoxal-family-k2-78",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-02": {
+  "to": "ctrnact-isotoxal-family-k3-01",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-04": {
+  "to": "ctrnact-isotoxal-family-k3-03",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-07": {
+  "to": "ctrnact-isotoxal-family-k3-05",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-08": {
+  "to": "ctrnact-isotoxal-family-k3-06",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-101": {
+  "to": "ctrnact-isotoxal-family-k3-100",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k3-103": {
@@ -48,8 +90,36 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k3-105": {
+  "to": "ctrnact-isotoxal-family-k3-104",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-107": {
+  "to": "ctrnact-isotoxal-family-k3-106",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-111": {
   "to": "ctrnact-isotoxal-family-k3-110",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-115": {
+  "to": "ctrnact-isotoxal-family-k3-114",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-117": {
+  "to": "ctrnact-isotoxal-family-k3-116",
   "uOf": {
    "m": -1,
    "c": 180
@@ -62,8 +132,22 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k3-14": {
+  "to": "ctrnact-isotoxal-family-k3-13",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-157": {
   "to": "ctrnact-isotoxal-family-k3-156",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-158": {
+  "to": "ctrnact-isotoxal-family-k3-155",
   "uOf": {
    "m": 1,
    "c": 0
@@ -76,6 +160,76 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k3-166": {
+  "to": "ctrnact-isotoxal-family-k3-165",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-168": {
+  "to": "ctrnact-isotoxal-family-k3-167",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-170": {
+  "to": "ctrnact-isotoxal-family-k3-169",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-174": {
+  "to": "ctrnact-isotoxal-family-k3-173",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-176": {
+  "to": "ctrnact-isotoxal-family-k3-175",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-178": {
+  "to": "ctrnact-isotoxal-family-k3-177",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-179": {
+  "to": "ctrnact-isotoxal-family-k3-177",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-180": {
+  "to": "ctrnact-isotoxal-family-k3-177",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-184": {
+  "to": "ctrnact-isotoxal-family-k3-183",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-186": {
+  "to": "ctrnact-isotoxal-family-k3-185",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-192": {
   "to": "ctrnact-isotoxal-family-k3-191",
   "uOf": {
@@ -83,8 +237,57 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k3-193": {
+  "to": "ctrnact-isotoxal-family-k3-191",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-194": {
-  "to": "ctrnact-isotoxal-family-k3-193",
+  "to": "ctrnact-isotoxal-family-k3-191",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-200": {
+  "to": "ctrnact-isotoxal-family-k3-199",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-214": {
+  "to": "ctrnact-isotoxal-family-k3-213",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-217": {
+  "to": "ctrnact-isotoxal-family-k3-215",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-218": {
+  "to": "ctrnact-isotoxal-family-k3-216",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-22": {
+  "to": "ctrnact-isotoxal-family-k3-21",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-225": {
+  "to": "ctrnact-isotoxal-family-k3-224",
   "uOf": {
    "m": 1,
    "c": 0
@@ -97,8 +300,50 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k3-237": {
+  "to": "ctrnact-isotoxal-family-k3-236",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-239": {
   "to": "ctrnact-isotoxal-family-k3-238",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-24": {
+  "to": "ctrnact-isotoxal-family-k3-23",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-240": {
+  "to": "ctrnact-isotoxal-family-k3-238",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-241": {
+  "to": "ctrnact-isotoxal-family-k3-238",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-246": {
+  "to": "ctrnact-isotoxal-family-k3-245",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-247": {
+  "to": "ctrnact-isotoxal-family-k3-245",
   "uOf": {
    "m": 1,
    "c": 0
@@ -107,15 +352,57 @@
  "ctrnact-isotoxal-family-k3-248": {
   "to": "ctrnact-isotoxal-family-k3-245",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k3-26": {
   "to": "ctrnact-isotoxal-family-k3-25",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-29": {
+  "to": "ctrnact-isotoxal-family-k3-27",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-30": {
+  "to": "ctrnact-isotoxal-family-k3-28",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-32": {
+  "to": "ctrnact-isotoxal-family-k3-31",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-324": {
+  "to": "ctrnact-isotoxal-family-k3-323",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-326": {
+  "to": "ctrnact-isotoxal-family-k3-325",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-328": {
+  "to": "ctrnact-isotoxal-family-k3-327",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k3-329": {
@@ -125,11 +412,158 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k3-33": {
+  "to": "ctrnact-isotoxal-family-k3-31",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-330": {
-  "to": "ctrnact-isotoxal-family-k3-328",
+  "to": "ctrnact-isotoxal-family-k3-327",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-333": {
+  "to": "ctrnact-isotoxal-family-k3-332",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-334": {
+  "to": "ctrnact-isotoxal-family-k3-331",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-337": {
+  "to": "ctrnact-isotoxal-family-k3-335",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-338": {
+  "to": "ctrnact-isotoxal-family-k3-336",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-34": {
+  "to": "ctrnact-isotoxal-family-k3-31",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-340": {
+  "to": "ctrnact-isotoxal-family-k3-339",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-341": {
+  "to": "ctrnact-isotoxal-family-k3-339",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-342": {
+  "to": "ctrnact-isotoxal-family-k3-339",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-344": {
+  "to": "ctrnact-isotoxal-family-k3-343",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-345": {
+  "to": "ctrnact-isotoxal-family-k3-343",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-346": {
+  "to": "ctrnact-isotoxal-family-k3-343",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-348": {
+  "to": "ctrnact-isotoxal-family-k3-347",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-352": {
+  "to": "ctrnact-isotoxal-family-k3-351",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-354": {
+  "to": "ctrnact-isotoxal-family-k3-353",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-36": {
+  "to": "ctrnact-isotoxal-family-k3-35",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-360": {
+  "to": "ctrnact-isotoxal-family-k3-359",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-38": {
+  "to": "ctrnact-isotoxal-family-k3-37",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-40": {
+  "to": "ctrnact-isotoxal-family-k3-39",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-412": {
+  "to": "ctrnact-isotoxal-family-k3-411",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-42": {
+  "to": "ctrnact-isotoxal-family-k3-41",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k3-448": {
@@ -139,8 +573,43 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k3-449": {
+  "to": "ctrnact-isotoxal-family-k3-447",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-455": {
+  "to": "ctrnact-isotoxal-family-k3-454",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-481": {
   "to": "ctrnact-isotoxal-family-k3-480",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-49": {
+  "to": "ctrnact-isotoxal-family-k3-09",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-50": {
+  "to": "ctrnact-isotoxal-family-k3-10",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-52": {
+  "to": "ctrnact-isotoxal-family-k3-12",
   "uOf": {
    "m": 1,
    "c": 0
@@ -174,6 +643,13 @@
    "c": 135
   }
  },
+ "ctrnact-isotoxal-family-k3-526": {
+  "to": "ctrnact-isotoxal-family-k3-522",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
  "ctrnact-isotoxal-family-k3-527": {
   "to": "ctrnact-isotoxal-family-k3-131",
   "uOf": {
@@ -181,8 +657,43 @@
    "c": 135
   }
  },
+ "ctrnact-isotoxal-family-k3-532": {
+  "to": "ctrnact-isotoxal-family-k3-530",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-534": {
+  "to": "ctrnact-isotoxal-family-k3-533",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k3-537": {
   "to": "ctrnact-isotoxal-family-k3-536",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-54": {
+  "to": "ctrnact-isotoxal-family-k3-13",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-540": {
+  "to": "ctrnact-isotoxal-family-k3-535",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-541": {
+  "to": "ctrnact-isotoxal-family-k3-538",
   "uOf": {
    "m": -1,
    "c": 180
@@ -195,11 +706,25 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k3-548": {
+  "to": "ctrnact-isotoxal-family-k3-546",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k3-567": {
   "to": "ctrnact-isotoxal-family-k3-565",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-57": {
+  "to": "ctrnact-isotoxal-family-k3-17",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k3-570": {
@@ -300,6 +825,13 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k3-609": {
+  "to": "ctrnact-isotoxal-family-k3-563",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k3-610": {
   "to": "ctrnact-isotoxal-family-k3-564",
   "uOf": {
@@ -323,6 +855,27 @@
  },
  "ctrnact-isotoxal-family-k3-638": {
   "to": "ctrnact-isotoxal-family-k3-630",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k3-639": {
+  "to": "ctrnact-isotoxal-family-k3-631",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k3-641": {
+  "to": "ctrnact-isotoxal-family-k3-632",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k3-642": {
+  "to": "ctrnact-isotoxal-family-k3-633",
   "uOf": {
    "m": -1,
    "c": 240
@@ -377,11 +930,81 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k3-86": {
+  "to": "ctrnact-isotoxal-family-k3-108",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-87": {
+  "to": "ctrnact-isotoxal-family-k3-109",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-88": {
+  "to": "ctrnact-isotoxal-family-k3-110",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k3-89": {
-  "to": "ctrnact-isotoxal-family-k3-88",
+  "to": "ctrnact-isotoxal-family-k3-110",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-91": {
+  "to": "ctrnact-isotoxal-family-k3-113",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-92": {
+  "to": "ctrnact-isotoxal-family-k3-114",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-93": {
+  "to": "ctrnact-isotoxal-family-k3-114",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k3-95": {
+  "to": "ctrnact-isotoxal-family-k3-94",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k3-98": {
+  "to": "ctrnact-isotoxal-family-k3-120",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-02": {
+  "to": "ctrnact-isotoxal-family-k4-01",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-05": {
+  "to": "ctrnact-isotoxal-family-k4-03",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-06": {
@@ -407,6 +1030,27 @@
  },
  "ctrnact-isotoxal-family-k4-1034": {
   "to": "ctrnact-isotoxal-family-k4-1033",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1039": {
+  "to": "ctrnact-isotoxal-family-k4-1038",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1040": {
+  "to": "ctrnact-isotoxal-family-k4-1036",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1041": {
+  "to": "ctrnact-isotoxal-family-k4-1037",
   "uOf": {
    "m": -1,
    "c": 180
@@ -447,6 +1091,41 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1061": {
+  "to": "ctrnact-isotoxal-family-k4-1060",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1063": {
+  "to": "ctrnact-isotoxal-family-k4-1062",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1095": {
+  "to": "ctrnact-isotoxal-family-k4-1094",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1097": {
+  "to": "ctrnact-isotoxal-family-k4-1096",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1099": {
+  "to": "ctrnact-isotoxal-family-k4-1098",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1100": {
   "to": "ctrnact-isotoxal-family-k4-1098",
   "uOf": {
@@ -455,7 +1134,70 @@
   }
  },
  "ctrnact-isotoxal-family-k4-1101": {
-  "to": "ctrnact-isotoxal-family-k4-1099",
+  "to": "ctrnact-isotoxal-family-k4-1098",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1103": {
+  "to": "ctrnact-isotoxal-family-k4-1102",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1105": {
+  "to": "ctrnact-isotoxal-family-k4-1104",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1107": {
+  "to": "ctrnact-isotoxal-family-k4-1106",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1109": {
+  "to": "ctrnact-isotoxal-family-k4-1108",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1110": {
+  "to": "ctrnact-isotoxal-family-k4-1108",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1111": {
+  "to": "ctrnact-isotoxal-family-k4-1108",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1115": {
+  "to": "ctrnact-isotoxal-family-k4-1114",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1117": {
+  "to": "ctrnact-isotoxal-family-k4-1116",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1123": {
+  "to": "ctrnact-isotoxal-family-k4-1122",
   "uOf": {
    "m": 1,
    "c": 0
@@ -510,8 +1252,162 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1138": {
+  "to": "ctrnact-isotoxal-family-k4-1136",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1139": {
-  "to": "ctrnact-isotoxal-family-k4-1138",
+  "to": "ctrnact-isotoxal-family-k4-1136",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1141": {
+  "to": "ctrnact-isotoxal-family-k4-1140",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1142": {
+  "to": "ctrnact-isotoxal-family-k4-1140",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1143": {
+  "to": "ctrnact-isotoxal-family-k4-1140",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1153": {
+  "to": "ctrnact-isotoxal-family-k4-1152",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1155": {
+  "to": "ctrnact-isotoxal-family-k4-1154",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1158": {
+  "to": "ctrnact-isotoxal-family-k4-1156",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1159": {
+  "to": "ctrnact-isotoxal-family-k4-1157",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1161": {
+  "to": "ctrnact-isotoxal-family-k4-1160",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1162": {
+  "to": "ctrnact-isotoxal-family-k4-1160",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1163": {
+  "to": "ctrnact-isotoxal-family-k4-1160",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1167": {
+  "to": "ctrnact-isotoxal-family-k4-1166",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1169": {
+  "to": "ctrnact-isotoxal-family-k4-1168",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1171": {
+  "to": "ctrnact-isotoxal-family-k4-1170",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1173": {
+  "to": "ctrnact-isotoxal-family-k4-1172",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1175": {
+  "to": "ctrnact-isotoxal-family-k4-1174",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1176": {
+  "to": "ctrnact-isotoxal-family-k4-1172",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1177": {
+  "to": "ctrnact-isotoxal-family-k4-1172",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1179": {
+  "to": "ctrnact-isotoxal-family-k4-1178",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1181": {
+  "to": "ctrnact-isotoxal-family-k4-1180",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-122": {
+  "to": "ctrnact-isotoxal-family-k4-121",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-124": {
+  "to": "ctrnact-isotoxal-family-k4-123",
   "uOf": {
    "m": 1,
    "c": 0
@@ -524,11 +1420,25 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-1242": {
+  "to": "ctrnact-isotoxal-family-k4-1240",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1243": {
-  "to": "ctrnact-isotoxal-family-k4-1242",
+  "to": "ctrnact-isotoxal-family-k4-1240",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1245": {
+  "to": "ctrnact-isotoxal-family-k4-1244",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1247": {
@@ -538,18 +1448,32 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1248": {
+  "to": "ctrnact-isotoxal-family-k4-1246",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1249": {
-  "to": "ctrnact-isotoxal-family-k4-1248",
+  "to": "ctrnact-isotoxal-family-k4-1246",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1250": {
+  "to": "ctrnact-isotoxal-family-k4-1244",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1251": {
-  "to": "ctrnact-isotoxal-family-k4-1245",
+  "to": "ctrnact-isotoxal-family-k4-1244",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1253": {
@@ -559,8 +1483,43 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1254": {
+  "to": "ctrnact-isotoxal-family-k4-1252",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1255": {
-  "to": "ctrnact-isotoxal-family-k4-1254",
+  "to": "ctrnact-isotoxal-family-k4-1252",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1259": {
+  "to": "ctrnact-isotoxal-family-k4-1257",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-126": {
+  "to": "ctrnact-isotoxal-family-k4-125",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1260": {
+  "to": "ctrnact-isotoxal-family-k4-1258",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1274": {
+  "to": "ctrnact-isotoxal-family-k4-1273",
   "uOf": {
    "m": 1,
    "c": 0
@@ -568,6 +1527,13 @@
  },
  "ctrnact-isotoxal-family-k4-1276": {
   "to": "ctrnact-isotoxal-family-k4-1275",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-128": {
+  "to": "ctrnact-isotoxal-family-k4-127",
   "uOf": {
    "m": 1,
    "c": 0
@@ -587,43 +1553,246 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1291": {
+  "to": "ctrnact-isotoxal-family-k4-1290",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1292": {
-  "to": "ctrnact-isotoxal-family-k4-1291",
+  "to": "ctrnact-isotoxal-family-k4-1290",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1293": {
+  "to": "ctrnact-isotoxal-family-k4-1289",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1294": {
+  "to": "ctrnact-isotoxal-family-k4-1290",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1295": {
-  "to": "ctrnact-isotoxal-family-k4-1291",
+  "to": "ctrnact-isotoxal-family-k4-1290",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1296": {
-  "to": "ctrnact-isotoxal-family-k4-1291",
+  "to": "ctrnact-isotoxal-family-k4-1290",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1298": {
+  "to": "ctrnact-isotoxal-family-k4-1297",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1299": {
+  "to": "ctrnact-isotoxal-family-k4-1297",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-13": {
+  "to": "ctrnact-isotoxal-family-k4-11",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-130": {
+  "to": "ctrnact-isotoxal-family-k4-129",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1302": {
+  "to": "ctrnact-isotoxal-family-k4-1300",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1303": {
+  "to": "ctrnact-isotoxal-family-k4-1301",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1306": {
+  "to": "ctrnact-isotoxal-family-k4-1304",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1307": {
+  "to": "ctrnact-isotoxal-family-k4-1305",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1308": {
+  "to": "ctrnact-isotoxal-family-k4-1305",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1309": {
+  "to": "ctrnact-isotoxal-family-k4-1305",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1310": {
   "to": "ctrnact-isotoxal-family-k4-1305",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1311": {
   "to": "ctrnact-isotoxal-family-k4-1305",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1314": {
+  "to": "ctrnact-isotoxal-family-k4-1312",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1315": {
+  "to": "ctrnact-isotoxal-family-k4-1313",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-133": {
+  "to": "ctrnact-isotoxal-family-k4-131",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1333": {
+  "to": "ctrnact-isotoxal-family-k4-1332",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1335": {
+  "to": "ctrnact-isotoxal-family-k4-1334",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-134": {
+  "to": "ctrnact-isotoxal-family-k4-132",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1353": {
+  "to": "ctrnact-isotoxal-family-k4-1352",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1355": {
+  "to": "ctrnact-isotoxal-family-k4-1354",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-136": {
+  "to": "ctrnact-isotoxal-family-k4-135",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-137": {
+  "to": "ctrnact-isotoxal-family-k4-135",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-138": {
+  "to": "ctrnact-isotoxal-family-k4-135",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-14": {
+  "to": "ctrnact-isotoxal-family-k4-12",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-140": {
+  "to": "ctrnact-isotoxal-family-k4-139",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-142": {
+  "to": "ctrnact-isotoxal-family-k4-141",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-144": {
+  "to": "ctrnact-isotoxal-family-k4-143",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1447": {
   "to": "ctrnact-isotoxal-family-k4-1446",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1448": {
+  "to": "ctrnact-isotoxal-family-k4-1445",
   "uOf": {
    "m": 1,
    "c": 0
@@ -636,8 +1805,274 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1453": {
+  "to": "ctrnact-isotoxal-family-k4-1451",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1454": {
+  "to": "ctrnact-isotoxal-family-k4-1452",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-146": {
+  "to": "ctrnact-isotoxal-family-k4-145",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1460": {
+  "to": "ctrnact-isotoxal-family-k4-1459",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1462": {
+  "to": "ctrnact-isotoxal-family-k4-1461",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1464": {
+  "to": "ctrnact-isotoxal-family-k4-1463",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1466": {
+  "to": "ctrnact-isotoxal-family-k4-1465",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1474": {
+  "to": "ctrnact-isotoxal-family-k4-1473",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1477": {
+  "to": "ctrnact-isotoxal-family-k4-1475",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1478": {
+  "to": "ctrnact-isotoxal-family-k4-1476",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1480": {
+  "to": "ctrnact-isotoxal-family-k4-1479",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1482": {
+  "to": "ctrnact-isotoxal-family-k4-1481",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1483": {
+  "to": "ctrnact-isotoxal-family-k4-1481",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1484": {
+  "to": "ctrnact-isotoxal-family-k4-1481",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1487": {
+  "to": "ctrnact-isotoxal-family-k4-1485",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1488": {
+  "to": "ctrnact-isotoxal-family-k4-1486",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1494": {
+  "to": "ctrnact-isotoxal-family-k4-1493",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1495": {
+  "to": "ctrnact-isotoxal-family-k4-1493",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1496": {
+  "to": "ctrnact-isotoxal-family-k4-1493",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1513": {
+  "to": "ctrnact-isotoxal-family-k4-1511",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1514": {
+  "to": "ctrnact-isotoxal-family-k4-1512",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1517": {
+  "to": "ctrnact-isotoxal-family-k4-1516",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1519": {
+  "to": "ctrnact-isotoxal-family-k4-1518",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-152": {
+  "to": "ctrnact-isotoxal-family-k4-151",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1521": {
+  "to": "ctrnact-isotoxal-family-k4-1520",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1523": {
+  "to": "ctrnact-isotoxal-family-k4-1522",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1530": {
+  "to": "ctrnact-isotoxal-family-k4-1528",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1531": {
+  "to": "ctrnact-isotoxal-family-k4-1529",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1533": {
+  "to": "ctrnact-isotoxal-family-k4-1532",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1534": {
+  "to": "ctrnact-isotoxal-family-k4-1532",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1535": {
+  "to": "ctrnact-isotoxal-family-k4-1532",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1537": {
+  "to": "ctrnact-isotoxal-family-k4-1536",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1539": {
+  "to": "ctrnact-isotoxal-family-k4-1538",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-154": {
+  "to": "ctrnact-isotoxal-family-k4-153",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1541": {
+  "to": "ctrnact-isotoxal-family-k4-1540",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1543": {
+  "to": "ctrnact-isotoxal-family-k4-1542",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-156": {
   "to": "ctrnact-isotoxal-family-k4-155",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-159": {
+  "to": "ctrnact-isotoxal-family-k4-157",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-160": {
+  "to": "ctrnact-isotoxal-family-k4-158",
   "uOf": {
    "m": 1,
    "c": 0
@@ -650,6 +2085,13 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1605": {
+  "to": "ctrnact-isotoxal-family-k4-1602",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1607": {
   "to": "ctrnact-isotoxal-family-k4-1606",
   "uOf": {
@@ -657,8 +2099,22 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-162": {
+  "to": "ctrnact-isotoxal-family-k4-161",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-163": {
-  "to": "ctrnact-isotoxal-family-k4-162",
+  "to": "ctrnact-isotoxal-family-k4-161",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-164": {
+  "to": "ctrnact-isotoxal-family-k4-161",
   "uOf": {
    "m": 1,
    "c": 0
@@ -688,8 +2144,15 @@
  "ctrnact-isotoxal-family-k4-1655": {
   "to": "ctrnact-isotoxal-family-k4-1653",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-166": {
+  "to": "ctrnact-isotoxal-family-k4-165",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1676": {
@@ -713,8 +2176,22 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-168": {
+  "to": "ctrnact-isotoxal-family-k4-167",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1681": {
+  "to": "ctrnact-isotoxal-family-k4-1680",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1682": {
-  "to": "ctrnact-isotoxal-family-k4-1681",
+  "to": "ctrnact-isotoxal-family-k4-1680",
   "uOf": {
    "m": 1,
    "c": 0
@@ -723,12 +2200,33 @@
  "ctrnact-isotoxal-family-k4-1683": {
   "to": "ctrnact-isotoxal-family-k4-1680",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1687": {
+  "to": "ctrnact-isotoxal-family-k4-1685",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1689": {
+  "to": "ctrnact-isotoxal-family-k4-1688",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1691": {
+  "to": "ctrnact-isotoxal-family-k4-1690",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1692": {
-  "to": "ctrnact-isotoxal-family-k4-1691",
+  "to": "ctrnact-isotoxal-family-k4-1690",
   "uOf": {
    "m": 1,
    "c": 0
@@ -737,8 +2235,15 @@
  "ctrnact-isotoxal-family-k4-1693": {
   "to": "ctrnact-isotoxal-family-k4-1690",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1695": {
+  "to": "ctrnact-isotoxal-family-k4-1694",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-17": {
@@ -748,11 +2253,18 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-170": {
+  "to": "ctrnact-isotoxal-family-k4-169",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1703": {
   "to": "ctrnact-isotoxal-family-k4-1702",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1705": {
@@ -772,8 +2284,8 @@
  "ctrnact-isotoxal-family-k4-1707": {
   "to": "ctrnact-isotoxal-family-k4-1704",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1708": {
@@ -807,8 +2319,8 @@
  "ctrnact-isotoxal-family-k4-1713": {
   "to": "ctrnact-isotoxal-family-k4-1710",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-1716": {
@@ -820,6 +2332,13 @@
  },
  "ctrnact-isotoxal-family-k4-1717": {
   "to": "ctrnact-isotoxal-family-k4-1715",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-172": {
+  "to": "ctrnact-isotoxal-family-k4-171",
   "uOf": {
    "m": 1,
    "c": 0
@@ -846,8 +2365,120 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1736": {
+  "to": "ctrnact-isotoxal-family-k4-1734",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1737": {
+  "to": "ctrnact-isotoxal-family-k4-1735",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1739": {
+  "to": "ctrnact-isotoxal-family-k4-1738",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1741": {
+  "to": "ctrnact-isotoxal-family-k4-1740",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1743": {
+  "to": "ctrnact-isotoxal-family-k4-1742",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1745": {
+  "to": "ctrnact-isotoxal-family-k4-1744",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1751": {
+  "to": "ctrnact-isotoxal-family-k4-1735",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1752": {
+  "to": "ctrnact-isotoxal-family-k4-1750",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1753": {
+  "to": "ctrnact-isotoxal-family-k4-1735",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1754": {
+  "to": "ctrnact-isotoxal-family-k4-1532",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1756": {
+  "to": "ctrnact-isotoxal-family-k4-1755",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1758": {
+  "to": "ctrnact-isotoxal-family-k4-1757",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1759": {
+  "to": "ctrnact-isotoxal-family-k4-1742",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1760": {
-  "to": "ctrnact-isotoxal-family-k4-1743",
+  "to": "ctrnact-isotoxal-family-k4-1742",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1762": {
+  "to": "ctrnact-isotoxal-family-k4-1761",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-18": {
+  "to": "ctrnact-isotoxal-family-k4-15",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-180": {
+  "to": "ctrnact-isotoxal-family-k4-179",
   "uOf": {
    "m": 1,
    "c": 0
@@ -860,11 +2491,18 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-1838": {
+  "to": "ctrnact-isotoxal-family-k4-1837",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-1839": {
   "to": "ctrnact-isotoxal-family-k4-1837",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-184": {
@@ -875,7 +2513,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-1840": {
-  "to": "ctrnact-isotoxal-family-k4-1838",
+  "to": "ctrnact-isotoxal-family-k4-1837",
   "uOf": {
    "m": -1,
    "c": 180
@@ -883,6 +2521,13 @@
  },
  "ctrnact-isotoxal-family-k4-186": {
   "to": "ctrnact-isotoxal-family-k4-185",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-189": {
+  "to": "ctrnact-isotoxal-family-k4-187",
   "uOf": {
    "m": 1,
    "c": 0
@@ -898,19 +2543,68 @@
  "ctrnact-isotoxal-family-k4-193": {
   "to": "ctrnact-isotoxal-family-k4-191",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-194": {
+  "to": "ctrnact-isotoxal-family-k4-192",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1953": {
+  "to": "ctrnact-isotoxal-family-k4-1952",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-196": {
+  "to": "ctrnact-isotoxal-family-k4-195",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-197": {
-  "to": "ctrnact-isotoxal-family-k4-196",
+  "to": "ctrnact-isotoxal-family-k4-195",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-198": {
-  "to": "ctrnact-isotoxal-family-k4-196",
+  "to": "ctrnact-isotoxal-family-k4-195",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1983": {
+  "to": "ctrnact-isotoxal-family-k4-1982",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1984": {
+  "to": "ctrnact-isotoxal-family-k4-1982",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-1985": {
+  "to": "ctrnact-isotoxal-family-k4-1982",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-200": {
+  "to": "ctrnact-isotoxal-family-k4-199",
   "uOf": {
    "m": 1,
    "c": 0
@@ -919,12 +2613,19 @@
  "ctrnact-isotoxal-family-k4-202": {
   "to": "ctrnact-isotoxal-family-k4-201",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-204": {
   "to": "ctrnact-isotoxal-family-k4-203",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-206": {
+  "to": "ctrnact-isotoxal-family-k4-205",
   "uOf": {
    "m": 1,
    "c": 0
@@ -938,7 +2639,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2092": {
-  "to": "ctrnact-isotoxal-family-k4-1953",
+  "to": "ctrnact-isotoxal-family-k4-1952",
   "uOf": {
    "m": -1,
    "c": 180
@@ -947,29 +2648,85 @@
  "ctrnact-isotoxal-family-k4-2117": {
   "to": "ctrnact-isotoxal-family-k4-1982",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2118": {
-  "to": "ctrnact-isotoxal-family-k4-1983",
+  "to": "ctrnact-isotoxal-family-k4-1982",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-2119": {
-  "to": "ctrnact-isotoxal-family-k4-1984",
+  "to": "ctrnact-isotoxal-family-k4-1982",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2120": {
-  "to": "ctrnact-isotoxal-family-k4-1985",
+  "to": "ctrnact-isotoxal-family-k4-1982",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-214": {
+  "to": "ctrnact-isotoxal-family-k4-213",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-217": {
+  "to": "ctrnact-isotoxal-family-k4-215",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-218": {
+  "to": "ctrnact-isotoxal-family-k4-216",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2199": {
+  "to": "ctrnact-isotoxal-family-k4-2198",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-22": {
+  "to": "ctrnact-isotoxal-family-k4-21",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-220": {
+  "to": "ctrnact-isotoxal-family-k4-219",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2201": {
+  "to": "ctrnact-isotoxal-family-k4-2200",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2203": {
+  "to": "ctrnact-isotoxal-family-k4-2202",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2204": {
@@ -980,24 +2737,241 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2205": {
-  "to": "ctrnact-isotoxal-family-k4-2203",
+  "to": "ctrnact-isotoxal-family-k4-2202",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-224": {
-  "to": "ctrnact-isotoxal-family-k4-223",
+ "ctrnact-isotoxal-family-k4-2208": {
+  "to": "ctrnact-isotoxal-family-k4-2207",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
- "ctrnact-isotoxal-family-k4-2249": {
-  "to": "ctrnact-isotoxal-family-k4-2247",
+ "ctrnact-isotoxal-family-k4-2209": {
+  "to": "ctrnact-isotoxal-family-k4-2206",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2212": {
+  "to": "ctrnact-isotoxal-family-k4-2210",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2213": {
+  "to": "ctrnact-isotoxal-family-k4-2211",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2215": {
+  "to": "ctrnact-isotoxal-family-k4-2214",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2216": {
+  "to": "ctrnact-isotoxal-family-k4-2214",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2217": {
+  "to": "ctrnact-isotoxal-family-k4-2214",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2219": {
+  "to": "ctrnact-isotoxal-family-k4-2218",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-222": {
+  "to": "ctrnact-isotoxal-family-k4-221",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2220": {
+  "to": "ctrnact-isotoxal-family-k4-2218",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2221": {
+  "to": "ctrnact-isotoxal-family-k4-2218",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2223": {
+  "to": "ctrnact-isotoxal-family-k4-2222",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2225": {
+  "to": "ctrnact-isotoxal-family-k4-2224",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2227": {
+  "to": "ctrnact-isotoxal-family-k4-2226",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2229": {
+  "to": "ctrnact-isotoxal-family-k4-2228",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-223": {
+  "to": "ctrnact-isotoxal-family-k4-221",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2231": {
+  "to": "ctrnact-isotoxal-family-k4-2230",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2233": {
+  "to": "ctrnact-isotoxal-family-k4-2232",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2236": {
+  "to": "ctrnact-isotoxal-family-k4-2235",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2237": {
+  "to": "ctrnact-isotoxal-family-k4-2234",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-224": {
+  "to": "ctrnact-isotoxal-family-k4-221",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2240": {
+  "to": "ctrnact-isotoxal-family-k4-2238",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2241": {
+  "to": "ctrnact-isotoxal-family-k4-2239",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2243": {
+  "to": "ctrnact-isotoxal-family-k4-2242",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2244": {
+  "to": "ctrnact-isotoxal-family-k4-2242",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2245": {
+  "to": "ctrnact-isotoxal-family-k4-2242",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2247": {
+  "to": "ctrnact-isotoxal-family-k4-2246",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2248": {
+  "to": "ctrnact-isotoxal-family-k4-2246",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2249": {
+  "to": "ctrnact-isotoxal-family-k4-2246",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2251": {
+  "to": "ctrnact-isotoxal-family-k4-2250",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2253": {
+  "to": "ctrnact-isotoxal-family-k4-2252",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2255": {
+  "to": "ctrnact-isotoxal-family-k4-2254",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2257": {
+  "to": "ctrnact-isotoxal-family-k4-2256",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2260": {
@@ -1021,6 +2995,20 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-2263": {
+  "to": "ctrnact-isotoxal-family-k4-2259",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2264": {
+  "to": "ctrnact-isotoxal-family-k4-2259",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-2265": {
   "to": "ctrnact-isotoxal-family-k4-2259",
   "uOf": {
@@ -1035,6 +3023,20 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-2269": {
+  "to": "ctrnact-isotoxal-family-k4-2267",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-227": {
+  "to": "ctrnact-isotoxal-family-k4-225",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-2271": {
   "to": "ctrnact-isotoxal-family-k4-2270",
   "uOf": {
@@ -1042,18 +3044,25 @@
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-2273": {
-  "to": "ctrnact-isotoxal-family-k4-2272",
+ "ctrnact-isotoxal-family-k4-2272": {
+  "to": "ctrnact-isotoxal-family-k4-2270",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
- "ctrnact-isotoxal-family-k4-2275": {
-  "to": "ctrnact-isotoxal-family-k4-2274",
+ "ctrnact-isotoxal-family-k4-2273": {
+  "to": "ctrnact-isotoxal-family-k4-2270",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2275": {
+  "to": "ctrnact-isotoxal-family-k4-2274",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2277": {
@@ -1061,6 +3070,27 @@
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2279": {
+  "to": "ctrnact-isotoxal-family-k4-2278",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-228": {
+  "to": "ctrnact-isotoxal-family-k4-226",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2281": {
+  "to": "ctrnact-isotoxal-family-k4-2280",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2282": {
@@ -1071,7 +3101,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2283": {
-  "to": "ctrnact-isotoxal-family-k4-2279",
+  "to": "ctrnact-isotoxal-family-k4-2278",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1085,17 +3115,31 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2285": {
-  "to": "ctrnact-isotoxal-family-k4-2281",
+  "to": "ctrnact-isotoxal-family-k4-2280",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2286": {
+  "to": "ctrnact-isotoxal-family-k4-2276",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2287": {
-  "to": "ctrnact-isotoxal-family-k4-2286",
+  "to": "ctrnact-isotoxal-family-k4-2276",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2289": {
+  "to": "ctrnact-isotoxal-family-k4-2288",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2290": {
@@ -1106,10 +3150,87 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2291": {
-  "to": "ctrnact-isotoxal-family-k4-2289",
+  "to": "ctrnact-isotoxal-family-k4-2288",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2294": {
+  "to": "ctrnact-isotoxal-family-k4-2292",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2295": {
+  "to": "ctrnact-isotoxal-family-k4-2293",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2297": {
+  "to": "ctrnact-isotoxal-family-k4-2296",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2298": {
+  "to": "ctrnact-isotoxal-family-k4-2296",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2299": {
+  "to": "ctrnact-isotoxal-family-k4-2296",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2301": {
+  "to": "ctrnact-isotoxal-family-k4-2300",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2303": {
+  "to": "ctrnact-isotoxal-family-k4-2302",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2305": {
+  "to": "ctrnact-isotoxal-family-k4-2304",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2307": {
+  "to": "ctrnact-isotoxal-family-k4-2306",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2309": {
+  "to": "ctrnact-isotoxal-family-k4-2308",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2311": {
+  "to": "ctrnact-isotoxal-family-k4-2310",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2312": {
@@ -1122,22 +3243,22 @@
  "ctrnact-isotoxal-family-k4-2313": {
   "to": "ctrnact-isotoxal-family-k4-2293",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2314": {
-  "to": "ctrnact-isotoxal-family-k4-2294",
+  "to": "ctrnact-isotoxal-family-k4-2292",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-2315": {
-  "to": "ctrnact-isotoxal-family-k4-2295",
+  "to": "ctrnact-isotoxal-family-k4-2293",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2316": {
@@ -1148,21 +3269,21 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2317": {
-  "to": "ctrnact-isotoxal-family-k4-2297",
+  "to": "ctrnact-isotoxal-family-k4-2296",
   "uOf": {
-   "m": 1,
-   "c": 0
+   "m": -1,
+   "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-2318": {
-  "to": "ctrnact-isotoxal-family-k4-2298",
+  "to": "ctrnact-isotoxal-family-k4-2296",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-2319": {
-  "to": "ctrnact-isotoxal-family-k4-2299",
+  "to": "ctrnact-isotoxal-family-k4-2296",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1176,7 +3297,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2321": {
-  "to": "ctrnact-isotoxal-family-k4-2303",
+  "to": "ctrnact-isotoxal-family-k4-2302",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1190,7 +3311,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2323": {
-  "to": "ctrnact-isotoxal-family-k4-2301",
+  "to": "ctrnact-isotoxal-family-k4-2300",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1204,7 +3325,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2325": {
-  "to": "ctrnact-isotoxal-family-k4-2305",
+  "to": "ctrnact-isotoxal-family-k4-2304",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1218,7 +3339,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2327": {
-  "to": "ctrnact-isotoxal-family-k4-2307",
+  "to": "ctrnact-isotoxal-family-k4-2306",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1232,10 +3353,10 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2329": {
-  "to": "ctrnact-isotoxal-family-k4-2309",
+  "to": "ctrnact-isotoxal-family-k4-2308",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2330": {
@@ -1246,10 +3367,52 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2331": {
-  "to": "ctrnact-isotoxal-family-k4-2311",
+  "to": "ctrnact-isotoxal-family-k4-2310",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2333": {
+  "to": "ctrnact-isotoxal-family-k4-2332",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2335": {
+  "to": "ctrnact-isotoxal-family-k4-2334",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2339": {
+  "to": "ctrnact-isotoxal-family-k4-2338",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-234": {
+  "to": "ctrnact-isotoxal-family-k4-233",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2341": {
+  "to": "ctrnact-isotoxal-family-k4-2340",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2347": {
+  "to": "ctrnact-isotoxal-family-k4-2346",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2348": {
@@ -1259,15 +3422,547 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-2349": {
+  "to": "ctrnact-isotoxal-family-k4-2346",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-235": {
-  "to": "ctrnact-isotoxal-family-k4-234",
+  "to": "ctrnact-isotoxal-family-k4-233",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2352": {
+  "to": "ctrnact-isotoxal-family-k4-2350",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2353": {
+  "to": "ctrnact-isotoxal-family-k4-2351",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2355": {
+  "to": "ctrnact-isotoxal-family-k4-2354",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2356": {
+  "to": "ctrnact-isotoxal-family-k4-2354",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2357": {
+  "to": "ctrnact-isotoxal-family-k4-2354",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2359": {
+  "to": "ctrnact-isotoxal-family-k4-2358",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-236": {
-  "to": "ctrnact-isotoxal-family-k4-234",
+  "to": "ctrnact-isotoxal-family-k4-233",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2360": {
+  "to": "ctrnact-isotoxal-family-k4-2358",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2361": {
+  "to": "ctrnact-isotoxal-family-k4-2358",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2363": {
+  "to": "ctrnact-isotoxal-family-k4-2362",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2365": {
+  "to": "ctrnact-isotoxal-family-k4-2364",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2367": {
+  "to": "ctrnact-isotoxal-family-k4-2366",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2369": {
+  "to": "ctrnact-isotoxal-family-k4-2368",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2370": {
+  "to": "ctrnact-isotoxal-family-k4-2336",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2371": {
+  "to": "ctrnact-isotoxal-family-k4-2337",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2372": {
+  "to": "ctrnact-isotoxal-family-k4-2338",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2373": {
+  "to": "ctrnact-isotoxal-family-k4-2338",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2374": {
+  "to": "ctrnact-isotoxal-family-k4-2340",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2375": {
+  "to": "ctrnact-isotoxal-family-k4-2340",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2376": {
+  "to": "ctrnact-isotoxal-family-k4-2342",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2377": {
+  "to": "ctrnact-isotoxal-family-k4-2343",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2378": {
+  "to": "ctrnact-isotoxal-family-k4-2344",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2379": {
+  "to": "ctrnact-isotoxal-family-k4-2345",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2381": {
+  "to": "ctrnact-isotoxal-family-k4-2380",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2384": {
+  "to": "ctrnact-isotoxal-family-k4-2382",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2385": {
+  "to": "ctrnact-isotoxal-family-k4-2383",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2387": {
+  "to": "ctrnact-isotoxal-family-k4-2386",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2389": {
+  "to": "ctrnact-isotoxal-family-k4-2388",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2390": {
+  "to": "ctrnact-isotoxal-family-k4-2388",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2391": {
+  "to": "ctrnact-isotoxal-family-k4-2388",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2393": {
+  "to": "ctrnact-isotoxal-family-k4-2392",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2394": {
+  "to": "ctrnact-isotoxal-family-k4-2392",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2395": {
+  "to": "ctrnact-isotoxal-family-k4-2392",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2398": {
+  "to": "ctrnact-isotoxal-family-k4-2396",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2399": {
+  "to": "ctrnact-isotoxal-family-k4-2397",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2402": {
+  "to": "ctrnact-isotoxal-family-k4-2401",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2403": {
+  "to": "ctrnact-isotoxal-family-k4-2401",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2404": {
+  "to": "ctrnact-isotoxal-family-k4-2401",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2407": {
+  "to": "ctrnact-isotoxal-family-k4-2405",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2408": {
+  "to": "ctrnact-isotoxal-family-k4-2406",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2411": {
+  "to": "ctrnact-isotoxal-family-k4-2409",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2412": {
+  "to": "ctrnact-isotoxal-family-k4-2410",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2414": {
+  "to": "ctrnact-isotoxal-family-k4-2413",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2416": {
+  "to": "ctrnact-isotoxal-family-k4-2415",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2418": {
+  "to": "ctrnact-isotoxal-family-k4-2417",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2420": {
+  "to": "ctrnact-isotoxal-family-k4-2419",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2422": {
+  "to": "ctrnact-isotoxal-family-k4-2421",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2424": {
+  "to": "ctrnact-isotoxal-family-k4-2423",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2425": {
+  "to": "ctrnact-isotoxal-family-k4-2409",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2426": {
+  "to": "ctrnact-isotoxal-family-k4-2410",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2427": {
+  "to": "ctrnact-isotoxal-family-k4-2409",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2428": {
+  "to": "ctrnact-isotoxal-family-k4-2410",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2429": {
+  "to": "ctrnact-isotoxal-family-k4-2413",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2430": {
+  "to": "ctrnact-isotoxal-family-k4-2413",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2431": {
+  "to": "ctrnact-isotoxal-family-k4-2415",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2432": {
+  "to": "ctrnact-isotoxal-family-k4-2415",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2433": {
+  "to": "ctrnact-isotoxal-family-k4-2417",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2434": {
+  "to": "ctrnact-isotoxal-family-k4-2417",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2435": {
+  "to": "ctrnact-isotoxal-family-k4-2419",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2436": {
+  "to": "ctrnact-isotoxal-family-k4-2419",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2437": {
+  "to": "ctrnact-isotoxal-family-k4-2423",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2438": {
+  "to": "ctrnact-isotoxal-family-k4-2423",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2439": {
+  "to": "ctrnact-isotoxal-family-k4-2421",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2440": {
+  "to": "ctrnact-isotoxal-family-k4-2421",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2443": {
+  "to": "ctrnact-isotoxal-family-k4-2441",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2444": {
+  "to": "ctrnact-isotoxal-family-k4-2442",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2446": {
+  "to": "ctrnact-isotoxal-family-k4-2445",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2447": {
+  "to": "ctrnact-isotoxal-family-k4-2445",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2448": {
+  "to": "ctrnact-isotoxal-family-k4-2445",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-245": {
+  "to": "ctrnact-isotoxal-family-k4-243",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2450": {
+  "to": "ctrnact-isotoxal-family-k4-2449",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2451": {
+  "to": "ctrnact-isotoxal-family-k4-2449",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2452": {
+  "to": "ctrnact-isotoxal-family-k4-2449",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2454": {
+  "to": "ctrnact-isotoxal-family-k4-2453",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2456": {
+  "to": "ctrnact-isotoxal-family-k4-2455",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2458": {
+  "to": "ctrnact-isotoxal-family-k4-2457",
   "uOf": {
    "m": 1,
    "c": 0
@@ -1276,12 +3971,47 @@
  "ctrnact-isotoxal-family-k4-246": {
   "to": "ctrnact-isotoxal-family-k4-244",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2460": {
+  "to": "ctrnact-isotoxal-family-k4-2459",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2462": {
+  "to": "ctrnact-isotoxal-family-k4-2461",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2463": {
+  "to": "ctrnact-isotoxal-family-k4-2461",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2464": {
+  "to": "ctrnact-isotoxal-family-k4-2461",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2466": {
+  "to": "ctrnact-isotoxal-family-k4-2465",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2467": {
-  "to": "ctrnact-isotoxal-family-k4-2466",
+  "to": "ctrnact-isotoxal-family-k4-2465",
   "uOf": {
    "m": 1,
    "c": 0
@@ -1290,8 +4020,71 @@
  "ctrnact-isotoxal-family-k4-2468": {
   "to": "ctrnact-isotoxal-family-k4-2465",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2470": {
+  "to": "ctrnact-isotoxal-family-k4-2469",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2471": {
+  "to": "ctrnact-isotoxal-family-k4-2469",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2472": {
+  "to": "ctrnact-isotoxal-family-k4-2469",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2474": {
+  "to": "ctrnact-isotoxal-family-k4-2473",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2476": {
+  "to": "ctrnact-isotoxal-family-k4-2475",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2477": {
+  "to": "ctrnact-isotoxal-family-k4-2475",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2478": {
+  "to": "ctrnact-isotoxal-family-k4-2475",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-248": {
+  "to": "ctrnact-isotoxal-family-k4-247",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2480": {
+  "to": "ctrnact-isotoxal-family-k4-2479",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2483": {
@@ -1301,8 +4094,50 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-2486": {
+  "to": "ctrnact-isotoxal-family-k4-2485",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-2492": {
   "to": "ctrnact-isotoxal-family-k4-2491",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-25": {
+  "to": "ctrnact-isotoxal-family-k4-23",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-250": {
+  "to": "ctrnact-isotoxal-family-k4-249",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2502": {
+  "to": "ctrnact-isotoxal-family-k4-2501",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2504": {
+  "to": "ctrnact-isotoxal-family-k4-2503",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2532": {
+  "to": "ctrnact-isotoxal-family-k4-2531",
   "uOf": {
    "m": 1,
    "c": 0
@@ -1322,8 +4157,99 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-2579": {
+  "to": "ctrnact-isotoxal-family-k4-2578",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-26": {
+  "to": "ctrnact-isotoxal-family-k4-24",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2601": {
+  "to": "ctrnact-isotoxal-family-k3-426",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2630": {
+  "to": "ctrnact-isotoxal-family-k4-2629",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-2636": {
   "to": "ctrnact-isotoxal-family-k4-2635",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2666": {
+  "to": "ctrnact-isotoxal-family-k4-2665",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-269": {
+  "to": "ctrnact-isotoxal-family-k4-267",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2697": {
+  "to": "ctrnact-isotoxal-family-k4-2696",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-270": {
+  "to": "ctrnact-isotoxal-family-k4-268",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2711": {
+  "to": "ctrnact-isotoxal-family-k4-2705",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-272": {
+  "to": "ctrnact-isotoxal-family-k4-271",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-273": {
+  "to": "ctrnact-isotoxal-family-k4-271",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-274": {
+  "to": "ctrnact-isotoxal-family-k4-271",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-276": {
+  "to": "ctrnact-isotoxal-family-k4-275",
   "uOf": {
    "m": 1,
    "c": 0
@@ -1350,6 +4276,20 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-2772": {
+  "to": "ctrnact-isotoxal-family-k4-2770",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2775": {
+  "to": "ctrnact-isotoxal-family-k4-2773",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-2776": {
   "to": "ctrnact-isotoxal-family-k4-2774",
   "uOf": {
@@ -1357,11 +4297,39 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-278": {
+  "to": "ctrnact-isotoxal-family-k4-277",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-2780": {
   "to": "ctrnact-isotoxal-family-k4-2777",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2781": {
+  "to": "ctrnact-isotoxal-family-k4-2778",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2783": {
+  "to": "ctrnact-isotoxal-family-k4-2782",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2785": {
+  "to": "ctrnact-isotoxal-family-k4-2409",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-2786": {
@@ -1372,7 +4340,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-2787": {
-  "to": "ctrnact-isotoxal-family-k4-2785",
+  "to": "ctrnact-isotoxal-family-k4-2409",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1392,6 +4360,13 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-2792": {
+  "to": "ctrnact-isotoxal-family-k4-2788",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-2793": {
   "to": "ctrnact-isotoxal-family-k4-2789",
   "uOf": {
@@ -1406,8 +4381,43 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-2795": {
+  "to": "ctrnact-isotoxal-family-k4-2789",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-2798": {
   "to": "ctrnact-isotoxal-family-k4-2796",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2799": {
+  "to": "ctrnact-isotoxal-family-k4-2797",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-28": {
+  "to": "ctrnact-isotoxal-family-k4-27",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-280": {
+  "to": "ctrnact-isotoxal-family-k4-279",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2804": {
+  "to": "ctrnact-isotoxal-family-k4-2800",
   "uOf": {
    "m": -1,
    "c": 180
@@ -1434,6 +4444,27 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-2809": {
+  "to": "ctrnact-isotoxal-family-k4-2808",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2815": {
+  "to": "ctrnact-isotoxal-family-k4-2814",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-282": {
+  "to": "ctrnact-isotoxal-family-k4-281",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-2821": {
   "to": "ctrnact-isotoxal-family-k4-2820",
   "uOf": {
@@ -1441,15 +4472,36 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-2854": {
+  "to": "ctrnact-isotoxal-family-k4-2696",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-2855": {
-  "to": "ctrnact-isotoxal-family-k4-2854",
+  "to": "ctrnact-isotoxal-family-k4-2696",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-288": {
+  "to": "ctrnact-isotoxal-family-k4-287",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-289": {
+  "to": "ctrnact-isotoxal-family-k4-287",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-290": {
-  "to": "ctrnact-isotoxal-family-k4-289",
+  "to": "ctrnact-isotoxal-family-k4-287",
   "uOf": {
    "m": 1,
    "c": 0
@@ -1504,8 +4556,22 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-296": {
+  "to": "ctrnact-isotoxal-family-k4-295",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-2960": {
+  "to": "ctrnact-isotoxal-family-k4-2958",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-2961": {
-  "to": "ctrnact-isotoxal-family-k4-2960",
+  "to": "ctrnact-isotoxal-family-k4-2958",
   "uOf": {
    "m": 1,
    "c": 0
@@ -1532,6 +4598,20 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-300": {
+  "to": "ctrnact-isotoxal-family-k4-297",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-302": {
+  "to": "ctrnact-isotoxal-family-k4-301",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-3079": {
   "to": "ctrnact-isotoxal-family-k4-3077",
   "uOf": {
@@ -1551,6 +4631,20 @@
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3084": {
+  "to": "ctrnact-isotoxal-family-k4-3082",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3087": {
+  "to": "ctrnact-isotoxal-family-k4-3086",
+  "uOf": {
+   "m": -1,
+   "c": 240
   }
  },
  "ctrnact-isotoxal-family-k4-3089": {
@@ -1574,11 +4668,25 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-3118": {
+  "to": "ctrnact-isotoxal-family-k4-3117",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
  "ctrnact-isotoxal-family-k4-3122": {
   "to": "ctrnact-isotoxal-family-k4-3119",
   "uOf": {
    "m": -1,
    "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3124": {
+  "to": "ctrnact-isotoxal-family-k4-3123",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-3128": {
@@ -1588,7 +4696,28 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-3129": {
+  "to": "ctrnact-isotoxal-family-k4-3126",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3130": {
+  "to": "ctrnact-isotoxal-family-k4-3127",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-3132": {
+  "to": "ctrnact-isotoxal-family-k4-3131",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3133": {
   "to": "ctrnact-isotoxal-family-k4-3131",
   "uOf": {
    "m": 1,
@@ -1609,11 +4738,95 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-3146": {
+  "to": "ctrnact-isotoxal-family-k4-3134",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3147": {
+  "to": "ctrnact-isotoxal-family-k4-3135",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3148": {
+  "to": "ctrnact-isotoxal-family-k4-3136",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3149": {
+  "to": "ctrnact-isotoxal-family-k4-3137",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3150": {
+  "to": "ctrnact-isotoxal-family-k4-3138",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3152": {
+  "to": "ctrnact-isotoxal-family-k4-3143",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3153": {
+  "to": "ctrnact-isotoxal-family-k4-3145",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3154": {
+  "to": "ctrnact-isotoxal-family-k4-3144",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-3157": {
   "to": "ctrnact-isotoxal-family-k4-3156",
   "uOf": {
    "m": -1,
    "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3162": {
+  "to": "ctrnact-isotoxal-family-k4-3160",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3168": {
+  "to": "ctrnact-isotoxal-family-k4-3164",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3169": {
+  "to": "ctrnact-isotoxal-family-k4-3165",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3170": {
+  "to": "ctrnact-isotoxal-family-k4-3166",
+  "uOf": {
+   "m": -1,
+   "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-3173": {
@@ -1646,6 +4859,13 @@
  },
  "ctrnact-isotoxal-family-k4-3196": {
   "to": "ctrnact-isotoxal-family-k4-3194",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-32": {
+  "to": "ctrnact-isotoxal-family-k4-30",
   "uOf": {
    "m": 1,
    "c": 0
@@ -1754,6 +4974,13 @@
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-33": {
+  "to": "ctrnact-isotoxal-family-k4-31",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-3339": {
@@ -2043,6 +5270,27 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-3671": {
+  "to": "ctrnact-isotoxal-family-k4-3228",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3672": {
+  "to": "ctrnact-isotoxal-family-k4-3229",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3673": {
+  "to": "ctrnact-isotoxal-family-k4-3230",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-3674": {
   "to": "ctrnact-isotoxal-family-k4-3231",
   "uOf": {
@@ -2092,11 +5340,46 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-376": {
+  "to": "ctrnact-isotoxal-family-k4-375",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-377": {
+  "to": "ctrnact-isotoxal-family-k4-375",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-378": {
+  "to": "ctrnact-isotoxal-family-k4-375",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-380": {
+  "to": "ctrnact-isotoxal-family-k4-379",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-3807": {
   "to": "ctrnact-isotoxal-family-k4-3806",
   "uOf": {
    "m": -1,
    "c": 165
+  }
+ },
+ "ctrnact-isotoxal-family-k4-381": {
+  "to": "ctrnact-isotoxal-family-k4-379",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-3817": {
@@ -2111,6 +5394,13 @@
   "uOf": {
    "m": -1,
    "c": 165
+  }
+ },
+ "ctrnact-isotoxal-family-k4-382": {
+  "to": "ctrnact-isotoxal-family-k4-379",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-3820": {
@@ -2162,6 +5452,13 @@
    "c": 135
   }
  },
+ "ctrnact-isotoxal-family-k4-3864": {
+  "to": "ctrnact-isotoxal-family-k4-3818",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
  "ctrnact-isotoxal-family-k4-3865": {
   "to": "ctrnact-isotoxal-family-k4-3858",
   "uOf": {
@@ -2190,6 +5487,27 @@
    "c": 240
   }
  },
+ "ctrnact-isotoxal-family-k4-3869": {
+  "to": "ctrnact-isotoxal-family-k4-3825",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3870": {
+  "to": "ctrnact-isotoxal-family-k4-3826",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3871": {
+  "to": "ctrnact-isotoxal-family-k4-3827",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
  "ctrnact-isotoxal-family-k4-3872": {
   "to": "ctrnact-isotoxal-family-k4-3828",
   "uOf": {
@@ -2199,6 +5517,13 @@
  },
  "ctrnact-isotoxal-family-k4-3873": {
   "to": "ctrnact-isotoxal-family-k4-3829",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3874": {
+  "to": "ctrnact-isotoxal-family-k4-3830",
   "uOf": {
    "m": -1,
    "c": 240
@@ -2218,6 +5543,76 @@
    "c": 240
   }
  },
+ "ctrnact-isotoxal-family-k4-3878": {
+  "to": "ctrnact-isotoxal-family-k4-3833",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3879": {
+  "to": "ctrnact-isotoxal-family-k4-3834",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-388": {
+  "to": "ctrnact-isotoxal-family-k4-387",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3880": {
+  "to": "ctrnact-isotoxal-family-k4-3835",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3881": {
+  "to": "ctrnact-isotoxal-family-k4-3836",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3882": {
+  "to": "ctrnact-isotoxal-family-k4-3837",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3883": {
+  "to": "ctrnact-isotoxal-family-k4-3838",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3884": {
+  "to": "ctrnact-isotoxal-family-k4-3839",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3885": {
+  "to": "ctrnact-isotoxal-family-k4-3840",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3886": {
+  "to": "ctrnact-isotoxal-family-k4-3841",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
  "ctrnact-isotoxal-family-k4-3887": {
   "to": "ctrnact-isotoxal-family-k4-3842",
   "uOf": {
@@ -2227,6 +5622,20 @@
  },
  "ctrnact-isotoxal-family-k4-3888": {
   "to": "ctrnact-isotoxal-family-k4-3843",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3889": {
+  "to": "ctrnact-isotoxal-family-k4-3844",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
+ "ctrnact-isotoxal-family-k4-3890": {
+  "to": "ctrnact-isotoxal-family-k4-3845",
   "uOf": {
    "m": -1,
    "c": 240
@@ -2260,22 +5669,71 @@
    "c": 240
   }
  },
- "ctrnact-isotoxal-family-k4-395": {
-  "to": "ctrnact-isotoxal-family-k4-152",
+ "ctrnact-isotoxal-family-k4-39": {
+  "to": "ctrnact-isotoxal-family-k4-384",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-395": {
+  "to": "ctrnact-isotoxal-family-k4-151",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-396": {
-  "to": "ctrnact-isotoxal-family-k4-154",
+  "to": "ctrnact-isotoxal-family-k4-153",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-399": {
+  "to": "ctrnact-isotoxal-family-k4-161",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-40": {
+  "to": "ctrnact-isotoxal-family-k4-385",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-400": {
-  "to": "ctrnact-isotoxal-family-k4-162",
+  "to": "ctrnact-isotoxal-family-k4-161",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-401": {
+  "to": "ctrnact-isotoxal-family-k4-165",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-404": {
+  "to": "ctrnact-isotoxal-family-k4-171",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-41": {
+  "to": "ctrnact-isotoxal-family-k4-386",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-413": {
+  "to": "ctrnact-isotoxal-family-k4-412",
   "uOf": {
    "m": 1,
    "c": 0
@@ -2283,6 +5741,111 @@
  },
  "ctrnact-isotoxal-family-k4-419": {
   "to": "ctrnact-isotoxal-family-k4-418",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-42": {
+  "to": "ctrnact-isotoxal-family-k4-387",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-422": {
+  "to": "ctrnact-isotoxal-family-k4-421",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-43": {
+  "to": "ctrnact-isotoxal-family-k4-387",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-430": {
+  "to": "ctrnact-isotoxal-family-k4-429",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-438": {
+  "to": "ctrnact-isotoxal-family-k4-437",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-44": {
+  "to": "ctrnact-isotoxal-family-k4-389",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-440": {
+  "to": "ctrnact-isotoxal-family-k4-439",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-443": {
+  "to": "ctrnact-isotoxal-family-k4-442",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-45": {
+  "to": "ctrnact-isotoxal-family-k4-390",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-46": {
+  "to": "ctrnact-isotoxal-family-k4-391",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-467": {
+  "to": "ctrnact-isotoxal-family-k4-121",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-468": {
+  "to": "ctrnact-isotoxal-family-k4-121",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-469": {
+  "to": "ctrnact-isotoxal-family-k4-123",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-47": {
+  "to": "ctrnact-isotoxal-family-k4-392",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-470": {
+  "to": "ctrnact-isotoxal-family-k4-123",
   "uOf": {
    "m": 1,
    "c": 0
@@ -2324,10 +5887,10 @@
   }
  },
  "ctrnact-isotoxal-family-k4-50": {
-  "to": "ctrnact-isotoxal-family-k4-152",
+  "to": "ctrnact-isotoxal-family-k4-151",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-501": {
@@ -2344,6 +5907,13 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-505": {
+  "to": "ctrnact-isotoxal-family-k4-503",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-506": {
   "to": "ctrnact-isotoxal-family-k4-504",
   "uOf": {
@@ -2351,8 +5921,15 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-509": {
+  "to": "ctrnact-isotoxal-family-k4-507",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-51": {
-  "to": "ctrnact-isotoxal-family-k4-154",
+  "to": "ctrnact-isotoxal-family-k4-153",
   "uOf": {
    "m": 1,
    "c": 0
@@ -2379,11 +5956,25 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-52": {
+  "to": "ctrnact-isotoxal-family-k4-397",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-520": {
   "to": "ctrnact-isotoxal-family-k4-519",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-524": {
+  "to": "ctrnact-isotoxal-family-k4-523",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-526": {
@@ -2393,6 +5984,13 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-53": {
+  "to": "ctrnact-isotoxal-family-k4-398",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-534": {
   "to": "ctrnact-isotoxal-family-k4-533",
   "uOf": {
@@ -2400,11 +5998,18 @@
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-54": {
-  "to": "ctrnact-isotoxal-family-k4-162",
+ "ctrnact-isotoxal-family-k4-538": {
+  "to": "ctrnact-isotoxal-family-k4-537",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-54": {
+  "to": "ctrnact-isotoxal-family-k4-161",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-540": {
@@ -2429,10 +6034,10 @@
   }
  },
  "ctrnact-isotoxal-family-k4-55": {
-  "to": "ctrnact-isotoxal-family-k4-399",
+  "to": "ctrnact-isotoxal-family-k4-161",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-550": {
@@ -2449,11 +6054,18 @@
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-56": {
-  "to": "ctrnact-isotoxal-family-k4-166",
+ "ctrnact-isotoxal-family-k4-556": {
+  "to": "ctrnact-isotoxal-family-k4-555",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-56": {
+  "to": "ctrnact-isotoxal-family-k4-165",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-563": {
@@ -2466,8 +6078,8 @@
  "ctrnact-isotoxal-family-k4-564": {
   "to": "ctrnact-isotoxal-family-k4-554",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-565": {
@@ -2478,7 +6090,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-566": {
-  "to": "ctrnact-isotoxal-family-k4-556",
+  "to": "ctrnact-isotoxal-family-k4-555",
   "uOf": {
    "m": -1,
    "c": 180
@@ -2505,6 +6117,13 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-57": {
+  "to": "ctrnact-isotoxal-family-k4-402",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-570": {
   "to": "ctrnact-isotoxal-family-k4-560",
   "uOf": {
@@ -2515,8 +6134,8 @@
  "ctrnact-isotoxal-family-k4-571": {
   "to": "ctrnact-isotoxal-family-k4-561",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-572": {
@@ -2526,6 +6145,20 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-578": {
+  "to": "ctrnact-isotoxal-family-k4-577",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-58": {
+  "to": "ctrnact-isotoxal-family-k4-403",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-580": {
   "to": "ctrnact-isotoxal-family-k4-579",
   "uOf": {
@@ -2533,18 +6166,46 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-584": {
+  "to": "ctrnact-isotoxal-family-k4-583",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-586": {
+  "to": "ctrnact-isotoxal-family-k4-585",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-588": {
   "to": "ctrnact-isotoxal-family-k4-587",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-59": {
-  "to": "ctrnact-isotoxal-family-k4-172",
+  "to": "ctrnact-isotoxal-family-k4-171",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-594": {
+  "to": "ctrnact-isotoxal-family-k4-593",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-597": {
+  "to": "ctrnact-isotoxal-family-k4-3078",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-601": {
@@ -2554,11 +6215,25 @@
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-603": {
-  "to": "ctrnact-isotoxal-family-k4-593",
+ "ctrnact-isotoxal-family-k4-602": {
+  "to": "ctrnact-isotoxal-family-k4-592",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-603": {
+  "to": "ctrnact-isotoxal-family-k4-593",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-604": {
+  "to": "ctrnact-isotoxal-family-k4-593",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-605": {
@@ -2568,8 +6243,15 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-606": {
+  "to": "ctrnact-isotoxal-family-k4-596",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-607": {
-  "to": "ctrnact-isotoxal-family-k4-597",
+  "to": "ctrnact-isotoxal-family-k4-3078",
   "uOf": {
    "m": -1,
    "c": 180
@@ -2596,18 +6278,123 @@
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-626": {
-  "to": "ctrnact-isotoxal-family-k4-625",
+ "ctrnact-isotoxal-family-k4-614": {
+  "to": "ctrnact-isotoxal-family-k4-613",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-616": {
+  "to": "ctrnact-isotoxal-family-k4-615",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-62": {
+  "to": "ctrnact-isotoxal-family-k4-407",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-622": {
+  "to": "ctrnact-isotoxal-family-k4-621",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-624": {
+  "to": "ctrnact-isotoxal-family-k4-623",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-626": {
+  "to": "ctrnact-isotoxal-family-k4-625",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-629": {
+  "to": "ctrnact-isotoxal-family-k4-628",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-63": {
+  "to": "ctrnact-isotoxal-family-k4-408",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-632": {
+  "to": "ctrnact-isotoxal-family-k4-631",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-634": {
+  "to": "ctrnact-isotoxal-family-k4-633",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-636": {
+  "to": "ctrnact-isotoxal-family-k4-635",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-638": {
+  "to": "ctrnact-isotoxal-family-k4-637",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-64": {
+  "to": "ctrnact-isotoxal-family-k4-409",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-640": {
+  "to": "ctrnact-isotoxal-family-k4-639",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-642": {
+  "to": "ctrnact-isotoxal-family-k4-641",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-644": {
   "to": "ctrnact-isotoxal-family-k4-643",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-646": {
+  "to": "ctrnact-isotoxal-family-k4-645",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-647": {
@@ -2618,10 +6405,24 @@
   }
  },
  "ctrnact-isotoxal-family-k4-648": {
-  "to": "ctrnact-isotoxal-family-k4-646",
+  "to": "ctrnact-isotoxal-family-k4-645",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-65": {
+  "to": "ctrnact-isotoxal-family-k4-410",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-650": {
+  "to": "ctrnact-isotoxal-family-k4-649",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-652": {
@@ -2631,18 +6432,123 @@
    "c": 0
   }
  },
- "ctrnact-isotoxal-family-k4-668": {
-  "to": "ctrnact-isotoxal-family-k4-666",
+ "ctrnact-isotoxal-family-k4-655": {
+  "to": "ctrnact-isotoxal-family-k4-653",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-656": {
+  "to": "ctrnact-isotoxal-family-k4-654",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-658": {
+  "to": "ctrnact-isotoxal-family-k4-657",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-659": {
+  "to": "ctrnact-isotoxal-family-k4-657",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-66": {
+  "to": "ctrnact-isotoxal-family-k4-411",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-660": {
+  "to": "ctrnact-isotoxal-family-k4-657",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-666": {
+  "to": "ctrnact-isotoxal-family-k4-665",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-667": {
+  "to": "ctrnact-isotoxal-family-k4-665",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-678": {
-  "to": "ctrnact-isotoxal-family-k4-677",
+ "ctrnact-isotoxal-family-k4-668": {
+  "to": "ctrnact-isotoxal-family-k4-665",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-67": {
+  "to": "ctrnact-isotoxal-family-k4-412",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-670": {
+  "to": "ctrnact-isotoxal-family-k4-669",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-672": {
+  "to": "ctrnact-isotoxal-family-k4-671",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-674": {
+  "to": "ctrnact-isotoxal-family-k4-673",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-676": {
+  "to": "ctrnact-isotoxal-family-k4-675",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-678": {
+  "to": "ctrnact-isotoxal-family-k4-677",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-68": {
+  "to": "ctrnact-isotoxal-family-k4-412",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-680": {
+  "to": "ctrnact-isotoxal-family-k4-679",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-681": {
@@ -2653,7 +6559,7 @@
   }
  },
  "ctrnact-isotoxal-family-k4-682": {
-  "to": "ctrnact-isotoxal-family-k4-680",
+  "to": "ctrnact-isotoxal-family-k4-679",
   "uOf": {
    "m": -1,
    "c": 180
@@ -2666,11 +6572,25 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-685": {
+  "to": "ctrnact-isotoxal-family-k4-683",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-686": {
-  "to": "ctrnact-isotoxal-family-k4-685",
+  "to": "ctrnact-isotoxal-family-k4-683",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-688": {
+  "to": "ctrnact-isotoxal-family-k4-687",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-689": {
@@ -2680,11 +6600,25 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-69": {
+  "to": "ctrnact-isotoxal-family-k4-414",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-690": {
-  "to": "ctrnact-isotoxal-family-k4-688",
+  "to": "ctrnact-isotoxal-family-k4-687",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-692": {
+  "to": "ctrnact-isotoxal-family-k4-691",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-693": {
@@ -2695,24 +6629,38 @@
   }
  },
  "ctrnact-isotoxal-family-k4-694": {
-  "to": "ctrnact-isotoxal-family-k4-692",
+  "to": "ctrnact-isotoxal-family-k4-691",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-696": {
+  "to": "ctrnact-isotoxal-family-k4-695",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-697": {
   "to": "ctrnact-isotoxal-family-k4-695",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-698": {
-  "to": "ctrnact-isotoxal-family-k4-696",
+  "to": "ctrnact-isotoxal-family-k4-695",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-70": {
+  "to": "ctrnact-isotoxal-family-k4-415",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-700": {
@@ -2746,33 +6694,47 @@
  "ctrnact-isotoxal-family-k4-709": {
   "to": "ctrnact-isotoxal-family-k4-707",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-710": {
   "to": "ctrnact-isotoxal-family-k4-708",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-712": {
+  "to": "ctrnact-isotoxal-family-k4-711",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-713": {
+  "to": "ctrnact-isotoxal-family-k4-711",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-714": {
   "to": "ctrnact-isotoxal-family-k4-711",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
- "ctrnact-isotoxal-family-k4-714": {
-  "to": "ctrnact-isotoxal-family-k4-712",
+ "ctrnact-isotoxal-family-k4-718": {
+  "to": "ctrnact-isotoxal-family-k4-715",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-721": {
-  "to": "ctrnact-isotoxal-family-k4-718",
+  "to": "ctrnact-isotoxal-family-k4-715",
   "uOf": {
    "m": -1,
    "c": 180
@@ -2820,6 +6782,13 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-73": {
+  "to": "ctrnact-isotoxal-family-k4-418",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-730": {
   "to": "ctrnact-isotoxal-family-k4-729",
   "uOf": {
@@ -2830,8 +6799,8 @@
  "ctrnact-isotoxal-family-k4-732": {
   "to": "ctrnact-isotoxal-family-k4-731",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-734": {
@@ -2849,24 +6818,276 @@
   }
  },
  "ctrnact-isotoxal-family-k4-739": {
-  "to": "ctrnact-isotoxal-family-k4-737",
+  "to": "ctrnact-isotoxal-family-k4-738",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-74": {
-  "to": "ctrnact-isotoxal-family-k4-73",
+  "to": "ctrnact-isotoxal-family-k4-418",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
- "ctrnact-isotoxal-family-k4-76": {
-  "to": "ctrnact-isotoxal-family-k4-422",
+ "ctrnact-isotoxal-family-k4-740": {
+  "to": "ctrnact-isotoxal-family-k4-737",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-742": {
+  "to": "ctrnact-isotoxal-family-k4-741",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-744": {
+  "to": "ctrnact-isotoxal-family-k4-743",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-747": {
+  "to": "ctrnact-isotoxal-family-k4-745",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-748": {
+  "to": "ctrnact-isotoxal-family-k4-746",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-75": {
+  "to": "ctrnact-isotoxal-family-k4-421",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-754": {
+  "to": "ctrnact-isotoxal-family-k4-753",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-755": {
+  "to": "ctrnact-isotoxal-family-k4-753",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-756": {
+  "to": "ctrnact-isotoxal-family-k4-753",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-758": {
+  "to": "ctrnact-isotoxal-family-k4-757",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-759": {
+  "to": "ctrnact-isotoxal-family-k4-757",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-76": {
+  "to": "ctrnact-isotoxal-family-k4-421",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-760": {
+  "to": "ctrnact-isotoxal-family-k4-757",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-762": {
+  "to": "ctrnact-isotoxal-family-k4-761",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-764": {
+  "to": "ctrnact-isotoxal-family-k4-763",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-766": {
+  "to": "ctrnact-isotoxal-family-k4-765",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-768": {
+  "to": "ctrnact-isotoxal-family-k4-767",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-77": {
+  "to": "ctrnact-isotoxal-family-k4-423",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-772": {
+  "to": "ctrnact-isotoxal-family-k4-771",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-774": {
+  "to": "ctrnact-isotoxal-family-k4-773",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-78": {
+  "to": "ctrnact-isotoxal-family-k4-424",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-780": {
+  "to": "ctrnact-isotoxal-family-k4-779",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-781": {
+  "to": "ctrnact-isotoxal-family-k4-769",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-782": {
+  "to": "ctrnact-isotoxal-family-k4-770",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-783": {
+  "to": "ctrnact-isotoxal-family-k4-771",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-784": {
+  "to": "ctrnact-isotoxal-family-k4-771",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-785": {
+  "to": "ctrnact-isotoxal-family-k4-773",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-786": {
+  "to": "ctrnact-isotoxal-family-k4-773",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-787": {
+  "to": "ctrnact-isotoxal-family-k4-775",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-788": {
+  "to": "ctrnact-isotoxal-family-k4-776",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-789": {
+  "to": "ctrnact-isotoxal-family-k4-777",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-790": {
+  "to": "ctrnact-isotoxal-family-k4-778",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-796": {
+  "to": "ctrnact-isotoxal-family-k4-795",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-798": {
+  "to": "ctrnact-isotoxal-family-k4-797",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-801": {
+  "to": "ctrnact-isotoxal-family-k4-799",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-802": {
+  "to": "ctrnact-isotoxal-family-k4-800",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-81": {
+  "to": "ctrnact-isotoxal-family-k4-427",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-811": {
@@ -2883,120 +7104,778 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-813": {
+  "to": "ctrnact-isotoxal-family-k4-517",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-814": {
+  "to": "ctrnact-isotoxal-family-k4-518",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-815": {
+  "to": "ctrnact-isotoxal-family-k4-519",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-816": {
-  "to": "ctrnact-isotoxal-family-k4-815",
+  "to": "ctrnact-isotoxal-family-k4-519",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-817": {
+  "to": "ctrnact-isotoxal-family-k4-521",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-818": {
+  "to": "ctrnact-isotoxal-family-k4-522",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-819": {
+  "to": "ctrnact-isotoxal-family-k4-523",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-82": {
+  "to": "ctrnact-isotoxal-family-k4-428",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-820": {
+  "to": "ctrnact-isotoxal-family-k4-523",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-821": {
+  "to": "ctrnact-isotoxal-family-k4-525",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-822": {
+  "to": "ctrnact-isotoxal-family-k4-525",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-823": {
+  "to": "ctrnact-isotoxal-family-k4-527",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-824": {
+  "to": "ctrnact-isotoxal-family-k4-528",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-825": {
+  "to": "ctrnact-isotoxal-family-k4-529",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-826": {
+  "to": "ctrnact-isotoxal-family-k4-530",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-827": {
+  "to": "ctrnact-isotoxal-family-k4-531",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-828": {
+  "to": "ctrnact-isotoxal-family-k4-532",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-829": {
+  "to": "ctrnact-isotoxal-family-k4-533",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-83": {
+  "to": "ctrnact-isotoxal-family-k4-429",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-830": {
-  "to": "ctrnact-isotoxal-family-k4-829",
+  "to": "ctrnact-isotoxal-family-k4-533",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-831": {
+  "to": "ctrnact-isotoxal-family-k4-535",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-832": {
+  "to": "ctrnact-isotoxal-family-k4-536",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-833": {
+  "to": "ctrnact-isotoxal-family-k4-537",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-834": {
+  "to": "ctrnact-isotoxal-family-k4-537",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-835": {
+  "to": "ctrnact-isotoxal-family-k4-539",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-836": {
+  "to": "ctrnact-isotoxal-family-k4-539",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-837": {
+  "to": "ctrnact-isotoxal-family-k4-541",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-838": {
+  "to": "ctrnact-isotoxal-family-k4-542",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-839": {
+  "to": "ctrnact-isotoxal-family-k4-543",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-84": {
+  "to": "ctrnact-isotoxal-family-k4-429",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-840": {
+  "to": "ctrnact-isotoxal-family-k4-544",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-841": {
+  "to": "ctrnact-isotoxal-family-k4-545",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-842": {
-  "to": "ctrnact-isotoxal-family-k4-841",
+  "to": "ctrnact-isotoxal-family-k4-545",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-843": {
+  "to": "ctrnact-isotoxal-family-k4-547",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-844": {
-  "to": "ctrnact-isotoxal-family-k4-843",
+  "to": "ctrnact-isotoxal-family-k4-547",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-845": {
+  "to": "ctrnact-isotoxal-family-k4-549",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-846": {
-  "to": "ctrnact-isotoxal-family-k4-845",
+  "to": "ctrnact-isotoxal-family-k4-549",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-847": {
+  "to": "ctrnact-isotoxal-family-k4-551",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-848": {
-  "to": "ctrnact-isotoxal-family-k4-847",
+  "to": "ctrnact-isotoxal-family-k4-551",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-849": {
+  "to": "ctrnact-isotoxal-family-k4-553",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-85": {
+  "to": "ctrnact-isotoxal-family-k4-431",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-850": {
+  "to": "ctrnact-isotoxal-family-k4-554",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-851": {
+  "to": "ctrnact-isotoxal-family-k4-555",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-852": {
+  "to": "ctrnact-isotoxal-family-k4-555",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-853": {
+  "to": "ctrnact-isotoxal-family-k4-557",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-854": {
+  "to": "ctrnact-isotoxal-family-k4-558",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-855": {
+  "to": "ctrnact-isotoxal-family-k4-559",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-856": {
+  "to": "ctrnact-isotoxal-family-k4-560",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-857": {
+  "to": "ctrnact-isotoxal-family-k4-561",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-858": {
+  "to": "ctrnact-isotoxal-family-k4-562",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-859": {
-  "to": "ctrnact-isotoxal-family-k4-849",
+  "to": "ctrnact-isotoxal-family-k4-553",
   "uOf": {
    "m": -1,
    "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-86": {
+  "to": "ctrnact-isotoxal-family-k4-432",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-860": {
-  "to": "ctrnact-isotoxal-family-k4-850",
+  "to": "ctrnact-isotoxal-family-k4-554",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-861": {
-  "to": "ctrnact-isotoxal-family-k4-851",
+  "to": "ctrnact-isotoxal-family-k4-555",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-862": {
-  "to": "ctrnact-isotoxal-family-k4-852",
+  "to": "ctrnact-isotoxal-family-k4-555",
   "uOf": {
-   "m": 1,
-   "c": 0
+   "m": -1,
+   "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-863": {
-  "to": "ctrnact-isotoxal-family-k4-854",
+  "to": "ctrnact-isotoxal-family-k4-558",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-864": {
-  "to": "ctrnact-isotoxal-family-k4-853",
+  "to": "ctrnact-isotoxal-family-k4-557",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-865": {
-  "to": "ctrnact-isotoxal-family-k4-855",
+  "to": "ctrnact-isotoxal-family-k4-559",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-866": {
-  "to": "ctrnact-isotoxal-family-k4-856",
+  "to": "ctrnact-isotoxal-family-k4-560",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-867": {
-  "to": "ctrnact-isotoxal-family-k4-857",
+  "to": "ctrnact-isotoxal-family-k4-561",
   "uOf": {
    "m": 1,
    "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-868": {
-  "to": "ctrnact-isotoxal-family-k4-858",
+  "to": "ctrnact-isotoxal-family-k4-562",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-87": {
+  "to": "ctrnact-isotoxal-family-k4-433",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-872": {
+  "to": "ctrnact-isotoxal-family-k4-573",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-873": {
+  "to": "ctrnact-isotoxal-family-k4-574",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-874": {
+  "to": "ctrnact-isotoxal-family-k4-575",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-875": {
+  "to": "ctrnact-isotoxal-family-k4-576",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-876": {
+  "to": "ctrnact-isotoxal-family-k4-577",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-877": {
+  "to": "ctrnact-isotoxal-family-k4-577",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-878": {
+  "to": "ctrnact-isotoxal-family-k4-579",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-879": {
+  "to": "ctrnact-isotoxal-family-k4-579",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-88": {
+  "to": "ctrnact-isotoxal-family-k4-434",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-880": {
+  "to": "ctrnact-isotoxal-family-k4-581",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-881": {
+  "to": "ctrnact-isotoxal-family-k4-582",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-883": {
+  "to": "ctrnact-isotoxal-family-k4-583",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-884": {
+  "to": "ctrnact-isotoxal-family-k4-583",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-885": {
+  "to": "ctrnact-isotoxal-family-k4-585",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-886": {
+  "to": "ctrnact-isotoxal-family-k4-585",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-887": {
+  "to": "ctrnact-isotoxal-family-k4-587",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-888": {
+  "to": "ctrnact-isotoxal-family-k4-587",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-889": {
+  "to": "ctrnact-isotoxal-family-k4-589",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-890": {
+  "to": "ctrnact-isotoxal-family-k4-590",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-891": {
+  "to": "ctrnact-isotoxal-family-k4-591",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-892": {
+  "to": "ctrnact-isotoxal-family-k4-592",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-893": {
+  "to": "ctrnact-isotoxal-family-k4-593",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-894": {
+  "to": "ctrnact-isotoxal-family-k4-593",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-895": {
+  "to": "ctrnact-isotoxal-family-k4-595",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-896": {
+  "to": "ctrnact-isotoxal-family-k4-596",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-897": {
+  "to": "ctrnact-isotoxal-family-k4-3078",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-898": {
+  "to": "ctrnact-isotoxal-family-k4-598",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-899": {
+  "to": "ctrnact-isotoxal-family-k4-599",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-900": {
+  "to": "ctrnact-isotoxal-family-k4-600",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-901": {
+  "to": "ctrnact-isotoxal-family-k4-591",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-902": {
+  "to": "ctrnact-isotoxal-family-k4-592",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-903": {
+  "to": "ctrnact-isotoxal-family-k4-593",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-904": {
+  "to": "ctrnact-isotoxal-family-k4-593",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-905": {
+  "to": "ctrnact-isotoxal-family-k4-595",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-906": {
+  "to": "ctrnact-isotoxal-family-k4-596",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-907": {
+  "to": "ctrnact-isotoxal-family-k4-3078",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-908": {
+  "to": "ctrnact-isotoxal-family-k4-598",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-909": {
+  "to": "ctrnact-isotoxal-family-k4-600",
   "uOf": {
    "m": -1,
    "c": 180
   }
  },
  "ctrnact-isotoxal-family-k4-91": {
-  "to": "ctrnact-isotoxal-family-k4-438",
+  "to": "ctrnact-isotoxal-family-k4-437",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-910": {
+  "to": "ctrnact-isotoxal-family-k4-599",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-911": {
+  "to": "ctrnact-isotoxal-family-k4-611",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-912": {
+  "to": "ctrnact-isotoxal-family-k4-612",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-913": {
+  "to": "ctrnact-isotoxal-family-k4-613",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-914": {
+  "to": "ctrnact-isotoxal-family-k4-613",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-915": {
+  "to": "ctrnact-isotoxal-family-k4-615",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-916": {
+  "to": "ctrnact-isotoxal-family-k4-615",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-917": {
+  "to": "ctrnact-isotoxal-family-k4-617",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-918": {
+  "to": "ctrnact-isotoxal-family-k4-618",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-919": {
+  "to": "ctrnact-isotoxal-family-k4-619",
   "uOf": {
    "m": 1,
    "c": 0
@@ -3005,15 +7884,36 @@
  "ctrnact-isotoxal-family-k4-92": {
   "to": "ctrnact-isotoxal-family-k4-437",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-920": {
+  "to": "ctrnact-isotoxal-family-k4-620",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-921": {
+  "to": "ctrnact-isotoxal-family-k4-621",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-922": {
+  "to": "ctrnact-isotoxal-family-k4-621",
+  "uOf": {
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-923": {
-  "to": "ctrnact-isotoxal-family-k4-624",
+  "to": "ctrnact-isotoxal-family-k4-623",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-924": {
@@ -3023,8 +7923,50 @@
    "c": 0
   }
  },
+ "ctrnact-isotoxal-family-k4-925": {
+  "to": "ctrnact-isotoxal-family-k4-625",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-926": {
+  "to": "ctrnact-isotoxal-family-k4-625",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-927": {
+  "to": "ctrnact-isotoxal-family-k4-627",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-928": {
+  "to": "ctrnact-isotoxal-family-k4-628",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-929": {
+  "to": "ctrnact-isotoxal-family-k4-628",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-93": {
-  "to": "ctrnact-isotoxal-family-k4-440",
+  "to": "ctrnact-isotoxal-family-k4-439",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-930": {
+  "to": "ctrnact-isotoxal-family-k4-630",
   "uOf": {
    "m": 1,
    "c": 0
@@ -3068,8 +8010,8 @@
  "ctrnact-isotoxal-family-k4-94": {
   "to": "ctrnact-isotoxal-family-k4-439",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-941": {
@@ -3081,6 +8023,13 @@
  },
  "ctrnact-isotoxal-family-k4-944": {
   "to": "ctrnact-isotoxal-family-k4-942",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-945": {
+  "to": "ctrnact-isotoxal-family-k4-943",
   "uOf": {
    "m": -1,
    "c": 180
@@ -3107,6 +8056,27 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-949": {
+  "to": "ctrnact-isotoxal-family-k4-937",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-isotoxal-family-k4-95": {
+  "to": "ctrnact-isotoxal-family-k4-441",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-950": {
+  "to": "ctrnact-isotoxal-family-k4-937",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-isotoxal-family-k4-951": {
   "to": "ctrnact-isotoxal-family-k4-937",
   "uOf": {
@@ -3128,11 +8098,18 @@
    "c": 180
   }
  },
+ "ctrnact-isotoxal-family-k4-96": {
+  "to": "ctrnact-isotoxal-family-k4-442",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
  "ctrnact-isotoxal-family-k4-97": {
   "to": "ctrnact-isotoxal-family-k4-442",
   "uOf": {
-   "m": -1,
-   "c": 180
+   "m": 1,
+   "c": 0
   }
  },
  "ctrnact-isotoxal-family-k4-976": {
@@ -3151,6 +8128,13 @@
  },
  "ctrnact-isotoxal-family-k4-978": {
   "to": "ctrnact-isotoxal-family-k4-975",
+  "uOf": {
+   "m": 1,
+   "c": 0
+  }
+ },
+ "ctrnact-isotoxal-family-k4-98": {
+  "to": "ctrnact-isotoxal-family-k4-444",
   "uOf": {
    "m": 1,
    "c": 0

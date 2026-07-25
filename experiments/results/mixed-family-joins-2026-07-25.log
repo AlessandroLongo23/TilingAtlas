@@ -1,8 +1,9 @@
 scan-family-joins.py — experiments/results/mixed-atlas-unmerged.json
-79 families; param-count histogram: {1: 79}
-patch congruence: R=5.0, 9x9 lattice translates
+93 families; param-count histogram: {1: 93}
+scanning 93 single-parameter families
+patch congruence: R=5.0, translate count derived per family from its lattice
 
-shared endpoints: 9 JOIN candidate group(s), 20 COLLAPSE group(s)
+shared endpoints: 9 JOIN candidate group(s), 22 COLLAPSE group(s)
 
 === JOINs — no tile vanishes, so the limit tiling is real and shared ===
   [2 entries] FINGERPRINT COLLISION — NOT congruent, not a join
@@ -32,7 +33,7 @@ shared endpoints: 9 JOIN candidate group(s), 20 COLLAPSE group(s)
       k2-47      4α.3*.6*         param0 @ 105°   range [45, 105]   3x4* 2x6* 1x12
       k2-49      4α.6α.6*         param0 @ 75°   range [0, 75]   3x4* 2x6* 1x12
       -> MERGE: k2-47 + k2-49   (excluded: none)
-  [2 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+  [2 entries] DUPLICATE ARTIFACT — the entries are one family (see DUPLICATES), not a join
       k2-54      4α.6α.6*         param0 @ 120°   range [0, 120]   6x4 3x4* 2x6* 1x12
       k2-55      4α.6α.6*         param0 @ 60°   range [60, 180]   6x4 3x4* 2x6* 1x12
   [3 entries] CONGRUENT — one arc through the limit (3 distinct branches)
@@ -40,17 +41,19 @@ shared endpoints: 9 JOIN candidate group(s), 20 COLLAPSE group(s)
       k2-58      4.4α.3*.6*       param0 @ 90°   range [30, 90]   6x4 3x4* 2x6* 1x12
       k2-59      4.4α.6α.6*       param0 @ 90°   range [0, 90]   6x4 3x4* 2x6* 1x12
       -> MERGE: k2-58 + k2-59   (excluded: ['k2-56'])
-  -> 6 verified join(s); 2 collision(s) rejected; 1 duplicate artifact(s)
+  -> 6 verified join(s); 1 collision(s) rejected; 2 duplicate artifact(s)
 
 === COLLAPSEs — a tile hits zero area; the limit is a SIMPLER tiling, shared by unrelated arcs ===
   k1-03[6α.3*]@120° | k2-04[6α.3*]@120°
   k1-06[8α.4*]@180° | k1-14[8α.4*]@90°
-  k1-08[4α.4*]@0° | k1-11[4α.8α.4*]@0° | k1-12[4α.8α.4*]@0° | k2-42[4α.8α.4*]@0° | k2-43[4α.8α.4*]@0°
+  k1-08[4α.4*]@0° | k1-11[4α.8α.4*]@0° | k1-12[4α.8α.4*]@0° | k1-31[4α.8α.4*]@0° | k1-32[4α.8α.4*]@0° | k2-42[4α.8α.4*]@0° | k2-43[4α.8α.4*]@0°
   k1-08[4α.4*]@90° | k2-17[4.4α.4*]@90°
   k1-09[4α.4*]@0° | k2-23[4α.4*]@0° | k2-34[4α.8α.4*]@0°
   k1-09[4α.4*]@90° | k2-23[4α.4*]@90°
   k1-11[4α.8α.4*]@90° | k1-12[4α.8α.4*]@90°
   k1-13[4.4α.4*]@90° | k2-21[4α.4*]@90°
+  k1-27[4α.3*]@60° | k2-07[4α.3*]@0°
+  k1-31[4α.8α.4*]@90° | k1-32[4α.8α.4*]@90°
   k2-16[4α.4*]@90° | k2-34[4α.8α.4*]@90°
   k2-18[4α.8α.4*]@0° | k2-20[4α.4*]@0°
   k2-19[4α.4*]@0° | k2-26[4α.8α.4*]@0°
@@ -66,8 +69,11 @@ shared endpoints: 9 JOIN candidate group(s), 20 COLLAPSE group(s)
 
 === DUPLICATES — same family shipped twice (forward, or with α reversed) ===
   α-reversed: k1-06 [90, 180] == k1-14 [90, 180]   [8α.4*]
+  α-forward: k1-11 [0, 90] == k1-31 [0, 90]   [4α.8α.4*]
+  α-forward: k1-12 [0, 90] == k1-32 [0, 90]   [4α.8α.4*]
   α-reversed: k1-15 [60, 180] == k1-18 [60, 180]   [6α.6*]
-  -> 2 duplicate pair(s) among 79 shipped families
+  α-reversed: k2-54 [0, 120] == k2-55 [60, 180]   [4α.6α.6*]
+  -> 5 duplicate pair(s) among the 93 single-parameter families
 
 === MERGE PLAN — a JOIN whose branches share the rigid/flexing partition ===
   k1-04 + k1-07  →  sweep ∈ (0°, 120°), join at 60°, default 30°
@@ -90,15 +96,19 @@ shared endpoints: 9 JOIN candidate group(s), 20 COLLAPSE group(s)
       k2-58      u∈[180,240]  α = 270 − u   (α-range [30, 90])
   -> 6 merge(s)
 
-SUMMARY: 79 shipped entries = 77 distinct families = 71 merged arcs
 === ABSORBED — ids that no longer ship, and where a link to them lands ===
   k1-07      → k1-04        u = 0 + α
   k1-14      → k1-06        u = 270 − α
   k1-15      → k1-05        u = 0 + α
   k1-18      → k1-05        u = 240 − α
+  k1-31      → k1-11        u = 0 + α
+  k1-32      → k1-12        u = 0 + α
   k2-06      → k2-05        u = 0 + α
   k2-46      → k2-45        u = 90 + α
   k2-49      → k2-47        u = 105 + α
+  k2-55      → k2-54        u = 240 − α
   k2-59      → k2-58        u = 90 + α
-  -> 8 absorbed, 71 entries ship
-wrote merge plan → experiments/results/mixed-merge-plan.json
+  -> 11 absorbed, 82 entries ship
+
+SUMMARY: 93 shipped entries = 88 distinct families = 82 arcs after merging
+wrote merge plan → /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/c5bff048-2f31-4da2-9307-e47acd0d0487/scratchpad/mixed-plan-fixed.json

@@ -5795,3 +5795,47 @@ belongs in `export_isotoxal_families.py` / `export_combined_families.py`, since 
 duplicates (the 30/150 rhombus one added 2 fresh pairs to mixed). (3) `EU_PRUNE_OVERLAP=1` missing from the
 Makefile (§97) still blocks a reproducible re-export. (4) `experiments/results/isotoxal-joins-2026-07-25.log`
 now holds the corpus-wide scan, superseding the per-shelf number §99's table cites for the k1/k2 base.
+
+## §101 — The congruence patch was truncated: 3 bogus merges shipped, 712 duplicates missed (2026-07-25)
+
+Extending the census to the 2,034 two-parameter isotoxal families (§100 ⚑1) meant verifying a 41.8% hit
+rate, and the verification broke instead — which exposed a bug in the congruence primitive every census
+since §92 has rested on.
+
+**`PATCH_N` was a fixed translate count, not derived from the lattice.** `patch_fingerprints` built
+translates over `[-N,N]²` and kept those within `PATCH_R` of an anchor tile. With N=4 and a large k4 cell the
+box never reaches the radius, so the "disc" is silently truncated — and two truncated neighbourhoods are
+compared instead of two discs. That cuts BOTH ways: it hides real differences (a false duplicate) and
+invents them (a false mismatch, since two families' cells truncate at different places). Both were observed:
+raising R to 7 while leaving N=5 made three genuine duplicates read as distinct, and the same truncation is
+what let three non-duplicates through as merges. Now `patch_translates()` derives the count from the lattice
+(h = |det| / longer basis vector, so ⌈(R + 2·extent)/h⌉+1 steps provably cover the disc), giving N=15–23
+where 4 was used. Enumerating only the translates that can reach the disc keeps it as fast as before —
+the corpus scan runs in 18 s.
+
+**Three merges I shipped in §100 were wrong, and the seam tests could not catch them.** k3-632+k3-641,
+k4-3840+k4-3885, k4-3845+k4-3890 are not two halves of an arc: each partner is the α-REVERSAL of its own
+primary, undetected while the patch was truncated. "Merging" them spliced a family to a mirrored copy of
+itself — a 240° slider sweeping the same 120° family out and back. The seam suite passed trivially, because
+the two halves ARE congruent at the join when they are the same family. The gate that was missing: a merge
+needs two DISTINCT families, so if both branches collapse to one duplicate representative it must be
+skipped. `canon()` now does that and the isotoxal shelf plans **0 merges**; the three primaries are back to
+their true 120° α-range with their partners absorbed as duplicates. Guard commented at the gate so it cannot
+recur silently.
+
+**What the corrected primitive changes, in numbers.** Isotoxal: **1,163 duplicates absorbed, not 451** —
+712 were missed by the truncated patch. The shelf ships **3,527** (was 4,690 raw, 4,239 after §100), i.e. a
+**24.8% overcount**, not 9.6%. Per shard: k1/k2 114→107, k3 658→523, k4 3918→2897. Mixed picks up one more
+duplicate: 83 → 82, and **all 6 of its merges survive the corrected test**, including AL's k2-58+k2-59 —
+none of them is a same-symbol self-splice (k2-05+k2-06 was the one at risk and it holds).
+
+**The reassuring half.** For both shelves the corrected absorbed set is a strict SUPERSET of what was
+shipped: **0 of the 451 isotoxal and 0 of the 10 mixed absorptions fail to reconfirm**. So the dedup never
+deleted a distinct tiling — it was incomplete, not wrong. Only the 3 merges were actual errors, and they are
+reverted. 91 aliases changed representative (a bigger cluster now has a different lowest id).
+
+⚑ Open. (1) The 2-parameter census still is not landed — the 41.8% figure was measured with the OLD
+truncated patch and must be re-measured now that coverage is derived; that number is not trustworthy as it
+stands. Its 8 candidate maps (axis permutation × per-axis reversal) and the per-parameter alias schema are
+written but unshipped. (2) Every earlier census number in §92–§100 that rests on patch congruence deserves
+the same re-run; the mixed merges and both dedups have been, nothing else has.

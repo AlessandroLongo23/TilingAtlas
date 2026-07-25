@@ -2,9 +2,11 @@
  "_meta": {
   "generated_from": "experiments/results/mixed-atlas-unmerged.json",
   "families": 93,
-  "duplicates": 4,
+  "scanned": 93,
+  "skippedMultiParam": [],
+  "duplicates": 5,
   "merges": 6,
-  "ships": 83,
+  "ships": 82,
   "note": "consumed by scripts/build-mixed-atlas.ts; spec docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md"
  },
  "duplicates": [
@@ -26,6 +28,11 @@
   {
    "absorbed": "ctrnact-mixed-family-k1-18",
    "into": "ctrnact-mixed-family-k1-15",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k2-55",
+   "into": "ctrnact-mixed-family-k2-54",
    "kind": "reversed"
   }
  ],
@@ -615,6 +622,13 @@
     "c": 270
    }
   },
+  "ctrnact-mixed-family-k1-18": {
+   "to": "ctrnact-mixed-family-k1-05",
+   "uOf": {
+    "m": -1,
+    "c": 240
+   }
+  },
   "ctrnact-mixed-family-k1-31": {
    "to": "ctrnact-mixed-family-k1-11",
    "uOf": {
@@ -629,8 +643,8 @@
     "c": 0
    }
   },
-  "ctrnact-mixed-family-k1-18": {
-   "to": "ctrnact-mixed-family-k1-05",
+  "ctrnact-mixed-family-k2-55": {
+   "to": "ctrnact-mixed-family-k2-54",
    "uOf": {
     "m": -1,
     "c": 240

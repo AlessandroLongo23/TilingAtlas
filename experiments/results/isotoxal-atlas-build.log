@@ -4691,13 +4691,10 @@
   ctrnact-isotoxal-family-k4-3918  (4,4,cx4@0@a,cx4@1@-a+12) + (4,4,cx4@0@a,cx8@0@-a+12) + (4,cx4@1@-a+12,cx8@1@a+6) + (4,cx8@0@-a+12,cx8@1@a+6)  P=1
   pre-merge snapshot (4690) → experiments/results/isotoxal-atlas-unmerged.json
 
-  --- merge plan: 3 merge(s), 451 alias(es) ---
-  ctrnact-isotoxal-family-k3-632  sweep ∈ (0°, 240°) join 120°  ← 3.3.3.3.3.6.4α.6α ↔ 3.3.3.3.3.6.4α.6α
-  ctrnact-isotoxal-family-k4-3840  sweep ∈ (0°, 240°) join 120°  ← 4α.6α ↔ 4α.6α
-  ctrnact-isotoxal-family-k4-3845  sweep ∈ (0°, 240°) join 120°  ← 3.3.3.3.4α.6α ↔ 3.3.3.3.4α.6α
-  absorbed 451 id(s): 3 merge partner(s) + 448 duplicate(s)
-  4690 → 4239 entries; alias table → lib/services/mergedFamilyAliases.isotoxal.json
-  main k≤2: 111 families → public/reference-atlas-isotoxal.json (333.9 KB)
-  shard k=3: 608 families → public/reference-atlas-isotoxal-k3.json (2982.0 KB)
-  shard k=4: 3520 families → public/reference-atlas-isotoxal-k4.json (24237.2 KB)
-  total 4239 shipped of 4690 built (0 check-failed), elapsed 0.81s
+  --- merge plan: 0 merge(s), 1163 alias(es) ---
+  absorbed 1163 id(s): 0 merge partner(s) + 1163 duplicate(s)
+  4690 → 3527 entries; alias table → lib/services/mergedFamilyAliases.isotoxal.json
+  main k≤2: 107 families → public/reference-atlas-isotoxal.json (324.0 KB)
+  shard k=3: 523 families → public/reference-atlas-isotoxal-k3.json (2525.4 KB)
+  shard k=4: 2897 families → public/reference-atlas-isotoxal-k4.json (19982.5 KB)
+  total 3527 shipped of 4690 built (0 check-failed), elapsed 1.48s

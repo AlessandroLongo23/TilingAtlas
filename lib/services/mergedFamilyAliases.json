@@ -48,6 +48,13 @@
    "c": 270
   }
  },
+ "ctrnact-mixed-family-k1-18": {
+  "to": "ctrnact-mixed-family-k1-05",
+  "uOf": {
+   "m": -1,
+   "c": 240
+  }
+ },
  "ctrnact-mixed-family-k1-31": {
   "to": "ctrnact-mixed-family-k1-11",
   "uOf": {
@@ -62,8 +69,8 @@
    "c": 0
   }
  },
- "ctrnact-mixed-family-k1-18": {
-  "to": "ctrnact-mixed-family-k1-05",
+ "ctrnact-mixed-family-k2-55": {
+  "to": "ctrnact-mixed-family-k2-54",
   "uOf": {
    "m": -1,
    "c": 240

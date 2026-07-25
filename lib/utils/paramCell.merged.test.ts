@@ -91,10 +91,10 @@ const seam = (t: ReferenceTiling): { lower: EvalCell; upper: EvalCell; join: num
 
 describe("merge plan", () => {
 	it("plans exactly the arcs the census found, across every shelf", () => {
+		// The isotoxal shelf plans NO merges. Its three former candidates turned out to be α-reversal
+		// duplicates of their own primary once the congruence patch was made coverage-safe, so they are
+		// absorbed rather than spliced: a merge needs two DISTINCT families meeting at a limit (§101).
 		expect(PLANNED_IDS).toEqual([
-			"ctrnact-isotoxal-family-k3-632",
-			"ctrnact-isotoxal-family-k4-3840",
-			"ctrnact-isotoxal-family-k4-3845",
 			"ctrnact-mixed-family-k1-04",
 			"ctrnact-mixed-family-k1-05",
 			"ctrnact-mixed-family-k2-05",
