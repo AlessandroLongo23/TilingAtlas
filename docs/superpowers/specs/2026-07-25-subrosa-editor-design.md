@@ -27,27 +27,33 @@ up the general CAST infrastructure.
 
 ## Scope of the first cut (honest)
 
-**Shipped and validated: n = 5 (10-fold) and n = 7 (14-fold).** `SUPPORTED_SYMMETRIES
-= [5, 7]`; the UI symmetry selector offers both. n=5 = the two Penrose rhombs (1,4),
-(2,3) → 72, 116 children. n=7 = three rhombs → 212, 380, 472 children. Both self-
-compose gap/overlap-free (n=7 star→depth-1 = 2 968 tiles, single→depth-2 = 81 632,
-edge-overuse 0, area exact).
+**Shipped and validated: n = 5, 7, 9, 11** (10/14/18/22-fold). `SUPPORTED_SYMMETRIES
+= [5, 7, 9, 11]`; the UI symmetry selector offers all four. Child counts per prototile:
+n=5 → 72, 116; n=7 → 212, 380, 472; n=9 → 464, 868, 1164, 1320; n=11 → 860, 1644,
+2288, 2744, 2980. All self-compose gap/overlap-free (n=11 single→depth-2 = 2 032 624
+tiles, edge-overuse 0, area exact; the 2n-fold star meshes at depth 1 for each).
 
-**The interior fill** — tiling the serrated super-rhomb with unit rhombi — is a
-**restart ear-clip**: try the deterministic sharpest-corner pass first, and on a
-dead-end retry with seeded-random tie-breaking among the near-sharpest ears. Rhombus
-ear-clipping isn't always greedily completable, but a valid tiling exists (the
-boundary meets the crossing condition, §5.1), so a random pass escapes the dead-ends;
-n=7 fills in a few tries (~1–2 s per symmetry, memoized). **Every returned fill is
-exactly validated** (edge-consistency + boundary match) — the heuristic affects which
-symmetries build, never whether a shown tiling is correct: a fill that can't be found
-returns null and the UI drops that symmetry.
+**The interior fill is the de Bruijn matched-line construction** (the paper's own
+method, §5 / refs [7,8]) — polynomial and dead-end-free, where the greedy/restart
+ear-clip stalled on the thin prototiles. Steps: match each boundary edge to its
+antiparallel partner via the **non-crossing (cyclic parenthesis) matching** per
+direction — NOT "i-th with i-th-last", which only works when a and ā sit in opposite
+halves of the word; the rose-sector-free boundary breaks that for x≥2, crossing
+same-direction strands. Each matched pair is a strand; two strands crossing (endpoints
+interleave) = one rhombus; along a strand the parallel edges march by the leftward
+directions of the crossing strands, ordered by the geometric crossing parameter.
+Combinatorics are exact-integer; positions accumulate exactly in ℤ[ζ₄ₙ]; only the
+crossing order uses float. Builds are fast (n=7 ≈ 13 ms, n=11 ≈ 127 ms).
 
-**n ≥ 9 is not yet supported.** The thin prototiles ((1,n−1), (2,n−2)) dead-end even
-with restart (n=9 x=1 needs ~120 random tries / ~20 s — too slow, and n=11+ fails).
-The correct general method is the **de Bruijn matched-line fill** (the region's
-rhombus tiling read off the matched boundary word, §5 / refs [7,8]); that is the
-documented next step that unlocks all n. ℤ[ζ₃₆], ℤ[ζ₄₄] rings are already in place.
+A **restart ear-clip fallback** remains for the one case the de Bruijn pass fails
+validation — a concurrent-point (three strands meeting) tparam tie that mis-orders a
+couple of rhombi (n=5 x=2). Both methods are gated by the same **accept()**: a fill is
+used only if it is edge-consistent AND covers the boundary's area, so a shown tiling is
+always correct; the method choice only decides which builds succeed.
+
+n ≥ 13 needs more ℤ[ζ₄ₙ] rings (ζ₅₂, …) and renders only at depth 1 (one super-rhomb
+is already thousands of tiles), so it is left out for now — the fill itself validates
+up to n=15 in the float prototype.
 
 This matches the agreed approach: set up all infrastructure + controls on the
 anchor case, polish, then expand.
@@ -106,11 +112,10 @@ deeper zoom (depth 4–5 in a bounded window) is the next enhancement.
   contributes two unit vectors at k±a; the first half of Σ tents out, the second
   half in, giving `u·ũ` with opposite edges antiparallel. Verified: closes to
   1e-15, encloses exactly S²·(rhomb area), simple, and half-turn-symmetric.
-- **Interior fill.** Greedy sharpest-corner ear-clip in exact ℤ[ζ₄ₙ] coords with
-  a float containment guard (no vertex inside the ear, no edge crossing it).
-  Positions exact; float only decides ear validity. n=5 → 72 and 116 children.
-  (The paper's own method is the de Bruijn matched-line fill — needed for n≥7
-  where greedy dead-ends — but ear-clip suffices for n=5.)
+- **Interior fill.** de Bruijn matched-line construction in exact ℤ[ζ₄ₙ] coords
+  (non-crossing matching → strands → crossings = rhombi → exact march). Restart
+  ear-clip fallback for the rare concurrent-point mis-order. Both gated on
+  edge-consistency + area coverage. n=5→72,116; n=11→860,1644,2288,2744,2980.
 - **Ring.** Vertices in ℤ[ζ₂₀] (φ=8, Φ₂₀=x⁸−x⁶+x⁴−x²+1 = Φ₁₀(x²)). Added to
   Cyclotomic.ts's PHI table. Odd-n boundary vectors are odd multiples of π/(2n),
   i.e. ζ₂₀ directions — NOT the ζ₁₀ tile-edge grid, which is why the ring is ζ₄ₙ.

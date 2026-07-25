@@ -108,6 +108,119 @@ function segCross(a: Vector, b: Vector, c: Vector, d: Vector): boolean {
 	);
 }
 
+// ---------------------------------------------------------------------------------------------
+// de Bruijn matched-line fill (the paper's own method, refs [7,8]). Polynomial and dead-end-free:
+// match each boundary edge to its antiparallel partner (the non-crossing / parenthesis matching),
+// making one "strand" per pair; two strands crossing = one rhombus; along a strand the parallel
+// edges march by the leftward directions of the crossing strands. This reaches n≥9 where the
+// greedy/restart ear-clip stalls. Combinatorics are exact-integer; only the crossing ORDER along
+// a strand uses float (midpoint-chord parameter); positions accumulate exactly in ℤ[ζ₄ₙ].
+// ---------------------------------------------------------------------------------------------
+
+/** Tile the super-rhomb via the de Bruijn matched-line construction. Returns exact rhombi, or null
+ *  if the boundary is unbalanced (should not happen for a valid super-rhomb). Output is validated
+ *  by the caller — a rare concurrent-point mis-order fails validation and triggers the fallback. */
+function deBruijnFill(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] | null {
+	const M = 4 * n;
+	const L = dirs.length;
+	const U: Pt[] = [];
+	for (let j = 0; j < M; j++) U.push(Cyclotomic.zeta(ring, j));
+
+	// exact boundary vertices P[0..L-1]; edge k runs P[k] → P[(k+1)%L] in direction dirs[k]
+	const P: Pt[] = [Cyclotomic.ZERO(ring)];
+	for (let i = 0; i < L - 1; i++) P.push(P[i].add(U[dirs[i]]));
+	const fp = P.map((p) => p.toVector()); // float positions for ordering only
+
+	// non-crossing matching per direction: cyclic parenthesis match (a=open, ā=close), started at
+	// the running-sum minimum so the linear stack is balanced.
+	const partner = new Array<number>(L).fill(-1);
+	const occ = new Map<number, number[]>();
+	for (let k = 0; k < L; k++) {
+		const d = dirs[k];
+		(occ.get(d) ?? occ.set(d, []).get(d)!).push(k);
+	}
+	for (let a = 0; a < M / 2; a++) {
+		const A = occ.get(a) ?? [];
+		const B = occ.get((a + M / 2) % M) ?? [];
+		if (A.length !== B.length) return null; // unbalanced
+		if (A.length === 0) continue;
+		const evs: { k: number; o: number }[] = [];
+		for (const k of A) evs.push({ k, o: 1 });
+		for (const k of B) evs.push({ k, o: -1 });
+		evs.sort((p, q) => p.k - q.k);
+		let run = 0, minRun = Infinity, minAt = 0;
+		for (let i = 0; i < evs.length; i++) {
+			run += evs[i].o;
+			if (run < minRun) { minRun = run; minAt = i; }
+		}
+		const stack: number[] = [];
+		for (let t = 0; t < evs.length; t++) {
+			const e = evs[(minAt + 1 + t) % evs.length];
+			if (e.o === 1) stack.push(e.k);
+			else { const p = stack.pop()!; partner[p] = e.k; partner[e.k] = p; }
+		}
+	}
+
+	// strands: e0 = the endpoint with direction in [0, M/2), e1 its antiparallel partner
+	const strands: { e0: number; e1: number; a: number }[] = [];
+	const strandOfEdge = new Array<number>(L).fill(-1);
+	const seen = new Array<boolean>(L).fill(false);
+	for (let k = 0; k < L; k++) {
+		if (seen[k]) continue;
+		const j = partner[k];
+		if (j < 0) return null;
+		seen[k] = seen[j] = true;
+		const e0 = dirs[k] < M / 2 ? k : j;
+		const e1 = dirs[k] < M / 2 ? j : k;
+		const id = strands.length;
+		strands.push({ e0, e1, a: dirs[e0] });
+		strandOfEdge[e0] = id;
+		strandOfEdge[e1] = id;
+	}
+
+	const inArc = (e0: number, e1: number, jj: number): boolean =>
+		e0 < e1 ? jj > e0 && jj < e1 : jj > e0 || jj < e1;
+	const mid = (k: number): Vector => {
+		const p = fp[k], q = fp[(k + 1) % L];
+		return new Vector((p.x + q.x) / 2, (p.y + q.y) / 2);
+	};
+	const isectParam = (A: Vector, B: Vector, C: Vector, D: Vector): number => {
+		const rx = B.x - A.x, ry = B.y - A.y, sx = D.x - C.x, sy = D.y - C.y;
+		const den = rx * sy - ry * sx;
+		if (Math.abs(den) < 1e-12) return 0;
+		return ((C.x - A.x) * sy - (C.y - A.y) * sx) / den;
+	};
+
+	const rh: Rhomb[] = [];
+	for (let sId = 0; sId < strands.length; sId++) {
+		const { e0, e1, a } = strands[sId];
+		const mS = mid(e0), mE = mid(e1);
+		const crossings: { c: number; st: number; tparam: number }[] = [];
+		for (let step = 1; step < L; step++) {
+			const j = (e0 + step) % L;
+			if (j === e1) break;
+			const st = strandOfEdge[j];
+			const other = strands[st];
+			const oe = other.e0 === j ? other.e1 : other.e0;
+			if (inArc(e0, e1, oe)) continue; // both endpoints in arc ⇒ no crossing with s
+			// orient the crossing direction leftward of a (into the interior): rep in (a, a+M/2)
+			let c = dirs[j] % M;
+			const rel = ((c - a) % M + M) % M;
+			if (!(rel > 0 && rel < M / 2)) c = (c + M / 2) % M;
+			crossings.push({ c, st, tparam: isectParam(mS, mE, mid(other.e0), mid(other.e1)) });
+		}
+		crossings.sort((p, q) => p.tparam - q.tparam); // order along s from e0 to e1
+		let A0 = P[e0];
+		const Ua = U[a];
+		for (const cr of crossings) {
+			const Uc = U[cr.c];
+			if (cr.st > sId) rh.push([A0, A0.add(Ua), A0.add(Ua).add(Uc), A0.add(Uc)]);
+			A0 = A0.add(Uc);
+		}
+	}
+	return rh;
+}
+
 /** A candidate ear during the fill: convex corner A-B-C with the fourth rhomb vertex Dv. */
 type Ear = { A: number; B: number; C: number; Dv: Pt; turn: number };
 
@@ -215,15 +328,42 @@ function fillOnce(
 const pickSharpest = (ears: Ear[]): Ear => ears.reduce((a, b) => (b.turn > a.turn ? b : a));
 
 /**
- * Tile the super-rhomb region with unit rhombi. Try the deterministic sharpest pass first (fills
- * n=5 immediately); if it dead-ends, restart with seeded-random tie-breaking among the near-
- * sharpest ears. Rhombus ear-clipping is not always greedily completable, but a valid tiling
- * exists (the boundary satisfies the crossing condition, Kari-Rissanen §5.1), so a random pass
- * escapes the dead-ends the pure-greedy path hits — this reaches n=7 where sharpest alone stalls.
- * Every returned fill is exactly validated by the caller. Returns null if no pass validates within
- * the retry budget (n≥9 thin prototiles — the de Bruijn matched-line fill is the real fix there).
+ * Tile the super-rhomb region with unit rhombi. Primary method: the de Bruijn matched-line fill
+ * (polynomial, dead-end-free, reaches high n). Fallback: the restart ear-clip (sharpest first,
+ * then seeded-random tie-breaking among the near-sharpest ears) — it catches the rare case a
+ * concurrent-point mis-order makes the de Bruijn pass fail validation (e.g. n=5 x=2). Every
+ * candidate is accepted only if it is edge-consistent AND covers the boundary's area, so a shown
+ * tiling is always correct; the method choice only affects which builds succeed. Returns null if
+ * nothing validates (the symmetry is then not offered).
  */
 export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] | null {
+	const M = 4 * n;
+	// target area = shoelace of the exact boundary (in float)
+	const U: Vector[] = [];
+	for (let j = 0; j < M; j++) U.push(Cyclotomic.zeta(ring, j).toVector());
+	let bx = 0, by = 0, target2 = 0;
+	for (let i = 0; i < dirs.length; i++) {
+		const nx = bx + U[dirs[i]].x, ny = by + U[dirs[i]].y;
+		target2 += bx * ny - nx * by;
+		bx = nx; by = ny;
+	}
+	const target = Math.abs(target2) / 2;
+	const rhArea = (r: Rhomb): number => {
+		const p = r.map((c) => c.toVector());
+		return 0.5 * Math.abs((p[2].x - p[0].x) * (p[3].y - p[1].y) - (p[3].x - p[1].x) * (p[2].y - p[0].y));
+	};
+	const accept = (rh: Rhomb[] | null): rh is Rhomb[] => {
+		if (!rh || !validateFill(rh, dirs).ok) return false;
+		let area = 0;
+		for (const r of rh) area += rhArea(r);
+		return Math.abs(area - target) / target < 1e-6;
+	};
+
+	// 1. de Bruijn (fast, general)
+	const db = deBruijnFill(ring, n, dirs);
+	if (accept(db)) return db;
+
+	// 2. restart ear-clip fallback
 	const TRIES = 128;
 	for (let t = 0; t < TRIES; t++) {
 		let pick = pickSharpest;
@@ -237,7 +377,7 @@ export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]):
 			};
 		}
 		const rh = fillOnce(ring, n, dirs, pick);
-		if (rh && validateFill(rh, dirs).ok) return rh;
+		if (accept(rh)) return rh;
 	}
 	return null;
 }
@@ -368,12 +508,12 @@ function buildRuleUncached(n: number): SubRosaRule | null {
 }
 
 /**
- * Symmetries the restart ear-clip fills reliably and fast enough for an interactive build:
- * n=5 (10-fold) and n=7 (14-fold). n≥9 have thin prototiles the greedy/restart fill can't reach
- * in a reasonable budget — they wait on the de Bruijn matched-line fill. This is a static list so
- * the UI never triggers a slow doomed build just to test support.
+ * Symmetries the de Bruijn fill builds (fast, gap/overlap-free): n = 5, 7, 9, 11 — 10/14/18/22-fold.
+ * Bounded by the ℤ[ζ₄ₙ] rings in `Cyclotomic` (ζ₂₀/₂₈/₃₆/₄₄); higher n needs more rings and only
+ * renders at depth 1 anyway (a single super-rhomb is thousands of tiles). Static list so the UI
+ * never triggers a doomed build just to test support.
  */
-export const SUPPORTED_SYMMETRIES: readonly number[] = [5, 7];
+export const SUPPORTED_SYMMETRIES: readonly number[] = [5, 7, 9, 11];
 
 /** Is symmetry n fully supported (every prototile fills within the fill budget)? */
 export function supportedSymmetry(n: number): boolean {

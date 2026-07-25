@@ -260,7 +260,7 @@ export function SubstitutionsClient() {
 					/>
 					<p className="text-[11px] text-fg-subtle mt-1">
 						n = {N} · {angles.length} rhomb{angles.length > 1 ? "s" : ""}
-						{N === 5 ? " (Penrose)" : ""}. n ≥ 9 awaits the de Bruijn fill (see spec).
+						{N === 5 ? " (Penrose)" : ""}. Interior via the de Bruijn matched-line fill.
 					</p>
 				</Section>
 

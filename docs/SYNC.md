@@ -1470,3 +1470,19 @@ seeded-random retries; every fill exactly validated → heuristic decides which 
 Added ℤ[ζ₂₈]/ℤ[ζ₃₆]/ℤ[ζ₄₄]; buildRule memoized (~1.8 s once). n=7 star→d1=2 968, single→d2=81 632, over 0,
 area exact; seamless 14-fold flower (Playwright). 21/21 vitest, build clean. n≥9 awaits the de Bruijn
 matched-line fill (thin prototiles dead-end even with restart). Detail: NOTES §93.
+
+**2026-07-25 · CC.** Sub Rosa **de Bruijn matched-line fill** — the paper's own method (refs [7,8]),
+polynomial and dead-end-free. Unlocks **n=9,11** (18/22-fold); `SUPPORTED_SYMMETRIES=[5,7,9,11]`. Keys:
+the non-crossing (cyclic parenthesis) matching per direction (naive i-th/i-th-last crosses same-direction
+strands once the rose-free boundary puts a and ā in the same half), then march parallel edges by the
+crossing strands ordered by crossing parameter. Exact positions in ℤ[ζ₄ₙ]; restart ear-clip kept as a
+fallback (concurrent-point tie in n=5 x=2), both gated on edge-consistency + area. Fast: n=7 build 1766→13
+ms, n=11 = 127 ms. Depth-2 clean to 2 032 624 tiles (over 0). Seamless 22-fold flower (Playwright, 18 920
+tiles). 28/28 vitest, build clean. Detail: NOTES §93.
+
+**2026-07-25 · CC.** Marek's two zips ingested to `materials/corpora/` (six corpora, 127,584 certificates;
+his `results_2026-07-25.txt` k-counts reproduce exactly). Shipped **four new hyperbolic color bases** {8,3}
+{5,4} {6,4} {4,5}: four rows in `develop_hyp_colors.BASES` (decoder already generic in (p,q)), 67,545 certs
+in 74 s with **0 failures**, 46,548 surjective colorings, every k Marek solved, 2.6 MB eager + 29.8 MB lazy;
+manifest-driven loader, so 4 rows + 4 labels in the app. Build clean, 2 known pre-existing test failures.
+`hexagons_edges`/`hexagons_3_colors` extracted, NOT decoded (no hex grid in GRIDS). Detail: NOTES §96.

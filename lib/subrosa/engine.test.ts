@@ -149,31 +149,53 @@ describe("n=5 substitution self-composes (gap/overlap-free at depth 2)", () => {
 	}
 });
 
-describe("n=7 (14-fold) is supported: fills, is point-symmetric, self-composes", () => {
-	it("SUPPORTED_SYMMETRIES is [5, 7]", () => {
-		expect([...SUPPORTED_SYMMETRIES]).toEqual([5, 7]);
+// The de Bruijn matched-line fill reaches the higher symmetries the ear-clip can't. Each must
+// fill exactly, have a point-symmetric boundary, and mesh gap-free when its 2n-fold star seed is
+// substituted (adjacent super-rhombs interlocking).
+describe("higher symmetries via the de Bruijn fill (n = 7, 9, 11)", () => {
+	it("SUPPORTED_SYMMETRIES is [5, 7, 9, 11]", () => {
+		expect([...SUPPORTED_SYMMETRIES]).toEqual([5, 7, 9, 11]);
 	});
-	it("boundary word is point-symmetric for all three prototiles (ring ζ₂₈)", () => {
-		for (const x of [1, 2, 3]) {
-			const dirs = boundaryWord(7, x);
-			const h = dirs.length / 2;
-			for (const d of dirs) expect(d).toBeLessThan(4 * 7);
-			for (let i = 0; i < h; i++) expect(dirs[i + h]).toBe((dirs[i] + 2 * 7) % (4 * 7));
-		}
-	});
-	const rule = buildRule(7);
-	it("builds with three prototiles, all fills exact (212, 380, 472)", () => {
-		expect(rule).not.toBeNull();
-		expect(rule!.check.every((c) => c.ok)).toBe(true);
-		expect(rule!.prototiles.map((p) => p.children.length)).toEqual([212, 380, 472]);
-	});
-	it("depth-2 self-composition of the thin prototile is gap/overlap-free", () => {
-		let tiles = seedSingle(rule!, 1);
+	const childCounts: Record<number, number[]> = {
+		7: [212, 380, 472],
+		9: [464, 868, 1164, 1320],
+		11: [860, 1644, 2288, 2744, 2980],
+	};
+	for (const n of [7, 9, 11]) {
+		describe(`n = ${n} (${2 * n}-fold)`, () => {
+			it("boundary word is point-symmetric for every prototile", () => {
+				for (let x = 1; x <= Math.floor(n / 2); x++) {
+					const dirs = boundaryWord(n, x);
+					const h = dirs.length / 2;
+					for (const d of dirs) expect(d).toBeLessThan(4 * n);
+					for (let i = 0; i < h; i++) expect(dirs[i + h]).toBe((dirs[i] + 2 * n) % (4 * n));
+				}
+			});
+			const rule = buildRule(n);
+			it("builds; every prototile fills exactly with the expected child count", () => {
+				expect(rule).not.toBeNull();
+				expect(rule!.check.every((c) => c.ok)).toBe(true);
+				expect(rule!.prototiles.map((p) => p.children.length)).toEqual(childCounts[n]);
+			});
+			it("the 2n-fold star substitutes gap/overlap-free (adjacent super-rhombs mesh)", () => {
+				const seed0 = seedStar(rule!);
+				const a0 = seed0.reduce((s, t) => s + rhArea(t.corners), 0);
+				const tiles = substituteOnce(rule!, seed0);
+				expect(edgeOveruse(tiles)).toBe(0);
+				const expected = a0 * Math.pow(rule!.scaling, 2);
+				const area = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+				expect(Math.abs(area - expected) / expected).toBeLessThan(1e-8);
+			});
+		});
+	}
+	it("n=7 thin prototile self-composes to depth 2 gap/overlap-free", () => {
+		const rule = buildRule(7)!;
+		let tiles = seedSingle(rule, 1);
 		const a0 = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
 		for (let d = 1; d <= 2; d++) {
-			tiles = substituteOnce(rule!, tiles);
+			tiles = substituteOnce(rule, tiles);
 			expect(edgeOveruse(tiles)).toBe(0);
-			const expected = a0 * Math.pow(rule!.scaling, 2 * d);
+			const expected = a0 * Math.pow(rule.scaling, 2 * d);
 			const area = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
 			expect(Math.abs(area - expected) / expected).toBeLessThan(1e-8);
 		}
