@@ -1536,3 +1536,15 @@ its true collapse-to-collapse interval retires the merge machinery for these cut
 analytic continuation of their own primary, so the partners absorb as duplicates: 0 merges, same 87 entries,
 no segments. Also 12 folded sliders marked, and two congruence primitives fixed (fingerprint alone is not
 congruence; the isometry search must try every largest-tile anchor). Detail: DEVELOPMENT_NOTES.md §102. — CC
+
+### 2026-07-26 — CC: hollow tilings (self-intersecting `{n/d}`) — new search, 7/12 of GMS
+AL asked for star polygons in the modern sense (`{5/2}` = 5 vertices, crossings not vertices). The space is
+GMS's *Uniform Tilings with Hollow Tiles* (1981); Myers 2004 enumerates the other kind and points there for
+this one. Measured that overlap-free is impossible (the star straddles its own chord ~76/24), so tiles must
+be boundary circuits. Pinned the vertex-closure rule empirically against the 19 published configs: reflex
+lift + `sum ≡ 0 mod 360`, not `= 360` (19/19 vs 8/19); δ ∈ {1,2}. New engine in `tools/hollow/`, exact
+ℤ[ζ₂₄]. Reproduces the 11 convex uniform tilings and rejects the 4 non-tiling species; δ=1 and δ=2/m≤4 give
+18 distinct tilings containing 7/12 transcribed GMS configs, zero false positives. ⚑ 1.16/1.19/x2 rejected
+by a coinciding-edges limitation (edges keyed geometrically); 74/304 (δ=1) and 27/133 (δ=2) species
+unresolved (capped/timeout = unknown), so 18 is a lower bound, not a count.
+Detail: DEVELOPMENT_NOTES.md §103. — CC
