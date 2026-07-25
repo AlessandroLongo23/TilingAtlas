@@ -5,11 +5,28 @@ import {
 	boundaryWord,
 	buildRule,
 	supportedSymmetry,
+	SUPPORTED_SYMMETRIES,
 	seedSingle,
 	seedStar,
 	substituteOnce,
 	type RenderTile,
 } from "./engine";
+
+const key = (v: Vector) => `${Math.round(v.x * 1e6)},${Math.round(v.y * 1e6)}`;
+const rhArea = (c: Vector[]) =>
+	0.5 * Math.abs((c[2].x - c[0].x) * (c[3].y - c[1].y) - (c[3].x - c[1].x) * (c[2].y - c[0].y));
+function edgeOveruse(tiles: RenderTile[]): number {
+	const cnt = new Map<string, number>();
+	for (const t of tiles)
+		for (let i = 0; i < 4; i++) {
+			const a = key(t.corners[i]), b = key(t.corners[(i + 1) % 4]);
+			const k = a < b ? `${a}|${b}` : `${b}|${a}`;
+			cnt.set(k, (cnt.get(k) ?? 0) + 1);
+		}
+	let over = 0;
+	for (const c of cnt.values()) if (c > 2) over++;
+	return over;
+}
 
 describe("Σ(n) edge word matches Kari-Rissanen Table 1/2", () => {
 	it("odd n", () => {
@@ -112,21 +129,6 @@ describe("n=5 substitution rule is an exact tiling (both prototiles)", () => {
 // substitution stays gap/overlap-free two levels deep, on every seed.
 describe("n=5 substitution self-composes (gap/overlap-free at depth 2)", () => {
 	const rule = buildRule(5)!;
-	const key = (v: Vector) => `${Math.round(v.x * 1e6)},${Math.round(v.y * 1e6)}`;
-	const rhArea = (c: Vector[]) =>
-		0.5 * Math.abs((c[2].x - c[0].x) * (c[3].y - c[1].y) - (c[3].x - c[1].x) * (c[2].y - c[0].y));
-	function edgeOveruse(tiles: RenderTile[]): number {
-		const cnt = new Map<string, number>();
-		for (const t of tiles)
-			for (let i = 0; i < 4; i++) {
-				const a = key(t.corners[i]), b = key(t.corners[(i + 1) % 4]);
-				const k = a < b ? `${a}|${b}` : `${b}|${a}`;
-				cnt.set(k, (cnt.get(k) ?? 0) + 1);
-			}
-		let over = 0;
-		for (const c of cnt.values()) if (c > 2) over++;
-		return over;
-	}
 	const seeds: [string, RenderTile[]][] = [
 		["single (1,4)", seedSingle(rule, 1)],
 		["single (2,3)", seedSingle(rule, 2)],
@@ -145,4 +147,35 @@ describe("n=5 substitution self-composes (gap/overlap-free at depth 2)", () => {
 			}
 		});
 	}
+});
+
+describe("n=7 (14-fold) is supported: fills, is point-symmetric, self-composes", () => {
+	it("SUPPORTED_SYMMETRIES is [5, 7]", () => {
+		expect([...SUPPORTED_SYMMETRIES]).toEqual([5, 7]);
+	});
+	it("boundary word is point-symmetric for all three prototiles (ring ζ₂₈)", () => {
+		for (const x of [1, 2, 3]) {
+			const dirs = boundaryWord(7, x);
+			const h = dirs.length / 2;
+			for (const d of dirs) expect(d).toBeLessThan(4 * 7);
+			for (let i = 0; i < h; i++) expect(dirs[i + h]).toBe((dirs[i] + 2 * 7) % (4 * 7));
+		}
+	});
+	const rule = buildRule(7);
+	it("builds with three prototiles, all fills exact (212, 380, 472)", () => {
+		expect(rule).not.toBeNull();
+		expect(rule!.check.every((c) => c.ok)).toBe(true);
+		expect(rule!.prototiles.map((p) => p.children.length)).toEqual([212, 380, 472]);
+	});
+	it("depth-2 self-composition of the thin prototile is gap/overlap-free", () => {
+		let tiles = seedSingle(rule!, 1);
+		const a0 = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+		for (let d = 1; d <= 2; d++) {
+			tiles = substituteOnce(rule!, tiles);
+			expect(edgeOveruse(tiles)).toBe(0);
+			const expected = a0 * Math.pow(rule!.scaling, 2 * d);
+			const area = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+			expect(Math.abs(area - expected) / expected).toBeLessThan(1e-8);
+		}
+	});
 });

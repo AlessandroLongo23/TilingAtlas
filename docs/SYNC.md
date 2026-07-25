@@ -1462,3 +1462,11 @@ antiparallel) so neighbours interlock — mine was mirror-symmetric. Also moved 
 (odd-n boundary vectors are ζ₄ₙ, not ζ₂ₙ; the old code rounded them). Now self-composes without limit:
 single tile → depth 3 = 706 240 tiles, zero edge-overuse, zero polygon overlap, area exact; star → depth 2
 = 71 200 clean. Corner rose sectors are NOT needed for gap-freeness. 17/17 vitest, build clean. Detail: NOTES §93.
+
+**2026-07-25 · CC.** Sub Rosa **n=7 (14-fold)** shipped — `SUPPORTED_SYMMETRIES=[5,7]`, UI symmetry
+selector. The corrected boundary is more fillable: sharpest greedy now completes n=5 and n=7 (212/380/472
+children), but is brittle in exact arithmetic, so the fill became a **restart ear-clip** (sharpest, then
+seeded-random retries; every fill exactly validated → heuristic decides which n build, never correctness).
+Added ℤ[ζ₂₈]/ℤ[ζ₃₆]/ℤ[ζ₄₄]; buildRule memoized (~1.8 s once). n=7 star→d1=2 968, single→d2=81 632, over 0,
+area exact; seamless 14-fold flower (Playwright). 21/21 vitest, build clean. n≥9 awaits the de Bruijn
+matched-line fill (thin prototiles dead-end even with restart). Detail: NOTES §93.

@@ -108,14 +108,33 @@ function segCross(a: Vector, b: Vector, c: Vector, d: Vector): boolean {
 	);
 }
 
+/** A candidate ear during the fill: convex corner A-B-C with the fourth rhomb vertex Dv. */
+type Ear = { A: number; B: number; C: number; Dv: Pt; turn: number };
+
+/** Seeded PRNG (mulberry32) — restart seeds are deterministic, so a build is reproducible. */
+function rng32(seed: number): () => number {
+	let s = seed >>> 0;
+	return () => {
+		s = (s + 0x6d2b79f5) >>> 0;
+		let t = s;
+		t = Math.imul(t ^ (t >>> 15), t | 1);
+		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
 /**
- * Tile the super-rhomb region (given by its boundary word) with unit rhombi.
- * Greedy: repeatedly clip the sharpest convex corner whose ear rhombus is contained (no other
- * vertex inside it, no boundary edge crossing it). Exact positions ⇒ no drift; the containment
- * float-predicate only decides validity between well-separated exact points. Returns null if
- * the greedy dead-ends (n where a robust fill is still needed).
+ * One greedy ear-clip pass over the super-rhomb region. `pick` chooses among the valid contained
+ * convex ears at each step. Exact positions (Dv via ℤ[ζ] add/sub) ⇒ no drift; the float
+ * containment predicate only decides ear validity between well-separated exact points. Returns
+ * null on a dead-end (no clippable ear before the region is exhausted).
  */
-export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] | null {
+function fillOnce(
+	ring: CyclotomicRing,
+	n: number,
+	dirs: number[],
+	pick: (ears: Ear[]) => Ear,
+): Rhomb[] | null {
 	const N = 4 * n;
 	const U: Pt[] = [];
 	for (let j = 0; j < N; j++) U.push(Cyclotomic.zeta(ring, j));
@@ -156,9 +175,8 @@ export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]):
 			poly = poly.filter((_, t) => t !== sp && t !== (sp + 1) % m);
 			continue;
 		}
-		// pick the sharpest (largest turn) convex, contained ear
-		let best: { A: number; B: number; C: number; Dv: Pt } | null = null;
-		let bestTurn = -1;
+		// collect every valid (convex, contained) ear
+		const ears: Ear[] = [];
 		for (let B = 0; B < m; B++) {
 			const A = (B - 1 + m) % m;
 			const C = (B + 1) % m;
@@ -167,10 +185,9 @@ export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]):
 			if (!(turn > 0 && turn < N / 2)) continue;
 			const Dv = poly[A].add(poly[C].sub(poly[B]));
 			const fa = fx(poly[A]);
-			const fb = fx(poly[B]);
 			const fc = fx(poly[C]);
 			const fd = fx(Dv);
-			const q = [fa, fb, fc, fd];
+			const q = [fa, fx(poly[B]), fc, fd];
 			let bad = false;
 			for (let k = 0; k < m && !bad; k++) {
 				if (k === A || k === B || k === C) continue;
@@ -184,16 +201,45 @@ export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]):
 				else if (segCross(fd, fc, fx(poly[e]), fx(poly[f]))) bad = true;
 			}
 			if (bad) continue;
-			if (turn > bestTurn) {
-				bestTurn = turn;
-				best = { A, B, C, Dv };
-			}
+			ears.push({ A, B, C, Dv, turn });
 		}
-		if (!best) return null;
-		rh.push([poly[best.A], poly[best.B], poly[best.C], best.Dv]);
-		poly[best.B] = best.Dv;
+		if (!ears.length) return null;
+		const chosen = pick(ears);
+		rh.push([poly[chosen.A], poly[chosen.B], poly[chosen.C], chosen.Dv]);
+		poly[chosen.B] = chosen.Dv;
 	}
 	return rh;
+}
+
+/** Deterministic: always clip the sharpest (largest-turn) ear. */
+const pickSharpest = (ears: Ear[]): Ear => ears.reduce((a, b) => (b.turn > a.turn ? b : a));
+
+/**
+ * Tile the super-rhomb region with unit rhombi. Try the deterministic sharpest pass first (fills
+ * n=5 immediately); if it dead-ends, restart with seeded-random tie-breaking among the near-
+ * sharpest ears. Rhombus ear-clipping is not always greedily completable, but a valid tiling
+ * exists (the boundary satisfies the crossing condition, Kari-Rissanen §5.1), so a random pass
+ * escapes the dead-ends the pure-greedy path hits — this reaches n=7 where sharpest alone stalls.
+ * Every returned fill is exactly validated by the caller. Returns null if no pass validates within
+ * the retry budget (n≥9 thin prototiles — the de Bruijn matched-line fill is the real fix there).
+ */
+export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] | null {
+	const TRIES = 128;
+	for (let t = 0; t < TRIES; t++) {
+		let pick = pickSharpest;
+		if (t > 0) {
+			const rand = rng32(0x9e3779b9 ^ (t * 0x85ebca6b));
+			pick = (ears: Ear[]): Ear => {
+				let maxT = 0;
+				for (const e of ears) if (e.turn > maxT) maxT = e.turn;
+				const pool = ears.filter((e) => e.turn >= maxT - 4); // near-sharpest
+				return pool[Math.floor(rand() * pool.length)];
+			};
+		}
+		const rh = fillOnce(ring, n, dirs, pick);
+		if (rh && validateFill(rh, dirs).ok) return rh;
+	}
+	return null;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -271,7 +317,18 @@ function protoOfRhomb(ring: CyclotomicRing, n: number, r: Rhomb, U: Pt[], dirOf:
  * Build the substitution rule for symmetry n: fill every prototile's super-rhomb and record its
  * children. Returns null if any prototile fails to fill (n not yet supported).
  */
+const ruleCache = new Map<number, SubRosaRule | null>();
+
+/** Build (and memoize) the substitution rule for symmetry n. The fill restart can cost ~1–2 s
+ *  for n=7, so the result is cached — switching symmetry in the UI pays it once. */
 export function buildRule(n: number): SubRosaRule | null {
+	if (ruleCache.has(n)) return ruleCache.get(n)!;
+	const rule = buildRuleUncached(n);
+	ruleCache.set(n, rule);
+	return rule;
+}
+
+function buildRuleUncached(n: number): SubRosaRule | null {
 	const ring = CyclotomicRing.create(4 * n);
 	const N = 4 * n;
 	const U: Pt[] = [];
@@ -310,9 +367,17 @@ export function buildRule(n: number): SubRosaRule | null {
 	return { n, scaling: S, sigma: sigma(n), prototiles, check };
 }
 
-/** Is symmetry n fully supported (every prototile fills)? */
+/**
+ * Symmetries the restart ear-clip fills reliably and fast enough for an interactive build:
+ * n=5 (10-fold) and n=7 (14-fold). n≥9 have thin prototiles the greedy/restart fill can't reach
+ * in a reasonable budget — they wait on the de Bruijn matched-line fill. This is a static list so
+ * the UI never triggers a slow doomed build just to test support.
+ */
+export const SUPPORTED_SYMMETRIES: readonly number[] = [5, 7];
+
+/** Is symmetry n fully supported (every prototile fills within the fill budget)? */
 export function supportedSymmetry(n: number): boolean {
-	if (n < 4) return false;
+	if (!SUPPORTED_SYMMETRIES.includes(n)) return false;
 	const r = buildRule(n);
 	return !!r && r.check.every((c) => c.ok);
 }

@@ -7,24 +7,23 @@ import {
 	seedStar,
 	seedSingle,
 	substituteOnce,
+	SUPPORTED_SYMMETRIES,
 	type SubRosaRule,
 	type RenderTile,
 } from "@/lib/subrosa/engine";
 import { prototileAngles } from "@/lib/subrosa/sigma";
 import { cn } from "@/lib/utils/cn";
 
-// n=5 is the shipped, fully-validated symmetry (both Penrose-rhomb prototiles fill exactly).
-const N = 5;
 const MAX_TILES = 130_000;
 // The substitution self-composes to any depth: the super-rhomb boundary is point-symmetric
 // (opposite super-edges antiparallel), so adjacent super-rhombs interlock. Verified gap/overlap-
-// free by dense-grid coverage + spatial-hash overlap + exact edge-consistency — a single tile to
-// depth 3 is 706k tiles with zero overlap. Depth here is bounded only by the tile budget: single
-// 1→116→11.5k, star 10→720→71k. (depth 3 = ~1M tiles needs viewport culling, not yet built.)
+// free by dense-grid coverage + spatial-hash overlap + exact edge-consistency. Depth here is
+// bounded only by the tile budget (depth 3 = ~1M tiles needs viewport culling, not yet built).
 const MAX_DEPTH = { single: 2, star: 2 } as const;
 
-// Prototile hues (thin (1,4) vs thick (2,3)). Distinct, works in light and dark.
-const HUE = (protoId: number) => (protoId === 1 ? 265 : 175);
+// Prototile hues by index (protoId 1..⌊n/2⌋). Distinct, legible in light and dark.
+const HUES = [265, 175, 45, 330, 130, 200, 90];
+const HUE = (protoId: number) => HUES[(protoId - 1) % HUES.length];
 
 type Seed = "single" | "star";
 
@@ -59,7 +58,8 @@ function bounds(tiles: RenderTile[]) {
 }
 
 export function SubstitutionsClient() {
-	const rule = useMemo(() => buildRule(N), []);
+	const [N, setN] = useState(5);
+	const rule = useMemo(() => buildRule(N), [N]);
 	const [seed, setSeed] = useState<Seed>("single");
 	const [protoX, setProtoX] = useState(2);
 	const [depth, setDepth] = useState(1);
@@ -67,10 +67,11 @@ export function SubstitutionsClient() {
 
 	const maxDepth = MAX_DEPTH[seed];
 	const effDepth = Math.min(depth, maxDepth);
+	const effProtoX = Math.min(protoX, Math.floor(N / 2)); // clamp when switching to a smaller n
 
 	const { tiles, capped } = useMemo(
-		() => (rule ? build(rule, seed, protoX, effDepth) : { tiles: [], capped: false }),
-		[rule, seed, protoX, effDepth],
+		() => (rule ? build(rule, seed, effProtoX, effDepth) : { tiles: [], capped: false }),
+		[rule, seed, effProtoX, effDepth],
 	);
 
 	// view transform
@@ -217,6 +218,7 @@ export function SubstitutionsClient() {
 			};
 		};
 		(window as unknown as { __subrosa?: unknown }).__subrosa = {
+			setN,
 			setDepth,
 			setSeed,
 			setProtoX,
@@ -241,20 +243,24 @@ export function SubstitutionsClient() {
 					<h1 className="text-base font-semibold text-fg">Sub Rosa</h1>
 					<p className="text-xs text-fg-muted mt-1 leading-relaxed">
 						Aperiodic rhombic substitution tilings with {2 * N}-fold symmetry (Kari &amp; Rissanen
-						2016). Vertices exact in ℤ[ζ₂₀]; the dissection is derived from the edge word Σ(n), not
+						2016). Vertices exact in ℤ[ζ₄ₙ]; the dissection is derived from the edge word Σ(n), not
 						traced from a figure.
 					</p>
 				</div>
 
 				<Section label="Symmetry">
-					<div className="flex items-center gap-2">
-						<span className="px-2 py-1 rounded-control bg-accent-subtle text-accent font-medium">
-							n = {N}
-						</span>
-						<span className="text-xs text-fg-muted">10-fold · Penrose rhombs</span>
-					</div>
+					<Segmented
+						options={SUPPORTED_SYMMETRIES.map((s) => ({ v: String(s), label: `${2 * s}-fold` }))}
+						value={String(N)}
+						onChange={(v) => {
+							const nn = Number(v);
+							setN(nn);
+							setProtoX((p) => Math.min(p, Math.floor(nn / 2)));
+						}}
+					/>
 					<p className="text-[11px] text-fg-subtle mt-1">
-						n = 7+ pending a robust interior fill (see spec).
+						n = {N} · {angles.length} rhomb{angles.length > 1 ? "s" : ""}
+						{N === 5 ? " (Penrose)" : ""}. n ≥ 9 awaits the de Bruijn fill (see spec).
 					</p>
 				</Section>
 
@@ -262,7 +268,7 @@ export function SubstitutionsClient() {
 					<Segmented
 						options={[
 							{ v: "single", label: "Single tile" },
-							{ v: "star", label: "Star (10-fold)" },
+							{ v: "star", label: `Star (${2 * N}-fold)` },
 						]}
 						value={seed}
 						onChange={(v) => {
@@ -274,7 +280,7 @@ export function SubstitutionsClient() {
 						<div className="mt-2">
 							<Segmented
 								options={angles.map((a) => ({ v: String(a.x), label: `${a.acuteDeg}°/${a.obtuseDeg}°` }))}
-								value={String(protoX)}
+								value={String(effProtoX)}
 								onChange={(v) => setProtoX(Number(v))}
 							/>
 						</div>

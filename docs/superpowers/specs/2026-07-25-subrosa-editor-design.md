@@ -27,17 +27,27 @@ up the general CAST infrastructure.
 
 ## Scope of the first cut (honest)
 
-**Shipped and validated: n = 5** (10-fold, the two Penrose rhombs (1,4) and
-(2,3)). The engine is general (Σ(n), boundary word, ring arithmetic all work for
-any n), but the **interior fill** — tiling the serrated super-rhomb region with
-unit rhombi — currently uses a greedy sharpest-corner ear-clip that is proven
-correct for n=5 (both prototiles: 72 and 116 children, area-exact,
-edge-consistent) and n=7 x=1, but **dead-ends for n=7 x=2, x=3**. Greedy rhombus
-ear-clipping is not always completable, and backtracking explodes. The correct
-general method is the de Bruijn matched-line algorithm (the region's rhombus
-tiling from the matched boundary word); implementing its position formula is the
-documented **next step** that unlocks n≥7. Until then the UI exposes only
-symmetries whose every prototile fills.
+**Shipped and validated: n = 5 (10-fold) and n = 7 (14-fold).** `SUPPORTED_SYMMETRIES
+= [5, 7]`; the UI symmetry selector offers both. n=5 = the two Penrose rhombs (1,4),
+(2,3) → 72, 116 children. n=7 = three rhombs → 212, 380, 472 children. Both self-
+compose gap/overlap-free (n=7 star→depth-1 = 2 968 tiles, single→depth-2 = 81 632,
+edge-overuse 0, area exact).
+
+**The interior fill** — tiling the serrated super-rhomb with unit rhombi — is a
+**restart ear-clip**: try the deterministic sharpest-corner pass first, and on a
+dead-end retry with seeded-random tie-breaking among the near-sharpest ears. Rhombus
+ear-clipping isn't always greedily completable, but a valid tiling exists (the
+boundary meets the crossing condition, §5.1), so a random pass escapes the dead-ends;
+n=7 fills in a few tries (~1–2 s per symmetry, memoized). **Every returned fill is
+exactly validated** (edge-consistency + boundary match) — the heuristic affects which
+symmetries build, never whether a shown tiling is correct: a fill that can't be found
+returns null and the UI drops that symmetry.
+
+**n ≥ 9 is not yet supported.** The thin prototiles ((1,n−1), (2,n−2)) dead-end even
+with restart (n=9 x=1 needs ~120 random tries / ~20 s — too slow, and n=11+ fails).
+The correct general method is the **de Bruijn matched-line fill** (the region's
+rhombus tiling read off the matched boundary word, §5 / refs [7,8]); that is the
+documented next step that unlocks all n. ℤ[ζ₃₆], ℤ[ζ₄₄] rings are already in place.
 
 This matches the agreed approach: set up all infrastructure + controls on the
 anchor case, polish, then expand.

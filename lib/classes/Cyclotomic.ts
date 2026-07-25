@@ -34,10 +34,17 @@ const PHI_POLY: Record<number, bigint[]> = {
 	20: [1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n],
 	// Φ₂₄ = x⁸ − x⁴ + 1
 	24: [1n, 0n, 0n, 0n, -1n, 0n, 0n, 0n, 1n],
+	// Sub Rosa ζ₄ₙ rings for odd n=7,9,11 (boundary vectors at odd multiples of π/(2n)):
+	// Φ₂₈ = Φ₁₄(x²) = x¹²−x¹⁰+x⁸−x⁶+x⁴−x²+1
+	28: [1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n],
+	// Φ₃₆ = Φ₁₈(x²) = x¹²−x⁶+1
+	36: [1n, 0n, 0n, 0n, 0n, 0n, -1n, 0n, 0n, 0n, 0n, 0n, 1n],
+	// Φ₄₄ = Φ₂₂(x²) = x²⁰−x¹⁸+x¹⁶−x¹⁴+x¹²−x¹⁰+x⁸−x⁶+x⁴−x²+1
+	44: [1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n],
 };
 
 /** Euler totient values for supported N (degree of Φ_N). */
-const PHI: Record<number, number> = { 10: 4, 12: 4, 20: 8, 24: 8 };
+const PHI: Record<number, number> = { 10: 4, 12: 4, 20: 8, 24: 8, 28: 12, 36: 12, 44: 20 };
 
 /**
  * The single shared ring for the current run. There is ONE arithmetic backend per run
