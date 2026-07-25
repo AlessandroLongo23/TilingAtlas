@@ -6,10 +6,19 @@
  *         →  per-prototile substitution rule  →  float iteration for rendering.
  *
  * Exactness lives where correctness is decided: the boundary and the dissection are built in
- * ℤ[ζ₂ₙ] via `Cyclotomic`, and `validateFill` checks — with exact keys — that the children tile
- * the super-rhomb with no gap or overlap. Iteration for the on-screen patch runs in float
- * (a similarity per tile), which is sound because each substitution rule was already proven
- * exact; float error over the ≤3 visible levels is invisible.
+ * ℤ[ζ₄ₙ] via `Cyclotomic` (odd-n boundary vectors sit at odd multiples of π/(2n), which are ζ₄ₙ
+ * directions, not ζ₂ₙ), and `validateFill` checks — with exact keys — that the children tile the
+ * super-rhomb with no gap or overlap. Iteration for the on-screen patch runs in float (a
+ * similarity per tile), which is sound because each substitution rule was already proven exact.
+ *
+ * The super-rhomb boundary is POINT-symmetric (u·ũ, opposite super-edges antiparallel — see
+ * `boundaryWord`), so adjacent super-rhombs share an identical serrated edge and interlock. That
+ * is what makes the substitution self-compose to arbitrary depth: iterating a single tile to
+ * depth 3 gives 706 240 tiles with zero edge-overuse, zero polygon overlap, and area conserved to
+ * float precision (verified by dense-grid coverage + spatial-hash overlap). The paper's optional
+ * corner "rose sectors" (§5) are what make specific corners equal the rose R₂¹ (needed for the
+ * R₂¹-seeded self-similar limit and primitivity); they are NOT needed for gap-free iteration, and
+ * this engine does not build them.
  *
  * Scope: n = 5 is validated end to end (prototiles (1,4) and (2,3): 72 and 116 children,
  * area-exact, edge-consistent). The greedy fill also solves n = 7 x=1 but dead-ends on
@@ -22,30 +31,52 @@ import { Vector } from "@/classes/Vector";
 import { sigma, scalingFactor } from "./sigma";
 
 // ---------------------------------------------------------------------------------------------
-// Boundary word: Σ(n) → the serrated super-rhomb outline as exact ℤ[ζ₂ₙ] vertices.
+// Boundary word: Σ(n) → the serrated super-rhomb outline as exact ℤ[ζ₄ₙ] vertices.
+//
+// Directions are integers 0..4n−1 in units of π/(2n) (ring ζ₄ₙ). For odd n the boundary unit
+// vectors land at ODD such multiples — i.e. odd multiples of π/(2n), NOT the tile-edge grid of
+// ζ₂ₙ — which is why the ring is ζ₄ₙ, not ζ₂ₙ. (The earlier ζ₂ₙ version rounded k±a/2 to
+// integers, which silently distorted the outline; that was one cause of the depth-2 break.)
 // ---------------------------------------------------------------------------------------------
 
-/** Direction integers (0..2n-1) around the boundary of the super-rhomb of prototile (x, n-x). */
+/**
+ * Direction integers (0..4n−1, units of π/(2n)) around the boundary of the super-rhomb of
+ * prototile (x, n−x), read counterclockwise.
+ *
+ * A super-edge with bisector direction K carries the whole word Σ(n): each label a contributes
+ * two unit vectors at K±a (Kari-Rissanen §5). The FIRST half of Σ tents "out" (K+a, K−a), the
+ * SECOND half tents "in" (K−a, K+a) — the "count-in first half clockwise, count-out second half"
+ * rule (§3, p.6). This is what makes the outline POINT-symmetric: the full word is u·ũ where ũ
+ * is the half-turn (σₙ, add 2n to every direction, same order), so OPPOSITE super-edges are exact
+ * antiparallels. Two adjacent super-rhombs then share an identical serrated edge and interlock —
+ * the property that lets the substitution self-compose to any depth. (A mirror-symmetric outline,
+ * which is what the previous version built, does NOT have antiparallel opposite edges, so
+ * neighbours failed to mesh and depth ≥2 overlapped.)
+ */
 export function boundaryWord(n: number, x: number): number[] {
-	const N = 2 * n;
+	const N = 4 * n; // ζ₄ₙ: full circle = 4n steps of π/(2n)
 	const sig = sigma(n);
-	// A super-edge with bisector k (half-integer, in π/n units) and label a contributes unit
-	// vectors at integer directions k±a/2. The 4 edges: bisectors ½, ½+x, and their antiparallels.
-	const edge = (k: number, reverse: boolean): number[] => {
-		const seq = reverse ? [...sig].reverse() : sig;
+	const L = sig.length;
+	const half = L / 2;
+	const edge = (K: number): number[] => {
 		const out: number[] = [];
-		for (const a of seq) {
-			const i1 = Math.round(k + a / 2);
-			const i2 = Math.round(k - a / 2);
-			if (reverse) {
-				out.push(((i2 + n) % N + N) % N, ((i1 + n) % N + N) % N);
-			} else {
-				out.push(((i1 % N) + N) % N, ((i2 % N) + N) % N);
+		for (let i = 0; i < L; i++) {
+			const a = sig[i];
+			if (a === 0) {
+				// even-n "zero rhombus": a single unit edge along the super-edge direction
+				out.push(((K % N) + N) % N);
+				continue;
 			}
+			const p = (((K + a) % N) + N) % N;
+			const m = (((K - a) % N) + N) % N;
+			if (i < half) out.push(p, m);
+			else out.push(m, p);
 		}
 		return out;
 	};
-	return [...edge(0.5, false), ...edge(0.5 + x, false), ...edge(0.5, true), ...edge(0.5 + x, true)];
+	// Four super-edges of the (x, n−x) rhombus have bisector directions 0, 2x, 2n, 2x+2n.
+	// A·C·E·G with E = σₙ(A), G = σₙ(C) ⇒ the boundary is (A·C)·σₙ(A·C) = u·ũ.
+	return [...edge(0), ...edge(2 * x), ...edge(2 * n), ...edge(2 * x + 2 * n)];
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -85,7 +116,7 @@ function segCross(a: Vector, b: Vector, c: Vector, d: Vector): boolean {
  * the greedy dead-ends (n where a robust fill is still needed).
  */
 export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] | null {
-	const N = 2 * n;
+	const N = 4 * n;
 	const U: Pt[] = [];
 	for (let j = 0; j < N; j++) U.push(Cyclotomic.zeta(ring, j));
 	const dirOf = new Map<string, number>();
@@ -131,8 +162,9 @@ export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]):
 		for (let B = 0; B < m; B++) {
 			const A = (B - 1 + m) % m;
 			const C = (B + 1) % m;
+			// convex (left) turn ⇒ index turn in (0, N/2); N/2 = 2n corresponds to a straight edge
 			const turn = ((edir(B) - edir(A)) % N + N) % N;
-			if (!(turn > 0 && turn < n)) continue;
+			if (!(turn > 0 && turn < N / 2)) continue;
 			const Dv = poly[A].add(poly[C].sub(poly[B]));
 			const fa = fx(poly[A]);
 			const fb = fx(poly[B]);
@@ -226,11 +258,13 @@ export interface SubRosaRule {
 
 /** Which prototile (x) a child rhomb is, from the angle between its two edge directions. */
 function protoOfRhomb(ring: CyclotomicRing, n: number, r: Rhomb, U: Pt[], dirOf: Map<string, number>): number {
+	const N = 4 * n;
 	const d0 = dirOf.get(r[1].sub(r[0]).key())!;
 	const d1 = dirOf.get(r[2].sub(r[1]).key())!;
-	let a = Math.abs(d1 - d0) % (2 * n);
-	if (a > n) a = 2 * n - a;
-	return Math.min(a, n - a);
+	let diff = (((d1 - d0) % N) + N) % N; // edge-direction gap in π/(2n) units
+	if (diff > N / 2) diff = N - diff; // fold to [0, 2n]
+	const label = diff / 2; // rhombus angle label in 1..n−1
+	return Math.min(label, n - label);
 }
 
 /**
@@ -238,8 +272,8 @@ function protoOfRhomb(ring: CyclotomicRing, n: number, r: Rhomb, U: Pt[], dirOf:
  * children. Returns null if any prototile fails to fill (n not yet supported).
  */
 export function buildRule(n: number): SubRosaRule | null {
-	const ring = CyclotomicRing.create(2 * n);
-	const N = 2 * n;
+	const ring = CyclotomicRing.create(4 * n);
+	const N = 4 * n;
 	const U: Pt[] = [];
 	for (let j = 0; j < N; j++) U.push(Cyclotomic.zeta(ring, j));
 	const dirOf = new Map<string, number>();

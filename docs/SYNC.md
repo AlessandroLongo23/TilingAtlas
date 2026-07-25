@@ -1455,3 +1455,10 @@ greedy ear-clip)→per-prototile rule→float iteration. Shipped **n=5** (10-fol
 exactly (both prototiles fill gap/overlap-free: 72 & 116 children; 12/12 vitest). n=7+ blocked on a robust
 fill (greedy dead-ends; de Bruijn matched-line is the next step). Added ℤ[ζ₁₀] to Cyclotomic. Spec:
 `docs/superpowers/specs/2026-07-25-subrosa-editor-design.md`; detail NOTES §93.
+
+**2026-07-25 · CC.** Sub Rosa depth-2 break FIXED at the root (was capped, per AL "fix the method, don't
+cap it"). Read Kari-Rissanen §5: the super-rhomb boundary must be POINT-symmetric (`u·ũ`, opposite edges
+antiparallel) so neighbours interlock — mine was mirror-symmetric. Also moved to the correct ring **ℤ[ζ₂₀]**
+(odd-n boundary vectors are ζ₄ₙ, not ζ₂ₙ; the old code rounded them). Now self-composes without limit:
+single tile → depth 3 = 706 240 tiles, zero edge-overuse, zero polygon overlap, area exact; star → depth 2
+= 71 200 clean. Corner rose sectors are NOT needed for gap-freeness. 17/17 vitest, build clean. Detail: NOTES §93.

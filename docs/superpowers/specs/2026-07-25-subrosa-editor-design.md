@@ -42,24 +42,43 @@ symmetries whose every prototile fills.
 This matches the agreed approach: set up all infrastructure + controls on the
 anchor case, polish, then expand.
 
-**Iteration is capped at depth 1** (update 2026-07-25, after two rounds of
-debugging). One substitution is exact and gap/overlap-free — verified by
-dense-grid coverage: single-tile 1→116 and the 10-fold star 10→720 are 100%
-exactly-once covered. Two things were fixed to get there: (a) substitution must
-**inflate the tile by S first, then subdivide** (`substituteOnce`); mapping the
-size-S children straight onto a unit tile piled ~40× overlap hidden by opaque
-overdraw. (b) `similarity()` must **search all four corner correspondences**
-(children come out of the fill in arbitrary vertex order). But composing a
-*second* time still overlaps ~1.8% of area: the simplified super-rhomb boundary
-here omits the shared **corner rose sectors** (Kari-Rissanen §5) that make the
-rule self-compose — one super-rhomb tiles correctly and the star's symmetric
-adjacencies mesh, but general depth-2 adjacencies do not. The boundary is
-mirror-symmetric where the paper's clockwise-inclusion rule makes it
-180°-symmetric; a 180°-symmetric boundary + paired-symmetric fill was tried and
-did **not** suffice, confirming the roses (not just symmetry) are the missing
-piece. Multi-level iteration is the concrete next step: implement the
-rose-sector boundary word (paper §5, Example 1) and place the roses shared
-between adjacent super-rhombs.
+**The substitution self-composes to any depth** (update 2026-07-25, after
+reading the paper's §5 in full). The break at depth ≥2 was a real method bug,
+now fixed at the root — not capped. Three fixes, in order of importance:
+
+1. **Point-symmetric boundary (the fix).** The paper's super-rhomb boundary is
+   `u·ũ` where `ũ` is the *half-turn* of `u` (each direction +n, same order),
+   so OPPOSITE super-edges are exact antiparallels. That antiparallel property is
+   exactly what makes two adjacent super-rhombs share an identical serrated edge
+   and interlock — the regions tile the inflated coarse tiling, so any valid
+   per-region fill composes gap-free. The earlier boundary was *mirror*-symmetric
+   (a reflected shape), so opposite edges were NOT antiparallel; neighbours failed
+   to mesh and depth-2 overlapped ~1.8%. Construction (§5, p.13): a unit rhombus
+   `(a,n−a)` on a super-edge of direction `k` contributes two boundary vectors
+   `k+a/2, k−a/2`; laying Σ(n) on all four edges (first half tents out, second
+   half in) yields `A·C·E·G = (A·C)·σₙ(A·C) = u·ũ`.
+2. **Correct ring ℤ[ζ₄ₙ].** For odd n the boundary vectors sit at odd multiples of
+   π/(2n) — ζ₄ₙ directions, not ζ₂ₙ. The old code rounded `k±a/2` to integers in
+   ℤ[ζ₂ₙ], silently distorting the outline. n=5 now lives in ℤ[ζ₂₀] (Φ₂₀ added to
+   `Cyclotomic.ts`), directions as integers 0..4n−1 in units of π/(2n).
+3. **Inflate-then-subdivide + all-four-corner `similarity()`** — kept from the
+   first round; both are still required.
+
+Verification (all pass): the boundary closes to 1e-15, encloses exactly S²·area,
+is simple, and is point-symmetric (`dirs[i+half] === (dirs[i]+2n) mod 4n`, a
+unit test). Iterating a single tile to **depth 3 → 706 240 tiles** (thick tile →
+1 142 720) has zero edge-overuse, area conserved to float precision, and **zero
+polygon overlaps** (dense-grid coverage + spatial-hash pairwise test). The
+10-fold star to depth 2 is 71 200 tiles, edgesOverused 0, one boundary loop.
+
+The **corner rose sectors** (Kari-Rissanen §5) are NOT needed for gap-free
+iteration — they only make specific corners equal the rose R₂¹, which the paper
+uses for the R₂¹-seeded self-similar *limit* and for primitivity. This engine
+does not build them.
+
+In the editor, depth is bounded only by the render budget (`MAX_TILES` 130 000):
+single-tile depths 0–2 and star depths 0–2 render in full. Viewport-culled
+deeper zoom (depth 4–5 in a bounded window) is the next enhancement.
 
 ## The math (validated in prototype)
 
@@ -72,16 +91,20 @@ between adjacent super-rhombs.
 - **Scaling factor.** Odd n: S(n)=cos(π/2n)/sin²(π/2n). S(5)=9.9596 (linear),
   area ×S²=99.19. (Not the textbook golden-ratio Penrose rule — a larger Sub
   Rosa inflation on the Penrose tiles.)
-- **Super-rhomb boundary.** For prototile (x,·): 4 super-edges, bisector
-  directions k₁=½, k₂=½+x (and +n). Each label a in Σ(n) contributes two unit
-  vectors at integer directions k±a/2. Verified: boundary closes exactly and
-  encloses exactly S²·(rhomb area) in ℤ[ζ₂ₙ].
-- **Interior fill.** Greedy sharpest-corner ear-clip in exact ℤ[ζ₂ₙ] coords with
+- **Super-rhomb boundary (point-symmetric).** For prototile (x,·): 4 super-edges
+  at bisector directions 0, 2x, 2n, 2x+2n (units of π/(2n)). Each label a in Σ(n)
+  contributes two unit vectors at k±a; the first half of Σ tents out, the second
+  half in, giving `u·ũ` with opposite edges antiparallel. Verified: closes to
+  1e-15, encloses exactly S²·(rhomb area), simple, and half-turn-symmetric.
+- **Interior fill.** Greedy sharpest-corner ear-clip in exact ℤ[ζ₄ₙ] coords with
   a float containment guard (no vertex inside the ear, no edge crossing it).
-  Positions exact; float only decides ear validity. Validated for n=5.
-- **Ring.** Vertices in ℤ[ζ₁₀] (φ=4, Φ₁₀=x⁴−x³+x²−x+1). Added to Cyclotomic.ts's
-  PHI table. `mulZeta` = rotation, `conj` = reflection, `scaleRational` = the
-  only division needed — no field inversion.
+  Positions exact; float only decides ear validity. n=5 → 72 and 116 children.
+  (The paper's own method is the de Bruijn matched-line fill — needed for n≥7
+  where greedy dead-ends — but ear-clip suffices for n=5.)
+- **Ring.** Vertices in ℤ[ζ₂₀] (φ=8, Φ₂₀=x⁸−x⁶+x⁴−x²+1 = Φ₁₀(x²)). Added to
+  Cyclotomic.ts's PHI table. Odd-n boundary vectors are odd multiples of π/(2n),
+  i.e. ζ₂₀ directions — NOT the ζ₁₀ tile-edge grid, which is why the ring is ζ₄ₙ.
+  `mulZeta` = rotation, `conj` = reflection, `scaleRational` = the only division.
 
 ## Architecture
 

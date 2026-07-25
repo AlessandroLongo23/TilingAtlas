@@ -15,12 +15,13 @@ import { cn } from "@/lib/utils/cn";
 
 // n=5 is the shipped, fully-validated symmetry (both Penrose-rhomb prototiles fill exactly).
 const N = 5;
-const MAX_TILES = 90_000;
-// One substitution is exact and gap/overlap-free (verified by dense-grid coverage): single
-// 1→116, star 10→720. Composing a SECOND time overlaps ~1.8% — the simplified super-rhomb here
-// omits the shared corner "rose sectors" (Kari-Rissanen §5) needed to make the rule self-compose.
-// So the depth is capped at 1 until that construction lands; anything deeper would be wrong.
-const MAX_DEPTH = { single: 1, star: 1 } as const;
+const MAX_TILES = 130_000;
+// The substitution self-composes to any depth: the super-rhomb boundary is point-symmetric
+// (opposite super-edges antiparallel), so adjacent super-rhombs interlock. Verified gap/overlap-
+// free by dense-grid coverage + spatial-hash overlap + exact edge-consistency — a single tile to
+// depth 3 is 706k tiles with zero overlap. Depth here is bounded only by the tile budget: single
+// 1→116→11.5k, star 10→720→71k. (depth 3 = ~1M tiles needs viewport culling, not yet built.)
+const MAX_DEPTH = { single: 2, star: 2 } as const;
 
 // Prototile hues (thin (1,4) vs thick (2,3)). Distinct, works in light and dark.
 const HUE = (protoId: number) => (protoId === 1 ? 265 : 175);
@@ -240,7 +241,7 @@ export function SubstitutionsClient() {
 					<h1 className="text-base font-semibold text-fg">Sub Rosa</h1>
 					<p className="text-xs text-fg-muted mt-1 leading-relaxed">
 						Aperiodic rhombic substitution tilings with {2 * N}-fold symmetry (Kari &amp; Rissanen
-						2016). Vertices exact in ℤ[ζ₁₀]; the dissection is derived from the edge word Σ(n), not
+						2016). Vertices exact in ℤ[ζ₂₀]; the dissection is derived from the edge word Σ(n), not
 						traced from a figure.
 					</p>
 				</div>
@@ -294,8 +295,8 @@ export function SubstitutionsClient() {
 						{capped && <span className="text-amber-500">capped at {MAX_TILES.toLocaleString()}</span>}
 					</div>
 					<p className="text-[11px] text-fg-subtle mt-1 leading-snug">
-						One substitution, verified gap/overlap-free. Composing further needs the shared
-						corner rose sectors (§5) — the next step.
+						Each level is exact and gap/overlap-free — the point-symmetric super-rhomb boundary
+						makes adjacent tiles interlock, so the rule self-composes to any depth.
 					</p>
 				</Section>
 
