@@ -15,10 +15,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **Next.js 16 notice:** see `AGENTS.md`. APIs and file conventions differ from older Next.js. Consult `node_modules/next/dist/docs/` before writing framework code.
 
-## Project goal (the mission — durable)
+## Project goal (the mission — durable; rescoped 2026-07-25, AL directive)
 
-Create an atlas of tilings that presents a complete catalogue of hyberbolic, euclidian, spherical tilings
- 
+**Make this Atlas the most comprehensive tiling catalogue that exists.** Euclidean, hyperbolic,
+spherical; uniform tilings and their decorations (edge systems, colorings, Islamic constructions,
+freedraw, …). Breadth of coverage and correctness of what is shown are the two things that matter. AL
+now has collaborators in the field — **Marek Čtrnáct** (solvers/corpora), **Craig Kaplan** and **Joseph
+Myers** — so new corpora will keep arriving and the scope is deliberately open-ended.
+
+### The thesis is DONE and OUT OF SCOPE — never raise it again
+
+The thesis was **submitted**; the defense is **2026-08-10**. AL is preparing the defense himself and
+that work is **not part of this repo or this project**.
+
+**Hard rule (AL directive, 2026-07-25):** do NOT bring up the thesis, its chapters, its deadlines, its
+`\describedcommit` anchor, "what belongs in the thesis", or whether recent work advanced it. Do not
+frame work as thesis-relevant or thesis-irrelevant. Do not comment on time spent vs. thesis progress.
+It is settled and closed. If something genuinely needs an author-only decision, ask about the ATLAS.
+
+Consequences already applied: the `\describedcommit` drift check is dormant in `scripts/status.mjs` and
+`scripts/docs-check.mjs` (see those files); the CC⇄TA handoff protocol below is dormant too.
+
+**Completeness/provenance still matters — for the ATLAS, not for a thesis.** With external
+collaborators looking at it, a shelf that presents a partial corpus as a catalogue is a data-integrity
+bug. Keep flagging those (e.g. non-contiguous k coverage in a shipped corpus). That is atlas quality
+work, not thesis work.
+
 
 ## The engine — what "the algorithm" means (durable; added 2026-07-12, AL directive)
 
@@ -127,29 +149,32 @@ This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16
 ## Agent sync protocol (multiple agents, one project)
 
 This repo is one of three siblings under `../`: `TilingAtlas/` (this repo — **you own it**),
-`../thesis/` (LaTeX) and `../resources/` (papers/drafts/notes) — **owned by the thesis agent (TA, in
-Cowork); do not edit those two folders.** All three are under git (`resources/` since 2026-06-07).
+`../thesis/` (LaTeX) and `../resources/` (papers/drafts/notes) — **still do not edit those two folders.**
+All three are under git (`resources/` since 2026-06-07).
+
+**DORMANT since 2026-07-25:** the thesis shipped, so the CC⇄TA handoff loop is closed — no TA entries to
+read, no handoffs to write for, no drift to reconcile. What survives is the **ledger discipline below**,
+kept because it is how this project remembers what was tried and why. Write `docs/DEVELOPMENT_NOTES.md`
+and `docs/SYNC.md` as before; just don't expect a counterparty or mention the thesis.
 
 **Two tiers — never mix them.**
 
-- **Ledgers — sacred: append-only, never trimmed, ONE writer per file.** The natural-language history
-  the thesis (`../thesis/chapters/journey.tex`) is written from. Rotate to `docs/archive/<name>-YYYY-MM.md`
+- **Ledgers — sacred: append-only, never trimmed, ONE writer per file.** The project's narrative memory:
+  what shipped, what failed, and why. Rotate to `docs/archive/<name>-YYYY-MM.md`
   when a file gets large — rotation *moves* history, never deletes it.
   - `docs/DEVELOPMENT_NOTES.md` — CC's session-by-session narrative (code/algorithm); failed ideas and
     *why* they failed belong here too.
-  - `../resources/research/TA_LOG.md` — the TA's chronological ledger (theory/proofs); topical detail in
-    the sibling `resources/research/*.md` notes.
-  - `docs/SYNC.md` — the CC⇄TA **handoff log**. Append a dated, signed (`CC`/`TA`) entry per milestone:
+  - `../resources/research/TA_LOG.md` — the TA's ledger (read-only reference; no longer written to).
+  - `docs/SYNC.md` — the **milestone log**. Append a dated, signed (`CC`) entry per milestone:
     **3–6 lines** = what landed + commit hash + a link to the ledger note holding the detail. Newest
-    last, never rewrite old entries, never inline long-form narrative (the ledgers are for that). Short
-    entries also keep the merge-conflict surface small when branches land.
-- **Cache — `docs/STATUS.md`.** Current state only (frontier, one live NEXT per party, active gates).
+    last, never rewrite old entries, never inline long-form narrative (the ledgers are for that).
+- **Cache — `docs/STATUS.md`.** Current state only (frontier, the live NEXT, active gates).
   Mutable, disposable, regenerable from the ledgers; overwrite freely. Never write history here.
 
-- The algorithm's prose description lives in the thesis (`../thesis/chapters/algorithm.tex`), not in
-  the app. Don't recreate an in-app write-up of the *method*. (The `/theory` page re-added 2026-07 is
-  different in kind: it teaches the mathematical background — the 11 uniform tilings — with interactive
-  previews, AL directive. Keep method prose out of it.)
+- **Method prose still doesn't belong in the app.** Don't build an in-app write-up of how the enumeration
+  works. (The `/theory` pages are different in kind: they teach the mathematical background — the uniform
+  tilings, hyperbolic geometry, Islamic construction — with interactive previews, AL directive. That is
+  the place for reader-facing mathematics; keep implementation narrative in `docs/`.)
 
 ## Migration history
 

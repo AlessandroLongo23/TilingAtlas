@@ -37,23 +37,10 @@ if (wts.length > 1) {
   for (const w of wts.slice(1)) console.log('       ' + w.replace(REPO, '.'));
 }
 
-// ── thesis \describedcommit drift ─────────────────────────────────────────────
-const mainTex = join(REPO, '..', 'thesis', 'main.tex');
-if (existsSync(mainTex)) {
-  const m = readFileSync(mainTex, 'utf8').match(/\\describedcommit\}\{\\texttt\{([0-9a-f]+)\}/);
-  if (m) {
-    const dc = m[1];
-    const known = sh(`git cat-file -e ${dc}^{commit} && echo ok`) === 'ok';
-    if (!known) console.log('\n' + c('y', 'thesis ') + ` \\describedcommit ${dc} not found in this repo`);
-    else {
-      const anc = sh(`git merge-base --is-ancestor ${dc} HEAD && echo yes`) === 'yes';
-      const n = sh(`git rev-list --count ${dc}..HEAD`);
-      if (!anc) console.log('\n' + c('r', 'thesis ') + ` \\describedcommit ${dc} is NOT an ancestor of HEAD (?!)`);
-      else if (+n > 0) console.log('\n' + c('y', 'thesis ') + ` \\describedcommit ${dc} → ` + c('y', `${n} commits behind HEAD`) + c('dim', ' (re-anchor when chapters land)'));
-      else console.log('\n' + c('g', 'thesis ') + ` \\describedcommit in sync with HEAD`);
-    }
-  }
-}
+// ── thesis \describedcommit drift — REMOVED 2026-07-25 ────────────────────────
+// The thesis shipped (submitted; defense 2026-08-10) and is out of scope for this repo, so there is no
+// anchor left to reconcile and the drift line was pure noise on every board. Deliberately deleted rather
+// than flag-gated: nothing should re-surface it. See CLAUDE.md "The thesis is DONE and OUT OF SCOPE".
 
 // ── NEXT (the one curated input) ──────────────────────────────────────────────
 const nextF = join(REPO, 'docs', 'NEXT.md');

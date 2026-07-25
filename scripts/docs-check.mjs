@@ -3,9 +3,9 @@
 //   `pnpm docs:check`           full sweep (CI / manual)
 //   `node docs-check.mjs --staged`   fast staged-only subset (pre-commit hook)
 //
-// HARD-FAIL (exit 1): staged litter (*.tmp/.orig/.DS_Store/…), dead cross-links in docs,
-//                     \describedcommit not an ancestor of HEAD.
-// WARN (exit 0):      SYNC entries over 6 lines, \describedcommit behind HEAD (normal drift).
+// HARD-FAIL (exit 1): staged litter (*.tmp/.orig/.DS_Store/…), dead cross-links in docs.
+// WARN (exit 0):      SYNC entries over 6 lines.
+// (The thesis \describedcommit ancestry check was removed 2026-07-25 — thesis out of scope.)
 import { execSync } from 'node:child_process';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -84,19 +84,9 @@ if (existsSync(syncF) && (!STAGED || stagedFiles.includes('docs/SYNC.md'))) {
   if (!over) console.log(grn('  ✓ all entries ≤ 6 lines'));
 }
 
-// ── CHECK 4: thesis \describedcommit ancestry ─────────────────────────────────
-const mainTex = join(REPO, '..', 'thesis', 'main.tex');
-if (existsSync(mainTex) && !STAGED) {
-  console.log('thesis \\describedcommit:');
-  const m = readFileSync(mainTex, 'utf8').match(/\\describedcommit\}\{\\texttt\{([0-9a-f]+)\}/);
-  if (!m) console.log(dim('  · no \\describedcommit found'));
-  else {
-    const dc = m[1];
-    if (sh(`git cat-file -e ${dc}^{commit} && echo ok`) !== 'ok') warn(`\\describedcommit ${dc} not found in this repo (fetch?)`);
-    else if (sh(`git merge-base --is-ancestor ${dc} HEAD && echo yes`) !== 'yes') fail(`\\describedcommit ${dc} is NOT an ancestor of HEAD`);
-    else { const n = sh(`git rev-list --count ${dc}..HEAD`); console.log(+n > 0 ? dim(`  · ancestor, ${n} commits behind HEAD (drift is informational)`) : grn('  ✓ in sync with HEAD')); }
-  }
-}
+// ── CHECK 4: thesis \describedcommit ancestry — REMOVED 2026-07-25 ────────────
+// The thesis shipped and is out of scope for this repo; there is no anchor left to reconcile. Deleted
+// rather than flag-gated so nothing re-surfaces it. See CLAUDE.md "The thesis is DONE and OUT OF SCOPE".
 
 console.log();
 if (errors) { console.log(red(`✗ docs:check — ${errors} error(s)`) + (warns ? yel(`, ${warns} warning(s)`) : '')); process.exit(1); }
