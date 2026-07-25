@@ -5,21 +5,28 @@ import { evaluateParamCell, segmentAt, type ParametricCellData } from "@/lib/uti
 import { resolveMergedFamilyKey } from "@/lib/services/referenceAtlas";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
-// The merged mixed families: two exported halves of ONE deformation spliced at the straight-vertex limit.
-// Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md, census in DEVELOPMENT_NOTES §92–§94.
-const SHELF = JSON.parse(
-	fs.readFileSync(path.join(process.cwd(), "public", "reference-atlas-mixed.json"), "utf8"),
-) as ReferenceTiling[];
+// A merged family is two exported halves of ONE deformation, spliced at the straight-vertex limit.
+// Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md; census in DEVELOPMENT_NOTES §92–§94, §99.
+// Every shelf that carries a merge plan. The invariants are the same for all of them — the mixed shelf just
+// happens to be where the first six arcs were found (§94); isotoxal added three more (§99).
+const SHELVES = [
+	{ name: "mixed", atlas: "public/reference-atlas-mixed.json", plan: "experiments/results/mixed-merge-plan.json" },
+	{ name: "isotoxal", atlas: "public/reference-atlas-isotoxal.json", plan: "experiments/results/isotoxal-merge-plan.json",
+	  shards: ["public/reference-atlas-isotoxal-k3.json", "public/reference-atlas-isotoxal-k4.json"] },
+];
+const read = (rel: string) => JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8"));
+const shelfOf = (s: (typeof SHELVES)[number]): ReferenceTiling[] =>
+	[s.atlas, ...(s.shards ?? [])].flatMap((f) => read(f) as ReferenceTiling[]);
+const SHELF = SHELVES.flatMap(shelfOf);
 const MERGED = SHELF.filter((t) => t.paramCell?.segments?.length);
 
-// The merge is applied by scripts/build-mixed-atlas.ts from this plan, so the plan is the expectation and
+// The merge is applied by scripts/merge-plan.ts from this plan, so the plan is the expectation and
 // the shipped shelf is what gets checked against it. A shelf built before the merge landed carries no
 // segments at all; the geometry suites below skip on that rather than fail, because there is nothing merged
 // to inspect. What is NOT tolerated is a shelf that is partly merged or merged into the wrong arcs — the
 // first test asserts all-or-exactly-the-plan, so a regression cannot hide behind the skip.
-const PLAN = JSON.parse(
-	fs.readFileSync(path.join(process.cwd(), "experiments", "results", "mixed-merge-plan.json"), "utf8"),
-) as { merges: { id: string; aliases: string[]; coordinate: string; range: [number, number] }[] };
+type Plan = { merges: { id: string; aliases: string[]; coordinate: string; range: [number, number] }[] };
+const PLAN: Plan = { merges: SHELVES.flatMap((s) => (read(s.plan) as Plan).merges) };
 const PLANNED_IDS = PLAN.merges.map((m) => m.id).sort();
 
 type Pt = [number, number];
@@ -83,8 +90,11 @@ const seam = (t: ReferenceTiling): { lower: EvalCell; upper: EvalCell; join: num
 };
 
 describe("merge plan", () => {
-	it("plans exactly the six arcs the census found", () => {
+	it("plans exactly the arcs the census found, across every shelf", () => {
 		expect(PLANNED_IDS).toEqual([
+			"ctrnact-isotoxal-family-k3-632",
+			"ctrnact-isotoxal-family-k4-3840",
+			"ctrnact-isotoxal-family-k4-3845",
 			"ctrnact-mixed-family-k1-04",
 			"ctrnact-mixed-family-k1-05",
 			"ctrnact-mixed-family-k2-05",
@@ -115,7 +125,7 @@ describe("merge plan", () => {
 	});
 });
 
-describe.skipIf(MERGED.length === 0)("merged mixed families", () => {
+describe.skipIf(MERGED.length === 0)("merged families", () => {
 
 	// The property that makes the merge legal rather than a splice of two unrelated things: at the seam the
 	// two halves are the SAME tiling in the SAME pose. Without it the pattern jumps as the slider crosses.

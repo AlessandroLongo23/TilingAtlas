@@ -1,6 +1,10 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
-import MERGED_FAMILY_ALIASES from "@/lib/services/mergedFamilyAliases.json";
+// One alias table per shelf, each written by that shelf's builder, so two builders never clobber each
+// other's keys. Ids are globally unique across shelves (tests/atlas-id-unique.test.ts), so a flat merge is
+// unambiguous — and a collision would be that test's failure, not a silent shadowing here.
+import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
+import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
@@ -566,7 +570,7 @@ export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: n
 	tiling: string | null;
 	alphas: number[] | null;
 } {
-	const alias = state.tiling ? (MERGED_FAMILY_ALIASES as MergedAliasTable)[state.tiling] : undefined;
+	const alias = state.tiling ? MERGED_FAMILY_ALIASES[state.tiling] : undefined;
 	if (!alias) return state;
 	const a = state.alphas?.[0];
 	const alphas =
@@ -575,6 +579,11 @@ export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: n
 }
 
 type MergedAliasTable = Record<string, { to: string; uOf: { m: number; c: number } }>;
+
+const MERGED_FAMILY_ALIASES: MergedAliasTable = {
+	...(MERGED_ALIASES_MIXED as MergedAliasTable),
+	...(MERGED_ALIASES_ISOTOXAL as MergedAliasTable),
+};
 
 // Isotoxal shelf only: how many INDEPENDENT free angles the family flexes on (its paramCell slider count
 // P). 1 ⇒ a single isotoxal tile flexes (α-family); 2 ⇒ two isotoxal tiles flex on their own (α, β-family).

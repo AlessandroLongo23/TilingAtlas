@@ -5758,3 +5758,40 @@ means teaching `build-isotoxal-atlas.ts` to consume a plan the way the mixed bui
 shard loaders and the /library counts. (2) The 2-parameter census. (3) `EU_PRUNE_OVERLAP=1` is still
 missing from the Makefile (§97), so none of these shelves rebuilds reproducibly — worth fixing before any
 re-export acts on this.
+
+## §100 — The dedup applied: the isotoxal shelves ship 4,239 instead of 4,690 (2026-07-25)
+
+§99 measured the overcount; this removes it. **4,690 → 4,239 shipped isotoxal entries: 448 α-reversal
+duplicates absorbed plus 3 merged arcs.** The mixed shelf is unchanged at 83 and rebuilds byte-identically.
+
+**Scanned as ONE corpus, not per shard.** The builder emits every k into one array before splitting into the
+eager main file and the k3/k4 lazy shards, so the dedup pass runs there — before the split — and an entry
+removed simply never reaches whichever file would have carried it. That also let the census see across the
+split: the corpus-wide run finds exactly the same 517 duplicate pairs as §99's three separate runs summed
+(3 + 49 + 465), i.e. **no duplicate straddles two k**, which is a real consistency check on the k labelling.
+517 pairs collapse to 448 absorbable ids because duplicates cluster (§99).
+
+**Shared, not copy-pasted.** The plan application moved out of `build-mixed-atlas.ts` into
+`scripts/merge-plan.ts` — `applyMergePlan(out, {planPath, unmergedPath, aliasPath, …})` — and both builders
+call it. The mixed shelf rebuilding **byte-identical** after that extraction is the regression that says the
+refactor was a no-op. Each shelf writes its own alias table
+(`mergedFamilyAliases{,.isotoxal}.json`), so two builders can never clobber each other's keys; ids are
+globally unique across shelves (`tests/atlas-id-unique.test.ts`), so `referenceAtlas` merges them flat.
+
+**All 3 isotoxal merges are `sweep`, none `theta`** — k3-632, k4-3840, k4-3845, each spanning (0°, 240°)
+with the join at 120°. Consistent with §99's finding that the concavity cut barely occurs on a shelf of
+convex isotoxal tiles: where it does, several tile orbits straighten at once, so no single tile angle is
+monotone and the slider has to be cumulative angle.
+
+**Verified.** The 9 merged arcs across both shelves now go through the same suite (seam pose, seam lattice,
+seam colour, area certificate Σ area == |det| at 121 positions per arc): 19 tests green, `tsc` clean apart
+from the pre-existing hex-grid errors, full `pnpm build` clean. In the running app: requesting the absorbed
+id `k3-641` with α=60° lands on the survivor `k3-632` at s=120°, exactly its alias map {m: 1, c: 60}, and
+the sidebar reads "Isotoxal polygons 4239 / k = 3 608".
+
+⚑ Open. (1) **2,034 of the 4,690 are 2-parameter and still unswept** — their validity region is a box, so a
+shared boundary is a face, not a point; 451 is a lower bound. (2) The quotient is still a post-process; it
+belongs in `export_isotoxal_families.py` / `export_combined_families.py`, since a re-export reintroduces
+duplicates (the 30/150 rhombus one added 2 fresh pairs to mixed). (3) `EU_PRUNE_OVERLAP=1` missing from the
+Makefile (§97) still blocks a reproducible re-export. (4) `experiments/results/isotoxal-joins-2026-07-25.log`
+now holds the corpus-wide scan, superseding the per-shelf number §99's table cites for the k1/k2 base.
