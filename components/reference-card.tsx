@@ -11,6 +11,7 @@ import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnai
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
+import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
@@ -150,7 +151,9 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 						}
 					: {})}
 			>
-				{tiling.spherical ? (
+				{tiling.hollow ? (
+					<HollowThumbnail patch={tiling.hollow.patch} />
+				) : tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
 				) : tiling.sphColors ? (
 					<SphericalColorsThumbnail pattern={tiling.sphColors.pattern} mode="polyhedron" />
@@ -169,7 +172,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				)}
 				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
 				    along with the two non-Euclidean renderers. */}
-				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw && !tiling.colors && !tiling.hypEdges ? (
+				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw && !tiling.colors && !tiling.hypEdges && !tiling.hollow ? (
 					<button
 						type="button"
 						onClick={handleScreenshot}

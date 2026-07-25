@@ -8,6 +8,7 @@ import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnai
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
+import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
 import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbnail";
 import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
@@ -216,7 +217,9 @@ function Tile({
 			className="ta-wall-cell group relative flex flex-col bg-surface-raised overflow-hidden cursor-pointer"
 		>
 			<div className="relative aspect-square bg-surface-raised">
-				{t.spherical ? (
+				{t.hollow ? (
+					<HollowThumbnail patch={t.hollow.patch} />
+				) : t.spherical ? (
 					<SphericalThumbnail solidId={t.spherical.solid} />
 				) : t.sphColors ? (
 					<SphericalColorsThumbnail pattern={t.sphColors.pattern} mode="polyhedron" />

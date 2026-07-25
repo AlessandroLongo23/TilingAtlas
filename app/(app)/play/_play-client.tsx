@@ -13,6 +13,7 @@ import { SphericalCanvas } from "@/components/spherical-canvas";
 import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
+import { HollowCanvas } from "@/components/hollow/hollow-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -597,6 +598,29 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			cfg.set({ colors: false });
 		}
 	}, [isColors, selected]);
+	// A hollow tiling is the same shape of thing as freedraw/colors: its own 2D canvas, no polygon cell
+	// (its faces overlap and self-intersect), so it force-clears every mode and tile-derived overlay the
+	// flat renderer would otherwise draw underneath it.
+	const isHollow = !!selected?.hollow;
+	useEffect(() => {
+		const cfg = useConfiguration.getState();
+		if (isHollow) {
+			cfg.set({
+				hollow: true,
+				hyperbolic: false,
+				spherical: false,
+				inversive: false,
+				circlePacking: false,
+				isTilingRegularOnly: false,
+				isIslamic: false,
+				showSymmetryElements: false,
+				showFundamentalDomain: false,
+				showVertexOrbits: false,
+			});
+		} else if (cfg.hollow) {
+			cfg.set({ hollow: false });
+		}
+	}, [isHollow, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isFreedraw) {
@@ -869,7 +893,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
-				{isSpherical && selected?.spherical ? (
+				{selected?.hollow ? (
+					// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
+					// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
+					// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
+					// density structure shows. Owns its pan/zoom, like freedraw and colors.
+					<div className="absolute inset-0 z-10">
+						<HollowCanvas patchId={selected.hollow.patch} />
+					</div>
+				) : isSpherical && selected?.spherical ? (
 					<SphericalCanvas solidId={selected.spherical.solid} />
 				) : selected?.sphericalFreedraw ? (
 					// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with

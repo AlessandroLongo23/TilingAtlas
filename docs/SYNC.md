@@ -1556,3 +1556,11 @@ it flexes alone, so a coupled flex space shipped as parallel 1-D slices, one per
 it pinned. Developed the real coupled families, which need a polytope region rather than two box sliders;
 per AL they ship with a 2-D pad. Everything off those lines was missing from the atlas, including whole grid
 lines the palette cannot seed. Detail: DEVELOPMENT_NOTES.md §103. — CC
+
+### 2026-07-26 — CC: hollow tilings shelved as a new Euclidean class
+Added `hollow` as the 13th TileClass (next to `star`), 7 entries, all "reproduced" against GMS. Needed its
+own renderer: overlapping self-intersecting faces have no polygon cell, so `lib/hollow/render.ts` strokes
+each closed path and fills with the NONZERO winding rule (even-odd would punch a hole through every star —
+the concave `|n/d|` reading). Faces + period lattice ship as `public/hollow/<id>.json`. The 11 convex
+uniform tilings are δ=1 hollow tilings but stay unshelved — they already ship under `regular`. Build clean,
+verified in /library, /play, sidebar picker, light and dark. Detail: DEVELOPMENT_NOTES.md §103.  — CC

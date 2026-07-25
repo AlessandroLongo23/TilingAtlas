@@ -1,5 +1,6 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
+import type { HollowPattern } from "@/lib/hollow/pattern";
 // One alias table per shelf, each written by that shelf's builder, so two builders never clobber each
 // other's keys. Ids are globally unique across shelves (tests/atlas-id-unique.test.ts), so a flat merge is
 // unambiguous — and a collision would be that test's failure, not a silent shadowing here.
@@ -67,10 +68,20 @@ export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical" | "hollow";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
+	// Hollow shelf only: a tiling by SELF-INTERSECTING regular star polygons {n/d}, where the
+	// crossings are NOT vertices (Grünbaum-Miller-Shephard, Uniform Tilings with Hollow Tiles, 1981).
+	// A different tile from the concave isotoxal |n/d| the `star`/`isotoxal` shelves carry. Its faces
+	// overlap by construction, so there is no cell polygon list the flat renderer could consume:
+	// `renderCell` is a throwaway here and never drawn, and its presence routes /play + the thumbnails
+	// to the hollow renderer (components/hollow/hollow-canvas.tsx) the way `freedraw` routes to the grid.
+	// `density` is the constant areal winding number (may be negative or zero — that is the point of a
+	// hollow tiling, not a bug); `gms` is the Grünbaum-Miller-Shephard figure number when the tiling is
+	// one of theirs; `k` is 1 throughout (uniform only so far).
+	hollow?: HollowPattern;
 	// Hyperbolic shelf only: the Schläfli symbol {p,q} of a regular hyperbolic tiling. Kept as the card
 	// label for the regular entries; routing keys on `developed`. Absent (and geometry "euclidean"/undefined)
 	// for every Euclidean tiling.
@@ -206,7 +217,7 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
+export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
@@ -214,6 +225,7 @@ export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold"
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
 // matches the legacy polygonClassLabel, so the two pages agree with or without a source.
 export function tileClassOf(t: { family: string; source?: ReferenceTiling["source"] }): TileClass {
+	if (t.source === "hollow") return "hollow";
 	if (t.source === "hyperbolic") return "hyperbolic";
 	if (t.source === "spherical") return "spherical";
 	if (t.source === "mixed") return "mixed";
@@ -232,10 +244,11 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
+	hollow: { short: "Hollow", long: "Hollow tilings (self-intersecting {n/d})" },
 	convex: { short: "Convex irregular", long: "Convex irregular polygons" },
 	isotoxal: { short: "Isotoxal", long: "Isotoxal polygons" },
 	mixed: { short: "Mixed", long: "Mixed polygons" },
@@ -810,6 +823,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		latticeShape: r.latticeShape,
 		freedraw: r.freedraw,
 		colors: r.colors,
+		hollow: r.hollow,
 		sphericalFreedraw: r.sphericalFreedraw,
 		hypEdges: r.hypEdges,
 		hypColors: r.hypColors,
@@ -1205,6 +1219,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-islamic.json"),
 		bestEffort("/reference-atlas-hyperbolic.json"),
 		bestEffort("/reference-atlas-spherical.json"),
+		bestEffort("/reference-atlas-hollow.json"),
 		// Freedraw is adapted from its own raw catalogues, not a reference-atlas-*.json (see
 		// freedrawToReference). The verified square k<=3 base, the square k=4/k=5 extensions, the
 		// triangular-grid catalogue (k<=3 plus the k=4 extension), and the combined-grid (squares +

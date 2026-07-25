@@ -130,6 +130,7 @@ describe("decorationOf", () => {
 	const BY_CLASS: Record<TileClass, CatalogueTiling> = {
 		regular: T({ canonicalKey: "r", k: 1 }),
 		star: T({ canonicalKey: "s", k: 1, family: "5*2" }),
+		hollow: T({ canonicalKey: "ho", k: 1, source: "hollow" }),
 		convex: T({ canonicalKey: "c", k: 1, source: "composable" }),
 		isotoxal: T({ canonicalKey: "i", k: 1, source: "isotoxal" }),
 		mixed: T({ canonicalKey: "m", k: 1, source: "mixed" }),

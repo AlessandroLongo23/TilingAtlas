@@ -6412,6 +6412,43 @@ suspect, and it is worth confirming rather than assuming.
 
 Code `tools/hollow/` (README has the full method), logs `experiments/results/hollow-*.log`.
 
+
+### Hollow tilings on the shelf (same day)
+
+AL asked to see them, as a new Euclidean class. Added `hollow` as the 13th `TileClass`, sitting next
+to `star` — its nearest kin and the one it is most likely to be confused with. The class plumbing is
+exactly what `referenceAtlas.ts` documents: one `TileClass` entry, one `tileClassOf` branch, one
+`bestEffort` fetch, and it appears on `/library` and `/play` together.
+
+**It needed its own renderer, for the same reason the tile needed its own class.** A hollow tiling's
+faces overlap and self-intersect, so there is no polygon decomposition of the plane to hand the flat
+cell renderer — `renderCell` is a throwaway here, exactly as it is for freedraw and the developed
+hyperbolic patches. `lib/hollow/render.ts` strokes each closed face path and fills it translucently
+with the **nonzero** winding rule, so overlaps accumulate and the density structure shows. Even-odd
+would punch a hole through the middle of every star, which is the concave `|n/d|` reading — the wrong
+tile, and precisely the distinction this class exists to draw.
+
+Three bugs worth recording, all found by screenshotting rather than by reasoning:
+1. `fundamentalFaces` deduped faces modulo the lattice but left each one where the patch happened to
+   put it. Replicating a scattered set tiles a **wedge**, not the plane. Faces must be translated into
+   the origin cell.
+2. The `/play` overlay was `h-full w-full` inside a flow box with no height, so it drew nothing and the
+   flat p5 canvas underneath stayed visible — the screenshot showed a completely different tiling. The
+   siblings all use `absolute inset-0 z-10`.
+3. The flat layer kept drawing underneath even once the overlay was positioned. Fixed the way freedraw
+   and colors do it: a `hollow` configuration flag that force-clears the tile-derived overlays and adds
+   `cfg.hollow` to the two `skipFlat` guards in `components/canvas.tsx`.
+
+⚑ The 11 convex uniform tilings are hollow tilings with δ=1, and the exporter produces their geometry
+(it is the regression), but they are deliberately NOT shelved: they already ship under `regular`, and
+listing them twice would double-count the catalogue.
+
+⚑ Worth knowing when reading the shelf: several entries LOOK like ordinary tilings. `3.12/11.6/5.12/11`
+(GMS 1.15) draws as a plain dodecagon/hexagon/triangle picture, because its tiles are `d = n-1`
+retrograde traversals of convex shapes — no visible crossings. What makes it hollow lives in the
+orientation and the density (−2 here), not in the line work. That IS Myers' "a single drawing can
+represent multiple distinct tilings", now sitting in the atlas as a card.
+
 ## §103 — Six shelf entries are 1-D slices of one 2-parameter family (2026-07-26)
 
 AL, on mixed k2-45 / k2-46 / k2-50: "they are the same tiling, just with a different angle for the rhombus
