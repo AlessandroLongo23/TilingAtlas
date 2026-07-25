@@ -508,12 +508,15 @@ function buildRuleUncached(n: number): SubRosaRule | null {
 }
 
 /**
- * Symmetries the de Bruijn fill builds (fast, gap/overlap-free): n = 5, 7, 9, 11 — 10/14/18/22-fold.
- * Bounded by the ℤ[ζ₄ₙ] rings in `Cyclotomic` (ζ₂₀/₂₈/₃₆/₄₄); higher n needs more rings and only
- * renders at depth 1 anyway (a single super-rhomb is thousands of tiles). Static list so the UI
+ * Symmetries the de Bruijn fill builds (fast, gap/overlap-free): n = 4,5,6,7,8,9,11 — 8/10/12/14/16/
+ * 18/22-fold. Even n share the same construction: sigma(n) uses the [0,2,…] base, boundaryWord has
+ * the zero-rhombus branch, and the square prototile (x=n/2, 90°/90°) fills and self-composes like any
+ * other — the "fixed-point handling" the paper needs is only for the self-similar limit, not for
+ * gap-free iteration (same as the corner rose sectors we skip). Bounded by the ℤ[ζ₄ₙ] rings in
+ * `Cyclotomic` (ζ₁₆/₂₀/₂₄/₂₈/₃₂/₃₆/₄₄); n=10 (ζ₄₀) and n≥13 need more rings. Static list so the UI
  * never triggers a doomed build just to test support.
  */
-export const SUPPORTED_SYMMETRIES: readonly number[] = [5, 7, 9, 11];
+export const SUPPORTED_SYMMETRIES: readonly number[] = [4, 5, 6, 7, 8, 9, 11];
 
 /** Is symmetry n fully supported (every prototile fills within the fill budget)? */
 export function supportedSymmetry(n: number): boolean {

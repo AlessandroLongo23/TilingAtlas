@@ -153,8 +153,8 @@ describe("n=5 substitution self-composes (gap/overlap-free at depth 2)", () => {
 // fill exactly, have a point-symmetric boundary, and mesh gap-free when its 2n-fold star seed is
 // substituted (adjacent super-rhombs interlocking).
 describe("higher symmetries via the de Bruijn fill (n = 7, 9, 11)", () => {
-	it("SUPPORTED_SYMMETRIES is [5, 7, 9, 11]", () => {
-		expect([...SUPPORTED_SYMMETRIES]).toEqual([5, 7, 9, 11]);
+	it("SUPPORTED_SYMMETRIES is [4, 5, 6, 7, 8, 9, 11]", () => {
+		expect([...SUPPORTED_SYMMETRIES]).toEqual([4, 5, 6, 7, 8, 9, 11]);
 	});
 	const childCounts: Record<number, number[]> = {
 		7: [212, 380, 472],
@@ -190,6 +190,87 @@ describe("higher symmetries via the de Bruijn fill (n = 7, 9, 11)", () => {
 	}
 	it("n=7 thin prototile self-composes to depth 2 gap/overlap-free", () => {
 		const rule = buildRule(7)!;
+		let tiles = seedSingle(rule, 1);
+		const a0 = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+		for (let d = 1; d <= 2; d++) {
+			tiles = substituteOnce(rule, tiles);
+			expect(edgeOveruse(tiles)).toBe(0);
+			const expected = a0 * Math.pow(rule.scaling, 2 * d);
+			const area = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+			expect(Math.abs(area - expected) / expected).toBeLessThan(1e-8);
+		}
+	});
+});
+
+// Even n share the same construction (the [0,2,…] edge word + the zero-rhombus boundary branch) and,
+// crucially, include a SQUARE prototile (x = n/2, 90°/90°). The gate is that the square fills and the
+// rule still self-composes gap/overlap-free — the paper's even-n "fixed point" is about the limit, not
+// iteration. Rings: n=4 → ℤ[ζ₁₆], n=6 → ℤ[ζ₂₄], n=8 → ℤ[ζ₃₂].
+describe("even symmetries via the de Bruijn fill (n = 4, 6, 8)", () => {
+	const childCounts: Record<number, number[]> = {
+		4: [40, 56],
+		6: [140, 240, 276],
+		8: [336, 616, 800, 864],
+	};
+	for (const n of [4, 6, 8]) {
+		describe(`n = ${n} (${2 * n}-fold)`, () => {
+			it("boundary word is point-symmetric for every prototile (incl. the square x=n/2)", () => {
+				for (let x = 1; x <= Math.floor(n / 2); x++) {
+					const dirs = boundaryWord(n, x);
+					const h = dirs.length / 2;
+					for (const d of dirs) expect(d).toBeLessThan(4 * n);
+					for (let i = 0; i < h; i++) expect(dirs[i + h]).toBe((dirs[i] + 2 * n) % (4 * n));
+				}
+			});
+			const rule = buildRule(n);
+			it("builds; every prototile (incl. the square) fills exactly with the expected child count", () => {
+				expect(rule).not.toBeNull();
+				expect(rule!.check.every((c) => c.ok)).toBe(true);
+				expect(rule!.prototiles.map((p) => p.children.length)).toEqual(childCounts[n]);
+			});
+			it("the 2n-fold star substitutes gap/overlap-free at depth 1", () => {
+				const seed0 = seedStar(rule!);
+				const a0 = seed0.reduce((s, t) => s + rhArea(t.corners), 0);
+				const tiles = substituteOnce(rule!, seed0);
+				expect(edgeOveruse(tiles)).toBe(0);
+				const expected = a0 * Math.pow(rule!.scaling, 2);
+				const area = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+				expect(Math.abs(area - expected) / expected).toBeLessThan(1e-8);
+			});
+		});
+	}
+
+	// The depth-2 self-composition gate. n=4 exercises both prototiles (thin + square) directly; n=6
+	// runs the square prototile itself; n=8 uses the thin tile (its children include the square, and
+	// its depth-2 stays affordable — the square's own depth-2 and the star depth-2 exceed 500k tiles).
+	it("n=4 self-composes to depth 2 gap/overlap-free (thin AND square)", () => {
+		const rule = buildRule(4)!;
+		for (const x of [1, 2]) {
+			let tiles = seedSingle(rule, x);
+			const a0 = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+			for (let d = 1; d <= 2; d++) {
+				tiles = substituteOnce(rule, tiles);
+				expect(edgeOveruse(tiles)).toBe(0);
+				const expected = a0 * Math.pow(rule.scaling, 2 * d);
+				const area = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+				expect(Math.abs(area - expected) / expected).toBeLessThan(1e-8);
+			}
+		}
+	});
+	it("n=6 square prototile self-composes to depth 2 gap/overlap-free", () => {
+		const rule = buildRule(6)!;
+		let tiles = seedSingle(rule, 3); // x=3 = the 90°/90° square
+		const a0 = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+		for (let d = 1; d <= 2; d++) {
+			tiles = substituteOnce(rule, tiles);
+			expect(edgeOveruse(tiles)).toBe(0);
+			const expected = a0 * Math.pow(rule.scaling, 2 * d);
+			const area = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
+			expect(Math.abs(area - expected) / expected).toBeLessThan(1e-8);
+		}
+	});
+	it("n=8 self-composes to depth 2 gap/overlap-free (thin tile; children include the square)", () => {
+		const rule = buildRule(8)!;
 		let tiles = seedSingle(rule, 1);
 		const a0 = tiles.reduce((s, t) => s + rhArea(t.corners), 0);
 		for (let d = 1; d <= 2; d++) {

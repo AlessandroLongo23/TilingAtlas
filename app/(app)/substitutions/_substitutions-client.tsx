@@ -354,6 +354,7 @@ export function SubstitutionsClient() {
 
 				<Section label="Symmetry">
 					<Segmented
+						wrap
 						options={SUPPORTED_SYMMETRIES.map((s) => ({ v: String(s), label: `${2 * s}-fold` }))}
 						value={String(N)}
 						onChange={(v) => {
@@ -477,11 +478,33 @@ function Segmented({
 	options,
 	value,
 	onChange,
+	wrap = false,
 }: {
 	options: { v: string; label: string }[];
 	value: string;
 	onChange: (v: string) => void;
+	wrap?: boolean; // wrap to multiple rows with individually-rounded chips (for the 7 symmetry options)
 }) {
+	if (wrap) {
+		return (
+			<div className="flex flex-wrap gap-1">
+				{options.map((o) => (
+					<button
+						key={o.v}
+						onClick={() => onChange(o.v)}
+						className={cn(
+							"px-2.5 py-1 text-xs rounded-control border transition-colors",
+							value === o.v
+								? "bg-accent-subtle text-accent font-medium border-accent/40"
+								: "border-line-subtle text-fg-muted hover:bg-surface-overlay",
+						)}
+					>
+						{o.label}
+					</button>
+				))}
+			</div>
+		);
+	}
 	return (
 		<div className="inline-flex rounded-control border border-line-subtle overflow-hidden">
 			{options.map((o) => (

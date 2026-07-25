@@ -1495,3 +1495,18 @@ suppressed) — no stroke geometry. Retired the 130k tile cap (2D budget) for a 
 edge attr byte-packed); the depth slider's max is now the EXACT deepest depth under budget from the
 substitution matrix, ending the "depth 2 → silently 380 tiles, capped at 130k" state. n=7 d2 = 147,088
 tiles renders (over 0, one boundary loop, GL path confirmed). Lint clean for these files.
+
+**2026-07-25 · CC.** Hexagonal grid shipped, closing Marek's 07-25 drop. The honeycomb is a lattice with a
+two-point basis, not a lattice, so the per-coset bitmask can't index it — it takes the ts PATCH path, which
+needed one `GRIDS` row per decoder and `is_patch_grid()` in place of `grid == "ts"`. **72,039 certificates,
+0 develop failures**, every k matching Marek: edges 36,062 (k≤9), colorings 23,977 (19,975 surjective, k≤8).
+Digon-free anchor = the 1 plain {6,3} tiling. Regressions hold (square BIJECTION 1420/1420, ts 3-colors
+byte-identical). First lazy shards on the Euclidean decoration shelves; `public/` 522 → 676 MB. Detail: NOTES §98.
+
+**2026-07-25 · CC.** Sub Rosa **even-n symmetries** n=4,6,8 (8/12/16-fold); `SUPPORTED_SYMMETRIES=[4,5,
+6,7,8,9,11]`. No new geometry — sigma/boundaryWord/de Bruijn fill were already general; even n add a
+SQUARE prototile (x=n/2) that fills and self-composes like any rhomb. The paper's even-n "fixed point"
+is about the self-similar limit, not gap-free iteration (skipped, like the rose sectors). Only work:
+rings ℤ[ζ₁₆],ℤ[ζ₃₂] in `Cyclotomic.ts` (n=6 reuses ζ₂₄) + a wrapping symmetry selector. Child counts
+n=4→[40,56] n=6→[140,240,276] n=8→[336,616,800,864]; depth-2 gap/overlap-free (over 0, area exact);
+seamless 12/16-fold flowers (Playwright, 1680/5376 tiles). 40/40 vitest, build clean. n=10/n≥13 next.

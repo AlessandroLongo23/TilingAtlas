@@ -27,11 +27,24 @@ up the general CAST infrastructure.
 
 ## Scope of the first cut (honest)
 
-**Shipped and validated: n = 5, 7, 9, 11** (10/14/18/22-fold). `SUPPORTED_SYMMETRIES
-= [5, 7, 9, 11]`; the UI symmetry selector offers all four. Child counts per prototile:
-n=5 → 72, 116; n=7 → 212, 380, 472; n=9 → 464, 868, 1164, 1320; n=11 → 860, 1644,
-2288, 2744, 2980. All self-compose gap/overlap-free (n=11 single→depth-2 = 2 032 624
-tiles, edge-overuse 0, area exact; the 2n-fold star meshes at depth 1 for each).
+**Shipped and validated: n = 4, 5, 6, 7, 8, 9, 11** (8/10/12/14/16/18/22-fold).
+`SUPPORTED_SYMMETRIES = [4, 5, 6, 7, 8, 9, 11]`; the UI symmetry selector offers all
+seven (wrapping to two rows). Child counts per prototile — odd: n=5 → 72, 116; n=7 →
+212, 380, 472; n=9 → 464, 868, 1164, 1320; n=11 → 860, 1644, 2288, 2744, 2980. Even:
+n=4 → 40, 56; n=6 → 140, 240, 276; n=8 → 336, 616, 800, 864. All self-compose
+gap/overlap-free (n=11 single→depth-2 = 2 032 624 tiles, edge-overuse 0, area exact;
+the 2n-fold star meshes at depth 1 for each).
+
+**Even n use the SAME construction** — no new geometry code. `sigma(n)` already emits
+the even `[0,2,…]` base word; `boundaryWord` already has the zero-rhombus branch; the
+de Bruijn fill and `protoOfRhomb` are general in n. Even n add a **square prototile**
+(x = n/2, 90°/90°); it fills and self-composes like any other rhomb — verified to
+depth 2 gap/overlap-free (n=4 both prototiles, n=6 the square, n=8 the thin tile whose
+children include squares; over 0, area exact). The paper's even-n "fixed-point"
+concern is about the self-similar *limit* and primitivity, NOT gap-free iteration —
+the same category as the corner rose sectors this engine skips. The only work was
+adding rings ℤ[ζ₁₆] (n=4) and ℤ[ζ₃₂] (n=8) to `Cyclotomic.ts` (n=6 reuses ℤ[ζ₂₄]).
+n=10 (ζ₄₀) and n ≥ 13 (ζ₅₂, …) need more rings; left for a follow-up.
 
 **The interior fill is the de Bruijn matched-line construction** (the paper's own
 method, §5 / refs [7,8]) — polynomial and dead-end-free, where the greedy/restart
@@ -164,5 +177,6 @@ per-prototile substitution rule rendered from the engine (not an image).
 ## Non-goals (first cut)
 
 Author-your-own edge rule; tile-lineage inspection; the catalogue/gallery + shard
-persistence; n≥7 (pending robust fill); even-n fixed-point handling; exact-area
-(Surd) generalization (the structural edge-count check suffices).
+persistence; n = 10 and n ≥ 13 (pending more ℤ[ζ₄ₙ] rings); the R₂¹-seeded
+self-similar limit / corner rose sectors; exact-area (Surd) generalization (the
+structural edge-count check suffices).
