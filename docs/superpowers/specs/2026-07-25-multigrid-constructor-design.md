@@ -86,9 +86,19 @@ one `nav.tsx` entry ("Multigrid", Snowflake icon). Dev hook `window.__multigrid`
   a before/after of one offset drag showing the tiling changed (phason flip).
 - `pnpm build` clean.
 
+## Split-view (added 2026-07-25)
+
+Shipped after the first cut. A "Split view" toggle (default on) splits the canvas into two panels:
+left = the n grid-line families in z-space (2D canvas, each family colour-coded, own pan/zoom);
+right = the dual rhombic tiling (the GL view). A thin overlay canvas on each panel draws the
+**duality link**: hovering a rhombus lights its two source lines and their crossing in the grid, and
+hovering near a crossing lights the corresponding rhombus in the tiling — the crossing↔rhombus
+correspondence made interactive. Powered by two fields added to `MgTile` (`site` = the crossing point
+in z-space, `fams` = the family pair). Lookup is a linear scan over the ~11k tiles per mouse-move.
+
 ## Non-goals (first cut)
 
-The duality split-view (grid lines ↔ dual, linked); the 3D cut-and-project / window visualization;
+The mesh↔vertex link (the subtler dual half); the 3D cut-and-project / window visualization;
 Penrose matching-rule enforcement or arrow decorations; de-duplicating against the Sub Rosa shelf
 (the same tilings via a different method is the point); persistence/gallery; n ≥ 11 (patch size, not
 math). Renaming `SubRosaGL` → a neutral `rhombGL` (reuse as-is for now).

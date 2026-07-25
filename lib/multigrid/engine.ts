@@ -27,6 +27,8 @@ export interface MgTile {
 	protoId: number; // min(|i−j|, n−|i−j|) ∈ 1..⌊n/2⌋
 	corners: Vector[]; // 4 world corners
 	vkeys: string[]; // the 4 corners' integer index-vector keys (exact vertex identity)
+	site: Vector; // the source line-crossing in grid (z) space — for the split-view duality link
+	fams: [number, number]; // the two grid families i<j whose crossing made this rhombus
 }
 
 /** Grid directions eⱼ = (cos πj/n, sin πj/n), j = 0..n−1. */
@@ -134,6 +136,8 @@ export function buildMultigrid(p: MultigridParams, maxTiles = 200_000): { tiles:
 						protoId: proto,
 						corners: [c00.v, c10.v, c11.v, c01.v],
 						vkeys: [c00.key, c10.key, c11.key, c01.key],
+						site: new Vector(px, py),
+						fams: [i, j],
 					});
 					if (tiles.length >= maxTiles) {
 						capped = true;

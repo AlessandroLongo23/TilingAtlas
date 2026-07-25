@@ -70,6 +70,22 @@ describe("multigrid builds valid edge-to-edge rhombic tilings (canonical offsets
 	});
 });
 
+describe("duality link fields (site + fams) for the split-view", () => {
+	it("every tile carries its crossing point and family pair, consistent with protoId and the window", () => {
+		const R = 8;
+		const { tiles } = buildMultigrid({ n: 6, offsets: canonicalOffsets(6), radius: R });
+		for (const t of tiles) {
+			const [i, j] = t.fams;
+			expect(i).toBeGreaterThanOrEqual(0);
+			expect(i).toBeLessThan(j);
+			expect(j).toBeLessThan(6);
+			expect(t.protoId).toBe(Math.min(j - i, 6 - (j - i)));
+			expect(Number.isFinite(t.site.x) && Number.isFinite(t.site.y)).toBe(true);
+			expect(Math.hypot(t.site.x, t.site.y)).toBeLessThanOrEqual(R + 1e-9); // crossing was in-window
+		}
+	});
+});
+
 describe("shared corners are exact (no float cracks)", () => {
 	it("every interior edge is shared by exactly two tiles keyed on integer vertex ids", () => {
 		const { tiles } = buildMultigrid({ n: 7, offsets: canonicalOffsets(7), radius: 7 });

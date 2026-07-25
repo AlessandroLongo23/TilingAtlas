@@ -1520,3 +1520,10 @@ tiling; presets Symmetric (2n-fold) / Randomize. Reuses the batched `SubRosaGL` 
 n=4..10 (8–20-fold): Ammann–Beenker, Penrose, 12-fold, … Verified — edge-to-edge (over 0, one loop,
 integer-K keyed), Penrose/AB prototiles + areas, 10-fold symmetric preset; Playwright shots of all
 three. 12/12 vitest, build clean. Spec: `superpowers/specs/2026-07-25-multigrid-constructor-design.md`.
+
+**2026-07-25 · CC.** `/multigrid` **duality split-view**. A "Split view" toggle (default on) shows the
+n grid-line families (z-space, colour-coded, own pan/zoom) beside the dual tiling; hovering a rhombus
+lights its two source lines + crossing in the grid, and hovering a crossing lights its rhombus — the
+crossing↔rhombus correspondence made interactive. Two `MgTile` fields (`site`, `fams`) carry the link;
+overlay canvases draw the highlight so the GL/grid bases don't re-render on hover. 13/13 vitest, build
+clean; Playwright confirms both hover directions. Spec updated (split-view section).
