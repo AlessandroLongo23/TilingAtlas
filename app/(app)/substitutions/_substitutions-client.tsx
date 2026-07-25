@@ -1,0 +1,364 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Vector } from "@/classes/Vector";
+import {
+	buildRule,
+	seedStar,
+	seedSingle,
+	substituteOnce,
+	type SubRosaRule,
+	type RenderTile,
+} from "@/lib/subrosa/engine";
+import { prototileAngles } from "@/lib/subrosa/sigma";
+import { cn } from "@/lib/utils/cn";
+
+// n=5 is the shipped, fully-validated symmetry (both Penrose-rhomb prototiles fill exactly).
+const N = 5;
+const MAX_TILES = 60_000;
+const MAX_DEPTH = { single: 3, star: 2 } as const;
+
+// Prototile hues (thin (1,4) vs thick (2,3)). Distinct, works in light and dark.
+const HUE = (protoId: number) => (protoId === 1 ? 265 : 175);
+
+type Seed = "single" | "star";
+
+function seedTiles(rule: SubRosaRule, seed: Seed, protoX: number): RenderTile[] {
+	return seed === "star" ? seedStar(rule) : seedSingle(rule, protoX);
+}
+
+function build(rule: SubRosaRule, seed: Seed, protoX: number, depth: number): { tiles: RenderTile[]; capped: boolean } {
+	let tiles = seedTiles(rule, seed, protoX);
+	let capped = false;
+	for (let i = 0; i < depth; i++) {
+		const next = substituteOnce(rule, tiles);
+		if (next.length > MAX_TILES) {
+			capped = true;
+			break;
+		}
+		tiles = next;
+	}
+	return { tiles, capped };
+}
+
+function bounds(tiles: RenderTile[]) {
+	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	for (const t of tiles)
+		for (const c of t.corners) {
+			if (c.x < minx) minx = c.x;
+			if (c.x > maxx) maxx = c.x;
+			if (c.y < miny) miny = c.y;
+			if (c.y > maxy) maxy = c.y;
+		}
+	return { minx, miny, maxx, maxy };
+}
+
+export function SubstitutionsClient() {
+	const rule = useMemo(() => buildRule(N), []);
+	const [seed, setSeed] = useState<Seed>("single");
+	const [protoX, setProtoX] = useState(2);
+	const [depth, setDepth] = useState(1);
+	const [showStroke, setShowStroke] = useState(true);
+
+	const maxDepth = MAX_DEPTH[seed];
+	const effDepth = Math.min(depth, maxDepth);
+
+	const { tiles, capped } = useMemo(
+		() => (rule ? build(rule, seed, protoX, effDepth) : { tiles: [], capped: false }),
+		[rule, seed, protoX, effDepth],
+	);
+
+	// view transform
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const view = useRef({ scale: 1, ox: 0, oy: 0, fitted: false });
+	const drag = useRef<{ x: number; y: number } | null>(null);
+
+	const fit = useCallback(() => {
+		const cv = canvasRef.current;
+		if (!cv || tiles.length === 0) return;
+		const b = bounds(tiles);
+		const w = cv.clientWidth, h = cv.clientHeight;
+		const bw = b.maxx - b.minx || 1, bh = b.maxy - b.miny || 1;
+		const s = 0.86 * Math.min(w / bw, h / bh);
+		view.current.scale = s;
+		view.current.ox = w / 2 - s * (b.minx + b.maxx) / 2;
+		view.current.oy = h / 2 + s * (b.miny + b.maxy) / 2; // y flipped
+		view.current.fitted = true;
+	}, [tiles]);
+
+	const draw = useCallback(() => {
+		const cv = canvasRef.current;
+		if (!cv) return;
+		const dpr = window.devicePixelRatio || 1;
+		const w = cv.clientWidth, h = cv.clientHeight;
+		if (cv.width !== w * dpr || cv.height !== h * dpr) {
+			cv.width = w * dpr;
+			cv.height = h * dpr;
+		}
+		const ctx = cv.getContext("2d")!;
+		ctx.save();
+		ctx.scale(dpr, dpr);
+		ctx.clearRect(0, 0, w, h);
+		const { scale, ox, oy } = view.current;
+		const tx = (p: Vector) => [ox + scale * p.x, oy - scale * p.y] as const;
+		const dark = document.documentElement.classList.contains("dark") ||
+			(document.documentElement.getAttribute("data-theme") === "dark");
+		const light = dark ? 62 : 66;
+		const strokeW = Math.max(0.3, Math.min(1.1, scale * 0.03));
+		ctx.lineJoin = "round";
+		for (const t of tiles) {
+			ctx.beginPath();
+			const [x0, y0] = tx(t.corners[0]);
+			ctx.moveTo(x0, y0);
+			for (let i = 1; i < t.corners.length; i++) {
+				const [x, y] = tx(t.corners[i]);
+				ctx.lineTo(x, y);
+			}
+			ctx.closePath();
+			ctx.fillStyle = `hsl(${HUE(t.protoId)} 58% ${light}%)`;
+			ctx.fill();
+			if (showStroke && scale > 2.2) {
+				ctx.lineWidth = strokeW;
+				ctx.strokeStyle = dark ? "rgba(0,0,0,0.55)" : "rgba(30,20,40,0.5)";
+				ctx.stroke();
+			}
+		}
+		ctx.restore();
+	}, [tiles, showStroke]);
+
+	// refit when the tile set changes; redraw on view/resize
+	useEffect(() => {
+		view.current.fitted = false;
+		fit();
+		draw();
+	}, [tiles, fit, draw]);
+
+	useEffect(() => {
+		const onResize = () => {
+			if (!view.current.fitted) fit();
+			draw();
+		};
+		window.addEventListener("resize", onResize);
+		return () => window.removeEventListener("resize", onResize);
+	}, [fit, draw]);
+
+	// pan / zoom
+	const onWheel = (e: React.WheelEvent) => {
+		e.preventDefault();
+		const cv = canvasRef.current!;
+		const rect = cv.getBoundingClientRect();
+		const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+		const f = Math.exp(-e.deltaY * 0.0016);
+		const v = view.current;
+		v.ox = mx - f * (mx - v.ox);
+		v.oy = my - f * (my - v.oy);
+		v.scale *= f;
+		draw();
+	};
+	const onDown = (e: React.MouseEvent) => {
+		drag.current = { x: e.clientX - view.current.ox, y: e.clientY - view.current.oy };
+	};
+	const onMove = (e: React.MouseEvent) => {
+		if (!drag.current) return;
+		view.current.ox = e.clientX - drag.current.x;
+		view.current.oy = e.clientY - drag.current.y;
+		draw();
+	};
+	const onUp = () => (drag.current = null);
+
+	// dev hook for visual checks
+	useEffect(() => {
+		(window as unknown as { __subrosa?: unknown }).__subrosa = {
+			setDepth,
+			setSeed,
+			setProtoX,
+			setShowStroke,
+			tileCount: () => tiles.length,
+		};
+	}, [tiles.length]);
+
+	if (!rule) {
+		return <div className="p-8 text-fg-muted">Sub Rosa engine failed to build for n={N}.</div>;
+	}
+
+	const angles = prototileAngles(N);
+	const areaFactor = rule.scaling * rule.scaling;
+
+	return (
+		<div className="flex-1 min-h-0 flex">
+			{/* control + info sidebar */}
+			<aside className="w-72 shrink-0 border-r border-line-subtle bg-surface-raised overflow-y-auto p-4 flex flex-col gap-5 text-sm">
+				<div>
+					<h1 className="text-base font-semibold text-fg">Sub Rosa</h1>
+					<p className="text-xs text-fg-muted mt-1 leading-relaxed">
+						Aperiodic rhombic substitution tilings with {2 * N}-fold symmetry (Kari &amp; Rissanen
+						2016). Vertices exact in ℤ[ζ₁₀]; the dissection is derived from the edge word Σ(n), not
+						traced from a figure.
+					</p>
+				</div>
+
+				<Section label="Symmetry">
+					<div className="flex items-center gap-2">
+						<span className="px-2 py-1 rounded-control bg-accent-subtle text-accent font-medium">
+							n = {N}
+						</span>
+						<span className="text-xs text-fg-muted">10-fold · Penrose rhombs</span>
+					</div>
+					<p className="text-[11px] text-fg-subtle mt-1">
+						n = 7+ pending a robust interior fill (see spec).
+					</p>
+				</Section>
+
+				<Section label="Seed">
+					<Segmented
+						options={[
+							{ v: "single", label: "Single tile" },
+							{ v: "star", label: "Star (10-fold)" },
+						]}
+						value={seed}
+						onChange={(v) => {
+							setSeed(v as Seed);
+							setDepth((d) => Math.min(d, MAX_DEPTH[v as Seed]));
+						}}
+					/>
+					{seed === "single" && (
+						<div className="mt-2">
+							<Segmented
+								options={angles.map((a) => ({ v: String(a.x), label: `${a.acuteDeg}°/${a.obtuseDeg}°` }))}
+								value={String(protoX)}
+								onChange={(v) => setProtoX(Number(v))}
+							/>
+						</div>
+					)}
+				</Section>
+
+				<Section label={`Iteration — depth ${effDepth} / ${maxDepth}`}>
+					<input
+						type="range"
+						min={0}
+						max={maxDepth}
+						value={effDepth}
+						onChange={(e) => setDepth(Number(e.target.value))}
+						className="w-full accent-[var(--accent)]"
+					/>
+					<div className="flex justify-between text-[11px] text-fg-subtle mt-1">
+						<span>{tiles.length.toLocaleString()} tiles</span>
+						{capped && <span className="text-amber-500">capped at {MAX_TILES.toLocaleString()}</span>}
+					</div>
+				</Section>
+
+				<Section label="Display">
+					<label className="flex items-center gap-2 text-xs text-fg-muted">
+						<input type="checkbox" checked={showStroke} onChange={(e) => setShowStroke(e.target.checked)} />
+						Tile outlines (when zoomed in)
+					</label>
+					<button
+						className="mt-2 px-2 py-1 rounded-control border border-line-subtle text-xs text-fg-muted hover:text-fg hover:bg-surface-overlay"
+						onClick={() => {
+							view.current.fitted = false;
+							fit();
+							draw();
+						}}
+					>
+						Reset view
+					</button>
+				</Section>
+
+				<Section label="How it works">
+					<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+						<dt className="text-fg-subtle">Inflation S(n)</dt>
+						<dd className="text-fg font-mono">{rule.scaling.toFixed(4)}</dd>
+						<dt className="text-fg-subtle">Area factor</dt>
+						<dd className="text-fg font-mono">{areaFactor.toFixed(2)}×</dd>
+						<dt className="text-fg-subtle">Prototiles</dt>
+						<dd className="text-fg">{rule.prototiles.length} rhombs</dd>
+						<dt className="text-fg-subtle">Edge word Σ</dt>
+						<dd className="text-fg font-mono text-[11px]">{rule.sigma.join(" ")}</dd>
+					</dl>
+					<div className="mt-3 space-y-3">
+						{rule.prototiles.map((p) => (
+							<RuleDiagram key={p.x} rule={rule} x={p.x} />
+						))}
+					</div>
+				</Section>
+			</aside>
+
+			{/* canvas */}
+			<div className="flex-1 min-h-0 relative">
+				<canvas
+					ref={canvasRef}
+					className="w-full h-full block cursor-grab active:cursor-grabbing"
+					onWheel={onWheel}
+					onMouseDown={onDown}
+					onMouseMove={onMove}
+					onMouseUp={onUp}
+					onMouseLeave={onUp}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+	return (
+		<div>
+			<div className="text-[11px] font-semibold uppercase tracking-wide text-fg-subtle mb-1.5">{label}</div>
+			{children}
+		</div>
+	);
+}
+
+function Segmented({
+	options,
+	value,
+	onChange,
+}: {
+	options: { v: string; label: string }[];
+	value: string;
+	onChange: (v: string) => void;
+}) {
+	return (
+		<div className="inline-flex rounded-control border border-line-subtle overflow-hidden">
+			{options.map((o) => (
+				<button
+					key={o.v}
+					onClick={() => onChange(o.v)}
+					className={cn(
+						"px-2.5 py-1 text-xs transition-colors",
+						value === o.v ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:bg-surface-overlay",
+					)}
+				>
+					{o.label}
+				</button>
+			))}
+		</div>
+	);
+}
+
+// Small SVG of one prototile's dissection (unit rhomb → its children), the "see how it works" cue.
+function RuleDiagram({ rule, x }: { rule: SubRosaRule; x: number }) {
+	const proto = rule.prototiles.find((p) => p.x === x)!;
+	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	for (const c of proto.children)
+		for (const v of c.corners) {
+			minx = Math.min(minx, v.x); maxx = Math.max(maxx, v.x);
+			miny = Math.min(miny, v.y); maxy = Math.max(maxy, v.y);
+		}
+	const W = 232, H = 90, pad = 6;
+	const bw = maxx - minx || 1, bh = maxy - miny || 1;
+	const s = Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh);
+	const tx = (v: Vector) => [pad + s * (v.x - minx), H - pad - s * (v.y - miny)] as const;
+	return (
+		<div>
+			<div className="text-[11px] text-fg-subtle mb-1">
+				{proto.x === 1 ? "36°/144°" : "72°/108°"} → {proto.children.length} tiles
+			</div>
+			<svg width={W} height={H} className="rounded border border-line-subtle bg-surface-overlay">
+				{proto.children.map((c, i) => {
+					const pts = c.corners.map((v) => tx(v).join(",")).join(" ");
+					return <polygon key={i} points={pts} fill={`hsl(${HUE(c.protoId)} 55% 62%)`} stroke="rgba(0,0,0,0.35)" strokeWidth={0.4} />;
+				})}
+			</svg>
+		</div>
+	);
+}

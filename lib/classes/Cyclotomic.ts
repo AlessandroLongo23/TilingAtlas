@@ -25,6 +25,8 @@ import { Vector } from "./Vector";
 
 /** Cyclotomic polynomials Φ_N as integer coefficient arrays (index = power of x), monic. */
 const PHI_POLY: Record<number, bigint[]> = {
+	// Φ₁₀ = x⁴ − x³ + x² − x + 1 (Sub Rosa n=5: vertices in ℤ[ζ₁₀], unit edges at 36° multiples)
+	10: [1n, -1n, 1n, -1n, 1n],
 	// Φ₁₂ = x⁴ − x² + 1
 	12: [1n, 0n, -1n, 0n, 1n],
 	// Φ₂₄ = x⁸ − x⁴ + 1
@@ -32,7 +34,7 @@ const PHI_POLY: Record<number, bigint[]> = {
 };
 
 /** Euler totient values for supported N (degree of Φ_N). */
-const PHI: Record<number, number> = { 12: 4, 24: 8 };
+const PHI: Record<number, number> = { 10: 4, 12: 4, 24: 8 };
 
 /**
  * The single shared ring for the current run. There is ONE arithmetic backend per run

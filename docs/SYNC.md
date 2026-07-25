@@ -1447,3 +1447,11 @@ the per-pixel disk shader (new `uColorsMode` fills a color-index field through t
 reuse icoFreedraw's helpers in `buildSphColors`. Colors CLASS × hyperbolic/spherical geometry, base/solid
 sub-axis, surjective-only. Shipped **~19.5k colorings, 25 MB** (16 hyp + 9 sph). Browser-verified, no
 regression. Detail: NOTES §91.
+
+**2026-07-25 · CC.** New **substitutions** section: a live Sub Rosa editor (`/substitutions`, nav "Sub
+Rosa"). First aperiodic-substitution class in the atlas — not enumerable, so a generator, not a catalogue.
+Engine `lib/subrosa/` derives everything from the edge word Σ(n): Σ→boundary→exact interior fill (ℤ[ζ₂ₙ],
+greedy ear-clip)→per-prototile rule→float iteration. Shipped **n=5** (10-fold, Penrose rhombs), validated
+exactly (both prototiles fill gap/overlap-free: 72 & 116 children; 12/12 vitest). n=7+ blocked on a robust
+fill (greedy dead-ends; de Bruijn matched-line is the next step). Added ℤ[ζ₁₀] to Cyclotomic. Spec:
+`docs/superpowers/specs/2026-07-25-subrosa-editor-design.md`; detail NOTES §93.
