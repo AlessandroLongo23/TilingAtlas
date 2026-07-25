@@ -299,18 +299,26 @@ const cdiv = (a: Vector, b: Vector): Vector => {
 };
 
 /**
- * Similarity g (rotation+scale+translation, optionally with a reflection) mapping the canonical
- * unit prototile corners C onto the tile's world corners Q. Determined from two corners; the
- * reflected branch is chosen when the direct one fails to reproduce corner 2.
+ * Similarity g mapping the canonical unit prototile corners C onto the tile's world corners Q.
+ * The tile's corners can be listed starting at any vertex and in either winding (children come out
+ * of the fill in an arbitrary order), so we search all four cyclic starts × {direct, reflected}
+ * and return the g that reproduces ALL four corners — the tile's true placement. Without this the
+ * wrong corner correspondence rotates a child's sub-dissection and tears the tiling at depth ≥2.
  */
 function similarity(C: Vector[], Q: Vector[]): (z: Vector) => Vector {
-	const aDir = cdiv(csub(Q[1], Q[0]), csub(C[1], C[0]));
-	const bDir = csub(Q[0], cmul(aDir, C[0]));
-	const gDir = (z: Vector) => cadd(cmul(aDir, z), bDir);
-	if (dist(gDir(C[2]), Q[2]) < 1e-6) return gDir;
-	const aR = cdiv(csub(Q[1], Q[0]), csub(cconj(C[1]), cconj(C[0])));
-	const bR = csub(Q[0], cmul(aR, cconj(C[0])));
-	return (z: Vector) => cadd(cmul(aR, cconj(z)), bR);
+	for (const refl of [false, true]) {
+		const c0 = refl ? cconj(C[0]) : C[0];
+		const c1 = refl ? cconj(C[1]) : C[1];
+		for (let k = 0; k < 4; k++) {
+			const a = cdiv(csub(Q[(k + 1) % 4], Q[k]), csub(c1, c0));
+			const b = csub(Q[k], cmul(a, c0));
+			const g = (z: Vector) => cadd(cmul(a, refl ? cconj(z) : z), b);
+			if (dist(g(C[2]), Q[(k + 2) % 4]) < 1e-6 && dist(g(C[3]), Q[(k + 3) % 4]) < 1e-6) return g;
+		}
+	}
+	// Fallback (degenerate input): direct 2-corner fit.
+	const a = cdiv(csub(Q[1], Q[0]), csub(C[1], C[0]));
+	return (z: Vector) => cadd(cmul(a, z), csub(Q[0], cmul(a, C[0])));
 }
 function dist(a: Vector, b: Vector): number {
 	return Math.hypot(a.x - b.x, a.y - b.y);

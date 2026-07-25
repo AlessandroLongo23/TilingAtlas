@@ -15,8 +15,10 @@ import { cn } from "@/lib/utils/cn";
 
 // n=5 is the shipped, fully-validated symmetry (both Penrose-rhomb prototiles fill exactly).
 const N = 5;
-const MAX_TILES = 60_000;
-const MAX_DEPTH = { single: 3, star: 2 } as const;
+const MAX_TILES = 90_000;
+// Depths where the patch renders within the tile budget (S(5)≈10 ⇒ ~100× tiles/step):
+// single 1→116→11.5k (depth 3 ≈ 1.1M, capped); star 10→720→71k.
+const MAX_DEPTH = { single: 2, star: 2 } as const;
 
 // Prototile hues (thin (1,4) vs thick (2,3)). Distinct, works in light and dark.
 const HUE = (protoId: number) => (protoId === 1 ? 265 : 175);
@@ -168,14 +170,37 @@ export function SubstitutionsClient() {
 
 	// dev hook for visual checks
 	useEffect(() => {
+		// Edge-consistency check on the rendered patch: round every tile edge to a grid and confirm
+		// no edge is shared by >2 tiles (overlap) and interior coverage is clean. A gap/overlap from a
+		// wrong child orientation shows up as edges used 1× deep inside the patch or 3+× at a seam.
+		const edgeCheck = () => {
+			const q = 1e5;
+			const key = (v: Vector) => `${Math.round(v.x * q)},${Math.round(v.y * q)}`;
+			const use = new Map<string, number>();
+			for (const t of tiles)
+				for (let i = 0; i < t.corners.length; i++) {
+					const a = key(t.corners[i]);
+					const b = key(t.corners[(i + 1) % t.corners.length]);
+					const e = a < b ? `${a}|${b}` : `${b}|${a}`;
+					use.set(e, (use.get(e) ?? 0) + 1);
+				}
+			let over = 0;
+			let single = 0;
+			for (const c of use.values()) {
+				if (c > 2) over++;
+				if (c === 1) single++;
+			}
+			return { tiles: tiles.length, edgesOverused: over, boundaryEdges: single };
+		};
 		(window as unknown as { __subrosa?: unknown }).__subrosa = {
 			setDepth,
 			setSeed,
 			setProtoX,
 			setShowStroke,
 			tileCount: () => tiles.length,
+			edgeCheck,
 		};
-	}, [tiles.length]);
+	}, [tiles]);
 
 	if (!rule) {
 		return <div className="p-8 text-fg-muted">Sub Rosa engine failed to build for n={N}.</div>;
