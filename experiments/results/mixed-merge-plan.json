@@ -1,0 +1,640 @@
+{
+ "_meta": {
+  "generated_from": "experiments/results/mixed-atlas-unmerged.json",
+  "families": 93,
+  "duplicates": 4,
+  "merges": 6,
+  "ships": 83,
+  "note": "consumed by scripts/build-mixed-atlas.ts; spec docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md"
+ },
+ "duplicates": [
+  {
+   "absorbed": "ctrnact-mixed-family-k1-14",
+   "into": "ctrnact-mixed-family-k1-06",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-31",
+   "into": "ctrnact-mixed-family-k1-11",
+   "kind": "forward"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-32",
+   "into": "ctrnact-mixed-family-k1-12",
+   "kind": "forward"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-18",
+   "into": "ctrnact-mixed-family-k1-15",
+   "kind": "reversed"
+  }
+ ],
+ "merges": [
+  {
+   "id": "ctrnact-mixed-family-k1-04",
+   "aliases": [
+    "ctrnact-mixed-family-k1-07"
+   ],
+   "coordinate": "sweep",
+   "range": [
+    0.0,
+    120
+   ],
+   "joinAt": 60,
+   "defaultDeg": 30.0,
+   "segments": [
+    {
+     "sourceId": "ctrnact-mixed-family-k1-04",
+     "range": [
+      0.0,
+      60
+     ],
+     "alphaOf": {
+      "m": -1,
+      "c": 150.0
+     },
+     "alpha0Deg": 120,
+     "alphaRangeDegOpen": [
+      90,
+      150
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "sourceId": "ctrnact-mixed-family-k1-07",
+     "range": [
+      60,
+      120
+     ],
+     "alphaOf": {
+      "m": 1,
+      "c": 0
+     },
+     "alpha0Deg": 105,
+     "alphaRangeDegOpen": [
+      60,
+      120
+     ],
+     "pose": {
+      "rot": [
+       0.8660254037844387,
+       0.49999999999999994
+      ],
+      "rotDeg": 30,
+      "conj": false,
+      "translate": [
+       1.8660254037844388,
+       0.49999999999999994
+      ]
+     },
+     "starFlags": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-05",
+   "aliases": [
+    "ctrnact-mixed-family-k1-15"
+   ],
+   "coordinate": "sweep",
+   "range": [
+    0.0,
+    180
+   ],
+   "joinAt": 60,
+   "defaultDeg": 15.0,
+   "segments": [
+    {
+     "sourceId": "ctrnact-mixed-family-k1-05",
+     "range": [
+      0.0,
+      60
+     ],
+     "alphaOf": {
+      "m": 1,
+      "c": 120.0
+     },
+     "alpha0Deg": 135,
+     "alphaRangeDegOpen": [
+      120,
+      180
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "sourceId": "ctrnact-mixed-family-k1-15",
+     "range": [
+      60,
+      180
+     ],
+     "alphaOf": {
+      "m": 1,
+      "c": 0
+     },
+     "alpha0Deg": 90,
+     "alphaRangeDegOpen": [
+      60,
+      180
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       -4.440892098500626e-16,
+       -3.4641016151377544
+      ]
+     },
+     "starFlags": [
+      true,
+      true,
+      true
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-05",
+   "aliases": [
+    "ctrnact-mixed-family-k2-06"
+   ],
+   "coordinate": "sweep",
+   "range": [
+    0.0,
+    120
+   ],
+   "joinAt": 60,
+   "defaultDeg": 30.0,
+   "segments": [
+    {
+     "sourceId": "ctrnact-mixed-family-k2-05",
+     "range": [
+      0.0,
+      60
+     ],
+     "alphaOf": {
+      "m": -1,
+      "c": 120.0
+     },
+     "alpha0Deg": 90,
+     "alphaRangeDegOpen": [
+      60,
+      120
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true
+     ]
+    },
+    {
+     "sourceId": "ctrnact-mixed-family-k2-06",
+     "range": [
+      60,
+      120
+     ],
+     "alphaOf": {
+      "m": 1,
+      "c": 0
+     },
+     "alpha0Deg": 90,
+     "alphaRangeDegOpen": [
+      60,
+      120
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       1.5,
+       0.8660254037844386
+      ]
+     },
+     "starFlags": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-45",
+   "aliases": [
+    "ctrnact-mixed-family-k2-46"
+   ],
+   "coordinate": "theta",
+   "range": [
+    90.0,
+    240.0
+   ],
+   "joinAt": 180.0,
+   "defaultDeg": 210.0,
+   "segments": [
+    {
+     "sourceId": "ctrnact-mixed-family-k2-46",
+     "range": [
+      90.0,
+      180.0
+     ],
+     "alphaOf": {
+      "m": 1,
+      "c": -90.0
+     },
+     "alpha0Deg": 60,
+     "alphaRangeDegOpen": [
+      0,
+      90
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+     ]
+    },
+    {
+     "sourceId": "ctrnact-mixed-family-k2-45",
+     "range": [
+      180.0,
+      240.0
+     ],
+     "alphaOf": {
+      "m": -1,
+      "c": 270.0
+     },
+     "alpha0Deg": 60,
+     "alphaRangeDegOpen": [
+      30,
+      90
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-47",
+   "aliases": [
+    "ctrnact-mixed-family-k2-49"
+   ],
+   "coordinate": "theta",
+   "range": [
+    105.0,
+    240.0
+   ],
+   "joinAt": 180.0,
+   "defaultDeg": 225.0,
+   "segments": [
+    {
+     "sourceId": "ctrnact-mixed-family-k2-49",
+     "range": [
+      105.0,
+      180.0
+     ],
+     "alphaOf": {
+      "m": 1,
+      "c": -105.0
+     },
+     "alpha0Deg": 60,
+     "alphaRangeDegOpen": [
+      0,
+      75
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+     ]
+    },
+    {
+     "sourceId": "ctrnact-mixed-family-k2-47",
+     "range": [
+      180.0,
+      240.0
+     ],
+     "alphaOf": {
+      "m": -1,
+      "c": 285.0
+     },
+     "alpha0Deg": 60,
+     "alphaRangeDegOpen": [
+      45,
+      105
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-58",
+   "aliases": [
+    "ctrnact-mixed-family-k2-59"
+   ],
+   "coordinate": "theta",
+   "range": [
+    90.0,
+    240.0
+   ],
+   "joinAt": 180.0,
+   "defaultDeg": 210.0,
+   "segments": [
+    {
+     "sourceId": "ctrnact-mixed-family-k2-59",
+     "range": [
+      90.0,
+      180.0
+     ],
+     "alphaOf": {
+      "m": 1,
+      "c": -90.0
+     },
+     "alpha0Deg": 60,
+     "alphaRangeDegOpen": [
+      0,
+      90
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+     ]
+    },
+    {
+     "sourceId": "ctrnact-mixed-family-k2-58",
+     "range": [
+      180.0,
+      240.0
+     ],
+     "alphaOf": {
+      "m": -1,
+      "c": 270.0
+     },
+     "alpha0Deg": 60,
+     "alphaRangeDegOpen": [
+      30,
+      90
+     ],
+     "pose": {
+      "rot": [
+       1.0,
+       0.0
+      ],
+      "rotDeg": 0,
+      "conj": false,
+      "translate": [
+       0.0,
+       0.0
+      ]
+     },
+     "starFlags": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+     ]
+    }
+   ]
+  }
+ ],
+ "aliases": {
+  "ctrnact-mixed-family-k1-07": {
+   "to": "ctrnact-mixed-family-k1-04",
+   "uOf": {
+    "m": 1,
+    "c": 0
+   }
+  },
+  "ctrnact-mixed-family-k1-15": {
+   "to": "ctrnact-mixed-family-k1-05",
+   "uOf": {
+    "m": 1,
+    "c": 0
+   }
+  },
+  "ctrnact-mixed-family-k2-06": {
+   "to": "ctrnact-mixed-family-k2-05",
+   "uOf": {
+    "m": 1,
+    "c": 0
+   }
+  },
+  "ctrnact-mixed-family-k2-46": {
+   "to": "ctrnact-mixed-family-k2-45",
+   "uOf": {
+    "m": 1,
+    "c": 90.0
+   }
+  },
+  "ctrnact-mixed-family-k2-49": {
+   "to": "ctrnact-mixed-family-k2-47",
+   "uOf": {
+    "m": 1,
+    "c": 105.0
+   }
+  },
+  "ctrnact-mixed-family-k2-59": {
+   "to": "ctrnact-mixed-family-k2-58",
+   "uOf": {
+    "m": 1,
+    "c": 90.0
+   }
+  },
+  "ctrnact-mixed-family-k1-14": {
+   "to": "ctrnact-mixed-family-k1-06",
+   "uOf": {
+    "m": -1,
+    "c": 270
+   }
+  },
+  "ctrnact-mixed-family-k1-31": {
+   "to": "ctrnact-mixed-family-k1-11",
+   "uOf": {
+    "m": 1,
+    "c": 0
+   }
+  },
+  "ctrnact-mixed-family-k1-32": {
+   "to": "ctrnact-mixed-family-k1-12",
+   "uOf": {
+    "m": 1,
+    "c": 0
+   }
+  },
+  "ctrnact-mixed-family-k1-18": {
+   "to": "ctrnact-mixed-family-k1-05",
+   "uOf": {
+    "m": -1,
+    "c": 240
+   }
+  }
+ }
+}

@@ -25,6 +25,33 @@ export interface ParametricCellData {
 	}[];
 	cellPolygons: { n: number; star?: boolean; vertices: ParamTerm[][] }[];
 	basis: [ParamTerm[], ParamTerm[]];
+	// MERGED families only (single parameter): two exported families that are the two halves of one
+	// continuous deformation, cut where the flexing tile's alternating vertex passes through 180° — on one
+	// side of that angle the tile is a concave star, on the other a convex 2n-gon, so the exporter files
+	// them as different families. `segments` splices them back into one monotone slider whose domain is
+	// params[0].alphaRangeDegOpen. Absent for the ordinary single-cell families, and `cellPolygons`/`basis`
+	// above stay the FIRST segment's, so a consumer that ignores this field still renders a real tiling
+	// (half the sweep) rather than nothing. Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md
+	segments?: ParamSegment[];
+}
+
+/** One half of a merged family: the source family's symbolic cell plus where it sits on the merged slider.
+ *  Segments are sorted, contiguous, and tile `alphaRangeDegOpen` exactly; the seam belongs to the lower
+ *  segment, which is immaterial because both sides evaluate to the same cell there — that agreement is
+ *  what makes the merge legal, and `paramCell.test.ts` asserts it. */
+export interface ParamSegment {
+	sourceId: string; // the pre-merge family id this half came from (kept for provenance + alias remaps)
+	range: [number, number]; // the merged coordinate's span covered by this segment
+	alphaOf: { m: number; c: number }; // this segment's own α = c + m·u, with m = ±1 (|dα/du| = 1)
+	alpha0Deg: number; // the segment's own δ origin — NOT params[0].alpha0Deg, which is the first segment's
+	cellPolygons: { n: number; star?: boolean; vertices: ParamTerm[][] }[];
+	basis: [ParamTerm[], ParamTerm[]];
+	// Provenance only. The two halves were exported in different frames, so the builder BAKED this isometry
+	// into the terms above to make the seam continuous — nothing at runtime re-applies it. Recorded so the
+	// alignment is auditable, and absent when it was the identity.
+	poseDeg?: number;
+	poseConj?: boolean;
+	poseTranslate?: [number, number];
 }
 
 /** Slider grid for the free angles, in degrees. Every open endpoint the exporters emit is a multiple of
@@ -75,8 +102,38 @@ function deltasFor(pc: ParametricCellData, alphaDeg: number | number[]): number[
 	});
 }
 
+/** The segment of a merged family covering a slider position — the lower segment at a seam, the nearest
+ *  one for a position outside the range (the caller has already clamped, this is belt-and-braces). Returns
+ *  null for an ordinary single-cell family, which is the signal to take the unsegmented path. */
+export function segmentAt(pc: ParametricCellData, u: number): ParamSegment | null {
+	const segs = pc.segments;
+	if (!segs?.length) return null;
+	for (const s of segs) if (u >= s.range[0] && u <= s.range[1]) return s;
+	return u < segs[0].range[0] ? segs[0] : segs[segs.length - 1];
+}
+
 /** Evaluate the family at a slider position (one number for 1-param, an array for N-param); parseBaseCell-ready. */
 export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | number[]): TranslationalCellData {
+	// A merged family carries one parameter and a segment per half: hold the slider position inside the
+	// merged open interval exactly as the unsegmented path does, pick the segment, map the position onto
+	// that segment's own α, and evaluate ITS cell against ITS δ origin. The seam is deliberately NOT
+	// nudged — it is a genuine tiling (no tile has zero area there), which is why the two halves are one
+	// family at all; only the outer ends are degenerate and need ALPHA_EPS_DEG.
+	if (pc.segments?.length) {
+		const [lo, hi] = pc.params[0].alphaRangeDegOpen;
+		const raw = Array.isArray(alphaDeg) ? (alphaDeg[0] ?? pc.params[0].defaultAlphaDeg) : alphaDeg;
+		const u = Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, raw));
+		const seg = segmentAt(pc, u)!;
+		const deltas = [((seg.alphaOf.c + seg.alphaOf.m * u) - seg.alpha0Deg) * (Math.PI / 180)];
+		return {
+			cellPolygons: seg.cellPolygons.map((poly) => ({
+				n: poly.n,
+				...(poly.star ? { star: true } : {}),
+				vertices: poly.vertices.map((v) => evalTerms(v, deltas)),
+			})),
+			basis: [evalTerms(seg.basis[0], deltas), evalTerms(seg.basis[1], deltas)],
+		};
+	}
 	const deltas = deltasFor(pc, alphaDeg);
 	return {
 		cellPolygons: pc.cellPolygons.map((poly) => ({

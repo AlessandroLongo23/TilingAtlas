@@ -3,7 +3,7 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-07-11, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-07-25, CC
 > (acting as TA too, AL authorization 2026-07-10).
 
 ## Knowledge model (read once, then follow it)
@@ -20,6 +20,44 @@ Two tiers. Do not mix them.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
 
+## Marek's 2026-07-25 drop: 4 new hyperbolic color bases in, 2 hexagon corpora parked (NOTES §96)
+
+★★ **The colors class goes from 2 hyperbolic bases to 6.** `hexagons_edges.zip` + `07-25_colors.zip`
+extracted to `materials/corpora/` (six corpora, 127,584 certificates; Marek's own `results_2026-07-25.txt`
+k-counts reproduce exactly from the certificate files). Shipped {8,3} {5,4} {6,4} {4,5}: four rows in
+`develop_hyp_colors.BASES` were the whole decoder change, since `alphabet()` already solves ℓ from (p, q).
+67,545 certificates decoded in 74 s, **0 develop failures**, 46,548 surjective colorings, every k Marek
+solved. 2.6 MB eager + 29.8 MB lazy (`public/hyperbolic-colors/` 16 → 47 MB). `HYP_COLORS_BASES` drives
+the loader, /library k-chips and /play deep links, so the app change is 4 rows there + 4 labels in
+`catalogue-list-panel.tsx`. Verified in the running app at `hc45-1`, `hc64-2`, `hc83-5`, the lazy
+`hc45-2` deep link, and /library `geo=hyperbolic&dec=colorings&k=4` (1,424 cards = 512 + 906 + 6). ⚑ {5,4}
+starts at k=2 on purpose: three colors need ≥2 colored vertex classes there.
+⚑ **Parked: `hexagons_edges` (36,062 certs, k≤9) and `hexagons_3_colors` (23,977, k≤8).** Both Euclidean
+{6,3}, and `develop_freedraw.GRIDS` has no hexagonal grid. Tractable-looking (A6 = 4 of the 30°-units;
+honeycomb steps embed in ℤ + ℤω as three ± axis pairs like `TR_STEP`) but unbuilt. Doing it completes the
+Euclidean colors shelf across all three regular grids.
+⚑ **This work is UNCOMMITTED**, in the same shared tree as the mixed-shelf merge below.
+
+## The 30/150 rhombus: 12 new mixed families, 71 → 83 (2026-07-25, NOTES §97) — UNCOMMITTED
+
+★★ **AL was right and I was wrong.** One palette line (`cx4-30.150`, angles [2,10,2,10]) takes the k=1
+mixed export from 19 families to 33 — **12 net new** after two turn out congruent to shipped ones. My
+objection (α ∈ (0°,60°) is a proven range, so the rhombus is already in there) confused the *validity* of a
+found family with the *discoverability* of one: families are recognised from DISCRETE seeds on the D=24 grid,
+so a topology whose only discrete realisation sits at an unrepresented α is unreachable. Visible in the data
+— 11 of the 12 have α ∈ (0°,60°), and the pre-existing 4-gon seeds (60/120, 75/105) both sit outside it.
+Base arm reproduced the shipped 19 **byte-identical**, so the delta is clean. Shipped: 83 entries (k=1
+15 → 27), each re-verified through the app's own `evaluateParamCell` (Σ area == |det| at 5 α samples).
+`scripts/stabilize-family-ids.mjs` keeps shipped ids and default α stable across the re-export.
+⚑ `maxValence=8` is an **incomplete** regime here (twelve 30° rhombus corners = a real 360° vertex a
+valence-8 word cannot express) ⇒ **12 is a lower bound**. k=2 not run with the rhombus. 45/135 and 15/165
+still unseeded. No new JOINs — the 12 are self-contained arcs.
+⚑ **Provenance bug:** `make PALETTE=isotoxal-star-z24` does not reproduce the shipped tables —
+`EU_PRUNE_OVERLAP=1` is never set by the Makefile, so a rebuild silently yields 285,899 vertexdefs against
+the shipped 34,329. The flag belongs in the palette JSON.
+⚑ **UNCOMMITTED, and blocked on the merge pass**: the rebuilt `public/reference-atlas-mixed.json` carries
+`segments`, which only the uncommitted `lib/utils/paramCell.ts` understands. Commit the merge sources first.
+
 ## Decoration axis shipped (2026-07-25, NOTES §95)
 
 ★★ **The shelf now says what kind of thing each row is.** `Decoration = tilings | edges | colorings` sits
@@ -33,6 +71,26 @@ strapwork is an overlay), though it is the one shelf of the eight that is transc
 Old `class=freedraw` / `class=colors` links promote to `dec=edges` / `dec=colorings`.
 Spec: `superpowers/specs/2026-07-25-decoration-axis-design.md`.
 ⚑ Next: fold the shape axis itself onto the period `p` (TILE_TAXONOMY §9), which is the other half of §3.
+
+## Mixed shelf merged (2026-07-25, NOTES §92–§94) — merge sources COMMITTED
+
+★★ **79 mixed entries → 71, each a single continuous sweep** (counts pre-rhombus; the shelf is 83 after
+the 30/150 re-export above, still with the same 6 merged arcs). AL spotted that k2-58/k2-59 are two halves
+of one deformation, cut where the flexing tile's alternating vertex crosses 180° (concave star ↔ convex
+2n-gon). Census `scripts/scan-family-joins.py`: 6 mergeable arcs (all clean 2-paths) + 2 α-reversal
+duplicates. Merge criterion is AL's — the branch that continues the family is the one with the SAME
+rigid/flexing tile partition; congruence of the limit tiling alone is not enough (3 branches meet at the
+k2-58 limit). Merged slider = `theta` (the flexing tile's alternating angle, join at 180°) on 3 arcs,
+`sweep` (cumulative angle) on 3 where several orbits straighten from different sides. Seam pose and star
+flags are baked at build time so nothing jumps or changes colour at the join.
+**Committed on `feat/subrosa-editor`: the merge SOURCES only** — `paramCell.ts` (`segments`), the scanner,
+the builder, the alias resolver + table, the slider label, the spec and the test. This is what §97 above was
+blocked on. Deliberately NOT in that commit: `public/reference-atlas-mixed.json` and
+`experiments/results/mixed-atlas-build.log`, which now carry the 30/150 rhombus re-export and belong with
+it — at the merge commit the shipped shelf is still HEAD's unsegmented 79, which the segment-aware evaluator
+reads unchanged. Spec: `superpowers/specs/2026-07-25-mixed-family-merge-design.md`.
+⚑ Next: same sweep on the isotoxal/composable/scaled shelves, then move the merge upstream into
+`export_combined_families.py` so the searcher emits merged families directly.
 
 ## Frontier (2026-07-23) — the hyperbolic shelf on exact identity
 

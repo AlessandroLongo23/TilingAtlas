@@ -8,6 +8,14 @@ import { useMetaKeyLabel } from "@/lib/hooks/useMetaKeyLabel";
 
 const GREEK = ["α", "β", "γ", "δ", "ε"];
 const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
+// A MERGED family's slider is not the exported α: it spans two halves spliced at a straight-vertex limit,
+// so it carries its own coordinate name and must not be mislabelled α. `theta` is the flexing tile's own
+// alternating interior angle (180° = the join); `sweep` is cumulative angle travelled, used where several
+// tile orbits straighten from different sides at once and no single tile angle is monotone.
+const NAMED_GLYPH: Record<string, { glyph: string; label: string }> = {
+	theta: { glyph: "θ", label: "theta" },
+	sweep: { glyph: "s", label: "sweep" },
+};
 
 // The free-angle slider overlay for a parametric tiling family. Deliberately a small leaf that
 // subscribes ONLY to `familyAlphas`: dragging writes the new tuple back to the store, which re-renders
@@ -34,7 +42,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 				{paramCell.params.map((p, j) => (
 					<div key={j} className="flex items-center gap-3">
 						<span className="text-xs font-medium text-accent whitespace-nowrap w-24">
-							{(GREEK[j] ?? `α${j + 1}`)} = {effAlphas[j].toFixed(1)}°
+							{(NAMED_GLYPH[p.name]?.glyph ?? GREEK[j] ?? `α${j + 1}`)} = {effAlphas[j].toFixed(1)}°
 						</span>
 						<RangeInput
 							min={p.alphaRangeDegOpen[0]}
@@ -43,7 +51,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 							value={effAlphas[j]}
 							onChange={(v) => setAlphaAt(j, v)}
 							className="w-56"
-							aria-label={`family angle ${GREEK_NAMES[j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
+							aria-label={`family angle ${NAMED_GLYPH[p.name]?.label ?? GREEK_NAMES[j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
 						/>
 						<span className="text-[10px] text-fg-muted whitespace-nowrap font-mono">
 							({p.alphaRangeDegOpen[0].toFixed(0)}°, {p.alphaRangeDegOpen[1].toFixed(0)}°)

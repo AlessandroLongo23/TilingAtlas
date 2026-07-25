@@ -5561,3 +5561,159 @@ page was colorings.
 beside the geometry segment. (2) The decoration segments have no "All" on /play (geometry has none either);
 if browsing across all three is ever wanted there, that is where it goes. (3) Both pre-existing test
 failures from §94 still stand, unchanged and unrelated.
+
+## §92 — The concavity cut: two "families" that are one arc, and two duplicates on the mixed shelf (2026-07-25)
+
+AL, sweeping `ctrnact-mixed-family-k2-58` (`4.4α.3*.6*`, α ∈ (30°, 90°)) and `-k2-59` (`4.4α.6α.6*`,
+α ∈ (0°, 90°)) on /play: these are the same tiling deformed continuously, split into two entries only
+because the flexing tile is detected first as a three-pointed star and then as a convex polygon. Verified.
+The mechanism is exactly as described; the identification is not two-way but three-way, which changes what
+can be done about it. Scanner `scripts/scan-family-joins.py`, log
+`experiments/results/mixed-family-joins-2026-07-25.log`.
+
+**The cut is measurable and lands on a straight angle.** In both entries the flexing tile is a hexagon
+whose alternating interior angle θ is linear in α: θ = 270° − α on 58 (240° at α=30°, down to 180° at
+α=90°) and θ = 90° + α on 59 (90° at α=0°, up to 180° at α=90°). The complementary class is 240° − θ,
+a hexagon's alternating angles summing to 240°. At θ = 180° the hexagon degenerates to an equilateral
+triangle of side 2 (area √3, each side two unit edges); θ > 180° is the concave `3*` branch, θ < 180° the
+convex `6α` branch, and the palette files those as different tiles, hence different families. So **θ, not
+α, is the honest global coordinate** for the joined object: one monotone sweep across (90°, 240°) with the
+cut at 180°. α *folds* there, running 30°→90° on one branch and 90°→0° on the other. That is why the two
+ranges overlap on (30°, 90°) while still being different tilings at every shared α but 90°: at α=60° the
+flexing tile has area 0.866 on 58 against 2.366 on 59, and |det| is 12.53 against 15.53.
+
+**Correction: three branches, so a merge is not well defined.** `k2-56` (`4.4α.6α.6*`, same symbol as 59)
+develops the *identical* tiling at α=90°, and 56/58/59 are pairwise non-congruent at every other α sampled.
+Congruence here is a lattice-expanded patch of radius 5 anchored on the 6-pointed star's centroid and
+compared by radial distance multiset, so it is free of rotation, reflection and translation. At the limit
+the hexagon carries three exactly-180° vertices: the triangle's side midpoints are FALSE vertices and the
+tiling is not edge-to-edge. A tiling with false vertices is a branch point of deformation space, one branch
+per way of activating them, so "58 and 59 are one family" cannot be implemented as a merge without
+arbitrarily preferring 58↔59 over 58↔56 or 56↔59. The connectivity is a graph, not a set of intervals. The
+surfacing that stays true to the geometry is a *link* ("continues through α=90° into …"), not a
+concatenated slider.
+
+**Shelf-wide: 6 verified joins, 79 entries but 77 families.** The joins are k1-04 ↔ k1-07 (all three tiles
+flip concave/convex at once: `8α.3*.6*` @90° = `6α.12α.4*` @60°), k1-05 ↔ k1-15 (`12α.3*` @180° = `6α.6*`
+@60°), k2-05 ↔ k2-06 (same symbol, both @60°), k2-45 ↔ k2-46 (@90°), k2-47 ↔ k2-49 (`3*` @105° = `6α` @75°,
+so the cut is not always at 90°), and the 3-branch k2-56/58/59 (@90°). The concave/convex pairing is always
+`nS` ↔ `cx(2n)` meeting where the 2n-gon's alternating angle passes 180° and it degenerates to a regular
+n-gon with doubled edges: 3*/6α at a triangle, 4*/8α at a square, 6*/12α at a hexagon.
+
+**Two shipped duplicates (⚑ fix in `export_combined_families.py`).** k1-06 ≡ k1-14 (`8α.4*`) and
+k1-15 ≡ k1-18 (`6α.6*`), each pair the same family under α ↦ (lo+hi) − α, congruent at all five interior
+samples. A convex isotoxal 2n-gon's alternating angles sum to a constant (270° for cx8, 240° for cx6), so
+that reversal swaps the two angle classes, which is the same tile rotated one step; a family invariant
+under the relabeling is exported twice. The pruner does not quotient by it. The mixed shelf is therefore
+**77 distinct families, not 79** — and the reversal also fakes a "join" between each duplicate pair, since
+the two entries share both endpoints.
+
+**Joins are not collapses, and the scan must not conflate them.** 20 further endpoint groups are shared
+because a tile reaches zero area (five `4α.8α.4*`/`4α.4*` entries all meet at α=0°). Those are not one
+family: the limit is a *simpler* tiling that unrelated arcs happen to degenerate to, a singular junction
+rather than a passage. The scanner separates the two cases by the minimum tile area at the endpoint, and
+rejects candidates whose patches are not congruent (2 such collisions: k1-03/k2-04 and k2-54/k2-55 match on
+tile density but not on geometry).
+
+**A doc comment that is now known false.** `lib/utils/paramCell.ts` justifies `ALPHA_EPS_DEG` with "at
+either endpoint the family degenerates (a tile collapses to zero area)". That holds at the collapse ends
+(58 at α=30° the 3-star hits zero area, 59 at α=0° the rhombus does) but not at a concavity cut: at 58's
+α=90° nothing collapses, the flexing hexagon is at its *largest* (√3), and the limit is a genuine tiling
+that the open interval excludes. The eps nudge is harmless there; the stated reason is wrong.
+
+⚑ Open. (1) The duplicate quotient in the exporter. (2) Whether the atlas should link joined branches in
+the UI, and whether the count claim should be stated per *arc* or per *combinatorial family* — they differ
+by 6 on this shelf. (3) The scan drives one parameter to an endpoint with the others at their default; all
+79 mixed families are single-parameter so it is complete here, but on the isotoxal/composable shelves the
+validity region is a box and this samples only its corners.
+
+**§92 addendum — AL's criterion resolves the branch point, and it is unique on the whole shelf.** The
+"merge is not well defined" objection above is answered. At a flatten node the natural continuation is the
+branch that keeps the SAME rigid/flexing partition of the tile set: which tiles morph and which stay put.
+Measured over 7 interior samples per family, 58 and 59 both read `6 rigid squares · 3 flexing cx4 · 2
+flexing hexagons · 1 RIGID 12-gon star`, while 56 reads `3 rigid squares · 6 flexing cx4 · 2 flexing
+hexagons · 1 FLEXING 12-gon star`. AL's phrasing — in 58/59 the central six-pointed star stays fixed, in 56
+it morphs along with the rhombi and hexagons — is exactly the `1x12` vs `1x12*` difference, plus a 6/3
+swap in how many squares are rigid. So the pairing 58↔59 is forced and 56 is excluded on a geometric
+invariant, not a preference.
+
+Applied to all 6 verified joins the rule gives a unique pairing at every one: k1-04↔k1-07, k1-05↔k1-15,
+k2-05↔k2-06, k2-45↔k2-46, k2-47↔k2-49, k2-58↔k2-59. The single apparent ambiguity (k1-05/k1-15/k1-18 all
+sharing `2x6* 1x12*`) dissolves once the α-reversal duplicate above is quotiented, since k1-18 IS k1-15.
+So the mixed shelf is 79 shipped entries = 77 distinct families = **71 maximal morph-arcs**, and each arc
+carries a monotone coordinate: for 58∪59 it is θ, the flexing hexagon's alternating interior angle, sweeping
+(90°, 240°) with the cut at 180° — α folds, θ does not.
+
+**This is the third edge type for the deformation graph** (`docs/superpowers/specs/2026-07-17-tiling-deformation-graph-design.md`,
+built under `scripts/moduli-graph/`). That machinery already models flattening — `nodeExtractor`'s
+`tilingDefect` reads a tile by its EFFECTIVE corners and a flattened endpoint is emitted as a node with
+`regular=false`, so the concavity cut is not a gap there. What is new is the *edge* rule: a collapse node
+(a tile reaches zero area, the tile set changes) and a flatten node (no tile vanishes, a 2n-gon straightens
+to an n-gon and the tiling is momentarily non-edge-to-edge) are both traversable, but only the flatten node
+with a matching rigid/flexing partition continues the SAME family. AL's connectivity question already has
+answers on the isotoxal slices: the k=1 graph is **6 components** (V=14, E=26, and the ⊥ non-tiling node
+does not glue them — dropping it still leaves 6), and the k=2 complex is **b₀ = 12** with degenerate faces
+excluded against b₀ = 3 if paths may pass through ⊥ (`betti [12,11,6]` vs `full.betti [3,27,13]`). So: not
+one component, and the count is a function of which edge types you admit. ⚑ The mixed shelf has never been
+run through that machinery; the join/collapse/duplicate census in `scripts/scan-family-joins.py` is the
+input it needs.
+
+## §94 — The merge lands: 79 mixed entries become 71, each a single continuous sweep (2026-07-25)
+
+§92 established that some mixed-shelf entries are two halves of one deformation. This ships the merge. AL's
+criterion (the rigid/flexing partition picks the continuing branch) turned out to be unique at every join
+once the α-reversal duplicates are quotiented, so the plan is mechanical: **79 shipped entries = 77 distinct
+families = 71 merged arcs.** Spec `docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md`.
+
+**Six arcs, all clean 2-paths, two coordinate kinds.** k2-58+59, k2-45+46, k2-47+49 get `theta` — the
+flexing tile's alternating interior angle, monotone across (90°,240°) or (105°,240°) with the straight-vertex
+limit exactly at 180°, θ>180° the star branch and θ<180° the convex one. k1-04+07, k1-05+15, k2-05+06 get
+`sweep`, cumulative angle travelled, because SEVERAL tile orbits straighten from different sides at the same
+join (k1-04's 8-gons approach convex while its 6- and 12-gons approach reflex; k2-05 holds star and convex
+hexagons in one half), so no single tile angle is monotone. Both are one slider mechanically: |dθ/dα| = 1 on
+every branch, so the two α-spans concatenate at uniform speed and `span θ == span α_A + span α_B` holds for
+all six — the check that θ really is a global coordinate and not a stitched fake.
+
+**Two reconciliations the first cut missed, both caught by looking.** (1) *Pose.* The halves develop the
+same tiling at the join but each was exported in its own frame: k1-04's differ by a 30° rotation plus a
+translation, k1-05's and k2-05's by a translation. `register_pose` searches the 24 ζ₂₄ rotations ×
+reflection, keeps only candidates whose lattice matches, and pins the translation by vertex correspondence
+mod the lattice. All six aligned with a pure rotation+translation — no reflection, so no arc crosses into its
+mirror. (2) *Colour.* `star` is the renderer's hue selector, and the flexing tile is a star on one half and
+convex on the other, so it flipped blue↔green at the join while its shape stayed continuous — 36% of canvas
+pixels changed across a 4° drag. Fixed by flagging a tile a star everywhere on the arc if it is one anywhere,
+matched **per tile by centroid mod the lattice**, never by side count (k1-04 has three orbits swapping
+star-ness with each other; k2-05 has star and convex hexagons in the same half, so a by-n rule over-marks).
+Measured after the fix: the residual pixel delta across the seam is camera framing plus 4° of real
+deformation, and the tile is blue on both sides.
+
+**Where it lives.** `segments` inside `paramCell`, so `evaluateParamCell` stays the one choke point every
+canvas, thumbnail and slider already funnels through — `clampAlphaAt`, `resolveAlphaDegs`, the Command-scrub
+and the URL `?alpha=` mirror all follow from the widened `alphaRangeDegOpen` with no further changes. Each
+segment carries its own δ origin and `α = c + m·u` with m = ±1; `cellPolygons`/`basis` stay the first
+segment's so a consumer ignoring `segments` still renders a real tiling instead of failing. Pose and star
+flags are BAKED into the shipped terms at build time; nothing re-applies them at runtime. The outer ends keep
+the `ALPHA_EPS_DEG` nudge, the seam deliberately does not — it is a genuine tiling, which is the whole point.
+
+**Absorbed ids still resolve.** 8 ids go (6 merge partners + the 2 α-reversal duplicates k1-14, k1-18);
+`resolveMergedFamilyKey` redirects a link and carries its angle onto the merged coordinate, composing the
+two maps where a duplicate's target was itself absorbed (k1-18 → k1-15 → k1-05: α=180° must land on u=60°,
+which is the phantom-loop regression from §92). Only absorbed ids are remapped — a survivor keeps its id
+while its slider changes meaning, and there α=45 and u=45 are indistinguishable, so an old link lands on the
+range clamp rather than on a guess.
+
+**A deliberate two-pass loop.** The census needs the unmerged shelf and the shipped file is the merged one,
+so the builder snapshots the pre-merge array (`experiments/results/mixed-atlas-unmerged.json`) every run and
+the scanner reads that. Deleting the plan and rebuilding reproduces the unmerged 79 exactly — the escape
+hatch if a merge is ever disputed.
+
+⚑ Open. (1) The same joins almost certainly exist on the isotoxal/composable/scaled shelves; only mixed was
+swept. (2) The merge is a post-process over shipped data — AL wants it inside
+`export_combined_families.py` so the searcher emits merged families directly. (3) `star` now describes the
+arc, not the instantaneous tile: a convex tile carries `star: true` because it is a star elsewhere on the
+sweep. It is a hue selector and nothing triangulates on it, but a future consumer reading it as "concave
+here" would be misled. (4) Two pre-existing test failures, confirmed identical at HEAD in a clean worktree:
+`tests/landing-data.test.ts` (seeded pick asserts `t1003`) and `tests/star-general-path.test.ts` (177 s
+against a 60 s timeout).
+
+---

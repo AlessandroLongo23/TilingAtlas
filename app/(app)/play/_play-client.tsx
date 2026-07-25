@@ -47,6 +47,7 @@ import {
 	type ReferenceTiling,
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
+	resolveMergedFamilyKey,
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
@@ -89,7 +90,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Parse the URL exactly once, on mount. After this the query string is WRITE-only (the mirror effect
 	// below), so browser back/forward inside the page is not a state source — same contract as the
 	// library shelf.
-	const [initialUrl] = useState(() => parsePlayState(searchParams));
+	// resolveMergedFamilyKey redirects a link naming a family that a merge absorbed onto the entry that now
+	// carries it, carrying the angle across to the merged coordinate. A no-op for every other key.
+	const [initialUrl] = useState(() => {
+		const parsed = parsePlayState(searchParams);
+		return { ...parsed, ...resolveMergedFamilyKey({ tiling: parsed.tiling, alphas: parsed.alphas }) };
+	});
 	const requestedKey = initialUrl.tiling;
 	// Guards the mirror against firing before the link has been applied (which would overwrite the link
 	// with defaults). Effects run in declaration order, so the apply below already precedes the mirror;
