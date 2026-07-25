@@ -357,8 +357,7 @@ def build_merge(a, ea, b, eb, D):
 
 
 def main(atlas_path, plan_path):
-    atlas = json.load(open(atlas_path))
-    by_id = {f["id"]: f for f in atlas}
+    full = json.load(open(atlas_path))
     out = []
 
     def say(s=""):
@@ -366,17 +365,30 @@ def main(atlas_path, plan_path):
         out.append(s)
 
     say(f"scan-family-joins.py — {atlas_path}")
-    say(f"{len(atlas)} families; param-count histogram: "
-        f"{dict(Counter(len(f['paramCell']['params']) for f in atlas))}")
+    say(f"{len(full)} families; param-count histogram: "
+        f"{dict(Counter(len(f['paramCell']['params']) for f in full))}")
+
+    # SINGLE-parameter families only. Every routine here evaluates a family from one angle, so a 2-parameter
+    # cell would silently mis-evaluate: `cell_at` zips alphas against params, and a 1-long alpha list against
+    # 2 params truncates the second δ to nothing instead of erroring. Beyond that the whole notion needs
+    # restating for them — a validity region is a BOX, so a shared boundary is a face, not a point, and
+    # "endpoint" means a corner. The mixed shelf is 100% single-parameter, which is why this never bit there.
+    atlas = [f for f in full if len(f["paramCell"]["params"]) == 1]
+    skipped_multi = [f["id"] for f in full if len(f["paramCell"]["params"]) != 1]
+    if skipped_multi:
+        say(f"⚑ {len(skipped_multi)} multi-parameter families NOT scanned (a join between them is a shared "
+            f"face of a validity box, which this scanner does not model)")
+    by_id = {f["id"]: f for f in atlas}
+    say(f"scanning {len(atlas)} single-parameter families")
     say(f"patch congruence: R={PATCH_R}, {2 * PATCH_N + 1}x{2 * PATCH_N + 1} lattice translates")
     say()
 
     # ── duplicates first. A family and its α-reversal share both endpoints, so quotienting them is a
     #    prerequisite: rewriting an id WITHOUT mapping the endpoint angle through the reversal invents
     #    phantom joins (it reported a false loop for k1-05/k1-15 until the angle map was added).
-    dups, dup_to = [], {}
+    dups, dup_edges = [], defaultdict(list)
     for f, g in itertools.combinations(atlas, 2):
-        if f["family"] != g["family"] or len(f["paramCell"]["params"]) != 1 or len(g["paramCell"]["params"]) != 1:
+        if f["family"] != g["family"]:
             continue
         lf = f["paramCell"]["params"][0]["alphaRangeDegOpen"]
         lg = g["paramCell"]["params"][0]["alphaRangeDegOpen"]
@@ -388,14 +400,53 @@ def main(atlas_path, plan_path):
         if fwd or rev:
             kind = "forward" if fwd else "reversed"
             dups.append((f, g, lf, lg, kind))
-            dup_to[g["id"]] = (f["id"], kind, lf)
+            # α in the OTHER family's coordinate, both directions. Reversal is an involution about the
+            # midpoint of the TARGET's range, so each direction is pinned by its own endpoints.
+            f2g = {"m": 1, "c": 0} if fwd else {"m": -1, "c": lg[0] + lg[1]}
+            g2f = {"m": 1, "c": 0} if fwd else {"m": -1, "c": lf[0] + lf[1]}
+            dup_edges[g["id"]].append((f["id"], g2f))
+            dup_edges[f["id"]].append((g["id"], f2g))
+
+    # Duplicates come in CLUSTERS, not disjoint pairs — on the isotoxal k4 shelf 465 congruent pairs are only
+    # 392 absorbable ids. Rewriting pairwise made an alias point at an id that was itself absorbed (45 of
+    # them there), so a link resolved to an entry that does not ship. Resolve each cluster transitively
+    # instead: lowest id is the representative, and every member's map to it is composed along the BFS tree.
+    def compose(inner, outer):
+        """u = outer(inner(α)) for two maps of the form β = c + m·α."""
+        return {"m": outer["m"] * inner["m"], "c": round(outer["c"] + outer["m"] * inner["c"], 9)}
+
+    dup_to_rep = {}
+    seen_dup = set()
+    for start in sorted(dup_edges):
+        if start in seen_dup:
+            continue
+        comp, stack = {start}, [start]
+        while stack:
+            x = stack.pop()
+            for y, _ in dup_edges[x]:
+                if y not in comp:
+                    comp.add(y)
+                    stack.append(y)
+        seen_dup |= comp
+        root = min(comp)
+        maps = {root: {"m": 1, "c": 0}}
+        frontier = [root]
+        while frontier:
+            x = frontier.pop()
+            for y, y2x in dup_edges[x]:
+                if y not in maps:
+                    maps[y] = compose(y2x, maps[x])  # y → x → … → root
+                    frontier.append(y)
+        for member, m in maps.items():
+            if member != root:
+                dup_to_rep[member] = (root, m)
 
     def canon(fid, e):
         """Map an (id, endpoint α) onto the surviving duplicate representative — angle included."""
-        if fid not in dup_to:
+        if fid not in dup_to_rep:
             return fid, e
-        tgt, kind, lt = dup_to[fid]
-        return tgt, (e if kind == "forward" else (lt[0] + lt[1]) - e)
+        tgt, m = dup_to_rep[fid]
+        return tgt, m["c"] + m["m"] * e
 
     # ── endpoint fingerprints. One parameter driven to each end, the others left at their default, so
     #    for a multi-parameter family this samples corners of the validity box, not its whole boundary.
@@ -469,7 +520,7 @@ def main(atlas_path, plan_path):
     say("=== DUPLICATES — same family shipped twice (forward, or with α reversed) ===")
     for f, g, lf, lg, kind in dups:
         say(f"  α-{kind}: {short(f['id'])} {lf} == {short(g['id'])} {lg}   [{f['family']}]")
-    say(f"  -> {len(dups)} duplicate pair(s) among {len(atlas)} shipped families")
+    say(f"  -> {len(dups)} duplicate pair(s) among the {len(atlas)} single-parameter families")
     say()
 
     # ── merge plan ────────────────────────────────────────────────────────────────────────────────────
@@ -494,8 +545,6 @@ def main(atlas_path, plan_path):
                     f"α = {ao['c']:g} {'+' if ao['m'] > 0 else '−'} u   (α-range {s['alphaRangeDegOpen']})")
     say(f"  -> {len(merges)} merge(s)")
     say()
-    say(f"SUMMARY: {len(atlas)} shipped entries = {len(atlas) - len(dups)} distinct families "
-        f"= {len(atlas) - len(dups) - len(merges)} merged arcs")
 
     # ── absorbed ids and their alias maps. An absorbed entry does not ship; a link to it resolves to the
     #    survivor, and its α is carried onto the survivor's coordinate by u = c + m·α.
@@ -503,10 +552,6 @@ def main(atlas_path, plan_path):
     #    Only ABSORBED ids get an α remap. A link to a surviving id whose coordinate changed (a merge
     #    primary: α → θ/sweep) is left to the ordinary range clamp, because α=45 and u=45 are
     #    indistinguishable once the id is the same — guessing there would silently move the view.
-    def compose(inner, outer):
-        """u = outer(inner(α)) for two α↦β maps of the form β = c + m·α."""
-        return {"m": outer["m"] * inner["m"], "c": round(outer["c"] + outer["m"] * inner["c"], 9)}
-
     seg_inverse, merge_of = {}, {}
     for m in merges:
         for s in m["segments"]:
@@ -518,31 +563,40 @@ def main(atlas_path, plan_path):
     for m in merges:
         for sec in m["aliases"]:
             aliases[sec] = {"to": m["id"], "uOf": seg_inverse[sec]}
-    for f, g, lf, lg, kind in dups:
-        # g is the reversal of f: α_f = c + m·α_g
-        to_rep = {"m": 1, "c": 0} if kind == "forward" else {"m": -1, "c": lf[0] + lf[1]}
-        target = f["id"]
-        if target in merge_of:  # f itself was absorbed into a merge — chain the two maps
-            aliases[g["id"]] = {"to": merge_of[target], "uOf": compose(to_rep, seg_inverse[target])}
+    # Every non-representative member of a duplicate cluster, mapped straight to its representative (never
+    # to another absorbed id), and on through the merge that absorbed the representative if there was one.
+    for member, (root, to_root) in sorted(dup_to_rep.items()):
+        if root in merge_of:
+            aliases[member] = {"to": merge_of[root], "uOf": compose(to_root, seg_inverse[root])}
         else:
-            aliases[g["id"]] = {"to": target, "uOf": to_rep}
+            aliases[member] = {"to": root, "uOf": to_root}
     absorbed = sorted(aliases)
+    dangling = [a for a, v in aliases.items() if v["to"] in aliases]
+    if dangling:
+        raise AssertionError(f"{len(dangling)} alias(es) point at an absorbed id, e.g. {dangling[:3]}")
 
     say("=== ABSORBED — ids that no longer ship, and where a link to them lands ===")
     for a in absorbed:
         al = aliases[a]
         say(f"  {short(a):10s} → {short(al['to']):10s}   u = {al['uOf']['c']:g} "
             f"{'+' if al['uOf']['m'] > 0 else '−'} α")
-    say(f"  -> {len(absorbed)} absorbed, {len(atlas) - len(absorbed)} entries ship")
+    say(f"  -> {len(absorbed)} absorbed, {len(full) - len(absorbed)} entries ship")
+    say()
+    # Counted from the absorbed SET, not the pair count: clusters make pairs over-count the reduction
+    # (465 congruent pairs on isotoxal k4 are only 392 absorbable ids).
+    say(f"SUMMARY: {len(full)} shipped entries = {len(full) - len(dup_to_rep)} distinct families "
+        f"= {len(full) - len(absorbed)} arcs after merging")
 
     if plan_path:
         plan = {
             "_meta": {
                 "generated_from": atlas_path,
-                "families": len(atlas),
+                "families": len(full),
+                "scanned": len(atlas),
+                "skippedMultiParam": skipped_multi,
                 "duplicates": len(dups),
                 "merges": len(merges),
-                "ships": len(atlas) - len(absorbed),
+                "ships": len(full) - len(absorbed),
                 "note": "consumed by scripts/build-mixed-atlas.ts; spec docs/superpowers/specs/"
                         "2026-07-25-mixed-family-merge-design.md",
             },

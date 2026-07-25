@@ -1,0 +1,61 @@
+scan-family-joins.py — public/reference-atlas-isotoxal.json
+114 families; param-count histogram: {1: 87, 2: 27}
+⚑ 27 multi-parameter families NOT scanned (a join between them is a shared face of a validity box, which this scanner does not model)
+scanning 87 single-parameter families
+patch congruence: R=5.0, 9x9 lattice translates
+
+shared endpoints: 3 JOIN candidate group(s), 20 COLLAPSE group(s)
+
+=== JOINs — no tile vanishes, so the limit tiling is real and shared ===
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k1-14 3.3.6α           param0 @ 60°   range [60, 180]   2x3 1x6*
+      isotoxal-family-k1-14 3.3.6α           param0 @ 180°   range [60, 180]   2x3 1x6*
+      isotoxal-family-k2-92 3.3.3.6α         param0 @ 60°   range [60, 180]   4x3 2x6*
+      isotoxal-family-k2-92 3.3.3.6α         param0 @ 180°   range [60, 180]   4x3 2x6*
+  [2 entries] DUPLICATE ARTIFACT — the entries are one family (see DUPLICATES), not a join
+      isotoxal-family-k2-08 4α.6α.12α        param0 @ 15°   range [15, 135]   3x4* 2x6* 1x12
+      isotoxal-family-k2-11 4α.6α.12α        param0 @ 165°   range [45, 165]   3x4* 2x6* 1x12
+  [2 entries] DUPLICATE ARTIFACT — the entries are one family (see DUPLICATES), not a join
+      isotoxal-family-k2-08 4α.6α.12α        param0 @ 135°   range [15, 135]   3x4* 2x6* 1x12
+      isotoxal-family-k2-11 4α.6α.12α        param0 @ 45°   range [45, 165]   3x4* 2x6* 1x12
+  -> 0 verified join(s); 1 collision(s) rejected; 2 duplicate artifact(s)
+
+=== COLLAPSEs — a tile hits zero area; the limit is a SIMPLER tiling, shared by unrelated arcs ===
+  isotoxal-family-k1-02[3.3.4α]@0° | isotoxal-family-k1-02[3.3.4α]@180° | isotoxal-family-k1-05[3.3.4α]@0° | isotoxal-family-k1-05[3.3.4α]@180° | isotoxal-family-k1-06[3.3.4α]@0° | isotoxal-family-k1-06[3.3.4α]@180° | isotoxal-family-k2-13[3.3.3.3.4α]@0° | isotoxal-family-k2-13[3.3.3.3.4α]@180° | isotoxal-family-k2-14[3.3.3.3.4α]@0° | isotoxal-family-k2-14[3.3.3.3.4α]@180° | isotoxal-family-k2-24[3.3.3.3.4α]@0° | isotoxal-family-k2-24[3.3.3.3.4α]@180°
+  isotoxal-family-k1-03[4.4.4α]@0° | isotoxal-family-k1-03[4.4.4α]@180° | isotoxal-family-k1-07[4.4α]@0° | isotoxal-family-k1-07[4.4α]@180° | isotoxal-family-k1-08[4.4α]@0° | isotoxal-family-k1-08[4.4α]@180° | isotoxal-family-k2-17[4.4.4.4α]@0° | isotoxal-family-k2-17[4.4.4.4α]@180° | isotoxal-family-k2-33[4.4.4α]@0° | isotoxal-family-k2-33[4.4.4α]@180°
+  isotoxal-family-k2-01[3.3.3.3.4.4α]@0° | isotoxal-family-k2-01[3.3.3.3.4.4α]@180° | isotoxal-family-k2-02[3.3.3.3.4.4α]@0° | isotoxal-family-k2-02[3.3.3.3.4.4α]@180°
+  isotoxal-family-k2-03[4.4.4.4α]@0° | isotoxal-family-k2-03[4.4.4.4α]@180° | isotoxal-family-k2-06[4.4.4.4α]@0° | isotoxal-family-k2-06[4.4.4.4α]@180°
+  isotoxal-family-k2-04[4.4.4.4α]@0° | isotoxal-family-k2-04[4.4.4.4α]@180° | isotoxal-family-k2-05[4.4.4.4α]@0° | isotoxal-family-k2-05[4.4.4.4α]@180°
+  isotoxal-family-k2-15[3.3.3.3.4α]@180° | isotoxal-family-k2-16[3.3.3.3.4α]@0° | isotoxal-family-k2-16[3.3.3.3.4α]@180°
+  isotoxal-family-k2-18[3.3.3.6.4α]@0° | isotoxal-family-k2-18[3.3.3.6.4α]@180° | isotoxal-family-k2-19[3.3.3.6.4α]@0°
+  isotoxal-family-k2-20[3.3.3.3.3.4α]@0° | isotoxal-family-k2-20[3.3.3.3.3.4α]@180° | isotoxal-family-k2-23[3.3.3.3.3.4α]@0° | isotoxal-family-k2-23[3.3.3.3.3.4α]@180°
+  isotoxal-family-k2-21[3.3.3.3.3.4α]@0° | isotoxal-family-k2-21[3.3.3.3.3.4α]@180° | isotoxal-family-k2-22[3.3.3.3.3.4α]@0° | isotoxal-family-k2-22[3.3.3.3.3.4α]@180°
+  isotoxal-family-k2-27[3.3.4.4.4α]@0° | isotoxal-family-k2-27[3.3.4.4.4α]@180° | isotoxal-family-k2-28[3.3.4.4.4α]@0° | isotoxal-family-k2-28[3.3.4.4.4α]@180°
+  isotoxal-family-k2-29[3.3.4.4α]@0° | isotoxal-family-k2-29[3.3.4.4α]@180° | isotoxal-family-k2-30[3.3.4.4α]@0° | isotoxal-family-k2-31[3.3.4.4α]@0° | isotoxal-family-k2-32[3.3.4.4α]@0° | isotoxal-family-k2-32[3.3.4.4α]@180°
+  isotoxal-family-k2-30[3.3.4.4α]@180° | isotoxal-family-k2-31[3.3.4.4α]@180°
+  isotoxal-family-k2-34[4.4α]@0° | isotoxal-family-k2-34[4.4α]@180° | isotoxal-family-k2-35[4.4α]@0° | isotoxal-family-k2-35[4.4α]@180° | isotoxal-family-k2-40[4.4α]@0° | isotoxal-family-k2-40[4.4α]@180° | isotoxal-family-k2-41[4.4α]@0° | isotoxal-family-k2-41[4.4α]@180°
+  isotoxal-family-k2-36[4.4α]@0° | isotoxal-family-k2-36[4.4α]@180° | isotoxal-family-k2-37[4.4α]@0° | isotoxal-family-k2-37[4.4α]@180° | isotoxal-family-k2-38[4.4α]@0° | isotoxal-family-k2-38[4.4α]@180° | isotoxal-family-k2-39[4.4α]@0° | isotoxal-family-k2-39[4.4α]@180°
+  isotoxal-family-k2-48[3.3.3.4α]@0° | isotoxal-family-k2-48[3.3.3.4α]@180° | isotoxal-family-k2-49[3.3.3.4α]@0° | isotoxal-family-k2-49[3.3.3.4α]@180°
+  isotoxal-family-k2-50[3.3.4α]@0° | isotoxal-family-k2-50[3.3.4α]@180° | isotoxal-family-k2-51[3.3.4α]@0° | isotoxal-family-k2-66[3.3.4α]@0° | isotoxal-family-k2-66[3.3.4α]@180°
+  isotoxal-family-k2-51[3.3.4α]@180° | isotoxal-family-k2-67[3.3.4α]@0° | isotoxal-family-k2-67[3.3.4α]@180°
+  isotoxal-family-k2-56[3.3.4α]@0° | isotoxal-family-k2-56[3.3.4α]@180° | isotoxal-family-k2-57[3.3.4α]@0° | isotoxal-family-k2-57[3.3.4α]@180° | isotoxal-family-k2-62[3.3.4α]@0° | isotoxal-family-k2-62[3.3.4α]@180° | isotoxal-family-k2-63[3.3.4α]@0° | isotoxal-family-k2-63[3.3.4α]@180°
+  isotoxal-family-k2-70[4.4.4α]@30° | isotoxal-family-k2-70[4.4.4α]@120° | isotoxal-family-k2-71[4.4.4α]@30° | isotoxal-family-k2-71[4.4.4α]@120° | isotoxal-family-k2-72[4.4.4α]@30° | isotoxal-family-k2-72[4.4.4α]@120°
+  isotoxal-family-k2-74[3.3.4α]@0° | isotoxal-family-k2-74[3.3.4α]@180° | isotoxal-family-k2-77[3.3.3.4α]@0° | isotoxal-family-k2-77[3.3.3.4α]@180° | isotoxal-family-k2-78[3.3.4α]@0° | isotoxal-family-k2-78[3.3.4α]@180° | isotoxal-family-k2-79[3.3.4α]@0° | isotoxal-family-k2-79[3.3.4α]@180° | isotoxal-family-k2-84[3.3.3.4α]@0° | isotoxal-family-k2-84[3.3.3.4α]@180° | isotoxal-family-k2-85[3.3.4α]@0° | isotoxal-family-k2-85[3.3.4α]@180° | isotoxal-family-k2-86[3.3.4α]@0° | isotoxal-family-k2-86[3.3.4α]@180°
+
+=== DUPLICATES — same family shipped twice (forward, or with α reversed) ===
+  α-reversed: isotoxal-family-k2-08 [15, 135] == isotoxal-family-k2-11 [45, 165]   [4α.6α.12α]
+  α-reversed: isotoxal-family-k2-13 [0, 180] == isotoxal-family-k2-14 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k2-77 [0, 180] == isotoxal-family-k2-84 [0, 180]   [3.3.3.4α]
+  -> 3 duplicate pair(s) among the 87 single-parameter families
+
+=== MERGE PLAN — a JOIN whose branches share the rigid/flexing partition ===
+  -> 0 merge(s)
+
+=== ABSORBED — ids that no longer ship, and where a link to them lands ===
+  isotoxal-family-k2-11 → isotoxal-family-k2-08   u = 210 − α
+  isotoxal-family-k2-14 → isotoxal-family-k2-13   u = 180 − α
+  isotoxal-family-k2-84 → isotoxal-family-k2-77   u = 180 − α
+  -> 3 absorbed, 111 entries ship
+
+SUMMARY: 114 shipped entries = 111 distinct families = 111 arcs after merging
+wrote merge plan → /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/c5bff048-2f31-4da2-9307-e47acd0d0487/scratchpad/isotoxal-plan.json

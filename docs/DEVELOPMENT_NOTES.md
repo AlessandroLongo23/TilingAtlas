@@ -5717,3 +5717,44 @@ here" would be misled. (4) Two pre-existing test failures, confirmed identical a
 against a 60 s timeout).
 
 ---
+
+## §99 — The duplicate quotient generalises, the merge does not: 451 duplicate isotoxal entries (2026-07-25)
+
+§94 shipped the mixed-shelf merge. Pointing the same census at the isotoxal shelves answers the obvious
+follow-up, and the answer is lopsided: the α-reversal DUPLICATE bug is everywhere, the concavity-cut MERGE
+is nearly absent. Logs: `experiments/results/isotoxal{,-k3,-k4}-joins.log`.
+
+| shelf | shipped | scanned (1-param) | duplicate pairs | merges | ships after |
+| --- | --- | --- | --- | --- | --- |
+| isotoxal (k1/k2) | 114 | 87 | 3 | 0 | 111 |
+| isotoxal-k3 | 658 | 424 | 49 | 1 | 608 |
+| isotoxal-k4 | 3918 | 2145 | 465 | 2 | 3520 |
+
+**4,690 isotoxal entries are 4,239 distinct families — a 9.6% overcount**, against 3 mergeable arcs in the
+whole set. On the isotoxal shelves every shared endpoint is a COLLAPSE (a tile reaching zero area, where
+unrelated families degenerate to the same simpler tiling and must stay separate); the concavity cut that
+splits mixed families barely occurs, because a shelf of convex isotoxal tiles rarely has a tile crossing
+180° with a partner branch on the other side. So the generalisation worth shipping is the duplicate
+quotient, not the merge — and it belongs in the exporter, since a re-export reintroduces it (the 30/150
+rhombus re-export added 2 fresh duplicate pairs to the mixed shelf, taking it from 2 to 4).
+
+**Two bugs in §94's scanner, both invisible on the mixed shelf and both found by running it wider.**
+(1) *Single-parameter assumption.* Every routine evaluates a family from one angle, and `cell_at` zips
+alphas against params — so a 2-parameter cell silently lost its second δ instead of erroring, quietly
+mis-evaluating the geometry. The mixed shelf is 100% single-parameter, so it never bit. Now filtered
+explicitly, with the count of skipped families reported: **2,007 of the 4,690 isotoxal families are
+2-parameter and remain unswept**, so the 9.6% is a lower bound. Their validity region is a box, so a
+shared boundary is a face rather than a point — restating the census for them is real new work, not a rerun.
+(2) *Duplicates cluster.* They are not disjoint pairs: k4's 465 congruent pairs are only 398 absorbable
+ids. Rewriting pairwise made 45 aliases point at an id that was itself absorbed, so those links resolved
+to entries that do not ship. Fixed by resolving each cluster transitively — lowest id is the
+representative, every member's α-map composed along a BFS tree — plus an assertion that no alias targets an
+absorbed id, and a SUMMARY counted from the absorbed set rather than the pair count (subtracting pairs
+over-states the reduction whenever a cluster is bigger than two). The mixed plan regenerates unchanged
+after the fix: same 6 merges, same aliases, byte-identical segments.
+
+⚑ Open. (1) The dedup is measured but NOT applied — the isotoxal shelves still ship 4,690. Applying it
+means teaching `build-isotoxal-atlas.ts` to consume a plan the way the mixed builder does, plus the k3/k4
+shard loaders and the /library counts. (2) The 2-parameter census. (3) `EU_PRUNE_OVERLAP=1` is still
+missing from the Makefile (§97), so none of these shelves rebuilds reproducibly — worth fixing before any
+re-export acts on this.
