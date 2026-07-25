@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Tabs } from "@/components/ui/tabs";
-import type { Geometry } from "@/lib/services/referenceAtlas";
+import type { Geometry, Decoration } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { NavHeader } from "./nav-header";
 import { CatalogueTab } from "./catalogue-tab";
@@ -19,10 +19,13 @@ interface TilingsTabProps {
 	onPrev?: () => void;
 	onNext?: () => void;
 	geometry: Geometry;
-	/** The active geometry's tilings — feeds the catalogue list and the nav count. */
+	/** The active (geometry, decoration) cell — feeds the catalogue list and the nav count. */
 	geometryList: CatalogueTiling[];
 	geometryCounts: Record<Geometry, number>;
 	onGeometryChange: (g: Geometry) => void;
+	decoration: Decoration;
+	decorationCounts: Record<Decoration, number>;
+	onDecorationChange: (d: Decoration) => void;
 }
 
 const TABS = ["Catalogue", "View options"];
@@ -40,6 +43,9 @@ export function TilingsTab({
 	geometryList,
 	geometryCounts,
 	onGeometryChange,
+	decoration,
+	decorationCounts,
+	onDecorationChange,
 }: TilingsTabProps) {
 	const [tab, setTab] = useState(TABS[0]);
 	// C / V jump to a tab, matching the keycaps on the triggers. Same guards as the /play canvas
@@ -79,6 +85,9 @@ export function TilingsTab({
 								geometry={geometry}
 								geometryCounts={geometryCounts}
 								onGeometryChange={onGeometryChange}
+								decoration={decoration}
+								decorationCounts={decorationCounts}
+								onDecorationChange={onDecorationChange}
 							/>
 						) : (
 							<OptionsTab selected={selected} />

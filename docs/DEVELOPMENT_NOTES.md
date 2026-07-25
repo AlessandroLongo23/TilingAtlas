@@ -5509,3 +5509,55 @@ tracks growth and drops the explosive tails: {3,7} k1–2 (k3 is 57k / 50 MB, dr
 dropped). Shipped: **~19.5k colorings, 25 MB (16 MB hyperbolic, 9 MB spherical)** — a few MB eager. Every
 render path verified in the browser (both disk bases, cube/octa/icosa solids, thumbnails, no regression on
 the edge systems the `developEdges` refactor touched). Detail + the decoders in `tools/ctrnact-oracle/`.
+
+---
+
+## §95 — The decoration axis: "what is catalogued" leaves the tile-class list (2026-07-25)
+
+AL, looking at the /play Euclidean shelf: the first eight rows are one method run on different tile sets,
+the last two are different methods, and the flat list says nothing about it. Same problem `TILE_TAXONOMY.md`
+§3 names from the other end (the class list flattens geometry × shape × decoration into one enum). Spec:
+`docs/superpowers/specs/2026-07-25-decoration-axis-design.md`.
+
+**One correction to the premise.** Seven of the eight are engine output. **Islamic is not** — it is
+hand-encoded transcriptions of Bonner's design systems, validated to tile but explicitly making no
+k-uniform completeness claim (`build-islamic-atlas.ts`). It still belongs with the eight, because the cut
+that matters here is *what is catalogued*, and its 192 entries are polygon tessellations with the Hankin
+strapwork as an Options-tab overlay. Its provenance problem is real and belongs on the certification axis,
+which already exists; folding it in would repeat the flattening being undone.
+
+**The axis.** `Decoration = "tilings" | "edges" | "colorings"` in `referenceAtlas.ts`, shaped as a mirror of
+the geometry axis (`DECORATION_ORDER`/`DECORATION_LABEL`/`decorationOf`). `decorationOf` is computed from
+`tileClassOf`, not from the payload flags — both agree today, and routing through the class function is what
+keeps the two axes from drifting once a class is added. `TILE_CLASS_ORDER` keeps all twelve values: freedraw
+and colors stay classes (they are the `source` discriminator and carry their own facets), they just become
+the sole occupant of their segment. No atlas JSON rebuilt; the axis is derived from shipped data.
+
+**It removes two workarounds rather than adding a third.** `hyperbolic` and `spherical` were geometries AND
+tile classes. /library papered over that by dropping them from the class chips and relabeling the
+non-Euclidean ones (`NONEUC_CLASS_LABEL = { hyperbolic: "Uniform", freedraw: "Edge patterns", colors:
+"Colorings" }`); /play papered over it with the `single` collapse in `catalogue-list-panel.tsx`. The
+relabeling is deleted — it was this axis, hard-coded off the plane. The collapse stays and now earns its
+keep: every segment outside Tilings holds exactly one class, so the class row vanishes on its own.
+"Uniform" became "Tilings" deliberately: the Islamic shelf makes no k-uniform claim.
+
+**Measured, and the reason it matters.** Euclidean is 10,384 tilings against 112,499 edge patterns and
+226,337 colorings — the eight shape shelves are 3% of the rows. Hyperbolic is 28,453 / 13,703 / 3,424. All
+nine (geometry × decoration) cells are populated, which is the empirical case that the two axes are
+orthogonal.
+
+**Ordering.** Decoration leads `compareCatalogueDisplayOrder`, and separately /library's own inline sort
+(that shelf never used the comparator — it sorts `(k, id)`). Within Euclidean nothing moves.
+Within hyperbolic it fixes a real inversion: `hyperbolic` sorts LAST in `TILE_CLASS_ORDER`, so the developed
+patches used to trail the edge patterns and colorings that decorate them. On /library the visible effect is
+that Kind = All now lands on tilings; before, `col-…` preceded `reg-…` at equal k, so the library's front
+page was colorings.
+
+**URL.** /play needs no new key (the selected tiling determines both axes, as with geometry). /library gains
+`dec`, plus the promotion the geometry migration established: `class=freedraw` → `dec=edges`,
+`class=colors` → `dec=colorings`, so links shared before today still land.
+
+⚑ Open. (1) The nav header still reads "k=1 · Hyperbolic tilings" — the class long-label, now redundant
+beside the geometry segment. (2) The decoration segments have no "All" on /play (geometry has none either);
+if browsing across all three is ever wanted there, that is where it goes. (3) Both pre-existing test
+failures from §94 still stand, unchanged and unrelated.

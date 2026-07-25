@@ -41,7 +41,9 @@ import {
 	tileClassOf,
 	compareCatalogueDisplayOrder,
 	geometryOf,
+	decorationOf,
 	type Geometry,
+	type Decoration,
 	type ReferenceTiling,
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
@@ -249,6 +251,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// follows the selection (see the sync effect below), so a deep-link or "R" that lands on another
 	// geometry flips it automatically. Default euclidean — the bulk of the atlas and the initial selection.
 	const [geometry, setGeometry] = useState<Geometry>("euclidean");
+	// Decoration is the split BELOW geometry and the same kind of thing: a browse mode as well as a filter.
+	// Tilings / Edge patterns / Colorings — see decorationOf. Default "tilings", which is where the initial
+	// Euclidean selection lands.
+	const [decoration, setDecoration] = useState<Decoration>("tilings");
 	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
 	// merges in). Derived once per atlas change, not per geometry switch.
 	const geometryCounts = useMemo(() => {
@@ -256,9 +262,19 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		for (const t of sorted) c[geometryOf(t)] += 1;
 		return c;
 	}, [sorted]);
-	// The active geometry's slice, in the same class → sub → k → key display order — the catalogue list, the
-	// nav count, and the scope for random/prev/next all read this.
-	const geometryList = useMemo(() => sorted.filter((t) => geometryOf(t) === geometry), [sorted, geometry]);
+	// Decoration counts WITHIN the active geometry — the segment row is scoped to it, and the hyperbolic /
+	// spherical edge + colour shards load lazily, so a segment starts empty (disabled) and fills in.
+	const decorationCounts = useMemo(() => {
+		const c: Record<Decoration, number> = { tilings: 0, edges: 0, colorings: 0 };
+		for (const t of sorted) if (geometryOf(t) === geometry) c[decorationOf(t)] += 1;
+		return c;
+	}, [sorted, geometry]);
+	// The active (geometry, decoration) cell, in the same class → sub → k → key display order — the catalogue
+	// list, the nav count, and the scope for random/prev/next all read this.
+	const geometryList = useMemo(
+		() => sorted.filter((t) => geometryOf(t) === geometry && decorationOf(t) === decoration),
+		[sorted, geometry, decoration],
+	);
 	// Dev-only: expose the catalogue selection so the Playwright visual/parity tools (see CLAUDE.md) can
 	// pick specific tilings, e.g. window.__play.select(window.__play.list.find(t => t.star)).
 	useEffect(() => {
@@ -267,24 +283,44 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		(window as any).__play = { list: geometryList, select: setSelected, selected };
 	}, [geometryList, setSelected, selected]);
 	// Switch geometry from the toggle: set the mode and jump to that geometry's first tiling so the canvas
-	// follows. Reads `sorted` (not `geometryList`, which still holds the OLD geometry this render).
+	// follows. Reads `sorted` (not `geometryList`, which still holds the OLD cell this render).
+	//
+	// The decoration carries across when the target cell has anything in it, so switching Euclidean →
+	// Hyperbolic while browsing colorings keeps you on colorings. It falls back to Tilings when the cell is
+	// empty, which is the case for a geometry whose edge/colour shard has not been fetched yet — without
+	// the fallback the switch would land on an empty list and a disabled segment.
 	const onGeometryChange = useCallback(
 		(g: Geometry) => {
 			if (g === geometry) return;
 			setGeometry(g);
-			const first = sorted.find((t) => geometryOf(t) === g);
+			const keepsDecoration = sorted.some((t) => geometryOf(t) === g && decorationOf(t) === decoration);
+			const d = keepsDecoration ? decoration : "tilings";
+			setDecoration(d);
+			const first = sorted.find((t) => geometryOf(t) === g && decorationOf(t) === d);
 			if (first) setSelected(first);
 		},
-		[geometry, sorted, setSelected],
+		[geometry, decoration, sorted, setSelected],
 	);
-	// Keep the toggle in sync with the selection's geometry — covers deep-links, the initial atlas load, and
-	// any path that sets `selected` outside the toggle. When the toggle drives the change, `selected` is
-	// already in `g`, so this is a no-op.
+	// Switch decoration from the toggle: same move one level down, within the active geometry.
+	const onDecorationChange = useCallback(
+		(d: Decoration) => {
+			if (d === decoration) return;
+			setDecoration(d);
+			const first = sorted.find((t) => geometryOf(t) === geometry && decorationOf(t) === d);
+			if (first) setSelected(first);
+		},
+		[decoration, geometry, sorted, setSelected],
+	);
+	// Keep both toggles in sync with the selection — covers deep-links, the initial atlas load, and any path
+	// that sets `selected` outside the toggles ("R", ←/→, a click in the list). When a toggle drives the
+	// change, `selected` already sits in the new cell, so this is a no-op.
 	useEffect(() => {
 		if (!selected) return;
 		const g = geometryOf(selected);
 		if (g !== geometry) setGeometry(g);
-	}, [selected, geometry]);
+		const d = decorationOf(selected);
+		if (d !== decoration) setDecoration(d);
+	}, [selected, geometry, decoration]);
 
 	// Spherical freedraw (~19.5k patterns, ~10 MB across 30 shards) is deliberately NOT in the base atlas —
 	// loading it up front would tax every /play visit for a shelf many never open. Pull it once the Spherical
@@ -808,6 +844,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					geometryList={geometryList}
 					geometryCounts={geometryCounts}
 					onGeometryChange={onGeometryChange}
+					decoration={decoration}
+					decorationCounts={decorationCounts}
+					onDecorationChange={onDecorationChange}
 				/>
 			</div>
 			<div className="flex-1 min-w-0 relative">

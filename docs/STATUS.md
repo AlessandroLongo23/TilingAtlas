@@ -20,6 +20,20 @@ Two tiers. Do not mix them.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
 
+## Decoration axis shipped (2026-07-25, NOTES §95)
+
+★★ **The shelf now says what kind of thing each row is.** `Decoration = tilings | edges | colorings` sits
+between geometry and tile class, present in all three geometries — a second segmented row on /play, a "Kind"
+chip wall on /library. It deletes two workarounds for the same missing axis: /library's non-Euclidean class
+relabeling (`NONEUC_CLASS_LABEL`) and the geometry-as-tile-class conflation behind /play's `single` collapse.
+Derived from `tileClassOf`, so no atlas JSON was rebuilt. Euclidean reads 10,384 tilings / 112,499 edge
+patterns / 226,337 colorings; hyperbolic 28,453 / 13,703 / 3,424 — all nine cells populated, which is the
+evidence the axes are orthogonal. Islamic stays under Tilings (its 192 entries are tessellations; the
+strapwork is an overlay), though it is the one shelf of the eight that is transcribed, not enumerated.
+Old `class=freedraw` / `class=colors` links promote to `dec=edges` / `dec=colorings`.
+Spec: `superpowers/specs/2026-07-25-decoration-axis-design.md`.
+⚑ Next: fold the shape axis itself onto the period `p` (TILE_TAXONOMY §9), which is the other half of §3.
+
 ## Frontier (2026-07-23) — the hyperbolic shelf on exact identity
 
 - ★★★ **SHIPPED: 28,453 hyperbolic tilings on /library + /play** (was 59 this morning, 6345 midday;

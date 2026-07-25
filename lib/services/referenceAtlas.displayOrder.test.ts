@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { compareCatalogueDisplayOrder } from "./referenceAtlas";
+import {
+	compareCatalogueDisplayOrder,
+	decorationOf,
+	tileClassOf,
+	DECORATION_ORDER,
+	TILE_CLASS_ORDER,
+	type TileClass,
+} from "./referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
 // Bare catalogue rows carrying only the fields the display-order comparator reads.
@@ -84,5 +91,73 @@ describe("compareCatalogueDisplayOrder", () => {
 			colors: { ...sq, id: "colt-1-00001", k: 1, grid: "triangle" },
 		});
 		expect(keys([triK1, sqK6])).toEqual(["col-6-00001", "colt-1-00001"]);
+	});
+
+	// Decoration is the FIRST sort key, above tile class. In Euclidean this is a no-op (TILE_CLASS_ORDER
+	// already runs the shape classes before freedraw and colors), so the case that proves it is hyperbolic:
+	// "hyperbolic" sorts LAST in TILE_CLASS_ORDER, so before the decoration key the developed patches
+	// trailed the edge patterns and colorings that decorate them.
+	it("puts a geometry's plain tilings before its edge patterns and colorings", () => {
+		const developed = T({
+			canonicalKey: "hyp-73",
+			k: 1,
+			source: "hyperbolic",
+			developed: { patch: "p73" } as never,
+		});
+		const edges = T({
+			canonicalKey: "he-73-1",
+			k: 1,
+			source: "freedraw",
+			hypEdges: { base: "b73" } as never,
+		});
+		const colorings = T({
+			canonicalKey: "hc-73-1",
+			k: 1,
+			source: "colors",
+			hypColors: { base: "b73" } as never,
+		});
+		expect(keys([colorings, edges, developed])).toEqual(["hyp-73", "he-73-1", "hc-73-1"]);
+	});
+});
+
+// Every TileClass must land in exactly one decoration segment. The mapping is total by construction
+// (decorationOf falls through to "tilings"), so what this really guards is the fall-through staying
+// DELIBERATE: a new decoration-like class added to TILE_CLASS_ORDER without a decorationOf branch would
+// silently join the shape shelves, which is the flattening this axis exists to undo.
+describe("decorationOf", () => {
+	// One representative row per class, built the way tileClassOf reads them: `source` where the atlas
+	// carries it, family tokens for the source-less Supabase rows.
+	const BY_CLASS: Record<TileClass, CatalogueTiling> = {
+		regular: T({ canonicalKey: "r", k: 1 }),
+		star: T({ canonicalKey: "s", k: 1, family: "5*2" }),
+		convex: T({ canonicalKey: "c", k: 1, source: "composable" }),
+		isotoxal: T({ canonicalKey: "i", k: 1, source: "isotoxal" }),
+		mixed: T({ canonicalKey: "m", k: 1, source: "mixed" }),
+		scaled: T({ canonicalKey: "sc", k: 1, source: "scaled" }),
+		polyomino: T({ canonicalKey: "p", k: 1, source: "polyomino" }),
+		islamic: T({ canonicalKey: "is", k: 1, source: "islamic" }),
+		freedraw: T({ canonicalKey: "fd", k: 1, source: "freedraw" }),
+		colors: T({ canonicalKey: "co", k: 1, source: "colors" }),
+		hyperbolic: T({ canonicalKey: "hy", k: 1, source: "hyperbolic" }),
+		spherical: T({ canonicalKey: "sp", k: 1, source: "spherical" }),
+	};
+
+	it("covers every tile class, each landing in exactly one segment", () => {
+		for (const cls of TILE_CLASS_ORDER) {
+			const row = BY_CLASS[cls];
+			expect(tileClassOf(row), `fixture for "${cls}" classifies as something else`).toBe(cls);
+			expect(DECORATION_ORDER).toContain(decorationOf(row));
+		}
+	});
+
+	// The two decoration classes are the ONLY ones outside Tilings. Stated positively so that adding a
+	// class here is a deliberate edit rather than a silent default.
+	it("routes freedraw to edges, colors to colorings, everything else to tilings", () => {
+		expect(decorationOf(BY_CLASS.freedraw)).toBe("edges");
+		expect(decorationOf(BY_CLASS.colors)).toBe("colorings");
+		for (const cls of TILE_CLASS_ORDER) {
+			if (cls === "freedraw" || cls === "colors") continue;
+			expect(decorationOf(BY_CLASS[cls]), `class "${cls}" left the Tilings segment`).toBe("tilings");
+		}
 	});
 });

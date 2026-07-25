@@ -288,11 +288,19 @@ export function subOf(t: {
 
 // The catalogue's canonical linear order — the SAME order the /play sidebar renders top-to-bottom, so
 // arrow-key / prev-next browsing steps through the visible list rather than a differently-sorted one.
-// Sort key: tile class (TILE_CLASS_ORDER) → freedraw sub-axis (SUB_ORDER) → k ascending → canonicalKey.
-// The sidebar re-groups this same order into its tree, so within each (class, sub, k) bucket both land on
-// canonicalKey order and agree exactly. Used by /play to sort the browse array feeding both the picker and
-// the stepper, so ←/→ steps through the visible list.
+// Sort key: decoration (DECORATION_ORDER) → tile class (TILE_CLASS_ORDER) → freedraw sub-axis (SUB_ORDER)
+// → k ascending → canonicalKey. The sidebar re-groups this same order into its tree, so within each
+// (class, sub, k) bucket both land on canonicalKey order and agree exactly. Used by /play to sort the
+// browse array feeding both the picker and the stepper, so ←/→ steps through the visible list.
+//
+// Decoration leads because it is the higher axis (/library can show all three at once, where the order is
+// visible). Within Euclidean it changes nothing — TILE_CLASS_ORDER already runs the eight shape classes
+// before freedraw and colors. Within hyperbolic and spherical it corrects a real inversion: "hyperbolic"
+// and "spherical" sort LAST in TILE_CLASS_ORDER, so the developed patches used to trail the edge patterns
+// and colorings that decorate them.
 export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTiling): number {
+	const dec = DECORATION_ORDER.indexOf(decorationOf(a)) - DECORATION_ORDER.indexOf(decorationOf(b));
+	if (dec) return dec;
 	const cls = TILE_CLASS_ORDER.indexOf(tileClassOf(a)) - TILE_CLASS_ORDER.indexOf(tileClassOf(b));
 	if (cls) return cls;
 	const sub = SUB_ORDER.indexOf(subOf(a)) - SUB_ORDER.indexOf(subOf(b));
@@ -323,6 +331,38 @@ export const GEOMETRY_LABEL: Record<Geometry, string> = {
 	euclidean: "Euclidean",
 	hyperbolic: "Hyperbolic",
 	spherical: "Spherical",
+};
+
+// The decoration axis — WHAT is catalogued, one level below geometry and one above tile class. The three
+// values are the three kinds of object the Atlas holds, and they cross geometry completely: every geometry
+// has all three (Euclidean grids, hyperbolic {p,q} bases, spherical solids).
+//
+//   tilings    the tiling itself is the object; the tile set is what varies (the eight shape shelves in E²,
+//              the developed patches in H², the Platonic/Archimedean solids in S²)
+//   edges      a subset of a fixed grid's edges is drawn and the faces are the derived tiles (freedraw)
+//   colorings  a fixed tiling carries a face coloring (colors)
+//
+// This is axis 3 of docs/TILE_TAXONOMY.md §3. Before it existed, "Hyperbolic" and "Spherical" were tile
+// CLASSES as well as geometries, which /library papered over by relabeling the non-Euclidean class chips
+// and /play by collapsing a lone class row. Both workarounds are gone now.
+export type Decoration = "tilings" | "edges" | "colorings";
+// Derived from tileClassOf rather than from the payload flags (freedraw / hypEdges / sphColors / …). Both
+// give the same answer today; going through the class function is what makes it impossible for the two
+// axes to disagree once a class is added — a new TileClass lands in "tilings" only by being neither of the
+// decoration classes, and referenceAtlas.displayOrder.test.ts asserts the mapping is total.
+export function decorationOf(t: { family: string; source?: ReferenceTiling["source"] }): Decoration {
+	const c = tileClassOf(t);
+	if (c === "freedraw") return "edges";
+	if (c === "colors") return "colorings";
+	return "tilings";
+}
+export const DECORATION_ORDER: Decoration[] = ["tilings", "edges", "colorings"];
+export const DECORATION_LABEL: Record<Decoration, string> = {
+	tilings: "Tilings",
+	edges: "Edge patterns",
+	// "Colorings", not "Colors" — the Options tab's fill/hue controls are the colours; these are the
+	// catalogued colorings.
+	colorings: "Colorings",
 };
 
 // Hyperbolic display parameters read straight off the vertex configuration (`family` is the full cyclic
@@ -561,6 +601,10 @@ export interface ReferenceFilter {
 	// of this geometry match. The Euclidean-only sub-filters (tileClass, star, lattice, wallpaper group)
 	// are meaningless off the plane, so the shelf hides them for hyperbolic/spherical.
 	geometry?: Geometry;
+	// The decoration axis — WHAT is catalogued, between geometry and tileClass. Present in every geometry.
+	// When set to "tilings" the tileClass chips describe the shape shelves; the other two segments hold one
+	// class each (freedraw, colors), so their own facets take over instead.
+	decoration?: Decoration;
 	kValue?: number; // single vertex-orbit count; unset = every k
 	tileClass?: TileClass; // regular polygons only / star-bearing only / composite-tile demo
 	// Scaled shelf sub-class: "s12" keeps only tilings within sides {1,2} (the former Doubled class);
@@ -612,6 +656,7 @@ export interface ReferenceFilter {
 
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
 	if (f.geometry && geometryOf(t) !== f.geometry) return false;
+	if (f.decoration && decorationOf(t) !== f.decoration) return false;
 	if (f.kValue != null && t.k !== f.kValue) return false;
 	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
 	if (f.scaledScaleSet) {
