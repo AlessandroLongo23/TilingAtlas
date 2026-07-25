@@ -42,6 +42,25 @@ symmetries whose every prototile fills.
 This matches the agreed approach: set up all infrastructure + controls on the
 anchor case, polish, then expand.
 
+**Iteration is capped at depth 1** (update 2026-07-25, after two rounds of
+debugging). One substitution is exact and gap/overlap-free — verified by
+dense-grid coverage: single-tile 1→116 and the 10-fold star 10→720 are 100%
+exactly-once covered. Two things were fixed to get there: (a) substitution must
+**inflate the tile by S first, then subdivide** (`substituteOnce`); mapping the
+size-S children straight onto a unit tile piled ~40× overlap hidden by opaque
+overdraw. (b) `similarity()` must **search all four corner correspondences**
+(children come out of the fill in arbitrary vertex order). But composing a
+*second* time still overlaps ~1.8% of area: the simplified super-rhomb boundary
+here omits the shared **corner rose sectors** (Kari-Rissanen §5) that make the
+rule self-compose — one super-rhomb tiles correctly and the star's symmetric
+adjacencies mesh, but general depth-2 adjacencies do not. The boundary is
+mirror-symmetric where the paper's clockwise-inclusion rule makes it
+180°-symmetric; a 180°-symmetric boundary + paired-symmetric fill was tried and
+did **not** suffice, confirming the roses (not just symmetry) are the missing
+piece. Multi-level iteration is the concrete next step: implement the
+rose-sector boundary word (paper §5, Example 1) and place the roses shared
+between adjacent super-rhombs.
+
 ## The math (validated in prototype)
 
 - **Prototiles.** For symmetry n, rhombs (x, n−x), x=1..⌊n/2⌋, angles xπ/n and

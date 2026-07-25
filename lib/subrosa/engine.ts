@@ -213,6 +213,7 @@ export interface ChildTile {
 export interface Prototile {
 	x: number; // acute half-angle index; rhomb (x, n-x)
 	unit: Vector[]; // canonical UNIT rhomb corners (super-rhomb corners / S)
+	superCorners: Vector[]; // the size-S super-rhomb corners (the frame `children` live in)
 	children: ChildTile[];
 }
 export interface SubRosaRule {
@@ -262,14 +263,15 @@ export function buildRule(n: number): SubRosaRule | null {
 			return p.toVector();
 		};
 		const P = [corner(0), corner(L / 4), corner(L / 2), corner((3 * L) / 4)];
-		// canonical UNIT rhomb = super-rhomb / S
+		// canonical UNIT rhomb = super-rhomb corners / S. Children stay in the super-rhomb frame
+		// (size S): the substitution inflates a tile by S and replaces it with these children.
 		const unit = P.map((v) => new Vector(v.x / S, v.y / S));
 
 		const children: ChildTile[] = rh.map((r) => ({
 			protoId: protoOfRhomb(ring, n, r, U, dirOf),
 			corners: r.map((p) => p.toVector()),
 		}));
-		prototiles.push({ x, unit, children });
+		prototiles.push({ x, unit, superCorners: P, children });
 	}
 	return { n, scaling: S, sigma: sigma(n), prototiles, check };
 }
@@ -325,14 +327,21 @@ function dist(a: Vector, b: Vector): number {
 }
 
 /**
- * Grow a patch by substituting every tile once: each tile is replaced by its prototile's children
- * mapped through the similarity that places the (S-inflated) super-rhomb over the tile.
+ * Grow a patch one substitution level: INFLATE every tile by S, then subdivide it.
+ *
+ * Inflate-first is essential. A level-k patch is a valid gap/overlap-free tiling of unit tiles;
+ * scaling every tile by S turns each into a super-rhomb-sized rhomb (still non-overlapping), and
+ * replacing each with its prototile's fill children subdivides it *within its own bounds*. Mapping
+ * the size-S children straight onto a unit tile instead (no inflation) piles size-S clusters on top
+ * of each other — the tiling then reads as ~40× overlap hidden by opaque overdraw.
  */
 export function substituteOnce(rule: SubRosaRule, tiles: RenderTile[]): RenderTile[] {
+	const S = rule.scaling;
 	const out: RenderTile[] = [];
 	for (const t of tiles) {
 		const proto = rule.prototiles.find((p) => p.x === t.protoId)!;
-		const g = similarity(proto.unit, t.corners);
+		const inflated = t.corners.map((z) => new Vector(z.x * S, z.y * S));
+		const g = similarity(proto.superCorners, inflated);
 		for (const c of proto.children) {
 			out.push({ protoId: c.protoId, corners: c.corners.map(g) });
 		}

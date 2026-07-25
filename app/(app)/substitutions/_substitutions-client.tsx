@@ -16,9 +16,11 @@ import { cn } from "@/lib/utils/cn";
 // n=5 is the shipped, fully-validated symmetry (both Penrose-rhomb prototiles fill exactly).
 const N = 5;
 const MAX_TILES = 90_000;
-// Depths where the patch renders within the tile budget (S(5)≈10 ⇒ ~100× tiles/step):
-// single 1→116→11.5k (depth 3 ≈ 1.1M, capped); star 10→720→71k.
-const MAX_DEPTH = { single: 2, star: 2 } as const;
+// One substitution is exact and gap/overlap-free (verified by dense-grid coverage): single
+// 1→116, star 10→720. Composing a SECOND time overlaps ~1.8% — the simplified super-rhomb here
+// omits the shared corner "rose sectors" (Kari-Rissanen §5) needed to make the rule self-compose.
+// So the depth is capped at 1 until that construction lands; anything deeper would be wrong.
+const MAX_DEPTH = { single: 1, star: 1 } as const;
 
 // Prototile hues (thin (1,4) vs thick (2,3)). Distinct, works in light and dark.
 const HUE = (protoId: number) => (protoId === 1 ? 265 : 175);
@@ -185,12 +187,33 @@ export function SubstitutionsClient() {
 					use.set(e, (use.get(e) ?? 0) + 1);
 				}
 			let over = 0;
-			let single = 0;
-			for (const c of use.values()) {
+			const single: [string, string][] = [];
+			for (const [e, c] of use) {
 				if (c > 2) over++;
-				if (c === 1) single++;
+				if (c === 1) single.push(e.split("|") as [string, string]);
 			}
-			return { tiles: tiles.length, edgesOverused: over, boundaryEdges: single };
+			// Count loops among once-used (boundary) edges: a gap-free simply-connected patch has
+			// exactly ONE boundary loop; each interior hole (gap) adds another. Union-find on endpoints.
+			const parent = new Map<string, string>();
+			const find = (x: string): string => {
+				let r = x;
+				while (parent.get(r) && parent.get(r) !== r) r = parent.get(r)!;
+				parent.set(x, r);
+				return r;
+			};
+			for (const [a, b] of single) {
+				if (!parent.has(a)) parent.set(a, a);
+				if (!parent.has(b)) parent.set(b, b);
+				parent.set(find(a), find(b));
+			}
+			const roots = new Set<string>();
+			for (const k of parent.keys()) roots.add(find(k));
+			return {
+				tiles: tiles.length,
+				edgesOverused: over,
+				boundaryEdges: single.length,
+				boundaryLoops: roots.size,
+			};
 		};
 		(window as unknown as { __subrosa?: unknown }).__subrosa = {
 			setDepth,
@@ -270,6 +293,10 @@ export function SubstitutionsClient() {
 						<span>{tiles.length.toLocaleString()} tiles</span>
 						{capped && <span className="text-amber-500">capped at {MAX_TILES.toLocaleString()}</span>}
 					</div>
+					<p className="text-[11px] text-fg-subtle mt-1 leading-snug">
+						One substitution, verified gap/overlap-free. Composing further needs the shared
+						corner rose sectors (§5) — the next step.
+					</p>
 				</Section>
 
 				<Section label="Display">
