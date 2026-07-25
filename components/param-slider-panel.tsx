@@ -17,6 +17,14 @@ const NAMED_GLYPH: Record<string, { glyph: string; label: string }> = {
 	sweep: { glyph: "s", label: "sweep" },
 };
 
+/** Where the fold centre sits along the track, 0–1, or null when there is none (or it is at an end). */
+function foldFraction(p: ParametricCellData["params"][number]): number | null {
+	const c = p.foldCentreDeg;
+	const [lo, hi] = p.alphaRangeDegOpen;
+	if (c == null || hi - lo < 1e-9 || c <= lo + 1e-9 || c >= hi - 1e-9) return null;
+	return (c - lo) / (hi - lo);
+}
+
 // The free-angle slider overlay for a parametric tiling family. Deliberately a small leaf that
 // subscribes ONLY to `familyAlphas`: dragging writes the new tuple back to the store, which re-renders
 // just this panel (a row or two) — never the page or the canvas. The canvas draw loops read the same
@@ -44,15 +52,28 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 						<span className="text-xs font-medium text-accent whitespace-nowrap w-24">
 							{(NAMED_GLYPH[p.name]?.glyph ?? GREEK[j] ?? `α${j + 1}`)} = {effAlphas[j].toFixed(1)}°
 						</span>
-						<RangeInput
-							min={p.alphaRangeDegOpen[0]}
-							max={p.alphaRangeDegOpen[1]}
-							step={ALPHA_STEP_DEG}
-							value={effAlphas[j]}
-							onChange={(v) => setAlphaAt(j, v)}
-							className="w-56"
-							aria-label={`family angle ${NAMED_GLYPH[p.name]?.label ?? GREEK_NAMES[j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
-						/>
+						<div className="relative w-56">
+							<RangeInput
+								min={p.alphaRangeDegOpen[0]}
+								max={p.alphaRangeDegOpen[1]}
+								step={ALPHA_STEP_DEG}
+								value={effAlphas[j]}
+								onChange={(v) => setAlphaAt(j, v)}
+								className="w-56"
+								aria-label={`family angle ${NAMED_GLYPH[p.name]?.label ?? GREEK_NAMES[j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
+							/>
+							{/* Fold marker: past this angle the sweep replays tilings it already passed, mirrored or
+							    rotated. The range is deliberately NOT clipped there — the replay is still a real
+							    deformation to drag through, it just adds no new tiling (AL, 2026-07-25, NOTES §102). */}
+							{foldFraction(p) !== null ? (
+								<span
+									aria-hidden
+									title={`mirror point — past ${p.foldCentreDeg}° the sweep repeats by ${p.foldKind}`}
+									className="pointer-events-none absolute top-1/2 h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-accent/70"
+									style={{ left: `${(foldFraction(p) as number) * 100}%` }}
+								/>
+							) : null}
+						</div>
 						<span className="text-[10px] text-fg-muted whitespace-nowrap font-mono">
 							({p.alphaRangeDegOpen[0].toFixed(0)}°, {p.alphaRangeDegOpen[1].toFixed(0)}°)
 						</span>

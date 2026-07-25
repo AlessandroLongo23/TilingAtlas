@@ -2,57 +2,29 @@
  "ctrnact-mixed-family-k1-07": {
   "to": "ctrnact-mixed-family-k1-04",
   "uOf": {
+   "m": -1,
+   "c": 150
+  }
+ },
+ "ctrnact-mixed-family-k1-14": {
+  "to": "ctrnact-mixed-family-k1-06",
+  "uOf": {
    "m": 1,
-   "c": 0
+   "c": 90
   }
  },
  "ctrnact-mixed-family-k1-15": {
   "to": "ctrnact-mixed-family-k1-05",
   "uOf": {
    "m": 1,
-   "c": 0
-  }
- },
- "ctrnact-mixed-family-k2-06": {
-  "to": "ctrnact-mixed-family-k2-05",
-  "uOf": {
-   "m": 1,
-   "c": 0
-  }
- },
- "ctrnact-mixed-family-k2-46": {
-  "to": "ctrnact-mixed-family-k2-45",
-  "uOf": {
-   "m": 1,
-   "c": 90
-  }
- },
- "ctrnact-mixed-family-k2-49": {
-  "to": "ctrnact-mixed-family-k2-47",
-  "uOf": {
-   "m": 1,
-   "c": 105
-  }
- },
- "ctrnact-mixed-family-k2-59": {
-  "to": "ctrnact-mixed-family-k2-58",
-  "uOf": {
-   "m": 1,
-   "c": 90
-  }
- },
- "ctrnact-mixed-family-k1-14": {
-  "to": "ctrnact-mixed-family-k1-06",
-  "uOf": {
-   "m": -1,
-   "c": 270
+   "c": -120
   }
  },
  "ctrnact-mixed-family-k1-18": {
   "to": "ctrnact-mixed-family-k1-05",
   "uOf": {
    "m": -1,
-   "c": 240
+   "c": 360
   }
  },
  "ctrnact-mixed-family-k1-31": {
@@ -69,11 +41,39 @@
    "c": 0
   }
  },
+ "ctrnact-mixed-family-k2-06": {
+  "to": "ctrnact-mixed-family-k2-05",
+  "uOf": {
+   "m": -1,
+   "c": 120
+  }
+ },
+ "ctrnact-mixed-family-k2-46": {
+  "to": "ctrnact-mixed-family-k2-45",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
+ "ctrnact-mixed-family-k2-49": {
+  "to": "ctrnact-mixed-family-k2-47",
+  "uOf": {
+   "m": -1,
+   "c": 180
+  }
+ },
  "ctrnact-mixed-family-k2-55": {
   "to": "ctrnact-mixed-family-k2-54",
   "uOf": {
    "m": -1,
-   "c": 240
+   "c": 180
+  }
+ },
+ "ctrnact-mixed-family-k2-59": {
+  "to": "ctrnact-mixed-family-k2-58",
+  "uOf": {
+   "m": -1,
+   "c": 180
   }
  }
 }

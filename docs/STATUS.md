@@ -72,7 +72,38 @@ Old `class=freedraw` / `class=colors` links promote to `dec=edges` / `dec=colori
 Spec: `superpowers/specs/2026-07-25-decoration-axis-design.md`.
 ⚑ Next: fold the shape axis itself onto the period `p` (TILE_TAXONOMY §9), which is the other half of §3.
 
-## Mixed shelf merged (2026-07-25, NOTES §92–§94) — merge sources COMMITTED
+## The α ranges were truncated: 41 mixed families widened, 3,015° of new sweep (2026-07-25, NOTES §102)
+
+★★ **The exporter clipped every family where a tile's SPECIES changed, not where the tiling stopped.** AL,
+from `/play` on k2-01: "nothing prevents the rhombus from shrinking even more and the triangle from becoming
+a concave star. Eventually, when the rhombus disappears at 0°, they would become the star tiling k2-14."
+All of it holds — the cell keeps tiling below 30° (covering multiplicity 1 on 300/300 samples), the rhombus
+reaches zero area at exactly α=0, and that limit is congruent to shipped `ctrnact-star-k2-14` by explicit
+isometry (139/139 cloud points). k2-01 now runs **(0°, 180°)** instead of (30°, 150°).
+Census `scripts/scan-family-ranges.py`: **41 of 98 mixed families truncated, 3,015° gross** (2,235° net of
+folded replay); every true range ends at a tile COLLAPSE on both sides. **18 of the 41** have no on-palette
+grid configuration in the new arc, so the solver cannot supply it under another id — those tilings were
+absent from the atlas outright. Blockers are palette gaps: `cx4-15.165` (18 families), `cx4-30.150` (13),
+`cx4-45.135` (9), stars `3*45`, `4*75`, `6*15`. `isotoxal-star-z24` has cx4 at only 60.120/75.105 and 15 of
+~33 grid-legal star species.
+**This retires the merge machinery for concavity cuts.** All 6 shipped merges were the analytic continuation
+of their own primary, so widening absorbs each partner as a plain duplicate: **0 merges, 11 aliases, same 87
+entries, no segments** — one analytic cell, no seam, no pose, no star-flag unification. `segments` stays in
+the code for a genuine branch point (AL's k2-56 case), where the branches are NOT one analytic arc.
+Also found: **12 folded sliders** (6 rotation, 6 reflection) where α and c−α are the same tiling. Kept at
+full sweep per AL, with the centre marked as a tick on the slider (`foldCentreDeg`).
+⚑ **Two of my own primitives were wrong** and both are fixed: the radial patch fingerprint is only
+NECESSARY for congruence (now confirmed by explicit isometry in both censuses — a false positive there
+DELETES a tiling), and that isometry anchored on the first largest tile, which fails when a cell has several
+largest-tile orbits (k2-05 has 9). The duplicate scan's family-label and equal-length prefilters are also
+gone: a widened family carries a different label on each side of the cut.
+⚑ Next: the isotoxal shelf (3,527 entries) has the same defect at ~36× scale, and its continuations carry
+star tiles a convex-only shelf cannot express — AL deferred it as a taxonomy question. A prior session's
+`scripts/probe-concave-extension.ts` independently agrees: 4 of 14 isotoxal k=1 families extend, k1-01 by
++119.8°. Then push widening upstream into `export_combined_families.py`, and re-measure the 2-parameter
+census with both fixes.
+
+## Mixed shelf merged (2026-07-25, NOTES §92–§94) — SUPERSEDED by §102 above
 
 ★★ **79 mixed entries → 71, each a single continuous sweep** (counts pre-rhombus; the shelf is 83 after
 the 30/150 re-export above, still with the same 6 merged arcs). AL spotted that k2-58/k2-59 are two halves

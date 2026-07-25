@@ -22,6 +22,14 @@ export interface ParametricCellData {
 		alphaRangeDegOpen: [number, number]; // mathematical (open) validity interval — the slider domain
 		defaultAlphaDeg: number;
 		tile?: string; // the isotoxal tile this parameter flexes (e.g. "cx6-90.150")
+		// The slider is not always injective: some families pass through a maximally symmetric member and
+		// come back, so α and 2·foldCentreDeg − α are the SAME tiling (up to an isometry, `foldKind`).
+		// Measured by scripts/scan-family-ranges.py and confirmed with an explicit isometry search, never
+		// with the radial fingerprint alone. Kept rather than clipped (AL, 2026-07-25): the replayed half is
+		// still a real sweep to drag through, it just adds no new tilings, so the UI marks the centre
+		// instead of hiding half the range. See docs/DEVELOPMENT_NOTES.md §102.
+		foldCentreDeg?: number;
+		foldKind?: "rotation" | "reflection";
 	}[];
 	cellPolygons: { n: number; star?: boolean; vertices: ParamTerm[][] }[];
 	basis: [ParamTerm[], ParamTerm[]];

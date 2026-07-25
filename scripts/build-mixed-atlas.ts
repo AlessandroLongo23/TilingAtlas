@@ -16,6 +16,7 @@ import path from "node:path";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { applyMergePlan } from "./merge-plan";
+import { applyRangePlan, rangeNote, type RangePlan } from "./range-plan";
 
 interface FamilyRecord {
 	id: string;
@@ -39,6 +40,7 @@ const IN_PATHS = [
 ];
 const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json");
 const PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-merge-plan.json");
+const RANGE_PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-range-plan.json");
 const UNMERGED_PATH = path.join(ROOT, "experiments", "results", "mixed-atlas-unmerged.json");
 const ALIAS_PATH = path.join(ROOT, "lib", "services", "mergedFamilyAliases.json");
 const LOG_PATH = path.join(ROOT, "experiments", "results", "mixed-atlas-build.log");
@@ -107,6 +109,17 @@ function main(): void {
 			note: NOTE,
 		});
 		log(`  ${r.id}  ${familyLabel(r.familySymbol)}  P=${r.P}`);
+	}
+	// Widen first, merge second. A widened family covers its own continuation, so its former partner turns
+	// into a plain duplicate — and the join census must run against the widened snapshot to see that.
+	applyRangePlan(out, { planPath: RANGE_PLAN_PATH, logName: "mixed-family", log, root: ROOT });
+	if (fs.existsSync(RANGE_PLAN_PATH)) {
+		const plan = JSON.parse(fs.readFileSync(RANGE_PLAN_PATH, "utf8")) as RangePlan;
+		const byId = new Map(out.map((t) => [t.id, t]));
+		for (const r of plan.ranges) {
+			const t = byId.get(r.id);
+			if (t && r.gainDeg > 0.01) t.note = `${t.note ?? NOTE} ${rangeNote(r)}`;
+		}
 	}
 	const merged = applyMergePlan(out, {
 		planPath: PLAN_PATH,

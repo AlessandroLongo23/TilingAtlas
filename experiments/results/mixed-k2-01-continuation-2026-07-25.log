@@ -1,0 +1,75 @@
+=== k2-01 continuation probe ===
+symbol   (12S@d@20,3) + (12S@d@20,3) + (12S@p@2,3,cx4@0@a,cx6@1@-a+14,3) + (12S@p@2,3,cx4@1@-a+12,cx6@0@a+2,3)
+exported α ∈ [30.0, 150.0], param alpha (cx4-60.120)
+
+    α      Σarea      |det|  cert  min tile area  tile-area multiset
+  150  16.160254  16.160254    OK       0.433013  [0.433, 0.5, 1.7321, 6.0]
+  149  16.257462  16.257462    OK       0.433013  [0.433, 0.515, 1.7581, 6.0]
+  120  18.526279  18.526279    OK       0.433013  [0.433, 0.866, 2.366, 6.0]
+   90  19.392305  19.392305    OK       0.433013  [0.433, 1.0, 2.5981, 6.0]
+   60  18.526279  18.526279    OK       0.433013  [0.433, 0.866, 2.366, 6.0]
+   31  16.257462  16.257462    OK       0.433013  [0.433, 0.515, 1.7581, 6.0]
+   30  16.160254  16.160254    OK       0.433013  [0.433, 0.5, 1.7321, 6.0]
+   29  16.062062  16.062062    OK       0.433013  [0.433, 0.4848, 1.7057, 6.0]
+   25  15.660051  15.660051    OK       0.422618  [0.4226, 0.433, 1.598, 6.0]
+   20  15.139056  15.139056    OK       0.342020  [0.342, 0.433, 1.4584, 6.0]
+   15  14.601236  14.601236    OK       0.258819  [0.2588, 0.433, 1.3143, 6.0]
+   10  14.050683  14.050683    OK       0.173648  [0.1736, 0.433, 1.1668, 6.0]
+    5  13.491587  13.491587    OK       0.087156  [0.0872, 0.433, 1.017, 6.0]
+    1  13.041017  13.041017    OK       0.017452  [0.0175, 0.433, 0.8963, 6.0]
+    0  12.928203  12.928203    OK       0.000000  [0.0, 0.433, 0.866, 6.0]
+   -5  12.887754  12.364820  FAIL       0.087156  [0.0872, 0.433, 0.7151, 6.0]
+
+--- the two 6-gons and the rhombus, angle by angle ---
+6-gon cell indices [5, 12], 4-gon indices [4, 16, 17]
+    α                             6gon#5                            6gon#12           4gon#4        4gon#16        4gon#17
+  150                      [60.0, 180.0]                      [60.0, 180.0]       0.500000       0.500000       0.500000
+  120                      [90.0, 150.0]                      [90.0, 150.0]       0.866025       0.866025       0.866025
+   90                            [120.0]                            [120.0]       1.000000       1.000000       1.000000
+   60                      [90.0, 150.0]                      [90.0, 150.0]       0.866025       0.866025       0.866025
+   31                      [61.0, 179.0]                      [61.0, 179.0]       0.515038       0.515038       0.515038
+   30                      [60.0, 180.0]                      [60.0, 180.0]       0.500000       0.500000       0.500000
+   29                      [59.0, 181.0]                      [59.0, 181.0]       0.484810       0.484810       0.484810
+   20                      [50.0, 190.0]                      [50.0, 190.0]       0.342020       0.342020       0.342020
+   10                      [40.0, 200.0]                      [40.0, 200.0]       0.173648       0.173648       0.173648
+    1                      [31.0, 209.0]                      [31.0, 209.0]       0.017452       0.017452       0.017452
+    0                      [30.0, 210.0]                      [30.0, 210.0]       0.000000       0.000000       0.000000
+
+--- direct covering test (400 samples; 1 = tiles exactly) ---
+  α=   60: multiplicities {1: 400}
+  α=   30: multiplicities {1: 400}
+  α=   29: multiplicities {1: 400}
+  α=   20: multiplicities {1: 400}
+  α=   10: multiplicities {1: 400}
+  α=    2: multiplicities {1: 400}
+  α=  0.5: multiplicities {1: 400}
+
+=== (1) does the k2-01 slider FOLD at 90°? ===
+  α= 31  vs  α=149   patch-congruent: True   (18 vs 18 tiles, 1×1 anchors)
+  α= 40  vs  α=140   patch-congruent: True   (18 vs 18 tiles, 1×1 anchors)
+  α= 60  vs  α=120   patch-congruent: True   (18 vs 18 tiles, 1×1 anchors)
+  α= 75  vs  α=105   patch-congruent: True   (18 vs 18 tiles, 1×1 anchors)
+  α= 89  vs  α= 91   patch-congruent: True   (18 vs 18 tiles, 1×1 anchors)
+
+=== (2) is the α→0 limit the star tiling ctrnact-star-k2-14? ===
+  k2-01 @ α=0     tiles (zero-area dropped): {(3, 0.43301): 12, (6, 0.86603): 2, (24, 6.0): 1}
+                  |det| = 12.928203, Σarea = 12.928203
+  star k2-14      tiles: {(3, 0.43301): 12, (6, 0.86603): 2, (24, 6.0): 1}
+                  |det| = 12.928203, Σarea = 12.928203
+                  family label: 3.3*.12*, discoverer Joseph Myers
+  patch-congruent: True   (15 vs 15 tiles in the cell, 1×1 anchors)
+
+=== (3) does any exported mixed family already cover the concave wing (a 3S tile)? ===
+  98 mixed families exported; 33 contain a 3S (3-pointed star) tile
+  tile species across the shelf: {'12S': 10, '3S': 130, '4S': 301, '6S': 73, '8S': 12, 'cx12': 8, 'cx4': 425, 'cx6': 71, 'cx8': 97, 'regular-3': 46, 'regular-4': 16, 'regular-6': 4, 'regular-8': 2}
+
+=== hunting the k2-01 wing: target = k2-01 @ α=20.0° ===
+  tile counts by vertex count: ((3, 12), (4, 3), (6, 2), (24, 1))
+  |det| = 15.139056
+
+  0 family/families share the density signature at some α:
+
+  patch-congruence at the signature-matching α values:
+    (no candidates at all — the wing is NOT in the exported corpus)
+
+=== which exported families carry BOTH a 12S and a 3S with a cx4? (the wing's shape) ===

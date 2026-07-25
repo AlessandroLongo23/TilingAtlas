@@ -1527,3 +1527,12 @@ lights its two source lines + crossing in the grid, and hovering a crossing ligh
 crossing↔rhombus correspondence made interactive. Two `MgTile` fields (`site`, `fams`) carry the link;
 overlay canvases draw the highlight so the GL/grid bases don't re-render on hover. 13/13 vitest, build
 clean; Playwright confirms both hover directions. Spec updated (split-view section).
+
+### 2026-07-25 — CC: α ranges widened, 41 mixed families, merges retired
+AL saw on /play that mixed k2-01's slider stops where its flexing tile turns concave, not where the tiling
+ends. Confirmed and generalised: 41 of 98 mixed families were truncated at that species cut (3,015° of arc),
+18 of them holding tilings no palette species can seed, so absent from the atlas. Widening each family to
+its true collapse-to-collapse interval retires the merge machinery for these cuts — all 6 merges were the
+analytic continuation of their own primary, so the partners absorb as duplicates: 0 merges, same 87 entries,
+no segments. Also 12 folded sliders marked, and two congruence primitives fixed (fingerprint alone is not
+congruence; the isometry search must try every largest-tile anchor). Detail: DEVELOPMENT_NOTES.md §102. — CC

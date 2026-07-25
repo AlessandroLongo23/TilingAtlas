@@ -1,6 +1,12 @@
 /*
  * probe-concave-extension.ts — does an isotoxal α-family keep tiling PAST the convexity boundary?
  *
+ * SUPERSEDED by scripts/scan-family-ranges.py, which answers the same question with more: it separates a
+ * collapse boundary from an overlap one, adds a direct covering test (the area certificate alone cannot
+ * tell a tiling from an overlap that a gap cancels), detects folded sliders, and reports whether a newly
+ * opened arc is reachable from the search palette at all. Kept because the two agree independently on the
+ * isotoxal k=1 shelf — 4 of 14 families extend, k1-01 by +119.8° (NOTES §102).
+ *
  * The exporter clips every family's α-range at convexity (both α,β ∈ (0,180)). AL's conjecture: some
  * families would keep tiling if you pushed α past β=180 into the CONCAVE (star) regime — same edge-to-edge,
  * no gap/overlap. This tests it directly: for each param, sweep α across the full (0,180) open interval,

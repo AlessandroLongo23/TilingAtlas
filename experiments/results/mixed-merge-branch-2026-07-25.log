@@ -1,0 +1,69 @@
+=== is each merged slider one analytic branch, or does it switch branch at the seam? ===
+
+merge ctrnact-mixed-family-k1-04  coord sweep  u∈[0.0, 120]  join u=60
+  continuing ctrnact-mixed-family-k1-04 past the join (vs ctrnact-mixed-family-k1-07):
+    u=  70.00: 04@α=  80.00 still tiles=True   vs 07@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  80.00: 04@α=  70.00 still tiles=True   vs 07@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  90.00: 04@α=  60.00 still tiles=True   vs 07@α=  90.00:  same tiles=True  fingerprint=True  isometry=rotation
+  continuing ctrnact-mixed-family-k1-07 past the join (vs ctrnact-mixed-family-k1-04):
+    u=  50.00: 07@α=  50.00 still tiles=True   vs 04@α= 100.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  40.00: 07@α=  40.00 still tiles=True   vs 04@α= 110.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  30.00: 07@α=  30.00 still tiles=True   vs 04@α= 120.00:  same tiles=True  fingerprint=True  isometry=rotation
+
+merge ctrnact-mixed-family-k1-05  coord sweep  u∈[0.0, 180]  join u=60
+  continuing ctrnact-mixed-family-k1-05 past the join (vs ctrnact-mixed-family-k1-15):
+    u=  70.00: 05@α= 190.00 still tiles=True   vs 15@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  80.00: 05@α= 200.00 still tiles=True   vs 15@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  90.00: 05@α= 210.00 still tiles=True   vs 15@α=  90.00:  same tiles=True  fingerprint=True  isometry=rotation
+  continuing ctrnact-mixed-family-k1-15 past the join (vs ctrnact-mixed-family-k1-05):
+    u=  50.00: 15@α=  50.00 still tiles=True   vs 05@α= 170.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  40.00: 15@α=  40.00 still tiles=True   vs 05@α= 160.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  30.00: 15@α=  30.00 still tiles=True   vs 05@α= 150.00:  same tiles=True  fingerprint=True  isometry=rotation
+
+merge ctrnact-mixed-family-k2-05  coord sweep  u∈[0.0, 120]  join u=60
+  continuing ctrnact-mixed-family-k2-05 past the join (vs ctrnact-mixed-family-k2-06):
+    u=  70.00: 05@α=  50.00 still tiles=True   vs 06@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  80.00: 05@α=  40.00 still tiles=True   vs 06@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  90.00: 05@α=  30.00 still tiles=True   vs 06@α=  90.00:  same tiles=True  fingerprint=True  isometry=rotation
+  continuing ctrnact-mixed-family-k2-06 past the join (vs ctrnact-mixed-family-k2-05):
+    u=  50.00: 06@α=  50.00 still tiles=True   vs 05@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  40.00: 06@α=  40.00 still tiles=True   vs 05@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u=  30.00: 06@α=  30.00 still tiles=True   vs 05@α=  90.00:  same tiles=True  fingerprint=True  isometry=rotation
+
+merge ctrnact-mixed-family-k2-45  coord theta  u∈[90.0, 240.0]  join u=180.0
+  continuing ctrnact-mixed-family-k2-46 past the join (vs ctrnact-mixed-family-k2-45):
+    u= 190.00: 46@α= 100.00 still tiles=True   vs 45@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 200.00: 46@α= 110.00 still tiles=True   vs 45@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 210.00: 46@α= 120.00 still tiles=True   vs 45@α=  60.00:  same tiles=True  fingerprint=True  isometry=rotation
+  continuing ctrnact-mixed-family-k2-45 past the join (vs ctrnact-mixed-family-k2-46):
+    u= 170.00: 45@α= 100.00 still tiles=True   vs 46@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 160.00: 45@α= 110.00 still tiles=True   vs 46@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 150.00: 45@α= 120.00 still tiles=True   vs 46@α=  60.00:  same tiles=True  fingerprint=True  isometry=rotation
+
+merge ctrnact-mixed-family-k2-47  coord theta  u∈[105.0, 240.0]  join u=180.0
+  continuing ctrnact-mixed-family-k2-49 past the join (vs ctrnact-mixed-family-k2-47):
+    u= 190.00: 49@α=  85.00 still tiles=True   vs 47@α=  95.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 200.00: 49@α=  95.00 still tiles=True   vs 47@α=  85.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 210.00: 49@α= 105.00 still tiles=True   vs 47@α=  75.00:  same tiles=True  fingerprint=True  isometry=rotation
+  continuing ctrnact-mixed-family-k2-47 past the join (vs ctrnact-mixed-family-k2-49):
+    u= 170.00: 47@α= 115.00 still tiles=True   vs 49@α=  65.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 160.00: 47@α= 125.00 still tiles=True   vs 49@α=  55.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 150.00: 47@α= 135.00 still tiles=True   vs 49@α=  45.00:  same tiles=True  fingerprint=True  isometry=rotation
+
+merge ctrnact-mixed-family-k2-58  coord theta  u∈[90.0, 240.0]  join u=180.0
+  continuing ctrnact-mixed-family-k2-59 past the join (vs ctrnact-mixed-family-k2-58):
+    u= 190.00: 59@α= 100.00 still tiles=True   vs 58@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 200.00: 59@α= 110.00 still tiles=True   vs 58@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 210.00: 59@α= 120.00 still tiles=True   vs 58@α=  60.00:  same tiles=True  fingerprint=True  isometry=rotation
+  continuing ctrnact-mixed-family-k2-58 past the join (vs ctrnact-mixed-family-k2-59):
+    u= 170.00: 58@α= 100.00 still tiles=True   vs 59@α=  80.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 160.00: 58@α= 110.00 still tiles=True   vs 59@α=  70.00:  same tiles=True  fingerprint=True  isometry=rotation
+    u= 150.00: 58@α= 120.00 still tiles=True   vs 59@α=  60.00:  same tiles=True  fingerprint=True  isometry=rotation
+
+=== verdict ===
+  ctrnact-mixed-family-k1-04         04:analytic  07:analytic
+  ctrnact-mixed-family-k1-05         05:analytic  15:analytic
+  ctrnact-mixed-family-k2-05         05:analytic  06:analytic
+  ctrnact-mixed-family-k2-45         46:analytic  45:analytic
+  ctrnact-mixed-family-k2-47         49:analytic  47:analytic
+  ctrnact-mixed-family-k2-58         59:analytic  58:analytic

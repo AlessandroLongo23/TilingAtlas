@@ -91,22 +91,12 @@ const seam = (t: ReferenceTiling): { lower: EvalCell; upper: EvalCell; join: num
 
 describe("merge plan", () => {
 	it("plans exactly the arcs the census found, across every shelf", () => {
-		// The isotoxal shelf plans NO merges. Its three former candidates turned out to be α-reversal
-		// duplicates of their own primary once the congruence patch was made coverage-safe, so they are
-		// absorbed rather than spliced: a merge needs two DISTINCT families meeting at a limit (§101).
-		expect(PLANNED_IDS).toEqual([
-			"ctrnact-mixed-family-k1-04",
-			"ctrnact-mixed-family-k1-05",
-			"ctrnact-mixed-family-k2-05",
-			"ctrnact-mixed-family-k2-45",
-			"ctrnact-mixed-family-k2-47",
-			"ctrnact-mixed-family-k2-58",
-		]);
-		expect(PLAN.merges.filter((m) => m.coordinate === "theta").map((m) => m.id).sort()).toEqual([
-			"ctrnact-mixed-family-k2-45",
-			"ctrnact-mixed-family-k2-47",
-			"ctrnact-mixed-family-k2-58",
-		]);
+		// NO shelf plans a merge any more, and that is the point. A merge spliced two exported halves at a
+		// concavity cut; widening each family to its true validity interval (scripts/range-plan.ts, §102)
+		// makes the primary cover its own continuation, so the former partner is a plain α-reversal
+		// duplicate and gets absorbed instead. Same 11 ids leave the mixed shelf either way — but with one
+		// analytic cell rather than two posed segments, so there is no seam to keep continuous.
+		expect(PLANNED_IDS).toEqual([]);
 	});
 
 	// All-or-exactly-the-plan. This is what stops the skip below from hiding a regression: a shelf that lost
@@ -206,21 +196,107 @@ describe.skipIf(MERGED.length === 0)("merged families", () => {
 	});
 });
 
+// ── widened ranges (scripts/range-plan.ts, NOTES §102) ────────────────────────────────────────────────
+// The exporter clipped each family where a flexing tile's species changed (convex 2n-gon ↔ concave
+// n-pointed star), not where the tiling stopped existing. These check that what now ships past those old
+// bounds is a real tiling, and that the shelf matches the plan that was measured.
+type RangePlan = {
+	ranges: { id: string; exported: [number, number]; range: [number, number]; gainDeg: number;
+	          fold: { centreDeg: number | null; kind: string } | null }[];
+};
+const RANGE_PLAN = (read("experiments/results/mixed-range-plan.json") as RangePlan).ranges;
+const WIDENED = RANGE_PLAN.filter((r) => r.gainDeg > 0.01);
+const ALIASES: Record<string, unknown> = read("lib/services/mergedFamilyAliases.json");
+
+describe("widened α ranges", () => {
+	it("ships every planned range, or absorbed that id as a duplicate", () => {
+		const byId = new Map(SHELF.map((t) => [t.id, t]));
+		for (const r of WIDENED) {
+			const t = byId.get(r.id);
+			if (!t) {
+				// gone from the shelf: only legitimate if the widening made it a duplicate of another entry
+				expect(ALIASES[r.id], `${r.id} vanished without an alias`).toBeDefined();
+				continue;
+			}
+			expect(t.alphaRange, `${r.id} range`).toEqual(r.range);
+			expect(t.paramCell!.params[0].alphaRangeDegOpen, `${r.id} param range`).toEqual(r.range);
+		}
+	});
+
+	// The claim the widening rests on: the cell keeps tiling past the old bound. Σ|tile area| == |det basis|
+	// is the exporter's own tiling certificate — an overlap or a gap breaks it — checked right across the
+	// widened sweep, not just at the sampled α the census used.
+	it("tiles at every slider position across each widened sweep", () => {
+		const byId = new Map(SHELF.map((t) => [t.id, t]));
+		for (const r of WIDENED) {
+			const t = byId.get(r.id);
+			if (!t?.paramCell) continue;
+			const [lo, hi] = r.range;
+			for (let i = 0; i <= 120; i++) {
+				const u = lo + ((hi - lo) * i) / 120;
+				const cell = evalAt(t.paramCell, u);
+				const sum = cell.cellPolygons.reduce((s, p) => s + area(p.vertices), 0);
+				expect(Math.abs(sum - det(cell.basis)), `${r.id} @ ${u.toFixed(2)}°`).toBeLessThan(1e-6);
+			}
+		}
+	});
+
+	// A tile reaching zero area is what ends the range, so the interval must be open: the endpoints
+	// themselves are the degenerate limits, and every interior position must have real tiles.
+	it("keeps every tile non-degenerate strictly inside the range", () => {
+		const byId = new Map(SHELF.map((t) => [t.id, t]));
+		for (const r of WIDENED) {
+			const t = byId.get(r.id);
+			if (!t?.paramCell) continue;
+			const [lo, hi] = r.range;
+			for (const u of [lo + (hi - lo) * 0.05, (lo + hi) / 2, hi - (hi - lo) * 0.05]) {
+				const cell = evalAt(t.paramCell, u);
+				const min = Math.min(...cell.cellPolygons.map((p) => area(p.vertices)));
+				expect(min, `${r.id} @ ${u.toFixed(2)}° has a collapsed tile`).toBeGreaterThan(1e-9);
+			}
+		}
+	});
+
+	it("marks each fold centre strictly inside its range", () => {
+		const byId = new Map(SHELF.map((t) => [t.id, t]));
+		let marked = 0;
+		for (const r of RANGE_PLAN) {
+			const p = byId.get(r.id)?.paramCell?.params[0];
+			if (!p) continue;
+			if (r.fold?.centreDeg == null) {
+				expect(p.foldCentreDeg, `${r.id} should carry no fold`).toBeUndefined();
+				continue;
+			}
+			expect(p.foldCentreDeg, `${r.id} fold centre`).toBe(r.fold.centreDeg);
+			expect(p.foldKind).toBe(r.fold.kind);
+			expect(p.foldCentreDeg!).toBeGreaterThanOrEqual(p.alphaRangeDegOpen[0]);
+			expect(p.foldCentreDeg!).toBeLessThanOrEqual(p.alphaRangeDegOpen[1]);
+			marked++;
+		}
+		expect(marked, "no fold centres reached the shelf").toBeGreaterThan(0);
+	});
+});
+
 describe("resolveMergedFamilyKey", () => {
-	it("redirects an absorbed id and carries its angle onto the merged coordinate", () => {
-		// k2-59 was the convex half: u = 90 + α, so its old α=45° is θ=135°.
+	it("redirects an absorbed id and carries its angle onto the survivor's coordinate", () => {
+		// k2-59 is the α-reversal of the widened k2-58: α ↦ 180 − α, so its old α=45° lands at 135°.
 		expect(resolveMergedFamilyKey({ tiling: "ctrnact-mixed-family-k2-59", alphas: [45] })).toEqual({
 			tiling: "ctrnact-mixed-family-k2-58",
 			alphas: [135],
 		});
 	});
 
-	// k1-18 is the α-REVERSAL of k1-15, and k1-15 was itself absorbed into k1-05: the two maps compose, and
-	// dropping the angle half of the reversal is the bug that invented a phantom loop in the first census.
-	it("composes a reversal duplicate through the merge that absorbed its target", () => {
+	// k1-18 is the α-REVERSAL of k1-15, and k1-15 is itself absorbed into k1-05: the two maps compose into
+	// α ↦ 360 − α. Dropping the angle half of a reversal is the bug that invented a phantom loop in the
+	// first census, so a chained reversal is the case worth pinning.
+	it("composes a reversal duplicate through the entry that absorbed its target", () => {
 		expect(resolveMergedFamilyKey({ tiling: "ctrnact-mixed-family-k1-18", alphas: [180] })).toEqual({
 			tiling: "ctrnact-mixed-family-k1-05",
-			alphas: [60], // 240 − 180, i.e. k1-15's α=60° end — the join, not its α=180° end
+			alphas: [180],
+		});
+		expect(resolveMergedFamilyKey({ tiling: "ctrnact-mixed-family-k1-18", alphas: [240] })).toEqual({
+			tiling: "ctrnact-mixed-family-k1-05",
+			alphas: [120],
 		});
 	});
 

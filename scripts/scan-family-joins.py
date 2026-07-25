@@ -157,11 +157,64 @@ def patch_fingerprints(fid, pc, alphas):
     return out
 
 
+def _clouds(pc, alphas, radius):
+    """Labelled tile-centroid clouds, ONE PER largest-tile anchor, that anchor at the origin.
+
+    `alphas` is the parameter LIST, matching cell_at / patch_fingerprints — not a bare angle.
+    All anchors, not just the first: a cell can hold several largest tiles in different orbits (k2-05 has
+    9), and a congruence may map one family's anchor onto any of the other's."""
+    polys, basis = cell_at(pc, alphas)
+    ps = [p for p in polys if abs(signed_area(p["v"])) > ZERO_AREA]
+    det = abs(basis[0].real * basis[1].imag - basis[1].real * basis[0].imag)
+    h = det / max(abs(basis[0]), abs(basis[1]))
+    extent = max(abs(z) for p in ps for z in p["v"])
+    n = int(math.ceil((radius + 2 * extent) / max(h, 1e-9))) + 1
+    pre = [((p["n"], round(abs(signed_area(p["v"])), 6)), centroid(p["v"])) for p in ps]
+    top = max(t[0] for t, _ in pre)
+    trans = [i * basis[0] + j * basis[1] for i in range(-n, n + 1) for j in range(-n, n + 1)]
+    return [[(lab, z + t - anc) for t in trans for lab, z in pre if abs(z + t - anc) <= radius + 1e-6]
+            for lab0, anc in pre if lab0[0] == top]
+
+
+def _isometry(a_pts, b_pts, radius):
+    """The actual isometry carrying a_pts onto b_pts, or None. One neighbour pairing fixes the rotation;
+    both orientations are tried. Only points safely inside the radius get to decide, so the ragged patch
+    edge cannot."""
+    inner = radius - 1.0
+    idx = {}
+    for lab, z in b_pts:
+        idx.setdefault(lab, []).append(z)
+    a_inner = [(lab, z) for lab, z in a_pts if abs(z) <= inner]
+    if not a_inner:
+        return None
+    ref = min(((lab, z) for lab, z in a_pts if abs(z) > 1e-9), key=lambda t: abs(t[1]))
+    for kind, rot in [(k, z / (ref[1].conjugate() if k == "reflection" else ref[1]))
+                      for z in idx.get(ref[0], []) if abs(abs(z) - abs(ref[1])) < 1e-6
+                      for k in ("rotation", "reflection")]:
+        if abs(abs(rot) - 1) > 1e-9:
+            continue
+        if all(any(abs(rot * (z.conjugate() if kind == "reflection" else z) - u) < 1e-6
+                   for u in idx.get(lab, []))
+               for lab, z in a_inner):
+            return kind
+    return None
+
+
 def congruent(fa, fb, aa, ab):
-    return bool(
-        patch_fingerprints(fa["id"], fa["paramCell"], aa)
-        & patch_fingerprints(fb["id"], fb["paramCell"], ab)
-    )
+    """Are these two evaluated families the SAME tiling?
+
+    The radial patch fingerprint is a multiset of (tile type, distance) from one anchor — NECESSARY for
+    congruence, never sufficient, because it is a distance list and distance lists collide. Used alone it
+    can absorb a DISTINCT family as a duplicate, which deletes a tiling from the atlas: the worst error
+    this census can make. So fingerprint to prefilter (cheap, cached), explicit isometry to decide.
+    See docs/DEVELOPMENT_NOTES.md §102.
+    """
+    if not (patch_fingerprints(fa["id"], fa["paramCell"], aa)
+            & patch_fingerprints(fb["id"], fb["paramCell"], ab)):
+        return False
+    r = PATCH_R + 1.0
+    ca, cb = _clouds(fa["paramCell"], aa, r), _clouds(fb["paramCell"], ab, r)
+    return any(_isometry(x, y, r) for x in ca for y in cb)
 
 
 # ── the rigid/flexing partition: WHICH tiles morph and which stay put ─────────────────────────────────
@@ -410,22 +463,33 @@ def main(atlas_path, plan_path):
     #    phantom joins (it reported a false loop for k1-05/k1-15 until the angle map was added).
     dups, dup_edges = [], defaultdict(list)
     for f, g in itertools.combinations(atlas, 2):
-        if f["family"] != g["family"]:
-            continue
         lf = f["paramCell"]["params"][0]["alphaRangeDegOpen"]
         lg = g["paramCell"]["params"][0]["alphaRangeDegOpen"]
-        if abs((lf[1] - lf[0]) - (lg[1] - lg[0])) > 1e-9:
-            continue
         at = lambda rng, u: [rng[0] + u * (rng[1] - rng[0])]
+        # No label prefilter, and no equal-length prefilter. Both were wrong once ranges run to their true
+        # limits (NOTES §102): the SAME family carries a different label on each side of a concavity cut
+        # (`4.4α.6α.6*` vs `4.4α.3*.6*`, since the flexing hexagon is convex on one side and a 3-pointed
+        # star on the other), and the two exports can walk the arc at different angular speeds, so their
+        # ranges differ in length while still being affinely the same sweep. Comparing by FRACTION of the
+        # range is speed-independent; what replaces the prefilter is the midpoint, which both the forward
+        # and the reversed map fix, so a same-family pair must agree there. One cached fingerprint per
+        # family kills the O(n²) sweep. (A folded family can miss here — its midpoint is the fold centre —
+        # which loses a duplicate rather than inventing one.)
+        if not congruent(f, g, at(lf, 0.5), at(lg, 0.5)):
+            continue
         fwd = all(congruent(f, g, at(lf, u), at(lg, u)) for u in SAMPLES)
         rev = all(congruent(f, g, at(lf, u), at(lg, 1 - u)) for u in SAMPLES)
         if fwd or rev:
             kind = "forward" if fwd else "reversed"
             dups.append((f, g, lf, lg, kind))
-            # α in the OTHER family's coordinate, both directions. Reversal is an involution about the
-            # midpoint of the TARGET's range, so each direction is pinned by its own endpoints.
-            f2g = {"m": 1, "c": 0} if fwd else {"m": -1, "c": lg[0] + lg[1]}
-            g2f = {"m": 1, "c": 0} if fwd else {"m": -1, "c": lf[0] + lf[1]}
+            # α in the OTHER family's coordinate, both directions, as the general affine map that carries
+            # one range onto the other — |m| is the speed ratio, not necessarily 1.
+            sf, sg = lf[1] - lf[0], lg[1] - lg[0]
+            r = sg / sf if sf else 1.0
+            f2g = ({"m": r, "c": round(lg[0] - lf[0] * r, 9)} if fwd
+                   else {"m": -r, "c": round(lg[1] + lf[0] * r, 9)})
+            g2f = ({"m": 1 / r, "c": round(lf[0] - lg[0] / r, 9)} if fwd
+                   else {"m": -1 / r, "c": round(lf[1] + lg[0] / r, 9)})
             dup_edges[g["id"]].append((f["id"], g2f))
             dup_edges[f["id"]].append((g["id"], f2g))
 

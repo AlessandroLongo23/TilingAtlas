@@ -1,0 +1,421 @@
+=== scan-family-ranges: true α ranges vs exported ===
+input: experiments/results/ctrnact-mixed-families.cells.json, experiments/results/ctrnact-mixed-families-k2.cells.json
+palette: tools/ctrnact-oracle/alphabets/palettes/isotoxal-star-z24.json — 29 species, 15° per angle unit
+98 families, 98 single-parameter (the rest need the 2-param sweep)
+
+[1/98] ctrnact-mixed-family-k1-01
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 24, 12, 12, 4, 4, 4, 4, 8, 4, 4, 4, 4, 8, 4, 4, 4, 4, 8, 4, 4] high=False[]
+[2/98] ctrnact-mixed-family-k1-02
+    exported (0, 90)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[4, 4, 24, 12, 12, 8, 8, 4, 4, 4, 4, 8] high=True[8, 8, 8]   TRUNCATED +30.00°
+    new high arc: solver-reachable=False  off-palette species ['12*45', '4*75', '6*15']
+[3/98] ctrnact-mixed-family-k1-03
+    exported (60, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[6, 6] high=False[]   TRUNCATED +60.00°; FOLDED rotation @ 24.0°≡96.0° (centre 60°)
+    new low arc: solver-reachable=True
+[4/98] ctrnact-mixed-family-k1-04
+    exported (90, 150)  true (0.0000, 150.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[8, 6, 12, 8, 8, 6] high=False[]   TRUNCATED +90.00°
+    new low arc: solver-reachable=True
+[5/98] ctrnact-mixed-family-k1-05
+    exported (120, 180)  true (120.0000, 300.0000)  stops: low=collapse high=collapse  distinct sweep 180.00°
+    exported bounds concavity cuts? low=True[12] high=True[12, 6, 6]   TRUNCATED +120.00°
+    new high arc: solver-reachable=True
+[6/98] ctrnact-mixed-family-k1-06
+    exported (90, 180)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[8, 8] high=True[8]   TRUNCATED +90.00°; FOLDED rotation @ 36.0°≡144.0° (centre 90°)
+    new low arc: solver-reachable=True
+[7/98] ctrnact-mixed-family-k1-07
+    exported (60, 120)  true (0.0000, 150.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[12, 8, 8, 6, 6, 8] high=True[12]   TRUNCATED +90.00°
+    new low arc: solver-reachable=True
+    new high arc: solver-reachable=False  off-palette species ['4*15', '6*105']
+[8/98] ctrnact-mixed-family-k1-08
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8] high=False[]
+[9/98] ctrnact-mixed-family-k1-09
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 4] high=False[]
+[10/98] ctrnact-mixed-family-k1-10
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 4, 4] high=False[]
+[11/98] ctrnact-mixed-family-k1-11
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 4, 4, 8] high=True[8]
+[12/98] ctrnact-mixed-family-k1-12
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 4, 4, 8] high=True[8]
+[13/98] ctrnact-mixed-family-k1-13
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 4, 4] high=False[]
+[14/98] ctrnact-mixed-family-k1-14
+    exported (90, 180)  true (90.0000, 270.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[8] high=True[8, 8]   TRUNCATED +90.00°; FOLDED rotation @ 126.0°≡234.0° (centre 180°)
+    new high arc: solver-reachable=True
+[15/98] ctrnact-mixed-family-k1-15
+    exported (60, 180)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 180.00°
+    exported bounds concavity cuts? low=True[6, 12, 6] high=True[6, 6]   TRUNCATED +60.00°
+    new low arc: solver-reachable=True
+[16/98] ctrnact-mixed-family-k1-16
+    exported (0, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[4, 12, 4, 4] high=False[]
+[17/98] ctrnact-mixed-family-k1-17
+    exported (0, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[4, 4, 12, 4, 4, 4, 4] high=False[]
+[18/98] ctrnact-mixed-family-k1-18
+    exported (60, 180)  true (60.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 180.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 12, 6]   TRUNCATED +60.00°
+    new high arc: solver-reachable=True
+[19/98] ctrnact-mixed-family-k1-19
+    exported (45, 90)  true (45.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=False[] high=True[8]   TRUNCATED +90.00°
+    new high arc: solver-reachable=False  off-palette species ['8*105', '8*120', '8*60', '8*75', 'cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[20/98] ctrnact-mixed-family-k1-20
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 6, 4, 6, 4] high=False[]
+[21/98] ctrnact-mixed-family-k1-21
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 6, 4, 4] high=False[]
+[22/98] ctrnact-mixed-family-k1-22
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 6, 6, 6, 6, 4, 6, 6, 4] high=False[]
+[23/98] ctrnact-mixed-family-k1-23
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 6, 6, 8, 6, 8, 6, 4] high=False[]
+[24/98] ctrnact-mixed-family-k1-24
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 6, 12, 4, 4, 6, 4, 4] high=False[]
+[25/98] ctrnact-mixed-family-k1-25
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 6, 8, 4, 4, 12, 4, 4, 8, 4, 4, 4, 4, 8, 4, 4, 6] high=False[]
+[26/98] ctrnact-mixed-family-k1-26
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 6, 12, 6, 4, 4] high=False[]
+[27/98] ctrnact-mixed-family-k1-27
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 6, 6, 4] high=False[]
+[28/98] ctrnact-mixed-family-k1-28
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 6, 4, 4, 4, 4, 6] high=False[]
+[29/98] ctrnact-mixed-family-k1-29
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 6, 8, 4, 4, 6, 8, 6, 4, 4, 6] high=False[]
+[30/98] ctrnact-mixed-family-k1-30
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 6, 6, 6, 12, 4, 4, 4, 6, 6, 6, 6, 6, 4, 4, 4] high=False[]
+[31/98] ctrnact-mixed-family-k1-31
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 4, 4, 8] high=True[8]
+[32/98] ctrnact-mixed-family-k1-32
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 4, 4, 8] high=True[8]
+[33/98] ctrnact-mixed-family-k1-33
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 12, 4, 4, 8, 6, 6, 8, 4, 4] high=False[]
+[34/98] ctrnact-mixed-family-k1-34
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 6, 6, 4, 4] high=False[]
+[35/98] ctrnact-mixed-family-k1-35
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 6, 6, 4, 4, 8, 4, 4, 6, 4, 4, 8, 4, 4, 6, 4] high=False[]
+[36/98] ctrnact-mixed-family-k1-36
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 6, 8, 4, 4, 6, 4] high=False[]
+[37/98] ctrnact-mixed-family-k1-37
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 6, 6, 6, 6, 6, 4, 4, 6, 4, 4] high=False[]
+[38/98] ctrnact-mixed-family-k1-38
+    exported (0, 60)  true (0.0000, 60.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 4, 6, 6, 6, 6, 12, 4, 4, 4, 4, 4, 6, 6, 6, 6, 4, 4, 4, 4, 4] high=False[]
+[39/98] ctrnact-mixed-family-k2-01
+    exported (30, 150)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +60.00°; FOLDED reflection @ 36.0°≡144.0° (centre 90°)
+    new low arc: solver-reachable=False  off-palette species ['3*45', 'cx4-15.165']
+    new high arc: solver-reachable=False  off-palette species ['3*45', 'cx4-15.165']
+[40/98] ctrnact-mixed-family-k2-02
+    exported (90, 150)  true (90.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 75.00°
+    exported bounds concavity cuts? low=False[] high=True[6]   TRUNCATED +90.00°; FOLDED rotation @ 120.0°≡210.0° (centre 165°)
+    new high arc: solver-reachable=True
+[41/98] ctrnact-mixed-family-k2-03
+    exported (60, 90)  true (60.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6]   TRUNCATED +90.00°; FOLDED rotation @ 84.0°≡156.0° (centre 120°)
+    new high arc: solver-reachable=True
+[42/98] ctrnact-mixed-family-k2-04
+    exported (60, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[6, 6, 6, 6] high=False[]   TRUNCATED +60.00°; FOLDED reflection @ 24.0°≡96.0° (centre 60°)
+    new low arc: solver-reachable=True
+[43/98] ctrnact-mixed-family-k2-05
+    exported (60, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6, 6, 6, 6, 6, 6, 6] high=False[]   TRUNCATED +60.00°
+    new low arc: solver-reachable=True
+[44/98] ctrnact-mixed-family-k2-06
+    exported (60, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6, 6, 6, 6, 6, 6, 6] high=False[]   TRUNCATED +60.00°
+    new low arc: solver-reachable=True
+[45/98] ctrnact-mixed-family-k2-07
+    exported (0, 60)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=False[] high=True[6, 6]   TRUNCATED +180.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new high arc: solver-reachable=True
+[46/98] ctrnact-mixed-family-k2-08
+    exported (60, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 60.00°
+    exported bounds concavity cuts? low=True[12, 6, 6, 6, 12, 6, 6, 6] high=True[12]   TRUNCATED +60.00°; FOLDED rotation @ 24.0°≡96.0° (centre 60°)
+    new low arc: solver-reachable=True
+[47/98] ctrnact-mixed-family-k2-09
+    exported (60, 120)  true (60.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=False[] high=True[6, 6]   TRUNCATED +60.00°
+    new high arc: solver-reachable=False  off-palette species ['cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[48/98] ctrnact-mixed-family-k2-10
+    exported (60, 120)  true (60.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +120.00°; FOLDED reflection @ 96.0°≡204.0° (centre 150°)
+    new high arc: solver-reachable=True
+[49/98] ctrnact-mixed-family-k2-11
+    exported (30, 120)  true (30.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=False[] high=True[8]   TRUNCATED +60.00°
+    new high arc: solver-reachable=False  off-palette species ['cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[50/98] ctrnact-mixed-family-k2-12
+    exported (60, 150)  true (0.0000, 150.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[6, 8, 12, 8, 6] high=True[8]   TRUNCATED +60.00°
+    new low arc: solver-reachable=True
+[51/98] ctrnact-mixed-family-k2-13
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[8, 4, 4, 4, 4, 8] high=True[8, 8, 8]
+[52/98] ctrnact-mixed-family-k2-14
+    exported (45, 135)  true (45.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=False[] high=True[8]   TRUNCATED +45.00°
+    new high arc: solver-reachable=False  off-palette species ['cx4-15.165', 'cx4-30.150']
+[53/98] ctrnact-mixed-family-k2-15
+    exported (30, 120)  true (30.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=False[] high=True[8]   TRUNCATED +60.00°
+    new high arc: solver-reachable=False  off-palette species ['cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[54/98] ctrnact-mixed-family-k2-16
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 4, 4] high=True[8]
+[55/98] ctrnact-mixed-family-k2-17
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 8, 8, 8, 4] high=False[]
+[56/98] ctrnact-mixed-family-k2-18
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 4, 4, 8, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 8] high=True[8]
+[57/98] ctrnact-mixed-family-k2-19
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 8, 8, 8, 4, 4] high=False[]
+[58/98] ctrnact-mixed-family-k2-20
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 8, 4, 4] high=False[]
+[59/98] ctrnact-mixed-family-k2-21
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 4, 4, 4, 4] high=False[]
+[60/98] ctrnact-mixed-family-k2-22
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 4, 4, 4] high=False[]
+[61/98] ctrnact-mixed-family-k2-23
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 4, 4] high=False[]
+[62/98] ctrnact-mixed-family-k2-24
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 8, 8, 8, 4, 4, 4] high=False[]
+[63/98] ctrnact-mixed-family-k2-25
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 8, 8, 4, 4] high=False[]
+[64/98] ctrnact-mixed-family-k2-26
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 8, 4, 4, 4, 4, 8] high=True[8]
+[65/98] ctrnact-mixed-family-k2-27
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 4, 4, 4, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 4] high=False[]
+[66/98] ctrnact-mixed-family-k2-28
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 8, 8, 4, 4, 8, 8, 8] high=True[8, 8, 8]
+[67/98] ctrnact-mixed-family-k2-29
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 8, 4, 4, 8, 8] high=True[8, 8]
+[68/98] ctrnact-mixed-family-k2-30
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 8, 8, 4, 4, 8, 8, 8] high=True[8, 8, 8]
+[69/98] ctrnact-mixed-family-k2-31
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 8, 8, 4, 4, 8, 8] high=True[8, 8]
+[70/98] ctrnact-mixed-family-k2-32
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 8, 8, 8, 8, 8, 4, 4, 4, 4, 8] high=True[8]
+[71/98] ctrnact-mixed-family-k2-33
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 8, 8, 8, 8, 8, 4, 4, 4, 4, 8] high=True[8]
+[72/98] ctrnact-mixed-family-k2-34
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 8, 8] high=True[8]
+[73/98] ctrnact-mixed-family-k2-35
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 4, 4] high=False[]
+[74/98] ctrnact-mixed-family-k2-36
+    exported (60, 150)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 180.00°
+    exported bounds concavity cuts? low=True[8] high=True[8]   TRUNCATED +90.00°
+    new low arc: solver-reachable=False  off-palette species ['4*75', 'cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+    new high arc: solver-reachable=False  off-palette species ['4*75', 'cx4-15.165']
+[75/98] ctrnact-mixed-family-k2-37
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8, 4, 4] high=True[8]
+[76/98] ctrnact-mixed-family-k2-38
+    exported (30, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[8] high=False[]   TRUNCATED +30.00°
+    new low arc: solver-reachable=False  off-palette species ['4*75', 'cx4-15.165']
+[77/98] ctrnact-mixed-family-k2-39
+    exported (45, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[8] high=True[8]   TRUNCATED +45.00°
+    new low arc: solver-reachable=False  off-palette species ['4*75', 'cx4-15.165', 'cx4-30.150']
+[78/98] ctrnact-mixed-family-k2-40
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 8, 8, 8, 4] high=True[8]
+[79/98] ctrnact-mixed-family-k2-41
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 8, 8, 8, 8, 8, 4, 4, 4] high=True[8]
+[80/98] ctrnact-mixed-family-k2-42
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 8, 8, 8, 8] high=True[8, 8]
+[81/98] ctrnact-mixed-family-k2-43
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 8] high=True[8]
+[82/98] ctrnact-mixed-family-k2-44
+    exported (0, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 8, 4, 4] high=False[]
+[83/98] ctrnact-mixed-family-k2-45
+    exported (30, 90)  true (30.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=False[] high=True[6, 6]   TRUNCATED +90.00°
+    new high arc: solver-reachable=True
+[84/98] ctrnact-mixed-family-k2-46
+    exported (0, 90)  true (0.0000, 150.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[4, 4, 4] high=True[6, 6]   TRUNCATED +60.00°
+    new high arc: solver-reachable=True
+[85/98] ctrnact-mixed-family-k2-47
+    exported (45, 105)  true (45.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=False[] high=True[6, 6]   TRUNCATED +75.00°
+    new high arc: solver-reachable=True
+[86/98] ctrnact-mixed-family-k2-48
+    exported (60, 120)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 240.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[12]   TRUNCATED +180.00°
+    new low arc: solver-reachable=True
+    new high arc: solver-reachable=True
+[87/98] ctrnact-mixed-family-k2-49
+    exported (0, 75)  true (0.0000, 135.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=True[4, 4, 4] high=True[6, 6]   TRUNCATED +60.00°
+    new high arc: solver-reachable=True
+[88/98] ctrnact-mixed-family-k2-50
+    exported (60, 120)  true (60.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=False[] high=True[6, 6]   TRUNCATED +60.00°
+    new high arc: solver-reachable=False  off-palette species ['cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[89/98] ctrnact-mixed-family-k2-51
+    exported (0, 120)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 180.00°
+    exported bounds concavity cuts? low=True[4, 4, 4] high=True[12]   TRUNCATED +60.00°
+    new high arc: solver-reachable=False  off-palette species ['cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[90/98] ctrnact-mixed-family-k2-52
+    exported (0, 120)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 12, 4, 4, 4, 4, 4, 4] high=False[]
+[91/98] ctrnact-mixed-family-k2-53
+    exported (0, 180)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[4, 4, 4, 4, 4, 4] high=True[4, 4, 4, 4, 4, 4]   FOLDED reflection @ 36.0°≡144.0° (centre 90°)
+[92/98] ctrnact-mixed-family-k2-54
+    exported (0, 120)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 180.00°
+    exported bounds concavity cuts? low=True[6, 4, 6, 4, 4] high=True[6, 6]   TRUNCATED +60.00°
+    new high arc: solver-reachable=False  off-palette species ['3*45', 'cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[93/98] ctrnact-mixed-family-k2-55
+    exported (60, 180)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 180.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 4, 6, 4, 4]   TRUNCATED +60.00°
+    new low arc: solver-reachable=False  off-palette species ['3*45', 'cx4-15.165', 'cx4-30.150', 'cx4-45.135']
+[94/98] ctrnact-mixed-family-k2-56
+    exported (0, 90)  true (0.0000, 120.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[4, 4, 12, 4, 4, 4, 4] high=True[6, 6]   TRUNCATED +30.00°
+    new high arc: solver-reachable=False  off-palette species ['3*45', '6*15']
+[95/98] ctrnact-mixed-family-k2-57
+    exported (30, 90)  true (0.0000, 90.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6, 6] high=False[]   TRUNCATED +30.00°
+    new low arc: solver-reachable=False  off-palette species ['cx4-15.165']
+[96/98] ctrnact-mixed-family-k2-58
+    exported (30, 90)  true (30.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=False[] high=True[6, 6]   TRUNCATED +90.00°
+    new high arc: solver-reachable=True
+[97/98] ctrnact-mixed-family-k2-59
+    exported (0, 90)  true (0.0000, 150.0000)  stops: low=collapse high=collapse  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[4, 4, 4] high=True[6, 6]   TRUNCATED +60.00°
+    new high arc: solver-reachable=True
+[98/98] ctrnact-mixed-family-k2-60
+    exported (45, 135)  true (0.0000, 180.0000)  stops: low=collapse high=collapse  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[8] high=True[8]   TRUNCATED +90.00°; FOLDED reflection @ 36.0°≡144.0° (centre 90°)
+    new low arc: solver-reachable=False  off-palette species ['4*75', 'cx4-15.165', 'cx4-30.150']
+    new high arc: solver-reachable=False  off-palette species ['4*75', 'cx4-15.165', 'cx4-30.150']
+
+=== summary ===
+single-parameter families scanned: 98
+TRUNCATED (true range wider than exported): 41
+FOLDED (slider not injective, isometry-confirmed): 12  [Counter({'rotation': 6, 'reflection': 6})]
+stop reasons: {'low:collapse': 98, 'high:collapse': 98}
+unshipped α-arc: 3015.00° gross across 41 families (mean 73.54°); 2235.00° after discounting folded replay
+families whose new arc has NO on-palette grid configuration (so the solver cannot supply it under another id — provably absent from the atlas): 18/41
+off-palette species blocking those arcs: {'cx4-15.165': 18, 'cx4-30.150': 13, 'cx4-45.135': 9, '4*75': 7, '3*45': 5, '6*15': 2, '12*45': 1, '4*15': 1, '6*105': 1, '8*60': 1, '8*120': 1, '8*75': 1, '8*105': 1}
+
+  widest truncations:
+    ctrnact-mixed-family-k2-07         (0,60) → (0.000,240.000)  +180.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k2-48         (60,120) → (0.000,240.000)  +180.00°  [collapse | collapse]
+    ctrnact-mixed-family-k1-05         (120,180) → (120.000,300.000)  +120.00°  [collapse | collapse]
+    ctrnact-mixed-family-k2-10         (60,120) → (60.000,240.000)  +120.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k1-04         (90,150) → (0.000,150.000)  +90.00°  [collapse | collapse]
+    ctrnact-mixed-family-k1-06         (90,180) → (0.000,180.000)  +90.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k1-07         (60,120) → (0.000,150.000)  +90.00°  [collapse | collapse]
+    ctrnact-mixed-family-k1-14         (90,180) → (90.000,270.000)  +90.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k1-19         (45,90) → (45.000,180.000)  +90.00°  [collapse | collapse]
+    ctrnact-mixed-family-k2-02         (90,150) → (90.000,240.000)  +90.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k2-03         (60,90) → (60.000,180.000)  +90.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k2-36         (60,150) → (0.000,180.000)  +90.00°  [collapse | collapse]
+    ctrnact-mixed-family-k2-45         (30,90) → (30.000,180.000)  +90.00°  [collapse | collapse]
+    ctrnact-mixed-family-k2-58         (30,90) → (30.000,180.000)  +90.00°  [collapse | collapse]
+    ctrnact-mixed-family-k2-60         (45,135) → (0.000,180.000)  +90.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k2-47         (45,105) → (45.000,180.000)  +75.00°  [collapse | collapse]
+    ctrnact-mixed-family-k1-03         (60,120) → (0.000,120.000)  +60.00°  [collapse | collapse]  FOLDED
+    ctrnact-mixed-family-k1-15         (60,180) → (0.000,180.000)  +60.00°  [collapse | collapse]
+    ctrnact-mixed-family-k1-18         (60,180) → (60.000,240.000)  +60.00°  [collapse | collapse]
+    ctrnact-mixed-family-k2-01         (30,150) → (0.000,180.000)  +60.00°  [collapse | collapse]  FOLDED
+
+  folded sliders:
+    ctrnact-mixed-family-k1-03         exported (60,120)  α=24.00° ≡ α=96.00° by rotation, centre 60°
+    ctrnact-mixed-family-k1-06         exported (90,180)  α=36.00° ≡ α=144.00° by rotation, centre 90°
+    ctrnact-mixed-family-k1-14         exported (90,180)  α=126.00° ≡ α=234.00° by rotation, centre 180°
+    ctrnact-mixed-family-k2-01         exported (30,150)  α=36.00° ≡ α=144.00° by reflection, centre 90°
+    ctrnact-mixed-family-k2-02         exported (90,150)  α=120.00° ≡ α=210.00° by rotation, centre 165°
+    ctrnact-mixed-family-k2-03         exported (60,90)  α=84.00° ≡ α=156.00° by rotation, centre 120°
+    ctrnact-mixed-family-k2-04         exported (60,120)  α=24.00° ≡ α=96.00° by reflection, centre 60°
+    ctrnact-mixed-family-k2-07         exported (0,60)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    ctrnact-mixed-family-k2-08         exported (60,120)  α=24.00° ≡ α=96.00° by rotation, centre 60°
+    ctrnact-mixed-family-k2-10         exported (60,120)  α=96.00° ≡ α=204.00° by reflection, centre 150°
+    ctrnact-mixed-family-k2-53         exported (0,180)  α=36.00° ≡ α=144.00° by reflection, centre 90°
+    ctrnact-mixed-family-k2-60         exported (45,135)  α=36.00° ≡ α=144.00° by reflection, centre 90°
+
+=== covering confirmation at the widest truncations (1 = tiles exactly) ===
+  ctrnact-mixed-family-k2-07         inside new low arc   α=   0.000  {1: 300}
+  ctrnact-mixed-family-k2-07         inside new high arc  α= 150.000  {1: 300}
+  ctrnact-mixed-family-k2-07         just past true low   α=  -0.500  {1: 298, 3: 2}
+  ctrnact-mixed-family-k2-07         just past true high  α= 240.500  {1: 298, 3: 2}
+  ctrnact-mixed-family-k2-48         inside new low arc   α=  30.000  {1: 300}
+  ctrnact-mixed-family-k2-48         inside new high arc  α= 180.000  {1: 300}
+  ctrnact-mixed-family-k2-48         just past true low   α=  -0.500  {1: 299, 3: 1}
+  ctrnact-mixed-family-k2-48         just past true high  α= 240.500  {1: 299, 3: 1}
+  ctrnact-mixed-family-k1-05         inside new low arc   α= 120.000  {1: 300}
+  ctrnact-mixed-family-k1-05         inside new high arc  α= 240.000  {1: 300}
+  ctrnact-mixed-family-k1-05         just past true low   α= 119.500  {1: 299, 3: 1}
+  ctrnact-mixed-family-k1-05         just past true high  α= 300.500  {1: 300}
+  ctrnact-mixed-family-k2-10         inside new low arc   α=  60.000  {1: 300}
+  ctrnact-mixed-family-k2-10         inside new high arc  α= 180.000  {1: 300}
+  ctrnact-mixed-family-k2-10         just past true low   α=  59.500  {1: 298, 3: 2}
+  ctrnact-mixed-family-k2-10         just past true high  α= 240.500  {1: 299, 3: 1}
+  ctrnact-mixed-family-k1-04         inside new low arc   α=  45.000  {1: 300}
+  ctrnact-mixed-family-k1-04         inside new high arc  α= 150.000  {1: 300}
+  ctrnact-mixed-family-k1-04         just past true low   α=  -0.500  {1: 300}
+  ctrnact-mixed-family-k1-04         just past true high  α= 150.500  {1: 299, 3: 1}
+  ctrnact-mixed-family-k1-06         inside new low arc   α=  45.000  {1: 300}
+  ctrnact-mixed-family-k1-06         inside new high arc  α= 180.000  {1: 300}
+  ctrnact-mixed-family-k1-06         just past true low   α=  -0.500  {1: 300}
+  ctrnact-mixed-family-k1-06         just past true high  α= 180.500  {1: 299, 3: 1}
+
+=== range plan → experiments/results/mixed-range-plan.json ===
+  42 entries (41 truncated, 12 folded)
+
+done

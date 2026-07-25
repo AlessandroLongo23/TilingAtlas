@@ -5839,3 +5839,61 @@ truncated patch and must be re-measured now that coverage is derived; that numbe
 stands. Its 8 candidate maps (axis permutation × per-axis reversal) and the per-parameter alias schema are
 written but unshipped. (2) Every earlier census number in §92–§100 that rests on patch congruence deserves
 the same re-run; the mixed merges and both dedups have been, nothing else has.
+
+## §102 — The α ranges are truncated at the species boundary, not at the tiling's edge (2026-07-25)
+
+AL, from `/play`: mixed `k2-01` runs α ∈ (30°, 150°); its rhombus shrinks and its green triangle grows into
+a hexagon. "Nothing prevents the rhombus from shrinking even more and the triangle from becoming a concave
+star. Eventually, when the rhombus disappears at 0°, they would become the star tiling k2-14."
+
+Every part of that is right, and the general case is worse than the instance.
+
+**The instance, measured.** `k2-01`'s two flexing hexagons have alternating angles (60°, 180°) at BOTH
+exported bounds — the straight-vertex concavity cut, where an isotoxal hexagon is an equilateral triangle.
+Below 30° they go reflex (181° at α=29, 210° at α=0): 3-pointed stars. The cell keeps tiling the whole way
+down — area certificate exact and, more to the point, the direct covering test (sample the fundamental
+domain, count containing tiles over lattice translates) returns multiplicity 1 for 300/300 samples at
+α = 29, 20, 10, 2, 0.5. The rhombus reaches zero area at exactly α = 0, and at α = −5 the certificate fails
+(Σarea 12.888 vs |det| 12.365), so 0 is a hard floor. At α = 0 the cell is 12 triangles + 2 three-pointed
+stars + 1 twelve-pointed star, |det| = 12.928203 — and it is congruent to shipped `ctrnact-star-k2-14`
+(family `3.3*.12*`, Myers) by an explicit isometry, 139/139 cloud points, rotation 150°. So a rigid entry on
+the star shelf is the boundary of a flexing family on the mixed shelf.
+
+**The general case (`scripts/scan-family-ranges.py`, mixed shelf).** 41 of 98 single-parameter families are
+truncated; 3,015° of α-arc gross, 2,235° after discounting folded replay. Every family's true range ends at
+a tile COLLAPSE on both sides — the natural interval is collapse-to-collapse, uniformly. 18 of the 41 have a
+new arc containing no on-palette grid configuration, so the solver cannot supply it under another id: those
+tilings are provably absent from the atlas. What blocks them is the palette's sparse species list —
+`cx4-15.165` (18 families), `cx4-30.150` (13), `cx4-45.135` (9), then stars `4*75` (7), `3*45` (5), `6*15`,
+`12*45`, `8*{60,75,105,120}`. `isotoxal-star-z24` carries cx4 at only 60.120 and 75.105, and 15 of the ~33
+grid-legal star species. Thin rhombi and mid-angle stars are simply not in the alphabet.
+
+**The fix needs no search.** The continuation is the analytic continuation of a cell we already ship: the
+terms are analytic in δ, so extending the range is arithmetic, not enumeration. This also subsumes the merge
+machinery for concavity cuts — all 6 shipped merges turn out to BE the analytic continuation of their
+primary half (checked at the plan's own α-maps, 3 offsets past each join), so an extended range would
+absorb the partner as a duplicate instead of splicing two posed segments.
+
+**Second defect from the same scan: 12 folded sliders.** α and c−α give the same tiling (6 by rotation, 6 by
+reflection), so the slider sweeps its shapes out and back. Only 3 bite today — `k2-01`, `k2-53`, `k2-60`,
+whose fold centre lies strictly inside the exported range; the other 9 centres are outside it and would
+bite only once the range is extended. `k2-01`'s (30,150) double-covers (30,90]; its true distinct sweep is
+(0,90].
+
+**Two of my own primitives were wrong, both found by cross-checking one claim two ways.**
+(1) The radial patch fingerprint is a multiset of (tile type, distance) from one anchor — NECESSARY for
+congruence, not sufficient. It is a distance list, and distance lists collide. Everything that calls itself
+a congruence now confirms with an explicit isometry search (`congruent_by`): pin anchor→anchor, let one
+neighbour pairing fix the rotation, test direct and reflected. (2) That search anchored on the FIRST
+largest tile in the cell, which fails whenever a cell has several largest-tile orbits — `k2-05` has 9. It
+reported the k2-05+k2-06 merge as a branch switch; with all anchors tried it is a clean rotation. The fold
+count went 5 → 12 for the same reason. Corollary for future censuses: fingerprint to prefilter, isometry to
+decide, and never anchor on "the first one".
+
+⚑ Open: (1) the range extension is measured but NOT applied — the shipped shelf still carries the truncated
+ranges. Applying it changes which families are duplicates of each other, so the order is extend → re-scan
+joins → merge, and the 6 merges likely collapse to duplicate absorptions. (2) The isotoxal shelf (3,527
+entries) is cx-only, so every truncated family there continues into STAR tiles its palette cannot express
+at all — same defect, ~36× the scale, and the continuations would not belong on a shelf labelled convex.
+That is a taxonomy question, not a code question. (3) The 2-parameter census (2,034 families) is still
+unmeasured with a coverage-safe patch, and now also needs the isometry confirmer.
