@@ -1,0 +1,45 @@
+[16:42:57] === valence sizing: palettes=['isotox-v8-base', 'isotox-v8-rh'] valences=[8, 9, 10, 11, 12] overlap=True ===
+[16:42:57] isotox-v8-base: D=24 tiles=29 classes=53 min_len=2 min_corner_units=1
+[16:44:36]   isotox-v8-base maxValence=8   configs=  277,785  overlap-free=  31,621 (11.4%)  enum=55.6s overlap=43.0s total=98.7s
+[16:44:36]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687}
+[16:46:08]   isotox-v8-base maxValence=9   configs=  278,057  overlap-free=  31,661 (11.4%)  enum=52.1s overlap=39.9s total=91.9s
+[16:46:08]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687, 9: 40}
+[16:47:41]   isotox-v8-base maxValence=10  configs=  278,057  overlap-free=  31,661 (11.4%)  enum=51.9s overlap=41.4s total=93.3s
+[16:47:41]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687, 9: 40}
+[16:49:16]   isotox-v8-base maxValence=11  configs=  278,057  overlap-free=  31,661 (11.4%)  enum=53.3s overlap=41.8s total=95.0s
+[16:49:16]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687, 9: 40}
+[16:50:45]   isotox-v8-base maxValence=12  configs=  278,057  overlap-free=  31,661 (11.4%)  enum=50.9s overlap=38.2s total=89.2s
+[16:50:45]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687, 9: 40}
+[16:50:45] isotox-v8-rh: D=24 tiles=30 classes=55 min_len=2 min_corner_units=1
+[16:53:41] === PAIR-PRUNED sizing (analysis/prefix_prune_probe forbidden-pair DFS) ===
+[16:53:41] isotox-v8-base: classes=53 forbidden pairs=589/2809
+[16:53:53]   isotox-v8-base maxValence=8   raw=  384,863 configs=  34,253 overlap-free=  31,621    12.8s
+[16:53:53]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687}
+[16:54:07]   isotox-v8-base maxValence=9   raw=  385,664 configs=  34,304 overlap-free=  31,661    13.1s
+[16:54:07]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687, 9: 40}
+[16:54:20]   isotox-v8-base maxValence=10  raw=  385,664 configs=  34,304 overlap-free=  31,661    13.3s
+[16:54:20]       kept by valence: {2: 58, 3: 525, 4: 3447, 5: 8294, 6: 11754, 7: 5856, 8: 1687, 9: 40}
+[16:54:20]   ** isotox-v8-base SATURATES at maxValence=9 — no word of length 10 closes to 360 deg
+[16:54:20] isotox-v8-rh: classes=55 forbidden pairs=613/3025
+[16:55:05]   isotox-v8-rh maxValence=8   raw=1,286,788 configs= 102,933 overlap-free=  99,106    44.8s
+[16:55:05]       kept by valence: {2: 61, 3: 628, 4: 4908, 5: 15483, 6: 30565, 7: 29619, 8: 17842}
+[16:55:55]   isotox-v8-rh maxValence=9   raw=1,390,561 configs= 108,813 overlap-free= 104,791    50.4s
+[16:55:55]       kept by valence: {2: 61, 3: 628, 4: 4908, 5: 15483, 6: 30565, 7: 29619, 8: 17842, 9: 5685}
+[16:56:51]   isotox-v8-rh maxValence=10  raw=1,414,146 configs= 110,104 overlap-free= 106,073    55.5s
+[16:56:51]       kept by valence: {2: 61, 3: 628, 4: 4908, 5: 15483, 6: 30565, 7: 29619, 8: 17842, 9: 5685, 10: 1282}
+[16:57:43]   isotox-v8-rh maxValence=11  raw=1,417,919 configs= 110,286 overlap-free= 106,255    52.5s
+[16:57:43]       kept by valence: {2: 61, 3: 628, 4: 4908, 5: 15483, 6: 30565, 7: 29619, 8: 17842, 9: 5685, 10: 1282, 11: 182}
+[16:58:35]   isotox-v8-rh maxValence=12  raw=1,418,241 configs= 110,312 overlap-free= 106,281    51.6s
+[16:58:35]       kept by valence: {2: 61, 3: 628, 4: 4908, 5: 15483, 6: 30565, 7: 29619, 8: 17842, 9: 5685, 10: 1282, 11: 182, 12: 26}
+[16:59:27]   isotox-v8-rh maxValence=13  raw=1,418,241 configs= 110,312 overlap-free= 106,281    52.1s
+[16:59:27]       kept by valence: {2: 61, 3: 628, 4: 4908, 5: 15483, 6: 30565, 7: 29619, 8: 17842, 9: 5685, 10: 1282, 11: 182, 12: 26}
+[16:59:27]   ** isotox-v8-rh SATURATES at maxValence=12 — no word of length 13 closes to 360 deg
+[16:59:27] === pair-pruned sizing done ===
+[17:00:16] === PAIR-PRUNED sizing (analysis/prefix_prune_probe forbidden-pair DFS) ===
+[17:00:16] isotox-v8-rh3: classes=59 forbidden pairs=659/3481
+[17:06:06]   isotox-v8-rh maxValence=8   configs=2,824,458  overlap-free=  99,106 (3.5%)  enum=492.4s overlap=428.1s total=920.5s
+[17:06:06]       kept by valence: {2: 61, 3: 628, 4: 4908, 5: 15483, 6: 30565, 7: 29619, 8: 17842}
+[17:09:38]   isotox-v8-rh3 maxValence=8   raw=16,174,837 configs=1,118,871 overlap-free=1,109,410   561.9s
+[17:09:38]       kept by valence: {2: 65, 3: 848, 4: 8915, 5: 43610, 6: 149234, 7: 335590, 8: 571148}
+[17:11:52] === PAIR-PRUNED sizing (analysis/prefix_prune_probe forbidden-pair DFS) ===
+[17:11:52] isotox-v8-rh45: classes=55 forbidden pairs=605/3025

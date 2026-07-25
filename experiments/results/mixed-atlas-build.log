@@ -18,6 +18,20 @@
   ctrnact-mixed-family-k1-17  3.4α.6*  P=1
   ctrnact-mixed-family-k1-18  6α.6*  P=1
   ctrnact-mixed-family-k1-19  4α.4*.8*  P=1
+  ctrnact-mixed-family-k1-20  4α.3*  P=1
+  ctrnact-mixed-family-k1-21  3.4α.3*  P=1
+  ctrnact-mixed-family-k1-22  4α.6α.3*  P=1
+  ctrnact-mixed-family-k1-23  4α.8α.3*  P=1
+  ctrnact-mixed-family-k1-24  4α.3*.6*  P=1
+  ctrnact-mixed-family-k1-25  4α.3*.4*.6*  P=1
+  ctrnact-mixed-family-k1-26  4α.6α.3*.6*  P=1
+  ctrnact-mixed-family-k1-27  4α.3*  P=1
+  ctrnact-mixed-family-k1-28  6.4α.3*  P=1
+  ctrnact-mixed-family-k1-29  4α.8α.3*.4*  P=1
+  ctrnact-mixed-family-k1-30  4α.6α.3*.6*  P=1
+  ctrnact-mixed-family-k1-31  4α.8α.4*  P=1
+  ctrnact-mixed-family-k1-32  4α.8α.4*  P=1
+  ctrnact-mixed-family-k1-33  4α.6α.4*.6*  P=1
   ctrnact-mixed-family-k2-01  3.4α.6α.12*  P=1
   ctrnact-mixed-family-k2-02  6α.3*  P=1
   ctrnact-mixed-family-k2-03  6α.3*  P=1
@@ -78,4 +92,15 @@
   ctrnact-mixed-family-k2-58  4.4α.3*.6*  P=1
   ctrnact-mixed-family-k2-59  4.4α.6α.6*  P=1
   ctrnact-mixed-family-k2-60  3.4α.8α.8*  P=1
-  wrote 79 mixed families (0 skipped) → public/reference-atlas-mixed.json (392.4 KB), elapsed 0.01s
+  pre-merge snapshot (93) → experiments/results/mixed-atlas-unmerged.json
+
+  --- merge plan: 6 merge(s) ---
+  ctrnact-mixed-family-k1-04  sweep ∈ (0°, 120°) join 60°  ← 8α.3*.6* ↔ 6α.12α.4*
+  ctrnact-mixed-family-k1-05  sweep ∈ (0°, 180°) join 60°  ← 12α.3* ↔ 6α.6*
+  ctrnact-mixed-family-k2-05  sweep ∈ (0°, 120°) join 60°  ← 6.6α.3* ↔ 6.6α.3*
+  ctrnact-mixed-family-k2-45  theta ∈ (90°, 240°) join 180°  ← 4α.6α.6* ↔ 4α.3*.6*
+  ctrnact-mixed-family-k2-47  theta ∈ (105°, 240°) join 180°  ← 4α.6α.6* ↔ 4α.3*.6*
+  ctrnact-mixed-family-k2-58  theta ∈ (90°, 240°) join 180°  ← 4.4α.6α.6* ↔ 4.4α.3*.6*
+  absorbed 10 id(s): ctrnact-mixed-family-k1-07, ctrnact-mixed-family-k1-14, ctrnact-mixed-family-k1-15, ctrnact-mixed-family-k1-18, ctrnact-mixed-family-k1-31, ctrnact-mixed-family-k1-32, ctrnact-mixed-family-k2-06, ctrnact-mixed-family-k2-46, ctrnact-mixed-family-k2-49, ctrnact-mixed-family-k2-59
+  alias table (10 entries) → lib/services/mergedFamilyAliases.json
+  wrote 83 mixed families (0 skipped) → public/reference-atlas-mixed.json (467.2 KB), elapsed 0.01s

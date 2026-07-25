@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { countsOf, loadLandingData, pickDistinct } from "@/lib/services/landingData";
+import payload from "@/lib/services/landing-data.generated.json";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
 // A cheap deterministic rng for reproducible picks.
@@ -62,9 +63,13 @@ describe("loadLandingData (real atlas files)", () => {
 		expect(new Set(data.mosaic.map((t) => t.id)).size).toBe(9);
 		for (const m of data.mosaic) expect(polysOf(m).length).toBeGreaterThan(0);
 
-		// The fixed card specimens.
-		expect(data.play.id).toBe("t1003");
-		expect(data.hyperbolicPatch).toBe("hyp-7-7-7");
-		expect(data.sphericalSolid).toBe("truncated-icosahedron");
+		// The three collection-preview specimens. They are RE-DEALT from the baked pools on every
+		// request (landingData.ts), so pinning them to specific ids would make every atlas addition
+		// look like a regression — the invariant is that each pick comes from its own pool and is
+		// drawable, not which one the rng happened to land on.
+		expect(payload.euclideanPool.map((t) => t.id)).toContain(data.play.id);
+		expect(polysOf(data.play)).not.toHaveLength(0);
+		expect(payload.hyperbolicPool).toContain(data.hyperbolicPatch);
+		expect(payload.sphericalPool).toContain(data.sphericalSolid);
 	});
 });
