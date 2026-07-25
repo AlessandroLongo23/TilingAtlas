@@ -72,6 +72,28 @@ Old `class=freedraw` / `class=colors` links promote to `dec=edges` / `dec=colori
 Spec: `superpowers/specs/2026-07-25-decoration-axis-design.md`.
 ⚑ Next: fold the shape axis itself onto the period `p` (TILE_TAXONOMY §9), which is the other half of §3.
 
+## Six entries were one 2-parameter family: the coupled families land, 87 → 83 (2026-07-26, NOTES §103)
+
+★★ **AL, on k2-45/k2-46/k2-50: "the same tiling, just with a different angle for the rhombus and the star."**
+Right, and it is SIX entries: `{k2-45, k2-46, k2-47, k2-49, k2-50, k2-57}` are one 2-parameter family. All
+three records already said **flexdim 2, P 1, separable False** — the exporter gives a species its own slider
+only when it flexes ALONE, and here they are coupled (t = r + s − 8 in 15° units, two free and the third
+determined), so it develops one direction: a 1-D line through whichever grid member it started from, keyed
+as its own family because the pinned angle enters the key. Developing the coupled family directly (the
+exporter's own `develop_multi`, qeff from the full null-space basis) puts k2-50's seed at δ=(−1,−2) of
+k2-45's family with Σarea = |det| = 8.929405237 — identical to nine decimals, isometry-confirmed.
+**12 coupled records → 5 families**, 9 of which shipped. The four slice lines sit at 6-star angles {6,5,4,2}
+units, exactly the palette's `{6*6, 6*5, 6*4, 6*2}`; the gap at `6*3` (45°) tiles, as do half-integer values.
+So this is §102 one dimension up and it is an UNDERCOUNT, not redundancy: a 2-D continuum shown as four lines.
+**Shipped (AL chose the 2-D pad):** mixed 87 → **83**, five entries with a real 2-parameter cell and a
+polytope region. Axes are species-aligned, so k2-45's read "rhombus" and "3-pointed star". Old links keep
+working — each absorbed slice carries its seat AND the direction its slider pointed, derived from the
+shipped record. `components/param-region-pad.tsx` draws the polygon; `clampToRegion` projects any outside
+point back in, so the pointer cannot reach an uncertified cell (verified by driving it).
+⚑ The region model first doubled star vertex counts (a 3-pointed star IS a hexagon), letting an angle reach
+300° where 240° is the maximum — the tests caught it via a self-intersecting tile. Corrected: V ↦ 24 − 48/V.
+⚑ Next: same measurement on the isotoxal shelf; the Command-drag scrub does not yet clamp to the polytope.
+
 ## The α ranges were truncated: 41 mixed families widened, 3,015° of new sweep (2026-07-25, NOTES §102)
 
 ★★ **The exporter clipped every family where a tile's SPECIES changed, not where the tiling stopped.** AL,

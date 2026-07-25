@@ -147,4 +147,12 @@
   --- merge plan: 0 merge(s), 11 alias(es) ---
   absorbed 11 id(s): 0 merge partner(s) + 11 duplicate(s)
   98 → 87 entries; alias table → lib/services/mergedFamilyAliases.json
-  wrote 87 mixed families (0 skipped) → public/reference-atlas-mixed.json (471.3 KB), elapsed 0.03s
+
+  --- coupled-family plan: 5 multi-parameter famil(ies) ---
+  ctrnact-mixed-family-k2-02  P=2  axes cx6-105.135 × 3*1  region 6-gon  absorbs (none)
+  ctrnact-mixed-family-k2-11  P=2  axes cx4-60.120 × 4*2  region 6-gon  absorbs 14
+  ctrnact-mixed-family-k2-36  P=2  axes cx4-60.120 × cx4-75.105  region 4-gon  absorbs (none)
+  ctrnact-mixed-family-k2-45  P=2  axes cx4-60.120 × 3*2  region 6-gon  absorbs 46, 47, 49, 50, 57
+  ctrnact-mixed-family-k2-54  P=2  axes cx4-60.120 × cx4-75.105  region 5-gon  absorbs 55
+  87 → 83 entries; coupled alias table → lib/services/coupledFamilyAliases.json
+  wrote 83 mixed families (0 skipped) → public/reference-atlas-mixed.json (458.9 KB), elapsed 0.15s

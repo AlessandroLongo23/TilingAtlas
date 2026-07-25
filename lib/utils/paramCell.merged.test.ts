@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { evaluateParamCell, segmentAt, type ParametricCellData } from "@/lib/utils/paramCell";
+import { clampToRegion, evaluateParamCell, segmentAt, type ParametricCellData } from "@/lib/utils/paramCell";
 import { resolveMergedFamilyKey } from "@/lib/services/referenceAtlas";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
@@ -207,15 +207,17 @@ type RangePlan = {
 const RANGE_PLAN = (read("experiments/results/mixed-range-plan.json") as RangePlan).ranges;
 const WIDENED = RANGE_PLAN.filter((r) => r.gainDeg > 0.01);
 const ALIASES: Record<string, unknown> = read("lib/services/mergedFamilyAliases.json");
+const COUPLED_ALIASES: Record<string, unknown> = read("lib/services/coupledFamilyAliases.json");
 
 describe("widened α ranges", () => {
 	it("ships every planned range, or absorbed that id as a duplicate", () => {
 		const byId = new Map(SHELF.map((t) => [t.id, t]));
 		for (const r of WIDENED) {
 			const t = byId.get(r.id);
+			if (t?.paramCell?.region?.length) continue; // now a coupled 2-parameter entry, not a 1-D range
 			if (!t) {
 				// gone from the shelf: only legitimate if the widening made it a duplicate of another entry
-				expect(ALIASES[r.id], `${r.id} vanished without an alias`).toBeDefined();
+					expect(ALIASES[r.id] ?? COUPLED_ALIASES[r.id], `${r.id} vanished without an alias`).toBeDefined();
 				continue;
 			}
 			expect(t.alphaRange, `${r.id} range`).toEqual(r.range);
@@ -230,7 +232,7 @@ describe("widened α ranges", () => {
 		const byId = new Map(SHELF.map((t) => [t.id, t]));
 		for (const r of WIDENED) {
 			const t = byId.get(r.id);
-			if (!t?.paramCell) continue;
+			if (!t?.paramCell || t.paramCell.region?.length) continue;
 			const [lo, hi] = r.range;
 			for (let i = 0; i <= 120; i++) {
 				const u = lo + ((hi - lo) * i) / 120;
@@ -247,7 +249,7 @@ describe("widened α ranges", () => {
 		const byId = new Map(SHELF.map((t) => [t.id, t]));
 		for (const r of WIDENED) {
 			const t = byId.get(r.id);
-			if (!t?.paramCell) continue;
+			if (!t?.paramCell || t.paramCell.region?.length) continue;
 			const [lo, hi] = r.range;
 			for (const u of [lo + (hi - lo) * 0.05, (lo + hi) / 2, hi - (hi - lo) * 0.05]) {
 				const cell = evalAt(t.paramCell, u);
@@ -261,7 +263,11 @@ describe("widened α ranges", () => {
 		const byId = new Map(SHELF.map((t) => [t.id, t]));
 		let marked = 0;
 		for (const r of RANGE_PLAN) {
-			const p = byId.get(r.id)?.paramCell?.params[0];
+			const pc = byId.get(r.id)?.paramCell;
+			// a family that turned out to be a slice of a coupled 2-parameter one no longer has the 1-D
+			// coordinate the fold was measured in — its entry is now the whole region (§103)
+			if (pc?.region?.length) continue;
+			const p = pc?.params[0];
 			if (!p) continue;
 			if (r.fold?.centreDeg == null) {
 				expect(p.foldCentreDeg, `${r.id} should carry no fold`).toBeUndefined();
@@ -274,6 +280,110 @@ describe("widened α ranges", () => {
 			marked++;
 		}
 		expect(marked, "no fold centres reached the shelf").toBeGreaterThan(0);
+	});
+});
+
+// ── coupled two-parameter families (scripts/coupled-plan.ts, NOTES §103) ──────────────────────────────
+// The export shipped these as several 1-D slices, one per palette value of the angle it pinned. They are
+// one family with two free-but-coupled angles, so the valid region is a polygon rather than a box.
+type CoupledPlan = {
+	families: {
+		id: string; P: number; regionVertices: [number, number][];
+		absorbs: { id: string; deltaUnits: number[]; alpha0Deg: number; axisUnits: number[] | null }[];
+	}[];
+};
+const COUPLED = (read("experiments/results/mixed-coupled-plan.json") as CoupledPlan).families;
+
+describe.skipIf(COUPLED.length === 0)("coupled two-parameter families", () => {
+	const byId = new Map(SHELF.map((t) => [t.id, t]));
+
+	it("ships each planned family with two parameters and a polygon region", () => {
+		for (const f of COUPLED) {
+			const t = byId.get(f.id);
+			expect(t, `${f.id} missing from the shelf`).toBeTruthy();
+			const pc = t!.paramCell!;
+			expect(pc.params.length, `${f.id} params`).toBe(f.P);
+			expect(pc.regionVertices?.length, `${f.id} region`).toBe(f.regionVertices.length);
+			expect(pc.regionVertices!.length).toBeGreaterThanOrEqual(3);
+			expect(pc.region?.length).toBeGreaterThan(0);
+		}
+	});
+
+	it("drops every absorbed slice from the shelf", () => {
+		for (const f of COUPLED) {
+			for (const a of f.absorbs) {
+				if (!a.axisUnits) continue;
+				expect(byId.has(a.id), `${a.id} still shipped`).toBe(false);
+			}
+		}
+	});
+
+	// The claim: every point of the region is a tiling. Sampled across the polygon's bounding box and
+	// filtered to interior points, because outside it the certificate is SUPPOSED to fail.
+	it("tiles at every interior point of the region", () => {
+		for (const f of COUPLED) {
+			const pc = byId.get(f.id)!.paramCell!;
+			const vs = pc.regionVertices!;
+			const [x0, x1] = [Math.min(...vs.map((v) => v[0])), Math.max(...vs.map((v) => v[0]))];
+			const [y0, y1] = [Math.min(...vs.map((v) => v[1])), Math.max(...vs.map((v) => v[1]))];
+			let checked = 0;
+			for (let i = 0; i <= 8; i++) {
+				for (let j = 0; j <= 8; j++) {
+					const du = [x0 + ((x1 - x0) * i) / 8, y0 + ((y1 - y0) * j) / 8];
+					// strictly inside every half-plane, or the point is outside the region by design
+					const inside = pc.region!.every((r) => {
+						const a = r.seedUnits + r.coef[0] * du[0] + r.coef[1] * du[1];
+						return a > 0.05 && a < r.limitUnits - 0.05;
+					});
+					if (!inside) continue;
+					checked++;
+					const alphas = pc.params.map((p, k) => p.alpha0Deg + du[k] * 15);
+					const cell = evalAt(pc, alphas as unknown as number);
+					const sum = cell.cellPolygons.reduce((s, p) => s + area(p.vertices), 0);
+					expect(Math.abs(sum - det(cell.basis)), `${f.id} @ δ=${du}`).toBeLessThan(1e-6);
+				}
+			}
+			expect(checked, `${f.id}: no interior sample points`).toBeGreaterThan(4);
+		}
+	});
+
+	// A point outside the polygon is not a tiling, so the evaluator has to pull it back in rather than draw
+	// it. This is what makes the pad safe: nothing the user can do reaches an uncertified cell.
+	it("clamps a point outside the region back inside it", () => {
+		for (const f of COUPLED) {
+			const pc = byId.get(f.id)!.paramCell!;
+			const far = pc.params.map((p) => p.alpha0Deg + 10_000);
+			const got = clampToRegion(pc, far);
+			for (const r of pc.region!) {
+				const du = pc.params.map((p, k) => (got[k] - p.alpha0Deg) / 15);
+				const a = r.seedUnits + r.coef.reduce((s, c, k) => s + c * du[k], 0);
+				expect(a, `${f.id} ${r.species} after clamp`).toBeGreaterThan(-1e-6);
+				expect(a, `${f.id} ${r.species} after clamp`).toBeLessThan(r.limitUnits + 1e-6);
+			}
+			const cell = evalAt(pc, got as unknown as number);
+			const sum = cell.cellPolygons.reduce((s, p) => s + area(p.vertices), 0);
+			expect(Math.abs(sum - det(cell.basis)), `${f.id} clamped point tiles`).toBeLessThan(1e-6);
+		}
+	});
+
+	// An old link named a slice and one angle; it must land on the point of the region that slice occupied,
+	// and a link that already carries the pair must pass through untouched (the survivor aliases itself).
+	it("redirects an absorbed slice onto the right point of the region", () => {
+		const f = COUPLED.find((x) => x.absorbs.some((a) => a.axisUnits));
+		if (!f) return;
+		const a = f.absorbs.find((x) => x.axisUnits)!;
+		const pc = byId.get(f.id)!.paramCell!;
+		const at = resolveMergedFamilyKey({ tiling: a.id, alphas: [a.alpha0Deg] });
+		expect(at.tiling).toBe(f.id);
+		// its seed: δ = deltaUnits exactly
+		expect(at.alphas!.map((v, k) => (v - pc.params[k].alpha0Deg) / 15)).toEqual(a.deltaUnits);
+		// one unit along its own former slider moves by exactly its axis
+		const step = resolveMergedFamilyKey({ tiling: a.id, alphas: [a.alpha0Deg + 15] });
+		expect(step.alphas!.map((v, k) => (v - pc.params[k].alpha0Deg) / 15))
+			.toEqual(a.deltaUnits.map((d, k) => d + a.axisUnits![k]));
+		// already-2-D state is left alone
+		const pair = { tiling: f.id, alphas: [pc.params[0].alpha0Deg, pc.params[1].alpha0Deg] };
+		expect(resolveMergedFamilyKey(pair)).toEqual(pair);
 	});
 });
 

@@ -17,6 +17,7 @@ import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCel
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { applyMergePlan } from "./merge-plan";
 import { applyRangePlan, rangeNote, type RangePlan } from "./range-plan";
+import { applyCoupledPlan } from "./coupled-plan";
 
 interface FamilyRecord {
 	id: string;
@@ -41,6 +42,8 @@ const IN_PATHS = [
 const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json");
 const PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-merge-plan.json");
 const RANGE_PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-range-plan.json");
+const COUPLED_PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-coupled-plan.json");
+const COUPLED_ALIAS_PATH = path.join(ROOT, "lib", "services", "coupledFamilyAliases.json");
 const UNMERGED_PATH = path.join(ROOT, "experiments", "results", "mixed-atlas-unmerged.json");
 const ALIAS_PATH = path.join(ROOT, "lib", "services", "mergedFamilyAliases.json");
 const LOG_PATH = path.join(ROOT, "experiments", "results", "mixed-atlas-build.log");
@@ -130,10 +133,21 @@ function main(): void {
 		log,
 		root: ROOT,
 	});
+	// Coupled multi-parameter families LAST. applyMergePlan writes the snapshot the join census reads, and
+	// that census wants the 1-parameter shelf — so collapsing slices into 2-parameter entries has to happen
+	// after it, or the next census would never see the slices it is supposed to reason about.
+	const final = applyCoupledPlan(merged, {
+		planPath: COUPLED_PLAN_PATH,
+		aliasPath: COUPLED_ALIAS_PATH,
+		logName: "mixed-family",
+		note: NOTE,
+		log,
+		root: ROOT,
+	});
 	fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-	fs.writeFileSync(OUT_PATH, JSON.stringify(merged, null, 0) + "\n");
+	fs.writeFileSync(OUT_PATH, JSON.stringify(final, null, 0) + "\n");
 	const sizeKB = (fs.statSync(OUT_PATH).size / 1024).toFixed(1);
-	log(`  wrote ${merged.length} mixed families (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
+	log(`  wrote ${final.length} mixed families (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
 	fs.writeFileSync(LOG_PATH, logLines.join("\n") + "\n");
 }
 

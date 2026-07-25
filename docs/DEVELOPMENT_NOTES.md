@@ -6411,3 +6411,77 @@ appears in none of the published uniform list — the crystallographic restricti
 suspect, and it is worth confirming rather than assuming.
 
 Code `tools/hollow/` (README has the full method), logs `experiments/results/hollow-*.log`.
+
+## §103 — Six shelf entries are 1-D slices of one 2-parameter family (2026-07-26)
+
+AL, on mixed k2-45 / k2-46 / k2-50: "they are the same tiling, just with a different angle for the rhombus
+and the star — are these three really the same tiling with just two independent parameters?"
+
+Yes, and it is **six** entries, not three: `{k2-45, k2-46, k2-47, k2-49, k2-50, k2-57}` are one 2-parameter
+family. Every pair is joined by an explicit integer δ plus an isometry, both directions.
+
+**The data already said flexdim 2, P 1, separable False.** `analyze_block`'s own docstring explains the
+rule: a species becomes its own slider only when it flexes ALONE (its column in the vertex δ-matrix is
+all-zero). Here nothing flexes alone. The vertex rows are `[[-1,1,-1],[1,-1,1]]` — one independent equation
+in three species angles, so in 15° units, with r = rhombus, s = 6-pointed-star point, t = 3-pointed-star
+point: **t = r + s − 8**. Two free, the third determined. Checked against the shipped seeds: (4,2,6) gives
+2 = 4+6−8 ✓, (5,1,4) gives 1 = 5+4−8 ✓. So the exporter develops the single direction ns[0] — a 1-D slice
+through whatever grid member it started from — and since the PINNED angle enters the family key, each
+parallel slice is keyed as a separate family. That is exactly the artefact AL noticed.
+
+**Developed the coupled family directly** (qeff from both null-space basis vectors, through the exporter's
+own `develop_multi` / `trace_faces_multi`): P=2, formal period rank 2, area certificate exact at the seed.
+k2-50's seed sits at δ = (−1,−2) of k2-45's family, and evaluating there gives Σarea = |det| =
+8.929405237 — identical to k2-50's own seed, to nine decimals. Symmetrically k2-50 @ (1,2) = k2-45's seed.
+
+**Quotient of all 12 coupled mixed records: 5 distinct 2-parameter families** — `{k2-02}`, `{k2-11, k2-14}`,
+`{k2-36}`, the six above, `{k2-54, k2-55}`. 9 of them still ship (three were absorbed as α-reversal
+duplicates by §102, consistently: k2-46's seed lies ON k2-45's slice line, δ₂ = 0).
+
+**The palette explains which slices exist**, the same sparsity that truncated the ranges in §102. The six
+sit at δ₂ ∈ {0, −1, −2, −4}, δ₂ indexing the 6-pointed star's point angle — and the palette's 6* species are
+exactly {6*2, 6*4, 6*5, 6*6}. The gap at δ₂ = −3 is 6*3 (45°), which the palette lacks. It tiles:
+Σarea = |det| = 8.273066. So do δ₂ = +1 (6*7) and −5 (6*1), and so does every half-integer δ₂ tested
+(−0.5, −1.5, −2.5, −3.5 all exact) — a continuum that no grid species can seed.
+
+So this is §102 one dimension up, and it is an UNDERCOUNT, not an overcount: the slices are genuinely
+different tilings (different star angle), so nothing is double-counted — but a 2-dimensional continuum of
+tilings is represented by four lines through it, which is measure zero.
+
+**Why the exporter punted is legitimate, and it is a UI question.** I mapped the valid region over
+δ ∈ [−4,4]²: it is a connected polytope, NOT a box — the left edge is vertical at δ₁ ≈ −2 while the top-left
+edge is slanted. `params[i].alphaRangeDegOpen` is a per-axis interval, so shipping this as two independent
+sliders would let a viewer drag outside the proven region. Separable families (96% of the multi-param
+isotoxal cases) have a genuine box and are safe; coupled ones need either a per-axis range conditioned on
+the other axis, or a 2-D region the evaluator clamps against.
+
+**Applied (AL chose the 2-D pad over conditioned sliders or extra palette species).** The mixed shelf ships
+**83** entries instead of 87: `scripts/scan-coupled-families.py` emits a plan, `scripts/coupled-plan.ts`
+applies it, and the five coupled families now carry a real 2-parameter cell with its polytope. The axes are
+chosen species-aligned — a re-basis of the null space so each axis IS one tile's angle — which recovers
+exactly the description AL gave: k2-45's sliders are the rhombus (cx4-60.120) and the 3-pointed star (3*2).
+Old deep links keep working: each absorbed slice carries the δ where it sat AND the direction its own
+slider pointed, derived from the shipped record rather than assumed, so a link travels the line it used to.
+The survivor is aliased to itself for the same reason (its coordinate changed meaning), guarded by a
+"only remap a single α" test so a 2-D link never gets remapped as if it were 1-D. `components/
+param-region-pad.tsx` draws the polygon and drags a point inside it; `clampToRegion` in `paramCell.ts`
+projects any outside point back along the line from the family's certified default, so nothing the pointer
+can do reaches an uncertified cell. Verified by driving it: a drag moves α 60→131.7° and β 30→184.5°
+together, and a drag far outside pins to α=180.0°, the rhombus's flat limit, instead of escaping.
+
+**A bug the region tests caught, worth recording.** The first region model doubled the vertex count for
+star species (`poly_n` already returns vertices — a 3-pointed star IS a hexagon), so a 3-pointed star was
+allowed up to 300° when a hexagon's two alternating angles can only sum to 240°. The region then contained
+points whose tiles self-intersect, and the area certificate failed there (k2-02 at δ=(−5, 11.5): Σarea
+3.129 vs |det| 1.661). With the limits right — V ↦ 24 − 48/V units — every interior sample certifies, so
+the simplicity constraint turns out to be IMPLIED by the correct angle bounds rather than extra. The
+earlier hand-check against the sampled map missed it because that map only covered δ ∈ [−4,4]², where the
+upper bounds never bind. Sampling a region and checking its corners are not the same test.
+
+⚑ Open: (1) the isotoxal shelf's coupled families are unmeasured — its exporter has the same
+separable-only rule, and 2-parameter families already ship there when separable. (2) The palette still
+lacks the species that would seed the missing slices (6*3 at 45° among them); adding them would not change
+these entries, but it would let the SOLVER find such families directly instead of leaving them to be
+recovered like this. (3) The 2-D pad is the only consumer of `region`; the Command-drag scrub still maps
+x/y to α/β without clamping to the polytope, so it can request an outside point — harmless (the evaluator
+clamps) but the handle and the pointer disagree while dragging.

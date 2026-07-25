@@ -5,6 +5,7 @@ import { ALPHA_STEP_DEG, resolveAlphaDegsRaw, type ParametricCellData } from "@/
 import { Kbd } from "@/components/ui/kbd";
 import { RangeInput } from "@/components/ui/range-input";
 import { useMetaKeyLabel } from "@/lib/hooks/useMetaKeyLabel";
+import { ParamRegionPad } from "@/components/param-region-pad";
 
 const GREEK = ["α", "β", "γ", "δ", "ε"];
 const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
@@ -43,6 +44,23 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 		next[j] = v;
 		useFamilyAlphas.getState().set(next);
 	};
+
+	// A coupled family's valid region is a polygon, not a box, so its two angles cannot be two independent
+	// sliders — dragging one past where the other allows would leave the certified region. It gets the 2-D
+	// pad instead (NOTES §103). Separable multi-parameter families keep the sliders: their region IS a box.
+	if (paramCell.regionVertices?.length && paramCell.params.length === 2) {
+		return (
+			<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
+				<ParamRegionPad paramCell={paramCell} />
+				<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted">
+					<span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+						<Kbd>{metaKey}</Kbd>
+						<span>+ move mouse to deform</span>
+					</span>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">

@@ -1,0 +1,76 @@
+loaded 426 k=2 blocks from run-par-k2-isotoxal-star-z24-pruned/out/pruned
+
+=== the flex space at each shipped slice ===
+  k2-45
+    species          ['cx4-60.120', '3*2', '6*6']
+    vertex δ-rows    [[-1, 1, -1], [1, -1, 1]]   (one row per vertex class, in 15° units)
+    integer nullspace[(1, 1, 0), (-1, 0, 1)]   → flexdim 2
+    flex-alone species [] → separable=False
+    seed angles      [('cx4-60.120', 4), ('3*2', 2), ('6*6', 6)]
+  k2-46
+    species          ['cx4-60.120', 'cx6-90.150', '6*6']
+    vertex δ-rows    [[1, 1, -1], [-1, -1, 1]]   (one row per vertex class, in 15° units)
+    integer nullspace[(-1, 1, 0), (1, 0, 1)]   → flexdim 2
+    flex-alone species [] → separable=False
+    seed angles      [('cx4-60.120', 4), ('cx6-90.150', 6), ('6*6', 6)]
+  k2-50
+    species          ['cx4-75.105', '3*1', '6*4']
+    vertex δ-rows    [[-1, 1, -1], [1, -1, 1]]   (one row per vertex class, in 15° units)
+    integer nullspace[(1, 1, 0), (-1, 0, 1)]   → flexdim 2
+    flex-alone species [] → separable=False
+    seed angles      [('cx4-75.105', 5), ('3*1', 1), ('6*4', 4)]
+
+=== develop the COUPLED 2-parameter family (qeff from the full nullspace basis) ===
+  k2-45: P=2, formal period rank 2, 10 traced faces, 6/6 corner classes carry a δ-coefficient
+  k2-46: P=2, formal period rank 2, 10 traced faces, 6/6 corner classes carry a δ-coefficient
+  k2-50: P=2, formal period rank 2, 10 traced faces, 6/6 corner classes carry a δ-coefficient
+
+=== the 2-parameter cell: does it tile, and what shape is its valid region? ===
+
+  k2-45: cell = 6 tiles [4, 4, 4, 6, 6, 12]
+    at δ=(0,0) [the shipped seed]: Σarea 12.526279442 vs |det| 12.526279442 → TILES, min tile area 0.866025
+    k2-50's seed is at δ = (-1, -2) in this family's nullspace coordinates (species displacement [1, -1, -2])
+    evaluated there: Σarea 8.929405237 vs |det| 8.929405237 → TILES, min tile area 0.417738
+    valid region over δ ∈ [-4,4]² (units of 15°; '#' tiles, ':' degenerate tile, ' ' fails):
+      δ₂=+4.00 |                :################|
+      δ₂=+3.50 |              :##################|
+      δ₂=+3.00 |            :####################|
+      δ₂=+2.50 |          :######################|
+      δ₂=+2.00 |        :########################|
+      δ₂=+1.50 |        :########################|
+      δ₂=+1.00 |        :########################|
+      δ₂=+0.50 |        :########################|
+      δ₂=+0.00 |        :########################|
+      δ₂=-0.50 |        :########################|
+      δ₂=-1.00 |        :########################|
+      δ₂=-1.50 |        :########################|
+      δ₂=-2.00 |        :########################|
+      δ₂=-2.50 |        :########################|
+      δ₂=-3.00 |        :########################|
+      δ₂=-3.50 |        :########################|
+      δ₂=-4.00 |        :#######################:|
+              δ₁= -4      -2      0       +2      +4
+
+  k2-50: cell = 6 tiles [4, 4, 4, 6, 6, 12]
+    at δ=(0,0) [the shipped seed]: Σarea 8.929405237 vs |det| 8.929405237 → TILES, min tile area 0.417738
+    k2-45's seed is at δ = (1, 2) in this family's nullspace coordinates (species displacement [-1, 1, 2])
+    evaluated there: Σarea 12.526279442 vs |det| 12.526279442 → TILES, min tile area 0.866025
+    valid region over δ ∈ [-4,4]² (units of 15°; '#' tiles, ':' degenerate tile, ' ' fails):
+      δ₂=+4.00 |            :####################|
+      δ₂=+3.50 |            :####################|
+      δ₂=+3.00 |            :####################|
+      δ₂=+2.50 |            :####################|
+      δ₂=+2.00 |            :####################|
+      δ₂=+1.50 |            :####################|
+      δ₂=+1.00 |            :####################|
+      δ₂=+0.50 |            :####################|
+      δ₂=+0.00 |            :####################|
+      δ₂=-0.50 |            :####################|
+      δ₂=-1.00 |            :####################|
+      δ₂=-1.50 |            :####################|
+      δ₂=-2.00 |            :####################|
+      δ₂=-2.50 |            :####################|
+      δ₂=-3.00 |            :###################:|
+      δ₂=-3.50 |            :#################:  |
+      δ₂=-4.00 |            :::::::::::::::::    |
+              δ₁= -4      -2      0       +2      +4

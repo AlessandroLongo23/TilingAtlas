@@ -33,6 +33,14 @@ export interface ParametricCellData {
 	}[];
 	cellPolygons: { n: number; star?: boolean; vertices: ParamTerm[][] }[];
 	basis: [ParamTerm[], ParamTerm[]];
+	// COUPLED multi-parameter families only. When no tile flexes on its own, the flex space is still
+	// N-dimensional but its valid region is a POLYTOPE, not the box that `alphaRangeDegOpen` per axis
+	// describes: moving one angle changes which values the others may take. Each entry is one species'
+	// angle, affine in δ (units of 15°), which must stay inside (0, limitUnits) — two half-planes per
+	// species. Absent for separable families (whose region really is a box) and for single-parameter ones.
+	// `regionVertices` is that region as an ordered polygon in δ-units, for drawing. See NOTES §103.
+	region?: { species: string; coef: number[]; seedUnits: number; limitUnits: number }[];
+	regionVertices?: [number, number][];
 	// MERGED families only (single parameter): two exported families that are the two halves of one
 	// continuous deformation, cut where the flexing tile's alternating vertex passes through 180° — on one
 	// side of that angle the tile is a concave star, on the other a convex 2n-gon, so the exporter files
@@ -76,6 +84,10 @@ export const ALPHA_STEP_DEG = 0.5;
  */
 const ALPHA_EPS_DEG = 1e-3;
 
+/** Same idea as ALPHA_EPS_DEG but for a coupled family's region, in δ-units (1 unit = 15°): stay this far
+ *  inside every half-plane, so a species angle is never exactly 0 (a collapsed tile) at the boundary. */
+const REGION_EPS_UNITS = 1e-3 / 15;
+
 /** m·δ for a scalar (single-param) or vector (multi-param) exponent. */
 function mDotDelta(m: number | number[], deltas: number[]): number {
 	if (typeof m === "number") return m * deltas[0];
@@ -102,12 +114,59 @@ function evalTerms(terms: ParamTerm[], deltas: number[]): [number, number] {
  *  short of the degenerate limit rather than on it. Interior angles pass through untouched. */
 function deltasFor(pc: ParametricCellData, alphaDeg: number | number[]): number[] {
 	const alphas = Array.isArray(alphaDeg) ? alphaDeg : [alphaDeg];
-	return pc.params.map((p, j) => {
+	const clamped = clampToRegion(pc, pc.params.map((p, j) => {
 		const [lo, hi] = p.alphaRangeDegOpen;
 		const a = alphas[j] ?? p.defaultAlphaDeg;
-		const inside = Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
-		return ((inside - p.alpha0Deg) * Math.PI) / 180;
-	});
+		return Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
+	}));
+	return pc.params.map((p, j) => ((clamped[j] - p.alpha0Deg) * Math.PI) / 180);
+}
+
+/** One species' angle in δ-units at a δ-unit position: seedUnits + coef·δ. */
+function speciesAngle(r: NonNullable<ParametricCellData["region"]>[number], du: number[]): number {
+	let a = r.seedUnits;
+	for (let p = 0; p < r.coef.length; p++) a += r.coef[p] * (du[p] ?? 0);
+	return a;
+}
+
+/**
+ * Hold a requested angle tuple inside a COUPLED family's polytope.
+ *
+ * The per-axis clamp above only knows each axis's own bounds, which for a coupled family describes the
+ * region's bounding box — so a point can pass it and still sit outside the proven region, in the corner
+ * the box adds. There the "tiling" is not one: a species angle has gone negative. Rather than refuse to
+ * draw, walk back along the straight line from the region's interior anchor (the family's default, which
+ * the exporter developed and certified) to the requested point, stopping at the first violated half-plane.
+ * That keeps dragging continuous and every rendered frame inside the certified region.
+ *
+ * A no-op unless `region` is present, so single-parameter and separable families are untouched.
+ */
+export function clampToRegion(pc: ParametricCellData, alphasDeg: number[]): number[] {
+	const region = pc.region;
+	if (!region?.length) return alphasDeg;
+	const toUnits = (a: number[]): number[] => pc.params.map((p, j) => (a[j] - p.alpha0Deg) / 15);
+	const want = toUnits(alphasDeg);
+	const anchor = toUnits(pc.params.map((p) => p.defaultAlphaDeg));
+	const bad = (du: number[]): boolean =>
+		region.some((r) => {
+			const a = speciesAngle(r, du);
+			return a <= REGION_EPS_UNITS || a >= r.limitUnits - REGION_EPS_UNITS;
+		});
+	if (!bad(want)) return alphasDeg;
+	if (bad(anchor)) return pc.params.map((p) => p.defaultAlphaDeg); // nothing safe to interpolate from
+	// largest t ∈ [0,1] with anchor + t·(want − anchor) still inside every half-plane
+	let t = 1;
+	for (const r of region) {
+		const a0 = speciesAngle(r, anchor);
+		const a1 = speciesAngle(r, want);
+		const d = a1 - a0;
+		if (Math.abs(d) < 1e-12) continue;
+		for (const bound of [REGION_EPS_UNITS, r.limitUnits - REGION_EPS_UNITS]) {
+			const tt = (bound - a0) / d;
+			if (tt >= 0 && tt < t) t = tt;
+		}
+	}
+	return pc.params.map((p, j) => p.alpha0Deg + (anchor[j] + t * (want[j] - anchor[j])) * 15);
 }
 
 /** The segment of a merged family covering a slider position — the lower segment at a seam, the nearest

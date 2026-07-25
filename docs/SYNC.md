@@ -1548,3 +1548,11 @@ lift + `sum ≡ 0 mod 360`, not `= 360` (19/19 vs 8/19); δ ∈ {1,2}. New engin
 by a coinciding-edges limitation (edges keyed geometrically); 74/304 (δ=1) and 27/133 (δ=2) species
 unresolved (capped/timeout = unknown), so 18 is a lower bound, not a count.
 Detail: DEVELOPMENT_NOTES.md §103. — CC
+
+### 2026-07-26 — CC: coupled 2-parameter families land, mixed 87 → 83
+AL noticed k2-45/46/50 are the same tiling at different rhombus and star angles. They are — six entries are
+one 2-parameter family, and 12 coupled records are 5. The exporter only gives a species its own slider when
+it flexes alone, so a coupled flex space shipped as parallel 1-D slices, one per palette value of the angle
+it pinned. Developed the real coupled families, which need a polytope region rather than two box sliders;
+per AL they ship with a 2-D pad. Everything off those lines was missing from the atlas, including whole grid
+lines the palette cannot seed. Detail: DEVELOPMENT_NOTES.md §103. — CC
