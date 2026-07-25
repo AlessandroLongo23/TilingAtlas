@@ -279,7 +279,10 @@ export function SubstitutionsClient() {
 					{seed === "single" && (
 						<div className="mt-2">
 							<Segmented
-								options={angles.map((a) => ({ v: String(a.x), label: `${a.acuteDeg}°/${a.obtuseDeg}°` }))}
+								options={angles.map((a) => ({
+									v: String(a.x),
+									label: `${Math.round(a.acuteDeg)}°/${Math.round(a.obtuseDeg)}°`,
+								}))}
 								value={String(effProtoX)}
 								onChange={(v) => setProtoX(Number(v))}
 							/>
@@ -410,7 +413,8 @@ function RuleDiagram({ rule, x }: { rule: SubRosaRule; x: number }) {
 	return (
 		<div>
 			<div className="text-[11px] text-fg-subtle mb-1">
-				{proto.x === 1 ? "36°/144°" : "72°/108°"} → {proto.children.length} tiles
+				{Math.round((proto.x * 180) / rule.n)}°/{Math.round(((rule.n - proto.x) * 180) / rule.n)}° →{" "}
+				{proto.children.length} tiles
 			</div>
 			<svg width={W} height={H} className="rounded border border-line-subtle bg-surface-overlay">
 				{proto.children.map((c, i) => {
