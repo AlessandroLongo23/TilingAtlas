@@ -12,14 +12,18 @@ import {
 	type RenderTile,
 } from "@/lib/subrosa/engine";
 import { prototileAngles } from "@/lib/subrosa/sigma";
+import { SubRosaGL } from "@/lib/render/subrosaGL";
 import { cn } from "@/lib/utils/cn";
 
-const MAX_TILES = 130_000;
-// The substitution self-composes to any depth: the super-rhomb boundary is point-symmetric
-// (opposite super-edges antiparallel), so adjacent super-rhombs interlock. Verified gap/overlap-
-// free by dense-grid coverage + spatial-hash overlap + exact edge-consistency. Depth here is
-// bounded only by the tile budget (depth 3 = ~1M tiles needs viewport culling, not yet built).
-const MAX_DEPTH = { single: 2, star: 2 } as const;
+// Tile budget for one patch. The whole patch is a single GPU draw (lib/render/subrosaGL.ts), so this
+// is sized against GPU memory, not per-tile CPU draw cost: ~90 B/tile of vertex data ⇒ ~135 MB of
+// buffers at the cap. The substitution self-composes to any depth (point-symmetric super-rhomb
+// boundary ⇒ adjacent super-rhombs interlock; verified gap/overlap-free); depth is bounded only here.
+const MAX_TILES = 1_500_000;
+// Never offer a slider depth past this even if it would fit — keeps the CPU build (substituteOnce
+// allocates one object per tile) from freezing the tab for seconds. The exact per-config max depth is
+// derived from the substitution matrix below and is usually the real limit well before this.
+const DEPTH_CEILING = 6;
 
 // Prototile hues by index (protoId 1..⌊n/2⌋). Distinct, legible in light and dark.
 const HUES = [265, 175, 45, 330, 130, 200, 90];
@@ -31,18 +35,54 @@ function seedTiles(rule: SubRosaRule, seed: Seed, protoX: number): RenderTile[] 
 	return seed === "star" ? seedStar(rule) : seedSingle(rule, protoX);
 }
 
-function build(rule: SubRosaRule, seed: Seed, protoX: number, depth: number): { tiles: RenderTile[]; capped: boolean } {
+function build(rule: SubRosaRule, seed: Seed, protoX: number, depth: number): RenderTile[] {
 	let tiles = seedTiles(rule, seed, protoX);
-	let capped = false;
 	for (let i = 0; i < depth; i++) {
 		const next = substituteOnce(rule, tiles);
-		if (next.length > MAX_TILES) {
-			capped = true;
-			break;
-		}
+		if (next.length > MAX_TILES) break; // defensive; renderableDepth() should keep us under budget
 		tiles = next;
 	}
-	return { tiles, capped };
+	return tiles;
+}
+
+// Exact tile count at each substitution depth, from the substitution matrix M[target][source] =
+// (# children of prototile `source` whose protoId is `target`). The count vector evolves v → M·v; the
+// seed's prototile histogram is v₀. K ≤ ⌊n/2⌋, so this is trivially cheap — cheap enough to size the
+// depth slider to what actually fits the budget rather than let the user pick a depth that silently
+// falls back to a shallower one.
+function depthTileCounts(rule: SubRosaRule, seed: Seed, protoX: number, ceiling: number): number[] {
+	const K = rule.prototiles.length;
+	const idxOf = new Map<number, number>();
+	rule.prototiles.forEach((p, i) => idxOf.set(p.x, i));
+	const M: number[][] = Array.from({ length: K }, () => new Array(K).fill(0));
+	rule.prototiles.forEach((p, src) => {
+		for (const c of p.children) M[idxOf.get(c.protoId)!][src]++;
+	});
+	let v = new Array<number>(K).fill(0);
+	if (seed === "star") v[idxOf.get(1) ?? 0] = 2 * rule.n; // star seed = 2n copies of the thin rhomb
+	else v[idxOf.get(protoX) ?? 0] = 1;
+	const counts = [v.reduce((a, b) => a + b, 0)];
+	for (let d = 1; d <= ceiling; d++) {
+		const nv = new Array<number>(K).fill(0);
+		for (let t = 0; t < K; t++) {
+			let s = 0;
+			for (let src = 0; src < K; src++) s += M[t][src] * v[src];
+			nv[t] = s;
+		}
+		v = nv;
+		counts.push(v.reduce((a, b) => a + b, 0));
+	}
+	return counts;
+}
+
+// Deepest substitution whose tile count still fits `budget` (counts rise monotonically, so stop early).
+function renderableDepth(counts: number[], budget: number): number {
+	let md = 0;
+	for (let d = 0; d < counts.length; d++) {
+		if (counts[d] <= budget) md = d;
+		else break;
+	}
+	return md;
 }
 
 function bounds(tiles: RenderTile[]) {
@@ -65,12 +105,16 @@ export function SubstitutionsClient() {
 	const [depth, setDepth] = useState(1);
 	const [showStroke, setShowStroke] = useState(true);
 
-	const maxDepth = MAX_DEPTH[seed];
-	const effDepth = Math.min(depth, maxDepth);
 	const effProtoX = Math.min(protoX, Math.floor(N / 2)); // clamp when switching to a smaller n
+	// The slider's real ceiling: the deepest substitution that fits the tile budget for THIS config.
+	const maxDepth = useMemo(
+		() => (rule ? renderableDepth(depthTileCounts(rule, seed, effProtoX, DEPTH_CEILING), MAX_TILES) : 0),
+		[rule, seed, effProtoX],
+	);
+	const effDepth = Math.min(depth, maxDepth);
 
-	const { tiles, capped } = useMemo(
-		() => (rule ? build(rule, seed, effProtoX, effDepth) : { tiles: [], capped: false }),
+	const tiles = useMemo(
+		() => (rule ? build(rule, seed, effProtoX, effDepth) : []),
 		[rule, seed, effProtoX, effDepth],
 	);
 
@@ -78,6 +122,13 @@ export function SubstitutionsClient() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const view = useRef({ scale: 1, ox: 0, oy: 0, fitted: false });
 	const drag = useRef<{ x: number; y: number } | null>(null);
+	// GPU renderer: WebGL2 batched draw (one drawArrays for the whole patch). Falls back to the 2D
+	// loop if a WebGL2 context can't be created. `mode` is fixed at first mount — a canvas can hold
+	// only one context type. `uploaded` tracks which tile array is on the GPU so a redraw (theme,
+	// stroke toggle, pan) doesn't needlessly re-triangulate.
+	const glRef = useRef<SubRosaGL | null>(null);
+	const modeRef = useRef<"init" | "gl" | "2d">("init");
+	const uploadedRef = useRef<RenderTile[] | null>(null);
 
 	const fit = useCallback(() => {
 		const cv = canvasRef.current;
@@ -97,20 +148,44 @@ export function SubstitutionsClient() {
 		if (!cv) return;
 		const dpr = window.devicePixelRatio || 1;
 		const w = cv.clientWidth, h = cv.clientHeight;
-		if (cv.width !== w * dpr || cv.height !== h * dpr) {
-			cv.width = w * dpr;
-			cv.height = h * dpr;
+		if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+			cv.width = Math.round(w * dpr);
+			cv.height = Math.round(h * dpr);
 		}
+		const { scale: vScale, ox: vOx, oy: vOy } = view.current;
+		const dark = document.documentElement.classList.contains("dark") ||
+			(document.documentElement.getAttribute("data-theme") === "dark");
+		const light = dark ? 62 : 66;
+		const strokeOn = showStroke && vScale > 2.2;
+		const strokeRGBA: [number, number, number, number] = dark
+			? [0, 0, 0, 0.55]
+			: [30 / 255, 20 / 255, 40 / 255, 0.5];
+
+		// GPU path: one batched draw. Pan/zoom just changed view.current, so this is a uniform update.
+		if (modeRef.current === "gl" && glRef.current) {
+			glRef.current.draw(
+				{
+					widthCss: w,
+					heightCss: h,
+					scale: vScale,
+					ox: vOx,
+					oy: vOy,
+					light,
+					strokePx: strokeOn ? 1.1 : 0,
+					strokeRGBA,
+				},
+				dpr,
+			);
+			return;
+		}
+
+		// 2D fallback (canvas has no WebGL2): the original per-tile loop.
 		const ctx = cv.getContext("2d")!;
 		ctx.save();
 		ctx.scale(dpr, dpr);
 		ctx.clearRect(0, 0, w, h);
-		const { scale, ox, oy } = view.current;
-		const tx = (p: Vector) => [ox + scale * p.x, oy - scale * p.y] as const;
-		const dark = document.documentElement.classList.contains("dark") ||
-			(document.documentElement.getAttribute("data-theme") === "dark");
-		const light = dark ? 62 : 66;
-		const strokeW = Math.max(0.3, Math.min(1.1, scale * 0.03));
+		const tx = (p: Vector) => [vOx + vScale * p.x, vOy - vScale * p.y] as const;
+		const strokeW = Math.max(0.3, Math.min(1.1, vScale * 0.03));
 		ctx.lineJoin = "round";
 		for (const t of tiles) {
 			ctx.beginPath();
@@ -123,7 +198,7 @@ export function SubstitutionsClient() {
 			ctx.closePath();
 			ctx.fillStyle = `hsl(${HUE(t.protoId)} 58% ${light}%)`;
 			ctx.fill();
-			if (showStroke && scale > 2.2) {
+			if (strokeOn) {
 				ctx.lineWidth = strokeW;
 				ctx.strokeStyle = dark ? "rgba(0,0,0,0.55)" : "rgba(30,20,40,0.5)";
 				ctx.stroke();
@@ -132,8 +207,37 @@ export function SubstitutionsClient() {
 		ctx.restore();
 	}, [tiles, showStroke]);
 
-	// refit when the tile set changes; redraw on view/resize
+	// Create the WebGL2 renderer once. A canvas can hold only one context type, so this decides the
+	// render path for the component's life. Declared BEFORE the upload effect so the renderer exists
+	// when the first upload runs (effects fire in declaration order, incl. Strict-Mode's re-run).
 	useEffect(() => {
+		const cv = canvasRef.current;
+		if (!cv) return;
+		const gl = cv.getContext("webgl2", { antialias: true, premultipliedAlpha: false, alpha: true });
+		if (gl) {
+			try {
+				glRef.current = new SubRosaGL(gl);
+				modeRef.current = "gl";
+			} catch {
+				modeRef.current = "2d";
+			}
+		} else {
+			modeRef.current = "2d";
+		}
+		uploadedRef.current = null; // a fresh renderer holds no geometry — force the next upload
+		return () => {
+			glRef.current?.dispose();
+			glRef.current = null;
+			uploadedRef.current = null;
+		};
+	}, []);
+
+	// refit when the tile set changes; (re)upload to the GPU, then redraw on view/resize
+	useEffect(() => {
+		if (modeRef.current === "gl" && glRef.current && uploadedRef.current !== tiles) {
+			glRef.current.uploadTiles(tiles, HUE);
+			uploadedRef.current = tiles;
+		}
 		view.current.fitted = false;
 		fit();
 		draw();
@@ -271,10 +375,7 @@ export function SubstitutionsClient() {
 							{ v: "star", label: `Star (${2 * N}-fold)` },
 						]}
 						value={seed}
-						onChange={(v) => {
-							setSeed(v as Seed);
-							setDepth((d) => Math.min(d, MAX_DEPTH[v as Seed]));
-						}}
+						onChange={(v) => setSeed(v as Seed)}
 					/>
 					{seed === "single" && (
 						<div className="mt-2">
@@ -301,7 +402,9 @@ export function SubstitutionsClient() {
 					/>
 					<div className="flex justify-between text-[11px] text-fg-subtle mt-1">
 						<span>{tiles.length.toLocaleString()} tiles</span>
-						{capped && <span className="text-amber-500">capped at {MAX_TILES.toLocaleString()}</span>}
+						{effDepth === maxDepth && maxDepth < DEPTH_CEILING && (
+							<span className="text-fg-subtle">budget limit</span>
+						)}
 					</div>
 					<p className="text-[11px] text-fg-subtle mt-1 leading-snug">
 						Each level is exact and gap/overlap-free — the point-symmetric super-rhomb boundary

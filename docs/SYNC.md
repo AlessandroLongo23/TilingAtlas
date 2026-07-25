@@ -1486,3 +1486,12 @@ his `results_2026-07-25.txt` k-counts reproduce exactly). Shipped **four new hyp
 in 74 s with **0 failures**, 46,548 surjective colorings, every k Marek solved, 2.6 MB eager + 29.8 MB lazy;
 manifest-driven loader, so 4 rows + 4 labels in the app. Build clean, 2 known pre-existing test failures.
 `hexagons_edges`/`hexagons_3_colors` extracted, NOT decoded (no hex grid in GRIDS). Detail: NOTES §96.
+
+**2026-07-25 · CC.** Sub Rosa renderer moved to **batched WebGL2** (`lib/render/subrosaGL.ts`): the
+whole patch is one `drawArrays`, and pan/zoom is a uniform update with no re-tessellation, so it stays
+smooth into the millions of tiles (the 2D per-tile fill loop was the bottleneck; kept as a
+context-failure fallback). Outlines are a single-pass barycentric wireframe (internal diagonal
+suppressed) — no stroke geometry. Retired the 130k tile cap (2D budget) for a GPU one (1.5M ≈ 135 MB,
+edge attr byte-packed); the depth slider's max is now the EXACT deepest depth under budget from the
+substitution matrix, ending the "depth 2 → silently 380 tiles, capped at 130k" state. n=7 d2 = 147,088
+tiles renders (over 0, one boundary loop, GL path confirmed). Lint clean for these files.
