@@ -116,30 +116,63 @@ interchangeable (4+6 across two performance levels), which makes static round-ro
 ## 4. Add rhombi one at a time — together they multiply
 
 The interaction is not additive. Each low-unit corner is a cheap *separator* that lets more star-point
-corners fit around one vertex, so two of them multiply the word count rather than adding to it. Measured at
-valence 8 (all pair-pruned):
+corners fit around one vertex, so two of them multiply the word count rather than adding to it. Every row
+below is the COMPLETE table — sized to the valence where a longer word stops closing to 360°, not to a cap:
 
-| palette added tiles | overlap-free configs @ v8 | note |
-|---|---|---|
-| — (base) | 31,621 | saturates at v9 |
-| +30/150 | 99,106 | saturates at v12, complete = 106,281 |
-| +45/135 | 102,043 | v9 = 105,884, same order |
-| +30/150, +45/135, +15/165 | **1,109,410** | still *rising* at v8 (571,148 in the v8 bucket) — nowhere near saturation |
+| added tiles | saturates at | complete overlap-free configs | build (pair-pruned) |
+|---|---|---|---|
+| — (base) | v9 | 31,661 | 13 s |
+| +30/150 | v12 | 106,281 | 52 s |
+| +45/135 | v12 | 106,359 | 50 s |
+| +15/165 | **v21** | 147,209 | 89 s |
+| +30/150, +45/135, +15/165 | ≥ v21 | **≥ 4,103,319** and still rising at v13 | ~70 min *per valence step* |
 
-So `45/135` next is cheap and should be run the same way `30/150` was. **All three at once is the thing to
-avoid**, and `15/165` is the one to leave for last: its 1-unit corner is the cheapest separator in the
-palette, and the all-three table is already 10× the single-rhombus one *before* reaching the valence where it
-stops growing.
+⚑ **Correction to this document's first draft**, which called `15/165` the one to leave for last on the
+grounds that its 1-unit corner is the cheapest separator in the palette. The mechanism is right; the
+magnitude was wrong. **Alone it is fine** — 1.4× the other two in size, and the extra 9 valences it needs
+cost 89 s rather than 52 s. The explosion is *purely* the interaction: three cheap separators together give
+at least 39× the sum of the singles, and the v13 bucket (312,024) shows the triple still climbing toward its
+own saturation. The all-three run was stopped at v13 after 4 h; the remaining valences would have cost
+~10 h to confirm a verdict already visible.
 
-## 5. The incremental union is sound, so nothing is ever recomputed
+So: **run each rhombus as its own delta** (§5) — three runs at ~1 min of table build each, against one run
+whose table alone does not finish in a working day. But read §5 before treating their union as the answer:
+it is a lower bound, not the joint result.
 
-For a palette P and a new tile T:
+## 5. The incremental union is sound for ONE tile, and INCOMPLETE for several
+
+For a palette P and a single new tile T:
 
 > Full(P ∪ {T}) = Full(P) ∪ { t ∈ Full(P ∪ {T}) : T occurs in t }
 
 ⊇ because the search is monotone in the alphabet; ⊆ because a tiling either uses T or does not, and if it does
-not it is in Full(P). So each new tile costs its own delta against a stored result, not a recomputation —
-which is what makes "the scope keeps growing" survivable as corpora keep arriving.
+not it is in Full(P). So one new tile costs its own delta against a stored result, not a recomputation —
+which is what makes "the scope keeps growing" survivable as corpora keep arriving. This is exactly what the
+30/150 run did, and its base arm reproducing the shipped 19 byte-identical is the empirical check.
+
+⚑ **It does not compose across tiles, and the plan above must not pretend it does.** For three new tiles the
+joint result is
+
+> Full(P ∪ {T₁,T₂,T₃}) = Full(P) ∪ { t : t uses **at least one** of T₁, T₂, T₃ }
+
+whereas the three separate runs deliver, between them, only the tilings using at least one new tile **and no
+other new tile** — each run's palette cannot express the other two rhombi at all. **Every tiling that mixes
+two of the new rhombi in one figure is missed by all three runs.** The union of the singles is therefore a
+lower bound on the joint answer, in exactly the same way `maxValence=8` was a lower bound on the shipped 12
+families. Calling it "the answer" would be the same error one level up.
+
+Two honest options, and they are not equivalent:
+
+- **Union of singles.** Cheap (three ~1 min tables), complete for *single-new-rhombus* tilings, silent about
+  the mixed ones. Ship it labelled as that, never as the cx4-family enumeration.
+- **The joint table.** The only route to the real claim, and ≥ 4.1M vertexdefs before saturation. Whether
+  that is affordable depends on the k=2 exponent, which is still unmeasured (§3).
+
+The cheap way to find out whether the gap is worth paying for: run the pairwise tables (P + two rhombi,
+three of them) rather than the triple. Each is one step less explosive, and their union with the singles
+closes everything except genuinely three-rhombus tilings — which, for a k=1 or k=2 tiling on a 30-tile
+palette, may well be empty. That is a measurement, not an assumption, and it should be made before either
+option is committed to.
 
 `scripts/stabilize-family-ids.mjs` (landed with the rhombus) is the bookkeeping half of this: it splices a
 fresh export onto the shipped one on `familySymbol`, keeps shipped ids and default α byte-identical, and
@@ -181,5 +214,9 @@ minutes; it costs 52 seconds.
    this removes the "12 is a lower bound" caveat from the shelf. ~1 min of table + 2 s of solve.
 3. Log per-worker wall time in `run-oracle-parallel.sh` (one line), then run k=2 on that table and record
    what it actually costs.
-4. Same for `+cx4-45.135`, as its own delta.
-5. Only then decide whether `15/165`, or the whole cx4 family at once, needs an idea beyond these.
+4. Same for `+cx4-45.135` and then `+cx4-15.165`, each as its own delta against the stored result. All
+   three tables are ~1 min to build; only the k=2 solves cost anything.
+5. The whole cx4 family in ONE palette is the thing that needs an idea beyond these — ≥ 4.1M configs and
+   still growing when the probe was stopped. If the union of the three deltas turns out to miss tilings
+   that need two new rhombi *in the same tiling*, that is the case the union cannot reach, and it is worth
+   knowing how many such tilings exist before paying for the joint table.

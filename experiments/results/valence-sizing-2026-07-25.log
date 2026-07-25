@@ -43,3 +43,60 @@
 [17:09:38]       kept by valence: {2: 65, 3: 848, 4: 8915, 5: 43610, 6: 149234, 7: 335590, 8: 571148}
 [17:11:52] === PAIR-PRUNED sizing (analysis/prefix_prune_probe forbidden-pair DFS) ===
 [17:11:52] isotox-v8-rh45: classes=55 forbidden pairs=605/3025
+[17:12:38]   isotox-v8-rh45 maxValence=8   raw=1,323,412 configs= 106,167 overlap-free= 102,043    45.1s
+[17:12:38]       kept by valence: {2: 62, 3: 638, 4: 5111, 5: 16650, 6: 32584, 7: 30338, 8: 16660}
+[17:13:27]   isotox-v8-rh45 maxValence=9   raw=1,395,661 configs= 110,225 overlap-free= 105,884    48.9s
+[17:13:27]       kept by valence: {2: 62, 3: 638, 4: 5111, 5: 16650, 6: 32584, 7: 30338, 8: 16660, 9: 3841}
+[17:14:19]   isotox-v8-rh45 maxValence=10  raw=1,404,191 configs= 110,705 overlap-free= 106,349    52.5s
+[17:14:19]       kept by valence: {2: 62, 3: 638, 4: 5111, 5: 16650, 6: 32584, 7: 30338, 8: 16660, 9: 3841, 10: 465}
+[17:15:09]   isotox-v8-rh45 maxValence=11  raw=1,404,378 configs= 110,714 overlap-free= 106,358    49.9s
+[17:15:09]       kept by valence: {2: 62, 3: 638, 4: 5111, 5: 16650, 6: 32584, 7: 30338, 8: 16660, 9: 3841, 10: 465, 11: 9}
+[17:15:59]   isotox-v8-rh45 maxValence=12  raw=1,404,380 configs= 110,715 overlap-free= 106,359    49.8s
+[17:15:59]       kept by valence: {2: 62, 3: 638, 4: 5111, 5: 16650, 6: 32584, 7: 30338, 8: 16660, 9: 3841, 10: 465, 11: 9, 12: 1}
+[17:16:49]   isotox-v8-rh45 maxValence=13  raw=1,404,380 configs= 110,715 overlap-free= 106,359    49.8s
+[17:16:49]       kept by valence: {2: 62, 3: 638, 4: 5111, 5: 16650, 6: 32584, 7: 30338, 8: 16660, 9: 3841, 10: 465, 11: 9, 12: 1}
+[17:16:49]   ** isotox-v8-rh45 SATURATES at maxValence=12 — no word of length 13 closes to 360 deg
+[17:16:49] isotox-v8-rh15: classes=55 forbidden pairs=619/3025
+[17:18:02]   isotox-v8-rh15 maxValence=8   raw=1,456,950 configs= 113,047 overlap-free= 108,883    72.8s
+[17:18:02]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209}
+[17:19:31]   isotox-v8-rh15 maxValence=9   raw=1,767,735 configs= 130,511 overlap-free= 125,818    89.7s
+[17:19:31]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935}
+[17:20:48]   isotox-v8-rh15 maxValence=10  raw=1,973,620 configs= 141,078 overlap-free= 136,095    77.2s
+[17:20:48]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277}
+[17:22:06]   isotox-v8-rh15 maxValence=11  raw=2,105,048 configs= 147,138 overlap-free= 142,021    77.9s
+[17:22:06]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926}
+[17:23:30]   isotox-v8-rh15 maxValence=12  raw=2,170,840 configs= 150,026 overlap-free= 144,885    83.5s
+[17:23:30]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864}
+[17:24:54]   isotox-v8-rh15 maxValence=13  raw=2,200,246 configs= 151,194 overlap-free= 146,044    83.6s
+[17:24:54]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159}
+[17:26:18]   isotox-v8-rh15 maxValence=14  raw=2,219,132 configs= 151,909 overlap-free= 146,753    84.8s
+[17:26:18]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709}
+[17:27:44]   isotox-v8-rh15 maxValence=15  raw=2,227,512 configs= 152,211 overlap-free= 147,054    85.9s
+[17:27:44]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301}
+[17:28:41]   isotox-v8-rh3 maxValence=9   raw=29,549,050 configs=1,863,293 overlap-free=1,849,654  1143.4s
+[17:28:41]       kept by valence: {2: 65, 3: 848, 4: 8915, 5: 43610, 6: 149234, 7: 335590, 8: 571148, 9: 740244}
+[17:29:11]   isotox-v8-rh15 maxValence=16  raw=2,229,288 configs= 152,281 overlap-free= 147,124    87.2s
+[17:29:11]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301, 16: 70}
+[17:30:42]   isotox-v8-rh15 maxValence=17  raw=2,230,665 configs= 152,326 overlap-free= 147,169    90.5s
+[17:30:42]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301, 16: 70, 17: 45}
+[17:32:13]   isotox-v8-rh15 maxValence=18  raw=2,231,421 configs= 152,360 overlap-free= 147,203    91.3s
+[17:32:13]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301, 16: 70, 17: 45, 18: 34}
+[17:33:43]   isotox-v8-rh15 maxValence=19  raw=2,231,459 configs= 152,362 overlap-free= 147,205    89.9s
+[17:33:43]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301, 16: 70, 17: 45, 18: 34, 19: 2}
+[17:35:11]   isotox-v8-rh15 maxValence=20  raw=2,231,499 configs= 152,364 overlap-free= 147,207    88.1s
+[17:35:11]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301, 16: 70, 17: 45, 18: 34, 19: 2, 20: 2}
+[17:36:42]   isotox-v8-rh15 maxValence=21  raw=2,231,541 configs= 152,366 overlap-free= 147,209    91.1s
+[17:36:42]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301, 16: 70, 17: 45, 18: 34, 19: 2, 20: 2, 21: 2}
+[17:38:11]   isotox-v8-rh15 maxValence=22  raw=2,231,541 configs= 152,366 overlap-free= 147,209    88.9s
+[17:38:11]       kept by valence: {2: 58, 3: 603, 4: 4679, 5: 14528, 6: 29618, 7: 32188, 8: 27209, 9: 16935, 10: 10277, 11: 5926, 12: 2864, 13: 1159, 14: 709, 15: 301, 16: 70, 17: 45, 18: 34, 19: 2, 20: 2, 21: 2}
+[17:38:11]   ** isotox-v8-rh15 SATURATES at maxValence=21 — no word of length 22 closes to 360 deg
+[17:38:11] === pair-pruned sizing done ===
+[18:02:40]   isotox-v8-rh3 maxValence=10  raw=45,067,975 configs=2,642,486 overlap-free=2,626,161  2037.8s
+[18:02:40]       kept by valence: {2: 65, 3: 848, 4: 8915, 5: 43610, 6: 149234, 7: 335590, 8: 571148, 9: 740244, 10: 776507}
+[18:51:02]   isotox-v8-rh3 maxValence=11  raw=59,830,008 configs=3,314,774 overlap-free=3,297,188  2901.7s
+[18:51:02]       kept by valence: {2: 65, 3: 848, 4: 8915, 5: 43610, 6: 149234, 7: 335590, 8: 571148, 9: 740244, 10: 776507, 11: 671027}
+[19:52:38]   isotox-v8-rh3 maxValence=12  raw=71,647,934 configs=3,809,333 overlap-free=3,791,295  3695.7s
+[19:52:38]       kept by valence: {2: 65, 3: 848, 4: 8915, 5: 43610, 6: 149234, 7: 335590, 8: 571148, 9: 740244, 10: 776507, 11: 671027, 12: 494107}
+[21:02:49]   isotox-v8-rh3 maxValence=13  raw=79,742,137 configs=4,121,477 overlap-free=4,103,319  4209.6s
+[21:02:49]       kept by valence: {2: 65, 3: 848, 4: 8915, 5: 43610, 6: 149234, 7: 335590, 8: 571148, 9: 740244, 10: 776507, 11: 671027, 12: 494107, 13: 312024}
+[22:04:59] rh3 (all three rhombi) run STOPPED at maxValence=13 by CC — 4.1M configs and still rising, ~70 min/step with ~8 valences to go. The verdict does not need the exact saturation: the singles are 106-147k complete, the triple is >=4.1M incomplete. Interaction is multiplicative; run them one at a time and union.
