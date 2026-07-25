@@ -4,6 +4,7 @@
  "pinnedLegacy": false,
  "maxValence": 8,
  "comment": "BOUNDED PROBE (maxValence=8, incomplete): fast arm for the rhombus-seed test. isotox-v8-rh.",
+ "pruneOverlap": true,
  "tiles": [
   {
    "kind": "regular",

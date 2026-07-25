@@ -4,6 +4,7 @@
  "pinnedLegacy": false,
  "maxValence": 12,
  "comment": "EXPERIMENT (AL 2026-07-25): isotoxal-star-z24 + ONLY the 30/150 convex isotoxal rhombus. The D=24 alpha+beta=180 rhombus family has 5 members; just 60/120 and 75/105 were seeded. A mixed free-alpha family whose alpha-window meets the 15deg grid only near 30deg can therefore never be DISCOVERED by the combinatorial pass, even though its proven range would contain it. Baseline: 19 families at k=1.",
+ "pruneOverlap": true,
  "tiles": [
   {
    "kind": "regular",

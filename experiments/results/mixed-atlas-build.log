@@ -32,6 +32,11 @@
   ctrnact-mixed-family-k1-31  4α.8α.4*  P=1
   ctrnact-mixed-family-k1-32  4α.8α.4*  P=1
   ctrnact-mixed-family-k1-33  4α.6α.4*.6*  P=1
+  ctrnact-mixed-family-k1-34  4α.3*  P=1
+  ctrnact-mixed-family-k1-35  4α.3*.4*  P=1
+  ctrnact-mixed-family-k1-36  4α.3*.4*  P=1
+  ctrnact-mixed-family-k1-37  4α.6α.3*  P=1
+  ctrnact-mixed-family-k1-38  4α.3*.6*  P=1
   ctrnact-mixed-family-k2-01  3.4α.6α.12*  P=1
   ctrnact-mixed-family-k2-02  6α.3*  P=1
   ctrnact-mixed-family-k2-03  6α.3*  P=1
@@ -92,7 +97,7 @@
   ctrnact-mixed-family-k2-58  4.4α.3*.6*  P=1
   ctrnact-mixed-family-k2-59  4.4α.6α.6*  P=1
   ctrnact-mixed-family-k2-60  3.4α.8α.8*  P=1
-  pre-merge snapshot (93) → experiments/results/mixed-atlas-unmerged.json
+  pre-merge snapshot (98) → experiments/results/mixed-atlas-unmerged.json
 
   --- merge plan: 6 merge(s), 11 alias(es) ---
   ctrnact-mixed-family-k1-04  sweep ∈ (0°, 120°) join 60°  ← 8α.3*.6* ↔ 6α.12α.4*
@@ -102,5 +107,5 @@
   ctrnact-mixed-family-k2-47  theta ∈ (105°, 240°) join 180°  ← 4α.6α.6* ↔ 4α.3*.6*
   ctrnact-mixed-family-k2-58  theta ∈ (90°, 240°) join 180°  ← 4.4α.6α.6* ↔ 4.4α.3*.6*
   absorbed 11 id(s): 6 merge partner(s) + 5 duplicate(s)
-  93 → 82 entries; alias table → lib/services/mergedFamilyAliases.json
-  wrote 82 mixed families (0 skipped) → public/reference-atlas-mixed.json (460.7 KB), elapsed 0.03s
+  98 → 87 entries; alias table → lib/services/mergedFamilyAliases.json
+  wrote 87 mixed families (0 skipped) → public/reference-atlas-mixed.json (494.9 KB), elapsed 0.02s

@@ -4,6 +4,7 @@
  "pinnedLegacy": false,
  "maxValence": 24,
  "comment": "PROBE: isotoxal-star-z24 + cx4-15.165 only. maxValence=24 = the D/min-corner bound; the real cap is measured saturation.",
+ "pruneOverlap": true,
  "tiles": [
   {
    "kind": "regular",

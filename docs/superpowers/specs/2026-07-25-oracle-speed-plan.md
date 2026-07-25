@@ -59,7 +59,7 @@ invariant under the rotation and reflection that `cyclic_reps` quotients by, so 
 representative can be lost either. The probe asserts this rather than arguing it — it compares the emitted
 overlap-free *sets*, not just the counts.
 
-Measured (`analysis/prefix_prune_probe.py`):
+Measured on the ENUMERATION STAGE (`analysis/prefix_prune_probe.py`):
 
 | palette | baseline | pair-pruned | speedup | sets identical |
 |---|---|---|---|---|
@@ -68,10 +68,39 @@ Measured (`analysis/prefix_prune_probe.py`):
 
 The win grows with palette size, which is the direction the atlas is going.
 
-**To land it:** move the pair table into `gen_alphabet.enum_configs`, replacing the point-adjacency special
-case; keep the leaf overlap check (it still catches the 12% that need 3+ corners, and the cyclic wrap pair).
-`make check-regular` must stay byte-identical — the regular palette is convex-only, so every pair is
-overlap-free and the table is empty there, which is the cheap way to see the guard will hold.
+### ✅ LANDED (2026-07-25) — and the end-to-end number is smaller than the stage number
+
+`forbidden_adjacent_pairs` + the `forbidden` parameter on `enum_configs`. **Quote the end-to-end figure,
+not the 20.5×**: folds, `certify`, `iso_key` and `emit` are untouched by this change, so they become the
+floor of the run.
+
+| whole generator run | before | after | speedup |
+|---|---|---|---|
+| `isotoxal-star-z24` (the shipped palette) | 165 s | **35.5 s** | **4.6×** |
+| `isotoxal-star-z24-rh` @ v12, 112,018 entries | — | 150 s | — |
+
+⚑ The rhombus palette's end-to-end *before* was never cleanly measured: the run was started while the k=2
+solve had 8 workers on the box, so its wall time is contention-inflated and was discarded rather than
+reported. Its stage-level 20.5× stands (measured on a quiet machine); its end-to-end multiplier is
+unmeasured and would land between 4.6× and 20.5×.
+
+Verification, which is the part that mattered: **byte-identical output on every palette compared** —
+`isotoxal-star-z24` (34,329 entries), `isotox-v8-base` (34,279), `isotox-v8-rh` (104,313), all 4/4 files;
+plus original-vs-new cross-checks on `star24`, `girih`, `composite-convex`, `spherical`, `hyp-p7`, `hyp-r5`
+covering both closure modes and both flag states, all 4/4. `make check-regular: PASS` (counts
+10/20/61/151/332/673). Every external caller of `enum_configs` passes `forbidden=None` implicitly, so the
+historical enumeration is what they still get.
+
+Two fixes rode along, both found by the cross-check rather than planned:
+
+- **`pruneOverlap` is now declared in the palette JSON**, which closes the provenance gap in §"What not to
+  do" below. `make PALETTE=isotoxal-star-z24` now reproduces the shipped 34,329 with no environment
+  variable set (verified byte-identical against the env-driven build).
+- **The flag is refused loudly on non-planar closures.** `build_config` is Euclidean, so applying it to a
+  defect-closure palette marks *every* config as overlapping and empties the table: `hyp-p7` went 6,719 →
+  **0 entries**, silently, no error. Since the switch was environment-driven this was one stray export away.
+  Now it prints `⚑ EU_PRUNE_OVERLAP IGNORED` and proceeds; verified `hyp-p7` returns 6,719, byte-identical
+  to the correct no-flag build.
 
 ## 2. maxValence=12 costs nothing — it is where the palette saturates
 
@@ -90,6 +119,17 @@ valence-8 one: 51.6 s against 44.8 s with the pair prune.
 
 So the "12 is a lower bound" caveat on the shipped 12 families costs **7 seconds of table build** to remove.
 Do it. It is not a speed/completeness trade at all.
+
+### ✅ DONE (2026-07-25) — and the valence-8 probe was hiding 5 families
+
+Rebuilt `isotoxal-star-z24-rh` at the saturating maxValence=12: **112,018 vertexdefs** (against 104,313 at
+valence 8), table in ~150 s, k=1 solve 291 s on 8 workers with no `EU_NCBUDGET` warning, 177 raw blocks →
+139 pruned (134 at valence 8, 95 for the base palette).
+
+**38 certified families against 33** — the incomplete regime cost 5 real tilings, so the caveat was not
+theoretical. All 5 seeded by `cx4-30.150`, all α ∈ (0°,60°), all 5/5 area checks, all re-verified through the
+app's `evaluateParamCell` at 5 α samples each. Shelf **83 → 87** (k=1: 27 → 32; k=2 lost one to an unrelated
+census fix, `ad7240a`). No originally-shipped id disappeared without an alias redirect.
 
 (This is the shape CLAUDE.md warns about from the other side: `maxValence` *is* a completeness knob, so it
 must never be tuned down for speed — but here the honest setting is also nearly the cheap one, and the way to

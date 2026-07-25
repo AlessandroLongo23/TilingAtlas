@@ -4,6 +4,7 @@
  "pinnedLegacy": false,
  "maxValence": 12,
  "comment": "PROBE: isotoxal-star-z24 + the three UNSEEDED D=24 convex isotoxal rhombi (15/165, 30/150, 45/135), completing the cx4 family. maxValence=12 = the saturation point measured for the single-rhombus palette; re-verify saturation here.",
+ "pruneOverlap": true,
  "tiles": [
   {
    "kind": "regular",

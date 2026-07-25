@@ -1,12 +1,12 @@
 {
  "_meta": {
   "generated_from": "experiments/results/mixed-atlas-unmerged.json",
-  "families": 93,
-  "scanned": 93,
+  "families": 98,
+  "scanned": 98,
   "skippedMultiParam": [],
   "duplicates": 5,
   "merges": 6,
-  "ships": 82,
+  "ships": 87,
   "note": "consumed by scripts/build-mixed-atlas.ts; spec docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md"
  },
  "duplicates": [
