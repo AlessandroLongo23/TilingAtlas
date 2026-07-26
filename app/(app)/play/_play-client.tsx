@@ -739,6 +739,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			const el = e.target as HTMLElement | null;
 			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			// A widget that declares role="application" owns its own arrow keys (the parametric family's 2-D
+			// region pad nudges the angle pair with them). Without this, ArrowRight both nudged the angle AND
+			// stepped the catalogue to the next tiling, which unmounted the pad mid-gesture.
+			if (el?.closest?.('[role="application"]')) return;
 			// Spherical view: Fill/Wireframe is a single mutually-exclusive toggle (the quaternion trackball
 			// owns rotation, so the flat overlays don't apply). Both W and B flip it — W = Wireframe, B = Fill,
 			// either key swaps the pair. Intercept before the flat toggles so B here means the spherical fill,

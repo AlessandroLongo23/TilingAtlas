@@ -169,6 +169,60 @@ export function clampToRegion(pc: ParametricCellData, alphasDeg: number[]): numb
 	return pc.params.map((p, j) => p.alpha0Deg + (anchor[j] + t * (want[j] - anchor[j])) * 15);
 }
 
+/** Is a δ-unit point inside (or on) the region polygon? Ray cast, ordered vertices, convex or not. */
+function pointInPolygon(p: [number, number], poly: [number, number][]): boolean {
+	let inside = false;
+	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+		const [xi, yi] = poly[i];
+		const [xj, yj] = poly[j];
+		if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
+	}
+	return inside;
+}
+
+/** Closest point to `p` on the polygon's boundary, in δ-units. */
+function closestOnPolygon(p: [number, number], poly: [number, number][]): [number, number] {
+	let best: [number, number] = poly[0];
+	let bestD = Infinity;
+	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+		const [ax, ay] = poly[j];
+		const [bx, by] = poly[i];
+		const dx = bx - ax;
+		const dy = by - ay;
+		const len2 = dx * dx + dy * dy;
+		const t = len2 < 1e-18 ? 0 : Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - ay) * dy) / len2));
+		const qx = ax + t * dx;
+		const qy = ay + t * dy;
+		const d = (p[0] - qx) ** 2 + (p[1] - qy) ** 2;
+		if (d < bestD) { bestD = d; best = [qx, qy]; }
+	}
+	return best;
+}
+
+/**
+ * The point of a coupled family's region NEAREST to a requested angle pair — the input-side projection,
+ * as opposed to clampToRegion's evaluator-side one.
+ *
+ * clampToRegion walks back along the line from the family's certified default, which is the right answer
+ * for "draw something legal" but the wrong one for a pointer: drag past an edge and the handle shoots off
+ * toward the default instead of sliding along the boundary under your cursor. Projecting to the nearest
+ * boundary point keeps the handle where the hand is. clampToRegion still runs afterwards to hold the
+ * result the REGION_EPS_UNITS inside every half-plane that the boundary itself sits on.
+ *
+ * Falls back to clampToRegion for anything without a 2-D drawn region (single-parameter and separable
+ * families, whose ranges are per-axis intervals already).
+ */
+export function nearestInRegionDeg(pc: ParametricCellData, alphasDeg: number[]): number[] {
+	const verts = pc.regionVertices;
+	if (!verts || verts.length < 3 || pc.params.length !== 2) return clampToRegion(pc, alphasDeg);
+	const want: [number, number] = [
+		(alphasDeg[0] - pc.params[0].alpha0Deg) / 15,
+		(alphasDeg[1] - pc.params[1].alpha0Deg) / 15,
+	];
+	const p = pointInPolygon(want, verts) ? want : closestOnPolygon(want, verts);
+	return clampToRegion(pc, [pc.params[0].alpha0Deg + p[0] * 15, pc.params[1].alpha0Deg + p[1] * 15]);
+}
+
 /** The segment of a merged family covering a slider position — the lower segment at a seam, the nearest
  *  one for a position outside the range (the caller has already clamped, this is belt-and-braces). Returns
  *  null for an ordinary single-cell family, which is the signal to take the unsegmented path. */

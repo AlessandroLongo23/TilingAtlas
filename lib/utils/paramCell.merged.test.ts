@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { clampToRegion, evaluateParamCell, segmentAt, type ParametricCellData } from "@/lib/utils/paramCell";
+import { clampToRegion, evaluateParamCell, nearestInRegionDeg, segmentAt, type ParametricCellData } from "@/lib/utils/paramCell";
 import { resolveMergedFamilyKey } from "@/lib/services/referenceAtlas";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
@@ -363,6 +363,41 @@ describe.skipIf(COUPLED.length === 0)("coupled two-parameter families", () => {
 			const cell = evalAt(pc, got as unknown as number);
 			const sum = cell.cellPolygons.reduce((s, p) => s + area(p.vertices), 0);
 			expect(Math.abs(sum - det(cell.basis)), `${f.id} clamped point tiles`).toBeLessThan(1e-6);
+		}
+	});
+
+	// The POINTER-side projection, as opposed to clampToRegion's walk-back from the family default: a drag
+	// that leaves the region must land on the nearest point of it, so the handle slides along the boundary
+	// under the cursor instead of shooting off toward the default. Checked in every compass direction, both
+	// for legality (still a tiling) and for the property that makes it the nearest point — no vertex of the
+	// region is closer to the request than the answer is.
+	it("projects a point outside the region onto its nearest boundary point", () => {
+		for (const f of COUPLED) {
+			const pc = byId.get(f.id)!.paramCell!;
+			const centre = pc.params.map((p) => p.defaultAlphaDeg);
+			for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+				const want = [centre[0] + dx * 900, centre[1] + dy * 900];
+				const got = nearestInRegionDeg(pc, want);
+				// legal: every species angle strictly inside its (0, limit)
+				const du = pc.params.map((p, k) => (got[k] - p.alpha0Deg) / 15);
+				for (const r of pc.region!) {
+					const a = r.seedUnits + r.coef.reduce((s, c, k) => s + c * du[k], 0);
+					expect(a, `${f.id} ${r.species} at ${dx},${dy}`).toBeGreaterThan(-1e-6);
+					expect(a, `${f.id} ${r.species} at ${dx},${dy}`).toBeLessThan(r.limitUnits + 1e-6);
+				}
+				// nearest: no region VERTEX beats it (the true nearest point is on the boundary, and every
+				// vertex is on the boundary, so this is a real lower bound on the projection's error). The
+				// slack is for the ε the clamp then holds the answer inside every half-plane by — the
+				// projection itself lands ON the boundary, which is a degenerate tiling.
+				const dist = (a: number[]) => Math.hypot(a[0] - want[0], a[1] - want[1]);
+				for (const [vx, vy] of pc.regionVertices!) {
+					const v = [pc.params[0].alpha0Deg + vx * 15, pc.params[1].alpha0Deg + vy * 15];
+					expect(dist(got), `${f.id} vertex closer at ${dx},${dy}`).toBeLessThan(dist(v) + 0.05);
+				}
+				const cell = evalAt(pc, got as unknown as number);
+				const sum = cell.cellPolygons.reduce((s, p) => s + area(p.vertices), 0);
+				expect(Math.abs(sum - det(cell.basis)), `${f.id} projected point tiles`).toBeLessThan(1e-6);
+			}
 		}
 	});
 

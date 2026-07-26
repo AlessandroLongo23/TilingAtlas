@@ -52,6 +52,8 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 		return (
 			<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
 				<ParamRegionPad paramCell={paramCell} />
+				{/* The pad's axes now say what the pad is, so the sentence that used to sit here is gone. This
+				    chip stays because the gesture it names is otherwise invisible. */}
 				<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted">
 					<span className="inline-flex items-center gap-1.5 whitespace-nowrap">
 						<Kbd>{metaKey}</Kbd>
