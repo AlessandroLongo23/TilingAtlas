@@ -6522,3 +6522,215 @@ these entries, but it would let the SOLVER find such families directly instead o
 recovered like this. (3) The 2-D pad is the only consumer of `region`; the Command-drag scrub still maps
 x/y to α/β without clamping to the polytope, so it can request an outside point — harmless (the evaluator
 clamps) but the handle and the pointer disagree while dragging.
+
+## §104 — The 2-D pad gets axes, and the α drag stops rebuilding an invisible grid (2026-07-26)
+
+AL, on the coupled-family pad from §103, with a screenshot: six complaints and one question. Paraphrased —
+the caption is read once and then never again; the clickable area is a square around a polygon, and a click
+in the corner gets mapped somewhere unrelated; there are no axes, so which angle is which, what the extremes
+are, and where an edge changes slope are all invisible; there is no grid to judge travel against; the
+readout's width changes as the number changes, which shifts the centred panel under the cursor mid-drag so
+the whole tiling jitters; and, separately, "why does it feel slower — I get some lagging", not only on the
+2-parameter families but on ordinary 1-parameter ones too.
+
+**The lag is real and it was the biggest thing here.** `scripts/measure-alpha-fps.mjs` (new — CDP sampling
+profiler + RAF deltas while sweeping α once per frame, the companion to `measure-fps.mjs`) at minimum zoom,
+1600×1000, on a k=2 star family:
+
+| | before | after |
+|---|---|---|
+| avg frame | 27.3 ms | 9.1 ms |
+| frames > 20 ms | 175 / 240 | 7 / 240 |
+| garbage collector | 49.0 % | 5.3 % |
+
+Cause: dragging a slider changes `tcId` every frame, so `ensureTiling` rebuilt the whole replicated grid —
+`buildTilingFromCell` allocates one `GenericPolygon` plus ~20 `Vector`s per tile, and at minimum zoom that
+is ~9 000 tiles, so ~180 000 objects per tick. The profile was almost entirely `Polygon`/`GenericPolygon`/
+`translatedCopy`/`Vector` constructors and the GC behind them. And under the default flat WebGL renderer
+that grid is never drawn: `drawTiling` passes `skipFill`, and `Tiling.show`'s plain branch then draws
+nothing. It was pure allocation for a canvas that paints no tiles.
+
+Fix (`components/canvas.tsx`): an α-ONLY tick under `isFlatShaderActive` skips the rebuild. What is still
+read off the retained grid — the VC list, the regular-only flag, the export-graph overlay — is
+COMBINATORIAL, and a parametric family is one continuous deformation, so the same vertex configurations and
+polygon degrees hold at every slider position; the retained grid answers those correctly at any α. Extent is
+unaffected (`grew`/`shrankAtRest` still force a rebuild when the viewport needs more tiles), and
+`prev.translationalCellId` is deliberately not advanced on a skip, so the first frame after the shader goes
+off rebuilds. `evaluateParamCell` still runs every frame — it is the base cell, tens of polygons, and the
+WebGL mesh is built from it.
+
+⚑ NOT fixed, and it is a different problem: with `euclideanShader` OFF, the same sweep at minimum zoom is
+76 ms/frame (13 fps, 240/240 frames over 20 ms) — p5 immediate-mode drawing ~9 000 tiles, plus the rebuild,
+which that path genuinely needs because it draws them. At the default zoom it is 13 ms. Not the default view
+and not what AL is looking at, but it is the honest ceiling of the p5 fill path.
+
+Also: `euclidean-canvas.tsx` was reading `resolveAlphaDegs`, which SNAPS to the 0.5° slider grid. The pad and
+the Command-scrub are continuous gestures, so the tiling stair-stepped under a smooth drag; it now reads
+`resolveAlphaDegsRaw`. (The p5 loop's eased `live` tuple is unchanged and still drives the inversive
+overlay.)
+
+**The pad.** Rewritten in CSS-pixel space (viewBox = the element's own size) so text and hairlines have a
+fixed weight while only the DATA stays in δ-units, both axes on one scale so the polygon is not distorted:
+
+- The polygon is the ONLY pointer target — no rectangle, no border, no background. A click outside it does
+  nothing rather than being projected to an unrelated point (verified: click outside leaves the tuple
+  untouched). Keyboard focus thickens the region's outline instead of drawing the browser's focus box,
+  which was itself the bounding rectangle the pad exists to not have.
+- A drag that leaves the region now slides along its boundary: `nearestInRegionDeg` in `paramCell.ts`
+  projects to the nearest point of the polygon, where `clampToRegion` walks back along the line from the
+  family's certified default — the right answer for "draw something legal", the wrong one for a pointer,
+  because it made the handle shoot toward the default. `clampToRegion` stays as the evaluator's guard and
+  as the ε that holds the projected point strictly inside every half-plane. The Command-drag scrub takes
+  the same projection, closing the open item flagged at the end of §103.
+- Axes: spines spanning exactly the region's extent, tick marks every 30° of ABSOLUTE angle on both axes,
+  numbers where they fit (the two extremes always print; a grid label prints only if it clears everything
+  already placed, so a 12-unit axis gets seven rules and four numbers rather than seven collisions), an
+  α/β glyph at each axis end, a 30° grid clipped to the polygon, dashed guides from the handle to both
+  axes, and a dot at every region vertex — where an edge changes slope is where one tile hits zero angle
+  and a different constraint takes over — each with the pair as a tooltip.
+- The readout is fixed-width with tabular figures, which is what actually stops the jitter: the panel is
+  centred with `-translate-x-1/2`, so a number growing from `90.0°` to `110.5°` moved the pad under the
+  cursor and the drag fought itself.
+- The caption is gone. The `⌘ + move mouse` chip stays: it names a gesture that is otherwise invisible.
+
+New test: `projects a point outside the region onto its nearest boundary point` — eight compass directions
+per coupled family, asserting the result is a legal tiling AND that no region vertex is closer to the
+request than the answer (every vertex is on the boundary, so that is a real lower bound on the projection).
+
+⚑ Open: the panel re-renders on every tick (`jsxDEV` is now the top non-idle entry at ~10% on the 2-param
+case). The frame is at the display cap anyway and the dev-only JSX wrapper is most of it, so memoising the
+pad's static chrome is available but was not worth the machinery today.
+
+### §104b — "Can it be even faster?" — three more layers (2026-07-26)
+
+AL asked. The median frame was already pinned at the 8.3ms display cap, so from here "faster" means killing
+spikes and reclaiming headroom, not raising the average. Extended `measure-alpha-fps.mjs` with INCLUSIVE
+attribution (walk each sample's parent chain, count an ancestor once per sample) — self time alone hides a
+cheap function that calls an expensive one, which is exactly the shape of a per-frame rebuild.
+
+**1. The skip was leaking.** `buildTilingFromCell` was still 0.37ms/frame on the star family. Cause: α
+changes the cell's BASIS, so the fill radii move with the slider and `grew` fired on its own every few
+frames — the first version of the skip exempted `grew`/`shrankAtRest`, thinking they only came from zoom.
+They are a property of what gets DRAWN, and under the shader nothing is. Dropping the exemption: star
+9.1 → 8.35ms avg, spikes 7/240 → 0/240, max 34.3 → 9.3ms. `buildTilingFromCell` left the profile entirely.
+
+**2. React was next, at 1.30ms/frame on the 2-param case** — the pad reconciling ~50 SVG nodes per pointer
+move. The pad is now `memo`'d and does NOT subscribe to the store: chrome renders once per family, and the
+five things that move (two numbers, two guides, the handle) are mutated through refs from a
+`useFamilyAlphas.subscribe`, the same imperative trick the canvases use. 1.30 → 0.22ms/frame.
+
+**3. Islamic mode was still on the old path.** `isFlatShaderActive` is false there, so the skip never
+applied — but IslamicCanvas/StrapCanvas own the fill and build their OWN patch, so p5's grid is equally
+invisible. Keyed the skip on a new shared `shaderOwnsFill` predicate (which the draw loop's `skipFill` now
+uses too, so the two cannot drift). At minimum zoom: star 35.4 → 10.2ms (198/240 → 3/240 over 20ms),
+coupled 2-param 25.6 → 14.9, mixed k2-01 51.5 → 32.3.
+
+**What makes the skip sound, exhaustively.** Everything that reads the retained grid is either covered by
+`skipFill` or now gated: circle packing and the symmetry view draw tile bodies themselves,
+`showConstructionPoints` and the export-graph hover draw from `tiling` regardless of `skipFill`, and the
+debug store is populated only on a rebuild — all five now veto the skip. The two remaining consumers are
+one-shot, so they get a lazy rebuild instead of vetoing: `gridStale` tracks whether the grid is behind the
+slider, and click-to-centre (`pickSnapTarget` needs tiles where they ARE, not where they were) and graph
+export call `ensureTiling(true)` first. One rebuild per click beats one per frame.
+
+⚑ Found while testing: ArrowRight in the pad ALSO stepped the catalogue to the next tiling, unmounting the
+pad mid-gesture — /play's window keydown handler only excused INPUT/TEXTAREA/SELECT. It now also excuses
+anything inside `[role="application"]`, which is the standard marker for a widget that owns its arrow keys.
+
+⚑ Open, with numbers, in descending order of what is left:
+1. **The Islamic arrangement rebuild, ~13.5ms/frame** at minimum zoom (`buildArrangement` + `extractFaces`
+   + `colorFacesAbc` + `buildMeshFromPatch`). IslamicCanvas rebuilds the planar arrangement of the WHOLE
+   patch on every α tick. Faces span tile boundaries, so the fix is not culling but building the
+   arrangement once per fundamental cell and instancing it across the lattice — a real piece of work in
+   that feature's area, not a tweak. This is why Islamic drags are 15–32ms rather than at the cap.
+2. **The p5 fill path off the shader, 76ms/frame** at minimum zoom (13fps, 240/240 frames over 20ms;
+   13ms at default zoom). It genuinely draws those ~9 000 tiles, so it needs the grid. The contained
+   improvement is to rebuild INTO the retained polygon objects — overwrite vertices instead of allocating
+   ~180 000 fresh Vectors — which would take the 27% GC share with it and leave the draw code untouched.
+3. **The 1-parameter slider panel, ~0.5ms/frame** (dev; `jsxDEV` halves in production). Same imperative
+   treatment as the pad would need RangeInput to expose its `--f` track variable, so it means touching a
+   design-system primitive for a path that has no measured problem. Left alone deliberately.
+4. `buildCellMesh` allocates fresh typed arrays every tick, 0.07–0.19ms/frame. Poolable; not worth it.
+
+And the answer to the question in the limit: the cell's vertices are Laurent polynomials in e^{iδ}, so the
+TERMS could be uploaded once and δ evaluated per-vertex in GLSL, making an angle change a single uniform
+write — zero CPU, zero allocation. At 0.15ms/frame for the current mesh rebuild there is nothing to buy.
+
+### §104c — "Faster" again: the Islamic arrangement, and grids that stop allocating (2026-07-26)
+
+Where §104b left it, the flat path was at the display cap and Islamic mode was the slow one. Three more
+things, in the order they mattered. `scripts/bench-islamic-arrangement.ts` (new) runs the whole Islamic
+chain in node so a change is measured in seconds instead of a four-minute browser profile.
+
+**1. The Islamic mesh rebuild bypassed its own throttle.** `MESH_REBUILD_THROTTLE_MS = 100` was already
+there for the angle/offset/count sliders, but the α path set `meshSigRef = null` to force a rebuild, and
+`structural = meshSigRef === null` reads that as "new tiling, paint at once". So every α tick rebuilt the
+whole arrangement. Replaced with a self-tuning gate on the α-derived chain (cell → basis → patch → mesh),
+rebuilt as ONE unit — the lattice basis must never disagree with the mesh — at a ~50% duty cycle measured
+from its own last run: next allowed after 2×cost. A family whose arrangement costs 10ms updates at ~50Hz; a
+cheap one still tracks every frame; nothing to tune and it degrades gracefully on slower hardware. Same gate
+in StrapCanvas. Islamic at minimum zoom, avg frame: star 35.4 → 10.2ms, coupled 2-param 25.6 → 14.9,
+mixed k2-01 32.3 → 12.9.
+
+**2. The arrangement itself was string-keyed throughout.** `buildArrangement`, `extractFaces` and
+`colorFacesAbc` were already grid-accelerated (someone had done that work), but every vertex went through
+`keyOf` → `"rx,ry"`, every grid cell through `` `${gx},${gy}` ``, every edge through `` `${a}-${b}` `` and
+back out via `split("-").map(Number)`, every half-edge visit through `` `${a}->${b}` ``, and `atan2` was
+called from inside a sort comparator. Rewritten to nested numeric Maps, pair-packing (min·N + max), stamp
+arrays in place of per-item Sets, scalar arithmetic instead of a `Vector` per candidate point, interned
+vertex/edge ids in the A/B/C colouring, and a BFS cursor instead of `queue.shift()`. Node bench, k2-01 at
+PATCH_MARGIN 3:
+
+| stage | offset 0 | | offset 0.2, count 2 | |
+|---|---|---|---|---|
+| | before | after | before | after |
+| buildArrangement | 12.5ms | 4.6 | 162.8ms | 24.5 |
+| face trace | 7.3 | 3.5 | 22.9 | 13.7 |
+| colorFacesAbc | 7.5 | 3.7 | 29.5 | 14.0 |
+| **chain** | **27.3** | **11.8** (2.3×) | **215.2** | **52.2** (4.1×) |
+
+The crossing-split branch (edge offset > 0 or count > 1) gains most because it is the one that was
+quadratic in allocations. This speeds up every Islamic interaction, not just parametric drags — the angle,
+edge-offset and intersection-count sliders all go through here, for rigid tilings too.
+
+⚑ Behaviour-preserving is easy to claim, so it is now pinned: `tests/islamic-arrangement-digest.test.ts`
+hashes pts + edges IN ORDER + faces + the A/B/C classification over three real shelf cases and two slider
+regimes. Recorded from the string-keyed implementation at 1f48db5 by temporarily restoring it (the file was
+backed up first, then the digest re-recorded, then the rewrite restored — the lock has to come from the OLD
+code or it locks nothing). Two of the rewrites were written deliberately in the old code's floating-point
+ORDER, not merely its algebra, so the digest holds bit-for-bit.
+
+**3. The replicated grid stopped allocating.** `buildTilingFromCell` now takes an optional grid to rebuild
+INTO: when the tile count and every node's shape match — which is the common case, since a slider only moves
+coordinates — `GenericPolygon.setToTranslated` overwrites the existing Vectors instead of allocating ~180 000
+objects per tick. Callers: the p5 canvas (withheld while a selection transition is running, because
+`outgoingRef` keeps the old grid on screen, and in debugView, where the debug store publishes node
+references) and both Islamic canvases for their patch. Off-shader flat path at minimum zoom, star family:
+76.2 → 38.9ms. `tests/build-patch-tiling-reuse.test.ts` asserts the reused grid is indistinguishable from a
+fresh one, that it holds across a six-step sweep (so nothing accumulates), and that a radius or shape
+mismatch falls back rather than half-writing.
+
+**Tried and rejected.** Caching `p5.Color` objects per hue in `Tiling.show` — ~9 000 `ctx.fill(h,s,b,a)`
+calls per frame for the ~20 distinct hues a tiling has. No measurable change (39.06 vs 38.93ms), so it was
+reverted rather than kept as unpaid-for complexity. p5's fill is not where that path's time goes.
+
+**Where it stands.** At minimum zoom (the stress case), 1600×1000, avg frame / frames over 20ms out of 240:
+
+| view | coupled 2-param | mixed k2-01 | star k2-01 |
+|---|---|---|---|
+| flat (default) | 8.33ms · 0 | 8.33 · 0 | 8.33 · 0 |
+| Islamic plain | 8.33 · 0 | 9.72 · 0 | 8.34 · 0 |
+| Islamic interlace | 8.33 · 0 | 10.7 · 11 | 8.33 · 0 |
+| flat, shader off | 8.33 · 0 | 18.5 · 52 | 39.1 · 240 |
+
+For comparison, the same three families in the flat view before any of this work: 11.3 / 8.4 / 27.3ms with
+7 / 0 / 175 frames over 20ms, and Islamic on mixed k2-01 was 51.5ms with 167.
+
+8.33ms IS the display cap on this machine (120Hz), so the first three rows are "as fast as the panel".
+
+⚑ Open: (1) the off-shader p5 fill at minimum zoom, 39ms — p5 immediate-mode drawing ~9 000 canvas2D paths.
+Halved by the reuse work; the rest is the renderer, which is why the WebGL path exists and is the default.
+Not worth pursuing. (2) Islamic interlace on mixed k2-01, 11 frames of 240 over 20ms; the remaining cost has
+moved off the arrangement and onto `resolveRayStops` + `calculateIslamicSegments`, i.e. the per-tile
+construction geometry, ~6% and ~5% of the frame. (3) The 1-parameter slider panel's React re-render,
+unchanged from §104b.

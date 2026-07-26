@@ -94,6 +94,37 @@ export class GenericPolygon extends Polygon {
         return p;
     }
 
+    // In-place counterpart to translatedCopy: overwrite THIS tile to be `src` shifted by (dx, dy), reusing
+    // every Vector it already owns. The replicated grid is rebuilt on every frame of a parametric-angle
+    // drag, and at minimum zoom that is ~9 000 tiles — one GenericPolygon plus ~20 Vectors each, i.e. of the
+    // order of 180 000 objects per tick, which showed up as ~27% of the frame in the garbage collector.
+    // Rebuilding into the previous grid removes all of it: the tile count and shape are unchanged from one
+    // slider position to the next, only the coordinates move.
+    //
+    // The caller must have checked that `n` and the vertex/halfway counts match (buildTilingFromCell does);
+    // sides/angles/orbitOfCorner are shared by reference exactly as translatedCopy shares them.
+    setToTranslated = (src: GenericPolygon, dx: number, dy: number): void => {
+        this.name = src.name;
+        this.sides = src.sides;
+        this.angles = src.angles;
+        this.interior_angle = src.interior_angle;
+        this.angle = src.angle;
+        this.hue = src.hue;
+        this.isStar = src.isStar;
+        this.orbitOfCorner = src.orbitOfCorner;
+        this.dir.x = src.dir.x; this.dir.y = src.dir.y;
+        for (let i = 0; i < src.vertices.length; i++) {
+            const v = this.vertices[i], w = src.vertices[i];
+            v.x = w.x + dx; v.y = w.y + dy;
+        }
+        for (let i = 0; i < src.halfways.length; i++) {
+            const v = this.halfways[i], w = src.halfways[i];
+            v.x = w.x + dx; v.y = w.y + dy;
+        }
+        this.centroid.x = src.centroid.x + dx; this.centroid.y = src.centroid.y + dy;
+        this.anchor.x = src.anchor.x + dx; this.anchor.y = src.anchor.y + dy;
+    }
+
     translate = (vector: Vector): GenericPolygon => {
         this.centroid.add(vector);
         for (let i = 0; i < this.vertices.length; i++) {

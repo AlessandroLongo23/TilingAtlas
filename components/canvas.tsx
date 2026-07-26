@@ -17,7 +17,7 @@ import {
 	prefersReducedMotion,
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
-import { evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, nearestInRegionDeg, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import {
 	screenToWorld,
 	worldToScreen,
@@ -189,6 +189,16 @@ function isStrapShaderActive(cfg: {
 	return cfg.isIslamic && !cfg.islamicAnimate
 		&& (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")
 		&& !cfg.hyperbolic && !cfg.spherical && !cfg.inversive;
+}
+
+// A WebGL layer owns the tile fill this frame — the flat renderer, or one of the two Islamic ones with a
+// cell to build from. Single source for both the per-frame `skipFill` handed to Tiling.show and the α-tick
+// rebuild skip in ensureTiling, so "p5 paints no tile bodies" cannot come to mean two different things.
+function shaderOwnsFill(
+	cfg: ReturnType<typeof useConfiguration.getState>,
+	hasStaticCell: boolean,
+): boolean {
+	return isFlatShaderActive(cfg) || ((isIslamicShaderActive(cfg) || isStrapShaderActive(cfg)) && hasStaticCell);
 }
 
 export function Canvas({
@@ -368,7 +378,12 @@ export function Canvas({
 				return renderAlphaDegs(pc, fa.live, fa.values);
 			};
 
-			const ensureTiling = () => {
+			// True when the retained grid is older than the current α because a rebuild was skipped. The
+			// per-frame draw does not care (nothing reads it), but click-to-centre snaps to a real tile, so it
+			// forces a rebuild first rather than snapping to where a tile used to be.
+			let gridStale = false;
+
+			const ensureTiling = (force = false) => {
 				const cfg = readCfg();
 				const ctrl = cfg.controls;
 				const { translationalCell: staticCell, translationalCellId: baseId, paramCell: pc } = propsRef.current;
@@ -443,19 +458,65 @@ export function Canvas({
 				const settled = Math.abs(ctrl.zoom - ctrl.targetZoom) < 0.5;
 				const grew = Ri > prev.Ri || Rj > prev.Rj;
 				const shrankAtRest = settled && (Ri !== prev.Ri || Rj !== prev.Rj);
-				const cellChanged =
-					!!tc && (prev.translationalCellId !== tcId || grew || shrankAtRest);
 
 				// orbitData arrives asynchronously (the hook computes it after selection); rebuild once when it
 				// changes so buildTilingFromCell can attach the orbit ids to the base polygons.
 				const orbitData = propsRef.current.orbitData ?? null;
 				const orbitChanged = orbitData !== prevOrbitDataRef.current;
+				const baseChanged = !!tc && baseId !== prevBaseIdRef.current;
+
+				// An α-ONLY tick under the flat WebGL renderer skips the grid rebuild entirely.
+				//
+				// Dragging a family slider changes tcId every frame, and the rebuild below allocates one
+				// Polygon per tile across the whole replicated grid — thousands of objects per tick. Measured
+				// on a k=2 star family at minimum zoom that was 27ms/frame with 49% of the budget in the
+				// garbage collector (scripts/measure-alpha-fps.mjs); it is the whole of "why does moving the
+				// angle feel slow". When isFlatShaderActive the p5 layer paints NO tiles (drawTiling passes
+				// skipFill and Tiling.show's plain branch then draws nothing), so that grid is never seen. What
+				// is still read off it — the VC list, the regular-only flag, the export-graph overlay — is
+				// COMBINATORIAL, and a parametric family is one continuous deformation: same vertex
+				// configurations, same polygon degrees at every slider position. So the retained grid answers
+				// those correctly at any α.
+				//
+				// The condition is `shaderOwnsFill`, not just the FLAT shader: with Islamic on, IslamicCanvas or
+				// StrapCanvas owns the fill and builds its own patch, so p5's grid is equally invisible there —
+				// and it cost 7.1ms/frame at minimum zoom, on top of the 13.5ms the arrangement rebuild costs.
+				// The extra flags are the overlays that DO read the grid and are not covered by skipFill: circle
+				// packing and the symmetry view draw tile bodies themselves, construction points and the
+				// export-graph hover draw from `tiling` regardless, and the debug store is filled only on a
+				// rebuild. isFlatShaderActive already excludes the first two; they matter for the Islamic branch.
+				//
+				// grew/shrankAtRest are NOT exempted, and that matters: α changes the cell's basis, so the fill
+				// radii move with the slider and `grew` fired on its own every few frames — 0.37ms/frame of
+				// buildTilingFromCell survived the first version of this skip because of it, along with the GC
+				// spikes behind the residual 34ms frames. The grid's EXTENT is a property of what gets drawn,
+				// and under the shader nothing is; zoom changes on a rigid tiling (tcId unchanged) still regrid
+				// normally, so the only thing given up is the export-graph overlay's reach mid-drag.
+				//
+				// prev.translationalCellId and prev.Ri/Rj are deliberately NOT advanced when we skip (only the
+				// rebuild block writes them), so the first frame after the shader goes off rebuilds at the
+				// current α AND the current radius.
+				const gridUnseen =
+					shaderOwnsFill(cfg, !!propsRef.current.translationalCell) &&
+					!cfg.circlePacking && !cfg.showSymmetryElements &&
+					!cfg.showConstructionPoints && !cfg.exportGraphButtonHover && !cfg.debugView;
+				const skipAlphaRebuild =
+					!force &&
+					!!pc &&
+					!!tilingRef.current &&
+					gridUnseen &&
+					prev.translationalCellId !== tcId &&
+					!baseChanged && !orbitChanged;
+				if (skipAlphaRebuild) gridStale = true;
+
+				const cellChanged =
+					!!tc && !skipAlphaRebuild && (prev.translationalCellId !== tcId || grew || shrankAtRest);
 
 				// A NEW TILING was selected — as opposed to an α-slider tick or a zoom-driven regrid, which
 				// also change tcId/the grid but must never animate. Hand what is on screen to the outgoing
 				// slot and start the wave. If a collapse is already running, leave it be: that is the one the
 				// user can actually see, and only the (not yet shown) incoming grid is superseded.
-				if (!!tc && baseId !== prevBaseIdRef.current) {
+				if (baseChanged) {
 					const canAnimate =
 						prevBaseIdRef.current !== null && !!shownTiling && !!shownCell && transitionsEnabled(cfg);
 					if (!canAnimate) {
@@ -472,8 +533,15 @@ export function Canvas({
 					try {
 						if (cfg.debugView) debugManager.reset();
 
-						const t = buildTilingFromCell(tc, Ri, Rj, orbitData);
+						// Rebuild INTO the grid already on screen when nothing else holds it: same tile count and shapes
+						// from one slider position to the next, so this is a pass of coordinate writes instead of ~180k
+						// allocations. Withheld while a selection transition is running — outgoingRef keeps the previous
+						// grid to draw the collapse from, and mutating that would corrupt what the user is watching — and
+						// in debugView, where updateDebugStore publishes node references that must not change underneath.
+						const canReuse = !outgoingRef.current && !transitionRef.current && !cfg.debugView;
+						const t = buildTilingFromCell(tc, Ri, Rj, orbitData, canReuse ? tilingRef.current : null);
 						tilingRef.current = t;
+						gridStale = false;
 
 						const regularOnly = t.nodes.length > 0 && t.nodes.every((n) => n instanceof RegularPolygon);
 						// Only touch the config store when this actually flips — see prevRegularOnlyRef: an
@@ -805,8 +873,7 @@ export function Canvas({
 					// The Islamic gate keys on the SAME prop (translationalCell) the React mount does — not the
 					// transient active-cell ref — so p5 skips its plain fill exactly when IslamicCanvas is
 					// mounted (never leaving a blank), and a rulestring tiling with no cell stays on p5.
-					const shaderFill = isFlatShaderActive(cfg)
-						|| ((isIslamicShaderActive(cfg) || isStrapShaderActive(cfg)) && !!propsRef.current.translationalCell);
+					const shaderFill = shaderOwnsFill(cfg, !!propsRef.current.translationalCell);
 					// Mouse in world coords for the orbit-dot hover (grow the hovered orbit, Tiling.
 					// drawVertexOrbits). Inverts the SAME frame transform the dots are drawn with (wrapped
 					// drawOffset + eased zoom/rot), so the hit-test matches what's on screen. Null when the
@@ -855,7 +922,8 @@ export function Canvas({
 					useConfiguration.setState({ takeScreenshot: false });
 				}
 				if (cfg.exportGraph && tiling) {
-					tiling.exportGraph();
+					if (gridStale) ensureTiling(true);
+					tilingRef.current!.exportGraph();
 					useConfiguration.setState({ exportGraph: false });
 				}
 			};
@@ -947,6 +1015,9 @@ export function Canvas({
 				// Flat view. wrap-reduce the offset so the inverted click lands in the built base grid, then shift
 				// targetOffset by the snapped point's on-screen position — moving that (visible) tile to the centre
 				// with a bounded pan.
+				// The grid may be several slider positions behind (see gridStale): snapping needs the tiles where
+				// they are NOW, so pay for one rebuild on the click instead of one per frame during the drag.
+				if (gridStale) ensureTiling(true);
 				const tiling = tilingRef.current;
 				const tc = activeCellRef.current;
 				if (!tiling || !tc) return;
@@ -1038,9 +1109,13 @@ export function Canvas({
 				if (dx === 0 && dy === 0) return;
 				const fa = useFamilyAlphas.getState();
 				const cur = resolveAlphaDegsRaw(pc, fa.values); // clamp-only, off-grid — the continuous scrub base
-				const next = cur.slice();
+				let next = cur.slice();
 				next[0] = clampAlphaOnly(pc, 0, cur[0] + dx * ALPHA_DEG_PER_PX);
 				if (pc.params.length >= 2) next[1] = clampAlphaOnly(pc, 1, cur[1] - dy * ALPHA_DEG_PER_PX);
+				// A coupled family's valid set is a POLYGON, not the box those two clamps describe, so a diagonal
+				// scrub can leave it. Slide along the boundary (the same projection the 2-D pad uses) instead of
+				// letting the evaluator's walk-back yank the tiling back toward the family default mid-gesture.
+				next = nearestInRegionDeg(pc, next);
 				// Skip the store write (and the ParamSliderPanel re-render) when nothing actually moved — a pure
 				// off-axis move on a 1-param family, or scrubbing while already pinned at a range endpoint.
 				if (next[0] !== cur[0] || (pc.params.length >= 2 && next[1] !== cur[1])) fa.set(next);

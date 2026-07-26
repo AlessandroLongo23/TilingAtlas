@@ -1564,3 +1564,20 @@ each closed path and fills with the NONZERO winding rule (even-odd would punch a
 the concave `|n/d|` reading). Faces + period lattice ship as `public/hollow/<id>.json`. The 11 convex
 uniform tilings are δ=1 hollow tilings but stay unshelved — they already ship under `regular`. Build clean,
 verified in /library, /play, sidebar picker, light and dark. Detail: DEVELOPMENT_NOTES.md §103.  — CC
+
+### 2026-07-26 — CC: 2-D pad gets axes; the α drag stops rebuilding an invisible grid
+AL's six UI complaints about the coupled-family pad, plus "why does it feel slower". The lag was real and
+not confined to 2-parameter families: an α tick rebuilt the whole replicated grid (~180k allocations at min
+zoom) for a p5 layer that paints no tiles under either the flat OR the Islamic WebGL renderer. Skipping it
+took a k=2 star family 27.3 → 8.35 ms/frame, 175/240 → 0/240 frames over 20ms, 49% → ~1% GC; Islamic mode
+35.4 → 10.2. Pad rewritten (polygon-only hit area, boundary-sliding drag, 30° axes/grid, fixed-width
+readout) and taken off the React hot path. Tool: `scripts/measure-alpha-fps.mjs`. Detail: NOTES §104. — CC
+
+### 2026-07-26 — CC: Islamic arrangement rewritten; grids rebuild in place
+Follow-on to the pad/perf work, all of it measured. The Islamic mesh rebuild was bypassing its own throttle
+on every α tick — now a self-tuning ~50% duty gate on the whole α chain. The arrangement was string-keyed
+throughout (vertex keys, grid cells, edges, half-edges, atan2 inside a sort comparator): rewritten to numeric
+keys and stamp arrays, 2.3× faster at edge offset 0 and 4.1× with crossings split, which speeds up every
+Islamic slider for rigid tilings too. `buildTilingFromCell` can now rebuild into the previous grid instead of
+allocating ~180k objects per tick. Flat and Islamic views are at the display cap; output locked by a digest
+test. Detail: DEVELOPMENT_NOTES.md §104c. — CC

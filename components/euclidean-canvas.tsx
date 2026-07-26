@@ -11,7 +11,7 @@ import {
 	ORBIT_VERT, ORBIT_FRAG, ORBIT_MAX, compileShader,
 } from "@/lib/render/flatTilingGL";
 import { getOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
-import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegs, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -273,7 +273,10 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			// clobber the collapsing/growing mesh mid-transition; the effect owns the mesh for the wave's duration.
 			const pc = paramCellRef.current;
 			if (pc && !transitionRef.current) {
-				const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+				// Clamp-only, NOT the 0.5° grid snap: the 2-D region pad and the Command-scrub are continuous
+				// gestures, and quantising here made the tiling stair-step under a smooth drag. The slider's own
+				// step is 0.5° so nothing changes for it, and the signature below still gates the rebuild.
+				const alphas = resolveAlphaDegsRaw(pc, useFamilyAlphas.getState().values);
 				const sig = alphas.map((a) => a.toFixed(2)).join(",");
 				if (sig !== lastSigRef.current) {
 					lastSigRef.current = sig;
