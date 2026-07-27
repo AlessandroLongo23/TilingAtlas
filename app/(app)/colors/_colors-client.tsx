@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils/cn";
 const GRID_OPTIONS: { value: ColorsGrid; label: string }[] = [
 	{ value: "square", label: "Square" },
 	{ value: "triangle", label: "Triangle" },
+	{ value: "hex", label: "Hexagon" },
 	{ value: "ts", label: "Tri + squares" },
 ];
 
@@ -40,7 +41,12 @@ const COLOR_OPTIONS = [...new Set(COLORS_CATALOGUES.map((c) => c.colors))].map((
 }));
 
 // The k range is per (grid, palette size) — what Marek's runs reached, not a limit of the method.
-const kRange = (grid: ColorsGrid, colors: number) => colorsCatalogue(grid, colors).ks;
+// Every k the catalogue holds, eager or lazy — this page fetches one k at a time, so a lazy slice is
+// no more expensive here than an eager one. (The atlas shelf is the one that cares about the split.)
+const kRange = (grid: ColorsGrid, colors: number) => {
+	const c = colorsCatalogue(grid, colors);
+	return [...c.ks, ...(c.lazyKs ?? [])].sort((a, b) => a - b);
+};
 const kOptions = (grid: ColorsGrid, colors: number) =>
 	[0, ...kRange(grid, colors)].map((k) => ({ value: k, label: k ? String(k) : "All" }));
 
@@ -70,7 +76,7 @@ export function ColorsClient() {
 	// Read the URL once on mount, write-only afterwards (replaceState) — the ReferenceShelf pattern.
 	const [grid, setGrid] = useState<ColorsGrid>(() => {
 		const g = searchParams.get("g");
-		return g === "triangle" || g === "ts" ? g : "square";
+		return g === "triangle" || g === "ts" || g === "hex" ? g : "square";
 	});
 	const [colors, setColors] = useState(() => {
 		const n = Number(searchParams.get("c"));

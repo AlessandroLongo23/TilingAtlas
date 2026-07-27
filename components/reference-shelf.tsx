@@ -24,6 +24,9 @@ import {
 	loadReferenceAtlasShard,
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
+	loadFreedrawShardsForK,
+	loadColorsShardsForK,
+	hasDecorationShardsForK,
 	loadHyperbolicEdgesAtlas,
 	loadHyperbolicEdgesShard,
 	loadHyperbolicColorsAtlas,
@@ -164,6 +167,7 @@ const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = 
 	{ value: "all", label: "All" },
 	{ value: "square", label: "Squares" },
 	{ value: "triangle", label: "Triangles" },
+	{ value: "hex", label: "Hexagons" },
 	{ value: "ts", label: "Tri + square" },
 ];
 const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
@@ -172,9 +176,17 @@ const COLORS_GRID_OPTIONS: { value: "all" | ColorsGrid; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "square", label: "Squares" },
 	{ value: "triangle", label: "Triangles" },
+	{ value: "hex", label: "Hexagons" },
 	{ value: "ts", label: "Tri + square" },
 ];
 const COLORS_GRID_VALUES = COLORS_GRID_OPTIONS.map((o) => o.value).filter((v): v is ColorsGrid => v !== "all");
+// One-word grid names for the collapsed FilterGroup summary, shared by both grid facets.
+const GRID_SUMMARY: Record<FreedrawGrid | ColorsGrid, string> = {
+	square: "squares",
+	triangle: "triangles",
+	hex: "hexagons",
+	ts: "tri + square",
+};
 // Colors-shelf palette-size facet: how many colors the solutions use. Each (grid, size) pair is its own
 // catalogue — an n-color run's solutions all use every one of its n colors.
 const COLORS_COUNT_OPTIONS: { value: "all" | number; label: string }[] = [
@@ -518,6 +530,8 @@ export function ReferenceShelf() {
 	// Dedicated isotoxal shard tracking — its k=3 collides with the convex-irregular k=3 in the shared sets.
 	const [isotoxalLoadedShards, setIsotoxalLoadedShards] = useState<Set<number>>(new Set());
 	const [isotoxalLoadingShards, setIsotoxalLoadingShards] = useState<Set<number>>(new Set());
+	// k values whose Euclidean decoration shards have been requested (hexagonal edges/colorings tails).
+	const [decorLoadedShards, setDecorLoadedShards] = useState<Set<number>>(new Set());
 
 	useEffect(() => {
 		let alive = true;
@@ -732,6 +746,22 @@ export function ReferenceShelf() {
 				);
 		}
 	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, isotoxalLoadingShards]);
+
+	// Lazy Euclidean DECORATION shards — the hexagonal grid's deep k slices (edges k>=7, colorings k>=6),
+	// the only freedraw/colors slices too big to ship eagerly. Fetch when that k chip is picked, under any
+	// decoration (the k chip is the whole trigger; there is no class to gate on). Best-effort: a missing
+	// shard resolves to an empty merge inside the loader, and a failure just marks the k done.
+	useEffect(() => {
+		const k = filters.kValue;
+		if (k == null || !hasDecorationShardsForK(k) || decorLoadedShards.has(k)) return;
+		setDecorLoadedShards((sh) => new Set(sh).add(k));
+		Promise.all([loadFreedrawShardsForK(k), loadColorsShardsForK(k)])
+			.then(([fd, col]) => {
+				const data = [...fd, ...col];
+				if (data.length) setTilings((prev) => (prev ? [...prev, ...data] : data));
+			})
+			.catch(() => {});
+	}, [filters.kValue, decorLoadedShards]);
 
 	// ── single-select setters (each clears the now-stale downstream selections) ──
 	const setKValue = (k: number | undefined) =>
@@ -1295,13 +1325,7 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Grid"
 							summary={
-								filters.freedrawGrid === "square"
-									? "squares"
-									: filters.freedrawGrid === "triangle"
-										? "triangles"
-										: filters.freedrawGrid === "ts"
-											? "tri + square"
-											: null
+								filters.freedrawGrid ? GRID_SUMMARY[filters.freedrawGrid] : null
 							}
 							note="the decorated lattice"
 						>
@@ -1313,7 +1337,8 @@ export function ReferenceShelf() {
 							/>
 							<GroupNote>
 								Which lattice the drawn edges decorate. Square patterns tile with polyominoes, triangular
-								ones with polyiamonds — plus strips and unbounded sheets on either board.
+								ones with polyiamonds, hexagonal ones with polyhexes — plus strips and unbounded sheets on
+								any board.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
@@ -1322,13 +1347,7 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Grid"
 							summary={
-								filters.colorsGrid === "square"
-									? "squares"
-									: filters.colorsGrid === "triangle"
-										? "triangles"
-										: filters.colorsGrid === "ts"
-											? "tri + square"
-											: null
+								filters.colorsGrid ? GRID_SUMMARY[filters.colorsGrid] : null
 							}
 							note="the colored board"
 						>

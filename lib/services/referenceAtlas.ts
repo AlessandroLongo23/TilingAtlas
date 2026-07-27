@@ -6,6 +6,7 @@ import type { HollowPattern } from "@/lib/hollow/pattern";
 // unambiguous — and a collision would be that test's failure, not a silent shadowing here.
 import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
 import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
+import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
@@ -13,13 +14,20 @@ import {
 	colorsGridOf as colorsPatternGridOf,
 	colorCensus,
 	COLORS_CATALOGUES,
+	colorsLazyShardsForK,
 	colorCountOf,
 	colorLetter,
 	type ColorPattern,
 	type ColorsGrid,
 } from "@/lib/colors/pattern";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
-import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import {
+	FREEDRAW_EAGER_FILES,
+	freedrawLazyShardsForK,
+	gridOf,
+	type FreedrawGrid,
+	type FreedrawPattern,
+} from "@/lib/freedraw/pattern";
 import {
 	hypEdgesBaseLabel,
 	hypEdgesFamilyLabel,
@@ -77,7 +85,7 @@ export interface ReferenceTiling {
 	// A different tile from the concave isotoxal |n/d| the `star`/`isotoxal` shelves carry. Its faces
 	// overlap by construction, so there is no cell polygon list the flat renderer could consume:
 	// `renderCell` is a throwaway here and never drawn, and its presence routes /play + the thumbnails
-	// to the hollow renderer (components/hollow/hollow-canvas.tsx) the way `freedraw` routes to the grid.
+	// to the hollow renderer (components/hollow-canvas.tsx) the way `freedraw` routes to the grid view.
 	// `density` is the constant areal winding number (may be negative or zero — that is the point of a
 	// hollow tiling, not a bug); `gms` is the Grünbaum-Miller-Shephard figure number when the tiling is
 	// one of theirs; `k` is 1 throughout (uniform only so far).
@@ -270,12 +278,14 @@ export const SUB_ORDER = [
 	"",
 	"square",
 	"triangle",
+	"hex",
 	"ts",
 	// Colors: grid-major, then palette size — "square-2" is every 2-coloring of the 4^4 grid.
 	"square-2",
 	"square-3",
 	"triangle-2",
 	"triangle-3",
+	"hex-3",
 	"ts-2",
 	"ts-3",
 	"tetrahedron",
@@ -535,14 +545,16 @@ export function freedrawGridOf(t: Pick<ReferenceTiling, "freedraw">): FreedrawGr
 
 // The card / search label for a freedraw pattern: what its faces ARE, since there is no vertex
 // configuration to name it by. "1 strip + 2 polyominoes", "1 unbounded · holes". The finite noun
-// follows the grid: polyomino on squares, polyiamond on triangles, polyform on the combined grid.
+// follows the grid: polyomino on squares, polyiamond on triangles, polyhex on hexagons, polyform on
+// the combined grid (where the cells are not all one shape, so no -omino word fits).
+const FREEDRAW_FINITE_NOUN: Record<FreedrawGrid, readonly [string, string]> = {
+	square: ["polyomino", "polyominoes"],
+	triangle: ["polyiamond", "polyiamonds"],
+	hex: ["polyhex", "polyhexes"],
+	ts: ["polyform", "polyforms"],
+};
 export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
-	const noun =
-		grid === "triangle"
-			? (["polyiamond", "polyiamonds"] as const)
-			: grid === "ts"
-				? (["polyform", "polyforms"] as const)
-				: (["polyomino", "polyominoes"] as const);
+	const noun = FREEDRAW_FINITE_NOUN[grid];
 	const parts: string[] = [];
 	if (s.finite) parts.push(`${s.finite} ${s.finite === 1 ? noun[0] : noun[1]}`);
 	if (s.strips) parts.push(`${s.strips} ${s.strips === 1 ? "strip" : "strips"}`);
@@ -583,6 +595,21 @@ export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: n
 	tiling: string | null;
 	alphas: number[] | null;
 } {
+	// A coupled family absorbed several 1-D slices of itself, so the redirect goes from ONE angle to a
+	// PAIR: the slice's seat in the region, plus how far along its own line the old α had travelled.
+	const coupled = state.tiling ? COUPLED_FAMILY_ALIASES[state.tiling] : undefined;
+	// Only a SINGLE angle is in the old coordinate. A link that already carries the pair is in the new one
+	// (the survivor is aliased to itself, so without this guard every round-trip would remap its own output).
+	if (coupled && (state.alphas?.length ?? 0) <= 1) {
+		const a = state.alphas?.[0];
+		const t = a != null && Number.isFinite(a) ? (a - coupled.fromAlpha0Deg) / 15 : 0;
+		return {
+			tiling: coupled.to,
+			alphas: coupled.survivorAlpha0Deg.map(
+				(a0, p) => a0 + 15 * (coupled.deltaUnits[p] + t * coupled.axisUnits[p]),
+			),
+		};
+	}
 	const alias = state.tiling ? MERGED_FAMILY_ALIASES[state.tiling] : undefined;
 	if (!alias) return state;
 	const a = state.alphas?.[0];
@@ -592,6 +619,15 @@ export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: n
 }
 
 type MergedAliasTable = Record<string, { to: string; uOf: { m: number; c: number } }>;
+type CoupledAliasTable = Record<string, {
+	to: string;
+	fromAlpha0Deg: number;
+	deltaUnits: number[];
+	axisUnits: number[];
+	survivorAlpha0Deg: number[];
+}>;
+
+const COUPLED_FAMILY_ALIASES: CoupledAliasTable = COUPLED_ALIASES_MIXED as CoupledAliasTable;
 
 const MERGED_FAMILY_ALIASES: MergedAliasTable = {
 	...(MERGED_ALIASES_MIXED as MergedAliasTable),
@@ -1222,19 +1258,10 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-hollow.json"),
 		// Freedraw is adapted from its own raw catalogues, not a reference-atlas-*.json (see
 		// freedrawToReference). The verified square k<=3 base, the square k=4/k=5 extensions, the
-		// triangular-grid catalogue (k<=3 plus the k=4 extension), and the combined-grid (squares +
+		// triangular-grid catalogue (k<=3 plus the k=4 extension), the hexagonal grid's k<=6, and the combined-grid (squares +
 		// triangles) patches per k — merged here so /library and /play see one shelf.
 		Promise.all(
-			[
-				"/freedraw/solutions.json",
-				"/freedraw/solutions-k4.json",
-				"/freedraw/solutions-k5.json",
-				"/freedraw/tri-solutions.json",
-				"/freedraw/tri-solutions-k4.json",
-				"/freedraw/ts-solutions-k1.json",
-				"/freedraw/ts-solutions-k2.json",
-				"/freedraw/ts-solutions-k3.json",
-			].map((url) =>
+			FREEDRAW_EAGER_FILES.map((url) =>
 				fetch(url)
 					.then((res) => (res.ok ? (res.json() as Promise<FreedrawPattern[]>) : []))
 					.catch(() => [] as FreedrawPattern[]),
@@ -1339,6 +1366,66 @@ export async function loadComposableAtlasShard(k: number): Promise<ReferenceTili
 	composableShardInflight.set(k, p);
 	return p;
 }
+
+// Per-k lazy shards for the Euclidean DECORATION shelves — the hexagonal grid's deep tails, which are
+// the only freedraw/colors slices too big to load with the atlas (edges k=7/8/9 = 6.4/17.6/58 MB,
+// colorings k=6/7/8 = 4.3/8.8/28.6 MB). Fetched when that k comes into view, exactly like the hyperbolic
+// bases. Both are best-effort: a missing shard (404) degrades to an empty merge, never an error, because
+// the eager slices already make the shelf usable. Keyed by URL so the two never share a cache entry.
+const decorationShardCache = new Map<string, ReferenceTiling[]>();
+const decorationShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+function loadDecorationShard<T>(
+	url: string,
+	adapt: (p: T) => ReferenceTiling,
+): Promise<ReferenceTiling[]> {
+	const cached = decorationShardCache.get(url);
+	if (cached) return Promise.resolve(cached);
+	const existing = decorationShardInflight.get(url);
+	if (existing) return existing;
+	const p = fetch(url)
+		.then((res) => {
+			if (res.status === 404) return [] as T[]; // slice not shipped at this k — empty merge
+			if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+			return res.json() as Promise<T[]>;
+		})
+		.then((data) => {
+			const out = data.map(adapt);
+			decorationShardCache.set(url, out);
+			decorationShardInflight.delete(url);
+			return out;
+		})
+		.catch((err) => {
+			decorationShardInflight.delete(url);
+			throw err;
+		});
+	decorationShardInflight.set(url, p);
+	return p;
+}
+
+/** Freedraw (edge-system) shards for vertex-count k — the hexagonal grid's k≥7 today. */
+export async function loadFreedrawShardsForK(k: number): Promise<ReferenceTiling[]> {
+	const shards = freedrawLazyShardsForK(k);
+	if (!shards.length) return [];
+	const lists = await Promise.all(
+		shards.map((s) => loadDecorationShard<FreedrawPattern>(s.url, freedrawToReference)),
+	);
+	return lists.flat();
+}
+
+/** Colors shards for vertex-count k — the hexagonal 3-colorings' k≥6 today. */
+export async function loadColorsShardsForK(k: number): Promise<ReferenceTiling[]> {
+	const shards = colorsLazyShardsForK(k);
+	if (!shards.length) return [];
+	const lists = await Promise.all(
+		shards.map((s) => loadDecorationShard<ColorPattern>(`${s.prefix}${s.k}.json`, colorsToReference)),
+	);
+	return lists.flat();
+}
+
+/** Does vertex-count `k` have any lazy Euclidean decoration slice at all? Drives the fetch effects. */
+export const hasDecorationShardsForK = (k: number): boolean =>
+	freedrawLazyShardsForK(k).length > 0 || colorsLazyShardsForK(k).length > 0;
 
 // Per-k lazy shards for the isotoxal α-family shelf (k≥3, generated by scripts/build-isotoxal-atlas.ts into
 // public/reference-atlas-isotoxal-k{k}.json). The main reference-atlas-isotoxal.json carries only k≤2; k=3

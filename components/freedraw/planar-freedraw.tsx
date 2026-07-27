@@ -41,14 +41,16 @@ import { cn } from "@/lib/utils/cn";
 const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 	{ value: "square", label: "Square" },
 	{ value: "triangle", label: "Triangle" },
+	{ value: "hex", label: "Hexagon" },
 	{ value: "ts", label: "Tri + squares" },
 ];
 
 // k ranges per grid track what the catalogues hold: squares to k=5, triangles to k=4, the combined
-// grid to k=3.
+// grid to k=3, hexagons to k=9. "All" on the hexagonal grid shows k<=6 (see filesFor).
 const K_OPTIONS: Record<FreedrawGrid, { value: number; label: string }[]> = {
 	square: [0, 1, 2, 3, 4, 5].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	triangle: [0, 1, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
+	hex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	ts: [0, 1, 2, 3].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 };
 
@@ -88,7 +90,7 @@ const PAGE_SIZE = 240;
 // Which catalogue files hold each grid's slices, and which k each covers. The page loads LAZILY: only
 // the files for the selected grid+k are fetched and classified, so opening square k=5 pulls one 7.6MB
 // file, not the whole ~35MB / 112k-pattern atlas. Cached module-wide, so switching back is instant.
-const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[] }[]> = {
+const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[]; heavy?: true }[]> = {
 	square: [
 		{ url: "/freedraw/solutions.json", ks: [1, 2, 3] },
 		{ url: "/freedraw/solutions-k4.json", ks: [4] },
@@ -103,11 +105,25 @@ const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[] }[]> = {
 		{ url: "/freedraw/ts-solutions-k2.json", ks: [2] },
 		{ url: "/freedraw/ts-solutions-k3.json", ks: [3] },
 	],
+	// The hexagonal grid runs deep — Marek solved it to k=9, where one slice is 22,361 patterns / 58 MB.
+	// `heavy` keeps those three out of the "All" fetch; picking their k chip still loads them.
+	hex: [
+		{ url: "/freedraw/hex-solutions-k1.json", ks: [1] },
+		{ url: "/freedraw/hex-solutions-k2.json", ks: [2] },
+		{ url: "/freedraw/hex-solutions-k3.json", ks: [3] },
+		{ url: "/freedraw/hex-solutions-k4.json", ks: [4] },
+		{ url: "/freedraw/hex-solutions-k5.json", ks: [5] },
+		{ url: "/freedraw/hex-solutions-k6.json", ks: [6] },
+		{ url: "/freedraw/hex-solutions-k7.json", ks: [7], heavy: true },
+		{ url: "/freedraw/hex-solutions-k8.json", ks: [8], heavy: true },
+		{ url: "/freedraw/hex-solutions-k9.json", ks: [9], heavy: true },
+	],
 };
 
-/** The catalogue files needed to show a grid+k slice (k = 0 means every k for that grid). */
+/** The catalogue files needed to show a grid+k slice. k = 0 means every k for that grid, minus the
+ *  `heavy` slices — "All" must not pull 80 MB of hexagonal tail; those load when their k is picked. */
 const filesFor = (grid: FreedrawGrid, k: number): string[] =>
-	CATALOGUE[grid].filter((f) => k === 0 || f.ks.includes(k)).map((f) => f.url);
+	CATALOGUE[grid].filter((f) => (k === 0 ? !f.heavy : f.ks.includes(k))).map((f) => f.url);
 
 // url -> loaded patterns. Populated on demand and kept for the session so re-opening a slice is instant.
 const catalogueCache = new Map<string, FreedrawPattern[]>();

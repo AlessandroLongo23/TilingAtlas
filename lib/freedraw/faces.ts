@@ -140,7 +140,7 @@ function analysePatch(p: FreedrawPattern): FaceAnalysis {
 		lifts: [],
 		periods: [],
 	}));
-	return { grid: "ts", faces, cellFace: new Int32Array(0) };
+	return { grid: gridOf(p), faces, cellFace: new Int32Array(0) };
 }
 
 function analyseSquare(p: FreedrawPattern): FaceAnalysis {
@@ -691,16 +691,15 @@ export function classifyPatchFaces(patch: FreedrawPatch): FaceClasses {
 }
 
 /** Human-readable tile kind for the UI and for catalogue filters. */
+const FINITE_LABEL: Record<FreedrawGrid, string> = {
+	square: "polyomino",
+	triangle: "polyiamond",
+	hex: "polyhex",
+	ts: "polyform",
+};
+
 export const rankLabel = (rank: 0 | 1 | 2, grid: FreedrawGrid = "square") =>
-	rank === 0
-		? grid === "triangle"
-			? "polyiamond"
-			: grid === "ts"
-				? "polyform"
-				: "polyomino"
-		: rank === 1
-			? "strip"
-			: "unbounded";
+	rank === 0 ? FINITE_LABEL[grid] : rank === 1 ? "strip" : "unbounded";
 
 export interface FaceSummary {
 	faceOrbits: number;

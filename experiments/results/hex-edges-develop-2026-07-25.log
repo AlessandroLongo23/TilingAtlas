@@ -1,0 +1,35 @@
+parsed 36062 certificates
+  [     2s] 2000/36062 developed, 0 failed, ETA 30s
+  [     4s] 4000/36062 developed, 0 failed, ETA 32s
+  [     7s] 6000/36062 developed, 0 failed, ETA 34s
+  [     9s] 8000/36062 developed, 0 failed, ETA 33s
+  [    12s] 10000/36062 developed, 0 failed, ETA 31s
+  [    15s] 12000/36062 developed, 0 failed, ETA 29s
+  [    20s] 14000/36062 developed, 0 failed, ETA 31s
+  [    24s] 16000/36062 developed, 0 failed, ETA 30s
+  [    27s] 18000/36062 developed, 0 failed, ETA 28s
+  [    30s] 20000/36062 developed, 0 failed, ETA 24s
+  [    33s] 22000/36062 developed, 0 failed, ETA 21s
+  [    36s] 24000/36062 developed, 0 failed, ETA 18s
+  [    39s] 26000/36062 developed, 0 failed, ETA 15s
+  [    42s] 28000/36062 developed, 0 failed, ETA 12s
+  [    46s] 30000/36062 developed, 0 failed, ETA 9s
+  [    49s] 32000/36062 developed, 0 failed, ETA 6s
+  [    52s] 34000/36062 developed, 0 failed, ETA 3s
+  [    54s] 36000/36062 developed, 0 failed, ETA 0s
+developed 36062/36062 (0 failed, 0 with >1 clean variant)
+    variant failure x85535: label 2 not in table
+    variant failure x70445: conflicting gluing
+    variant failure x19668: label 2' not in table
+    variant failure x14292: label 2'' not in table
+    variant failure x13712: label 3' not in table
+digon-free (= the underlying uniform tiling) per k: {1: 1}
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k1.json: 5 patches, 0.0 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k2.json: 16 patches, 0.0 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k3.json: 80 patches, 0.1 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k4.json: 175 patches, 0.2 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k5.json: 465 patches, 0.7 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k6.json: 1651 patches, 3.1 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k7.json: 3117 patches, 6.4 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k8.json: 8192 patches, 17.6 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hex/hex-solutions-k9.json: 22361 patches, 58.0 MB

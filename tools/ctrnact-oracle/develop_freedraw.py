@@ -70,7 +70,20 @@ GRIDS = {
     # solution, so there is nothing to index a bitmask into. Develop runs in exact Z[zeta12]
     # instead and the emitter writes an explicit patch (vertices + edges + faces per period).
     "ts": {"units": {"A2": 0, "A3": 2, "A4": 3}, "step": None, "axes": None, "axis_names": None},
+    # The HEXAGONAL grid {6,3} takes the same patch path, for a different reason. Its vertex set is a
+    # honeycomb, not a lattice: embedded in Z + Z*omega (the unit triangular lattice, omega = e^{2*pi*i/3})
+    # the vertices are exactly the points with (a + b) mod 3 in {0, 1}, two thirds of it. A step table
+    # would work — 0:(1,0) 2:(1,1) 4:(0,1) 6:(-1,0) 8:(-1,-1) 10:(0,-1), alternating between the two
+    # sublattices — but emit_pattern indexes a bitmask by lattice COSET and demands every coset be a
+    # vertex, so one third of every domain would come back unseen. The patch emitter has no such
+    # assumption, and PatchComplex reads face size off the letter ("A6" -> 6 corners), so it needed
+    # nothing new. step = None is what selects that path.
+    "hex": {"units": {"A2": 0, "A6": 4}, "step": None, "axes": None, "axis_names": None},
 }
+
+# The grids with no bitmask: develop in exact Z[zeta12] and emit explicit geometry.
+def is_patch_grid(grid):
+    return GRIDS[grid]["step"] is None
 
 # ---------------------------------------------------------------- exact Z[zeta12] (from develop.py)
 # element = (a,b,c,d) = a + b*z + c*z^2 + d*z^3, z = e^{i*pi/6}, minimal polynomial z^4 = z^2 - 1.
@@ -936,7 +949,7 @@ def develop_block(cert, grid):
     for tables in combos:
         try:
             block = Block(cert, tables, grid)
-            if grid == "ts":
+            if is_patch_grid(grid):
                 T1, T2, placed = develop_patch(block)
                 out.append(emit_patch(block, T1, T2, placed))
             else:
@@ -947,18 +960,29 @@ def develop_block(cert, grid):
     return out, len(combos), reasons
 
 
-def run_ts(certs, args):
-    """Combined-grid driver: develop every certificate into a patch, run the internal checks
+PATCH_ID_PREFIX = {"ts": "fdts", "hex": "fdh"}
+
+
+def run_patch(certs, args, grid):
+    """Patch-grid driver (ts and hex): develop every certificate into a patch, run the internal checks
     (star closure, glue completeness, face-walk closure, torus Euler — all inside develop/emit),
-    verify the digon-free slice IS the known uniform square-triangle tilings, write per-k files."""
+    report the digon-free slice (which must BE the underlying uniform tiling), write per-k files."""
     from collections import defaultdict
+    import time as _time
     by_k = defaultdict(list)
     fails = []
     multi_ok = 0
     digonfree = Counter()
     fail_reasons = Counter()
+    every = max(1, args.progress) if getattr(args, "progress", 0) else 0
+    t0 = _time.time()
     for ci, cert in enumerate(certs):
-        pats, ncombo, reasons = develop_block(cert, "ts")
+        if every and ci and ci % every == 0:
+            el = _time.time() - t0
+            eta = el * (len(certs) - ci) / ci
+            print(f"  [{el:6.0f}s] {ci}/{len(certs)} developed, {len(fails)} failed, ETA {eta:.0f}s",
+                  flush=True)
+        pats, ncombo, reasons = develop_block(cert, grid)
         for r in reasons:
             fail_reasons[r] += 1
         if not pats:
@@ -975,14 +999,15 @@ def run_ts(certs, args):
           f"({len(fails)} failed, {multi_ok} with >1 clean variant)")
     for r, c in fail_reasons.most_common(5):
         print(f"    variant failure x{c}: {r}")
-    print(f"digon-free (= underlying uniform square-triangle tilings) per k: {dict(sorted(digonfree.items()))}")
+    print(f"digon-free (= the underlying uniform tiling) per k: {dict(sorted(digonfree.items()))}")
     if args.out:
+        prefix = PATCH_ID_PREFIX[grid]
         for k, pats in sorted(by_k.items()):
             recs = []
             for i, p in enumerate(pats, start=1):
                 # Self-contained FreedrawPattern records: the lattice-bits fields are 1x1 dummies so
                 # every existing consumer type-checks; all real geometry lives under `patch`.
-                recs.append({"id": f"fdts-{k}-{i:05d}", "k": k, "grid": "ts",
+                recs.append({"id": f"{prefix}-{k}-{i:05d}", "k": k, "grid": grid,
                              "a": 1, "b": 0, "d": 1, "h": [0], "v": [0], "orbit": [0],
                              "patch": p})
             path = args.out.replace(".json", f"-k{k}.json")
@@ -997,6 +1022,8 @@ def main():
     ap.add_argument("--grid", default="square", choices=sorted(GRIDS))
     ap.add_argument("--oracle", help="known-good bitmask JSON to match bijectively")
     ap.add_argument("--out")
+    ap.add_argument("--progress", type=int, default=0,
+                    help="patch grids: print a progress/ETA line every N certificates")
     args = ap.parse_args()
 
     paths = ([os.path.join(args.source, p) for p in sorted(os.listdir(args.source))
@@ -1006,8 +1033,8 @@ def main():
         certs.extend(parse_file(p))
     print(f"parsed {len(certs)} certificates")
 
-    if args.grid == "ts":
-        run_ts(certs, args)
+    if is_patch_grid(args.grid):
+        run_patch(certs, args, args.grid)
         return
 
     oracle_index = {}
