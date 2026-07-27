@@ -6,13 +6,71 @@
 > entry of each ledger. **Never write history here.** — last updated 2026-07-27, CC
 > (acting as TA too, AL authorization 2026-07-10).
 
-## The tree holds seven unrelated pieces of work, all UNCOMMITTED (2026-07-27)
+## /freedraw has a fifth grid: Schwarz (2,3,6) — UNCOMMITTED (2026-07-27)
 
-Everything below this line is in the working tree, nothing is committed, and it wants splitting into
-separate commits: hollow engine, landing wall, hexagon corpora, hyperbolic bases, overlay refactor +
-aperiodic patches, `/defense`, ring sweep. `pnpm build` clean; `pnpm test` 1569 pass, 1 timeout in
-`tests/star-general-path.test.ts` (that file is untouched here — it takes 180 s and timed out under
-load). `pnpm docs:check` fails on 5 broken links, all 5 already in committed SYNC entries.
+Marek's `_schwarz.zip` (solver + 43 tilings at k=3 and k=4) is decoded and live as the `sch236` grid.
+`pnpm build` clean; `pnpm test` 1602 pass, 1 fail — the same pre-existing `star-general-path.test.ts`
+timeout noted below, file untouched. Detail: DEVELOPMENT_NOTES.md §"The Schwarz (2,3,6) board joins
+/freedraw".
+
+- **It is the first SCALENE board here.** Three edge classes at three lengths (1 : √3 : 2), where every
+  other grid is equilateral and `develop_patch` hardcoded a unit step. √3 = 2z − z³ lives in ℤ[ζ₁₂], so
+  the exact develop survives; `edge_len` + `Block.far_step` scale the step. Also the first board where
+  EVERY edge carries a digon (drawn or not, the letter says which), so crossing to a neighbouring face
+  hops the digon — `PatchComplex.adj`.
+- **All three additions are `GRIDS`-table knobs, not new code paths.** Defaults reproduce the four old
+  grids exactly: `hexagons_edges` regenerates byte-identical across nine k files / 86 MB, `squares_edges`
+  byte-identical against pre-change code.
+- **k=3 is the floor, not a gap** — the bare board already has three vertex orbits, so k=1 and k=2
+  cannot exist (Marek). Finite tiles are polydrafters, and all of them are an even number of drafters.
+- ⚑ **`F2` appears nowhere in the corpus.** It is the drawn 60–30 edge, so all 43 solutions leave that
+  class undrawn — five of six letters used. The one real coverage gap; needs a rerun from Marek.
+- ⚑ **The exhaustive-`Record` guard has a hole, now plugged for grids.** `FreedrawGrid` forced five
+  sites to update but MISSED the /play sidebar tree: `SUB_ORDER` listed the freedraw subs as loose
+  strings and `SUB_LABEL` is a `Record<string, string>`, so the grid loaded and counted but had no
+  folder row (AL caught it). `FREEDRAW_GRID_SUBS` is now `as const satisfies` + an `Exclude` guard that
+  fails the build naming the missing grid. **The colors and hyperbolic sub-axes are still hand-listed
+  in the same `SUB_ORDER` and may have the same hole — unaudited.**
+- ⚑ **A latent precision bug got fixed on the way**, and it moved shipped numbers. `regularOf` collapsed
+  collinear boundary runs with an ABSOLUTE epsilon, which is exact on the integer bitmask grids but not
+  on patch grids whose vertices ship rounded to 5 decimals. It suppressed every regular tile on the new
+  board and under-counted DILATIONS on **ts**: `allRegular` 12 → 18 at k=2, 36 → 70 at k=3. `allUnit` is
+  unchanged everywhere, so the classical slice never moved (4/7/17 oracle, 43 edge-to-edge, both
+  dodecagon results all still hold). Goldens updated in `regular.test.ts` / `filter.test.ts`.
+
+## The aperiodic shelf is one page with four views — UNCOMMITTED (2026-07-27)
+
+The seven clusters listed here before are committed (through `4808b4e`). What is now in the working
+tree is one piece of work: `/substitutions` + `/multigrid` merged into **`/aperiodic`**, joined by
+**Penrose** and **the hat**, all four driving the same pan/rotate/zoom layer. `pnpm build` clean;
+`pnpm test` 1569 pass, 1 timeout in `tests/star-general-path.test.ts` (untouched here — it takes 180 s
+and times out under load). `pnpm docs:check` fails on the same 5 broken links, all in committed SYNC
+entries. Detail: DEVELOPMENT_NOTES.md §"The aperiodic shelf: two pages merge into four views".
+
+- **The registry is the extension point.** `app/(app)/aperiodic/_views.ts` lists the constructions
+  (label, blurb, icon, group); the sidebar renders what it lists. AL's next additions — Wang tiles,
+  more substitutions from the encyclopedia — are an entry plus a component.
+- **`lib/hooks/useAperiodicView.ts` is the shared interaction layer**, on the same state and constants
+  as /play and the theory cards (`lib/render/viewControls.ts`). Drag pans, wheel zooms at the cursor,
+  Shift+wheel rotates in 5° detents, right-click resets. `subrosaGL` gained `uRot`/`uCentre`;
+  `zoomAtPoint`/`resetCardControls` gained an optional `bounds` (existing callers untouched).
+- **All four views are on the GPU.** `lib/render/triangulate.ts` (ear clipping + the barycentric edge
+  mask) and `SubRosaGL.uploadPolygons` let the non-convex hat onto the batched renderer; `uploadTiles`
+  keeps the fixed quad split for the rhombic views. Colours are unchanged — a `uSat` uniform lets the
+  patch views ask for the atlas' own HSB(h, 40, 100) fill. Caps rose 18×/7×: Penrose depth 11 (143,010
+  rhombi), hat level 6 (54,289 hats), both at 8.3 ms a frame on an M5.
+- ⚑ **Headless WebGL numbers are worthless.** The hat-level-6 upload measures 11 s headless
+  (SwiftShader) and 140 ms headed. CLAUDE.md says this about FPS; it is just as true of upload. Check
+  the renderer string.
+- **Patch framing is one rule at every level: fit the whole patch.** Scale across constructions is
+  matched by pairing the default LEVELS on tile count (Penrose view default 6 = 1,140 rhombi vs hat
+  level 4 = 1,156 hats), not by special-casing the default's framing — an earlier attempt did that and
+  made the default the only slider position not showing the whole patch.
+- **The sidebars are /play's, not their own.** `AperiodicSidebar` = `PageSidebar` + the `ta-wall` cell
+  system + `.ta-tab` segments + the shared `Slider`/`Checkbox`/`Button`. No hand-rolled chips or bare
+  range inputs remain on the page.
+- ⚑ Switching views unmounts the old one, so its controls reset; `?view=` carries the view, not its
+  parameters.
 
 ⚑ **`public/` is 669 MB, 504 MB of it tracked.** `hex-solutions-k9.json` alone is 56 MB for one array
 entry. Nothing is broken by it; it is the next thing to get expensive.

@@ -1616,3 +1616,46 @@ Three pieces of 2026-07-26 work sat in the tree with no ledger entry; written up
 Also: `tsconfig.json` tool-reformat reverted; `export2.py` stopped writing the 11 convex regression
 patches into `public/` where nothing referenced them (shelf now 14-for-14); and `docs-check.mjs`'s
 entry-length rule never matched `###` headings, so it had been measuring nothing. — CC
+
+### 2026-07-27 — CC — /substitutions + /multigrid merge into /aperiodic, and gain Penrose and the hat
+One page, four views from a sidebar registry (`_views.ts`), ready for the Wang tiles and further
+substitutions AL wants next; old routes 307 to `/aperiodic?view=…`. All four canvases pan, rotate and
+zoom on /play's model via `lib/hooks/useAperiodicView.ts` + the shared `viewControls`; `subrosaGL`
+gained `uRot`/`uCentre`. Penrose and the hat are now explorable, cover-fitted to their measured
+gap-free windows. Build clean, 1569 tests pass. Detail: DEVELOPMENT_NOTES.md §"The aperiodic shelf". — CC
+
+### 2026-07-27 — CC — the finite patches move to the shader; ear clipping, and three bugs
+Penrose and the hat now draw through `SubRosaGL` too, via a new `lib/render/triangulate.ts` (ear
+clipping + the barycentric edge mask) and `uploadPolygons`; colours unchanged (`uSat` uniform). Caps up
+18×/7× — Penrose depth 11, hat level 6 — at 8.3 ms a frame on an M5. Three bugs found and fixed: two
+inversion cases in the ear test, and a GLSL `smoothstep(0,0,d)` flood on all-diagonal triangles.
+Detail: DEVELOPMENT_NOTES.md §"The finite patches move to the shader". — CC
+
+### 2026-07-27 — CC — /aperiodic patch views: one framing rule at every level
+The patch views now fit the whole patch at every slider position. A first fix normalised only the
+DEFAULT level onto a shared window, which made that one position the only one not showing the whole
+patch (AL caught it on Penrose 4/5/6). Scale across constructions is matched by pairing the default
+LEVELS on tile count instead — Penrose's view default 5 → 6, 1,140 rhombi against 1,156 hats;
+`PENROSE_DEPTH` untouched for the cards. `HomeBox.cover` removed, no callers left. Detail:
+DEVELOPMENT_NOTES.md §"Home framing normalised across the patch views". — CC
+
+### 2026-07-27 — CC — /aperiodic sidebars adopt the /play sidebar's grammar
+Three hand-rolled `<aside>`s became one `AperiodicSidebar` on `PageSidebar` + the `ta-wall` cell system,
+with `.ta-tab` segments and the atlas' `Slider`/`Checkbox`/`Button` primitives in place of bare range and
+checkbox inputs. View switcher restyled as /play's metadata-cell-over-segment-rows. Checked light and
+dark. Detail: DEVELOPMENT_NOTES.md §"/aperiodic adopts the /play sidebar's grammar". — CC
+
+### 2026-07-27 — CC — Schwarz (2,3,6) edge systems join /freedraw as a fifth grid
+Marek's `_schwarz.zip` (solver + 43 tilings, k=3/4) shipped as the `sch236` grid. First SCALENE board
+here — edge classes at 1 : √3 : 2, scaled in ℤ[ζ₁₂] since √3 = 2z − z³ — and the first digoning every
+edge, so face crossing hops it. All 43 develop clean, all 636 faces exact 30-60-90 triangles, hex +
+square byte-identical. Also fixed a latent absolute-epsilon collinearity test under-counting dilations
+on ts. Detail: DEVELOPMENT_NOTES.md §"The Schwarz (2,3,6) board joins /freedraw". — CC
+
+### 2026-07-27 — CC — The conformal lens works on every Euclidean class, not just plain tilings
+Colorings, edge patterns, hollow and the Islamic construction (all five styles) now go through the
+inversive view: one periodic-cell IR (`lib/render/periodicCell.ts`) + five adapters replaces the shader's
+single data shape, and a lattice-space uniform grid replaces the 3×3 copy sweep (~9× less per-pixel work,
+no primitive ceiling). Also: `loadReferenceAtlas` destructured 12 names off a 13-entry `Promise.all`,
+dropping the 226,946-entry colorings shelf. Detail: NOTES §"The conformal lens becomes universal". — CC
+

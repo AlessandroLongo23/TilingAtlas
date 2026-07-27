@@ -55,6 +55,13 @@ import re
 import sys
 from collections import Counter, deque
 
+# Z[zeta12] scalars used by the scalene grid below, in the (a, b, c, d) = a + b*z + c*z^2 + d*z^3
+# basis defined further down (z = e^{i*pi/6}). sqrt(3) = 2*cos(pi/6) = 2z - z^3, since z = sqrt(3)/2
+# + i/2 and z^3 = i.
+Z_ONE = (1, 0, 0, 0)
+Z_TWO = (2, 0, 0, 0)
+Z_SQRT3 = (0, 2, 0, -1)
+
 # ---------------------------------------------------------------- grids
 # units: interior angle in 30-degree units (A2 digon = 0 via 6 - 12//n).
 # step(d): unit vector of direction d (30-degree units) in the grid's own integer basis -- square
@@ -79,7 +86,47 @@ GRIDS = {
     # assumption, and PatchComplex reads face size off the letter ("A6" -> 6 corners), so it needed
     # nothing new. step = None is what selects that path.
     "hex": {"units": {"A2": 0, "A6": 4}, "step": None, "axes": None, "axis_names": None},
+    # The (2,3,6) SCHWARZ TRIANGLE grid -- Marek's pt_schwarz_edges_236.exe. Three things make it
+    # unlike every grid above, and each one is a knob added below rather than a new code path:
+    #
+    #  1. The letters name CORNERS, not polygons. S2/S3/S6 are the 90/60/30 corners of the one
+    #     30-60-90 tile, tagged by the rotation order of the site each sits at, so a face walk
+    #     crosses three DIFFERENT letters ("face_corners": "vary") and its size is fixed at 3
+    #     rather than read off the digits.
+    #  2. Every base edge carries a digon, drawn or not, where freedraw's other grids only digon
+    #     the DRAWN ones (undrawn edges vanish and the faces merge). The letter carries the bit:
+    #     A2/C2/E2 undrawn, B2/D2/F2 drawn (Marek, 2026-07-27).
+    #  3. The tile is SCALENE, so the three edge classes have three lengths. Taking the base
+    #     hexagon's circumradius as 2: the 90-60 edge (midpoint to hexagon vertex) is 1, the 90-30
+    #     (midpoint to centre) is sqrt(3), the 60-30 (vertex to centre) is 2. All three live in
+    #     Z[zeta12] -- sqrt(3) = 2z - z^3 -- so the exact develop survives; only the unit step in
+    #     develop_patch has to be scaled, which is what "edge_len" drives.
+    #
+    # The vertex set is three interleaved orbits (hexagon centres, vertices, edge midpoints), not a
+    # lattice, so it takes the patch path for the same reason hex does.
+    "sch236": {"units": {"S2": 3, "S3": 2, "S6": 1,
+                         "A2": 0, "B2": 0, "C2": 0, "D2": 0, "E2": 0, "F2": 0},
+               "step": None, "axes": None, "axis_names": None,
+               "digons": ("A2", "B2", "C2", "D2", "E2", "F2"),
+               "drawn_letters": ("B2", "D2", "F2"),
+               "edge_len": {"A2": Z_ONE, "B2": Z_ONE,
+                            "C2": Z_SQRT3, "D2": Z_SQRT3,
+                            "E2": Z_TWO, "F2": Z_TWO},
+               "face_size": 3, "face_corners": "vary", "digon_every_edge": True},
 }
+
+# Grid knobs, with the defaults that reproduce the four original grids exactly.
+def grid_digons(grid):
+    """The letters that mark a zero-angle digon rather than a polygon face."""
+    return tuple(GRIDS.get(grid, {}).get("digons", ("A2",)))
+
+
+def grid_drawn(grid):
+    """The digon letters that mean the edge is DRAWN. None => every digon is drawn, which is the
+    original convention (an undrawn edge simply has no digon)."""
+    d = GRIDS.get(grid, {}).get("drawn_letters")
+    return tuple(d) if d is not None else None
+
 
 # The grids with no bitmask: develop in exact Z[zeta12] and emit explicit geometry.
 def is_patch_grid(grid):
@@ -113,6 +160,17 @@ def zsub(u, v):
 
 def zscale(u, m):
     return (u[0] * m, u[1] * m, u[2] * m, u[3] * m)
+
+
+def zmul(u, v):
+    """General Z[zeta12] product, by expanding v over the power basis and stepping u through z^k."""
+    out = (0, 0, 0, 0)
+    cur = u
+    for k in range(4):
+        if v[k]:
+            out = zadd(out, zscale(cur, v[k]))
+        cur = zmul_zeta(cur)
+    return out
 
 
 import cmath as _cmath
@@ -180,7 +238,7 @@ class VTable:
 
     __slots__ = ("t", "n", "rneig", "lneig", "mirro", "step", "tile", "drawn", "core_labels", "axis")
 
-    def __init__(self, listed, units, chiral, axis=None):
+    def __init__(self, listed, units, chiral, axis=None, digons=("A2",), drawn_letters=None):
         t = len(listed)
         u = [units[c] for c in listed]
         self.t = t
@@ -207,7 +265,13 @@ class VTable:
         self.lneig = [0] * self.n
         for s in range(self.n):
             self.lneig[self.rneig[s]] = s
-        drawn_plain = [listed[s] == "A2" or listed[(s - 1) % t] == "A2" for s in range(t)]
+        # Half-edge s lies between corner listed[s-1] and corner listed[s], so it is a digon side iff
+        # either neighbour is a digon. Whether that digon means a DRAWN edge is the grid's business:
+        # with drawn_letters unset every digon is drawn (the original convention, where an undrawn
+        # edge is simply absent); with it set the letter decides, and undrawn edges still carry a
+        # digon (the sch236 convention).
+        mark = tuple(drawn_letters) if drawn_letters is not None else tuple(digons)
+        drawn_plain = [listed[s] in mark or listed[(s - 1) % t] in mark for s in range(t)]
         self.drawn = drawn_plain + (drawn_plain if chiral else [])
 
 
@@ -216,6 +280,7 @@ def vtable_variants(figure, tag, grid):
     several mirror axes; the developer tries each and lets consistency decide."""
     g = GRIDS[grid]
     units = g["units"]
+    kw = {"digons": grid_digons(grid), "drawn_letters": grid_drawn(grid)}
     for c in figure:
         if c not in units:
             raise DevelopError(f"tile {c} not in the {grid} alphabet")
@@ -232,7 +297,7 @@ def vtable_variants(figure, tag, grid):
     if head == "F" or head.startswith("C"):
         if head.startswith("C") and int(head[1:]) != rot:
             raise DevelopError(f"tag {tag} order != rotation order {rot} of {figure}")
-        return [VTable(figure, units, chiral=True)]
+        return [VTable(figure, units, chiral=True, **kw)]
     # A mirror is present (A* order 2, D* order 2*rot). Valid axes a: the reflection
     # slot s -> (a - s) mod t must preserve corner sizes: figure[s] == figure[(a-s-1) mod t].
     if head.startswith("D") and int(re.match(r"D(\d+)", head).group(1)) != 2 * rot:
@@ -241,7 +306,7 @@ def vtable_variants(figure, tag, grid):
             if all(figure[s] == figure[(a - s - 1) % t] for s in range(t))]
     if not axes:
         raise DevelopError(f"tag {tag} claims a mirror but figure {figure} admits none")
-    return [VTable(figure, units, chiral=False, axis=a) for a in axes]
+    return [VTable(figure, units, chiral=False, axis=a, **kw) for a in axes]
 
 
 # ---------------------------------------------------------------- glue (pruner.py makeglue port)
@@ -269,12 +334,34 @@ class Block:
             self.slot_of += list(range(tb.n))
         self.rneig, self.lneig, self.mirro, self.step, self.tile, self.drawn = (
             rneig, lneig, mirro, step, tile, drawn)
+        # Per-half-edge length in Z[zeta12], for grids whose tile is not equilateral. None means the
+        # uniform unit step every other grid uses. Entry h lies between corners tile[lneig[h]] and
+        # tile[h]; on a grid that digons every edge exactly one of those is the digon naming the
+        # edge class, and both sides of that digon land on the same length.
+        lens = GRIDS.get(grid, {}).get("edge_len")
+        if lens is None:
+            self.edgelen = None
+        else:
+            self.edgelen = []
+            for h in range(len(rneig)):
+                cand = [c for c in (self.tile[h], self.tile[self.lneig[h]]) if c in lens]
+                if not cand:
+                    raise DevelopError(f"half-edge {h} has no edge-class digon "
+                                       f"({self.tile[self.lneig[h]]}|{self.tile[h]})")
+                if len(cand) == 2 and lens[cand[0]] != lens[cand[1]]:
+                    raise DevelopError(f"half-edge {h} straddles two edge classes {cand}")
+                self.edgelen.append(lens[cand[0]])
         self.label_index = {}
         for i, lab in enumerate(labels):
             if lab in self.label_index:
                 raise DevelopError(f"duplicate label {lab}")
             self.label_index[lab] = i
         self.glue = self._make_glue(cert["structure"])
+
+    def far_step(self, h, d):
+        """Vector from the tail of half-edge h, heading d, to its head. Unit on the equilateral
+        grids; scaled by the half-edge's own class length on a scalene one."""
+        return ZK[d] if self.edgelen is None else zmul(self.edgelen[h], ZK[d])
 
     def _ref_entry(self, ref, extra_star=False):
         star = ref["mirror"] != extra_star  # composing stars cancels
@@ -556,7 +643,7 @@ def develop_patch(block):
             continue
         for (h, d) in star(h0, d0):
             reg(h, d, pos)
-            npos = zadd(pos, ZK[d])
+            npos = zadd(pos, block.far_step(h, d))
             gd = (d + 6) % 12
             if reg(block.glue[h], gd, npos):
                 q.append((block.glue[h], gd, npos))
@@ -611,6 +698,10 @@ class PatchComplex:
 
     def build(self):
         b = self.block
+        digons = grid_digons(b.grid)
+        gcfg = GRIDS.get(b.grid, {})
+        fixed_size = gcfg.get("face_size")        # None => read the size off the letter's digits
+        corners_vary = gcfg.get("face_corners") == "vary"
         keys = sorted(self.placed)
         # Vertices: distinct reduced positions. Orbit label from the entry's certificate orbit.
         vindex = {}
@@ -633,7 +724,7 @@ class PatchComplex:
         for (h, d) in keys:
             K = (h, d)
             Kr = (b.glue[h], (d + 6) % 12)
-            far = zadd(self.placed[K], ZK[d])
+            far = zadd(self.placed[K], b.far_step(h, d))
             delta[K] = self.lam_coords(zsub(far, self.placed[Kr]))
         # Faces: cycles of next() over keys whose corner tile is a polygon (digons are the drawn
         # edge markers, not faces). next walks the face on the LEFT of the directed edge.
@@ -651,7 +742,7 @@ class PatchComplex:
         face_of_key = {}
         seen = set()
         for K0 in keys:
-            if K0 in seen or face_tile(K0) == "A2":
+            if K0 in seen or face_tile(K0) in digons:
                 continue
             cyc = []
             offs = []
@@ -662,11 +753,15 @@ class PatchComplex:
                 cyc.append(K)
                 offs.append(o)
                 seen.add(K)
-                if face_tile(K) != tile:
+                # On sch236 the three corners of the one tile carry three different letters, so the
+                # only thing to enforce mid-walk is that we never wander onto a digon.
+                if face_tile(K) in digons:
+                    raise DevelopError("face walk crossed a digon")
+                if not corners_vary and face_tile(K) != tile:
                     raise DevelopError("face changed tile type mid-walk")
                 K2 = nxt(K)
                 # next edge starts at K's far vertex: off2 = off + (far - placed[K2]) in lattice coords
-                far = zadd(self.placed[K], ZK[K[1]])
+                far = zadd(self.placed[K], b.far_step(K[0], K[1]))
                 step = self.lam_coords(zsub(far, self.placed[K2]))
                 o = (o[0] + step[0], o[1] + step[1])
                 K = K2
@@ -678,9 +773,9 @@ class PatchComplex:
                 raise DevelopError("face walk returned with a lattice offset")
             # Face size straight from the letter's digits — "A3"/"A4" here, and the colored alphabet's
             # "B3"/"B4" when develop_colors.py drives this same complex.
-            want = int(tile[1:])
+            want = fixed_size if fixed_size is not None else int(tile[1:])
             if len(cyc) != want:
-                raise DevelopError(f"{tile} face has {len(cyc)} corners")
+                raise DevelopError(f"{tile} face has {len(cyc)} corners, want {want}")
             fid = len(faces)
             faces.append({"keys": cyc, "offs": offs, "tile": tile})
             for K, o in zip(cyc, offs):
@@ -689,13 +784,30 @@ class PatchComplex:
         # (one against each neighbouring polygon) with a zero-area digon face between them, so
         # V - E + (polygon faces + digon faces) = 0 on the torus. Digon faces = A2-sided key pairs.
         n_e = len(keys) // 2
-        n_digon = sum(1 for K in keys if face_tile(K) == "A2") // 2
+        n_digon = sum(1 for K in keys if face_tile(K) in digons) // 2
         if len(vpos) - n_e + len(faces) + n_digon != 0:
             raise DevelopError(
                 f"torus Euler failed: V={len(vpos)} E={n_e} F={len(faces)} D={n_digon}")
         self.vpos, self.vorbit = vpos, vorbit
         self.key_vertex, self.key_off = key_vertex, key_off
         self.delta, self.faces, self.face_of_key = delta, faces, face_of_key
+        # Crossing a polygon's edge to the polygon on the far side, with the lattice offset composed
+        # over the whole crossing. On the grids where only DRAWN edges carry a digon, an undrawn edge
+        # abuts its neighbour directly and this is just the co-edge. On sch236 every edge carries a
+        # digon, so the neighbour is two steps away: co-edge into the digon, the digon's other side,
+        # then its co-edge back out into the far triangle.
+        hop = gcfg.get("digon_every_edge", False)
+        self.adj = {}
+        for K in keys:
+            if face_tile(K) in digons:
+                continue
+            h, d = K
+            Kr = (b.glue[h], (d + 6) % 12)
+            if hop and face_tile(Kr) in digons:
+                hd, dd = nxt(Kr)
+                Kr = (b.glue[hd], (dd + 6) % 12)
+            far = zadd(self.placed[K], b.far_step(h, d))
+            self.adj[K] = (Kr, self.lam_coords(zsub(far, self.placed[Kr])))
         return self
 
     def classify(self):
@@ -720,9 +832,8 @@ class PatchComplex:
                     h, d = K
                     if b.drawn[h]:
                         continue
-                    Kr = (b.glue[h], (d + 6) % 12)
+                    Kr, dK = self.adj[K]
                     f2, o2 = self.face_of_key[Kr]
-                    dK = self.delta[K]
                     L2 = (L[0] + oK[0] + dK[0] - o2[0], L[1] + oK[1] + dK[1] - o2[1])
                     if comp[f2] == -1:
                         comp[f2] = cid
@@ -756,13 +867,15 @@ class PatchComplex:
                     vi = self.key_vertex[K]
                     oi = self.key_off[K]
                     verts.add((vi, oi[0] + L[0] + oK[0], oi[1] + L[1] + oK[1]))
-                    Kr = (b.glue[h], (d + 6) % 12)
+                    # Name the undirected edge instance by the sorted pair of its two POLYGON sides,
+                    # so the two triangles sharing an undrawn edge name it identically and Euler
+                    # counts it once. (self.adj, not the raw co-edge — see build().)
+                    Kr, dK = self.adj[K]
                     inst = (K, (L[0] + oK[0], L[1] + oK[1]))
-                    rinst = (Kr, (L[0] + oK[0] + self.delta[K][0], L[1] + oK[1] + self.delta[K][1]))
+                    rinst = (Kr, (L[0] + oK[0] + dK[0], L[1] + oK[1] + dK[1]))
                     edges.add(tuple(sorted([inst, rinst])))
                     if not b.drawn[h]:
                         f2, o2 = self.face_of_key[Kr]
-                        dK = self.delta[K]
                         L2 = (L[0] + oK[0] + dK[0] - o2[0], L[1] + oK[1] + dK[1] - o2[1])
                         if (f2, L2) not in seenf:
                             seenf.add((f2, L2))
@@ -960,7 +1073,7 @@ def develop_block(cert, grid):
     return out, len(combos), reasons
 
 
-PATCH_ID_PREFIX = {"ts": "fdts", "hex": "fdh"}
+PATCH_ID_PREFIX = {"ts": "fdts", "hex": "fdh", "sch236": "sch236"}
 
 
 def run_patch(certs, args, grid):
@@ -992,7 +1105,11 @@ def run_patch(certs, args, grid):
             # Distinct mirror axes that BOTH develop cleanly. Keep the first; count loudly.
             multi_ok += 1
         k = cert.get("k")
-        if all("A2" not in t["figure"] for t in cert["types"]):
+        # "Nothing drawn" = the bare underlying tiling. On the grids where an undrawn edge simply has
+        # no digon that is the digon-free slice; on sch236, where every edge carries one, it is the
+        # slice with no B2/D2/F2.
+        marks = grid_drawn(grid) or grid_digons(grid)
+        if all(all(c not in marks for c in t["figure"]) for t in cert["types"]):
             digonfree[k] += 1
         by_k[k].append(pats[0])
     print(f"developed {sum(len(v) for v in by_k.values())}/{len(certs)} "

@@ -49,7 +49,11 @@ export interface RegularInfo {
 }
 
 const SQRT3_2 = Math.sqrt(3) / 2;
-const EPS = 1e-6;
+// Collinearity tolerance, as |sin| of the turn at a boundary corner (see regularOf). Sized to the
+// patch grids' coordinate precision: vertices ship rounded to 5 decimals, so a genuinely straight run
+// over unit-ish segments scores up to ~1e-5. 1e-4 clears that by a decade and still sits four orders
+// below the smallest real turn any of these boards can make (30°, sin 0.5).
+const EPS = 1e-4;
 
 type Pt = [number, number];
 /** A boundary corner as an integer grid vertex, so the walk compares exactly. */
@@ -137,7 +141,16 @@ function regularOf(cycle: Pt[]): RegularFace | null {
 		const uy = cur[1] - prev[1];
 		const vx = nxt[0] - cur[0];
 		const vy = nxt[1] - cur[1];
-		if (Math.abs(ux * vy - uy * vx) > EPS) pts.push(cur); // a real turn
+		// |sin| of the turn, NOT the raw cross product. The bitmask grids build corners from integer
+		// lattice coordinates, so a collinear run crosses to exactly 0 and either test collapses it.
+		// The patch grids do not: their vertices ship rounded to 5 decimals, and over segments of
+		// length ~2 a genuinely straight run scores ~2e-5 — above an absolute 1e-6, so it survived as
+		// a fake corner. That was invisible while every patch tile happened to turn at every vertex;
+		// on the Schwarz board, where a hexagon's side runs straight through the edge-midpoint vertex,
+		// it suppressed every regular tile in the catalogue. Normalising by the two lengths makes the
+		// threshold an angle, which is scale-free and identical on the integer grids.
+		const denom = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+		if (denom > 0 && Math.abs(ux * vy - uy * vx) / denom > EPS) pts.push(cur); // a real turn
 	}
 	const n = pts.length;
 	if (n < 3) return null;

@@ -132,24 +132,31 @@ describe("the combined-grid catalogue", () => {
 	// allRegular counts dilations too — a tiling by side-2 squares is a tiling by regular polygons,
 	// just not an edge-to-edge one. allUnit is the slice that maps onto the classical k-uniform
 	// catalogue, so both are pinned: the gap IS the dilation family.
+	//
+	// The dilation counts here rose (k=2: 12 -> 18, k=3: 36 -> 70) when regularOf's collinearity test
+	// became scale-relative, 2026-07-27. A dilated polygon has collinear boundary vertices BY
+	// DEFINITION — that is what a side spanning several grid edges means — so an absolute epsilon
+	// against 5-decimal patch coordinates was exactly the wrong test, and it under-counted this family
+	// and no other. allUnit is unchanged at every k, which is the check that this moved only dilations:
+	// every added pattern carries a tile of integer side > 1.
 	it.skipIf(!k2)("counts every tiling by regular polygons at k=2", () => {
 		const hits = allRegular(k2 as FreedrawPattern[]);
-		expect(hits).toHaveLength(12);
+		expect(hits).toHaveLength(18);
 		expect(hits.filter((p) => info(p).allUnit)).toHaveLength(11);
 	});
 
 	it.skipIf(!k3)("counts every tiling by regular polygons at k=3", () => {
 		const hits = allRegular(k3 as FreedrawPattern[]);
-		expect(hits).toHaveLength(36);
+		expect(hits).toHaveLength(70);
 		expect(hits.filter((p) => info(p).allUnit)).toHaveLength(28);
 	});
 
 	it.skipIf(!k3)("separates dilations from edge-to-edge tilings", () => {
-		// The eight extras at k=3 each carry at least one tile whose sides span more than one grid edge:
+		// The 42 extras at k=3 each carry at least one tile whose sides span more than one grid edge:
 		// pure dilations of 4^4 and mixed-scale tilings (a unit tile beside a bigger one). Neither kind is
 		// classically k-uniform, which is why the {3,4} oracle check filters on allUnit not allRegular.
 		const dilated = allRegular(k3 as FreedrawPattern[]).filter((p) => !info(p).allUnit);
-		expect(dilated).toHaveLength(8);
+		expect(dilated).toHaveLength(42);
 		for (const p of dilated) {
 			expect(info(p).perFace.some((f) => f && f.side > 1)).toBe(true);
 		}

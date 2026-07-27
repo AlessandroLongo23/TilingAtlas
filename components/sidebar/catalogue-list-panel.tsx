@@ -39,6 +39,7 @@ const SUB_LABEL: Record<string, string> = {
 	triangle: "Triangle grid",
 	hex: "Hexagon grid",
 	ts: "Triangle + square grid",
+	sch236: "Schwarz 236 grid",
 	// Colors splits the same grids again by palette size — each is its own catalogue.
 	"square-2": "Square grid, 2 colors",
 	"square-3": "Square grid, 3 colors",

@@ -169,6 +169,7 @@ const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = 
 	{ value: "triangle", label: "Triangles" },
 	{ value: "hex", label: "Hexagons" },
 	{ value: "ts", label: "Tri + square" },
+	{ value: "sch236", label: "Schwarz 236" },
 ];
 const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
 // Colors-shelf grid facet — the same axis, shown only for the colored class.
@@ -186,6 +187,7 @@ const GRID_SUMMARY: Record<FreedrawGrid | ColorsGrid, string> = {
 	triangle: "triangles",
 	hex: "hexagons",
 	ts: "tri + square",
+	sch236: "schwarz 236",
 };
 // Colors-shelf palette-size facet: how many colors the solutions use. Each (grid, size) pair is its own
 // catalogue — an n-color run's solutions all use every one of its n colors.

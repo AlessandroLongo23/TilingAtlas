@@ -274,12 +274,21 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // other class shares the anonymous "" spine (no sub row). `subOf` and this order are the single source of
 // truth for BOTH the sidebar tree (catalogue-list-panel) and the linear browse order below, so the two
 // can't drift. SUB_LABEL (display names) stays in the panel — that's presentation, not ordering.
+// The planar-freedraw subs ARE the FreedrawGrid members, so the list is typed as such: adding a grid
+// without giving it a row here fails to compile. It used to be four loose strings, and when the Schwarz
+// board landed (2026-07-27) every OTHER site caught the omission at compile time while this one silently
+// dropped the grid out of the /play sidebar tree — the counts still summed into "Edge patterns", but the
+// folder never appeared. Order is display order, so it stays explicit rather than derived from the union.
+const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "sch236"] as const satisfies readonly FreedrawGrid[];
+// ...and this is what makes "fails to compile" true rather than aspirational: `satisfies` alone would
+// accept a SHORT list. Leaving a grid out makes the Exclude non-never, so the assignment errors.
+type UnlistedGrid = Exclude<FreedrawGrid, (typeof FREEDRAW_GRID_SUBS)[number]>;
+const _everyGridHasASubRow: UnlistedGrid extends never ? true : ["missing from FREEDRAW_GRID_SUBS", UnlistedGrid] = true;
+void _everyGridHasASubRow;
+
 export const SUB_ORDER = [
 	"",
-	"square",
-	"triangle",
-	"hex",
-	"ts",
+	...FREEDRAW_GRID_SUBS,
 	// Colors: grid-major, then palette size — "square-2" is every 2-coloring of the 4^4 grid.
 	"square-2",
 	"square-3",
@@ -546,12 +555,14 @@ export function freedrawGridOf(t: Pick<ReferenceTiling, "freedraw">): FreedrawGr
 // The card / search label for a freedraw pattern: what its faces ARE, since there is no vertex
 // configuration to name it by. "1 strip + 2 polyominoes", "1 unbounded · holes". The finite noun
 // follows the grid: polyomino on squares, polyiamond on triangles, polyhex on hexagons, polyform on
-// the combined grid (where the cells are not all one shape, so no -omino word fits).
+// the combined grid (where the cells are not all one shape, so no -omino word fits), polydrafter on
+// the Schwarz 236 board (a 30-60-90 triangle is a drafter).
 const FREEDRAW_FINITE_NOUN: Record<FreedrawGrid, readonly [string, string]> = {
 	square: ["polyomino", "polyominoes"],
 	triangle: ["polyiamond", "polyiamonds"],
 	hex: ["polyhex", "polyhexes"],
 	ts: ["polyform", "polyforms"],
+	sch236: ["polydrafter", "polydrafters"],
 };
 export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
 	const noun = FREEDRAW_FINITE_NOUN[grid];
@@ -886,6 +897,11 @@ function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 	// certificates (the decoder is validated bijectively on the slices above, and the combined grid's
 	// digon-free slice reproduces the known 4/7/17 uniform square-triangle tilings, but no independent
 	// enumeration reaches the rest), so they carry "candidate" until something independent does.
+	// Schwarz 236 is "candidate" on the same footing. What its decode DOES check: all 43 certificates
+	// develop with no failures, every one of the 636 emitted faces measures as an exact 30-60-90
+	// triangle with sides 1 : √3 : 2, and the nothing-drawn slice is a single pattern at k=3 — the bare
+	// Schwarz tiling, which is the only thing it could be. That is the decoder verifying itself, not an
+	// independent enumeration of the family.
 	const verified = grid === "square" ? p.k <= 3 : grid === "triangle" ? p.k <= 1 : false;
 	return {
 		id: p.id,
@@ -1280,7 +1296,11 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 			.then((res) => (res.ok ? (res.json() as Promise<Array<{ id: string; edge?: number }>>) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
-		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, freedraw, colors, devPatches]) => {
+		// One name per Promise.all entry, IN ORDER. `hollow` was missing here, which shifted every binding
+		// after it by one: the hollow shelf arrived as `freedraw`, freedraw as `colors`, and the colorings
+		// as `devPatches`. Net effect — the whole colorings shelf never reached the atlas (Colorings read 0
+		// on /play and /library) and no hyperbolic entry ever got its forced edge length ℓ merged.
+		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, hollow, freedraw, colors, devPatches]) => {
 			// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
 			// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
 			const edgeById = new Map<string, number | undefined>(
@@ -1290,7 +1310,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 				const e = edgeById.get(t.developed?.patch ?? t.id);
 				if (typeof e === "number") t.edge = e;
 			}
-			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...freedraw, ...colors, ...hyperbolic, ...spherical];
+			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...hollow, ...freedraw, ...colors, ...hyperbolic, ...spherical];
 			cache = data;
 			inflight = null;
 			return data;

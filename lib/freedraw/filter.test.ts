@@ -262,8 +262,11 @@ describe("the combined-grid catalogue — regular-polygon filter", () => {
 	});
 
 	it.skipIf(!have)("admits dilations when regularity is 'regular', not 'unit'", () => {
-		// allRegular is 5 + 12 + 36; the extra 10 over allUnit are the side-2 and mixed-scale tilings.
-		expect(count(all, { regularity: "regular" })).toBe(53);
+		// allRegular is 5 + 18 + 70; the extra 50 over allUnit are the side-2/3/4 and mixed-scale
+		// tilings. (Was 53 before regularOf's collinearity test went scale-relative on 2026-07-27 —
+		// an absolute epsilon against rounded patch coordinates missed most dilations, which are
+		// precisely the tiles whose sides run straight through a grid vertex. `unit` is unchanged.)
+		expect(count(all, { regularity: "regular" })).toBe(93);
 	});
 
 	it.skipIf(!have)("isolates the honeycomb as the only all-hexagon tiling", () => {
@@ -285,6 +288,7 @@ describe("the combined-grid catalogue — regular-polygon filter", () => {
 	});
 
 	it.skipIf(!have)("counts patterns merely CONTAINING a hexagon, dilations and mixtures included", () => {
-		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } })).toBe(88);
+		// 89, not 88: the scale-relative collinearity fix also surfaced one side-2 hexagon at k=3.
+		expect(count(all, { polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } })).toBe(89);
 	});
 });

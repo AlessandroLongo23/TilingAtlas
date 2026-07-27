@@ -6974,3 +6974,390 @@ Controls reproduce: star18 6+7 → 18/19 against the reference 18/37 cumulative 
 ⚑ **D=42 never finished.** The palette built (2108 s, 192,687 alphabet entries) and phase 1 started at
 21:42:57; the log ends there. D=42 is the other mixed ring ({3,6,7,14,21,42}) and the one that would
 separate 7-fold-with-triangles from the D=28 result. Re-run before the sweep is called complete.
+
+## The aperiodic shelf: two pages merge into four views, on /play's interaction model (2026-07-27, AL directive)
+
+`/substitutions` (Sub Rosa) and `/multigrid` were two nav entries for two halves of one subject —
+substitution and projection routes to the same quasiperiodic rhombic tilings. AL asked for one page,
+`/aperiodic`, with the constructions as views selectable from the sidebar. Old routes 307 to
+`/aperiodic?view=subrosa|multigrid` (`next.config.ts`); the view is carried in `?view=` on the
+read-once/write-only pattern `/colors` uses, so a link opens where it was left.
+
+Then AL added the two the atlas already had as static pictures — Penrose and the hat — and asked that
+everything here move, rotate and zoom the way the periodic flat views do.
+
+**The registry, not a switch.** `_views.ts` lists the constructions with a label, a blurb, an icon and
+a `group` (Substitution / Projection); the sidebar renders whatever it lists, grouped in first-appearance
+order. AL's stated direction is a collection — Wang tiles, more substitutions out of the encyclopedia —
+so adding one is an entry plus a component, not an edit to the page. Only the selected view mounts:
+each owns a WebGL2 context or a large 2-D patch, and a canvas holds exactly one context type.
+
+**One interaction layer.** `lib/hooks/useAperiodicView.ts` owns pan/rotate/zoom for every canvas here,
+on the *shared* state and constants in `lib/render/viewControls.ts` — so a wheel notch, a Shift+wheel
+detent and a right-click mean the same thing on /aperiodic as on /play and the theory cards. The
+transform is flatTilingGL's, with the world centre subtracted:
+
+    screen_centred = offset + zoom · R'(θ) · (p − centre),   R'(θ)·(x,y) = (c·x + s·y, s·x − c·y)
+
+R' is rotation composed with the y-flip. Two consequences worth writing down. It is an *involution* (a
+reflection, det = −1), so `viewToWorld` runs the same formula as the forward map — the multigrid's
+hover-picking inverts the view for free at any angle. And because the offset is added *after* the
+rotation, a drag needs no un-rotation: Δoffset = Δscreen holds at every angle. Subtracting `centre`
+rather than folding it into the offset keeps home at offset = 0, so `resetCardControls` works unchanged
+and an unpanned view spins about the patch instead of about a stale origin.
+
+`subrosaGL.ts` gained `uRot` + `uCentre` and lost `uScale`/`uOrigin`; its draw params are now
+`{zoom, offsetX, offsetY, rot, centreX, centreY}`. `zoomAtPoint` and `resetCardControls` took an
+optional `bounds` — the shared ZOOM_MIN/MAX are px per tile *edge*, and no two views here measure their
+world the same way (a Sub Rosa patch at depth 3 spans hundreds of edges, the hat's window eighteen), so
+each view clamps the wheel relative to its own fitted home zoom (home/8 … home×400). Existing callers
+are untouched.
+
+**Penrose and the hat.** `lib/render/penrosePatch.ts` and `hatPatch.ts` already existed for the
+/defense cards; `_patch-view.tsx` is one component over both, with the construction's single parameter
+on a slider. They landed first on the 2-D `drawPolygons` path and then moved to the shader (below);
+`drawPolygons` kept an optional `outline` argument from that first pass, used by the 2-D fallback to
+drop the stroke when zoomed out, where a 1-px outline per tile reads as grey.
+
+**Home framing needed a cover mode.** Both patches are finite, so both have a ragged boundary, and both
+carry a *measured* gap-free window (`PENROSE_WINDOW`, `HAT_WINDOW`). Contain-fitting a square window on
+a landscape canvas shows world outside it horizontally — which is exactly the ragged edge, and it read
+as a rendering fault on first load. `HomeBox.cover` scales so the window covers the canvas instead: the
+visible region is then a sub-box of the clean window, never larger, the same argument `patch-card.tsx`
+makes with `max(W,H)`. Cover applies only at the default level, where the window was measured; move the
+slider and the view contain-fits the patch's own bounds, because seeing the whole finite thing is then
+the point.
+
+Verified by driving real Chromium input (not synthetic WheelEvents — those don't reach the non-passive
+listener): Shift+wheel rotates and snaps to the 5° detent on both the GL path (Sub Rosa, 40°) and the
+2-D path (Penrose, 15°); bare wheel zooms without touching the angle; the multigrid's duality highlight
+still lights the crossing and its rhombus in both panels after the panels became two independent
+`useAperiodicView` instances. `pnpm build` clean, `pnpm test` 1569 pass with the one pre-existing
+`star-general-path` timeout.
+
+⚑ Switching views resets that view's controls (it unmounts). The URL carries the view, not its
+parameters — a shared `/aperiodic?view=hat` link opens at level 4, not at whatever the sender was
+looking at.
+
+## The finite patches move to the shader, and ear clipping turns up two real bugs (2026-07-27, AL directive)
+
+AL: "Move them to the shader." Penrose and the hat now draw through `SubRosaGL` like the other two
+views — the patch is triangulated once into one vertex buffer and a drag is a uniform update. What was
+blocking it: the renderer's tile split was hard-wired to a quad (two triangles across a diagonal),
+which cannot represent the hat's 13-gon at all.
+
+**`lib/render/triangulate.ts`** is ear clipping for any simple polygon, plus the barycentric edge mask
+the single-pass wireframe needs. An edge is strokeable only when its endpoints are adjacent on the
+polygon's ring; anything else is a diagonal the triangulation invented, and its channel pins to 1 so
+`min()` never reaches 0 there. `SubRosaGL.uploadPolygons` uses it; `uploadTiles` keeps the fixed quad
+split for the rhombic views. The colours did not move: the fragment shader took a `uSat` uniform and
+the patch views pass saturation 1.0 / lightness 80, which is *exactly* the atlas' HSB(h, 40, 100) tile
+fill — l = v(1 − s/2) = 0.8 and s_hsl = (v − l)/min(l, 1−l) = 1.
+
+**Correction to the entry above.** It claimed a fan from corner 0 "would put triangles outside" the
+hat. That is false, and worth recording as false: measured over hatPatch(4)'s 1,156 tiles, a corner-0
+fan conserves area exactly and inverts nothing, because the hat's outline is star-shaped about the
+vertex its own construction happens to list first. The real blocker was the quad split, and the reason
+not to lean on the fan is that star-shapedness is a property of one shape's indexing, not a guarantee —
+and this shelf is meant to keep gaining tile families. A test now pins both facts.
+
+**Two bugs the tests caught, neither of which area conservation would have.** Summing |triangle area|
+and comparing to the polygon's is the obvious check and it is nearly worthless on its own: a triangle
+covering a region twice, once flipped, still adds up. The check that matters is *no inverted triangle*.
+
+1. *The ear test.* Rejecting an ear when any vertex is inside-or-on it stalls the clipper (the hat has
+   three collinear corners, so a candidate ear routinely has a vertex exactly on an edge), and the
+   stall fallback fanned a non-convex remainder — inversions. Accepting strictly-interior-only instead
+   admits an ear whose reflex neighbour sits on its edge, which pinches the ring — also inversions. The
+   correct condition is inclusive containment tested against **reflex vertices only**, against the ring
+   as it currently stands.
+2. *The tolerance.* Even then, a vertex mathematically ON an edge evaluates to a cross product of
+   ±1e-16, not 0, so an exact `>= 0` read it as outside and the ear went through anyway. The tolerance
+   has to scale with the triangle's own area — these coordinates run to ±40 while a tile is ~1 across.
+   Worst inversion before the fix was −6.25% of a tile's area; after, −1e-14.
+
+⚑ The suite originally checked `hatPatch(2)`, which contains too few tile orientations to expose any of
+this and passed throughout. It now checks level 4. A test at the smallest level that runs is not a test.
+
+**A third bug, visible only on screen.** With the outline gate on, every hat drew with dark triangular
+wedges across it. Ear clipping a 13-gon produces interior triangles all three of whose edges are
+invented diagonals; all three channels pin to 1, `d` is constant, `fwidth(d)` is 0, and
+`smoothstep(0, 0, d)` — undefined in GLSL — floods the triangle with stroke colour. The quad split
+could never produce that case, since two of its edges are always real. The fragment shader now takes
+the branch out explicitly when `aa == 0`.
+
+**Caps raised, measured on a real GPU.** Penrose depth 8 → 11 (143,010 rhombi, 286k triangles), hat
+level 5 → 6 (54,289 hats, 597k triangles): 18× and 7× the tiles. On an M5 via Metal, a level change
+costs 140–200 ms (build + triangulate + upload, main thread) and panning holds 8.3 ms/frame median,
+which is the display refresh cap. The next rung is where that stops: hat level 7 is 372,100 hats and a
+184 MB buffer.
+
+⚑ **Do not trust headless WebGL numbers.** The same measurement headless reported an 11-second level
+change, because headless Chromium falls back to SwiftShader — CLAUDE.md says so about FPS and it is
+just as true of upload. Headed, it is 140 ms. Every perf figure above is from a headed run with the
+renderer string checked (`ANGLE (Apple, ANGLE Metal Renderer: Apple M5)`).
+
+## Home framing normalised across the patch views — and the invariant that looked right (2026-07-27)
+
+AL, on landing between the two: why do Penrose depth 5 and hat level 4 open at different zoom levels?
+Because nothing normalised them. Each view cover-fits its own measured window, and those windows were
+sized for the static /defense cards — standalone square thumbnails, where nothing invites comparing one
+to another. Two causes stacked. The tile scales differ (`penrosePatch` deliberately rescales so an edge
+is exactly 1; `hatPatch` inherits Kaplan's raw hatviz coordinates, edge 0.866), and the windows spend
+their budget differently: Penrose takes 93% of its clean square (14 of 15.0), the hat 60% (18 of 29.8),
+the latter tightened on purpose because "the hat's outline is intricate enough to read as texture
+rather than a shape if the view pulls much further back". Result: 15.5 tiles across vs 9.7.
+
+**First attempt, and why it was wrong.** I normalised the DEFAULT level onto a shared
+`HOME_TILES_ACROSS = 9.5`, cover-fitted to each patch's clean window, and left every other level
+fitting the patch's own bounds. It made the two defaults agree and broke something worse: the default
+became the one position on the slider that did *not* show the whole patch. AL, with screenshots —
+Penrose 4, 5, 6 — "4 and 6 render fully contained in the screen, but 5 doesn't." Dragging the slider
+jumped whole patch → window → whole patch. A framing rule that special-cases one value of a continuous
+control is a bug however well the value is chosen, and the two-branch shape was the tell.
+
+**What shipped.** One rule at every level: fit the whole patch. The slider now means "more tiling" and
+nothing else, and the clean windows go back to being what they always were — the /defense cards'
+framing, right for a standalone thumbnail, wrong for something you drag. `HomeBox.cover` went with it;
+no caller was left.
+
+That alone would have made the original complaint *worse*, and in the opposite direction: contain-fit
+puts Penrose d5 at 24.6 tiles across against the hat L4's 48.4, a 2.0× mismatch where the windows gave
+1.6× the other way. So scale is matched by the DEFAULT LEVELS instead, which is the only lever left
+once framing is uniform. Penrose's view default moves 5 → 6: 1,140 rhombi against 1,156 hats, landing
+at 39.9 and 48.4 tiles across (1.21×). `PENROSE_DEPTH` is untouched — it stays the card's framing —
+so the view's default and the module's are now deliberately decoupled.
+
+**The measurement worth keeping from the failed attempt.** I first proposed normalising on median edge
+length — the atlas' usual scale for periodic tilings, and what `penrosePatch`'s own comment invokes
+("the renderer sizes everything off median edge"). Measured, that is the wrong invariant here and
+would have made the complaint worse. A hat has *shorter* edges than a Penrose rhombus (0.866 vs 1.0)
+while being 2.07× the tile, because it is a 13-gon built from many short edges. Ordering the two by
+edge length gets the answer backwards. sqrt(mean tile area) is the size that makes tiles look alike;
+`characteristicTileSize` survives as the function that measures it, and it is what the paired default
+levels were chosen against.
+
+Pinned by `tests/aperiodic-patches.test.ts`: that the defaults stay paired on tile count (1,140 vs
+1,156, within 5%), that the two land within 1.3× on tiles-across, that Penrose's *card* default would
+be 1.9× off — so the decoupling is deliberate and stays visible — and that median edge orders the two
+tiles the opposite way from characteristic size, keeping the invariant that looks right documented as
+wrong.
+
+⚑ Two framing rules in two turns, both wrong before this one. The lesson is not about tilings: a
+control with a continuous range should have ONE rule across that range. Special-casing its default
+value is a smell, and it was visible in the code as a two-branch `home()` before it was visible on
+screen.
+
+## /aperiodic adopts the /play sidebar's grammar (2026-07-27, AL directive)
+
+AL: "Take a look at the styling for the play sidebar. Apply the same here." The aperiodic views had
+been speaking a second visual language — a hand-rolled `<aside>` at w-72 on `surface-raised`, uppercase
+micro-labels, rounded chips, and bare `<input type="range">`/`<input type="checkbox">` — for controls
+the atlas already had components for.
+
+What was adopted, and none of it is skin-deep:
+
+- **`PageSidebar`** — the shared w-80 chrome column with the project's scroll behaviour, replacing three
+  hand-written asides.
+- **The wall.** `ta-wall ta-wall-dense … gap-px`: the container paints the line colour and every child
+  is an opaque cell, so the 1px gaps between them are the only rules in the panel. Same construction as
+  `components/sidebar/tilings-tab.tsx`; where a vertical gap crosses a horizontal one the cells' rounded
+  corners open the little diamond, which is the detail that makes the two pages read as one.
+- **`.ta-tab` segments** for every choice — idle cells at the panel colour, the active one filled with
+  white (black in dark). Replaces the rounded accent chips.
+- **`Slider`, `Checkbox`, `Button`, `Kbd`, `RangeInput`** for the controls, so a toggle here behaves and
+  looks like a toggle in /play's View options. The multigrid's γ rows keep a bare `RangeInput` rather
+  than `Slider`: each row is tinted with the colour its grid family draws with on the z-space panel, so
+  the row's own label is the legend, and `Slider`'s built-in label/value row would fight it.
+
+The switcher follows /play's shape rather than inventing one: a metadata cell naming the active view
+and its group, over one segment row per construction group. `AperiodicSidebar` (in `_controls.tsx`) is
+the shell all four views render into, so this is written once rather than three times as before.
+
+Two things the first pass got wrong, both caught on screen:
+
+1. Seven symmetry options in a four-wide grid leave one empty grid area, and an empty area shows the
+   container's wall colour — a grey block sitting inside the control. `Segmented` now pads the last row
+   with inert panel-coloured cells.
+2. The group name was rendered on every tab cell, so three cells in a row all read "Substitution". The
+   row already IS the grouping, and the metadata cell names the active view's group; the per-cell label
+   was pure noise and is gone.
+
+Checked in both themes — the `.ta-tab` active fill is white in light and black in dark, and the
+`ta-wall` hairlines have to read against both.
+
+## The Schwarz (2,3,6) board joins /freedraw — the first scalene grid (2026-07-27)
+
+Marek sent `_schwarz.zip` on 2026-07-27: `pt_schwarz_edges_236.exe` (sha256 `1c4ce3ac`) plus its own
+output, 15 certificate files holding 43 tilings at k=3 and k=4. Both halves landed in `materials/`
+(`corpora/schwarz_edges_236/`, `solvers/`, `_as-received/schwarz_edges_236.zip`), all 16 files verified
+sha256-identical against the archive. The exe is PE32+ like every other solver he ships, so it is
+provenance here, not something to run.
+
+**Reading the alphabet.** The certificates use tokens no previous corpus had: `S2 S3 S6` alongside
+`A2`–`E2`. They are not polygons. `S2/S3/S6` are the three CORNERS of the single 30-60-90 tile —
+90°, 60°, 30° — named by the rotation order of the site each occupies. That falls out of Marek's own
+site-symmetry tags, which encode `rot` and must satisfy `listed angle sum = 360°/rot`:
+`(S2,A2,S2,C2)D4c` → rot 2 → 2×90 = 180 ✓, `(S6,C2,S6,E2)D12c` → rot 6 → 2×30 = 60 ✓,
+`(S3,A2,S3,E2)D6c` → rot 3 → 2×60 = 120 ✓, `(…4×S2…)F` → rot 1 → 360 ✓. The letters `A2`–`F2` are
+edges as digons, paired by endpoint class and carrying the drawn bit in the letter itself
+(Marek, 2026-07-27): `A2/C2/E2` undrawn, `B2/D2/F2` drawn; A/B join 90–60, C/D join 90–30, E/F join
+60–30. Measured endpoint classes over the whole corpus agree with that pairing exactly.
+
+**Three things made it unlike the four existing grids**, and each became a knob in
+`develop_freedraw.py`'s `GRIDS` table rather than a new code path — defaults reproduce square,
+triangle, ts and hex byte for byte.
+
+1. *The letters name corners, not faces.* A face walk crosses three different letters and its size is
+   fixed at 3 (`face_size`, `face_corners: "vary"`) instead of being read off the digits.
+2. *Every edge carries a digon*, drawn or not, where the other grids digon only the drawn ones and let
+   undrawn edges vanish into merged faces. So crossing an undrawn edge lands on the digon, not on the
+   neighbouring triangle: `PatchComplex` grew `self.adj`, which hops it (co-edge in, digon's other
+   side, co-edge out) and composes the lattice offset over the whole crossing. `digon_every_edge`.
+3. *The tile is SCALENE* — the first such board here. Its three edge classes have three lengths, and
+   taking the base hexagon's circumradius as 2 they are 1 (90–60), √3 (90–30), 2 (60–30). All three
+   live in ℤ[ζ₁₂], since √3 = 2z − z³, so the exact develop survives; only `develop_patch`'s hardcoded
+   unit step had to be scaled, via `edge_len` and `Block.far_step`.
+
+**What the decode proves about itself.** All 43 certificates develop with zero failures and no
+ambiguous mirror axis. Every one of the 636 emitted faces measures as an exact 30-60-90 triangle with
+sides 1 : √3 : 2 — the check that the per-class lengths are right, since any wrong assignment would
+distort them. Exactly one certificate has nothing drawn, at k=3, and it develops to a single unbounded
+region: the bare Schwarz tiling, which is the only thing it could be. Regression: `hexagons_edges`
+regenerates byte-identical across all nine k files (86 MB), and `squares_edges` byte-identical against
+the pre-change code on the same corpus — together those exercise every line touched.
+
+**k=3 is the floor, not a gap.** k counts vertex orbits and the bare board already has three (hexagon
+centres, corners, edge midpoints), so k=1 and k=2 do not exist on this board. I initially flagged the
+missing low-k slices as a partial-corpus problem; Marek corrected it. The catalogue is complete for
+what was searched.
+
+⚑ **`F2` never appears anywhere in the corpus** — no filename, no vertex figure. F2 is the DRAWN 60–30
+edge, so every one of the 43 solutions leaves that class undrawn: the run used five of the six letters.
+This is the one genuine coverage gap, and it needs a rerun from Marek, not a reparse.
+
+### A latent precision bug the scalene board exposed
+
+`regularOf` collapsed collinear boundary runs with an ABSOLUTE test, `|cross| > 1e-6`. The bitmask grids
+build corners from integer lattice coordinates, so a straight run crosses to exactly 0 and it worked.
+The patch grids do not: their vertices ship rounded to 5 decimals, and over segments of length ~2 a
+genuinely straight run scores ~2e-5 — above the threshold, so it survived as a fake corner. On the
+Schwarz board a hexagon's side runs straight through the edge-midpoint vertex between its two grid
+edges, so this suppressed EVERY regular tile in the new catalogue: `allRegular` came back 0 while the
+thumbnails plainly showed hexagons.
+
+Fixed by normalising the cross product by the two segment lengths, making the threshold an angle
+(scale-free, and identical on the integer grids where it is exactly 0), and sizing it to the
+coordinate precision at 1e-4 — a decade above the rounding noise and four orders below the smallest
+turn any of these boards can make (30°).
+
+The fix reaches the **ts** grid too, which had the same latent bug: `allRegular` 12 → 18 at k=2 and
+36 → 70 at k=3. Those are real tiles that were being missed, and the direction is not a judgement
+call — a dilated regular polygon has collinear boundary vertices by definition, so an absolute epsilon
+under-counted that family and no other. Verified: every newly-admitted tile has integer side > 1
+(triangles of side 2/3/4, squares of 2/3, one hexagon of 2) and a kind in {3,4,6,12}. `allUnit` is
+unchanged at every k on every grid, so the classical slice never moved — the 4/7/17 tri-square oracle,
+the 43 edge-to-edge count and both dodecagon results all still hold. Square, triangle and hex counts
+are identical before and after. Goldens in `regular.test.ts` and `filter.test.ts` updated with that
+reasoning recorded beside them.
+
+**Shipping.** `public/freedraw/sch236-solutions-k{3,4}.json`, 5 + 38 records, ~50 kB total.
+`FreedrawGrid` gained `"sch236"` and the compiler enumerated the five sites that needed handling —
+`filter.ts`'s exhaustive `GRIDS` record did its job. Finite tiles are **polydrafters** (a 30-60-90
+triangle is a drafter, after the drafting set square; these are the Eternity puzzle's pieces), and
+every finite tile in the corpus is an even number of drafters — 2, 4, 6, 8 or 12 — which is the mirror
+pairing you would expect on a reflection-group board. `lib/freedraw/sch236.test.ts` pins the counts,
+the triangle geometry, the bare-board anchor and the collinearity fix.
+
+## The conformal lens becomes universal: one periodic-cell IR for every Euclidean class (2026-07-27, AL directive)
+
+AL: every Euclidean tiling must support the inversive view — colorings, edge patterns, all of them.
+He was right that it did not, and the reason was structural rather than an oversight in any one place.
+
+**What the lens actually was.** `components/inversive-canvas.tsx` was a self-contained analytic shader
+that knew exactly ONE data shape: a period lattice plus ≤128 polygons of ≤40 vertices, each carrying a
+single `hue` float. Per pixel it inverted the lens map, reduced into the fundamental parallelogram, and
+ran point-in-polygon over the 3×3 block of lattice copies. Sharp at any magnification — that is the
+whole point of the view — and also a cage. Every decoration that did not fit the shape had been
+force-cleared rather than ported: `inversive: false` on selecting a coloring, an edge pattern or a
+hollow tiling (`_play-client.tsx`), and the Islamic construction was worse — no flag at all, both
+WebGL Islamic layers simply gated on `!cfg.inversive`, so switching the lens on with the construction
+up dropped it silently and showed the bare tiling.
+
+**The IR.** `lib/render/periodicCell.ts` defines one description of "a lattice-periodic drawing":
+`v1`, `v2`, and a z-ordered list of primitives, each a ring or polyline with an optional fill
+(hue-driven or literal RGBA, even-odd or nonzero) and an optional stroke. Five adapters under
+`lib/render/periodic/` map the classes onto it; `lib/hooks/useInversiveCell.ts` is the single place
+that decides which one a selection uses. Adding a class to the lens is now one adapter and one branch.
+
+**The index, and why it is also faster.** The 3×3 sweep is gone. The packer builds a uniform grid in
+LATTICE coordinates over the unit cell [0,1)², registering each primitive under every integer shift
+that brings it into that cell, so the shader reduces once, reads one bucket, and tests only what is
+near it. That removes the 9× copy factor the old shader paid on every pixel AND lifts the 128-primitive
+ceiling, which no coloring or edge-pattern cell would have fit under.
+
+**Two bugs the tests caught, and one they didn't.** First: I had the index's shift sign inverted. The
+shader tests `q = w − (di·v1 + dj·v2)`, which compares w against the primitive translated by **+**(di,dj),
+and I registered the range as if it were −. Synthetic test cells whose tiles sat inside the unit cell
+passed anyway — both signs file those under (0,0) — so the bug only showed on real geometry, as a
+wedge-shaped hole in composable-k3-000 that the lens magnified across half the screen. A CPU coverage
+sweep put the loss at 9.5% of the fundamental domain. `periodicCell.test.ts` now carries a
+straddling-tile cell and a rhombic cell that fail under the wrong sign.
+
+Second: `MAX_BUCKET_ENTRIES` at 96 was silently truncating six of the fourteen hollow patches. Hollow is
+the class where the per-bucket count stops depending on grid resolution — its faces overlap by
+construction and each spans several lattice cells, so the count converges to the sum of the primitives'
+lattice bbox areas. Measured demand across `public/hollow` tops out at 420 (hollow-12-5_12-5_3-2), so the
+cap is 512 and `packPeriodicCell` now WARNS instead of truncating quietly. A silent cap on a completeness
+knob is the same failure the notes have flagged before.
+
+The one the tests didn't catch was a calibration, not a defect: hollow outlines at the lens's default
+stroke are 3× the 2D canvas's 1.25 CSS px, and on the dense patches (|v1| ≈ 0.5 with edge-1 faces, ~100
+faces covering every point) the union of that many bands inked over the entire picture. `strokeScale`
+0.3 matches the flat renderer at its default zoom.
+
+**Fill model.** Fills composite in z order, which is what lets hollow stack translucent self-intersecting
+faces the way `ctx.fill("nonzero")` does. Strokes take the STRONGEST coverage rather than compositing:
+two tiles sharing an edge both stroke it at the same coverage, and an "over" blend would darken and
+fatten every shared edge by exactly that doubling. Class A of the Islamic construction keeps its `hue`
+channel, so the sidebar hue ring stays live with no geometry rebuild.
+
+**Islamic, all five styles.** Plain and checkerboard reuse `extractFaces` → `colorFacesAbc` /
+`twoColorFaces` with the same origin-cell filter `buildInstancedIslamicMesh` uses. Interlace, outline and
+emboss reuse `buildIslamicInterlace`'s woven `Band`s: because the over/under illusion is already baked
+into the band geometry (an under strand's side edges stop on the over strand's outer border line), the
+weave survives the port with no z-ordering of its own — which is the thing I expected to be hard.
+
+**Found on the way, unrelated and worse.** `loadReferenceAtlas`'s `Promise.all` has 13 entries and the
+destructure named 12 — `hollow` was missing, so every binding after it shifted by one. The hollow shelf
+arrived as `freedraw`, freedraw as `colors`, and the colorings as `devPatches`. Net effect: the ENTIRE
+colorings shelf never reached the atlas (Colorings read 0 on /play and /library — 226,946 tilings), and
+no hyperbolic entry ever got its forced edge length ℓ merged, so every ℓ readout was blank. Fixed.
+
+**Not done.** The lens stays Euclidean-only, per AL's scoping — the aperiodic shelf has no period lattice
+to reduce into, and the spiral mode could not follow it there in any case (K = (a·v1+b·v2)/(2πi) is built
+from the lattice, and the branch cut closes only because θ+2π is a lattice translation). The overlays
+(symmetry elements, fundamental domain, vertex orbits) still vanish under the lens; they are vector data
+on the same lattice, so they are an adapter away, but they were not in scope.
+
+### The one site the compiler did not catch — the /play sidebar tree
+
+`FreedrawGrid` gaining a member forced five call sites to be updated, which is the whole point of the
+exhaustive `Record<FreedrawGrid, …>` pattern this codebase uses. It missed a sixth. `SUB_ORDER` in
+`referenceAtlas.ts` listed the planar-freedraw subs as four LOOSE strings, and `SUB_LABEL` in
+`catalogue-list-panel.tsx` is a `Record<string, string>` — neither is keyed on the union, so both
+compiled happily without `sch236` and the grid simply had no folder row in /play's catalogue. The
+symptom was quiet and easy to miss: `subOf` returned `"sch236"` correctly, the 43 patterns loaded and
+counted into the "Edge patterns" total (114,934), they were reachable in /library — there just was no
+row to open them by. AL spotted it.
+
+Fixed by typing the list. `FREEDRAW_GRID_SUBS` is now `as const satisfies readonly FreedrawGrid[]`,
+which alone would still accept a SHORT list, so it is paired with
+`Exclude<FreedrawGrid, (typeof FREEDRAW_GRID_SUBS)[number]> extends never ? true : [...]`. Dropping a
+grid now fails the build naming the culprit — verified by removing `sch236` and watching
+`Type 'boolean' is not assignable to type '["missing from FREEDRAW_GRID_SUBS", "sch236"]'`, then
+restoring. The folders now sum to the header exactly: 53060 + 44721 + 2392 + 14718 + 43 = 114,934.
+
+The general lesson for the next grid: an exhaustive `Record` keyed on the union is load-bearing, and
+the two places that used a bare `string` key silently opted out of it. Worth auditing whether the
+colors/hyperbolic sub-axes have the same hole — they are hand-listed in the same `SUB_ORDER`.

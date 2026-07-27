@@ -43,15 +43,21 @@ const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 	{ value: "triangle", label: "Triangle" },
 	{ value: "hex", label: "Hexagon" },
 	{ value: "ts", label: "Tri + squares" },
+	{ value: "sch236", label: "Schwarz 236" },
 ];
 
 // k ranges per grid track what the catalogues hold: squares to k=5, triangles to k=4, the combined
 // grid to k=3, hexagons to k=9. "All" on the hexagonal grid shows k<=6 (see filesFor).
+//
+// Schwarz 236 starts at k=3, not k=1: k counts vertex orbits, and the bare board already has three
+// (hexagon centres, corners, edge midpoints), so 1 and 2 are not gaps but non-existent. Its chips
+// therefore run 3..4, which is Marek's whole 2026-07-27 run.
 const K_OPTIONS: Record<FreedrawGrid, { value: number; label: string }[]> = {
 	square: [0, 1, 2, 3, 4, 5].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	triangle: [0, 1, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	hex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	ts: [0, 1, 2, 3].map((k) => ({ value: k, label: k ? String(k) : "All" })),
+	sch236: [0, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 };
 
 // The face classes, one has/none/any row each (they COMBINE — "a strip is fine, an unbounded sheet is
@@ -104,6 +110,10 @@ const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[]; heavy?: true 
 		{ url: "/freedraw/ts-solutions-k1.json", ks: [1] },
 		{ url: "/freedraw/ts-solutions-k2.json", ks: [2] },
 		{ url: "/freedraw/ts-solutions-k3.json", ks: [3] },
+	],
+	sch236: [
+		{ url: "/freedraw/sch236-solutions-k3.json", ks: [3] },
+		{ url: "/freedraw/sch236-solutions-k4.json", ks: [4] },
 	],
 	// The hexagonal grid runs deep — Marek solved it to k=9, where one slice is 22,361 patterns / 58 MB.
 	// `heavy` keeps those three out of the "All" fetch; picking their k chip still loads them.

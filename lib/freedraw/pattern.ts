@@ -24,7 +24,17 @@
 //   U(x,y) has corners (x,y), (x+1,y), (x,y+1);   D(x,y) has corners (x+1,y), (x,y+1), (x+1,y+1);
 //   the two share the w edge based at (x, y+1).
 
-export type FreedrawGrid = "square" | "triangle" | "ts" | "hex";
+// SCHWARZ (2,3,6) GRID (grid: "sch236", from Marek's pt_schwarz_edges_236.exe): the first grid here
+// whose tile is not equilateral. The board is the (2,3,6) Schwarz triangle tiling — the plane cut by
+// the mirrors of the 236 reflection group, i.e. the barycentric subdivision of the hexagons, whose
+// cells are 30-60-90 triangles ("drafters"). Its three vertex classes are the hexagon centres (order
+// 6), the hexagon corners (order 3) and the edge midpoints (order 2), and its three edge classes have
+// three different LENGTHS, ratio 1 : √3 : 2. That is why it takes the patch representation below:
+// there is no bitmask, and no lattice, to index.
+//
+// One consequence for reading k: the bare board already has three vertex orbits, so k = 3 is the
+// floor here rather than k = 1, and the k = 3 slice contains the undecorated Schwarz tiling itself.
+export type FreedrawGrid = "square" | "triangle" | "ts" | "hex" | "sch236";
 
 /**
  * PATCH GRIDS (grid: "ts" and "hex"): no bitmask, explicit geometry instead. The developer
@@ -79,7 +89,7 @@ export interface FreedrawPattern {
 	orbit: number[];
 	/** Which grid the bits decorate. Absent = "square" (the original catalogue predates the field). */
 	grid?: FreedrawGrid;
-	/** Combined grid only: the explicit per-period geometry. Present exactly when grid === "ts". */
+	/** Patch grids only: the explicit per-period geometry. Present when grid is "ts", "hex" or "sch236". */
 	patch?: FreedrawPatch;
 }
 
@@ -106,6 +116,8 @@ export const FREEDRAW_EAGER_FILES = [
 	"/freedraw/hex-solutions-k4.json",
 	"/freedraw/hex-solutions-k5.json",
 	"/freedraw/hex-solutions-k6.json",
+	"/freedraw/sch236-solutions-k3.json",
+	"/freedraw/sch236-solutions-k4.json",
 ];
 
 /** Hexagonal-grid k slices that load on demand: k=7 (6.4 MB), k=8 (17.6 MB), k=9 (58 MB). */
