@@ -11,7 +11,7 @@ import { buildInstancedStrapMesh, type StrapMesh } from "@/lib/render/buildIslam
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { buildIslamicInterlace, strapWidthScale, EMBOSS_MIN_BORDER, type OutlineSeg } from "@/lib/utils/islamicInterlace";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
-import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { Segment } from "@/utils/islamicArrangement";
@@ -102,6 +102,10 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 	const patchBuiltRef = useRef(false);
 	const meshSigRef = useRef<string | null>(null);
 	const lastRebuildRef = useRef(0);
+	// Same self-tuning gate as IslamicCanvas: the α-derived chain (cell → basis → patch → strap bands) is
+	// rebuilt as ONE unit at a ~50% duty cycle measured from its own last run, so a drag can never spend
+	// more than about half the frame budget on it. See docs/DEVELOPMENT_NOTES.md §104c.
+	const alphaGateRef = useRef<{ last: number; cost: number; startedAt: number | null }>({ last: 0, cost: 0, startedAt: null });
 	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
 
 	useEffect(() => {
@@ -170,9 +174,14 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 			// bands, instance grid. Must run before `meta` is read. Rigid tilings skip this entirely.
 			const pc = paramCellRef.current;
 			if (pc) {
-				const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+				// Clamp-only, not the 0.5° grid snap: the 2-D region pad and the Command-scrub are continuous.
+				const alphas = resolveAlphaDegsRaw(pc, useFamilyAlphas.getState().values);
 				const sig = alphas.map((a) => a.toFixed(2)).join(",");
-				if (sig !== alphaSigRef.current) {
+				const gate = alphaGateRef.current;
+				const nowMs = performance.now();
+				if (sig !== alphaSigRef.current && nowMs - gate.last >= gate.cost * 2) {
+					gate.last = nowMs;
+					gate.startedAt = nowMs;
 					alphaSigRef.current = sig;
 					const live = evaluateParamCell(pc, alphas) as unknown as FlatCellData;
 					liveCellRef.current = live;
@@ -204,7 +213,9 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 
 			if (!patchBuiltRef.current) {
 				patchBuiltRef.current = true;
-				patchRef.current = buildTilingFromCell(cell as unknown as AlgoCellData, PATCH_MARGIN, PATCH_MARGIN);
+				// Reuses the previous patch's polygon objects when the shape is unchanged — an α drag rebuilds
+			// this every time the gate opens, and the patch is the one part of the chain that allocates.
+			patchRef.current = buildTilingFromCell(cell as unknown as AlgoCellData, PATCH_MARGIN, PATCH_MARGIN, null, patchRef.current);
 				meshSigRef.current = null;
 			}
 			const meshSig = `${style}|${theta}|${offset}|${count}|${bandWidth}|${borderWidth}|${chirality}`;
@@ -215,6 +226,13 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 					lastRebuildRef.current = now;
 					meshSigRef.current = meshSig;
 					upload(buildStrapMeshFromPatch(patchRef.current, islamicNormalAngleFromSlider(theta), offset, count, bandWidth, borderWidth, chirality, weave, emboss, meta.v1, meta.v2));
+					// Tail of the α chain — cell, basis and patch were rebuilt earlier in the SAME frame, which is why
+					// the gate times from `startedAt` rather than from here.
+					const gate = alphaGateRef.current;
+					if (gate.startedAt !== null) {
+						gate.cost = performance.now() - gate.startedAt;
+						gate.startedAt = null;
+					}
 				}
 			}
 			const mesh = meshRef.current;

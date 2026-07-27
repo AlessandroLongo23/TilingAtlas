@@ -52,6 +52,7 @@ export interface CatalogueTiling {
 	// thumbnails to the colors renderer — `renderCell` is a throwaway. `k` counts COLORED VERTEX classes
 	// (vertex orbits under color-preserving symmetry; see ReferenceTiling.colors).
 	colors?: import("@/lib/colors/pattern").ColorPattern;
+	hollow?: import("@/lib/hollow/pattern").HollowPattern;
 	// Spherical freedraw shelf only: Čtrnáct's freedraw on a Platonic solid. Its presence routes /play + the
 	// thumbnails to the three.js ico-freedraw renderer, the way `spherical` routes to the solid sphere.
 	// `renderCell` is a throwaway; `k` counts VERTEX orbits (see ReferenceTiling.sphericalFreedraw).

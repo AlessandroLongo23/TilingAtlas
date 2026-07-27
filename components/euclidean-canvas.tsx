@@ -10,8 +10,9 @@ import {
 	FILL_VERT, FILL_FRAG, STROKE_VERT, STROKE_FRAG, POINTS_VERT, POINTS_FRAG,
 	ORBIT_VERT, ORBIT_FRAG, ORBIT_MAX, compileShader,
 } from "@/lib/render/flatTilingGL";
+import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, parseDimTarget, stepOrbitScales } from "@/lib/render/orbitHover";
 import { getOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
-import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegs, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -22,21 +23,8 @@ import {
 	prefersReducedMotion,
 } from "@/lib/utils/tilingTransition";
 
-// Vertex-orbit hover-grow, mirroring Tiling.drawVertexOrbits (ORBIT_HOVER_GROW / ORBIT_HOVER_DAMP): the
-// hovered orbit's dots ease toward 2x radius, the rest back to 1x, at this per-frame lerp rate.
-const ORBIT_HOVER_GROW = 2;
-const ORBIT_HOVER_DAMP = 0.2;
-
-// Parse a CSS "rgb(r, g, b)" / "rgba(r, g, b, a)" string to [r,g,b] in 0..1. Used for the orbit-mode dim
-// target (the surface background). Falls back to white so a dim never turns tiles black on a parse miss.
-function parseRgb(s: string): [number, number, number] {
-	const m = s.match(/[\d.]+/g);
-	if (!m || m.length < 3) return [1, 1, 1];
-	// A transparent background (alpha 0, or the keyword "transparent") gives no colour to fade toward, so
-	// fall back to white rather than fading tiles to black.
-	if (m.length >= 4 && Number(m[3]) === 0) return [1, 1, 1];
-	return [Number(m[0]) / 255, Number(m[1]) / 255, Number(m[2]) / 255];
-}
+// The vertex-orbit hover (hit radius, grow factor, easing rate) lives in lib/render/orbitHover.ts,
+// shared with the embeddable cards so the two surfaces cannot drift apart on feel.
 
 // The flat (Euclidean) view, retained-mode. TS builds the fundamental cell's triangles once
 // (buildCellMesh); the vertex shader replicates the cell with per-instance lattice offsets (i*v1 + j*v2)
@@ -273,7 +261,10 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			// clobber the collapsing/growing mesh mid-transition; the effect owns the mesh for the wave's duration.
 			const pc = paramCellRef.current;
 			if (pc && !transitionRef.current) {
-				const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+				// Clamp-only, NOT the 0.5° grid snap: the 2-D region pad and the Command-scrub are continuous
+				// gestures, and quantising here made the tiling stair-step under a smooth drag. The slider's own
+				// step is 0.5° so nothing changes for it, and the signature below still gates the rebuild.
+				const alphas = resolveAlphaDegsRaw(pc, useFamilyAlphas.getState().values);
 				const sig = alphas.map((a) => a.toFixed(2)).join(",");
 				if (sig !== lastSigRef.current) {
 					lastSigRef.current = sig;
@@ -361,7 +352,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			// reads pale in light theme and dark in dark theme, matching what p5 composites over. Read only in
 			// orbit mode (a static overlay); otherwise uFillDim=0 makes uDimTarget irrelevant.
 			const dim: [number, number, number] = orbitMode
-				? parseRgb(getComputedStyle(canvas.parentElement ?? canvas).backgroundColor)
+				? parseDimTarget(getComputedStyle(canvas.parentElement ?? canvas).backgroundColor)
 				: [0, 0, 0];
 
 			g.uniform2f(U.uOffset, draw.x, draw.y);
@@ -477,33 +468,15 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			const orbitMesh = orbitMeshRef.current;
 			if (orbitMode && orbitMesh && orbitMesh.vertexCount > 0) {
 				const k = orbitMesh.k;
-				const det = mesh.det;
-				const [v1x, v1y] = mesh.v1, [v2x, v2y] = mesh.v2;
-				const hover = getOrbitHoverWorld();
-				let hoveredOrbit = -1;
-				if (hover && Math.abs(det) > 1e-9) {
-					const rWorld = 4 / ctrl.zoom;        // dot radius in world units (uRadiusPx / zoom)
-					let best = rWorld * rWorld;
-					for (const d of orbitMesh.dots) {
-						// Nearest lattice image of this base dot to the cursor: solve Δ = i·v1 + j·v2, round i,j.
-						const dx = hover.x - d.x, dy = hover.y - d.y;
-						const fi = (dx * v2y - dy * v2x) / det;
-						const fj = (dy * v1x - dx * v1y) / det;
-						const i = Math.round(fi), j = Math.round(fj);
-						const rx = dx - (i * v1x + j * v2x), ry = dy - (i * v1y + j * v2y);
-						const dist2 = rx * rx + ry * ry;
-						if (dist2 < best) { best = dist2; hoveredOrbit = d.orbit; }
-					}
-				}
-				const scales = orbitScalesRef.current;
-				if (scales.length !== k) { scales.length = k; scales.fill(1); }
-				const arr = new Float32Array(ORBIT_MAX).fill(1);
-				for (let o = 0; o < k; o++) {
-					const target = o === hoveredOrbit ? ORBIT_HOVER_GROW : 1;
-					const dd = target - scales[o];
-					scales[o] = Math.abs(dd) < 0.01 ? target : scales[o] + dd * ORBIT_HOVER_DAMP;
-					if (o < ORBIT_MAX) arr[o] = scales[o];
-				}
+				const hoveredOrbit = hoveredOrbitAt(
+					orbitMesh.dots,
+					getOrbitHoverWorld(),
+					mesh.v1,
+					mesh.v2,
+					mesh.det,
+					ctrl.zoom,
+				);
+				const arr = stepOrbitScales(orbitScalesRef.current, k, hoveredOrbit, ORBIT_MAX);
 
 				g.enable(g.BLEND);
 				g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
@@ -531,7 +504,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.uniform2f(OU.uV1, mesh.v1[0], mesh.v1[1]);
 				g.uniform2f(OU.uV2, mesh.v2[0], mesh.v2[1]);
 				g.uniform2f(OU.uHalf, w / 2, h / 2);
-				g.uniform1f(OU.uRadiusPx, 4); // p5 drew an 8px-diameter orbit dot (8/zoom world units)
+				g.uniform1f(OU.uRadiusPx, ORBIT_DOT_RADIUS_PX); // p5 drew an 8px-diameter orbit dot
 				g.uniform1f(OU.uK, k);
 				g.uniform1fv(OU.uOrbitScale, arr);
 				g.drawArraysInstanced(g.TRIANGLES, 0, orbitMesh.vertexCount, instRef.current.count);

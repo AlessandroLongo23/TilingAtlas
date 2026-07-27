@@ -3,7 +3,8 @@ import {
 	ZOOM_MIN,
 	ZOOM_MAX,
 	ZOOM_RESET,
-	ZOOM_WHEEL_FACTOR,
+	ZOOM_CARD_FACTOR,
+	ZOOM_CARD_PX_PER_NOTCH,
 	ROTATE_PX_PER_STEP,
 	accumulateDetents,
 	defaultZoomForCell,
@@ -46,8 +47,9 @@ describe("zoomAtPoint", () => {
 		const mouse = { x: 40, y: -25 };
 		const off = { x: 7, y: -3 };
 		const z0 = 60;
-		const { zoom, offset } = zoomAtPoint(mouse, off, z0, -1); // zoom in
-		expect(zoom).toBeCloseTo(z0 * ZOOM_WHEEL_FACTOR, 12);
+		// One mouse-wheel notch in, expressed as normalized scroll px.
+		const { zoom, offset } = zoomAtPoint(mouse, off, z0, -ZOOM_CARD_PX_PER_NOTCH);
+		expect(zoom).toBeCloseTo(z0 * ZOOM_CARD_FACTOR, 12);
 		// The world point under the mouse before must land on the mouse after.
 		const worldX = (mouse.x - off.x) / z0;
 		const worldY = (mouse.y - off.y) / z0;
@@ -56,12 +58,31 @@ describe("zoomAtPoint", () => {
 	});
 
 	it("clamps at the zoom bounds without moving the view", () => {
-		const atMax = zoomAtPoint({ x: 10, y: 10 }, { x: 0, y: 0 }, ZOOM_MAX, -1);
+		const px = ZOOM_CARD_PX_PER_NOTCH;
+		const atMax = zoomAtPoint({ x: 10, y: 10 }, { x: 0, y: 0 }, ZOOM_MAX, -px);
 		expect(atMax.zoom).toBe(ZOOM_MAX);
 		expect(atMax.offset).toEqual({ x: 0, y: 0 }); // unchanged zoom -> unchanged offset
-		const atMin = zoomAtPoint({ x: 10, y: 10 }, { x: 0, y: 0 }, ZOOM_MIN, 1);
+		const atMin = zoomAtPoint({ x: 10, y: 10 }, { x: 0, y: 0 }, ZOOM_MIN, px);
 		expect(atMin.zoom).toBe(ZOOM_MIN);
 		expect(atMin.offset).toEqual({ x: 0, y: 0 });
+	});
+
+	// The reason the card's zoom is a function of scroll DISTANCE and not of wheel-event count: a
+	// trackpad fires dozens of small events per gesture, and a per-event step sent the view to the
+	// clamp in a flick.
+	it("scales by distance, so many small deltas equal one big one", () => {
+		const start = { x: 0, y: 0 };
+		const big = zoomAtPoint({ x: 0, y: 0 }, start, 50, -200).zoom;
+		let z = 50;
+		for (let i = 0; i < 25; i++) z = zoomAtPoint({ x: 0, y: 0 }, start, z, -8).zoom;
+		expect(z).toBeCloseTo(big, 10);
+		expect(big).toBeCloseTo(50 * ZOOM_CARD_FACTOR ** 2, 10); // 200px = two notches
+	});
+
+	it("does nothing on a zero delta", () => {
+		const r = zoomAtPoint({ x: 12, y: -4 }, { x: 3, y: 5 }, 77, 0);
+		expect(r.zoom).toBe(77);
+		expect(r.offset).toEqual({ x: 3, y: 5 });
 	});
 });
 

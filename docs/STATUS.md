@@ -3,8 +3,44 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-07-11, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-07-27, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## The tree holds seven unrelated pieces of work, all UNCOMMITTED (2026-07-27)
+
+Everything below this line is in the working tree, nothing is committed, and it wants splitting into
+separate commits: hollow engine, landing wall, hexagon corpora, hyperbolic bases, overlay refactor +
+aperiodic patches, `/defense`, ring sweep. `pnpm build` clean; `pnpm test` 1569 pass, 1 timeout in
+`tests/star-general-path.test.ts` (that file is untouched here — it takes 180 s and timed out under
+load). `pnpm docs:check` fails on 5 broken links, all 5 already in committed SYNC entries.
+
+⚑ **`public/` is 669 MB, 504 MB of it tracked.** `hex-solutions-k9.json` alone is 56 MB for one array
+entry. Nothing is broken by it; it is the next thing to get expensive.
+
+## Three clusters were backfilled into the ledgers (2026-07-27, NOTES ×3)
+
+They had shipped with no entry anywhere. Symmetry overlays now draw through a `Pen` interface
+(`lib/render/overlayPen.ts`) so one implementation serves /play's p5 canvas and the preview cards' 2-D
+layer — the old `canvas-overlays` module under `components/` is deleted; Penrose and the hat arrive as
+finite patches with measured clean windows. `/defense` is an unlisted `force-static` `noindex` route outside the `(app)`
+group, 40 slides from one markdown file with live atlas cards. The ring sweep answers the taxonomy
+audit's unstated claim: 7-, 11-, 13-, 17-, 19- and 23-fold stars tile nothing at k ≤ 2, but **16-fold
+does** (4 star-bearing at k=1, 2 at k=2) — an order no shipped palette reaches.
+⚑ Ring D=42 was interrupted mid-solve; it is the one that would separate 7-fold-with-triangles from the
+D=28 result. Re-run before the sweep is called complete.
+
+## The landing wall is live (2026-07-26, NOTES §"three geometry cells go live") — UNCOMMITTED
+
+The Play, Hyperbolic and Spherical cells on `/` render the real /play canvases instead of baked
+thumbnails, with /play's controls. Each is inert until clicked, so the page still scrolls under an
+untouched card; the card's link moved from the whole frame to the caption block, since a drag inside
+an anchor navigates on release (`CollectionCard.interactive`). New shared pieces:
+`lib/hooks/useFlatCellPreview.ts` (extracted from the /theory preview card, now used by both),
+`useCardActivation`, `useInViewMount`; `HyperbolicDevelopedCanvas` takes an optional per-instance
+`input` so an embedded disk never steers /play's global controls. The landing's 9.9 MB fetch of
+`hyperbolic-developed.json` is gone — the pool's 64 records are inlined at build time.
+⚑ A client-side back-navigation from /play with Islamic mode on still renders the landing sphere as a
+star pattern: `SphericalCanvas` reads look flags from the global store, as every thumbnail does.
 
 ## Knowledge model (read once, then follow it)
 
@@ -19,6 +55,145 @@ Two tiers. Do not mix them.
   - `SYNC.md` — CC⇄TA handoff log. Entries **3–6 lines**: what landed + commit + ledger link.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
+
+## The hexagonal grid lands: {6,3} edge systems and 3-colorings (2026-07-25, NOTES §98) — UNCOMMITTED
+
+★★ **The Euclidean decoration shelves now cover all three regular grids.** The honeycomb is a lattice with
+a two-point basis, not a lattice (inside ℤ + ℤω only (a + b) mod 3 ∈ {0,1} are hexagon corners), so the
+per-coset bitmask has nothing to index and the grid takes the **ts patch path** instead: one `GRIDS` row
+per decoder plus `is_patch_grid()` in place of three `grid == "ts"` tests. **72,039 certificates, 0 develop
+failures**, every k reproducing Marek's counts — edges 36,062 (k≤9), colorings 23,977 (19,975 surjective,
+k≤8, no k=2 row: all twelve k=2 certificates use ≤2 colors). Anchor = the digon-free slice, exactly 1
+certificate, the plain {6,3} tiling. Regressions hold: square edges `BIJECTION` 1420/1420, ts 3-colorings
+byte-identical. New words on this board: **polyhex** beside polyomino / polyiamond / polyform.
+⚑ **First lazy shards on the Euclidean decoration shelves** (`loadFreedrawShardsForK` /
+`loadColorsShardsForK`, composable-shard shape). Eager = edges k≤6 + colorings k≤5 (4.9 MB); lazy = edges
+k7/8/9 and colorings k6/7/8 (123.6 MB). **`public/` 522 → 676 MB** — dropping `hex-solutions-k9.json`
+alone returns 58 MB and costs one array entry. Both corpora ship as `candidate`.
+
+## Marek's 2026-07-25 drop: 4 new hyperbolic color bases in, 2 hexagon corpora NOW DONE (NOTES §96, §98)
+
+★★ **The colors class goes from 2 hyperbolic bases to 6.** `hexagons_edges.zip` + `07-25_colors.zip`
+extracted to `materials/corpora/` (six corpora, 127,584 certificates; Marek's own `results_2026-07-25.txt`
+k-counts reproduce exactly from the certificate files). Shipped {8,3} {5,4} {6,4} {4,5}: four rows in
+`develop_hyp_colors.BASES` were the whole decoder change, since `alphabet()` already solves ℓ from (p, q).
+67,545 certificates decoded in 74 s, **0 develop failures**, 46,548 surjective colorings, every k Marek
+solved. 2.6 MB eager + 29.8 MB lazy (`public/hyperbolic-colors/` 16 → 47 MB). `HYP_COLORS_BASES` drives
+the loader, /library k-chips and /play deep links, so the app change is 4 rows there + 4 labels in
+`catalogue-list-panel.tsx`. Verified in the running app at `hc45-1`, `hc64-2`, `hc83-5`, the lazy
+`hc45-2` deep link, and /library `geo=hyperbolic&dec=colorings&k=4` (1,424 cards = 512 + 906 + 6). ⚑ {5,4}
+starts at k=2 on purpose: three colors need ≥2 colored vertex classes there.
+✓ **The two hexagon corpora are no longer parked** — decoded and shipped the same day; see the section
+above. The hunch recorded here (steps embed in ℤ + ℤω like `TR_STEP`) was right about the embedding and
+wrong about the consequence: `emit_pattern` demands every coset be a vertex, and a third of them are not.
+⚑ **This work is UNCOMMITTED**, in the same shared tree as the mixed-shelf merge below.
+
+## The 30/150 rhombus: 12 new mixed families, 71 → 83 (2026-07-25, NOTES §97) — UNCOMMITTED
+
+★★ **AL was right and I was wrong.** One palette line (`cx4-30.150`, angles [2,10,2,10]) takes the k=1
+mixed export from 19 families to 33 — **12 net new** after two turn out congruent to shipped ones. My
+objection (α ∈ (0°,60°) is a proven range, so the rhombus is already in there) confused the *validity* of a
+found family with the *discoverability* of one: families are recognised from DISCRETE seeds on the D=24 grid,
+so a topology whose only discrete realisation sits at an unrepresented α is unreachable. Visible in the data
+— 11 of the 12 have α ∈ (0°,60°), and the pre-existing 4-gon seeds (60/120, 75/105) both sit outside it.
+Base arm reproduced the shipped 19 **byte-identical**, so the delta is clean. Shipped: 83 entries (k=1
+15 → 27), each re-verified through the app's own `evaluateParamCell` (Σ area == |det| at 5 α samples).
+`scripts/stabilize-family-ids.mjs` keeps shipped ids and default α stable across the re-export.
+⚑ `maxValence=8` is an **incomplete** regime here (twelve 30° rhombus corners = a real 360° vertex a
+valence-8 word cannot express) ⇒ **12 is a lower bound**. k=2 not run with the rhombus. 45/135 and 15/165
+still unseeded. No new JOINs — the 12 are self-contained arcs.
+⚑ **Provenance bug:** `make PALETTE=isotoxal-star-z24` does not reproduce the shipped tables —
+`EU_PRUNE_OVERLAP=1` is never set by the Makefile, so a rebuild silently yields 285,899 vertexdefs against
+the shipped 34,329. The flag belongs in the palette JSON.
+⚑ **UNCOMMITTED, and blocked on the merge pass**: the rebuilt `public/reference-atlas-mixed.json` carries
+`segments`, which only the uncommitted `lib/utils/paramCell.ts` understands. Commit the merge sources first.
+
+## Decoration axis shipped (2026-07-25, NOTES §95)
+
+★★ **The shelf now says what kind of thing each row is.** `Decoration = tilings | edges | colorings` sits
+between geometry and tile class, present in all three geometries — a second segmented row on /play, a "Kind"
+chip wall on /library. It deletes two workarounds for the same missing axis: /library's non-Euclidean class
+relabeling (`NONEUC_CLASS_LABEL`) and the geometry-as-tile-class conflation behind /play's `single` collapse.
+Derived from `tileClassOf`, so no atlas JSON was rebuilt. Euclidean reads 10,384 tilings / 112,499 edge
+patterns / 226,337 colorings; hyperbolic 28,453 / 13,703 / 3,424 — all nine cells populated, which is the
+evidence the axes are orthogonal. Islamic stays under Tilings (its 192 entries are tessellations; the
+strapwork is an overlay), though it is the one shelf of the eight that is transcribed, not enumerated.
+Old `class=freedraw` / `class=colors` links promote to `dec=edges` / `dec=colorings`.
+Spec: `superpowers/specs/2026-07-25-decoration-axis-design.md`.
+⚑ Next: fold the shape axis itself onto the period `p` (TILE_TAXONOMY §9), which is the other half of §3.
+
+## Six entries were one 2-parameter family: the coupled families land, 87 → 83 (2026-07-26, NOTES §103)
+
+★★ **AL, on k2-45/k2-46/k2-50: "the same tiling, just with a different angle for the rhombus and the star."**
+Right, and it is SIX entries: `{k2-45, k2-46, k2-47, k2-49, k2-50, k2-57}` are one 2-parameter family. All
+three records already said **flexdim 2, P 1, separable False** — the exporter gives a species its own slider
+only when it flexes ALONE, and here they are coupled (t = r + s − 8 in 15° units, two free and the third
+determined), so it develops one direction: a 1-D line through whichever grid member it started from, keyed
+as its own family because the pinned angle enters the key. Developing the coupled family directly (the
+exporter's own `develop_multi`, qeff from the full null-space basis) puts k2-50's seed at δ=(−1,−2) of
+k2-45's family with Σarea = |det| = 8.929405237 — identical to nine decimals, isometry-confirmed.
+**12 coupled records → 5 families**, 9 of which shipped. The four slice lines sit at 6-star angles {6,5,4,2}
+units, exactly the palette's `{6*6, 6*5, 6*4, 6*2}`; the gap at `6*3` (45°) tiles, as do half-integer values.
+So this is §102 one dimension up and it is an UNDERCOUNT, not redundancy: a 2-D continuum shown as four lines.
+**Shipped (AL chose the 2-D pad):** mixed 87 → **83**, five entries with a real 2-parameter cell and a
+polytope region. Axes are species-aligned, so k2-45's read "rhombus" and "3-pointed star". Old links keep
+working — each absorbed slice carries its seat AND the direction its slider pointed, derived from the
+shipped record. `components/param-region-pad.tsx` draws the polygon; `clampToRegion` projects any outside
+point back in, so the pointer cannot reach an uncertified cell (verified by driving it).
+⚑ The region model first doubled star vertex counts (a 3-pointed star IS a hexagon), letting an angle reach
+300° where 240° is the maximum — the tests caught it via a self-intersecting tile. Corrected: V ↦ 24 − 48/V.
+⚑ Next: same measurement on the isotoxal shelf; the Command-drag scrub does not yet clamp to the polytope.
+
+## The α ranges were truncated: 41 mixed families widened, 3,015° of new sweep (2026-07-25, NOTES §102)
+
+★★ **The exporter clipped every family where a tile's SPECIES changed, not where the tiling stopped.** AL,
+from `/play` on k2-01: "nothing prevents the rhombus from shrinking even more and the triangle from becoming
+a concave star. Eventually, when the rhombus disappears at 0°, they would become the star tiling k2-14."
+All of it holds — the cell keeps tiling below 30° (covering multiplicity 1 on 300/300 samples), the rhombus
+reaches zero area at exactly α=0, and that limit is congruent to shipped `ctrnact-star-k2-14` by explicit
+isometry (139/139 cloud points). k2-01 now runs **(0°, 180°)** instead of (30°, 150°).
+Census `scripts/scan-family-ranges.py`: **41 of 98 mixed families truncated, 3,015° gross** (2,235° net of
+folded replay); every true range ends at a tile COLLAPSE on both sides. **18 of the 41** have no on-palette
+grid configuration in the new arc, so the solver cannot supply it under another id — those tilings were
+absent from the atlas outright. Blockers are palette gaps: `cx4-15.165` (18 families), `cx4-30.150` (13),
+`cx4-45.135` (9), stars `3*45`, `4*75`, `6*15`. `isotoxal-star-z24` has cx4 at only 60.120/75.105 and 15 of
+~33 grid-legal star species.
+**This retires the merge machinery for concavity cuts.** All 6 shipped merges were the analytic continuation
+of their own primary, so widening absorbs each partner as a plain duplicate: **0 merges, 11 aliases, same 87
+entries, no segments** — one analytic cell, no seam, no pose, no star-flag unification. `segments` stays in
+the code for a genuine branch point (AL's k2-56 case), where the branches are NOT one analytic arc.
+Also found: **12 folded sliders** (6 rotation, 6 reflection) where α and c−α are the same tiling. Kept at
+full sweep per AL, with the centre marked as a tick on the slider (`foldCentreDeg`).
+⚑ **Two of my own primitives were wrong** and both are fixed: the radial patch fingerprint is only
+NECESSARY for congruence (now confirmed by explicit isometry in both censuses — a false positive there
+DELETES a tiling), and that isometry anchored on the first largest tile, which fails when a cell has several
+largest-tile orbits (k2-05 has 9). The duplicate scan's family-label and equal-length prefilters are also
+gone: a widened family carries a different label on each side of the cut.
+⚑ Next: the isotoxal shelf (3,527 entries) has the same defect at ~36× scale, and its continuations carry
+star tiles a convex-only shelf cannot express — AL deferred it as a taxonomy question. A prior session's
+`scripts/probe-concave-extension.ts` independently agrees: 4 of 14 isotoxal k=1 families extend, k1-01 by
++119.8°. Then push widening upstream into `export_combined_families.py`, and re-measure the 2-parameter
+census with both fixes.
+
+## Mixed shelf merged (2026-07-25, NOTES §92–§94) — SUPERSEDED by §102 above
+
+★★ **79 mixed entries → 71, each a single continuous sweep** (counts pre-rhombus; the shelf is 83 after
+the 30/150 re-export above, still with the same 6 merged arcs). AL spotted that k2-58/k2-59 are two halves
+of one deformation, cut where the flexing tile's alternating vertex crosses 180° (concave star ↔ convex
+2n-gon). Census `scripts/scan-family-joins.py`: 6 mergeable arcs (all clean 2-paths) + 2 α-reversal
+duplicates. Merge criterion is AL's — the branch that continues the family is the one with the SAME
+rigid/flexing tile partition; congruence of the limit tiling alone is not enough (3 branches meet at the
+k2-58 limit). Merged slider = `theta` (the flexing tile's alternating angle, join at 180°) on 3 arcs,
+`sweep` (cumulative angle) on 3 where several orbits straighten from different sides. Seam pose and star
+flags are baked at build time so nothing jumps or changes colour at the join.
+**Committed on `feat/subrosa-editor`: the merge SOURCES only** — `paramCell.ts` (`segments`), the scanner,
+the builder, the alias resolver + table, the slider label, the spec and the test. This is what §97 above was
+blocked on. Deliberately NOT in that commit: `public/reference-atlas-mixed.json` and
+`experiments/results/mixed-atlas-build.log`, which now carry the 30/150 rhombus re-export and belong with
+it — at the merge commit the shipped shelf is still HEAD's unsegmented 79, which the segment-aware evaluator
+reads unchanged. Spec: `superpowers/specs/2026-07-25-mixed-family-merge-design.md`.
+⚑ Next: same sweep on the isotoxal/composable/scaled shelves, then move the merge upstream into
+`export_combined_families.py` so the searcher emits merged families directly.
 
 ## Frontier (2026-07-23) — the hyperbolic shelf on exact identity
 

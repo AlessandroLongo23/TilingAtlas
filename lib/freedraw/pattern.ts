@@ -24,14 +24,20 @@
 //   U(x,y) has corners (x,y), (x+1,y), (x,y+1);   D(x,y) has corners (x+1,y), (x,y+1), (x+1,y+1);
 //   the two share the w edge based at (x, y+1).
 
-export type FreedrawGrid = "square" | "triangle" | "ts";
+export type FreedrawGrid = "square" | "triangle" | "ts" | "hex";
 
 /**
- * COMBINED GRID (grid: "ts"): squares and triangles mixed, so there is NO fixed lattice to index a
- * bitmask into — the underlying square-triangle tiling varies per solution. The developer
- * (tools/ctrnact-oracle/develop_freedraw.py --grid ts) emits explicit geometry instead: one period
- * of vertices, edges and polygon faces, each endpoint a (vertex index, integer T1/T2 offset) pair.
- * A record with `patch` carries 1x1 dummy lattice fields so the bitmask type stays total.
+ * PATCH GRIDS (grid: "ts" and "hex"): no bitmask, explicit geometry instead. The developer
+ * (tools/ctrnact-oracle/develop_freedraw.py --grid ts|hex) emits one period of vertices, edges and
+ * polygon faces, each endpoint a (vertex index, integer T1/T2 offset) pair. A record with `patch`
+ * carries 1x1 dummy lattice fields so the bitmask type stays total.
+ *
+ * Two different reasons for the same representation. The COMBINED grid ("ts", squares and triangles
+ * mixed) has no fixed lattice at all: the underlying square-triangle tiling varies per solution. The
+ * HEXAGONAL grid ("hex", {6,3}) has a fixed geometry, but its vertex set is a honeycomb rather than a
+ * lattice — inside the unit triangular lattice ℤ + ℤω only the points with (a + b) mod 3 ∈ {0, 1} are
+ * hexagon corners, two thirds of it — so a per-coset bitmask has no consistent index. Face rank 0 on
+ * the hexagonal grid is a POLYHEX, the hexagonal sibling of polyomino / polyiamond / polyform.
  */
 export interface FreedrawPatch {
 	/** Period translations, world coordinates. */
@@ -78,6 +84,37 @@ export interface FreedrawPattern {
 }
 
 export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? "square";
+
+/**
+ * The shipped edge-system catalogues. `eager` loads with the atlas; `lazyKs` are the dense tails,
+ * fetched only when that k comes into view (freedrawLazyShardsForK), the policy the hyperbolic bases
+ * and the higher-k Čtrnáct shards already use. The hexagonal grid is the only one deep enough to need
+ * it — Marek solved it to k=9, where one slice is 22,361 patterns / 58 MB.
+ */
+export const FREEDRAW_EAGER_FILES = [
+	"/freedraw/solutions.json",
+	"/freedraw/solutions-k4.json",
+	"/freedraw/solutions-k5.json",
+	"/freedraw/tri-solutions.json",
+	"/freedraw/tri-solutions-k4.json",
+	"/freedraw/ts-solutions-k1.json",
+	"/freedraw/ts-solutions-k2.json",
+	"/freedraw/ts-solutions-k3.json",
+	"/freedraw/hex-solutions-k1.json",
+	"/freedraw/hex-solutions-k2.json",
+	"/freedraw/hex-solutions-k3.json",
+	"/freedraw/hex-solutions-k4.json",
+	"/freedraw/hex-solutions-k5.json",
+	"/freedraw/hex-solutions-k6.json",
+];
+
+/** Hexagonal-grid k slices that load on demand: k=7 (6.4 MB), k=8 (17.6 MB), k=9 (58 MB). */
+export const FREEDRAW_HEX_LAZY_KS = [7, 8, 9];
+
+/** Lazy (url, k) shards to fetch when vertex-count `k` comes into view. */
+export function freedrawLazyShardsForK(k: number): { url: string; k: number }[] {
+	return FREEDRAW_HEX_LAZY_KS.includes(k) ? [{ url: `/freedraw/hex-solutions-k${k}.json`, k }] : [];
+}
 
 export const cosetCount = (p: Pick<FreedrawPattern, "a" | "d">) => p.a * p.d;
 

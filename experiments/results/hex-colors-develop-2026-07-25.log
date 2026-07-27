@@ -1,0 +1,46 @@
+[17:03:29] parsed 23977 certificate blocks from ../../materials/corpora/hexagons_3_colors (grid hex, 3 colors, alphabet ['A6', 'B6', 'C6'])
+[17:03:31]   developed 2000/23977  (2s, ETA 18s)
+[17:03:32]   developed 4000/23977  (3s, ETA 16s)
+[17:03:34]   developed 6000/23977  (5s, ETA 14s)
+[17:03:36]   developed 8000/23977  (6s, ETA 13s)
+[17:03:37]   developed 10000/23977  (8s, ETA 11s)
+[17:03:39]   developed 12000/23977  (10s, ETA 10s)
+[17:03:40]   developed 14000/23977  (11s, ETA 8s)
+[17:03:42]   developed 16000/23977  (13s, ETA 7s)
+[17:03:44]   developed 18000/23977  (15s, ETA 5s)
+[17:03:46]   developed 20000/23977  (16s, ETA 3s)
+[17:03:48]   developed 22000/23977  (18s, ETA 2s)
+[17:03:49] developed 23977/23977 blocks, 0 with disagreeing table variants
+[17:03:49] blocks per k (main): {1: 10, 2: 12, 3: 153, 4: 254, 5: 612, 6: 2585, 7: 5072, 8: 14715}
+[17:03:49] blocks per k (o):    {1: 0, 2: 0, 3: 6, 4: 0, 5: 24, 6: 54, 7: 330, 8: 150}
+[17:03:49] blocks using 1 color(s): {1: 3} = 3
+[17:03:49] blocks using 2 color(s): {1: 6, 2: 12, 3: 90, 4: 99, 5: 252, 6: 702, 7: 1056, 8: 1782} = 3999
+[17:03:49] blocks using 3 color(s): {1: 1, 3: 69, 4: 155, 5: 384, 6: 1937, 7: 4346, 8: 13083} = 19975
+[17:03:49] surjective filter: 19975/23977 use all 3 colors (the rest re-embed the smaller catalogues)
+[17:04:16] parsed 23977 certificate blocks from ../../materials/corpora/hexagons_3_colors (grid hex, 3 colors, alphabet ['A6', 'B6', 'C6'])
+[17:04:18]   developed 2000/23977  (2s, ETA 18s)
+[17:04:19]   developed 4000/23977  (3s, ETA 16s)
+[17:04:21]   developed 6000/23977  (5s, ETA 14s)
+[17:04:23]   developed 8000/23977  (7s, ETA 13s)
+[17:04:24]   developed 10000/23977  (8s, ETA 11s)
+[17:04:26]   developed 12000/23977  (10s, ETA 10s)
+[17:04:28]   developed 14000/23977  (12s, ETA 8s)
+[17:04:30]   developed 16000/23977  (13s, ETA 7s)
+[17:04:31]   developed 18000/23977  (15s, ETA 5s)
+[17:04:33]   developed 20000/23977  (17s, ETA 3s)
+[17:04:35]   developed 22000/23977  (19s, ETA 2s)
+[17:04:37] developed 23977/23977 blocks, 0 with disagreeing table variants
+[17:04:37] blocks per k (main): {1: 10, 2: 12, 3: 153, 4: 254, 5: 612, 6: 2585, 7: 5072, 8: 14715}
+[17:04:37] blocks per k (o):    {1: 0, 2: 0, 3: 6, 4: 0, 5: 24, 6: 54, 7: 330, 8: 150}
+[17:04:37] blocks using 1 color(s): {1: 3} = 3
+[17:04:37] blocks using 2 color(s): {1: 6, 2: 12, 3: 90, 4: 99, 5: 252, 6: 702, 7: 1056, 8: 1782} = 3999
+[17:04:37] blocks using 3 color(s): {1: 1, 3: 69, 4: 155, 5: 384, 6: 1937, 7: 4346, 8: 13083} = 19975
+[17:04:37] surjective filter: 19975/23977 use all 3 colors (the rest re-embed the smaller catalogues)
+[17:04:37] wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hexcolors/hex-3-k1.json: 1 colorings, 0.00 MB
+[17:04:37] wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hexcolors/hex-3-k3.json: 69 colorings, 0.10 MB
+[17:04:37] wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hexcolors/hex-3-k4.json: 155 colorings, 0.22 MB
+[17:04:37] wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hexcolors/hex-3-k5.json: 384 colorings, 0.56 MB
+[17:04:37] wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hexcolors/hex-3-k6.json: 1937 colorings, 4.29 MB
+[17:04:38] wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hexcolors/hex-3-k7.json: 4346 colorings, 8.78 MB
+[17:04:41] wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hexcolors/hex-3-k8.json: 13083 colorings, 28.57 MB
+[17:04:41] total distinct colorings by k: {1: 1, 3: 69, 4: 155, 5: 384, 6: 1937, 7: 4346, 8: 13083}

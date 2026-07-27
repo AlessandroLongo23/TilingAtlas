@@ -10,7 +10,17 @@ import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { MAX_FILL_RADIUS } from "@/lib/render/flatView";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 
-export function buildTilingFromCell(cellData: TranslationalCellData, Ri: number, Rj: number, orbitData?: OrbitData | null): Tiling {
+export function buildTilingFromCell(
+	cellData: TranslationalCellData,
+	Ri: number,
+	Rj: number,
+	orbitData?: OrbitData | null,
+	/** A previously built grid to overwrite IN PLACE instead of allocating a new one. Only used when its
+	 *  node count and every node's shape still match, so the result is identical either way — see the
+	 *  reuse block below. Pass null (or omit) whenever anything else still holds the old grid: the
+	 *  selection transition keeps the outgoing tiling on screen, and mutating that would corrupt it. */
+	reuse?: Tiling | null,
+): Tiling {
 	const ri = Math.max(1, Math.min(MAX_FILL_RADIUS, Ri || 1));
 	const rj = Math.max(1, Math.min(MAX_FILL_RADIUS, Rj || 1));
 	const polyArray = cellData.p ?? cellData.cellPolygons ?? [];
@@ -56,6 +66,44 @@ export function buildTilingFromCell(cellData: TranslationalCellData, Ri: number,
 			const d = Math.hypot(vv.x - c.x, vv.y - c.y);
 			if (d > maxRadius) maxRadius = d;
 		}
+	}
+
+	// Rebuild INTO the previous grid when it is the same shape — same tile count, same polygon degrees,
+	// same vertex counts. A parametric slider only moves coordinates, so that is the common case, and it
+	// turns ~180 000 allocations per tick at minimum zoom into a pass of coordinate writes (see
+	// GenericPolygon.setToTranslated). The check is O(nodes) with trivial work, against O(nodes)
+	// allocations, and any mismatch falls through to the fresh build below with identical output.
+	const cellCount = (2 * ri + 1) * (2 * rj + 1);
+	const wanted = cellCount * basePolys.length;
+	let target: Tiling | null = null;
+	if (reuse && reuse.nodes.length === wanted && basePolys.length > 0) {
+		target = reuse;
+		for (let idx = 0; idx < wanted; idx++) {
+			const dst = reuse.nodes[idx];
+			const src = basePolys[idx % basePolys.length];
+			if (
+				!(dst instanceof GenericPolygon) ||
+				dst.n !== src.n ||
+				dst.vertices.length !== src.vertices.length ||
+				dst.halfways.length !== src.halfways.length
+			) { target = null; break; }
+		}
+	}
+
+	if (target) {
+		let idx = 0;
+		for (let i = -ri; i <= ri; i++) {
+			for (let j = -rj; j <= rj; j++) {
+				const ox = i * v1x + j * v2x;
+				const oy = i * v1y + j * v2y;
+				for (const base of basePolys) {
+					(target.nodes[idx] as GenericPolygon).setToTranslated(base, ox, oy);
+					idx++;
+				}
+			}
+		}
+		target.maxRadius = maxRadius;
+		return target;
 	}
 
 	for (let i = -ri; i <= ri; i++) {

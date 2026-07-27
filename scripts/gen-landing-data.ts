@@ -17,6 +17,7 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { buildLandingPayload, drawableEuclidean, toSpecimen } from "@/lib/services/landing-core";
+import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
 // The same eager set loadReferenceAtlas fetches client-side for /library, minus the lazy k≥8 shards,
@@ -35,6 +36,7 @@ const EAGER_ATLAS_FILES = [
 ];
 
 const PAYLOAD_OUT = path.join(process.cwd(), "lib", "services", "landing-data.generated.json");
+const DEVELOPED_PATCHES_IN = path.join(process.cwd(), "public", "hyperbolic-developed.json");
 const HERO_INDEX_OUT = path.join(process.cwd(), "public", "hero-index.json");
 const HERO_CELLS_DIR = path.join(process.cwd(), "public", "hero-cells");
 
@@ -65,11 +67,33 @@ async function writeInBatches(entries: [string, string][], batch = 256): Promise
 	}
 }
 
+// The developed records for the Hyperbolic card's pool, keyed by patch id. Inlining them (~350 bytes
+// each) is what lets the landing page render its Poincaré disk without fetching all 28,453 records —
+// 9.9 MB — to read exactly one. Best-effort: a missing or unreadable catalogue leaves the field off
+// and the card falls back to the client fetch.
+async function hyperbolicPatchesFor(ids: string[]): Promise<Record<string, CataloguePatch> | undefined> {
+	if (ids.length === 0) return undefined;
+	let all: CataloguePatch[];
+	try {
+		all = JSON.parse(await readFile(DEVELOPED_PATCHES_IN, "utf8")) as CataloguePatch[];
+	} catch (e) {
+		console.warn(`landing: no developed patches inlined (${(e as Error).message})`);
+		return undefined;
+	}
+	const wanted = new Set(ids);
+	const out: Record<string, CataloguePatch> = {};
+	for (const p of all) if (wanted.has(p.id)) out[p.id] = p;
+	const missing = ids.filter((id) => !out[id]);
+	if (missing.length) console.warn(`landing: ${missing.length} pool patch(es) absent from the catalogue`);
+	return out;
+}
+
 async function main(): Promise<void> {
 	const atlas = await loadAtlas();
 
 	// 1. Bundled payload.
 	const payload = buildLandingPayload(atlas);
+	payload.hyperbolicPatches = await hyperbolicPatchesFor(payload.hyperbolicPool);
 	await writeFile(PAYLOAD_OUT, `${JSON.stringify(payload)}\n`, "utf8");
 
 	// 2 + 3. Full hero index + per-cell files.
@@ -88,7 +112,8 @@ async function main(): Promise<void> {
 	console.log(
 		`landing-data.generated.json: ${total} tilings → seed pool ${payload.euclideanPool.length}, ` +
 			`counts E${euclidean}/H${hyperbolic}/S${spherical}, play ${payload.play.id}, ` +
-			`hyp ${payload.hyperbolicPatch}, sph ${payload.sphericalSolid}`,
+			`hyp ${payload.hyperbolicPatch} (${Object.keys(payload.hyperbolicPatches ?? {}).length} records inlined), ` +
+			`sph ${payload.sphericalSolid}`,
 	);
 	console.log(
 		`hero: ${safe.length} per-cell files + index${skipped ? ` (${skipped} ids skipped: unsafe chars)` : ""}`,

@@ -18,6 +18,25 @@
   ctrnact-mixed-family-k1-17  3.4α.6*  P=1
   ctrnact-mixed-family-k1-18  6α.6*  P=1
   ctrnact-mixed-family-k1-19  4α.4*.8*  P=1
+  ctrnact-mixed-family-k1-20  4α.3*  P=1
+  ctrnact-mixed-family-k1-21  3.4α.3*  P=1
+  ctrnact-mixed-family-k1-22  4α.6α.3*  P=1
+  ctrnact-mixed-family-k1-23  4α.8α.3*  P=1
+  ctrnact-mixed-family-k1-24  4α.3*.6*  P=1
+  ctrnact-mixed-family-k1-25  4α.3*.4*.6*  P=1
+  ctrnact-mixed-family-k1-26  4α.6α.3*.6*  P=1
+  ctrnact-mixed-family-k1-27  4α.3*  P=1
+  ctrnact-mixed-family-k1-28  6.4α.3*  P=1
+  ctrnact-mixed-family-k1-29  4α.8α.3*.4*  P=1
+  ctrnact-mixed-family-k1-30  4α.6α.3*.6*  P=1
+  ctrnact-mixed-family-k1-31  4α.8α.4*  P=1
+  ctrnact-mixed-family-k1-32  4α.8α.4*  P=1
+  ctrnact-mixed-family-k1-33  4α.6α.4*.6*  P=1
+  ctrnact-mixed-family-k1-34  4α.3*  P=1
+  ctrnact-mixed-family-k1-35  4α.3*.4*  P=1
+  ctrnact-mixed-family-k1-36  4α.3*.4*  P=1
+  ctrnact-mixed-family-k1-37  4α.6α.3*  P=1
+  ctrnact-mixed-family-k1-38  4α.3*.6*  P=1
   ctrnact-mixed-family-k2-01  3.4α.6α.12*  P=1
   ctrnact-mixed-family-k2-02  6α.3*  P=1
   ctrnact-mixed-family-k2-03  6α.3*  P=1
@@ -78,4 +97,62 @@
   ctrnact-mixed-family-k2-58  4.4α.3*.6*  P=1
   ctrnact-mixed-family-k2-59  4.4α.6α.6*  P=1
   ctrnact-mixed-family-k2-60  3.4α.8α.8*  P=1
-  wrote 79 mixed families (0 skipped) → public/reference-atlas-mixed.json (392.4 KB), elapsed 0.01s
+
+  --- range plan: 42 entr(ies) ---
+  ctrnact-mixed-family-k1-02  (0, 90) → (0, 120)  +30.00°  off-palette: 12*45 4*75 6*15
+  ctrnact-mixed-family-k1-03  (60, 120) → (0, 120)  +60.00°  fold rotation @ 60°
+  ctrnact-mixed-family-k1-04  (90, 150) → (0, 150)  +90.00°
+  ctrnact-mixed-family-k1-05  (120, 180) → (120, 300)  +120.00°
+  ctrnact-mixed-family-k1-06  (90, 180) → (0, 180)  +90.00°  fold rotation @ 90°
+  ctrnact-mixed-family-k1-07  (60, 120) → (0, 150)  +90.00°  off-palette: 4*15 6*105
+  ctrnact-mixed-family-k1-14  (90, 180) → (90, 270)  +90.00°  fold rotation @ 180°
+  ctrnact-mixed-family-k1-15  (60, 180) → (0, 180)  +60.00°
+  ctrnact-mixed-family-k1-18  (60, 180) → (60, 240)  +60.00°
+  ctrnact-mixed-family-k1-19  (45, 90) → (45, 180)  +90.00°  off-palette: 8*105 8*120 8*60 8*75 cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-01  (30, 150) → (0, 180)  +60.00°  fold reflection @ 90°  off-palette: 3*45 cx4-15.165
+  ctrnact-mixed-family-k2-02  (90, 150) → (90, 240)  +90.00°  fold rotation @ 165°
+  ctrnact-mixed-family-k2-03  (60, 90) → (60, 180)  +90.00°  fold rotation @ 120°
+  ctrnact-mixed-family-k2-04  (60, 120) → (0, 120)  +60.00°  fold reflection @ 60°
+  ctrnact-mixed-family-k2-05  (60, 120) → (0, 120)  +60.00°
+  ctrnact-mixed-family-k2-06  (60, 120) → (0, 120)  +60.00°
+  ctrnact-mixed-family-k2-07  (0, 60) → (0, 240)  +180.00°  fold reflection @ 120°
+  ctrnact-mixed-family-k2-08  (60, 120) → (0, 120)  +60.00°  fold rotation @ 60°
+  ctrnact-mixed-family-k2-09  (60, 120) → (60, 180)  +60.00°  off-palette: cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-10  (60, 120) → (60, 240)  +120.00°  fold reflection @ 150°
+  ctrnact-mixed-family-k2-11  (30, 120) → (30, 180)  +60.00°  off-palette: cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-12  (60, 150) → (0, 150)  +60.00°
+  ctrnact-mixed-family-k2-14  (45, 135) → (45, 180)  +45.00°  off-palette: cx4-15.165 cx4-30.150
+  ctrnact-mixed-family-k2-15  (30, 120) → (30, 180)  +60.00°  off-palette: cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-36  (60, 150) → (0, 180)  +90.00°  off-palette: 4*75 cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-38  (30, 90) → (0, 90)  +30.00°  off-palette: 4*75 cx4-15.165
+  ctrnact-mixed-family-k2-39  (45, 90) → (0, 90)  +45.00°  off-palette: 4*75 cx4-15.165 cx4-30.150
+  ctrnact-mixed-family-k2-45  (30, 90) → (30, 180)  +90.00°
+  ctrnact-mixed-family-k2-46  (0, 90) → (0, 150)  +60.00°
+  ctrnact-mixed-family-k2-47  (45, 105) → (45, 180)  +75.00°
+  ctrnact-mixed-family-k2-48  (60, 120) → (0, 240)  +180.00°
+  ctrnact-mixed-family-k2-49  (0, 75) → (0, 135)  +60.00°
+  ctrnact-mixed-family-k2-50  (60, 120) → (60, 180)  +60.00°  off-palette: cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-51  (0, 120) → (0, 180)  +60.00°  off-palette: cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-53  (0, 180) unchanged  fold reflection @ 90°
+  ctrnact-mixed-family-k2-54  (0, 120) → (0, 180)  +60.00°  off-palette: 3*45 cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-55  (60, 180) → (0, 180)  +60.00°  off-palette: 3*45 cx4-15.165 cx4-30.150 cx4-45.135
+  ctrnact-mixed-family-k2-56  (0, 90) → (0, 120)  +30.00°  off-palette: 3*45 6*15
+  ctrnact-mixed-family-k2-57  (30, 90) → (0, 90)  +30.00°  off-palette: cx4-15.165
+  ctrnact-mixed-family-k2-58  (30, 90) → (30, 180)  +90.00°
+  ctrnact-mixed-family-k2-59  (0, 90) → (0, 150)  +60.00°
+  ctrnact-mixed-family-k2-60  (45, 135) → (0, 180)  +90.00°  fold reflection @ 90°  off-palette: 4*75 cx4-15.165 cx4-30.150
+  widened 41 range(s) by 3015.00° total; marked 12 fold centre(s)
+  pre-merge snapshot (98) → experiments/results/mixed-atlas-unmerged.json
+
+  --- merge plan: 0 merge(s), 11 alias(es) ---
+  absorbed 11 id(s): 0 merge partner(s) + 11 duplicate(s)
+  98 → 87 entries; alias table → lib/services/mergedFamilyAliases.json
+
+  --- coupled-family plan: 5 multi-parameter famil(ies) ---
+  ctrnact-mixed-family-k2-02  P=2  axes cx6-105.135 × 3*1  region 6-gon  absorbs (none)
+  ctrnact-mixed-family-k2-11  P=2  axes cx4-60.120 × 4*2  region 6-gon  absorbs 14
+  ctrnact-mixed-family-k2-36  P=2  axes cx4-60.120 × cx4-75.105  region 4-gon  absorbs (none)
+  ctrnact-mixed-family-k2-45  P=2  axes cx4-60.120 × 3*2  region 6-gon  absorbs 46, 47, 49, 50, 57
+  ctrnact-mixed-family-k2-54  P=2  axes cx4-60.120 × cx4-75.105  region 5-gon  absorbs 55
+  87 → 83 entries; coupled alias table → lib/services/coupledFamilyAliases.json
+  wrote 83 mixed families (0 skipped) → public/reference-atlas-mixed.json (458.9 KB), elapsed 0.15s

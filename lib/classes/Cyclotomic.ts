@@ -25,14 +25,32 @@ import { Vector } from "./Vector";
 
 /** Cyclotomic polynomials Φ_N as integer coefficient arrays (index = power of x), monic. */
 const PHI_POLY: Record<number, bigint[]> = {
+	// Φ₁₀ = x⁴ − x³ + x² − x + 1
+	10: [1n, -1n, 1n, -1n, 1n],
 	// Φ₁₂ = x⁴ − x² + 1
 	12: [1n, 0n, -1n, 0n, 1n],
+	// Φ₂₀ = x⁸ − x⁶ + x⁴ − x² + 1  (= Φ₁₀(x²); Sub Rosa n=5 lives in ℤ[ζ₂₀]: the boundary unit
+	// vectors sit at odd multiples of π/10, i.e. ζ₂₀ directions, not ζ₁₀)
+	20: [1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n],
 	// Φ₂₄ = x⁸ − x⁴ + 1
 	24: [1n, 0n, 0n, 0n, -1n, 0n, 0n, 0n, 1n],
+	// Sub Rosa ζ₄ₙ rings for EVEN n=4,8 (n=6 reuses Φ₂₄ above). Φ_{2^k} = x^{2^{k-1}} + 1, palindromic
+	// so the coefficient order is unambiguous.
+	// Φ₁₆ = x⁸ + 1
+	16: [1n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 1n],
+	// Φ₃₂ = x¹⁶ + 1
+	32: [1n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 1n],
+	// Sub Rosa ζ₄ₙ rings for odd n=7,9,11 (boundary vectors at odd multiples of π/(2n)):
+	// Φ₂₈ = Φ₁₄(x²) = x¹²−x¹⁰+x⁸−x⁶+x⁴−x²+1
+	28: [1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n],
+	// Φ₃₆ = Φ₁₈(x²) = x¹²−x⁶+1
+	36: [1n, 0n, 0n, 0n, 0n, 0n, -1n, 0n, 0n, 0n, 0n, 0n, 1n],
+	// Φ₄₄ = Φ₂₂(x²) = x²⁰−x¹⁸+x¹⁶−x¹⁴+x¹²−x¹⁰+x⁸−x⁶+x⁴−x²+1
+	44: [1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n],
 };
 
 /** Euler totient values for supported N (degree of Φ_N). */
-const PHI: Record<number, number> = { 12: 4, 24: 8 };
+const PHI: Record<number, number> = { 10: 4, 12: 4, 16: 8, 20: 8, 24: 8, 28: 12, 32: 16, 36: 12, 44: 20 };
 
 /**
  * The single shared ring for the current run. There is ONE arithmetic backend per run

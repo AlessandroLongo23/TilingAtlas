@@ -1,0 +1,29 @@
+solving 25 configurations at node_cap=20000
+
+  ok   3.3.3.3.3.3                d=1   k=1 convex (geometry only, not shelved)
+  ok   4.4.4.4                    d=1   k=1 convex (geometry only, not shelved)
+  ok   6.6.6                      d=1   k=1 convex (geometry only, not shelved)
+  ok   3.12.12                    d=1   k=1 convex (geometry only, not shelved)
+  ok   4.8.8                      d=1   k=1 convex (geometry only, not shelved)
+  ok   3.4.6.4                    d=1   k=1 convex (geometry only, not shelved)
+  ok   3.6.3.6                    d=1   k=1 convex (geometry only, not shelved)
+  ok   3.3.4.3.4                  d=1   k=1 convex (geometry only, not shelved)
+  ok   3.3.3.4.4                  d=1   k=1 convex (geometry only, not shelved)
+  ok   3.3.3.3.6                  d=1   k=1 convex (geometry only, not shelved)
+  ok   4.6.12                     d=1   k=1 convex (geometry only, not shelved)
+  ok   4.4.3/2.3/2.3/2            d=1   k=1 cells=6   faces=  48 GMS 1.2
+  ok   4.3/2.4.3/2.3/2            d=1   k=1 cells=6   faces=  31 GMS 1.4
+  ok   8.4/3.8/5                  d=1   k=1 cells=4   faces=  23 GMS 1.6
+  ok   8/3.8.8/5.8/7              d=0   k=1 cells=4   faces=  38 GMS 1.7
+  ok   4.8/5.8/5                  d=1   k=1 cells=4   faces=  23 GMS 1.8
+  ok   12.6/5.12/7                d=2   k=1 cells=4   faces=  32 GMS 1.12
+  ok   6.4/3.12/7                 d=1   k=1 cells=6   faces=  36 GMS 1.13
+  ok   3/2.12.6.12                d=2   k=1 cells=4   faces=  22 GMS 1.15
+  ok   4.12.4/3.12/11             d=0   k=2 cells=8   faces=  54 GMS 1.16
+  ok   4.3/2.4.6/5                d=-1  k=1 cells=6   faces=  37 GMS 1.17
+  ok   12/5.3.12/5.6/5            d=-2  k=1 cells=4   faces=  28 GMS 1.18
+  ok   12/5.4.12/7.4/3            d=0   k=2 cells=8   faces=  54 GMS 1.19
+  ok   12/5.12.12/7.12/11         d=0   k=2 cells=4   faces= 130 GMS 1.21
+  ok   12/5.12/5.3/2              d=-1  k=1 cells=9   faces=  40 GMS 1.22
+
+shelved 14 entries -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/public/reference-atlas-hollow.json

@@ -1,0 +1,19 @@
+hyperbolic colored-tiling develop — base {5,4} (54), 3 colors, source /Users/alessandro/Desktop/University/Thesis/TilingAtlas/materials/corpora/5_4_3_colors
+forced edge length l = 1.061275061905
+certificates in : 20931
+developed       : 13179
+failed          : 0
+dropped (non-surjective): 7752
+multi-variant   : 5904
+wall            : 21.0s (1.0 ms/cert)
+
+
+   k  colorings         colors used (census)
+   2          6   {3: 6}
+   3        171   {3: 171}
+   4        906   {3: 906}
+   5      12096   {3: 12096}
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c54-k2.json: 6 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c54-k3.json: 171 records, 0.11 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c54-k4.json: 906 records, 0.63 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c54-k5.json: 12096 records, 8.72 MB

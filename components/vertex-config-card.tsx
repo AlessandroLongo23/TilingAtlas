@@ -22,7 +22,13 @@ const FILL_ALPHA = TILE_FILL_ALPHA;
 const VIEW = 100; // svg viewBox is VIEW×VIEW; tiles fitted into it with padding
 const PAD = 8;
 
-export function VertexConfigCard({ config }: { config: VertexConfig }) {
+/**
+ * `unitsAcross` fixes the scale instead of fitting each figure to its own box: given, the viewBox
+ * spans that many unit edges, so several figures drawn side by side are directly comparable and a
+ * dodecagon looks bigger than a triangle. Omitted (the /configs grid, where each card stands alone),
+ * every figure is fitted to fill its card.
+ */
+export function VertexConfigCard({ config, unitsAcross }: { config: VertexConfig; unitsAcross?: number }) {
 	const { polys, dot } = useMemo(() => {
 		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 		for (const p of config.polys)
@@ -34,7 +40,7 @@ export function VertexConfigCard({ config }: { config: VertexConfig }) {
 			}
 		const w = maxX - minX || 1;
 		const h = maxY - minY || 1;
-		const s = (VIEW - 2 * PAD) / Math.max(w, h);
+		const s = (VIEW - 2 * PAD) / (unitsAcross ?? Math.max(w, h));
 		// centre the figure in the viewBox; flip Y so math-up renders as screen-up
 		const ox = PAD + (VIEW - 2 * PAD - s * w) / 2;
 		const oy = PAD + (VIEW - 2 * PAD - s * h) / 2;
@@ -51,7 +57,7 @@ export function VertexConfigCard({ config }: { config: VertexConfig }) {
 			}),
 			dot: { x: tx(0), y: ty(0) },
 		};
-	}, [config]);
+	}, [config, unitsAcross]);
 
 	const openScreenshot = useScreenshotPreview((s) => s.open);
 

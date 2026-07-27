@@ -164,6 +164,8 @@ export interface ConfigurationState {
 	// canvas draws nothing (blanked like hyperbolic/spherical). A freedraw pattern has no polygon cell, so
 	// none of the flat overlays — symmetry, fundamental domain, orbits, Islamic, inversive — apply.
 	freedraw: boolean;
+	/** A hollow tiling ({n/d} star polygons) is selected: its own 2D canvas owns the view, blank the flat layer. */
+	hollow: boolean;
 	// Freedraw cell fill, coarse to fine — see FillMode in lib/freedraw/render.ts. "none" leaves the line
 	// art bare; "rank" colours by tile KIND (finite / strip / unbounded); "shape" by congruence class,
 	// counting rotations and mirrors as one shape; "pose" splits those by orientation; "orbit" is finest,
@@ -295,6 +297,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	sphericalWeaveFlat: false,
 
 	freedraw: false,
+	hollow: false,
 	freedrawFill: "rank",
 	freedrawScaffold: false,
 	freedrawVertices: false,

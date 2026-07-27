@@ -1,0 +1,283 @@
+scan-family-joins.py — public/reference-atlas-isotoxal-k3.json
+658 families; param-count histogram: {1: 424, 2: 234}
+⚑ 234 multi-parameter families NOT scanned (a join between them is a shared face of a validity box, which this scanner does not model)
+scanning 424 single-parameter families
+patch congruence: R=5.0, 9x9 lattice translates
+
+shared endpoints: 14 JOIN candidate group(s), 92 COLLAPSE group(s)
+
+=== JOINs — no tile vanishes, so the limit tiling is real and shared ===
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-67 3.3.3.6.4α.6α    param0 @ 30°   range [30, 150]   6x3 6x4 3x4* 1x6 2x6*
+      isotoxal-family-k3-67 3.3.3.6.4α.6α    param0 @ 150°   range [30, 150]   6x3 6x4 3x4* 1x6 2x6*
+      isotoxal-family-k3-68 3.3.3.6.4α.6α    param0 @ 30°   range [30, 150]   6x3 6x4 3x4* 1x6 2x6*
+      isotoxal-family-k3-68 3.3.3.6.4α.6α    param0 @ 150°   range [30, 150]   6x3 6x4 3x4* 1x6 2x6*
+  [2 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-69 3.3.3.3.3.3.4α.6α.12α param0 @ 60°   range [60, 120]   12x3 3x4* 2x6* 1x12*
+      isotoxal-family-k3-70 3.3.3.3.3.3.4α.6α.12α param0 @ 120°   range [60, 120]   12x3 3x4* 2x6* 1x12*
+  [2 entries] DUPLICATE ARTIFACT — the entries are one family (see DUPLICATES), not a join
+      isotoxal-family-k3-69 3.3.3.3.3.3.4α.6α.12α param0 @ 120°   range [60, 120]   12x3 3x4* 2x6* 1x12*
+      isotoxal-family-k3-70 3.3.3.3.3.3.4α.6α.12α param0 @ 60°   range [60, 120]   12x3 3x4* 2x6* 1x12*
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-73 4α.12α           param0 @ 60°   range [60, 120]   6x4 3x4* 1x12*
+      isotoxal-family-k3-73 4α.12α           param0 @ 120°   range [60, 120]   6x4 3x4* 1x12*
+      isotoxal-family-k3-75 4α.12α           param0 @ 60°   range [60, 120]   6x4 3x4* 1x12*
+      isotoxal-family-k3-75 4α.12α           param0 @ 120°   range [60, 120]   6x4 3x4* 1x12*
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-133 3.3.3.4.4.6.4α.6α param0 @ 30°   range [30, 150]   6x3 3x4 6x4* 1x6 2x6*
+      isotoxal-family-k3-133 3.3.3.4.4.6.4α.6α param0 @ 150°   range [30, 150]   6x3 3x4 6x4* 1x6 2x6*
+      isotoxal-family-k3-134 3.3.3.6.4α.6α    param0 @ 30°   range [30, 150]   6x3 3x4 6x4* 1x6 2x6*
+      isotoxal-family-k3-134 3.3.3.6.4α.6α    param0 @ 150°   range [30, 150]   6x3 3x4 6x4* 1x6 2x6*
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-520 3.3.3.3.3.6.4α.6α param0 @ 120°   range [0, 120]   12x3 6x4* 1x6 2x6*
+      isotoxal-family-k3-522 3.3.3.3.6.4α.6α  param0 @ 120°   range [0, 120]   12x3 6x4* 1x6 2x6*
+      isotoxal-family-k3-524 3.3.3.3.3.6.4α.6α param0 @ 60°   range [60, 180]   12x3 6x4* 1x6 2x6*
+      isotoxal-family-k3-526 3.3.3.3.6.4α.6α  param0 @ 60°   range [60, 180]   12x3 6x4* 1x6 2x6*
+  [6 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-528 3.3.3.6.4α.6α    param0 @ 60°   range [60, 120]   6x3 9x4* 1x6 2x6*
+      isotoxal-family-k3-528 3.3.3.6.4α.6α    param0 @ 120°   range [60, 120]   6x3 9x4* 1x6 2x6*
+      isotoxal-family-k3-529 3.3.3.6.4α.6α    param0 @ 60°   range [60, 120]   6x3 9x4* 1x6 2x6*
+      isotoxal-family-k3-529 3.3.3.6.4α.6α    param0 @ 120°   range [60, 120]   6x3 9x4* 1x6 2x6*
+      isotoxal-family-k3-633 3.3.3.4α.6α      param0 @ 120°   range [0, 120]   6x3 6x4 3x4* 1x6 2x6*
+      isotoxal-family-k3-642 3.3.3.4α.6α      param0 @ 60°   range [60, 180]   6x3 6x4 3x4* 1x6 2x6*
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-630 3.3.3.3.3.3.4α.6α param0 @ 120°   range [0, 120]   8x3 2x4* 2x6*
+      isotoxal-family-k3-631 3.3.3.3.3.4α.6α  param0 @ 120°   range [0, 120]   8x3 2x4* 2x6*
+      isotoxal-family-k3-638 3.3.3.3.3.3.4α.6α param0 @ 60°   range [60, 180]   8x3 2x4* 2x6*
+      isotoxal-family-k3-639 3.3.3.3.3.4α.6α  param0 @ 60°   range [60, 180]   8x3 2x4* 2x6*
+  [2 entries] CONGRUENT — one arc through the limit (2 distinct branches)
+      isotoxal-family-k3-632 3.3.3.3.3.6.4α.6α param0 @ 120°   range [0, 120]   18x3 3x4* 1x6 2x6*
+      isotoxal-family-k3-641 3.3.3.3.3.6.4α.6α param0 @ 60°   range [60, 180]   18x3 3x4* 1x6 2x6*
+      -> MERGE: isotoxal-family-k3-632 + isotoxal-family-k3-641   (excluded: none)
+  [2 entries] DUPLICATE ARTIFACT — the entries are one family (see DUPLICATES), not a join
+      isotoxal-family-k3-634 4α.6α            param0 @ 120°   range [0, 120]   4x4 2x4* 2x6*
+      isotoxal-family-k3-643 4α.6α            param0 @ 60°   range [60, 180]   4x4 2x4* 2x6*
+  [2 entries] DUPLICATE ARTIFACT — the entries are one family (see DUPLICATES), not a join
+      isotoxal-family-k3-635 6.4α.6α          param0 @ 120°   range [0, 120]   6x4 6x4* 1x6 2x6*
+      isotoxal-family-k3-644 6.4α.6α          param0 @ 60°   range [60, 180]   6x4 6x4* 1x6 2x6*
+  [6 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-647 3.3.3.4α.6α      param0 @ 60°   range [60, 180]   4x3 2x4 4x6*
+      isotoxal-family-k3-647 3.3.3.4α.6α      param0 @ 180°   range [60, 180]   4x3 2x4 4x6*
+      isotoxal-family-k3-648 3.3.4α.6α        param0 @ 60°   range [60, 180]   4x3 2x4 4x6*
+      isotoxal-family-k3-648 3.3.4α.6α        param0 @ 180°   range [60, 180]   4x3 2x4 4x6*
+      isotoxal-family-k3-649 3.3.4α.6α        param0 @ 60°   range [60, 180]   2x3 1x4 2x6*
+      isotoxal-family-k3-649 3.3.4α.6α        param0 @ 180°   range [60, 180]   2x3 1x4 2x6*
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-650 3.3.3.3.4.4.4α.6α param0 @ 30°   range [30, 150]   4x3 2x4 2x4* 2x6*
+      isotoxal-family-k3-650 3.3.3.3.4.4.4α.6α param0 @ 150°   range [30, 150]   4x3 2x4 2x4* 2x6*
+      isotoxal-family-k3-651 3.3.3.3.4α.6α    param0 @ 30°   range [30, 150]   4x3 2x4 2x4* 2x6*
+      isotoxal-family-k3-651 3.3.3.3.4α.6α    param0 @ 150°   range [30, 150]   4x3 2x4 2x4* 2x6*
+  [4 entries] FINGERPRINT COLLISION — NOT congruent, not a join
+      isotoxal-family-k3-653 3.3.3.3.4α.6α    param0 @ 60°   range [60, 120]   2x3 2x4* 1x6*
+      isotoxal-family-k3-653 3.3.3.3.4α.6α    param0 @ 120°   range [60, 120]   2x3 2x4* 1x6*
+      isotoxal-family-k3-654 3.3.3.3.4α.6α    param0 @ 60°   range [60, 120]   4x3 4x4* 2x6*
+      isotoxal-family-k3-654 3.3.3.3.4α.6α    param0 @ 120°   range [60, 120]   4x3 4x4* 2x6*
+  -> 1 verified join(s); 10 collision(s) rejected; 3 duplicate artifact(s)
+
+=== COLLAPSEs — a tile hits zero area; the limit is a SIMPLER tiling, shared by unrelated arcs ===
+  isotoxal-family-k3-01[3.3.3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-02[3.3.3.3.3.3.3.4.4α]@0°
+  isotoxal-family-k3-03[3.3.3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-03[3.3.3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-04[3.3.3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-04[3.3.3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-156[3.3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-156[3.3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-157[3.3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-157[3.3.3.3.3.4.4.4α]@180°
+  isotoxal-family-k3-05[3.3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-05[3.3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-06[3.3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-06[3.3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-07[3.3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-07[3.3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-08[3.3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-08[3.3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-167[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-167[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-168[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-168[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-169[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-169[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-170[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-170[3.3.3.3.3.4.4α]@180°
+  isotoxal-family-k3-09[3.3.3.3.4.4.4.4α]@0° | isotoxal-family-k3-09[3.3.3.3.4.4.4.4α]@180° | isotoxal-family-k3-155[3.3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-155[3.3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-158[3.3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-158[3.3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-49[3.3.3.3.4.4.4.4α]@0° | isotoxal-family-k3-49[3.3.3.3.4.4.4.4α]@180°
+  isotoxal-family-k3-10[4.4.4.4.4.4α]@0° | isotoxal-family-k3-10[4.4.4.4.4.4α]@180° | isotoxal-family-k3-50[4.4.4.4.4.4α]@0° | isotoxal-family-k3-50[4.4.4.4.4.4α]@180°
+  isotoxal-family-k3-11[3.3.4.4.4.4α]@0° | isotoxal-family-k3-11[3.3.4.4.4.4α]@180° | isotoxal-family-k3-12[3.3.4.4.4.4α]@0° | isotoxal-family-k3-12[3.3.4.4.4.4α]@180° | isotoxal-family-k3-232[3.3.4.4.4α]@0° | isotoxal-family-k3-232[3.3.4.4.4α]@180° | isotoxal-family-k3-233[3.3.4.4.4α]@0° | isotoxal-family-k3-233[3.3.4.4.4α]@180° | isotoxal-family-k3-234[3.3.4.4.4α]@0° | isotoxal-family-k3-234[3.3.4.4.4α]@180° | isotoxal-family-k3-235[3.3.4.4.4α]@0° | isotoxal-family-k3-235[3.3.4.4.4α]@180° | isotoxal-family-k3-51[3.3.4.4.4.4α]@0° | isotoxal-family-k3-51[3.3.4.4.4.4α]@180° | isotoxal-family-k3-52[3.3.4.4.4.4α]@0°
+  isotoxal-family-k3-13[4.4.4.4.4α]@0° | isotoxal-family-k3-13[4.4.4.4.4α]@180° | isotoxal-family-k3-14[4.4.4.4.4α]@0° | isotoxal-family-k3-14[4.4.4.4.4α]@180° | isotoxal-family-k3-37[4.4.4.4α]@0° | isotoxal-family-k3-37[4.4.4.4α]@180° | isotoxal-family-k3-38[4.4.4.4α]@0° | isotoxal-family-k3-38[4.4.4.4α]@180° | isotoxal-family-k3-39[4.4.4.4α]@0° | isotoxal-family-k3-39[4.4.4.4α]@180° | isotoxal-family-k3-40[4.4.4.4α]@0° | isotoxal-family-k3-40[4.4.4.4α]@180° | isotoxal-family-k3-53[4.4.4.4.4α]@0° | isotoxal-family-k3-53[4.4.4.4.4α]@180° | isotoxal-family-k3-54[4.4.4.4.4α]@0° | isotoxal-family-k3-54[4.4.4.4.4α]@180°
+  isotoxal-family-k3-15[4.4.4.4α]@0° | isotoxal-family-k3-15[4.4.4.4α]@180° | isotoxal-family-k3-18[4.4.4.4α]@0° | isotoxal-family-k3-18[4.4.4.4α]@180° | isotoxal-family-k3-203[4.4.4α]@0° | isotoxal-family-k3-203[4.4.4α]@180° | isotoxal-family-k3-204[4.4.4α]@0° | isotoxal-family-k3-204[4.4.4α]@180° | isotoxal-family-k3-205[4.4.4α]@0° | isotoxal-family-k3-205[4.4.4α]@180° | isotoxal-family-k3-206[4.4.4α]@0° | isotoxal-family-k3-206[4.4.4α]@180° | isotoxal-family-k3-55[4.4.4.4α]@0° | isotoxal-family-k3-55[4.4.4.4α]@180° | isotoxal-family-k3-58[4.4.4.4α]@0° | isotoxal-family-k3-58[4.4.4.4α]@180°
+  isotoxal-family-k3-122[4.4.4.4.4.4α]@0° | isotoxal-family-k3-122[4.4.4.4.4.4α]@180° | isotoxal-family-k3-123[4.4.4.4.4α]@0° | isotoxal-family-k3-123[4.4.4.4.4α]@180° | isotoxal-family-k3-16[4.4.4.4α]@0° | isotoxal-family-k3-16[4.4.4.4α]@180° | isotoxal-family-k3-17[4.4.4.4α]@0° | isotoxal-family-k3-17[4.4.4.4α]@180° | isotoxal-family-k3-199[4.4.4.4α]@0° | isotoxal-family-k3-199[4.4.4.4α]@180° | isotoxal-family-k3-200[4.4.4.4α]@0° | isotoxal-family-k3-200[4.4.4.4α]@180° | isotoxal-family-k3-35[4.4.4.4α]@0° | isotoxal-family-k3-35[4.4.4.4α]@180° | isotoxal-family-k3-36[4.4.4.4α]@0° | isotoxal-family-k3-36[4.4.4.4α]@180° | isotoxal-family-k3-41[4.4.4.4α]@0° | isotoxal-family-k3-41[4.4.4.4α]@180° | isotoxal-family-k3-42[4.4.4.4α]@0° | isotoxal-family-k3-42[4.4.4.4α]@180° | isotoxal-family-k3-56[4.4.4.4α]@0° | isotoxal-family-k3-56[4.4.4.4α]@180° | isotoxal-family-k3-57[4.4.4.4α]@0° | isotoxal-family-k3-57[4.4.4.4α]@180°
+  isotoxal-family-k3-159[3.3.3.3.4.4.4.4α]@0° | isotoxal-family-k3-159[3.3.3.3.4.4.4.4α]@180° | isotoxal-family-k3-160[3.3.3.3.4.4.4.4α]@0° | isotoxal-family-k3-160[3.3.3.3.4.4.4.4α]@180° | isotoxal-family-k3-21[3.3.3.3.4.4.4.4α]@0° | isotoxal-family-k3-21[3.3.3.3.4.4.4.4α]@180° | isotoxal-family-k3-22[3.3.3.3.4.4.4.4α]@0° | isotoxal-family-k3-22[3.3.3.3.4.4.4.4α]@180°
+  isotoxal-family-k3-23[4.4.4.4.4.4α]@0° | isotoxal-family-k3-23[4.4.4.4.4.4α]@180° | isotoxal-family-k3-24[4.4.4.4.4.4α]@0° | isotoxal-family-k3-24[4.4.4.4.4.4α]@180°
+  isotoxal-family-k3-25[3.3.4.4.4.4.4α]@0° | isotoxal-family-k3-25[3.3.4.4.4.4.4α]@180° | isotoxal-family-k3-26[3.3.4.4.4.4.4α]@0° | isotoxal-family-k3-26[3.3.4.4.4.4.4α]@180°
+  isotoxal-family-k3-191[3.3.4.4.4.4α]@0° | isotoxal-family-k3-191[3.3.4.4.4.4α]@180° | isotoxal-family-k3-192[3.3.4.4.4.4α]@0° | isotoxal-family-k3-192[3.3.4.4.4.4α]@180° | isotoxal-family-k3-193[3.3.4.4.4.4α]@0° | isotoxal-family-k3-193[3.3.4.4.4.4α]@180° | isotoxal-family-k3-194[3.3.4.4.4.4α]@0° | isotoxal-family-k3-194[3.3.4.4.4.4α]@180° | isotoxal-family-k3-27[3.3.4.4.4.4α]@0° | isotoxal-family-k3-27[3.3.4.4.4.4α]@180° | isotoxal-family-k3-28[3.3.4.4.4.4α]@0° | isotoxal-family-k3-28[3.3.4.4.4.4α]@180° | isotoxal-family-k3-29[3.3.4.4.4.4α]@0° | isotoxal-family-k3-29[3.3.4.4.4.4α]@180° | isotoxal-family-k3-30[3.3.4.4.4.4α]@0° | isotoxal-family-k3-30[3.3.4.4.4.4α]@180°
+  isotoxal-family-k3-31[4.4.4.4.4α]@0° | isotoxal-family-k3-31[4.4.4.4.4α]@180° | isotoxal-family-k3-32[4.4.4.4.4α]@0° | isotoxal-family-k3-32[4.4.4.4.4α]@180° | isotoxal-family-k3-33[4.4.4.4.4α]@0° | isotoxal-family-k3-33[4.4.4.4.4α]@180° | isotoxal-family-k3-34[4.4.4.4.4α]@0° | isotoxal-family-k3-34[4.4.4.4.4α]@180°
+  isotoxal-family-k3-63[3.3.3.3.4α]@0° | isotoxal-family-k3-64[3.3.3.3.4α]@0°
+  isotoxal-family-k3-63[3.3.3.3.4α]@180° | isotoxal-family-k3-64[3.3.3.3.4α]@180° | isotoxal-family-k3-65[3.3.3.3.4α]@0° | isotoxal-family-k3-65[3.3.3.3.4α]@180° | isotoxal-family-k3-66[3.3.3.3.4α]@0° | isotoxal-family-k3-66[3.3.3.3.4α]@180°
+  isotoxal-family-k3-76[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-76[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-77[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-77[3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-127[3.3.3.3.6.4α]@0° | isotoxal-family-k3-127[3.3.3.3.6.4α]@180° | isotoxal-family-k3-128[3.3.3.3.6.4α]@180° | isotoxal-family-k3-78[3.3.3.3.4α]@0° | isotoxal-family-k3-78[3.3.3.3.4α]@180°
+  isotoxal-family-k3-79[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-83[3.3.3.3.3.3.3.4α]@0°
+  isotoxal-family-k3-79[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-83[3.3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-149[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-149[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-150[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-356[3.3.3.3.3.4α]@0° | isotoxal-family-k3-356[3.3.3.3.3.4α]@180° | isotoxal-family-k3-357[3.3.3.3.3.4α]@180° | isotoxal-family-k3-407[3.3.3.3.3.4α]@0° | isotoxal-family-k3-407[3.3.3.3.3.4α]@180° | isotoxal-family-k3-410[3.3.3.3.3.4α]@0° | isotoxal-family-k3-410[3.3.3.3.3.4α]@180° | isotoxal-family-k3-450[3.3.3.3.3.4α]@0° | isotoxal-family-k3-450[3.3.3.3.3.4α]@180° | isotoxal-family-k3-453[3.3.3.3.3.4α]@0° | isotoxal-family-k3-453[3.3.3.3.3.4α]@180° | isotoxal-family-k3-477[3.3.3.3.3.4α]@0° | isotoxal-family-k3-477[3.3.3.3.3.4α]@180° | isotoxal-family-k3-478[3.3.3.3.3.4α]@0° | isotoxal-family-k3-478[3.3.3.3.3.4α]@180° | isotoxal-family-k3-80[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-81[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-81[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-82[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-84[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-84[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-85[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-85[3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-150[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-82[3.3.3.3.3.3.4α]@0°
+  isotoxal-family-k3-108[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-108[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-86[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-86[3.3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-109[3.3.3.4.4.4α]@0° | isotoxal-family-k3-109[3.3.3.4.4.4α]@180° | isotoxal-family-k3-87[3.3.3.4.4.4α]@0° | isotoxal-family-k3-87[3.3.3.4.4.4α]@180°
+  isotoxal-family-k3-110[3.3.3.3.4α]@0° | isotoxal-family-k3-111[3.3.3.3.4α]@0° | isotoxal-family-k3-111[3.3.3.3.4α]@180° | isotoxal-family-k3-331[3.3.3.4α]@180° | isotoxal-family-k3-334[3.3.3.4α]@0° | isotoxal-family-k3-334[3.3.3.4α]@180° | isotoxal-family-k3-88[3.3.3.3.4α]@0° | isotoxal-family-k3-89[3.3.3.3.4α]@0° | isotoxal-family-k3-89[3.3.3.3.4α]@180°
+  isotoxal-family-k3-112[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-112[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-113[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-113[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-91[3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-114[3.3.3.3.4.4α]@0° | isotoxal-family-k3-114[3.3.3.3.4.4α]@180° | isotoxal-family-k3-115[3.3.3.3.4.4α]@180° | isotoxal-family-k3-92[3.3.3.3.4.4α]@180° | isotoxal-family-k3-93[3.3.3.3.4.4α]@180°
+  isotoxal-family-k3-351[3.3.3.4α]@180° | isotoxal-family-k3-94[3.3.3.3.4α]@0° | isotoxal-family-k3-94[3.3.3.3.4α]@180° | isotoxal-family-k3-95[3.3.3.3.4α]@0°
+  isotoxal-family-k3-116[3.3.3.3.4α]@0° | isotoxal-family-k3-116[3.3.3.3.4α]@180° | isotoxal-family-k3-117[3.3.3.3.4α]@0° | isotoxal-family-k3-117[3.3.3.3.4α]@180° | isotoxal-family-k3-349[3.3.3.4α]@0° | isotoxal-family-k3-349[3.3.3.4α]@180° | isotoxal-family-k3-350[3.3.3.4α]@0° | isotoxal-family-k3-350[3.3.3.4α]@180° | isotoxal-family-k3-351[3.3.3.4α]@0° | isotoxal-family-k3-352[3.3.3.4α]@0° | isotoxal-family-k3-352[3.3.3.4α]@180° | isotoxal-family-k3-95[3.3.3.3.4α]@180°
+  isotoxal-family-k3-118[3.3.3.3.4α]@0° | isotoxal-family-k3-118[3.3.3.3.4α]@180° | isotoxal-family-k3-121[3.3.3.3.4α]@0° | isotoxal-family-k3-121[3.3.3.3.4α]@180° | isotoxal-family-k3-96[3.3.3.3.4α]@180° | isotoxal-family-k3-99[3.3.3.3.4α]@180°
+  isotoxal-family-k3-119[3.3.3.3.4α]@0° | isotoxal-family-k3-119[3.3.3.3.4α]@180° | isotoxal-family-k3-120[3.3.3.3.4α]@0° | isotoxal-family-k3-120[3.3.3.3.4α]@180° | isotoxal-family-k3-97[3.3.3.3.4α]@180° | isotoxal-family-k3-98[3.3.3.3.4α]@180°
+  isotoxal-family-k3-100[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-100[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-101[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-101[3.3.3.3.3.4.4α]@180°
+  isotoxal-family-k3-102[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-102[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-103[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-103[3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-104[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-104[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-105[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-105[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-323[3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-323[3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-324[3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-124[4.4.4.4.4α]@30° | isotoxal-family-k3-124[4.4.4.4.4α]@120° | isotoxal-family-k3-125[4.4.4.4.4α]@30° | isotoxal-family-k3-125[4.4.4.4.4α]@120° | isotoxal-family-k3-321[4.4.4.4α]@30° | isotoxal-family-k3-321[4.4.4.4α]@120° | isotoxal-family-k3-322[4.4.4.4α]@30° | isotoxal-family-k3-322[4.4.4.4α]@120°
+  isotoxal-family-k3-129[3.3.3.6.4α.6α]@0° | isotoxal-family-k3-130[3.3.3.6.4α.6α]@0° | isotoxal-family-k3-523[3.3.3.6.4α.6α]@165°
+  isotoxal-family-k3-130[3.3.3.6.4α.6α]@165° | isotoxal-family-k3-521[3.3.3.6.4α.6α]@0° | isotoxal-family-k3-523[3.3.3.6.4α.6α]@0°
+  isotoxal-family-k3-131[3.3.3.6.4α.6α]@0° | isotoxal-family-k3-132[3.3.3.6.4α.6α]@0°
+  isotoxal-family-k3-131[3.3.3.6.4α.6α]@135° | isotoxal-family-k3-525[3.3.3.6.4α.6α]@0° | isotoxal-family-k3-527[3.3.3.6.4α.6α]@0°
+  isotoxal-family-k3-135[3.3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-135[3.3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-138[3.3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-138[3.3.3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-136[3.3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-136[3.3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-137[3.3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-137[3.3.3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-141[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-141[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-142[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-142[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-147[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-147[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-148[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-148[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-408[3.3.3.3.3.4α]@0° | isotoxal-family-k3-408[3.3.3.3.3.4α]@180° | isotoxal-family-k3-409[3.3.3.3.3.4α]@0° | isotoxal-family-k3-409[3.3.3.3.3.4α]@180° | isotoxal-family-k3-451[3.3.3.3.3.4α]@0° | isotoxal-family-k3-451[3.3.3.3.3.4α]@180° | isotoxal-family-k3-452[3.3.3.3.3.4α]@0° | isotoxal-family-k3-452[3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-143[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-143[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-144[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-145[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-145[3.3.3.3.3.3.3.4α]@180° | isotoxal-family-k3-146[3.3.3.3.3.3.3.4α]@0° | isotoxal-family-k3-146[3.3.3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-161[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-161[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-162[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-162[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-173[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-174[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-175[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-175[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-176[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-176[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-177[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-177[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-178[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-178[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-179[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-179[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-180[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-180[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-181[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-181[3.3.3.3.4.4.4α]@180° | isotoxal-family-k3-182[3.3.3.3.4.4.4α]@0° | isotoxal-family-k3-182[3.3.3.3.4.4.4α]@180°
+  isotoxal-family-k3-165[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-165[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-166[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-166[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-171[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-171[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-172[3.3.3.3.3.4.4α]@0° | isotoxal-family-k3-172[3.3.3.3.3.4.4α]@180° | isotoxal-family-k3-411[3.3.3.3.4.4α]@0° | isotoxal-family-k3-411[3.3.3.3.4.4α]@180° | isotoxal-family-k3-412[3.3.3.3.4.4α]@0° | isotoxal-family-k3-412[3.3.3.3.4.4α]@180° | isotoxal-family-k3-454[3.3.3.3.4.4α]@0° | isotoxal-family-k3-454[3.3.3.3.4.4α]@180° | isotoxal-family-k3-455[3.3.3.3.4.4α]@0° | isotoxal-family-k3-455[3.3.3.3.4.4α]@180°
+  isotoxal-family-k3-183[3.3.3.3.4.4α]@0° | isotoxal-family-k3-184[3.3.3.3.4.4α]@0° | isotoxal-family-k3-185[3.3.3.3.4.4α]@0° | isotoxal-family-k3-185[3.3.3.3.4.4α]@180° | isotoxal-family-k3-186[3.3.3.3.4.4α]@0° | isotoxal-family-k3-186[3.3.3.3.4.4α]@180° | isotoxal-family-k3-359[3.3.3.3.4.4α]@0° | isotoxal-family-k3-359[3.3.3.3.4.4α]@180° | isotoxal-family-k3-360[3.3.3.3.4.4α]@0° | isotoxal-family-k3-480[3.3.3.3.4.4α]@0° | isotoxal-family-k3-480[3.3.3.3.4.4α]@180° | isotoxal-family-k3-481[3.3.3.3.4.4α]@0°
+  isotoxal-family-k3-184[3.3.3.3.4.4α]@180° | isotoxal-family-k3-360[3.3.3.3.4.4α]@180° | isotoxal-family-k3-481[3.3.3.3.4.4α]@180°
+  isotoxal-family-k3-195[3.3.4.4.4α]@0° | isotoxal-family-k3-195[3.3.4.4.4α]@180° | isotoxal-family-k3-196[3.3.4.4.4α]@0° | isotoxal-family-k3-197[3.3.4.4.4α]@0° | isotoxal-family-k3-197[3.3.4.4.4α]@180° | isotoxal-family-k3-198[3.3.4.4.4α]@0° | isotoxal-family-k3-198[3.3.4.4.4α]@180° | isotoxal-family-k3-213[3.3.4.4.4α]@0° | isotoxal-family-k3-213[3.3.4.4.4α]@180° | isotoxal-family-k3-214[3.3.4.4.4α]@0° | isotoxal-family-k3-214[3.3.4.4.4α]@180° | isotoxal-family-k3-236[3.3.4.4.4α]@0° | isotoxal-family-k3-236[3.3.4.4.4α]@180° | isotoxal-family-k3-237[3.3.4.4.4α]@0° | isotoxal-family-k3-237[3.3.4.4.4α]@180°
+  isotoxal-family-k3-201[4.4.4α]@0° | isotoxal-family-k3-201[4.4.4α]@180° | isotoxal-family-k3-202[4.4.4α]@0° | isotoxal-family-k3-202[4.4.4α]@180° | isotoxal-family-k3-207[4.4.4α]@0° | isotoxal-family-k3-207[4.4.4α]@180° | isotoxal-family-k3-208[4.4.4α]@0° | isotoxal-family-k3-208[4.4.4α]@180° | isotoxal-family-k3-219[4.4.4α]@0° | isotoxal-family-k3-219[4.4.4α]@180° | isotoxal-family-k3-242[4.4.4α]@0° | isotoxal-family-k3-242[4.4.4α]@180°
+  isotoxal-family-k3-215[3.3.4.4α]@0° | isotoxal-family-k3-215[3.3.4.4α]@180° | isotoxal-family-k3-216[3.3.4.4α]@0° | isotoxal-family-k3-216[3.3.4.4α]@180° | isotoxal-family-k3-217[3.3.4.4α]@0° | isotoxal-family-k3-218[3.3.4.4α]@0° | isotoxal-family-k3-218[3.3.4.4α]@180° | isotoxal-family-k3-238[3.3.4.4α]@0° | isotoxal-family-k3-238[3.3.4.4α]@180° | isotoxal-family-k3-239[3.3.4.4α]@0° | isotoxal-family-k3-240[3.3.4.4α]@0° | isotoxal-family-k3-240[3.3.4.4α]@180° | isotoxal-family-k3-241[3.3.4.4α]@0° | isotoxal-family-k3-241[3.3.4.4α]@180°
+  isotoxal-family-k3-217[3.3.4.4α]@180° | isotoxal-family-k3-239[3.3.4.4α]@180°
+  isotoxal-family-k3-220[4.4α]@0° | isotoxal-family-k3-220[4.4α]@180° | isotoxal-family-k3-221[4.4α]@0° | isotoxal-family-k3-221[4.4α]@180° | isotoxal-family-k3-226[4.4α]@0° | isotoxal-family-k3-226[4.4α]@180° | isotoxal-family-k3-227[4.4α]@0° | isotoxal-family-k3-227[4.4α]@180° | isotoxal-family-k3-243[4.4α]@0° | isotoxal-family-k3-243[4.4α]@180° | isotoxal-family-k3-244[4.4α]@0° | isotoxal-family-k3-244[4.4α]@180° | isotoxal-family-k3-249[4.4α]@0° | isotoxal-family-k3-249[4.4α]@180° | isotoxal-family-k3-250[4.4α]@0° | isotoxal-family-k3-250[4.4α]@180°
+  isotoxal-family-k3-222[4.4α]@0° | isotoxal-family-k3-222[4.4α]@180° | isotoxal-family-k3-223[4.4α]@0° | isotoxal-family-k3-223[4.4α]@180° | isotoxal-family-k3-224[4.4α]@0° | isotoxal-family-k3-224[4.4α]@180° | isotoxal-family-k3-225[4.4α]@0° | isotoxal-family-k3-225[4.4α]@180° | isotoxal-family-k3-245[4.4α]@0° | isotoxal-family-k3-245[4.4α]@180° | isotoxal-family-k3-246[4.4α]@0° | isotoxal-family-k3-246[4.4α]@180° | isotoxal-family-k3-247[4.4α]@0° | isotoxal-family-k3-247[4.4α]@180° | isotoxal-family-k3-248[4.4α]@0° | isotoxal-family-k3-248[4.4α]@180°
+  isotoxal-family-k3-327[3.3.3.4α]@0° | isotoxal-family-k3-328[3.3.3.4α]@0° | isotoxal-family-k3-329[3.3.3.4α]@0° | isotoxal-family-k3-329[3.3.3.4α]@180° | isotoxal-family-k3-330[3.3.3.4α]@180° | isotoxal-family-k3-332[3.3.3.4α]@0° | isotoxal-family-k3-332[3.3.3.4α]@180°
+  isotoxal-family-k3-328[3.3.3.4α]@180° | isotoxal-family-k3-330[3.3.3.4α]@0° | isotoxal-family-k3-333[3.3.3.4α]@180°
+  isotoxal-family-k3-335[3.3.3.3.3.4α]@0° | isotoxal-family-k3-337[3.3.3.3.3.4α]@0° | isotoxal-family-k3-338[3.3.3.3.3.4α]@0° | isotoxal-family-k3-338[3.3.3.3.3.4α]@180° | isotoxal-family-k3-556[3.3.3.3.4α]@0° | isotoxal-family-k3-556[3.3.3.3.4α]@180° | isotoxal-family-k3-557[3.3.3.3.4α]@0° | isotoxal-family-k3-557[3.3.3.3.4α]@180° | isotoxal-family-k3-558[3.3.3.3.4α]@0° | isotoxal-family-k3-558[3.3.3.3.4α]@180° | isotoxal-family-k3-559[3.3.3.3.4α]@0° | isotoxal-family-k3-559[3.3.3.3.4α]@180° | isotoxal-family-k3-596[3.3.3.3.4α]@0° | isotoxal-family-k3-596[3.3.3.3.4α]@180° | isotoxal-family-k3-597[3.3.3.3.4α]@0° | isotoxal-family-k3-597[3.3.3.3.4α]@180° | isotoxal-family-k3-598[3.3.3.3.4α]@0° | isotoxal-family-k3-598[3.3.3.3.4α]@180° | isotoxal-family-k3-599[3.3.3.3.4α]@0° | isotoxal-family-k3-599[3.3.3.3.4α]@180°
+  isotoxal-family-k3-339[3.3.3.4.4α]@0° | isotoxal-family-k3-342[3.3.3.4.4α]@0° | isotoxal-family-k3-342[3.3.3.4.4α]@180°
+  isotoxal-family-k3-340[3.3.3.4.4α]@0° | isotoxal-family-k3-341[3.3.3.4.4α]@0° | isotoxal-family-k3-341[3.3.3.4.4α]@180°
+  isotoxal-family-k3-343[3.3.3.4α]@0° | isotoxal-family-k3-345[3.3.3.4α]@0° | isotoxal-family-k3-346[3.3.3.4α]@0° | isotoxal-family-k3-446[3.3.3.4α]@0° | isotoxal-family-k3-446[3.3.3.4α]@180° | isotoxal-family-k3-447[3.3.3.4α]@0° | isotoxal-family-k3-447[3.3.3.4α]@180° | isotoxal-family-k3-448[3.3.3.4α]@180° | isotoxal-family-k3-449[3.3.3.4α]@180°
+  isotoxal-family-k3-343[3.3.3.4α]@180° | isotoxal-family-k3-345[3.3.3.4α]@180°
+  isotoxal-family-k3-344[3.3.3.4α]@0° | isotoxal-family-k3-346[3.3.3.4α]@180°
+  isotoxal-family-k3-347[3.3.3.4α]@0° | isotoxal-family-k3-348[3.3.3.4α]@180° | isotoxal-family-k3-353[3.3.3.4α]@0° | isotoxal-family-k3-354[3.3.3.4α]@0° | isotoxal-family-k3-533[3.3.4α]@0° | isotoxal-family-k3-533[3.3.4α]@180° | isotoxal-family-k3-534[3.3.4α]@0° | isotoxal-family-k3-534[3.3.4α]@180° | isotoxal-family-k3-536[3.3.4α]@0° | isotoxal-family-k3-536[3.3.4α]@180° | isotoxal-family-k3-537[3.3.4α]@0° | isotoxal-family-k3-537[3.3.4α]@180° | isotoxal-family-k3-538[3.3.3.4α]@0° | isotoxal-family-k3-538[3.3.3.4α]@180° | isotoxal-family-k3-539[3.3.3.4α]@0° | isotoxal-family-k3-541[3.3.3.4α]@0° | isotoxal-family-k3-541[3.3.3.4α]@180° | isotoxal-family-k3-542[3.3.3.4α]@180° | isotoxal-family-k3-546[3.3.4α]@180° | isotoxal-family-k3-548[3.3.4α]@180° | isotoxal-family-k3-560[3.3.4α]@0° | isotoxal-family-k3-560[3.3.4α]@180° | isotoxal-family-k3-561[3.3.4α]@0° | isotoxal-family-k3-561[3.3.4α]@180° | isotoxal-family-k3-562[3.3.4α]@0° | isotoxal-family-k3-562[3.3.4α]@180° | isotoxal-family-k3-565[3.3.3.4α]@0° | isotoxal-family-k3-565[3.3.3.4α]@180° | isotoxal-family-k3-566[3.3.3.4α]@0° | isotoxal-family-k3-566[3.3.3.4α]@180° | isotoxal-family-k3-567[3.3.3.4α]@0° | isotoxal-family-k3-567[3.3.3.4α]@180° | isotoxal-family-k3-568[3.3.3.4α]@0° | isotoxal-family-k3-569[3.3.3.4α]@0° | isotoxal-family-k3-570[3.3.3.4α]@0° | isotoxal-family-k3-601[3.3.3.4α]@0° | isotoxal-family-k3-601[3.3.3.4α]@180° | isotoxal-family-k3-606[3.3.4α]@0° | isotoxal-family-k3-606[3.3.4α]@180° | isotoxal-family-k3-607[3.3.4α]@0° | isotoxal-family-k3-607[3.3.4α]@180° | isotoxal-family-k3-608[3.3.4α]@0° | isotoxal-family-k3-608[3.3.4α]@180°
+  isotoxal-family-k3-347[3.3.3.4α]@180° | isotoxal-family-k3-353[3.3.3.4α]@180°
+  isotoxal-family-k3-348[3.3.3.4α]@0° | isotoxal-family-k3-552[3.3.3.4α]@180°
+  isotoxal-family-k3-355[3.3.3.3.3.4α]@0° | isotoxal-family-k3-355[3.3.3.3.3.4α]@180° | isotoxal-family-k3-456[3.3.3.3.4α]@180° | isotoxal-family-k3-457[3.3.3.3.4α]@180° | isotoxal-family-k3-476[3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-358[3.3.3.3.3.4α]@0° | isotoxal-family-k3-358[3.3.3.3.3.4α]@180° | isotoxal-family-k3-413[3.3.3.3.4α]@0° | isotoxal-family-k3-414[3.3.3.3.4α]@0° | isotoxal-family-k3-414[3.3.3.3.4α]@180° | isotoxal-family-k3-456[3.3.3.3.4α]@0° | isotoxal-family-k3-457[3.3.3.3.4α]@0° | isotoxal-family-k3-476[3.3.3.3.3.4α]@0° | isotoxal-family-k3-479[3.3.3.3.3.4α]@0° | isotoxal-family-k3-479[3.3.3.3.3.4α]@180°
+  isotoxal-family-k3-361[3.3.3.3.4α]@0° | isotoxal-family-k3-361[3.3.3.3.4α]@180° | isotoxal-family-k3-362[3.3.3.3.4α]@0° | isotoxal-family-k3-362[3.3.3.3.4α]@180° | isotoxal-family-k3-363[3.3.3.3.4α]@0° | isotoxal-family-k3-482[3.3.3.3.4α]@0° | isotoxal-family-k3-482[3.3.3.3.4α]@180° | isotoxal-family-k3-483[3.3.3.3.4α]@0° | isotoxal-family-k3-483[3.3.3.3.4α]@180° | isotoxal-family-k3-484[3.3.3.3.4α]@0°
+  isotoxal-family-k3-363[3.3.3.3.4α]@180° | isotoxal-family-k3-484[3.3.3.3.4α]@180°
+  isotoxal-family-k3-366[3.3.4α]@0° | isotoxal-family-k3-366[3.3.4α]@180° | isotoxal-family-k3-367[3.3.4α]@0° | isotoxal-family-k3-367[3.3.4α]@180° | isotoxal-family-k3-377[3.3.4α]@0° | isotoxal-family-k3-377[3.3.4α]@180° | isotoxal-family-k3-378[3.3.4α]@180° | isotoxal-family-k3-379[3.3.4α]@0° | isotoxal-family-k3-380[3.3.4α]@0° | isotoxal-family-k3-380[3.3.4α]@180° | isotoxal-family-k3-487[3.3.4α]@0° | isotoxal-family-k3-487[3.3.4α]@180° | isotoxal-family-k3-488[3.3.4α]@0°
+  isotoxal-family-k3-368[4α]@0° | isotoxal-family-k3-381[4α]@0°
+  isotoxal-family-k3-368[4α]@180° | isotoxal-family-k3-381[4α]@180°
+  isotoxal-family-k3-372[3.3.4α]@0° | isotoxal-family-k3-373[3.3.4α]@0° | isotoxal-family-k3-373[3.3.4α]@180° | isotoxal-family-k3-417[3.3.4α]@0° | isotoxal-family-k3-417[3.3.4α]@180° | isotoxal-family-k3-418[3.3.4α]@0° | isotoxal-family-k3-418[3.3.4α]@180° | isotoxal-family-k3-423[3.3.4α]@0° | isotoxal-family-k3-423[3.3.4α]@180° | isotoxal-family-k3-424[3.3.4α]@0° | isotoxal-family-k3-461[3.3.4α]@0° | isotoxal-family-k3-461[3.3.4α]@180°
+  isotoxal-family-k3-372[3.3.4α]@180° | isotoxal-family-k3-424[3.3.4α]@180°
+  isotoxal-family-k3-378[3.3.4α]@0° | isotoxal-family-k3-488[3.3.4α]@180°
+  isotoxal-family-k3-419[4α]@0° | isotoxal-family-k3-426[4α]@0°
+  isotoxal-family-k3-419[4α]@180° | isotoxal-family-k3-426[4α]@180°
+  isotoxal-family-k3-448[3.3.3.4α]@0° | isotoxal-family-k3-449[3.3.3.4α]@0°
+  isotoxal-family-k3-510[4.4.4.4.4α]@30° | isotoxal-family-k3-510[4.4.4.4.4α]@120° | isotoxal-family-k3-512[4.4.4.4α]@30° | isotoxal-family-k3-512[4.4.4.4α]@120° | isotoxal-family-k3-514[4.4.4.4.4α]@30° | isotoxal-family-k3-514[4.4.4.4.4α]@120° | isotoxal-family-k3-515[4.4.4.4α]@30° | isotoxal-family-k3-515[4.4.4.4α]@120°
+  isotoxal-family-k3-511[4.4.4α]@30° | isotoxal-family-k3-511[4.4.4α]@120° | isotoxal-family-k3-513[4.4.4α]@30° | isotoxal-family-k3-513[4.4.4α]@120° | isotoxal-family-k3-516[4.4.4α]@30° | isotoxal-family-k3-517[4.4.4α]@30°
+  isotoxal-family-k3-518[4.4.4α]@30° | isotoxal-family-k3-518[4.4.4α]@120° | isotoxal-family-k3-519[4.4.4α]@30° | isotoxal-family-k3-519[4.4.4α]@120°
+  isotoxal-family-k3-520[3.3.3.3.3.6.4α.6α]@0° | isotoxal-family-k3-524[3.3.3.3.3.6.4α.6α]@180°
+  isotoxal-family-k3-530[3.3.3.3.4α]@0° | isotoxal-family-k3-530[3.3.3.3.4α]@180° | isotoxal-family-k3-532[3.3.3.3.4α]@0° | isotoxal-family-k3-532[3.3.3.3.4α]@180° | isotoxal-family-k3-535[3.3.3.3.4α]@0° | isotoxal-family-k3-535[3.3.3.3.4α]@180° | isotoxal-family-k3-540[3.3.3.3.4α]@0° | isotoxal-family-k3-540[3.3.3.3.4α]@180° | isotoxal-family-k3-550[3.3.3.3.3.4α]@0° | isotoxal-family-k3-550[3.3.3.3.3.4α]@180° | isotoxal-family-k3-551[3.3.3.3.4α]@180° | isotoxal-family-k3-553[3.3.3.3.4α]@0° | isotoxal-family-k3-553[3.3.3.3.4α]@180° | isotoxal-family-k3-554[3.3.3.3.4α]@0° | isotoxal-family-k3-554[3.3.3.3.4α]@180° | isotoxal-family-k3-555[3.3.3.3.4α]@0° | isotoxal-family-k3-555[3.3.3.3.4α]@180° | isotoxal-family-k3-600[3.3.3.3.3.4α]@0° | isotoxal-family-k3-600[3.3.3.3.3.4α]@180° | isotoxal-family-k3-602[3.3.3.3.4α]@0° | isotoxal-family-k3-603[3.3.3.3.4α]@0° | isotoxal-family-k3-603[3.3.3.3.4α]@180° | isotoxal-family-k3-604[3.3.3.3.4α]@0° | isotoxal-family-k3-604[3.3.3.3.4α]@180° | isotoxal-family-k3-605[3.3.3.3.4α]@0° | isotoxal-family-k3-605[3.3.3.3.4α]@180°
+  isotoxal-family-k3-539[3.3.3.4α]@180° | isotoxal-family-k3-548[3.3.4α]@0° | isotoxal-family-k3-552[3.3.3.4α]@0° | isotoxal-family-k3-568[3.3.3.4α]@180° | isotoxal-family-k3-569[3.3.3.4α]@180° | isotoxal-family-k3-570[3.3.3.4α]@180°
+  isotoxal-family-k3-542[3.3.3.4α]@0° | isotoxal-family-k3-546[3.3.4α]@0°
+  isotoxal-family-k3-563[3.3.4α]@0° | isotoxal-family-k3-563[3.3.4α]@180° | isotoxal-family-k3-564[3.3.4α]@0° | isotoxal-family-k3-564[3.3.4α]@180° | isotoxal-family-k3-609[3.3.4α]@0° | isotoxal-family-k3-609[3.3.4α]@180° | isotoxal-family-k3-610[3.3.4α]@0° | isotoxal-family-k3-610[3.3.4α]@180°
+  isotoxal-family-k3-628[3.3.3.3.4α.6α]@165° | isotoxal-family-k3-629[3.3.3.3.4α.6α]@0° | isotoxal-family-k3-629[3.3.3.3.4α.6α]@165°
+  isotoxal-family-k3-630[3.3.3.3.3.3.4α.6α]@0° | isotoxal-family-k3-631[3.3.3.3.3.4α.6α]@0° | isotoxal-family-k3-638[3.3.3.3.3.3.4α.6α]@180°
+  isotoxal-family-k3-632[3.3.3.3.3.6.4α.6α]@0° | isotoxal-family-k3-641[3.3.3.3.3.6.4α.6α]@180°
+  isotoxal-family-k3-633[3.3.3.4α.6α]@0° | isotoxal-family-k3-642[3.3.3.4α.6α]@180°
+  isotoxal-family-k3-634[4α.6α]@0° | isotoxal-family-k3-643[4α.6α]@180°
+  isotoxal-family-k3-635[6.4α.6α]@0° | isotoxal-family-k3-644[6.4α.6α]@180°
+  isotoxal-family-k3-636[3.3.3.3.4α.6α]@135° | isotoxal-family-k3-637[3.3.3.3.4α.6α]@135°
+
+=== DUPLICATES — same family shipped twice (forward, or with α reversed) ===
+  α-reversed: isotoxal-family-k3-25 [0, 180] == isotoxal-family-k3-26 [0, 180]   [3.3.4.4.4.4.4α]
+  α-reversed: isotoxal-family-k3-69 [60, 120] == isotoxal-family-k3-70 [60, 120]   [3.3.3.3.3.3.4α.6α.12α]
+  α-reversed: isotoxal-family-k3-73 [60, 120] == isotoxal-family-k3-75 [60, 120]   [4α.12α]
+  α-reversed: isotoxal-family-k3-80 [0, 180] == isotoxal-family-k3-81 [0, 180]   [3.3.3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-84 [0, 180] == isotoxal-family-k3-85 [0, 180]   [3.3.3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-88 [0, 180] == isotoxal-family-k3-89 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-102 [0, 180] == isotoxal-family-k3-103 [0, 180]   [3.3.3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-110 [0, 180] == isotoxal-family-k3-111 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-127 [0, 180] == isotoxal-family-k3-128 [0, 180]   [3.3.3.3.6.4α]
+  α-reversed: isotoxal-family-k3-129 [0, 165] == isotoxal-family-k3-523 [0, 165]   [3.3.3.6.4α.6α]
+  α-reversed: isotoxal-family-k3-130 [0, 165] == isotoxal-family-k3-521 [0, 165]   [3.3.3.6.4α.6α]
+  α-reversed: isotoxal-family-k3-131 [0, 135] == isotoxal-family-k3-527 [0, 135]   [3.3.3.6.4α.6α]
+  α-reversed: isotoxal-family-k3-132 [0, 135] == isotoxal-family-k3-525 [0, 135]   [3.3.3.6.4α.6α]
+  α-forward: isotoxal-family-k3-156 [0, 180] == isotoxal-family-k3-157 [0, 180]   [3.3.3.3.3.4.4.4α]
+  α-forward: isotoxal-family-k3-159 [0, 180] == isotoxal-family-k3-160 [0, 180]   [3.3.3.3.4.4.4.4α]
+  α-forward: isotoxal-family-k3-191 [0, 180] == isotoxal-family-k3-192 [0, 180]   [3.3.4.4.4.4α]
+  α-forward: isotoxal-family-k3-193 [0, 180] == isotoxal-family-k3-194 [0, 180]   [3.3.4.4.4.4α]
+  α-forward: isotoxal-family-k3-234 [0, 180] == isotoxal-family-k3-235 [0, 180]   [3.3.4.4.4α]
+  α-forward: isotoxal-family-k3-238 [0, 180] == isotoxal-family-k3-239 [0, 180]   [3.3.4.4α]
+  α-reversed: isotoxal-family-k3-245 [0, 180] == isotoxal-family-k3-248 [0, 180]   [4.4α]
+  α-reversed: isotoxal-family-k3-327 [0, 180] == isotoxal-family-k3-329 [0, 180]   [3.3.3.4α]
+  α-reversed: isotoxal-family-k3-328 [0, 180] == isotoxal-family-k3-330 [0, 180]   [3.3.3.4α]
+  α-reversed: isotoxal-family-k3-446 [0, 180] == isotoxal-family-k3-448 [0, 180]   [3.3.3.4α]
+  α-forward: isotoxal-family-k3-480 [0, 180] == isotoxal-family-k3-481 [0, 180]   [3.3.3.3.4.4α]
+  α-reversed: isotoxal-family-k3-520 [0, 120] == isotoxal-family-k3-524 [60, 180]   [3.3.3.3.3.6.4α.6α]
+  α-reversed: isotoxal-family-k3-536 [0, 180] == isotoxal-family-k3-537 [0, 180]   [3.3.4α]
+  α-reversed: isotoxal-family-k3-539 [0, 180] == isotoxal-family-k3-542 [0, 180]   [3.3.3.4α]
+  α-reversed: isotoxal-family-k3-550 [0, 180] == isotoxal-family-k3-600 [0, 180]   [3.3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-551 [0, 180] == isotoxal-family-k3-602 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-552 [0, 180] == isotoxal-family-k3-601 [0, 180]   [3.3.3.4α]
+  α-reversed: isotoxal-family-k3-553 [0, 180] == isotoxal-family-k3-604 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-554 [0, 180] == isotoxal-family-k3-603 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-555 [0, 180] == isotoxal-family-k3-605 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-556 [0, 180] == isotoxal-family-k3-596 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-557 [0, 180] == isotoxal-family-k3-597 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-558 [0, 180] == isotoxal-family-k3-599 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-559 [0, 180] == isotoxal-family-k3-598 [0, 180]   [3.3.3.3.4α]
+  α-reversed: isotoxal-family-k3-560 [0, 180] == isotoxal-family-k3-608 [0, 180]   [3.3.4α]
+  α-reversed: isotoxal-family-k3-561 [0, 180] == isotoxal-family-k3-606 [0, 180]   [3.3.4α]
+  α-reversed: isotoxal-family-k3-562 [0, 180] == isotoxal-family-k3-607 [0, 180]   [3.3.4α]
+  α-reversed: isotoxal-family-k3-564 [0, 180] == isotoxal-family-k3-610 [0, 180]   [3.3.4α]
+  α-reversed: isotoxal-family-k3-565 [0, 180] == isotoxal-family-k3-567 [0, 180]   [3.3.3.4α]
+  α-reversed: isotoxal-family-k3-568 [0, 180] == isotoxal-family-k3-570 [0, 180]   [3.3.3.4α]
+  α-reversed: isotoxal-family-k3-628 [0, 165] == isotoxal-family-k3-629 [0, 165]   [3.3.3.3.4α.6α]
+  α-reversed: isotoxal-family-k3-630 [0, 120] == isotoxal-family-k3-638 [60, 180]   [3.3.3.3.3.3.4α.6α]
+  α-reversed: isotoxal-family-k3-634 [0, 120] == isotoxal-family-k3-643 [60, 180]   [4α.6α]
+  α-reversed: isotoxal-family-k3-635 [0, 120] == isotoxal-family-k3-644 [60, 180]   [6.4α.6α]
+  α-reversed: isotoxal-family-k3-636 [0, 135] == isotoxal-family-k3-637 [0, 135]   [3.3.3.3.4α.6α]
+  α-forward: isotoxal-family-k3-648 [60, 180] == isotoxal-family-k3-649 [60, 180]   [3.3.4α.6α]
+  -> 49 duplicate pair(s) among the 424 single-parameter families
+
+=== MERGE PLAN — a JOIN whose branches share the rigid/flexing partition ===
+  isotoxal-family-k3-632 + isotoxal-family-k3-641  →  sweep ∈ (0°, 240°), join at 120°, default 75°
+      isotoxal-family-k3-632 u∈[0,120]  α = 0 + u   (α-range [0, 120])
+      isotoxal-family-k3-641 u∈[120,240]  α = -60 + u   (α-range [60, 180])
+  -> 1 merge(s)
+
+=== ABSORBED — ids that no longer ship, and where a link to them lands ===
+  isotoxal-family-k3-103 → isotoxal-family-k3-102   u = 180 − α
+  isotoxal-family-k3-111 → isotoxal-family-k3-110   u = 180 − α
+  isotoxal-family-k3-128 → isotoxal-family-k3-127   u = 180 − α
+  isotoxal-family-k3-157 → isotoxal-family-k3-156   u = 0 + α
+  isotoxal-family-k3-160 → isotoxal-family-k3-159   u = 0 + α
+  isotoxal-family-k3-192 → isotoxal-family-k3-191   u = 0 + α
+  isotoxal-family-k3-194 → isotoxal-family-k3-193   u = 0 + α
+  isotoxal-family-k3-235 → isotoxal-family-k3-234   u = 0 + α
+  isotoxal-family-k3-239 → isotoxal-family-k3-238   u = 0 + α
+  isotoxal-family-k3-248 → isotoxal-family-k3-245   u = 180 − α
+  isotoxal-family-k3-26 → isotoxal-family-k3-25   u = 180 − α
+  isotoxal-family-k3-329 → isotoxal-family-k3-327   u = 180 − α
+  isotoxal-family-k3-330 → isotoxal-family-k3-328   u = 180 − α
+  isotoxal-family-k3-448 → isotoxal-family-k3-446   u = 180 − α
+  isotoxal-family-k3-481 → isotoxal-family-k3-480   u = 0 + α
+  isotoxal-family-k3-521 → isotoxal-family-k3-130   u = 165 − α
+  isotoxal-family-k3-523 → isotoxal-family-k3-129   u = 165 − α
+  isotoxal-family-k3-524 → isotoxal-family-k3-520   u = 240 − α
+  isotoxal-family-k3-525 → isotoxal-family-k3-132   u = 135 − α
+  isotoxal-family-k3-527 → isotoxal-family-k3-131   u = 135 − α
+  isotoxal-family-k3-537 → isotoxal-family-k3-536   u = 180 − α
+  isotoxal-family-k3-542 → isotoxal-family-k3-539   u = 180 − α
+  isotoxal-family-k3-567 → isotoxal-family-k3-565   u = 180 − α
+  isotoxal-family-k3-570 → isotoxal-family-k3-568   u = 180 − α
+  isotoxal-family-k3-596 → isotoxal-family-k3-556   u = 180 − α
+  isotoxal-family-k3-597 → isotoxal-family-k3-557   u = 180 − α
+  isotoxal-family-k3-598 → isotoxal-family-k3-559   u = 180 − α
+  isotoxal-family-k3-599 → isotoxal-family-k3-558   u = 180 − α
+  isotoxal-family-k3-600 → isotoxal-family-k3-550   u = 180 − α
+  isotoxal-family-k3-601 → isotoxal-family-k3-552   u = 180 − α
+  isotoxal-family-k3-602 → isotoxal-family-k3-551   u = 180 − α
+  isotoxal-family-k3-603 → isotoxal-family-k3-554   u = 180 − α
+  isotoxal-family-k3-604 → isotoxal-family-k3-553   u = 180 − α
+  isotoxal-family-k3-605 → isotoxal-family-k3-555   u = 180 − α
+  isotoxal-family-k3-606 → isotoxal-family-k3-561   u = 180 − α
+  isotoxal-family-k3-607 → isotoxal-family-k3-562   u = 180 − α
+  isotoxal-family-k3-608 → isotoxal-family-k3-560   u = 180 − α
+  isotoxal-family-k3-610 → isotoxal-family-k3-564   u = 180 − α
+  isotoxal-family-k3-629 → isotoxal-family-k3-628   u = 165 − α
+  isotoxal-family-k3-637 → isotoxal-family-k3-636   u = 135 − α
+  isotoxal-family-k3-638 → isotoxal-family-k3-630   u = 240 − α
+  isotoxal-family-k3-641 → isotoxal-family-k3-632   u = 60 + α
+  isotoxal-family-k3-643 → isotoxal-family-k3-634   u = 240 − α
+  isotoxal-family-k3-644 → isotoxal-family-k3-635   u = 240 − α
+  isotoxal-family-k3-649 → isotoxal-family-k3-648   u = 0 + α
+  isotoxal-family-k3-70 → isotoxal-family-k3-69   u = 180 − α
+  isotoxal-family-k3-75 → isotoxal-family-k3-73   u = 180 − α
+  isotoxal-family-k3-81 → isotoxal-family-k3-80   u = 180 − α
+  isotoxal-family-k3-85 → isotoxal-family-k3-84   u = 180 − α
+  isotoxal-family-k3-89 → isotoxal-family-k3-88   u = 180 − α
+  -> 50 absorbed, 608 entries ship
+
+SUMMARY: 658 shipped entries = 609 distinct families = 608 arcs after merging
+wrote merge plan → /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/c5bff048-2f31-4da2-9307-e47acd0d0487/scratchpad/isotoxal-k3-plan.json

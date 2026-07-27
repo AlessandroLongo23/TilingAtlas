@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { applyMergePlan } from "./merge-plan";
 
 interface FamilyRecord {
 	id: string;
@@ -53,6 +54,11 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-isotoxal.json");
 const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-isotoxal-k${k}.json`);
 const LOG_PATH = path.join(ROOT, "experiments", "results", "isotoxal-atlas-build.log");
+// Dedup/merge pass (scripts/scan-family-joins.py → scripts/merge-plan.ts). Scanned over the WHOLE corpus,
+// not per shard: a duplicate pair could straddle the eager/lazy split, and the census needs one view.
+const PLAN_PATH = path.join(ROOT, "experiments", "results", "isotoxal-merge-plan.json");
+const UNMERGED_PATH = path.join(ROOT, "experiments", "results", "isotoxal-atlas-unmerged.json");
+const ALIAS_PATH = path.join(ROOT, "lib", "services", "mergedFamilyAliases.isotoxal.json");
 const NOTE =
 	"One-parameter isotoxal family (α-slider): a convex tile with two alternating angles α, β = 360−360/n−α, " +
 	"tiled edge-to-edge with regular polygons. Closure proven for the whole α-range (symbolic ℤ[ζ₂₄] development " +
@@ -120,16 +126,28 @@ function main(): void {
 		log(`  ${r.id}  ${r.familySymbol}  P=${r.P}${coupled ? " (+coupled)" : ""}`);
 	}
 
+	// Absorb duplicates and splice merged arcs BEFORE the k split, so an entry removed here disappears from
+	// whichever file would have carried it and the shard counts stay honest.
+	const shipped = applyMergePlan(out, {
+		planPath: PLAN_PATH,
+		unmergedPath: UNMERGED_PATH,
+		aliasPath: ALIAS_PATH,
+		logName: "isotoxal",
+		note: NOTE,
+		log,
+		root: ROOT,
+	});
+
 	fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 	const sizeKB = (p: string): string => (fs.statSync(p).size / 1024).toFixed(1);
 
 	// k≤MAIN_MAX_K → eager main file; each higher k → its own lazy shard.
-	const main = out.filter((t) => t.k <= MAIN_MAX_K);
-	const shardKs = [...new Set(out.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
+	const main = shipped.filter((t) => t.k <= MAIN_MAX_K);
+	const shardKs = [...new Set(shipped.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
 	fs.writeFileSync(OUT_PATH, JSON.stringify(main, null, 0) + "\n");
 	log(`  main k≤${MAIN_MAX_K}: ${main.length} families → ${path.relative(ROOT, OUT_PATH)} (${sizeKB(OUT_PATH)} KB)`);
 	for (const k of shardKs) {
-		const entries = out.filter((t) => t.k === k);
+		const entries = shipped.filter((t) => t.k === k);
 		const p = shardPath(k);
 		fs.writeFileSync(p, JSON.stringify(entries, null, 0) + "\n");
 		log(`  shard k=${k}: ${entries.length} families → ${path.relative(ROOT, p)} (${sizeKB(p)} KB)`);
@@ -142,7 +160,7 @@ function main(): void {
 			log(`  removed stale shard ${f}`);
 		}
 	}
-	log(`  total ${out.length} families (${skipped} skipped), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
+	log(`  total ${shipped.length} shipped of ${out.length} built (${skipped} check-failed), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
 	fs.writeFileSync(LOG_PATH, logLines.join("\n") + "\n");
 }
 

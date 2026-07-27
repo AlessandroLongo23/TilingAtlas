@@ -52,7 +52,7 @@ export interface FreedrawFacts {
 // so the vocabulary shifts without changing the union.
 export interface ColorsFacts {
 	/** Which grid the coloring lives on. */
-	grid: "square" | "triangle" | "ts";
+	grid: "square" | "triangle" | "ts" | "hex";
 	/** Period lattice in Hermite normal form: (a,0) and (b,d). Meaningless (1×1 dummy) when `patch`
 	 * is present — the combined grid has no fixed lattice. */
 	lattice: { a: number; b: number; d: number };

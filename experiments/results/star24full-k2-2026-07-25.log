@@ -1,0 +1,192 @@
+=== star24full k=2 — launched 2026-07-25 17:53:32, 10 workers ===
+Goal: the first CERTIFIED k=2 catalog over the closed D=24 in-ring species set.
+Baseline to beat: star24 k=2 = 65 pruned blocks (130 raw, 51 s on one core).
+Reference point:  star24full k=1 = 44 pruned blocks (50 raw, ~10 s) — 37 -> 44, 0 lost, 7 new.
+Alphabet:         60,927 entries / 90 corner classes, against star24's 6,663 — ~9x.
+Runtime:          UNKNOWN. The 2026-07-11 attempt was still going at 11 CPU-min with
+                  23 raw blocks. Watcher below logs raw-block count every 5 min.
+
+[17:53:32] G0  build (MAXNUM=2 PALETTE=star24full) — regenerates tables if gen_alphabet.py moved
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/star24full.json --out tables/star24full --certify
+[gen] palette=star24full D=24 tiles=48 classes=90 configs=56570
+[cert] A6: 60927 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/star24full/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (60927 entries)
+touch tables/star24full/.generated
+rm -f .maxnum-star24full-*
+touch .maxnum-star24full-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/star24full -o eu_solver.star24full eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/star24full -o eu_pruner.star24full eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/star24full -o eu_develop.star24full eu_develop.cpp
+[17:54:14] G0  build done (42s)
+[17:54:14] G0  PROVENANCE MISMATCH — current gen_alphabet.py does NOT reproduce the committed tables:
+            tools/ctrnact-oracle/tables/star24full/certs.txt         | 1 +
+            tools/ctrnact-oracle/tables/star24full/pruner_tables.inc | 2 ++
+            tools/ctrnact-oracle/tables/star24full/solver_tables.inc | 2 ++
+            tools/ctrnact-oracle/tables/star24full/tables.py         | 1 +
+            4 files changed, 6 insertions(+)
+[17:54:14] G0  ^ this is a finding; the run below uses the REGENERATED tables
+[17:54:14] PHASE  solve at EU_NCBUDGET=6 — 10 workers -> run-par-k2-star24full-b6
+[17:54:14] build (MAXNUM=2 PALETTE=star24full)
+[17:54:15] PHASE 1  parallel solve — 10 workers, budget 6
+[17:59:14]     [b6 watcher] elapsed 5m — raw blocks so far: 52 (star24 k=2 total was 130)
+[18:04:15]     [b6 watcher] elapsed 10m — raw blocks so far: 65 (star24 k=2 total was 130)
+[18:09:15]     [b6 watcher] elapsed 15m — raw blocks so far: 80 (star24 k=2 total was 130)
+[18:14:15]     [b6 watcher] elapsed 20m — raw blocks so far: 93 (star24 k=2 total was 130)
+[18:19:15]     [b6 watcher] elapsed 25m — raw blocks so far: 99 (star24 k=2 total was 130)
+[18:24:15]     [b6 watcher] elapsed 30m — raw blocks so far: 105 (star24 k=2 total was 130)
+[18:29:15]     [b6 watcher] elapsed 35m — raw blocks so far: 105 (star24 k=2 total was 130)
+[18:34:15]     [b6 watcher] elapsed 40m — raw blocks so far: 111 (star24 k=2 total was 130)
+[18:39:15]     [b6 watcher] elapsed 45m — raw blocks so far: 117 (star24 k=2 total was 130)
+[18:44:15]     [b6 watcher] elapsed 50m — raw blocks so far: 127 (star24 k=2 total was 130)
+[18:49:15]     [b6 watcher] elapsed 55m — raw blocks so far: 128 (star24 k=2 total was 130)
+[18:54:15]     [b6 watcher] elapsed 60m — raw blocks so far: 136 (star24 k=2 total was 130)
+[18:59:15]     [b6 watcher] elapsed 65m — raw blocks so far: 137 (star24 k=2 total was 130)
+[19:04:15]     [b6 watcher] elapsed 70m — raw blocks so far: 137 (star24 k=2 total was 130)
+[19:09:15]     [b6 watcher] elapsed 75m — raw blocks so far: 137 (star24 k=2 total was 130)
+[19:14:15]     [b6 watcher] elapsed 80m — raw blocks so far: 137 (star24 k=2 total was 130)
+[19:19:15]     [b6 watcher] elapsed 85m — raw blocks so far: 137 (star24 k=2 total was 130)
+[19:24:15]     [b6 watcher] elapsed 90m — raw blocks so far: 138 (star24 k=2 total was 130)
+[19:29:15]     [b6 watcher] elapsed 95m — raw blocks so far: 138 (star24 k=2 total was 130)
+[19:30:52]   workers done (5797s wall)
+[19:30:52] PHASE 1b  merge worker outputs
+[19:30:52]   merged raw blocks: 146
+[19:30:52] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+total kept: 118
+[19:30:52]   prune done (0s);  total wall 5797s
+[19:30:52] PHASE  b6 finished rc=0 in 5798s
+[19:30:52] b6 pruned k=2 blocks: 0
+?
+[19:30:52] PHASE  solve at EU_NCBUDGET=7 — 10 workers -> run-par-k2-star24full-b7
+[19:30:52] build (MAXNUM=2 PALETTE=star24full)
+[19:30:53] PHASE 1  parallel solve — 10 workers, budget 7
+[19:35:53]     [b7 watcher] elapsed 5m — raw blocks so far: 50 (star24 k=2 total was 130)
+[19:40:53]     [b7 watcher] elapsed 10m — raw blocks so far: 56 (star24 k=2 total was 130)
+[19:45:53]     [b7 watcher] elapsed 15m — raw blocks so far: 79 (star24 k=2 total was 130)
+[19:50:53]     [b7 watcher] elapsed 20m — raw blocks so far: 93 (star24 k=2 total was 130)
+[19:55:53]     [b7 watcher] elapsed 25m — raw blocks so far: 97 (star24 k=2 total was 130)
+[20:00:53]     [b7 watcher] elapsed 30m — raw blocks so far: 105 (star24 k=2 total was 130)
+[20:05:53]     [b7 watcher] elapsed 35m — raw blocks so far: 105 (star24 k=2 total was 130)
+[20:10:53]     [b7 watcher] elapsed 40m — raw blocks so far: 111 (star24 k=2 total was 130)
+[20:15:53]     [b7 watcher] elapsed 45m — raw blocks so far: 111 (star24 k=2 total was 130)
+[20:20:53]     [b7 watcher] elapsed 50m — raw blocks so far: 117 (star24 k=2 total was 130)
+[20:25:53]     [b7 watcher] elapsed 55m — raw blocks so far: 127 (star24 k=2 total was 130)
+[20:30:53]     [b7 watcher] elapsed 60m — raw blocks so far: 128 (star24 k=2 total was 130)
+[20:35:53]     [b7 watcher] elapsed 65m — raw blocks so far: 136 (star24 k=2 total was 130)
+[20:40:53]     [b7 watcher] elapsed 70m — raw blocks so far: 137 (star24 k=2 total was 130)
+[20:45:53]     [b7 watcher] elapsed 75m — raw blocks so far: 137 (star24 k=2 total was 130)
+[20:50:53]     [b7 watcher] elapsed 80m — raw blocks so far: 137 (star24 k=2 total was 130)
+[20:55:53]     [b7 watcher] elapsed 85m — raw blocks so far: 137 (star24 k=2 total was 130)
+[21:00:53]     [b7 watcher] elapsed 90m — raw blocks so far: 137 (star24 k=2 total was 130)
+[21:05:53]     [b7 watcher] elapsed 95m — raw blocks so far: 138 (star24 k=2 total was 130)
+[21:37:18]     [b7 watcher] elapsed 126m — raw blocks so far: 138 (star24 k=2 total was 130)
+[21:40:21]   workers done (7768s wall)
+[21:40:21] PHASE 1b  merge worker outputs
+[21:40:21]   merged raw blocks: 146
+[21:40:21] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+total kept: 118
+[21:40:21]   prune done (0s);  total wall 7768s
+[21:40:21] PHASE  b7 finished rc=0 in 7769s
+[21:40:21] b7 pruned k=2 blocks: 0
+?
+[21:40:21] G1  FIXPOINT PASS — b6 and b7 catalogs byte-identical
+[21:40:21] G2  zero-lost gate vs star24 k=2 baseline (/Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-star-k2b6/pruned/eupruned_02.txt)
+old: 65 blocks   new: 1 blocks
+LOST (old>new count): 63
+  LOST (12*d16,6)A, (12*d16,3,3)A, (12*p6,6,12*p6,3)A   old x1 new x0
+  LOST (12*d18,4)A, (12*d18,6*p6)A, (12*p4,6*d14,4)F, (6*p6,4,6*p6,4)S2   old x1 new x0
+  LOST (12*d18,4)A, (12*d20,3)F, (12*p4,12*d20)A, (12*d18,12*p2,3)F, (12*p4,4,12*p4,3,12*p2,3)A   old x1 new x0
+  LOST (12*d18,4)Ax2, (6*d18,4)Ax2, (4,4,4,4)S2b, (12*p4,4,6*p2,4,4)F   old x1 new x0
+  LOST (12*d20,3)A, (12*d20,3)F, (12*p2,3,3,4,3,3)A, (12*p2,3,3,12*p2,3,3,3)A   old x1 new x0
+  LOST (12*d20,3)A, (12*d20,3)F, (12*p2,3,4*d14,3)A, (12*p2,3,4*p4,3,12*p2,3,3)A   old x1 new x0
+  LOST (12*d20,3)A, (12*d20,3)F, (12*p4,12*d20)A, (12*d18,12*p2,3)F, (12*p4,3,12*p2,3,3,12*p2,3)A   old x1 new x0
+  LOST (12*d20,3)A, (12*d20,3)F, (4*d14,12)A, (12*p2,3,4*d14,3)A, (12*p2,3,4*p4,12,3)F   old x1 new x0
+  LOST (12*d20,3)A, (12*d20,4*p4)A, (12*p2,4*d14,3,3)F, (4*p4,3,4*p4,3,4*p4,3)S3   old x1 new x0
+  LOST (12*d20,3)Ax2, (12*d20,3)F, (12*p2,3,12,3,3)F, (12*p2,3,3,12*p2,3,3,3)A   old x1 new x0
+  LOST (12*d20,3)Ax2, (12*p2,3,4,3,3,3)F, (3,3,3,3,3,3)S3b   old x1 new x0
+  LOST (12*d20,3)Ax2, (12,12,3)A, (12*p2,3,12,3,3)F   old x1 new x0
+  LOST (12*d20,3)Ax2, (6,4,3,4)A, (12*p2,3,6,4,3)F   old x1 new x0
+  LOST (12*d20,3)F, (12*p2,3,3*d14,3)A, (12*p2,3,3*p2,3,12*p2,3,3*p2,3)S2   old x1 new x0
+  LOST (12*p6,6*d18)A, (6*d18,4)A, (12*d16,6*p2,4)F, (12*p6,4,12*p6,4)S2   old x1 new x0
+  LOST (12,12,3)A, (12,3,4,3)A   old x1 new x0
+  LOST (12,4,3,3)F, (3,3,3,3,3,3)S3b   old x1 new x0
+  LOST (12,6,4)F, (6,4,3,4)A   old x1 new x0
+  LOST (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6   old x1 new x0
+  LOST (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F   old x1 new x0
+  LOST (3*d14,4,3)F, (3*p2,4,3,4,3*p2,3)A   old x1 new x0
+  LOST (3*d14,4,3)F, (3*p2,4,3,6,3)F   old x1 new x0
+  LOST (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6   old x1 new x0
+  LOST (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F   old x1 new x0
+  LOST (4*d14,4,3)F, (4*p4,4,3,4,3)F   old x1 new x0
+  LOST (4*d14,4,3)F, (4*p4,4,4,4*p4,3)A   old x1 new x0
+  LOST (4*d15,8)A, (8*d20,3)F, (8*p1,3,4*d15,3)A, (8*p1,3,4*p3,8,4*p3,3)A   old x1 new x0
+  LOST (4*d16,3,3)A, (4*d16,4*p2,3,4*p2)A   old x1 new x0
+  LOST (4*d16,3,3)A, (4*p2,3,4*p2,3,4*p2,3,4*p2,3)S4   old x1 new x0
+  LOST (4*d16,3,3)F, (4*p2,3,4,3,3,3)F   old x1 new x0
+  LOST (4*d16,6)A, (4*d16,3,3)A, (4*p2,6,6,4*p2,3)A   old x1 new x0
+  LOST (4*p4,4*d16,3)F, (4*d14,4*p2,3,3)F   old x1 new x0
+  LOST (4,3,4,3,3)A, (3,3,3,3,3,3)S6   old x1 new x0
+  LOST (4,3,4,3,3)F, (4,4,3,3,3)A   old x1 new x0
+  LOST (4,3,4,3,3)F, (4,4,3,3,3)F   old x1 new x0
+  LOST (4,4,3,3,3)A, (3,3,3,3,3,3)Ab   old x1 new x0
+  LOST (4,4,3,3,3)A, (3,3,3,3,3,3)S2   old x1 new x0
+  LOST (4,4,4,4)Aa, (4,4,3,3,3)A   old x1 new x0
+  LOST (4,4,4,4)S2a, (4,4,3,3,3)A   old x1 new x0
+  LOST (6*d14,4,3)F, (6*p6,4,3,3,3)F   old x1 new x0
+  LOST (6*d16,3*p2,4)F, (6*p4,3*d14,4)F   old x1 new x0
+  LOST (6*d16,3,3)A, (6*p4,3,6*p4,3,6*p4,3)S3   old x1 new x0
+  LOST (6*d16,3,3)F, (6*p4,3,3,3,3,3)F   old x1 new x0
+  LOST (6*d18,3*p2,3)F, (6*p2,3*d14,3,3)F   old x1 new x0
+  LOST (6*d18,4)F, (3*d14,4,3)F, (6*p2,4,3*p2,3,3,4)F   old x1 new x0
+  LOST (6*d18,4)F, (4,4,3,3,3)F, (6*p2,4,4,3,4)F   old x1 new x0
+  LOST (6*d18,4)F, (6*p6,6*d18)A, (6*d14,6*p2,4,6*p2)A, (6*p2,4,6*p2,4,6*p2,4)S3   old x1 new x0
+  LOST (6*p5,3*d15,3)F, (6*d15,3*p1,3,3)F   old x1 new x0
+  LOST (6,3,3,3,3)A, (3,3,3,3,3,3)S3b   old x1 new x0
+  LOST (6,3,3,3,3)F, (3,3,3,3,3,3)F   old x1 new x0
+  LOST (6,3,6,3)S2, (6,4,4,3)F   old x2 new x0
+  LOST (6,3,6,3)S2, (6,6,3,3)A   old x1 new x0
+  LOST (6,4,3,4)A, (4,3,4,3,3)A   old x1 new x0
+  LOST (6,4,3,4)A, (4,4,3,3,3)A   old x1 new x0
+  LOST (6,4,3,4)A, (6,4,4,3)F   old x1 new x0
+  LOST (6,6,3,3)A, (3,3,3,3,3,3)S6   old x1 new x0
+  LOST (6,6,3,3)A, (6,3,3,3,3)A   old x1 new x0
+  LOST (8*d18,4)A, (8*p6,8*d18)A, (8*d15,8*p3,4)F, (8*p6,4,8*p6,4)S2   old x1 new x0
+  LOST (8*d18,4)Ax2, (4,4,4,4)S4, (8*p3,4,8*p3,4,4)A   old x1 new x0
+  LOST (8*d20,3)A, (8*d20,3)F, (8*d20,4*p4)A, (8*p1,4*d14,8*p1,3,3)A, (8*p1,3,4,3,8*p1,3,3)A   old x1 new x0
+  LOST (8*d20,3)Ax2, (8,8,4)F, (8*p1,3,8,4,3)F   old x1 new x0
+  LOST (8*d20,3)Ax4, (8*d20,3)F, (8*p1,3,8,4,3)F, (8*p1,3,4,3,8*p1,3,3)F   old x1 new x0
+  LOST (8*d20,3)F, (8*p1,3,4*d15,3)A, (8*p1,3,4*p3,3,8*p1,3,4*p3,3)S2   old x1 new x0
+NEW  (new>old count): 0
+[21:40:21] G2  exit 1 (0 = no star24 block lost)
+[21:40:21] === star24full k=2 DONE ===
+
+=== MANUAL GATE RE-RUN (the script's own G1/G2 lines above used a WRONG PATH and misfired:
+    the pruner writes per-family files under out/pruned/eupruned_0K_*.txt, not a single
+    eupruned_02.txt. Ignore those lines; these are the real gates.) ===
+G1 FIXPOINT PASS — b6 and b7 catalogs byte-identical
+     b6 sha256 9d661c11b57498c2d0e3cd3128f3f03cb36a6f1a6f72327012538740048623e6
+     b7 sha256 9d661c11b57498c2d0e3cd3128f3f03cb36a6f1a6f72327012538740048623e6
+     diff -rq over out/pruned: no differing files
+     EU_NCBUDGET never engaged in EITHER run (all 10 worker stderrs empty, both budgets)
+     => the noncounting-budget provably never cut the search. CERTIFIED COMPLETE.
+G2 ZERO-LOST PASS — catalog_diff vs star24 k=2 baseline: old 65, new 74, LOST 0, NEW 9.
+
+RESULT (first certified k<=2 catalog over the closed D=24 in-ring species set):
+  k=1 : 44 blocks  (11 pure-regular + 33 star-bearing)
+  k=2 : 74 blocks  (20 pure-regular + 54 star-bearing)
+  star24 baseline was 37 / 65 (26 / 45 star-bearing).
+  Wall: b6 5797 s, b7 ~5900 s, 10 workers => ~16 CPU-hours per budget.
+
+LIBRARY IMPACT: ZERO new entries. All 9 new k=2 blocks are FLEXING members of the SAME 6
+  families the Atlas already ships as continuous alpha-sliders (export_family_cells.py:
+  star24 = 36 pinned + 9 flexing in 6 families; star24full = 36 pinned + 18 flexing in the
+  SAME 6 families, keys and [0,60] ranges identical; member lists go a=[1,2] -> a=[1,2,3]).
+  The closed palette CONFIRMS the shipped shelf rather than extending it.
+
+SPECIES: 6 of the 27 newly added species appear at k<=2 (3*3, 4*1, 4*5, 6*1, 6*3, 6*7);
+  the other 21 (added 8*/12*/24* species + the regular 24-gon) produce nothing.
+  NOTE: star24.json's `comment` understates its own species list (documents 10, ships 15 —
+  6*6, 8*3, 8*6, 12*4, 12*6 are present but undocumented). Fix the comment.

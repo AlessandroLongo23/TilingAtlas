@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // `next dev` and `next build` both write .next, so a production build run while the dev server is
+  // up clobbers its chunks and the dev server starts serving 404s for hashed assets. Setting
+  // NEXT_DIST_DIR lets a production build live somewhere else, e.g.
+  //   NEXT_DIST_DIR=.next-prod pnpm build && NEXT_DIST_DIR=.next-prod PORT=3001 pnpm start
+  // Unset, this is exactly the default.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Expose SvelteKit-style PUBLIC_* env vars to the browser. Next.js only
   // auto-inlines NEXT_PUBLIC_*; listing them here makes them available to
   // client-side code via `process.env.PUBLIC_*`.

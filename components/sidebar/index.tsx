@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { PageSidebar } from "@/components/page-sidebar";
-import type { Geometry } from "@/lib/services/referenceAtlas";
+import type { Geometry, Decoration } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { TilingsTab } from "./tilings-tab";
 
@@ -16,10 +16,15 @@ interface SidebarProps {
 	onNext?: () => void;
 	/** Active geometry — the catalogue's top-level split; also scopes random/prev/next. */
 	geometry: Geometry;
-	/** The active geometry's tilings (catalogue list + nav count). */
+	/** The active (geometry, decoration) cell's tilings (catalogue list + nav count). */
 	geometryList: CatalogueTiling[];
 	geometryCounts: Record<Geometry, number>;
 	onGeometryChange: (g: Geometry) => void;
+	/** Active decoration — the split below geometry (Tilings / Edge patterns / Colorings); scopes browsing too. */
+	decoration: Decoration;
+	/** Counts WITHIN the active geometry, so an unloaded shard reads as a disabled segment. */
+	decorationCounts: Record<Decoration, number>;
+	onDecorationChange: (d: Decoration) => void;
 }
 
 // Memoized: the /play viewer holds transient state (the parametric-angle slider) in the parent, so the
@@ -37,6 +42,9 @@ export const Sidebar = memo(function Sidebar({
 	geometryList,
 	geometryCounts,
 	onGeometryChange,
+	decoration,
+	decorationCounts,
+	onDecorationChange,
 }: SidebarProps) {
 	return (
 		<PageSidebar scrollable={false}>
@@ -50,6 +58,9 @@ export const Sidebar = memo(function Sidebar({
 				geometryList={geometryList}
 				geometryCounts={geometryCounts}
 				onGeometryChange={onGeometryChange}
+				decoration={decoration}
+				decorationCounts={decorationCounts}
+				onDecorationChange={onDecorationChange}
 			/>
 		</PageSidebar>
 	);

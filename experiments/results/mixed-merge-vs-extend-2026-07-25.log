@@ -1,0 +1,38 @@
+=== does extending a half's range reach its merge partner? ===
+
+merge ctrnact-mixed-family-k1-04  halves ['ctrnact-mixed-family-k1-04', 'ctrnact-mixed-family-k1-07']
+  ctrnact-mixed-family-k1-04: exported (90,150) → true (0.000,150.000) [collapse|collapse]
+    new below arc (0.000,90.000) probe α=45.000: no congruent α found in ctrnact-mixed-family-k1-07 (60,120)
+  ctrnact-mixed-family-k1-07: exported (60,120) → true (0.000,150.000) [collapse|collapse]
+    new below arc (0.000,60.000) probe α=30.000: no congruent α found in ctrnact-mixed-family-k1-04 (90,150)
+    new above arc (120.000,150.000) probe α=135.000: no congruent α found in ctrnact-mixed-family-k1-04 (90,150)
+
+merge ctrnact-mixed-family-k1-05  halves ['ctrnact-mixed-family-k1-05', 'ctrnact-mixed-family-k1-15']
+  ctrnact-mixed-family-k1-05: exported (120,180) → true (120.000,300.000) [collapse|collapse]
+    new above arc (180.000,300.000) probe α=240.000: no congruent α found in ctrnact-mixed-family-k1-15 (60,180)
+  ctrnact-mixed-family-k1-15: exported (60,180) → true (0.000,180.000) [collapse|collapse]
+    new below arc (0.000,60.000) probe α=30.000: no congruent α found in ctrnact-mixed-family-k1-05 (120,180)
+
+merge ctrnact-mixed-family-k2-05  halves ['ctrnact-mixed-family-k2-05', 'ctrnact-mixed-family-k2-06']
+  ctrnact-mixed-family-k2-05: exported (60,120) → true (0.000,120.000) [collapse|collapse]
+    new below arc (0.000,60.000) probe α=30.000: no congruent α found in ctrnact-mixed-family-k2-06 (60,120)
+  ctrnact-mixed-family-k2-06: exported (60,120) → true (0.000,120.000) [collapse|collapse]
+    new below arc (0.000,60.000) probe α=30.000: no congruent α found in ctrnact-mixed-family-k2-05 (60,120)
+
+merge ctrnact-mixed-family-k2-45  halves ['ctrnact-mixed-family-k2-46', 'ctrnact-mixed-family-k2-45']
+  ctrnact-mixed-family-k2-46: exported (0,90) → true (0.000,150.000) [collapse|collapse]
+    new above arc (90.000,150.000) probe α=120.000: no congruent α found in ctrnact-mixed-family-k2-45 (30,90)
+  ctrnact-mixed-family-k2-45: exported (30,90) → true (30.000,180.000) [collapse|collapse]
+    new above arc (90.000,180.000) probe α=135.000: no congruent α found in ctrnact-mixed-family-k2-46 (0,90)
+
+merge ctrnact-mixed-family-k2-47  halves ['ctrnact-mixed-family-k2-49', 'ctrnact-mixed-family-k2-47']
+  ctrnact-mixed-family-k2-49: exported (0,75) → true (0.000,135.000) [collapse|collapse]
+    new above arc (75.000,135.000) probe α=105.000: no congruent α found in ctrnact-mixed-family-k2-47 (45,105)
+  ctrnact-mixed-family-k2-47: exported (45,105) → true (45.000,180.000) [collapse|collapse]
+    new above arc (105.000,180.000) probe α=142.500: no congruent α found in ctrnact-mixed-family-k2-49 (0,75)
+
+merge ctrnact-mixed-family-k2-58  halves ['ctrnact-mixed-family-k2-59', 'ctrnact-mixed-family-k2-58']
+  ctrnact-mixed-family-k2-59: exported (0,90) → true (0.000,150.000) [collapse|collapse]
+    new above arc (90.000,150.000) probe α=120.000: no congruent α found in ctrnact-mixed-family-k2-58 (30,90)
+  ctrnact-mixed-family-k2-58: exported (30,90) → true (30.000,180.000) [collapse|collapse]
+    new above arc (90.000,180.000) probe α=135.000: IS ctrnact-mixed-family-k2-59 @ α=45.000 (rotation)

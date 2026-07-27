@@ -1,0 +1,102 @@
+=== scan-coupled-families: multi-parameter families shipped as 1-D slices ===
+98 mixed records, 12 with flexdim > #params
+loaded 517 pruned blocks from 2 run dirs
+
+  ctrnact-mixed-family-k2-02
+    species ['cx6-105.135', '3*1', '3*2'] seed [7, 1, 2]
+    P=2  axes named after ['cx6-105.135', '3*1']  basis [[1, 0, -1], [0, 1, 1]]
+    cell [6, 6, 6]  Σarea 3.822821  bbox [[-7.0, 9.0], [-1.0, 15.0]]
+  ctrnact-mixed-family-k2-11
+    species ['cx4-60.120', '4*2', '4*4'] seed [4, 2, 4]
+    P=2  axes named after ['cx4-60.120', '4*2']  basis [[1, 0, -1], [0, 1, 1]]
+    cell [4, 4, 8, 8]  Σarea 5.732051  bbox [[-4.0, 8.0], [-2.0, 16.0]]
+  ctrnact-mixed-family-k2-14
+    species ['cx4-75.105', '4*2', '4*3'] seed [5, 2, 3]
+    P=2  axes named after ['cx4-75.105', '4*2']  basis [[1, 0, -1], [0, 1, 1]]
+    cell [4, 4, 8, 8]  Σarea 5.199801  bbox [[-5.0, 7.0], [-2.0, 16.0]]
+  ctrnact-mixed-family-k2-36
+    species ['cx4-60.120', 'cx4-75.105', 'cx8-105.165', '4*2'] seed [4, 5, 7, 2]
+    P=2  axes named after ['cx4-60.120', 'cx4-75.105']  basis [[1, 0, -1, -1], [0, 1, 1, 0]]
+    cell [4, 4, 4, 4, 4, 4, 8, 8]  Σarea 11.113392  bbox [[-4.0, 2.0], [-5.0, 7.0]]
+  ctrnact-mixed-family-k2-45
+    species ['cx4-60.120', '3*2', '6*6'] seed [4, 2, 6]
+    P=2  axes named after ['cx4-60.120', '3*2']  basis [[1, 0, -1], [0, 1, 1]]
+    cell [4, 4, 4, 6, 6, 12]  Σarea 12.526279  bbox [[-4.0, 8.0], [-2.0, 14.0]]
+  ctrnact-mixed-family-k2-46
+    species ['cx4-60.120', 'cx6-90.150', '6*6'] seed [4, 6, 6]
+    P=2  axes named after ['cx4-60.120', 'cx6-90.150']  basis [[1, 0, 1], [0, 1, 1]]
+    cell [4, 4, 4, 6, 6, 12]  Σarea 15.526279  bbox [[-4.0, 8.0], [-6.0, 10.0]]
+  ctrnact-mixed-family-k2-47
+    species ['cx4-60.120', '3*1', '6*5'] seed [4, 1, 5]
+    P=2  axes named after ['cx4-60.120', '3*1']  basis [[1, 0, -1], [0, 1, 1]]
+    cell [4, 4, 4, 6, 6, 12]  Σarea 10.182618  bbox [[-4.0, 8.0], [-1.0, 15.0]]
+  ctrnact-mixed-family-k2-49
+    species ['cx4-60.120', 'cx6-75.165', '6*5'] seed [4, 5, 5]
+    P=2  axes named after ['cx4-60.120', 'cx6-75.165']  basis [[1, 0, 1], [0, 1, 1]]
+    cell [4, 4, 4, 6, 6, 12]  Σarea 13.528683  bbox [[-4.0, 8.0], [-5.0, 11.0]]
+  ctrnact-mixed-family-k2-50
+    species ['cx4-75.105', '3*1', '6*4'] seed [5, 1, 4]
+    P=2  axes named after ['cx4-75.105', '3*1']  basis [[1, 0, -1], [0, 1, 1]]
+    cell [4, 4, 4, 6, 6, 12]  Σarea 8.929405  bbox [[-5.0, 7.0], [-1.0, 15.0]]
+  ctrnact-mixed-family-k2-54
+    species ['cx4-60.120', 'cx4-75.105', 'cx6-105.135', '6*4'] seed [4, 5, 7, 4]
+    P=2  axes named after ['cx4-60.120', 'cx4-75.105']  basis [[1, 0, -1, -1], [0, 1, -1, 0]]
+    cell [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 12]  Σarea 18.368198  bbox [[-4.0, 4.0], [-5.0, 7.0]]
+  ctrnact-mixed-family-k2-55
+    species ['cx4-60.120', 'cx4-75.105', 'cx6-75.165', '6*4'] seed [4, 5, 5, 4]
+    P=2  axes named after ['cx4-60.120', 'cx4-75.105']  basis [[1, 0, -1, -1], [0, 1, 1, 0]]
+    cell [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 12]  Σarea 17.471623  bbox [[-4.0, 4.0], [-5.0, 7.0]]
+  ctrnact-mixed-family-k2-57
+    species ['cx4-60.120', '3*2', '6*2'] seed [4, 2, 2]
+    P=2  axes named after ['cx4-60.120', '3*2']  basis [[1, 0, 1], [0, 1, 1]]
+    cell [4, 4, 4, 6, 6, 12]  Σarea 6.526279  bbox [[-4.0, 8.0], [-2.0, 14.0]]
+
+=== grouping (integer δ ∈ [-6,6]^P, isometry-confirmed) ===
+  k2-11 @ δ=(1, 0) IS k2-14's seed (rotation)
+  k2-14 @ δ=(-1, 0) IS k2-11's seed (rotation)
+  k2-45 @ δ=(4, 4) IS k2-46's seed (rotation)
+  k2-45 @ δ=(0, -1) IS k2-47's seed (rotation)
+  k2-45 @ δ=(4, 3) IS k2-49's seed (rotation)
+  k2-45 @ δ=(1, -1) IS k2-50's seed (rotation)
+  k2-45 @ δ=(4, 0) IS k2-57's seed (rotation)
+  k2-46 @ δ=(4, -4) IS k2-45's seed (rotation)
+  k2-46 @ δ=(4, -5) IS k2-47's seed (rotation)
+  k2-46 @ δ=(0, -1) IS k2-49's seed (rotation)
+  k2-46 @ δ=(3, -5) IS k2-50's seed (rotation)
+  k2-46 @ δ=(0, -4) IS k2-57's seed (rotation)
+  k2-47 @ δ=(0, 1) IS k2-45's seed (rotation)
+  k2-47 @ δ=(4, 5) IS k2-46's seed (rotation)
+  k2-47 @ δ=(4, 4) IS k2-49's seed (rotation)
+  k2-47 @ δ=(1, 0) IS k2-50's seed (rotation)
+  k2-47 @ δ=(4, 1) IS k2-57's seed (rotation)
+  k2-49 @ δ=(4, -3) IS k2-45's seed (rotation)
+  k2-49 @ δ=(0, 1) IS k2-46's seed (rotation)
+  k2-49 @ δ=(4, -4) IS k2-47's seed (rotation)
+  k2-49 @ δ=(3, -4) IS k2-50's seed (rotation)
+  k2-49 @ δ=(0, -3) IS k2-57's seed (rotation)
+  k2-50 @ δ=(-1, 1) IS k2-45's seed (rotation)
+  k2-50 @ δ=(3, 5) IS k2-46's seed (rotation)
+  k2-50 @ δ=(-1, 0) IS k2-47's seed (rotation)
+  k2-50 @ δ=(3, 4) IS k2-49's seed (rotation)
+  k2-50 @ δ=(3, 1) IS k2-57's seed (rotation)
+  k2-54 @ δ=(0, 2) IS k2-55's seed (rotation)
+  k2-55 @ δ=(0, 2) IS k2-54's seed (rotation)
+  k2-57 @ δ=(4, 0) IS k2-45's seed (rotation)
+  k2-57 @ δ=(0, 4) IS k2-46's seed (rotation)
+  k2-57 @ δ=(4, -1) IS k2-47's seed (rotation)
+  k2-57 @ δ=(0, 3) IS k2-49's seed (rotation)
+  k2-57 @ δ=(3, -1) IS k2-50's seed (rotation)
+
+12 coupled records → 5 distinct famil(ies)
+  {k2-02}
+  {k2-11, k2-14}
+  {k2-36}
+  {k2-45, k2-46, k2-47, k2-49, k2-50, k2-57}
+  {k2-54, k2-55}
+
+=== plan → experiments/results/mixed-coupled-plan.json ===
+  ctrnact-mixed-family-k2-02  P=2  absorbs []
+  ctrnact-mixed-family-k2-11  P=2  absorbs ['k2-14']
+  ctrnact-mixed-family-k2-36  P=2  absorbs []
+  ctrnact-mixed-family-k2-45  P=2  absorbs ['k2-46', 'k2-47', 'k2-49', 'k2-50', 'k2-57']
+  ctrnact-mixed-family-k2-54  P=2  absorbs ['k2-55']

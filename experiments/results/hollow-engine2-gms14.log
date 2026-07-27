@@ -1,0 +1,4 @@
+=== GMS 14 at node_cap=120000, kappa searched 1..2 ===
+  1.4   4.3/2.4.3/2.3/2          kappa=1 -> unknown    31.0s
+  1.4   4.3/2.4.3/2.3/2          kappa=2 -> unknown    36.2s
+        -> unresolved

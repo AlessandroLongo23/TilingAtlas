@@ -1,5 +1,12 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
+import type { HollowPattern } from "@/lib/hollow/pattern";
+// One alias table per shelf, each written by that shelf's builder, so two builders never clobber each
+// other's keys. Ids are globally unique across shelves (tests/atlas-id-unique.test.ts), so a flat merge is
+// unambiguous — and a collision would be that test's failure, not a silent shadowing here.
+import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
+import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
+import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
@@ -7,13 +14,20 @@ import {
 	colorsGridOf as colorsPatternGridOf,
 	colorCensus,
 	COLORS_CATALOGUES,
+	colorsLazyShardsForK,
 	colorCountOf,
 	colorLetter,
 	type ColorPattern,
 	type ColorsGrid,
 } from "@/lib/colors/pattern";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
-import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import {
+	FREEDRAW_EAGER_FILES,
+	freedrawLazyShardsForK,
+	gridOf,
+	type FreedrawGrid,
+	type FreedrawPattern,
+} from "@/lib/freedraw/pattern";
 import {
 	hypEdgesBaseLabel,
 	hypEdgesFamilyLabel,
@@ -62,10 +76,20 @@ export type Certification = "proven" | "reproduced" | "candidate";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical" | "hollow";
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
+	// Hollow shelf only: a tiling by SELF-INTERSECTING regular star polygons {n/d}, where the
+	// crossings are NOT vertices (Grünbaum-Miller-Shephard, Uniform Tilings with Hollow Tiles, 1981).
+	// A different tile from the concave isotoxal |n/d| the `star`/`isotoxal` shelves carry. Its faces
+	// overlap by construction, so there is no cell polygon list the flat renderer could consume:
+	// `renderCell` is a throwaway here and never drawn, and its presence routes /play + the thumbnails
+	// to the hollow renderer (components/hollow-canvas.tsx) the way `freedraw` routes to the grid view.
+	// `density` is the constant areal winding number (may be negative or zero — that is the point of a
+	// hollow tiling, not a bug); `gms` is the Grünbaum-Miller-Shephard figure number when the tiling is
+	// one of theirs; `k` is 1 throughout (uniform only so far).
+	hollow?: HollowPattern;
 	// Hyperbolic shelf only: the Schläfli symbol {p,q} of a regular hyperbolic tiling. Kept as the card
 	// label for the regular entries; routing keys on `developed`. Absent (and geometry "euclidean"/undefined)
 	// for every Euclidean tiling.
@@ -137,6 +161,12 @@ export interface ReferenceTiling {
 	variant?: number;
 	variants?: number;
 	alphaRange?: [number, number]; // degrees; present ⇒ one-parameter family with an alpha slider
+	// MERGED families (mixed shelf): this entry is one continuous sweep spliced from two exported halves,
+	// cut where the flexing tile's alternating vertex passes 180° (concave star ↔ convex 2n-gon). `family`
+	// stays the survivor's label — it is the shelf's grouping/search key — so the two halves' labels live
+	// here, and `mergedFrom` records the pre-merge ids. Geometry is in `paramCell.segments`.
+	familyHalves?: [string, string];
+	mergedFrom?: string[];
 	candidate?: boolean; // ctrnact-star only: not in Myers' enumeration — candidate new tiling
 	preview?: boolean; // ctrnact-star only: from a PARTIAL (still-running) solve — incomplete, uncertified
 	// Historical first-discoverer of this tiling (Kepler, Krötenheerdt, Chavey, Galebach, Čtrnáct,
@@ -195,7 +225,7 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
+export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
@@ -203,6 +233,7 @@ export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold"
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
 // matches the legacy polygonClassLabel, so the two pages agree with or without a source.
 export function tileClassOf(t: { family: string; source?: ReferenceTiling["source"] }): TileClass {
+	if (t.source === "hollow") return "hollow";
 	if (t.source === "hyperbolic") return "hyperbolic";
 	if (t.source === "spherical") return "spherical";
 	if (t.source === "mixed") return "mixed";
@@ -221,10 +252,11 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
+	hollow: { short: "Hollow", long: "Hollow tilings (self-intersecting {n/d})" },
 	convex: { short: "Convex irregular", long: "Convex irregular polygons" },
 	isotoxal: { short: "Isotoxal", long: "Isotoxal polygons" },
 	mixed: { short: "Mixed", long: "Mixed polygons" },
@@ -246,12 +278,14 @@ export const SUB_ORDER = [
 	"",
 	"square",
 	"triangle",
+	"hex",
 	"ts",
 	// Colors: grid-major, then palette size — "square-2" is every 2-coloring of the 4^4 grid.
 	"square-2",
 	"square-3",
 	"triangle-2",
 	"triangle-3",
+	"hex-3",
 	"ts-2",
 	"ts-3",
 	"tetrahedron",
@@ -288,11 +322,19 @@ export function subOf(t: {
 
 // The catalogue's canonical linear order — the SAME order the /play sidebar renders top-to-bottom, so
 // arrow-key / prev-next browsing steps through the visible list rather than a differently-sorted one.
-// Sort key: tile class (TILE_CLASS_ORDER) → freedraw sub-axis (SUB_ORDER) → k ascending → canonicalKey.
-// The sidebar re-groups this same order into its tree, so within each (class, sub, k) bucket both land on
-// canonicalKey order and agree exactly. Used by /play to sort the browse array feeding both the picker and
-// the stepper, so ←/→ steps through the visible list.
+// Sort key: decoration (DECORATION_ORDER) → tile class (TILE_CLASS_ORDER) → freedraw sub-axis (SUB_ORDER)
+// → k ascending → canonicalKey. The sidebar re-groups this same order into its tree, so within each
+// (class, sub, k) bucket both land on canonicalKey order and agree exactly. Used by /play to sort the
+// browse array feeding both the picker and the stepper, so ←/→ steps through the visible list.
+//
+// Decoration leads because it is the higher axis (/library can show all three at once, where the order is
+// visible). Within Euclidean it changes nothing — TILE_CLASS_ORDER already runs the eight shape classes
+// before freedraw and colors. Within hyperbolic and spherical it corrects a real inversion: "hyperbolic"
+// and "spherical" sort LAST in TILE_CLASS_ORDER, so the developed patches used to trail the edge patterns
+// and colorings that decorate them.
 export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTiling): number {
+	const dec = DECORATION_ORDER.indexOf(decorationOf(a)) - DECORATION_ORDER.indexOf(decorationOf(b));
+	if (dec) return dec;
 	const cls = TILE_CLASS_ORDER.indexOf(tileClassOf(a)) - TILE_CLASS_ORDER.indexOf(tileClassOf(b));
 	if (cls) return cls;
 	const sub = SUB_ORDER.indexOf(subOf(a)) - SUB_ORDER.indexOf(subOf(b));
@@ -323,6 +365,38 @@ export const GEOMETRY_LABEL: Record<Geometry, string> = {
 	euclidean: "Euclidean",
 	hyperbolic: "Hyperbolic",
 	spherical: "Spherical",
+};
+
+// The decoration axis — WHAT is catalogued, one level below geometry and one above tile class. The three
+// values are the three kinds of object the Atlas holds, and they cross geometry completely: every geometry
+// has all three (Euclidean grids, hyperbolic {p,q} bases, spherical solids).
+//
+//   tilings    the tiling itself is the object; the tile set is what varies (the eight shape shelves in E²,
+//              the developed patches in H², the Platonic/Archimedean solids in S²)
+//   edges      a subset of a fixed grid's edges is drawn and the faces are the derived tiles (freedraw)
+//   colorings  a fixed tiling carries a face coloring (colors)
+//
+// This is axis 3 of docs/TILE_TAXONOMY.md §3. Before it existed, "Hyperbolic" and "Spherical" were tile
+// CLASSES as well as geometries, which /library papered over by relabeling the non-Euclidean class chips
+// and /play by collapsing a lone class row. Both workarounds are gone now.
+export type Decoration = "tilings" | "edges" | "colorings";
+// Derived from tileClassOf rather than from the payload flags (freedraw / hypEdges / sphColors / …). Both
+// give the same answer today; going through the class function is what makes it impossible for the two
+// axes to disagree once a class is added — a new TileClass lands in "tilings" only by being neither of the
+// decoration classes, and referenceAtlas.displayOrder.test.ts asserts the mapping is total.
+export function decorationOf(t: { family: string; source?: ReferenceTiling["source"] }): Decoration {
+	const c = tileClassOf(t);
+	if (c === "freedraw") return "edges";
+	if (c === "colors") return "colorings";
+	return "tilings";
+}
+export const DECORATION_ORDER: Decoration[] = ["tilings", "edges", "colorings"];
+export const DECORATION_LABEL: Record<Decoration, string> = {
+	tilings: "Tilings",
+	edges: "Edge patterns",
+	// "Colorings", not "Colors" — the Options tab's fill/hue controls are the colours; these are the
+	// catalogued colorings.
+	colorings: "Colorings",
 };
 
 // Hyperbolic display parameters read straight off the vertex configuration (`family` is the full cyclic
@@ -471,14 +545,16 @@ export function freedrawGridOf(t: Pick<ReferenceTiling, "freedraw">): FreedrawGr
 
 // The card / search label for a freedraw pattern: what its faces ARE, since there is no vertex
 // configuration to name it by. "1 strip + 2 polyominoes", "1 unbounded · holes". The finite noun
-// follows the grid: polyomino on squares, polyiamond on triangles, polyform on the combined grid.
+// follows the grid: polyomino on squares, polyiamond on triangles, polyhex on hexagons, polyform on
+// the combined grid (where the cells are not all one shape, so no -omino word fits).
+const FREEDRAW_FINITE_NOUN: Record<FreedrawGrid, readonly [string, string]> = {
+	square: ["polyomino", "polyominoes"],
+	triangle: ["polyiamond", "polyiamonds"],
+	hex: ["polyhex", "polyhexes"],
+	ts: ["polyform", "polyforms"],
+};
 export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
-	const noun =
-		grid === "triangle"
-			? (["polyiamond", "polyiamonds"] as const)
-			: grid === "ts"
-				? (["polyform", "polyforms"] as const)
-				: (["polyomino", "polyominoes"] as const);
+	const noun = FREEDRAW_FINITE_NOUN[grid];
 	const parts: string[] = [];
 	if (s.finite) parts.push(`${s.finite} ${s.finite === 1 ? noun[0] : noun[1]}`);
 	if (s.strips) parts.push(`${s.strips} ${s.strips === 1 ? "strip" : "strips"}`);
@@ -502,6 +578,61 @@ export function starFoldsOf(t: Pick<ReferenceTiling, "family">): number[] {
 export function isParametric(t: Pick<ReferenceTiling, "alphaRange">): boolean {
 	return Array.isArray(t.alphaRange);
 }
+
+/**
+ * Redirect a link that names a family absorbed by a merge (or by an α-reversal de-duplication) onto the
+ * entry that now carries it, moving the shared angle with it: `u = c + m·α`.
+ *
+ * Generated by `scripts/build-mixed-atlas.ts` into `mergedFamilyAliases.json`, imported statically so this
+ * resolves synchronously while the URL is being parsed — before any shelf has loaded.
+ *
+ * Only ABSORBED ids are remapped. A merge survivor keeps its id while its slider changes meaning (α became
+ * θ or a sweep angle), and there `α=45` and `u=45` are the same string: an old link to it lands wherever
+ * the ordinary range clamp puts it, which is a real member of the same family. Guessing instead would
+ * silently move the view, so it is left alone.
+ */
+export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: number[] | null }): {
+	tiling: string | null;
+	alphas: number[] | null;
+} {
+	// A coupled family absorbed several 1-D slices of itself, so the redirect goes from ONE angle to a
+	// PAIR: the slice's seat in the region, plus how far along its own line the old α had travelled.
+	const coupled = state.tiling ? COUPLED_FAMILY_ALIASES[state.tiling] : undefined;
+	// Only a SINGLE angle is in the old coordinate. A link that already carries the pair is in the new one
+	// (the survivor is aliased to itself, so without this guard every round-trip would remap its own output).
+	if (coupled && (state.alphas?.length ?? 0) <= 1) {
+		const a = state.alphas?.[0];
+		const t = a != null && Number.isFinite(a) ? (a - coupled.fromAlpha0Deg) / 15 : 0;
+		return {
+			tiling: coupled.to,
+			alphas: coupled.survivorAlpha0Deg.map(
+				(a0, p) => a0 + 15 * (coupled.deltaUnits[p] + t * coupled.axisUnits[p]),
+			),
+		};
+	}
+	const alias = state.tiling ? MERGED_FAMILY_ALIASES[state.tiling] : undefined;
+	if (!alias) return state;
+	const a = state.alphas?.[0];
+	const alphas =
+		a != null && Number.isFinite(a) ? [alias.uOf.c + alias.uOf.m * a, ...(state.alphas ?? []).slice(1)] : state.alphas;
+	return { tiling: alias.to, alphas };
+}
+
+type MergedAliasTable = Record<string, { to: string; uOf: { m: number; c: number } }>;
+type CoupledAliasTable = Record<string, {
+	to: string;
+	fromAlpha0Deg: number;
+	deltaUnits: number[];
+	axisUnits: number[];
+	survivorAlpha0Deg: number[];
+}>;
+
+const COUPLED_FAMILY_ALIASES: CoupledAliasTable = COUPLED_ALIASES_MIXED as CoupledAliasTable;
+
+const MERGED_FAMILY_ALIASES: MergedAliasTable = {
+	...(MERGED_ALIASES_MIXED as MergedAliasTable),
+	...(MERGED_ALIASES_ISOTOXAL as MergedAliasTable),
+};
 
 // Isotoxal shelf only: how many INDEPENDENT free angles the family flexes on (its paramCell slider count
 // P). 1 ⇒ a single isotoxal tile flexes (α-family); 2 ⇒ two isotoxal tiles flex on their own (α, β-family).
@@ -561,6 +692,10 @@ export interface ReferenceFilter {
 	// of this geometry match. The Euclidean-only sub-filters (tileClass, star, lattice, wallpaper group)
 	// are meaningless off the plane, so the shelf hides them for hyperbolic/spherical.
 	geometry?: Geometry;
+	// The decoration axis — WHAT is catalogued, between geometry and tileClass. Present in every geometry.
+	// When set to "tilings" the tileClass chips describe the shape shelves; the other two segments hold one
+	// class each (freedraw, colors), so their own facets take over instead.
+	decoration?: Decoration;
 	kValue?: number; // single vertex-orbit count; unset = every k
 	tileClass?: TileClass; // regular polygons only / star-bearing only / composite-tile demo
 	// Scaled shelf sub-class: "s12" keeps only tilings within sides {1,2} (the former Doubled class);
@@ -612,6 +747,7 @@ export interface ReferenceFilter {
 
 export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter): boolean {
 	if (f.geometry && geometryOf(t) !== f.geometry) return false;
+	if (f.decoration && decorationOf(t) !== f.decoration) return false;
 	if (f.kValue != null && t.k !== f.kValue) return false;
 	if (f.tileClass && tileClassOf(t) !== f.tileClass) return false;
 	if (f.scaledScaleSet) {
@@ -723,6 +859,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		latticeShape: r.latticeShape,
 		freedraw: r.freedraw,
 		colors: r.colors,
+		hollow: r.hollow,
 		sphericalFreedraw: r.sphericalFreedraw,
 		hypEdges: r.hypEdges,
 		hypColors: r.hypColors,
@@ -1118,21 +1255,13 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-islamic.json"),
 		bestEffort("/reference-atlas-hyperbolic.json"),
 		bestEffort("/reference-atlas-spherical.json"),
+		bestEffort("/reference-atlas-hollow.json"),
 		// Freedraw is adapted from its own raw catalogues, not a reference-atlas-*.json (see
 		// freedrawToReference). The verified square k<=3 base, the square k=4/k=5 extensions, the
-		// triangular-grid catalogue (k<=3 plus the k=4 extension), and the combined-grid (squares +
+		// triangular-grid catalogue (k<=3 plus the k=4 extension), the hexagonal grid's k<=6, and the combined-grid (squares +
 		// triangles) patches per k — merged here so /library and /play see one shelf.
 		Promise.all(
-			[
-				"/freedraw/solutions.json",
-				"/freedraw/solutions-k4.json",
-				"/freedraw/solutions-k5.json",
-				"/freedraw/tri-solutions.json",
-				"/freedraw/tri-solutions-k4.json",
-				"/freedraw/ts-solutions-k1.json",
-				"/freedraw/ts-solutions-k2.json",
-				"/freedraw/ts-solutions-k3.json",
-			].map((url) =>
+			FREEDRAW_EAGER_FILES.map((url) =>
 				fetch(url)
 					.then((res) => (res.ok ? (res.json() as Promise<FreedrawPattern[]>) : []))
 					.catch(() => [] as FreedrawPattern[]),
@@ -1237,6 +1366,66 @@ export async function loadComposableAtlasShard(k: number): Promise<ReferenceTili
 	composableShardInflight.set(k, p);
 	return p;
 }
+
+// Per-k lazy shards for the Euclidean DECORATION shelves — the hexagonal grid's deep tails, which are
+// the only freedraw/colors slices too big to load with the atlas (edges k=7/8/9 = 6.4/17.6/58 MB,
+// colorings k=6/7/8 = 4.3/8.8/28.6 MB). Fetched when that k comes into view, exactly like the hyperbolic
+// bases. Both are best-effort: a missing shard (404) degrades to an empty merge, never an error, because
+// the eager slices already make the shelf usable. Keyed by URL so the two never share a cache entry.
+const decorationShardCache = new Map<string, ReferenceTiling[]>();
+const decorationShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+function loadDecorationShard<T>(
+	url: string,
+	adapt: (p: T) => ReferenceTiling,
+): Promise<ReferenceTiling[]> {
+	const cached = decorationShardCache.get(url);
+	if (cached) return Promise.resolve(cached);
+	const existing = decorationShardInflight.get(url);
+	if (existing) return existing;
+	const p = fetch(url)
+		.then((res) => {
+			if (res.status === 404) return [] as T[]; // slice not shipped at this k — empty merge
+			if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+			return res.json() as Promise<T[]>;
+		})
+		.then((data) => {
+			const out = data.map(adapt);
+			decorationShardCache.set(url, out);
+			decorationShardInflight.delete(url);
+			return out;
+		})
+		.catch((err) => {
+			decorationShardInflight.delete(url);
+			throw err;
+		});
+	decorationShardInflight.set(url, p);
+	return p;
+}
+
+/** Freedraw (edge-system) shards for vertex-count k — the hexagonal grid's k≥7 today. */
+export async function loadFreedrawShardsForK(k: number): Promise<ReferenceTiling[]> {
+	const shards = freedrawLazyShardsForK(k);
+	if (!shards.length) return [];
+	const lists = await Promise.all(
+		shards.map((s) => loadDecorationShard<FreedrawPattern>(s.url, freedrawToReference)),
+	);
+	return lists.flat();
+}
+
+/** Colors shards for vertex-count k — the hexagonal 3-colorings' k≥6 today. */
+export async function loadColorsShardsForK(k: number): Promise<ReferenceTiling[]> {
+	const shards = colorsLazyShardsForK(k);
+	if (!shards.length) return [];
+	const lists = await Promise.all(
+		shards.map((s) => loadDecorationShard<ColorPattern>(`${s.prefix}${s.k}.json`, colorsToReference)),
+	);
+	return lists.flat();
+}
+
+/** Does vertex-count `k` have any lazy Euclidean decoration slice at all? Drives the fetch effects. */
+export const hasDecorationShardsForK = (k: number): boolean =>
+	freedrawLazyShardsForK(k).length > 0 || colorsLazyShardsForK(k).length > 0;
 
 // Per-k lazy shards for the isotoxal α-family shelf (k≥3, generated by scripts/build-isotoxal-atlas.ts into
 // public/reference-atlas-isotoxal-k{k}.json). The main reference-atlas-isotoxal.json carries only k≤2; k=3

@@ -224,10 +224,11 @@ export function classifyRegular(p: FreedrawPattern, a: FaceAnalysis): RegularInf
 	const hit = cache.get(a);
 	if (hit) return hit;
 	const grid = gridOf(p);
-	const perFace: (RegularFace | null)[] =
-		grid === "ts"
-			? a.faces.map((f) => regularOfPatch(p, f.id))
-			: a.faces.map((f) => regularOfFace(p, grid, f));
+	// Patch grids (ts, hex) carry explicit polygons; the fixed grids reconstruct from the bitmask.
+	// Keyed on `patch` rather than the grid name so a new patch grid needs no edit here.
+	const perFace: (RegularFace | null)[] = p.patch
+		? a.faces.map((f) => regularOfPatch(p, f.id))
+		: a.faces.map((f) => regularOfFace(p, grid, f));
 	const kinds = new Set<RegularKind>();
 	let allRegular = perFace.length > 0;
 	let allUnit = allRegular;

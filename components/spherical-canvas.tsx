@@ -30,13 +30,33 @@ import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIsla
 interface SphericalCanvasProps {
 	/** Stable solid id ("tetrahedron", "cuboctahedron", …) — the routing key for Platonic + Archimedean. */
 	solidId: string;
+	/**
+	 * Whether the solid takes input at all — drag, wheel and touch together. False renders the same
+	 * scene inert, which is what an embedded sphere in a SCROLLING page (the landing wall) needs
+	 * before the reader has claimed it: ArcballControls preventDefaults every wheel event it acts on,
+	 * so a live sphere stops the page scrolling the moment the pointer crosses it, and `touch-action:
+	 * none` would eat the swipe on a phone. /play, one sphere filling the viewport, leaves it on.
+	 */
+	interactive?: boolean;
+	/**
+	 * Fraction of the viewport's height the unit sphere spans at rest. /play's default leaves a
+	 * quarter of the frame as margin, which is right for a viewport with controls floating in its
+	 * corners; an embedded cell that IS the picture passes 1 and has the solid meet the top and
+	 * bottom edges. Only the resting framing — the wheel dollies from there either way.
+	 */
+	fitFraction?: number;
 }
 
-const CAMERA_DISTANCE = 3.2;
-// Orthographic half-height: the perspective camera (fov 45° at distance 3.2) frames the unit sphere with a
-// half-height of 3.2·tan(22.5°) ≈ 1.33, so matching it here keeps the solid the same on-screen size when the
-// projection toggles (only the perspective foreshortening changes, not the framing).
-const ORTHO_HALF_HEIGHT = 1.33;
+// Resting framing, as the fraction of the viewport half-height the unit sphere spans. 0.75 is /play's
+// long-standing look (camera distance 3.2, orthographic half-height 1.33); the two derivations below
+// reproduce those numbers exactly, and stay in step for any other fraction a caller asks for.
+const DEFAULT_FIT_FRACTION = 0.75;
+const HALF_FOV = Math.tan((22.5 * Math.PI) / 180); // fov 45° ⇒ half-height = distance · tan(22.5°)
+// The perspective distance that frames the unit sphere at `fit` of the half-height.
+const cameraDistanceFor = (fit: number) => 1 / (fit * HALF_FOV);
+// The orthographic half-height matching it, so the solid keeps its on-screen size across the
+// projection toggle (only the perspective foreshortening changes, not the framing).
+const orthoHalfHeightFor = (fit: number) => 1 / fit;
 // Maps the shared islamicBandWidth slider (a fraction, flat default 0.25) to the sphere strap's arc width in
 // radians — 0.25 → 0.09 rad, the tuned default look. The Border Width slider goes through the SAME factor, so
 // the border/band ratio on the sphere is identical to the flat one for any pair of slider values.
@@ -46,10 +66,9 @@ type SphericalCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 type Content = { kind: "sphere"; sphere: Sphere } | { kind: "wire"; wire: Wireframe } | { kind: "solid"; solid: FlatSolid };
 
 // Perspective (foreshortened) or orthographic (parallel) camera framing the unit sphere identically.
-function makeSphericalCamera(orthographic: boolean, aspect: number): SphericalCamera {
+function makeSphericalCamera(orthographic: boolean, aspect: number, halfHeight: number): SphericalCamera {
 	if (orthographic) {
-		const h = ORTHO_HALF_HEIGHT;
-		return new THREE.OrthographicCamera(-h * aspect, h * aspect, h, -h, 0.1, 100);
+		return new THREE.OrthographicCamera(-halfHeight * aspect, halfHeight * aspect, halfHeight, -halfHeight, 0.1, 100);
 	}
 	return new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
 }
@@ -58,8 +77,9 @@ function makeSphericalCamera(orthographic: boolean, aspect: number): SphericalCa
 // hidden. Factored out because the projection toggle recreates the controls fresh (full constructor re-init
 // = guaranteed-clean trackball state), rather than mutating a live instance's camera, which left rotation
 // in a corrupt state after a perspective⇄orthographic swap.
-function makeArcball(camera: SphericalCamera, canvas: HTMLCanvasElement, scene: THREE.Scene): ArcballControls {
+function makeArcball(camera: SphericalCamera, canvas: HTMLCanvasElement, scene: THREE.Scene, interactive = true): ArcballControls {
 	const controls = new ArcballControls(camera, canvas, scene);
+	controls.enabled = interactive; // the master gate — every handler checks it before consuming an event
 	controls.enablePan = false; // keep the sphere centred (no panning, per design)
 	controls.enableZoom = true; // wheel / pinch dolly
 	controls.enableRotate = true; // free quaternion trackball rotation
@@ -78,10 +98,10 @@ function makeArcball(camera: SphericalCamera, canvas: HTMLCanvasElement, scene: 
 }
 
 // Re-fit either camera type to a viewport aspect (perspective: aspect; orthographic: the L/R/T/B frustum).
-function applyCameraAspect(camera: SphericalCamera, w: number, h: number): void {
+function applyCameraAspect(camera: SphericalCamera, w: number, h: number, halfHeight: number): void {
 	const aspect = w > 0 && h > 0 ? w / h : 1;
 	if (camera instanceof THREE.OrthographicCamera) {
-		const hh = ORTHO_HALF_HEIGHT;
+		const hh = halfHeight;
 		camera.left = -hh * aspect;
 		camera.right = hh * aspect;
 		camera.top = hh;
@@ -92,9 +112,21 @@ function applyCameraAspect(camera: SphericalCamera, w: number, h: number): void 
 	camera.updateProjectionMatrix();
 }
 
-export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
+export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEFAULT_FIT_FRACTION }: SphericalCanvasProps) {
 	const poly = useMemo(() => polyhedronForId(solidId), [solidId]);
 	const hostRef = useRef<HTMLDivElement | null>(null);
+	// The canvas element itself (created imperatively below) — the gate effect writes its touch-action,
+	// and the mount effect reads the gate without taking it as a dep (it must never rebuild the WebGL
+	// context).
+	const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+	// Seeded from the first render's prop, then kept current by the gate effect below — never written
+	// during render. The two effects that read it (mount, projection swap) both build a fresh
+	// ArcballControls, and the gate effect re-applies the live value right after either.
+	const interactiveRef = useRef(interactive);
+	// The resting framing, read by the mount and projection effects (both build a camera) and by the
+	// render loop's resize path. A ref for the same reason as `interactive`: it must not rebuild the
+	// WebGL context.
+	const fitRef = useRef(fitFraction);
 	const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 	const sceneRef = useRef<THREE.Scene | null>(null);
 	const cameraRef = useRef<SphericalCamera | null>(null);
@@ -121,8 +153,9 @@ export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 		try {
 			canvas = document.createElement("canvas");
 			canvas.className = "absolute inset-0 h-full w-full";
-			canvas.style.touchAction = "none";
+			canvas.style.touchAction = interactiveRef.current ? "none" : "auto";
 			host.appendChild(canvas);
+			canvasElRef.current = canvas;
 			renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 		} catch (e) {
 			console.warn("SphericalCanvas: WebGL unavailable —", e);
@@ -152,13 +185,13 @@ export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 		// (effect below) recreates them as a fresh pair; reading refs keeps the rendered camera and the
 		// controlled camera the same instance, so dragging always follows the pointer.
 		const aspect0 = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
-		const camera = makeSphericalCamera(useConfiguration.getState().sphericalOrthographic, aspect0);
+		const camera = makeSphericalCamera(useConfiguration.getState().sphericalOrthographic, aspect0, orthoHalfHeightFor(fitRef.current));
 		// A three-quarter start so the solid reads as 3D on first paint (before the user rotates).
-		camera.position.set(1.35, 1.05, 2.6).setLength(CAMERA_DISTANCE);
+		camera.position.set(1.35, 1.05, 2.6).setLength(cameraDistanceFor(fitRef.current));
 		camera.lookAt(0, 0, 0);
 		camera.updateProjectionMatrix();
 		cameraRef.current = camera;
-		controlsRef.current = makeArcball(camera, canvas, scene);
+		controlsRef.current = makeArcball(camera, canvas, scene, interactiveRef.current);
 
 		// DEBUG (dev only): read the live camera + controls state to diagnose the projection-toggle drift.
 		if (process.env.NODE_ENV !== "production") {
@@ -183,7 +216,7 @@ export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 			if (w > 0 && h > 0 && (w !== boxRef.current.w || h !== boxRef.current.h)) {
 				boxRef.current = { w, h };
 				renderer.setSize(w, h, false);
-				if (cam) applyCameraAspect(cam, w, h);
+				if (cam) applyCameraAspect(cam, w, h, orthoHalfHeightFor(fitRef.current));
 			}
 			if (controls) controls.update();
 			if (cam) renderer.render(scene, cam);
@@ -197,6 +230,7 @@ export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 			renderer.dispose();
 			renderer.forceContextLoss();
 			if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+			canvasElRef.current = null;
 			rendererRef.current = null;
 			sceneRef.current = null;
 			cameraRef.current = null;
@@ -219,18 +253,29 @@ export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 		if (!renderer || !scene || !host || !prev || !oldControls) return;
 		if ((prev instanceof THREE.OrthographicCamera) === orthographic) return; // already the requested projection
 		const aspect = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
-		const camera = makeSphericalCamera(orthographic, aspect);
+		const camera = makeSphericalCamera(orthographic, aspect, orthoHalfHeightFor(fitRef.current));
 		// Preserve the current view: position + up drive the arcball's look direction; copy quaternion too so
 		// the first frame (before any update) matches.
 		camera.position.copy(prev.position);
 		camera.quaternion.copy(prev.quaternion);
 		camera.up.copy(prev.up);
 		camera.updateProjectionMatrix();
-		const controls = makeArcball(camera, renderer.domElement, scene);
+		const controls = makeArcball(camera, renderer.domElement, scene, interactiveRef.current);
 		cameraRef.current = camera;
 		controlsRef.current = controls; // publish the fresh pair before disposing the old one
 		oldControls.dispose();
 	}, [orthographic]);
+
+	// The interaction gate. Kept off the mount effect's deps (it must not rebuild the WebGL context)
+	// and re-applied on `orthographic` because a projection swap builds a fresh ArcballControls, which
+	// would otherwise come up at the constructor default.
+	useEffect(() => {
+		interactiveRef.current = interactive;
+		const controls = controlsRef.current;
+		if (controls) controls.enabled = interactive;
+		const canvas = canvasElRef.current;
+		if (canvas) canvas.style.touchAction = interactive ? "none" : "auto";
+	}, [interactive, orthographic]);
 
 	// The BASE surface — rebuilt when the solid or a mode changes. Islamic wins: with it on there is NO base
 	// (no sphere, no tiling-edge wireframe) — the star construction lines are the whole picture, drawn by the
@@ -308,10 +353,14 @@ export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 
 	// A projection toggle swaps in a fresh camera, which starts with no aspect applied. Drop the tracked box
 	// so the render loop re-fits it (perspective aspect or orthographic frustum) on its next frame; plain
-	// resizes need nothing here — the loop measures the host itself.
+	// resizes need nothing here — the loop measures the host itself. A changed `fitFraction` re-frames
+	// through the same path, after pulling the camera to the matching distance.
 	useEffect(() => {
+		fitRef.current = fitFraction;
+		const cam = cameraRef.current;
+		if (cam) cam.position.setLength(cameraDistanceFor(fitFraction));
 		boxRef.current = { w: 0, h: 0 };
-	}, [orthographic]);
+	}, [orthographic, fitFraction]);
 
 	// Hue ring + Line-stroke slider. Solid sphere: re-bake the surface texture in place. Wireframe: recolour
 	// the tubes (stroke doesn't apply — thickness is its own control). Both are cheap, so drags stay live.
@@ -466,5 +515,11 @@ export function SphericalCanvas({ solidId }: SphericalCanvasProps) {
 
 	// z-10 sits ABOVE the p5 input layer (canvas.tsx container is z-[1]) so ArcballControls receives the
 	// drag/wheel, while staying below the z-20 canvas badges/buttons so those remain clickable.
-	return <div ref={hostRef} className="absolute inset-0 z-10 h-full w-full" style={{ touchAction: "none" }} />;
+	return (
+		<div
+			ref={hostRef}
+			className="absolute inset-0 z-10 h-full w-full"
+			style={{ touchAction: interactive ? "none" : "auto" }}
+		/>
+	);
 }

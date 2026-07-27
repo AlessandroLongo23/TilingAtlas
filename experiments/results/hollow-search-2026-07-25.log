@@ -1,0 +1,27 @@
+
+=== delta=1 maxm=6 radius=2.6 n in [3, 4, 6, 8, 12] : 304 species ===
+  [3/304] TILING 3.4/3.12/5                       faces=   13 density=[(0, 87), (-1, 63)] uni=False 0.0s
+  [4/304] TILING 3.12.12                          faces=    8 density=1 uni=True 0.0s
+  [5/304] TILING 3/2.12/5.12/5                    faces= 1416 density=-1 uni=True 7.4s
+  [6/304] TILING 4.6.12                           faces=   11 density=1 uni=True 0.0s
+  [7/304] timeout        4.6/5.12/5                       20.0s
+  [8/304] TILING 4.8.8                            faces=   15 density=1 uni=True 0.0s
+  [9/304] TILING 4.8/3.8/7                        faces=   69 density=-1 uni=True 0.1s
+  [10/304] TILING 4/3.8/3.8/3                      faces=  342 density=-1 uni=True 0.6s
+  [11/304] TILING 6.6.6                            faces=   12 density=1 uni=True 0.0s
+  [12/304] TILING 6.12/5.12/11                     faces=   64 density=-2 uni=True 0.0s
+  [18/304] TILING 3.4.6.4                          faces=   29 density=1 uni=True 0.0s
+  [19/304] TILING 3.6.3.6                          faces=   24 density=1 uni=True 0.0s
+  ... 25/304 found=11 timeouts=1 elapsed=30s eta=334s
+  [27/304] timeout        3.8.12/5.8                       20.8s
+  [31/304] timeout        3.8/3.12/11.8/3                  20.7s
+  [35/304] TILING 3.12/5.6/5.12/5                  faces=  279 density=-2 uni=True 0.2s
+  [36/304] TILING 4.4.4.4                          faces=   32 density=1 uni=True 0.0s
+  [37/304] timeout        4.4.8.8/3                        20.1s
+  [38/304] timeout        4.4.12.12/5                      20.1s
+  [39/304] timeout        4.6.6.12/5                       20.0s
+  [42/304] timeout        4.12.4.12/5                      20.7s
+  [46/304] timeout        6.8/3.8/3.12                     20.0s
+  [47/304] timeout        6.8/3.12.8/3                     21.9s
+  [48/304] timeout        6/5.8/3.8/3.12/5                 21.2s
+  [49/304] timeout        6/5.8/3.12/5.8/3                 21.9s

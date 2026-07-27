@@ -8,11 +8,15 @@ OF SCOPE"). The mission is now breadth + correctness of the Atlas itself, with c
 Marek Čtrnáct and contact opened with Craig Kaplan and Joseph Myers. The old TA (thesis-agent) and
 theorem-certification lines are retired — history lives in `docs/SYNC.md` and `DEVELOPMENT_NOTES.md`.
 
-- **CC** — Non-Euclidean decoration shelves shipped: hyperbolic edge systems (13 bases, 45,203 tilings)
-  and colorings in H²/S² (~19.5k, NOTES §90–91); Sub Rosa substitution generator on `feat/subrosa-editor`
-  (n=5 live, n=7+ blocked on a robust interior fill — NOTES §93). NEXT: **data integrity on the shipped
-  corpora** — `edges_667` ships k = 1,5,7,8,9,12,13 with k = 2,3,4,6,10,11 absent from Marek's files (every
-  other hyperbolic base is contiguous from k=1), so that shelf is a sample presented as a catalogue; label
-  it honestly and ask Marek for the missing k + the k=12/13 chiral files. Then the de Bruijn fill for n≥7.
+- **CC** — `feat/subrosa-editor` merged 2026-07-27, 39 commits. Shipped on it: Sub Rosa (n = 4–9,11),
+  `/multigrid` + duality split-view, the hollow engine (all 14 GMS), the hexagonal {6,3} shelves, four
+  new hyperbolic colour bases, the live landing cells, the p5-free symmetry overlays, and `/defense`.
+  NEXT: **re-run ring D=42** — it was interrupted mid-solve and is the one ring that separates
+  7-fold-with-triangles from the D=28 result, so the ring sweep cannot be called complete without it
+  (`experiments/results/ring-sweep-2026-07-25.log`). Then the `public/` weight problem: 669 MB, 504 MB
+  of it tracked, `hex-solutions-k9.json` alone 56 MB for one array entry.
+  Standing flags — `edges_667` ships non-contiguous k (2,3,4,6,10,11 absent from Marek's files), a sample
+  presented as a catalogue: label it honestly and ask Marek for the missing k + k=12/13 chiral files.
+  `tests/star-general-path.test.ts` fails on a 60 s timeout, takes 151 s, and predates all of this.
 - **Alessandro** — collaborator pipeline: what to request next from Marek (missing 6.6.7 k values first),
   and what Kaplan / Myers could contribute that the atlas cannot generate itself.

@@ -1,0 +1,21 @@
+% fig:gluing-profile — wrapper. To use in the thesis, copy both this file and
+% fig-gluing-profile-body.tex into thesis/figures/ and \input{figures/fig-gluing-profile}.
+\begin{figure}[htbp]
+\centering
+\input{figures/fig-gluing-profile-body}
+\caption[The mismatch rule, worked on $3.4.4.6$]{Why the first of the four
+local rules rejects what it rejects, worked on a $3.4.4.6$ vertex. (a) Each
+half-edge sees one polygon on its left and one on its right, and that pair is
+its \emph{profile}: reading clockwise from half-edge $0$, the four profiles are
+hexagon/triangle, triangle/square, square/square and square/hexagon. (b)
+Gluing two half-edges lays their polygons face to face, so the two profiles
+must be opposites. The gluing $(0\;1)$ fails this: below the edge the two
+triangles agree, but above it the hexagon flanking $0$ meets the square
+flanking $1$, and no tiling contains that edge. (c) The only profile opposite
+to hexagon/triangle is triangle/hexagon, which on this vertex is carried by
+$*0$ alone, so $[0]$ is the single admissible gluing at half-edge $0$. The
+rule is local, it is checked before any coordinate is computed, and
+\cref{ch:engine-proof} must establish that it never rejects a partial assembly
+that would have grown into a tiling.}
+\label{fig:gluing-profile}
+\end{figure}

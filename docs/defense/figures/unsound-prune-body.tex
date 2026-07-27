@@ -1,0 +1,41 @@
+\begin{tikzpicture}[scale=0.62]
+  % ---------- (a) the partial patch ----------
+  \begin{scope}[shift={(0,0)}]
+    \foreach \i in {0,...,3}
+      \path[tileedge, fill=tileN4!50] (\i,0) rectangle ++(1,1);
+    \node[conceptnote, text width=40mm] at (2,-1.0)
+      {(a) partial patch:\\closure certifies a period};
+  \end{scope}
+
+  % arrows to the two completions; the prune cross sits on the second branch
+  \draw[flow] (5.1,0.8) -- (6.6,1.9) node[midway, above, sloped, font=\footnotesize] {extend};
+  \draw[flow] (5.1,0.2) -- (6.6,-1.6) node[midway, below, sloped, font=\footnotesize] {extend};
+  \node[font=\Large\bfseries, text=oiVermillion] at (5.92,-0.78) {$\times$};
+  \node[conceptnote, text=oiVermillion, text width=34mm, anchor=east] at (5.3,-2.5)
+    {pruned by emit-on-closure: tiling lost};
+
+  % ---------- (b) periodic completion: 4^4 ----------
+  \begin{scope}[shift={(7.2,1.2)}]
+    \foreach \i in {0,...,3}
+      \foreach \j in {0,...,1}
+        \path[tileedge, fill=tileN4!50] (\i,\j) rectangle ++(1,1);
+    \node[conceptnote, text width=58mm] at (2,2.45)
+      {(b) periodic completion: $4^4$, emitted};
+  \end{scope}
+
+  % ---------- (c) different completion: 3^3.4^2 ----------
+  \begin{scope}[shift={(7.2,-4.3)}]
+    % bottom row: squares
+    \foreach \i in {0,...,3}
+      \path[tileedge, fill=tileN4!50] (\i,0) rectangle ++(1,1);
+    % triangle row on top (3^3.4^2)
+    \foreach \i in {0,...,3} {
+      \path[tileedge, fill=tileN3!50] (\i,1) -- (\i+1,1) -- (\i+0.5,1.866) -- cycle;
+      \path[tileedge, fill=tileN3!50] (\i,1) -- (\i+0.5,1.866) -- (\i-0.5,1.866) -- cycle;
+    }
+    \path[tileedge, fill=tileN3!50] (4,1) -- (4.5,1.866) -- (3.5,1.866) -- cycle;
+    \node[conceptnote, text width=62mm] at (2,-1.05)
+      {(c) the same patch extends into a \emph{different} tiling
+       ($3^3.4^2$, or non-periodic row mixtures)};
+  \end{scope}
+\end{tikzpicture}

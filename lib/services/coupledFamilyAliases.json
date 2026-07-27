@@ -1,0 +1,194 @@
+{
+ "ctrnact-mixed-family-k2-02": {
+  "to": "ctrnact-mixed-family-k2-02",
+  "fromAlpha0Deg": 105,
+  "deltaUnits": [
+   0,
+   0
+  ],
+  "axisUnits": [
+   -5,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   105,
+   15
+  ]
+ },
+ "ctrnact-mixed-family-k2-11": {
+  "to": "ctrnact-mixed-family-k2-11",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   0,
+   0
+  ],
+  "axisUnits": [
+   1,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-14": {
+  "to": "ctrnact-mixed-family-k2-11",
+  "fromAlpha0Deg": 75,
+  "deltaUnits": [
+   1,
+   0
+  ],
+  "axisUnits": [
+   1,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-36": {
+  "to": "ctrnact-mixed-family-k2-36",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   0,
+   0
+  ],
+  "axisUnits": [
+   0,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   75
+  ]
+ },
+ "ctrnact-mixed-family-k2-45": {
+  "to": "ctrnact-mixed-family-k2-45",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   0,
+   0
+  ],
+  "axisUnits": [
+   1,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-46": {
+  "to": "ctrnact-mixed-family-k2-45",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   4,
+   4
+  ],
+  "axisUnits": [
+   -1,
+   -1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-47": {
+  "to": "ctrnact-mixed-family-k2-45",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   0,
+   -1
+  ],
+  "axisUnits": [
+   1,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-49": {
+  "to": "ctrnact-mixed-family-k2-45",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   4,
+   3
+  ],
+  "axisUnits": [
+   -1,
+   -1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-50": {
+  "to": "ctrnact-mixed-family-k2-45",
+  "fromAlpha0Deg": 75,
+  "deltaUnits": [
+   1,
+   -1
+  ],
+  "axisUnits": [
+   1,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-57": {
+  "to": "ctrnact-mixed-family-k2-45",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   4,
+   0
+  ],
+  "axisUnits": [
+   -1,
+   -1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   30
+  ]
+ },
+ "ctrnact-mixed-family-k2-54": {
+  "to": "ctrnact-mixed-family-k2-54",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   0,
+   0
+  ],
+  "axisUnits": [
+   0,
+   1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   75
+  ]
+ },
+ "ctrnact-mixed-family-k2-55": {
+  "to": "ctrnact-mixed-family-k2-54",
+  "fromAlpha0Deg": 60,
+  "deltaUnits": [
+   0,
+   2
+  ],
+  "axisUnits": [
+   0,
+   -1
+  ],
+  "survivorAlpha0Deg": [
+   60,
+   75
+  ]
+ }
+}

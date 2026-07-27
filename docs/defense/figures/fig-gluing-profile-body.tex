@@ -1,0 +1,97 @@
+% fig:gluing-profile (body) — the mismatch rule, worked on 3.4.4.6.
+% Ground truth: the half-edge profile table of Čtrnáct's STS/Conway writeup
+% (materials/writeups/sts_conway.docx): half-edge 0 = hexagon/triangle,
+% 1 = triangle/square, 2 = square/square, 3 = square/hexagon; edges numbered
+% clockwise, so a 3.4.4.6 vertex with edges at 0, 120, 210, 300 degrees carries
+% half-edges 0, 3, 2, 1 respectively.
+% Needs: figures/concept-style.tex (tileN*, oi*, tileedge, hairline, conceptnote).
+\begin{tikzpicture}
+
+  % ================= (a) the vertex, and where the profiles come from =========
+  \begin{scope}[shift={(0,0)}, scale=1.9]
+    \begin{scope}
+      \clip (0,0) circle (0.85);
+      % hexagon spans 0..120, squares 120..210 and 210..300, triangle 300..360
+      \fill[tileN6] (0,0) -- (1,0) -- (1.5,0.866) -- (1,1.732) -- (0,1.732)
+                          -- (-0.5,0.866) -- cycle;
+      \fill[tileN4] (0,0) -- (-0.5,0.866) -- (-1.366,0.366) -- (-0.866,-0.5) -- cycle;
+      \fill[tileN4] (0,0) -- (-0.866,-0.5) -- (-0.366,-1.366) -- (0.5,-0.866) -- cycle;
+      \fill[tileN3] (0,0) -- (0.5,-0.866) -- (1,0) -- cycle;
+      \draw[tileedge] (0,0) -- (0:1);
+      \draw[tileedge] (0,0) -- (120:1);
+      \draw[tileedge] (0,0) -- (210:1);
+      \draw[tileedge] (0,0) -- (300:1);
+    \end{scope}
+    % the four half-edges, vertex -> edge midpoint
+    \foreach \a in {0,120,210,300}{
+      \draw[draw=oiBlue, line width=1pt] (0,0) -- (\a:0.5);
+      \draw[draw=oiBlue, line width=0.7pt]
+        ([shift={(\a+90:0.045)}]\a:0.5) -- ([shift={(\a-90:0.045)}]\a:0.5);
+    }
+    \fill[figEdge] (0,0) circle (0.032);
+    % tile sizes, inside the sectors: the clip radius is smaller than any of
+    % these polygons, so shape alone cannot distinguish them
+    \node[font=\tiny, text=figEdge] at (60:0.30)  {$6$};
+    \node[font=\tiny, text=figEdge] at (165:0.30) {$4$};
+    \node[font=\tiny, text=figEdge] at (255:0.30) {$4$};
+    \node[font=\tiny, text=figEdge] at (330:0.30) {$3$};
+    \node[font=\footnotesize, text=figEdge] at (11:0.66)  {$0$};
+    \node[font=\footnotesize, text=figEdge] at (131:0.66) {$3$};
+    \node[font=\footnotesize, text=figEdge] at (221:0.66) {$2$};
+    \node[font=\footnotesize, text=figEdge] at (311:0.66) {$1$};
+    \node[font=\scriptsize, text=figEdge] at (0,-1.16) {$3.4.4.6$};
+  \end{scope}
+  \node[conceptnote, text width=38mm] at (0,-3.05)
+    {(a) half-edge $0$ has a hexagon on its left and a triangle on its right};
+
+  % ================= (b) a gluing that fails ==================================
+  \begin{scope}[shift={(4.4,0)}, scale=1.6]
+    \fill[tileN6] (-0.85,0) rectangle (0,0.5);
+    \fill[tileN4] (0,0) rectangle (0.85,0.5);
+    \fill[tileN3] (-0.85,-0.5) rectangle (0,0);
+    \fill[tileN3] (0,-0.5) rectangle (0.85,0);
+    \node[font=\tiny, text=figEdge] at (-0.43,0.25) {hexagon};
+    \node[font=\tiny, text=figEdge] at (0.43,0.25)  {square};
+    \node[font=\tiny, text=figEdge] at (-0.43,-0.25) {triangle};
+    \node[font=\tiny, text=figEdge] at (0.43,-0.25)  {triangle};
+    \draw[tileedge] (-0.85,0.5) rectangle (0.85,-0.5);
+    \draw[draw=oiBlue, line width=1pt] (-0.85,0) -- (0.85,0);
+    \draw[draw=oiBlue, line width=0.7pt] (0,-0.07) -- (0,0.07);
+    \fill[figEdge] (-0.85,0) circle (0.045);
+    \fill[figEdge] (0.85,0) circle (0.045);
+    % the two sides disagree above the edge
+    \draw[draw=oiVermillion, line width=0.9pt, dashed] (0,0.02) -- (0,0.5);
+    \node[font=\footnotesize, text=oiVermillion] at (0,0.66) {$\times$};
+    \node[font=\footnotesize, text=oiGreen] at (0,-0.66) {$\checkmark$};
+    \node[font=\scriptsize, text=figEdge] at (-0.62,0.86) {$0$};
+    \node[font=\scriptsize, text=figEdge] at (0.62,0.86)  {$1$};
+    \node[font=\footnotesize, text=oiVermillion] at (0,-1.02) {$(0\;1)$ is rejected};
+  \end{scope}
+  \node[conceptnote, text width=38mm] at (4.4,-3.05)
+    {(b) the triangles agree, the hexagon meets a square: the rule fires};
+
+  % ================= (c) the gluing that fits =================================
+  \begin{scope}[shift={(8.8,0)}, scale=1.6]
+    \fill[tileN6] (-0.85,0) rectangle (0.85,0.5);
+    \fill[tileN3] (-0.85,-0.5) rectangle (0.85,0);
+    \node[font=\tiny, text=figEdge] at (-0.43,0.25) {hexagon};
+    \node[font=\tiny, text=figEdge] at (0.43,0.25)  {hexagon};
+    \node[font=\tiny, text=figEdge] at (-0.43,-0.25) {triangle};
+    \node[font=\tiny, text=figEdge] at (0.43,-0.25)  {triangle};
+    \draw[tileedge] (-0.85,0.5) rectangle (0.85,-0.5);
+    \draw[hairline] (0,0.02) -- (0,0.5);
+    \draw[hairline] (0,-0.02) -- (0,-0.5);
+    \draw[draw=oiBlue, line width=1pt] (-0.85,0) -- (0.85,0);
+    \draw[draw=oiBlue, line width=0.7pt] (0,-0.07) -- (0,0.07);
+    \fill[figEdge] (-0.85,0) circle (0.045);
+    \fill[figEdge] (0.85,0) circle (0.045);
+    \node[font=\footnotesize, text=oiGreen] at (0,0.66)  {$\checkmark$};
+    \node[font=\footnotesize, text=oiGreen] at (0,-0.66) {$\checkmark$};
+    \node[font=\scriptsize, text=figEdge] at (-0.62,0.86) {$0$};
+    \node[font=\scriptsize, text=figEdge] at (0.62,0.86)  {$*0$};
+    \node[font=\footnotesize, text=oiGreen] at (0,-1.02) {$[0]$ is the only fit};
+  \end{scope}
+  \node[conceptnote, text width=38mm] at (8.8,-3.05)
+    {(c) only the opposite profile works, and $*0$ is the only edge carrying it};
+
+\end{tikzpicture}

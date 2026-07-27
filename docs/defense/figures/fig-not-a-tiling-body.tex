@@ -1,0 +1,48 @@
+% fig:not-a-tiling (body) — the two ways a family of polygons fails to be a tiling.
+% Authored for the defense: no atlas can supply these, because every atlas entry is a valid tiling.
+% Needs: concept-style.tex (tileN*, oi*, tileedge, conceptnote).
+\begin{tikzpicture}[scale=1.05]
+
+  % ================= (a) a tiling ==========================================
+  \begin{scope}[shift={(0,0)}]
+    \foreach \x in {0,1,2} \foreach \y in {0,1,2} {
+      \fill[tileN4] (\x,\y) rectangle ++(1,1);
+      \draw[tileedge] (\x,\y) rectangle ++(1,1);
+    }
+  \end{scope}
+  \node[conceptnote, text width=32mm] at (1.5,-0.95)
+    {(a) a tiling: every point of the plane is covered exactly once};
+
+  % ================= (b) a gap =============================================
+  \begin{scope}[shift={(4.2,0)}]
+    \foreach \x in {0,1,2} \foreach \y in {0,1,2} {
+      \ifnum\x=1 \ifnum\y=1 \else
+        \fill[tileN4] (\x,\y) rectangle ++(1,1);
+        \draw[tileedge] (\x,\y) rectangle ++(1,1);
+      \fi \else
+        \fill[tileN4] (\x,\y) rectangle ++(1,1);
+        \draw[tileedge] (\x,\y) rectangle ++(1,1);
+      \fi
+    }
+    % the hole
+    \draw[draw=oiVermillion, line width=1pt, dashed] (1,1) rectangle ++(1,1);
+    \node[font=\footnotesize, text=oiVermillion] at (1.5,1.5) {gap};
+  \end{scope}
+  \node[conceptnote, text width=32mm] at (5.7,-0.95)
+    {(b) not a tiling: a point of the plane is covered by nothing};
+
+  % ================= (c) an overlap ========================================
+  \begin{scope}[shift={(8.4,0)}]
+    \foreach \x in {0,1,2} \foreach \y in {0,1,2} {
+      \fill[tileN4] (\x,\y) rectangle ++(1,1);
+      \draw[tileedge] (\x,\y) rectangle ++(1,1);
+    }
+    % one tile laid down out of register, so it sits on top of its neighbours
+    \fill[oiVermillion, opacity=0.42] (1.45,1.45) rectangle ++(1,1);
+    \draw[draw=oiVermillion, line width=1pt] (1.45,1.45) rectangle ++(1,1);
+    \node[font=\footnotesize, text=oiVermillion] at (1.95,2.72) {overlap};
+  \end{scope}
+  \node[conceptnote, text width=32mm] at (9.9,-0.95)
+    {(c) not a tiling: a point of the plane is covered twice};
+
+\end{tikzpicture}

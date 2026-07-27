@@ -13,7 +13,7 @@ import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { extractFaces, colorFacesAbc, type Segment, type Marker } from "@/utils/islamicArrangement";
 import { twoColorFaces } from "@/lib/utils/islamicInterlace";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
-import { evaluateParamCell, resolveAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
@@ -95,6 +95,13 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 	const meshSigRef = useRef<string | null>(null);
 	// Timestamp (performance.now) of the last mesh rebuild, for the slider-drag throttle above.
 	const lastRebuildRef = useRef(0);
+	// The α-derived chain (cell → basis → patch → arrangement mesh) is rebuilt as ONE unit, gated to a
+	// ~50% duty cycle measured from its own last run: `cost` is how long that unit took, `last` when it
+	// started, and the next one waits 2×cost. A drag on a family whose arrangement costs 10ms therefore
+	// updates at ~50Hz instead of trying (and failing) at 120Hz, while a cheap family still tracks every
+	// frame — no fixed number to tune, and it degrades gracefully on slower hardware. Measured: rebuilding
+	// it every tick put a k=2 star family at 35ms/frame with the arrangement alone costing ~10ms.
+	const alphaGateRef = useRef<{ last: number; cost: number; startedAt: number | null }>({ last: 0, cost: 0, startedAt: null });
 	// Instance grid over the visible lattice range; rebuilt only when the radius changes (like EuclideanCanvas).
 	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
 
@@ -170,9 +177,14 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			// mesh, instance grid. Must run before `meta` is read. Rigid tilings skip this entirely.
 			const pc = paramCellRef.current;
 			if (pc) {
-				const alphas = resolveAlphaDegs(pc, useFamilyAlphas.getState().values);
+				// Clamp-only, not the 0.5° grid snap: the 2-D region pad and the Command-scrub are continuous.
+				const alphas = resolveAlphaDegsRaw(pc, useFamilyAlphas.getState().values);
 				const sig = alphas.map((a) => a.toFixed(2)).join(",");
-				if (sig !== alphaSigRef.current) {
+				const gate = alphaGateRef.current;
+				const nowMs = performance.now();
+				if (sig !== alphaSigRef.current && nowMs - gate.last >= gate.cost * 2) {
+					gate.last = nowMs;
+					gate.startedAt = nowMs;
 					alphaSigRef.current = sig;
 					const live = evaluateParamCell(pc, alphas) as unknown as FlatCellData;
 					liveCellRef.current = live;
@@ -202,7 +214,9 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			// pan/zoom reuse these nodes. Constant size, so this never scales with the zoom.
 			if (!patchBuiltRef.current) {
 				patchBuiltRef.current = true;
-				patchRef.current = buildTilingFromCell(cell as unknown as AlgoCellData, PATCH_MARGIN, PATCH_MARGIN);
+				// Reuses the previous patch's polygon objects when the shape is unchanged — an α drag rebuilds
+				// this every time the gate opens, and the patch is the one part of the chain that allocates.
+				patchRef.current = buildTilingFromCell(cell as unknown as AlgoCellData, PATCH_MARGIN, PATCH_MARGIN, null, patchRef.current);
 				meshSigRef.current = null; // new nodes → mesh must rebuild
 			}
 			// Layer 2: the origin-cell A/B/C mesh, keyed on the slider geometry. Throttled so a continuous
@@ -216,6 +230,13 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 					lastRebuildRef.current = now;
 					meshSigRef.current = meshSig;
 					upload(buildMeshFromPatch(patchRef.current, style, islamicNormalAngleFromSlider(theta), offset, count, meta.v1, meta.v2));
+					// The mesh is the tail of the α chain, so this is where its true cost is known — cell evaluation
+					// and patch build happened earlier in the SAME frame, which is why the gate times from `startedAt`.
+					const gate = alphaGateRef.current;
+					if (gate.startedAt !== null) {
+						gate.cost = performance.now() - gate.startedAt;
+						gate.startedAt = null;
+					}
 				}
 				// else: leave meshSigRef stale; the next frame past the throttle window rebuilds to the latest value.
 			}

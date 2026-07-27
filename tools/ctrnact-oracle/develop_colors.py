@@ -61,6 +61,10 @@ for _n in range(2, MAX_COLORS + 1):
                                   "axes": [(1, 0), (0, 1), (1, -1)], "axis_names": ["h", "v", "w"]}
     fd.GRIDS[f"colors{_n}ts"] = {"units": {**{f"{c}3": 2 for c in _cols}, **{f"{c}4": 3 for c in _cols}},
                                  "step": None, "axes": None, "axis_names": None}
+    # The hexagonal grid takes the patch path too, for the reason in develop_freedraw.GRIDS: the {6,3}
+    # vertex set is a honeycomb, not a lattice, so there is no cell coset to index colors into.
+    fd.GRIDS[f"colors{_n}hex"] = {"units": {f"{c}6": 4 for c in _cols},
+                                  "step": None, "axes": None, "axis_names": None}
 
 # The unit cell in quadrant [d, d+90) at a vertex, as the offset of the cell's SW corner.
 CELL_D = {0: (0, 0), 3: (-1, 0), 6: (-1, -1), 9: (0, -1)}
@@ -271,6 +275,7 @@ GRID_CFG = {
     "square": {"suffix": "sq", "canon": canon_colors, "rot": ROT4, "full": D4, "prefix": "col"},
     "triangle": {"suffix": "tri", "canon": canon_colors_tri, "rot": ROT6, "full": D6, "prefix": "colt"},
     "ts": {"suffix": "ts", "canon": None, "rot": None, "full": None, "prefix": "colts"},
+    "hex": {"suffix": "hex", "canon": None, "rot": None, "full": None, "prefix": "colh"},
 }
 
 
@@ -298,7 +303,7 @@ def develop_cert(cert, grid, gkey):
     for tables in combos:
         try:
             block = fd.Block(cert, tables, gkey)
-            if grid == "ts":
+            if fd.is_patch_grid(gkey):
                 T1, T2, placed = fd.develop_patch(block)
                 out.append(emit_colors_patch(block, T1, T2, placed))
             else:
@@ -458,10 +463,10 @@ def main():
             # 2-color files stay byte-identical if they are ever regenerated.
             if nc != 2:
                 rec["colors"] = nc
-            if args.grid == "ts":
+            if fd.is_patch_grid(gkey):
                 # Self-contained: dummy lattice fields so every cell-grid consumer type-checks; the
                 # real geometry lives under `patch` — the freedraw ts convention exactly.
-                rec.update({"grid": "ts", "a": 1, "b": 0, "d": 1, "cells": [0], "orbit": [0],
+                rec.update({"grid": args.grid, "a": 1, "b": 0, "d": 1, "cells": [0], "orbit": [0],
                             "patch": pat})
             else:
                 rec.update({"a": pat["a"], "b": pat["b"], "d": pat["d"],

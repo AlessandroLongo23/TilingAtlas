@@ -48,6 +48,10 @@ export async function loadLandingData(rng: () => number = Math.random): Promise<
 		uniformEleven: LANDING.uniformEleven,
 		play,
 		hyperbolicPatch,
+		// Ship the chosen patch's record with the page. Without it the Hyperbolic card fetches the whole
+		// 9.9 MB developed catalogue client-side to read one entry; the pool's records are inlined in the
+		// payload at build time (~20 KB) precisely so it doesn't have to.
+		hyperbolicPatchData: (hyperbolicPatch && LANDING.hyperbolicPatches?.[hyperbolicPatch]) || null,
 		sphericalSolid,
 	};
 }

@@ -8,9 +8,8 @@ import { CompletenessBadge } from "@/components/landing/completeness-badge";
 import { LibraryMosaic } from "@/components/landing/library-mosaic";
 import { TheoryRing } from "@/components/landing/theory-ring";
 import { ParquetMini } from "@/components/landing/parquet-mini";
-import { HyperbolicMini, SphericalMini } from "@/components/landing/geometry-minis";
+import { HyperbolicMini, PlayMini, SphericalMini } from "@/components/landing/geometry-minis";
 import { HatMini, PenroseMini } from "@/components/landing/coming-soon-minis";
-import { TilingThumbnail } from "@/components/tiling-thumbnail";
 
 // The landing page (spec: docs/superpowers/specs/2026-07-22-landing-page-design.md).
 // Conventional skeleton, catalog material: every visual is a real render from the atlas, every
@@ -85,17 +84,19 @@ export default async function HomePage() {
 					The collections
 				</h2>
 				<div className="ta-wall grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[22rem] sm:auto-rows-[19rem] lg:auto-rows-[21rem] gap-px border-t border-line-subtle">
+					{/* The three live cells (Play, Hyperbolic, Spherical) render the real /play canvases rather
+					    than baked stills, so their media takes the drag and the caption below carries the link
+					    — see CollectionCard's `interactive`. */}
 					<CollectionCard
 						title="Play"
 						span="2x2"
+						interactive
 						subtitle={`${fmt(counts.total)} tilings`}
 						href={`/play?source=reference&tiling=${encodeURIComponent(data.play.id)}`}
 						description="Explore any tiling in the atlas from the interactive viewer."
 						badge={<CompletenessBadge tone="complete" label="all three geometries" />}
 					>
-						<div className="absolute inset-0">
-							<TilingThumbnail translationalCell={data.play.cell} pxPerEdge={44} />
-						</div>
+						<PlayMini cell={data.play.cell} />
 					</CollectionCard>
 
 					<CollectionCard
@@ -131,16 +132,20 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Hyperbolic"
+						interactive={!!data.hyperbolicPatch}
 						subtitle={`${fmt(counts.hyperbolic)} tilings`}
 						href="/library?geo=hyperbolic"
 						description="Tilings of the hyperbolic plane, developed into the Poincaré disk."
 						badge={<CompletenessBadge tone="infinite" label="infinite family" />}
 					>
-						{data.hyperbolicPatch ? <HyperbolicMini patch={data.hyperbolicPatch} /> : null}
+						{data.hyperbolicPatch ? (
+							<HyperbolicMini patch={data.hyperbolicPatch} data={data.hyperbolicPatchData ?? undefined} />
+						) : null}
 					</CollectionCard>
 
 					<CollectionCard
 						title="Spherical"
+						interactive={!!data.sphericalSolid}
 						subtitle={`${fmt(counts.spherical)} tilings`}
 						href="/library?geo=spherical"
 						description="Platonic and Archimedean solids as tilings of the sphere."

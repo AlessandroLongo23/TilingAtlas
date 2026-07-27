@@ -24,6 +24,9 @@ import {
 	loadReferenceAtlasShard,
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
+	loadFreedrawShardsForK,
+	loadColorsShardsForK,
+	hasDecorationShardsForK,
 	loadHyperbolicEdgesAtlas,
 	loadHyperbolicEdgesShard,
 	loadHyperbolicColorsAtlas,
@@ -36,8 +39,11 @@ import {
 	hyperbolicFacetsOf,
 	tileClassOf,
 	geometryOf,
+	decorationOf,
 	GEOMETRY_ORDER,
 	GEOMETRY_LABEL,
+	DECORATION_ORDER,
+	DECORATION_LABEL,
 	TILE_CLASS_ORDER,
 	TILE_CLASS_LABEL,
 	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
@@ -46,6 +52,7 @@ import {
 	type FreedrawKind,
 	type FreedrawRegular,
 	type Geometry,
+	type Decoration,
 	type ReferenceTiling,
 	type ReferenceFilter,
 	type TileClass,
@@ -70,29 +77,32 @@ import {
 // k=4 you see M ∈ {2,3,4}, never a dead M=1 button.
 // Derived from the shared registry (referenceAtlas TILE_CLASS_ORDER/LABEL) — the SAME source /play's
 // catalogue groups read, so the two pages' class axes can never drift.
-// The geometry axis is the top-level split now, so hyperbolic/spherical are their OWN geometries — not
-// tile classes. Drop them from the class chips; the remaining classes are all Euclidean and only ever
-// show while the Euclidean geometry is selected.
+//
+// Four of the twelve classes are dropped because they belong to a HIGHER axis, not to this one:
+// hyperbolic/spherical are geometries, freedraw/colors are decorations. Each is the sole occupant of its
+// (geometry, decoration) cell, so a chip for it would just restate the segment already chosen above. What
+// is left is the shape axis proper — the eight shelves that differ by tile set, which is what "tile class"
+// was always trying to say.
 const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = [
 	{ value: "all", label: "All" },
-	...TILE_CLASS_ORDER.filter((c) => c !== "hyperbolic" && c !== "spherical").map((c) => ({
+	...TILE_CLASS_ORDER.filter(
+		(c) => c !== "hyperbolic" && c !== "spherical" && c !== "freedraw" && c !== "colors",
+	).map((c) => ({
 		value: c,
 		label: TILE_CLASS_LABEL[c].short,
 	})),
 ];
-// Chip labels for the non-Euclidean class facet, where the geometry name is already the header: under
-// Hyperbolic, "Hyperbolic" would be a redundant chip, so the developed uniform tilings read as "Uniform"
-// and Čtrnáct's edge patterns (the freedraw class here) as "Edge patterns".
-const NONEUC_CLASS_LABEL: Partial<Record<TileClass, string>> = {
-	hyperbolic: "Uniform",
-	freedraw: "Edge patterns",
-	colors: "Colorings",
-};
-const noneucClassLabel = (c: TileClass): string => NONEUC_CLASS_LABEL[c] ?? TILE_CLASS_LABEL[c].short;
 const GEOMETRY_OPTIONS: { value: Geometry; label: string }[] = GEOMETRY_ORDER.map((g) => ({
 	value: g,
 	label: GEOMETRY_LABEL[g],
 }));
+// The decoration axis, present in every geometry (unlike the class wall, which is Euclidean shape talk).
+// "All" is offered here but not in /play's segmented control: the shelf is one flat paginated grid that
+// can hold all three at once, where /play always renders a single cell.
+const DECORATION_OPTIONS: { value: "all" | Decoration; label: string }[] = [
+	{ value: "all", label: "All" },
+	...DECORATION_ORDER.map((d) => ({ value: d, label: DECORATION_LABEL[d] })),
+];
 // Convex-irregular-shelf facet: the whole demo, only decomposable-family tilings, or only the ones that
 // reach for a non-decomposable composite. Shown only while the convex-irregular tile class is selected.
 const DECOMP_OPTIONS: { value: "all" | "decomposable" | "non-decomposable"; label: string }[] = [
@@ -157,6 +167,7 @@ const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = 
 	{ value: "all", label: "All" },
 	{ value: "square", label: "Squares" },
 	{ value: "triangle", label: "Triangles" },
+	{ value: "hex", label: "Hexagons" },
 	{ value: "ts", label: "Tri + square" },
 ];
 const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
@@ -165,9 +176,17 @@ const COLORS_GRID_OPTIONS: { value: "all" | ColorsGrid; label: string }[] = [
 	{ value: "all", label: "All" },
 	{ value: "square", label: "Squares" },
 	{ value: "triangle", label: "Triangles" },
+	{ value: "hex", label: "Hexagons" },
 	{ value: "ts", label: "Tri + square" },
 ];
 const COLORS_GRID_VALUES = COLORS_GRID_OPTIONS.map((o) => o.value).filter((v): v is ColorsGrid => v !== "all");
+// One-word grid names for the collapsed FilterGroup summary, shared by both grid facets.
+const GRID_SUMMARY: Record<FreedrawGrid | ColorsGrid, string> = {
+	square: "squares",
+	triangle: "triangles",
+	hex: "hexagons",
+	ts: "tri + square",
+};
 // Colors-shelf palette-size facet: how many colors the solutions use. Each (grid, size) pair is its own
 // catalogue — an n-color run's solutions all use every one of its n colors.
 const COLORS_COUNT_OPTIONS: { value: "all" | number; label: string }[] = [
@@ -230,7 +249,7 @@ const CERT_VALUES = CERT_OPTIONS.map((o) => o.value);
 // The whole view (every filter field + the page, page-size and column-count prefs) round-trips through
 // the query string: a reload restores the exact view, and the "Copy link" button hands a friend a link
 // that reproduces it. parseViewState and serializeView are inverse — add a field to one, add it to the
-// other. Keys are short and stable (they're a shared URL contract): k, class, decomp, m, partition,
+// other. Keys are short and stable (they're a shared URL contract): k, dec, class, decomp, m, partition,
 // maximal, folds, param, iso, fdkind, group, lattice, by, cert, polygon, q + page, size, cols.
 interface ViewState {
 	filters: ReferenceFilter;
@@ -278,11 +297,17 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	// Geometry is the top-level axis; default euclidean when the link omits it.
 	const geo = sp.get("geo");
 	f.geometry = geo === "hyperbolic" || geo === "spherical" ? geo : "euclidean";
+	const dec = sp.get("dec");
+	if (dec && (DECORATION_ORDER as string[]).includes(dec)) f.decoration = dec as Decoration;
 	const cls = sp.get("class");
 	if (cls === "hyperbolic" || cls === "spherical") {
 		// Back-compat: geometry used to be a tile-class chip. Promote an old link's class to the geometry
 		// axis and leave tileClass unset.
 		f.geometry = cls;
+	} else if (cls === "freedraw" || cls === "colors") {
+		// Same move one axis down: freedraw and colors used to be tile-class chips before the decoration
+		// axis existed. Promote them so links shared before this change still land on the right shelf.
+		f.decoration = cls === "freedraw" ? "edges" : "colorings";
 	} else if (cls && (TILE_CLASS_VALUES as string[]).includes(cls)) {
 		f.tileClass = cls as TileClass;
 	}
@@ -359,6 +384,7 @@ function serializeView(v: ViewState): string {
 	if (f.kValue != null) p.set("k", String(f.kValue));
 	// Euclidean is the default, so only non-euclidean geometries need a URL param.
 	if (f.geometry && f.geometry !== "euclidean") p.set("geo", f.geometry);
+	if (f.decoration) p.set("dec", f.decoration);
 	if (f.tileClass) p.set("class", f.tileClass);
 	if (f.hypValence) p.set("valence", f.hypValence.join(","));
 	if (f.hypPolygon) p.set("palette", f.hypPolygon.join(","));
@@ -504,6 +530,8 @@ export function ReferenceShelf() {
 	// Dedicated isotoxal shard tracking — its k=3 collides with the convex-irregular k=3 in the shared sets.
 	const [isotoxalLoadedShards, setIsotoxalLoadedShards] = useState<Set<number>>(new Set());
 	const [isotoxalLoadingShards, setIsotoxalLoadingShards] = useState<Set<number>>(new Set());
+	// k values whose Euclidean decoration shards have been requested (hexagonal edges/colorings tails).
+	const [decorLoadedShards, setDecorLoadedShards] = useState<Set<number>>(new Set());
 
 	useEffect(() => {
 		let alive = true;
@@ -719,6 +747,22 @@ export function ReferenceShelf() {
 		}
 	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, isotoxalLoadingShards]);
 
+	// Lazy Euclidean DECORATION shards — the hexagonal grid's deep k slices (edges k>=7, colorings k>=6),
+	// the only freedraw/colors slices too big to ship eagerly. Fetch when that k chip is picked, under any
+	// decoration (the k chip is the whole trigger; there is no class to gate on). Best-effort: a missing
+	// shard resolves to an empty merge inside the loader, and a failure just marks the k done.
+	useEffect(() => {
+		const k = filters.kValue;
+		if (k == null || !hasDecorationShardsForK(k) || decorLoadedShards.has(k)) return;
+		setDecorLoadedShards((sh) => new Set(sh).add(k));
+		Promise.all([loadFreedrawShardsForK(k), loadColorsShardsForK(k)])
+			.then(([fd, col]) => {
+				const data = [...fd, ...col];
+				if (data.length) setTilings((prev) => (prev ? [...prev, ...data] : data));
+			})
+			.catch(() => {});
+	}, [filters.kValue, decorLoadedShards]);
+
 	// ── single-select setters (each clears the now-stale downstream selections) ──
 	const setKValue = (k: number | undefined) =>
 		setFilters({ ...filters, kValue: k, mValue: undefined, partitionKey: undefined });
@@ -749,40 +793,13 @@ export function ReferenceShelf() {
 		if (v !== "polyomino") next.polyominoOrder = undefined;
 		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
 		if (v !== "islamic") next.islamicSystem = undefined;
-		// The freedraw tile-kind, grid and regular-polygon facets only mean something inside the freedraw
-		// class — drop them otherwise.
-		if (v !== "freedraw") {
-			next.freedrawKind = undefined;
-			next.freedrawGrid = undefined;
-			next.freedrawRegular = undefined;
-		}
-		// The colors grid / palette-size facets only mean something inside the colored class — drop them
-		// otherwise.
-		if (v !== "colors") {
-			next.colorsGrid = undefined;
-			next.colorsCount = undefined;
-		}
-		if (v === "colors") {
-			// A coloring is classified by its colored vertex classes, not the uniform-tiling axes.
-			next.mValue = undefined;
-			next.partitionKey = undefined;
-			next.maximalOnly = undefined;
-			next.starFolds = undefined;
-			next.parametric = undefined;
-			next.wallpaperGroups = undefined;
-			next.latticeShapes = undefined;
-		}
-		if (v === "freedraw") {
-			// Freedraw faces are not tiles in the Grünbaum & Shephard sense, so none of the uniform-tiling
-			// classification applies: no M/partition, no star folds, no α-family, no wallpaper group or lattice.
-			next.mValue = undefined;
-			next.partitionKey = undefined;
-			next.maximalOnly = undefined;
-			next.starFolds = undefined;
-			next.parametric = undefined;
-			next.wallpaperGroups = undefined;
-			next.latticeShapes = undefined;
-		}
+		// The freedraw and colors facets belong to the OTHER decoration segments (setDecoration owns them);
+		// the class chips only ever run inside Tilings, so reaching one means those are stale.
+		next.freedrawKind = undefined;
+		next.freedrawGrid = undefined;
+		next.freedrawRegular = undefined;
+		next.colorsGrid = undefined;
+		next.colorsCount = undefined;
 		if (v === "islamic") {
 			// The Islamic tessellations carry no m/partition/wallpaper/star-fold classification yet.
 			next.starFolds = undefined;
@@ -852,8 +869,48 @@ export function ReferenceShelf() {
 	// sub-filters (tile class, star, lattice, wallpaper group, M/partition) are hidden.
 	const geometry = filters.geometry ?? "euclidean";
 	const isEuclidean = geometry === "euclidean";
+	// Switch decoration: each segment owns its own facets, so moving between them drops the ones that
+	// belong to the segment being left. k survives — it means grid-point orbits under Edge patterns and
+	// colored vertices under Colorings rather than vertex orbits, but the axis is shared and a k present in
+	// one segment is usually present in the next, so clearing it would be a nuisance rather than a fix.
+	const setDecoration = (v: "all" | Decoration) => {
+		const dec = v === "all" ? undefined : v;
+		const next: ReferenceFilter = { ...filters, decoration: dec };
+		// The shape-class chips and everything hanging off them only exist inside Tilings.
+		if (dec && dec !== "tilings") {
+			next.tileClass = undefined;
+			next.convexDecomp = undefined;
+			next.isotoxalShape = undefined;
+			next.scaledScaleSet = undefined;
+			next.polyominoOrder = undefined;
+			next.islamicSystem = undefined;
+			// Neither an edge pattern nor a coloring carries the uniform-tiling classification: freedraw faces
+			// aren't tiles in the Grünbaum & Shephard sense, and a coloring is classified by its colored vertex
+			// classes. No M/partition, no star folds, no α-family, no wallpaper group or lattice.
+			next.mValue = undefined;
+			next.partitionKey = undefined;
+			next.maximalOnly = undefined;
+			next.starFolds = undefined;
+			next.parametric = undefined;
+			next.wallpaperGroups = undefined;
+			next.latticeShapes = undefined;
+		}
+		if (v !== "edges") {
+			next.freedrawKind = undefined;
+			next.freedrawGrid = undefined;
+			next.freedrawRegular = undefined;
+		}
+		if (v !== "colorings") {
+			next.colorsGrid = undefined;
+			next.colorsCount = undefined;
+		}
+		setFilters(next);
+	};
+
 	// Switch geometry: clear every Euclidean-only filter (they mean nothing off the plane) and reset k —
-	// a k valid in one geometry (e.g. a Euclidean k=2) may filter the new one to zero.
+	// a k valid in one geometry (e.g. a Euclidean k=2) may filter the new one to zero. Decoration is
+	// deliberately NOT cleared: it is orthogonal to geometry (every geometry has all three), so a reader
+	// comparing Euclidean and hyperbolic colorings stays on colorings across the switch.
 	const setGeometry = (g: Geometry) => {
 		if (g === geometry) return;
 		setFilters(
@@ -872,7 +929,9 @@ export function ReferenceShelf() {
 					}
 				: {
 						geometry: g,
-						// keep the cross-geometry axes (provenance + search); drop everything Euclidean-only
+						// keep the cross-geometry axes (decoration + provenance + search); drop everything
+						// Euclidean-only
+						decoration: filters.decoration,
 						discoverers: filters.discoverers,
 						certifications: filters.certifications,
 						query: filters.query,
@@ -1003,53 +1062,51 @@ export function ReferenceShelf() {
 	const selectedLattice = filters.latticeShapes?.[0];
 
 	const tileClass = filters.tileClass ?? "all";
-	// The classes actually present in the current NON-Euclidean geometry. The hyperbolic shelf now carries
-	// two — developed uniform tilings and Čtrnáct's edge patterns (freedraw) — so a class facet splits them
-	// instead of one mixed list. Empty on the plane (Euclidean uses the full CLASS_OPTIONS wall).
-	const geometryClasses = useMemo(() => {
-		if (!tilings || isEuclidean) return [] as TileClass[];
-		const s = new Set<TileClass>();
-		for (const t of tilings) if (geometryOf(t) === geometry) s.add(tileClassOf(t));
-		return TILE_CLASS_ORDER.filter((c) => s.has(c));
-	}, [tilings, geometry, isEuclidean]);
-	const geometryClassOptions = useMemo(
-		() => [
-			{ value: "all" as const, label: "All" },
-			...geometryClasses.map((c) => ({ value: c, label: noneucClassLabel(c) })),
-		],
-		[geometryClasses],
-	);
+	const decoration = filters.decoration ?? "all";
+	// Tilings covers both the explicit segment and "All", where the shape chips are still the useful way in
+	// (each of the eight lives only in that segment, so picking one implies it).
+	const inTilings = decoration === "all" || decoration === "tilings";
+	// The shape-class wall is Euclidean talk: off the plane the Tilings segment holds exactly ONE class
+	// (the developed patches, the Platonic solids), so a wall with one live chip would say nothing the
+	// geometry segment hasn't. This is what the old non-Euclidean class relabeling was standing in for.
+	const showTileClass = isEuclidean && inTilings;
 	// Classes carrying NO vertex-configuration classification — no M/partition, no star folds, no wallpaper
-	// group or lattice. The convex-irregular + isotoxal demo shelves (their builds don't compute it) and
-	// freedraw (whose faces aren't tiles in the Grünbaum & Shephard sense, so none of that theory applies).
-	const isUnclassified = tileClass === "convex" || tileClass === "isotoxal" || tileClass === "freedraw";
-	// Tile class, M/partition, star, lattice, and wallpaper group are all Euclidean-only — a hyperbolic
-	// {p,q} or spherical Platonic tiling has no wallpaper group, no lattice, no star fold. Off the plane
-	// only k, discoverer, certification, and search survive.
-	const showM = isEuclidean && filters.kValue != null && !isUnclassified;
-	const showStar = isEuclidean && tileClass !== "regular" && !isUnclassified && availableFolds.length > 0;
-	const showGroup = isEuclidean && tileClass !== "star" && !isUnclassified && availableGroups.length > 0;
-	const showLattice = isEuclidean && tileClass !== "star" && !isUnclassified && availableShapes.length > 0;
+	// group or lattice. The convex-irregular + isotoxal demo shelves, whose builds don't compute it.
+	const isUnclassified = tileClass === "convex" || tileClass === "isotoxal";
+	// M/partition, star, lattice, and wallpaper group are Euclidean-only — a hyperbolic {p,q} or spherical
+	// Platonic tiling has no wallpaper group, no lattice, no star fold. Off the plane only k, discoverer,
+	// certification, and search survive. They are also Tilings-only: freedraw faces aren't tiles in the
+	// Grünbaum & Shephard sense and a coloring is classified by its colored vertex classes, so none of the
+	// uniform-tiling theory applies in the other two segments.
+	const classified = isEuclidean && inTilings && !isUnclassified;
+	const showM = classified && filters.kValue != null;
+	const showStar = classified && tileClass !== "regular" && availableFolds.length > 0;
+	const showGroup = classified && tileClass !== "star" && availableGroups.length > 0;
+	const showLattice = classified && tileClass !== "star" && availableShapes.length > 0;
 	const showConvex = tileClass === "convex";
 	const showIsotoxalShape = tileClass === "isotoxal";
 	const showScaledScaleSet = tileClass === "scaled";
 	const showPolyominoOrder = tileClass === "polyomino";
 	const showIslamicSystem = tileClass === "islamic";
 	// Freedraw's grid / tile-kind / regular-polygon facets describe the EUCLIDEAN grids (square/triangle/ts).
-	// Hyperbolic edge patterns are the freedraw class too, but on a hyperbolic base — those grid facets mean
-	// nothing there, so keep them Euclidean-only.
-	const showFreedrawKind = isEuclidean && tileClass === "freedraw";
+	// Hyperbolic edge patterns are the same segment on a hyperbolic base — those grid facets mean nothing
+	// there, so keep them Euclidean-only.
+	const showFreedrawKind = isEuclidean && decoration === "edges";
 	// The grid/palette facets describe the EUCLIDEAN color catalogues (square/triangle/ts × 2/3). The
-	// hyperbolic and spherical colorings are the colors class too, but on a {p,q} / Platonic base — those
-	// grid facets mean nothing there, so keep them Euclidean-only (they group by base in the /play tree).
-	const showColorsGrid = isEuclidean && tileClass === "colors";
-	// Freedraw's k counts GRID-POINT orbits of the decoration, not vertex orbits of a tiling. It shares the
-	// axis so the two are browsable together; the heading is what keeps them from reading as one quantity.
-	const kGroupTitle = showFreedrawKind ? "Grid-point orbits (k)" : "Vertex count (k)";
+	// hyperbolic and spherical colorings are the same segment on a {p,q} / Platonic base — those grid facets
+	// mean nothing there, so keep them Euclidean-only (they group by base in the /play tree).
+	const showColorsGrid = isEuclidean && decoration === "colorings";
+	// k is shared across the three segments but does NOT mean the same thing in each: vertex orbits of a
+	// tiling, GRID-POINT orbits of an edge pattern (including points with no drawn edge), colored vertex
+	// classes of a coloring. Sharing the axis is what makes them browsable together; naming the quantity on
+	// the heading is what keeps them from reading as one. Matches the /play tree's k row labels.
+	const kGroupTitle =
+		decoration === "edges" ? "Grid-point orbits (k)" : decoration === "colorings" ? "Colored vertices (k)" : "Vertex count (k)";
 
 	const activeFilterCount =
 		// Euclidean is the default, so it doesn't read as an active filter; hyperbolic/spherical do.
 		(filters.geometry && filters.geometry !== "euclidean" ? 1 : 0) +
+		(filters.decoration ? 1 : 0) +
 		(filters.kValue != null ? 1 : 0) +
 		(filters.tileClass ? 1 : 0) +
 		(filters.convexDecomp ? 1 : 0) +
@@ -1076,11 +1133,20 @@ export function ReferenceShelf() {
 		(filters.certifications?.length ? 1 : 0) +
 		(filters.query?.trim() ? 1 : 0);
 
+	// Decoration leads the sort so that Kind = "All" pages in the order the Kind wall reads: every tiling,
+	// then every edge pattern, then every coloring. Without it the shelf is (k, id)-major, and since the
+	// three segments share the k axis and "col-…" precedes "reg-…", the landing page of the whole library
+	// was colorings. Inside one segment nothing moves — k ascending, then id, as before.
 	const filtered = useMemo(() => {
 		if (!tilings) return [];
 		return tilings
 			.filter((t) => matchesReferenceFilters(t, filters))
-			.sort((a, b) => a.k - b.k || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+			.sort(
+				(a, b) =>
+					DECORATION_ORDER.indexOf(decorationOf(a)) - DECORATION_ORDER.indexOf(decorationOf(b)) ||
+					a.k - b.k ||
+					(a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+			);
 	}, [tilings, filters]);
 
 	// The card list, one group per card. Grouping collapses HYPERBOLIC entries sharing (k, vertex
@@ -1151,19 +1217,20 @@ export function ReferenceShelf() {
 						<OptionWall columns={3} options={GEOMETRY_OPTIONS} selected={geometry} onChange={setGeometry} />
 					</FilterGroup>
 
-					{/* Tile class. On the plane it is the full class wall. Off the plane it appears only when the
-					    geometry actually holds more than one class — the hyperbolic shelf now splits into the
-					    developed uniform tilings and Čtrnáct's edge patterns, so this facet keeps them apart. */}
-					{isEuclidean ? (
+					{/* Decoration — WHAT is catalogued, below geometry and above tile class. Every geometry has all
+					    three segments, so this wall never changes shape with the one above it. */}
+					<FilterGroup
+						title="Kind"
+						summary={filters.decoration ? DECORATION_LABEL[filters.decoration] : null}
+					>
+						<OptionWall columns={2} options={DECORATION_OPTIONS} selected={decoration} onChange={setDecoration} />
+					</FilterGroup>
+
+					{/* Tile class — the SHAPE axis, which is the eight Euclidean shelves that differ by tile set.
+					    Hidden off the plane and outside Tilings, where it has at most one live chip. */}
+					{showTileClass ? (
 						<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
 							<OptionWall columns={3} options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
-						</FilterGroup>
-					) : geometryClasses.length > 1 ? (
-						<FilterGroup
-							title="Tile class"
-							summary={filters.tileClass ? noneucClassLabel(filters.tileClass) : null}
-						>
-							<OptionWall columns={3} options={geometryClassOptions} selected={tileClass} onChange={setTileClass} />
 						</FilterGroup>
 					) : null}
 
@@ -1258,13 +1325,7 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Grid"
 							summary={
-								filters.freedrawGrid === "square"
-									? "squares"
-									: filters.freedrawGrid === "triangle"
-										? "triangles"
-										: filters.freedrawGrid === "ts"
-											? "tri + square"
-											: null
+								filters.freedrawGrid ? GRID_SUMMARY[filters.freedrawGrid] : null
 							}
 							note="the decorated lattice"
 						>
@@ -1276,7 +1337,8 @@ export function ReferenceShelf() {
 							/>
 							<GroupNote>
 								Which lattice the drawn edges decorate. Square patterns tile with polyominoes, triangular
-								ones with polyiamonds — plus strips and unbounded sheets on either board.
+								ones with polyiamonds, hexagonal ones with polyhexes — plus strips and unbounded sheets on
+								any board.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
@@ -1285,13 +1347,7 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Grid"
 							summary={
-								filters.colorsGrid === "square"
-									? "squares"
-									: filters.colorsGrid === "triangle"
-										? "triangles"
-										: filters.colorsGrid === "ts"
-											? "tri + square"
-											: null
+								filters.colorsGrid ? GRID_SUMMARY[filters.colorsGrid] : null
 							}
 							note="the colored board"
 						>
@@ -1376,8 +1432,8 @@ export function ReferenceShelf() {
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
 						/>
 						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
-						    the plane, and none for freedraw (whose k isn't a vertex-orbit count at all). */}
-						{isEuclidean && !showFreedrawKind ? (
+						    the plane, and none in the other two segments, whose k isn't a vertex-orbit count. */}
+						{isEuclidean && inTilings ? (
 							<OptionWall
 								columns={1}
 								options={[{ value: "maximal", label: "Maximal (M = k)" }]}

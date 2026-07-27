@@ -15,6 +15,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { applyMergePlan } from "./merge-plan";
+import { applyRangePlan, rangeNote, type RangePlan } from "./range-plan";
+import { applyCoupledPlan } from "./coupled-plan";
 
 interface FamilyRecord {
 	id: string;
@@ -37,6 +40,12 @@ const IN_PATHS = [
 	path.join(ROOT, "experiments", "results", "ctrnact-mixed-families-k2.cells.json"),
 ];
 const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json");
+const PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-merge-plan.json");
+const RANGE_PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-range-plan.json");
+const COUPLED_PLAN_PATH = path.join(ROOT, "experiments", "results", "mixed-coupled-plan.json");
+const COUPLED_ALIAS_PATH = path.join(ROOT, "lib", "services", "coupledFamilyAliases.json");
+const UNMERGED_PATH = path.join(ROOT, "experiments", "results", "mixed-atlas-unmerged.json");
+const ALIAS_PATH = path.join(ROOT, "lib", "services", "mergedFamilyAliases.json");
 const LOG_PATH = path.join(ROOT, "experiments", "results", "mixed-atlas-build.log");
 const NOTE =
 	"Mixed convex-isotoxal + star family (α-slider): a k-uniform tiling using a convex isotoxal tile AND a " +
@@ -104,11 +113,43 @@ function main(): void {
 		});
 		log(`  ${r.id}  ${familyLabel(r.familySymbol)}  P=${r.P}`);
 	}
+	// Widen first, merge second. A widened family covers its own continuation, so its former partner turns
+	// into a plain duplicate — and the join census must run against the widened snapshot to see that.
+	applyRangePlan(out, { planPath: RANGE_PLAN_PATH, logName: "mixed-family", log, root: ROOT });
+	if (fs.existsSync(RANGE_PLAN_PATH)) {
+		const plan = JSON.parse(fs.readFileSync(RANGE_PLAN_PATH, "utf8")) as RangePlan;
+		const byId = new Map(out.map((t) => [t.id, t]));
+		for (const r of plan.ranges) {
+			const t = byId.get(r.id);
+			if (t && r.gainDeg > 0.01) t.note = `${t.note ?? NOTE} ${rangeNote(r)}`;
+		}
+	}
+	const merged = applyMergePlan(out, {
+		planPath: PLAN_PATH,
+		unmergedPath: UNMERGED_PATH,
+		aliasPath: ALIAS_PATH,
+		logName: "mixed-family",
+		note: NOTE,
+		log,
+		root: ROOT,
+	});
+	// Coupled multi-parameter families LAST. applyMergePlan writes the snapshot the join census reads, and
+	// that census wants the 1-parameter shelf — so collapsing slices into 2-parameter entries has to happen
+	// after it, or the next census would never see the slices it is supposed to reason about.
+	const final = applyCoupledPlan(merged, {
+		planPath: COUPLED_PLAN_PATH,
+		aliasPath: COUPLED_ALIAS_PATH,
+		logName: "mixed-family",
+		note: NOTE,
+		log,
+		root: ROOT,
+	});
 	fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-	fs.writeFileSync(OUT_PATH, JSON.stringify(out, null, 0) + "\n");
+	fs.writeFileSync(OUT_PATH, JSON.stringify(final, null, 0) + "\n");
 	const sizeKB = (fs.statSync(OUT_PATH).size / 1024).toFixed(1);
-	log(`  wrote ${out.length} mixed families (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
+	log(`  wrote ${final.length} mixed families (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
 	fs.writeFileSync(LOG_PATH, logLines.join("\n") + "\n");
 }
+
 
 main();

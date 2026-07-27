@@ -1,6 +1,7 @@
 // Shared interaction math for the flat views: /play's input layer (components/canvas.tsx) and the
 // theory-page preview cards (components/interactive-tiling-preview-card.tsx). Pure functions + the
-// canonical constants, so the two input surfaces can never drift apart in feel. The world->screen
+// canonical constants, so the two input surfaces can only drift apart where a constant here says so
+// in as many words (wheel zoom is the one such place today). The world->screen
 // transform itself lives in lib/render/flatView.ts; this file owns how user input mutates the view
 // state that transform consumes.
 
@@ -12,8 +13,18 @@ export const ZOOM_MAX = 150;
 // /play's reset zoom (right-click). Cards derive their own reset zoom from the cell basis instead
 // (defaultZoomForCell below) because a card is ~1/5 the viewport area.
 export const ZOOM_RESET = 50;
-// Wheel zoom multiplier per notch (deltaY sign picks the direction).
+// Wheel zoom multiplier per notch (deltaY sign picks the direction). /play's own p5 wheel handler
+// (components/canvas.tsx) applies this once per wheel EVENT.
 export const ZOOM_WHEEL_FACTOR = 1.1;
+
+// The preview cards zoom more gently, and deliberately do not match /play here. Two reasons: a card
+// is a few centimetres of screen embedded in prose or on a slide, so a /play-sized step overshoots
+// the patch you were looking at; and per-event steps are unusable on a trackpad or a Magic Mouse,
+// which fire dozens of events per gesture. Card zoom is a function of scroll DISTANCE, the same way
+// the rotation detents below are — ZOOM_CARD_FACTOR per ZOOM_CARD_PX_PER_NOTCH pixels scrolled.
+// Lower ZOOM_CARD_FACTOR (or higher ZOOM_CARD_PX_PER_NOTCH) = gentler.
+export const ZOOM_CARD_FACTOR = 1.06;
+export const ZOOM_CARD_PX_PER_NOTCH = 100; // one classic mouse-wheel notch in pixel mode
 
 // Wheel rotation (flat/inversive Shift+wheel; hyperbolic bare wheel). The angle advances in fixed
 // detents as a function of how far you scroll (not how many wheel events fire — a trackpad emits
@@ -41,21 +52,21 @@ export const shortestDeltaDeg = (diff: number) => ((diff % 360) + 540) % 360 - 1
 export const wheelDeltaPx = (e: { deltaY: number; deltaMode: number }) =>
 	e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 800 : 1);
 
-// Wheel zoom toward the cursor: scale the target zoom by ZOOM_WHEEL_FACTOR (clamped), then shift the
-// target offset so the world point under the mouse stays put on screen. `mouse` is in centred CSS px
-// (origin at the canvas centre, y down) — the same frame as the offset. Mirrors the /play handler
-// (canvas.tsx p5.mouseWheel) exactly.
+// Wheel zoom toward the cursor for a preview card: scale the target zoom by ZOOM_CARD_FACTOR per
+// ZOOM_CARD_PX_PER_NOTCH of scroll (clamped), then shift the target offset so the world point under
+// the mouse stays put on screen. `mouse` is in centred CSS px (origin at the canvas centre, y down)
+// — the same frame as the offset. `deltaPx` must be a NORMALIZED scroll distance (wheelDeltaPx),
+// not a raw deltaY, or line-mode and pixel-mode devices zoom at wildly different rates.
 export function zoomAtPoint(
 	mouse: { x: number; y: number },
 	targetOffset: { x: number; y: number },
 	targetZoom: number,
-	deltaY: number,
+	deltaPx: number,
 ): { zoom: number; offset: { x: number; y: number } } {
 	const worldX = (mouse.x - targetOffset.x) / targetZoom;
 	const worldY = (mouse.y - targetOffset.y) / targetZoom;
-	let z = targetZoom;
-	if (deltaY > 0) z = Math.max(z / ZOOM_WHEEL_FACTOR, ZOOM_MIN);
-	else if (deltaY < 0) z = Math.min(z * ZOOM_WHEEL_FACTOR, ZOOM_MAX);
+	const scale = Math.pow(ZOOM_CARD_FACTOR, -deltaPx / ZOOM_CARD_PX_PER_NOTCH);
+	const z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZoom * scale));
 	return {
 		zoom: z,
 		offset: {
@@ -138,7 +149,12 @@ export function makeCardControls(zoom: number): CardControls {
 // then the pivot-about-centre offset compensation for whatever rotation delta was applied. Mirrors
 // the /play draw-loop bookkeeping (canvas.tsx p5.draw) exactly. Returns true while still visibly
 // easing (callers may use it to idle the render loop at rest).
-export function stepCardControls(c: CardControls): boolean {
+//
+// `pivotOffsetOnRotate` exists for the hyperbolic disk, the one consumer that must NOT get the
+// compensation: it applies rotation as θ inside its own Möbius map and derives its pan vector from
+// the RAW offset, so rotating the offset here too double-counts the spin. canvas.tsx skips the same
+// step for the same reason (see its `if (!hyperbolic …)` guard).
+export function stepCardControls(c: CardControls, pivotOffsetOnRotate = true): boolean {
 	c.zoom += (c.targetZoom - c.zoom) * EASE_DAMP;
 	c.offset.x += (c.targetOffset.x - c.offset.x) * EASE_DAMP;
 	c.offset.y += (c.targetOffset.y - c.offset.y) * EASE_DAMP;
@@ -146,7 +162,7 @@ export function stepCardControls(c: CardControls): boolean {
 	if (Math.abs(dRot) < 0.05) c.rotation = c.targetRotation;
 	else c.rotation += dRot * ROTATE_DAMP;
 
-	if (c.prevRotation !== null && c.prevRotation !== c.rotation) {
+	if (pivotOffsetOnRotate && c.prevRotation !== null && c.prevRotation !== c.rotation) {
 		const dTheta = ((c.rotation - c.prevRotation) * Math.PI) / 180;
 		rotateOffsetAboutCentre(c.offset, dTheta);
 		rotateOffsetAboutCentre(c.targetOffset, dTheta);

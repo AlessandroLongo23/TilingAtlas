@@ -1,0 +1,1462 @@
+{
+ "ranges": [
+  {
+   "id": "ctrnact-mixed-family-k1-02",
+   "exported": [
+    0,
+    90
+   ],
+   "range": [
+    0.0,
+    120.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    119.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60,
+   "gainDeg": 29.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "12*45",
+    "4*75",
+    "6*15"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-03",
+   "exported": [
+    60,
+    120
+   ],
+   "range": [
+    0.0,
+    120.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    119.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 90,
+   "gainDeg": 59.999939,
+   "fold": {
+    "centreDeg": 60.0,
+    "kind": "rotation",
+    "witness": [
+     24.0,
+     96.0
+    ]
+   },
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-04",
+   "exported": [
+    90,
+    150
+   ],
+   "range": [
+    0.0,
+    150.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    149.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 120,
+   "gainDeg": 89.999939,
+   "fold": null,
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-05",
+   "exported": [
+    120,
+    180
+   ],
+   "range": [
+    120.0,
+    300.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    120.000031,
+    299.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 135,
+   "gainDeg": 119.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-06",
+   "exported": [
+    90,
+    180
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 120,
+   "gainDeg": 89.999939,
+   "fold": {
+    "centreDeg": 90.0,
+    "kind": "rotation",
+    "witness": [
+     36.0,
+     144.0
+    ]
+   },
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-07",
+   "exported": [
+    60,
+    120
+   ],
+   "range": [
+    0.0,
+    150.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    149.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 105,
+   "gainDeg": 89.999939,
+   "fold": null,
+   "newArcReachable": [
+    true,
+    false
+   ],
+   "offPalette": [
+    "4*15",
+    "6*105"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-14",
+   "exported": [
+    90,
+    180
+   ],
+   "range": [
+    90.0,
+    270.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    90.000031,
+    269.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 120,
+   "gainDeg": 89.999939,
+   "fold": {
+    "centreDeg": 180.0,
+    "kind": "rotation",
+    "witness": [
+     126.0,
+     234.0
+    ]
+   },
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-15",
+   "exported": [
+    60,
+    180
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 90,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-18",
+   "exported": [
+    60,
+    180
+   ],
+   "range": [
+    60.0,
+    240.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    60.000031,
+    239.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 90,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k1-19",
+   "exported": [
+    45,
+    90
+   ],
+   "range": [
+    45.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    45.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60,
+   "gainDeg": 89.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "8*105",
+    "8*120",
+    "8*60",
+    "8*75",
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-01",
+   "exported": [
+    30.0,
+    150.0
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 59.999939,
+   "fold": {
+    "centreDeg": 90.0,
+    "kind": "reflection",
+    "witness": [
+     36.0,
+     144.0
+    ]
+   },
+   "newArcReachable": [
+    false,
+    false
+   ],
+   "offPalette": [
+    "3*45",
+    "cx4-15.165"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-02",
+   "exported": [
+    90.0,
+    150.0
+   ],
+   "range": [
+    90.0,
+    240.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    90.000031,
+    239.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 105.0,
+   "gainDeg": 89.999939,
+   "fold": {
+    "centreDeg": 165.0,
+    "kind": "rotation",
+    "witness": [
+     120.0,
+     210.0
+    ]
+   },
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-03",
+   "exported": [
+    60.0,
+    90.0
+   ],
+   "range": [
+    60.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    60.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 89.999939,
+   "fold": {
+    "centreDeg": 120.0,
+    "kind": "rotation",
+    "witness": [
+     84.0,
+     156.0
+    ]
+   },
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-04",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    0.0,
+    120.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    119.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 90.0,
+   "gainDeg": 59.999939,
+   "fold": {
+    "centreDeg": 60.0,
+    "kind": "reflection",
+    "witness": [
+     24.0,
+     96.0
+    ]
+   },
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-05",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    0.0,
+    120.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    119.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 90.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-06",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    0.0,
+    120.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    119.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 90.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-07",
+   "exported": [
+    0.0,
+    60.0
+   ],
+   "range": [
+    0.0,
+    240.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    239.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 15.0,
+   "gainDeg": 179.999939,
+   "fold": {
+    "centreDeg": 120.0,
+    "kind": "reflection",
+    "witness": [
+     48.0,
+     192.0
+    ]
+   },
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-08",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    0.0,
+    120.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    119.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 105.0,
+   "gainDeg": 59.999939,
+   "fold": {
+    "centreDeg": 60.0,
+    "kind": "rotation",
+    "witness": [
+     24.0,
+     96.0
+    ]
+   },
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-09",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    60.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    60.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-10",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    60.0,
+    240.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    60.000031,
+    239.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 119.999939,
+   "fold": {
+    "centreDeg": 150.0,
+    "kind": "reflection",
+    "witness": [
+     96.0,
+     204.0
+    ]
+   },
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-11",
+   "exported": [
+    30.0,
+    120.0
+   ],
+   "range": [
+    30.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    30.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-12",
+   "exported": [
+    60.0,
+    150.0
+   ],
+   "range": [
+    0.0,
+    150.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    149.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 90.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    true,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-14",
+   "exported": [
+    45.0,
+    135.0
+   ],
+   "range": [
+    45.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    45.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 44.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "cx4-15.165",
+    "cx4-30.150"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-15",
+   "exported": [
+    30.0,
+    120.0
+   ],
+   "range": [
+    30.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    30.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-36",
+   "exported": [
+    60.0,
+    150.0
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 89.999939,
+   "fold": null,
+   "newArcReachable": [
+    false,
+    false
+   ],
+   "offPalette": [
+    "4*75",
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-38",
+   "exported": [
+    30.0,
+    90.0
+   ],
+   "range": [
+    0.0,
+    90.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    89.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 29.999939,
+   "fold": null,
+   "newArcReachable": [
+    false,
+    null
+   ],
+   "offPalette": [
+    "4*75",
+    "cx4-15.165"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-39",
+   "exported": [
+    45.0,
+    90.0
+   ],
+   "range": [
+    0.0,
+    90.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    89.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 44.999939,
+   "fold": null,
+   "newArcReachable": [
+    false,
+    null
+   ],
+   "offPalette": [
+    "4*75",
+    "cx4-15.165",
+    "cx4-30.150"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-45",
+   "exported": [
+    30.0,
+    90.0
+   ],
+   "range": [
+    30.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    30.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 89.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-46",
+   "exported": [
+    0.0,
+    90.0
+   ],
+   "range": [
+    0.0,
+    150.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    149.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-47",
+   "exported": [
+    45.0,
+    105.0
+   ],
+   "range": [
+    45.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    45.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 74.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-48",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    0.0,
+    240.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    239.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 179.999939,
+   "fold": null,
+   "newArcReachable": [
+    true,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-49",
+   "exported": [
+    0.0,
+    75.0
+   ],
+   "range": [
+    0.0,
+    135.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    134.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-50",
+   "exported": [
+    60.0,
+    120.0
+   ],
+   "range": [
+    60.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    60.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-51",
+   "exported": [
+    0.0,
+    120.0
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-53",
+   "exported": [
+    0.0,
+    180.0
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": -6.1e-05,
+   "fold": {
+    "centreDeg": 90.0,
+    "kind": "reflection",
+    "witness": [
+     36.0,
+     144.0
+    ]
+   },
+   "newArcReachable": [
+    null,
+    null
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-54",
+   "exported": [
+    0.0,
+    120.0
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "3*45",
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-55",
+   "exported": [
+    60.0,
+    180.0
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 75.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    false,
+    null
+   ],
+   "offPalette": [
+    "3*45",
+    "cx4-15.165",
+    "cx4-30.150",
+    "cx4-45.135"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-56",
+   "exported": [
+    0.0,
+    90.0
+   ],
+   "range": [
+    0.0,
+    120.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    119.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 29.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    false
+   ],
+   "offPalette": [
+    "3*45",
+    "6*15"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-57",
+   "exported": [
+    30.0,
+    90.0
+   ],
+   "range": [
+    0.0,
+    90.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    89.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 29.999939,
+   "fold": null,
+   "newArcReachable": [
+    false,
+    null
+   ],
+   "offPalette": [
+    "cx4-15.165"
+   ]
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-58",
+   "exported": [
+    30.0,
+    90.0
+   ],
+   "range": [
+    30.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    30.000031,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 89.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-59",
+   "exported": [
+    0.0,
+    90.0
+   ],
+   "range": [
+    0.0,
+    150.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    149.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 59.999939,
+   "fold": null,
+   "newArcReachable": [
+    null,
+    true
+   ],
+   "offPalette": []
+  },
+  {
+   "id": "ctrnact-mixed-family-k2-60",
+   "exported": [
+    45.0,
+    135.0
+   ],
+   "range": [
+    0.0,
+    180.0
+   ],
+   "snapped": [
+    true,
+    true
+   ],
+   "measured": [
+    3.1e-05,
+    179.999969
+   ],
+   "stops": [
+    "collapse",
+    "collapse"
+   ],
+   "defaultDeg": 60.0,
+   "gainDeg": 89.999939,
+   "fold": {
+    "centreDeg": 90.0,
+    "kind": "reflection",
+    "witness": [
+     36.0,
+     144.0
+    ]
+   },
+   "newArcReachable": [
+    false,
+    false
+   ],
+   "offPalette": [
+    "4*75",
+    "cx4-15.165",
+    "cx4-30.150"
+   ]
+  }
+ ]
+}

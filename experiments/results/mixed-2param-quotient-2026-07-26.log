@@ -1,0 +1,73 @@
+=== 12 mixed records ship P={1} with flexdim 2 ===
+  k2-02  (3S@d@-a+22,3S@p@2,cx6@0@a) + (3S@d@14,3S@p@a-6,cx6@1@-a+16)
+  k2-11  (4S@d@-a+20,4S@p@4,cx4@0@a) + (4S@d@14,4S@p@a-2,cx4@1@-a+12)
+  k2-14  (4S@d@-a+21,4S@p@3,cx4@0@a) + (4S@d@15,4S@p@a-3,cx4@1@-a+12)
+  k2-36  (4S@d@16,cx4@1@8) + (4S@p@2,cx4@0@4,cx4@1@-a+12,cx8@0@a+2,cx4@0@4) + (cx4@0@a,cx4@1@8,cx8@1@-a+16)
+  k2-45  (3S@d@-a+18,6S@p@6,cx4@0@a) + (3S@p@a-2,6S@d@14,cx4@1@-a+12)
+  k2-46  (6S@d@14,cx4@0@a,cx6@0@-a+10) + (6S@p@6,cx4@1@-a+12,cx6@1@a+6)
+  k2-47  (3S@d@-a+19,6S@p@5,cx4@0@a) + (3S@p@a-3,6S@d@15,cx4@1@-a+12)
+  k2-49  (6S@d@15,cx4@0@a,cx6@0@-a+9) + (6S@p@5,cx4@1@-a+12,cx6@1@a+7)
+  k2-50  (3S@d@-a+20,6S@p@4,cx4@0@a) + (3S@p@a-4,6S@d@16,cx4@1@-a+12)
+  k2-54  (6S@d@16,cx4@1@8) + (6S@p@4,cx4@0@4,cx4@0@a,cx6@0@-a+12,cx4@0@4) + (cx4@1@-a+12,cx4@1@8,cx6@1@a+4)
+  k2-55  (6S@d@16,cx4@1@8) + (6S@p@4,cx4@0@4,cx4@1@-a+12,cx6@0@a,cx4@0@4) + (cx4@0@a,cx4@1@8,cx6@1@-a+16)
+  k2-57  (3S@d@a+10,6S@p@2,cx4@1@-a+12) + (3S@p@-a+6,6S@d@18,cx4@0@a)
+
+loaded 517 pruned blocks
+
+=== develop each as a coupled 2-parameter family ===
+  k2-02: species ['cx6-105.135', '3*1', '3*2'] seed [7, 1, 2]  nullspace [(1, 1, 0), (-1, 0, 1)]  cell [6, 6, 6]  seed tiles=True Σarea 3.822821
+  k2-11: species ['cx4-60.120', '4*2', '4*4'] seed [4, 2, 4]  nullspace [(1, 1, 0), (-1, 0, 1)]  cell [4, 4, 8, 8]  seed tiles=True Σarea 5.732051
+  k2-14: species ['cx4-75.105', '4*2', '4*3'] seed [5, 2, 3]  nullspace [(1, 1, 0), (-1, 0, 1)]  cell [4, 4, 8, 8]  seed tiles=True Σarea 5.199801
+  k2-36: species ['cx4-60.120', 'cx4-75.105', 'cx8-105.165', '4*2'] seed [4, 5, 7, 2]  nullspace [(0, 1, 1, 0), (-1, -1, 0, 1)]  cell [4, 4, 4, 4, 4, 4, 8, 8]  seed tiles=True Σarea 11.113392
+  k2-45: species ['cx4-60.120', '3*2', '6*6'] seed [4, 2, 6]  nullspace [(1, 1, 0), (-1, 0, 1)]  cell [4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 12.526279
+  k2-46: species ['cx4-60.120', 'cx6-90.150', '6*6'] seed [4, 6, 6]  nullspace [(-1, 1, 0), (1, 0, 1)]  cell [4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 15.526279
+  k2-47: species ['cx4-60.120', '3*1', '6*5'] seed [4, 1, 5]  nullspace [(1, 1, 0), (-1, 0, 1)]  cell [4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 10.182618
+  k2-49: species ['cx4-60.120', 'cx6-75.165', '6*5'] seed [4, 5, 5]  nullspace [(-1, 1, 0), (1, 0, 1)]  cell [4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 13.528683
+  k2-50: species ['cx4-75.105', '3*1', '6*4'] seed [5, 1, 4]  nullspace [(1, 1, 0), (-1, 0, 1)]  cell [4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 8.929405
+  k2-54: species ['cx4-60.120', 'cx4-75.105', 'cx6-105.135', '6*4'] seed [4, 5, 7, 4]  nullspace [(0, -1, 1, 0), (-1, 1, 0, 1)]  cell [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 18.368198
+  k2-55: species ['cx4-60.120', 'cx4-75.105', 'cx6-75.165', '6*4'] seed [4, 5, 5, 4]  nullspace [(0, 1, 1, 0), (-1, -1, 0, 1)]  cell [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 17.471623
+  k2-57: species ['cx4-60.120', '3*2', '6*2'] seed [4, 2, 2]  nullspace [(-1, 1, 0), (1, 0, 1)]  cell [4, 4, 4, 6, 6, 12]  seed tiles=True Σarea 6.526279
+
+=== quotient: search integer δ ∈ [-6,6]² of each family for the others' seeds ===
+  k2-11 @ δ=(0, -1) IS k2-14's seed (rotation)
+  k2-14 @ δ=(0, 1) IS k2-11's seed (rotation)
+  k2-45 @ δ=(4, 0) IS k2-46's seed (rotation)
+  k2-45 @ δ=(-1, -1) IS k2-47's seed (rotation)
+  k2-45 @ δ=(3, -1) IS k2-49's seed (rotation)
+  k2-45 @ δ=(-1, -2) IS k2-50's seed (rotation)
+  k2-45 @ δ=(0, -4) IS k2-57's seed (rotation)
+  k2-46 @ δ=(-4, 0) IS k2-45's seed (rotation)
+  k2-46 @ δ=(-5, -1) IS k2-47's seed (rotation)
+  k2-46 @ δ=(-1, -1) IS k2-49's seed (rotation)
+  k2-46 @ δ=(-5, -2) IS k2-50's seed (rotation)
+  k2-46 @ δ=(-4, -4) IS k2-57's seed (rotation)
+  k2-47 @ δ=(1, 1) IS k2-45's seed (rotation)
+  k2-47 @ δ=(5, 1) IS k2-46's seed (rotation)
+  k2-47 @ δ=(4, 0) IS k2-49's seed (rotation)
+  k2-47 @ δ=(0, -1) IS k2-50's seed (rotation)
+  k2-47 @ δ=(1, -3) IS k2-57's seed (rotation)
+  k2-49 @ δ=(-3, 1) IS k2-45's seed (rotation)
+  k2-49 @ δ=(1, 1) IS k2-46's seed (rotation)
+  k2-49 @ δ=(-4, 0) IS k2-47's seed (rotation)
+  k2-49 @ δ=(-4, -1) IS k2-50's seed (rotation)
+  k2-49 @ δ=(-3, -3) IS k2-57's seed (rotation)
+  k2-50 @ δ=(1, 2) IS k2-45's seed (rotation)
+  k2-50 @ δ=(5, 2) IS k2-46's seed (rotation)
+  k2-50 @ δ=(0, 1) IS k2-47's seed (rotation)
+  k2-50 @ δ=(4, 1) IS k2-49's seed (rotation)
+  k2-50 @ δ=(1, -2) IS k2-57's seed (rotation)
+  k2-54 @ δ=(-2, 0) IS k2-55's seed (rotation)
+  k2-55 @ δ=(2, 0) IS k2-54's seed (rotation)
+  k2-57 @ δ=(0, 4) IS k2-45's seed (rotation)
+  k2-57 @ δ=(4, 4) IS k2-46's seed (rotation)
+  k2-57 @ δ=(-1, 3) IS k2-47's seed (rotation)
+  k2-57 @ δ=(3, 3) IS k2-49's seed (rotation)
+  k2-57 @ δ=(-1, 2) IS k2-50's seed (rotation)
+
+=== result ===
+12 coupled records → 5 distinct 2-parameter famil(ies)
+  {k2-02}
+  {k2-11, k2-14}
+  {k2-36}
+  {k2-45, k2-46, k2-47, k2-49, k2-50, k2-57}
+  {k2-54, k2-55}

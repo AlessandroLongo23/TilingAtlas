@@ -37,12 +37,14 @@ const NESTED_TOP = ROW_H + 1;
 const SUB_LABEL: Record<string, string> = {
 	square: "Square grid",
 	triangle: "Triangle grid",
+	hex: "Hexagon grid",
 	ts: "Triangle + square grid",
 	// Colors splits the same grids again by palette size — each is its own catalogue.
 	"square-2": "Square grid, 2 colors",
 	"square-3": "Square grid, 3 colors",
 	"triangle-2": "Triangle grid, 2 colors",
 	"triangle-3": "Triangle grid, 3 colors",
+	"hex-3": "Hexagon grid, 3 colors",
 	"ts-2": "Triangle + square, 2 colors",
 	"ts-3": "Triangle + square, 3 colors",
 	tetrahedron: "Tetrahedron",
@@ -67,6 +69,10 @@ const SUB_LABEL: Record<string, string> = {
 	// Hyperbolic colored tilings: one sub per base {p,q}.
 	"hyc-37": "{3,7} colored",
 	"hyc-73": "{7,3} colored",
+	"hyc-83": "{8,3} colored",
+	"hyc-54": "{5,4} colored",
+	"hyc-64": "{6,4} colored",
+	"hyc-45": "{4,5} colored",
 	// Spherical colored tilings: one sub per Platonic solid.
 	"spc-tetrahedron": "Tetrahedron colored",
 	"spc-octahedron": "Octahedron colored",

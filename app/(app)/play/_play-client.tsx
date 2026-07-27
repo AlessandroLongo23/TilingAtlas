@@ -13,6 +13,7 @@ import { SphericalCanvas } from "@/components/spherical-canvas";
 import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
+import { HollowCanvas } from "@/components/hollow/hollow-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -30,6 +31,8 @@ import {
 	loadIsotoxalAtlasShard,
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
+	loadFreedrawShardsForK,
+	loadColorsShardsForK,
 	loadSphericalFreedrawAtlas,
 	loadHyperbolicEdgesAtlas,
 	loadHyperbolicEdgesShard,
@@ -41,10 +44,13 @@ import {
 	tileClassOf,
 	compareCatalogueDisplayOrder,
 	geometryOf,
+	decorationOf,
 	type Geometry,
+	type Decoration,
 	type ReferenceTiling,
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
+	resolveMergedFamilyKey,
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
@@ -87,7 +93,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Parse the URL exactly once, on mount. After this the query string is WRITE-only (the mirror effect
 	// below), so browser back/forward inside the page is not a state source — same contract as the
 	// library shelf.
-	const [initialUrl] = useState(() => parsePlayState(searchParams));
+	// resolveMergedFamilyKey redirects a link naming a family that a merge absorbed onto the entry that now
+	// carries it, carrying the angle across to the merged coordinate. A no-op for every other key.
+	const [initialUrl] = useState(() => {
+		const parsed = parsePlayState(searchParams);
+		return { ...parsed, ...resolveMergedFamilyKey({ tiling: parsed.tiling, alphas: parsed.alphas }) };
+	});
 	const requestedKey = initialUrl.tiling;
 	// Guards the mirror against firing before the link has been applied (which would overwrite the link
 	// with defaults). Effects run in declaration order, so the apply below already precedes the mirror;
@@ -207,6 +218,33 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 	}, [requestedKey]);
 
+	// Hexagonal-grid decorations run deeper than the atlas ships eagerly: edge systems to k=9 (ids
+	// "fdh-{k}-…") and 3-colorings to k=8 ("colh3-{k}-…"). A direct arrival at one of the lazy slices
+	// fetches it — same best-effort, dedup-by-key shape as the shards above. loadFreedrawShardsForK /
+	// loadColorsShardsForK return [] when that k needs nothing, so no gate on the number is needed here.
+	useEffect(() => {
+		const m = requestedKey?.match(/^(fdh|colh3)-(\d+)-/);
+		if (!m) return;
+		const k = Number(m[2]);
+		if (!Number.isFinite(k)) return;
+		let alive = true;
+		const load = m[1] === "fdh" ? loadFreedrawShardsForK : loadColorsShardsForK;
+		load(k)
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [requestedKey]);
+
 	// Higher-k regular tilings (Čtrnáct, k≥8, id "ctrnact-{kk}_…") live in lazy per-k shards
 	// (public/reference-atlas-k{k}.json), not the base atlas. If we arrived directly at one (a click from
 	// the /library higher-k shelf), fetch its shard and merge it in so the requested key resolves —
@@ -249,6 +287,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// follows the selection (see the sync effect below), so a deep-link or "R" that lands on another
 	// geometry flips it automatically. Default euclidean — the bulk of the atlas and the initial selection.
 	const [geometry, setGeometry] = useState<Geometry>("euclidean");
+	// Decoration is the split BELOW geometry and the same kind of thing: a browse mode as well as a filter.
+	// Tilings / Edge patterns / Colorings — see decorationOf. Default "tilings", which is where the initial
+	// Euclidean selection lands.
+	const [decoration, setDecoration] = useState<Decoration>("tilings");
 	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
 	// merges in). Derived once per atlas change, not per geometry switch.
 	const geometryCounts = useMemo(() => {
@@ -256,9 +298,19 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		for (const t of sorted) c[geometryOf(t)] += 1;
 		return c;
 	}, [sorted]);
-	// The active geometry's slice, in the same class → sub → k → key display order — the catalogue list, the
-	// nav count, and the scope for random/prev/next all read this.
-	const geometryList = useMemo(() => sorted.filter((t) => geometryOf(t) === geometry), [sorted, geometry]);
+	// Decoration counts WITHIN the active geometry — the segment row is scoped to it, and the hyperbolic /
+	// spherical edge + colour shards load lazily, so a segment starts empty (disabled) and fills in.
+	const decorationCounts = useMemo(() => {
+		const c: Record<Decoration, number> = { tilings: 0, edges: 0, colorings: 0 };
+		for (const t of sorted) if (geometryOf(t) === geometry) c[decorationOf(t)] += 1;
+		return c;
+	}, [sorted, geometry]);
+	// The active (geometry, decoration) cell, in the same class → sub → k → key display order — the catalogue
+	// list, the nav count, and the scope for random/prev/next all read this.
+	const geometryList = useMemo(
+		() => sorted.filter((t) => geometryOf(t) === geometry && decorationOf(t) === decoration),
+		[sorted, geometry, decoration],
+	);
 	// Dev-only: expose the catalogue selection so the Playwright visual/parity tools (see CLAUDE.md) can
 	// pick specific tilings, e.g. window.__play.select(window.__play.list.find(t => t.star)).
 	useEffect(() => {
@@ -267,24 +319,44 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		(window as any).__play = { list: geometryList, select: setSelected, selected };
 	}, [geometryList, setSelected, selected]);
 	// Switch geometry from the toggle: set the mode and jump to that geometry's first tiling so the canvas
-	// follows. Reads `sorted` (not `geometryList`, which still holds the OLD geometry this render).
+	// follows. Reads `sorted` (not `geometryList`, which still holds the OLD cell this render).
+	//
+	// The decoration carries across when the target cell has anything in it, so switching Euclidean →
+	// Hyperbolic while browsing colorings keeps you on colorings. It falls back to Tilings when the cell is
+	// empty, which is the case for a geometry whose edge/colour shard has not been fetched yet — without
+	// the fallback the switch would land on an empty list and a disabled segment.
 	const onGeometryChange = useCallback(
 		(g: Geometry) => {
 			if (g === geometry) return;
 			setGeometry(g);
-			const first = sorted.find((t) => geometryOf(t) === g);
+			const keepsDecoration = sorted.some((t) => geometryOf(t) === g && decorationOf(t) === decoration);
+			const d = keepsDecoration ? decoration : "tilings";
+			setDecoration(d);
+			const first = sorted.find((t) => geometryOf(t) === g && decorationOf(t) === d);
 			if (first) setSelected(first);
 		},
-		[geometry, sorted, setSelected],
+		[geometry, decoration, sorted, setSelected],
 	);
-	// Keep the toggle in sync with the selection's geometry — covers deep-links, the initial atlas load, and
-	// any path that sets `selected` outside the toggle. When the toggle drives the change, `selected` is
-	// already in `g`, so this is a no-op.
+	// Switch decoration from the toggle: same move one level down, within the active geometry.
+	const onDecorationChange = useCallback(
+		(d: Decoration) => {
+			if (d === decoration) return;
+			setDecoration(d);
+			const first = sorted.find((t) => geometryOf(t) === geometry && decorationOf(t) === d);
+			if (first) setSelected(first);
+		},
+		[decoration, geometry, sorted, setSelected],
+	);
+	// Keep both toggles in sync with the selection — covers deep-links, the initial atlas load, and any path
+	// that sets `selected` outside the toggles ("R", ←/→, a click in the list). When a toggle drives the
+	// change, `selected` already sits in the new cell, so this is a no-op.
 	useEffect(() => {
 		if (!selected) return;
 		const g = geometryOf(selected);
 		if (g !== geometry) setGeometry(g);
-	}, [selected, geometry]);
+		const d = decorationOf(selected);
+		if (d !== decoration) setDecoration(d);
+	}, [selected, geometry, decoration]);
 
 	// Spherical freedraw (~19.5k patterns, ~10 MB across 30 shards) is deliberately NOT in the base atlas —
 	// loading it up front would tax every /play visit for a shelf many never open. Pull it once the Spherical
@@ -555,6 +627,29 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			cfg.set({ colors: false });
 		}
 	}, [isColors, selected]);
+	// A hollow tiling is the same shape of thing as freedraw/colors: its own 2D canvas, no polygon cell
+	// (its faces overlap and self-intersect), so it force-clears every mode and tile-derived overlay the
+	// flat renderer would otherwise draw underneath it.
+	const isHollow = !!selected?.hollow;
+	useEffect(() => {
+		const cfg = useConfiguration.getState();
+		if (isHollow) {
+			cfg.set({
+				hollow: true,
+				hyperbolic: false,
+				spherical: false,
+				inversive: false,
+				circlePacking: false,
+				isTilingRegularOnly: false,
+				isIslamic: false,
+				showSymmetryElements: false,
+				showFundamentalDomain: false,
+				showVertexOrbits: false,
+			});
+		} else if (cfg.hollow) {
+			cfg.set({ hollow: false });
+		}
+	}, [isHollow, selected]);
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isFreedraw) {
@@ -673,6 +768,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			const el = e.target as HTMLElement | null;
 			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			// A widget that declares role="application" owns its own arrow keys (the parametric family's 2-D
+			// region pad nudges the angle pair with them). Without this, ArrowRight both nudged the angle AND
+			// stepped the catalogue to the next tiling, which unmounted the pad mid-gesture.
+			if (el?.closest?.('[role="application"]')) return;
 			// Spherical view: Fill/Wireframe is a single mutually-exclusive toggle (the quaternion trackball
 			// owns rotation, so the flat overlays don't apply). Both W and B flip it — W = Wireframe, B = Fill,
 			// either key swaps the pair. Intercept before the flat toggles so B here means the spherical fill,
@@ -808,6 +907,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					geometryList={geometryList}
 					geometryCounts={geometryCounts}
 					onGeometryChange={onGeometryChange}
+					decoration={decoration}
+					decorationCounts={decorationCounts}
+					onDecorationChange={onDecorationChange}
 				/>
 			</div>
 			<div className="flex-1 min-w-0 relative">
@@ -824,7 +926,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
-				{isSpherical && selected?.spherical ? (
+				{selected?.hollow ? (
+					// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
+					// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
+					// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
+					// density structure shows. Owns its pan/zoom, like freedraw and colors.
+					<div className="absolute inset-0 z-10">
+						<HollowCanvas patchId={selected.hollow.patch} />
+					</div>
+				) : isSpherical && selected?.spherical ? (
 					<SphericalCanvas solidId={selected.spherical.solid} />
 				) : selected?.sphericalFreedraw ? (
 					// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with

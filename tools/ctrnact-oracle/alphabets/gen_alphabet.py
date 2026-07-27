@@ -39,6 +39,7 @@ import json
 import os
 import re
 import sys
+import time
 from fractions import Fraction
 
 def _word_period(w):
@@ -207,8 +208,44 @@ def cyclic_reps(words):
             reps.append(list(key))
     return reps
 
-def enum_configs(D, classes, min_len, max_len, closure="euclidean"):
+def forbidden_adjacent_pairs(classes, D):
+    """{(cid_a, cid_b)} whose PLACED tiles already collide as a bare 2-corner fan.
+
+    The geometric generalization of the point-adjacency lemma below: that lemma is the hand-derived
+    special case "two star points cannot be adjacent", and this is the same statement computed for
+    every ordered pair. Feeding it to enum_configs turns EU_PRUNE_OVERLAP from a filter that discards
+    96.5% of the finished words into a branch prune. Measured 2026-07-25, output byte-identical both times:
+
+      enumeration stage alone, isotoxal-star-z24 + cx4-30.150 : 920.5s -> 44.8s   (20.5x)
+      WHOLE generator run, isotoxal-star-z24                  : 165s   -> 35.5s   (4.6x)
+
+    The end-to-end figure is the smaller one and is the one to quote: folds, certificates and emit are
+    untouched by this, so they become the floor. Both are on this machine (M5, Python 3.9.6).
+
+    Why pruning a PREFIX cannot lose a config: build_config places each tile at the running angle sum,
+    so a prefix's placement is literally the prefix of the full word's placement — if corners i and i+1
+    collide they collide in every extension. And overlap is invariant under the rotation/reflection that
+    cyclic_reps quotients by, so no surviving representative is lost either. EUCLIDEAN CLOSURE ONLY:
+    build_config is planar, and in the defect modes the word does not close, so the tiles it would place
+    are not the tiles of the actual spherical/hyperbolic vertex.
+    """
+    from export_vertex_configs import build_config  # deferred: same exact placement the filter uses
+    bad = set()
+    for a in range(len(classes)):
+        for b in range(len(classes)):
+            if classes[a].units + classes[b].units > D:
+                continue  # cannot occur as an adjacent pair in any word that closes
+            if build_config(classes, D, [a, b])["overlap"]:
+                bad.add((a, b))
+    return bad
+
+
+def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=None):
     """All cyclic words of corner classes with unit sum == D, up to rotation+reflection.
+
+    `forbidden` is an optional set of ordered corner-class pairs that may not be cyclically adjacent
+    (see forbidden_adjacent_pairs). It is a pure prune: passing None reproduces the historical
+    enumeration exactly, which is what keeps the certified byte-identical tables byte-identical.
 
     Closure modes. "euclidean" (default, all pinned/star/composite palettes): a vertex
     closes when its interior angles sum to EXACTLY a full turn (total == D) — flat plane.
@@ -237,6 +274,10 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean"):
     cids = sorted(unit, key=lambda k: (-unit[k], k))
     spherical = (closure == "positive-defect")
     hyperbolic = (closure == "negative-defect")
+    # The wrap pair (last, first) is only genuinely adjacent when the word CLOSES a full turn, so the
+    # cyclic half of the pair prune is euclidean-only even if a caller hands us a table in a defect mode.
+    bad = forbidden if forbidden else frozenset()
+    bad_wrap = bad if not (spherical or hyperbolic) else frozenset()
 
     # "negative-defect" (hyperbolic palette): a vertex closes with STRICTLY NEGATIVE angular defect
     # (total > D), the mirror image of the spherical case. The EUCLIDEAN interior angles overfill a full
@@ -261,7 +302,7 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean"):
                 # fall through: a longer word is a distinct, larger hyperbolic vertex
         else:
             if len(word) >= min_len and total == D:
-                if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
+                if not (pt[word[-1]] and pt[word[0]]) and (word[-1], word[0]) not in bad_wrap:
                     out.append(list(word))
                 return
         if len(word) >= max_len:
@@ -270,6 +311,8 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean"):
             return
         for cid in cids:
             if word and pt[word[-1]] and pt[cid]:   # point-adjacency lemma
+                continue
+            if word and (word[-1], cid) in bad:     # geometric generalization of the same lemma
                 continue
             word.append(cid)
             nxt = total + unit[cid]
@@ -745,18 +788,45 @@ def main():
     # all-convex composite palettes keep min_len=3 and stay byte-identical (make check-regular unaffected).
     has_reflex_composite = any(t.kind == "composite" and any(a > D // 2 for a in t.angles) for t in tiles)
     min_len = 2 if (any(t.kind in ("star", "doubled", "scaled", "polyomino") for t in tiles) or has_reflex_composite) else 3
-    configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), spec.get("closure", "euclidean"))
     # Optional geometric pre-filter (EU_PRUNE_OVERLAP=1): drop vertex configs whose PLACED tiles physically
     # overlap. The solver is combinatorial (no geometry), so an overlapping figure would otherwise seed
     # geometrically-impossible tilings; an overlapping figure appears in zero real tilings, so dropping it is
     # SOUND (removes only the impossible, never a valid tiling). OFF by default ⇒ certified regular/star/
     # isotoxal tables are byte-identical. Only meaningful for star (non-convex) palettes — convex-only
     # alphabets are already overlap-free, so this is a no-op there.
-    if os.environ.get("EU_PRUNE_OVERLAP"):
+    #
+    # Run in TWO parts, which together emit exactly what the single post-hoc filter used to. The adjacent-PAIR
+    # half moves inside the DFS (forbidden_adjacent_pairs), where it kills a branch instead of a leaf: 88% of
+    # the rejects collide at prefix length 2, so this is where the 20x lives. The whole-word half stays here
+    # for the remaining 12%, which need three or more corners before they collide.
+    closure = spec.get("closure", "euclidean")
+    # `pruneOverlap` in the palette JSON is the PRIMARY switch, because whether a palette needs the geometric
+    # filter is a property of the palette (does it carry non-convex tiles?), not of who invoked the build.
+    # It used to be env-only, and the Makefile never set it — so `make PALETTE=isotoxal-star-z24` produced
+    # 285,899 vertexdefs where the SHIPPED table has 34,329, silently and with no way to tell from the output.
+    # The env var still forces it on, for probing a palette that does not declare it.
+    prune_overlap = bool(spec.get("pruneOverlap")) or bool(os.environ.get("EU_PRUNE_OVERLAP"))
+    # The overlap test is PLANAR (build_config places tiles in the Euclidean plane), so applying it to a
+    # defect-closure palette tests a figure that does not exist: every spherical/hyperbolic config "overlaps"
+    # and the table comes out EMPTY. That is a silent, total loss — hyp-p7 goes from 6,719 entries to 0 with
+    # no error — and the flag is environment-driven, so it is one stray export away. Refuse it loudly instead.
+    if prune_overlap and closure != "euclidean":
+        print(f"[gen] ⚑ EU_PRUNE_OVERLAP IGNORED: closure={closure} is not planar, and the overlap test is. "
+              f"(Setting it here would silently empty the table.)")
+        prune_overlap = False
+    forbidden = None
+    if prune_overlap and closure == "euclidean":
+        t_pairs = time.time()
+        forbidden = forbidden_adjacent_pairs(classes, D)
+        print(f"[gen] EU_PRUNE_OVERLAP: {len(forbidden)} forbidden adjacent pairs of {len(classes) ** 2} "
+              f"({time.time() - t_pairs:.1f}s) — pruned inside the DFS")
+    configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), closure, forbidden)
+    if prune_overlap:
         from export_vertex_configs import build_config  # deferred: reuse the exact placement + overlap test
         before = len(configs)
         configs = [c for c in configs if not build_config(classes, D, c)["overlap"]]
-        print(f"[gen] EU_PRUNE_OVERLAP: dropped {before - len(configs)} overlapping configs ({before} -> {len(configs)})")
+        print(f"[gen] EU_PRUNE_OVERLAP: dropped {before - len(configs)} residual overlapping configs "
+              f"({before} -> {len(configs)}) — the 3+-corner collisions the pair table cannot see")
     print(f"[gen] palette={palette_name} D={D} tiles={len(tiles)} classes={len(classes)} "
           f"configs={len(configs)}")
 

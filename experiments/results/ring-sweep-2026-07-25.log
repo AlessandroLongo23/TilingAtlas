@@ -1,0 +1,418 @@
+=== ring sweep — do star tilings exist at unreached orders? — 2026-07-25 21:01:58 ===
+Rings: 14   workers: 8   k<=2, budgets 6 and 7 (fixpoint pair)
+Control: the same generator reproduces star18/star20/star24full at 24/28/48 tiles.
+Reference counts to beat — star18 k=1/k=2 = 18/37, star20 = 6/6, star24full = 44/74.
+A ring returning ONLY its pure-regular tilings (or 0) means that star order tiles nothing new.
+
+[21:01:58] =========== D=14  (11 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring14.json --out tables/ring14 --certify
+[gen] palette=ring14 D=14 tiles=11 classes=20 configs=40
+[cert] A6: 82 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring14/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (82 entries)
+touch tables/ring14/.generated
+rm -f .maxnum-ring14-*
+touch .maxnum-ring14-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring14 -o eu_solver.ring14 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring14 -o eu_pruner.ring14 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring14 -o eu_develop.ring14 eu_develop.cpp
+[21:02:02]   built in 4s; alphabet 82 entries
+[21:02:02] build (MAXNUM=2 PALETTE=ring14)
+[21:02:02] PHASE 1  parallel solve — 8 workers, budget 6
+[21:02:02]   workers done (0s wall)
+[21:02:02] PHASE 1b  merge worker outputs
+[21:02:02]   merged raw blocks: 0
+[21:02:02] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:02:02]   prune done (0s);  total wall 0s
+[21:02:02]   D=14 b6: k=1 0, k=2 0  (0 budget hits, 0s)
+[21:02:02] build (MAXNUM=2 PALETTE=ring14)
+[21:02:02] PHASE 1  parallel solve — 8 workers, budget 7
+[21:02:02]   workers done (0s wall)
+[21:02:02] PHASE 1b  merge worker outputs
+[21:02:02]   merged raw blocks: 0
+[21:02:02] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:02:02]   prune done (0s);  total wall 0s
+[21:02:02]   D=14 b7: k=1 0, k=2 0  (0 budget hits, 0s)
+[21:02:02]   D=14 FIXPOINT OK (b6==b7 = 0/0)
+[21:02:02]   D=14 k=1: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:02:02]   D=14 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:02:02] === ring sweep DONE ===
+=== ring sweep — do star tilings exist at unreached orders? — 2026-07-25 21:02:58 ===
+Rings: 18 20   workers: 8   k<=2, budgets 6 and 7 (fixpoint pair)
+Control: the same generator reproduces star18/star20/star24full at 24/28/48 tiles.
+Reference counts to beat — star18 k=1/k=2 = 18/37, star20 = 6/6, star24full = 44/74.
+A ring returning ONLY its pure-regular tilings (or 0) means that star order tiles nothing new.
+
+[21:02:58] =========== D=18  (24 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring18.json --out tables/ring18 --certify
+[gen] palette=ring18 D=18 tiles=24 classes=44 configs=3108
+[cert] A6: 3839 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring18/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (3839 entries)
+touch tables/ring18/.generated
+rm -f .maxnum-ring18-*
+touch .maxnum-ring18-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring18 -o eu_solver.ring18 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring18 -o eu_pruner.ring18 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring18 -o eu_develop.ring18 eu_develop.cpp
+[21:03:02]   built in 4s; alphabet 3839 entries
+[21:03:02] build (MAXNUM=2 PALETTE=ring18)
+[21:03:02] PHASE 1  parallel solve — 8 workers, budget 6
+[21:03:09]   workers done (7s wall)
+[21:03:09] PHASE 1b  merge worker outputs
+[21:03:09]   merged raw blocks: 40
+[21:03:09] PHASE 2  prune
+  k=1 : 18
+  k=2 : 19
+total kept: 37
+[21:03:09]   prune done (0s);  total wall 7s
+[21:03:09]   D=18 b6: k=1 18, k=2 19  (0 budget hits, 7s)
+[21:03:09] build (MAXNUM=2 PALETTE=ring18)
+[21:03:09] PHASE 1  parallel solve — 8 workers, budget 7
+[21:03:16]   workers done (7s wall)
+[21:03:16] PHASE 1b  merge worker outputs
+[21:03:16]   merged raw blocks: 40
+[21:03:16] PHASE 2  prune
+  k=1 : 18
+  k=2 : 19
+total kept: 37
+[21:03:16]   prune done (0s);  total wall 7s
+[21:03:16]   D=18 b7: k=1 18, k=2 19  (0 budget hits, 7s)
+[21:03:16]   D=18 FIXPOINT OK (b6==b7 = 18/19)
+[21:03:16]   D=18 k=1: 18 total, 14 STAR-BEARING, 4 pure-regular
+[21:03:16]   D=18 k=2: 19 total, 14 STAR-BEARING, 5 pure-regular
+[21:03:16] =========== D=20  (28 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring20.json --out tables/ring20 --certify
+[gen] palette=ring20 D=20 tiles=28 classes=52 configs=1286
+[cert] A6: 1667 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring20/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (1667 entries)
+touch tables/ring20/.generated
+rm -f .maxnum-ring20-*
+touch .maxnum-ring20-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring20 -o eu_solver.ring20 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring20 -o eu_pruner.ring20 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring20 -o eu_develop.ring20 eu_develop.cpp
+[21:03:20]   built in 4s; alphabet 1667 entries
+[21:03:20] build (MAXNUM=2 PALETTE=ring20)
+[21:03:20] PHASE 1  parallel solve — 8 workers, budget 6
+[21:03:21]   workers done (1s wall)
+[21:03:21] PHASE 1b  merge worker outputs
+[21:03:21]   merged raw blocks: 7
+[21:03:21] PHASE 2  prune
+  k=1 : 6
+  k=2 : 0
+total kept: 6
+[21:03:21]   prune done (0s);  total wall 1s
+[21:03:21]   D=20 b6: k=1 6, k=2 0  (0 budget hits, 1s)
+[21:03:21] build (MAXNUM=2 PALETTE=ring20)
+[21:03:21] PHASE 1  parallel solve — 8 workers, budget 7
+[21:03:22]   workers done (1s wall)
+[21:03:22] PHASE 1b  merge worker outputs
+[21:03:22]   merged raw blocks: 7
+[21:03:22] PHASE 2  prune
+  k=1 : 6
+  k=2 : 0
+total kept: 6
+[21:03:22]   prune done (0s);  total wall 1s
+[21:03:22]   D=20 b7: k=1 6, k=2 0  (0 budget hits, 1s)
+[21:03:22]   D=20 FIXPOINT OK (b6==b7 = 6/0)
+[21:03:22]   D=20 k=1: 6 total, 5 STAR-BEARING, 1 pure-regular
+[21:03:22]   D=20 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:03:22] === ring sweep DONE ===
+=== ring sweep — do star tilings exist at unreached orders? — 2026-07-25 21:03:54 ===
+Rings: 16 22 26 34 38 46   workers: 8   k<=2, budgets 6 and 7 (fixpoint pair)
+Control: the same generator reproduces star18/star20/star24full at 24/28/48 tiles.
+Reference counts to beat — star18 k=1/k=2 = 18/37, star20 = 6/6, star24full = 44/74.
+A ring returning ONLY its pure-regular tilings (or 0) means that star order tiles nothing new.
+
+[21:03:54] =========== D=16  (17 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring16.json --out tables/ring16 --certify
+[gen] palette=ring16 D=16 tiles=17 classes=31 configs=261
+[cert] A6: 396 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring16/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (396 entries)
+touch tables/ring16/.generated
+rm -f .maxnum-ring16-*
+touch .maxnum-ring16-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring16 -o eu_solver.ring16 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring16 -o eu_pruner.ring16 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring16 -o eu_develop.ring16 eu_develop.cpp
+[21:03:58]   built in 4s; alphabet 396 entries
+[21:03:58] build (MAXNUM=2 PALETTE=ring16)
+[21:03:58] PHASE 1  parallel solve — 8 workers, budget 6
+[21:03:58]   workers done (0s wall)
+[21:03:58] PHASE 1b  merge worker outputs
+[21:03:58]   merged raw blocks: 9
+[21:03:58] PHASE 2  prune
+  k=1 : 6
+  k=2 : 2
+total kept: 8
+[21:03:58]   prune done (0s);  total wall 0s
+[21:03:59]   D=16 b6: k=1 6, k=2 2  (0 budget hits, 0s)
+[21:03:59] build (MAXNUM=2 PALETTE=ring16)
+[21:03:59] PHASE 1  parallel solve — 8 workers, budget 7
+[21:03:59]   workers done (0s wall)
+[21:03:59] PHASE 1b  merge worker outputs
+[21:03:59]   merged raw blocks: 9
+[21:03:59] PHASE 2  prune
+  k=1 : 6
+  k=2 : 2
+total kept: 8
+[21:03:59]   prune done (0s);  total wall 0s
+[21:03:59]   D=16 b7: k=1 6, k=2 2  (0 budget hits, 0s)
+[21:03:59]   D=16 FIXPOINT OK (b6==b7 = 6/2)
+[21:03:59]   D=16 k=1: 6 total, 4 STAR-BEARING, 2 pure-regular
+[21:03:59]   D=16 k=2: 2 total, 2 STAR-BEARING, 0 pure-regular
+[21:03:59] =========== D=22  (19 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring22.json --out tables/ring22 --certify
+[gen] palette=ring22 D=22 tiles=19 classes=36 configs=56
+[cert] A6: 114 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring22/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (114 entries)
+touch tables/ring22/.generated
+rm -f .maxnum-ring22-*
+touch .maxnum-ring22-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring22 -o eu_solver.ring22 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring22 -o eu_pruner.ring22 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring22 -o eu_develop.ring22 eu_develop.cpp
+[21:04:02]   built in 3s; alphabet 114 entries
+[21:04:02] build (MAXNUM=2 PALETTE=ring22)
+[21:04:02] PHASE 1  parallel solve — 8 workers, budget 6
+[21:04:02]   workers done (0s wall)
+[21:04:02] PHASE 1b  merge worker outputs
+[21:04:02]   merged raw blocks: 0
+[21:04:02] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:03]   prune done (1s);  total wall 1s
+[21:04:03]   D=22 b6: k=1 0, k=2 0  (0 budget hits, 1s)
+[21:04:03] build (MAXNUM=2 PALETTE=ring22)
+[21:04:03] PHASE 1  parallel solve — 8 workers, budget 7
+[21:04:03]   workers done (0s wall)
+[21:04:03] PHASE 1b  merge worker outputs
+[21:04:03]   merged raw blocks: 0
+[21:04:03] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:03]   prune done (0s);  total wall 0s
+[21:04:03]   D=22 b7: k=1 0, k=2 0  (0 budget hits, 0s)
+[21:04:03]   D=22 FIXPOINT OK (b6==b7 = 0/0)
+[21:04:03]   D=22 k=1: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:03]   D=22 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:03] =========== D=26  (23 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring26.json --out tables/ring26 --certify
+[gen] palette=ring26 D=26 tiles=23 classes=44 configs=64
+[cert] A6: 130 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring26/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (130 entries)
+touch tables/ring26/.generated
+rm -f .maxnum-ring26-*
+touch .maxnum-ring26-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring26 -o eu_solver.ring26 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring26 -o eu_pruner.ring26 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring26 -o eu_develop.ring26 eu_develop.cpp
+[21:04:06]   built in 3s; alphabet 130 entries
+[21:04:06] build (MAXNUM=2 PALETTE=ring26)
+[21:04:06] PHASE 1  parallel solve — 8 workers, budget 6
+[21:04:06]   workers done (0s wall)
+[21:04:06] PHASE 1b  merge worker outputs
+[21:04:06]   merged raw blocks: 0
+[21:04:06] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:07]   prune done (1s);  total wall 1s
+[21:04:07]   D=26 b6: k=1 0, k=2 0  (0 budget hits, 1s)
+[21:04:07] build (MAXNUM=2 PALETTE=ring26)
+[21:04:07] PHASE 1  parallel solve — 8 workers, budget 7
+[21:04:07]   workers done (0s wall)
+[21:04:07] PHASE 1b  merge worker outputs
+[21:04:07]   merged raw blocks: 0
+[21:04:07] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:07]   prune done (0s);  total wall 0s
+[21:04:07]   D=26 b7: k=1 0, k=2 0  (0 budget hits, 0s)
+[21:04:07]   D=26 FIXPOINT OK (b6==b7 = 0/0)
+[21:04:07]   D=26 k=1: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:07]   D=26 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:07] =========== D=34  (31 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring34.json --out tables/ring34 --certify
+[gen] palette=ring34 D=34 tiles=31 classes=60 configs=80
+[cert] A6: 162 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring34/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (162 entries)
+touch tables/ring34/.generated
+rm -f .maxnum-ring34-*
+touch .maxnum-ring34-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring34 -o eu_solver.ring34 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring34 -o eu_pruner.ring34 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring34 -o eu_develop.ring34 eu_develop.cpp
+[21:04:10]   built in 3s; alphabet 162 entries
+[21:04:10] build (MAXNUM=2 PALETTE=ring34)
+[21:04:10] PHASE 1  parallel solve — 8 workers, budget 6
+[21:04:11]   workers done (1s wall)
+[21:04:11] PHASE 1b  merge worker outputs
+[21:04:11]   merged raw blocks: 0
+[21:04:11] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:11]   prune done (0s);  total wall 1s
+[21:04:11]   D=34 b6: k=1 0, k=2 0  (0 budget hits, 1s)
+[21:04:11] build (MAXNUM=2 PALETTE=ring34)
+[21:04:11] PHASE 1  parallel solve — 8 workers, budget 7
+[21:04:11]   workers done (0s wall)
+[21:04:11] PHASE 1b  merge worker outputs
+[21:04:11]   merged raw blocks: 0
+[21:04:11] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:11]   prune done (0s);  total wall 0s
+[21:04:11]   D=34 b7: k=1 0, k=2 0  (0 budget hits, 0s)
+[21:04:11]   D=34 FIXPOINT OK (b6==b7 = 0/0)
+[21:04:11]   D=34 k=1: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:11]   D=34 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:11] =========== D=38  (35 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring38.json --out tables/ring38 --certify
+[gen] palette=ring38 D=38 tiles=35 classes=68 configs=88
+[cert] A6: 178 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring38/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (178 entries)
+touch tables/ring38/.generated
+rm -f .maxnum-ring38-*
+touch .maxnum-ring38-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring38 -o eu_solver.ring38 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring38 -o eu_pruner.ring38 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring38 -o eu_develop.ring38 eu_develop.cpp
+[21:04:14]   built in 3s; alphabet 178 entries
+[21:04:14] build (MAXNUM=2 PALETTE=ring38)
+[21:04:14] PHASE 1  parallel solve — 8 workers, budget 6
+[21:04:15]   workers done (1s wall)
+[21:04:15] PHASE 1b  merge worker outputs
+[21:04:15]   merged raw blocks: 0
+[21:04:15] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:15]   prune done (0s);  total wall 1s
+[21:04:15]   D=38 b6: k=1 0, k=2 0  (0 budget hits, 1s)
+[21:04:15] build (MAXNUM=2 PALETTE=ring38)
+[21:04:15] PHASE 1  parallel solve — 8 workers, budget 7
+[21:04:15]   workers done (0s wall)
+[21:04:15] PHASE 1b  merge worker outputs
+[21:04:15]   merged raw blocks: 0
+[21:04:15] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:15]   prune done (0s);  total wall 0s
+[21:04:15]   D=38 b7: k=1 0, k=2 0  (0 budget hits, 0s)
+[21:04:15]   D=38 FIXPOINT OK (b6==b7 = 0/0)
+[21:04:15]   D=38 k=1: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:15]   D=38 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:15] =========== D=46  (43 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring46.json --out tables/ring46 --certify
+[gen] palette=ring46 D=46 tiles=43 classes=84 configs=104
+[cert] A6: 210 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring46/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (210 entries)
+touch tables/ring46/.generated
+rm -f .maxnum-ring46-*
+touch .maxnum-ring46-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring46 -o eu_solver.ring46 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring46 -o eu_pruner.ring46 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring46 -o eu_develop.ring46 eu_develop.cpp
+[21:04:19]   built in 4s; alphabet 210 entries
+[21:04:19] build (MAXNUM=2 PALETTE=ring46)
+[21:04:19] PHASE 1  parallel solve — 8 workers, budget 6
+[21:04:19]   workers done (0s wall)
+[21:04:19] PHASE 1b  merge worker outputs
+[21:04:19]   merged raw blocks: 0
+[21:04:19] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:19]   prune done (0s);  total wall 0s
+[21:04:19]   D=46 b6: k=1 0, k=2 0  (0 budget hits, 0s)
+[21:04:19] build (MAXNUM=2 PALETTE=ring46)
+[21:04:19] PHASE 1  parallel solve — 8 workers, budget 7
+[21:04:20]   workers done (1s wall)
+[21:04:20] PHASE 1b  merge worker outputs
+[21:04:20]   merged raw blocks: 0
+[21:04:20] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+total kept: 0
+[21:04:20]   prune done (0s);  total wall 1s
+[21:04:20]   D=46 b7: k=1 0, k=2 0  (0 budget hits, 1s)
+[21:04:20]   D=46 FIXPOINT OK (b6==b7 = 0/0)
+[21:04:20]   D=46 k=1: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:20]   D=46 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:04:20] === ring sweep DONE ===
+=== ring sweep — do star tilings exist at unreached orders? — 2026-07-25 21:07:23 ===
+Rings: 28   workers: 8   k<=2, budgets 6 and 7 (fixpoint pair)
+Control: the same generator reproduces star18/star20/star24full at 24/28/48 tiles.
+Reference counts to beat — star18 k=1/k=2 = 18/37, star20 = 6/6, star24full = 44/74.
+A ring returning ONLY its pure-regular tilings (or 0) means that star order tiles nothing new.
+
+[21:07:23] =========== D=28  (42 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring28.json --out tables/ring28 --certify
+[gen] palette=ring28 D=28 tiles=42 classes=80 configs=1783
+[cert] A6: 2261 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring28/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (2261 entries)
+touch tables/ring28/.generated
+rm -f .maxnum-ring28-*
+touch .maxnum-ring28-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring28 -o eu_solver.ring28 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring28 -o eu_pruner.ring28 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring28 -o eu_develop.ring28 eu_develop.cpp
+[21:07:27]   built in 4s; alphabet 2261 entries
+[21:07:27] build (MAXNUM=2 PALETTE=ring28)
+[21:07:27] PHASE 1  parallel solve — 8 workers, budget 6
+[21:07:28]   workers done (1s wall)
+[21:07:28] PHASE 1b  merge worker outputs
+[21:07:28]   merged raw blocks: 7
+[21:07:28] PHASE 2  prune
+  k=1 : 7
+  k=2 : 0
+total kept: 7
+[21:07:28]   prune done (0s);  total wall 1s
+[21:07:28]   D=28 b6: k=1 7, k=2 0  (0 budget hits, 1s)
+[21:07:28] build (MAXNUM=2 PALETTE=ring28)
+[21:07:28] PHASE 1  parallel solve — 8 workers, budget 7
+[21:07:28]   workers done (0s wall)
+[21:07:28] PHASE 1b  merge worker outputs
+[21:07:28]   merged raw blocks: 7
+[21:07:28] PHASE 2  prune
+  k=1 : 7
+  k=2 : 0
+total kept: 7
+[21:07:28]   prune done (0s);  total wall 0s
+[21:07:28]   D=28 b7: k=1 7, k=2 0  (0 budget hits, 0s)
+[21:07:28]   D=28 FIXPOINT OK (b6==b7 = 7/0)
+[21:07:28]   D=28 k=1: 7 total, 6 STAR-BEARING, 1 pure-regular
+[21:07:28]   D=28 k=2: 0 total, 0 STAR-BEARING, 0 pure-regular
+[21:07:28] === ring sweep DONE ===
+=== ring sweep — do star tilings exist at unreached orders? — 2026-07-25 21:07:49 ===
+Rings: 42   workers: 8   k<=2, budgets 6 and 7 (fixpoint pair)
+Control: the same generator reproduces star18/star20/star24full at 24/28/48 tiles.
+Reference counts to beat — star18 k=1/k=2 = 18/37, star20 = 6/6, star24full = 44/74.
+A ring returning ONLY its pure-regular tilings (or 0) means that star order tiles nothing new.
+
+[21:07:49] =========== D=42  (93 tiles) ===========
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/ring42.json --out tables/ring42 --certify
+[gen] palette=ring42 D=42 tiles=93 classes=180 configs=182849
+[cert] A6: 192687 entries, pairwise non-isomorphic PASS
+[gen] wrote tables/ring42/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (192687 entries)
+touch tables/ring42/.generated
+rm -f .maxnum-ring42-*
+touch .maxnum-ring42-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/ring42 -o eu_solver.ring42 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/ring42 -o eu_pruner.ring42 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/ring42 -o eu_develop.ring42 eu_develop.cpp
+[21:42:57]   built in 2108s; alphabet 192687 entries
+[21:42:57] build (MAXNUM=2 PALETTE=ring42)
+[21:42:57] PHASE 1  parallel solve — 8 workers, budget 6

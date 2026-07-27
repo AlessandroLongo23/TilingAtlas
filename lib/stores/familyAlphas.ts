@@ -28,3 +28,11 @@ export const useFamilyAlphas = create<FamilyAlphasState>()((set) => ({
 	set: (values) => set({ values }),
 	resetLive: () => set({ live: null }),
 }));
+
+// Dev-only hook, same pattern as configuration.ts and parquet.ts: park the store on `window` so a
+// Playwright run can drive the slider without a real drag. That is how a widened range gets checked on
+// screen — set a tiling, set an α the exporter used to clip away, screenshot.
+//   window.__stores.familyAlphas.getState().set([15])
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+	((window as unknown as { __stores?: Record<string, unknown> }).__stores ??= {}).familyAlphas = useFamilyAlphas;
+}

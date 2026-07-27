@@ -1,0 +1,154 @@
+{
+ "_meta": {
+  "generated_from": "experiments/results/mixed-atlas-unmerged.json",
+  "families": 98,
+  "scanned": 98,
+  "skippedMultiParam": [],
+  "duplicates": 12,
+  "merges": 0,
+  "ships": 87,
+  "note": "consumed by scripts/build-mixed-atlas.ts; spec docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md"
+ },
+ "duplicates": [
+  {
+   "absorbed": "ctrnact-mixed-family-k1-07",
+   "into": "ctrnact-mixed-family-k1-04",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-15",
+   "into": "ctrnact-mixed-family-k1-05",
+   "kind": "forward"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-18",
+   "into": "ctrnact-mixed-family-k1-05",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-14",
+   "into": "ctrnact-mixed-family-k1-06",
+   "kind": "forward"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-31",
+   "into": "ctrnact-mixed-family-k1-11",
+   "kind": "forward"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-32",
+   "into": "ctrnact-mixed-family-k1-12",
+   "kind": "forward"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k1-18",
+   "into": "ctrnact-mixed-family-k1-15",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k2-06",
+   "into": "ctrnact-mixed-family-k2-05",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k2-46",
+   "into": "ctrnact-mixed-family-k2-45",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k2-49",
+   "into": "ctrnact-mixed-family-k2-47",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k2-55",
+   "into": "ctrnact-mixed-family-k2-54",
+   "kind": "reversed"
+  },
+  {
+   "absorbed": "ctrnact-mixed-family-k2-59",
+   "into": "ctrnact-mixed-family-k2-58",
+   "kind": "reversed"
+  }
+ ],
+ "merges": [],
+ "aliases": {
+  "ctrnact-mixed-family-k1-07": {
+   "to": "ctrnact-mixed-family-k1-04",
+   "uOf": {
+    "m": -1.0,
+    "c": 150.0
+   }
+  },
+  "ctrnact-mixed-family-k1-14": {
+   "to": "ctrnact-mixed-family-k1-06",
+   "uOf": {
+    "m": 1.0,
+    "c": 90.0
+   }
+  },
+  "ctrnact-mixed-family-k1-15": {
+   "to": "ctrnact-mixed-family-k1-05",
+   "uOf": {
+    "m": 1.0,
+    "c": -120.0
+   }
+  },
+  "ctrnact-mixed-family-k1-18": {
+   "to": "ctrnact-mixed-family-k1-05",
+   "uOf": {
+    "m": -1.0,
+    "c": 360.0
+   }
+  },
+  "ctrnact-mixed-family-k1-31": {
+   "to": "ctrnact-mixed-family-k1-11",
+   "uOf": {
+    "m": 1.0,
+    "c": 0.0
+   }
+  },
+  "ctrnact-mixed-family-k1-32": {
+   "to": "ctrnact-mixed-family-k1-12",
+   "uOf": {
+    "m": 1.0,
+    "c": 0.0
+   }
+  },
+  "ctrnact-mixed-family-k2-06": {
+   "to": "ctrnact-mixed-family-k2-05",
+   "uOf": {
+    "m": -1.0,
+    "c": 120.0
+   }
+  },
+  "ctrnact-mixed-family-k2-46": {
+   "to": "ctrnact-mixed-family-k2-45",
+   "uOf": {
+    "m": -1.0,
+    "c": 180.0
+   }
+  },
+  "ctrnact-mixed-family-k2-49": {
+   "to": "ctrnact-mixed-family-k2-47",
+   "uOf": {
+    "m": -1.0,
+    "c": 180.0
+   }
+  },
+  "ctrnact-mixed-family-k2-55": {
+   "to": "ctrnact-mixed-family-k2-54",
+   "uOf": {
+    "m": -1.0,
+    "c": 180.0
+   }
+  },
+  "ctrnact-mixed-family-k2-59": {
+   "to": "ctrnact-mixed-family-k2-58",
+   "uOf": {
+    "m": -1.0,
+    "c": 180.0
+   }
+  }
+ }
+}

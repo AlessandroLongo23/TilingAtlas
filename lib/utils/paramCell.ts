@@ -22,9 +22,52 @@ export interface ParametricCellData {
 		alphaRangeDegOpen: [number, number]; // mathematical (open) validity interval — the slider domain
 		defaultAlphaDeg: number;
 		tile?: string; // the isotoxal tile this parameter flexes (e.g. "cx6-90.150")
+		// The slider is not always injective: some families pass through a maximally symmetric member and
+		// come back, so α and 2·foldCentreDeg − α are the SAME tiling (up to an isometry, `foldKind`).
+		// Measured by scripts/scan-family-ranges.py and confirmed with an explicit isometry search, never
+		// with the radial fingerprint alone. Kept rather than clipped (AL, 2026-07-25): the replayed half is
+		// still a real sweep to drag through, it just adds no new tilings, so the UI marks the centre
+		// instead of hiding half the range. See docs/DEVELOPMENT_NOTES.md §102.
+		foldCentreDeg?: number;
+		foldKind?: "rotation" | "reflection";
 	}[];
 	cellPolygons: { n: number; star?: boolean; vertices: ParamTerm[][] }[];
 	basis: [ParamTerm[], ParamTerm[]];
+	// COUPLED multi-parameter families only. When no tile flexes on its own, the flex space is still
+	// N-dimensional but its valid region is a POLYTOPE, not the box that `alphaRangeDegOpen` per axis
+	// describes: moving one angle changes which values the others may take. Each entry is one species'
+	// angle, affine in δ (units of 15°), which must stay inside (0, limitUnits) — two half-planes per
+	// species. Absent for separable families (whose region really is a box) and for single-parameter ones.
+	// `regionVertices` is that region as an ordered polygon in δ-units, for drawing. See NOTES §103.
+	region?: { species: string; coef: number[]; seedUnits: number; limitUnits: number }[];
+	regionVertices?: [number, number][];
+	// MERGED families only (single parameter): two exported families that are the two halves of one
+	// continuous deformation, cut where the flexing tile's alternating vertex passes through 180° — on one
+	// side of that angle the tile is a concave star, on the other a convex 2n-gon, so the exporter files
+	// them as different families. `segments` splices them back into one monotone slider whose domain is
+	// params[0].alphaRangeDegOpen. Absent for the ordinary single-cell families, and `cellPolygons`/`basis`
+	// above stay the FIRST segment's, so a consumer that ignores this field still renders a real tiling
+	// (half the sweep) rather than nothing. Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md
+	segments?: ParamSegment[];
+}
+
+/** One half of a merged family: the source family's symbolic cell plus where it sits on the merged slider.
+ *  Segments are sorted, contiguous, and tile `alphaRangeDegOpen` exactly; the seam belongs to the lower
+ *  segment, which is immaterial because both sides evaluate to the same cell there — that agreement is
+ *  what makes the merge legal, and `paramCell.test.ts` asserts it. */
+export interface ParamSegment {
+	sourceId: string; // the pre-merge family id this half came from (kept for provenance + alias remaps)
+	range: [number, number]; // the merged coordinate's span covered by this segment
+	alphaOf: { m: number; c: number }; // this segment's own α = c + m·u, with m = ±1 (|dα/du| = 1)
+	alpha0Deg: number; // the segment's own δ origin — NOT params[0].alpha0Deg, which is the first segment's
+	cellPolygons: { n: number; star?: boolean; vertices: ParamTerm[][] }[];
+	basis: [ParamTerm[], ParamTerm[]];
+	// Provenance only. The two halves were exported in different frames, so the builder BAKED this isometry
+	// into the terms above to make the seam continuous — nothing at runtime re-applies it. Recorded so the
+	// alignment is auditable, and absent when it was the identity.
+	poseDeg?: number;
+	poseConj?: boolean;
+	poseTranslate?: [number, number];
 }
 
 /** Slider grid for the free angles, in degrees. Every open endpoint the exporters emit is a multiple of
@@ -40,6 +83,10 @@ export const ALPHA_STEP_DEG = 0.5;
  * rendered tiling stays strictly inside the proven region.
  */
 const ALPHA_EPS_DEG = 1e-3;
+
+/** Same idea as ALPHA_EPS_DEG but for a coupled family's region, in δ-units (1 unit = 15°): stay this far
+ *  inside every half-plane, so a species angle is never exactly 0 (a collapsed tile) at the boundary. */
+const REGION_EPS_UNITS = 1e-3 / 15;
 
 /** m·δ for a scalar (single-param) or vector (multi-param) exponent. */
 function mDotDelta(m: number | number[], deltas: number[]): number {
@@ -67,16 +114,147 @@ function evalTerms(terms: ParamTerm[], deltas: number[]): [number, number] {
  *  short of the degenerate limit rather than on it. Interior angles pass through untouched. */
 function deltasFor(pc: ParametricCellData, alphaDeg: number | number[]): number[] {
 	const alphas = Array.isArray(alphaDeg) ? alphaDeg : [alphaDeg];
-	return pc.params.map((p, j) => {
+	const clamped = clampToRegion(pc, pc.params.map((p, j) => {
 		const [lo, hi] = p.alphaRangeDegOpen;
 		const a = alphas[j] ?? p.defaultAlphaDeg;
-		const inside = Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
-		return ((inside - p.alpha0Deg) * Math.PI) / 180;
-	});
+		return Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
+	}));
+	return pc.params.map((p, j) => ((clamped[j] - p.alpha0Deg) * Math.PI) / 180);
+}
+
+/** One species' angle in δ-units at a δ-unit position: seedUnits + coef·δ. */
+function speciesAngle(r: NonNullable<ParametricCellData["region"]>[number], du: number[]): number {
+	let a = r.seedUnits;
+	for (let p = 0; p < r.coef.length; p++) a += r.coef[p] * (du[p] ?? 0);
+	return a;
+}
+
+/**
+ * Hold a requested angle tuple inside a COUPLED family's polytope.
+ *
+ * The per-axis clamp above only knows each axis's own bounds, which for a coupled family describes the
+ * region's bounding box — so a point can pass it and still sit outside the proven region, in the corner
+ * the box adds. There the "tiling" is not one: a species angle has gone negative. Rather than refuse to
+ * draw, walk back along the straight line from the region's interior anchor (the family's default, which
+ * the exporter developed and certified) to the requested point, stopping at the first violated half-plane.
+ * That keeps dragging continuous and every rendered frame inside the certified region.
+ *
+ * A no-op unless `region` is present, so single-parameter and separable families are untouched.
+ */
+export function clampToRegion(pc: ParametricCellData, alphasDeg: number[]): number[] {
+	const region = pc.region;
+	if (!region?.length) return alphasDeg;
+	const toUnits = (a: number[]): number[] => pc.params.map((p, j) => (a[j] - p.alpha0Deg) / 15);
+	const want = toUnits(alphasDeg);
+	const anchor = toUnits(pc.params.map((p) => p.defaultAlphaDeg));
+	const bad = (du: number[]): boolean =>
+		region.some((r) => {
+			const a = speciesAngle(r, du);
+			return a <= REGION_EPS_UNITS || a >= r.limitUnits - REGION_EPS_UNITS;
+		});
+	if (!bad(want)) return alphasDeg;
+	if (bad(anchor)) return pc.params.map((p) => p.defaultAlphaDeg); // nothing safe to interpolate from
+	// largest t ∈ [0,1] with anchor + t·(want − anchor) still inside every half-plane
+	let t = 1;
+	for (const r of region) {
+		const a0 = speciesAngle(r, anchor);
+		const a1 = speciesAngle(r, want);
+		const d = a1 - a0;
+		if (Math.abs(d) < 1e-12) continue;
+		for (const bound of [REGION_EPS_UNITS, r.limitUnits - REGION_EPS_UNITS]) {
+			const tt = (bound - a0) / d;
+			if (tt >= 0 && tt < t) t = tt;
+		}
+	}
+	return pc.params.map((p, j) => p.alpha0Deg + (anchor[j] + t * (want[j] - anchor[j])) * 15);
+}
+
+/** Is a δ-unit point inside (or on) the region polygon? Ray cast, ordered vertices, convex or not. */
+function pointInPolygon(p: [number, number], poly: [number, number][]): boolean {
+	let inside = false;
+	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+		const [xi, yi] = poly[i];
+		const [xj, yj] = poly[j];
+		if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
+	}
+	return inside;
+}
+
+/** Closest point to `p` on the polygon's boundary, in δ-units. */
+function closestOnPolygon(p: [number, number], poly: [number, number][]): [number, number] {
+	let best: [number, number] = poly[0];
+	let bestD = Infinity;
+	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+		const [ax, ay] = poly[j];
+		const [bx, by] = poly[i];
+		const dx = bx - ax;
+		const dy = by - ay;
+		const len2 = dx * dx + dy * dy;
+		const t = len2 < 1e-18 ? 0 : Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - ay) * dy) / len2));
+		const qx = ax + t * dx;
+		const qy = ay + t * dy;
+		const d = (p[0] - qx) ** 2 + (p[1] - qy) ** 2;
+		if (d < bestD) { bestD = d; best = [qx, qy]; }
+	}
+	return best;
+}
+
+/**
+ * The point of a coupled family's region NEAREST to a requested angle pair — the input-side projection,
+ * as opposed to clampToRegion's evaluator-side one.
+ *
+ * clampToRegion walks back along the line from the family's certified default, which is the right answer
+ * for "draw something legal" but the wrong one for a pointer: drag past an edge and the handle shoots off
+ * toward the default instead of sliding along the boundary under your cursor. Projecting to the nearest
+ * boundary point keeps the handle where the hand is. clampToRegion still runs afterwards to hold the
+ * result the REGION_EPS_UNITS inside every half-plane that the boundary itself sits on.
+ *
+ * Falls back to clampToRegion for anything without a 2-D drawn region (single-parameter and separable
+ * families, whose ranges are per-axis intervals already).
+ */
+export function nearestInRegionDeg(pc: ParametricCellData, alphasDeg: number[]): number[] {
+	const verts = pc.regionVertices;
+	if (!verts || verts.length < 3 || pc.params.length !== 2) return clampToRegion(pc, alphasDeg);
+	const want: [number, number] = [
+		(alphasDeg[0] - pc.params[0].alpha0Deg) / 15,
+		(alphasDeg[1] - pc.params[1].alpha0Deg) / 15,
+	];
+	const p = pointInPolygon(want, verts) ? want : closestOnPolygon(want, verts);
+	return clampToRegion(pc, [pc.params[0].alpha0Deg + p[0] * 15, pc.params[1].alpha0Deg + p[1] * 15]);
+}
+
+/** The segment of a merged family covering a slider position — the lower segment at a seam, the nearest
+ *  one for a position outside the range (the caller has already clamped, this is belt-and-braces). Returns
+ *  null for an ordinary single-cell family, which is the signal to take the unsegmented path. */
+export function segmentAt(pc: ParametricCellData, u: number): ParamSegment | null {
+	const segs = pc.segments;
+	if (!segs?.length) return null;
+	for (const s of segs) if (u >= s.range[0] && u <= s.range[1]) return s;
+	return u < segs[0].range[0] ? segs[0] : segs[segs.length - 1];
 }
 
 /** Evaluate the family at a slider position (one number for 1-param, an array for N-param); parseBaseCell-ready. */
 export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | number[]): TranslationalCellData {
+	// A merged family carries one parameter and a segment per half: hold the slider position inside the
+	// merged open interval exactly as the unsegmented path does, pick the segment, map the position onto
+	// that segment's own α, and evaluate ITS cell against ITS δ origin. The seam is deliberately NOT
+	// nudged — it is a genuine tiling (no tile has zero area there), which is why the two halves are one
+	// family at all; only the outer ends are degenerate and need ALPHA_EPS_DEG.
+	if (pc.segments?.length) {
+		const [lo, hi] = pc.params[0].alphaRangeDegOpen;
+		const raw = Array.isArray(alphaDeg) ? (alphaDeg[0] ?? pc.params[0].defaultAlphaDeg) : alphaDeg;
+		const u = Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, raw));
+		const seg = segmentAt(pc, u)!;
+		const deltas = [((seg.alphaOf.c + seg.alphaOf.m * u) - seg.alpha0Deg) * (Math.PI / 180)];
+		return {
+			cellPolygons: seg.cellPolygons.map((poly) => ({
+				n: poly.n,
+				...(poly.star ? { star: true } : {}),
+				vertices: poly.vertices.map((v) => evalTerms(v, deltas)),
+			})),
+			basis: [evalTerms(seg.basis[0], deltas), evalTerms(seg.basis[1], deltas)],
+		};
+	}
 	const deltas = deltasFor(pc, alphaDeg);
 	return {
 		cellPolygons: pc.cellPolygons.map((poly) => ({

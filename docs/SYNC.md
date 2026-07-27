@@ -1447,3 +1447,172 @@ the per-pixel disk shader (new `uColorsMode` fills a color-index field through t
 reuse icoFreedraw's helpers in `buildSphColors`. Colors CLASS × hyperbolic/spherical geometry, base/solid
 sub-axis, surjective-only. Shipped **~19.5k colorings, 25 MB** (16 hyp + 9 sph). Browser-verified, no
 regression. Detail: NOTES §91.
+
+**2026-07-25 · CC.** New **substitutions** section: a live Sub Rosa editor (`/substitutions`, nav "Sub
+Rosa"). First aperiodic-substitution class in the atlas — not enumerable, so a generator, not a catalogue.
+Engine `lib/subrosa/` derives everything from the edge word Σ(n): Σ→boundary→exact interior fill (ℤ[ζ₂ₙ],
+greedy ear-clip)→per-prototile rule→float iteration. Shipped **n=5** (10-fold, Penrose rhombs), validated
+exactly (both prototiles fill gap/overlap-free: 72 & 116 children; 12/12 vitest). n=7+ blocked on a robust
+fill (greedy dead-ends; de Bruijn matched-line is the next step). Added ℤ[ζ₁₀] to Cyclotomic. Spec:
+`docs/superpowers/specs/2026-07-25-subrosa-editor-design.md`; detail NOTES §93.
+
+**2026-07-25 · CC.** Sub Rosa depth-2 break FIXED at the root (was capped, per AL "fix the method, don't
+cap it"). Read Kari-Rissanen §5: the super-rhomb boundary must be POINT-symmetric (`u·ũ`, opposite edges
+antiparallel) so neighbours interlock — mine was mirror-symmetric. Also moved to the correct ring **ℤ[ζ₂₀]**
+(odd-n boundary vectors are ζ₄ₙ, not ζ₂ₙ; the old code rounded them). Now self-composes without limit:
+single tile → depth 3 = 706 240 tiles, zero edge-overuse, zero polygon overlap, area exact; star → depth 2
+= 71 200 clean. Corner rose sectors are NOT needed for gap-freeness. 17/17 vitest, build clean. Detail: NOTES §93.
+
+**2026-07-25 · CC.** Sub Rosa **n=7 (14-fold)** shipped — `SUPPORTED_SYMMETRIES=[5,7]`, UI symmetry
+selector. The corrected boundary is more fillable: sharpest greedy now completes n=5 and n=7 (212/380/472
+children), but is brittle in exact arithmetic, so the fill became a **restart ear-clip** (sharpest, then
+seeded-random retries; every fill exactly validated → heuristic decides which n build, never correctness).
+Added ℤ[ζ₂₈]/ℤ[ζ₃₆]/ℤ[ζ₄₄]; buildRule memoized (~1.8 s once). n=7 star→d1=2 968, single→d2=81 632, over 0,
+area exact; seamless 14-fold flower (Playwright). 21/21 vitest, build clean. n≥9 awaits the de Bruijn
+matched-line fill (thin prototiles dead-end even with restart). Detail: NOTES §93.
+
+**2026-07-25 · CC.** Sub Rosa **de Bruijn matched-line fill** — the paper's own method (refs [7,8]),
+polynomial and dead-end-free. Unlocks **n=9,11** (18/22-fold); `SUPPORTED_SYMMETRIES=[5,7,9,11]`. Keys:
+the non-crossing (cyclic parenthesis) matching per direction (naive i-th/i-th-last crosses same-direction
+strands once the rose-free boundary puts a and ā in the same half), then march parallel edges by the
+crossing strands ordered by crossing parameter. Exact positions in ℤ[ζ₄ₙ]; restart ear-clip kept as a
+fallback (concurrent-point tie in n=5 x=2), both gated on edge-consistency + area. Fast: n=7 build 1766→13
+ms, n=11 = 127 ms. Depth-2 clean to 2 032 624 tiles (over 0). Seamless 22-fold flower (Playwright, 18 920
+tiles). 28/28 vitest, build clean. Detail: NOTES §93.
+
+**2026-07-25 · CC.** Marek's two zips ingested to `materials/corpora/` (six corpora, 127,584 certificates;
+his `results_2026-07-25.txt` k-counts reproduce exactly). Shipped **four new hyperbolic color bases** {8,3}
+{5,4} {6,4} {4,5}: four rows in `develop_hyp_colors.BASES` (decoder already generic in (p,q)), 67,545 certs
+in 74 s with **0 failures**, 46,548 surjective colorings, every k Marek solved, 2.6 MB eager + 29.8 MB lazy;
+manifest-driven loader, so 4 rows + 4 labels in the app. Build clean, 2 known pre-existing test failures.
+`hexagons_edges`/`hexagons_3_colors` extracted, NOT decoded (no hex grid in GRIDS). Detail: NOTES §96.
+
+**2026-07-25 · CC.** Sub Rosa renderer moved to **batched WebGL2** (`lib/render/subrosaGL.ts`): the
+whole patch is one `drawArrays`, and pan/zoom is a uniform update with no re-tessellation, so it stays
+smooth into the millions of tiles (the 2D per-tile fill loop was the bottleneck; kept as a
+context-failure fallback). Outlines are a single-pass barycentric wireframe (internal diagonal
+suppressed) — no stroke geometry. Retired the 130k tile cap (2D budget) for a GPU one (1.5M ≈ 135 MB,
+edge attr byte-packed); the depth slider's max is now the EXACT deepest depth under budget from the
+substitution matrix, ending the "depth 2 → silently 380 tiles, capped at 130k" state. n=7 d2 = 147,088
+tiles renders (over 0, one boundary loop, GL path confirmed). Lint clean for these files.
+
+**2026-07-25 · CC.** Hexagonal grid shipped, closing Marek's 07-25 drop. The honeycomb is a lattice with a
+two-point basis, not a lattice, so the per-coset bitmask can't index it — it takes the ts PATCH path, which
+needed one `GRIDS` row per decoder and `is_patch_grid()` in place of `grid == "ts"`. **72,039 certificates,
+0 develop failures**, every k matching Marek: edges 36,062 (k≤9), colorings 23,977 (19,975 surjective, k≤8).
+Digon-free anchor = the 1 plain {6,3} tiling. Regressions hold (square BIJECTION 1420/1420, ts 3-colors
+byte-identical). First lazy shards on the Euclidean decoration shelves; `public/` 522 → 676 MB. Detail: NOTES §98.
+
+**2026-07-25 · CC.** Sub Rosa **even-n symmetries** n=4,6,8 (8/12/16-fold); `SUPPORTED_SYMMETRIES=[4,5,
+6,7,8,9,11]`. No new geometry — sigma/boundaryWord/de Bruijn fill were already general; even n add a
+SQUARE prototile (x=n/2) that fills and self-composes like any rhomb. The paper's even-n "fixed point"
+is about the self-similar limit, not gap-free iteration (skipped, like the rose sectors). Only work:
+rings ℤ[ζ₁₆],ℤ[ζ₃₂] in `Cyclotomic.ts` (n=6 reuses ζ₂₄) + a wrapping symmetry selector. Child counts
+n=4→[40,56] n=6→[140,240,276] n=8→[336,616,800,864]; depth-2 gap/overlap-free (over 0, area exact);
+seamless 12/16-fold flowers (Playwright, 1680/5376 tiles). 40/40 vitest, build clean. n=10/n≥13 next.
+
+**2026-07-25 · CC.** New **`/multigrid`** shelf — quasiperiodic rhombic tilings by **de Bruijn's
+multigrid (dual) method**, the projection counterpart to Sub Rosa's substitution. n grid-line families
+dualize to a 2n-fold rhombic tiling; each corner is `V(K)=ΣKⱼeⱼ` with K∈ℤⁿ the exact integer index
+vector, so topology is integer equality and positions are crack-free float — **no CyclotomicRing
+needed** (single-pass, no composition). Live **phason editor**: per-γⱼ sliders, dragging one flips the
+tiling; presets Symmetric (2n-fold) / Randomize. Reuses the batched `SubRosaGL` renderer + pan/zoom.
+n=4..10 (8–20-fold): Ammann–Beenker, Penrose, 12-fold, … Verified — edge-to-edge (over 0, one loop,
+integer-K keyed), Penrose/AB prototiles + areas, 10-fold symmetric preset; Playwright shots of all
+three. 12/12 vitest, build clean. Spec: `superpowers/specs/2026-07-25-multigrid-constructor-design.md`.
+
+**2026-07-25 · CC.** `/multigrid` **duality split-view**. A "Split view" toggle (default on) shows the
+n grid-line families (z-space, colour-coded, own pan/zoom) beside the dual tiling; hovering a rhombus
+lights its two source lines + crossing in the grid, and hovering a crossing lights its rhombus — the
+crossing↔rhombus correspondence made interactive. Two `MgTile` fields (`site`, `fams`) carry the link;
+overlay canvases draw the highlight so the GL/grid bases don't re-render on hover. 13/13 vitest, build
+clean; Playwright confirms both hover directions. Spec updated (split-view section).
+
+### 2026-07-25 — CC: α ranges widened, 41 mixed families, merges retired
+AL saw on /play that mixed k2-01's slider stops where its flexing tile turns concave, not where the tiling
+ends. Confirmed and generalised: 41 of 98 mixed families were truncated at that species cut (3,015° of arc),
+18 of them holding tilings no palette species can seed, so absent from the atlas. Widening each family to
+its true collapse-to-collapse interval retires the merge machinery for these cuts — all 6 merges were the
+analytic continuation of their own primary, so the partners absorb as duplicates: 0 merges, same 87 entries,
+no segments. Also 12 folded sliders marked, and two congruence primitives fixed (fingerprint alone is not
+congruence; the isometry search must try every largest-tile anchor). Detail: DEVELOPMENT_NOTES.md §102. — CC
+
+### 2026-07-26 — CC: hollow tilings (self-intersecting `{n/d}`) — new search, 7/12 of GMS
+AL asked for star polygons in the modern sense (`{5/2}` = 5 vertices, crossings not vertices). The space is
+GMS's *Uniform Tilings with Hollow Tiles* (1981); Myers 2004 enumerates the other kind and points there for
+this one. Measured that overlap-free is impossible (the star straddles its own chord ~76/24), so tiles must
+be boundary circuits. Pinned the vertex-closure rule empirically against the 19 published configs: reflex
+lift + `sum ≡ 0 mod 360`, not `= 360` (19/19 vs 8/19); δ ∈ {1,2}. New engine in `tools/hollow/`, exact
+ℤ[ζ₂₄]. Reproduces the 11 convex uniform tilings and rejects the 4 non-tiling species; δ=1 and δ=2/m≤4 give
+18 distinct tilings containing 7/12 transcribed GMS configs, zero false positives. ⚑ 1.16/1.19/x2 rejected
+by a coinciding-edges limitation (edges keyed geometrically); 74/304 (δ=1) and 27/133 (δ=2) species
+unresolved (capped/timeout = unknown), so 18 is a lower bound, not a count.
+Detail: DEVELOPMENT_NOTES.md §103. — CC
+
+### 2026-07-26 — CC: coupled 2-parameter families land, mixed 87 → 83
+AL noticed k2-45/46/50 are the same tiling at different rhombus and star angles. They are — six entries are
+one 2-parameter family, and 12 coupled records are 5. The exporter only gives a species its own slider when
+it flexes alone, so a coupled flex space shipped as parallel 1-D slices, one per palette value of the angle
+it pinned. Developed the real coupled families, which need a polytope region rather than two box sliders;
+per AL they ship with a 2-D pad. Everything off those lines was missing from the atlas, including whole grid
+lines the palette cannot seed. Detail: DEVELOPMENT_NOTES.md §103. — CC
+
+### 2026-07-26 — CC: hollow tilings shelved as a new Euclidean class
+Added `hollow` as the 13th TileClass (next to `star`), 7 entries, all "reproduced" against GMS. Needed its
+own renderer: overlapping self-intersecting faces have no polygon cell, so `lib/hollow/render.ts` strokes
+each closed path and fills with the NONZERO winding rule (even-odd would punch a hole through every star —
+the concave `|n/d|` reading). Faces + period lattice ship as `public/hollow/<id>.json`. The 11 convex
+uniform tilings are δ=1 hollow tilings but stay unshelved — they already ship under `regular`. Build clean,
+verified in /library, /play, sidebar picker, light and dark. Detail: DEVELOPMENT_NOTES.md §103.  — CC
+
+### 2026-07-26 — CC: 2-D pad gets axes; the α drag stops rebuilding an invisible grid
+AL's six UI complaints about the coupled-family pad, plus "why does it feel slower". The lag was real and
+not confined to 2-parameter families: an α tick rebuilt the whole replicated grid (~180k allocations at min
+zoom) for a p5 layer that paints no tiles under either the flat OR the Islamic WebGL renderer. Skipping it
+took a k=2 star family 27.3 → 8.35 ms/frame, 175/240 → 0/240 frames over 20ms, 49% → ~1% GC; Islamic mode
+35.4 → 10.2. Pad rewritten (polygon-only hit area, boundary-sliding drag, 30° axes/grid, fixed-width
+readout) and taken off the React hot path. Tool: `scripts/measure-alpha-fps.mjs`. Detail: NOTES §104. — CC
+
+### 2026-07-26 — CC: Islamic arrangement rewritten; grids rebuild in place
+Follow-on to the pad/perf work, all of it measured. The Islamic mesh rebuild was bypassing its own throttle
+on every α tick — now a self-tuning ~50% duty gate on the whole α chain. The arrangement was string-keyed
+throughout (vertex keys, grid cells, edges, half-edges, atan2 inside a sort comparator): rewritten to numeric
+keys and stamp arrays, 2.3× faster at edge offset 0 and 4.1× with crossings split, which speeds up every
+Islamic slider for rigid tilings too. `buildTilingFromCell` can now rebuild into the previous grid instead of
+allocating ~180k objects per tick. Flat and Islamic views are at the display cap; output locked by a digest
+test. Detail: DEVELOPMENT_NOTES.md §104c. — CC
+
+### 2026-07-26 — CC — hollow engine rebuilt, 14/14 GMS
+- `tools/hollow/engine.py` supersedes the first cut; vertex-figure multiplicity κ searched, caps can
+  only yield UNKNOWN, density exact from a torus certificate.
+- All **14** GMS hollow tilings reproduced (was 7); 11 convex regression at density exactly +1; the
+  4 negative controls still rejected.
+- Ground truth was wrong: GMS table 1 has 14 hollow entries, not the 12 transcribed (1.2 and 1.4 are
+  δ=3/m=5 and were never enumerated).
+- Shelf `public/reference-atlas-hollow.json` 7 → 14 entries.
+- Detail: `docs/DEVELOPMENT_NOTES.md` §"Hollow tilings — engine rebuilt"; results table in
+  `tools/hollow/README.md`.
+
+### 2026-07-26 — CC: the landing wall's Play, Hyperbolic and Spherical cells go live
+Three baked thumbnails became real canvases with /play's controls (AL directive). The card link moved to
+the caption block so the figure can take drags (`CollectionCard.interactive`); all three are inert until
+clicked, so the page still scrolls under an untouched card. `HyperbolicDevelopedCanvas` grew an optional
+per-instance `input` prop — /play's store-driven path is untouched — and the /theory card's GL lifecycle
+came out as `lib/hooks/useFlatCellPreview.ts`, shared with the new Play cell. The landing's 9.9 MB fetch of
+the developed catalogue is gone: the pool's 64 records (~350 bytes each) are inlined at build time. Build
+clean; verified with Playwright on / and /theory. Detail: DEVELOPMENT_NOTES.md §"The landing wall's three
+geometry cells go live". — CC
+
+### 2026-07-27 — CC — backfill: three clusters that shipped unrecorded
+Three pieces of 2026-07-26 work sat in the tree with no ledger entry; written up now from the diff.
+- Symmetry overlays left p5 for `lib/render/overlayPen.ts` — one implementation, both flat surfaces.
+- `/defense`: an unlisted static route, 40 slides from one markdown file, live atlas cards.
+- Ring sweep: 7/11/13/17/19/23-fold stars tile nothing at k≤2; **16-fold does**. ⚑ D=42 interrupted.
+- Detail: DEVELOPMENT_NOTES.md, the three sections dated 2026-07-27. — CC
+
+### 2026-07-27 — CC — working-tree hygiene: .gitignore was silently off
+`materials/` had no trailing newline, so appending `.next-prod/` merged them into the dead single line
+`materials/.next-prod/` and 1.1 GB stopped being ignored. Repaired, plus ctrnact per-run worker scratch.
+Also: `tsconfig.json` tool-reformat reverted; `export2.py` stopped writing the 11 convex regression
+patches into `public/` where nothing referenced them (shelf now 14-for-14); and `docs-check.mjs`'s
+entry-length rule never matched `###` headings, so it had been measuring nothing. — CC
