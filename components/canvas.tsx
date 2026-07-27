@@ -55,7 +55,8 @@ import { Input } from "./ui/input";
 import { ColorPad } from "./ui/color-pad";
 import { WallpaperGroupDiagrams } from "./wallpaper-group-diagram";
 import { useP5 } from "@/lib/hooks/useP5";
-import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "./canvas-overlays";
+import { drawFundamentalDomain, drawSymmetryElements, drawTilingPlain } from "@/lib/render/symmetryOverlay";
+import { p5Pen } from "@/lib/render/overlayPen";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { EuclideanCanvas } from "./euclidean-canvas";
@@ -886,8 +887,11 @@ export function Canvas({
 							: null;
 					// tiling is null in the cold-load window (no cell resolved yet) — ensureTiling sets it null and
 					// returns, and the cull above already guards on it. Draw nothing rather than deref null.show().
+					// One pen per frame, wrapping the same p5 instance: the overlay code itself is shared
+					// with the preview cards' 2-D layer (lib/render/symmetryOverlay.ts).
+					const pen = p5Pen(p5);
 					if (tiling) {
-						if (symmetryActive) drawTilingPlain(p5, tiling, ctrl.zoom);
+						if (symmetryActive) drawTilingPlain(pen, tiling, ctrl.zoom);
 						else drawTiling(cfg, tiling, cull, wave, shaderFill, hoverWorld);
 					}
 					// Shared by both overlays: the FD uses it to snap to the lattice copy nearest the view
@@ -899,9 +903,9 @@ export function Canvas({
 						width: p5.width,
 						height: p5.height,
 					};
-					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(p5, sd, overlayView);
+					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(pen, sd, overlayView);
 					if (symmetryActive) {
-						drawSymmetryElements(p5, sd, overlayView);
+						drawSymmetryElements(pen, sd, overlayView);
 					}
 					p5.pop();
 

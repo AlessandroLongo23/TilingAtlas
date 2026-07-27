@@ -9,6 +9,10 @@ import { TheoryArticleNav } from "@/components/theory-article-nav";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { InteractiveTilingPreviewCard, CARD_LAYOUT_SPRING } from "@/components/interactive-tiling-preview-card";
 import { HyperbolicFigureCard } from "@/components/hyperbolic-figure-card";
+import { PreviewOverlayScope } from "@/lib/hooks/usePreviewOverlays";
+import { orbitsFor } from "@/lib/defense/orbitCache";
+import { symmetryFor } from "@/lib/services/symmetryCache";
+import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
@@ -17,6 +21,12 @@ interface TheoryClientProps {
 	sections: TheorySection[];
 	/** Atlas id -> render cell for the tilings the markdown embeds via `<tiling-card tiling="…">`. */
 	cells: Record<string, TranslationalCellData>;
+	/**
+	 * Atlas id -> exact cell, for the same tilings. What the three card overlays are computed from:
+	 * vertex orbits (`o`), symmetry elements (`s`), fundamental domain (`d`). Optional — an article
+	 * that ships none simply has three dead keys.
+	 */
+	sources?: Record<string, ExactCellSource>;
 	/**
 	 * Patch id -> developed record for the tilings the markdown embeds via `<hyperbolic-card patch="…">`.
 	 * Only the ones an article actually shows — the full catalogue is 11.6 MB.
@@ -83,7 +93,7 @@ function AnimatedCardGrid({ cols, children }: { cols?: string; children?: React.
 	);
 }
 
-export function TheoryClient({ content, sections, cells, patches, currentSlug }: TheoryClientProps) {
+export function TheoryClient({ content, sections, cells, sources, patches, currentSlug }: TheoryClientProps) {
 	const [targetSection, setTargetSection] = useState("");
 	const [activeSection, setActiveSection] = useState("");
 	const progressRef = useRef<HTMLDivElement | null>(null);
@@ -110,7 +120,18 @@ export function TheoryClient({ content, sections, cells, patches, currentSlug }:
 						</div>
 					);
 				}
-				return <InteractiveTilingPreviewCard cell={cell} tilingId={tiling} title={title} />;
+				// The exact cell, when the article ships one, is what the o / s / d overlays are drawn
+				// from. Both derivations cache per tiling, so a keypress costs nothing after the first.
+				const source = tiling ? sources?.[tiling] : undefined;
+				return (
+					<InteractiveTilingPreviewCard
+						cell={cell}
+						tilingId={tiling}
+						title={title}
+						orbitData={tiling && source ? orbitsFor(tiling, source) : null}
+						symmetryData={tiling && source ? symmetryFor(tiling, source) : null}
+					/>
+				);
 			},
 			// <hyperbolic-card patch="hyp-4-4-4-6" label="4.4.4.6" caption="…">
 			// A Poincaré-disk figure. Static by design (see HyperbolicFigureCard) — the interactive view
@@ -132,10 +153,13 @@ export function TheoryClient({ content, sections, cells, patches, currentSlug }:
 			"card-grid": AnimatedCardGrid,
 		};
 		return map as unknown as Components;
-	}, [cells, patches]);
+	}, [cells, sources, patches]);
 
 	return (
-		<div className="flex h-full min-h-0 w-full overflow-hidden">
+		// One overlay scope for the whole article: o / s / d with no card focused toggle every preview
+		// on the page, and a focused card answers for itself.
+		<PreviewOverlayScope>
+			<div className="flex h-full min-h-0 w-full overflow-hidden">
 			<PageSidebar scrollable={false}>
 				<div className="flex h-full min-h-0 flex-col">
 					<div className="shrink-0 border-b border-line-subtle pb-2">
@@ -174,6 +198,7 @@ export function TheoryClient({ content, sections, cells, patches, currentSlug }:
 					</div>
 				)}
 			</div>
-		</div>
+			</div>
+		</PreviewOverlayScope>
 	);
 }

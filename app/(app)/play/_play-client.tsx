@@ -31,6 +31,8 @@ import {
 	loadIsotoxalAtlasShard,
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
+	loadFreedrawShardsForK,
+	loadColorsShardsForK,
 	loadSphericalFreedrawAtlas,
 	loadHyperbolicEdgesAtlas,
 	loadHyperbolicEdgesShard,
@@ -201,6 +203,33 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (!Number.isFinite(k) || k < 3) return;
 		let alive = true;
 		loadIsotoxalAtlasShard(k)
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [requestedKey]);
+
+	// Hexagonal-grid decorations run deeper than the atlas ships eagerly: edge systems to k=9 (ids
+	// "fdh-{k}-…") and 3-colorings to k=8 ("colh3-{k}-…"). A direct arrival at one of the lazy slices
+	// fetches it — same best-effort, dedup-by-key shape as the shards above. loadFreedrawShardsForK /
+	// loadColorsShardsForK return [] when that k needs nothing, so no gate on the number is needed here.
+	useEffect(() => {
+		const m = requestedKey?.match(/^(fdh|colh3)-(\d+)-/);
+		if (!m) return;
+		const k = Number(m[2]);
+		if (!Number.isFinite(k)) return;
+		let alive = true;
+		const load = m[1] === "fdh" ? loadFreedrawShardsForK : loadColorsShardsForK;
+		load(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
 				setRefList((prev) => {

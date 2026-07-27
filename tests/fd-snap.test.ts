@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fdSnapTranslate, type OverlayView } from "@/components/canvas-overlays";
+import { fdSnapTranslate, type OverlayView } from "@/lib/render/symmetryOverlay";
 
 // The canvas world transform: screen = (W/2 + off.x, H/2 + off.y) + Rot(rot)·(zoom·wx, −zoom·wy).
 // fdSnapTranslate returns the whole-lattice-vector translate that brings `anchor` to the copy nearest

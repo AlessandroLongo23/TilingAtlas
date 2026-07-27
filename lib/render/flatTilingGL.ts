@@ -7,7 +7,14 @@
 
 import { Vector } from "@/classes/Vector";
 import type { CellMesh } from "@/lib/render/buildCellMesh";
+import type { OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
 import { computeFillRadii, wrapOffset } from "@/lib/render/flatView";
+import {
+	ORBIT_DOT_RADIUS_PX,
+	hoveredOrbitAt,
+	screenToWorld,
+	stepOrbitScales,
+} from "@/lib/render/orbitHover";
 
 // Selection-transition wave (M2), shared by the fill and stroke vertex shaders. A transcription of
 // waveTileScale + WAVE_MIN_SCALE in lib/utils/tilingTransition.ts — KEEP THE TWO IN STEP. `phase` is +1
@@ -286,6 +293,16 @@ export interface FlatDrawParams {
 	showFill: boolean;
 	strokeRGB: [number, number, number]; // 0..1
 	hueOffsetDeg?: number; // global fill-hue rotation (degrees); omitted ⇒ 0 (theory cards)
+	/** Pointer position in centred CSS px, y down, or null when it is off the surface. Only read when
+	 *  an orbit mesh is uploaded; the renderer converts it to world space itself, so a caller never has
+	 *  to reproduce the shader's transform. */
+	orbitHoverPx?: { x: number; y: number } | null;
+	/** Colour the tiles fade toward in orbit mode, 0..1. Defaults to white. */
+	dimTargetRGB?: [number, number, number];
+	/** Force the same fade with no orbit mesh loaded. The symmetry-elements overlay wants it: colour
+	 *  has to belong to the axes and rotation centres drawn on top, which is why /play's p5 view
+	 *  swaps in drawTilingPlain there. Dimming the shader fill is this view's equivalent. */
+	dimFill?: boolean;
 }
 
 // Retained-mode instanced renderer over one CellMesh: upload the cell once, then every frame is two
@@ -309,6 +326,16 @@ export class FlatCellRenderer {
 	private mesh: CellMesh | null = null;
 	private inst = { Ri: -1, Rj: -1, count: 0 };
 	private disposed = false;
+	// Vertex-orbit dots: its own program and buffers, drawn over the dimmed fill, sharing the fill's
+	// instance grid. Inert until uploadOrbitMesh() supplies a mesh.
+	private orbitProg: WebGLProgram;
+	private orbitPosBuf: WebGLBuffer;
+	private orbitCornerBuf: WebGLBuffer;
+	private orbitOrbitBuf: WebGLBuffer;
+	private orbitU: Record<string, WebGLUniformLocation | null> = {};
+	private orbitA: Record<string, number> = {};
+	private orbitMesh: OrbitDotMesh | null = null;
+	private orbitScales: number[] = [];
 	// TEMPORARY (stroke-invisible investigation): what the last draw() actually issued, so the theory
 	// card's ?gldebug overlay can report whether the stroke pass ran at all. Remove with that overlay.
 	lastDraw: { fillVerts: number; strokeVerts: number; instances: number; strokePx: number } | null = null;
@@ -318,9 +345,11 @@ export class FlatCellRenderer {
 		this.gl = gl;
 		const fillProg = linkProgram(gl, FILL_VERT, FILL_FRAG);
 		const strokeProg = linkProgram(gl, STROKE_VERT, STROKE_FRAG);
-		if (!fillProg || !strokeProg) throw new Error("flat renderer: shader compile/link failed");
+		const orbitProg = linkProgram(gl, ORBIT_VERT, ORBIT_FRAG);
+		if (!fillProg || !strokeProg || !orbitProg) throw new Error("flat renderer: shader compile/link failed");
 		this.fillProg = fillProg;
 		this.strokeProg = strokeProg;
+		this.orbitProg = orbitProg;
 
 		// uWavePhase/uWaveP are set explicitly (to "wave off") rather than left at their default-zero,
 		// and aCentroid is bound even though the wave is off here: both shaders declare aCentroid as an
@@ -328,19 +357,28 @@ export class FlatCellRenderer {
 		// renderer did that euclidean-canvas.tsx's pipeline does not. Some drivers tolerate it; others
 		// drop the draw, which showed up as strokeless (flat-filled) theory cards on Apple/ANGLE Metal
 		// while /play — which binds aCentroid in both passes — rendered correctly on the same GPU.
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uWavePhase", "uWaveP"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
 			this.fillU[name] = gl.getUniformLocation(fillProg, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
 			this.fillA[name] = gl.getAttribLocation(fillProg, name);
 		}
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP", "uStrokeDim", "uDimTarget"]) {
 			this.strokeU[name] = gl.getUniformLocation(strokeProg, name);
 		}
 		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
 			this.strokeA[name] = gl.getAttribLocation(strokeProg, name);
 		}
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uRadiusPx", "uK", "uOrbitScale"]) {
+			this.orbitU[name] = gl.getUniformLocation(orbitProg, name);
+		}
+		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
+			this.orbitA[name] = gl.getAttribLocation(orbitProg, name);
+		}
 
+		this.orbitPosBuf = gl.createBuffer();
+		this.orbitCornerBuf = gl.createBuffer();
+		this.orbitOrbitBuf = gl.createBuffer();
 		this.posBuf = gl.createBuffer();
 		this.hueBuf = gl.createBuffer();
 		this.instBuf = gl.createBuffer();
@@ -380,6 +418,21 @@ export class FlatCellRenderer {
 		this.inst = { Ri: -1, Rj: -1, count: 0 }; // force an instance rebuild for the new basis
 	}
 
+	/** Supply (or clear) the vertex-orbit dots. With a mesh uploaded, draw() dims the tiles and paints
+	 *  the dots over them, exactly as /play does in orbit mode. */
+	uploadOrbitMesh(mesh: OrbitDotMesh | null): void {
+		const gl = this.gl;
+		this.orbitMesh = mesh;
+		this.orbitScales = []; // a new mesh means a new orbit count; drop the eased state
+		if (!mesh) return;
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitPosBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.pos, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitCornerBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.corner, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitOrbitBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.orbit, gl.STATIC_DRAW);
+	}
+
 	// One frame. The caller owns canvas backing-size/viewport management (DPR differs per surface).
 	draw(p: FlatDrawParams): void {
 		const gl = this.gl;
@@ -405,6 +458,15 @@ export class FlatCellRenderer {
 
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
+
+		// Orbit mode is simply "a dot mesh is loaded": the tiles fade back so the dots read as the
+		// subject, matching euclidean-canvas.tsx's showVertexOrbits branch.
+		const orbitMesh = this.orbitMesh;
+		const orbitMode = orbitMesh != null && orbitMesh.vertexCount > 0;
+		// The fill fades for the orbit dots OR because the caller asked (symmetry elements). The dot
+		// pass below still keys on orbitMode alone, so dimFill never conjures dots.
+		const dimmed = orbitMode || p.dimFill === true;
+		const dim = p.dimTargetRGB ?? ([1, 1, 1] as [number, number, number]);
 
 		// No VAOs: both programs share the default VAO and the instance buffer, so EVERY attribute must
 		// be fully rebound (bindBuffer + vertexAttribPointer + vertexAttribDivisor) before its own draw
@@ -437,6 +499,8 @@ export class FlatCellRenderer {
 			gl.uniform1f(U.uHueOffset, p.hueOffsetDeg ?? 0);
 			gl.uniform1i(U.uWavePhase, 0); // this renderer never runs the selection wave
 			gl.uniform1f(U.uWaveP, 0);
+			gl.uniform1f(U.uFillDim, dimmed ? 1 : 0);
+			gl.uniform3f(U.uDimTarget, dim[0], dim[1], dim[2]);
 			gl.drawArraysInstanced(gl.TRIANGLES, 0, mesh.fillVertexCount, this.inst.count);
 		}
 
@@ -475,6 +539,11 @@ export class FlatCellRenderer {
 			gl.uniform3f(U.uStroke, p.strokeRGB[0], p.strokeRGB[1], p.strokeRGB[2]);
 			gl.uniform1i(U.uWavePhase, 0);
 			gl.uniform1f(U.uWaveP, 0);
+			// The outline fades with the fill for the orbit dots, but NOT for dimFill: the symmetry view
+			// keeps its tile edges crisp under the axes (that is what /play's drawTilingPlain paints —
+			// pale tiles, thin dark edges), and a faded edge would read as a second overlay.
+			gl.uniform1f(U.uStrokeDim, orbitMode ? 1 : 0);
+			gl.uniform3f(U.uDimTarget, dim[0], dim[1], dim[2]);
 			gl.drawArraysInstanced(gl.TRIANGLES, 0, mesh.strokeVertexCount, this.inst.count);
 			this.lastDraw = {
 				fillVerts: p.showFill ? mesh.fillVertexCount : 0,
@@ -485,6 +554,47 @@ export class FlatCellRenderer {
 		} else {
 			this.lastDraw = { fillVerts: p.showFill ? mesh.fillVertexCount : 0, strokeVerts: 0, instances: this.inst.count, strokePx: p.lineWidth };
 		}
+
+		// Vertex-orbit dots, over the dimmed tiles. The hit-test and the easing are the shared ones in
+		// lib/render/orbitHover.ts, so a card's hover behaves the same as /play's down to the frame.
+		if (orbitMode && orbitMesh) {
+			const world = p.orbitHoverPx
+				? screenToWorld(p.orbitHoverPx.x, p.orbitHoverPx.y, draw, p.zoom, rot)
+				: null;
+			const hovered = hoveredOrbitAt(orbitMesh.dots, world, mesh.v1, mesh.v2, mesh.det, p.zoom);
+			const scales = stepOrbitScales(this.orbitScales, orbitMesh.k, hovered, ORBIT_MAX);
+
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			gl.useProgram(this.orbitProg);
+			const A = this.orbitA, U = this.orbitU;
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitPosBuf);
+			gl.enableVertexAttribArray(A.aPos);
+			gl.vertexAttribPointer(A.aPos, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aPos, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitCornerBuf);
+			gl.enableVertexAttribArray(A.aCorner);
+			gl.vertexAttribPointer(A.aCorner, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aCorner, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitOrbitBuf);
+			gl.enableVertexAttribArray(A.aOrbit);
+			gl.vertexAttribPointer(A.aOrbit, 1, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aOrbit, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.instBuf);
+			gl.enableVertexAttribArray(A.aInst);
+			gl.vertexAttribPointer(A.aInst, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aInst, 1);
+			gl.uniform2f(U.uOffset, draw.x, draw.y);
+			gl.uniform1f(U.uZoom, p.zoom);
+			gl.uniform1f(U.uRot, rot);
+			gl.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
+			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
+			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
+			gl.uniform1f(U.uRadiusPx, ORBIT_DOT_RADIUS_PX);
+			gl.uniform1f(U.uK, orbitMesh.k);
+			gl.uniform1fv(U.uOrbitScale, scales);
+			gl.drawArraysInstanced(gl.TRIANGLES, 0, orbitMesh.vertexCount, this.inst.count);
+		}
 	}
 
 	dispose(): void {
@@ -493,6 +603,10 @@ export class FlatCellRenderer {
 		const gl = this.gl;
 		gl.deleteProgram(this.fillProg);
 		gl.deleteProgram(this.strokeProg);
+		gl.deleteProgram(this.orbitProg);
+		gl.deleteBuffer(this.orbitPosBuf);
+		gl.deleteBuffer(this.orbitCornerBuf);
+		gl.deleteBuffer(this.orbitOrbitBuf);
 		gl.deleteBuffer(this.posBuf);
 		gl.deleteBuffer(this.hueBuf);
 		gl.deleteBuffer(this.instBuf);

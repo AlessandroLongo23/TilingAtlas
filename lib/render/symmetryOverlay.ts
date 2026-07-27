@@ -1,13 +1,20 @@
+// The wallpaper-symmetry overlays: the fundamental domain with its cell subdivision, and the
+// rotation centres + mirror/glide axes replicated across the viewport.
+//
+// Drawn through the `Pen` vocabulary (lib/render/overlayPen.ts) rather than against p5 directly, so
+// the same code paints /play's p5 canvas (components/canvas.tsx) and a preview card's 2-D layer over
+// its WebGL patch (lib/hooks/useFlatCellPreview.ts). Every draw here runs INSIDE the world transform
+// (…translate·rotate·scale·scale(1,-1)), so geometry is in WORLD units and follows pan/zoom/rotate for
+// free. World-unit stroke weights ≈ pixels/zoom; these surfaces draw at zoom≈40–150, so 0.02–0.05
+// → ~1–4 px.
+//
+// (Was components/canvas-overlays.ts, when /play's p5 canvas was the only caller.)
+
 import type { Axis, Center, SymmetryData, Vec2 } from "@/lib/classes/symmetry/types";
+import type { Pen } from "@/lib/render/overlayPen";
 
-// p5 is the same untyped instance canvas.tsx uses. Every draw here runs INSIDE the canvas world
-// transform (…translate·rotate·scale·scale(1,-1)), so geometry is in WORLD units and follows
-// pan/zoom/rotate for free. Colour mode is HSB(360,100,100) with alpha 0..1 (set in canvas.tsx setup).
-// World-unit stroke weights ≈ pixels/zoom; the canvas draws at zoom≈40–150, so 0.02–0.05 → ~1–4 px.
-type P5 = any; // eslint-disable-line @typescript-eslint/no-explicit-any
-
-// The canvas draw state the overlay needs to map screen<->world and replicate elements across the whole
-// viewport (the same transform canvas.tsx applies before calling us).
+// The draw state the overlay needs to map screen<->world and replicate elements across the whole
+// viewport (the same transform the caller applies before calling us).
 export interface OverlayView {
 	zoom: number;
 	rotation: number; // radians
@@ -16,25 +23,16 @@ export interface OverlayView {
 	height: number;
 }
 
-function polygon(p5: P5, pts: Vec2[]) {
-	p5.beginShape();
-	for (const q of pts) p5.vertex(q.x, q.y);
-	p5.endShape(p5.CLOSE);
-}
-
 // Plain (monochrome) tiling render for the symmetry-elements view: light-grey tiles + thin dark edges,
-// no per-tile hue — colour is reserved for the symmetry axes and rotation centres drawn on top.
-export function drawTilingPlain(p5: P5, tiling: { nodes: { vertices: Vec2[] }[] }, zoom: number) {
-	p5.push();
-	p5.stroke(0, 0, 25);
-	p5.strokeWeight(1 / zoom);
-	p5.fill(0, 0, 88);
-	for (const node of tiling.nodes) {
-		p5.beginShape();
-		for (const v of node.vertices) p5.vertex(v.x, v.y);
-		p5.endShape(p5.CLOSE);
-	}
-	p5.pop();
+// no per-tile hue — colour is reserved for the symmetry axes and rotation centres drawn on top. Only
+// the p5 view needs this; the WebGL surfaces dim their own fill in the shader instead.
+export function drawTilingPlain(pen: Pen, tiling: { nodes: { vertices: Vec2[] }[] }, zoom: number) {
+	pen.push();
+	pen.stroke(0, 0, 25);
+	pen.strokeWeight(1 / zoom);
+	pen.fill(0, 0, 88);
+	for (const node of tiling.nodes) pen.polygon(node.vertices);
+	pen.pop();
 }
 
 // World point currently under the SCREEN CENTRE: invert the canvas transform
@@ -63,32 +61,32 @@ export function fdSnapTranslate(view: OverlayView, cell: [Vec2, Vec2], anchor: V
 	return { x: m * c1.x + n * c2.x, y: m * c1.y + n * c2.y };
 }
 
-export function drawFundamentalDomain(p5: P5, data: SymmetryData, view: OverlayView) {
-	p5.push();
+export function drawFundamentalDomain(pen: Pen, data: SymmetryData, view: OverlayView) {
+	pen.push();
 	// Snap the whole group (cell + subdivision + FD) to the lattice copy nearest the view centre. ONE
 	// shared translate keeps it coherent — the FD stays inside its cell. cellOrigin is the documented
 	// anchor the cellPolygon is centred on.
 	const t = fdSnapTranslate(view, data.cell, data.cellOrigin);
-	p5.translate(t.x, t.y);
+	pen.translate(t.x, t.y);
 	// the drawn cell — the primitive parallelogram (hexagonal → 60° rhombus, cm/cmm → mirror rhombus); a
 	// thin neutral outline.
-	p5.noFill();
-	p5.stroke(0, 0, 55);
-	p5.strokeWeight(0.02);
-	polygon(p5, data.cellPolygon);
+	pen.noFill();
+	pen.stroke(0, 0, 55);
+	pen.strokeWeight(0.02);
+	pen.polygon(data.cellPolygon);
 	// subdivision — the cell tiled by all its fundamental-domain copies, faint orange outlines (a single
 	// entry means the self-check declined a subdivision, so only the FD below is drawn).
 	if (data.subdivision.length > 1) {
-		p5.stroke(28, 60, 90);
-		p5.strokeWeight(0.02);
-		for (const copy of data.subdivision) polygon(p5, copy);
+		pen.stroke(28, 60, 90);
+		pen.strokeWeight(0.02);
+		for (const copy of data.subdivision) pen.polygon(copy);
 	}
 	// emphasized fundamental domain — translucent yellow fill + orange edge, on top
-	p5.fill(48, 85, 100, 0.5);
-	p5.stroke(28, 90, 90);
-	p5.strokeWeight(0.03);
-	polygon(p5, data.fd);
-	p5.pop();
+	pen.fill(48, 85, 100, 0.5);
+	pen.stroke(28, 90, 90);
+	pen.strokeWeight(0.03);
+	pen.polygon(data.fd);
+	pen.pop();
 }
 
 // --- symmetry elements: rotation centres + mirror/glide axes, replicated across the whole viewport ---
@@ -102,31 +100,31 @@ const CENTER_STYLE: Record<number, { h: number; s: number; b: number }> = {
 	6: { h: 222, s: 78, b: 88 }, // blue
 };
 
-function ngon(p5: P5, n: number, r: number, start: number) {
-	p5.beginShape();
+function ngon(pen: Pen, n: number, r: number, start: number) {
+	const pts: Vec2[] = [];
 	for (let i = 0; i < n; i++) {
 		const a = start + (2 * Math.PI * i) / n;
-		p5.vertex(r * Math.cos(a), r * Math.sin(a));
+		pts.push({ x: r * Math.cos(a), y: r * Math.sin(a) });
 	}
-	p5.endShape(p5.CLOSE);
+	pen.polygon(pts);
 }
 
 // One rotation-centre glyph at world point `z`, drawn at a fixed PIXEL size (unscaled by zoom, y-flip
 // undone) so it stays legible and upright at any zoom. Shape + colour follow the Wikipedia legend.
-function drawCenterGlyph(p5: P5, z: Vec2, order: number, zoom: number) {
+function drawCenterGlyph(pen: Pen, z: Vec2, order: number, zoom: number) {
 	const r = 6; // px
 	const st = CENTER_STYLE[order] ?? CENTER_STYLE[2];
-	p5.push();
-	p5.translate(z.x, z.y);
-	p5.scale(1 / zoom, -1 / zoom); // pixel units, undo the world y-flip so glyphs are upright
-	p5.stroke(0, 0, 15);
-	p5.strokeWeight(1);
-	p5.fill(st.h, st.s, st.b);
-	if (order === 2) polygon(p5, [{ x: 0, y: r }, { x: 0.62 * r, y: 0 }, { x: 0, y: -r }, { x: -0.62 * r, y: 0 }]); // diamond
-	else if (order === 3) ngon(p5, 3, r, Math.PI / 2); // triangle, point up
-	else if (order === 4) ngon(p5, 4, r * 0.92, Math.PI / 4); // square, flat sides
-	else ngon(p5, 6, r, Math.PI / 2); // hexagon, point up
-	p5.pop();
+	pen.push();
+	pen.translate(z.x, z.y);
+	pen.scale(1 / zoom, -1 / zoom); // pixel units, undo the world y-flip so glyphs are upright
+	pen.stroke(0, 0, 15);
+	pen.strokeWeight(1);
+	pen.fill(st.h, st.s, st.b);
+	if (order === 2) pen.polygon([{ x: 0, y: r }, { x: 0.62 * r, y: 0 }, { x: 0, y: -r }, { x: -0.62 * r, y: 0 }]); // diamond
+	else if (order === 3) ngon(pen, 3, r, Math.PI / 2); // triangle, point up
+	else if (order === 4) ngon(pen, 4, r * 0.92, Math.PI / 4); // square, flat sides
+	else ngon(pen, 6, r, Math.PI / 2); // hexagon, point up
+	pen.pop();
 }
 
 // World-space visible rectangle (AABB), inverting the canvas transform
@@ -175,7 +173,7 @@ function latticeWindow(
 // Mirror axes solid crimson, glide axes dashed royal-blue, each replicated to fill the viewport. Every
 // line runs through its (translated) point along its direction, spanning the whole AABB. Stroke weight
 // and dash length scale by 1/zoom to stay ~constant in pixels. Deduped by (angle, perpendicular offset).
-function drawAxes(p5: P5, axes: Axis[], c1: Vec2, c2: Vec2, view: OverlayView, bounds: ReturnType<typeof visibleWorldBounds>) {
+function drawAxes(pen: Pen, axes: Axis[], c1: Vec2, c2: Vec2, view: OverlayView, bounds: ReturnType<typeof visibleWorldBounds>) {
 	const L = 2 * Math.hypot(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) + 4;
 	const seen = new Set<string>();
 	const zoom = view.zoom;
@@ -190,26 +188,26 @@ function drawAxes(p5: P5, axes: Axis[], c1: Vec2, c2: Vec2, view: OverlayView, b
 				const key = `${ang}|${off}|${ax.kind}`;
 				if (seen.has(key)) continue;
 				seen.add(key);
-				p5.push();
-				p5.strokeWeight(2 / zoom);
+				pen.push();
+				pen.strokeWeight(2 / zoom);
 				if (ax.kind === "glide") {
-					p5.stroke(220, 85, 90);
-					p5.drawingContext.setLineDash([8 / zoom, 5 / zoom]);
+					pen.stroke(220, 85, 90);
+					pen.lineDash([8 / zoom, 5 / zoom]);
 				} else {
-					p5.stroke(348, 90, 85);
+					pen.stroke(348, 90, 85);
 				}
-				p5.line(p.x - ax.d.x * L, p.y - ax.d.y * L, p.x + ax.d.x * L, p.y + ax.d.y * L);
-				p5.drawingContext.setLineDash([]);
-				p5.pop();
+				pen.line(p.x - ax.d.x * L, p.y - ax.d.y * L, p.x + ax.d.x * L, p.y + ax.d.y * L);
+				pen.lineDash([]);
+				pen.pop();
 			}
 		}
 	}
 }
 
-export function drawSymmetryElements(p5: P5, data: SymmetryData, view: OverlayView) {
+export function drawSymmetryElements(pen: Pen, data: SymmetryData, view: OverlayView) {
 	const [c1, c2] = data.cell;
 	const bounds = visibleWorldBounds(view);
-	drawAxes(p5, data.axes, c1, c2, view, bounds); // axes first, so the rotation-centre glyphs sit on top
+	drawAxes(pen, data.axes, c1, c2, view, bounds); // axes first, so the rotation-centre glyphs sit on top
 
 	const seen = new Set<string>();
 	for (const cen of data.centers as Center[]) {
@@ -221,7 +219,7 @@ export function drawSymmetryElements(p5: P5, data: SymmetryData, view: OverlayVi
 				const key = `${Math.round(z.x * 1000)},${Math.round(z.y * 1000)}`;
 				if (seen.has(key)) continue;
 				seen.add(key);
-				drawCenterGlyph(p5, z, cen.order, view.zoom);
+				drawCenterGlyph(pen, z, cen.order, view.zoom);
 			}
 		}
 	}
