@@ -13,6 +13,7 @@ import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
+import { paramGlyphs } from "@/lib/utils/paramCell";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import {
@@ -56,8 +57,8 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const tiling = members ? members[idx] : baseTiling;
 	const isFamily = Array.isArray(tiling.alphaRange);
 	// Degrees of freedom = independent sliders in Play. 2+ (α, β, …) get their own badge.
-	const dof = tiling.paramCell?.params?.length ?? (isFamily ? 1 : 0);
-	const GREEK = ["α", "β", "γ", "δ", "ε"];
+	const glyphs = tiling.paramCell ? paramGlyphs(tiling.paramCell) : isFamily ? ["α"] : [];
+	const dof = glyphs.length;
 	const isHyperbolic = tileClassOf(tiling) === "hyperbolic";
 	const isConvex = tileClassOf(tiling) === "convex";
 	const isIsotoxal = tileClassOf(tiling) === "isotoxal";
@@ -287,13 +288,16 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					{dof >= 2 ? (
 						<span
 							className="inline-flex items-center gap-0.5 border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-							title={`${dof}-parameter family — ${GREEK.slice(0, dof).join(", ")} vary independently (${dof} sliders in Play)`}
+							title={`${dof}-parameter family — ${glyphs.join(", ")} vary independently (${dof} sliders in Play)`}
 						>
-							{GREEK.slice(0, dof).join(" ")}
+							{glyphs.join(" ")}
 						</span>
-					) : isFamily ? (
-						<span className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted" title="one-parameter family — α slider in Play">
-							α
+					) : dof === 1 ? (
+						<span
+							className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
+							title={`one-parameter family — ${glyphs[0]} slider in Play`}
+						>
+							{glyphs[0]}
 						</span>
 					) : null}
 					{folds.map((n) => (

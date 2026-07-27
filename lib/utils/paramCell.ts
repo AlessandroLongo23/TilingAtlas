@@ -74,6 +74,34 @@ export interface ParamSegment {
  *  15°, so this grid lands exactly on both ends of every family's range. */
 export const ALPHA_STEP_DEG = 0.5;
 
+const GREEK = ["α", "β", "γ", "δ", "ε"];
+const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
+// A MERGED family's slider is not the exported α: it spans two halves spliced at a straight-vertex limit,
+// so it carries its own coordinate name and must not be mislabelled α. `theta` is the flexing tile's own
+// alternating interior angle (180° = the join); `sweep` is cumulative angle travelled, used where several
+// tile orbits straighten from different sides at once and no single tile angle is monotone.
+const NAMED_GLYPH: Record<string, { glyph: string; label: string }> = {
+	theta: { glyph: "θ", label: "theta" },
+	sweep: { glyph: "s", label: "sweep" },
+};
+
+/** One parameter's display glyph and spoken name — α, β, … by position, or the coordinate's own name
+ *  where it has one (a merged family's θ). Single source for the slider panel, the library card and the
+ *  sidebar thumbnail badge, so a two-parameter family reads "α β" everywhere it is labelled. */
+export function paramGlyph(p: ParametricCellData["params"][number], index: number): { glyph: string; label: string } {
+	return (
+		NAMED_GLYPH[p.name] ?? {
+			glyph: GREEK[index] ?? `α${index + 1}`,
+			label: GREEK_NAMES[index] ?? `alpha${index + 1}`,
+		}
+	);
+}
+
+/** The family's glyphs in slider order: `["α", "β"]` for a two-parameter family, `["θ"]` for a merged one. */
+export function paramGlyphs(pc: ParametricCellData): string[] {
+	return pc.params.map((p, j) => paramGlyph(p, j).glyph);
+}
+
 /**
  * The validity interval is OPEN: at either endpoint the family degenerates (a tile collapses to zero
  * area — the basis stays non-singular, so nothing blows up, but the limit is not a member of the family).

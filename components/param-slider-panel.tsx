@@ -1,22 +1,11 @@
 "use client";
 
 import { useFamilyAlphas } from "@/stores/familyAlphas";
-import { ALPHA_STEP_DEG, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
+import { ALPHA_STEP_DEG, paramGlyph, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { Kbd } from "@/components/ui/kbd";
 import { RangeInput } from "@/components/ui/range-input";
 import { useMetaKeyLabel } from "@/lib/hooks/useMetaKeyLabel";
 import { ParamRegionPad } from "@/components/param-region-pad";
-
-const GREEK = ["α", "β", "γ", "δ", "ε"];
-const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
-// A MERGED family's slider is not the exported α: it spans two halves spliced at a straight-vertex limit,
-// so it carries its own coordinate name and must not be mislabelled α. `theta` is the flexing tile's own
-// alternating interior angle (180° = the join); `sweep` is cumulative angle travelled, used where several
-// tile orbits straighten from different sides at once and no single tile angle is monotone.
-const NAMED_GLYPH: Record<string, { glyph: string; label: string }> = {
-	theta: { glyph: "θ", label: "theta" },
-	sweep: { glyph: "s", label: "sweep" },
-};
 
 /** Where the fold centre sits along the track, 0–1, or null when there is none (or it is at an end). */
 function foldFraction(p: ParametricCellData["params"][number]): number | null {
@@ -70,7 +59,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 				{paramCell.params.map((p, j) => (
 					<div key={j} className="flex items-center gap-3">
 						<span className="text-xs font-medium text-accent whitespace-nowrap w-24">
-							{(NAMED_GLYPH[p.name]?.glyph ?? GREEK[j] ?? `α${j + 1}`)} = {effAlphas[j].toFixed(1)}°
+							{paramGlyph(p, j).glyph} = {effAlphas[j].toFixed(1)}°
 						</span>
 						<div className="relative w-56">
 							<RangeInput
@@ -80,7 +69,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 								value={effAlphas[j]}
 								onChange={(v) => setAlphaAt(j, v)}
 								className="w-56"
-								aria-label={`family angle ${NAMED_GLYPH[p.name]?.label ?? GREEK_NAMES[j] ?? `alpha${j + 1}`}${p.tile ? ` (${p.tile})` : ""} in degrees`}
+								aria-label={`family angle ${paramGlyph(p, j).label}${p.tile ? ` (${p.tile})` : ""} in degrees`}
 							/>
 							{/* Fold marker: past this angle the sweep replays tilings it already passed, mirrored or
 							    rotated. The range is deliberately NOT clipped there — the replay is still a real
@@ -111,11 +100,11 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 					<span className="inline-flex items-center gap-3 font-mono">
 						<span className="inline-flex items-center gap-1">
 							<span aria-hidden>↔</span>
-							<span className="text-accent">{GREEK[0]}</span>
+							<span className="text-accent">{paramGlyph(paramCell.params[0], 0).glyph}</span>
 						</span>
 						<span className="inline-flex items-center gap-1">
 							<span aria-hidden>↕</span>
-							<span className="text-accent">{GREEK[1]}</span>
+							<span className="text-accent">{paramGlyph(paramCell.params[1], 1).glyph}</span>
 						</span>
 					</span>
 				) : null}

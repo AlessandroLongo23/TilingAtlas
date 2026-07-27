@@ -14,6 +14,7 @@ import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbn
 import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { paramGlyphs, type ParametricCellData } from "@/lib/utils/paramCell";
 
 // The /play picker's tile wall for one k-bucket: two columns of thumbnails on the wall grid, with a
 // GUTTER lane between them — a strip of panel colour a few px wide whose two edges are hairlines.
@@ -243,14 +244,7 @@ function Tile({
 				) : t.renderCell ? (
 					<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
 				) : null}
-				{t.paramCell ? (
-					<span
-						title="One-parameter family (adjustable α)"
-						className="absolute top-1 left-1 inline-flex h-4 w-4 items-center justify-center text-[10px] font-bold leading-none bg-fg text-fg-inverse"
-					>
-						α
-					</span>
-				) : null}
+				{t.paramCell ? <ParamBadge paramCell={t.paramCell} /> : null}
 			</div>
 			{/* The selection ring lives on its own overlay, not on the button: both an inset ring
 			    (a box-shadow) and a negatively-offset outline paint UNDER the button's children in
@@ -266,5 +260,28 @@ function Tile({
 				)}
 			/>
 		</button>
+	);
+}
+
+// The free-angle badge: one glyph per independent slider the tiling gets in /play, in slider order — "α"
+// for the ordinary one-parameter families, "α β" for a two-parameter one, "θ" for a merged family whose
+// coordinate is not the exported α. Same glyphs as the slider panel and the library card, so the badge
+// reads as a count of the axes rather than a generic "this deforms" mark.
+function ParamBadge({ paramCell }: { paramCell: ParametricCellData }) {
+	const glyphs = paramGlyphs(paramCell);
+	if (!glyphs.length) return null;
+	return (
+		<span
+			title={
+				glyphs.length > 1
+					? `${glyphs.length}-parameter family — ${glyphs.join(", ")} vary independently (${glyphs.length} sliders in Play)`
+					: `One-parameter family (adjustable ${glyphs[0]})`
+			}
+			// min-w-4 + px-1 keeps the single-glyph badge the square it has always been and lets the
+			// two-glyph one grow sideways instead of squeezing the pair into 16px.
+			className="absolute top-1 left-1 inline-flex h-4 min-w-4 items-center justify-center gap-0.5 px-1 text-[10px] font-bold leading-none bg-fg text-fg-inverse"
+		>
+			{glyphs.join(" ")}
+		</span>
 	);
 }
