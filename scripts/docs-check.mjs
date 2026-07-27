@@ -77,7 +77,10 @@ if (existsSync(syncF) && (!STAGED || stagedFiles.includes('docs/SYNC.md'))) {
   let cur = null, count = 0, over = 0;
   const flush = () => { if (cur && count > 6) { warn(`entry "${cur.slice(0, 44)}…" is ${count} lines (>6) — link to a ledger instead`); over++; } };
   for (const l of lines) {
-    if (/^\*\*\d{4}-\d{2}-\d{2} — /.test(l)) { flush(); cur = l.replace(/\*\*/g, ''); count = 1; }
+    // Both entry headings SYNC.md has used: the original `**2026-01-01 — …**` and the `### 2026-01-01 — …`
+    // form it moved to. Matching only the first meant the check silently stopped firing when the format
+    // changed, so every entry written since went unmeasured. (Found 2026-07-27.)
+    if (/^(\*\*|#{2,4} )\d{4}-\d{2}-\d{2} — /.test(l)) { flush(); cur = l.replace(/^#+ |\*\*/g, ''); count = 1; }
     else if (cur) { if (l.trim() === '---') { flush(); cur = null; } else if (l.trim()) count++; }
   }
   flush();
