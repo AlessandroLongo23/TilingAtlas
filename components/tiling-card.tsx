@@ -85,7 +85,6 @@ export function TilingCard({ tiling, density = "comfortable", onClick }: TilingC
 				translationalCell,
 				polygons,
 				pxPerEdge: 48,
-				background: "#1e1e22",
 			},
 			1024,
 			"image/png",

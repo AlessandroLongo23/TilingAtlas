@@ -91,7 +91,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const handleScreenshot = (e: React.MouseEvent) => {
 		e.stopPropagation();
 		const dataUrl = renderTilingToDataUrl(
-			{ translationalCell: tiling.renderCell, pxPerEdge: 48, background: "#1e1e22" },
+			{ translationalCell: tiling.renderCell, pxPerEdge: 48 },
 			1024,
 		);
 		if (!dataUrl) return;

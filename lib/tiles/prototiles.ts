@@ -29,9 +29,6 @@ export interface Prototile {
   badges: string[];
   /** Non-convex star — the renderer colors it on the star hue ramp. */
   star?: boolean;
-  /** Optional card render scale override (px per unit edge). Used by scaled tiles, whose side-3
-   *  dodecagon spans ~6 units and would clip the card at the default 28. */
-  pxPerEdge?: number;
   /** Explicit fill hue (degrees) overriding the geometric by-side-count ramp. Polyominoes use it: every
    *  tetromino except the O shares a 10-unit boundary, so side count can't tell them apart — a per-piece
    *  identity hue (the Tetris palette) does. Chroma/brightness stay the app default. */
@@ -168,7 +165,6 @@ export function scaledPrototiles(): Prototile[] {
       sideCount: s * n,
       vertices: scaledVertices(n, s),
       badges: [`side ${s}`, `= ${s * n}-gon`],
-      pxPerEdge: 12, // side-3 dodecagon spans ~6 units; keep the whole family in-card
     });
   }
   return out;
@@ -274,7 +270,6 @@ export function polyominoPrototiles(): Prototile[] {
       vertices: verts.map((v) => ({ x: v.x - cx, y: v.y - cy })),
       badges: ['tetromino'],
       hue,
-      pxPerEdge: 18, // the I bar spans 4 units; keep the whole family in-card at one unit length
     };
   });
 }

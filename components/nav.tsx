@@ -10,11 +10,11 @@ import { Kbd } from "@/components/ui/kbd";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
+	{ href: "/theory", label: "Theory", icon: BookOpen },
 	{ href: "/tiles", label: "Tiles", icon: Shapes },
 	{ href: "/configs", label: "Configs", icon: Grid3x3 },
 	{ href: "/library", label: "Library", icon: Library },
 	{ href: "/play", label: "Play", icon: Play },
-	{ href: "/theory", label: "Theory", icon: BookOpen },
 	{ href: "/parquet", label: "Parquet", icon: Waves },
 	{ href: "/freedraw", label: "Freedraw", icon: PenLine },
 	{ href: "/colors", label: "Colors", icon: Palette },

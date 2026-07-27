@@ -292,11 +292,33 @@ export function drawPolygons(
 	}
 }
 
+/** Fallback for the themed surface when there's no document to read it from (SSR, tests). Matches
+ *  the dark theme's `--color-surface-raised`, which is what these previews used unconditionally
+ *  before the background became theme-aware. */
+const SURFACE_FALLBACK = "#1e1e22";
+
+/**
+ * The themed surface a preview sits on — `--color-surface-raised`, the same token every preview
+ * slot already carries as a Tailwind class. Live canvases don't need this: they leave the
+ * background TRANSPARENT (`background: null`) and let the CSS behind them paint it, so a theme
+ * flip recolours them instantly without a redraw. The offscreen data-URL exports have no CSS
+ * behind them, so they resolve the token here instead.
+ */
+export function themeSurfaceColor(): string {
+	if (typeof document === "undefined") return SURFACE_FALLBACK;
+	const v = getComputedStyle(document.documentElement)
+		.getPropertyValue("--color-surface-raised")
+		.trim();
+	return v || SURFACE_FALLBACK;
+}
+
 export interface RenderTilingOptions {
 	translationalCell?: TranslationalCellData | null;
 	polygons?: RawPolygon[];
 	pxPerEdge: number;
-	background?: string;
+	/** Omitted ⇒ the themed surface (see themeSurfaceColor). `null` ⇒ leave the canvas transparent,
+	 *  which is what live on-page canvases want — the CSS surface under them supplies the colour. */
+	background?: string | null;
 	/** Global fill-hue rotation (degrees, the sidebar hue ring). Omitted ⇒ 0 (figures, cards). */
 	hueOffsetDeg?: number;
 }
@@ -312,9 +334,14 @@ export function renderTilingToContext(
 	H: number,
 	opts: RenderTilingOptions,
 ): boolean {
-	const { background = "#1e1e22", pxPerEdge, hueOffsetDeg = 0 } = opts;
-	ctx.fillStyle = background;
-	ctx.fillRect(0, 0, W, H);
+	const { pxPerEdge, hueOffsetDeg = 0 } = opts;
+	const background = opts.background === undefined ? themeSurfaceColor() : opts.background;
+	if (background === null) {
+		ctx.clearRect(0, 0, W, H);
+	} else {
+		ctx.fillStyle = background;
+		ctx.fillRect(0, 0, W, H);
+	}
 
 	if (opts.translationalCell) {
 		const base = parseBaseCell(opts.translationalCell);
@@ -387,21 +414,19 @@ export function renderTilingToDataUrl(
 }
 
 /**
- * Render a fixed FIGURE — a single prototile, or the tiles fanned around one vertex — fit to ~`fill` of a
- * square frame. The `polygons` branch of renderTilingToContext scales by a fixed pxPerEdge, so a lone
- * shape lands tiny (huge margins) or clipped depending on its side count; here we size pxPerEdge from the
- * figure's own bounding box so the framing is consistent whatever the tile count or edge length. For a
- * repeating tiling use renderTilingToDataUrl with a translationalCell instead — that path already fills
- * the viewport. Returns a data URL, or null off the main thread / for an empty figure.
+ * The pxPerEdge that frames a FIGURE — a lone prototile, or the tiles fanned around one vertex — inside
+ * a W×H box at `fill` of its shorter fitting dimension.
+ *
+ * A fixed pxPerEdge cannot frame a set of single tiles: the figure's size in EDGES varies wildly with
+ * side count. A triangle is one edge across; an 18-pointed star with a 20° apex is roughly eleven, and
+ * the side-3 dodecagon six. At one edge length the small tiles are lost in the frame and the big ones
+ * overflow it. Sizing from the figure's own bounding box normalises the drawn size instead — at the
+ * cost of the unit edge no longer being comparable card-to-card, which is what the scale bar restores.
+ *
+ * renderTilingToContext scales by pxPerEdge / medianEdge and centres on the bbox, so this is exactly the
+ * value that maps the bbox onto fill·W × fill·H.
  */
-export function renderFigureToDataUrl(
-	polygons: RawPolygon[],
-	size = 1024,
-	fill = 0.9,
-	background = "#1e1e22",
-	type = "image/png",
-): string | null {
-	if (typeof document === "undefined" || polygons.length === 0) return null;
+export function fitPxPerEdge(polygons: RawPolygon[], W: number, H: number, fill = 0.8): number {
 	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 	for (const p of polygons) {
 		for (const v of p.vertices) {
@@ -411,9 +436,25 @@ export function renderFigureToDataUrl(
 			if (v.y > maxY) maxY = v.y;
 		}
 	}
-	const span = Math.max(maxX - minX, maxY - minY, 1e-6);
-	// renderTilingToContext scales by pxPerEdge / medianEdge and centres on the bbox, so pick pxPerEdge to
-	// map the figure's larger bbox dimension onto fill*size.
-	const pxPerEdge = (polygonsMedianEdge(polygons) * fill * size) / span;
+	const spanX = Math.max(maxX - minX, 1e-6);
+	const spanY = Math.max(maxY - minY, 1e-6);
+	const scale = Math.min((W * fill) / spanX, (H * fill) / spanY);
+	return polygonsMedianEdge(polygons) * scale;
+}
+
+/**
+ * Render a fixed FIGURE fit to ~`fill` of a square frame (see fitPxPerEdge). For a repeating tiling use
+ * renderTilingToDataUrl with a translationalCell instead — that path already fills the viewport. Returns
+ * a data URL, or null off the main thread / for an empty figure.
+ */
+export function renderFigureToDataUrl(
+	polygons: RawPolygon[],
+	size = 1024,
+	fill = 0.9,
+	background?: string,
+	type = "image/png",
+): string | null {
+	if (typeof document === "undefined" || polygons.length === 0) return null;
+	const pxPerEdge = fitPxPerEdge(polygons, size, size, fill);
 	return renderTilingToDataUrl({ polygons, pxPerEdge, background }, size, type);
 }
