@@ -57,10 +57,16 @@ export interface HypColorsPattern {
 /** The base tilings shipped today. One row per corpus decoded under public/hyperbolic-colors/. `k` counts
  *  colored vertex orbits; only surjective colorings (using all `colors` colors) ship — the monochrome and
  *  2-colorings are the plain uniform tiling and the smaller catalogues re-embedded. Depth tracks growth:
- *  {3,7} explodes at k=3 (57k, dropped), {7,3} at k=12 (64k, dropped). Big tails go lazy. */
+ *  {3,7} explodes at k=3 (57k, dropped), {7,3} at k=12 (64k, dropped). Big tails go lazy.
+ *  The last four arrived 2026-07-25 and carry the corpus to its full depth — every k Marek solved ships,
+ *  the terminal one lazily. {5,4} has no k=1 row: one colored vertex class cannot use three colors there. */
 export const HYP_COLORS_BASES: HypColorsBase[] = [
 	{ id: "37", label: "{3,7}", eagerKs: [1, 2], lazyKs: [] }, // k=3 is 57k colorings (50 MB) — omitted
 	{ id: "73", label: "{7,3}", eagerKs: [3, 4, 5, 6, 7, 8], lazyKs: [9, 10, 11] }, // k=12 is 64k (71 MB) — omitted
+	{ id: "83", label: "{8,3}", eagerKs: [1, 2, 3, 4, 5], lazyKs: [6] }, // k=6 is 13,356 (10.5 MB)
+	{ id: "54", label: "{5,4}", eagerKs: [2, 3, 4], lazyKs: [5] }, // k=5 is 12,096 (8.7 MB)
+	{ id: "64", label: "{6,4}", eagerKs: [1, 2], lazyKs: [3] }, // k=3 is 9,336 (5.8 MB)
+	{ id: "45", label: "{4,5}", eagerKs: [1], lazyKs: [2] }, // k=2 is 7,902 (4.8 MB)
 ];
 
 /** Lazy (base, k) shards to fetch when vertex-count `k` comes into view under the Hyperbolic geometry. */

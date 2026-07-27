@@ -1,0 +1,23 @@
+hyperbolic colored-tiling develop — base {8,3} (83), 3 colors, source /Users/alessandro/Desktop/University/Thesis/TilingAtlas/materials/corpora/8_3_3_colors
+forced edge length l = 0.727039839351
+certificates in : 21756
+developed       : 15810
+failed          : 0
+dropped (non-surjective): 5946
+multi-variant   : 1077
+wall            : 29.0s (1.3 ms/cert)
+
+
+   k  colorings         colors used (census)
+   1          1   {3: 1}
+   2          9   {3: 9}
+   3         51   {3: 51}
+   4        512   {3: 512}
+   5       1881   {3: 1881}
+   6      13356   {3: 13356}
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c83-k1.json: 1 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c83-k2.json: 9 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c83-k3.json: 51 records, 0.03 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c83-k4.json: 512 records, 0.33 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c83-k5.json: 1881 records, 1.33 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c83-k6.json: 13356 records, 10.51 MB

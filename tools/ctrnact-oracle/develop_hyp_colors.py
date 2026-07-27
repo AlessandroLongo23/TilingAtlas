@@ -58,9 +58,15 @@ LETTERS = "ABCDEFGHIJ"
 COLOR_OF = {ch: i for i, ch in enumerate(LETTERS)}
 
 # The regular {p,q} base tilings Marek has color solvers for. p = face size, q = faces per vertex.
+# Nothing here is per-base machinery: alphabet() solves ℓ from (p, q) and the develop is the shared
+# SU(1,1) one, so a new solver family is exactly one row (2026-07-25 drop: 83/54/64/45).
 BASES = {
     "37": {"p": 3, "q": 7, "label": "{3,7}"},
     "73": {"p": 7, "q": 3, "label": "{7,3}"},
+    "83": {"p": 8, "q": 3, "label": "{8,3}"},
+    "54": {"p": 5, "q": 4, "label": "{5,4}"},
+    "64": {"p": 6, "q": 4, "label": "{6,4}"},
+    "45": {"p": 4, "q": 5, "label": "{4,5}"},
 }
 
 
@@ -236,7 +242,7 @@ def run(source, base_id, out_prefix, ncolors=3, ks=None, surjective=False, repor
 
 # ------------------------------------------------------------------ selftest
 def _selftest():
-    for bid in ("37", "73"):
+    for bid in sorted(BASES):
         base = {**BASES[bid], "id": bid}
         l, units = alphabet(base, 3)
         p, q = base["p"], base["q"]

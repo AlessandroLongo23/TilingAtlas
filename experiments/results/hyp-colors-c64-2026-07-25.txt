@@ -1,0 +1,17 @@
+hyperbolic colored-tiling develop — base {6,4} (64), 3 colors, source /Users/alessandro/Desktop/University/Thesis/TilingAtlas/materials/corpora/6_4_3_colors
+forced edge length l = 1.316957896925
+certificates in : 14727
+developed       : 9603
+failed          : 0
+dropped (non-surjective): 5124
+multi-variant   : 1662
+wall            : 9.4s (0.6 ms/cert)
+
+
+   k  colorings         colors used (census)
+   1          6   {3: 6}
+   2        261   {3: 261}
+   3       9336   {3: 9336}
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c64-k1.json: 6 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c64-k2.json: 261 records, 0.14 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors/c64-k3.json: 9336 records, 5.78 MB

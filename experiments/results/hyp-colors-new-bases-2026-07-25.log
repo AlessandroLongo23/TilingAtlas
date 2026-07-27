@@ -1,0 +1,33 @@
+==============================================================================
+hyperbolic 3-colorings — new bases, surjective develop   stage=/private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ac8c2104-04d8-4ef4-a67f-8d2e8a6aa8da/scratchpad/stage-hypcolors
+67545 certificates across 4 bases; ~1.2 ms/cert measured at k=1
+==============================================================================
+
+[16:24:57] base 83 ({8,3}) — 8_3_3_colors, 21756 certificates
+    k=1  surjective      1     0.00 MB
+    k=2  surjective      9     0.00 MB
+    k=3  surjective     51     0.03 MB
+    k=4  surjective    512     0.33 MB
+    k=5  surjective   1881     1.33 MB
+    k=6  surjective  13356    10.51 MB
+    failures 0   wall 29.6s   ETA remaining 62s
+
+[16:25:27] base 54 ({5,4}) — 5_4_3_colors, 20931 certificates
+    k=2  surjective      6     0.00 MB
+    k=3  surjective    171     0.11 MB
+    k=4  surjective    906     0.63 MB
+    k=5  surjective  12096     8.72 MB
+    failures 0   wall 21.5s   ETA remaining 30s
+
+[16:25:48] base 64 ({6,4}) — 6_4_3_colors, 14727 certificates
+    k=1  surjective      6     0.00 MB
+    k=2  surjective    261     0.14 MB
+    k=3  surjective   9336     5.78 MB
+    failures 0   wall 9.7s   ETA remaining 11s
+
+[16:25:58] base 45 ({4,5}) — 4_5_3_colors, 10131 certificates
+    k=1  surjective     54     0.03 MB
+    k=2  surjective   7902     4.75 MB
+    failures 0   wall 12.9s   ETA remaining 0s
+
+[16:26:11] all four bases done in 73.8s
