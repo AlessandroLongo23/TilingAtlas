@@ -3,8 +3,44 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-07-25, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-07-27, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## The tree holds seven unrelated pieces of work, all UNCOMMITTED (2026-07-27)
+
+Everything below this line is in the working tree, nothing is committed, and it wants splitting into
+separate commits: hollow engine, landing wall, hexagon corpora, hyperbolic bases, overlay refactor +
+aperiodic patches, `/defense`, ring sweep. `pnpm build` clean; `pnpm test` 1569 pass, 1 timeout in
+`tests/star-general-path.test.ts` (that file is untouched here — it takes 180 s and timed out under
+load). `pnpm docs:check` fails on 5 broken links, all 5 already in committed SYNC entries.
+
+⚑ **`public/` is 669 MB, 504 MB of it tracked.** `hex-solutions-k9.json` alone is 56 MB for one array
+entry. Nothing is broken by it; it is the next thing to get expensive.
+
+## Three clusters were backfilled into the ledgers (2026-07-27, NOTES ×3)
+
+They had shipped with no entry anywhere. Symmetry overlays now draw through a `Pen` interface
+(`lib/render/overlayPen.ts`) so one implementation serves /play's p5 canvas and the preview cards' 2-D
+layer — the old `canvas-overlays` module under `components/` is deleted; Penrose and the hat arrive as
+finite patches with measured clean windows. `/defense` is an unlisted `force-static` `noindex` route outside the `(app)`
+group, 40 slides from one markdown file with live atlas cards. The ring sweep answers the taxonomy
+audit's unstated claim: 7-, 11-, 13-, 17-, 19- and 23-fold stars tile nothing at k ≤ 2, but **16-fold
+does** (4 star-bearing at k=1, 2 at k=2) — an order no shipped palette reaches.
+⚑ Ring D=42 was interrupted mid-solve; it is the one that would separate 7-fold-with-triangles from the
+D=28 result. Re-run before the sweep is called complete.
+
+## The landing wall is live (2026-07-26, NOTES §"three geometry cells go live") — UNCOMMITTED
+
+The Play, Hyperbolic and Spherical cells on `/` render the real /play canvases instead of baked
+thumbnails, with /play's controls. Each is inert until clicked, so the page still scrolls under an
+untouched card; the card's link moved from the whole frame to the caption block, since a drag inside
+an anchor navigates on release (`CollectionCard.interactive`). New shared pieces:
+`lib/hooks/useFlatCellPreview.ts` (extracted from the /theory preview card, now used by both),
+`useCardActivation`, `useInViewMount`; `HyperbolicDevelopedCanvas` takes an optional per-instance
+`input` so an embedded disk never steers /play's global controls. The landing's 9.9 MB fetch of
+`hyperbolic-developed.json` is gone — the pool's 64 records are inlined at build time.
+⚑ A client-side back-navigation from /play with Islamic mode on still renders the landing sphere as a
+star pattern: `SphericalCanvas` reads look flags from the global store, as every thumbnail does.
 
 ## Knowledge model (read once, then follow it)
 
@@ -20,7 +56,22 @@ Two tiers. Do not mix them.
     Full pre-2026-06 history in `archive/SYNC-2026-06.md`.
 - **Cache — this file.** Current state only. Overwrite freely.
 
-## Marek's 2026-07-25 drop: 4 new hyperbolic color bases in, 2 hexagon corpora parked (NOTES §96)
+## The hexagonal grid lands: {6,3} edge systems and 3-colorings (2026-07-25, NOTES §98) — UNCOMMITTED
+
+★★ **The Euclidean decoration shelves now cover all three regular grids.** The honeycomb is a lattice with
+a two-point basis, not a lattice (inside ℤ + ℤω only (a + b) mod 3 ∈ {0,1} are hexagon corners), so the
+per-coset bitmask has nothing to index and the grid takes the **ts patch path** instead: one `GRIDS` row
+per decoder plus `is_patch_grid()` in place of three `grid == "ts"` tests. **72,039 certificates, 0 develop
+failures**, every k reproducing Marek's counts — edges 36,062 (k≤9), colorings 23,977 (19,975 surjective,
+k≤8, no k=2 row: all twelve k=2 certificates use ≤2 colors). Anchor = the digon-free slice, exactly 1
+certificate, the plain {6,3} tiling. Regressions hold: square edges `BIJECTION` 1420/1420, ts 3-colorings
+byte-identical. New words on this board: **polyhex** beside polyomino / polyiamond / polyform.
+⚑ **First lazy shards on the Euclidean decoration shelves** (`loadFreedrawShardsForK` /
+`loadColorsShardsForK`, composable-shard shape). Eager = edges k≤6 + colorings k≤5 (4.9 MB); lazy = edges
+k7/8/9 and colorings k6/7/8 (123.6 MB). **`public/` 522 → 676 MB** — dropping `hex-solutions-k9.json`
+alone returns 58 MB and costs one array entry. Both corpora ship as `candidate`.
+
+## Marek's 2026-07-25 drop: 4 new hyperbolic color bases in, 2 hexagon corpora NOW DONE (NOTES §96, §98)
 
 ★★ **The colors class goes from 2 hyperbolic bases to 6.** `hexagons_edges.zip` + `07-25_colors.zip`
 extracted to `materials/corpora/` (six corpora, 127,584 certificates; Marek's own `results_2026-07-25.txt`
@@ -32,10 +83,9 @@ the loader, /library k-chips and /play deep links, so the app change is 4 rows t
 `catalogue-list-panel.tsx`. Verified in the running app at `hc45-1`, `hc64-2`, `hc83-5`, the lazy
 `hc45-2` deep link, and /library `geo=hyperbolic&dec=colorings&k=4` (1,424 cards = 512 + 906 + 6). ⚑ {5,4}
 starts at k=2 on purpose: three colors need ≥2 colored vertex classes there.
-⚑ **Parked: `hexagons_edges` (36,062 certs, k≤9) and `hexagons_3_colors` (23,977, k≤8).** Both Euclidean
-{6,3}, and `develop_freedraw.GRIDS` has no hexagonal grid. Tractable-looking (A6 = 4 of the 30°-units;
-honeycomb steps embed in ℤ + ℤω as three ± axis pairs like `TR_STEP`) but unbuilt. Doing it completes the
-Euclidean colors shelf across all three regular grids.
+✓ **The two hexagon corpora are no longer parked** — decoded and shipped the same day; see the section
+above. The hunch recorded here (steps embed in ℤ + ℤω like `TR_STEP`) was right about the embedding and
+wrong about the consequence: `emit_pattern` demands every coset be a vertex, and a third of them are not.
 ⚑ **This work is UNCOMMITTED**, in the same shared tree as the mixed-shelf merge below.
 
 ## The 30/150 rhombus: 12 new mixed families, 71 → 83 (2026-07-25, NOTES §97) — UNCOMMITTED

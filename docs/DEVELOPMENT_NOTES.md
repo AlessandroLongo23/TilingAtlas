@@ -6734,3 +6734,243 @@ Not worth pursuing. (2) Islamic interlace on mixed k2-01, 11 frames of 240 over 
 moved off the arrangement and onto `resolveRayStops` + `calculateIslamicSegments`, i.e. the per-tile
 construction geometry, ~6% and ~5% of the frame. (3) The 1-parameter slider panel's React re-render,
 unchanged from §104b.
+
+### Hollow tilings — engine rebuilt, all 14 GMS reproduced (2026-07-26)
+
+The first hollow engine shipped 7 of GMS's hollow tilings. It now reproduces all **14**, with the
+11 convex uniform tilings as regression and the 4 close-to-360-but-tile-nothing species still
+rejected. `tools/hollow/engine.py` replaces `hollow.py` + `grow2.py` + `verify2.py` +
+`discrete.py` + `periodic.py`. Detail and the results table: `tools/hollow/README.md`.
+
+Four errors in the first cut, each of which changed results:
+
+1. **The ground truth was short by two.** GMS table 1 is 11 convex + 14 hollow. My transcription had
+   12 and was missing `1.2 = 4.4.3/2.3/2.3/2` and `1.4 = 4.3/2.4.3/2.3/2` — both δ=3, m=5, and the
+   sweep only ran δ≤2 with m≤4, so they were never enumerated. `x1`/`x2` in the old notes are
+   GMS `1.7` and `1.21`.
+
+2. **Vertex-figure multiplicity κ.** `1.16`, `1.19`, `1.21` carry κ=2: the face set is closed under
+   orientation reversal, every polygon appears both ways, every 1-cell is doubled and every segment
+   carries 2κ face-sides. This is Coxeter's `(p/2 q/2)|`. It is forced, not chosen — `1.16` lives on
+   the 3.4.6.4 edge graph, where κ=1 would need a prograde/retrograde 2-colouring of the squares, and
+   the three squares around each triangle pairwise share a vertex, so that conflict graph has an odd
+   cycle. Verified against GMS's own figure: 8 corners, 4 rays, 4 face-sides per ray, total 4·360°.
+   The engine searches κ = 1, 2, … and reports which one certifies.
+
+3. **Caps decided verdicts.** `grow_disk` returned its patch when the completion counter ran out, so
+   the gates judged a partial object — `1.22` was clean at cap 8000 and degenerate at 9000. Now a
+   budget can only ever produce UNKNOWN; acceptance is a torus certificate (every vertex class a full
+   star, every edge class exactly 2κ faces, every corner realised) and rejection is a contradiction.
+
+4. **Face classes were not translation-invariant.** Faces were canonicalised by the corner nearest the
+   origin, which moves under translation, so each lattice-translate got its own class and every
+   per-period count came out multiplied by the face size. That is *why* a sampled density gate seemed
+   necessary. With the class keyed on direction instead, density is exact from the certified lattice
+   and all 11 convex tilings come out at exactly +1 (the old engine gave 0.875 for 3.6.3.6, −0.5 for
+   3⁶, −1 for 3.12.12/4.8.8/3.3.4.3.4). Gone with it: the coverage margin, the sample count, the RNG
+   seed, and `MIN_SEP` — a torus tiling is discrete by construction.
+
+Worth recording because it is easy to repeat: **reflection reverses the cyclic order but leaves the
+tiles alone**, which is why `a.b.c` and `c.b.a` name one vertex type; the map sending `{n/d}` to
+`{n/(n−d)}` swaps which sector the face occupies and changes the total from 24δ to 24(m−δ). I
+conflated the two mid-session and briefly removed the mirror stars, which turned 4.6.12 into a false
+rejection.
+
+Shelf: `public/reference-atlas-hollow.json` now carries 14 entries (was 7), each with `kappa` and
+`cells`; `HollowPatch.separation`/`safeR` are replaced by `kappa`/`cells` and `lattice` is no longer
+nullable. Seven superseded patch files (reversal-partner spellings the old engine happened to find
+first) removed; backups in `/tmp/hollow-backup/stale-patches/`.
+
+Still open: the full species sweep under the new engine, κ≥3, apeirogons (25→53), the 24-gon
+alphabet, and `{5/2}`/`{10/3}` (ℤ[ζ₆₀], rank 16).
+
+## The landing wall's three geometry cells go live (2026-07-26, AL directive)
+
+AL asked for the Hyperbolic and Spherical cards on the landing page to be draggable and zoomable
+"with the same controls we have in the play page", then extended it to the 2×2 Play cell. Three baked
+thumbnails became three live canvases.
+
+**The link had to move first.** All three cards were whole-surface `<Link>`s, and a drag that starts
+inside an anchor fires the navigation on release. AL's call: the cell splits into figure and caption,
+the figure takes the input, the caption below becomes the click target. `CollectionCard` grew an
+`interactive` flag that switches the frame from a `<Link>` to a plain `<div>` and moves `href` onto
+the caption block; the dead `titleHref` prop it was carrying (declared for exactly this problem at a
+different granularity, never used) is gone.
+
+**The three canvases needed three different amounts of work.**
+
+`SphericalCanvas` already owned its input — ArcballControls consumes drag and wheel — so it needed
+one prop, `interactive`, wired to `controls.enabled` and the canvas's `touch-action`. That gate is
+load-bearing, not cosmetic: ArcballControls calls `preventDefault` on every wheel event it acts on,
+so a permanently live sphere stops the landing page scrolling the instant the pointer crosses it.
+
+The Play cell reuses the /theory preview card's pipeline. Rather than copy 150 lines of GL lifecycle,
+that card's big effect came out as `lib/hooks/useFlatCellPreview.ts` and both call it. One behavioural
+addition: an optional fixed `homeZoom` (px per tile edge) beside the existing `homePeriods` fit. The
+landing Play cell shows whatever the atlas dealt that request, and fitting N lattice periods of a
+large k=7 cell into it asks for a zoom below `ZOOM_MIN`, clamps, and lands as a mat of 2-pixel
+triangles — caught on the first screenshot. It passes 44, the pxPerEdge the baked thumbnail used.
+
+`HyperbolicDevelopedCanvas` was the real work. It does not own its input: on /play the p5 layer writes
+pan and rotation into the global configuration store and the disk reads `cfg.controls` there each
+frame. A landing card must not steer that store — the offset would follow the reader into /play — so
+the canvas took an optional `input` prop (`HyperbolicViewInput`: offset, targetOffset, rotationDeg,
+resetSeq, click) and the frame loop now resolves those four values once at the top from either source.
+Everything downstream is unchanged, and with the prop absent /play runs exactly as before. Recentre
+and click-to-anchor are sequence counters rather than flags precisely because two owners of one object
+would race over clearing a consumed flag; the canvas remembers the last sequence it acted on.
+
+`InteractiveHyperbolicMini` owns a per-instance `CardControls`, eases it in its own rAF, and publishes
+into that input object. `stepCardControls` grew a `pivotOffsetOnRotate` argument for it: the disk
+applies rotation as θ inside its own Möbius map and derives its pan from the raw offset, so rotating
+the offset as well double-counts the spin. canvas.tsx skips the same step for the same reason — the
+knowledge was there, it just wasn't reachable from the shared helper. Its reset snaps home rather than
+easing home, because the canvas syncs its pan bookkeeping to whatever offset it sees on the reset
+frame and a glide back to the origin afterwards reads as a fresh drag.
+
+**Activation.** All three are inert until clicked (`lib/hooks/useCardActivation.ts` — focus is the
+activation, so it is exclusive across cards for free) and release the wheel on Esc or blur. The active
+state carries NO visual chrome: a first pass drew an accent ring and a hover chip naming the gestures,
+and AL cut both — the ring reads as a stray border on a wall whose whole design is hairline gaps, and
+the chip is a caption competing with the real one below. The cursor is the only cue. Verified
+with Playwright: wheeling over an inert card scrolls the page (scrollY 0 → 300), and after a click,
+drag and wheel each change canvas pixels on all three. Contexts are released off-screen through
+`useInViewMount`.
+
+**The 9.9 MB fetch is gone.** The Hyperbolic card was pulling `public/hyperbolic-developed.json` —
+28,453 developed records — into the browser to read one. A record is 343 bytes at the median, so
+`gen-landing-data.ts` now inlines the 64 pool records into the bundled payload (103 KB total, up from
+~80 KB) and the chosen one goes down as a prop. Playwright confirms zero fetches of that file on the
+landing page.
+
+**Framing, second pass (AL).** Both round cells were sitting in an `aspect-square` wrapper with
+padding — a box narrower than the cell that cropped the canvas at its own edge, so zooming in ran into
+an invisible wall well short of the cell. Both now fill the media box outright. Two knobs came out of
+the renderers to go with it, each defaulting to /play's existing value: `diskPadPx` on the hyperbolic
+canvas (24 on /play, where floating controls sit over the viewport corners; 0 here) and `fitFraction`
+on the spherical one — the fraction of the viewport half-height the unit sphere spans, 0.75 on /play
+and 1 here. `CAMERA_DISTANCE = 3.2` and `ORTHO_HALF_HEIGHT = 1.33` are now derived from it rather than
+written down; the derivation reproduces them to 0.6%, and as a side effect the perspective and
+orthographic framings agree exactly instead of being 0.3% apart. Disk and sphere both come out at
+220 px in a 359×220 cell, matched.
+
+**Known limitation, not fixed:** `SphericalCanvas` reads hue/wireframe/Islamic flags from the global
+store, so a client-side back-navigation from /play with Islamic mode on renders the landing sphere as
+a star pattern. Every thumbnail on the page already behaves this way (they all read `hueOffset`), the
+store is not persisted so a fresh load is always clean, and de-globalising it is a much larger change.
+
+## The symmetry overlays leave /play, and two aperiodic tilings arrive as patches (2026-07-26)
+
+*Written 2026-07-27 from the working tree — this landed alongside the landing-wall and hollow work and
+went unrecorded at the time.*
+
+**The overlays were welded to p5.** `components/canvas-overlays.ts` drew the fundamental domain, the
+rotation centres and the mirror/glide axes straight against a p5 instance, so only /play's canvas could
+show them. The preview cards render a WebGL patch and have no p5 anywhere, and a second hand-written
+copy of the drawing code would have drifted within a week.
+
+What broke the deadlock is that p5 is itself a thin wrapper over `CanvasRenderingContext2D`, so the
+subset the overlays actually use — push/pop, translate, scale, stroke, fill, line, shapes — is common to
+both. `lib/render/overlayPen.ts` is that subset as an interface, with two near-passthrough adapters; the
+drawing moved to `lib/render/symmetryOverlay.ts` and is now called by /play's canvas and by
+`lib/hooks/useFlatCellPreview.ts`'s 2-D layer over the GL patch. Colours stay in HSB(360,100,100) because
+that is the mode /play's canvas already runs in; the 2-D adapter converts, the p5 one does not.
+
+Three smaller extractions went with it. `lib/render/orbitHover.ts` holds the orbit-dot feel — radius
+4 px, hover growth ×2, lerp 0.2 — as constants both `euclidean-canvas.tsx` and `flatTilingGL.ts` read,
+so the hit test and the shader's `uRadiusPx` are the same number by construction rather than by
+coincidence. `lib/render/vertexFigure.ts` recomputes a configuration's cyclic name from placed geometry
+instead of trusting the alphabet file's own ordering (`public/vertex-configs/*.json` writes "6·4·3·4").
+`lib/services/symmetryCache.ts` memoises the exact-cell symmetry analysis per atlas id, failures
+included — a tiling whose exact source will not reconstruct fails identically every time, and retrying
+on each toggle stalls the page.
+
+**Two tilings that have no cell.** Every atlas card takes a translational cell and repeats it on a
+lattice, which is precisely what an aperiodic tiling has not got. `lib/render/penrosePatch.ts` deflates
+Robinson triangles — not the multigrid engine, because de Bruijn's pentagrid yields a Penrose tiling only
+when the five offsets sum to an integer and that engine's generic offsets give a *generalised* Penrose
+tiling, so a card labelled "Penrose" would have been showing something else. `lib/render/hatPatch.ts` is
+a port of Craig Kaplan's hatviz metatile substitution (BSD 3-Clause, © 2023 Craig S. Kaplan): H, T, P, F
+assembled 29 at a time by matching named edges, the next generation read back out of the patch.
+
+A finite patch has a ragged boundary, so each module exports the window it actually covers with no gap —
+`PENROSE_WINDOW` side 15.0 at `PENROSE_DEPTH = 5`, measured by a rasterised coverage scan. That number is
+the whole correctness story for a card that crops to it, so `tests/aperiodic-patches.test.ts` holds it
+there; `tests/vertex-figure.test.ts` covers the renaming.
+
+## An unlisted /defense route: the talk as markdown, the tilings live (2026-07-26)
+
+*Written 2026-07-27 from the working tree — unrecorded at the time.*
+
+A presentation route at `/defense`, deliberately **outside the `(app)` route group** so it renders on the
+bare root layout with no Nav and no app chrome, `force-static`, and `robots: noindex` — reachable by URL,
+absent from every navigation. 40 slides.
+
+The talk is one markdown file (`public/defense/talk.md`) split on `---` fences, so wording changes during
+rehearsal touch no code. The one authoring rule that bites: a horizontal rule inside a slide is therefore
+not available. `<!-- notes: … -->` per slide feeds presenter view. Keys: arrows move, Esc is overview,
+`n` notes, `o`/`s`/`d` the three overlays — the same letters /play uses, held in one table
+(`lib/hooks/usePreviewOverlays.tsx`) so the deck, the article pages and /play cannot disagree.
+
+Custom markdown tags mount real atlas cards: `<tiling-card>` (the /theory preview card with expand
+lifting to 90% of the viewport over a backdrop, since a slide has no prose column to break out of),
+`<patch-card>` for Penrose and the hat, `<vertex-figure-card>` built from a configuration's *name* rather
+than an alphabet file so a slide can show configurations no palette ships, `<method-card>` as inline SVG
+schematics, and `<count-timeline>` — the published k-uniform counts drawn rather than tabulated, because
+the two facts that matter (the frontier sat still for thirty-three years then moved twice; every step was
+a different person with a different method) do not survive a three-column table.
+
+Page weight is held the way `/theory/uniform-tilings` holds it: only the cells the talk embeds are read
+out of the atlases at build time, not the ~13 MB whole. `lib/defense/orbitCache.ts` mirrors
+`symmetryCache.ts` for vertex orbits.
+
+Two tools ship with it. `scripts/export-deck.mjs` drives the live page in Playwright and screenshots one
+slide per page into a PDF — a print stylesheet renders a second copy of every card inside a hidden
+container whose canvases never paint, so screenshots of the real deck are the only faithful export.
+`scripts/check-style.mjs` measures prose against a reconstructed style profile; the rule added after AL
+flagged it is "catchphrase tails" (a sentence closing on ", and <short clause restating the point>"),
+measured at 3.6% in the reference corpus and 14.1% in the deck.
+
+⚑ `check-style.mjs` hardcodes an absolute path to a sibling checkout for its baseline mode. Fine on this
+machine, broken on any other; make it a flag if the script outlives the week.
+
+## Ring sweep: 7-, 11-, 13-, 17-, 19- and 23-fold stars tile nothing (2026-07-25)
+
+*Written 2026-07-27 from the working tree — unrecorded at the time.
+Log: `experiments/results/ring-sweep-2026-07-25.log`.*
+
+`docs/TILE_TAXONOMY_AUDIT.md` §3.5 lists the star orders the shipped palettes reach — n ∈
+{3,4,5,6,8,9,10,12,18,20,24} — and calls the absence of n = 7,11,13,14,16,17,19,21,22,23 "principled …
+but nowhere stated". The stated argument is that a 7-fold star cannot meet regular {3,4,6,12} at a legal
+vertex, which is an argument about *mixing with the D=24 ring*, not about whether 7-fold stars tile among
+themselves. Nobody had built the palette.
+
+`alphabets/gen_ring_palette.py` builds a complete in-ring palette for any even D straight from the closure
+formula (angle unit 360/D; a regular n-gon is in-ring iff n | D; an isotoxal star n\*a is in-ring iff
+n | D and 1 ≤ a ≤ D/2 − D/n − 1). Complete for its ring **by construction**, and the generator reproduces
+star18/star20/star24full at 24/28/48 tiles exactly as a control. Each ring ran k ≤ 2 at `EU_NCBUDGET` 6
+and 7: equal catalogues at both budgets with no budget engagement is the certification.
+
+| D | orders | k=1 (star-bearing) | k=2 (star-bearing) |
+|---|---|---|---|
+| 14 | {7,14}      | 0        | 0       |
+| 22 | {11,22}     | 0        | 0       |
+| 26 | {13,26}     | 0        | 0       |
+| 34 | {17}        | 0        | 0       |
+| 38 | {19}        | 0        | 0       |
+| 46 | {23}        | 0        | 0       |
+| 16 | {16}        | 6 (4)    | 2 (2)   |
+| 28 | {4,7,14,28} | 7 (6)    | 0       |
+
+Every pure new-order ring is empty at both k, at both budgets, with zero budget hits — so the audit's
+unstated claim is now measured, not assumed. **D=16 is the correction**: 16-fold stars *do* tile, 4
+star-bearing tilings at k=1 and 2 at k=2, an order no shipped palette reaches. D=28 returns 6 star-bearing
+at k=1, but its ring carries {4,7,14,28} together, so those need attributing to an order before anything
+is claimed about 7-fold specifically.
+
+Controls reproduce: star18 6+7 → 18/19 against the reference 18/37 cumulative (18+19), star20 6/0 against
+6.
+
+⚑ **D=42 never finished.** The palette built (2108 s, 192,687 alphabet entries) and phase 1 started at
+21:42:57; the log ends there. D=42 is the other mixed ring ({3,6,7,14,21,42}) and the one that would
+separate 7-fold-with-triangles from the D=28 result. Re-run before the sweep is called complete.

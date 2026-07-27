@@ -1581,3 +1581,38 @@ keys and stamp arrays, 2.3× faster at edge offset 0 and 4.1× with crossings sp
 Islamic slider for rigid tilings too. `buildTilingFromCell` can now rebuild into the previous grid instead of
 allocating ~180k objects per tick. Flat and Islamic views are at the display cap; output locked by a digest
 test. Detail: DEVELOPMENT_NOTES.md §104c. — CC
+
+### 2026-07-26 — CC — hollow engine rebuilt, 14/14 GMS
+- `tools/hollow/engine.py` supersedes the first cut; vertex-figure multiplicity κ searched, caps can
+  only yield UNKNOWN, density exact from a torus certificate.
+- All **14** GMS hollow tilings reproduced (was 7); 11 convex regression at density exactly +1; the
+  4 negative controls still rejected.
+- Ground truth was wrong: GMS table 1 has 14 hollow entries, not the 12 transcribed (1.2 and 1.4 are
+  δ=3/m=5 and were never enumerated).
+- Shelf `public/reference-atlas-hollow.json` 7 → 14 entries.
+- Detail: `docs/DEVELOPMENT_NOTES.md` §"Hollow tilings — engine rebuilt"; results table in
+  `tools/hollow/README.md`.
+
+### 2026-07-26 — CC: the landing wall's Play, Hyperbolic and Spherical cells go live
+Three baked thumbnails became real canvases with /play's controls (AL directive). The card link moved to
+the caption block so the figure can take drags (`CollectionCard.interactive`); all three are inert until
+clicked, so the page still scrolls under an untouched card. `HyperbolicDevelopedCanvas` grew an optional
+per-instance `input` prop — /play's store-driven path is untouched — and the /theory card's GL lifecycle
+came out as `lib/hooks/useFlatCellPreview.ts`, shared with the new Play cell. The landing's 9.9 MB fetch of
+the developed catalogue is gone: the pool's 64 records (~350 bytes each) are inlined at build time. Build
+clean; verified with Playwright on / and /theory. Detail: DEVELOPMENT_NOTES.md §"The landing wall's three
+geometry cells go live". — CC
+
+### 2026-07-27 — CC — backfill: three clusters that shipped unrecorded
+Three pieces of 2026-07-26 work sat in the tree with no ledger entry; written up now from the diff.
+- Symmetry overlays left p5 for `lib/render/overlayPen.ts` — one implementation, both flat surfaces.
+- `/defense`: an unlisted static route, 40 slides from one markdown file, live atlas cards.
+- Ring sweep: 7/11/13/17/19/23-fold stars tile nothing at k≤2; **16-fold does**. ⚑ D=42 interrupted.
+- Detail: DEVELOPMENT_NOTES.md, the three sections dated 2026-07-27. — CC
+
+### 2026-07-27 — CC — working-tree hygiene: .gitignore was silently off
+`materials/` had no trailing newline, so appending `.next-prod/` merged them into the dead single line
+`materials/.next-prod/` and 1.1 GB stopped being ignored. Repaired, plus ctrnact per-run worker scratch.
+Also: `tsconfig.json` tool-reformat reverted; `export2.py` stopped writing the 11 convex regression
+patches into `public/` where nothing referenced them (shelf now 14-for-14); and `docs-check.mjs`'s
+entry-length rule never matched `###` headings, so it had been measuring nothing. — CC
