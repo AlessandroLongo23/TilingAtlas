@@ -72,26 +72,54 @@ separations are sharply bimodal — `4.8/3.8/7` gives 0.41421 (= √2−1), a de
 
 ## Status
 
-Validated: reproduces the **11 convex uniform tilings** through every gate, and rejects the
-four species (`3.3.4.12`, `3.3.6.6`, `3.4.3.12`, `3.4.4.6`) that close to 360° but yield no
-1-uniform tiling.
+**All 14 GMS hollow tilings reproduced**, plus the 11 convex uniform tilings as the regression,
+with the 4 species that close to 360 deg but tile nothing (`3.3.4.12`, `3.3.6.6`, `3.4.3.12`,
+`3.4.4.6`) still rejected. Every accepted tiling carries a torus certificate and an exact integer
+density. See `experiments/results/hollow-export2-2026-07-26.log`.
 
-Searched δ=1 (304 species) and δ=2, m≤4 (133). Result: **18 distinct tilings** after the
-reversal quotient, containing **7 of 12** transcribed GMS configurations (1.6, 1.8, 1.12, 1.15,
-1.17, 1.18, x1), most found as *both* members of their reversal pair, with **zero false
-positives** — every non-convex tiling accepted is a published one.
+| GMS | config | kappa | density | GMS | config | kappa | density |
+|---|---|---|---|---|---|---|---|
+| 1.2  | `4.4.3/2.3/2.3/2` | 1 | +1 | 1.15 | `3/2.12.6.12`        | 1 | +2 |
+| 1.4  | `4.3/2.4.3/2.3/2` | 1 | +1 | 1.16 | `4.12.4/3.12/11`     | 2 |  0 |
+| 1.6  | `8.4/3.8/5`       | 1 | +1 | 1.17 | `4.3/2.4.6/5`        | 1 | -1 |
+| 1.7  | `8/3.8.8/5.8/7`   | 1 |  0 | 1.18 | `12/5.3.12/5.6/5`    | 1 | -2 |
+| 1.8  | `4.8/5.8/5`       | 1 | +1 | 1.19 | `12/5.4.12/7.4/3`    | 2 |  0 |
+| 1.12 | `12.6/5.12/7`     | 1 | +2 | 1.21 | `12/5.12.12/7.12/11` | 2 |  0 |
+| 1.13 | `6.4/3.12/7`      | 1 | +1 | 1.22 | `12/5.12/5.3/2`      | 1 | -1 |
 
-⚑ **18 is a lower bound, not a count.** δ=1 left 74 of 304 species unresolved (55 capped, 19
-timeout); δ=2/m≤4 left 27 of 133. Capped and timeout mean UNKNOWN, never rejected, and both
-are listed verbatim in the logs. No completeness claim is available until they are resolved.
+## What the first cut got wrong
 
-⚑ **Known gap — coinciding edges.** `1.16` (`4.12.4/3.12/11`), `1.19` and `x2` are rejected
-outright. Each pairs a face with its own retrograde, so two distinct edges of the map share
-one endpoint pair. Edges here are keyed by endpoint pair with exactly 2 faces, which forbids
-that. This is Myers' warning that "a single drawing can represent multiple distinct tilings":
-the map is not recoverable from the geometry. Fixing it means keying edges combinatorially
-rather than geometrically.
+The first engine (`hollow.py`, `grow2.py`, `verify2.py`, `discrete.py`, `periodic.py`) found 7 of
+these and is superseded by `engine.py`. Four errors, all of which changed results:
 
-⚑ Also open: `1.13` and `1.22` reach a judgeable disk only at some completion caps (1.22
-confirmed clean at cap 8000, density −1) — the branch taken depends on the budget, so the
-result is cap-sensitive and needs the search made deterministic before any count is claimed.
+**The ground truth was short by two.** GMS table 1 has 25 entries, 11 convex and 14 hollow. The
+transcription had 12, missing `1.2` and `1.4` -- both delta=3, m=5, and the sweep only ran delta<=2
+with m<=4, so they were never enumerated. What the notes called `x1`/`x2` are `1.7` and `1.21`.
+
+**Multiplicity.** `1.16`, `1.19` and `1.21` are not realisable with one circuit per vertex, and the
+rejection was correct rather than a bug -- but the model was too narrow. See kappa above; the proof
+for `1.16` is the odd cycle in the square-conflict graph of 3.4.6.4.
+
+**Caps decided verdicts.** `grow_disk` returned its patch when the completion counter ran out, so
+the gates judged whatever partial thing happened to exist: `1.22` came out clean at cap 8000 and
+degenerate at 9000. Budgets now only ever produce UNKNOWN.
+
+**Face classes were not translation-invariant.** Faces were canonicalised by the corner nearest the
+origin, which moves under translation, so every lattice-translate of a face got its own class and
+every per-period count came out multiplied by the face size. This is why a sampled density gate was
+needed at all; with the class fixed, the density is exact and the sampling, its coverage margin, its
+sample count and its RNG seed are all gone. So is the `MIN_SEP` discreteness threshold -- a torus
+tiling has finitely many vertices per period and is discrete by construction.
+
+A fifth confusion is worth recording because it is easy to repeat: **reflection reverses the cyclic
+order but leaves the tiles alone** (a face occupies its interior sector however you walk it), which
+is why `a.b.c` and `c.b.a` are one vertex type. The map that sends `{n/d}` to `{n/(n-d)}` swaps
+which side of the boundary the face occupies and changes the total from `24*delta` to
+`24*(m-delta)`. Conflating the two either loses tilings or invents them.
+
+## Open
+
+Not yet searched: the full species sweep under the new engine (delta 1..3 with m bounded by the
+alphabet's smallest corner angle, which for `{3,4,6,8,12}` gives m <= 12*delta); kappa >= 3;
+apeirogons, which take GMS's 25 to 53; the 24-gon/24-gram alphabet; and `{5/2}` and `{10/3}`, which
+need Z[zeta_60] at rank 16 rather than Z[zeta_24] at rank 8.

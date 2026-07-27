@@ -36,12 +36,21 @@ export interface HollowPatch {
 	 * negative winding cancel). Both are proper values for a hollow tiling, not defects.
 	 */
 	density: number;
-	/** Minimum distance between distinct vertices. A tiling's vertex set is discrete; this proves it. */
-	separation: number;
-	/** Radius out to which every face covering a point is guaranteed present. */
-	safeR: number;
-	/** Two independent translations `[[x,y],[x,y]]` generating the period lattice, or null if uncertified. */
-	lattice: [[number, number], [number, number]] | null;
+	/**
+	 * Multiplicity of the vertex figure: how many circuits of `cfg` meet at each vertex.
+	 *
+	 * `1` is the ordinary case. `2` is the degenerate case Coxeter's `(p/2 q/2)|` symbols mark —
+	 * the face set is closed under orientation reversal, so every polygon is present both ways,
+	 * every 1-cell of the map is doubled, and every segment carries `2κ` face-sides. GMS 1.16 and
+	 * 1.21 are only realisable at `κ = 2`: at `κ = 1` they would need a prograde/retrograde
+	 * 2-colouring of the squares of 3.4.6.4, and the three squares around each triangle pairwise
+	 * share a vertex, so that conflict graph has an odd cycle.
+	 */
+	kappa: number;
+	/** Faces per fundamental domain of the period lattice. */
+	cells: number;
+	/** Two independent translations `[[x,y],[x,y]]` generating the certified period lattice. */
+	lattice: [[number, number], [number, number]];
 	faces: HollowFace[];
 	/** Distinct tile types present, e.g. `["4", "8/3", "8/7"]`. */
 	tiles: string[];
@@ -53,7 +62,15 @@ export interface HollowPattern {
 	patch: string;
 	density: number;
 	tiles: string[];
-	/** True iff a translation lattice was certified, so the renderer may replicate the patch. */
+	/** Circuits of the vertex figure per vertex; `2` means every polygon appears both ways. */
+	kappa: number;
+	/** Faces per fundamental domain. */
+	cells: number;
+	/**
+	 * Always true. Nothing reaches the shelf without a torus certificate — every vertex class
+	 * carrying a full star, every edge class exactly `2κ` faces, every corner realised — so the
+	 * renderer may always replicate the patch by its lattice.
+	 */
 	periodic: boolean;
 	/** Grünbaum-Miller-Shephard figure number when this is one of theirs, else null. */
 	gms: string | null;

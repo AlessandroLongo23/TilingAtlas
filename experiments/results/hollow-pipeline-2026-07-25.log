@@ -1,0 +1,20 @@
+
+=== delta=1 maxm=6 depth=12 tcap=45s : 304 species ===
+  TILING  3.12.12                          faces=   90 dens=1        safe_r=  5.86 period=3.73,3.73
+  susp    3/2.12/5.12/5                    faces=   90 dens=None     safe_r= -3.68 period=0.27,0.27
+  TILING  4.6.12                           faces=  102 dens=1        safe_r=  5.28 period=4.73,4.73
+  susp    4.6/5.12/5                       faces=  102 dens=None     safe_r= -2.65 period=1.27,1.27
+  TILING  4.8.8                            faces=  112 dens=1        safe_r=  5.24 period=2.41,2.41
+  susp    4.8/3.8/7                        faces=  112 dens=None     safe_r= -1.29 period=1.41,1.41
+  susp    4/3.8/3.8/3                      faces=  112 dens=None     safe_r= -3.22 period=0.41,0.41
+  TILING  6.6.6                            faces=  126 dens=1        safe_r=  5.13 period=1.73,1.73
+  susp    6.12/5.12/11                     faces=  126 dens=None     safe_r= -1.10 period=1.73,1.73
+  TILING  3.4.6.4                          faces=  304 dens=1        safe_r=  5.33 period=2.73,2.73
+  TILING  3.6.3.6                          faces=  330 dens=1        safe_r=  6.52 period=2.00,2.00
+  susp    3.8.12/5.8                       faces= 2642 dens=None     safe_r= -3.61 period=3.66,3.66
+  susp    3.8/3.12/11.8/3                  faces= 2642 dens=None     safe_r= -3.78 period=1.21,1.21
+  susp    3.12/5.6/5.12/5                  faces=  217 dens=None     safe_r= -2.65 period=0.73,0.73
+  TILING  4.4.4.4                          faces=  312 dens=1        safe_r=  4.61 period=1.00,1.00
+  susp    4.4.8.8/3                        faces= 3842 dens=None     safe_r= -3.70 period=1.41,2.00
+  susp    4.12.4.12/5                      faces= 3278 dens=None     safe_r= -3.68 period=2.45,2.45
+  susp    6.8/3.12.8/3                     faces= 6778 dens=None     safe_r= -3.56 period=2.93,2.93

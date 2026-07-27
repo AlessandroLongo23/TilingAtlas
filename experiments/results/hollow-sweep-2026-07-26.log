@@ -1,0 +1,20 @@
+
+=== hollow sweep  alphabet=[3, 4, 6, 8, 12]  node_cap=20000  kappa<=2  2026-07-26 15:26:56 ===
+corner types (14): 3=4, 3/2=20, 4=6, 4/3=18, 6=8, 6/5=16, 8=9, 8/3=3, 8/5=21, 8/7=15, 12=10, 12/5=2, 12/7=22, 12/11=14
+smallest corner angle a_min=2  =>  m <= 24*delta/2, and m <= 24
+
+-- delta=1  m<=12  873 species
+   TILING 3.12.12                    delta=1 kappa=1 density=+1 cells=9   convex
+   TILING 3/2.12/5.12/5              delta=1 kappa=1 density=-1 cells=9   GMS 1.22
+   TILING 4.6.12                     delta=1 kappa=1 density=+1 cells=6   convex
+   TILING 4.6/5.12/5                 delta=1 kappa=1 density=-1 cells=6   GMS 1.13
+   TILING 4.8.8                      delta=1 kappa=1 density=+1 cells=4   convex
+   TILING 4.8/3.8/7                  delta=1 kappa=1 density=-1 cells=4   GMS 1.6
+   TILING 4/3.8/3.8/3                delta=1 kappa=1 density=-1 cells=4   GMS 1.8
+   TILING 6.6.6                      delta=1 kappa=1 density=+1 cells=3   convex
+   TILING 6.12/5.12/11               delta=1 kappa=1 density=-2 cells=4   GMS 1.12
+   TILING 3.4.6.4                    delta=1 kappa=1 density=+1 cells=6   convex
+   TILING 3.6.3.6                    delta=1 kappa=1 density=+1 cells=3   convex
+   ... 25/873  tilings=11 none=14 unknown=0  0s eta=4s
+   TILING 3.12/5.6/5.12/5            delta=1 kappa=1 density=-2 cells=4   GMS 1.18
+   TILING 4.4.4.4                    delta=1 kappa=1 density=+1 cells=2   convex
