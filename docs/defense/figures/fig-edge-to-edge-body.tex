@@ -1,0 +1,39 @@
+% fig:edge-to-edge (body) — the constraint that rules out the running bond.
+% Both panels are tilings by unit squares, so the difference is exactly edge-to-edge and nothing else.
+% Needs: concept-style.tex (tileN*, oi*, tileedge, conceptnote).
+\begin{tikzpicture}[scale=1.05]
+
+  % ================= (a) edge-to-edge ======================================
+  \begin{scope}[shift={(0,0)}]
+    \foreach \x in {0,1,2} \foreach \y in {0,1,2} {
+      \fill[tileN4] (\x,\y) rectangle ++(1,1);
+      \draw[tileedge] (\x,\y) rectangle ++(1,1);
+    }
+    % the shared edge, whole on both sides
+    \draw[draw=oiGreen, line width=1.6pt] (1,1) -- (2,1);
+    \fill[oiGreen] (1,1) circle (0.075);
+    \fill[oiGreen] (2,1) circle (0.075);
+  \end{scope}
+  \node[conceptnote, text width=34mm] at (1.5,-1.05)
+    {(a) edge-to-edge: the shared edge is a whole edge of both squares};
+
+  % ================= (b) the running bond ==================================
+  \begin{scope}[shift={(5.2,0)}]
+    \foreach \y in {0,2} \foreach \x in {0,1,2} {
+      \fill[tileN4] (\x,\y) rectangle ++(1,1);
+      \draw[tileedge] (\x,\y) rectangle ++(1,1);
+    }
+    \foreach \y in {1} \foreach \x in {-0.5,0.5,1.5,2.5} {
+      \fill[tileN4] (\x,\y) rectangle ++(1,1);
+      \draw[tileedge] (\x,\y) rectangle ++(1,1);
+    }
+    % a corner of the lower square lands halfway along the upper square's edge
+    \draw[draw=oiVermillion, line width=1.6pt] (0.5,1) -- (1.5,1);
+    \fill[oiVermillion] (1,1) circle (0.085);
+    \node[font=\footnotesize, text=oiVermillion] at (1.0,0.66) {corner};
+    \node[font=\footnotesize, text=oiVermillion] at (2.15,1.32) {mid-edge};
+  \end{scope}
+  \node[conceptnote, text width=34mm] at (6.7,-1.05)
+    {(b) not edge-to-edge: a corner meets the middle of a neighbour's edge};
+
+\end{tikzpicture}
