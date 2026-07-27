@@ -1,4 +1,5 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import {
 	type ReferenceTiling,
 	compactVertexConfig,
@@ -35,9 +36,12 @@ export interface LandingData {
 	uniformEleven: LandingSpecimen[];
 	/** Cell for the Play card's interactive patch (4.6.12, the truncated trihexagonal). */
 	play: LandingSpecimen;
-	/** Developed-patch id for the Hyperbolic card thumbnail. */
+	/** Developed-patch id for the Hyperbolic card. */
 	hyperbolicPatch: string | null;
-	/** Solid id for the Spherical card thumbnail. */
+	/** The record for that patch, so the card renders without fetching the 9.9 MB developed catalogue
+	 *  to read one 350-byte entry out of it. Null if the payload predates the inlining. */
+	hyperbolicPatchData: CataloguePatch | null;
+	/** Solid id for the Spherical card. */
 	sphericalSolid: string | null;
 }
 
@@ -52,6 +56,11 @@ export interface LandingPayload {
 	/** Renderable developed-patch ids the Hyperbolic card picks one from per request (one representative
 	 *  per vertex-config family, so successive reloads look different, not two near-identical 7.7.7s). */
 	hyperbolicPool: string[];
+	/** The developed record for every id in `hyperbolicPool`, inlined by the generator. A record is
+	 *  ~350 bytes, so the whole pool is ~20 KB in the function bundle — against a 9.9 MB client fetch
+	 *  of public/hyperbolic-developed.json (28,453 records) to read exactly one of them. Absent on a
+	 *  payload generated before this existed; the card falls back to the fetch. */
+	hyperbolicPatches?: Record<string, CataloguePatch>;
 	/** Distinct spherical solid ids the Spherical card picks one from per request. */
 	sphericalPool: string[];
 	/** Stable fallbacks used only if the pool is empty (kept from the original fixed picks). */

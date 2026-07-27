@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import {
 	su11Identity,
@@ -31,18 +32,56 @@ import { tileHueRgb01 } from "@/lib/render/hueRing";
 // explicit-polygon 2D renderer (robust but with a thin sub-pixel rim). The p5 canvas underneath captures
 // the pan gestures; this canvas is an input-transparent overlay.
 
-const DISK_PAD_PX = 24;
+const DISK_PAD_PX = 24; // /play's default gap from the canvas edge; see the diskPadPx prop
 const MAX_CENTER_R = 0.9995; // clamp only against numerical blow-up at the ideal boundary; panning is otherwise free
 const ISLAMIC_DRAG_RES = 256; // in-drag Islamic bake res — every slider notch lands the same frame
 const ISLAMIC_SETTLE_MS = 200; // stable angle re-bakes at full res after this quiet window
+
+/**
+ * Per-instance view input, for an embedded disk that must NOT steer (or be steered by) the global
+ * configuration store — the landing wall's Hyperbolic cell. Supply it and the loop reads pan,
+ * rotation, recentre and click-to-anchor from here instead of `cfg.controls`; omit it and /play's
+ * store-driven path runs exactly as before.
+ *
+ * `resetSeq` / `click.seq` are counters rather than flags because ownership stays one-way: the canvas
+ * remembers the last sequence it acted on instead of writing a consumed flag back into its caller's
+ * object (which is what /play does, and what two owners of one object would race over).
+ */
+export interface HyperbolicViewInput {
+	/** Live (eased) pan offset in centred CSS px, y DOWN — the same frame as /play's controls.offset. */
+	offset: { x: number; y: number };
+	/** Pan target the pointer writes. Only used to tell an active drag from a settling glide. */
+	targetOffset: { x: number; y: number };
+	/** Live (eased) view rotation in degrees. */
+	rotationDeg: number;
+	/** Bump to recentre the disk (right-click in /play). */
+	resetSeq: number;
+	/** Click to fold to the disk centre, in centred CSS px, y down. `seq` bumps per click. */
+	click: { x: number; y: number; seq: number } | null;
+}
 
 // No width/height props: the canvas fills its parent by CSS and measures itself in the render loop
 // (syncCanvasSize) — see lib/render/canvasSize.ts.
 interface Props {
 	patchId: string;
+	/**
+	 * The patch record itself, when the caller already has it. Skips loadDevelopedPatches entirely —
+	 * which is how a page that shows ONE disk (the landing wall) avoids pulling the whole 9.9 MB
+	 * developed catalogue into the browser to read a 350-byte record out of it. /play, which needs the
+	 * map anyway for its sidebar, keeps passing the id alone. Mirrors the thumbnail's `data` prop.
+	 */
+	data?: CataloguePatch;
+	/** Per-instance view input; omit to read /play's global controls. See HyperbolicViewInput. */
+	input?: RefObject<HyperbolicViewInput | null>;
+	/**
+	 * Gap in CSS px between the disk's ideal boundary and the nearest edge of the canvas. /play's
+	 * default keeps the rim clear of the floating controls that sit over its viewport corners; an
+	 * embedded disk with nothing on top of it passes 0 and fills its cell edge to edge.
+	 */
+	diskPadPx?: number;
 }
 
-export function HyperbolicDevelopedCanvas({ patchId }: Props) {
+export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DISK_PAD_PX }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null); // set only in the 2D fallback path
@@ -77,6 +116,14 @@ export function HyperbolicDevelopedCanvas({ patchId }: Props) {
 	const prevTargetOffset = useRef<{ x: number; y: number } | null>(null);
 	const prevRot = useRef<number | null>(null);
 	const centerAnim = useRef<Complex | null>(null);
+	// Local-input mode only: the last recentre / click sequence acted on (see HyperbolicViewInput).
+	const lastResetSeq = useRef(0);
+	const lastClickSeq = useRef(0);
+	// Read in the rAF loop, which is created once — the prop itself may be a fresh ref object per render.
+	const inputRef = useRef<RefObject<HyperbolicViewInput | null> | undefined>(input);
+	inputRef.current = input;
+	const padRef = useRef(diskPadPx);
+	padRef.current = diskPadPx;
 
 	// Acquire the drawing context (WebGL2 preferred; 2D when unavailable OR when the patch forces it).
 	useEffect(() => {
@@ -108,7 +155,8 @@ export function HyperbolicDevelopedCanvas({ patchId }: Props) {
 	useEffect(() => {
 		let alive = true;
 		readyRef.current = false;
-		loadDevelopedPatches().then((map) => {
+		// A caller that supplied the record resolves immediately and never touches the network.
+		(data ? Promise.resolve({ [patchId]: data }) : loadDevelopedPatches()).then((map) => {
 			if (!alive) return;
 			const patch = map[patchId] ?? null;
 			const meta = patch ? { id: patch.id, name: patch.name, config: patch.config, edge: patch.edge } : null;
@@ -151,7 +199,7 @@ export function HyperbolicDevelopedCanvas({ patchId }: Props) {
 		return () => {
 			alive = false;
 		};
-	}, [patchId, use2d]);
+	}, [patchId, data, use2d]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -170,8 +218,22 @@ export function HyperbolicDevelopedCanvas({ patchId }: Props) {
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;
-			const Rcss = Math.max(0.5 * Math.min(w, h) - DISK_PAD_PX, 1); // disk radius in CSS px (pan units)
-			const rotDeg = ctrl.rotation || 0;
+			const Rcss = Math.max(0.5 * Math.min(w, h) - padRef.current, 1); // disk radius in CSS px (pan units)
+
+			// Where pan / rotation / recentre / click come from this frame. /play drives them through the
+			// global store (its p5 input layer writes cfg.controls); an embedded disk hands in its own
+			// per-instance input instead, so the two never steer each other. Everything BELOW this block
+			// reads these four locals and is identical in both modes — only the acknowledgement differs:
+			// the store path clears its flags by writing them back, the local path remembers a sequence.
+			const local = inputRef.current?.current ?? null;
+			const offset = local ? local.offset : ctrl.offset;
+			const targetOffset = local ? local.targetOffset : ctrl.targetOffset;
+			const rotDeg = local ? local.rotationDeg : ctrl.rotation || 0;
+			const wantReset = local ? local.resetSeq !== lastResetSeq.current : cfg.hyperbolicResetView;
+			if (local) lastResetSeq.current = local.resetSeq;
+			const localClick = local?.click && local.click.seq !== lastClickSeq.current ? local.click : null;
+			if (local?.click) lastClickSeq.current = local.click.seq;
+			const clickPx = local ? localClick : cfg.hyperbolicClick;
 
 			// dev-only pan diagnostics (window.__hypDebug), same spirit as the __stores hook
 			const dbgHost = window as unknown as { __hypDebug?: Record<string, unknown> };
@@ -191,25 +253,25 @@ export function HyperbolicDevelopedCanvas({ patchId }: Props) {
 				}
 			};
 
-			if (cfg.hyperbolicResetView) {
+			if (wantReset) {
 				viewRef.current = su11Identity();
 				centerAnim.current = null;
-				prevOffset.current = { x: ctrl.offset.x, y: ctrl.offset.y };
-				prevTargetOffset.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
+				prevOffset.current = { x: offset.x, y: offset.y };
+				prevTargetOffset.current = { x: targetOffset.x, y: targetOffset.y };
 				prevRot.current = rotDeg;
-				useConfiguration.setState({ hyperbolicResetView: false });
+				if (!local) useConfiguration.setState({ hyperbolicResetView: false });
 			} else {
-				if (prevOffset.current === null) prevOffset.current = { x: ctrl.offset.x, y: ctrl.offset.y };
-				if (prevTargetOffset.current === null) prevTargetOffset.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
+				if (prevOffset.current === null) prevOffset.current = { x: offset.x, y: offset.y };
+				if (prevTargetOffset.current === null) prevTargetOffset.current = { x: targetOffset.x, y: targetOffset.y };
 				if (prevRot.current === null) prevRot.current = rotDeg;
 				const dragging =
-					Math.hypot(ctrl.targetOffset.x - prevTargetOffset.current.x, ctrl.targetOffset.y - prevTargetOffset.current.y) > 1e-4;
-				prevTargetOffset.current = { x: ctrl.targetOffset.x, y: ctrl.targetOffset.y };
-				const dx = (ctrl.offset.x - prevOffset.current.x) / Rcss;
-				// store offsets are centred CSS px with y DOWN; the disk world is y UP (the shader maps
+					Math.hypot(targetOffset.x - prevTargetOffset.current.x, targetOffset.y - prevTargetOffset.current.y) > 1e-4;
+				prevTargetOffset.current = { x: targetOffset.x, y: targetOffset.y };
+				const dx = (offset.x - prevOffset.current.x) / Rcss;
+				// offsets are centred CSS px with y DOWN; the disk world is y UP (the shader maps
 				// gl_FragCoord y-up) — negate so dragging down moves the tiling down, not mirrored.
-				const dy = -(ctrl.offset.y - prevOffset.current.y) / Rcss;
-				prevOffset.current = { x: ctrl.offset.x, y: ctrl.offset.y };
+				const dy = -(offset.y - prevOffset.current.y) / Rcss;
+				prevOffset.current = { x: offset.x, y: offset.y };
 				const dLen = Math.hypot(dx, dy);
 				if (dLen > 1e-5 && !(centerAnim.current && !dragging)) {
 					const sc = Math.min(dLen, 0.9) / dLen;
@@ -225,10 +287,10 @@ export function HyperbolicDevelopedCanvas({ patchId }: Props) {
 
 			// Click-to-anchor: snap the click to the nearest tiling feature (developed on demand) and ease it
 			// to the disk centre.
-			if (cfg.hyperbolicClick) {
+			if (clickPx) {
 				// click comes in centred CSS px, y down (canvas.tsx) — flip to the disk's y-up frame.
-				const clickDisk = { x: cfg.hyperbolicClick.x / Rcss, y: -cfg.hyperbolicClick.y / Rcss };
-				useConfiguration.setState({ hyperbolicClick: null });
+				const clickDisk = { x: clickPx.x / Rcss, y: -clickPx.y / Rcss };
+				if (!local) useConfiguration.setState({ hyperbolicClick: null });
 				const dev = devRef.current;
 				if (dev && clickDisk.x * clickDisk.x + clickDisk.y * clickDisk.y < 0.998) {
 					const local = dev.develop(meta, viewRef.current, 0.75, 4000);
