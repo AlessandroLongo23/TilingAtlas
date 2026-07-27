@@ -110,6 +110,8 @@ scripts/fetch-discord-dm.mjs
 # isotoxal-*, girih, spherical, tetromino, …), and gitignore does not apply to tracked files — those
 # 16 stay tracked and keep showing up in `git status` when regenerated. The rule binds NEW palettes
 # only. Untracking the old ones is a deliberate call, not something to do by accident.
+# Staging a regenerated tracked palette needs `git add -u tools/ctrnact-oracle/tables/<name>/` — plain
+# `git add` refuses any pathspec under an ignored directory, tracked file or not.
 tools/ctrnact-oracle/tables/
 tools/ctrnact-oracle/scratch-*/
 # per-run worker scratch (`run-<palette>-k<N>b<M>/w0…w7`, `probe-<palette>/`) — written by

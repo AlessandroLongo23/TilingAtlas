@@ -1,0 +1,17 @@
+=== MIXED +cx4-30.150 (30/150 rhombus) k=2 SOLVE+PRUNE — started Sat Jul 25 22:56:44 CEST 2026 ===
+palette isotoxal-star-z24-rh: 30 tiles, maxValence=12 (saturating), pruneOverlap declared, 112,018 vertexdefs.
+baseline for comparison: base palette k=2 = 547s on 34,329 vertexdefs (2026-07-12). Table is 3.26x bigger; this run IS the scaling measurement.
+
+[22:56:58] build (MAXNUM=2 PALETTE=isotoxal-star-z24-rh)
+[22:56:59] PHASE 1  parallel solve — 8 workers, budget 8
+./run-oracle-parallel.sh: line 29: 79071 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 79080 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 79062 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 79077 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 79074 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 79065 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 79082 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+./run-oracle-parallel.sh: line 29: 79068 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$HERE/eu_solver$SFX" > /dev/null 2> solver-stderr.log
+a worker failed
+
+[11:58:44] SOLVE STOPPED by AL instruction after 12.7h wall / ~8.6 CPU-hours. No shard completed; runner aborted before merge, so out/ is empty and NOTHING was exported. Partial shards left in run-par-k2-isotoxal-star-z24-rh/ with INCOMPLETE-DO-NOT-USE.txt. k=2 with the rhombus remains UNRUN — the shelf's k=2 entries are still base-palette only.
