@@ -36,8 +36,17 @@ interface Person {
 interface Stop {
 	/** As printed: a single year, or the span a multi-year effort ran over. */
 	years: string;
-	/** Highest k the published record reached once this entry landed. */
+	/** Highest k this entry settled. */
 	k: number;
+	/**
+	 * Whether the entry settled every k up to `k` at once, rather than adding that one term to a
+	 * record it otherwise took as given. This is what separates the `k \le 7` label from `k = 3`,
+	 * and the split is not decorative: Kepler, Krötenheerdt and Chavey each contributed a single
+	 * term by hand and cited the ones below it, while Galebach's search swept n ≤ 6 in one go and
+	 * the 2022 searches every k to 15. So the notation carries the same break the slide's prose
+	 * makes — case analysis one term at a time, then computer searches over whole ranges.
+	 */
+	sweep?: boolean;
 	/**
 	 * How long the frontier stood still before this entry, written on the rail just ahead of it.
 	 *
@@ -64,6 +73,10 @@ const STOPS: readonly Stop[] = [
 		people: [{ given: "Johannes", family: "Kepler", portrait: "kepler.jpg" }],
 	},
 	{
+		// The 20 two-uniform tilings, with Kepler's 11 taken as given — hence `k = 2`, not `k \le 2`.
+		// Note for the room: his parts II and III do go past n = 2 (39, 33, 15, 10 for n = 3..6), but
+		// those are the Krötenheerdt counts — exactly n orbits, all of distinct vertex type — which is
+		// a different sequence from the full k-uniform one this timeline plots.
 		years: "1969",
 		k: 2,
 		gapBefore: "350 years",
@@ -76,14 +89,18 @@ const STOPS: readonly Stop[] = [
 		people: [{ given: "Darrah", family: "Chavey", portrait: "chavey.jpg" }],
 	},
 	{
+		// The first entry that settled a range rather than a term: the 2002 search returned every
+		// n ≤ 6 at once (11, 20, 61, 151, 332, 673), and k = 7 followed by 2020.
 		years: "2002–2020",
 		k: 7,
+		sweep: true,
 		// NASPA player photo: he competes in tournament Scrabble under the same name.
 		people: [{ given: "Brian", family: "Galebach", portrait: "galebach.jpg" }],
 	},
 	{
 		years: "2022",
 		k: 15,
+		sweep: true,
 		people: [
 			// iDNES, 30 July 2020, cropped to the face. Press photo, so it carries a photographer credit
 			// this deck does not show; if /defense is ever linked publicly, credit it or swap in one of
@@ -102,14 +119,14 @@ const COLUMNS = STOPS.reduce((n, s) => n + s.people.length, 0);
 const groupSpan = (stop: Stop) => ({ gridColumn: `span ${stop.people.length} / span ${stop.people.length}` });
 
 /**
- * The cap label, set through KaTeX rather than an italic span. The prose around it writes $k$, and
+ * The k label, set through KaTeX rather than an italic span. The prose around it writes $k$, and
  * a Latin Modern italic beside an Inter italic is the kind of mismatch a reader notices without
  * being able to name.
  */
-function KLabel({ k }: { k: number }) {
+function KLabel({ k, sweep }: { k: number; sweep?: boolean }) {
 	const html = useMemo(
-		() => katex.renderToString(`k \\le ${k}`, { throwOnError: false, output: "html" }),
-		[k],
+		() => katex.renderToString(`k ${sweep ? "\\le" : "="} ${k}`, { throwOnError: false, output: "html" }),
+		[k, sweep],
 	);
 	return (
 		<span
@@ -180,7 +197,7 @@ export function CountTimeline() {
 								{stop.gapBefore}
 							</span>
 						)}
-						<KLabel k={stop.k} />
+						<KLabel k={stop.k} sweep={stop.sweep} />
 						{/* 4px rounded data-end, square where it meets the baseline. */}
 						<div
 							className="shrink-0 rounded-t-[4px] bg-accent"
@@ -245,7 +262,7 @@ export function CountTimeline() {
 					<tr>
 						<th>Year</th>
 						<th>Author</th>
-						<th>Highest k</th>
+						<th>k settled</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -253,7 +270,7 @@ export function CountTimeline() {
 						<tr key={stop.years}>
 							<td>{stop.years}</td>
 							<td>{stop.people.map((p) => `${p.given} ${p.family}`).join(", ")}</td>
-							<td>{stop.k}</td>
+							<td>{stop.sweep ? `≤ ${stop.k}` : stop.k}</td>
 						</tr>
 					))}
 				</tbody>
