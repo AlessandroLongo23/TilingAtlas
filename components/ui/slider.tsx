@@ -16,6 +16,8 @@ interface SliderProps {
 	step?: number;
 	disabled?: boolean;
 	unit?: string;
+	/** Readout override, for values that aren't just a number and a unit (0 reading as "off", say). */
+	format?: (value: number) => ReactNode;
 }
 
 // Squared w/b design system: label + value readout above a RangeInput (2px square-ended track,
@@ -31,6 +33,7 @@ export function Slider({
 	step = 1,
 	disabled = false,
 	unit = "",
+	format,
 }: SliderProps) {
 	return (
 		<div className="grid w-full gap-2">
@@ -43,7 +46,7 @@ export function Slider({
 						{hint}
 					</div>
 					<span className="text-xs text-fg font-medium tabular-nums whitespace-nowrap">
-						{value} {unit}
+						{format ? format(value) : `${value} ${unit}`}
 					</span>
 				</div>
 			) : null}
