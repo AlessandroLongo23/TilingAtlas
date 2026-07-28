@@ -270,12 +270,20 @@ someone asks what "fit" means. -->
 
 ## Architecture one: failure
 
-Some groups have elongated lattices, which can make one of the vertices of the fundamental domain "fall" out of the patch:
+Some groups have elongated lattices, which can make a vertex of the fundamental domain "fall" out of
+the patch. This tiling is $cmm$ — the commonest group at $k = 4$, 50 of the 151. Symmetry does not
+construct a tiling, then; it constrains the period lattice, and it can be detected exactly once the
+tiling is already in hand.
 
-[TODO: add ]
+<slide-grid cols="2">
+<tiling-card tiling="t4003" title="t4003, a cmm tiling" periods="3"></tiling-card>
+<seed-card tiling="t4003" domain="yes" label="its seed, with the domain over it"></seed-card>
+</slide-grid>
 
-Symmetry does not construct a tiling, though it does
-constrain the period lattice, and it can be detected exactly once the tiling is already in hand.
+<!-- notes: The pair is the argument: the tiling on the left, the patch the search would actually have
+in hand on the right, with cmm's fundamental domain drawn over it. Fifty of the 151 k=4 tilings are
+cmm, so this is not an awkward corner — it is the single commonest case at that level. -->
+
 
 ---
 

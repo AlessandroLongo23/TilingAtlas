@@ -60,6 +60,9 @@ const ORBITS_ON = { orbits: true } as const;
 /** A `<seed-card>`'s: it arrives with the construction points showing. `p` still turns them off. */
 const POINTS_ON = { polygonPoints: true } as const;
 
+/** …and with `domain="yes"`, the fundamental domain over them as well. */
+const POINTS_AND_DOMAIN_ON = { polygonPoints: true, fundamentalDomain: true } as const;
+
 /** Width over height of the DTU mark's own bounding box in `dtured_rgb.pdf`: 468.25 x 683 pt. */
 const DTU_LOGO_RATIO = 468.25 / 683;
 
@@ -396,7 +399,17 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// mid-sentence says nothing about fitting anything — so it takes no drag, no wheel and no
 			// expand. The overlay keys still work: `s` puts the symmetry elements over it, which is the
 			// next thing the slide wants to say.
-			"seed-card": ({ tiling, label }: { tiling?: string; label?: string }) => {
+			"seed-card": ({
+				tiling,
+				label,
+				domain,
+			}: {
+				tiling?: string;
+				label?: string;
+				/** `domain="yes"` also arrives with the fundamental domain drawn (/play's `d`), for the
+				 *  slide whose argument is about where a domain's corners land relative to the patch. */
+				domain?: string;
+			}) => {
 				const cell = tiling ? cells[tiling] : undefined;
 				const source = tiling ? sources[tiling] : undefined;
 				const orbits = tiling && source ? orbitsFor(tiling, source) : null;
@@ -415,7 +428,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							title={label}
 							seed
 							interactive={false}
-							initialOverlays={POINTS_ON}
+							initialOverlays={String(domain) === "yes" ? POINTS_AND_DOMAIN_ON : POINTS_ON}
 							{...overlayData(tiling)}
 							{...SLIDE_CARD_PROPS}
 						/>
