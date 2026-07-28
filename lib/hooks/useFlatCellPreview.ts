@@ -7,7 +7,7 @@ import { buildOrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
 import { FlatCellRenderer } from "@/lib/render/flatTilingGL";
 import { parseDimTarget } from "@/lib/render/orbitHover";
 import { canvas2dPen } from "@/lib/render/overlayPen";
-import { drawFundamentalDomain, drawSymmetryElements } from "@/lib/render/symmetryOverlay";
+import { drawFundamentalDomain, drawSymmetryElements, fdSnapTranslateAt } from "@/lib/render/symmetryOverlay";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import {
@@ -151,6 +151,8 @@ export function useFlatCellPreview({
 	const basisRef = useRef<{ v1: { x: number; y: number }; v2: { x: number; y: number } } | null>(null);
 	// World point the view centres on: the patch's bbox centre in single mode, the origin otherwise.
 	const centreRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+	// The host size and overlay state the home framing was last computed for, so a change recomputes it.
+	const framingRef = useRef("");
 	const activeRef = useRef(false);
 	const dragRef = useRef<{ id: number; x: number; y: number } | null>(null);
 	const [failed, setFailed] = useState(false);
@@ -159,6 +161,40 @@ export function useFlatCellPreview({
 	// How much of the shorter side a single patch takes when fitted, leaving a margin of surround —
 	// a patch touching the card's edges reads as a crop of something larger.
 	const FIT_FRACTION = 0.86;
+
+	/**
+	 * What a single patch has to hold: its own tiles, and — when the fundamental-domain overlay is on —
+	 * the domain drawn over them. A domain whose corner sits outside the patch is precisely what that
+	 * overlay is there to show on a seed card, so framing the tiles alone would crop the one thing the
+	 * picture is for.
+	 *
+	 * The overlay snaps the domain to the lattice copy nearest the world point under the screen centre,
+	 * so where it lands depends on what the view centres on, which depends on this box. Two passes
+	 * settle it: the seed's own centre picks a copy, that copy gives a box, and the box's centre picks
+	 * the copy again. It converges immediately in practice, and a stale copy would only ever be one
+	 * lattice vector out.
+	 */
+	const singleHomeBox = () => {
+		const base = parseBaseCell(cellRef.current);
+		if (!base) return null;
+		const box = { minX: base.minX, maxX: base.maxX, minY: base.minY, maxY: base.maxY };
+		const sd = symmetryRef.current;
+		if (!overlayFlagsRef.current.fd || !sd) return box;
+		let centre = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
+		for (let pass = 0; pass < 2; pass++) {
+			const t = fdSnapTranslateAt(centre, sd.cell, sd.cellOrigin);
+			box.minX = base.minX; box.maxX = base.maxX;
+			box.minY = base.minY; box.maxY = base.maxY;
+			for (const p of sd.cellPolygon) {
+				box.minX = Math.min(box.minX, p.x + t.x);
+				box.maxX = Math.max(box.maxX, p.x + t.x);
+				box.minY = Math.min(box.minY, p.y + t.y);
+				box.maxY = Math.max(box.maxY, p.y + t.y);
+			}
+			centre = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
+		}
+		return box;
+	};
 
 	// The reset zoom: a caller-fixed px-per-edge if one was given, else the whole patch fitted (single
 	// mode), else `homePeriods` of the cell's lattice across the host. All three go through the shared
@@ -171,9 +207,9 @@ export function useFlatCellPreview({
 		const fixed = fixedZoomRef.current;
 		if (fixed != null) return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fixed));
 		if (singleRef.current) {
-			const base = parseBaseCell(cellRef.current);
-			const bw = base ? base.maxX - base.minX : 0;
-			const bh = base ? base.maxY - base.minY : 0;
+			const box = singleHomeBox();
+			const bw = box ? box.maxX - box.minX : 0;
+			const bh = box ? box.maxY - box.minY : 0;
 			if (bw > 0 && bh > 0) {
 				const fit = FIT_FRACTION * Math.min(w / bw, h / bh);
 				return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fit));
@@ -340,14 +376,39 @@ export function useFlatCellPreview({
 					v1: { x: mesh.v1[0], y: mesh.v1[1] },
 					v2: { x: mesh.v2[0], y: mesh.v2[1] },
 				};
-				const base = singleRef.current ? parseBaseCell(cellRef.current) : null;
-				centreRef.current = base
-					? { x: (base.minX + base.maxX) / 2, y: (base.minY + base.maxY) / 2 }
+				const box = singleRef.current ? singleHomeBox() : null;
+				centreRef.current = box
+					? { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 }
 					: { x: 0, y: 0 };
 				homeZoomRef.current = resolveHomeZoom(basisRef.current, w, h);
+				framingRef.current = `${w}x${h}:${singleRef.current && overlayFlagsRef.current.fd ? "fd" : ""}`;
 				controlsRef.current = makeCardControls(homeZoomRef.current);
 			}
 			const ctrl = controlsRef.current;
+
+			// The home framing is a function of the host's size and of whether the domain is drawn, and
+			// both change after the first frame: a card in a SlideGrid is laid out at a fallback size and
+			// then capped to the space the slide has left, and `d` can be pressed at any time. A patch
+			// fitted against the fallback overflows its card by whatever the cap took away. Interactive
+			// surfaces only refresh the value `resetView` will use — their current view is the reader's
+			// and is not ours to move — but an inert one has no view of its own to preserve, so it
+			// refits and recentres immediately.
+			const framing = `${w}x${h}:${singleRef.current && overlayFlagsRef.current.fd ? "fd" : ""}`;
+			if (framingRef.current !== framing) {
+				framingRef.current = framing;
+				if (basisRef.current) {
+					if (!interactiveRef.current) {
+						const box = singleRef.current ? singleHomeBox() : null;
+						if (box) centreRef.current = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
+					}
+					homeZoomRef.current = resolveHomeZoom(basisRef.current, w, h);
+					if (!interactiveRef.current) {
+						ctrl.zoom = homeZoomRef.current;
+						ctrl.targetZoom = homeZoomRef.current;
+					}
+				}
+			}
+
 			stepCardControls(ctrl);
 
 			// Toggling the `o` overlay swaps the caller's orbitData between the data and null, which the

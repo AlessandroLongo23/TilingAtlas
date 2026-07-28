@@ -51,10 +51,17 @@ function worldUnderCentre(view: OverlayView): Vec2 {
 // cell that can be the corner of the screen. Round-reduction in LATTICE coordinates picks the nearest
 // copy under any pan/rotation (same convention as canvas.tsx wrapOffset). Degenerate basis → no move.
 export function fdSnapTranslate(view: OverlayView, cell: [Vec2, Vec2], anchor: Vec2): Vec2 {
+	return fdSnapTranslateAt(worldUnderCentre(view), cell, anchor);
+}
+
+/** The same snap, given the world point directly. A surface that already knows what it centres on can
+ *  ask where the domain will land without first having to have a view — which is how a fitted single
+ *  patch sizes itself to hold the domain as well as the tiles (lib/hooks/useFlatCellPreview.ts). */
+export function fdSnapTranslateAt(world: Vec2, cell: [Vec2, Vec2], anchor: Vec2): Vec2 {
 	const [c1, c2] = cell;
 	const det = c1.x * c2.y - c1.y * c2.x;
 	if (Math.abs(det) < 1e-12) return { x: 0, y: 0 };
-	const w = worldUnderCentre(view);
+	const w = world;
 	const dx = w.x - anchor.x, dy = w.y - anchor.y;
 	const m = Math.round((dx * c2.y - dy * c2.x) / det);
 	const n = Math.round((-dx * c1.y + dy * c1.x) / det);
