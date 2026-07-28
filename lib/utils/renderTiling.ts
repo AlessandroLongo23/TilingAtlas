@@ -270,17 +270,24 @@ export function polygonsMedianEdge(polys: RawPolygon[]): number {
 	return edges[Math.floor(edges.length / 2)] || 1;
 }
 
+/** `outline` is a px width, or a boolean for the 1-px default / no stroke at all. Zero and `false`
+ *  both skip the per-tile stroke: at the zoom-outs the interactive /aperiodic patch views allow, an
+ *  outline on every tile swamps the fill and the pattern reads as grey. `outlineStyle` defaults to
+ *  the previews' 45% black; the live views pass /play's opaque stroke. */
 export function drawPolygons(
 	ctx: CanvasRenderingContext2D,
 	polygons: RawPolygon[],
 	scale: number,
 	hueOffsetDeg = 0,
+	outline: boolean | number = true,
+	outlineStyle = "rgba(0, 0, 0, 0.45)",
 ) {
+	const outlinePx = outline === true ? 1 : outline === false ? 0 : outline;
+	ctx.strokeStyle = outlineStyle;
+	ctx.lineWidth = outlinePx / scale;
 	for (const poly of polygons) {
 		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
 		ctx.fillStyle = hsbToHsla((hue + hueOffsetDeg) % 360, 40, 100, TILE_FILL_ALPHA);
-		ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
-		ctx.lineWidth = 1 / scale;
 		ctx.beginPath();
 		ctx.moveTo(poly.vertices[0].x, poly.vertices[0].y);
 		for (let i = 1; i < poly.vertices.length; i++) {
@@ -288,7 +295,7 @@ export function drawPolygons(
 		}
 		ctx.closePath();
 		ctx.fill();
-		ctx.stroke();
+		if (outlinePx > 0) ctx.stroke();
 	}
 }
 
