@@ -246,13 +246,25 @@ In the euclidean 2D space, every tiling or pattern belongs to one of the 17 wall
 
 ## Architecture one: symmetry-first
 
+<slide-cols>
+<div>
+
 The first method was based on symmetry:
 - generate a seed patch
 - for each tuple of construction points:
   - try to fit the fundamental domain of each of the 17 wallpaper groups
   - check for validity and reconstruct the tiling from the symmetries
 
-<!-- notes: Ninety seconds. It never got built, so do not spend more than that. -->
+</div>
+<div>
+<seed-card tiling="t4001" label="a k = 4 seed, with its construction points"></seed-card>
+</div>
+</slide-cols>
+
+<!-- notes: Ninety seconds. It never got built, so do not spend more than that. The dots are the
+construction points: red centroids, green edge midpoints, blue vertices — the candidates a
+fundamental domain's corners were matched against. `s` puts the symmetry elements over the seed if
+someone asks what "fit" means. -->
 
 ---
 

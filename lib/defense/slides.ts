@@ -98,7 +98,7 @@ export function referencedTilingIds(markdown: string): string[] {
 	const ids = new Set<string>();
 	// Every tag that names a tiling has to appear here, or the page ships the deck without that
 	// tiling's cell and the slide renders "Unknown tiling id".
-	const re = /<(?:tiling-card|orbit-card)[^>]*\btiling=["']([^"']+)["']/gi;
+	const re = /<(?:tiling-card|orbit-card|seed-card)[^>]*\btiling=["']([^"']+)["']/gi;
 	let m: RegExpExecArray | null;
 	while ((m = re.exec(markdown)) !== null) ids.add(m[1]);
 	return [...ids];

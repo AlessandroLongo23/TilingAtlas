@@ -57,6 +57,9 @@ const SLIDE_CARD_PROPS = {
 /** An `<orbit-card>`'s one difference from a plain card: it arrives with the dots showing. */
 const ORBITS_ON = { orbits: true } as const;
 
+/** A `<seed-card>`'s: it arrives with the construction points showing. `p` still turns them off. */
+const POINTS_ON = { polygonPoints: true } as const;
+
 /** Width over height of the DTU mark's own bounding box in `dtured_rgb.pdf`: 468.25 x 683 pt. */
 const DTU_LOGO_RATIO = 468.25 / 683;
 
@@ -384,6 +387,46 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 					</figure>
 				);
 			},
+			// <seed-card tiling="t4001" label="…"> — the patch the symmetry-first method starts from: one
+			// vertex figure per orbit, cut out of the tiling and drawn once, with a dot on every centroid,
+			// edge halfway and vertex (/play's `p`). Those dots are the construction points the seventeen
+			// fundamental domains were fitted against, which is the whole content of that slide.
+			//
+			// Inert on purpose. The framing is the argument here — a seed knocked half out of the card
+			// mid-sentence says nothing about fitting anything — so it takes no drag, no wheel and no
+			// expand. The overlay keys still work: `s` puts the symmetry elements over it, which is the
+			// next thing the slide wants to say.
+			"seed-card": ({ tiling, label }: { tiling?: string; label?: string }) => {
+				const cell = tiling ? cells[tiling] : undefined;
+				const source = tiling ? sources[tiling] : undefined;
+				const orbits = tiling && source ? orbitsFor(tiling, source) : null;
+				if (!cell || !orbits || !tiling) {
+					return (
+						<div className="not-prose flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+							No exact cell for {tiling ?? "(none)"}, so its seed cannot be cut.
+						</div>
+					);
+				}
+				return (
+					<figure className="not-prose m-0">
+						<InteractiveTilingPreviewCard
+							cell={cell}
+							tilingId={tiling}
+							title={label}
+							seed
+							interactive={false}
+							initialOverlays={POINTS_ON}
+							{...overlayData(tiling)}
+							{...SLIDE_CARD_PROPS}
+						/>
+						{label && (
+							<figcaption className="mt-2 text-center text-[clamp(0.7rem,1vh+0.3vw,1rem)] text-fg-muted">
+								{label}
+							</figcaption>
+						)}
+					</figure>
+				);
+			},
 			// <vc-card word="3.4.6.4"> — one vertex configuration drawn on its own, named underneath.
 			// `tiles="no"` marks one that closes 360 degrees and still appears in no tiling.
 			"vc-card": ({ word, tiles }: { word?: string; tiles?: string }) =>
@@ -531,7 +574,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 								{current.number} / {slides.length}
 							</span>
 							<span className="hidden sm:inline">
-								&larr; &rarr; move &middot; Esc overview &middot; n notes &middot; o/s/d overlays
+								&larr; &rarr; move &middot; Esc overview &middot; n notes &middot; o/s/d/p overlays
 							</span>
 							<span
 								className={cn(
