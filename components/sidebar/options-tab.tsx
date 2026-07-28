@@ -136,6 +136,11 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// Flat-canvas overlays: only meaningful when the p5 layer is actually the thing painting.
 	const isFlat =
 		!isHyperbolic && !isHyperbolicEdges && !isHyperbolicColors && !isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors;
+	// The conformal lens is a WIDER set than the flat overlays: it draws from the shared periodic-cell IR
+	// (lib/render/periodicCell.ts), so it covers the classes with no polygon cell — colorings, edge
+	// patterns, hollow — as well as the plain tilings. It needs only a period lattice, which rules out
+	// exactly the hyperbolic and spherical shelves.
+	const lensApplies = !isHyperbolic && !isHyperbolicEdges && !isHyperbolicColors && !isSpherical && !isSphericalFreedraw && !isSphColors;
 
 	// One picker per tile color — shared by every colored view (Euclidean grid, hyperbolic disk, spherical
 	// solid): a hue ring plus the two swatches no hue reaches (cream + its near-black complement).
@@ -885,7 +890,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 						</div>
 					) : null}
-					{isFlat ? (
+					{lensApplies ? (
 						<Checkbox
 							id="inversive"
 							label="Inversive view"
@@ -894,7 +899,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ inversive: v })}
 						/>
 					) : null}
-					{isFlat ? (
+					{lensApplies ? (
 						<Reveal show={cfg.inversive}>
 						<div className="space-y-2 pl-7">
 							<div className="flex gap-2">

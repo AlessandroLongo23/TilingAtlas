@@ -7334,6 +7334,16 @@ arrived as `freedraw`, freedraw as `colors`, and the colorings as `devPatches`. 
 colorings shelf never reached the atlas (Colorings read 0 on /play and /library — 226,946 tilings), and
 no hyperbolic entry ever got its forced edge length ℓ merged, so every ℓ readout was blank. Fixed.
 
+**The control, which I forgot.** Shipped the above and AL immediately reported he still could not turn
+the lens ON for a coloring or an edge pattern — correctly, because I had fixed the renderer and the store
+without ever checking the UI could reach them. Two gates: the Options tab rendered the "Inversive view"
+checkbox under `isFlat`, which excludes exactly the classes with no polygon cell, and the X shortcut sat
+behind a blanket `!!selected?.freedraw || !!selected?.colors` block. `isFlat` is the wrong predicate for
+this control — the lens needs a period lattice, not a p5 layer — so the checkbox now gates on a separate
+`lensApplies` (everything but hyperbolic and spherical) and X is exempted from the blanket block. Worth
+remembering: "the renderer draws it" and "the user can switch it on" are two claims, and I verified only
+the first. Driving the real checkbox with Playwright, not just the URL parameter, is what closes that gap.
+
 **Not done.** The lens stays Euclidean-only, per AL's scoping — the aperiodic shelf has no period lattice
 to reduce into, and the spiral mode could not follow it there in any case (K = (a·v1+b·v2)/(2πi) is built
 from the lattice, and the branch cut closes only because θ+2π is a lattice translation). The overlays

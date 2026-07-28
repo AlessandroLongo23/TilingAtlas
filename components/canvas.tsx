@@ -79,6 +79,13 @@ interface CanvasProps {
 	/** Geometry-aware spec for the info card (built in the play client). Null while loading. */
 	spec?: TilingSpec | null;
 	showTilingRuleInput?: boolean;
+	/**
+	 * Does `translationalCell` describe real tile polygons? False for the classes that carry a throwaway
+	 * cell (colorings, edge patterns, hollow) — under the lens those now render from their own periodic
+	 * cell, and hit-testing the throwaway would centre the click on geometry that isn't on screen. When
+	 * false, click-to-centre uses the world point under the cursor instead of a tile centroid.
+	 */
+	cellHasTiles?: boolean;
 }
 
 // The zoom bounds, wheel-rotation detents, and angle/wheel normalization helpers moved to
@@ -212,6 +219,7 @@ export function Canvas({
 	orbitData = null,
 	spec = null,
 	showTilingRuleInput = true,
+	cellHasTiles = true,
 }: CanvasProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	// The element every renderer here fills. The p5 canvas measures IT each frame instead of taking the
@@ -278,10 +286,10 @@ export function Canvas({
 		extent: { aMin: 0, aMax: 0, bMin: 0, bMax: 0 },
 	});
 
-	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData });
+	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles });
 	useEffect(() => {
-		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData };
-	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData]);
+		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles };
+	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles]);
 
 	// Clear the Command-scrub "move" cursor when Command is released (or the window blurs) without another
 	// mouse move to clear it in mouseMoved. Cosmetic: the scrub itself is driven entirely by mouseMoved.
@@ -980,7 +988,7 @@ export function Canvas({
 					// The inversive view skips ensureTiling (its geometry lives in InversiveCanvas' own data textures),
 					// so tilingRef/activeCellRef can be stale after a selection or slider change made while inversive.
 					// Resolve the current cell fresh from the props and build a small local patch to hit-test against.
-					const { translationalCell: staticCell, paramCell: pc } = propsRef.current;
+					const { translationalCell: staticCell, paramCell: pc, cellHasTiles } = propsRef.current;
 					const cell = pc
 						? evaluateParamCell(pc, renderAlphas(pc))
 						: staticCell;
@@ -998,6 +1006,15 @@ export function Canvas({
 						kinv: { x: kinvMag * Math.cos(-tau), y: kinvMag * Math.sin(-tau) },
 					};
 					const w0 = inversiveScreenToWorld(mx, my, lens, ctrl.targetOffset, zoom, rot);
+					// Colorings, edge patterns and hollow tilings carry a THROWAWAY translational cell — under
+					// the lens they render from their own periodic cell instead, so hit-testing the throwaway
+					// would centre on geometry that is not on screen. Send the clicked world point to the centre
+					// of the inversion directly, which is what the tile-centroid solve below reduces to anyway.
+					if (cellHasTiles === false) {
+						const sp0 = worldToScreen(w0.x, w0.y, { x: 0, y: 0 }, zoom, rot);
+						ctrl.targetOffset.set(new Vector(-sp0.x, -sp0.y));
+						return;
+					}
 					// Find the TILE the click lands in — the one containing the world point under the cursor — and take
 					// its centroid. NO vertex snapping here (radius 0): the user is selecting a whole tile to send to
 					// infinity, and snapping to a vertex, which several tiles share, makes "which tile surrounds the

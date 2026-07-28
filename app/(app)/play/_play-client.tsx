@@ -20,7 +20,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import { cn } from "@/lib/utils/cn";
-import type { TranslationalCellData as InversiveCellData } from "@/lib/utils/renderTiling";
+import { useInversiveCell } from "@/lib/hooks/useInversiveCell";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
 import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import { useVertexOrbits } from "@/lib/hooks/useVertexOrbits";
@@ -615,7 +615,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				colors: true,
 				hyperbolic: false,
 				spherical: false,
-				inversive: false,
+				// `inversive` is NOT cleared any more: a coloring has a periodic cell of its own
+				// (lib/render/periodic/colorings.ts), so the lens renders it like any other Euclidean class.
 				circlePacking: false,
 				isTilingRegularOnly: false,
 				isIslamic: false,
@@ -638,7 +639,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				hollow: true,
 				hyperbolic: false,
 				spherical: false,
-				inversive: false,
+				// `inversive` is NOT cleared any more: hollow faces go through the lens as nonzero-winding,
+				// translucent prims (lib/render/periodic/hollow.ts), so the overlaps still accumulate.
 				circlePacking: false,
 				isTilingRegularOnly: false,
 				isIslamic: false,
@@ -657,7 +659,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				freedraw: true,
 				hyperbolic: false,
 				spherical: false,
-				inversive: false,
+				// `inversive` is NOT cleared any more: an edge pattern has a periodic cell of its own
+				// (lib/render/periodic/edges.ts) — cell fills by face, plus scaffold and drawn strokes.
 				circlePacking: false,
 				isTilingRegularOnly: false,
 				isIslamic: false,
@@ -848,11 +851,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				// vertex orbits also need the tiling's exact cell (the sidebar disables the checkbox without
 				// one). Ignore each key where the sidebar hides/disables the control.
 				const isHyperbolic = !!selected?.developed;
-				// A freedraw pattern has no tiles, so EVERY toggle in this table is a dead control there (the
-				// Options tab hides them all and shows the freedraw fill/grid/orbit trio instead).
+				// A freedraw pattern or coloring has no tiles, so every TILE-derived toggle is a dead control
+				// there (the Options tab hides them and shows that class's own trio instead). The lens is the
+				// exception: it draws those classes from their own periodic cell, so X stays live — matching
+				// the checkbox, which is gated on `lensApplies`, not `isFlat`.
 				const blocked =
-					!!selected?.freedraw ||
-					!!selected?.colors ||
+					((!!selected?.freedraw || !!selected?.colors) && field !== "inversive") ||
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
 					(field === "showVertexOrbits" && !selected?.exactSource) ||
@@ -886,6 +890,18 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// signature to this base id), so nothing alpha-dependent flows through this render.
 	const renderCell = (selected?.renderCell ?? null) as TranslationalCellData | null;
 	const renderCellId = selected?.canonicalKey ?? null;
+	// What the conformal lens draws: the selection reduced to the shared periodic-cell IR. One hook covers
+	// every Euclidean class, so the lens is no longer limited to the plain polygon-cell tilings.
+	const { cell: inversiveCell, cellId: inversiveCellId } = useInversiveCell(selected ?? null, renderCell);
+	// The lens is Euclidean-only: the hyperbolic and spherical shelves have no period lattice to reduce
+	// into, and each owns its own renderer below.
+	const lensActive =
+		inversive && !!inversiveCell &&
+		!isHyperbolic && !isHyperbolicEdges && !isHyperbolicColors &&
+		!isSpherical && !isSphericalFreedraw && !isSphColors;
+	// Colorings, edge patterns and hollow carry a throwaway translational cell; tell the input layer so
+	// click-to-centre doesn't hit-test geometry that isn't on screen.
+	const cellHasTiles = !(selected?.colors || selected?.freedraw || selected?.hollow);
 
 	return (
 		<div className="flex-1 flex min-h-0 overflow-hidden">
@@ -921,12 +937,18 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					orbitData={orbitData}
 					spec={tilingSpec}
 					showTilingRuleInput={false}
+					cellHasTiles={cellHasTiles}
 				/>
 				{/* Exactly one WebGL overlay at a time: the three.js sphere for a spherical tiling (it owns its
 				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
-				{selected?.hollow ? (
+				{lensActive ? (
+					// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
+					// to sit at the BOTTOM of this chain, which is why every decoration below it silently lost the
+					// lens; each Euclidean class now has a periodic-cell representation, so the lens goes first.
+					<InversiveCanvas cell={inversiveCell} cellId={inversiveCellId} paramCell={paramCell ?? null} />
+				) : selected?.hollow ? (
 					// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
 					// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
 					// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
@@ -974,12 +996,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
 					// regular-faced tilings the (2,p,q) fold shader cannot.
 					<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
-				) : inversive ? (
-					<InversiveCanvas
-						translationalCell={renderCell as unknown as InversiveCellData | null}
-						translationalCellId={renderCellId}
-						paramCell={paramCell ?? null}
-					/>
 				) : null}
 				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
 				{/* Fullscreen toggle: collapses the header + sidebar. Stays visible while immersive so it can
