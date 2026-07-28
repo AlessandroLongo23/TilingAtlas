@@ -2,16 +2,26 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
-// The three overlay toggles a preview card can carry, on the keys /play already uses for them:
-// o = vertex orbits, s = symmetry elements, d = fundamental domain. One table, so the deck, the
-// article pages and /play can never disagree about which letter does what.
-export const OVERLAY_KEYS = { o: "orbits", s: "symmetry", d: "fundamentalDomain" } as const;
+// The four overlay toggles a preview card can carry, on the keys /play already uses for them:
+// o = vertex orbits, s = symmetry elements, d = fundamental domain, p = polygon points. One table, so
+// the deck, the article pages and /play can never disagree about which letter does what.
+export const OVERLAY_KEYS = {
+	o: "orbits",
+	s: "symmetry",
+	d: "fundamentalDomain",
+	p: "polygonPoints",
+} as const;
 
 export type OverlayName = (typeof OVERLAY_KEYS)[keyof typeof OVERLAY_KEYS];
 
 export type OverlayState = Record<OverlayName, boolean>;
 
-export const NO_OVERLAYS: OverlayState = { orbits: false, symmetry: false, fundamentalDomain: false };
+export const NO_OVERLAYS: OverlayState = {
+	orbits: false,
+	symmetry: false,
+	fundamentalDomain: false,
+	polygonPoints: false,
+};
 
 /**
  * Page-wide overlay state for a group of preview cards, with per-card exceptions.
@@ -115,7 +125,7 @@ export function PreviewOverlayScope({
 
 /**
  * A card's view of the scope: the overlays it should currently show, and the key handler that claims
- * o/s/d for itself while it is focused.
+ * o/s/d/p for itself while it is focused.
  *
  * `stopPropagation` is what makes the focused-vs-page split work: React dispatches this handler at the
  * root container, and stopping the native event there keeps it from ever reaching the provider's
@@ -135,15 +145,21 @@ export function useCardOverlays(
 
 	// Precedence, narrowest first: this card's exception, then whatever a key set for the whole scope,
 	// then the card's own default, then off.
-	const base = initial?.orbits === true || initial?.symmetry === true || initial?.fundamentalDomain === true
-		? { ...NO_OVERLAYS, ...initial }
-		: NO_OVERLAYS;
+	//
+	// The defaults are read generically rather than flag by flag. An earlier version tested the three
+	// names it knew by hand, which silently ignored the fourth the day one was added — a `<seed-card>`
+	// asking for its points arrived with them off and no error anywhere.
+	const initialKey = Object.keys(initial ?? {})
+		.filter((k) => initial?.[k as OverlayName] === true)
+		.sort()
+		.join(",");
+	const base = initialKey ? { ...NO_OVERLAYS, ...initial } : NO_OVERLAYS;
 	const overlays = useMemo<OverlayState>(
 		() => ({ ...base, ...(scope ? scope.shared : {}), ...(scope ? scope.overrides[cardId] : solo) }),
 		// `base` is derived from `initial`, which callers pass as a literal; depending on the object
-		// identity would rebuild this every render for no benefit.
+		// identity would rebuild this every render for no benefit. `initialKey` is its value.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[scope, cardId, solo, base.orbits, base.symmetry, base.fundamentalDomain],
+		[scope, cardId, solo, initialKey],
 	);
 	const overlaysRef = useRef(overlays);
 	overlaysRef.current = overlays;
