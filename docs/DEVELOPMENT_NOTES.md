@@ -7441,3 +7441,37 @@ would take the browser's menu away and give nothing back, since there is no rese
 deliberately still tracks — a highlight following the pointer is a readout, not an input. Verified with
 Playwright: drag, wheel, Shift+wheel and right-click leave the canvas pixel-identical, while an ordinary
 `<tiling-card>` two slides earlier still pans and still resets.
+
+## 2026-07-28 (2) — The cmm slide, and what "fit the patch" has to mean when a domain is on it
+
+AL asked for t4003 and its patch on the failure slide, because t4003 is cmm and cmm is one of the
+groups that break the symmetry-first method. Checked rather than taken on trust, through the app's own
+exact analysis: t4003 is indeed cmm, k=4, 13 cell polygons and 9 in its seed. The tally is the better
+fact, though — across the 151 k=4 tilings the groups run cmm 50, p6m 34, pmm 29, pmg 11, then a tail.
+The group that breaks the method is the single commonest case at that level, which is a stronger claim
+than "one awkward group" and is now the sentence on the slide.
+
+### Fitting a patch that has a domain drawn over it
+
+I put the fundamental domain on the seed card (`domain="yes"`), since "a vertex of the domain falls out
+of the patch" needs the domain in the picture. First attempt cropped it: the fit framed the tiles, and
+cmm's cell for this tiling is a very elongated rhombus that ran far off the card — including the corner
+the slide is about. A picture that crops one of the two things whose relationship it is describing is
+worse than no picture.
+
+So a single patch now fits and centres on the union of its own bbox and the drawn cell. The wrinkle is
+that the overlay snaps the domain to the lattice copy nearest the world point under the SCREEN CENTRE,
+so where it lands depends on what the view centres on, which is what the box is being computed to
+decide. Two passes settle it — the seed's centre picks a copy, that copy gives a box, the box's centre
+picks the copy again — and `fdSnapTranslate` gained a sibling taking the world point directly
+(`fdSnapTranslateAt`) so the hook can ask without first having a view. Verified: the elongated cell is
+now whole in the card, with the yellow domain's top vertex plainly outside the patch.
+
+### The bug the first screenshot caught
+
+The fitted zoom was computed once, on the frame the controls were built, and never again. A card inside
+`SlideGrid` is laid out at a fallback size and then capped to the space the slide has left, so the patch
+was sized against the fallback and overflowed by whatever the cap took away. The home framing is now
+keyed on `${w}x${h}:${fd}` and recomputed when that changes; an inert surface follows immediately (it
+has no view of its own to preserve), while an interactive one only refreshes the value `resetView` will
+use. Worth remembering for any future fitted view: the host's first size is not its size.

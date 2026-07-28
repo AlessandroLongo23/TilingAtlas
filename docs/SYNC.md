@@ -1666,3 +1666,10 @@ The symmetry-first slide shows a k=4 seed (t4001): one vertex figure per orbit, 
 already — `FlatCellRenderer` just never linked the program. Plus `single` (one copy, no pan wrap) and
 `interactive={false}`; `anchorNodes` stays dead. Spec:
 `docs/superpowers/specs/2026-07-28-seed-card-design.md`. Detail: NOTES §"The seed card". — CC
+
+### 2026-07-28 — CC — the cmm failure slide, and a seed card that frames its domain
+`/defense` "Architecture one: failure" now pairs t4003 with its seed. Verified rather than asserted:
+t4003 is `cmm`, and cmm is the COMMONEST group at k=4 (50 of 151, then p6m 34, pmm 29) — so the group
+that breaks the method is the typical case, not a corner. `<seed-card domain="yes">` draws the domain
+over the patch, and a single fitted patch now sizes and centres on patch ∪ domain, or the one thing
+the picture is for (a domain vertex outside the patch) lands off-card. — CC
