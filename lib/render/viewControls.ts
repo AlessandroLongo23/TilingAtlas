@@ -57,16 +57,26 @@ export const wheelDeltaPx = (e: { deltaY: number; deltaMode: number }) =>
 // the mouse stays put on screen. `mouse` is in centred CSS px (origin at the canvas centre, y down)
 // — the same frame as the offset. `deltaPx` must be a NORMALIZED scroll distance (wheelDeltaPx),
 // not a raw deltaY, or line-mode and pixel-mode devices zoom at wildly different rates.
+// `bounds` overrides the shared [ZOOM_MIN, ZOOM_MAX] clamp. The atlas' periodic views all measure
+// world units in tile edges, so one absolute px-per-unit window fits them all; the aperiodic patches
+// do not (a Sub Rosa patch at depth 3 spans hundreds of edge lengths, the hat's window eighteen), so
+// those views pass a window derived from their own fitted home zoom. Omit it and nothing changes.
+//
+// Rotation needs no special handling here: the flat transform applies the view angle to the world
+// point and the offset in the same screen frame (see flatTilingGL's vertex shader), so holding the
+// point under the cursor fixed is the same computation at any angle.
 export function zoomAtPoint(
 	mouse: { x: number; y: number },
 	targetOffset: { x: number; y: number },
 	targetZoom: number,
 	deltaPx: number,
+	bounds?: { min: number; max: number },
 ): { zoom: number; offset: { x: number; y: number } } {
 	const worldX = (mouse.x - targetOffset.x) / targetZoom;
 	const worldY = (mouse.y - targetOffset.y) / targetZoom;
 	const scale = Math.pow(ZOOM_CARD_FACTOR, -deltaPx / ZOOM_CARD_PX_PER_NOTCH);
-	const z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZoom * scale));
+	const lo = bounds?.min ?? ZOOM_MIN, hi = bounds?.max ?? ZOOM_MAX;
+	const z = Math.max(lo, Math.min(hi, targetZoom * scale));
 	return {
 		zoom: z,
 		offset: {
@@ -178,8 +188,10 @@ export function stepCardControls(c: CardControls, pivotOffsetOnRotate = true): b
 }
 
 // Snap a card back to its home view (right-click, as in /play — but to the card's own fitted zoom).
-export function resetCardControls(c: CardControls, zoom: number): void {
-	c.targetZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom));
+// `bounds` as in zoomAtPoint: the aperiodic views' home zooms sit far outside the shared window, and
+// clamping them to it would reset those views to a wildly wrong scale.
+export function resetCardControls(c: CardControls, zoom: number, bounds?: { min: number; max: number }): void {
+	c.targetZoom = Math.max(bounds?.min ?? ZOOM_MIN, Math.min(bounds?.max ?? ZOOM_MAX, zoom));
 	c.targetOffset.x = 0;
 	c.targetOffset.y = 0;
 	c.targetRotation = 0;
