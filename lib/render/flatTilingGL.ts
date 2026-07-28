@@ -152,6 +152,11 @@ void main() { frag = vec4(mix(uDimTarget, uStroke, 1.0 - 0.7 * uStrokeDim), 1.0)
 // radius; the fragment shader carves an anti-aliased disk with a dark rim out of it. Instanced by the
 // same lattice grid as the fill, so every replicated cell shows its dots. aCorner is the unit-quad corner
 // in [-1,1]; the world point maps like the fill, then the corner pushes by uRadiusPx in screen space.
+
+/** Disk radius in CSS px, shared by /play's inline pipeline and FlatCellRenderer so a preview card's
+ *  dots are the same size as the ones on /play. p5 drew a 5px-diameter dot (5/zoom world units). */
+export const POINT_DOT_RADIUS_PX = 2.5;
+
 export const POINTS_VERT = `#version 300 es
 in vec2 aPos;
 in vec2 aCorner;   // unit-quad corner in [-1,1]
@@ -303,6 +308,17 @@ export interface FlatDrawParams {
 	 *  has to belong to the axes and rotation centres drawn on top, which is why /play's p5 view
 	 *  swaps in drawTilingPlain there. Dimming the shader fill is this view's equivalent. */
 	dimFill?: boolean;
+	/** /play's `p`: a disk on every centroid, edge halfway and vertex of the mesh. */
+	showPoints?: boolean;
+	/**
+	 * Draw ONE copy of the mesh instead of a lattice of it — for a cell whose polygons are a finite
+	 * patch rather than a repeat (a seed; see lib/render/seedPatch.ts).
+	 *
+	 * It also turns the pan wrap off. The wrap folds the offset back by whole lattice vectors so a
+	 * fixed instance grid always covers the viewport, which is invisible while the copies are
+	 * indistinguishable and is a teleport as soon as there is only one.
+	 */
+	single?: boolean;
 }
 
 // Retained-mode instanced renderer over one CellMesh: upload the cell once, then every frame is two
@@ -336,6 +352,14 @@ export class FlatCellRenderer {
 	private orbitA: Record<string, number> = {};
 	private orbitMesh: OrbitDotMesh | null = null;
 	private orbitScales: number[] = [];
+	// Polygon points: the fourth program, from the same shaders and mesh fields /play's inline pipeline
+	// uses (euclidean-canvas.tsx). Uploaded with the mesh, drawn only when the caller asks.
+	private pointsProg: WebGLProgram;
+	private pointsPosBuf: WebGLBuffer;
+	private pointsCornerBuf: WebGLBuffer;
+	private pointsColorBuf: WebGLBuffer;
+	private pointsU: Record<string, WebGLUniformLocation | null> = {};
+	private pointsA: Record<string, number> = {};
 	// TEMPORARY (stroke-invisible investigation): what the last draw() actually issued, so the theory
 	// card's ?gldebug overlay can report whether the stroke pass ran at all. Remove with that overlay.
 	lastDraw: { fillVerts: number; strokeVerts: number; instances: number; strokePx: number } | null = null;
@@ -346,10 +370,13 @@ export class FlatCellRenderer {
 		const fillProg = linkProgram(gl, FILL_VERT, FILL_FRAG);
 		const strokeProg = linkProgram(gl, STROKE_VERT, STROKE_FRAG);
 		const orbitProg = linkProgram(gl, ORBIT_VERT, ORBIT_FRAG);
-		if (!fillProg || !strokeProg || !orbitProg) throw new Error("flat renderer: shader compile/link failed");
+		const pointsProg = linkProgram(gl, POINTS_VERT, POINTS_FRAG);
+		if (!fillProg || !strokeProg || !orbitProg || !pointsProg)
+			throw new Error("flat renderer: shader compile/link failed");
 		this.fillProg = fillProg;
 		this.strokeProg = strokeProg;
 		this.orbitProg = orbitProg;
+		this.pointsProg = pointsProg;
 
 		// uWavePhase/uWaveP are set explicitly (to "wave off") rather than left at their default-zero,
 		// and aCentroid is bound even though the wave is off here: both shaders declare aCentroid as an
@@ -375,7 +402,16 @@ export class FlatCellRenderer {
 		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
 			this.orbitA[name] = gl.getAttribLocation(orbitProg, name);
 		}
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uRadiusPx"]) {
+			this.pointsU[name] = gl.getUniformLocation(pointsProg, name);
+		}
+		for (const name of ["aPos", "aCorner", "aColor", "aInst"]) {
+			this.pointsA[name] = gl.getAttribLocation(pointsProg, name);
+		}
 
+		this.pointsPosBuf = gl.createBuffer();
+		this.pointsCornerBuf = gl.createBuffer();
+		this.pointsColorBuf = gl.createBuffer();
 		this.orbitPosBuf = gl.createBuffer();
 		this.orbitCornerBuf = gl.createBuffer();
 		this.orbitOrbitBuf = gl.createBuffer();
@@ -414,6 +450,12 @@ export class FlatCellRenderer {
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeNorm, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.strokeSideBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeSide, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsPosBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointPos, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsCornerBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointCorner, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsColorBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointColor, gl.STATIC_DRAW);
 		this.mesh = mesh;
 		this.inst = { Ri: -1, Rj: -1, count: 0 }; // force an instance rebuild for the new basis
 	}
@@ -443,8 +485,11 @@ export class FlatCellRenderer {
 		const v1 = new Vector(mesh.v1[0], mesh.v1[1]);
 		const v2 = new Vector(mesh.v2[0], mesh.v2[1]);
 
-		// Instance grid: (i,j) over the visible lattice range. Rebuild only when the radius changes.
-		const { Ri, Rj } = computeFillRadii(v1, v2, mesh.det, p.zoom, p.width, p.height, rot, mesh.extent);
+		// Instance grid: (i,j) over the visible lattice range, or the single copy (0,0) when the mesh is a
+		// finite patch. Rebuild only when the radius changes.
+		const fitted = computeFillRadii(v1, v2, mesh.det, p.zoom, p.width, p.height, rot, mesh.extent);
+		const Ri = p.single ? 0 : fitted.Ri;
+		const Rj = p.single ? 0 : fitted.Rj;
 		if (Ri !== this.inst.Ri || Rj !== this.inst.Rj) {
 			const inst: number[] = [];
 			for (let i = -Ri; i <= Ri; i++) for (let j = -Rj; j <= Rj; j++) inst.push(i, j);
@@ -454,7 +499,11 @@ export class FlatCellRenderer {
 		}
 
 		// Wrapped pan keeps the offset bounded so the fixed instance grid always covers the viewport.
-		const { draw } = wrapOffset(new Vector(p.offset.x, p.offset.y), v1, v2, mesh.det, p.zoom, rot);
+		// A single copy has nothing to wrap onto: folding its offset by a lattice vector would jump the
+		// patch off-centre instead of leaving the picture unchanged.
+		const draw = p.single
+			? new Vector(p.offset.x, p.offset.y)
+			: wrapOffset(new Vector(p.offset.x, p.offset.y), v1, v2, mesh.det, p.zoom, rot).draw;
 
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
@@ -555,6 +604,40 @@ export class FlatCellRenderer {
 			this.lastDraw = { fillVerts: p.showFill ? mesh.fillVertexCount : 0, strokeVerts: 0, instances: this.inst.count, strokePx: p.lineWidth };
 		}
 
+		// Polygon points (/play's `p`): a disk on every centroid, halfway and vertex, over the tiles and
+		// under the orbit dots — the order euclidean-canvas.tsx draws them in. Same shaders, same mesh
+		// fields, same radius, so the card and /play paint the same dots.
+		if (p.showPoints && mesh.pointVertexCount > 0) {
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			gl.useProgram(this.pointsProg);
+			const A = this.pointsA, U = this.pointsU;
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsPosBuf);
+			gl.enableVertexAttribArray(A.aPos);
+			gl.vertexAttribPointer(A.aPos, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aPos, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsCornerBuf);
+			gl.enableVertexAttribArray(A.aCorner);
+			gl.vertexAttribPointer(A.aCorner, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aCorner, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsColorBuf);
+			gl.enableVertexAttribArray(A.aColor);
+			gl.vertexAttribPointer(A.aColor, 3, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aColor, 0);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.instBuf);
+			gl.enableVertexAttribArray(A.aInst);
+			gl.vertexAttribPointer(A.aInst, 2, gl.FLOAT, false, 0, 0);
+			gl.vertexAttribDivisor(A.aInst, 1);
+			gl.uniform2f(U.uOffset, draw.x, draw.y);
+			gl.uniform1f(U.uZoom, p.zoom);
+			gl.uniform1f(U.uRot, rot);
+			gl.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
+			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
+			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
+			gl.uniform1f(U.uRadiusPx, POINT_DOT_RADIUS_PX);
+			gl.drawArraysInstanced(gl.TRIANGLES, 0, mesh.pointVertexCount, this.inst.count);
+		}
+
 		// Vertex-orbit dots, over the dimmed tiles. The hit-test and the easing are the shared ones in
 		// lib/render/orbitHover.ts, so a card's hover behaves the same as /play's down to the frame.
 		if (orbitMode && orbitMesh) {
@@ -604,9 +687,13 @@ export class FlatCellRenderer {
 		gl.deleteProgram(this.fillProg);
 		gl.deleteProgram(this.strokeProg);
 		gl.deleteProgram(this.orbitProg);
+		gl.deleteProgram(this.pointsProg);
 		gl.deleteBuffer(this.orbitPosBuf);
 		gl.deleteBuffer(this.orbitCornerBuf);
 		gl.deleteBuffer(this.orbitOrbitBuf);
+		gl.deleteBuffer(this.pointsPosBuf);
+		gl.deleteBuffer(this.pointsCornerBuf);
+		gl.deleteBuffer(this.pointsColorBuf);
 		gl.deleteBuffer(this.posBuf);
 		gl.deleteBuffer(this.hueBuf);
 		gl.deleteBuffer(this.instBuf);

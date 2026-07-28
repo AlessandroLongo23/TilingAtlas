@@ -8,7 +8,7 @@ import { computeFillRadii, wrapOffset } from "@/lib/render/flatView";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import {
 	FILL_VERT, FILL_FRAG, STROKE_VERT, STROKE_FRAG, POINTS_VERT, POINTS_FRAG,
-	ORBIT_VERT, ORBIT_FRAG, ORBIT_MAX, compileShader,
+	ORBIT_VERT, ORBIT_FRAG, ORBIT_MAX, POINT_DOT_RADIUS_PX, compileShader,
 } from "@/lib/render/flatTilingGL";
 import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, parseDimTarget, stepOrbitScales } from "@/lib/render/orbitHover";
 import { getOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
@@ -455,7 +455,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.uniform2f(PU.uV1, mesh.v1[0], mesh.v1[1]);
 				g.uniform2f(PU.uV2, mesh.v2[0], mesh.v2[1]);
 				g.uniform2f(PU.uHalf, w / 2, h / 2);
-				g.uniform1f(PU.uRadiusPx, 2.5); // p5 drew a 5px-diameter dot (5/zoom world units)
+				g.uniform1f(PU.uRadiusPx, POINT_DOT_RADIUS_PX);
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.pointVertexCount, instRef.current.count);
 				g.useProgram(progRef.current); // restore the fill program for next frame's fill pass
 			}
