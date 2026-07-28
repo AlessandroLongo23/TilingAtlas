@@ -8,6 +8,7 @@ import { PatchCard } from "@/components/patch-card";
 import { VertexFigureCard } from "@/components/vertex-figure-card";
 import { MethodCard, MethodStrip } from "@/components/method-card";
 import { CountTimeline } from "@/components/count-timeline";
+import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
 import { PreviewOverlayScope } from "@/lib/hooks/usePreviewOverlays";
@@ -410,6 +411,10 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// numbers its children by cloning them, and a wrapper would swallow the prop it injects.
 			"method-strip": MethodStrip,
 			"method-card": MethodCard,
+			// <wallpaper-wall signatures="yes"> — the 17 wallpaper groups as one wall of cell diagrams,
+			// the same Wikipedia images the library sidebar shows on hover. `signatures="yes"` adds the
+			// orbifold notation beside each name.
+			"wallpaper-wall": WallpaperGroupWall,
 			// <count-timeline> — who published which k-uniform count, when, drawn rather than tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,

@@ -39,7 +39,7 @@ excluded over the next three slides, so plant them here without arguing yet. -->
 ## Covering the plane exactly once
 
 We do not allow a tiling with a gap or an overlap. Every point of the plane is either inside exactly
-one tile, or on an edge shared by two, or a vertex where several meet.
+one tile, on an edge shared by two, or a vertex where several meet.
 
 ![](/defense/figures/not-a-tiling.png)
 
@@ -47,11 +47,10 @@ one tile, or on an edge shared by two, or a vertex where several meet.
 
 ---
 
-## The tiling has to repeat
+## Periodicity
 
-A tiling is periodic when two independent translations carry it onto itself, so the whole of it is
-determined by one finite patch repeated on a lattice. We require periodicity, which rules out the
-Penrose tiling and the hat: both cover the plane, but no translation carries either onto itself.
+We require periodicity: a tiling is periodic when two independent translations carry it onto itself, 
+so the whole of it is determined by one finite patch repeated on a lattice. 
 
 <slide-grid cols="3">
 <patch-card patch="penrose" label="Penrose: never repeats"></patch-card>
@@ -64,7 +63,7 @@ k-uniform tilings it is a theorem, and it comes back in Obligation 6. -->
 
 ---
 
-## The tiles meet edge to edge
+## Edge-to-edge
 
 A tiling is edge-to-edge when every edge of every tile is a whole edge of each tile beside it, so
 that a corner of one tile never lands part-way along the side of another. The squares below show
@@ -77,10 +76,9 @@ committee will be happier if you say that rather than letting the constraint loo
 
 ---
 
-## Every tile is a regular polygon
+## Only regular polygons
 
-On the left, squares, hexagons and triangles. On the right, a tiling whose tiles are star polygons,
-which are not convex regular polygons, so it sits outside the problem as posed.
+Finally, we are restricting the study to the tilings that consists of regular polygons only.
 
 <slide-cols>
 <div>
@@ -99,11 +97,12 @@ it forty minutes later. -->
 
 ## Vertex configuration
 
-A vertex configuration (vc) is a list of polygons sharing a vertex, and its name is just the number relative to each polygon, listed in the least cyclic lexicographical order: e.g. $4.6.12$ is a square,
+A vertex configuration (vc) is a list of polygons sharing a vertex, and its name is just the number 
+relative to each polygon, listed in the least cyclic lexicographical order: e.g. $4.6.12$ is a square,
 a hexagon, and a dodecagon. 
 
-Fifteen of them appear in a tiling of the plane. The other six, dashed, close the full turn and then
-tile nothing.
+Fifteen of them appear in a tiling of the plane; the other six close the full turn, but don't appear
+in any tiling.
 
 <slide-grid cols="7">
 <vc-card word="3.3.3.3.3.3"></vc-card>
@@ -138,9 +137,10 @@ the board. Do not mention that two configurations can share a multiset; that is 
 
 ---
 
-## How many kinds of vertex a tiling has
+## Vertex orbits
 
-Take a vertex and ask which other vertices the tiling's own symmetries can carry it to: that set is its orbit, and a tiling is said *k*-uniform when there are exactly $k$ of them.
+A vertex orbit is the set of vertices that the tiling's own symmetries can carry onto each other, 
+and a tiling is said *k*-uniform when there are exactly $k$ of them.
 
 <slide-grid cols="3">
 <orbit-card tiling="t1011" label="k = 1"></orbit-card>
@@ -157,27 +157,27 @@ This is the definition the whole talk rests on, so let the pointer do the explai
 
 ## The numbers we have, and where they came from
 
-11, 20, 61, 151, 332, 673, 1472, 2850, and onward.
+The counts for the first values of k are listed in the OEIS A068599:
 
-For each small $k$ we know how many *k*-uniform tilings there are, since the sequence sits in the
-OEIS as A068599. But knowing is not the same as having proven, which is the gap this thesis is
-about.
+11, 20, 61, 151, 332, 673, 1472, 2850, ....
+
+But knowing is not the same as having proven, which is the gap we are trying to fill.
 
 Here is the first term in full. The three ringed use a single shape of tile: they are the regular
 tilings, and the other eight the semiregular ones.
 
 <slide-grid cols="6">
-<tiling-card tiling="t1011" title="3.3.3.3.3.3" accent="yes" periods="2"></tiling-card>
-<tiling-card tiling="t1005" title="4.4.4.4" accent="yes" periods="2"></tiling-card>
-<tiling-card tiling="t1001" title="6.6.6" accent="yes" periods="2"></tiling-card>
-<tiling-card tiling="t1010" title="3.3.3.3.6" periods="2"></tiling-card>
-<tiling-card tiling="t1008" title="3.3.3.4.4" periods="2"></tiling-card>
-<tiling-card tiling="t1009" title="3.3.4.3.4" periods="2"></tiling-card>
-<tiling-card tiling="t1006" title="3.4.6.4" periods="2"></tiling-card>
-<tiling-card tiling="t1007" title="3.6.3.6" periods="2"></tiling-card>
-<tiling-card tiling="t1004" title="3.12.12" periods="2"></tiling-card>
-<tiling-card tiling="t1003" title="4.6.12" periods="2"></tiling-card>
-<tiling-card tiling="t1002" title="4.8.8" periods="2"></tiling-card>
+<tiling-card tiling="t1011" title="3.3.3.3.3.3" accent="yes" periods="3"></tiling-card>
+<tiling-card tiling="t1005" title="4.4.4.4" accent="yes" periods="3"></tiling-card>
+<tiling-card tiling="t1001" title="6.6.6" accent="yes" periods="3"></tiling-card>
+<tiling-card tiling="t1010" title="3.3.3.3.6" periods="3"></tiling-card>
+<tiling-card tiling="t1008" title="3.3.3.4.4" periods="3"></tiling-card>
+<tiling-card tiling="t1009" title="3.3.4.3.4" periods="3"></tiling-card>
+<tiling-card tiling="t1006" title="3.4.6.4" periods="3"></tiling-card>
+<tiling-card tiling="t1007" title="3.6.3.6" periods="3"></tiling-card>
+<tiling-card tiling="t1004" title="3.12.12" periods="3"></tiling-card>
+<tiling-card tiling="t1003" title="4.6.12" periods="3"></tiling-card>
+<tiling-card tiling="t1002" title="4.8.8" periods="3"></tiling-card>
 </slide-grid>
 
 <!-- notes: NOW the numbers mean something, because they know what is being counted. Say the two
@@ -190,9 +190,7 @@ the ninth is not. -->
 
 ## Nobody who produced these counts proved them
 
-At $k=2$ and $k=3$ the counts rest on case analyses that nobody has ever independently re-derived,
-and from $k=4$ on they rest on computer searches, none of which comes with an argument that it
-missed nothing.
+At $k=2$ and $k=3$ the counts rest on case analyses, and from $k=4$ on they rest on computer searches, but none of them comes with a completeness argument.
 
 <count-timeline>
 </count-timeline>
@@ -209,9 +207,9 @@ sentence on the slide starts at k=2. Do not claim Kepler proved anything. -->
 
 ## The methods I explored
 
-In this kind of work, the paths themselves are evidence. Each of these had its strengths and its
-weaknesses, and the first four were abandoned: either they did not scale, or they needed something I
-could not prove.
+In this kind of work, the path to the solution is as important as the solution itself, because it's evidence of what worked and what didn't. 
+
+Each of the methods I explored had strengths and weaknesses, and the first four were abandoned either because they didn't scale, or because the next was easier to prove.
 
 <method-strip>
 <method-card fig="growth" name="Grow the patch" note="until it holds two translations"></method-card>
@@ -237,19 +235,35 @@ being slow." -->
 
 ---
 
-## Architecture one: fit the symmetry first
+## Wallpaper groups
 
-The plan was symmetry-first: generate a seed patch, fit the fundamental domains of the seventeen
-wallpaper groups onto its construction points, and recover the tiling as the orbit of whatever
-fitted.
+In the euclidean 2D space, every tiling or pattern belongs to one of the 17 wallpaper groups, depending on its **symmetries**.
 
-It died before the implementation matured because some groups, like
-`cmm`, have fundamental domains whose shape depends on the tiling you are looking for, so no fixed-shape matching can work in general.
+<wallpaper-wall>
+</wallpaper-wall>
 
-The idea did not die so much as get demoted. Symmetry does not construct a tiling, though it does
-constrain the period lattice, and it can be detected exactly once the tiling is already in hand.
+---
+
+## Architecture one: symmetry-first
+
+The first method was based on symmetry:
+- generate a seed patch
+- for each tuple of construction points:
+  - try to fit the fundamental domain of each of the 17 wallpaper groups
+  - check for validity and reconstruct the tiling from the symmetries
 
 <!-- notes: Ninety seconds. It never got built, so do not spend more than that. -->
+
+---
+
+## Architecture one: failure
+
+Some groups have elongated lattices, which can make one of the vertices of the fundamental domain "fall" out of the patch:
+
+[TODO: add ]
+
+Symmetry does not construct a tiling, though it does
+constrain the period lattice, and it can be detected exactly once the tiling is already in hand.
 
 ---
 

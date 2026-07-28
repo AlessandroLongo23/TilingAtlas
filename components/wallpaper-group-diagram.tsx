@@ -1,4 +1,4 @@
-import { ORBIFOLD_SIGNATURE, type WallpaperGroup } from "@/lib/classes/symmetry/types";
+import { ORBIFOLD_SIGNATURE, WALLPAPER_GROUPS, type WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { cn } from "@/lib/utils/cn";
 
 interface Diagram {
@@ -96,6 +96,67 @@ export function WallpaperGroupDiagrams({ group, size = 104 }: { group: Wallpaper
 						/>
 					</span>
 					{d.caption ? <figcaption className="text-[10px] text-fg-muted">{d.caption}</figcaption> : null}
+				</figure>
+			))}
+		</div>
+	);
+}
+
+/**
+ * All 17 groups at once — one diagram each, named underneath. The deck slide that introduces the
+ * groups, drawn from the same map the library sidebar tooltips use, so the room sees the images it
+ * would see in the app.
+ *
+ * Groups Wikipedia draws on several lattices show only the FIRST diagram (the base lattice): the
+ * point of the wall is "there are seventeen of these", and a group contributing four cells to it
+ * would read as four groups.
+ *
+ * Sizing is the deck's usual bind. The tile is `min(18vh, 10.5rem)`, so on a 720p projector the
+ * three rows fit under the prose, and on anything taller the rem cap keeps six across inside the
+ * 69rem slide frame. Plate and padding are inline because the deck styles every `img` on a slide
+ * through a descendant selector (`[&_img]` in slide-markdown), which outranks a class here.
+ *
+ * Six across is fixed rather than left to a free wrap, which follows the viewport and at eight
+ * columns strands p6m alone on a third row. Twelve columns two wide, not six: 17 leaves five on the
+ * last row, and centring five under six needs a half-column offset that only a half-width column can
+ * give. The tile size then comes from the container, not from each item, so the same markup also
+ * shrinks to fit an overview thumbnail.
+ */
+export function WallpaperGroupWall({ signatures }: { signatures?: string }) {
+	const showSignature = String(signatures) === "yes";
+	return (
+		<div
+			style={{ maxWidth: "calc(6 * var(--wp-tile) + 5 * 0.75rem)" }}
+			className="not-prose mx-auto grid grid-cols-12 gap-x-3 gap-y-2 [--wp-tile:min(18vh,10.5rem)]"
+		>
+			{WALLPAPER_GROUPS.map((group, i) => (
+				<figure
+					key={group}
+					className={cn("col-span-2 m-0 flex flex-col items-center gap-1", i === 12 && "col-start-2")}
+				>
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img
+						src={`${DIAGRAM_BASE}${WALLPAPER_GROUP_DIAGRAMS[group][0].src}`}
+						alt={`${group} cell diagram`}
+						style={{
+							width: "100%",
+							height: "auto",
+							aspectRatio: "1 / 1",
+							background: "#fff",
+							padding: "0.3rem",
+							borderRadius: "0.375rem",
+							margin: 0,
+						}}
+						className="block object-contain"
+					/>
+					<figcaption className="text-center leading-tight">
+						<span className="text-[clamp(0.7rem,1vh+0.3vw,1.05rem)] font-medium text-fg">{group}</span>
+						{showSignature && (
+							<span className="ml-1 font-mono text-[clamp(0.6rem,0.8vh+0.25vw,0.9rem)] text-fg-muted">
+								{ORBIFOLD_SIGNATURE[group]}
+							</span>
+						)}
+					</figcaption>
 				</figure>
 			))}
 		</div>
