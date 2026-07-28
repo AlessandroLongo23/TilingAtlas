@@ -7371,3 +7371,73 @@ restoring. The folders now sum to the header exactly: 53060 + 44721 + 2392 + 147
 The general lesson for the next grid: an exhaustive `Record` keyed on the union is load-bearing, and
 the two places that used a bare `string` key silently opted out of it. Worth auditing whether the
 colors/hyperbolic sub-axes have the same hole — they are hand-listed in the same `SUB_ORDER`.
+
+## 2026-07-28 — The seed card, and the points pass that was already written
+
+AL wanted the symmetry-first slide to show what the method starts from: a k=4 seed with its construction
+points marked, fixed in place, with a toggle beside the o/s/d overlays the cards already carry.
+
+### Two corrections before any code
+
+I proposed defining "construction point" from scratch — centroid, edge midpoint, vertex, colour-coded —
+and AL cut it off: it is the existing **show polygon points** option, don't reinvent it. He was right, and
+the feature turned out to be complete on the /play side: `buildCellMesh` has emitted `pointPos` /
+`pointCorner` / `pointColor` (centroid red, halfway green, vertex blue) all along, `POINTS_VERT` /
+`POINTS_FRAG` are exported from `flatTilingGL.ts`, and `euclidean-canvas.tsx` runs the pass inline, bound
+to `p` in /play's shortcut table. The only gap was that `FlatCellRenderer` — the class every preview card
+draws through — linked fill, stroke and orbit-dot programs and not that one. So this was porting a fourth
+pass into a class already shaped for it, not designing a feature.
+
+What IS dead, and stays dead: `showConstructionPoints` + `Tiling.drawConstructionPoints`. They read
+`Tiling.anchorNodes`, which nothing in this repo ever writes — initialised to `[]`, cloned once, never
+populated. That path draws nothing for any tiling and is a remnant of the SvelteKit pipeline. Its one use
+was as documentation: it says a construction point is a centroid, a halfway or a vertex, which is exactly
+what the points mesh already builds.
+
+### The seed is derived, not shipped
+
+The deck ships `renderCell` and `exactSource` per referenced id, and nothing else — there is no seed
+artifact anywhere in `public/`. So `lib/render/seedPatch.ts` reconstructs one: replicate the cell over a
+5×5 window (`expandToViewport`), ask `orbitAt` for the orbit of every vertex, take one representative per
+orbit, and keep every polygon incident to a representative. Orbit 0's representative is the vertex nearest
+the cell centre and each next orbit takes the vertex nearest the representatives already chosen, which is
+what keeps the k figures one clump instead of four scattered rosettes. ±2 is not a free parameter:
+`orbitsFromExactSource` builds its position→orbit map over a ±3-cell block, so a wider window would ask
+about vertices it cannot answer for and they would silently drop out of the partition.
+
+It returns a synthetic `TranslationalCellData`, not a polygon list. That is what made the rest cheap:
+`buildCellMesh`, `buildOrbitDotMesh` and the whole preview pipeline take a cell, so a cell whose polygons
+happen not to tile it draws the seed through the existing path — points, orbit dots and symmetry overlays
+all in one world frame, no second code path. `FlatDrawParams.single` then draws one copy (Ri = Rj = 0) and
+skips `wrapOffset`, whose whole job is to fold the pan back by lattice vectors so a fixed grid keeps
+covering the viewport; with one copy that is not invisible, it is a teleport.
+
+### Keeping the symmetry elements on the seed
+
+The seed keeps its ABSOLUTE coordinates, so its bounding box sits wherever it was cut from — nowhere near
+the origin the view is built around. The obvious fix (translate the polygons to the origin) would have
+taken the symmetry overlays off the patch, since those are drawn from `symmetryData` in world coordinates,
+and "the fundamental domain lands on the seed's points" is the slide's entire content. So the VIEW moves
+instead: a per-frame shift reproducing the shader's map, `−zoom·(c·cx + s·cy, s·cx − c·cy)`, added to both
+the renderer's offset and the 2-D overlay's translate. Same trick as subrosaGL's `uCentre`. Verified by
+screenshot: the 6-fold centre sits exactly on the triangle rosette's centre.
+
+### The bug the feature found
+
+The card shipped with `initialOverlays={{ polygonPoints: true }}` and arrived with the points OFF. In
+`useCardOverlays`, the default-overlay test was written as
+`initial?.orbits === true || initial?.symmetry === true || initial?.fundamentalDomain === true` — three
+names by hand, and the memo's dependency list enumerated the same three. A fourth overlay was therefore
+accepted by the type checker, passed by the caller, and dropped on the floor with no error anywhere. Now
+read generically off `Object.keys(initial)`, with a value-stable key for the deps. Worth remembering: an
+`OverlayState` typed as `Record<OverlayName, boolean>` gives no protection at all where the CODE spells the
+names out one at a time — the union bought nothing here.
+
+### Inert mode
+
+`interactive={false}` on the card and the hook: no pointer handlers, no wheel listener, no right-click
+reset, no expand button, no grab cursor, no focus ring, and the context menu left alone (suppressing it
+would take the browser's menu away and give nothing back, since there is no reset to run). The orbit hover
+deliberately still tracks — a highlight following the pointer is a readout, not an input. Verified with
+Playwright: drag, wheel, Shift+wheel and right-click leave the canvas pixel-identical, while an ordinary
+`<tiling-card>` two slides earlier still pans and still resets.

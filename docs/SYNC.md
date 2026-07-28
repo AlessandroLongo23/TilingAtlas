@@ -1659,3 +1659,10 @@ single data shape, and a lattice-space uniform grid replaces the 3×3 copy sweep
 no primitive ceiling). Also: `loadReferenceAtlas` destructured 12 names off a 13-entry `Promise.all`,
 dropping the 226,946-entry colorings shelf. Detail: NOTES §"The conformal lens becomes universal". — CC
 
+
+### 2026-07-28 — CC — /defense gains a seed card; preview cards gain /play's `p`
+The symmetry-first slide shows a k=4 seed (t4001): one vertex figure per orbit, cut by
+`lib/render/seedPatch.ts`, drawn once and inert, construction points on. Those points existed end to end
+already — `FlatCellRenderer` just never linked the program. Plus `single` (one copy, no pan wrap) and
+`interactive={false}`; `anchorNodes` stays dead. Spec:
+`docs/superpowers/specs/2026-07-28-seed-card-design.md`. Detail: NOTES §"The seed card". — CC
