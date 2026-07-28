@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { Maximize, Minimize, ExternalLink, Play, X } from "lucide-react";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils/cn";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
 import { useFlatCellPreview } from "@/lib/hooks/useFlatCellPreview";
 import { useCardOverlays, type OverlayState } from "@/lib/hooks/usePreviewOverlays";
+import { seedFromCell } from "@/lib/render/seedPatch";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -69,6 +70,23 @@ interface InteractiveTilingPreviewCardProps {
 	 * nothing, and on a slide that rings three cards for a reason it says something false.
 	 */
 	alwaysActive?: boolean;
+	/**
+	 * Draw the tiling's SEED instead of the tiling: one vertex figure per orbit, cut out of the tiling
+	 * where it lies and drawn once (lib/render/seedPatch.ts). This is the patch the symmetry-first
+	 * method starts from, and the slide that describes that method is what it is for.
+	 *
+	 * Needs `orbitData` — without an orbit partition there is nothing to take one vertex of, so the
+	 * card falls back to the whole tiling rather than blanking.
+	 */
+	seed?: boolean;
+	/**
+	 * Take no input: no drag, no wheel, no rotate, no right-click reset, and no expand button. The
+	 * overlay keys still answer, since they belong to the page's scope rather than to the surface.
+	 *
+	 * For a card that is making a point rather than inviting exploration — a slide where the framing
+	 * IS the argument and a stray gesture mid-sentence would cost more than the gesture is worth.
+	 */
+	interactive?: boolean;
 	className?: string;
 }
 
@@ -93,6 +111,8 @@ export function InteractiveTilingPreviewCard({
 	openInPlayIcon = "link",
 	expandMode = "inline",
 	alwaysActive = false,
+	seed = false,
+	interactive = true,
 	className,
 }: InteractiveTilingPreviewCardProps) {
 	const [expanded, setExpanded] = useState(false);
@@ -102,16 +122,26 @@ export function InteractiveTilingPreviewCard({
 	const cardId = useId();
 	const { overlays, onOverlayKeyDown } = useCardOverlays(cardId, initialOverlays);
 	// Focus still decides the ring; `live` decides who owns the input.
-	const live = alwaysActive || focused;
+	const live = interactive && (alwaysActive || focused);
+	// The seed is derived from the cell and the orbit partition, so it is recomputed only when either
+	// changes — never on a toggle, and never per frame. Falls back to the whole tiling when there is no
+	// partition to take one vertex of each orbit from.
+	const drawnCell = useMemo(
+		() => (seed && orbitData ? (seedFromCell(cell, orbitData) ?? cell) : cell),
+		[seed, cell, orbitData],
+	);
 	const { hostRef, failed, pointerProps } = useFlatCellPreview({
-		cell,
+		cell: drawnCell,
 		// The `o` overlay decides whether the dots are DRAWN; the data only decides whether they can
 		// be. A card with no orbit data ignores the key rather than blanking.
 		orbitData: overlays.orbits ? orbitData : null,
 		symmetryData,
 		showFundamentalDomain: overlays.fundamentalDomain,
 		showSymmetryElements: overlays.symmetry,
+		showPolygonPoints: overlays.polygonPoints,
 		homePeriods,
+		single: seed,
+		interactive,
 		active: live,
 	});
 
@@ -161,7 +191,8 @@ export function InteractiveTilingPreviewCard({
 					{...hostProps}
 					{...pointerProps}
 					// After the spread: an always-active card claims the touch gesture for panning, which is
-					// what `hostProps.style` would only have granted it once focused.
+					// what `hostProps.style` would only have granted it once focused. An inert one never
+					// claims it — a touch there should scroll the page it sits on.
 					style={{ touchAction: live ? "none" : "auto" }}
 					onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
 						// Esc closes the expansion and stops there — it must neither blur the card nor reach
@@ -181,8 +212,10 @@ export function InteractiveTilingPreviewCard({
 					className={cn(
 						"group select-none overflow-hidden rounded-2xl border bg-surface-base outline-none",
 						lifted ? "fixed inset-[5vh_5vw] z-50 shadow-2xl" : "absolute inset-0",
-						live ? "cursor-grab" : "cursor-pointer",
-						focused && !alwaysActive
+						// An inert card takes the default cursor: neither grab (nothing to drag) nor pointer
+						// (nothing happens on click).
+						!interactive ? "cursor-default" : live ? "cursor-grab" : "cursor-pointer",
+						focused && interactive && !alwaysActive
 							? "border-accent ring-2 ring-accent/60"
 							: "border-line hover:border-line-strong",
 					)}
@@ -204,7 +237,7 @@ export function InteractiveTilingPreviewCard({
 							lifted ? "opacity-100" : "opacity-0",
 						)}
 					>
-						{showExpand ? (
+						{showExpand && interactive ? (
 							<button
 								type="button"
 								onPointerDown={stopDrag}

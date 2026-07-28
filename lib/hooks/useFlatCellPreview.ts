@@ -24,7 +24,7 @@ import {
 	zoomAtPoint,
 	type CardControls,
 } from "@/lib/render/viewControls";
-import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { parseBaseCell, type TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // A live Euclidean tiling patch on a host element: the /play flat shader view (lib/render/flatTilingGL.ts)
 // driven by the shared interaction math (lib/render/viewControls.ts) — drag pans, wheel zooms toward
@@ -70,6 +70,23 @@ export interface FlatCellPreviewOptions {
 	showFundamentalDomain?: boolean;
 	/** Draw the rotation centres and mirror/glide axes, over a faded fill. /play's `s`. */
 	showSymmetryElements?: boolean;
+	/** A disk on every centroid, halfway and vertex. /play's `p`. */
+	showPolygonPoints?: boolean;
+	/**
+	 * Draw ONE copy of the cell rather than a lattice of it, and frame the view on the polygons'
+	 * bounding box instead of on `homePeriods`. For a cell that is a finite patch — a seed
+	 * (lib/render/seedPatch.ts) — where periods are not a unit the content has.
+	 */
+	single?: boolean;
+	/**
+	 * Take no input at all: no drag, no wheel, no rotate, no right-click reset. The surface still
+	 * draws, still answers the overlay flags, and still tracks the pointer for the orbit hover.
+	 *
+	 * Distinct from `active`, which is a card WAITING to be clicked into. An inert surface is not
+	 * waiting for anything; it is a picture. Defaults to true (interactive), so no existing caller
+	 * changes behaviour.
+	 */
+	interactive?: boolean;
 }
 
 export interface FlatCellPreview {
@@ -99,6 +116,9 @@ export function useFlatCellPreview({
 	symmetryData = null,
 	showFundamentalDomain = false,
 	showSymmetryElements = false,
+	showPolygonPoints = false,
+	single = false,
+	interactive = true,
 }: FlatCellPreviewOptions): FlatCellPreview {
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	// In refs, not the GL effect's deps: changing one must not tear down and rebuild the context.
@@ -114,8 +134,12 @@ export function useFlatCellPreview({
 	// tear the GL context down and rebuild it, it must just change what the next frame paints.
 	const symmetryRef = useRef(symmetryData);
 	symmetryRef.current = symmetryData;
-	const overlayFlagsRef = useRef({ fd: showFundamentalDomain, sym: showSymmetryElements });
-	overlayFlagsRef.current = { fd: showFundamentalDomain, sym: showSymmetryElements };
+	const overlayFlagsRef = useRef({ fd: showFundamentalDomain, sym: showSymmetryElements, pts: showPolygonPoints });
+	overlayFlagsRef.current = { fd: showFundamentalDomain, sym: showSymmetryElements, pts: showPolygonPoints };
+	const singleRef = useRef(single);
+	singleRef.current = single;
+	const interactiveRef = useRef(interactive);
+	interactiveRef.current = interactive;
 	// Pointer position in centred CSS px for the orbit hover, or null when the pointer is elsewhere.
 	// Per-instance state, so several orbit surfaces on one page highlight independently. (This is why
 	// /play's orbitHoverBridge singleton is not used here: it can only describe one surface at a time.)
@@ -125,17 +149,57 @@ export function useFlatCellPreview({
 	// Lattice basis of the current mesh — lets the reset handler recompute the home zoom for the
 	// host's CURRENT width (it changes when a card expands).
 	const basisRef = useRef<{ v1: { x: number; y: number }; v2: { x: number; y: number } } | null>(null);
+	// World point the view centres on: the patch's bbox centre in single mode, the origin otherwise.
+	const centreRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 	const activeRef = useRef(false);
 	const dragRef = useRef<{ id: number; x: number; y: number } | null>(null);
 	const [failed, setFailed] = useState(false);
 	activeRef.current = active;
 
-	// The reset zoom: a caller-fixed px-per-edge if one was given, else fitted to `homePeriods` of
-	// the cell's lattice across the host. Both go through the shared clamp.
-	const resolveHomeZoom = (basis: { v1: { x: number; y: number }; v2: { x: number; y: number } }, w: number): number => {
+	// How much of the shorter side a single patch takes when fitted, leaving a margin of surround —
+	// a patch touching the card's edges reads as a crop of something larger.
+	const FIT_FRACTION = 0.86;
+
+	// The reset zoom: a caller-fixed px-per-edge if one was given, else the whole patch fitted (single
+	// mode), else `homePeriods` of the cell's lattice across the host. All three go through the shared
+	// clamp.
+	const resolveHomeZoom = (
+		basis: { v1: { x: number; y: number }; v2: { x: number; y: number } },
+		w: number,
+		h: number,
+	): number => {
 		const fixed = fixedZoomRef.current;
 		if (fixed != null) return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fixed));
+		if (singleRef.current) {
+			const base = parseBaseCell(cellRef.current);
+			const bw = base ? base.maxX - base.minX : 0;
+			const bh = base ? base.maxY - base.minY : 0;
+			if (bw > 0 && bh > 0) {
+				const fit = FIT_FRACTION * Math.min(w / bw, h / bh);
+				return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fit));
+			}
+		}
 		return defaultZoomForCell(basis.v1, basis.v2, w, periodsRef.current);
+	};
+
+	/**
+	 * Screen shift that holds the patch's own centre at the centre of the card.
+	 *
+	 * A seed is cut out of the tiling where it lies, keeping its absolute coordinates so the symmetry
+	 * overlays still land on it — which means its bounding box is nowhere near the world origin the
+	 * view is otherwise built around. Rather than move the geometry (that would take the symmetry
+	 * elements off it) the view is shifted, exactly as subrosaGL's uCentre does for the aperiodic
+	 * patches. Reproduces the shader's map: screen = offset + zoom·(c·x + s·y, s·x − c·y).
+	 *
+	 * Zero in every non-single mode, where the centre is the origin and nothing moves.
+	 */
+	const centreShift = (centre: { x: number; y: number }, zoom: number, rotDeg: number) => {
+		const r = (rotDeg * Math.PI) / 180;
+		const c = Math.cos(r), s = Math.sin(r);
+		return {
+			x: -zoom * (c * centre.x + s * centre.y),
+			y: -zoom * (s * centre.x - c * centre.y),
+		};
 	};
 
 	// Deactivating mid-drag (focus moved away, Esc) must not leave the pan latched to a pointer that
@@ -214,7 +278,13 @@ export function useFlatCellPreview({
 		// `offset` is the UNWRAPPED pan while the renderer wraps its own by whole lattice vectors. That
 		// is not a mismatch: the tiling and its symmetry structure are both invariant under a lattice
 		// translation, so the two agree on screen.
-		const drawOverlays = (w: number, h: number, dpr: number, ctrl: CardControls) => {
+		const drawOverlays = (
+			w: number,
+			h: number,
+			dpr: number,
+			ctrl: CardControls,
+			offset: { x: number; y: number },
+		) => {
 			const sd = symmetryRef.current;
 			const { fd, sym } = overlayFlagsRef.current;
 			const wanted = !!sd && (fd || sym);
@@ -244,12 +314,12 @@ export function useFlatCellPreview({
 			ctx.save();
 			ctx.scale(dpr, dpr);
 			ctx.translate(w / 2, h / 2);
-			ctx.translate(ctrl.offset.x, ctrl.offset.y);
+			ctx.translate(offset.x, offset.y);
 			ctx.rotate(rot);
 			ctx.scale(ctrl.zoom, ctrl.zoom);
 			ctx.scale(1, -1);
 			const pen = canvas2dPen(ctx);
-			const view = { zoom: ctrl.zoom, rotation: rot, offset: ctrl.offset, width: w, height: h };
+			const view = { zoom: ctrl.zoom, rotation: rot, offset, width: w, height: h };
 			if (fd) drawFundamentalDomain(pen, sd, view);
 			if (sym) drawSymmetryElements(pen, sd, view);
 			ctx.restore();
@@ -270,7 +340,11 @@ export function useFlatCellPreview({
 					v1: { x: mesh.v1[0], y: mesh.v1[1] },
 					v2: { x: mesh.v2[0], y: mesh.v2[1] },
 				};
-				homeZoomRef.current = resolveHomeZoom(basisRef.current, w);
+				const base = singleRef.current ? parseBaseCell(cellRef.current) : null;
+				centreRef.current = base
+					? { x: (base.minX + base.maxX) / 2, y: (base.minY + base.maxY) / 2 }
+					: { x: 0, y: 0 };
+				homeZoomRef.current = resolveHomeZoom(basisRef.current, w, h);
 				controlsRef.current = makeCardControls(homeZoomRef.current);
 			}
 			const ctrl = controlsRef.current;
@@ -289,10 +363,15 @@ export function useFlatCellPreview({
 			if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
 			gl.viewport(0, 0, bw, bh);
 
+			// The pan the shader sees: the user's, plus the shift that holds a single patch's own centre
+			// at the centre of the card (zero otherwise).
+			const shift = centreShift(centreRef.current, ctrl.zoom, ctrl.rotation);
+			const offset = { x: ctrl.offset.x + shift.x, y: ctrl.offset.y + shift.y };
+
 			renderer.draw({
 				width: w,
 				height: h,
-				offset: ctrl.offset,
+				offset,
 				zoom: ctrl.zoom,
 				rotationDeg: ctrl.rotation,
 				lineWidth: 1,
@@ -306,9 +385,11 @@ export function useFlatCellPreview({
 				dimTargetRGB: parseDimTarget(getComputedStyle(host).backgroundColor),
 				// Same fade under the symmetry elements, so the axes and rotation centres own the colour.
 				dimFill: overlayFlagsRef.current.sym && symmetryRef.current != null,
+				showPoints: overlayFlagsRef.current.pts,
+				single: singleRef.current,
 			});
 
-			drawOverlays(w, h, dpr, ctrl);
+			drawOverlays(w, h, dpr, ctrl, offset);
 
 			if (debug && frame++ % 30 === 0) sample(bw, bh);
 		};
@@ -364,7 +445,7 @@ export function useFlatCellPreview({
 		// Wheel: must be a non-passive DOM listener to preventDefault (block page scroll) while active.
 		// Inactive surfaces let the event through untouched so the page scrolls normally.
 		const onWheel = (e: WheelEvent) => {
-			if (!activeRef.current) return;
+			if (!interactiveRef.current || !activeRef.current) return;
 			const ctrl = controlsRef.current;
 			if (!ctrl) return;
 			e.preventDefault();
@@ -399,14 +480,16 @@ export function useFlatCellPreview({
 	const resetView = () => {
 		const ctrl = controlsRef.current;
 		if (!ctrl) return;
-		// Recompute the home zoom for the current width — the host may have grown since mount.
+		// Recompute the home zoom for the current size — the host may have grown since mount.
 		const basis = basisRef.current;
 		const w = hostRef.current?.clientWidth ?? 0;
-		if (basis && w > 0) homeZoomRef.current = resolveHomeZoom(basis, w);
+		const h = hostRef.current?.clientHeight ?? 0;
+		if (basis && w > 0 && h > 0) homeZoomRef.current = resolveHomeZoom(basis, w, h);
 		resetCardControls(ctrl, homeZoomRef.current);
 	};
 
 	const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
+		if (!interactiveRef.current) return;
 		if (e.button === 2) {
 			// Right-click resets, as in /play. (The activation state is untouched — reset shouldn't
 			// deactivate an active surface, nor activate an inert one.)
@@ -425,7 +508,9 @@ export function useFlatCellPreview({
 
 	const onPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
 		// Orbit hover tracks the pointer whether or not the surface is active: hovering changes nothing
-		// but the highlight, so gating it behind a click would only make the card feel dead.
+		// but the highlight, so gating it behind a click would only make the card feel dead. It tracks on
+		// an INERT surface too — an inert card still shows its orbits, and a highlight that follows the
+		// pointer is not an input, it is a readout.
 		const rect = e.currentTarget.getBoundingClientRect();
 		hoverPxRef.current = {
 			x: e.clientX - rect.left - rect.width / 2,
@@ -457,7 +542,10 @@ export function useFlatCellPreview({
 			onPointerUp,
 			onPointerCancel: onPointerUp,
 			onPointerLeave: () => { hoverPxRef.current = null; },
-			onContextMenu: (e) => e.preventDefault(),
+			// Right-click is the reset gesture, so the menu is suppressed where there is one to run. An
+			// inert surface has no reset, and swallowing the browser's menu there would take something
+			// away and give nothing back.
+			onContextMenu: (e) => { if (interactiveRef.current) e.preventDefault(); },
 		},
 	};
 }
