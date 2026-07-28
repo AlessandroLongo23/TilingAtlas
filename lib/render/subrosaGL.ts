@@ -1,4 +1,4 @@
-// Batched WebGL2 renderer for the Sub Rosa substitution patches (app/(app)/substitutions).
+// Batched WebGL2 renderer for the Sub Rosa substitution patches (app/(app)/aperiodic).
 //
 // Unlike FlatCellRenderer (periodic, instanced: one cell mesh × a lattice of offsets), a Sub Rosa
 // patch is APERIODIC — the tiles never repeat — so there is nothing to instance. We triangulate the
@@ -6,31 +6,41 @@
 // three uniforms (scale, origin) read in the vertex shader: the geometry never re-tessellates, so a
 // drag or a wheel is "change a uniform, redraw" and stays at frame rate even at ~1M tiles.
 //
-// The view model is the one the substitutions client already uses: top-left CSS-px origin, y-down,
-// screen = (ox + scale·x, oy − scale·y). The shader reproduces exactly that map, so the existing
-// pan/zoom handlers are untouched.
+// The view model is flatTilingGL's, so a pan, a wheel notch and a Shift+wheel turn mean the same
+// thing here as on /play: screen_centred = offset + zoom · R'(θ) · (p − centre), with R'(θ)·(x,y) =
+// (c·x + s·y, s·x − c·y) — rotation composed with the y-flip. lib/hooks/useAperiodicView.ts owns the
+// state that feeds it and documents the frame in full.
 //
 // Tile outlines are a single-pass barycentric wireframe (Celes/NVIDIA trick): each vertex carries a
 // vec3 whose channels are the triangle's barycentric coords, with the internal-diagonal channel
-// pinned to 1 so it never strokes. The fragment darkens toward the stroke colour within uStrokePx of
-// the nearest REAL edge, anti-aliased via fwidth — no separate stroke geometry.
+// pinned to 1 so it never strokes. The fragment converts that coordinate to a screen-space distance
+// and paints the stroke colour out to the half-width, with one pixel of AA past it — no separate
+// stroke geometry. /play's FlatCellRenderer takes the other route (real expanded edge quads); it can
+// afford the vertices because it instances ONE cell mesh, where a patch here is up to a million
+// distinct tiles and stroke geometry would triple the buffer. The shader must therefore do the work
+// the geometry does there: a flat-topped line at a true (not Manhattan) distance, sized in device px.
 
 import type { Vector } from "@/classes/Vector";
+import { edgeMask, triangulate } from "./triangulate";
 
 const FILL_VERT = `#version 300 es
 in vec2 aPos;
 in float aHue;
 in vec3 aEdge;
-uniform float uScale;
-uniform vec2 uOrigin;  // ox, oy in CSS px (top-left origin, y down)
+uniform float uZoom;
+uniform vec2 uOffset;  // pan, centred CSS px, y down
+uniform float uRot;    // view angle, radians
+uniform vec2 uCentre;  // world point the view is centred on
 uniform vec2 uHalf;    // canvas CSS half-size (w/2, h/2)
 out float vHue;
 out vec3 vEdge;
 void main() {
-	// Transcribes the client's tx(): screen = (ox + scale·x, oy − scale·y). Then CSS px → clip.
-	float sx = uOrigin.x + uScale * aPos.x;
-	float sy = uOrigin.y - uScale * aPos.y;
-	gl_Position = vec4(sx / uHalf.x - 1.0, 1.0 - sy / uHalf.y, 0.0, 1.0);
+	// Transcribes applyViewTransform in lib/hooks/useAperiodicView.ts — keep the two in step.
+	float c = cos(uRot), s = sin(uRot);
+	vec2 p = aPos - uCentre;
+	float sx = uOffset.x + uZoom * (c * p.x + s * p.y);
+	float sy = uOffset.y + uZoom * (s * p.x - c * p.y);
+	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
 	vHue = aHue;
 	vEdge = aEdge;
 }
@@ -41,21 +51,36 @@ precision highp float;
 in float vHue;
 in vec3 vEdge;
 uniform float uLight;    // HSL lightness 0..100 (theme-dependent), to match the 2D path's hsl(h 58% L%)
-uniform float uStrokePx; // outline half-width in CSS px; 0 disables the outline
+uniform float uSat;      // HSL saturation 0..1
+uniform float uStrokePx; // outline HALF-width in DEVICE px (draw() converts from the CSS width); 0 = off
 uniform vec4 uStroke;    // outline colour, rgb 0..1 + alpha
 out vec4 frag;
-// Compact CSS hsl()→rgb (the spec's modulo form), s fixed at 0.58 to match the 2D renderer.
+// Compact CSS hsl()→rgb (the spec's modulo form).
 vec3 hsl2rgb(float h, float s, float l) {
 	float a = s * min(l, 1.0 - l);
 	vec3 k = mod(vec3(0.0, 8.0, 4.0) + h / 30.0, 12.0);
 	return l - a * clamp(min(min(k - 3.0, 9.0 - k), 1.0), -1.0, 1.0);
 }
 void main() {
-	vec3 base = hsl2rgb(vHue, 0.58, uLight * 0.01);
+	vec3 base = hsl2rgb(vHue, uSat, uLight * 0.01);
 	if (uStrokePx > 0.0) {
 		float d = min(min(vEdge.x, vEdge.y), vEdge.z); // distance (barycentric) to nearest REAL edge
-		float aa = fwidth(d);
-		float e = 1.0 - smoothstep(0.0, uStrokePx * aa, d);
+		// True screen-space gradient, NOT fwidth. fwidth is |∂d/∂x| + |∂d/∂y| — the Manhattan length of
+		// the same vector — which overstates it by up to √2 depending on how the edge lies against the
+		// pixel grid, so an fwidth-scaled outline is up to 41% wider on a diagonal edge than on an axis-
+		// aligned one. In a rhombic patch every edge sits at a different angle, so that shows up as
+		// outlines of visibly unequal weight within one tiling. length() is the real distance.
+		float g = length(vec2(dFdx(d), dFdy(d)));
+		// g == 0 means d is constant over the whole triangle, which happens when every one of its three
+		// edges is an invented diagonal — all three channels pinned to 1. Ear clipping a 13-gon produces
+		// such interior triangles routinely (the fixed quad split never could, since two of its edges
+		// are always real). Push them past the threshold instead of dividing by zero: nothing to stroke.
+		float dpx = g > 0.0 ? d / g : 1e9; // distance to the edge, in device px
+		// A LINE, not a gradient: full stroke colour out to the half-width, then one pixel of AA. The
+		// former smoothstep(0, width, d) ramped the whole way from edge to width, which is a blur —
+		// it is what made these outlines look soft next to /play's, where the stroke is real geometry
+		// (flatTilingGL's expanded edge quads) and only its own boundary is antialiased.
+		float e = 1.0 - smoothstep(uStrokePx - 0.5, uStrokePx + 0.5, dpx);
 		base = mix(base, uStroke.rgb, e * uStroke.a);
 	}
 	frag = vec4(base, 1.0);
@@ -117,11 +142,20 @@ export interface SubRosaTile {
 export interface SubRosaDrawParams {
 	widthCss: number;
 	heightCss: number;
-	scale: number;
-	ox: number;
-	oy: number;
+	zoom: number; // px per world unit
+	offsetX: number; // pan, centred CSS px, y down
+	offsetY: number;
+	rot: number; // view angle, radians
+	centreX: number; // world point held at the view centre
+	centreY: number;
 	light: number; // HSL lightness 0..100
-	strokePx: number; // 0 disables outlines
+	/** HSL saturation 0..1. Defaults to the rhombic views' 0.58; the finite-patch views pass 1.0 with
+	 *  light 80, which is exactly the atlas' HSB(h, 40, 100) tile fill in HSL terms. */
+	sat?: number;
+	/** Outline width in CSS px — the whole line across a shared edge, as /play's `lineWidth` means it.
+	 *  0 disables outlines. draw() halves it (each tile strokes inward from its own edge) and scales to
+	 *  device px, so a given width looks the same on a 1× and a 2× display. */
+	strokePx: number;
 	strokeRGBA: [number, number, number, number];
 	clearRGBA?: [number, number, number, number]; // default transparent
 }
@@ -143,7 +177,7 @@ export class SubRosaGL {
 		const prog = link(gl, FILL_VERT, FILL_FRAG);
 		if (!prog) throw new Error("subrosa renderer: shader compile/link failed");
 		this.prog = prog;
-		for (const name of ["uScale", "uOrigin", "uHalf", "uLight", "uStrokePx", "uStroke"]) {
+		for (const name of ["uZoom", "uOffset", "uRot", "uCentre", "uHalf", "uLight", "uSat", "uStrokePx", "uStroke"]) {
 			this.u[name] = gl.getUniformLocation(prog, name);
 		}
 		const aPos = gl.getAttribLocation(prog, "aPos");
@@ -205,6 +239,59 @@ export class SubRosaGL {
 		this.vertexCount = n * 6;
 	}
 
+	/**
+	 * The general-polygon upload: any simple polygon, convex or not, of any vertex count. Used by the
+	 * finite-patch views (Penrose rhombi, the hat's 13-gons), where uploadTiles' fixed quad split does
+	 * not apply. Each polygon is ear-clipped (lib/render/triangulate.ts) and its triangles carry the
+	 * barycentric mask that keeps the wireframe on real polygon edges and off invented diagonals.
+	 *
+	 * `hueOf` runs once per polygon, not per vertex. Returns the vertex count uploaded.
+	 */
+	uploadPolygons<T extends { vertices: { x: number; y: number }[] }>(
+		polys: readonly T[],
+		hueOf: (poly: T, index: number) => number,
+	): number {
+		const gl = this.gl;
+		// Exact total: an n-gon yields n−2 triangles, so 3(n−2) vertices.
+		let verts = 0;
+		for (const p of polys) verts += 3 * Math.max(0, p.vertices.length - 2);
+
+		const pos = new Float32Array(verts * 2);
+		const hue = new Float32Array(verts);
+		const edge = new Uint8Array(verts * 3);
+		let pi = 0, hi = 0, ei = 0;
+
+		polys.forEach((poly, pIdx) => {
+			const v = poly.vertices;
+			const n = v.length;
+			if (n < 3) return;
+			const h = hueOf(poly, pIdx);
+			const idx = triangulate(v);
+			for (let t = 0; t < idx.length; t += 3) {
+				const ia = idx[t], ib = idx[t + 1], ic = idx[t + 2];
+				const mask = edgeMask(ia, ib, ic, n);
+				const tri = [v[ia], v[ib], v[ic]];
+				for (let k = 0; k < 3; k++) {
+					pos[pi++] = tri[k].x;
+					pos[pi++] = tri[k].y;
+					hue[hi++] = h;
+					edge[ei++] = mask[k * 3] * 255;
+					edge[ei++] = mask[k * 3 + 1] * 255;
+					edge[ei++] = mask[k * 3 + 2] * 255;
+				}
+			}
+		});
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.hueBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, hue, gl.STATIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.edgeBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, edge, gl.STATIC_DRAW);
+		this.vertexCount = pi / 2;
+		return this.vertexCount;
+	}
+
 	// One frame. The caller owns the canvas backing-store size; we set the viewport from device px.
 	draw(p: SubRosaDrawParams, dpr: number): void {
 		const gl = this.gl;
@@ -217,11 +304,16 @@ export class SubRosaGL {
 
 		gl.useProgram(this.prog);
 		gl.bindVertexArray(this.vao);
-		gl.uniform1f(this.u.uScale, p.scale);
-		gl.uniform2f(this.u.uOrigin, p.ox, p.oy);
+		gl.uniform1f(this.u.uZoom, p.zoom);
+		gl.uniform2f(this.u.uOffset, p.offsetX, p.offsetY);
+		gl.uniform1f(this.u.uRot, p.rot);
+		gl.uniform2f(this.u.uCentre, p.centreX, p.centreY);
 		gl.uniform2f(this.u.uHalf, p.widthCss / 2, p.heightCss / 2);
 		gl.uniform1f(this.u.uLight, p.light);
-		gl.uniform1f(this.u.uStrokePx, p.strokePx);
+		gl.uniform1f(this.u.uSat, p.sat ?? 0.58);
+		// CSS width → device half-width: the shader measures distance in device px, and both tiles
+		// meeting at an edge stroke inward, so each paints half the line.
+		gl.uniform1f(this.u.uStrokePx, p.strokePx * dpr * 0.5);
 		gl.uniform4f(this.u.uStroke, p.strokeRGBA[0], p.strokeRGBA[1], p.strokeRGBA[2], p.strokeRGBA[3]);
 		gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
 		gl.bindVertexArray(null);

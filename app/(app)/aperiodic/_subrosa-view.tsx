@@ -13,7 +13,15 @@ import {
 } from "@/lib/subrosa/engine";
 import { prototileAngles } from "@/lib/subrosa/sigma";
 import { SubRosaGL } from "@/lib/render/subrosaGL";
-import { cn } from "@/lib/utils/cn";
+import {
+	applyViewTransform,
+	useAperiodicView,
+	type AperiodicFrame,
+	type HomeBox,
+} from "@/lib/hooks/useAperiodicView";
+import { Slider } from "@/components/ui/slider";
+import { AperiodicSidebar, Section, Segmented } from "./_controls";
+import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
 // Tile budget for one patch. The whole patch is a single GPU draw (lib/render/subrosaGL.ts), so this
 // is sized against GPU memory, not per-tile CPU draw cost: ~90 B/tile of vertex data ⇒ ~135 MB of
@@ -97,13 +105,15 @@ function bounds(tiles: RenderTile[]) {
 	return { minx, miny, maxx, maxy };
 }
 
-export function SubstitutionsClient() {
+// `header` is the /aperiodic view switcher, injected by the parent so it sits at the top of THIS
+// view's sidebar rather than in a second chrome column.
+export function SubRosaView({ header }: { header: React.ReactNode }) {
 	const [N, setN] = useState(5);
 	const rule = useMemo(() => buildRule(N), [N]);
 	const [seed, setSeed] = useState<Seed>("single");
 	const [protoX, setProtoX] = useState(2);
 	const [depth, setDepth] = useState(1);
-	const [showStroke, setShowStroke] = useState(true);
+	const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTH.def);
 
 	const effProtoX = Math.min(protoX, Math.floor(N / 2)); // clamp when switching to a smaller n
 	// The slider's real ceiling: the deepest substitution that fits the tile budget for THIS config.
@@ -118,94 +128,84 @@ export function SubstitutionsClient() {
 		[rule, seed, effProtoX, effDepth],
 	);
 
-	// view transform
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const view = useRef({ scale: 1, ox: 0, oy: 0, fitted: false });
-	const drag = useRef<{ x: number; y: number } | null>(null);
 	// GPU renderer: WebGL2 batched draw (one drawArrays for the whole patch). Falls back to the 2D
 	// loop if a WebGL2 context can't be created. `mode` is fixed at first mount — a canvas can hold
 	// only one context type. `uploaded` tracks which tile array is on the GPU so a redraw (theme,
-	// stroke toggle, pan) doesn't needlessly re-triangulate.
+	// stroke width, pan) doesn't needlessly re-triangulate.
 	const glRef = useRef<SubRosaGL | null>(null);
 	const modeRef = useRef<"init" | "gl" | "2d">("init");
 	const uploadedRef = useRef<RenderTile[] | null>(null);
 
-	const fit = useCallback(() => {
-		const cv = canvasRef.current;
-		if (!cv || tiles.length === 0) return;
+	const home = useCallback((): HomeBox | null => {
+		if (tiles.length === 0) return null;
 		const b = bounds(tiles);
-		const w = cv.clientWidth, h = cv.clientHeight;
-		const bw = b.maxx - b.minx || 1, bh = b.maxy - b.miny || 1;
-		const s = 0.86 * Math.min(w / bw, h / bh);
-		view.current.scale = s;
-		view.current.ox = w / 2 - s * (b.minx + b.maxx) / 2;
-		view.current.oy = h / 2 + s * (b.miny + b.maxy) / 2; // y flipped
-		view.current.fitted = true;
+		return {
+			cx: (b.minx + b.maxx) / 2,
+			cy: (b.miny + b.maxy) / 2,
+			width: b.maxx - b.minx || 1,
+			height: b.maxy - b.miny || 1,
+		};
 	}, [tiles]);
 
-	const draw = useCallback(() => {
-		const cv = canvasRef.current;
-		if (!cv) return;
-		const dpr = window.devicePixelRatio || 1;
-		const w = cv.clientWidth, h = cv.clientHeight;
-		if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
-			cv.width = Math.round(w * dpr);
-			cv.height = Math.round(h * dpr);
-		}
-		const { scale: vScale, ox: vOx, oy: vOy } = view.current;
-		const dark = document.documentElement.classList.contains("dark") ||
-			(document.documentElement.getAttribute("data-theme") === "dark");
-		const light = dark ? 62 : 66;
-		const strokeOn = showStroke && vScale > 2.2;
-		const strokeRGBA: [number, number, number, number] = dark
-			? [0, 0, 0, 0.55]
-			: [30 / 255, 20 / 255, 40 / 255, 0.5];
+	const draw = useCallback(
+		(f: AperiodicFrame) => {
+			const cv = canvasRef.current;
+			if (!cv) return;
+			const dark = document.documentElement.classList.contains("dark") ||
+				(document.documentElement.getAttribute("data-theme") === "dark");
+			const light = dark ? 62 : 66;
+			const strokePx = strokePxAt(strokeWidth, f.zoom);
 
-		// GPU path: one batched draw. Pan/zoom just changed view.current, so this is a uniform update.
-		if (modeRef.current === "gl" && glRef.current) {
-			glRef.current.draw(
-				{
-					widthCss: w,
-					heightCss: h,
-					scale: vScale,
-					ox: vOx,
-					oy: vOy,
-					light,
-					strokePx: strokeOn ? 1.1 : 0,
-					strokeRGBA,
-				},
-				dpr,
-			);
-			return;
-		}
+			// GPU path: one batched draw. Pan/zoom/rotate are uniforms, so the patch never re-tessellates.
+			if (modeRef.current === "gl" && glRef.current) {
+				glRef.current.draw(
+					{
+						widthCss: f.w,
+						heightCss: f.h,
+						zoom: f.zoom,
+						offsetX: f.offsetX,
+						offsetY: f.offsetY,
+						rot: f.rot,
+						centreX: f.centreX,
+						centreY: f.centreY,
+						light,
+						strokePx,
+						strokeRGBA: STROKE_RGBA,
+					},
+					f.dpr,
+				);
+				return;
+			}
 
-		// 2D fallback (canvas has no WebGL2): the original per-tile loop.
-		const ctx = cv.getContext("2d")!;
-		ctx.save();
-		ctx.scale(dpr, dpr);
-		ctx.clearRect(0, 0, w, h);
-		const tx = (p: Vector) => [vOx + vScale * p.x, vOy - vScale * p.y] as const;
-		const strokeW = Math.max(0.3, Math.min(1.1, vScale * 0.03));
-		ctx.lineJoin = "round";
-		for (const t of tiles) {
-			ctx.beginPath();
-			const [x0, y0] = tx(t.corners[0]);
-			ctx.moveTo(x0, y0);
-			for (let i = 1; i < t.corners.length; i++) {
-				const [x, y] = tx(t.corners[i]);
-				ctx.lineTo(x, y);
+			// 2D fallback (canvas has no WebGL2): the per-tile loop, in world coordinates.
+			const ctx = cv.getContext("2d")!;
+			ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
+			ctx.clearRect(0, 0, f.w, f.h);
+			ctx.save();
+			applyViewTransform(ctx, f);
+			const strokeW = strokePx / f.zoom; // CSS px → world units, for the transformed context
+			ctx.lineJoin = "round";
+			for (const t of tiles) {
+				ctx.beginPath();
+				ctx.moveTo(t.corners[0].x, t.corners[0].y);
+				for (let i = 1; i < t.corners.length; i++) ctx.lineTo(t.corners[i].x, t.corners[i].y);
+				ctx.closePath();
+				ctx.fillStyle = `hsl(${HUE(t.protoId)} 58% ${light}%)`;
+				ctx.fill();
+				if (strokePx > 0) {
+					ctx.lineWidth = strokeW;
+					ctx.strokeStyle = STROKE_CSS;
+					ctx.stroke();
+				}
 			}
-			ctx.closePath();
-			ctx.fillStyle = `hsl(${HUE(t.protoId)} 58% ${light}%)`;
-			ctx.fill();
-			if (strokeOn) {
-				ctx.lineWidth = strokeW;
-				ctx.strokeStyle = dark ? "rgba(0,0,0,0.55)" : "rgba(30,20,40,0.5)";
-				ctx.stroke();
-			}
-		}
-		ctx.restore();
-	}, [tiles, showStroke]);
+			ctx.restore();
+		},
+		[tiles, strokeWidth],
+	);
+
+	const view = useAperiodicView({ canvasRef, home, draw });
+	const { refit, requestDraw } = view;
 
 	// Create the WebGL2 renderer once. A canvas can hold only one context type, so this decides the
 	// render path for the component's life. Declared BEFORE the upload effect so the renderer exists
@@ -232,49 +232,18 @@ export function SubstitutionsClient() {
 		};
 	}, []);
 
-	// refit when the tile set changes; (re)upload to the GPU, then redraw on view/resize
+	// (re)upload to the GPU and reframe whenever the tile set changes
 	useEffect(() => {
 		if (modeRef.current === "gl" && glRef.current && uploadedRef.current !== tiles) {
 			glRef.current.uploadTiles(tiles, HUE);
 			uploadedRef.current = tiles;
 		}
-		view.current.fitted = false;
-		fit();
-		draw();
-	}, [tiles, fit, draw]);
+		refit();
+	}, [tiles, refit]);
 
 	useEffect(() => {
-		const onResize = () => {
-			if (!view.current.fitted) fit();
-			draw();
-		};
-		window.addEventListener("resize", onResize);
-		return () => window.removeEventListener("resize", onResize);
-	}, [fit, draw]);
-
-	// pan / zoom
-	const onWheel = (e: React.WheelEvent) => {
-		e.preventDefault();
-		const cv = canvasRef.current!;
-		const rect = cv.getBoundingClientRect();
-		const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-		const f = Math.exp(-e.deltaY * 0.0016);
-		const v = view.current;
-		v.ox = mx - f * (mx - v.ox);
-		v.oy = my - f * (my - v.oy);
-		v.scale *= f;
-		draw();
-	};
-	const onDown = (e: React.MouseEvent) => {
-		drag.current = { x: e.clientX - view.current.ox, y: e.clientY - view.current.oy };
-	};
-	const onMove = (e: React.MouseEvent) => {
-		if (!drag.current) return;
-		view.current.ox = e.clientX - drag.current.x;
-		view.current.oy = e.clientY - drag.current.y;
-		draw();
-	};
-	const onUp = () => (drag.current = null);
+		requestDraw();
+	}, [strokeWidth, requestDraw]);
 
 	// dev hook for visual checks
 	useEffect(() => {
@@ -326,14 +295,22 @@ export function SubstitutionsClient() {
 			setDepth,
 			setSeed,
 			setProtoX,
-			setShowStroke,
+			setStrokeWidth,
 			tileCount: () => tiles.length,
 			edgeCheck,
 		};
 	}, [tiles]);
 
+	// buildRule returns null only if the Σ(n) fill fails — keep the switcher reachable if it ever does.
 	if (!rule) {
-		return <div className="p-8 text-fg-muted">Sub Rosa engine failed to build for n={N}.</div>;
+		return (
+			<div className="flex-1 min-h-0 flex">
+				<AperiodicSidebar header={header}>
+					<p className="text-[11px] text-fg-muted">Sub Rosa engine failed to build for n={N}.</p>
+				</AperiodicSidebar>
+				<div className="flex-1 min-h-0" />
+			</div>
+		);
 	}
 
 	const angles = prototileAngles(N);
@@ -341,21 +318,11 @@ export function SubstitutionsClient() {
 
 	return (
 		<div className="flex-1 min-h-0 flex">
-			{/* control + info sidebar */}
-			<aside className="w-72 shrink-0 border-r border-line-subtle bg-surface-raised overflow-y-auto p-4 flex flex-col gap-5 text-sm">
-				<div>
-					<h1 className="text-base font-semibold text-fg">Sub Rosa</h1>
-					<p className="text-xs text-fg-muted mt-1 leading-relaxed">
-						Aperiodic rhombic substitution tilings with {2 * N}-fold symmetry (Kari &amp; Rissanen
-						2016). Vertices exact in ℤ[ζ₄ₙ]; the dissection is derived from the edge word Σ(n), not
-						traced from a figure.
-					</p>
-				</div>
-
+			<AperiodicSidebar header={header}>
 				<Section label="Symmetry">
 					<Segmented
-						wrap
-						options={SUPPORTED_SYMMETRIES.map((s) => ({ v: String(s), label: `${2 * s}-fold` }))}
+						cols={4}
+						options={SUPPORTED_SYMMETRIES.map((s) => ({ v: String(s), label: `${2 * s}` }))}
 						value={String(N)}
 						onChange={(v) => {
 							const nn = Number(v);
@@ -363,162 +330,74 @@ export function SubstitutionsClient() {
 							setProtoX((p) => Math.min(p, Math.floor(nn / 2)));
 						}}
 					/>
-					<p className="text-[11px] text-fg-subtle mt-1">
-						n = {N} · {angles.length} rhomb{angles.length > 1 ? "s" : ""}
-						{N === 5 ? " (Penrose)" : ""}. Interior via the de Bruijn matched-line fill.
-					</p>
 				</Section>
 
 				<Section label="Seed">
 					<Segmented
 						options={[
 							{ v: "single", label: "Single tile" },
-							{ v: "star", label: `Star (${2 * N}-fold)` },
+							{ v: "star", label: `Star`, sub: `${2 * N}-fold` },
 						]}
 						value={seed}
 						onChange={(v) => setSeed(v as Seed)}
 					/>
 					{seed === "single" && (
-						<div className="mt-2">
-							<Segmented
-								options={angles.map((a) => ({
-									v: String(a.x),
-									label: `${Math.round(a.acuteDeg)}°/${Math.round(a.obtuseDeg)}°`,
-								}))}
-								value={String(effProtoX)}
-								onChange={(v) => setProtoX(Number(v))}
-							/>
-						</div>
+						<Segmented
+							cols={Math.min(angles.length, 3)}
+							options={angles.map((a) => ({
+								v: String(a.x),
+								label: `${Math.round(a.acuteDeg)}°/${Math.round(a.obtuseDeg)}°`,
+							}))}
+							value={String(effProtoX)}
+							onChange={(v) => setProtoX(Number(v))}
+						/>
 					)}
 				</Section>
 
-				<Section label={`Iteration — depth ${effDepth} / ${maxDepth}`}>
-					<input
-						type="range"
+				<Section label="Iteration">
+					<Slider
+						id="subrosa-depth"
+						label="Depth"
+						value={effDepth}
+						onChange={setDepth}
 						min={0}
 						max={maxDepth}
-						value={effDepth}
-						onChange={(e) => setDepth(Number(e.target.value))}
-						className="w-full accent-[var(--accent)]"
+						step={1}
 					/>
-					<div className="flex justify-between text-[11px] text-fg-subtle mt-1">
+					<div className="flex justify-between text-[11px] text-fg-muted">
 						<span>{tiles.length.toLocaleString()} tiles</span>
-						{effDepth === maxDepth && maxDepth < DEPTH_CEILING && (
-							<span className="text-fg-subtle">budget limit</span>
-						)}
+						{effDepth === maxDepth && maxDepth < DEPTH_CEILING && <span>budget limit</span>}
 					</div>
-					<p className="text-[11px] text-fg-subtle mt-1 leading-snug">
-						Each level is exact and gap/overlap-free — the point-symmetric super-rhomb boundary
-						makes adjacent tiles interlock, so the rule self-composes to any depth.
-					</p>
 				</Section>
 
-				<Section label="Display">
-					<label className="flex items-center gap-2 text-xs text-fg-muted">
-						<input type="checkbox" checked={showStroke} onChange={(e) => setShowStroke(e.target.checked)} />
-						Tile outlines (when zoomed in)
-					</label>
-					<button
-						className="mt-2 px-2 py-1 rounded-control border border-line-subtle text-xs text-fg-muted hover:text-fg hover:bg-surface-overlay"
-						onClick={() => {
-							view.current.fitted = false;
-							fit();
-							draw();
-						}}
-					>
-						Reset view
-					</button>
-				</Section>
+				<ViewFooter view={view} strokeWidth={strokeWidth} onStrokeWidth={setStrokeWidth} />
 
-				<Section label="How it works">
-					<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-						<dt className="text-fg-subtle">Inflation S(n)</dt>
-						<dd className="text-fg font-mono">{rule.scaling.toFixed(4)}</dd>
-						<dt className="text-fg-subtle">Area factor</dt>
-						<dd className="text-fg font-mono">{areaFactor.toFixed(2)}×</dd>
-						<dt className="text-fg-subtle">Prototiles</dt>
-						<dd className="text-fg">{rule.prototiles.length} rhombs</dd>
-						<dt className="text-fg-subtle">Edge word Σ</dt>
-						<dd className="text-fg font-mono text-[11px]">{rule.sigma.join(" ")}</dd>
-					</dl>
-					<div className="mt-3 space-y-3">
+				<Section label="Details">
+					<Details
+						rows={[
+							["Symmetry", `${2 * N}-fold · n = ${N}${N === 5 ? " (Penrose)" : ""}`],
+							["Prototiles", `${rule.prototiles.length} rhomb${rule.prototiles.length > 1 ? "s" : ""}`],
+							["Inflation S(n)", rule.scaling.toFixed(4)],
+							["Area factor", `${areaFactor.toFixed(2)}×`],
+							["Edge word Σ", rule.sigma.join(" ")],
+						]}
+					/>
+					<div className="flex flex-col gap-3">
 						{rule.prototiles.map((p) => (
 							<RuleDiagram key={p.x} rule={rule} x={p.x} />
 						))}
 					</div>
 				</Section>
-			</aside>
+			</AperiodicSidebar>
 
 			{/* canvas */}
 			<div className="flex-1 min-h-0 relative">
 				<canvas
 					ref={canvasRef}
-					className="w-full h-full block cursor-grab active:cursor-grabbing"
-					onWheel={onWheel}
-					onMouseDown={onDown}
-					onMouseMove={onMove}
-					onMouseUp={onUp}
-					onMouseLeave={onUp}
+					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+					{...view.handlers}
 				/>
 			</div>
-		</div>
-	);
-}
-
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-	return (
-		<div>
-			<div className="text-[11px] font-semibold uppercase tracking-wide text-fg-subtle mb-1.5">{label}</div>
-			{children}
-		</div>
-	);
-}
-
-function Segmented({
-	options,
-	value,
-	onChange,
-	wrap = false,
-}: {
-	options: { v: string; label: string }[];
-	value: string;
-	onChange: (v: string) => void;
-	wrap?: boolean; // wrap to multiple rows with individually-rounded chips (for the 7 symmetry options)
-}) {
-	if (wrap) {
-		return (
-			<div className="flex flex-wrap gap-1">
-				{options.map((o) => (
-					<button
-						key={o.v}
-						onClick={() => onChange(o.v)}
-						className={cn(
-							"px-2.5 py-1 text-xs rounded-control border transition-colors",
-							value === o.v
-								? "bg-accent-subtle text-accent font-medium border-accent/40"
-								: "border-line-subtle text-fg-muted hover:bg-surface-overlay",
-						)}
-					>
-						{o.label}
-					</button>
-				))}
-			</div>
-		);
-	}
-	return (
-		<div className="inline-flex rounded-control border border-line-subtle overflow-hidden">
-			{options.map((o) => (
-				<button
-					key={o.v}
-					onClick={() => onChange(o.v)}
-					className={cn(
-						"px-2.5 py-1 text-xs transition-colors",
-						value === o.v ? "bg-accent-subtle text-accent font-medium" : "text-fg-muted hover:bg-surface-overlay",
-					)}
-				>
-					{o.label}
-				</button>
-			))}
 		</div>
 	);
 }
@@ -538,11 +417,11 @@ function RuleDiagram({ rule, x }: { rule: SubRosaRule; x: number }) {
 	const tx = (v: Vector) => [pad + s * (v.x - minx), H - pad - s * (v.y - miny)] as const;
 	return (
 		<div>
-			<div className="text-[11px] text-fg-subtle mb-1">
+			<div className="text-[11px] text-fg-muted mb-1">
 				{Math.round((proto.x * 180) / rule.n)}°/{Math.round(((rule.n - proto.x) * 180) / rule.n)}° →{" "}
 				{proto.children.length} tiles
 			</div>
-			<svg width={W} height={H} className="rounded border border-line-subtle bg-surface-overlay">
+			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
 				{proto.children.map((c, i) => {
 					const pts = c.corners.map((v) => tx(v).join(",")).join(" ");
 					return <polygon key={i} points={pts} fill={`hsl(${HUE(c.protoId)} 55% 62%)`} stroke="rgba(0,0,0,0.35)" strokeWidth={0.4} />;

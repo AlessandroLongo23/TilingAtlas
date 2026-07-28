@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { HAT_WINDOW, hatPatch } from "@/lib/render/hatPatch";
 import { PENROSE_WINDOW, penrosePatch } from "@/lib/render/penrosePatch";
+import { characteristicTileSize, PATCH_DEFAULT_LEVELS } from "@/app/(app)/aperiodic/_patch-view";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
 
 function inside(poly: { x: number; y: number }[], x: number, y: number): boolean {
@@ -120,5 +121,63 @@ describe("hatPatch", () => {
 
 	it("grows as the squares of every other Fibonacci number", () => {
 		expect([1, 2, 3, 4].map((l) => hatPatch(l).length)).toEqual([4, 25, 169, 1156]);
+	});
+});
+
+// The /aperiodic patch views fit the whole patch at EVERY level, so the default level is what decides
+// how big a tile looks on landing. The two defaults are therefore chosen to have comparable tile
+// counts; without that, one construction opens at roughly twice the other's tile size.
+describe("the patch views open at a comparable tile scale", () => {
+	/** How many tiles span the view when the whole patch is fitted — the thing the eye compares. */
+	const tilesAcross = (polys: RawPolygon[]) => {
+		let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+		for (const p of polys)
+			for (const v of p.vertices) {
+				minx = Math.min(minx, v.x); maxx = Math.max(maxx, v.x);
+				miny = Math.min(miny, v.y); maxy = Math.max(maxy, v.y);
+			}
+		return Math.max(maxx - minx, maxy - miny) / characteristicTileSize(polys);
+	};
+
+	const penrose = penrosePatch(PATCH_DEFAULT_LEVELS.penrose);
+	const hat = hatPatch(PATCH_DEFAULT_LEVELS.hat);
+
+	it("measures a hat as about twice a Penrose rhombus", () => {
+		// Not obvious from the outlines, and the reason median edge is the wrong scale (below).
+		expect(characteristicTileSize(hat) / characteristicTileSize(penrose)).toBeCloseTo(2.07, 2);
+	});
+
+	it("pairs the default levels on tile count", () => {
+		expect(penrose.length).toBe(1140);
+		expect(hat.length).toBe(1156);
+		expect(Math.abs(penrose.length - hat.length) / hat.length).toBeLessThan(0.05);
+	});
+
+	it("lands the two within 1.3x of each other, fitting the whole patch", () => {
+		const ratio = tilesAcross(hat) / tilesAcross(penrose);
+		expect(ratio).toBeGreaterThan(1 / 1.3);
+		expect(ratio).toBeLessThan(1.3);
+	});
+
+	it("would be twice as far apart at Penrose's card default", () => {
+		// PENROSE_DEPTH (5) is the /defense card's framing, not the view's; 430 rhombi against 1,156
+		// hats opens Penrose at about double the tile size. Pinned so the two defaults stay decoupled.
+		expect(tilesAcross(hat) / tilesAcross(penrosePatch())).toBeGreaterThan(1.9);
+	});
+
+	it("would NOT be matched by median edge — the invariant that looks right and isn't", () => {
+		// A hat has SHORTER edges than a Penrose rhombus while being the LARGER tile, so ordering the
+		// two by edge length gets the answer backwards.
+		const medianEdge = (polys: RawPolygon[]) => {
+			const e: number[] = [];
+			for (const p of polys)
+				for (let i = 0; i < p.vertices.length; i++) {
+					const a = p.vertices[i], b = p.vertices[(i + 1) % p.vertices.length];
+					e.push(Math.hypot(b.x - a.x, b.y - a.y));
+				}
+			return e.sort((x, y) => x - y)[e.length >> 1];
+		};
+		expect(medianEdge(hat)).toBeLessThan(medianEdge(penrose));
+		expect(characteristicTileSize(hat)).toBeGreaterThan(characteristicTileSize(penrose));
 	});
 });

@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "*": ["public/**"],
   },
+  // /substitutions and /multigrid merged into /aperiodic (2026-07-27); they are now two views of one
+  // shelf, selected in its sidebar and carried in ?view=. Temporary (307) rather than permanent so a
+  // later reshuffle of the aperiodic section isn't stuck in every browser's redirect cache.
+  async redirects() {
+    return [
+      { source: "/substitutions", destination: "/aperiodic?view=subrosa", permanent: false },
+      { source: "/multigrid", destination: "/aperiodic?view=multigrid", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
