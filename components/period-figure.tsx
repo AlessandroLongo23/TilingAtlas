@@ -77,38 +77,91 @@ export function PeriodFigure() {
 		const N = data.directions;
 
 		const paint = () => {
-			const p = prepare(host, canvas, { minX: -1.32, maxX: 1.32, minY: -1.32, maxY: 1.32 }, 0.96);
+			const p = prepare(host, canvas, { minX: -1.5, maxX: 1.5, minY: -1.5, maxY: 1.5 }, 0.96);
 			if (!p) return;
 			const { ctx, s, dpr } = p;
+
+			// The axes of the complex plane, and the unit circle every arrowhead lands on — which is what
+			// says "these are UNIT steps" without a word. The tick at 1 gives the circle its scale; ζ⁰ is
+			// that point, so labelling the tick as well would name it twice.
+			ctx.strokeStyle = "rgba(0,0,0,0.42)";
+			ctx.lineWidth = 1.2 / s;
+			for (const [ax, ay] of [[1, 0], [0, 1]] as const) {
+				ctx.beginPath();
+				ctx.moveTo(-1.15 * ax, -1.15 * ay);
+				ctx.lineTo(1.15 * ax, 1.15 * ay);
+				ctx.stroke();
+				// ticks at ±1, across the axis
+				for (const sgn of [-1, 1]) {
+					ctx.beginPath();
+					ctx.moveTo(sgn * ax - 0.045 * ay, sgn * ay - 0.045 * ax);
+					ctx.lineTo(sgn * ax + 0.045 * ay, sgn * ay + 0.045 * ax);
+					ctx.stroke();
+				}
+			}
+			ctx.setLineDash([4 / s, 4 / s]);
+			ctx.strokeStyle = "rgba(0,0,0,0.22)";
+			ctx.beginPath();
+			ctx.arc(0, 0, 1, 0, 2 * Math.PI);
+			ctx.stroke();
+			ctx.setLineDash([]);
+
 			const labels: { x: number; y: number; k: number }[] = [];
 			for (let k = 0; k < N; k++) {
 				const a = (2 * Math.PI * k) / N;
 				const dx = Math.cos(a), dy = Math.sin(a);
 				ctx.strokeStyle = colourOf(k, N);
-				ctx.lineWidth = 2.6 / s;
-				ctx.lineCap = "round";
+				ctx.fillStyle = colourOf(k, N);
+				ctx.lineWidth = 2.2 / s;
+				ctx.lineCap = "butt";
+				const head = 0.13;
 				ctx.beginPath();
 				ctx.moveTo(0, 0);
-				ctx.lineTo(dx, dy);
+				ctx.lineTo(dx * (1 - head * 0.75), dy * (1 - head * 0.75));
 				ctx.stroke();
-				ctx.fillStyle = colourOf(k, N);
 				ctx.beginPath();
-				ctx.arc(dx, dy, 4.2 / s, 0, 2 * Math.PI);
+				ctx.moveTo(dx, dy);
+				ctx.lineTo(dx - head * Math.cos(a - 0.32), dy - head * Math.sin(a - 0.32));
+				ctx.lineTo(dx - head * Math.cos(a + 0.32), dy - head * Math.sin(a + 0.32));
+				ctx.closePath();
 				ctx.fill();
-				labels.push({ x: dx * 1.17, y: dy * 1.17, k });
+				labels.push({ x: dx * 1.28, y: dy * 1.28, k });
 			}
-			// Labels go on in SCREEN space: the world transform flips y, and text drawn through it comes
-			// out mirrored. Map each anchor through the matrix by hand, then reset and write.
+
+			// Text goes on in SCREEN space: the world transform flips y, and anything drawn through it
+			// comes out mirrored. Anchors are mapped through the matrix by hand.
 			const m = ctx.getTransform();
+			const toScreen = (x: number, y: number): [number, number] =>
+				[(m.a * x + m.c * y + m.e) / dpr, (m.b * x + m.d * y + m.f) / dpr];
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
 			ctx.scale(dpr, dpr);
-			ctx.font = `${Math.max(9, Math.min(13, s * 0.13))}px ui-monospace, monospace`;
-			ctx.textAlign = "center";
+			const size = Math.max(9, Math.min(15, s * 0.115));
+			const base = `${size}px ui-sans-serif, system-ui, sans-serif`;
+			const sup = `${size * 0.68}px ui-sans-serif, system-ui, sans-serif`;
 			ctx.textBaseline = "middle";
+			// ζ^k, set by hand rather than with a superscript glyph: the exponent runs to two digits and
+			// the Unicode superscripts for 4-9 are missing from enough UI fonts to risk a tofu on stage.
 			for (const { x, y, k } of labels) {
+				const exp = String(k);
+				ctx.font = base;
+				const wz = ctx.measureText("ζ").width;
+				ctx.font = sup;
+				const we = ctx.measureText(exp).width;
+				const [sx, sy] = toScreen(x, y);
+				const left = sx - (wz + we) / 2;
 				ctx.fillStyle = colourOf(k, N);
-				ctx.fillText(String(k), (m.a * x + m.c * y + m.e) / dpr, (m.b * x + m.d * y + m.f) / dpr);
+				ctx.textAlign = "left";
+				ctx.font = base;
+				ctx.fillText("ζ", left, sy);
+				ctx.font = sup;
+				ctx.fillText(exp, left + wz, sy - size * 0.3);
 			}
+			// the tick's value, tucked under the real axis so it does not crowd ζ⁰
+			ctx.font = `${size * 0.9}px ui-sans-serif, system-ui, sans-serif`;
+			ctx.fillStyle = "rgba(0,0,0,0.62)";
+			ctx.textAlign = "center";
+			const [ux, uy] = toScreen(1, -0.22);
+			ctx.fillText("1", ux, uy);
 		};
 
 		paint();
