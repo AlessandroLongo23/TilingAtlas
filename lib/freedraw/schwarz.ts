@@ -147,7 +147,18 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 	// The k COVERAGE IS MAREK'S RUN, NOT THE BOARD. Two boards have holes in it — (2,2,4) has no k=8 and
 	// (2,3,5) no k=4 — and those are gaps in the solve, not empty slices. schwarzKGaps() below is what the
 	// UI says that with; do not quietly present the list as a complete enumeration.
-	{ id: "223", pqr: [2, 2, 3], label: "(2,2,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6, 7, 8], lazyKs: [] , counts: { 2: 5, 3: 29, 4: 121, 5: 166, 6: 108, 7: 34, 8: 1834 } },
+	//
+	// ⚑ SIX BOARDS ARE STILL SHORT (Marek, 2026-07-29). Two solver bugs, both since fixed upstream:
+	//   · a wrong definition on the boards whose triangle has THREE different angles — (2,3,4) (2,3,5)
+	//     (2,3,6) (2,3,7) (2,4,5) — dropped every tiling that draws the longest edge class. This is the
+	//     F2-never-appears flag: E2 (third class undrawn) names all 103 scalene certificates, F2 (drawn)
+	//     names none. Corrected solvers are in materials/_as-received/corrections.zip; the reruns have
+	//     not arrived, so those five counts below are LOWER BOUNDS.
+	//   · too few starting vertices on (2,2,3) and (2,2,4), losing tilings built only from the excluded
+	//     ones. (2,2,3) is CORRECTED here (2,297 → 2,347, and the all-edges-drawn pattern it was missing
+	//     is back at ss223-2-00007); (2,2,4) is still rerunning.
+	// (2,3,3) and (2,4,4) are in neither bug and stand as shipped.
+	{ id: "223", pqr: [2, 2, 3], label: "(2,2,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6, 7, 8], lazyKs: [] , counts: { 2: 7, 3: 35, 4: 129, 5: 171, 6: 121, 7: 34, 8: 1850 } },
 	{ id: "224", pqr: [2, 2, 4], label: "(2,2,4)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6, 7, 9], lazyKs: [10] , counts: { 2: 10, 3: 52, 4: 52, 5: 780, 6: 1165, 7: 963, 9: 321, 10: 61914 } }, // k=10 is 61,914 tilings / 23 MB
 	{ id: "233", pqr: [2, 3, 3], label: "(2,3,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6], lazyKs: [7] , counts: { 2: 4, 3: 111, 4: 464, 5: 654, 6: 1966, 7: 45580 } }, // k=7 is 45,580 / 19 MB
 	// (2,3,4) reached k=11 in Marek's 2026-07-29 rerun — 5,974 certificates, contiguous from k=3. Every
@@ -157,7 +168,7 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 	// Hyperbolic. Marek's runs here are short — these two are the small end of the hyperbolic Schwarz
 	// family, and (2,3,7) is the smallest hyperbolic triangle there is.
 	{ id: "237", pqr: [2, 3, 7], label: "(2,3,7)", geometry: "hyperbolic", eagerKs: [3], lazyKs: [] , counts: { 3: 4 } },
-	{ id: "245", pqr: [2, 4, 5], label: "(2,4,5)", geometry: "hyperbolic", eagerKs: [3, 4], lazyKs: [] , counts: { 3: 5, 4: 2 } },
+	{ id: "245", pqr: [2, 4, 5], label: "(2,4,5)", geometry: "hyperbolic", eagerKs: [3, 4], lazyKs: [] , counts: { 3: 10, 4: 13 } },
 ];
 
 export const SCHWARZ_BOARD_BY_ID = new Map(SCHWARZ_BOARDS.map((b) => [b.id, b]));

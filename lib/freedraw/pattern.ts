@@ -126,9 +126,10 @@ export const FREEDRAW_EAGER_FILES = [
 	"/freedraw/hex-solutions-k4.json",
 	"/freedraw/hex-solutions-k5.json",
 	"/freedraw/hex-solutions-k6.json",
+	// No sch236 k=5: the only slice we ever had came from the withdrawn solver build. See the note in
+	// components/freedraw/planar-freedraw.tsx.
 	"/freedraw/sch236-solutions-k3.json",
 	"/freedraw/sch236-solutions-k4.json",
-	"/freedraw/sch236-solutions-k5.json",
 	"/freedraw/sch244-solutions-k2.json",
 	"/freedraw/sch244-solutions-k3.json",
 ];

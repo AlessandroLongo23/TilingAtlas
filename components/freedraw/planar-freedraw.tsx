@@ -59,7 +59,10 @@ const K_OPTIONS: Record<FreedrawGrid, { value: number; label: string }[]> = {
 	triangle: [0, 1, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	hex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	ts: [0, 1, 2, 3].map((k) => ({ value: k, label: k ? String(k) : "All" })),
-	sch236: [0, 3, 4, 5].map((k) => ({ value: k, label: k ? String(k) : "All" })),
+	// (2,3,6) stops at 4, not 5: the k=5 slice was withdrawn with the solver build that produced it
+	// (see CATALOGUE below). Offering a chip with nothing behind it claims a depth the board does not
+	// have here. Add 5 back with the data, not before.
+	sch236: [0, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	sch244: [0, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 };
 
@@ -114,10 +117,13 @@ const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[]; heavy?: true 
 		{ url: "/freedraw/ts-solutions-k2.json", ks: [2] },
 		{ url: "/freedraw/ts-solutions-k3.json", ks: [3] },
 	],
+	// k=5 is DELIBERATELY ABSENT. The slice we had came from the solver build Marek withdrew on
+	// 2026-07-29 (it dropped every tiling drawing the longest edge class), and his corrected drop
+	// only reaches k=4. Showing six known-short patterns beside a corrected k=3 and k=4 would make
+	// the board look enumerated to k=5 when it is not. Restore the entry when a corrected k=5 exists.
 	sch236: [
 		{ url: "/freedraw/sch236-solutions-k3.json", ks: [3] },
 		{ url: "/freedraw/sch236-solutions-k4.json", ks: [4] },
-		{ url: "/freedraw/sch236-solutions-k5.json", ks: [5] },
 	],
 	// The (2,4,4) board's k=4 slice is 12,361 patterns / 18.8 MB, so it is `heavy` like the hexagonal
 	// tail: "All" skips it and picking its chip loads it.

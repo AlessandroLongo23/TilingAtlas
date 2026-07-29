@@ -14,12 +14,23 @@ const k4 = load("sch236-solutions-k4.json");
 const byId = (ps: FreedrawPattern[] | null, id: string) => ps?.find((p) => p.id === id);
 
 describe("Schwarz (2,3,6) edge systems", () => {
-	it.skipIf(!k3 || !k4)("ships Marek's whole 2026-07-27 run, and it starts at k=3", () => {
+	it.skipIf(!k3 || !k4)("ships Marek's 2026-07-29 corrected run, and it starts at k=3", () => {
 		// k counts vertex orbits and the bare board already has three (hexagon centres, corners, edge
 		// midpoints), so k=1 and k=2 do not exist here — the catalogue is complete, not truncated.
-		expect(k3).toHaveLength(5);
-		expect(k4).toHaveLength(38);
+		//
+		// These counts are 10.7× the 2026-07-27 ones (5 and 38). The first build of the solver carried a
+		// wrong definition that dropped every tiling drawing the LONGEST of the board's three edge
+		// classes, which is why no certificate anywhere ever named F2. The corrected build restores them.
+		expect(k3).toHaveLength(10);
+		expect(k4).toHaveLength(452);
 		for (const p of [...k3!, ...k4!]) expect(p.grid).toBe("sch236");
+	});
+
+	it("ships no k=5 at all, rather than the withdrawn build's six patterns", () => {
+		// The only k=5 slice that ever existed came from the retracted solver, and the corrected drop
+		// stops at k=4. A short slice sitting beside two corrected ones would read as "enumerated to
+		// k=5". Deleting it is the honest state; this test is what stops it drifting back in.
+		expect(existsSync("public/freedraw/sch236-solutions-k5.json")).toBe(false);
 	});
 
 	it.skipIf(!k3)("has exactly one nothing-drawn pattern: the bare Schwarz tiling", () => {
@@ -54,7 +65,7 @@ describe("Schwarz (2,3,6) edge systems", () => {
 				checked++;
 			}
 		}
-		expect(checked).toBe(636);
+		expect(checked).toBe(7344);
 	});
 
 	it.skipIf(!k3)("sees the regular tiles that a straight run through a board vertex hides", () => {
@@ -69,7 +80,9 @@ describe("Schwarz (2,3,6) edge systems", () => {
 			if (r.allRegular) allRegular++;
 			for (const n of r.kinds) kinds.add(n);
 		}
-		expect(allRegular).toBe(2);
+		// Three at k=3, not the two the withdrawn build found: one of the tilings it dropped is itself
+		// all-regular, so the bug was costing the catalogue regular tilings, not just decorated ones.
+		expect(allRegular).toBe(3);
 		expect([...kinds].sort()).toEqual([3, 6]);
 	});
 
