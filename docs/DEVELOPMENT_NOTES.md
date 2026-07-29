@@ -8001,3 +8001,10 @@ as two isolated vectors rather than as a lattice.
 
 Verified: build exit 0, eslint clean, 0 px overflow at 1280×800 and 1440×900, hit-testing confirmed at
 four probe points via the cursor style.
+
+**Follow-up the same day.** Two corrections from AL. The resting highlight was a separate orange
+accent, which made hovering look like a change of colour *scheme* rather than a change of which tile
+is lit; it now uses the same by-side-count colour, so the palette is the resting state. And the plane
+panel drew only the two lattice lines the arrows sit on, which shows a pair of vectors, not a lattice
+— it now draws every line of constant a and constant b, clipped to the frame, with the range taken
+from the frame's own corners in lattice coordinates so it covers the panel at any skew.

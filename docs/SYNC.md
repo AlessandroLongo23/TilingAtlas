@@ -1771,3 +1771,10 @@ the renderer) and lights every piece of it on the right. Hovered COPY on the lef
 right — in the plane those are different tiles, on the torus one. Hovering a copy outside the cell
 lights its image inside. Plane panel zoomed out; lattice directions carried on dashed. 642a355.
 Detail: NOTES §"The torus figure becomes the quotient map". — CC
+
+### 2026-07-29 (3) — CC — resting colour and the whole lattice
+AL: the unhovered tile should keep its own by-side-count colour rather than a separate orange accent
+(so hover changes which tile is lit, not which scheme is running), and the plane panel should draw
+every lattice line, not the two the arrows sit on. Both done; line range derived from the frame
+corners in lattice coordinates, so it covers the panel at any skew. Detail: NOTES §"The torus figure
+becomes the quotient map" (follow-up). — CC
