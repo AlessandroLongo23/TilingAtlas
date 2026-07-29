@@ -86,6 +86,13 @@ export class SeedExpander {
 	 *  — used by the re-exploration meter to distinguish H1 (DAG-as-tree) from H2 (over-admission). */
 	canonicalKeyFn?: (polys: Polygon[]) => string;
 
+	/**
+	 * What a stamp places: a copy of the seed, or a copy of the whole current patch. See the comment
+	 * at the placement site in `findValidIsometries`. `seed` is the default and is what every count in
+	 * this repo was measured with; `patch` exists to be measured against it, not to be switched on.
+	 */
+	stampMode: "seed" | "patch" = "seed";
+
 	constructor(k: number) {
 		this.k = k;
 		this.threshold = 6 * k;
@@ -743,7 +750,18 @@ export class SeedExpander {
 						if (!aligned) continue;
 
 						// Collision needs float geometry; build it once and reuse it as the patch delta.
-						const transformedFullPatch = this.applyIsometryToPolygons(originalPolygons, T, 'full');
+						// What the stamp actually places. `seed` (the default, and what the whole architecture
+						// was built and measured on) places a copy of the SEED: the minimal consequence of
+						// "this open vertex is in orbit i", since the symmetry carrying core_i onto it carries
+						// the seed's figure with it. `patch` places a copy of the ENTIRE CURRENT PATCH, which
+						// is the stronger reading of the same fact — if the isometry really is a symmetry of
+						// the target tiling then it carries all of the patch there too, so the copy cannot
+						// collide, and a copy that DOES collide proves the isometry is a symmetry of no
+						// tiling containing this patch. Sound and complete by that argument; strictly more
+						// pruning; and O(patch) per candidate rather than O(seed), which is the open cost
+						// question. See scripts/diag-stamp-mode.ts.
+						const stampSource = this.stampMode === "patch" ? currentPatch : originalPolygons;
+						const transformedFullPatch = this.applyIsometryToPolygons(stampSource, T, 'full');
 						if (dbg) { const e = dnow() - _s; dbg.xform += e; dbg.collision += e; dbg.collCand++; _s = dnow(); }
 						const collided = this.hasFatalCollision(transformedFullPatch, patchSpatialHash, existingBboxCache, patchKeySet);
 						if (dbg) { const e = dnow() - _s; dbg.collide += e; dbg.collision += e; }

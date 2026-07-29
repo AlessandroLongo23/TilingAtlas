@@ -1,0 +1,10 @@
+k=1, tiles {3,4,6,8,12}: 15 seeds, 20000ms cap each
+
+mode   extracted  deduped  leaves  capped-seeds  ms
+seed          11       11      13             0    8911
+patch         10       10      10             0  144603
+
+target for k=1: 11
+COUNT CHANGED: seed=11, patch=10 — patch-stamping is INCOMPLETE here.
+  seed [3,3,3,3,6]: seed-stamping 1 cell(s), patch-stamping 0
+leaves 13 → 10 (23.1% fewer), capped seeds 0 → 0, wall 8911ms → 144603ms

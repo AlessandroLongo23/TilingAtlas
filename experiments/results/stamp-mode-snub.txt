@@ -1,0 +1,17 @@
+seed [3,3,3,3,6]: 5 tiles
+
+seed   leaves=2 (sizes 134..134) | no cell extracted=0 | orbit-gate rejected=0 | usable=2 | capped=false | 1621ms
+patch  leaves=0 (sizes 0..0) | no cell extracted=0 | orbit-gate rejected=0 | usable=0 | capped=false | 4ms
+
+Reading:
+  leaves=0            -> the search itself dies: no valid whole-patch placement exists.
+  leaves>0, usable=0  -> the search gets there; the emitted leaf is what fails.
+
+placements surviving per step (figure trace):
+  seed   step1: 3 (patch 5 tiles, 5 open, prunedByVC 0) | step2: 1 (patch 8 tiles, 6 open, prunedByVC 0) | step3: 1 (patch 10 tiles, 7 open, prunedByVC 0) | step4: 2 (patch 12 tiles, 8 open, prunedByVC 0)
+  patch  step1: 3 (patch 5 tiles, 5 open, prunedByVC 0) | step2: 0 (patch 8 tiles, 6 open, prunedByVC 0)
+
+is the step-2 target already surrounded?
+  patch after stamp 1: 8 tiles, 2 recorded as collapsed
+  open vertices offered: 6, of which ALREADY at 2pi: 0
+  step-2 target: 16/24 angle units from 3 tiles — genuinely open
