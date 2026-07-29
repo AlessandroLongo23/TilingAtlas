@@ -1,0 +1,13 @@
+seed [3,3,3,3,6]
+
+seed   20 candidates: align=5 accepted=1 footprintDup=14
+patch  20 candidates: align=5 collision=1 footprintDup=14
+
+candidates whose fate DIFFERS between the modes:
+  a0 s0 b12 R: seed=accepted  patch=collision
+
+what the whole-patch copy collides with:
+  seed-stamping accepts 1: a0 s0 b12 R
+  transform rotK=0 reflect=true: 8 tiles → 4 re-stamp an existing tile, 2 land on free space, 2 OVERLAP
+      3-gon at (0.000,1.155) overlaps 6-gon at (0.000,1.732)
+      6-gon at (1.000,1.732) overlaps 3-gon at (1.000,1.155)

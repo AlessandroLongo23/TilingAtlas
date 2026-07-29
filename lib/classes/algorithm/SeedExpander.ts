@@ -93,6 +93,20 @@ export class SeedExpander {
 	 */
 	stampMode: "seed" | "patch" = "seed";
 
+	/**
+	 * Diagnostic hook: called once per enumerated candidate isometry with the stage that decided its
+	 * fate. Off unless assigned; scripts/diag-stamp-why.ts uses it to compare the two stamp modes
+	 * candidate by candidate on the same frame. Costs one optional call per candidate when unset.
+	 */
+	candidateProbe?: (info: {
+		stage: "namePrefilter" | "orbit" | "footprintDup" | "align" | "collision" | "accepted";
+		anchorIdx: number;
+		seedDir?: number;
+		boundaryDir?: number;
+		reflect?: boolean;
+		rotK?: number;
+	}) => void;
+
 	constructor(k: number) {
 		this.k = k;
 		this.threshold = 6 * k;
@@ -220,6 +234,11 @@ export class SeedExpander {
 		}
 		return { frontier, target, candidates, prunedByVC };
 	};
+
+	/** The private isometry application, exposed for the stamp-mode diagnostics (they need to build a
+	 *  transform's image themselves to see what it hits). Read-only: nothing here feeds the search. */
+	applyIsometryPublic = (polys: Polygon[], T: RigidIsometry): Polygon[] =>
+		this.applyIsometryToPolygons(polys, T, 'full');
 
 	/** Apply one candidate, exactly as the DFS does when it pushes the child frame. */
 	figureMerge = (
@@ -685,6 +704,15 @@ export class SeedExpander {
 		// re-stamp an existing tile (the bulk of the seed re-placement). Built once per frame.
 		const patchKeySet = new Set<string>(currentPatch.map((p) => p.exactKey()));
 		const seenFootprints = new Set<string>();
+		// What the footprint dedup measures must be what the stamp PLACES. It keys an isometry by where
+		// it sends the stamped tiles and keeps the first of each group — sound for seed stamping, where
+		// two isometries agreeing on the seed produce the identical child patch. Under patch stamping it
+		// is not: they agree on the seed and can differ everywhere else, so keying on the seed discards
+		// placements that are genuinely distinct. That is what lost the snub — its 5-tile seed is
+		// mirror-symmetric, so a reflection and a rotation share a seed-footprint, the reflection was kept,
+		// and applied to the (chiral) 8-tile patch it collides while the rotation would not have.
+		const footprintCentroids =
+			this.stampMode === "patch" ? currentPatch.map((p) => p.exactCentroid!) : coreCentroids;
 		const validTransforms: { transform: RigidIsometry; anchorIdx: number; transformedPatch: Polygon[] }[] = [];
 		const existingBboxCache = new Map<
 			Polygon,
@@ -707,7 +735,7 @@ export class SeedExpander {
 				for (const nm of existingNamesAtTarget) {
 					if (!coreNames.has(nm)) { coverable = false; break; }
 				}
-				if (!coverable) continue;
+				if (!coverable) { this.candidateProbe?.({ stage: "namePrefilter", anchorIdx: idx }); continue; }
 			}
 
 			for (const boundaryEdge of boundaryEdgesAtTarget) {
@@ -736,18 +764,27 @@ export class SeedExpander {
 							}
 						}
 						if (dbg) { dbg.orbit += dnow() - _s; _s = dnow(); }
-						if (orbitMismatch) continue;
+						if (orbitMismatch) {
+							this.candidateProbe?.({ stage: "orbit", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
+							continue;
+						}
 
-						const footprint = this.getIsometryFootprint(T, coreCentroids);
+						const footprint = this.getIsometryFootprint(T, footprintCentroids);
 						if (dbg) { dbg.footprint += dnow() - _s; _s = dnow(); }
-						if (seenFootprints.has(footprint)) continue;
+						if (seenFootprints.has(footprint)) {
+							this.candidateProbe?.({ stage: "footprintDup", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
+							continue;
+						}
 						seenFootprints.add(footprint);
 
 						// Alignment is a pure exact-key test — transform exact-only (no float trig).
 						const transformedCorePolys = this.applyIsometryToPolygons(corePolys, T, 'exact');
 						const aligned = this.passesAlignmentCheck(transformedCorePolys, existingPolysAtTarget);
 						if (dbg) { dbg.align += dnow() - _s; _s = dnow(); }
-						if (!aligned) continue;
+						if (!aligned) {
+							this.candidateProbe?.({ stage: "align", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
+							continue;
+						}
 
 						// Collision needs float geometry; build it once and reuse it as the patch delta.
 						// What the stamp actually places. `seed` (the default, and what the whole architecture
@@ -765,6 +802,7 @@ export class SeedExpander {
 						if (dbg) { const e = dnow() - _s; dbg.xform += e; dbg.collision += e; dbg.collCand++; _s = dnow(); }
 						const collided = this.hasFatalCollision(transformedFullPatch, patchSpatialHash, existingBboxCache, patchKeySet);
 						if (dbg) { const e = dnow() - _s; dbg.collide += e; dbg.collision += e; }
+						this.candidateProbe?.({ stage: collided ? "collision" : "accepted", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
 						if (!collided) {
 							validTransforms.push({ transform: T, anchorIdx: idx, transformedPatch: transformedFullPatch });
 						}

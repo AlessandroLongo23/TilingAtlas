@@ -28,6 +28,11 @@ import { setActiveRing } from '@/classes/Cyclotomic';
 
 const k = parseInt(process.argv[2] ?? '1', 10);
 const msPerSeed = parseInt(process.argv[3] ?? '20000', 10);
+// Deterministic frame cap. Whole-patch stamping needs one: its patches grow geometrically, so a
+// wall-clock cap checked every 256 frames can allocate gigabytes between checks (measured: OOM at 12 GB
+// with a 15 s cap). A frame cap bounds memory as well as time, and being wall-clock-free it is
+// reproducible. 0 = unlimited.
+const nodesPerSeed = parseInt(process.argv[4] ?? '0', 10);
 // The same tile set the k=1=11 test uses, so the counts are comparable to the ones on record.
 const ns = k === 1 ? [3, 4, 6, 8, 12] : [3, 4, 6, 12];
 
@@ -44,7 +49,7 @@ const graph = CompatibilityGraph.fromAdjacencyList(adj, vcs);
 const seedSets = new SeedSetExtractor(graph).findSeedSets(k);
 const allSeeds = new SeedBuilder().buildSeeds(k, 1, { seedSetLoader: () => seedSets });
 const seeds = k >= 2 ? allSeeds.filter((s) => new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2) : allSeeds;
-console.log(`k=${k}, tiles {${ns.join(',')}}: ${seeds.length} seeds, ${msPerSeed}ms cap each\n`);
+console.log(`k=${k}, tiles {${ns.join(',')}}: ${seeds.length} seeds, ${msPerSeed}ms + ${nodesPerSeed || '∞'} frames cap each\n`);
 
 interface Row { mode: string; extracted: number; deduped: number; leaves: number; capped: number; ms: number; bySeed: Map<string, number> }
 
@@ -63,6 +68,7 @@ function run(mode: 'seed' | 'patch'): Row {
 		const expander = new SeedExpander(k);
 		expander.stampMode = mode;
 		expander.maxExpandMs = msPerSeed;
+		expander.maxExpandNodes = nodesPerSeed;
 		expander.expand(seed, (patch) => {
 			leaves++;
 			const canonical = extractor.canonicalPatchKey(patch);

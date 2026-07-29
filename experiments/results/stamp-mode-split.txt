@@ -1,0 +1,4 @@
+--- seed ---
+[done] frames=164 pruned=8 leaves=2 stack=0 phase=branch branchMax=3 avgBranch=1.04 ms=194 | hash=0 dist=12 frontier=6 valid=151 merge=6 || fvi: cand=3650 build=0 orbit=8 footprint=31 align=50 collision=59 [xform=12 collide=47 collCand=171 intersects=1415]
+--- patch ---
+[done] frames=147 pruned=0 leaves=2 stack=0 phase=branch branchMax=3 avgBranch=0.99 ms=187539 | hash=688 dist=3431 frontier=748 valid=172115 merge=3004 || fvi: cand=3210 build=1 orbit=47 footprint=73832 align=208 collision=97407 [xform=87554 collide=9853 collCand=291 intersects=129844]

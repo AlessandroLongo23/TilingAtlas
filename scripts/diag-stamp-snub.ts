@@ -71,9 +71,9 @@ for (const mode of ['seed', 'patch'] as const) {
 	let patch = snub.polygons.map((p) => p.clone());
 	let collapsed = exp.figureStart(snub);
 	const counts: string[] = [];
-	for (let step = 0; step < 4; step++) {
+	for (let step = 0; step < 9; step++) {
 		const s = exp.figureStep(snub, patch, collapsed);
-		counts.push(`step${step + 1}: ${s.candidates.length} (patch ${patch.length} tiles, ${s.frontier.length} open, prunedByVC ${s.prunedByVC})`);
+		counts.push(`${patch.length}→${s.candidates.length}c`);
 		if (s.candidates.length === 0) break;
 		const merged = exp.figureMerge(patch, s.candidates[0]);
 		patch = merged.patch;
