@@ -7824,3 +7824,36 @@ whole-patch stamping does not bound that either. Fixing Λ first does, which is 
 k=2 from 13 timeouts to zero.
 
 `stampMode` stays `"seed"`. `"patch"` remains measured, not shipped.
+
+## 2026-07-28 (6) — The unsoundness slide, walked instead of asserted
+
+The emit-on-closure slide carried a static three-panel figure: a strip of squares, an arrow to its 4⁴
+completion, an arrow to its 3³.4² one. It asserts the ambiguity, and the eye cannot check across three
+separate drawings that the patch really is the same in all of them — which is the entire claim.
+
+`<row-stacker>` replaces it. A certified row of squares, ringed, and above it one free binary choice
+per row: another square row or a row of triangles. Every choice is legal because all three interfaces
+close 2π — squares on squares 4.4.4.4, triangles on squares 3.3.3.4.4, triangles on triangles 3⁶ — so
+n rows are 2ⁿ distinct tilings all containing that same ringed patch, and the prune keeps one. The
+counter says so as you build it. It is the family the old figure's own caption named ("3³.4², or
+non-periodic row mixtures"); the widget just lets you walk it.
+
+Two things the geometry forced. A triangle row shifts the lattice half a unit — its lower boundary
+sits on the integers and its upper on the half-integers — so the offset has to be carried; getting it
+wrong puts the squares above a triangle row half a tile out. And letting that shift move each row's
+left edge makes the stack lean further right with every triangle row: honest, and on a slide purely a
+distraction that reads as a rendering fault. Each row is now drawn past both edges of a fixed window
+and clipped, so the silhouette stays square while the phase inside it still shifts.
+
+The frame is fixed at the tallest stack the demo allows rather than fitted to the current one. Fitting
+would redraw the certified patch smaller with every row added, and "this patch is unchanged" is what
+the picture is for.
+
+Keys are digits — 1 squares, 2 triangles, Backspace undo, 0 reset. The deck owns the arrows, Space,
+PageUp/Down, Home, End, Esc and n; the preview overlays own o/s/d/p. Verified that ArrowRight still
+advances the deck with the widget on screen.
+
+Also on the architecture-two slide, one clause: the stamping rule is not the lever — a stronger one
+prunes about a tenth of the search for roughly 900× the cost. That is the whole-patch measurement in
+eight words, placed so the obvious question is answered before it is asked, and it keeps a sub-method
+that changed nothing out of the narrative (see the 2.A/2.B discussion, entry 5).

@@ -1723,3 +1723,10 @@ discarded 14 of 20 candidates, keeping a reflection that collides on the chiral 
 stamped source instead, the snub comes back (0 → 2 usable leaves). Profile: 967× slower, but `collide`
 is only 9.9 s of 187 s — 86% is the footprint key and an eager float transform. It buys 147 frames vs
 164. Detail: NOTES §"Whole-patch stamping, diagnosed". — CC
+
+### 2026-07-28 (5) — CC — the unsoundness slide becomes a thing you build
+`<row-stacker>` replaces the static three-panel figure: a ringed certified patch, a free
+squares-or-triangles choice per row, and a counter reading 2ⁿ legal continuations of that same patch
+against the one emit-on-closure keeps. All three interfaces close 2π, so every choice is legal. Plus
+one clause on the architecture-two slide retiring the whole-patch variant in eight words. Detail:
+NOTES §"The unsoundness slide, walked instead of asserted". — CC
