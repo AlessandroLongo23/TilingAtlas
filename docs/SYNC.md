@@ -1750,3 +1750,9 @@ Wheel and example split, per AL: the alphabet's origin is where both chains star
 covered what it was explaining. The wheel now carries its exponents and the sum line is set in the same
 colours, so a term walks from equation to direction to chain segment unaided. No overflow at 1440×900
 or 1280×720. Detail: NOTES §"The period figure splits in two". — CC
+
+### 2026-07-28 (8) — CC — the ζ wheel redrawn: arrows, axes, ζ^k
+AL called the first version horrible and was right. Arrowheads instead of dots, real and imaginary axes
+with ticks at ±1 and a dashed unit circle through every head (which is what "unit steps" needed to be
+visible rather than asserted), and labels set as ζ^k by hand — Unicode superscripts 4–9 are missing
+from enough UI fonts to risk a tofu on a projector. Detail: NOTES §"The wheel redrawn". — CC

@@ -7907,3 +7907,21 @@ Two adjustments the split forced. The example panel no longer needs the ±1.4 pa
 and the tile margin came in from ±0.45 to ±0.22 lattice units, which is what keeps the chains large
 enough to read now that they share a panel with nothing else. Panels sit at 34vh; verified no overflow
 at 1440×900 and at 1280×720, which is the projector case.
+
+## 2026-07-28 (9) — The wheel redrawn
+
+AL, on the first version: horrible. Dots on spokes, bare numbers, and no way to see that the steps are
+unit length. Three fixes, all his:
+
+**Arrows, not dots.** A dot at the end of a line is a point; an arrowhead is a vector, which is what
+these are. Heads at 0.13 of the unit, shaft stopping short of the head so the two do not overlap.
+
+**Axes and a unit circle.** The claim in the caption is "unit steps" and nothing on the old drawing
+supported it. Now the real and imaginary axes cross at the origin with ticks at ±1, a dashed circle of
+radius 1 passes through every arrowhead, and the tick carries a "1". The tick is labelled and ζ⁰ is
+not, because they are the same point and naming it twice reads as two different things.
+
+**ζ^k, not k.** The exponent runs to two digits, so it is set by hand — "ζ" at full size, the digits at
+0.68× raised by 0.3em, the pair centred as one unit — rather than through Unicode superscripts, whose
+glyphs for 4–9 are missing from enough UI fonts to risk a tofu on a projector. The axes were also
+shortened to ±1.15 so they stop before the label ring instead of running through ζ⁰ and ζ¹².
