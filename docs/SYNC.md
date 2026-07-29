@@ -1778,3 +1778,10 @@ AL: the unhovered tile should keep its own by-side-count colour rather than a se
 every lattice line, not the two the arrows sit on. Both done; line range derived from the frame
 corners in lattice coordinates, so it covers the panel at any skew. Detail: NOTES §"The torus figure
 becomes the quotient map" (follow-up). — CC
+
+### 2026-07-29 (4) — CC — the k=2 count-error slide is cut, the counts table gets its scope
+AL: the 23-against-20 story is about a dead pipeline and its lesson is already carried by "Why
+agreement between programs settles nothing" and by the residual-risk slide. Cut. What replaces it is
+one asterisk on the counts table — "assuming the algorithm is implemented correctly and faithfully
+matches the theory" — because the proof is of the ALGORITHM and the numbers come from a program; only
+11 and 20 are certified independently of this engine. Deck now 44 slides. — CC
