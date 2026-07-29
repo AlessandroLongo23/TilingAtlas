@@ -36,10 +36,16 @@ const DISK_PAD_PX = 24;
 const MAX_CENTER_R = 0.9995;
 
 interface Props {
-	pattern: HypEdgesPattern;
+	/** Everything both render paths read. The Schwarz shelf (lib/freedraw/schwarz.ts) is not a
+	 *  HypEdgesPattern but supplies exactly this, so it draws through this canvas unchanged. */
+	pattern: Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts">;
+	/** Skip the per-pixel path. The Dirichlet reducer rebuilds side pairings from ONE edge length, so a
+	 *  SCALENE board (a Schwarz triangle has three) has to take the explicit developed draw — which reads
+	 *  the per-dart lengths off the darts and is correct there. */
+	force2d?: boolean;
 }
 
-export function HyperbolicEdgesCanvas({ pattern }: Props) {
+export function HyperbolicEdgesCanvas({ pattern, force2d = false }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -60,7 +66,7 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		if (!use2d) {
+		if (!use2d && !force2d) {
 			const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
 			if (gl) {
 				try {
@@ -77,7 +83,7 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 			glRef.current = null;
 			ctx2dRef.current = null;
 		};
-	}, [use2d]);
+	}, [use2d, force2d]);
 
 	// Bind the pattern to whichever renderer came up; (perPixel) build + upload the edge field.
 	useEffect(() => {

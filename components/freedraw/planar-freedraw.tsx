@@ -30,7 +30,7 @@ import {
 	type SizeMode,
 	type Tri,
 } from "@/lib/freedraw/filter";
-import { gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import { freedrawKNoun, gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw/regular";
 import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
@@ -44,20 +44,23 @@ const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 	{ value: "hex", label: "Hexagon" },
 	{ value: "ts", label: "Tri + squares" },
 	{ value: "sch236", label: "Schwarz 236" },
+	{ value: "sch244", label: "Schwarz 244" },
 ];
 
 // k ranges per grid track what the catalogues hold: squares to k=5, triangles to k=4, the combined
 // grid to k=3, hexagons to k=9. "All" on the hexagonal grid shows k<=6 (see filesFor).
 //
-// Schwarz 236 starts at k=3, not k=1: k counts vertex orbits, and the bare board already has three
-// (hexagon centres, corners, edge midpoints), so 1 and 2 are not gaps but non-existent. Its chips
-// therefore run 3..4, which is Marek's whole 2026-07-27 run.
+// The two Schwarz boards start above k=1, and not by the same amount: k counts vertex orbits, and the
+// bare board already has as many as it has corner classes. (2,3,6) has three (hexagon centres, corners,
+// edge midpoints) so it starts at 3; (2,4,4) has two (the lattice points and the square centres) so it
+// starts at 2. Below those, k values are not gaps but non-existent.
 const K_OPTIONS: Record<FreedrawGrid, { value: number; label: string }[]> = {
 	square: [0, 1, 2, 3, 4, 5].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	triangle: [0, 1, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	hex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	ts: [0, 1, 2, 3].map((k) => ({ value: k, label: k ? String(k) : "All" })),
-	sch236: [0, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
+	sch236: [0, 3, 4, 5].map((k) => ({ value: k, label: k ? String(k) : "All" })),
+	sch244: [0, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 };
 
 // The face classes, one has/none/any row each (they COMBINE — "a strip is fine, an unbounded sheet is
@@ -114,6 +117,14 @@ const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[]; heavy?: true 
 	sch236: [
 		{ url: "/freedraw/sch236-solutions-k3.json", ks: [3] },
 		{ url: "/freedraw/sch236-solutions-k4.json", ks: [4] },
+		{ url: "/freedraw/sch236-solutions-k5.json", ks: [5] },
+	],
+	// The (2,4,4) board's k=4 slice is 12,361 patterns / 18.8 MB, so it is `heavy` like the hexagonal
+	// tail: "All" skips it and picking its chip loads it.
+	sch244: [
+		{ url: "/freedraw/sch244-solutions-k2.json", ks: [2] },
+		{ url: "/freedraw/sch244-solutions-k3.json", ks: [3] },
+		{ url: "/freedraw/sch244-solutions-k4.json", ks: [4], heavy: true },
 	],
 	// The hexagonal grid runs deep — Marek solved it to k=9, where one slice is 22,361 patterns / 58 MB.
 	// `heavy` keeps those three out of the "All" fetch; picking their k chip still loads them.
@@ -502,7 +513,7 @@ export function PlanarFreedraw({
 								<Button href={playHref} variant="secondary" size="sm" icon={Play} label="Open in play" fullWidth />
 							)}
 							<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-								<dt className="text-text-muted">grid-point orbits</dt>
+								<dt className="text-text-muted">{freedrawKNoun(filter.grid)}</dt>
 								<dd className="text-text-secondary">k = {selected.pattern.k}</dd>
 								<dt className="text-text-muted">period lattice</dt>
 								<dd className="text-text-secondary">

@@ -7,6 +7,7 @@ import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, type
 import { cn } from "@/lib/utils/cn";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { TileGrid } from "./tile-grid";
+import { freedrawKNoun, gridOf } from "@/lib/freedraw/pattern";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
 // thumbnail + badge. Click selects (renders large on the canvas)
@@ -39,7 +40,8 @@ const SUB_LABEL: Record<string, string> = {
 	triangle: "Triangle grid",
 	hex: "Hexagon grid",
 	ts: "Triangle + square grid",
-	sch236: "Schwarz 236 grid",
+	sch236: "Schwarz (2,3,6) grid",
+	sch244: "Schwarz (2,4,4) grid",
 	// Colors splits the same grids again by palette size — each is its own catalogue.
 	"square-2": "Square grid, 2 colors",
 	"square-3": "Square grid, 3 colors",
@@ -53,6 +55,15 @@ const SUB_LABEL: Record<string, string> = {
 	cube: "Cube",
 	dodecahedron: "Dodecahedron",
 	icosahedron: "Icosahedron",
+	// Schwarz boards: one sub per (p,q,r) reflection group. The board is the sphere / disk cut by its
+	// mirrors, so the label names the triple rather than a Schläfli symbol — (2,3,4) has no {p,q} name.
+	"sps-223": "(2,2,3) board",
+	"sps-224": "(2,2,4) board",
+	"sps-233": "(2,3,3) board",
+	"sps-234": "(2,3,4) board",
+	"sps-235": "(2,3,5) board",
+	"hys-237": "(2,3,7) board",
+	"hys-245": "(2,4,5) board",
 	// Hyperbolic edge systems: one sub per base tiling.
 	"hyp-667": "6.6.7 edges",
 	"hyp-37": "{3,7} edges",
@@ -187,9 +198,9 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			// row rather than letting a bare "k = 2" imply the quantities are the same.
 			const kLabel =
 				cls === "freedraw"
-					? kk.list[0]?.sphericalFreedraw || kk.list[0]?.hypEdges
+					? kk.list[0]?.sphericalFreedraw || kk.list[0]?.hypEdges || kk.list[0]?.schwarz
 						? `k = ${kk.k} vertex orbits`
-						: `k = ${kk.k} grid points`
+						: `k = ${kk.k} ${kk.list[0]?.freedraw ? freedrawKNoun(gridOf(kk.list[0].freedraw)) : "grid points"}`
 					: cls === "colors"
 						? `k = ${kk.k} colored vertices`
 						: `k = ${kk.k}`;

@@ -53,7 +53,7 @@ function ensureRenderer(size: number): HyperbolicPerPixelRenderer | null {
 	return glRenderer ?? null;
 }
 
-function renderThumbGL(pattern: HypEdgesPattern, size: number, opts: ThumbOpts): string | null {
+function renderThumbGL(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpts): string | null {
 	const r = ensureRenderer(size);
 	if (!r || !glCanvas) return null;
 	let st = tilingCache.get(pattern.id);
@@ -82,7 +82,7 @@ function renderThumbGL(pattern: HypEdgesPattern, size: number, opts: ThumbOpts):
 	return glCanvas.toDataURL("image/png");
 }
 
-function renderThumb2d(pattern: HypEdgesPattern, size: number, opts: ThumbOpts): string | null {
+function renderThumb2d(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpts): string | null {
 	if (!thumbCanvas2d) thumbCanvas2d = document.createElement("canvas");
 	if (thumbCanvas2d.width !== size) {
 		thumbCanvas2d.width = size;
@@ -109,11 +109,27 @@ function renderThumb2d(pattern: HypEdgesPattern, size: number, opts: ThumbOpts):
 	return thumbCanvas2d.toDataURL("image/png");
 }
 
-function renderThumb(pattern: HypEdgesPattern, size: number, opts: ThumbOpts): string | null {
+function renderThumb(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpts, force2d: boolean): string | null {
+	if (force2d) return renderThumb2d(pattern, size, opts);
 	return renderThumbGL(pattern, size, opts) ?? renderThumb2d(pattern, size, opts);
 }
 
-export function HyperbolicEdgesThumbnail({ pattern, size = 256 }: { pattern: HypEdgesPattern; size?: number }) {
+/** Everything either render path reads off a record. The Schwarz shelf (lib/freedraw/schwarz.ts) is not a
+ *  HypEdgesPattern but supplies exactly this, so it draws through the same component. */
+export type HypEdgesThumbInput = Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts">;
+
+export function HyperbolicEdgesThumbnail({
+	pattern,
+	size = 256,
+	force2d = false,
+}: {
+	pattern: HypEdgesThumbInput;
+	size?: number;
+	/** Skip the per-pixel path. The Dirichlet-certificate reducer reconstructs side pairings from ONE
+	 *  edge length, so a scalene board (the Schwarz shelf) has to take the explicit developed draw —
+	 *  which reads the per-dart lengths off the darts and is correct there. */
+	force2d?: boolean;
+}) {
 	const wrapRef = useRef<HTMLDivElement>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
@@ -134,7 +150,7 @@ export function HyperbolicEdgesThumbnail({ pattern, size = 256 }: { pattern: Hyp
 				cancelJob = enqueueThumbnailRender(() => {
 					if (disposed) return;
 					try {
-						const dataUrl = renderThumb(pattern, size, { hueOffset, showFill, showScaffold, lineMode, lineWidth });
+						const dataUrl = renderThumb(pattern, size, { hueOffset, showFill, showScaffold, lineMode, lineWidth }, force2d);
 						if (dataUrl) setUrl(dataUrl);
 						else setFailed(true);
 					} catch (e) {
@@ -152,7 +168,7 @@ export function HyperbolicEdgesThumbnail({ pattern, size = 256 }: { pattern: Hyp
 			io.disconnect();
 			cancelJob?.();
 		};
-	}, [pattern, size, hueOffset, showFill, showScaffold, lineMode, lineWidth]);
+	}, [pattern, size, hueOffset, showFill, showScaffold, lineMode, lineWidth, force2d]);
 
 	if (failed) {
 		return (

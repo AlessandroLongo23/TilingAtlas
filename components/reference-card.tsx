@@ -12,10 +12,13 @@ import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
+import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail";
+import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
 import { paramGlyphs } from "@/lib/utils/paramCell";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
+import { freedrawKNoun, gridOf } from "@/lib/freedraw/pattern";
 import {
 	compactVertexConfig,
 	freedrawStatsOf,
@@ -154,6 +157,12 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 			>
 				{tiling.hollow ? (
 					<HollowThumbnail patch={tiling.hollow.patch} />
+				) : tiling.schwarz ? (
+					tiling.schwarz.geometry === "spherical" ? (
+						<SphSchwarzThumbnail pattern={tiling.schwarz} />
+					) : (
+						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(tiling.schwarz)} force2d />
+					)
 				) : tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
 				) : tiling.sphColors ? (
@@ -339,8 +348,30 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 						<p className="text-xs text-fg-secondary font-mono leading-tight" title={tiling.family}>
 							{tiling.family}
 						</p>
-						<p className="text-[10px] text-fg-muted leading-tight" title="grid-point orbits of the decoration, not vertex orbits of a tiling">
-							k={tiling.k} grid-point orbits
+						<p
+							className="text-[10px] text-fg-muted leading-tight"
+							title="what k counts on this grid — see freedrawKNoun"
+						>
+							k={tiling.k} {freedrawKNoun(gridOf(tiling.freedraw!))}
+						</p>
+						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
+							{tiling.id}
+						</p>
+					</>
+				) : tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw ? (
+					// The CURVED edge shelves. Same object as planar freedraw, but off the plane there is no grid
+					// of points to count: Marek's spherical and hyperbolic solvers count VERTEX orbits of the
+					// decorated tiling, so the k line has to say that and not "grid points". The family line
+					// already names the board and what the tiles are.
+					<>
+						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
+							{tiling.discoverer}
+						</p>
+						<p className="text-xs text-fg-secondary font-mono leading-tight" title={tiling.family}>
+							{tiling.family}
+						</p>
+						<p className="text-[10px] text-fg-muted leading-tight" title="vertex orbits of the decorated tiling">
+							k={tiling.k} vertex orbits
 						</p>
 						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
 							{tiling.id}

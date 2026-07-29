@@ -7,7 +7,7 @@ import { OptionWall } from "@/components/ui/option-wall";
 import type { Tri } from "@/lib/freedraw/filter";
 import { cn } from "@/lib/utils/cn";
 
-export type FreedrawGeometry = "planar" | "spherical";
+export type FreedrawGeometry = "planar" | "spherical" | "hyperbolic";
 
 // The freedraw filter bar, built from the library's "wall" vocabulary (globals.css .ta-wall / .ta-tab):
 // every control is an opaque chrome cell on a line-coloured container, so the 1px gaps read as mortar and
@@ -131,6 +131,7 @@ export function WallSubLabel({ children }: { children: ReactNode }) {
 const GEOMETRY_OPTIONS: { value: FreedrawGeometry; label: string }[] = [
 	{ value: "planar", label: "Planar" },
 	{ value: "spherical", label: "Spherical" },
+	{ value: "hyperbolic", label: "Hyperbolic" },
 ];
 
 // The high-level geometry picker, rendered as the first group of either arm so the two arms share it.
@@ -143,7 +144,7 @@ export function GeometryGroup({
 }) {
 	return (
 		<WallGroup title="Geometry">
-			<OptionWall columns={2} options={GEOMETRY_OPTIONS} selected={value} onChange={onChange} />
+			<OptionWall columns={3} options={GEOMETRY_OPTIONS} selected={value} onChange={onChange} />
 		</WallGroup>
 	);
 }

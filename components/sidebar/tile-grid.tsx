@@ -10,6 +10,8 @@ import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
+import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail";
+import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
 import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbnail";
 import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -220,6 +222,12 @@ function Tile({
 			<div className="relative aspect-square bg-surface-raised">
 				{t.hollow ? (
 					<HollowThumbnail patch={t.hollow.patch} />
+				) : t.schwarz ? (
+					t.schwarz.geometry === "spherical" ? (
+						<SphSchwarzThumbnail pattern={t.schwarz} />
+					) : (
+						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(t.schwarz)} force2d />
+					)
 				) : t.spherical ? (
 					<SphericalThumbnail solidId={t.spherical.solid} />
 				) : t.sphColors ? (

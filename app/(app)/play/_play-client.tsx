@@ -15,6 +15,7 @@ import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
 import { HollowCanvas } from "@/components/hollow/hollow-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
+import { SphSchwarzCanvas } from "@/components/freedraw/sph-schwarz-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
@@ -36,6 +37,9 @@ import {
 	loadSphericalFreedrawAtlas,
 	loadHyperbolicEdgesAtlas,
 	loadHyperbolicEdgesShard,
+	loadSphericalSchwarzAtlas,
+	loadHyperbolicSchwarzAtlas,
+	loadSchwarzShard,
 	loadHyperbolicColorsAtlas,
 	loadHyperbolicColorsShard,
 	loadSphericalColorsAtlas,
@@ -53,6 +57,7 @@ import {
 	resolveMergedFamilyKey,
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
+import { hypSchwarzMeta, schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK, SPH_COLORS_SOLIDS } from "@/lib/colors/sph-colors";
 import { resolveAlphaDegs } from "@/lib/utils/paramCell";
@@ -409,6 +414,39 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 	}, [geometry, requestedKey]);
 
+	// Schwarz boards — same lazy pattern again, but this shelf spans BOTH curved geometries, so the effect
+	// runs under either and pulls that geometry's boards. Record ids are "ss<board>-…" (spherical) and
+	// "hs<board>-…" (hyperbolic), which is what a deep-link is matched on; the two dense tails ((2,2,4) k=10,
+	// (2,3,3) k=7) are fetched per-k when their key is requested or their row is opened.
+	useEffect(() => {
+		const wantSph = geometry === "spherical" || !!requestedKey?.startsWith("ss");
+		const wantHyp = geometry === "hyperbolic" || !!requestedKey?.startsWith("hs");
+		if (!wantSph && !wantHyp) return;
+		let alive = true;
+		const merge = (data: Awaited<ReturnType<typeof loadSphericalSchwarzAtlas>>) => {
+			if (!alive || data.length === 0) return;
+			setRefList((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.canonicalKey));
+				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+				return add.length ? [...base, ...add] : base;
+			});
+		};
+		if (wantSph) loadSphericalSchwarzAtlas().then(merge).catch(() => {});
+		if (wantHyp) loadHyperbolicSchwarzAtlas().then(merge).catch(() => {});
+		// A deep-link into a lazy shard needs that shard fetched or the key never resolves.
+		const m = requestedKey?.match(/^(?:ss|hs)(\d+)-(\d+)-/);
+		if (m) {
+			const geo = requestedKey!.startsWith("ss") ? "spherical" : "hyperbolic";
+			if (schwarzLazyShardsForK(geo, Number(m[2])).some((b) => b.id === m[1])) {
+				loadSchwarzShard(m[1], Number(m[2])).then(merge).catch(() => {});
+			}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [geometry, requestedKey]);
+
 	// Colored tilings in H² and on S² — the same lazy pattern. The per-base/solid eager slices load once the
 	// matching geometry is entered (or a deep-link "hc…"/"sc…" key arrives); dense shards load per-k below.
 	useEffect(() => {
@@ -587,7 +625,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// A hyperbolic edge-system pattern is Čtrnáct's freedraw moved to H². Like the developed tiling it rides
 	// the `hyperbolic` store flag (blank the flat p5 layer, disable zoom) but routes to its own 2D
 	// developed-edge canvas instead of the per-pixel shader.
-	const isHyperbolicEdges = !!selected?.hypEdges;
+	// A SCHWARZ board is the same object on a (p,q,r) mirror board, so it rides its geometry's flags: the
+	// hyperbolic boards behave exactly like the {p,q} edge systems here, the spherical ones like the ico
+	// freedraw below. Folding them in beats a third set of near-identical branches.
+	const isHyperbolicEdges = !!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic";
 	// A hyperbolic COLORED tiling (colors class, hyperbolic geometry): rides the `hyperbolic` store flag like
 	// the developed tilings and edge systems, but routes to the per-pixel disk shader in colors mode.
 	const isHyperbolicColors = !!selected?.hypColors;
@@ -600,7 +641,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// A spherical-freedraw pattern is a drawn edge subset of a Platonic solid — a three.js overlay like the
 	// Platonic sphere, but with no polygon cell of its own. It shares the sphere's flat-layer blanking (below)
 	// while routing to its own IcoFreedrawCanvas in the dispatch chain.
-	const isSphericalFreedraw = !!selected?.sphericalFreedraw;
+	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical";
 	// A freedraw pattern swaps the flat p5 renderer for the 2D grid view. It has no polygon cell at all, so
 	// force off every mode that would try to draw one and every overlay derived from tiles — the Options tab
 	// hides those controls, and this keeps a stale render from surviving the switch.
@@ -801,7 +842,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			}
 			// Spherical freedraw: one overlay, one key. G = the faint edge grid — the same letter the planar
 			// scaffold uses above, and the one both /freedraw arms bind.
-			if (!!selected?.sphericalFreedraw && (e.key === "g" || e.key === "G")) {
+			if ((!!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical") && (e.key === "g" || e.key === "G")) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
 				c.set({ sphericalFreedrawGrid: !c.sphericalFreedrawGrid });
@@ -811,7 +852,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// letter every other freedraw scaffold uses. Its canvas reads freedrawScaffold, so flip that. This
 			// is a distinct branch because a hyp-edge pattern lives in the `hypEdges` field, not `freedraw`, so
 			// the FREEDRAW_TOGGLES table above never sees it.
-			if (!!selected?.hypEdges && (e.key === "g" || e.key === "G")) {
+			if ((!!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic") && (e.key === "g" || e.key === "G")) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
 				c.set({ freedrawScaffold: !c.freedrawScaffold });
@@ -956,6 +997,21 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					<div className="absolute inset-0 z-10">
 						<HollowCanvas patchId={selected.hollow.patch} />
 					</div>
+				) : selected?.schwarz ? (
+					// Schwarz board: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection group. The one
+					// shelf that spans two geometries, so it dispatches on its own: a spherical board is finite
+					// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
+					// re-develops in the disk. force2d because the per-pixel reducer rebuilds side pairings from
+					// ONE edge length and a Schwarz triangle is scalene.
+					selected.schwarz.geometry === "spherical" ? (
+						<SphSchwarzCanvas
+							pattern={selected.schwarz}
+							mode={sphericalFreedrawMode}
+							showGrid={sphericalFreedrawGrid}
+						/>
+					) : (
+						<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} force2d />
+					)
 				) : isSpherical && selected?.spherical ? (
 					<SphericalCanvas solidId={selected.spherical.solid} />
 				) : selected?.sphericalFreedraw ? (

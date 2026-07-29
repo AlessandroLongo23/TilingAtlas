@@ -100,7 +100,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// ArcballControls, its own fixed edge tubes and golden-angle tile colours). Like planar freedraw it has no
 	// tiles/cell for the shared controls to touch — only the two Display controls the /freedraw arm carries
 	// (polyhedron/sphere + grid) apply, so every other control is hidden for it.
-	const isSphericalFreedraw = !!selected?.sphericalFreedraw;
+	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical";
 	// A colored tiling renders on its own 2D canvas like freedraw: no tiles, no polygon cell, so the shared
 	// fill/stroke/hue/points controls are all dead and its own palette + trio take their place. Rotation
 	// still applies (the field spins about the canvas centre), rendered inside that block.
@@ -108,7 +108,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// A hyperbolic edge-system pattern renders in the Poincaré disk via the SAME per-pixel shader as the
 	// developed tilings, so it shares their disk controls (fill, hue, line stroke, perspective/flat line
 	// mode) — plus a scaffold toggle for the faint undrawn base tiling. It is NOT a flat p5 view.
-	const isHyperbolicEdges = !!selected?.hypEdges;
+	// A SCHWARZ board is the same object on a (p,q,r) mirror board, so it takes the same controls as its
+	// geometry's shelf: the spherical boards are ico-freedraw spheres, the hyperbolic ones are disk edge
+	// systems. That is why both flags above/below fold it in rather than growing a third branch.
+	const isHyperbolicEdges = !!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic";
 	// A hyperbolic COLORED tiling renders in the disk via the same per-pixel shader in colors mode — it shares
 	// the disk line controls, and (like the Euclidean colors) carries the palette pickers instead of fill/hue.
 	const isHyperbolicColors = !!selected?.hypColors;

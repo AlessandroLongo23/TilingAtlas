@@ -21,15 +21,24 @@ interface Props {
 	pattern: IcoPattern;
 	mode: IcoMode;
 	showGrid: boolean;
-	/** Which Platonic solid this pattern lives on ("icosahedron", "cube", …). */
+	/** Which Platonic solid this pattern lives on ("icosahedron", "cube", …). Ignored when `vertices`
+	 *  is given — a spherical SCHWARZ board has no canonical solid to name. */
 	solidId: string;
+	/** Self-contained boards (Schwarz, lib/render/sphSchwarz.ts) ship their own unit vertices and edge
+	 *  list rather than indexing into a solid. Supplying both switches off the solid lookup entirely. */
+	vertices?: [number, number, number][];
+	allEdges?: [number, number][];
 }
 
 const CAMERA_DISTANCE = 3.2;
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId }: Props) {
-	const solid = useMemo(() => polyhedronForId(solidId), [solidId]);
-	const solidEdgeList = useMemo<[number, number][]>(() => (solid ? solidEdges(solid) : []), [solid]);
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges }: Props) {
+	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
+	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
+	const solidEdgeList = useMemo<[number, number][]>(
+		() => allEdges ?? (solid ? solidEdges(solid) : []),
+		[allEdges, solid],
+	);
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 	const sceneRef = useRef<THREE.Scene | null>(null);
@@ -132,16 +141,17 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId }: Props) {
 	// Rebuild the pattern geometry when the pattern, solid, sphere/polyhedron mode, or grid toggle changes.
 	useEffect(() => {
 		const scene = sceneRef.current;
-		if (!scene || !solid) return;
-		// Guard against a pattern/solid mismatch during a solid switch: for one render the pattern can still
-		// be the previous solid's (its vertex indices out of range here). Skip until the matching data lands.
-		const nVerts = solid.vertices.length;
+		if (!scene || !verts) return;
+		// Guard against a pattern/geometry mismatch during a solid or board switch: for one render the
+		// pattern can still be the previous one's (its vertex indices out of range here). Skip until the
+		// matching data lands.
+		const nVerts = verts.length;
 		const inRange =
 			pattern.drawn.every(([i, j]) => i < nVerts && j < nVerts) &&
 			pattern.tiles.every((tile) => tile.every((face) => face.every((idx) => idx < nVerts)));
 		if (!inRange) return;
 		const dark = document.documentElement.classList.contains("dark");
-		const content = buildIcoFreedraw(pattern, solid.vertices as [number, number, number][], {
+		const content = buildIcoFreedraw(pattern, verts, {
 			dark,
 			mode,
 			showGrid,

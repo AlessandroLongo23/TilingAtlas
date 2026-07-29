@@ -17,6 +17,7 @@ import type { FreedrawGrid } from "@/lib/freedraw/pattern";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK } from "@/lib/colors/sph-colors";
+import { schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
 import {
@@ -33,6 +34,9 @@ import {
 	loadHyperbolicColorsShard,
 	loadSphericalColorsAtlas,
 	loadSphericalColorsShard,
+	loadSphericalSchwarzAtlas,
+	loadHyperbolicSchwarzAtlas,
+	loadSchwarzShard,
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
@@ -170,6 +174,7 @@ const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = 
 	{ value: "hex", label: "Hexagons" },
 	{ value: "ts", label: "Tri + square" },
 	{ value: "sch236", label: "Schwarz 236" },
+	{ value: "sch244", label: "Schwarz 244" },
 ];
 const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
 // Colors-shelf grid facet — the same axis, shown only for the colored class.
@@ -188,6 +193,7 @@ const GRID_SUMMARY: Record<FreedrawGrid | ColorsGrid, string> = {
 	hex: "hexagons",
 	ts: "tri + square",
 	sch236: "schwarz 236",
+	sch244: "schwarz 244",
 };
 // Colors-shelf palette-size facet: how many colors the solutions use. Each (grid, size) pair is its own
 // catalogue — an n-color run's solutions all use every one of its n colors.
@@ -646,6 +652,43 @@ export function ReferenceShelf() {
 		};
 	}, [filters.geometry, filters.kValue, heLoaded, tilings]);
 
+	// Schwarz-triangle edge systems — the freedraw class on a (p,q,r) mirror board. Same lazy shape as the
+	// {p,q} edge systems, but it spans BOTH curved geometries, so the effect runs under either and pulls
+	// that geometry's boards. Eager slices arrive with the geometry; the two dense tails ((2,2,4) k=10,
+	// (2,3,3) k=7) load when their k chip is selected.
+	const [schLoaded, setSchLoaded] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		const geo = filters.geometry;
+		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
+		let alive = true;
+		const merge = (data: ReferenceTiling[], token: string) => {
+			if (!alive || !data.length) return;
+			setTilings((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.id));
+				const add = data.filter((t) => !have.has(t.id));
+				return add.length ? [...base, ...add] : base;
+			});
+			setSchLoaded((s) => new Set(s).add(token));
+		};
+		const eagerToken = `sch-${geo}`;
+		if (!schLoaded.has(eagerToken)) {
+			const load = geo === "spherical" ? loadSphericalSchwarzAtlas : loadHyperbolicSchwarzAtlas;
+			load().then((d) => merge(d, eagerToken)).catch(() => {});
+		}
+		const k = filters.kValue;
+		if (k != null) {
+			for (const b of schwarzLazyShardsForK(geo, k)) {
+				const token = `sch-${b.id}-${k}`;
+				if (!schLoaded.has(token)) loadSchwarzShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+			}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [filters.geometry, filters.kValue, schLoaded, tilings]);
+
 	// Colored tilings in H² and on S² — the same lazy shape as the edge systems. The eager per-base/solid
 	// slices load once their geometry is entered (making the "Colorings" class chip appear); dense shards load
 	// when their k chip is selected. Merged into `tilings` (deduped by id).
@@ -1099,11 +1142,21 @@ export function ReferenceShelf() {
 	// mean nothing there, so keep them Euclidean-only (they group by base in the /play tree).
 	const showColorsGrid = isEuclidean && decoration === "colorings";
 	// k is shared across the three segments but does NOT mean the same thing in each: vertex orbits of a
-	// tiling, GRID-POINT orbits of an edge pattern (including points with no drawn edge), colored vertex
-	// classes of a coloring. Sharing the axis is what makes them browsable together; naming the quantity on
-	// the heading is what keeps them from reading as one. Matches the /play tree's k row labels.
+	// tiling, GRID-POINT orbits of a PLANAR edge pattern (including points with no drawn edge), colored
+	// vertex classes of a coloring. Sharing the axis is what makes them browsable together; naming the
+	// quantity on the heading is what keeps them from reading as one. Matches the /play tree's k row labels.
+	//
+	// The curved edge shelves are the exception inside the exception: Marek's hyperbolic {p,q} and Schwarz
+	// solvers count VERTEX orbits of the decorated tiling, not grid points, so calling them grid points
+	// there would be simply wrong.
 	const kGroupTitle =
-		decoration === "edges" ? "Grid-point orbits (k)" : decoration === "colorings" ? "Colored vertices (k)" : "Vertex count (k)";
+		decoration === "edges"
+			? isEuclidean
+				? "Grid-point orbits (k)"
+				: "Vertex orbits (k)"
+			: decoration === "colorings"
+				? "Colored vertices (k)"
+				: "Vertex count (k)";
 
 	const activeFilterCount =
 		// Euclidean is the default, so it doesn't read as an active filter; hyperbolic/spherical do.

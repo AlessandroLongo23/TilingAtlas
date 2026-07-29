@@ -24,7 +24,8 @@ import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
 
 interface SphereFreedrawThumbnailProps {
 	pattern: IcoPattern;
-	/** Which Platonic solid the pattern lives on ("icosahedron", "cube", …). */
+	/** Which Platonic solid the pattern lives on ("icosahedron", "cube", …). Ignored when `vertices` is
+	 *  given — a spherical SCHWARZ board has no canonical solid to name. */
 	solidId: string;
 	/** "polyhedron" flat facets + chord edges, or "sphere" curved patches + arc edges. */
 	mode: IcoMode;
@@ -32,6 +33,10 @@ interface SphereFreedrawThumbnailProps {
 	showGrid: boolean;
 	/** Render resolution in device px (square). The <img> scales to fill its slot. */
 	size?: number;
+	/** Self-contained boards (Schwarz) ship their own unit vertices and edge list instead of indexing
+	 *  into a canonical solid — the same override IcoFreedrawCanvas takes, so both stay one look. */
+	vertices?: [number, number, number][];
+	allEdges?: [number, number][];
 }
 
 let sharedRenderer: THREE.WebGLRenderer | null = null;
@@ -58,11 +63,14 @@ function renderToDataUrl(
 	size: number,
 	mode: IcoMode,
 	showGrid: boolean,
+	vertices?: [number, number, number][],
+	allEdges?: [number, number][],
 ): string | null {
 	const renderer = getSharedRenderer();
 	if (!renderer || !sharedCanvas) return null;
-	const solid = polyhedronForId(solidId);
-	if (!solid) return null;
+	const solid = vertices ? null : polyhedronForId(solidId);
+	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
+	if (!verts) return null;
 	renderer.setSize(size, size, false);
 
 	const scene = new THREE.Scene();
@@ -79,11 +87,11 @@ function renderToDataUrl(
 	camera.lookAt(0, 0, 0);
 
 	const dark = document.documentElement.classList.contains("dark");
-	const content = buildIcoFreedraw(pattern, solid.vertices as [number, number, number][], {
+	const content = buildIcoFreedraw(pattern, verts, {
 		dark,
 		mode,
 		showGrid,
-		allEdges: showGrid ? solidEdges(solid) : undefined,
+		allEdges: showGrid ? (allEdges ?? (solid ? solidEdges(solid) : undefined)) : undefined,
 	});
 	scene.add(content.object);
 	try {
@@ -96,7 +104,15 @@ function renderToDataUrl(
 	}
 }
 
-export function SphereFreedrawThumbnail({ pattern, solidId, mode, showGrid, size = 256 }: SphereFreedrawThumbnailProps) {
+export function SphereFreedrawThumbnail({
+	pattern,
+	solidId,
+	mode,
+	showGrid,
+	size = 256,
+	vertices,
+	allEdges,
+}: SphereFreedrawThumbnailProps) {
 	const holderRef = useRef<HTMLDivElement | null>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
@@ -114,7 +130,7 @@ export function SphereFreedrawThumbnail({ pattern, solidId, mode, showGrid, size
 			// rather than firing alongside every other card's render in one task.
 			cancelJob = enqueueThumbnailRender(() => {
 				try {
-					const dataUrl = renderToDataUrl(pattern, solidId, size, mode, showGrid);
+					const dataUrl = renderToDataUrl(pattern, solidId, size, mode, showGrid, vertices, allEdges);
 					if (dataUrl) setUrl(dataUrl);
 					else setFailed(true);
 				} catch (e) {
