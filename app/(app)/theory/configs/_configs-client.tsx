@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Grid3x3, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
+import { TheoryArticleNav } from "@/components/theory-article-nav";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Pagination } from "@/components/ui/pagination";
 import { VertexConfigCard } from "@/components/vertex-config-card";
@@ -66,42 +67,53 @@ export function ConfigsClient() {
 
 	return (
 		<div className="flex flex-1 min-h-0 overflow-hidden">
-			<PageSidebar>
-				<div className="flex items-center justify-between px-3 pt-3">
-					<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Palette</span>
-				</div>
-				<div className="p-3 flex flex-col gap-4 text-sm">
-					<section className="flex flex-col gap-1.5">
-						{CONFIG_PALETTES.map((p) => {
-							const active = p.name === paletteName;
-							return (
-								<button
-									key={p.name}
-									onClick={() => setPaletteName(p.name)}
-									className={`flex flex-col items-start gap-0.5 rounded-md border px-2.5 py-2 text-left transition-colors ${
-										active
-											? "border-accent/40 bg-accent-subtle"
-											: "border-line hover:border-line-strong hover:bg-surface-overlay/50"
-									}`}
-								>
-									<span className={`text-xs font-medium ${active ? "text-accent" : "text-fg-secondary"}`}>
-										{p.label}
-									</span>
-									<span className="text-[10px] text-fg-disabled leading-tight">{p.blurb}</span>
-								</button>
-							);
-						})}
-					</section>
+			<PageSidebar scrollable={false}>
+				{/* Same two-part sidebar as a theory article: the library switcher pinned on top, the page's
+				    own controls scrolling under it. */}
+				<div className="flex h-full min-h-0 flex-col">
+					<div className="shrink-0 border-b border-line-subtle pb-2">
+						<TheoryArticleNav currentSlug="configs" />
+					</div>
+					<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+						<div className="flex items-center justify-between px-3 pt-3">
+							<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Palette</span>
+						</div>
+						<div className="p-3 flex flex-col gap-4 text-sm">
+							<section className="flex flex-col gap-1.5">
+								{CONFIG_PALETTES.map((p) => {
+									const active = p.name === paletteName;
+									return (
+										<button
+											key={p.name}
+											onClick={() => setPaletteName(p.name)}
+											className={`flex flex-col items-start gap-0.5 rounded-md border px-2.5 py-2 text-left transition-colors ${
+												active
+													? "border-accent/40 bg-accent-subtle"
+													: "border-line hover:border-line-strong hover:bg-surface-overlay/50"
+											}`}
+										>
+											<span
+												className={`text-xs font-medium ${active ? "text-accent" : "text-fg-secondary"}`}
+											>
+												{p.label}
+											</span>
+											<span className="text-[10px] text-fg-disabled leading-tight">{p.blurb}</span>
+										</button>
+									);
+								})}
+							</section>
 
-					<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
-						<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Columns</h3>
-						<ButtonGroup
-							variant="chip"
-							options={[4, 5, 6, 8].map((c) => ({ value: c, label: `${c}` }))}
-							selected={columns}
-							onChange={setColumns}
-						/>
-					</section>
+							<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
+								<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Columns</h3>
+								<ButtonGroup
+									variant="chip"
+									options={[4, 5, 6, 8].map((c) => ({ value: c, label: `${c}` }))}
+									selected={columns}
+									onChange={setColumns}
+								/>
+							</section>
+						</div>
+					</div>
 				</div>
 			</PageSidebar>
 

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Shapes, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
+import { TheoryArticleNav } from "@/components/theory-article-nav";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { PrototileCard } from "@/components/prototile-card";
 import { allPrototiles, FAMILY_LABELS, type TileFamily } from "@/lib/tiles/prototiles";
@@ -44,42 +45,51 @@ export function TilesClient() {
 
 	return (
 		<div className="flex flex-1 min-h-0 overflow-hidden">
-			<PageSidebar>
-				<div className="flex items-center justify-between px-3 pt-3">
-					<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
-					{family !== "all" ? (
-						<button
-							onClick={() => setFamily("all")}
-							className="flex items-center gap-1 text-xs text-fg-muted hover:text-danger transition-colors"
-						>
-							<X size={11} /> Clear
-						</button>
-					) : null}
-				</div>
+			<PageSidebar scrollable={false}>
+				{/* Same two-part sidebar as a theory article: the library switcher pinned on top, the page's
+				    own controls scrolling under it. */}
+				<div className="flex h-full min-h-0 flex-col">
+					<div className="shrink-0 border-b border-line-subtle pb-2">
+						<TheoryArticleNav currentSlug="tiles" />
+					</div>
+					<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+						<div className="flex items-center justify-between px-3 pt-3">
+							<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
+							{family !== "all" ? (
+								<button
+									onClick={() => setFamily("all")}
+									className="flex items-center gap-1 text-xs text-fg-muted hover:text-danger transition-colors"
+								>
+									<X size={11} /> Clear
+								</button>
+							) : null}
+						</div>
 
-				<div className="p-3 flex flex-col gap-4 text-sm">
-					<section className="flex flex-col gap-2">
-						<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Tile class</h3>
-						<ButtonGroup variant="chip" options={FAMILY_OPTIONS} selected={family} onChange={setFamily} />
-					</section>
+						<div className="p-3 flex flex-col gap-4 text-sm">
+							<section className="flex flex-col gap-2">
+								<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Tile class</h3>
+								<ButtonGroup variant="chip" options={FAMILY_OPTIONS} selected={family} onChange={setFamily} />
+							</section>
 
-					{showGrid ? (
-						<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
-							<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-								Isotoxal angle grid
-							</h3>
-							<ButtonGroup variant="chip" options={GRID_OPTIONS} selected={isoGrid} onChange={setIsoGrid} />
-							<p className="text-[11px] text-fg-disabled leading-relaxed">
-								15° adds the off-grid members (regular octagon, 105°/135° hexagon) the 30° grid can’t
-								express. Only affects the isotoxal family.
-							</p>
-						</section>
-					) : null}
+							{showGrid ? (
+								<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
+									<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">
+										Isotoxal angle grid
+									</h3>
+									<ButtonGroup variant="chip" options={GRID_OPTIONS} selected={isoGrid} onChange={setIsoGrid} />
+									<p className="text-[11px] text-fg-disabled leading-relaxed">
+										15° adds the off-grid members (regular octagon, 105°/135° hexagon) the 30° grid
+										can’t express. Only affects the isotoxal family.
+									</p>
+								</section>
+							) : null}
 
-					<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
-						<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Columns</h3>
-						<ButtonGroup variant="chip" options={COLUMN_OPTIONS} selected={columns} onChange={setColumns} />
-					</section>
+							<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
+								<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Columns</h3>
+								<ButtonGroup variant="chip" options={COLUMN_OPTIONS} selected={columns} onChange={setColumns} />
+							</section>
+						</div>
+					</div>
 				</div>
 			</PageSidebar>
 

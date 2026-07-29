@@ -4,6 +4,7 @@ import { ConfigsClient } from "./_configs-client";
 // tilings in the Library. Makes the config counts (e.g. 7,389 for the reduced combined palette) tangible
 // by rendering each config's tiles fanned around the vertex. Data from public/vertex-configs/*.json
 // (tools/ctrnact-oracle/alphabets/export_vertex_configs.py).
+// Lives under /theory as an "Elements" page (moved from /configs, 2026-07-29).
 export default function ConfigsPage() {
 	return <ConfigsClient />;
 }

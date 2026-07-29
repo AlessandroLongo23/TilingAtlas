@@ -3,16 +3,14 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Library, Palette, PenLine, Play, Shapes, Grid3x3, Waves, Snowflake } from "lucide-react"; // History icon commented out with its nav link below
+import { BookOpen, Library, Palette, PenLine, Play, Waves, Snowflake } from "lucide-react"; // History icon commented out with its nav link below
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 import { Kbd } from "@/components/ui/kbd";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
-	{ href: "/theory", label: "Theory", icon: BookOpen },
-	{ href: "/tiles", label: "Tiles", icon: Shapes },
-	{ href: "/configs", label: "Configs", icon: Grid3x3 },
+	{ href: "/theory", label: "Theory", icon: BookOpen }, // Prototiles + vertex configs live under here now (Elements)
 	{ href: "/library", label: "Library", icon: Library },
 	{ href: "/play", label: "Play", icon: Play },
 	{ href: "/parquet", label: "Parquet", icon: Waves },
