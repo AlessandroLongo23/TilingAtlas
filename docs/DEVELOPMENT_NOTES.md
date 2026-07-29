@@ -7925,3 +7925,50 @@ not, because they are the same point and naming it twice reads as two different 
 0.68× raised by 0.3em, the pair centred as one unit — rather than through Unicode superscripts, whose
 glyphs for 4–9 are missing from enough UI fonts to risk a tofu on a projector. The axes were also
 shortened to ±1.15 so they stop before the label ring instead of running through ζ⁰ and ζ¹².
+
+## Architecture three gets its preliminaries (2026-07-29)
+
+AL's read of the deck: method three is the most machinery-heavy of the three and it was compressed
+into one slide, so the first slides of its block should be preliminaries — the exact arithmetic and
+the lattice torus — and the method should come after them. He is right about the compression. The old
+slide 17 carried the inversion of order, the bounded-weight theorem *and* the exactness claim, with a
+figure that illustrated only the middle one.
+
+I argued for putting the arithmetic slide earlier still, in the tools block before architecture one,
+on the grounds that the exact substrate is claimed as a contribution and still runs in the shipped
+engine's develop stage — so introducing it inside the architecture that was abandoned invites the
+committee to file it as dead. AL rejected re-opening settled slides. Built as he specified: both
+preliminaries sit inside method three's block, nothing before it touched.
+
+**"Every coordinate is an integer, not a decimal."** The ζ wheel on its own. `<period-figure>` grew a
+`panel` prop ("wheel" | "example", omitted = both) rather than being split into two components, since
+both panels read the same JSON and share the colour map that ties a term in the sum to a direction to
+a chain segment.
+
+**"Two translations turn the plane into a torus."** New `<torus-figure>`, two panels: the plane with
+one period cell outlined, and the same cell with its opposite edges identified. One tile is picked out
+in both — on the left it is two distinct copies poking in from opposite edges, on the right it is one
+tile. That is the whole argument for why a fill is finite, and it is also the contrast with
+architecture two, whose patch always had a boundary that could extend.
+
+Two things worth recording from building it:
+
+**Centroid reduction does not tile the cell; clipping does.** Reducing each tile's centroid into
+[0,1)² is the obvious way to draw "the cell", and it leaves gaps — a tile whose centre falls inside
+can still hang out over an edge, and the complementary piece belongs to a tile whose centre reduces
+somewhere else. The figure instead clips every lattice translate of every cell polygon against the
+unit square in lattice coordinates (Sutherland–Hodgman). Because the reconstructed cell is a
+fundamental *set*, its translates cover the plane exactly once, so the surviving pieces tile the
+parallelogram with no gap and no overlap. This is the same clumping the period figure worked around
+with a widened margin; clipping is the actual fix.
+
+**The chevrons name the wrong translation if you follow the edge direction.** The edge running along
+T₁ is the one T₂ carries across, so an identification mark belongs on the pair *opposite* the arrow it
+looks like it matches. The first draft had both pairs swapped and it looked entirely plausible.
+
+Framing note: the plane panel culls and frames on a world-space square centred on the cell, not on a
+lattice-space window. A lattice window is a parallelogram, and framing on its bounding box leaves two
+white corners wherever the lattice is skewed.
+
+Verified: build exit 0, eslint clean on the touched files, 0 px overflow on slides 17–19 at 1280×800,
+1440×900 and 1920×1200. `prepare`/`screenMapper` factored out to `lib/render/figureCanvas.ts`.

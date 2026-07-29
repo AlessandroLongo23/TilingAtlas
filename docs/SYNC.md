@@ -1756,3 +1756,11 @@ AL called the first version horrible and was right. Arrowheads instead of dots, 
 with ticks at ±1 and a dashed unit circle through every head (which is what "unit steps" needed to be
 visible rather than asserted), and labels set as ζ^k by hand — Unicode superscripts 4–9 are missing
 from enough UI fonts to risk a tofu on a projector. Detail: NOTES §"The wheel redrawn". — CC
+
+### 2026-07-29 — CC — architecture three gets its two preliminaries
+Per AL: the method-three block now opens with the exact arithmetic (the ζ wheel alone, via a new
+`panel` prop on `<period-figure>`) and the lattice torus (new `<torus-figure>`), then the method. The
+torus panel's pieces are clipped, not centroid-reduced — a fundamental set's translates tile the cell
+exactly, centroids leave gaps. Chevron colours name the gluing translation, which is the pair opposite
+the one the edge runs along; the first draft had them swapped. 7b674ec. Detail: NOTES §"Architecture
+three gets its preliminaries". — CC
