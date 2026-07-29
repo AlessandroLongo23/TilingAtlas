@@ -1737,3 +1737,10 @@ action, `and not` across a line wrap. Comments, both ledgers, archive, experimen
 and the 5 copies of one notes string in the generated mixed atlas. ⚑ `SeedExpander.ts` hid 4: it
 stores a raw NUL as its hash list separator, so `file` calls it data and EVERY `grep -I` here skips
 it silently — sweep with `grep -a`. Five mentions kept (02-thesis-alignment.md:28 quotes). — CC
+
+### 2026-07-28 (6) — CC — the bounded-weight theorem gets a figure, computed not drawn
+`<period-figure>`: the 24 ζ₂₄ directions as a coloured rose, a tiling patch held back behind them, and
+t2001's two period vectors drawn as the shortest chains of unit steps summing to them — searched in
+exact ℤ[ζ₂₄] by `scripts/build-period-figure.ts`. Both weigh 6, the measured k=2 maximum, so the slide
+shows the extremal case. Survey finding: every k ≤ 3 tiling's chains use only EVEN exponents — the
+octagon rule from the other side. Detail: NOTES §"The bounded-weight slide gets its one case". — CC

@@ -7857,3 +7857,37 @@ Also on the architecture-two slide, one clause: the stamping rule is not the lev
 prunes about a tenth of the search for roughly 900× the cost. That is the whole-patch measurement in
 eight words, placed so the obvious question is answered before it is asked, and it keeps a sub-method
 that changed nothing out of the narrative (see the 2.A/2.B discussion, entry 5).
+
+## 2026-07-28 (7) — The bounded-weight slide gets its one case
+
+`<period-figure>` on "Architecture three". AL's design: the complex plane with the 24 ζ₂₄ directions,
+a patch of a real tiling behind them, and the two period vectors drawn as the sums of unit ζ steps
+that make them — everything but the ζ vectors held back, the vectors coloured.
+
+Nothing on it is drawn. `scripts/build-period-figure.ts` decodes {T1, T2} from the atlas's exact
+source, searches breadth-first over the 24 unit directions in exact ℤ[ζ₂₄] arithmetic for a SHORTEST
+chain summing to each, and writes the result to `public/defense/period-figure.json`. The chain length
+is therefore the vector's weight — the quantity `SMALLK_W_BOUND.md` proves the bound on.
+
+The subject was chosen on the arithmetic. Surveying every k ≤ 3 tiling with a {T1,T2,Seed} source:
+t2001's two periods both have weight **6**, which is the measured maximum at k=2 over all 92 tilings
+with k ≤ 3. The slide therefore shows the extremal case rather than a convenient one.
+
+A fact that fell out of the survey and is worth having ready for questions: across every one of those
+tilings the chains use only EVEN ζ₂₄ exponents. That is the octagon rule in CLAUDE.md arriving from
+the other direction — every regular-polygon tiling but the 4.8.8 lives in ℤ[ζ₁₂] ⊂ ℤ[ζ₂₄], and the odd
+powers exist for the octagon alone. The rose shows all 24 spokes; the chains touch twelve of them.
+
+Two things the drawing needed. The reconstructed cell is a connected patch of 12 tiles that is a
+fundamental SET — same area as the period parallelogram, different shape — so reducing each tile's
+centroid into [0,1)² exactly clumps the patch where the cell happens to sit and leaves a corner of the
+parallelogram bare. The margin is widened to ±0.45 so the tiling is drawn AROUND the cell instead,
+which is what belongs behind the vectors anyway. And the first version overflowed the slide by 27 px
+with all three paragraphs kept, which the figure height absorbed (44vh → 40vh); the exactness
+paragraph stays where AL wrote it.
+
+I had proposed a different figure — the reachable set W(R) as a slider, showing |W(5)| = 1,441 against
+|W(23)| = 458,713 for the off-the-shelf radius 24k−1. AL's is better: it shows what the theorem SAYS
+rather than what it buys, and one case you can read is worth more to a room than a growth curve. The
+W(R) numbers are recomputed and confirmed against SMALLK_W_BOUND.md (|W(10)| = 18,481 ≈ its 1.9e4) and
+are kept here in case the counting argument is ever wanted for a question.
