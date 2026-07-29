@@ -3,8 +3,49 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-07-27, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-07-29, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## The Schwarz boards are a nine-board family across all three geometries — UNCOMMITTED (2026-07-28)
+
+Marek's eight new corpora (`materials/solvers/edges/Schwarz/`) are decoded and live. 135,157
+certificates (122,353 curved + 12,804 Euclidean), **0 failures**. Surfaced on /library, /play and
+/freedraw under all three geometries — verified in the browser, 2026-07-29.
+`pnpm build` clean; `pnpm test` 1612 pass, 1 fail — the same pre-existing
+`star-general-path.test.ts` 60 s timeout noted below (file untouched; it needs 167 s alone). Detail:
+DEVELOPMENT_NOTES.md §"The Schwarz family becomes a family".
+
+- **Three back ends, split by the sign of 1/p + 1/q + 1/r − 1.** Spherical (2,2,3) (2,2,4) (2,3,3)
+  (2,3,4) (2,3,5) close under an SO(3) develop and ship finished geometry; hyperbolic (2,3,7) (2,4,5)
+  ship darts and re-develop under the view; Euclidean (2,4,4) joins the planar grids beside (2,3,6).
+  New: `tools/ctrnact-oracle/{schwarz_board,develop_schwarz}.py`, `lib/freedraw/schwarz.ts`.
+- **Two conventions were READ off the certificates, not assumed.** `Sn` names an ANGLE π/n (not a site
+  of rotation order n — the isoceles boards diverge and would reject), and a digon letter names a pair
+  of ANGLES (which is why (2,4,4) has two edge classes and (2,3,6) three). `check_corpus` derives the
+  map from each corpus and asserts it against the rule; that is also what filed the 16 (2,3,3)
+  certificates Marek left in a folder named 236, with every file classifying to exactly one board.
+- **Every spherical pattern is aligned onto ONE canonical board per shard.** Exact, not fitted: a
+  developed instance is a flag and the board's group is transitive on flags of a given (corner, edge
+  class). The geometry then ships once per shard instead of 61,914 times — **175 MB → 44 MB at full
+  coverage**, which is what made (2,2,4) k=10 and (2,3,3) k=7 shippable at all.
+- **`Darts` grew optional `alpha`/`elen`/`drawn`.** On a scalene board none of the three is derivable
+  (one polygon size, three angles, three lengths, a digon on every edge). Absent on every existing
+  record, so the {p,q} shelves develop byte-identically. ⚑ The per-pixel disk shader is NOT available
+  here — its Dirichlet reducer rebuilds side pairings from ONE edge length — so the Schwarz disk takes
+  the explicit developed draw (`force2d` on canvas and thumbnail).
+- **(2,4,4) needed ℤ[ζ₈] in `develop_freedraw.py`** (45° directions, sides 1 : √2). A `Ring` knob per
+  grid; every `% 12` is now `% block.ndir`. Regression: all nine hexagonal k slices (86 MB) and
+  sch236 k=3/k=4 regenerate **byte-identical**.
+- **I had (2,4,4)'s board wrong and the develop caught it.** Not the barycentric subdivision (that
+  would put the floor at k=3); y = ½ is not a mirror, so it is the square grid with both diagonals —
+  four triangles per square, two vertex classes, floor k=2. All 270,768 faces measure 1 : 1 : √2.
+- ⚑ **Coverage is Marek's run, not the board.** (2,2,4) has no k=8 and (2,3,5) no k=4 — gaps in the
+  solve, surfaced by `schwarzKGaps` in the /freedraw board picker and asserted in the test suite.
+  **(2,3,4) reran on 2026-07-29 to k=11** (842 → 5,974 certificates, contiguous k=3..11, 0 failures,
+  same canonical board). A rerun that ADDS k is one manifest row; the board hoist is what keeps the
+  new 5,132 tilings at 2.7 MB rather than ~10 MB.
+- ⚑ **`F2` still appears in NO corpus**, on any board. The third edge class is never drawn where one
+  exists. Unchanged since 2026-07-27; still needs a rerun from Marek.
 
 ## /freedraw has a fifth grid: Schwarz (2,3,6) — UNCOMMITTED (2026-07-27)
 
