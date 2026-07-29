@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Library, Palette, PenLine, Play, Waves, Snowflake } from "lucide-react"; // History icon commented out with its nav link below
+import { BookOpen, Library, Palette, PenLine, Play, Waves } from "lucide-react"; // History icon commented out with its nav link below
+import { HatMonotile } from "@/components/icons/hat-monotile";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 import { Kbd } from "@/components/ui/kbd";
@@ -17,7 +18,7 @@ const LINKS = [
 	{ href: "/parquet", label: "Parquet", icon: Waves },
 	{ href: "/freedraw", label: "Freedraw", icon: PenLine },
 	{ href: "/colors", label: "Colors", icon: Palette },
-	{ href: "/aperiodic", label: "Aperiodic", icon: Snowflake }, // Sub Rosa, Penrose, hat, Multigrid — switched in its sidebar
+	{ href: "/aperiodic", label: "Aperiodic", icon: HatMonotile }, // Sub Rosa, Penrose, hat, Multigrid — switched in its sidebar
 	// { href: "/history", label: "History", icon: History }, // hidden from header (route still exists)
 ];
 
