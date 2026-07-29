@@ -351,7 +351,8 @@ other spoke. -->
 ## Two translations turn the plane into a torus
 
 Fix a period lattice and the plane folds up: opposite edges of the cell become the same edge, so a
-tile leaving one side arrives back on the other. The orange tile below is one tile, not two.
+tile leaving one side arrives back on the other. The orange tile below is one tile, not two. Hover any
+tile on the left to see where it lands.
 
 This is what makes a fill finite. There is no boundary to grow into and nothing outside the cell left
 to decide, which is exactly what architecture two never had.
@@ -361,7 +362,10 @@ to decide, which is exactly what architecture two never had.
 
 <!-- notes: This is the slide that answers "why did you expect this one to work". Put your finger on
 the orange piece on the right, then on its two copies on the left, and say it once: on the plane those
-are two different tiles, on the torus they are one. Then the payoff line — the previous architecture
+are two different tiles, on the torus they are one. Hovering any tile on the left paints it in the
+atlas's own by-side-count colours and lights every piece of it on the right, so do one more by hand if
+the room looks unconvinced — a tile the boundary does not cut is the easy case and lands as one piece.
+Then the payoff line — the previous architecture
 failed because its patch had a boundary that could always extend; a torus has no boundary at all. The
 chevrons are the identification: one arrow glues the T1 pair, two glue the T2 pair. -->
 
