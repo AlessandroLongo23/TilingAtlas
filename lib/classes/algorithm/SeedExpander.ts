@@ -142,6 +142,87 @@ export class SeedExpander {
 		return expandedSeeds;
 	};
 
+	// --- Figure trace ---------------------------------------------------------------------------
+	//
+	// A read-only view of ONE DFS frame, for scripts/build-growth-figure.ts, which precomputes the
+	// /defense slide showing the expansion's first two stamps. `expand` is untouched: these call the
+	// same private helpers in the same order a popped frame does, and nothing here feeds back into the
+	// search. The figure is therefore real output — the frontier the expander sees, the vertex it
+	// takes next, and the placements that survive its gates — rather than a drawing of one.
+
+	/** The k core vertices as the initial collapsed set, one orbit each (mirrors `expand`'s prologue). */
+	figureStart = (seed: SeedConfigurationLike): CollapsedVertex[] =>
+		seed.vertexConfigurations.map((vc, idx) => ({ vertex: vc.computeSharedVertexExact(), orbitId: idx }));
+
+	/**
+	 * The frontier of `patch`, the vertex the DFS would take next, and every placement of the seed
+	 * valid there.
+	 *
+	 * `prunedByVC` counts placements that ARE valid at the target but whose merged patch closes some
+	 * vertex with a VC outside the seed's k — the frame the DFS pushes and then discards on the next
+	 * pop. They are excluded from `candidates` (the search never grows them) and counted here so the
+	 * exclusion is visible rather than silent.
+	 */
+	figureStep = (
+		seed: SeedConfigurationLike,
+		patch: Polygon[],
+		collapsed: CollapsedVertex[],
+	): {
+		frontier: FrontierVertex[];
+		target: FrontierVertex | null;
+		candidates: { transform: RigidIsometry; anchorIdx: number; transformedPatch: Polygon[]; collapsed: CollapsedVertex[] }[];
+		prunedByVC: number;
+	} => {
+		const originalPolygons = seed.polygons;
+		const coreVertices = seed.vertexConfigurations.map((vc) => vc.computeSharedVertexExact());
+		const coreLocalData = coreVertices.map((core) => ({
+			edges: this.getEdgesEmanatingFrom(core, originalPolygons),
+			polys: originalPolygons.filter((p) => p.vertexKeySet().has(core.key())),
+		}));
+		const coreCentroids = originalPolygons.map((p) => p.exactCentroid!);
+		const allowedVCNames = new Set<string>(
+			coreVertices.map((cv, i) => this.computeVCNameAtVertex(cv, coreLocalData[i]!.polys)),
+		);
+
+		const distances = this.computeDistancesToCore(patch, coreVertices);
+		const frontier = this.computeFrontier(patch, collapsed, distances);
+		const sorted = [...frontier].sort((a, b) => a.distance - b.distance);
+		const target = sorted[0] ?? null;
+		if (!target) return { frontier, target: null, candidates: [], prunedByVC: 0 };
+
+		const raw = this.findValidIsometries(
+			target,
+			patch,
+			collapsed,
+			coreVertices,
+			originalPolygons,
+			coreLocalData,
+			coreCentroids,
+			this.buildSpatialHash(patch),
+		);
+
+		let prunedByVC = 0;
+		const candidates: { transform: RigidIsometry; anchorIdx: number; transformedPatch: Polygon[]; collapsed: CollapsedVertex[] }[] = [];
+		for (const c of raw) {
+			const merged = deduplicatePolygons([...patch, ...c.transformedPatch]);
+			if (this.hasDisallowedSurroundedVertex(merged, allowedVCNames)) { prunedByVC++; continue; }
+			candidates.push({
+				...c,
+				collapsed: this.addCollapsedFromTransform(c.transform, coreVertices, collapsed),
+			});
+		}
+		return { frontier, target, candidates, prunedByVC };
+	};
+
+	/** Apply one candidate, exactly as the DFS does when it pushes the child frame. */
+	figureMerge = (
+		patch: Polygon[],
+		candidate: { transformedPatch: Polygon[]; collapsed: CollapsedVertex[] },
+	): { patch: Polygon[]; collapsed: CollapsedVertex[] } => ({
+		patch: deduplicatePolygons([...patch, ...candidate.transformedPatch]),
+		collapsed: candidate.collapsed,
+	});
+
 	/**
 	 * Canonical exact key for an expanded seed (absolute coordinates), to dedup identical
 	 * patches reached via different DFS paths within one expansion. Symmetry/chiral dedup
