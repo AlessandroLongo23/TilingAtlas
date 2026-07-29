@@ -45,9 +45,40 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.11.0",
+		date: "2026-07-29",
+		title: "Corrections to the Schwarz counts",
+		commit: "a0e0c39",
+		changes: [
+			{
+				kind: "content",
+				text: "**Four Schwarz boards** were re-derived from Marek Čtrnáct's corrected solvers: (2,3,6) goes 43 → 462 tilings, (2,4,5) 7 → 23, (2,2,3) 2,297 → 2,347.",
+				href: "/freedraw",
+			},
+			{
+				kind: "content",
+				text: "Every tiling that **draws the longest edge** of a Schwarz triangle had been missing. The shelf goes 135,157 → 135,636.",
+			},
+			{
+				kind: "fix",
+				text: "The **(2,3,6) k=5 slice** is gone: it came from a solver build that has been retired.",
+			},
+			{
+				kind: "feature",
+				text: "**Update notes** now say what changed in each release.",
+				href: "/updates",
+			},
+			{
+				kind: "changed",
+				text: "The **aperiodic tab** shows a hat tile as its icon.",
+				href: "/aperiodic",
+			},
+		],
+	},
+	{
 		version: "1.10.1",
 		date: "2026-07-29",
-		title: "Theory splits in two",
+		title: "Theory splits into Elements and Articles",
 		commit: "cd8a1b7",
 		changes: [
 			{
@@ -60,7 +91,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.10.0",
 		date: "2026-07-29",
-		title: "The Schwarz family",
+		title: "Nine Schwarz boards",
 		commit: "1556d96",
 		changes: [
 			{
@@ -151,7 +182,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.6.1",
 		date: "2026-07-25",
-		title: "The mixed shelf, widened",
+		title: "The mixed shelf grows to 83",
 		commit: "124fd92",
 		changes: [
 			{
@@ -172,7 +203,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.6.0",
 		date: "2026-07-25",
-		title: "The decoration axis, and two new constructors",
+		title: "The decoration axis",
 		commit: "af07c83",
 		changes: [
 			{
@@ -200,7 +231,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.5.0",
 		date: "2026-07-24",
-		title: "The hyperbolic shelf, and colorings",
+		title: "Hyperbolic tilings and colorings",
 		commit: "cd0c982",
 		changes: [
 			{
@@ -226,7 +257,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.4.0",
 		date: "2026-07-22",
-		title: "A front door, and the edges carry the tiling",
+		title: "Freedraw and a new landing page",
 		commit: "cf5a501",
 		changes: [
 			{
@@ -253,7 +284,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.3.0",
 		date: "2026-07-20",
-		title: "Islamic patterns on the GPU, and the sphere",
+		title: "Islamic patterns and the spherical shelf",
 		commit: "11044c0",
 		changes: [
 			{
@@ -280,7 +311,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.2.0",
 		date: "2026-07-16",
-		title: "The hyperbolic plane, and a GPU renderer",
+		title: "Hyperbolic tilings and a GPU renderer",
 		commit: "9428805",
 		changes: [
 			{
@@ -306,7 +337,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.1.0",
 		date: "2026-07-12",
-		title: "The pieces get their own pages",
+		title: "Prototile and vertex-configuration pages",
 		commit: "1d4006c",
 		changes: [
 			{
@@ -333,7 +364,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.0.0",
 		date: "2026-07-09",
-		title: "Every tiling shows its symmetry",
+		title: "Symmetry overlays",
 		commit: "f9053f0",
 		changes: [
 			{
