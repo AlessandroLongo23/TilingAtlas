@@ -10,6 +10,7 @@ import { MethodCard, MethodStrip } from "@/components/method-card";
 import { CountTimeline } from "@/components/count-timeline";
 import { GrowthStrip } from "@/components/growth-strip";
 import { RowStacker } from "@/components/row-stacker";
+import { PeriodFigure } from "@/components/period-figure";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -481,6 +482,10 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// of squares, and above it a free binary choice per row: 2^n legal tilings all containing that
 			// same patch, of which the prune keeps one.
 			"row-stacker": RowStacker,
+			// <period-figure> — a tiling's two period vectors written as chains of unit ζ steps, over the
+			// cell they generate. The bounded-weight theorem in one case, searched rather than drawn
+			// (scripts/build-period-figure.ts).
+			"period-figure": PeriodFigure,
 			// <count-timeline> — who published which k-uniform count, when, drawn, not tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,
