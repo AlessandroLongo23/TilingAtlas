@@ -291,7 +291,9 @@ cmm, so this is not an awkward corner — it is the single commonest case at tha
 
 Using the fact that each vertex should belong to one of the seed's $k$ orbits, we stamp rigid copies
 of it at the open vertices with exact isometries, and then search the finished patch for two
-independent translations that map it onto itself.
+independent translations that map it onto itself. The stamping rule is not the lever: a stronger one,
+stamping the whole grown patch rather than the seed, prunes about a tenth of the search for roughly
+900 times the cost.
 
 <growth-strip>
 </growth-strip>
@@ -308,14 +310,19 @@ saturating a 410-deep search stack with patches of about 730 tiles: locally lega
 boundary variants, proliferating without any bound.
 
 The tempting repair was to emit as soon as a patch certifies a period and prune that branch.
-Fortunately I tried to prove that step before shipping it, because it turns out to be unsound.
+Fortunately I tried to prove that step before shipping it, because it turns out to be unsound: the
+certified patch below extends legally in two ways at every row, and the prune keeps one of them.
 
-![](/defense/figures/unsound-prune.png)
+<row-stacker>
+</row-stacker>
 
-<!-- notes: The strip of squares completes to 4^4 and also to 3^3.4^2, and to non-periodic row
-mixtures. Pruning at the first certified closure drops the others. This is the first entry in the
-prohibited-prune registry. Then the closing line, slowly, because it is the hinge of the first half:
-growth has no sound stopping rule, so the period has to be fixed before the search begins. -->
+<!-- notes: Build it live. Add a few rows, mixing squares and triangles, and let the counter climb —
+every one of those is a legal tiling containing the ringed patch, and emit-on-closure keeps exactly
+one. All three interfaces close 360 degrees, which is why every choice is free: squares on squares is
+4.4.4.4, triangles on squares is 3.3.3.4.4, triangles on triangles is 3.3.3.3.3.3. This is the first
+entry in the prohibited-prune registry. Then the closing line, slowly, because it is the hinge of the
+first half: growth has no sound stopping rule, so the period has to be fixed before the search
+begins. Keys: 1 squares, 2 triangles, Backspace undo, 0 reset. -->
 
 ---
 

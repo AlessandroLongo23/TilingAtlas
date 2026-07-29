@@ -9,6 +9,7 @@ import { VertexFigureCard } from "@/components/vertex-figure-card";
 import { MethodCard, MethodStrip } from "@/components/method-card";
 import { CountTimeline } from "@/components/count-timeline";
 import { GrowthStrip } from "@/components/growth-strip";
+import { RowStacker } from "@/components/row-stacker";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -476,6 +477,10 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// cycling through the placements the expander actually offers at the vertex it takes next.
 			// Precomputed SeedExpander output (scripts/build-growth-figure.ts), not a drawing.
 			"growth-strip": GrowthStrip,
+			// <row-stacker> — why emit-on-closure is unsound, walked rather than asserted. A certified row
+			// of squares, and above it a free binary choice per row: 2^n legal tilings all containing that
+			// same patch, of which the prune keeps one.
+			"row-stacker": RowStacker,
 			// <count-timeline> — who published which k-uniform count, when, drawn rather than tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,
