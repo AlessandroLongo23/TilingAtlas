@@ -1707,3 +1707,19 @@ being tried, and both our completeness arguments said it was sound — so it was
 k=1 drops **11 → 10**, at 16× the wall clock; the casualty is `[3,3,3,3,6]`, the one chiral tiling. It
 dies at the second stamp, on the same patch and target where seed-stamping succeeds. Bookkeeping and
 leaf-shape explanations both tested and refuted. Detail: NOTES §"AL's whole-patch stamping". — CC
+
+### 2026-07-29 (2) — CC — the F2 flag was Marek's solver bug; (2,2,3) corrected
+Marek found it too, by asking why there is no all-edges-drawn tiling at (2,2,3). Two bugs: a typo on
+the five boards whose triangle has three different angles, dropping every tiling that draws the
+longest edge class (this is exactly the F2 flag — E2 names all 103 scalene certificates, F2 none);
+and too few starting vertices on (2,2,3)/(2,2,4). (2,2,3) reran and is in: **2,297 → 2,347**, 0
+failures, same board, and the missing 12-tile pattern is back at `ss223-2-00007`. The five corrected
+solvers are Windows binaries and cannot run on this arm64 Mac, so those boards stay short until
+Marek's reruns arrive. Detail: NOTES §"Marek's corrections". — CC
+
+### 2026-07-28 (4) — CC — whole-patch stamping: the lost tiling was a bug, now fixed and profiled
+The footprint dedup keyed on the SEED's tiles, which is wrong once a stamp places the whole patch — it
+discarded 14 of 20 candidates, keeping a reflection that collides on the chiral snub. Keyed on the
+stamped source instead, the snub comes back (0 → 2 usable leaves). Profile: 967× slower, but `collide`
+is only 9.9 s of 187 s — 86% is the footprint key and an eager float transform. It buys 147 frames vs
+164. Detail: NOTES §"Whole-patch stamping, diagnosed". — CC

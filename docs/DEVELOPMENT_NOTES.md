@@ -7728,3 +7728,99 @@ took k=2 from 13 timeouts to zero, and no stamping rule addresses that.
 
 **Do not ship `stampMode: "patch"`.** It exists to be measured against the default, and the default is
 what every count in this repo was produced with.
+
+## 2026-07-29 — Marek's corrections: the F2 flag was a solver bug, and (2,2,3) is fixed
+
+The ⚑ I had been carrying since 2026-07-27 — `F2` appears in NO corpus on any board, so the third
+edge class is never drawn where one exists — turned out to be a bug in Marek's solver, not a quirk of
+his run. He found it independently by asking why the catalogue has no all-edges-drawn tiling at
+(2,2,3), and said the renders are what caught it.
+
+Two separate bugs, and the boards split cleanly by which one hit them.
+
+**A wrong definition (a typo, copy/pasted across families) on every board whose triangle has three
+different angles**: (2,3,4) (2,3,5) (2,3,6) (2,3,7) (2,4,5). It dropped every tiling that draws the
+longest edge class. The evidence in our own staged corpora is exact and total: those five are the only
+boards with three edge classes, hence the only ones with a third digon pair, and across all 103 of
+their certificates `E2` (third class undrawn) names every single one and `F2` (drawn) names none. The
+four isoceles boards use A2–D2 only, which is correct — two classes, two pairs. Corrected solvers
+arrived as `corrections.zip` (five PE32+ Windows binaries; the 236 one differs by md5 from the copy
+archived on 2026-07-27, so they are real rebuilds). **They cannot run here**: this is an arm64 Mac
+with no Wine, no CrossOver, no VM, and the zips ship no source. Those five boards stay at their
+current counts, which are now known to be LOWER BOUNDS, until Marek's reruns arrive.
+
+**Too few starting vertices** on (2,2,3) and (2,2,4), losing tilings built only out of the excluded
+ones. (2,2,3)'s rerun arrived and is ingested: 47 certificate files against the staged 44 (3 new, 22
+with changed content, none removed), **2,297 → 2,347 tilings, 0 failures, same canonical board**
+(V=8 E=18 F=12). The gain sits at k=2..8 (+2 +6 +8 +5 +13 0 +16). His missing all-edges-drawn pattern
+is the sharpest check available: the board has 12 triangles, the shipped corpus topped out at 11
+tiles, and the corrected one reaches 12 at `ss223-2-00007`. (2,2,4) was still rerunning.
+
+(2,3,3) and (2,4,4) are in neither bug and stand exactly as shipped — both isoceles, and neither is in
+the starting-vertex pair. Marek confirmed (2,4,4) himself.
+
+⚑ **Six of nine boards are short right now**, and `SCHWARZ_BOARDS` says so in a comment beside the
+rows. Two tests currently encode the bug as an expectation and will need rewriting when the reruns
+land: the (2,3,7) case asserts its four tilings have sizes `[-1, 2, 6, 14]`, complete only while the
+third class is never drawn; and the gaps test asserts `{224: [8], 235: [4]}`, holes a rerun may close.
+
+## 2026-07-28 (5) — Whole-patch stamping, diagnosed: the loss was a BUG, and the cost is mostly avoidable
+
+Correcting the entry above, which recorded the failure as unexplained. AL asked for the mechanism, and
+instrumenting the candidate loop (`SeedExpander.candidateProbe`, `scripts/diag-stamp-why.ts`) found it
+in one frame.
+
+### The bug: a dedup keyed on the wrong tiles
+
+`findValidIsometries` dedups candidate isometries by FOOTPRINT — where the isometry sends the stamped
+tiles — keeping the first of each group. The centroids it keys on are `originalPolygons`, the SEED.
+That is sound while a stamp places the seed: two isometries agreeing there produce the identical child
+patch. It is wrong the moment a stamp places the whole patch, because those two isometries agree on
+the seed and can differ everywhere else.
+
+The candidate table at the frame where patch mode died:
+
+    seed   20 candidates: footprintDup=14 align=5 accepted=1
+    patch  20 candidates: footprintDup=14 align=5 collision=1
+
+Fourteen of twenty were discarded before ever being tested, keyed on a 5-tile seed. The one survivor is
+a REFLECTION, and the snub is chiral: reflecting the mirror-symmetric 5-tile seed is legal, reflecting
+the chiral 8-tile patch is not — 2 of its 8 tiles overlap (a triangle onto a hexagon and a hexagon onto
+a triangle). The rotation that would have worked shared a seed-footprint with it and was never tried.
+
+Keying the footprint on the stamped source instead: patch mode goes from `accepted=0` to `accepted=1`
+at that frame, and the snub seed from **0 usable leaves to 2 — the same 2 seed stamping finds**. So the
+completeness failure was an implementation bug, not a limit of the idea. Regression: `tests/stamp-mode.test.ts`.
+
+### The cost: 86% of it is avoidable, and it buys almost nothing
+
+Same seed, same 2 leaves, and essentially the same search — 164 frames seed-stamped, 147 patch-stamped:
+
+| mode | frames | leaves | ms | fvi | footprint | xform | collide | intersects |
+|---|---|---|---|---|---|---|---|---|
+| seed  | 164 | 2 | 194 | 151 | 31 | 12 | 47 | 1,415 |
+| patch | 147 | 2 | 187,539 | 172,115 | 73,832 | 87,554 | 9,853 | 129,844 |
+
+The 967× is not the overlap testing. `collide` is 9.9 s of 187 s. It is the two places that transform
+the whole patch per candidate: the footprint key (73.8 s, 39% — and that is the fix above, which made
+the key O(patch)) and `applyIsometryToPolygons(..., 'full')` (87.6 s, 47%), which runs the float
+refresh — live trig per polygon — for every candidate before anything is tested. K2_DIAGNOSIS already
+flagged that transform as waste on the seed path; here it is paid 181× over. A commutative footprint
+hash instead of sort+join of bigint key strings, and a lazy exact-first transform that aborts on the
+first overlap, would take most of it back.
+
+Memory is the harder wall: the full 15-seed k=1 enumeration in patch mode exhausts a **12 GB** heap and
+cannot be completed, because every rejected candidate materialises a fresh copy of a patch that grows
+geometrically — measured on one branch: 5, 8, 13, 23, 31, 44, 66, 88, 123 tiles, against seed
+stamping's 5, 8, 10, 12, 14.
+
+### The verdict
+
+Neither the failure nor the slowness is a limit of AL's idea. But the measurement that matters is what
+it BUYS: 147 frames against 164, and `avgBranch` 0.99 against 1.04. It prunes ~10% of the search for
+~900× the cost. The expander's wall was never the branching factor — it is that the search grows every
+locally-legal partial to radius 6k with no bound on how many non-periodic boundary variants exist, and
+whole-patch stamping does not bound that either. Fixing Λ first does, which is why PeriodSolver took
+k=2 from 13 timeouts to zero.
+
+`stampMode` stays `"seed"`. `"patch"` remains measured, not shipped.
