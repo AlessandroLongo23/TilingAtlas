@@ -392,38 +392,6 @@ other spoke, for the reason given on the arithmetic slide. -->
 
 ---
 
-## A count can be wrong twice and still look right
-
-The first full $k=2$ run terminated cleanly and returned 23 against the reference 20. Diagnosing that
-single discrepancy took an entire phase of the project, and it taught me more than any success in
-the thesis.
-
-<slide-cols>
-<div>
-<tiling-card tiling="t2014" title="t2014, the missing twentieth"></tiling-card>
-</div>
-<div>
-
-The pipeline had only ever found 19 distinct tilings, so the 23 was an under-merged 19: an
-over-count and an under-count that happened to cancel into a plausible number. The missing twentieth
-has a fundamental cell smaller than the rigid seed core, so the patch we seeded the fill with could
-never fit inside the tiling it was supposed to find.
-
-Later the same thing happened at $k=1$, where a tuned area bound dropped an Archimedean
-tiling and a duplicate-count bug of the opposite sign hid it. Two errors cancelling into the
-expected 11.
-
-It survived that long because the number it produced was the number I was expecting.
-
-</div>
-</slide-cols>
-
-<!-- notes: This is the best methodological slide you have, so do not rush it. The lesson in one
-sentence: counts are validated per-tiling against an independent catalogue, or they are not
-validated. -->
-
----
-
 ## Measuring the wall at $k=4$
 
 Coverage was never the problem. The obstacle is how much there is to fill: 13,000 to 27,000 fillable
@@ -646,7 +614,7 @@ credible one. The obligation most likely to hide an error is 3, the symmetry-bre
 
 ---
 
-## The engine reproduces every published count
+## The engine reproduces every published count<sup>*</sup>
 
 | $k$ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -663,7 +631,19 @@ tiling that was not already known.
 What it is, is a check on my re-implementation, and a good one, because a search that loses tilings
 tends to lose them at one particular $k$, not uniformly.
 
-<!-- notes: Volunteering that this sets no record is worth more than the table itself. -->
+<small style="opacity:0.62">* assuming the algorithm is implemented correctly and faithfully matches the theory</small>
+
+<!-- notes: Volunteering that this sets no record is worth more than the table itself. The asterisk is
+the honest scope of the whole table and you should read it out rather than let it sit there: the proof
+is about the algorithm, the numbers come from a program, and the gap between them is the first of the
+four residual risks two slides back. Only 11 and 20 are certified independently of any implementation
+of this engine. -->
+
+<!-- Cut 2026-07-29: "A count can be wrong twice and still look right" — the first k=2 run returning 23
+against 20, an under-merged 19 with an over-count and an under-count cancelling, and the same shape of
+double error at k=1. Recoverable from git before b695477. AL's call: the story is about a pipeline that
+is dead, and the epistemic point it carried is made by "Why agreement between programs settles nothing"
+and by the residual-risk slide. Say it out loud if the question comes. -->
 
 ---
 
