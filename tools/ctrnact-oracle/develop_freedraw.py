@@ -49,7 +49,9 @@ Usage:
     develop_freedraw.py <dir> --grid triangle --out tri_solutions.json [--oracle tri_k1.json]
 """
 import argparse
+import cmath as _cmath
 import json
+import math as _math
 import os
 import re
 import sys
@@ -61,6 +63,11 @@ from collections import Counter, deque
 Z_ONE = (1, 0, 0, 0)
 Z_TWO = (2, 0, 0, 0)
 Z_SQRT3 = (0, 2, 0, -1)
+
+# The same scalars in Z[zeta8] (z = e^{i*pi/4}, z^4 = -1), for the (2,4,4) board below.
+# sqrt(2) = 2*cos(pi/4) = z + z^{-1} = z - z^3.
+Z8_ONE = (1, 0, 0, 0)
+Z8_SQRT2 = (0, 1, 0, -1)
 
 # ---------------------------------------------------------------- grids
 # units: interior angle in 30-degree units (A2 digon = 0 via 6 - 12//n).
@@ -113,6 +120,31 @@ GRIDS = {
                             "C2": Z_SQRT3, "D2": Z_SQRT3,
                             "E2": Z_TWO, "F2": Z_TWO},
                "face_size": 3, "face_corners": "vary", "digon_every_edge": True},
+    # The (2,4,4) SCHWARZ board -- Marek's pt_schwarz_edges_244.exe, the other Euclidean member of the
+    # family. Its triangle is the half-square: 90/45/45. Reflecting it in its three sides generates
+    # mirrors at x in Z, y in Z, and BOTH diagonal families y = x + n, y = -x + n, so the board is the
+    # unit square grid with both diagonals of every square drawn -- four triangles per square, not the
+    # eight of a barycentric subdivision (there are no midlines: y = 1/2 is not a mirror).
+    #
+    # Two vertex classes, and that is why k = 2 is the floor here rather than sch236's 3: the LATTICE
+    # POINTS are the 45-degree corners (eight triangles each, letter S4) and the SQUARE CENTRES the
+    # 90-degree ones (four triangles, S2). Two edge classes follow: the square edges join two S4s
+    # (length sqrt(2) here, the side opposite the right angle) and the half-diagonals an S2 to an S4
+    # (length 1). Only two letters, because Marek's digon letters name a pair of ANGLES.
+    #
+    # Everything sch236 needed it needs too, plus one thing sch236 did not: 45-degree directions. A
+    # direction is a multiple of 45 degrees and the two side lengths are 1 : sqrt(2), neither of which
+    # lives in Z[zeta12] -- so the develop runs in Z[zeta8], where sqrt(2) = z - z^3. That is the "ring"
+    # knob; in 45-degree units the corner angles are S2 = 2 and S4 = 1, and 8 units close the circle.
+    "sch244": {"units": {"S2": 2, "S4": 1,
+                         "A2": 0, "B2": 0, "C2": 0, "D2": 0, "E2": 0, "F2": 0},
+               "step": None, "axes": None, "axis_names": None,
+               "ring": 8,
+               "digons": ("A2", "B2", "C2", "D2", "E2", "F2"),
+               "drawn_letters": ("B2", "D2", "F2"),
+               "edge_len": {"A2": Z8_ONE, "B2": Z8_ONE,
+                            "C2": Z8_SQRT2, "D2": Z8_SQRT2},
+               "face_size": 3, "face_corners": "vary", "digon_every_edge": True},
 }
 
 # Grid knobs, with the defaults that reproduce the four original grids exactly.
@@ -132,22 +164,71 @@ def grid_drawn(grid):
 def is_patch_grid(grid):
     return GRIDS[grid]["step"] is None
 
-# ---------------------------------------------------------------- exact Z[zeta12] (from develop.py)
-# element = (a,b,c,d) = a + b*z + c*z^2 + d*z^3, z = e^{i*pi/6}, minimal polynomial z^4 = z^2 - 1.
+# ---------------------------------------------------------------- exact cyclotomic rings
+# Two rings, because two Schwarz boards need two direction sets. Both are DEGREE 4 over Z, so an element
+# is (a,b,c,d) = a + b*z + c*z^2 + d*z^3 either way and only the reduction of z^4 differs:
+#
+#   Z[zeta12]  z = e^{i*pi/6},  z^4 = z^2 - 1   12 directions, 30 deg apart   sqrt(3) = 2z - z^3
+#   Z[zeta8]   z = e^{i*pi/4},  z^4 = -1         8 directions, 45 deg apart   sqrt(2) = z - z^3
+#
+# zeta12 is the plane's default and every grid that predates the (2,4,4) board uses it. That board's
+# triangle has 90/45/45 corners, so its directions are multiples of 45 degrees and its two side lengths
+# are 1 : sqrt(2) — neither of which lives in Z[zeta12]. A grid names its ring with the "ring" knob and
+# everything downstream reads NDIR / ZK / far_step off the block, so no code path is duplicated.
 def zmul_zeta(v):
+    """Multiply by zeta12."""
     a, b, c, d = v
     return (-d, a, b + d, c)
 
 
-def zpow(k):
+def zmul_zeta8(v):
+    """Multiply by zeta8 (z^4 = -1)."""
+    a, b, c, d = v
+    return (-d, a, b, c)
+
+
+def zpow(k, n=12):
     v = (1, 0, 0, 0)
-    for _ in range(k % 12):
-        v = zmul_zeta(v)
+    step = zmul_zeta if n == 12 else zmul_zeta8
+    for _ in range(k % n):
+        v = step(v)
     return v
 
 
-ZK = [zpow(k) for k in range(12)]
 ZZERO = (0, 0, 0, 0)
+
+
+class Ring:
+    """One cyclotomic ring plus its direction count: `n` directions, `zk[d]` the unit step in direction d
+    (d in 30-degree units on zeta12, 45-degree on zeta8), `half` the reversal (+180 degrees)."""
+
+    __slots__ = ("n", "half", "zk", "mul_zeta", "_ze")
+
+    def __init__(self, n):
+        self.n = n
+        self.half = n // 2
+        self.mul_zeta = zmul_zeta if n == 12 else zmul_zeta8
+        self.zk = [zpow(k, n) for k in range(n)]
+        self._ze = [_cmath.exp(2j * _math.pi / n) ** k for k in range(4)]
+
+    def to_complex(self, v):
+        return v[0] * self._ze[0] + v[1] * self._ze[1] + v[2] * self._ze[2] + v[3] * self._ze[3]
+
+
+RINGS = {}
+
+
+def ring_of(grid):
+    """A grid's ring. 12 unless it says otherwise, which is what keeps every pre-existing grid exact."""
+    n = GRIDS.get(grid, {}).get("ring", 12)
+    if n not in RINGS:
+        RINGS[n] = Ring(n)
+    return RINGS[n]
+
+
+RING12 = Ring(12)
+RINGS[12] = RING12
+ZK = RING12.zk  # the zeta12 unit steps, kept as a module name for the code that predates Ring
 
 
 def zadd(u, v):
@@ -162,25 +243,20 @@ def zscale(u, m):
     return (u[0] * m, u[1] * m, u[2] * m, u[3] * m)
 
 
-def zmul(u, v):
-    """General Z[zeta12] product, by expanding v over the power basis and stepping u through z^k."""
+def zmul(u, v, ring=None):
+    """General product in `ring`, by expanding v over the power basis and stepping u through z^k."""
+    step = (ring or RING12).mul_zeta
     out = (0, 0, 0, 0)
     cur = u
     for k in range(4):
         if v[k]:
             out = zadd(out, zscale(cur, v[k]))
-        cur = zmul_zeta(cur)
+        cur = step(cur)
     return out
 
 
-import cmath as _cmath
-import math as _math
-
-_ZE = [_cmath.exp(1j * _math.pi / 6) ** k for k in range(4)]
-
-
-def zfloat(v):
-    return v[0] * _ZE[0] + v[1] * _ZE[1] + v[2] * _ZE[2] + v[3] * _ZE[3]
+def zfloat(v, ring=None):
+    return (ring or RING12).to_complex(v)
 
 
 class DevelopError(Exception):
@@ -285,9 +361,11 @@ def vtable_variants(figure, tag, grid):
         if c not in units:
             raise DevelopError(f"tile {c} not in the {grid} alphabet")
     s = sum(units[c] for c in figure)
-    if s == 0 or 12 % s:
-        raise DevelopError(f"figure {figure} angle sum {s * 30} does not divide 360")
-    rot = 12 // s  # rotation order of the site group
+    ndir = g.get("ring", 12)
+    unit_deg = 360 // ndir
+    if s == 0 or ndir % s:
+        raise DevelopError(f"figure {figure} angle sum {s * unit_deg} does not divide 360")
+    rot = ndir // s  # rotation order of the site group
     t = len(figure)
 
     m = re.fullmatch(r"(F|C\d+|A[a-z0-9]*|D\d+[a-z]?)(x\d+)?", tag or "F")
@@ -315,6 +393,11 @@ class Block:
 
     def __init__(self, cert, tables, grid):
         self.grid = grid
+        # The grid's direction set. NDIR is the number of directions and HALF the 180-degree reversal,
+        # so every "(d + 6) % 12" below is written in terms of the grid rather than baked at 12.
+        self.ring = ring_of(grid)
+        self.ndir = self.ring.n
+        self.half = self.ring.half
         self.tables = tables
         self.orbit_of = []
         self.slot_of = []   # index into the table's own entries
@@ -361,7 +444,8 @@ class Block:
     def far_step(self, h, d):
         """Vector from the tail of half-edge h, heading d, to its head. Unit on the equilateral
         grids; scaled by the half-edge's own class length on a scalene one."""
-        return ZK[d] if self.edgelen is None else zmul(self.edgelen[h], ZK[d])
+        zk = self.ring.zk[d]
+        return zk if self.edgelen is None else zmul(self.edgelen[h], zk, self.ring)
 
     def _ref_entry(self, ref, extra_star=False):
         star = ref["mirror"] != extra_star  # composing stars cancels
@@ -407,7 +491,7 @@ def develop(block):
         for _ in range(40):
             seq.append((cur, d))
             cur2 = block.rneig[cur]
-            d = (d + block.step[cur]) % 12
+            d = (d + block.step[cur]) % block.ndir
             cur = cur2
             if (cur, d) == (h0, d0):
                 return seq
@@ -443,7 +527,7 @@ def develop(block):
                 raise DevelopError(f"direction {d} off the {block.grid} grid")
             dx, dy = step[d]
             npos = (pos[0] + dx, pos[1] + dy)
-            gd = (d + 6) % 12
+            gd = (d + block.half) % block.ndir
             if reg(block.glue[h], gd, npos):
                 q.append((block.glue[h], gd, npos))
         # Marked AFTER the star registers its members, so the clash check in reg() only ever
@@ -579,24 +663,24 @@ def egcd_pair(a, b):
     return g, s, t
 
 
-def _dotf(u, v):
-    a, b = zfloat(u), zfloat(v)
+def _dotf(u, v, ring):
+    a, b = zfloat(u, ring), zfloat(v, ring)
     return a.real * b.real + a.imag * b.imag
 
 
-def gauss_reduce(T1, T2):
+def gauss_reduce(T1, T2, ring=None):
     a, b = tuple(T1), tuple(T2)
     for _ in range(1000):
-        if _dotf(b, b) < _dotf(a, a):
+        if _dotf(b, b, ring) < _dotf(a, a, ring):
             a, b = b, a
-        da = _dotf(a, a)
+        da = _dotf(a, a, ring)
         if da == 0:
             break
-        m = int(round(_dotf(b, a) / da))
+        m = int(round(_dotf(b, a, ring) / da))
         if m == 0:
             break
         b = zsub(b, zscale(a, m))
-    if _dotf(b, b) < _dotf(a, a):
+    if _dotf(b, b, ring) < _dotf(a, a, ring):
         a, b = b, a
     return a, b
 
@@ -613,7 +697,7 @@ def develop_patch(block):
         for _ in range(40):
             seq.append((cur, d))
             cur2 = block.rneig[cur]
-            d = (d + block.step[cur]) % 12
+            d = (d + block.step[cur]) % block.ndir
             cur = cur2
             if (cur, d) == (h0, d0):
                 return seq
@@ -644,7 +728,7 @@ def develop_patch(block):
         for (h, d) in star(h0, d0):
             reg(h, d, pos)
             npos = zadd(pos, block.far_step(h, d))
-            gd = (d + 6) % 12
+            gd = (d + block.half) % block.ndir
             if reg(block.glue[h], gd, npos):
                 q.append((block.glue[h], gd, npos))
         expanded[pos] = (h0, d0)
@@ -654,7 +738,7 @@ def develop_patch(block):
     basis = lattice_basis_z(periods)
     if len(basis) != 2:
         raise DevelopError(f"period lattice rank {len(basis)} != 2")
-    T1, T2 = gauss_reduce(basis[0], basis[1])
+    T1, T2 = gauss_reduce(basis[0], basis[1], block.ring)
     return T1, T2, placed
 
 
@@ -671,7 +755,8 @@ class PatchComplex:
         self.block = block
         self.T1, self.T2 = T1, T2
         self.placed = placed
-        f1, f2 = zfloat(T1), zfloat(T2)
+        self.ring = block.ring
+        f1, f2 = zfloat(T1, self.ring), zfloat(T2, self.ring)
         det = f1.real * f2.imag - f1.imag * f2.real
         if abs(det) < 1e-9:
             raise DevelopError("degenerate period basis")
@@ -679,7 +764,7 @@ class PatchComplex:
 
     def lam_coords(self, zv):
         """Exact integer (m, n) with zv = m*T1 + n*T2; DevelopError if zv is not in the lattice."""
-        p = zfloat(zv)
+        p = zfloat(zv, self.ring)
         m = round(self._inv[0] * p.real + self._inv[1] * p.imag)
         n = round(self._inv[2] * p.real + self._inv[3] * p.imag)
         if zsub(zv, zadd(zscale(self.T1, m), zscale(self.T2, n))) != ZZERO:
@@ -688,7 +773,7 @@ class PatchComplex:
 
     def reduce_pos(self, pos):
         """(representative position in the base cell, (m, n) lift). Floor in float, subtract exact."""
-        p = zfloat(pos)
+        p = zfloat(pos, self.ring)
         al = self._inv[0] * p.real + self._inv[1] * p.imag
         be = self._inv[2] * p.real + self._inv[3] * p.imag
         m = _math.floor(al + 1e-9)
@@ -723,7 +808,7 @@ class PatchComplex:
         delta = {}
         for (h, d) in keys:
             K = (h, d)
-            Kr = (b.glue[h], (d + 6) % 12)
+            Kr = (b.glue[h], (d + b.half) % b.ndir)
             far = zadd(self.placed[K], b.far_step(h, d))
             delta[K] = self.lam_coords(zsub(far, self.placed[Kr]))
         # Faces: cycles of next() over keys whose corner tile is a polygon (digons are the drawn
@@ -732,7 +817,7 @@ class PatchComplex:
             h, d = K
             g = b.glue[h]
             x = b.lneig[g]
-            return (x, (d + 6 - b.step[x]) % 12)
+            return (x, (d + b.half - b.step[x]) % b.ndir)
 
         def face_tile(K):
             h, d = K
@@ -802,10 +887,10 @@ class PatchComplex:
             if face_tile(K) in digons:
                 continue
             h, d = K
-            Kr = (b.glue[h], (d + 6) % 12)
+            Kr = (b.glue[h], (d + b.half) % b.ndir)
             if hop and face_tile(Kr) in digons:
                 hd, dd = nxt(Kr)
-                Kr = (b.glue[hd], (dd + 6) % 12)
+                Kr = (b.glue[hd], (dd + b.half) % b.ndir)
             far = zadd(self.placed[K], b.far_step(h, d))
             self.adj[K] = (Kr, self.lam_coords(zsub(far, self.placed[Kr])))
         return self
@@ -903,13 +988,13 @@ def emit_patch(block, T1, T2, placed):
     cx = PatchComplex(block, T1, T2, placed).build()
     comp, comps = cx.classify()
     rnd = lambda z: [round(z.real, 5), round(z.imag, 5)]
-    verts = [rnd(zfloat(p)) for p in cx.vpos]
+    verts = [rnd(zfloat(p, block.ring)) for p in cx.vpos]
     edges = []
     seen = set()
     b = block
     for K in sorted(cx.key_vertex):
         h, d = K
-        Kr = (b.glue[h], (d + 6) % 12)
+        Kr = (b.glue[h], (d + b.half) % b.ndir)
         und = tuple(sorted([K, Kr]))
         if und in seen:
             continue
@@ -954,8 +1039,8 @@ def emit_patch(block, T1, T2, placed):
         "withHoles": sum(1 for c in comps if c["holes"] > 0),
     }
     return {
-        "T1": rnd(zfloat(T1)),
-        "T2": rnd(zfloat(T2)),
+        "T1": rnd(zfloat(T1, block.ring)),
+        "T2": rnd(zfloat(T2, block.ring)),
         "verts": verts,
         "vorbit": cx.vorbit,
         "edges": edges,
@@ -1073,7 +1158,7 @@ def develop_block(cert, grid):
     return out, len(combos), reasons
 
 
-PATCH_ID_PREFIX = {"ts": "fdts", "hex": "fdh", "sch236": "sch236"}
+PATCH_ID_PREFIX = {"ts": "fdts", "hex": "fdh", "sch236": "sch236", "sch244": "sch244"}
 
 
 def run_patch(certs, args, grid):

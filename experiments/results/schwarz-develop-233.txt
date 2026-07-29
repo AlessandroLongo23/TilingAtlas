@@ -1,0 +1,25 @@
+Schwarz edge-system develop — board (2,3,3) (233, spherical)
+source          : ../../materials/corpora/schwarz_edges_233
+edge lengths    : A2=0.955316618, C2=1.230959417
+certificates in : 48779
+developed       : 48779
+failed          : 0
+multi-variant   : 2498
+wall            : 119.9s (2.5 ms/certificate)
+
+shared board    : V=14 E=36 F=24 (every pattern lands on it)
+
+
+   k   tilings  tiles: min    max
+   2         4           1     24
+   3       111           2     21
+   4       464           2     22
+   5       654           2     22
+   6      1966           2     23
+   7     45580           2     22
+wrote ../../public/schwarz-sph/s233-k2.json: 4 records, 0.00 MB
+wrote ../../public/schwarz-sph/s233-k3.json: 111 records, 0.05 MB
+wrote ../../public/schwarz-sph/s233-k4.json: 464 records, 0.19 MB
+wrote ../../public/schwarz-sph/s233-k5.json: 654 records, 0.27 MB
+wrote ../../public/schwarz-sph/s233-k6.json: 1966 records, 0.80 MB
+wrote ../../public/schwarz-sph/s233-k7.json: 45580 records, 18.50 MB

@@ -1,0 +1,13 @@
+Schwarz edge-system develop — board (2,3,7) (237, hyperbolic)
+source          : ../../materials/corpora/schwarz_edges_237
+edge lengths    : A2=0.283128153, C2=0.545274832, E2=0.620671738
+certificates in : 4
+developed       : 4
+failed          : 0
+multi-variant   : 0
+wall            : 0.1s (26.5 ms/certificate)
+
+
+   k   tilings  tiles: min    max
+   3         4           1      1
+wrote ../../public/schwarz-hyp/h237-k3.json: 4 records, 0.00 MB
