@@ -289,11 +289,12 @@ cmm, so this is not an awkward corner — it is the single commonest case at tha
 
 ## Architecture two: grow the patch, then look for periods
 
-We stamp rigid copies of the seed at the frontier with exact isometries, grow outward in coronas,
-and then search the finished patch for two independent translations that map it onto itself.
+Using the fact that each vertex should belong to one of the seed's $k$ orbits, we stamp rigid copies
+of it at the open vertices with exact isometries, and then search the finished patch for two
+independent translations that map it onto itself.
 
-It reproduced the eleven uniform tilings, and it forced me to build the exact orbit gate, so it was
-not a failure in every respect.
+<growth-strip>
+</growth-strip>
 
 <!-- notes: Give it its due before you kill it. The orbit gate and the disallowed-vc prune both came
 out of this architecture and both survived into the final system. -->

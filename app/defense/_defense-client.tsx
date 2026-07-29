@@ -8,6 +8,7 @@ import { PatchCard } from "@/components/patch-card";
 import { VertexFigureCard } from "@/components/vertex-figure-card";
 import { MethodCard, MethodStrip } from "@/components/method-card";
 import { CountTimeline } from "@/components/count-timeline";
+import { GrowthStrip } from "@/components/growth-strip";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -471,6 +472,10 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// the same Wikipedia images the library sidebar shows on hover. `signatures="yes"` adds the
 			// orbifold notation beside each name.
 			"wallpaper-wall": WallpaperGroupWall,
+			// <growth-strip> — the expansion driven by hand: a k=3 seed, then the two stamps that grow it,
+			// cycling through the placements the expander actually offers at the vertex it takes next.
+			// Precomputed SeedExpander output (scripts/build-growth-figure.ts), not a drawing.
+			"growth-strip": GrowthStrip,
 			// <count-timeline> — who published which k-uniform count, when, drawn rather than tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,
