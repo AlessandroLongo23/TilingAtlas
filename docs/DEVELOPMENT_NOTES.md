@@ -7654,3 +7654,23 @@ Each card fitted to its own contents would draw the seed at the same size as the
 the growth — the only thing the row exists to show — would vanish. So all three share one frame, big
 enough for every patch any path can reach. The seed lands at about half the card's width, which is
 what makes the third card read as growth.
+
+## 2026-07-29 — Theory becomes two shelves: Elements and Articles
+
+Prototiles and vertex configurations moved from top-level `/tiles` and `/configs` to `/theory/tiles`
+and `/theory/configs`, and both are gone from the header (AL directive). The header is down to seven
+links, so the number-key shortcuts renumber: Theory 1, Library 2, Play 3, Parquet 4, Freedraw 5,
+Colors 6, Aperiodic 7.
+
+`lib/theory/articles.ts` now exports `THEORY_ELEMENTS` alongside `THEORY_ARTICLES` and a
+`THEORY_GROUPS` list of the two. That single list drives both the index grid (a labelled section per
+group) and `TheoryArticleNav`, so the sidebar switcher on every theory page — including the two
+element pages — lists all six. `theoryArticle()` looks across both groups.
+
+The element pages are client galleries, not markdown, so they keep their own filter sidebar; they
+just adopt the article layout around it — `PageSidebar scrollable={false}`, the nav pinned in a
+`shrink-0` block, the filters scrolling under it. Nothing about the galleries themselves changed.
+
+The routes are the pieces the atlas is built from, which is what "theory" already meant; keeping them
+as sibling top-level tabs made the header claim they were three coordinate destinations instead of
+one shelf and its contents.
