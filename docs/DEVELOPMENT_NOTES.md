@@ -8008,3 +8008,32 @@ is lit; it now uses the same by-side-count colour, so the palette is the resting
 panel drew only the two lattice lines the arrows sit on, which shows a pair of vectors, not a lattice
 — it now draws every line of constant a and constant b, clipped to the frame, with the range taken
 from the frame's own corners in lattice coordinates so it covers the panel at any skew.
+
+## The k=4 wall slide, redrawn and re-checked (2026-07-29)
+
+AL: the figure looked printed rather than drawn, and its three panels used two orientations. Both
+true. Replaced the matplotlib PNG with `<k4-wall>`, three panels of horizontal bars in the deck's own
+type and its single accent.
+
+The data audit turned up one real error, in panel (c). It showed the **k=3** profile — torus fill 83%,
+orbit gate 16.5%, candidate enumeration 0.04% (§15.3) — on a slide about **k=4**, where §22.3 measured
+something different: `cand≈0 ms, fill≈27000 ms (the entire budget), gate≈0`. The k=4 gate reads zero
+not because it got cheaper but because no fill ever completes, so it is never reached. Showing the k=3
+shape alone understated exactly the thing the slide exists to say. The panel now carries both rows,
+and the contrast between them is the difference between slow and walled.
+
+The rest checks out against the ledger and is unchanged: `findSeedSets(4)` = 2072 sets in 0.1 s, ~6.1
+(strided) to ~13.2 (dense head) useSeeds per set giving ~13,000–27,000 against 449 at k=3 (§22.2); a
+strided sample of 25 fills timing out 25/25 at both the 15 s and 30 s caps with 0 cells completed
+(§22.3). One caveat worth knowing: the k=4 seed estimate was taken when k=3 stood at 447, before the
+{3,4,6,12} seed-list fix took it to 449. The ratio is unaffected (29–60× either way).
+
+Panel (a) is linear, not log. The old figure used log and then needed a "30–60×" annotation to say
+what the axis had just hidden; on a linear axis 449 against 27,000 is a 1.7% sliver and needs no
+annotation at all.
+
+Trap for the next slide figure: a `<p>` inside a slide inherits body size from `[&_p]:text-[clamp(…)]`
+on the slide wrapper (`components/slide-markdown.tsx:47`), which beats a utility class on the element
+itself on specificity. Use a `div`.
+
+Verified: build exit 0, eslint clean, 0 px overflow at 1280×800, 1440×900 and 1920×1200.

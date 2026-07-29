@@ -1785,3 +1785,10 @@ agreement between programs settles nothing" and by the residual-risk slide. Cut.
 one asterisk on the counts table — "assuming the algorithm is implemented correctly and faithfully
 matches the theory" — because the proof is of the ALGORITHM and the numbers come from a program; only
 11 and 20 are certified independently of this engine. Deck now 44 slides. — CC
+
+### 2026-07-29 (5) — CC — the k=4 wall slide redrawn, and a data error in it fixed
+Matplotlib PNG (serif, two orientations) replaced by `<k4-wall>`: three panels of horizontal bars in
+the deck's type. The audit AL asked for found one real error — panel (c) showed the k=3 profile (fill
+83%, gate 16.5%) on a k=4 slide, where the measured shape is fill = the entire budget and gate = 0
+because no fill completes, so the gate is never reached. Both rows now shown. Seed counts and timeout
+rates check out against NOTES §22.2–22.3. 59da0ee. Detail: NOTES §"The k=4 wall slide, redrawn". — CC
