@@ -35,11 +35,9 @@ type Pt = [number, number];
 
 const T1_COLOUR = "hsl(212 78% 45%)";
 const T2_COLOUR = "hsl(285 55% 47%)";
-/** The same hues carried past the cell: dashed and faded, so the lattice reads as continuing. */
-const T1_FAINT = "hsl(212 78% 45% / 0.4)";
-const T2_FAINT = "hsl(285 55% 47% / 0.4)";
-const ACCENT = "hsl(18 88% 48%)";
-const ACCENT_FILL = "hsl(18 88% 48% / 0.4)";
+/** The whole lattice, dashed: the two through the origin carry the arrows, so they sit up a little. */
+const T1_FAINT = ["hsl(212 78% 45% / 0.2)", "hsl(212 78% 45% / 0.4)"] as const;
+const T2_FAINT = ["hsl(285 55% 47% / 0.2)", "hsl(285 55% 47% / 0.4)"] as const;
 const TILE_FILL = "rgba(0,0,0,0.045)";
 const TILE_LINE = "rgba(0,0,0,0.17)";
 /**
@@ -225,6 +223,7 @@ export function TorusFigure() {
 		if (!host || !canvas || !built) return;
 		const { copies, accent, t1, t2, sides } = built;
 		const world = ([a, b]: Pt): Pt => [a * t1[0] + b * t2[0], a * t1[1] + b * t2[1]];
+		const detW = t1[0] * t2[1] - t1[1] * t2[0];
 
 		const paint = () => {
 			// A square window in WORLD space, centred on the cell and sized off it, so the tiling reaches
@@ -250,13 +249,14 @@ export function TorusFigure() {
 				if (Math.abs(mx - centre[0]) > half * 1.12 || Math.abs(my - centre[1]) > half * 1.12) continue;
 				drawn.push({ w, idx: copies[c].idx, copy: c });
 				// The hovered COPY only — in the plane these really are different tiles, and lighting every
-				// copy of the same cell polygon would say the opposite of what the panel is for. The orange
-				// accent steps aside while a hover is live so the two colour systems never argue.
+				// copy of the same cell polygon would say the opposite of what the panel is for. With
+				// nothing hovered one cut tile stands lit, in its own by-side-count colour rather than a
+				// separate accent hue, so the resting state is already the palette hovering uses.
 				const isHover = h?.copy === c;
-				const isAccent = !h && copies[c].idx === accent && copies[c].meetsCell;
-				ctx.fillStyle = isHover ? tileFill(sides[copies[c].idx]) : isAccent ? ACCENT_FILL : TILE_FILL;
-				ctx.strokeStyle = isHover ? tileStroke(sides[copies[c].idx]) : isAccent ? ACCENT : TILE_LINE;
-				ctx.lineWidth = isHover ? 2 / s : 1 / s;
+				const lit = isHover || (!h && copies[c].idx === accent && copies[c].meetsCell);
+				ctx.fillStyle = lit ? tileFill(sides[copies[c].idx]) : TILE_FILL;
+				ctx.strokeStyle = lit ? tileStroke(sides[copies[c].idx]) : TILE_LINE;
+				ctx.lineWidth = lit ? 2 / s : 1 / s;
 				fillStroke(ctx, w);
 			}
 
@@ -269,19 +269,35 @@ export function TorusFigure() {
 				],
 			};
 
-			// The two lattice directions carried on past the cell, so the pair of arrows reads as a lattice
-			// rather than as two isolated vectors. Dashed and faded: the periods themselves stay the figure.
+			// The whole lattice, not just the two lines the arrows sit on: every translate of the cell is a
+			// candidate origin, and one pair of vectors on its own reads as two arrows rather than as the
+			// grid they generate. Dashed and faded so the tiling underneath still leads; the two through
+			// the origin sit a shade stronger because they carry the labelled periods.
+			// The range comes from the frame's own corners in lattice coordinates, so it covers the panel
+			// exactly however the lattice is skewed.
+			const abCorners = ([[box.minX, box.minY], [box.maxX, box.minY], [box.maxX, box.maxY], [box.minX, box.maxY]] as Pt[])
+				.map(([x, y]): Pt => [(x * t2[1] - y * t2[0]) / detW, (-x * t1[1] + y * t1[0]) / detW]);
+			const span = (i: 0 | 1) => {
+				const vs = abCorners.map((c) => c[i]);
+				return [Math.floor(Math.min(...vs)), Math.ceil(Math.max(...vs))] as const;
+			};
+			const [aLo, aHi] = span(0), [bLo, bHi] = span(1);
 			ctx.setLineDash([7 / s, 6 / s]);
 			ctx.lineWidth = 1.6 / s;
-			for (const [dir, faint] of [[world([1, 0]), T1_FAINT], [world([0, 1]), T2_FAINT]] as const) {
-				const d: Pt = [dir[0] - originW[0], dir[1] - originW[1]];
-				const [lo, hi] = rayRange(originW, d, box);
-				ctx.strokeStyle = faint;
-				for (const [from, to] of [[lo, 0], [1, hi]] as const) {
-					if (to <= from) continue;
+			// lines of constant b run along T1; lines of constant a run along T2
+			for (const [lo, hi, at, dirAt, faint] of [
+				[bLo, bHi, (n: number): Pt => world([0, n]), world([1, 0]), T1_FAINT],
+				[aLo, aHi, (n: number): Pt => world([n, 0]), world([0, 1]), T2_FAINT],
+			] as const) {
+				const d: Pt = [dirAt[0] - originW[0], dirAt[1] - originW[1]];
+				for (let n = lo; n <= hi; n++) {
+					const from = at(n);
+					const [t0, t1r] = rayRange(from, d, box);
+					if (t1r <= t0) continue;
+					ctx.strokeStyle = faint[n === 0 ? 1 : 0];
 					ctx.beginPath();
-					ctx.moveTo(originW[0] + d[0] * from, originW[1] + d[1] * from);
-					ctx.lineTo(originW[0] + d[0] * to, originW[1] + d[1] * to);
+					ctx.moveTo(from[0] + d[0] * t0, from[1] + d[1] * t0);
+					ctx.lineTo(from[0] + d[0] * t1r, from[1] + d[1] * t1r);
 					ctx.stroke();
 				}
 			}
@@ -364,11 +380,10 @@ export function TorusFigure() {
 			for (const piece of pieces) {
 				// EVERY piece of the hovered tile, however many the boundary cut it into: on the torus they
 				// are one tile, which is the whole point of hovering.
-				const isHover = h?.idx === piece.idx;
-				const isAccent = !h && piece.idx === accent;
-				ctx.fillStyle = isHover ? tileFill(sides[piece.idx]) : isAccent ? ACCENT_FILL : TILE_FILL;
-				ctx.strokeStyle = isHover ? tileStroke(sides[piece.idx]) : isAccent ? ACCENT : TILE_LINE;
-				ctx.lineWidth = isHover ? 2 / s : 1 / s;
+				const lit = h ? h.idx === piece.idx : piece.idx === accent;
+				ctx.fillStyle = lit ? tileFill(sides[piece.idx]) : TILE_FILL;
+				ctx.strokeStyle = lit ? tileStroke(sides[piece.idx]) : TILE_LINE;
+				ctx.lineWidth = lit ? 2 / s : 1 / s;
 				fillStroke(ctx, piece.ab.map(world));
 			}
 
