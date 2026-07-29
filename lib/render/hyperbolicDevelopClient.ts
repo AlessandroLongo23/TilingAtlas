@@ -38,6 +38,19 @@ export interface Darts {
 	 *  …) of the base face each quotient dart belongs to — constant along a quotient face. Fills each
 	 *  developed face with its solver-assigned color; every edge is a real tile boundary. Absent otherwise. */
 	faceColor?: number[];
+	// ── SCALENE boards (tools/ctrnact-oracle/develop_schwarz.py) ──────────────────────────────────────
+	// Everything above assumes REGULAR faces at ONE forced edge length ℓ, which is what lets a dart's turn
+	// and its edge involution be derived from `lvert` and the scalar ℓ. A Schwarz (p,q,r) board breaks
+	// both: its one tile is a triangle with three different angles and three different side lengths, and
+	// every edge carries a digon so `lvert` can no longer tell a drawn edge from an undrawn one. The three
+	// arrays below say all of it per dart. Present together or not at all; when absent the derivations
+	// above are used unchanged, so every regular-tiling record still develops byte-identically.
+	/** Turn applied stepping h → rneig[h], in radians. */
+	alpha?: number[];
+	/** Length of dart h's edge. Equal on a dart and its glue partner. */
+	elen?: number[];
+	/** 1 when dart h's edge is DRAWN (a tile boundary), 0 when it is faint scaffold. */
+	drawn?: number[];
 }
 
 /** A developed edge-pattern patch: base faces coloured by MERGED TILE plus the edge list with per-edge
@@ -123,6 +136,13 @@ export class HyperbolicDeveloper {
 	// present, developColors() fills each developed face by ITS color; every edge is a tile boundary.
 	private readonly faceColor?: number[];
 
+	// Scalene boards only (see Darts): per-dart turn, edge length and drawn flag. Undefined on every
+	// regular-tiling record, where the three are derived from lvert + the single ℓ.
+	private readonly alphaOf?: number[];
+	private readonly elenOf?: number[];
+	private readonly drawnOf?: number[];
+	private readonly medc = new Map<number, Su11>(); // edge involution per distinct length, memoised
+
 	constructor(darts: Darts, edgeLength: number, opts: { deepDedup?: boolean } = {}) {
 		this.rneig = darts.rneig;
 		this.glue = darts.glue;
@@ -133,15 +153,21 @@ export class HyperbolicDeveloper {
 		this.deepDedup = opts.deepDedup ?? false;
 		this.tileOrbit = darts.tileOrbit;
 		this.faceColor = darts.faceColor;
+		this.alphaOf = darts.alpha;
+		this.elenOf = darts.elen;
+		this.drawnOf = darts.drawn;
 	}
 
-	/** True when dart h's edge is a DRAWN edge (a digon side): the polygon on either side of h is a digon.
-	 *  Matches develop_hyp_edges.py's `drawn[h] == lvert[h]==2 || lvert[rneig[h]]==2`. */
+	/** True when dart h's edge is a DRAWN edge. On a regular board that is "the polygon on either side of
+	 *  h is a digon" (develop_hyp_edges.py's `lvert[h]==2 || lvert[rneig[h]]==2`); on a scalene board every
+	 *  edge carries a digon, so the flag is shipped instead of derived. */
 	private isDrawn(h: number): boolean {
+		if (this.drawnOf) return this.drawnOf[h] === 1;
 		return this.lvert[h] === 2 || this.lvert[this.rneig[h]] === 2;
 	}
 
 	private alpha(h: number): number {
+		if (this.alphaOf) return this.alphaOf[h];
 		const p = this.lvert[this.rneig[h]];
 		let a = this.angc.get(p);
 		if (a === undefined) {
@@ -149,6 +175,19 @@ export class HyperbolicDeveloper {
 			this.angc.set(p, a);
 		}
 		return a;
+	}
+
+	/** The edge involution to apply crossing dart h's edge. One matrix for the whole tiling on a regular
+	 *  board; one per edge class on a scalene one. */
+	private med(h: number): Su11 {
+		if (!this.elenOf) return this.Med;
+		const l = this.elenOf[h];
+		let m = this.medc.get(l);
+		if (m === undefined) {
+			m = medge(l);
+			this.medc.set(l, m);
+		}
+		return m;
 	}
 
 	private vidOf(G: Su11): number {
@@ -298,7 +337,7 @@ export class HyperbolicDeveloper {
 			const [ridx, rNew] = this.addInst(this.rneig[h], su11Normalize(su11Mul(G, su11Rotation(this.alpha(h)))));
 			this.rn[i] = ridx;
 			// glue: cross this dart's edge (advance by the edge involution)
-			const [gidx, gNew] = this.addInst(this.glue[h], su11Normalize(su11Mul(G, this.Med)));
+			const [gidx, gNew] = this.addInst(this.glue[h], su11Normalize(su11Mul(G, this.med(h))));
 			this.gl[i] = gidx;
 			this.expanded[i] = true;
 			grew = true;

@@ -66,6 +66,11 @@ export interface CatalogueTiling {
 	hypColors?: import("@/lib/colors/hyp-colors").HypColorsPattern;
 	// Spherical colored-tiling shelf only: an n-coloring of a Platonic solid → three.js SphericalColorsCanvas.
 	sphColors?: { solid: string; k: number; pattern: import("@/lib/colors/sph-colors").SphColorsPattern };
+	// Schwarz-board edge-system shelf only: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection
+	// group. The one payload that spans two geometries — it names its own — so it routes to the sphere
+	// renderer or the developed-edge disk depending on `geometry`. `renderCell` is a throwaway; `k` counts
+	// vertex orbits.
+	schwarz?: import("@/lib/freedraw/schwarz").SchwarzPattern;
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
 	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their

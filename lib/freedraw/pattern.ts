@@ -34,7 +34,7 @@
 //
 // One consequence for reading k: the bare board already has three vertex orbits, so k = 3 is the
 // floor here rather than k = 1, and the k = 3 slice contains the undecorated Schwarz tiling itself.
-export type FreedrawGrid = "square" | "triangle" | "ts" | "hex" | "sch236";
+export type FreedrawGrid = "square" | "triangle" | "ts" | "hex" | "sch236" | "sch244";
 
 /**
  * PATCH GRIDS (grid: "ts" and "hex"): no bitmask, explicit geometry instead. The developer
@@ -95,6 +95,16 @@ export interface FreedrawPattern {
 
 export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? "square";
 
+/** What this grid's `k` COUNTS, for the surfaces that spell it out.
+ *
+ *  On the four lattice grids it is grid-point orbits — including points with no drawn edge at all, so
+ *  it measures how complicated the DECORATION is, not the resulting tiling. On the two Schwarz boards
+ *  every edge carries a digon, so every board vertex is a vertex of the decorated tiling and k is the
+ *  ordinary vertex-orbit count — the same quantity the spherical and hyperbolic Schwarz shelves use,
+ *  which is why the three read as one family. */
+export const freedrawKNoun = (grid: FreedrawGrid): string =>
+	grid === "sch236" || grid === "sch244" ? "vertex orbits" : "grid-point orbits";
+
 /**
  * The shipped edge-system catalogues. `eager` loads with the atlas; `lazyKs` are the dense tails,
  * fetched only when that k comes into view (freedrawLazyShardsForK), the policy the hyperbolic bases
@@ -118,14 +128,23 @@ export const FREEDRAW_EAGER_FILES = [
 	"/freedraw/hex-solutions-k6.json",
 	"/freedraw/sch236-solutions-k3.json",
 	"/freedraw/sch236-solutions-k4.json",
+	"/freedraw/sch236-solutions-k5.json",
+	"/freedraw/sch244-solutions-k2.json",
+	"/freedraw/sch244-solutions-k3.json",
 ];
 
 /** Hexagonal-grid k slices that load on demand: k=7 (6.4 MB), k=8 (17.6 MB), k=9 (58 MB). */
 export const FREEDRAW_HEX_LAZY_KS = [7, 8, 9];
 
+/** The Schwarz (2,4,4) board's dense tail: k=4 is 12,361 patterns / 18.8 MB. */
+export const FREEDRAW_SCH244_LAZY_KS = [4];
+
 /** Lazy (url, k) shards to fetch when vertex-count `k` comes into view. */
 export function freedrawLazyShardsForK(k: number): { url: string; k: number }[] {
-	return FREEDRAW_HEX_LAZY_KS.includes(k) ? [{ url: `/freedraw/hex-solutions-k${k}.json`, k }] : [];
+	const out: { url: string; k: number }[] = [];
+	if (FREEDRAW_HEX_LAZY_KS.includes(k)) out.push({ url: `/freedraw/hex-solutions-k${k}.json`, k });
+	if (FREEDRAW_SCH244_LAZY_KS.includes(k)) out.push({ url: `/freedraw/sch244-solutions-k${k}.json`, k });
+	return out;
 }
 
 export const cosetCount = (p: Pick<FreedrawPattern, "a" | "d">) => p.a * p.d;

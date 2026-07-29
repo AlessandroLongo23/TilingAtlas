@@ -50,6 +50,21 @@ import {
 	SPH_COLORS_SOLIDS,
 	type SphColorsPattern,
 } from "@/lib/colors/sph-colors";
+import {
+	hydrateSphShard,
+	hypSchwarzBoards,
+	schwarzFamilyLabel,
+	schwarzShardUrl,
+	schwarzSub,
+	SCHWARZ_BOARDS,
+	schwarzSubOfBoard,
+	sphSchwarzBoards,
+	type HypSchwarzPattern,
+	type SchwarzBoard,
+	type SchwarzPattern,
+	type SphSchwarzPattern,
+	type SphSchwarzShard,
+} from "@/lib/freedraw/schwarz";
 import type { IcoPattern } from "@/lib/render/icoFreedraw";
 import { ICO_SOLIDS, ICO_SOLID_BY_ID, icoSolidKs } from "@/lib/render/icoSolids";
 
@@ -154,6 +169,16 @@ export interface ReferenceTiling {
 	// ico renderer. Colors class, SPHERICAL geometry, solid sub-axis. `renderCell` is a throwaway; `k` counts
 	// colored vertex orbits.
 	sphColors?: { solid: string; k: number; pattern: SphColorsPattern };
+	// Schwarz-triangle edge systems (tools/ctrnact-oracle/develop_schwarz.py → public/schwarz-{sph,hyp}/).
+	// The freedraw object on the board cut by the mirrors of a (p,q,r) reflection group, in the two
+	// curved geometries — the Euclidean member of the same family is the `sch236` planar-freedraw grid.
+	// FREEDRAW class, spherical or hyperbolic geometry, the board as the sub-axis; `renderCell` is a
+	// throwaway. Its presence routes /play + thumbnails to the sphere renderer (spherical, via
+	// lib/render/sphSchwarz.ts → buildIcoFreedraw) or the developed-edge disk renderer (hyperbolic,
+	// HyperbolicDeveloper.developEdges — which reads this shelf's per-dart alpha/elen/drawn arrays,
+	// since a Schwarz tile is scalene and none of the three is derivable from polygon sizes).
+	// `k` counts vertex orbits.
+	schwarz?: SchwarzPattern;
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Hyperbolic shelf: which of the tilings sharing this vertex figure this one is, and how many there
 	// are. In H2 the figure does not determine the tiling — 4.4.6.4.6.6 carries fourteen distinct ones —
@@ -279,7 +304,7 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // board landed (2026-07-27) every OTHER site caught the omission at compile time while this one silently
 // dropped the grid out of the /play sidebar tree — the counts still summed into "Edge patterns", but the
 // folder never appeared. Order is display order, so it stays explicit rather than derived from the union.
-const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "sch236"] as const satisfies readonly FreedrawGrid[];
+const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "sch236", "sch244"] as const satisfies readonly FreedrawGrid[];
 // ...and this is what makes "fails to compile" true rather than aspirational: `satisfies` alone would
 // accept a SHORT list. Leaving a grid out makes the Exclude non-never, so the assignment errors.
 type UnlistedGrid = Exclude<FreedrawGrid, (typeof FREEDRAW_GRID_SUBS)[number]>;
@@ -309,6 +334,8 @@ export const SUB_ORDER = [
 	// Spherical colored tilings: one sub per Platonic solid. "spc-" namespaced so it can't collide with the
 	// spherical-freedraw solid subs (bare solid names).
 	...SPH_COLORS_SOLIDS.map((s) => `spc-${s.id}`),
+	// Schwarz boards: one sub per (p,q,r). "sps-" spherical, "hys-" hyperbolic.
+	...SCHWARZ_BOARDS.map((b) => schwarzSubOfBoard(b)),
 ];
 export function subOf(t: {
 	sphericalFreedraw?: { solid: string };
@@ -317,7 +344,9 @@ export function subOf(t: {
 	hypEdges?: HypEdgesPattern;
 	hypColors?: HypColorsPattern;
 	sphColors?: { pattern: SphColorsPattern };
+	schwarz?: SchwarzPattern;
 }): string {
+	if (t.schwarz) return schwarzSub(t.schwarz);
 	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
 	if (t.hypEdges) return hypEdgesSub(t.hypEdges);
 	if (t.hypColors) return hypColorsSub(t.hypColors);
@@ -364,7 +393,11 @@ export function geometryOf(t: {
 	developed?: unknown;
 	hypEdges?: unknown;
 	hypColors?: unknown;
+	schwarz?: { geometry: "spherical" | "hyperbolic" };
 }): Geometry {
+	// The Schwarz shelf is the one payload that spans two geometries, so it names its own rather than
+	// being inferred from which field is set.
+	if (t.schwarz) return t.schwarz.geometry;
 	if (t.spherical || t.sphericalFreedraw || t.sphColors) return "spherical";
 	if (t.developed || t.hypEdges || t.hypColors) return "hyperbolic";
 	return "euclidean";
@@ -563,6 +596,9 @@ const FREEDRAW_FINITE_NOUN: Record<FreedrawGrid, readonly [string, string]> = {
 	hex: ["polyhex", "polyhexes"],
 	ts: ["polyform", "polyforms"],
 	sch236: ["polydrafter", "polydrafters"],
+	// A 45-45-90 triangle is a "abolo" — the (2,4,4) board's tile, and the standard name for a
+	// half-square polyform (Gardner, 1967).
+	sch244: ["polyabolo", "polyaboloes"],
 };
 export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
 	const noun = FREEDRAW_FINITE_NOUN[grid];
@@ -875,6 +911,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		hypEdges: r.hypEdges,
 		hypColors: r.hypColors,
 		sphColors: r.sphColors,
+		schwarz: r.schwarz,
 	};
 }
 
@@ -1242,6 +1279,103 @@ export async function loadSphericalFreedrawAtlas(): Promise<ReferenceTiling[]> {
 			throw err;
 		});
 	return sfInflight;
+}
+
+// ── Schwarz-triangle edge systems, spherical and hyperbolic ──────────────────────────────────────
+// The freedraw object on a (p,q,r) mirror board. Adapted at load like every other Čtrnáct shelf; the
+// board's own label carries the triple, and the family line says what the tiles are.
+function schwarzToReference(p: SchwarzPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "freedraw",
+		k: p.k,
+		family: `${p.label}${p.chiral ? " · chiral" : ""} · ${schwarzFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		schwarz: p,
+		// H² has no similarity, so the board's edge lengths are a coordinate; the shortest is the one the
+		// disk renderer needs as its base scale. Spherical boards live on the unit sphere and need none.
+		edge: p.geometry === "hyperbolic" ? p.edges[0] : undefined,
+		geometry: p.geometry,
+		discoverer: "Marek Čtrnáct",
+		// Decoded from Marek's certificates and internally consistent (the spherical boards close to
+		// Euler 2 with the right triangle count and every side measuring its class length; the hyperbolic
+		// ones develop with edge residual ~1e-13 and every face a Schwarz triangle). No independent
+		// enumeration of this class exists, so every slice is "candidate".
+		certification: "candidate",
+	};
+}
+
+/** One (board, k) shard: a spherical shard is a board header plus its patterns, a hyperbolic one a plain
+ *  array of dart records. */
+async function fetchSchwarzShard(b: SchwarzBoard, k: number): Promise<ReferenceTiling[]> {
+	try {
+		const res = await fetch(schwarzShardUrl(b, k));
+		if (!res.ok) return [];
+		if (b.geometry === "spherical") {
+			const shard = (await res.json()) as SphSchwarzShard;
+			return hydrateSphShard(shard).map((p) => schwarzToReference(p as SphSchwarzPattern));
+		}
+		const recs = (await res.json()) as HypSchwarzPattern[];
+		return recs.map(schwarzToReference);
+	} catch {
+		return [];
+	}
+}
+
+// Eager slices load with their geometry (as the hyperbolic-edge and spherical-freedraw shelves do), the
+// dense tails on demand. Two caches, one per geometry, so opening the spherical shelf never pulls the
+// hyperbolic boards or the reverse.
+const schwarzCache = new Map<string, ReferenceTiling[]>();
+const schwarzInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+async function loadSchwarzEager(geometry: "spherical" | "hyperbolic"): Promise<ReferenceTiling[]> {
+	const cached = schwarzCache.get(geometry);
+	if (cached) return cached;
+	const existing = schwarzInflight.get(geometry);
+	if (existing) return existing;
+	const boards = geometry === "spherical" ? sphSchwarzBoards() : hypSchwarzBoards();
+	const p = Promise.all(boards.flatMap((b) => b.eagerKs.map((k) => fetchSchwarzShard(b, k))))
+		.then((lists) => {
+			const data = lists.flat();
+			schwarzCache.set(geometry, data);
+			schwarzInflight.delete(geometry);
+			return data;
+		})
+		.catch((err) => {
+			schwarzInflight.delete(geometry);
+			throw err;
+		});
+	schwarzInflight.set(geometry, p);
+	return p;
+}
+
+export const loadSphericalSchwarzAtlas = () => loadSchwarzEager("spherical");
+export const loadHyperbolicSchwarzAtlas = () => loadSchwarzEager("hyperbolic");
+
+const schwarzShardCache = new Map<string, ReferenceTiling[]>();
+const schwarzShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+/** A dense (board, k) tail, fetched only when that k comes into view. */
+export async function loadSchwarzShard(board: string, k: number): Promise<ReferenceTiling[]> {
+	const key = `${board}-${k}`;
+	const cached = schwarzShardCache.get(key);
+	if (cached) return cached;
+	const existing = schwarzShardInflight.get(key);
+	if (existing) return existing;
+	const b = SCHWARZ_BOARDS.find((x) => x.id === board);
+	if (!b) return [];
+	const p = fetchSchwarzShard(b, k)
+		.then((data) => {
+			schwarzShardCache.set(key, data);
+			schwarzShardInflight.delete(key);
+			return data;
+		})
+		.catch((err) => {
+			schwarzShardInflight.delete(key);
+			throw err;
+		});
+	schwarzShardInflight.set(key, p);
+	return p;
 }
 
 // Lazy client-side fetch of the static atlas. Cached across mode toggles so the ~4MB payload is pulled

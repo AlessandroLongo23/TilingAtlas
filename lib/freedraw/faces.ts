@@ -699,6 +699,7 @@ const FINITE_LABEL: Record<FreedrawGrid, string> = {
 	// A 30-60-90 triangle is a "drafter" (after the drafting set square), and its polyforms on this
 	// exact board are the polydrafters — the pieces of the Eternity puzzle.
 	sch236: "polydrafter",
+	sch244: "polyabolo",
 };
 
 export const rankLabel = (rank: 0 | 1 | 2, grid: FreedrawGrid = "square") =>
