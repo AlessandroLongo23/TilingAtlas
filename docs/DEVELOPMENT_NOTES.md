@@ -7891,3 +7891,19 @@ I had proposed a different figure — the reachable set W(R) as a slider, showin
 rather than what it buys, and one case you can read is worth more to a room than a growth curve. The
 W(R) numbers are recomputed and confirmed against SMALLK_W_BOUND.md (|W(10)| = 18,481 ≈ its 1.9e4) and
 are kept here in case the counting argument is ever wanted for a question.
+
+## 2026-07-28 (8) — The period figure splits in two
+
+AL: one panel for the wheel, one for the example. Right, and for a reason worth writing down: the
+alphabet's origin is exactly where both chains begin, so drawing them together puts the rose on top of
+the thing it exists to explain. Apart, each is legible — the 24 directions numbered and coloured on the
+left, the two chains over the cell on the right.
+
+Splitting also let the wheel earn its labels. Every spoke carries its exponent, so the sum line under
+the panels can be set in the same colours (ζ² green, ζ²² magenta, …) and the reader can walk a term
+from the equation to a direction to a segment of the chain without being told how.
+
+Two adjustments the split forced. The example panel no longer needs the ±1.4 padding the rose wanted,
+and the tile margin came in from ±0.45 to ±0.22 lattice units, which is what keeps the chains large
+enough to read now that they share a panel with nothing else. Panels sit at 34vh; verified no overflow
+at 1440×900 and at 1280×720, which is the projector case.

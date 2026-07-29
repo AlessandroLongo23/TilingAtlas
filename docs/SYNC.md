@@ -1744,3 +1744,9 @@ t2001's two period vectors drawn as the shortest chains of unit steps summing to
 exact ℤ[ζ₂₄] by `scripts/build-period-figure.ts`. Both weigh 6, the measured k=2 maximum, so the slide
 shows the extremal case. Survey finding: every k ≤ 3 tiling's chains use only EVEN exponents — the
 octagon rule from the other side. Detail: NOTES §"The bounded-weight slide gets its one case". — CC
+
+### 2026-07-28 (7) — CC — the period figure becomes two panels
+Wheel and example split, per AL: the alphabet's origin is where both chains start, so together the rose
+covered what it was explaining. The wheel now carries its exponents and the sum line is set in the same
+colours, so a term walks from equation to direction to chain segment unaided. No overflow at 1440×900
+or 1280×720. Detail: NOTES §"The period figure splits in two". — CC
