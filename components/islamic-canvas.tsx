@@ -80,7 +80,7 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 	const paramCellRef = useRef(paramCell);
 	paramCellRef.current = paramCell;
 	// Parametric family only: the cell evaluated at the current slider tuple, and the tuple's signature.
-	// Everything downstream (basis, patch, mesh) is derived from this rather than the base cell.
+	// Everything downstream (basis, patch, mesh) is derived from this, not the base cell.
 	const liveCellRef = useRef<FlatCellData | null>(null);
 	const alphaSigRef = useRef<string | null>(null);
 

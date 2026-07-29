@@ -138,7 +138,7 @@ export function ErrorScreen({ eyebrow, title, body, detail, actions }: ErrorScre
 				<TilingTile spec={MID_LEFT} />
 			</div>
 			{/* overflow-y-auto: on sm+ this cell is a fixed third of the viewport, and error.message is
-			    whatever was thrown — a long one scrolls rather than spilling over its neighbours. */}
+			    whatever was thrown — a long one scrolls instead of spilling over its neighbours. */}
 			<div className="col-start-1 col-span-3 sm:col-start-2 sm:col-span-1 row-start-2 bg-surface flex flex-col justify-center p-6 md:p-8 overflow-y-auto">
 				<p className="text-[10px] uppercase tracking-wider text-fg-muted font-mono">{eyebrow}</p>
 				<h1 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight text-balance">

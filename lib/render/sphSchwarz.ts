@@ -30,7 +30,7 @@ export function sphSchwarzScene(p: SphSchwarzPattern): SphSchwarzScene {
 	p.geom.faces.forEach((ring, fi) => {
 		const t = p.faceTile[fi];
 		// A record whose faceTile ran past `tiles` would silently drop triangles; grow instead, so a
-		// mismatch shows up as a visible extra tile rather than a hole in the sphere.
+		// mismatch shows up as a visible extra tile, not a hole in the sphere.
 		while (tiles.length <= t) tiles.push([]);
 		tiles[t].push(ring);
 	});

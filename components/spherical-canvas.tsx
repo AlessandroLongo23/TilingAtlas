@@ -21,7 +21,7 @@ import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIsla
 // Three looks: the SOLID sphere (the tiling drawn procedurally per fragment on a UV sphere — flat surface
 // edges, stroke slider, pixel-sharp at any zoom); the WIREFRAME skeleton (the tiling edges as hollow 3D tube bars); and
 // the ISLAMIC construction (the star pattern as a hollow line structure, no base surface — flat ribbons, or
-// rigid tube bars when Wireframe is also on, which makes the LINES rigid rather than adding tiling edges).
+// rigid tube bars when Wireframe is also on, which makes the LINES rigid instead of adding tiling edges).
 // The <canvas> is created imperatively per mount (a canvas holds one WebGL context for life; forceContextLoss
 // on teardown would poison a reused node across a StrictMode remount).
 
@@ -75,7 +75,7 @@ function makeSphericalCamera(orthographic: boolean, aspect: number, halfHeight: 
 
 // A configured ArcballControls for the sphere: free quaternion trackball, no pan, dolly/zoom on, gizmos
 // hidden. Factored out because the projection toggle recreates the controls fresh (full constructor re-init
-// = guaranteed-clean trackball state), rather than mutating a live instance's camera, which left rotation
+// = guaranteed-clean trackball state), instead of mutating a live instance's camera, which left rotation
 // in a corrupt state after a perspective⇄orthographic swap.
 function makeArcball(camera: SphericalCamera, canvas: HTMLCanvasElement, scene: THREE.Scene, interactive = true): ArcballControls {
 	const controls = new ArcballControls(camera, canvas, scene);
@@ -208,7 +208,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		const animate = () => {
 			const controls = controlsRef.current;
 			const cam = cameraRef.current;
-			// Track the host box here, in the loop, rather than through a React size prop: a size that
+			// Track the host box here, in the loop, not through a React size prop: a size that
 			// arrives a render later gets rescaled into the new box while a layout transition (the /play
 			// fullscreen toggle) is running, which reads as the sphere squashing and springing back.
 			// See lib/render/canvasSize.ts.

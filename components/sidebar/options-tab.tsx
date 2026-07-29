@@ -110,7 +110,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// mode) — plus a scaffold toggle for the faint undrawn base tiling. It is NOT a flat p5 view.
 	// A SCHWARZ board is the same object on a (p,q,r) mirror board, so it takes the same controls as its
 	// geometry's shelf: the spherical boards are ico-freedraw spheres, the hyperbolic ones are disk edge
-	// systems. That is why both flags above/below fold it in rather than growing a third branch.
+	// systems. That is why both flags above/below fold it in instead of growing a third branch.
 	const isHyperbolicEdges = !!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic";
 	// A hyperbolic COLORED tiling renders in the disk via the same per-pixel shader in colors mode — it shares
 	// the disk line controls, and (like the Euclidean colors) carries the palette pickers instead of fill/hue.
@@ -121,7 +121,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// Any colored tiling (Euclidean grid, hyperbolic disk, or spherical solid): all carry the palette pickers.
 	const isAnyColors = isColors || isHyperbolicColors || isSphColors;
 	const isHyperbolicDisk = isHyperbolic || isHyperbolicEdges || isHyperbolicColors;
-	// One picker per color of the SELECTED pattern (2 or 3 today), read off the record rather than the
+	// One picker per color of the SELECTED pattern (2 or 3 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
 	// remembers every slot.
 	const colorCount = selected?.colors

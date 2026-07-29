@@ -111,7 +111,7 @@ tile-type hues, and a snub flag.
   piece; the plan isolates it as the **final** increment so it cannot block the other 15 tilings. If it
   proves disproportionately costly it can be dropped without unwinding anything else.
 
-Colouring becomes per-tile-type (up to three hues) rather than one hue per tiling. Distance-dimming,
+Colouring becomes per-tile-type (up to three hues), not one hue per tiling. Distance-dimming,
 the parity shading toggle (offered only where meaningful), and both line modes are preserved.
 
 ## Interaction & catalogue

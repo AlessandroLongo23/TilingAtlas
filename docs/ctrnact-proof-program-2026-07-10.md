@@ -254,7 +254,7 @@ translation subgroup as position discrepancies (eu_develop.cpp:148-172).
 - Discrete Gauss-Bonnet / orbifold Euler characteristic χ_orb = 0 for wallpaper quotients.
 - 1-WL color refinement computes the coarsest stable partition (standard; e.g.
   Cardon-Crochemore 1982 partition refinement, or any WL survey). The congruence reading on
-  functional structures is elementary and we prove it inline rather than cite.
+  functional structures is elementary and we prove it inline instead of citing.
 - Grünbaum & Shephard for vertex-configuration enumeration (the 15-species list for
   {3,4,6,12}) and for star polygon definitions (§2.5; Myers' papers refine this).
 - Delaney-Dress symbol theory (Dress 1987; Dress-Huson 1987; Delgado-Friedrichs 2003) as the
@@ -484,7 +484,7 @@ merge or the comparison adjusted). Both are bookkeeping, both must be written do
 the first run, or a count mismatch will be undiagnosable. Remember Myers' lists are
 themselves unproven hand enumerations: a mismatch is evidence about one of the three parties
 (engine, transcription, Myers), not automatically an engine bug. That is what makes this
-track scientifically interesting rather than a regression test.
+track scientifically interesting, not a regression test.
 
 ### 4.8 The α-symbolic extension (Track 4 seed, noted here because the code shape matters)
 

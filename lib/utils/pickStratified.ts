@@ -1,5 +1,5 @@
 // Two-stage (stratified) uniform sampling: pick a bucket uniformly at random, then pick an item
-// uniformly within it. This makes every *bucket* equally likely rather than every *item* — so a
+// uniformly within it. This makes every *bucket* equally likely, not every *item* — so a
 // bucket holding one tiling is as likely to be drawn as a bucket holding two hundred. Used by /play's
 // "random tiling" so a fat class×k group (e.g. regular k=10) doesn't swamp a thin one (star k=1).
 //

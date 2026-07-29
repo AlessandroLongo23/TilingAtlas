@@ -50,7 +50,7 @@ export function ParquetClient() {
   const { tiling, fromPreset, toPreset, dProfile, amount, cols, rows, showGuides, colour, animate, set } =
     useParquet();
 
-  // Sliding the phase treats the strip as a loop, so it only reads as motion (rather than as a seam
+  // Sliding the phase treats the strip as a loop, so it only reads as motion (and not as a seam
   // travelling across the tiles) when D(x) closes on itself. A non-periodic D is therefore static-only:
   // the switch below is disabled, and picking such a profile turns animation off.
   const canAnimate = D_PROFILE_META[dProfile].periodic;

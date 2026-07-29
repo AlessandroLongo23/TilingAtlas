@@ -54,7 +54,7 @@ console.log(`k=${k}, tiles {${ns.join(',')}}: ${seeds.length} seeds, ${msPerSeed
 interface Row { mode: string; extracted: number; deduped: number; leaves: number; capped: number; ms: number; bySeed: Map<string, number> }
 
 function run(mode: 'seed' | 'patch'): Row {
-	// Which seed each surviving cell came from, so a count that drops can be NAMED rather than just
+	// Which seed each surviving cell came from, so a count that drops can be NAMED, not just
 	// counted — "10 instead of 11" is a bug report; "it loses 4.8.8" is a finding.
 	const bySeed = new Map<string, number>();
 	const extractor = new TranslationalCellExtractor();

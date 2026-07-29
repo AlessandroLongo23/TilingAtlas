@@ -119,7 +119,7 @@ index, so it inherits exactly the scaling problem the decoder was meant to escap
 **What remains** is resolving the slot-pairing conventions: which slot of the far vertex an edge
 arrives at, how `*` composes on each end, and how the reduced numbering extends to the full cycle.
 The semantics are understood; the index conventions are not yet pinned. With 1420 known-good patterns
-available as an oracle this is now a bounded search over a handful of binary choices rather than
+available as an oracle this is now a bounded search over a handful of binary choices, not
 open-ended reverse engineering, but it is not done.
 
 ## The decoder, completed (same evening)
@@ -201,13 +201,13 @@ the play canvas with fills. Build clean.
 
 ## The combined triangles + squares grid (same night, third pass)
 
-The case with no fixed lattice — the one that made the decoder mandatory rather than convenient.
+The case with no fixed lattice — the one that made the decoder mandatory, not merely convenient.
 Marek's `pt_triangles_squares_edges.exe` (alphabet A2 + A3 + A4) had already been run for k ≤ 3:
 56 / 1294 / 16851 = 18,201 certificates.
 
 **Developer** (`develop_freedraw.py --grid ts`): the same table builder and glue port — the alphabet
 extension is literally one `units` entry, since the rotation order was always computed from the
-angle sum rather than a face count. What is new: develop runs in exact ℤ[ζ₁₂] (ring helpers ported
+angle sum, not a face count. What is new: develop runs in exact ℤ[ζ₁₂] (ring helpers ported
 from develop.py), the period lattice comes from `lattice_basis` + Gauss reduction, and the emitter
 walks the quotient's combinatorial face map (`next(K) = (lneig[glue[h]], d + 180° − step)`),
 classifies tile components by the same lift-holonomy flood (now over quotient faces instead of

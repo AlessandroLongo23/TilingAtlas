@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils/cn";
 
 /** Above this many intervals the marks are closer together than the 12px thumb and read as
- *  hatching rather than as positions, so they are dropped. */
+ *  hatching, not as positions, so they are dropped. */
 const MAX_TICK_INTERVALS = 20;
 
 /** Number of intervals to mark, or null when the value set is too large — or too irregular — to

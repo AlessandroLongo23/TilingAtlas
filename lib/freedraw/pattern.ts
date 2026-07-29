@@ -1,7 +1,7 @@
 // "Freedraw" tilings (Marek Čtrnáct, 2026-07): the combinatorics lives entirely in which EDGES of an
 // underlying grid are drawn, never in the tiles. A pattern is a periodic subset of the edges of Z^2
 // with no vertex of degree exactly 1 (a degree-1 vertex is a dead end, which would make the figure a
-// maze rather than a tiling). The tiles are whatever faces fall out, and they may be finite polyominoes,
+// maze, not a tiling). The tiles are whatever faces fall out, and they may be finite polyominoes,
 // infinite strips, or 2-dimensionally unbounded regions — so they are NOT tiles in the Grünbaum &
 // Shephard sense (closed topological disks) and none of the classical uniform-tiling theory applies.
 //
@@ -33,7 +33,7 @@
 // there is no bitmask, and no lattice, to index.
 //
 // One consequence for reading k: the bare board already has three vertex orbits, so k = 3 is the
-// floor here rather than k = 1, and the k = 3 slice contains the undecorated Schwarz tiling itself.
+// floor here, not k = 1, and the k = 3 slice contains the undecorated Schwarz tiling itself.
 export type FreedrawGrid = "square" | "triangle" | "ts" | "hex" | "sch236" | "sch244";
 
 /**
@@ -44,7 +44,7 @@ export type FreedrawGrid = "square" | "triangle" | "ts" | "hex" | "sch236" | "sc
  *
  * Two different reasons for the same representation. The COMBINED grid ("ts", squares and triangles
  * mixed) has no fixed lattice at all: the underlying square-triangle tiling varies per solution. The
- * HEXAGONAL grid ("hex", {6,3}) has a fixed geometry, but its vertex set is a honeycomb rather than a
+ * HEXAGONAL grid ("hex", {6,3}) has a fixed geometry, but its vertex set is a honeycomb, not a
  * lattice — inside the unit triangular lattice ℤ + ℤω only the points with (a + b) mod 3 ∈ {0, 1} are
  * hexagon corners, two thirds of it — so a per-coset bitmask has no consistent index. Face rank 0 on
  * the hexagonal grid is a POLYHEX, the hexagonal sibling of polyomino / polyiamond / polyform.

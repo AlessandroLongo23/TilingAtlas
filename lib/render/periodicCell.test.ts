@@ -1,6 +1,6 @@
 // The load-bearing property of the packer: the lattice-space bucket a pixel lands in must contain EVERY
 // primitive copy that covers it. If it doesn't, the shader silently drops tiles — the failure mode is a
-// hole in the tiling, not a crash, so it has to be tested rather than eyeballed.
+// hole in the tiling, not a crash, so it has to be tested, not eyeballed.
 //
 // Both tests below compare the bucket lookup (what the shader does) against a brute-force sweep over a
 // wide range of lattice shifts (what the answer is).
@@ -270,7 +270,7 @@ describe("packPeriodicCell", () => {
 		}
 	});
 
-	it("rejects a degenerate lattice rather than emitting a divide-by-zero index", () => {
+	it("rejects a degenerate lattice instead of emitting a divide-by-zero index", () => {
 		expect(packPeriodicCell({ v1: [1, 0], v2: [2, 0], prims: [{ verts: [0, 0, 1, 0, 1, 1] }], feature: 1 }))
 			.toBeNull();
 		expect(packPeriodicCell({ v1: [1, 0], v2: [0, 1], prims: [], feature: 1 })).toBeNull();

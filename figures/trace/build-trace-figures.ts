@@ -15,7 +15,7 @@ import { poolFigure } from './poolFigure';
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'figures', 'out', 'trace');
 
-/** Size each figure to a target PHYSICAL WIDTH (mm) rather than a fixed mm-per-edge: these figures
+/** Size each figure to a target PHYSICAL WIDTH (mm), not a fixed mm-per-edge: these figures
  *  have very different model-unit extents (a 3-polygon row vs a 143-unit-wide tree), so a single
  *  edgeMm blows the trees up to a metre wide. edgeMm = targetWidthMm / (bbox width in model units);
  *  the emitter derives height from the bbox aspect. */

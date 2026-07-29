@@ -123,7 +123,7 @@ export function applyMergePlan(out: ReferenceTiling[], opts: ApplyOptions): Refe
 				? { poseDeg: s.pose.rotDeg, poseConj: s.pose.conj, poseTranslate: s.pose.translate }
 				: {}),
 			// `star` is the renderer's hue selector (star ramp vs by-side-count ramp), so it is taken from the
-			// plan's seam-unified flags rather than the source family's: the flexing tile is a concave star on
+			// plan's seam-unified flags, not the source family's: the flexing tile is a concave star on
 			// one half and convex on the other, and keeping each half's own flag would flip its colour at the
 			// join even though its shape is continuous.
 			cellPolygons: sources[i]!.paramCell!.cellPolygons.map((poly, j) => ({

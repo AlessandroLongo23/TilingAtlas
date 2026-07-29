@@ -41,7 +41,7 @@ builds exactly that:
 5. Return a synthetic `TranslationalCellData` — `{ p: seedPolys, b: basis }` — carrying `n`, `hue`
    and `star` through so the tiles keep their atlas colours.
 
-Returning a cell rather than a polygon list is what keeps this cheap: `buildCellMesh`,
+Returning a cell, not a polygon list, is what keeps this cheap: `buildCellMesh`,
 `buildOrbitDotMesh` and the whole preview pipeline take it unchanged, so the seed's points, orbit
 dots and symmetry overlays all land in one world frame with no second code path.
 
@@ -77,7 +77,7 @@ and the /theory cards gain the key for free.
 `interactive?: boolean` (default true) on both `useFlatCellPreview` and
 `InteractiveTilingPreviewCard`. When false: no pointer handlers, no wheel listener, no right-click
 reset, no expand button, no grab cursor, no focus ring, `touchAction: auto`. The overlay keys still
-answer, because they are handled by the page-level scope rather than the surface.
+answer, because they are handled by the page-level scope, not the surface.
 
 Home zoom for a seed is `homeFit`: fit the cell's polygon bounding box to the host with a margin.
 `homePeriods` is meaningless for a finite patch, and a lattice-derived zoom would frame a seed by the

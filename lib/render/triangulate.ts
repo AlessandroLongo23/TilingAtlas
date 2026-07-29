@@ -13,7 +13,7 @@
 // depending on a coincidence.
 //
 // Cost is O(n²) per polygon, which is the right trade here: n is 4 or 13, so the constant beats a
-// monotone-chain sweep, and the whole thing runs once per upload rather than per frame.
+// monotone-chain sweep, and the whole thing runs once per upload, not per frame.
 
 export interface Pt {
 	x: number;
@@ -44,7 +44,7 @@ const cross = (ax: number, ay: number, bx: number, by: number, cx: number, cy: n
  *
  * `area2` is twice the candidate triangle's area, and sets the tolerance. Exact zero is not good
  * enough: the hat's collinear corners put a vertex mathematically ON an edge, where the cross product
- * evaluates to ±1e-16 rather than 0. Taken as "outside", that vertex stops blocking, the ear is
+ * evaluates to ±1e-16, not 0. Taken as "outside", that vertex stops blocking, the ear is
  * clipped, the ring pinches, and an inverted triangle falls out a few clips later. Scaling the
  * tolerance by the triangle's own area keeps the test independent of where the patch sits — these
  * coordinates run to ±40 while a tile is ~1 across.

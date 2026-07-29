@@ -111,7 +111,7 @@ the first).
   (§0 reality-check) — a refinement to prove, not yet settled.
 - Datta-Maity's bounds are **per-type**, not a global k cap.
 - Tegula/Delaney-Dress counts are a **superset** (irregular polygons) — method yes, numbers no.
-- Galebach is image-only/undocumented; Soto's *paper* classifies rather than enumerates (its *datasets*
+- Galebach is image-only/undocumented; Soto's *paper* classifies, it does not enumerate (its *datasets*
   are still the gold validation source); neither *proves* completeness — that is our contribution.
 - Access failures / unverified: RCSR (403), Chavey & C&G-2021 (paywall), Soto hi-res thesis (>10 MB),
   arXiv:2511.20915 & Billiet-Bertaut (abstract/paywall only). Retrieve via browser / `curl` / library

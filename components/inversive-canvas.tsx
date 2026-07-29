@@ -140,7 +140,7 @@ void main() {
 		vec2 merc = vec2(0.5 * log(max(dot(w, w), 1e-30)), atan(w.y, w.x));
 		world = cmul(uSpiralK, merc - uSpiralV);
 		// Footprint on the CONTINUOUS coord w: log is conformal (isotropic step |dw|/|w|) and K a
-		// similarity, so the world footprint is just |K|·|dw|/|w|. Measuring on w rather than the folded
+		// similarity, so the world footprint is just |K|·|dw|/|w|. Measuring on w, not the folded
 		// world keeps the branch cut from spiking dFdx into a one-pixel radial seam.
 		float pw_w = max(length(dFdx(w)), length(dFdy(w)));
 		pwRaw = length(uSpiralK) * pw_w / max(length(w), 1e-6);
@@ -258,7 +258,7 @@ void main() {
 	}
 
 	// The fill is point-sampled, so once primitives fall below a pixel it speckles; blend toward the cell
-	// average there so the very centre is a clean disk rather than colour noise.
+	// average there so the very centre is a clean disk, not colour noise.
 	fillCol = mix(fillCol, uAvg, smoothstep(uFeature * 0.8, uFeature * 3.0, pwRaw));
 	frag = vec4(mix(fillCol, lineCol, lineCov), 1.0);
 }

@@ -6,7 +6,7 @@
 // The board is the plane / sphere / disk cut by the mirrors of the (p,q,r) reflection group, so its
 // one tile is a triangle with angles π/p, π/q, π/r and, when the three differ, THREE EDGE LENGTHS.
 // That is what separates this shelf from every other freedraw catalogue: the tile is scalene, so a
-// dart's turn and its edge length are both per-dart data rather than "the interior angle of a regular
+// dart's turn and its edge length are both per-dart data, not "the interior angle of a regular
 // p-gon at the one forced ℓ". Decoded by tools/ctrnact-oracle/develop_schwarz.py.
 //
 // The EUCLIDEAN board (2,3,6) is not here: it is the `sch236` planar-freedraw grid, developed exactly

@@ -92,7 +92,7 @@ enumeration was easy and is done (table above). Displaying it is a separate buil
 that lays certificates onto the icosahedron (spherical coordinates or an unfolded net, no period
 lattice), a data shape that does not assume HNF/T1-T2, and a renderer that draws on a sphere or a net.
 That is closer to the atlas's "spherical tilings" arm than to the planar freedraw grids, and it should
-live there rather than being bolted onto the freedraw lattice model.
+live there instead of being bolted onto the freedraw lattice model.
 
 ## Independent enumeration on the fixed icosahedron — and it matches Marek to the unit
 

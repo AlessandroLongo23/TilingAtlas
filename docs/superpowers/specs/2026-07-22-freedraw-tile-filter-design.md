@@ -145,5 +145,5 @@ smallest witness is `fd-4-2524`, an 8 × 2 period whose four faces are all tetro
 distinct congruence classes.
 
 So equal area is strictly weaker than one shape, as expected, and k ≤ 3 was simply too small to show
-it. This is why the size filter and a future shape-class filter are different controls rather than one
+it. This is why the size filter and a future shape-class filter are different controls, not one
 control with two labels.

@@ -193,7 +193,7 @@ describe("orbitsFromExactSource", () => {
     expect(orbits.size).toBe(2);
   });
 
-  it("returns null on a degenerate seed rather than throwing", () => {
+  it("returns null on a degenerate seed instead of throwing", () => {
     const ring = CyclotomicRing.create(24);
     setActiveRing(ring);
     const bad: ExactCellSource = { kind: "seed", T1: [0, 0, 0, 0], T2: [0, 0, 0, 0], Seed: [[0, 0, 0, 0]] };

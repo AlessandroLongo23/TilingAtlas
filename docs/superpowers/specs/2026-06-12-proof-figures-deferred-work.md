@@ -11,7 +11,7 @@ or (b) its own subsystem needing recon. None should be faked.
 > **First, the rule that governs all of it:** this is a *provable-exhaustiveness* thesis. Never ship a
 > measured number a log warned about, and never fabricate a count to fill a `\TODO`. If the data isn't
 > clean, the honest output is "deferred / needs re-run," not a caveated guess. That's why the items
-> below are deferred rather than shipped.
+> below are deferred, not shipped.
 
 ---
 

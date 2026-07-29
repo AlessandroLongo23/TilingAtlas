@@ -37,7 +37,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Environment
 
-The app uses **SvelteKit-style env var names** (`PUBLIC_*`) rather than
+The app uses **SvelteKit-style env var names** (`PUBLIC_*`) and not
 Next.js's `NEXT_PUBLIC_*`. `next.config.ts` lists them in the `env` block so
 the browser bundle sees them. Required:
 

@@ -64,7 +64,7 @@ export function nullSpace(rows: number[][], cols: number): number[][] {
     for (const f of x) lcm = (lcm / gcd(lcm, f.d)) * f.d;
     // Clear denominators to integers. Elimination is exact BigInt; the ONLY precision hazard is this cast
     // to Number. ∂1 is totally unimodular (entries ±1) and the ∂2 kernels here are trivial, so entries
-    // stay tiny — but a large-coefficient 2-cycle could exceed 2^53. Throw loud rather than silently
+    // stay tiny — but a large-coefficient 2-cycle could exceed 2^53. Throw loud, not silently
     // round (the Hadamard bound at F≈24 can top MAX_SAFE); switch to BigInt output if this ever fires.
     const SAFE = 9007199254740991n;
     basis.push(x.map((f) => {

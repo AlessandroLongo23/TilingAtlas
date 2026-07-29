@@ -2,7 +2,7 @@
 
 // The view block every /aperiodic view carries: how far the view is turned, and how heavy the tile
 // outlines are. Every view drives the same interaction layer (lib/hooks/useAperiodicView.ts), so this
-// is stated once rather than per view.
+// is stated once, not per view.
 //
 // Both are sliders in /play's Options grammar — same primitive, same label/value row, and rotation
 // carries the same `Shift + scroll` hint chip that /play's does, which is where the gesture is

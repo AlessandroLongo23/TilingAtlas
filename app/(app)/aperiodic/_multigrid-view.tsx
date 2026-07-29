@@ -413,7 +413,7 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 
 				<Section label="Offsets γⱼ">
 					{/* Each row is one grid family, tinted with the colour that family's lines carry on the
-					    z-space panel — the label IS the legend. Hence a bare RangeInput per row rather than a
+					    z-space panel — the label IS the legend. Hence a bare RangeInput per row, not a
 					    Slider: Slider owns its own label/value row, which would fight this one. */}
 					{offsets.map((g, j) => (
 						<div key={j} className="flex items-center gap-2">

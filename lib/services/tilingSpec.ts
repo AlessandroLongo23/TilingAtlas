@@ -33,7 +33,7 @@ interface BaseSpec extends OrbitCounts {
 	label: string;
 }
 
-// Freedraw facts, present ONLY on a freedraw entry. It stays inside EuclideanSpec rather than becoming a
+// Freedraw facts, present ONLY on a freedraw entry. It stays inside EuclideanSpec instead of becoming a
 // fourth union member because freedraw IS Euclidean — geometryOf says so, and the geometry toggle groups it
 // with the plane. What changes is the vocabulary: `k` counts grid-point orbits (not vertex orbits), and the
 // "tiles" are faces of the drawn edge set, which may be unbounded.
@@ -86,7 +86,7 @@ export interface HyperbolicSpec extends BaseSpec {
 	provenance: string | null; // "rendered by" note (the atlas discoverer string, relocated off the card)
 	// Rigorous symmetry — REGULAR {p,q} entries ONLY. Deriving a Coxeter symbol from a bare vertex
 	// configuration (3.4.8.4, 3.8.3.8, …) is a Wythoff-inverse we do NOT perform, so non-regular configs
-	// leave these null and the panel omits the Symmetry section rather than fabricating it.
+	// leave these null and the panel omits the Symmetry section instead of fabricating it.
 	schlafli: [number, number] | null; // "{8,3}"
 	coxeter: string | null; // "[8,3]"
 	orbifold: string | null; // full reflection group, "*832"

@@ -464,7 +464,7 @@ the k≤2 digests `6f9ca9cf…` / `f3e2e051…` byte-identical and pass the k=3 
 - **Statement to prove (or scope):** *in any in-ring k=1 isotoxal-star tiling of the Fig-4 class,
   every t=2 dent-fill corner is a regular corner* — OR, failing that, the sound-run configuration
   must enumerate star-point-fillable variants too, and the filter becomes a documented,
-  oracle-checked optimization rather than a soundness assumption.
+  oracle-checked optimization, not a soundness assumption.
 - **Proof route:** (1) CC first runs the finite exact feasibility table: for each of the 32 variants,
   list ALL corners (regular and point) matching γ — if for some family no star-point match exists,
   the lemma is vacuous there. (2) Where matches exist, TA attempts the local exclusion: a

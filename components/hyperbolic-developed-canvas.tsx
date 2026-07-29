@@ -43,7 +43,7 @@ const ISLAMIC_SETTLE_MS = 200; // stable angle re-bakes at full res after this q
  * rotation, recentre and click-to-anchor from here instead of `cfg.controls`; omit it and /play's
  * store-driven path runs exactly as before.
  *
- * `resetSeq` / `click.seq` are counters rather than flags because ownership stays one-way: the canvas
+ * `resetSeq` / `click.seq` are counters, not flags, because ownership stays one-way: the canvas
  * remembers the last sequence it acted on instead of writing a consumed flag back into its caller's
  * object (which is what /play does, and what two owners of one object would race over).
  */

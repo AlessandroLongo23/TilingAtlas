@@ -43,7 +43,7 @@ interface TilingCardTagProps {
 /**
  * What every interactive card on a slide gets, over its /theory defaults.
  *
- * Expand LIFTS the card to 90% of the viewport over a backdrop rather than growing it in flow: a
+ * Expand LIFTS the card to 90% of the viewport over a backdrop instead of growing it in flow: a
  * slide has no prose column to break out of, and nothing behind the card may move while the room is
  * looking at it. The /play link stays, wearing a play triangle: from the back of a room that reads as
  * "he is about to open this" faster than a link glyph does. And every card is live on arrival: the
@@ -72,12 +72,12 @@ const DTU_LOGO_RATIO = 468.25 / 683;
  * `<title-slide>` — the DTU mark on the left, the title block on the right, the logo exactly as
  * tall as the text beside it.
  *
- * The height has to be measured rather than declared. It is whatever the title, the name and the
+ * The height has to be measured, not declared. It is whatever the title, the name and the
  * date happen to occupy, and every size on a slide is a `clamp()`, so it moves with the projector.
  * CSS alone will not do it: a flex item resolves its width before `align-self: stretch` hands it a
  * height, so `aspect-ratio` has nothing to work from and the cell collapses to zero width (measured).
  *
- * The mark is a background rather than an `<img>` on purpose — the deck's figure styling
+ * The mark is a background, not an `<img>`, on purpose — the deck's figure styling
  * (`[&_img]`: white plate, padding, rounded corners, a 46vh cap) is a descendant selector and
  * outranks anything a class on the image itself could say.
  */
@@ -118,7 +118,7 @@ function TitleSlide({ children }: { children?: React.ReactNode }) {
 const CARD_CAPTION_PX = 44;
 
 /**
- * A run of cards, capped by HEIGHT rather than only by width.
+ * A run of cards, capped by HEIGHT, not only by width.
  *
  * Card width is (grid − gaps) / cols, and for a square card width IS height, so a grid sized off the
  * viewport's width silently sets its own height: at 1280x720, six cards across make two rows 400px
@@ -204,8 +204,8 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 	const current = slides[index];
 
 	// The slide number lives in the URL hash, so opening /play in the same tab and coming back with
-	// the browser's Back button lands on the slide you left rather than at the title. replaceState
-	// rather than pushState: stepping through 40 slides must not put 40 entries in the history.
+	// the browser's Back button lands on the slide you left, not at the title. replaceState
+	// and not pushState: stepping through 40 slides must not put 40 entries in the history.
 	useEffect(() => {
 		const fromHash = () => {
 			const n = Number(window.location.hash.slice(1));
@@ -379,7 +379,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							title={label}
 							homePeriods={2}
 							{...overlayData(tiling)}
-							// What makes this an orbit card rather than a plain one: the dots are already on
+							// What makes this an orbit card, not a plain one: the dots are already on
 							// when the slide arrives. `o` still turns them off again, here or slide-wide.
 							initialOverlays={ORBITS_ON}
 							{...SLIDE_CARD_PROPS}
@@ -465,7 +465,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// one row of schematics, in the order they were tried, with an arrow into each. `accent="yes"`
 			// marks the one the path arrived at. An unknown `fig` draws a labelled placeholder, so a method
 			// can go on the slide before its drawing exists.
-			// Both are mapped to the components themselves rather than wrapped in an arrow: the strip
+			// Both are mapped to the components themselves, not wrapped in an arrow: the strip
 			// numbers its children by cloning them, and a wrapper would swallow the prop it injects.
 			"method-strip": MethodStrip,
 			"method-card": MethodCard,
@@ -477,25 +477,25 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// cycling through the placements the expander actually offers at the vertex it takes next.
 			// Precomputed SeedExpander output (scripts/build-growth-figure.ts), not a drawing.
 			"growth-strip": GrowthStrip,
-			// <row-stacker> — why emit-on-closure is unsound, walked rather than asserted. A certified row
+			// <row-stacker> — why emit-on-closure is unsound, walked, not asserted. A certified row
 			// of squares, and above it a free binary choice per row: 2^n legal tilings all containing that
 			// same patch, of which the prune keeps one.
 			"row-stacker": RowStacker,
-			// <count-timeline> — who published which k-uniform count, when, drawn rather than tabulated.
+			// <count-timeline> — who published which k-uniform count, when, drawn, not tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,
 			// <title-slide> … </title-slide> — the DTU mark beside the title block, in one row.
 			"title-slide": TitleSlide,
 			// <slide-cols> … </slide-cols> — text beside a figure, the commonest slide shape.
 			"slide-cols": ({ children }: { children?: React.ReactNode }) => (
-				// Same height cap as slide-grid, applied to the figures rather than the columns: a column
+				// Same height cap as slide-grid, applied to the figures, not the columns: a column
 				// holding prose should still use its full width.
 				<div className="grid grid-cols-1 items-center gap-8 [&_figure]:mx-auto [&_figure]:max-w-[38vh] md:grid-cols-2">
 					{children}
 				</div>
 			),
 			// <slide-grid cols="3"> … </slide-grid> — a run of cards, height-capped. `cols` is a real HTML
-			// attribute name, so React may hand it through as a number rather than the authored string.
+			// attribute name, so React may hand it through as a number, not the authored string.
 			"slide-grid": ({ cols, children }: { cols?: string | number; children?: React.ReactNode }) => (
 				<SlideGrid cols={cols}>{children}</SlideGrid>
 			),

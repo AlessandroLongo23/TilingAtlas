@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils/cn";
  * The sidebar shell every aperiodic view renders into: the view switcher (`header`, supplied by the
  * page so it is identical across views) pinned above this view's own scrolling controls.
  *
- * `header` is expected to be bare wall cells — it drops straight into the wall rather than nesting.
+ * `header` is expected to be bare wall cells — it drops straight into the wall instead of nesting.
  */
 export function AperiodicSidebar({ header, children }: { header: ReactNode; children: ReactNode }) {
 	return (
@@ -48,7 +48,7 @@ export function Section({ label, children }: { label: string; children: ReactNod
 
 /**
  * Segmented choice as wall cells. `cols` sets the grid width so a long option set wraps to further
- * rows rather than shrinking — the symmetry pickers run to seven options.
+ * rows instead of shrinking — the symmetry pickers run to seven options.
  *
  * The wrapper repaints the wall colour because these sit INSIDE the padded panel, where the ancestor
  * wall is masked by the panel's own opaque background; without it the gaps would read as panel, not
@@ -101,7 +101,7 @@ export function Segmented({
 				);
 			})}
 			{/* Pad the last row. An empty grid area shows the container's wall colour, which reads as a
-			    grey block sitting in the control rather than as blank space — the symmetry pickers run to
+			    grey block sitting in the control, not as blank space — the symmetry pickers run to
 			    seven options in a four-wide grid, so there is always one. */}
 			{Array.from({ length: (cols - (options.length % cols)) % cols }, (_, i) => (
 				<div key={`pad-${i}`} className="ta-wall-cell bg-surface-chrome" aria-hidden />

@@ -1,7 +1,7 @@
 // Vertex orbits for a talk slide, computed once per tiling and kept.
 //
 // The partition itself comes from the exact cell, the same route /play takes, so a card's orbits are
-// the atlas's orbits rather than a second opinion. Deriving it is slow enough that recomputing on
+// the atlas's orbits, not a second opinion. Deriving it is slow enough that recomputing on
 // every slide change would show, and the result never changes for a given id, so a module-level map
 // is all the caching needed. Failures are cached too: a tiling with no usable exact source will fail
 // the same way every time, and retrying it each render would stall the deck.

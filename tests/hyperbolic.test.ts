@@ -64,7 +64,7 @@ describe("mirrorParams", () => {
 		}
 	});
 
-	it("throws on non-hyperbolic {p,q} rather than returning NaN", () => {
+	it("throws on non-hyperbolic {p,q} instead of returning NaN", () => {
 		expect(() => mirrorParams(4, 4)).toThrow();
 		expect(() => mirrorParams(3, 3)).toThrow();
 	});

@@ -33,7 +33,7 @@ import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 // has no zoom — its radius is fixed), a click folds the tile under the cursor to the centre, and
 // right-click recentres.
 
-// Pointer travel, in px, under which a press-release counts as a click rather than a pan. Same
+// Pointer travel, in px, under which a press-release counts as a click, not a pan. Same
 // threshold /play uses (components/canvas.tsx CLICK_DRAG_THRESHOLD_PX).
 const CLICK_DRAG_THRESHOLD_PX = 5;
 

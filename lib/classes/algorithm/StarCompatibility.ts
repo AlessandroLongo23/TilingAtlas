@@ -9,7 +9,7 @@
  * The adjacency primitive is `placeStarVCPair` (StarVC.ts): two VCs are compatible iff their fans admit
  * ≥1 admissible edge-gluing (shared tile, no proper overlap) — the merge-search, sound by
  * `exactPolygonsOverlap`. `starSeedSets` ports `SeedSetExtractor.findSeedSets` verbatim (connected
- * sub-multisets up to size k, with-replacement padding) but over VC NAMES rather than a
+ * sub-multisets up to size k, with-replacement padding) but over VC NAMES, not a
  * `CompatibilityGraph` instance, so no float VertexConfiguration objects are constructed.
  *
  * CERTIFIED-CORRECT, not complete: `placeStarVCPair` is a sound necessary-condition search (every edge

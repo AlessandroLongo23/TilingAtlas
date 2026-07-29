@@ -9,7 +9,7 @@ import { PatchView } from "./_patch-view";
 import { APERIODIC_VIEWS, DEFAULT_VIEW, groupedViews, isViewId, type AperiodicViewId } from "./_views";
 
 // The aperiodic shelf. Every construction here refuses a translational cell, which is exactly what
-// the rest of the atlas is built on — so each arrives as its own engine rather than as a lattice of
+// the rest of the atlas is built on — so each arrives as its own engine, not as a lattice of
 // one cell, and the page is a switch over them. They share the interaction layer
 // (lib/hooks/useAperiodicView.ts): drag, wheel, Shift+wheel, right-click mean the same in all of them.
 //
@@ -20,7 +20,7 @@ import { APERIODIC_VIEWS, DEFAULT_VIEW, groupedViews, isViewId, type AperiodicVi
 // The switcher below is built as bare wall cells (see AperiodicSidebar): a metadata cell carrying the
 // active view's name and one line about it, then one segment row per construction group. That is the
 // /play sidebar's own shape — selected-thing metadata over segmented rows — so the two pages read as
-// one piece of software rather than two. Cells are text only: a flower, a hexagon and a snowflake say
+// one piece of software, not two. Cells are text only: a flower, a hexagon and a snowflake say
 // nothing a reader can act on about which construction they pick, and next to `Segmented`'s bare-label
 // cells further down the same panel they made the switcher look like a different control.
 

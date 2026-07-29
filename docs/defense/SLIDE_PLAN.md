@@ -4,11 +4,11 @@
 early and you have slack if a demo misbehaves.
 
 Figures: most of what you need already exists in `thesis/figures/` (72 files) and in the
-running TilingAtlas app. Reuse rather than redraw. Where a slide needs something new it is
+running TilingAtlas app. Reuse, do not redraw. Where a slide needs something new it is
 marked NEW.
 
 Timing per act is the budget, not a suggestion. If an act runs long in rehearsal, cut a slide
-from that act rather than borrowing from the proof.
+from that act, not borrowed from the proof.
 
 ---
 
@@ -225,7 +225,7 @@ then observe that the plane covers a flat torus and a covering map of the plane 
 homeomorphism, which is what excludes the global overlap.
 
 The plain sentence to end on: we glued abstract pieces together with no coordinates anywhere, and
-we know the result is a picture rather than a broken one because the only closed flat oriented
+we know the result is a picture, not a broken one because the only closed flat oriented
 surface is a torus, and the plane wraps onto a torus without ever folding back on itself.
 
 This slide is where you demonstrate the skill your professor is grading. Rehearse it more than
@@ -260,7 +260,7 @@ The table through k=16. Then immediately the honest framing, because it is stron
 table: this sets no record. Čtrnáct, Griffin and Kopczyński published through k=15 and a later
 implementation reaches k=18. The table contains no tiling that was not already known. What it is,
 is a check on my re-implementation, and a good one, because a search that loses tilings tends to
-lose them at some particular k rather than uniformly.
+lose them at some particular k, not uniformly.
 
 **26. Theorem-certified 11 and 20.**
 The Delaney-Dress chain, which shares no machinery with either enumeration method and consults no
@@ -315,7 +315,7 @@ answer. Flipping to a slide reads as depth; improvising reads as the opposite.
 2. **Obligation 1 in detail.** 21 angle-valid configurations → six excluded species → 4.8.8 orphan
    → 14 configurations → 44 vertex types via the site-symmetry split.
 3. **Obligation 2 in detail.** The four rules with the necessity argument, and the note that the
-   divisor condition is the only rule reasoning about the quotient rather than the plane.
+   divisor condition is the only rule reasoning about the quotient, not the plane.
 4. **Obligation 3 and the k=8 exhibit.** The no-drop lemma, then 2849 versus 2850, the one-dart
    root cause, and the A5/A6 certificates that exclude that failure class. Your best story; make
    sure this slide exists.

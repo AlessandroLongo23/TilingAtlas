@@ -1,6 +1,6 @@
 // Localize the Islamic HIGH-OFFSET cost that survives the distance-transform fill. Times getIslamicField
 // end-to-end at increasing offsets for the worst tiling, so we can see whether the seconds live in the
-// per-offset re-bake (arrangement + texel classification) rather than the fill. Pure math under tsx.
+// per-offset re-bake (arrangement + texel classification) and not the fill. Pure math under tsx.
 import { readFileSync } from "node:fs";
 import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareShaderTiling } from "@/lib/render/hyperbolicReduce";

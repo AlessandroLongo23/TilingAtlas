@@ -43,7 +43,7 @@ DEVELOPMENT_NOTES.md §"The Schwarz family becomes a family".
   solve, surfaced by `schwarzKGaps` in the /freedraw board picker and asserted in the test suite.
   **(2,3,4) reran on 2026-07-29 to k=11** (842 → 5,974 certificates, contiguous k=3..11, 0 failures,
   same canonical board). A rerun that ADDS k is one manifest row; the board hoist is what keeps the
-  new 5,132 tilings at 2.7 MB rather than ~10 MB.
+  new 5,132 tilings at 2.7 MB, not ~10 MB.
 - ⚑ **`F2` still appears in NO corpus**, on any board. The third edge class is never drawn where one
   exists. Unchanged since 2026-07-27; still needs a rerun from Marek.
 

@@ -80,7 +80,7 @@ const LENSES = [
 	{ key: 'cheaper-node', angle: 'CHEAPER NODES: make each pop/place cost less — memoize/cache exact keys, avoid rebuilding blocks, incremental incidence maps, cheaper overlap tests, reuse work across children.' },
 	{ key: 'exact-arith', angle: 'CHEAPER EXACT ARITHMETIC: the ℤ[ζ24] key strings / BigInt / Surd operations. Faster canonical keys (integer hashing vs string), lazy exactness, float broadphase before exact, packed representations.' },
 	{ key: 'certify', angle: 'VALIDITY WORK: the closure certificate (isCompleteTiling rebuilds a big block + O(block^2) intersects) and isPrimitive. Can these be incrementalized, cached, or replaced by the fast point-group method already in KUniformityFast.ts?' },
-	{ key: 'algorithmic', angle: 'DIFFERENT ALGORITHM: is corner-completion DFS the right shape at all? Constraint propagation, exact cover / dancing links, meet-in-the-middle on the cell, or solving the cell as a finite CSP — anything that changes the asymptotics rather than the constant.' },
+	{ key: 'algorithmic', angle: 'DIFFERENT ALGORITHM: is corner-completion DFS the right shape at all? Constraint propagation, exact cover / dancing links, meet-in-the-middle on the cell, or solving the cell as a finite CSP — anything that changes the asymptotics, not the constant.' },
 ];
 
 const proposals = await parallel(LENSES.map((L) => () =>

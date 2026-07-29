@@ -331,7 +331,7 @@ function classifyLattice(T1: Vec, T2: Vec): LatticeShape {
 }
 
 // The 17-group decision (matches analyzeSymmetry.identifyGroup). The cm/cmm vs pm/pmm/pmg split uses the
-// EXACT Bravais lattice (centered=rhombic ⇒ cm/cmm) rather than a float essential-glide test — see the
+// EXACT Bravais lattice (centered=rhombic ⇒ cm/cmm), not a float essential-glide test — see the
 // same note in WallpaperSymmetry.ts. hasGlide is only consulted where there is no mirror (pgg/pg), where
 // it is exact.
 function identifyGroup(nMax: number, hasMirror: boolean, hasGlide: boolean, mAngles: number, allTopOnMirror: boolean, isCentered: boolean): WallpaperGroup {

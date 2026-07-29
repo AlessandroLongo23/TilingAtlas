@@ -81,7 +81,7 @@ export function ParquetMini() {
 	);
 
 	// h-full, not h-auto: with the box fixed the aspect no longer moves, and a height that comes from
-	// the container rather than the drawing can't feed back into layout at all.
+	// the container, not the drawing, can't feed back into layout at all.
 	return (
 		<div ref={hostRef} className="w-full h-full flex items-center px-3">
 			<ParquetStrip

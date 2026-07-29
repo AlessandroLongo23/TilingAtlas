@@ -7,7 +7,7 @@ and the a=3 sibling A3). Everything upstream is machine-checked in exact arithme
 `verify_star_extras_exact.py` (certified-sign simplicity and orientation, 2026-07-11,
 zero float in any decision). This note states the lemma whose hypotheses are exactly
 those certificates, proves it, and flags the single input that remains topology
-rather than machine-checked arithmetic.
+and not machine-checked arithmetic.
 
 ## Certified data and hypotheses
 
@@ -123,7 +123,7 @@ degree `d >= 1`, and a local isometry multiplies area by the degree:
 degree and sheets). By (H5), `area(S) = sum_i area(F_i) = area(T^2)`, so `d = 1`. A
 degree-1 covering is a homeomorphism, and a bijective local isometry is an isometry.
 So the faces embed in `T^2` with disjoint interiors and cover it. This is the whole
-point of proving the area identity exactly rather than numerically: `d = 1` versus
+point of proving the area identity exactly, not numerically: `d = 1` versus
 `d = 2` is a gap of an entire torus area, but certifying it requires the two areas
 to be *equal*, not approximately equal.
 

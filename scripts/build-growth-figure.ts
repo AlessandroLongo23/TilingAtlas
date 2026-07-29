@@ -3,7 +3,7 @@
  * it. Run: `pnpm tsx scripts/build-growth-figure.ts [--list] [--seed <name>] [--out <path>]`
  *
  * The slide's widget is driven entirely from the JSON this writes, so the room is looking at real
- * SeedExpander output rather than a drawing: the frontier, the target vertex the DFS would take next
+ * SeedExpander output, not a drawing: the frontier, the target vertex the DFS would take next
  * (least graph distance to the core), and every rigid placement of the seed that survives the orbit,
  * alignment and collision gates at that vertex.
  *

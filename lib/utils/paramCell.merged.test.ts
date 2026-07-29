@@ -22,7 +22,7 @@ const MERGED = SHELF.filter((t) => t.paramCell?.segments?.length);
 
 // The merge is applied by scripts/merge-plan.ts from this plan, so the plan is the expectation and
 // the shipped shelf is what gets checked against it. A shelf built before the merge landed carries no
-// segments at all; the geometry suites below skip on that rather than fail, because there is nothing merged
+// segments at all; the geometry suites below skip on that instead of failing, because there is nothing merged
 // to inspect. What is NOT tolerated is a shelf that is partly merged or merged into the wrong arcs — the
 // first test asserts all-or-exactly-the-plan, so a regression cannot hide behind the skip.
 type Plan = { merges: { id: string; aliases: string[]; coordinate: string; range: [number, number] }[] };
@@ -32,7 +32,7 @@ const PLANNED_IDS = PLAN.merges.map((m) => m.id).sort();
 type Pt = [number, number];
 type Basis = [Pt, Pt];
 /** evaluateParamCell returns the render layer's deliberately loose TranslationalCellData (`unknown[]`
- *  polygons, so every consumer can carry its own extras). Narrowed once here rather than at each use. */
+ *  polygons, so every consumer can carry its own extras). Narrowed once here, not at each use. */
 type EvalCell = { cellPolygons: { n: number; star?: boolean; vertices: Pt[] }[]; basis: Basis };
 const evalAt = (pc: ParametricCellData, u: number): EvalCell => evaluateParamCell(pc, u) as unknown as EvalCell;
 
@@ -95,7 +95,7 @@ describe("merge plan", () => {
 		// concavity cut; widening each family to its true validity interval (scripts/range-plan.ts, §102)
 		// makes the primary cover its own continuation, so the former partner is a plain α-reversal
 		// duplicate and gets absorbed instead. Same 11 ids leave the mixed shelf either way — but with one
-		// analytic cell rather than two posed segments, so there is no seam to keep continuous.
+		// analytic cell, not two posed segments, so there is no seam to keep continuous.
 		expect(PLANNED_IDS).toEqual([]);
 	});
 
@@ -117,7 +117,7 @@ describe("merge plan", () => {
 
 describe.skipIf(MERGED.length === 0)("merged families", () => {
 
-	// The property that makes the merge legal rather than a splice of two unrelated things: at the seam the
+	// The property that makes the merge legal, and not a splice of two unrelated things: at the seam the
 	// two halves are the SAME tiling in the SAME pose. Without it the pattern jumps as the slider crosses.
 	it("agrees at the seam — same tiling, same pose, same lattice", () => {
 		for (const t of MERGED) {
@@ -285,7 +285,7 @@ describe("widened α ranges", () => {
 
 // ── coupled two-parameter families (scripts/coupled-plan.ts, NOTES §103) ──────────────────────────────
 // The export shipped these as several 1-D slices, one per palette value of the angle it pinned. They are
-// one family with two free-but-coupled angles, so the valid region is a polygon rather than a box.
+// one family with two free-but-coupled angles, so the valid region is a polygon, not a box.
 type CoupledPlan = {
 	families: {
 		id: string; P: number; regionVertices: [number, number][];
@@ -347,7 +347,7 @@ describe.skipIf(COUPLED.length === 0)("coupled two-parameter families", () => {
 		}
 	});
 
-	// A point outside the polygon is not a tiling, so the evaluator has to pull it back in rather than draw
+	// A point outside the polygon is not a tiling, so the evaluator has to pull it back in instead of drawing
 	// it. This is what makes the pad safe: nothing the user can do reaches an uncertified cell.
 	it("clamps a point outside the region back inside it", () => {
 		for (const f of COUPLED) {

@@ -101,7 +101,7 @@ export function applyCoupledPlan(out: ReferenceTiling[], opts: ApplyCoupledOptio
 			`1-dimensional slices, one per palette value of the angle it happened to pin. It is really one ` +
 			`family with ${f.P} free angles (${axes}); the third angle of each vertex is determined by them. ` +
 			`The valid region is a ${f.regionVertices.length}-sided polygon, not a rectangle, so the two ` +
-			`angles are free but coupled — which is why it is explored on a 2-D region rather than two ` +
+			`angles are free but coupled — which is why it is explored on a 2-D region, not two ` +
 			`independent sliders. Absorbed slices: ${f.absorbs.map((a) => a.id.split("-").pop()).join(", ")}.`;
 		// The survivor kept its id but not its coordinate: one angle became a point in a 2-D region. Alias
 		// it to ITSELF so an existing single-α link travels the line it used to travel.

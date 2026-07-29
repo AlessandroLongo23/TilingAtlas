@@ -169,7 +169,7 @@ describe("URL codec", () => {
 		expect(serializeFilter(DEFAULT_FILTER)).toBe("");
 	});
 
-	it("falls back to the default on hostile input rather than injecting it", () => {
+	it("falls back to the default on hostile input instead of injecting it", () => {
 		const f = parseFilter(
 			new URLSearchParams("g=hexagon&k=-2&u=maybe&s=x&sz=4,abc,0,-3,4&m=nonsense"),
 		);

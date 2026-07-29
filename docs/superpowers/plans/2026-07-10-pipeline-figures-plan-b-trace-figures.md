@@ -933,4 +933,4 @@ git commit -m "feat(figures): trace-figure README + end-to-end emit smoke test"
 
 ## Verification note (honest limitation)
 
-SVGs can be validated structurally in tests (element counts, non-empty, expected tags) but their *visual* quality (legibility, overlap, proportions) can't be asserted by the test suite. After Task 8, a human (AL) should open `figures/out/trace/*.svg` and eyeball them; layout constants (`BOX`, `GAPX`, `GAPY`, `MAX_ARROWS`) are the tuning knobs. This is expected for figure work and is called out rather than hidden.
+SVGs can be validated structurally in tests (element counts, non-empty, expected tags) but their *visual* quality (legibility, overlap, proportions) can't be asserted by the test suite. After Task 8, a human (AL) should open `figures/out/trace/*.svg` and eyeball them; layout constants (`BOX`, `GAPX`, `GAPY`, `MAX_ARROWS`) are the tuning knobs. This is expected for figure work and is called out, not hidden.

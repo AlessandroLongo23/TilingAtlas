@@ -21,7 +21,7 @@ import {
 // grow-in / -1 collapse-out (0 = inactive, handled at the call site); `u` is the tile centroid's
 // normalised screen distance from the canvas centre; `p` the phase progress in [0,1]. Returns the tile's
 // [0,1] scale about its centroid. WAVE_MIN_SCALE (0.02) is applied by the caller so the tile is dropped
-// (zero-area) rather than lingering as a stroke speck.
+// (zero-area) instead of lingering as a stroke speck.
 const WAVE_GLSL = `
 float waveTileScale(int phase, float u, float p) {
 	float travel = 0.8; // WAVE_TRAVEL
@@ -312,7 +312,7 @@ export interface FlatDrawParams {
 	showPoints?: boolean;
 	/**
 	 * Draw ONE copy of the mesh instead of a lattice of it — for a cell whose polygons are a finite
-	 * patch rather than a repeat (a seed; see lib/render/seedPatch.ts).
+	 * patch, not a repeat (a seed; see lib/render/seedPatch.ts).
 	 *
 	 * It also turns the pan wrap off. The wrap folds the offset back by whole lattice vectors so a
 	 * fixed instance grid always covers the viewport, which is invisible while the copies are
@@ -378,7 +378,7 @@ export class FlatCellRenderer {
 		this.orbitProg = orbitProg;
 		this.pointsProg = pointsProg;
 
-		// uWavePhase/uWaveP are set explicitly (to "wave off") rather than left at their default-zero,
+		// uWavePhase/uWaveP are set explicitly (to "wave off"), not left at their default-zero,
 		// and aCentroid is bound even though the wave is off here: both shaders declare aCentroid as an
 		// active attribute, and leaving an active attribute's array disabled is the one thing this
 		// renderer did that euclidean-canvas.tsx's pipeline does not. Some drivers tolerate it; others

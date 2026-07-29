@@ -198,7 +198,7 @@ export function PlanarFreedraw({
 
 	// The grid + k slice, classified. ONLY this slice is analysed — the win over classifying all 112k
 	// patterns up front. null while its files are still loading. Deriving the size chips from the SLICE
-	// rather than from `shown` is deliberate: chips computed after the size filter would vanish as you
+	// and not from `shown` is deliberate: chips computed after the size filter would vanish as you
 	// picked them, reshuffling the row under the cursor. loadTick is a dep so it recomputes on load.
 	const slice = useMemo(() => {
 		const urls = filesFor(filter.grid, filter.k);

@@ -95,7 +95,7 @@ equilateral with alternating angles, so the theorem applies throughout and stars
 
 `p = 1` means the combined word is constant, so all edges are equal and all angles are equal. With §2.1
 that is exactly regular, and the symmetry order is `m/1 = m`. So **the period axis subsumes "regular" as
-its degenerate case** rather than sitting beside it. This is the cleanest justification for making `p` the
+its degenerate case**, not sitting beside it. This is the cleanest justification for making `p` the
 organizing parameter.
 
 ### 2.3 p = 2 and equilateral ⟺ the star / isotoxal band.

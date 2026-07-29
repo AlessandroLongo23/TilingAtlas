@@ -94,12 +94,12 @@ GRIDS = {
     # nothing new. step = None is what selects that path.
     "hex": {"units": {"A2": 0, "A6": 4}, "step": None, "axes": None, "axis_names": None},
     # The (2,3,6) SCHWARZ TRIANGLE grid -- Marek's pt_schwarz_edges_236.exe. Three things make it
-    # unlike every grid above, and each one is a knob added below rather than a new code path:
+    # unlike every grid above, and each one is a knob added below, not a new code path:
     #
     #  1. The letters name CORNERS, not polygons. S2/S3/S6 are the 90/60/30 corners of the one
     #     30-60-90 tile, tagged by the rotation order of the site each sits at, so a face walk
     #     crosses three DIFFERENT letters ("face_corners": "vary") and its size is fixed at 3
-    #     rather than read off the digits.
+    #     and not read off the digits.
     #  2. Every base edge carries a digon, drawn or not, where freedraw's other grids only digon
     #     the DRAWN ones (undrawn edges vanish and the faces merge). The letter carries the bit:
     #     A2/C2/E2 undrawn, B2/D2/F2 drawn (Marek, 2026-07-27).
@@ -126,7 +126,7 @@ GRIDS = {
     # unit square grid with both diagonals of every square drawn -- four triangles per square, not the
     # eight of a barycentric subdivision (there are no midlines: y = 1/2 is not a mirror).
     #
-    # Two vertex classes, and that is why k = 2 is the floor here rather than sch236's 3: the LATTICE
+    # Two vertex classes, and that is why k = 2 is the floor here, not sch236's 3: the LATTICE
     # POINTS are the 45-degree corners (eight triangles each, letter S4) and the SQUARE CENTRES the
     # 90-degree ones (four triangles, S2). Two edge classes follow: the square edges join two S4s
     # (length sqrt(2) here, the side opposite the right angle) and the half-diagonals an S2 to an S4
@@ -149,7 +149,7 @@ GRIDS = {
 
 # Grid knobs, with the defaults that reproduce the four original grids exactly.
 def grid_digons(grid):
-    """The letters that mark a zero-angle digon rather than a polygon face."""
+    """The letters that mark a zero-angle digon, not a polygon face."""
     return tuple(GRIDS.get(grid, {}).get("digons", ("A2",)))
 
 
@@ -394,7 +394,7 @@ class Block:
     def __init__(self, cert, tables, grid):
         self.grid = grid
         # The grid's direction set. NDIR is the number of directions and HALF the 180-degree reversal,
-        # so every "(d + 6) % 12" below is written in terms of the grid rather than baked at 12.
+        # so every "(d + 6) % 12" below is written in terms of the grid, not baked at 12.
         self.ring = ring_of(grid)
         self.ndir = self.ring.n
         self.half = self.ring.half

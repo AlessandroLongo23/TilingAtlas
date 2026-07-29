@@ -11,7 +11,7 @@
 //
 // Unlike planar freedraw there is NO lattice and NO bitmask: H² has no translation lattice, so the
 // tiling is the dart structure, and a drawn edge's status is recovered from the polygon sizes
-// (drawn[h] ⇔ the polygon on either side of h is a digon) rather than stored per edge.
+// (drawn[h] ⇔ the polygon on either side of h is a digon), not stored per edge.
 
 import type { Darts } from "@/lib/render/hyperbolicDevelopClient";
 

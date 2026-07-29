@@ -31,7 +31,7 @@ export const NO_OVERLAYS: OverlayState = {
  * `s` with nothing focused and every card on the slide (or the article page) shows theirs.
  *
  * Implemented as a page-level `shared` state plus a per-card override map. A global toggle rewrites
- * `shared` AND drops every override, so "all of them" really means all of them rather than "all the
+ * `shared` AND drops every override, so "all of them" really means all of them, not "all the
  * ones you have not touched yet" — otherwise a card you had toggled earlier would sit there
  * contradicting the rest of the slide with no way to tell why.
  */
@@ -146,7 +146,7 @@ export function useCardOverlays(
 	// Precedence, narrowest first: this card's exception, then whatever a key set for the whole scope,
 	// then the card's own default, then off.
 	//
-	// The defaults are read generically rather than flag by flag. An earlier version tested the three
+	// The defaults are read generically, not flag by flag. An earlier version tested the three
 	// names it knew by hand, which silently ignored the fourth the day one was added — a `<seed-card>`
 	// asking for its points arrived with them off and no error anywhere.
 	const initialKey = Object.keys(initial ?? {})

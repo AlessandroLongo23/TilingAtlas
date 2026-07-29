@@ -47,7 +47,7 @@ Modules: regular **triangle, square, hexagon, dodecagon** on the three regular g
 Archimedean, twelve 2-uniform, and four 3-uniform tessellations. Angular openings 30°/45°/60°/90°/120°/135°.
 Field **ℤ[ζ₁₂] ⊂ ℤ[ζ₂₄]**. Earliest and most widespread; 3-, 4-, 6-, and 12-fold stars.
 **Atlas note:** these *are* our existing regular/Archimedean tilings — the Islamic category re-presents a
-few under the strapwork framing rather than enumerating anything new.
+few under the strapwork framing, it does not enumerate anything new.
 
 ### 2. Fourfold system A (Bonner §3.1.3, Fig. 130)
 Nine modules: a large octagon, a small octagon, a square, a pentagon, a large and a small hexagon, a
@@ -225,7 +225,7 @@ Verification (diagnostic over pooled real `calculateIslamicSegments` output): th
 and A is confined to a single parity on squares (4⁴), triangles (3⁶), hexagons (6³) and 4.8.8 at edge
 offsets 0–0.6 and contact angles 30/45/60°. Not yet verified for genuinely star-shaped tiles (dent/tip)
 or k≥2 multi-orbit tilings — `colorFacesAbc` returns `degenerate = true` if A ever straddles both parities
-in a component, and the renderer then paints all background as B (two-tone) rather than mis-colour.
+in a component, and the renderer then paints all background as B (two-tone) instead of mis-colouring.
 
 ## Sources
 

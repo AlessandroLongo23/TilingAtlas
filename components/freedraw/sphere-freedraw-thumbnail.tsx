@@ -127,7 +127,7 @@ export function SphereFreedrawThumbnail({
 			if (done) return;
 			done = true;
 			// Building the scene + rendering is synchronous, so it goes through the shared frame-paced queue
-			// rather than firing alongside every other card's render in one task.
+			// instead of firing alongside every other card's render in one task.
 			cancelJob = enqueueThumbnailRender(() => {
 				try {
 					const dataUrl = renderToDataUrl(pattern, solidId, size, mode, showGrid, vertices, allEdges);

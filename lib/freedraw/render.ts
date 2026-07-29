@@ -46,7 +46,7 @@ const basisOf = (p: FreedrawPattern) =>
 export type FillMode = "none" | "rank" | "shape" | "pose" | "orbit";
 
 /**
- * Chip label and gloss per fill mode, in ladder order. Lives here rather than in either sidebar so
+ * Chip label and gloss per fill mode, in ladder order. Lives here, not in either sidebar, so
  * /play's options tab and the freedraw browser can't drift apart on what the modes are called.
  */
 export const FILL_MODES: { value: FillMode; label: string; help: string }[] = [
@@ -158,7 +158,7 @@ export function rotatedExtent(width: number, height: number, rot: number): { w: 
 
 /**
  * Turn the context about the canvas centre for a rotated view, on a SAVED state — the caller restores.
- * It saves even at rot 0 so every draw path has one balanced save/restore rather than a conditional one.
+ * It saves even at rot 0 so every draw path has one balanced save/restore, not a conditional one.
  */
 export function beginViewRotation(
 	ctx: CanvasRenderingContext2D,

@@ -86,7 +86,7 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 			if (done) return;
 			done = true;
 			// Building the scene + rendering is synchronous, so it goes through the shared frame-paced
-			// queue rather than firing alongside every other card's bake in one task.
+			// queue instead of firing alongside every other card's bake in one task.
 			cancelJob = enqueueThumbnailRender(() => {
 				try {
 					const dataUrl = renderToDataUrl(solidId, size, hueOffset);

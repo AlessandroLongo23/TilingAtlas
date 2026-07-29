@@ -185,7 +185,7 @@ minimizes over $24n$ frames assigns these two symbols matrices of different shap
 is not canonical for~\eqref{eq:equiv}; we verified this computationally on a faithful
 implementation. Any correct $\N$ must therefore recompute $\Lmax$, as Stage A does.
 Alternatively one may read lattice maximality as an unstated precondition on valid symbols;
-then Stage A is input validation rather than a correction, and it certifies the
+then Stage A is input validation, not a correction, and it certifies the
 precondition at the same cost. Whether the convention of~\cite{soto2021integer} already
 requires maximality should be checked before attributing the defect beyond the problem
 statement we received; in an enumeration pipeline the point is moot, since period-solving
@@ -542,7 +542,7 @@ random symbols.
 \end{itemize}
 
 Degenerate inputs are handled as follows: symbols violating the encoding contract (rank-1
-lattices, empty seed lists) are rejected by assertion rather than canonicalized;
+lattices, empty seed lists) are rejected by assertion, not canonicalized;
 $\R$-linearly dependent lattice generators are accepted silently and canonicalized
 consistently (the theory never uses $\R$-independence), which is acceptable for a dedup key
 but callers wanting validation must test $\mathrm{Im}(t_1\overline{t_2})\neq0$ themselves.
@@ -569,7 +569,7 @@ coordinates bounded by $m$ in absolute value; reduced representatives lie within
 distance $O(\lambda_2)$ of the origin, and $\lambda_2=O(n)$ since the cell area is
 $\Theta(n)$ and $\lambda_1$ is bounded below by the minimum vertex distance of unit-edge
 tilings. The missing step is the routine bounded-dilation lemma converting Euclidean
-distance to path length in these tilings; we flag it rather than claim it. Conversely
+distance to path length in these tilings; we flag it, we do not claim it. Conversely
 $O(\sqrt n)$ is impossible: strip-stacked tilings in the style of the elongated triangular
 family realize $\lambda_1=\Theta(1)$, $\lambda_2=\Theta(n)$, and any symbol must contain a
 basis vector of length $\Theta(n)$, forcing entries $\Omega(n)$.

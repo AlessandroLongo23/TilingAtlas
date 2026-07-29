@@ -50,7 +50,7 @@ export function TilingsTab({
 	const [tab, setTab] = useState(TABS[0]);
 	// C / V jump to a tab, matching the keycaps on the triggers. Same guards as the /play canvas
 	// shortcuts (skip modifier chords and typing targets) so they don't fire mid-text-entry. Tab state
-	// is local to this component, so the listener lives here rather than in the canvas keydown handler.
+	// is local to this component, so the listener lives here, not in the canvas keydown handler.
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;

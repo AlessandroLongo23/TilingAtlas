@@ -13,7 +13,7 @@ import katex from "katex";
 // PORTRAITS. Two of the six have no photograph anyone has found. Krötenheerdt died in 2018 and the
 // only picture of him anywhere is of his grave (German Wikipedia; the Oberwolfach collection, which
 // holds 25k mathematician portraits, has none). Griffin, per Čtrnáct's own account, disappeared
-// years ago. Those two get a monogram on a dashed plate rather than a placeholder pretending to be
+// years ago. Those two get a monogram on a dashed plate, not a placeholder pretending to be
 // a face, which is honest about the record and, on this particular slide, part of the argument. To
 // fill either in later: drop a square JPEG into public/defense/faces/ and set `portrait`.
 //
@@ -39,7 +39,7 @@ interface Stop {
 	/** Highest k this entry settled. */
 	k: number;
 	/**
-	 * Whether the entry settled every k up to `k` at once, rather than adding that one term to a
+	 * Whether the entry settled every k up to `k` at once, instead of adding that one term to a
 	 * record it otherwise took as given. This is what separates the `k \le 7` label from `k = 3`,
 	 * and the split is not decorative: Kepler, Krötenheerdt and Chavey each contributed a single
 	 * term by hand and cited the ones below it, while Galebach's search swept n ≤ 6 in one go and
@@ -89,7 +89,7 @@ const STOPS: readonly Stop[] = [
 		people: [{ given: "Darrah", family: "Chavey", portrait: "chavey.jpg" }],
 	},
 	{
-		// The first entry that settled a range rather than a term: the 2002 search returned every
+		// The first entry that settled a range, not a term: the 2002 search returned every
 		// n ≤ 6 at once (11, 20, 61, 151, 332, 673), and k = 7 followed by 2020.
 		years: "2002–2020",
 		k: 7,
@@ -119,7 +119,7 @@ const COLUMNS = STOPS.reduce((n, s) => n + s.people.length, 0);
 const groupSpan = (stop: Stop) => ({ gridColumn: `span ${stop.people.length} / span ${stop.people.length}` });
 
 /**
- * The k label, set through KaTeX rather than an italic span. The prose around it writes $k$, and
+ * The k label, set through KaTeX, not an italic span. The prose around it writes $k$, and
  * a Latin Modern italic beside an Inter italic is the kind of mismatch a reader notices without
  * being able to name.
  */
@@ -137,7 +137,7 @@ function KLabel({ k, sweep }: { k: number; sweep?: boolean }) {
 }
 
 /**
- * One face. A background image rather than an `<img>` on purpose: the deck's figure styling
+ * One face. A background image, not an `<img>`, on purpose: the deck's figure styling
  * (`[&_img]`: white plate, padding, rounded corners, a 46vh cap in slide-markdown.tsx) is a
  * descendant selector and outranks anything a class on the image itself could say.
  */
@@ -192,7 +192,7 @@ export function CountTimeline() {
 					>
 						{stop.gapBefore && (
 							// Straddles this entry's leading edge, so it reads as the span between the two bars
-							// it sits between rather than as a label on either one.
+							// it sits between, not as a label on either one.
 							<span className="absolute bottom-[0.3em] left-0 -translate-x-1/2 text-[clamp(0.55rem,0.8vh+0.22vw,0.82rem)] whitespace-nowrap text-fg-muted">
 								{stop.gapBefore}
 							</span>

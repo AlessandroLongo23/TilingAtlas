@@ -126,7 +126,7 @@ because γ commutes with μ and is injective, so γ(x) is mirror-fixed exactly w
 **Whose.** Yours.
 
 **The interesting sentence to say out loud.** The divisor condition of the false-closure rule
-is the only one of the four that reasons about the quotient rather than about the plane, and
+is the only one of the four that reasons about the quotient, not about the plane, and
 a plausible-looking strengthening of it would be unsound.
 
 ---
@@ -177,7 +177,7 @@ automorphism orbit. Exactly one k=8 tiling was reachable only through a gluing a
 and it was dropped silently. That is lemma A5's failure class happening in the wild, and the
 A5/A6 certificates are precisely the checks that exclude it. A one-entry fix restores 2850.
 
-This story does three things at once: it proves the obligation is real rather than
+This story does three things at once: it proves the obligation is real and not
 bureaucratic, it shows the machine certificates earning their keep, and it explains why a
 search that agrees with a published sequence still needs a proof. Use it.
 
@@ -263,7 +263,7 @@ excludes the global overlap. [C3a–C3d]
 **Whose.** Yours.
 
 **The plain-language version for the talk.** We glued abstract pieces together with no
-coordinates anywhere. How do we know the result is a picture rather than a broken one?
+coordinates anywhere. How do we know the result is a picture, not a broken one?
 Because the glued object is a closed flat surface; the only closed flat oriented surface is a
 torus; and the plane wraps onto a torus without ever folding back on itself.
 
@@ -342,14 +342,14 @@ case of cocompact discrete planar groups is standard.
 
 Four lemmas of Obligation 1 are discharged by machine over the 44 vertex types. Independently
 re-run and audited. They are finite checks over a small set, and you record them as checks
-rather than arguments.
+and not as arguments.
 
 **One inconsistency to be ready for.** §7.5 names two classical inputs. The appendix ledger
 says "the sole standing classical input is C2 (Killing-Hopf)," because it folds Grünbaum and
-Shephard into citation pins on A1/O2/O4 rather than a standalone classical row. Both
+Shephard into citation pins on A1/O2/O4, not a standalone classical row. Both
 statements are defensible under their own conventions, but a careful reader comparing the two
 can ask. The answer: §7.5 counts what you take on authority; the ledger tags rows whose entire
-content is imported. Have that ready rather than being surprised by it.
+content is imported. Have that ready instead of being surprised by it.
 
 ---
 

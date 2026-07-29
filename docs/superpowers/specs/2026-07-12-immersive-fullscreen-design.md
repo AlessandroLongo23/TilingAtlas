@@ -14,7 +14,7 @@ hide; the on-canvas overlays (tile-count readout, α slider) stay visible.
 
 ## Approach
 
-Collapse the chrome inside the existing flexbox flow rather than overlaying/sliding it over the canvas.
+Collapse the chrome inside the existing flexbox flow instead of overlaying/sliding it over the canvas.
 The canvas-wrap is already `flex-1`, so as the header height and sidebar width animate to zero the
 canvas-wrap grows, and the existing `ResizeObserver` on it drives the p5 canvas resize each frame —
 genuinely smooth growth, not an instant snap. Rejected alternatives: (a) absolutely-positioned canvas

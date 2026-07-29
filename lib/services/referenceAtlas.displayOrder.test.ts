@@ -152,7 +152,7 @@ describe("decorationOf", () => {
 	});
 
 	// The two decoration classes are the ONLY ones outside Tilings. Stated positively so that adding a
-	// class here is a deliberate edit rather than a silent default.
+	// class here is a deliberate edit, not a silent default.
 	it("routes freedraw to edges, colors to colorings, everything else to tilings", () => {
 		expect(decorationOf(BY_CLASS.freedraw)).toBe("edges");
 		expect(decorationOf(BY_CLASS.colors)).toBe("colorings");

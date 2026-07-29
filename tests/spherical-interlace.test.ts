@@ -70,7 +70,7 @@ describe("buildSphericalInterlace — one band per ray, corners on the sphere", 
 // in the vertex's tangent plane and mapped back by normalize(pos + x·u + y·v), a gnomonic map: an in-plane
 // offset d lands atan(d) along the sphere. The band's own half-width already carries that same 0.1%-scale
 // compression, so border and band stay in proportion; the floor below just states it exactly. The ceiling pins
-// the overshoot as a mitre rather than an unbounded spike.
+// the overshoot as a mitre, not an unbounded spike.
 describe("buildSphericalInterlace — the border ring is offset outward by `border` radians", () => {
 	const arc = (a: Vec3, b: Vec3): number => Math.acos(clamp3(dot3(norm3(a), norm3(b))));
 	for (const id of SOLIDS) {

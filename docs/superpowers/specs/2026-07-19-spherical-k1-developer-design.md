@@ -27,7 +27,7 @@ plane reproduces the classical uniform polyhedra on the sphere.*
   needs the *unfolded* graph, but the pruned block is the symmetry-quotient, so an
   unfolding/development pass is unavoidable. For k=1 that pass closes analytically via a
   single edge-length solve, making relaxation redundant.) The realizability/A6 signal is
-  preserved — it comes from *closure failure* rather than relaxation stalling.
+  preserved — it comes from *closure failure*, not relaxation stalling.
 
 ### Method correction (during planning)
 

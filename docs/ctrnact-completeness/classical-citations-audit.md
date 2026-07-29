@@ -10,7 +10,7 @@ correctly and their hypotheses met, which is the part a proof can get wrong.
 Honest limitation of this audit: I verify statement-fidelity and hypothesis-discharge, not
 the classical theorems themselves. A geometer should still confirm the two geometry
 applications (Killing–Hopf via the bundle, and the vertex-link flatness feeding it), which
-are the only places the classical input is doing real work rather than bookkeeping.
+are the only places the classical input is doing real work, not bookkeeping.
 
 ## Summary
 
@@ -53,7 +53,7 @@ half ("contains rank-2 translations ⇒ doubly periodic").
 doubly periodic. Uses exactly the translation-lattice conclusion. No over-reach.
 
 **Verdict: correctly applied.** The one subtlety a referee checks — that discreteness is
-proved *before* invoking Bieberbach rather than assumed — is handled by B0. The proof does
+proved *before* invoking Bieberbach, not assumed — is handled by B0. The proof does
 not silently assume periodicity; it derives it.
 
 ---
@@ -154,7 +154,7 @@ coincide — Myhill–Nerode), not cited. ✓
 **Verdict: correctly applied.** The one place a referee worries — that colour refinement is
 incomplete for *graph* isomorphism — is defused because the structures are deterministic
 (functional), where refinement is exact; the skeleton states this explicitly and proves the
-congruence identity rather than leaning on the citation for it.
+congruence identity instead of leaning on the citation for it.
 
 ---
 
@@ -167,4 +167,4 @@ structure by Def. 3.1). No citation is misremembered or over-applied. The single
 the vertex-link identification feeding C1's flatness — already flagged as owed in the
 skeleton and computationally supported by the A2(iv) checker — and it is the natural thing to
 put in front of a geometer, because it is the one spot where the classical geometry is doing
-load-bearing work rather than standard bookkeeping.
+load-bearing work, not standard bookkeeping.

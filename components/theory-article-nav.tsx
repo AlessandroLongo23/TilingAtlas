@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils/cn";
 
 // The page switcher at the top of every theory page's sidebar: a link back to the /theory index plus
 // both groups (Elements, Articles), the current page highlighted. This is what makes the theory pages
-// a connected library rather than a set of orphan routes.
+// a connected library, not a set of orphan routes.
 export function TheoryArticleNav({ currentSlug }: { currentSlug: string }) {
 	return (
 		<div className="px-2 pt-4">

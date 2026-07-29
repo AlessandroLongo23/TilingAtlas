@@ -4,7 +4,7 @@
  * The completeness question is settled (scripts/diag-stamp-why.ts: the loss was a footprint-dedup bug,
  * fixed, and the snub comes back). What remains is why it is so much slower, and whether that too is
  * fixable or structural. This scales the deterministic frame cap and watches time and heap grow, so
- * the answer is a curve rather than a single "16x".
+ * the answer is a curve, not a single "16x".
  *
  * Run it with a raised heap; the point of the exercise is that the default one is not enough:
  *   NODE_OPTIONS=--max-old-space-size=8192 pnpm tsx scripts/diag-stamp-cost.ts

@@ -45,7 +45,7 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 	return (
 		<div className="relative flex flex-col rounded-lg border border-line bg-surface-overlay/30 hover:border-line-strong hover:bg-surface-overlay/50 transition-colors overflow-hidden group">
 			<div className="relative aspect-square bg-surface-raised">
-				{/* Fit rather than a fixed edge length: these are lone tiles, so the frame has to follow
+				{/* Fit, not a fixed edge length: these are lone tiles, so the frame has to follow
 				    the shape (a triangle is one edge across, an 18★ at 20° apex about eleven). The bar
 				    puts the unit back — it's the only thing left that compares one card to the next.
 				    Room below for it: 0.74 leaves a ~13% margin, which is where the ruler sits. */}

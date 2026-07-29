@@ -37,7 +37,7 @@ in the thesis repo; rendered from the certified catalogue, galleries untouched):
   length 2). Spec recommends splitting into two figures so F16 keeps its identity.
 - **G4 `fig:equivariant-cascade`** (`thm:groupcomplete`): conceptual cascade T → G_T → point group
   P_T → ≤2 bounded-weight lifted generators → branch closure recovers G_T. **Medium-confidence — your
-  call:** if it reads as decoration rather than load-bearing, cut it. Anchor each box to a symbol the
+  call:** if it reads as decoration, not as load-bearing, cut it. Anchor each box to a symbol the
   proof uses (Λ, P_T, W(s), hol(Λ), the coset map) so it's a data-flow of the proof, not vibes.
 - **G5 `fig:reflection-cover`** (`lem:reflectioncover`): a chiral vertex fan reached two ways —
   on-grid rotation (det g=+1) vs reflect-then-rotate (det g=−1) — coinciding up to on-grid rotation;

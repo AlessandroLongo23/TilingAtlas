@@ -1553,7 +1553,7 @@ Detail: DEVELOPMENT_NOTES.md §103. — CC
 AL noticed k2-45/46/50 are the same tiling at different rhombus and star angles. They are — six entries are
 one 2-parameter family, and 12 coupled records are 5. The exporter only gives a species its own slider when
 it flexes alone, so a coupled flex space shipped as parallel 1-D slices, one per palette value of the angle
-it pinned. Developed the real coupled families, which need a polytope region rather than two box sliders;
+it pinned. Developed the real coupled families, which need a polytope region, not two box sliders;
 per AL they ship with a 2-D pad. Everything off those lines was missing from the atlas, including whole grid
 lines the palette cannot seed. Detail: DEVELOPMENT_NOTES.md §103. — CC
 
@@ -1668,7 +1668,7 @@ already — `FlatCellRenderer` just never linked the program. Plus `single` (one
 `docs/superpowers/specs/2026-07-28-seed-card-design.md`. Detail: NOTES §"The seed card". — CC
 
 ### 2026-07-28 — CC — the cmm failure slide, and a seed card that frames its domain
-`/defense` "Architecture one: failure" now pairs t4003 with its seed. Verified rather than asserted:
+`/defense` "Architecture one: failure" now pairs t4003 with its seed. Verified, not asserted:
 t4003 is `cmm`, and cmm is the COMMONEST group at k=4 (50 of 151, then p6m 34, pmm 29) — so the group
 that breaks the method is the typical case, not a corner. `<seed-card domain="yes">` draws the domain
 over the patch, and a single fitted patch now sizes and centres on patch ∪ domain, or the one thing
@@ -1689,7 +1689,7 @@ transitivity), so geometry ships once, not 61,914 times: 175 MB → 44 MB at ful
 optional `alpha`/`elen`/`drawn`; `develop_freedraw.py` grew ℤ[ζ₈]. Detail: same NOTES section. — CC
 
 ### 2026-07-29 — CC — (2,3,4) reruns to k=11
-Marek's second 234 drop extends rather than replaces: 8 files at k=10/k=11, 842 certificates → 5,974,
+Marek's second 234 drop extends, it does not replace: 8 files at k=10/k=11, 842 certificates → 5,974,
 coverage now contiguous k=3..11. All develop, 0 failures, all still land on the same 48-triangle board;
 k=3..9 counts unchanged to the unit. New slices are 1,603 and 3,529 tilings (0.83 + 1.84 MB), eager.
 Detail: DEVELOPMENT_NOTES.md §"(2,3,4) rerun: k=10 and k=11". — CC
@@ -1702,7 +1702,7 @@ worth keeping: it stamps the SEED, not the grown patch. Keys are `,` `.` Enter, 
 clicker sends those. Detail: NOTES §"The expansion, driven by hand". — CC
 
 ### 2026-07-28 (3) — CC — whole-patch stamping measured: 10 tilings instead of 11
-AL proposed stamping the whole current patch rather than the seed. The notes had no record of it ever
+AL proposed stamping the whole current patch, not the seed. The notes had no record of it ever
 being tried, and both our completeness arguments said it was sound — so it was measured instead.
 k=1 drops **11 → 10**, at 16× the wall clock; the casualty is `[3,3,3,3,6]`, the one chiral tiling. It
 dies at the second stamp, on the same patch and target where seed-stamping succeeds. Bookkeeping and
@@ -1730,3 +1730,10 @@ squares-or-triangles choice per row, and a counter reading 2ⁿ legal continuati
 against the one emit-on-closure keeps. All three interfaces close 2π, so every choice is legal. Plus
 one clause on the architecture-two slide retiring the whole-patch variant in eight words. Detail:
 NOTES §"The unsoundness slide, walked instead of asserted". — CC
+
+### 2026-07-29 — CC — "rather than" cut from the whole repo, not just the prose
+493 occurrences in 240 files: `, not X` for parallel halves, `instead of X-ing` for a rejected
+action, `and not` across a line wrap. Comments, both ledgers, archive, experiment logs, site copy,
+and the 5 copies of one notes string in the generated mixed atlas. ⚑ `SeedExpander.ts` hid 4: it
+stores a raw NUL as its hash list separator, so `file` calls it data and EVERY `grep -I` here skips
+it silently — sweep with `grep -a`. Five mentions kept (02-thesis-alignment.md:28 quotes). — CC

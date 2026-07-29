@@ -101,7 +101,7 @@ describe.skipIf(!anySphShard)("spherical Schwarz shards", () => {
 
 	it("develops every board's edges to one of its own class lengths", () => {
 		// Three angles ⇒ up to three side lengths, and this is the check that the per-class edge table
-		// reached the develop rather than one length being used throughout.
+		// reached the develop, not one length used throughout.
 		for (const b of sphSchwarzBoards()) {
 			const shard = sphShard(b, schwarzBoardKs(b)[0])!;
 			const want = b.pqr.map((_, i) => {

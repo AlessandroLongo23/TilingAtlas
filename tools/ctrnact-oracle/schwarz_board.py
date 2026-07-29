@@ -30,7 +30,7 @@ THE ALPHABET, read off the certificates:
         (2,4,4) → A/B = S2–S4,  C/D = S4–S4
 
     `letter_pairs` derives that map from the triple, and `derive_letter_pairs` re-derives it from a
-    corpus's own vertex figures so the two can be checked against each other rather than trusted.
+    corpus's own vertex figures so the two can be checked against each other, not trusted.
 
 EDGE LENGTHS. The triangle is rigid (its three angles are fixed), so the sides follow from the law of
 cosines for angles, with the side joining the A-corner and the B-corner opposite the third angle C:
@@ -123,7 +123,7 @@ def letter_pairs(pqr):
 
     Classes are the DISTINCT unordered pairs of corner letters, lettered in lexicographic order of
     the pair. A repeated angle (the isoceles boards) collapses two index pairs onto one class; this
-    asserts they agree on length rather than assuming it."""
+    asserts they agree on length instead of assuming it."""
     by_pair = {}
     for i in range(3):
         for j in range(i + 1, 3):

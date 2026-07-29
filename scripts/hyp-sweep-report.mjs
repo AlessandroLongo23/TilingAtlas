@@ -262,7 +262,7 @@ a { color: inherit; }
   <section>
     <span class="eyebrow">Reading the frontier</span>
     <p class="note">The censored band is where this enumeration currently ends, and it is a compute wall
-    rather than a mathematical one — every censored cell was still emitting raw blocks at the cap. Raising the
+    and not a mathematical one — every censored cell was still emitting raw blocks at the cap. Raising the
     cap moves the wall; nothing in the method changes. Regenerate this page after any new cell with
     <code>node scripts/hyp-sweep-report.mjs</code>.</p>
   </section>

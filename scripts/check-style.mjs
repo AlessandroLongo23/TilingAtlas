@@ -1,4 +1,4 @@
-// Check prose against thesis/writing-style.md, measured rather than eyeballed.
+// Check prose against thesis/writing-style.md, measured, not eyeballed.
 //
 // Usage:  node scripts/check-style.mjs public/defense/talk.md [more files...]
 //         node scripts/check-style.mjs --baseline      (measure the thesis itself)

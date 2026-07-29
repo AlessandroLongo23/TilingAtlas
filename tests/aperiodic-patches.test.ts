@@ -109,7 +109,7 @@ describe("hatPatch", () => {
 
 	it("uses one tile shape at two handednesses", () => {
 		// Congruent copies of a single 13-gon: equal area is a cheap proxy that the placements are
-		// isometries rather than shears or scalings.
+		// isometries, not shears or scalings.
 		const areas = tiles.map((t) => signedArea(t.vertices));
 		for (const a of areas) expect(a).toBeCloseTo(areas[0], 9);
 		for (const t of tiles) expect(t.vertices).toHaveLength(13);

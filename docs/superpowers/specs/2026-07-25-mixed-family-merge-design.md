@@ -160,7 +160,7 @@ shelf exactly, which is the escape hatch if a merge is ever disputed.
 - **Seam agreement** — at the seam the two halves have the same vertex set mod the lattice (reduced by ONE
   basis: their own bases are unimodular-related, the same lattice written with a different generating
   pair), the same lattice, the same covolume and the same tile areas. This is the property that makes the
-  merge legal rather than a splice of two unrelated things.
+  merge legal, and not a splice of two unrelated things.
 - **Seam colour** — every tile has the same `star` flag on both sides, matched by seam position.
 - **Area certificate across the sweep** — Σ tile area == |det basis| at 121 positions per arc, including
   both open ends. It fails the moment tiles overlap or leave a gap, so passing it everywhere is what proves

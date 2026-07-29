@@ -27,7 +27,7 @@ Certificates emitted per entry (proof obligations A4/A5 in docs/ctrnact-proof-pr
 
 Regular palette gate: the generated (config x subgroup-class) folds must match the 44
 legacy entries EXACTLY (arrays + ferkval), trying every frame (rotation/reflection of the
-word) per fold; names/codes/order are then pinned from the legacy tables rather than
+word) per fold; names/codes/order are then pinned from the legacy tables and not
 reverse-engineered. Star palettes use a systematic frame (lex-max word) and fresh names.
 
 Usage:
@@ -251,7 +251,7 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     closes when its interior angles sum to EXACTLY a full turn (total == D) — flat plane.
     "positive-defect" (spherical palette): a vertex closes with STRICTLY POSITIVE angular
     defect (0 < total < D), so discrete Gauss–Bonnet forces the glued closed map onto a
-    sphere (χ=2) rather than a torus. In that mode a valid word is NOT a dead end — a longer
+    sphere (χ=2), not a torus. In that mode a valid word is NOT a dead end — a longer
     word is a different, still-valid defect vertex (3.3.3 vs 3.3.3.3 vs 3.3.3.3.3 are the
     tetra/octa/icosa figures), so we emit and keep recursing; and a step that would reach a
     full turn exactly (nxt == D, a flat Euclidean vertex) is pruned, not accepted.

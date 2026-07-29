@@ -63,7 +63,7 @@ nice -n 15 python3 "$W/export_atlas_cells.py" \
 # 4b. detect free-alpha families among the star blocks and merge them into the persistent families
 # file, so the live preview groups them (slider) exactly like the full atlas build. Needs sympy
 # (the formal symbolic-alpha development); without it we DEGRADE GRACEFULLY to un-folded snapshots
-# rather than silently wiping families or reporting a false "0 families".
+# and not silently wiping families or reporting a false "0 families".
 FAM_OK=0
 if python3 -c 'import sympy' 2>/dev/null; then
   set +e

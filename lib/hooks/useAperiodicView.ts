@@ -12,8 +12,8 @@
 //
 // R' is rotation composed with the y-flip (world y up, screen y down). It is its own inverse — a
 // reflection — which is why `viewToWorld` below runs the same formula in both directions. Subtracting
-// `centre` rather than folding it into the offset keeps home at offset = 0, so resetCardControls
-// works unchanged and an unpanned view spins about the patch rather than about a stale origin.
+// `centre`, instead of folding it into the offset, keeps home at offset = 0, so resetCardControls
+// works unchanged and an unpanned view spins about the patch, not about a stale origin.
 //
 // Why not the shared ZOOM_MIN/ZOOM_MAX: those are px per tile EDGE, and every aperiodic view measures
 // its world differently (a Sub Rosa patch at depth 3 spans hundreds of edges, the hat's window
@@ -106,7 +106,7 @@ export interface AperiodicView {
 	frameRef: RefObject<AperiodicFrame>;
 	/**
 	 * The view angle the controls are easing TOWARD, in whole degrees — the sidebar slider's value, and
-	 * the only piece of view state that re-renders React. The target rather than the live angle so a
+	 * the only piece of view state that re-renders React. The target, not the live angle, so a
 	 * slider drag doesn't fight the easing: a controlled input fed the live value would lag the pointer
 	 * by however long the ease takes and stutter under the cursor.
 	 */
@@ -169,7 +169,7 @@ export function useAperiodicView({
 		if (!measureHome()) return;
 		const c = controlsRef.current;
 		// Snap, don't ease: a refit follows new geometry, and easing from the previous patch's scale
-		// reads as a lurch rather than a transition.
+		// reads as a lurch, not a transition.
 		c.zoom = c.targetZoom = homeZoomRef.current;
 		c.offset.x = c.offset.y = c.targetOffset.x = c.targetOffset.y = 0;
 		c.rotation = c.targetRotation = 0;
@@ -179,7 +179,7 @@ export function useAperiodicView({
 	}, [measureHome]);
 
 	// The slider's setter. Wraps like the wheel path so 355 + a detent and "355" from the slider land on
-	// the same target, and publishes the value straight away rather than waiting for the next frame.
+	// the same target, and publishes the value straight away instead of waiting for the next frame.
 	const setRotation = useCallback((deg: number) => {
 		const c = controlsRef.current;
 		c.targetRotation = wrap360(deg);

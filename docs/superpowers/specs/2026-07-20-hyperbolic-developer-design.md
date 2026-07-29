@@ -157,7 +157,7 @@ developer and feed the renderer.
 - **Crispness gap.** The analytic triangle-group shader is infinite-resolution; explicit geometry drawn
   under a fragment shader with geodesic-edge AA should match, but this is the load-bearing visual risk and
   is why the Playwright side-by-side is a gate, not a nicety. If a tile-fill approach looks softer, fall
-  back to per-pixel geodesic distance in the shader rather than triangulated fills.
+  back to per-pixel geodesic distance in the shader, not triangulated fills.
 - **Patch size vs pan.** A finite patch can be panned off its edge. Phase 1 picks a radius that covers
   reasonable panning; if it is not enough, re-development on pan (Phase 2+) is the fix, not a bigger bake.
 - **Combinatorial spec shape.** The spec type must be general enough that Phase 3 solver output slots in

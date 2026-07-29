@@ -7,7 +7,7 @@ import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCel
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 
 /**
- * `buildTilingFromCell` can rebuild INTO a previous grid rather than allocating a new one — the optimisation
+ * `buildTilingFromCell` can rebuild INTO a previous grid instead of allocating a new one — the optimisation
  * that makes a parametric-angle drag free of the ~180 000 object allocations it used to cost per tick. The
  * whole thing rests on "identical output either way", so that is what these tests check: not that it is
  * faster, but that the reused grid is indistinguishable from the fresh one, and that a shape mismatch falls
@@ -53,7 +53,7 @@ describe.skipIf(!family)("buildTilingFromCell in-place reuse", () => {
 
 	it("holds across a whole sweep, so error cannot accumulate", () => {
 		// Writing in place means each rebuild starts from the previous one's memory; if any field were left
-		// stale, the drift would show up after several steps rather than after one.
+		// stale, the drift would show up after several steps, not after one.
 		let rolling = buildTilingFromCell(cellAt(pc, lo), 2, 2);
 		for (let k = 1; k <= 6; k++) {
 			const at = pc.params.map((_, j) => lo[j] + ((hi[j] - lo[j]) * k) / 6);

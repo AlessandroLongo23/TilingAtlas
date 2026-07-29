@@ -33,7 +33,7 @@ export function buildTilingFromCell(
 
 	// Build each distinct base tile ONCE. fromVertices is the expensive part (per-vertex angle, side
 	// lengths, centroid, hue classification); every replicated cell is the same base tile translated by
-	// i·v1 + j·v2, so the grid loop below clones by translation (translatedCopy) rather than
+	// i·v1 + j·v2, so the grid loop below clones by translation (translatedCopy) instead of
 	// reconstructing each copy from scratch — the reconstruction is identical work for a shape that only
 	// shifted. This is what keeps the parametric-angle slider (which rebuilds the whole grid every tick)
 	// interactive: the cost drops from O(gridCells · perTileRebuild) to O(baseTiles · perTileRebuild)

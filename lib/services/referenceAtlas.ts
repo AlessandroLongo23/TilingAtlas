@@ -202,7 +202,7 @@ export interface ReferenceTiling {
 	//   reproduced  — count matches a published enumeration, not independently proven here
 	//   candidate   — surfaced by this work; completeness / literature-novelty not established
 	// Absent on the convex-irregular demo shelf — those tilings make no completeness claim, so they're
-	// excluded from the certification facet rather than assigned a misleading status.
+	// excluded from the certification facet, not assigned a misleading status.
 	certification?: Certification;
 	// Convex-irregular shelf only: true iff every composite tile it uses dissects into regular pieces (the
 	// decomposable palette); false iff it uses a non-decomposable composite. Absent on every other source.
@@ -303,9 +303,9 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // without giving it a row here fails to compile. It used to be four loose strings, and when the Schwarz
 // board landed (2026-07-27) every OTHER site caught the omission at compile time while this one silently
 // dropped the grid out of the /play sidebar tree — the counts still summed into "Edge patterns", but the
-// folder never appeared. Order is display order, so it stays explicit rather than derived from the union.
+// folder never appeared. Order is display order, so it stays explicit, not derived from the union.
 const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "sch236", "sch244"] as const satisfies readonly FreedrawGrid[];
-// ...and this is what makes "fails to compile" true rather than aspirational: `satisfies` alone would
+// ...and this is what makes "fails to compile" true, not aspirational: `satisfies` alone would
 // accept a SHORT list. Leaving a grid out makes the Exclude non-never, so the assignment errors.
 type UnlistedGrid = Exclude<FreedrawGrid, (typeof FREEDRAW_GRID_SUBS)[number]>;
 const _everyGridHasASubRow: UnlistedGrid extends never ? true : ["missing from FREEDRAW_GRID_SUBS", UnlistedGrid] = true;
@@ -359,7 +359,7 @@ export function subOf(t: {
 }
 
 // The catalogue's canonical linear order — the SAME order the /play sidebar renders top-to-bottom, so
-// arrow-key / prev-next browsing steps through the visible list rather than a differently-sorted one.
+// arrow-key / prev-next browsing steps through the visible list, not a differently-sorted one.
 // Sort key: decoration (DECORATION_ORDER) → tile class (TILE_CLASS_ORDER) → freedraw sub-axis (SUB_ORDER)
 // → k ascending → canonicalKey. The sidebar re-groups this same order into its tree, so within each
 // (class, sub, k) bucket both land on canonicalKey order and agree exactly. Used by /play to sort the
@@ -395,7 +395,7 @@ export function geometryOf(t: {
 	hypColors?: unknown;
 	schwarz?: { geometry: "spherical" | "hyperbolic" };
 }): Geometry {
-	// The Schwarz shelf is the one payload that spans two geometries, so it names its own rather than
+	// The Schwarz shelf is the one payload that spans two geometries, so it names its own instead of
 	// being inferred from which field is set.
 	if (t.schwarz) return t.schwarz.geometry;
 	if (t.spherical || t.sphericalFreedraw || t.sphColors) return "spherical";
@@ -422,7 +422,7 @@ export const GEOMETRY_LABEL: Record<Geometry, string> = {
 // CLASSES as well as geometries, which /library papered over by relabeling the non-Euclidean class chips
 // and /play by collapsing a lone class row. Both workarounds are gone now.
 export type Decoration = "tilings" | "edges" | "colorings";
-// Derived from tileClassOf rather than from the payload flags (freedraw / hypEdges / sphColors / …). Both
+// Derived from tileClassOf, not from the payload flags (freedraw / hypEdges / sphColors / …). Both
 // give the same answer today; going through the class function is what makes it impossible for the two
 // axes to disagree once a class is added — a new TileClass lands in "tilings" only by being neither of the
 // decoration classes, and referenceAtlas.displayOrder.test.ts asserts the mapping is total.
@@ -527,7 +527,7 @@ export interface FreedrawStats {
 }
 
 // analyseFaces is O(a·d) and every shipped pattern has a·d ≤ 8, but the shelf filter runs over the whole
-// atlas on every keystroke — so memoise per pattern id rather than re-flooding 166 patterns per render.
+// atlas on every keystroke — so memoise per pattern id instead of re-flooding 166 patterns per render.
 const freedrawStatsCache = new Map<string, FreedrawStats>();
 
 export function freedrawStatsOf(t: Pick<ReferenceTiling, "id" | "freedraw">): FreedrawStats | null {
@@ -831,7 +831,7 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 		if (f.convexDecomp === "decomposable" && !t.decomposableOnly) return false;
 		if (f.convexDecomp === "non-decomposable" && t.decomposableOnly) return false;
 	}
-	// M/partition/maximal: an active filter EXCLUDES unclassified tilings rather than matching them —
+	// M/partition/maximal: an active filter EXCLUDES unclassified tilings instead of matching them —
 	// completeness ethos, we never silently pass a tiling whose classification we don't have.
 	if (f.mValue != null && t.m !== f.mValue) return false;
 	if (f.partitionKey != null && partitionKeyOf(t) !== f.partitionKey) return false;
@@ -976,7 +976,7 @@ export function colorsFamilyLabel(p: ColorPattern): string {
 
 // Adapt one colored-square pattern to a reference tiling. Like freedraw, the pattern ships as its own
 // raw catalogue (public/colors/squares-2-k*.json, the same files /colors reads) — the pattern IS the
-// record, so the adaptation happens at load rather than through a build script that could drift.
+// record, so the adaptation happens at load, not through a build script that could drift.
 function colorsToReference(p: ColorPattern): ReferenceTiling {
 	return {
 		id: p.id,
@@ -1016,7 +1016,7 @@ function sphericalFreedrawToReference(solid: string, k: number, p: IcoPattern): 
 
 // Adapt one hyperbolic edge-system pattern to a reference tiling. Like spherical freedraw it ships as
 // its own raw catalogue (public/hyperbolic-edges/e<base>-k<k>.json) and carries its own render field, so
-// the adaptation happens at load rather than through a build script that could drift. `renderCell` is a
+// the adaptation happens at load, not through a build script that could drift. `renderCell` is a
 // throwaway — every consumer branches on `hypEdges` first (thumbnail, /play canvas).
 function hypEdgesToReference(p: HypEdgesPattern): ReferenceTiling {
 	return {
@@ -1492,7 +1492,7 @@ export async function loadReferenceAtlasShard(k: number): Promise<ReferenceTilin
 // into public/reference-atlas-composable-k{k}.json). The main reference-atlas-composable.json carries
 // only k≤2; the higher-k entries — heaviest today is k=3, ~940 tilings and growing with the convex
 // solve — load only when the convex-irregular class or a k≥3 chip is selected. Mirrors loadReferenceAtlasShard,
-// but a MISSING shard degrades to an empty merge (HTTP 404 ⇒ []) rather than throwing: the convex-irregular
+// but a MISSING shard degrades to an empty merge (HTTP 404 ⇒ []) instead of throwing: the convex-irregular
 // shelf is a best-effort demo, never a hard dependency of the library. Cached per-k across the session.
 const composableShardCache = new Map<number, ReferenceTiling[]>();
 const composableShardInflight = new Map<number, Promise<ReferenceTiling[]>>();

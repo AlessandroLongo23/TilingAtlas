@@ -9,7 +9,7 @@ import { useKeyShortcuts } from "./useKeyShortcuts";
  *
  * `index` is a position in the WHOLE filtered list, not in the visible page, so a step off the end of
  * a page moves into the next one — the caller's onMove is expected to set the page from the index
- * (see PAGE_SIZE at each call site). Both axes CLAMP rather than wrap: /play wraps because its list is
+ * (see PAGE_SIZE at each call site). Both axes CLAMP, they never wrap: /play wraps because its list is
  * the browse scope, but wrapping a 27k-entry catalogue from the last thumbnail back to page 1 is a
  * jump, not a step.
  *

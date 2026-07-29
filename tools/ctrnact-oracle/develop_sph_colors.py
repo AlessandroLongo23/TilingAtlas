@@ -16,7 +16,7 @@ list for the grid overlay. buildSphColors (lib/render/sphColors.ts) draws it dir
 tile boundary, so all edges are drawn.
 
 The geometry helpers (regular_spherical_polygon / interior_angle / solve_rho / Rz / Medge) mirror
-develop_spherical.py — copied rather than imported so this module does not drag pruner.py and its
+develop_spherical.py — copied, not imported, so this module does not drag pruner.py and its
 palette install (both unused here; we develop the freedraw Block, not a pruned Čtrnáct quotient).
 
 Usage:

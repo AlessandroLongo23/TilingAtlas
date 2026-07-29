@@ -33,7 +33,7 @@ import { parseBaseCell, type TranslationalCellData } from "@/lib/utils/renderTil
 // surface is active.
 //
 // Extracted from components/interactive-tiling-preview-card.tsx so the /theory prose cards and the
-// landing wall's Play cell run the same lifecycle rather than two copies of it.
+// landing wall's Play cell run the same lifecycle, not two copies of it.
 //
 // Two things intentionally differ from /play:
 // - Per-instance state. /play's controls live in the global configuration store; a page of previews
@@ -73,7 +73,7 @@ export interface FlatCellPreviewOptions {
 	/** A disk on every centroid, halfway and vertex. /play's `p`. */
 	showPolygonPoints?: boolean;
 	/**
-	 * Draw ONE copy of the cell rather than a lattice of it, and frame the view on the polygons'
+	 * Draw ONE copy of the cell, not a lattice of it, and frame the view on the polygons'
 	 * bounding box instead of on `homePeriods`. For a cell that is a finite patch — a seed
 	 * (lib/render/seedPatch.ts) — where periods are not a unit the content has.
 	 */
@@ -258,7 +258,7 @@ export function useFlatCellPreview({
 		let renderer: FlatCellRenderer | null = null;
 		let gl: WebGL2RenderingContext | null = null;
 		// The symmetry overlays are vector work over the GL patch, so they get their own 2-D canvas
-		// layered on top rather than a shader. Created lazily on first use: most surfaces never turn an
+		// layered on top, not a shader. Created lazily on first use: most surfaces never turn an
 		// overlay on, and an unused canvas is still a compositor layer.
 		let overlay: HTMLCanvasElement | null = null;
 		let raf = 0;
@@ -412,7 +412,7 @@ export function useFlatCellPreview({
 			stepCardControls(ctrl);
 
 			// Toggling the `o` overlay swaps the caller's orbitData between the data and null, which the
-			// loop turns into an upload. Doing it here rather than in an effect keeps the renderer inside
+			// loop turns into an upload. Doing it here, not in an effect, keeps the renderer inside
 			// this closure, where its lifetime is already managed.
 			if (uploadedOrbit !== orbitDataRef.current) {
 				uploadedOrbit = orbitDataRef.current;

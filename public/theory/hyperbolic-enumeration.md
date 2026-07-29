@@ -1,6 +1,6 @@
 # Why the hyperbolic catalogue stops where it does
 
-The Euclidean half of this atlas has an ending. There are eleven uniform tilings of the plane, and that number is a theorem rather than a tally of what we happened to find. Somebody proved the list complete, so the catalogue can show all eleven and say the word "all" without flinching.
+The Euclidean half of this atlas has an ending. There are eleven uniform tilings of the plane, and that number is a theorem, not a tally of what we happened to find. Somebody proved the list complete, so the catalogue can show all eleven and say the word "all" without flinching.
 
 The hyperbolic half has no ending, and almost every decision behind it follows from that one fact. This page is about those decisions: why the enumeration is bounded the way it is, what had to be fixed before any count meant anything, and where the search currently runs out of room.
 
@@ -17,7 +17,7 @@ If the sum is larger, the tiling closes up on a sphere, and there are exactly fi
 <hyperbolic-card patch="hyp-3-3-3-3-3-3-3" label="{3,7}" caption="Its dual: seven triangles at every vertex. Both are equally regular, and both are one entry in an infinite family."></hyperbolic-card>
 </card-grid>
 
-The tiles look as though they shrink toward the boundary. They do not. Every heptagon above is the same size as every other, and the circle is the whole hyperbolic plane rather than a window onto part of it. That is the Poincaré disk being honest about a plane that has more room in it than a flat one, and the extra room is exactly why the list never ends.
+The tiles look as though they shrink toward the boundary. They do not. Every heptagon above is the same size as every other, and the circle is the whole hyperbolic plane, not a window onto part of it. That is the Poincaré disk being honest about a plane that has more room in it than a flat one, and the extra room is exactly why the list never ends.
 
 So "enumerate the hyperbolic tilings" is not a question with a finite answer. The first job is to replace it with one that has.
 
@@ -27,7 +27,7 @@ A tiling by regular polygons can be complicated in three independent ways, and e
 
 The **palette** $p$ is the largest polygon allowed, so the tiles are drawn from $\{3, 4, \ldots, p\}$. The **valence** $v$ is the most edges permitted at any vertex. The **uniformity** $k$ is the number of vertex orbits: how many genuinely different kinds of vertex the tiling has once its own symmetries are taken into account. A 1-uniform tiling looks the same from every vertex; a 2-uniform tiling has two classes of vertex, and no symmetry carries one class to the other.
 
-Fix all three and the set of tilings is finite, so a complete enumeration is possible and the word "all" is available again. Every count in this atlas is the answer for one such box, never an answer about hyperbolic tilings in general. The boxes nest, so a result for $p \le 6$, $v \le 5$ contains every result for $p \le 5$, $v \le 5$, which is what makes the table below readable as a single growing region rather than a grid of unrelated experiments.
+Fix all three and the set of tilings is finite, so a complete enumeration is possible and the word "all" is available again. Every count in this atlas is the answer for one such box, never an answer about hyperbolic tilings in general. The boxes nest, so a result for $p \le 6$, $v \le 5$ contains every result for $p \le 5$, $v \le 5$, which is what makes the table below readable as a single growing region, not a grid of unrelated experiments.
 
 This is the honest form of the completeness claim, and it is worth stating plainly because it is easy to overclaim here. We do not know how many hyperbolic tilings there are. We know how many there are inside a stated box.
 
@@ -68,7 +68,7 @@ Now fold by symmetry: identify chambers that some symmetry of the tiling carries
 
 The reason to do any of this is a theorem of Dress from 1984. Two tilings are equivalent, deformable into one another without breaking symmetry, **exactly when their symbols are isomorphic**. The symbol is a complete invariant, not an approximation to one, and it has a canonical form that a computer can compute in roughly quadratic time. So "are these the same tiling?" becomes a string comparison that is right by construction. No radius, no sampling, no tolerance.
 
-Two more things fall out of the same finite object, which is what makes it the right thing to enumerate rather than merely to compare. The uniformity is read straight off: a tiling is $k$-uniform precisely when its symbol has $k$ orbits under $s_1$ and $s_2$ together, since walking $s_1 s_2$ traces the chambers around a vertex. And the geometry is decided by a sum over chambers,
+Two more things fall out of the same finite object, which is what makes it the right thing to enumerate, not merely to compare. The uniformity is read straight off: a tiling is $k$-uniform precisely when its symbol has $k$ orbits under $s_1$ and $s_2$ together, since walking $s_1 s_2$ traces the chambers around a vertex. And the geometry is decided by a sum over chambers,
 
 $$K = \sum_{\text{chambers}} \left( \frac{1}{m_{01}} + \frac{1}{m_{12}} - \frac{1}{2} \right)$$
 
@@ -80,15 +80,15 @@ One caveat matters in practice. A symbol built from a particular presentation of
 
 There are two ways to enumerate. Draw candidate tilings and compare the pictures, or generate the combinatorial objects and only draw at the end.
 
-Drawing first is the natural instinct and it is the wrong one here. Hyperbolic positions crowd together near the boundary of the disk, so deciding whether two drawn vertices coincide becomes a question about floating-point noise rather than about geometry, and it becomes so exactly where the interesting structure lives. Worse, comparing pictures needs a notion of "the same picture", and any such notion built from a finite patch can only ever inspect a bounded neighbourhood. Two different tilings that agree out to that radius are indistinguishable to it. The $4.4.4.6$ pair above is precisely that trap: agree near the centre, differ further out.
+Drawing first is the natural instinct and it is the wrong one here. Hyperbolic positions crowd together near the boundary of the disk, so deciding whether two drawn vertices coincide becomes a question about floating-point noise, not about geometry, and it becomes so exactly where the interesting structure lives. Worse, comparing pictures needs a notion of "the same picture", and any such notion built from a finite patch can only ever inspect a bounded neighbourhood. Two different tilings that agree out to that radius are indistinguishable to it. The $4.4.4.6$ pair above is precisely that trap: agree near the centre, differ further out.
 
 So the search runs the other way. The engine glues vertex figures together as combinatorial objects, checks that the angles close, and prunes duplicates by canonical form. Geometry is computed once, at the end, for tilings whose identity has already been settled. The expensive and fragile part happens least often.
 
-That leaves the question of whether the machinery is correct, and here we had one piece of luck worth using. The interior-angle formula degenerates to the ordinary Euclidean angle at $\ell = 0$, so the entire identity stack runs unmodified on flat tilings, where the answer has been known for decades. Pointed at the Euclidean palette, the raw solver output, which contains many redundant presentations of each tiling, collapses to exactly **10 at $k = 1$ and 20 at $k = 2$**, matching the published counts (OEIS A068599). The 10 rather than 11 is understood and deliberate: this run works in twelve directions, which cannot express the octagon, and the single missing tiling is the well-known $4.8.8$. That test is the one that matters, because it checks the property everything else depends on, namely that distinct presentations of one tiling *merge*. An invariant can be perfectly self-consistent and still fail that, which is how the first attempt passed its own regressions while being wrong.
+That leaves the question of whether the machinery is correct, and here we had one piece of luck worth using. The interior-angle formula degenerates to the ordinary Euclidean angle at $\ell = 0$, so the entire identity stack runs unmodified on flat tilings, where the answer has been known for decades. Pointed at the Euclidean palette, the raw solver output, which contains many redundant presentations of each tiling, collapses to exactly **10 at $k = 1$ and 20 at $k = 2$**, matching the published counts (OEIS A068599). That the count is 10 and not 11 is understood and deliberate: this run works in twelve directions, which cannot express the octagon, and the single missing tiling is the well-known $4.8.8$. That test is the one that matters, because it checks the property everything else depends on, namely that distinct presentations of one tiling *merge*. An invariant can be perfectly self-consistent and still fail that, which is how the first attempt passed its own regressions while being wrong.
 
 ## Where the enumeration stops
 
-With identity settled, counting is mechanical, and the results describe a region rather than a totality. Each box was run to completion or to a time limit, and 82 of 108 finished.
+With identity settled, counting is mechanical, and the results describe a region, not a totality. Each box was run to completion or to a time limit, and 82 of 108 finished.
 
 Growth in the palette and valence bounds is steep. Holding uniformity at $k \le 1$ and the palette at $p \le 8$, widening the valence alone gives:
 
@@ -107,7 +107,7 @@ Roughly a factor of four to five per step, with no sign of flattening. Growth in
 
 The Euclidean intuition does not survive the trip. In the plane, going from 1-uniform to 2-uniform takes 11 to 20, a little under double. In these boxes the same step multiplies by five, and sometimes by more than twelve, and the step after that is larger again.
 
-Cost grows faster than the count it buys. The $p \le 6$, $v \le 5$ box takes under twenty seconds to produce 439 tilings at $k \le 2$, and over eight minutes to produce 5,035 at $k \le 3$. That gap, rather than any mathematical obstruction, is what defines the edge of the catalogue.
+Cost grows faster than the count it buys. The $p \le 6$, $v \le 5$ box takes under twenty seconds to produce 439 tilings at $k \le 2$, and over eight minutes to produce 5,035 at $k \le 3$. That gap, not any mathematical obstruction, is what defines the edge of the catalogue.
 
 ## What the wall is made of
 

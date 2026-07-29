@@ -14,7 +14,7 @@
 
 /** Which grid the coloring lives on. Two of them are PATCH grids with no cell bitmask: the combined
  * grid ("ts") has no fixed lattice at all, and the hexagonal grid ("hex", {6,3}) has a honeycomb
- * vertex set rather than a lattice. Both carry dummy lattice fields and the real geometry under
+ * vertex set, not a lattice. Both carry dummy lattice fields and the real geometry under
  * `patch` — see lib/freedraw/pattern.ts for the honeycomb argument. */
 export type ColorsGrid = "square" | "triangle" | "ts" | "hex";
 

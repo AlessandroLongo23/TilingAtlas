@@ -19,7 +19,7 @@ function triArea(pts: readonly Pt[], idx: number[]): number {
  *
  * The tolerance is relative to the polygon, and it has to be. Zero-area slivers are legitimate here
  * (three of the hat's thirteen corners are collinear, so an ear can clip to nothing), and they land
- * at ±1e-16 rather than exactly 0. A real inversion is a fraction of the tile: the bug this suite
+ * at ±1e-16, not exactly 0. A real inversion is a fraction of the tile: the bug this suite
  * caught produced −6.25% of the tile's area, twelve orders of magnitude clear of the tolerance.
  */
 function noneInverted(pts: readonly Pt[], idx: number[]): boolean {
@@ -78,7 +78,7 @@ describe("triangulate", () => {
 		expect(used.size).toBe(ell.length);
 	});
 
-	it("terminates on a degenerate ring rather than hanging", () => {
+	it("terminates on a degenerate ring instead of hanging", () => {
 		const spur: Pt[] = [
 			{ x: 0, y: 0 },
 			{ x: 1, y: 0 },

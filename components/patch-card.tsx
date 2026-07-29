@@ -29,7 +29,7 @@ interface PatchDef {
 const PATCHES: Record<string, PatchDef> = {
 	penrose: { build: () => penrosePatch(), ...PENROSE_WINDOW },
 	hat: { build: () => hatPatch(), ...HAT_WINDOW },
-	// The single tiles, for a slide that wants the shape rather than the tiling.
+	// The single tiles, for a slide that wants the shape, not the tiling.
 	"penrose-star": { build: () => penroseSun().map(toPoly), cx: 0, cy: 0, width: 4.2 },
 	"hat-tile": { build: () => [toPoly(hatOutline())], cx: 1.5, cy: 0.43, width: 7.5 },
 };

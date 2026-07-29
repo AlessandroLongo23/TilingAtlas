@@ -301,7 +301,7 @@ function flatten(g: Geom, T: Aff, out: RawPolygon[]) {
  *  is not centred on its own bounding box, hence the offset. Measured by a rasterised coverage scan
  *  (largest clean square: side 29.8 about (11.0, 2.57)), and held there by
  *  tests/aperiodic-patches.test.ts. The width below is well inside that, because the hat's outline is
- *  intricate enough to read as texture rather than a shape if the view pulls much further back. */
+ *  intricate enough to read as texture, not a shape, if the view pulls much further back. */
 export const HAT_LEVEL = 4;
 export const HAT_WINDOW = { cx: 11, cy: 2.57, width: 18 };
 

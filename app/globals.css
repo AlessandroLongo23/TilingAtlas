@@ -394,7 +394,7 @@ body {
 
 /* Hazard tape for the collections that have no page yet (2026-07-24). Stripes run at 45° inside
    the band; the band itself is rotated and over-hangs both card edges by the component, so the
-   two rotations compose and the tape reads as draped across the cell rather than drawn on it.
+   two rotations compose and the tape reads as draped across the cell, not drawn on it.
    The period is in px, not %, so the stripe pitch stays constant whatever the cell is wide. */
 .ta-hazard-stripes {
   background-image: repeating-linear-gradient(
@@ -407,7 +407,7 @@ body {
 /* A tab on the wall (2026-07-22). Unselected options carry the chrome fill every other header row
    in the panel uses, so the strip sits flush with its surroundings; the selected one goes to the
    extreme of the theme's own direction — pure white in light, pure black in dark — so it reads as
-   the sheet lifted clear of the chrome rather than as a block of ink dropped on top of it. Hover
+   the sheet lifted clear of the chrome, not as a block of ink dropped on top of it. Hover
    takes an unselected cell partway there, live but never mistakable for selected.
    State comes off the attributes the controls already publish — Radix's data-state for the tab
    pair, aria-pressed for the segmented geometry picker — so nothing has to thread a prop. */
@@ -465,7 +465,7 @@ body {
 
    The placeholder's fill (bg-surface-overlay, set by <ThumbnailSkeleton>) is deliberately NOT
    surface-raised: raised is pure white in light mode, so a pulse on it would be invisible against the
-   card. Overlay is neutral-100 light / neutral-800 dark — legible in both themes. A pulse rather than
+   card. Overlay is neutral-100 light / neutral-800 dark — legible in both themes. A pulse, not
    a travelling shimmer band: 25 sweeps at once fight the wall's hairline grid, whereas opacity
    breathing reads as "working" without adding direction.
 

@@ -56,7 +56,7 @@ function build(rule: SubRosaRule, seed: Seed, protoX: number, depth: number): Re
 // Exact tile count at each substitution depth, from the substitution matrix M[target][source] =
 // (# children of prototile `source` whose protoId is `target`). The count vector evolves v → M·v; the
 // seed's prototile histogram is v₀. K ≤ ⌊n/2⌋, so this is trivially cheap — cheap enough to size the
-// depth slider to what actually fits the budget rather than let the user pick a depth that silently
+// depth slider to what actually fits the budget instead of letting the user pick a depth that silently
 // falls back to a shallower one.
 function depthTileCounts(rule: SubRosaRule, seed: Seed, protoX: number, ceiling: number): number[] {
 	const K = rule.prototiles.length;
@@ -106,7 +106,7 @@ function bounds(tiles: RenderTile[]) {
 }
 
 // `header` is the /aperiodic view switcher, injected by the parent so it sits at the top of THIS
-// view's sidebar rather than in a second chrome column.
+// view's sidebar, not in a second chrome column.
 export function SubRosaView({ header }: { header: React.ReactNode }) {
 	const [N, setN] = useState(5);
 	const rule = useMemo(() => buildRule(N), [N]);

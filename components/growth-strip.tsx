@@ -11,7 +11,7 @@ import { drawPolygons, hsbToHsla, type RawPolygon } from "@/lib/utils/renderTili
 // open vertices it sees, the one it takes next, and every rigid placement of the seed that survives
 // its orbit, alignment and collision gates there. Nothing is illustrated. What the widget adds is the
 // pause: the candidate is shown faint until it is confirmed, so the room sees a choice being made
-// rather than a result appearing.
+// and not a result appearing.
 //
 // The target vertex is not the viewer's to choose. The expander always takes the open vertex of least
 // graph distance to the core (`sorted[0]` in its DFS), and letting a click move it would show a

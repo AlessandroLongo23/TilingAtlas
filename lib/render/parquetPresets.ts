@@ -87,7 +87,7 @@ export const D_PROFILE_META: Record<DProfileId, DProfileMeta> = {
  * Animated: the phase slides the profile along the strip (Kaplan's "static tiles, moving
  * interpolation function"), which needs the wrap — both to keep sampling inside [0,1] and to make
  * the travel loop. That is only coherent for a periodic D, so a non-periodic one is left static
- * rather than wrapped into a discontinuity.
+ * instead of being wrapped into a discontinuity.
  */
 export function resolveDProfile(
   id: DProfileId,

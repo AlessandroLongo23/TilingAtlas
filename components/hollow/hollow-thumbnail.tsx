@@ -7,7 +7,7 @@ import type { HollowStyle } from "@/lib/hollow/render";
 // FreedrawThumbnail and HyperbolicDevelopedThumbnail, and the only way those surfaces can show a
 // hollow tiling (its overlapping faces give TilingThumbnail no cell to draw).
 //
-// Static and non-interactive, like the other two. Filled by tile type rather than by density: at
+// Static and non-interactive, like the other two. Filled by tile type, not by density: at
 // ~100px the accumulating density wash reads as one flat grey, whereas per-tile hue still separates
 // the star from the polygon it interleaves with.
 

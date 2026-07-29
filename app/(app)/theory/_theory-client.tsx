@@ -148,7 +148,7 @@ export function TheoryClient({ content, sections, cells, sources, patches, curre
 				return <HyperbolicFigureCard patchId={patch} patch={record} label={label} caption={caption} />;
 			},
 			// <card-grid cols="3"> … </card-grid> — a responsive grid for a run of cards. Mapped to a
-			// component (rather than authored classes) so Tailwind never needs to scan the markdown,
+			// component (not authored classes) so Tailwind never needs to scan the markdown,
 			// and so expansion can animate the whole neighbourhood (see AnimatedCardGrid).
 			"card-grid": AnimatedCardGrid,
 		};

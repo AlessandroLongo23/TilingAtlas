@@ -13,7 +13,7 @@ import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 // /play, which is one tiling at a time and already built for it. Here the disk is baked once.
 //
 // The patch record arrives from the server route (see app/(app)/theory/hyperbolic/page.tsx), so the
-// page ships only the few tilings it shows rather than the whole developed catalogue.
+// page ships only the few tilings it shows, not the whole developed catalogue.
 interface HyperbolicFigureCardProps {
 	patchId: string;
 	patch: CataloguePatch;

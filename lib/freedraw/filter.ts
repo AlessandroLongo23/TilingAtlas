@@ -3,7 +3,7 @@
 // patterns on higher k… or filter out infinite cells." AL: "you could, for example, filter for
 // tetrominos only. Or pentominos."
 //
-// Each of the three face ranks — plus holes — is a three-state toggle rather than one chip out of a
+// Each of the three face ranks — plus holes — is a three-state toggle, not one chip out of a
 // list, so the classes combine: "unbounded yes, strips irrelevant, every finite tile a tetromino" is
 // one selection instead of an impossible one. Spec:
 // docs/superpowers/specs/2026-07-22-freedraw-tile-filter-design.md
@@ -121,7 +121,7 @@ export function sizeOptions(summaries: readonly FaceSummary[]): number[] {
 
 // ── URL codec ─────────────────────────────────────────────────────────────────────────────────────
 // Same contract as lib/services/playUrlState.ts: short stable keys, only non-defaults emitted (so an
-// untouched view is a bare /freedraw), and anything unparseable falls back to the default rather than
+// untouched view is a bare /freedraw), and anything unparseable falls back to the default instead of
 // being injected into state. Keys are public once a link is shared — renaming one breaks it.
 //
 // Deliberately absent: the page number, the selected pattern, and the view controls (fill mode,
@@ -133,7 +133,7 @@ const TRI_CODE: Record<Tri, string> = { any: "", require: "r", exclude: "x" };
 const readTri = (raw: string | null): Tri =>
 	raw === "r" ? "require" : raw === "x" ? "exclude" : "any";
 
-// Exhaustive by construction: a new member of FreedrawGrid fails to compile here rather than silently
+// Exhaustive by construction: a new member of FreedrawGrid fails to compile here instead of silently
 // becoming an unshareable link.
 const GRIDS: Record<FreedrawGrid, true> = { square: true, triangle: true, hex: true, ts: true, sch236: true, sch244: true };
 const isGrid = (raw: string | null): raw is FreedrawGrid =>
@@ -159,7 +159,7 @@ export function parseFilter(sp: URLSearchParams): FreedrawFilter {
 	if (sp.get("m") === "any") out.sizeMode = "any";
 
 	// Polygons: "reqcodes.xcodes", each code a polygon digit. e.g. "3.4" = require a triangle, exclude
-	// a square. Digits not in REGULAR_KINDS are dropped rather than trusted.
+	// a square. Digits not in REGULAR_KINDS are dropped, not trusted.
 	out.polygons = anyPolygons();
 	const [reqRaw = "", excRaw = ""] = (sp.get("pg") ?? "").split(".");
 	const asKind = (ch: string): RegularKind | null => {

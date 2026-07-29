@@ -74,7 +74,7 @@ import {
 // atlas*.json. Each entry carries a DISCOVERER (historical
 // first-finder), a CERTIFICATION (proven / reproduced / candidate), and a vertex-type classification
 // (k, M, partition — see referenceAtlas.ts). Filters are flat and always-open (no accordion); groups
-// irrelevant to the current tile-class selection are hidden rather than shown as dead controls.
+// irrelevant to the current tile-class selection are hidden, not shown as dead controls.
 //
 // k / M / partition are SINGLE-select (pick one, or "All"). M and partition only appear once a k is
 // chosen, and their chips are faceted to values that actually occur under the current filters — so at
@@ -438,7 +438,7 @@ const META = "text-[11px] font-normal leading-snug text-fg-muted";
 // Structure sits on the wall's mortar; content sits on its tiles. A group heading and a sub-label are
 // structure, but they carry the SAME chrome fill the option cells use (AL, 2026-07-23) — the title band
 // reads as the lighter gray of an unselected tab, not the darker line colour, so a heading is flush with
-// the controls it names rather than dropping into the seam. The 1px wall gaps above and below still rule
+// the controls it names instead of dropping into the seam. The 1px wall gaps above and below still rule
 // each band off; every diamond stays where it was, born only where four rounded option-cell corners meet.
 
 // A caption row inside a filter group — a thinner echo of the group heading, same chrome band.
@@ -916,8 +916,8 @@ export function ReferenceShelf() {
 	const isEuclidean = geometry === "euclidean";
 	// Switch decoration: each segment owns its own facets, so moving between them drops the ones that
 	// belong to the segment being left. k survives — it means grid-point orbits under Edge patterns and
-	// colored vertices under Colorings rather than vertex orbits, but the axis is shared and a k present in
-	// one segment is usually present in the next, so clearing it would be a nuisance rather than a fix.
+	// colored vertices under Colorings, not vertex orbits, but the axis is shared and a k present in
+	// one segment is usually present in the next, so clearing it would be a nuisance, not a fix.
 	const setDecoration = (v: "all" | Decoration) => {
 		const dec = v === "all" ? undefined : v;
 		const next: ReferenceFilter = { ...filters, decoration: dec };

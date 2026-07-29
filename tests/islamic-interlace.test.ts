@@ -143,7 +143,7 @@ describe("buildIslamicInterlace band geometry", () => {
         expect(near(fillPts, 0.2, h + bd)).toBe(true);
         expect(near(fillPts, 0.2, h)).toBe(false);
         // Its outer ring stops on the same line — the two rings clip together, so the quad's end edge lies
-        // along the over strand's border rather than cutting across it.
+        // along the over strand's border instead of cutting across it.
         const outerPts = bands.flatMap((b) => b.outline.flatMap((s) => [s.oa, s.ob]));
         expect(near(outerPts, 0.2 + bd, h + bd)).toBe(true);
     });

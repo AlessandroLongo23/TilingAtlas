@@ -20,7 +20,7 @@ which makes the code count a LOWER BOUND on k that needs no trust in the solver'
 
 Only vertices whose r-ball lies strictly inside the patch are used as roots (`depths` measures distance
 to the rim over the FULL adjacency, boundary vertices included, so the wave really does propagate
-inward). A patch that cannot support radius r reports None there rather than a truncated answer.
+inward). A patch that cannot support radius r reports None there, not a truncated answer.
 """
 from collections import defaultdict, deque
 

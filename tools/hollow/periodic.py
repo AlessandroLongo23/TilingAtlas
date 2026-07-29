@@ -49,7 +49,7 @@ def independent(t1, t2):
 
 def certify(P, depths, m, core_depth=2, cand_depth=6):
     """Return (ok, basis): two independent translations under which every completed
-    vertex of the core has an identical star. Checking STARS rather than whole faces
+    vertex of the core has an identical star. Checking STARS, not whole faces,
     avoids the patch-extent problem (a 12-gon's corners span many corona levels, so
     no face is ever fully contained in a shallow core)."""
     core = [v for v, dv in depths.items()

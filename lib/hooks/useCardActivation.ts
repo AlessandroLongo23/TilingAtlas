@@ -31,7 +31,7 @@ export interface CardActivation {
 
 export function useCardActivation(): CardActivation {
 	const [active, setActive] = useState(false);
-	// Synced in an effect rather than during render: the ref only ever feeds DOM listeners and rAF
+	// Synced in an effect, not during render: the ref only ever feeds DOM listeners and rAF
 	// loops, which run after commit, so a one-render lag is unobservable.
 	const activeRef = useRef(false);
 	useEffect(() => {

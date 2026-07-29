@@ -95,7 +95,7 @@ export function FreedrawCanvas({
 	const rotRef = useEasedRotation(rotation, drawRef);
 	const radNow = useCallback(() => (rotRef.current * Math.PI) / 180, [rotRef]);
 	// Sub-detent scroll remainder, carried between wheel events so a spin tracks total scroll distance
-	// rather than the wheel-event count (a trackpad fires dozens per gesture).
+	// and not the wheel-event count (a trackpad fires dozens per gesture).
 	const scrollAccumRef = useRef(0);
 
 	// Track the element's CSS size; the canvas backing store is sized from it times the DPR.
@@ -139,7 +139,7 @@ export function FreedrawCanvas({
 			cw,
 			ch,
 			pattern,
-			// The live angle is injected per draw rather than stored in `view`, so a refit (double-click,
+			// The live angle is injected per draw, not stored in `view`, so a refit (double-click,
 			// a new pattern) can rebuild the view without touching the rotation.
 			{ ...view, rot: radNow() },
 			{ ...style, dark },

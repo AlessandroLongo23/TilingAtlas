@@ -1,4 +1,4 @@
-// The deck names vertex configurations itself rather than trusting the name in the alphabet file, so
+// The deck names vertex configurations itself instead of trusting the name in the alphabet file, so
 // the check that matters is against the literature: the regular palette's fifteen figures are exactly
 // the fifteen vertex configurations of regular polygons, and every one has a settled name.
 

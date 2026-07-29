@@ -825,7 +825,7 @@ describe('tracing is pure observation', () => {
 });
 ```
 
-Note: `solveK2` calls `_testOnlyClearCandidateStageCaches()` so the second run genuinely re-executes the hooked paths rather than serving `candidateCache`/`poolCache` hits.
+Note: `solveK2` calls `_testOnlyClearCandidateStageCaches()` so the second run genuinely re-executes the hooked paths instead of serving `candidateCache`/`poolCache` hits.
 
 - [ ] **Step 2: Also lean on the existing suite**
 

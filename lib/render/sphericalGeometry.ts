@@ -235,7 +235,7 @@ export function straightEdges(poly: Polyhedron, radius = 1, extend = 0): Float32
 
 // The unique polyhedron edges as vertex-index pairs (each shared by two faces, deduped) — the flat solid's
 // corners/creases, drawn as straight LineSegments between the normalised vertices. Same dedup key as
-// edgeArcs, but returns the endpoints as indices rather than sampled great-circle arcs (a flat facet's edge
+// edgeArcs, but returns the endpoints as indices, not sampled great-circle arcs (a flat facet's edge
 // is a straight chord, not an arc).
 export function solidEdges(poly: Polyhedron): [number, number][] {
 	const seen = new Set<string>();

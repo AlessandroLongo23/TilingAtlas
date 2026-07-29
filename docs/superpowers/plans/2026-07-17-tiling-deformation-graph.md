@@ -17,7 +17,7 @@
 - `tilingSignature` (Task 3): the rotation/translation/scale-invariant, reflection-sensitive fingerprint used to pick the catalogue entry. Its tests are the contract; the implementation may need one iteration to get the vertex-star tracing tolerant enough.
 - `nodeExtractor` interior detection (Task 5): locating the flexing-tile regularity point. Tests fix the α it must find.
 
-If either resists the first cut, stop and revisit the spec rather than widening tolerances silently. The golden test (Task 7) is the gate before Task 9 scales to the full slice.
+If either resists the first cut, stop and revisit the spec instead of widening tolerances silently. The golden test (Task 7) is the gate before Task 9 scales to the full slice.
 
 ## Scope
 

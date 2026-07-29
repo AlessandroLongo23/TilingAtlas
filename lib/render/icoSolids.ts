@@ -1,7 +1,7 @@
 // The Platonic-solid freedraw manifest: which solids carry a spherical-freedraw catalogue, and how many
 // patterns each has per k. The per-k counts are LOAD-BEARING — they name the files that exist under
 // public/freedraw-ico/ ({id}-k{k}.json), so both the /freedraw spherical arm and the /play catalogue
-// loader derive their fetch list from here rather than probing for files. One source of truth: a new
+// loader derive their fetch list from here instead of probing for files. One source of truth: a new
 // solid or k lands in this array and both surfaces pick it up.
 //
 // counts come from the independent enumeration (= Marek Čtrnáct's solver, cross-checked to the unit).

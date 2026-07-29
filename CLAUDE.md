@@ -132,7 +132,7 @@ Uses **SvelteKit-style `PUBLIC_*`** names, not `NEXT_PUBLIC_*`. `next.config.ts`
 
 ## Architecture
 
-This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16 App Router + React 19. The port preserves the original layer boundaries rather than rewriting them idiomatically — understanding those boundaries matters more than understanding Next conventions.
+This is a port of a SvelteKit app (`../TilingAtlas` @ `svelte-final`) to Next 16 App Router + React 19. The port preserves the original layer boundaries instead of rewriting them idiomatically — understanding those boundaries matters more than understanding Next conventions.
 
 **Routing.** Route groups under `app/(app)/` share the app-shell layout (`Nav` + store bootstrap). Top-level routes: `/library`, `/lab` (+ `/lab/[hash]/{polygons,vcs,seeds,expanded-seeds,tilings}`), `/play`, `/theory`. (The original `/theory` method write-up was removed 2026-06 — it documented the superseded wallpaper-fitting method; the historical write-ups live in `../resources/drafts/`, the implemented method in `docs/DEVELOPMENT_NOTES.md`. The route returned 2026-07 as a mathematical-background page: markdown from `public/theory/uniform-tilings.md` with interactive tiling cards embedded via `<tiling-card>` tags.) Seven pipeline API handlers live under `app/api/pipeline/*/`. Next 16 replaces `middleware.ts` with `proxy.ts` at the root — that's where pipeline auth is enforced.
 

@@ -73,7 +73,7 @@ to forward its ref to the underlying DOM node.
   `<Tooltip content={opt.tooltip}>…</Tooltip>`. Options without `tooltip` render exactly as today.
 
 This keeps `ButtonGroup` general — any button group in the app can now attach per-option tooltips —
-rather than special-casing the wallpaper filter.
+and does not special-case the wallpaper filter.
 
 Disabled interaction: a disabled chip (a group the selected lattice can't host) still shows its
 tooltip. The diagram is educational, so seeing it while the chip is greyed out is fine and desirable.

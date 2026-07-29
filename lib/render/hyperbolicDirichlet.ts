@@ -112,7 +112,7 @@ export function foldIntoDomain(
 
 /**
  * Build the certified Dirichlet domain for the deck group of the tiling given by its quotient darts and
- * forced edge length. Fails LOUDLY (reason string) rather than returning an uncertified guess.
+ * forced edge length. Fails LOUDLY (reason string) instead of returning an uncertified guess.
  */
 export function buildDirichletDomain(
 	darts: Darts,

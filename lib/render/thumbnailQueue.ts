@@ -11,7 +11,7 @@
 // This queue drains ONE job per animation frame, which hands the browser a paint opportunity between
 // every bake: skeletons show up immediately, previews resolve one-by-one, scrolling stays alive.
 //
-// One-per-frame rather than a time budget on purpose — a single hyperbolic bake overruns any budget
+// One-per-frame, not a time budget, on purpose — a single hyperbolic bake overruns any budget
 // no matter how it is measured, so budgeting only adds bookkeeping. For the cheap euclidean thumbs
 // one-per-frame still clears a 25-card page in ~0.2 s on a 120 Hz panel.
 //

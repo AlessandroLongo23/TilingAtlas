@@ -52,7 +52,7 @@ distinct), so his dedup and ours agree solution for solution.
 
 ## Decoder
 
-`develop_colors.py` took a `--colors n` axis rather than a fork. The letter IS the color index
+`develop_colors.py` took a `--colors n` axis, not a fork. The letter IS the color index
 (`A`=0, `B`=1, `C`=2), so the changes were: alphabets registered per color count (`colors3sq` =
 `{A4, B4, C4}`), the binary `1 - c` swap replaced by S_n permutations, `--surjective`, and a
 `colors` field on the emitted records. Nothing in the parser, tables, develop or patch quotient

@@ -47,7 +47,7 @@ def face_key(v, e, n, d):
 
 class Patch:
     """Face/edge/vertex incidence with a mutation trail so backtracking is an undo
-    rather than a deep copy (patches reach thousands of faces; cloning dominated)."""
+    and not a deep copy (patches reach thousands of faces; cloning dominated)."""
     __slots__ = ("faces", "vfac", "edges", "trail")
     def __init__(self):
         self.faces = {}; self.vfac = {}; self.edges = {}; self.trail = []

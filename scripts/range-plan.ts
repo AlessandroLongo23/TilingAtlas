@@ -74,7 +74,7 @@ export function applyRangePlan(out: ReferenceTiling[], opts: ApplyRangeOptions):
 		const p = t.paramCell.params[0];
 		const [lo, hi] = r.range;
 		// The plan is measured off the same exported record this entry was built from, so a range that does
-		// not contain the entry's own default means the two are out of sync — refuse rather than ship a
+		// not contain the entry's own default means the two are out of sync — refuse instead of shipping a
 		// slider whose default sits outside its domain.
 		if (!(lo <= p.defaultAlphaDeg && p.defaultAlphaDeg <= hi)) {
 			log(`  ⚑ ${r.id}: plan range (${lo}, ${hi}) excludes default α=${p.defaultAlphaDeg} — SKIPPED`);

@@ -1,6 +1,6 @@
 # Taxonomy audit: classifying what the Atlas already has, and what it is missing and why
 
-**Companion to `TILE_TAXONOMY.md`.** AL's question (2026-07-25): rather than adding polygons, classify the
+**Companion to `TILE_TAXONOMY.md`.** AL's question (2026-07-25): instead of adding polygons, classify the
 existing results under the new taxonomy and report where a family is missing tilings *because a tile was
 missing in the first place*.
 
@@ -163,7 +163,7 @@ combination with the composites**, which is un-searched for the same reason as �
 exist is open.
 
 All 11 composite tiles appear in at least one shipped tiling (usage counts 16 to 5,585), so the palette has
-no dead weight. That raises rather than lowers the prior that a twelfth tile would yield new tilings.
+no dead weight. That raises, and does not lower, the prior that a twelfth tile would yield new tilings.
 
 ### 3.4 Concave with `p ≥ 3` — OPEN, largest unexplored region
 
@@ -231,7 +231,7 @@ because right now a complete shelf and a hand-sampled one look identical to a re
    gap. If it yields tilings, the composite×star region is a new shelf and the taxonomy gains its first
    cross-family cell.
 2. **Fill the equiangular cell**: 1×2 rectangle, 1×3 rectangle, equiangular hexagon `(1,1,2)²`. Each is
-   provably productive, so this is guaranteed to add tilings rather than merely possibly.
+   provably productive, so this is guaranteed to add tilings, not merely likely to.
 3. **Record the completeness statements** from §3.6 as machine-checked assertions next to the palettes,
    so "complete" and "hand-sampled" stop looking alike.
 4. Only then consider a concave `p ≥ 3` probe (§3.4), which is the largest region but the least certain.

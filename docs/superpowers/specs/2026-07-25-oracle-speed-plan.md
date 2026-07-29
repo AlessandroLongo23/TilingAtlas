@@ -56,7 +56,7 @@ which exceed 2π). So the lemma is a special case of pairwise overlap, hand-deri
 **Soundness.** `build_config` places tiles at the running angle sum, so a prefix's placement is literally the
 prefix of the full placement: if tiles *i* and *i+1* collide, they collide in every extension. Overlap is
 invariant under the rotation and reflection that `cyclic_reps` quotients by, so no overlap-free
-representative can be lost either. The probe asserts this rather than arguing it — it compares the emitted
+representative can be lost either. The probe asserts this instead of arguing it — it compares the emitted
 overlap-free *sets*, not just the counts.
 
 Measured on the ENUMERATION STAGE (`analysis/prefix_prune_probe.py`):
@@ -80,7 +80,7 @@ floor of the run.
 | `isotoxal-star-z24-rh` @ v12, 112,018 entries | — | 150 s | — |
 
 ⚑ The rhombus palette's end-to-end *before* was never cleanly measured: the run was started while the k=2
-solve had 8 workers on the box, so its wall time is contention-inflated and was discarded rather than
+solve had 8 workers on the box, so its wall time is contention-inflated and was discarded and not
 reported. Its stage-level 20.5× stands (measured on a quiet machine); its end-to-end multiplier is
 unmeasured and would land between 4.6× and 20.5×.
 
@@ -91,7 +91,7 @@ covering both closure modes and both flag states, all 4/4. `make check-regular: 
 10/20/61/151/332/673). Every external caller of `enum_configs` passes `forbidden=None` implicitly, so the
 historical enumeration is what they still get.
 
-Two fixes rode along, both found by the cross-check rather than planned:
+Two fixes rode along, both found by the cross-check, not planned:
 
 - **`pruneOverlap` is now declared in the palette JSON**, which closes the provenance gap in §"What not to
   do" below. `make PALETTE=isotoxal-star-z24` now reproduces the shipped 34,329 with no environment
@@ -133,7 +133,7 @@ census fix, `ad7240a`). No originally-shipped id disappeared without an alias re
 
 (This is the shape CLAUDE.md warns about from the other side: `maxValence` *is* a completeness knob, so it
 must never be tuned down for speed — but here the honest setting is also nearly the cheap one, and the way to
-find that out was to measure the saturation rather than to pick a number.)
+find that out was to measure the saturation, not to pick a number.)
 
 ## 3. k=2 is the one real unknown — and 547 s says it is affordable
 
@@ -144,19 +144,19 @@ linear → ~30 min, quadratic → ~97 min. **Both are a coffee break, not "forev
 There is no cheap way to know which, and the cheapest way to know at all is to run it. That is the
 recommendation: run k=2 on the complete `isotox-v8-rh` table and record the wall clock. It is already
 parallel; nothing needs building first except item 1 (which makes the table 20× cheaper to produce, so the
-run becomes a single afternoon job rather than two).
+run becomes a single afternoon job, not two).
 
 **One measurement to add while doing it.** The runner logs only the aggregate wall, so shard imbalance is
 invisible. The shipped k=2 run emitted 71–179 blocks per worker — a 2.5× spread, and if wall time tracks the
 heaviest shard there is ~1.6× on the table from finer chunks with dynamic scheduling (`EU_SHARD_N` becomes a
-chunk count fed to a pool of 8–10, rather than the process count). Emitted blocks are a weak proxy for time,
+chunk count fed to a pool of 8–10, not the process count). Emitted blocks are a weak proxy for time,
 so log per-worker wall first and only then decide. It also matters that the M5's 10 cores are not
 interchangeable (4+6 across two performance levels), which makes static round-robin worse than it looks.
 
 ## 4. Add rhombi one at a time — together they multiply
 
 The interaction is not additive. Each low-unit corner is a cheap *separator* that lets more star-point
-corners fit around one vertex, so two of them multiply the word count rather than adding to it. Every row
+corners fit around one vertex, so two of them multiply the word count, they do not add to it. Every row
 below is the COMPLETE table — sized to the valence where a longer word stops closing to 360°, not to a cap:
 
 | added tiles | saturates at | complete overlap-free configs | build (pair-pruned) |
@@ -170,7 +170,7 @@ below is the COMPLETE table — sized to the valence where a longer word stops c
 ⚑ **Correction to this document's first draft**, which called `15/165` the one to leave for last on the
 grounds that its 1-unit corner is the cheapest separator in the palette. The mechanism is right; the
 magnitude was wrong. **Alone it is fine** — 1.4× the other two in size, and the extra 9 valences it needs
-cost 89 s rather than 52 s. The explosion is *purely* the interaction: three cheap separators together give
+cost 89 s, not 52 s. The explosion is *purely* the interaction: three cheap separators together give
 at least 39× the sum of the singles, and the v13 bucket (312,024) shows the triple still climbing toward its
 own saturation. The all-three run was stopped at v13 after 4 h; the remaining valences would have cost
 ~10 h to confirm a verdict already visible.
@@ -209,14 +209,14 @@ Two honest options, and they are not equivalent:
   that is affordable depends on the k=2 exponent, which is still unmeasured (§3).
 
 The cheap way to find out whether the gap is worth paying for: run the pairwise tables (P + two rhombi,
-three of them) rather than the triple. Each is one step less explosive, and their union with the singles
+three of them), not the triple. Each is one step less explosive, and their union with the singles
 closes everything except genuinely three-rhombus tilings — which, for a k=1 or k=2 tiling on a 30-tile
 palette, may well be empty. That is a measurement, not an assumption, and it should be made before either
 option is committed to.
 
 `scripts/stabilize-family-ids.mjs` (landed with the rhombus) is the bookkeeping half of this: it splices a
 fresh export onto the shipped one on `familySymbol`, keeps shipped ids and default α byte-identical, and
-reports a shipped family missing from the new export as a REGRESSION rather than silently dropping it.
+reports a shipped family missing from the new export as a REGRESSION instead of silently dropping it.
 
 There is a solver-side version too, worth less than it first looks. With T-containing vertexdefs sorted to the
 front of the table, min-type-root means every T-containing tiling has a T-type as its root, so only those

@@ -14,8 +14,8 @@ What this does:
   * develops each coupled record with P = flexdim (qeff from the full null-space basis, via the exporter's
     own develop_multi / trace_faces_multi), so the family is the real 2-parameter object;
   * picks the parameter basis so each axis IS a species angle (see `species_aligned_basis`) — the sliders
-    then read "rhombus angle" and "star angle" rather than two abstract null-space directions;
-  * computes the valid region EXACTLY as a polytope from the per-species angle bounds, rather than by
+    then read "rhombus angle" and "star angle", not two abstract null-space directions;
+  * computes the valid region EXACTLY as a polytope from the per-species angle bounds, instead of by
     sampling: every species angle is affine in δ, and an isotoxal 2m-gon needs both of its alternating
     angles positive, which is two half-planes per species;
   * groups the records into families by looking for one's seed at an integer δ of another's, confirmed by an

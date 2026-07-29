@@ -234,7 +234,7 @@ export function extractFaces(segments: Segment[], splitCrossings: boolean = fals
     const { pts, edges } = buildArrangement(segments, splitCrossings);
 
     // Adjacency, sorted CCW by angle. The angle is computed ONCE per neighbour and the permutation sorted,
-    // rather than calling atan2 twice per comparison inside the comparator — same key, same (stable) tie
+    // instead of calling atan2 twice per comparison inside the comparator — same key, same (stable) tie
     // order, ~2·log(degree) fewer transcendental calls per vertex.
     const adj: number[][] = pts.map(() => []);
     for (const [a, b] of edges) { adj[a].push(b); adj[b].push(a); }
@@ -256,7 +256,7 @@ export function extractFaces(segments: Segment[], splitCrossings: boolean = fals
         adj[a] = sorted;
     }
 
-    // A degree-1 (pendant) vertex means a segment endpoint dangles in open space rather than meeting
+    // A degree-1 (pendant) vertex means a segment endpoint dangles in open space instead of meeting
     // another segment — impossible for the closed Islamic construction, but if the caller ever violates
     // that (e.g. a ray dropped for having no partner), the trace detours into the spur and back, making
     // the containing face non-simple. Never let that pass silently.
@@ -468,8 +468,8 @@ export interface AbcFace { face: Face; klass: AbcClass; hue: number; } // hue is
  * edge offset splits the contact point off the midpoint), the other parity is B (the side fields). At
  * edge offset 0 there is no diamond, so the C bucket is empty and this degrades to A + B on its own.
  * `degenerate` is set when A straddles both parities inside one connected component (star/dent tiles,
- * k≥2 orbits); the caller should then paint every background face as B (a clean two-tone) rather than
- * trust the split. Verified bipartite with A confined to one parity on the regular Euclidean tilings
+ * k≥2 orbits); the caller should then paint every background face as B (a clean two-tone) instead of
+ * trusting the split. Verified bipartite with A confined to one parity on the regular Euclidean tilings
  * (squares/triangles/hexagons/4.8.8) at edge offsets 0–0.6 — see docs/ISLAMIC_TILINGS.md.
  */
 export function colorFacesAbc(faces: Face[], markers: Marker[]): { faces: AbcFace[]; degenerate: boolean } {
@@ -536,7 +536,7 @@ export function colorFacesAbc(faces: Face[], markers: Marker[]): { faces: AbcFac
     // Vertices are interned to integer ids by their QUANTised coordinates and each distinct undirected
     // pair gets a sequential edge id, so `faceEdges`/`edgeFaces` are plain number arrays. Before, every
     // face vertex produced a keyOf string and every face edge a second concatenated one — ~150k throwaway
-    // strings on a 10k-face arrangement. The pair is canonicalised by id rather than by string ordering,
+    // strings on a 10k-face arrangement. The pair is canonicalised by id, not by string ordering,
     // which picks a different representative for the same pair and therefore groups identically.
     const vidByX = new Map<number, Map<number, number>>();
     let nVid = 0;
@@ -574,7 +574,7 @@ export function colorFacesAbc(faces: Face[], markers: Marker[]): { faces: AbcFac
         if (parity[start] !== -1) continue;
         const cid = nComp++;
         parity[start] = 0; comp[start] = cid;
-        // Cursor rather than queue.shift(): the shift moves the whole backing store on every step, and one
+        // A cursor, not queue.shift(): the shift moves the whole backing store on every step, and one
         // component can hold every face in the arrangement. Same visit order.
         const queue = [start];
         for (let qi = 0; qi < queue.length; qi++) {

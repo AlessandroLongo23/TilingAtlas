@@ -76,14 +76,14 @@ interface InteractiveTilingPreviewCardProps {
 	 * method starts from, and the slide that describes that method is what it is for.
 	 *
 	 * Needs `orbitData` — without an orbit partition there is nothing to take one vertex of, so the
-	 * card falls back to the whole tiling rather than blanking.
+	 * card falls back to the whole tiling instead of blanking.
 	 */
 	seed?: boolean;
 	/**
 	 * Take no input: no drag, no wheel, no rotate, no right-click reset, and no expand button. The
-	 * overlay keys still answer, since they belong to the page's scope rather than to the surface.
+	 * overlay keys still answer, since they belong to the page's scope, not to the surface.
 	 *
-	 * For a card that is making a point rather than inviting exploration — a slide where the framing
+	 * For a card that is making a point, not inviting exploration — a slide where the framing
 	 * IS the argument and a stray gesture mid-sentence would cost more than the gesture is worth.
 	 */
 	interactive?: boolean;
@@ -133,7 +133,7 @@ export function InteractiveTilingPreviewCard({
 	const { hostRef, failed, pointerProps } = useFlatCellPreview({
 		cell: drawnCell,
 		// The `o` overlay decides whether the dots are DRAWN; the data only decides whether they can
-		// be. A card with no orbit data ignores the key rather than blanking.
+		// be. A card with no orbit data ignores the key instead of blanking.
 		orbitData: overlays.orbits ? orbitData : null,
 		symmetryData,
 		showFundamentalDomain: overlays.fundamentalDomain,

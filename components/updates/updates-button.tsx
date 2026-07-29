@@ -55,7 +55,7 @@ export function UpdatesButton() {
 				<ScrollText size={16} strokeWidth={1.75} />
 				{unseen > 0 ? (
 					// Out at the button's corner, not over the glyph: at top-1 it landed on the scroll's
-					// curl and read as part of the icon rather than as a badge.
+					// curl and read as part of the icon, not as a badge.
 					<span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-accent" aria-hidden />
 				) : null}
 			</button>

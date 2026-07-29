@@ -18,7 +18,7 @@ const SNAP = 0.01;
 
 /**
  * The colour orbit mode fades the tiles toward, read from a CSS "rgb(...)" / "rgba(...)" string and
- * returned as 0..1 channels. Falls back to white rather than black on a parse miss or a transparent
+ * returned as 0..1 channels. Falls back to white, not black, on a parse miss or a transparent
  * background: with no colour to fade toward, dark tiles would read as a rendering fault.
  */
 export function parseDimTarget(css: string): [number, number, number] {

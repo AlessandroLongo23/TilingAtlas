@@ -6,7 +6,7 @@ That inversion is the whole idea, and it is the thing to hold onto before any de
 
 ## The tiles are whatever falls out
 
-Take the square grid, the integer lattice $\mathbb{Z}^2$ with its horizontal and vertical unit edges. A freedraw pattern is a choice, periodic under some sublattice, of which of those edges are drawn, subject to one rule: no vertex may have exactly one drawn edge. A vertex with a single drawn edge is a dead end, that is a segment that starts nowhere, and a dead end would make the figure a maze rather than a tiling, so we forbid it. Every other local configuration is allowed, including a vertex with no drawn edge at all.
+Take the square grid, the integer lattice $\mathbb{Z}^2$ with its horizontal and vertical unit edges. A freedraw pattern is a choice, periodic under some sublattice, of which of those edges are drawn, subject to one rule: no vertex may have exactly one drawn edge. A vertex with a single drawn edge is a dead end, that is a segment that starts nowhere, and a dead end would make the figure a maze, not a tiling, so we forbid it. Every other local configuration is allowed, including a vertex with no drawn edge at all.
 
 The tiles are then the connected regions the drawn edges leave behind, and here is the catch that makes freedraw its own thing: those regions need not be nice. On the plane a tile can be a finite polyomino, but it can just as well be an infinite strip of width two, or a whole quadrant of the plane with no bounding edge on one side. None of these are tiles in the sense of Grünbaum and Shephard, who require a tile to be a closed topological disk, so the classical uniform-tiling theory doesn't apply to them at all. We are counting something genuinely different, and it took me a while to stop expecting the old invariants to mean anything here.
 
@@ -36,7 +36,7 @@ The first way is Marek's solver. It searches the *duals* of these patterns combi
 
 The two methods share no code and rest on no common assumption, so when they agree it means something. They agree to the unit at every $k$ on every solid, including the split between achiral patterns (a mirror lies in the symmetry group) and chiral ones (none does). Running Marek's binary can only ever reproduce Marek's numbers, so on its own it proves nothing about correctness: the independent enumeration is the check that actually bites, and it settles the counting convention too, that patterns are counted up to the full group with mirror pairs merged.
 
-One consequence of the setup is provable rather than measured, and I like it for that. The top count, at $k$ equal to the number of vertices, is the fully asymmetric class, and a pattern with no symmetry has no mirror symmetry in particular, so every pattern at the top $k$ is chiral by necessity. When the icosahedron's $k = 12$ came back as 1,569,679 solutions with none of them achiral, that zero was exactly what the argument had already guaranteed, and the search only confirmed it.
+One consequence of the setup is provable, not measured, and I like it for that. The top count, at $k$ equal to the number of vertices, is the fully asymmetric class, and a pattern with no symmetry has no mirror symmetry in particular, so every pattern at the top $k$ is chiral by necessity. When the icosahedron's $k = 12$ came back as 1,569,679 solutions with none of them achiral, that zero was exactly what the argument had already guaranteed, and the search only confirmed it.
 
 ## The numbers, and what they say
 

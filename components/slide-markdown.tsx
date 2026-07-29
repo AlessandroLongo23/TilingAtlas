@@ -16,7 +16,7 @@ interface SlideMarkdownProps {
 
 // Same plugin stack as the theory renderer (so `<tiling-card>`, KaTeX and GFM tables all behave
 // identically), but presentation typography instead of article typography. Sizes are viewport-
-// relative via clamp() rather than fixed, because the projector in the room is an unknown: the
+// relative via clamp(), not fixed, because the projector in the room is an unknown: the
 // deck has to read at 1280x720 and at 3840x2160 without a per-venue pass.
 export function SlideMarkdown({ content, components, compact = false }: SlideMarkdownProps) {
 	return (
@@ -80,7 +80,7 @@ export function SlideMarkdown({ content, components, compact = false }: SlideMar
 							"[&_img]:bg-white [&_img]:p-3",
 							"[&_a]:text-accent [&_a]:underline",
 						],
-				// KaTeX inherits slide type rather than shrinking to article size
+				// KaTeX inherits slide type instead of shrinking to article size
 				"[&_.katex]:text-[1.02em] [&_.katex-display]:my-[0.7em] [&_.katex-display]:overflow-x-auto",
 			)}
 		>

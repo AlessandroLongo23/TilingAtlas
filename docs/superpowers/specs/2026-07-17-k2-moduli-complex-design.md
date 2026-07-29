@@ -167,7 +167,7 @@ New in `scripts/moduli-graph/`:
   This isolates and validates the new linear-algebra layer (∂₁ rank, Betti) against the old cyclomatic
   number `E − V + C`, holding node identity fixed. Swapping in the new geometric canonical-key identity
   is a *separate* test: it may legitimately split chirality-tracked nodes and change the count, so it
-  asserts the key invariances (rotation/scale → same key, chiral split) rather than the literal `15`.
+  asserts the key invariances (rotation/scale → same key, chiral split), not the literal `15`.
 
 ## Risks
 
@@ -217,7 +217,7 @@ text above where they conflict.
   (full 24 two-param: genuine `χ=7 b=[12,11,6]`, full `χ=−11 b=[3,27,13]`). Residual `b₁` can carry
   boundary node-coincidence (a single `4.4α` face already shows `b=[1,3,0]` though a family is a disk),
   and each `b₂` generator needs per-generator verification that the faces genuinely glue into a closed
-  surface rather than a chain artifact. Making the cluster invariants thesis-defensible is the next
+  surface, not a chain artifact. Making the cluster invariants thesis-defensible is the next
   slice: per-generator verification + deciding whether boundary node-coincidence is geometrically real
   or an over-merge of the canonical key.
 

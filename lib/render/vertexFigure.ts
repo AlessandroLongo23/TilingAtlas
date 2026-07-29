@@ -3,7 +3,7 @@
 //
 // The configuration alphabet ships its figures already placed around the vertex
 // (public/vertex-configs/*.json) but writes its own ordering for the name ("6·4·3·4"), so the name a
-// slide shows is recomputed here rather than taken from the file.
+// slide shows is recomputed here, not taken from the file.
 
 import type { RawPolygon } from "@/lib/utils/renderTiling";
 
@@ -46,7 +46,7 @@ export function canonicalWord(ns: number[]): string {
 }
 
 /** The direction a tile lies in as seen from one of its own corners: the bisector of the two edges
- *  meeting there. Bisecting rather than pointing at the centroid keeps the cyclic order right for
+ *  meeting there. Bisecting the angle, not pointing at the centroid, keeps the cyclic order right for
  *  tiles that are long, or non-convex away from this corner. */
 function bisectorAngle(poly: RawPolygon, at: number): number {
 	const v = poly.vertices;
@@ -67,7 +67,7 @@ function bisectorAngle(poly: RawPolygon, at: number): number {
  * with a corner on it, unit edges. Returns null unless the name is a list of polygon side counts whose
  * interior angles close a full turn.
  *
- * Building the figure from its name rather than reading it out of the alphabet file lets a slide draw
+ * Building the figure from its name, instead of reading it out of the alphabet file, lets a slide draw
  * configurations no palette ships, including the ones that reach 360 degrees and then tile nothing:
  * 3.7.42 wants a 42-gon, which no tile alphabet in the atlas contains.
  */

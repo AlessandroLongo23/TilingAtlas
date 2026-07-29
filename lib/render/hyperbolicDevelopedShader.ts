@@ -154,7 +154,7 @@ void main() {
 
 	// PER-TILE depth: map the found tile's centre back through the reduction (G⁻¹) to this tile instance, put
 	// it on screen, and dim by its distance from the disk centre. Every pixel of one tile shares this centre,
-	// so the whole tile takes ONE shade (the fold-shader look) rather than a per-pixel radial gradient.
+	// so the whole tile takes ONE shade (the fold-shader look), not a per-pixel radial gradient.
 	vec4 Ginv = vec4(G.x, -G.y, -G.z, -G.w);
 	vec2 tileCentreScreen = viewForward(applyMobius(Ginv, uTileCentroid[found]));
 	// Base colour is the bright euclidean/spherical pastel (HSB 0.40, 1.0), then dimmed by tile DEPTH:

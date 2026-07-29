@@ -67,7 +67,7 @@ interface PatchDef {
 //
 // Measured: Penrose depth 11 is 143,010 rhombi, 286k triangles, 137 ms to build and 22 ms to
 // triangulate; hat level 6 is 54,289 hats, 597k triangles, 21 ms + 52 ms. Both sit around a tenth of
-// a second, which reads as a pause on the slider rather than a hang. The next rung up is where that
+// a second, which reads as a pause on the slider, not a hang. The next rung up is where that
 // stops being true: Penrose depth 12 roughly triples the build, and hat level 7 is 372,100 hats and
 // 4.09M triangles — a 184 MB buffer and ~200 ms of build before the triangulator even starts.
 //

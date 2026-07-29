@@ -169,7 +169,7 @@ export class SeedExpander {
 	// /defense slide showing the expansion's first two stamps. `expand` is untouched: these call the
 	// same private helpers in the same order a popped frame does, and nothing here feeds back into the
 	// search. The figure is therefore real output — the frontier the expander sees, the vertex it
-	// takes next, and the placements that survive its gates — rather than a drawing of one.
+	// takes next, and the placements that survive its gates — not a drawing of one.
 
 	/** The k core vertices as the initial collapsed set, one orbit each (mirrors `expand`'s prologue). */
 	figureStart = (seed: SeedConfigurationLike): CollapsedVertex[] =>
@@ -182,7 +182,7 @@ export class SeedExpander {
 	 * `prunedByVC` counts placements that ARE valid at the target but whose merged patch closes some
 	 * vertex with a VC outside the seed's k — the frame the DFS pushes and then discards on the next
 	 * pop. They are excluded from `candidates` (the search never grows them) and counted here so the
-	 * exclusion is visible rather than silent.
+	 * exclusion is visible, not silent.
 	 */
 	figureStep = (
 		seed: SeedConfigurationLike,
@@ -266,7 +266,7 @@ export class SeedExpander {
 	 *  dedup conservative — two paths that reach the same polygons but with different orbit
 	 *  labelings stay distinct, so no valid expansion is ever skipped.
 	 *
-	 *  Returns a ~106-bit hash (two independent 53-bit folds) rather than the full concatenated
+	 *  Returns a ~106-bit hash (two independent 53-bit folds), not the full concatenated
 	 *  string: a threshold-12 expansion visits up to ~10^6 distinct states, and retaining a 15 KB
 	 *  string per state would exhaust memory. Collision probability at that scale is ~10^-20 —
 	 *  far below any other error source — and hashing short tokens is far cheaper than hashing a
@@ -795,7 +795,7 @@ export class SeedExpander {
 						// the target tiling then it carries all of the patch there too, so the copy cannot
 						// collide, and a copy that DOES collide proves the isometry is a symmetry of no
 						// tiling containing this patch. Sound and complete by that argument; strictly more
-						// pruning; and O(patch) per candidate rather than O(seed), which is the open cost
+						// pruning; and O(patch) per candidate, not O(seed), which is the open cost
 						// question. See scripts/diag-stamp-mode.ts.
 						const stampSource = this.stampMode === "patch" ? currentPatch : originalPolygons;
 						const transformedFullPatch = this.applyIsometryToPolygons(stampSource, T, 'full');

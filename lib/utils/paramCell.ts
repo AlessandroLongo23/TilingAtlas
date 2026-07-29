@@ -25,7 +25,7 @@ export interface ParametricCellData {
 		// The slider is not always injective: some families pass through a maximally symmetric member and
 		// come back, so α and 2·foldCentreDeg − α are the SAME tiling (up to an isometry, `foldKind`).
 		// Measured by scripts/scan-family-ranges.py and confirmed with an explicit isometry search, never
-		// with the radial fingerprint alone. Kept rather than clipped (AL, 2026-07-25): the replayed half is
+		// with the radial fingerprint alone. Kept, not clipped (AL, 2026-07-25): the replayed half is
 		// still a real sweep to drag through, it just adds no new tilings, so the UI marks the centre
 		// instead of hiding half the range. See docs/DEVELOPMENT_NOTES.md §102.
 		foldCentreDeg?: number;
@@ -47,7 +47,7 @@ export interface ParametricCellData {
 	// them as different families. `segments` splices them back into one monotone slider whose domain is
 	// params[0].alphaRangeDegOpen. Absent for the ordinary single-cell families, and `cellPolygons`/`basis`
 	// above stay the FIRST segment's, so a consumer that ignores this field still renders a real tiling
-	// (half the sweep) rather than nothing. Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md
+	// (half the sweep), not nothing. Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md
 	segments?: ParamSegment[];
 }
 
@@ -139,7 +139,7 @@ function evalTerms(terms: ParamTerm[], deltas: number[]): [number, number] {
 
 /** Per-parameter δ (radians) from the angle values. Accepts a single number (1-param) or an array.
  *  Angles are held ALPHA_EPS_DEG inside the open interval, so an endpoint slider position evaluates just
- *  short of the degenerate limit rather than on it. Interior angles pass through untouched. */
+ *  short of the degenerate limit, not on it. Interior angles pass through untouched. */
 function deltasFor(pc: ParametricCellData, alphaDeg: number | number[]): number[] {
 	const alphas = Array.isArray(alphaDeg) ? alphaDeg : [alphaDeg];
 	const clamped = clampToRegion(pc, pc.params.map((p, j) => {

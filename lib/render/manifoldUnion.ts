@@ -34,7 +34,7 @@ export interface UnionResult {
 }
 
 // Union the parts and return the merged {position, index}. Normals are left to the caller (three's
-// toCreasedNormals) rather than Manifold's calculateNormals, which stashes them in a property channel whose
+// toCreasedNormals) and not Manifold's calculateNormals, which stashes them in a property channel whose
 // layout is awkward to read back — three's version gives the same "smooth along the tube, hard crease at the
 // weld seam" result directly on the BufferGeometry.
 export async function unionTubeParts(parts: UnionPart[]): Promise<UnionResult> {

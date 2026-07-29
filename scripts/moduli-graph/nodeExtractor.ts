@@ -29,7 +29,7 @@ export function extractNodes(pc: ParametricCellData): NodeState[] {
   // FLATTENED endpoint (positive area, non-regular) is emitted with regular=false, and a fully
   // COLLAPSED endpoint (every tile shrinks to zero area, leaving an empty tiling) is emitted with an
   // empty poly list — the resolver treats a tiling with no vertex configurations as a non-tiling
-  // limit. Emitting rather than discarding the collapsed endpoint is what connects the single-tile
+  // limit. Emitting, not discarding, the collapsed endpoint is what connects the single-tile
   // families (e.g. 4α) to ⊥ on both sides of their α=90° square; discarding it silently deleted that
   // ⊥—tiling—⊥ relation.
   for (const a of [lo + 1e-3, hi - 1e-3]) {

@@ -13,7 +13,7 @@
 ## Design decisions locked in during planning (deviations from the spec)
 
 - **Normals: `flatShading: true`, not indexed-per-cell smoothing.** The spec (section 3) proposed building indexed-per-cell geometry and `computeVertexNormals()` per cell. `flatShading` on the existing dense non-indexed tessellation achieves the same visual result — smooth-reading domed interior (facets are sub-perceptible at the subdivision density) plus a crisp crease at every cell boundary (the tile edge) — with far less code and zero change to the vertex layout of the flat path. If faceting is visible on large cells after tuning, the fallback is to raise the relief-path subdivision floor; indexed smoothing stays out of scope.
-- **Brightness: light-rig boost, no palette change.** AL directive (2026-07-19): the perceived dullness of the lit sphere is a lighting effect, so increase the light source rather than the surface saturation. The `0.40` saturation is a shared cross-view/thesis-figure constant and stays as-is. Only lit materials brighten (realistic sphere, wireframe, weave, relief fill); unlit `MeshBasicMaterial` modes are unaffected by design.
+- **Brightness: light-rig boost, no palette change.** AL directive (2026-07-19): the perceived dullness of the lit sphere is a lighting effect, so increase the light source, not the surface saturation. The `0.40` saturation is a shared cross-view/thesis-figure constant and stays as-is. Only lit materials brighten (realistic sphere, wireframe, weave, relief fill); unlit `MeshBasicMaterial` modes are unaffected by design.
 
 ## File map
 

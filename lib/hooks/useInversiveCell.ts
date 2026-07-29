@@ -68,7 +68,7 @@ export function useInversiveCell(
 	);
 	const islamicKey = Object.values(islamic).join(",");
 
-	// The face analysis walks the whole period, so it is memoised on the pattern rather than recomputed
+	// The face analysis walks the whole period, so it is memoised on the pattern, not recomputed
 	// whenever a style toggle moves.
 	const faceAnalysis = useMemo(
 		() => (selected?.freedraw ? analyseFaces(selected.freedraw) : null),
@@ -102,7 +102,7 @@ export function useInversiveCell(
 			});
 		}
 		if (selected.hollow) {
-			// Null until the patch lands; the canvas blanks for that one tick rather than drawing the
+			// Null until the patch lands; the canvas blanks for that one tick instead of drawing the
 			// throwaway cell hollow entries carry.
 			return hollowPatch ? hollowPeriodicCell(hollowPatch, { dark, fillMode: DEFAULT_HOLLOW_STYLE.fillMode }) : null;
 		}

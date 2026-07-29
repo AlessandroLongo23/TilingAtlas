@@ -1,7 +1,7 @@
 // The wallpaper-symmetry overlays: the fundamental domain with its cell subdivision, and the
 // rotation centres + mirror/glide axes replicated across the viewport.
 //
-// Drawn through the `Pen` vocabulary (lib/render/overlayPen.ts) rather than against p5 directly, so
+// Drawn through the `Pen` vocabulary (lib/render/overlayPen.ts) and not against p5 directly, so
 // the same code paints /play's p5 canvas (components/canvas.tsx) and a preview card's 2-D layer over
 // its WebGL patch (lib/hooks/useFlatCellPreview.ts). Every draw here runs INSIDE the world transform
 // (…translate·rotate·scale·scale(1,-1)), so geometry is in WORLD units and follows pan/zoom/rotate for

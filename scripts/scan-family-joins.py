@@ -474,7 +474,7 @@ def main(atlas_path, plan_path):
         # range is speed-independent; what replaces the prefilter is the midpoint, which both the forward
         # and the reversed map fix, so a same-family pair must agree there. One cached fingerprint per
         # family kills the O(n²) sweep. (A folded family can miss here — its midpoint is the fold centre —
-        # which loses a duplicate rather than inventing one.)
+        # which loses a duplicate instead of inventing one.)
         if not congruent(f, g, at(lf, 0.5), at(lg, 0.5)):
             continue
         fwd = all(congruent(f, g, at(lf, u), at(lg, u)) for u in SAMPLES)

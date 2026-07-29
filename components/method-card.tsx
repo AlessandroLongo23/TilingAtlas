@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils/cn";
 // paragraph about them. Each panel is a drawing, not a picture of a tiling: what a method *does* to
 // the problem, at the size a room reads in two seconds.
 //
-// Drawn as inline SVG rather than exported from the thesis TikZ, for two reasons. The panels are
+// Drawn as inline SVG, not exported from the thesis TikZ, for two reasons. The panels are
 // schematic and have no counterpart in the thesis, so there is nothing to keep in sync; and a
 // projector may be anything from 720p to 4K, where a 200px PNG in a five-across strip is the one
 // figure format guaranteed to look soft.
@@ -25,7 +25,7 @@ const TINT = "var(--color-accent-subtle)";
 const SQRT3 = Math.sqrt(3);
 
 interface MethodCardProps {
-	/** Which schematic to draw. An unknown key draws a labelled placeholder rather than nothing. */
+	/** Which schematic to draw. An unknown key draws a labelled placeholder, not nothing. */
 	fig?: string;
 	/** The method, in the fewest words that identify it. */
 	name?: string;
@@ -465,7 +465,7 @@ export function MethodCard({ fig, name, note, accent, linked }: MethodCardProps)
 					marked ? "border-accent" : "border-line",
 				)}
 			>
-				{/* Anchored to the panel rather than the card, so the arrow sits on the drawings' centre
+				{/* Anchored to the panel, not the card, so the arrow sits on the drawings' centre
 				    line whatever the captions below happen to wrap to. */}
 				{linked && (
 					<span

@@ -110,7 +110,7 @@ So you enumerate a handful of Bravais *types*, not arbitrary parallelograms — 
 even allowed is dictated by the seed's VCs** (a VC's local rotation/reflection content limits the
 global `P`). This is precisely the documented `algorithm.md` instinct (fit the 17 wallpaper groups /
 Conway orbifold), finally used correctly: as **period enumeration** (let the group propose Λ, then
-fill) rather than as a construction strategy.
+fill), not as a construction strategy.
 
 ### 1.3 Grid / commensurability is quantized
 Every vertex of an edge-to-edge unit-edge tiling on the ring is a sum of unit edge-vectors ζ^j, so

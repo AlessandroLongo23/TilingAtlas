@@ -186,7 +186,7 @@ static void extractFaces(DevResult& res, const std::unordered_map<int, Vec>& pla
 static DevResult develop(const vector<int>& rneig, const vector<int>& cls,
                          const vector<int>& glue, int sign, bool wantFaces) {
 	// Turn by the incident corner's true interior angle, read from its corner CLASS
-	// (CLASS_UNITS[cls]) rather than derived from the polygon size (angunits(lvert)).
+	// (CLASS_UNITS[cls]), not derived from the polygon size (angunits(lvert)).
 	// For the regular palette cls is bijective with lvert and CLASS_UNITS[cls]==angunits(n),
 	// so this is byte-identical there; for doubled tiles it yields the correct per-corner
 	// turn (real θ_N vs flat 180°), which angunits(lvert) cannot express.

@@ -23,7 +23,7 @@ export function homologyGenerators(cx: CellComplex): Generators {
 
   // Self-guard: the H1 = ker∂1/im∂2 construction is only valid when im∂2 ⊆ ker∂1, i.e. ∂1∘∂2 = 0. The
   // assembler already routes complexes through homology() (which validates this), but this is a public
-  // export, so re-check here rather than return silently-wrong generators on a mis-stitched boundary.
+  // export, so re-check here instead of returning silently-wrong generators on a mis-stitched boundary.
   for (let f = 0; f < F; f++) {
     for (let vtx = 0; vtx < V; vtx++) {
       let acc = 0;

@@ -43,7 +43,7 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 	// not vertex orbits of a tiling. Same axis, different quantity, so it never borrows the "Vertices" label.
 	const isFreedraw = spec.geometry === "euclidean" && !!spec.freedraw;
 	// Colors' k is a vertex-orbit count, but of the COLORED tiling (orbits under color-preserving
-	// symmetry only), so it gets its own label rather than borrowing the bare "Vertices".
+	// symmetry only), so it gets its own label instead of borrowing the bare "Vertices".
 	const isColors = spec.geometry === "euclidean" && !!spec.colors;
 	return (
 		<div className="flex flex-col gap-1.5">

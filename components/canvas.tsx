@@ -389,7 +389,7 @@ export function Canvas({
 
 			// True when the retained grid is older than the current α because a rebuild was skipped. The
 			// per-frame draw does not care (nothing reads it), but click-to-centre snaps to a real tile, so it
-			// forces a rebuild first rather than snapping to where a tile used to be.
+			// forces a rebuild first instead of snapping to where a tile used to be.
 			let gridStale = false;
 
 			const ensureTiling = (force = false) => {
@@ -400,7 +400,7 @@ export function Canvas({
 				// of draw. The width/height props lag a React render behind, which would undersize the grid
 				// mid-transition and flash empty corners.
 				const W = p5.width, H = p5.height;
-				// No geometry yet (cold load before the first tiling resolves): blank rather than crash in
+				// No geometry yet (cold load before the first tiling resolves): blank, not crash, in
 				// buildTilingFromCell, which dereferences a null cell.
 				if (!staticCell && !pc) {
 					tilingRef.current = null;
@@ -786,7 +786,7 @@ export function Canvas({
 				const tr = transitionRef.current;
 				if (tr && !transitionsEnabled(cfg)) {
 					// Toggled off (or Islamic/symmetry/inversive switched on) mid-flight: drop straight to the
-					// finished state rather than freezing the tiles at whatever scale they had reached.
+					// finished state instead of freezing the tiles at whatever scale they had reached.
 					transitionRef.current = null;
 					outgoingRef.current = null;
 				} else if (tr) {
@@ -894,7 +894,7 @@ export function Canvas({
 							? screenToWorld(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2, drawOffset, ctrl.zoom, rot)
 							: null;
 					// tiling is null in the cold-load window (no cell resolved yet) — ensureTiling sets it null and
-					// returns, and the cull above already guards on it. Draw nothing rather than deref null.show().
+					// returns, and the cull above already guards on it. Draw nothing instead of dereferencing null.show().
 					// One pen per frame, wrapping the same p5 instance: the overlay code itself is shared
 					// with the preview cards' 2-D layer (lib/render/symmetryOverlay.ts).
 					const pen = p5Pen(p5);

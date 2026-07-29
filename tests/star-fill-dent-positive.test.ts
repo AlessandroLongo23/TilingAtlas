@@ -6,7 +6,7 @@
  * (`ExactStarPolygon.isotoxalDentAt`) into an open vertex.
  *
  * The proof is the MODE DIFFERENCE on one and the same seed (this IS the work order's mutation check,
- * run in-test rather than by commenting code):
+ * run in-test, not by commenting code):
  *   - includeDents:true  (dent loop ON)  → certifies ≥1 cell;
  *   - includeDents:false (dent loop OFF) → 0 cells.
  * The seed fan already carries the VC's own dent at O in BOTH modes (buildStarVCSeed seats dent

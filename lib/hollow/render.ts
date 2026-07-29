@@ -5,7 +5,7 @@
  * cannot go through the flat cell renderer: there is no polygon decomposition of the plane to
  * hand it. Each face is stroked as its own closed path and filled translucently, so overlaps
  * accumulate and the density structure — the thing that distinguishes a hollow tiling from an
- * ordinary one — is visible as darker regions rather than hidden.
+ * ordinary one — is visible as darker regions, not hidden.
  *
  * Fill uses the NONZERO winding rule deliberately. Even-odd would punch a hole in the middle of
  * every pentagram-like tile, which is the `|n/d|` concave reading — the wrong tile.

@@ -411,7 +411,7 @@ def _sphere_emit(block, pqr, lens, verts, inst, rn, gl):
         raise DevelopError(f"Euler != 2 (V={len(verts)} E={len(edges)} F={len(tris)})")
 
     # Merged tiles: flood the developed triangles across undrawn edges. Doing it on the finished
-    # sphere rather than in the quotient means the tile count is the REAL one, not an orbit count.
+    # sphere, not in the quotient, means the tile count is the REAL one, not an orbit count.
     face_of_edge = defaultdict(list)
     for fi, ring in enumerate(tris):
         for a in range(3):
@@ -482,7 +482,7 @@ def _sphere_emit(block, pqr, lens, verts, inst, rn, gl):
 # symmetry group is transitive on flags of a given (corner letter, edge class); so mapping any one such
 # flag to the identity frame maps the whole board onto itself. `_align_matrix` picks that flag by a rule
 # that reads only the certificate's letters, and `SphBoard.absorb` asserts the result lands on the
-# canonical vertex set rather than trusting it.
+# canonical vertex set instead of trusting it.
 
 
 def _align_matrix(block, inst):
@@ -498,7 +498,7 @@ def _align_matrix(block, inst):
 
 # The one reflection that fixes the reference flag (the xz-plane mirror). A development that came out
 # with the opposite handedness — develop_sphere's sign = −1 — is the board's mirror image, congruent to
-# it but not by a rotation, so the alignment gets one extra candidate rather than a special case.
+# it but not by a rotation, so the alignment gets one extra candidate, not a special case.
 _YFLIP = np.diag([1.0, -1.0, 1.0])
 
 _VTOL = 1e-6
@@ -999,7 +999,7 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, cap
         recs = by_k[k]
         counts = [r["stats"].get("tiles", r["stats"]["tileOrbits"]) for r in recs]
         lines.append(f"{k:>4} {len(recs):>9} {min(counts):>11} {max(counts):>6}")
-    # A gap in k is a CORPUS gap, not a fact about the board — say so rather than letting the shelf
+    # A gap in k is a CORPUS gap, not a fact about the board — say so instead of letting the shelf
     # present a hole as an enumeration result.
     if ks_present:
         missing = [k for k in range(ks_present[0], ks_present[-1] + 1) if k not in by_k]

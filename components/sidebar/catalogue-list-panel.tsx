@@ -56,7 +56,7 @@ const SUB_LABEL: Record<string, string> = {
 	dodecahedron: "Dodecahedron",
 	icosahedron: "Icosahedron",
 	// Schwarz boards: one sub per (p,q,r) reflection group. The board is the sphere / disk cut by its
-	// mirrors, so the label names the triple rather than a Schläfli symbol — (2,3,4) has no {p,q} name.
+	// mirrors, so the label names the triple, not a Schläfli symbol — (2,3,4) has no {p,q} name.
 	"sps-223": "(2,2,3) board",
 	"sps-224": "(2,2,4) board",
 	"sps-233": "(2,3,3) board",
@@ -139,7 +139,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	}, [byClass]);
 	const { expanded, toggle, openGroups } = useExpandableGroups(nodeIds, (id) => id, false);
 
-	// One width for every bucket. Measured here rather than per grid so that a single commit gives
+	// One width for every bucket. Measured here, not per grid, so that a single commit gives
 	// them ALL their real heights: a scroll target computed while some buckets were still zero-height
 	// lands somewhere else entirely once they settle.
 	const listRef = useRef<HTMLDivElement | null>(null);
@@ -195,7 +195,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			// Freedraw shares the k axis but not its meaning. For PLANAR freedraw k counts GRID-POINT orbits of
 			// the decoration; for SPHERICAL freedraw it counts VERTEX orbits of the solid. Either way it is not
 			// the vertex-orbit count of a uniform tiling in the way the other classes mean it, so name it on the
-			// row rather than letting a bare "k = 2" imply the quantities are the same.
+			// row instead of letting a bare "k = 2" imply the quantities are the same.
 			const kLabel =
 				cls === "freedraw"
 					? kk.list[0]?.sphericalFreedraw || kk.list[0]?.hypEdges || kk.list[0]?.schwarz

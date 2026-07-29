@@ -475,7 +475,7 @@ function drawColorsPatch(
 }
 
 // The freedraw orbit-dot hue walk (vertexColour there), restated locally: golden-angle hues against
-// the inverted theme so the dots sit on the fills rather than with them.
+// the inverted theme so the dots sit on the fills, not with them.
 function orbitDotFill(orbit: number, dark: boolean): string {
 	const hue = (34 + (orbit + 3) * 137.508) % 360;
 	return `hsl(${hue.toFixed(1)} 46% ${!dark ? 36 : 74}% / 1)`;

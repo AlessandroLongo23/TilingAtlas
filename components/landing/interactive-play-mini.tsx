@@ -10,7 +10,7 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 // useFlatCellPreview. Inert until clicked (useCardActivation) so the wheel keeps scrolling the page.
 
 // Px per tile edge at rest, matching the pxPerEdge the baked thumbnail here used before it went live.
-// A fixed edge size rather than a period count, because this card shows whatever the atlas dealt this
+// A fixed edge size, not a period count, because this card shows whatever the atlas dealt this
 // request: fitting N periods of a large k=7 cell into it lands a mat of 2-pixel triangles.
 const HOME_ZOOM = 44;
 

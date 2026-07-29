@@ -1101,7 +1101,7 @@ git commit -am "feat(library): lattice-shape and wallpaper-group filters wired t
 - §9 scope — MVP (two toggles, Play) = Phase 0–3; group label = 3.4; library filters (original request) = Phase 6; Lab + SVG-export nice-to-have — Lab in 7.1, SVG export deferred. ✓
 - Original message's second ask (library filters: lattice shape + wallpaper groups) — Phase 6. ✓
 
-**Placeholder scan:** the FD chamber vertex selection (Task 3.3) is specified by construction + guarded by the area invariant rather than pre-written line-for-line for all 6 reflection groups — this is deliberate TDD (the exact chamber math is discovered under the area test), not a hidden TODO. Everything else has concrete code.
+**Placeholder scan:** the FD chamber vertex selection (Task 3.3) is specified by construction + guarded by the area invariant, not pre-written line-for-line for all 6 reflection groups — this is deliberate TDD (the exact chamber math is discovered under the area test), not a hidden TODO. Everything else has concrete code.
 
 **Type consistency:** `SymmetryData`/`Axis`/`Center`/`LatticeShape`/`WallpaperGroup` (Task 0.1) are used unchanged in every later task; `analyzeSymmetry(ring, T1, T2, seed)` signature is stable from 0.3 onward; `seedFromCell` returns `{T1,T2,seed}` used identically in the hook, tests, and precompute.
 

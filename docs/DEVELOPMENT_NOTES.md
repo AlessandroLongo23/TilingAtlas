@@ -511,7 +511,7 @@ wall-clock). **`tsc --noEmit` clean; Surd + LatticeEnumerator unit tests green.*
 
 **Recommended starting point:** attack #1 (the expander) first — it is the genuine root, fixing it can
 collapse the candidate-explosion problem (a deep cheap pool makes `gridGen`/area-ladder unnecessary),
-and it directly retires the original k≥2 wall rather than working around it.
+and it directly retires the original k≥2 wall instead of working around it.
 
 ### 11.6 Working-tree state at handoff (everything UNCOMMITTED; last commit `c6aebf8`)
 - **Solid (keep):** `exact/Surd.ts` + `tests/surd.test.ts` (14✅); `LatticeEnumerator.ts` +
@@ -674,7 +674,7 @@ float broadphase for the incidence/overlap with exact confirm. None are needed f
 ### 12.11 Immediate next step  *(SUPERSEDED — see §13: dedup is DONE, and it revealed the real count is 19, not 23-as-distinct)*
 Implement the **chirality- and representation-robust tiling dedup** (merge the snub's mirror lattices +
 representations). Cleanest: dedup by a canonical key computed from a fixed-radius vertex-star patch,
-normalized over reflection AND the actual (possibly off-grid) lattice orientation — rather than over the
+normalized over reflection AND the actual (possibly off-grid) lattice orientation — and not over the
 24 grid rotations of one cell's polygon set. Expectation: k=2 → exactly 20. Then re-run twice to confirm
 the composition digest is identical (determinism), then `algorithm.md` update + the fill speed pass.
 
@@ -1140,7 +1140,7 @@ unbounded — they are ~minutes-long finite fills. ⇒ a **no-cap parallel sweep
 time**: ~72 hard seeds × a few min / 8 cores. **RESULT: the no-cap sweep finished — 59 distinct, digest
 `a4d05490f47eccf3`, 0 timeouts, 447/447 seeds, ~149 min on 8 workers** (inflated ~1.6× by a concurrent DS
 emulator + Spotlight indexing; ~90-110 min on a free box). It reproduces the EXACT digest the capped serial
-run found (55 timeouts there), so it **certifies** the 59 rather than lower-bounding it — the orbifold
+run found (55 timeouts there), so it **certifies** the 59, it does not lower-bound it — the orbifold
 Phase-C reproduce-or-beat baseline, timeout-free. The hard cost is real: the worst concretes are
 single-threaded ~10-22-min torus fills (one `[3⁶;3⁶;3⁴.6]` concrete took 1328 s uncapped — concretes of a
 single seed *name* vary 4× in cost), so a *serial* no-cap sweep would be ~20 h; parallelization is what
@@ -3999,7 +3999,7 @@ dedup discrepancy — cheap and it converts "the engine says so" into "we proved
 (running this session). (3) Finiteness-per-k for this family is unproven. (4) Pre-existing shelf wart:
 the Star / Lattice / Wallpaper facets show for the scaled AND polyomino classes even though those
 polygon-set families carry no such attributes (a dead control against the "hide irrelevant facets"
-ethos) — matched scaled's behaviour rather than fixing both, flag for a separate cleanup.
+ethos) — matched scaled's behaviour instead of fixing both, flag for a separate cleanup.
 
 Files: `tools/ctrnact-oracle/alphabets/gen_alphabet.py` (`polyomino` kind + boundary tracer),
 `.../palettes/tetromino.json`, `.../run-oracle.sh` (develop branch), `scripts/build-tetromino-atlas.ts`
@@ -4158,7 +4158,7 @@ a reseed so `live` never glides across two unrelated families (the length-mismat
 switch between two same-arity families).
 
 **Clamp-only resolvers (the subtle bug the review caught).** The scrub must stay OFF the slider's 0.5° grid
-to sweep continuously, so it clamps via `clampAlphaOnly` (no snap) rather than `clampAlphaAt`. The first cut
+to sweep continuously, so it clamps via `clampAlphaOnly` (no snap), not `clampAlphaAt`. The first cut
 still SEEDED the scrub and the ease target through the snapping `resolveAlphaDegs`, so each off-grid value
 was re-snapped on the next read — and with 0.25°/px landing on grid midpoints, `Math.round`'s round-half-up
 bias made a slow rightward drag move 2× intended while a slow leftward drag STALLED. Fix: `resolveAlphaDegsRaw`
@@ -4333,7 +4333,7 @@ every crossing (gap ~0.03). Removed the occluder ball (AL: so you can see all th
 solids depth-sort, so the far side shows through the gaps as the whole cage. Smoothed the undulation.
 The level ramp was linear, a triangle wave with sharp peaks at crossings; `smooth01` (smoothstep, zero
 slope at both ends) rounds the peaks, and the length subdivision went 0.05 → 0.03 rad so the eased
-curve renders smooth rather than faceted.
+curve renders smooth, not faceted.
 
 Woven/Flat toggle (`sphericalWeaveFlat`, default Woven). Flat sets the lift to 0, so every band sits
 coplanar on the sphere: still a solid 3D ribbon, still no ball. Coplanar crossings do NOT z-fight,
@@ -4649,7 +4649,7 @@ portrait crop anchor moved to 0.19 so the masthead survives on phones.
 AL, on the Euclidean Play view: the `outline` strap style was wrong ("I think it was meant to be
 something else"), drawing every strap border straight through every intersection instead of just
 the outside of the ribbon network; and for both `outline` and `interlace` the border should be an
-additional layer rather than a stroke, so its scale stays relative to the band under zoom instead
+additional layer, not a stroke, so its scale stays relative to the band under zoom instead
 of pinned to screen pixels.
 
 Both collapse into one mechanism. `buildBands` now runs its corner logic TWICE per edge-end —
@@ -4738,7 +4738,7 @@ Grünbaum & Shephard theory applies. Two consequences drove the whole design.
 
 First, `k` collides. Everywhere else in the atlas k counts vertex orbits of a uniform tiling; in
 freedraw it counts GRID-POINT orbits of the decoration, grid points with no drawn edge included.
-AL chose to share the axis and relabel per class rather than split it, so every surface that shows
+AL chose to share the axis and relabel per class instead of splitting it, so every surface that shows
 a freedraw k says which quantity it is: the shelf heading reads "Grid-point orbits (k)" with a note,
 the catalogue tree rows read "k = 2 grid points", the nav header "k=2 grid pts", the card "k=2
 grid-point orbits", the info panel "Grid points (k)". Freedraw is excluded from M/partition, star
@@ -4756,7 +4756,7 @@ centroid and inward normals, and a freedraw face has none of them.
 
 No build script. The patterns already ship as `public/freedraw/solutions.json` in exactly the right
 shape, so `loadReferenceAtlas` adapts them at load (as it already does for the hyperbolic ℓ merge)
-rather than baking a `reference-atlas-freedraw.json` that could drift from its source.
+and does not bake a `reference-atlas-freedraw.json` that could drift from its source.
 
 Second pass, AL feedback. (a) Line stroke reuses the shared `lineWidth` field — same slider, same
 `lw` URL param — multiplying the zoom-proportional edge weight, 0 dropping the stroke like the flat
@@ -4815,7 +4815,7 @@ the sheet fall out of the same code as the domino. The three ranks differ only i
 — nothing for rank 0, one coordinate mod the generator in a basis completed from the strip direction
 for rank 1, and the HNF quotient Z²/P for rank 2.
 
-Canonicalisation minimises over "slide lift e onto the origin". That is complete rather than a
+Canonicalisation minimises over "slide lift e onto the origin". That is complete, not a
 heuristic: any translation identifying two faces carries some cell of one onto a cell of the other,
 so the winning candidate is always among those |T|. It matters for rank 2, where |Z²/P| = det(L)·|T|
 and walking the whole quotient would be quadratic for no gain.
@@ -4888,7 +4888,7 @@ without React, including regression counts against the shipped catalogues.
 Collision worth recording: this landed while AL was live-editing the same files to add the combined
 triangles+squares grid. `FreedrawGrid` gained a third member mid-session, which broke two exhaustive
 `Record<FreedrawGrid, …>` tables in the client. The URL codec now validates the grid against an
-exhaustive record, so a fourth grid fails to compile here rather than silently becoming an
+exhaustive record, so a fourth grid fails to compile here instead of silently becoming an
 unshareable link. `907fba4` is the buildable snapshot of both strands; they could not be separated
 because `faces.ts` does not compile without `pattern.ts`.
 
@@ -5037,7 +5037,7 @@ Redone on a labelling-independent fingerprint (period area, V/E/F, sorted polygo
 sorted total and drawn vertex degrees, sorted component rank/cells/holes): every fingerprint class
 present in both builds keeps *identical* membership, 2/87/1301 whole classes vanish, and zero new
 classes appear anywhere. Duplicates would have shown as surplus inside shared classes. There is none,
-so the old build was emitting whole families of invalid tilings rather than double-counting, and the
+so the old build was emitting whole families of invalid tilings, not double-counting, and the
 new catalogue is a strict sub-catalogue of the old.
 
 The methodological lesson is the one worth keeping. §81 recorded "18201/18201 develop, all distinct"
@@ -5128,7 +5128,7 @@ report: minimal image only MERGES, so a k≤2 block can never yield k>2 — ever
 **Shipped (AL /goal directive): 6345 tilings — 1555 k=1, 4790 k=2, 59 legacy ids preserved, variants
 numbered per figure.** Scope, stated plainly: k=1 complete over {3..8} valence ≤ 6, k=2 complete over
 {3,4,6} valence ≤ 6, regular families to valence 8 (hyp-r*). The k=2 palette asymmetry stands — the
-full-palette run (hyp-p7k2) was aborted by AL at ~4 h CPU mid-solve — and is now MEASURED rather than
+full-palette run (hyp-p7k2) was aborted by AL at ~4 h CPU mid-solve — and is now MEASURED and not
 guessed: `hyp_sweep.py` fills a (k, p, v) cube cell by cell, each cell a complete enumeration with
 counts by true k, per-tiling records and phase timings (`experiments/results/hyp-sweep/`). The k=2
 column grows ~3-4× per +1 valence; k2/k1 runs 5-37×, so the Euclidean 11→20 intuition does not
@@ -5330,14 +5330,14 @@ the same box at k≤2 took under 20 s for 439.
 3-uniform tilings** (4,596 of them in p6v5 alone) that exist nowhere on /library or /play — the shelf
 is still k≤2. Shipping them needs the same bridge as §83 (re-run the maximal complete cells with
 darts kept → export → certify → stamp), which is hours of compute and a catalogue-scale data change,
-so it waits for AL's call rather than being assumed from the earlier "Add them ALL".
+so it waits for AL's call instead of being assumed from the earlier "Add them ALL".
 
 **The report** (`scripts/hyp-sweep-report.mjs` → `experiments/results/hyp-sweep/report.html`) is the
 display layer AL specified: one p×v table per k with a cumulative/exact-k toggle, and count-vs-k plus
 cost-vs-k growth charts at fixed (p,v). Zero-dep, regenerable, self-contained. Design notes worth
 keeping: censored cells are hatched and carry no number (a cap is not a count, and colouring one on
 the magnitude ramp would have read as "few"); p is an ORDERED quantity, so series colour is a
-single-hue ordinal ramp rather than categorical hues, validated against both surfaces; the growth
+single-hue ordinal ramp, not categorical hues, validated against both surfaces; the growth
 charts drop boxes whose count never rises, since a flat line and a 3-vs-4-second wobble plot nothing.
 
 ## §89 — A theory page for the hyperbolic enumeration, and the title that was never styled (2026-07-24)
@@ -5347,9 +5347,9 @@ Shipped as `/theory/hyperbolic` ("Why the hyperbolic catalogue stops where it do
 `public/theory/hyperbolic-enumeration.md`. Seven sections: the infinitude of {p,q} (so the question
 needs bounds before it has an answer), the (k,p,v) box, why a vertex configuration does not name a
 hyperbolic tiling, the Delaney–Dress symbol as the identity that does, why the search runs on
-combinatorics rather than geometry, the sweep numbers, and what the cap is made of.
+combinatorics and not geometry, the sweep numbers, and what the cap is made of.
 
-**Scope call, flagged rather than assumed.** CLAUDE.md says method prose belongs in the thesis and
+**Scope call, flagged, not assumed.** CLAUDE.md says method prose belongs in the thesis and
 must stay out of /theory. The page is written as the MATHEMATICS of the problem (curvature forces ℓ;
 the figure is not a complete invariant; the symbol is; growth rates) plus the measured results. The
 pipeline itself — binaries, palettes, file formats, make targets — stays out, and the standing rule
@@ -5373,7 +5373,7 @@ numbers the prose quotes (the pair really is distinct with equal ℓ; 4.6⁷ rea
 body type, 16px/400, so every title rendered smaller and lighter than its own section headings
 (36px/700). Pre-existing on all four articles; fixed once in `markdown-renderer` (48px/700, balanced,
 no top margin). Also local: the article's `[&_img]` prose rule (one-third width, bordered, centred)
-was shrinking the rendered disks, overridden inside the figure card rather than loosened globally.
+was shrinking the rendered disks, overridden inside the figure card, not loosened globally.
 
 ## §90 — Hyperbolic edge systems: freedraw moved to H², rendered on the developed shelf's shader (2026-07-24)
 
@@ -5402,7 +5402,7 @@ run leaves every "unbounded" verdict unchanged, so the finite/unbounded split is
 
 **The drawn bit is not stored** — it is recoverable as `drawn[h] ⇔ lvert[h]==2 || lvert[rneig[h]]==2`
 (h's edge is a digon side iff the polygon on either side of it is a digon), asserted per certificate
-rather than trusted. Shipped record: `{id, k, base, config, edge, darts:{rneig,glue,lvert,orbit,
+and not trusted. Shipped record: `{id, k, base, config, edge, darts:{rneig,glue,lvert,orbit,
 tileOrbit,seed}, stats}`.
 
 **The renderer is the developed shelf's per-pixel shader, not a new one — that is the whole point.**
@@ -5445,7 +5445,7 @@ hyperbolic bases — {3,7} {3,8} {4,5} {4,6} {5,4} {5,5} {6,4} {6,5} {7,3} {7,4}
 `3_5` one is spherical, 5 triangles = 300° < 360, skipped) — decoded by the SAME `develop_hyp_edges.py`
 with one `BASES` row each, **0 failures**. They explode much faster than the Euclidean grids: {3,7} is
 47 → 468 → 29,448 → 912,074 certificates (k=4 alone is 1 GB of text), so **k≤2 is the shipped depth** —
-enough that the shelf is a real multi-base catalogue (13 bases) rather than one. Raw corpora persisted to
+enough that the shelf is a real multi-base catalogue (13 bases), not one. Raw corpora persisted to
 `materials/corpora/` (gitignored). Verified {4,5} and {8,3} render through the edge shader like 6.6.7.
 
 **The loader went per-base manifest-driven.** `HYP_EDGES_BASES` gained `eagerKs`/`lazyKs` arrays, so
@@ -5559,7 +5559,7 @@ the two entries share both endpoints.
 **Joins are not collapses, and the scan must not conflate them.** 20 further endpoint groups are shared
 because a tile reaches zero area (five `4α.8α.4*`/`4α.4*` entries all meet at α=0°). Those are not one
 family: the limit is a *simpler* tiling that unrelated arcs happen to degenerate to, a singular junction
-rather than a passage. The scanner separates the two cases by the minimum tile area at the endpoint, and
+and not a passage. The scanner separates the two cases by the minimum tile area at the endpoint, and
 rejects candidates whose patches are not congruent (2 such collisions: k1-03/k2-04 and k2-54/k2-55 match on
 tile density but not on geometry).
 
@@ -5766,7 +5766,7 @@ the `ALPHA_EPS_DEG` nudge, the seam deliberately does not — it is a genuine ti
 two maps where a duplicate's target was itself absorbed (k1-18 → k1-15 → k1-05: α=180° must land on u=60°,
 which is the phantom-loop regression from §92). Only absorbed ids are remapped — a survivor keeps its id
 while its slider changes meaning, and there α=45 and u=45 are indistinguishable, so an old link lands on the
-range clamp rather than on a guess.
+range clamp, not on a guess.
 
 **A deliberate two-pass loop.** The census needs the unmerged shelf and the shipped file is the merged one,
 so the builder snapshots the pre-merge array (`experiments/results/mixed-atlas-unmerged.json`) every run and
@@ -5805,7 +5805,7 @@ keeps the two axes from drifting once a class is added. `TILE_CLASS_ORDER` keeps
 and colors stay classes (they are the `source` discriminator and carry their own facets), they just become
 the sole occupant of their segment. No atlas JSON rebuilt; the axis is derived from shipped data.
 
-**It removes two workarounds rather than adding a third.** `hyperbolic` and `spherical` were geometries AND
+**It removes two workarounds instead of adding a third.** `hyperbolic` and `spherical` were geometries AND
 tile classes. /library papered over that by dropping them from the class chips and relabeling the
 non-Euclidean ones (`NONEUC_CLASS_LABEL = { hyperbolic: "Uniform", freedraw: "Edge patterns", colors:
 "Colorings" }`); /play papered over it with the `single` collapse in `catalogue-list-panel.tsx`. The
@@ -5869,7 +5869,7 @@ lazy**; `public/hyperbolic-colors/` goes 16 → 47 MB. The eager colorings shelf
 **{5,4} has no k=1 row, and that is correct, not a gap.** Its six k=1 certificates use one or two colors
 (census {1: 3, 2: 3}); three colors on the {5,4} tiling need at least two colored vertex classes, so the
 surjective filter empties the slice. `HYP_COLORS_BASES` therefore starts {5,4} at k=2, and a reader who
-expects a k=1 chip on every base should read this line rather than file a bug.
+expects a k=1 chip on every base should read this line instead of filing a bug.
 
 **No app code beyond two lists.** The loader, `SUB_ORDER`, the k-chip lazy fetch on /library, the /play
 deep-link shard fetch and `hypColorsFamilyLabel` all read `HYP_COLORS_BASES`, so the shipped change is four
@@ -5882,7 +5882,7 @@ lists 1,424 cards, which is exactly {8,3} 512 + {5,4} 906 + {7,3} 6, attributed 
 
 **The two hexagon corpora are NOT ingested.** Both are Euclidean {6,3} and `develop_freedraw.GRIDS` has
 only `square`, `triangle` and `ts`, so neither the edge system nor the 3-coloring has a decoder. It looks
-tractable rather than nasty: A6 is 4 of the 30°-units, so every vertex figure in the corpus passes the
+tractable, not nasty: A6 is 4 of the 30°-units, so every vertex figure in the corpus passes the
 `12 % s` closure check (`(A6)D6a` sums to 12, `(A2,A6)C3` to 4), and the honeycomb's six step directions
 embed in the unit triangular lattice ℤ + ℤω as three ± axis pairs, the same shape as `TR_STEP`
 (0 → (1,0), 2 → (1,1), 4 → (0,1), and negatives). Whether `emit_pattern`'s per-axis bitmask survives the
@@ -5931,7 +5931,7 @@ the rhombus with the three-pointed star, and 11 of them have α ∈ (0°, 60°) 
 Every one of those windows tops out at or below 90°, and on the 15° grid the pre-existing convex-isotoxal
 4-gon seeds are 60/120 and 75/105 — both *outside* a (0°,60°) window. So the topologies had no discrete
 representative anywhere in their own validity interval. That is AL's endpoint argument, and it is visible in
-the ranges rather than argued from them.
+the ranges, not argued from them.
 
 **Correction to my first count: 14 exported, 12 distinct.** `familySymbol` matching says 14 new, but
 `scan-family-joins.py` finds `k1-31 ≡ k1-11` and `k1-32 ≡ k1-12` (α-forward duplicates, `4α.8α.4*`,
@@ -5951,7 +5951,7 @@ is reported as a REGRESSION and kept. Verified: 0 of the 71 previously-shipped e
 **Shipped.** 71 → **83** mixed entries (k=1: 15 → 27), 10 absorbed ids instead of 8, landing count +12. Each
 of the 12 re-verified through the app's own `evaluateParamCell` at 5 α samples across its open range,
 Σ tile area == |det basis| to < 1e-9 relative every time — the same certificate the exporter applies, checked
-on the shipped JSON rather than on the exporter's intermediate. Build clean, /library and /play screenshotted.
+on the shipped JSON, not on the exporter's intermediate. Build clean, /library and /play screenshotted.
 
 **A provenance bug found on the way.** `make PALETTE=isotoxal-star-z24` does NOT reproduce the shipped
 tables. The geometric overlap pre-filter is gated on `EU_PRUNE_OVERLAP=1`, which the Makefile never sets, so
@@ -6078,12 +6078,12 @@ alphas against params — so a 2-parameter cell silently lost its second δ inst
 mis-evaluating the geometry. The mixed shelf is 100% single-parameter, so it never bit. Now filtered
 explicitly, with the count of skipped families reported: **2,007 of the 4,690 isotoxal families are
 2-parameter and remain unswept**, so the 9.6% is a lower bound. Their validity region is a box, so a
-shared boundary is a face rather than a point — restating the census for them is real new work, not a rerun.
+shared boundary is a face, not a point — restating the census for them is real new work, not a rerun.
 (2) *Duplicates cluster.* They are not disjoint pairs: k4's 465 congruent pairs are only 398 absorbable
 ids. Rewriting pairwise made 45 aliases point at an id that was itself absorbed, so those links resolved
 to entries that do not ship. Fixed by resolving each cluster transitively — lowest id is the
 representative, every member's α-map composed along a BFS tree — plus an assertion that no alias targets an
-absorbed id, and a SUMMARY counted from the absorbed set rather than the pair count (subtracting pairs
+absorbed id, and a SUMMARY counted from the absorbed set, not the pair count (subtracting pairs
 over-states the reduction whenever a cluster is bigger than two). The mixed plan regenerates unchanged
 after the fix: same 6 merges, same aliases, byte-identical segments.
 
@@ -6183,7 +6183,7 @@ probe's, and the completeness caveat §97 left open was not theoretical.
 
 **The change.** `EU_PRUNE_OVERLAP` used to run as a post-filter that discarded 96.5% of the words the DFS
 had just built. 88% of those rejects already collide at prefix length 2, which makes them a property of the
-adjacent PAIR rather than of the word: `forbidden_adjacent_pairs` precomputes the 53×53 table in 0.3 s and
+adjacent PAIR, not of the word: `forbidden_adjacent_pairs` precomputes the 53×53 table in 0.3 s and
 `enum_configs` refuses the pair instead of enumerating every completion of it. It generalizes a prune already
 there — the point-adjacency lemma is the hand-derived special case "two star points cannot be adjacent", and
 the lemma's own docstring proves it geometrically, i.e. as pairwise overlap.
@@ -6196,7 +6196,7 @@ Euclidean closure only — `build_config` is planar.
 **Quote 4.6×, not 20.5×.** The 20.5× was the enumeration stage in isolation; folds, `certify` and `emit` are
 untouched and become the floor of a real run. Whole-generator, `isotoxal-star-z24`: **165 s → 35.5 s**. The
 rhombus palette's end-to-end *before* was started while the k=2 solve held 8 workers, so it is
-contention-inflated; discarded rather than reported, and that multiplier stays unmeasured.
+contention-inflated; discarded, not reported, and that multiplier stays unmeasured.
 
 **Verification is the deliverable, not the speed.** Byte-identical 4/4 files on `isotoxal-star-z24` (34,329),
 `isotox-v8-base` (34,279), `isotox-v8-rh` (104,313); original-vs-new cross-check 4/4 on `star24`, `girih`,
@@ -6408,7 +6408,7 @@ the tilings in these two layers, not a count, and no completeness claim is avail
 ⚑ Not attempted: apeirogons (GMS's third expansion, the 25→53 jump), δ≥3, m=5–6 at δ=2, and
 the 24-gon/24-gram alphabet (58k species vs 2.9k). `{5/2}` itself needs `ℤ[ζ₆₀]` (rank 16) and
 appears in none of the published uniform list — the crystallographic restriction is the
-suspect, and it is worth confirming rather than assuming.
+suspect, and it is worth confirming, not assuming.
 
 Code `tools/hollow/` (README has the full method), logs `experiments/results/hollow-*.log`.
 
@@ -6428,7 +6428,7 @@ with the **nonzero** winding rule, so overlaps accumulate and the density struct
 would punch a hole through the middle of every star, which is the concave `|n/d|` reading — the wrong
 tile, and precisely the distinction this class exists to draw.
 
-Three bugs worth recording, all found by screenshotting rather than by reasoning:
+Three bugs worth recording, all found by screenshotting, not by reasoning:
 1. `fundamentalFaces` deduped faces modulo the lattice but left each one where the patch happened to
    put it. Replicating a scattered set tiles a **wedge**, not the plane. Faces must be translated into
    the origin cell.
@@ -6498,7 +6498,7 @@ applies it, and the five coupled families now carry a real 2-parameter cell with
 chosen species-aligned — a re-basis of the null space so each axis IS one tile's angle — which recovers
 exactly the description AL gave: k2-45's sliders are the rhombus (cx4-60.120) and the 3-pointed star (3*2).
 Old deep links keep working: each absorbed slice carries the δ where it sat AND the direction its own
-slider pointed, derived from the shipped record rather than assumed, so a link travels the line it used to.
+slider pointed, derived from the shipped record, not assumed, so a link travels the line it used to.
 The survivor is aliased to itself for the same reason (its coordinate changed meaning), guarded by a
 "only remap a single α" test so a 2-D link never gets remapped as if it were 1-D. `components/
 param-region-pad.tsx` draws the polygon and drags a point inside it; `clampToRegion` in `paramCell.ts`
@@ -6511,7 +6511,7 @@ star species (`poly_n` already returns vertices — a 3-pointed star IS a hexago
 allowed up to 300° when a hexagon's two alternating angles can only sum to 240°. The region then contained
 points whose tiles self-intersect, and the area certificate failed there (k2-02 at δ=(−5, 11.5): Σarea
 3.129 vs |det| 1.661). With the limits right — V ↦ 24 − 48/V units — every interior sample certifies, so
-the simplicity constraint turns out to be IMPLIED by the correct angle bounds rather than extra. The
+the simplicity constraint turns out to be IMPLIED by the correct angle bounds, not extra. The
 earlier hand-check against the sampled map missed it because that map only covered δ ∈ [−4,4]², where the
 upper bounds never bind. Sampling a region and checking its corners are not the same test.
 
@@ -6573,7 +6573,7 @@ overlay.)
 fixed weight while only the DATA stays in δ-units, both axes on one scale so the polygon is not distorted:
 
 - The polygon is the ONLY pointer target — no rectangle, no border, no background. A click outside it does
-  nothing rather than being projected to an unrelated point (verified: click outside leaves the tuple
+  nothing instead of being projected to an unrelated point (verified: click outside leaves the tuple
   untouched). Keyboard focus thickens the region's outline instead of drawing the browser's focus box,
   which was itself the bounding rectangle the pad exists to not have.
 - A drag that leaves the region now slides along its boundary: `nearestInRegionDeg` in `paramCell.ts`
@@ -6584,7 +6584,7 @@ fixed weight while only the DATA stays in δ-units, both axes on one scale so th
   the same projection, closing the open item flagged at the end of §103.
 - Axes: spines spanning exactly the region's extent, tick marks every 30° of ABSOLUTE angle on both axes,
   numbers where they fit (the two extremes always print; a grid label prints only if it clears everything
-  already placed, so a 12-unit axis gets seven rules and four numbers rather than seven collisions), an
+  already placed, so a 12-unit axis gets seven rules and four numbers, not seven collisions), an
   α/β glyph at each axis end, a 30° grid clipped to the polygon, dashed guides from the handle to both
   axes, and a dot at every region vertex — where an edge changes slope is where one tile hits zero angle
   and a different constraint takes over — each with the pair as a tooltip.
@@ -6642,7 +6642,7 @@ anything inside `[role="application"]`, which is the standard marker for a widge
    + `colorFacesAbc` + `buildMeshFromPatch`). IslamicCanvas rebuilds the planar arrangement of the WHOLE
    patch on every α tick. Faces span tile boundaries, so the fix is not culling but building the
    arrangement once per fundamental cell and instancing it across the lattice — a real piece of work in
-   that feature's area, not a tweak. This is why Islamic drags are 15–32ms rather than at the cap.
+   that feature's area, not a tweak. This is why Islamic drags are 15–32ms, not at the cap.
 2. **The p5 fill path off the shader, 76ms/frame** at minimum zoom (13fps, 240/240 frames over 20ms;
    13ms at default zoom). It genuinely draws those ~9 000 tiles, so it needs the grid. The contained
    improvement is to rebuild INTO the retained polygon objects — overwrite vertices instead of allocating
@@ -6708,11 +6708,11 @@ objects per tick. Callers: the p5 canvas (withheld while a selection transition 
 references) and both Islamic canvases for their patch. Off-shader flat path at minimum zoom, star family:
 76.2 → 38.9ms. `tests/build-patch-tiling-reuse.test.ts` asserts the reused grid is indistinguishable from a
 fresh one, that it holds across a six-step sweep (so nothing accumulates), and that a radius or shape
-mismatch falls back rather than half-writing.
+mismatch falls back instead of half-writing.
 
 **Tried and rejected.** Caching `p5.Color` objects per hue in `Tiling.show` — ~9 000 `ctx.fill(h,s,b,a)`
 calls per frame for the ~20 distinct hues a tiling has. No measurable change (39.06 vs 38.93ms), so it was
-reverted rather than kept as unpaid-for complexity. p5's fill is not where that path's time goes.
+reverted, not kept as unpaid-for complexity. p5's fill is not where that path's time goes.
 
 **Where it stands.** At minimum zoom (the stress case), 1600×1000, avg frame / frames over 20ms out of 240:
 
@@ -6817,14 +6817,14 @@ frame. A landing card must not steer that store — the offset would follow the 
 the canvas took an optional `input` prop (`HyperbolicViewInput`: offset, targetOffset, rotationDeg,
 resetSeq, click) and the frame loop now resolves those four values once at the top from either source.
 Everything downstream is unchanged, and with the prop absent /play runs exactly as before. Recentre
-and click-to-anchor are sequence counters rather than flags precisely because two owners of one object
+and click-to-anchor are sequence counters, not flags, precisely because two owners of one object
 would race over clearing a consumed flag; the canvas remembers the last sequence it acted on.
 
 `InteractiveHyperbolicMini` owns a per-instance `CardControls`, eases it in its own rAF, and publishes
 into that input object. `stepCardControls` grew a `pivotOffsetOnRotate` argument for it: the disk
 applies rotation as θ inside its own Möbius map and derives its pan from the raw offset, so rotating
 the offset as well double-counts the spin. canvas.tsx skips the same step for the same reason — the
-knowledge was there, it just wasn't reachable from the shared helper. Its reset snaps home rather than
+knowledge was there, it just wasn't reachable from the shared helper. Its reset snaps home instead of
 easing home, because the canvas syncs its pan bookkeeping to whatever offset it sees on the reset
 frame and a glide back to the origin afterwards reads as a fresh drag.
 
@@ -6849,7 +6849,7 @@ an invisible wall well short of the cell. Both now fill the media box outright. 
 the renderers to go with it, each defaulting to /play's existing value: `diskPadPx` on the hyperbolic
 canvas (24 on /play, where floating controls sit over the viewport corners; 0 here) and `fitFraction`
 on the spherical one — the fraction of the viewport half-height the unit sphere spans, 0.75 on /play
-and 1 here. `CAMERA_DISTANCE = 3.2` and `ORTHO_HALF_HEIGHT = 1.33` are now derived from it rather than
+and 1 here. `CAMERA_DISTANCE = 3.2` and `ORTHO_HALF_HEIGHT = 1.33` are now derived from it and not
 written down; the derivation reproduces them to 0.6%, and as a side effect the perspective and
 orthographic framings agree exactly instead of being 0.3% apart. Disk and sphere both come out at
 220 px in a 359×220 cell, matched.
@@ -6878,7 +6878,7 @@ that is the mode /play's canvas already runs in; the 2-D adapter converts, the p
 
 Three smaller extractions went with it. `lib/render/orbitHover.ts` holds the orbit-dot feel — radius
 4 px, hover growth ×2, lerp 0.2 — as constants both `euclidean-canvas.tsx` and `flatTilingGL.ts` read,
-so the hit test and the shader's `uRadiusPx` are the same number by construction rather than by
+so the hit test and the shader's `uRadiusPx` are the same number by construction, not by
 coincidence. `lib/render/vertexFigure.ts` recomputes a configuration's cyclic name from placed geometry
 instead of trusting the alphabet file's own ordering (`public/vertex-configs/*.json` writes "6·4·3·4").
 `lib/services/symmetryCache.ts` memoises the exact-cell symmetry analysis per atlas id, failures
@@ -6916,7 +6916,7 @@ Custom markdown tags mount real atlas cards: `<tiling-card>` (the /theory previe
 lifting to 90% of the viewport over a backdrop, since a slide has no prose column to break out of),
 `<patch-card>` for Penrose and the hat, `<vertex-figure-card>` built from a configuration's *name* rather
 than an alphabet file so a slide can show configurations no palette ships, `<method-card>` as inline SVG
-schematics, and `<count-timeline>` — the published k-uniform counts drawn rather than tabulated, because
+schematics, and `<count-timeline>` — the published k-uniform counts drawn, not tabulated, because
 the two facts that matter (the frontier sat still for thirty-three years then moved twice; every step was
 a different person with a different method) do not survive a three-column table.
 
@@ -7003,7 +7003,7 @@ R' is rotation composed with the y-flip. Two consequences worth writing down. It
 reflection, det = −1), so `viewToWorld` runs the same formula as the forward map — the multigrid's
 hover-picking inverts the view for free at any angle. And because the offset is added *after* the
 rotation, a drag needs no un-rotation: Δoffset = Δscreen holds at every angle. Subtracting `centre`
-rather than folding it into the offset keeps home at offset = 0, so `resetCardControls` works unchanged
+and not folding it into the offset, keeps home at offset = 0, so `resetCardControls` works unchanged
 and an unpanned view spins about the patch instead of about a stale origin.
 
 `subrosaGL.ts` gained `uRot` + `uCentre` and lost `uScale`/`uOrigin`; its draw params are now
@@ -7105,8 +7105,8 @@ sized for the static /defense cards — standalone square thumbnails, where noth
 to another. Two causes stacked. The tile scales differ (`penrosePatch` deliberately rescales so an edge
 is exactly 1; `hatPatch` inherits Kaplan's raw hatviz coordinates, edge 0.866), and the windows spend
 their budget differently: Penrose takes 93% of its clean square (14 of 15.0), the hat 60% (18 of 29.8),
-the latter tightened on purpose because "the hat's outline is intricate enough to read as texture
-rather than a shape if the view pulls much further back". Result: 15.5 tiles across vs 9.7.
+the latter tightened on purpose because "the hat's outline is intricate enough to read as texture,
+not a shape, if the view pulls much further back". Result: 15.5 tiles across vs 9.7.
 
 **First attempt, and why it was wrong.** I normalised the DEFAULT level onto a shared
 `HOME_TILES_ACROSS = 9.5`, cover-fitted to each patch's clean window, and left every other level
@@ -7170,9 +7170,9 @@ What was adopted, and none of it is skin-deep:
   than `Slider`: each row is tinted with the colour its grid family draws with on the z-space panel, so
   the row's own label is the legend, and `Slider`'s built-in label/value row would fight it.
 
-The switcher follows /play's shape rather than inventing one: a metadata cell naming the active view
+The switcher follows /play's shape instead of inventing one: a metadata cell naming the active view
 and its group, over one segment row per construction group. `AperiodicSidebar` (in `_controls.tsx`) is
-the shell all four views render into, so this is written once rather than three times as before.
+the shell all four views render into, so this is written once, not three times as before.
 
 Two things the first pass got wrong, both caught on screen:
 
@@ -7205,7 +7205,7 @@ edges as digons, paired by endpoint class and carrying the drawn bit in the lett
 60–30. Measured endpoint classes over the whole corpus agree with that pairing exactly.
 
 **Three things made it unlike the four existing grids**, and each became a knob in
-`develop_freedraw.py`'s `GRIDS` table rather than a new code path — defaults reproduce square,
+`develop_freedraw.py`'s `GRIDS` table, not a new code path — defaults reproduce square,
 triangle, ts and hex byte for byte.
 
 1. *The letters name corners, not faces.* A face walk crosses three different letters and its size is
@@ -7272,14 +7272,14 @@ the triangle geometry, the bare-board anchor and the collinearity fix.
 ## The conformal lens becomes universal: one periodic-cell IR for every Euclidean class (2026-07-27, AL directive)
 
 AL: every Euclidean tiling must support the inversive view — colorings, edge patterns, all of them.
-He was right that it did not, and the reason was structural rather than an oversight in any one place.
+He was right that it did not, and the reason was structural, not an oversight in any one place.
 
 **What the lens actually was.** `components/inversive-canvas.tsx` was a self-contained analytic shader
 that knew exactly ONE data shape: a period lattice plus ≤128 polygons of ≤40 vertices, each carrying a
 single `hue` float. Per pixel it inverted the lens map, reduced into the fundamental parallelogram, and
 ran point-in-polygon over the 3×3 block of lattice copies. Sharp at any magnification — that is the
 whole point of the view — and also a cage. Every decoration that did not fit the shape had been
-force-cleared rather than ported: `inversive: false` on selecting a coloring, an edge pattern or a
+force-cleared, not ported: `inversive: false` on selecting a coloring, an edge pattern or a
 hollow tiling (`_play-client.tsx`), and the Islamic construction was worse — no flag at all, both
 WebGL Islamic layers simply gated on `!cfg.inversive`, so switching the lens on with the construction
 up dropped it silently and showed the bare tiling.
@@ -7317,7 +7317,7 @@ faces covering every point) the union of that many bands inked over the entire p
 0.3 matches the flat renderer at its default zoom.
 
 **Fill model.** Fills composite in z order, which is what lets hollow stack translucent self-intersecting
-faces the way `ctx.fill("nonzero")` does. Strokes take the STRONGEST coverage rather than compositing:
+faces the way `ctx.fill("nonzero")` does. Strokes take the STRONGEST coverage, they do not composite:
 two tiles sharing an edge both stroke it at the same coverage, and an "over" blend would darken and
 fatten every shared edge by exactly that doubling. Class A of the Islamic construction keeps its `hue`
 channel, so the sidebar hue ring stays live with no geometry rebuild.
@@ -7445,7 +7445,7 @@ Playwright: drag, wheel, Shift+wheel and right-click leave the canvas pixel-iden
 ## 2026-07-28 (2) — The cmm slide, and what "fit the patch" has to mean when a domain is on it
 
 AL asked for t4003 and its patch on the failure slide, because t4003 is cmm and cmm is one of the
-groups that break the symmetry-first method. Checked rather than taken on trust, through the app's own
+groups that break the symmetry-first method. Checked, not taken on trust, through the app's own
 exact analysis: t4003 is indeed cmm, k=4, 13 cell polygons and 9 in its seed. The tally is the better
 fact, though — across the 151 k=4 tilings the groups run cmm 50, p6m 34, pmm 29, pmg 11, then a tail.
 The group that breaks the method is the single commonest case at that level, which is a stronger claim
@@ -7504,11 +7504,11 @@ alone would give. Reading `Sn` as a site order rejects every one of those 2,297 
 two edge classes where the scalene ones have three — (2,4,4)'s two S2–S4 sides are congruent, so they
 are one letter. `schwarz_board.letter_pairs` assigns them in lexicographic order of the angle pair, and
 `derive_letter_pairs` re-derives the same map from a corpus's own vertex figures so the two can be
-checked against each other rather than one trusted. That check is also what sorted out the drop: the
+checked against each other, not one trusted. That check is also what sorted out the drop: the
 `237.zip` folder named `solver_schwarz_edges_236` holds 17 genuine (2,3,6) certificates and 16 (2,3,3)
 ones, and every file classified to exactly ONE board, no ambiguity.
 
-Edge lengths come from the law of cosines for angles rather than a table. The formula reproduces the
+Edge lengths come from the law of cosines for angles, not from a table. The formula reproduces the
 hand-written 1 : √3 : 2 that `develop_freedraw.py`'s sch236 row carries, which is the selftest.
 
 ### The sphere: develop, then align onto ONE board
@@ -7523,7 +7523,7 @@ The size problem was not the develop. (2,2,4) reaches 61,914 tilings at k=10 and
 k=7; shipping the board's geometry with each record cost 74 MB and 78 MB for those two slices alone,
 175 MB across the shelf. But every pattern on a board develops the SAME sphere — a decoration says
 which edges are drawn, never where the triangles are — so the geometry belongs to the shard, not the
-record. Aligning them is exact rather than fitted: a developed instance is a flag, the board's symmetry
+record. Aligning them is exact, not fitted: a developed instance is a flag, the board's symmetry
 group is transitive on flags of a given (corner letter, edge class), so mapping any one such flag to
 the identity frame maps the board onto itself. Pick that flag by a rule reading only the certificate's
 letters, order vertices by position, and every record lands on one canonical indexing — asserted, with
@@ -7587,7 +7587,7 @@ filed. 842 certificates → 5,974, and coverage runs contiguous k=3..11 with no 
 All 5,974 develop, 0 failures, and every one still lands on the same canonical board (V=26, E=72,
 F=48) — which is the check that matters after a corpus grows, since the shard header now describes
 five times as many patterns as it did when it was written. The k=3..9 counts are unchanged to the
-unit (5, 2, 80, 81, 196, 392, 86), so the rerun added rather than moved anything.
+unit (5, 2, 80, 81, 196, 392, 86), so the rerun added and did not move anything.
 
 The new slices are 1,603 and 3,529 tilings, 0.83 MB and 1.84 MB — small enough to stay eager, because
 the board hoist is doing the work: at the pre-hoist per-record geometry those two would have been
@@ -7620,10 +7620,10 @@ frame, calling the same private helpers in the same order. `expand` is untouched
 back into the search. `scripts/build-growth-figure.ts` runs the probe-pipeline prologue to build the
 k=3 seeds, walks two steps, and writes `public/defense/growth-k3.json` (10.6 KB). `figureStep` also
 reports `prunedByVC` — placements valid at the target whose merged patch closes a bad vertex, which
-the search enumerates and then discards. They are excluded from the widget and counted, rather than
+the search enumerates and then discards. They are excluded from the widget and counted, not
 dropped silently.
 
-Depth 2 is small ONLY because the target vertex is the algorithm's choice rather than the viewer's.
+Depth 2 is small ONLY because the target vertex is the algorithm's choice, not the viewer's.
 Letting a hover pick any open vertex — AL's first sketch — would have made the tree (open × cands)²,
 thousands of states, and depicted a freedom the DFS does not have. Restricting it to `sorted[0]` is
 both the faithful option and the cheap one, which is a nice place to end up.
@@ -7677,7 +7677,7 @@ one shelf and its contents.
 
 ## 2026-07-28 (4) — AL's whole-patch stamping, measured: it loses the snub
 
-AL asked why the expander stamps a copy of the SEED rather than a copy of the whole current patch,
+AL asked why the expander stamps a copy of the SEED and not a copy of the whole current patch,
 reasoning that a whole-patch stamp cannot break a pattern the patch has already established. The
 notes had no answer: searching them turned up no record of the variant ever being tried, so "why did
 it fail" had never been asked, let alone answered.
@@ -7722,7 +7722,7 @@ shape the extractor cannot use. Measured false — there is no leaf to fail, the
 
 So the mechanism is still unidentified, and the completeness argument above is wrong somewhere I have
 not found. What is established: the naive swap loses a tiling, and it loses the chiral one, which is
-suggestive but not yet an explanation. Recorded here rather than resolved, because the architecture it
+suggestive but not yet an explanation. Recorded here, not resolved, because the architecture it
 would rescue was abandoned for a stronger reason — fixing Λ first makes the fill finite, which is what
 took k=2 from 13 timeouts to zero, and no stamping rule addresses that.
 
@@ -7845,7 +7845,7 @@ left edge makes the stack lean further right with every triangle row: honest, an
 distraction that reads as a rendering fault. Each row is now drawn past both edges of a fixed window
 and clipped, so the silhouette stays square while the phase inside it still shifts.
 
-The frame is fixed at the tallest stack the demo allows rather than fitted to the current one. Fitting
+The frame is fixed at the tallest stack the demo allows, not fitted to the current one. Fitting
 would redraw the certified patch smaller with every row added, and "this patch is unchanged" is what
 the picture is for.
 

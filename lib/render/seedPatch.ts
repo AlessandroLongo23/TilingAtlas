@@ -6,7 +6,7 @@
 // such artifact, only the fundamental cell and the exact source the orbit partition is derived from.
 // So the seed is reconstructed here from those two.
 //
-// The result is returned as a synthetic TranslationalCellData rather than a polygon list. That is the
+// The result is returned as a synthetic TranslationalCellData, not a polygon list. That is the
 // whole trick: buildCellMesh, buildOrbitDotMesh and the rest of the preview pipeline take a cell, so
 // handing them a cell whose polygons happen not to tile it draws the seed through the existing path,
 // with its polygon points, orbit dots and symmetry overlays all landing in one world frame. The
@@ -62,7 +62,7 @@ function nearest(cands: readonly { x: number; y: number }[], ax: number, ay: num
  *
  * Orbit 0's representative is the vertex nearest the cell's centre, and each subsequent orbit takes the
  * vertex of that orbit nearest the centroid of the representatives already chosen — so the k figures
- * come out as one clump rather than scattered across the window. It is a heuristic: this is *a* valid
+ * come out as one clump, not scattered across the window. It is a heuristic: this is *a* valid
  * one-vertex-per-orbit seed, not the one the search would have started from.
  *
  * Returns null when the cell cannot be parsed or no vertex of the patch has an orbit (a tiling with no
@@ -86,7 +86,7 @@ export function seedFromCell(
 	const patch = expandToViewport(base, cx, cy, reach, reach, SEED_WINDOW_RADIUS);
 
 	// Every distinct vertex of the patch, grouped by orbit. Vertices the partition does not know
-	// (orbitAt = −1) are dropped rather than pooled: they are positions the exact cell never produced.
+	// (orbitAt = −1) are dropped, not pooled: they are positions the exact cell never produced.
 	const byOrbit = new Map<number, { x: number; y: number }[]>();
 	const seenVertex = new Set<string>();
 	for (const poly of patch) {

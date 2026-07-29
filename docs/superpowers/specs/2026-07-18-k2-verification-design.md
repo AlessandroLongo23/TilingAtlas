@@ -26,7 +26,7 @@ this slice is two things, not a vague "check everything":
 - **Shared arcs are shared because two families share the same underlying tile-slider** (e.g. k2-25↔k2-26,
   and k2-82/83 gluing with k2-64/65). They therefore parametrise the shared arc identically, so the
   false-split/reparametrisation risk is expected NOT to occur here. This slice VERIFIES that (if two
-  edges' multi-sample sequences match at all, they match sample-for-sample) rather than assuming it.
+  edges' multi-sample sequences match at all, they match sample-for-sample) instead of assuming it.
 - **Self-folding (zero-∂₂) faces are k2-82 and k2-83** (family 4α, tiles cx4-60.120 + cx4-75.105 — NOT
   identical tiles, so there is no α₁=α₂ diagonal to subdivide along; the fold is an opposite-side
   coincidence). Two of the thirteen `full` b₂ generators are these.
@@ -135,7 +135,7 @@ Modify:
 - **A pinched-fold face is classified, not repaired.** If Component 4 finds a genuine pinch (k2-82/83),
   the honest fix is subdividing the fold into proper cells (exact-stratification territory). This slice
   reports the pinch and its effect on b₂; repairing the CW model is the next slice if the pinch proves to
-  be a real modeling artifact rather than a genuine surface.
+  be a real modeling artifact, not a genuine surface.
 - **Generator bases are non-unique.** H₁/H₂ representatives are a choice of basis; the report says so and
   presents one explicit basis, which suffices to name and classify each independent generator.
 

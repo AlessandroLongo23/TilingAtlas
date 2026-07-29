@@ -582,7 +582,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 	}, [currentQuery]);
 
-	// Share: copy a link to exactly this view. Serializes fresh rather than reading window.location.href,
+	// Share: copy a link to exactly this view. Serializes fresh instead of reading window.location.href,
 	// so a slider moved less than URL_MIRROR_DEBOUNCE_MS ago is still included — the debounce then only
 	// ever serves reload-restore, never the clipboard.
 	const [shared, setShared] = useState(false);

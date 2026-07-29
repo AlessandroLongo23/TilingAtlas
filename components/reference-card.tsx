@@ -82,7 +82,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const wrapperClass = cn(
 		// surface-raised, not surface: the lane between cells is the page's own background, so the card
 		// has to sit a step above it or the lane reads as part of the card. Hover darkens the hairline
-		// rather than the fill — in a layout made of lines, that is the louder signal anyway.
+		// and not the fill — in a layout made of lines, that is the louder signal anyway.
 		// Only the THUMBNAIL is clickable (AL, 2026-07-23), so on interactive cards the hover signal
 		// tracks the thumbnail alone — hovering the inert bottom section changes nothing.
 		"ta-lane-cell relative flex flex-col bg-surface-raised transition-all overflow-hidden group text-left",
@@ -260,7 +260,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					) : null}
 					{/* Freedraw kind chips: what the faces ARE. A strip or an unbounded sheet is the whole point
 					    of the class — these are not tiles in the Grünbaum & Shephard sense — so they get a
-					    badge rather than being buried in the sub-line. */}
+					    badge instead of being buried in the sub-line. */}
 					{isFreedraw && freedrawStats ? (
 						<>
 							{freedrawStats.strips > 0 ? (

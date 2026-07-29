@@ -210,7 +210,7 @@ function computeFaceRays(
 	// Cap each ray where it exits its own face (contains runaways, see exitArc), then resolve every ray's stop
 	// with resolveRayStops: the same growing-line rule as the flat renderer (Pass 1) plus the opt-in overshoot
 	// trim (Pass 2). On the sphere the cap makes a ray with no covered crossing fall back to its in-face chord
-	// rather than run away. See lib/utils/islamicRayStops for the full rationale.
+	// instead of running away. See lib/utils/islamicRayStops for the full rationale.
 	const cap = new Array<number>(R);
 	for (let i = 0; i < R; i++) cap[i] = exitArc(i);
 	const stop = resolveRayStops(xs, nStop, cap, eps, trim);

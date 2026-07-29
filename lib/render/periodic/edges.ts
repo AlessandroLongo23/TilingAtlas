@@ -2,7 +2,7 @@
 // infinite strips or unbounded sheets, which have no vertex list — so the fill is emitted PER GRID CELL,
 // coloured by the face the cell belongs to. Same-face neighbours therefore share a colour and read as one
 // merged tile, which is exactly what the 2D canvas draws (lib/freedraw/render.ts) and why that renderer
-// also fills cell by cell rather than face by face.
+// also fills cell by cell, not face by face.
 //
 // Three layers, in paint order: cell fills, the scaffold (every grid edge, faint), the drawn edges on top.
 

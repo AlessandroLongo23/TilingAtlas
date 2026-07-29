@@ -19,7 +19,7 @@ const WAVE_TRAVEL = 0.8;
 
 const clamp01 = (t: number) => (t < 0 ? 0 : t > 1 ? 1 : t);
 
-// Eased at both ends, so a tile emerges from (and returns to) its centroid rather than snapping.
+// Eased at both ends, so a tile emerges from (and returns to) its centroid instead of snapping.
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
 /**
@@ -33,7 +33,7 @@ export function waveTileScale(phase: "in" | "out", u: number, p: number): number
 	return phase === "in" ? eased : 1 - eased;
 }
 
-/** Under this a tile is a dot of stroke rather than a shape — skip it instead of drawing it. */
+/** Under this a tile is a dot of stroke, not a shape — skip it instead of drawing it. */
 export const WAVE_MIN_SCALE = 0.02;
 
 export function prefersReducedMotion(): boolean {

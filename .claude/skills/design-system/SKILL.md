@@ -226,11 +226,11 @@ Every component follows this structure:
 - Prefer **slots** for content injection over content props.
 - Use named slots for multi-region components (`slot="header"`, `slot="footer"`).
 - Build small, focused components — one responsibility per component.
-- Compose complex UIs by nesting primitives rather than adding props to a single component.
+- Compose complex UIs by nesting primitives, not by adding props to a single component.
 
 ### Variant Pattern
 
-Use a class builder function rather than ternary chains in templates:
+Use a class builder function, not ternary chains, in templates:
 
 ```ts
 function buildClasses(variant: string, size: string, disabled: boolean): string {

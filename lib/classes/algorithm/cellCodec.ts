@@ -22,7 +22,7 @@ export function serializeCell(cell: PeriodCell): SerializedCell {
 	const polys = cell.cellPolygons.map((p) => {
 		// This codec is regular-polygon-only: it stores {n, anchor, dir} and deserializeCell rebuilds via
 		// RegularPolygon.fromAnchorAndDirExact. A star tile (its reflex dents / extra boundary vertices)
-		// would be silently regularized into an n-gon, so refuse it loudly rather than lose geometry.
+		// would be silently regularized into an n-gon, so refuse it loudly instead of losing geometry.
 		if ((p as { isStar?: boolean }).isStar === true)
 			throw new Error('cellCodec: star polygons are not representable by the regular-only {n,anchor,dir} codec');
 		if (!p.exactVertices || !p.edgeDirs) throw new Error('cellCodec: cell polygon lacks exact data');

@@ -274,7 +274,7 @@ function Tile({
 // The free-angle badge: one glyph per independent slider the tiling gets in /play, in slider order — "α"
 // for the ordinary one-parameter families, "α β" for a two-parameter one, "θ" for a merged family whose
 // coordinate is not the exported α. Same glyphs as the slider panel and the library card, so the badge
-// reads as a count of the axes rather than a generic "this deforms" mark.
+// reads as a count of the axes, not a generic "this deforms" mark.
 function ParamBadge({ paramCell }: { paramCell: ParametricCellData }) {
 	const glyphs = paramGlyphs(paramCell);
 	if (!glyphs.length) return null;

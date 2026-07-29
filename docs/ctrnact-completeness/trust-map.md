@@ -3,7 +3,7 @@
 Date: 2026-07-12. Purpose: for a reader who cannot personally certify the geometry, this
 sorts every lemma of `skeleton.tex` into one of three tiers, so the question "can I trust
 this proof?" reduces to a small, bounded set of lemmas that genuinely need a mathematician,
-rather than 27 pages taken as one indivisible object.
+and not 27 pages taken as one indivisible object.
 
 Tiers:
 - **M — mechanical / finite.** A finite computation or a routine finite argument. Checkable

@@ -11,7 +11,7 @@ Soundness. `build_config` places tiles at the running angle sum, so a prefix's p
 the full placement: if tiles i and i+1 overlap, they still overlap in every extension, and overlap is
 invariant under the rotation/reflection that `cyclic_reps` quotients by — so no overlap-free config can be
 lost. The existing point-adjacency lemma in `enum_configs` is the same shape (and, per its own docstring,
-the same geometry) so this generalizes a prune already there rather than adding a new kind.
+the same geometry) so this generalizes a prune already there instead of adding a new kind.
 
 This probe does not modify gen_alphabet. It builds the table, re-runs the DFS with it, and asserts the
 emitted overlap-free set is IDENTICAL to the baseline's — the only result worth having.

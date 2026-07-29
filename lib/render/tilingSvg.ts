@@ -63,7 +63,7 @@ export function tilingToSvg(
 	for (const poly of polys) {
 		const v0 = poly.vertices[0];
 		// `l` chains from the previous point, so these are step deltas, not offsets from v0.
-		// SVG's y axis points down and the atlas's world y points up, so flip here rather than
+		// SVG's y axis points down and the atlas's world y points up, so flip here instead of
 		// wrapping every tile in a transform.
 		const steps: string[] = [];
 		for (let i = 1; i < poly.vertices.length; i++) {

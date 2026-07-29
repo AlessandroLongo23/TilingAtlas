@@ -14,7 +14,7 @@ import type { TranslationalCellData } from "@/classes/algorithm/types";
  * of those rewrites has to leave the RESULT untouched: the same vertices, the same edges IN THE SAME ORDER
  * (face tracing walks `edges`, and the arrangement's own comments call out that ordering is load-bearing),
  * and the same faces with the same winding. Behaviour-preserving is easy to claim and easy to get wrong, so
- * this pins a digest of the whole pipeline over real shelf geometry rather than trusting the claim.
+ * this pins a digest of the whole pipeline over real shelf geometry instead of trusting the claim.
  *
  * If a change here is DELIBERATE, re-run with SHOW_DIGEST=<path> to write the new values out and paste them in —
  * but only after checking on screen that the construction is unchanged (scripts/visual-check.mjs, /play

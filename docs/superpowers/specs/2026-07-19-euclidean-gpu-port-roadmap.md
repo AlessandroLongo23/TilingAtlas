@@ -195,7 +195,7 @@ illusion is already baked into the outline endpoints by `buildBands`, so the GPU
 fill colour and border width are draw-time uniforms. Two shaders in [islamicGL.ts](../../../lib/render/islamicGL.ts):
 `ISLAMIC_FILL` gains `uMode 2` (solid body colour), and `STRAP_BORDER_VERT/FRAG` is the per-vertex-colour
 border. This lives in a SEPARATE [strap-canvas.tsx](../../../components/strap-canvas.tsx) (a sibling of
-IslamicCanvas, its own gate `isStrapShaderActive`) rather than another branch of the plain/checker canvas,
+IslamicCanvas, its own gate `isStrapShaderActive`), not another branch of the plain/checker canvas,
 because straps are a different mesh shape and that file was mid-refactor next door; the patch/instance/
 throttle plumbing is duplicated for now (factor a shared hook once the colour refactor there settles).
 Playwright-verified against genuine-p5 references for all three styles (interlace weave, flat outline,

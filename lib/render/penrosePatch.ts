@@ -82,11 +82,11 @@ export function penrosePatch(depth = PENROSE_DEPTH): RawPolygon[] {
 	let tris = wheel();
 	for (let i = 0; i < depth; i++) tris = subdivide(tris);
 
-	// Rescale so an edge is 1 rather than φ^-depth: the renderer sizes everything off median edge.
+	// Rescale so an edge is 1, not φ^-depth: the renderer sizes everything off median edge.
 	const s = Math.pow(PHI, depth);
 
 	// Two mirror triangles make one rhombus, and they meet along b-c, so the midpoint of b-c
-	// identifies the rhombus. Partners are found through a hash grid rather than by string-keying a
+	// identifies the rhombus. Partners are found through a hash grid, not by string-keying a
 	// rounded midpoint: the two halves reach the same point along different subdivision paths, so
 	// their coordinates agree only to floating-point noise, and a rounded key can split a pair across
 	// a cell boundary. That would drop a rhombus and leave a hole. Cells are 0.01 wide against a

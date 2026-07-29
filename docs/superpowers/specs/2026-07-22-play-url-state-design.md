@@ -93,7 +93,7 @@ Keys are prefixed by group: bare for global, `i*` Islamic, `s*` spherical, `v*` 
 | `varmb` | `spiralArmB` | int −6–6 | 0 |
 
 Only non-defaults are emitted, so a default view serializes to a bare `/play`. Booleans emit their literal
-value (`fill=0`, `i=1`) rather than presence-as-true, because `showPolygonFill` defaults to `true` and
+value (`fill=0`, `i=1`), not presence-as-true, because `showPolygonFill` defaults to `true` and
 needs a way to say "off".
 
 Example: `/play?tiling=ctrnact-04_123&i=1&istyle=interlace&iang=30&hue=210`
@@ -108,7 +108,7 @@ New `lib/services/playUrlState.ts`, holding the `PLAY_PARAMS` table and an inver
 - `serializePlayState(config, alphas, tiling): string` — non-defaults only.
 
 Add a field to one, add it to the other — the same contract the shelf's pair carries. Extracted to its own
-module rather than inlined: `_play-client.tsx` is already 560 lines and this adds ~120 more. The shelf's
+module, not inlined: `_play-client.tsx` is already 560 lines and this adds ~120 more. The shelf's
 inline version is working and stays untouched.
 
 ## Wiring in `_play-client.tsx`
@@ -123,7 +123,7 @@ tiling that fails `polygonClassSupportsIslamic` still gets Islamic force-cleared
 correct.
 
 `familyAlphas` is set from `alpha` at mount; the effect at lines 271–276 reconciles it into the selected
-family's valid range via `resolveAlphaDegs`, so an out-of-range shared tuple clamps rather than breaking.
+family's valid range via `resolveAlphaDegs`, so an out-of-range shared tuple clamps instead of breaking.
 
 **The mirror must be an imperative subscription, and it must be debounced.** Two independent reasons:
 
@@ -163,7 +163,7 @@ fullscreen button's classes verbatim.
 rejection silently no-ops — identical to `reference-shelf.tsx` 341–358, so the two pages behave the same.
 Wrapped in the existing `Tooltip` with `side="left"` and `delay={0}`, matching its neighbour.
 
-The handler serializes fresh from the store rather than reading `window.location.href`. That removes the
+The handler serializes fresh from the store instead of reading `window.location.href`. That removes the
 race where a slider drag less than 250 ms old has not yet been flushed to the URL, and means the debounce
 only ever serves reload-restore.
 
@@ -173,7 +173,7 @@ only ever serves reload-restore.
 
 - every field round-trips serialize → parse
 - a default state serializes to the empty string
-- out-of-range numbers clamp; unknown enum values fall back to the default rather than reaching the store
+- out-of-range numbers clamp; unknown enum values fall back to the default instead of reaching the store
 - `alpha` round-trips a multi-parameter tuple
 
 Then Playwright per CLAUDE.md: set options on /play, reload, confirm the view returns; and confirm the

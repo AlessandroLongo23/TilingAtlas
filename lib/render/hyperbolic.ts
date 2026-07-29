@@ -27,7 +27,7 @@ export interface MirrorParams {
 
 /**
  * Mirror parameters for the central p-gon of a hyperbolic {p,q} tiling, at the disk origin.
- * Throws (rather than returning NaN) when {p,q} is not hyperbolic, so a bad palette entry fails loudly.
+ * Throws, instead of returning NaN, when {p,q} is not hyperbolic, so a bad palette entry fails loudly.
  */
 export function mirrorParams(p: number, q: number): MirrorParams {
 	if (!isHyperbolic(p, q)) {

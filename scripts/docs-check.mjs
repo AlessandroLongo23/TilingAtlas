@@ -89,7 +89,7 @@ if (existsSync(syncF) && (!STAGED || stagedFiles.includes('docs/SYNC.md'))) {
 
 // ── CHECK 4: thesis \describedcommit ancestry — REMOVED 2026-07-25 ────────────
 // The thesis shipped and is out of scope for this repo; there is no anchor left to reconcile. Deleted
-// rather than flag-gated so nothing re-surfaces it. See CLAUDE.md "The thesis is DONE and OUT OF SCOPE".
+// and not flag-gated, so nothing re-surfaces it. See CLAUDE.md "The thesis is DONE and OUT OF SCOPE".
 
 console.log();
 if (errors) { console.log(red(`✗ docs:check — ${errors} error(s)`) + (warns ? yel(`, ${warns} warning(s)`) : '')); process.exit(1); }

@@ -127,7 +127,7 @@ baseline that canonicalizes the given lattice by HNF and minimizes over 24n fram
 two symbols matrices of different shapes, so it is not canonical for (1); we verified this computa-
 tionally on a faithful implementation. Any correct N must therefore recompute Λmax , as Stage A
 does. Alternatively one may read lattice maximality as an unstated precondition on valid symbols;
-then Stage A is input validation rather than a correction, and it certifies the precondition at the
+then Stage A is input validation, not a correction, and it certifies the precondition at the
 same cost. Whether the convention of [1] already requires maximality should be checked before
 attributing the defect beyond the problem statement we received; in an enumeration pipeline the
 point is moot, since period-solving stages do not in general certify maximal periods, and a dedup
@@ -369,7 +369,7 @@ representative vertex on the right, is {3, 7, 11}; the star of the open class, d
       unchanged; the rank-2 assertion of Lemma 3.1(d) never fired on 3000 random symbols.
 
     Degenerate inputs are handled as follows: symbols violating the encoding contract (rank-1
-lattices, empty seed lists) are rejected by assertion rather than canonicalized; R-linearly depen-
+lattices, empty seed lists) are rejected by assertion, not canonicalized; R-linearly depen-
 dent lattice generators are accepted silently and canonicalized consistently (the theory never uses
 R-independence), which is acceptable for a dedup key but callers wanting validation must test
 Im(t1 t2 ) ̸= 0 themselves.
@@ -393,7 +393,7 @@ them) and reduces seeds into the fundamental parallelogram. Sketch of the result
 all four coordinates bounded by m in absolute value; reduced representatives lie within Euclidean
 distance O(λ2 ) of the origin, and λ2 = O(n) since the cell area is Θ(n) and λ1 is bounded below by
 the minimum vertex distance of unit-edge tilings. The missing step is the routine bounded-dilation
-lemma converting Euclidean distance to path length in these tilings; we flag it rather than claim
+lemma converting Euclidean distance to path length in these tilings; we flag it, we do not claim
                    √
 it. Conversely O( n) is impossible: strip-stacked tilings in the style of the elongated triangular
 

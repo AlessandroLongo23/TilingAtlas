@@ -27,7 +27,7 @@ export interface CanvasBox extends Box {
 
 /**
  * The CSS box of a host element, for renderers that own their canvas element (p5, three.js) and are sized
- * through an API rather than by assigning width/height.
+ * through an API, not by assigning width/height.
  */
 export function measureBox(el: Element | null): Box {
 	if (!el) return { w: 0, h: 0 };

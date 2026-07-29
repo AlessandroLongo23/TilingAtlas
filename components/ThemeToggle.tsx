@@ -31,7 +31,7 @@ export function ThemeToggle() {
 		return () => media.removeEventListener("change", onChange);
 	}, []);
 
-	// Read the current theme from the DOM (source of truth) rather than the `theme` state, so this stays
+	// Read the current theme from the DOM (source of truth) and not the `theme` state, so this stays
 	// stable ([] deps) and the keydown listener below never fires on a stale closure.
 	const toggle = useCallback(() => {
 		const next: Theme = document.documentElement.classList.contains("dark") ? "light" : "dark";

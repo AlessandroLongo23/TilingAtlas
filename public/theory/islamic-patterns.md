@@ -64,8 +64,8 @@ Sevenfold patterns are rare; Bonner catalogues nearly every historical example h
 
 The systems map onto history. The earliest Abbasid work (ibn Tulun, Cairo, 876–79) is simple three- and fourfold star patterns. Seljuk builders in eleventh- to thirteenth-century Anatolia and Persia brought the leap in complexity, especially the ten-point patterns. The fivefold system is the Persian heartland — Darb-i Imam (Isfahan, 1453), the Topkapı Scroll — while the Nasrid Alhambra is famous for fourfold and sixfold work carrying many of the seventeen wallpaper groups. Mamluk designers favoured bold medallions with rare sixteen-point stars; Mughal India preferred cleaner, precisely proportioned fields.
 
-One debate is worth flagging rather than settling. Lu and Steinhardt read the fivefold dual-level designs as anticipating quasicrystalline order by five centuries; Bonner and Peter Cromwell argue the historical examples are governed by ordinary translation symmetry. The question is open, and this atlas takes no side on it.
+One debate is worth flagging, not settling. Lu and Steinhardt read the fivefold dual-level designs as anticipating quasicrystalline order by five centuries; Bonner and Peter Cromwell argue the historical examples are governed by ordinary translation symmetry. The question is open, and this atlas takes no side on it.
 
 ## Turning on the strapwork
 
-To see any of these as an Islamic pattern rather than a tiling, open it in Play and press **I**. The *Islamic Angle* slider sweeps between Bonner's acute, median, and obtuse openings; the style buttons switch between plain lines and woven interlace. The same tessellation gives a different classical pattern at each opening — which is the whole point of keeping the two objects separate.
+To see any of these as an Islamic pattern instead of a tiling, open it in Play and press **I**. The *Islamic Angle* slider sweeps between Bonner's acute, median, and obtuse openings; the style buttons switch between plain lines and woven interlace. The same tessellation gives a different classical pattern at each opening — which is the whole point of keeping the two objects separate.

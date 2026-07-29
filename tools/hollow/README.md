@@ -97,7 +97,7 @@ transcription had 12, missing `1.2` and `1.4` -- both delta=3, m=5, and the swee
 with m<=4, so they were never enumerated. What the notes called `x1`/`x2` are `1.7` and `1.21`.
 
 **Multiplicity.** `1.16`, `1.19` and `1.21` are not realisable with one circuit per vertex, and the
-rejection was correct rather than a bug -- but the model was too narrow. See kappa above; the proof
+rejection was correct, not a bug -- but the model was too narrow. See kappa above; the proof
 for `1.16` is the odd cycle in the square-conflict graph of 3.4.6.4.
 
 **Caps decided verdicts.** `grow_disk` returned its patch when the completion counter ran out, so
@@ -122,4 +122,4 @@ which side of the boundary the face occupies and changes the total from `24*delt
 Not yet searched: the full species sweep under the new engine (delta 1..3 with m bounded by the
 alphabet's smallest corner angle, which for `{3,4,6,8,12}` gives m <= 12*delta); kappa >= 3;
 apeirogons, which take GMS's 25 to 53; the 24-gon/24-gram alphabet; and `{5/2}` and `{10/3}`, which
-need Z[zeta_60] at rank 16 rather than Z[zeta_24] at rank 8.
+need Z[zeta_60] at rank 16, not Z[zeta_24] at rank 8.

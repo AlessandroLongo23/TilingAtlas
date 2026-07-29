@@ -34,7 +34,7 @@ drawn/undrawn bit is NOT shipped: it is recoverable from the polygon sizes as
     drawn[h]  ==  lvert[h] == 2 or lvert[rneig[h]] == 2
 
 (h's edge is a digon side iff the corner on either side of it is a digon), and this file asserts that
-identity on every certificate rather than trusting the derivation.
+identity on every certificate instead of trusting the derivation.
 
 Usage:
     develop_hyp_edges.py <corpus-dir> --base 667 --out public/hyperbolic-edges/e667
@@ -408,7 +408,7 @@ def emit_darts(block, face_of, faces, orbit):
     """The shipped quotient structure. lvert is indexed so that the client's
     alpha(h) = interiorAngle(lvert[rneig[h]]) reproduces block.step[h] — i.e. lvert[j] is the polygon
     at the corner ARRIVED AT by j, not left by it. Getting this shift backwards silently rotates every
-    developed tiling, so it is asserted below rather than commented."""
+    developed tiling, so it is asserted below, not commented."""
     n = len(block.rneig)
     lvert = [0] * n
     for h in range(n):

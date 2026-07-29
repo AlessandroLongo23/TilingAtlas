@@ -116,7 +116,7 @@ export function WallpaperGroupDiagrams({ group, size = 104 }: { group: Wallpaper
  * 69rem slide frame. Plate and padding are inline because the deck styles every `img` on a slide
  * through a descendant selector (`[&_img]` in slide-markdown), which outranks a class here.
  *
- * Six across is fixed rather than left to a free wrap, which follows the viewport and at eight
+ * Six across is fixed, not left to a free wrap, which follows the viewport and at eight
  * columns strands p6m alone on a third row. Twelve columns two wide, not six: 17 leaves five on the
  * last row, and centring five under six needs a half-column offset that only a half-width column can
  * give. The tile size then comes from the container, not from each item, so the same markup also

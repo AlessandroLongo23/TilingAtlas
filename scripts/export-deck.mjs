@@ -1,6 +1,6 @@
 // Export the /defense deck to PDF by driving the live page, one screenshot per slide.
 //
-// Why screenshots rather than a print stylesheet: the slides embed live WebGL/canvas tilings, and
+// Why screenshots and not a print stylesheet: the slides embed live WebGL/canvas tilings, and
 // a print-media DOM renders a SECOND copy of every card inside a hidden container whose canvases
 // never paint. Driving the real deck captures exactly what the room will see, tilings included.
 //

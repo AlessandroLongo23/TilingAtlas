@@ -116,7 +116,7 @@ function holeCount(cells: [number, number][]): number {
 
 /**
  * Classify every face of a pattern. O(n) in the number of lattice cosets, so it is cheap enough to
- * run on load for a whole catalogue page rather than being baked into the data file.
+ * run on load for a whole catalogue page instead of being baked into the data file.
  */
 export function analyseFaces(p: FreedrawPattern): FaceAnalysis {
 	if (p.patch) return analysePatch(p);

@@ -7,7 +7,7 @@ import { cellsCongruent } from '@/classes/algorithm/TilingCongruence';
 // The new browser-safe module (ring passed in) must reproduce the legacy script wrapper (module ring),
 // which is the proven float reconstruction. Congruence is the authoritative equality. Importing
 // scripts/oracle-match (above) already created the N=24 ring and made it active; reuse THAT instance
-// via getActiveRing() rather than calling CyclotomicRing.create(24) again here — a second instance
+// via getActiveRing(), not by calling CyclotomicRing.create(24) again here — a second instance
 // would be a distinct object, and cellsCongruent would throw a ring-mismatch on every comparison
 // (the exact footgun this extraction is required to avoid — see the note atop
 // tests/oracle-reconstruct-exact.test.ts).

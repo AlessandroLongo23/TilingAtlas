@@ -184,7 +184,7 @@ LIBRARY IMPACT: ZERO new entries. All 9 new k=2 blocks are FLEXING members of th
   families the Atlas already ships as continuous alpha-sliders (export_family_cells.py:
   star24 = 36 pinned + 9 flexing in 6 families; star24full = 36 pinned + 18 flexing in the
   SAME 6 families, keys and [0,60] ranges identical; member lists go a=[1,2] -> a=[1,2,3]).
-  The closed palette CONFIRMS the shipped shelf rather than extending it.
+  The closed palette CONFIRMS the shipped shelf, it does not extend it.
 
 SPECIES: 6 of the 27 newly added species appear at k<=2 (3*3, 4*1, 4*5, 6*1, 6*3, 6*7);
   the other 21 (added 8*/12*/24* species + the regular 24-gon) produce nothing.

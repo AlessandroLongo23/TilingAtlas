@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils/cn";
 //
 // The board is the disk cut by the mirrors of a (p,q,r) group, so its tile is a triangle with three
 // different angles AND three different side lengths. Both render paths take the explicit developed draw
-// (force2d) rather than the per-pixel shader: that shader's Dirichlet reducer rebuilds side pairings from
+// (force2d) and not the per-pixel shader: that shader's Dirichlet reducer rebuilds side pairings from
 // ONE edge length, which a scalene board does not have.
 //
 // The {p,q} edge systems (6.6.7, {7,3}, …) are a different catalogue and live on /library and /play; this
@@ -278,7 +278,7 @@ export function HyperbolicFreedraw({
 									{selected.stats.sizes.map((n) => (n < 0 ? "∞" : n)).join(", ")}
 								</dd>
 								{/* H² has no similarity, so the board's three side lengths are a real coordinate — the
-								    thing that makes (2,3,7) a different shape from (2,4,5) rather than a scaling of it. */}
+								    thing that makes (2,3,7) a different shape from (2,4,5), not a scaling of it. */}
 								<dt className="text-text-muted">edge lengths</dt>
 								<dd className="text-text-secondary tabular-nums">
 									{selected.edges.map((e) => e.toFixed(4)).join(" · ")}

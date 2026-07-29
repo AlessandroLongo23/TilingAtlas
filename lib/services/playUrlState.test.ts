@@ -95,7 +95,7 @@ describe("playUrlState", () => {
 		expect(parse("alpha=72").alphas).toEqual([72]);
 	});
 
-	it("drops a malformed alpha tuple rather than passing NaN to the renderer", () => {
+	it("drops a malformed alpha tuple instead of passing NaN to the renderer", () => {
 		expect(parse("alpha=45,oops").alphas).toBeNull();
 		expect(parse("alpha=").alphas).toBeNull();
 	});

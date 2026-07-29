@@ -1,7 +1,7 @@
 // Wallpaper-symmetry analysis for an embedded preview, computed once per tiling and kept.
 //
 // The analysis comes from the exact cell, the same route /play takes (useSymmetryData), so a card's
-// fundamental domain is the atlas's fundamental domain rather than a second opinion. Deriving it runs
+// fundamental domain is the atlas's fundamental domain, not a second opinion. Deriving it runs
 // exact cyclotomic arithmetic and is slow enough to notice, and the result never changes for a given
 // id, so a module-level map is all the caching needed. Failures are cached too: a tiling whose exact
 // source will not reconstruct fails the same way every time, and retrying on every toggle would stall

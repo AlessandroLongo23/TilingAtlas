@@ -25,7 +25,7 @@ interface Props {
 	 *  is given — a spherical SCHWARZ board has no canonical solid to name. */
 	solidId: string;
 	/** Self-contained boards (Schwarz, lib/render/sphSchwarz.ts) ship their own unit vertices and edge
-	 *  list rather than indexing into a solid. Supplying both switches off the solid lookup entirely. */
+	 *  list instead of indexing into a solid. Supplying both switches off the solid lookup entirely. */
 	vertices?: [number, number, number][];
 	allEdges?: [number, number][];
 }

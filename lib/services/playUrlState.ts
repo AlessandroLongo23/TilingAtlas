@@ -83,7 +83,7 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	varmb: { field: "spiralArmB", kind: "num", min: -6, max: 6, int: true },
 };
 
-// The store's own initial values ARE the defaults — read them from zustand rather than restating them
+// The store's own initial values ARE the defaults — read them from zustand instead of restating them
 // here, so the table can never drift from configuration.ts.
 const defaults = () => useConfiguration.getInitialState() as unknown as Record<string, unknown>;
 
@@ -145,7 +145,7 @@ export function parsePlayState(sp: URLSearchParams): PlayUrlState {
 }
 
 // Serialize a view back to a query string. Only non-defaults are emitted, so the default view produces
-// "" (a bare /play). Booleans emit their literal value rather than presence-as-true — showPolygonFill
+// "" (a bare /play). Booleans emit their literal value, not presence-as-true — showPolygonFill
 // defaults to true and needs a way to say "off".
 export function serializePlayState(
 	config: Partial<ConfigurationState>,

@@ -89,7 +89,7 @@ per-k period-bound obligation. (Repo already carries D-D machinery under `experi
 
 Delaney–Dress counts **combinatorial** types; realizability by regular polygons is a separate filter.
 Once the combinatorics is fixed the regular-polygon realization is rigid (unique ℓ₀), so it filters
-the finite list rather than inflating it — but see the decidability caveat in §4.
+the finite list instead of inflating it — but see the decidability caveat in §4.
 
 ## 4. Port verdict and open blockers
 
@@ -101,7 +101,7 @@ Ports:
   realization tool, not the finiteness mechanism.)
 - Čtrnáct's rigidity closure already targets the periodic quotient (minimal fundamental domain), so
   it sidesteps the [4,4,4,6] vertex-type-infinitude trap by construction, provided the port keeps
-  rigidity rather than closing on vertex-type.
+  rigidity and does not close on vertex-type.
 
 Does not port / open:
 - `eu_develop`'s exact realization: ℤ[ζ₁₂] flood-fill + integer HNF + Lagrange–Gauss → PSL(2,ℝ)

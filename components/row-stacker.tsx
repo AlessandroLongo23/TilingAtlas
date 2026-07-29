@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
 
-// Why emit-on-closure is unsound, built by the room rather than asserted at it.
+// Why emit-on-closure is unsound, built by the room, not asserted at it.
 //
 // The certified patch is a row of squares. Above it, every row is a free choice — another square row
 // or a row of triangles — and every choice is legal, because all three interfaces close 360 degrees:
@@ -19,7 +19,7 @@ import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
 
 type Row = "S" | "T";
 
-/** Columns drawn. Wide enough that the rows read as rows rather than as a few tiles. */
+/** Columns drawn. Wide enough that the rows read as rows, not as a few tiles. */
 const COLS = 7;
 /** Rows the demo allows above the certified patch. 2^6 = 64 continuations is past the point where
  *  anyone is still counting, and the tiles stay legible from the back of a room. */

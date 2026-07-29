@@ -212,7 +212,7 @@ corner), and the central cell's vertices lie inside the `vertR = 1.6·cellDiam` 
 `reps ≠ ∅`. Until L7 is signed off, the validation plan (§4, stage V2) carries a loud per-sweep
 assert `gateNullOnClosure == 0` — measured 0 on all recorded sweeps; and the full-sweep digest
 equality is itself an empirical discharge at k=3. This is the only link in the chain that is
-scoped-open rather than settled.
+scoped-open, not settled.
 
 **Scope.** Regular seeds only (the incidence identity is false for stars — same scope rule as P0;
 star seeds bypass C/P3 exactly as they bypass P0). Active only when the early gate runs (k ≥ 3
@@ -290,7 +290,7 @@ count grows ~11×/k, so it becomes a real wall at k=4–5. Not pursued here — 
   asserted (L7 belt); counters (`cSkipped`, `p3Pruned`) published Σ-and-distinct, OP-9 style.
 - **V3 (the win, honestly):** wall-clock 449-seed sweep P3 ON vs OFF; report the split
   "lattices skipped" vs "in-fill subtree cut" separately. If the total win is < 2×, say so and
-  escalate to the next lever (cross-seed dedup, the bigger proof burden) rather than tuning knobs.
+  escalate to the next lever (cross-seed dedup, the bigger proof burden) instead of tuning knobs.
 - **Doctrine:** C/P3 are licensed necessary conditions, not completeness knobs — no cap, no
   budget, nothing tunable. The single unproven link (L7) is named, asserted loudly per sweep, and
   is the one item that must be formally discharged (TA sign-off or a short proof note) before the

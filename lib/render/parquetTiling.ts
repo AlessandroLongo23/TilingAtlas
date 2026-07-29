@@ -66,7 +66,7 @@ const squareTemplate: TilingTemplate = {
 
 // Equilateral triangles via the rhombus decomposition of the triangular lattice. V(i,j) = (i+0.5j, j·H).
 // Each (i,j) cell contributes a lower-left and an upper-right triangle. We over-generate in i and clip
-// by centroid so the strip is roughly rectangular rather than a slanted parallelogram.
+// by centroid so the strip is roughly rectangular, not a slanted parallelogram.
 const triangleTemplate: TilingTemplate = {
   id: "triangle",
   label: "Triangle",

@@ -13,7 +13,7 @@ with no slot for star geometry (reflex dents, extra boundary vertices). It silen
 into an n-gon, so the Myers overlays classified the wrong tiling (two landed on `p1`, impossible for a
 vertex-transitive k=1 tiling). As shipped: `serializeCell` now THROWS on a star tile, and the builder
 OMITS `exactSource` for star cells, so the Myers symmetry overlay is a clean no-op (pre-feature behavior)
-rather than a wrong overlay. Regular oracles (Galebach k=1..6 including t1002, ctrnact k=7) work
+and not a wrong overlay. Regular oracles (Galebach k=1..6 including t1002, ctrnact k=7) work
 correctly. Faithful star wallpaper symmetry is deferred follow-up work (needs a star-aware codec +
 reconstruction), consistent with the mission's "star/parametric families are a later frontier."
 
@@ -108,7 +108,7 @@ a serialized cell. Myers is 2 entries and t1002 is 1, so the `cell` branch is a 
 
 New file `lib/classes/algorithm/oracleCellReconstruct.ts`. Move `reconstructOracleCell` and its helpers
 (`dec`, `zetaExp`) out of `scripts/oracle-match.ts`, changing the signature to take `ring` as a
-parameter rather than reading a module-level singleton:
+parameter instead of reading a module-level singleton:
 
 ```ts
 export function reconstructOracleCell(
@@ -186,6 +186,6 @@ the build takes a few minutes; Galebach and ctrnact are fast (pass-through + rec
 - Reconstruction mismatch build vs browser: eliminated by construction (same function, same integer
   input, deterministic). Criterion 3 confirms across the whole atlas.
 - A seed that fails to reconstruct in the browser (should not happen, since the build already
-  reconstructed all 2722): `useSymmetryData` caches null and logs, so the overlay is a no-op rather than a
+  reconstructed all 2722): `useSymmetryData` caches null and logs, so the overlay is a no-op, not a
   crash. Criterion 3 surfaces any such entry at build/validation time.
 - Myers/t1002 serialized-cell size: 3 entries, negligible.

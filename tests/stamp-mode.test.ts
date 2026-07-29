@@ -17,7 +17,7 @@ import { setActiveRing } from '@/classes/Cyclotomic';
 // was kept, and applied to the (chiral) 8-tile patch it collides where the rotation would not have. The
 // branch died with zero placements and the tiling was never found.
 //
-// These are structural checks on one frame rather than a full enumeration: whole-patch stamping needs
+// These are structural checks on one frame, not a full enumeration: whole-patch stamping needs
 // minutes per seed and gigabytes of heap (scripts/diag-stamp-cost.ts), which is not a unit test.
 
 function snubSeed() {

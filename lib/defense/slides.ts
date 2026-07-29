@@ -44,7 +44,7 @@ function firstHeading(body: string): string {
 }
 
 export function parseSlides(markdown: string): Slide[] {
-	// Split on the fence rather than on /^---$/m so that a `---` inside a fenced code block or an
+	// Split on the fence, not on /^---$/m, so that a `---` inside a fenced code block or an
 	// HTML block is not treated as a slide break by accident.
 	const lines = markdown.replace(/\r\n/g, "\n").split("\n");
 	const chunks: string[] = [];

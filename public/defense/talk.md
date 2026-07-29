@@ -72,7 +72,7 @@ both cases.
 ![](/defense/figures/edge-to-edge.png)
 
 <!-- notes: Of course a brick wall is a perfectly good tiling. It is just not one of ours, and the
-committee will be happier if you say that rather than letting the constraint look arbitrary. -->
+committee will be happier if you say that instead of letting the constraint look arbitrary. -->
 
 ---
 
@@ -223,7 +223,7 @@ Each of the methods I explored had strengths and weaknesses, and the first four 
 and the boxed one is where the talk lands. Point at each panel for a beat, no more, and do not
 explain any of them here; each gets its own slide.
 
-Say the chapter 9 line out loud rather than reading the slide back: in a computer-assisted
+Say the chapter 9 line out loud instead of reading the slide back: in a computer-assisted
 classification the path taken is itself evidence, so I am going to report it. Then the honest
 summary: three architectures built, a fourth abandoned at the drawing board, and each one failed
 into something, a theorem or a prohibition or a measurement.
@@ -292,7 +292,7 @@ cmm, so this is not an awkward corner — it is the single commonest case at tha
 Using the fact that each vertex should belong to one of the seed's $k$ orbits, we stamp rigid copies
 of it at the open vertices with exact isometries, and then search the finished patch for two
 independent translations that map it onto itself. The stamping rule is not the lever: a stronger one,
-stamping the whole grown patch rather than the seed, prunes about a tenth of the search for roughly
+stamping the whole grown patch, not the seed, prunes about a tenth of the search for roughly
 900 times the cost.
 
 <growth-strip>
@@ -553,7 +553,7 @@ out the global overlap.
 
 <!-- notes: This is the slide where you demonstrate the skill being graded, so rehearse it more than
 any other. Plain version: we glued abstract pieces with no coordinates anywhere, and we know the
-result is a picture rather than a broken one because the only closed flat oriented surface is a
+result is a picture, not a broken one because the only closed flat oriented surface is a
 torus, and the plane wraps onto a torus without ever folding back on itself. -->
 
 ---
@@ -581,7 +581,7 @@ because its absence is what would make the whole claim empty. -->
 
 We take two results from the literature without reproving them, the Grünbaum and Shephard species
 table and Killing-Hopf. Four more obligations are discharged by machine, and I record those as
-checks rather than as arguments, because that is what they are.
+checks, not as arguments, because that is what they are.
 
 The residual risk, in the order I judge it: first, the implementation may not be the algorithm,
 which is exactly where the earlier Python port lost its tiling; second, a mis-specified machine
@@ -611,7 +611,7 @@ published through $k=15$, a later implementation of his reaches $k=18$, and the 
 tiling that was not already known.
 
 What it is, is a check on my re-implementation, and a good one, because a search that loses tilings
-tends to lose them at one particular $k$ rather than uniformly.
+tends to lose them at one particular $k$, not uniformly.
 
 <!-- notes: Volunteering that this sets no record is worth more than the table itself. -->
 
@@ -667,7 +667,7 @@ to the recorded capture and keep talking. Do not debug in front of the committee
 
 ## What is mine, and what is not
 
-The Synthetic Tiling Searcher is not mine: searching gluings rather than placements, the four local
+The Synthetic Tiling Searcher is not mine: searching gluings, not placements, the four local
 rules, the Conway-symbol notation, the duplicate test with its theorem, and the counts to $k=15$ all
 belong to Čtrnáct, Griffin and Kopczyński. The vertex-configuration catalogue is classical, and the
 counts themselves are Krötenheerdt's, Chavey's and Galebach's.
@@ -678,7 +678,7 @@ exact-arithmetic substrate, the measured negative result at $k=4$, the alphabet 
 reached independently but not first, and TilingAtlas.
 
 <!-- notes: Putting this on a slide yourself removes the sharpest question in the room, and the
-candour reads as confidence rather than concession. -->
+candour reads as confidence, not concession. -->
 
 ---
 
@@ -729,7 +729,7 @@ the classical species table, and no such table exists for them.
 
 ## Obligation 3, and how a tiling went missing at $k=8$
 
-The search picks the most constrained free half-edge rather than trying all of them, and that costs
+The search picks the most constrained free half-edge instead of trying all of them, and that costs
 nothing, because choosing which half-edge to extend is a choice of order and not a choice of branch.
 
 When it attaches a fresh vertex it tries only one representative per class of equivalent half-edges.
@@ -751,7 +751,7 @@ The test is 1-dimensional Weisfeiler-Leman, which is known not to decide isomorp
 a 6-cycle under a single successor map refine into indistinguishable classes, and yet no isomorphism
 carries a vertex of one to a vertex of the other.
 
-It is true here for a geometric reason rather than a combinatorial one. A half-edge together with
+It is true here for a geometric reason, not a combinatorial one. A half-edge together with
 the tile on its left determines a frame of the plane, so there is a unique isometry carrying one
 half-edge to another, and the only question is whether that isometry is a symmetry of the whole
 tiling. The plane is simply connected, so local agreement propagates. If it fails, it fails at some
@@ -774,7 +774,7 @@ when two seed vertices coincide modulo the lattice, but coinciding seed vertices
 orbit, and the missing orbits can be realised by vertices the fill creates later.
 
 The orbit-floor prune is correct, though it fired zero times on the hard family. That negative result
-is evidence in itself: the degenerations blocking $k=3$ have too few orbits rather than too many, so
+is evidence in itself: the degenerations blocking $k=3$ have too few orbits, not too many, so
 no sound mid-fill test can detect them.
 
 <!-- notes: A prune that fires zero times and a prune ruled unsound are both load-bearing knowledge,

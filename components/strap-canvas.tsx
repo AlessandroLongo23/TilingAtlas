@@ -93,7 +93,7 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 	const paramCellRef = useRef(paramCell);
 	paramCellRef.current = paramCell;
 	// Parametric family only: the cell evaluated at the current slider tuple, and the tuple's signature.
-	// Everything downstream (basis, patch, bands) is derived from this rather than the base cell.
+	// Everything downstream (basis, patch, bands) is derived from this, not the base cell.
 	const liveCellRef = useRef<FlatCellData | null>(null);
 	const alphaSigRef = useRef<string | null>(null);
 
@@ -227,7 +227,7 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 					meshSigRef.current = meshSig;
 					upload(buildStrapMeshFromPatch(patchRef.current, islamicNormalAngleFromSlider(theta), offset, count, bandWidth, borderWidth, chirality, weave, emboss, meta.v1, meta.v2));
 					// Tail of the α chain — cell, basis and patch were rebuilt earlier in the SAME frame, which is why
-					// the gate times from `startedAt` rather than from here.
+					// the gate times from `startedAt`, not from here.
 					const gate = alphaGateRef.current;
 					if (gate.startedAt !== null) {
 						gate.cost = performance.now() - gate.startedAt;

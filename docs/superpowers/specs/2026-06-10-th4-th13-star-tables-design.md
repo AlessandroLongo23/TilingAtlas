@@ -23,7 +23,7 @@ machine availability (parallel CC session running CB probes).
 ## Stated premises (table preamble — not inherited from the enumerator)
 
 TH-4 exists because an unstated premise (d ≤ 6) was false. The tables therefore state their
-premises as mini-lemmas rather than citing "the live enumerator implements them":
+premises as mini-lemmas instead of citing "the live enumerator implements them":
 
 - **P1 (≤ 1 dent per vertex).** Dent corners are reflex: β = 24 − 24/n − α > 12 units (since
   α < 12 − 24/n). Two reflex corners sum to > 24 units = 2π. ∎ (k-independent.)

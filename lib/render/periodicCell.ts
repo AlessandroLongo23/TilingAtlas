@@ -2,7 +2,7 @@
 // emits and the inversive shader consumes. Before this existed the conformal lens knew exactly one data
 // shape — a partition into ≤128 convex tiles coloured by polygon size — so colorings, edge patterns,
 // hollow tilings and the Islamic construction had no representation and were force-cleared off the view
-// (app/(app)/play/_play-client.tsx) rather than ported. A decoration now becomes lens-capable by writing
+// (app/(app)/play/_play-client.tsx), not ported. A decoration now becomes lens-capable by writing
 // an adapter to this type; nothing in the renderer changes.
 //
 // A cell is a lattice (v1, v2) plus a z-ordered list of primitives. A primitive is one ring or polyline
@@ -40,7 +40,7 @@ export interface PeriodicPrim {
 	fillRgb?: [number, number, number];
 	/** 0 (the default when neither `hue` nor `fillRgb` is set) means "no fill" — a stroke-only prim. */
 	fillAlpha?: number;
-	/** Fill by nonzero winding rather than even-odd. Only the hollow class needs it. */
+	/** Fill by nonzero winding, not even-odd. Only the hollow class needs it. */
 	nonzero?: boolean;
 	/** Stroke colour, 0..1 per channel. */
 	strokeRgb?: [number, number, number];
@@ -103,7 +103,7 @@ const LIST_TEX_W = 1024;
  * spans several lattice cells, so a single point is genuinely covered by dozens of face copies and the
  * per-bucket count stops depending on the grid resolution at all — it converges to the sum of the
  * primitives' lattice-space bbox areas. Measured across public/hollow the worst shelf entry wants 420
- * (hollow-12-5_12-5_3-2), so this is 512 with headroom rather than a number picked by feel. Going over
+ * (hollow-12-5_12-5_3-2), so this is 512 with headroom, not a number picked by feel. Going over
  * it drops geometry, which is why `packPeriodicCell` warns instead of truncating quietly.
  */
 export const MAX_BUCKET_ENTRIES = 512;
@@ -256,7 +256,7 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 	}
 
 	// The uniform grid over [0,1)². Aim for a handful of prims per bucket; a prim spanning many buckets
-	// (a strip face, a long scaffold line) is registered in each, which is why G is capped rather than
+	// (a strip face, a long scaffold line) is registered in each, which is why G is capped and not
 	// scaled straight off primCount.
 	const grid = Math.max(1, Math.min(48, Math.round(Math.sqrt(primCount))));
 	const buckets: { p: number; di: number; dj: number; z: number }[][] = Array.from(
@@ -307,7 +307,7 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 		if (b.length > maxBucket) maxBucket = b.length;
 		total += b.length;
 	}
-	// Truncation loses primitives, and the failure mode is a picture that looks plausible rather than an
+	// Truncation loses primitives, and the failure mode is a picture that looks plausible, not an
 	// error — so say so. Raise MAX_BUCKET_ENTRIES (and the shader's matching loop bound) if this fires.
 	if (dropped > 0) {
 		console.warn(

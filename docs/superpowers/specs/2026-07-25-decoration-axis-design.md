@@ -109,4 +109,4 @@ sort. Added:
 
 - ordering across decorations within one geometry, including the hyperbolic case that is wrong today;
 - a consistency assertion that every `TileClass` maps to exactly one segment, so adding a class without
-  placing it fails a test rather than silently landing in Tilings.
+  placing it fails a test instead of silently landing in Tilings.

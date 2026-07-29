@@ -122,7 +122,7 @@ decisively per-node, NOT a combinatorial blowup.
 ## cpu-prof corroboration (independent of the manual timers)
 
 Subtree-restricted to `torusFill` (`scripts/analyze-cpuprofile.mjs --subtree torusFill`). tsx mangles
-function names (esbuild `__name` wrappers, `:0` locations), so it corroborates rather than leads. The one
+function names (esbuild `__name` wrappers, `:0` locations), so it corroborates, it does not lead. The one
 big mislabel — `set TextDecoder` (32–35%) — is a leaf called 435× from `Vector.ts` with no children: a
 mislabeled hot Vector float-math leaf. Folding it into the float-geometry path:
 

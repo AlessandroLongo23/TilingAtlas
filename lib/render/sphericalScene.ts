@@ -19,7 +19,7 @@ export const SPHERE_RADIUS = 1;
 const SPHERE_WIDTH_SEGMENTS = 160;
 const SPHERE_HEIGHT_SEGMENTS = 120;
 // Realistic surface: finer, so the carved fillet (a few line-widths wide) spans several segments and the
-// vertex displacement reads as a smooth groove on the silhouette rather than a faceted notch.
+// vertex displacement reads as a smooth groove on the silhouette, not a faceted notch.
 const REALISTIC_WIDTH_SEGMENTS = 512;
 const REALISTIC_HEIGHT_SEGMENTS = 256;
 

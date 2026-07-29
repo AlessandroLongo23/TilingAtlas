@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils/cn";
 
 // One vertex configuration on a slide: the polygons fanned around their shared vertex, named
 // underneath. Drawn by the /configs page's own card, so a configuration looks the same on a slide as
-// it does in the atlas, but built from its name rather than from an alphabet file, so a slide can
+// it does in the atlas, but built from its name, not from an alphabet file, so a slide can
 // show configurations no palette ships.
 //
-// Each figure is fitted to its own card, as on /configs, rather than drawn at a scale shared across
+// Each figure is fitted to its own card, as on /configs, and not drawn at a scale shared across
 // the row. A shared scale would be truer, but 3.7.42 is thirteen unit edges across and 6.6.6 is
 // three, so sharing one would leave most of the slide too small to read.
 

@@ -267,7 +267,7 @@ function buildMyersK1Stars(): ReferenceTiling[] {
 	log('');
 
 	// The regular-only cell codec cannot represent star tiles (serializeCell now throws on them), so star
-	// cells get NO exactSource: the Play symmetry overlay is DISABLED for them (honest no-op) rather than
+	// cells get NO exactSource: the Play symmetry overlay is DISABLED for them (honest no-op) instead of
 	// drawing a wrong overlay computed from a regularized cell. Faithful star wallpaper symmetry needs a
 	// star-aware codec + reconstruction (follow-up). Every Myers Fig-4 cell here is a star, so this is all
 	// of them; logged loud so the gap is never silent.

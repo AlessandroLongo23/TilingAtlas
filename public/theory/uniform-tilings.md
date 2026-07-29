@@ -86,7 +86,7 @@ The largest vertex zoo in the family: a square, a hexagon, and a dodecagon at ev
 
 ### Elongated triangular 3.3.3.4.4
 
-Rows of squares slide between rows of triangles. It is the odd one out in two ways: its symmetry group cmm is the only one here with a rhombic (rather than square or hexagonal) lattice, and it is the only uniform tiling that no Wythoff construction produces.
+Rows of squares slide between rows of triangles. It is the odd one out in two ways: its symmetry group cmm is the only one here with a rhombic (not square or hexagonal) lattice, and it is the only uniform tiling that no Wythoff construction produces.
 
 <card-grid cols="2">
 <tiling-card tiling="t1008" title="3.3.3.4.4 · elongated triangular" subtitle="cmm · rhombic lattice"></tiling-card>
