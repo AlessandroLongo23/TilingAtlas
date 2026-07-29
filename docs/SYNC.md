@@ -1764,3 +1764,10 @@ torus panel's pieces are clipped, not centroid-reduced — a fundamental set's t
 exactly, centroids leave gaps. Chevron colours name the gluing translation, which is the pair opposite
 the one the edge runs along; the first draft had them swapped. 7b674ec. Detail: NOTES §"Architecture
 three gets its preliminaries". — CC
+
+### 2026-07-29 (2) — CC — the torus figure gets hover, and it is the quotient map
+Hovering a tile on the left paints it in the atlas's own by-side-count ramp (`polygonHue`, shared with
+the renderer) and lights every piece of it on the right. Hovered COPY on the left, every PIECE on the
+right — in the plane those are different tiles, on the torus one. Hovering a copy outside the cell
+lights its image inside. Plane panel zoomed out; lattice directions carried on dashed. 642a355.
+Detail: NOTES §"The torus figure becomes the quotient map". — CC

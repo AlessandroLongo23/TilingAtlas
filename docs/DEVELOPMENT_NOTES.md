@@ -7972,3 +7972,32 @@ white corners wherever the lattice is skewed.
 
 Verified: build exit 0, eslint clean on the touched files, 0 px overflow on slides 17–19 at 1280×800,
 1440×900 and 1920×1200. `prepare`/`screenMapper` factored out to `lib/render/figureCanvas.ts`.
+
+## The torus figure becomes the quotient map (2026-07-29)
+
+AL wanted the plane panel hoverable: any tile, coloured with the renderer's own palette, lit in both
+panels. Built, and it turned out to carry more than decoration.
+
+**The hovered copy lights on the left; every piece lights on the right.** That asymmetry is the
+figure's whole content. In the plane, two copies of the same cell polygon are two different tiles, so
+lighting all of them would say the opposite of what the panel is for. On the torus they are one tile,
+so every piece the cell boundary cut it into lights together. The best case to demonstrate is a copy
+lying entirely OUTSIDE the cell: hovering it still lights its image inside, which is the quotient map
+with nothing left to explain.
+
+Colours come from `polygonHue` + `hsbToHsla` in `lib/utils/renderTiling`, not from a local palette, so
+the figure cannot drift from what the atlas draws: triangle red, square yellow, hexagon green,
+dodecagon blue, on the log-spaced by-side-count ramp.
+
+Hover lives in refs, not React state, and the pointer handler repaints both canvases imperatively.
+State would have re-run the paint effects on every hover change and torn down both ResizeObservers
+with them. The orange accent stands down while a hover is live, so the slide reads untouched and the
+two colour systems never argue.
+
+Two smaller changes from the same review: the plane panel zooms out (half-width 0.8 → 0.95 of the
+cell's longer side, sweep widened to ±2.4 periods to keep it fed), and the two lattice directions
+carry on past the cell as dashed faded lines in their own hues — the pair of solid arrows alone read
+as two isolated vectors rather than as a lattice.
+
+Verified: build exit 0, eslint clean, 0 px overflow at 1280×800 and 1440×900, hit-testing confirmed at
+four probe points via the cursor style.
