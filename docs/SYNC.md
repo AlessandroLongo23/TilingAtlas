@@ -1792,3 +1792,11 @@ the deck's type. The audit AL asked for found one real error — panel (c) showe
 83%, gate 16.5%) on a k=4 slide, where the measured shape is fill = the entire budget and gate = 0
 because no fill completes, so the gate is never reached. Both rows now shown. Seed counts and timeout
 rates check out against NOTES §22.2–22.3. 59da0ee. Detail: NOTES §"The k=4 wall slide, redrawn". — CC
+
+### 2026-07-29 (3) — CC — four Schwarz boards corrected; the solvers do run here
+(2,2,3) 2,297→2,347, (2,3,6) 43→462, (2,4,5) 7→23, all 0 failures; (2,2,4)'s rerun CONFIRMS its
+65,257 (byte diffs are board orientation, proven on an orientation-free fingerprint). sch236 k=5
+DELETED rather than shipped short, k chip and all. Marek's 236 drop again held 16 misfiled (2,3,3)
+certificates = exactly the 247 develop failures. **His .exe DO run here** via an extracted wine-stable
+through Rosetta 2 — recipe in `docs/RUNNING_MAREK_SOLVERS.md`, pointer in CLAUDE.md, after I claimed
+otherwise twice. (2,3,4)/(2,3,5)/(2,3,7) still short. Detail: NOTES §"the corrections land". — CC

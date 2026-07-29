@@ -1,0 +1,30 @@
+Schwarz edge-system develop — board (2,2,4) (224, spherical)
+source          : ../../materials/corpora/schwarz_edges_224
+edge lengths    : A2=0.785398163, C2=1.570796327
+certificates in : 65257
+developed       : 65257
+failed          : 0
+multi-variant   : 1724
+wall            : 431.6s (6.6 ms/certificate)
+
+shared board    : V=10 E=24 F=16 (every pattern lands on it)
+
+
+   k   tilings  tiles: min    max
+   2        10           1     16
+   3        52           2     14
+   4        52           2     14
+   5       780           2     15
+   6      1165           2     14
+   7       963           2     15
+   9       321           3     13
+  10     61914           2     14
+NOTE: k coverage is non-contiguous — no certificates for k = [8]. This is a gap in Marek's run, not an empty slice of the board.
+wrote ../../public/schwarz-sph/s224-k2.json: 10 records, 0.00 MB
+wrote ../../public/schwarz-sph/s224-k3.json: 52 records, 0.02 MB
+wrote ../../public/schwarz-sph/s224-k4.json: 52 records, 0.02 MB
+wrote ../../public/schwarz-sph/s224-k5.json: 780 records, 0.28 MB
+wrote ../../public/schwarz-sph/s224-k6.json: 1165 records, 0.42 MB
+wrote ../../public/schwarz-sph/s224-k7.json: 963 records, 0.35 MB
+wrote ../../public/schwarz-sph/s224-k9.json: 321 records, 0.12 MB
+wrote ../../public/schwarz-sph/s224-k10.json: 61914 records, 22.60 MB

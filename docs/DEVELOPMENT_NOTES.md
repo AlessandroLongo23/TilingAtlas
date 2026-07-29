@@ -8037,3 +8037,50 @@ on the slide wrapper (`components/slide-markdown.tsx:47`), which beats a utility
 itself on specificity. Use a `div`.
 
 Verified: build exit 0, eslint clean, 0 px overflow at 1280×800, 1440×900 and 1920×1200.
+
+## 2026-07-29 — the corrections land, and the solvers turn out to run here after all
+
+Four of the six short boards are fixed. The headline is that I twice told AL Marek's `.exe` solvers
+cannot run on this machine, and both times that was false — a July session had already worked it out
+and AL had already corrected the same claim once. The recipe now lives in
+`docs/RUNNING_MAREK_SOLVERS.md` with a pointer at the top of `CLAUDE.md`, because losing it is what
+makes the conversation repeat: Homebrew's `wine-stable` cask fails on a sudo `.pkg` but caches a
+complete Wine tarball on the way, and extracting that to `materials/tools/` (gitignored, so it
+survives a session) plus `xattr -d -r com.apple.quarantine` gives an x86_64 Wine that runs them
+through Rosetta 2. Each `pt_<tag>.exe` wants `solver_<tag>/` to exist already and reads kmin/kmax on
+stdin. macOS has no `timeout`, which cost a first driver that failed instantly while logging a
+3600 s timeout; `perl -e 'alarm shift; exec @ARGV'` is the substitute.
+
+| board | was | now | |
+|---|---|---|---|
+| (2,2,3) | 2,297 | 2,347 | starting-vertex bug; the all-edges-drawn pattern is back at `ss223-2-00007` |
+| (2,2,4) | 65,257 | 65,257 | rerun CONFIRMS the catalogue |
+| (2,3,6) | 43 | 462 | the typo bug |
+| (2,4,5) | 7 | 23 | the typo bug |
+
+**(2,2,4) is the interesting negative.** Six shards changed bytes and every count stayed identical, so
+the byte diff proves nothing. An orientation-free fingerprint (tile-size multiset, drawn count, the
+three orbit counts, chirality) matches at all eight k, and the records that "moved" are the same
+tilings aligned to a different flag — the threaded solver's representative nondeterminism reaching
+the develop. The committed shards were kept rather than re-shipping 23 MB for an orientation flip.
+
+**Marek's 236 drop contained 16 certificates that are not (2,3,6).** All (2,3,3), the same board that
+was misfiled in the 237 drop, and they held exactly the 247 certificates that failed to develop —
+diagnosis and count matched to the unit. `develop_schwarz.py --classify` is the tool for this and
+should be run on every drop before anything else. With them removed, 462/462 develop, 0 failures.
+
+**sch236 k=5 was deleted rather than corrected** (AL: "better to not show the results rather than
+showing false ones"). Its only slice came from the withdrawn build and the corrected drop stops at
+k=4; a short slice beside two corrected ones would read as "enumerated to k=5". The k chip in
+`K_OPTIONS` came out with it — a chip claims a depth just as loudly as data does — and
+`sch236.test.ts` now asserts the file stays absent.
+
+**The corrected corpus cost the catalogue regular tilings, not just decorated ones.** all-regular at
+k=3 on (2,3,6) goes 2 → 3.
+
+⚑ **(2,3,4), (2,3,5) and (2,3,7) are still short.** My runs got partway before AL stopped them:
+(2,3,4) k=3..5 complete (10 / 13 / **1,568**, against Marek's 5 / 2 / 80), (2,3,5) k=3=8 and
+**k=4 = 0**, (2,3,7) k=3=8 (his 4). The partial slices are marked `_INCOMPLETE_k*.txt` in
+`materials/runs/`, because a half-finished k is indistinguishable from a complete one. That k=4=0
+also retires our own claim: `schwarzKGaps` calls (2,3,5) k=4 a gap in the solve, and it is an empty
+slice. The gaps test needs to separate "not searched" from "searched, none exist".

@@ -8,8 +8,8 @@
 
 ## The Schwarz boards are a nine-board family across all three geometries — UNCOMMITTED (2026-07-28)
 
-Marek's eight new corpora (`materials/solvers/edges/Schwarz/`) are decoded and live. 135,157
-certificates (122,353 curved + 12,804 Euclidean), **0 failures**. Surfaced on /library, /play and
+Marek's corpora (`materials/solvers/edges/Schwarz/`) are decoded and live. 135,636
+certificates (122,419 curved + 13,217 Euclidean), **0 failures**. Surfaced on /library, /play and
 /freedraw under all three geometries — verified in the browser, 2026-07-29.
 `pnpm build` clean; `pnpm test` 1612 pass, 1 fail — the same pre-existing
 `star-general-path.test.ts` 60 s timeout noted below (file untouched; it needs 167 s alone). Detail:
@@ -44,8 +44,30 @@ DEVELOPMENT_NOTES.md §"The Schwarz family becomes a family".
   **(2,3,4) reran on 2026-07-29 to k=11** (842 → 5,974 certificates, contiguous k=3..11, 0 failures,
   same canonical board). A rerun that ADDS k is one manifest row; the board hoist is what keeps the
   new 5,132 tilings at 2.7 MB, not ~10 MB.
-- ⚑ **`F2` still appears in NO corpus**, on any board. The third edge class is never drawn where one
-  exists. Unchanged since 2026-07-27; still needs a rerun from Marek.
+- ⚑ **The `F2` flag was a solver bug. Four boards are corrected; THREE ARE STILL SHORT.**
+  (Marek, 2026-07-29.) A typo on the boards whose triangle has three different angles dropped every
+  tiling that draws the longest edge class — which is why `E2` named all 103 scalene certificates and
+  `F2` named none. A second bug (too few starting vertices) hit (2,2,3) and (2,2,4).
+
+  | board | was | now | |
+  |---|---|---|---|
+  | (2,2,3) | 2,297 | **2,347** | the missing all-edges-drawn pattern is back at `ss223-2-00007` |
+  | (2,2,4) | 65,257 | 65,257 | rerun CONFIRMS it; byte diffs are board orientation only |
+  | (2,3,6) | 43 | **462** | k=3 5→10, k=4 38→452 |
+  | (2,4,5) | 7 | **23** | k=3 5→10, k=4 2→13 |
+  | (2,3,4) (2,3,5) (2,3,7) | | | ⚑ STILL SHORT — no corrected corpus yet |
+
+  (2,3,3) and (2,4,4) are in neither bug and stand as shipped.
+  **sch236 k=5 was DELETED, not corrected** (AL: better to show nothing than something false). The
+  only slice we had came from the withdrawn build and Marek's drop stops at k=4; its k chip went too,
+  and `sch236.test.ts` asserts the file stays absent.
+  ⚑ Marek's drop for 236 again contained 16 misfiled certificates, all (2,3,3), holding exactly the
+  247 that failed to develop. `--classify` catches this; never trust the folder name.
+- **His solvers RUN here — see `docs/RUNNING_MAREK_SOLVERS.md`.** Reporting them unrunnable on this
+  arm64 Mac was wrong for the third time. An extracted Homebrew `wine-stable` runs them via Rosetta 2
+  with no sudo. Driver: `tools/ctrnact-oracle/run_schwarz_solver.sh`. My own runs reproduced Marek's
+  k=3 exactly on (2,3,6), (2,4,5) and (2,3,7), and reached (2,3,4) k=5 at 1,568 (his: 80) and
+  (2,3,5) k=4 at **0** — so that "gap" is an empty slice, not an unsearched one.
 
 ## /freedraw has a fifth grid: Schwarz (2,3,6) — UNCOMMITTED (2026-07-27)
 
