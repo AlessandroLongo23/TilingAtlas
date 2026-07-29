@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { prepare, screenMapper } from "@/lib/render/figureCanvas";
 
 // The bounded-weight theorem as one case you can read off the plane, in two panels.
 //
@@ -28,33 +29,13 @@ interface FigureData {
 const colourOf = (k: number, n: number) => `hsl(${(360 * k) / n} 85% 45%)`;
 
 /**
- * Size a canvas to its host and hand back a context in world coordinates (y up), plus the scale.
- * `fill` is how much of the shorter side the content takes.
+ * `panel` picks one of the two: "wheel" is the alphabet on its own (the preliminary slide), "example"
+ * the spelled-out periods with the sum underneath (the method slide). Omitted, both are drawn.
  */
-function prepare(
-	host: HTMLDivElement,
-	canvas: HTMLCanvasElement,
-	box: { minX: number; maxX: number; minY: number; maxY: number },
-	fill: number,
-): { ctx: CanvasRenderingContext2D; s: number; dpr: number } | null {
-	const w = host.clientWidth, h = host.clientHeight;
-	if (w <= 0 || h <= 0) return null;
-	const dpr = Math.min(window.devicePixelRatio || 1, 2);
-	const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-	if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-	const ctx = canvas.getContext("2d");
-	if (!ctx) return null;
-	ctx.setTransform(1, 0, 0, 1, 0, 0);
-	ctx.clearRect(0, 0, bw, bh);
-	const s = fill * Math.min(w / (box.maxX - box.minX), h / (box.maxY - box.minY));
-	ctx.scale(dpr, dpr);
-	ctx.translate(w / 2, h / 2);
-	ctx.scale(s, -s);
-	ctx.translate(-(box.minX + box.maxX) / 2, -(box.minY + box.maxY) / 2);
-	return { ctx, s, dpr };
-}
-
-export function PeriodFigure() {
+export function PeriodFigure({ panel }: { panel?: string }) {
+	const showWheel = panel !== "example";
+	const showExample = panel !== "wheel";
+	const solo = panel === "wheel" || panel === "example";
 	const [data, setData] = useState<FigureData | null>(null);
 	const wheelHost = useRef<HTMLDivElement | null>(null);
 	const wheelCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -129,12 +110,8 @@ export function PeriodFigure() {
 			}
 
 			// Text goes on in SCREEN space: the world transform flips y, and anything drawn through it
-			// comes out mirrored. Anchors are mapped through the matrix by hand.
-			const m = ctx.getTransform();
-			const toScreen = (x: number, y: number): [number, number] =>
-				[(m.a * x + m.c * y + m.e) / dpr, (m.b * x + m.d * y + m.f) / dpr];
-			ctx.setTransform(1, 0, 0, 1, 0, 0);
-			ctx.scale(dpr, dpr);
+			// comes out mirrored.
+			const toScreen = screenMapper(ctx, dpr);
 			const size = Math.max(9, Math.min(15, s * 0.115));
 			const base = `${size}px ui-sans-serif, system-ui, sans-serif`;
 			const sup = `${size * 0.68}px ui-sans-serif, system-ui, sans-serif`;
@@ -304,24 +281,34 @@ export function PeriodFigure() {
 	return (
 		<div className="not-prose flex flex-col items-center gap-2">
 			<div className="flex flex-wrap items-start justify-center gap-5">
-				<figure className="m-0 flex flex-col items-center gap-1">
-					<div ref={wheelHost} className="relative aspect-square h-[34vh] rounded-2xl border border-line bg-surface-base">
-						<canvas ref={wheelCanvas} className="absolute inset-0 h-full w-full" />
-					</div>
-					<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">
-						the alphabet: 24 unit steps
-					</figcaption>
-				</figure>
-				<figure className="m-0 flex flex-col items-center gap-1">
-					<div ref={exHost} className="relative aspect-[4/3] h-[34vh] rounded-2xl border border-line bg-surface-base">
-						<canvas ref={exCanvas} className="absolute inset-0 h-full w-full" />
-					</div>
-					<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">
-						one tiling&rsquo;s two periods, spelled in it
-					</figcaption>
-				</figure>
+				{showWheel ? (
+					<figure className="m-0 flex flex-col items-center gap-1">
+						<div
+							ref={wheelHost}
+							className={`relative aspect-square ${solo ? "h-[44vh]" : "h-[34vh]"} rounded-2xl border border-line bg-surface-base`}
+						>
+							<canvas ref={wheelCanvas} className="absolute inset-0 h-full w-full" />
+						</div>
+						<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">
+							the alphabet: 24 unit steps
+						</figcaption>
+					</figure>
+				) : null}
+				{showExample ? (
+					<figure className="m-0 flex flex-col items-center gap-1">
+						<div
+							ref={exHost}
+							className={`relative aspect-[4/3] ${solo ? "h-[42vh]" : "h-[34vh]"} rounded-2xl border border-line bg-surface-base`}
+						>
+							<canvas ref={exCanvas} className="absolute inset-0 h-full w-full" />
+						</div>
+						<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">
+							one tiling&rsquo;s two periods, spelled in it
+						</figcaption>
+					</figure>
+				) : null}
 			</div>
-			{data ? (
+			{data && showExample ? (
 				<p className="m-0 text-center font-mono text-[clamp(0.6rem,0.9vh+0.25vw,0.85rem)] leading-relaxed text-fg-secondary">
 					T₁ = {sum(data.t1.chain, data.directions)}
 					<span className="text-fg-muted"> ({data.t1.weight} steps)</span>
