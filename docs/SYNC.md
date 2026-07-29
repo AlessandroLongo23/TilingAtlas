@@ -1673,3 +1673,30 @@ t4003 is `cmm`, and cmm is the COMMONEST group at k=4 (50 of 151, then p6m 34, p
 that breaks the method is the typical case, not a corner. `<seed-card domain="yes">` draws the domain
 over the patch, and a single fitted patch now sizes and centres on patch ∪ domain, or the one thing
 the picture is for (a domain vertex outside the patch) lands off-card. — CC
+
+### 2026-07-28 — CC — the Schwarz boards become a family: 5 spherical, 2 hyperbolic, 2 Euclidean
+Marek's eight new corpora decoded and shipped. One drop, three back ends, split by the sign of
+1/p+1/q+1/r−1: (2,2,3) (2,2,4) (2,3,3) (2,3,4) (2,3,5) close on S² (SO(3) develop, finished geometry);
+(2,3,7) (2,4,5) ship darts for H²; (2,4,4) joins the planar grids. 130,208 certificates, 0 failures.
+Live on /library, /play and /freedraw (which gained a hyperbolic arm). Detail: DEVELOPMENT_NOTES.md
+§"The Schwarz family becomes a family". — CC
+
+### 2026-07-28 — CC — the conventions the Schwarz certificates actually use, and the size fix
+`Sn` names an ANGLE π/n, not a site order, and a digon letter names a pair of ANGLES — deriving both
+from the corpus and checking them against the rule also sorted 16 misfiled (2,3,3) certificates out of
+a folder named 236. Spherical patterns align onto ONE canonical board per shard (exact, via flag
+transitivity), so geometry ships once, not 61,914 times: 175 MB → 44 MB at full coverage. `Darts` grew
+optional `alpha`/`elen`/`drawn`; `develop_freedraw.py` grew ℤ[ζ₈]. Detail: same NOTES section. — CC
+
+### 2026-07-29 — CC — (2,3,4) reruns to k=11
+Marek's second 234 drop extends rather than replaces: 8 files at k=10/k=11, 842 certificates → 5,974,
+coverage now contiguous k=3..11. All develop, 0 failures, all still land on the same 48-triangle board;
+k=3..9 counts unchanged to the unit. New slices are 1,603 and 3,529 tilings (0.83 + 1.84 MB), eager.
+Detail: DEVELOPMENT_NOTES.md §"(2,3,4) rerun: k=10 and k=11". — CC
+
+### 2026-07-28 (2) — CC — the expansion runs by hand on the architecture-two slide
+A k=3 seed and two stamps, cycled and confirmed live: `<growth-strip>` over precomputed SeedExpander
+output (`scripts/build-growth-figure.ts` → `public/defense/growth-k3.json`). The expander gained a
+read-only frame trace (`figureStart`/`figureStep`/`figureMerge`); `expand` is untouched. Correction
+worth keeping: it stamps the SEED, not the grown patch. Keys are `,` `.` Enter, never the arrows — a
+clicker sends those. Detail: NOTES §"The expansion, driven by hand". — CC

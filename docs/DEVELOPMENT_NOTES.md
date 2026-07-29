@@ -7475,3 +7475,182 @@ was sized against the fallback and overflowed by whatever the cap took away. The
 keyed on `${w}x${h}:${fd}` and recomputed when that changes; an inert surface follows immediately (it
 has no view of its own to preserve), while an interactive one only refreshes the value `resetView` will
 use. Worth remembering for any future fitted view: the host's first size is not its size.
+
+## 2026-07-28 (3) — The Schwarz family becomes a family: seven curved boards, two Euclidean
+
+Marek dropped eight more Schwarz corpora (`materials/solvers/edges/Schwarz/`), and the interesting
+thing about them is that only one is the same KIND of object as the (2,3,6) board that shipped
+yesterday. Sorted by the sign of 1/p + 1/q + 1/r − 1:
+
+    spherical    (2,2,3) (2,2,4) (2,3,3) (2,3,4) (2,3,5)     finite, closes
+    euclidean    (2,3,6) (2,4,4)                             period lattice
+    hyperbolic   (2,3,7) (2,4,5)                             develops forever
+
+So one drop, three back ends. The front end — the Conway certificate parser, `VTable`'s site-symmetry
+fold, `Block`'s glue — is shared with everything else here and was imported, not copied.
+
+### What the certificates actually say (read, not assumed)
+
+Two conventions had to be settled from the data before any of it could develop, and both differ from
+the obvious guess:
+
+**`Sn` names an ANGLE, π/n — not a site of rotation order n.** On (2,3,6) the two readings agree, so
+the shipped board never had to distinguish them. On (2,2,3) they diverge loudly: the π/3 corner is
+written `S3` and tagged `D12a`, i.e. rotation order 6. The reason is that the (2,2,3) triangle is
+ISOCELES and therefore mirror-symmetric, so the tiling carries twice the rotation the triangle group
+alone would give. Reading `Sn` as a site order rejects every one of those 2,297 certificates.
+
+**A digon letter names a PAIR OF ANGLES, not a pair of orbits.** That is why the isoceles boards have
+two edge classes where the scalene ones have three — (2,4,4)'s two S2–S4 sides are congruent, so they
+are one letter. `schwarz_board.letter_pairs` assigns them in lexicographic order of the angle pair, and
+`derive_letter_pairs` re-derives the same map from a corpus's own vertex figures so the two can be
+checked against each other rather than one trusted. That check is also what sorted out the drop: the
+`237.zip` folder named `solver_schwarz_edges_236` holds 17 genuine (2,3,6) certificates and 16 (2,3,3)
+ones, and every file classified to exactly ONE board, no ambiguity.
+
+Edge lengths come from the law of cosines for angles rather than a table. The formula reproduces the
+hand-written 1 : √3 : 2 that `develop_freedraw.py`'s sch236 row carries, which is the selftest.
+
+### The sphere: develop, then align onto ONE board
+
+Spherical boards close, so `develop_sphere` floods the instance orbit in SO(3) with a per-class
+`Medge(ρ)` and reads off the finished complex. The checks are the board's own: V − E + F = 2, the
+triangle count equals the group order (12/16/24/48/120), every developed side measures one of the
+class lengths, and — the anchor — exactly one certificate per board draws nothing, and it develops to
+one tile covering the sphere.
+
+The size problem was not the develop. (2,2,4) reaches 61,914 tilings at k=10 and (2,3,3) 45,580 at
+k=7; shipping the board's geometry with each record cost 74 MB and 78 MB for those two slices alone,
+175 MB across the shelf. But every pattern on a board develops the SAME sphere — a decoration says
+which edges are drawn, never where the triangles are — so the geometry belongs to the shard, not the
+record. Aligning them is exact rather than fitted: a developed instance is a flag, the board's symmetry
+group is transitive on flags of a given (corner letter, edge class), so mapping any one such flag to
+the identity frame maps the board onto itself. Pick that flag by a rule reading only the certificate's
+letters, order vertices by position, and every record lands on one canonical indexing — asserted, with
+a mirrored-development retry, not assumed. 175 MB → 44 MB, full coverage kept.
+
+### H²: the shipped darts grow three arrays
+
+The hyperbolic records ship quotient darts and the client re-develops under the live view, exactly as
+the {p,q} edge shelf does. What is new is that none of the three things that develop needs can be
+DERIVED here. `HyperbolicDeveloper` reads a dart's turn off the polygon size at the one forced ℓ, and
+its drawn bit off "is either neighbouring polygon a digon" — but a Schwarz board has one polygon size
+(3), three angles, three edge lengths, and a digon on every edge. So `alpha` / `elen` / `drawn` are
+explicit per dart, optional in `Darts`, and absent on every existing record, which therefore develops
+byte-identically.
+
+One consequence worth writing down: the per-pixel disk shader is NOT available to this shelf. Its
+Dirichlet reducer rebuilds side pairings from a single edge length, so a scalene board has to take the
+explicit developed draw (`force2d`). Both the canvas and the thumbnail gained the flag.
+
+The arithmetic is right, and the (2,3,7) k=3 slice is the proof — four tilings, and each is a tiling
+you can name. Nothing drawn is the bare board (unbounded). Drawing only the S2–S3 class merges every
+triangle round an S7 vertex: 14 of them, the {7,3} heptagon. Drawing only S2–S7 merges round an S3
+vertex: 6, the {3,7} triangle. Drawing both leaves the pair across an S3–S7 edge: 2, the quasiregular
+rhombus. The develop was never told any of that.
+
+### (2,4,4) needed a second cyclotomic ring, and I had the board wrong
+
+(2,4,4) is Euclidean, so it belongs in `develop_freedraw.py` with the lattice reduction — except its
+angles are 90/45/45, so directions are multiples of 45° and its side lengths are 1 : √2. Neither lives
+in ℤ[ζ₁₂]. `develop_freedraw` now carries a `Ring` (12 or 8 directions, degree 4 either way, differing
+only in the reduction of z⁴), and a grid names its ring. Every `% 12` and `(d + 6)` is written as
+`% block.ndir` and `+ block.half`. The regression that matters: all nine hexagonal k slices, 86 MB,
+regenerate BYTE-IDENTICAL, and so do sch236's k=3 and k=4 against what shipped yesterday.
+
+I had the board's geometry wrong at first and the develop caught it. I wrote it up as the square
+grid's barycentric subdivision — squares cut by diagonals AND midlines, eight triangles each, three
+vertex classes — which would have put the floor at k=3. The bare-board certificate came back at k=2.
+Reflecting the half-square triangle in its three sides generates mirrors at x ∈ ℤ, y ∈ ℤ and both
+diagonal families, and NOT at the half-integers: y = ½ is not a mirror. So the board is the unit square
+grid with both diagonals, four triangles per square, two vertex classes (lattice points at 45°, square
+centres at 90°) and two edge classes — which is exactly the alphabet Marek shipped. Comment corrected;
+all 270,768 emitted faces across k=2..4 measure as exact 1 : 1 : √2 triangles.
+
+### Coverage is Marek's run, and the shelf says so
+
+Two boards have holes: (2,2,4) has no k=8, (2,3,5) no k=4. Those are gaps in the SOLVE, not empty
+slices of the board, and `schwarzKGaps` is what both the /freedraw board picker and the test suite say
+that with. Still missing everywhere, as on 2026-07-27: `F2` appears in no corpus at all, so on the
+three-class boards the third edge class is never drawn. That half needs a rerun from Marek.
+
+Counts: spherical 2,297 / 65,257 / 48,562 / 842 / 35 certificates for (2,2,3) (2,2,4) (2,3,3) (2,3,4)
+(2,3,5); hyperbolic 4 and 7; Euclidean 12,755 for (2,4,4) and 49 for the refreshed (2,3,6), which adds
+a k=5 slice of 6 on top of the 43 that shipped. Every one develops — 0 failures across all nine boards.
+
+### 2026-07-29 — (2,3,4) rerun: k=10 and k=11
+
+Marek's second 234 drop is an EXTENSION, not a replacement: eight files, all k=10 and k=11, no filename
+collision with the 58 already staged, and each classified to (2,3,4) by its own alphabet before being
+filed. 842 certificates → 5,974, and coverage runs contiguous k=3..11 with no gap to flag.
+
+All 5,974 develop, 0 failures, and every one still lands on the same canonical board (V=26, E=72,
+F=48) — which is the check that matters after a corpus grows, since the shard header now describes
+five times as many patterns as it did when it was written. The k=3..9 counts are unchanged to the
+unit (5, 2, 80, 81, 196, 392, 86), so the rerun added rather than moved anything.
+
+The new slices are 1,603 and 3,529 tilings, 0.83 MB and 1.84 MB — small enough to stay eager, because
+the board hoist is doing the work: at the pre-hoist per-record geometry those two would have been
+~10 MB together instead of 2.7 MB.
+
+## 2026-07-28 (3) — The expansion, driven by hand on a slide
+
+AL wanted the architecture-two slide to show the growth as a sequence: a k=3 seed, then two stamps.
+What he described was "stamping the entire patch onto itself", and the code does not do that — it
+stamps a copy of the SEED, fixed for the whole run (`applyIsometryToPolygons(originalPolygons, T)` in
+`findValidIsometries`). The two readings agree at step 1, where the patch IS the seed, and diverge at
+step 2. He took the code's version once it was pointed out.
+
+### What one step actually is
+
+Worth writing down, because the slide now asserts it. The state is a patch plus a list of COLLAPSED
+vertices, each carrying an orbit id. The FRONTIER is every vertex not collapsed but touching one that
+is. A step takes the frontier vertex of LEAST graph distance to the core (`sorted[0]`, so growth stays
+compact), enumerates isometries aligning any of the k cores onto it — each seed edge against each
+boundary edge, with and without reflection — and keeps those that survive four gates: polygon names at
+the target must be coverable by that core, no transformed core may land on a collapsed vertex carrying
+a different orbit id, exact alignment against the tiles already there, no collision. Separately, any
+patch that closes a vertex with a VC outside the seed's k is killed on the next pop. Leaves at
+distance 6k.
+
+### The figure is output, not a drawing
+
+`SeedExpander` gained `figureStart` / `figureStep` / `figureMerge`: a read-only mirror of one DFS
+frame, calling the same private helpers in the same order. `expand` is untouched and nothing feeds
+back into the search. `scripts/build-growth-figure.ts` runs the probe-pipeline prologue to build the
+k=3 seeds, walks two steps, and writes `public/defense/growth-k3.json` (10.6 KB). `figureStep` also
+reports `prunedByVC` — placements valid at the target whose merged patch closes a bad vertex, which
+the search enumerates and then discards. They are excluded from the widget and counted, rather than
+dropped silently.
+
+Depth 2 is small ONLY because the target vertex is the algorithm's choice rather than the viewer's.
+Letting a hover pick any open vertex — AL's first sketch — would have made the tree (open × cands)²,
+thousands of states, and depicted a freedom the DFS does not have. Restricting it to `sorted[0]` is
+both the faithful option and the cheap one, which is a nice place to end up.
+
+### Choosing the seed on evidence
+
+243 of the 449 k=3 seeds have three distinct VCs. The selection criterion that mattered was not
+beauty: **every** first stamp must still admit a second, or confirming one strands the widget with an
+empty third card. 110 of 243 pass. The pick is `[3,3,3,3,3,3;3,3,3,3,6;3,3,6,6]` — 10 tiles, three
+well-separated cores, 3 placements at step 1 and 4–7 at step 2, and triangles against hexagons reads
+from the back of a room.
+
+### Two bugs the widget found in itself
+
+The keyboard died after one press. The listener effect depended on the handlers, so it re-registered
+on every cursor change — and the hover flag lived inside it, resetting to false while the pointer had
+not moved. Handlers now go through a ref and the listener registers once. The hover gate is gone
+entirely: hover is only knowable from pointer EVENTS, so returning to the slide with the pointer
+already parked leaves it stale, and "jiggle the mouse" is not a thing to discover mid-sentence.
+
+Keys are `,` `.` and Enter, never the arrows. A presentation clicker sends arrow keys, so a widget
+that captured them would kill slide advance for as long as the pointer sat on it. Verified with
+Playwright that ArrowRight still moves the deck while the strip is under the cursor.
+
+### One frame for three cards
+
+Each card fitted to its own contents would draw the seed at the same size as the finished patch, and
+the growth — the only thing the row exists to show — would vanish. So all three share one frame, big
+enough for every patch any path can reach. The seed lands at about half the card's width, which is
+what makes the third card read as growth.
