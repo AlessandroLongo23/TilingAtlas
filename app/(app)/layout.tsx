@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Nav } from "@/components/nav";
 import { ScreenshotPreviewModal } from "@/components/screenshot-preview-modal";
+import { UpdatesGate } from "@/components/updates/updates-gate";
 import { LegacyTilingStoreBootstrap } from "./_bootstrap";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -10,6 +11,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 			<Nav />
 			<div className="flex-1 min-h-0 flex">{children}</div>
 			<ScreenshotPreviewModal />
+			<UpdatesGate />
 		</div>
 	);
 }

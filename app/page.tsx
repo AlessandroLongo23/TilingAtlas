@@ -10,6 +10,8 @@ import { TheoryRing } from "@/components/landing/theory-ring";
 import { ParquetMini } from "@/components/landing/parquet-mini";
 import { HyperbolicMini, PlayMini, SphericalMini } from "@/components/landing/geometry-minis";
 import { HatMini, PenroseMini } from "@/components/landing/coming-soon-minis";
+import { UpdatesGate } from "@/components/updates/updates-gate";
+import { CURRENT_DATE, CURRENT_VERSION } from "@/lib/updates/entries";
 
 // The landing page (spec: docs/superpowers/specs/2026-07-22-landing-page-design.md).
 // Conventional skeleton, catalog material: every visual is a real render from the atlas, every
@@ -177,6 +179,19 @@ export default async function HomePage() {
 			{/* P7 — footer with the citation block. */}
 			<footer className="border-t border-line-subtle">
 				<div className="max-w-6xl mx-auto px-6 md:px-12 py-8 flex flex-col gap-2 text-xs text-fg-muted">
+					{/* The landing page carries no Nav, so this line is the only "what's new" affordance here. */}
+					<p>
+						Updated{" "}
+						{new Date(`${CURRENT_DATE}T00:00:00Z`).toLocaleDateString("en-GB", {
+							day: "numeric",
+							month: "short",
+							timeZone: "UTC",
+						})}{" "}
+						· v{CURRENT_VERSION} —{" "}
+						<Link href="/updates" className="text-accent hover:underline">
+							what&rsquo;s new
+						</Link>
+					</p>
 					<p>
 						Built by Alessandro Longo as part of an MSc thesis on the enumeration of k-uniform
 						tilings. Counts on this page are computed from the atlas data, never typed in.
@@ -187,6 +202,10 @@ export default async function HomePage() {
 					</p>
 				</div>
 			</footer>
+
+			{/* Mounted here, not in the root layout, so /defense, which is also outside (app),
+			    cannot ever pop this mid-talk. */}
+			<UpdatesGate />
 		</main>
 	);
 }

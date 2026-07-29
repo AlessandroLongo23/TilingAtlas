@@ -7,6 +7,7 @@ import { BookOpen, Library, Palette, PenLine, Play, Waves, Snowflake } from "luc
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 import { Kbd } from "@/components/ui/kbd";
+import { UpdatesButton } from "@/components/updates/updates-button";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
@@ -85,7 +86,10 @@ export function Nav() {
 
 			<div className="flex-1" />
 
-			<ThemeToggle />
+			<div className="flex items-center gap-2">
+				<UpdatesButton />
+				<ThemeToggle />
+			</div>
 		</nav>
 	);
 }

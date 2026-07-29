@@ -10,6 +10,12 @@
             "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-destructive-git.sh\"",
             "statusMessage": "Checking for uncommitted work…",
             "timeout": 20
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/release-nudge.sh\"",
+            "statusMessage": "Checking for unreleased work…",
+            "timeout": 30
           }
         ]
       }

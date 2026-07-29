@@ -1,11 +1,13 @@
 {
   "name": "tiling-atlas-next",
-  "version": "0.1.0",
+  "version": "1.10.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "tsx scripts/gen-landing-data.ts && NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "build": "tsx scripts/gen-landing-data.ts && tsx scripts/gen-updates-data.ts && NODE_OPTIONS=--max-old-space-size=8192 next build",
     "landing:data": "tsx scripts/gen-landing-data.ts",
+    "updates:data": "tsx scripts/gen-updates-data.ts",
+    "updates:draft": "node scripts/draft-update.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
