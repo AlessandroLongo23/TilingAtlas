@@ -79,6 +79,15 @@ is the current primary enumeration method (thesis pivot 2026-07-10, `docs/thesis
    the **⚑ flag lists**. `docs/K2_DIAGNOSIS.md` holds the measurement log, `docs/LATTICE_ENUMERATION_DESIGN.md`
    the enumeration design (read its STATUS header — parts are corrected), `docs/RESEARCH_NOTES.md` the literature.
 
+## Marek's solvers RUN on this machine — read `docs/RUNNING_MAREK_SOLVERS.md` before claiming otherwise
+
+His solvers arrive as Windows x64 console `.exe`. This is an arm64 Mac with no Docker, no VM and no
+installed Wine, and the reflex is to report them unrunnable. **That reflex is wrong and has cost AL the
+same conversation three times.** An extracted Homebrew `wine-stable` runs them through Rosetta 2 with no
+sudo; the whole recipe, the per-solver stdin contract, the driver script and the measured costs are in
+`docs/RUNNING_MAREK_SOLVERS.md`. Read it before saying anything about whether a solver can be run, and
+before asking AL how to run one.
+
 ## Settled decisions — do NOT re-litigate (proofs/measurements behind each)
 
 - **Chirality: mirror pairs MERGE** (count once) — matches A068599; k=2 target is 20. (NOTES §12.8)
