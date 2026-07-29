@@ -7674,3 +7674,57 @@ just adopt the article layout around it — `PageSidebar scrollable={false}`, th
 The routes are the pieces the atlas is built from, which is what "theory" already meant; keeping them
 as sibling top-level tabs made the header claim they were three coordinate destinations instead of
 one shelf and its contents.
+
+## 2026-07-28 (4) — AL's whole-patch stamping, measured: it loses the snub
+
+AL asked why the expander stamps a copy of the SEED rather than a copy of the whole current patch,
+reasoning that a whole-patch stamp cannot break a pattern the patch has already established. The
+notes had no answer: searching them turned up no record of the variant ever being tried, so "why did
+it fail" had never been asked, let alone answered.
+
+The theory did not settle it either. Both of us produced an argument that whole-patch stamping is
+sound AND complete — if the isometry carrying `core_i` onto the open vertex is a genuine symmetry of
+the target tiling, it carries the entire patch into that tiling, so the copy cannot collide; and an
+isometry whose patch-image DOES collide is a symmetry of no tiling containing the patch, so rejecting
+it drops nothing. My own counterexample against it (translate a 3-row patch by its own height) was
+invalid, as AL pointed out: that isometry maps no core onto an open vertex, so it is not an
+admissible stamp. Given §15.4 — a prune that looked sound to everyone and silently dropped tilings —
+the only way to settle it was to measure.
+
+`SeedExpander.stampMode` ("seed" | "patch") + `scripts/diag-stamp-mode.ts`. The decisive number is
+not speed but the count.
+
+**k=1, 15 seeds, {3,4,6,8,12}, 20 s cap:**
+
+| mode | cells | leaves | wall |
+|---|---|---|---|
+| seed  | **11** | 13 | 8.9 s |
+| patch | **10** | 10 | 144.6 s |
+
+Patch-stamping loses one tiling and costs 16× the wall clock. The casualty is named:
+`[3,3,3,3,6]` — the snub trihexagonal tiling, the one CHIRAL tiling among the eleven.
+
+**Where it dies** (`scripts/diag-stamp-snub.ts`). Not at the leaf, and not late:
+
+    seed   step1: 3 placements | step2: 1 | step3: 1 | step4: 2
+    patch  step1: 3 placements | step2: 0
+
+Step 1 is identical in both modes — the patch IS the seed, so the stamps coincide, and both reach the
+same 8-tile patch. At step 2, on the SAME patch and the SAME target vertex, seed-stamping finds a
+placement and whole-patch stamping finds none. The full DFS confirms it: 0 leaves, 5 ms, not capped.
+
+**Two explanations tested and refuted.** (1) Bookkeeping: a whole-patch stamp closes many vertices it
+never records as collapsed, so the frontier might offer already-complete vertices where nothing can be
+placed. Measured false — of the 6 open vertices offered at step 2, ZERO are at 2π, and the chosen
+target carries 16/24 angle units from 3 tiles, genuinely open. (2) The leaf: patch-stamping grows the
+patch much faster, so the 6k threshold could be cleared in fewer steps and the emitted patch be a
+shape the extractor cannot use. Measured false — there is no leaf to fail, the branch dies first.
+
+So the mechanism is still unidentified, and the completeness argument above is wrong somewhere I have
+not found. What is established: the naive swap loses a tiling, and it loses the chiral one, which is
+suggestive but not yet an explanation. Recorded here rather than resolved, because the architecture it
+would rescue was abandoned for a stronger reason — fixing Λ first makes the fill finite, which is what
+took k=2 from 13 timeouts to zero, and no stamping rule addresses that.
+
+**Do not ship `stampMode: "patch"`.** It exists to be measured against the default, and the default is
+what every count in this repo was produced with.

@@ -1700,3 +1700,10 @@ output (`scripts/build-growth-figure.ts` → `public/defense/growth-k3.json`). T
 read-only frame trace (`figureStart`/`figureStep`/`figureMerge`); `expand` is untouched. Correction
 worth keeping: it stamps the SEED, not the grown patch. Keys are `,` `.` Enter, never the arrows — a
 clicker sends those. Detail: NOTES §"The expansion, driven by hand". — CC
+
+### 2026-07-28 (3) — CC — whole-patch stamping measured: 10 tilings instead of 11
+AL proposed stamping the whole current patch rather than the seed. The notes had no record of it ever
+being tried, and both our completeness arguments said it was sound — so it was measured instead.
+k=1 drops **11 → 10**, at 16× the wall clock; the casualty is `[3,3,3,3,6]`, the one chiral tiling. It
+dies at the second stamp, on the same patch and target where seed-stamping succeeds. Bookkeeping and
+leaf-shape explanations both tested and refuted. Detail: NOTES §"AL's whole-patch stamping". — CC
