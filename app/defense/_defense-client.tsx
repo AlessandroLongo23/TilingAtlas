@@ -12,6 +12,7 @@ import { GrowthStrip } from "@/components/growth-strip";
 import { RowStacker } from "@/components/row-stacker";
 import { PeriodFigure } from "@/components/period-figure";
 import { TorusFigure } from "@/components/torus-figure";
+import { K4Wall } from "@/components/k4-wall";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -491,6 +492,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// cell with its opposite edges identified, one tile picked out crossing the seam. Same tiling
 			// and same JSON as <period-figure>.
 			"torus-figure": TorusFigure,
+			// <k4-wall> — the three measurements that closed architecture three: seed count, timeout rate,
+			// and where the time goes at k=3 against k=4. Numbers sourced in NOTES §15.3 and §22.2-22.3.
+			"k4-wall": K4Wall,
 			// <count-timeline> — who published which k-uniform count, when, drawn, not tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,

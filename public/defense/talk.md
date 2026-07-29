@@ -401,10 +401,19 @@ seeds against 449 at $k=3$, and on a representative sample 25 fills out of 25 ti
 I could have run it for a week, but an intractability measurement is a decisive answer too, which
 is what the experiment returned.
 
-![](/defense/figures/k4-wall.png)
+<k4-wall>
+</k4-wall>
 
-<!-- notes: Say plainly that measuring the wall was a choice, and defend it in one sentence if
-asked. -->
+<!-- notes: Say plainly that measuring the wall was a choice, and defend it in one sentence if asked.
+The third panel is the one to land: at k=3 the orbit gate still costs 16.5%, and at k=4 it costs
+nothing at all — not because it got cheaper but because no fill ever completes, so it is never
+reached. That is the difference between slow and walled. If pressed on the seed range: seed-SET
+enumeration is 0.1 s for 2072 sets, so the explosion is in building their geometry, and a full
+buildSeeds run passed 43 minutes single-threaded without finishing, which is why the number is a
+range and not a figure. -->
+
+<!-- The old k4-wall.png is still in public/defense/figures/ and unused; the numbers here are the
+same measurements, minus its third panel, which showed the k=3 profile alone on a k=4 slide. -->
 
 ---
 
