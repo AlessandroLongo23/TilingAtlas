@@ -7,6 +7,7 @@ import {
 	type RawPolygon,
 	type TranslationalCellData,
 	fitPxPerEdge,
+	parseBaseCell,
 	renderTilingToContext,
 } from "@/lib/utils/renderTiling";
 import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
@@ -31,8 +32,39 @@ interface TilingThumbnailProps {
 	 * fitting is what costs the unit edge its card-to-card meaning.
 	 */
 	fit?: number;
+	/**
+	 * LATTICE mode: ignore pxPerEdge and scale so this many translational periods fit across the slot.
+	 * Only meaningful with `translationalCell`.
+	 *
+	 * pxPerEdge assumes an edge in the data is an edge of a tile. That holds for the atlas, whose
+	 * polygons are straight, and fails for a cell whose boundary is a flattened curve: there an "edge"
+	 * is one of eight segments along a tile's side, so the same number zooms in ~8x and the slot shows
+	 * one tile. The period is the honest unit for those.
+	 */
+	periodsAcross?: number;
 	/** Draw a unit-edge ruler in the bottom-right corner. */
 	scaleBar?: boolean;
+}
+
+/**
+ * The pxPerEdge that puts `periodsAcross` lattice periods across the slot's short side.
+ *
+ * renderTilingToContext scales by pxPerEdge / medianEdge, so inverting through the same median is
+ * what makes the request land: ask for a scale, divide the median back out. Null when the cell has
+ * no usable basis, which sends the caller back to its own pxPerEdge.
+ */
+function latticePxPerEdge(
+	cell: TranslationalCellData,
+	W: number,
+	H: number,
+	periodsAcross: number,
+): number | null {
+	const base = parseBaseCell(cell);
+	if (!base?.basis || base.basis.length < 2) return null;
+	const [v1, v2] = base.basis;
+	const period = Math.sqrt(Math.abs(v1[0] * v2[1] - v1[1] * v2[0]));
+	if (!(period > 0) || !(periodsAcross > 0)) return null;
+	return (Math.min(W, H) / (periodsAcross * period)) * base.medianEdge;
 }
 
 export function TilingThumbnail({
@@ -41,6 +73,7 @@ export function TilingThumbnail({
 	translationalCell = null,
 	pxPerEdge = 22,
 	fit,
+	periodsAcross,
 	scaleBar = false,
 }: TilingThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -92,7 +125,12 @@ export function TilingThumbnail({
 				}
 				// Figure mode resolves its edge length from the measured slot, so it can only happen
 				// here — the card has no width to fit against until the canvas is laid out.
-				const edgePx = fit != null && polys?.length ? fitPxPerEdge(polys, W, H, fit) : pxPerEdge;
+				const edgePx =
+					fit != null && polys?.length
+						? fitPxPerEdge(polys, W, H, fit)
+						: (periodsAcross != null && translationalCell
+								? latticePxPerEdge(translationalCell, W, H, periodsAcross)
+								: null) ?? pxPerEdge;
 				renderTilingToContext(ctx, W, H, {
 					translationalCell,
 					polygons: polys,
@@ -149,7 +187,7 @@ export function TilingThumbnail({
 			ro.disconnect();
 			cancelJob?.();
 		};
-	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, fit, hueOffset]);
+	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, fit, periodsAcross, hueOffset]);
 
 	if (hasError) {
 		return (

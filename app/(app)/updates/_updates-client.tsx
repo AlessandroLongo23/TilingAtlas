@@ -7,6 +7,7 @@ import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-pr
 import { ChangeText } from "@/components/updates/change-text";
 import { KIND_LABEL, KIND_ORDER, type ChangeKind, type UpdateEntry } from "@/lib/updates/entries";
 import { groupByMonth } from "@/lib/updates/grouping";
+import { previewHref, previewLabel } from "@/lib/updates/preview-ids";
 import { releaseLevel } from "@/lib/updates/version";
 import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -145,7 +146,7 @@ export function UpdatesClient({
 						<h1 className="text-2xl font-semibold text-fg">Updates</h1>
 						<p className="text-sm text-fg-secondary max-w-prose">
 							What has changed in the Atlas, newest first. New tilings are shown as they arrived;
-							drag to pan, scroll to zoom, or open any of them in Play.
+							drag to pan, scroll to zoom, or open any of them where it lives.
 						</p>
 					</header>
 
@@ -217,7 +218,8 @@ export function UpdatesClient({
 																		key={id}
 																		cell={cells[id]}
 																		tilingId={id}
-																		title={id}
+																		title={previewLabel(id)}
+																		openHref={previewHref(id)}
 																		homePeriods={3}
 																		showExpand={false}
 																	/>
@@ -230,10 +232,10 @@ export function UpdatesClient({
 																{textOnly.map((id) => (
 																	<Link
 																		key={id}
-																		href={`/play?tiling=${encodeURIComponent(id)}`}
+																		href={previewHref(id)}
 																		className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
 																	>
-																		{id}
+																		{previewLabel(id)}
 																		<ArrowRight size={12} aria-hidden="true" className="shrink-0" />
 																	</Link>
 																))}

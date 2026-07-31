@@ -47,6 +47,9 @@ interface InteractiveTilingPreviewCardProps {
 	showExpand?: boolean;
 	/** Show the deep-link to /play. Only ever rendered when `tilingId` is set. */
 	showOpenInPlay?: boolean;
+	/** Where that deep-link goes, when /play is the wrong destination. The update notes use it: a
+	 *  preview of an isohedral or pentagon type belongs on its own shelf, which /play cannot open. */
+	openHref?: string;
 	/** Which icon that deep-link wears. "play" on a slide, where an audience reads a triangle as
 	 *  "he is about to open this" faster than a link glyph. */
 	openInPlayIcon?: "link" | "play";
@@ -108,6 +111,7 @@ export function InteractiveTilingPreviewCard({
 	initialOverlays,
 	showExpand = true,
 	showOpenInPlay = true,
+	openHref,
 	openInPlayIcon = "link",
 	expandMode = "inline",
 	alwaysActive = false,
@@ -252,10 +256,10 @@ export function InteractiveTilingPreviewCard({
 						) : null}
 						{showOpenInPlay && tilingId ? (
 							<Link
-								href={`/play?source=reference&tiling=${encodeURIComponent(tilingId)}`}
+								href={openHref ?? `/play?source=reference&tiling=${encodeURIComponent(tilingId)}`}
 								onPointerDown={stopDrag}
-								title="Open in Play"
-								aria-label="Open this tiling in Play"
+								title={openHref ? "Open" : "Open in Play"}
+								aria-label={openHref ? "Open this tiling on its page" : "Open this tiling in Play"}
 								className="flex items-center justify-center rounded-lg border border-line bg-surface-overlay/80 p-2 text-fg-muted backdrop-blur-sm transition-colors hover:border-line-strong hover:text-fg"
 							>
 								{openInPlayIcon === "play" ? (

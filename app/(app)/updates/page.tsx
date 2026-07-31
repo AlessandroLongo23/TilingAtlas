@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Metadata } from "next";
 import { UPDATES } from "@/lib/updates/entries";
+import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewIdsIn } from "@/lib/updates/unseen";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -37,6 +38,11 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 	const wanted = new Set(ids);
 	const dir = path.join(process.cwd(), "public");
 	const out: Record<string, TranslationalCellData> = {};
+	// The shelf ids first: they are solved here, not looked up, and no shard will ever answer for one.
+	for (const id of wanted) {
+		const cell = shelfPreviewCell(id);
+		if (cell) out[id] = cell;
+	}
 	for (const name of ATLAS_FILES) {
 		try {
 			const all: ReferenceTiling[] = JSON.parse(await readFile(path.join(dir, name), "utf8"));

@@ -2,12 +2,13 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { ChangeText } from "@/components/updates/change-text";
 import { KIND_LABEL, KIND_ORDER, type Change, type ChangeKind, type UpdateEntry } from "@/lib/updates/entries";
+import { parseShelfPreviewId, previewHref, previewLabel } from "@/lib/updates/preview-ids";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // The "what's new" modal: everything a visitor has not seen, merged into one grouped list rather
@@ -28,20 +29,33 @@ interface UpdatesModalProps {
 	entries: UpdateEntry[];
 }
 
+/**
+ * The one in-flight fetch, cached at module scope so every mount shares it.
+ *
+ * A `fetched` ref inside the hook cannot do this job. Strict Mode runs each effect twice: the first
+ * pass sets the ref and starts the request, the teardown flips the `live` flag that guards setState,
+ * and the second pass returns early on the ref it just set — so the response lands with nothing left
+ * to receive it, and the strip falls back to text chips in dev forever. Caching the PROMISE lets
+ * every pass await the same request and the last one alive to keep the result. One network hit
+ * either way. A missing or broken asset resolves to {}: text-only previews, never a broken modal.
+ */
+let cellsRequest: Promise<CellMap> | null = null;
+
+function loadPreviewCells(): Promise<CellMap> {
+	cellsRequest ??= fetch("/updates-cells.json")
+		.then((r) => (r.ok ? (r.json() as Promise<CellMap>) : ({} as CellMap)))
+		.catch(() => ({}) as CellMap);
+	return cellsRequest;
+}
+
 function usePreviewCells(enabled: boolean): CellMap {
 	const [cells, setCells] = useState<CellMap>({});
-	const fetched = useRef(false);
 	useEffect(() => {
-		if (!enabled || fetched.current) return;
-		fetched.current = true;
+		if (!enabled) return;
 		let live = true;
-		fetch("/updates-cells.json")
-			.then((r) => (r.ok ? r.json() : {}))
-			.then((j: CellMap) => {
-				if (live) setCells(j);
-			})
-			// A missing or broken asset just means text-only previews, never a broken modal.
-			.catch(() => {});
+		loadPreviewCells().then((j) => {
+			if (live) setCells(j);
+		});
 		return () => {
 			live = false;
 		};
@@ -54,7 +68,8 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 		<div className="mt-2 flex flex-wrap gap-2">
 			{ids.map((id) => {
 				const entry = cells[id];
-				const href = `/play?tiling=${encodeURIComponent(id)}`;
+				// /play for an atlas id, the shelf's own page for a shelf id — /play cannot open one.
+				const href = previewHref(id);
 				if (!entry) {
 					// No flat cell for this id (hyperbolic, spherical, freedraw, Schwarz, hollow). Still
 					// reachable — it just travels as a chip instead of a picture.
@@ -64,7 +79,7 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 							href={href}
 							className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
 						>
-							{id}
+							{previewLabel(id)}
 							<ArrowRight size={12} aria-hidden="true" className="shrink-0" />
 						</Link>
 					);
@@ -73,12 +88,18 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 					<Link
 						key={id}
 						href={href}
-						title={`Open ${entry.label} in Play`}
+						title={`Open ${entry.label}`}
 						className="block w-20 h-20 border border-line hover:border-accent transition-colors overflow-hidden"
 					>
 						{/* Small pxPerEdge on purpose: at 80px a card needs several repeats to read as a
-						    tiling, not as a crop of one tile. */}
-						<TilingThumbnail translationalCell={entry.cell} pxPerEdge={8} />
+						    tiling, not as a crop of one tile. A shelf cell is scaled by its lattice
+						    instead — its boundary is a flattened curve, so an "edge" there is a
+						    segment, not a side, and pxPerEdge would zoom in about eightfold. */}
+						<TilingThumbnail
+							translationalCell={entry.cell}
+							pxPerEdge={8}
+							periodsAcross={parseShelfPreviewId(id) ? 2.2 : undefined}
+						/>
 					</Link>
 				);
 			})}

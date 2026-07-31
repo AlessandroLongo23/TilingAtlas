@@ -53,6 +53,55 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.12.0",
+		date: "2026-07-31",
+		title: "Two new shelves: isohedral and pentagons",
+		commit: "49d62ef",
+		changes: [
+			{
+				kind: "feature",
+				text: "**The ninety-three isohedral types** get a shelf, IH1 to IH93, with every vertex parameter and edge shape live on a slider.",
+				items: [
+					"Eighty-one draw from their boundary alone; the twelve that need a marked interior are listed and named.",
+				],
+				href: "/isohedral",
+				tilings: ["isohedral-ih01", "isohedral-ih44", "isohedral-ih84"],
+			},
+			{
+				kind: "feature",
+				text: "**The fifteen convex pentagons** that tile the plane, Reinhardt in 1918 through the last type found in 2015, each one a family you can move.",
+				items: [
+					"Type 1 has five free parameters, Types 14 and 15 have none.",
+					"Wikipedia's side condition for Type 15 does not close: the tile needs d = a√(2+√3), about 1.932a, not the 0.966a printed there.",
+				],
+				href: "/pentagons",
+				tilings: ["pentagon-t1", "pentagon-t5", "pentagon-t15"],
+			},
+			{
+				kind: "content",
+				text: "**Sixteen cards on the landing wall**, up from twelve, every one drawing real geometry.",
+				items: [
+					"The Aperiodic card is a live hat patch of 7,921 tiles.",
+					"Isohedral and Pentagons replace the last coming-soon placeholders.",
+				],
+				href: "/",
+			},
+			{
+				kind: "fix",
+				text: "**Tile outlines in the aperiodic shelf** are drawn as geometry, so corners meet cleanly instead of biting out at small tile sizes.",
+				href: "/aperiodic",
+			},
+			{
+				kind: "content",
+				text: "**The 27 hyperbolic Schwarz patterns** render per-pixel in the disk now, like every other hyperbolic shelf.",
+				items: [
+					"A white pinhole where a drawn edge ran straight through a vertex is gone from every hyperbolic edge shelf.",
+				],
+				href: "/freedraw",
+			},
+		],
+	},
+	{
 		version: "1.11.0",
 		date: "2026-07-29",
 		title: "Corrections to the Schwarz counts",

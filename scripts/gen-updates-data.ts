@@ -22,6 +22,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { drawableEuclidean, toSpecimen, type LandingSpecimen } from "@/lib/services/landing-core";
 import { UPDATES } from "@/lib/updates/entries";
+import { shelfPreviewCell } from "@/lib/updates/preview-cells";
+import { previewLabel } from "@/lib/updates/preview-ids";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 
 /** How many of the newest releases the modal can show previews for. The modal never reaches past
@@ -89,7 +91,15 @@ async function main(): Promise<void> {
 	const skipped: string[] = [];
 	for (const id of wanted) {
 		const tiling = renderable.get(id);
-		if (tiling) out[id] = toSpecimen(tiling);
+		if (tiling) {
+			out[id] = toSpecimen(tiling);
+			continue;
+		}
+		// A shelf id (lib/updates/preview-ids.ts): built from its type number instead of looked up,
+		// because /isohedral and /pentagons solve their geometry and ship no shard. `k` counts vertex
+		// orbits in the atlas and is not measured for these; nothing reads it off this asset.
+		const shelf = shelfPreviewCell(id);
+		if (shelf) out[id] = { id, label: previewLabel(id), k: 0, cell: shelf };
 		else skipped.push(id);
 	}
 

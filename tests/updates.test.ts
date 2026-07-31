@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { CURRENT_VERSION, KIND_LABEL, KIND_ORDER, UPDATES, type UpdateEntry } from "@/lib/updates/entries";
 import { formatMonth, groupByMonth } from "@/lib/updates/grouping";
 import { bumpBetween, compareVersions, isVersion, parseVersion, releaseLevel } from "@/lib/updates/version";
+import { shelfPreviewCell } from "@/lib/updates/preview-cells";
+import { parseShelfPreviewId, previewHref } from "@/lib/updates/preview-ids";
 import { previewIdsIn, shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
 
 // Guards for the update notes. Atlas ids are opaque strings — "ctrnact-07_34-5c2_5e_5f3_6f-1" is a
@@ -143,14 +145,42 @@ describe("update entries", () => {
 		}
 	});
 
-	it("every preview id exists in the atlas", () => {
+	it("every preview id resolves, in the atlas or on a shelf", () => {
 		const ids = atlasIds();
 		// Guard the guard: if the shards are absent (a lean checkout) this test would pass vacuously.
 		expect(ids.size, "no atlas ids loaded — cannot validate preview ids").toBeGreaterThan(1000);
 		for (const entry of UPDATES) {
 			for (const change of entry.changes) {
 				for (const id of change.tilings ?? []) {
+					// A shelf id names a type on /isohedral or /pentagons, which ship no shard and solve
+					// their geometry instead — so the check is that the builder answers for it, not that
+					// a shard holds it. shelfPreviewCell returns null for a type that does not exist, one
+					// of the twelve marked isohedral types, and a pentagon with no derived unit.
+					if (parseShelfPreviewId(id)) {
+						expect(shelfPreviewCell(id), `${entry.version}: ${id} builds no cell`).not.toBe(null);
+						continue;
+					}
 					expect(ids.has(id), `${entry.version} references unknown tiling ${id}`).toBe(true);
+				}
+			}
+		}
+	});
+
+	it("sends every preview somewhere that can show it", () => {
+		// The failure this catches is a shelf preview keeping /play's deep-link: /play reads the atlas,
+		// so "pentagon-t15" would land on a page that cannot find it.
+		for (const entry of UPDATES) {
+			for (const change of entry.changes) {
+				for (const id of change.tilings ?? []) {
+					const href = previewHref(id);
+					const shelf = parseShelfPreviewId(id);
+					if (shelf) {
+						expect(href, `${id} still points at /play`).toMatch(
+							shelf.kind === "pentagon" ? /^\/pentagons\?type=\d+$/ : /^\/isohedral\?type=IH\d{2}$/,
+						);
+					} else {
+						expect(href, `${id} should deep-link to /play`).toContain("/play?");
+					}
 				}
 			}
 		}
