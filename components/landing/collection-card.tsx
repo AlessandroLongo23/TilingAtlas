@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
@@ -58,7 +59,11 @@ export function CollectionCard({
 					)}
 				>
 					{title}
-					{captionIsLink ? <span aria-hidden="true"> →</span> : null}
+					{/* Inline, not a flex child: the row above aligns on the baseline, and an
+					    inline-flex h3 would take its own baseline and drop out of line with the badge. */}
+					{captionIsLink ? (
+						<ArrowRight aria-hidden="true" className="ml-1 inline w-3.5 h-3.5 align-[-0.15em]" />
+					) : null}
 				</h3>
 				{/* A coming-soon card wears the caution chip whatever the call site passed — there is
 				    no completeness to report on a collection that has not been enumerated yet. */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
 import { useDebug, updateDebugStore } from "@/stores/debug";
@@ -57,8 +58,8 @@ export function PieChart() {
 			<div className="px-4 py-2 text-xs font-medium text-fg-secondary flex justify-between items-center border-b border-line">
 				<div className="flex items-center gap-2">
 					{currentPath.length > 0 ? (
-						<button className="text-fg-muted hover:text-fg flex items-center" onClick={navigateBack}>
-							<span className="text-lg leading-none mr-1">←</span>
+						<button className="text-fg-muted hover:text-fg flex items-center gap-1" onClick={navigateBack}>
+							<ArrowLeft aria-hidden="true" className="w-3.5 h-3.5" />
 							<span>Back</span>
 						</button>
 					) : (
