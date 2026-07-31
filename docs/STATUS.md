@@ -6,6 +6,49 @@
 > entry of each ledger. **Never write history here.** — last updated 2026-07-31, CC
 > (acting as TA too, AL authorization 2026-07-10).
 
+## The isohedral shelf is live — UNCOMMITTED (2026-07-31)
+
+`/isohedral` lists all 93 Grünbaum–Shephard isohedral types with live vertex parameters and edge
+shapes. Geometry from Craig Kaplan's Tactile, vendored under BSD-3 at `lib/isohedral/vendor/`
+(byte-identical to GitHub master; npm's 1.0.0 is stale by a `fillRegionQuad` fix). `pnpm build` clean,
+31 new tests pass.
+
+- **81 of 93 render, and the page says which twelve do not and why.** IH19, 35, 48, 60, 63, 65, 70, 75,
+  80, 87, 89, 92 need interior markings; they are selectable and replace the canvas with Kaplan's own
+  explanation. G&S's 1977 paper is titled *The eighty-one types of isohedral tilings in the plane*.
+- **It draws through `FlatCellRenderer`, so the tiling is unbounded** — one translational cell uploaded,
+  instanced over the visible lattice in the vertex shader, two draw calls per frame at any zoom. AL
+  corrected this mid-build; the first version was a finite patch, which was wrong in kind.
+- **The cell is the nc × nc supercell**, because `getColour` reduces mod nc and a one-cell mesh would
+  colour touching tiles the same. 49 of 81 genuinely need it. Ear-clipped via its own
+  `lib/isohedral/cellMesh.ts`: /play's `buildCellMesh` fans from the centroid, which the curvature
+  sliders invalidate. /play's builder untouched.
+- Every per-type fact is derived from Tactile at module load, never transcribed; the tests pin the
+  measured distributions and IH01's exact default geometry against a bad vendor update.
+- **Edge sliders round-trip** (fixed same day, AL found it). Edge state is a shape template plus an
+  amplitude the slider scales, so Randomize's shape survives being adjusted — the old model rebuilt the
+  control points from the slider value and threw the random x's away on first touch. Randomize also
+  quantizes onto the slider's step grid, or the control showed a rounded value the first drag then
+  wrote back. Verified by screenshot hash across 26 sliders on four types.
+- **No zoom slider.** The wheel owns zoom over an unbounded tiling; a slider duplicated it and, since
+  reframing refits, yanked the view home when touched (AL). `HOME_PERIODS = 8` is now a constant that
+  only sets where the view starts. Applied to `/pentagons` too (`HOME_PERIODS = 4`), whose "Patch"
+  label also claimed an extent that tiling does not have.
+- **The facts live in the shared info panel**, not a sidebar block (AL): `TilingSpec` grows
+  `IsohedralFacts`/`PentagonFacts` beside `FreedrawFacts`/`ColorsFacts`, and both pages mount
+  `TilingInfo` over their canvas as /play does. The orbit section is now conditional — /pentagons knows
+  none of the four counts, and /isohedral's only certainty (tile orbits = 1) is not worth three blanks
+  beside it.
+- **Edge curves are flattened adaptively, from the Bézier's own error bound**, to a quarter-pixel
+  budget that follows the zoom (AL saw segments at high magnification). Per edge, so cost tracks
+  curvature; capped at 128 segments; the mesh re-tessellates when the zoom crosses a power of two, via
+  `rehome` so the camera does not move. Affordable because `cellMesh.ts` now triangulates the prototile
+  once and reuses the index list across the cell — 8 ms against 218 ms at the extreme.
+- ⚑ Not done: drag-to-edit edge control points, wallpaper-group labels per type (derivable, but must be
+  cross-checked against G&S before shipping a label), the marked types' interior markings.
+
+Detail: DEVELOPMENT_NOTES.md §"the isohedral shelf: IH1–IH93 on the flat renderer".
+
 ## The hyperbolic freedraw renderer is finished (2026-07-31)
 
 Marek's open item from 2026-07-29 is closed. The hyperbolic Schwarz shelf now draws through the

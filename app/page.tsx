@@ -212,11 +212,7 @@ export default async function HomePage() {
 					</p>
 					<p>
 						Built by Alessandro Longo as part of an MSc thesis on the enumeration of k-uniform
-						tilings. Counts on this page are computed from the atlas data, never typed in.
-					</p>
-					<p className="font-mono">
-						Cite as: A. Longo, <span className="italic">The Tiling Atlas: a catalogue of tilings of the
-						plane, the sphere, and the hyperbolic plane</span>, 2026.
+						tilings.
 					</p>
 				</div>
 			</footer>

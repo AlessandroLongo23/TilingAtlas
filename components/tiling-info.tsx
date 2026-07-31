@@ -25,16 +25,50 @@ function SectionTitle({ children }: { children: ReactNode }) {
 	return <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider">{children}</h4>;
 }
 
-// One "Label   value" row. `muted` renders a de-emphasised placeholder for a not-yet-computed field.
-function Row({ label, value, muted }: { label: string; value: ReactNode; muted?: boolean }) {
+/**
+ * One "Label   value" row. `muted` renders a de-emphasised placeholder for a not-yet-computed field.
+ *
+ * `stack` puts the value on its own line beneath the label, for values too long to sit beside one: a
+ * five-angle list wraps to three lines in the value column, and the side-by-side layout then centres
+ * the label against the middle of that block, which reads as a misalignment rather than as a pair.
+ */
+function Row({
+	label,
+	value,
+	muted,
+	stack,
+}: {
+	label: string;
+	value: ReactNode;
+	muted?: boolean;
+	stack?: boolean;
+}) {
+	const valueClass = muted ? "text-sm italic text-fg-muted/60" : "text-sm font-medium text-fg";
+	if (stack) {
+		return (
+			<div className="flex flex-col gap-0.5">
+				<span className="text-sm text-fg-secondary">{label}</span>
+				<span className={valueClass}>{value}</span>
+			</div>
+		);
+	}
 	return (
 		<div className="flex items-center justify-between gap-4">
 			<span className="text-sm text-fg-secondary">{label}</span>
-			<span className={muted ? "text-sm italic text-fg-muted/60" : "text-sm font-medium text-fg"}>
-				{value}
-			</span>
+			<span className={valueClass}>{value}</span>
 		</div>
 	);
+}
+
+/**
+ * Whether the orbit section has anything to say.
+ *
+ * The catalogue always knows k, so this is true there. /pentagons knows none of the four — a monohedral
+ * pentagon tiling's tile-orbit count is not something this page derives — and a section of four dashes
+ * says less than no section at all.
+ */
+function hasOrbitFacts(spec: TilingSpec): boolean {
+	return spec.k != null || spec.m != null || spec.edgeOrbits != null || spec.faceOrbits != null;
 }
 
 // Orbit section — shown for every geometry. m is hidden when absent; edge/tile orbits are flagged.
@@ -251,10 +285,74 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 							</div>
 						) : null}
 
-						{/* Orbits — every geometry */}
-						<div className="border-t border-line pt-3">
-							<OrbitSection spec={spec} />
-						</div>
+						{/* Parameterization — /isohedral. The tiling vertices, aspects and edge symmetries ARE
+						    the type here; a vertex configuration would say nothing, since the tile is a free
+						    shape. See lib/isohedral/catalogue.ts for where each number comes from. */}
+						{spec.geometry === "euclidean" && spec.isohedral ? (
+							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+								<SectionTitle>Parameterization</SectionTitle>
+								{spec.isohedral.marked ? (
+									<Row label="Status" value="needs interior markings" muted />
+								) : (
+									<>
+										<Row label="Parameters" value={spec.isohedral.numParams} />
+										<Row label="Tiling vertices" value={spec.isohedral.numVertices} />
+										<Row label="Aspects" value={spec.isohedral.numAspects} />
+										<Row
+											label="Edge shapes"
+											value={<span className="font-mono">{spec.isohedral.edgeShapes.join(" ")}</span>}
+										/>
+										<Row
+											label="Edge word"
+											value={<span className="font-mono">{spec.isohedral.edgeWord}</span>}
+										/>
+										<Row label="Colours" value={spec.isohedral.numColours} />
+										<Row label="Unit cell" value={`${spec.isohedral.tilesPerCell} tiles, instanced`} />
+										{spec.isohedral.degenerate ? (
+											<Row label="Prototile" value="self-overlapping" muted />
+										) : null}
+									</>
+								)}
+							</div>
+						) : null}
+
+						{/* Family — /pentagons. Kershner's fifteen types: who found each and when is half the
+						    subject, so it leads. Angles and sides are the solved pentagon, not the sliders. */}
+						{spec.geometry === "euclidean" && spec.pentagon ? (
+							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+								<SectionTitle>Family</SectionTitle>
+								<Row label="Discovered" value={spec.pentagon.discovered} />
+								<Row label="Freedom" value={spec.pentagon.dof === 0 ? "rigid" : spec.pentagon.dof} />
+								<Row label="Tiles per unit" value={spec.pentagon.tilesPerUnit} />
+								<Row stack label="Wallpaper groups" value={<span className="font-mono">{spec.pentagon.groups}</span>} />
+								{spec.pentagon.angles ? (
+									<Row
+										stack
+										label="Angles"
+										value={
+											<span className="font-mono">{spec.pentagon.angles.map((a) => a.toFixed(2)).join(", ")}</span>
+										}
+									/>
+								) : null}
+								{spec.pentagon.sides ? (
+									<Row
+										stack
+										label="Sides"
+										value={
+											<span className="font-mono">{spec.pentagon.sides.map((s) => s.toFixed(4)).join(", ")}</span>
+										}
+									/>
+								) : null}
+								{spec.pentagon.status ? <Row label="Status" value={spec.pentagon.status} muted /> : null}
+							</div>
+						) : null}
+
+						{/* Orbits — every geometry that knows any of them */}
+						{hasOrbitFacts(spec) ? (
+							<div className="border-t border-line pt-3">
+								<OrbitSection spec={spec} />
+							</div>
+						) : null}
 
 						{/* Vertex-configuration thumbnails — Euclidean only */}
 						{spec.geometry === "euclidean" && vcs.length > 0 ? (

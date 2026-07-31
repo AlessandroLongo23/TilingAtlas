@@ -1,0 +1,1855 @@
+{
+	"1": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 0,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 4,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 0,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 6,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			0,
+			2
+		],
+		"t1": {
+			"from": [
+				0,
+				0
+			],
+			"to": [
+				5,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				2,
+				0
+			],
+			"to": [
+				7,
+				0
+			]
+		}
+	},
+	"2": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 6,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 5,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 0,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			}
+		],
+		"unit": [
+			1,
+			2,
+			0,
+			3
+		],
+		"t1": {
+			"from": [
+				1,
+				0
+			],
+			"to": [
+				9,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				7,
+				0
+			],
+			"to": [
+				8,
+				0
+			]
+		}
+	},
+	"3": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 1,
+				"refEnd": 1,
+				"newEdge": 2,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 4,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			0,
+			2
+		],
+		"t1": {
+			"from": [
+				0,
+				0
+			],
+			"to": [
+				5,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				3,
+				0
+			],
+			"to": [
+				6,
+				0
+			]
+		}
+	},
+	"4": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			0,
+			2,
+			3
+		],
+		"t1": {
+			"from": [
+				1,
+				0
+			],
+			"to": [
+				5,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				7,
+				0
+			],
+			"to": [
+				6,
+				0
+			]
+		}
+	},
+	"5": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 5,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 8,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			0,
+			1,
+			2,
+			3,
+			4,
+			5
+		],
+		"t1": {
+			"from": [
+				1,
+				0
+			],
+			"to": [
+				7,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				6,
+				0
+			],
+			"to": [
+				9,
+				0
+			]
+		}
+	},
+	"6": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			2,
+			0,
+			4
+		],
+		"t1": {
+			"from": [
+				1,
+				0
+			],
+			"to": [
+				7,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				6,
+				0
+			],
+			"to": [
+				5,
+				0
+			]
+		}
+	},
+	"7": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 2,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 5,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 9,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 8,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 11,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 10,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 11,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			2,
+			3,
+			0,
+			5,
+			4,
+			6,
+			7
+		],
+		"t1": {
+			"from": [
+				2,
+				0
+			],
+			"to": [
+				12,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				13,
+				0
+			],
+			"to": [
+				14,
+				0
+			]
+		}
+	},
+	"8": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 2,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 10,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 9,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 11,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 12,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			2,
+			0,
+			3,
+			6,
+			5,
+			7,
+			8
+		],
+		"t1": {
+			"from": [
+				0,
+				0
+			],
+			"to": [
+				14,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				15,
+				0
+			],
+			"to": [
+				13,
+				0
+			]
+		}
+	},
+	"9": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 2,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 5,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 7,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 10,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 12,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			2,
+			0,
+			5,
+			3,
+			6,
+			8,
+			9
+		],
+		"t1": {
+			"from": [
+				3,
+				0
+			],
+			"to": [
+				13,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				11,
+				0
+			],
+			"to": [
+				14,
+				0
+			]
+		}
+	},
+	"10": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 1,
+				"newEdge": 3,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 5,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 7,
+				"refEdge": 0,
+				"refEnd": 1,
+				"newEdge": 3,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 8,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			2,
+			0,
+			3,
+			4,
+			6
+		],
+		"t1": {
+			"from": [
+				3,
+				0
+			],
+			"to": [
+				10,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				9,
+				0
+			],
+			"to": [
+				11,
+				0
+			]
+		}
+	},
+	"11": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 6,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 4,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 7,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 1,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 9,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 0,
+				"refEnd": 1,
+				"newEdge": 2,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 8,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 11,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 10,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			4,
+			0,
+			2,
+			5,
+			3,
+			7,
+			6
+		],
+		"t1": {
+			"from": [
+				4,
+				0
+			],
+			"to": [
+				13,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				12,
+				0
+			],
+			"to": [
+				14,
+				0
+			]
+		}
+	},
+	"12": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 1,
+				"refEnd": 1,
+				"newEdge": 2,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 2,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 6,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 6,
+				"refEdge": 3,
+				"refEnd": 1,
+				"newEdge": 2,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 7,
+				"refEdge": 1,
+				"refEnd": 1,
+				"newEdge": 2,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 9,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 3,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 11,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 10,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			0,
+			2,
+			4,
+			5,
+			3,
+			6,
+			8
+		],
+		"t1": {
+			"from": [
+				0,
+				0
+			],
+			"to": [
+				12,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				13,
+				0
+			],
+			"to": [
+				14,
+				0
+			]
+		}
+	},
+	"13": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 1,
+				"newEdge": 2,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 2,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 1,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 3,
+				"refEnd": 1,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 5,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 7,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 8,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 0,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 3,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 12,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 15,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 0,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 13,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 3,
+				"newEnd": 0,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			0,
+			2,
+			5,
+			6,
+			11,
+			8,
+			10
+		],
+		"t1": {
+			"from": [
+				9,
+				0
+			],
+			"to": [
+				17,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				14,
+				0
+			],
+			"to": [
+				16,
+				0
+			]
+		}
+	},
+	"14": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 1,
+				"newEdge": 2,
+				"newEnd": 0,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 0,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 2,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 1,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 1,
+				"newEdge": 4,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 6,
+				"refEdge": 1,
+				"refEnd": 1,
+				"newEdge": 1,
+				"newEnd": 0,
+				"mirror": false
+			},
+			{
+				"ref": 8,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 7,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			}
+		],
+		"unit": [
+			1,
+			2,
+			0,
+			5,
+			4,
+			3
+		],
+		"t1": {
+			"from": [
+				1,
+				0
+			],
+			"to": [
+				9,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				4,
+				0
+			],
+			"to": [
+				10,
+				0
+			]
+		}
+	},
+	"15": {
+		"glues": [
+			{
+				"ref": 0,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 1,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 0,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 2,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 4,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 4,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 1,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 3,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 6,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 6,
+				"refEdge": 1,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 5,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 4,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 8,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 7,
+				"refEdge": 4,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": false
+			},
+			{
+				"ref": 11,
+				"refEdge": 2,
+				"refEnd": 0,
+				"newEdge": 2,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 10,
+				"refEdge": 3,
+				"refEnd": 0,
+				"newEdge": 0,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 14,
+				"refEdge": 0,
+				"refEnd": 0,
+				"newEdge": 3,
+				"newEnd": 1,
+				"mirror": true
+			},
+			{
+				"ref": 16,
+				"refEdge": 4,
+				"refEnd": 1,
+				"newEdge": 3,
+				"newEnd": 0,
+				"mirror": false
+			}
+		],
+		"unit": [
+			1,
+			0,
+			2,
+			4,
+			3,
+			6,
+			5,
+			7,
+			11,
+			10,
+			12,
+			13
+		],
+		"t1": {
+			"from": [
+				9,
+				0
+			],
+			"to": [
+				17,
+				0
+			]
+		},
+		"t2": {
+			"from": [
+				12,
+				0
+			],
+			"to": [
+				15,
+				0
+			]
+		}
+	}
+}

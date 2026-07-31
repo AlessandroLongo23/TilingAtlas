@@ -8196,6 +8196,294 @@ proof that the `uStrokePx = 0` handoff between the two paths is wired correctly.
 paths now differ in one visible way: on the patch boundary the GL stroke is centred on the edge (full
 width) where the old wireframe painted only the inward half.
 
+## 2026-07-31 — the isohedral shelf: IH1–IH93 on the flat renderer
+
+AL asked for a page for the Grünbaum–Shephard isohedral types with the usual shape: list and
+parameters on the left, renderer on the right. The classification was simply absent from the atlas
+despite being the standard vocabulary for Escher-style tessellation.
+
+**Geometry comes from Craig Kaplan's Tactile**, vendored at `lib/isohedral/vendor/tactile.js`,
+byte-identical to `github.com/isohedral/tactile-js` master (sha1 743b1a55…), BSD-3-Clause, with the
+LICENSE and a hand-written `tactile.d.ts` beside it. `tsconfig` already sets `allowJs`, and a sibling
+`.d.ts` shadows the `.js` for typing, so the boundary is fully typed while the implementation stays
+upstream's and stays upgradable by re-download. **Not npm**: `tactile-js@1.0.0` (2021, the only
+published version) predates a `last_y` clamp in `fillRegionQuad` that master carries; diffed.
+Transliterating the file to TypeScript was considered and rejected — 87% of its 2,256 lines are ~7,500
+numeric literals whose exact values are load-bearing (the odd 3.9 and 0.1 in the coefficient tables
+exist so the defaults land on 1/√3 and friends), so retyping buys nothing and risks a silent
+transcription error in data nobody can eyeball.
+
+**81 of 93, and the page says so.** IH19, 35, 48, 60, 63, 65, 70, 75, 80, 87, 89 and 92 cannot be
+expressed by the tile boundary at all. Kaplan, at isohedral.ca/isohedral-tiles-tilings-and-notations:
+"In these cases all tile edges act as mirrors, forcing those edges to be straight lines. As a result,
+the tiles are forced to be too symmetric to express the specific symmetries implied by the incidence
+symbol." Grünbaum and Shephard reach them only by marking the tile's interior, which is why their 1977
+paper is titled *The eighty-one types of isohedral tilings in the plane*. All 93 are listed; the twelve
+are selectable and replace the canvas with that quote and its source. Listing only the 81 would have
+been the quiet-gap failure this project keeps flagging elsewhere.
+
+**Everything per-type is derived from Tactile at module load**, never transcribed
+(`lib/isohedral/catalogue.ts`): parameter count, tiling vertices, aspects, edge kinds, edge word,
+defaults, colour count. The test pins the distributions I measured — params `{0:26, 1:15, 2:21, 3:9,
+4:7, 5:2, 6:1}`, vertices `{3:16, 4:37, 5:9, 6:19}`, aspects `{1:17, 2:27, 3:6, 4:20, 6:8, 8:2, 12:1}`,
+edge shapes `{1:17, 2:30, 3:26, 4:7, 5:1}` — plus IH01's exact default hexagon and lattice, so a bad
+vendor update fails a test instead of silently redrawing the shelf.
+
+**The renderer is `FlatCellRenderer`, not a finite patch — AL's correction, and he was right.** I first
+built this the way /aperiodic works: fill a bounded region with `fillRegionBounds` and upload the
+polygons. That is wrong in kind. These tilings are periodic, so they belong on the flat Euclidean
+renderer /play uses, which uploads ONE translational cell and instances it over the visible lattice in
+the vertex shader. The tiling is then genuinely unbounded — zoom out as far as you like — and a frame
+is two instanced draw calls at any zoom with no geometry rebuilt. The finite version also needed an
+aspect-aware fill box, a 1.5× fringe margin and a tile cap, all of which evaporated.
+
+Two things had to be got right for that to work.
+
+- **The unit cell is the nc × nc supercell, not one lattice cell.** Tactile's repeat unit is a single
+  cell carrying one copy of each aspect, but `getColour(a, b, aspect)` reduces a and b mod nc, so the
+  three-colouring only repeats every nc steps. A one-cell mesh would tile the plane correctly and
+  colour it wrong, putting one colour on tiles that share an edge. Taking nc × nc cells and the lattice
+  nc·T1, nc·T2 makes the mesh exactly periodic in geometry *and* colour for at most 9 × 12 = 108 tiles.
+  Measured: 49 of the 81 genuinely need it; the other 32 carry their colours on aspects alone (IH07 has
+  three aspects, three colours and identity lattice permutations). Uniform nc × nc anyway — the branch
+  would save at most 96 tiles in a mesh uploaded once per parameter change.
+- **The mesh is ear-clipped, so `lib/render/buildCellMesh.ts` could not be reused.** That builder fans
+  each polygon from its centroid, valid for the whole /play catalogue ("regular tiles are convex and
+  star tiles are star-shaped from their centre") and invalid here: the edge-curvature sliders are
+  precisely a way to make a tile that is not star-shaped about its centroid, and the fan then paints
+  triangles outside it. `lib/isohedral/cellMesh.ts` emits the same `CellMesh` contract through
+  `lib/render/triangulate.ts`. /play's builder is untouched.
+
+**The load-bearing test is an area identity.** If the cell's tiles exactly cover one lattice cell with
+no gap and no overlap, their total area equals |det(v1, v2)|. It holds to 1e-9 for all 81 at their
+defaults, and to 1e-6 with every edge bowed by 0.35 — which also pins that the flattened Bézier
+polyline is identical along both sides of a shared edge including the reversed ones, since a `rev` that
+sampled at different parameters would leave slivers and break the identity.
+
+**Edges get one bulge slider each, staying inside their own symmetry**: S takes b = (1−a.x, −a.y), U
+takes b = (1−a.x, a.y), J takes the U form because it is unconstrained, I is disabled and reads
+"straight (forced)". So dragging the control demonstrates the constraint. Randomize follows
+`demo/minimaldemo.js` and gives J edges two independent control points, which is the only place the
+page shows what J's freedom actually buys. Parameter sliders run [0, 2] — Tactile ships defaults but no
+ranges, and [0, 2] is what the reference editor at isohedral.ca uses for every parameter of every type.
+A self-overlapping prototile is reported in the sidebar, not prevented; `isSimple` is a readout.
+
+Verified in the browser: IH01 at defaults, IH04 with six parameters and randomized SJSSS edges
+(interlocking curved tiles, no gaps), IH12's U edge visibly mirror-symmetric, IH77 at twelve aspects
+zoomed out forty wheel detents with no patch boundary anywhere, and IH19's explanation panel.
+
+⚑ Out of scope for this pass: drag-to-edit control points on the outline, wallpaper-group labels per
+type (derivable from the aspect transforms and lattice, but it must be cross-checked against Grünbaum
+and Shephard before a label ships), Heesch–Kienzle and Bigalke–Wippermann cross-notations, and drawing
+the twelve marked types with their interior markings.
+
+### Addendum — the edge sliders did not round-trip (AL, same day)
+
+AL: randomize, nudge an edge slider, put it back, and the tiling is not the one you started with. Two
+separate causes, both in how the slider related to the curve.
+
+**The slider rebuilt the shape instead of adjusting it.** `onChange` called `curveFromBulge(kind, v)`,
+which constructs control points at x = 0.25 and 0.75. Randomize varies the control points' **x** as
+well as their y, so the first touch of any edge slider silently replaced the random shape with the
+canonical bow — and since one number cannot carry two x values, no slider position could bring it
+back. Fixed by splitting edge state into `EdgeShapeState { base, amount }`: `base` is the shape at unit
+amplitude, `amount` is what the slider sets, and the drawn curve is `base` with its y values scaled.
+Scaling y is symmetry-safe (S's b = (1−a.x, −a.y) and U's b = (1−a.x, a.y) both survive it), so the
+constraint still holds at every slider position, and moving the control away and back is an identity —
+including all the way to zero, where the edge goes straight but the shape is still there to come back.
+
+**Randomize produced amplitudes the slider could not represent.** The step is 0.01 and the amplitude
+was a full-precision random number, so the control displayed 0.31 while the state held 0.3137: picking
+the slider up wrote the rounded value back and moved the tiling before the thumb did. `quantizeAmount`
+snaps Randomize onto the slider's own grid, and rounds the product too, because
+`Math.round(0.3137 / 0.01) * 0.01` is 0.31000000000000005 — a different double from the 0.31 the DOM
+parses out of the input's value string, which would have left the mismatch in place.
+
+Only the first was visible as a shape change; the second was a small drift, and both were present.
+Pinned two ways: a unit test that round-trips every non-I edge slider of all 81 types through a nudge
+and through zero, asserting the cell polygons are `toEqual` before and after (with a not-equal
+assertion on the nudge itself so it cannot pass vacuously), and a Playwright run that randomizes, moves
+each slider and returns it, comparing canvas screenshot hashes — 8 runs across IH01/04/12/21, 26
+sliders, every hash identical.
+
+⚑ Vertex-parameter sliders have the residue of the same effect and it is left alone: Tactile's defaults
+are off-grid on purpose (0.12239750492 is what makes IH01's hexagon exactly 1/√3 wide), so the first
+drag snaps to the nearest 0.001. Rounding the defaults would change the shipped tiling to hide a
+0.0005 step; Reset restores them exactly.
+
+## Pentagons — the 15 convex-pentagon families (2026-07-31)
+
+`/pentagons`. Kershner's classification: the 15 families of convex pentagon that tile the plane,
+Reinhardt 1918 through Mann/McLoud-Mann/Von Derau 2015, closed by Rao 2017. Each type is a family, not
+a shape, so the page is sliders over its degrees of freedom (5 for Type 1, 0 for Types 14 and 15).
+
+### Renderer: the instanced flat path, not a finite patch
+
+These tilings are periodic, so they belong on `FlatCellRenderer` (`lib/render/flatTilingGL.ts`), the
+same path /play and /isohedral use: upload one translational cell, and the vertex shader instances it
+across the visible lattice. A parameter change therefore rebuilds **2 to 12 pentagons**, not the
+thousands a patch builder would re-triangulate for the same picture, and zooming out costs nothing.
+`lib/render/buildCellMesh.ts` (centroid fan) is correct here and the ear-clipping variant
+`lib/isohedral/cellMesh.ts` is not needed: that exists because curved edges can make a tile that is not
+star-shaped about its centroid, which a convex pentagon cannot do.
+
+Tiles are hued by index within the unit. The by-side-count ramp would paint every tile on the page one
+colour, since all of them are pentagons.
+
+### One solver for all 15 types
+
+Angles first: each type's angle conditions are linear and, with the sum-to-540 identity, leave the
+sliders. Then the five edge directions are fixed, so closure is TWO LINEAR equations in (a,b,c,d,e),
+and every type's side conditions are linear too. Stack, normalise a = 1, solve. The row count decides:
+
+- 4 rows → unique (types 3, 4, 5, 10–13, and 1 and 2 once their side sliders pin the slack).
+- 5 rows → over-determined; a nonzero solution needs a 5×5 determinant to vanish, a transcendental
+  condition pinning one more angle (types 6, 7, 8, 9, 14). Bisected at runtime.
+- 6 rows → type 15, angles all constant, extra row dependent by construction.
+
+This reproduces the published DOF column exactly, which is the check that a constraint row was
+transcribed correctly (`solve.test.ts` pins DOF = number of sliders).
+
+**Nullspace by cofactors, not elimination.** Row reduction needs a pivot tolerance and there is no good
+value: at a determinant root the matrix is singular only to the root-finder's accuracy, so a strict
+tolerance rejects valid pentagons and a loose one accepts garbage. The kernel of a rank-4 4×5 is given
+exactly by the signed 4×4 minors, with no tolerance anywhere.
+
+### The units were searched, not transcribed
+
+`scripts/derive-pentagon-units.ts` grows a patch from the pentagon alone (backtracking over vertex
+gaps, SAT overlap rejection), reads the lattice off it, and emits a combinatorial recipe to
+`lib/pentagon/assemblies.json`. All 15 recover the published tiles-per-unit
+(2,4,3,4,6,4,8,8,8,6,8,8,8,6,12) blind, area error ~1e-15, and all 15 replay at a different member of
+their family. That last check is the one that matters: it is what proves the recipe is parametric.
+
+Provenance: Kit Wallace's OpenSCAD library is the only complete public encoding of all 15 and carries
+NO LICENCE, so it is all-rights-reserved and was not read into this code.
+
+### ⚑ Four things that cost time, worth not rediscovering
+
+1. **The edge-multiset check is WRONG for these tilings.** "Every edge used exactly twice, boundary
+   union-finds to one loop" (`_subrosa-view.tsx`) assumes edge-to-edge. These are not: types 10–13 have
+   conditions (`a = b = c + e`, `2a + c = d`, `2a = d = c + e`, `d = 2a = 2e`) that literally say one
+   tile's long edge is covered by two neighbours' short edges. It rejected every correct Type 1 lattice.
+   The gate is **area + SAT**: no overlap at any lattice offset, and unit area = cell area. Together
+   those are a proof, with no quantisation grid.
+2. **The search must grow in RINGS.** Ordering candidate vertices by "most constrained" grows a strip,
+   and every same-orientation pair in a strip is collinear, so no two candidate periods are independent.
+   Types 2, 6 and 15 each produced exactly zero usable pairs that way. Distance-from-origin has to be
+   the primary key.
+3. **Deriving at a published sample tuple can find the WRONG tiling.** The families overlap. Type 5's
+   own conditions plus its default B=110°, C=130° give E = 120°, hence A + E = 180°, so that pentagon is
+   simultaneously a Type 1 and admits a 2-tile unit. The script derives at a nudged generic tuple and
+   selects the lattice by the type's published unit size.
+4. **Slider bounds must be measured.** Convexity describes a strictly larger region than the family:
+   Type 9's determinant root dies at A ≈ 135°, Type 13's at 135°, Type 10 only lives on
+   B ∈ [53.1°, 126.9°]. `scripts/scan-pentagon-ranges.ts` measures the contiguous interval around each
+   default. On multi-parameter types those bounds are a box around a region that is not one, so the page
+   also keeps the last valid tiling and names the failure.
+
+### Corrections to published sources
+
+**Wikipedia's Type 15 side condition is wrong.** It gives `d = a/(√2(√3−1)) ≈ 0.966a`; the pentagon does
+not close with it (the walk ends a full unit from its start). Correct: `d = a·√(2+√3) = 2a·cos15° ≈
+1.9319a`, closing at 2.5e-16. It is a relabelling artefact — Mann et al. normalise a different side, and
+their ratio applies to `c`. Exact vertices with a=1: (0,0), (2,0), (3/2, √3/2), ((1−√3)/2, (1+√3)/2),
+(−√3/2, 1/2).
+
+### Shared sidebar primitives
+
+`components/shelf/` now holds `Section`, `Segmented`, `Details`, promoted from the duplicated copies in
+`app/(app)/aperiodic/_controls.tsx` and `app/(app)/isohedral/_controls.tsx` (the latter's header asked
+for exactly this at the third shelf). The three sidebar SHELLS stay page-private: they differ in how
+many scrolling regions they need.
+
+### Addendum — the scale slider is gone (AL)
+
+AL: "the scale slider is useless because the user will use the wheel to zoom." Correct, and it was
+worse than useless. Changing the framing calls `refit`, so dragging the slider snapped the camera back
+to home — after you had already zoomed somewhere with the wheel, touching it threw that away. Two
+controls for one thing, one of which fights the other.
+
+`PERIODS` (min/max/step/def) becomes the plain constant `HOME_PERIODS = 8`. `buildCell` still takes
+`periods`, because the home box has to be sized somehow and "eight lattice periods across the short
+side" is the honest way to say it, and because the framing stays testable that way — the test now also
+pins that changing it moves only `home` and leaves `polygons` and `tilesPerCell` untouched, which is
+the proof that it never had anything to offer a reader: it cannot show more tiling, since the tiling is
+already unbounded.
+
+The View section is now Rotation and Tile outlines. Zoom is the wheel and right-click resets, as on
+/aperiodic, and neither gets a sidebar row — a sidebar states values you can set, it is not the place
+to narrate the mouse (`_view-chrome.tsx`). Confirmed against the live DOM: the sidebar's range inputs
+are six parameters, five edges, rotation and outlines, with no `ih-periods`.
+
+### ⚑ `useAperiodicView.rehome()` — deforming geometry must not move the camera (2026-07-31)
+
+`refit()` snaps zoom, pan AND rotation to home. Both parameterized shelves called it from the
+mesh-upload effect, which fires on every tick of a slider drag, so the view jumped home the moment you
+touched a parameter: you could never zoom into a vertex and watch what a parameter does to it, which is
+the one thing these pages exist for. AL reported it on /pentagons and /isohedral together.
+
+`rehome()` is the same re-measure with the controls left alone. The rule is now: refit when the SUBJECT
+changes (a different type, or a control whose purpose is to reframe), rehome when the same subject
+DEFORMS. Each client keeps a `framingKey` and compares it, so the distinction is one string, not a pile
+of flags.
+
+Note for later: /isohedral's Patch slider was deleted because "changing the framing refits, would yank
+the view back to home the moment you touched it". That reason is now gone, so it can come back if
+wanted — put `periods` in its `framingKey` and it will reframe without fighting the shape sliders.
+
+### Addendum — /pentagons loses its patch slider too (AL)
+
+Same control, same page shape, same verdict. `/pentagons` was modelled on `/isohedral` and draws through
+`FlatCellRenderer` the same way, so its "Patch" slider had exactly the defects described above, plus one
+of its own: the label claimed an extent the tiling does not have. Its own source comment already said
+what it did — "Sets the starting zoom, nothing else."
+
+`PERIODS` becomes `HOME_PERIODS = 4`, `buildCell` keeps `periods` as a testable argument, and
+`framingKey` drops to the type id so refits follow a type change and not a reframe. The new test walks
+all fifteen Kershner types and pins that changing `periods` scales `home` while leaving `polygons` and
+`mesh.fillVertexCount` identical — the measurement that makes "this control has nothing to offer"
+a fact instead of an opinion.
+
+Checked against the live page: the sidebar's range inputs are three angles, two sides, rotation and
+outlines, with no `pent-periods`, and the wheel zooms both ways.
+
+### Addendum — the shelf facts move into the shared info panel (AL)
+
+AL: the /isohedral and /pentagons "Details" blocks belong in the info panel the atlas already has for
+normal tilings, not in a sidebar section of their own.
+
+Right, and for a reason worth stating: the sidebar holds values you can SET, and every row in those
+blocks was read-only output. Two vocabularies for the same thing in one panel. Moving them also puts
+one presenter in charge of how a tiling describes itself everywhere — `components/tiling-info.tsx`, the
+hover card on /play's canvas.
+
+`TilingSpec` grows `IsohedralFacts` and `PentagonFacts`, both hung off `EuclideanSpec` beside
+`FreedrawFacts` and `ColorsFacts`, because both tilings ARE Euclidean and what differs is the
+vocabulary — the same argument those two already carry in their own comments. `buildTilingSpec` sets
+both null; neither page has a `CatalogueTiling` behind it, so each builds its spec directly.
+
+Two judgement calls in the presenter.
+
+- **The orbit section is now conditional.** /pentagons knows none of k, m, edge orbits or tile orbits,
+  and four dashes say less than no section. `hasOrbitFacts` gates it; every catalogue entry knows k, so
+  nothing else changes. I deliberately did NOT fill in tile orbits = 1 for /isohedral even though it is
+  true by definition — one certainty beside three blanks reads worse than silence, and the edge-orbit
+  count in particular I am not confident enough to derive: `numEdgeShapes` almost certainly IS the edge
+  orbit count, since Tactile's parameterization is minimal, but "almost certainly" is not what this
+  atlas puts in a numbered row.
+- **`Row` gains `stack`.** A five-angle list wraps to three lines in the value column, and the
+  side-by-side layout then centres the label against the middle of that block, reading as a
+  misalignment. Wallpaper groups, Angles and Sides stack; everything else is unchanged.
+
+The `tests/tiling-info.render.test.tsx` suite grows from 4 cases to 9: the isohedral parameterization,
+a marked type reporting why instead of listing zeros, the self-overlapping flag, the pentagon family
+facts, and a rigid type reading "rigid" instead of 0 — each also asserting the orbit section is absent.
+
+⚑ `app/(app)/pentagons/_pentagons-client.tsx` lines 118–124 fail `react-hooks/refs` (19 errors) on the
+`lastCellRef` "keep the last drawable cell" pattern. Pre-existing and deliberate-looking — it has a
+comment explaining why — so I left it; the fix changes behaviour and belongs to whoever wrote it.
+
 ### Addendum — the two new shelves join the landing wall (AL)
 
 AL: put /isohedral and /pentagons on the landing page, make Aperiodic 2×2, and sit the two new cards
@@ -8231,3 +8519,94 @@ Both new cards render REAL geometry, not a still.
 
 `components/landing/coming-soon-minis.tsx` → `isohedral-mini.tsx`: no coming-soon cards are left on the
 wall. `CollectionCard` keeps the `comingSoon` prop and the hazard tape for the next unbuilt collection.
+
+### ⚑ Pentagons draw at unit TILE AREA, not at a = 1 (2026-07-31)
+
+`solvePentagon` normalises `a = 1`. That is the right contract for reading side ratios and it is the
+wrong one for drawing. The 15 types classify pentagons up to SIMILARITY, so overall size is not part of
+the classification and pinning one named side is arbitrary. On Type 7 it pins the odd side out
+(`b = c = d = e` are the other four), so running E from 95° to 145° takes those four from 0.4148 to
+1.5139 and the tile's area up by about an order of magnitude. AL reported it as the tiling appearing to
+zoom while the camera had not moved, which is exactly what it was.
+
+`buildCell` now scales the assembled unit and its lattice vectors by `1/√(tile area)`. Area is the
+invariant, not edge length: `characteristicTileSize` in `app/(app)/aperiodic/_patch-view.tsx` settled
+the same question for the aperiodic patches, and the reasoning carries ("a hat has shorter edges than a
+Penrose rhombus while being 2.07× the tile").
+
+Nothing true is hidden. Shape still changes visibly under the slider, and the sidebar quotes the exact
+side ratios from the unscaled `sides`, still at a = 1. Two things fall out for free: the lattice
+determinant becomes exactly `tilesPerUnit`, so `home` no longer depends on the parameters at all, and
+tiles are comparable in size ACROSS types too, since every type draws at tile area 1.
+
+### Addendum — edge curves get an adaptive tessellation (AL)
+
+AL, with a screenshot of a deeply-bowed tile zoomed in: the individual segments show. "If the
+parameter has a closed formula (e.g. a spline) use that to draw it for maximum precision, otherwise
+you can just increment the number of segments."
+
+There is no drawing the spline exactly: `FlatCellRenderer` has no curve primitive, the fill reaches the
+GPU as triangles, so a curved edge is a polyline at *some* resolution. What the closed form does buy is
+knowing exactly what resolution. For a Bézier of degree d, splitting the parameter into n equal pieces
+deviates from the curve by at most (d(d−1)/8)·max|Δ²Pᵢ|/n² with Δ²Pᵢ = Pᵢ − 2Pᵢ₊₁ + Pᵢ₊₂ (Sederberg,
+*Computer Aided Geometric Design* §2.7); for a cubic the constant is 0.75. Invert it and you get the
+segment count that holds the error under a budget — per edge, from that edge's own control points.
+
+Three things follow from doing it that way instead of raising the flat ten.
+
+- **The budget is in SCREEN pixels, so the count follows the zoom.** A world-space budget is one you
+  can always zoom past, which is precisely the faceting in the screenshot: the mesh is uploaded once
+  and instanced at any magnification. `tessellationZoom` rounds the zoom UP to a power of two and the
+  mesh rebuilds when that changes — about a dozen times across the hook's whole range, never during a
+  pan. The rebuild goes through `rehome`, not `refit`, so it does not move the camera.
+- **Cost follows curvature, not edge count.** A gently bowed edge asks for two or three segments where
+  it used to pay ten; a hard S curve at a 400 px chord asks for 26. An exactly straight edge asks for
+  one at any zoom.
+- **The prototile is triangulated ONCE and the index list reused across the cell** (`cellMesh.ts`).
+  Every tile is an affine image of the same outline and a triangulation is a combinatorial fact, so
+  this is free correctness-wise — reflected aspects get their triangles wound the other way, which the
+  fill shader does not care about, since it does no face culling. It is also the whole reason a fine
+  tessellation is affordable: at a 256-segment cap the cell costs 8 ms this way against 218 ms
+  triangulating each of the 108 tiles.
+
+Measured worst case over all 81 types with every edge at the slider's limit and the cap forced on:
+32 → 1.9 ms / 2.0 MB, 64 → 1.3 ms / 3.9 MB, 128 → 2.9 ms / 7.9 MB, 256 → 8.2 ms / 15.8 MB. Cap set at
+**128**, the last rung before the cost bends; it holds a quarter-pixel error past 100× the home zoom,
+and at home the adaptive rule asks for 10 to 26 and never reaches it.
+
+The degeneracy check moved to a coarse outline. Whether the prototile folds over itself is a property
+of the shape, not of how finely it is drawn, and `isSimple` is O(n²) — no reason to run it over a
+400-vertex drawing outline.
+
+Pinned by measuring the real curve, not by trusting the algebra: the test flattens each kind at four
+depths and four chord lengths, samples 32 points inside every segment, and asserts the true distance
+from curve to polyline is inside the pixel budget `segmentsForEdge` was given. Plus n ∝ √chord, the cap,
+one segment for a straight edge at any zoom, and the cell's area identity still holding at both a
+coarse and a fine tessellation — refining the curve must not change what the tiling is.
+
+### ⚑ Correction: the range scan was circular, and truncated every slider (2026-07-31)
+
+Note 4 above claimed the slider bounds were measured. They were not, and the flaw is worth naming
+because it is invisible in the output. `interval()` walked outward from the default only as far as the
+type record's EXISTING `min`/`max`, so it could narrow a bound but never widen one. Every bound I had
+guessed therefore came back "measured" unchanged, and the log read as confirmation. Type 13 shipped
+with A ∈ [95°, 135°]; AL noticed the family plainly starts at 90°.
+
+Fixed by scanning the whole mathematically possible domain (angles over (0°, 180°], ratios over a wide
+positive range) instead of the current bounds. Every single one of the 13 parameterized types was
+truncated. Type 6's B ran from 45° when the family starts at 30.4°; Type 7's E stopped at 145° when it
+reaches 178.9°; Type 4's A and C both reach 180° exactly.
+
+Two changes made the true limits reachable rather than merely known:
+
+- `isConvexCCW` is now WEAK, allowing a 180° vertex, and `assemble` allows an angle of exactly 180°.
+  A straight vertex is a real point of these families: Type 13 at A = 90° has D = 180°, the pentagon
+  flattens into a 2:1 rectangle, and the herringbone it tiles is perfectly valid. `area > 0` guards the
+  degenerate direction that weak convexity would otherwise admit.
+- The other kind of limit, a side shrinking to zero, is NOT attainable: a zero-length edge has no
+  direction to glue along, so `placeTile` cannot use it. Those bounds stop one slider step short, which
+  is why Type 13's A ends at 134.9° and not 135°.
+
+`build.test.ts` now builds at both ends of every slider, so a truncated bound fails the suite instead of
+looking measured. One honest exception: Type 1's `b/a` has no upper limit at all (it still tiles at
+b/a = 10000, the tile just elongates), so its max is a usability cap and says so in the type record.

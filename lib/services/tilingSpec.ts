@@ -66,6 +66,54 @@ export interface ColorsFacts {
 	vcs: string[];
 }
 
+// Isohedral-shelf facts, present ONLY on an /isohedral entry. Same placement logic as FreedrawFacts:
+// an isohedral tiling IS Euclidean. What is different is that its parameterization, not its vertex
+// configuration, is the thing worth reading — see lib/isohedral/catalogue.ts.
+export interface IsohedralFacts {
+	/** 1..93. */
+	ih: number;
+	/** Free parameters controlling the tiling vertices: 0 to 6. */
+	numParams: number;
+	/** Tiling vertices around the prototile: 3 to 6. */
+	numVertices: number;
+	/** Distinct transformed copies of the tile per lattice cell: 1 to 12. */
+	numAspects: number;
+	/** Kind of each distinct edge curve, e.g. ["S","J","J"]. */
+	edgeShapes: string[];
+	/** One letter per boundary edge, uppercase where traversed backwards: "abBcC". NOT the G&S
+	 *  incidence symbol, which encodes reflection signs Tactile does not expose. */
+	edgeWord: string;
+	/** 2 or 3: the count the three-colouring cycles through. */
+	numColours: number;
+	/** Tiles in the uploaded translational cell (numColours² × numAspects). */
+	tilesPerCell: number;
+	/** The current parameters fold the prototile over itself. Reported, not prevented: Tactile ships no
+	 *  parameter ranges and the reference editor lets every slider run the full width. */
+	degenerate: boolean;
+	/** One of the twelve types that need interior markings, so nothing is drawn. */
+	marked: boolean;
+}
+
+// Convex-pentagon facts, present ONLY on a /pentagons entry. Kershner's fifteen types.
+export interface PentagonFacts {
+	/** 1..15. */
+	typeId: number;
+	/** Discoverer and year, e.g. "Reinhardt 1918". */
+	discovered: string;
+	/** Free parameters left after the type's own conditions; 0 is a rigid pentagon. */
+	dof: number;
+	/** Tiles in the translational unit. */
+	tilesPerUnit: number;
+	/** Wallpaper groups the family realises, as published. */
+	groups: string;
+	/** The solved pentagon's interior angles in degrees, and its side lengths. Null when the current
+	 *  parameter tuple falls outside the family. */
+	angles: number[] | null;
+	sides: number[] | null;
+	/** Why the current tuple does not solve, when it does not. */
+	status: string | null;
+}
+
 export interface EuclideanSpec extends BaseSpec {
 	geometry: "euclidean";
 	wallpaperGroup: string | null; // e.g. "p6m"
@@ -76,6 +124,10 @@ export interface EuclideanSpec extends BaseSpec {
 	freedraw: FreedrawFacts | null;
 	// Present iff this is a colored square tiling. Relabels the orbit section to "colored vertices".
 	colors: ColorsFacts | null;
+	// Present iff this is an /isohedral entry.
+	isohedral: IsohedralFacts | null;
+	// Present iff this is a /pentagons entry.
+	pentagon: PentagonFacts | null;
 }
 
 export interface HyperbolicSpec extends BaseSpec {
@@ -237,6 +289,10 @@ export function buildTilingSpec(
 					vcs: cp.vcs,
 				}
 			: null,
+		// The catalogue path never produces these two; /isohedral and /pentagons build their own specs
+		// directly, since neither has a CatalogueTiling behind it.
+		isohedral: null,
+		pentagon: null,
 		...base,
 		faceOrbits: cp ? cp.tileOrbits : stats ? stats.faceOrbits : base.faceOrbits,
 		edgeOrbits: cp ? cp.edgeOrbits : base.edgeOrbits,

@@ -1,0 +1,53 @@
+pentagon parameter ranges — measured, not derived
+started 2026-07-31T12:37:33.171Z
+
+Type 1 (5 DOF)
+  A: current [71, 170] -> limit [70.0000, 180.0000] -> USE min: 70, max: 180   <-- CHANGE
+  B: current [40, 156] -> limit [22.6264, 157.3736] -> USE min: 22.7, max: 157.3   <-- CHANGE
+  D: current [61, 156] -> limit [60.0000, 156.7539] -> USE min: 60, max: 156.7   <-- CHANGE
+  b/a: current [0.2, 4] -> limit [0.0000, 40.0100] -> USE min: 0.001, max: 40.009   <-- CHANGE
+  c/a: current [0.89, 4] -> limit [0.8794, 16.6080] -> USE min: 0.88, max: 16.608   <-- CHANGE
+
+Type 2 (4 DOF)
+  A: current [93, 134] -> limit [92.5075, 134.5425] -> USE min: 92.6, max: 134.5   <-- CHANGE
+  B: current [105, 129.5] -> limit [104.3369, 129.9941] -> USE min: 104.4, max: 129.9   <-- CHANGE
+  C: current [125, 170] -> limit [124.3369, 178.6737] -> USE min: 124.4, max: 178.6   <-- CHANGE
+  b/a: current [0.4, 1.53] -> limit [0.3949, 1.5321] -> USE min: 0.395, max: 1.532   <-- CHANGE
+
+Type 3 (1 DOF)
+  B: current [65, 119.5] -> limit [60.0000, 120.0000] -> USE min: 60.1, max: 119.9   <-- CHANGE
+
+Type 4 (2 DOF)
+  A: current [60, 170] -> limit [50.0000, 180.0000] -> USE min: 50, max: 180   <-- CHANGE
+  C: current [90.5, 170] -> limit [90.0000, 180.0000] -> USE min: 90.1, max: 180   <-- CHANGE
+
+Type 5 (2 DOF)
+  B: current [65, 139.5] -> limit [60.0000, 140.0000] -> USE min: 60.1, max: 139.9   <-- CHANGE
+  C: current [70.5, 159.5] -> limit [70.0000, 160.0000] -> USE min: 70, max: 159.9   <-- CHANGE
+
+Type 6 (1 DOF)
+  B: current [45, 88] -> limit [30.4240, 90.0000] -> USE min: 30.5, max: 90   <-- CHANGE
+
+Type 7 (1 DOF)
+  E: current [95, 145] -> limit [90.0000, 178.9998] -> USE min: 90, max: 178.9   <-- CHANGE
+
+Type 8 (1 DOF)
+  B: current [95, 145] -> limit [90.0000, 173.9990] -> USE min: 90, max: 173.9   <-- CHANGE
+
+Type 9 (1 DOF)
+  A: current [95, 134.5] -> limit [90.0000, 134.9978] -> USE min: 90, max: 134.9   <-- CHANGE
+
+Type 10 (1 DOF)
+  B: current [53.5, 126.5] -> limit [53.1301, 126.8699] -> USE min: 53.2, max: 126.8   <-- CHANGE
+
+Type 11 (1 DOF)
+  B: current [140, 158] -> limit [139.3537, 158.5282] -> USE min: 139.4, max: 158.5   <-- CHANGE
+
+Type 12 (1 DOF)
+  B: current [140, 165] -> limit [139.3537, 165.5225] -> USE min: 139.4, max: 165.5   <-- CHANGE
+
+Type 13 (1 DOF)
+  A: current [95, 134.5] -> limit [90.0000, 135.0000] -> USE min: 90, max: 134.9   <-- CHANGE
+
+Type 14: rigid, no sliders
+Type 15: rigid, no sliders

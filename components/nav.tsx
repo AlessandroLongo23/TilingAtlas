@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Library, Palette, PenLine, Play, Waves } from "lucide-react"; // History icon commented out with its nav link below
+import { BookOpen, Library, Palette, Pentagon, PenLine, Play, Shapes, Waves } from "lucide-react"; // History icon commented out with its nav link below
 import { HatMonotile } from "@/components/icons/hat-monotile";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
@@ -19,6 +19,8 @@ const LINKS = [
 	{ href: "/freedraw", label: "Freedraw", icon: PenLine },
 	{ href: "/colors", label: "Colors", icon: Palette },
 	{ href: "/aperiodic", label: "Aperiodic", icon: HatMonotile }, // Sub Rosa, Penrose, hat, Multigrid — switched in its sidebar
+	{ href: "/isohedral", label: "Isohedral", icon: Shapes }, // Grünbaum & Shephard IH1–IH93, parameterized via Tactile
+	{ href: "/pentagons", label: "Pentagons", icon: Pentagon }, // Kershner's 15 convex-pentagon families, closed by Rao 2017
 	// { href: "/history", label: "History", icon: History }, // hidden from header (route still exists)
 ];
 
@@ -29,7 +31,7 @@ export function Nav() {
 	// animated so entering/exiting is a smooth 300ms slide, matching the sidebar collapse on /play.
 	const immersive = useImmersive((s) => s.immersive);
 
-	// Number keys 1–8 jump to the matching nav link (in visible order). Same guard pattern as the /play
+	// Number keys 1–9 jump to the matching nav link (in visible order). Same guard pattern as the /play
 	// key handler: skip modifier combos so browser Cmd/Ctrl+number keeps switching tabs, and skip while
 	// typing in a form field or contenteditable.
 	useEffect(() => {

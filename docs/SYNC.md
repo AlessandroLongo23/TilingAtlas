@@ -1846,3 +1846,10 @@ reported it as not working. `clean` (half-width of the gap-free square) is now a
 number and the clamp uses it. New `scripts/measure-patch-window.ts`; its first run under-reported the
 hat 5.5 vs 18 because probes landing on shared tile edges are inside neither polygon, fixed by
 jittering off-lattice. Penrose moved to depth 6 for room (same tile size). b0a21ae. — CC
+
+### 2026-07-31 — CC — /pentagons: Kershner's 15 convex-pentagon families, derived not transcribed
+New shelf on the flat instanced renderer, so a slider tick rebuilds 2–12 pentagons, not a patch, and
+the tiling stays unbounded. One solver covers all 15 types (linear side system; determinant bisection
+for the 6 over-determined ones). `scripts/derive-pentagon-units.ts` SEARCHES each translational unit
+from the pentagon alone: all 15 recover the published size (2,4,3,4,6,4,8,8,8,6,8,8,8,6,12) and replay
+at a second member of their family. Detail in DEVELOPMENT_NOTES §"Pentagons". — CC
