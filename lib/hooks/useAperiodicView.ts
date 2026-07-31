@@ -81,6 +81,16 @@ export interface AperiodicViewOptions {
 	fill?: number;
 	/** Draw one frame. Called on the rAF loop only while something is moving or a redraw was asked for. */
 	draw: (f: AperiodicFrame) => void;
+	/**
+	 * Whether this surface currently owns the wheel and the drag. False leaves wheel events untouched
+	 * (so the page under them scrolls) and refuses to start a pan — the contract a canvas embedded in a
+	 * page the reader SCROLLS needs; see useCardActivation, and useFlatCellPreview's `active`, which
+	 * means the same thing.
+	 *
+	 * Defaults to true: the /aperiodic views own their whole panel and are always live. Right-click
+	 * reset is deliberately outside the gate, as it is there.
+	 */
+	active?: boolean;
 	/** Pointer moved with no button down, in CSS px relative to the canvas — for hover picking. */
 	onHover?: (sx: number, sy: number, f: AperiodicFrame) => void;
 	/** Pointer left the canvas. */
@@ -122,8 +132,14 @@ export function useAperiodicView({
 	draw,
 	onHover,
 	onHoverEnd,
+	active = true,
 }: AperiodicViewOptions): AperiodicView {
 	const controlsRef = useRef<CardControls>(makeCardControls(1));
+	// Read by the wheel listener (mounted once) and by the pointer handlers, so it tracks the prop
+	// without re-running the effect that owns the listener. Written in an effect, not during render:
+	// both readers run after commit, so the one-render lag is unobservable — the same rule cbRef below
+	// and useCardActivation follow.
+	const activeRef = useRef(active);
 	const homeZoomRef = useRef(1);
 	const centreRef = useRef({ x: 0, y: 0 });
 	const dragRef = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -233,6 +249,14 @@ export function useAperiodicView({
 		return () => cancelAnimationFrame(raf);
 	}, [canvasRef]);
 
+	// Publish `active` to the listeners, and drop any latched drag on the way down: deactivating
+	// mid-drag (focus moved away, Esc) must not leave the pan following a pointer that is no longer
+	// ours.
+	useEffect(() => {
+		activeRef.current = active;
+		if (!active) dragRef.current = null;
+	}, [active]);
+
 	// Refit on resize: the home zoom is a function of the canvas size, so a resized panel that kept its
 	// old zoom would sit at the wrong scale. Only the zoom is re-derived; pan and angle are the user's.
 	useEffect(() => {
@@ -258,6 +282,8 @@ export function useAperiodicView({
 		const cv = canvasRef.current;
 		if (!cv) return;
 		const onWheel = (e: WheelEvent) => {
+			// Inactive: let it through untouched, so the page keeps scrolling under an unclicked card.
+			if (!activeRef.current) return;
 			e.preventDefault();
 			const c = controlsRef.current;
 			if (e.shiftKey) {
@@ -283,6 +309,9 @@ export function useAperiodicView({
 				return;
 			}
 			if (e.button !== 0) return;
+			// First click on an inactive surface activates it (via focus — see useCardActivation) and
+			// deliberately does NOT start a pan, so an activation click never jolts the view.
+			if (!activeRef.current) return;
 			dragRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
 			e.currentTarget.setPointerCapture(e.pointerId);
 		},

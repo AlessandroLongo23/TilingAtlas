@@ -8,8 +8,8 @@ import { CompletenessBadge } from "@/components/landing/completeness-badge";
 import { LibraryMosaic } from "@/components/landing/library-mosaic";
 import { TheoryRing } from "@/components/landing/theory-ring";
 import { ParquetMini } from "@/components/landing/parquet-mini";
-import { HyperbolicMini, PlayMini, SphericalMini } from "@/components/landing/geometry-minis";
-import { HatMini, PenroseMini } from "@/components/landing/coming-soon-minis";
+import { HatMini, HyperbolicMini, PlayMini, SphericalMini } from "@/components/landing/geometry-minis";
+import { IsohedralMini } from "@/components/landing/coming-soon-minis";
 import { UpdatesGate } from "@/components/updates/updates-gate";
 import { CURRENT_DATE, CURRENT_VERSION } from "@/lib/updates/entries";
 
@@ -86,9 +86,9 @@ export default async function HomePage() {
 					The collections
 				</h2>
 				<div className="ta-wall grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[22rem] sm:auto-rows-[19rem] lg:auto-rows-[21rem] gap-px border-t border-line-subtle">
-					{/* The three live cells (Play, Hyperbolic, Spherical) render the real /play canvases rather
-					    than baked stills, so their media takes the drag and the caption below carries the link
-					    — see CollectionCard's `interactive`. */}
+					{/* The four live cells (Play, Hyperbolic, Spherical, Aperiodic) render real canvases
+					    instead of baked stills, so their media takes the drag and the caption below carries
+					    the link — see CollectionCard's `interactive`. */}
 					<CollectionCard
 						title="Play"
 						span="2x2"
@@ -158,20 +158,22 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Aperiodic"
-						subtitle="page not built yet"
-						comingSoon
-						description="The hat and its relatives. Tilings that never repeat."
-						>
+						interactive
+						subtitle="the hat, Penrose, Sub Rosa"
+						href="/aperiodic?view=hat"
+						description="Tilings that never repeat, by substitution and by projection."
+						badge={<CompletenessBadge tone="infinite" label="infinite family" />}
+					>
 						<HatMini />
 					</CollectionCard>
 
 					<CollectionCard
-						title="Substitution"
+						title="Isohedral"
 						subtitle="page not built yet"
 						comingSoon
-						description="Penrose and the subdivision families."
+						description="IH1 to IH93: every tiling with one tile, and its parameters."
 						>
-						<PenroseMini />
+						<IsohedralMini />
 					</CollectionCard>
 				</div>
 			</section>

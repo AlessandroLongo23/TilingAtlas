@@ -39,6 +39,86 @@ export function penroseSun(): Pt[][] {
 	return rhombs;
 }
 
+// --- IH1: the general translation hexagon --------------------------------------------------------
+//
+// The first of Grünbaum and Shephard's 93 isohedral types (Tilings and Patterns §6.2), and the one
+// that shows what "parametric" means with no explanation attached: a hexagon whose three pairs of
+// opposite edges are related by translation, each edge free to be any curve at all as long as its
+// opposite copies it. Every tile is the same tile, moved — the tiling's whole symmetry group is the
+// translation lattice, which is what makes it isohedral.
+//
+// Incidence symbol TTTTTT: with v_k the corners of a regular hexagon, edge k maps onto edge k+3 under
+// T_k = −(v_k + v_{k+1}), so the three independent edges are 0, 1 and 2 and the other three are their
+// reversed translates. That relation is exact whatever the edges do in between, which is why the
+// deformation below can be arbitrary and the tiles still meet.
+
+/** Corner k of the unit-circumradius regular hexagon the type is parameterised around. */
+const hexCorner = (k: number): Pt => [Math.cos((Math.PI / 3) * k), Math.sin((Math.PI / 3) * k)];
+
+/** Edge v_k → v_{k+1} as `samples + 1` points, BOTH corners included, swung sideways by `bulge`. */
+function edgeCurve(k: number, bulge: number, samples: number): Pt[] {
+	const [x0, y0] = hexCorner(k);
+	const [x1, y1] = hexCorner(k + 1);
+	const nx = -(y1 - y0);
+	const ny = x1 - x0;
+	const pts: Pt[] = [];
+	for (let i = 0; i <= samples; i++) {
+		const t = i / samples;
+		// sin(2πt) is zero at both ends and swings the middle out and back, so the edge is a visible S
+		// and the corners stay exactly where the hexagon put them.
+		const d = bulge * Math.sin(2 * Math.PI * t);
+		pts.push([x0 + (x1 - x0) * t + nx * d, y0 + (y1 - y0) * t + ny * d]);
+	}
+	return pts;
+}
+
+/** The three edge amplitudes. Different per edge class, so the tile reads as a parameterised shape
+ *  and not as a hexagon someone rounded off. */
+const IH1_BULGES = [0.16, -0.1, 0.22] as const;
+
+/** Translation carrying edge k onto edge k+3: T_k = −(v_k + v_{k+1}). */
+function hexEdgeTranslation(k: number): Pt {
+	const [x0, y0] = hexCorner(k);
+	const [x1, y1] = hexCorner(k + 1);
+	return [-(x0 + x1), -(y0 + y1)];
+}
+
+/**
+ * One IH1 prototile, as a closed polyline of 6·`samples` points: edges 0–2 are free curves, edges 3–5
+ * their reversed translates. Each edge contributes its own start corner and stops one sample short of
+ * the next, so no vertex is repeated and the loop closes on the first point.
+ */
+export function isohedralTile(samples = 12): Pt[] {
+	const free = [0, 1, 2].map((k) => edgeCurve(k, IH1_BULGES[k], samples));
+	const out: Pt[] = [];
+	for (const e of free) out.push(...e.slice(0, -1));
+	for (let k = 0; k < 3; k++) {
+		const [tx, ty] = hexEdgeTranslation(k);
+		// Edge k translated runs v_{k+4} → v_{k+3}; the boundary walks it the other way, from v_{k+3}.
+		for (let i = free[k].length - 1; i >= 1; i--) out.push([free[k][i][0] + tx, free[k][i][1] + ty]);
+	}
+	return out;
+}
+
+/**
+ * A patch of the IH1 tiling: the prototile at every lattice point a·T_0 + b·T_2 with |a|, |b| ≤
+ * `radius`. T_1 = T_0 + T_2, so those two generate the whole lattice and no copy is placed twice.
+ */
+export function isohedralPatch(radius = 2, samples = 12): Pt[][] {
+	const tile = isohedralTile(samples);
+	const [ax, ay] = hexEdgeTranslation(0);
+	const [bx, by] = hexEdgeTranslation(2);
+	const patch: Pt[][] = [];
+	for (let a = -radius; a <= radius; a++) {
+		for (let b = -radius; b <= radius; b++) {
+			const dx = a * ax + b * bx;
+			const dy = a * ay + b * by;
+			patch.push(tile.map(([x, y]) => [x + dx, y + dy] as Pt));
+		}
+	}
+	return patch;
+}
+
 export function polygonArea(poly: readonly Pt[]): number {
 	let s = 0;
 	for (let i = 0; i < poly.length; i++) {

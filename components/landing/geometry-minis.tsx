@@ -5,12 +5,12 @@ import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // Client wrappers that code-split the heavy GL stacks out of the landing bundle: the spherical cell
-// pulls three.js and the hyperbolic one its WebGL2 per-pixel renderer — neither belongs in the
-// landing's initial chunk. No SSR: all three are canvases, so there is nothing to render on the
-// server.
+// pulls three.js, the hyperbolic one its WebGL2 per-pixel renderer, and the hat cell the metatile
+// substitution plus the ear-clipping triangulator — none of it belongs in the landing's initial
+// chunk. No SSR: all four are canvases, so there is nothing to render on the server.
 //
-// The three live cells (Play, Hyperbolic, Spherical) each own their input and are inert until
-// clicked; see the components themselves.
+// The four live cells (Play, Hyperbolic, Spherical, Aperiodic) each own their input and are inert
+// until clicked; see the components themselves.
 
 const InteractivePlay = dynamic(
 	() => import("@/components/landing/interactive-play-mini").then((m) => m.InteractivePlayMini),
@@ -24,6 +24,11 @@ const InteractiveHyperbolic = dynamic(
 
 const InteractiveSpherical = dynamic(
 	() => import("@/components/landing/interactive-spherical-mini").then((m) => m.InteractiveSphericalMini),
+	{ ssr: false },
+);
+
+const InteractiveHat = dynamic(
+	() => import("@/components/landing/interactive-hat-mini").then((m) => m.InteractiveHatMini),
 	{ ssr: false },
 );
 
@@ -45,4 +50,9 @@ export function HyperbolicMini({ patch, data }: { patch: string; data?: Catalogu
 
 export function SphericalMini({ solidId }: { solidId: string }) {
 	return <InteractiveSpherical solidId={solidId} />;
+}
+
+// The hat patch fills its cell the same way: the tiling has no natural frame, so the card is its frame.
+export function HatMini() {
+	return <InteractiveHat />;
 }
