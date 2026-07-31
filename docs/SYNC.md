@@ -1839,3 +1839,10 @@ double-click back to the slide's framing. Clamped to the measured gap-free windo
 are finite and a ragged edge on the "a tiling covers the plane" slide reads as a bug; pan bound is
 `zoom*width/2 - W/2`, zero at home. 2-D repaint is fine at 430 and 1,156 tiles. Verified by driving
 48 viewport states and pixel-probing for gaps: none. `static="yes"` pins a card back. — CC
+
+### 2026-07-29 (9) — CC — the patch cards pan for real: framed window ≠ clean window
+First cut clamped pan to the window the card FRAMES, which leaves zero room at rest — AL correctly
+reported it as not working. `clean` (half-width of the gap-free square) is now a separate measured
+number and the clamp uses it. New `scripts/measure-patch-window.ts`; its first run under-reported the
+hat 5.5 vs 18 because probes landing on shared tile edges are inside neither polygon, fixed by
+jittering off-lattice. Penrose moved to depth 6 for room (same tile size). b0a21ae. — CC
