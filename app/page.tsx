@@ -9,7 +9,8 @@ import { LibraryMosaic } from "@/components/landing/library-mosaic";
 import { TheoryRing } from "@/components/landing/theory-ring";
 import { ParquetMini } from "@/components/landing/parquet-mini";
 import { HatMini, HyperbolicMini, PlayMini, SphericalMini } from "@/components/landing/geometry-minis";
-import { IsohedralMini } from "@/components/landing/coming-soon-minis";
+import { IsohedralMini } from "@/components/landing/isohedral-mini";
+import { PentagonMini } from "@/components/landing/pentagon-mini";
 import { UpdatesGate } from "@/components/updates/updates-gate";
 import { CURRENT_DATE, CURRENT_VERSION } from "@/lib/updates/entries";
 
@@ -75,9 +76,12 @@ export default async function HomePage() {
 			</section>
 
 			{/* P3+P4+P5 — the collections: a full-bleed wall, cells split by hairlines only.
-			    Mixed cell sizes on a 4×3 field: Play claims 2×2, Parquet 2×1, the other six 1×1 —
-			    the one combination that fills twelve cells exactly, so document order alone places
-			    the wall with no holes and no explicit grid coordinates. The row track is FIXED,
+			    Mixed cell sizes on a 4×4 field: Play and Aperiodic claim 2×2 each, Parquet 2×1, the
+			    other six 1×1 — 4+4+2+6 = sixteen cells exactly, so document order alone places the
+			    wall with no holes and no explicit grid coordinates. Order is load-bearing twice
+			    over: sparse auto-placement never walks the cursor backwards, and the pairing below
+			    (Isohedral under Hyperbolic, Pentagons under Spherical) only holds at this order.
+			    The row track is FIXED,
 			    not minmax(…, auto): a media box with an intrinsic aspect (the disk, the
 				    ball) inflates an auto row to max-content and the rows stop matching, which is
 				    the whole point of a modular wall. Media flexes into what the caption leaves. */}
@@ -158,6 +162,7 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Aperiodic"
+						span="2x2"
 						interactive
 						subtitle="the hat, Penrose, Sub Rosa"
 						href="/aperiodic?view=hat"
@@ -169,11 +174,22 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Isohedral"
-						subtitle="page not built yet"
-						comingSoon
-						description="IH1 to IH93: every tiling with one tile, and its parameters."
-						>
+						subtitle="93 types, IH1 to IH93"
+						href="/isohedral"
+						description="Every tiling with one tile up to symmetry, with its corners and edges live."
+						badge={<CompletenessBadge tone="proven" label="exactly 93, proven" />}
+					>
 						<IsohedralMini />
+					</CollectionCard>
+
+					<CollectionCard
+						title="Pentagons"
+						subtitle="15 types"
+						href="/pentagons"
+						description="The convex pentagons that tile the plane, a list Rao closed in 2017."
+						badge={<CompletenessBadge tone="proven" label="exactly 15, proven" />}
+					>
+						<PentagonMini />
 					</CollectionCard>
 				</div>
 			</section>

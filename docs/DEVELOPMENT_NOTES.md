@@ -8195,3 +8195,39 @@ proof that the `uStrokePx = 0` handoff between the two paths is wired correctly.
 ⚑ The 2-D fallback path is untouched and still strokes whole polygons with `drawPolygons`, so the two
 paths now differ in one visible way: on the patch boundary the GL stroke is centred on the edge (full
 width) where the old wireframe painted only the inward half.
+
+### Addendum — the two new shelves join the landing wall (AL)
+
+AL: put /isohedral and /pentagons on the landing page, make Aperiodic 2×2, and sit the two new cards
+under Spherical and Hyperbolic.
+
+The wall has no explicit grid coordinates: every card is placed by document order and its own span, so
+the arithmetic has to come out exactly or CSS auto-placement leaves holes. It was a 4×3 field of
+twelve (Play 2×2, Parquet 2×1, six 1×1); it is now 4×4 of sixteen — Play and Aperiodic 2×2 each,
+Parquet 2×1, six 1×1, so 4+4+2+6. Order is load-bearing twice over. Sparse auto-placement never walks
+the cursor backwards, so Aperiodic must be declared while the cursor is at row 3 column 3 for its 2×2
+to land there and leave row 4 columns 1–2 free; and it is precisely that placement which puts
+Isohedral under Hyperbolic and Pentagons under Spherical. Verified at all three breakpoints (1 / 2 / 4
+columns) — no holes, and the pairing survives the 2-column layout.
+
+Both new cards render REAL geometry, not a still.
+
+- **Pentagons** (`components/landing/pentagon-mini.tsx`) calls `lib/pentagon/build.buildCell({id: 15})`
+  — the same code the page draws — and replicates the returned 12-tile unit over its lattice as static
+  server-rendered SVG. Type 15 because it is the card's story (the last one found, MMV 2015) and it is
+  rigid, so there is nothing to animate. The tile hues are the page's own; the fill is
+  `hsbToHsla(hue, 40, 100, 1)`, the atlas convention everywhere else.
+  ⚑ The lattice range is COMPUTED from the window through the inverse basis, not a fixed radius. Type
+  15's basis is nearly collinear (two vectors of length ~11 spanning a cell of side 5.5), so a radius
+  read off the vector lengths covered barely half the window across the short direction and the card
+  rendered with white corners. Any mini that replicates a skewed cell needs the same treatment.
+- **Isohedral** keeps the hand-derived curved IH1 patch (`lib/render/landingPatches.ts`) but is now
+  coloured like the page: `polygonHue(6)` cycled by `lib/isohedral/build.ts`'s `[0, 40, 80]` offsets.
+  Drawn faint, it still read as the coming-soon placeholder it used to be. The colouring needs to know
+  which tiles are neighbours, and in a translation lattice nothing in the geometry says — so
+  `isohedralPatchCells` now returns each copy's (a, b) and `(a + b) mod 3` is a proper 3-colouring:
+  the six neighbours sit at ±T₀, ±T₂, ±(T₀+T₂), whose coordinate sums are ±1, ±1, ±2, none 0 mod 3.
+  `isohedralPatch` is a one-line map over it, so the existing tests were untouched.
+
+`components/landing/coming-soon-minis.tsx` → `isohedral-mini.tsx`: no coming-soon cards are left on the
+wall. `CollectionCard` keeps the `comingSoon` prop and the hazard tape for the next unbuilt collection.

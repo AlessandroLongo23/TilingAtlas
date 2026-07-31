@@ -100,23 +100,40 @@ export function isohedralTile(samples = 12): Pt[] {
 	return out;
 }
 
+/** One placed copy, carrying the lattice coordinates it was placed at. */
+export interface IsohedralCell {
+	poly: Pt[];
+	a: number;
+	b: number;
+}
+
 /**
  * A patch of the IH1 tiling: the prototile at every lattice point a·T_0 + b·T_2 with |a|, |b| ≤
  * `radius`. T_1 = T_0 + T_2, so those two generate the whole lattice and no copy is placed twice.
+ *
+ * The lattice coordinates come back with each tile because a colouring needs them. Every tile here is
+ * a translate of every other, so nothing in the geometry distinguishes neighbours; (a, b) is the only
+ * handle a caller has. `(a + b) mod 3` is a proper 3-colouring: the six neighbours of a tile sit at
+ * ±T_0, ±T_2 and ±(T_0 + T_2), whose coordinate sums are ±1, ±1 and ±2, none of them 0 mod 3.
  */
-export function isohedralPatch(radius = 2, samples = 12): Pt[][] {
+export function isohedralPatchCells(radius = 2, samples = 12): IsohedralCell[] {
 	const tile = isohedralTile(samples);
 	const [ax, ay] = hexEdgeTranslation(0);
 	const [bx, by] = hexEdgeTranslation(2);
-	const patch: Pt[][] = [];
+	const cells: IsohedralCell[] = [];
 	for (let a = -radius; a <= radius; a++) {
 		for (let b = -radius; b <= radius; b++) {
 			const dx = a * ax + b * bx;
 			const dy = a * ay + b * by;
-			patch.push(tile.map(([x, y]) => [x + dx, y + dy] as Pt));
+			cells.push({ poly: tile.map(([x, y]) => [x + dx, y + dy] as Pt), a, b });
 		}
 	}
-	return patch;
+	return cells;
+}
+
+/** The same patch as bare polygons. */
+export function isohedralPatch(radius = 2, samples = 12): Pt[][] {
+	return isohedralPatchCells(radius, samples).map((c) => c.poly);
 }
 
 export function polygonArea(poly: readonly Pt[]): number {
