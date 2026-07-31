@@ -201,6 +201,29 @@ describe("the edge curvature model respects each edge's symmetry", () => {
 	});
 
 	/**
+	 * The slider's travel is [-0.5, 0.5], and normalising the random curve by |y| put the bow's
+	 * direction into the template and left every amplitude positive: correct shapes, but every thumb
+	 * parked right of centre and the left half of the control looked dead. The sign belongs in
+	 * `amount`, where the reader can see it.
+	 */
+	it("randomizes into both halves of the slider's travel", () => {
+		const rnd = seeded(5);
+		const signs = new Set<number>();
+		for (const t of available) {
+			for (const s of randomEdgeStates(t.edgeShapes, rnd)) {
+				if (s.kind === "I") continue;
+				signs.add(Math.sign(s.amount));
+				// The template holds shape only: its dominant control point is +1, never -1.
+				const lead =
+					Math.abs(s.base!.a.y) >= Math.abs(s.base!.b.y) ? s.base!.a.y : s.base!.b.y;
+				expect(lead, `${t.label} ${s.kind}`).toBeCloseTo(1, 12);
+			}
+		}
+		expect(signs.has(-1), "no edge bowed the negative way").toBe(true);
+		expect(signs.has(1), "no edge bowed the positive way").toBe(true);
+	});
+
+	/**
 	 * The reported bug, pinned. Randomize, nudge one slider, put it back: the tiling must be the one you
 	 * started with. It was not, because the old model rebuilt the control points from the slider value
 	 * and Randomize varies their x as well as their y, so the first touch of any edge slider silently

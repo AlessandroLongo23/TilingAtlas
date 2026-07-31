@@ -115,11 +115,15 @@ const P1: TactilePoint = { x: 1, y: 0 };
 export interface EdgeShapeState {
 	kind: EdgeKind;
 	/**
-	 * Unit-amplitude control points, y normalised so the larger |y| is exactly 1. Null for an I edge,
-	 * which is forced straight and has no shape to hold.
+	 * Unit-amplitude control points, y normalised so the dominant one is exactly +1 — signed, so which
+	 * way the edge bows is `amount`'s business and the template only holds the shape. Null for an I
+	 * edge, which is forced straight and has no shape to hold.
 	 */
 	base: EdgeCurve | null;
-	/** What the slider sets. The drawn curve is `base` with both y values multiplied by this. */
+	/**
+	 * What the slider sets, sign included. The drawn curve is `base` with both y values multiplied by
+	 * this, so a negative amplitude is the same shape bowing the other way.
+	 */
 	amount: number;
 }
 
@@ -179,24 +183,28 @@ export function randomEdgeStates(
 		else if (kind === "S") curve = { a, b: { x: 1 - a.x, y: -a.y } };
 		else curve = { a, b: { x: 1 - a.x, y: a.y } }; // U
 
-		const amp = Math.max(Math.abs(curve.a.y), Math.abs(curve.b.y));
+		// Divide by the dominant y WITH its sign, not by its magnitude. Normalising by |y| left every
+		// amplitude positive: the bow's direction went into the template, so Randomize could only ever
+		// park a thumb in the right half of a track that runs [-0.5, 0.5], and half the control looked
+		// unreachable. The drawn curve is identical either way — this is about what the slider reads.
+		const lead = Math.abs(curve.a.y) >= Math.abs(curve.b.y) ? curve.a.y : curve.b.y;
 		// A curve that came out flat has no direction to normalise; fall back to the canonical template
 		// so the slider still has something to scale.
-		if (amp < EPS) return { kind, base: canonicalBase(kind), amount: 0 };
+		if (Math.abs(lead) < EPS) return { kind, base: canonicalBase(kind), amount: 0 };
 
 		return {
 			kind,
 			base: {
-				a: { x: curve.a.x, y: curve.a.y / amp },
-				b: { x: curve.b.x, y: curve.b.y / amp },
+				a: { x: curve.a.x, y: curve.a.y / lead },
+				b: { x: curve.b.x, y: curve.b.y / lead },
 			},
-			// Quantized onto the slider's own grid, and never below one step.
+			// Quantized onto the slider's own grid, and never below one step in magnitude.
 			//
 			// Without this the amplitude is a full-precision random number the slider cannot represent:
 			// the control shows the rounded value, and the first drag writes that rounded value back,
 			// so touching the slider at all nudged the tiling before it moved. Randomize now lands on a
 			// value the slider can hold exactly, and picking it up changes nothing until it moves.
-			amount: Math.max(BULGE.step, quantizeAmount(amp)),
+			amount: Math.sign(lead) * Math.max(BULGE.step, Math.abs(quantizeAmount(lead))),
 		};
 	});
 }
