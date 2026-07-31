@@ -1809,3 +1809,10 @@ longest edge class (regular boards unchanged); the edge field now measures each 
 face's vertex star, closing a white pinhole every hyperbolic edge shelf had at a straight-through
 vertex — 0.94–1.33× cost, colorings byte-identical. Detail: NOTES §"the hyperbolic Schwarz shelf
 joins the per-pixel renderer". — CC
+
+### 2026-07-29 (6) — CC — "What was kept" as a list, and an ownership overclaim removed
+Three paragraphs → five bold-lead bullets, matching the "Four local rules" pattern; the slide has no
+figure, so the eye needs the structure. Also corrected: a speaker note claimed the final engine
+develops coordinates in AL's exact substrate. `eu_develop.cpp` is a native C++ port of Čtrnáct's
+`develop.py`, byte-for-byte validated — exactness is load-bearing at both ends, the far-end code is
+not his. — CC
