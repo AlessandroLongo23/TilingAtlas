@@ -339,8 +339,9 @@ setting: it changes an integer, and with it the count.
 </period-figure>
 
 <!-- notes: Forty-five seconds, and do not apologise for spending them — this substrate is one of the
-things you claim as yours, it carries both remaining architectures, and the final engine still
-develops its coordinates in it. Say the practical version out loud: two vertices are the same vertex
+things you claim as yours and it carries both remaining architectures. Exactness survives to the far
+end too: the engine's develop stage works in ℤ[ζ₁₂]. Do not say that stage is yours — eu_develop.cpp
+is a port of Čtrnáct's develop.py. Say the practical version out loud: two vertices are the same vertex
 when their integer vectors match, so "did this tile land where that one did" is a comparison, not a
 judgement call. If asked why 24 and not 12: the odd powers exist for the octagon alone, and every
 other regular-polygon tiling lives in Z[zeta_12] — which is the next slide's rose using only every
@@ -417,17 +418,25 @@ same measurements, minus its third panel, which showed the k=3 profile alone on 
 
 ---
 
-## What survived the method that failed
+## What was kept
 
-The bounded-weight theorem survived, together with its small-$k$ sharpening and the attainment
-certificates that go with it, and so did the exact cyclotomic substrate underneath it.
+- **The bounded-weight theorem**, with its small-$k$ sharpening and the attainment certificates that
+  go with it.
+- **The exact cyclotomic substrate** underneath it, which every decisive comparison still runs on.
+- **The certified 61 at $k=3$**, matched tiling by tiling under two independent implementations.
+- **The prohibited-prune registry**: two prunes proven unsound, recorded so that nobody re-derives
+  them.
+- **A characterised negative result** at $k=4$, which is a result.
 
-The certified 61 at $k=3$ survived, matched tiling by tiling under two independent implementations.
+<!-- notes: Close the act here and go straight into the pivot. Do not apologise for the year. Read the
+five, do not elaborate on any of them; every one has its own slide behind it or has already had one.
+If asked which you would defend hardest: the theorem, because it is the only thing on the list that is
+a theorem. -->
 
-So did the prohibited-prune registry, which records two prunes proven unsound so that nobody
-re-derives them, and a characterised negative result, which is a result.
-
-<!-- notes: Close the act here and go straight into the pivot. Do not apologise for the year. -->
+<!-- Deliberately NOT claimed here: that the final engine develops its coordinates in YOUR substrate.
+It develops in exact ℤ[ζ₁₂], but eu_develop.cpp is a port of Čtrnáct's develop.py, validated
+byte-for-byte against it. Exactness is load-bearing at both ends of the project; the code at the far
+end is not yours. -->
 
 ---
 
