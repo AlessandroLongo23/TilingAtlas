@@ -11,6 +11,8 @@ interface CommonProps {
 	variant?: Variant;
 	size?: Size;
 	icon?: ComponentType<{ className?: string }>;
+	/** Trailing icon, after the label. For directional affordances — "go there", "next". */
+	iconRight?: ComponentType<{ className?: string }>;
 	label?: ReactNode;
 	fullWidth?: boolean;
 	classes?: string;
@@ -77,11 +79,12 @@ function computeClassName(p: CommonProps) {
 
 function renderContent(p: CommonProps) {
 	const size = p.size ?? "md";
-	const { icon: Icon, label, children } = p;
+	const { icon: Icon, iconRight: IconRight, label, children } = p;
 	return (
 		<>
 			{Icon ? <Icon className={ICON_SIZE[size]} /> : null}
 			{size === "icon" ? null : (label ?? children)}
+			{IconRight && size !== "icon" ? <IconRight className={ICON_SIZE[size]} /> : null}
 		</>
 	);
 }
@@ -91,6 +94,7 @@ function ButtonAsLinkRender(props: ButtonAsLink) {
 		variant: _v,
 		size: _s,
 		icon: _i,
+		iconRight: _ir,
 		label: _l,
 		fullWidth: _fw,
 		classes: _c,
@@ -110,6 +114,7 @@ function ButtonAsButtonRender(props: ButtonAsButton) {
 		variant: _v,
 		size: _s,
 		icon: _i,
+		iconRight: _ir,
 		label: _l,
 		fullWidth: _fw,
 		classes: _c,

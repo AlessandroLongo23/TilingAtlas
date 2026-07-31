@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
@@ -143,7 +144,7 @@ export function UpdatesClient({
 					<header className="flex flex-col gap-2">
 						<h1 className="text-2xl font-semibold text-fg">Updates</h1>
 						<p className="text-sm text-fg-secondary max-w-prose">
-							What has changed in the Atlas, newest first. New tilings are shown as they arrived —
+							What has changed in the Atlas, newest first. New tilings are shown as they arrived;
 							drag to pan, scroll to zoom, or open any of them in Play.
 						</p>
 					</header>
@@ -195,6 +196,16 @@ export function UpdatesClient({
 															<ChangeText text={change.text} />
 														)}
 
+														{change.items?.length ? (
+															<ul className="mt-1.5 flex flex-col gap-1 list-disc pl-5 marker:text-fg-muted">
+																{change.items.map((item, k2) => (
+																	<li key={k2}>
+																		<ChangeText text={item} />
+																	</li>
+																))}
+															</ul>
+														) : null}
+
 														{/* No fixed height on the wrapper: the card's own slot is
 														    `aspect-square` and sizes itself from its width, so a fixed-height
 														    box does not contain it — it overflows and lands on the prose
@@ -220,9 +231,10 @@ export function UpdatesClient({
 																	<Link
 																		key={id}
 																		href={`/play?tiling=${encodeURIComponent(id)}`}
-																		className="px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
+																		className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
 																	>
-																		{id} →
+																		{id}
+																		<ArrowRight size={12} aria-hidden="true" className="shrink-0" />
 																	</Link>
 																))}
 															</div>

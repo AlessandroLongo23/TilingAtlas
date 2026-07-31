@@ -88,13 +88,33 @@ describe("update entries", () => {
 			for (const change of entry.changes) {
 				const where = `${entry.version}: ${change.text.slice(0, 40)}`;
 				expect(KIND_ORDER, `unknown kind on ${where}`).toContain(change.kind);
-				expect(change.text.includes("\n"), `multi-line change on ${where}`).toBe(false);
-				// The modal renders **bold** and nothing else (components/updates/change-text.tsx).
-				const withoutBold = change.text.replace(/\*\*[^*]+\*\*/g, "");
-				expect(withoutBold.includes("*"), `stray markup on ${where}`).toBe(false);
-				expect(withoutBold, `raw HTML or a link on ${where}`).not.toMatch(/<[a-z]|\]\(/i);
-				// Bold pairs must close.
-				expect((change.text.match(/\*\*/g) ?? []).length % 2, `unclosed bold on ${where}`).toBe(0);
+				// The lead line and every bullet under it go through the same renderer, so they live
+				// under the same rules.
+				for (const line of [change.text, ...(change.items ?? [])]) {
+					expect(line.includes("\n"), `multi-line change on ${where}`).toBe(false);
+					// The modal renders **bold** and nothing else (components/updates/change-text.tsx).
+					const withoutBold = line.replace(/\*\*[^*]+\*\*/g, "");
+					expect(withoutBold.includes("*"), `stray markup on ${where}`).toBe(false);
+					expect(withoutBold, `raw HTML or a link on ${where}`).not.toMatch(/<[a-z]|\]\(/i);
+					// Bold pairs must close.
+					expect((line.match(/\*\*/g) ?? []).length % 2, `unclosed bold on ${where}`).toBe(0);
+				}
+				expect((change.items ?? []).length, `bullet wall on ${where}`).toBeLessThanOrEqual(6);
+				expect(
+					(change.items ?? []).some((i) => i.trim().length === 0),
+					`empty bullet on ${where}`,
+				).toBe(false);
+			}
+		}
+	});
+
+	it("carries no em dashes", () => {
+		// AL's standing rule for anything a reader sees. The house shape here is "**key noun** —
+		// gloss", which is exactly where the dash keeps creeping back in: use a colon, a comma, a
+		// semicolon, or split the sentence. Catches the `--` stand-in too.
+		for (const entry of UPDATES) {
+			for (const line of [entry.title, ...entry.changes.flatMap((c) => [c.text, ...(c.items ?? [])])]) {
+				expect(line, `em dash in "${line.slice(0, 60)}"`).not.toMatch(/—|--/);
 			}
 		}
 	});
@@ -105,7 +125,9 @@ describe("update entries", () => {
 
 	it("never mentions the unlisted /defense route", () => {
 		for (const entry of UPDATES) {
-			const blob = `${entry.title} ${entry.changes.map((c) => `${c.text} ${c.href ?? ""}`).join(" ")}`;
+			const blob = `${entry.title} ${entry.changes
+				.map((c) => `${c.text} ${(c.items ?? []).join(" ")} ${c.href ?? ""}`)
+				.join(" ")}`;
 			expect(blob.toLowerCase(), `${entry.version} mentions defense`).not.toContain("defense");
 		}
 	});

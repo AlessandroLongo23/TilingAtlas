@@ -1,7 +1,9 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { ChangeText } from "@/components/updates/change-text";
@@ -60,9 +62,10 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 						<Link
 							key={id}
 							href={href}
-							className="px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
+							className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
 						>
-							{id} →
+							{id}
+							<ArrowRight size={12} aria-hidden="true" className="shrink-0" />
 						</Link>
 					);
 				}
@@ -70,7 +73,7 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 					<Link
 						key={id}
 						href={href}
-						title={`${entry.label} — open in Play`}
+						title={`Open ${entry.label} in Play`}
 						className="block w-20 h-20 border border-line hover:border-accent transition-colors overflow-hidden"
 					>
 						{/* Small pxPerEdge on purpose: at 80px a card needs several repeats to read as a
@@ -130,6 +133,15 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 									) : (
 										<ChangeText text={change.text} />
 									)}
+									{change.items?.length ? (
+										<ul className="mt-1.5 flex flex-col gap-1 list-disc pl-5 marker:text-fg-muted">
+											{change.items.map((item, j) => (
+												<li key={j}>
+													<ChangeText text={item} />
+												</li>
+											))}
+										</ul>
+									) : null}
 									{change.tilings?.length ? <TilingStrip ids={change.tilings} cells={cells} /> : null}
 								</li>
 							))}
@@ -137,13 +149,13 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 					</section>
 				))}
 			</div>
-			<div className="border-t border-line p-3 flex items-center justify-between">
+			<div className="border-t border-line p-3 flex items-center justify-between gap-3">
 				<span className="text-xs text-fg-muted">
 					{newest.date} · v{newest.version}
 				</span>
-				<Link href="/updates" className="text-xs text-accent hover:underline" onClick={onClose}>
-					See all updates →
-				</Link>
+				<Button href="/updates" variant="secondary" size="sm" iconRight={ArrowRight} onClick={onClose}>
+					See all updates
+				</Button>
 			</div>
 		</Modal>
 	);
