@@ -1816,3 +1816,19 @@ figure, so the eye needs the structure. Also corrected: a speaker note claimed t
 develops coordinates in AL's exact substrate. `eu_develop.cpp` is a native C++ port of Čtrnáct's
 `develop.py`, byte-for-byte validated — exactness is load-bearing at both ends, the far-end code is
 not his. — CC
+
+### 2026-07-31 (2) — CC — the isohedral shelf lands: IH1–IH93 on /isohedral
+Tactile vendored (BSD-3, from master — npm 1.0.0 is stale by a `fillRegionQuad` fix) with a
+hand-written `.d.ts`; every per-type fact derived at load, none transcribed. All 93 listed, the twelve
+marked types selectable and explaining themselves in Kaplan's words. AL corrected the renderer
+mid-build: it is `FlatCellRenderer` instancing one translational cell, not a finite patch, so the
+tiling is unbounded. Cell is the nc × nc supercell (the colouring is not one-cell periodic; 49 of 81
+need it) and is ear-clipped, since the centroid fan breaks on curved tiles. 31 tests, `pnpm build`
+clean. Detail: NOTES §"the isohedral shelf: IH1–IH93 on the flat renderer". — CC
+
+### 2026-07-29 (7) — CC — bold pass over the whole deck
+145 bold spans across all 44 slides, one to three per slide, on the term/number/claim the eye should
+land on. Wording provably unchanged: stripping `**` from the new file diffs clean against the old.
+Applied as one script with a per-pattern uniqueness assertion, so a near-miss aborts the run rather
+than bolding the wrong sentence. Nothing inside math, notes, tags, tables or quotes. Swept all 44
+slides: 0 px overflow, no unrendered markers. — CC
