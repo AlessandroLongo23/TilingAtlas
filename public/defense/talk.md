@@ -15,8 +15,8 @@ sentence out of your mouth should be about the numbers, not about yourself. -->
 
 ## What is a tiling?
 
-A tiling of the plane is a countable family of closed sets whose union is the whole plane and whose
-interiors do not meet.
+A tiling of the plane is a countable family of closed sets whose union is **the whole plane** and whose
+**interiors do not meet**.
 
 <slide-grid cols="4">
 <tiling-card tiling="t1001" title="hexagons"></tiling-card>
@@ -38,7 +38,7 @@ excluded over the next three slides, so plant them here without arguing yet. -->
 
 ## Covering the plane exactly once
 
-We do not allow a tiling with a gap or an overlap. Every point of the plane is either inside exactly
+We do not allow a tiling with a **gap** or an **overlap**. Every point of the plane is either inside exactly
 one tile, on an edge shared by two, or a vertex where several meet.
 
 ![](/defense/figures/not-a-tiling.png)
@@ -49,8 +49,8 @@ one tile, on an edge shared by two, or a vertex where several meet.
 
 ## Periodicity
 
-We require periodicity: a tiling is periodic when two independent translations carry it onto itself, 
-so the whole of it is determined by one finite patch repeated on a lattice. 
+We require periodicity: a tiling is periodic when **two independent translations** carry it onto itself, 
+so the whole of it is determined by **one finite patch** repeated on a lattice. 
 
 <slide-grid cols="3">
 <patch-card patch="penrose" label="Penrose: never repeats"></patch-card>
@@ -65,8 +65,8 @@ k-uniform tilings it is a theorem, and it comes back in Obligation 6. -->
 
 ## Edge-to-edge
 
-A tiling is edge-to-edge when every edge of every tile is a whole edge of each tile beside it, so
-that a corner of one tile never lands part-way along the side of another. The squares below show
+A tiling is edge-to-edge when every edge of every tile is **a whole edge** of each tile beside it, so
+that a corner of one tile **never lands part-way along the side** of another. The squares below show
 both cases.
 
 ![](/defense/figures/edge-to-edge.png)
@@ -78,7 +78,7 @@ committee will be happier if you say that instead of letting the constraint look
 
 ## Only regular polygons
 
-Finally, we are restricting the study to the tilings that consists of regular polygons only.
+Finally, we are restricting the study to the tilings that consists of **regular polygons only**.
 
 <slide-cols>
 <div>
@@ -97,11 +97,11 @@ it forty minutes later. -->
 
 ## Vertex configuration
 
-A vertex configuration (vc) is a list of polygons sharing a vertex, and its name is just the number 
-relative to each polygon, listed in the least cyclic lexicographical order: e.g. $4.6.12$ is a square,
+A vertex configuration (vc) is a **list of polygons sharing a vertex**, and its name is just the number 
+relative to each polygon, listed in the **least cyclic lexicographical order**: e.g. $4.6.12$ is a square,
 a hexagon, and a dodecagon. 
 
-Fifteen of them appear in a tiling of the plane; the other six close the full turn, but don't appear
+**Fifteen** of them appear in a tiling of the plane; the other **six** close the full turn, but don't appear
 in any tiling.
 
 <slide-grid cols="7">
@@ -139,7 +139,7 @@ the board. Do not mention that two configurations can share a multiset; that is 
 
 ## Vertex orbits
 
-A vertex orbit is the set of vertices that the tiling's own symmetries can carry onto each other, 
+A vertex orbit is the set of vertices that **the tiling's own symmetries** can carry onto each other, 
 and a tiling is said *k*-uniform when there are exactly $k$ of them.
 
 <slide-grid cols="3">
@@ -157,14 +157,14 @@ This is the definition the whole talk rests on, so let the pointer do the explai
 
 ## The numbers we have, and where they came from
 
-The counts for the first values of k are listed in the OEIS A068599:
+The counts for the first values of k are listed in the **OEIS A068599**:
 
 11, 20, 61, 151, 332, 673, 1472, 2850, ....
 
-But knowing is not the same as having proven, which is the gap we are trying to fill.
+But **knowing is not the same as having proven**, which is the gap we are trying to fill.
 
-Here is the first term in full. The three ringed use a single shape of tile: they are the regular
-tilings, and the other eight the semiregular ones.
+Here is the first term in full. The three ringed use a single shape of tile: they are the **regular**
+tilings, and the other eight the **semiregular** ones.
 
 <slide-grid cols="6">
 <tiling-card tiling="t1011" title="3.3.3.3.3.3" accent="yes" periods="3"></tiling-card>
@@ -190,12 +190,12 @@ the ninth is not. -->
 
 ## Nobody who produced these counts proved them
 
-At $k=2$ and $k=3$ the counts rest on case analyses, and from $k=4$ on they rest on computer searches, but none of them comes with a completeness argument.
+At $k=2$ and $k=3$ the counts rest on case analyses, and from $k=4$ on they rest on computer searches, but **none of them comes with a completeness argument**.
 
 <count-timeline>
 </count-timeline>
 
-So the sequence is not a theorem: it is a consensus.
+So the sequence is not a theorem: it is a **consensus**.
 
 <!-- notes: Land the last line and stop. This is the gap the whole thesis addresses. If anyone
 presses on Kepler: he drew all eleven in 1619 with no completeness argument, but k=1 is the one
@@ -207,9 +207,9 @@ sentence on the slide starts at k=2. Do not claim Kepler proved anything. -->
 
 ## The methods I explored
 
-In this kind of work, the path to the solution is as important as the solution itself, because it's evidence of what worked and what didn't. 
+In this kind of work, **the path to the solution** is as important as the solution itself, because it's evidence of what worked and what didn't. 
 
-Each of the methods I explored had strengths and weaknesses, and the first four were abandoned either because they didn't scale, or because the next was easier to prove.
+Each of the methods I explored had strengths and weaknesses, and the first four were abandoned either because they **didn't scale**, or because **the next was easier to prove**.
 
 <method-strip>
 <method-card fig="growth" name="Grow the patch" note="until it holds two translations"></method-card>
@@ -237,7 +237,7 @@ being slow." -->
 
 ## Wallpaper groups
 
-In the euclidean 2D space, every tiling or pattern belongs to one of the 17 wallpaper groups, depending on its **symmetries**.
+In the euclidean 2D space, every tiling or pattern belongs to one of the **17 wallpaper groups**, depending on its **symmetries**.
 
 <wallpaper-wall>
 </wallpaper-wall>
@@ -249,7 +249,7 @@ In the euclidean 2D space, every tiling or pattern belongs to one of the 17 wall
 <slide-cols>
 <div>
 
-The first method was based on symmetry:
+The first method was based on **symmetry**:
 - generate a seed patch
 - for each tuple of construction points:
   - try to fit the fundamental domain of each of the 17 wallpaper groups
@@ -270,9 +270,9 @@ someone asks what "fit" means. -->
 
 ## Architecture one: failure
 
-Some groups have elongated lattices, which can make a vertex of the fundamental domain "fall" out of
-the patch. This tiling is $cmm$ — the commonest group at $k = 4$, 50 of the 151. Symmetry does not
-construct a tiling, then; it constrains the period lattice, and it can be detected exactly once the
+Some groups have **elongated lattices**, which can make a vertex of the fundamental domain "fall" out of
+the patch. This tiling is $cmm$ — the commonest group at $k = 4$, **50 of the 151**. Symmetry does not
+construct a tiling, then; it **constrains the period lattice**, and it can be detected exactly once the
 tiling is already in hand.
 
 <slide-grid cols="2">
@@ -289,11 +289,11 @@ cmm, so this is not an awkward corner — it is the single commonest case at tha
 
 ## Architecture two: grow the patch, then look for periods
 
-Using the fact that each vertex should belong to one of the seed's $k$ orbits, we stamp rigid copies
-of it at the open vertices with exact isometries, and then search the finished patch for two
-independent translations that map it onto itself. The stamping rule is not the lever: a stronger one,
+Using the fact that each vertex should belong to one of the seed's $k$ orbits, we **stamp rigid copies**
+of it at the open vertices with exact isometries, and then search the finished patch for **two
+independent translations** that map it onto itself. The stamping rule is not the lever: a stronger one,
 stamping the whole grown patch, not the seed, prunes about a tenth of the search for roughly
-900 times the cost.
+**900 times the cost**.
 
 <growth-strip>
 </growth-strip>
@@ -306,12 +306,12 @@ out of this architecture and both survived into the final system. -->
 ## What killed it was a measurement I had never run
 
 The decisive experiment, which I had never run at the real radius, showed hard 2-uniform seeds
-saturating a 410-deep search stack with patches of about 730 tiles: locally legal, non-periodic
-boundary variants, proliferating without any bound.
+saturating a **410-deep search stack** with patches of about **730 tiles**: locally legal, non-periodic
+boundary variants, **proliferating without any bound**.
 
 The tempting repair was to emit as soon as a patch certifies a period and prune that branch.
-Fortunately I tried to prove that step before shipping it, because it turns out to be unsound: the
-certified patch below extends legally in two ways at every row, and the prune keeps one of them.
+Fortunately I tried to prove that step before shipping it, because it turns out to be **unsound**: the
+certified patch below **extends legally in two ways at every row**, and the prune keeps one of them.
 
 <row-stacker>
 </row-stacker>
@@ -328,12 +328,12 @@ begins. Keys: 1 squares, 2 triangles, Backspace undo, 0 reset. -->
 
 ## Every coordinate is an integer, not a decimal
 
-A vertex of a regular-polygon tiling is reached from any other by a whole number of unit edges, and
-those edges point in 24 directions: the powers of $\zeta_{24} = e^{2\pi i/24}$. So a coordinate is a
-list of integers, and two vertices coincide or they do not. There is no tolerance to choose.
+A vertex of a regular-polygon tiling is reached from any other by **a whole number of unit edges**, and
+those edges point in **24 directions**: the powers of $\zeta_{24} = e^{2\pi i/24}$. So a coordinate is a
+list of integers, and two vertices coincide or they do not. There is **no tolerance to choose**.
 
 That matters more here than in most geometry. A floating-point error does not blur a picture in this
-setting: it changes an integer, and with it the count.
+setting: it **changes an integer, and with it the count**.
 
 <period-figure panel="wheel">
 </period-figure>
@@ -351,11 +351,11 @@ other spoke. -->
 
 ## Two translations turn the plane into a torus
 
-Fix a period lattice and the plane folds up: opposite edges of the cell become the same edge, so a
-tile leaving one side arrives back on the other. The coloured tile below is one tile, not two. Hover any
+Fix a period lattice and the plane folds up: **opposite edges of the cell become the same edge**, so a
+tile leaving one side arrives back on the other. The coloured tile below is **one tile, not two**. Hover any
 tile on the left to see where it lands.
 
-This is what makes a fill finite. There is no boundary to grow into and nothing outside the cell left
+This is what makes a fill **finite**. There is **no boundary to grow into** and nothing outside the cell left
 to decide, which is exactly what architecture two never had.
 
 <torus-figure>
@@ -374,12 +374,12 @@ chevrons are the identification: one arrow glues the T1 pair, two glue the T2 pa
 
 ## Architecture three: fix the period before placing a tile
 
-This next method fixed both problems by inverting the order: it first enumerates the candidate period
+This next method fixed both problems by **inverting the order**: it first enumerates the candidate period
 lattices, and then it fills each resulting torus exhaustively.
 
 The fill is finite once a lattice is chosen. What makes the *enumeration of lattices* finite is the
-bounded-weight theorem, proven for this purpose: the period lattice of any *k*-uniform tiling is
-generated by sums of a bounded number of unit edges. Below, one case of it, searched rather than
+**bounded-weight theorem**, proven for this purpose: the period lattice of any *k*-uniform tiling is
+generated by **sums of a bounded number of unit edges**. Below, one case of it, searched rather than
 asserted: both periods of this tiling, spelled out in the alphabet from two slides ago.
 
 <period-figure panel="example">
@@ -395,11 +395,11 @@ other spoke, for the reason given on the arithmetic slide. -->
 
 ## Measuring the wall at $k=4$
 
-Coverage was never the problem. The obstacle is how much there is to fill: 13,000 to 27,000 fillable
-seeds against 449 at $k=3$, and on a representative sample 25 fills out of 25 timed out at both a
-15-second and a 30-second cap, with no cell completed.
+Coverage was never the problem. The obstacle is how much there is to fill: **13,000 to 27,000** fillable
+seeds against 449 at $k=3$, and on a representative sample **25 fills out of 25 timed out** at both a
+15-second and a 30-second cap, with **no cell completed**.
 
-I could have run it for a week, but an intractability measurement is a decisive answer too, which
+I could have run it for a week, but an intractability measurement is **a decisive answer too**, which
 is what the experiment returned.
 
 <k4-wall>
@@ -442,10 +442,10 @@ end is not yours. -->
 
 ## There was a second solver in my repository the whole time
 
-For months it had exactly one job: to disagree with my pipeline whenever my pipeline was wrong. It
-was Čtrnáct's, I had found it on GitHub, and I used it purely as an oracle.
+For months it had exactly one job: **to disagree with my pipeline whenever my pipeline was wrong**. It
+was Čtrnáct's, I had found it on GitHub, and I used it **purely as an oracle**.
 
-It had reproduced the whole sequence to $k=16$ in the time my own pipeline was spending on $k=3$.
+It had reproduced **the whole sequence** to $k=16$ in the time my own pipeline was spending on $k=3$.
 
 <!-- notes: Slow down here, this is the hinge of the talk, and let the last line sit before you
 click. -->
@@ -455,12 +455,12 @@ click. -->
 ## I was defending the slower engine because it was mine
 
 I was treating the faster engine as a checking tool and the slower one as the contribution, and the
-reason for that arrangement had nothing to do with the mathematics.
+**reason for that arrangement had nothing to do with the mathematics**.
 
-But the claim of this thesis was never "I built a solver": it was that the canonical counts have no
-completeness proof and here is one, and nothing in that sentence requires the algorithm to be my
-own. Čtrnáct's has exactly the same missing piece as everyone else's, in fact: it is described
-carefully but never proven.
+But the claim of this thesis was never "I built a solver": it was that **the canonical counts have no
+completeness proof and here is one**, and nothing in that sentence requires the algorithm to be my
+own. Čtrnáct's has exactly the same missing piece as everyone else's, in fact: it is **described
+carefully but never proven**.
 
 > The proof comes first, and it attaches to whatever machinery can actually carry it. It is not
 > sentimental about authorship.
@@ -473,16 +473,16 @@ proof to be worth having. -->
 
 ## The engine searches gluings, not placements
 
-An abstract vertex is a cyclic sequence of half-edges with the angles between them, and nothing in
-it records where the vertex lies. One abstract vertex stands for a whole orbit of the eventual
+An abstract vertex is a **cyclic sequence of half-edges** with the angles between them, and **nothing in
+it records where the vertex lies**. One abstract vertex stands for a whole orbit of the eventual
 tiling.
 
 So a *k*-uniform tiling, which has infinitely many vertices in the plane, is assembled out of at
-most $k$ abstract ones, and the search space is finite by construction, with no bound to
-establish beforehand.
+most $k$ abstract ones, and the search space is **finite by construction**, with **no bound to
+establish beforehand**.
 
 That finiteness is exactly what the bounded-weight theorem bought at such length for the previous
-method, and here it comes for nothing. I find that slightly galling.
+method, and here it comes **for nothing**. I find that slightly galling.
 
 <!-- notes: The galling line is verbatim from the thesis and it always gets a reaction. Use it. -->
 
@@ -509,12 +509,12 @@ mismatch rule worked on 3.4.4.6. -->
 
 ## Only the last stage touches geometry
 
-The pipeline is three stages, `solve`, then `prune`, then `develop`, and the first two never compute
-a coordinate. Only `develop` does, exactly, in $\mathbb{Z}[\zeta_{12}]$, and by the time it runs the
-search is already over.
+The pipeline is three stages, `solve`, then `prune`, then `develop`, and the first two **never compute
+a coordinate**. Only `develop` does, exactly, in $\mathbb{Z}[\zeta_{12}]$, and by the time it runs **the
+search is already over**.
 
-That is the whole reason the engine is fast. Unfortunately it is also where the hardest proof
-obligation lives, which we come to in two slides.
+That is **the whole reason the engine is fast**. Unfortunately it is also where **the hardest proof
+obligation** lives, which we come to in two slides.
 
 <!-- notes: One minute. This slide exists to set up Obligation 5, so do not linger. -->
 
@@ -522,12 +522,12 @@ obligation lives, which we come to in two slides.
 
 ## Why agreement between programs settles nothing
 
-The sequence itself is not known to be correct, so agreement establishes only that two programs
-concur while neither carries an argument, and adding a third program cannot break the circularity.
+The sequence itself is not known to be correct, so agreement establishes only that **two programs
+concur while neither carries an argument**, and adding a third program **cannot break the circularity**.
 
 And searches of this kind do lose tilings. An earlier Python implementation of this very algorithm
-returned 2849 at $k=8$ and 5959 at $k=9$, against the correct 2850 and 5960: off by exactly one,
-twice, and caught only because an independent implementation disagreed with it.
+returned 2849 at $k=8$ and 5959 at $k=9$, against the correct 2850 and 5960: **off by exactly one,
+twice**, and caught only because **an independent implementation disagreed with it**.
 
 > *"Turned out I forgot to implement one vertex type, but because it was very rare, it didn't occur at all at the beginning. Or something like that."*, Marek Čtrnáct
 >
@@ -538,16 +538,16 @@ twice, and caught only because an independent implementation disagreed with it.
 
 ## What the theorem claims
 
-Run the pipeline with a vertex budget of at least $k$. Then it halts; every gluing it emits develops
+Run the pipeline with a vertex budget of at least $k$. Then it **halts**; every gluing it emits develops
 into a genuine $k$-uniform tiling; every $k$-uniform tiling is the development of some gluing it
 emits; and distinct gluings develop into tilings that are not isometric. That is to say,
-$\mathrm{dev}$ induces a bijection $P_k \to \mathcal{T}_k$.
+$\mathrm{dev}$ induces a **bijection** $P_k \to \mathcal{T}_k$.
 
 The four parts pull against each other, and that is where the difficulty is: soundness is easiest to
-get by rejecting aggressively, completeness is easiest to get by rejecting nothing at all.
+get by **rejecting aggressively**, completeness is easiest to get by **rejecting nothing at all**.
 
-So the substance of the proof is showing that the four rules reject exactly the assemblies that
-could never have become tilings, and not one assembly more.
+So the substance of the proof is showing that the four rules reject **exactly the assemblies that
+could never have become tilings**, and not one assembly more.
 
 <!-- notes: Announce the difficulty before you show the structure. That is the shape they expect. -->
 
@@ -564,7 +564,7 @@ could never have become tilings, and not one assembly more.
 | 5 | a finished gluing is a real tiling | C1–C4 | mine |
 | 6 | every planar tiling is a gluing | B0–B3 | mine |
 
-Number four is theirs, the single theorem their paper proves. The other five are new here.
+Number four is theirs, the single theorem their paper proves. **The other five are new here.**
 
 <!-- notes: You have to be able to talk to this slide for two minutes with your back to it. Say
 whose is whose early and without being asked. -->
@@ -578,13 +578,13 @@ whose is whose early and without being asked. -->
 
 A finished gluing is an abstract object, so turning it into a picture means walking it and laying
 down coordinates, and two things can go wrong that no local rule can see: the walk can come back
-with a different accumulated rotation, which means the object is not flat, and tiles laid down with
-no local overlap can still overlap after wrapping around.
+with a different accumulated rotation, which means the object is **not flat**, and tiles laid down with
+no local overlap can **still overlap after wrapping around**.
 
-We rule both out by showing the developed object is a flat torus. Glue one regular $n$-gon per face
+We rule both out by showing the developed object is a **flat torus**. Glue one regular $n$-gon per face
 walk and the result is a compact flat oriented surface, because every vertex link closes at exactly
-$2\pi$. By Killing-Hopf a closed flat oriented surface is a torus and nothing else. The plane covers
-a flat torus, and a covering map of the plane by the plane is a homeomorphism, which is what rules
+$2\pi$. By **Killing-Hopf** a closed flat oriented surface is a torus and nothing else. The plane covers
+a flat torus, and a covering map of the plane by the plane is a **homeomorphism**, which is what rules
 out the global overlap.
 
 <!-- notes: This is the slide where you demonstrate the skill being graded, so rehearse it more than
@@ -596,17 +596,17 @@ torus, and the plane wraps onto a torus without ever folding back on itself. -->
 
 ## Without obligation 6 the word "completeness" means nothing
 
-Nothing in the original paper addresses this one, which is where I would expect the first
+**Nothing in the original paper addresses this one**, which is where I would expect the first
 question.
 
-The other five establish that the engine produces tilings and loses none of the ones it was capable
-of building. This one establishes that the ones it was capable of building are all the tilings there
-are.
+The other five establish that the engine produces tilings and **loses none of the ones it was capable
+of building**. This one establishes that **the ones it was capable of building are all the tilings there
+are**.
 
-The argument runs through periodicity: a *k*-uniform tiling has a cocompact wallpaper group, so it
+The argument runs through **periodicity**: a *k*-uniform tiling has a cocompact wallpaper group, so it
 has a lattice of translations, so it has a finite quotient, and that quotient is itself a legal
-gluing over the alphabet with exactly $k$ vertices. Note that periodicity is a theorem here and not
-an assumption, which is a small thing I am pleased about.
+gluing over the alphabet with exactly $k$ vertices. Note that **periodicity is a theorem here and not
+an assumption**, which is a small thing I am pleased about.
 
 <!-- notes: Ninety seconds. If they ask one question about the proof it will probably be this one,
 because its absence is what would make the whole claim empty. -->
@@ -615,15 +615,15 @@ because its absence is what would make the whole claim empty. -->
 
 ## What the proof rests on, and where it could fail
 
-We take two results from the literature without reproving them, the Grünbaum and Shephard species
-table and Killing-Hopf. Four more obligations are discharged by machine, and I record those as
-checks, not as arguments, because that is what they are.
+We take two results from the literature without reproving them, the **Grünbaum and Shephard species
+table** and **Killing-Hopf**. Four more obligations are discharged by machine, and I record those as
+**checks, not as arguments**, because that is what they are.
 
-The residual risk, in the order I judge it: first, the implementation may not be the algorithm,
+The residual risk, in the order I judge it: first, **the implementation may not be the algorithm**,
 which is exactly where the earlier Python port lost its tiling; second, a mis-specified machine
 certificate would pass and prove nothing; third, three conventions in the development argument rest
 on finite bookkeeping with no general lemma behind them; and fourth, the mathematics itself, which I
-rate smallest, though that is not the same as zero.
+rate **smallest**, though that is not the same as zero.
 
 > I believe it is correct, and I would not yet call the catalogue proven on my own authority.
 
@@ -643,10 +643,10 @@ credible one. The obligation most likely to hide an error is 3, the symmetry-bre
 | tilings | 5960 | 11866 | 24459 | 49794 | 103082 | 212631 | 445289 | 933637 |
 
 This sets no record, and I want to say so before anyone asks: Čtrnáct, Griffin and Kopczyński
-published through $k=15$, a later implementation of his reaches $k=18$, and the table contains no
-tiling that was not already known.
+published through $k=15$, a later implementation of his reaches $k=18$, and the table contains **no
+tiling that was not already known**.
 
-What it is, is a check on my re-implementation, and a good one, because a search that loses tilings
+What it is, is **a check on my re-implementation**, and a good one, because a search that loses tilings
 tends to lose them at one particular $k$, not uniformly.
 
 <small style="opacity:0.62">* assuming the algorithm is implemented correctly and faithfully matches the theory</small>
@@ -667,15 +667,15 @@ and by the residual-risk slide. Say it out loud if the question comes. -->
 
 ## Certifying 11 and 20 without consulting any catalogue
 
-The Delaney-Dress chain shares no machinery with either enumeration method. A flag-orbit bound makes
-the sweep over symbols finite, a realizability lemma proven here puts minimal flat symbols in
+The Delaney-Dress chain **shares no machinery with either enumeration method**. A flag-orbit bound makes
+the sweep over symbols finite, a **realizability lemma proven here** puts minimal flat symbols in
 bijection with congruence classes of *k*-uniform tilings, and a terminating realizer turns every
 surviving symbol into a certified tiling.
 
-So its agreement with the engine at $k \le 2$ is evidence of a kind neither route can produce alone.
-As far as I know this is the first mechanical verification of Krötenheerdt's 1969 count.
+So its agreement with the engine at $k \le 2$ is **evidence of a kind neither route can produce alone**.
+As far as I know this is **the first mechanical verification of Krötenheerdt's 1969 count**.
 
-Unfortunately it stops there, because symbol generation walls at $k=3$.
+Unfortunately it **stops there**, because symbol generation walls at $k=3$.
 
 <!-- notes: Say where it stops without being asked. -->
 
@@ -683,19 +683,19 @@ Unfortunately it stops there, because symbol generation walls at $k=3$.
 
 ## Making the alphabet an input opens up new tile families
 
-Regular polygons enter the search at exactly one point, the list of vertex types it is allowed to
-use. If we make that list an input instead of a hard-wired table, the same unmodified search reaches
+Regular polygons enter the search at **exactly one point**, the list of vertex types it is allowed to
+use. If we make that list **an input instead of a hard-wired table**, the same unmodified search reaches
 star polygons, composite tiles, scaled families and polyominoes. Because Čtrnáct's later
-implementation already did this, I reached it independently but not first, which is how it should be
+implementation already did this, I reached it **independently but not first**, which is how it should be
 read.
 
 On the star family it finds every in-ring entry of Myers's hand catalogues, 37 at $k=1$ and all 34
-in-ring at $k=2$, and it also returns four tilings that his 2-uniform list does not contain. Those
-four survived three independent adversarial reviews before we reported them as candidate
+in-ring at $k=2$, and it also returns **four tilings that his 2-uniform list does not contain**. Those
+four survived **three independent adversarial reviews** before we reported them as candidate
 omissions.
 
-Of course none of this is a proven enumeration: obligation 1 does not transfer, so these families
-are an exhibition of the mechanism and nothing more.
+Of course **none of this is a proven enumeration**: obligation 1 does not transfer, so these families
+are **an exhibition of the mechanism and nothing more**.
 
 <!-- notes: The four candidate omissions are the closest thing you have to a "we found something"
 moment, so have them open in the atlas in the other window. -->
@@ -704,8 +704,8 @@ moment, so have them open in the atlas in the other window. -->
 
 ## TilingAtlas, which displays certification without producing it
 
-Every result in the thesis is rendered from the exact coordinates the solver produces, and the
-platform is careful about the difference between showing a certificate and being one.
+Every result in the thesis is rendered from **the exact coordinates the solver produces**, and the
+platform is careful about **the difference between showing a certificate and being one**.
 
 <!-- notes: LIVE DEMO, 60 seconds. Alt-tab to the other window, already sitting on a prepared deep
 link. Show one tiling, move one parameter, show the certification badge. If anything hesitates, cut
@@ -715,12 +715,12 @@ to the recorded capture and keep talking. Do not debug in front of the committee
 
 ## What is mine, and what is not
 
-The Synthetic Tiling Searcher is not mine: searching gluings, not placements, the four local
+The Synthetic Tiling Searcher is **not mine**: searching gluings, not placements, the four local
 rules, the Conway-symbol notation, the duplicate test with its theorem, and the counts to $k=15$ all
 belong to Čtrnáct, Griffin and Kopczyński. The vertex-configuration catalogue is classical, and the
 counts themselves are Krötenheerdt's, Chavey's and Galebach's.
 
-What is mine is the completeness and correctness proof of that algorithm, the Delaney-Dress
+**What is mine** is the completeness and correctness proof of that algorithm, the Delaney-Dress
 certification of 11 and 20, the bounded-weight theorem with its small-$k$ sharpening, the
 exact-arithmetic substrate, the measured negative result at $k=4$, the alphabet generalisation
 reached independently but not first, and TilingAtlas.
@@ -732,10 +732,10 @@ candour reads as confidence, not concession. -->
 
 ## What is open
 
-The most useful single thing this thesis leaves behind is a target: prove the generator complete for
-one new tile family, and that family's catalogue becomes as certified as the regular one.
+The most useful single thing this thesis leaves behind is a target: **prove the generator complete for
+one new tile family**, and that family's catalogue becomes **as certified as the regular one**.
 
-After that, a certified enumeration at $k=4$, and peer review of the proof.
+After that, **a certified enumeration** at $k=4$, and **peer review of the proof**.
 
 <!-- notes: End on the content. No thank-you slide and no questions slide. Stop talking. -->
 
@@ -743,86 +743,86 @@ After that, a certified enumeration at $k=4$, and peer review of the proof.
 
 ## The octagon costs exactly one tiling
 
-The engine works in twelve directions and so cannot see the octagon, which is why it returns 10 at
-$k=1$ instead of 11. A scope restriction on a completeness claim has to be paid for, so we pay it.
+The engine works in **twelve directions** and so cannot see the octagon, which is why it returns 10 at
+$k=1$ instead of 11. A scope restriction on a completeness claim **has to be paid for**, so we pay it.
 
 Among the 21 angle-valid configurations only $4.8.8$ and $3.8.24$ contain an octagon, and the second
-is killed by the classical odd-polygon adjacency lemma. So every vertex of an octagon is $4.8.8$,
-which forces the corona of that octagon to alternate square and octagon, and that propagates
-deterministically over the whole plane to the unique $4.8.8$ tiling.
+is killed by the classical **odd-polygon adjacency lemma**. So every vertex of an octagon is $4.8.8$,
+which forces the corona of that octagon to alternate square and octagon, and that **propagates
+deterministically** over the whole plane to the unique $4.8.8$ tiling.
 
-So any tiling with an octagon is that tiling, which is 1-uniform, leaving none at all once
-$k \ge 2$. The cost is a single tiling, known and named, which we re-add by hand.
+So any tiling with an octagon **is that tiling**, which is 1-uniform, leaving none at all once
+$k \ge 2$. The cost is **a single tiling**, known and named, which we re-add by hand.
 
 ---
 
 ## Where the 44 vertex types come from
 
 There are 21 cyclic sequences of regular polygons whose interior angles sum to $360°$. Six of those
-species occur at no vertex of any edge-to-edge tiling, $4.8.8$ is the orphan, and the remaining ten
-multisets give 14 distinct cyclic configurations, because four of them admit two inequivalent cyclic
+species occur at **no vertex of any edge-to-edge tiling**, $4.8.8$ is the orphan, and the remaining ten
+multisets give **14 distinct cyclic configurations**, because four of them admit two inequivalent cyclic
 orders.
 
-Splitting each configuration by the site symmetry a vertex may carry, an axis, a rotation, both, or
-neither, gives the 44.
+Splitting each configuration by **the site symmetry** a vertex may carry, an axis, a rotation, both, or
+neither, gives **the 44**.
 
-The first half of that is Grünbaum and Shephard. The second half, that the 44 are pairwise
-non-isomorphic, is not in the literature, so we discharge it with an explicit machine
-certificate.
+The first half of that is Grünbaum and Shephard. The second half, that the 44 are **pairwise
+non-isomorphic**, is not in the literature, so we discharge it with an **explicit machine
+certificate**.
 
-This is the one obligation that cannot transfer to star, composite or scaled families: its proof is
-the classical species table, and no such table exists for them.
+This is the one obligation that **cannot transfer** to star, composite or scaled families: its proof is
+the classical species table, and **no such table exists for them**.
 
 ---
 
 ## Obligation 3, and how a tiling went missing at $k=8$
 
-The search picks the most constrained free half-edge instead of trying all of them, and that costs
-nothing, because choosing which half-edge to extend is a choice of order and not a choice of branch.
+The search picks **the most constrained free half-edge** instead of trying all of them, and that costs
+nothing, because choosing which half-edge to extend is **a choice of order and not a choice of branch**.
 
-When it attaches a fresh vertex it tries only one representative per class of equivalent half-edges.
-That is a symmetry-breaking prune, asserted without argument in the original paper, which we
-discharge here as the no-drop lemma.
+When it attaches a fresh vertex it tries **only one representative per class** of equivalent half-edges.
+That is a **symmetry-breaking prune**, asserted without argument in the original paper, which we
+discharge here as **the no-drop lemma**.
 
-It matters, because there is a witness. The Python reference solver's hand-computed attachment
+It matters, because **there is a witness**. The Python reference solver's hand-computed attachment
 bound for
-the letter $(4,4,4,4)$A2 tried one dart where it needed two, so it missed the starred automorphism
-orbit. Exactly one $k=8$ tiling was reachable only through a gluing at that dart, so it was dropped in
-silence: 2849 instead of 2850. That is this lemma's failure class happening in the wild, and the
+the letter $(4,4,4,4)$A2 **tried one dart where it needed two**, so it missed the starred automorphism
+orbit. Exactly one $k=8$ tiling was reachable only through a gluing at that dart, so it was **dropped in
+silence**: 2849 instead of 2850. That is this lemma's failure class happening in the wild, and the
 A5 and A6 certificates are precisely the checks that exclude it.
 
 ---
 
 ## Why the duplicate test should not work, but does
 
-The test is 1-dimensional Weisfeiler-Leman, which is known not to decide isomorphism: a 3-cycle and
+The test is **1-dimensional Weisfeiler-Leman**, which is **known not to decide isomorphism**: a 3-cycle and
 a 6-cycle under a single successor map refine into indistinguishable classes, and yet no isomorphism
 carries a vertex of one to a vertex of the other.
 
-It is true here for a geometric reason, not a combinatorial one. A half-edge together with
-the tile on its left determines a frame of the plane, so there is a unique isometry carrying one
+It is true here for **a geometric reason, not a combinatorial one**. A half-edge together with
+the tile on its left **determines a frame of the plane**, so there is a unique isometry carrying one
 half-edge to another, and the only question is whether that isometry is a symmetry of the whole
-tiling. The plane is simply connected, so local agreement propagates. If it fails, it fails at some
+tiling. The plane is **simply connected**, so local agreement propagates. If it fails, it fails at some
 edge, and the failure travels back along a path and separates the two starting classes.
 
-Their proof runs exactly this way and it is correct, but it leans on simple-connectedness and on
-frame rigidity without naming either, and neither property is available to the abstract quotient the
-algorithm actually manipulates. Of everything in that chapter, this is the step whose obviousness is
-most misleading.
+Their proof runs exactly this way and it is correct, but it **leans on simple-connectedness and on
+frame rigidity without naming either**, and neither property is available to the abstract quotient the
+algorithm actually manipulates. Of everything in that chapter, this is **the step whose obviousness is
+most misleading**.
 
 ---
 
 ## The prohibited-prune registry
 
-Emit-on-validated-closure was proven unsound and never shipped: a patch that can be completed
-periodically can still extend non-periodically into a different valid tiling.
+Emit-on-validated-closure was **proven unsound** and never shipped: a patch that can be completed
+periodically can still **extend non-periodically into a different valid tiling**.
 
-Core-coincidence was proven unsound in review, before it could ship. The idea was to abandon a fill
-when two seed vertices coincide modulo the lattice, but coinciding seed vertices merely share an
-orbit, and the missing orbits can be realised by vertices the fill creates later.
+Core-coincidence was **proven unsound in review**, before it could ship. The idea was to abandon a fill
+when two seed vertices coincide modulo the lattice, but coinciding seed vertices **merely share an
+orbit**, and the missing orbits can be realised by vertices the fill creates later.
 
-The orbit-floor prune is correct, though it fired zero times on the hard family. That negative result
-is evidence in itself: the degenerations blocking $k=3$ have too few orbits, not too many, so
+The orbit-floor prune is **correct**, though it **fired zero times** on the hard family. That negative result
+is evidence in itself: the degenerations blocking $k=3$ have **too few orbits, not too many**, so
 no sound mid-fill test can detect them.
 
 <!-- notes: A prune that fires zero times and a prune ruled unsound are both load-bearing knowledge,
@@ -832,13 +832,13 @@ and the registry has already prevented one regression. -->
 
 ## A cap that can lose a solution is not a speed dial
 
-The solver carries one parameter that could cost tilings if it were set too low, a cap on how many
+The solver carries **one parameter that could cost tilings** if it were set too low, a cap on how many
 flat mid-edge vertex types a partial assembly may accumulate.
 
 So the implementation treats it accordingly, and when the cap binds the run prints
-`COMPLETENESS NOT CERTIFIED` and we do not use the result. A count is accepted only at a budget
-fixpoint, that is, when consecutive budget levels produce byte-identical catalogues with no warning.
+`COMPLETENESS NOT CERTIFIED` and we do not use the result. A count is accepted only at **a budget
+fixpoint**, that is, when consecutive budget levels produce **byte-identical catalogues** with no warning.
 
 That discipline has already paid for itself. On the scaled palette at $k=4$ the default budget
-quietly costs 73 tilings out of 1064, and the fixpoint is only reached at budget 12.
+quietly costs **73 tilings out of 1064**, and the fixpoint is only reached at **budget 12**.
 
