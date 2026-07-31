@@ -14,7 +14,12 @@
 // no magic constants tuned to k=1 tilings.
 
 import { type Complex, type Su11 } from "@/lib/render/hyperbolic";
-import { HyperbolicDeveloper, type Darts, type DevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopClient";
+import {
+	HyperbolicDeveloper,
+	maxTileRadius,
+	type Darts,
+	type DevelopedEdgePatch,
+} from "@/lib/render/hyperbolicDevelopClient";
 import {
 	buildDirichletDomain,
 	foldIntoDomain,
@@ -212,8 +217,7 @@ export function prepareShaderTiling(
 	}
 
 	// ---- bake patch: every face that can touch D̄ + collar closes inside this develop -------------
-	let rMaxTile = 0;
-	for (const p of darts.lvert) rMaxTile = Math.max(rMaxTile, Math.asinh(Math.sinh(edge / 2) / Math.sin(Math.PI / p)));
+	const rMaxTile = maxTileRadius(darts, edge);
 	const rTex = Math.tanh((dom.RD + COLLAR) / 2);
 	const boundEu = Math.min(0.9995, Math.tanh((dom.RD + COLLAR + 2 * rMaxTile + 0.2) / 2));
 	const dev = new HyperbolicDeveloper(darts, edge, { deepDedup: true });
@@ -341,10 +345,24 @@ export function prepareShaderTiling(
 }
 
 // ----------------------------------------------------------------------------- edge-pattern field
+/** One patch edge, tessellated once and SHARED by every face that measures against it. The bounding box
+ *  is what keeps the vertex star cheap: a texel whose best hit already beats the box can skip the edge's
+ *  whole sub-segment run on one compare, and a face's own sides are scanned first, so for the texels far
+ *  from any vertex — almost all of them — the star costs a handful of rejects and nothing else. */
+interface EdgeSegs {
+	segs: number[]; // flat [ax,ay,bx,by …]
+	x0: number;
+	x1: number;
+	y0: number;
+	y1: number;
+}
+
 interface BakeEdgeTile {
 	fillPoly: [number, number][]; // all sides tessellated — for point-in-tile
-	drawnSegs: number[]; // flat [ax,ay,bx,by …] of the DRAWN sides (bold stroke)
-	scaffoldSegs: number[]; // flat […] of the UNDRAWN sides (faint grid stroke)
+	/** Every DRAWN edge incident to one of this face's vertices — its own drawn sides FIRST (they give the
+	 *  tight initial bound), then the rest of the star. See the note on the star below. */
+	drawn: EdgeSegs[];
+	scaffold: EdgeSegs[]; // the same star, UNDRAWN (the faint grid stroke)
 	orbit: number; // merged-tile orbit — the fill hue key
 	x0: number;
 	x1: number;
@@ -358,12 +376,23 @@ interface BakeEdgeTile {
  * hyperbolic shelf). Only the field changes: instead of (tile side count, one edge distance, barycenter),
  * each texel carries
  *   R = merged-tile orbit (fill hue),
- *   G = hyperbolic distance to the nearest DRAWN edge of its base face (the bold tile boundary),
+ *   G = hyperbolic distance to the nearest DRAWN edge (the bold tile boundary),
  *   B = hyperbolic distance to the nearest UNDRAWN edge (the faint base-tiling scaffold),
  *   A = 255 (unused).
  * Depth shading is per-pixel (screen radius) in edge mode, so no barycenter needs storing. The drawn /
  * undrawn distances are each continuous across face boundaries (a shared edge is the same kind on both
  * sides), so the shader's bilinear read of G/B is sound just as it is for the plain field.
+ *
+ * Each distance is measured against the VERTEX STAR of the texel's face — every edge incident to one of
+ * its three-or-more vertices — and not against its own sides alone. In the plain field "own sides" is
+ * right, because from inside a convex tile the nearest point of the tiling's edge set always lies on that
+ * tile's own boundary. Here the edge set is a SUBSET of the sides, so a face can be a hair from a drawn
+ * edge that belongs to a neighbour: at a vertex where a bold run passes straight through, the faces
+ * wedged either side of it have no drawn side of their own there, and taking their own sides only left a
+ * white pinhole at every such vertex. The star is exactly the fix — a point within ε of a drawn edge
+ * lies, for ε below the vertex-to-non-incident-edge separation, in a face touching one of that edge's
+ * endpoints — and it can never make a distance too SMALL, since any path out of a face crosses its own
+ * boundary first.
  */
 export function prepareEdgeShaderTiling(
 	darts: Darts,
@@ -377,12 +406,11 @@ export function prepareEdgeShaderTiling(
 		return null;
 	}
 
-	let rMaxTile = 0;
-	for (const p of darts.lvert) if (p >= 3) rMaxTile = Math.max(rMaxTile, Math.asinh(Math.sinh(edge / 2) / Math.sin(Math.PI / p)));
+	const rMaxTile = maxTileRadius(darts, edge);
 	const rTex = Math.tanh((dom.RD + COLLAR) / 2);
 	const boundEu = Math.min(0.9995, Math.tanh((dom.RD + COLLAR + 2 * rMaxTile + 0.2) / 2));
 	const dev = new HyperbolicDeveloper(darts, edge, { deepDedup: true });
-	// Colors: faceOrbit carries the COLOR index and every edge is a tile boundary (all in drawnSegs). The
+	// Colors: faceOrbit carries the COLOR index and every edge is a tile boundary (all drawn, none scaffold). The
 	// bake is otherwise byte-identical, so the same field format serves both — the shader keys R on a
 	// palette in colors mode instead of a hue.
 	const view0 = { a: { x: 1, y: 0 }, b: { x: 0, y: 0 } };
@@ -390,29 +418,81 @@ export function prepareEdgeShaderTiling(
 		? dev.developColors(meta, view0, boundEu, 400_000)
 		: dev.developEdges(meta, view0, boundEu, 400_000);
 
-	// per-side drawn flag: an edge's two endpoints key its drawn bit
-	const drawnOf = new Map<string, number>();
-	for (const [a, b, drawn] of patch.edges) drawnOf.set(a < b ? `${a},${b}` : `${b},${a}`, drawn);
+	// Tessellate every patch edge once and index the edges incident to each vertex — the star each face
+	// measures its distances against.
+	const tessellate = (a: [number, number], b: [number, number]): number[] => {
+		const pts = geodesicPts({ x: a[0], y: a[1] }, { x: b[0], y: b[1] }, SEG);
+		const flat: number[] = [];
+		for (let k = 0; k < pts.length - 1; k++) flat.push(pts[k].x, pts[k].y, pts[k + 1].x, pts[k + 1].y);
+		return flat;
+	};
+	const box = (segs: number[]): EdgeSegs => {
+		let x0 = Infinity;
+		let x1 = -Infinity;
+		let y0 = Infinity;
+		let y1 = -Infinity;
+		for (let k = 0; k < segs.length; k += 2) {
+			x0 = Math.min(x0, segs[k]);
+			x1 = Math.max(x1, segs[k]);
+			y0 = Math.min(y0, segs[k + 1]);
+			y1 = Math.max(y1, segs[k + 1]);
+		}
+		return { segs, x0, x1, y0, y1 };
+	};
+	const edgeSegs: EdgeSegs[] = [];
+	const edgeDrawn: boolean[] = [];
+	const incident: number[][] = Array.from({ length: patch.vertices.length }, () => []);
+	const edgeAt = new Map<string, number>(); // unordered endpoint pair → patch-edge index
+	for (let ei = 0; ei < patch.edges.length; ei++) {
+		const [u, v, drawn] = patch.edges[ei];
+		edgeSegs.push(box(tessellate(patch.vertices[u], patch.vertices[v])));
+		edgeDrawn.push(drawn === 1);
+		incident[u].push(ei);
+		incident[v].push(ei);
+		edgeAt.set(u < v ? `${u},${v}` : `${v},${u}`, ei);
+	}
 
 	const tiles: BakeEdgeTile[] = [];
 	for (let fi = 0; fi < patch.faces.length; fi++) {
 		const ring = patch.faces[fi];
 		const fillPoly: [number, number][] = [];
-		const drawnSegs: number[] = [];
-		const scaffoldSegs: number[] = [];
+		// OWN SIDES FIRST, so the scan's running best is tight by the time it reaches the foreign edges and
+		// can reject them on their box alone.
+		const drawn: EdgeSegs[] = [];
+		const scaffold: EdgeSegs[] = [];
+		const took = new Set<number>();
+		const take = (ei: number) => {
+			if (took.has(ei)) return;
+			took.add(ei);
+			(edgeDrawn[ei] ? drawn : scaffold).push(edgeSegs[ei]);
+		};
 		for (let i = 0; i < ring.length; i++) {
 			const u = ring[i];
 			const v = ring[(i + 1) % ring.length];
-			const a = { x: patch.vertices[u][0], y: patch.vertices[u][1] };
-			const b = { x: patch.vertices[v][0], y: patch.vertices[v][1] };
-			const pts = geodesicPts(a, b, SEG);
-			const drawn = drawnOf.get(u < v ? `${u},${v}` : `${v},${u}`) === 1;
+			const ei = edgeAt.get(u < v ? `${u},${v}` : `${v},${u}`);
+			// Own sides are tessellated HERE, in ring order, and not taken from the shared per-edge run: the
+			// fill polygon has to walk the ring in one direction, and a shared run is stored in its own
+			// edge's direction, which is the ring's for only one of the two faces on it. Sampling the arc
+			// backwards is the same arc but not the same floats, and the field it replaces sampled it
+			// forwards — so ring order here keeps every own-side distance bit-identical to that field, and
+			// the star's effect stays exactly the one thing it is for.
+			const pts = geodesicPts(
+				{ x: patch.vertices[u][0], y: patch.vertices[u][1] },
+				{ x: patch.vertices[v][0], y: patch.vertices[v][1] },
+				SEG,
+			);
+			const flat: number[] = [];
 			for (let k = 0; k < pts.length - 1; k++) {
 				fillPoly.push([pts[k].x, pts[k].y]);
-				const seg = drawn ? drawnSegs : scaffoldSegs;
-				seg.push(pts[k].x, pts[k].y, pts[k + 1].x, pts[k + 1].y);
+				flat.push(pts[k].x, pts[k].y, pts[k + 1].x, pts[k + 1].y);
 			}
+			// A side with no patch edge (its two ends collapsed onto one vid in the develop's position-dedup
+			// grid, out at the crowded rim) has no drawn flag to read, so it counts as scaffold — which is
+			// what the own-sides field did with it too.
+			(ei !== undefined && edgeDrawn[ei] ? drawn : scaffold).push(box(flat));
+			if (ei !== undefined) took.add(ei); // don't let the star add the shared copy of a side again
 		}
+		for (const u of ring) for (const ei of incident[u]) take(ei);
 		let x0 = Infinity;
 		let x1 = -Infinity;
 		let y0 = Infinity;
@@ -423,7 +503,7 @@ export function prepareEdgeShaderTiling(
 			y0 = Math.min(y0, y);
 			y1 = Math.max(y1, y);
 		}
-		tiles.push({ fillPoly, drawnSegs, scaffoldSegs, orbit: patch.faceOrbit[fi], x0, x1, y0, y1 });
+		tiles.push({ fillPoly, drawn, scaffold, orbit: patch.faceOrbit[fi], x0, x1, y0, y1 });
 	}
 
 	const GRID = 64;
@@ -442,9 +522,21 @@ export function prepareEdgeShaderTiling(
 		}
 		return -1;
 	};
-	const nearest = (segs: number[], px: number, py: number): number => {
+	/** Squared distance from (px,py) to the nearest of a face's star edges. Each edge is rejected whole
+	 *  when the box distance already loses to the running best — with the face's own sides scanned first,
+	 *  a texel in the middle of a tile pays one compare per foreign edge and never touches its segments. */
+	const nearest = (edges: EdgeSegs[], px: number, py: number): number => {
 		let best = Infinity;
-		for (let k = 0; k < segs.length; k += 4) best = Math.min(best, distSq(px, py, segs[k], segs[k + 1], segs[k + 2], segs[k + 3]));
+		for (const e of edges) {
+			const bx = px < e.x0 ? e.x0 - px : px > e.x1 ? px - e.x1 : 0;
+			const by = py < e.y0 ? e.y0 - py : py > e.y1 ? py - e.y1 : 0;
+			if (bx * bx + by * by >= best) continue;
+			const s = e.segs;
+			for (let k = 0; k < s.length; k += 4) {
+				const d = distSq(px, py, s[k], s[k + 1], s[k + 2], s[k + 3]);
+				if (d < best) best = d;
+			}
+		}
 		return best;
 	};
 
@@ -486,8 +578,8 @@ export function prepareEdgeShaderTiling(
 			const t = tiles[ti];
 			const conf = 2 / Math.max(1 - (px * px + py * py), 1e-6);
 			data[o] = Math.min(255, t.orbit);
-			data[o + 1] = distByte(nearest(t.drawnSegs, px, py), conf);
-			data[o + 2] = distByte(nearest(t.scaffoldSegs, px, py), conf);
+			data[o + 1] = distByte(nearest(t.drawn, px, py), conf);
+			data[o + 2] = distByte(nearest(t.scaffold, px, py), conf);
 			data[o + 3] = 255;
 			resolved[o / 4] = 1;
 		}

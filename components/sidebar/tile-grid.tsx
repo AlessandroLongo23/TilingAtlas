@@ -226,7 +226,7 @@ function Tile({
 					t.schwarz.geometry === "spherical" ? (
 						<SphSchwarzThumbnail pattern={t.schwarz} />
 					) : (
-						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(t.schwarz)} force2d />
+						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(t.schwarz)} />
 					)
 				) : t.spherical ? (
 					<SphericalThumbnail solidId={t.spherical.solid} />

@@ -109,26 +109,21 @@ function renderThumb2d(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpt
 	return thumbCanvas2d.toDataURL("image/png");
 }
 
-function renderThumb(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpts, force2d: boolean): string | null {
-	if (force2d) return renderThumb2d(pattern, size, opts);
+function renderThumb(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpts): string | null {
 	return renderThumbGL(pattern, size, opts) ?? renderThumb2d(pattern, size, opts);
 }
 
 /** Everything either render path reads off a record. The Schwarz shelf (lib/freedraw/schwarz.ts) is not a
- *  HypEdgesPattern but supplies exactly this, so it draws through the same component. */
+ *  HypEdgesPattern but supplies exactly this, so it draws through the same component — SCALENE boards
+ *  included, since their per-dart turns and lengths ride inside `darts`. */
 export type HypEdgesThumbInput = Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts">;
 
 export function HyperbolicEdgesThumbnail({
 	pattern,
 	size = 256,
-	force2d = false,
 }: {
 	pattern: HypEdgesThumbInput;
 	size?: number;
-	/** Skip the per-pixel path. The Dirichlet-certificate reducer reconstructs side pairings from ONE
-	 *  edge length, so a scalene board (the Schwarz shelf) has to take the explicit developed draw —
-	 *  which reads the per-dart lengths off the darts and is correct there. */
-	force2d?: boolean;
 }) {
 	const wrapRef = useRef<HTMLDivElement>(null);
 	const [url, setUrl] = useState<string | null>(null);
@@ -150,7 +145,7 @@ export function HyperbolicEdgesThumbnail({
 				cancelJob = enqueueThumbnailRender(() => {
 					if (disposed) return;
 					try {
-						const dataUrl = renderThumb(pattern, size, { hueOffset, showFill, showScaffold, lineMode, lineWidth }, force2d);
+						const dataUrl = renderThumb(pattern, size, { hueOffset, showFill, showScaffold, lineMode, lineWidth });
 						if (dataUrl) setUrl(dataUrl);
 						else setFailed(true);
 					} catch (e) {
@@ -168,7 +163,7 @@ export function HyperbolicEdgesThumbnail({
 			io.disconnect();
 			cancelJob?.();
 		};
-	}, [pattern, size, hueOffset, showFill, showScaffold, lineMode, lineWidth, force2d]);
+	}, [pattern, size, hueOffset, showFill, showScaffold, lineMode, lineWidth]);
 
 	if (failed) {
 		return (

@@ -1001,8 +1001,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// Schwarz board: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection group. The one
 					// shelf that spans two geometries, so it dispatches on its own: a spherical board is finite
 					// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
-					// re-develops in the disk. force2d because the per-pixel reducer rebuilds side pairings from
-					// ONE edge length and a Schwarz triangle is scalene.
+					// re-develops in the disk through the same per-pixel reducer as every other hyperbolic shelf.
 					selected.schwarz.geometry === "spherical" ? (
 						<SphSchwarzCanvas
 							pattern={selected.schwarz}
@@ -1010,7 +1009,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							showGrid={sphericalFreedrawGrid}
 						/>
 					) : (
-						<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} force2d />
+						<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
 					)
 				) : isSpherical && selected?.spherical ? (
 					<SphericalCanvas solidId={selected.spherical.solid} />

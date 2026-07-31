@@ -1800,3 +1800,12 @@ DELETED rather than shipped short, k chip and all. Marek's 236 drop again held 1
 certificates = exactly the 247 develop failures. **His .exe DO run here** via an extracted wine-stable
 through Rosetta 2 — recipe in `docs/RUNNING_MAREK_SOLVERS.md`, pointer in CLAUDE.md, after I claimed
 otherwise twice. (2,3,4)/(2,3,5)/(2,3,7) still short. Detail: NOTES §"the corrections land". — CC
+
+### 2026-07-31 — CC — the hyperbolic Schwarz shelf renders per-pixel
+The scalene boards drew through the 2D fallback on a reason that was not true: the reducer takes side
+pairings from the developer's deck frames, which already carry per-dart turns and lengths. All 27
+patterns certify in 3–18 ms, `force2d` deleted. `maxTileRadius` bounds the develop margin by the
+longest edge class (regular boards unchanged); the edge field now measures each texel against its
+face's vertex star, closing a white pinhole every hyperbolic edge shelf had at a straight-through
+vertex — 0.94–1.33× cost, colorings byte-identical. Detail: NOTES §"the hyperbolic Schwarz shelf
+joins the per-pixel renderer". — CC

@@ -8084,3 +8084,62 @@ k=3 on (2,3,6) goes 2 → 3.
 `materials/runs/`, because a half-finished k is indistinguishable from a complete one. That k=4=0
 also retires our own claim: `schwarzKGaps` calls (2,3,5) k=4 a gap in the solve, and it is an empty
 slice. The gaps test needs to separate "not searched" from "searched, none exist".
+
+## 2026-07-31 — the hyperbolic Schwarz shelf joins the per-pixel renderer
+
+Marek, 2026-07-29, looking at `/freedraw?geo=hyperbolic&board=245&hk=3`: "I don't see the completely
+drawn Schwarz triangle tiling." Two separate things were behind that. The tiling itself was his solver
+typo — the one that dropped every tiling drawing the longest edge class — and it came back with the
+corrected drop as `hs245-3-00010`, 6 of 6 edge orbits drawn, two one-triangle tiles. The other is what
+AL answered at the time ("I still have to finish that renderer"): the shelf drew through the 2D
+developed fallback, which fills only to a ragged sub-pixel rim and cannot pan without drift.
+
+**The reason the shelf was on the fallback was not true.** Five call sites passed `force2d` with the
+same comment: the per-pixel path's Dirichlet reducer "rebuilds side pairings from ONE edge length,
+which a scalene board does not have". It does not rebuild them from anything —
+`buildDirichletDomain` takes them from `HyperbolicDeveloper.deckFrames()`, and that developer has read
+per-dart turns and per-dart lengths (`darts.alpha`, `darts.elen`) since the Schwarz corpus landed. The
+scalar `edge` entered in exactly one place: `rMaxTile`, the flood-fill connectivity margin. All 27
+shipped hyperbolic Schwarz patterns certify in 3–18 ms, and the domain they certify to is identical
+whether the shortest or the longest edge class is passed.
+
+There *was* a defect in that one place, just not the one claimed: a Schwarz record hands the renderer
+`edges[0]`, the shortest of three, so the margin was an underestimate that happened to be generous
+enough. `maxTileRadius()` in `hyperbolicDevelopClient.ts` now derives it from the longest class in
+`darts.elen`, which for a triangle is a real bound (the diameter is the longest side). On a regular
+board, with no `elen`, it computes exactly what the three inlined copies computed before, so every
+{p,q} record bakes byte-identically.
+
+**Switching the shelf on exposed a defect in the edge field that was never Schwarz-specific.** The bake
+gave each texel its distance to the drawn sides *of its own face*. For the plain field that is exactly
+right — from inside a convex tile the nearest point of the tiling's edge set is on that tile's own
+boundary — but in an edge pattern the drawn edges are a *subset* of the sides. At a vertex where a bold
+run passes straight through, the faces wedged either side of it own no drawn side there, so the stroke
+dropped out: one white pinhole per such vertex, on every hyperbolic edge shelf, visible in the {3,7}
+shelf too once you know to look. The field now measures against the face's **vertex star** — every edge
+incident to one of its vertices — which is provably the right set, since a point within ε of a drawn
+edge lies in a face touching one of that edge's endpoints for ε below the vertex-to-non-incident-edge
+separation, and which can never shorten anything wrongly because any path out of a face crosses its own
+boundary first.
+
+The star is ~3× the segments per face and the bake loop is per texel × per segment, so a naive version
+cost 3–5× — measured, on records that already take seconds. A per-edge bounding-box reject with the own
+sides scanned first brings it back to 0.94–1.33×, inside run-to-run noise: a texel in the middle of a
+tile has a tight running best by the time it reaches the foreign edges and rejects each on one compare.
+
+Verified against HEAD's bake on the same patch: raised distances 0 everywhere (the star only ever
+shortens), orbit channel untouched, unresolved-texel counts identical, and the colorings move **zero**
+texels — which is the check that matters, because in a coloring every edge is drawn, so own-sides was
+already the true distance and the star is provably a no-op there. Numbers in
+`experiments/results/hyp-schwarz-renderer-2026-07-31.md`, including the hour lost to comparing the star
+against a baseline whose patch was a different size, and to a killed vitest worker that kept appending
+to the log and inflated every timing threefold.
+
+`force2d` is gone from both components — no caller was left, and a failed certificate or a missing
+WebGL2 context already falls back to the 2D draw on its own.
+
+⚑ Two things this leaves open. The (2,3,7) k=3 board's first record, `hs237-3-00001`, draws 0 of 6 edge
+orbits and so renders as a blank disk with the scaffold off; that is correct but reads as broken, and
+the shelf may want the scaffold forced on when nothing is drawn. And `tests/star-general-path.test.ts`
+fails on a 60 s timeout at ~160 s of real work — pre-existing, on the superseded lattice path, nothing
+in this change touches it.

@@ -24,7 +24,7 @@ import {
 	su11Identity,
 	su11Inverse,
 } from "@/lib/render/hyperbolic";
-import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
+import { HyperbolicDeveloper, maxTileRadius, type Darts } from "@/lib/render/hyperbolicDevelopClient";
 
 /** One supporting bisector of D as a Klein-model half-plane x·u ≤ c (u unit, c = Poincaré radius of γ·0). */
 export interface HalfPlane {
@@ -124,16 +124,10 @@ export function buildDirichletDomain(
 	const maxRounds = opts.maxRounds ?? 14;
 
 	// flood-fill connectivity margin: any instance with vertex in B(R) is reachable through instances
-	// with vertices in B(R + 2·rMaxTile) (walk the tiles crossed by the geodesic 0 → vertex).
-	// rMaxTile bounds the flood-fill margin by the largest tile in-radius. Digons (p = 2, the edge-pattern
-	// drawn-edge markers) are geometrically degenerate — interior angle 0, no proper face — so they are
-	// skipped, not rejected: the deck group and the margin are set by the real polygons around them.
-	let rMaxTile = 0;
-	for (const p of darts.lvert) {
-		if (p < 3) continue;
-		rMaxTile = Math.max(rMaxTile, Math.asinh(Math.sinh(edge / 2) / Math.sin(Math.PI / p)));
-	}
-	const M = 2 * rMaxTile + 0.15;
+	// with vertices in B(R + 2·rMaxTile) (walk the tiles crossed by the geodesic 0 → vertex). maxTileRadius
+	// takes the LONGEST per-dart class on a scalene board, where the scalar `edge` is only the shortest of
+	// three and would understate the margin — see its note in hyperbolicDevelopClient.
+	const M = 2 * maxTileRadius(darts, edge) + 0.15;
 
 	const dev = new HyperbolicDeveloper(darts, edge, { deepDedup: true });
 	const idView = su11Identity();

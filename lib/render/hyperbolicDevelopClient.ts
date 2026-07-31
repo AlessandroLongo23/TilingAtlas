@@ -78,6 +78,31 @@ function interiorAngle(p: number, l: number): number {
 	return 2 * Math.asin(Math.min(1, Math.max(-1, r)));
 }
 
+/**
+ * Circumradius bound over the faces of a tiling — the length scale every develop BOUND is quoted in
+ * (the Dirichlet flood-fill margin, the bake patch radius). Twice this has to cover a face's diameter,
+ * which is what makes "walk the geodesic 0 → vertex and you only cross tiles whose vertices stay within
+ * R + 2·rMaxTile" true.
+ *
+ * On a regular board every face is a regular p-gon at the one forced length ℓ, so it is the largest
+ * asinh(sinh(ℓ/2)/sin(π/p)) over the face sizes in `lvert`. A SCALENE board (a Schwarz (p,q,r) tile) has
+ * three side lengths and the scalar ℓ its records carry is only the shortest, which UNDERSTATES the
+ * margin; there the same formula is taken at the LONGEST class in `darts.elen`. For a triangle that is a
+ * genuine bound: the diameter is the longest side c, and 2·asinh(sinh(c/2)/sin(π/3)) > c.
+ *
+ * Digons (p = 2 — the drawn-edge markers of the edge-pattern shelves) are degenerate, no proper face, and
+ * are skipped; the margin is set by the real polygons around them.
+ */
+export function maxTileRadius(darts: Darts, edge: number): number {
+	const l = darts.elen?.length ? Math.max(...darts.elen) : edge;
+	let r = 0;
+	for (const p of darts.lvert) {
+		if (p < 3) continue;
+		r = Math.max(r, Math.asinh(Math.sinh(l / 2) / Math.sin(Math.PI / p)));
+	}
+	return r;
+}
+
 /** Edge involution M = T(tanh(ℓ/2))·Rot(π): dart (vertex A, heading→B) ↦ glued dart (vertex B, →A). */
 function medge(l: number): Su11 {
 	return su11Mul(su11Translation({ x: Math.tanh(l / 2), y: 0 }), su11Rotation(Math.PI));

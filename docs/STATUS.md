@@ -3,8 +3,32 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-07-29, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-07-31, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## The hyperbolic freedraw renderer is finished (2026-07-31)
+
+Marek's open item from 2026-07-29 is closed. The hyperbolic Schwarz shelf now draws through the
+per-pixel WebGL path like every other hyperbolic shelf: the disk fills to the rim, panning re-anchors
+through the side pairings and never drifts. The fully-drawn (2,4,5) triangle he could not find is
+`hs245-3-00010` and renders. Roadmap item ticked in `marek-vault/ideas/roadmap.md`.
+
+- **`force2d` deleted** from `HyperbolicEdgesCanvas` / `HyperbolicEdgesThumbnail` and all five Schwarz
+  call sites. The reason it existed was wrong: the reducer never rebuilt side pairings from one edge
+  length, it takes them from the developer's deck frames.
+- **`maxTileRadius()`** (new, `hyperbolicDevelopClient.ts`) bounds the develop margin by the longest
+  per-dart class on a scalene board, replacing three inlined copies that used the scalar `edge`.
+  Regular boards compute the same number, so {p,q} records bake byte-identically.
+- **The edge field measures a texel against its face's VERTEX STAR**, not its own sides. Closes a white
+  pinhole at every vertex a bold run passes straight through — a defect on every hyperbolic edge shelf,
+  not only this one. Cost 0.94–1.33× via a per-edge bbox reject; colorings byte-identical.
+- ⚑ `hs237-3-00001` draws 0 of 6 edge orbits, so it renders as a blank disk with the scaffold off.
+  Correct, but reads as broken — the shelf may want the scaffold forced on when nothing is drawn.
+- ⚑ `tests/star-general-path.test.ts` fails on a 60 s timeout at ~160 s of real work. Pre-existing, on
+  the superseded lattice path; untouched by this change.
+
+Detail: DEVELOPMENT_NOTES.md §"the hyperbolic Schwarz shelf joins the per-pixel renderer"; numbers in
+`experiments/results/hyp-schwarz-renderer-2026-07-31.md`.
 
 ## The Schwarz boards are a nine-board family across all three geometries — UNCOMMITTED (2026-07-28)
 
@@ -30,9 +54,9 @@ DEVELOPMENT_NOTES.md §"The Schwarz family becomes a family".
   coverage**, which is what made (2,2,4) k=10 and (2,3,3) k=7 shippable at all.
 - **`Darts` grew optional `alpha`/`elen`/`drawn`.** On a scalene board none of the three is derivable
   (one polygon size, three angles, three lengths, a digon on every edge). Absent on every existing
-  record, so the {p,q} shelves develop byte-identically. ⚑ The per-pixel disk shader is NOT available
-  here — its Dirichlet reducer rebuilds side pairings from ONE edge length — so the Schwarz disk takes
-  the explicit developed draw (`force2d` on canvas and thumbnail).
+  record, so the {p,q} shelves develop byte-identically. The per-pixel disk shader DOES serve these
+  boards (2026-07-31): its reducer takes side pairings from the developer's deck frames, which read
+  `alpha`/`elen` already, and all 27 patterns certify in 3–18 ms. `force2d` is gone.
 - **(2,4,4) needed ℤ[ζ₈] in `develop_freedraw.py`** (45° directions, sides 1 : √2). A `Ring` knob per
   grid; every `% 12` is now `% block.ndir`. Regression: all nine hexagonal k slices (86 MB) and
   sch236 k=3/k=4 regenerate **byte-identical**.

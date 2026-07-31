@@ -35,9 +35,11 @@ import { cn } from "@/lib/utils/cn";
 // edges cut out; k counts vertex orbits.
 //
 // The board is the disk cut by the mirrors of a (p,q,r) group, so its tile is a triangle with three
-// different angles AND three different side lengths. Both render paths take the explicit developed draw
-// (force2d) and not the per-pixel shader: that shader's Dirichlet reducer rebuilds side pairings from
-// ONE edge length, which a scalene board does not have.
+// different angles AND three different side lengths. Both render paths take the per-pixel shader, the
+// same one every other hyperbolic shelf uses: its Dirichlet reducer reads the side pairings off the
+// developer's own deck frames, which already carry the per-dart turns and lengths, so a scalene board
+// certifies exactly like a regular one (the single scalar it ever needed was the develop margin — see
+// maxTileRadius in lib/render/hyperbolicDevelopClient).
 //
 // The {p,q} edge systems (6.6.7, {7,3}, …) are a different catalogue and live on /library and /play; this
 // arm is the Schwarz boards only.
@@ -230,7 +232,7 @@ export function HyperbolicFreedraw({
 								)}
 							>
 								<div className="aspect-square">
-									<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(pattern)} size={232} force2d />
+									<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(pattern)} size={232} />
 								</div>
 								<div className="px-1.5 py-1 text-[11px] leading-tight text-text-muted">
 									<div className="font-mono text-text-secondary">{pattern.id}</div>
@@ -254,7 +256,7 @@ export function HyperbolicFreedraw({
 				{selected && (
 					<aside className="w-[380px] shrink-0 border-l border-line-subtle flex flex-col min-h-0">
 						<div className="relative aspect-square border-b border-line-subtle overflow-hidden bg-bg-subtle">
-							<HyperbolicEdgesCanvas key={selected.id} pattern={hypSchwarzMeta(selected)} force2d />
+							<HyperbolicEdgesCanvas key={selected.id} pattern={hypSchwarzMeta(selected)} />
 						</div>
 						<div className="p-4 overflow-y-auto text-sm space-y-3">
 							<div>

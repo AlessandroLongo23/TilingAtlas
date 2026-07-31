@@ -161,7 +161,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					tiling.schwarz.geometry === "spherical" ? (
 						<SphSchwarzThumbnail pattern={tiling.schwarz} />
 					) : (
-						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(tiling.schwarz)} force2d />
+						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(tiling.schwarz)} />
 					)
 				) : tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
