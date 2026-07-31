@@ -14,6 +14,11 @@
 //
 // Cost is O(n²) per polygon, which is the right trade here: n is 4 or 13, so the constant beats a
 // monotone-chain sweep, and the whole thing runs once per upload, not per frame.
+//
+// `edgeMask` below is now only half live. Outlines are drawn as their own instanced geometry, so the
+// mask feeds SubRosaGL's wireframe FALLBACK, the path a patch too large to carry an edge buffer still
+// takes, and the path whose bitten corners are why outlines moved to geometry in the first place. The
+// triangulation itself is unconditional: it is what the fills are made of.
 
 export interface Pt {
 	x: number;

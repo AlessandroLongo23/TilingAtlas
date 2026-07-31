@@ -8143,3 +8143,55 @@ orbits and so renders as a blank disk with the scaffold off; that is correct but
 the shelf may want the scaffold forced on when nothing is drawn. And `tests/star-general-path.test.ts`
 fails on a 60 s timeout at ~160 s of real work — pre-existing, on the superseded lattice path, nothing
 in this change touches it.
+
+## 2026-07-31 — aperiodic outlines become geometry
+
+AL pointed at the hat card on the landing wall: the tile outlines looked chunky, unevenly weighted and
+chipped at the corners. They were, and the cause was structural.
+
+Every /aperiodic view drew outlines with SubRosaGL's single-pass barycentric wireframe: no stroke
+geometry at all, just a vec3 of barycentric coordinates per vertex with the ear-clip diagonals pinned
+to 1, and a fragment that paints out to the half-width from the nearest real edge. The stroke therefore
+only exists inside triangles that own that edge. Near a corner the ear triangle is thinner than the
+band, so the ink stops dead along the invented diagonal: a straight bite out of the join, and
+consecutive sides stepping instead of meeting. It scales with stroke width over triangle size in px,
+which is why it is invisible zoomed in and obvious at the size the card actually shows. The hat at 24
+CSS px a tile leaves a 0.75 px band inside ear triangles a couple of px across. Three barycentric
+channels cannot fix it; the triangle does not know about the edge next door. The second half of the
+look was antialiasing: MSAA never touched these lines, because the stroke is interior shading and not a
+primitive boundary, so all the smoothing there was came from a smoothstep over a per-2×2-quad
+derivative estimate of `min(x,y,z)`.
+
+Diagnosis was by comparison, not by reading. The identical view drawn through the 2-D fallback (block
+`getContext("webgl2")` in the page) has filled mitres, even weight and smooth AA at the same width; the
+GL path zoomed 22 wheel notches in is clean; the explorer's outline slider at 3 px makes the bites
+plain. Crops in the session scratchpad.
+
+The fix is a second pass of real geometry: one instanced quad per polygon side, expanded to the stroke
+width in SCREEN space by the vertex shader, shaded as a capsule (analytic distance to the segment) by
+the fragment. Screen-space expansion is what lets a static world-coordinate buffer carry a px-measured
+stroke, since pan, zoom and rotation stay uniforms. The capsule gives round joins for nothing: two sides
+meeting at a corner are two capsules sharing an endpoint and their union *is* the round join, so there
+is no miter maths to get wrong at the hat's 60° and 300° corners. Blending is on for that pass only,
+separate for alpha, since these contexts are `premultipliedAlpha: false`.
+
+Sides are NOT deduplicated. An interior edge is drawn twice, once by each tile, and since both copies
+are opaque and coincident the only difference is that the AA ramp composites twice: the line reads
+~10% heavier, uniformly across the patch. That buys back a 700k-entry hash on the main thread. The
+cost is that the stroke has to stay opaque, which every caller already does, and `_view-chrome.tsx`
+now says so for the right reason.
+
+Measured: packing the edge buffer is 2.2 ms for hat level 5 (7,921 tiles, 102,973 sides, 1.6 MB), 12.3
+ms for hat level 6 (705,757 sides, 11.3 MB) and 11.9 ms for Penrose depth 11 (572,040 sides, 9.2 MB),
+against the 21 + 52 ms those levels already spend building and triangulating. Pan frame times at hat
+level 6 and Penrose depth 11 are indistinguishable from level 4's, all three pinned at the headed
+browser's 33.3 ms RAF cap, so the pass is not the bottleneck at any shipped size.
+
+The wireframe stays as the fallback above `MAX_OUTLINE_EDGES` (1.5M sides, 24 MB of instance data),
+which no shipped configuration reaches except a Sub Rosa patch past ~375k tiles. Verified by forcing
+the cap to 100 and confirming the old bitten corners come back, then restoring it; that is also the
+proof that the `uStrokePx = 0` handoff between the two paths is wired correctly.
+
+⚑ The 2-D fallback path is untouched and still strokes whole polygons with `drawPolygons`, so the two
+paths now differ in one visible way: on the patch boundary the GL stroke is centred on the edge (full
+width) where the old wireframe painted only the inward half.

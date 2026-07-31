@@ -11,17 +11,84 @@
 // (c·x + s·y, s·x − c·y) — rotation composed with the y-flip. lib/hooks/useAperiodicView.ts owns the
 // state that feeds it and documents the frame in full.
 //
-// Tile outlines are a single-pass barycentric wireframe (Celes/NVIDIA trick): each vertex carries a
-// vec3 whose channels are the triangle's barycentric coords, with the internal-diagonal channel
-// pinned to 1 so it never strokes. The fragment converts that coordinate to a screen-space distance
-// and paints the stroke colour out to the half-width, with one pixel of AA past it — no separate
-// stroke geometry. /play's FlatCellRenderer takes the other route (real expanded edge quads); it can
-// afford the vertices because it instances ONE cell mesh, where a patch here is up to a million
-// distinct tiles and stroke geometry would triple the buffer. The shader must therefore do the work
-// the geometry does there: a flat-topped line at a true (not Manhattan) distance, sized in device px.
+// Tile outlines come in two flavours, and which one runs is decided by the patch's size.
+//
+// THE DEFAULT: a second pass of real geometry, one instanced quad per polygon side, expanded to the
+// stroke width in SCREEN space by the vertex shader and shaded as a capsule (distance to the segment)
+// by the fragment. Screen-space expansion is what keeps a static vertex buffer compatible with a
+// stroke measured in px: the quad is four corners and a pair of endpoints, and zoom, pan and rotation
+// stay uniforms. Capsule shading gives round joins for free: two sides meeting at a corner are two
+// capsules sharing an endpoint, and their union IS the round join, so there is no miter maths and
+// nothing to get wrong at the hat's 60° and 300° corners.
+//
+// THE FALLBACK, for patches too large to carry a second buffer: the single-pass barycentric wireframe
+// (Celes/NVIDIA trick) this renderer used everywhere until 2026-07-31. Each vertex carries a vec3 of
+// the triangle's barycentric coords with the internal-diagonal channel pinned to 1 so it never
+// strokes, and the fragment paints out to the half-width from whichever real edge is nearest.
+//
+// Why the wireframe stopped being the default. Its stroke lives INSIDE the triangles of the tile's own
+// ear clip, so a band can only be painted where a triangle owning that edge covers it. Near a corner
+// the ear triangle is thinner than the band, and the ink stops dead along the invented diagonal: the
+// join comes out with a straight bite taken out of it, and consecutive sides step instead of meeting.
+// The defect scales with stroke width over triangle size in px, so it is invisible zoomed in and
+// plainly visible at the size a landing card or a fitted patch actually shows. Measured on the hat at
+// 24 CSS px a tile, where a 1.5 px line leaves a 0.75 px band inside ear triangles a couple of px
+// across. Nothing about it is fixable from three barycentric channels: the triangle simply does not
+// know about the edge next door. The second flavour also gains analytic AA, where the wireframe had
+// only a smoothstep over a per-quad derivative estimate (MSAA never touched it, the stroke being
+// interior shading and not a primitive boundary), which is the other half of why those lines looked hard
+// and stepped.
+//
+// Sides are NOT deduplicated, so an interior edge is drawn once by each of the two tiles that share
+// it. Both copies are opaque and coincident, so the only difference is that the AA ramp composites
+// twice and the line reads ~10% heavier than a single pass would, uniformly across the patch, and
+// cheaper than a 700k-entry hash. It does assume an OPAQUE stroke; a semi-transparent one would show
+// its interior edges darker than its boundary.
 
 import type { Vector } from "@/classes/Vector";
 import { edgeMask, triangulate } from "./triangulate";
+
+interface Pt {
+	x: number;
+	y: number;
+}
+
+/**
+ * Most polygon sides the outline pass will carry, counted before any sharing: 16 B of instance data
+ * each, so 24 MB of buffer at the cap. Penrose depth 11 (572k sides) and hat level 6 (706k) both fit;
+ * a 1.5M-tile Sub Rosa patch is 6M sides and does not, and falls back to the wireframe.
+ */
+export const MAX_OUTLINE_EDGES = 1_500_000;
+
+/**
+ * Pack every side of every ring into the instanced outline buffer: 4 floats per side, (ax, ay, bx,
+ * by) in world coordinates. Returns null when the patch is over budget (the caller then keeps the
+ * barycentric wireframe) or has no sides at all.
+ *
+ * Exported for the unit test; the renderer is the only real caller.
+ */
+export function packOutlineEdges<T>(items: readonly T[], ringOf: (item: T) => readonly Pt[]): Float32Array | null {
+	let sides = 0;
+	for (const it of items) {
+		const r = ringOf(it);
+		if (r.length >= 2) sides += r.length;
+	}
+	if (sides === 0 || sides > MAX_OUTLINE_EDGES) return null;
+
+	const out = new Float32Array(sides * 4);
+	let i = 0;
+	for (const it of items) {
+		const r = ringOf(it);
+		if (r.length < 2) continue;
+		for (let k = 0, j = r.length - 1; k < r.length; j = k++) {
+			out[i++] = r[j].x;
+			out[i++] = r[j].y;
+			out[i++] = r[k].x;
+			out[i++] = r[k].y;
+		}
+	}
+	return out;
+}
 
 const FILL_VERT = `#version 300 es
 in vec2 aPos;
@@ -84,6 +151,63 @@ void main() {
 		base = mix(base, uStroke.rgb, e * uStroke.a);
 	}
 	frag = vec4(base, 1.0);
+}
+`;
+
+// The outline pass. One instance per polygon side; the four corners of a quad that hugs the segment,
+// expanded in screen space so a px width means px at every zoom. Both stages work in the same centred
+// CSS-px frame the fill's vertex shader computes, so the two passes cannot drift apart.
+const LINE_VERT = `#version 300 es
+in vec2 aQuad;  // (±1, ±1): (along the segment, across it)
+in vec2 aSegA;  // per instance: the side's world endpoints
+in vec2 aSegB;
+uniform float uZoom;
+uniform vec2 uOffset;
+uniform float uRot;
+uniform vec2 uCentre;
+uniform vec2 uHalf;      // canvas CSS half-size
+uniform float uExtend;   // half-width + AA slack, CSS px: how far past the segment the quad reaches
+flat out vec2 vA;
+flat out vec2 vB;
+out vec2 vP;
+vec2 toScreen(vec2 w) {
+	float c = cos(uRot), s = sin(uRot);
+	vec2 p = w - uCentre;
+	return vec2(uOffset.x + uZoom * (c * p.x + s * p.y), uOffset.y + uZoom * (s * p.x - c * p.y));
+}
+void main() {
+	vec2 a = toScreen(aSegA), b = toScreen(aSegB);
+	vec2 d = b - a;
+	float len = length(d);
+	// A side can collapse to a point in screen space (zoomed far out, or a degenerate ring). Any
+	// direction will do then: the capsule the fragment shades is a disc either way.
+	vec2 dir = len > 1e-6 ? d / len : vec2(1.0, 0.0);
+	vec2 nrm = vec2(-dir.y, dir.x);
+	vec2 base = aQuad.x < 0.0 ? a : b;
+	vec2 p = base + dir * (aQuad.x * uExtend) + nrm * (aQuad.y * uExtend);
+	vA = a; vB = b; vP = p;
+	gl_Position = vec4(p.x / uHalf.x, -p.y / uHalf.y, 0.0, 1.0);
+}
+`;
+
+const LINE_FRAG = `#version 300 es
+precision highp float;
+flat in vec2 vA;
+flat in vec2 vB;
+in vec2 vP;
+uniform float uHalfWidth; // CSS px
+uniform float uFeather;   // CSS px: half the AA ramp, set to half a DEVICE px by draw()
+uniform vec4 uStroke;
+out vec4 frag;
+void main() {
+	// Distance to the segment, analytically, which is the whole point of the pass. The old wireframe had to
+	// reconstruct this from a barycentric coordinate and a screen-space derivative estimate.
+	vec2 pa = vP - vA, ba = vB - vA;
+	float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-12), 0.0, 1.0);
+	float d = length(pa - ba * h);
+	float cov = 1.0 - smoothstep(uHalfWidth - uFeather, uHalfWidth + uFeather, d);
+	if (cov <= 0.0) discard;
+	frag = vec4(uStroke.rgb, uStroke.a * cov);
 }
 `;
 
@@ -153,8 +277,9 @@ export interface SubRosaDrawParams {
 	 *  light 80, which is exactly the atlas' HSB(h, 40, 100) tile fill in HSL terms. */
 	sat?: number;
 	/** Outline width in CSS px — the whole line across a shared edge, as /play's `lineWidth` means it.
-	 *  0 disables outlines. draw() halves it (each tile strokes inward from its own edge) and scales to
-	 *  device px, so a given width looks the same on a 1× and a 2× display. */
+	 *  0 disables outlines. The outline pass draws it centred on the edge; the wireframe fallback halves
+	 *  it and scales to device px, since there each tile strokes inward from its own edge. Either way a
+	 *  given width looks the same on a 1× and a 2× display. */
 	strokePx: number;
 	strokeRGBA: [number, number, number, number];
 	clearRGBA?: [number, number, number, number]; // default transparent
@@ -171,6 +296,15 @@ export class SubRosaGL {
 	private u: Record<string, WebGLUniformLocation | null> = {};
 	private vertexCount = 0;
 	private disposed = false;
+
+	// The outline pass. `lineProg` is null only if its shaders failed to build, in which case the
+	// renderer keeps working on the wireframe instead of throwing away the whole patch.
+	private lineProg: WebGLProgram | null = null;
+	private quadBuf: WebGLBuffer | null = null;
+	private segBuf: WebGLBuffer | null = null;
+	private lineVao: WebGLVertexArrayObject | null = null;
+	private ul: Record<string, WebGLUniformLocation | null> = {};
+	private edgeInstances = 0;
 
 	constructor(gl: WebGL2RenderingContext) {
 		this.gl = gl;
@@ -203,6 +337,55 @@ export class SubRosaGL {
 		// of a float — meaningful at ~1M tiles.
 		gl.vertexAttribPointer(aEdge, 3, gl.UNSIGNED_BYTE, true, 0, 0);
 		gl.bindVertexArray(null);
+
+		this.initLinePass();
+	}
+
+	/** The outline pass' program, its unit quad and the VAO that binds one instance per polygon side. */
+	private initLinePass(): void {
+		const gl = this.gl;
+		const prog = link(gl, LINE_VERT, LINE_FRAG);
+		if (!prog) return; // wireframe fallback; the fill pass is unaffected
+		this.lineProg = prog;
+		for (const name of ["uZoom", "uOffset", "uRot", "uCentre", "uHalf", "uExtend", "uHalfWidth", "uFeather", "uStroke"]) {
+			this.ul[name] = gl.getUniformLocation(prog, name);
+		}
+		const aQuad = gl.getAttribLocation(prog, "aQuad");
+		const aSegA = gl.getAttribLocation(prog, "aSegA");
+		const aSegB = gl.getAttribLocation(prog, "aSegB");
+
+		this.quadBuf = gl.createBuffer();
+		this.segBuf = gl.createBuffer();
+		this.lineVao = gl.createVertexArray();
+
+		gl.bindVertexArray(this.lineVao);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuf);
+		// Triangle-strip order for the four corners: (along, across).
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+		gl.enableVertexAttribArray(aQuad);
+		gl.vertexAttribPointer(aQuad, 2, gl.FLOAT, false, 0, 0);
+		// One (ax, ay, bx, by) record per side, stepped once per instance.
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.segBuf);
+		gl.enableVertexAttribArray(aSegA);
+		gl.vertexAttribPointer(aSegA, 2, gl.FLOAT, false, 16, 0);
+		gl.vertexAttribDivisor(aSegA, 1);
+		gl.enableVertexAttribArray(aSegB);
+		gl.vertexAttribPointer(aSegB, 2, gl.FLOAT, false, 16, 8);
+		gl.vertexAttribDivisor(aSegB, 1);
+		gl.bindVertexArray(null);
+	}
+
+	/**
+	 * Hand the outline pass the sides of whatever was just uploaded. `null` (over budget, or no line
+	 * program) leaves `edgeInstances` at 0, which is what makes draw() fall back to the wireframe.
+	 */
+	private setOutlineEdges(edges: Float32Array | null): void {
+		const gl = this.gl;
+		this.edgeInstances = 0;
+		if (!edges || !this.lineProg || !this.segBuf) return;
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.segBuf);
+		gl.bufferData(gl.ARRAY_BUFFER, edges, gl.STATIC_DRAW);
+		this.edgeInstances = edges.length / 4;
 	}
 
 	// Triangulate the patch into one flat buffer. hueOf maps a tile's protoId to its HSL hue (degrees).
@@ -237,6 +420,7 @@ export class SubRosaGL {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.edgeBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, edge, gl.STATIC_DRAW);
 		this.vertexCount = n * 6;
+		this.setOutlineEdges(packOutlineEdges(tiles, (t) => t.corners));
 	}
 
 	/**
@@ -289,6 +473,7 @@ export class SubRosaGL {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.edgeBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, edge, gl.STATIC_DRAW);
 		this.vertexCount = pi / 2;
+		this.setOutlineEdges(packOutlineEdges(polys, (p) => p.vertices));
 		return this.vertexCount;
 	}
 
@@ -302,6 +487,8 @@ export class SubRosaGL {
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		if (this.vertexCount === 0) return;
 
+		const outlined = this.edgeInstances > 0 && this.lineProg !== null;
+
 		gl.useProgram(this.prog);
 		gl.bindVertexArray(this.vao);
 		gl.uniform1f(this.u.uZoom, p.zoom);
@@ -311,12 +498,37 @@ export class SubRosaGL {
 		gl.uniform2f(this.u.uHalf, p.widthCss / 2, p.heightCss / 2);
 		gl.uniform1f(this.u.uLight, p.light);
 		gl.uniform1f(this.u.uSat, p.sat ?? 0.58);
-		// CSS width → device half-width: the shader measures distance in device px, and both tiles
-		// meeting at an edge stroke inward, so each paints half the line.
-		gl.uniform1f(this.u.uStrokePx, p.strokePx * dpr * 0.5);
+		// The wireframe's width, used only when the outline pass is not carrying this patch. CSS width →
+		// device half-width: that shader measures distance in device px, and both tiles meeting at an edge
+		// stroke inward, so each paints half the line.
+		gl.uniform1f(this.u.uStrokePx, outlined ? 0 : p.strokePx * dpr * 0.5);
 		gl.uniform4f(this.u.uStroke, p.strokeRGBA[0], p.strokeRGBA[1], p.strokeRGBA[2], p.strokeRGBA[3]);
 		gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
 		gl.bindVertexArray(null);
+
+		if (!outlined || p.strokePx <= 0) return;
+
+		// The outlines, over the fills. Blending is on for this pass only, and separate for alpha so the
+		// canvas keeps a correct alpha channel where a stroke overhangs the patch boundary, these
+		// contexts being created with premultipliedAlpha: false.
+		const half = p.strokePx / 2;
+		const feather = 0.5 / dpr; // half the AA ramp: one device px across, wherever the display sits
+		gl.enable(gl.BLEND);
+		gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+		gl.useProgram(this.lineProg);
+		gl.bindVertexArray(this.lineVao);
+		gl.uniform1f(this.ul.uZoom, p.zoom);
+		gl.uniform2f(this.ul.uOffset, p.offsetX, p.offsetY);
+		gl.uniform1f(this.ul.uRot, p.rot);
+		gl.uniform2f(this.ul.uCentre, p.centreX, p.centreY);
+		gl.uniform2f(this.ul.uHalf, p.widthCss / 2, p.heightCss / 2);
+		gl.uniform1f(this.ul.uHalfWidth, half);
+		gl.uniform1f(this.ul.uFeather, feather);
+		gl.uniform1f(this.ul.uExtend, half + feather + 1);
+		gl.uniform4f(this.ul.uStroke, p.strokeRGBA[0], p.strokeRGBA[1], p.strokeRGBA[2], p.strokeRGBA[3]);
+		gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.edgeInstances);
+		gl.bindVertexArray(null);
+		gl.disable(gl.BLEND);
 	}
 
 	dispose(): void {
@@ -328,5 +540,10 @@ export class SubRosaGL {
 		gl.deleteBuffer(this.hueBuf);
 		gl.deleteBuffer(this.edgeBuf);
 		gl.deleteVertexArray(this.vao);
+		if (this.lineProg) gl.deleteProgram(this.lineProg);
+		if (this.quadBuf) gl.deleteBuffer(this.quadBuf);
+		if (this.segBuf) gl.deleteBuffer(this.segBuf);
+		if (this.lineVao) gl.deleteVertexArray(this.lineVao);
+		this.edgeInstances = 0;
 	}
 }

@@ -22,9 +22,9 @@ import { Section } from "./_controls";
  *  /play's `lineWidth`, so "1.5 px" draws the same line on both pages. */
 export const STROKE_WIDTH = { min: 0, max: 3, step: 0.25, def: 1.5 } as const;
 
-/** Tile outline colour, as /play draws it: opaque black. Semi-transparent strokes take the colour of
- *  whichever tile they cross, and since each tile paints only its own half of a shared edge, a 50%
- *  stroke makes one line out of two different greys — part of why these outlines read as soft. */
+/** Tile outline colour, as /play draws it: opaque black. It has to stay opaque: the outline pass
+ *  (lib/render/subrosaGL.ts) draws one line per polygon side without deduplicating shared sides, so a
+ *  semi-transparent stroke would come out darker on every interior edge than on the patch boundary. */
 export const STROKE_RGBA: [number, number, number, number] = [0, 0, 0, 1];
 export const STROKE_CSS = "#000";
 
