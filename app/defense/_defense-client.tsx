@@ -455,10 +455,12 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 						vc-card with no word
 					</div>
 				),
-			// <patch-card patch="penrose"> — a fixed patch, for tilings with no fundamental cell.
-			"patch-card": ({ patch, label }: { patch?: string; label?: string }) =>
+			// <patch-card patch="penrose"> — a finite patch, for tilings with no fundamental cell. It pans
+			// and zooms, clamped to the gap-free window so the patch's ragged boundary can never come
+			// into view; `static="yes"` pins it back to a picture.
+			"patch-card": ({ patch, label, static: fixed }: { patch?: string; label?: string; static?: string }) =>
 				patch ? (
-					<PatchCard patch={patch} label={label} />
+					<PatchCard patch={patch} label={label} interactive={String(fixed) !== "yes"} />
 				) : (
 					<div className="not-prose flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
 						No patch named.
