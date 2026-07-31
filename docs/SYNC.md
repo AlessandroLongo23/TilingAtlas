@@ -1832,3 +1832,10 @@ land on. Wording provably unchanged: stripping `**` from the new file diffs clea
 Applied as one script with a per-pattern uniqueness assertion, so a near-miss aborts the run rather
 than bolding the wrong sentence. Nothing inside math, notes, tags, tables or quotes. Swept all 44
 slides: 0 px overflow, no unrendered markers. — CC
+
+### 2026-07-29 (8) — CC — the aperiodic patch cards become interactive, clamped
+`<patch-card>` (Penrose, the hat) now pans and wheel-zooms through the shared `zoomAtPoint`, with
+double-click back to the slide's framing. Clamped to the measured gap-free window, because the patches
+are finite and a ragged edge on the "a tiling covers the plane" slide reads as a bug; pan bound is
+`zoom*width/2 - W/2`, zero at home. 2-D repaint is fine at 430 and 1,156 tiles. Verified by driving
+48 viewport states and pixel-probing for gaps: none. `static="yes"` pins a card back. — CC
