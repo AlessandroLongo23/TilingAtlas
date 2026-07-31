@@ -93,16 +93,5 @@ export function ViewFooter({
 	);
 }
 
-/** The facts block each view ends on: a definition list, no prose. */
-export function Details({ rows }: { rows: [string, string][] }) {
-	return (
-		<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-			{rows.map(([k, v]) => (
-				<div key={k} className="contents">
-					<dt className="text-fg-muted">{k}</dt>
-					<dd className="text-fg-secondary tabular-nums">{v}</dd>
-				</div>
-			))}
-		</dl>
-	);
-}
+/** The facts block each view ends on. Shared with the other shelves. */
+export { Details } from "@/components/shelf";

@@ -106,8 +106,20 @@ export interface AperiodicView {
 		onPointerLeave: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
 		onContextMenu: (e: React.MouseEvent) => void;
 	};
-	/** Re-read home() and snap the view to it. Call when the drawn geometry changes. */
+	/**
+	 * Re-read home() and SNAP the view to it. For when the subject changes: a different tiling type, or
+	 * a control whose whole purpose is to reframe.
+	 */
 	refit: () => void;
+	/**
+	 * Re-read home() and keep the view exactly where the reader put it.
+	 *
+	 * For geometry that DEFORMED rather than changed identity, which is what a parameter slider does.
+	 * Snapping there throws away the pan and zoom on every tick of a drag, so the one thing you cannot
+	 * do is study a detail while moving a parameter — the view jumps home the moment you touch it.
+	 * The home zoom and centre still update, so right-click-home and the wheel's limits stay correct.
+	 */
+	rehome: () => void;
 	/** Ease back to home (what right-click does). */
 	resetView: () => void;
 	/** Ask for one more frame — theme flips, a toggled option, anything not driven by the controls. */
@@ -191,6 +203,12 @@ export function useAperiodicView({
 		c.rotation = c.targetRotation = 0;
 		c.prevRotation = 0;
 		c.scrollAccum = 0;
+		dirtyRef.current = true;
+	}, [measureHome]);
+
+	const rehome = useCallback(() => {
+		// Deliberately touches no control state. Only the reference frame moves; the camera does not.
+		measureHome();
 		dirtyRef.current = true;
 	}, [measureHome]);
 
@@ -343,5 +361,5 @@ export function useAperiodicView({
 		onContextMenu: (e: React.MouseEvent) => e.preventDefault(), // right-click resets, not a menu
 	};
 
-	return { handlers, refit, resetView, requestDraw, frameRef, rotationDeg, setRotation };
+	return { handlers, refit, rehome, resetView, requestDraw, frameRef, rotationDeg, setRotation };
 }
