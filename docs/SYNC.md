@@ -1882,3 +1882,10 @@ the cyclic word the engine stores, which is byte-identical after any placement. 
 `alphabets/gen_alphabet.py` — corner classes in units of 2π/D, D=12, 3.4.6.4 closing as 2+3+4+3=12.
 Both panels derive the corner sequence from the same geometry after the first version had the ring and
 the drawing disagreeing about which tile fills which gap. Ring spaced equally on purpose. — CC
+
+### 2026-07-29 (11) — CC — a worked rejection for each of the four local rules
+`<local-rules>` replaces gluing-profile.png: four panels, one per rule, examples quoted from
+`docs/defense/SIX_OBLIGATIONS.md:95-108` so the pictures cannot drift from the proof program. False
+closure shows its legal neighbour too, since "must divide" needs a pair. Two drawing constraints
+recorded: a 7th unit step lands on top of the 1st (drawn just outside instead), and the mirror panel's
+highlighted half-edge must be one of the vertex's own edges, not a stray ray. — CC
