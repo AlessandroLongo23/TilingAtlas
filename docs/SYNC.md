@@ -1853,3 +1853,32 @@ the tiling stays unbounded. One solver covers all 15 types (linear side system; 
 for the 6 over-determined ones). `scripts/derive-pentagon-units.ts` SEARCHES each translational unit
 from the pentagon alone: all 15 recover the published size (2,4,3,4,6,4,8,8,8,6,8,8,8,6,12) and replay
 at a second member of their family. Detail in DEVELOPMENT_NOTES §"Pentagons". — CC
+
+### 2026-07-31 (3) — CC — Marek's new drop lands as three shelves, on renderers we already had
+6.6.8 edges (15,017, k≤9), nine finite polyhedral edge boards (prisms, antiprisms, truncated
+tetrahedron, cuboctahedron) and the 3.4.n.4 hyperbolic tilings by regular {3,4,n,2n}-gons (26,605,
+n=7…16). 191,473 records, 0 develop failures, per-k counts matching Marek's census. No new renderer.
+`cuboctahedron_edges` is TWO polyhedra — gyro-twin J27 shares its edge length and V/E/F — so a board is
+now keyed on vertex-figure census. Detail: NOTES §"Marek's 2026-07-31 drop". — CC
+
+### 2026-07-31 (4) — CC — the 3.4.n.4 family closes: its 20 spherical members ship
+`develop_ai1_sph.py` (SO(3) twin of develop_ai1.py) → `public/spherical-poly/`, 20 records / 55 kB, 0
+failures. Draws through `buildIcoFreedraw` with faces grouped by polygon size, so the sphere and the
+disk fill the same way. `k` is the orbit count MEASURED off each solid's own isometry group, which
+agrees with Marek's on all 20 and is what separates the rhombicuboctahedron (|G|=48) from J37 (|G|=16)
+— identical in V/E/F and vertex figure. n=3 carries one great-circle face (ρ=π/3), which is geometry.
+Detail: NOTES §"The spherical half of the 3.4.n.4 family". — CC
+
+### 2026-08-02 — CC — Marek's new drop: four spherical edge boards and five more of the 3.4.n.4 family
+146,276 records / 73 MB, 0 develop failures, per-k counts matching his census on every board. Octagonal
+prism, heptagonal antiprism, truncated octahedron, rhombicuboctahedron; AI1 n = 17, 18, 19, 20, 23.
+`edges_4443` is TWO polyhedra with an IDENTICAL vertex-figure census, so board identity is now keyed on
+(census, measured symmetry orbits) — 48/1 against J37's 16/2. New `complete` / `missing` fields split
+"the run is unfinished" from "the census counts a slice the zip omits". NOTES §"2026-08-02 drop". — CC
+
+### 2026-07-29 (10) — CC — the STS slide gets its abstract-vertex figure
+`<abstract-vertex>` replaces the slide's TODO: the vertex in the plane (drag, turn, live x/y/θ) beside
+the cyclic word the engine stores, which is byte-identical after any placement. Encoding from
+`alphabets/gen_alphabet.py` — corner classes in units of 2π/D, D=12, 3.4.6.4 closing as 2+3+4+3=12.
+Both panels derive the corner sequence from the same geometry after the first version had the ring and
+the drawing disagreeing about which tile fills which gap. Ring spaced equally on purpose. — CC
