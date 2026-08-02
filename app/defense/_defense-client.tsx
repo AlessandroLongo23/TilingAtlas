@@ -13,6 +13,7 @@ import { RowStacker } from "@/components/row-stacker";
 import { PeriodFigure } from "@/components/period-figure";
 import { TorusFigure } from "@/components/torus-figure";
 import { K4Wall } from "@/components/k4-wall";
+import { AbstractVertex } from "@/components/abstract-vertex";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -497,6 +498,10 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// <k4-wall> — the three measurements that closed architecture three: seed count, timeout rate,
 			// and where the time goes at k=3 against k=4. Numbers sourced in NOTES §15.3 and §22.2-22.3.
 			"k4-wall": K4Wall,
+			// <abstract-vertex word="3.4.6.4"> — a vertex in the plane beside the cyclic word the engine
+			// actually stores. Drag the left panel and its coordinates run while the word does not move,
+			// which is the slide's claim made checkable. Encoding per alphabets/gen_alphabet.py.
+			"abstract-vertex": ({ word }: { word?: string }) => <AbstractVertex word={word} />,
 			// <count-timeline> — who published which k-uniform count, when, drawn, not tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,
