@@ -453,7 +453,7 @@ proof to be worth having. -->
 
 ---
 
-## Marek's Čtrnáct's Synthetic Tiling Searcher (STS)
+## Marek Čtrnáct's Synthetic Tiling Searcher (STS)
 
 An abstract vertex is a **cyclic sequence of half-edges** with the angles between them, and **nothing in
 it records where the vertex lies**. One abstract vertex stands for a whole orbit of the eventual
@@ -466,14 +466,17 @@ So a *k*-uniform tiling, which has infinitely many vertices in the plane, is ass
 most $k$ abstract ones, and the search space is **finite by construction**, with **no bound to
 establish beforehand**.
 
-<!-- notes: The two panels are one sentence: drag the left one and watch x, y and theta run while the
-word on the right does not move, because there is nothing in it that could. Say the units out loud
-once — a triangle's corner is 2 of the 12, a square 3, a hexagon 4, and 3.4.6.4 closes as 2+3+4+3=12 —
-because that integer sum is the only closure test the search performs, and it is the reason no
-coordinate is computed until develop. The ring is drawn at equal spacing on purpose: the word fixes
-the cyclic ORDER of the half-edges and the span of each corner, never a direction, so spacing it by
-the real angles would put back the geometry the panel is there to say is absent. Double-click resets
-the placement. -->
+<!-- notes: Point at one half-edge and say why it stops halfway: an edge runs between two vertices and
+this one owns only its end, so the dashed half belongs to a vertex the search has not chosen yet, and
+a gluing is what joins two of those free ends into an edge. That is the whole setup for the next
+slide. Then the wedges: between two half-edges the vertex sees a CORNER of a tile, not a tile — which
+tile it turns out to be is the search's business, not this object's. If you draw the edges and the
+tiles whole you have drawn a vertex configuration, which is a different and smaller thing.
+
+Say the units out loud once: a triangle's corner is 2 of the 12, a square 3, a hexagon 4, and 3.4.6.4
+closes as 2+3+4+3 = 12. That integer sum is the only closure test the search performs, and it is why
+no coordinate is computed before develop. The angles in the figure are the real ones. What is missing
+is a position and an orientation, and the figure has neither. -->
 
 ---
 
@@ -506,10 +509,9 @@ across three panels of 3.4.4.6. If anyone wants that level of detail on mismatch
 ## Only the last stage touches geometry
 
 The pipeline is three stages, `solve`, then `prune`, then `develop`, and the first two **never compute
-a coordinate**. Only `develop` does, exactly, in $\mathbb{Z}[\zeta_{12}]$, and by the time it runs **the
-search is already over**.
+a coordinate**. Only `develop` does, exactly, in $\mathbb{Z}[\zeta_{12}]$.
 
-That is **the whole reason the engine is fast**. Unfortunately it is also where **the hardest proof
+That is why **the engine is fast**. Unfortunately it is also where **the hardest proof
 obligation** lives, which we come to in two slides.
 
 <!-- notes: One minute. This slide exists to set up Obligation 5, so do not linger. -->
