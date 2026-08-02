@@ -14,6 +14,7 @@ import { PeriodFigure } from "@/components/period-figure";
 import { TorusFigure } from "@/components/torus-figure";
 import { K4Wall } from "@/components/k4-wall";
 import { AbstractVertex } from "@/components/abstract-vertex";
+import { LocalRules } from "@/components/local-rules";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -502,6 +503,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// actually stores. Drag the left panel and its coordinates run while the word does not move,
 			// which is the slide's claim made checkable. Encoding per alphabets/gen_alphabet.py.
 			"abstract-vertex": ({ word }: { word?: string }) => <AbstractVertex word={word} />,
+			// <local-rules> — one rejected assembly per local rule, examples taken verbatim from
+			// docs/defense/SIX_OBLIGATIONS.md so the pictures cannot drift from the proof program.
+			"local-rules": LocalRules,
 			// <count-timeline> — who published which k-uniform count, when, drawn, not tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,
@@ -541,6 +545,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 	const overTime = elapsed > TARGET_MINUTES * 60_000;
 	const nearTime = !overTime && elapsed > TARGET_MINUTES * 0.9 * 60_000;
 	const progress = slides.length > 0 ? current.number / slides.length : 0;
+	const isTitleSlide = current.content.includes("<title-slide");
 
 	return (
 		// One overlay scope per SLIDE: o / s / d with nothing focused toggle every card on the slide,
@@ -589,7 +594,17 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							/>
 						</div>
 
-						<div className="flex min-h-0 flex-1 items-center justify-center px-[6vw] py-[5vh]">
+						{/* Slides are TOP-aligned, not centred: with `items-center` the heading sits at a
+						    different height on every slide, so the eye has to hunt for the title on each
+						    advance. Top-aligned, the title lands in exactly the same place all the way
+						    through and only the empty space below it changes. The title slide is the one
+						    exception — it has no heading to anchor, so it stays centred. */}
+						<div
+							className={cn(
+								"flex min-h-0 flex-1 justify-center px-[6vw] py-[5vh]",
+								isTitleSlide ? "items-center" : "items-start",
+							)}
+						>
 							{/* The scroll frame is a safety net for a slide that outgrows the viewport, but
 							    `overflow-y: auto` makes the browser clip the OTHER axis too, and anything a card
 							    draws outside its border box then gets cut at the frame edge: the accent ring on

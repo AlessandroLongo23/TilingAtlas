@@ -488,11 +488,18 @@ the placement. -->
 - **False closure**: when a polygon closes, the number of full edges around it has to divide its
   size.
 
-![](/defense/figures/gluing-profile.png)
+<local-rules>
+</local-rules>
 
-<!-- notes: A hexagon closing with three full edges is fine, because the same edge sequence repeats
-twice and the hexagon carries a 2-fold rotation. Closing with four is impossible. The figure is the
-mismatch rule worked on 3.4.4.6. -->
+<!-- notes: One rejected assembly per rule, left to right in the order you just read them. Take them
+at a beat each and do not narrate all four; the two worth saying out loud are lost trail and false
+closure. Lost trail: the walk turns by the exterior angle each step, six steps close a hexagon, so a
+seventh has nowhere to go. False closure: a hexagon closing on three full edges is fine, because the
+same edge sequence repeats twice and the hexagon carries a 2-fold rotation in the finished tiling;
+on four, two of the joins land in the middle of a side, which is what "must divide" looks like.
+
+The old figure (gluing-profile.png, still in public/defense/figures/) worked the mismatch rule alone
+across three panels of 3.4.4.6. If anyone wants that level of detail on mismatch, it is the answer. -->
 
 ---
 
