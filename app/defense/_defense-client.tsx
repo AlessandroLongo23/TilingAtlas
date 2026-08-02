@@ -16,6 +16,7 @@ import { K4Wall } from "@/components/k4-wall";
 import { AbstractVertex } from "@/components/abstract-vertex";
 import { LocalRules } from "@/components/local-rules";
 import { PipelineStages } from "@/components/pipeline-stages";
+import { SolveLoop } from "@/components/solve-loop";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -523,6 +524,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// <local-rules> — one rejected assembly per local rule, each drawn from the test that
 			// rejects it in tools/ctrnact-oracle/eu_solver.cpp (checkpart, and the mirror guard in extend).
 			"local-rules": LocalRules,
+			// <solve-loop> — the search loop as a filmstrip: a piece, a move, a move undone, closed.
+			// Every frame is a state of `configuration` in eu_solver.cpp.
+			"solve-loop": SolveLoop,
 			// <pipeline-stages> — solve, prune, develop, one panel each, drawn from what the three
 			// sources do. Only the third has coordinates in it, which is the slide's whole claim.
 			"pipeline-stages": PipelineStages,

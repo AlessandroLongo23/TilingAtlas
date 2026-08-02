@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { prepare, screenMapper, type Box } from "@/lib/render/figureCanvas";
+import { useEffect, useMemo, useState } from "react";
+import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
+import { type Box } from "@/lib/render/figureCanvas";
+import {
+	ACCEPT, arc, arrowHead, congruent, DART, dot, freeEnd, gluedEdge, GHOST, halo, INK, rad, REJECT,
+	segment, SOFT, T1_COLOUR, T2_COLOUR, type Api, type Pt,
+} from "@/lib/render/figureGlyphs";
 import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 
 // One panel per pipeline stage, each drawn from what that stage's source actually does.
@@ -29,103 +34,6 @@ import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 //
 // The panel marks one dart at the three places the walk meets it; the two vectors between them are
 // that subtraction, and lattice_basis + gauss_reduce turn a heap of them into T₁ and T₂.
-
-type Pt = [number, number];
-
-const INK = "rgba(20,20,20,0.88)";
-const SOFT = "rgba(20,20,20,0.45)";
-const GHOST = "rgba(20,20,20,0.26)";
-const REJECT = "hsl(2 70% 46%)";
-const ACCEPT = "hsl(150 55% 33%)";
-/** A half-edge the stage is working on: the candidate in `solve`, the repeated dart in `develop`. */
-const DART = "hsl(28 88% 44%)";
-const T1_COLOUR = "hsl(212 78% 45%)";
-const T2_COLOUR = "hsl(285 55% 47%)";
-
-interface TextOpts {
-	colour?: string;
-	size?: number;
-	weight?: number;
-	align?: CanvasTextAlign;
-	/** For the engine's own identifiers, which are set in mono everywhere else in the deck. */
-	mono?: boolean;
-}
-
-interface Api {
-	ctx: CanvasRenderingContext2D;
-	/** world units → CSS px, so a width of n/s is n pixels at any panel size */
-	s: number;
-	text: (x: number, y: number, str: string, o?: TextOpts) => void;
-}
-
-const rad = (deg: number) => (deg * Math.PI) / 180;
-
-function dot({ ctx, s }: Api, x: number, y: number, r = 5, colour = INK) {
-	ctx.fillStyle = colour;
-	ctx.beginPath();
-	ctx.arc(x, y, r / s, 0, 2 * Math.PI);
-	ctx.fill();
-}
-
-/** An open ring: a half-edge with nothing glued to it yet. Same glyph as <abstract-vertex>. */
-function freeEnd({ ctx, s }: Api, x: number, y: number, colour = INK) {
-	ctx.fillStyle = "#fff";
-	ctx.beginPath();
-	ctx.arc(x, y, 4 / s, 0, 2 * Math.PI);
-	ctx.fill();
-	ctx.strokeStyle = colour;
-	ctx.lineWidth = 2.2 / s;
-	ctx.stroke();
-}
-
-function segment({ ctx, s }: Api, a: Pt, b: Pt, colour: string, w: number, dash?: [number, number]) {
-	ctx.strokeStyle = colour;
-	ctx.lineWidth = w / s;
-	ctx.lineCap = "round";
-	if (dash) ctx.setLineDash([dash[0] / s, dash[1] / s]);
-	ctx.beginPath();
-	ctx.moveTo(a[0], a[1]);
-	ctx.lineTo(b[0], b[1]);
-	ctx.stroke();
-	ctx.setLineDash([]);
-}
-
-/** A bowed connector, so a candidate gluing reads as a proposal and not as another edge. */
-function arc({ ctx, s }: Api, a: Pt, b: Pt, bow: number, colour: string, w: number, dash?: [number, number]): Pt {
-	const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
-	const dx = b[0] - a[0], dy = b[1] - a[1];
-	const len = Math.hypot(dx, dy) || 1;
-	const c: Pt = [mx - (dy / len) * bow, my + (dx / len) * bow];
-	ctx.strokeStyle = colour;
-	ctx.lineWidth = w / s;
-	ctx.lineCap = "round";
-	if (dash) ctx.setLineDash([dash[0] / s, dash[1] / s]);
-	ctx.beginPath();
-	ctx.moveTo(a[0], a[1]);
-	ctx.quadraticCurveTo(c[0], c[1], b[0], b[1]);
-	ctx.stroke();
-	ctx.setLineDash([]);
-	return [0.25 * a[0] + 0.5 * c[0] + 0.25 * b[0], 0.25 * a[1] + 0.5 * c[1] + 0.25 * b[1]];
-}
-
-function arrowHead({ ctx, s }: Api, at: Pt, ang: number, colour: string, size = 12) {
-	const h = size / s;
-	ctx.fillStyle = colour;
-	ctx.beginPath();
-	ctx.moveTo(at[0], at[1]);
-	ctx.lineTo(at[0] - h * Math.cos(ang - 0.42), at[1] - h * Math.sin(ang - 0.42));
-	ctx.lineTo(at[0] - h * Math.cos(ang + 0.42), at[1] - h * Math.sin(ang + 0.42));
-	ctx.closePath();
-	ctx.fill();
-}
-
-/** Clear a disc so a mark laid over a line still reads. */
-function halo({ ctx, s }: Api, x: number, y: number, r: number) {
-	ctx.fillStyle = "#fff";
-	ctx.beginPath();
-	ctx.arc(x, y, r / s, 0, 2 * Math.PI);
-	ctx.fill();
-}
 
 // ---------------------------------------------------------------------------------------------
 // solve
@@ -173,17 +81,9 @@ function drawSolve(api: Api) {
 	}
 	dot(api, FRESH.at[0], FRESH.at[1], 4, GHOST);
 
-	// completed edges: stub, stub, and the join between them marked at the seam
-	for (const [h1, s1, h2, s2] of GLUED) {
-		const e1 = stubEnd(h1, s1), e2 = stubEnd(h2, s2);
-		segment(api, HUBS[h1].at, e1, INK, 3.2);
-		segment(api, HUBS[h2].at, e2, INK, 3.2);
-		segment(api, e1, e2, INK, 3.2);
-		const m: Pt = [(e1[0] + e2[0]) / 2, (e1[1] + e2[1]) / 2];
-		const ang = Math.atan2(e2[1] - e1[1], e2[0] - e1[0]) + Math.PI / 2;
-		segment(api, [m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
-			[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07], SOFT, 2);
-	}
+	// completed edges: two half-edges end to end, with the seam where they meet
+	for (const [h1, s1, h2, s2] of GLUED)
+		gluedEdge(api, HUBS[h1].at, stubEnd(h1, s1), HUBS[h2].at, stubEnd(h2, s2));
 
 	// everything still free, and the one the search is about to work on
 	for (let h = 0; h < HUBS.length; h++) {
@@ -254,28 +154,6 @@ function drawGraph(api: Api, p: Pt[], fade: number) {
 	for (const [a, b] of RNEIG) segment(api, p[a], p[b], `rgba(20,20,20,${0.38 * fade})`, 2);
 	for (const [a, b] of GLUE) segment(api, p[a], p[b], `rgba(20,20,20,${0.85 * fade})`, 3);
 	for (const q of p) dot(api, q[0], q[1], 4.6, `rgba(20,20,20,${0.88 * fade})`);
-}
-
-/**
- * ≅, stroked rather than typed. The character U+2245 comes back from the font fallback rotated a
- * quarter turn on this machine, and a symbol that names the panel's whole claim cannot be left to
- * whichever font happens to own the codepoint.
- */
-function congruent({ ctx, s }: Api, x: number, y: number, w = 0.17) {
-	const h = w / 2;
-	ctx.strokeStyle = SOFT;
-	ctx.lineWidth = 2.4 / s;
-	ctx.lineCap = "round";
-	ctx.beginPath();
-	ctx.moveTo(x - h, y + 0.085);
-	ctx.bezierCurveTo(x - h * 0.35, y + 0.16, x + h * 0.35, y + 0.01, x + h, y + 0.085);
-	ctx.stroke();
-	for (const dy of [0.005, -0.06]) {
-		ctx.beginPath();
-		ctx.moveTo(x - h, y + dy);
-		ctx.lineTo(x + h, y + dy);
-		ctx.stroke();
-	}
 }
 
 function drawPrune(api: Api) {
@@ -423,80 +301,9 @@ function drawDevelop(api: Api, dev: Developed) {
 
 // ---------------------------------------------------------------------------------------------
 
-interface Stage {
-	title: string;
-	note: string;
-	box: Box;
-	draw: (api: Api) => void;
-}
-
 /** Half-width of the world box the two combinatorial panels are drawn in; 4:3, like the frames. */
 const BOX = 1.35;
 const FLAT: Box = { minX: -BOX, maxX: BOX, minY: -BOX * 0.75, maxY: BOX * 0.75 };
-
-function StagePanel({ stage }: { stage: Stage }) {
-	const host = useRef<HTMLDivElement | null>(null);
-	const canvas = useRef<HTMLCanvasElement | null>(null);
-
-	const paint = useCallback(() => {
-		const h = host.current, c = canvas.current;
-		if (!h || !c) return;
-		const p = prepare(h, c, stage.box, 0.97);
-		if (!p) return;
-		const { ctx, s, dpr } = p;
-		const base = Math.max(10, Math.min(19, h.clientWidth * 0.075));
-
-		const queued: ({ x: number; y: number; str: string } & Required<TextOpts>)[] = [];
-		stage.draw({
-			ctx,
-			s,
-			text: (x, y, str, o) =>
-				queued.push({
-					x, y, str,
-					colour: o?.colour ?? INK,
-					size: o?.size ?? 1,
-					weight: o?.weight ?? 400,
-					align: o?.align ?? "center",
-					mono: o?.mono ?? false,
-				}),
-		});
-
-		// Text last, in screen space: anything written through the world transform comes out mirrored.
-		const toScreen = screenMapper(ctx, dpr);
-		ctx.textBaseline = "middle";
-		for (const q of queued) {
-			const family = q.mono ? "ui-monospace, SFMono-Regular, Menlo, monospace" : "ui-sans-serif, system-ui, sans-serif";
-			ctx.font = `${q.weight} ${base * q.size}px ${family}`;
-			ctx.textAlign = q.align;
-			ctx.fillStyle = q.colour;
-			const [sx, sy] = toScreen(q.x, q.y);
-			ctx.fillText(q.str, sx, sy);
-		}
-	}, [stage]);
-
-	useEffect(() => {
-		paint();
-		const h = host.current;
-		if (!h) return;
-		const ro = new ResizeObserver(paint);
-		ro.observe(h);
-		return () => ro.disconnect();
-	}, [paint]);
-
-	return (
-		<figure className="m-0 flex min-w-[11rem] flex-1 flex-col gap-1.5">
-			<figcaption className="text-center font-mono text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg">
-				{stage.title}
-			</figcaption>
-			<div ref={host} className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-line bg-surface-base">
-				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
-			</div>
-			<div className="text-center text-[clamp(0.54rem,0.74vh+0.14vw,0.74rem)] leading-snug text-fg-muted">
-				{stage.note}
-			</div>
-		</figure>
-	);
-}
 
 export function PipelineStages() {
 	const [data, setData] = useState<FigureData | null>(null);
@@ -510,16 +317,18 @@ export function PipelineStages() {
 		return () => { alive = false; };
 	}, []);
 
-	const stages = useMemo<Stage[]>(() => {
-		const out: Stage[] = [
+	const stages = useMemo<PanelSpec[]>(() => {
+		const out: PanelSpec[] = [
 			{
 				title: "solve",
+				mono: true,
 				note: "glue the first free half-edge to a free end, or to a vertex added on the spot, and back out the moment a rule fails",
 				box: FLAT,
 				draw: drawSolve,
 			},
 			{
 				title: "prune",
+				mono: true,
 				note: "one gluing reached along two search paths, numbered two ways: an isomorphism test keeps a single copy",
 				box: FLAT,
 				draw: drawPrune,
@@ -530,6 +339,7 @@ export function PipelineStages() {
 		const dev = data ? buildDeveloped(data) : null;
 		out.push({
 			title: "develop",
+			mono: true,
 			note: "every step an exact power of ζ₁₂; a dart met again elsewhere gives a period, and the periods generate the cell",
 			box: dev ? dev.box : FLAT,
 			draw: dev ? (api) => drawDevelop(api, dev) : () => {},
@@ -540,7 +350,7 @@ export function PipelineStages() {
 	return (
 		<div className="not-prose mx-auto flex w-full max-w-[64rem] flex-wrap items-start justify-center gap-4">
 			{stages.map((s) => (
-				<StagePanel key={s.title} stage={s} />
+				<FigurePanel key={s.title} panel={s} />
 			))}
 		</div>
 	);

@@ -1912,3 +1912,10 @@ make from `firstfree` and a ✗ on the rejected one. `prune`: one gluing graph d
 figure and round a circle, which is what `comparesolutions` has to see through. `develop`: the tiling
 with one dart marked at the three places the walk placed it, the two differences being the periods
 `reg()` collects. U+2245 comes back rotated from the font fallback here, so ≅ is stroked. — CC
+
+### 2026-08-02 (2) — CC — `solve` gets its own slide, and the figure vocabulary gets one home
+AL found the solve panel of `<pipeline-stages>` unclear, so the loop now has a slide of its own:
+`<solve-loop>`, four frames of one assembly — a piece, a move, a move undone, closed — each a state
+of `configuration` in eu_solver.cpp, with the free-half-edge count under each. Extracted the glyphs
+three figures now share (hub, free end, glued edge, ≅) into `lib/render/figureGlyphs.ts` and the
+panel chrome into `components/figure-panel.tsx`; `<pipeline-stages>` moved onto both. — CC
