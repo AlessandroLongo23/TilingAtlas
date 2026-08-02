@@ -2,192 +2,245 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { prepare, screenMapper } from "@/lib/render/figureCanvas";
-import { hsbToHsla, polygonHue, TILE_FILL_ALPHA } from "@/lib/utils/renderTiling";
+import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 
-// One rejected assembly per local rule, in the order the slide lists them.
+// One rejected assembly per local rule, drawn from what the solver actually tests.
 //
-// Every example is the one the proof program states, not one invented for the picture
-// (docs/defense/SIX_OBLIGATIONS.md:95-108):
+// Three of the four are not separate passes at all: they are the three ways the FACE WALK in
+// checkpart() (tools/ctrnact-oracle/eu_solver.cpp:246-275) can fail. The walk starts at a dart, steps
+// to its right neighbour, crosses the glued edge, and repeats:
 //
-//   Mismatch      "A half-edge with a triangle left and a square right can only meet one with a
-//                  square left and a triangle right."
-//   Mirror break  "A half-edge lying on an axis of symmetry is its own mirror image; one not on an
-//                  axis is not. The two kinds cannot be glued to each other."
-//   Lost trail    "A hexagon can carry at most five completed edges and two dangling half-edges
-//                  before it is forced to close."
-//   False closure "A hexagon closing with three full edges is fine... A hexagon closing with four is
-//                  impossible."
+//     free = glue[rfree]
+//     if (free == -1)    { if (count > L) return false; }        // LOST TRAIL — open, over length
+//     else if (free == i){ if (L % count != 0) return false; }    // FALSE CLOSURE — closed, count ∤ L
+//     else               { if (actual != expect) return false; }  // MISMATCH — corner class changed
 //
-// Three of the four are drawn as the FAILING case alone; false closure needs its legal neighbour
-// beside it, because "must divide" is a statement about a pair of numbers and one hexagon cannot
-// carry it.
+// `L` is the tile's word length (n, for a regular n-gon) and `expect` advances by CLASS_NEXT, which is
+// the identity for regular tiles — so on the regular palette the mismatch test reads: every corner you
+// meet walking round one face must belong to the same kind of tile.
 //
-// Shapes are drawn in world coordinates with y up; text is QUEUED and flushed afterwards in screen
-// space, because anything written through the world transform comes out upside down.
+// The fourth, MIRROR BREAK, is the guard on the gluing itself (eu_solver.cpp:646):
+//
+//     bool mirrored  = (mirro[firstfree] == firstfree);
+//     bool mirroredi = (mirro[i] == i);
+//     if (mirrored == mirroredi) { ...glue... }
+//
+// A dart with mirro[i] == i is its own mirror image, one without is not, and only like joins like.
+//
+// Two things the first version got wrong, both reported by AL. The half-edges were drawn as separate
+// segments with their faces pressed together, but a gluing joins two HALF-EDGES end to end into one
+// edge and the faces then lie alongside it — so the mismatch panel is one horizontal edge with a face
+// above and a face below, and the seam in the middle is where the two halves meet. And the lost-trail
+// walk was drawn on a hexagon, which is a picture of geometry the search does not have; it is unrolled
+// here, because a walk that has over-run its tile cannot be drawn on that tile.
 
 const REJECT = "hsl(2 70% 46%)";
 const ACCEPT = "hsl(150 55% 33%)";
-const INK = "rgba(20,20,20,0.85)";
-const SOFT = "rgba(20,20,20,0.45)";
+const INK = "rgba(20,20,20,0.88)";
+const SOFT = "rgba(20,20,20,0.42)";
+const GHOST = "rgba(20,20,20,0.22)";
 
-const tileFill = (n: number) => hsbToHsla(polygonHue(n), 40, 100, TILE_FILL_ALPHA);
-const tileLine = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const fill = (n: number) => hsbToHsla(polygonHue(n), 40, 100, 0.9);
+const line = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
 
 interface Api {
 	ctx: CanvasRenderingContext2D;
-	/** world units → CSS px, for line widths that stay constant on screen */
+	/** world units → CSS px, so a width of n/s is n pixels at any panel size */
 	s: number;
-	/** Queue a label at a world point. `size` multiplies the panel's base font. */
 	text: (x: number, y: number, str: string, o?: { colour?: string; size?: number; weight?: number }) => void;
 }
 
-/** Half-edge width, in world units: the tile block on each side. Two fit side by side with a gap. */
-const HE_W = 0.42;
-const HE_H = 1.1;
-
-/** A half-edge: the segment, and the tile lying on each side of it, each named in place. */
-function halfEdge(api: Api, x: number, y: number, left: number, right: number) {
-	const { ctx, s, text } = api;
-	for (const [n, side] of [[left, -1], [right, 1]] as const) {
-		ctx.fillStyle = tileFill(n);
-		ctx.strokeStyle = tileLine(n);
-		ctx.lineWidth = 1.2 / s;
-		ctx.beginPath();
-		ctx.rect(side < 0 ? x - HE_W : x, y - HE_H / 2, HE_W, HE_H);
-		ctx.fill();
-		ctx.stroke();
-		text(x + (side * HE_W) / 2, y, String(n), { colour: "rgba(20,20,20,0.7)", size: 0.9, weight: 700 });
-	}
-	ctx.strokeStyle = INK;
-	ctx.lineWidth = 3.2 / s;
-	ctx.lineCap = "round";
+/** A dot: a vertex of the assembly. */
+function vertexDot({ ctx, s }: Api, x: number, y: number, r = 5) {
+	ctx.fillStyle = INK;
 	ctx.beginPath();
-	ctx.moveTo(x, y - HE_H / 2);
-	ctx.lineTo(x, y + HE_H / 2);
-	ctx.stroke();
+	ctx.arc(x, y, r / s, 0, 2 * Math.PI);
+	ctx.fill();
 }
 
-/** n-gon centred at (cx, cy), first vertex pointing up. */
-const ngon = (n: number, r: number, cx: number, cy: number): [number, number][] =>
-	Array.from({ length: n }, (_, i) => {
-		const a = Math.PI / 2 + (2 * Math.PI * i) / n;
-		return [cx + Math.cos(a) * r, cy + Math.sin(a) * r] as [number, number];
-	});
+/** An open ring: a free end, with nothing glued to it yet. */
+function freeEnd({ ctx, s }: Api, x: number, y: number) {
+	ctx.fillStyle = "#fff";
+	ctx.beginPath();
+	ctx.arc(x, y, 4.6 / s, 0, 2 * Math.PI);
+	ctx.fill();
+	ctx.strokeStyle = INK;
+	ctx.lineWidth = 2.2 / s;
+	ctx.stroke();
+}
 
 const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 	{
 		title: "Mismatch",
-		note: "triangle | square glued to triangle | square: the gluing lays a triangle against a square",
+		note: "two half-edges make one edge, so one face above it — but its ends report a hexagon and a square",
 		draw: (api) => {
 			const { ctx, s, text } = api;
-			halfEdge(api, -0.72, 0.16, 3, 4);
-			halfEdge(api, 0.72, 0.16, 3, 4);
-			// the gluing, which brings them together and lays 3 against 3
+			const y = 0.02, x0 = -0.95, x1 = 0.95;
+			const band = (a: number, b: number, top: boolean, n: number) => {
+				ctx.fillStyle = fill(n);
+				ctx.strokeStyle = line(n);
+				ctx.lineWidth = 1.2 / s;
+				ctx.beginPath();
+				ctx.rect(a, top ? y : y - 0.56, b - a, 0.56);
+				ctx.fill();
+				ctx.stroke();
+			};
+			band(x0, 0, true, 6);
+			band(0, x1, true, 4);
+			band(x0, 0, false, 3);
+			band(0, x1, false, 3);
+			// the edge the two half-edges make, end to end, with the seam where they meet
+			ctx.strokeStyle = INK;
+			ctx.lineWidth = 3.4 / s;
+			ctx.lineCap = "butt";
+			ctx.beginPath();
+			ctx.moveTo(x0, y);
+			ctx.lineTo(x1, y);
+			ctx.stroke();
 			ctx.strokeStyle = REJECT;
 			ctx.setLineDash([5 / s, 4 / s]);
 			ctx.lineWidth = 2 / s;
 			ctx.beginPath();
-			ctx.moveTo(-0.72 + HE_W, 0.16);
-			ctx.lineTo(0.72 - HE_W, 0.16);
+			ctx.moveTo(0, y + 0.56);
+			ctx.lineTo(0, y - 0.56);
 			ctx.stroke();
 			ctx.setLineDash([]);
-			text(0, 0.18, "✗", { colour: REJECT, size: 1.2, weight: 700 });
-			text(0, -0.72, "the second must read 4 | 3", { colour: REJECT, size: 0.72, weight: 600 });
+			vertexDot(api, x0, y);
+			vertexDot(api, x1, y);
+			text(-0.48, y + 0.28, "6", { colour: "rgba(20,20,20,0.75)", size: 0.95, weight: 700 });
+			text(0.48, y + 0.28, "4", { colour: "rgba(20,20,20,0.75)", size: 0.95, weight: 700 });
+			text(-0.48, y - 0.28, "3", { colour: "rgba(20,20,20,0.75)", size: 0.95, weight: 700 });
+			text(0.48, y - 0.28, "3", { colour: "rgba(20,20,20,0.75)", size: 0.95, weight: 700 });
+			text(0, 0.86, "✗", { colour: REJECT, size: 1.15, weight: 700 });
+			text(0, -0.86, "✓", { colour: ACCEPT, size: 1.05, weight: 700 });
 		},
 	},
 	{
 		title: "Mirror break",
-		note: "one half-edge is fixed by the mirror, the other is not, so the two cannot be joined",
+		note: "the mirror fixes one half-edge and moves the other, and only like may join like",
 		draw: (api) => {
 			const { ctx, s, text } = api;
+			const cy = 0.2, r = 0.5;
 			const vertex = (cx: number, onAxis: boolean) => {
-				// Mirrors along the edges put one of them on the axis; mirrors between the edges put none
-				// there. The highlighted half-edge is always one of the vertex's own, never an extra ray.
+				// Mirrors running along the edges leave one on the axis; mirrors running between them
+				// leave none, and the reflection carries that half-edge to a different one.
 				const phase = onAxis ? 0 : Math.PI / 4;
-				ctx.strokeStyle = SOFT;
+				ctx.strokeStyle = GHOST;
 				ctx.lineWidth = 1.6 / s;
 				for (let i = 0; i < 4; i++) {
 					const a = (Math.PI / 2) * i + phase;
 					ctx.beginPath();
-					ctx.moveTo(cx, 0.15);
-					ctx.lineTo(cx + Math.cos(a) * 0.62, 0.15 + Math.sin(a) * 0.62);
+					ctx.moveTo(cx, cy);
+					ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
 					ctx.stroke();
 				}
 				ctx.setLineDash([5 / s, 4 / s]);
-				ctx.strokeStyle = "rgba(20,20,20,0.55)";
+				ctx.strokeStyle = "rgba(20,20,20,0.5)";
 				ctx.lineWidth = 1.6 / s;
 				ctx.beginPath();
-				ctx.moveTo(cx - 0.72, 0.15);
-				ctx.lineTo(cx + 0.72, 0.15);
+				ctx.moveTo(cx - 0.66, cy);
+				ctx.lineTo(cx + 0.66, cy);
 				ctx.stroke();
 				ctx.setLineDash([]);
-				// the half-edge in question: the one lying along the axis, or the nearest one off it
 				const a = phase;
 				ctx.strokeStyle = INK;
 				ctx.lineWidth = 3.6 / s;
 				ctx.lineCap = "round";
 				ctx.beginPath();
-				ctx.moveTo(cx, 0.15);
-				ctx.lineTo(cx + Math.cos(a) * 0.62, 0.15 + Math.sin(a) * 0.62);
+				ctx.moveTo(cx, cy);
+				ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
 				ctx.stroke();
-				ctx.fillStyle = INK;
-				ctx.beginPath();
-				ctx.arc(cx, 0.15, 4 / s, 0, 2 * Math.PI);
-				ctx.fill();
+				if (!onAxis) {
+					// where the mirror sends it: a different half-edge, so the two are not interchangeable
+					ctx.strokeStyle = REJECT;
+					ctx.beginPath();
+					ctx.moveTo(cx, cy);
+					ctx.lineTo(cx + Math.cos(-a) * r, cy + Math.sin(-a) * r);
+					ctx.stroke();
+					ctx.lineWidth = 1.5 / s;
+					ctx.setLineDash([4 / s, 3 / s]);
+					ctx.beginPath();
+					ctx.arc(cx, cy, r * 0.74, -a, a);
+					ctx.stroke();
+					ctx.setLineDash([]);
+				}
+				vertexDot(api, cx, cy, 4.5);
 			};
-			vertex(-0.8, true);
-			vertex(0.8, false);
-			text(0, 0.17, "✗", { colour: REJECT, size: 1.15, weight: 700 });
-			text(-0.8, -0.85, "on the axis", { colour: SOFT, size: 0.74 });
-			text(-0.8, -1.14, "0 = ∗0", { colour: INK, size: 0.78, weight: 600 });
-			text(0.8, -0.85, "off it", { colour: SOFT, size: 0.74 });
-			text(0.8, -1.14, "0 ≠ ∗0", { colour: INK, size: 0.78, weight: 600 });
+			vertex(-0.72, true);
+			vertex(0.72, false);
+			text(0, cy, "✗", { colour: REJECT, size: 1.15, weight: 700 });
+			text(-0.72, -0.58, "fixed by the mirror", { colour: SOFT, size: 0.66 });
+			text(-0.72, -0.85, "mirro[i] = i", { colour: INK, size: 0.72, weight: 600 });
+			text(0.72, -0.58, "moved by it", { colour: SOFT, size: 0.66 });
+			text(0.72, -0.85, "mirro[i] ≠ i", { colour: INK, size: 0.72, weight: 600 });
 		},
 	},
 	{
 		title: "Lost trail",
-		note: "a seventh edge on a hexagon: the walk has used more than the polygon has",
+		note: "the walk round one face has passed seven corners and both its ends are still free",
 		draw: (api) => {
 			const { ctx, s, text } = api;
-			const v = ngon(6, 0.68, 0, 0.1);
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
-			ctx.strokeStyle = INK;
-			ctx.lineWidth = 2.8 / s;
-			for (let i = 0; i < 6; i++) {
-				ctx.beginPath();
-				ctx.moveTo(v[i][0], v[i][1]);
-				ctx.lineTo(v[(i + 1) % 6][0], v[(i + 1) % 6][1]);
-				ctx.stroke();
-				const mx = (v[i][0] + v[(i + 1) % 6][0]) / 2, my = (v[i][1] + v[(i + 1) % 6][1]) / 2;
-				// inside the hexagon: the seventh edge is drawn outside, and a numeral there would collide
-				text(mx * 0.62, 0.1 + (my - 0.1) * 0.62, String(i + 1), { colour: SOFT, size: 0.62 });
+			// Unrolled: a walk that has over-run its tile cannot be drawn on that tile, and the search
+			// has no geometry here anyway. Each wedge is one corner the walk has consumed.
+			const n = 7, step = 0.26, y = 0.14;
+			const x0 = -((n - 1) * step) / 2;
+			for (let i = 0; i < n; i++) {
+				const x = x0 + i * step;
+				if (i < n - 1) {
+					ctx.strokeStyle = INK;
+					ctx.lineWidth = 2.6 / s;
+					ctx.lineCap = "butt";
+					ctx.beginPath();
+					ctx.moveTo(x, y);
+					ctx.lineTo(x + step, y);
+					ctx.stroke();
+				}
 			}
-			// The seventh. A seventh unit step at the exterior angle lands exactly on the first, where it
-			// would be invisible, so it is drawn just outside the side it duplicates.
-			const a = v[0], b = v[1];
-			const nx = (a[0] + b[0]) / 2, ny = (a[1] + b[1]) / 2;
-			const len = Math.hypot(nx, ny - 0.1) || 1;
-			const ox = (nx / len) * 0.19, oy = ((ny - 0.1) / len) * 0.19;
-			ctx.strokeStyle = REJECT;
-			ctx.lineWidth = 3.6 / s;
+			for (let i = 0; i < n; i++) {
+				const x = x0 + i * step;
+				const over = i === n - 1;
+				ctx.fillStyle = over ? "hsl(2 70% 46% / 0.3)" : fill(6);
+				ctx.strokeStyle = over ? REJECT : line(6);
+				ctx.lineWidth = 1.2 / s;
+				ctx.beginPath();
+				ctx.moveTo(x, y);
+				ctx.arc(x, y, 0.135, Math.PI * 0.16, Math.PI * 0.84);
+				ctx.closePath();
+				ctx.fill();
+				ctx.stroke();
+				vertexDot(api, x, y, 3.4);
+				text(x, y - 0.26, String(i + 1), { colour: over ? REJECT : SOFT, size: 0.6, weight: over ? 700 : 400 });
+			}
+			// both ends of the walk still free: that is what "still open" means
+			const xa = x0 - 0.2, xb = x0 + (n - 1) * step + 0.2;
+			ctx.strokeStyle = INK;
+			ctx.lineWidth = 2.6 / s;
 			ctx.beginPath();
-			ctx.moveTo(a[0] + ox, a[1] + oy);
-			ctx.lineTo(b[0] + ox, b[1] + oy);
+			ctx.moveTo(x0, y);
+			ctx.lineTo(xa, y);
+			ctx.moveTo(x0 + (n - 1) * step, y);
+			ctx.lineTo(xb, y);
 			ctx.stroke();
-			text(nx + ox * 2.6, ny + oy * 2.6, "7th", { colour: REJECT, size: 0.78, weight: 600 });
-			text(0, -0.78, "a hexagon has six", { colour: SOFT, size: 0.72 });
+			freeEnd(api, xa, y);
+			freeEnd(api, xb, y);
+			text(0, 0.62, "count = 7 > 6 = L", { colour: REJECT, size: 0.72, weight: 600 });
+			text(0, -0.66, "and still open at both ends", { colour: SOFT, size: 0.66 });
 		},
 	},
 	{
 		title: "False closure",
-		note: "a hexagon may close on 3 full edges; on 4 two of the joins fall mid-side",
+		note: "a closed walk of 3 edges suits a hexagon; one of 4 cannot, because 4 does not divide 6",
 		draw: (api) => {
 			const { ctx, s, text } = api;
-			// k marks cut the closed boundary into equal arcs. They land on corners exactly when k
-			// divides the size — which is the rule, drawn.
-			const one = (cx: number, k: number, ok: boolean) => {
-				const v = ngon(6, 0.6, cx, 0.24);
+			// A closed walk of `count` edges round a tile of word length L is legal exactly when
+			// L % count == 0. Marks cut the boundary into count equal arcs, and they land on corners
+			// precisely in that case.
+			const one = (cx: number, count: number, ok: boolean) => {
+				const R = 0.48, cy = 0.28;
+				const v = Array.from({ length: 6 }, (_, i) => {
+					const a = Math.PI / 2 + (Math.PI * i) / 3;
+					return [cx + Math.cos(a) * R, cy + Math.sin(a) * R] as [number, number];
+				});
 				ctx.strokeStyle = SOFT;
 				ctx.lineWidth = 1.8 / s;
 				ctx.beginPath();
@@ -195,8 +248,8 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 				for (let i = 1; i < 6; i++) ctx.lineTo(v[i][0], v[i][1]);
 				ctx.closePath();
 				ctx.stroke();
-				for (let i = 0; i < k; i++) {
-					const t = (6 * i) / k;
+				for (let i = 0; i < count; i++) {
+					const t = (6 * i) / count;
 					const j = Math.floor(t) % 6, f = t - Math.floor(t);
 					const px = v[j][0] + (v[(j + 1) % 6][0] - v[j][0]) * f;
 					const py = v[j][1] + (v[(j + 1) % 6][1] - v[j][1]) * f;
@@ -206,16 +259,17 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 					ctx.arc(px, py, (corner ? 5 : 6.5) / s, 0, 2 * Math.PI);
 					ctx.fill();
 				}
-				text(cx, -0.75, ok ? "3 divides 6" : "4 does not", { colour: ok ? ACCEPT : REJECT, size: 0.76, weight: 600 });
+				text(cx, -0.46, `count = ${count}`, { colour: SOFT, size: 0.66 });
+				text(cx, -0.74, ok ? "6 % 3 = 0" : "6 % 4 ≠ 0", { colour: ok ? ACCEPT : REJECT, size: 0.74, weight: 600 });
 			};
-			one(-0.82, 3, true);
-			one(0.82, 4, false);
+			one(-0.72, 3, true);
+			one(0.72, 4, false);
 		},
 	},
 ];
 
-/** Half-width of the world box every panel is drawn in. Panels share it so nothing looks rescaled. */
-const BOX = 1.65;
+/** Half-width of the world box every panel is drawn in, shared so nothing looks rescaled. */
+const BOX = 1.3;
 
 function RulePanel({ rule }: { rule: (typeof RULES)[number] }) {
 	const host = useRef<HTMLDivElement | null>(null);
@@ -224,10 +278,10 @@ function RulePanel({ rule }: { rule: (typeof RULES)[number] }) {
 	const paint = useCallback(() => {
 		const h = host.current, c = canvas.current;
 		if (!h || !c) return;
-		const p = prepare(h, c, { minX: -BOX, maxX: BOX, minY: -BOX * 0.75, maxY: BOX * 0.75 }, 0.98);
+		const p = prepare(h, c, { minX: -BOX, maxX: BOX, minY: -BOX * 0.8, maxY: BOX * 0.8 }, 0.98);
 		if (!p) return;
 		const { ctx, s, dpr } = p;
-		const base = Math.max(11, Math.min(20, h.clientWidth * 0.09));
+		const base = Math.max(11, Math.min(20, h.clientWidth * 0.085));
 
 		const queued: { x: number; y: number; str: string; colour: string; size: number; weight: number }[] = [];
 		rule.draw({
@@ -237,6 +291,7 @@ function RulePanel({ rule }: { rule: (typeof RULES)[number] }) {
 				queued.push({ x, y, str, colour: o?.colour ?? INK, size: o?.size ?? 1, weight: o?.weight ?? 400 }),
 		});
 
+		// Text last, in screen space: anything written through the world transform comes out mirrored.
 		const toScreen = screenMapper(ctx, dpr);
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
