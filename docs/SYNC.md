@@ -1889,3 +1889,10 @@ the drawing disagreeing about which tile fills which gap. Ring spaced equally on
 closure shows its legal neighbour too, since "must divide" needs a pair. Two drawing constraints
 recorded: a 7th unit step lands on top of the 1st (drawn just outside instead), and the mirror panel's
 highlighted half-edge must be one of the vertex's own edges, not a stray ray. — CC
+
+### 2026-07-29 (12) — CC — the abstract vertex, drawn as one
+AL: the figure was a vertex configuration. Right on all three counts — edges drawn full length when a
+half-edge is half (now solid to the midpoint, open ring, dashed ghost beyond), tiles drawn whole when
+the vertex sees only a corner (now wedges), and the ring spaced equally when the angles are part of
+the data (now true spans, so 3.4.6.4 reads 60/90/120/90). The drag-the-vertex panel is gone: what the
+object lacks is a position, and the figure shows that by having none. — CC
