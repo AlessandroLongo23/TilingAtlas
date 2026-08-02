@@ -1896,3 +1896,11 @@ half-edge is half (now solid to the midpoint, open ring, dashed ghost beyond), t
 the vertex sees only a corner (now wedges), and the ring spaced equally when the angles are part of
 the data (now true spans, so 3.4.6.4 reads 60/90/120/90). The drag-the-vertex panel is gone: what the
 object lacks is a position, and the figure shows that by having none. — CC
+
+### 2026-07-29 (13) — CC — the four local rules, redrawn from eu_solver.cpp
+AL sent the figure back to the source. Only one of the four is a separate test: mismatch, lost trail
+and false closure are the three ways `checkpart()` (eu_solver.cpp:246-275) can fail, and mirror break
+is the `mirrored == mirroredi` guard at :646. Two panels were wrong — mismatch pressed two faces
+together when a gluing joins two HALF-EDGES end to end into one edge (now one edge, seam in the
+middle, one face above reporting 6 at one end and 4 at the other), and lost trail was drawn on a
+hexagon when the walk has over-run it (now unrolled, count = 7 > 6 = L). c53d728. — CC
