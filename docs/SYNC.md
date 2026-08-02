@@ -1919,3 +1919,17 @@ AL found the solve panel of `<pipeline-stages>` unclear, so the loop now has a s
 of `configuration` in eu_solver.cpp, with the free-half-edge count under each. Extracted the glyphs
 three figures now share (hub, free end, glued edge, ≅) into `lib/render/figureGlyphs.ts` and the
 panel chrome into `components/figure-panel.tsx`; `<pipeline-stages>` moved onto both. — CC
+
+### 2026-08-02 (3) — CC — Čtrnáct's five levels become a library facet
+Regular / Archimedean / Pseudo-Archimedean / Combination / Hybrid, classified live by
+`lib/tilings/tiling-level.ts`: a /library facet with per-level counts and a /play info row. The ladder is
+(k, m) plus one test the pair cannot make — do the configurations agree as MULTISETS — and it is scoped
+to the CURVED shelves, since in E² the edge function is free and "hybrid" costs nothing. 65,457 of 65,458
+classify; the developed catalogue holds exactly THREE hybrids. NOTES §"Marek's five levels". — CC
+
+### 2026-08-02 (3) — CC — the fourth method gets its slide, and a figure
+Part two listed five methods and showed three; Delaney–Dress lived only in the results act. It is now
+"Architecture four" between the k=4 wall and What was kept, with `<delaney-symbol>`: the chamber
+system of 3.6.3.6 beside the quotient it collapses to. The right panel is not drawn by hand —
+`generateCandidateSymbols(1,[3,4,6,12],12)` returns n=2, s0=s1=id, s2=(01), m01=(3,6), m12=4, and the
+left panel's colours follow from it. Bug found on the way: `(-0).toFixed(3)` broke a dedup key. — CC

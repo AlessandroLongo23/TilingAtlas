@@ -17,7 +17,12 @@ import { AbstractVertex } from "@/components/abstract-vertex";
 import { LocalRules } from "@/components/local-rules";
 import { PipelineStages } from "@/components/pipeline-stages";
 import { SolveLoop } from "@/components/solve-loop";
+import { DelaneySymbol } from "@/components/delaney-symbol";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
+import { PartSlide } from "@/components/part-slide";
+import { ObligationsMark } from "@/components/obligations-mark";
+import { FailedPath } from "@/components/failed-path";
+import { ShowcaseWall } from "@/components/showcase-wall";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
 import { PreviewOverlayScope } from "@/lib/hooks/usePreviewOverlays";
@@ -524,6 +529,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// <local-rules> — one rejected assembly per local rule, each drawn from the test that
 			// rejects it in tools/ctrnact-oracle/eu_solver.cpp (checkpart, and the mirror guard in extend).
 			"local-rules": LocalRules,
+			// <delaney-symbol> — the chamber system beside the quotient it collapses to. The right
+			// panel is generateCandidateSymbols(1, [3,4,6,12], 12)'s own answer for 3.6.3.6.
+			"delaney-symbol": DelaneySymbol,
 			// <solve-loop> — the search loop as a filmstrip: a piece, a move, a move undone, closed.
 			// Every frame is a state of `configuration` in eu_solver.cpp.
 			"solve-loop": SolveLoop,
@@ -535,6 +543,20 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			"count-timeline": CountTimeline,
 			// <title-slide> … </title-slide> — the DTU mark beside the title block, in one row.
 			"title-slide": TitleSlide,
+			// <part-slide part="3"> — the act divider: the five parts in order, titles only, the one
+			// being entered set large and in the accent. `part="1"` right after the title is what
+			// introduces the split; `part="backup"` appends the backup deck as a sixth row. One figure
+			// may be authored between the tags, and it sits beside the list, uncaptioned.
+			"part-slide": PartSlide,
+			// <obligations-mark> — six boxes, five filled: the Part IV door, where the act behind it has
+			// a table and no figure to borrow. Numbering follows the obligations table.
+			"obligations-mark": ObligationsMark,
+			// <failed-path> — the Part II door: the four abandoned architectures, in build order, threaded
+			// onto one dashed curve that enters and leaves the frame.
+			"failed-path": FailedPath,
+			// <showcase-wall> — the Part V door: sixteen captures of the real library shelf, three
+			// geometries by three decorations plus the tile families that are not regular polygons.
+			"showcase-wall": ShowcaseWall,
 			// <slide-cols> … </slide-cols> — text beside a figure, the commonest slide shape.
 			"slide-cols": ({ children }: { children?: React.ReactNode }) => (
 				// Same height cap as slide-grid, applied to the figures, not the columns: a column
@@ -551,6 +573,37 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 		};
 		return map as unknown as Components;
 	}, [cells, sources, overlayData]);
+
+	// Which slide each act divider landed on. Derived from the parsed deck, so inserting a slide
+	// anywhere above a divider cannot leave a stale jump target behind.
+	const partSlideIndex = useMemo(() => {
+		const found: Record<string, number> = {};
+		for (const s of slides) {
+			const m = s.content.match(/<part-slide[^>]*\bpart=["']([^"']+)["']/i);
+			if (m && found[m[1]] === undefined) found[m[1]] = s.index;
+		}
+		return found;
+	}, [slides]);
+
+	// The presenting map: the same tags, plus the jump a divider's titles need. The overview keeps the
+	// plain map — its thumbnails are already one button each, and a target inside one would be nested.
+	const liveComponents = useMemo(() => {
+		const live = {
+			...(components as unknown as Record<string, unknown>),
+			"part-slide": ({ part, children }: { part?: string; children?: React.ReactNode }) => (
+				<PartSlide
+					part={part}
+					onSelect={(key) => {
+						const target = partSlideIndex[key];
+						if (target !== undefined) go(target);
+					}}
+				>
+					{children}
+				</PartSlide>
+			),
+		};
+		return live as unknown as Components;
+	}, [components, partSlideIndex, go]);
 
 	if (slides.length === 0) {
 		return (
@@ -569,14 +622,16 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 	const overTime = elapsed > TARGET_MINUTES * 60_000;
 	const nearTime = !overTime && elapsed > TARGET_MINUTES * 0.9 * 60_000;
 	const progress = slides.length > 0 ? current.number / slides.length : 0;
-	const isTitleSlide = current.content.includes("<title-slide");
+	// The two slides with no heading to pin: the title, and an act divider. Both are sized to their
+	// own content and centred in the box, since there is nothing on them for the eye to hunt for.
+	const isCoverSlide = current.content.includes("<title-slide") || current.content.includes("<part-slide");
 	// A slide "carries a figure" if it has a markdown image or any of the deck's own tags — every one
 	// of those is a custom element, and a custom element name is required to contain a hyphen, which
 	// is what tells `<slide-grid>` apart from the `<span>` and `<sup>` that appear in ordinary prose.
 	// Digits after the first character are part of the name: `<k4-wall>` is a tag, and a letters-only
 	// class silently misses it.
 	const hasFigure = /!\[|<[a-z][a-z0-9]*-[a-z0-9-]+/.test(current.content);
-	const layout: SlideLayout = isTitleSlide ? "flow" : hasFigure ? "spread" : "pinned";
+	const layout: SlideLayout = isCoverSlide ? "flow" : hasFigure ? "spread" : "pinned";
 
 	return (
 		// One overlay scope per SLIDE: o / s / d with nothing focused toggle every card on the slide,
@@ -634,7 +689,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 						<div
 							className={cn(
 								"flex min-h-0 flex-1 justify-center px-[6vw] py-[5vh]",
-								isTitleSlide ? "items-center" : "items-stretch",
+								isCoverSlide ? "items-center" : "items-stretch",
 							)}
 						>
 							{/* The scroll frame is a safety net for a slide that outgrows the viewport, but
@@ -651,10 +706,10 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 									// leaves the frame sized to its content and there is nothing to divide.
 									// Overflow still scrolls, since content taller than the frame overflows it
 									// either way.
-									isTitleSlide ? "max-h-full" : "h-full",
+									isCoverSlide ? "max-h-full" : "h-full",
 								)}
 							>
-								<SlideMarkdown content={current.content} components={components} layout={layout} />
+								<SlideMarkdown content={current.content} components={liveComponents} layout={layout} />
 							</div>
 						</div>
 
