@@ -1904,3 +1904,11 @@ is the `mirrored == mirroredi` guard at :646. Two panels were wrong — mismatch
 together when a gluing joins two HALF-EDGES end to end into one edge (now one edge, seam in the
 middle, one face above reporting 6 at one end and 4 at the other), and lost trail was drawn on a
 hexagon when the walk has over-run it (now unrolled, count = 7 > 6 = L). c53d728. — CC
+
+### 2026-08-02 — CC — a figure for each of the three pipeline stages
+The "only the last stage touches geometry" slide got a row of three panels, each drawn from its own
+source. `solve`: vertex figures whose half-edges are glued or free, with the two moves `extend()` can
+make from `firstfree` and a ✗ on the rejected one. `prune`: one gluing graph drawn twice, by vertex
+figure and round a circle, which is what `comparesolutions` has to see through. `develop`: the tiling
+with one dart marked at the three places the walk placed it, the two differences being the periods
+`reg()` collects. U+2245 comes back rotated from the font fallback here, so ≅ is stroked. — CC

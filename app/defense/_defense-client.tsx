@@ -2,7 +2,7 @@
 
 import { Children, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Components } from "react-markdown";
-import { SlideMarkdown } from "@/components/slide-markdown";
+import { SlideMarkdown, type SlideLayout } from "@/components/slide-markdown";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
 import { PatchCard } from "@/components/patch-card";
 import { VertexFigureCard } from "@/components/vertex-figure-card";
@@ -15,6 +15,7 @@ import { TorusFigure } from "@/components/torus-figure";
 import { K4Wall } from "@/components/k4-wall";
 import { AbstractVertex } from "@/components/abstract-vertex";
 import { LocalRules } from "@/components/local-rules";
+import { PipelineStages } from "@/components/pipeline-stages";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -153,11 +154,24 @@ function SlideGrid({ cols, children }: { cols?: string | number; children?: Reac
 			// `max-h-full`, so its own height shrinks to its content: reading that would shrink the cards,
 			// which would shrink the frame, which would shrink the cards again, all the way to the floor.
 			const boxStyle = getComputedStyle(box);
-			const framePad = parseFloat(getComputedStyle(frame).paddingBottom) || 0;
+			const frameStyle = getComputedStyle(frame);
+			const framePad = (parseFloat(frameStyle.paddingTop) || 0) + (parseFloat(frameStyle.paddingBottom) || 0);
 			const usable =
 				box.clientHeight - (parseFloat(boxStyle.paddingTop) || 0) - (parseFloat(boxStyle.paddingBottom) || 0);
-			const top = el.getBoundingClientRect().top - frame.getBoundingClientRect().top + frame.scrollTop;
-			const available = usable - top - framePad;
+			// What the blocks ABOVE this grid occupy, summed directly instead of read off the grid's
+			// own position. On a spread slide (`justify-between`) the gap above the grid is free space,
+			// and free space is a function of the grid's height: measuring from the grid's top would
+			// feed the answer back into the question. Summing the siblings does not — none of their
+			// heights depends on how big the cards turn out to be.
+			let above = 0;
+			for (let sib = el.previousElementSibling; sib; sib = sib.previousElementSibling) {
+				const s = getComputedStyle(sib);
+				above +=
+					sib.getBoundingClientRect().height +
+					(parseFloat(s.marginTop) || 0) +
+					(parseFloat(s.marginBottom) || 0);
+			}
+			const available = usable - above - framePad;
 			setCap(Math.max(48, Math.floor(available / rows) - CARD_CAPTION_PX));
 		};
 		measure();
@@ -175,7 +189,10 @@ function SlideGrid({ cols, children }: { cols?: string | number; children?: Reac
 			ref={ref}
 			style={{ maxWidth: `calc(${n} * ${perCard} + ${n - 1}rem)` }}
 			className={cn(
-				"mx-auto grid grid-cols-1 gap-4",
+				// `w-full` is load-bearing next to `mx-auto`. A slide is a flex column, and auto margins
+				// on a flex item's cross axis cancel `align-items: stretch`, so without it the grid
+				// shrinks to fit-content and the cards collapse to their intrinsic size (measured: 44px).
+				"mx-auto grid w-full grid-cols-1 gap-4",
 				String(cols) === "2" && "sm:grid-cols-2",
 				String(cols) === "4" && "sm:grid-cols-2 lg:grid-cols-4",
 				String(cols) === "5" && "grid-cols-3 lg:grid-cols-5",
@@ -499,13 +516,16 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// <k4-wall> — the three measurements that closed architecture three: seed count, timeout rate,
 			// and where the time goes at k=3 against k=4. Numbers sourced in NOTES §15.3 and §22.2-22.3.
 			"k4-wall": K4Wall,
-			// <abstract-vertex word="3.4.6.4"> — a vertex in the plane beside the cyclic word the engine
-			// actually stores. Drag the left panel and its coordinates run while the word does not move,
-			// which is the slide's claim made checkable. Encoding per alphabets/gen_alphabet.py.
+			// <abstract-vertex word="3.4.6.4"> — the object the engine stores: half-edges that stop at
+			// mid-edge, corner wedges at their true angles, and no position or orientation anywhere.
+			// Encoding per alphabets/gen_alphabet.py.
 			"abstract-vertex": ({ word }: { word?: string }) => <AbstractVertex word={word} />,
-			// <local-rules> — one rejected assembly per local rule, examples taken verbatim from
-			// docs/defense/SIX_OBLIGATIONS.md so the pictures cannot drift from the proof program.
+			// <local-rules> — one rejected assembly per local rule, each drawn from the test that
+			// rejects it in tools/ctrnact-oracle/eu_solver.cpp (checkpart, and the mirror guard in extend).
 			"local-rules": LocalRules,
+			// <pipeline-stages> — solve, prune, develop, one panel each, drawn from what the three
+			// sources do. Only the third has coordinates in it, which is the slide's whole claim.
+			"pipeline-stages": PipelineStages,
 			// <count-timeline> — who published which k-uniform count, when, drawn, not tabulated.
 			// Fixed content, like the DTU mark: it is one slide's graphic, not a reusable card.
 			"count-timeline": CountTimeline,
@@ -546,6 +566,13 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 	const nearTime = !overTime && elapsed > TARGET_MINUTES * 0.9 * 60_000;
 	const progress = slides.length > 0 ? current.number / slides.length : 0;
 	const isTitleSlide = current.content.includes("<title-slide");
+	// A slide "carries a figure" if it has a markdown image or any of the deck's own tags — every one
+	// of those is a custom element, and a custom element name is required to contain a hyphen, which
+	// is what tells `<slide-grid>` apart from the `<span>` and `<sup>` that appear in ordinary prose.
+	// Digits after the first character are part of the name: `<k4-wall>` is a tag, and a letters-only
+	// class silently misses it.
+	const hasFigure = /!\[|<[a-z][a-z0-9]*-[a-z0-9-]+/.test(current.content);
+	const layout: SlideLayout = isTitleSlide ? "flow" : hasFigure ? "spread" : "pinned";
 
 	return (
 		// One overlay scope per SLIDE: o / s / d with nothing focused toggle every card on the slide,
@@ -594,15 +621,16 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							/>
 						</div>
 
-						{/* Slides are TOP-aligned, not centred: with `items-center` the heading sits at a
-						    different height on every slide, so the eye has to hunt for the title on each
-						    advance. Top-aligned, the title lands in exactly the same place all the way
-						    through and only the empty space below it changes. The title slide is the one
-						    exception — it has no heading to anchor, so it stays centred. */}
+						{/* The heading is PINNED, not centred: with the old `items-center` it sat at a
+						    different height on every slide, so the eye had to hunt for the title on each
+						    advance. Now the frame is stretched to the full height of the box and the slide's
+						    own blocks divide it up (see SlideLayout), which keeps the heading at a fixed y
+						    and decides where the slack below it goes. The title slide is the one exception:
+						    it has no heading to anchor, so it stays centred and sized to its content. */}
 						<div
 							className={cn(
 								"flex min-h-0 flex-1 justify-center px-[6vw] py-[5vh]",
-								isTitleSlide ? "items-center" : "items-start",
+								isTitleSlide ? "items-center" : "items-stretch",
 							)}
 						>
 							{/* The scroll frame is a safety net for a slide that outgrows the viewport, but
@@ -612,8 +640,17 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							    clip box by 8px on every side, and the extra 1rem of max-width gives that padding
 							    somewhere to go, so the content still measures 68rem and still starts in exactly
 							    the same place. */}
-							<div className="slide-frame max-h-full w-full max-w-[69rem] overflow-y-auto p-2">
-								<SlideMarkdown content={current.content} components={components} />
+							<div
+								className={cn(
+									"slide-frame w-full max-w-[69rem] overflow-y-auto p-2",
+									// A pinned or spread slide divides a height, so it needs one: `max-h-full`
+									// leaves the frame sized to its content and there is nothing to divide.
+									// Overflow still scrolls, since content taller than the frame overflows it
+									// either way.
+									isTitleSlide ? "max-h-full" : "h-full",
+								)}
+							>
+								<SlideMarkdown content={current.content} components={components} layout={layout} />
 							</div>
 						</div>
 
