@@ -18,6 +18,7 @@ import { LocalRules } from "@/components/local-rules";
 import { PipelineStages } from "@/components/pipeline-stages";
 import { SolveLoop } from "@/components/solve-loop";
 import { DelaneySymbol } from "@/components/delaney-symbol";
+import { OctagonForcing } from "@/components/octagon-forcing";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { PartSlide } from "@/components/part-slide";
 import { ObligationsMark } from "@/components/obligations-mark";
@@ -529,6 +530,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// <local-rules> — one rejected assembly per local rule, each drawn from the test that
 			// rejects it in tools/ctrnact-oracle/eu_solver.cpp (checkpart, and the mirror guard in extend).
 			"local-rules": LocalRules,
+			// <octagon-forcing> — one octagon, its forced corona, the plane. Each frame adds only what
+			// the frame before it forced, which is what "propagates deterministically" looks like.
+			"octagon-forcing": OctagonForcing,
 			// <delaney-symbol> — the chamber system beside the quotient it collapses to. The right
 			// panel is generateCandidateSymbols(1, [3,4,6,12], 12)'s own answer for 3.6.3.6.
 			"delaney-symbol": DelaneySymbol,

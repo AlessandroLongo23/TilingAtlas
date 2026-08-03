@@ -1933,3 +1933,10 @@ Part two listed five methods and showed three; Delaney–Dress lived only in the
 system of 3.6.3.6 beside the quotient it collapses to. The right panel is not drawn by hand —
 `generateCandidateSymbols(1,[3,4,6,12],12)` returns n=2, s0=s1=id, s2=(01), m01=(3,6), m12=4, and the
 left panel's colours follow from it. Bug found on the way: `(-0).toFixed(3)` broke a dedup key. — CC
+
+### 2026-08-02 (4) — CC — the octagon slide gets the forcing argument as a figure
+AL moved the octagon slide next to the ζ₂₄ rose and rewrote it; `<octagon-forcing>` now draws the
+step the prose only asserts. Three frames of one growing picture: the vertex (135 + 135 + 90 = 360,
+as wedges on a real octagon corner), the corona it forces (four octagons on the axes, four squares on
+the diagonals — the alternation drawn, not claimed), and the plane. Truncated square tiling at unit
+edge, octagons on a 1+√2 lattice. Each frame adds only what the one before it forced. — CC
