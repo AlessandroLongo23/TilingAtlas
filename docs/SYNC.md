@@ -1947,3 +1947,10 @@ octagon are one drawing, not two. `<octagon-forcing>` gained it as a fourth fram
 gained `dirs`, which rescales the stored ζ₂₄ chains into any coarser alphabet that divides them, so
 architecture three now spells its periods in ζ₁₂. Verified the rescale moves neither vector
 (T₁ exact, T₂ 8.9e-16). `drawWithText` now captures its screen map before drawing. — CC
+
+### 2026-08-03 — CC — the Delaney-Dress pair: what a symbol is, and what it costs
+Two slides instead of a definition plus a stranded result. The first keeps the definition and
+`<delaney-symbol>`; the second is the 12k budget and the wall, carrying `<dsym-growth>` — Table 1 of
+Zeller/Delgado-Friedrichs/Huson, arXiv:2007.10625, on a log axis with k=1,2,3 marked. Their table
+ends at δ=24, exactly the k=2 ceiling. Our own cost measured for the slide and logged:
+16,500 nodes at k=1, 314,028,907 at k=2 (473.6 s, returns 20), not one D-set at k=3 in 60M. — CC

@@ -1,0 +1,20 @@
+Delaney–Dress Stage-1 probe — P={3,4,6,12}  budget=60M nodes/k
+orbifold baseline (ΣcandidateLattices, {3,4,6}): k=1 183, k=2 3103, k=3 186190
+—
+k=1  δ≤12  candidateSymbols=10  COMPLETE (provably exhaustive ≤ δ=12k)
+        dsets=238 nodes=16500 0.0s digest=4fe0502db359d988
+k=2  δ≤24  candidateSymbols=7  ⚑ WALLED @ 60M nodes, δ≤24 ⇒ LOWER BOUND, NOT provably complete
+        dsets=678 nodes=60000000 83.2s digest=9b69ce03ef7735a6
+k=3  δ≤36  candidateSymbols=0  ⚑ WALLED @ 60M nodes, δ≤36 ⇒ LOWER BOUND, NOT provably complete
+        dsets=0 nodes=60000000 114.5s digest=1505
+{"k":2,"bound":24,"completed":true,"nodes":314028907,"dsets":30359,"raw":230,"minimal":20,"seconds":473.6}
+
+--- k=2 completion cost, full budget (4000M nodes allowed) ---
+{"k":2,"bound":24,"completed":true,"nodes":314028907,"dsets":30359,"raw":230,"minimal":20,"seconds":473.6}
+
+Summary, P={3,4,6,12}, generateCandidateSymbols:
+  k=1  δ≤12  COMPLETE       16,500 nodes        238 D-sets     10 minimal    0.0 s
+  k=2  δ≤24  COMPLETE  314,028,907 nodes     30,359 D-sets     20 minimal  473.6 s
+  k=3  δ≤36  WALLED     60,000,000 nodes          0 D-sets      0 minimal  114.5 s
+  k=1 -> k=2 is 19,032x the nodes for one more orbit. k=3 produced nothing at all.
+  (k=1 returns 10, not 11: the octagon is out of the pool, per the octagon slide.)

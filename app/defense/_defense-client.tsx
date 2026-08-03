@@ -19,6 +19,7 @@ import { PipelineStages } from "@/components/pipeline-stages";
 import { SolveLoop } from "@/components/solve-loop";
 import { DelaneySymbol } from "@/components/delaney-symbol";
 import { OctagonForcing } from "@/components/octagon-forcing";
+import { DsymGrowth } from "@/components/dsym-growth";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { PartSlide } from "@/components/part-slide";
 import { ObligationsMark } from "@/components/obligations-mark";
@@ -532,6 +533,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// <local-rules> — one rejected assembly per local rule, each drawn from the test that
 			// rejects it in tools/ctrnact-oracle/eu_solver.cpp (checkpart, and the mirror guard in extend).
 			"local-rules": LocalRules,
+			// <dsym-growth> — how many Delaney–Dress symbols exist at each size, on a log axis, with the
+			// 12k budget marked at k = 1, 2, 3. Data is Table 1 of arXiv:2007.10625; the k rules are ours.
+			"dsym-growth": DsymGrowth,
 			// <octagon-forcing> — one octagon, its forced corona, the plane. Each frame adds only what
 			// the frame before it forced, which is what "propagates deterministically" looks like.
 			"octagon-forcing": OctagonForcing,
