@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { prepare, screenMapper } from "@/lib/render/figureCanvas";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { prepare } from "@/lib/render/figureCanvas";
+import { colourOf, drawZetaWheel } from "@/lib/render/zetaWheel";
 
 // The bounded-weight theorem as one case you can read off the plane, in two panels.
 //
@@ -14,8 +15,12 @@ import { prepare, screenMapper } from "@/lib/render/figureCanvas";
 // a SHORTEST one and its length is that vector's weight. Everything that is not a ζ step — the tiles,
 // the period parallelogram — is held at low opacity, because the claim is about the steps.
 //
-// A detail worth having ready: the chains only ever use EVEN exponents. Every regular-polygon tiling
-// except the 4.8.8 lives in ℤ[ζ₁₂] ⊂ ℤ[ζ₂₄], and the odd powers exist for the octagon alone.
+// `dirs` re-reads the same data in a coarser alphabet. Every exponent in the stored chains is EVEN —
+// every regular-polygon tiling except the 4.8.8 lives in ℤ[ζ₁₂] ⊂ ℤ[ζ₂₄], and the odd powers exist for
+// the octagon alone — so once the octagon is out of the pool, halving each exponent says the same
+// vector in ζ₁₂. The drawing does not move a pixel; only the names and the colours change, which is
+// exactly the claim. The rescale is guarded: if any exponent failed to divide, the figure falls back
+// to the alphabet the data was built in rather than quietly relabelling a step as one it is not.
 
 interface FigureData {
 	id: string;
@@ -25,17 +30,16 @@ interface FigureData {
 	polys: { n: number; v: [number, number][] }[];
 }
 
-/** Hue per ζ exponent, so a step's colour names its direction and the wheel is its legend. */
-const colourOf = (k: number, n: number) => `hsl(${(360 * k) / n} 85% 45%)`;
-
 /**
  * `panel` picks one of the two: "wheel" is the alphabet on its own (the preliminary slide), "example"
  * the spelled-out periods with the sum underneath (the method slide). Omitted, both are drawn.
  */
-export function PeriodFigure({ panel }: { panel?: string }) {
+export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: string | number; size?: string }) {
 	const showWheel = panel !== "example";
 	const showExample = panel !== "wheel";
 	const solo = panel === "wheel" || panel === "example";
+	/** `sm` is for a slide that already carries a figure: the wheel is the footnote there, not the subject. */
+	const compact = String(size) === "sm";
 	const [data, setData] = useState<FigureData | null>(null);
 	const wheelHost = useRef<HTMLDivElement | null>(null);
 	const wheelCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -51,108 +55,42 @@ export function PeriodFigure({ panel }: { panel?: string }) {
 		return () => { alive = false; };
 	}, []);
 
+	// The alphabet actually drawn, and the two chains written in it.
+	const view = useMemo(() => {
+		if (!data) return null;
+		const N = data.directions;
+		const want = Number(dirs);
+		const f = want > 0 ? N / want : 1;
+		const chains = [...data.t1.chain, ...data.t2.chain];
+		if (!(want > 0) || want === N || !Number.isInteger(f) || f < 1 || chains.some((k) => k % f !== 0))
+			return { N, t1: data.t1.chain, t2: data.t2.chain };
+		return { N: want, t1: data.t1.chain.map((k) => k / f), t2: data.t2.chain.map((k) => k / f) };
+	}, [data, dirs]);
+
 	// --- panel one: the alphabet -------------------------------------------------------------------
 	useEffect(() => {
 		const host = wheelHost.current, canvas = wheelCanvas.current;
-		if (!host || !canvas || !data) return;
-		const N = data.directions;
+		if (!host || !canvas || !view) return;
+		const N = view.N;
 
 		const paint = () => {
 			const p = prepare(host, canvas, { minX: -1.5, maxX: 1.5, minY: -1.5, maxY: 1.5 }, 0.96);
 			if (!p) return;
-			const { ctx, s, dpr } = p;
-
-			// The axes of the complex plane, and the unit circle every arrowhead lands on — which is what
-			// says "these are UNIT steps" without a word. The tick at 1 gives the circle its scale; ζ⁰ is
-			// that point, so labelling the tick as well would name it twice.
-			ctx.strokeStyle = "rgba(0,0,0,0.42)";
-			ctx.lineWidth = 1.2 / s;
-			for (const [ax, ay] of [[1, 0], [0, 1]] as const) {
-				ctx.beginPath();
-				ctx.moveTo(-1.15 * ax, -1.15 * ay);
-				ctx.lineTo(1.15 * ax, 1.15 * ay);
-				ctx.stroke();
-				// ticks at ±1, across the axis
-				for (const sgn of [-1, 1]) {
-					ctx.beginPath();
-					ctx.moveTo(sgn * ax - 0.045 * ay, sgn * ay - 0.045 * ax);
-					ctx.lineTo(sgn * ax + 0.045 * ay, sgn * ay + 0.045 * ax);
-					ctx.stroke();
-				}
-			}
-			ctx.setLineDash([4 / s, 4 / s]);
-			ctx.strokeStyle = "rgba(0,0,0,0.22)";
-			ctx.beginPath();
-			ctx.arc(0, 0, 1, 0, 2 * Math.PI);
-			ctx.stroke();
-			ctx.setLineDash([]);
-
-			const labels: { x: number; y: number; k: number }[] = [];
-			for (let k = 0; k < N; k++) {
-				const a = (2 * Math.PI * k) / N;
-				const dx = Math.cos(a), dy = Math.sin(a);
-				ctx.strokeStyle = colourOf(k, N);
-				ctx.fillStyle = colourOf(k, N);
-				ctx.lineWidth = 2.2 / s;
-				ctx.lineCap = "butt";
-				const head = 0.13;
-				ctx.beginPath();
-				ctx.moveTo(0, 0);
-				ctx.lineTo(dx * (1 - head * 0.75), dy * (1 - head * 0.75));
-				ctx.stroke();
-				ctx.beginPath();
-				ctx.moveTo(dx, dy);
-				ctx.lineTo(dx - head * Math.cos(a - 0.32), dy - head * Math.sin(a - 0.32));
-				ctx.lineTo(dx - head * Math.cos(a + 0.32), dy - head * Math.sin(a + 0.32));
-				ctx.closePath();
-				ctx.fill();
-				labels.push({ x: dx * 1.28, y: dy * 1.28, k });
-			}
-
-			// Text goes on in SCREEN space: the world transform flips y, and anything drawn through it
-			// comes out mirrored.
-			const toScreen = screenMapper(ctx, dpr);
-			const size = Math.max(9, Math.min(15, s * 0.115));
-			const base = `${size}px ui-sans-serif, system-ui, sans-serif`;
-			const sup = `${size * 0.68}px ui-sans-serif, system-ui, sans-serif`;
-			ctx.textBaseline = "middle";
-			// ζ^k, set by hand rather than with a superscript glyph: the exponent runs to two digits and
-			// the Unicode superscripts for 4-9 are missing from enough UI fonts to risk a tofu on stage.
-			for (const { x, y, k } of labels) {
-				const exp = String(k);
-				ctx.font = base;
-				const wz = ctx.measureText("ζ").width;
-				ctx.font = sup;
-				const we = ctx.measureText(exp).width;
-				const [sx, sy] = toScreen(x, y);
-				const left = sx - (wz + we) / 2;
-				ctx.fillStyle = colourOf(k, N);
-				ctx.textAlign = "left";
-				ctx.font = base;
-				ctx.fillText("ζ", left, sy);
-				ctx.font = sup;
-				ctx.fillText(exp, left + wz, sy - size * 0.3);
-			}
-			// the tick's value, tucked under the real axis so it does not crowd ζ⁰
-			ctx.font = `${size * 0.9}px ui-sans-serif, system-ui, sans-serif`;
-			ctx.fillStyle = "rgba(0,0,0,0.62)";
-			ctx.textAlign = "center";
-			const [ux, uy] = toScreen(1, -0.22);
-			ctx.fillText("1", ux, uy);
+			drawZetaWheel(p.ctx, p.s, p.dpr, N);
 		};
 
 		paint();
 		const ro = new ResizeObserver(paint);
 		ro.observe(host);
 		return () => ro.disconnect();
-	}, [data]);
+	}, [view]);
 
 	// --- panel two: one word in that alphabet ------------------------------------------------------
 	useEffect(() => {
 		const host = exHost.current, canvas = exCanvas.current;
-		if (!host || !canvas || !data) return;
+		if (!host || !canvas || !data || !view) return;
 
-		const N = data.directions;
+		const N = view.N;
 		const unit = (k: number): [number, number] => [Math.cos((2 * Math.PI * k) / N), Math.sin((2 * Math.PI * k) / N)];
 		const chainPoints = (chain: number[]) => {
 			const pts: [number, number][] = [[0, 0]];
@@ -160,8 +98,8 @@ export function PeriodFigure({ panel }: { panel?: string }) {
 			for (const k of chain) { const [dx, dy] = unit(k); x += dx; y += dy; pts.push([x, y]); }
 			return pts;
 		};
-		const p1 = chainPoints(data.t1.chain);
-		const p2 = chainPoints(data.t2.chain);
+		const p1 = chainPoints(view.t1);
+		const p2 = chainPoints(view.t2);
 		const [t1x, t1y] = data.t1.xy, [t2x, t2y] = data.t2.xy;
 
 		// The cell repeated over the lattice, kept to a margin around the period parallelogram. The
@@ -240,8 +178,8 @@ export function PeriodFigure({ panel }: { panel?: string }) {
 					ctx.stroke();
 				}
 			};
-			drawChain(p1, data.t1.chain);
-			drawChain(p2, data.t2.chain);
+			drawChain(p1, view.t1);
+			drawChain(p2, view.t2);
 
 			for (const [ex, ey] of [[t1x, t1y], [t2x, t2y]] as const) {
 				ctx.strokeStyle = "rgba(20,20,20,0.85)";
@@ -265,7 +203,7 @@ export function PeriodFigure({ panel }: { panel?: string }) {
 		const ro = new ResizeObserver(paint);
 		ro.observe(host);
 		return () => ro.disconnect();
-	}, [data]);
+	}, [data, view]);
 
 	/** The sum written out, each term in its direction's colour, so the line and the wheel agree. */
 	const sum = (chain: number[], n: number) =>
@@ -285,12 +223,12 @@ export function PeriodFigure({ panel }: { panel?: string }) {
 					<figure className="m-0 flex flex-col items-center gap-1">
 						<div
 							ref={wheelHost}
-							className={`relative aspect-square ${solo ? "h-[44vh]" : "h-[34vh]"} rounded-2xl border border-line bg-surface-base`}
+							className={`relative aspect-square ${solo ? (compact ? "h-[27vh]" : "h-[44vh]") : "h-[34vh]"} rounded-2xl border border-line bg-surface-base`}
 						>
 							<canvas ref={wheelCanvas} className="absolute inset-0 h-full w-full" />
 						</div>
 						<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">
-							the alphabet: 24 unit steps
+							the alphabet: {view?.N ?? 24} unit steps
 						</figcaption>
 					</figure>
 				) : null}
@@ -310,10 +248,10 @@ export function PeriodFigure({ panel }: { panel?: string }) {
 			</div>
 			{data && showExample ? (
 				<p className="m-0 text-center font-mono text-[clamp(0.6rem,0.9vh+0.25vw,0.85rem)] leading-relaxed text-fg-secondary">
-					T₁ = {sum(data.t1.chain, data.directions)}
+					T₁ = {sum(view.t1, view.N)}
 					<span className="text-fg-muted"> ({data.t1.weight} steps)</span>
 					<br />
-					T₂ = {sum(data.t2.chain, data.directions)}
+					T₂ = {sum(view.t2, view.N)}
 					<span className="text-fg-muted"> ({data.t2.weight} steps)</span>
 				</p>
 			) : null}

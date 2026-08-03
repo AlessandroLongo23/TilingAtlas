@@ -1940,3 +1940,10 @@ step the prose only asserts. Three frames of one growing picture: the vertex (13
 as wedges on a real octagon corner), the corona it forces (four octagons on the axes, four squares on
 the diagonals — the alternation drawn, not claimed), and the plane. Truncated square tiling at unit
 edge, octagons on a 1+√2 lattice. Each frame adds only what the one before it forced. — CC
+
+### 2026-08-02 (5) — CC — the pruned alphabet joins the octagon row, and the periods are respelled
+The ζ wheel moved to `lib/render/zetaWheel.ts` so the 24 of the problem and the 12 that survive the
+octagon are one drawing, not two. `<octagon-forcing>` gained it as a fourth frame; `<period-figure>`
+gained `dirs`, which rescales the stored ζ₂₄ chains into any coarser alphabet that divides them, so
+architecture three now spells its periods in ζ₁₂. Verified the rescale moves neither vector
+(T₁ exact, T₂ 8.9e-16). `drawWithText` now captures its screen map before drawing. — CC

@@ -512,9 +512,11 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// of squares, and above it a free binary choice per row: 2^n legal tilings all containing that
 			// same patch, of which the prune keeps one.
 			"row-stacker": RowStacker,
-			// <period-figure panel="wheel|example"> — the 24 unit ζ directions, and a tiling's two period
-			// vectors written as chains of them over the cell they generate. The bounded-weight theorem in
-			// one case, searched rather than drawn (scripts/build-period-figure.ts). Omit `panel` for both.
+			// <period-figure panel="wheel|example" dirs="12" size="sm"> — the unit ζ directions, and a
+			// tiling's two period vectors written as chains of them over the cell they generate. The
+			// bounded-weight theorem in one case, searched rather than drawn (scripts/build-period-figure.ts).
+			// Omit `panel` for both. `dirs` re-reads the same chains in a coarser alphabet once the octagon
+			// is out of the pool; `size="sm"` is for a slide that already carries another figure.
 			"period-figure": PeriodFigure,
 			// <torus-figure> — why fixing the lattice first bounds the search: the plane beside the same
 			// cell with its opposite edges identified, one tile picked out crossing the seam. Same tiling

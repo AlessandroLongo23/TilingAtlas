@@ -10,7 +10,7 @@
  * transform (it comes out mirrored). `Api.text` queues; the panel flushes in screen space afterwards.
  */
 
-import { screenMapper } from "./figureCanvas";
+import { captureScreenMap, toScreenSpace } from "./figureCanvas";
 
 export type Pt = [number, number];
 
@@ -37,6 +37,8 @@ export interface Api {
 	ctx: CanvasRenderingContext2D;
 	/** world units → CSS px, so a width of n/s is n pixels at any panel size */
 	s: number;
+	/** device pixel ratio, for a draw function that has to put text on by itself */
+	dpr: number;
 	text: (x: number, y: number, str: string, o?: TextOpts) => void;
 }
 
@@ -158,10 +160,14 @@ export function drawWithText(
 	base: number,
 	draw: (api: Api) => void,
 ) {
+	// Captured BEFORE drawing: a draw function may put text on itself and leave the context in screen
+	// space, and a mapper taken afterwards would be reading the identity transform.
+	const toScreen = captureScreenMap(ctx, dpr);
 	const queued: ({ x: number; y: number; str: string } & Required<TextOpts>)[] = [];
 	draw({
 		ctx,
 		s,
+		dpr,
 		text: (x, y, str, o) =>
 			queued.push({
 				x, y, str,
@@ -173,7 +179,7 @@ export function drawWithText(
 			}),
 	});
 
-	const toScreen = screenMapper(ctx, dpr);
+	toScreenSpace(ctx, dpr);
 	ctx.textBaseline = "middle";
 	for (const q of queued) {
 		const family = q.mono ? "ui-monospace, SFMono-Regular, Menlo, monospace" : "ui-sans-serif, system-ui, sans-serif";

@@ -3,6 +3,7 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import { dot, halo, rad, SOFT, type Api, type Pt } from "@/lib/render/figureGlyphs";
+import { drawZetaWheel } from "@/lib/render/zetaWheel";
 import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 
 // Why an octagon has no choices left to make, in three frames that are the same picture growing.
@@ -135,6 +136,15 @@ function drawPlane(api: Api) {
 	drawTile(api, { pts: octagon([0, 0]), n: 8 }, 0.95, 2.6);
 }
 
+/**
+ * The fourth frame is the payoff, and it is the SAME drawing as the ζ₂₄ wheel two slides back —
+ * drawZetaWheel, not a copy of it — with the odd powers gone. Nothing here may be free to disagree
+ * with the alphabet slide about what a ζ step looks like.
+ */
+function drawWheel({ ctx, s, dpr }: Api) {
+	drawZetaWheel(ctx, s, dpr, 12);
+}
+
 // ---------------------------------------------------------------------------------------------
 
 const box = (half: number): Box => ({ minX: -half, maxX: half, minY: -half, maxY: half });
@@ -158,11 +168,17 @@ const FRAMES: PanelSpec[] = [
 		box: box(6.4),
 		draw: drawPlane,
 	},
+	{
+		title: "twelve directions left",
+		note: "so the octagon leaves the pool, and with it the odd powers: every other tiling lives in ζ₁₂",
+		box: box(1.5),
+		draw: drawWheel,
+	},
 ];
 
 export function OctagonForcing() {
 	return (
-		<div className="not-prose mx-auto flex w-full max-w-[52rem] flex-wrap items-start justify-center gap-4">
+		<div className="not-prose mx-auto flex w-full max-w-[62rem] flex-wrap items-start justify-center gap-7">
 			{FRAMES.map((f) => (
 				<FigurePanel key={f.title} panel={f} aspect="1/1" />
 			))}

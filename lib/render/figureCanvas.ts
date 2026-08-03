@@ -43,12 +43,27 @@ export function prepare(host: HTMLElement, canvas: HTMLCanvasElement, box: Box, 
 }
 
 /**
+ * Where a world point currently sits on screen, WITHOUT touching the transform. Capture this before
+ * drawing if the drawing itself might reset the context — a shared draw helper that flushes its own
+ * text does exactly that, and a mapper captured afterwards would be reading the identity.
+ */
+export function captureScreenMap(ctx: CanvasRenderingContext2D, dpr: number): (x: number, y: number) => [number, number] {
+	const m = ctx.getTransform();
+	return (x, y) => [(m.a * x + m.c * y + m.e) / dpr, (m.b * x + m.d * y + m.f) / dpr];
+}
+
+/** Reset the context to CSS pixels, for drawing text. */
+export function toScreenSpace(ctx: CanvasRenderingContext2D, dpr: number) {
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+	ctx.scale(dpr, dpr);
+}
+
+/**
  * Capture the world transform, then reset the context to CSS pixels for drawing text. The returned
  * function maps a world point to where it now sits on screen.
  */
 export function screenMapper(ctx: CanvasRenderingContext2D, dpr: number): (x: number, y: number) => [number, number] {
-	const m = ctx.getTransform();
-	ctx.setTransform(1, 0, 0, 1, 0, 0);
-	ctx.scale(dpr, dpr);
-	return (x, y) => [(m.a * x + m.c * y + m.e) / dpr, (m.b * x + m.d * y + m.f) / dpr];
+	const map = captureScreenMap(ctx, dpr);
+	toScreenSpace(ctx, dpr);
+	return map;
 }
