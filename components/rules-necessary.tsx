@@ -3,7 +3,7 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	ACCEPT, arrowHead, DART, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT, T1_COLOUR,
+	arrowHead, classMark, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT,
 	type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
 
@@ -22,10 +22,10 @@ import {
 // carries that break into every descendant. Rejecting at the first violation therefore discards a
 // subtree that contained no finished gluing to begin with.
 //
-// The three corner colours are the three orbits of the hexagon's corners under its half-turn. Colour
-// is never the only carrier — the pairing is also the geometry, opposite corner to opposite corner.
-
-const ORBIT = [T1_COLOUR, DART, ACCEPT];
+// The three corner marks are the three orbits of the hexagon's corners under its half-turn, told apart
+// by SHAPE. Hue would have been easier and wrong: green means "legal" on the four-rules slide seven
+// slides back, where it sits on a hexagon's corners exactly like this, and orange means "the half-edge
+// being worked on" everywhere in the deck.
 
 /** The crystallographic 2-fold mark, over a cleared disc so it reads on top of the tile. */
 function halfTurn({ ctx }: Api, at: Pt, r = 0.09) {
@@ -63,12 +63,28 @@ function drawDivisor(api: Api) {
 	}
 	ctx.closePath();
 	ctx.stroke();
+	// the six steps of the walk in the plane, so the fold maps a walk to a walk and not a dot pattern
+	for (let i = 0; i < 6; i++) {
+		const a = corner(i), b = corner((i + 1) % 6);
+		const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+		arrowHead(api, [a[0] + Math.cos(ang) * R * 0.62, a[1] + Math.sin(ang) * R * 0.62], ang, GHOST, 8);
+	}
 	for (let i = 0; i < 6; i++) {
 		const p = corner(i);
-		dot(api, p[0], p[1], 6.2, ORBIT[i % 3]);
+		halo(api, p[0], p[1], 8);
+		classMark(api, p[0], p[1], (i % 3) as 0 | 1 | 2, 5.6);
 	}
 	halfTurn(api, c);
-	text(c[0], c[1] - 0.62, "n = 6 corners, r = 2", { colour: SOFT, size: 0.62 });
+	// The mirror the face may also carry, struck out: L1(i) counts the ROTATIONS in the stabiliser and
+	// nothing else, and a reflection does not shorten the walk. Reading "orbits of the corners" instead
+	// of "orbits of the rotations" is exactly the plausible strengthening that would be unsound — on
+	// this very hexagon, a 2mm stabiliser has two corner orbits while the walk still closes at three.
+	// Vertical, through the top and bottom corners. Drawn horizontally it lay on the fold arrow's own
+	// line and the two dashed strokes read as one object.
+	segment(api, [c[0], c[1] - 0.58], [c[0], c[1] + 0.58], GHOST, 1.6, [5, 4]);
+	segment(api, [c[0] - 0.13, c[1] + 0.3], [c[0] + 0.13, c[1] + 0.44], REJECT, 2.2);
+	text(c[0], c[1] - 0.5, "a mirror does not shorten it", { colour: SOFT, size: 0.54 });
+	text(c[0], c[1] - 0.72, "n = 6 corners, r = 2 rotations", { colour: SOFT, size: 0.6 });
 
 	// the fold
 	segment(api, [-0.09, 0.14], [0.11, 0.14], SOFT, 2, [5, 4]);
@@ -92,11 +108,13 @@ function drawDivisor(api: Api) {
 	}
 	for (let i = 0; i < 3; i++) {
 		const p = qc(i);
-		dot(api, p[0], p[1], 6.2, ORBIT[i]);
+		halo(api, p[0], p[1], 8);
+		classMark(api, p[0], p[1], i as 0 | 1 | 2, 5.6);
 	}
-	text(q[0], q[1] - 0.62, "the walk closes at 3", { colour: SOFT, size: 0.62 });
+	text(q[0], q[1] - 0.5, "ℓ = 3", { colour: INK, size: 0.66, weight: 600 });
+	text(q[0], q[1] - 0.72, "one step per orbit", { colour: SOFT, size: 0.6 });
 
-	text(0, -0.9, "ℓ = n / r, so ℓ always divides n", { colour: INK, size: 0.74, weight: 600 });
+	text(0, -0.94, "the rotations act freely, so r divides n", { colour: INK, size: 0.7, weight: 600 });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -132,7 +150,9 @@ function drawHeredity(api: Api) {
 
 	for (const [i, n] of TREE.entries()) {
 		if (n.parent === null) continue;
-		const dead = BELOW.has(i);
+		// The edge INTO the cut node stays solid: the search DID reach it, test it and reject it. Greying
+		// it says the branch was never taken, which is the opposite of the panel's claim.
+		const dead = BELOW.has(i) && i !== CUT;
 		segment(api, TREE[n.parent].at, n.at, dead ? GHOST : INK, dead ? 1.5 : 2.2, dead ? [5, 4] : undefined);
 	}
 	for (const [i, n] of TREE.entries()) {
@@ -144,9 +164,20 @@ function drawHeredity(api: Api) {
 		}
 	}
 
+	const { ctx, s: sc } = api;
+	ctx.strokeStyle = "hsl(2 70% 46% / 0.35)";
+	ctx.lineWidth = 1.6 / sc;
+	ctx.setLineDash([6 / sc, 5 / sc]);
+	ctx.beginPath();
+	ctx.roundRect(0.04, -0.88, 1.2, 1.36, 0.06);
+	ctx.stroke();
+	ctx.setLineDash([]);
+
 	text(TREE[CUT].at[0] + 0.26, TREE[CUT].at[1] + 0.02, "✗", { colour: REJECT, size: 0.95, weight: 700 });
+	text(TREE[CUT].at[0] + 0.3, TREE[CUT].at[1] - 0.2, "4 ∤ 6", { colour: REJECT, size: 0.58, weight: 600 });
+	text(-0.36, 0.54, "+1 gluing", { colour: SOFT, size: 0.54 });
 	text(0.62, -1.02, "nothing below here", { colour: REJECT, size: 0.66, weight: 600 });
-	text(0, -1.26, "because a gluing is never taken back out", { colour: SOFT, size: 0.62 });
+	text(0, -1.26, "because every descendant keeps its ancestor's gluings", { colour: SOFT, size: 0.6 });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -156,13 +187,13 @@ const BOX: Box = { minX: -1.3, maxX: 1.3, minY: -1.32, maxY: 1.0 };
 const PANELS: PanelSpec[] = [
 	{
 		title: "why the divisor rule is forced",
-		note: "a face is visited once per orbit of its corners, so the quotient walk closes at n/r — and r is the order of a rotation",
+		note: "the walk visits one corner per orbit of the ROTATIONS fixing the face, so it closes at n/r, and those rotations act freely",
 		box: { minX: -1.3, maxX: 1.3, minY: -1.16, maxY: 0.8 },
 		draw: drawDivisor,
 	},
 	{
 		title: "why rejecting early costs nothing",
-		note: "gluings are only ever added, so a broken rule is broken in every descendant and the discarded subtree held no tiling",
+		note: "along one branch gluings are only added, so a broken rule stays broken below and the cut subtree held no tiling",
 		box: BOX,
 		draw: drawHeredity,
 	},
@@ -172,7 +203,7 @@ export function RulesNecessary() {
 	return (
 		<div className="not-prose mx-auto flex w-full max-w-[52rem] flex-wrap items-start justify-center gap-6">
 			{PANELS.map((p) => (
-				<FigurePanel key={p.title} panel={p} aspect="6/5" />
+				<FigurePanel key={p.title} panel={p} aspect="4/3" />
 			))}
 		</div>
 	);

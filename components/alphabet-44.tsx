@@ -111,7 +111,15 @@ function LetterCell({ letter }: { letter: AlphabetLetter }) {
 					// y down in SVG, y up in the figure: one flip on the group, so the angles the generator
 					// emits are the angles drawn.
 					<svg viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`} className="h-full w-full" role="img" aria-label={letter.symbol}>
-						<g transform="scale(1,-1)">
+						{/* Clipped to a DISC, not to the cell. A 12-gon runs past the frame at cap scale, and a
+						    square clip is not invariant under a diagonal axis: the region on one side of the
+						    drawn mirror comes out a different SHAPE from the region on the other, in a figure
+						    whose whole claim is that the mark is a symmetry of what is drawn. A radial clip
+						    commutes with every rotation and reflection about the vertex, so all 44 stay honest. */}
+						<clipPath id={`vx-${letter.code}`}>
+							<circle cx={0} cy={0} r={VIEW} />
+						</clipPath>
+						<g transform="scale(1,-1)" clipPath={`url(#vx-${letter.code})`}>
 							{geo.polys.map((p, i) => (
 								<path
 									key={i}
@@ -180,7 +188,7 @@ export function Alphabet44() {
 				{BLOCKS.map((b) => (
 					<div key={b.word} className="flex flex-col items-center gap-[0.2rem]">
 						<div className="font-mono leading-none text-fg-muted" style={{ fontSize: "var(--label)" }}>
-							{b.word}
+							{b.word} · {b.letters.length}
 						</div>
 						<div className="flex gap-[0.2rem]">
 							{b.letters.map((l) => (
@@ -190,19 +198,30 @@ export function Alphabet44() {
 					</div>
 				))}
 			</div>
-			<div className="flex items-center justify-center gap-5 text-fg-muted" style={{ fontSize: "var(--label)" }}>
+			<div
+				className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-fg-muted"
+				style={{ fontSize: "var(--label)" }}
+			>
 				<span className="flex items-center gap-1.5">
-					<svg viewBox="-1 -1 2 2" className="h-[0.9em] w-[0.9em]" aria-hidden>
-						<line x1={-0.9} y1={0} x2={0.9} y2={0} stroke={MIRROR} strokeWidth={0.18} strokeLinecap="round" />
+					<svg viewBox="-1 -1 2 2" className="h-[1em] w-[1em]" aria-hidden>
+						<line x1={-0.92} y1={0} x2={0.92} y2={0} stroke={MIRROR} strokeWidth={0.2} strokeLinecap="round" />
 					</svg>
 					a mirror through the vertex
 				</span>
+				{/* All four rotation marks, not one standing for the set: at cell size the hexagon and the
+				    square are the two a reader is least likely to name unaided. */}
 				<span className="flex items-center gap-1.5">
-					<svg viewBox="-1 -1 2 2" className="h-[0.9em] w-[0.9em]" aria-hidden>
-						<polygon points="0,-0.78 0.68,0.39 -0.68,0.39" fill={MARK} />
-					</svg>
-					a rotation about it, 2- to 6-fold
+					{([2, 3, 4, 6] as const).map((r) => (
+						<span key={r} className="flex items-center gap-0.5">
+							<svg viewBox="-0.5 -0.5 1 1" className="h-[1em] w-[1em]" aria-hidden>
+								<RotationMark r={r} />
+							</svg>
+							{r}
+						</span>
+					))}
+					-fold rotation about it
 				</span>
+				<span>S both · R rotation only · A one mirror · F neither</span>
 			</div>
 		</div>
 	);

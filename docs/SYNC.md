@@ -1962,3 +1962,12 @@ drawn by eye: `scripts/build-alphabet-figure.mjs` recovers each subgroup from th
 finding the one whose dart orbits that entry's label array transverses, then checks it against
 ferkval, against |H|·fold = 2m, against one-per-conjugacy-class (= 44), and against the drawn figure.
 Also `<rules-necessary>`, `<no-drop>`, `<refinement-exact>`, `<flat-torus>`, `<quotient-bridge>`. — CC
+
+### 2026-08-03 (3) — CC — seven reviewers on the six obligation figures, and what they were wrong about
+Adversarial pass, one agent per figure plus a cross-cutting one. Real defects, verified before acting:
+the deck breaks in DARK MODE (every canvas figure, not just the new ones — slide 30 goes blank), now
+pinned light on the /defense route; obligation 3 drew its target OPEN while claiming it closed, and
+drew rneig without mirro so |Aut| read as 4; obligation 4's counterexample was separable by 1-WL on
+cardinality, replaced by C3⊔C6 as one structure (1 class, |Aut| 18, 2 orbits — checked) with the CORE
+hypothesis named; obligation 5's torus marks were inverted against slide 19; obligation 6's quotient
+is now T/Λ, which makes the two-vertex drawing exact. Two false sentences killed. — CC

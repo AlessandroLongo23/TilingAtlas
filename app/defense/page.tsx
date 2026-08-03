@@ -65,9 +65,30 @@ async function loadCells(
 	return { cells, sources };
 }
 
+/**
+ * The deck is always light, whatever the machine it is presented from is set to.
+ *
+ * The root layout picks the theme from `localStorage.theme`, falling back to the OS setting, so a
+ * laptop in dark appearance with no stored preference opens /defense in dark — and every figure in
+ * the deck is drawn in fixed inks on fixed pastel fills (`lib/render/figureGlyphs.ts` hardcodes
+ * rgba(20,20,20,…), the tile colours come from the atlas's own hues). On a dark surface the strokes
+ * disappear: measured on slide 30, the mirror-break panel goes blank and the false-closure hexagons
+ * vanish, leaving their marker dots floating. That is every canvas figure in the deck, not one slide,
+ * and it would happen on the day without warning.
+ *
+ * The script runs during parse, before the deck paints, so there is no flash. It is scoped to this
+ * route; nothing else in the atlas changes.
+ */
+const PIN_LIGHT = `document.documentElement.classList.remove('dark');`;
+
 export default async function DefensePage() {
 	const talk = await loadTalk();
 	const slides = parseSlides(talk);
 	const { cells, sources } = await loadCells(referencedTilingIds(talk));
-	return <DefenseClient slides={slides} cells={cells} sources={sources} />;
+	return (
+		<>
+			<script dangerouslySetInnerHTML={{ __html: PIN_LIGHT }} />
+			<DefenseClient slides={slides} cells={cells} sources={sources} />
+		</>
+	);
 }

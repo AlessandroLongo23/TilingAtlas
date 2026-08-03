@@ -3,7 +3,7 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arrowHead, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT, T1_COLOUR, T2_COLOUR,
+	arrowHead, DART, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT, T1_COLOUR, T2_COLOUR,
 	type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
 import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
@@ -53,31 +53,33 @@ const R = 0.62;
 function drawHolonomy(api: Api) {
 	const { ctx, s, text } = api;
 	// three of the four corners: 2 + 3 + 4 units, so the walk comes back a quarter turn short
+	// Five triangles: 5 x 2 = 10 twelfths, so the link CANNOT close however it is continued. Chosen so
+	// the panel is not a truncated 3.4.6.4 with one wedge missing, which read as "a tile is absent"
+	// and made panel 2 look like the answer to a different question.
 	let a = 66;
-	for (const n of [3, 4, 6]) {
+	for (const n of [3, 3, 3, 3, 3]) {
 		const span = (360 * units(n)) / D;
 		wedge(api, C, a, span, n, R);
 		a += span;
 	}
-	// the deficit, and the turn it represents
-	ctx.fillStyle = "hsl(2 70% 46% / 0.13)";
-	ctx.beginPath();
-	ctx.moveTo(C[0], C[1]);
-	ctx.arc(C[0], C[1], R, rad(a), rad(66 + 360));
-	ctx.closePath();
-	ctx.fill();
+	// The first and last edges of the walk are the SAME edge of the gluing, and they have come back
+	// short of each other. No fill in the gap: a filled sector reads as a hole in a tiling.
+	segment(api, C, [C[0] + Math.cos(rad(66)) * R * 1.16, C[1] + Math.sin(rad(66)) * R * 1.16], DART, 3);
+	segment(api, C, [C[0] + Math.cos(rad(a)) * R * 1.16, C[1] + Math.sin(rad(a)) * R * 1.16], DART, 3);
 	ctx.strokeStyle = REJECT;
 	ctx.lineWidth = 2 / s;
 	ctx.setLineDash([5 / s, 4 / s]);
+	ctx.beginPath();
+	ctx.arc(C[0], C[1], R * 1.16, rad(a), rad(66 + 360));
 	ctx.stroke();
 	ctx.setLineDash([]);
-
 	const mid = rad(a + (360 + 66 - a) / 2);
-	text(C[0] + Math.cos(mid) * R * 0.62, C[1] + Math.sin(mid) * R * 0.62, "?", {
-		colour: REJECT, size: 1.0, weight: 700,
+	halo(api, C[0] + Math.cos(mid) * R * 1.16, C[1] + Math.sin(mid) * R * 1.16, 10);
+	text(C[0] + Math.cos(mid) * R * 1.16, C[1] + Math.sin(mid) * R * 1.16, "?", {
+		colour: REJECT, size: 0.95, weight: 700,
 	});
 	dot(api, C[0], C[1], 5.5);
-	text(0, -0.86, "the walk returns turned", { colour: REJECT, size: 0.68, weight: 600 });
+	text(0, -0.88, "the same edge, come back turned", { colour: REJECT, size: 0.62, weight: 600 });
 }
 
 function drawFlat(api: Api) {
@@ -110,8 +112,14 @@ function drawTorus(api: Api) {
 	ctx.fill();
 	ctx.stroke();
 
-	// a couple of faces inside, so the cell reads as a piece of tiling and not as a bare square
-	for (const [cx, cy, n] of [[-0.2, 0.16, 6], [0.22, -0.24, 4]] as const) {
+	// A tile STRADDLING the seam, drawn once on each side and CLIPPED to the cell, so the panel shows
+	// what "closed" means instead of asserting it: what leaves the right edge arrives on the left.
+	// Unclipped the two halves hang off the outside and read as two extra tiles.
+	ctx.save();
+	ctx.beginPath();
+	ctx.rect(-h, -h - 0.06, 2 * h, 2 * h);
+	ctx.clip();
+	for (const [cx, cy, n] of [[-0.2, 0.16, 6], [0.22, -0.24, 4], [h, 0.2, 4], [-h, 0.2, 4]] as const) {
 		const rr = n === 6 ? 0.19 : 0.15;
 		ctx.fillStyle = wedgeFill(n);
 		ctx.strokeStyle = wedgeLine(n);
@@ -127,24 +135,23 @@ function drawTorus(api: Api) {
 		ctx.fill();
 		ctx.stroke();
 	}
+	ctx.restore();
 
-	// one chevron on the T1 pair, two on the T2 pair: the standard identification marks
+	// The identification, in slide 19's convention and no other: the edges RUNNING along T1 are the
+	// ones T2 carries across, so they wear T2's two chevrons, and the edges along T2 wear T1's one.
+	// The first version had both the colour and the count on the wrong pair, which put this panel at
+	// odds with slide 19 and with panel 4 of its own figure, where T1 is the horizontal generator.
 	const chevrons = (at: Pt, ang: number, count: number, colour: string) => {
 		for (let i = 0; i < count; i++) {
-			const off = (i - (count - 1) / 2) * 0.09;
+			const off = (i - (count - 1) / 2) * 0.1;
 			const base: Pt = [at[0] + Math.cos(ang) * off, at[1] + Math.sin(ang) * off];
 			arrowHead(api, base, ang, colour, 11);
 		}
 	};
-	for (const y of [-h - 0.06, h - 0.06]) {
-		segment(api, [-h, y], [h, y], T1_COLOUR, 2.6);
-		chevrons([0, y], 0, 1, T1_COLOUR);
-	}
-	for (const x of [-h, h]) {
-		segment(api, [x, -h - 0.06], [x, h - 0.06], T2_COLOUR, 2.6);
-		chevrons([x, -0.06], Math.PI / 2, 2, T2_COLOUR);
-	}
-	text(0, -0.86, "closed, flat, oriented", { colour: INK, size: 0.68, weight: 600 });
+	for (const y of [-h - 0.06, h - 0.06]) chevrons([0, y], 0, 2, T2_COLOUR);
+	for (const x of [-h, h]) chevrons([x, -0.06], Math.PI / 2, 1, T1_COLOUR);
+	text(0, -0.88, "closed, flat, oriented", { colour: INK, size: 0.66, weight: 600 });
+	text(0, -1.06, "once the bundle unfolds the mirrors", { colour: SOFT, size: 0.58 });
 }
 
 /** The lattice of lifts, with one cell picked out: the plane covering the torus. */
@@ -169,19 +176,19 @@ function drawCover(api: Api) {
 		arrowHead(api, [dx, dy - 0.06], Math.atan2(dy, dx), colour, 11);
 	}
 	dot(api, 0, -0.06, 5);
-	halo(api, 0, 0.52, 15);
-	text(0, 0.52, "ℂ → ℂ/Λ", { colour: INK, size: 0.7, weight: 600 });
-	text(0, -0.86, "no fold, so no overlap", { colour: INK, size: 0.68, weight: 600 });
+	halo(api, 0, 0.52, 30);
+	text(0, 0.52, "ℂ → ℂ/Λ", { colour: INK, size: 0.68, weight: 600 });
+	text(0, -0.88, "the tiles are lifts, so nothing folds", { colour: INK, size: 0.62, weight: 600 });
 }
 
 // ---------------------------------------------------------------------------------------------
 
-const BOX: Box = { minX: -0.92, maxX: 0.92, minY: -1.02, maxY: 0.82 };
+const BOX: Box = { minX: -0.92, maxX: 0.92, minY: -1.16, maxY: 0.8 };
 
 const PANELS: PanelSpec[] = [
 	{
 		title: "the risk",
-		note: "walking the assembly to lay down coordinates, the tour of a vertex might not close a full turn",
+		note: "walking the assembly to lay down coordinates, the tour of a vertex might come back to its own first edge turned",
 		box: BOX,
 		draw: drawHolonomy,
 	},
@@ -193,13 +200,13 @@ const PANELS: PanelSpec[] = [
 	},
 	{
 		title: "so it is a torus",
-		note: "the glued surface is compact, flat and oriented, and Killing–Hopf leaves ℂ/Λ and nothing else",
+		note: "the bundle surface is compact and flat, and oriented because the bundle unfolds every mirror; Killing–Hopf then leaves ℂ/Λ and nothing else",
 		box: BOX,
 		draw: drawTorus,
 	},
 	{
-		title: "and the plane covers it",
-		note: "a covering map of the plane by the plane is a homeomorphism, which is what rules out a global overlap",
+		title: "the plane covers it",
+		note: "the plane is the cover of the glued surface and the tiles are its lifts, so there is no immersion that could fold and no overlap",
 		box: BOX,
 		draw: drawCover,
 	},

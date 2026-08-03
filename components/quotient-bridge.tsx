@@ -3,7 +3,7 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arc, arrowHead, DART, dot, INK, rad, segment, SOFT, T1_COLOUR,
+	arc, arrowHead, DART, dot, halo, INK, rad, segment, SOFT, T1_COLOUR,
 	type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
 import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
@@ -23,11 +23,8 @@ import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 // 3. So T/G(T) is a finite closed valid gluing over the alphabet with exactly k vertices, it is a
 //    core (B2b), and develop takes it back to T. Fold and develop are mutually inverse, which is the
 //    sentence that turns five obligations about what the engine builds into a completeness claim.
-//    The pair in that panel is schematic on one point, deliberately: the fragment on the left stands
-//    for a tiling rather than being one, so the two vertices on the right are not a claim about how
-//    many orbits those particular hexagons have. Drawing the honeycomb's own quotient truthfully would
-//    mean one vertex carrying one half-edge glued to itself, which needs a paragraph the panel has no
-//    room for.
+//    Panel three folds by the LATTICE, not by the whole group, which is what lets the drawing be exact:
+//    the honeycomb modulo its translations is two vertices, three edges and one face.
 
 const fill = (n: number) => hsbToHsla(polygonHue(n), 40, 100, 0.85);
 const stroke = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
@@ -74,9 +71,11 @@ function drawCocompact(api: Api) {
 		dot(api, c[0] + Math.cos(t) * R, c[1] + Math.sin(t) * R, 3.6, "rgba(20,20,20,0.6)");
 	}
 
-	text(0.42, -0.32, "R", { colour: SOFT, size: 0.72, weight: 600 });
-	segment(api, c, [c[0] + Math.cos(rad(-30)) * R, c[1] + Math.sin(rad(-30)) * R], SOFT, 1.6);
-	text(0, -0.78, "every point is within R of a vertex", { colour: INK, size: 0.64 });
+	segment(api, c, [c[0] + Math.cos(rad(-30)) * R, c[1] + Math.sin(rad(-30)) * R], INK, 2.2);
+	halo(api, c[0] + Math.cos(rad(-30)) * R * 0.55, c[1] + Math.sin(rad(-30)) * R * 0.55 + 0.06, 9);
+	text(c[0] + Math.cos(rad(-30)) * R * 0.55, c[1] + Math.sin(rad(-30)) * R * 0.55 + 0.06, "R", { colour: INK, size: 0.66, weight: 700 });
+	text(0, -0.72, "every point lies in a tile, so within R of a vertex", { colour: INK, size: 0.6 });
+	text(0, -0.93, "and the vertices fall into k orbits", { colour: INK, size: 0.6 });
 }
 
 /** A vertex of the largest possible degree, and the two flags each of its corners carries. */
@@ -127,21 +126,34 @@ function drawRoundTrip(api: Api) {
 	}
 	text(-0.5, -0.3, "T", { colour: INK, size: 0.8, weight: 700 });
 
-	// Right: its quotient. Drawn CLOSED — three edges between two vertices, no free ends anywhere —
-	// because the quotient of a tiling by its own symmetries has every half-edge glued. Free ends here
-	// would say the opposite of what the panel claims.
+	// Right: the honeycomb folded by its TRANSLATION lattice, which is what makes this drawing exactly
+	// true rather than schematic. Two vertices, three edges, one hexagonal face: V − E + F = 0, the
+	// honeycomb on a torus. Folding by the full symmetry group instead would give a single vertex
+	// carrying one half-edge glued to itself, which is correct and needs a paragraph to read; B3 covers
+	// any subgroup with finitely many flag orbits, so develop still returns T either way.
 	// The three edges are drawn as one bowed curve each, and the seam where their two half-edges meet
 	// has to be SHORT: the three midpoints sit one above another, and at full length the ticks join up
 	// into a single line through the middle that reads as a divider instead of three seams.
-	const A: Pt = [0.38, 0.28], B: Pt = [0.8, 0.28];
-	for (const bow of [0.2, 0, -0.2]) {
-		const m = arc(api, A, B, bow, INK, 3);
-		const ang = Math.atan2(B[1] - A[1], B[0] - A[0]) + Math.PI / 2;
-		segment(api, [m[0] - Math.cos(ang) * 0.026, m[1] - Math.sin(ang) * 0.026],
-			[m[0] + Math.cos(ang) * 0.026, m[1] + Math.sin(ang) * 0.026], SOFT, 2);
+	const A: Pt = [0.36, 0.28], B: Pt = [0.82, 0.28];
+	for (const [bow, t] of [[0.22, 0.36], [0, 0.5], [-0.22, 0.64]] as const) {
+		arc(api, A, B, bow, INK, 3);
+		// The seam at a different point along each curve. Put all three at the midpoint and they stack
+		// into one vertical dashed line through the middle, which in this company reads as a mirror.
+		const c: Pt = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2 + bow];
+		const at: Pt = [
+			(1 - t) ** 2 * A[0] + 2 * t * (1 - t) * c[0] + t ** 2 * B[0],
+			(1 - t) ** 2 * A[1] + 2 * t * (1 - t) * c[1] + t ** 2 * B[1],
+		];
+		const d: Pt = [
+			2 * (1 - t) * (c[0] - A[0]) + 2 * t * (B[0] - c[0]),
+			2 * (1 - t) * (c[1] - A[1]) + 2 * t * (B[1] - c[1]),
+		];
+		const ang = Math.atan2(d[1], d[0]) + Math.PI / 2;
+		segment(api, [at[0] - Math.cos(ang) * 0.035, at[1] - Math.sin(ang) * 0.035],
+			[at[0] + Math.cos(ang) * 0.035, at[1] + Math.sin(ang) * 0.035], SOFT, 2);
 	}
 	for (const h of [A, B]) dot(api, h[0], h[1], 5.4);
-	text(0.59, -0.3, "T / G(T)", { colour: INK, size: 0.7, weight: 700, mono: true });
+	text(0.59, -0.3, "T / Λ", { colour: INK, size: 0.72, weight: 700, mono: true });
 
 	// the two maps, and the claim that they are inverse
 	const up = arc(api, [-0.16, 0.5], [0.2, 0.5], 0.13, DART, 2.2);
@@ -151,29 +163,29 @@ function drawRoundTrip(api: Api) {
 	arrowHead(api, [-0.16, 0.1], Math.PI + 0.55, T1_COLOUR, 10);
 	text(down[0], down[1] - 0.15, "develop", { colour: T1_COLOUR, size: 0.6, weight: 600 });
 
-	text(0, -0.78, "and they are mutually inverse", { colour: INK, size: 0.64 });
+	text(0, -0.78, "and they are mutually inverse", { colour: INK, size: 0.62 });
 }
 
 // ---------------------------------------------------------------------------------------------
 
-const BOX: Box = { minX: -0.94, maxX: 0.94, minY: -0.94, maxY: 0.72 };
+const BOX: Box = { minX: -0.9, maxX: 0.9, minY: -1.06, maxY: 0.7 };
 
 const PANELS: PanelSpec[] = [
 	{
-		title: "so the symmetries act cocompactly",
+		title: "the symmetries act cocompactly",
 		note: "with a discrete group that gives a wallpaper group, a lattice of translations, and periodicity as a theorem",
 		box: BOX,
 		draw: drawCocompact,
 	},
 	{
-		title: "and the quotient is finite",
-		note: "every angle is at least 60°, so a vertex carries at most twelve flags and a k-uniform tiling at most 12k",
+		title: "so the quotient is finite",
+		note: "every angle is at least 60°, so a vertex carries at most twelve flags and a k-uniform tiling at most 12k flag orbits",
 		box: BOX,
 		draw: drawFlagBound,
 	},
 	{
-		title: "so every tiling is a gluing",
-		note: "T/G(T) is a finite closed gluing over the alphabet with exactly k vertices, and developing it returns T",
+		title: "and every tiling is a gluing",
+		note: "folding by the lattice gives a finite closed gluing over the alphabet, and developing it returns T; folding by the whole group gives the core the search enumerates, with exactly k vertices",
 		box: BOX,
 		draw: drawRoundTrip,
 	},

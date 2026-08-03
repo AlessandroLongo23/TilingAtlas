@@ -117,14 +117,54 @@ export function halo({ ctx, s }: Api, x: number, y: number, r: number) {
  * sent the local-rules figure back for — a gluing joins two half-edges END TO END, it does not press
  * two faces together — so every figure that draws a finished edge draws it through here.
  */
-export function gluedEdge(api: Api, hubA: Pt, endA: Pt, hubB: Pt, endB: Pt, colour = INK, w = 3.2) {
-	segment(api, hubA, endA, colour, w);
-	segment(api, hubB, endB, colour, w);
-	segment(api, endA, endB, colour, w);
+export function gluedEdge({ ctx, s, text }: Api, hubA: Pt, endA: Pt, hubB: Pt, endB: Pt, colour = INK, w = 3.2) {
+	// ONE path, not three overlapping segments. The inks here are translucent (INK is alpha 0.88), so
+	// three round-capped strokes meeting at endA and endB composite darker there and the finished edge
+	// comes out reading as dot-seam-dot — as though it had extra vertices in it. Reported on the
+	// obligation-3 figure, where the panel's whole subject is how many vertices there are.
+	ctx.strokeStyle = colour;
+	ctx.lineWidth = w / s;
+	ctx.lineCap = "round";
+	ctx.lineJoin = "round";
+	ctx.beginPath();
+	ctx.moveTo(hubA[0], hubA[1]);
+	ctx.lineTo(endA[0], endA[1]);
+	ctx.lineTo(endB[0], endB[1]);
+	ctx.lineTo(hubB[0], hubB[1]);
+	ctx.stroke();
 	const m: Pt = [(endA[0] + endB[0]) / 2, (endA[1] + endB[1]) / 2];
 	const ang = Math.atan2(endB[1] - endA[1], endB[0] - endA[0]) + Math.PI / 2;
-	segment(api, [m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
+	segment({ ctx, s, text } as Api, [m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
 		[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07], SOFT, 2);
+}
+
+/**
+ * A mark for an arbitrary class: an orbit, a partition cell, anything whose labels carry no meaning
+ * beyond "these two are the same and that one is different".
+ *
+ * SHAPE and not hue, deliberately. Every colour in this file already means something — REJECT and
+ * ACCEPT are verdicts, DART is the half-edge a stage is working on, T1/T2 are the two period
+ * directions — and painting an orbit in one of them says something the figure does not mean. Three
+ * consecutive slides were caught doing it: green for "orbit 3" seven slides after green meant "this
+ * closure is legal", and orange for the automorphism orbit that was never worked on.
+ */
+export function classMark({ ctx, s }: Api, x: number, y: number, kind: 0 | 1 | 2, r = 6, colour = INK) {
+	const R = r / s;
+	if (kind === 1) {
+		ctx.fillStyle = "#fff";
+		ctx.beginPath();
+		ctx.arc(x, y, R, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.strokeStyle = colour;
+		ctx.lineWidth = 2.4 / s;
+		ctx.stroke();
+		return;
+	}
+	ctx.fillStyle = colour;
+	ctx.beginPath();
+	if (kind === 0) ctx.arc(x, y, R, 0, 2 * Math.PI);
+	else ctx.rect(x - R * 0.88, y - R * 0.88, R * 1.76, R * 1.76);
+	ctx.fill();
 }
 
 /**
