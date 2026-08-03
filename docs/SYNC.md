@@ -1954,3 +1954,11 @@ Two slides instead of a definition plus a stranded result. The first keeps the d
 Zeller/Delgado-Friedrichs/Huson, arXiv:2007.10625, on a log axis with k=1,2,3 marked. Their table
 ends at δ=24, exactly the k=2 ceiling. Our own cost measured for the slide and logged:
 16,500 nodes at k=1, 314,028,907 at k=2 (473.6 s, returns 20), not one D-set at k=3 in 60M. — CC
+
+### 2026-08-03 (2) — CC — a slide and a figure for each of the six proof obligations
+Part four now runs 1 to 6 in the table's own order, each with a drawing. `<alphabet-44>` is the whole
+alphabet grouped by its 14 configurations, and the site symmetry on every letter is DERIVED, not
+drawn by eye: `scripts/build-alphabet-figure.mjs` recovers each subgroup from the shipped table by
+finding the one whose dart orbits that entry's label array transverses, then checks it against
+ferkval, against |H|·fold = 2m, against one-per-conjugacy-class (= 44), and against the drawn figure.
+Also `<rules-necessary>`, `<no-drop>`, `<refinement-exact>`, `<flat-torus>`, `<quotient-bridge>`. — CC

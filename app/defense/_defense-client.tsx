@@ -23,6 +23,12 @@ import { DsymGrowth } from "@/components/dsym-growth";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
 import { PartSlide } from "@/components/part-slide";
 import { ObligationsMark } from "@/components/obligations-mark";
+import { Alphabet44 } from "@/components/alphabet-44";
+import { RulesNecessary } from "@/components/rules-necessary";
+import { NoDrop } from "@/components/no-drop";
+import { RefinementExact } from "@/components/refinement-exact";
+import { FlatTorus } from "@/components/flat-torus";
+import { QuotientBridge } from "@/components/quotient-bridge";
 import { FailedPath } from "@/components/failed-path";
 import { ShowcaseWall } from "@/components/showcase-wall";
 import { orbitsFor } from "@/lib/defense/orbitCache";
@@ -558,6 +564,25 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// introduces the split; `part="backup"` appends the backup deck as a sixth row. One figure
 			// may be authored between the tags, and it sits beside the list, uncaptioned.
 			"part-slide": PartSlide,
+			// The six obligation figures of part four, one per slide, in order.
+			//
+			// <alphabet-44> — the whole alphabet: 44 letters grouped by the 14 configurations they refine,
+			// each drawn with the mirrors and rotation it carries. Symmetry data recovered from the shipped
+			// table by scripts/build-alphabet-figure.mjs, not drawn by eye.
+			"alphabet-44": Alphabet44,
+			// <rules-necessary> — why the four local rules reject nothing real: the divisor is forced by the
+			// quotient (l = n/r), and a broken rule stays broken in every descendant.
+			"rules-necessary": RulesNecessary,
+			// <no-drop> — the descent always has a move, and the one step that could still lose a tiling:
+			// the Aut-orbit transversal, with (4,4,4,4)A2 where the Python solver's was one dart short.
+			"no-drop": NoDrop,
+			// <refinement-exact> — the 3-cycle/6-cycle that refinement cannot separate, beside the flag
+			// rigidity that makes the test exact here anyway.
+			"refinement-exact": RefinementExact,
+			// <flat-torus> — holonomy, the 12-unit vertex link that rules it out, the torus, and the cover.
+			"flat-torus": FlatTorus,
+			// <quotient-bridge> — cocompactness, the 12k flag bound, and fold/develop as mutual inverses.
+			"quotient-bridge": QuotientBridge,
 			// <obligations-mark> — six boxes, five filled: the Part IV door, where the act behind it has
 			// a table and no figure to borrow. Numbering follows the obligations table.
 			"obligations-mark": ObligationsMark,
