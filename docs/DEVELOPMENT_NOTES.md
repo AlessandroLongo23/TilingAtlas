@@ -8610,3 +8610,42 @@ Two changes made the true limits reachable rather than merely known:
 `build.test.ts` now builds at both ends of every slider, so a truncated bound fails the suite instead of
 looking measured. One honest exception: Type 1's `b/a` has no upper limit at all (it still tiles at
 b/a = 10000, the tile just elongates), so its max is a usability cap and says so in the type record.
+
+⚑ **The fundamental domain was wrong for 350 of the 2,719 reference-atlas tilings**, and the self-check
+that was supposed to catch it only ever measured area. AL spotted it on the pmg tiling
+`ctrnact-07_34-5d_5e2_5f3_6i-1`: the yellow quarter did not match its three neighbours, and it sat half
+an edge off. It did. `buildSubdivision` cut the Wigner–Seitz cell into `|G|` angular wedges about the
+anchor, which is only a fundamental-domain subdivision when the whole point group ACTS at the anchor.
+pmg has |G| = 4 but no point of the plane carries more than a 2-fold or a single mirror, so the four
+quarters cut around a 2-fold centre are pure translates by c1/2 and c2/2 — not lattice vectors, not
+group elements. Each quarter measured exactly cellArea/4 and each had a MIRROR down its middle, so it
+covered half the orbifold twice and the other half not at all. The genuine chamber is the same quarter
+shifted by |c1|/4 (half its own edge, exactly as AL described), anchored where a mirror meets a glide
+axis: mirrors bound it across, glide axes along. IUCr p2mg, mirrors x = ¼,¾, glides y = 0,½.
+
+Same failure one group over, which only surfaced once a real check existed: **p4g** (18 tilings) — no
+mirror passes through its 4-folds, so the eight 45° wedges cut around one were never eight images of
+each other, because a mirror carries that centre to the OTHER 4-fold of the cell. And **cm** (6) — with
+no rotation centre to anchor on, the anchor defaulted to the origin, which need not lie on a mirror, and
+the rhombus got split by a horizontal line through the origin instead of by its mirror.
+
+Three changes, in the order they matter. (1) `isChamber` rebuilds G/Λ from the detected centres and axes
+and asks the decisive question — does any non-identity coset carry an interior point of the emphasized
+face back into that face? — and now gates `ok` alongside the area tests. (2) pmg gets its own
+construction, anchored at mirror ∩ glide. (3) When a cut cannot be certified, the subdivision is
+generated the honest way round: take the orbifold triangle `buildFD` finds and APPLY THE GROUP to it,
+instead of hoping a geometric cut lands on group images. That last one is what fixes p4g, and it also
+gave the 11 pmm tilings that used to show no subdivision at all one that certifies.
+
+Two traps worth keeping. Coset representatives must have their translations reduced into the home cell:
+`reflections` walks a ±5 window from a seed vertex, so a coset can be discovered through an axis a dozen
+cells out, and an element carrying that offset maps the domain far enough away that the ±2 retiling
+window never finds the copy again — that showed up as eight group images covering half the cell. And the
+drawn parallelogram for the group-image path cannot be corner-anchored on the chamber's apex, because
+sliding a cell by a lattice vector moves the chamber with it; anchor it at the chamber's own
+lattice-coordinate corner so the chamber lands whole inside.
+
+Verified with an orbit test written independently of the module, over all 2,719 reference-atlas entries:
+350 bad → 0, and the 11 subdivision-less pmm entries → 0. `scripts/validate-fd-subdivision.ts` still
+reports 92/92 area-exact with no fallbacks. Regression tests pin pmg and p4g by the property that
+actually failed (no mirror through a chamber's interior), and both fail against the pre-fix code.

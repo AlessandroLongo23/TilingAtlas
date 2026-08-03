@@ -478,6 +478,166 @@ function lineIntersect(a: Axis, b: Axis): Vec2 | null {
 	return { x: a.p.x + s * a.d.x, y: a.p.y + s * a.d.y };
 }
 
+// The axis of `kind` whose line runs nearest the origin. `Axis.p` is the foot of the perpendicular
+// from the origin (see `reflections`), so |p| IS that distance and p is a point of the line.
+function nearestAxis(axes: Axis[], kind: "mirror" | "glide"): Axis | null {
+	let best: Axis | null = null;
+	for (const a of axes) {
+		if (a.kind !== kind) continue;
+		if (!best || Math.hypot(a.p.x, a.p.y) < Math.hypot(best.p.x, best.p.y)) best = a;
+	}
+	return best;
+}
+
+// --- certifying a fundamental domain -----------------------------------------------------------
+//
+// Correct area is not the same thing as a correct chamber, and pmg is the case that proved it: with
+// |G| = 4 but no point of the plane carrying more than a 2-fold or a single mirror, the WS-cell wedge
+// cut quarters the cell around a 2-fold centre — four congruent quarters, each exactly cellArea/4, so
+// every area test passed — yet a mirror runs down the MIDDLE of each quarter. Such a quarter covers
+// half the orbifold twice and the other half not at all. The genuine chamber sits half an edge away,
+// anchored where a mirror meets a glide axis. So rebuild G/Λ from the detected elements and ask the
+// decisive question instead: does any non-identity coset carry an interior point of the emphasized
+// face back into that same face?
+
+/** A plane isometry x ↦ M·x + t, M row-major [m00, m01, m10, m11]. */
+type Iso = { m: [number, number, number, number]; t: Vec2 };
+
+const isoApply = (e: Iso, p: Vec2): Vec2 => ({
+	x: e.m[0] * p.x + e.m[1] * p.y + e.t.x,
+	y: e.m[2] * p.x + e.m[3] * p.y + e.t.y,
+});
+const isoCompose = (a: Iso, b: Iso): Iso => ({ // a ∘ b
+	m: [
+		a.m[0] * b.m[0] + a.m[1] * b.m[2], a.m[0] * b.m[1] + a.m[1] * b.m[3],
+		a.m[2] * b.m[0] + a.m[3] * b.m[2], a.m[2] * b.m[1] + a.m[3] * b.m[3],
+	],
+	t: isoApply(a, b.t),
+});
+
+// One isometry per detected element: a rotation by 2π/n about each centre, a reflection across each
+// mirror, and a glide across each glide axis whose translation part is half the on-axis lattice period
+// (g² is the shortest on-axis translation, so that halving is forced).
+function isoGenerators(centers: Center[], axes: Axis[], c1: Vec2, c2: Vec2): Iso[] {
+	const out: Iso[] = [];
+	for (const c of centers) {
+		const a = (2 * Math.PI) / c.order;
+		const m: [number, number, number, number] = [Math.cos(a), -Math.sin(a), Math.sin(a), Math.cos(a)];
+		out.push({
+			m,
+			t: { x: c.z.x - (m[0] * c.z.x + m[1] * c.z.y), y: c.z.y - (m[2] * c.z.x + m[3] * c.z.y) },
+		});
+	}
+	for (const ax of axes) {
+		const { x: dx, y: dy } = ax.d;
+		const m: [number, number, number, number] = [dx * dx - dy * dy, 2 * dx * dy, 2 * dx * dy, dy * dy - dx * dx];
+		const t = {
+			x: ax.p.x - (m[0] * ax.p.x + m[1] * ax.p.y),
+			y: ax.p.y - (m[2] * ax.p.x + m[3] * ax.p.y),
+		};
+		if (ax.kind === "glide") {
+			const P = onLinePeriod(ax.d, c1, c2);
+			if (!Number.isFinite(P)) continue;
+			t.x += (P / 2) * dx;
+			t.y += (P / 2) * dy;
+		}
+		out.push({ m, t });
+	}
+	return out;
+}
+
+// Close the generators into G/Λ: same linear part and translations differing by a lattice vector is
+// one coset. `cap` bounds the walk so a bad generator can't spin (the caller rejects any result whose
+// size isn't |G| anyway).
+function closeCosets(gens: Iso[], c1: Vec2, c2: Vec2, cap: number): Iso[] {
+	const det = c1.x * c2.y - c1.y * c2.x;
+	if (Math.abs(det) < 1e-12) return [];
+	const wrap = (v: number) => {
+		let f = v - Math.floor(v);
+		if (f > 1 - 1e-6) f -= 1;
+		return Math.abs(f) < 1e-6 ? 0 : f;
+	};
+	const key = (e: Iso) =>
+		e.m.map((v) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(4)).join(",") +
+		"|" + wrap((e.t.x * c2.y - e.t.y * c2.x) / det).toFixed(4) +
+		"," + wrap((-e.t.x * c1.y + e.t.y * c1.x) / det).toFixed(4);
+	// Keep the representative's translation in the home cell. A coset can be discovered through an axis
+	// that sits a dozen cells out (`reflections` walks a ±5 window from a seed vertex), and an element
+	// carrying that offset maps the fundamental domain miles away — far enough that the retiling window
+	// downstream never finds the copy again.
+	const reduce = (e: Iso): Iso => {
+		const a = Math.floor((e.t.x * c2.y - e.t.y * c2.x) / det + 1e-9);
+		const b = Math.floor((-e.t.x * c1.y + e.t.y * c1.x) / det + 1e-9);
+		return { m: e.m, t: { x: e.t.x - a * c1.x - b * c2.x, y: e.t.y - a * c1.y - b * c2.y } };
+	};
+	const out: Iso[] = [{ m: [1, 0, 0, 1], t: { x: 0, y: 0 } }];
+	const seen = new Set([key(out[0])]);
+	for (let i = 0; i < out.length && out.length <= 4 * cap; i++) {
+		for (const g of gens) {
+			const e = isoCompose(g, out[i]);
+			const k = key(e);
+			if (seen.has(k)) continue;
+			seen.add(k);
+			out.push(reduce(e));
+		}
+	}
+	return out;
+}
+
+// G/Λ as isometries, or null when the detected elements don't reconstruct exactly |G| cosets (then
+// there is nothing to certify against and the caller keeps the area verdict). Rotations + mirrors are
+// tried alone first: they generate every symmorphic group, and leaving the reconstructed glide vectors
+// out of the closure where they aren't needed keeps a float slip from inflating the coset count.
+function groupCosets(centers: Center[], axes: Axis[], c1: Vec2, c2: Vec2, order: number): Iso[] | null {
+	const mirrors = axes.filter((a) => a.kind === "mirror");
+	let g = closeCosets(isoGenerators(centers, mirrors, c1, c2), c1, c2, order);
+	if (g.length !== order) g = closeCosets(isoGenerators(centers, axes, c1, c2), c1, c2, order);
+	return g.length === order ? g : null;
+}
+
+function pointInPolygon(p: Vec2, poly: Vec2[]): boolean {
+	let inside = false;
+	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+		const a = poly[i], b = poly[j];
+		if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+	}
+	return inside;
+}
+
+// Is `face` a genuine fundamental domain for `cosets`? Sample interior points (pulled off the
+// centroid toward each vertex, so they stay clear of the boundary and of any axis bounding it) and
+// count how many of the |G| images come back — exactly one, the identity, for a real chamber.
+function isChamber(face: Vec2[], cosets: Iso[], c1: Vec2, c2: Vec2): boolean {
+	if (face.length < 3) return false;
+	const det = c1.x * c2.y - c1.y * c2.x;
+	if (Math.abs(det) < 1e-12) return true;
+	const cx = face.reduce((s, v) => s + v.x, 0) / face.length;
+	const cy = face.reduce((s, v) => s + v.y, 0) / face.length;
+	// Does SOME lattice translate of q land in `face`? Centred on the translate nearest the face: the
+	// coset representative can come from an axis many cells out, so a fixed window around q would miss it.
+	const lands = (q: Vec2): boolean => {
+		const dx = cx - q.x, dy = cy - q.y;
+		const m0 = Math.round((dx * c2.y - dy * c2.x) / det);
+		const n0 = Math.round((-dx * c1.y + dy * c1.x) / det);
+		for (let m = m0 - 1; m <= m0 + 1; m++) {
+			for (let n = n0 - 1; n <= n0 + 1; n++) {
+				if (pointInPolygon({ x: q.x + m * c1.x + n * c2.x, y: q.y + m * c1.y + n * c2.y }, face)) return true;
+			}
+		}
+		return false;
+	};
+	for (const w of [0.31, 0.62]) {
+		for (const v of face) {
+			const p = { x: cx + w * (v.x - cx), y: cy + w * (v.y - cy) };
+			if (!pointInPolygon(p, face)) continue;
+			let self = 0;
+			for (const g of cosets) if (lands(isoApply(g, p))) self++;
+			if (self !== 1) return false; // the identity always lands; anything more is an overlap
+		}
+	}
+	return true;
+}
+
 // Direct FD for the two-perpendicular-mirror-family groups (Conway 2*22 cmm and *2222 pmm). Anchor at a
 // mirror∩mirror corner reflector; the two legs run half the on-mirror period along each mirror. The
 // rectangle spanned by both legs is pmm's FD; when that rectangle is twice the target (a centered/rhombic
@@ -729,7 +889,9 @@ function buildFD(
 // It is subdivided into its `pointGroupOrder` fundamental-domain copies: the FD-tiling of the plane
 // (computed by cutting the anchor-centred WS cell into correct copies) is re-tiled into the parallelogram
 // by clipping lattice translates, so every copy is a piece of the cell and the FD is always inside it.
-// Validated area-exact on all 92 certified k≤3 tilings (scripts/validate-fd-subdivision.ts).
+// Validated area-exact on all 92 certified k≤3 tilings (scripts/validate-fd-subdivision.ts), and the
+// emphasized copy is separately certified a genuine chamber (`isChamber`) — area-exactness alone let a
+// wrong subdivision through for 350 of the 2,719 reference-atlas tilings (pmg, p4g, cm).
 
 // Wigner–Seitz cell of the lattice (c1,c2) around `anchor`: a big box clipped by the perpendicular
 // bisectors of nearby lattice vectors (keep the half nearer the anchor).
@@ -878,8 +1040,16 @@ function buildSubdivision(
 		const k = c.order * 100 + mirrorAnglesThrough(axes, c.z).length;
 		if (k > bestKey) { bestKey = k; anchor = c.z; }
 	}
+	// The rotation-free groups (p1, pm, pg, cm) have no centre to anchor on, and the origin need not
+	// lie on an axis — which left cm's rhombus split by a horizontal line through the origin instead of
+	// by its mirror whenever no mirror happened to pass through it. Anchor on the nearest axis instead.
+	if (!centers.length) {
+		const ax = nearestAxis(axes, "mirror") ?? nearestAxis(axes, "glide");
+		if (ax) anchor = ax.p;
+	}
 	const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
 	const target = cellArea / Math.max(1, order);
+	const cosets = groupCosets(centers, axes, c1, c2, order);
 	const finish = (cellPolygon: Vec2[], faces: Vec2[][]): { anchor: Vec2; cellPolygon: Vec2[]; faces: Vec2[][]; ok: boolean } => {
 		// emphasise a WHOLE chamber (area ≈ target) by ordering it first
 		faces.sort((a, b) => Math.abs(polyArea(a) - target) - Math.abs(polyArea(b) - target));
@@ -887,7 +1057,9 @@ function buildSubdivision(
 		const ok =
 			faces.length >= order &&
 			Math.abs(totArea - cellArea) < 1e-3 * cellArea &&
-			(order <= 1 || Math.abs(polyArea(faces[0]) - target) < 1e-2 * target);
+			(order <= 1 || Math.abs(polyArea(faces[0]) - target) < 1e-2 * target) &&
+			// …and the emphasized piece must actually BE a chamber, not merely the right size.
+			(order <= 1 || !cosets || isChamber(faces[0], cosets, c1, c2));
 		return { anchor, cellPolygon, faces, ok };
 	};
 
@@ -906,6 +1078,34 @@ function buildSubdivision(
 	if (order <= 1) {
 		const cell = cornerParallelogram(anchor, c1, c2);
 		return { anchor, cellPolygon: cell, faces: [cell], ok: true };
+	}
+
+	// pmg (22*). |G| = 4, but no point of the plane carries more than a 2-fold or a single mirror, so
+	// neither the kaleidoscope nor a 4-wedge cut about the anchor applies — quartering the cell around a
+	// 2-fold centre puts a mirror through the middle of every quarter. The chamber is the quarter cell
+	// anchored where a mirror MEETS a glide axis: the mirrors (spacing half the period across them) bound
+	// it on two sides, the glide axes (spacing half the period along them) on the other two, and its three
+	// lattice-quarter neighbours are its mirror, 2-fold and glide images. IUCr p2mg in the conventional
+	// setting: mirrors x = ¼, ¾; glide axes y = 0, ½; chamber [¼,¾] × [0,½].
+	if (group === "pmg") {
+		const mirror = nearestAxis(axes, "mirror");
+		const glide = nearestAxis(axes, "glide");
+		const corner = mirror && glide ? lineIntersect(mirror, glide) : null;
+		if (corner) {
+			const centreAnchor = anchor;
+			anchor = corner;
+			const h1 = { x: c1.x / 2, y: c1.y / 2 }, h2 = { x: c2.x / 2, y: c2.y / 2 };
+			const faces: Vec2[][] = [];
+			for (let i = 0; i < 2; i++) {
+				for (let j = 0; j < 2; j++) {
+					const o = scaleAdd(anchor, h1, i, h2, j);
+					faces.push([o, scaleAdd(o, h1, 1), scaleAdd(o, h1, 1, h2, 1), scaleAdd(o, h2, 1)]);
+				}
+			}
+			const built = finish(cornerParallelogram(anchor, c1, c2), faces);
+			if (built.ok) return built;
+			anchor = centreAnchor; // uncertified — leave the general path exactly as it was
+		}
 	}
 
 	if (order === 2) {
@@ -927,7 +1127,38 @@ function buildSubdivision(
 	// general: cut the WS cell into correct FD copies, then re-tile them into the displayed parallelogram.
 	const cell = cornerParallelogram(anchor, c1, c2);
 	const faces = retileIntoCell(cutWignerSeitz(order, anchor, axes, c1, c2), cell, c1, c2);
-	return finish(cell, faces);
+	const wedged = finish(cell, faces);
+	if (wedged.ok) return wedged;
+
+	// The anchor kaleidoscope only yields chambers when the whole point group ACTS at the anchor, and p4g
+	// is the counterexample: no mirror passes through its 4-folds, so the eight 45° wedges around one are
+	// not eight images of each other — a mirror carries that centre to the OTHER 4-fold of the cell, not
+	// back to itself. When the cut can't be certified, take the orbifold triangle `buildFD` finds (its
+	// legs really do lie on mirrors) and generate the subdivision the honest way round: apply the group to
+	// the chamber, instead of hoping a geometric cut lands on group images.
+	if (cosets) {
+		const wedgedAnchor = anchor;
+		const chamber = buildFD(group, order, centers, axes, c1, c2);
+		// Place the drawn parallelogram so the chamber lands WHOLE inside it. Sliding the shell by a
+		// lattice vector cannot do that (it moves by a full period and the chamber goes with it), so put
+		// the shell's corner at the chamber's own lattice-coordinate corner instead: still a primitive
+		// cell, just not corner-anchored on a symmetry point — which this construction doesn't need,
+		// because the copies come from the group rather than from a cut aligned to the cell edges.
+		const det = c1.x * c2.y - c1.y * c2.x;
+		let a0 = Infinity, b0 = Infinity;
+		for (const p of chamber.fd) {
+			const dx = p.x - chamber.anchor.x, dy = p.y - chamber.anchor.y;
+			a0 = Math.min(a0, (dx * c2.y - dy * c2.x) / det);
+			b0 = Math.min(b0, (-dx * c1.y + dy * c1.x) / det);
+		}
+		anchor = scaleAdd(chamber.anchor, c1, a0 - 1e-9, c2, b0 - 1e-9);
+		const shell = cornerParallelogram(anchor, c1, c2);
+		const copies = cosets.map((g) => chamber.fd.map((p) => isoApply(g, p)));
+		const spread = finish(shell, retileIntoCell(copies, shell, c1, c2));
+		if (spread.ok) return spread;
+		anchor = wedgedAnchor;
+	}
+	return wedged;
 }
 
 export function analyzeSymmetry(

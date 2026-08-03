@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
-import { seedFromCell } from "@/lib/services/cellCodecService";
+import { seedFromCell, seedFromPeriodCell } from "@/lib/services/cellCodecService";
+import { reconstructOracleCell } from "@/classes/algorithm/oracleCellReconstruct";
 import {
 	analyzeSymmetry,
 	_inLatticeForTest,
@@ -8,7 +9,10 @@ import {
 	_polyAreaForTest,
 } from "@/lib/classes/symmetry/WallpaperSymmetry";
 import { galebachToInput } from "@/lib/services/galebachInput";
+import type { Axis, Vec2 } from "@/lib/classes/symmetry/types";
 import type { SerializedCell } from "@/lib/services/cellCodecService";
+import cellP4g from "./fixtures/cell-p4g.json"; // snub square t1009, full cell vertex set
+import oraclePmg from "./fixtures/oracle-pmg.json";
 import square44Json from "./fixtures/cell-44.json";
 import hex666Json from "./fixtures/cell-666.json";
 import tsp4mJson from "./fixtures/cell-488.json";
@@ -170,5 +174,65 @@ describe("fundamental domain", () => {
 		expect(analyzeSymmetry(ring, p4m.T1, p4m.T2, p4m.seed).fd.length).toBe(3);
 		const p2 = galebachToInput(ring, galP2 as Parameters<typeof galebachToInput>[1]);
 		expect(analyzeSymmetry(ring, p2.T1, p2.T2, p2.seed).fd.length).toBe(4);
+	});
+});
+
+// A mirror may BOUND a chamber; it may never run through the middle of one, because the two sides of
+// an interior mirror are the same point of the orbifold. Checked here straight off the axis geometry,
+// independently of the module's own certification, so the two can't agree by sharing a bug.
+function mirrorThroughInterior(fd: Vec2[], axes: Axis[], scale: number): Axis | null {
+	const eps = 1e-3 * scale;
+	for (const a of axes) {
+		if (a.kind !== "mirror") continue;
+		let pos = 0, neg = 0;
+		for (const v of fd) {
+			const s = (v.x - a.p.x) * -a.d.y + (v.y - a.p.y) * a.d.x;
+			if (s > eps) pos++;
+			else if (s < -eps) neg++;
+		}
+		if (pos > 0 && neg > 0) return a;
+	}
+	return null;
+}
+
+describe("the emphasized chamber is a real fundamental domain, not just the right area", () => {
+	const ring = CyclotomicRing.create(24);
+	setActiveRing(ring);
+
+	// The bug this pins: pmg has |G| = 4 but no point of the plane carries more than a 2-fold or a single
+	// mirror, so cutting the cell into four quarters about a 2-fold centre passed every area test while
+	// putting a mirror down the middle of each quarter. The chamber sits half an edge away, between two
+	// mirrors. (ctrnact-07_34-5d_5e2_5f3_6i-1, k=7, reported 2026-08-02.)
+	it("pmg: the chamber lies BETWEEN mirrors", () => {
+		const rec = reconstructOracleCell(ring, oraclePmg.id, oraclePmg.exactSource as never);
+		expect("error" in rec).toBe(false);
+		const { T1, T2, seed } = seedFromPeriodCell((rec as { cell: Parameters<typeof seedFromPeriodCell>[0] }).cell);
+		const d = analyzeSymmetry(ring, T1, T2, seed);
+		const [c1, c2] = d.cell;
+		const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
+
+		expect(d.group).toBe("pmg");
+		expect(_polyAreaForTest(d.fd)).toBeCloseTo(cellArea / 4, 6);
+		expect(mirrorThroughInterior(d.fd, d.axes, Math.hypot(c1.x, c1.y))).toBeNull();
+		expect(d.subdivision.length).toBe(4);
+		for (const f of d.subdivision) expect(mirrorThroughInterior(f, d.axes, Math.hypot(c1.x, c1.y))).toBeNull();
+		expect(d.subdivision.reduce((s, f) => s + _polyAreaForTest(f), 0)).toBeCloseTo(cellArea, 6);
+	});
+
+	// Same failure one group over: p4g's 4-folds carry no mirror, so the eight 45° wedges cut around one
+	// were never eight images of each other — a mirror carries that centre to the OTHER 4-fold of the cell.
+	it("p4g: eight whole chambers, none bisected by a mirror", () => {
+		const s = seedFromCell(ring, cellP4g as Parameters<typeof seedFromCell>[1]);
+		const d = analyzeSymmetry(ring, s.T1, s.T2, s.seed);
+		const [c1, c2] = d.cell;
+		const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
+
+		expect(d.group).toBe("p4g");
+		expect(_polyAreaForTest(d.fd)).toBeCloseTo(cellArea / 8, 6);
+		expect(d.subdivision.length).toBe(8);
+		for (const f of d.subdivision) {
+			expect(_polyAreaForTest(f)).toBeCloseTo(cellArea / 8, 6);
+			expect(mirrorThroughInterior(f, d.axes, Math.hypot(c1.x, c1.y))).toBeNull();
+		}
 	});
 });
