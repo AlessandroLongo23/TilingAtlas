@@ -74,8 +74,8 @@ function drawCocompact(api: Api) {
 	segment(api, c, [c[0] + Math.cos(rad(-30)) * R, c[1] + Math.sin(rad(-30)) * R], INK, 2.2);
 	halo(api, c[0] + Math.cos(rad(-30)) * R * 0.55, c[1] + Math.sin(rad(-30)) * R * 0.55 + 0.06, 9);
 	text(c[0] + Math.cos(rad(-30)) * R * 0.55, c[1] + Math.sin(rad(-30)) * R * 0.55 + 0.06, "R", { colour: INK, size: 0.66, weight: 700 });
-	text(0, -0.72, "every point lies in a tile, so within R of a vertex", { colour: INK, size: 0.6 });
-	text(0, -0.93, "and the vertices fall into k orbits", { colour: INK, size: 0.6 });
+	text(0, -0.62, "every point lies in a tile, so within R of a vertex", { colour: INK, size: 0.58 });
+	text(0, -0.8, "and the vertices fall into k orbits", { colour: INK, size: 0.58 });
 }
 
 /** A vertex of the largest possible degree, and the two flags each of its corners carries. */
@@ -103,12 +103,25 @@ function drawFlagBound(api: Api) {
 		const reach = R * Math.cos(rad(30));
 		segment(api, c, [c[0] + Math.cos(t) * reach, c[1] + Math.sin(t) * reach], "rgba(20,20,20,0.34)", 1.4, [4, 3]);
 	}
-	for (let i = 0; i < 12; i++) {
-		const t = rad(30 * i + 15);
-		dot(api, c[0] + Math.cos(t) * R * 0.58, c[1] + Math.sin(t) * R * 0.58, 3.4, INK);
+	// Two per corner, CLUSTERED on their own bisector. Spread evenly they read as twelve dots on a
+	// circle and the pairing — which is the whole "2 flags per corner" claim — is invisible.
+	for (let i = 0; i < 6; i++) {
+		for (const off of [-11, 11]) {
+			const t = rad(60 * i + 30 + off);
+			dot(api, c[0] + Math.cos(t) * R * 0.62, c[1] + Math.sin(t) * R * 0.62, 3.4, INK);
+		}
 	}
+	// one of them named, so "flag" has a referent: half a corner, between an edge and a bisector
+	ctx.fillStyle = "hsl(28 88% 44% / 0.22)";
+	ctx.beginPath();
+	ctx.moveTo(c[0], c[1]);
+	ctx.lineTo(c[0] + Math.cos(rad(0)) * R, c[1] + Math.sin(rad(0)) * R);
+	ctx.lineTo(c[0] + Math.cos(rad(30)) * R * Math.cos(rad(30)), c[1] + Math.sin(rad(30)) * R * Math.cos(rad(30)));
+	ctx.closePath();
+	ctx.fill();
+	text(c[0] + 0.52, c[1] + 0.1, "one flag", { colour: DART, size: 0.5, weight: 600, align: "left" });
 	dot(api, c[0], c[1], 5.4);
-	text(0, -0.78, "degree ≤ 6, so ≤ 12 flags", { colour: INK, size: 0.64 });
+	text(0, -0.7, "degree ≤ 6, so ≤ 12 flags", { colour: INK, size: 0.62 });
 }
 
 /** Fold a tiling by its own symmetries, develop the result, and you are back where you started. */
@@ -118,13 +131,13 @@ function drawRoundTrip(api: Api) {
 	// left: a patch, standing for the whole tiling. Honeycomb spacing, so it is a tiling and not four
 	// hexagons with gaps between them: centres sit sqrt(3)R apart along a row, 1.5R between rows, with
 	// every other row offset by half a step.
-	const R = 0.175, dx = Math.sqrt(3) * R, dy = 1.5 * R;
+	const R = 0.16, dx = Math.sqrt(3) * R, dy = 1.5 * R;
 	for (let j = -1; j <= 1; j++) {
 		for (let i = -1; i <= 0; i++) {
-			polygon(api, [-0.5 + (i + (j & 1 ? 0.5 : 0)) * dx + dx / 2, 0.26 + j * dy], 6, R, 90, 1.1);
+			polygon(api, [-0.58 + (i + (j & 1 ? 0.5 : 0)) * dx + dx / 2, 0.3 + j * dy], 6, R, 90, 1.1);
 		}
 	}
-	text(-0.5, -0.3, "T", { colour: INK, size: 0.8, weight: 700 });
+	text(-0.52, -0.2, "T", { colour: INK, size: 0.8, weight: 700 });
 
 	// Right: the honeycomb folded by its TRANSLATION lattice, which is what makes this drawing exactly
 	// true rather than schematic. Two vertices, three edges, one hexagonal face: V − E + F = 0, the
@@ -134,7 +147,7 @@ function drawRoundTrip(api: Api) {
 	// The three edges are drawn as one bowed curve each, and the seam where their two half-edges meet
 	// has to be SHORT: the three midpoints sit one above another, and at full length the ticks join up
 	// into a single line through the middle that reads as a divider instead of three seams.
-	const A: Pt = [0.36, 0.28], B: Pt = [0.82, 0.28];
+	const A: Pt = [0.42, 0.3], B: Pt = [0.86, 0.3];
 	for (const [bow, t] of [[0.22, 0.36], [0, 0.5], [-0.22, 0.64]] as const) {
 		arc(api, A, B, bow, INK, 3);
 		// The seam at a different point along each curve. Put all three at the midpoint and they stack
@@ -153,22 +166,23 @@ function drawRoundTrip(api: Api) {
 			[at[0] + Math.cos(ang) * 0.035, at[1] + Math.sin(ang) * 0.035], SOFT, 2);
 	}
 	for (const h of [A, B]) dot(api, h[0], h[1], 5.4);
-	text(0.59, -0.3, "T / Λ", { colour: INK, size: 0.72, weight: 700, mono: true });
+	text(0.64, -0.2, "T / Λ", { colour: INK, size: 0.72, weight: 700, mono: true });
 
-	// the two maps, and the claim that they are inverse
-	const up = arc(api, [-0.16, 0.5], [0.2, 0.5], 0.13, DART, 2.2);
-	arrowHead(api, [0.2, 0.5], -0.55, DART, 10);
-	text(up[0], up[1] + 0.14, "fold", { colour: DART, size: 0.6, weight: 600 });
-	const down = arc(api, [0.2, 0.1], [-0.16, 0.1], 0.13, T1_COLOUR, 2.2);
-	arrowHead(api, [-0.16, 0.1], Math.PI + 0.55, T1_COLOUR, 10);
-	text(down[0], down[1] - 0.15, "develop", { colour: T1_COLOUR, size: 0.6, weight: 600 });
+	// Both maps in the clear channel between the patch and the quotient. Drawn wider they ran their
+	// heads into the hexagons and dropped "develop" on top of one.
+	const up = arc(api, [-0.02, 0.56], [0.34, 0.5], 0.07, DART, 2.2);
+	arrowHead(api, [0.34, 0.5], -0.2, DART, 10);
+	text(up[0], up[1] + 0.13, "fold", { colour: DART, size: 0.58, weight: 600 });
+	const down = arc(api, [0.34, 0.1], [-0.02, 0.04], 0.07, T1_COLOUR, 2.2);
+	arrowHead(api, [-0.02, 0.04], Math.PI + 0.2, T1_COLOUR, 10);
+	text(down[0], down[1] - 0.14, "develop", { colour: T1_COLOUR, size: 0.58, weight: 600 });
 
-	text(0, -0.78, "and they are mutually inverse", { colour: INK, size: 0.62 });
+	text(0, -0.7, "and they are mutually inverse", { colour: INK, size: 0.62 });
 }
 
 // ---------------------------------------------------------------------------------------------
 
-const BOX: Box = { minX: -0.9, maxX: 0.9, minY: -1.06, maxY: 0.7 };
+const BOX: Box = { minX: -0.9, maxX: 0.9, minY: -0.9, maxY: 0.78 };
 
 const PANELS: PanelSpec[] = [
 	{

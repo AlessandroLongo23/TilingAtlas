@@ -62,20 +62,31 @@ function drawHolonomy(api: Api) {
 		wedge(api, C, a, span, n, R);
 		a += span;
 	}
+	// The walk itself, as a walk: a sweep just inside the disc from the first edge round to the last,
+	// with the head at the end. Without it nothing on the panel says a TOUR happened, and two radii
+	// with a gap between them read as a missing tile.
+	ctx.strokeStyle = DART;
+	ctx.lineWidth = 2.2 / s;
+	ctx.beginPath();
+	ctx.arc(C[0], C[1], R * 0.52, rad(72), rad(a - 8));
+	ctx.stroke();
+	arrowHead(api, [C[0] + Math.cos(rad(a - 8)) * R * 0.52, C[1] + Math.sin(rad(a - 8)) * R * 0.52], rad(a - 8 + 90), DART, 10);
+
 	// The first and last edges of the walk are the SAME edge of the gluing, and they have come back
 	// short of each other. No fill in the gap: a filled sector reads as a hole in a tiling.
-	segment(api, C, [C[0] + Math.cos(rad(66)) * R * 1.16, C[1] + Math.sin(rad(66)) * R * 1.16], DART, 3);
-	segment(api, C, [C[0] + Math.cos(rad(a)) * R * 1.16, C[1] + Math.sin(rad(a)) * R * 1.16], DART, 3);
+	const OUT = R * 1.09;
+	segment(api, C, [C[0] + Math.cos(rad(66)) * OUT, C[1] + Math.sin(rad(66)) * OUT], DART, 3);
+	segment(api, C, [C[0] + Math.cos(rad(a)) * OUT, C[1] + Math.sin(rad(a)) * OUT], DART, 3);
 	ctx.strokeStyle = REJECT;
 	ctx.lineWidth = 2 / s;
 	ctx.setLineDash([5 / s, 4 / s]);
 	ctx.beginPath();
-	ctx.arc(C[0], C[1], R * 1.16, rad(a), rad(66 + 360));
+	ctx.arc(C[0], C[1], OUT, rad(a), rad(66 + 360));
 	ctx.stroke();
 	ctx.setLineDash([]);
 	const mid = rad(a + (360 + 66 - a) / 2);
-	halo(api, C[0] + Math.cos(mid) * R * 1.16, C[1] + Math.sin(mid) * R * 1.16, 10);
-	text(C[0] + Math.cos(mid) * R * 1.16, C[1] + Math.sin(mid) * R * 1.16, "?", {
+	halo(api, C[0] + Math.cos(mid) * OUT, C[1] + Math.sin(mid) * OUT, 10);
+	text(C[0] + Math.cos(mid) * OUT, C[1] + Math.sin(mid) * OUT, "?", {
 		colour: REJECT, size: 0.95, weight: 700,
 	});
 	dot(api, C[0], C[1], 5.5);
@@ -119,7 +130,7 @@ function drawTorus(api: Api) {
 	ctx.beginPath();
 	ctx.rect(-h, -h - 0.06, 2 * h, 2 * h);
 	ctx.clip();
-	for (const [cx, cy, n] of [[-0.2, 0.16, 6], [0.22, -0.24, 4], [h, 0.2, 4], [-h, 0.2, 4]] as const) {
+	for (const [cx, cy, n] of [[-0.2, 0.16, 6], [0.22, -0.24, 4], [h - 0.06, 0.2, 4], [-h - 0.06, 0.2, 4]] as const) {
 		const rr = n === 6 ? 0.19 : 0.15;
 		ctx.fillStyle = wedgeFill(n);
 		ctx.strokeStyle = wedgeLine(n);
@@ -157,27 +168,53 @@ function drawTorus(api: Api) {
 /** The lattice of lifts, with one cell picked out: the plane covering the torus. */
 function drawCover(api: Api) {
 	const { ctx, s, text } = api;
-	const w = 0.36;
+	const w = 0.34;
+	// The home cell is [0,w]^2, so the two generators lie along its OWN bottom and left edges and each
+	// one visibly carries the cell onto its neighbour. Drawn from the middle of the grid they pointed
+	// away from the highlighted cell and generated nothing a reader could see.
 	ctx.lineWidth = 1.3 / s;
 	for (let i = -2; i <= 1; i++) {
 		for (let j = -2; j <= 1; j++) {
-			const x = i * w + w / 2, y = j * w + w / 2 - 0.06;
-			const home = i === -1 && j === -1;
-			ctx.fillStyle = home ? "rgba(20,20,20,0.07)" : "transparent";
+			const home = i === 0 && j === 0;
+			ctx.fillStyle = home ? "rgba(20,20,20,0.06)" : "transparent";
 			ctx.strokeStyle = home ? INK : GHOST;
+			ctx.lineWidth = (home ? 2 : 1.3) / s;
 			ctx.beginPath();
-			ctx.rect(x - w / 2, y - w / 2, w, w);
+			ctx.rect(i * w, j * w - 0.1, w, w);
 			if (home) ctx.fill();
 			ctx.stroke();
 		}
 	}
-	for (const [dx, dy, colour] of [[w, 0, T1_COLOUR], [0, w, T2_COLOUR]] as const) {
-		segment(api, [0, -0.06], [dx, dy - 0.06], colour, 2.6);
-		arrowHead(api, [dx, dy - 0.06], Math.atan2(dy, dx), colour, 11);
+
+	// the same two tiles panel three put in the cell, here and in two of its lifts: that is what
+	// "the tiles are lifts" means, and an empty grid says nothing about tiles at all
+	for (const [i, j, alpha] of [[0, 0, 0.85], [1, 0, 0.3], [0, 1, 0.3], [-1, -1, 0.3]] as const) {
+		for (const [fx, fy, n, rr] of [[0.42, 0.56, 6, 0.1], [0.72, 0.26, 4, 0.075]] as const) {
+			ctx.fillStyle = wedgeFill(n).replace(/[\d.]+\)$/, `${alpha})`);
+			ctx.strokeStyle = alpha > 0.5 ? wedgeLine(n) : GHOST;
+			ctx.lineWidth = 1.1 / s;
+			ctx.beginPath();
+			for (let v = 0; v < n; v++) {
+				const t = rad(90 + (360 * v) / n);
+				const x = (i + fx) * w + Math.cos(t) * rr, y = (j + fy) * w - 0.1 + Math.sin(t) * rr;
+				if (v) ctx.lineTo(x, y);
+				else ctx.moveTo(x, y);
+			}
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+		}
 	}
-	dot(api, 0, -0.06, 5);
-	halo(api, 0, 0.52, 30);
-	text(0, 0.52, "ℂ → ℂ/Λ", { colour: INK, size: 0.68, weight: 600 });
+
+	for (const [dx, dy, colour] of [[w, 0, T1_COLOUR], [0, w, T2_COLOUR]] as const) {
+		segment(api, [0, -0.1], [dx * 0.82, dy * 0.82 - 0.1], colour, 2.8);
+		arrowHead(api, [dx * 0.94, dy * 0.94 - 0.1], Math.atan2(dy, dx), colour, 11);
+	}
+	dot(api, 0, -0.1, 5);
+
+	// Above the lattice, not inside it: a halo big enough to clear this label punched visible gaps in
+	// the grid lines either side of it.
+	text(0, 0.72, "ℂ → ℂ/Λ", { colour: INK, size: 0.68, weight: 600 });
 	text(0, -0.88, "the tiles are lifts, so nothing folds", { colour: INK, size: 0.62, weight: 600 });
 }
 

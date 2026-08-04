@@ -113,19 +113,22 @@ function drawTransversal(api: Api) {
 		segment(api, from, to, GHOST, 2);
 		arrowHead(api, to, ang, GHOST, 9);
 	}
-	// mirro, pairing the two half-edges of each mirror-image sheet: the top pair and the bottom pair
-	for (const [i, j] of [[0, 1], [2, 3]] as const) {
-		segment(api, at(i), at(j), SOFT, 1.6);
-	}
-	text(0, 0.62, "μ", { colour: SOFT, size: 0.62, weight: 700 });
-	text(0, -0.3, "μ", { colour: SOFT, size: 0.62, weight: 700 });
-	text(0.62, 0.16, "ρ", { colour: GHOST, size: 0.62, weight: 700 });
+	// mirro, pairing the two half-edges of each sheet. Bowed OUTSIDE the ring: mu's two pairs are the
+	// ring's own top and bottom sides, so drawn straight they lie underneath the rho arrows and the
+	// panel shows one line carrying two different operations.
+	arc(api, at(0), at(1), 0.16, SOFT, 1.8);
+	arc(api, at(3), at(2), -0.16, SOFT, 1.8);
+	text(0, 0.78, "μ", { colour: SOFT, size: 0.66, weight: 700 });
+	text(0, -0.5, "μ", { colour: SOFT, size: 0.66, weight: 700 });
+	text(0.66, 0.16, "ρ", { colour: SOFT, size: 0.66, weight: 700 });
 
-	// the one nontrivial automorphism: the half-turn, which is the only power of rho that also
-	// commutes with mu — it carries the top mu-pair to the bottom one and back
+	// The one nontrivial automorphism, and it is rho squared: the only power of rho that also commutes
+	// with mu. In INK, not in REJECT — nothing here is rejected, and red is a verdict everywhere else.
 	for (const [i, j] of [[0, 2], [1, 3]] as const) {
-		segment(api, at(i), at(j), REJECT, 1.6, [5, 4]);
+		segment(api, at(i), at(j), INK, 1.6, [5, 4]);
 	}
+	halo(api, 0.18, 0.16, 11);
+	text(0.18, 0.16, "ρ²", { colour: INK, size: 0.62, weight: 700 });
 
 	for (let i = 0; i < 4; i++) {
 		const p = at(i);
@@ -138,19 +141,24 @@ function drawTransversal(api: Api) {
 	}
 
 	// what the two versions of the search tried
-	const box = (x: number, w: number, colour: string, label: string, sub: string) => {
+	// Each box carries the MARKS of the orbits it stands for, so it points back at the ring above it
+	// instead of asserting a bare number.
+	const box = (x: number, w: number, colour: string, label: string, sub: string, kinds: (0 | 1)[]) => {
 		ctx.strokeStyle = colour;
 		ctx.lineWidth = 2 / s;
 		ctx.setLineDash([]);
 		ctx.beginPath();
-		ctx.roundRect(x - w / 2, -0.98, w, 0.3, 0.06);
+		ctx.roundRect(x - w / 2, -1.0, w, 0.32, 0.06);
 		ctx.stroke();
-		text(x, -0.83, label, { colour, size: 0.62, weight: 700 });
-		text(x, -1.14, sub, { colour: SOFT, size: 0.58 });
+		kinds.forEach((k, i) => classMark(api, x - w / 2 + 0.12 + i * 0.14, -0.84, k, 5.2));
+		text(x - w / 2 + 0.12 + kinds.length * 0.14 + 0.02, -0.84, label, {
+			colour, size: 0.6, weight: 700, align: "left",
+		});
+		text(x, -1.16, sub, { colour: SOFT, size: 0.56 });
 	};
-	box(-0.62, 0.66, REJECT, "tried 1", "an orbit never reached");
-	box(0.56, 0.72, ACCEPT, "needs 2", "one from each orbit");
-	arrowHead(api, [-0.02, -0.83], 0, SOFT, 10);
+	box(-0.62, 0.86, REJECT, "tried 1", "an orbit never reached", [0]);
+	box(0.62, 0.98, ACCEPT, "needs 2", "one from each orbit", [0, 1]);
+	arrowHead(api, [-0.04, -0.84], 0, SOFT, 10);
 
 	text(0, 0.9, "|Aut| = 2, so two orbits of two half-edges", { colour: SOFT, size: 0.6 });
 }
