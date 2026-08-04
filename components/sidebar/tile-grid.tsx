@@ -11,7 +11,11 @@ import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
 import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail";
+import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
+import { hypPolyMeta } from "@/lib/tilings/hyp-poly";
+import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
+import { IsohedralEdgesThumbnail } from "@/components/isohedral-edges-thumbnail";
 import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbnail";
 import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -222,6 +226,16 @@ function Tile({
 			<div className="relative aspect-square bg-surface-raised">
 				{t.hollow ? (
 					<HollowThumbnail patch={t.hollow.patch} />
+				) : t.sphPoly ? (
+					<SphPolyThumbnail pattern={t.sphPoly} />
+				) : t.pentEdges ? (
+					<PentagonEdgesThumbnail pattern={t.pentEdges} />
+				) : t.ihEdges ? (
+					<IsohedralEdgesThumbnail pattern={t.ihEdges} />
+				) : t.sphEdges ? (
+					<SphSchwarzThumbnail pattern={t.sphEdges} />
+				) : t.hypPoly ? (
+					<HyperbolicColorsThumbnail pattern={hypPolyMeta(t.hypPoly)} />
 				) : t.schwarz ? (
 					t.schwarz.geometry === "spherical" ? (
 						<SphSchwarzThumbnail pattern={t.schwarz} />

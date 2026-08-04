@@ -30,7 +30,13 @@ import {
 	type SizeMode,
 	type Tri,
 } from "@/lib/freedraw/filter";
-import { freedrawKNoun, gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import {
+	freedrawKNoun,
+	gridOf,
+	type FreedrawCatalogueGrid,
+	type FreedrawGrid,
+	type FreedrawPattern,
+} from "@/lib/freedraw/pattern";
 import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw/regular";
 import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
@@ -54,7 +60,7 @@ const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 // bare board already has as many as it has corner classes. (2,3,6) has three (hexagon centres, corners,
 // edge midpoints) so it starts at 3; (2,4,4) has two (the lattice points and the square centres) so it
 // starts at 2. Below those, k values are not gaps but non-existent.
-const K_OPTIONS: Record<FreedrawGrid, { value: number; label: string }[]> = {
+const K_OPTIONS: Record<FreedrawCatalogueGrid, { value: number; label: string }[]> = {
 	square: [0, 1, 2, 3, 4, 5].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	triangle: [0, 1, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	hex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => ({ value: k, label: k ? String(k) : "All" })),
@@ -102,7 +108,7 @@ const PAGE_SIZE = 240;
 // Which catalogue files hold each grid's slices, and which k each covers. The page loads LAZILY: only
 // the files for the selected grid+k are fetched and classified, so opening square k=5 pulls one 7.6MB
 // file, not the whole ~35MB / 112k-pattern atlas. Cached module-wide, so switching back is instant.
-const CATALOGUE: Record<FreedrawGrid, { url: string; ks: number[]; heavy?: true }[]> = {
+const CATALOGUE: Record<FreedrawCatalogueGrid, { url: string; ks: number[]; heavy?: true }[]> = {
 	square: [
 		{ url: "/freedraw/solutions.json", ks: [1, 2, 3] },
 		{ url: "/freedraw/solutions-k4.json", ks: [4] },

@@ -11,7 +11,7 @@
 // Pure functions over a FaceSummary. No React, no DOM — the tests run on the real catalogue files.
 
 import type { FaceSummary } from "./faces";
-import type { FreedrawGrid } from "./pattern";
+import type { FreedrawCatalogueGrid, FreedrawGrid } from "./pattern";
 import { REGULAR_KINDS, type RegularInfo, type RegularKind } from "./regular";
 
 /** require = the pattern contains at least one such face; exclude = it contains none. */
@@ -135,7 +135,7 @@ const readTri = (raw: string | null): Tri =>
 
 // Exhaustive by construction: a new member of FreedrawGrid fails to compile here instead of silently
 // becoming an unshareable link.
-const GRIDS: Record<FreedrawGrid, true> = { square: true, triangle: true, hex: true, ts: true, sch236: true, sch244: true };
+const GRIDS: Record<FreedrawCatalogueGrid, true> = { square: true, triangle: true, hex: true, ts: true, sch236: true, sch244: true };
 const isGrid = (raw: string | null): raw is FreedrawGrid =>
 	raw !== null && Object.hasOwn(GRIDS, raw);
 

@@ -71,6 +71,25 @@ export interface CatalogueTiling {
 	// renderer or the developed-edge disk depending on `geometry`. `renderCell` is a throwaway; `k` counts
 	// vertex orbits.
 	schwarz?: import("@/lib/freedraw/schwarz").SchwarzPattern;
+	// Uniform-polyhedron edge-system shelf only: Čtrnáct's freedraw on a prism / antiprism / truncated
+	// tetrahedron / cuboctahedron / J27. Routes to the same three.js sphere renderer the spherical Schwarz
+	// boards use (lib/render/sphSchwarz.ts). `renderCell` is a throwaway; `k` counts vertex orbits.
+	sphEdges?: import("@/lib/freedraw/sph-edges").SphEdgesPattern;
+	// The 3.4.n.4 hyperbolic tilings by regular polygons. Not a decoration: every edge is a real tile
+	// boundary. Routes /play + thumbnails to HyperbolicDeveloper.developColors, colouring each face by its
+	// polygon size. `renderCell` is a throwaway; `k` counts vertex orbits.
+	hypPoly?: import("@/lib/tilings/hyp-poly").HypPolyPattern;
+	// The spherical members of the same family, n = 3, 4, 5. Routes to the three.js sphere via
+	// lib/render/sphPoly.ts, filling each face by its polygon size. `renderCell` is a throwaway; `k` is
+	// the MEASURED vertex-orbit count of the solid, not the certificate's.
+	sphPoly?: import("@/lib/tilings/sph-poly").SphPolyPattern;
+	// Parametric-pentagon edge system: carries NO geometry, so /play solves the board at its slider
+	// point and re-develops (lib/pentagon/edgeDevelop.ts). `renderCell` is a throwaway.
+	pentEdges?: import("@/lib/pentagon/edgeDevelop").PentEdgeRecord;
+	// Parametric-isohedral edge system: carries NO geometry either, but takes its tile from Tactile at
+	// the live parameter point instead of a bespoke solver (lib/isohedral/edge-board.ts), so the same
+	// shelf reaches any isohedral type. `renderCell` is a throwaway.
+	ihEdges?: import("@/lib/isohedral/edgeDevelop").IhEdgeRecord;
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
 	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their

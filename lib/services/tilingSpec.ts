@@ -7,6 +7,7 @@ import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { ORBIFOLD_SIGNATURE } from "@/lib/classes/symmetry/types";
 import { geometryOf, hyperbolicParams } from "@/lib/services/referenceAtlas";
+import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { colorCensus, colorsGridOf } from "@/lib/colors/pattern";
 
@@ -31,6 +32,11 @@ export interface OrbitCounts {
 interface BaseSpec extends OrbitCounts {
 	/** Headline label: a vertex-config string ("3.4.6.12") or a Schläfli symbol ("{7,3}"). */
 	label: string;
+	/** Marek Čtrnáct's level of increasing complexity (lib/tilings/tiling-level.ts). Null when the ladder
+	 *  does not describe this record: every edge system, colouring and freedraw pattern, and the whole
+	 *  Euclidean catalogue, which ships no per-orbit vertex configurations and where the top rung would be
+	 *  vacuous anyway. It belongs beside k and m because it IS those two plus one more test. */
+	level: TilingLevel | null;
 }
 
 // Freedraw facts, present ONLY on a freedraw entry. It stays inside EuclideanSpec instead of becoming a
@@ -192,12 +198,13 @@ export function buildTilingSpec(
 	symmetryData: SymmetryData | null,
 	orbitData: OrbitData | null,
 ): TilingSpec {
-	const base: OrbitCounts = {
+	const base: OrbitCounts & { level: TilingLevel | null } = {
 		k: orbitData?.k ?? selected.k ?? null,
 		m: selected.m ?? null,
 		partition: selected.partition ?? null,
 		edgeOrbits: null, // flagged — see EDGE_FACE_ORBITS_ENABLED
 		faceOrbits: null,
+		level: tilingLevel(selected),
 	};
 
 	const geometry = geometryOf(selected);

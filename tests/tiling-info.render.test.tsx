@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { TilingInfo } from "@/components/tiling-info";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 
-const orbits = { k: 1, m: null, partition: null, edgeOrbits: null, faceOrbits: null };
+const orbits = { k: 1, m: null, partition: null, edgeOrbits: null, faceOrbits: null, level: null };
 
 function hover() {
 	fireEvent.mouseEnter(screen.getByRole("group", { name: "Tiling information" }));
@@ -26,6 +26,7 @@ describe("TilingInfo spec card", () => {
 			partition: [5, 1, 1],
 			edgeOrbits: null,
 			faceOrbits: null,
+			level: null,
 		};
 		render(<TilingInfo spec={spec} />);
 		hover();
@@ -57,6 +58,29 @@ describe("TilingInfo spec card", () => {
 		expect(screen.getByText("[7,3]")).toBeInTheDocument();
 		expect(screen.getByText("*732")).toBeInTheDocument();
 		expect(screen.queryByText("Lattice")).not.toBeInTheDocument();
+		// This one carries no level, so the row is absent instead of showing a dash.
+		expect(screen.queryByText("Level")).not.toBeInTheDocument();
+	});
+
+	it("shows Čtrnáct's level beside k and m, and only when the record has one", () => {
+		const spec: TilingSpec = {
+			geometry: "hyperbolic",
+			label: "3.4.7.4",
+			faces: [3, 4, 7, 14],
+			valence: 4,
+			edge: 0.6,
+			provenance: null,
+			schlafli: null,
+			coxeter: null,
+			orbifold: null,
+			...orbits,
+			k: 2,
+			level: "hybrid",
+		};
+		render(<TilingInfo spec={spec} />);
+		hover();
+		expect(screen.getByText("Level")).toBeInTheDocument();
+		expect(screen.getByText("Hybrid")).toBeInTheDocument();
 	});
 
 	it("spherical Platonic: shows point group and V/E/F", () => {
@@ -92,6 +116,7 @@ describe("TilingInfo spec card", () => {
 		partition: null,
 		edgeOrbits: null,
 		faceOrbits: null,
+		level: null,
 	} as const;
 
 	it("isohedral: shows the parameterization and drops the empty orbit section", () => {

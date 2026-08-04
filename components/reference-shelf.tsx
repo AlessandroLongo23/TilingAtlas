@@ -13,11 +13,22 @@ import { Switch } from "@/components/ui/switch";
 import { ReferenceCard } from "@/components/reference-card";
 import { cn } from "@/lib/utils/cn";
 import type { ColorsGrid } from "@/lib/colors/pattern";
-import type { FreedrawGrid } from "@/lib/freedraw/pattern";
+import type { FreedrawCatalogueGrid, FreedrawGrid } from "@/lib/freedraw/pattern";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK } from "@/lib/colors/sph-colors";
 import { schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
+import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
+import { hypPolyLazyShardsForK } from "@/lib/tilings/hyp-poly";
+import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
+import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
+import {
+	tilingLevel,
+	TILING_LEVEL_LABEL,
+	TILING_LEVEL_NOTE,
+	TILING_LEVEL_ORDER,
+	type TilingLevel,
+} from "@/lib/tilings/tiling-level";
 import { WallpaperGroupTooltip } from "@/components/wallpaper-group-diagram";
 import { LatticeTooltip } from "@/components/lattice-diagram";
 import {
@@ -37,6 +48,15 @@ import {
 	loadSphericalSchwarzAtlas,
 	loadHyperbolicSchwarzAtlas,
 	loadSchwarzShard,
+	loadSphericalEdgesAtlas,
+	loadSphericalEdgesShard,
+	loadSphericalPolyAtlas,
+	loadPentagonEdgesAtlas,
+	loadPentagonEdgesShard,
+	loadIsohedralEdgesAtlas,
+	loadIsohedralEdgesShard,
+	loadHyperbolicPolyAtlas,
+	loadHyperbolicPolyShard,
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
@@ -187,7 +207,7 @@ const COLORS_GRID_OPTIONS: { value: "all" | ColorsGrid; label: string }[] = [
 ];
 const COLORS_GRID_VALUES = COLORS_GRID_OPTIONS.map((o) => o.value).filter((v): v is ColorsGrid => v !== "all");
 // One-word grid names for the collapsed FilterGroup summary, shared by both grid facets.
-const GRID_SUMMARY: Record<FreedrawGrid | ColorsGrid, string> = {
+const GRID_SUMMARY: Record<FreedrawCatalogueGrid | ColorsGrid, string> = {
 	square: "squares",
 	triangle: "triangles",
 	hex: "hexagons",
@@ -360,6 +380,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (freedrawRegular && (FREEDRAW_REGULAR_VALUES as string[]).includes(freedrawRegular)) f.freedrawRegular = freedrawRegular as FreedrawRegular;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
 	if (groups?.length) f.wallpaperGroups = groups;
+	const levels = list("level")?.filter((s): s is TilingLevel => (TILING_LEVEL_ORDER as string[]).includes(s));
+	if (levels?.length) f.levels = levels;
 	const lattices = list("lattice")?.filter((s): s is LatticeShape => (LATTICE_ORDER as string[]).includes(s));
 	if (lattices?.length) f.latticeShapes = lattices;
 	const discoverers = list("by");
@@ -413,6 +435,7 @@ function serializeView(v: ViewState): string {
 	if (f.colorsCount) p.set("cocount", String(f.colorsCount));
 	if (f.freedrawRegular) p.set("fdreg", f.freedrawRegular);
 	if (f.wallpaperGroups?.length) p.set("group", f.wallpaperGroups.join(","));
+	if (f.levels?.length) p.set("level", f.levels.join(","));
 	if (f.latticeShapes?.length) p.set("lattice", f.latticeShapes.join(","));
 	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
 	if (f.certifications?.length) p.set("cert", f.certifications.join(","));
@@ -652,6 +675,74 @@ export function ReferenceShelf() {
 		};
 	}, [filters.geometry, filters.kValue, heLoaded, tilings]);
 
+	// Parametric-pentagon edge systems — EUCLIDEAN, so this effect runs under the plane, unlike every
+	// other Čtrnáct edge shelf. Eager slices (k = 2, 4, 6) arrive with the geometry; k = 8 and 10 are
+	// 8.4 and 35.2 MB and wait for their k chip.
+	const [penLoaded, setPenLoaded] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
+		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
+		let alive = true;
+		const merge = (data: ReferenceTiling[], token: string) => {
+			if (!alive || !data.length) return;
+			setTilings((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.id));
+				const add = data.filter((t) => !have.has(t.id));
+				return add.length ? [...base, ...add] : base;
+			});
+			setPenLoaded((s) => new Set(s).add(token));
+		};
+		if (!penLoaded.has("pen-eager")) {
+			loadPentagonEdgesAtlas().then((d) => merge(d, "pen-eager")).catch(() => {});
+		}
+		const k = filters.kValue;
+		if (k != null) {
+			for (const b of pentEdgeLazyShardsForK(k)) {
+				const token = `pen-${b.id}-${k}`;
+				if (penLoaded.has(token)) continue;
+				loadPentagonEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+			}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [filters.geometry, filters.kValue, penLoaded, tilings]);
+
+	// Parametric-isohedral edge systems — EUCLIDEAN too, and the same lazy shape as the pentagon board
+	// above. Eager slices (k = 2…10) arrive with the geometry; k = 12 and 14 are 14.1 and 35.0 MB and
+	// wait for their k chip.
+	const [ihLoaded, setIhLoaded] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
+		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
+		let alive = true;
+		const merge = (data: ReferenceTiling[], token: string) => {
+			if (!alive || !data.length) return;
+			setTilings((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.id));
+				const add = data.filter((t) => !have.has(t.id));
+				return add.length ? [...base, ...add] : base;
+			});
+			setIhLoaded((s) => new Set(s).add(token));
+		};
+		if (!ihLoaded.has("ih-eager")) {
+			loadIsohedralEdgesAtlas().then((d) => merge(d, "ih-eager")).catch(() => {});
+		}
+		const k = filters.kValue;
+		if (k != null) {
+			for (const b of ihEdgeLazyShardsForK(k)) {
+				const token = `ih-${b.id}-${k}`;
+				if (ihLoaded.has(token)) continue;
+				loadIsohedralEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+			}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [filters.geometry, filters.kValue, ihLoaded, tilings]);
+
 	// Schwarz-triangle edge systems — the freedraw class on a (p,q,r) mirror board. Same lazy shape as the
 	// {p,q} edge systems, but it spans BOTH curved geometries, so the effect runs under either and pulls
 	// that geometry's boards. Eager slices arrive with the geometry; the two dense tails ((2,2,4) k=10,
@@ -688,6 +779,52 @@ export function ReferenceShelf() {
 			alive = false;
 		};
 	}, [filters.geometry, filters.kValue, schLoaded, tilings]);
+
+	// Uniform-polyhedron edge systems (spherical) and the 3.4.n.4 tilings (hyperbolic) — one shelf per
+	// curved geometry, same lazy shape: eager slices with the geometry, dense tails on their k chip.
+	const [xLoaded, setXLoaded] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		const geo = filters.geometry;
+		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
+		let alive = true;
+		const merge = (data: ReferenceTiling[], token: string) => {
+			if (!alive || !data.length) return;
+			setTilings((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.id));
+				const add = data.filter((t) => !have.has(t.id));
+				return add.length ? [...base, ...add] : base;
+			});
+			setXLoaded((s) => new Set(s).add(token));
+		};
+		const eagerToken = `xtra-${geo}`;
+		if (!xLoaded.has(eagerToken)) {
+			if (geo === "spherical") {
+				loadSphericalEdgesAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
+				loadSphericalPolyAtlas().then((d) => merge(d, `${eagerToken}-poly`)).catch(() => {});
+			} else {
+				loadHyperbolicPolyAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
+			}
+		}
+		const k = filters.kValue;
+		if (k != null) {
+			if (geo === "spherical") {
+				for (const b of sphEdgesLazyShardsForK(k)) {
+					const token = `spe-${b.id}-${k}`;
+					if (!xLoaded.has(token)) loadSphericalEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+				}
+			} else {
+				for (const b of hypPolyLazyShardsForK(k)) {
+					const token = `hpo-${b.n}-${k}`;
+					if (!xLoaded.has(token)) loadHyperbolicPolyShard(String(b.n), k).then((d) => merge(d, token)).catch(() => {});
+				}
+			}
+		}
+		return () => {
+			alive = false;
+		};
+	}, [filters.geometry, filters.kValue, xLoaded, tilings]);
 
 	// Colored tilings in H² and on S² — the same lazy shape as the edge systems. The eager per-base/solid
 	// slices load once their geometry is entered (making the "Colorings" class chip appear); dense shards load
@@ -893,6 +1030,7 @@ export function ReferenceShelf() {
 	};
 	const toggleFold = (n: number) => toggleIn("starFolds", filters.starFolds ?? [], n);
 	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
+	const toggleLevel = (l: TilingLevel) => toggleIn("levels", filters.levels ?? [], l);
 	// Lattice is single-select — it drives which wallpaper groups are realizable, so at most one at a
 	// time. Re-clicking the active shape clears it; switching shape drops any now-incompatible group so
 	// the group filter never contradicts the chosen lattice.
@@ -939,6 +1077,8 @@ export function ReferenceShelf() {
 			next.parametric = undefined;
 			next.wallpaperGroups = undefined;
 			next.latticeShapes = undefined;
+			// Čtrnáct's ladder is defined for tilings by regular polygons, so it leaves with them.
+			next.levels = undefined;
 		}
 		if (v !== "edges") {
 			next.freedrawKind = undefined;
@@ -971,6 +1111,9 @@ export function ReferenceShelf() {
 						hypValence: undefined,
 						hypPolygon: undefined,
 						hypEdge: undefined,
+						// Nor does Čtrnáct's ladder: in E² the edge function is unconstrained, so its top rung
+						// costs nothing and stops meaning anything.
+						levels: undefined,
 					}
 				: {
 						geometry: g,
@@ -1102,6 +1245,25 @@ export function ReferenceShelf() {
 		return LATTICE_ORDER.filter((s) => present.has(s));
 	}, [tilings]);
 
+	// Per-level counts, so the wall can say how many sit on each rung before it is clicked — the
+	// distribution IS the finding here, and five bare labels would hide that hybrids are three records in
+	// the whole developed hyperbolic catalogue.
+	//
+	// Counted over the records matching every OTHER active filter, the same way availableM is, so the
+	// number on a chip is the number of results clicking it gives. Counting over everything loaded
+	// instead reads as a bug the moment another filter is on: under Geometry = Hyperbolic it would still
+	// include the seven spherical hybrids and promise 1023 where the shelf then shows 1016.
+	const levelCounts = useMemo(() => {
+		const c = new Map<TilingLevel, number>();
+		for (const t of tilings ?? []) {
+			const lv = tilingLevel(t);
+			if (lv && matchesReferenceFilters(t, { ...filters, levels: undefined })) {
+				c.set(lv, (c.get(lv) ?? 0) + 1);
+			}
+		}
+		return c;
+	}, [tilings, filters]);
+
 	// The one selected lattice (single-select). When set, it disables the wallpaper-group chips whose
 	// group can't be crystallographically realized on it.
 	const selectedLattice = filters.latticeShapes?.[0];
@@ -1127,6 +1289,12 @@ export function ReferenceShelf() {
 	const showM = classified && filters.kValue != null;
 	const showStar = classified && tileClass !== "regular" && availableFolds.length > 0;
 	const showGroup = classified && tileClass !== "star" && availableGroups.length > 0;
+	// Marek's five levels are the CURVED counterpart of the M/partition block above, and the two never
+	// show together: the ladder needs per-orbit vertex configurations (only the hyperbolic and spherical
+	// shelves ship them) and its top rung is vacuous in E², where every combination shares an edge
+	// length for free. Tilings-only for the same reason M is — an edge system's tiles are merged
+	// polyforms, and the ladder is defined for tilings by regular polygons.
+	const showLevel = !isEuclidean && inTilings;
 	const showLattice = classified && tileClass !== "star" && availableShapes.length > 0;
 	const showConvex = tileClass === "convex";
 	const showIsotoxalShape = tileClass === "isotoxal";
@@ -1183,6 +1351,7 @@ export function ReferenceShelf() {
 		(filters.starFolds?.length ? 1 : 0) +
 		(filters.parametric ? 1 : 0) +
 		(filters.wallpaperGroups?.length ? 1 : 0) +
+		(filters.levels?.length ? 1 : 0) +
 		(filters.latticeShapes?.length ? 1 : 0) +
 		(filters.discoverers?.length ? 1 : 0) +
 		(filters.certifications?.length ? 1 : 0) +
@@ -1507,6 +1676,32 @@ export function ReferenceShelf() {
 							<GroupNote>k ≥ 8 loads on demand.</GroupNote>
 						) : null}
 					</FilterGroup>
+
+					{/* Marek Čtrnáct's five levels of increasing complexity, from his own classification of the
+					    hyperbolic tilings by regular polygons. The ladder is (k, m) plus one test the pair
+					    cannot make — whether the vertex configurations agree as MULTISETS — and the top rung
+					    is the rare one: two combinations whose edge functions land on the same length. */}
+					{showLevel ? (
+						<FilterGroup
+							title="Level"
+							summary={filters.levels?.length ? `${filters.levels.length} selected` : null}
+							note="Čtrnáct's ladder"
+						>
+							<OptionWall
+								multi
+								columns={1}
+								options={TILING_LEVEL_ORDER.filter((l) => (levelCounts.get(l) ?? 0) > 0).map((l) => ({
+									value: l,
+									label: `${TILING_LEVEL_LABEL[l]} · ${levelCounts.get(l)}`,
+									tooltip: TILING_LEVEL_NOTE[l],
+									tooltipSide: "right" as const,
+									tooltipDelay: 0,
+								}))}
+								selected={filters.levels ?? []}
+								onChange={toggleLevel}
+							/>
+						</FilterGroup>
+					) : null}
 
 					{/* Hyperbolic-only interval facets. Valence and palette are the sweep's own axes (most edges
 					    at any vertex, largest polygon in any figure), so their upper bounds read exactly as an

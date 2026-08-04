@@ -6,6 +6,7 @@ import type { VCWithOccurrences } from "@/classes/Tiling";
 import { colorLetter } from "@/lib/colors/pattern";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import { compactVertexConfig } from "@/lib/services/referenceAtlas";
+import { TILING_LEVEL_LABEL, TILING_LEVEL_NOTE } from "@/lib/tilings/tiling-level";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
 import { Button } from "./ui/button";
 
@@ -37,23 +38,26 @@ function Row({
 	value,
 	muted,
 	stack,
+	title,
 }: {
 	label: string;
 	value: ReactNode;
 	muted?: boolean;
 	stack?: boolean;
+	/** Native tooltip on the whole row, for a term whose one-line gloss will not fit the layout. */
+	title?: string;
 }) {
 	const valueClass = muted ? "text-sm italic text-fg-muted/60" : "text-sm font-medium text-fg";
 	if (stack) {
 		return (
-			<div className="flex flex-col gap-0.5">
+			<div className="flex flex-col gap-0.5" title={title}>
 				<span className="text-sm text-fg-secondary">{label}</span>
 				<span className={valueClass}>{value}</span>
 			</div>
 		);
 	}
 	return (
-		<div className="flex items-center justify-between gap-4">
+		<div className="flex items-center justify-between gap-4" title={title}>
 			<span className="text-sm text-fg-secondary">{label}</span>
 			<span className={valueClass}>{value}</span>
 		</div>
@@ -75,6 +79,8 @@ function hasOrbitFacts(spec: TilingSpec): boolean {
 function OrbitSection({ spec }: { spec: TilingSpec }) {
 	// Freedraw's k counts GRID-POINT orbits of the decoration — grid points with no drawn edge included —
 	// not vertex orbits of a tiling. Same axis, different quantity, so it never borrows the "Vertices" label.
+	// The parametric-pentagon edge shelf is euclidean and freedraw-CLASS, but its k counts VERTEX orbits
+	// (Marek's "Number of vertices"), not grid points, so it must not borrow freedraw's label.
 	const isFreedraw = spec.geometry === "euclidean" && !!spec.freedraw;
 	// Colors' k is a vertex-orbit count, but of the COLORED tiling (orbits under color-preserving
 	// symmetry only), so it gets its own label instead of borrowing the bare "Vertices".
@@ -91,6 +97,11 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 					label="VC types (m)"
 					value={spec.partition ? `${spec.m} [${spec.partition.join("·")}]` : String(spec.m)}
 				/>
+			) : null}
+			{/* Čtrnáct's level sits with k and m because it IS the pair (k, m) plus one further test: do the
+			    vertex configurations agree as multisets. Absent off the curved regular-polygon shelves. */}
+			{spec.level ? (
+				<Row label="Level" value={TILING_LEVEL_LABEL[spec.level]} title={TILING_LEVEL_NOTE[spec.level]} />
 			) : null}
 			<Row label="Edge orbits" value={spec.edgeOrbits ?? "not computed"} muted={spec.edgeOrbits == null} />
 			<Row label="Tile orbits" value={spec.faceOrbits ?? "not computed"} muted={spec.faceOrbits == null} />

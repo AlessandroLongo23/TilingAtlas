@@ -80,7 +80,11 @@ if (existsSync(syncF) && (!STAGED || stagedFiles.includes('docs/SYNC.md'))) {
     // Both entry headings SYNC.md has used: the original `**2026-01-01 — …**` and the `### 2026-01-01 — …`
     // form it moved to. Matching only the first meant the check silently stopped firing when the format
     // changed, so every entry written since went unmeasured. (Found 2026-07-27.)
-    if (/^(\*\*|#{2,4} )\d{4}-\d{2}-\d{2} — /.test(l)) { flush(); cur = l.replace(/^#+ |\*\*/g, ''); count = 1; }
+    // The "(2)"/"(3)" suffix a second entry on one date carries was not a boundary, so every such entry
+    // was invisible and its lines were charged to the entry ABOVE it — a 6-line entry reported as 31
+    // because the four that followed it were suffixed. Same failure as the 2026-07-27 one directly
+    // above: the check kept running and kept measuring the wrong thing. (Found 2026-08-02.)
+    if (/^(\*\*|#{2,4} )\d{4}-\d{2}-\d{2}( \(\d+\))? — /.test(l)) { flush(); cur = l.replace(/^#+ |\*\*/g, ''); count = 1; }
     else if (cur) { if (l.trim() === '---') { flush(); cur = null; } else if (l.trim()) count++; }
   }
   flush();

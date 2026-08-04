@@ -42,6 +42,10 @@ const SUB_LABEL: Record<string, string> = {
 	ts: "Triangle + square grid",
 	sch236: "Schwarz (2,3,6) grid",
 	sch244: "Schwarz (2,4,4) grid",
+	// The two PARAMETRIC boards, whose tile is a family and not a fixed grid.
+	"pen-1": "Pentagon (Kershner 1) edges",
+	"ih-1": "Isohedral IH01 edges",
+	"ih-2": "Isohedral IH02 edges",
 	// Colors splits the same grids again by palette size — each is its own catalogue.
 	"square-2": "Square grid, 2 colors",
 	"square-3": "Square grid, 3 colors",
@@ -64,8 +68,36 @@ const SUB_LABEL: Record<string, string> = {
 	"sps-235": "(2,3,5) board",
 	"hys-237": "(2,3,7) board",
 	"hys-245": "(2,4,5) board",
+	// Uniform-polyhedron edge systems: one sub per solid. The label is the solid, since a prism has no
+	// Schläfli symbol and "3.4.4" alone would not read as a shape.
+	"spe-443": "Triangular prism edges",
+	"spe-445": "Pentagonal prism edges",
+	"spe-446": "Hexagonal prism edges",
+	"spe-447": "Heptagonal prism edges",
+	"spe-663": "Truncated tetrahedron edges",
+	"spe-3334": "Square antiprism edges",
+	"spe-3335": "Pentagonal antiprism edges",
+	"spe-3336": "Hexagonal antiprism edges",
+	"spe-cuboctahedron": "Cuboctahedron edges",
+	"spe-j27": "Triangular orthobicupola edges",
+	// The 3.4.n.4 family on the sphere, n = 3, 4, 5 — the same rows as "hpo-", other side of the split.
+	"spp-3": "3.4.3.4 solids",
+	"spp-4": "3.4.4.4 solids",
+	"spp-5": "3.4.5.4 solids",
+	// The 3.4.n.4 family: one sub per board. Labelled by the defining vertex figure, which is also what
+	// names the edge length the whole board is built at.
+	"hpo-7": "3.4.7.4 tilings",
+	"hpo-8": "3.4.8.4 tilings",
+	"hpo-9": "3.4.9.4 tilings",
+	"hpo-10": "3.4.10.4 tilings",
+	"hpo-11": "3.4.11.4 tilings",
+	"hpo-12": "3.4.12.4 tilings",
+	"hpo-14": "3.4.14.4 tilings",
+	"hpo-15": "3.4.15.4 tilings",
+	"hpo-16": "3.4.16.4 tilings",
 	// Hyperbolic edge systems: one sub per base tiling.
 	"hyp-667": "6.6.7 edges",
+	"hyp-668": "6.6.8 edges",
 	"hyp-37": "{3,7} edges",
 	"hyp-38": "{3,8} edges",
 	"hyp-45": "{4,5} edges",
@@ -198,7 +230,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			// row instead of letting a bare "k = 2" imply the quantities are the same.
 			const kLabel =
 				cls === "freedraw"
-					? kk.list[0]?.sphericalFreedraw || kk.list[0]?.hypEdges || kk.list[0]?.schwarz
+					? kk.list[0]?.sphericalFreedraw || kk.list[0]?.hypEdges || kk.list[0]?.schwarz || kk.list[0]?.sphEdges || kk.list[0]?.pentEdges || kk.list[0]?.ihEdges
 						? `k = ${kk.k} vertex orbits`
 						: `k = ${kk.k} ${kk.list[0]?.freedraw ? freedrawKNoun(gridOf(kk.list[0].freedraw)) : "grid points"}`
 					: cls === "colors"

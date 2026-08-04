@@ -25,6 +25,7 @@ import {
 	FREEDRAW_EAGER_FILES,
 	freedrawLazyShardsForK,
 	gridOf,
+	type FreedrawCatalogueGrid,
 	type FreedrawGrid,
 	type FreedrawPattern,
 } from "@/lib/freedraw/pattern";
@@ -65,6 +66,53 @@ import {
 	type SphSchwarzPattern,
 	type SphSchwarzShard,
 } from "@/lib/freedraw/schwarz";
+import {
+	hydrateSphEdgesShard,
+	sphEdgesFamilyLabel,
+	sphEdgesShardUrl,
+	sphEdgesSub,
+	SPH_EDGES_BOARDS,
+	sphEdgesSubOfBoard,
+	type SphEdgesBoard,
+	type SphEdgesPattern,
+	type SphEdgesShard,
+} from "@/lib/freedraw/sph-edges";
+import {
+	sphPolyBoardLabel,
+	sphPolyFamilyLabel,
+	sphPolyShardUrl,
+	sphPolySub,
+	SPH_POLY_BOARDS,
+	sphPolySubOfBoard,
+	type SphPolyPattern,
+} from "@/lib/tilings/sph-poly";
+import {
+	hypPolyBoardLabel,
+	hypPolyFamilyLabel,
+	hypPolyShardUrl,
+	hypPolySub,
+	HYP_POLY_BOARDS,
+	hypPolySubOfBoard,
+	type HypPolyBoard,
+	type HypPolyPattern,
+} from "@/lib/tilings/hyp-poly";
+import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
+import type { PentEdgeRecord } from "@/lib/pentagon/edgeDevelop";
+import {
+	pentEdgeFamilyLabel,
+	pentEdgeShardUrl,
+	pentEdgeSub,
+	pentEdgeSubOfBoard,
+	PENT_EDGE_BOARDS,
+} from "@/lib/pentagon/edge-shelf";
+import type { IhEdgeRecord } from "@/lib/isohedral/edgeDevelop";
+import {
+	ihEdgeFamilyLabel,
+	ihEdgeShardUrl,
+	ihEdgeSub,
+	ihEdgeSubOfBoard,
+	IH_EDGE_BOARDS,
+} from "@/lib/isohedral/edge-shelf";
 import type { IcoPattern } from "@/lib/render/icoFreedraw";
 import { ICO_SOLIDS, ICO_SOLID_BY_ID, icoSolidKs } from "@/lib/render/icoSolids";
 
@@ -179,6 +227,39 @@ export interface ReferenceTiling {
 	// since a Schwarz tile is scalene and none of the three is derivable from polygon sizes).
 	// `k` counts vertex orbits.
 	schwarz?: SchwarzPattern;
+	// Uniform-polyhedron edge systems (tools/ctrnact-oracle/develop_sph_edges.py → public/spherical-edges/).
+	// The same object as `schwarz` on a spherical board and as `hypEdges` in H², on a third kind of board:
+	// a prism, an antiprism, the truncated tetrahedron, the cuboctahedron or its gyro-twin J27. FREEDRAW
+	// class, SPHERICAL geometry, the solid as the sub-axis; `renderCell` is a throwaway. Renders through
+	// the very same adapter the Schwarz spheres use (lib/render/sphSchwarz.ts → buildIcoFreedraw) — the
+	// only difference is that these boards mix face sizes, which that adapter never assumed away.
+	// `k` counts vertex orbits.
+	sphEdges?: SphEdgesPattern;
+	// The 3.4.n.4 family of hyperbolic tilings by regular polygons (tools/ctrnact-oracle/develop_ai1.py →
+	// public/hyperbolic-poly/hp<n>-k<k>.json). Not a decoration of anything: at the edge length 3.4.n.4
+	// forces, the three closing vertex figures make k-uniform tilings out of {3, 4, n, 2n}-gons. TILINGS
+	// class, HYPERBOLIC geometry, the board n as the sub-axis. Its presence routes /play + thumbnails to
+	// HyperbolicDeveloper.developColors — whose contract (fill each face by its index, stroke every edge)
+	// is exactly this object's, with the index being the face's polygon size. `renderCell` is a throwaway.
+	hypPoly?: HypPolyPattern;
+	// The SPHERICAL members of the same 3.4.n.4 family (tools/ctrnact-oracle/develop_ai1_sph.py →
+	// public/spherical-poly/sp<n>-k<k>.json), n = 3, 4, 5. TILINGS class, SPHERICAL geometry, the board n
+	// as the sub-axis. Its presence routes /play + thumbnails to the three.js sphere through
+	// lib/render/sphPoly.ts, which groups the faces by POLYGON SIZE — the same fill rule the hyperbolic
+	// half uses on the disk. `renderCell` is a throwaway.
+	sphPoly?: SphPolyPattern;
+	// EDGE systems on a PARAMETRIC pentagon (tools/ctrnact-oracle/develop_pent_edges.py →
+	// public/pentagon-edges/pe<type>-k<k>.json). EDGES class, EUCLIDEAN geometry. Unlike every other
+	// shelf this record carries NO geometry: the tile is a Kershner type 1 pentagon with five free
+	// parameters, so /play solves the board at the live slider point and re-develops
+	// (lib/pentagon/edgeDevelop.ts). `renderCell` is a throwaway.
+	pentEdges?: PentEdgeRecord;
+	// EDGE systems on a PARAMETRIC ISOHEDRAL tile (tools/ctrnact-oracle/develop_ih_edges.py →
+	// public/isohedral-edges/ie<nn>-k<k>.json). EDGES class, EUCLIDEAN geometry. Carries no geometry
+	// either, and for the same reason as `pentEdges` — but where that board needed its own closure
+	// solver, this one takes its tile from Tactile at the live parameter point, so the shelf generalises
+	// to any of the 93 isohedral types Marek runs a solver on. `renderCell` is a throwaway.
+	ihEdges?: IhEdgeRecord;
 	geometry?: "euclidean" | "hyperbolic" | "spherical";
 	// Hyperbolic shelf: which of the tilings sharing this vertex figure this one is, and how many there
 	// are. In H2 the figure does not determine the tiling — 4.4.6.4.6.6 carries fourteen distinct ones —
@@ -299,15 +380,18 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // other class shares the anonymous "" spine (no sub row). `subOf` and this order are the single source of
 // truth for BOTH the sidebar tree (catalogue-list-panel) and the linear browse order below, so the two
 // can't drift. SUB_LABEL (display names) stays in the panel — that's presentation, not ordering.
-// The planar-freedraw subs ARE the FreedrawGrid members, so the list is typed as such: adding a grid
+// The planar-freedraw subs ARE the freedraw CATALOGUE grids, so the list is typed as such: adding a grid
 // without giving it a row here fails to compile. It used to be four loose strings, and when the Schwarz
 // board landed (2026-07-27) every OTHER site caught the omission at compile time while this one silently
 // dropped the grid out of the /play sidebar tree — the counts still summed into "Edge patterns", but the
 // folder never appeared. Order is display order, so it stays explicit, not derived from the union.
-const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "sch236", "sch244"] as const satisfies readonly FreedrawGrid[];
+// The two parametric boards are FreedrawGrids but NOT catalogue grids: each is its own shelf with its
+// own sub row (`pen-1` from PENT_EDGE_BOARDS, `ih-1` from IH_EDGE_BOARDS), so listing them here would
+// give them two.
+const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "sch236", "sch244"] as const satisfies readonly FreedrawCatalogueGrid[];
 // ...and this is what makes "fails to compile" true, not aspirational: `satisfies` alone would
 // accept a SHORT list. Leaving a grid out makes the Exclude non-never, so the assignment errors.
-type UnlistedGrid = Exclude<FreedrawGrid, (typeof FREEDRAW_GRID_SUBS)[number]>;
+type UnlistedGrid = Exclude<FreedrawCatalogueGrid, (typeof FREEDRAW_GRID_SUBS)[number]>;
 const _everyGridHasASubRow: UnlistedGrid extends never ? true : ["missing from FREEDRAW_GRID_SUBS", UnlistedGrid] = true;
 void _everyGridHasASubRow;
 
@@ -336,6 +420,17 @@ export const SUB_ORDER = [
 	...SPH_COLORS_SOLIDS.map((s) => `spc-${s.id}`),
 	// Schwarz boards: one sub per (p,q,r). "sps-" spherical, "hys-" hyperbolic.
 	...SCHWARZ_BOARDS.map((b) => schwarzSubOfBoard(b)),
+	// Uniform-polyhedron edge systems: one sub per solid. "spe-" namespaced against the bare Platonic
+	// solid names the spherical-freedraw shelf uses.
+	...SPH_EDGES_BOARDS.map((b) => sphEdgesSubOfBoard(b)),
+	// The 3.4.n.4 hyperbolic tilings: one sub per board n. "hpo-" namespaced.
+	...HYP_POLY_BOARDS.map((b) => hypPolySubOfBoard(b)),
+	// Their spherical siblings, n = 3, 4, 5. "spp-" namespaced.
+	...SPH_POLY_BOARDS.map((b) => sphPolySubOfBoard(b)),
+	// Parametric-pentagon edge systems: one sub per Kershner type. "pen-" namespaced.
+	...PENT_EDGE_BOARDS.map((b) => pentEdgeSubOfBoard(b)),
+	// Parametric-isohedral edge systems: one sub per isohedral type. "ih-" namespaced.
+	...IH_EDGE_BOARDS.map((b) => ihEdgeSubOfBoard(b)),
 ];
 export function subOf(t: {
 	sphericalFreedraw?: { solid: string };
@@ -345,8 +440,18 @@ export function subOf(t: {
 	hypColors?: HypColorsPattern;
 	sphColors?: { pattern: SphColorsPattern };
 	schwarz?: SchwarzPattern;
+	sphEdges?: SphEdgesPattern;
+	hypPoly?: HypPolyPattern;
+	sphPoly?: SphPolyPattern;
+	pentEdges?: PentEdgeRecord;
+	ihEdges?: IhEdgeRecord;
 }): string {
+	if (t.pentEdges) return pentEdgeSub(t.pentEdges);
+	if (t.ihEdges) return ihEdgeSub(t.ihEdges);
 	if (t.schwarz) return schwarzSub(t.schwarz);
+	if (t.sphEdges) return sphEdgesSub(t.sphEdges);
+	if (t.hypPoly) return hypPolySub(t.hypPoly);
+	if (t.sphPoly) return sphPolySub(t.sphPoly);
 	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
 	if (t.hypEdges) return hypEdgesSub(t.hypEdges);
 	if (t.hypColors) return hypColorsSub(t.hypColors);
@@ -394,12 +499,15 @@ export function geometryOf(t: {
 	hypEdges?: unknown;
 	hypColors?: unknown;
 	schwarz?: { geometry: "spherical" | "hyperbolic" };
+	sphEdges?: unknown;
+	hypPoly?: unknown;
+	sphPoly?: unknown;
 }): Geometry {
 	// The Schwarz shelf is the one payload that spans two geometries, so it names its own instead of
 	// being inferred from which field is set.
 	if (t.schwarz) return t.schwarz.geometry;
-	if (t.spherical || t.sphericalFreedraw || t.sphColors) return "spherical";
-	if (t.developed || t.hypEdges || t.hypColors) return "hyperbolic";
+	if (t.spherical || t.sphericalFreedraw || t.sphColors || t.sphEdges || t.sphPoly) return "spherical";
+	if (t.developed || t.hypEdges || t.hypColors || t.hypPoly) return "hyperbolic";
 	return "euclidean";
 }
 export const GEOMETRY_ORDER: Geometry[] = ["euclidean", "hyperbolic", "spherical"];
@@ -590,7 +698,7 @@ export function freedrawGridOf(t: Pick<ReferenceTiling, "freedraw">): FreedrawGr
 // follows the grid: polyomino on squares, polyiamond on triangles, polyhex on hexagons, polyform on
 // the combined grid (where the cells are not all one shape, so no -omino word fits), polydrafter on
 // the Schwarz 236 board (a 30-60-90 triangle is a drafter).
-const FREEDRAW_FINITE_NOUN: Record<FreedrawGrid, readonly [string, string]> = {
+const FREEDRAW_FINITE_NOUN: Record<FreedrawCatalogueGrid, readonly [string, string]> = {
 	square: ["polyomino", "polyominoes"],
 	triangle: ["polyiamond", "polyiamonds"],
 	hex: ["polyhex", "polyhexes"],
@@ -775,6 +883,12 @@ export interface ReferenceFilter {
 	mValue?: number; // single distinct-vertex-config count; unclassified tilings never match
 	partitionKey?: string; // single partition key (e.g. "511"); unclassified tilings never match
 	maximalOnly?: boolean; // Krötenheerdt: keep only m === k
+	// Marek's five levels of increasing complexity (lib/tilings/tiling-level.ts). A CURVED-geometry
+	// facet: it needs per-orbit vertex configurations, which only the hyperbolic and spherical shelves
+	// ship, and its top rung means nothing in E², where every combination shares one edge length for
+	// free. Anything the ladder does not describe — every edge system, colouring and freedraw pattern,
+	// and the whole Euclidean catalogue — is EXCLUDED while this is active, never silently passed.
+	levels?: TilingLevel[];
 	starFolds?: number[]; // keep tilings using at least one of these star folds
 	parametric?: "rigid" | "family"; // rigid (no α) / one-parameter α-family
 	isotoxalShape?: "alpha" | "alpha-beta"; // isotoxal only: 1 free angle (α) vs 2 independent (α, β)
@@ -836,6 +950,10 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	if (f.mValue != null && t.m !== f.mValue) return false;
 	if (f.partitionKey != null && partitionKeyOf(t) !== f.partitionKey) return false;
 	if (f.maximalOnly && !isMaximal(t)) return false;
+	if (f.levels?.length) {
+		const lv = tilingLevel(t);
+		if (lv == null || !f.levels.includes(lv)) return false;
+	}
 	if (f.starFolds?.length) {
 		const folds = starFoldsOf(t);
 		if (!f.starFolds.some((n) => folds.includes(n))) return false;
@@ -912,6 +1030,11 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		hypColors: r.hypColors,
 		sphColors: r.sphColors,
 		schwarz: r.schwarz,
+		sphEdges: r.sphEdges,
+		hypPoly: r.hypPoly,
+		sphPoly: r.sphPoly,
+		pentEdges: r.pentEdges,
+		ihEdges: r.ihEdges,
 	};
 }
 
@@ -1376,6 +1499,334 @@ export async function loadSchwarzShard(board: string, k: number): Promise<Refere
 		});
 	schwarzShardInflight.set(key, p);
 	return p;
+}
+
+// ── Uniform-polyhedron edge systems (spherical) ──────────────────────────────────────────────────
+// Marek's prisms, antiprisms, truncated tetrahedron, cuboctahedron and its gyro-twin. Adapted at load
+// like every other Čtrnáct shelf; the board's solid name carries the row and the family line says how
+// many tiles the decoration cuts the solid into.
+function sphEdgesToReference(p: SphEdgesPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "freedraw",
+		k: p.k,
+		family: `${p.solid}${p.chiral ? " · chiral" : ""} · ${sphEdgesFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		sphEdges: p,
+		geometry: "spherical",
+		discoverer: "Marek Čtrnáct",
+		// Decoded from Marek's certificates and checked, not trusted: every development closes to Euler 2
+		// with the solid's own V/E/F, every side measures the one forced arc, and every pattern lands on
+		// the shard's shared board. The per-k counts reproduce his census files exactly. No independent
+		// enumeration of this class exists, so every slice is "candidate".
+		certification: "candidate",
+	};
+}
+
+async function fetchSphEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
+	try {
+		const res = await fetch(sphEdgesShardUrl(board, k));
+		if (!res.ok) return [];
+		const shard = (await res.json()) as SphEdgesShard;
+		return hydrateSphEdgesShard(shard).map(sphEdgesToReference);
+	} catch {
+		return [];
+	}
+}
+
+let sphEdgesCache: ReferenceTiling[] | null = null;
+let sphEdgesInflight: Promise<ReferenceTiling[]> | null = null;
+
+/** Eager slices, loaded with the Spherical geometry. The dense tails (each board's lazyKs — the two k=12
+ *  cuboctahedron/J27 shards are 6.6 and 27.4 MB) wait for their k chip. */
+export async function loadSphericalEdgesAtlas(): Promise<ReferenceTiling[]> {
+	if (sphEdgesCache) return sphEdgesCache;
+	if (sphEdgesInflight) return sphEdgesInflight;
+	sphEdgesInflight = Promise.all(
+		SPH_EDGES_BOARDS.flatMap((b: SphEdgesBoard) => b.eagerKs.map((k) => fetchSphEdgesShard(b.id, k))),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			sphEdgesCache = data;
+			sphEdgesInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			sphEdgesInflight = null;
+			throw err;
+		});
+	return sphEdgesInflight;
+}
+
+const sphEdgesShardCache = new Map<string, ReferenceTiling[]>();
+const sphEdgesShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+/** A dense (board, k) tail, fetched only when that k comes into view. */
+export async function loadSphericalEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
+	const key = `${board}-${k}`;
+	const cached = sphEdgesShardCache.get(key);
+	if (cached) return cached;
+	const existing = sphEdgesShardInflight.get(key);
+	if (existing) return existing;
+	const p = fetchSphEdgesShard(board, k)
+		.then((data) => {
+			sphEdgesShardCache.set(key, data);
+			sphEdgesShardInflight.delete(key);
+			return data;
+		})
+		.catch((err) => {
+			sphEdgesShardInflight.delete(key);
+			throw err;
+		});
+	sphEdgesShardInflight.set(key, p);
+	return p;
+}
+
+// ── The 3.4.n.4 hyperbolic tilings by regular polygons ───────────────────────────────────────────
+// A TILINGS-class shelf, not a decoration: source "hyperbolic" puts it beside the developed patches,
+// and the sub-axis is the board n. The card's family line names the polygon sizes the tiling uses.
+function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "hyperbolic",
+		k: p.k,
+		family: `${hypPolyBoardLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypPolyFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		hypPoly: p,
+		// H² has no similarity, so the forced edge length is a coordinate, not a scale — the card shows it.
+		edge: p.edge,
+		geometry: "hyperbolic",
+		discoverer: "Marek Čtrnáct",
+		// Every record developed to a patch whose edges and face sides all measure ℓ (residuals ~1e-12)
+		// before it was emitted; 26,605 of 26,605 certificates passed. The enumeration behind them is
+		// Marek's alone, so "candidate".
+		certification: "candidate",
+	};
+}
+
+async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[]> {
+	try {
+		const res = await fetch(hypPolyShardUrl(n, k));
+		if (!res.ok) return [];
+		const recs = (await res.json()) as HypPolyPattern[];
+		return recs.map(hypPolyToReference);
+	} catch {
+		return [];
+	}
+}
+
+let hypPolyCache: ReferenceTiling[] | null = null;
+let hypPolyInflight: Promise<ReferenceTiling[]> | null = null;
+
+/** The five lowest k of each board, loaded with the Hyperbolic geometry (a few KB in total). */
+export async function loadHyperbolicPolyAtlas(): Promise<ReferenceTiling[]> {
+	if (hypPolyCache) return hypPolyCache;
+	if (hypPolyInflight) return hypPolyInflight;
+	hypPolyInflight = Promise.all(
+		HYP_POLY_BOARDS.flatMap((b: HypPolyBoard) => b.eagerKs.map((k) => fetchHypPolyShard(String(b.n), k))),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			hypPolyCache = data;
+			hypPolyInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			hypPolyInflight = null;
+			throw err;
+		});
+	return hypPolyInflight;
+}
+
+const hypPolyShardCache = new Map<string, ReferenceTiling[]>();
+const hypPolyShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
+
+/** A (board, k) shard, fetched only when that k comes into view. */
+export async function loadHyperbolicPolyShard(n: string, k: number): Promise<ReferenceTiling[]> {
+	const key = `${n}-${k}`;
+	const cached = hypPolyShardCache.get(key);
+	if (cached) return cached;
+	const existing = hypPolyShardInflight.get(key);
+	if (existing) return existing;
+	const p = fetchHypPolyShard(n, k)
+		.then((data) => {
+			hypPolyShardCache.set(key, data);
+			hypPolyShardInflight.delete(key);
+			return data;
+		})
+		.catch((err) => {
+			hypPolyShardInflight.delete(key);
+			throw err;
+		});
+	hypPolyShardInflight.set(key, p);
+	return p;
+}
+
+// ── Edge systems on a PARAMETRIC pentagon (Kershner type 1) ─────────────────────────────────────
+// The only shelf whose records carry no geometry at all. `tileClassOf` sees a freedraw-class family
+// label, so it lands in the EDGES decoration beside the other edge systems, and its geometry stays
+// euclidean because a plane tiling is what it is.
+function pentEdgesToReference(p: PentEdgeRecord): ReferenceTiling {
+	const board = PENT_EDGE_BOARDS.find((b) => String(b.type) === String(p.type));
+	return {
+		id: p.id,
+		source: "freedraw",
+		k: p.k,
+		family: `Pentagon ${board?.label ?? p.type} · ${pentEdgeFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		pentEdges: p,
+		geometry: "euclidean",
+		discoverer: "Marek Čtrnáct",
+		// Decoded 17,993 of 17,993 with per-k counts matching his census exactly; the enumeration is his,
+		// so "candidate".
+		certification: "candidate",
+	};
+}
+
+let pentEdgesCache: ReferenceTiling[] | null = null;
+let pentEdgesInflight: Promise<ReferenceTiling[]> | null = null;
+
+/** The eager slices (k = 2, 4, 6 — 1.2 MB in total). k = 8 and 10 are 8.4 and 35.2 MB and load per-k. */
+export async function loadPentagonEdgesAtlas(): Promise<ReferenceTiling[]> {
+	if (pentEdgesCache) return pentEdgesCache;
+	if (pentEdgesInflight) return pentEdgesInflight;
+	pentEdgesInflight = Promise.all(
+		PENT_EDGE_BOARDS.flatMap((b) =>
+			b.eagerKs.map((k) =>
+				fetch(pentEdgeShardUrl(b.id, k))
+					.then((res) => (res.ok ? (res.json() as Promise<PentEdgeRecord[]>) : []))
+					.catch(() => [] as PentEdgeRecord[])
+					.then((recs) => recs.map(pentEdgesToReference)),
+			),
+		),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			pentEdgesCache = data;
+			pentEdgesInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			pentEdgesInflight = null;
+			throw err;
+		});
+	return pentEdgesInflight;
+}
+
+/** One lazy (board, k) shard. */
+export async function loadPentagonEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
+	const res = await fetch(pentEdgeShardUrl(board, k));
+	if (!res.ok) return [];
+	const recs = (await res.json()) as PentEdgeRecord[];
+	return recs.map(pentEdgesToReference);
+}
+
+// ── Edge systems on a PARAMETRIC ISOHEDRAL tile ──────────────────────────────────────────────────
+// The second geometry-free shelf, and the one that generalises the first: its tile comes from Tactile,
+// so the same decoder and the same renderer reach any isohedral type Marek runs a solver on. IH01 is
+// the general hexagon with opposite sides paired.
+function ihEdgesToReference(p: IhEdgeRecord): ReferenceTiling {
+	const board = IH_EDGE_BOARDS.find((b) => b.ih === p.ih);
+	return {
+		id: p.id,
+		source: "freedraw",
+		k: p.k,
+		family: `${board?.label ?? `IH${p.ih}`} · ${ihEdgeFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		ihEdges: p,
+		geometry: "euclidean",
+		discoverer: "Marek Čtrnáct",
+		// Decoded 14,759 of 14,759 shipped with per-k counts matching his census exactly; the enumeration
+		// is his, so "candidate".
+		certification: "candidate",
+	};
+}
+
+let ihEdgesCache: ReferenceTiling[] | null = null;
+let ihEdgesInflight: Promise<ReferenceTiling[]> | null = null;
+
+/** The eager slices (k = 2…10 — 2.7 MB in total). k = 12 and 14 are 14.1 and 35.0 MB and load per-k. */
+export async function loadIsohedralEdgesAtlas(): Promise<ReferenceTiling[]> {
+	if (ihEdgesCache) return ihEdgesCache;
+	if (ihEdgesInflight) return ihEdgesInflight;
+	ihEdgesInflight = Promise.all(
+		IH_EDGE_BOARDS.flatMap((b) =>
+			b.eagerKs.map((k) =>
+				fetch(ihEdgeShardUrl(b.id, k))
+					.then((res) => (res.ok ? (res.json() as Promise<IhEdgeRecord[]>) : []))
+					.catch(() => [] as IhEdgeRecord[])
+					.then((recs) => recs.map(ihEdgesToReference)),
+			),
+		),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			ihEdgesCache = data;
+			ihEdgesInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			ihEdgesInflight = null;
+			throw err;
+		});
+	return ihEdgesInflight;
+}
+
+/** One lazy (board, k) shard. */
+export async function loadIsohedralEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
+	const res = await fetch(ihEdgeShardUrl(board, k));
+	if (!res.ok) return [];
+	const recs = (await res.json()) as IhEdgeRecord[];
+	return recs.map(ihEdgesToReference);
+}
+
+// ── The 3.4.n.4 family on the sphere (n = 3, 4, 5) ───────────────────────────────────────────────
+// The whole family is 20 tilings / 55 kB, so there is no eager/lazy split: entering the Spherical
+// geometry pulls all of it.
+function sphPolyToReference(p: SphPolyPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "spherical",
+		k: p.k,
+		family: `${sphPolyBoardLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${sphPolyFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		sphPoly: p,
+		geometry: "spherical",
+		discoverer: "Marek Čtrnáct",
+		// Every record closes to Euler 2 with every side measuring the one forced arc and every ring the
+		// length its letter claims, and its k is the orbit count MEASURED off the finished solid — which
+		// agrees with Marek's on all 20. The enumeration itself is his alone, so "candidate".
+		certification: "candidate",
+	};
+}
+
+let sphPolyCache: ReferenceTiling[] | null = null;
+let sphPolyInflight: Promise<ReferenceTiling[]> | null = null;
+
+export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
+	if (sphPolyCache) return sphPolyCache;
+	if (sphPolyInflight) return sphPolyInflight;
+	sphPolyInflight = Promise.all(
+		SPH_POLY_BOARDS.flatMap((b) =>
+			b.ks.map((k) =>
+				fetch(sphPolyShardUrl(b.n, k))
+					.then((res) => (res.ok ? (res.json() as Promise<SphPolyPattern[]>) : []))
+					.catch(() => [] as SphPolyPattern[])
+					.then((recs) => recs.map(sphPolyToReference)),
+			),
+		),
+	)
+		.then((lists) => {
+			const data = lists.flat();
+			sphPolyCache = data;
+			sphPolyInflight = null;
+			return data;
+		})
+		.catch((err) => {
+			sphPolyInflight = null;
+			throw err;
+		});
+	return sphPolyInflight;
 }
 
 // Lazy client-side fetch of the static atlas. Cached across mode toggles so the ~4MB payload is pulled

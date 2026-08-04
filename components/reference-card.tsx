@@ -13,7 +13,11 @@ import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail";
+import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
+import { hypPolyMeta } from "@/lib/tilings/hyp-poly";
+import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
+import { IsohedralEdgesThumbnail } from "@/components/isohedral-edges-thumbnail";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
 import { paramGlyphs } from "@/lib/utils/paramCell";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
@@ -163,6 +167,16 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					) : (
 						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(tiling.schwarz)} />
 					)
+				) : tiling.sphPoly ? (
+					<SphPolyThumbnail pattern={tiling.sphPoly} />
+				) : tiling.pentEdges ? (
+					<PentagonEdgesThumbnail pattern={tiling.pentEdges} />
+				) : tiling.ihEdges ? (
+					<IsohedralEdgesThumbnail pattern={tiling.ihEdges} />
+				) : tiling.sphEdges ? (
+					<SphSchwarzThumbnail pattern={tiling.sphEdges} />
+				) : tiling.hypPoly ? (
+					<HyperbolicColorsThumbnail pattern={hypPolyMeta(tiling.hypPoly)} />
 				) : tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
 				) : tiling.sphColors ? (
@@ -358,7 +372,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							{tiling.id}
 						</p>
 					</>
-				) : tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw ? (
+				) : tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw || tiling.sphEdges || tiling.hypPoly || tiling.sphPoly ? (
 					// The CURVED edge shelves. Same object as planar freedraw, but off the plane there is no grid
 					// of points to count: Marek's spherical and hyperbolic solvers count VERTEX orbits of the
 					// decorated tiling, so the k line has to say that and not "grid points". The family line
