@@ -43,6 +43,7 @@ On (2,3,6) that gives 1 : √3 : 2 for A : C : E, which is the table develop_fre
 carries by hand — reproduced here from the formula, and asserted in the selftest.
 """
 import math
+import re
 
 # Marek's boards, by the id his corpora use. Value is the angle triple (p, q, r), always sorted.
 BOARDS = {
@@ -61,6 +62,78 @@ BOARDS = {
 DIGON_PAIRS = (("A2", "B2"), ("C2", "D2"), ("E2", "F2"))
 DIGON_LETTERS = tuple(x for pair in DIGON_PAIRS for x in pair)
 DRAWN_LETTERS = tuple(pair[1] for pair in DIGON_PAIRS)
+
+
+class Dialect:
+    """How one corpus letters a board. Marek changed both halves of the scheme mid-2026-08.
+
+    LEGACY is every Schwarz drop up to 2026-07-29: corners are `S<n>` and each edge class gets ONE
+    undrawn letter and ONE drawn one — A2/B2, C2/D2, E2/F2.
+
+    SLOTTED is the corrected (2,3,4) rerun of 2026-08-04 and the alphabet the isohedral boards already
+    use: corners are `A<n>`, and each class gets FOUR letters, `X10`/`X11` undrawn and `X12`/`X13`
+    drawn. The pair is not redundant — the slot says which END of the edge a dart sits at, so class A
+    joining the order-2 and order-3 corners puts A10 at the order-2 end and A11 at the order-3 end.
+    That is the same bit the isohedral boards use to orient a bowed edge.
+
+    Consequence for checking: in LEGACY a digon letter is listed beside BOTH corner letters its edge
+    joins, so a letter alone names the pair. In SLOTTED each letter sits at exactly one corner and it
+    takes the whole CLASS to name the pair. So the corpus check below works per class, not per letter,
+    which is true in both dialects.
+    """
+
+    def __init__(self, name, corner_prefix, classes):
+        self.name = name
+        self.corner_prefix = corner_prefix
+        # classes[i] = (undrawn letters, drawn letters) of edge class i
+        self.classes = tuple((tuple(u), tuple(d)) for u, d in classes)
+        self.digons = tuple(x for u, d in self.classes for x in u + d)
+        self.drawn = tuple(x for _, d in self.classes for x in d)
+        self._class_of = {x: i for i, (u, d) in enumerate(self.classes) for x in u + d}
+
+    def corner_letter(self, n):
+        return f"{self.corner_prefix}{n}"
+
+    def is_corner(self, letter):
+        """`A<n>` is a corner, `A10`..`A13` are digons of class A, and both start with A — so the digon
+        set is subtracted rather than relying on the prefix alone."""
+        return self.class_of(letter) is None and bool(
+            re.fullmatch(rf"{self.corner_prefix}\d+", letter)
+        )
+
+    def class_of(self, letter):
+        """Edge-class index of a digon letter, or None."""
+        return self._class_of.get(letter)
+
+    def __repr__(self):
+        return f"Dialect({self.name})"
+
+
+LEGACY = Dialect("legacy", "S", [(("A2",), ("B2",)), (("C2",), ("D2",)), (("E2",), ("F2",))])
+SLOTTED = Dialect(
+    "slotted", "A", [((f"{L}10", f"{L}11"), (f"{L}12", f"{L}13")) for L in ("A", "B", "C")]
+)
+DIALECTS = (LEGACY, SLOTTED)
+
+
+def detect_dialect(certs):
+    """Which dialect a parsed corpus is written in, from the letters it actually uses.
+
+    The two alphabets OVERLAP, so this cannot be a simple set intersection: `A2` is a legacy DIGON and
+    a slotted CORNER at the same time, and every slotted corpus is full of it. What has no overlap is
+    the slotted digon range — nothing in LEGACY looks like `X10`..`X13` — so a corpus is slotted
+    exactly when it uses one of those, and legacy otherwise. The caller reports which it got, since
+    picking the wrong one would silently mislabel every edge class.
+    """
+    letters = {c for cert in certs for vt in cert["types"] for c in vt["figure"]}
+    if not letters:
+        raise BoardError("corpus has no vertex figures to read an alphabet from")
+    if letters & set(SLOTTED.digons):
+        return SLOTTED
+    if letters & set(LEGACY.digons):
+        return LEGACY
+    raise BoardError(f"no dialect recognises any letter of {sorted(letters)[:8]}")
+
 
 TWO_PI = 2 * math.pi
 
@@ -89,8 +162,8 @@ def triangle_count(pqr):
     return int(round(n))
 
 
-def corner_letter(n):
-    return f"S{n}"
+def corner_letter(n, dialect=LEGACY):
+    return dialect.corner_letter(n)
 
 
 def side_length(pqr, i, j):
@@ -118,11 +191,11 @@ def side_length(pqr, i, j):
     return math.acosh(max(1.0, x))
 
 
-def letter_pairs(pqr):
-    """{digon letter: (corner letter, corner letter)} for one board, both letters of each pair.
+def class_pairs(pqr, dialect=LEGACY):
+    """{edge-class index: (corner letter, corner letter)} for one board.
 
-    Classes are the DISTINCT unordered pairs of corner letters, lettered in lexicographic order of
-    the pair. A repeated angle (the isoceles boards) collapses two index pairs onto one class; this
+    Classes are the DISTINCT unordered pairs of corner ORDERS, lettered in ascending order of the
+    pair. A repeated angle (the isoceles boards) collapses two index pairs onto one class; this
     asserts they agree on length instead of assuming it."""
     by_pair = {}
     for i in range(3):
@@ -134,78 +207,101 @@ def letter_pairs(pqr):
             by_pair[key] = ln
     out = {}
     for idx, key in enumerate(sorted(by_pair)):
-        if idx >= len(DIGON_PAIRS):
-            raise BoardError(f"board {pqr} needs more than {len(DIGON_PAIRS)} edge classes")
-        for letter in DIGON_PAIRS[idx]:
-            out[letter] = (corner_letter(key[0]), corner_letter(key[1]))
+        if idx >= len(dialect.classes):
+            raise BoardError(f"board {pqr} needs more than {len(dialect.classes)} edge classes")
+        out[idx] = (dialect.corner_letter(key[0]), dialect.corner_letter(key[1]))
     return out
 
 
-def edge_lengths(pqr):
-    """{digon letter: side length}, both letters of each class mapping to the same length."""
-    pairs = letter_pairs(pqr)
+def letter_pairs(pqr, dialect=LEGACY):
+    """{digon letter: (corner letter, corner letter)}, every letter of a class sharing its pair."""
+    per_class = class_pairs(pqr, dialect)
+    out = {}
+    for ci, pair in per_class.items():
+        for letter in dialect.classes[ci][0] + dialect.classes[ci][1]:
+            out[letter] = pair
+    return out
+
+
+def edge_lengths(pqr, dialect=LEGACY):
+    """{digon letter: side length}, every letter of a class mapping to the same length."""
     lens = {}
-    for letter, (a, b) in pairs.items():
-        na, nb = int(a[1:]), int(b[1:])
+    for letter, (a, b) in letter_pairs(pqr, dialect).items():
+        na, nb = int(a[len(dialect.corner_prefix):]), int(b[len(dialect.corner_prefix):])
         i = pqr.index(na)
         j = next(m for m in range(3) if pqr[m] == nb and m != i)
         lens[letter] = side_length(pqr, i, j)
     return lens
 
 
-def alphabet(pqr):
-    """{letter: interior angle in radians} — corners Sn at π/n, every digon at 0."""
-    units = {corner_letter(n): math.pi / n for n in set(pqr)}
-    for letter in DIGON_LETTERS:
+def alphabet(pqr, dialect=LEGACY):
+    """{letter: interior angle in radians} — corners at π/n, every digon at 0."""
+    units = {dialect.corner_letter(n): math.pi / n for n in set(pqr)}
+    for letter in dialect.digons:
         units[letter] = 0.0
     return units
 
 
-def derive_letter_pairs(certs):
-    """Re-derive {digon letter: (corner, corner)} from a corpus's own vertex figures.
+def derive_class_pairs(certs, dialect=LEGACY):
+    """Re-derive {edge-class index: (corner, corner)} from a corpus's own vertex figures.
 
     Each vertex of a Schwarz board carries ONE corner letter (every corner meeting there has the same
-    angle), so the set of corner letters a digon letter is listed beside, over the whole corpus, IS
-    the pair of corner letters its edge joins — a singleton meaning both ends are the same letter.
-    Used to CHECK letter_pairs() against the data instead of trusting the lexicographic rule."""
+    angle), so the corner letters a CLASS is listed beside, over the whole corpus, are the pair of
+    corners its edges join — a singleton meaning both ends are the same letter.
+
+    Per class rather than per letter, because that is what is true in both dialects: LEGACY lists a
+    class's single undrawn letter at both ends of its edge, while SLOTTED splits the two ends across
+    two letters and neither one alone sees the pair.
+    """
     seen = {}
     for cert in certs:
         for vt in cert["types"]:
-            corners = {c for c in vt["figure"] if c.startswith("S")}
+            corners = {c for c in vt["figure"] if dialect.is_corner(c)}
             if len(corners) != 1:
                 raise BoardError(f"vertex figure {vt['figure']} mixes corner letters {corners}")
             corner = corners.pop()
             for c in vt["figure"]:
-                if c in DIGON_LETTERS:
-                    seen.setdefault(c, set()).add(corner)
+                ci = dialect.class_of(c)
+                if ci is not None:
+                    seen.setdefault(ci, set()).add(corner)
     out = {}
-    for letter, corners in seen.items():
-        cs = sorted(corners, key=lambda s: int(s[1:]))
+    for ci, corners in seen.items():
+        cs = sorted(corners, key=lambda s2: int(s2[len(dialect.corner_prefix):]))
         if len(cs) == 1:
-            out[letter] = (cs[0], cs[0])
+            out[ci] = (cs[0], cs[0])
         elif len(cs) == 2:
-            out[letter] = (cs[0], cs[1])
+            out[ci] = (cs[0], cs[1])
         else:
-            raise BoardError(f"digon {letter} sits at {len(cs)} corner classes: {cs}")
+            raise BoardError(f"class {ci} sits at {len(cs)} corner classes: {cs}")
     return out
 
 
-def check_corpus(pqr, certs):
-    """The derived letter→corner-pair map must agree with the board's own, on every letter the corpus
-    uses. Returns the derived map. Raises when the corpus is not this board's — which is how the
-    misfiled certificates in Marek's 237 drop are told apart from the real ones."""
-    want = letter_pairs(pqr)
-    got = derive_letter_pairs(certs)
-    for letter, pair in got.items():
-        if letter not in want:
-            raise BoardError(f"letter {letter} is not in board {pqr}'s alphabet")
-        if want[letter] != pair:
-            raise BoardError(f"letter {letter} joins {pair}, board {pqr} says {want[letter]}")
-    used = {c for cert in certs for vt in cert["types"] for c in vt["figure"] if c.startswith("S")}
-    known = {corner_letter(n) for n in pqr}
+def derive_letter_pairs(certs, dialect=LEGACY):
+    """`derive_class_pairs` spread back over every letter of each class."""
+    per_class = derive_class_pairs(certs, dialect)
+    out = {}
+    for ci, pair in per_class.items():
+        for letter in dialect.classes[ci][0] + dialect.classes[ci][1]:
+            out[letter] = pair
+    return out
+
+
+def check_corpus(pqr, certs, dialect=LEGACY):
+    """The derived class→corner-pair map must agree with the board's own, on every class the corpus
+    uses. Returns the derived per-LETTER map. Raises when the corpus is not this board's — which is how
+    the misfiled certificates in Marek's 237 drop are told apart from the real ones."""
+    want = class_pairs(pqr, dialect)
+    got = derive_class_pairs(certs, dialect)
+    for ci, pair in got.items():
+        if ci not in want:
+            raise BoardError(f"edge class {ci} is not in board {pqr}'s alphabet")
+        if want[ci] != pair:
+            raise BoardError(f"class {ci} joins {pair}, board {pqr} says {want[ci]}")
+    used = {c for cert in certs for vt in cert["types"] for c in vt["figure"] if dialect.is_corner(c)}
+    known = {dialect.corner_letter(n) for n in pqr}
     if not used <= known:
         raise BoardError(f"corner letters {sorted(used - known)} are not in board {pqr}")
-    return got
+    return derive_letter_pairs(certs, dialect)
 
 
 def board_label(board_id):

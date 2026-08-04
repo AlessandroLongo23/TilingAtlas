@@ -75,7 +75,11 @@ the shelf is verified in the browser: period, fills, scaffold/lattice/orbit over
   ⚑ Only the class occurring twice gets a digon slot, so four of its five classes cannot say which way
   an edge is crossed — harmless because those four are the S edges, equal to their own reverse, and
   `checkSlotsAreOpposite` asserts that pairing instead of assuming it.
-- ⚑ `solver_schwarz_edges_234.zip` (11:51) still unprocessed — a one-row job on the Schwarz shelf.
+- **The (2,3,4) F2 rerun is IN** — k=3 goes 5 → 10 and k=4 goes 2 → 13, both strict supersets: 16
+  tilings that a shelf calling itself a catalogue was missing. ⚑ Only those two slices are rerun, so
+  (2,3,4) k=5…11 and the whole of (2,3,5) (2,3,6) (2,3,7) (2,4,5) are still lower bounds — five boards
+  short, not six. ⚑ The corpus arrives in the isohedral alphabet, so the Schwarz front end now carries
+  a LEGACY/SLOTTED `Dialect`; re-decoding legacy (2,3,5) is byte-identical.
 
 Detail: DEVELOPMENT_NOTES.md §"The IH01 shelf ships".
 

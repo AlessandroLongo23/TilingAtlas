@@ -9421,3 +9421,51 @@ every tile of every patch congruent.
 (95,328) are enumerated and dropped. Five edge classes grow the search far faster than three. The
 counts are the PENTAGON board's, exactly (13 / 103 / 628 / 3977 / 13,272), which is the same coincidence
 as before one level up: that board also decorates a five-class tile.
+
+## The (2,3,4) rerun: a corrected corpus in a new alphabet, and 16 tilings that were missing
+
+`solver_schwarz_edges_234.zip` (2026-08-04 11:51) is the rerun of the F2 bug flagged in
+`lib/freedraw/schwarz.ts` since 2026-07-29, and it is in. ⚑ **I called this "a one-row job" three
+times in earlier notes. It was not** — the corpus arrives in a NEW ALPHABET, and getting it in meant
+teaching the Schwarz front end two dialects.
+
+**What the bug cost, measured.** On the boards whose triangle has three different angles, the short
+solver dropped every tiling that draws the longest edge class. On (2,3,4) that is **k=3: 5 → 10 and
+k=4: 2 → 13** — sixteen tilings that were missing from a shelf presenting itself as a catalogue, and
+the k=4 slice was more than six times short. Both new sets are strict SUPERSETS: all seven previously
+shipped records survive unchanged, which is what says this is a correction and not a different board.
+
+**The new alphabet is the isohedral one.** Marek re-lettered both halves: corners `S<n>` → `A<n>`, and
+digons `A2/B2, C2/D2, E2/F2` (one undrawn and one drawn letter per class) → `X10`/`X11` undrawn and
+`X12`/`X13` drawn. The extra letters are not redundant — the slot says which END of the edge a dart
+sits at, so class A joining the order-2 and order-3 corners puts A10 at the order-2 end and A11 at the
+order-3 end. That is the same bit the isohedral boards use to orient a bowed edge, so the two corpora
+have converged on one scheme.
+
+`schwarz_board.py` grew a `Dialect`, LEGACY and SLOTTED, defaulting to LEGACY so every existing call
+site is unchanged, and `develop_schwarz.py` detects it from the corpus and reports it. Four things had
+to move, and each was an assumption that only held in the old dialect:
+
+⚑ **Detection cannot be a set intersection.** The alphabets OVERLAP: `A2` is a legacy DIGON and a
+slotted CORNER at once, and every slotted corpus is full of it, so matching on shared letters called
+the corpus ambiguous. Only the slotted digon range `X10..X13` is unique to one dialect, so that is what
+decides it.
+
+⚑ **`A10` also matches `A\d+`**, so corner detection could not be the prefix alone; the dialect's own
+digon set is subtracted from it.
+
+⚑ **A digon face no longer carries one letter.** The face check demanded all its darts agree on the
+LETTER, which is true in LEGACY and false in SLOTTED, where a face reads `{A10, A11}` — the two ends of
+one edge. It now demands they agree on the edge CLASS and the DRAWN state, which is the actual claim.
+
+⚑ The certificate filename regex was `[A-Z0-9]+` and the slotted tokens are hex — `Aa` is A10 — so no
+file matched and the corpus looked empty. The report's edge-lengths line was hardcoded to `A2, C2, E2`
+and silently printed nothing on the first slotted corpus; it reads the letters off the dialect now.
+
+**Regression check, and it is the load-bearing one: re-decoding the legacy (2,3,5) corpus reproduces
+its shipped shards BYTE-IDENTICALLY** at both k=3 and k=5. The seven boards already on the shelf are
+untouched.
+
+⚑ **(2,3,4) is now MIXED and the flag says so.** The rerun covers only k=3 and k=4; k=5…11 on that
+board are still the short solver's output, and (2,3,5) (2,3,6) (2,3,7) (2,4,5) are entirely untouched.
+Five boards remain lower bounds, not six.

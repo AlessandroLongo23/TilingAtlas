@@ -2034,3 +2034,10 @@ class occurring twice (`b`) gets a slot bit; a, c, d, e get one each and cannot 
 crossed — harmless because those four are the S edges, equal to their own reverse. So the slot check now
 demands opposite slots only where the curve is not self-reverse, and asserts that pairing. Deeper board:
 13/103/628/3977, budget stops at k=8. NOTES §"IH04: the board where not every edge". — CC
+
+### 2026-08-05 (5) — CC — the (2,3,4) rerun lands, in a new alphabet
+The F2-bug rerun flagged since 2026-07-29 is in: (2,3,4) k=3 goes 5 → 10, k=4 goes 2 → 13, both strict
+supersets — 16 tilings that were missing. ⚑ NOT the one-row job I called it: the corpus uses the new
+alphabet the isohedral boards use (corners `A<n>`, digons `X10..X13`), so schwarz_board.py grew a
+LEGACY/SLOTTED `Dialect` and four assumptions moved. Re-decoding legacy (2,3,5) is BYTE-IDENTICAL.
+⚑ Only k=3,4 are rerun; k=5…11 stay lower bounds. NOTES §"The (2,3,4) rerun". — CC

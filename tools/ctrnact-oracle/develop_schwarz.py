@@ -55,7 +55,9 @@ from schwarz_board import (
     BoardError,
     DIGON_LETTERS,
     DRAWN_LETTERS,
+    LEGACY,
     alphabet,
+    detect_dialect,
     board_label,
     check_corpus,
     edge_lengths,
@@ -76,7 +78,7 @@ TILE_CAP = 400   # base triangles per merged tile before H² calls it unbounded
 
 
 # ------------------------------------------------------------------ vertex tables (the bridge)
-def vtable_variants_sch(figure, tag, units):
+def vtable_variants_sch(figure, tag, units, dialect=LEGACY):
     """develop_freedraw.vtable_variants with 30°-unit arithmetic replaced by radians, and the board's
     digon convention (every edge carries one; the letter says whether it is drawn) passed through.
 
@@ -97,7 +99,7 @@ def vtable_variants_sch(figure, tag, units):
     if not m:
         raise DevelopError(f"unrecognised site tag {tag!r}")
     head = m.group(1)
-    kw = {"digons": DIGON_LETTERS, "drawn_letters": DRAWN_LETTERS}
+    kw = {"digons": dialect.digons, "drawn_letters": dialect.drawn}
     if head == "F" or head.startswith("C"):
         if head.startswith("C") and int(head[1:]) != rotn:
             raise DevelopError(f"tag {tag} order != rotation order {rotn}")
@@ -110,10 +112,10 @@ def vtable_variants_sch(figure, tag, units):
     return [fd.VTable(figure, units, chiral=False, axis=a, **kw) for a in axes]
 
 
-def build_blocks(cert, units, lens):
+def build_blocks(cert, units, lens, dialect=LEGACY):
     """Every table-variant block that survives glue construction, each carrying `elen` — the length of
     each dart's edge, read off the digon letter beside it. A dart and its glue partner must agree."""
-    variant_lists = [vtable_variants_sch(t["figure"], t["tag"], units) for t in cert["types"]]
+    variant_lists = [vtable_variants_sch(t["figure"], t["tag"], units, dialect) for t in cert["types"]]
     combos = [[]]
     for vl in variant_lists:
         combos = [c + [v] for c in combos for v in vl]
@@ -156,7 +158,7 @@ def vertex_letter(block, h):
 
 
 # ------------------------------------------------------------------ quotient faces + tile orbits
-def quotient_faces(block, corners):
+def quotient_faces(block, corners, dialect=LEGACY):
     """Cycles of nxt(h) = glue[rneig[h]] — the faces of the quotient complex, each a Schwarz TRIANGLE
     or a DIGON. Unlike the regular-tiling version in develop_hyp_edges.py the corner letters VARY
     along a triangle (that is what "scalene" means here), so what is asserted is the shape: a triangle
@@ -182,10 +184,14 @@ def quotient_faces(block, corners):
         else:
             raise DevelopError("quotient face walk did not close")
         letters = [block.tile[x] for x in darts]
-        digon = [c in DIGON_LETTERS for c in letters]
+        digon = [dialect.class_of(c) is not None for c in letters]
         if all(digon):
-            if len(set(letters)) != 1:
-                raise DevelopError(f"digon face mixes letters {set(letters)}")
+            # One digon face is ONE edge, so its darts must agree on the edge class AND on whether it
+            # is drawn. They need not agree on the LETTER: the slotted dialect splits each state across
+            # two letters, one per end of the edge, so a face there reads {A10, A11} rather than {A2}.
+            kinds = {(dialect.class_of(c), c in dialect.drawn) for c in letters}
+            if len(kinds) != 1:
+                raise DevelopError(f"digon face mixes edge states {set(letters)}")
             if len(darts) not in (1, 2):
                 raise DevelopError(f"digon face has {len(darts)} darts")
             faces.append({"darts": darts, "kind": "digon", "letter": letters[0]})
@@ -777,14 +783,14 @@ def classify_tiles_hyp(block, face_of, faces, orbit, norbits, cap=TILE_CAP):
     return out
 
 
-def emit_darts(block, face_of, faces, orbit):
+def emit_darts(block, face_of, faces, orbit, dialect=LEGACY):
     """The shipped quotient structure. `alpha`/`elen`/`drawn` are what make it scalene-ready: the
     client cannot derive any of the three from polygon sizes on this board (every face is a triangle,
     every edge carries a digon), so all three are explicit."""
     n = len(block.rneig)
     lvert = [0] * n
     for h in range(n):
-        lvert[block.rneig[h]] = 2 if block.tile[h] in DIGON_LETTERS else 3
+        lvert[block.rneig[h]] = 2 if dialect.class_of(block.tile[h]) is not None else 3
     tile_orbit = [int(orbit[face_of[h]]) for h in range(n)]
     return {
         "rneig": [int(x) for x in block.rneig],
@@ -800,16 +806,16 @@ def emit_darts(block, face_of, faces, orbit):
 
 
 # ------------------------------------------------------------------ one certificate -> one record
-def develop_cert(cert, board_id, units, lens, cap=TILE_CAP):
+def develop_cert(cert, board_id, units, lens, dialect=LEGACY, cap=TILE_CAP):
     pqr = BOARDS[board_id]
     geo = geometry_of(pqr)
-    blocks, ncombo, reasons = build_blocks(cert, units, lens)
+    blocks, ncombo, reasons = build_blocks(cert, units, lens, dialect)
     if not blocks:
         return None, "glue: " + "; ".join(sorted(set(reasons))[:2]), ncombo
-    corners = sorted(f"S{n}" for n in pqr)
+    corners = sorted(dialect.corner_letter(n) for n in pqr)
     for block in blocks:
         try:
-            face_of, faces = quotient_faces(block, corners)
+            face_of, faces = quotient_faces(block, corners, dialect)
             orbit, norbits = tile_orbits(block, face_of, faces)
             n_edges = len(block.rneig) // 2
             n_drawn = sum(1 for h in range(len(block.rneig)) if block.drawn[h]) // 2
@@ -837,7 +843,7 @@ def develop_cert(cert, board_id, units, lens, cap=TILE_CAP):
                     **base,
                     "edges": sorted(round(lens[c], 12) for c in ("A2", "C2", "E2") if c in lens),
                     "tiles": res["faces"],
-                    "darts": emit_darts(block, face_of, faces, orbit),
+                    "darts": emit_darts(block, face_of, faces, orbit, dialect),
                     "stats": {
                         "tileOrbits": norbits,
                         "finite": sum(1 for s in sizes if s >= 0),
@@ -856,7 +862,9 @@ def develop_cert(cert, board_id, units, lens, cap=TILE_CAP):
 
 
 # ------------------------------------------------------------------ driver
-CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Z0-9]+)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
+# The token is the alphabet subset the certificate uses. Lower case is allowed because the SLOTTED
+# dialect writes its digon slots in hex — `Aa` is A10 — where the legacy one used `A2` throughout.
+CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Za-z0-9]+)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
 ID_PREFIX = {"spherical": "ss", "hyperbolic": "hs", "euclidean": "es"}
 
 
@@ -899,14 +907,17 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, cap
         progress=0):
     pqr = BOARDS[board_id]
     geo = geometry_of(pqr)
-    units = alphabet(pqr)
-    lens = edge_lengths(pqr)
     rows = load_corpus(source)
     if ks:
         rows = [r for r in rows if r[1] in ks]
     if limit:
         rows = rows[:limit]
-    check_corpus(pqr, [c for (_, _, _, c) in rows])
+    # The alphabet is the corpus's, not the board's: Marek re-lettered the Schwarz boards on
+    # 2026-08-04 and both dialects are in the materials tree, so it is detected, reported and checked.
+    dialect = detect_dialect([c for (_, _, _, c) in rows])
+    units = alphabet(pqr, dialect)
+    lens = edge_lengths(pqr, dialect)
+    check_corpus(pqr, [c for (_, _, _, c) in rows], dialect)
 
     by_k = defaultdict(list)
     failures = Counter()
@@ -923,7 +934,7 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, cap
         if cert.get("k") != k:
             failures["certificate k disagrees with the file name"] += 1
             continue
-        rec, err, ncombo = develop_cert(cert, board_id, units, lens, cap=cap)
+        rec, err, ncombo = develop_cert(cert, board_id, units, lens, dialect, cap=cap)
         if rec is None:
             key = err.split(":")[0]
             failures[key] += 1
@@ -979,7 +990,11 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, cap
 
     lines = [f"Schwarz edge-system develop — board {board_label(board_id)} ({board_id}, {geo})",
              f"source          : {source}",
-             f"edge lengths    : " + ", ".join(f"{c}={lens[c]:.9f}" for c in ("A2", "C2", "E2") if c in lens),
+             # One length per CLASS, named by its first undrawn letter — which is "A2" in the legacy
+             # dialect and "A10" in the slotted one, so the letters are taken from the dialect and not
+             # hardcoded (they were, and the line silently came out empty on the first slotted corpus).
+             f"edge lengths    : " + ", ".join(
+                 f"{u[0]}={lens[u[0]]:.9f}" for u, _ in dialect.classes if u[0] in lens),
              f"certificates in : {len(rows)}",
              f"developed       : {sum(len(v) for v in by_k.values())}",
              f"failed          : {sum(failures.values())}",

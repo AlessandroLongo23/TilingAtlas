@@ -148,12 +148,16 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 	// (2,3,5) no k=4 — and those are gaps in the solve, not empty slices. schwarzKGaps() below is what the
 	// UI says that with; do not quietly present the list as a complete enumeration.
 	//
-	// ⚑ SIX BOARDS ARE STILL SHORT (Marek, 2026-07-29). Two solver bugs, both since fixed upstream:
+	// ⚑ FIVE BOARDS ARE STILL SHORT (Marek, 2026-07-29). Two solver bugs, both since fixed upstream:
 	//   · a wrong definition on the boards whose triangle has THREE different angles — (2,3,4) (2,3,5)
 	//     (2,3,6) (2,3,7) (2,4,5) — dropped every tiling that draws the longest edge class. This is the
 	//     F2-never-appears flag: E2 (third class undrawn) names all 103 scalene certificates, F2 (drawn)
-	//     names none. Corrected solvers are in materials/_as-received/corrections.zip; the reruns have
-	//     not arrived, so those five counts below are LOWER BOUNDS.
+	//     names none. Corrected solvers are in materials/_as-received/corrections.zip.
+	//     (2,3,4) IS PARTLY RERUN (2026-08-04): its k=3 went 5 → 10 and its k=4 went 2 → 13, both strict
+	//     supersets of what shipped. The rerun covers ONLY those two slices, so k = 5…11 on that board
+	//     are still lower bounds and the other four boards are untouched. The rerun also arrived in a
+	//     NEW ALPHABET (corners A<n>, digons X10..X13 rather than S<n> and A2..F2) — see the `Dialect`
+	//     note in tools/ctrnact-oracle/schwarz_board.py.
 	//   · too few starting vertices on (2,2,3) and (2,2,4), losing tilings built only from the excluded
 	//     ones. (2,2,3) is CORRECTED here (2,297 → 2,347, and the all-edges-drawn pattern it was missing
 	//     is back at ss223-2-00007); (2,2,4) is still rerunning.
@@ -163,7 +167,8 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 	{ id: "233", pqr: [2, 3, 3], label: "(2,3,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6], lazyKs: [7] , counts: { 2: 4, 3: 111, 4: 464, 5: 654, 6: 1966, 7: 45580 } }, // k=7 is 45,580 / 19 MB
 	// (2,3,4) reached k=11 in Marek's 2026-07-29 rerun — 5,974 certificates, contiguous from k=3. Every
 	// slice is small enough to load with the geometry (k=11, the biggest, is 3,529 tilings / 1.8 MB).
-	{ id: "234", pqr: [2, 3, 4], label: "(2,3,4)", geometry: "spherical", eagerKs: [3, 4, 5, 6, 7, 8, 9, 10, 11], lazyKs: [] , counts: { 3: 5, 4: 2, 5: 80, 6: 81, 7: 196, 8: 392, 9: 86, 10: 1603, 11: 3529 } },
+	// k=3 and k=4 are the 2026-08-04 rerun (5 → 10, 2 → 13); k=5…11 are still the short solver's.
+	{ id: "234", pqr: [2, 3, 4], label: "(2,3,4)", geometry: "spherical", eagerKs: [3, 4, 5, 6, 7, 8, 9, 10, 11], lazyKs: [] , counts: { 3: 10, 4: 13, 5: 80, 6: 81, 7: 196, 8: 392, 9: 86, 10: 1603, 11: 3529 } },
 	{ id: "235", pqr: [2, 3, 5], label: "(2,3,5)", geometry: "spherical", eagerKs: [3, 5], lazyKs: [] , counts: { 3: 4, 5: 31 } },
 	// Hyperbolic. Marek's runs here are short — these two are the small end of the hyperbolic Schwarz
 	// family, and (2,3,7) is the smallest hyperbolic triangle there is.
