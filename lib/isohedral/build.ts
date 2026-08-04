@@ -354,6 +354,61 @@ export function prototileOutline(
 	return out;
 }
 
+/**
+ * One boundary edge of the prototile, in `tilingVertices` order: edge i runs from vertex i to i+1.
+ *
+ * This is what a preview needs and `prototileOutline` throws away — the outline is one flat point list,
+ * so nothing downstream can say which stretch of it is edge `b`. Cheap to keep: at most six entries.
+ */
+export interface PrototileEdge {
+	/** Which of the type's distinct curves draws this edge; `edgeShapes[id]` is its kind. */
+	id: number;
+	kind: EdgeKind;
+	/** True when the curve is traversed backwards here — the uppercase letters of `edgeWord`. */
+	rev: boolean;
+	/** The chord: tiling vertex `i` and vertex `i+1`. */
+	from: TactilePoint;
+	to: TactilePoint;
+	/** A point ON the drawn edge, at the curve's parameter midpoint. Where a label or a mark goes. */
+	mid: TactilePoint;
+}
+
+/**
+ * The boundary edges of the prototile, named and located, in the same order as `tiling.vertices()`.
+ *
+ * `rev` is not applied to `mid`: a Bézier is symmetric under reversing its control points, so t = 0.5
+ * lands on the same point either way.
+ */
+export function prototileEdges(tiling: IsohedralTiling, curves: EdgeCurves): PrototileEdge[] {
+	const verts = tiling.vertices();
+	const nv = verts.length;
+	const out: PrototileEdge[] = [];
+
+	let idx = 0;
+	for (const edge of tiling.shape()) {
+		const curve = edge.shape === EdgeShape.I ? null : (curves[edge.id] ?? null);
+		const flat = !curve || (Math.abs(curve.a.y) < EPS && Math.abs(curve.b.y) < EPS);
+		const from = verts[idx];
+		const to = verts[(idx + 1) % nv];
+		out.push({
+			id: edge.id,
+			kind: kindOf(edge.shape),
+			rev: edge.rev,
+			from,
+			to,
+			mid: flat
+				? { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }
+				: cubicAt(
+						[mul(edge.T, P0), mul(edge.T, curve.a), mul(edge.T, curve.b), mul(edge.T, P1)],
+						0.5,
+					),
+		});
+		idx++;
+	}
+
+	return out;
+}
+
 /** Apply a Tactile 2x3 matrix to every point of an outline. The hot loop of `buildPatch`. */
 function transformOutline(T: TactileMatrix, outline: TactilePoint[]): TactilePoint[] {
 	const [a, b, c, d, e, f] = T;
@@ -433,6 +488,8 @@ export interface IsohedralCell {
 	prototile: TactilePoint[];
 	/** The 3 to 6 tiling vertices, before any edge curvature. */
 	tilingVertices: TactilePoint[];
+	/** The boundary edges, named and located, in `tilingVertices` order. For previews. */
+	edges: PrototileEdge[];
 	/** Tactile's own translations, which is what the sidebar should report. */
 	t1: TactilePoint;
 	t2: TactilePoint;
@@ -542,6 +599,7 @@ export function buildCell(req: CellRequest): IsohedralCell | null {
 		v2,
 		prototile: outline,
 		tilingVertices: tiling.vertices(),
+		edges: prototileEdges(tiling, req.curves),
 		t1,
 		t2,
 		period,

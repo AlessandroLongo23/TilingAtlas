@@ -64,6 +64,7 @@ import {
 	type EdgeShapeState,
 } from "@/lib/isohedral/build";
 import { IsohedralSidebar, Section, Segmented, type SegmentedOption } from "./_controls";
+import { PrototileInspector } from "./_prototile";
 
 /** Outline width in CSS px, as /play's `lineWidth` means it. 0 is off. */
 const STROKE_WIDTH = { min: 0, max: 3, step: 0.25, def: 1.5 } as const;
@@ -340,7 +341,7 @@ export function IsohedralClient() {
 
 	const filters = (
 		<>
-			<Section label="Parameters">
+			<Section label="Parameters" flush>
 				<Segmented
 					cols={5}
 					options={PARAM_FILTERS.map((f) => ({ v: f, label: f }))}
@@ -348,7 +349,7 @@ export function IsohedralClient() {
 					onChange={setParamFilter}
 				/>
 			</Section>
-			<Section label="Tiling vertices">
+			<Section label="Tiling vertices" flush>
 				<Segmented
 					cols={5}
 					options={VERTEX_FILTERS.map((f) => ({ v: f, label: f }))}
@@ -374,6 +375,8 @@ export function IsohedralClient() {
 		() => ({
 			geometry: "euclidean",
 			label: info.label,
+			// Čtrnáct's ladder describes tilings by REGULAR polygons; this page's tiles are neither.
+			level: null,
 			wallpaperGroup: null,
 			orbifold: null,
 			latticeShape: null,
@@ -411,12 +414,21 @@ export function IsohedralClient() {
 					typeOptions.length > 0 ? (
 						<Segmented cols={4} options={typeOptions} value={String(ih)} onChange={(v) => selectType(Number(v))} />
 					) : (
-						<p className="text-xs text-fg-muted">No type matches both filters.</p>
+						// Its own inset: the region around it is unpadded so the grid can reach the edges.
+						<p className="px-3 py-2 text-xs text-fg-muted">No type matches both filters.</p>
 					)
 				}
 			>
 				{info.available ? (
 					<>
+						{/* Above the sliders, like /pentagons: the picture is what makes an edge slider mean
+						    anything, and it has to be visible while you drag one. */}
+						{cell ? (
+							<Section label="Prototile">
+								<PrototileInspector info={info} cell={cell} />
+							</Section>
+						) : null}
+
 						{info.numParams > 0 ? (
 							<Section label="Tiling vertices">
 								{params.map((p, i) => (

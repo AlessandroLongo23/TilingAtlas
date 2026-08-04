@@ -18,6 +18,7 @@ import {
 	isSimple,
 	MAX_EDGE_SEGMENTS,
 	makeTiling,
+	prototileEdges,
 	prototileOutline,
 	quantizeAmount,
 	randomEdgeStates,
@@ -328,6 +329,85 @@ describe("prototile outlines", () => {
 		const first = outline[0];
 		const last = outline[outline.length - 1];
 		expect(Math.hypot(first.x - last.x, first.y - last.y)).toBeGreaterThan(1e-6);
+	});
+});
+
+/**
+ * The sidebar preview draws from these: a letter per boundary edge, and a point on that edge to hang it
+ * and its symmetry mark on. Everything it asserts is something the drawing would get silently wrong.
+ */
+describe("named boundary edges", () => {
+	it("spells edgeWord, in tiling-vertex order", () => {
+		for (const t of available) {
+			const tiling = new IsohedralTiling(t.ih);
+			const edges = prototileEdges(tiling, straightCurves(t.edgeShapes));
+			expect(edges, t.label).toHaveLength(t.numVertices);
+			const word = edges
+				.map((e) => {
+					const letter = String.fromCharCode(97 + e.id);
+					return e.rev ? letter.toUpperCase() : letter;
+				})
+				.join("");
+			expect(word, t.label).toBe(t.edgeWord);
+		}
+	});
+
+	it("chords the tiling polygon: edge i runs from vertex i to vertex i+1", () => {
+		for (const t of available) {
+			const tiling = new IsohedralTiling(t.ih);
+			const verts = tiling.vertices();
+			const edges = prototileEdges(tiling, straightCurves(t.edgeShapes));
+			edges.forEach((e, i) => {
+				expect([e.from.x, e.from.y], `${t.label} edge ${i}`).toEqual([verts[i].x, verts[i].y]);
+				const q = verts[(i + 1) % verts.length];
+				expect([e.to.x, e.to.y], `${t.label} edge ${i}`).toEqual([q.x, q.y]);
+			});
+		}
+	});
+
+	it("puts `mid` at the chord midpoint while every edge is straight", () => {
+		for (const t of available) {
+			const tiling = new IsohedralTiling(t.ih);
+			for (const e of prototileEdges(tiling, straightCurves(t.edgeShapes))) {
+				expect(Math.hypot(e.mid.x - (e.from.x + e.to.x) / 2, e.mid.y - (e.from.y + e.to.y) / 2)).
+					toBeLessThan(1e-9);
+			}
+		}
+	});
+
+	/**
+	 * The one that matters for the drawing: an S edge turns 180° about its own midpoint, so that point
+	 * stays ON the chord however hard the edge bows — which is why the preview can draw the 2-fold centre
+	 * there and be right. A U or J edge bows off it, and must, or the letter would sit on the wrong side.
+	 */
+	it("keeps an S edge's midpoint on its chord, and moves a bowed U or J edge's off it", () => {
+		for (const t of available) {
+			const tiling = new IsohedralTiling(t.ih);
+			const curves = curvesOf(
+				t.edgeShapes.map((kind) => ({ kind, base: canonicalBase(kind), amount: BULGE.max })),
+			);
+			for (const e of prototileEdges(tiling, curves)) {
+				const chord = { x: (e.from.x + e.to.x) / 2, y: (e.from.y + e.to.y) / 2 };
+				const off = Math.hypot(e.mid.x - chord.x, e.mid.y - chord.y);
+				const len = Math.hypot(e.to.x - e.from.x, e.to.y - e.from.y);
+				if (e.kind === "S" || e.kind === "I") {
+					expect(off, `${t.label} ${e.kind}`).toBeLessThan(1e-9);
+				} else {
+					// 3/8 of the amplitude, by the cubic at t = 1/2. Well clear of zero at BULGE.max.
+					expect(off / len, `${t.label} ${e.kind}`).toBeGreaterThan(0.1);
+				}
+			}
+		}
+	});
+
+	it("is what buildCell reports", () => {
+		const t = isohedralType(13)!;
+		const cell = buildCell({
+			ih: 13,
+			params: [...t.defaultParams],
+			curves: straightCurves(t.edgeShapes),
+		})!;
+		expect(cell.edges).toEqual(prototileEdges(makeTiling(13, t.defaultParams), straightCurves(t.edgeShapes)));
 	});
 });
 
