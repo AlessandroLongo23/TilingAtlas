@@ -31,6 +31,8 @@ import { drawPolygons, expandToViewport, parseBaseCell } from "@/lib/utils/rende
 import { Kbd } from "@/components/ui/kbd";
 import { Slider } from "@/components/ui/slider";
 import { TilingInfo } from "@/components/tiling-info";
+import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import {
 	DEFAULT_TYPE,
@@ -88,6 +90,11 @@ export function PentagonsClient() {
 		setAngles(d.angles);
 		setSides(d.sides);
 	}, [type]);
+
+	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the tiling fills the window.
+	// F toggles it, Esc leaves it, and the hook restores the chrome when this page unmounts.
+	const immersive = useImmersive((s) => s.immersive);
+	useImmersiveShortcuts();
 
 	// Adopt a deep link once, after hydration. Runs on mount only: afterwards this component owns the
 	// selection and the effect below writes it back out.
@@ -306,6 +313,7 @@ export function PentagonsClient() {
 	return (
 		<div className="flex-1 min-h-0 flex">
 			<PentagonSidebar
+				collapsed={immersive}
 				header={header}
 				types={
 					<Segmented
@@ -421,6 +429,8 @@ export function PentagonsClient() {
 				<div className="absolute top-4 left-4 z-20">
 					<TilingInfo spec={spec} />
 				</div>
+				{/* Opposite corner, and the only control that stays put while immersive — it is the way back. */}
+				<FullscreenToggle />
 			</div>
 		</div>
 	);

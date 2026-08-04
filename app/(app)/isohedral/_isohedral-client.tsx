@@ -41,6 +41,8 @@ import { drawPolygons, expandToViewport, parseBaseCell } from "@/lib/utils/rende
 import { Kbd } from "@/components/ui/kbd";
 import { Slider } from "@/components/ui/slider";
 import { TilingInfo } from "@/components/tiling-info";
+import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import {
 	DEFAULT_IH,
@@ -146,6 +148,11 @@ export function IsohedralClient() {
 		setParams([...info.defaultParams]);
 		setEdges(defaultEdgeStates(info.edgeShapes));
 	}, [info]);
+
+	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the tiling fills the window.
+	// F toggles it, Esc leaves it, and the hook restores the chrome when this page unmounts.
+	const immersive = useImmersive((s) => s.immersive);
+	useImmersiveShortcuts();
 
 	// Mirror the selection into the URL without navigating, so a reload and a shared link both land on
 	// the same type. Debounced because the type grid is clickable at speed and WebKit disables
@@ -397,6 +404,7 @@ export function IsohedralClient() {
 	return (
 		<div className="flex-1 min-h-0 flex">
 			<IsohedralSidebar
+				collapsed={immersive}
 				header={header}
 				filters={filters}
 				types={
@@ -531,6 +539,10 @@ export function IsohedralClient() {
 				<div className="absolute top-4 left-4 z-20">
 					<TilingInfo spec={spec} />
 				</div>
+				{/* Opposite corner, and the only control that stays put while immersive — it is the way back.
+				    Shown on a marked type too: those twelve replace the canvas with prose, which reads better
+				    across the full window as well. */}
+				<FullscreenToggle />
 			</div>
 		</div>
 	);

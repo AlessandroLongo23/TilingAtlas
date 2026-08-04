@@ -18,6 +18,7 @@ export function IsohedralSidebar({
 	filters,
 	types,
 	children,
+	collapsed = false,
 }: {
 	/** Bare wall cells: the current type's identity line. */
 	header: ReactNode;
@@ -27,9 +28,11 @@ export function IsohedralSidebar({
 	types: ReactNode;
 	/** Parameters, edge curvature, view, details. */
 	children: ReactNode;
+	/** Immersive mode: slide the whole panel shut and give the canvas the window. */
+	collapsed?: boolean;
 }) {
 	return (
-		<PageSidebar scrollable={false}>
+		<PageSidebar scrollable={false} collapsed={collapsed}>
 			<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px">
 				{header}
 				<div className="bg-surface-chrome shrink-0 p-3 flex flex-col gap-3">{filters}</div>
