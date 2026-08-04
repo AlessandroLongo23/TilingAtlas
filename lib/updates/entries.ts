@@ -53,6 +53,59 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.13.0",
+		date: "2026-08-04",
+		title: "Edge systems on parametric tiles",
+		commit: "5dec644",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Edge systems on a parametric pentagon**: 17,993 of them on the Kershner type 1 board, with the five parameters of the family live on sliders.",
+				items: [
+					"The record carries no geometry at all, so the same decoration redraws at every shape you dial.",
+					"Vertex orbits k = 2, 4, 6, 8, 10.",
+				],
+				href: "/library",
+			},
+			{
+				kind: "feature",
+				text: "**Four isohedral edge boards**, IH01 to IH04, carry 48,998 edge systems on tiles whose corners and edge curves you can drag.",
+				href: "/library",
+			},
+			{
+				kind: "content",
+				text: "**Sixteen spherical edge boards** arrive with 309,061 edge systems, from the triangular prism to the snub cube.",
+				items: [
+					"The snub cube is the first chiral board on the shelf.",
+				],
+				href: "/library?geo=spherical",
+			},
+			{
+				kind: "content",
+				text: "**Hyperbolic gains two shelves**: 15,017 edge systems on the (6,6,8) board, k = 1 to 9, and 36,945 tilings by 3.4.n.4 polygons over fourteen boards.",
+				href: "/library?geo=hyperbolic",
+			},
+			{
+				kind: "feature",
+				text: "**A five-level filter** sorts the catalogue by regular, Archimedean, pseudo-Archimedean, combination and hybrid, the classification Marek Čtrnáct uses.",
+				href: "/library",
+			},
+			{
+				kind: "content",
+				text: "**The isohedral and pentagon pages go fullscreen**, with the prototile drawn above its own sliders and the arrow keys walking the type grid.",
+				items: [
+					"The five wallpaper-group diagrams that were missing, p1, p2, pg, pm and cm, now draw on the square and hexagonal cells.",
+				],
+				href: "/isohedral",
+			},
+			{
+				kind: "fix",
+				text: "**The (2,3,4) Schwarz board** was missing every tiling that draws its longest edge class: k = 3 goes 5 → 10 and k = 4 goes 2 → 13.",
+				href: "/freedraw",
+			},
+		],
+	},
+	{
 		version: "1.12.0",
 		date: "2026-07-31",
 		title: "Two new shelves: isohedral and pentagons",
