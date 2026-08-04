@@ -1978,3 +1978,38 @@ k=24 ~100 days single-threaded. That assertion caught `make MAXNUM=<k>` silently
 Make 3.81's 1s mtime granularity, shipping an incomplete catalogue (k=5 gave 0, not 332); fixed at parse
 time. Sharding is a flat 4.0-4.2x, capped ~5.8x by one seed. Marek's out-of-core pruner store lands as
 `EU_SPILL=<MB>`: k=13 RSS 214.8 -> 75.6 MB, +0.4% wall, byte-identical. NOTES §"what a level of k costs". — CC
+
+### 2026-08-04 — CC — the snub cube ships; the parametric pentagon board is decoded and solved
+`edges_33334`: 23,274 records, 0 failures, per-k matching the census. First CHIRAL board (|G|=24) and
+the first row where `complete:false` and `missing:[8]` both fire. New `develop_pent_edges.py` decodes
+all 17,993 `edges_pentagons_01` certificates, 0 failures, per-k exactly Marek's census; Kershner TYPE 1,
+proved from the vertex figures, shipping PARAMETER-FREE darts. Its tile is a hexagon with a split side;
+closure is 2 linear equations with positive solutions, and b is free exactly because B+C=180. — CC
+
+### 2026-08-04 (2) — CC — the parametric pentagon shelf goes live
+`pen-1` is in the atlas: 744 eager records of 17,993, drawn by a client that solves the Kershner type 1
+board at the live slider point and re-develops darts that carry NO geometry. The split-side tile is a
+hexagon (class b twice, one flat π corner); closure is two linear equations, and b is free exactly
+because B + C = 180 makes the two b-edges antiparallel. A test pins that re-solving elsewhere keeps
+vertex/edge/drawn counts identical while the shape changes. NOTES §"parametric pentagon shelf". — CC
+
+### 2026-08-04 (3) — CC — IH01 edge systems decoded and solved; render layer held on a collision
+`develop_ih_edges.py` decodes 14,759 of 69,389 IH01 certificates, 0 failures, per-k matching the census;
+`--budget 15000` ships k<=14 and names k=16 dropped. Tactile and Marek agree on the tile (`abcABC` vs
+`A-a-B-b-C-c-D-a-E-b-F-c-A`) and `solveIhBoard` asserts it per build, so no closure solver was needed.
+The decoration's period lattice comes off the walk at index k/2, now a test. ⚑ Renderer NOT built:
+another session is moving pentagons onto `FreedrawPattern`, which IH01 should reuse. NOTES §"IH01". — CC
+
+### 2026-08-04 (4) — CC — the pentagon shelf draws a PERIOD, and joins the lens
+`lib/pentagon/edgePatch.ts` recovers the period lattice per parameter point and returns a
+`FreedrawPatch`, so the shelf draws through `drawFreedraw`: infinite scroll, the five fill modes, the
+scaffold/lattice/orbit overlays, G/P/O/X and the conformal lens, all existing code. Cell area is known
+before the search (12k darts ⇒ F=k, E=3k, V=2k), making the second basis vector exact. 53,979 builds,
+0 failures. ⚑ Also fixed `drawPatchPattern` blanking on zoom-out. NOTES §"renders as a PERIOD". — CC
+
+### 2026-08-05 (1) — CC — the IH01 shelf ships, on a SHARED patch builder, with curved edges
+Generic half of the pentagon patch builder extracted to `lib/freedraw/edgePatchCore.ts`; the IH adapter
+is 50 lines, and all 14,759 records build, 0 failures. ⚑ CORRECTION: the period holds k/2 tiles, not k —
+the certificate cell is exactly TWO periods (2k vertices, k orbit labels), now a checked board fact.
+Edges bow, one slider per shape: the digon slot bit gives the crossing direction, pinned against Tactile.
+⚑ The develop realises the MIRROR of Tactile's placement (pre-existing; pentagon too). NOTES §"IH01 shelf ships". — CC

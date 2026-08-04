@@ -16,6 +16,7 @@ import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
 import { HollowCanvas } from "@/components/hollow/hollow-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { SphSchwarzCanvas } from "@/components/freedraw/sph-schwarz-canvas";
+import { SphPolyCanvas } from "@/components/freedraw/sph-poly-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
@@ -44,6 +45,15 @@ import {
 	loadHyperbolicColorsShard,
 	loadSphericalColorsAtlas,
 	loadSphericalColorsShard,
+	loadSphericalEdgesAtlas,
+	loadSphericalEdgesShard,
+	loadSphericalPolyAtlas,
+	loadPentagonEdgesAtlas,
+	loadPentagonEdgesShard,
+	loadIsohedralEdgesAtlas,
+	loadIsohedralEdgesShard,
+	loadHyperbolicPolyAtlas,
+	loadHyperbolicPolyShard,
 	referenceToCatalogue,
 	tileClassOf,
 	compareCatalogueDisplayOrder,
@@ -58,6 +68,14 @@ import {
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypSchwarzMeta, schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
+import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
+import { hypPolyLazyShardsForK, hypPolyMeta } from "@/lib/tilings/hyp-poly";
+import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
+import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
+import { PentagonEdgesCanvas } from "@/components/pentagon-edges-canvas";
+import { IsohedralEdgesCanvas } from "@/components/isohedral-edges-canvas";
+import { PentagonEdgesControls } from "@/components/pentagon-edges-controls";
+import { IsohedralEdgesControls } from "@/components/isohedral-edges-controls";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK, SPH_COLORS_SOLIDS } from "@/lib/colors/sph-colors";
 import { resolveAlphaDegs } from "@/lib/utils/paramCell";
@@ -447,6 +465,54 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 	}, [geometry, requestedKey]);
 
+	// Uniform-polyhedron edge systems (prisms, antiprisms, truncated tetrahedron, cuboctahedron, J27) and
+	// the 3.4.n.4 hyperbolic tilings — the same lazy pattern once more, one shelf per curved geometry.
+	// Record ids are "xe<board>-k-i" and "hp<n>-k-i", which is what a deep-link is matched on.
+	useEffect(() => {
+		const wantSph = geometry === "spherical" || !!requestedKey?.startsWith("xe") || !!requestedKey?.startsWith("sp");
+		const wantHyp = geometry === "hyperbolic" || !!requestedKey?.startsWith("hp");
+		// The pentagon edge shelf is EUCLIDEAN — a plane tiling — so it rides this effect's default
+		// geometry rather than one of the curved ones.
+		const wantEuc = geometry === "euclidean" || !!requestedKey?.startsWith("pe");
+		if (!wantSph && !wantHyp && !wantEuc) return;
+		let alive = true;
+		const merge = (data: Awaited<ReturnType<typeof loadSphericalEdgesAtlas>>) => {
+			if (!alive || data.length === 0) return;
+			setRefList((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.canonicalKey));
+				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+				return add.length ? [...base, ...add] : base;
+			});
+		};
+		if (wantSph) {
+			loadSphericalEdgesAtlas().then(merge).catch(() => {});
+			loadSphericalPolyAtlas().then(merge).catch(() => {});
+		}
+		if (wantHyp) loadHyperbolicPolyAtlas().then(merge).catch(() => {});
+		if (wantEuc) loadPentagonEdgesAtlas().then(merge).catch(() => {});
+		if (wantEuc) loadIsohedralEdgesAtlas().then(merge).catch(() => {});
+		const pe = requestedKey?.match(/^pe(.+?)-(\d+)-/);
+		if (pe && pentEdgeLazyShardsForK(Number(pe[2])).some((b) => b.id === pe[1])) {
+			loadPentagonEdgesShard(pe[1], Number(pe[2])).then(merge).catch(() => {});
+		}
+		const ie = requestedKey?.match(/^ie(.+?)-(\d+)-/);
+		if (ie && ihEdgeLazyShardsForK(Number(ie[2])).some((b) => b.id === ie[1])) {
+			loadIsohedralEdgesShard(ie[1], Number(ie[2])).then(merge).catch(() => {});
+		}
+		const xe = requestedKey?.match(/^xe(.+)-(\d+)-/);
+		if (xe && sphEdgesLazyShardsForK(Number(xe[2])).some((b) => b.id === xe[1])) {
+			loadSphericalEdgesShard(xe[1], Number(xe[2])).then(merge).catch(() => {});
+		}
+		const hp = requestedKey?.match(/^hp(\d+)-(\d+)-/);
+		if (hp && hypPolyLazyShardsForK(Number(hp[2])).some((b) => String(b.n) === hp[1])) {
+			loadHyperbolicPolyShard(hp[1], Number(hp[2])).then(merge).catch(() => {});
+		}
+		return () => {
+			alive = false;
+		};
+	}, [geometry, requestedKey]);
+
 	// Colored tilings in H² and on S² — the same lazy pattern. The per-base/solid eager slices load once the
 	// matching geometry is entered (or a deep-link "hc…"/"sc…" key arrives); dense shards load per-k below.
 	useEffect(() => {
@@ -631,7 +697,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const isHyperbolicEdges = !!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic";
 	// A hyperbolic COLORED tiling (colors class, hyperbolic geometry): rides the `hyperbolic` store flag like
 	// the developed tilings and edge systems, but routes to the per-pixel disk shader in colors mode.
-	const isHyperbolicColors = !!selected?.hypColors;
+	const isHyperbolicColors = !!selected?.hypColors || !!selected?.hypPoly;
 	// A spherical COLORED tiling (colors class, spherical geometry): a three.js overlay like the sphere/ico.
 	const isSphColors = !!selected?.sphColors;
 	// A spherical (Platonic {p,q}) tiling swaps the flat p5 renderer for the three.js sphere view. Set the
@@ -641,7 +707,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// A spherical-freedraw pattern is a drawn edge subset of a Platonic solid — a three.js overlay like the
 	// Platonic sphere, but with no polygon cell of its own. It shares the sphere's flat-layer blanking (below)
 	// while routing to its own IcoFreedrawCanvas in the dispatch chain.
-	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical";
+	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical" || !!selected?.sphEdges || !!selected?.sphPoly;
 	// A freedraw pattern swaps the flat p5 renderer for the 2D grid view. It has no polygon cell at all, so
 	// force off every mode that would try to draw one and every overlay derived from tiles — the Options tab
 	// hides those controls, and this keeps a stale render from surviving the switch.
@@ -825,7 +891,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// the scaffold and the period lattice. All three are intercepted before the TOGGLES table, which
 			// is dead here (a freedraw pattern has no tiles for any of it to act on) — so P meaning the
 			// lattice in this view never fights showPolygonPoints.
-			const freedrawField = !!selected?.freedraw ? FREEDRAW_TOGGLES[e.key.toLowerCase()] : undefined;
+			// The parametric-pentagon shelf draws through the same 2D grid renderer off the same three store
+			// fields, so it takes the same three keys. Gating this on `freedraw` alone left G, P and O dead
+			// on that shelf while its own Options block showed the checkboxes they drive.
+			const freedrawField =
+				!!selected?.freedraw || !!selected?.pentEdges || !!selected?.ihEdges
+					? FREEDRAW_TOGGLES[e.key.toLowerCase()]
+					: undefined;
 			if (freedrawField) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
@@ -897,7 +969,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				// exception: it draws those classes from their own periodic cell, so X stays live — matching
 				// the checkbox, which is gated on `lensApplies`, not `isFlat`.
 				const blocked =
-					((!!selected?.freedraw || !!selected?.colors) && field !== "inversive") ||
+					((!!selected?.freedraw || !!selected?.colors || !!selected?.pentEdges || !!selected?.ihEdges) &&
+						field !== "inversive") ||
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
 					(field === "showVertexOrbits" && !selected?.exactSource) ||
@@ -942,7 +1015,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		!isSpherical && !isSphericalFreedraw && !isSphColors;
 	// Colorings, edge patterns and hollow carry a throwaway translational cell; tell the input layer so
 	// click-to-centre doesn't hit-test geometry that isn't on screen.
-	const cellHasTiles = !(selected?.colors || selected?.freedraw || selected?.hollow);
+	const cellHasTiles = !(
+		selected?.colors || selected?.freedraw || selected?.hollow || selected?.pentEdges || selected?.ihEdges
+	);
 
 	return (
 		<div className="flex-1 flex min-h-0 overflow-hidden">
@@ -1011,6 +1086,45 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					) : (
 						<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
 					)
+				) : selected?.pentEdges ? (
+					// Edge system on a PARAMETRIC pentagon. The record carries no geometry at all, so this canvas
+					// solves the Kershner type 1 board at the store's parameter point, recovers the period lattice
+					// from the develop, and hands the result to the SAME freedraw renderer every other Euclidean
+					// edge system uses — so it pans, zooms and fills like them, off the same store fields. The
+					// lens above draws the same period through the same adapter.
+					// Owns its own layer like freedraw, colors and hollow do: the flat p5 canvas stays mounted
+					// underneath as the input surface, so a plain child would render behind it.
+					// Opaque: the flat p5 canvas stays mounted underneath as the input surface, so without a
+					// background its tiling shows straight through this one.
+					<div className="absolute inset-0 z-10 bg-surface">
+						<PentagonEdgesCanvas pattern={selected.pentEdges} />
+					</div>
+				) : selected?.ihEdges ? (
+					// Edge system on a PARAMETRIC ISOHEDRAL tile — the same story as the pentagon above, with
+					// the board coming from Tactile instead of a bespoke closure solver, so the shelf reaches
+					// any of the 93 types. Same renderer, same store fields, same opaque layer over the p5
+					// input surface.
+					<div className="absolute inset-0 z-10 bg-surface">
+						<IsohedralEdgesCanvas pattern={selected.ihEdges} />
+					</div>
+				) : selected?.sphEdges ? (
+					// Uniform-polyhedron edge system: the same object as a spherical Schwarz board on a prism /
+					// antiprism / truncated tetrahedron / cuboctahedron / J27, so it draws through the very same
+					// three.js canvas. Those boards mix face sizes, which the adapter never assumed away.
+					<SphSchwarzCanvas
+						pattern={selected.sphEdges}
+						mode={sphericalFreedrawMode}
+						showGrid={sphericalFreedrawGrid}
+					/>
+				) : selected?.sphPoly ? (
+					// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
+					// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
+					<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalFreedrawMode} showGrid={sphericalFreedrawGrid} />
+				) : selected?.hypPoly ? (
+					// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
+					// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
+					// uses that canvas with the size index standing in for the colour index.
+					<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} />
 				) : isSpherical && selected?.spherical ? (
 					<SphericalCanvas solidId={selected.spherical.solid} />
 				) : selected?.sphericalFreedraw ? (
@@ -1053,6 +1167,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
 				) : null}
 				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
+				{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
+				    the family is still what is being drawn when the conformal lens replaces the flat view —
+				    the sliders have to survive that swap. Their values live in the store for the same reason. */}
+				{selected?.pentEdges ? <PentagonEdgesControls /> : null}
+				{selected?.ihEdges ? <IsohedralEdgesControls ih={selected.ihEdges.ih} /> : null}
 				{/* Fullscreen toggle: collapses the header + sidebar. Stays visible while immersive so it can
 				    exit. Keeps the top-right corner; the symmetry-info badge insets itself to the left of this
 				    control column (canvas.tsx), so they never overlap however tall the badge grows. */}

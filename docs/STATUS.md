@@ -32,6 +32,73 @@ so k>=21 stays the distributed problem §44 called it.
 
 Detail: DEVELOPMENT_NOTES.md §"what a level of k costs"; logs in `experiments/results/2026-08-03-*`.
 
+## The IH01 edge shelf is LIVE, with curved edges — UNCOMMITTED (2026-08-05)
+
+Marek's second PARAMETRIC board is in the atlas, at `ih-1`. `pnpm build` clean, 15 IH tests pass, and
+the shelf is verified in the browser: period, fills, scaffold/lattice/orbit overlays, curvature.
+
+- **`edges_isohedral_IH01` at `ih-1`** — 1,099 records eager of 14,759 decoded (k = 2…10 eager, 12 and
+  14 lazy at 14.1 and 35.0 MB). Tile from Craig Kaplan's Tactile at the live parameter point, so this
+  board needed no closure solver, unlike the pentagon one. `complete: false` (Marek's census carries no
+  MAX line) and k = 16 is `dropped` — enumerated, 54,630 certificates, not shipped on our budget.
+- **The patch builder is now SHARED** — `lib/freedraw/edgePatchCore.ts` takes a tile plus a walk closure
+  and returns a `FreedrawPatch`, so both parametric shelves draw through `drawFreedraw` and inherit
+  infinite scroll, the five fill modes, every overlay and the conformal lens. The pentagon file still
+  holds its own copy; collapsing it is a mechanical diff, left for when that session is out of it.
+- **The period holds k/2 tiles.** Marek's certificate cell is exactly TWO translation periods — 2k board
+  vertices carrying k distinct orbit labels — measured at ratio 2.0000 on 153 records across every
+  shipped k. Declared per board (`certCellPeriods`) and CHECKED against the lattice the develop found.
+- **Edges bow**, one slider per distinct edge shape, ±0.5 as on `/isohedral`. Straight by default: an
+  edge system is about which edges are DRAWN. Curvature moves no tiling vertex, so the walk, the lattice,
+  the face merge and the ranks are untouched — it is a pure render-layer change. `FreedrawPatch` gained
+  two optional curve arrays, omitted entirely when nothing bows, so the five straight boards are
+  unchanged. Which way an edge bulges comes from the digon SLOT bit, pinned against Tactile.
+- **All 14,759 records build a patch, 0 failures**, worst 157 ms at k = 14
+  (`experiments/results/2026-08-04-ih01-patch-sweep.log`).
+- ⚑ **The develop realises the MIRROR of Tactile's placement** — pre-existing, from the turn sign in the
+  walk, and the pentagon shelf's walk shares the convention. Harmless under mirror-pairs-merge and the
+  bows are correct relative to the tile. Flipping one shelf and not the other would be worse. AL call.
+- ⚑ `solver_schwarz_edges_234.zip` (11:51) still unprocessed — a one-row job on the Schwarz shelf.
+
+Detail: DEVELOPMENT_NOTES.md §"The IH01 shelf ships".
+
+## The parametric pentagon shelf is LIVE, and the snub cube shipped — UNCOMMITTED (2026-08-04)
+
+Both Marek drops are in the atlas. `pnpm build` clean, 283 tests pass across pentagon + freedraw, and
+the shelf is verified in the browser: period, fills, grid toggle, G/P/O/X, zoom-out, lens.
+
+- **Snub cube (3.3.3.3.4)** — 23,274 records, 0 failures, 10.6 MB, per-k matching the census. The
+  shelf's first CHIRAL board (|G| = 24, the rotation group O), and the first row where `complete: false`
+  and `missing: [8]` both fire: the census stops at k = 8 of a 24-vertex solid AND its 147,140 tilings
+  are not in the zip. Live at `spe-33334`.
+- **`edges_pentagons_01` is live at `pen-1`** — 744 records eager of 17,993 decoded. Kershner TYPE 1,
+  proved from the vertex figures. The record ships NO geometry; `lib/pentagon/edge-board.ts` solves the
+  board at the live slider point and `edgeDevelop.ts` re-develops the darts.
+- **It renders as a PERIOD, so it behaves like every other edge shelf** (2026-08-04 pm).
+  `edgePatch.ts` recovers the period lattice from the develop per parameter point and returns a
+  `FreedrawPatch`, so `drawFreedraw` draws it: infinite scroll, the five fill modes, scaffold / period /
+  orbit overlays, G/P/O/X, and the conformal lens. Cell area is known before the search — every
+  certificate carries 12k darts, so F = k, E = 3k, V = 2k — which makes the second basis vector exact
+  and sizes the develop in one step instead of doubling. **53,979 builds, 0 failures**
+  (`experiments/results/pent-edges-periodic-patch.md`). `pentParams` is now store state, which the lens
+  requires. ⚑ Also fixed in the SHARED renderer: `drawPatchPattern` blanked the canvas past 4,000
+  lattice copies; it now trims to a 200k-primitive budget, as the fixed-grid branch always did.
+- **The split-side board is solved.** Tile = the hexagon `A-b-B-c-C-d-Pi-b-D-e-E-a-A`, angles summing to
+  720°, closure two linear equations. b is free because the two b-edges are antiparallel, which holds
+  exactly when B + C = 180° — type 1's own constraint. Family stays 5-dimensional. It does not close at
+  `lib/pentagon/types.ts`'s type 1 side defaults (residual 0.61, pinned in a test): those are a
+  different type 1 tiling.
+- **The parametric claim is a test, not a hope**: re-solving at another parameter point gives identical
+  vertex/edge/drawn counts with a different shape. Plus two geometric checks on real records — every
+  edge at a class length (2e-14) and every interior vertex closing out of tile corners (4e-7, 540
+  vertices).
+- ⚑ Open: k = 8 / 10 are lazy but only the deep-link path exercises the fetch; `pentParams` is in the
+  store but NOT yet in the share URL, so a link still does not carry the shape; the shelf borrows
+  `source: "freedraw"` for its class, so any new surface special-casing freedraw must know its k counts
+  VERTEX orbits.
+
+Detail: DEVELOPMENT_NOTES.md §"The parametric pentagon shelf is live".
+
 ## Čtrnáct's five levels are a library facet — UNCOMMITTED (2026-08-02)
 
 `/library` has a **Level** filter under Hyperbolic and Spherical: Regular, Archimedean,

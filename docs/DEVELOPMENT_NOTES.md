@@ -8994,3 +8994,303 @@ sequential baselines, and the clean run is flat. A thermal-throttling explanatio
 DISPROVED by a fixed canary workload timed before every measurement: 0.91-1.00x of baseline across a
 28-minute run including the 44-shard bursts. Contention, not heat. Check machine load before trusting a
 timing, and put a canary in the harness when a run takes long enough for the environment to drift.
+
+## The snub cube lands, and a parametric pentagon board is half-decoded
+
+Two drops from Marek: `edges_33334` (2026-08-02, missed at the time) and `edges_pentagons_01`
+(2026-08-04). The first is a one-row job and is done. The second is a new KIND of board and is decoded
+but not yet realisable; what stopped it is written down below rather than guessed past.
+
+**The snub cube (33334) is the shelf's first chiral board.** 23,274 records, 0 failures, 10.6 MB, every
+per-k count matching the census. `symmetry_orbits` measures |G| = 24 in one vertex orbit, which is the
+rotation group O and not Oh, so the solid has no mirror: a reflected development is the enantiomorph and
+lands on the board only because `board_project` already tries the reflected frame for every candidate.
+It stays one board, which the per-k census check confirms. It is also the first row where BOTH coverage
+claims fire at once — `complete: false` (census stops at k=8 of a 24-vertex solid, no MAX) AND
+`missing: [8]` (that slice's 147,140 tilings are counted and not in the zip). The test now pins that
+pair, since it is the case that proves the two fields are not one field.
+
+**`edges_pentagons_01` is an edge system on a KERSHNER TYPE 1 pentagon**, and the certificates prove
+the type without being told. The corpus uses exactly two vertex figures, `(A5,·,E5,·,D5,·)` and
+`(Pi,·,B5,·,C5,·)`, which close as A + E + D = 360° and 180° + B + C = 360°. Those sum to 540°, the
+pentagon's own angle sum, and the second is `B + C = 180°` — literally the constraint string
+`lib/pentagon/types.ts` carries for Type 1.
+
+**The alphabet was measured, not assumed.** `X5` is the pentagon at corner X, `Pi` a FLAT 180° vertex
+sitting inside a neighbour's edge, and `X10`–`X13` the edge-class digons. The drawn/undrawn split is
+10/11 undrawn against 12/13 drawn: across all 17,993 certificates the count of 12/13 letters runs 0…29
+like a decoration count, and exactly ONE certificate has none of them. That one is the bare board, and
+it is at k = 2, which is also why the census has nothing at k = 1 — the undecorated tiling already has
+two vertex orbits, so no decoration of it can have one.
+
+**The decode is done and externally checked.** `develop_pent_edges.py` reads all 17,993 certificates
+with 0 failures and per-k counts of 13 / 103 / 628 / 3977 / 13272, matching Marek's census exactly. The
+front end needed nothing new: `fd.parse_file`, `VTable` and `Block` take the pentagon certificates
+unchanged, because `VTable` already accepts `digons=`/`drawn_letters=` for exactly this (the sch236
+convention, where undrawn edges still carry a digon naming their class).
+
+**What ships is parameter-free, which is the whole design.** A record carries rneig, glue, the corner
+letter per dart, the edge class per dart and the drawn bits. None of that moves when a slider moves, so
+the client can realise the same record at any point of the family, the way
+`hyperbolicDevelopClient.ts` re-develops darts under the live view.
+
+**The board's side system is SOLVED, and it is a two-equation constraint, not a wall.** The tile has
+SIX boundary edges — `A -b- B -c- C -d- Pi -b- D -e- E -a- A`, class b twice, one flat π corner — whose
+interior angles sum to 720°, correct for a hexagon, which is the first check that the corner/edge
+incidence derived from the corpus is right. Closure is then 2 real linear equations on (a, b, c, d, e).
+Marek's board does NOT close at `lib/pentagon/types.ts`'s Type 1 side defaults (residual 0.61); those
+defaults describe a DIFFERENT Type 1 tiling. The system does admit positive solutions, e.g. a = 1,
+b = 0.7918, c = 1.4086, d = 0.5549, e = 0.5547, closing to 2e-16.
+
+**Why b is free, and why that is Type 1 itself talking.** The b column of the closure matrix is
+identically zero: the two b-edges are exactly antiparallel, so their contributions cancel and any b
+closes. The heading between them is the turn at B, C and Pi, which is (180−B) + (180−C) + 0 =
+360 − (B+C), and that is 180° **exactly when B + C = 180°** — the defining constraint of Kershner
+type 1. So the split side this board needs is not an extra condition bolted on; it is what type 1's own
+constraint buys. Counting: 3 free angles (A, B, D; C = 180−B, E from the 540° sum) plus b free plus one
+more side ratio after scale = five, the same dimension type 1 has. Nothing is lost, the sides are just
+parameterised differently from the repo's defaults.
+
+⚑ Also open: `public/pentagon-edges/pe1-k*.json` is 44.7 MB that nothing reads yet, and class b having
+four digon letters (B10–B13) against two for every other class is explained by b occurring twice on the
+tile, which is worth confirming against Marek before it is built on.
+
+## The parametric pentagon shelf is live: geometry solved on the client, per slider
+
+`edges_pentagons_01` is in the atlas. `pen-1`, 744 records eager (k = 2, 4, 6) of 17,993, drawn by a
+client that solves the board at the live parameter point and re-develops the shipped darts. 239 tests
+pass, `pnpm build` clean, verified in the browser.
+
+**The split-side board, solved.** The tile is the hexagon `A-b-B-c-C-d-Pi-b-D-e-E-a-A`: class b twice,
+one flat π corner where a neighbour's vertex lands inside the C–D side, interior angles summing to 720°.
+Closure is two real linear equations on (a, b, c, d, e), and `lib/pentagon/edge-board.ts` solves them at
+whatever angles the sliders name. It does NOT hold at `lib/pentagon/types.ts`'s type 1 side defaults
+(residual 0.61) — those describe a different type 1 tiling — which is why this board carries its own
+solver instead of borrowing them. A test pins that residual so the distinction cannot quietly rot.
+
+**b is free, and type 1 is what frees it.** The b column of the closure matrix is identically zero
+because the two b-edges are antiparallel; the heading between them is (180−B) + (180−C) + 0 =
+360 − (B+C), which is 180° exactly when B + C = 180°. The test checks it at four different (B, C) pairs,
+so it is the family and not one lucky point. Counting: A, B, D free, plus b, plus one ratio after
+a = 1 — five, the same dimension type 1 has.
+
+**The record ships no geometry, and a test enforces it.** `developPentEdges` walks rneig/glue with the
+corner angles and edge-class lengths of whatever board it is handed. Re-solving at a different
+parameter point gives the SAME vertex count, edge count and drawn count with a demonstrably different
+shape — bounded by instance count, not radius, because a fixed radius covers different amounts of
+tiling once the tile changes size. That test is the shelf's whole claim in one assertion.
+
+**Two geometric checks on real records, not just on the board.** Every developed edge sits at one of the
+five class lengths (worst error 2e-14 over the sampled records), and every interior vertex's angular
+gaps are corners of the tile summing to a full turn (worst 4e-7 over 540 vertices). Those are what would
+fail if the corner/edge incidence or the drawn/undrawn split had been read wrong.
+
+⚑ The shelf reuses `source: "freedraw"` so it lands in the EDGES decoration, but its k counts VERTEX
+orbits, not grid points. The catalogue k-row and the info panel were both taught the difference; any
+new surface that special-cases freedraw must be too.
+
+⚑ Rendering notes worth keeping: the /play overlay needs an explicit opaque background (the flat p5
+canvas stays mounted underneath as the input layer) and `bg-bg` is NOT a token in this project —
+`bg-surface` is. The develop is bounded by a radius scaled to the tile's own size, because a pure
+instance budget grows in dart order and comes out as a diagonal streak.
+
+⚑ Not done: k = 8 and 10 (8.4 MB and 35.2 MB) are declared lazy but the shelf has no per-k fetch
+trigger exercised yet beyond the deep-link path, and the parameter point is per-canvas state, so it is
+not in the URL and a link does not carry the shape.
+
+## IH01 edge systems: decoded, geometry solved, render layer blocked on a collision
+
+Marek's `edges_isohedral_IH01` is decoded and its geometry is done and tested. The RENDER layer is not
+built, on purpose: a second session is mid-flight on the pentagon shelf and has established a different
+and better answer to the same question, so building a parallel one would have been 600 lines of
+duplicate.
+
+**The board is IH01, and Tactile and Marek agree without being introduced.** Tactile reports numVertices
+6, numEdgeShapes 3, edgeWord `abcABC`; the corpus independently gives the boundary
+`A-a-B-b-C-c-D-a-E-b-F-c-A`, every corner followed by a fixed class across all 88,085 occurrences, and
+vertices only ever `{A,C,E}` or `{B,D,F}` so both triples close to 360°. `solveIhBoard` asserts the two
+descriptions match per build (`checkBoardAgreesWithTactile`), which is what protects the shelf from a
+Tactile bump silently relabelling the classes.
+
+**So this board needed no closure solver**, unlike the pentagon one. An isohedral type is already
+parameterised and `/isohedral` has been drawing it since 2026-07-31, so `lib/isohedral/edge-board.ts`
+just reads the tile off `buildCell` at the live parameter point.
+
+**Decoded: 14,759 of 69,389, 0 failures**, per-k counts 5 / 15 / 60 / 275 / 744 / 4380 / 9280 matching
+the census exactly. `--budget 15000` ships k ≤ 14 and names k = 16 (54,630 certificates) as dropped;
+the census has no MAX line and stops at 16, so the run is unfinished too. `develop_ih_edges.py` is
+board-table driven, so IH02 is one row. Odd k is empty for the same reason as the pentagon board: the
+undecorated tiling already has two vertex orbits, so the bare board sits at k = 2 and there is no k = 1.
+
+**The period lattice is recovered from the walk, and its index is k/2.** Two placed instances of one
+dart with one heading differ by a translation of the decoration; collecting those and Gauss-reducing
+gives the lattice, with no assumption about which sublattice it is. Measured index over Tactile's own
+lattice is exactly 1, 2, 3, 4 at k = 2, 4, 6, 8 — which is the base tiling's two vertex orbits showing
+through, and is now a test.
+
+⚑ **COLLISION, and why the renderer stopped.** A concurrent session is converting the pentagon shelf to
+render by dressing its record as a `FreedrawPattern` (`lib/pentagon/edgePatch.ts`,
+`edgeShelfPattern.ts`, plus `"pent"` added to `FreedrawGrid`) and drawing it through the existing
+`drawFreedraw`. That is the right answer to "make it look like the other freedraw renderers", because
+`FreedrawPatch` is already generic — T1/T2, verts, vorbit, edges with lattice offsets, and crucially
+`polys`/`polyComp`/`compRank`, which is where the face fills and the finite/strip/unbounded ranks come
+from. I had written `lib/render/ihEdgesDraw.ts` instead: it does infinite stamping of a fundamental
+cell with scaffold, orbit dots, lattice overlay, rotation and dark, and it works and is tested, but it
+cannot produce face fills without duplicating that 636-line patch builder. IH01 should reuse the patch
+route once it settles, and `buildPentEdgePatch` touches its board in only six places, so generalising
+it is small.
+
+⚑ Also unprocessed: `solver_schwarz_edges_234.zip` (2026-08-04 11:51), a (2,3,4) Schwarz edge board,
+10 at k=3 and 13 at k=4. The Schwarz shelf already exists, so that is a one-row job.
+
+## The pentagon shelf renders as a PERIOD, not a patch — infinite, filled, and in the lens (2026-08-04, CC)
+
+The shelf shipped this morning drew one breadth-first develop fitted to the canvas. AL's verdict on the
+screenshot was the right one: that is wrong three ways at once. The walk stops mid-tile, so the boundary
+is a fringe of dangling stubs. There is nothing to pan or zoom into, because outside the developed disc
+nothing exists. And a segment list has no faces, so the tiles could not be coloured at all.
+
+Every other Euclidean decoration in the atlas solved this years ago by drawing ONE period and instancing
+it over a lattice. **So the fix is not a renderer, it is a conversion**: `lib/pentagon/edgePatch.ts`
+hands back a `FreedrawPatch`, the same structure Marek's combined-grid and Schwarz records ship
+pre-baked, and the shelf then draws through `drawFreedraw` like everything else. Infinite scrolling, the
+five fill modes, the scaffold, the period overlay, the orbit dots, rotation and the conformal lens all
+arrive with it and none of them is new code. `lib/render/pentEdgesDraw.ts` (90 lines) is deleted.
+
+**What could not be borrowed: those records ship their patch because their board is fixed. This board is
+a family, so the lattice itself moves when a slider moves.** The patch is recovered per parameter point:
+
+1. Walk the darts. Every re-placement of dart 0 at the seed's heading is a translation of the figure
+   onto itself, because the walk only ever composes rotations and steps.
+2. Verify each candidate before believing it — translate a sample of real edges by it and require they
+   land on edges with the same drawn bit. Without that check a GLIDE passes for a period on any pattern
+   that has one, and the figure renders as a plausible-looking lie.
+3. Cut the faces out of the planar rotation system, fold vertices and edges onto the lattice, and merge
+   faces across UNDRAWN edges carrying each face's lift, so an infinite tile is recognised as infinite
+   (the holonomy trick from `lib/freedraw/faces.ts`).
+
+**The certificate hands over the answer for free, and this is the load-bearing fact.** All 17,993 records
+carry exactly 12k darts with every dart glued. Each vertex contributes two darts per incident edge, so
+darts = 4E; every face is the one hexagon, so 6F = 2E; Euler on the torus closes it. Hence **F = k,
+E = 3k, V = 2k per period, and the cell's AREA is known before the search starts**. That is what makes
+the second basis vector exact — a partner spanning exactly one cell area completes a basis, one spanning
+a multiple of it does not — and a sublattice would draw a period n times too big and split every tile
+orbit n ways. It also sizes the develop in one step instead of doubling blindly: given the shortest
+period, the second is at least cellArea/|v1| away, which is the radius the walk actually needs.
+
+That mattered. **Push t toward either end and one side of the tile goes to zero, so the cell stretches**:
+six k=10 records failed at t=0.001 with the shortest period at 1.05 and the second past 14. Blind
+doubling never reached it; sizing from the area does, first try.
+
+**Measured: 53,979 builds (all 17,993 records x 3 parameter points), 0 failures**, mean 3.5-17.9 ms,
+worst 306 ms — `experiments/results/pent-edges-periodic-patch.md`. Cost is per parameter change, not per
+frame; pan and zoom re-instance a finished patch.
+
+⚑ **Fixed a bug in the SHARED patch renderer, not just here.** `drawPatchPattern` bailed and left the
+canvas blank once the instance range passed 4,000 cells, which any patch shelf hits by zooming out far
+enough. It now trims the range toward the view centre against a PRIMITIVE budget (200k rings+polylines),
+which is what the cost actually tracks — a two-tile period affords thousands of copies where a
+nine-orbit hexagonal one does not. Same policy as the fixed-grid branch's `MAX_SPAN`, which always
+clamped rather than returning.
+
+**`pentParams` moved into the configuration store**, which closes the open item from this morning about
+the parameter point being canvas state. It had to: the conformal lens builds its cell from the same
+numbers through `useInversiveCell`, and a parameter point held inside the flat canvas leaves the lens
+drawing a different pentagon from the one under the sliders. The slider panel is its own overlay
+(`components/pentagon-edges-controls.tsx`) rendered outside the exclusive canvas chain, so it survives
+the lens replacing the flat view. G / P / O and X now work on this shelf — they were gated on
+`selected?.freedraw` alone, so they were dead here while the Options tab showed the checkboxes they drive.
+
+`FreedrawGrid` gained `"pent"`, and is now split: `FreedrawCatalogueGrid` is the six shipped catalogue
+boards (the freedraw browser's pickers, filter and sub-rows key on that), `FreedrawGrid` is every board
+a pattern can decorate. Without the split, adding a board to the type puts a phantom empty grid in the
+freedraw browser.
+
+## The IH01 shelf ships, on a shared patch builder, with curved edges
+
+The render layer that stopped on a collision this morning is built, and it did not duplicate anything.
+The generic half of `lib/pentagon/edgePatch.ts` moved out to **`lib/freedraw/edgePatchCore.ts`**, which
+takes a tile (an outline and its class lengths) plus a walk closure and hands back a `FreedrawPatch`.
+`lib/isohedral/edgePatch.ts` is then 50 lines. The pentagon file is untouched and still carries its own
+copy: collapsing it onto the core is a mechanical diff, deliberately left for when that session is done
+in it rather than done to a file another agent was editing.
+
+⚑ **CORRECTION to this morning's entry, and it was a real error.** I wrote that the period holds F = k
+tiles, reading it off "all records carry 12k darts" the way the pentagon board does. It does not: it
+holds **k/2**. The certificate cell is **exactly two translation periods** — it carries 2k board
+vertices bearing only k distinct orbit labels, so the labels repeat twice and the cell is not a
+fundamental domain for the translations. Measured on 153 records spanning every shipped k, ratio exactly
+2.0000 every time; the lattice-index test that said k/2 was right and my prose around it was wrong. This
+is now a declared board fact (`certCellPeriods: 2` in the board spec) and a checked expectation, not an
+assumption: the builder derives the face count from the lattice it actually found and reports a mismatch
+instead of drawing a period twice the size it should be. A board that breaks the rule says so.
+
+**The core recovers the lattice without being told the cell area**, which is where it differs from the
+pentagon builder. That one knows F = k up front and uses the area to pin the second generator exactly.
+Here F is what we are trying to learn, so the lattice comes from the shortest verified candidate pair —
+which can only ever be the true period lattice or a sublattice of it, never something coarser that is
+not a period at all. Two independent checks make a candidate a period: translating a sample of interior
+edges by it must land on edges with the same DRAWN bit (this is what kills a glide), and it must also
+preserve the certificate's VERTEX ORBIT labels. The second is new and the pentagon builder lacks it — a
+translation that permutes orbits is a symmetry of the tiling but not of the decoration the certificate
+describes, and folding on it would silently merge two orbits into one colour. Then Euler on the torus
+closes the loop: for an n-gon board 2E = nF and V − E + F = 0, so one number gives three counts, each
+catching a different failure.
+
+**Measured: all 14,759 shipped records build a patch at the default parameter point, 0 failures**, worst
+build 157 ms at k = 14 — `experiments/results/2026-08-04-ih01-patch-sweep.log`. Cost is per parameter
+change, not per frame.
+
+**Home zoom is a fixed TILE COUNT here, not a fixed number of periods, and that is forced by the cells.**
+IH01's period is long and thin: the short generator stays at one tile at every k while the long one grows
+with it (|T2| runs 1.00 → 6.08 from k=2 to k=14). "Show five periods" therefore means five of the long
+side, and the shelf sat 2.5x closer than the pentagon one at low k and swung by 6x across the corpus.
+Thirty tiles across at every k reads the same everywhere and still never crops the repeat.
+
+### Curved edges, and why they cost the develop nothing
+
+The shelf now bows its edges, one slider per distinct edge shape, same control and same ±0.5 range as
+`/isohedral` so the same number means the same bow on both pages. Straight is the default on purpose: an
+edge SYSTEM is about which edges are drawn, and a bowed edge makes drawn and undrawn harder to tell apart.
+
+**A curve does not move a tiling vertex**, so the walk, the period lattice, the face merge, the
+finite/strip/unbounded ranks and the orbit labels are all invariant — curvature is a pure render-layer
+change and touches no combinatorics. What it needed was a frame: the develop knows where an edge IS but
+not which tile or which aspect placed it, so the curve is carried in the edge's own CHORD coordinates
+(t along the chord, s to its left, both in units of chord length). Any developed edge P→Q then gets its
+control points as P + t·(Q−P) + s·perp(Q−P), with no matrix and no case analysis.
+
+**The direction bit comes from the corpus, and it was already there.** A bowed edge has to bulge into one
+tile and out of the other, so drawing it needs to know which way the edge is being crossed. Marek's digon
+alphabet gives each class four letters — `X10`/`X11` undrawn, `X12`/`X13` drawn — and the second bit is
+exactly that: **every glued dart pair carries one even-slot and one odd-slot letter of the same class**,
+measured across the corpus, so the slot says which END of the edge the dart sits at. `checkSlotsAreOpposite`
+asserts it over all 1,099 eagerly shipped records, walking the quotient, at no geometric cost.
+
+That the two slots are opposite senses is measured; that slot 0 is the FORWARD one is Marek's convention
+and cannot be read off a letter, so it is pinned against Tactile: bow the three classes by 0.42 / −0.18 /
+0.09 and the six sides of a folded tile come out at +0.315 / −0.135 / +0.067 and their negatives, matching
+`prototileEdges` exactly. Distinct bulges matter — with three equal ones the boundary reads `+++---`,
+which is its own mirror under a rotation by three and cannot tell a correct sense from an inverted one.
+The other guard is congruence: a curve belongs to an EDGE, so the two tiles sharing it fit whichever way
+it bows, which means a mis-oriented bow does not tear the tiling, it silently makes some tiles a
+different shape from the rest. A test asserts every face of the patch is one curved shape up to isometry.
+
+**`FreedrawPatch` gained two optional arrays** (`edgeCurves`, `polyCurves`: cubic control points as world
+offsets from each arc's start, parallel to `edges` and to `polys`) and `drawPatchPattern` an `arcTo` that
+falls through to `lineTo` when they are absent. The fill pass now draws its closing side explicitly
+instead of leaving it to `closePath`, which would have straightened one edge of every curved tile. Both
+fields are omitted entirely when nothing bows, so the five straight patch boards are byte-for-byte and
+cost-for-cost what they were.
+
+⚑ **The developed tiling is the MIRROR of Tactile's placement, and that is pre-existing.** Going round a
+folded tile the classes read c, b, a, c, b, a where Tactile's boundary reads a, b, c, a, b, c, both rings
+counter-clockwise — so the walk realises the reflected tiling. It comes from the sign of the turn in
+`walkIhEdges` (`th + angle`), so it predates curvature and applies to the pentagon shelf's walk too,
+which uses the same convention. Harmless for the catalogue under the settled mirror-pairs-merge rule, and
+harmless for the bows, which are correct RELATIVE to the tile (class a bows +0.315 in both). Left alone
+rather than flipped: flipping one shelf and not the other would make the two disagree in handedness,
+which is worse than both being consistently mirrored. Worth an author decision.
+
+⚑ Still unprocessed: `solver_schwarz_edges_234.zip` (2026-08-04 11:51), a (2,3,4) Schwarz edge board,
+10 at k=3 and 13 at k=4 — a one-row job on the existing Schwarz shelf.

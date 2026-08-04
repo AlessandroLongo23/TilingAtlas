@@ -34,7 +34,25 @@
 //
 // One consequence for reading k: the bare board already has three vertex orbits, so k = 3 is the
 // floor here, not k = 1, and the k = 3 slice contains the undecorated Schwarz tiling itself.
-export type FreedrawGrid = "square" | "triangle" | "ts" | "hex" | "sch236" | "sch244";
+// PENTAGON BOARD (grid: "pent", from Marek's pt_edges_pentagons_01.exe): the first board here that is
+// not a fixed tiling at all but a FAMILY of them — Kershner type 1 with a split side, five degrees of
+// freedom (lib/pentagon/edge-board.ts). Nothing geometric can be baked into the record, so its patch is
+// built on the client at whatever point of the family the sliders name (lib/pentagon/edgePatch.ts) and
+// is the one grid whose T1/T2 move while you watch. Its tile is the hexagon the tiling sees, since a
+// neighbour's corner splits one pentagon side.
+// ISOHEDRAL BOARD (grid: "ih", from Marek's pt_edges_isohedral_IH<nn>.exe): the second parametric
+// board, and the one that generalises the first. Its tile is an isohedral type from Craig Kaplan's
+// Tactile (lib/isohedral/edge-board.ts) at whatever point of the type's own parameter space the sliders
+// name, so the shelf inherits 93 boards' worth of families instead of one. IH01 is the general hexagon
+// with opposite sides paired. One difference from every other board here: Marek's certificate cell is
+// NOT a fundamental domain for the translations — it spans two of them — so the period is recovered
+// from the develop and checked, never taken from the record (lib/isohedral/edgePatch.ts).
+/** The boards the shipped freedraw CATALOGUE covers: one browser, one filter, one set of shards. */
+export type FreedrawCatalogueGrid = "square" | "triangle" | "ts" | "hex" | "sch236" | "sch244";
+/** Every board a pattern can decorate. Wider than the catalogue: the two parametric boards are their own
+ *  shelves (`pen-1`, `ih-1`), reached from the Edge patterns tab and not from the freedraw browser, so
+ *  they must not appear in that browser's grid pickers — which is what the two types keep apart. */
+export type FreedrawGrid = FreedrawCatalogueGrid | "pent" | "ih";
 
 /**
  * PATCH GRIDS (grid: "ts" and "hex"): no bitmask, explicit geometry instead. The developer
@@ -49,6 +67,9 @@ export type FreedrawGrid = "square" | "triangle" | "ts" | "hex" | "sch236" | "sc
  * hexagon corners, two thirds of it — so a per-coset bitmask has no consistent index. Face rank 0 on
  * the hexagonal grid is a POLYHEX, the hexagonal sibling of polyomino / polyiamond / polyform.
  */
+/** Two cubic control points as world offsets from the arc's start: [c1x, c1y, c2x, c2y]. */
+export type Curve4 = readonly [number, number, number, number];
+
 export interface FreedrawPatch {
 	/** Period translations, world coordinates. */
 	T1: [number, number];
@@ -61,6 +82,19 @@ export interface FreedrawPatch {
 	edges: [number, number, number, number, number][];
 	/** Polygon rings: [vi, offX, offY] per corner, offsets relative to the ring's anchor corner. */
 	polys: [number, number, number][][];
+	/**
+	 * CURVED boards only: the two cubic control points of each edge, as world offsets from that edge's
+	 * START point. Parallel to `edges`; null where an edge is straight; the whole field absent on every
+	 * board whose edges are chords, which is all of them except the parametric isohedral types.
+	 *
+	 * World offsets and not chord coordinates, so the draw loop adds the same lattice translation it
+	 * already adds to the endpoints and the curve comes along. `polyCurves` is the same thing indexed
+	 * for the FILL pass: entry j of a ring is the arc leaving corner j, offset from corner j's own
+	 * position. Kept as its own array because a ring traverses some of its edges backwards, and
+	 * resolving that per frame would cost a lookup and an orientation test per corner per lattice copy.
+	 */
+	edgeCurves?: (Curve4 | null)[];
+	polyCurves?: (Curve4 | null)[][];
 	/** Tile component (face orbit) id per polygon. */
 	polyComp: number[];
 	/** Per component: 0 finite, 1 strip, 2 unbounded — the same holonomy ranks as the fixed grids. */
@@ -103,7 +137,9 @@ export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? "square";
  *  ordinary vertex-orbit count — the same quantity the spherical and hyperbolic Schwarz shelves use,
  *  which is why the three read as one family. */
 export const freedrawKNoun = (grid: FreedrawGrid): string =>
-	grid === "sch236" || grid === "sch244" ? "vertex orbits" : "grid-point orbits";
+	grid === "sch236" || grid === "sch244" || grid === "pent" || grid === "ih"
+		? "vertex orbits"
+		: "grid-point orbits";
 
 /**
  * The shipped edge-system catalogues. `eager` loads with the atlas; `lazyKs` are the dense tails,

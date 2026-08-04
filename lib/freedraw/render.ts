@@ -136,6 +136,11 @@ export function fitView(width: number, height: number, cells: number): FreedrawV
 // Guard against pathological zoom-out: at most this many grid units are ever iterated per axis.
 const MAX_SPAN = 400;
 
+/** Ceiling on rings + polylines emitted for one patch-grid frame, across all lattice copies. Sized so a
+ *  small period still fills the screen at the lowest zoom the canvas allows (a k=6 pentagon period is 24
+ *  primitives, and covering a 1500x950 view at 5 px/unit wants about 4,700 copies of it). */
+const PRIM_BUDGET = 200_000;
+
 export interface Span {
 	x0: number;
 	x1: number;
@@ -405,13 +410,59 @@ function drawPatchPattern(
 	m1 = Math.ceil(m1) + PAD;
 	n0 = Math.floor(n0) - PAD;
 	n1 = Math.ceil(n1) + PAD;
-	// Runaway guard, same spirit as MAX_SPAN.
-	if ((m1 - m0 + 1) * (n1 - n0 + 1) > 4000) return;
+	// Runaway guard, same spirit as MAX_SPAN — and, like MAX_SPAN, it TRIMS the range instead of
+	// abandoning the frame. Returning early here left the canvas blank the moment a view zoomed far
+	// enough out, which is the one thing a periodic renderer must never do; a patch drawn to the edge of
+	// its budget still reads as the tiling, an empty rectangle reads as a bug.
+	//
+	// The budget counts PRIMITIVES, not cells, because that is what the cost actually tracks: a two-tile
+	// period can afford thousands of copies where a nine-orbit hexagonal one cannot, and one fixed cell
+	// count is either wasteful for the first or a stutter for the second.
+	const perCell = (style.fillMode === "none" ? 0 : patch.polys.length) + patch.edges.length;
+	const maxCells = Math.max(1, Math.floor(PRIM_BUDGET / Math.max(1, perCell)));
+	const want = (m1 - m0 + 1) * (n1 - n0 + 1);
+	if (want > maxCells) {
+		// Trim toward the view centre, keeping the aspect of the range, so what survives is what is
+		// actually on screen in front of the viewer.
+		const shrink = Math.sqrt(maxCells / want);
+		const mMid = (m0 + m1) / 2;
+		const nMid = (n0 + n1) / 2;
+		const mHalf = Math.max(0.5, ((m1 - m0 + 1) * shrink) / 2);
+		const nHalf = Math.max(0.5, ((n1 - n0 + 1) * shrink) / 2);
+		m0 = Math.round(mMid - mHalf);
+		m1 = Math.round(mMid + mHalf);
+		n0 = Math.round(nMid - nHalf);
+		n1 = Math.round(nMid + nHalf);
+	}
 
 	beginViewRotation(ctx, width, height, rot);
 
 	const vx = (vi: number, ox: number, oy: number) => patch.verts[vi][0] + ox * t1x + oy * t2x;
 	const vy = (vi: number, ox: number, oy: number) => patch.verts[vi][1] + ox * t1y + oy * t2y;
+
+	// CURVED boards (the parametric isohedral types) carry two cubic control points per arc, as world
+	// offsets from the arc's start. Every other board omits the field and takes the straight path below,
+	// so nothing changes for them — not the geometry, not the cost.
+	const arcTo = (
+		curve: readonly [number, number, number, number] | null | undefined,
+		sx: number,
+		sy: number,
+		ex: number,
+		ey: number,
+	) => {
+		if (!curve) {
+			ctx.lineTo(px(ex), py(ey));
+			return;
+		}
+		ctx.bezierCurveTo(
+			px(sx + curve[0]),
+			py(sy + curve[1]),
+			px(sx + curve[2]),
+			py(sy + curve[3]),
+			px(ex),
+			py(ey),
+		);
+	};
 
 	if (style.fillMode !== "none") {
 		const alpha = style.showVertices ? ORBIT_MODE_FILL_ALPHA : 1;
@@ -430,13 +481,17 @@ function drawPatchPattern(
 					const ring = patch.polys[pi];
 					ctx.fillStyle = ctx.strokeStyle = compFill[patch.polyComp[pi]];
 					ctx.lineWidth = 1;
+					const arcs = patch.polyCurves?.[pi];
 					ctx.beginPath();
+					// One arc per side, INCLUDING the closing one, so a curved tile's last edge bows like
+					// the rest instead of being straightened by closePath.
 					for (let ci = 0; ci < ring.length; ci++) {
 						const [vi, ox, oy] = ring[ci];
-						const x = px(vx(vi, ox + m, oy + n));
-						const y = py(vy(vi, ox + m, oy + n));
-						if (ci === 0) ctx.moveTo(x, y);
-						else ctx.lineTo(x, y);
+						const [wi, wx, wy] = ring[(ci + 1) % ring.length];
+						const sx = vx(vi, ox + m, oy + n);
+						const sy = vy(vi, ox + m, oy + n);
+						if (ci === 0) ctx.moveTo(px(sx), py(sy));
+						arcTo(arcs?.[ci], sx, sy, vx(wi, wx + m, wy + n), vy(wi, wx + m, wy + n));
 					}
 					ctx.closePath();
 					ctx.fill();
@@ -451,12 +506,16 @@ function drawPatchPattern(
 		if (pass === "scaffold" && !style.showScaffold) continue;
 		if (pass === "drawn" && style.lineWidth <= 0) continue;
 		ctx.beginPath();
-		for (const [vi, vj, ox, oy, drawn] of patch.edges) {
+		for (let ei = 0; ei < patch.edges.length; ei++) {
+			const [vi, vj, ox, oy, drawn] = patch.edges[ei];
 			if ((pass === "drawn") !== (drawn === 1)) continue;
+			const curve = patch.edgeCurves?.[ei];
 			for (let n = n0; n <= n1; n++) {
 				for (let m = m0; m <= m1; m++) {
-					ctx.moveTo(px(vx(vi, m, n)), py(vy(vi, m, n)));
-					ctx.lineTo(px(vx(vj, ox + m, oy + n)), py(vy(vj, ox + m, oy + n)));
+					const sx = vx(vi, m, n);
+					const sy = vy(vi, m, n);
+					ctx.moveTo(px(sx), py(sy));
+					arcTo(curve, sx, sy, vx(vj, ox + m, oy + n), vy(vj, ox + m, oy + n));
 				}
 			}
 		}

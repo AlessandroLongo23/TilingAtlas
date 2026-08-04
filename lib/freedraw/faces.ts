@@ -700,6 +700,14 @@ const FINITE_LABEL: Record<FreedrawGrid, string> = {
 	// exact board are the polydrafters — the pieces of the Eternity puzzle.
 	sch236: "polydrafter",
 	sch244: "polyabolo",
+	// The cell is a Kershner type 1 pentagon whose SHAPE moves with the sliders, so there is no fixed
+	// figure to name after — "polypent" would imply a settled family the way polyomino and polyabolo do,
+	// and this one has five free parameters. The generic name is the honest one.
+	pent: "polyform",
+	// Same for the isohedral boards, and more so: the tile is whichever IH type is selected, at whichever
+	// point of its parameter space. Added here because widening FreedrawGrid makes this record incomplete
+	// — the guard doing its job. Owned by the isohedral shelf; rename freely if that shelf wants another.
+	ih: "polyform",
 };
 
 export const rankLabel = (rank: 0 | 1 | 2, grid: FreedrawGrid = "square") =>

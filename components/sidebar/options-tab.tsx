@@ -95,12 +95,15 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// all, so almost every control above — fill, hue, points, orbits, symmetry, inversive — is dead, and the
 	// freedraw block below takes their place. Line stroke and rotation are the exceptions: that canvas draws
 	// real strokes and spins about its centre like any other view, so its block renders those two itself.
-	const isFreedraw = !!selected?.freedraw;
+	// The parametric-pentagon shelf renders through the SAME 2D grid canvas off the same store fields
+	// (its patch is built on the client instead of shipped, which changes nothing above the renderer),
+	// so it takes this whole block rather than growing a near-duplicate of it.
+	const isFreedraw = !!selected?.freedraw || !!selected?.pentEdges || !!selected?.ihEdges;
 	// A spherical-freedraw pattern renders on the self-contained three.js ico-freedraw canvas (its own
 	// ArcballControls, its own fixed edge tubes and golden-angle tile colours). Like planar freedraw it has no
 	// tiles/cell for the shared controls to touch — only the two Display controls the /freedraw arm carries
 	// (polyhedron/sphere + grid) apply, so every other control is hidden for it.
-	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical";
+	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical" || !!selected?.sphEdges;
 	// A colored tiling renders on its own 2D canvas like freedraw: no tiles, no polygon cell, so the shared
 	// fill/stroke/hue/points controls are all dead and its own palette + trio take their place. Rotation
 	// still applies (the field spins about the canvas centre), rendered inside that block.

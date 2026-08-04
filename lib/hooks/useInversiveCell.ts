@@ -9,6 +9,10 @@ import { edgesPeriodicCell } from "@/lib/render/periodic/edges";
 import { hollowPeriodicCell } from "@/lib/render/periodic/hollow";
 import { islamicPeriodicCell, type IslamicStyle } from "@/lib/render/periodic/islamic";
 import { analyseFaces } from "@/lib/freedraw/faces";
+import { solveEdgeBoard } from "@/lib/pentagon/edge-board";
+import { pentEdgePattern } from "@/lib/pentagon/edgeShelfPattern";
+import { solveIhBoardFor } from "@/lib/isohedral/edge-board";
+import { ihEdgePattern } from "@/lib/isohedral/edgeShelfPattern";
 import { loadHollowPatch, type HollowPatch } from "@/lib/hollow/pattern";
 import { DEFAULT_HOLLOW_STYLE } from "@/lib/hollow/render";
 import { useConfiguration } from "@/stores/configuration";
@@ -68,11 +72,34 @@ export function useInversiveCell(
 	);
 	const islamicKey = Object.values(islamic).join(",");
 
+	// The parametric-pentagon shelf reaches the lens the same way it reaches the flat canvas: build the
+	// period at the store's parameter point and hand over a FreedrawPattern. `pentEdgePattern` memoises on
+	// (record, board), so the two views share one build rather than each doing their own.
+	const pentParams = useConfiguration((s) => s.pentParams);
+	const pentPattern = useMemo(() => {
+		if (!selected?.pentEdges) return null;
+		const board = solveEdgeBoard(pentParams);
+		return board.ok ? pentEdgePattern(selected.pentEdges, board.board).pattern : null;
+	}, [selected, pentParams]);
+
+	// The isohedral shelf reaches the lens the same way, off its own parameter vector. A stored vector of
+	// the wrong length belongs to a different type, so it is dropped in favour of the type's defaults —
+	// the same guard the flat canvas applies, and for the same reason.
+	const ihParams = useConfiguration((s) => s.ihEdgeParams);
+	const ihBulge = useConfiguration((s) => s.ihEdgeBulge);
+	const ihPattern = useMemo(() => {
+		const rec = selected?.ihEdges;
+		if (!rec) return null;
+		const board = solveIhBoardFor(rec.ih, ihParams, ihBulge);
+		return board.ok ? ihEdgePattern(rec, board.board).pattern : null;
+	}, [selected, ihParams, ihBulge]);
+
 	// The face analysis walks the whole period, so it is memoised on the pattern, not recomputed
 	// whenever a style toggle moves.
+	const freedrawPattern = selected?.freedraw ?? pentPattern ?? ihPattern;
 	const faceAnalysis = useMemo(
-		() => (selected?.freedraw ? analyseFaces(selected.freedraw) : null),
-		[selected],
+		() => (freedrawPattern ? analyseFaces(freedrawPattern) : null),
+		[freedrawPattern],
 	);
 
 	// A hollow patch is lazy-fetched (public/hollow/<id>.json), so the cell arrives one tick after the
@@ -96,8 +123,8 @@ export function useInversiveCell(
 		if (selected.colors) {
 			return colorsPeriodicCell(selected.colors, { dark, palette: colorsPalette, edges: colorsEdges });
 		}
-		if (selected.freedraw && faceAnalysis) {
-			return edgesPeriodicCell(selected.freedraw, {
+		if (freedrawPattern && faceAnalysis) {
+			return edgesPeriodicCell(freedrawPattern, {
 				dark, fillMode: freedrawFill, showScaffold: freedrawScaffold, analysis: faceAnalysis,
 			});
 		}
@@ -115,10 +142,13 @@ export function useInversiveCell(
 		return tilingPeriodicCell(renderCell);
 		// islamicKey stands in for the `islamic` object, which is rebuilt on every store read.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selected, renderCell, dark, colorsPalette, colorsEdges, freedrawFill, freedrawScaffold, faceAnalysis, hollowPatch, isIslamic, islamicKey]);
+	}, [selected, renderCell, dark, colorsPalette, colorsEdges, freedrawFill, freedrawScaffold, freedrawPattern, faceAnalysis, hollowPatch, isIslamic, islamicKey]);
 
 	// The id changes whenever the geometry or its baked colours do, so the canvas re-uploads exactly then.
-	const styleKey = `${dark ? "d" : "l"}:${colorsEdges ? 1 : 0}:${colorsPalette.join(",")}:${freedrawFill}:${freedrawScaffold ? 1 : 0}:${isIslamic ? islamicKey : "-"}`;
+	// The pentagon parameters belong in it for the same reason the Islamic sliders do: they change the
+	// GEOMETRY of the cell, so an id that ignored them would leave the lens showing the previous pentagon.
+	const pentKey = selected?.pentEdges ? Object.values(pentParams).join(",") : "-";
+	const styleKey = `${dark ? "d" : "l"}:${colorsEdges ? 1 : 0}:${colorsPalette.join(",")}:${freedrawFill}:${freedrawScaffold ? 1 : 0}:${isIslamic ? islamicKey : "-"}:${pentKey}`;
 	const cellId = useMemo(
 		() => (cell && selected ? `${selected.canonicalKey}::${styleKey}` : null),
 		[cell, selected, styleKey],

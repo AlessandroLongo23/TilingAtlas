@@ -176,6 +176,33 @@ export interface ConfigurationState {
 	// Period-lattice overlay: tints the fundamental cell and outlines its translates, so the pattern reads
 	// as that one cell stamped out across the plane. See lib/freedraw/render.ts drawLattice.
 	freedrawLattice: boolean;
+	/**
+	 * Where the parametric-pentagon shelf is standing in its family: the three free angles, the free side
+	 * b, and t along the one remaining side ratio (lib/pentagon/edge-board.ts).
+	 *
+	 * Store state and not canvas state, and for the reason every other view option is: more than one
+	 * renderer has to agree on it. The conformal lens builds the same period from the same numbers, so a
+	 * parameter point held inside the flat canvas would leave the lens drawing a different pentagon from
+	 * the one under the sliders.
+	 */
+	pentParams: { A: number; B: number; D: number; b: number; t: number };
+
+	/**
+	 * Where the isohedral edge shelf is standing in its type's family: Tactile's own parameter vector,
+	 * whose length is the type's `numParams`. Null means "wherever the type says", which is the only
+	 * sane default when the vector's LENGTH depends on which type is selected — IH01 takes four numbers
+	 * and IH04 takes six, so one shared array of fixed length would be wrong for all but one board.
+	 */
+	ihEdgeParams: number[] | null;
+
+	/**
+	 * How far each of the isohedral tile's edge classes bows off its chord, one entry per DISTINCT edge
+	 * shape (IH01 has three). Same control and same range as /isohedral's edge sliders (BULGE, ±0.5).
+	 *
+	 * Null means straight, and straight is the default deliberately: an edge SYSTEM is about which edges
+	 * are drawn, and a bowed edge makes drawn and undrawn harder to tell apart, so curvature is opt-in.
+	 */
+	ihEdgeBulge: number[] | null;
 
 	// Colored-tiling view: set true by /play when a colored square pattern is selected. Same contract as
 	// `freedraw` above — swaps the flat p5 render for the colors renderer (components/colors-play-canvas.tsx),
@@ -302,6 +329,11 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	freedrawScaffold: false,
 	freedrawVertices: false,
 	freedrawLattice: false,
+	// Mirrors PENT_EDGE_DEFAULTS; spelled out rather than imported so the store keeps no dependency on a
+	// shelf. lib/pentagon/edge-board.test.ts holds the two to each other.
+	pentParams: { A: 120, B: 100, D: 110, b: 0.8, t: 0.5 },
+	ihEdgeParams: null,
+	ihEdgeBulge: null,
 
 	colors: false,
 	colorsEdges: true,
