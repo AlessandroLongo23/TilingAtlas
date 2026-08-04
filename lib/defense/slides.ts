@@ -5,28 +5,31 @@
 // the reveal.js/Marp convention. Consequence, and it is the only authoring rule that bites:
 // a horizontal rule inside a slide is not available. Use spacing or a heading instead.
 //
-// Two optional per-slide directives, each an HTML comment so they stay invisible to any other
-// markdown renderer:
-//   <!-- notes: ... -->   presenter notes, shown only in presenter view, never on the slide
+// There are no per-slide directives: an HTML comment in the source is just a comment, invisible in
+// the deck as in any other markdown renderer.
 
 export interface Slide {
 	/** 0-based index across ALL slides, main and backup. */
 	index: number;
 	/** 1-based slide number. */
 	number: number;
-	/** Markdown body with directives stripped. */
+	/** Markdown body. */
 	content: string;
-	/** Presenter notes, if the slide declared any. */
-	notes: string;
 	/** First heading text, used as the label in overview mode. */
 	title: string;
 }
 
+import { partSlideLabel } from "./parts";
+
 const SLIDE_FENCE = /^\s*---\s*$/;
-const NOTES_DIRECTIVE = /<!--\s*notes:\s*([\s\S]*?)-->/gi;
 
 /** First ATX heading in the body, stripped of markup, for the overview grid. */
 function firstHeading(body: string): string {
+	// An act divider carries no heading — it names itself from the parts list instead, or the
+	// overview grid labels five of its cards "(untitled)".
+	const part = partSlideLabel(body);
+	if (part) return part;
+
 	for (const line of body.split("\n")) {
 		const m = line.match(/^#{1,4}\s+(.*)$/);
 		if (m) {
@@ -68,15 +71,7 @@ export function parseSlides(markdown: string): Slide[] {
 	for (const raw of chunks) {
 		if (!raw.trim()) continue;
 
-		let body = raw;
-
-		const noteParts: string[] = [];
-		body = body.replace(NOTES_DIRECTIVE, (_, note: string) => {
-			noteParts.push(note.trim());
-			return "";
-		});
-
-		const content = body.trim();
+		const content = raw.trim();
 		if (!content) continue;
 
 		count += 1;
@@ -85,7 +80,6 @@ export function parseSlides(markdown: string): Slide[] {
 			index: slides.length,
 			number: count,
 			content,
-			notes: noteParts.join("\n\n"),
 			title: firstHeading(content),
 		});
 	}

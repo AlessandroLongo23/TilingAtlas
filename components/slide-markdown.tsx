@@ -5,24 +5,89 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
+import type { Element, ElementContent, Parent, Root } from "hast";
 import { cn } from "@/lib/utils/cn";
+
+/**
+ * Lift a custom tag out of the paragraph markdown wrapped it in.
+ *
+ * CommonMark only starts an HTML block at a line that is a *complete open tag and nothing else*
+ * (condition 7). `<alphabet-44></alphabet-44>` puts the closing tag on the same line, so the rule
+ * does not fire and the whole thing is parsed as a paragraph containing inline HTML. The component
+ * then renders its `<div>`/`<figure>` inside a `<p>`, which is invalid HTML: React logs a nesting
+ * error per offending descendant and the hydration mismatch shows up in the Next dev overlay.
+ *
+ * Authoring around it (split the tag over two lines, or self-close it) works but is invisible and
+ * has to be remembered on every new figure. This does it in the pipeline instead: a paragraph whose
+ * only content is custom elements is replaced by those elements.
+ */
+function rehypeUnwrapCustomBlocks() {
+	const isCustom = (n: ElementContent) => n.type === "element" && n.tagName.includes("-");
+	const isBlank = (n: ElementContent) => n.type === "text" && n.value.trim() === "";
+
+	return (tree: Root) => {
+		const walk = (parent: Root | Element) => {
+			const out: ElementContent[] = [];
+			for (const child of parent.children as ElementContent[]) {
+				if (child.type === "element") walk(child);
+				if (
+					child.type === "element" &&
+					child.tagName === "p" &&
+					child.children.some(isCustom) &&
+					child.children.every((c) => isCustom(c) || isBlank(c))
+				) {
+					out.push(...child.children.filter(isCustom));
+					continue;
+				}
+				out.push(child);
+			}
+			(parent as Parent).children = out;
+		};
+		walk(tree);
+	};
+}
+
+/**
+ * How a slide's blocks sit in the height they are given.
+ *
+ * `flow` is plain document order, top down, and is what the title slide and the overview
+ * thumbnails want. The other two both pin the heading at the top of the slide, so the eye does not
+ * have to hunt for the title on every advance, and differ only in what happens to the slack below it:
+ *
+ * - `spread` keeps the prose together under the heading and sinks the figure to the bottom edge, so
+ *   all the slack goes into the one gap between them. Right when the slide carries a figure or a run
+ *   of cards, which look wrong floating high. The selectors are `.slide-spread` in app/globals.css.
+ * - `pinned` keeps the blocks together at their authored spacing and centres them as one group in
+ *   the space under the heading. Right for prose, which `spread` would pull apart into bands.
+ *
+ * `pinned` is two auto margins, not `justify-center`: react-markdown emits the blocks as flat
+ * siblings, so there is no element wrapping "everything after the heading" to centre, and centring
+ * the whole column would move the heading again. `mt-auto` on the second child and `mb-auto` on the
+ * last make the free space split equally above and below exactly that range.
+ */
+export type SlideLayout = "flow" | "spread" | "pinned";
 
 interface SlideMarkdownProps {
 	content: string;
 	components?: Components;
 	/** Overview thumbnails render the same markdown at a fraction of the size. */
 	compact?: boolean;
+	/** Defaults to `flow`. See {@link SlideLayout}. Needs a parent of definite height to do anything. */
+	layout?: SlideLayout;
 }
 
 // Same plugin stack as the theory renderer (so `<tiling-card>`, KaTeX and GFM tables all behave
 // identically), but presentation typography instead of article typography. Sizes are viewport-
 // relative via clamp(), not fixed, because the projector in the room is an unknown: the
 // deck has to read at 1280x720 and at 3840x2160 without a per-venue pass.
-export function SlideMarkdown({ content, components, compact = false }: SlideMarkdownProps) {
+export function SlideMarkdown({ content, components, compact = false, layout = "flow" }: SlideMarkdownProps) {
 	return (
 		<div
 			className={cn(
 				"slide-markdown w-full",
+				layout !== "flow" && "flex h-full flex-col",
+				layout === "spread" && "slide-spread",
+				layout === "pinned" && "[&>*:nth-child(2)]:mt-auto [&>*:last-child]:mb-auto",
 				compact
 					? [
 							"[&_h1]:text-[0.95rem] [&_h1]:font-bold [&_h1]:leading-tight [&_h1]:mb-1",
@@ -86,7 +151,7 @@ export function SlideMarkdown({ content, components, compact = false }: SlideMar
 		>
 			<ReactMarkdown
 				remarkPlugins={[remarkGfm, remarkMath]}
-				rehypePlugins={[rehypeRaw, [rehypeKatex, { output: "html" }]]}
+				rehypePlugins={[rehypeRaw, rehypeUnwrapCustomBlocks, [rehypeKatex, { output: "html" }]]}
 				components={components}
 			>
 				{content}

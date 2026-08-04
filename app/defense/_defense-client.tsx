@@ -230,7 +230,6 @@ function formatClock(ms: number): string {
 export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 	const [index, setIndex] = useState(0);
 	const [overview, setOverview] = useState(false);
-	const [showNotes, setShowNotes] = useState(false);
 	const [elapsed, setElapsed] = useState(0);
 	const [running, setRunning] = useState(false);
 	const startedRef = useRef(false);
@@ -323,14 +322,6 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 				case "Escape":
 					e.preventDefault();
 					setOverview((o) => !o);
-					break;
-				// Notes are on `n`, NOT `s`: s/d/o belong to the three preview overlays, on the same
-				// letters /play binds them to (lib/hooks/usePreviewOverlays.tsx). One set of keys for the
-				// same three things everywhere beats a deck-only exception.
-				case "n":
-				case "N":
-					e.preventDefault();
-					setShowNotes((v) => !v);
 					break;
 			}
 		};
@@ -748,23 +739,12 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							</div>
 						</div>
 
-						{showNotes && current.notes && (
-							<div className="max-h-[26vh] shrink-0 overflow-y-auto border-t border-line bg-surface px-[6vw] py-4">
-								<p className="mb-1 text-[0.65rem] font-semibold tracking-wide text-fg-muted uppercase">
-									Notes
-								</p>
-								<p className="text-sm leading-relaxed whitespace-pre-wrap text-fg-secondary">
-									{current.notes}
-								</p>
-							</div>
-						)}
-
 						<div className="flex shrink-0 items-center justify-between px-[6vw] py-3 text-xs text-fg-muted">
 							<span className="tabular-nums">
 								{current.number} / {slides.length}
 							</span>
 							<span className="hidden sm:inline">
-								&larr; &rarr; move &middot; Esc overview &middot; n notes &middot; o/s/d/p overlays
+								&larr; &rarr; move &middot; Esc overview &middot; o/s/d/p overlays
 							</span>
 							<span
 								className={cn(

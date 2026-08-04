@@ -35,6 +35,11 @@ interface MethodCardProps {
 	accent?: string;
 	/** Set by `<method-strip>`: every card but the first draws the arrow that precedes it. */
 	linked?: boolean;
+	/**
+	 * `frame="no"` drops the panel's border and background. For a divider, where the drawing has no
+	 * neighbours to be separated from and the box is the only thing on the slide with a hard edge.
+	 */
+	frame?: string;
 }
 
 /** A line with a solid head, built as geometry so no `<marker>` id has to be unique on the page. */
@@ -442,7 +447,12 @@ function GluingFigure() {
 	);
 }
 
-const FIGURES: Record<string, () => React.ReactElement> = {
+/**
+ * The five drawings, keyed the way `fig="…"` names them. Exported because `<failed-path>` threads
+ * the first four onto one curve for the Part II divider, and drawing them twice would be two
+ * drawings to keep in step.
+ */
+export const METHOD_FIGURES: Record<string, () => React.ReactElement> = {
 	growth: GrowthFigure,
 	wallpaper: WallpaperFigure,
 	torus: TorusFigure,
@@ -450,9 +460,10 @@ const FIGURES: Record<string, () => React.ReactElement> = {
 	gluing: GluingFigure,
 };
 
-export function MethodCard({ fig, name, note, accent, linked }: MethodCardProps) {
-	const Figure = fig ? FIGURES[fig] : undefined;
+export function MethodCard({ fig, name, note, accent, linked, frame }: MethodCardProps) {
+	const Figure = fig ? METHOD_FIGURES[fig] : undefined;
 	const marked = String(accent) === "yes";
+	const framed = String(frame) !== "no";
 
 	return (
 		// Captions sized off the CARD, not the viewport: the same strip is rendered at 190px on a slide
@@ -461,8 +472,8 @@ export function MethodCard({ fig, name, note, accent, linked }: MethodCardProps)
 		<figure className="@container not-prose m-0 flex min-w-0 flex-col">
 			<div
 				className={cn(
-					"relative aspect-square w-full border bg-surface-base p-[6%]",
-					marked ? "border-accent" : "border-line",
+					"relative aspect-square w-full p-[6%]",
+					framed && ["border bg-surface-base", marked ? "border-accent" : "border-line"],
 				)}
 			>
 				{/* Anchored to the panel, not the card, so the arrow sits on the drawings' centre

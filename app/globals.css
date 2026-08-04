@@ -525,3 +525,37 @@ body {
     opacity: 0;
   }
 }
+
+/* A spread slide (2026-08-02): the prose holds together and the figure floats with EQUAL air above
+   and below it. `margin-block: auto` is flex's own free-space distribution, not a chosen number: two
+   auto margins on the same item split whatever the slide has left over into two equal halves, so the
+   gap over the figure and the gap under it move together at every viewport. Nothing to tune.
+
+   Two earlier attempts, for whoever reads this next. `justify-content: space-between` shared the
+   slack out between EVERY pair of children, which left the two paragraphs of the k=4 wall slide most
+   of a screen apart. A fixed `margin-top` on whatever followed the figure fixed that but could never
+   match the gap above it, since that gap is leftover space and a fixed value is not.
+
+   "The figure" is a child that is not prose: a component's div, a figure, or the paragraph
+   react-markdown wraps a lone image in. See SlideLayout in components/slide-markdown.tsx. */
+.slide-spread > :is(div, figure, p:has(img)) {
+  margin-block: auto;
+}
+
+/* The block above the figure gives up its own bottom margin, or the gap over the figure is one
+   paragraph-space taller than the gap under it and the two auto halves no longer read as equal
+   (measured: 101 against 83 on slide 23, and the 18px difference is exactly the paragraph's
+   margin-bottom). */
+.slide-spread > :has(+ :is(div, figure, p:has(img))) {
+  margin-bottom: 0;
+}
+
+/* Two figures in a row belong together, so no free space goes between them and the pair floats as
+   one block. Both rules outrank the one above (0,1,4 against 0,1,2). No slide is authored this way
+   today; this is here so that one can be. */
+.slide-spread > :is(div, figure, p:has(img)):has(+ :is(div, figure, p:has(img))) {
+  margin-bottom: 0;
+}
+.slide-spread > :is(div, figure, p:has(img)) + :is(div, figure, p:has(img)) {
+  margin-top: 0;
+}
