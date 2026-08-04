@@ -1971,3 +1971,10 @@ drew rneig without mirro so |Aut| read as 4; obligation 4's counterexample was s
 cardinality, replaced by C3⊔C6 as one structure (1 class, |Aut| 18, 2 orbits — checked) with the CORE
 hypothesis named; obligation 5's torus marks were inverted against slide 19; obligation 6's quotient
 is now T/Λ, which makes the two-vertex drawing exact. Two false sentences killed. — CC
+
+### 2026-08-03 (4) — CC — a level of k costs 2.45x, and the pruner store moves off-RAM
+Timed k=1..13, every level asserted against A068599: a level costs 2.45x the last, k=13 12m27.7s,
+k=24 ~100 days single-threaded. That assertion caught `make MAXNUM=<k>` silently no-opping under GNU
+Make 3.81's 1s mtime granularity, shipping an incomplete catalogue (k=5 gave 0, not 332); fixed at parse
+time. Sharding is a flat 4.0-4.2x, capped ~5.8x by one seed. Marek's out-of-core pruner store lands as
+`EU_SPILL=<MB>`: k=13 RSS 214.8 -> 75.6 MB, +0.4% wall, byte-identical. NOTES §"what a level of k costs". — CC

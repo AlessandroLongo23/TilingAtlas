@@ -23,6 +23,24 @@ $(TB)/.generated: alphabets/palettes/$(PALETTE).json alphabets/gen_alphabet.py
 # .maxnum stamp: MAXNUM is a compile flag, not a file dependency — without the stamp,
 # `make MAXNUM=13` after a MAXNUM=11 build is a silent no-op and the solver keeps the
 # old k range. Stamped per palette so switching PALETTE also forces a rebuild.
+#
+# The stamp alone is NOT enough: macOS ships GNU Make 3.81, which compares mtimes at
+# 1-SECOND granularity, and eu_solver rebuilds only if the stamp is strictly NEWER. When a
+# whole pipeline round-trips inside one wall-clock second (true for k<=5, ~0.3s end to end)
+# the fresh stamp lands in the SAME second as the existing eu_solver, make calls the binary
+# up to date, and the previous MAXNUM stays compiled in — the solver then silently
+# under-enumerates. Measured 2026-08-03: `make MAXNUM=5` straight after a MAXNUM=4 build
+# no-opped and the catalogue reported k=5: 0 tilings instead of 332, with no error.
+#
+# Deleting eu_solver from the stamp RECIPE does not fix it either: make stats each target
+# before running its prerequisites' recipes, so by the time the stamp recipe deletes the
+# binary make has already cached "exists, mtime T" and still skips the compile — leaving no
+# binary at all. The deletion must happen before make stats anything, i.e. at PARSE time.
+# Absence then forces the compile, and mtime ordering never enters into it. Only eu_solver
+# is dropped: it is the sole binary that bakes in -DMAXNUM. When the stamp already matches
+# the requested MAXNUM nothing is deleted, so incremental rebuilds still work.
+$(shell [ -f .maxnum-$(PALETTE)-$(MAXNUM) ] || rm -f eu_solver$(SFX))
+
 .maxnum-$(PALETTE)-$(MAXNUM):
 	rm -f .maxnum-$(PALETTE)-*
 	touch $@

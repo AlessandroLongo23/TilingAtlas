@@ -3,8 +3,137 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-07-31, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-03, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## Engine cost per level is known, and the pruner store can leave RAM (2026-08-03)
+
+The regular palette is timed k=1..13 with every level asserted against A068599. **A level costs
+2.45x the one before** (solve 2.449x, engine 2.465x, fitted k=7..13, Apple M5 single-threaded):
+k=8 11.9s, k=10 1m15.8s, k=13 12m27.7s. k=16 ~2h, k=19 ~1.5d, k=24 ~100 days over ~2.5e8 tilings,
+so k>=21 stays the distributed problem §44 called it.
+
+- **`EU_SPILL=<MB>` is new in `eu_pruner.cpp`** (Marek's proposal, 2026-08-03): caps resident
+  solution bytes and spills the rest to disk, read back only for the matching bucket. Streamed
+  k=13: 214.8 -> 75.6 MB peak RSS (2.84x) for +0.4% wall; resident pinned at 8 MB against a
+  148.9 MB store. Catalog byte-identical on/off, `check-regular` PASS with the knob on and off.
+  Unset = previous all-in-RAM behaviour, so nothing changes unless asked.
+- **Root-split parallelism (`EU_SHARD_N/W`) is a flat 4.0-4.2x** on 10 cores, k=10..13, counts
+  summing to A068599 at every k. Ceiling is 5.7-6.0x: one of the 44 seeds is ~17% of all shard
+  CPU and the run ends waiting on it. More cores buy nothing without splitting that subtree.
+- ⚑ **Fixed: `make MAXNUM=<k>` could silently ship an incomplete catalogue.** GNU Make 3.81
+  compares mtimes at 1s granularity, so a stamp touched in the same second as the previous
+  `eu_solver` did not force a rebuild; k=5 reported 0 tilings instead of 332, with no error.
+  Now forced at parse time. Deleting the binary from the stamp *recipe* does NOT work (make has
+  already stat'd it) and leaves no binary at all.
+- ⚑ **Timings taken while other oracle work runs are worthless**: streamed k=12/k=13 first read
+  2.27x slow, which invented a "streaming gets slower past k=12" crossover that does not exist
+  (streaming is 0.79-0.81x of the file path). A thermal explanation was disproved by a canary.
+
+Detail: DEVELOPMENT_NOTES.md §"what a level of k costs"; logs in `experiments/results/2026-08-03-*`.
+
+## Čtrnáct's five levels are a library facet — UNCOMMITTED (2026-08-02)
+
+`/library` has a **Level** filter under Hyperbolic and Spherical: Regular, Archimedean,
+Pseudo-Archimedean, Combination, Hybrid, from Marek's own ladder in
+`materials/writeups/tilings_exploration.txt` §2. Classified live by `lib/tilings/tiling-level.ts`, shown
+with per-level counts, and repeated as a row in /play's info panel beside k and m. `pnpm build` clean,
+58 tests pass across the eight affected files. 65,457 of 65,458 curved records classify.
+
+- **The ladder is (k, m) plus one test the pair cannot make**: do the vertex configurations agree as
+  MULTISETS. 3.4.7.4 and 3.4.4.7 are one combination in two cyclic orders (Combination); 4.7.14 is a
+  second combination (Hybrid). Everything else follows from k and m, which the atlas already carried.
+- **Curved-geometry only, by the mathematics and by the data.** A hybrid needs two combinations whose
+  edge functions coincide, which is rare only where the edge function constrains anything; in E² it
+  "resolves to 0" (Marek), so the top rung is free and meaningless. The Euclidean catalogue also ships
+  no per-orbit configurations, only `m`/`partition`, which already have their own filters.
+- ⚑ **Three hybrids in the whole 28,453-record developed hyperbolic catalogue** — `3.3.3.7.7 + 3.7.7.7`
+  (twice) and `3.8.3.8.8 + 8.8.8.8`. Pinned by name in the tests, because that is the claim the shelf
+  now makes. The AI1 shelf is the opposite: 32,194 of 36,945 are hybrid.
+- **AI1 stays a SEPARATE axis from the levels**, deliberately: a level is computed from one tiling's own
+  vertices, AI1 names the edge identity whose board it came from, and 4,751 AI1 records are not hybrid.
+  Nesting the families under Hybrid would misfile one record in eight.
+- ⚑ **`lib/render/johnsonSolids.ts` had 12 corrupt vertex configurations** and so did the spherical
+  catalogue. `gen_johnson_ts.py` joined an already-dotted config string's own CHARACTERS with ".":
+  "3.3.4.4" → "3...3...4...4", "4.5.10" → "4...5...1.0". Its catalogue loop was also append-only, so no
+  re-run ever repaired it. Both fixed; regenerating now touches 12 lines and nothing else.
+- ⚑ Open: `sp3-1-00001` ships `config: "3.4"`, the cuboctahedron's figure modulo a 2-fold site rotation
+  where the vertex is 3.4.3.4. The one record the classifier returns null for, and it is on the card.
+  Fix is in `develop_ai1_sph.py` plus a re-develop of sp3.
+
+Detail: DEVELOPMENT_NOTES.md §"Marek's five levels become a filter".
+
+## Marek's 2026-08-02 drop is in — UNCOMMITTED (2026-08-02)
+
+Nine zips at 11:29–11:30, onto the two shelves the 07-31 drop built. 146,276 developed records, 73 MB,
+**zero develop failures**, every per-k count matching the census Marek ships beside the certificates.
+`pnpm build` clean; the two shelf test files pass (19 tests). No new renderer and no new developer.
+
+- **Four spherical edge boards** (`public/spherical-edges/`): the octagonal prism (4.4.8), the
+  heptagonal antiprism (3.3.3.7), the truncated octahedron (4.6.6) and the rhombicuboctahedron
+  (3.4.4.4). One row each in `develop_sph_edges.py::BOARDS`. The corpus ids read like triangle groups
+  and are not — every one of the four is a finite solid.
+- **Five more of the 3.4.n.4 family** (`public/hyperbolic-poly/`): n = 17, 18, 19, 20, 23. 10,340
+  records shipped of 146,417 enumerated, `--budget 4000` per board, every one truncated and saying so
+  in `dropped`. The filenames encode polygon sizes in HEX, so `ai1_23` reads `S3S4S17S2e` for
+  {3, 4, 23, 46}. Still no n = 13; now no 21 or 22 either.
+- ⚑ **`edges_4443` is TWO polyhedra the census cannot separate.** The rhombicuboctahedron and J37 have
+  V=24 E=48 F=26 and 3.4.4.4 at *every* vertex, so the old census-only key would have shipped J37 as an
+  unnamed `4443v2`. `symmetry_orbits` moved down from `develop_ai1_sph.py` (which already had it for
+  this exact pair) into `develop_sph_edges.py`, and both tables key on (census, vertex orbits).
+  Measured |G| = 48 in one orbit against 16 in two. Split 14,271 / 5,649, summing to the census at
+  every k. The cuboctahedron corpus re-keys unchanged (48/1, 12/2) — the regression that proves it.
+- ⚑ **Two coverage claims came apart, so `SphEdgesBoard` grew two fields.** `complete` — 4443/j37 are
+  MID-RUN (census stops at k=8 of a 24-vertex solid, no MAX marker). `missing` — 3337 is the opposite:
+  a finished enumeration (census reaches k=14=V) whose k=14 slice, **334,772 tilings**, is not in the
+  zip. Exhausted board, short copy. The shelf's old blanket claim that every k hole is the solid was
+  also unbacked for 3334 and 3336, which shipped no census at all.
+- **Both board tables are generated now**: `tools/ctrnact-oracle/emit_board_tables.py` prints them off
+  the shards, the census files and the develop reports. It reproduces all nineteen prior rows exactly.
+- ⚑ Open: nothing RENDERS `complete`/`missing`/`dropped` yet — data model only, on both shelves. And
+  Marek shipped `pt_edges_448/3337/4443.exe`, which run here under wine, so "is 4443 k>8 empty or
+  unenumerated?" is answerable on this machine.
+
+Detail: DEVELOPMENT_NOTES.md §"Marek's 2026-08-02 drop"; reports in `experiments/results/sph-edges-*.md`
+and `ai1-*.md`.
+
+## Marek's 2026-07-31 drop is in — UNCOMMITTED (2026-07-31)
+
+Three new shelves from the archives that arrived at 19:24, 191,473 developed records, 122 MB, **zero
+develop failures**, every per-k count matching Marek's own census files. `pnpm build` clean, 17 new
+tests pass. **No new renderer was written** — all three ride paths already in the repo.
+
+- **6.6.8 hyperbolic edges** — one row in `develop_hyp_edges.py::BASES`, one in `HYP_EDGES_BASES`.
+  15,017 records, k=1–9. k=10 is 53,417 more (~85 MB) and is omitted; the board's census has no `MAX`
+  line, so it is a budget cut, not an exhausted board.
+- **Ten finite polyhedral edge boards** (`public/spherical-edges/`, new `develop_sph_edges.py`): the
+  triangular/pentagonal/hexagonal/heptagonal prisms, the truncated tetrahedron, the square/pentagonal/
+  hexagonal antiprisms, the cuboctahedron and **J27**. 149,851 patterns — every certificate of all
+  ten boards — in 49 MB. They draw through the
+  spherical Schwarz adapter unchanged; its face type widened `[n,n,n][]` → `number[][]` and nothing
+  else moved. Every board's k ceiling IS its vertex count, so these are complete, and the intermediate
+  k holes are the solid, not a short run.
+- **The 3.4.n.4 family** (`public/hyperbolic-poly/`, new `develop_ai1.py`): hyperbolic tilings by
+  regular {3, 4, n, 2n}-gons at the ℓ where 3.4.n.4 closes, n = 7…16 (no 13 in the drop). 26,605
+  records, 52 MB (26,605 of Marek's 232,000; see the budget note below). Renders through `developColors` with the face's POLYGON SIZE as the fill index.
+- ⚑ **`cuboctahedron_edges` was two polyhedra.** The corpus holds 3.4.3.4 and 3.3.4.4 vertices: Marek's
+  solver enumerates by angle closure, so the gyro-twin **J27** (triangular orthobicupola) comes back in
+  the same run, sharing the edge length and V=12/E=24/F=14 exactly. 102,278 records split 20,799 /
+  81,479. A board is now keyed on its VERTEX-FIGURE CENSUS; V/E/F does not separate the pair.
+- ⚑ **Every AI1 board is TRUNCATED and says so.** 232,000 hyperbolic certificates would be ~350 MB, so
+  `--budget 4000` ships a contiguous k prefix per board. `HypPolyBoard.dropped` (this shelf's budget)
+  is kept separate from `hypPolyKGaps` (the corpus having nothing there) — two different claims.
+- **The 3.4.n.4 family is now complete on both sides of the curvature split** (`public/spherical-poly/`,
+  new `develop_ai1_sph.py`): its 20 spherical members, n = 3, 4, 5, in 55 kB. Each record carries its own
+  solid, since at k > 1 these are neither uniform nor the board. `k` is the orbit count MEASURED off the
+  solid's isometry group, not the certificate's — it agrees with Marek's on all 20, and it is what
+  separates the rhombicuboctahedron (|G|=48, one orbit) from **J37** (|G|=16, two), a pair identical in
+  V/E/F and in vertex figure at every vertex. n = 3 carries one great-circle face (at ρ = π/3 the
+  hexagon's circumradius is exactly π/2); that record is the triangular cupola, and it is geometry, not
+  a decode failure.
+- Still open: `ai1_13` is absent from the drop, AI1 shipped no `.exe` so those runs cannot be extended
+  here, and the Euclidean member (n = 6, 6,593 tilings by {3,4,6,12}) needs the ℤ[ζ₁₂] path, not this
+  developer.
 
 ## The isohedral shelf is live — UNCOMMITTED (2026-07-31)
 

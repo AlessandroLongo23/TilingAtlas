@@ -40,6 +40,91 @@ static std::vector<Sol> sols;                 // every kept solution
 static std::vector<std::string> siglist;      // distinct signatures
 static std::vector<std::vector<int>> sollist; // sig index -> indices into sols
 static std::unordered_map<std::string, int> sigIndex;
+
+// ---------- out-of-core solution store (EU_SPILL) ----------
+// Marek Čtrnáct's proposal, 2026-08-03. The DFS itself costs almost no memory (measured 12.0 MB
+// at k=13 against the pruner's 846.4 MB); ALL of the pruner's RAM is `sols`, the kept solutions
+// retained so later candidates can be arbitrated against them. But the bucket key
+// (sigline, fingerprint) is an isomorphism invariant, so a duplicate is NEVER compared outside
+// its own bucket, and measured buckets are tiny (mean 6.3, max 400 at k=13). The store therefore
+// does not have to be resident: spill it to disk and read back only the few solutions in the
+// matching bucket.
+//
+// EU_SPILL=<MB> caps resident solution bytes; unset or 0 keeps everything in RAM (the previous
+// behaviour). Input order and every keep/discard verdict are untouched, so the emitted catalog is
+// byte-identical with the knob on or off — that equality is the acceptance gate for this change.
+static size_t spillLimitBytes = 0;
+static size_t solsResidentBytes = 0;
+static std::vector<long long> solOff;   // per solution: -1 = resident in `sols`, else spill offset
+static std::FILE* spillF = nullptr;
+static std::string spillPath;
+static long long spillWrites = 0, spillReads = 0, spillBytesOut = 0;
+// Telemetry: how big the store actually gets, independent of where it lives. storeTotalPeak is
+// what the in-RAM design must hold; residentPeak is what it holds with spilling on.
+static size_t storeTotalBytes = 0, storeTotalPeak = 0, residentPeak = 0;
+
+static inline size_t solBytes(const Sol& s) {
+	return (s.rneig.size() + s.lneig.size() + s.lvert.size()
+	        + s.mirro.size() + s.glue.size()) * sizeof(int16_t);
+}
+
+// Append every still-resident solution to the spill file and free its vectors.
+static void spillResident() {
+	if (!spillF) {
+		spillF = std::fopen(spillPath.c_str(), "w+b");
+		if (!spillF) {
+			std::cerr << "eu_pruner: cannot open spill file " << spillPath << "\n";
+			std::exit(1);
+		}
+	}
+	std::fseek(spillF, 0, SEEK_END);
+	long long off = std::ftell(spillF);
+	for (size_t i = 0; i < sols.size(); i++) {
+		if (solOff[i] >= 0) continue;                  // already spilled
+		Sol& s = sols[i];
+		int32_t le = (int32_t)s.rneig.size();
+		std::fwrite(&le, sizeof(le), 1, spillF);
+		std::fwrite(s.rneig.data(), sizeof(int16_t), le, spillF);
+		std::fwrite(s.lneig.data(), sizeof(int16_t), le, spillF);
+		std::fwrite(s.lvert.data(), sizeof(int16_t), le, spillF);
+		std::fwrite(s.mirro.data(), sizeof(int16_t), le, spillF);
+		std::fwrite(s.glue.data(), sizeof(int16_t), le, spillF);
+		solOff[i] = off;
+		off += (long long)sizeof(le) + 5LL * le * (long long)sizeof(int16_t);
+		std::vector<int16_t>().swap(s.rneig);
+		std::vector<int16_t>().swap(s.lneig);
+		std::vector<int16_t>().swap(s.lvert);
+		std::vector<int16_t>().swap(s.mirro);
+		std::vector<int16_t>().swap(s.glue);
+		spillWrites++;
+	}
+	std::fflush(spillF);
+	spillBytesOut = off;
+	solsResidentBytes = 0;
+}
+
+// Transparent read-through: resident solutions are returned in place, spilled ones are pulled back
+// into a single reusable scratch buffer. Only one is live per comparesolutions() call.
+static const Sol& solAt(int idx) {
+	if (solOff[idx] < 0) return sols[idx];
+	static Sol scratch;
+	std::fseek(spillF, solOff[idx], SEEK_SET);
+	int32_t le = 0;
+	if (std::fread(&le, sizeof(le), 1, spillF) != 1) {
+		std::cerr << "eu_pruner: short read from spill file\n";
+		std::exit(1);
+	}
+	auto rd = [&](std::vector<int16_t>& v) {
+		v.resize(le);
+		if (le && std::fread(v.data(), sizeof(int16_t), le, spillF) != (size_t)le) {
+			std::cerr << "eu_pruner: short read from spill file\n";
+			std::exit(1);
+		}
+	};
+	rd(scratch.rneig); rd(scratch.lneig); rd(scratch.lvert); rd(scratch.mirro); rd(scratch.glue);
+	spillReads++;
+	return scratch;
+}
 // countsignature + the decode machinery (edgelabel/decipher/makeglue/buildvertextypes, Graph, decode)
 // live in ctrnact_decode.hpp, shared with eu_develop (was duplicated here; single source now).
 
@@ -99,7 +184,7 @@ static bool simplify(const Graph& g) {
 // reusable buffers: this is called once per duplicate block (tens of thousands), so std::set was
 // the 50s bottleneck; identical logic, ~50x cheaper per call.
 static bool comparesolutions(const Graph& x, int solIdx) {
-	const Sol& s = sols[solIdx];
+	const Sol& s = solAt(solIdx);   // resident, or read back from the spill file
 	int le = (int)x.rneig.size();
 	if ((int)s.rneig.size() != le) return false;   // same signature ⇒ same le; guard anyway
 	int n = 2 * le, nw = (n + 63) >> 6;
@@ -205,8 +290,32 @@ static std::vector<int16_t> narrow(const std::vector<int>& v) { return {v.begin(
 
 static void addsolution(const Graph& g, const std::string& key) {
 	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.cls), narrow(g.mirro), narrow(g.glue) };
+	size_t b = solBytes(s);
+	solsResidentBytes += b;
+	storeTotalBytes += b;
+	if (storeTotalBytes > storeTotalPeak) storeTotalPeak = storeTotalBytes;
+	if (solsResidentBytes > residentPeak) residentPeak = solsResidentBytes;
 	sols.push_back(std::move(s));
+	solOff.push_back(-1);
 	bucket[key].push_back((int)sols.size() - 1);
+	if (spillLimitBytes && solsResidentBytes > spillLimitBytes) spillResident();
+}
+
+// One line of store telemetry, printed at the end of either mode.
+static void reportStore() {
+	std::cerr << "store: peak " << (storeTotalPeak / 1048576.0) << " MB total, "
+	          << (residentPeak / 1048576.0) << " MB resident";
+	if (spillLimitBytes)
+		std::cerr << "  (spill " << spillWrites << " out / " << spillReads << " back, "
+		          << (spillBytesOut / 1048576.0) << " MB on disk)";
+	std::cerr << "\n";
+}
+
+// Free the whole store (see the per-k note at the call site).
+static void resetStore() {
+	sols.clear(); bucket.clear(); solOff.clear();
+	solsResidentBytes = 0; storeTotalBytes = 0;
+	if (spillF) { std::fclose(spillF); std::remove(spillPath.c_str()); spillF = nullptr; }
 }
 
 // ---------- file processing ----------
@@ -318,6 +427,11 @@ int main() {
 	PRUNEDDIR = OUTDIR + "pruned/";
 	fs::create_directories(PRUNEDDIR);
 
+	// EU_SPILL=<MB>: cap resident solution bytes, spilling the rest to disk (see the store note
+	// above). 0/unset = everything in RAM, the previous behaviour.
+	if (const char* sp = std::getenv("EU_SPILL")) spillLimitBytes = (size_t)atof(sp) * 1048576ULL;
+	spillPath = OUTDIR + ".eu_pruner_spill.bin";
+
 	bool stream = std::getenv("EU_STREAM") != nullptr;
 	int konly = std::getenv("EU_KONLY") ? atoi(std::getenv("EU_KONLY")) : 0;
 	if (stream) {
@@ -326,6 +440,8 @@ int main() {
 		for (auto& kv : keptByK)                                  // same "  k=<k> : <n>" format as file mode
 			std::cerr << "  k=" << kv.first << " : " << kv.second << "\n";
 		std::cerr << "total kept: " << kept << "\n";
+		reportStore();
+		resetStore();
 		return 0;
 	}
 
@@ -335,7 +451,7 @@ int main() {
 	for (int k = KMIN; k <= KMAX; k++) {
 		// buckets never cross k (the signature key encodes the vertex-type count), so a finished k
 		// can be freed: caps RAM at the single largest k instead of the cumulative range.
-		sols.clear(); bucket.clear();
+		resetStore();
 		char nn[4]; std::snprintf(nn, sizeof(nn), "%02d", k);
 		filecodebase = nn;
 		std::vector<std::string> fams;
@@ -352,6 +468,8 @@ int main() {
 		std::cerr << "  k=" << k << " : " << kc << "\n";
 	}
 	std::cerr << "total kept: " << keptTotal << "\n";
+	reportStore();
+	resetStore();
 #ifdef PROFILE
 	std::cerr << "PROFILE  decode=" << prof_decode << "s  simplify=" << prof_simpl
 	          << "s  fp+compare=" << prof_fpcmp << "s\n";

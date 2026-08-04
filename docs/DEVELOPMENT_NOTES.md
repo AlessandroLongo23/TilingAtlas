@@ -8611,6 +8611,280 @@ Two changes made the true limits reachable rather than merely known:
 looking measured. One honest exception: Type 1's `b/a` has no upper limit at all (it still tiles at
 b/a = 10000, the tile just elongates), so its max is a usability cap and says so in the type record.
 
+## Marek's 2026-07-31 drop: three shelves, no new renderer
+
+Twenty-one archives arrived at 19:24–19:27 on 2026-07-31, in two folders. They turned out to be three
+different objects, and the useful discovery is that all three already had a renderer in the repo. Total
+new content: 191,473 developed records, 122 MB, zero develop failures anywhere.
+
+### What was actually in the drop
+
+`materials/solvers/edges/` — ten `pt_edges_*.exe` with their output. Nine are FINITE boards: the
+triangular / pentagonal / hexagonal / heptagonal prisms (3.4.4, 4.4.5, 4.4.6, 4.4.7), the truncated
+tetrahedron (3.6.6), the square / pentagonal / hexagonal antiprisms (3.3.3.n) and the cuboctahedron.
+Each one's census file caps k at the solid's VERTEX COUNT — 6, 10, 12, 14, 12, 8, 10, 12, 12 — which is
+the strongest evidence in the drop that these are complete and not short runs. The tenth, 6.6.8, is
+hyperbolic: its list stops at k=10 with no `MAX` line, so it is a budget cut.
+
+`materials/solvers/AI1/` — eleven archives of `ai1_<n>` results with NO binary and no census file. The
+alphabet in the filenames is HEX (`S10` is the 16-gon), which is why the first read of them looked
+wrong. Decoded: for each n, the tilings by regular {3, 4, n, 2n}-gons at the edge length where 3.4.n.4
+closes. n = 3, 4, 5 are spherical, n = 6 Euclidean, n ≥ 7 hyperbolic; n = 13 is missing from the drop.
+
+### The identity that makes AI1 a family and not a pile
+
+At the ℓ solving Σα(3, 4, n, 4) = 2π, exactly three vertex figures close: 3.4.n.4, 3.4.4.n (the same
+multiset, different cyclic order) and 4.n.2n. The third is the identity α(3,ℓ) + α(4,ℓ) = α(2n,ℓ), and
+it holds to 1e-14 for every n from 7 to 16 — checked before writing a line of decoder, because if it
+failed the 2n-gon had no business being in the alphabet. `develop_ai1.py::board_of` asserts both
+closures per board rather than trusting the alphabet the filenames imply.
+
+Enumerating ai1_6's certificates confirms the family from the other side: exactly three distinct vertex
+figures across all 6,593 of them, and no others. So ai1_6 is NOT the Euclidean k-uniform catalogue
+restricted — it is this family's Euclidean member, and its k=1 count is 2 (3.4.6.4 and 4.6.12), not 11.
+
+### `cuboctahedron_edges` is two polyhedra, and finding out was the only real bug
+
+The first full run crashed on certificate 2 of the cuboctahedron corpus: a development that would not
+land on the board the previous certificate had built. The cause is not a decoder bug — the corpus
+holds vertex figures 3.4.3.4 AND 3.3.4.4, because Marek's solver enumerates by ANGLE CLOSURE and the
+gyro-twin shares the cuboctahedron's edge length and its V=12 / E=24 / F=14 exactly. That twin is the
+**triangular orthobicupola, J27** (6 × 3.4.3.4 + 6 × 3.3.4.4). The 102,278 records split 20,799 /
+81,479 and ship as two boards. `develop_sph_edges.py` now keys a board on its VERTEX-FIGURE CENSUS,
+which is what separates them; V/E/F does not, and neither would have caught it.
+
+An earlier symptom pointed the wrong way. The alignment failed first because the reference flag was
+taken from `faces[0]`, which on a prism is a SQUARE, so no triangle-flag frame could ever land on it —
+fixed by choosing the reference the same way the candidates are generated (smallest face size). The
+second failure needed the mirrored candidate (`_YFLIP`), since the cuboctahedron's rotation group is
+simply transitive on triangle flags and a wrong-handed development has no rotation to fall back on.
+Only after both did the real cause surface. Two plausible fixes for one symptom, and neither was it.
+
+### Reuse, which was the point
+
+- **6.6.8** is one row in `develop_hyp_edges.py::BASES` and one in `HYP_EDGES_BASES`. 15,017 records,
+  21 MB, k=1–9; k=10 is 53,417 more (~85 MB) and is omitted, as the shelf's other big tails are.
+- **The nine finite boards** ship through `sphSchwarzScene` → `buildIcoFreedraw` — the spherical Schwarz
+  adapter, unchanged. The one thing that had to give was its face type: `[number, number, number][]` →
+  `number[][]`, because these boards mix face sizes. Nothing downstream had assumed three; the /play
+  framing is pixel-identical to a Schwarz sphere's.
+- **AI1** ships darts and renders through `HyperbolicDeveloper.developColors`, whose contract already is
+  this object's: fill each face by an index, stroke every edge. The index is the face's POLYGON SIZE
+  instead of a solver colour, so one hue means one polygon across the shelf. Two component prop types
+  widened to a `Pick<>`; no renderer touched.
+
+### The caps, and saying so
+
+AI1 is 232,000 hyperbolic certificates at ~1.5 KB of darts each — ~350 MB, on a `public/` already at
+734 MB. `--budget 4000` ships a contiguous k prefix per board and the report names the dropped tail.
+The first version of that loop skipped an expensive k and took cheaper ones above it, which put a HOLE
+in the middle of a shipped range: n=11 came out with k=26, 27 present and 23, 24, 25 missing. A hole
+reads as "the board has nothing there", which is the one claim a truncated corpus must never make. It
+is a contiguous prefix now, and `HypPolyBoard` keeps `dropped` (this shelf's budget) separate from
+`hypPolyKGaps` (the corpus having nothing) — two different statements, two fields, one test asserting
+`dropped` is always above the shipped range.
+
+The finite boards are the opposite case and worth stating plainly: their k holes are the SOLID. (4,4,7)
+genuinely has nothing at k = 3, 5, 6, 9…13, its census confirms each zero, and k=14 = 198 is the last
+slice a 14-vertex solid can have. Same shape of gap, opposite meaning.
+
+### Numbers
+
+Zero develop failures across 191,473 records: 15,017 (6.6.8) + 149,851 spherical-edge patterns (every
+certificate of all ten boards, cuboctahedron and J27 included) + 26,605 AI1. Every per-k count
+reproduces Marek's census files exactly where he shipped one. Hyperbolic
+patch residuals ~1e-12; every spherical board closes to Euler 2 with the declared V/E/F and every side
+measuring the one forced arc. Reports in `experiments/results/{hyp-edges-668,sph-edges-*,ai1-*}.md`.
+
+### The spherical half of the 3.4.n.4 family (2026-07-31)
+
+The 20 tilings of `ai1_3/4/5` now ship too, so the family is complete on both sides of the curvature
+split: 3, 4, 5 spherical, 6 Euclidean, 7…16 hyperbolic. `develop_ai1_sph.py` is the SO(3) twin of
+`develop_ai1.py` — same alphabet, same closure identity (which holds on the sphere to 1e-15), same
+front end — and the records draw through `buildIcoFreedraw`, the three.js sphere every other spherical
+Čtrnáct shelf uses, with the faces grouped by polygon size so one colour means one polygon exactly as
+the hyperbolic half fills its disk.
+
+A record carries its OWN geometry here, unlike the uniform-polyhedron edge shelf which ships one board
+per shard. At k > 1 these are genuinely different solids — a mix of 3.4.n.4 and 4.n.2n vertices is
+neither uniform nor the board — and at 20 records the geometry costs 55 kB, so sharing a board would
+be a lie told to save nothing.
+
+**The census is not enough, and this family is the textbook proof.** `ai1_4` produces both the
+rhombicuboctahedron and the pseudo-rhombicuboctahedron **J37**: V=24, E=48, F=26 and 3.4.4.4 at every
+single vertex, for both. Nothing local separates them. So `symmetry_orbits` measures the solid's
+isometry group off the developed geometry — a symmetry is determined by where it sends one flag, so
+enumerating the isometries carrying flag 0 to each flag in turn (each with its mirror), keeping those
+that map the vertex set AND the face set onto themselves, enumerates the group. It gives |G| = 48 with
+one vertex orbit for the rhombicuboctahedron and |G| = 16 with two for J37, and `KNOWN_SOLIDS` is keyed
+on (census, orbit count) accordingly. This is the same trap `cuboctahedron_edges` set with J27 earlier
+the same day, caught the second time by construction instead of by a crash.
+
+That measurement also cross-checks Marek: the shelf's `k` is the measured orbit count, not the
+certificate's, and **the two agree on all 20 records**. Had any certificate been a sub-symmetry
+presentation the report would have named it; none is.
+
+**n = 3 has a great-circle face, and it is real.** At ρ = π/3 the hexagon's circumradius is exactly
+π/2, so its six vertices lie on a great circle and its interior angle is exactly π. One record
+(`sp3-2-00001`, V=9 E=15 F=8, 3 × 3.4.3.4 + 6 × 3.4.6) carries one: it is the triangular cupola with
+its hexagonal base on the equator. The regularity check accepts a coplanar face on purpose and the
+report counts how many records have one, so the case is visible rather than silently tolerated.
+
+### The 2D hyperbolic fallback was under-filling half the shelf (2026-07-31)
+
+AL flagged `hyp-3-3-3-3-3-6-6-6-c` as "not rendering correctly": a scalloped blob with the page
+background biting into the disk. The tiling data is sound: all 71 developed faces close with edge
+length 2.2127660 to 1e-6, and the three `3.3.3.3.3.6.6.6` variants are genuinely distinct (they share
+54 of 71 faces near the seed and diverge outward). Two separate causes stacked.
+
+**Why it took the fallback at all.** `-c` is stamped `certified: false`, so
+`hyperbolic-developed-canvas` skips the per-pixel renderer. Tracing `buildDirichletDomain` round by
+round: its Dirichlet polygon stays UNBOUNDED until Rcomplete = 6.5, then lands at RD = 3.527 and
+demands Rcomplete ≥ 7.10, i.e. a develop to hyperbolic radius 11.06 = Euclid 0.999968, past the
+float64 safe rim of 0.99995 (Rdev ≤ 10.60). It misses by 0.46 in hyperbolic radius. `-a` and `-b`
+certify at round 1 with RD = 1.716; `-c`'s quotient carries 16 darts against their 8, so its deck
+group is index-2 smaller and its domain roughly twice the radius. Raising the rim to 0.99999 DOES
+certify it (verified: Rc = 7.47, RD = 3.437) at 485,994 developed instances against 10,728 for `-a`,
+so that lever is real but not free, and a tail of large-ℓ boards would stay uncertified anyway.
+
+**Why the fallback looked broken.** `develop` emits a face only once every one of its darts exists, so
+the drawn region stops a whole tile short of `boundR`. At the old 0.99, with this board's forced
+ℓ = 2.2128 and hexagon circumradius 1.72, worst-angle coverage was 0.80 of the disk radius. The disk
+has no background of its own (`frame: false`, and the per-pixel path fills every pixel), so the deficit
+read as the page showing through. This was never one record's problem: 14,347 of 28,453 tilings
+(50.4%) are uncertified, and the edges/colors shelves are 2D-ONLY, so the bound is the floor for all
+three shelves.
+
+**Fix: make the budget the governor, not the radius.** `FALLBACK_BOUND_R` 0.99 → 0.9995 with the
+budget left at 12000 (`FALLBACK_BUDGET`; thumbnails 9000). Every board now saturates the cap, and
+`extend`'s nearest-first heap spends it innermost-first, so the cap trims the far rim and never opens
+a hole. Over a tile-size-stratified sample of uncertified boards, worst-angle coverage rises from
+0.80–0.94 to 0.95–0.98; the develop costs ~10 ms/frame while panning against ~1 ms before, because a
+saturated cap re-prunes and re-traces each frame. Budget sweep put the knee here: 20000 buys +0.01
+coverage for +7 ms, 30000 another +0.008 for +17 ms. Worst board in the shelf
+(`hyp-7-8-8-8-8-8-8-*`, ℓ = 2.769) went from 7 drawn faces to a full disk.
+
+⚑ The certificate gap itself is untouched. Half the hyperbolic shelf still renders by explicit
+polygons with a fuzzy rim instead of per-pixel. The lever that would close it is the bound chain
+(Rcomplete = 2·RD + Δ, then + 2·rMaxTile for the flood-fill margin), not the rim constant alone.
+
+## Marek's 2026-08-02 drop: nine corpora onto two existing shelves
+
+Nine zips landed at 11:29–11:30, four spherical edge boards and five members of the 3.4.n.4 family.
+146,276 developed records, 73 MB, **zero develop failures**, and every per-k count matching the census
+Marek ships beside the certificates. No new renderer and no new developer: both shelves are one row
+per board, and the four edge boards are one row each in `develop_sph_edges.py::BOARDS` while the AI1
+boards needed nothing but a `--n`.
+
+- **The four edge boards are all spherical**, which the corpus ids do not say out loud: `448` is the
+  octagonal prism, `3337` the heptagonal antiprism, `664` the truncated octahedron (4.6.6, not a
+  triangle group) and `4443` the rhombicuboctahedron. 135,936 certificates in, 135,936 patterns out
+  across five boards, because `4443` is two polyhedra.
+- **The AI1 boards are n = 17, 18, 19, 20, 23** — the filenames encode the polygon sizes in HEX, so
+  `ai1_23`'s alphabet reads `S3S4S17S2e` for {3, 4, 23, 46}. 10,340 records shipped of 146,417
+  enumerated; every board is budget-truncated at `--budget 4000` and says so in `dropped`, exactly as
+  the nine boards before it. Still no n = 13, and now no 21 or 22 either.
+
+**The rhombicuboctahedron/J37 split, and why the old key could not make it.** `edges_4443` develops
+into two polyhedra, and unlike cuboctahedron/J27 the vertex-figure CENSUS cannot separate them: both
+have V=24 E=48 F=26 and 3.4.4.4 at every single vertex. `KNOWN_SOLIDS` was keyed on that census alone,
+so a J37 pattern would have taken the numbered `4443v2` fallback and shipped as an unnamed extra. The
+fix is not a new invariant — `develop_ai1_sph.py` already had the right one for exactly this pair, so
+`symmetry_orbits` (isometries enumerated by where they send one flag) MOVED DOWN into
+`develop_sph_edges.py`, which `develop_ai1_sph` already imports from, and both tables are now keyed on
+(census, vertex orbits). Measured: |G| = 48 in one orbit against 16 in two, the published group orders.
+The cuboctahedron corpus re-runs unchanged under the new key (48/1 and 12/2), which is the regression
+that says the re-key disturbed nothing. Split 14,271 / 5,649, and the two boards' per-k counts sum to
+Marek's census exactly at every k.
+
+**Three coverage claims, and they came apart on this drop.** The shelf had one story — "every k hole is
+the solid, never a short run" — and this drop breaks it in two different ways, so `SphEdgesBoard` grew
+two fields beside `sphEdgesKGaps`:
+
+- `complete` — whether the ENUMERATION finished. `4443`/`j37` are mid-run: the census stops at k = 8 on
+  a 24-vertex solid with no MAX marker. They ship flagged, never as a full catalogue.
+- `missing` — k the census COUNTS and the drop does not carry. `3337` is the case, and it is the
+  opposite shape: its census reaches k = 14 = V, so the board IS exhausted, and the zip still contains
+  none of that slice's 334,772 tilings. Exhausted board, short copy.
+
+The old comment also claimed the census confirms every zero, which was never true of `3334` and `3336`
+— neither shipped one. Their `complete` now rests on the stated ground that their top k equals V.
+
+**The tables are generated now, not transcribed.** `tools/ctrnact-oracle/emit_board_tables.py` prints
+both `SPH_EDGES_BOARDS` and `HYP_POLY_BOARDS` off the shipped shards, the census files and the develop
+reports' BUDGET lines. It reproduces all ten previous edge rows and all nine previous AI1 rows exactly,
+which is what earns the right to paste its output for the new ones.
+
+⚑ The eager threshold moved 2 MB → 1 MB, and one EXISTING row moved with it (`3335` k=10, 1.43 MB, is
+now lazy). At 2 MB the five new boards would have taken the Spherical geometry's first load from 4.76
+to 13.74 MB; at 1 MB it is 5.00 MB with fifteen boards instead of ten. Lazy slices still load when
+their k comes into view.
+
+⚑ Not done: `complete`, `missing` and `dropped` are all data-model only — nothing renders them yet, on
+this shelf or the AI1 one. A card that says "mid-run" is the obvious next step and was not built here.
+
+⚑ Marek shipped `pt_edges_448/3337/4443.exe` in these zips (`664` came without one). Per
+`docs/RUNNING_MAREK_SOLVERS.md` those run here under the extracted wine, so the `4443` question — is
+k > 8 empty or unenumerated? — is answerable on this machine rather than only by asking him.
+
+## Marek's five levels become a filter, and the Johnson vertex configs were corrupt
+
+`/library` grows a **Level** facet under the curved geometries: Marek's own ladder for tilings by regular
+polygons, from `materials/writeups/tilings_exploration.txt` §2. Regular, Archimedean,
+Pseudo-Archimedean, Combination, Hybrid, classified live by `lib/tilings/tiling-level.ts`, and repeated
+as a row in /play's info panel beside k and m. 65,457 of 65,458 curved records classify.
+
+**The ladder is (k, m) plus exactly one more test.** k vertex orbits and m distinct vertex
+configurations, m ≤ k — the pair the atlas already carries. Regular is k=1 with one polygon size,
+Archimedean k=1 with several, Pseudo-Archimedean m=1 < k. The split the pair CANNOT make is the last
+one: do the configurations agree as MULTISETS. 3.4.7.4 and 3.4.4.7 are two configurations of one
+combination {3,4,4,7} (Combination); 4.7.14 is a different combination (Hybrid). That single test is the
+whole top of the ladder.
+
+**Why it is a curved-geometry facet.** The ladder is only interesting because the edge function
+constrains it: one combination forces one edge length, so a hybrid needs two different combinations
+whose edge functions coincide, which Marek calls "quite rare, making hybrid tilings significant
+outliers". In E² that rarity evaporates — his own aside, "hybrid symbols work even in Euclidean plane,
+where the edge resolves to 0" — so every Euclidean tiling with two combinations is trivially hybrid and
+the word carries nothing. The Euclidean catalogue also ships no per-orbit configurations, only `m` and
+`partition`, which already have their own filters. Mathematics and data agree on the scope.
+
+**The measured distribution, which is the reason to show it at all:**
+
+| shelf | Reg | Arch | Pseudo | Comb | Hybrid |
+|---|---|---|---|---|---|
+| hyperbolic developed (28,453) | 27 | 12,141 | 7,606 | 8,676 | **3** |
+| AI1 hyperbolic (36,945) | 0 | 21 | 0 | 4,730 | 32,194 |
+| solids (40) | 5 | 23 | 1 | 4 | 7 |
+| AI1 spherical (20) | 0 | 3 | 1 | 5 | 10 |
+
+Three hybrids in the whole developed hyperbolic catalogue: `3.3.3.7.7 + 3.7.7.7` (twice, one a variant)
+and `3.8.3.8.8 + 8.8.8.8`. The tests pin them by name, because "three in 28,453" is the claim the shelf
+is making.
+
+**AI1 and the levels are separate axes, deliberately.** A level is computed from one tiling's own
+vertices; AI1 names the edge identity whose board it was enumerated on. One board hosts several levels:
+4,751 of the 36,945 AI1 records are not hybrid, so nesting the families under Hybrid would misfile one
+record in eight. On that shelf hybrid is equivalent to "contains a 2n-gon", since `4.n.2n` is the only
+closing configuration holding one — a single 2n-gon face pins all its corners to that vertex and puts
+both combinations in the tiling. The 4,751 that lack it are tilings by {3,4,n} that would exist even if
+the AI1 identity were false, because {3,4,4,n} forces its own edge length unaided.
+
+⚑ **`lib/render/johnsonSolids.ts` shipped 12 corrupt vertex configurations**, and the generator was the
+culprit. `cyc_hist` returns (config-STRING, count) pairs, and both call sites then ran
+`'.'.join(map(str,cc))` over that string's own CHARACTERS: "3.3.4.4" → "3...3...4...4", and "4.5.10" →
+"4...5...1.0", which is where the stray "1.0" came from. Every solid ships its vertices and faces, so
+the truth was derivable and was re-derived before the fix. The catalogue loop was also append-only,
+which is why the corruption survived every re-run — the ids were already present, so `family` was never
+re-derived. It now repairs a stale row instead of skipping it. Both files regenerate to a 12-line diff
+touching nothing but the strings.
+
+⚑ Not fixed: `sp3-1-00001` carries `config: "3.4"`, the cuboctahedron's certificate figure modulo a
+2-fold site rotation, where the vertex is 3.4.3.4. It is the one record of 65,458 the classifier returns
+null for, and the field is user-visible on the card. The fix is in `develop_ai1_sph.py` (multiply the
+listed figure by the site rotation order) plus a re-develop of the sp3 shards; nothing else in the
+spherical AI1 set is affected.
+
 ⚑ **The fundamental domain was wrong for 350 of the 2,719 reference-atlas tilings**, and the self-check
 that was supposed to catch it only ever measured area. AL spotted it on the pmg tiling
 `ctrnact-07_34-5d_5e2_5f3_6i-1`: the yellow quarter did not match its three neighbours, and it sat half
@@ -8649,3 +8923,74 @@ Verified with an orbit test written independently of the module, over all 2,719 
 350 bad → 0, and the 11 subdivision-less pmm entries → 0. `scripts/validate-fd-subdivision.ts` still
 reports 92/92 area-exact with no fallbacks. Regression tests pin pmg and p4g by the property that
 actually failed (no mirror through a chamber's interior), and both fail against the pre-fix code.
+
+## 2026-08-03 — what a level of k costs, and Marek's out-of-core pruner store
+
+AL asked for solver timings k=1..8 to extrapolate higher k. Answered with k=1..13, because k=1..5 all
+finish under a second against a ~2.5s compile, so a fit on k<=8 mostly measures g++. Every level's
+counts were asserted against A068599 (octagon-blind: 10 at k=1), which is what caught the two bugs
+below. Full logs in `experiments/results/2026-08-03-*.md`.
+
+**The cost of a level is 2.45x, flat.** Fitted over k=7..13 on the regular palette, single-threaded,
+Apple M5: solve 2.449x/level, prune 2.563x, develop 2.269x, raw disk 2.407x, pruner RSS 2.234x,
+solve+prune 2.465x. That confirms the ~2.5x/k in §44 over six levels. Absolute file-path totals:
+k=8 11.9s, k=10 1m15.8s, k=13 12m27.7s. Projection: k=16 ~2h, k=19 ~1.5d, k=24 ~100 days of engine
+single-threaded, with a 2.3-2.6x ratio band spreading that 5.5x. The catalogue itself reaches
+~2.5e8 tilings at k=24, so it is a distributed problem, as §44 already said for k>=21.
+
+**⚑ `make MAXNUM=<k>` could silently no-op, producing an INCOMPLETE catalogue.** macOS ships GNU Make
+3.81, which compares mtimes at 1-second granularity. The `.maxnum-$(PALETTE)-$(MAXNUM)` stamp forces a
+rebuild only if it is strictly NEWER than `eu_solver`; when a whole pipeline round-trips inside one
+wall-clock second (k<=5, ~0.3s), the fresh stamp lands in the same second and make calls the binary up
+to date. The previous MAXNUM stays compiled in. Measured: `make MAXNUM=5` straight after a MAXNUM=4
+build no-opped, the k=4 binary ran again (427 raw blocks, identical), and the run reported **k=5: 0
+tilings** instead of 332, with no error. Nothing but the A068599 assertion caught it.
+
+*The obvious fix is wrong and worth recording.* Deleting `eu_solver` from the stamp RECIPE does not
+work: make stats each target before running its prerequisites' recipes, so it has already cached
+"exists, mtime T" by the time the recipe deletes the file, skips the compile anyway, and leaves NO
+binary at all. Loud instead of silent, still broken. The deletion has to happen before make stats
+anything, i.e. at parse time: `$(shell [ -f .maxnum-$(PALETTE)-$(MAXNUM) ] || rm -f eu_solver$(SFX))`.
+Absence then forces the compile and mtime ordering never enters into it. Incremental rebuilds are
+preserved (nothing is deleted when the stamp already matches). `make check-regular` PASS.
+
+**Root-split parallelism gives a flat 4.0-4.2x, capped at ~5.8x by one seed.** `EU_SHARD_N/W` partitions
+initex()'s loop over the 44 first vertex types. The minimum vertex type is an ISOMORPHISM INVARIANT, so
+every isomorph of a tiling is seeded at the same first type and lands in the same shard: per-shard dedup
+equals global dedup and the per-k counts SUM. Verified, not assumed (44-shard sums match A068599 at
+every k=1..13). One shard per seed, 10 concurrent, streamed: 4.18x (k=10), 4.20x (k=11), 4.04x (k=12),
+3.99x (k=13). It does not decay. The Amdahl ceiling is 5.7-6.0x throughout because one seed is ~17% of
+all shard CPU; at k=13 the slowest shard is 1m55.0s against a 1m56.3s wall, so the run ends waiting on
+it alone. More cores buy nothing without splitting that subtree, which the current partition cannot
+express.
+
+**Marek's out-of-core store (EU_SPILL), implemented and gated.** He proposed that the pruner need not
+hold solutions in RAM: bucket them by invariants on disk, compare only within a bucket. Measured first:
+the DFS is 12.0 MB at k=13 against the pruner's 846.4 MB, so his diagnosis is right. But the invariant
+bucketing he described is ALREADY in `eu_pruner.cpp`, keyed on (sigline, 3-round WL fingerprint), finer
+than the invariants he listed; it cut comparison work, not storage. His genuinely new part is the
+out-of-core store, and the refinement he mentions in passing is the whole mechanism: splitting by tile
+family alone leaves the largest of 5 files holding **72.4%** of the k=13 slice (and rising with k, 62.8%
+at k=10), while adding the exact vertex/tile multiset gives 16,469 buckets with the largest at 400
+records, **0.4%**, mean 6.3.
+
+`EU_SPILL=<MB>` caps resident solution bytes; past the cap the store is appended to a spill file and its
+vectors freed, and `comparesolutions` goes through a `solAt()` accessor that reads spilled solutions back
+into one reusable scratch buffer. Input order and every keep/discard verdict are untouched, so the
+catalog is byte-identical with the knob on or off, which is the acceptance gate. Clean measurements,
+streamed: k=12 111.1 -> 54.6 MB (2.03x), k=13 214.8 -> 75.6 MB (2.84x), resident pinned at 8.0 MB
+against a true store of 148.9 MB at k=13. Wall cost +1.9s, 0.4% at k=13, so the memory is near-free
+(page cache absorbs the read-backs; the saved allocator churn pays for them). `make check-regular` PASS,
+and the golden k=6 hashes also match with `EU_SPILL=1` active. Default (unset) is the previous
+all-in-RAM path.
+
+**⚑ Measurement hygiene, twice burned.** Two conclusions in this session were artifacts of running
+measurements concurrently with other oracle work on the same machine. (1) Streamed k=12/k=13 first read
+6m35.9s/16m11.3s, both exactly **2.27x** inflated; clean idle re-runs give 2m54.1s/7m08.3s. That killed
+a "streaming crosses over and gets slower past k=12" hypothesis: streaming is 0.79-0.81x of the file path
+at k=12/13, faster at every k measured, and §44's 157s for streamed k=12 reproduces (clean 174s). (2) The
+first sequential-vs-parallel table showed speedup decaying 4.14x -> 3.19x with k; that was the contaminated
+sequential baselines, and the clean run is flat. A thermal-throttling explanation was proposed and
+DISPROVED by a fixed canary workload timed before every measurement: 0.91-1.00x of baseline across a
+28-minute run including the 44-shard bursts. Contention, not heat. Check machine load before trusting a
+timing, and put a canary in the harness when a run takes long enough for the environment to drift.
