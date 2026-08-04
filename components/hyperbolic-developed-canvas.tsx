@@ -16,7 +16,7 @@ import {
 	type Complex,
 } from "@/lib/render/hyperbolic";
 import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
-import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { getIslamicField } from "@/lib/render/hyperbolicIslamic";
 import { su11Inverse } from "@/lib/render/hyperbolic";
@@ -423,7 +423,7 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 				const ctx = ctx2dRef.current;
 				const dev = devRef.current;
 				if (!ctx || !dev) return;
-				const patch: DevelopedPatch = dev.develop(meta, view, 0.99, 12000);
+				const patch: DevelopedPatch = dev.develop(meta, view, FALLBACK_BOUND_R, FALLBACK_BUDGET);
 				ctx.clearRect(0, 0, bw, bh);
 				drawDevelopedPatch(ctx, patch, view, {
 					R: Rcss * dpr,

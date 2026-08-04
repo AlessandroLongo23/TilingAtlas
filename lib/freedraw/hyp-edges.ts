@@ -40,6 +40,9 @@ export interface HypEdgesPattern {
 	edge: number;
 	/** A chiral solution (from an `_o_` certificate file); its mirror image is implied, not listed. */
 	chiral?: boolean;
+	/** Per-pixel renderability (shipped in the shards already). False = the Dirichlet certificate fails,
+	 *  so the client must go straight to the 2D developed renderer. Absent = untried → attempt it. */
+	certified?: boolean;
 	/** Reference-development tile count — a size hint, not geometry. */
 	tiles: number;
 	/** Quotient half-edge structure, the sole render input (re-developed under the view). */
@@ -67,6 +70,9 @@ export const HYP_EDGES_BASES: HypEdgesBase[] = [
 	// Depth tracks growth rate: the q=3 / small-q bases barely branch and run deep; the high-valence ones
 	// ({3,7} {3,8} {4,5} {4,6} {6,5} {8,4}) explode by k=2–3 and stay shallow. Big tails are lazy.
 	{ id: "667", label: "6.6.7", eagerKs: [1, 5, 7, 8, 9], lazyKs: [12, 13] },
+	// 6.6.8 (Marek's 2026-07-31 drop). Its census file stops at k=10 with no MAX line, so the board is
+	// budget-capped there, not exhausted; k=10 is a further 53,417 tilings (~85 MB) and is omitted.
+	{ id: "668", label: "6.6.8", eagerKs: [1, 2, 3, 4, 5, 6], lazyKs: [7, 8, 9] },
 	{ id: "37", label: "{3,7}", eagerKs: [1, 2], lazyKs: [] }, // k=3 is 29k tilings (~40 MB) — omitted
 	{ id: "38", label: "{3,8}", eagerKs: [1], lazyKs: [] }, // k=2 is 13.5k (~13 MB) — omitted
 	{ id: "45", label: "{4,5}", eagerKs: [1, 2], lazyKs: [] },

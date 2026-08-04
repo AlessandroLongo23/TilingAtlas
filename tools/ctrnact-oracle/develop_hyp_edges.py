@@ -70,6 +70,7 @@ _ID2 = np.eye(2, dtype=complex)
 # `pt_triangles_edges_3_7.exe`'s corpus is one line here and no new logic.
 BASES = {
     "667": {"config": [6, 6, 7], "label": "6.6.7", "solver": "pt_edges_667.exe"},
+    "668": {"config": [6, 6, 8], "label": "6.6.8", "solver": "pt_edges_668.exe"},
     "37": {"config": [3, 3, 3, 3, 3, 3, 3], "label": "3^7", "solver": "pt_triangles_edges_3_7.exe"},
     "38": {"config": [3] * 8, "label": "3^8", "solver": "pt_triangles_edges_3_8.exe"},
     "45": {"config": [4, 4, 4, 4, 4], "label": "4^5", "solver": "pt_squares_edges_4_5.exe"},

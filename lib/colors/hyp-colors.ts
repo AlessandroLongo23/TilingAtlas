@@ -40,6 +40,9 @@ export interface HypColorsPattern {
 	edge: number;
 	/** A chiral solution (from an `_o_` certificate file); its mirror image is implied, not listed. */
 	chiral?: boolean;
+	/** Per-pixel renderability (shipped in the shards already). False = the Dirichlet certificate fails,
+	 *  so the client must go straight to the 2D developed renderer. Absent = untried → attempt it. */
+	certified?: boolean;
 	/** Reference-development face count — a size hint, not geometry. */
 	tiles: number;
 	/** Quotient half-edge structure with the per-dart color (the sole render input). */

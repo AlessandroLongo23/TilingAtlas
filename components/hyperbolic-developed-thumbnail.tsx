@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { su11Identity } from "@/lib/render/hyperbolic";
 import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
-import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { FALLBACK_BOUND_R, HyperbolicDeveloper, THUMB_BUDGET } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
@@ -97,8 +97,8 @@ function renderThumb2d(patch: CataloguePatch, size: number, opts: ThumbOpts): st
 	const drawn = new HyperbolicDeveloper(patch.darts, patch.edge).develop(
 		{ id: patch.id, name: patch.name, config: patch.config, edge: patch.edge },
 		su11Identity(),
-		0.99,
-		5000,
+		FALLBACK_BOUND_R,
+		THUMB_BUDGET,
 	);
 	drawDevelopedPatch(ctx, drawn, su11Identity(), {
 		R: size / 2 - 4,
@@ -115,6 +115,9 @@ function renderThumb2d(patch: CataloguePatch, size: number, opts: ThumbOpts): st
 }
 
 function renderThumb(patch: CataloguePatch, size: number, opts: ThumbOpts): string | null {
+	// A record stamped un-certifiable would spend a median 210 ms inside buildDirichletDomain only to
+	// fail, once per card, and a grid bakes dozens of them. Skip straight to the 2D bake.
+	if (patch.certified === false) return renderThumb2d(patch, size, opts);
 	return renderThumbGL(patch, size, opts) ?? renderThumb2d(patch, size, opts);
 }
 

@@ -1,0 +1,29 @@
+[08:30:11] hyp-poly certification stamp: 193 shards, 36945 tilings, 8 workers
+[08:30:11] log: /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/2026-08-03-hyp-poly-certification.log
+[08:30:11]   worker 0: 23 shards, 3418 tilings
+[08:30:11]   worker 1: 23 shards, 4847 tilings
+[08:30:11]   worker 2: 26 shards, 4308 tilings
+[08:30:11]   worker 3: 25 shards, 6107 tilings
+[08:30:11]   worker 4: 26 shards, 5230 tilings
+[08:30:11]   worker 5: 23 shards, 4121 tilings
+[08:30:11]   worker 6: 24 shards, 5118 tilings
+[08:30:11]   worker 7: 23 shards, 3796 tilings
+[08:43:52] w6 hp7-k33.json (+403)  403/36945 = 1.1%  elapsed 13.7m  ETA 1241.8m
+[NOTE] The "ETA" on the lines above is an ARTIFACT, ignore it. It computes
+       elapsed / rows_reported, but a row only counts when its whole SHARD
+       finishes, and all 8 workers began on their largest shard (the driver
+       sorts descending for LPT bin packing). So for the first ~15 min the
+       numerator holds 8 workers' wall time while the denominator holds 1
+       worker's output, inflating the ETA by roughly 8x.
+       Scaling from the first real datapoint (hp7-k33: 403 rows at k=33 in
+       13.7 min of one worker = 3.91% of the corpus cost-weight) the true
+       figure is 0.7-1.2 h wall, depending on whether per-row cost grows
+       like k^2 or k^1.1. Expect the reported ETA to fall steeply as the
+       big first shards land together.
+[09:02:01] w0 hp7-k34.json (+713)  1116/36945 = 3.0%  elapsed 31.8m  ETA 1022.1m
+[09:17:34] w7 hp8-k18.json (+1327)  2443/36945 = 6.6%  elapsed 47.4m  ETA 669.2m
+[09:17:41] w3 hp9-k21.json (+1192)  3635/36945 = 9.8%  elapsed 47.5m  ETA 435.3m
+[09:19:00] w6 hp16-k14.json (+1851)  5486/36945 = 14.8%  elapsed 48.8m  ETA 280.0m
+[09:24:56] w5 hp17-k19.json (+1274)  6760/36945 = 18.3%  elapsed 54.8m  ETA 244.5m
+[09:28:45] w2 hp17-k18.json (+1672)  8432/36945 = 22.8%  elapsed 58.6m  ETA 198.0m
+[09:31:16] w0 hp8-k17.json (+787)  9219/36945 = 25.0%  elapsed 61.1m  ETA 183.7m

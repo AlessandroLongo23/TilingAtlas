@@ -67,36 +67,46 @@ function orthoCircle(a: Complex, b: Complex): { cx: number; cy: number; r: numbe
 	return { cx, cy, r: Math.sqrt(Math.max(cx * cx + cy * cy - 1, 0)) };
 }
 
-/** Poincaré geodesic arc a→b as a polyline of n+1 disk points. Picks the arc that stays inside the disk
- *  (the orthogonal circle has two arcs between a,b; the geodesic is the one bulging toward the centre). */
-function geodesicPts(a: Complex, b: Complex, n: number): Complex[] {
+const SEG = 14; // cap on geodesic tessellation per edge (the big central tiles still reach it)
+const TWO_PI = 2 * Math.PI;
+const SAG_PX = 0.35; // max polyline sagitta in device px; under this a chord reads as the exact arc
+
+/**
+ * Poincaré geodesic arc a→b as a polyline, subdivided just finely enough that its sagitta stays under
+ * SAG_PX at the device-pixel scale `R`, and never past SEG.
+ *
+ * The arc inside the disk is always the MINOR arc at the orthogonal circle's centre C: that circle meets
+ * the unit circle at an angle 2·arccos(r/|C|), which is < π because r < |C| = √(1+r²). So the short
+ * angular step IS the geodesic, with no need to test candidates.
+ *
+ * The catch is the wrap. JS `%` keeps the DIVIDEND's sign, so the previous `((tb-ta+π) % 2π) - π` returned
+ * a step outside (-π, π] whenever tb-ta < -π, which is 4.2% of edges on a 3.4.17.4 board. The shipped code
+ * covered for that by building BOTH arcs at full resolution and keeping whichever stayed nearer the origin,
+ * paying double the trigonometry plus a hypot per point on every edge. Normalising the step properly picks
+ * the same arc (verified bit-identical over 53,368 edges across two views) for half the work.
+ *
+ * Subdividing by size matters because the fixed 14 segments were spent mostly on rim tiles a few pixels
+ * across: the median edge's 1-segment sagitta is 0.06 px at a 565 px disk, so most edges need no
+ * subdivision at all, while the big central tiles still get the full 14.
+ */
+function geodesicPts(a: Complex, b: Complex, R: number): Complex[] {
 	const oc = orthoCircle(a, b);
-	if (!oc) {
-		const out: Complex[] = [];
-		for (let i = 0; i <= n; i++) {
-			const t = i / n;
-			out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-		}
-		return out;
-	}
+	if (!oc) return [a, b]; // a diameter: the chord IS the geodesic, subdivision cannot improve it
 	const ta = Math.atan2(a.y - oc.cy, a.x - oc.cx);
 	const tb = Math.atan2(b.y - oc.cy, b.x - oc.cx);
-	const d = ((tb - ta + Math.PI) % (2 * Math.PI)) - Math.PI; // short angular arc
-	const build = (dd: number): Complex[] => {
-		const o: Complex[] = [];
-		for (let i = 0; i <= n; i++) {
-			const t = ta + dd * (i / n);
-			o.push({ x: oc.cx + oc.r * Math.cos(t), y: oc.cy + oc.r * Math.sin(t) });
-		}
-		return o;
-	};
-	const maxR = (pts: Complex[]): number => pts.reduce((m, q) => Math.max(m, Math.hypot(q.x, q.y)), 0);
-	const A = build(d);
-	const B = build(d > 0 ? d - 2 * Math.PI : d + 2 * Math.PI);
-	return maxR(A) <= maxR(B) ? A : B;
+	let d = (tb - ta) % TWO_PI;
+	if (d > Math.PI) d -= TWO_PI;
+	else if (d < -Math.PI) d += TWO_PI;
+	// sagitta of an n-chord approximation ≈ ρ·d²/(8n²) px, with ρ = oc.r·R the arc's pixel radius
+	const n = Math.max(1, Math.min(SEG, Math.ceil(Math.abs(d) * Math.sqrt((oc.r * R) / (8 * SAG_PX)))));
+	const out: Complex[] = new Array(n + 1);
+	for (let i = 0; i <= n; i++) {
+		const t = ta + d * (i / n);
+		out[i] = { x: oc.cx + oc.r * Math.cos(t), y: oc.cy + oc.r * Math.sin(t) };
+	}
+	return out;
 }
 
-const SEG = 14; // geodesic tessellation per edge — enough to look like an exact arc at any zoom
 
 export interface DrawOpts {
 	/** Disk radius in device px. */
@@ -175,7 +185,7 @@ export function drawDevelopedPatch(
 		ctx.beginPath();
 		let started = false;
 		for (let i = 0; i < sides; i++) {
-			const pts = geodesicPts(tv[face[i]], tv[face[(i + 1) % sides]], SEG);
+			const pts = geodesicPts(tv[face[i]], tv[face[(i + 1) % sides]], R);
 			for (const p of pts) {
 				const [px, py] = toPx(p);
 				if (!started) {
@@ -270,7 +280,7 @@ export function drawDevelopedEdgePatch(
 		ctx.beginPath();
 		let started = false;
 		for (let i = 0; i < sides; i++) {
-			const pts = geodesicPts(tv[face[i]], tv[face[(i + 1) % sides]], SEG);
+			const pts = geodesicPts(tv[face[i]], tv[face[(i + 1) % sides]], R);
 			for (const p of pts) {
 				const [px, py] = toPx(p);
 				if (!started) {
@@ -306,7 +316,7 @@ export function drawDevelopedEdgePatch(
 				const dep = Math.min(1, Math.hypot(mid.x, mid.y));
 				const w = drawnPass ? baseW * 3 : baseW * 1.2;
 				ctx.lineWidth = opts.taper ? Math.max(0.35, w * Math.pow(1 - dep * dep, 1.0)) : w;
-				const pts = geodesicPts(tv[a], tv[b], SEG);
+				const pts = geodesicPts(tv[a], tv[b], R);
 				ctx.beginPath();
 				let started = false;
 				for (const p of pts) {

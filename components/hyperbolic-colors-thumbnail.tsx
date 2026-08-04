@@ -4,13 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { su11Identity } from "@/lib/render/hyperbolic";
 import { drawDevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopedDraw";
-import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { FALLBACK_BOUND_R, HyperbolicDeveloper, THUMB_BUDGET } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareEdgeShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
 import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
 import { paletteRgb255 } from "@/lib/colors/render";
 import type { HypColorsPattern } from "@/lib/colors/hyp-colors";
+
+/** Everything this component reads off a record. Declared as a subset so a shelf that is NOT a colouring
+ *  can draw through it: the 3.4.n.4 tilings (lib/tilings/hyp-poly.ts) fill each face by POLYGON SIZE
+ *  instead of by solver colour, which is the same render — an index per face and every edge a boundary. */
+export type HypColorsThumbInput = Pick<HypColorsPattern, "id" | "config" | "edge" | "darts" | "colors" | "certified">;
 
 // Static Poincaré-disk preview of a hyperbolic colored tiling — one frame of the same per-pixel colors
 // renderer as the interactive canvas, so the preview fills the disk to the rim and matches /play. One
@@ -50,7 +55,7 @@ function ensureRenderer(size: number): HyperbolicPerPixelRenderer | null {
 	return glRenderer ?? null;
 }
 
-function renderThumbGL(pattern: HypColorsPattern, size: number, opts: ThumbOpts): string | null {
+function renderThumbGL(pattern: HypColorsThumbInput, size: number, opts: ThumbOpts): string | null {
 	const r = ensureRenderer(size);
 	if (!r || !glCanvas) return null;
 	let st = tilingCache.get(pattern.id);
@@ -81,7 +86,7 @@ function renderThumbGL(pattern: HypColorsPattern, size: number, opts: ThumbOpts)
 	return glCanvas.toDataURL("image/png");
 }
 
-function renderThumb2d(pattern: HypColorsPattern, size: number, opts: ThumbOpts): string | null {
+function renderThumb2d(pattern: HypColorsThumbInput, size: number, opts: ThumbOpts): string | null {
 	if (!thumbCanvas2d) thumbCanvas2d = document.createElement("canvas");
 	if (thumbCanvas2d.width !== size) {
 		thumbCanvas2d.width = size;
@@ -92,7 +97,7 @@ function renderThumb2d(pattern: HypColorsPattern, size: number, opts: ThumbOpts)
 	const dark = document.documentElement.classList.contains("dark");
 	ctx.clearRect(0, 0, size, size);
 	const meta = { id: pattern.id, name: pattern.id, config: pattern.config, edge: pattern.edge };
-	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developColors(meta, su11Identity(), 0.985, 4000);
+	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developColors(meta, su11Identity(), FALLBACK_BOUND_R, THUMB_BUDGET);
 	drawDevelopedEdgePatch(ctx, drawn, su11Identity(), {
 		R: size / 2 - 4,
 		cx: size / 2,
@@ -107,11 +112,14 @@ function renderThumb2d(pattern: HypColorsPattern, size: number, opts: ThumbOpts)
 	return thumbCanvas2d.toDataURL("image/png");
 }
 
-function renderThumb(pattern: HypColorsPattern, size: number, opts: ThumbOpts): string | null {
+function renderThumb(pattern: HypColorsThumbInput, size: number, opts: ThumbOpts): string | null {
+	// A record stamped un-certifiable would spend a median 210 ms inside buildDirichletDomain only to
+	// fail, once per card, and a grid bakes dozens of them. Skip straight to the 2D bake.
+	if (pattern.certified === false) return renderThumb2d(pattern, size, opts);
 	return renderThumbGL(pattern, size, opts) ?? renderThumb2d(pattern, size, opts);
 }
 
-export function HyperbolicColorsThumbnail({ pattern, size = 256 }: { pattern: HypColorsPattern; size?: number }) {
+export function HyperbolicColorsThumbnail({ pattern, size = 256 }: { pattern: HypColorsThumbInput; size?: number }) {
 	const wrapRef = useRef<HTMLDivElement>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);

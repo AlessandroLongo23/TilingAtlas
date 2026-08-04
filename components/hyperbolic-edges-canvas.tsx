@@ -16,7 +16,7 @@ import {
 	type Complex,
 } from "@/lib/render/hyperbolic";
 import { drawDevelopedEdgePatch, type DevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopedDraw";
-import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareEdgeShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
@@ -39,7 +39,7 @@ interface Props {
 	/** Everything both render paths read. The Schwarz shelf (lib/freedraw/schwarz.ts) is not a
 	 *  HypEdgesPattern but supplies exactly this, so it draws through this canvas unchanged — including
 	 *  the SCALENE boards, whose per-dart turns and lengths ride inside `darts`. */
-	pattern: Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts">;
+	pattern: Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts" | "certified">;
 }
 
 export function HyperbolicEdgesCanvas({ pattern }: Props) {
@@ -47,7 +47,13 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null);
 	// A canvas that yielded a webgl2 context can never yield a 2d one, so a mode flip re-mounts via `key`.
+	// A canvas that has yielded a webgl2 context can never yield a 2d one, so flipping modes re-mounts the
+	// element via `key`. This is per-PATTERN, not per-machine.
 	const [use2d, setUse2d] = useState(false);
+	// Patterns whose reduction failed AT RUNTIME (an unstamped shard, or a stale stamp). Without this memory
+	// the reconciliation reads `certified === undefined`, decides GL is wanted, flips back, fails again, and
+	// the canvas oscillates permanently blank — the failure the developed canvas hit on 2026-07-23.
+	const runtimeUncertified = useRef<Set<string>>(new Set());
 	const devRef = useRef<HyperbolicDeveloper | null>(null); // fallback draw + click-feature snapping
 	const stRef = useRef<ShaderTiling | null>(null);
 	const readyRef = useRef(false);
@@ -95,7 +101,17 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 		prevRot.current = null;
 		centerAnim.current = null;
 		anchorRef.current = null;
-		if (glRef.current) {
+		// Per-PATTERN renderer choice, the same reconciliation the developed canvas runs. A pattern stamped
+		// `certified: false` skips buildDirichletDomain entirely (a doomed attempt costs a median 210 ms and
+		// up to 1.2 s on the main thread), and a certifiable one flips BACK to GL when the pattern before it
+		// had forced 2D. Without that second direction the flag would still leave the shelf degraded for the
+		// rest of the session after the first uncertified tiling.
+		const want2d = pattern.certified === false || runtimeUncertified.current.has(pattern.id);
+		if (want2d !== use2d && !(ctx2dRef.current && !glRef.current && want2d)) {
+			setUse2d(want2d);
+			if (want2d) return; // the context is still webgl2 this pass; the re-run binds 2D
+		}
+		if (glRef.current && !want2d) {
 			const st = prepareEdgeShaderTiling(pattern.darts, pattern.edge, meta);
 			if (st) {
 				glRef.current.setTiling(st);
@@ -103,7 +119,9 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 				anchorRef.current = { gens: st.domain.gens, r: Math.min(0.97, st.domain.rPEu + 0.05) };
 				readyRef.current = true;
 			} else {
-				// Dirichlet certificate failed at runtime (loud in prepareEdgeShaderTiling) → 2D.
+				// Certificate failed at runtime (loud in prepareEdgeShaderTiling) — remember it so the
+				// reconciliation above does not decide GL is wanted again and oscillate, then go 2D.
+				runtimeUncertified.current.add(pattern.id);
 				setUse2d(true);
 			}
 		} else {
@@ -255,7 +273,7 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 				const ctx = ctx2dRef.current;
 				const dev = devRef.current;
 				if (!ctx || !dev) return;
-				const patch: DevelopedEdgePatch = dev.developEdges(meta, view, 0.99, 12000);
+				const patch: DevelopedEdgePatch = dev.developEdges(meta, view, FALLBACK_BOUND_R, FALLBACK_BUDGET);
 				ctx.clearRect(0, 0, bw, bh);
 				drawDevelopedEdgePatch(ctx, patch, view, {
 					R: Rcss * dpr,

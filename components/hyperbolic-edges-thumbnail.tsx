@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { su11Identity } from "@/lib/render/hyperbolic";
 import { drawDevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopedDraw";
-import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { FALLBACK_BOUND_R, HyperbolicDeveloper, THUMB_BUDGET } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareEdgeShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
@@ -93,7 +93,7 @@ function renderThumb2d(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpt
 	const dark = document.documentElement.classList.contains("dark");
 	ctx.clearRect(0, 0, size, size);
 	const meta = { id: pattern.id, name: pattern.id, config: pattern.config, edge: pattern.edge };
-	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developEdges(meta, su11Identity(), 0.985, 4000);
+	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developEdges(meta, su11Identity(), FALLBACK_BOUND_R, THUMB_BUDGET);
 	drawDevelopedEdgePatch(ctx, drawn, su11Identity(), {
 		R: size / 2 - 4,
 		cx: size / 2,
@@ -110,13 +110,16 @@ function renderThumb2d(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpt
 }
 
 function renderThumb(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpts): string | null {
+	// A record stamped un-certifiable would spend a median 210 ms inside buildDirichletDomain only to
+	// fail, once per card, and a grid bakes dozens of them. Skip straight to the 2D bake.
+	if (pattern.certified === false) return renderThumb2d(pattern, size, opts);
 	return renderThumbGL(pattern, size, opts) ?? renderThumb2d(pattern, size, opts);
 }
 
 /** Everything either render path reads off a record. The Schwarz shelf (lib/freedraw/schwarz.ts) is not a
  *  HypEdgesPattern but supplies exactly this, so it draws through the same component — SCALENE boards
  *  included, since their per-dart turns and lengths ride inside `darts`. */
-export type HypEdgesThumbInput = Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts">;
+export type HypEdgesThumbInput = Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts" | "certified">;
 
 export function HyperbolicEdgesThumbnail({
 	pattern,

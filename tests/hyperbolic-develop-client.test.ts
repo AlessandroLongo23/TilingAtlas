@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
+import { HyperbolicDeveloper, nthSmallest, type Darts } from "@/lib/render/hyperbolicDevelopClient";
 import { su11Identity, su11Mul, su11Translation, su11Normalize, su11Apply, hypDist, type Complex } from "@/lib/render/hyperbolic";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { sampleAtlas } from "./hyperbolic-sample";
@@ -191,5 +191,49 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 		// a tiny cap must be reported as capped
 		const dev2 = new HyperbolicDeveloper(p.darts as Darts, p.edge, { deepDedup: true });
 		expect(dev2.extendTo(su11Identity(), 0.99, 50)).toBe(false);
+	});
+
+	// prune picks its keep-radius with nthSmallest instead of sorting every instance radius. A wrong order
+	// statistic keeps the wrong tiles and opens holes, and no structural invariant would catch it, so pin it
+	// against a full sort over the shapes prune actually sees: heavy duplicates (co-radial orbits), constant
+	// runs, already-sorted and reversed input.
+	it("nthSmallest matches a full sort on every order statistic", () => {
+		const shapes: ((i: number, n: number) => number)[] = [
+			(i) => Math.sin(i * 12.9898) * 0.5 + 0.5, // pseudo-random spread
+			(i) => (i * 37) % 5, // few distinct values, heavy duplicates
+			() => 0.7, // all equal
+			(i, n) => i / n, // ascending
+			(i, n) => 1 - i / n, // descending
+			(i) => (i % 2 === 0 ? 0.25 : 0.75), // two clusters
+		];
+		for (const shape of shapes) {
+			for (const n of [1, 2, 3, 5, 17, 64, 257, 1000]) {
+				const base = new Float64Array(n);
+				for (let i = 0; i < n; i++) base[i] = shape(i, n);
+				const want = [...base].sort((x, y) => x - y);
+				for (const k of [0, 1, n >> 2, n >> 1, n - 2, n - 1].filter((v) => v >= 0 && v < n)) {
+					expect(nthSmallest(base.slice(), k)).toBe(want[k]);
+				}
+			}
+		}
+	});
+
+	it("prune keeps the nearest instances and leaves the develop self-consistent while panning", () => {
+		const p = byId("hyp-7-7-7");
+		const meta = { id: p.id, name: p.name, config: p.config, edge: p.edge };
+		const dev = new HyperbolicDeveloper(p.darts as Darts, p.edge);
+		let view = su11Identity();
+		for (let step = 0; step < 12; step++) {
+			view = su11Normalize(su11Mul(su11Translation({ x: 0.05, y: 0.02 }), view));
+			const patch = dev.develop(meta, view, 0.995, 4000);
+			// The cap must hold, and every emitted face must index a real vertex. extend tests the cap BEFORE
+			// an expansion that adds up to two instances, so maxInsts + 1 is the true ceiling, not maxInsts.
+			expect(dev.instanceCount()).toBeLessThanOrEqual(4001);
+			expect(patch.faces.length).toBeGreaterThan(0);
+			for (const f of patch.faces) {
+				expect(f.length).toBeGreaterThanOrEqual(3);
+				for (const v of f) expect(v).toBeLessThan(patch.vertices.length);
+			}
+		}
 	});
 });

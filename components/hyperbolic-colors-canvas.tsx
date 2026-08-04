@@ -16,12 +16,12 @@ import {
 	type Complex,
 } from "@/lib/render/hyperbolic";
 import { drawDevelopedEdgePatch, type DevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopedDraw";
-import { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
+import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { prepareEdgeShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { paletteRgb255 } from "@/lib/colors/render";
-import type { HypColorsPattern } from "@/lib/colors/hyp-colors";
+import type { HypColorsThumbInput } from "@/components/hyperbolic-colors-thumbnail";
 
 // Interactive Poincaré-disk view of a hyperbolic COLORED tiling — the per-pixel WebGL renderer in colors
 // mode (lib/render/hyperbolicPerPixelGL.ts), the exact sibling of the hyperbolic edge-system canvas. Each
@@ -35,14 +35,20 @@ const DISK_PAD_PX = 24;
 const MAX_CENTER_R = 0.9995;
 
 interface Props {
-	pattern: HypColorsPattern;
+	pattern: HypColorsThumbInput;
 }
 
 export function HyperbolicColorsCanvas({ pattern }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null);
+	// A canvas that has yielded a webgl2 context can never yield a 2d one, so flipping modes re-mounts the
+	// element via `key`. This is per-PATTERN, not per-machine.
 	const [use2d, setUse2d] = useState(false);
+	// Patterns whose reduction failed AT RUNTIME (an unstamped shard, or a stale stamp). Without this memory
+	// the reconciliation reads `certified === undefined`, decides GL is wanted, flips back, fails again, and
+	// the canvas oscillates permanently blank — the failure the developed canvas hit on 2026-07-23.
+	const runtimeUncertified = useRef<Set<string>>(new Set());
 	const devRef = useRef<HyperbolicDeveloper | null>(null);
 	const stRef = useRef<ShaderTiling | null>(null);
 	const readyRef = useRef(false);
@@ -90,7 +96,17 @@ export function HyperbolicColorsCanvas({ pattern }: Props) {
 		prevRot.current = null;
 		centerAnim.current = null;
 		anchorRef.current = null;
-		if (glRef.current) {
+		// Per-PATTERN renderer choice, the same reconciliation the developed canvas runs. A pattern stamped
+		// `certified: false` skips buildDirichletDomain entirely (a doomed attempt costs a median 210 ms and
+		// up to 1.2 s on the main thread), and a certifiable one flips BACK to GL when the pattern before it
+		// had forced 2D. Without that second direction the flag would still leave the shelf degraded for the
+		// rest of the session after the first uncertified tiling.
+		const want2d = pattern.certified === false || runtimeUncertified.current.has(pattern.id);
+		if (want2d !== use2d && !(ctx2dRef.current && !glRef.current && want2d)) {
+			setUse2d(want2d);
+			if (want2d) return; // the context is still webgl2 this pass; the re-run binds 2D
+		}
+		if (glRef.current && !want2d) {
 			const st = prepareEdgeShaderTiling(pattern.darts, pattern.edge, meta, { colors: true });
 			if (st) {
 				glRef.current.setTiling(st);
@@ -98,6 +114,9 @@ export function HyperbolicColorsCanvas({ pattern }: Props) {
 				anchorRef.current = { gens: st.domain.gens, r: Math.min(0.97, st.domain.rPEu + 0.05) };
 				readyRef.current = true;
 			} else {
+				// Certificate failed at runtime (an unstamped shard, or a stamp gone stale) — remember it so
+				// the reconciliation above does not decide GL is wanted again and oscillate, then go 2D.
+				runtimeUncertified.current.add(pattern.id);
 				setUse2d(true);
 			}
 		} else {
@@ -247,7 +266,7 @@ export function HyperbolicColorsCanvas({ pattern }: Props) {
 				const ctx = ctx2dRef.current;
 				const dev = devRef.current;
 				if (!ctx || !dev) return;
-				const patchDev: DevelopedEdgePatch = dev.developColors(meta, view, 0.99, 12000);
+				const patchDev: DevelopedEdgePatch = dev.developColors(meta, view, FALLBACK_BOUND_R, FALLBACK_BUDGET);
 				ctx.clearRect(0, 0, bw, bh);
 				drawDevelopedEdgePatch(ctx, patchDev, view, {
 					R: Rcss * dpr,
