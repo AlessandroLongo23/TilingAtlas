@@ -13,6 +13,7 @@ def canon(seq):
     return min(rots)
 
 def cyc_hist(r):
+    # -> ((config-string, count), ...). The config is ALREADY dotted here; callers use it as is.
     V=[np.array(v) for v in r['vertices']]; inc={i:[] for i in range(len(V))}
     for f in r['faces']:
         c=np.mean([V[k] for k in f],axis=0)
@@ -77,7 +78,7 @@ for V,ident,var,name,k,note,r in entries:
     names.append(var)
     verts="\n\t\t"+",\n\t\t".join(fv(v) for v in r['vertices'])+",\n\t"
     faces="\n\t\t"+",\n\t\t".join(ff(f) for f in r['faces'])+",\n\t"
-    cfg=" / ".join(sorted({'.'.join(map(str,cc)) for cc,_ in cyc_hist(r)}))
+    cfg=" / ".join(sorted({cc for cc, _ in cyc_hist(r)}))
     consts.append(f'''// {name}  — k={k}, V={V}
 export const {var}: Polyhedron = {{
 	id: "{ident}",
@@ -104,14 +105,20 @@ print(f"wrote johnsonSolids.ts with {len(entries)} solids")
 existing={"triangular-orthobicupola","pseudo-rhombicuboctahedron"}
 cat=json.load(open(f"{ROOT}/public/reference-atlas-spherical.json"))
 cell=[x for x in cat if x.get('spherical',{}).get('solid')=='cuboctahedron'][0]['renderCell']
-have={x['id'] for x in cat}
-added=0
+by_id={x['id']:x for x in cat}
+added=fixed=0
 for V,ident,var,name,k,note,r in entries:
     eid="sph-"+ident
-    if eid in have: continue
-    fam=" / ".join(sorted({'.'.join(map(str,cc)) for cc,_ in cyc_hist(r)}))
+    fam=" / ".join(sorted({cc for cc, _ in cyc_hist(r)}))
+    if eid in by_id:
+        # Idempotent: re-running REPAIRS a stale `family` instead of skipping the row. The append-only
+        # version let the double-join bug ("3.3.4.4" -> "3...3...4...4") survive every re-run, because
+        # the ids were already there. A derived field has to be re-derived.
+        if by_id[eid].get('family') != fam:
+            by_id[eid]['family']=fam; fixed+=1
+        continue
     cat.append({"id":eid,"source":"spherical","k":k,"family":fam,"spherical":{"solid":ident},
                 "geometry":"spherical","discoverer":"Norman Johnson (1966)","note":note,"renderCell":cell})
     added+=1
 json.dump(cat,open(f"{ROOT}/public/reference-atlas-spherical.json","w"),indent=1)
-print(f"catalogue: added {added}, total {len(cat)}")
+print(f"catalogue: added {added}, repaired {fixed}, total {len(cat)}")

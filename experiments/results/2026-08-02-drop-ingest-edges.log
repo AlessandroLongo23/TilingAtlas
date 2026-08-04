@@ -1,0 +1,171 @@
+=== spherical edge boards, drop of 2026-08-02 — started 11:41:52 ===
+
+---------- board 448  (start 11:41:52) ----------
+spherical edge-system develop — board 4.4.8 (448, octagonal prism)
+source          : ../../materials/corpora/edges_448
+forced edge arc : rho = 0.730979511936
+certificates in : 1181
+developed       : 1181
+failed          : 0
+multi-variant   : 0
+wall            : 1.8s (1.6 ms/certificate)
+
+board 448             : octagonal prism — V=16 E=24 F=10, vertices 4.4.8×16, |G|=32 in 1 vertex orbit(s), 1181 patterns
+
+
+   k   tilings  tiles: min    max
+   1         5           1     10
+   2         8           2      7
+   3         5           2      8
+   4        53           2      8
+   5        44           2      9
+   6         2           4      6
+   8       292           2      9
+  10        53           2      8
+  16       719           2      8
+NOTE: no certificates for k = [7, 9, 11, 12, 13, 14, 15]; check the board's census file before reading these as gaps in the run.
+wrote ../../public/spherical-edges/x448-k1.json: 5 records, 0.00 MB
+wrote ../../public/spherical-edges/x448-k2.json: 8 records, 0.00 MB
+wrote ../../public/spherical-edges/x448-k3.json: 5 records, 0.00 MB
+wrote ../../public/spherical-edges/x448-k4.json: 53 records, 0.02 MB
+wrote ../../public/spherical-edges/x448-k5.json: 44 records, 0.02 MB
+wrote ../../public/spherical-edges/x448-k6.json: 2 records, 0.00 MB
+wrote ../../public/spherical-edges/x448-k8.json: 292 records, 0.09 MB
+wrote ../../public/spherical-edges/x448-k10.json: 53 records, 0.02 MB
+wrote ../../public/spherical-edges/x448-k16.json: 719 records, 0.24 MB
+
+---------- board 448 done, exit 0 at 11:41:54 ----------
+
+---------- board 3337  (start 11:41:54) ----------
+  [     9s] 5000/6845 developed, 0 failed, ETA 3s
+spherical edge-system develop — board 3.3.3.7 (3337, heptagonal antiprism)
+source          : ../../materials/corpora/edges_3337
+forced edge arc : rho = 0.837446196679
+certificates in : 6845
+developed       : 6845
+failed          : 0
+multi-variant   : 0
+wall            : 12.7s (1.9 ms/certificate)
+
+board 3337            : heptagonal antiprism — V=14 E=28 F=16, vertices 3.3.3.7×14, |G|=28 in 1 vertex orbit(s), 6845 patterns
+
+
+   k   tilings  tiles: min    max
+   1         5           1     16
+   2         2           2      9
+   4       116           2     14
+   7      3124           2     15
+   8      3598           2     15
+NOTE: no certificates for k = [3, 5, 6]; check the board's census file before reading these as gaps in the run.
+wrote ../../public/spherical-edges/x3337-k1.json: 5 records, 0.00 MB
+wrote ../../public/spherical-edges/x3337-k2.json: 2 records, 0.00 MB
+wrote ../../public/spherical-edges/x3337-k4.json: 116 records, 0.04 MB
+wrote ../../public/spherical-edges/x3337-k7.json: 3124 records, 1.07 MB
+wrote ../../public/spherical-edges/x3337-k8.json: 3598 records, 1.24 MB
+
+---------- board 3337 done, exit 0 at 11:42:08 ----------
+
+---------- board 4443  (start 11:42:08) ----------
+  [    12s] 5000/19920 developed, 0 failed, ETA 35s
+  [    26s] 10000/19920 developed, 0 failed, ETA 26s
+  [    42s] 15000/19920 developed, 0 failed, ETA 14s
+spherical edge-system develop — board 3.4.4.4 (4443, rhombicuboctahedron)
+source          : ../../materials/corpora/edges_4443
+forced edge arc : rho = 0.730979511936
+certificates in : 19920
+developed       : 19920
+failed          : 0
+multi-variant   : 0
+wall            : 54.8s (2.8 ms/certificate)
+
+board 4443            : rhombicuboctahedron — V=24 E=48 F=26, vertices 3.4.4.4×24, |G|=48 in 1 vertex orbit(s), 14271 patterns
+board j37             : pseudo-rhombicuboctahedron (J37) — V=24 E=48 F=26, vertices 3.4.4.4×24, |G|=16 in 2 vertex orbit(s), 5649 patterns
+NOTE: this corpus develops into more than one polyhedron. The solver enumerates by angle closure, so a twin sharing the edge length and the V/E/F comes back in the same run; each ships as its own board.
+
+
+   k   tilings  tiles: min    max
+   1         5           1     26
+   2        46           1     26
+   3       138           3     22
+   4       429           2     22
+   6      6186           2     24
+   7      9828           2     24
+   8      3288           2     24
+NOTE: no certificates for k = [5]; check the board's census file before reading these as gaps in the run.
+wrote ../../public/spherical-edges/x4443-k1.json: 5 records, 0.00 MB
+wrote ../../public/spherical-edges/x4443-k2.json: 22 records, 0.01 MB
+wrote ../../public/spherical-edges/x4443-k3.json: 117 records, 0.05 MB
+wrote ../../public/spherical-edges/x4443-k4.json: 293 records, 0.12 MB
+wrote ../../public/spherical-edges/x4443-k6.json: 5118 records, 2.11 MB
+wrote ../../public/spherical-edges/x4443-k7.json: 5428 records, 2.24 MB
+wrote ../../public/spherical-edges/x4443-k8.json: 3288 records, 1.36 MB
+wrote ../../public/spherical-edges/xj37-k2.json: 24 records, 0.01 MB
+wrote ../../public/spherical-edges/xj37-k3.json: 21 records, 0.01 MB
+wrote ../../public/spherical-edges/xj37-k4.json: 136 records, 0.06 MB
+wrote ../../public/spherical-edges/xj37-k6.json: 1068 records, 0.45 MB
+wrote ../../public/spherical-edges/xj37-k7.json: 4400 records, 1.86 MB
+
+---------- board 4443 done, exit 0 at 11:43:04 ----------
+
+---------- board 664  (start 11:43:04) ----------
+  [    10s] 5000/107990 developed, 0 failed, ETA 203s
+  [    20s] 10000/107990 developed, 0 failed, ETA 193s
+  [    30s] 15000/107990 developed, 0 failed, ETA 184s
+  [    40s] 20000/107990 developed, 0 failed, ETA 176s
+  [    50s] 25000/107990 developed, 0 failed, ETA 167s
+  [    61s] 30000/107990 developed, 0 failed, ETA 157s
+  [    71s] 35000/107990 developed, 0 failed, ETA 148s
+  [    82s] 40000/107990 developed, 0 failed, ETA 139s
+  [    92s] 45000/107990 developed, 0 failed, ETA 129s
+  [   103s] 50000/107990 developed, 0 failed, ETA 119s
+  [   114s] 55000/107990 developed, 0 failed, ETA 109s
+  [   124s] 60000/107990 developed, 0 failed, ETA 99s
+  [   135s] 65000/107990 developed, 0 failed, ETA 89s
+  [   146s] 70000/107990 developed, 0 failed, ETA 79s
+  [   156s] 75000/107990 developed, 0 failed, ETA 69s
+  [   167s] 80000/107990 developed, 0 failed, ETA 58s
+  [   178s] 85000/107990 developed, 0 failed, ETA 48s
+  [   189s] 90000/107990 developed, 0 failed, ETA 38s
+  [   200s] 95000/107990 developed, 0 failed, ETA 27s
+  [   211s] 100000/107990 developed, 0 failed, ETA 17s
+  [   222s] 105000/107990 developed, 0 failed, ETA 6s
+spherical edge-system develop — board 4.6.6 (664, truncated octahedron)
+source          : ../../materials/corpora/edges_664
+forced edge arc : rho = 0.643501108793
+certificates in : 107990
+developed       : 107990
+failed          : 0
+multi-variant   : 0
+wall            : 228.9s (2.1 ms/certificate)
+
+board 664             : truncated octahedron — V=24 E=36 F=14, vertices 4.6.6×24, |G|=48 in 1 vertex orbit(s), 107990 patterns
+
+
+   k   tilings  tiles: min    max
+   1         4           1     14
+   2        10           2      9
+   3        10           3     10
+   4        58           2     12
+   5        18           2     11
+   6       140           2     12
+   8       173           2     13
+  10        29           3     12
+  12      4776           2     13
+  16       885           2     12
+  24    101887           2     12
+NOTE: no certificates for k = [7, 9, 11, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23]; check the board's census file before reading these as gaps in the run.
+wrote ../../public/spherical-edges/x664-k1.json: 4 records, 0.00 MB
+wrote ../../public/spherical-edges/x664-k2.json: 10 records, 0.00 MB
+wrote ../../public/spherical-edges/x664-k3.json: 10 records, 0.00 MB
+wrote ../../public/spherical-edges/x664-k4.json: 58 records, 0.02 MB
+wrote ../../public/spherical-edges/x664-k5.json: 18 records, 0.01 MB
+wrote ../../public/spherical-edges/x664-k6.json: 140 records, 0.05 MB
+wrote ../../public/spherical-edges/x664-k8.json: 173 records, 0.06 MB
+wrote ../../public/spherical-edges/x664-k10.json: 29 records, 0.01 MB
+wrote ../../public/spherical-edges/x664-k12.json: 4776 records, 1.77 MB
+wrote ../../public/spherical-edges/x664-k16.json: 885 records, 0.33 MB
+wrote ../../public/spherical-edges/x664-k24.json: 101887 records, 38.61 MB
+
+---------- board 664 done, exit 0 at 11:47:22 ----------
+
+=== all edge boards finished 11:47:22 ===

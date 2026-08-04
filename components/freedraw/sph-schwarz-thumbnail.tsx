@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
-import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
-import type { SphSchwarzPattern } from "@/lib/freedraw/schwarz";
+import { sphSchwarzScene, type SphBoardPattern } from "@/lib/render/sphSchwarz";
+
 import type { IcoMode } from "@/lib/render/icoFreedraw";
 
 // Static preview of one SPHERICAL Schwarz edge system, for the library grid and the /play sidebar.
@@ -18,7 +18,7 @@ export function SphSchwarzThumbnail({
 	showGrid = false,
 	size = 256,
 }: {
-	pattern: SphSchwarzPattern;
+	pattern: SphBoardPattern & { board: string };
 	mode?: IcoMode;
 	showGrid?: boolean;
 	size?: number;
@@ -27,7 +27,7 @@ export function SphSchwarzThumbnail({
 	return (
 		<SphereFreedrawThumbnail
 			pattern={scene.pattern}
-			solidId={`schwarz-${pattern.board}`}
+			solidId={`sphboard-${pattern.board}`}
 			vertices={scene.vertices}
 			allEdges={scene.allEdges}
 			mode={mode}

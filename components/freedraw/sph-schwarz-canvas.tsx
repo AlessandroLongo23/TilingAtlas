@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
-import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
-import type { SphSchwarzPattern } from "@/lib/freedraw/schwarz";
+import { sphSchwarzScene, type SphBoardPattern } from "@/lib/render/sphSchwarz";
+
 import type { IcoMode } from "@/lib/render/icoFreedraw";
 
 // Interactive view of one SPHERICAL Schwarz edge system. The whole component is the adapter: a Schwarz
@@ -16,7 +16,7 @@ export function SphSchwarzCanvas({
 	mode,
 	showGrid,
 }: {
-	pattern: SphSchwarzPattern;
+	pattern: SphBoardPattern & { board: string };
 	mode: IcoMode;
 	showGrid: boolean;
 }) {
@@ -24,7 +24,7 @@ export function SphSchwarzCanvas({
 	return (
 		<IcoFreedrawCanvas
 			pattern={scene.pattern}
-			solidId={`schwarz-${pattern.board}`}
+			solidId={`sphboard-${pattern.board}`}
 			vertices={scene.vertices}
 			allEdges={scene.allEdges}
 			mode={mode}

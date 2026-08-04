@@ -1,0 +1,194 @@
+=== 3.4.n.4 hyperbolic boards, drop of 2026-08-02 — started 11:41:54 ===
+
+---------- n=17  (start 11:41:54) ----------
+  [     1s] 500/3699 developed, 0 failed, ETA 5s
+  [     2s] 1000/3699 developed, 0 failed, ETA 4s
+  [     2s] 1500/3699 developed, 0 failed, ETA 3s
+  [     3s] 2000/3699 developed, 0 failed, ETA 3s
+  [     4s] 2500/3699 developed, 0 failed, ETA 2s
+  [     5s] 3000/3699 developed, 0 failed, ETA 1s
+  [     6s] 3500/3699 developed, 0 failed, ETA 0s
+3.4.17.4 family develop — tilings by regular [3, 4, 17, 34] at one edge length
+source          : ../../materials/corpora/ai1_17
+forced edge len : l = 0.686154298227
+angles          : 3-gon 56.3221deg, 4-gon 83.7397deg, 17-gon 136.1986deg, 34-gon 140.0618deg
+certificates in : 3699
+developed       : 3699
+failed          : 0
+multi-variant   : 0
+wall            : 6.1s (1.6 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         1                 3      3
+   9         9                15     18
+  10        18                18     20
+  11         9                22     23
+  17       716                30     36
+  18      1672                30     40
+  19      1274                32     42
+
+BUDGET: shipped k <= 19; DROPPED k = [20, 21] (534 certificates). Those k are enumerated in the corpus and NOT shipped — the shelf must not present this board as exhausted.
+wrote ../../public/hyperbolic-poly/hp17-k1.json: 1 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp17-k9.json: 9 records, 0.01 MB
+wrote ../../public/hyperbolic-poly/hp17-k10.json: 18 records, 0.02 MB
+wrote ../../public/hyperbolic-poly/hp17-k11.json: 9 records, 0.01 MB
+wrote ../../public/hyperbolic-poly/hp17-k17.json: 716 records, 1.63 MB
+wrote ../../public/hyperbolic-poly/hp17-k18.json: 1672 records, 4.04 MB
+wrote ../../public/hyperbolic-poly/hp17-k19.json: 1274 records, 3.22 MB
+
+---------- n=17 done, exit 0 at 11:42:01 ----------
+
+---------- n=18  (start 11:42:01) ----------
+  [     1s] 500/2039 developed, 0 failed, ETA 2s
+  [     1s] 1000/2039 developed, 0 failed, ETA 1s
+  [     2s] 1500/2039 developed, 0 failed, ETA 1s
+  [     2s] 2000/2039 developed, 0 failed, ETA 0s
+3.4.18.4 family develop — tilings by regular [3, 4, 18, 36] at one edge length
+source          : ../../materials/corpora/ai1_18
+forced edge len : l = 0.691976805214
+angles          : 3-gon 56.2630deg, 4-gon 83.6406deg, 18-gon 136.4558deg, 36-gon 139.9036deg
+certificates in : 2039
+developed       : 2039
+failed          : 0
+multi-variant   : 0
+wall            : 2.4s (1.2 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         2                 3      3
+   2         2                 4      5
+   3         1                 6      6
+   4         3                 7      9
+   5         9                 7     11
+   6        19                 8     14
+   7        22                 9     18
+   8        34                 9     17
+   9       125                10     20
+  10       256                10     24
+  11       474                10     26
+  12      1092                13     28
+
+BUDGET: shipped k <= 12; DROPPED k = [13, 14, 15, 16, 17] (60086 certificates). Those k are enumerated in the corpus and NOT shipped — the shelf must not present this board as exhausted.
+wrote ../../public/hyperbolic-poly/hp18-k1.json: 2 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp18-k2.json: 2 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp18-k3.json: 1 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp18-k4.json: 3 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp18-k5.json: 9 records, 0.01 MB
+wrote ../../public/hyperbolic-poly/hp18-k6.json: 19 records, 0.02 MB
+wrote ../../public/hyperbolic-poly/hp18-k7.json: 22 records, 0.02 MB
+wrote ../../public/hyperbolic-poly/hp18-k8.json: 34 records, 0.04 MB
+wrote ../../public/hyperbolic-poly/hp18-k9.json: 125 records, 0.15 MB
+wrote ../../public/hyperbolic-poly/hp18-k10.json: 256 records, 0.33 MB
+wrote ../../public/hyperbolic-poly/hp18-k11.json: 474 records, 0.66 MB
+wrote ../../public/hyperbolic-poly/hp18-k12.json: 1092 records, 1.64 MB
+
+---------- n=18 done, exit 0 at 11:42:04 ----------
+
+---------- n=19  (start 11:42:04) ----------
+  [     1s] 500/2106 developed, 0 failed, ETA 2s
+  [     2s] 1000/2106 developed, 0 failed, ETA 2s
+  [     2s] 1500/2106 developed, 0 failed, ETA 1s
+  [     3s] 2000/2106 developed, 0 failed, ETA 0s
+3.4.19.4 family develop — tilings by regular [3, 4, 19, 38] at one edge length
+source          : ../../materials/corpora/ai1_19
+forced edge len : l = 0.696881288171
+angles          : 3-gon 56.2128deg, 4-gon 83.5567deg, 19-gon 136.6737deg, 38-gon 139.7695deg
+certificates in : 2106
+developed       : 2106
+failed          : 0
+multi-variant   : 0
+wall            : 3.2s (1.5 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         1                 3      3
+  10        21                16     20
+  11        26                18     23
+  12        12                22     24
+  13         7                26     26
+  19      2039                34     40
+
+BUDGET: shipped k <= 19; DROPPED k = [20, 21, 22, 23] (14403 certificates). Those k are enumerated in the corpus and NOT shipped — the shelf must not present this board as exhausted.
+wrote ../../public/hyperbolic-poly/hp19-k1.json: 1 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp19-k10.json: 21 records, 0.03 MB
+wrote ../../public/hyperbolic-poly/hp19-k11.json: 26 records, 0.04 MB
+wrote ../../public/hyperbolic-poly/hp19-k12.json: 12 records, 0.02 MB
+wrote ../../public/hyperbolic-poly/hp19-k13.json: 7 records, 0.01 MB
+wrote ../../public/hyperbolic-poly/hp19-k19.json: 2039 records, 5.17 MB
+
+---------- n=19 done, exit 0 at 11:42:07 ----------
+
+---------- n=20  (start 11:42:07) ----------
+  [     1s] 500/2279 developed, 0 failed, ETA 2s
+  [     1s] 1000/2279 developed, 0 failed, ETA 1s
+  [     2s] 1500/2279 developed, 0 failed, ETA 1s
+  [     2s] 2000/2279 developed, 0 failed, ETA 0s
+3.4.20.4 family develop — tilings by regular [3, 4, 20, 40] at one edge length
+source          : ../../materials/corpora/ai1_20
+forced edge len : l = 0.701052298281
+angles          : 3-gon 56.1700deg, 4-gon 83.4850deg, 20-gon 136.8600deg, 40-gon 139.6550deg
+certificates in : 2279
+developed       : 2279
+failed          : 0
+multi-variant   : 0
+wall            : 2.6s (1.2 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         2                 3      3
+   2         1                 5      5
+   3         4                 5      6
+   4         3                 8      9
+   5         3                 7     10
+   6        13                 8     14
+   7        26                10     15
+   8        36                10     17
+   9        65                12     20
+  10       259                11     22
+  11       684                12     26
+  12      1183                13     28
+
+BUDGET: shipped k <= 12; DROPPED k = [13, 14, 15] (17386 certificates). Those k are enumerated in the corpus and NOT shipped — the shelf must not present this board as exhausted.
+wrote ../../public/hyperbolic-poly/hp20-k1.json: 2 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp20-k2.json: 1 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp20-k3.json: 4 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp20-k4.json: 3 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp20-k5.json: 3 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp20-k6.json: 13 records, 0.01 MB
+wrote ../../public/hyperbolic-poly/hp20-k7.json: 26 records, 0.03 MB
+wrote ../../public/hyperbolic-poly/hp20-k8.json: 36 records, 0.04 MB
+wrote ../../public/hyperbolic-poly/hp20-k9.json: 65 records, 0.08 MB
+wrote ../../public/hyperbolic-poly/hp20-k10.json: 259 records, 0.34 MB
+wrote ../../public/hyperbolic-poly/hp20-k11.json: 684 records, 0.95 MB
+wrote ../../public/hyperbolic-poly/hp20-k12.json: 1183 records, 1.78 MB
+
+---------- n=20 done, exit 0 at 11:42:10 ----------
+
+---------- n=23  (start 11:42:10) ----------
+3.4.23.4 family develop — tilings by regular [3, 4, 23, 46] at one edge length
+source          : ../../materials/corpora/ai1_23
+forced edge len : l = 0.710413493973
+angles          : 3-gon 56.0731deg, 4-gon 83.3231deg, 23-gon 137.2808deg, 46-gon 139.3961deg
+certificates in : 217
+developed       : 217
+failed          : 0
+multi-variant   : 0
+wall            : 0.3s (1.5 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         1                 3      3
+  12        54                20     24
+  13       108                22     27
+  14        54                28     29
+
+BUDGET: shipped k <= 14; DROPPED k = [23] (43668 certificates). Those k are enumerated in the corpus and NOT shipped — the shelf must not present this board as exhausted.
+wrote ../../public/hyperbolic-poly/hp23-k1.json: 1 records, 0.00 MB
+wrote ../../public/hyperbolic-poly/hp23-k12.json: 54 records, 0.09 MB
+wrote ../../public/hyperbolic-poly/hp23-k13.json: 108 records, 0.18 MB
+wrote ../../public/hyperbolic-poly/hp23-k14.json: 54 records, 0.10 MB
+
+---------- n=23 done, exit 0 at 11:42:11 ----------
+
+=== all ai1 boards finished 11:42:11 ===

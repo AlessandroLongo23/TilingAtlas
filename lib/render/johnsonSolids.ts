@@ -11,7 +11,7 @@ import type { Polyhedron } from "./platonicSolids";
 export const TRIANGULAR_ORTHOBICUPOLA: Polyhedron = {
 	id: "triangular-orthobicupola",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...3...4...4 / 3...4...3...4",
+	vertexConfig: "3.3.4.4 / 3.4.3.4",
 	name: "Triangular orthobicupola (J27)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -49,7 +49,7 @@ export const TRIANGULAR_ORTHOBICUPOLA: Polyhedron = {
 export const PSEUDO_RHOMBICUBOCTAHEDRON: Polyhedron = {
 	id: "pseudo-rhombicuboctahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...4...4...4",
+	vertexConfig: "3.4.4.4",
 	name: "Pseudo-rhombicuboctahedron (J37)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -111,7 +111,7 @@ export const PSEUDO_RHOMBICUBOCTAHEDRON: Polyhedron = {
 export const TRIDIMINISHED_ICOSAHEDRON: Polyhedron = {
 	id: "tridiminished-icosahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...3...3...5 / 3...5...5",
+	vertexConfig: "3.3.3.5 / 3.5.5",
 	name: "Tridiminished icosahedron (J63)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -140,7 +140,7 @@ export const TRIDIMINISHED_ICOSAHEDRON: Polyhedron = {
 export const DIMINISHED_ICOSAHEDRON: Polyhedron = {
 	id: "diminished-icosahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...3...3...3...3 / 3...3...3...5",
+	vertexConfig: "3.3.3.3.3 / 3.3.3.5",
 	name: "Diminished icosahedron (J11)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -179,7 +179,7 @@ export const DIMINISHED_ICOSAHEDRON: Polyhedron = {
 export const ELONGATED_SQUARE_CUPOLA: Polyhedron = {
 	id: "elongated-square-cupola",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...4...4...4 / 4...4...8",
+	vertexConfig: "3.4.4.4 / 4.4.8",
 	name: "Elongated square cupola (J19)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -229,7 +229,7 @@ export const ELONGATED_SQUARE_CUPOLA: Polyhedron = {
 export const PENTAGONAL_ORTHOBIROTUNDA: Polyhedron = {
 	id: "pentagonal-orthobirotunda",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...3...5...5 / 3...5...3...5",
+	vertexConfig: "3.3.5.5 / 3.5.3.5",
 	name: "Pentagonal orthobirotunda (J34)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -303,7 +303,7 @@ export const PENTAGONAL_ORTHOBIROTUNDA: Polyhedron = {
 export const PARABIDIMINISHED_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 	id: "parabidiminished-rhombicosidodecahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...4...5...4 / 4...5...1.0",
+	vertexConfig: "3.4.5.4 / 4.5.10",
 	name: "Parabidiminished rhombicosidodecahedron (J80)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -407,7 +407,7 @@ export const PARABIDIMINISHED_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 export const METABIDIMINISHED_ICOSAHEDRON: Polyhedron = {
 	id: "metabidiminished-icosahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...3...3...3...3 / 3...3...3...5 / 3...5...5",
+	vertexConfig: "3.3.3.3.3 / 3.3.3.5 / 3.5.5",
 	name: "Metabidiminished icosahedron (J62)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -441,7 +441,7 @@ export const METABIDIMINISHED_ICOSAHEDRON: Polyhedron = {
 export const PARABIGYRATE_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 	id: "parabigyrate-rhombicosidodecahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...4...4...5 / 3...4...5...4",
+	vertexConfig: "3.4.4.5 / 3.4.5.4",
 	name: "Parabigyrate rhombicosidodecahedron (J73)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -575,7 +575,7 @@ export const PARABIGYRATE_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 export const GYRATE_DIMINISHED_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 	id: "gyrate-diminished-rhombicosidodecahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...4...4...5 / 3...4...5...4 / 4...5...1.0",
+	vertexConfig: "3.4.4.5 / 3.4.5.4 / 4.5.10",
 	name: "Gyrate diminished rhombicosidodecahedron (J77/J78)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -694,7 +694,7 @@ export const GYRATE_DIMINISHED_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 export const DIMINISHED_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 	id: "diminished-rhombicosidodecahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...4...5...4 / 4...5...1.0",
+	vertexConfig: "3.4.5.4 / 4.5.10",
 	name: "Diminished rhombicosidodecahedron (J76)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],
@@ -813,7 +813,7 @@ export const DIMINISHED_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 export const GYRATE_RHOMBICOSIDODECAHEDRON: Polyhedron = {
 	id: "gyrate-rhombicosidodecahedron",
 	schlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id
-	vertexConfig: "3...4...4...5 / 3...4...5...4",
+	vertexConfig: "3.4.4.5 / 3.4.5.4",
 	name: "Gyrate rhombicosidodecahedron (J72)",
 	vertices: [
 		[0.000000000, 0.000000000, 1.000000000],

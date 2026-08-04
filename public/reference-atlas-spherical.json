@@ -1377,7 +1377,7 @@
   "id": "sph-triangular-orthobicupola",
   "source": "spherical",
   "k": 2,
-  "family": "3...3...4...4 / 3...4...3...4",
+  "family": "3.3.4.4 / 3.4.3.4",
   "spherical": {
    "solid": "triangular-orthobicupola"
   },
@@ -1425,7 +1425,7 @@
   "id": "sph-pseudo-rhombicuboctahedron",
   "source": "spherical",
   "k": 2,
-  "family": "3...4...4...4",
+  "family": "3.4.4.4",
   "spherical": {
    "solid": "pseudo-rhombicuboctahedron"
   },
@@ -1473,7 +1473,7 @@
   "id": "sph-tridiminished-icosahedron",
   "source": "spherical",
   "k": 3,
-  "family": "3...3...3...5 / 3...5...5",
+  "family": "3.3.3.5 / 3.5.5",
   "spherical": {
    "solid": "tridiminished-icosahedron"
   },
@@ -1521,7 +1521,7 @@
   "id": "sph-diminished-icosahedron",
   "source": "spherical",
   "k": 3,
-  "family": "3...3...3...3...3 / 3...3...3...5",
+  "family": "3.3.3.3.3 / 3.3.3.5",
   "spherical": {
    "solid": "diminished-icosahedron"
   },
@@ -1569,7 +1569,7 @@
   "id": "sph-elongated-square-cupola",
   "source": "spherical",
   "k": 3,
-  "family": "3...4...4...4 / 4...4...8",
+  "family": "3.4.4.4 / 4.4.8",
   "spherical": {
    "solid": "elongated-square-cupola"
   },
@@ -1617,7 +1617,7 @@
   "id": "sph-pentagonal-orthobirotunda",
   "source": "spherical",
   "k": 3,
-  "family": "3...3...5...5 / 3...5...3...5",
+  "family": "3.3.5.5 / 3.5.3.5",
   "spherical": {
    "solid": "pentagonal-orthobirotunda"
   },
@@ -1665,7 +1665,7 @@
   "id": "sph-parabidiminished-rhombicosidodecahedron",
   "source": "spherical",
   "k": 3,
-  "family": "3...4...5...4 / 4...5...1.0",
+  "family": "3.4.5.4 / 4.5.10",
   "spherical": {
    "solid": "parabidiminished-rhombicosidodecahedron"
   },
@@ -1713,7 +1713,7 @@
   "id": "sph-metabidiminished-icosahedron",
   "source": "spherical",
   "k": 4,
-  "family": "3...3...3...3...3 / 3...3...3...5 / 3...5...5",
+  "family": "3.3.3.3.3 / 3.3.3.5 / 3.5.5",
   "spherical": {
    "solid": "metabidiminished-icosahedron"
   },
@@ -1761,7 +1761,7 @@
   "id": "sph-parabigyrate-rhombicosidodecahedron",
   "source": "spherical",
   "k": 4,
-  "family": "3...4...4...5 / 3...4...5...4",
+  "family": "3.4.4.5 / 3.4.5.4",
   "spherical": {
    "solid": "parabigyrate-rhombicosidodecahedron"
   },
@@ -1809,7 +1809,7 @@
   "id": "sph-gyrate-diminished-rhombicosidodecahedron",
   "source": "spherical",
   "k": 7,
-  "family": "3...4...4...5 / 3...4...5...4 / 4...5...1.0",
+  "family": "3.4.4.5 / 3.4.5.4 / 4.5.10",
   "spherical": {
    "solid": "gyrate-diminished-rhombicosidodecahedron"
   },
@@ -1857,7 +1857,7 @@
   "id": "sph-diminished-rhombicosidodecahedron",
   "source": "spherical",
   "k": 7,
-  "family": "3...4...5...4 / 4...5...1.0",
+  "family": "3.4.5.4 / 4.5.10",
   "spherical": {
    "solid": "diminished-rhombicosidodecahedron"
   },
@@ -1905,7 +1905,7 @@
   "id": "sph-gyrate-rhombicosidodecahedron",
   "source": "spherical",
   "k": 8,
-  "family": "3...4...4...5 / 3...4...5...4",
+  "family": "3.4.4.5 / 3.4.5.4",
   "spherical": {
    "solid": "gyrate-rhombicosidodecahedron"
   },

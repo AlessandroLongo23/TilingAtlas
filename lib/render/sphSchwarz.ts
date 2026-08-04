@@ -12,7 +12,24 @@
 // a Schwarz sphere and a Platonic freedraw sphere read as one look.
 
 import type { IcoPattern, V3 } from "@/lib/render/icoFreedraw";
-import type { SphSchwarzPattern } from "@/lib/freedraw/schwarz";
+
+/** What this adapter actually needs: a decoration indexed against a shipped board. `SphSchwarzPattern`
+ *  satisfies it, and so does the uniform-polyhedron edge system (lib/freedraw/sph-edges.ts), whose board
+ *  is a prism / antiprism / cuboctahedron instead of a triangulation. Faces are `number[]` rings, not
+ *  triples, because those boards mix face sizes — nothing below ever assumed three. */
+export interface SphBoardPattern {
+	id: string;
+	k: number;
+	chiral?: boolean;
+	/** Merged-tile id per board face (parallel to `geom.faces`). */
+	faceTile: number[];
+	/** One "0"/"1" per board edge (parallel to `geom.edges`). */
+	drawn: string;
+	/** Certificate vertex-orbit label per board vertex. */
+	vorbit: number[];
+	geom: { vertices: V3[]; faces: number[][]; edges: [number, number][] };
+	stats: { tiles: number };
+}
 
 export interface SphSchwarzScene {
 	/** What buildIcoFreedraw consumes: tiles as rings of vertex indices, plus the drawn edges. */
@@ -23,13 +40,13 @@ export interface SphSchwarzScene {
 	allEdges: [number, number][];
 }
 
-/** Group the board's triangles by the pattern's merged tile, and read its drawn bits off the board's
- *  edge list. The board geometry is the shard's shared object — nothing here copies it. */
-export function sphSchwarzScene(p: SphSchwarzPattern): SphSchwarzScene {
+/** Group the board's faces by the pattern's merged tile, and read its drawn bits off the board's edge
+ *  list. The board geometry is the shard's shared object — nothing here copies it. */
+export function sphSchwarzScene(p: SphBoardPattern): SphSchwarzScene {
 	const tiles: number[][][] = Array.from({ length: p.stats.tiles }, () => []);
 	p.geom.faces.forEach((ring, fi) => {
 		const t = p.faceTile[fi];
-		// A record whose faceTile ran past `tiles` would silently drop triangles; grow instead, so a
+		// A record whose faceTile ran past `tiles` would silently drop faces; grow instead, so a
 		// mismatch shows up as a visible extra tile, not a hole in the sphere.
 		while (tiles.length <= t) tiles.push([]);
 		tiles[t].push(ring);
