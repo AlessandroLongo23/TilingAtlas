@@ -19,11 +19,25 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
-/** A labelled control group, matching the Options tab's `text-[11px] text-fg-muted` caption. */
-export function Section({ label, children }: { label: string; children: ReactNode }) {
+/**
+ * A labelled control group, matching the Options tab's `text-[11px] text-fg-muted` caption.
+ *
+ * `flush` is for a group whose region has no padding of its own, so a grid of wall cells inside it
+ * reaches both panel edges: the caption takes the indent the region would have given it, and the
+ * control below keeps the full width.
+ */
+export function Section({
+	label,
+	flush = false,
+	children,
+}: {
+	label: string;
+	flush?: boolean;
+	children: ReactNode;
+}) {
 	return (
 		<div className="flex flex-col gap-2">
-			<span className="text-[11px] text-fg-muted">{label}</span>
+			<span className={cn("text-[11px] text-fg-muted", flush && "px-3")}>{label}</span>
 			{children}
 		</div>
 	);

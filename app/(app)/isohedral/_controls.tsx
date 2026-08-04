@@ -35,11 +35,13 @@ export function IsohedralSidebar({
 		<PageSidebar scrollable={false} collapsed={collapsed}>
 			<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px">
 				{header}
-				<div className="bg-surface-chrome shrink-0 p-3 flex flex-col gap-3">{filters}</div>
+				{/* Vertical padding only: the filter rows are grids of wall cells like the type grid below
+				    them, so they run to both panel edges and only their captions carry the indent. */}
+				<div className="bg-surface-chrome shrink-0 py-3 flex flex-col gap-3">{filters}</div>
 				{/* Capped, not proportional: nine rows of chips is enough to browse in, and a proportional
 				    split would shrink the controls to nothing on a short window. */}
 				<div className="bg-surface-chrome shrink-0 max-h-64 overflow-y-auto overflow-x-hidden scrollbar-hide">
-					<div className="p-3">{types}</div>
+					{types}
 				</div>
 				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide bg-surface-chrome">
 					<div className="p-3 flex flex-col gap-3">{children}</div>

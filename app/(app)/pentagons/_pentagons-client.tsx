@@ -52,6 +52,17 @@ const STROKE_CSS = "#000";
 /** Lattice radius the CPU fallback walks out to. Well past a screenful at the zooms this page uses. */
 const FALLBACK_MAX_RADIUS = 40;
 
+/** Columns in the type grid. The arrow keys walk the same layout, so both read it from here. */
+const GRID_COLS = 5;
+
+/** Arrow key → (column step, row step) in that grid. */
+const ARROW_STEP: Record<string, [number, number]> = {
+	ArrowLeft: [-1, 0],
+	ArrowRight: [1, 0],
+	ArrowUp: [0, -1],
+	ArrowDown: [0, 1],
+};
+
 export function PentagonsClient() {
 	const searchParams = useSearchParams();
 
@@ -90,6 +101,52 @@ export function PentagonsClient() {
 		setAngles(d.angles);
 		setSides(d.sides);
 	}, [type]);
+
+	// ←/→/↑/↓ move through the type grid the way it is drawn: one step along the row, one row down the
+	// column. Both wrap, and fifteen types over five columns is exactly three full rows, so a column
+	// cycles 1 → 6 → 11 → 1 with nothing skipped. The tag guard leaves the arrows to a focused slider,
+	// where they nudge the parameter and must not also change the type.
+	//
+	// The listener binds once and reads the selection through a ref, the same shape lib/hooks/
+	// useKeyShortcuts uses. Closing over `id` and re-binding on every selection instead leaves a window
+	// between the render that shows the new type and the effect that swaps the listener, and a key
+	// pressed inside it steps from the PREVIOUS type. Measured, not hypothetical: with ?type=14 the
+	// first ArrowRight after load gave Type 2, stepping from the default instead of from 14.
+	const idRef = useRef(id);
+	useEffect(() => {
+		idRef.current = id;
+	});
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = e.target as HTMLElement | null;
+			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			const step = ARROW_STEP[e.key];
+			if (!step) return;
+			e.preventDefault();
+			const [dx, dy] = step;
+			const n = PENTAGON_TYPES.length;
+			const i = Math.max(0, PENTAGON_TYPES.findIndex((t) => t.id === idRef.current));
+			if (dx !== 0) {
+				selectType(PENTAGON_TYPES[(i + dx + n) % n].id);
+				return;
+			}
+			// Walk the column, stepping over the empty slots a partial last row would leave (none at 15).
+			const rows = Math.ceil(n / GRID_COLS);
+			const col = i % GRID_COLS;
+			let row = Math.floor(i / GRID_COLS);
+			for (let s = 0; s < rows; s++) {
+				row = (row + dy + rows) % rows;
+				const j = row * GRID_COLS + col;
+				if (j < n) {
+					selectType(PENTAGON_TYPES[j].id);
+					return;
+				}
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [selectType]);
 
 	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the tiling fills the window.
 	// F toggles it, Esc leaves it, and the hook restores the chrome when this page unmounts.
@@ -285,6 +342,8 @@ export function PentagonsClient() {
 		() => ({
 			geometry: "euclidean",
 			label: type.label,
+			// Čtrnáct's ladder describes tilings by REGULAR polygons; this page's tiles are neither.
+			level: null,
 			wallpaperGroup: null,
 			orbifold: null,
 			latticeShape: null,
@@ -317,7 +376,7 @@ export function PentagonsClient() {
 				header={header}
 				types={
 					<Segmented
-						cols={5}
+						cols={GRID_COLS}
 						options={typeOptions}
 						value={String(id)}
 						onChange={(v) => selectType(Number(v))}
