@@ -1,0 +1,39 @@
+IH01 patch-build sweep — every shipped record, default parameter point
+started 2026-08-04T12:02:56.260Z
+
+k=2: 5 records, 0 failed, worst build 3ms, 0.0s
+k=4: 15 records, 0 failed, worst build 3ms, 0.0s
+k=6: 60 records, 0 failed, worst build 4ms, 0.2s
+k=8: 275 records, 0 failed, worst build 6ms, 1.1s
+  k=10  501/744  0 failed  201/s  ETA 1s
+k=10: 744 records, 0 failed, worst build 16ms, 3.8s
+  k=12  501/4380  0 failed  181/s  ETA 21s
+  k=12  1001/4380  0 failed  174/s  ETA 19s
+  k=12  1501/4380  0 failed  172/s  ETA 17s
+  k=12  2001/4380  0 failed  170/s  ETA 14s
+  k=12  2501/4380  0 failed  172/s  ETA 11s
+  k=12  3001/4380  0 failed  168/s  ETA 8s
+  k=12  3501/4380  0 failed  160/s  ETA 5s
+  k=12  4001/4380  0 failed  140/s  ETA 3s
+k=12: 4380 records, 0 failed, worst build 87ms, 33.8s
+  k=14  501/9280  0 failed  93/s  ETA 94s
+  k=14  1001/9280  0 failed  95/s  ETA 87s
+  k=14  1501/9280  0 failed  98/s  ETA 80s
+  k=14  2001/9280  0 failed  98/s  ETA 75s
+  k=14  2501/9280  0 failed  94/s  ETA 72s
+  k=14  3001/9280  0 failed  82/s  ETA 77s
+  k=14  3501/9280  0 failed  81/s  ETA 71s
+  k=14  4001/9280  0 failed  83/s  ETA 63s
+  k=14  4501/9280  0 failed  84/s  ETA 57s
+  k=14  5001/9280  0 failed  78/s  ETA 55s
+  k=14  5501/9280  0 failed  76/s  ETA 50s
+  k=14  6001/9280  0 failed  76/s  ETA 43s
+  k=14  6501/9280  0 failed  77/s  ETA 36s
+  k=14  7001/9280  0 failed  80/s  ETA 29s
+  k=14  7501/9280  0 failed  82/s  ETA 22s
+  k=14  8001/9280  0 failed  85/s  ETA 15s
+  k=14  8501/9280  0 failed  87/s  ETA 9s
+  k=14  9001/9280  0 failed  88/s  ETA 3s
+k=14: 9280 records, 0 failed, worst build 157ms, 104.0s
+
+TOTAL 14759 records, 0 failed, 143.1s

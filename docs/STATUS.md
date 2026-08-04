@@ -32,7 +32,7 @@ so k>=21 stays the distributed problem §44 called it.
 
 Detail: DEVELOPMENT_NOTES.md §"what a level of k costs"; logs in `experiments/results/2026-08-03-*`.
 
-## The IH01 edge shelf is LIVE, with curved edges — UNCOMMITTED (2026-08-05)
+## FOUR isohedral edge shelves are LIVE, with curved edges (2026-08-05)
 
 Marek's second PARAMETRIC board is in the atlas, at `ih-1`. `pnpm build` clean, 15 IH tests pass, and
 the shelf is verified in the browser: period, fills, scaffold/lattice/orbit overlays, curvature.
@@ -58,6 +58,23 @@ the shelf is verified in the browser: period, fills, scaffold/lattice/orbit over
 - ⚑ **The develop realises the MIRROR of Tactile's placement** — pre-existing, from the turn sign in the
   walk, and the pentagon shelf's walk shares the convention. Harmless under mirror-pairs-merge and the
   bows are correct relative to the tile. Flipping one shelf and not the other would be worse. AL call.
+- **`edges_isohedral_IH02` at `ih-2`** — same counts as IH01 at every k, zero shared records (asserted).
+  Its tile has TWO aspects, so `corner -> class` is not a function, the corner labelling had to be solved
+  from eight candidates, and — since IH02's DEFAULT tile is the regular hexagon, where every wrong
+  candidate develops — the test that pins it works at a generic parameter point.
+- ⚑ **`certCellPeriods` was wrong and is gone.** The certificate cell is a whole number of periods, but
+  which number is a property of the RECORD: IH01's is always 2, IH02's is 1 for 75 of 80 and 2 for 5.
+  The builder now checks the period DIVIDES the certificate's count.
+- **`edges_isohedral_IH03` at `ih-3`** — `abacBc`, two aspects, same counts again from disjoint data.
+- **`scripts/solve-ih-board.ts` derives the board row** for any IH corpus, and separates what is forced
+  (corpus incidence, 360° closure) from what is decisive (does it develop) from what is a tie-break
+  (mirror pair). ⚑ It must test away from the DEFAULT parameters: IH02 and IH03 are the regular hexagon
+  there, where every wrong corner labelling develops perfectly. Reproduces IH01's and IH02's answers.
+- **`edges_isohedral_IH04` at `ih-4`** — six parameters, FIVE edge classes (`S J S S S`), and much
+  deeper: 13/103/628/3977 where the others give 5/15/60/275, budget stops at k=8 (k=10 and 12 dropped).
+  ⚑ Only the class occurring twice gets a digon slot, so four of its five classes cannot say which way
+  an edge is crossed — harmless because those four are the S edges, equal to their own reverse, and
+  `checkSlotsAreOpposite` asserts that pairing instead of assuming it.
 - ⚑ `solver_schwarz_edges_234.zip` (11:51) still unprocessed — a one-row job on the Schwarz shelf.
 
 Detail: DEVELOPMENT_NOTES.md §"The IH01 shelf ships".

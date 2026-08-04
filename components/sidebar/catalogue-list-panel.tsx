@@ -46,6 +46,8 @@ const SUB_LABEL: Record<string, string> = {
 	"pen-1": "Pentagon (Kershner 1) edges",
 	"ih-1": "Isohedral IH01 edges",
 	"ih-2": "Isohedral IH02 edges",
+	"ih-3": "Isohedral IH03 edges",
+	"ih-4": "Isohedral IH04 edges",
 	// Colors splits the same grids again by palette size — each is its own catalogue.
 	"square-2": "Square grid, 2 colors",
 	"square-3": "Square grid, 3 colors",

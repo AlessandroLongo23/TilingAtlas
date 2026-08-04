@@ -2013,3 +2013,24 @@ is 50 lines, and all 14,759 records build, 0 failures. ⚑ CORRECTION: the perio
 the certificate cell is exactly TWO periods (2k vertices, k orbit labels), now a checked board fact.
 Edges bow, one slider per shape: the digon slot bit gives the crossing direction, pinned against Tactile.
 ⚑ The develop realises the MIRROR of Tactile's placement (pre-existing; pentagon too). NOTES §"IH01 shelf ships". — CC
+
+### 2026-08-05 (2) — CC — IH02 ships, and corrects the model IH01 suggested
+Second isohedral board live at `ih-2`, 1,099 records eager of 14,759. ⚑ Two aspects, so `corner -> class`
+is no longer a function; the corner labelling had to be solved, and since IH02's default tile is the
+regular hexagon every wrong candidate develops there, so the test moves off it. ⚑ CORRECTION to
+2026-08-05 (1): `certCellPeriods` is not a board constant (IH02's cell is one period for 75 records, two
+for 5), so the builder checks DIVISIBILITY. NOTES §"IH02, and what a second board cost". — CC
+
+### 2026-08-05 (3) — CC — IH03, and a script that derives the board row
+Third isohedral board live at `ih-3` (`abacBc`, two aspects), 14,759 decoded, 0 failures.
+`scripts/solve-ih-board.ts` derives the corner labelling for any IH corpus, separating what is FORCED
+(corpus incidence, 360° closure) from DECISIVE (does it develop) from TIE-BREAK (mirror pair). ⚑ It must
+test away from the defaults: IH02 and IH03 are the regular hexagon there, where every wrong labelling
+works. Reproduces IH01's and IH02's known answers. NOTES §"IH03, and the board-row solver". — CC
+
+### 2026-08-05 (4) — CC — IH04, where four classes get no direction bit
+Fourth isohedral board live at `ih-4`: six parameters, FIVE edge classes, kinds `S J S S S`. ⚑ Only the
+class occurring twice (`b`) gets a slot bit; a, c, d, e get one each and cannot say which way an edge is
+crossed — harmless because those four are the S edges, equal to their own reverse. So the slot check now
+demands opposite slots only where the curve is not self-reverse, and asserts that pairing. Deeper board:
+13/103/628/3977, budget stops at k=8. NOTES §"IH04: the board where not every edge". — CC

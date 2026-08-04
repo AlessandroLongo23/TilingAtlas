@@ -9294,3 +9294,130 @@ which is worse than both being consistently mirrored. Worth an author decision.
 
 ⚑ Still unprocessed: `solver_schwarz_edges_234.zip` (2026-08-04 11:51), a (2,3,4) Schwarz edge board,
 10 at k=3 and 13 at k=4 — a one-row job on the existing Schwarz shelf.
+
+## IH02, and what a second board cost the model
+
+Marek's `solver_edges_isohedral_IH02.zip` (2026-08-04 13:45) is decoded and live at `ih-2`. It is the
+first board that did not simply fill in the table, and every place it pushed back was a place where
+IH01's single data point had been generalised too early.
+
+**IH02 has TWO aspects; IH01 has one.** Tactile's edgeWord is `aabccB` against IH01's `abcABC`: classes
+a and c each occur twice FORWARD on the boundary, which is only possible because the tiling contains
+reflected tiles. Three consequences, in the order they bit.
+
+⚑ **`corner -> class` stopped being a function.** `check_incidence` asserted that each corner letter is
+followed around a vertex by exactly the class the board declares. With two aspects a tile is met either
+way about, so the digon following a corner is the side LEAVING it on a direct tile and the side ENTERING
+it on a reflected one — and the corpus duly gives corners B and F two classes each. Demanding equality
+rejected all 80 IH02 records. It now weakens to containment on multi-aspect boards, which still catches
+a class that has no business at that corner. `aspects` and `vertex_corners` are declared per board; the
+latter had been `len(corners) // 2`, right for both boards by luck and wrong the moment a 4-valent one
+arrives.
+
+**The corner labelling had to be solved, not read.** IH01's corpus states the boundary outright. IH02's
+narrows it only to eight candidates, because B and F are interchangeable in the incidence and so are
+C and D. Two of the eight develop; they are mirror images of each other, and the tie goes to
+`F,A,B,C,D,E` — Marek's letters running in boundary order, offset by one from Tactile's vertex 0, which
+is the reading that needs no coincidence. ⚑ **At IH02's DEFAULT parameters the tile is the regular
+hexagon, every angle 120°, and all eight candidates develop perfectly.** Any test of a corner labelling
+has to move off the defaults or it tests nothing; the one in `edge-board.test.ts` asserts the six angles
+are distinct before it asserts anything else.
+
+⚑ **CORRECTION, again, to the certificate-cell claim.** This morning's entry recorded IH01's cell as two
+translation periods and I made that a declared board constant, `certCellPeriods`. IH02 shows the model
+was wrong: its cell is ONE period for 75 of its 80 eager records and TWO for the other five. The ratio
+is a property of the RECORD — how much extra symmetry that decoration happens to have — not of the
+board. The constant is gone. The builder is handed the certificate's tile count and asked only that the
+period it found DIVIDES it, which still catches a sublattice (too big to divide) and a mis-scaled fold,
+without pretending the ratio is knowable in advance. IH01's uniform 2 survives as a test, which is where
+a measured regularity belongs.
+
+**The slot check was over-fitted too.** `checkSlotsAreOpposite` walked a tile and demanded each class
+appear once per slot — true of `abcABC`, false of `aabccB`, and not the claim curvature actually needs.
+It now states that claim exactly: the two darts glued across one edge carry the same class at opposite
+slots. That is board-agnostic, one pass over the darts, and it holds on every eagerly shipped record of
+both boards.
+
+**Counts: 5 / 15 / 60 / 275 / 744 / 4380 / 9280, identical to IH01 at every k**, with the same k=16 drop
+of 54,630. Not a copy: zero records are shared between the two boards and no source file is
+byte-identical. Both are hexagons with three edge classes over the same four-letter digon alphabet, so
+the number of edge systems up to symmetry agrees at every k. A test asserts the disjointness, because a
+shelf quietly presenting one board's data twice is the worst version of this bug.
+
+All 80 eager IH02 records build a patch at the defaults AND at a generic parameter point, ratios 1 and 2,
+slot check clean. 19 tests over the two boards.
+
+## IH03, and the board-row solver that should have existed two boards ago
+
+`solver_edges_isohedral_IH03.zip` (2026-08-04 15:10) is decoded and live at `ih-3`. It took ten minutes
+instead of an hour, because deriving the board row is now a script.
+
+**`scripts/solve-ih-board.ts` proposes the row for any IH corpus**, and — more useful — says which parts
+of it are forced and which are a tie-break:
+
+1. FORCED, from the corpus: the classes seen after each corner around a vertex, and which corners share
+   a vertex. A corner's declared sides must contain everything the corpus ever saw there.
+2. FORCED, from geometry: every corner set the corpus puts at a vertex closes to 360°.
+3. DECISIVE, when decoded shards are passed: does the labelling actually DEVELOP? A wrong one puts the
+   wrong angle at a corner and the patch builder refuses. This is the step that matters, and it is the
+   one I did by hand for IH02 — steps 1 and 2 left eight candidates there and the develop cut it to two.
+4. A TIE-BREAK, printed as one: what survives is a MIRROR PAIR, because no corpus can see handedness.
+   Marek numbers corners around the boundary, so the candidate reading A, B, C… cyclically wins.
+
+Two traps it encodes, both of which cost time on IH02:
+
+⚑ **The develop test must run AWAY from the type's default parameters.** IH02 and IH03 are both the
+regular hexagon at their defaults, every angle 120°, where every wrong labelling develops perfectly.
+The script picks the point with the most distinct angles and reports how many it got.
+
+⚑ **Six distinct angles is not always reachable, so it cannot be required.** IH01 pairs opposite sides
+by translation, so its opposite angles are equal at every parameter point — three distinct, never six.
+Demanding six threw on IH01, which is how that was found.
+
+**Validated on the two boards whose answers were already known.** IH02 → `FABCDE`, uniquely, matching
+the hand derivation. IH01 → `ABCDEF`, together with `DEFABC`: those two differ by a symmetry the board
+genuinely has (its boundary word repeats with period 3, so calling the first corner A or D is the same
+board relabelled), so the script takes the lexicographically smaller and says the choice was free rather
+than pretending to have derived it.
+
+**IH03 (`abacBc`, two aspects) resolves uniquely to `ABCDEF`**: 16 candidates from the corpus, 4 develop,
+1 in boundary order. Decoded 14,759 of 69,389, 0 failures, counts again 5 / 15 / 60 / 275 / 744 / 4380 /
+9280 with k=16 dropped — the third board in a row with those numbers, and again from disjoint data.
+
+The decode order that makes this work: the decoded record depends only on the corner LETTERS, never on
+their order, so a corpus is decoded once with any consistent row and every candidate is then re-tested
+against those same records. No chicken and egg.
+
+## IH04: the board where not every edge gets to know which way it is crossed
+
+`solver_edges_isohedral_IH04.zip` (2026-08-04 15:32) is live at `ih-4`, and it is the first board that
+is not a variation on the first three. Tactile: six parameters (the only type with six), **five** edge
+shapes, boundary `abcdBe`, kinds `S J S S S`. The solver script handled the corner labelling without
+help — five classes constrain the incidence far harder than three, so it saw four candidates instead of
+sixteen and exactly one developed.
+
+⚑ **Four of its five classes carry NO direction bit, and that is not a defect in the corpus.** The digon
+alphabet gives a class four letters when it occurs TWICE on the tile and two when it occurs once. IH01
+to IH03 have three classes occurring twice each, so every class has a slot bit and both ends of an edge
+disagree about it — which is exactly what curvature reads to decide which way to bulge. IH04 uses class
+b twice and a, c, d, e once, so those four get a single slot and both ends of such an edge carry the
+same letter. There is no direction to read.
+
+**It does not matter, and the reason is worth stating precisely: the once-occurring classes are exactly
+the S edges.** Tactile's S is point-symmetric about the edge's midpoint, so its curve EQUALS its own
+reverse and traversal direction changes nothing. The one class that occurs twice is the one J edge, the
+one whose curve is direction-dependent, and it is the one that gets a slot bit. The alphabet gives each
+class a direction bit exactly when the geometry needs one.
+
+So `checkSlotsAreOpposite` stopped demanding opposite slots unconditionally and now demands them only
+where the answer depends on it: same class at both ends always, opposite slots unless the class's curve
+is self-reverse. A board with a single-slot class whose curve is NOT self-reverse would be one where
+curvature genuinely could not be resolved, and it now fails loudly instead of drawing half its tiles
+mirrored. All 744 eager records pass, straight and curved, at the defaults and away from them, with
+every tile of every patch congruent.
+
+**A much deeper board, and the counts show why.** 13 / 103 / 628 / 3977 against the first three boards'
+5 / 15 / 60 / 275, and our budget stops at k = 8 where theirs reached 14 — k = 10 (13,272) and k = 12
+(95,328) are enumerated and dropped. Five edge classes grow the search far faster than three. The
+counts are the PENTAGON board's, exactly (13 / 103 / 628 / 3977 / 13,272), which is the same coincidence
+as before one level up: that board also decorates a five-class tile.
