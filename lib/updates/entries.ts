@@ -53,6 +53,37 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.15.0",
+		date: "2026-08-05",
+		title: "The inversive view on the isohedral and pentagon families",
+		commit: "a521c08",
+		changes: [
+			{
+				kind: "feature",
+				text: "**The inversive view** now works on the parametric families: 81 isohedral types and 15 pentagon types, seen through a circle inversion, a Möbius map or a spiral. Press X, or turn it on under View.",
+				href: "/isohedral",
+			},
+			{
+				kind: "fix",
+				text: "**Curved edges** keep their shape under the lens. A J or S edge bowed with the sliders used to snap back to a straight chord there, while the flat view drew it correctly.",
+				href: "/isohedral",
+			},
+			{
+				kind: "fix",
+				text: "**Line weight** matches the flat view at the same slider setting. Near the rim of the lens it drew 7 pixels of ink where the flat view drew 2, and thinned to hairlines toward the centre.",
+			},
+			{
+				kind: "fix",
+				text: "**Tile colours** survive the lens. The isohedral three colouring, the pentagon unit colours and the polyomino pieces all came out in a single flat colour before.",
+				href: "/pentagons",
+			},
+			{
+				kind: "fix",
+				text: "**Curves stay smooth** toward the edge of the view, which is where an inversion magnifies most and where their straight segments used to become visible.",
+			},
+		],
+	},
+	{
 		version: "1.14.1",
 		date: "2026-08-05",
 		title: "Clearer lines on the hyperbolic disk",
