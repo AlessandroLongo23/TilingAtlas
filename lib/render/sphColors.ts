@@ -71,7 +71,7 @@ export function buildSphColors(
 	faces.forEach((face, fi) => {
 		const col = pal01[faceColor[fi]] ?? pal01[pal01.length - 1] ?? [0.5, 0.5, 0.5];
 		const ring = face.map((idx) => V[idx]);
-		if (mode === "sphere") pushSphericalFace(positions, normals, colors, ring, radius, col);
+		if (mode === "sphere") pushSphericalFace(positions, normals, colors, ring, radius, col, V);
 		else pushFlatFace(positions, normals, colors, ring, radius, col);
 	});
 	const geom = new THREE.BufferGeometry();

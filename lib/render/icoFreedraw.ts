@@ -158,11 +158,40 @@ export function pushFlatFace(positions: number[], normals: number[], colors: num
 	}
 }
 
+// The pole of a face whose vertices lie exactly ON a great circle — a face that IS a hemisphere. Its
+// ring bounds both halves equally, so nothing inside the ring says which half is the tile; the rest of
+// the solid does. Every other vertex lies outside the tile, so the tile's centre is the pole they lean
+// away from. With no vertices to ask, either pole is as good as the other.
+function hemispherePole(U: V3[], solidVerts?: V3[]): V3 {
+	const n = nrm(cross(sub(U[1], U[0]), sub(U[2], U[0])));
+	let inPos = 0;
+	let inNeg = 0;
+	for (const v of solidVerts ?? []) {
+		const d = dot(n, v); // ring vertices sit at 0 and so cast no vote either way
+		inPos = Math.max(inPos, d);
+		inNeg = Math.max(inNeg, -d);
+	}
+	return inPos <= inNeg ? n : [-n[0], -n[1], -n[2]];
+}
+
 // A curved spherical face (any ring length): fan-triangulate on the unit sphere, each fan triangle a
 // subdivided spherical patch. Fan triangles share the diagonal from ring[0], evaluated identically on
 // both sides, so no cracks.
-export function pushSphericalFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3) {
+//
+// `solidVerts` is only consulted for a HEMISPHERE face — one whose circumradius is exactly π/2, so its
+// vertices are coplanar with the origin and sum to zero. There the ring[0] fan degenerates: every
+// barycentric blend of three origin-coplanar vertices normalises straight back onto their great circle,
+// so the whole face collapses to a curve and renders as a hole (sp3-2-00001, the triangular cupola,
+// whose hexagonal base has circumradius π/2 — the one such face in the spherical corpus). Fanning from
+// the pole instead gives one non-degenerate patch per ring EDGE, which is the hemisphere.
+export function pushSphericalFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3, solidVerts?: V3[]) {
 	const U = ring.map(nrm);
+	const sum = U.reduce<V3>((a, u) => [a[0] + u[0], a[1] + u[1], a[2] + u[2]], [0, 0, 0]);
+	if (Math.hypot(sum[0], sum[1], sum[2]) < 1e-9) {
+		const p = hemispherePole(U, solidVerts);
+		for (let i = 0; i < U.length; i++) pushSphericalTri(positions, normals, colors, p, U[i], U[(i + 1) % U.length], radius, col);
+		return;
+	}
 	// outward test on the flat polygon; if inward, reverse so sub-triangles wind outward
 	let fn = cross(sub(U[1], U[0]), sub(U[2], U[0]));
 	const flip = dot(fn, U[0]) < 0;
@@ -192,7 +221,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 		const col = tileColor(ti, pattern.nTiles, opts.hueOffset ?? 0);
 		for (const face of tile) {
 			const ring = face.map((idx) => V[idx]);
-			if (mode === "sphere") pushSphericalFace(positions, normals, colors, ring, radius, col);
+			if (mode === "sphere") pushSphericalFace(positions, normals, colors, ring, radius, col, V);
 			else pushFlatFace(positions, normals, colors, ring, radius, col);
 		}
 	});
