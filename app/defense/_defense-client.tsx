@@ -384,6 +384,79 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 					</figure>
 				);
 			},
+			// <tiling-verdict yes="id,id,id,id" no="id,id,id,id" yeslabel="…" nolabel="…"> — the shape of
+			// every "here is the property, here is its absence" slide in part one: two 2x2 grids side by
+			// side, each under a verdict mark. The mark is what carries the slide from the back of the
+			// room; the captions carry which property is being decided.
+			//
+			// Four tilings a side and not one, because a single example of a property reads as a fact
+			// about that tiling. Four says the property is what they have in common.
+			"tiling-verdict": ({
+				yes,
+				no,
+				yeslabel,
+				nolabel,
+			}: {
+				yes?: string;
+				no?: string;
+				yeslabel?: string;
+				nolabel?: string;
+			}) => {
+				const quad = (ids: string | undefined, ok: boolean, label?: string) => (
+					<figure className="m-0 flex min-w-0 flex-col items-center gap-[1.2vh]">
+						<div
+							aria-label={ok ? "has the property" : "does not"}
+							className={cn(
+								"text-[clamp(1.7rem,5.4vh,3.2rem)] leading-none font-bold",
+								ok ? "text-emerald-600" : "text-red-600",
+							)}
+						>
+							{ok ? "✓" : "✗"}
+						</div>
+						<div className="grid w-full grid-cols-2 gap-[0.9vh]">
+							{(ids ?? "")
+								.split(",")
+								.map((t) => t.trim())
+								.filter(Boolean)
+								.map((id) => {
+									const cell = cells[id];
+									return cell ? (
+										<InteractiveTilingPreviewCard
+											key={id}
+											cell={cell}
+											tilingId={id}
+											// Two periods, not the card's three: at a quarter of the usual size a
+											// three-period patch reads as texture instead of as tiles.
+											homePeriods={2}
+											{...overlayData(id)}
+											{...SLIDE_CARD_PROPS}
+										/>
+									) : (
+										<div
+											key={id}
+											className="flex aspect-square items-center justify-center rounded-xl border border-line bg-surface-overlay/30 p-2 text-center text-[0.55rem] text-fg-muted"
+										>
+											unknown: {id}
+										</div>
+									);
+								})}
+						</div>
+						{label && (
+							<figcaption className="text-center text-[clamp(0.62rem,1.1vh+0.2vw,0.9rem)] text-fg-muted">
+								{label}
+							</figcaption>
+						)}
+					</figure>
+				);
+				return (
+					// Each column is capped by HEIGHT, since the cards are square and a width-driven grid
+					// silently sets its own height — the mistake <slide-grid> exists to avoid.
+					<div className="not-prose mx-auto flex w-full flex-wrap items-start justify-center gap-[4vw] [&>figure]:w-[min(57vh,46%)]">
+						{quad(yes, true, yeslabel)}
+						{quad(no, false, nolabel)}
+					</div>
+				);
+			},
 			// <orbit-card tiling="t3001" label="…"> — the same card again, in /play's vertex-orbit mode:
 			// tiles dimmed, a dot on every vertex coloured by its orbit, and hovering one orbit grows
 			// all of its dots. Several may share a slide, each hovering independently.

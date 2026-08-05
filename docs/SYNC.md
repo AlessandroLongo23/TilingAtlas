@@ -2090,3 +2090,12 @@ built them: one asymmetric F, carried by a wallpaper group smaller than the base
 group, aspects and wallpaper group are transcribed then RECOMPUTED from the geometry, which caught IH35
 drawn as IH36. ⚑ `uFeature` was a flattened-segment length, so bowing an edge by 0.01 collapsed it
 tenfold; √area now, and the lens' stroke tapers in width not opacity. DEVELOPMENT_NOTES §2026-08-05. — CC
+
+### 2026-08-05 — CC — the two property slides became verdict pairs
+`<tiling-verdict>`: two 2x2 grids side by side, each under a green check or a red cross, for the
+edge-to-edge and regular-polygon slides. `referencedTilingIds` learned to read its comma-separated
+lists or the page ships without those cells. Three corrections AL caught while it was being built:
+the herringbone polyomino is NOT edge-to-edge (a long side is met by two short ones) so it moved from
+the passing column to the failing one; two scaled examples were the same hexagon-and-triangle
+arrangement in different hues; three star examples shared one 8x3/12x1 core. The two slides now share
+no tiling, so nothing survives the slide change and re-animates. — CC

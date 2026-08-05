@@ -95,6 +95,16 @@ export function referencedTilingIds(markdown: string): string[] {
 	const re = /<(?:tiling-card|orbit-card|seed-card)[^>]*\btiling=["']([^"']+)["']/gi;
 	let m: RegExpExecArray | null;
 	while ((m = re.exec(markdown)) !== null) ids.add(m[1]);
+	// <tiling-verdict> names four a side, comma-separated, in `yes` and `no`.
+	const verdict = /<tiling-verdict\b[^>]*>/gi;
+	while ((m = verdict.exec(markdown)) !== null) {
+		for (const list of m[0].matchAll(/\b(?:yes|no)=["']([^"']+)["']/gi)) {
+			for (const id of list[1].split(",")) {
+				const t = id.trim();
+				if (t) ids.add(t);
+			}
+		}
+	}
 	return [...ids];
 }
 
