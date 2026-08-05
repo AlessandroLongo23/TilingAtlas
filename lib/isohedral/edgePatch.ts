@@ -5,19 +5,30 @@
 // lib/freedraw/edgePatchCore.ts. This file supplies the two things that are specific to this corpus:
 // the tile (from Tactile, via edge-board.ts) and how many tiles a period should hold.
 //
-// THE FACE COUNT IS A CHECK, NOT A SEARCH KEY. A certificate carries 2n·F darts for F tiles, because
-// every board edge is a digon and so contributes four darts; for a hexagonal board that is 12F. But the
-// certificate cell need not be a fundamental domain for the TRANSLATIONS: every IH01 cell holds 2k board
-// vertices carrying only k distinct orbit labels, so it spans two periods and the period holds k/2 tiles,
-// while IH02's cell is one period for most records and two for a handful. The ratio is a property of the
-// RECORD, not of the board, so the builder is given the certificate's count and asked only that the
-// period it finds DIVIDES it — which still catches a sublattice and a mis-scaled fold.
+// ⚑ THE CERTIFICATE'S FACE COUNT IS NOT A CONSTRAINT ON THE PERIOD, and this file used to say it was.
+// A certificate carries 2n·F darts for F tiles, so `certCellFaces` reads F back off the dart count — and
+// on all 48,998 shipped records of IH01 to IH04, and on IH05's too, that number is IDENTICALLY k. It
+// carries no information the record does not already state. The old gate ("the period must divide the
+// certificate's count") was therefore just "F divides k", which held on the first four boards by
+// coincidence and is false on IH05: at k=6 its period is 12 tiles, TWICE k, and the gate rejected every
+// record of the board including the correct labelling.
+//
+// What replaces it is a fact about the board instead of about the data. A decoration is preserved only by
+// translations that already preserve the undecorated tiling, so its lattice is a sublattice of Tactile's
+// and its cell holds a whole multiple of the |t1 x t2| / tileArea tiles that Tactile's own cell holds —
+// one on IH01, two on IH02 to IH04, four on IH05. That is `periodFacesMultipleOf`, and it still catches
+// the fold that loses or duplicates an aspect. It does NOT catch a sublattice; nothing here does, and
+// the shortest-verified-pair search in edgePatchCore is what keeps that from happening.
 
 import { buildEdgePatch, type EdgePatchOptions, type EdgePatchResult } from "@/lib/freedraw/edgePatchCore";
 import { ihLetterSlot, reverseChordCurve, type SolvedIhBoard } from "./edge-board";
 import { walkIhEdges, type IhEdgeRecord } from "./edgeDevelop";
 
-/** Tiles in one certificate cell: darts / (2 · sides), the digon count inverted. */
+/** Tiles in one certificate cell: darts / (2 · sides), the digon count inverted.
+ *
+ *  Equal to `rec.k` on every record of every board shipped so far, which is why it constrains nothing —
+ *  see the note at the top of this file. Kept because it sizes the develop and because the tests assert
+ *  that equality instead of assuming it. */
 export const certCellFaces = (rec: IhEdgeRecord, board: SolvedIhBoard): number =>
 	rec.rneig.length / (2 * board.spec.sides.length);
 
@@ -73,10 +84,14 @@ export function buildIhEdgePatch(
 		area += p.x * q.y - q.x * p.y;
 	}
 	const tileArea = Math.abs(area / 2);
+	// Tiles in Tactile's OWN cell: one for IH01, two for IH02 to IH04, four for IH05. Measured off the
+	// geometry the develop is about to use, not read from the catalogue, so the two cannot disagree.
+	const baseFaces = Math.round(Math.abs(board.t1.x * board.t2.y - board.t1.y * board.t2.x) / tileArea);
 	// Size the develop from the period it is looking for: a cell of F tiles is about sqrt(F·tileArea)
 	// across, and the walk needs a few of those to see two generators AND a core holding a whole one.
 	// Guessing a constant here is what makes a high-k record fail on a develop that was never big enough.
-	const worldR = 3.2 * Math.sqrt(Math.max(1, cert) * tileArea) + 2 * longest;
+	// F can run to twice k (IH05 at k=6), so this is a starting size and the attempt loop grows it.
+	const worldR = 3.2 * Math.sqrt(Math.max(1, cert, baseFaces) * tileArea) + 2 * longest;
 
 	return buildEdgePatch(
 		{ outline: board.outline, classLengths: board.classLengths },
@@ -84,7 +99,7 @@ export function buildIhEdgePatch(
 		{
 			reach: worldR / longest,
 			budget: 120000,
-			certFaces: Number.isInteger(cert) ? cert : undefined,
+			periodFacesMultipleOf: baseFaces > 0 ? baseFaces : undefined,
 			...opts,
 		},
 	);
