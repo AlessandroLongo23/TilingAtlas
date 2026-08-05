@@ -10,6 +10,7 @@
 // throw away the scroll position of a 93-entry type grid every time you looked at the tiling.
 
 import { useEffect } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Maximize, Minimize } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils/cn";
@@ -26,8 +27,7 @@ export function useImmersiveShortcuts() {
 		const onKey = (e: KeyboardEvent) => {
 			// Skip modifier combos (Cmd+F is the browser's find) and anything typed into a control.
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			if (e.key === "f" || e.key === "F") {
 				e.preventDefault();
 				useImmersive.getState().toggle();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Tabs } from "@/components/ui/tabs";
 import type { Geometry, Decoration } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
@@ -54,8 +55,7 @@ export function TilingsTab({
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			const k = e.key.toLowerCase();
 			if (k === "c") {
 				e.preventDefault();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, Library, Palette, Pentagon, PenLine, Play, Shapes, Waves } from "lucide-react"; // History icon commented out with its nav link below
@@ -37,8 +38,7 @@ export function Nav() {
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			const idx = Number(e.key) - 1;
 			const link = LINKS[idx];
 			if (link) {

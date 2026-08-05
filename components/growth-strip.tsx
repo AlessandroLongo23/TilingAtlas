@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { drawPolygons, hsbToHsla, type RawPolygon } from "@/lib/utils/renderTiling";
@@ -170,8 +171,7 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			if (e.key === ",") { e.preventDefault(); e.stopPropagation(); keysRef.current.cycle(-1); }
 			else if (e.key === ".") { e.preventDefault(); e.stopPropagation(); keysRef.current.cycle(1); }
 			else if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); keysRef.current.confirm(); }

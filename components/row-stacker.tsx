@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
 
 // Why emit-on-closure is unsound, built by the room, not asserted at it.
@@ -100,8 +101,7 @@ export function RowStacker() {
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			const k = keysRef.current;
 			if (e.key === "1") { e.preventDefault(); e.stopPropagation(); k.add("S"); }
 			else if (e.key === "2") { e.preventDefault(); e.stopPropagation(); k.add("T"); }

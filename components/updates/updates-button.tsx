@@ -2,6 +2,7 @@
 
 import { ScrollText } from "lucide-react";
 import { useEffect } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useUpdates } from "@/stores/updates";
 import { unseenSince } from "@/lib/updates/unseen";
@@ -30,8 +31,7 @@ export function UpdatesButton() {
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key !== "U" || !e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			e.preventDefault();
 			e.stopImmediatePropagation();
 			open();

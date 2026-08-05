@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 
 // The four overlay toggles a preview card can carry, on the keys /play already uses for them:
 // o = vertex orbits, s = symmetry elements, d = fundamental domain, p = polygon points. One table, so
@@ -104,8 +105,7 @@ export function PreviewOverlayScope({
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			const name = OVERLAY_KEYS[e.key.toLowerCase() as keyof typeof OVERLAY_KEYS];
 			if (!name) return;
 			e.preventDefault();

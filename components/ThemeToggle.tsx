@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Tooltip } from "@/components/ui/tooltip";
 
 type Theme = "light" | "dark";
@@ -46,8 +47,7 @@ export function ThemeToggle() {
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key !== "T" || !e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			e.preventDefault();
 			e.stopImmediatePropagation();
 			toggle();

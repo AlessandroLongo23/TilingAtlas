@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useSearchParams } from "next/navigation";
 import { Camera, Check, Link2, Maximize, Minimize } from "lucide-react";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
@@ -889,8 +890,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		};
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			if (isTypingTarget(e)) return;
 			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
 			// A widget that declares role="application" owns its own arrow keys (the parametric family's 2-D
 			// region pad nudges the angle pair with them). Without this, ArrowRight both nudged the angle AND
 			// stepped the catalogue to the next tiling, which unmounted the pad mid-gesture.
