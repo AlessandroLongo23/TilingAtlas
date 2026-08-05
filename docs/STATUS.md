@@ -3,8 +3,31 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-08-03, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-05, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## /isohedral covers all 93 IH types (2026-08-05)
+
+The twelve that Tactile cannot parameterize — IH19, 35, 48, 60, 63, 65, 70, 75, 80, 87, 89, 92 — now
+draw, from `lib/isohedral/marked.ts`. Their tiles are too symmetric for the boundary to carry the type,
+so the type lives in the interior: one asymmetric F, transported by a wallpaper group smaller than the
+base net's own symmetry, leaving |I(T)| marks in every tile. That is Grünbaum & Shephard's own
+construction, p.180 of the 1977 paper.
+
+- **The table is transcribed, and then not trusted.** Induced tile group, wallpaper group and aspect
+  count come off a scan of Table 1 (pp. 183–186); `marked.test.ts` recomputes all three FROM the
+  constructed geometry and fails on any disagreement. ⚑ That is what caught IH35 built as IH36 — same
+  tile, same net, same D1, same three aspects, differing only in which diagonal stays a mirror.
+- **Three of the twelve take one mark** (IH48, IH80, IH87, tile group trivial); the rest take 2, 3, 4
+  or 6 in a rosette. Placement is derived, not hand-picked: laid along a tile edge and sized by
+  bisection so the orbit stays inside the tile and its copies stay clear of each other.
+- ⚑ **The lens' `uFeature` was measuring flattening, not tiles.** Median segment length, so one straight
+  edge (one segment) against one bowed edge (ten flattened segments) differed tenfold — bowing an edge
+  by 0.01 redrew the whole centre of an inversion. √area now. The stroke also tapers in WIDTH to zero
+  instead of fading in opacity, which reverses the 2026-08-05 addendum; that call was made against the
+  broken feature size.
+
+Detail: DEVELOPMENT_NOTES.md §2026-08-05 "the twelve marked isohedral types".
 
 ## Engine cost per level is known, and the pruner store can leave RAM (2026-08-03)
 

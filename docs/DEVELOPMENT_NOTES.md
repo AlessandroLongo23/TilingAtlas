@@ -9791,3 +9791,113 @@ a producer has to respect it.
 0.4%-of-chord budget: its cell is built from a pattern, not rebuilt on zoom, so making it zoom-adaptive
 means rebuilding the periodic cell during a pan. Its cap of 24 segments per arc holds a hexagonal tile
 to 144 vertices, safely inside the ring budget, and no faceting was visible at the zooms it reaches.
+
+## 2026-08-05 — the twelve marked isohedral types, and the feature size that was measuring flattening
+
+The isohedral shelf listed all ninety-three IH types and drew eighty-one. The other twelve —
+IH19, 35, 48, 60, 63, 65, 70, 75, 80, 87, 89, 92 — replaced the canvas with a note quoting Kaplan on
+why Tactile stops at eighty-one. They draw now, from `lib/isohedral/marked.ts`.
+
+**Why they were out of reach, and what replaces the boundary.** Every edge of these tiles lies on a
+mirror of the tiling, so every edge is forced straight and the tile is forced to be a regular hexagon,
+a 60/120 rhombus, a rectangle, a square or a triangle. Those shapes are MORE symmetric than the
+incidence symbol allows, so the boundary alone always lands on some other type. G&S's own example,
+p.180 of the 1977 paper: IH19 wants a hexagonal tile with induced group D3, but a hexagon whose six
+edges and six vertices are all equivalent under the tiling is regular, and the regular hexagon tiling
+is IH20. So the interior carries the type instead, and the construction is theirs, quoted:
+
+> all we have to do is to assign a mark to any one tile (the mark may be chosen arbitrarily so long as
+> its symmetry group is E — we have used an ⌐) and then apply the operations of S(T) to mark all the
+> other tiles. If I(T) ≠ E then each tile may carry more than one mark.
+
+That reduces the whole job to a pair: a base net, and a subgroup S' of the net's symmetry group. The
+tiles are the net's; the marks are S''s orbit of one asymmetric seed. Because the seed is asymmetric
+and in general position, distinct cosets place distinct marks, and the marked tiling's symmetry group
+is then EXACTLY S' and not something larger that happened to preserve the mark set.
+
+**The data is transcribed, so nothing trusts it.** Induced tile group, wallpaper group and aspect count
+come off a scan of Table 1 (pp. 183–186) of Grünbaum & Shephard, *The eighty-one types of isohedral
+tilings in the plane*, Math. Proc. Camb. Phil. Soc. 82 (1977), 177–196 — the full paper is online at
+faculty.washington.edu/moishe/branko/. `marked.test.ts` recomputes each column FROM the constructed
+geometry: the tile group order from which cosets fix the prototile, the aspect count from the distinct
+tiles in a cell, the wallpaper group from where the rotation centres sit relative to the mirrors.
+
+⚑ The cheapest test earned the most. |S'/T| = |I(T)| × aspects ties columns (3) and (8) together and
+holds for all twelve; it rejected four subgroup choices that looked right on paper. The wallpaper
+classifier earned its keep separately: IH35 and IH36 have the same tile, the same net, the same D1 and
+the same three aspects, and differ ONLY in which diagonal of the rhombus stays a mirror. The first
+construction picked the long one, which is p31m, which is IH36 — already drawn by Tactile. Only the
+p3m1-vs-p31m test (is every three-fold centre on a mirror?) caught it.
+
+**Three of the twelve have a trivial tile group.** IH48, IH80 and IH87 take a single mark. The other
+nine need 2, 3, 4 or 6 in a rosette, which is why AL's first idea — a colour wheel filling the tile —
+could not work: a wheel is one mark, so it covers three of the twelve and over-breaks the other nine
+into a different type. The surviving half of the idea is that shape carries orientation better than
+colour does anyway.
+
+### What the marks went through before they read
+
+**Hand-picked seed coordinates, twice wrong.** Marks straddled tile boundaries on IH35, and on IH92 a
+D1 pair fused into one blob. `placeSeed` derives the placement instead: walk along an edge, step inward,
+lay the glyph ALONG that edge so the tile group carries a copy to each edge parallel to it, then
+bisect for the largest size that fits inside an inset tile and keeps the rosette's copies clear of each
+other. `along` is never 0.5 — an edge midpoint sits on the perpendicular bisector, which is a mirror for
+the D1 types, and a seed on a mirror has an orbit half the size it should.
+
+⚑ **Fitting the size at a fixed anchor is the wrong way round.** It gave IH92 two marks a few pixels
+across, because its D1 pair sat close together and the only way to keep them apart was to shrink both.
+Searching the anchor first and sizing second buys back four to five times the size for the same
+guarantees.
+
+⚑ **The stabilizer as computed did not stabilize anything.** `closeGroup` reduces every representative's
+translation into the cell, so a coset that fixes the tile is generally represented by an isometry
+carrying it to a lattice TRANSLATE of itself. Used as-is, `placeSeed` checked the rosette for overlap in
+positions the rosette never occupies. Each element is corrected by the lattice vector that brings the
+image home, which leaves it in the same coset.
+
+⚑ **And a hollow mark in every IH89 rosette, which was neither hue nor triangulation.** The cell's tiles
+are deduped, so mapping the seed by every coset left some marks sitting where the cell draws no tile.
+The union over the lattice is still correct; the paint order is not, because the tile that belongs under
+such a mark arrives with a LATER instance and covers its fill, leaving only the stroke. Anchoring each
+rosette to its own tile's representative fixes it.
+
+**The mark itself.** Filled block → stroked ⌐ → stroked F, on AL's notes. The fill plus its own outline
+made a chunky lozenge whose corners went lumpy where the per-segment stroke quads failed to mitre, and
+a solid shape that size competes with the tiles instead of marking them. The F is better than the ⌐ for
+a reason beyond taste: an ⌐'s only asymmetry is that its two arms differ in length, while an F is
+asymmetric along both axes, so its reflection is unmistakable — and reflection is what separates several
+of these twelve. Spine 1.0 against arms 0.40 and 0.24, a 2.5:1 box, because at near-square proportions a
+glyph and its quarter-turn read alike.
+
+Marks reach the renderers as `RawPolygon.open` and draw at 1.45× the tile-edge weight. No second draw
+call: the stroke shader multiplies `aSide` straight into the half-width, so the attribute carrying which
+side of a segment a corner is on carries the width too.
+
+**Hue was tried on the marks and removed.** Coding each mark's hue by its orientation is redundant twice
+over — the F's direction already IS the rotation and its handedness already IS the reflection, and above
+that the tile tint separates the aspects, an aspect being an orientation class. It cost two colour
+scales competing in one picture and a channel that greyscale and red-green colour blindness lose. G&S
+and Kaplan both draw a flat motif on a tinted tile; so does this.
+
+### The lens' feature size was measuring the flattening resolution
+
+⚑ AL moved the edge-bulge slider from 0.00 to 0.01 on IH73 under the lens and the whole centre of the
+inversion redrew. `uFeature` was `base.medianEdge`, the median SEGMENT length of the cell's polygons —
+and a straight tile edge is one segment while a bowed one is a flattened cubic of about ten. Measured on
+IH73: 1.000 → 0.103. Both of the lens' fade thresholds key off that number, so a change invisible in the
+tile moved them by a decade of zoom. `tilingPeriodicCell` now takes √area per tile, median across the
+cell, which is invariant to how finely a curve is flattened. `medianEdge` is untouched:
+`renderTilingToContext` sizes thumbnails by it and that genuinely is an edge-length question.
+
+**Which reverses the §2026-08-05 addendum above, and the reason it was wrong is the same bug.** That
+note says capping the WIDTH is worse than fading the layer, because "the line tapers for a decade of
+zoom before it is anywhere near unresolvable". A decade is exactly the error `uFeature` was carrying.
+With the feature size honest, the taper starts where it should: the half-width is multiplied by
+`1 - smoothstep(0.10, 0.45, width/spacing)` and the constant-width opacity fade is gone. Thinning is the
+better behaviour on its own merits — a hairline still draws the pattern, and the existing coverage rule
+turns sub-pixel width into sub-pixel coverage, so the picture greys out through a real texture instead
+of the strokes blinking off as a layer. `unresolved` stays as a backstop, because a very thin slider
+setting keeps width/spacing small even where the tiles are long gone.
+
+**One coupling worth knowing.** The marks share the "Tile outlines" slider, so setting it to 0 hides
+them along with the tile edges.

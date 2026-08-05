@@ -2083,3 +2083,10 @@ hook shared with /play, J and S bows carried through the map. `e6f40d6` — `pat
 `edgeCurves`, `tilingPeriodicCell` ignored `RawPolygon.hue`. `109075b` — the lens' stroke was a world
 width against the flat canvas' screen width, and its tessellation followed the view zoom, which under a
 lens is not the magnification. Also `ca01c55`, `f6d5c52`. Detail in DEVELOPMENT_NOTES §2026-08-05. — CC
+
+### 2026-08-05 (12) — CC — the last twelve isohedral types, and a feature size that lied
+The isohedral shelf draws all ninety-three. `lib/isohedral/marked.ts` builds the marked twelve as G&S
+built them: one asymmetric F, carried by a wallpaper group smaller than the base net's. Table 1's tile
+group, aspects and wallpaper group are transcribed then RECOMPUTED from the geometry, which caught IH35
+drawn as IH36. ⚑ `uFeature` was a flattened-segment length, so bowing an edge by 0.01 collapsed it
+tenfold; √area now, and the lens' stroke tapers in width not opacity. DEVELOPMENT_NOTES §2026-08-05. — CC
