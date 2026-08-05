@@ -69,14 +69,28 @@ export interface EdgePatchOptions {
 	reach?: number;
 	/** Hard ceiling on developed dart instances. */
 	budget?: number;
-	/** Tiles in the CERTIFICATE's cell, when the caller can count them.
+	/** Tiles in the BOARD's own translation cell, when the caller knows it.
 	 *
-	 *  A constraint, never a search key. The certificate cell is always a whole number of periods, but
-	 *  WHICH number is a property of the record, not of the board — every IH01 record's cell is exactly
-	 *  two periods, while IH02's is one for most records and two for a handful. So the check is that the
-	 *  period DIVIDES it: that still catches a sublattice (which gives a period too big to divide it) and
-	 *  a mis-scaled fold, without pretending the ratio is known in advance. */
-	certFaces?: number;
+	 *  A constraint, never a search key, and the one structural fact available here: a decoration can
+	 *  only ever be preserved by translations that already preserve the undecorated board, so its lattice
+	 *  is a sublattice of the board's and its cell holds a whole multiple of this many tiles. A fold that
+	 *  lost or duplicated an aspect lands off that multiple. */
+	periodFacesMultipleOf?: number;
+	/**
+	 * Tiles in the DECORATION's own period, when the caller can derive it exactly.
+	 *
+	 * Much stronger than the multiple, and worth every board that can supply it. The pentagon corpus can:
+	 * a certificate carrying 12k glued darts has 4E = 12k and 6F = 2E, so Euler on the torus pins F = k
+	 * with no search at all (see lib/pentagon/edgePatch.ts). Knowing F means knowing the cell's AREA before
+	 * looking for it, which changes the search in two places — the second basis vector becomes exact
+	 * instead of merely independent (only a partner spanning ONE cell with the shortest is a basis; one
+	 * spanning a multiple names a sublattice), and a failed attempt can size the next develop from
+	 * cellArea/|v1| instead of growing by a constant.
+	 *
+	 * Leave unset when the count is unknown or only a lower bound — the isohedral boards are that case,
+	 * where a period can hold twice k (IH05 at k=6) and guessing would reject the correct labelling.
+	 */
+	periodFacesExactly?: number;
 	/** How many attempts to grow the develop before giving up. */
 	attempts?: number;
 }
@@ -292,11 +306,16 @@ function reduce(a: Vec, b: Vec): [Vec, Vec] {
  * sublattice of it, never a coarser lattice that is not a period at all. A sublattice draws a period
  * some integer multiple too big, which is wasteful and is caught by the face-count check; a non-period
  * would draw a lie, and `isPeriod` is what rules that out.
+ *
+ * `cellArea`, when the caller knows it exactly, removes the sublattice case outright: the partner must
+ * span exactly one cell with the shortest vector, and a vector spanning n of them is skipped instead of
+ * accepted and caught downstream.
  */
 function findLattice(
 	walk: DevelopedWalk,
 	tol: number,
 	coreR: number,
+	cellArea: number | null,
 ): { basis: [Vec, Vec]; shortest: number } | null {
 	const DIR = 1e-6;
 	const first = new Map<string, Vec>();
@@ -319,8 +338,14 @@ function findLattice(
 	let v1: Vec | null = null;
 	for (const v of cand) {
 		// Skip a repeat of a candidate already rejected or accepted, and anything parallel to v1: a
-		// parallel vector is either v1 again or a multiple of it, never a second generator.
-		if (v1 && Math.abs(cross(v1, v)) < tol * Math.hypot(...v1)) continue;
+		// parallel vector is either v1 again or a multiple of it, never a second generator. With a known
+		// cell area that widens to the exact test, which rejects an index-n partner as well as a parallel one.
+		if (v1) {
+			const span = Math.abs(cross(v1, v));
+			if (cellArea !== null) {
+				if (Math.abs(span - cellArea) > 1e-4 * cellArea) continue;
+			} else if (span < tol * Math.hypot(...v1)) continue;
+		}
 		if (!isPeriod(walk, edges, v, coreR)) continue;
 		if (!v1) v1 = v;
 		else return { basis: reduce(v1, v), shortest: Math.hypot(...v1) };
@@ -414,6 +439,10 @@ export function buildEdgePatch(
 	const budget = opts.budget ?? 60000;
 	const attempts = opts.attempts ?? 4;
 	let reach = (opts.reach ?? 5) * longest;
+	// The cell's area, when the caller can state its tile count exactly. Null is the honest answer for a
+	// board that only knows a multiple, and every use below falls back to a heuristic on null.
+	const exactFaces = opts.periodFacesExactly;
+	const knownCellArea = exactFaces !== undefined && exactFaces > 0 ? exactFaces * tileArea : null;
 
 	let diag: EdgePatchDiag = {
 		placed: 0,
@@ -435,12 +464,15 @@ export function buildEdgePatch(
 		diag = { ...diag, placed: walk.placed, reach, ms: Date.now() - t0 };
 		const last = attempt === attempts - 1;
 
-		const found = findLattice(walk, tol, coreR);
+		const found = findLattice(walk, tol, coreR, knownCellArea);
 		if (found && norm2(found.basis[1]) > 0) {
 			const cellArea = Math.abs(cross(found.basis[0], found.basis[1]));
 			const fpp = cellArea / tileArea;
 			diag = { ...diag, facesPerPeriod: fpp };
-			const built = assemble(walk, found.basis, tileArea, coreR, corners, fpp, opts.certFaces);
+			const built = assemble(walk, found.basis, tileArea, coreR, corners, fpp, {
+				multipleOf: opts.periodFacesMultipleOf,
+				exactly: exactFaces,
+			});
 			diag = { ...diag, ...built.diag, ms: Date.now() - t0 };
 			if (built.patch) return { ok: true, patch: built.patch, diag };
 			if (last) return { ok: false, diag, reason: built.reason };
@@ -453,10 +485,18 @@ export function buildEdgePatch(
 				diag,
 				reason: found ? "period too elongated to develop" : "no period found in the developed patch",
 			};
-		// Sized, not doubled: reach past the second generator with enough margin that the faces can be
-		// cut from a core that holds a whole period. Without a first vector there is nothing to size on,
-		// so fall back to growing.
-		const need = found ? (found.shortest * 4 + longest * 2) * 1.25 : reach * 1.8 * 0.62;
+		// Sized, not doubled: reach past the second generator with enough margin that the faces can be cut
+		// from a core that holds a whole period. With the area known the distance is not a guess — a cell of
+		// that area on a base of |v1| is exactly cellArea/|v1| tall, and that is the radius the walk needs.
+		// Without the area, four times the shortest is the working estimate; without a first vector at all
+		// there is nothing to size on, so fall back to growing.
+		let need = reach * 1.8 * 0.62;
+		if (found)
+			need =
+				1.25 *
+				(knownCellArea !== null
+					? knownCellArea / found.shortest + found.shortest
+					: found.shortest * 4 + longest * 2);
 		reach = Math.max(reach * 1.4, need / 0.62);
 	}
 	return { ok: false, diag, reason: "period larger than the develop budget allows" };
@@ -469,7 +509,7 @@ function assemble(
 	coreR: number,
 	corners: number,
 	facesPerPeriod: number,
-	certFaces: number | undefined,
+	want: { multipleOf?: number; exactly?: number },
 ): { patch: FreedrawPatch | null; reason: string; diag: Partial<EdgePatchDiag> } {
 	const [T1, T2] = basis;
 	const nV = walk.vertices.length;
@@ -483,10 +523,16 @@ function assemble(
 			reason: `period spans ${facesPerPeriod.toFixed(3)} tiles, which is not a whole number`,
 			diag: zero,
 		};
-	if (certFaces !== undefined && (F > certFaces || certFaces % F !== 0))
+	if (want.exactly !== undefined && want.exactly > 0 && F !== want.exactly)
 		return {
 			patch: null,
-			reason: `period of ${F} tiles does not divide the certificate's ${certFaces}`,
+			reason: `period spans ${F} tiles but the certificate pins ${want.exactly}`,
+			diag: zero,
+		};
+	if (want.multipleOf !== undefined && want.multipleOf > 0 && F % want.multipleOf !== 0)
+		return {
+			patch: null,
+			reason: `period of ${F} tiles is not a multiple of the board's ${want.multipleOf}`,
 			diag: zero,
 		};
 	// Euler on the torus for an n-gon board: 2E = nF and V - E + F = 0.
