@@ -117,7 +117,7 @@ export default async function HomePage() {
 
 					<CollectionCard
 						title="Theory"
-						subtitle="Undersand the concepts"
+						subtitle="Understand the concepts"
 						href="/theory"
 						description="In the theory section, you can learn about the geometric concepts behind tilings."
 						badge={<CompletenessBadge tone="proven" label="exactly 11, proven" />}
