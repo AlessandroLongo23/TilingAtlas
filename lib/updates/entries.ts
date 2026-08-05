@@ -53,6 +53,37 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.16.0",
+		date: "2026-08-05",
+		title: "The twelve isohedral types that live in their marks",
+		commit: "afb4610",
+		changes: [
+			{
+				kind: "content",
+				text: "**The twelve marked isohedral types** draw now: IH19, IH35, IH48, IH60, IH63, IH65, IH70, IH75, IH80, IH87, IH89 and IH92. The shelf listed all 93 types and drew 81.",
+				items: [
+					"Every edge of these tiles lies on a mirror of the tiling, which forces the outline to a regular hexagon, a rhombus, a rectangle, a square or a triangle. What separates the types is the motif inside: six marks per tile on IH19, one on IH48, IH80 and IH87.",
+				],
+				href: "/isohedral",
+				tilings: ["isohedral-ih19", "isohedral-ih63", "isohedral-ih89", "isohedral-ih92"],
+			},
+			{
+				kind: "feature",
+				text: "**A Marks panel** gives each of the twelve its tile group, wallpaper group and aspect count, and puts the rectangle proportion of IH48, IH60 and IH65 on a slider.",
+				href: "/isohedral",
+			},
+			{
+				kind: "fix",
+				text: "**Bowing an edge** no longer moves where the inversive lens fades its lines. The lens sized features by segment length, so a straight edge counted as one segment and a curved one as ten, and the thresholds jumped by a decade of zoom the moment a slider left zero.",
+				href: "/isohedral",
+			},
+			{
+				kind: "changed",
+				text: "**Lines thin** toward the rim of the lens instead of fading out at full width, so a pattern greys through its own texture.",
+			},
+		],
+	},
+	{
 		version: "1.15.0",
 		date: "2026-08-05",
 		title: "The inversive view on the isohedral and pentagon families",

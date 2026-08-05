@@ -12,6 +12,7 @@
 // bundle. Defaults throughout, so a card shows the type as its page opens on it.
 import {
 	buildCell as buildIsohedralCell,
+	buildMarked,
 	curvesOf,
 	defaultEdgeStates,
 	straightCurves,
@@ -33,8 +34,7 @@ function buildValid(ih: number, params: number[], curves: EdgeCurves) {
 
 /**
  * The translational cell for a shelf preview id, or `null` for anything else — an atlas id, a type
- * that does not exist, one of the twelve isohedral types with no boundary geometry, or a pentagon
- * type whose unit has not been derived.
+ * that does not exist, or a pentagon type whose unit has not been derived.
  *
  * `periods` is not passed: it only sets each builder's home framing, and the preview card supplies
  * its own through `homePeriods`.
@@ -50,7 +50,15 @@ export function shelfPreviewCell(id: string): TranslationalCellData | null {
 	}
 
 	const info = isohedralType(shelf.n);
-	if (!info || !info.available) return null;
+	if (!info) return null;
+	// The marked twelve have no boundary to bow — every edge is forced straight and the type shows in
+	// the marks inside the tile. buildMarked hands back the same cell, marks appended to the tiles in
+	// paint order, so the card draws it with nothing else changed.
+	if (info.marked) {
+		const marked = buildMarked(shelf.n);
+		return marked ? { cellPolygons: marked.polygons, basis: [marked.v1, marked.v2] } : null;
+	}
+	if (!info.available) return null;
 	// Every edge bowed by the same fixed amount off its canonical template, which is what the page's
 	// edge sliders do and the whole reason the type is a type: it fixes how tiles meet and leaves the
 	// boundary free. At amplitude 0 the quadrilateral types are graph paper and say nothing. The
