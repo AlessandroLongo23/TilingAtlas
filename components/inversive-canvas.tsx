@@ -30,6 +30,27 @@ import { useFamilyAlphas } from "@/stores/familyAlphas";
 // It reads pan/zoom/rotation from the same configuration store the p5 canvas writes, so the p5 canvas
 // (mounted underneath, input-only while inversive is on) keeps driving panning with no new input code.
 
+/**
+ * Where the lens gets its camera, when the page owns one.
+ *
+ * /play's camera IS the configuration store — the p5 canvas underneath writes `controls` and the lens
+ * reads it — so /play passes nothing. The parametric shelves (/isohedral, /pentagons) drive their own
+ * pan/zoom through useAperiodicView instead, and its frame already speaks this convention exactly
+ * (centred CSS px, y down, rotation after the y flip), so their frame passes straight through.
+ *
+ * Only the camera moves; every other lens control — mode, lens radius, twist, spiral arms — stays on
+ * the configuration store, so one set of controls drives the lens wherever it is mounted.
+ */
+export interface LensCamera {
+	/** Pan in centred CSS px, y down. */
+	offset: { x: number; y: number };
+	/** Screen px per world unit. */
+	zoom: number;
+	rotationDeg: number;
+	/** Stroke width in the "Line stroke" slider's units. */
+	lineWidth: number;
+}
+
 // No width/height props: the canvas fills its parent by CSS and measures itself in the render loop
 // (syncCanvasSize) — see lib/render/canvasSize.ts.
 interface InversiveCanvasProps {
@@ -40,6 +61,8 @@ interface InversiveCanvasProps {
 	/** Free-angle family cell. When present, the geometry is rebuilt in the render loop from the store's
 	 *  `familyAlphas` (imperative — the alpha slider never re-renders React), matching the p5 canvas. */
 	paramCell?: ParametricCellData | null;
+	/** Read once per frame for the camera. Omit to use the configuration store's `controls`. */
+	camera?: () => LensCamera | null;
 }
 
 /** Vertices walked per primitive. A cap for the GLSL loop only — `count` breaks out early. Sized for the
@@ -291,8 +314,12 @@ function uploadFloatTex(
 const TEX_NAMES = ["verts", "meta", "head", "list"] as const;
 type TexName = (typeof TEX_NAMES)[number];
 
-export function InversiveCanvas({ cell, cellId, paramCell = null }: InversiveCanvasProps) {
+export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: InversiveCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	// Read imperatively in the loop, like every other live input here, so a moving camera never
+	// re-subscribes the render effect.
+	const cameraRef = useRef(camera);
+	cameraRef.current = camera;
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const progRef = useRef<WebGLProgram | null>(null);
 	const texRef = useRef<Partial<Record<TexName, WebGLTexture>>>({});
@@ -394,7 +421,13 @@ export function InversiveCanvas({ cell, cellId, paramCell = null }: InversiveCan
 			if (w <= 0 || h <= 0) return;
 			g.viewport(0, 0, canvas.width, canvas.height);
 
-			const ctrl = cfg.controls;
+			const store = cfg.controls;
+			const cam: LensCamera = cameraRef.current?.() ?? {
+				offset: store.offset,
+				zoom: store.zoom,
+				rotationDeg: store.rotation || 0,
+				lineWidth: cfg.lineWidth,
+			};
 			const R = cfg.inversiveRadiusFrac * Math.min(w, h) * 0.5;
 			const sigma = 0.5;
 			const tau = (cfg.mobiusTwist * Math.PI) / 180;
@@ -426,16 +459,16 @@ export function InversiveCanvas({ cell, cellId, paramCell = null }: InversiveCan
 				drift.y = wy;
 			}
 			const spiralV: [number, number] = [
-				ctrl.offset.x * stripSc - Math.log(Math.max(ctrl.zoom, 1) / 50) + drift.x,
-				-ctrl.offset.y * stripSc - ((ctrl.rotation || 0) * Math.PI) / 180 + drift.y,
+				cam.offset.x * stripSc - Math.log(Math.max(cam.zoom, 1) / 50) + drift.x,
+				-cam.offset.y * stripSc - (cam.rotationDeg * Math.PI) / 180 + drift.y,
 			];
 
 			const U = uniformsRef.current;
 			g.uniform2f(U.uRes, w, h);
 			g.uniform1f(U.uDpr, dpr);
-			g.uniform2f(U.uOffset, ctrl.offset.x, ctrl.offset.y);
-			g.uniform1f(U.uZoom, ctrl.zoom);
-			g.uniform1f(U.uRot, ((ctrl.rotation || 0) * Math.PI) / 180);
+			g.uniform2f(U.uOffset, cam.offset.x, cam.offset.y);
+			g.uniform1f(U.uZoom, cam.zoom);
+			g.uniform1f(U.uRot, (cam.rotationDeg * Math.PI) / 180);
 			g.uniform1i(U.uMode, cfg.inversiveMode === "spiral" ? 2 : cfg.inversiveMode === "mobius" ? 1 : 0);
 			g.uniform1f(U.uR, R);
 			g.uniform2f(U.uKinv, kinvMag * Math.cos(-tau), kinvMag * Math.sin(-tau));
@@ -451,7 +484,7 @@ export function InversiveCanvas({ cell, cellId, paramCell = null }: InversiveCan
 			g.uniform1i(U.uListW, geom.listW);
 			// Stroke half-width as a fraction of the tile edge (uStrokePx * uFeature in the shader). The
 			// "Line stroke" slider scales it; 0 → no strokes.
-			g.uniform1f(U.uStrokePx, cfg.lineWidth * 0.028);
+			g.uniform1f(U.uStrokePx, cam.lineWidth * 0.028);
 			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
 			g.uniform3f(U.uSurface, dark ? 0.08 : 0.96, dark ? 0.09 : 0.96, dark ? 0.11 : 0.97);
 			// uAvg must be averaged AFTER the hue rotation (rotating the averaged RGB would be wrong);

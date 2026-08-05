@@ -18,20 +18,20 @@
 // the same lattice on the CPU.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useSearchParams } from "next/navigation";
 import { RotateCcw } from "lucide-react";
-import {
-	applyViewTransform,
-	useAperiodicView,
-	type AperiodicFrame,
-	type HomeBox,
-} from "@/lib/hooks/useAperiodicView";
-import { FlatCellRenderer } from "@/lib/render/flatTilingGL";
-import { drawPolygons, expandToViewport, parseBaseCell } from "@/lib/utils/renderTiling";
+import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
+import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
 import { Kbd } from "@/components/ui/kbd";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Reveal } from "@/components/ui/reveal";
 import { TilingInfo } from "@/components/tiling-info";
+import { InversiveCanvas } from "@/components/inversive-canvas";
+import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
 import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import {
@@ -80,10 +80,6 @@ export function PentagonsClient() {
 	const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTH.def);
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const glRef = useRef<FlatCellRenderer | null>(null);
-	const glContextRef = useRef<WebGL2RenderingContext | null>(null);
-	const modeRef = useRef<"init" | "gl" | "2d">("init");
-	const uploadedRef = useRef<unknown>(null);
 
 	// Selecting a type replaces its whole control set: a parameter vector only means anything relative
 	// to the type it belongs to, and the types do not even agree on how many sliders there are.
@@ -119,8 +115,7 @@ export function PentagonsClient() {
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const el = e.target as HTMLElement | null;
-			if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+			if (isTypingTarget(e)) return;
 			const step = ARROW_STEP[e.key];
 			if (!step) return;
 			e.preventDefault();
@@ -183,71 +178,21 @@ export function PentagonsClient() {
 	if (result.ok) lastCellRef.current = result.cell;
 	const cell = result.ok ? result.cell : lastCellRef.current;
 
-	// Only the 2-D fallback needs this; parsing once here keeps it off the draw path.
-	const fallbackBase = useMemo(
-		() => (cell ? parseBaseCell({ p: cell.polygons, b: [cell.v1, cell.v2] }) : null),
-		[cell],
+	// The conformal lens: the same cell seen through a circle inversion, a Möbius map or Kaplan's spiral.
+	// Reads the cell through the shared periodic-cell IR, so the pentagons reach it with no renderer of
+	// their own. Same store fields as /play's, so a mode picked there is the mode here.
+	const lens = useConfiguration((s) => s.inversive);
+	const setLens = useCallback((v: boolean) => useConfiguration.getState().set({ inversive: v }), []);
+	useInversiveShortcut();
+	const lensCell = useMemo(
+		() => (lens && cell ? tilingPeriodicCell({ cellPolygons: cell.polygons, basis: [cell.v1, cell.v2] }) : null),
+		[lens, cell],
 	);
-
-	// Sets the starting scale only. The tiling has no edge to frame, so this is a square box and the
-	// renderer instances out to whatever the canvas' aspect turns out to be.
-	const home = useCallback((): HomeBox | null => cell?.home ?? null, [cell]);
-
-	const draw = useCallback(
-		(f: AperiodicFrame) => {
-			const cv = canvasRef.current;
-			if (!cv) return;
-
-			if (modeRef.current === "gl" && glRef.current && glContextRef.current) {
-				// FlatCellRenderer leaves backing-size and viewport to the caller. useAperiodicView has
-				// already resized the backing store to w*dpr, so the viewport just follows it.
-				glContextRef.current.viewport(0, 0, cv.width, cv.height);
-				glRef.current.draw({
-					width: f.w,
-					height: f.h,
-					// The hook's frame and flatWorldToClip share a convention (centred CSS px, y down,
-					// rotation after the y flip) so the offset passes straight through. That holds because
-					// home is centred on the origin, making f.centreX/Y zero.
-					offset: { x: f.offsetX, y: f.offsetY },
-					zoom: f.zoom,
-					rotationDeg: (f.rot * 180) / Math.PI,
-					lineWidth: strokeWidth,
-					showFill: true,
-					strokeRGB: STROKE_RGB,
-				});
-				return;
-			}
-
-			const ctx = cv.getContext("2d");
-			if (!ctx) return;
-			ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
-			ctx.clearRect(0, 0, f.w, f.h);
-			ctx.save();
-			applyViewTransform(ctx, f);
-			ctx.lineJoin = "round";
-			if (fallbackBase && f.zoom > 0) {
-				// Walk the same lattice on the CPU, out to the visible world rect. The √2 covers rotation.
-				const halfW = ((f.w / f.zoom) * Math.SQRT2) / 2;
-				const halfH = ((f.h / f.zoom) * Math.SQRT2) / 2;
-				const world = expandToViewport(
-					fallbackBase,
-					f.centreX - f.offsetX / f.zoom,
-					f.centreY + f.offsetY / f.zoom,
-					halfW,
-					halfH,
-					FALLBACK_MAX_RADIUS,
-				);
-				drawPolygons(ctx, world, f.zoom, 0, strokeWidth, STROKE_CSS);
-			}
-			ctx.restore();
-		},
-		[fallbackBase, strokeWidth],
+	// Everything that moves the geometry, so the lens re-uploads exactly when it changes.
+	const lensCellId = useMemo(
+		() => (lensCell ? `pent${id}:${angles.join(",")}:${sides.join(",")}` : null),
+		[lensCell, id, angles, sides],
 	);
-
-	// fill: 1, not the hook's 0.86 default. There is no patch boundary to keep clear of the canvas
-	// edges — the tiling runs off all four of them — so a margin would only mean less tiling.
-	const view = useAperiodicView({ canvasRef, home, draw, fill: 1 });
-	const { refit, rehome, requestDraw } = view;
 
 	/**
 	 * What counts as "a different thing to look at", as opposed to the same thing deformed.
@@ -257,52 +202,16 @@ export function PentagonsClient() {
 	 * camera on every tick of a drag, so you could never zoom into a vertex and watch what the parameter
 	 * does to it, which is precisely the thing worth watching.
 	 */
-	const framingKey = `${id}`;
-	const lastFramingRef = useRef<string | null>(null);
-
-	// Create the renderer once: a canvas holds one context type for its life, so this decides the path.
-	// Declared BEFORE the upload effect so the renderer exists when the first upload runs (effects fire
-	// in declaration order, including Strict Mode's re-run).
-	useEffect(() => {
-		const cv = canvasRef.current;
-		if (!cv) return;
-		const gl = cv.getContext("webgl2", { antialias: true, premultipliedAlpha: false, alpha: true });
-		if (gl) {
-			try {
-				glRef.current = new FlatCellRenderer(gl);
-				glContextRef.current = gl;
-				modeRef.current = "gl";
-			} catch {
-				modeRef.current = "2d";
-			}
-		} else {
-			modeRef.current = "2d";
-		}
-		uploadedRef.current = null;
-		return () => {
-			glRef.current?.dispose();
-			glRef.current = null;
-			glContextRef.current = null;
-			uploadedRef.current = null;
-		};
-	}, []);
-
-	useEffect(() => {
-		if (modeRef.current === "gl" && glRef.current && cell && uploadedRef.current !== cell.mesh) {
-			glRef.current.uploadMesh(cell.mesh);
-			uploadedRef.current = cell.mesh;
-		}
-		if (lastFramingRef.current !== framingKey) {
-			lastFramingRef.current = framingKey;
-			refit();
-		} else {
-			rehome();
-		}
-	}, [cell, framingKey, refit, rehome]);
-
-	useEffect(() => {
-		requestDraw();
-	}, [strokeWidth, requestDraw]);
+	const { view, lensCamera } = useParametricTilingCanvas({
+		canvasRef,
+		cell,
+		strokeWidth,
+		strokeRgb: STROKE_RGB,
+		strokeCss: STROKE_CSS,
+		framingKey: `${id}`,
+		fallbackMaxRadius: FALLBACK_MAX_RADIUS,
+		lensActive: lens,
+	});
 
 	const typeOptions: SegmentedOption[] = useMemo(
 		() =>
@@ -474,6 +383,18 @@ export function PentagonsClient() {
 						step={STROKE_WIDTH.step}
 						format={(v) => (v === 0 ? "off" : `${v} px`)}
 					/>
+					<Checkbox
+						id="pent-inversive"
+						label="Inversive view"
+						shortcut="X"
+						checked={lens}
+						onCheckedChange={(v) => setLens(v)}
+					/>
+					<Reveal show={lens}>
+						<div className="pl-7">
+							<InversiveControls />
+						</div>
+					</Reveal>
 				</Section>
 
 			</PentagonSidebar>
@@ -484,6 +405,10 @@ export function PentagonsClient() {
 					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
 					{...view.handlers}
 				/>
+				{/* The lens is a second canvas over the first, which stays mounted as the input layer —
+				    the same arrangement /play uses, and for the same reason: a canvas holds one WebGL
+				    context for its life. */}
+				{lens ? <InversiveCanvas cell={lensCell} cellId={lensCellId} camera={lensCamera} /> : null}
 				{/* Same corner, same component as /play's canvas. */}
 				<div className="absolute top-4 left-4 z-20">
 					<TilingInfo spec={spec} />

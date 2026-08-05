@@ -30,18 +30,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Shuffle, RotateCcw } from "lucide-react";
-import {
-	applyViewTransform,
-	useAperiodicView,
-	type AperiodicFrame,
-	type HomeBox,
-} from "@/lib/hooks/useAperiodicView";
-import { FlatCellRenderer } from "@/lib/render/flatTilingGL";
-import { drawPolygons, expandToViewport, parseBaseCell } from "@/lib/utils/renderTiling";
+import type { AperiodicFrame } from "@/lib/hooks/useAperiodicView";
+import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
+import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
 import { Kbd } from "@/components/ui/kbd";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Reveal } from "@/components/ui/reveal";
 import { TilingInfo } from "@/components/tiling-info";
+import { InversiveCanvas } from "@/components/inversive-canvas";
+import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
 import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import {
@@ -128,12 +128,7 @@ export function IsohedralClient() {
 	// so this is a handful of re-renders across the entire zoom range and none during a pan.
 	const [tessZoom, setTessZoom] = useState(INITIAL_TESS_ZOOM);
 	const tessZoomRef = useRef(INITIAL_TESS_ZOOM);
-
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const glRef = useRef<FlatCellRenderer | null>(null);
-	const glContextRef = useRef<WebGL2RenderingContext | null>(null);
-	const modeRef = useRef<"init" | "gl" | "2d">("init");
-	const uploadedRef = useRef<unknown>(null);
 
 	// Selecting a type replaces its whole control set: a parameter vector only means anything relative
 	// to the type it belongs to, and so does a per-edge-shape curve list.
@@ -171,79 +166,39 @@ export function IsohedralClient() {
 		[ih, params, edges, tessZoom, info.available],
 	);
 
-	// Only the 2-D fallback needs this; parsing once here keeps it off the draw path.
-	const fallbackBase = useMemo(
-		() => (cell ? parseBaseCell({ p: cell.polygons, b: [cell.v1, cell.v2] }) : null),
-		[cell],
+	// The conformal lens: the same cell seen through a circle inversion, a Möbius map or Kaplan's spiral.
+	// It reads the cell through the shared periodic-cell IR, so the tessellated edge curves above reach it
+	// unchanged and a bowed J or S edge stays bowed under the map.
+	const lens = useConfiguration((s) => s.inversive);
+	const setLens = useCallback((v: boolean) => useConfiguration.getState().set({ inversive: v }), []);
+	const lensActive = lens && info.available;
+	useInversiveShortcut(info.available);
+	const lensCell = useMemo(
+		() => (lensActive && cell ? tilingPeriodicCell({ cellPolygons: cell.polygons, basis: [cell.v1, cell.v2] }) : null),
+		[lensActive, cell],
+	);
+	// Everything that moves the geometry, so the lens re-uploads exactly when it changes: the type, the
+	// parameter vector, every edge's shape AND amplitude (Randomize varies the control points, which one
+	// number cannot carry), and the tessellation zoom that decides how finely the curves are flattened.
+	const lensCellId = useMemo(
+		() =>
+			lensCell
+				? `IH${ih}:${tessZoom}:${params.join(",")}:${edges
+						.map((e) => `${e.kind}${e.amount}${e.base ? `@${e.base.a.x},${e.base.a.y},${e.base.b.x},${e.base.b.y}` : ""}`)
+						.join("|")}`
+				: null,
+		[lensCell, ih, tessZoom, params, edges],
 	);
 
-	// Sets the starting scale only. The tiling has no edge to frame, so this is a square box and the
-	// renderer instances out to whatever the canvas' aspect turns out to be.
-	const home = useCallback((): HomeBox | null => cell?.home ?? null, [cell]);
-
-	const draw = useCallback(
-		(f: AperiodicFrame) => {
-			const cv = canvasRef.current;
-			if (!cv) return;
-
-			// Re-tessellate when the zoom crosses a power of two. The ref is what keeps this off the hot
-			// path: without it every frame of a drag would call setState with the value it already holds.
-			const q = tessellationZoom(f.zoom);
-			if (q !== tessZoomRef.current) {
-				tessZoomRef.current = q;
-				setTessZoom(q);
-			}
-
-			if (modeRef.current === "gl" && glRef.current && glContextRef.current) {
-				// FlatCellRenderer leaves backing-size and viewport to the caller. useAperiodicView has
-				// already resized the backing store to w*dpr, so the viewport just follows it.
-				glContextRef.current.viewport(0, 0, cv.width, cv.height);
-				glRef.current.draw({
-					width: f.w,
-					height: f.h,
-					// The hook's frame and flatWorldToClip use the same convention — centred CSS px, y
-					// down, rotation applied after the y flip — so the offset passes straight through.
-					// This holds because home is centred on the origin, making f.centreX/Y zero.
-					offset: { x: f.offsetX, y: f.offsetY },
-					zoom: f.zoom,
-					rotationDeg: (f.rot * 180) / Math.PI,
-					lineWidth: strokeWidth,
-					showFill: true,
-					strokeRGB: STROKE_RGB,
-				});
-				return;
-			}
-
-			const ctx = cv.getContext("2d");
-			if (!ctx) return;
-			ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
-			ctx.clearRect(0, 0, f.w, f.h);
-			ctx.save();
-			applyViewTransform(ctx, f);
-			ctx.lineJoin = "round";
-			if (fallbackBase && f.zoom > 0) {
-				// Walk the same lattice on the CPU, out to the visible world rect. The √2 covers rotation.
-				const halfW = ((f.w / f.zoom) * Math.SQRT2) / 2;
-				const halfH = ((f.h / f.zoom) * Math.SQRT2) / 2;
-				const world = expandToViewport(
-					fallbackBase,
-					f.centreX - f.offsetX / f.zoom,
-					f.centreY + f.offsetY / f.zoom,
-					halfW,
-					halfH,
-					FALLBACK_MAX_RADIUS,
-				);
-				drawPolygons(ctx, world, f.zoom, 0, strokeWidth, STROKE_CSS);
-			}
-			ctx.restore();
-		},
-		[fallbackBase, strokeWidth],
-	);
-
-	// fill: 1, not the hook's 0.86 default. There is no patch boundary to keep clear of the canvas
-	// edges — the tiling runs off all four of them — so a margin would only mean less tiling.
-	const view = useAperiodicView({ canvasRef, home, draw, fill: 1 });
-	const { refit, rehome, requestDraw } = view;
+	// Re-tessellate when the zoom crosses a power of two. The ref is what keeps this off the hot path:
+	// without it every frame of a drag would call setState with the value it already holds.
+	const onFrame = useCallback((f: AperiodicFrame) => {
+		const q = tessellationZoom(f.zoom);
+		if (q !== tessZoomRef.current) {
+			tessZoomRef.current = q;
+			setTessZoom(q);
+		}
+	}, []);
 
 	/**
 	 * What counts as "a different thing to look at", as opposed to the same thing deformed.
@@ -254,52 +209,20 @@ export function IsohedralClient() {
 	 * does. Canvas aspect is deliberately absent too: a window resize must not throw the reader's view
 	 * away, and the hook's own ResizeObserver already rescales the zoom.
 	 */
-	const framingKey = `${ih}`;
-	const lastFramingRef = useRef<string | null>(null);
-
-	// Create the renderer once: a canvas holds one context type for its life, so this decides the path.
-	// Declared BEFORE the upload effect so the renderer exists when the first upload runs.
-	useEffect(() => {
-		const cv = canvasRef.current;
-		if (!cv) return;
-		const gl = cv.getContext("webgl2", { antialias: true, premultipliedAlpha: false, alpha: true });
-		if (gl) {
-			try {
-				glRef.current = new FlatCellRenderer(gl);
-				glContextRef.current = gl;
-				modeRef.current = "gl";
-			} catch {
-				modeRef.current = "2d";
-			}
-		} else {
-			modeRef.current = "2d";
-		}
-		uploadedRef.current = null;
-		return () => {
-			glRef.current?.dispose();
-			glRef.current = null;
-			glContextRef.current = null;
-			uploadedRef.current = null;
-		};
-		// The canvas unmounts when a marked type is selected, so this must re-run when one is picked.
-	}, [info.available]);
-
-	useEffect(() => {
-		if (modeRef.current === "gl" && glRef.current && cell && uploadedRef.current !== cell.mesh) {
-			glRef.current.uploadMesh(cell.mesh);
-			uploadedRef.current = cell.mesh;
-		}
-		if (lastFramingRef.current !== framingKey) {
-			lastFramingRef.current = framingKey;
-			refit();
-		} else {
-			rehome();
-		}
-	}, [cell, framingKey, refit, rehome]);
-
-	useEffect(() => {
-		requestDraw();
-	}, [strokeWidth, requestDraw]);
+	const { view, lensCamera } = useParametricTilingCanvas({
+		canvasRef,
+		cell,
+		strokeWidth,
+		strokeRgb: STROKE_RGB,
+		strokeCss: STROKE_CSS,
+		framingKey: `${ih}`,
+		fallbackMaxRadius: FALLBACK_MAX_RADIUS,
+		// The canvas unmounts when a marked type is selected, so the GL context is rebuilt when one is
+		// picked and then left.
+		mounted: info.available,
+		lensActive,
+		onFrame,
+	});
 
 	const visible = useMemo(
 		() =>
@@ -531,6 +454,21 @@ export function IsohedralClient() {
 								step={STROKE_WIDTH.step}
 								format={(v) => (v === 0 ? "off" : `${v} px`)}
 							/>
+							{/* The lens draws the same cell the flat renderer does, curved edges and all, so a
+							    bowed J or S edge stays bowed under the conformal map. Same store fields as
+							    /play's, so a mode picked there is the mode here. */}
+							<Checkbox
+								id="ih-inversive"
+								label="Inversive view"
+								shortcut="X"
+								checked={lens}
+								onCheckedChange={(v) => setLens(v)}
+							/>
+							<Reveal show={lens}>
+								<div className="pl-7">
+									<InversiveControls />
+								</div>
+							</Reveal>
 						</Section>
 					</>
 				) : null}
@@ -547,6 +485,12 @@ export function IsohedralClient() {
 				) : (
 					<MarkedTypeNote info={info} />
 				)}
+				{/* The lens is a second canvas over the first, which stays mounted as the input layer —
+				    the same arrangement /play uses, and for the same reason: a canvas holds one WebGL
+				    context for its life. */}
+				{lensActive ? (
+					<InversiveCanvas cell={lensCell} cellId={lensCellId} camera={lensCamera} />
+				) : null}
 				{/* Same corner, same component as /play's canvas. */}
 				<div className="absolute top-4 left-4 z-20">
 					<TilingInfo spec={spec} />

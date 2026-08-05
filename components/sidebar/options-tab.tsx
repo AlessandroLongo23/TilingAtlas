@@ -17,7 +17,7 @@ import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import { isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
-import { SpiralVelocityPad } from "@/components/spiral-velocity-pad";
+import { InversiveControls } from "@/components/inversive-controls";
 
 interface OptionsTabProps {
 	selected: CatalogueTiling | null;
@@ -928,101 +928,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{lensApplies ? (
 						<Reveal show={cfg.inversive}>
-						<div className="space-y-2 pl-7">
-							<div className="flex gap-2">
-								<Button
-									variant={cfg.inversiveMode === "inversion" ? "primary" : "secondary"}
-									size="sm"
-									classes="flex-1"
-									onClick={() => setCfg({ inversiveMode: "inversion" })}
-								>
-									Inversion
-								</Button>
-								<Button
-									variant={cfg.inversiveMode === "mobius" ? "primary" : "secondary"}
-									size="sm"
-									classes="flex-1"
-									onClick={() => setCfg({ inversiveMode: "mobius" })}
-								>
-									Möbius
-								</Button>
-								<Button
-									variant={cfg.inversiveMode === "spiral" ? "primary" : "secondary"}
-									size="sm"
-									classes="flex-1"
-									onClick={() => setCfg({ inversiveMode: "spiral" })}
-								>
-									Spiral
-								</Button>
+							<div className="pl-7">
+								<InversiveControls />
 							</div>
-							{/* Lens radius has no meaning for a single-centre spiral; it becomes the pole
-							    separation for the two-centre (Droste) spiral. */}
-							<Reveal show={!(cfg.inversiveMode === "spiral" && !cfg.spiralDouble)}>
-								<Slider
-									id="inversiveRadius"
-									label={cfg.inversiveMode === "spiral" ? "Pole separation" : "Lens radius"}
-									value={cfg.inversiveRadiusFrac}
-									onChange={(v) => setCfg({ inversiveRadiusFrac: v })}
-									min={0.1}
-									max={1}
-									step={0.01}
-								/>
-							</Reveal>
-							<Reveal show={cfg.inversiveMode === "mobius"}>
-								<Slider
-									id="mobiusTwist"
-									label="Spiral twist"
-									value={cfg.mobiusTwist}
-									onChange={(v) => setCfg({ mobiusTwist: v })}
-									min={0}
-									max={180}
-									step={1}
-									unit="°"
-								/>
-							</Reveal>
-							<Reveal show={cfg.inversiveMode === "spiral"}>
-								<div className="space-y-2">
-									<div className="flex gap-2">
-										<Button
-											variant={!cfg.spiralDouble ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ spiralDouble: false })}
-										>
-											1 center
-										</Button>
-										<Button
-											variant={cfg.spiralDouble ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ spiralDouble: true })}
-										>
-											2 centers
-										</Button>
-									</div>
-									<Slider
-										id="spiralArmA"
-										label="Arm a"
-										value={cfg.spiralArmA}
-										onChange={(v) => setCfg({ spiralArmA: Math.round(v) })}
-										min={-6}
-										max={6}
-										step={1}
-									/>
-									<Slider
-										id="spiralArmB"
-										label="Arm b"
-										value={cfg.spiralArmB}
-										onChange={(v) => setCfg({ spiralArmB: Math.round(v) })}
-										min={-6}
-										max={6}
-										step={1}
-									/>
-									{/* Velocity pad: hold a zoom/rotation rate — the spiral animates without dragging. */}
-									<SpiralVelocityPad />
-								</div>
-							</Reveal>
-						</div>
 						</Reveal>
 					) : null}
 				</div>
