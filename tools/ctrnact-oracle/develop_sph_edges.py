@@ -89,6 +89,10 @@ BOARDS = {
              "vef": (12, 24, 14), "solver": "pt_edges_3336.exe"},
     "3337": {"config": [3, 3, 3, 7], "label": "3.3.3.7", "solid": "heptagonal antiprism",
              "vef": (14, 28, 16), "solver": "pt_edges_3337.exe"},
+    # 2 octagons + 16 triangles: V = 2n, E = 4n, F = 2 + 2n at n = 8, the same antiprism arithmetic as
+    # the four above it.
+    "3338": {"config": [3, 3, 3, 8], "label": "3.3.3.8", "solid": "octagonal antiprism",
+             "vef": (16, 32, 18), "solver": "pt_edges_3338.exe"},
     # The first CHIRAL board on this shelf: the snub cube has no mirror symmetry, so its isometry group
     # is the rotation group O (order 24) and not Oh. `board_project` already tries the reflected frame
     # (_YFLIP) for every candidate, so a development that came out mirrored still lands on the one board

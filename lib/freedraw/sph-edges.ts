@@ -142,6 +142,12 @@ export const SPH_EDGES_BOARDS: SphEdgesBoard[] = [
 	{ id: "3335", config: "3.3.3.5", solid: "pentagonal antiprism", eagerKs: [1, 2, 3, 5, 6], lazyKs: [10], complete: true, missing: [], counts: { 1: 5, 2: 2, 3: 34, 5: 299, 6: 348, 10: 4477 } }, // k=10 is 1.4 MB → lazy
 	{ id: "3336", config: "3.3.3.6", solid: "hexagonal antiprism", eagerKs: [1, 2, 3, 4, 6, 7], lazyKs: [12], complete: true, missing: [], counts: { 1: 5, 2: 17, 3: 33, 4: 33, 6: 974, 7: 1117, 12: 38698 } }, // k=12 is 12.9 MB → lazy
 	{ id: "3337", config: "3.3.3.7", solid: "heptagonal antiprism", eagerKs: [1, 2, 4], lazyKs: [7, 8], complete: true, missing: [14], counts: { 1: 5, 2: 2, 4: 116, 7: 3124, 8: 3598 } },
+	// ⚑ 5 / 9 / 8 / 91 / 105 at k = 1…5 is IDENTICAL to the square antiprism's, and it is not the same
+	// data: zero drawn-sets are shared, and the solids differ (32 edges and 18 faces against 16 and 10).
+	// The same coincidence IH01 and IH02 have on the isohedral shelf.
+	// ⚑ `missing: [16]` is the big one: the census counts 2,925,191 there and the drop carries no k=16
+	// file at all. Not our budget — the data is not in the drop.
+	{ id: "3338", config: "3.3.3.8", solid: "octagonal antiprism", eagerKs: [1, 2, 3, 4, 5], lazyKs: [8, 9], complete: false, missing: [16], counts: { 1: 5, 2: 9, 3: 8, 4: 91, 5: 105, 8: 9928, 9: 11412 } }, // k=8 is 3.5 MB, k=9 is 4.1 MB -> lazy
 	// The first CHIRAL board here: |G| = 24 (the rotation group O), not 48, so a mirrored development is
 	// the enantiomorph and lands only because `board_project` tries the reflected frame too.
 	{ id: "33334", config: "3.3.3.3.4", solid: "snub cube", eagerKs: [1, 2, 3, 4], lazyKs: [6], complete: false, missing: [8], counts: { 1: 7, 2: 8, 3: 152, 4: 1078, 6: 22029 } }, // k=6 is 10.1 MB → lazy // k=7 is 1.1 MB → lazy // k=8 is 1.2 MB → lazy

@@ -62,7 +62,19 @@ describe("uniform-polyhedron edge board manifest", () => {
 		// at k = 8 on a 24-vertex solid with no MAX marker, so the search itself is unfinished. Both
 		// boards that came out of that one run inherit it.
 		const snub = SPH_EDGES_BOARDS.find((b) => b.id === "33334")!;
-		expect(SPH_EDGES_BOARDS.filter((b) => !b.complete).map((b) => b.id).sort()).toEqual(["33334", "4443", "j37"]);
+		// Lexicographic, so "33334" sorts before "3338" — the fourth character decides.
+		expect(SPH_EDGES_BOARDS.filter((b) => !b.complete).map((b) => b.id).sort()).toEqual([
+			"33334",
+			"3338",
+			"4443",
+			"j37",
+		]);
+		// ⚑ 3338 is the third shape of the same story: its census counts 2,925,191 tilings at k=16, the
+		// drop carries no k=16 file at all, and the census carries no MAX marker either — so the board is
+		// both unfinished AND short-copied, like the snub cube, at a scale that dwarfs everything shipped.
+		const oct = SPH_EDGES_BOARDS.find((b) => b.id === "3338")!;
+		expect(oct.complete).toBe(false);
+		expect(oct.missing).toEqual([16]);
 		expect(SPH_EDGES_BOARDS.find((b) => b.id === "4443")!.missing).toEqual([]);
 		// The snub cube is the case where BOTH are true at once, which is why they are two fields: its
 		// census stops at k = 8 of a 24-vertex solid (unfinished) AND counts 147,140 tilings there that
