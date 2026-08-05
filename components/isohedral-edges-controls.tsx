@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BULGE } from "@/lib/isohedral/build";
 import { ISOHEDRAL_TYPES } from "@/lib/isohedral/catalogue";
-import { solveIhBoardFor } from "@/lib/isohedral/edge-board";
+import { IH_EDGE_BOARD_BY_IH, solveIhBoardFor } from "@/lib/isohedral/edge-board";
 import { useConfiguration } from "@/stores/configuration";
 
 // The isohedral edge shelf's shape controls, as their own overlay instead of part of its canvas.
@@ -55,6 +55,12 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 	);
 
 	const solved = solveIhBoardFor(ih, stored, storedBulge);
+	// Whether this board can carry a bow at all: every one-slot class must be its own reverse.
+	const spec = IH_EDGE_BOARD_BY_IH.get(ih);
+	const bowable =
+		!spec ||
+		!info ||
+		spec.slots.every((n, i) => n > 1 || info.edgeShapes[i] === "S" || info.edgeShapes[i] === "I");
 
 	return (
 		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 rounded-md bg-surface-overlay/95 p-3 text-xs backdrop-blur">
@@ -81,8 +87,13 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 			{/* Edge curvature, one slider per DISTINCT edge shape — the same control /isohedral carries, so
 			    the same number means the same bow on both pages. Straight at zero, and zero is the default:
 			    an edge system is about which edges are DRAWN, and a bowed edge makes drawn and undrawn
-			    harder to tell apart. IH01's three shapes are all kind J, so all three bow freely. */}
-			{bulge.map((v, i) => (
+			    harder to tell apart. IH01's three shapes are all kind J, so all three bow freely.
+
+			    ⚑ NOT OFFERED AT ALL on a board that cannot orient a bow. A digon slot says which end of an
+			    edge a dart sits at; a class with one slot has no such bit, which is only safe where the edge
+			    equals its own reverse. IH10's single class is a J edge with one slot, so a bow there would
+			    be mirrored on half the edges — better to withhold the slider than to draw that. */}
+			{(bowable ? bulge : []).map((v, i) => (
 				<label key={`bulge-${i}`} className="flex items-center gap-2">
 					<span className="w-14 text-fg-secondary">bow {String.fromCharCode(97 + i)}</span>
 					<input

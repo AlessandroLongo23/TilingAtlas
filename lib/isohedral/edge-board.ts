@@ -37,6 +37,18 @@ export interface IhEdgeBoardSpec {
 	classes: string[];
 	/** The cyclic boundary as (corner, class of the side LEAVING it). Mirrors develop_ih_edges.py. */
 	sides: [string, string][];
+	/**
+	 * Per class, how many DIGON SLOTS the corpus's alphabet gives it: 2 when the letters `X11`/`X13`
+	 * appear, 1 when only `X10`/`X12` do. Read off the corpora, asserted by edge-board.test.ts.
+	 *
+	 * ⚑ This is what decides whether a class may be BOWED. A slot says which end of an edge a dart sits
+	 * at, so a two-slot class knows which way it is being crossed and a one-slot class does not. On IH04
+	 * to IH09 every one-slot class is an S edge, equal to its own reverse, so the missing bit costs
+	 * nothing. IH10 is where that stops: its single class is used SIX times, is a J edge, and still gets
+	 * one slot — so a bowed IH10 edge cannot know which way to bend, and `solveIhBoardFor` refuses the
+	 * bulge instead of drawing half the tiles mirrored.
+	 */
+	slots: number[];
 }
 
 export const IH_EDGE_BOARDS: IhEdgeBoardSpec[] = [
@@ -53,6 +65,7 @@ export const IH_EDGE_BOARDS: IhEdgeBoardSpec[] = [
 			["E", "b"],
 			["F", "c"],
 		],
+		slots: [2, 2, 2],
 	},
 	{
 		ih: 2,
@@ -74,6 +87,7 @@ export const IH_EDGE_BOARDS: IhEdgeBoardSpec[] = [
 			["D", "c"],
 			["E", "b"],
 		],
+		slots: [2, 2, 2],
 	},
 	{
 		ih: 3,
@@ -91,6 +105,7 @@ export const IH_EDGE_BOARDS: IhEdgeBoardSpec[] = [
 			["E", "b"],
 			["F", "c"],
 		],
+		slots: [2, 2, 2],
 	},
 	{
 		ih: 4,
@@ -110,6 +125,121 @@ export const IH_EDGE_BOARDS: IhEdgeBoardSpec[] = [
 			["E", "b"],
 			["F", "e"],
 		],
+		slots: [1, 2, 1, 1, 1],
+	},
+	{
+		ih: 5,
+		label: "IH05",
+		// FOUR aspects, the first board past two. Corner order solved by scripts/solve-ih-board.ts.
+		// Classes `a` and `d` occur once each on the boundary, so they get one digon slot and no
+		// direction bit; both are Tactile S edges, equal to their own reverse, so neither needs one —
+		// the same arrangement IH04 has, and `checkSlotsAreOpposite` asserts it here too.
+		corners: ["A", "B", "C", "D", "E", "F"],
+		classes: ["a", "b", "c", "d"],
+		sides: [
+			["A", "a"],
+			["B", "b"],
+			["C", "c"],
+			["D", "c"],
+			["E", "b"],
+			["F", "d"],
+		],
+		slots: [1, 2, 2, 1],
+	},
+	{
+		ih: 6,
+		label: "IH06",
+		// Four aspects again, and `abcdbd` puts the single-slot classes at `a` and `c`, which are its two
+		// S edges. ⚑ Solving this board is what caught the parameter point in scripts/solve-ih-board.ts:
+		// IH06's boundary self-intersects at the first two points the script tried, and a tile whose
+		// angles sum to 1080° instead of 720° fails the 360° vertex test for every labelling at once.
+		corners: ["A", "B", "C", "D", "E", "F"],
+		classes: ["a", "b", "c", "d"],
+		sides: [
+			["A", "a"],
+			["B", "b"],
+			["C", "c"],
+			["D", "d"],
+			["E", "b"],
+			["F", "d"],
+		],
+		slots: [1, 2, 1, 2],
+	},
+	{
+		ih: 7,
+		label: "IH07",
+		// THREE aspects, and the first board with ROTATION CENTRES. Its `aAbBcC` puts a 120° corner at
+		// B, D and F, where three copies of the same corner meet; the corpus reports such a vertex either
+		// whole (`BBB`, tagged F) or quotiented by the rotation (`B`, tagged C3), and a site tagged Cn
+		// closes to 360/n. Reading every site as a full turn rejected both candidate labellings at once.
+		corners: ["A", "B", "C", "D", "E", "F"],
+		classes: ["a", "b", "c"],
+		sides: [
+			["A", "a"],
+			["B", "a"],
+			["C", "b"],
+			["D", "b"],
+			["E", "c"],
+			["F", "c"],
+		],
+		slots: [2, 2, 2],
+	},
+	{
+		ih: 8,
+		label: "IH08",
+		// ⚑ THE FIRST BOARD WHOSE CORNER LETTERS REPEAT, so `corners` is no longer six distinct names.
+		// `abcabc` repeats with period three, its six corners fall into three classes, and the corpus
+		// knows only A, B and C. Opposite corners carry equal angles, so reading a letter's angle off its
+		// first occurrence is exact and not an approximation. One aspect, three S edges — and the only
+		// board so far with ODD k, because its bare tiling has a single vertex orbit.
+		corners: ["A", "B", "C", "A", "B", "C"],
+		classes: ["a", "b", "c"],
+		sides: [
+			["A", "a"],
+			["B", "b"],
+			["C", "c"],
+			["A", "a"],
+			["B", "b"],
+			["C", "c"],
+		],
+		slots: [1, 1, 1],
+	},
+	{
+		ih: 9,
+		label: "IH09",
+		// Repeating corner letters again (`abbabb` at period three) and only TWO edge classes, the fewest
+		// on the shelf: `a` is the S edge, occurring twice with a single slot, `b` the J edge, occurring
+		// four times with two.
+		corners: ["A", "B", "C", "A", "B", "C"],
+		classes: ["a", "b"],
+		sides: [
+			["A", "a"],
+			["B", "b"],
+			["C", "b"],
+			["A", "a"],
+			["B", "b"],
+			["C", "b"],
+		],
+		slots: [1, 2],
+	},
+	{
+		ih: 10,
+		label: "IH10",
+		// ⚑ ZERO PARAMETERS. Tactile hands back one fixed tile for this type, the regular hexagon, so the
+		// shelf has no sliders to offer beyond curvature and the board solver has no generic point to test
+		// at. Nothing needed solving: one corner letter, one edge class, one surviving labelling. Its
+		// corpus is also the first with MIRROR site tags (`Aa`, `Ac`, `D6a`) alongside rotation centres.
+		corners: ["A", "A", "A", "A", "A", "A"],
+		classes: ["a"],
+		sides: [
+			["A", "a"],
+			["A", "a"],
+			["A", "a"],
+			["A", "a"],
+			["A", "a"],
+			["A", "a"],
+		],
+		slots: [1],
 	},
 ];
 
@@ -148,7 +278,13 @@ export interface SolvedIhBoard {
 	period: number;
 }
 
-export type IhBoardError = "unknown-type" | "build-failed" | "degenerate" | "tactile-mismatch";
+export type IhBoardError =
+	| "unknown-type"
+	| "build-failed"
+	| "degenerate"
+	| "tactile-mismatch"
+	/** The board has a class that can be bowed but cannot say which way it is crossed. See below. */
+	| "unbowable";
 export type SolveIhResult =
 	| { ok: true; board: SolvedIhBoard; error?: undefined }
 	| { ok: false; board?: undefined; error: IhBoardError };
@@ -320,6 +456,19 @@ export function solveIhBoardFor(
 		b && b.some((v) => Math.abs(v) > 1e-6)
 			? curvesOf(defaultEdgeStates(info.edgeShapes).map((s, i) => ({ ...s, amount: b[i] })))
 			: undefined;
+	// ⚑ Refuse a bulge the board cannot orient. A class with ONE digon slot carries no direction bit, so
+	// bowing it is only safe when the bow is its own reverse — an S edge. That held on every board up to
+	// IH09 and fails on IH10, whose single J class is used six times and still gets one slot. Drawing it
+	// anyway would mirror the bow on half the edges, which is a plausible-looking lie, so this says no
+	// and lets the shelf show the reason.
+	const spec = IH_EDGE_BOARD_BY_IH.get(ih);
+	if (curves && spec) {
+		for (let i = 0; i < spec.classes.length; i++) {
+			if (spec.slots[i] !== 1) continue;
+			if (info.edgeShapes[i] === "S" || info.edgeShapes[i] === "I") continue;
+			return { ok: false, error: "unbowable" };
+		}
+	}
 	return solveIhBoard(ih, p, curves);
 }
 
