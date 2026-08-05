@@ -68,8 +68,24 @@ export function PrototileInspector({
 	const s = (BOX - 2 * PAD) / Math.max(w, h);
 	const ox = PAD + (BOX - 2 * PAD - w * s) / 2;
 	const oy = PAD + (BOX - 2 * PAD - h * s) / 2;
-	// y flipped so the drawing agrees with the canvas next to it.
-	const px = (p: TactilePoint) => ({ x: ox + (p.x - minx) * s, y: BOX - (oy + (p.y - miny) * s) });
+	/**
+	 * Project a tile point into the viewBox, rounded to a hundredth of a unit.
+	 *
+	 * The rounding is not cosmetic, it is what makes this component hydrate. Node's `Math.cos` and
+	 * Chromium's disagree in the last bit — different V8 versions, different polynomial — so a tile whose
+	 * vertices come from a cosine renders `cy="105.83716857408417"` on the server and 105.83716857408416
+	 * in the browser, and React reports the attribute mismatch. It surfaced on the marked hexagon of
+	 * IH19, where the prototile is built from cos(60k°), but nothing about it is specific to that type:
+	 * any float wide enough to print all seventeen digits is exposed. Two decimals is far finer than a
+	 * 132-unit box can show.
+	 *
+	 * y is flipped so the drawing agrees with the canvas next to it.
+	 */
+	const round2 = (v: number) => Math.round(v * 100) / 100;
+	const px = (p: TactilePoint) => ({
+		x: round2(ox + (p.x - minx) * s),
+		y: round2(BOX - (oy + (p.y - miny) * s)),
+	});
 
 	const path = (pts: { x: number; y: number }[]) =>
 		pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
@@ -104,12 +120,13 @@ export function PrototileInspector({
 		return {
 			e,
 			mid,
-			nx,
-			ny,
+			// Rounded for the same reason `px` is: `Math.hypot` above is another place two V8 builds may
+			// disagree in the last bit, and every number here becomes an SVG attribute React diffs.
 			label: {
-				x: chord.x + nx * (bow + LABEL_PUSH),
-				y: chord.y + ny * (bow + LABEL_PUSH),
+				x: round2(chord.x + nx * (bow + LABEL_PUSH)),
+				y: round2(chord.y + ny * (bow + LABEL_PUSH)),
 			},
+			arm: { x: round2(nx * MARK), y: round2(ny * MARK) },
 		};
 	});
 
@@ -145,7 +162,7 @@ export function PrototileInspector({
 
 				{/* Each edge's symmetry element, where it acts. J is unconstrained and gets none; I is
 				    visibly straight already. */}
-				{marks.map(({ e, mid, nx, ny }, i) =>
+				{marks.map(({ e, mid, arm }, i) =>
 					e.kind === "S" ? (
 						// The 2-fold centre the edge turns about. An S curve is antisymmetric about it, so this
 						// point sits on the chord however hard the edge bows.
@@ -168,10 +185,10 @@ export function PrototileInspector({
 						// spokes hanging outside a concave edge, touching nothing.
 						<line
 							key={`m${i}`}
-							x1={mid.x - nx * MARK}
-							y1={mid.y - ny * MARK}
-							x2={mid.x + nx * MARK}
-							y2={mid.y + ny * MARK}
+							x1={mid.x - arm.x}
+							y1={mid.y - arm.y}
+							x2={mid.x + arm.x}
+							y2={mid.y + arm.y}
 							className="stroke-fg-muted"
 							strokeWidth={0.9}
 						/>

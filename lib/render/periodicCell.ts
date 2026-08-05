@@ -59,7 +59,15 @@ export interface PeriodicCell {
 	v1: [number, number];
 	v2: [number, number];
 	prims: PeriodicPrim[];
-	/** Median tile-edge length in world units — the resolution scale the centre fade tracks. */
+	/**
+	 * The size of one drawn feature, in world units: the scale at which the picture stops resolving.
+	 *
+	 * What every producer means by it is "roughly one tile across". Deliberately NOT a segment length —
+	 * lib/render/periodic/tilings.ts used the median segment and that measured the flattening resolution
+	 * of curved edges, so bowing an edge by a hundredth collapsed it tenfold and redrew the whole centre
+	 * of an inversion. It now takes √area per tile, which is invariant under how finely a curve is
+	 * flattened. The centre fade and the stroke taper are both measured against this.
+	 */
 	feature: number;
 }
 

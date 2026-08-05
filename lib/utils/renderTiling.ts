@@ -8,6 +8,15 @@ export interface RawPolygon {
 	/** Explicit fill hue (degrees), overriding both the star and by-side-count ramps. Used by polyominoes,
 	 *  whose boundary side count doesn't distinguish the pieces — a per-piece identity hue does. */
 	hue?: number;
+	/**
+	 * An open polyline: stroked along vertices 0..n-1 and NOT closed, with no fill.
+	 *
+	 * The isohedral shelf's interior markings are the only user. A mark is a drawn ⌐, the way Grünbaum
+	 * and Shephard drew it — a line, not a block — so it has to reach the renderers as a path and take
+	 * the same weight and colour as the tile edges beside it. Default false: every other producer emits
+	 * closed, filled rings.
+	 */
+	open?: boolean;
 }
 
 export interface TranslationalCellData {
@@ -23,6 +32,7 @@ interface CellPolyData {
 	n?: number;
 	star?: boolean;
 	hue?: number;
+	open?: boolean;
 }
 
 export interface BaseCell {
@@ -160,6 +170,16 @@ export function starApexAngleDeg(vertices: { x: number; y: number }[]): number {
 // a catalogue thumbnail is the colour you get on the play canvas.
 export const TILE_FILL_ALPHA = 1;
 
+/**
+ * The fill for a polygon whose `hue` is negative: neutral ink, not a colour.
+ *
+ * The hue ramp is `hsb(h, 40, 100)`, so every hue is a light pastel and none of them can be dark. A
+ * prim that has to read as a MARK rather than as a tile therefore needs a way out of the ramp, and a
+ * negative hue is it — the same sentinel the PeriodicCell IR already documents, so the flat view, the
+ * 2-D fallback and the lens all agree. Matches TILE_LINE_RGB, the near-black the tile edges use.
+ */
+export const INK_FILL = "rgb(13, 13, 18)";
+
 export function hsbToHsla(h: number, s: number, b: number, a: number) {
 	const sf = s / 100;
 	const bf = b / 100;
@@ -183,7 +203,8 @@ export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 		const verts = raw.map((v) =>
 			Array.isArray(v) ? { x: v[0], y: v[1] } : { x: v.x, y: v.y },
 		);
-		if (verts.length < 3) continue;
+		// An open polyline needs only two points; a ring needs three.
+		if (verts.length < (poly.open ? 2 : 3)) continue;
 		for (const v of verts) {
 			if (v.x < minX) minX = v.x;
 			if (v.x > maxX) maxX = v.x;
@@ -195,7 +216,7 @@ export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 			const b = verts[(i + 1) % verts.length];
 			edges.push(Math.hypot(b.x - a.x, b.y - a.y));
 		}
-		polys.push({ n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)), hue: poly.hue });
+		polys.push({ n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)), hue: poly.hue, open: poly.open });
 	}
 	if (polys.length === 0 || edges.length === 0) return null;
 	edges.sort((a, b) => a - b);
@@ -286,13 +307,27 @@ export function drawPolygons(
 	ctx.strokeStyle = outlineStyle;
 	ctx.lineWidth = outlinePx / scale;
 	for (const poly of polygons) {
-		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
-		ctx.fillStyle = hsbToHsla((hue + hueOffsetDeg) % 360, 40, 100, TILE_FILL_ALPHA);
 		ctx.beginPath();
 		ctx.moveTo(poly.vertices[0].x, poly.vertices[0].y);
 		for (let i = 1; i < poly.vertices.length; i++) {
 			ctx.lineTo(poly.vertices[i].x, poly.vertices[i].y);
 		}
+		// An open path is a drawn mark, not a tile: it strokes at the tile-edge weight and never fills or
+		// closes. The isohedral shelf's interior markings are the only producer — see RawPolygon.open.
+		if (poly.open) {
+			if (outlinePx > 0) {
+				// Matches MARK_STROKE_SCALE in lib/isohedral/cellMesh.ts, so the 2-D fallback draws the same
+				// weight the GPU path does.
+				ctx.lineWidth = (outlinePx * 1.45) / scale;
+				ctx.stroke();
+				ctx.lineWidth = outlinePx / scale;
+			}
+			continue;
+		}
+		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
+		// Negative hue = ink, the same sentinel FILL_FRAG and the PeriodicCell IR use. Nothing on the hue
+		// wheel can be dark at b=100.
+		ctx.fillStyle = hue < 0 ? INK_FILL : hsbToHsla((hue + hueOffsetDeg) % 360, 40, 100, TILE_FILL_ALPHA);
 		ctx.closePath();
 		ctx.fill();
 		if (outlinePx > 0) ctx.stroke();

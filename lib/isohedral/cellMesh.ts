@@ -27,6 +27,15 @@ import type { RawPolygon } from "@/lib/utils/renderTiling";
 
 const EMPTY = new Float32Array(0);
 
+/**
+ * How much heavier an open path draws than a tile edge.
+ *
+ * The stroke shader multiplies `aSide` straight into the half-width, so the attribute that carries which
+ * side of the segment a corner is on carries the width too. A mark wants to sit a little above the net it
+ * decorates without becoming a second kind of line.
+ */
+const MARK_STROKE_SCALE = 1.45;
+
 export function buildIsohedralCellMesh(
 	polys: RawPolygon[],
 	v1: [number, number],
@@ -38,9 +47,10 @@ export function buildIsohedralCellMesh(
 	if (!Number.isFinite(det) || Math.abs(det) < DEGENERATE_DET) return null;
 	if (polys.length === 0) return null;
 
-	// Ear clipping yields n−2 triangles for an n-gon, against the centroid fan's n.
+	// Ear clipping yields n−2 triangles for an n-gon, against the centroid fan's n. Open paths contribute
+	// none: they are marks, drawn as line only.
 	let triCount = 0;
-	for (const poly of polys) triCount += Math.max(0, poly.vertices.length - 2);
+	for (const poly of polys) if (!poly.open) triCount += Math.max(0, poly.vertices.length - 2);
 	if (triCount === 0) return null;
 
 	const fillVerts = new Float32Array(triCount * 3 * 2);
@@ -63,11 +73,12 @@ export function buildIsohedralCellMesh(
 	 * once, it is 160 thousand. Guarded on the vertex counts agreeing, and falls back per polygon if
 	 * they ever do not.
 	 */
-	const shared = polys[0].vertices.length;
-	const uniform = polys.every((p) => p.vertices.length === shared);
-	const sharedIdx = uniform && shared >= 3 ? triangulate(polys[0].vertices) : null;
+	const fillable = polys.filter((p) => !p.open);
+	const shared = fillable[0]?.vertices.length ?? 0;
+	const uniform = fillable.length > 0 && fillable.every((p) => p.vertices.length === shared);
+	const sharedIdx = uniform && shared >= 3 ? triangulate(fillable[0].vertices) : null;
 
-	for (const poly of polys) {
+	for (const poly of fillable) {
 		const vs = poly.vertices;
 		if (vs.length < 3) continue;
 		let cx = 0, cy = 0;
@@ -106,8 +117,11 @@ export function buildIsohedralCellMesh(
 
 	// One quad (2 triangles, 6 verts) per polygon edge. The vertex shader pushes each corner along the
 	// edge normal by half the screen stroke width, so the line stays a constant width at any zoom.
+	//
+	// An open path has one fewer segment than it has vertices: it is a drawn mark, and closing it back to
+	// its first point would turn a ⌐ into a triangle.
 	let edgeCount = 0;
-	for (const poly of polys) edgeCount += poly.vertices.length;
+	for (const poly of polys) edgeCount += poly.open ? Math.max(0, poly.vertices.length - 1) : poly.vertices.length;
 	const strokePos = new Float32Array(edgeCount * 6 * 2);
 	const strokeNorm = new Float32Array(edgeCount * 6 * 2);
 	const strokeSide = new Float32Array(edgeCount * 6);
@@ -128,7 +142,7 @@ export function buildIsohedralCellMesh(
 
 	for (const poly of polys) {
 		const vs = poly.vertices;
-		if (vs.length < 3) continue;
+		if (vs.length < (poly.open ? 2 : 3)) continue;
 		scx = 0;
 		scy = 0;
 		for (const v of vs) {
@@ -137,18 +151,20 @@ export function buildIsohedralCellMesh(
 		}
 		scx /= vs.length;
 		scy /= vs.length;
-		for (let k = 0; k < vs.length; k++) {
+		const segs = poly.open ? vs.length - 1 : vs.length;
+		const w = poly.open ? MARK_STROKE_SCALE : 1;
+		for (let k = 0; k < segs; k++) {
 			const a = vs[k];
 			const b = vs[(k + 1) % vs.length];
 			const dx = b.x - a.x, dy = b.y - a.y;
 			const len = Math.hypot(dx, dy) || 1;
 			const nx = -dy / len, ny = dx / len;
-			pushStroke(a.x, a.y, nx, ny, -1);
-			pushStroke(a.x, a.y, nx, ny, +1);
-			pushStroke(b.x, b.y, nx, ny, -1);
-			pushStroke(b.x, b.y, nx, ny, -1);
-			pushStroke(a.x, a.y, nx, ny, +1);
-			pushStroke(b.x, b.y, nx, ny, +1);
+			pushStroke(a.x, a.y, nx, ny, -w);
+			pushStroke(a.x, a.y, nx, ny, +w);
+			pushStroke(b.x, b.y, nx, ny, -w);
+			pushStroke(b.x, b.y, nx, ny, -w);
+			pushStroke(a.x, a.y, nx, ny, +w);
+			pushStroke(b.x, b.y, nx, ny, +w);
 		}
 	}
 

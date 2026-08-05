@@ -86,7 +86,14 @@ void main() {
 	// mode (uFillDim=1) the tile fades to 0.3 of its colour over the surface background, OPAQUELY: p5 draws
 	// the fill at alpha 0.3 over its background, which is exactly mix(bg, tile, 0.3). Doing it as an opaque
 	// mix (not a translucent fragment) sidesteps the premultiplied-alpha double-fade on this alpha canvas.
-	vec3 tile = hsb2rgb((vHue + uHueOffset) / 360.0, 0.40, 1.0);
+	//
+	// A NEGATIVE hue means ink: fill this prim with the near-black the tile edges use, ignoring the hue
+	// ring. Brightness is pinned at 1.0 above, so no hue in [0,360) can produce a dark fill, and the
+	// isohedral shelf's interior markings have to be neutral — they carry orientation in their shape, and
+	// a second colour scale on top of the aspect tints only makes the tints harder to read. Same sentinel
+	// the PeriodicCell IR already uses (see lib/render/periodicCell.ts), so the lens and the flat view
+	// agree without a second convention.
+	vec3 tile = vHue < 0.0 ? vec3(0.05, 0.05, 0.07) : hsb2rgb((vHue + uHueOffset) / 360.0, 0.40, 1.0);
 	frag = vec4(mix(uDimTarget, tile, 1.0 - 0.7 * uFillDim), 1.0);
 }
 `;
@@ -94,7 +101,10 @@ void main() {
 export const STROKE_VERT = `#version 300 es
 in vec2 aPos;
 in vec2 aNorm;    // world-space edge normal
-in float aSide;   // +1 / -1
+in float aSide;   // signed half-width multiplier: ±1 for a tile edge, ±k for a stroke drawn k times
+                  // thicker. It multiplies uHalfStrokePx directly below, so a magnitude other than 1 is
+                  // a per-segment width, which is how the isohedral shelf's interior marks sit a little
+                  // heavier than the tile edges without a second draw call.
 in vec2 aInst;
 in vec2 aCentroid;            // tile fan-apex centroid, for the selection-transition wave
 uniform vec2 uOffset;

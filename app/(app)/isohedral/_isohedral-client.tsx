@@ -9,10 +9,13 @@
 // parameter vector. Moving a slider therefore moves the whole tiling, coherently, and never leaves the
 // type.
 //
-// Twelve of the ninety-three are here but cannot be drawn: they need interior markings to break the
-// tile's symmetry and have no boundary geometry at all. They are selectable, and selecting one
-// replaces the canvas with the reason. That is the whole point of listing all ninety-three instead of
-// the eighty-one that render — see lib/isohedral/catalogue.ts.
+// Twelve of the ninety-three come from somewhere else. Their tiles are too symmetric for the boundary
+// to carry the type — every edge sits on a mirror, so every edge is straight and the tile is a regular
+// hexagon, a rhombus, a rectangle, a square or a triangle — and Tactile does not parameterize them.
+// lib/isohedral/marked.ts builds them the way Grünbaum and Shephard did in 1977: one asymmetric mark,
+// carried around by a wallpaper group smaller than the base net's own symmetry, leaving |I(T)| marks
+// in every tile. They render through the same cell, the same mesh and the same shader as the other
+// eighty-one; only the builder differs.
 //
 // These tilings are periodic, so they render on the atlas' flat Euclidean renderer, the one /play
 // uses: FlatCellRenderer takes one translational cell and the vertex shader instances it across the
@@ -48,15 +51,16 @@ import {
 	DEFAULT_IH,
 	ISOHEDRAL_TYPES,
 	MARKED_REASON,
-	MARKED_TYPES,
 	isohedralType,
 	parseIh,
 	type EdgeKind,
 	type IsohedralTypeInfo,
 } from "@/lib/isohedral/catalogue";
+import { markedType } from "@/lib/isohedral/marked";
 import {
 	BULGE,
 	buildCell,
+	buildMarked,
 	curvesOf,
 	defaultEdgeStates,
 	randomEdgeStates,
@@ -122,15 +126,17 @@ function lensMagnification(f: { w: number; h: number }, on: boolean, radiusFrac:
 const PARAM_FILTERS = ["any", "0", "1", "2", "3+"] as const;
 const VERTEX_FILTERS = ["any", "3", "4", "5", "6"] as const;
 
+// Both filters read the same fields on all 93 now. The marked twelve used to report zeroes and drop out
+// of every filter but "any", which was honest while they had no geometry and is a lie now that they do.
 function matchesParamFilter(t: IsohedralTypeInfo, f: string): boolean {
 	if (f === "any") return true;
-	if (f === "3+") return t.available && t.numParams >= 3;
-	return t.available && t.numParams === Number(f);
+	if (f === "3+") return t.numParams >= 3;
+	return t.numParams === Number(f);
 }
 
 function matchesVertexFilter(t: IsohedralTypeInfo, f: string): boolean {
 	if (f === "any") return true;
-	return t.available && t.numVertices === Number(f);
+	return t.numVertices === Number(f);
 }
 
 export function IsohedralClient() {
@@ -189,8 +195,10 @@ export function IsohedralClient() {
 	const setLens = useCallback((v: boolean) => useConfiguration.getState().set({ inversive: v }), []);
 	const lensMode = useConfiguration((s) => s.inversiveMode);
 	const lensRadiusFrac = useConfiguration((s) => s.inversiveRadiusFrac);
-	const lensActive = lens && info.available;
-	useInversiveShortcut(info.available);
+	// The lens takes a marked cell too: it reads the shared periodic-cell IR, and a marked cell is a
+	// periodic cell like any other — the marks travel through the conformal map with their tiles.
+	const lensActive = lens;
+	useInversiveShortcut(true);
 
 	// Under the lens one tile's whole boundary is a single IR primitive, and the shader walks at most
 	// MAX_VERTS_PER_PRIM of them before breaking out — past that a ring closes early and both the fill
@@ -203,16 +211,19 @@ export function IsohedralClient() {
 	);
 	const cell = useMemo(
 		() =>
-			info.available
-				? buildCell({
+			info.marked
+				? // The marked twelve have straight edges by construction, so there is nothing to flatten and
+					// neither the tessellation zoom nor the lens segment cap reaches them. `params[0]` is the
+					// rectangles' height-to-width ratio; the nine rigid types ignore it.
+					buildMarked(ih, params[0])
+				: buildCell({
 						ih,
 						params,
 						curves: curvesOf(edges),
 						pxPerWorld: tessZoom,
 						...(lensActive ? { maxSegments: lensSegmentCap } : {}),
-					})
-				: null,
-		[ih, params, edges, tessZoom, info.available, lensActive, lensSegmentCap],
+					}),
+		[ih, params, edges, tessZoom, info.marked, lensActive, lensSegmentCap],
 	);
 
 	const lensCell = useMemo(
@@ -259,9 +270,7 @@ export function IsohedralClient() {
 		strokeCss: STROKE_CSS,
 		framingKey: `${ih}`,
 		fallbackMaxRadius: FALLBACK_MAX_RADIUS,
-		// The canvas unmounts when a marked type is selected, so the GL context is rebuilt when one is
-		// picked and then left.
-		mounted: info.available,
+		mounted: true,
 		lensActive,
 		onFrame,
 	});
@@ -279,11 +288,13 @@ export function IsohedralClient() {
 			visible.map((t) => ({
 				v: String(t.ih),
 				label: t.label,
-				sub: t.available ? (t.numParams > 0 ? `${t.numParams}p` : "fixed") : "marked",
-				dim: !t.available,
-				title: t.available
-					? `${t.label} · ${t.numParams} parameter${t.numParams === 1 ? "" : "s"} · ${t.numVertices} tiling vertices · ${t.numAspects} aspect${t.numAspects === 1 ? "" : "s"} · edges ${t.edgeShapes.join("")}`
-					: `${t.label} needs interior markings; no boundary geometry exists`,
+				// A marked type's badge is its induced tile group, which is the marks-per-tile count and the
+				// one fact that says why it needs marks at all. Not dimmed any more: it draws.
+				sub: t.gs ? t.gs.tileGroup : t.numParams > 0 ? `${t.numParams}p` : "fixed",
+				dim: false,
+				title: t.gs
+					? `${t.label} · marked · ${t.gs.laves} · tile group ${t.gs.tileGroup} (${t.gs.tileGroupOrder} mark${t.gs.tileGroupOrder === 1 ? "" : "s"} per tile) · ${t.gs.wallpaper} · ${t.numAspects} aspect${t.numAspects === 1 ? "" : "s"}`
+					: `${t.label} · ${t.numParams} parameter${t.numParams === 1 ? "" : "s"} · ${t.numVertices} tiling vertices · ${t.numAspects} aspect${t.numAspects === 1 ? "" : "s"} · edges ${t.edgeShapes.join("")}`,
 			})),
 		[visible],
 	);
@@ -292,14 +303,14 @@ export function IsohedralClient() {
 		<div className="ta-wall-cell bg-surface-chrome px-3 py-2.5 flex flex-col gap-1">
 			<span className="text-xs font-mono text-fg-secondary">
 				{info.label} ·{" "}
-				{info.available
-					? `${info.numParams} parameter${info.numParams === 1 ? "" : "s"}`
-					: "marked type"}
+				{info.gs
+					? `marked · ${info.gs.wallpaper}`
+					: `${info.numParams} parameter${info.numParams === 1 ? "" : "s"}`}
 			</span>
 			<span className="text-[10px] font-mono text-fg-disabled truncate">
-				{info.available
-					? `${info.numVertices} vertices · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"} · ${info.edgeShapes.join("")}`
-					: "no boundary geometry"}
+				{info.gs
+					? `${info.gs.laves} · ${info.gs.tileGroup} · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"}`
+					: `${info.numVertices} vertices · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"} · ${info.edgeShapes.join("")}`}
 			</span>
 		</div>
 	);
@@ -342,7 +353,11 @@ export function IsohedralClient() {
 			label: info.label,
 			// Čtrnáct's ladder describes tilings by REGULAR polygons; this page's tiles are neither.
 			level: null,
-			wallpaperGroup: null,
+			// The marked twelve are the only entries on this page that know their own wallpaper group: it
+			// is column (5) of G&S Table 1, and marked.ts recomputes it from the constructed geometry and
+			// fails the build if it disagrees. Tactile does not expose it for the other 81, which stay null
+			// rather than get a guess. The panel turns it into an orbifold signature for free.
+			wallpaperGroup: info.gs?.wallpaper ?? null,
 			orbifold: null,
 			latticeShape: null,
 			freedraw: null,
@@ -384,16 +399,18 @@ export function IsohedralClient() {
 					)
 				}
 			>
-				{info.available ? (
-					<>
-						{/* Above the sliders, like /pentagons: the picture is what makes an edge slider mean
-						    anything, and it has to be visible while you drag one. */}
-						{cell ? (
-							<Section label="Prototile">
-								<PrototileInspector info={info} cell={cell} />
-							</Section>
-						) : null}
+				{/* Above the sliders, like /pentagons: the picture is what makes an edge slider mean
+				    anything, and it has to be visible while you drag one. */}
+				{cell ? (
+					<Section label="Prototile">
+						<PrototileInspector info={info} cell={cell} />
+					</Section>
+				) : null}
 
+				{info.gs ? (
+					<MarkedControls info={info} params={params} setParams={setParams} />
+				) : (
+					<>
 						{info.numParams > 0 ? (
 							<Section label="Tiling vertices">
 								{params.map((p, i) => (
@@ -465,68 +482,63 @@ export function IsohedralClient() {
 								</button>
 							</div>
 						</Section>
-
-						{/* No zoom control: the wheel does it, over an unbounded tiling. A slider for it would
-						    duplicate the gesture and, because changing the framing refits, would yank the view
-						    back to home the moment you touched it. */}
-						<Section label="View">
-							<Slider
-								id="ih-rotation"
-								label="Rotation"
-								hint={
-									<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
-										<Kbd>Shift</Kbd>
-										<span>+ scroll</span>
-									</span>
-								}
-								value={view.rotationDeg}
-								onChange={view.setRotation}
-								min={0}
-								max={359}
-								step={1}
-								unit="°"
-							/>
-							<Slider
-								id="ih-outlines"
-								label="Tile outlines"
-								value={strokeWidth}
-								onChange={setStrokeWidth}
-								min={STROKE_WIDTH.min}
-								max={STROKE_WIDTH.max}
-								step={STROKE_WIDTH.step}
-								format={(v) => (v === 0 ? "off" : `${v} px`)}
-							/>
-							{/* The lens draws the same cell the flat renderer does, curved edges and all, so a
-							    bowed J or S edge stays bowed under the conformal map. Same store fields as
-							    /play's, so a mode picked there is the mode here. */}
-							<Checkbox
-								id="ih-inversive"
-								label="Inversive view"
-								shortcut="X"
-								checked={lens}
-								onCheckedChange={(v) => setLens(v)}
-							/>
-							<Reveal show={lens}>
-								<div className="pl-7">
-									<InversiveControls />
-								</div>
-							</Reveal>
-						</Section>
 					</>
-				) : null}
+				)}
 
+				{/* No zoom control: the wheel does it, over an unbounded tiling. A slider for it would
+				    duplicate the gesture and, because changing the framing refits, would yank the view
+				    back to home the moment you touched it. */}
+				<Section label="View">
+					<Slider
+						id="ih-rotation"
+						label="Rotation"
+						hint={
+							<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
+								<Kbd>Shift</Kbd>
+								<span>+ scroll</span>
+							</span>
+						}
+						value={view.rotationDeg}
+						onChange={view.setRotation}
+						min={0}
+						max={359}
+						step={1}
+						unit="°"
+					/>
+					<Slider
+						id="ih-outlines"
+						label="Tile outlines"
+						value={strokeWidth}
+						onChange={setStrokeWidth}
+						min={STROKE_WIDTH.min}
+						max={STROKE_WIDTH.max}
+						step={STROKE_WIDTH.step}
+						format={(v) => (v === 0 ? "off" : `${v} px`)}
+					/>
+					{/* The lens draws the same cell the flat renderer does, curved edges and all, so a
+					    bowed J or S edge stays bowed under the conformal map. Same store fields as
+					    /play's, so a mode picked there is the mode here. */}
+					<Checkbox
+						id="ih-inversive"
+						label="Inversive view"
+						shortcut="X"
+						checked={lens}
+						onCheckedChange={(v) => setLens(v)}
+					/>
+					<Reveal show={lens}>
+						<div className="pl-7">
+							<InversiveControls />
+						</div>
+					</Reveal>
+				</Section>
 			</IsohedralSidebar>
 
 			<div className="flex-1 min-h-0 relative">
-				{info.available ? (
-					<canvas
-						ref={canvasRef}
-						className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
-						{...view.handlers}
-					/>
-				) : (
-					<MarkedTypeNote info={info} />
-				)}
+				<canvas
+					ref={canvasRef}
+					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+					{...view.handlers}
+				/>
 				{/* The lens is a second canvas over the first, which stays mounted as the input layer —
 				    the same arrangement /play uses, and for the same reason: a canvas holds one WebGL
 				    context for its life. */}
@@ -547,35 +559,88 @@ export function IsohedralClient() {
 }
 
 /**
- * What stands in for the canvas on the twelve types with no boundary geometry. It quotes Kaplan
- * verbatim and names the source, because the claim is the whole reason those twelve are listed at all
- * and a paraphrase would invite the reader to assume we simply ran out of data.
+ * The sidebar for one of the twelve marked types: the incidence symbol, the reason marks are needed,
+ * and the tile's one remaining degree of freedom where it has one.
+ *
+ * No edge sliders, because there is nothing to slide. Every edge of these tiles lies on a mirror of the
+ * tiling, so every edge is a straight line and the boundary carries no information about the type — the
+ * marks carry all of it. That constraint is Kaplan's own account of why Tactile stops at 81, quoted
+ * below rather than paraphrased, and it is the reason this panel looks different from the other 81's.
  */
-function MarkedTypeNote({ info }: { info: IsohedralTypeInfo }) {
+function MarkedControls({
+	info,
+	params,
+	setParams,
+}: {
+	info: IsohedralTypeInfo;
+	params: number[];
+	setParams: (next: number[]) => void;
+}) {
+	const gs = info.gs!;
+	const shape = markedType(info.ih);
+	const range = shape?.param ?? null;
+	const marks = gs.tileGroupOrder;
+
 	return (
-		<div className="h-full overflow-y-auto flex items-center justify-center p-8">
-			<div className="max-w-prose flex flex-col gap-4">
-				<h2 className="text-base font-semibold text-fg">{info.label} needs interior markings</h2>
-				<p className="text-sm text-fg-secondary leading-relaxed">
-					Twelve of the ninety-three isohedral types cannot be expressed by the tile boundary
-					alone. Craig Kaplan puts it this way:
+		<>
+			<Section label="Incidence symbol">
+				<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+					<dt className="text-fg-muted">Laves net</dt>
+					<dd className="font-mono text-fg-secondary">{gs.laves}</dd>
+					<dt className="text-fg-muted">Tile symbol</dt>
+					<dd className="font-mono text-fg-secondary">{gs.tileSymbol}</dd>
+					<dt className="text-fg-muted">Adjacency</dt>
+					<dd className="font-mono text-fg-secondary">{gs.adjacency}</dd>
+					<dt className="text-fg-muted">Tile group</dt>
+					<dd className="font-mono text-fg-secondary">
+						{gs.tileGroup} · order {marks}
+					</dd>
+					<dt className="text-fg-muted">Group</dt>
+					<dd className="font-mono text-fg-secondary">{gs.wallpaper}</dd>
+					<dt className="text-fg-muted">Aspects</dt>
+					<dd className="font-mono text-fg-secondary tabular-nums">{info.numAspects}</dd>
+				</dl>
+				<p className="text-[10px] text-fg-disabled leading-relaxed">
+					Grünbaum &amp; Shephard 1977, Table 1, columns (2) to (5) and (8). The tile group order,
+					the aspect count and the group are recomputed from the drawn geometry and checked against
+					the table before this page builds.
 				</p>
-				<blockquote className="border-l-2 border-line pl-4 text-sm text-fg-secondary leading-relaxed italic">
-					{MARKED_REASON}
-				</blockquote>
-				<p className="text-sm text-fg-secondary leading-relaxed">
-					Grünbaum and Shephard reach these twelve only by decorating the tile&apos;s interior to
-					cut its symmetry back down. Which is why their 1977 paper is titled{" "}
-					<em>The eighty-one types of isohedral tilings in the plane</em>: the count of ninety-three
-					belongs to the marked enumeration. The other eighty-one are all here and all live.
+			</Section>
+
+			<Section label="Marks">
+				<p className="text-xs text-fg-secondary leading-relaxed">
+					{marks === 1
+						? "One mark per tile. This is one of only three types whose induced tile group is trivial, so a single asymmetric motif is the whole decoration."
+						: `${marks} marks per tile, one for each element of ${gs.tileGroup}. The mark itself is asymmetric; the rosette is its orbit under the tile group, and that orbit is what has exactly the symmetry the incidence symbol asks for.`}
 				</p>
-				<p className="text-xs text-fg-muted leading-relaxed">
-					The twelve:{" "}
-					<span className="font-mono tabular-nums">
-						{MARKED_TYPES.map((n) => `IH${String(n).padStart(2, "0")}`).join(", ")}
-					</span>
+				<p className="text-xs text-fg-secondary leading-relaxed">
+					The mark is flat ink, and it carries both facts in its shape: which way it points is the
+					rotation, which way it is handed is the reflection. Colour is left to the tile tints, which
+					already separate the aspects — and an aspect is an orientation class, so tinting the marks
+					too would say the same thing twice in a channel that greyscale and colour blindness lose.
 				</p>
-			</div>
-		</div>
+				<p className="text-[10px] text-fg-disabled leading-relaxed">{MARKED_REASON} — Craig Kaplan</p>
+			</Section>
+
+			<Section label="Tile">
+				{range ? (
+					<Slider
+						id="ih-marked-param"
+						label={range.label}
+						value={params[0] ?? range.def}
+						onChange={(v) => setParams([v])}
+						min={range.min}
+						max={range.max}
+						step={0.005}
+						format={(v) => v.toFixed(3)}
+					/>
+				) : (
+					<p className="text-xs text-fg-muted">
+						Rigid. Every edge is on a mirror, which fixes the tile up to similarity; only the
+						rectangles keep a free ratio.
+					</p>
+				)}
+			</Section>
+		</>
 	);
 }

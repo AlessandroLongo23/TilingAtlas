@@ -116,7 +116,8 @@ uniform float uStrokeW;   // the "Line stroke" slider, CSS px — the flat rende
 uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); hsb2rgb wraps via mod
 uniform vec3 uSurface;
 uniform vec3 uAvg;      // cell average fill (already hue-shifted CPU-side); the unresolvable centre blends to this
-uniform float uFeature; // median tile-edge length (world); the fade/blend track this, not the cell period
+uniform float uFeature; // median TILE size (world), not the cell period and not a segment length — the
+                        // stroke taper and the fill's average-blend are both measured against it
 
 out vec4 frag;
 
@@ -217,6 +218,21 @@ void main() {
 	vec3 lineCol = vec3(0.0);
 	float lineCov = 0.0;
 
+	// How wide the stroke wants to be, measured against the gap between neighbouring strokes. A line stops
+	// carrying information once it approaches that gap: every pixel then lies within half a line of some
+	// edge, and the strongest-coverage rule below would ink all of them, which is the black ring the
+	// compressed centre of an inversion used to grow.
+	//
+	// So the line THINS instead. The taper is a width multiplier, applied to halfW inside the loop, and it
+	// reaches zero well before the flood point. Thinning rather than fading at constant width matters
+	// because a hairline still draws the pattern: the picture greys out through a real texture instead of
+	// the strokes blinking off as a layer. It also starts far earlier than the old opacity fade did — the
+	// point is to never let the lines cross into solid, not to hold full width until they do.
+	//
+	// Uniform across the pixel, so it is computed once here and not per primitive.
+	float widthOverSpacing = (uStrokeW * uDpr * pwRaw) / max(uFeature, 1e-9);
+	float taper = 1.0 - smoothstep(0.10, 0.45, widthOverSpacing);
+
 	for (int e = 0; e < ${MAX_BUCKET_ENTRIES}; e++) {
 		if (e >= eCount) break;
 		vec4 ent = getEntry(eStart + e);
@@ -242,11 +258,12 @@ void main() {
 		// is magnified 17x more than the lens circle, and the two ends of one edge visibly disagreed.
 		//
 		// Where the map COMPRESSES, dozens of edges share a pixel and the strongest-coverage rule below
-		// would ink every one of them solid; the resolvability fade at the end drops the whole stroke layer
-		// there, on the same threshold the fill already blends to uAvg on. Fading the layer beats capping the
-		// width: the line keeps its slider width right up to the point where the picture stops carrying
-		// lines at all, instead of tapering for a decade of zoom before it.
-		float halfW = strokeC.a > 0.0 ? strokeScale * uStrokeW * 0.5 * uDpr * pwRaw : 0.0;
+		// would ink every one of them solid. taper (computed once, above the loop) is what stops that:
+		// the line gets THINNER as its width closes on the spacing between neighbouring lines, and reaches
+		// zero before it can flood. Thinning beats fading the layer out at constant width — a hairline that
+		// keeps shrinking still draws the pattern, and the coverage rule below turns sub-pixel width into
+		// sub-pixel coverage on its own, so the picture greys out smoothly instead of blinking off.
+		float halfW = strokeC.a > 0.0 ? strokeScale * uStrokeW * 0.5 * uDpr * pwRaw * taper : 0.0;
 		if (q.x < bb.x - halfW || q.x > bb.z + halfW || q.y < bb.y - halfW || q.y > bb.w + halfW) continue;
 
 		int flags = int(m0.z);
@@ -310,14 +327,10 @@ void main() {
 	// average there so the very centre is a clean disk, not colour noise.
 	fillCol = mix(fillCol, uAvg, unresolved);
 
-	// The strokes need their OWN threshold, earlier than the fill's, and this is the whole reason the
-	// compressed centre used to grow a black ring. A screen-width line stops carrying information as soon
-	// as it is as wide as the gap between neighbouring lines — every pixel then lies within half a line of
-	// some edge, and the strongest-coverage rule inks all of them. That happens at a stroke-width-to-
-	// spacing ratio of 1, which the fill's uFeature*0.8 threshold does not reach until well after.
-	float widthOverSpacing = (uStrokeW * uDpr * pwRaw) / max(uFeature, 1e-9);
-	float inked = 1.0 - smoothstep(0.35, 1.0, widthOverSpacing);
-	frag = vec4(mix(fillCol, lineCol, lineCov * min(inked, 1.0 - unresolved)), 1.0);
+	// unresolved still gates the strokes as a backstop. The taper is driven by the line's width relative
+	// to the spacing, so a very thin slider setting can keep widthOverSpacing small even where the tiles
+	// themselves are long gone; this is what stops lines surviving into the fully unresolvable disc.
+	frag = vec4(mix(fillCol, lineCol, lineCov * (1.0 - unresolved)), 1.0);
 }
 `;
 

@@ -19,6 +19,7 @@ import { polygonHue, type RawPolygon } from "@/lib/utils/renderTiling";
 import type { CellMesh } from "@/lib/render/buildCellMesh";
 import { cubicAt, cubicFlatness, cubicSegmentCount, flattenCubicOpen, type Cubic } from "@/lib/render/cubic";
 import { buildIsohedralCellMesh } from "./cellMesh";
+import { buildMarkedCell } from "./marked";
 import { isohedralType, kindOf, type EdgeKind } from "./catalogue";
 
 /**
@@ -584,6 +585,67 @@ export function buildCell(req: CellRequest): IsohedralCell | null {
 		home: { cx: 0, cy: 0, width: span, height: span },
 		tilesPerCell: polygons.length,
 		degenerate: !isSimple(coarse),
+	};
+}
+
+/**
+ * The same cell, for one of the twelve types that exist only with interior markings.
+ *
+ * Separate entry point because nothing Tactile-shaped applies: there is no parameter vector to feed an
+ * aspect matrix, no edge curve to flatten, and the tile boundary is not what distinguishes the type.
+ * What comes back is the SAME `IsohedralCell`, so the renderer, the lens, the 2-D fallback and the
+ * prototile inspector all take it unchanged.
+ *
+ * The polygon list is the cell's tiles followed by its marks. Order is paint order — the flat renderer
+ * draws the triangle buffer front to back with no depth test — so the marks land on top of the tiles
+ * they sit in.
+ *
+ * `param` is the rectangles' height-to-width ratio and is ignored by the nine rigid types. Every edge
+ * reports as an I edge, which is exactly the constraint that put these twelve out of Tactile's reach.
+ */
+export function buildMarked(ih: number, param?: number, periods = HOME_PERIODS): IsohedralCell | null {
+	const info = isohedralType(ih);
+	if (!info || !info.marked || !info.gs) return null;
+
+	const cell = buildMarkedCell(ih, param);
+	if (!cell) return null;
+
+	const mesh = buildIsohedralCellMesh(cell.polygons, cell.v1, cell.v2);
+	if (!mesh) return null;
+
+	const verts = cell.tile;
+	const nv = verts.length;
+	const letters = [...new Set(info.edgeWord.toLowerCase())].sort();
+	const edges: PrototileEdge[] = verts.map((from, i) => {
+		const to = verts[(i + 1) % nv];
+		const w = info.edgeWord[i] ?? "a";
+		return {
+			id: Math.max(0, letters.indexOf(w.toLowerCase())),
+			kind: "I" as EdgeKind,
+			rev: w === w.toUpperCase(),
+			from,
+			to,
+			mid: { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 },
+		};
+	});
+
+	const span = periods * cell.period;
+
+	return {
+		polygons: cell.polygons,
+		mesh,
+		v1: cell.v1,
+		v2: cell.v2,
+		prototile: verts,
+		tilingVertices: verts,
+		edges,
+		t1: { x: cell.v1[0], y: cell.v1[1] },
+		t2: { x: cell.v2[0], y: cell.v2[1] },
+		period: cell.period,
+		home: { cx: 0, cy: 0, width: span, height: span },
+		// Tiles, not polygons: the marks are decoration on those tiles, not more of them.
+		tilesPerCell: cell.tiles.length,
+		degenerate: false,
 	};
 }
 
