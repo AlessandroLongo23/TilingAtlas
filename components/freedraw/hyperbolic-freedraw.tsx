@@ -204,7 +204,7 @@ export function HyperbolicFreedraw({
 						<WallGroup title="Display">
 							<WallSubLabel>Overlays</WallSubLabel>
 							<ToggleCell
-								label="Scaffold"
+								label="Grid"
 								shortcut="G"
 								on={showScaffold}
 								onClick={() => setCfg({ freedrawScaffold: !showScaffold })}

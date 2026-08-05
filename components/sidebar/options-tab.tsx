@@ -281,7 +281,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							/>
 							<Checkbox
 								id="freedrawScaffold"
-								label="Grid scaffold"
+								label="Grid"
 								shortcut="G"
 								checked={cfg.freedrawScaffold}
 								onCheckedChange={(v) => setCfg({ freedrawScaffold: v })}
@@ -421,7 +421,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					{isHyperbolicEdges ? (
 						<Checkbox
 							id="freedrawScaffold"
-							label="Base tiling scaffold"
+							label="Grid"
 							shortcut="G"
 							checked={cfg.freedrawScaffold}
 							onCheckedChange={(v) => setCfg({ freedrawScaffold: v })}
