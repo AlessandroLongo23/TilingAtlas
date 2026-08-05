@@ -28,6 +28,7 @@ import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import { useVertexOrbits } from "@/lib/hooks/useVertexOrbits";
 import { buildTilingSpec } from "@/lib/services/tilingSpec";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
@@ -684,37 +685,49 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		}
 	}, [selected]);
 
+	// WHICH RENDERER OWNS THE CANVAS, answered once for this file and for the Options tab both, in
+	// lib/services/shelfRegistry.ts. The two files used to answer it separately from two hand-maintained
+	// lists of shelf fields, and the lists had drifted apart: this one folded `hypPoly` into the disk and
+	// `sphPoly` into the sphere, the sidebar's did neither, so those records got the flat p5 control block
+	// over a canvas this file had already blanked.
+	const surface = surfaceOf(selected);
 	// An engine-developed hyperbolic tiling swaps the flat p5 renderer for the per-pixel Poincaré-disk shader.
 	// Set the store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off
 	// Euclidean-only render modes so their now-hidden sidebar controls can't leave a stale render behind.
-	const isHyperbolic = !!selected?.developed;
+	const isHyperbolic = surface === "disk";
 	// A hyperbolic edge-system pattern is Čtrnáct's freedraw moved to H². Like the developed tiling it rides
 	// the `hyperbolic` store flag (blank the flat p5 layer, disable zoom) but routes to its own 2D
 	// developed-edge canvas instead of the per-pixel shader.
 	// A SCHWARZ board is the same object on a (p,q,r) mirror board, so it rides its geometry's flags: the
 	// hyperbolic boards behave exactly like the {p,q} edge systems here, the spherical ones like the ico
-	// freedraw below. Folding them in beats a third set of near-identical branches.
-	const isHyperbolicEdges = !!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic";
+	// freedraw below. The registry resolves that per record, so no flag here has to fold it in.
+	const isHyperbolicEdges = surface === "diskEdges";
 	// A hyperbolic COLORED tiling (colors class, hyperbolic geometry): rides the `hyperbolic` store flag like
-	// the developed tilings and edge systems, but routes to the per-pixel disk shader in colors mode.
-	const isHyperbolicColors = !!selected?.hypColors || !!selected?.hypPoly;
+	// the developed tilings and edge systems, but routes to the per-pixel disk shader in colors mode. The
+	// 3.4.n.4 tilings ride it too — same canvas, polygon size standing in for colour index.
+	const isHyperbolicColors = surface === "diskColors";
 	// A spherical COLORED tiling (colors class, spherical geometry): a three.js overlay like the sphere/ico.
-	const isSphColors = !!selected?.sphColors;
+	const isSphColors = surface === "sphereColors";
 	// A spherical (Platonic {p,q}) tiling swaps the flat p5 renderer for the three.js sphere view. Set the
 	// store flag (canvas.tsx reads it to blank the flat layer) and force off the other render modes so their
 	// now-hidden sidebar controls can't leave a stale render behind. The sphere renderer owns its own input.
-	const isSpherical = !!selected?.spherical;
+	const isSpherical = surface === "sphere";
 	// A spherical-freedraw pattern is a drawn edge subset of a Platonic solid — a three.js overlay like the
 	// Platonic sphere, but with no polygon cell of its own. It shares the sphere's flat-layer blanking (below)
-	// while routing to its own IcoFreedrawCanvas in the dispatch chain.
-	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical" || !!selected?.sphEdges || !!selected?.sphPoly;
+	// while routing to its own IcoFreedrawCanvas in the dispatch chain. The uniform polyhedra, the spherical
+	// Schwarz boards and the 3.4.n.4 solids all draw on that same canvas, so they share this flag.
+	const isSphericalFreedraw = surface === "sphereEdges";
 	// A freedraw pattern swaps the flat p5 renderer for the 2D grid view. It has no polygon cell at all, so
 	// force off every mode that would try to draw one and every overlay derived from tiles — the Options tab
 	// hides those controls, and this keeps a stale render from surviving the switch.
+	//
+	// The FIELD, not the surface, and deliberately: the two parametric boards share the grid2d surface but
+	// do NOT set this store flag. They draw an opaque layer over the flat p5 canvas and leave it mounted as
+	// the input surface (see the dispatch chain below), where setting `freedraw` would blank it.
 	const isFreedraw = !!selected?.freedraw;
 	// A colored tiling is the same shape of thing: its own 2D canvas, no polygon cell, so it force-clears
 	// every mode and tile-derived overlay the flat renderer would otherwise try to draw.
-	const isColors = !!selected?.colors;
+	const isColors = surface === "colors2d";
 	useEffect(() => {
 		const cfg = useConfiguration.getState();
 		if (isColors) {
@@ -1008,11 +1021,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// every Euclidean class, so the lens is no longer limited to the plain polygon-cell tilings.
 	const { cell: inversiveCell, cellId: inversiveCellId } = useInversiveCell(selected ?? null, renderCell);
 	// The lens is Euclidean-only: the hyperbolic and spherical shelves have no period lattice to reduce
-	// into, and each owns its own renderer below.
-	const lensActive =
-		inversive && !!inversiveCell &&
-		!isHyperbolic && !isHyperbolicEdges && !isHyperbolicColors &&
-		!isSpherical && !isSphericalFreedraw && !isSphColors;
+	// into, and each owns its own renderer below. Same predicate the Options tab uses to decide whether to
+	// OFFER the toggle, so a checkbox can no longer appear for a shelf this refuses to honour.
+	const lensActive = inversive && !!inversiveCell && lensAppliesTo(selected);
 	// Colorings, edge patterns and hollow carry a throwaway translational cell; tell the input layer so
 	// click-to-centre doesn't hit-test geometry that isn't on screen.
 	const cellHasTiles = !(

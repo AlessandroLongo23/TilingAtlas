@@ -15,6 +15,7 @@ import { colorCountOf, colorLetter } from "@/lib/colors/pattern";
 import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/colors/render";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
+import { isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { SpiralVelocityPad } from "@/components/spiral-velocity-pad";
 
@@ -85,51 +86,67 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
 	const isIslamicClass = !!selected && tileClassOf(selected) === "islamic";
+	// WHICH RENDERER OWNS THE CANVAS decides every control below, and it is answered in exactly one place
+	// — lib/services/shelfRegistry.ts — for this file and for _play-client both. It used to be answered
+	// twice, once per file, from two hand-maintained lists of shelf fields; they had diverged in two
+	// places by 2026-08-04, and the effect was that `hypPoly` and `sphPoly` records rendered the flat p5
+	// control block (symmetry elements, fundamental domain, vertex orbits, polygon points) over a canvas
+	// _play-client had already blanked.
+	const surface = surfaceOf(selected);
 	// An engine-developed hyperbolic tiling renders in the Poincaré disk via the per-pixel shader, which
 	// honours the edge-width toggle below.
-	const isHyperbolic = !!selected?.developed;
+	const isHyperbolic = surface === "disk";
 	// A spherical (Platonic {p,q}) tiling renders in the three.js sphere view, which owns its own
 	// rotate/zoom input — so the flat-canvas overlays (symmetry, orbits, transition, inversive) don't apply.
-	const isSpherical = !!selected?.spherical;
+	const isSpherical = surface === "sphere";
 	// A freedraw pattern renders on its own 2D grid canvas. It is the strictest case: there are no tiles at
 	// all, so almost every control above — fill, hue, points, orbits, symmetry, inversive — is dead, and the
 	// freedraw block below takes their place. Line stroke and rotation are the exceptions: that canvas draws
 	// real strokes and spins about its centre like any other view, so its block renders those two itself.
-	// The parametric-pentagon shelf renders through the SAME 2D grid canvas off the same store fields
-	// (its patch is built on the client instead of shipped, which changes nothing above the renderer),
-	// so it takes this whole block rather than growing a near-duplicate of it.
-	const isFreedraw = !!selected?.freedraw || !!selected?.pentEdges || !!selected?.ihEdges;
+	// Both PARAMETRIC boards render through the same 2D grid canvas off the same store fields (their patch
+	// is built on the client instead of shipped, which changes nothing above the renderer), so the registry
+	// files them on this surface and they take this whole block instead of near-duplicates of it.
+	const isFreedraw = surface === "grid2d";
 	// A spherical-freedraw pattern renders on the self-contained three.js ico-freedraw canvas (its own
 	// ArcballControls, its own fixed edge tubes and golden-angle tile colours). Like planar freedraw it has no
 	// tiles/cell for the shared controls to touch — only the two Display controls the /freedraw arm carries
-	// (polyhedron/sphere + grid) apply, so every other control is hidden for it.
-	const isSphericalFreedraw = !!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical" || !!selected?.sphEdges;
+	// (polyhedron/sphere + grid) apply, so every other control is hidden for it. The spherical Schwarz
+	// boards, the uniform polyhedra and the spherical 3.4.n.4 solids are the same canvas and the same block.
+	const isSphericalFreedraw = surface === "sphereEdges";
 	// A colored tiling renders on its own 2D canvas like freedraw: no tiles, no polygon cell, so the shared
 	// fill/stroke/hue/points controls are all dead and its own palette + trio take their place. Rotation
 	// still applies (the field spins about the canvas centre), rendered inside that block.
-	const isColors = !!selected?.colors;
+	const isColors = surface === "colors2d";
 	// A hyperbolic edge-system pattern renders in the Poincaré disk via the SAME per-pixel shader as the
 	// developed tilings, so it shares their disk controls (fill, hue, line stroke, perspective/flat line
 	// mode) — plus a scaffold toggle for the faint undrawn base tiling. It is NOT a flat p5 view.
 	// A SCHWARZ board is the same object on a (p,q,r) mirror board, so it takes the same controls as its
 	// geometry's shelf: the spherical boards are ico-freedraw spheres, the hyperbolic ones are disk edge
-	// systems. That is why both flags above/below fold it in instead of growing a third branch.
-	const isHyperbolicEdges = !!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic";
+	// systems. The registry resolves that per record, which is why no flag here has to fold it in.
+	const isHyperbolicEdges = surface === "diskEdges";
 	// A hyperbolic COLORED tiling renders in the disk via the same per-pixel shader in colors mode — it shares
 	// the disk line controls, and (like the Euclidean colors) carries the palette pickers instead of fill/hue.
-	const isHyperbolicColors = !!selected?.hypColors;
+	// The 3.4.n.4 tilings draw through the very same canvas with polygon size standing in for colour index,
+	// so they are on this surface too — and were the half of the divergence this file got wrong.
+	const isHyperbolicColors = surface === "diskColors";
 	// A spherical COLORED tiling renders on the three.js canvas like spherical freedraw: only the
 	// polyhedron/sphere mode toggle + the palette apply.
-	const isSphColors = !!selected?.sphColors;
+	const isSphColors = surface === "sphereColors";
 	// Any colored tiling (Euclidean grid, hyperbolic disk, or spherical solid): all carry the palette pickers.
 	const isAnyColors = isColors || isHyperbolicColors || isSphColors;
-	const isHyperbolicDisk = isHyperbolic || isHyperbolicEdges || isHyperbolicColors;
-	// One picker per color of the SELECTED pattern (2 or 3 today), read off the record, not the
+	const isHyperbolicDisk = isDiskSurface(surface);
+	// One picker per color of the SELECTED pattern (2 to 4 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
 	// remembers every slot.
+	// A 3.4.n.4 tiling counts POLYGON SIZES here: it is not a coloring, but it fills each face by size
+	// through the same palette (paletteRgb255 in hyperbolic-colors-canvas), so a size is a slot and the
+	// pickers drive it exactly as they drive a coloring's colors.
 	const colorCount = selected?.colors
 		? colorCountOf(selected.colors)
-		: selected?.hypColors?.colors ?? selected?.sphColors?.pattern.colors ?? 2;
+		: selected?.hypColors?.colors ??
+			selected?.hypPoly?.stats.sizes.length ??
+			selected?.sphColors?.pattern.colors ??
+			2;
 	// Every palette read goes through paletteFor, so a store array left short by an older `copal=` URL
 	// still fills the pickers; writes go back through the same dense array, keeping slots the current
 	// pattern does not use.
@@ -140,13 +157,17 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 		setCfg({ colorsPalette: next });
 	};
 	// Flat-canvas overlays: only meaningful when the p5 layer is actually the thing painting.
-	const isFlat =
-		!isHyperbolic && !isHyperbolicEdges && !isHyperbolicColors && !isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors;
+	//
+	// ⚑ "hollow2d" is here because it has always been, NOT because it is right: the hollow shelf draws on
+	// its own canvas and components/canvas.tsx blanks the flat layer for it (`skipFlat` reads cfg.hollow),
+	// so these overlays paint nothing. It is the same defect as the hypPoly one, and it is left alone
+	// because fixing it changes which controls a shipped shelf offers — a decision, not a refactor.
+	const isFlat = surface === "flat" || surface === "hollow2d";
 	// The conformal lens is a WIDER set than the flat overlays: it draws from the shared periodic-cell IR
 	// (lib/render/periodicCell.ts), so it covers the classes with no polygon cell — colorings, edge
 	// patterns, hollow — as well as the plain tilings. It needs only a period lattice, which rules out
 	// exactly the hyperbolic and spherical shelves.
-	const lensApplies = !isHyperbolic && !isHyperbolicEdges && !isHyperbolicColors && !isSpherical && !isSphericalFreedraw && !isSphColors;
+	const lensApplies = lensAppliesTo(selected);
 
 	// One picker per tile color — shared by every colored view (Euclidean grid, hyperbolic disk, spherical
 	// solid): a hue ring plus the two swatches no hue reaches (cream + its near-black complement).
