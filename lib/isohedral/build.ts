@@ -17,6 +17,7 @@ import { EdgeShape, IsohedralTiling, mul } from "./vendor/tactile";
 import type { TactileMatrix, TactilePoint } from "./vendor/tactile";
 import { polygonHue, type RawPolygon } from "@/lib/utils/renderTiling";
 import type { CellMesh } from "@/lib/render/buildCellMesh";
+import { cubicAt, cubicFlatness, cubicSegmentCount, flattenCubicOpen, type Cubic } from "@/lib/render/cubic";
 import { buildIsohedralCellMesh } from "./cellMesh";
 import { isohedralType, kindOf, type EdgeKind } from "./catalogue";
 
@@ -56,12 +57,8 @@ export const HOME_PERIODS = 8;
  * Flattening budget for the edge curves.
  *
  * The fill has to reach the GPU as triangles — FlatCellRenderer has no curve primitive — so a curved
- * edge is always a polyline. What the closed form buys is knowing exactly how fine that polyline has
- * to be: for a Bézier of degree d, splitting the parameter into n equal pieces deviates from the true
- * curve by at most (d(d−1)/8)·max|Δ²P|/n², where Δ²Pᵢ = Pᵢ − 2Pᵢ₊₁ + Pᵢ₊₂ (Sederberg, *Computer Aided
- * Geometric Design*, §2.7). For a cubic that constant is 0.75. Inverting it gives the segment count
- * that holds the error under a target, so a gently bowed edge costs a couple of segments and a hard S
- * curve costs dozens, instead of every edge paying the same flat ten.
+ * edge is always a polyline, and lib/render/cubic.ts is the closed form saying how fine that polyline
+ * has to be. What is decided HERE is the target it is held to.
  *
  * The target is in SCREEN pixels, so the count also follows the zoom. That is the part a fixed count
  * cannot do: the mesh is uploaded once and instanced at any magnification, so a world-space budget is
@@ -242,20 +239,14 @@ export function straightCurves(edgeShapes: EdgeKind[]): EdgeCurves {
  * the straight line.
  */
 export function flatness(curve: EdgeCurve): number {
-	const { a, b } = curve;
-	// P0=(0,0), P1=a, P2=b, P3=(1,0)
-	const d0x = 0 - 2 * a.x + b.x;
-	const d0y = 0 - 2 * a.y + b.y;
-	const d1x = a.x - 2 * b.x + 1;
-	const d1y = a.y - 2 * b.y + 0;
-	return Math.max(Math.hypot(d0x, d0y), Math.hypot(d1x, d1y));
+	return cubicFlatness([P0, curve.a, curve.b, P1]);
 }
 
 /**
  * Segments needed to hold the flattening error under `tolPx` on screen.
  *
- * `chordPx` is the edge's chord length in screen pixels, which is what turns the dimensionless bound
- * into a pixel one. Inverting 0.75·M/n² ≤ tol/chord gives n ≥ √(0.75·M·chord/tol).
+ * `chordPx` is the edge's chord length in screen pixels, which is what turns the dimensionless
+ * canonical-frame flatness into a pixel one — the `scale` argument the shared rule takes.
  */
 export function segmentsForEdge(
 	curve: EdgeCurve,
@@ -263,22 +254,7 @@ export function segmentsForEdge(
 	tolPx: number = FLATNESS_TOL_PX,
 	max: number = MAX_EDGE_SEGMENTS,
 ): number {
-	const m = flatness(curve);
-	if (!(m > 0) || !(chordPx > 0) || !(tolPx > 0)) return 1;
-	const n = Math.ceil(Math.sqrt((0.75 * m * chordPx) / tolPx));
-	return Math.min(max, Math.max(1, n));
-}
-
-function cubicAt(p: TactilePoint[], t: number): TactilePoint {
-	const u = 1 - t;
-	const w0 = u * u * u;
-	const w1 = 3 * u * u * t;
-	const w2 = 3 * u * t * t;
-	const w3 = t * t * t;
-	return {
-		x: w0 * p[0].x + w1 * p[1].x + w2 * p[2].x + w3 * p[3].x,
-		y: w0 * p[0].y + w1 * p[1].y + w2 * p[2].y + w3 * p[3].y,
-	};
+	return cubicSegmentCount(flatness(curve), chordPx, tolPx, max);
 }
 
 /**
@@ -346,7 +322,7 @@ export function prototileOutline(
 							opts.maxSegments,
 						)
 					: fixed;
-			for (let i = 0; i < n; ++i) out.push(cubicAt(seg, i / n));
+			flattenCubicOpen(seg as unknown as Cubic, n, out);
 		}
 		idx++;
 	}
@@ -399,7 +375,7 @@ export function prototileEdges(tiling: IsohedralTiling, curves: EdgeCurves): Pro
 			mid: flat
 				? { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }
 				: cubicAt(
-						[mul(edge.T, P0), mul(edge.T, curve.a), mul(edge.T, curve.b), mul(edge.T, P1)],
+						[mul(edge.T, P0), mul(edge.T, curve.a), mul(edge.T, curve.b), mul(edge.T, P1)] as Cubic,
 						0.5,
 					),
 		});

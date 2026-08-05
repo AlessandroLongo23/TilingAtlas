@@ -11,8 +11,9 @@ import {
 	classifyPatchFaces,
 	type FaceAnalysis,
 } from "@/lib/freedraw/faces";
-import { coset, gridOf, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import { coset, gridOf, type Curve4, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import type { FillMode } from "@/lib/freedraw/render";
+import { cubicAt, cubicFlatness, cubicSegmentCount, type Cubic } from "../cubic";
 import type { PeriodicCell, PeriodicPrim } from "../periodicCell";
 import { hslToRgb } from "./color";
 
@@ -135,6 +136,23 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 	};
 }
 
+/**
+ * Flattening budget for a curved patch edge, as a fraction of that edge's own chord.
+ *
+ * Fixed, unlike the isohedral page's screen-space budget (lib/isohedral/build.ts), and it has to be:
+ * the lens packs a cell ONCE and the conformal map then magnifies it by an amount that varies across
+ * the screen and has no upper bound near the singularity, so there is no single zoom to tessellate
+ * for. A relative budget is the honest answer — 0.4% of a chord stays under a pixel until you are
+ * ~250× into one edge, by which point the shader is blending that region to the cell average anyway.
+ *
+ * Chosen so the deepest bow the sliders allow lands just under the cap below: at bulge ±0.5 the
+ * canonical S curve has max|Δ²P| ≈ 1.52 chords, giving √(0.75·1.52/0.004) ≈ 17 segments.
+ */
+const ARC_TOL_FRAC = 0.004;
+/** Per-arc cap. A board tile is at most a hexagon, so a ring stays well under the shader's
+ *  MAX_VERTS_PER_PRIM of 256 (6 × 24 = 144) and no geometry is silently dropped. */
+const MAX_ARC_SEGMENTS = 24;
+
 function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | null {
 	const patch = p.patch!;
 	const [t1x, t1y] = patch.T1;
@@ -142,6 +160,37 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 	const vx = (vi: number, ox: number, oy: number) => patch.verts[vi][0] + ox * t1x + oy * t2x;
 	// Negated: the 2D canvas maps world y up through py(), the lens works in the p5 world where y is down.
 	const vy = (vi: number, ox: number, oy: number) => -(patch.verts[vi][1] + ox * t1y + oy * t2y);
+
+	/**
+	 * One arc as a polyline, appended to `out` WITHOUT its endpoint.
+	 *
+	 * `curve` holds the two cubic control points as world offsets from the arc's start, in the patch's
+	 * y-up frame — so the y component flips along with the endpoints above, and nothing else about the
+	 * curve has to be re-derived. Null (every board but the parametric isohedral types) emits the start
+	 * point alone, which is exactly the straight-edge behaviour this replaced.
+	 */
+	const arc = (
+		curve: Curve4 | null | undefined,
+		sx: number, sy: number, ex: number, ey: number,
+		out: number[],
+	) => {
+		if (!curve) {
+			out.push(sx, sy);
+			return;
+		}
+		const c: Cubic = [
+			{ x: sx, y: sy },
+			{ x: sx + curve[0], y: sy - curve[1] },
+			{ x: sx + curve[2], y: sy - curve[3] },
+			{ x: ex, y: ey },
+		];
+		const chord = Math.hypot(ex - sx, ey - sy);
+		const n = cubicSegmentCount(cubicFlatness(c), 1, ARC_TOL_FRAC * chord, MAX_ARC_SEGMENTS);
+		for (let i = 0; i < n; i++) {
+			const q = cubicAt(c, i / n);
+			out.push(q.x, q.y);
+		}
+	};
 
 	const classes =
 		opts.fillMode === "shape" || opts.fillMode === "pose" ? classifyPatchFaces(patch) : null;
@@ -156,16 +205,31 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 
 	if (opts.fillMode !== "none") {
 		for (let pi = 0; pi < patch.polys.length; pi++) {
+			const ring = patch.polys[pi];
+			const arcs = patch.polyCurves?.[pi];
 			const verts: number[] = [];
-			for (const [vi, ox, oy] of patch.polys[pi]) verts.push(vx(vi, ox, oy), vy(vi, ox, oy));
+			// One arc per side, INCLUDING the closing one, so a curved tile's last edge bows like the rest
+			// instead of being straightened by the ring's implicit close — the same rule the 2D canvas
+			// follows (lib/freedraw/render.ts).
+			for (let ci = 0; ci < ring.length; ci++) {
+				const [vi, ox, oy] = ring[ci];
+				const [wi, wox, woy] = ring[(ci + 1) % ring.length];
+				arc(arcs?.[ci], vx(vi, ox, oy), vy(vi, ox, oy), vx(wi, wox, woy), vy(wi, wox, woy), verts);
+			}
 			if (verts.length < 6) continue;
 			prims.push({ verts, fillRgb: compRgb[patch.polyComp[pi]], z: Z_FILL });
 		}
 	}
 
-	for (const [vi, vj, ox, oy, drawn] of patch.edges) {
-		const verts = [vx(vi, 0, 0), vy(vi, 0, 0), vx(vj, ox, oy), vy(vj, ox, oy)];
-		edgeLens.push(Math.hypot(verts[2] - verts[0], verts[3] - verts[1]));
+	for (let ei = 0; ei < patch.edges.length; ei++) {
+		const [vi, vj, ox, oy, drawn] = patch.edges[ei];
+		const sx = vx(vi, 0, 0), sy = vy(vi, 0, 0);
+		const ex = vx(vj, ox, oy), ey = vy(vj, ox, oy);
+		edgeLens.push(Math.hypot(ex - sx, ey - sy));
+		// An open polyline keeps its endpoint — there is no next arc to supply it.
+		const verts: number[] = [];
+		arc(patch.edgeCurves?.[ei], sx, sy, ex, ey, verts);
+		verts.push(ex, ey);
 		if (opts.showScaffold && drawn !== 1) {
 			prims.push({
 				verts, open: true, strokeRgb: scaffoldRgb(opts.dark), strokeAlpha: SCAFFOLD_ALPHA,

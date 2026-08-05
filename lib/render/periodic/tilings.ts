@@ -27,7 +27,15 @@ export function tilingPeriodicCell(cell: TranslationalCellData | null): Periodic
 		for (const v of poly.vertices) verts.push(v.x, v.y);
 		return {
 			verts,
-			hue: poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices),
+			// Explicit override > star hue > the regular by-side ramp. The SAME precedence as
+			// lib/render/buildCellMesh.ts and drawPolygons, which is what makes the lens agree with the
+			// flat views instead of only looking as though it does.
+			//
+			// ⚑ The override was missing here until 2026-08-05, and it is not a hypothetical: it is the
+			// only way a polyomino's pieces are told apart (their boundary side count does not), and it
+			// carries the isohedral shelf's three-colouring and the pentagon shelf's per-unit hues. All of
+			// them rendered under the lens in one flat colour.
+			hue: poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices)),
 			strokeRgb: TILE_LINE_RGB,
 			strokeAlpha: 1,
 			// Every tile edge paints above every fill, which is what the old shader's "compute minD across
