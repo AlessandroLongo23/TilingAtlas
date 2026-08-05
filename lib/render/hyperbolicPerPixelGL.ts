@@ -122,10 +122,19 @@ void main() {
 		// Colors mode dims LESS toward the rim than edge mode: the palette fills are pale (cream) and a
 		// heavy dim reads as muddy, so keep them legible while still giving the disk some depth.
 		float dim = uColorsMode > 0.5 ? 1.0 - 0.28 * r2 : 1.0 - 0.5 * r2;
+		// EDGE patterns take ONE hue for the whole disk, so the fill is a smooth radial gradient and nothing
+		// but the strokes draws the tiling. It used to hue by merged-tile orbit, which on a record with every
+		// edge drawn gives one colour per tile and paints the base polygons into the fill — the board is then
+		// legible whether or not the grid is on, and the disk reads as a mosaic instead of a gradient. The
+		// Schwarz boards looked right only by accident: their records leave every edge undrawn, so all faces
+		// merge into a single orbit and the old formula happened to return one colour.
+		// COLOURINGS keep the palette: there the colours ARE the catalogued object, not a backdrop.
 		vec3 tileCol = uColorsMode > 0.5
 			? uPalette[int(clamp(orbit, 0.0, 3.0))]
-			: hsb2rgb(mod((orbit + 2.0) * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0);
+			: hsb2rgb(mod(2.0 * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0);
 		vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
+		// The depth shade lights the INK as well as the paper — see the note on ink in the tile branch.
+		float ink = uShowFill > 0.5 ? dim : 1.0;
 		float hypD = mix(mix(f00.g, f10.g, fr.x), mix(f01.g, f11.g, fr.x), fr.y) * 255.0 / ${EDGE_SCALE}.0;
 		float hypS = mix(mix(f00.b, f10.b, fr.x), mix(f01.b, f11.b, fr.x), fr.y) * 255.0 / ${EDGE_SCALE}.0;
 		float conf = (1.0 - r2) * uR * 0.5;
@@ -136,8 +145,8 @@ void main() {
 		float halfS = uStrokePx * 0.5 * (uTaper > 0.5 ? 1.2 * taperF : 0.4);        // scaffold: thin
 		float amtD = uStrokePx > 0.01 ? 1.0 - smoothstep(halfD - 1.0, halfD + 1.0, edgePxD) : 0.0;
 		float amtS = (uScaffold > 0.5 && uStrokePx > 0.01) ? 1.0 - smoothstep(halfS - 1.0, halfS + 1.0, edgePxS) : 0.0;
-		vec3 col = mix(fill, uStrokeSca, amtS);
-		col = mix(col, uStroke, amtD);
+		vec3 col = mix(fill, uStrokeSca * ink, amtS);
+		col = mix(col, uStroke * ink, amtD);
 		frag = vec4(col, 1.0);
 		return;
 	}
@@ -181,6 +190,14 @@ void main() {
 	vec3 tileCol = hsb2rgb(mod(sides * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0);
 	if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
 	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
+	// THE SHADE LIGHTS THE INK TOO, and leaving it off the stroke inverted the figure halfway out.
+	// dim runs 1.0 at the centre to 0.5 at the rim, so a fill that starts at luma 0.86 ends near 0.55
+	// while a constant stroke sat at 0.76 the whole way: the lines read DARKER than their tile in the
+	// middle of the disk, vanished into it at r = 0.61, and read LIGHTER than it outside that. Scaling
+	// the stroke by the same factor holds the ink-to-fill ratio constant at every radius, so the lines
+	// keep one polarity and the disk keeps its depth. Guarded on uShowFill: with the fill off the
+	// background is flat uBg, and dimming the stroke against it would invent a gradient of its own.
+	float ink = uShowFill > 0.5 ? dim : 1.0;
 
 	// stroke: the stored edge distance is HYPERBOLIC (isometry-invariant), so "inside the stroke" =
 	// hypEdge ≤ h with h a constant hyperbolic half-width — an equidistant band around each geodesic.
@@ -194,7 +211,7 @@ void main() {
 	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? 3.0 *pow(1.0 - r2, ${STROKE_GAMMA}) : 1.0);
 	// slider at 0 = NO stroke: the AA band alone would still ink a ~50% hairline at halfW = 0
 	float strokeAmt = uStrokePx > 0.01 ? 1.0 - smoothstep(halfW - 1.0, halfW + 1.0, edgePx) : 0.0;
-	frag = vec4(mix(fill, uStroke, strokeAmt), 1.0);
+	frag = vec4(mix(fill, uStroke * ink, strokeAmt), 1.0);
 }`;
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {

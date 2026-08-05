@@ -10,6 +10,30 @@
 import { type Complex, type Su11, su11Apply, tileHue } from "@/lib/render/hyperbolic";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 
+/**
+ * A stroke colour under the same depth shade the fill gets.
+ *
+ * The rim shade is a lamp over the whole disk, so it has to fall on the ink as well as the paper. It used
+ * to fall only on the fill, which inverted the figure halfway out: a fill running from luma 0.86 at the
+ * centre to 0.55 at the rim, against a stroke pinned at 0.76, gave lines that read darker than their tile
+ * in the middle, vanished into it at r = 0.61, and read lighter than it outside. Scaling both by `dim`
+ * holds the ratio constant at every radius. Mirrors `ink` in the shader (hyperbolicPerPixelGL.ts), which
+ * this path is byte-matched against.
+ *
+ * `dim` of 1 returns the colour untouched, which is what the no-fill mode passes: there the background is
+ * flat, so shading the ink would invent a gradient instead of matching one.
+ */
+function shadeStroke(hex: string, dim: number): string {
+	if (dim >= 0.999) return hex;
+	const h = hex.slice(1);
+	const w = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+	const n = Number.parseInt(w, 16);
+	const r = Math.round(((n >> 16) & 255) * dim);
+	const g = Math.round(((n >> 8) & 255) * dim);
+	const b = Math.round((n & 255) * dim);
+	return `rgb(${r},${g},${b})`;
+}
+
 export interface Darts {
 	rneig: number[];
 	glue: number[];
@@ -89,6 +113,33 @@ const SAG_PX = 0.35; // max polyline sagitta in device px; under this a chord re
  * across: the median edge's 1-segment sagitta is 0.06 px at a 565 px disk, so most edges need no
  * subdivision at all, while the big central tiles still get the full 14.
  */
+/** Longest screen span a single tapered piece may cover. Small enough that the width steps between
+ *  consecutive pieces stay under a pixel, large enough that a full patch is still one cheap pass. */
+const TAPER_SEG_PX = 6;
+
+/**
+ * Split a polyline so no piece spans more than `maxPx` on screen.
+ *
+ * A per-segment taper can only vary as finely as the polyline it walks, and `geodesicPts` gives a curved
+ * arc plenty of points but a DIAMETER exactly two — so without this, the straight edges through the middle
+ * of the disk are the only ones that cannot taper. Splitting is linear in disk space, which is exact for
+ * the chord case that needs it and harmless elsewhere, since curved arcs arrive fine enough already.
+ */
+function densify(pts: Complex[], toPx: (p: Complex) => [number, number], maxPx: number): Complex[] {
+	if (pts.length < 2) return pts;
+	const out: Complex[] = [pts[0]];
+	for (let i = 1; i < pts.length; i++) {
+		const p0 = pts[i - 1];
+		const p1 = pts[i];
+		const [x0, y0] = toPx(p0);
+		const [x1, y1] = toPx(p1);
+		const n = Math.max(1, Math.min(64, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / maxPx)));
+		for (let s = 1; s <= n; s++)
+			out.push({ x: p0.x + (p1.x - p0.x) * (s / n), y: p0.y + (p1.y - p0.y) * (s / n) });
+	}
+	return out;
+}
+
 function geodesicPts(a: Complex, b: Complex, R: number): Complex[] {
 	const oc = orthoCircle(a, b);
 	if (!oc) return [a, b]; // a diameter: the chord IS the geodesic, subdivision cannot improve it
@@ -174,7 +225,7 @@ export function drawDevelopedPatch(
 					? "#14110d"
 					: "#faf8f5"
 				: `rgb(${Math.round(fr * dim * 255)},${Math.round(fg * dim * 255)},${Math.round(fb * dim * 255)})`;
-		ctx.strokeStyle = edgeCol;
+		ctx.strokeStyle = shadeStroke(edgeCol, opts.showFill === false ? 1 : dim);
 		const baseW = opts.strokePx ?? Math.max(1, R * 0.006);
 		// Perspective width: the exact conformal factor (1 − r²) at the tile's centre with the same
 		// 3× overall boost as the shader (AL-tuned final law: metric-exact thinning, thicker base).
@@ -258,9 +309,34 @@ export function drawDevelopedEdgePatch(
 	}
 	ctx.clip();
 
-	// Fill pass: one hue per merged-tile orbit, dimmed toward the rim exactly like drawDevelopedPatch.
 	const showFill = opts.showFill !== false;
-	for (let fi = 0; fi < patch.faces.length; fi++) {
+
+	// EDGE patterns: paint the disk ONCE as a radial gradient and skip the per-face fill entirely.
+	//
+	// ⚑ Per-face shading is what "each polygon has its own shade" actually was, and dropping the per-orbit
+	// hue did not fix it. `dim` here is a function of the face CENTROID, so every polygon gets one flat
+	// value and the mosaic survives in brightness even when every face shares a hue. The GL path has no
+	// such problem — its edge branch shades per PIXEL — so a certified record looked smooth and an
+	// uncertified one (certified === false, which is what routes a record here) did not. Same shelf, two
+	// renderers, two different pictures.
+	//
+	// The gradient stops sample the shader's own 1 − 0.5r² at sixteen radii, so the two paths agree to
+	// within a linear interpolation between neighbouring stops. Colourings keep the per-face loop below:
+	// there the fill IS the catalogued object, not a backdrop.
+	if (showFill && !opts.palette) {
+		const [gr, gg, gb] = tileHueRgb01(tileHue(2) + (opts.hueOffset ?? 0));
+		const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+		for (let s = 0; s <= 16; s++) {
+			const t = s / 16;
+			const d = 1 - 0.5 * t * t;
+			grad.addColorStop(t, `rgb(${Math.round(gr * d * 255)},${Math.round(gg * d * 255)},${Math.round(gb * d * 255)})`);
+		}
+		ctx.fillStyle = grad;
+		ctx.fillRect(cx - R, cy - R, R * 2, R * 2); // inside the disk clip set above
+	}
+
+	// Fill pass: one colour per merged-tile orbit. Colourings only — see the note above.
+	for (let fi = 0; showFill && opts.palette && fi < patch.faces.length; fi++) {
 		const face = patch.faces[fi];
 		const sides = face.length;
 		let ccx = 0;
@@ -273,10 +349,13 @@ export function drawDevelopedEdgePatch(
 		ccy /= sides;
 		const dep = Math.min(1, Math.hypot(ccx, ccy));
 		// Colors mode dims less toward the rim (pale fills stay legible), matching the shader's colors branch.
-		const dim = opts.palette ? 1 - 0.28 * dep * dep : 1 - 0.5 * dep * dep;
-		const [fr, fg, fb] = opts.palette
-			? (opts.palette[patch.faceOrbit[fi]] ?? opts.palette[opts.palette.length - 1]).map((c) => c / 255) as [number, number, number]
-			: tileHueRgb01(tileHue(patch.faceOrbit[fi] + 2) + (opts.hueOffset ?? 0));
+		const dim = 1 - 0.28 * dep * dep;
+		const pal = opts.palette!;
+		const [fr, fg, fb] = (pal[patch.faceOrbit[fi]] ?? pal[pal.length - 1]).map((c) => c / 255) as [
+			number,
+			number,
+			number,
+		];
 		ctx.beginPath();
 		let started = false;
 		for (let i = 0; i < sides; i++) {
@@ -309,26 +388,35 @@ export function drawDevelopedEdgePatch(
 		for (let pass = 0; pass < 2; pass++) {
 			const drawnPass = pass === 1; // scaffold first, drawn edges on top
 			if (drawnPass ? false : !showScaffold) continue;
-			ctx.strokeStyle = drawnPass ? drawnCol : scaffoldCol;
+			const passCol = drawnPass ? drawnCol : scaffoldCol;
 			for (const [a, b, drawn] of patch.edges) {
 				if ((drawn === 1) !== drawnPass) continue;
-				const mid = { x: (tv[a].x + tv[b].x) / 2, y: (tv[a].y + tv[b].y) / 2 };
-				const dep = Math.min(1, Math.hypot(mid.x, mid.y));
 				const w = drawnPass ? baseW * 3 : baseW * 1.2;
-				ctx.lineWidth = opts.taper ? Math.max(0.35, w * Math.pow(1 - dep * dep, 1.0)) : w;
-				const pts = geodesicPts(tv[a], tv[b], R);
-				ctx.beginPath();
-				let started = false;
-				for (const p of pts) {
-					const [px, py] = toPx(p);
-					if (!started) {
-						ctx.moveTo(px, py);
-						started = true;
-					} else {
-						ctx.lineTo(px, py);
-					}
+				// PER SEGMENT, not per edge. Width and shade are both functions of the radius, and an edge
+				// spans a range of radii, so one value for the whole edge steps at every vertex: two edges
+				// meeting there were sized from their own midpoints, which sit at different depths. Walking
+				// the geodesic's own polyline and sizing each piece at ITS midpoint makes the width agree
+				// from both sides of a vertex, which is the continuity the per-pixel shader gets for free.
+				//
+				// `densify` is what makes that work on a DIAMETER: geodesicPts returns the bare chord there
+				// (the chord IS the geodesic, so subdivision cannot improve its shape), and a two-point
+				// polyline can only carry one width — which is why the straight edges through the middle of
+				// the disk stayed a uniform thickness while every curved one tapered.
+				const poly = densify(geodesicPts(tv[a], tv[b], R), toPx, TAPER_SEG_PX);
+				for (let i = 1; i < poly.length; i++) {
+					const p0 = poly[i - 1];
+					const p1 = poly[i];
+					const dep = Math.min(1, Math.hypot((p0.x + p1.x) / 2, (p0.y + p1.y) / 2));
+					const eDim = opts.palette ? 1 - 0.28 * dep * dep : 1 - 0.5 * dep * dep;
+					ctx.strokeStyle = shadeStroke(passCol, showFill ? eDim : 1);
+					ctx.lineWidth = opts.taper ? Math.max(0.35, w * Math.pow(1 - dep * dep, 1.0)) : w;
+					const [x0, y0] = toPx(p0);
+					const [x1, y1] = toPx(p1);
+					ctx.beginPath();
+					ctx.moveTo(x0, y0);
+					ctx.lineTo(x1, y1);
+					ctx.stroke(); // round caps, set above, close the joins between consecutive pieces
 				}
-				ctx.stroke();
 			}
 		}
 	}
