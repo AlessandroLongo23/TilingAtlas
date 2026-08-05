@@ -1,0 +1,10 @@
+[23:17:36] hyp-poly certification stamp: 201 shards, 39305 tilings, 8 workers
+[23:17:36] log: /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/2026-08-04-hyp-poly-certification.log
+[23:17:36]   worker 0: 24 shards, 5257 tilings
+[23:17:36]   worker 1: 25 shards, 3400 tilings
+[23:17:36]   worker 2: 23 shards, 6273 tilings
+[23:17:36]   worker 3: 26 shards, 4164 tilings
+[23:17:36]   worker 4: 26 shards, 3272 tilings
+[23:17:36]   worker 5: 25 shards, 6891 tilings
+[23:17:36]   worker 6: 25 shards, 5230 tilings
+[23:17:36]   worker 7: 27 shards, 4818 tilings

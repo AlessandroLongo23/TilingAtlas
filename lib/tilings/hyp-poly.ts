@@ -31,6 +31,16 @@ export interface HypPolyBoard {
 	/** k values Marek ENUMERATED and this shelf does NOT ship (the develop budget, not the board).
 	 *  Kept so a surface can say the board is truncated instead of implying it is exhausted. */
 	dropped: number[];
+	/**
+	 * k values Marek's own CENSUS counts and whose certificates his drop does not contain.
+	 *
+	 * ⚑ A THIRD claim, and the strongest one against calling a board complete: `dropped` is our budget,
+	 * `hypPolyKGaps` is a hole the enumeration proved empty, and this is neither — the count exists and
+	 * the data does not. Present only on n = 13, the first AI1 drop to ship a `solution_list.txt` at all;
+	 * on every other board there is no census to compare the files against, so ABSENT here means UNKNOWN
+	 * and never "none". Do not default it to an empty array.
+	 */
+	missing?: number[];
 	/** Tilings per shipped k. */
 	counts: Record<number, number>;
 }
@@ -89,6 +99,10 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 	{ n: 10, eagerKs: [1, 2, 3, 4, 5], lazyKs: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], dropped: [17, 18, 19, 20], counts: { 1: 2, 2: 1, 3: 2, 4: 2, 5: 1, 6: 8, 7: 14, 8: 15, 9: 28, 10: 50, 11: 89, 12: 114, 13: 248, 14: 263, 15: 599, 16: 1214 } },
 	{ n: 11, eagerKs: [1, 6, 7, 11, 12], lazyKs: [13, 14, 17, 18, 19, 20, 21, 22], dropped: [23, 24, 25, 26, 27, 28], counts: { 1: 1, 6: 2, 7: 2, 11: 15, 12: 34, 13: 27, 14: 4, 17: 193, 18: 370, 19: 310, 20: 87, 21: 8, 22: 472 } },
 	{ n: 12, eagerKs: [1, 2, 3, 4, 5], lazyKs: [6, 7, 8, 9, 10, 11, 12], dropped: [13, 14, 15], counts: { 1: 2, 2: 2, 3: 3, 4: 5, 5: 6, 6: 19, 7: 46, 8: 77, 9: 203, 10: 338, 11: 610, 12: 1344 } },
+	// n = 13, and the ONE board with a census to check against. Its `missing` is 416,137 certificates the
+	// census counts at k = 27…30 that the drop does not carry; see the field's note. Its k holes below
+	// the cap (2…6, 9…12, 17…19) are corpus facts, the same kind n = 11 has.
+	{ n: 13, eagerKs: [1, 7, 8, 13, 14], lazyKs: [15, 16, 20], dropped: [21, 22, 23, 24, 26], missing: [27, 28, 29, 30], counts: { 1: 1, 7: 4, 8: 4, 13: 33, 14: 104, 15: 94, 16: 23, 20: 2097 } },
 	{ n: 14, eagerKs: [1, 2, 4, 5, 6], lazyKs: [7, 8, 9, 10, 11, 12, 13, 14, 15], dropped: [16, 17, 18, 19, 20], counts: { 1: 2, 2: 1, 4: 4, 5: 6, 6: 3, 7: 3, 8: 24, 9: 39, 10: 48, 11: 81, 12: 163, 13: 175, 14: 659, 15: 1259 } },
 	{ n: 15, eagerKs: [1, 2, 3, 4, 5], lazyKs: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], dropped: [17, 18, 19, 20], counts: { 1: 1, 2: 1, 3: 2, 4: 1, 5: 1, 6: 2, 7: 3, 8: 20, 9: 20, 10: 38, 11: 92, 12: 104, 13: 156, 14: 287, 15: 781, 16: 1894 } },
 	{ n: 16, eagerKs: [1, 2, 3, 4, 5], lazyKs: [6, 7, 8, 9, 10, 11, 12, 13, 14], dropped: [15, 16, 17], counts: { 1: 2, 2: 1, 3: 2, 4: 1, 5: 6, 6: 7, 7: 7, 8: 39, 9: 104, 10: 163, 11: 312, 12: 501, 13: 915, 14: 1851 } },

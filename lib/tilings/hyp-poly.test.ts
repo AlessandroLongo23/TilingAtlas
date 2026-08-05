@@ -159,3 +159,34 @@ describe.skipIf(!anyShard)("3.4.n.4 shards", () => {
 		expect(hypPolyMeta(r).certified).toBe(r.certified);
 	});
 });
+
+describe("n = 13, the board with a census to check against", () => {
+	const b = HYP_POLY_BOARDS.find((x) => x.n === 13)!;
+
+	it("closes the gap the shelf used to have between 12 and 14", () => {
+		const ns = HYP_POLY_BOARDS.map((x) => x.n);
+		expect(ns).toEqual([...ns].sort((p, q) => p - q));
+		expect(ns).toContain(13);
+		// 21 and 22 are still absent, so the shelf is not contiguous and must not read as if it were.
+		expect(ns).not.toContain(21);
+		expect(ns).not.toContain(22);
+	});
+
+	it("separates the census's own gaps from ours, and from what the drop never carried", () => {
+		// Three different claims, and this is the only board where all three are knowable.
+		//   dropped  — enumerated, in the drop, past OUR budget.
+		//   kGaps    — the enumeration itself found nothing there.
+		//   missing  — ⚑ the census COUNTS them and the drop does not contain them: 416,137 certificates
+		//              at k = 27…30. No other AI1 drop shipped a solution_list.txt, so on every other
+		//              board this is UNKNOWN, which is why the field is optional and never defaults to [].
+		expect(b.dropped).toEqual([21, 22, 23, 24, 26]);
+		expect(b.missing).toEqual([27, 28, 29, 30]);
+		expect(hypPolyKGaps(b)).toEqual([2, 3, 4, 5, 6, 9, 10, 11, 12, 17, 18, 19]);
+		for (const other of HYP_POLY_BOARDS) if (other.n !== 13) expect(other.missing).toBeUndefined();
+	});
+
+	it("ships the counts its census states", () => {
+		expect(b.counts).toEqual({ 1: 1, 7: 4, 8: 4, 13: 33, 14: 104, 15: 94, 16: 23, 20: 2097 });
+		expect(hypPolyBoardKs(b)).toEqual([1, 7, 8, 13, 14, 15, 16, 20]);
+	});
+});
