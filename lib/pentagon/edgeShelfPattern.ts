@@ -7,19 +7,20 @@
 // difference that runs all the way down: its patch cannot be shipped, because the tile is a family.
 // So it is built here, per parameter point, and everything downstream is unchanged.
 
+import type { EdgePatchDiag } from "@/lib/freedraw/edgePatchCore";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import type { SolvedBoard } from "./edge-board";
 import type { PentEdgeRecord } from "./edgeDevelop";
-import { buildPentEdgePatch, type PentPatchDiag } from "./edgePatch";
+import { buildPentEdgePatch } from "./edgePatch";
 
 export interface PentShelfPattern {
 	pattern: FreedrawPattern | null;
 	reason: string | null;
-	diag: PentPatchDiag;
-	/** World units across the shorter canvas side at the home zoom: about four periods, so the repeat
-	 *  reads at a glance whatever the parameters do to the cell's size. Clamped at both ends — a k=2
-	 *  cell four times over is still only a handful of tiles, and a k=10 cell four times over would put
-	 *  the tiles below a pixel. */
+	diag: EdgePatchDiag;
+	/** World units across the shorter canvas side at the home zoom: about two and a half periods, so
+	 *  the repeat reads at a glance and the tile is still big enough to see its edges. Clamped at both
+	 *  ends — a k=2 cell a few times over is only a handful of tiles, and a k=10 cell would otherwise
+	 *  put the tiles below a pixel. */
 	cells: number;
 }
 
@@ -63,7 +64,7 @@ export function pentEdgePattern(rec: PentEdgeRecord, board: SolvedBoard): PentSh
 			},
 			reason: null,
 			diag: built.diag,
-			cells: Math.max(24, Math.min(48, span * 6)),
+			cells: Math.max(14, Math.min(30, span * 2.5)),
 		};
 	}
 

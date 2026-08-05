@@ -133,6 +133,18 @@ export function fitView(width: number, height: number, cells: number): FreedrawV
 	return { cx: 0, cy: 0, scale: Math.min(width, height) / Math.max(1, cells) };
 }
 
+/**
+ * The same view, sized for a THUMBNAIL.
+ *
+ * `cells` is a count, not a scale, so handing a 220px preview the number a ~1000px canvas was tuned
+ * for draws the same tiles at a fifth the size, and a parametric board's cells come out as texture.
+ * A preview has one job — say which record this is — so it shows fewer of them, larger.
+ *
+ * Not `cells × 220/1000`: matching the big canvas's pixels-per-tile exactly would crop most previews
+ * to less than one period, and the repeat is often the thing that identifies the record.
+ */
+export const thumbnailCells = (cells: number) => cells * 0.45;
+
 // Guard against pathological zoom-out: at most this many grid units are ever iterated per axis.
 const MAX_SPAN = 400;
 

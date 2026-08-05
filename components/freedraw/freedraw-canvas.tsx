@@ -13,10 +13,15 @@ import {
 import { useEasedRotation } from "@/lib/hooks/useEasedRotation";
 import {
 	accumulateDetents,
+	makeCardControls,
+	resetCardControls,
 	ROTATE_SNAP_DEG,
+	stepCardControls,
 	unrotateScreen,
 	wheelDeltaPx,
 	wrap360,
+	zoomAtPoint,
+	type CardControls,
 } from "@/lib/render/viewControls";
 import { cn } from "@/lib/utils/cn";
 
@@ -25,7 +30,24 @@ import { cn } from "@/lib/utils/cn";
 // once, so the floor has to be much lower than ZOOM_MIN's 20 px/unit.
 const ZOOM_MIN = 5;
 const ZOOM_MAX = 160;
-const ZOOM_STEP = 1.1;
+const ZOOM_BOUNDS = { min: ZOOM_MIN, max: ZOOM_MAX };
+
+// The view is a CardControls — the same state, the same easing and the same zoom-toward-the-cursor
+// arithmetic /play, the theory cards and the aperiodic canvases run on (lib/render/viewControls.ts,
+// covered by tests/view-controls.test.ts). It used to set `scale` straight from the wheel handler,
+// which is why zooming here jumped while every other view in the atlas glided.
+//
+// CardControls speaks zoom + a centred screen offset; this renderer speaks a world centre + a scale.
+// They are the same view written two ways, so the draw derives one from the other:
+//
+//     scale = zoom      cx = -offset.x / zoom      cy = +offset.y / zoom
+//
+// (cy flips because the renderer's world y grows upward and the offset's does not.)
+const viewOf = (c: CardControls): FreedrawView => ({
+	cx: -c.offset.x / c.zoom,
+	cy: c.offset.y / c.zoom,
+	scale: c.zoom,
+});
 
 /** Track the `dark` class the ThemeToggle writes onto <html>. */
 export function useIsDark(): boolean {
@@ -72,7 +94,12 @@ export function FreedrawCanvas({
 }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [size, setSize] = useState({ w: 0, h: 0 });
-	const [view, setView] = useState<FreedrawView | null>(null);
+	// The live view. A ref, not state: it changes every eased frame, and routing that through React
+	// would re-render the whole canvas sixty times a second to produce one draw call.
+	const controlsRef = useRef<CardControls>(makeCardControls(0));
+	const homeZoomRef = useRef(0);
+	// Set when a target moves, so the frame loop below knows to run even though nothing eased yet.
+	const dirtyRef = useRef(false);
 	const dark = useIsDark();
 	const analysis = useMemo(() => analyseFaces(pattern), [pattern]);
 	// Pointer in WORLD (grid) coordinates, for the orbit-dot hover. A ref, not state: it changes on every
@@ -113,15 +140,27 @@ export function FreedrawCanvas({
 		return () => ro.disconnect();
 	}, []);
 
-	// Re-fit whenever the pattern changes or the element is first measured.
+	// Re-fit whenever the pattern changes or the element is first measured. This one SNAPS (live and
+	// target together): a new pattern arriving at the old zoom and gliding to its own would read as the
+	// canvas lurching on every ←/→ step. Double-click is the eased one, below.
 	useEffect(() => {
-		if (size.w > 0 && size.h > 0) setView(fitView(size.w, size.h, cells));
+		if (size.w <= 0 || size.h <= 0) return;
+		const home = fitView(size.w, size.h, cells).scale;
+		homeZoomRef.current = home;
+		const c = controlsRef.current;
+		c.zoom = c.targetZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, home));
+		c.offset.x = c.offset.y = c.targetOffset.x = c.targetOffset.y = 0;
+		dirtyRef.current = true;
+		// Draw it here, not through the effect below: `draw` no longer closes over the view (it reads the
+		// ref), so its identity does not change when the fit does — and a NON-interactive canvas has no
+		// frame loop to notice `dirty`. Thumbnails would stay blank without this line.
+		drawRef.current();
 	}, [pattern.id, size.w, size.h, cells]);
 
 	const draw = useCallback(() => {
 		const el = canvasRef.current;
 		const { w: cw, h: ch } = boxRef.current;
-		if (!el || !view || cw === 0 || ch === 0) return;
+		if (!el || homeZoomRef.current <= 0 || cw === 0 || ch === 0) return;
 		const dpr = window.devicePixelRatio || 1;
 		// Only resize when it actually changed — assigning width/height clears the backing store, so doing
 		// it every frame would flash the canvas empty under the hover loop below.
@@ -139,36 +178,46 @@ export function FreedrawCanvas({
 			cw,
 			ch,
 			pattern,
-			// The live angle is injected per draw, not stored in `view`, so a refit (double-click,
+			// The live angle is injected per draw, not stored in the controls, so a refit (double-click,
 			// a new pattern) can rebuild the view without touching the rotation.
-			{ ...view, rot: radNow() },
+			{ ...viewOf(controlsRef.current), rot: radNow() },
 			{ ...style, dark },
 			analysis,
 			hoverRef.current,
 			orbitScalesRef.current,
 		);
-	}, [pattern, view, style, dark, analysis, radNow]);
+	}, [pattern, style, dark, analysis, radNow]);
 	drawRef.current = draw;
 
 	useEffect(() => {
 		draw();
 	}, [draw]);
 
-	// The orbit-dot hover eases over several frames, so it needs a frame loop — a redraw per pointermove
-	// would freeze the growth the moment the cursor stops. Runs ONLY while the dots are up on an
-	// interactive canvas; a gallery of 166 static thumbnails never enters it. (A view mid-turn has its own
-	// loop inside useEasedRotation.)
-	const animate = interactive && style.showVertices;
+	// One frame loop for both things that move between renders: the view easing toward its target
+	// (stepCardControls reports when it has arrived) and the orbit-dot hover growth, which eases over
+	// several frames and would freeze the moment the cursor stopped if it only redrew on pointermove.
+	//
+	// It runs while EITHER is live, and stops when both settle, so a settled canvas costs nothing and a
+	// gallery of 166 static thumbnails never enters it at all. (A view mid-TURN has its own loop inside
+	// useEasedRotation, for the same reason and with the same shared constants.)
+	const hoverAnimates = interactive && style.showVertices;
 	useEffect(() => {
-		if (!animate) return;
+		if (!interactive) return;
 		let raf = 0;
 		const tick = () => {
-			draw();
+			// pivotOffsetOnRotate = false: this renderer turns the whole context about the canvas centre,
+			// so the world point at the centre is already fixed under a spin. Rotating the offset too
+			// would double-count it and drift the pattern sideways as the angle eased.
+			const moving = stepCardControls(controlsRef.current, false);
+			if (moving || hoverAnimates || dirtyRef.current) {
+				dirtyRef.current = false;
+				drawRef.current();
+			}
 			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(raf);
-	}, [animate, draw]);
+	}, [interactive, hoverAnimates]);
 
 	// Pan. Pointer capture keeps the drag alive when the cursor leaves the canvas.
 	const drag = useRef<{ x: number; y: number } | null>(null);
@@ -185,13 +234,20 @@ export function FreedrawCanvas({
 			drag.current = { x: e.clientX, y: e.clientY };
 			// Panning, not pointing — drop the hover so a dot doesn't stay grown under a moving canvas.
 			hoverRef.current = null;
-			setView((v) => (v ? { ...v, cx: v.cx - d.x / v.scale, cy: v.cy + d.y / v.scale } : v));
+			// Target AND live together: a drag that eased would lag the cursor it is supposed to be
+			// holding. The ease is for the wheel and the refit, where there is no pointer to track.
+			const c = controlsRef.current;
+			c.targetOffset.x += d.x;
+			c.targetOffset.y += d.y;
+			c.offset.x += d.x;
+			c.offset.y += d.y;
+			dirtyRef.current = true;
 			return;
 		}
 		// Screen → world, the inverse of the sx/sy the renderer draws with (y flips: world y grows upward),
 		// with the view rotation undone first.
-		const v = view;
-		if (!v) return;
+		const v = viewOf(controlsRef.current);
+		if (!(v.scale > 0)) return;
 		const rect = e.currentTarget.getBoundingClientRect();
 		const p = unrotateScreen(
 			e.clientX - rect.left - rect.width / 2,
@@ -231,18 +287,21 @@ export function FreedrawCanvas({
 				e.clientY - rect.top - rect.height / 2,
 				radNow(),
 			);
-			setView((v) => {
-				if (!v) return v;
-				const delta = wheelDeltaPx(e);
-				const next = Math.max(
-					ZOOM_MIN,
-					Math.min(ZOOM_MAX, delta > 0 ? v.scale / ZOOM_STEP : v.scale * ZOOM_STEP),
-				);
-				if (next === v.scale) return v;
-				const wx = v.cx + px / v.scale;
-				const wy = v.cy - py / v.scale;
-				return { scale: next, cx: wx - px / next, cy: wy + py / next };
-			});
+			// The shared one: scales the TARGET zoom by scroll DISTANCE (not per wheel event, which a
+			// trackpad fires dozens of times per gesture) and shifts the target offset so the world point
+			// under the cursor stays put. The frame loop above eases the live view into it.
+			const c = controlsRef.current;
+			const { zoom, offset } = zoomAtPoint(
+				{ x: px, y: py },
+				c.targetOffset,
+				c.targetZoom,
+				wheelDeltaPx(e),
+				ZOOM_BOUNDS,
+			);
+			c.targetZoom = zoom;
+			c.targetOffset.x = offset.x;
+			c.targetOffset.y = offset.y;
+			dirtyRef.current = true;
 		};
 		el.addEventListener("wheel", onWheel, { passive: false });
 		return () => el.removeEventListener("wheel", onWheel);
@@ -253,7 +312,10 @@ export function FreedrawCanvas({
 	// Double-click is "put it back": pan, zoom AND angle, so a refit never leaves the view tilted.
 	const refit = () => {
 		if (size.w <= 0) return;
-		setView(fitView(size.w, size.h, cells));
+		// Eased, unlike the pattern-change fit above: "put it back" reads better as a glide, and the
+		// shared helper is the same one /play and the cards snap home with.
+		resetCardControls(controlsRef.current, homeZoomRef.current, ZOOM_BOUNDS);
+		dirtyRef.current = true;
 		onRotationChange?.(0);
 	};
 

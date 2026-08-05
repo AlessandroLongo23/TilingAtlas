@@ -24,7 +24,7 @@ export interface IhShelfPattern {
 	 *  generator stays at one tile at every k while the long one grows with k — so "show five periods"
 	 *  means five of the LONG side, and the home zoom would swing by 6x across the shelf and sit far
 	 *  closer than every other Euclidean shelf at low k. A constant density reads the same at every k,
-	 *  and the period still always fits, since thirty tiles across is wider than the longest generator
+	 *  and the period still always fits, since fourteen tiles across is wider than the longest generator
 	 *  the shipped corpus has. */
 	cells: number;
 }
@@ -75,8 +75,8 @@ export function ihEdgePattern(rec: IhEdgeRecord, board: SolvedIhBoard): IhShelfP
 			reason: null,
 			diag: built.diag,
 			// ...and the `span` term is the guard, not the rule: if a parameter point ever stretches the
-			// cell past thirty tiles, the zoom follows it out so the repeat is never cropped.
-			cells: Math.max(30 * tile, span * 1.15),
+			// cell past fourteen tiles, the zoom follows it out so the repeat is never cropped.
+			cells: Math.max(14 * tile, span * 1.15),
 		};
 	}
 
