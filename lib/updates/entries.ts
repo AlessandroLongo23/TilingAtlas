@@ -53,6 +53,45 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.14.0",
+		date: "2026-08-05",
+		title: "Eight new boards across three geometries",
+		commit: "0012b89",
+		changes: [
+			{
+				kind: "content",
+				text: "**Six more isohedral families**: IH05 to IH10, 33,238 edge systems on hexagons you reshape with the sliders.",
+				items: [
+					"IH10 is the regular hexagon, whose one edge class leaves nothing to dial.",
+				],
+				href: "/library",
+			},
+			{
+				kind: "content",
+				text: "**The octagonal antiprism** joins the spherical edge shelf, carrying 21,558 edge systems on its 3.3.3.8 vertices.",
+				href: "/library?geo=spherical",
+			},
+			{
+				kind: "content",
+				text: "**The 3.4.13.4 tilings** fill the gap at n = 13, 2,360 of them, the last hole below n = 14.",
+				href: "/library?geo=hyperbolic",
+			},
+			{
+				kind: "feature",
+				text: "**The library filters by board** now, 93 of them, grouped as the viewer groups them.",
+				items: [
+					"The pentagon, isohedral and 3.4.n.4 boards had no filter at all before, so their tilings could not be reached from the library.",
+				],
+				href: "/library",
+			},
+			{
+				kind: "fix",
+				text: "**Curved-geometry tilings** open with the controls their renderer actually has, instead of the flat-plane set.",
+				href: "/library?geo=hyperbolic",
+			},
+		],
+	},
+	{
 		version: "1.13.0",
 		date: "2026-08-04",
 		title: "Edge systems on parametric tiles",
