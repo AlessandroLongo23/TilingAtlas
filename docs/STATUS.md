@@ -32,7 +32,7 @@ so k>=21 stays the distributed problem §44 called it.
 
 Detail: DEVELOPMENT_NOTES.md §"what a level of k costs"; logs in `experiments/results/2026-08-03-*`.
 
-## FOUR isohedral edge shelves are LIVE, with curved edges (2026-08-05)
+## TEN isohedral edge shelves are LIVE, with curved edges (2026-08-05)
 
 Marek's second PARAMETRIC board is in the atlas, at `ih-1`. `pnpm build` clean, 15 IH tests pass, and
 the shelf is verified in the browser: period, fills, scaffold/lattice/orbit overlays, curvature.
@@ -75,13 +75,63 @@ the shelf is verified in the browser: period, fills, scaffold/lattice/orbit over
   ⚑ Only the class occurring twice gets a digon slot, so four of its five classes cannot say which way
   an edge is crossed — harmless because those four are the S edges, equal to their own reverse, and
   `checkSlotsAreOpposite` asserts that pairing instead of assuming it.
+- **`edges_isohedral_IH05` at `ih-5`** and **`IH06` at `ih-6`** — 7/28/166/1040/2336 and
+  3/14/74/580/1224, census-exact, k ≤ 10 shipped. The first boards with FOUR aspects, and each broke a
+  rule that had only held because four boards agreed on it.
+- ⚑ **The certificate face count constrains nothing.** It is identically `rec.k` on all 48,998 earlier
+  records, so the builder's "the period must divide it" gate was really "F divides k" and rejected
+  every IH05 record (its k=6 period holds TWELVE tiles). Replaced by a fact about the board: the period
+  is a whole number of Tactile's own cells, 1/2/2/2/4/4 across the six.
+- ⚑ **IH06 marks a drawn edge at ONE END ONLY** (`C10` against `C12`), so read per dart its drawn set
+  depends on which side the walk arrived from and 10 of 14 records at k=4 develop with no period at
+  all. The bit is now resolved PER EDGE, drawn iff either dart says so: byte-identical on IH01-IH05,
+  11,088 marks fixed on IH06. `or` and not `and` because only `or` keeps the full 1-skeleton in the
+  corpus. ⚑ UNCONFIRMED by Marek; the develop reports the count per board so it stays visible.
+- **`edges_isohedral_IH07` at `ih-7`** and **`IH08` at `ih-8`** — 5/15/60/230/1100 (k=4…12) and
+  5/15/52/175/360/1288/1840/6500 (k=1…8), census-exact. All 11,645 records build at two parameter
+  points, straight and bowed, with no slot failures.
+- ⚑ **IH07 has ROTATION CENTRES, the first board that does.** Three of its corners are 120° and meet
+  three copies of themselves, so a vertex figure tagged `Cn` is a 1/n of a vertex: it closes to 360/n
+  and lists `vertex_corners / n` corners. Demanding a full turn from a third of one rejected both
+  candidate labellings and the board read as unsolvable.
+- ⚑ **IH08 names THREE corner letters for six corners** (`abcabc` repeats at period 3), so the 6 in
+  `A6` is the tile's SIDE count and never was the letter count. It is also the only board with ODD k:
+  one aspect and three S edges give it a bare tiling with a single vertex orbit, so it starts at k=1.
+  Any code stepping these boards two at a time is wrong on it.
+- ⚑ **COVERAGE FLAG, IH07: its census reads 1,100 at k=12, ZERO at k=14, 22,240 at k=16.** Nothing on
+  this shelf grows like that, so the zero is recorded as `missing` and not believed. Ask Marek, along
+  with IH06's one-sided drawn marks.
+- **`edges_isohedral_IH09` at `ih-9`** and **`IH10` at `ih-10`** — 3/4/14/41/64/205/244/1328/1313/
+  4152/3244 (k=1…11) and 5/16/80/175/465/1651/3117 (k=1…7), census-exact. Ten boards, 82,436 records.
+- ⚑ **IH10 CANNOT BE BOWED, and the code refuses instead of drawing it.** A digon slot says which end of
+  an edge a dart sits at, so a one-slot class has no direction bit — safe only where the edge is its own
+  reverse, which held from IH04 to IH09 because every one-slot class was an S edge. IH10's single class
+  is a J edge used six times with one slot, so a bow would come out mirrored on half the edges.
+  `solveIhBoardFor` returns `unbowable`, the controls withhold the sliders, and each board now declares
+  its slot counts, derived from its corpus and asserted against the shards.
+- ⚑ **A `Dn` site tag is n/2-fold** (a dihedral group of order n has n/2 rotations). IH10 is the first
+  corpus with mirror sites, `Aa`/`Ac`/`D6a`. It also has ZERO parameters, the only board that does.
+- ⚑ **IH09's census FALLS**, 4,152 at k=10 to 3,244 at k=11. That is the board, not a short run — which
+  is the contrast that makes IH07's zero at k=14 a gap and not a fact.
+- **n = 13 fills a hole in the 3.4.n.4 shelf**, which shipped n = 7…12, 14…20, 23 and jumped 12 → 14
+  with nothing saying so. 1/4/4/33/104/94/23/2097 at k = 1,7,8,13…16,20. ⚑ It is the FIRST AI1 drop with
+  a census, and the census counts 416,137 certificates at k = 27…30 that the drop does not contain, so
+  `HypPolyBoard` grew an OPTIONAL `missing` — absent means UNKNOWN on the other fourteen boards, never
+  none. n = 21 and 22 are still absent from the shelf.
+- **The octagonal antiprism (3.3.3.8) joins the spherical edge shelf**, 21,558 records at k = 1…5, 8, 9.
+  ⚑ Its k=1…5 counts are identical to the square antiprism's from disjoint data (zero shared drawn-sets,
+  32e/18f against 16e/10f). ⚑ Its census counts 2,925,191 at k=16 that the drop lacks: `missing: [16]`.
+- **`quadrangles.txt` is a SPEC, not data** — Marek proposing isohedral quadrangles as a family, eight
+  symmetry classes with their Conway symbols, forced edge shapes and angle conditions across all three
+  geometries. Nothing to ingest; it is what a future solver would be written against.
 - **The (2,3,4) F2 rerun is IN** — k=3 goes 5 → 10 and k=4 goes 2 → 13, both strict supersets: 16
   tilings that a shelf calling itself a catalogue was missing. ⚑ Only those two slices are rerun, so
   (2,3,4) k=5…11 and the whole of (2,3,5) (2,3,6) (2,3,7) (2,4,5) are still lower bounds — five boards
   short, not six. ⚑ The corpus arrives in the isohedral alphabet, so the Schwarz front end now carries
   a LEGACY/SLOTTED `Dialect`; re-decoding legacy (2,3,5) is byte-identical.
 
-Detail: DEVELOPMENT_NOTES.md §"The IH01 shelf ships".
+Detail: DEVELOPMENT_NOTES.md §"The IH01 shelf ships", §"IH05 and IH06", §"IH07 and IH08",
+§"IH09 and IH10".
 
 ## The parametric pentagon shelf is LIVE, and the snub cube shipped — UNCOMMITTED (2026-08-04)
 

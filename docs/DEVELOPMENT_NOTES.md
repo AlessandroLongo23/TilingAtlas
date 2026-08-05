@@ -9469,3 +9469,174 @@ untouched.
 ⚑ **(2,3,4) is now MIXED and the flag says so.** The rerun covers only k=3 and k=4; k=5…11 on that
 board are still the short solver's output, and (2,3,5) (2,3,6) (2,3,7) (2,4,5) are entirely untouched.
 Five boards remain lower bounds, not six.
+
+## IH05 and IH06, and the two claims that only held because four boards agreed
+
+`solver_edges_isohedral_IH05.zip` (2026-08-04 16:08) and `_IH06.zip` (16:15) are decoded and live at
+`ih-5` and `ih-6`. Both are hexagons with four edge classes and FOUR aspects, the first boards past two,
+and each one broke a rule I had written down as though it were structural.
+
+**IH05 counts 7 / 28 / 166 / 1040 / 2336, matching Marek's census at every k; the budget ships k ≤ 10
+and drops k = 12 (18,737). IH06 counts 3 / 14 / 74 / 580 / 1224, ships k ≤ 10 and drops k = 12 and 14
+(26,719 together).** 5,472 certificates decoded, none failed, and both boards' corner labellings resolve
+uniquely to `ABCDEF` through `scripts/solve-ih-board.ts`.
+
+⚑ **CORRECTION: the certificate face count was never a constraint on the period.** `certCellFaces`
+reads a tile count back off a certificate's dart count, and the builder demanded that the period DIVIDE
+it. Checked properly, that number is identically `rec.k` on all 48,998 records of IH01 to IH04, and on
+IH05's and IH06's too. So the gate was really "F divides k", which held on the first four boards by
+coincidence. IH05 at k=6 has a period of TWELVE tiles against k=6, so the gate rejected every record of
+the board, including the labelling that turned out to be right; the third time on this shelf that a
+claim read off one board's data has failed on the next. What replaced it is a fact about the board:
+a decoration is preserved only by translations that already preserve the undecorated tiling, so its
+cell holds a whole multiple of the tiles Tactile's own cell holds: 1, 2, 2, 2, 4, 4 across the six
+boards. It does NOT catch a sublattice; nothing here does, and the shortest-verified-pair search in
+`edgePatchCore` is what keeps that from arising.
+
+⚑ **IH06 marks a drawn edge at ONE END ONLY, and read per dart it develops into something that is not
+a tiling.** Its class `c` gives the letter pair `(C10, C12)` across an edge, where every single-slot
+class on every other board gives `(C10, C10)` or `(C12, C12)`. The drawn set then depends on which side
+the walk reached an edge from, and 10 of the 14 records at k=4 develop with NO period at all. The
+builder said "no period found", which is the failure being correct about a figure that had none.
+`combinatorics()` now resolves the bit PER EDGE: drawn iff either dart says so. Re-decoding IH01 to IH05
+after the change is BYTE-IDENTICAL, so it is a no-op on everything already shipped; on IH06 it fixes
+11,088 one-sided marks and every one of the 1,895 shipped records then develops.
+
+**Why `or` and not `and`, since both readings make every record periodic and the geometry cannot choose
+between them.** Under `and` no c-edge on IH06 could ever be drawn, so the board's full 1-skeleton (every edge drawn,
+a legitimate edge system a complete enumeration has to contain) would be missing from the corpus. Under `or` it is there, at k=4, and it renders: `ie06-4-00013` draws every hexagon
+edge. A solver does not emit a letter, 40 times in the k ≤ 4 slice alone, that marks nothing.
+⚑ **This is inference from Marek's data and he has not confirmed it.** The develop reports the
+one-sided count per board so the anomaly stays visible; if he says otherwise, `combinatorics()` is the
+only thing that changes.
+
+⚑ **A third trap, in the board solver: the parameter point must be one where the tile is still SIMPLE.**
+Tactile returns a self-intersecting boundary for a point outside a type's usable range, and its interior
+angles then sum to 1080° on a hexagon instead of 720°, so the 360° vertex test throws every labelling
+away at once and the board reads as unsolvable. IH06 hits that at the first two points the script tried.
+It now checks the angle sum and carries six candidate points instead of three. The develop test in the
+same script also had its budget raised from 6,000 to 200,000: more aspects means more tiles per
+translation cell, so the smallest patch that closes is bigger, and at 6,000 IH05's correct labelling
+failed alongside its seven wrong ones.
+
+## IH07 and IH08: rotation centres, and the first board that stops naming every corner
+
+`solver_edges_isohedral_IH07.zip` (2026-08-04 16:56) and `_IH08.zip` (17:21) are live at `ih-7` and
+`ih-8`. Between them they broke three more things that six agreeing boards had made look structural,
+and one of them is a coverage flag rather than a bug.
+
+**IH07 counts 5 / 15 / 60 / 230 / 1100 and ships all of them (k = 4…12), dropping k = 16 and 18 (69,420
+together). IH08 counts 5 / 15 / 52 / 175 / 360 / 1288 / 1840 / 6500 and ships all eight (k = 1…8),
+dropping k = 9 and 10 (40,309).** Every one of the 11,645 shipped records builds, at the defaults and at
+a generic parameter point, straight and bowed, with zero slot failures. IH07's periods hold 3, 6, 9 or
+12 tiles, all multiples of its three aspects; IH08's hold 1 to 8, and it has one aspect.
+
+⚑ **IH07 has ROTATION CENTRES, and a site tagged `Cn` lists a 1/n of a vertex.** Three of its six
+corners are 120° and meet three copies of themselves, which the corpus reports two ways: whole, as
+`(…B6…B6…B6…)F`, and quotiented by the rotation, as `(C11, F6)C3`: one corner, one digon, a third of a
+turn. Every earlier board tags every site `F` and shows all three corners, so both the 360° test and the
+corner-count check were written against a constant. Reading a C3 site as a full turn demands 360° from a
+120° corner, so it rejected both of IH07's candidate labellings at once and the board read as
+unsolvable. The rule that replaces the constant: a site tagged `Cn` closes to 360/n and lists
+`vertex_corners / n` corners.
+
+⚑ **IH08 stops naming every corner separately, and the "6" in `A6` was never the number of corner
+letters.** Its word `abcabc` repeats with period three, so its six corners fall into three classes and
+the corpus knows only A, B and C, still as `A6`, `B6`, `C6`, because the tile is still a hexagon.
+`is_corner` compared that 6 against `len(corners)`, which had been 6 on seven boards running and is 3
+here, so every corner letter stopped being recognised. It compares against the SIDE count now. Two more
+followed from the same place: `corner_classes` overwrote instead of unioning when a letter occurs twice,
+and the board solver assumed a bijection from letters to Tactile vertices. It now allows the letters to
+repeat at their own period, checking first that Tactile's class word repeats there too.
+
+⚑ **And the certificate face count is not `rec.k` either.** Yesterday's correction said that number
+constrains nothing because it is identically k; it is identically k on seven of the eight boards, and
+IH07 gives four different ratios (1, 4/5, 3/4, 1/2) because a C3 site contributes a third of a vertex's
+darts. Nothing depends on it any more, which is the point, but the test now asserts the ratios per board
+so the rule is not re-derived from six agreeing boards a third time.
+
+⚑ **IH08 is the first board with ODD k, and the shelf's note that odd k is always empty is now wrong.**
+One aspect and three S edges give it a bare tiling with a SINGLE vertex orbit, so its census starts at
+k = 1 and every k after is populated. Any code stepping these boards two at a time is broken on this
+board; the tests walk `counts` instead.
+
+⚑ **COVERAGE FLAG, IH07: the census reads 1,100 at k=12, ZERO at k=14 and 22,240 at k=16.** No
+enumeration profile on this shelf grows like that (the ratios either side are 4.8x and 20x, so k=14
+should be somewhere near 5,000), so the zero is read as a run that did not finish, not as a proof that
+the slice is empty. It is recorded as `missing: [14]` so the shelf cannot present 12 → 16 as contiguous,
+and the vocabulary note at the top of `edge-shelf.ts` is widened to say what that entry means. Worth
+asking Marek, alongside IH06's one-sided drawn marks.
+
+## IH09 and IH10, and the board that must not be bowed
+
+`solver_edges_isohedral_IH09.zip` (2026-08-04 17:41) and `_IH10.zip` (18:45) are live at `ih-9` and
+`ih-10`. Ten boards now, 82,436 records.
+
+**IH09 counts 3 / 4 / 14 / 41 / 64 / 205 / 244 / 1328 / 1313 / 4152 / 3244 and ships all of them
+(k = 1…11), dropping k = 12 (30,199). IH10 counts 5 / 16 / 80 / 175 / 465 / 1651 / 3117 and ships all
+seven, dropping k = 8 (8,192).** Both decode with zero failures and match their censuses exactly.
+
+⚑ **IH09's census is NOT monotone: 4,152 at k=10 and 3,244 at k=11.** That is the board and not a short
+run. A k with more vertex orbits is not obliged to admit more edge systems, and the drop carries every
+certificate the census counts at both. Worth writing down because the shape of a sequence is what I used
+one board earlier to argue that IH07's zero at k=14 is a gap; a falling step is normal, a zero between
+two large numbers is not.
+
+⚑ **IH10 CANNOT BE BOWED, and the code now refuses instead of drawing it.** A digon slot says which END
+of an edge a dart sits at, so a two-slot class knows which way it is being crossed and a one-slot class
+does not. From IH04 on, every one-slot class has been an S edge, equal to its own reverse, so the
+missing bit cost nothing, and that pairing is the whole reason curvature works on this shelf without
+tracking which tile or which aspect placed an edge. IH10 breaks it: its single class is used SIX times,
+is a J edge, and still gets one slot, so a bow on it would come out mirrored on half the edges.
+`solveIhBoardFor` returns a new `unbowable` error for any non-zero bulge on such a board, the controls
+withhold the bow sliders entirely, and the canvas says why. Each board now declares its slot counts,
+derived from its own corpus and asserted against the shipped shards.
+
+⚑ **A `Dn` site tag is n/2-fold, not n-fold.** IH10 is the first corpus with mirror sites: `Aa`, `Ac`
+and `D6a` beside `F` and `C3`. A dihedral group of order n has n/2 rotations, and it is the rotations
+that divide the turn, so `D6a`'s single 120° corner closes at 360/3. Reading D6 as sixfold or as onefold
+both throw the board out.
+
+**Two smaller things.** IH10 has ZERO parameters, the only board that does: Tactile hands back one fixed
+tile, the regular hexagon, so the /play panel offers no `v` sliders and (now) no bow sliders either, just
+the class length and the underlying-tiling toggle. And its `multi-variant` count of 92 is not ambiguity:
+that counter reports combinations TRIED, and on all 255 certificates at k = 3,4 exactly one survived the
+glue, so `blocks[0]` is a choice with one option.
+
+## Two holes in shipped shelves, one filled and one newly visible
+
+Alongside IH09 and IH10, the 2026-08-05 00:49 drop carried two corpora that are not isohedral boards at
+all, and both are about COVERAGE of shelves that already ship.
+
+**`solver_ai1_13.zip` fills n = 13 in the 3.4.n.4 family, which the shelf did not have.** It shipped
+n = 7…12, 14…20, 23, and jumped from 12 to 14 with nothing saying so. Developed at the shelf's usual
+`--budget 4000`: 1 / 4 / 4 / 33 / 104 / 94 / 23 / 2097 at k = 1, 7, 8, 13…16, 20, dropping k = 21…24 and
+26. Its k holes below the cap (2…6, 9…12, 17…19) are corpus facts of the same kind n = 11 has, and
+`hypPolyKGaps` already separates those from our budget. n = 21 and 22 are still absent from the shelf.
+
+⚑ **It is also the FIRST AI1 drop with a census, and the census does not match the drop.** No earlier
+`ai1_*` corpus carries a `solution_list.txt` at all, so this shelf has never been checkable against
+Marek's own counts. n = 13's census counts k = 27, 28, 29, 30 at 87,701 / 155,852 / 125,344 / 47,240,
+and the drop contains no file for any of them: **416,137 certificates counted and not delivered.** That
+is a third claim, distinct from both `dropped` (our budget) and `hypPolyKGaps` (the enumeration found
+nothing), so `HypPolyBoard` grew an OPTIONAL `missing`. Optional on purpose: on the other fourteen
+boards there is no census to compare against, so absent means UNKNOWN and must never be read as none.
+
+**`solver_edges_3338b.zip` adds the octagonal antiprism to the spherical edge shelf**, continuing
+3.3.3.4 / 5 / 6 / 7. Its board row is the same antiprism arithmetic (V = 2n, E = 4n, F = 2 + 2n at
+n = 8), and `develop_sph_edges.py --selftest` now closes fifteen boards instead of fourteen. Ships
+5 / 9 / 8 / 91 / 105 / 9928 / 11412 at k = 1…5, 8, 9.
+
+⚑ **Its k = 1…5 counts are IDENTICAL to the square antiprism's, and it is not the same data**: zero
+drawn-sets are shared and the solids differ, 32 edges and 18 faces against 16 and 10. The same
+coincidence IH01 and IH02 have.
+
+⚑ **And its census counts 2,925,191 tilings at k = 16 that the drop does not carry.** Like the snub
+cube, the board is both unfinished (no MAX marker) and short-copied, at a scale that dwarfs the 21,558
+records shipped. `missing: [16]`.
+
+**`quadrangles.txt` is not a corpus.** It is Marek's design note proposing isohedral QUADRANGLES as a
+family: eight symmetry classes (D8, C4, D4a, D4b, C2, Aa, Ab, F), each with its Conway symbols, the
+edge shapes each symbol forces (straight, J, S, U) and the angle condition that decides whether a
+symbol lands on the sphere, in the plane, or in H². Nothing to ingest yet; it is the specification a
+future solver would be written against, and it spans all three geometries in one table.

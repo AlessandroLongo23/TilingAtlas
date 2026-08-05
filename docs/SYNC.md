@@ -2041,3 +2041,31 @@ supersets — 16 tilings that were missing. ⚑ NOT the one-row job I called it:
 alphabet the isohedral boards use (corners `A<n>`, digons `X10..X13`), so schwarz_board.py grew a
 LEGACY/SLOTTED `Dialect` and four assumptions moved. Re-decoding legacy (2,3,5) is BYTE-IDENTICAL.
 ⚑ Only k=3,4 are rerun; k=5…11 stay lower bounds. NOTES §"The (2,3,4) rerun". — CC
+
+### 2026-08-05 (6) — CC — IH05 and IH06, and two rules that only held by coincidence
+Boards five and six live at `ih-5` / `ih-6`: 7/28/166/1040/2336 and 3/14/74/580/1224, census-exact,
+k ≤ 10 shipped, four aspects each. ⚑ The certificate face count constrains nothing (it is identically
+`rec.k`), so the old "period divides it" gate was a coincidence of four boards and rejected all of IH05;
+now "the period is a whole number of Tactile cells". ⚑ IH06 marks a drawn edge at ONE END, so per-dart
+it develops with no period; resolved per edge, `or` not `and`. UNCONFIRMED by Marek. NOTES §IH05/IH06.
+
+### 2026-08-05 (7) — CC — IH07 and IH08, and the end of six boards agreeing
+Boards seven and eight at `ih-7` / `ih-8`: 5/15/60/230/1100 (k=4..12) and 5/15/52/175/360/1288/1840/6500
+(k=1..8), census-exact, all 11,645 records build. ⚑ IH07 has ROTATION CENTRES: a site tagged `Cn` closes
+to 360/n and lists `vertex_corners/n` corners. ⚑ IH08 names THREE corners for six (`abcabc` repeats), so
+the 6 in `A6` is the side count, never the letter count, and it is the first board with ODD k.
+⚑ COVERAGE: IH07's census reads zero at k=14 between 1,100 and 22,240; `missing`, not believed. — CC
+
+### 2026-08-05 (8) — CC — IH09 and IH10, and a board that must not be bowed
+Boards nine and ten at `ih-9` / `ih-10`: 3/4/14/41/64/205/244/1328/1313/4152/3244 (k=1..11) and
+5/16/80/175/465/1651/3117 (k=1..7), census-exact. ⚑ IH10 CANNOT BE BOWED: its one class is a J edge used
+six times with a single digon slot, so a bow would mirror on half the edges. `solveIhBoardFor` returns
+`unbowable`, the controls withhold the sliders, and every board now declares its slot counts. ⚑ A `Dn`
+site tag is n/2-fold. ⚑ IH09's census falls 4,152 to 3,244 from k=10 to k=11; that is the board. — CC
+
+### 2026-08-05 (9) — CC — n=13 fills a hole; 3.3.3.8 opens one
+`solver_ai1_13.zip` fills n = 13 in the 3.4.n.4 shelf, which jumped 12 to 14 with nothing saying so.
+⚑ It is the first AI1 drop with a census, and the census counts 416,137 certificates at k = 27..30 that
+the drop does not contain, so `HypPolyBoard` grew an OPTIONAL `missing` (absent = UNKNOWN, never none).
+`solver_edges_3338b.zip` adds the octagonal antiprism to the spherical edge shelf, 21,558 records;
+⚑ its census counts 2,925,191 at k=16 that the drop lacks. `quadrangles.txt` is a spec, not data. — CC
