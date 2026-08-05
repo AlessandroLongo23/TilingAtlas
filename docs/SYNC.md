@@ -2076,3 +2076,10 @@ boards; `lib/services/facets.ts` now derives the board axis from `SUB_ORDER` for
 `ca13578` — one `surfaceOf`, fixing flat controls drawn over the disk on 36,945 records. `1cfb574` —
 pentagon onto `edgePatchCore`, 636 duplicate lines gone. Also `525c100`, `6701cb1`, `fc71b15`.
 Detail, and the two facets that can still drift, in DEVELOPMENT_NOTES §2026-08-05. — CC
+
+### 2026-08-05 (11) — CC — the lens on the parametric shelves, and two things it drew wrong
+`10948d0` — /isohedral and /pentagons get the conformal lens on X, sharing one control block and one
+canvas hook with /play; their edge tessellation carries J and S bows through the map.
+`e6f40d6` — two fixes it exposed: `patchCell` never read `edgeCurves` (bowed isohedral edge systems
+drew straight), `tilingPeriodicCell` ignored `RawPolygon.hue` (polyomino, isohedral and pentagon
+colourings went flat). Also `ca01c55`, `f6d5c52`. Detail in DEVELOPMENT_NOTES §2026-08-05. — CC

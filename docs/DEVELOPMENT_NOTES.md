@@ -9691,3 +9691,63 @@ uncommitted work. Staging it swept up a `certFaces` → `periodFacesMultipleOf` 
 left its only call site behind, so five commits did not typecheck (`391fccb` repairs it). Reading the diff
 hunks was not enough — a rename reads as an addition. In a shared worktree, check out HEAD into a detached
 worktree with no uncommitted work and build THERE before trusting what was committed.
+
+## 2026-08-05 — the conformal lens on the parametric shelves, and two ways it was lying
+
+`/isohedral` and `/pentagons` draw their families flat and had no lens. Adding it was the request;
+what it turned up on the way was worse than the missing feature.
+
+**The lens was already reachable for the isohedral EDGE shelf, and it straightened every curve.** A
+`/play` record like `ie01-2-00002` at bulge (0.60, −0.50, 0.45) draws as a smooth interlock on the 2D
+canvas and drew as an angular zigzag under the lens: `patchCell` in `lib/render/periodic/edges.ts`
+emitted `[vi, vj, ox, oy]` as one straight segment and never looked at `edgeCurves` or `polyCurves`.
+Both fields have existed since the parametric isohedral boards landed; nothing consumed them outside
+`lib/freedraw/render.ts`, which draws them natively with `bezierCurveTo`. The periodic-cell IR has
+exactly one primitive — a ring or a polyline — so the fix is to flatten, and the only real question is
+how finely.
+
+**Why the budget is relative and fixed.** The isohedral page tessellates against a SCREEN tolerance
+that follows the zoom (`FLATNESS_TOL_PX`, re-tessellating at each power of two), which is right for a
+mesh instanced at a known magnification. The lens has no such number: it packs a cell once and the
+conformal map then magnifies it by an amount that varies across the screen and is unbounded near the
+singularity. So the budget is 0.4% of each arc's own chord, which holds under a pixel out to ~250× into
+a single edge — past the point where the shader is blending that region to the cell average anyway. At
+the sliders' limit (bulge ±0.5, max|Δ²P| ≈ 1.52 chords) that asks for 17 segments, under the per-arc
+cap of 24; six of those on a hexagonal tile is 144 vertices, comfortably inside the shader's
+`MAX_VERTS_PER_PRIM` of 256, so nothing is silently dropped.
+
+⚑ **`tilingPeriodicCell` ignored `RawPolygon.hue`, and the comment claiming otherwise is in a third
+file.** `lib/render/buildCellMesh.ts:76` says the hue precedence "mirrors drawPolygons and buildCellGeom
+so the shader colour matches the p5 and inversive views exactly". It did not. `buildCellMesh` and
+`drawPolygons` both read `poly.hue ?? (star ? starHue : polygonFillHue)`; the periodic-cell adapter read
+only the second half. The override is the ONLY thing distinguishing a polyomino's pieces (their boundary
+side counts do not differ), and it carries the isohedral three-colouring and the pentagon per-unit hues.
+All of them rendered under the lens in one flat colour. Caught by eye, not by a test: the picture is
+perfectly plausible if you have not got the flat view beside it. The stale comment named
+`buildCellGeom`, a function deleted in `f6d5c52` — a reference to dead code asserting a property that
+was false about live code.
+
+**What was shared instead of copied.** `useParametricTilingCanvas` is the canvas both shelves now use:
+the FlatCellRenderer path, the CPU lattice fallback, the `useAperiodicView` wiring and the framing
+policy were duplicated line for line in the two clients, and the lens would have made that three copies
+each. `InversiveControls` is the Options tab's slider block, unchanged, so the lens' modes cannot drift
+between the three pages that offer it. `lib/render/cubic.ts` holds Sederberg's degree-3 error bound once,
+so `build.ts` and the patch flattener cannot disagree on how many segments an edge needs.
+`isTypingTarget` collapses twelve byte-identical copies of the keyboard guard.
+
+**The lens is a SECOND canvas, not a second program on the first.** A canvas holds one WebGL context for
+its life, and `FlatCellRenderer` and the lens set their vertex state up at different times — the lens
+binds its quad attribute once at init, which the flat renderer's draws would clobber. Overlaying a second
+canvas is what `/play` already does, so the flat canvas stays mounted as the input layer and the lens
+takes `pointerEvents: none`. When the lens is on, the flat pass is skipped and its canvas cleared.
+
+**Honest score on size.** The request was to come out with less code. Raw, this is +193 lines across 21
+files; stripped of comments and blanks it is +45. What came out: 123 lines of dead geometry packer, 92
+of duplicated lens controls, ~98 of duplicated canvas plumbing, and twelve copies of the key guard. What
+went in: the lens integration on two pages, the flattener, the shortcut hook and the shared canvas. Net
+negative was not reached and claiming otherwise by trimming comments would be the wrong trade in this
+repo.
+
+⚑ **Still open: `drawDevelopedPatch` sizes its stroke once per face.** Unrelated to this change and
+noted at v1.14.1 — the 2D hyperbolic TILINGS path still steps stroke width at vertices the way the edge
+patterns did before `53e20bc`.
