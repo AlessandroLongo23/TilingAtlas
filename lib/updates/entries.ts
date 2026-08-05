@@ -53,6 +53,29 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.14.1",
+		date: "2026-08-05",
+		title: "Clearer lines on the hyperbolic disk",
+		commit: "5d0853d",
+		changes: [
+			{
+				kind: "fix",
+				text: "**Grid lines** hold one contrast from the centre of the disk to the rim. They used to fade into the background about halfway out and read inverted past it, because the disk's shading fell on the tiles and not on the lines over them.",
+				href: "/library?geo=hyperbolic",
+			},
+			{
+				kind: "fix",
+				text: "**Hyperbolic edge patterns** draw the disk as one smooth gradient, so the base polygons show only when you turn Grid on.",
+				href: "/library?geo=hyperbolic",
+			},
+			{
+				kind: "fix",
+				text: "**Line thickness** varies continuously along an edge and across the vertices where edges meet, instead of stepping from one edge to the next.",
+				href: "/library?geo=hyperbolic",
+			},
+		],
+	},
+	{
 		version: "1.14.0",
 		date: "2026-08-05",
 		title: "Eight new boards across three geometries",
