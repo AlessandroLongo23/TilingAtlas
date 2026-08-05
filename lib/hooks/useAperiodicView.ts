@@ -112,12 +112,17 @@ export interface AperiodicView {
 	 */
 	refit: () => void;
 	/**
-	 * Re-read home() and keep the view exactly where the reader put it.
+	 * Re-read home() and keep the reader's framing, carrying the zoom with the new scale.
 	 *
-	 * For geometry that DEFORMED rather than changed identity, which is what a parameter slider does.
+	 * For geometry that DEFORMED instead of changing identity, which is what a parameter slider does.
 	 * Snapping there throws away the pan and zoom on every tick of a drag, so the one thing you cannot
 	 * do is study a detail while moving a parameter — the view jumps home the moment you touch it.
-	 * The home zoom and centre still update, so right-click-home and the wheel's limits stay correct.
+	 *
+	 * Pan and angle therefore survive untouched. The zoom does not, and must not: a slider that changes
+	 * the tile's area changes how big it is on screen at a fixed camera, which reads as the view zooming
+	 * by itself. Scaling the camera by the change in home zoom holds the tile's on-screen area still, so
+	 * the slider only changes shape — see carryZoom. Home zoom and centre update either way, so
+	 * right-click-home and the wheel's limits stay correct.
 	 */
 	rehome: () => void;
 	/** Ease back to home (what right-click does). */
@@ -161,6 +166,25 @@ export function useAperiodicView({
 	});
 	const [rotationDeg, setRotationDeg] = useState(0);
 
+	/**
+	 * The canvas ELEMENT, not just the ref that points at it.
+	 *
+	 * The wheel listener and the ResizeObserver bind to one specific node, and a view that unmounts its
+	 * canvas hands back a different one afterwards — /isohedral replaces the canvas with prose for the
+	 * twelve marked types, so picking IH19 and then any live type swaps the element underneath us. Reading
+	 * `canvasRef.current` once inside those effects then leaves both attached to a node that is no longer
+	 * in the document: wheel zoom and resize rescaling die silently and stay dead until a reload, while
+	 * pan and right-click keep working because those are React props on the new element.
+	 *
+	 * A dep-less effect is the cheapest way to notice. It runs after every commit, compares, and only
+	 * writes state when the node actually changed, so the extra render happens once per swap and never on
+	 * a slider drag.
+	 */
+	const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
+	useEffect(() => {
+		setCanvasEl((prev) => (prev === canvasRef.current ? prev : canvasRef.current));
+	});
+
 	// Latest callbacks without re-running the rAF/wheel effects (they mount once). Written in an
 	// effect, not during render: effects commit before the next animation frame, so the loop never
 	// reads a stale callback, and React's ref rules stay satisfied.
@@ -193,6 +217,26 @@ export function useAperiodicView({
 		return true;
 	}, [canvasRef, fill]);
 
+	/**
+	 * Scale the camera by however much the home zoom just moved, so whatever is on screen keeps the size
+	 * it had. `before` is the home zoom read BEFORE the `measureHome()` that changed it.
+	 *
+	 * Two things move the home zoom and neither is the reader asking for a different scale: the canvas
+	 * resizing, and the subject deforming under a parameter slider. Home zoom is `fill · min(w, h) / span`
+	 * and every view sizes `span` off its own lattice, so the ratio is exactly the reciprocal of the
+	 * change in the tile's linear size — carrying the camera by it holds the tile's AREA on screen fixed
+	 * while its shape changes, which is the only way a parameter slider reads as deforming one tiling
+	 * instead of zooming a different one.
+	 */
+	const carryZoom = useCallback((before: number) => {
+		if (!(before > 0) || !(homeZoomRef.current > 0)) return;
+		const k = homeZoomRef.current / before;
+		if (k === 1) return;
+		const c = controlsRef.current;
+		c.zoom *= k;
+		c.targetZoom *= k;
+	}, []);
+
 	const refit = useCallback(() => {
 		if (!measureHome()) return;
 		const c = controlsRef.current;
@@ -207,10 +251,14 @@ export function useAperiodicView({
 	}, [measureHome]);
 
 	const rehome = useCallback(() => {
-		// Deliberately touches no control state. Only the reference frame moves; the camera does not.
-		measureHome();
+		// Pan and angle are untouched — the reader's framing is theirs. The zoom is carried, because the
+		// geometry it is looking at changed size underneath it; see carryZoom.
+		const before = homeZoomRef.current;
+		if (measureHome()) carryZoom(before);
+		// Marked as dirty either way: the caller rebuilt something, and a view whose home box is not
+		// measurable yet still has to redraw with whatever it has.
 		dirtyRef.current = true;
-	}, [measureHome]);
+	}, [measureHome, carryZoom]);
 
 	// The slider's setter. Wraps like the wheel path so 355 + a detent and "355" from the slider land on
 	// the same target, and publishes the value straight away instead of waiting for the next frame.
@@ -278,26 +326,20 @@ export function useAperiodicView({
 	// Refit on resize: the home zoom is a function of the canvas size, so a resized panel that kept its
 	// old zoom would sit at the wrong scale. Only the zoom is re-derived; pan and angle are the user's.
 	useEffect(() => {
-		const cv = canvasRef.current;
-		if (!cv) return;
+		if (!canvasEl) return;
 		const ro = new ResizeObserver(() => {
 			const before = homeZoomRef.current;
 			if (!measureHome()) return;
-			const c = controlsRef.current;
-			if (before > 0) {
-				const k = homeZoomRef.current / before;
-				c.zoom *= k;
-				c.targetZoom *= k;
-			}
+			carryZoom(before);
 			dirtyRef.current = true;
 		});
-		ro.observe(cv);
+		ro.observe(canvasEl);
 		return () => ro.disconnect();
-	}, [canvasRef, measureHome]);
+	}, [canvasEl, measureHome, carryZoom]);
 
 	// Wheel must be a non-passive DOM listener so it can block the page scroll.
 	useEffect(() => {
-		const cv = canvasRef.current;
+		const cv = canvasEl;
 		if (!cv) return;
 		const onWheel = (e: WheelEvent) => {
 			// Inactive: let it through untouched, so the page keeps scrolling under an unclicked card.
@@ -318,7 +360,7 @@ export function useAperiodicView({
 		};
 		cv.addEventListener("wheel", onWheel, { passive: false });
 		return () => cv.removeEventListener("wheel", onWheel);
-	}, [canvasRef, zoomBounds]);
+	}, [canvasEl, zoomBounds]);
 
 	const handlers = {
 		onPointerDown: (e: ReactPointerEvent<HTMLCanvasElement>) => {
