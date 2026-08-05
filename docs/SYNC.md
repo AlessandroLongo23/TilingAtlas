@@ -2077,9 +2077,9 @@ boards; `lib/services/facets.ts` now derives the board axis from `SUB_ORDER` for
 pentagon onto `edgePatchCore`, 636 duplicate lines gone. Also `525c100`, `6701cb1`, `fc71b15`.
 Detail, and the two facets that can still drift, in DEVELOPMENT_NOTES §2026-08-05. — CC
 
-### 2026-08-05 (11) — CC — the lens on the parametric shelves, and two things it drew wrong
-`10948d0` — /isohedral and /pentagons get the conformal lens on X, sharing one control block and one
-canvas hook with /play; their edge tessellation carries J and S bows through the map.
-`e6f40d6` — two fixes it exposed: `patchCell` never read `edgeCurves` (bowed isohedral edge systems
-drew straight), `tilingPeriodicCell` ignored `RawPolygon.hue` (polyomino, isohedral and pentagon
-colourings went flat). Also `ca01c55`, `f6d5c52`. Detail in DEVELOPMENT_NOTES §2026-08-05. — CC
+### 2026-08-05 (11) — CC — the lens on the parametric shelves, and three things it drew wrong
+`c4c8f14` — /isohedral and /pentagons get the conformal lens on X, one control block and one canvas
+hook shared with /play, J and S bows carried through the map. `e6f40d6` — `patchCell` never read
+`edgeCurves`, `tilingPeriodicCell` ignored `RawPolygon.hue`. `109075b` — the lens' stroke was a world
+width against the flat canvas' screen width, and its tessellation followed the view zoom, which under a
+lens is not the magnification. Also `ca01c55`, `f6d5c52`. Detail in DEVELOPMENT_NOTES §2026-08-05. — CC
