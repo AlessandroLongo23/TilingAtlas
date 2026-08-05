@@ -167,6 +167,8 @@ function useBothArrangementsFit() {
 	const visibleRef = useRef<HTMLDivElement | null>(null);
 	const ghostRef = useRef<HTMLDivElement | null>(null);
 	const [tile, setTile] = useState<number | null>(null);
+	/** The taller arrangement's height, reserved for both, so the toggle above does not move on a switch. */
+	const [wallHeight, setWallHeight] = useState<number | null>(null);
 
 	useLayoutEffect(() => {
 		const el = ref.current;
@@ -221,6 +223,7 @@ function useBothArrangementsFit() {
 			});
 			at(tile);
 			setTile(tile);
+			setWallHeight(Math.max(visible.offsetHeight, ghost.offsetHeight));
 		};
 
 		fit();
@@ -229,7 +232,7 @@ function useBothArrangementsFit() {
 		return () => ro.disconnect();
 	}, []);
 
-	return { ref, visibleRef, ghostRef, tile };
+	return { ref, visibleRef, ghostRef, tile, wallHeight };
 }
 
 interface Cluster {
@@ -237,36 +240,82 @@ interface Cluster {
 	title: string;
 	note: string;
 	items: LatticeDiagram[];
+	/** Tiles per line inside the box. Chosen per cluster below, never left to a wrap. */
+	perRow: number;
 }
 
-function clustersFor(mode: Grouping, showSignature: boolean): Cluster[] {
+/**
+ * Which clusters share a line of the wall, and how many tiles wide each of them is.
+ *
+ * Both are declared, neither is left to `flex-wrap`, and that is the whole difference between this
+ * wall and the one before it. Wrapping packs by whatever happens to fit: the group arrangement came
+ * out 2 boxes, then 5, then 8, then a widowed row holding p6 and p6m, and every viewport width dealt
+ * a different hand. The counts here are chosen so that
+ *
+ *   - every line of the wall is about ten tiles wide, so the block is a rectangle and not a staircase;
+ *   - both arrangements are four tile-rows tall, so the toggle does not move under the pointer;
+ *   - no line inside a box is left with a hole (12 -> 6+6, 4 -> 4, 2 -> 2 stacked).
+ *
+ * The two seven-tile clusters are the exception: 7 is prime, so `rectangular` and `hexagonal` run
+ * 4 then 3, and the short line is CENTRED under the long one, which reads as a shape instead of as a
+ * gap. That is why each line is its own flex row rather than a grid: a grid's last row keeps its
+ * items in columns 1..3 and leaves the hole on the right.
+ */
+const GROUP_LINES: readonly (readonly WallpaperGroup[])[] = [
+	// The two groups with no point symmetry, which is why they sit on all five lattices.
+	["p1", "p2"],
+	// Two lattices each, stacked rather than side by side: seven boxes two tiles wide would be half
+	// the wall again, and the tile size the whole wall gets is set by its widest line.
+	["pm", "pg", "cm", "pmm", "pmg", "pgg", "cmm"],
+	// Pinned to one lattice by a 3-, 4- or 6-fold rotation.
+	["p4", "p4m", "p4g", "p3", "p3m1", "p31m", "p6", "p6m"],
+];
+const GROUP_PER_ROW: Record<number, number> = { 5: 5, 2: 1, 1: 1 };
+const LATTICE_LINES: readonly (readonly LatticeShape[])[] = [
+	["oblique", "rectangular", "rhombic"],
+	["square", "hexagonal"],
+];
+const LATTICE_PER_ROW: Record<LatticeShape, number> = {
+	oblique: 2,
+	rectangular: 4,
+	rhombic: 4,
+	square: 6,
+	hexagonal: 4,
+};
+
+function clustersFor(mode: Grouping, showSignature: boolean): Cluster[][] {
 	if (mode === "group") {
-		return WALLPAPER_GROUPS.map((group) => {
-			const items = diagramsForGroup(group);
-			return {
-				key: `group:${group}`,
-				title: group,
-				// The orbifold signature is the better note when it is wanted, but the count is what
-				// carries the slide's point: seventeen groups, thirty-two cells.
-				note: showSignature ? ORBIFOLD_SIGNATURE[group] : items.length > 1 ? `${items.length}` : "",
-				items,
-			};
-		});
+		return GROUP_LINES.map((line) =>
+			line.map((group) => {
+				const items = diagramsForGroup(group);
+				return {
+					key: `group:${group}`,
+					title: group,
+					// The orbifold signature is the better note when it is wanted, but the count is what
+					// carries the slide's point: seventeen groups, thirty-two cells.
+					note: showSignature ? ORBIFOLD_SIGNATURE[group] : items.length > 1 ? `${items.length}` : "",
+					items,
+					perRow: GROUP_PER_ROW[items.length] ?? items.length,
+				};
+			}),
+		);
 	}
-	return LATTICE_SHAPES.map((lattice) => ({
-		key: `lattice:${lattice}`,
-		title: lattice,
-		note: `${LATTICE_REALIZABLE_GROUPS[lattice].length}`,
-		items: WALLPAPER_DIAGRAMS.filter((d) => d.lattice === lattice),
-	}));
+	return LATTICE_LINES.map((line) =>
+		line.map((lattice) => ({
+			key: `lattice:${lattice}`,
+			title: lattice,
+			note: `${LATTICE_REALIZABLE_GROUPS[lattice].length}`,
+			items: WALLPAPER_DIAGRAMS.filter((d) => d.lattice === lattice),
+			perRow: LATTICE_PER_ROW[lattice],
+		})),
+	);
 }
 
-/** Widest a cluster box may get, in tiles. Past this it starts crowding out its neighbours on the line. */
-const MAX_TILES_PER_ROW = 6;
-
-/** Balanced column count for a cluster of `n` tiles: 12 -> 6, 7 -> 4, anything up to the cap -> n. */
-function columnsFor(n: number): number {
-	return Math.ceil(n / Math.ceil(n / MAX_TILES_PER_ROW));
+/** Split a cluster's tiles into the lines it is drawn on. */
+function linesOf<T>(items: T[], perRow: number): T[][] {
+	const out: T[][] = [];
+	for (let i = 0; i < items.length; i += perRow) out.push(items.slice(i, i + perRow));
+	return out;
 }
 
 /**
@@ -285,64 +334,66 @@ function Arrangement({
 	showSignature: boolean;
 	register: ((key: string) => (el: HTMLElement | null) => () => void) | null;
 }) {
-	// `items-start`, so a one-row box beside a two-row one keeps its own height instead of being
-	// stretched to match and leaving its tiles marooned at the bottom of an empty box.
+	// Boxes on a line STRETCH to the tallest of them, and each box centres its tiles in whatever
+	// height it is given. `oblique` holds two diagrams and `rectangular` seven, so left to themselves
+	// they are a short card and a tall one side by side and the line reads as a step; equal heights
+	// make it a band. The cost is a little air inside the short boxes, which is what padding looks
+	// like anyway.
 	return (
-		<div className="flex flex-wrap items-start justify-center gap-[0.45em]">
-			{clustersFor(mode, showSignature).map((cluster) => (
-				<section
-					key={cluster.key}
-					className="flex flex-col items-center gap-[0.15em] rounded-md border border-line/70 bg-surface-overlay/30 px-[0.35em] pt-[0.15em] pb-[0.3em]"
-				>
-					<h3 className="flex items-baseline gap-[0.3em] leading-none">
-						<span className="text-[clamp(0.55rem,0.8vh+0.26vw,0.95rem)] font-semibold text-fg">
-							{cluster.title}
-						</span>
-						{cluster.note && (
-							<span className="font-mono text-[clamp(0.45rem,0.55vh+0.18vw,0.72rem)] text-fg-muted">
-								{cluster.note}
-							</span>
-						)}
-					</h3>
-					{/* An explicit column count, not a free wrap, because it is what stops the big clusters
-					    from each taking a line to themselves: "square" laid out in one row is twelve tiles
-					    wide and nothing fits beside it, so the wall becomes a column of near-empty rows.
-					    Capped and balanced (12 -> 6+6, 7 -> 4+3), the same five boxes pack two to a row.
-					    `auto` columns rather than a fixed cell: the square-lattice diagrams are narrower
-					    than the rest, and a uniform cell would pad every one of the twelve. */}
-					<div
-						className="grid flex-1 items-end justify-center justify-items-center gap-[0.3em]"
-						style={{ gridTemplateColumns: `repeat(${columnsFor(cluster.items.length)}, auto)` }}
-					>
-						{cluster.items.map((d) => (
-							<figure
-								key={d.key}
-								ref={register?.(d.key)}
-								className="m-0 flex flex-col items-center gap-[0.1em]"
-							>
-								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img
-									src={`${DIAGRAM_BASE}${d.src}`}
-									alt={`${d.group} cell diagram on a ${d.lattice} lattice`}
-									style={{
-										height: "var(--wp-h)",
-										// Width from the declared aspect, not `auto`: `auto` is zero until the
-										// SVG loads, and the fit runs before that.
-										width: `calc(var(--wp-h) * ${d.aspect})`,
-										background: "#fff",
-										padding: "0.12rem",
-										borderRadius: "0.2rem",
-										margin: 0,
-									}}
-									className="block object-contain"
-								/>
-								<figcaption className="text-[clamp(0.44rem,0.58vh+0.19vw,0.7rem)] leading-none text-fg-muted">
-									{mode === "group" ? d.lattice : d.group}
-								</figcaption>
-							</figure>
-						))}
-					</div>
-				</section>
+		<div className="flex flex-col items-center gap-[0.5em]">
+			{clustersFor(mode, showSignature).map((line, i) => (
+				<div key={i} className="flex items-stretch justify-center gap-[0.5em]">
+					{line.map((cluster) => (
+						<section
+							key={cluster.key}
+							className="flex flex-col items-center gap-[0.2em] rounded-lg bg-surface-overlay/45 px-[0.4em] pt-[0.2em] pb-[0.35em]"
+						>
+							<h3 className="flex items-baseline gap-[0.3em] leading-none">
+								<span className="text-[clamp(0.55rem,0.8vh+0.26vw,0.95rem)] font-semibold text-fg">
+									{cluster.title}
+								</span>
+								{cluster.note && (
+									<span className="font-mono text-[clamp(0.45rem,0.55vh+0.18vw,0.72rem)] text-fg-muted">
+										{cluster.note}
+									</span>
+								)}
+							</h3>
+							<div className="flex flex-1 flex-col justify-center gap-[0.3em]">
+							{linesOf(cluster.items, cluster.perRow).map((tiles, j) => (
+								<div key={j} className="flex items-end justify-center gap-[0.3em]">
+									{tiles.map((d) => (
+										<figure
+											key={d.key}
+											ref={register?.(d.key)}
+											className="m-0 flex flex-col items-center gap-[0.1em]"
+										>
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img
+												src={`${DIAGRAM_BASE}${d.src}`}
+												alt={`${d.group} cell diagram on a ${d.lattice} lattice`}
+												style={{
+													height: "var(--wp-h)",
+													// Width from the declared aspect, not `auto`: `auto` is
+													// zero until the SVG loads, and the fit runs before that.
+													width: `calc(var(--wp-h) * ${d.aspect})`,
+													background: "#fff",
+													padding: "0.12rem",
+													borderRadius: "0.2rem",
+													margin: 0,
+												}}
+												className="block object-contain"
+											/>
+											<figcaption className="text-[clamp(0.44rem,0.58vh+0.19vw,0.7rem)] leading-none text-fg-muted">
+												{mode === "group" ? d.lattice : d.group}
+											</figcaption>
+										</figure>
+									))}
+								</div>
+							))}
+							</div>
+						</section>
+					))}
+				</div>
 			))}
 		</div>
 	);
@@ -385,7 +436,7 @@ function Arrangement({
 export function WallpaperGroupWall({ signatures }: { signatures?: string }) {
 	const showSignature = String(signatures) === "yes";
 	const [mode, setMode] = useState<Grouping>("group");
-	const { ref: wallRef, visibleRef, ghostRef, tile } = useBothArrangementsFit();
+	const { ref: wallRef, visibleRef, ghostRef, tile, wallHeight } = useBothArrangementsFit();
 	const other: Grouping = mode === "group" ? "lattice" : "group";
 
 	// key -> the tile element currently mounted for it. Tiles are re-parented across a regroup, so
@@ -470,7 +521,10 @@ export function WallpaperGroupWall({ signatures }: { signatures?: string }) {
 				))}
 			</div>
 
-			<div className="relative w-full">
+			{/* Both arrangements get the taller one's height. Without it the wall is a different size in
+			    each mode, the block above it is re-centred, and the toggle slides out from under the
+			    pointer on every switch. */}
+			<div className="relative w-full" style={wallHeight === null ? undefined : { height: wallHeight }}>
 				<div ref={visibleRef}>
 					<Arrangement mode={mode} showSignature={showSignature} register={register} />
 				</div>
