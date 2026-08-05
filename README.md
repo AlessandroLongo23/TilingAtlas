@@ -1,8 +1,7 @@
 # The Tiling Atlas
 
-A Next.js 16 app for exploring uniform tilings of the plane. Ported from a
-SvelteKit codebase (see [../TilingAtlas](../TilingAtlas) tagged
-`svelte-final`).
+A Next.js 16 app: a catalogue of tilings of the plane, the sphere, and the
+hyperbolic plane.
 
 ## Stack
 

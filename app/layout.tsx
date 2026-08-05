@@ -17,7 +17,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "The Tiling Atlas",
-  description: "Explore uniform tilings of the plane",
+  description:
+    "A catalogue of tilings of the plane, the sphere, and the hyperbolic plane.",
 };
 
 export default function RootLayout({
