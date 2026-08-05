@@ -9640,3 +9640,54 @@ family: eight symmetry classes (D8, C4, D4a, D4b, C2, Aa, Ab, F), each with its 
 edge shapes each symbol forces (straight, J, S, U) and the angle condition that decides whether a
 symbol lands on the sphere, in the plane, or in H². Nothing to ingest yet; it is the specification a
 future solver would be written against, and it spans all three geometries in one table.
+
+## 2026-08-05 — one taxonomy behind /play and /library
+
+The audit AL asked for on 2026-08-04 (spec: `docs/superpowers/specs/2026-08-04-shelf-registry-design.md`)
+found that a shelf is declared implicitly across seven shared files with nothing checking that all seven
+were updated. Four silent omissions in the two weeks before it. What landed, and what it did not fix.
+
+**The reported symptom.** AL: "the library is currently missing the isohedral freedraw edge patterns."
+They were not missing. Both surfaces call `loadReferenceAtlas` and the same nine lazy loaders, and
+/library does fetch the isohedral shards — verified by watching `ie01-k2.json` through `ie02-k4.json`
+return 200. What was missing was any way to reach them: `FREEDRAW_GRID_OPTIONS` was six hand-typed
+entries where `FreedrawGrid` has eight, and underneath it `freedrawGridOf` read only `t.freedraw`, so
+records carrying `pentEdges` / `ihEdges` resolved to no board at all. 128,944 edge-pattern records,
+paginated, sorted with `fd-1-001` first, and no facet that could narrow to the parametric boards.
+
+⚑ **The data was one catalogue all along; the TAXONOMY was duplicated.** That is the distinction to keep.
+Nothing was wrong with how records are loaded or shared. What drifted was each surface's hand-typed
+description of what the records contain. `lib/services/facets.ts` is now that description, once: facets
+with a real value type are exhaustive `Record<Value, string>` (a widened type fails the build), and the
+board axis is DERIVED from `SUB_ORDER` + `familyOfSub`, the same list /play's tree walks.
+
+⚑ **The test found a second instance on its first run.** `tests/catalogue-one-taxonomy.test.ts` asserts
+every family in `SUB_ORDER` lands in some (geometry, decoration) segment. It failed on `hyp-poly` and
+`sph-poly`: the 3.4.n.4 shelves are tilings by regular polygons, not decorations, so `decorationOf` files
+them under Tilings — which had no board axis at all. `hpo-7` … `hpo-23` and `spp-3` … `spp-5` were as
+unreachable as the parametric boards. Written to catch the reported bug, it caught one nobody had reported.
+
+⚑ **Still hand-typed, still able to drift: `DISCOVERER_OPTIONS`.** Seven names matched against a free-text
+field on records. A corpus from a new collaborator gets no chip, silently, which is the same failure shape.
+Craig Kaplan is not in that list. It should be derived from the loaded records.
+
+**The other four commits.** `1cfb574` finished the `edgePatchCore` extraction — the pentagon's own 636-line
+copy of the lattice recovery is gone, and `periodFacesExactly` gives the core back the shortcut generalising
+had cost (the 12k-dart identity pins F = k, so the cell area is known before the search; the second basis
+vector becomes exact and a failed attempt sizes the next develop from `cellArea/|v1|`). Sweep re-run:
+53,979 builds, 0 failures, `compRank`/`compCells` identical, mean 11.4 ms → 3.6 ms. `ca13578` replaced two
+diverged copies of the geometry predicates with one `surfaceOf`, fixing flat p5 controls rendered over a
+blanked disk for 36,945 hyperbolic and 20 spherical records. `525c100` collapsed the duplicated parametric
+views and disk thumbnails. `6701cb1` moved `FreedrawCanvas` onto `CardControls`.
+
+**Honest score against the spec's goal.** "Adding a shelf is a one-file change" was not reached: 248
+shelf-field references across those seven files became 217, three files materially touched and four
+unchanged. The remaining risk sits in `tile-grid.tsx` and `reference-card.tsx`, both of which end in
+"otherwise render nothing", so a shelf with no branch is an invisible blank. Converting those two to
+`Record<ShelfId, …>` is the next step and makes a missing entry a compile error.
+
+⚑ **A process note, because it cost a broken commit.** `lib/freedraw/edgePatchCore.ts` held two sessions'
+uncommitted work. Staging it swept up a `certFaces` → `periodFacesMultipleOf` rename that was not mine and
+left its only call site behind, so five commits did not typecheck (`391fccb` repairs it). Reading the diff
+hunks was not enough — a rename reads as an addition. In a shared worktree, check out HEAD into a detached
+worktree with no uncommitted work and build THERE before trusting what was committed.

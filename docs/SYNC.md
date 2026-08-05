@@ -2069,3 +2069,10 @@ site tag is n/2-fold. ⚑ IH09's census falls 4,152 to 3,244 from k=10 to k=11; 
 the drop does not contain, so `HypPolyBoard` grew an OPTIONAL `missing` (absent = UNKNOWN, never none).
 `solver_edges_3338b.zip` adds the octagonal antiprism to the spherical edge shelf, 21,558 records;
 ⚑ its census counts 2,925,191 at k=16 that the drop lacks. `quadrangles.txt` is a spec, not data. — CC
+
+### 2026-08-05 (10) — CC — one taxonomy behind /play and /library
+`b2342b9` — the isohedral and pentagon shelves were unreachable in /library, and so were the 3.4.n.4
+boards; `lib/services/facets.ts` now derives the board axis from `SUB_ORDER` for both surfaces.
+`ca13578` — one `surfaceOf`, fixing flat controls drawn over the disk on 36,945 records. `1cfb574` —
+pentagon onto `edgePatchCore`, 636 duplicate lines gone. Also `525c100`, `6701cb1`, `fc71b15`.
+Detail, and the two facets that can still drift, in DEVELOPMENT_NOTES §2026-08-05. — CC
