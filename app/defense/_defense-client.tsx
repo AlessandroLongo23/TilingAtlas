@@ -138,7 +138,7 @@ function TitleSlide({ children }: { children?: React.ReactNode }) {
 const CARD_CAPTION_PX = 44;
 
 /**
- * A run of cards, capped by HEIGHT, not only by width.
+ * The side a row of square cards may be, capped by HEIGHT and not only by width.
  *
  * Card width is (grid − gaps) / cols, and for a square card width IS height, so a grid sized off the
  * viewport's width silently sets its own height: at 1280x720, six cards across make two rows 400px
@@ -148,15 +148,13 @@ const CARD_CAPTION_PX = 44;
  *
  * The measurement cannot feed back on itself: the grid's top edge is fixed by the heading and prose
  * above it, neither of which depends on how big the cards turn out to be.
+ *
+ * Returned as a hook because a slide may carry two grids of different widths that still have to agree
+ * on card size — <vc-split> is 5 columns beside 2, and one measurement serves both.
  */
-function SlideGrid({ cols, children }: { cols?: string | number; children?: React.ReactNode }) {
+function useCardCap(rows: number) {
 	const ref = useRef<HTMLDivElement | null>(null);
 	const [cap, setCap] = useState<number | null>(null);
-
-	const n = ["2", "4", "5", "6", "7"].includes(String(cols)) ? Number(cols) : 3;
-	// Whitespace between tags arrives as text children; counting those would invent rows.
-	const count = Children.toArray(children).filter((c) => typeof c !== "string" || c.trim().length > 0).length;
-	const rows = Math.max(1, Math.ceil(count / n));
 
 	useLayoutEffect(() => {
 		const el = ref.current;
@@ -197,6 +195,16 @@ function SlideGrid({ cols, children }: { cols?: string | number; children?: Reac
 	// Before the first measurement, fall back to a fraction of the viewport, so the cards are never
 	// briefly drawn at full width and then snapped down.
 	const perCard = cap !== null ? `${cap}px` : `${rows >= 4 ? 11 : rows === 3 ? 15 : rows === 2 ? 24 : 38}vh`;
+	return { ref, perCard };
+}
+
+/** A run of cards on one grid, sized by {@link useCardCap}. */
+function SlideGrid({ cols, children }: { cols?: string | number; children?: React.ReactNode }) {
+	const n = ["2", "4", "5", "6", "7"].includes(String(cols)) ? Number(cols) : 3;
+	// Whitespace between tags arrives as text children; counting those would invent rows.
+	const count = Children.toArray(children).filter((c) => typeof c !== "string" || c.trim().length > 0).length;
+	const rows = Math.max(1, Math.ceil(count / n));
+	const { ref, perCard } = useCardCap(rows);
 
 	return (
 		<div
@@ -216,6 +224,67 @@ function SlideGrid({ cols, children }: { cols?: string | number; children?: Reac
 			)}
 		>
 			{children}
+		</div>
+	);
+}
+
+/** How wide each block of <vc-split> is, in cards. The 15 that tile, then the 6 that do not. */
+const VC_SPLIT_COLS: Record<"yes" | "no", number> = { yes: 5, no: 2 };
+
+/**
+ * The 21 vertex configurations as two blocks: the ones that appear in a tiling of the plane, and,
+ * across a wider gap, the ones that close 360 degrees and appear in none.
+ *
+ * One grid with the second group merely outlined made the reader do the sorting the sentence above
+ * has already done. Splitting says it in the layout. Both blocks take their card size from the same
+ * measurement, so 5 columns beside 2 still draw one size of card.
+ */
+function VcSplit({ yes, no }: { yes?: string; no?: string }) {
+	const lists = {
+		yes: (yes ?? "").split(",").map((w) => w.trim()).filter(Boolean),
+		no: (no ?? "").split(",").map((w) => w.trim()).filter(Boolean),
+	};
+	const rows = Math.max(
+		1,
+		...(["yes", "no"] as const).map((k) => Math.ceil(lists[k].length / VC_SPLIT_COLS[k])),
+	);
+	const { ref, perCard } = useCardCap(rows);
+
+	// A card's side is the smaller of what the height leaves and what the width leaves — and unlike
+	// <slide-grid>, which has one row of cards to fit, the width here is shared by two blocks and the
+	// gap between them, so it has to be spent explicitly. Without this the 4:3 case wraps the second
+	// block onto a fourth row and it falls off the bottom of the slide (measured at 1024x768).
+	const total = VC_SPLIT_COLS.yes + VC_SPLIT_COLS.no;
+	const inner = `${VC_SPLIT_COLS.yes + VC_SPLIT_COLS.no - 2}rem`;
+	const byWidth = `calc((100% - ${inner} - var(--vc-split-gap) - 0.25rem) / ${total})`;
+
+	const block = (side: "yes" | "no") => {
+		const n = VC_SPLIT_COLS[side];
+		return (
+			<div
+				className="grid shrink-0 gap-4"
+				style={{
+					gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`,
+					width: `calc(${n} * min(${perCard}, ${byWidth}) + ${n - 1}rem)`,
+				}}
+			>
+				{lists[side].map((word) => (
+					<VertexFigureCard key={word} word={word} tiles={side === "yes"} />
+				))}
+			</div>
+		);
+	};
+
+	return (
+		// The gap between the blocks is what carries the meaning, so it is wider than the gap inside
+		// one — and it grows with the slide, since a fixed rem would vanish on a projector.
+		<div
+			ref={ref}
+			style={{ "--vc-split-gap": "clamp(2rem, 5vw, 5rem)" } as React.CSSProperties}
+			className="not-prose mx-auto flex w-full items-start justify-center gap-x-[var(--vc-split-gap)]"
+		>
+			{block("yes")}
+			{block("no")}
 		</div>
 	);
 }
@@ -669,6 +738,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			"slide-grid": ({ cols, children }: { cols?: string | number; children?: React.ReactNode }) => (
 				<SlideGrid cols={cols}>{children}</SlideGrid>
 			),
+			// <vc-split yes="…" no="…"> — the 21 vertex configurations sorted into the ones that tile and
+			// the ones that do not, comma-separated, 5 columns beside 2 across a wider gap.
+			"vc-split": ({ yes, no }: { yes?: string; no?: string }) => <VcSplit yes={yes} no={no} />,
 		};
 		return map as unknown as Components;
 	}, [cells, sources, overlayData]);
