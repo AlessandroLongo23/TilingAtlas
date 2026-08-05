@@ -9751,3 +9751,43 @@ repo.
 ⚑ **Still open: `drawDevelopedPatch` sizes its stroke once per face.** Unrelated to this change and
 noted at v1.14.1 — the 2D hyperbolic TILINGS path still steps stroke width at vertices the way the edge
 patterns did before `53e20bc`.
+
+### Addendum, same day — what the lens got wrong about line width and about zoom
+
+AL caught both on sight, and both were mine.
+
+⚑ **The lens' stroke was a WORLD width where the flat canvas' is a SCREEN width.** `halfW = uStrokePx *
+uFeature` put the stroke in world units, so the conformal map scaled it along with everything else: at
+the default lens radius on a 1280x900 canvas the screen corner is magnified 17x relative to the lens
+circle, and the same slider value measured 7 px of ink there against the flat canvas' 2 px, while the
+compressed side of the same picture drew hairlines. One slider, two meanings, and a line that visibly
+changed weight along its own length. It is now `uStrokeW * 0.5 * uDpr * pwRaw` — pwRaw is world units
+per DEVICE pixel, uDpr converts to CSS px — which is exactly what `uHalfStrokePx` means in
+lib/render/flatTilingGL.ts. Measured after: 2 px against 2 px.
+
+**The centre then needed its own fade, and the fill's threshold was the wrong one.** A screen-width
+stroke does not thin out as the map compresses, so every pixel of the middle ends up within half a line
+of some edge and the strongest-coverage rule inks all of them — a black ring appeared inside the
+existing uAvg blend. The stroke layer fades on its own quantity now, the stroke-width-to-line-spacing
+ratio, which crosses 1 well before the fill's `uFeature * 0.8`. Capping the WIDTH instead was the first
+thing I tried and it is worse: the line tapers for a decade of zoom before it is anywhere near
+unresolvable, which is the same complaint in a different place.
+
+⚑ **The view zoom is not the magnification, and the tessellation believed it was.** `tessellationZoom`
+follows `f.zoom`, which is right for a mesh instanced at a known scale and wrong under a lens: circle
+inversion scales the picture by |s|²/R², so the canvas corner sees 17x more magnification than the view
+zoom reports and its curves were tessellated for 1/17 of the resolution they were drawn at — about 4 px
+of flattening error, which is what AL saw as coarsening segments. `lensMagnification` feeds the peak
+factor in. The spiral is excluded: it is a similarity in strip space and needs none of it.
+
+⚑ **And the ring budget that fix walked into.** `MAX_VERTS_PER_PRIM` is 256 and the shader BREAKS OUT
+there — a longer ring does not draw coarsely, it closes early, so the fill test and the edge distance
+are both computed against an outline missing a piece. A hexagon at the flattener's own ceiling wants
+6 x 128 = 768. The isohedral page now splits that budget across the tile's sides while the lens owns the
+canvas, and the constant is exported with the contract written on it, because nothing in the types says
+a producer has to respect it.
+
+**Left alone, and worth knowing.** The /play edge-shelf path (`patchCell`) still uses the fixed
+0.4%-of-chord budget: its cell is built from a pattern, not rebuilt on zoom, so making it zoom-adaptive
+means rebuilding the periodic cell during a pan. Its cap of 24 segments per arc holds a hexagonal tile
+to 144 vertices, safely inside the ring budget, and no faceting was visible at the zooms it reaches.

@@ -38,7 +38,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Reveal } from "@/components/ui/reveal";
 import { TilingInfo } from "@/components/tiling-info";
-import { InversiveCanvas } from "@/components/inversive-canvas";
+import { InversiveCanvas, MAX_VERTS_PER_PRIM } from "@/components/inversive-canvas";
 import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
 import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
 import { useConfiguration } from "@/stores/configuration";
@@ -97,6 +97,27 @@ function tessellationZoom(zoom: number): number {
 
 /** What the first frame tessellates at, before a real zoom has been measured. Home lands near here. */
 const INITIAL_TESS_ZOOM = 128;
+
+/**
+ * How much more than the view zoom the conformal lens magnifies, at its most magnifying pixel.
+ *
+ * The view zoom is NOT the magnification once the lens is on, and tessellating for it alone is what
+ * left the outer ring of an inversion visibly polygonal while the middle stayed smooth. Circle
+ * inversion sends screen offset s to R²·s/|s|², whose derivative has magnitude R²/|s|² — so the picture
+ * is scaled by |s|²/R², identity on the lens circle, compressed inside it and MAGNIFIED outside. The
+ * extreme is the far corner of the canvas: 17x at the default radius on a 1280x900 view, and it climbs
+ * as the radius slider shrinks the circle.
+ *
+ * The Möbius map is the same family and bounded by the same quantity. The spiral is a similarity in
+ * strip space and asks for none of this, which is why the caller excludes it.
+ */
+function lensMagnification(f: { w: number; h: number }, on: boolean, radiusFrac: number): number {
+	if (!on) return 1;
+	const R = radiusFrac * Math.min(f.w, f.h) * 0.5;
+	if (!(R > 0)) return 1;
+	const ratio = (0.5 * Math.hypot(f.w, f.h)) / R;
+	return Math.max(1, ratio * ratio);
+}
 
 const PARAM_FILTERS = ["any", "0", "1", "2", "3+"] as const;
 const VERTEX_FILTERS = ["any", "3", "4", "5", "6"] as const;
@@ -161,18 +182,39 @@ export function IsohedralClient() {
 		return () => window.clearTimeout(id);
 	}, [ih]);
 
-	const cell = useMemo(
-		() => (info.available ? buildCell({ ih, params, curves: curvesOf(edges), pxPerWorld: tessZoom }) : null),
-		[ih, params, edges, tessZoom, info.available],
-	);
-
 	// The conformal lens: the same cell seen through a circle inversion, a Möbius map or Kaplan's spiral.
-	// It reads the cell through the shared periodic-cell IR, so the tessellated edge curves above reach it
+	// It reads the cell through the shared periodic-cell IR, so the tessellated edge curves below reach it
 	// unchanged and a bowed J or S edge stays bowed under the map.
 	const lens = useConfiguration((s) => s.inversive);
 	const setLens = useCallback((v: boolean) => useConfiguration.getState().set({ inversive: v }), []);
+	const lensMode = useConfiguration((s) => s.inversiveMode);
+	const lensRadiusFrac = useConfiguration((s) => s.inversiveRadiusFrac);
 	const lensActive = lens && info.available;
 	useInversiveShortcut(info.available);
+
+	// Under the lens one tile's whole boundary is a single IR primitive, and the shader walks at most
+	// MAX_VERTS_PER_PRIM of them before breaking out — past that a ring closes early and both the fill
+	// test and the edge distance are computed against a broken outline. A hexagon at the flattener's own
+	// ceiling wants 6 x 128 = 768, so the budget is split across the tile's sides instead. The flat
+	// renderer has no such limit (it triangulates), so this applies only while the lens owns the canvas.
+	const lensSegmentCap = Math.max(
+		4,
+		Math.floor((MAX_VERTS_PER_PRIM - 8) / Math.max(3, info.numVertices)),
+	);
+	const cell = useMemo(
+		() =>
+			info.available
+				? buildCell({
+						ih,
+						params,
+						curves: curvesOf(edges),
+						pxPerWorld: tessZoom,
+						...(lensActive ? { maxSegments: lensSegmentCap } : {}),
+					})
+				: null,
+		[ih, params, edges, tessZoom, info.available, lensActive, lensSegmentCap],
+	);
+
 	const lensCell = useMemo(
 		() => (lensActive && cell ? tilingPeriodicCell({ cellPolygons: cell.polygons, basis: [cell.v1, cell.v2] }) : null),
 		[lensActive, cell],
@@ -193,12 +235,12 @@ export function IsohedralClient() {
 	// Re-tessellate when the zoom crosses a power of two. The ref is what keeps this off the hot path:
 	// without it every frame of a drag would call setState with the value it already holds.
 	const onFrame = useCallback((f: AperiodicFrame) => {
-		const q = tessellationZoom(f.zoom);
+		const q = tessellationZoom(f.zoom * lensMagnification(f, lensActive && lensMode !== "spiral", lensRadiusFrac));
 		if (q !== tessZoomRef.current) {
 			tessZoomRef.current = q;
 			setTessZoom(q);
 		}
-	}, []);
+	}, [lensActive, lensMode, lensRadiusFrac]);
 
 	/**
 	 * What counts as "a different thing to look at", as opposed to the same thing deformed.

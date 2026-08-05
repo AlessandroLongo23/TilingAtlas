@@ -65,9 +65,18 @@ interface InversiveCanvasProps {
 	camera?: () => LensCamera | null;
 }
 
-/** Vertices walked per primitive. A cap for the GLSL loop only — `count` breaks out early. Sized for the
- *  worst real case, a freedraw polyomino face or a high-density {n/d} hollow ring. */
-const MAX_VERTS_PER_PRIM = 256;
+/**
+ * Vertices walked per primitive. A cap for the GLSL loop only — `count` breaks out early, so a small
+ * prim costs nothing. Sized for the worst real case, a freedraw polyomino face or a high-density {n/d}
+ * hollow ring.
+ *
+ * Exported because it is a CONTRACT, not an implementation detail: a ring longer than this is not drawn
+ * more coarsely, it is drawn wrong — the loop stops and the polygon closes early, so both the
+ * point-in-polygon test and the edge distance are computed against a ring that is missing a piece. Any
+ * producer that tessellates a curve into this IR has to keep one ring under it (see the outline cap in
+ * app/(app)/isohedral/_isohedral-client.tsx, where a hexagon at full flattening would want 768).
+ */
+export const MAX_VERTS_PER_PRIM = 256;
 
 const VERT = `#version 300 es
 in vec2 aPos;
@@ -103,7 +112,7 @@ uniform int uGrid;          // G
 uniform sampler2D uList;    // RGBA32F, [primIndex, di, dj, 0] per bucket entry
 uniform int uListW;
 
-uniform float uStrokePx;
+uniform float uStrokeW;   // the "Line stroke" slider, CSS px — the flat renderer's uHalfStrokePx doubled
 uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); hsb2rgb wraps via mod
 uniform vec3 uSurface;
 uniform vec3 uAvg;      // cell average fill (already hue-shifted CPU-side); the unresolvable centre blends to this
@@ -223,7 +232,21 @@ void main() {
 
 		// Stroke half-width in WORLD units (a fraction of the tile edge), so it scales with the tiles
 		// under the map: compressed near the centre it shrinks with them and dissolves on its own.
-		float halfW = strokeC.a > 0.0 ? strokeScale * uStrokePx * uFeature : 0.0;
+		// Stroke half-width, in WORLD units because that is what minD is measured in.
+		//
+		// Constant SCREEN width is the target, so the "Line stroke" slider means the same thing here as
+		// on the flat canvas (lib/render/flatTilingGL.ts pushes its outline by uHalfStrokePx CSS px).
+		// pwRaw is world units per DEVICE pixel, so uDpr converts it to world units per CSS pixel. This
+		// used to be a fixed world width, which made a line several times too fat wherever the map
+		// magnifies and a hairline wherever it compresses — at the default lens radius the screen corner
+		// is magnified 17x more than the lens circle, and the two ends of one edge visibly disagreed.
+		//
+		// Where the map COMPRESSES, dozens of edges share a pixel and the strongest-coverage rule below
+		// would ink every one of them solid; the resolvability fade at the end drops the whole stroke layer
+		// there, on the same threshold the fill already blends to uAvg on. Fading the layer beats capping the
+		// width: the line keeps its slider width right up to the point where the picture stops carrying
+		// lines at all, instead of tapering for a decade of zoom before it.
+		float halfW = strokeC.a > 0.0 ? strokeScale * uStrokeW * 0.5 * uDpr * pwRaw : 0.0;
 		if (q.x < bb.x - halfW || q.x > bb.z + halfW || q.y < bb.y - halfW || q.y > bb.w + halfW) continue;
 
 		int flags = int(m0.z);
@@ -280,10 +303,21 @@ void main() {
 		}
 	}
 
+	// How much of the drawing this pixel can still resolve: 1 while a tile is bigger than the footprint,
+	// 0 once the footprint swallows three of them.
+	float unresolved = smoothstep(uFeature * 0.8, uFeature * 3.0, pwRaw);
 	// The fill is point-sampled, so once primitives fall below a pixel it speckles; blend toward the cell
 	// average there so the very centre is a clean disk, not colour noise.
-	fillCol = mix(fillCol, uAvg, smoothstep(uFeature * 0.8, uFeature * 3.0, pwRaw));
-	frag = vec4(mix(fillCol, lineCol, lineCov), 1.0);
+	fillCol = mix(fillCol, uAvg, unresolved);
+
+	// The strokes need their OWN threshold, earlier than the fill's, and this is the whole reason the
+	// compressed centre used to grow a black ring. A screen-width line stops carrying information as soon
+	// as it is as wide as the gap between neighbouring lines — every pixel then lies within half a line of
+	// some edge, and the strongest-coverage rule inks all of them. That happens at a stroke-width-to-
+	// spacing ratio of 1, which the fill's uFeature*0.8 threshold does not reach until well after.
+	float widthOverSpacing = (uStrokeW * uDpr * pwRaw) / max(uFeature, 1e-9);
+	float inked = 1.0 - smoothstep(0.35, 1.0, widthOverSpacing);
+	frag = vec4(mix(fillCol, lineCol, lineCov * min(inked, 1.0 - unresolved)), 1.0);
 }
 `;
 
@@ -372,7 +406,7 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 			"uSpiralDouble", "uSpiralK", "uSpiralV",
 			"uMinv", "uV1", "uV2",
 			"uVerts", "uVertsW", "uMeta", "uMetaW", "uHead", "uGrid", "uList", "uListW",
-			"uStrokePx", "uHueOffset", "uSurface", "uAvg", "uFeature",
+			"uStrokeW", "uHueOffset", "uSurface", "uAvg", "uFeature",
 		]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
@@ -482,9 +516,8 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 			g.uniform1i(U.uMetaW, geom.metaW);
 			g.uniform1i(U.uGrid, geom.grid);
 			g.uniform1i(U.uListW, geom.listW);
-			// Stroke half-width as a fraction of the tile edge (uStrokePx * uFeature in the shader). The
-			// "Line stroke" slider scales it; 0 → no strokes.
-			g.uniform1f(U.uStrokePx, cam.lineWidth * 0.028);
+			// The slider itself: the shader turns it into a constant CSS-px width. 0 → no strokes.
+			g.uniform1f(U.uStrokeW, cam.lineWidth);
 			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
 			g.uniform3f(U.uSurface, dark ? 0.08 : 0.96, dark ? 0.09 : 0.96, dark ? 0.11 : 0.97);
 			// uAvg must be averaged AFTER the hue rotation (rotating the averaged RGB would be wrong);
