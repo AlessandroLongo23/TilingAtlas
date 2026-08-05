@@ -83,6 +83,25 @@ import {
 	type IslamicSystem,
 } from "@/lib/services/referenceAtlas";
 import {
+	withAll,
+	valuesOf,
+	boardFamiliesFor,
+	boardSummary,
+	BOARD_VALUES,
+	SHAPE_CLASS_ORDER,
+	SHAPE_CLASS_LABEL,
+	ISLAMIC_SYSTEM_ORDER,
+	ISLAMIC_SYSTEM_LABEL,
+	FREEDRAW_KIND_ORDER,
+	FREEDRAW_KIND_LABEL,
+	FREEDRAW_REGULAR_ORDER,
+	FREEDRAW_REGULAR_LABEL,
+	CERTIFICATION_ORDER,
+	CERTIFICATION_LABEL,
+	COLORS_COUNT_ORDER,
+	COLORS_COUNT_LABEL,
+} from "@/lib/services/facets";
+import {
 	WALLPAPER_GROUPS,
 	isGroupOnLattice,
 	type LatticeShape,
@@ -107,15 +126,10 @@ import {
 // (geometry, decoration) cell, so a chip for it would just restate the segment already chosen above. What
 // is left is the shape axis proper — the eight shelves that differ by tile set, which is what "tile class"
 // was always trying to say.
-const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = [
-	{ value: "all", label: "All" },
-	...TILE_CLASS_ORDER.filter(
-		(c) => c !== "hyperbolic" && c !== "spherical" && c !== "freedraw" && c !== "colors",
-	).map((c) => ({
-		value: c,
-		label: TILE_CLASS_LABEL[c].short,
-	})),
-];
+const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = withAll(
+	SHAPE_CLASS_ORDER,
+	SHAPE_CLASS_LABEL,
+);
 const GEOMETRY_OPTIONS: { value: Geometry; label: string }[] = GEOMETRY_ORDER.map((g) => ({
 	value: g,
 	label: GEOMETRY_LABEL[g],
@@ -162,82 +176,33 @@ const POLY_ORDER_OPTIONS: { value: "all" | "tetromino"; label: string }[] = [
 ];
 // Islamic-shelf sub-class facet: Bonner's design system (the underlying tile kit). Shown only for the
 // Islamic class. See docs/ISLAMIC_TILINGS.md.
-const ISLAMIC_SYSTEM_OPTIONS: { value: "all" | IslamicSystem; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "regular", label: "Regular" },
-	{ value: "fourfold-a", label: "Fourfold A" },
-	{ value: "fourfold-b", label: "Fourfold B" },
-	{ value: "fivefold", label: "Fivefold" },
-	{ value: "sevenfold", label: "Sevenfold" },
-	{ value: "nonsystematic", label: "Nonsystematic" },
-	{ value: "dual-level", label: "Dual-level" },
-];
-const ISLAMIC_SYSTEM_VALUES = ISLAMIC_SYSTEM_OPTIONS.map((o) => o.value).filter((v): v is IslamicSystem => v !== "all");
+const ISLAMIC_SYSTEM_OPTIONS = withAll(ISLAMIC_SYSTEM_ORDER, ISLAMIC_SYSTEM_LABEL);
+const ISLAMIC_SYSTEM_VALUES = valuesOf(ISLAMIC_SYSTEM_ORDER);
 // Freedraw-shelf sub-class facet: what KIND of faces the pattern produces. A freedraw "tile" is whatever
 // face falls out of the drawn edge set, so it can be a finite polyomino, an infinite strip, or a sheet
 // unbounded in both directions — the one axis that says what a pattern actually makes. Shown only for the
 // freedraw class. See lib/freedraw/faces.ts.
-const FREEDRAW_KIND_OPTIONS: { value: "all" | FreedrawKind; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "finite", label: "All finite" },
-	{ value: "strip", label: "Has strip" },
-	{ value: "unbounded", label: "Has unbounded" },
-	{ value: "holes", label: "Has holes" },
-];
-const FREEDRAW_KIND_VALUES = FREEDRAW_KIND_OPTIONS.map((o) => o.value).filter((v): v is FreedrawKind => v !== "all");
-// Freedraw-shelf grid facet, one level above the tile kind: which lattice the edge subset decorates.
-// Shown only for the freedraw class, ordered before Tile kind — first the board, then the pieces.
-const FREEDRAW_GRID_OPTIONS: { value: "all" | FreedrawGrid; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "square", label: "Squares" },
-	{ value: "triangle", label: "Triangles" },
-	{ value: "hex", label: "Hexagons" },
-	{ value: "ts", label: "Tri + square" },
-	{ value: "sch236", label: "Schwarz 236" },
-	{ value: "sch244", label: "Schwarz 244" },
-];
-const FREEDRAW_GRID_VALUES = FREEDRAW_GRID_OPTIONS.map((o) => o.value).filter((v): v is FreedrawGrid => v !== "all");
-// Colors-shelf grid facet — the same axis, shown only for the colored class.
-const COLORS_GRID_OPTIONS: { value: "all" | ColorsGrid; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "square", label: "Squares" },
-	{ value: "triangle", label: "Triangles" },
-	{ value: "hex", label: "Hexagons" },
-	{ value: "ts", label: "Tri + square" },
-];
-const COLORS_GRID_VALUES = COLORS_GRID_OPTIONS.map((o) => o.value).filter((v): v is ColorsGrid => v !== "all");
-// One-word grid names for the collapsed FilterGroup summary, shared by both grid facets.
-const GRID_SUMMARY: Record<FreedrawCatalogueGrid | ColorsGrid, string> = {
-	square: "squares",
-	triangle: "triangles",
-	hex: "hexagons",
-	ts: "tri + square",
-	sch236: "schwarz 236",
-	sch244: "schwarz 244",
-};
+const FREEDRAW_KIND_OPTIONS = withAll(FREEDRAW_KIND_ORDER, FREEDRAW_KIND_LABEL);
+const FREEDRAW_KIND_VALUES = valuesOf(FREEDRAW_KIND_ORDER);
+// The BOARD facet replaces the two hand-typed grid walls that used to live here — one for freedraw, one
+// for colors, each naming only the four Euclidean grids. Both are now derived from SUB_ORDER in
+// lib/services/facets.ts, which is the same list /play's tree walks, so the pentagon and isohedral boards
+// (and every board Marek sends next) appear in both surfaces from one edit.
 // Colors-shelf palette-size facet: how many colors the solutions use. Each (grid, size) pair is its own
-// catalogue — an n-color run's solutions all use every one of its n colors.
+// catalogue — an n-color run's solutions all use every one of its n colors. Read off the subs.
 const COLORS_COUNT_OPTIONS: { value: "all" | number; label: string }[] = [
 	{ value: "all", label: "All" },
-	{ value: 2, label: "2 colors" },
-	{ value: 3, label: "3 colors" },
+	...COLORS_COUNT_ORDER.map((n) => ({ value: n, label: COLORS_COUNT_LABEL(n) })),
 ];
-const COLORS_COUNT_VALUES = COLORS_COUNT_OPTIONS.map((o) => o.value).filter((v): v is number => v !== "all");
+const COLORS_COUNT_VALUES = valuesOf(COLORS_COUNT_ORDER);
 // Freedraw-shelf regular-polygon facet — the bridge to the classical catalogue. Every k-uniform tiling
 // dissects onto a triangle/square grid (octagon excepted), so "k-uniform" is the subfamily where every
 // tile is an edge-to-edge regular polygon. The full has/none/any composition tool is on /freedraw; the
 // shelf offers the common single-select cases (all-regular, k-uniform, or contains a given polygon). A
 // dodecagon needs a large period and first appears at k=3, so the shelf's has-a-hexagon/triangle/square
 // chips cover the common cases and the full composition (incl. dodecagons) lives on /freedraw.
-const FREEDRAW_REGULAR_OPTIONS: { value: "all" | FreedrawRegular; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "unit", label: "k-uniform" },
-	{ value: "regular", label: "All regular (+ dilations)" },
-	{ value: "tri", label: "Has a triangle" },
-	{ value: "square", label: "Has a square" },
-	{ value: "hex", label: "Has a hexagon" },
-];
-const FREEDRAW_REGULAR_VALUES = FREEDRAW_REGULAR_OPTIONS.map((o) => o.value).filter((v): v is FreedrawRegular => v !== "all");
+const FREEDRAW_REGULAR_OPTIONS = withAll(FREEDRAW_REGULAR_ORDER, FREEDRAW_REGULAR_LABEL);
+const FREEDRAW_REGULAR_VALUES = valuesOf(FREEDRAW_REGULAR_ORDER);
 const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Kepler", label: "Kepler" },
 	{ value: "Krötenheerdt", label: "Krötenheerdt" },
@@ -247,11 +212,10 @@ const DISCOVERER_OPTIONS: { value: string; label: string }[] = [
 	{ value: "Joseph Myers", label: "Myers" },
 	{ value: "Alessandro Longo", label: "Longo" },
 ];
-const CERT_OPTIONS: { value: Certification; label: string }[] = [
-	{ value: "proven", label: "Proven" },
-	{ value: "reproduced", label: "Reproduced" },
-	{ value: "candidate", label: "Candidate" },
-];
+const CERT_OPTIONS: { value: Certification; label: string }[] = CERTIFICATION_ORDER.map((c) => ({
+	value: c,
+	label: CERTIFICATION_LABEL[c],
+}));
 const LATTICE_ORDER: LatticeShape[] = ["square", "hexagonal", "rhombic", "rectangular", "oblique"];
 const COLUMN_PRESETS = [3, 4, 5, 6];
 // Page-size choices for the header dropdown; 25 is the default.
@@ -370,10 +334,11 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem)) f.islamicSystem = islamicSystem as IslamicSystem;
 	const freedrawKind = sp.get("fdkind");
 	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind)) f.freedrawKind = freedrawKind as FreedrawKind;
-	const freedrawGrid = sp.get("fdgrid");
-	if (freedrawGrid && (FREEDRAW_GRID_VALUES as string[]).includes(freedrawGrid)) f.freedrawGrid = freedrawGrid as FreedrawGrid;
-	const colorsGrid = sp.get("cogrid");
-	if (colorsGrid && (COLORS_GRID_VALUES as string[]).includes(colorsGrid)) f.colorsGrid = colorsGrid as ColorsGrid;
+	// The board axis. `fdgrid` / `cogrid` are the two params it replaced; a link carrying either still
+	// resolves, because every value they could hold is a board sub under the same name ("square", "ts",
+	// "sch236"). Reading them into `board` keeps shared links working without a second filter to apply.
+	const board = sp.get("board") ?? sp.get("fdgrid") ?? sp.get("cogrid");
+	if (board && BOARD_VALUES.includes(board)) f.board = board;
 	const colorsCount = Number(sp.get("cocount"));
 	if (COLORS_COUNT_VALUES.includes(colorsCount)) f.colorsCount = colorsCount;
 	const freedrawRegular = sp.get("fdreg");
@@ -1014,10 +979,15 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, islamicSystem: v === "all" ? undefined : v });
 	const setFreedrawKind = (v: "all" | FreedrawKind) =>
 		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
-	const setFreedrawGrid = (v: "all" | FreedrawGrid) =>
-		setFilters({ ...filters, freedrawGrid: v === "all" ? undefined : v });
-	const setColorsGrid = (v: "all" | ColorsGrid) =>
-		setFilters({ ...filters, colorsGrid: v === "all" ? undefined : v });
+	// Selecting a board clears the two legacy grid filters: they name the same axis, so leaving one set
+	// would silently intersect it with the board and show nothing.
+	const setBoard = (v: "all" | string) =>
+		setFilters({
+			...filters,
+			board: v === "all" ? undefined : v,
+			freedrawGrid: undefined,
+			colorsGrid: undefined,
+		});
 	const setColorsCount = (v: "all" | number) =>
 		setFilters({ ...filters, colorsCount: v === "all" ? undefined : v });
 	const setFreedrawRegular = (v: "all" | FreedrawRegular) =>
@@ -1301,14 +1271,22 @@ export function ReferenceShelf() {
 	const showScaledScaleSet = tileClass === "scaled";
 	const showPolyominoOrder = tileClass === "polyomino";
 	const showIslamicSystem = tileClass === "islamic";
-	// Freedraw's grid / tile-kind / regular-polygon facets describe the EUCLIDEAN grids (square/triangle/ts).
-	// Hyperbolic edge patterns are the same segment on a hyperbolic base — those grid facets mean nothing
-	// there, so keep them Euclidean-only.
+	// Freedraw's tile-kind / regular-polygon facets read the pattern's own face analysis, which only the
+	// EUCLIDEAN grid patterns ship, so they stay Euclidean-only.
 	const showFreedrawKind = isEuclidean && decoration === "edges";
-	// The grid/palette facets describe the EUCLIDEAN color catalogues (square/triangle/ts × 2/3). The
-	// hyperbolic and spherical colorings are the same segment on a {p,q} / Platonic base — those grid facets
-	// mean nothing there, so keep them Euclidean-only (they group by base in the /play tree).
+	// The palette-size facet describes the EUCLIDEAN color catalogues (square/triangle/ts × 2/3). The
+	// hyperbolic and spherical colorings are the same segment on a {p,q} / Platonic base and have no
+	// palette axis of their own.
 	const showColorsGrid = isEuclidean && decoration === "colorings";
+	// The BOARD facet, unlike the grid walls it replaces, is defined in every geometry: each segment has its
+	// own families (hyperbolic edges group by base tiling, spherical by solid), and boardFamiliesFor names
+	// them off the same SUB_ORDER run /play's tree walks. Empty for the Tilings segment, which has no board.
+	// "all" spans the three segments at once, and a board wall then means nothing — the same sub can be a
+	// grid under Edge patterns and a palette stem under Colorings. Shown once a segment is chosen.
+	const boardFamilies = useMemo(
+		() => (decoration === "all" ? [] : boardFamiliesFor(geometry, decoration)),
+		[geometry, decoration],
+	);
 	// k is shared across the three segments but does NOT mean the same thing in each: vertex orbits of a
 	// tiling, GRID-POINT orbits of a PLANAR edge pattern (including points with no drawn edge), colored
 	// vertex classes of a coloring. Sharing the axis is what makes them browsable together; naming the
@@ -1545,45 +1523,41 @@ export function ReferenceShelf() {
 						</FilterGroup>
 					) : null}
 
-					{showFreedrawKind ? (
+					{boardFamilies.length ? (
 						<FilterGroup
-							title="Grid"
-							summary={
-								filters.freedrawGrid ? GRID_SUMMARY[filters.freedrawGrid] : null
-							}
-							note="the decorated lattice"
+							title="Board"
+							summary={filters.board ? boardSummary(filters.board) : null}
+							note={decoration === "colorings" ? "the colored board" : "the decorated board"}
 						>
+							{/* One wall per family, in SUB_ORDER sequence — the same grouping and the same order
+							    /play's tree renders, because both read boardFamiliesFor(). A family heading appears
+							    only when there is more than one, so a segment with a single family (the Euclidean
+							    colorings today) reads as one flat wall the way it always did. */}
 							<OptionWall
 								columns={3}
-								options={FREEDRAW_GRID_OPTIONS}
-								selected={filters.freedrawGrid ?? "all"}
-								onChange={setFreedrawGrid}
+								options={[{ value: "all" as const, label: "All" }]}
+								selected={filters.board ?? "all"}
+								onChange={setBoard}
 							/>
+							{boardFamilies.map((fam) => (
+								<div key={fam.family} className="flex flex-col gap-px">
+									{boardFamilies.length > 1 ? (
+										<div className="bg-surface-chrome px-3 pt-2 pb-1 text-[11px] font-medium tracking-wide text-fg-muted uppercase">
+											{fam.label}
+										</div>
+									) : null}
+									<OptionWall
+										columns={3}
+										options={fam.boards.map((b) => ({ value: b.sub, label: b.label }))}
+										selected={filters.board ?? "all"}
+										onChange={setBoard}
+									/>
+								</div>
+							))}
 							<GroupNote>
-								Which lattice the drawn edges decorate. Square patterns tile with polyominoes, triangular
-								ones with polyiamonds, hexagonal ones with polyhexes — plus strips and unbounded sheets on
-								any board.
-							</GroupNote>
-						</FilterGroup>
-					) : null}
-
-					{showColorsGrid ? (
-						<FilterGroup
-							title="Grid"
-							summary={
-								filters.colorsGrid ? GRID_SUMMARY[filters.colorsGrid] : null
-							}
-							note="the colored board"
-						>
-							<OptionWall
-								columns={3}
-								options={COLORS_GRID_OPTIONS}
-								selected={filters.colorsGrid ?? "all"}
-								onChange={setColorsGrid}
-							/>
-							<GroupNote>
-								Which grid the coloring lives on: squares, triangles, or the mixed square-triangle
-								tilings (each of those a different underlying tessellation per solution).
+								{decoration === "colorings"
+									? "Which board the coloring lives on. Each (grid, palette size) pair is its own catalogue."
+									: "Which board the drawn edges decorate. Square patterns tile with polyominoes, triangular ones with polyiamonds, hexagonal ones with polyhexes, and the parametric boards carry a tile you can move with the sliders in Play."}
 							</GroupNote>
 						</FilterGroup>
 					) : null}

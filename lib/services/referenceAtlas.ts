@@ -432,6 +432,60 @@ export const SUB_ORDER = [
 	// Parametric-isohedral edge systems: one sub per isohedral type. "ih-" namespaced.
 	...IH_EDGE_BOARDS.map((b) => ihEdgeSubOfBoard(b)),
 ];
+
+/**
+ * The FAMILY a sub belongs to: one layer above the sub, so the /play tree can gather eleven sibling
+ * folders into four headings instead of listing them flat.
+ *
+ * Why here and not in the panel with SUB_LABEL: this is ordering, not presentation. Grouping only
+ * works if a family's subs are CONTIGUOUS in SUB_ORDER — otherwise the tree would show an order the
+ * linear browse order (which follows SUB_ORDER) does not, and ← / → would walk the shelves in a
+ * different sequence from the one on screen. `tests/catalogue-sub-family.test.ts` asserts that
+ * contiguity, so a sub inserted into the wrong run fails there instead of silently reordering.
+ *
+ * The bare grids and the coloring grids are deliberately DIFFERENT families sharing one label: they
+ * sit in two separate runs of SUB_ORDER (the Schwarz grids fall between them), and one family
+ * spanning both would break the contiguity the whole scheme rests on. They never appear in the same
+ * list anyway, since a list is filtered to one class first.
+ *
+ * Returns null for the anonymous spine and for anything unclassified, which renders exactly as it
+ * does today — no family row.
+ */
+export type SubFamily =
+	| "grid"
+	| "schwarz-eu"
+	| "grid-colors"
+	| "platonic"
+	| "hyp-edges"
+	| "hyp-colors"
+	| "sph-colors"
+	| "schwarz-board"
+	| "sph-edges"
+	| "hyp-poly"
+	| "sph-poly"
+	| "pent"
+	| "ih";
+
+const PLATONIC_SUBS = new Set(["tetrahedron", "octahedron", "cube", "dodecahedron", "icosahedron"]);
+
+export function familyOfSub(sub: string): SubFamily | null {
+	if (!sub) return null;
+	if (sub.startsWith("pen-")) return "pent";
+	if (sub.startsWith("ih-")) return "ih";
+	if (sub.startsWith("hyp-")) return "hyp-edges";
+	if (sub.startsWith("hyc-")) return "hyp-colors";
+	if (sub.startsWith("spc-")) return "sph-colors";
+	if (sub.startsWith("sps-") || sub.startsWith("hys-")) return "schwarz-board";
+	if (sub.startsWith("spe-")) return "sph-edges";
+	if (sub.startsWith("hpo-")) return "hyp-poly";
+	if (sub.startsWith("spp-")) return "sph-poly";
+	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";
+	if (/^(square|triangle|hex|ts)$/.test(sub)) return "grid";
+	if (/^(square|triangle|hex|ts)-\d+$/.test(sub)) return "grid-colors";
+	if (PLATONIC_SUBS.has(sub)) return "platonic";
+	return null;
+}
+
 export function subOf(t: {
 	sphericalFreedraw?: { solid: string };
 	freedraw?: FreedrawPattern;
@@ -693,6 +747,31 @@ export function freedrawGridOf(t: Pick<ReferenceTiling, "freedraw">): FreedrawGr
 	return t.freedraw ? gridOf(t.freedraw) : null;
 }
 
+/**
+ * The BOARD a decorated record sits on, as the sub id both surfaces already agree on.
+ *
+ * ⚑ This replaces `freedrawGridOf` / `colorsGridOf` at the FILTER layer, and the reason is a bug those two
+ * could not avoid: each reads exactly one payload field (`t.freedraw`, `t.colors`), so every record on a
+ * board that is not one of the four Euclidean grids answered `null`. The pentagon and isohedral shelves
+ * carry `pentEdges` / `ihEdges` and therefore had no board at all as far as /library was concerned — no
+ * chip could select them and no chip could exclude them, so 128,944 edge-pattern records paginated with
+ * the parametric boards buried and unreachable.
+ *
+ * `subOf` already resolves all fifteen shelf fields and is what /play's tree groups by, so routing the
+ * facet through it makes the two surfaces answer the same question with the same function. Returns null
+ * for the anonymous spine the undecorated classes share, which has no board to name.
+ */
+export function boardOf(t: Parameters<typeof subOf>[0]): string | null {
+	const sub = subOf(t);
+	if (!sub || !familyOfSub(sub)) return null;
+	// A Euclidean colouring sub names the grid AND the palette size ("square-3"). The palette has its own
+	// facet on both surfaces, so the BOARD is the grid stem; lib/services/facets.ts collapses the option
+	// rows the same way, and the two must agree or the chip matches nothing.
+	return COLORING_SUB_STEM.exec(sub)?.[1] ?? sub;
+}
+/** Kept local so referenceAtlas owns no presentation import; the same shape as shelfLabels' COLOR_SUB. */
+const COLORING_SUB_STEM = /^(square|triangle|hex|ts)-\d+$/;
+
 // The card / search label for a freedraw pattern: what its faces ARE, since there is no vertex
 // configuration to name it by. "1 strip + 2 polyominoes", "1 unbounded · holes". The finite noun
 // follows the grid: polyomino on squares, polyiamond on triangles, polyhex on hexagons, polyform on
@@ -865,11 +944,17 @@ export interface ReferenceFilter {
 	// Freedraw shelf sub-class: keep only patterns whose faces are all finite / include a strip / include an
 	// unbounded sheet / include a polyomino with holes. Non-freedraw tilings never match while this is active.
 	freedrawKind?: FreedrawKind;
+	// The BOARD axis: which board a decorated record sits on, as the sub id /play's tree groups by. Supersedes
+	// the two grid facets below, which could only ever name the four Euclidean grids; see `boardOf`. Records
+	// with no board (the undecorated classes) never match while this is active.
+	board?: string;
 	// Freedraw shelf sub-class, one level above the kind: which grid the edge subset decorates. Non-freedraw
 	// tilings never match while this is active.
+	// DEPRECATED in favour of `board`, kept so shared links carrying ?fdgrid= still resolve.
 	freedrawGrid?: FreedrawGrid;
 	// Colors shelf sub-class: which grid the coloring lives on. Non-colors tilings never match while
 	// this is active.
+	// DEPRECATED in favour of `board`, kept so shared links carrying ?cgrid= still resolve.
 	colorsGrid?: ColorsGrid;
 	// Colors shelf sub-class: how many colors the palette has (2 or 3 so far). Non-colors tilings never
 	// match while this is active.
@@ -926,6 +1011,9 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	if (f.freedrawKind) {
 		const s = freedrawStatsOf(t);
 		if (!s || !matchesFreedrawKind(s, f.freedrawKind)) return false; // non-freedraw never matches the kind facet
+	}
+	if (f.board) {
+		if (boardOf(t) !== f.board) return false; // a record with no board never matches the board facet
 	}
 	if (f.freedrawGrid) {
 		if (freedrawGridOf(t) !== f.freedrawGrid) return false; // non-freedraw never matches the grid facet

@@ -3,11 +3,12 @@
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
-import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, type TileClass } from "@/lib/services/referenceAtlas";
+import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, familyOfSub, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
+import { kNounOf } from "@/lib/services/shelfRegistry";
 import { TileGrid } from "./tile-grid";
-import { freedrawKNoun, gridOf } from "@/lib/freedraw/pattern";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
 // thumbnail + badge. Click selects (renders large on the canvas)
@@ -34,109 +35,10 @@ const NESTED_TOP = ROW_H + 1;
 // is WHICH GRID the edge subset decorates; for SPHERICAL freedraw WHICH SOLID. Both live under the one
 // "freedraw" class, but never in the same list — the catalogue is filtered to one geometry first, so a given
 // list shows only grid subs (euclidean) or only solid subs (spherical). sub = "" is the spine every other
-// class uses (no row rendered for it). SUB_LABEL below is the display name — presentation, so it stays here.
-const SUB_LABEL: Record<string, string> = {
-	square: "Square grid",
-	triangle: "Triangle grid",
-	hex: "Hexagon grid",
-	ts: "Triangle + square grid",
-	sch236: "Schwarz (2,3,6) grid",
-	sch244: "Schwarz (2,4,4) grid",
-	// The two PARAMETRIC boards, whose tile is a family and not a fixed grid.
-	"pen-1": "Pentagon (Kershner 1) edges",
-	"ih-1": "Isohedral IH01 edges",
-	"ih-2": "Isohedral IH02 edges",
-	"ih-3": "Isohedral IH03 edges",
-	"ih-4": "Isohedral IH04 edges",
-	// Colors splits the same grids again by palette size — each is its own catalogue.
-	"square-2": "Square grid, 2 colors",
-	"square-3": "Square grid, 3 colors",
-	"triangle-2": "Triangle grid, 2 colors",
-	"triangle-3": "Triangle grid, 3 colors",
-	"hex-3": "Hexagon grid, 3 colors",
-	"ts-2": "Triangle + square, 2 colors",
-	"ts-3": "Triangle + square, 3 colors",
-	tetrahedron: "Tetrahedron",
-	octahedron: "Octahedron",
-	cube: "Cube",
-	dodecahedron: "Dodecahedron",
-	icosahedron: "Icosahedron",
-	// Schwarz boards: one sub per (p,q,r) reflection group. The board is the sphere / disk cut by its
-	// mirrors, so the label names the triple, not a Schläfli symbol — (2,3,4) has no {p,q} name.
-	"sps-223": "(2,2,3) board",
-	"sps-224": "(2,2,4) board",
-	"sps-233": "(2,3,3) board",
-	"sps-234": "(2,3,4) board",
-	"sps-235": "(2,3,5) board",
-	"hys-237": "(2,3,7) board",
-	"hys-245": "(2,4,5) board",
-	// Uniform-polyhedron edge systems: one sub per solid. The label is the solid, since a prism has no
-	// Schläfli symbol and "3.4.4" alone would not read as a shape.
-	"spe-443": "Triangular prism edges",
-	"spe-445": "Pentagonal prism edges",
-	"spe-446": "Hexagonal prism edges",
-	"spe-447": "Heptagonal prism edges",
-	"spe-663": "Truncated tetrahedron edges",
-	"spe-3334": "Square antiprism edges",
-	"spe-3335": "Pentagonal antiprism edges",
-	"spe-3336": "Hexagonal antiprism edges",
-	"spe-cuboctahedron": "Cuboctahedron edges",
-	"spe-j27": "Triangular orthobicupola edges",
-	"spe-448": "Octagonal prism edges",
-	"spe-664": "Truncated octahedron edges",
-	"spe-3337": "Heptagonal antiprism edges",
-	"spe-4443": "Rhombicuboctahedron edges",
-	"spe-j37": "Pseudo-rhombicuboctahedron edges",
-	"spe-33334": "Snub cube edges",
-	// The 3.4.n.4 family on the sphere, n = 3, 4, 5 — the same rows as "hpo-", other side of the split.
-	"spp-3": "3.4.3.4 solids",
-	"spp-4": "3.4.4.4 solids",
-	"spp-5": "3.4.5.4 solids",
-	// The 3.4.n.4 family: one sub per board. Labelled by the defining vertex figure, which is also what
-	// names the edge length the whole board is built at.
-	"hpo-7": "3.4.7.4 tilings",
-	"hpo-8": "3.4.8.4 tilings",
-	"hpo-9": "3.4.9.4 tilings",
-	"hpo-10": "3.4.10.4 tilings",
-	"hpo-11": "3.4.11.4 tilings",
-	"hpo-12": "3.4.12.4 tilings",
-	"hpo-14": "3.4.14.4 tilings",
-	"hpo-15": "3.4.15.4 tilings",
-	"hpo-16": "3.4.16.4 tilings",
-	"hpo-17": "3.4.17.4 tilings",
-	"hpo-18": "3.4.18.4 tilings",
-	"hpo-19": "3.4.19.4 tilings",
-	"hpo-20": "3.4.20.4 tilings",
-	"hpo-23": "3.4.23.4 tilings",
-	// Hyperbolic edge systems: one sub per base tiling.
-	"hyp-667": "6.6.7 edges",
-	"hyp-668": "6.6.8 edges",
-	"hyp-37": "{3,7} edges",
-	"hyp-38": "{3,8} edges",
-	"hyp-45": "{4,5} edges",
-	"hyp-46": "{4,6} edges",
-	"hyp-54": "{5,4} edges",
-	"hyp-55": "{5,5} edges",
-	"hyp-64": "{6,4} edges",
-	"hyp-65": "{6,5} edges",
-	"hyp-73": "{7,3} edges",
-	"hyp-74": "{7,4} edges",
-	"hyp-83": "{8,3} edges",
-	"hyp-84": "{8,4} edges",
-	// Hyperbolic colored tilings: one sub per base {p,q}.
-	"hyc-37": "{3,7} colored",
-	"hyc-73": "{7,3} colored",
-	"hyc-83": "{8,3} colored",
-	"hyc-54": "{5,4} colored",
-	"hyc-64": "{6,4} colored",
-	"hyc-45": "{4,5} colored",
-	// Spherical colored tilings: one sub per Platonic solid.
-	"spc-tetrahedron": "Tetrahedron colored",
-	"spc-octahedron": "Octahedron colored",
-	"spc-cube": "Cube colored",
-	"spc-dodecahedron": "Dodecahedron colored",
-	"spc-icosahedron": "Icosahedron colored",
-};
+// class uses (no row rendered for it). The display names live in lib/services/shelfLabels.ts — SUB_LABEL,
+// FAMILY_LABEL and the COLOR_SUB split. Presentation, like they always were, but out of this "use client"
+// module so a test can import them: tests/catalogue-sub-family.test.ts asserts every sub in SUB_ORDER has
+// a label, which is what nothing did when eleven shelves shipped in v1.13.0 rendering as raw ids.
 
 // Memoized: the catalogue's inputs (items/selectedKey/onSelect) don't change while a sidebar
 // slider is dragged, but its parent TilingsTab subscribes to the WHOLE config store, so it re-renders on
@@ -166,7 +68,22 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 					.map(([k, list]) => ({ k, list }));
 				return { sub, ks, count: ks.reduce((s2, g) => s2 + g.list.length, 0) };
 			});
-			return { cls, subs, count: subs.reduce((s2, g) => s2 + g.count, 0) };
+			// Gather the subs into families, in SUB_ORDER (families are contiguous there, which is what
+			// referenceAtlas' familyOfSub guarantees and its test enforces), so this pass is a scan and
+			// never a re-sort. A family of one still gets a run: whether it earns a ROW is decided at
+			// render time, once we know how many the class has.
+			const families: { family: string | null; subs: typeof subs; count: number }[] = [];
+			for (const s of subs) {
+				const family = familyOfSub(s.sub);
+				const last = families[families.length - 1];
+				if (last && last.family === family && family !== null) {
+					last.subs.push(s);
+					last.count += s.count;
+				} else {
+					families.push({ family, subs: [s], count: s.count });
+				}
+			}
+			return { cls, subs, families, count: subs.reduce((s2, g) => s2 + g.count, 0) };
 		});
 	}, [items]);
 
@@ -175,6 +92,14 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		const ids: string[] = [];
 		for (const g of byClass) {
 			ids.push(`c:${g.cls}`);
+			// Family rows exist in the id set whether or not this class renders them: a class with one
+			// family skips the row, and an id nobody toggles costs nothing, where a MISSING one would
+			// leave a row that cannot open.
+			for (const f of g.families) ids.push(`f:${g.cls}:${f.family ?? "_spine"}`);
+			for (const s of g.subs) {
+				const stem = COLOR_SUB.exec(s.sub)?.[1];
+				if (stem) ids.push(`g:${g.cls}:${stem}`);
+			}
 			for (const s of g.subs) {
 				if (s.sub) ids.push(`s:${g.cls}:${s.sub}`);
 				for (const kk of s.ks) ids.push(`k:${g.cls}:${s.sub}:${kk.k}`);
@@ -206,6 +131,17 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	const selectedClassId = selectedTile ? `c:${tileClassOf(selectedTile)}` : null;
 	const selectedSubId =
 		selectedTile && subOf(selectedTile) ? `s:${tileClassOf(selectedTile)}:${subOf(selectedTile)}` : null;
+	// `_spine` included: a tiling on the anonymous spine now sits under a heading too (see subSections).
+	const selectedFamilyId = selectedTile
+		? `f:${tileClassOf(selectedTile)}:${familyOfSub(subOf(selectedTile)) ?? "_spine"}`
+		: null;
+	// The grid row a coloring sits under, between its family and its palette row.
+	const selectedGridId = selectedTile
+		? (() => {
+				const stem = COLOR_SUB.exec(subOf(selectedTile))?.[1];
+				return stem ? `g:${tileClassOf(selectedTile)}:${stem}` : null;
+			})()
+		: null;
 	const selectedKId = selectedTile
 		? `k:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedTile.k}`
 		: null;
@@ -224,8 +160,14 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			revealedFirst.current = true;
 			return;
 		}
-		openGroups(selectedSubId ? [selectedClassId, selectedSubId, selectedKId] : [selectedClassId, selectedKId]);
-	}, [selectedKey, selectedClassId, selectedSubId, selectedKId, openGroups]);
+		// Every level on the path, family included; a closed family row would hide the sub the reveal
+		// just opened.
+		openGroups(
+			[selectedClassId, selectedFamilyId, selectedGridId, selectedSubId, selectedKId].filter(
+				(x): x is string => !!x,
+			),
+		);
+	}, [selectedKey, selectedClassId, selectedFamilyId, selectedGridId, selectedSubId, selectedKId, openGroups]);
 
 	// When the geometry filter leaves a single tile class (hyperbolic is always one; spherical is one until
 	// its freedraw shelf loads, then it splits into Spherical + Freedraw), drop the redundant class level and
@@ -233,7 +175,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	// be a second identical one. With two or more classes the class headers render normally.
 	const single = byClass.length === 1;
 
-	const kSections = (cls: TileClass, sub: string, ks: { k: number; list: CatalogueTiling[] }[], depth: 0 | 1 | 2) =>
+	const kSections = (cls: TileClass, sub: string, ks: { k: number; list: CatalogueTiling[] }[], depth: 0 | 1 | 2 | 3) =>
 		ks.map((kk) => {
 			const id = `k:${cls}:${sub}:${kk.k}`;
 			const open = expanded[id];
@@ -241,14 +183,12 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			// the decoration; for SPHERICAL freedraw it counts VERTEX orbits of the solid. Either way it is not
 			// the vertex-orbit count of a uniform tiling in the way the other classes mean it, so name it on the
 			// row instead of letting a bare "k = 2" imply the quantities are the same.
-			const kLabel =
-				cls === "freedraw"
-					? kk.list[0]?.sphericalFreedraw || kk.list[0]?.hypEdges || kk.list[0]?.schwarz || kk.list[0]?.sphEdges || kk.list[0]?.pentEdges || kk.list[0]?.ihEdges
-						? `k = ${kk.k} vertex orbits`
-						: `k = ${kk.k} ${kk.list[0]?.freedraw ? freedrawKNoun(gridOf(kk.list[0].freedraw)) : "grid points"}`
-					: cls === "colors"
-						? `k = ${kk.k} colored vertices`
-						: `k = ${kk.k}`;
+			//
+			// Which shelves deviate, and what to call their k, is one field on the shelf registry — this used
+			// to be a chain over six payload fields that a new shelf had to be added to by hand. A null noun is
+			// the ordinary reading and keeps the bare "k = 2", so most of the catalogue reads as it always did.
+			const kNoun = kk.list[0] ? kNounOf(kk.list[0]) : null;
+			const kLabel = kNoun ? `k = ${kk.k} ${kNoun}` : `k = ${kk.k}`;
 			return (
 				// The wrapper is what bounds the sticky header: pinned while its own bucket is on screen,
 				// pushed off by the next one. Transparent, so the wall's line colour still fills its gaps.
@@ -273,23 +213,123 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			);
 		});
 
-	const subSections = (g: (typeof byClass)[number], baseDepth: 0 | 1) =>
-		g.subs.map((s) => {
-			if (!s.sub) return <Fragment key="_">{kSections(g.cls, s.sub, s.ks, baseDepth)}</Fragment>;
+	// The palette leaf: "2 colors" under its grid. Its k rows sit one deeper again.
+	const paletteRows = (g: (typeof byClass)[number], subs: (typeof byClass)[number]["subs"], baseDepth: 0 | 1 | 2) =>
+		subs.map((s) => {
 			const id = `s:${g.cls}:${s.sub}`;
+			const n = COLOR_SUB.exec(s.sub)?.[2] ?? "";
 			return (
 				<div key={id} className="flex flex-col gap-px">
 					<TreeRow
-						label={SUB_LABEL[s.sub] ?? s.sub}
+						label={`${n} colors`}
 						count={s.count}
 						open={expanded[id]}
 						depth={baseDepth}
 						onToggle={() => toggle(id)}
 					/>
-					{expanded[id] ? kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2) : null}
+					{expanded[id] ? kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3) : null}
 				</div>
 			);
 		});
+
+	// One row per GRID, with its palettes beneath. Subs arrive in SUB_ORDER, which is grid-major, so
+	// this is a scan too and the grids keep the catalogue's own order.
+	const gridSections = (
+		g: (typeof byClass)[number],
+		subs: (typeof byClass)[number]["subs"],
+		baseDepth: 0 | 1 | 2,
+		underFamily = false,
+	) => {
+		const stems: { stem: string; subs: typeof subs; count: number }[] = [];
+		for (const s of subs) {
+			const stem = COLOR_SUB.exec(s.sub)?.[1] ?? s.sub;
+			const last = stems[stems.length - 1];
+			if (last && last.stem === stem) {
+				last.subs.push(s);
+				last.count += s.count;
+			} else stems.push({ stem, subs: [s], count: s.count });
+		}
+		return stems.map((st) => {
+			const id = `g:${g.cls}:${st.stem}`;
+			return (
+				<div key={id} className="flex flex-col gap-px">
+					<TreeRow
+						label={underFamily ? shortSubLabel(st.stem) : (SUB_LABEL[st.stem] ?? st.stem)}
+						count={st.count}
+						open={expanded[id]}
+						depth={baseDepth}
+						onToggle={() => toggle(id)}
+					/>
+					{expanded[id] ? paletteRows(g, st.subs, (baseDepth + 1) as 1 | 2) : null}
+				</div>
+			);
+		});
+	};
+
+	// `underFamily` says whether a family heading is already on screen above these rows. When it is, the row
+	// only has to name its member — "IH01", not "Isohedral IH01 edges" — and /library's board wall makes the
+	// same call from the same table (lib/services/shelfLabels.ts). When no family row was rendered, the long
+	// name is all the context there is, so it stays.
+	const subRows = (
+		g: (typeof byClass)[number],
+		subs: (typeof byClass)[number]["subs"],
+		baseDepth: 0 | 1 | 2,
+		family: string | null = null,
+		underFamily = false,
+	) => {
+		// Colorings split one more time, into grid then palette size.
+		if (family === "grid-colors" && baseDepth < 2) return gridSections(g, subs, baseDepth, underFamily);
+		return subs.map((s) => {
+			if (!s.sub) return <Fragment key="_">{kSections(g.cls, s.sub, s.ks, baseDepth)}</Fragment>;
+			const id = `s:${g.cls}:${s.sub}`;
+			return (
+				<div key={id} className="flex flex-col gap-px">
+					<TreeRow
+						label={underFamily ? shortSubLabel(s.sub) : (SUB_LABEL[s.sub] ?? s.sub)}
+						count={s.count}
+						open={expanded[id]}
+						depth={baseDepth}
+						onToggle={() => toggle(id)}
+					/>
+					{expanded[id] ? kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3) : null}
+				</div>
+			);
+		});
+	};
+
+	// The family layer earns a row only when it actually divides something: at least one named family,
+	// and at least two groups once the unnamed run is counted. A lone "Base tilings ▸" wrapping every
+	// row beneath it is a second copy of the heading above it, and costs a click.
+	//
+	// The unnamed run is the anonymous spine, and at baseDepth 0 it gets a heading of its own — the
+	// CLASS label, which the tree dropped precisely because the class was the only one. Hyperbolic and
+	// spherical Tilings are the lists that need it: without it their `k = 1` rows sit as siblings of
+	// "3.4.7.4 tilings", two different shelves reading as one flat list. Deeper than that the class row
+	// is already on screen, so repeating its label under itself would say nothing.
+	const subSections = (g: (typeof byClass)[number], baseDepth: 0 | 1) => {
+		const named = g.families.filter((f) => f.family !== null);
+		const spineGetsRow = baseDepth === 0 && named.length >= 1;
+		if (named.length < 1 || (g.families.length < 2 && baseDepth > 0))
+			return subRows(g, g.subs, baseDepth, named[0]?.family ?? null);
+		return g.families.map((f) => {
+			if (f.family === null && !spineGetsRow)
+				return <Fragment key="_none">{subRows(g, f.subs, baseDepth)}</Fragment>;
+			const id = f.family === null ? `f:${g.cls}:_spine` : `f:${g.cls}:${f.family}`;
+			return (
+				<div key={id} className="flex flex-col gap-px">
+					<TreeRow
+						label={f.family === null ? TILE_CLASS_LABEL[g.cls].long : FAMILY_LABEL[f.family] ?? f.family}
+						count={f.count}
+						open={expanded[id]}
+						depth={baseDepth}
+						onToggle={() => toggle(id)}
+					/>
+					{/* A family row was just rendered above, so the subs beneath it drop the family word. */}
+					{expanded[id] ? subRows(g, f.subs, (baseDepth + 1) as 1 | 2, f.family, f.family !== null) : null}
+				</div>
+			);
+		});
+	};
 
 	return (
 		// The list is a wall: rows stacked edge to edge, the 1px gaps between them the only rules.
@@ -327,7 +367,7 @@ function TreeRow({
 	label: string;
 	count: number;
 	open: boolean;
-	depth: 0 | 1 | 2;
+	depth: 0 | 1 | 2 | 3;
 	onToggle: () => void;
 }) {
 	return (
@@ -346,9 +386,9 @@ function TreeRow({
 				// and — later in DOM order — the ring won, bleeding its outline up over the pinned k-row. Keep
 				// the depth order (class over grid over k) but start it past 10. The scroller isolates this
 				// context (catalogue-tab.tsx), so these values never reach the canvas overlay buttons.
-				depth === 0 ? "pl-3 z-40" : depth === 1 ? "pl-7 z-30" : "pl-11 z-20",
+				depth === 0 ? "pl-3 z-40" : depth === 1 ? "pl-7 z-30" : depth === 2 ? "pl-11 z-20" : "pl-[3.75rem] z-[15]",
 			)}
-			style={{ height: ROW_H, top: depth === 0 ? 0 : depth === 1 ? NESTED_TOP : NESTED_TOP * 2 }}
+			style={{ height: ROW_H, top: depth === 0 ? 0 : NESTED_TOP * depth }}
 		>
 			<span className="text-xs font-medium text-fg-secondary truncate">
 				{label}
