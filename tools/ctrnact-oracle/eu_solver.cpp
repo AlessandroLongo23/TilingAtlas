@@ -737,7 +737,25 @@ int writesolution(configuration const& conf) {
     return 0;
 }
 
+// Instrumentation for pricing isomorph-free generation (2026-08-07). simplify() is a WL refinement
+// run at every CLOSURE; canonical augmentation would need a test of this kind at every NODE, so the
+// break-even is cost(test) vs cost(node), not a ratio of leaf counts.
+//   simplify_calls / simplify_true  — how much isomorph rejection already happens at leaves
+//   EU_DOUBLE_SIMPLIFY=1            — call simplify twice per closure and discard the second result.
+//     The catalog is untouched (same return value used), so the timing delta against a normal run
+//     divided by simplify_calls is a clean per-call cost. Measuring by stubbing simplify out instead
+//     would change what gets emitted and therefore change downstream work, contaminating the number.
+static long long simplify_calls = 0, simplify_true = 0;
+static const bool dbl_simplify = std::getenv("EU_DOUBLE_SIMPLIFY") != nullptr;
+bool simplify_inner(configuration const& conf);
 bool simplify(configuration const& conf) {
+    simplify_calls++;
+    if (dbl_simplify) (void)simplify_inner(conf);
+    const bool r = simplify_inner(conf);
+    if (r) simplify_true++;
+    return r;
+}
+bool simplify_inner(configuration const& conf) {
     int le = conf.rneig.size();
 
     std::vector<int> eq_class(le, 0);
@@ -1190,6 +1208,19 @@ static void build_okpair() {
 // static face filter already does; here the result is KEPT and recorded at every step t (not only at
 // admissible c), because the dynamic query asks for bit (c - count), not bit c.
 static void dyn_build() {
+    // ⚑ MUST be guarded on BUCKET_OK, exactly like face_filter() and build_okpair(). dyn_can_close()
+    // identifies a dart through cand_key(), and that key is only a valid successor identity when
+    // CLASS_PREV == CLASS_NEXT with NEXT an involution — the property BUCKET_OK tests. On a palette
+    // where it fails the keys address the wrong orbit, the filter rejects reachable branches, and
+    // TILINGS ARE SILENTLY LOST.
+    //
+    // Measured 2026-08-07 on composite-convex (BUCKET_OK false): k<=2 gave 147 kept with the dynamic
+    // filter against 288 with it off — 141 real tilings gone, no error, no warning. The bug was
+    // invisible until now because every palette the filter was developed and gated against (regular,
+    // star24full, ring*) has BUCKET_OK true, so `make check-regular` and every star digest passed
+    // throughout. The blast radius is the composite/scaled family: composite-convex,
+    // composite-decomp, and any other palette with period-p corners.
+    if (!BUCKET_OK) return;   // leaves DYN_READY false => dyn_can_close() is never consulted
     const int NKEY = NCLS * NCLS * 2;
     std::vector<int> orb(NCLS, -1), orbL, orbP;
     for (int c = 0; c < NCLS; c++) {
@@ -1308,6 +1339,14 @@ int main() {
     }
     initex();
     if (eu_trace) gen.close();
+    // DFS node count: one per extend() call, i.e. every partial configuration the search expanded.
+    // Needed to price isomorph-free generation. The duplication table counts emitted LEAVES (raw
+    // blocks / kept blocks = 3.84x at k=8), but canonical augmentation pays a canonicity test at
+    // every NODE, so the break-even is a ratio of per-node costs, not of leaf counts. STDERR only —
+    // the catalog is on stdout and in out/*.txt, so this cannot perturb a digest.
+    std::cerr << "nodes: " << solcount
+              << "  simplify_calls: " << simplify_calls
+              << "  simplify_true: " << simplify_true << "\n";
     if (max_nc > 0)
         std::cerr << "note: up to " << max_nc << " dent-fill (noncounting) vertices per configuration; "
                   << "no cap is applied.\n";
