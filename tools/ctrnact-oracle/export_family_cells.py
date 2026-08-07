@@ -151,6 +151,76 @@ def delta_interval_units(tab, species, direction):
     return lo, hi
 
 
+def param_key(tab, cell_faces, T1, T2, lo_u, hi_u):
+    """Isometry-invariant signature of the PARAMETRIC cell, re-anchored to a common alpha.
+
+    This is the family discriminator. Two blocks are alpha-snapshots of the same one-parameter
+    family iff their parametric developments are the same tiling, so the key has to compare the
+    developments themselves — not a proxy for them. Two proxies were tried and both failed:
+
+      family_key alone (the multiset of alpha-abstracted corner words) UNDER-splits. Two
+      non-isomorphic tilings can carry the same vertex configurations and differ only in the gluing.
+      At k=8 four of six key-groups held two parallel families each and the atlas fold would have
+      dropped 12 real tilings.
+
+      (family_key, conway_word) OVER-splits. The Conway word was argued to be alpha-invariant, and
+      it is across all 29 k<=7 families, but that does not generalise: moving along alpha changes
+      the star species (3*d15/3*p1 -> 3*d14/3*p2 -> ...), which can change the gluing word for one
+      and the same family. At k=9 that tore four families in half, leaving four singleton "families"
+      at alpha=2 and four with a hole at alpha=2.
+
+    The anchor. Members of one family share an ABSOLUTE alpha range but sit at different alpha0, so
+    their delta parameterisations are offset from each other and cannot be compared term by term.
+    The absolute midpoint a0 + (lo+hi)/2 IS shared, so evaluating each member at its own
+    delta = (lo+hi)/2 puts every member of a family at the same geometric point. Verified on the
+    k=9 pairs: alpha0 = 30 with delta range [-2,2] and alpha0 = 15 with [-1,3] both anchor to
+    absolute alpha = 30.
+
+    The invariants are all isometry-invariant, so a family found in a rotated or translated frame
+    still matches: the cell area, a theta-series prefix of the period lattice (basis-independent,
+    unlike the raw T1/T2), and per tile its side count, star flag, area, edge lengths and interior
+    angles. Area alone is NOT enough — k9-01, k9-02 and k9-04 are different families that all have
+    area 18.0717 at alpha = 22.5.
+    """
+    delta = (lo_u + hi_u) / 2.0 * math.pi / 12
+    b1, b2 = eval_terms(lp_terms(T1), delta), eval_terms(lp_terms(T2), delta)
+    det = abs(b1.real * b2.imag - b1.imag * b2.real)
+    R = lambda x: round(x, 6)
+    # theta-series prefix: sorted |m*b1 + n*b2|^2 over a small window. Independent of which basis
+    # the developer happened to pick, which |T1|,|T2| would not be.
+    theta = sorted(R(abs(m * b1 + n * b2) ** 2)
+                   for m in range(-2, 3) for n in range(-2, 3) if (m, n) != (0, 0))[:8]
+    tiles, cents = [], []
+    for tile, verts in cell_faces:
+        pts = [eval_terms(lp_terms(v), delta) for v in verts]
+        nm = tab.TILE_NAME[tile]
+        star = "*" in nm
+        n = int(nm.split("*")[0]) if star else int(nm)
+        edges = sorted(R(abs(pts[(i + 1) % len(pts)] - pts[i])) for i in range(len(pts)))
+        angs = []
+        for i in range(len(pts)):
+            u = pts[i - 1] - pts[i]
+            w = pts[(i + 1) % len(pts)] - pts[i]
+            angs.append(R(abs(cmath.phase(w / u)) if abs(u) > 1e-12 and abs(w) > 1e-12 else 0.0))
+        sig = (n, star, R(poly_area(pts)), tuple(edges), tuple(sorted(angs)))
+        tiles.append(sig)
+        cents.append((sig, sum(pts) / len(pts)))
+    # ARRANGEMENT. The tile multiset and the lattice alone do NOT determine the tiling: the two
+    # parallel families at k=8 carry the same tiles on the same lattice and differ only in how they
+    # are placed, so a key without this term merges them and the k=8 under-split returns (measured —
+    # the KEY COLLISION guard fired on exactly those four). Pairwise centroid distances reduced
+    # modulo the period lattice are isometry-invariant and translation-invariant, which raw centroid
+    # positions would not be.
+    pairs = []
+    for i in range(len(cents)):
+        for j in range(i + 1, len(cents)):
+            dv = cents[i][1] - cents[j][1]
+            dmin = min(abs(dv + m * b1 + n * b2) for m in (-1, 0, 1) for n in (-1, 0, 1))
+            a, b = sorted((cents[i][0], cents[j][0]))
+            pairs.append((a, b, R(dmin)))
+    return ((R(det), tuple(theta), tuple(sorted(tiles))), tuple(sorted(pairs)))
+
+
 def analyze_block(tab, vertype, conway):
     """Returns None (pinned/not-flexing) or a family-member dict."""
     rneig, lneig, mirro, cls, glue = ff.decode(tab, vertype, conway)
@@ -191,6 +261,7 @@ def analyze_block(tab, vertype, conway):
         cell_faces += [(tile, v) for _, v in reps]
     words, prim, a0 = corner_records(tab, vertype, species, direction)
     lo_u, hi_u = delta_interval_units(tab, species, direction)
+    _pk = param_key(tab, cell_faces, T1, T2, lo_u, hi_u)
     return {
         "vertype": vertype,
         "species": [tab.TILE_NAME[t] for t in species],
@@ -199,6 +270,7 @@ def analyze_block(tab, vertype, conway):
         "primary": tab.TILE_NAME[prim],
         "a0_units": a0,
         "key": family_key(words),
+        "pkey": _pk[0], "pkey_fine": _pk[1],
         "symbol": sym_word_str(words),
         "delta_units": (lo_u, hi_u),
         "T1": T1, "T2": T2,
@@ -319,20 +391,29 @@ def main():
             if res is None:
                 n_pinned += 1
                 continue
-            # Key on (parametric corner words, GLUING WORD). family_key alone is the multiset of
-            # alpha-abstracted corner words, which is necessary but NOT sufficient: two
-            # non-isomorphic tilings can carry the same vertex configurations and differ only in how
-            # the half-edges are glued. Measured at k=8 (2026-08-07): 4 of 6 key-groups held two
-            # parallel families each, so every alpha appeared twice, one family record was emitted
-            # for both, and the Phase-4 fold then removed 30 records while shipping 6 sliders — 12
-            # real tilings would have vanished from the shelf with no trace. The Conway word is the
-            # right discriminator because it is alpha-INVARIANT: the alpha snapshots of one family
-            # differ only in star species (3*d15 vs 3*d14), which lives in the vertype, not in the
-            # gluing. Verified on the 29 known-good k<=7 families — all 29 have members sharing
-            # exactly one Conway word, so this key leaves them untouched and splits only the
-            # collisions.
-            fams.setdefault((res["key"], cw), []).append(res)
+            # Coarse key: (corner words, parametric cell content). See param_key() for the two
+            # cheaper proxies that failed. Refinement by arrangement happens below, and only where
+            # it is provably needed.
+            fams.setdefault((res["key"], res["pkey"]), []).append(res)
             log(f"  flexing: {vt}  (dev {time.time()-t0:.1f}s, primary {res['primary']})")
+        # REFINE ONLY WHERE NEEDED. A family is one tiling deformed by alpha, so it holds at most
+        # one member per alpha; a repeated alpha is proof that the group merges parallel families.
+        # The arrangement invariant (pkey_fine) separates them, but it is too sharp to use as the
+        # primary key: applied everywhere it also tears apart genuine families whose alpha snapshots
+        # the developer laid out differently (measured — k=8 came out right and k=9 split into four
+        # singletons plus four families with a hole). So: group coarsely, then split a group by
+        # arrangement precisely when its alpha values repeat. Both failure modes are then impossible
+        # by construction, and the KEY COLLISION guard below still fires if a refined group is
+        # somehow STILL degenerate.
+        refined = {}
+        for gk, members in fams.items():
+            aus = [m["a0_units"] for m in members]
+            if len(aus) == len(set(aus)):
+                refined[gk] = members
+                continue
+            for m in members:
+                refined.setdefault((gk, m["pkey_fine"]), []).append(m)
+        fams = refined
         log(f"k={k}: {n_pinned} pinned, {sum(len(v) for v in fams.values())} flexing blocks "
             f"in {len(fams)} families")
         for i, (key, members) in enumerate(sorted(fams.items(), key=lambda kv: kv[1][0]["vertype"]), 1):
