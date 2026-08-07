@@ -88,9 +88,17 @@ export class KUniformityChecker {
 		// null, and the caller KEPT every candidate — a silent un-gating that violates "all and
 		// only". N≠24 is an explicit non-goal (review ST-5); throw loudly instead of degrading,
 		// matching the sibling star code (StarVC, ExactStarPolygon).
-		if (N !== 24) {
+		// ST-5 originally threw on every N≠24 because the gate had only been validated at N=24, and
+		// degrading silently (empty reps → null → caller keeps everything) would break "all and only".
+		// The BODY is in fact N-generic: the only N-dependent quantities are FULL_TURN_UNITS = N below
+		// and Polygon.cornerAngleUnits, which derives everything from `this.ring.N`. Relaxed on
+		// 2026-08-07 to the rings the atlas actually holds — 24 (in-ring stars/regulars), 18 (9-fold)
+		// and 20 (5-fold) — so the out-of-ring shelves get vertex-orbit overlays. Still throws loudly on
+		// anything else: the point of ST-5 was to refuse unvalidated rings, not to refuse N≠24 forever.
+		// Verified: N=24 orbit counts are unchanged, and the N=18/20 counts are gated by tests.
+		if (N !== 24 && N !== 18 && N !== 20) {
 			throw new Error(
-				`KUniformityChecker: hardcoded to N=24 angle units; N=${N} unsupported — see review ST-5`
+				`KUniformityChecker: validated for N∈{18,20,24} angle units; N=${N} unsupported — see review ST-5`
 			);
 		}
 		// Full turn (2π) in cornerAngleUnits' units of 2π/N — the one site a future N-generalization

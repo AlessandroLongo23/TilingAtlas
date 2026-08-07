@@ -2,7 +2,10 @@
  * CB-5 (review 2026-06-09, 01-code-bugs): the k-uniformity gate is hardcoded to N=24 angle units
  * (full surround = 24 units of 2π/24). On any N≠24 ring `cornerAngleUnits` returns units of 2π/N,
  * so no vertex ever sums to 24 ⇒ reps empty ⇒ the gate returns null ⇒ EVERYTHING is kept — the
- * pipeline would emit ungated candidates as if gated, silently. The honest scope is N=24-only
+ * pipeline would emit ungated candidates as if gated, silently. Scope widened 2026-08-07 to
+ * N in {18, 20, 24} — the rings the atlas actually holds — after verifying the body is N-generic
+ * (FULL_TURN_UNITS = N; Polygon.cornerAngleUnits reads this.ring.N). N=12 below is still refused,
+ * which is the point: the gate rejects UNVALIDATED rings, it was never about N=24 forever
  * (ST-5); the checker must THROW on N≠24, matching the sibling star code (StarVC.ts,
  * ExactStarPolygon.ts), not silently degrade.
  */

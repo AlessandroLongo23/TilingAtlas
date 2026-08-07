@@ -714,7 +714,26 @@ export function sameLattice(
 	c: Cyclotomic,
 	d: Cyclotomic
 ): boolean {
-	if (detSurd(a, b).abs().cmp(detSurd(c, d).abs()) !== 0) return false;
+	// The determinant is only ever compared for EQUAL MAGNITUDE (equal covolume), and that has an exact
+	// form in any cyclotomic ring: 2i·det(a,b) = conj(a)·b − a·conj(b), which is an element of Z[zeta_N]
+	// (purely imaginary). So |det(a,b)| == |det(c,d)| iff those two elements agree up to sign, decided by
+	// exact ring equality with no surds at all.
+	//
+	// Needed because Surd represents Q(sqrt2, sqrt3, sqrt6) and imSurd/reSurd read the 15-degree
+	// sine/cosine table, i.e. they are ZZ[zeta_24]-only — not a hardcoding but a real limit: the 9-fold
+	// shelf needs cos 20 degrees, a CUBIC irrationality (root of 8x^3-6x-1), and the 5-fold shelf needs
+	// cos 18 degrees = sqrt(10+2 sqrt5)/4. Neither lies in that field.
+	//
+	// N=24 deliberately keeps the Surd path so the validated oblique census (0,0,2,5 at k=1..4) is
+	// reproduced bit-for-bit; only the rings that had no path at all take the new one.
+	if (a.ring.N === 24) {
+		if (detSurd(a, b).abs().cmp(detSurd(c, d).abs()) !== 0) return false;
+	} else {
+		const twoIdet = (x: Cyclotomic, y: Cyclotomic) => x.conj().mul(y).sub(x.mul(y.conj()));
+		const D1 = twoIdet(a, b);
+		const D2 = twoIdet(c, d);
+		if (!D1.equals(D2) && !D1.equals(D2.neg())) return false;
+	}
 	return isIntCombo(c, a, b) && isIntCombo(d, a, b);
 }
 

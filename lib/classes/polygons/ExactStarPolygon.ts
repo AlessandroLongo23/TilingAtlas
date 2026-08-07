@@ -19,19 +19,26 @@ import { Cyclotomic } from '../Cyclotomic';
  * upper bound (regular interior angle) is exactly `β > 12`, i.e. the dent is genuinely reflex.
  */
 export class ExactStarPolygon extends Polygon {
-	/** Point (convex-corner) interior angle in π/12 units — pinned per-VC by the surrounding regulars. */
+	/** Point (convex-corner) interior angle in 2π/ringN units — pinned per-VC by the surrounding regulars. */
 	alphaU: number;
+	/**
+	 * Order of the cyclotomic ring the tile lives in (angle unit = 2π/ringN). 24 for the in-ring
+	 * ZZ[zeta_24] star palette; 18 for the 9-fold and 20 for the 5-fold out-of-ring shelves, whose
+	 * tiles carry symmetry orders that do not divide 24 and so cannot be expressed at N=24 at all.
+	 */
+	ringN: number;
 
-	constructor(points: number, alphaU: number) {
+	constructor(points: number, alphaU: number, ringN = 24) {
 		super(points); // n = number of POINTS (4 for the 4-star ⇒ an 8-gon boundary)
 		this.isStar = true;
 		this.alphaU = alphaU;
+		this.ringN = ringN;
 		this.name = `${points}*@${alphaU}`;
 	}
 
 	/** Dent (reflex-corner) interior angle in π/12 units, from the closure identity Σturns = 24. */
 	get betaU(): number {
-		return 24 - 24 / this.n - this.alphaU;
+		return this.ringN - this.ringN / this.n - this.alphaU;
 	}
 
 	/**
@@ -49,21 +56,26 @@ export class ExactStarPolygon extends Polygon {
 	): ExactStarPolygon => {
 		const ring = anchorExact.ring;
 		const N = ring.N;
-		if (N !== 24) throw new Error(`ExactStarPolygon.isotoxal: requires the N=24 ring (got ${N})`);
-		if (24 % nPoints !== 0) throw new Error(`ExactStarPolygon.isotoxal: n must divide 24 (got n=${nPoints})`);
+		// Generalised from the N=24-only form on 2026-08-07 so the out-of-ring 9-fold (ZZ[zeta_18]) and
+		// 5-fold (ZZ[zeta_20]) shelves can build exact tiles too. Every constant below was D/2 or D
+		// written out at D=24; at N=24 this is arithmetically identical to what it replaced. N must be
+		// even for the half-turn H to be an integer number of units — true of every ring in the atlas.
+		const H = N / 2;
+		if (N % 2 !== 0) throw new Error(`ExactStarPolygon.isotoxal: needs an even ring order (got N=${N})`);
+		if (N % nPoints !== 0) throw new Error(`ExactStarPolygon.isotoxal: n must divide N=${N} (got n=${nPoints})`);
 		if (nPoints < 3) throw new Error(`ExactStarPolygon.isotoxal: need n ≥ 3 points (got ${nPoints})`);
-		const regularInteriorU = (12 * (nPoints - 2)) / nPoints; // regular n-gon interior angle, π/12 units
+		const regularInteriorU = (H * (nPoints - 2)) / nPoints; // regular n-gon interior angle, 2π/N units
 		if (!(alphaU > 0 && alphaU < regularInteriorU)) {
 			throw new Error(
 				`ExactStarPolygon.isotoxal: α=${alphaU} out of range 0 < α < ${regularInteriorU} for n=${nPoints} ` +
 					`(β = ${24 - 24 / nPoints - alphaU} would not be a reflex dent)`,
 			);
 		}
-		const betaU = 24 - 24 / nPoints - alphaU;
+		const betaU = N - N / nPoints - alphaU;
 		// Exterior turn applied AFTER each edge = exterior angle at the NEXT vertex. Starting at a point's
-		// outgoing edge, the first turn heads into a dent (12−β ≤ 0), then rounds a point (12−α > 0), …
-		const dentTurn = 12 - betaU;
-		const pointTurn = 12 - alphaU;
+		// outgoing edge, the first turn heads into a dent (H−β ≤ 0), then rounds a point (H−α > 0), …
+		const dentTurn = H - betaU;
+		const pointTurn = H - alphaU;
 		const verts: Cyclotomic[] = [];
 		const edgeDirs: number[] = [];
 		let p = anchorExact;
@@ -75,7 +87,7 @@ export class ExactStarPolygon extends Polygon {
 			const turn = i % 2 === 0 ? dentTurn : pointTurn; // edge 0 → dent at v1, edge 1 → point at v2, …
 			dir = (((dir + turn) % N) + N) % N;
 		}
-		const star = new ExactStarPolygon(nPoints, alphaU);
+		const star = new ExactStarPolygon(nPoints, alphaU, N);
 		star.setExactVertices(verts, edgeDirs);
 		return star;
 	};
@@ -95,9 +107,9 @@ export class ExactStarPolygon extends Polygon {
 	): ExactStarPolygon => {
 		const ring = dentVertex.ring;
 		const N = ring.N;
-		if (N !== 24) throw new Error(`ExactStarPolygon.isotoxalDentAt: requires the N=24 ring (got ${N})`);
-		const betaU = 24 - 24 / nPoints - alphaU;
-		const D = (((dentOutDir - 12 + betaU) % N) + N) % N; // edge-0 (point's outgoing) direction
+		if (N % 2 !== 0) throw new Error(`ExactStarPolygon.isotoxalDentAt: needs an even ring order (got N=${N})`);
+		const betaU = N - N / nPoints - alphaU;
+		const D = (((dentOutDir - N / 2 + betaU) % N) + N) % N; // edge-0 (point's outgoing) direction
 		const v0 = dentVertex.sub(Cyclotomic.zeta(ring, D)); // vertex 0 (a point)
 		return ExactStarPolygon.isotoxal(nPoints, alphaU, v0, D);
 	};
@@ -111,11 +123,11 @@ export class ExactStarPolygon extends Polygon {
 
 	getName = (): string => this.name;
 
-	makeEmptyLike = (): ExactStarPolygon => new ExactStarPolygon(this.n, this.alphaU);
+	makeEmptyLike = (): ExactStarPolygon => new ExactStarPolygon(this.n, this.alphaU, this.ringN);
 
 	clone = (): ExactStarPolygon => {
 		// Exact clone: copy the exact source of truth so no float round-trip occurs.
-		const s = new ExactStarPolygon(this.n, this.alphaU);
+		const s = new ExactStarPolygon(this.n, this.alphaU, this.ringN);
 		if (this.exactVertices && this.edgeDirs) {
 			s.setExactVertices(this.exactVertices.slice(), this.edgeDirs.slice());
 		}

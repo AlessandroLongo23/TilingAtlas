@@ -29,6 +29,10 @@ const PHI_POLY: Record<number, bigint[]> = {
 	10: [1n, -1n, 1n, -1n, 1n],
 	// Φ₁₂ = x⁴ − x² + 1
 	12: [1n, 0n, -1n, 0n, 1n],
+	// Φ₁₈ = x⁶ − x³ + 1  (= Φ₆(x³)). The 9-fold out-of-ring star shelf lives in ℤ[ζ₁₈]: a 9- or
+	// 18-gon's angles are integer multiples of 2π/18 and of nothing coarser, so they are not
+	// expressible in ℤ[ζ₂₄] at all.
+	18: [1n, 0n, 0n, -1n, 0n, 0n, 1n],
 	// Φ₂₀ = x⁸ − x⁶ + x⁴ − x² + 1  (= Φ₁₀(x²); Sub Rosa n=5 lives in ℤ[ζ₂₀]: the boundary unit
 	// vectors sit at odd multiples of π/10, i.e. ζ₂₀ directions, not ζ₁₀)
 	20: [1n, 0n, -1n, 0n, 1n, 0n, -1n, 0n, 1n],
@@ -50,7 +54,7 @@ const PHI_POLY: Record<number, bigint[]> = {
 };
 
 /** Euler totient values for supported N (degree of Φ_N). */
-const PHI: Record<number, number> = { 10: 4, 12: 4, 16: 8, 20: 8, 24: 8, 28: 12, 32: 16, 36: 12, 44: 20 };
+const PHI: Record<number, number> = { 10: 4, 12: 4, 16: 8, 18: 6, 20: 8, 24: 8, 28: 12, 32: 16, 36: 12, 44: 20 };
 
 /**
  * The single shared ring for the current run. There is ONE arithmetic backend per run
