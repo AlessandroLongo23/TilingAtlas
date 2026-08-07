@@ -10443,3 +10443,56 @@ keep pressing on anything keyed by vertype alone.
 
 Detail: `experiments/results/family-key-collision-2026-08-07.md`. State page:
 `experiments/results/star-catalogue-state-2026-08-07.md`, now carrying six traps instead of five.
+
+## 2026-08-07 (8) — k=9, depth-2 sharding, and two bugs found by pointing the work somewhere new
+
+**star24full k=9 = 12,076**, cumulative **24,511**, digest `3489713bb0d31c0a`. D=18 adds 2,317 for
+4,878; D=20 was run at k=9 and is still 6. Atlas 15,680 entries, 85.6 MB, star shelf 12,960.
+
+**Depth-2 sharding landed and works.** `initex()` splits on the first vertex type only, so the
+depth-1 partition cannot cut inside one first-type subtree, and one always dominates: 218 s of 1109
+at k=7 on 200 shards, 803 s of 4140 at k=8 on 400. A fixed FRACTION near 20%, so more shards bought
+nothing — measured twice before I believed it. `EU_SHARD_D2=<f>` splits `EU_SHARD_N` two ways, N/D2
+root slices and D2 branch slices per root, so root-level work is duplicated D2-fold instead of
+N-fold. Floor drops to 5-7%; 217.3 s -> 138.5 s at k=7 (1.57x); k=9 ran at a 6.7% floor.
+
+The speedup is bounded by floor x slots and the floor saturates near 20%, so this is a one-time
+constant-factor win of at most ~1.8x here and it does NOT compound. The falling per-level time ratio
+from the dynamic filter (8.7, 5.5, 4.3, 3.73) is the thing that actually makes depth reachable, and
+I should keep that distinction in mind before spending more on parallelism. On a bigger machine the
+ceiling scales with core count, so this pays off far better on a cluster than on this box.
+
+**The digest changes and that is not a bug.** Splitting inside a root changes which branch reaches a
+tiling first, and the pruner keeps the first-seen representative, so the printed orbit order moves.
+The tiling SET is identical: at k=4 the union of a sequential and a depth-2 run (2600 raw blocks)
+prunes back to exactly 678, and at k=9 the k<=8 prefix matches the depth-1 k=8 catalog on the
+order-insensitive multiset. ⚑ The atlas keys ids, the family fold and `cells_index` by vertype
+STRING, so depth-2 is safe for a NEW k but re-running a shipped k would move those keys.
+
+**Bug 1: the dynamic filter was unsound on composite palettes.** `face_filter()` and `build_okpair()`
+both bail when `BUCKET_OK` is false; `dyn_build()` did not, and set `DYN_READY` unconditionally.
+`dyn_can_close()` identifies darts through `cand_key()`, valid only under the `BUCKET_OK` identity.
+On composite-convex, k<=2 gave 147 kept against 288 with the filter off — 141 real tilings gone
+silently. Invisible because every palette the filter was developed against (regular, star24full,
+ring*) has `BUCKET_OK` true, so `check-regular` and every star digest passed throughout. It surfaced
+only when AL asked what this work is worth on the OTHER palettes. The lesson is not subtle: a gate
+that only covers the cases you developed against proves nothing about the cases you didn't.
+
+**Bug 2: the family key, third revision.** The morning's `(family_key, conway_word)` over-corrected.
+The Conway word is alpha-invariant across all 29 k<=7 families — I checked that before landing it —
+but it does not generalise, because moving along alpha changes the star species and with it the
+gluing word. At k=9 it tore four families in half. Four keys tested against all three known-good
+cases: `family_key` alone under-splits at k=8, `+conway` over-splits at k=9, `+parametric cell`
+under-splits at k=8, `+arrangement` over-splits at k=9. What works is coarse grouping refined by
+arrangement ONLY where alpha repeats — a repeated alpha is proof that a group merges parallel
+families, since a family holds at most one member per alpha. 29 / 10 / 5, k<=8 byte-identical.
+
+The `KEY COLLISION` guard I added this morning earned itself twice: it caught the parametric-key
+regression seconds after I introduced it, and it is what makes the refinement rule well-founded
+rather than a heuristic. Cheap assertions on impossible states are worth more than they cost.
+
+**A process note I should not need to write twice.** I corrupted a k=8 benchmark row by running
+`make MAXNUM=4` while the benchmark's remaining shards were executing that same binary — after
+reasoning explicitly that the build could not disturb it, which was true of the script and false of
+the shared binary path. `EU_SOLVER_BIN` exists precisely so an experimental build can live at its
+own path. Use it.

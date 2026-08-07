@@ -2170,3 +2170,14 @@ the k=7 run at a different shard count (400 vs 200) — the strongest reproducti
 Fixed `export_family_cells.py`: keying families on corner words alone merged parallel families at k=8
 and the fold would have dropped **12 real tilings silently**; the key now includes the Conway word.
 Detail: `experiments/results/family-key-collision-2026-08-07.md`, state page updated for k=8.
+
+## 2026-08-07 (8) — k=9, depth-2 sharding, and two more bugs the guards caught (CC)
+
+**star24full to k=9: 12,076 new, 24,511 total** (`3489713bb0d31c0a`), 25 min wall. **D=18 = 4,878**;
+**D=20 still 6**. Atlas 15,680 entries / 85.6 MB, star shelf 12,960.
+Landed **depth-2 sharding** (`EU_SHARD_D2`): the parallel floor was a fixed ~20% fraction no shard
+count could move; it is now 5-7%, worth 1.57x at k=7 and used in production for k=9.
+Two correctness fixes: the dynamic filter was **unsound on composite palettes** (missing `BUCKET_OK`
+guard, 141 tilings lost at composite-convex k<=2), and the family key needed a third revision —
+parametric cell, refined by arrangement only where alpha repeats. Detail:
+`experiments/results/depth2-sharding-2026-08-07.log`, `family-key-collision-2026-08-07.md`.
