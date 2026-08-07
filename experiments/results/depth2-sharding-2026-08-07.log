@@ -1,0 +1,87 @@
+# Depth-2 sharding — 2026-08-07
+
+Goal: get below the parallel floor. The depth-1 partition splits on the FIRST vertex type only, so it
+cannot cut inside a single first-type subtree, and one always dominates: slowest shard 218 s of 1109
+CPU-s at k=7 (19.7%, 200 shards) and 803 s of 4140 at k=8 (19.4%, 400 shards). A fixed FRACTION, so
+more shards buy nothing — measured, not assumed.
+
+## What was implemented
+
+`EU_SHARD_D2=<f>` in `eu_solver.cpp` (default 1 = the old behaviour, byte-identical). EU_SHARD_N stays
+the TOTAL shard count and splits two ways:
+
+    N1 = N / D2  root slices,  w1 = W / D2     which first vertex types this shard walks
+    D2           branch slices, w2 = W % D2    which of that root's level-1 branches it descends
+
+extend() called on a one-vertex seed branches into root-level children (glue firstfree to an existing
+free dart, or add a vertex type and glue to one of its darts). Those children partition the root's
+subtree; every solution is either emitted AT the root level or lives under exactly one child. So
+numbering the surviving root-level branches and slicing that number is exact — the depth-1 argument,
+one level down. The counter is shared across roots safely because the branch sequence does not depend
+on shard state: a skipped branch sets and clears the same glue as a taken one, and checkpart_inc reads
+only the configuration.
+
+Two levels rather than pure depth-2 because pure depth-2 makes EVERY shard redo EVERY root's level-1
+work (writecycle + candidate scan + checkpart_inc per branch). With the split above that duplication
+is D2-fold, not N-fold. `main()` refuses a run where D2 does not divide N — a remainder would leave
+root slices no shard walks, i.e. silently missing tilings.
+
+## Correctness: the tiling set is identical, the catalog TEXT is not
+
+k=4, star24full, four partition shapes:
+
+| shape | digest | blocks |
+|---|---|---|
+| sequential (N=1) | `0d6c89a535a16ad8` | 678 |
+| depth-1, N=8 D2=1 | `0d6c89a535a16ad8` | 678 |
+| depth-2, N=8 D2=8 | `17a1384157a0d211` | 678 |
+| hybrid, N=8 D2=2 | `f7662cc5b462713d` | 678 |
+
+Same 44/74/169/391 in every shape. The blocks differ only in the ORDER of orbits inside the vertype
+line (and the `…N.tes` ordinal, which is a per-shard emission counter).
+
+**The decisive check** is the project's own canonical form, not my reading of the diffs: concatenate
+the raw output of the sequential run and the depth-2 run — 2600 raw blocks — and prune the union. It
+collapses to exactly 678, 44/74/169/391. The WL canonical form identifies every depth-2 block with its
+sequential counterpart, so the two runs describe the same tilings.
+
+**Why the text moves.** The printed orbit order is the DFS insertion order, and the pruner keeps the
+FIRST-SEEN representative of each isomorphism class. Depth-1 sharding preserves per-root DFS order
+(each root's whole subtree is walked by one shard in one sequence), which is why 200-shard and
+400-shard runs gave byte-identical catalogs. Depth-2 splits inside a root, so a tiling reachable from
+two different root-level branches can now be first-found by the other one.
+
+⚑ **This is a real migration cost, not a cosmetic one.** The atlas keys ids, the family fold and
+`cells_index` by vertype STRING. Adopting depth-2 for a shipped catalog would move some of those keys.
+The clean fix is to make the pruner choose a canonical representative (e.g. lex-min vertype among the
+class) instead of first-seen, which would make the digest stable under ANY search order — worth doing
+on its own merits, but it re-baselines every digest and is a separate decision.
+
+
+## Benchmark: same total shard count (N=360), vary D2 only. 9 slots.
+k=5 N=360 D2=1 | wall 13s | cpu 91s | max shard 9s (9.9% of cpu) | raw 3269 | kept 
+k=5 N=360 D2=4 | wall 12s | cpu 103s | max shard 3s (2.9% of cpu) | raw 3269 | kept 
+k=5 N=360 D2=8 | wall 11s | cpu 96s | max shard 3s (3.1% of cpu) | raw 3269 | kept 
+k=6 N=360 D2=1 | wall 47s | cpu 275s | max shard 45s (16.4% of cpu) | raw 7967 | kept 
+k=6 N=360 D2=4 | wall 35s | cpu 275s | max shard 20s (7.3% of cpu) | raw 7967 | kept 
+k=6 N=360 D2=8 | wall 34s | cpu 291s | max shard 13s (4.5% of cpu) | raw 7967 | kept 
+k=7 N=360 D2=1 | wall 240s | cpu 1111s | max shard 234s (21.1% of cpu) | raw 18851 | kept 
+k=7 N=360 D2=4 | wall 207s | cpu 1598s | max shard 133s (8.3% of cpu) | raw 18851 | kept 
+k=7 N=360 D2=8 | wall 140s | cpu 1190s | max shard 62s (5.2% of cpu) | raw 18851 | kept 
+k=4 N=360 D2=1 | wall 6.5s | cpu 39.9s | max shard 1.2s (3.0% of cpu) | raw 1300 | kept 678
+k=4 N=360 D2=4 | wall 6.9s | cpu 44.1s | max shard 1.0s (2.3% of cpu) | raw 1300 | kept 678
+
+## Benchmark v2 — sub-second per-shard timing (the v1 CPU column above is quantization-inflated)
+## v1 used `date +%s`: 360 shards x 1 s granularity, and raising D2 makes each shard walk D2x more
+## roots so fewer finish under a second and more round UP — biased against D2>1 specifically. The
+## tell is k=7 v1: cpu 1598 s at D2=4 but 1190 s at D2=8; a duplication cost cannot FALL as D2 rises.
+## v1 wall and max-shard figures stand; only its cpu column is discarded.
+k=5 N=360 D2=1 | wall 10.3s | cpu 70.3s | max shard 6.9s (9.8% of cpu) | raw 3269 | kept 1449
+k=5 N=360 D2=4 | wall 11.8s | cpu 79.9s | max shard 4.6s (5.8% of cpu) | raw 3269 | kept 1449
+k=5 N=360 D2=8 | wall 9.6s | cpu 77.4s | max shard 3.2s (4.1% of cpu) | raw 3269 | kept 1449
+k=6 N=360 D2=1 | wall 45.3s | cpu 246.3s | max shard 43.0s (17.5% of cpu) | raw 7967 | kept 3019
+k=6 N=360 D2=4 | wall 33.9s | cpu 259.3s | max shard 17.5s (6.7% of cpu) | raw 7967 | kept 3019
+k=6 N=360 D2=8 | wall 32.1s | cpu 260.7s | max shard 13.6s (5.2% of cpu) | raw 7967 | kept 3019
+k=7 N=360 D2=1 | wall 217.3s | cpu 970.1s | max shard 212.9s (21.9% of cpu) | raw 18851 | kept 6223
+k=7 N=360 D2=4 | wall 153.3s | cpu 1092.1s | max shard 94.4s (8.6% of cpu) | raw 18851 | kept 6223
+k=7 N=360 D2=8 | wall 138.5s | cpu 1107.1s | max shard 63.1s (5.7% of cpu) | raw 18851 | kept 6223
