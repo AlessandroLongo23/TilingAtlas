@@ -2181,3 +2181,15 @@ Two correctness fixes: the dynamic filter was **unsound on composite palettes** 
 guard, 141 tilings lost at composite-convex k<=2), and the family key needed a third revision —
 parametric cell, refined by arrangement only where alpha repeats. Detail:
 `experiments/results/depth2-sharding-2026-08-07.log`, `family-key-collision-2026-08-07.md`.
+
+## 2026-08-07 (9) — the alphabet is no longer a compiled artefact (CC)
+
+`gen_alphabet.py` now emits `tables.bin` beside the `.inc`; `make eu_solver_rt` + `EU_TABLES=<path>`
+reads it at startup. Removes the wall that made **combined-z24 INFEASIBLE** (1.75M types → 588 MB
+single-line `.inc` → `g++` OOM; the data is only ~100-200 MB in RAM). Verified identical both ways:
+regular `884968dca36a6c41`/1247 (the check-regular golden) and star24full k≤4 `0d6c89a535a16ad8`/678.
+Compiled path unchanged and still gated. Bonus: the runtime binary is 121 KB vs 25 MB and has NO
+palette dependency, so one binary serves every palette.
+Also measured: completing the isotoxal palette is NOT reachable by filtering — the filter's kill rate
+is palette-dependent (99.5% ring42, 96% star24full, **56% isotoxal**, 0% composite). Detail:
+`experiments/results/isotoxal-completion-feasibility-2026-08-07.md`.
