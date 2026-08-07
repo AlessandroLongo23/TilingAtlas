@@ -88,3 +88,34 @@ k=7 N=360 D2=8 | wall 138.5s | cpu 1107.1s | max shard 63.1s (5.7% of cpu) | raw
 k=8 N=360 D2=1 | wall 805.1s | cpu 3481.5s | max shard 792.9s (22.8% of cpu) | raw 42697 | kept 12435
 k=8 N=360 D2=4 | wall 589.9s | cpu 3994.6s | max shard 354.5s (8.9% of cpu) | raw 42697 | kept 12435
 k=8 N=360 D2=8 | wall 191.1s | cpu 1246.3s | max shard 181.2s (14.5% of cpu) | raw 3500 | kept 1233
+## re-run of the k=8 D2=8 row invalidated by a mid-run rebuild (see log above)
+k=8 N=360 D2=8 | wall 495.2s | cpu 3876.0s | max shard 199.5s (5.1% of cpu) | raw 42697 | kept 12435
+
+## Summary — wall clock (N=360, 9 slots) and the max-shard floor
+
+| k | D2=1 | D2=4 | D2=8 | best speedup | floor D2=1 -> D2=8 |
+|---|---|---|---|---|---|
+| 4 |   6.5s |   6.9s |      — | 0.94x (LOSS) |  3.0% ->    — |
+| 5 |  10.3s |  11.8s |   9.6s | 1.07x        |  9.8% -> 4.1% |
+| 6 |  45.3s |  33.9s |  32.1s | 1.41x        | 17.5% -> 5.2% |
+| 7 | 217.3s | 153.3s | 138.5s | 1.57x        | 21.9% -> 5.7% |
+| 8 | 805.1s | 589.9s | 495.2s | 1.63x        | 22.8% -> 5.1% |
+| 9 |      — |      — | 1494s  | production   |    — -> 6.7% |
+
+Duplication cost in CPU: +5.3%/+5.8% at k=6 (D2=4/8), +12.6%/+14.1% at k=7, +14.7%/+11.3% at k=8.
+Real, small, and flat in D2 — so raising D2 further is nearly free.
+
+**The speedup tracks the BASELINE FLOOR, not k.** The ceiling is floor x slots; with 9 slots
+anything below 1/9 = 11.1% has no headroom at all. k=4 (3.0%) and k=5 (9.8%) were already
+throughput-bound, which is why k=4 is a small LOSS — 360 shards of startup plus duplication buy
+nothing there. Depth-2 should be left OFF below k=6. From k=6 the floor exceeds 11.1% and the gain
+appears, reaching 1.63x at k=8 against a 2.05x ceiling.
+
+⚑ The floor saturates near 20-23% rather than climbing, so ~1.8x is the ceiling on this 10-core box
+and the gain does NOT compound per level. Contrast the dynamic filter, whose per-level time ratio
+keeps falling (8.7, 5.5, 4.3, 3.59, ~2.9) — that is what actually buys depth. The depth-2 ceiling
+scales with core count, so it is worth far more on a cluster than here.
+
+Correctness: every D2 variant at k=5,6,7 gave identical per-k counts AND identical
+order-insensitive block multisets; k=8 D2=8 reproduces raw 42697 / kept 12435; the k=9 production
+run's k<=8 prefix matches the depth-1 k=8 catalog exactly.
