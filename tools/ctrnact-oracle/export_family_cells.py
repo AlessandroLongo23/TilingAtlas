@@ -319,13 +319,33 @@ def main():
             if res is None:
                 n_pinned += 1
                 continue
-            fams.setdefault(res["key"], []).append(res)
+            # Key on (parametric corner words, GLUING WORD). family_key alone is the multiset of
+            # alpha-abstracted corner words, which is necessary but NOT sufficient: two
+            # non-isomorphic tilings can carry the same vertex configurations and differ only in how
+            # the half-edges are glued. Measured at k=8 (2026-08-07): 4 of 6 key-groups held two
+            # parallel families each, so every alpha appeared twice, one family record was emitted
+            # for both, and the Phase-4 fold then removed 30 records while shipping 6 sliders — 12
+            # real tilings would have vanished from the shelf with no trace. The Conway word is the
+            # right discriminator because it is alpha-INVARIANT: the alpha snapshots of one family
+            # differ only in star species (3*d15 vs 3*d14), which lives in the vertype, not in the
+            # gluing. Verified on the 29 known-good k<=7 families — all 29 have members sharing
+            # exactly one Conway word, so this key leaves them untouched and splits only the
+            # collisions.
+            fams.setdefault((res["key"], cw), []).append(res)
             log(f"  flexing: {vt}  (dev {time.time()-t0:.1f}s, primary {res['primary']})")
         log(f"k={k}: {n_pinned} pinned, {sum(len(v) for v in fams.values())} flexing blocks "
             f"in {len(fams)} families")
         for i, (key, members) in enumerate(sorted(fams.items(), key=lambda kv: kv[1][0]["vertype"]), 1):
             fid = f"{args.id_prefix}-k{k}-{i:02d}"
             rec = emit_family(fid, k, members, cells_index)
+            # A family is ONE tiling deformed by alpha, so it holds at most one member per alpha.
+            # A repeat means the key still merges parallel families, and Phase 4 folds every member
+            # away while shipping a single slider that represents only one of them. Loud, because
+            # the failure is silent in the atlas: the records just stop existing.
+            aus = [m["a_units"] for m in rec["members"]]
+            if len(aus) != len(set(aus)):
+                log(f"  ⚑ KEY COLLISION {fid}: alpha values {aus} repeat — this record merges "
+                    f"parallel families and folding its members WILL drop real tilings")
             out_records.append(rec)
             log(f"  {fid}: {rec['familySymbol']}  members a={[m['a_units'] for m in rec['members']]}"
                 f"  alpha in {rec['params'][0]['alphaRangeDegOpen']} deg  checks {rec['areaChecks']}")

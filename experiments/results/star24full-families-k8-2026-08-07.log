@@ -1,0 +1,180 @@
+[10:02:31] === family export sweep start; tables=tables/star24full ===
+[10:02:32] k=1: 33 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k7/s24-k1.blocks.txt
+[10:02:32]   flexing: (3*d15,3,3*p1,3)A  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (3*d14,3,3*p2,3)A  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (6*d18,6*p2,3)F  (dev 0.0s, primary 6*2)
+[10:02:32]   flexing: (6*d16,6*p4,3)F  (dev 0.0s, primary 6*4)
+[10:02:32]   flexing: (6*d15,6*p5,3)F  (dev 0.0s, primary 6*5)
+[10:02:32]   flexing: (6*d14,6*p6,3)F  (dev 0.0s, primary 6*6)
+[10:02:32]   flexing: (3*d13,3,3*p3,3)A  (dev 0.0s, primary 3*3)
+[10:02:32]   flexing: (6*d19,6*p1,3)F  (dev 0.0s, primary 6*1)
+[10:02:32]   flexing: (6*d17,6*p3,3)F  (dev 0.0s, primary 6*3)
+[10:02:32]   flexing: (6*d13,6*p7,3)F  (dev 0.0s, primary 6*7)
+[10:02:32]   flexing: (4*d16,4*p2,4)F  (dev 0.0s, primary 4*2)
+[10:02:32]   flexing: (4*d15,4*p3,4)F  (dev 0.0s, primary 4*3)
+[10:02:32]   flexing: (4*d14,4*p4,4)F  (dev 0.0s, primary 4*4)
+[10:02:32]   flexing: (4*d17,4*p1,4)F  (dev 0.0s, primary 4*1)
+[10:02:32]   flexing: (4*d13,4*p5,4)F  (dev 0.0s, primary 4*5)
+[10:02:32]   flexing: (3*d15,3*p1,6)F  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (3*d14,3*p2,6)F  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (3*d13,3*p3,6)F  (dev 0.0s, primary 3*3)
+[10:02:32] k=1: 15 pinned, 18 flexing blocks in 4 families
+[10:02:32]   ctrnact-s24f-family-k1-01: (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k1-02: (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k1-03: (4,4*d@-a+18,4*p@a)  members a=[1, 2, 3, 4, 5]  alpha in [0.0, 90.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k1-04: (3,6*d@-a+20,6*p@a)  members a=[1, 2, 3, 4, 5, 6, 7]  alpha in [0.0, 120.0] deg  checks 11/11 pass
+[10:02:32] k=2: 54 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k7/s24-k2.blocks.txt
+[10:02:32]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (6*p5,3*d15,3)F, (6*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (6*d19,3*p1,3)F, (6*p1,3*d15,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (6*d18,3*p2,3)F, (6*p2,3*d14,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (6*p6,3*d14,3)F, (6*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (4*p4,4*d16,3)F, (4*d14,4*p2,3,3)F  (dev 0.0s, primary 4*2)
+[10:02:32]   flexing: (4*p5,4*d15,3)F, (4*d13,4*p3,3,3)F  (dev 0.0s, primary 4*3)
+[10:02:32]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:32]   flexing: (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*3)
+[10:02:32]   flexing: (6*d17,3*p3,3)F, (6*p3,3*d13,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:32]   flexing: (6*p7,3*d13,3)F, (6*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:32]   flexing: (4*p3,4*d17,3)F, (4*d15,4*p1,3,3)F  (dev 0.0s, primary 4*1)
+[10:02:32]   flexing: (6*d17,3*p1,4)F, (6*p3,3*d15,4)F  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (6*d16,3*p2,4)F, (6*p4,3*d14,4)F  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (6*d15,3*p3,4)F, (6*p5,3*d13,4)F  (dev 0.0s, primary 3*3)
+[10:02:32] k=2: 36 pinned, 18 flexing blocks in 6 families
+[10:02:32]   ctrnact-s24f-family-k2-01: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k2-02: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k2-03: (3,3,4*d@-a+16,4*p@a) + (3,4*d@-a+18,4*p@a+2)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k2-04: (3*d@-a+16,4,6*p@a+2) + (3*p@a,4,6*d@-a+18)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k2-05: (3,3,3*d@-a+16,6*p@a) + (3,3*p@a,6*d@-a+20)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k2-06: (3,3,3*p@a,6*d@-a+16) + (3,3*d@-a+16,6*p@a+4)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32] k=3: 108 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k7/s24-k3.blocks.txt
+[10:02:32]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:32]   flexing: (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:32]   flexing: (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:32]   flexing: (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:32] k=3: 102 pinned, 6 flexing blocks in 2 families
+[10:02:32]   ctrnact-s24f-family-k3-01: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32]   ctrnact-s24f-family-k3-02: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:32] k=4: 240 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k7/s24-k4.blocks.txt
+[10:02:33]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R3  (dev 0.0s, primary 3*1)
+[10:02:33]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[10:02:33]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R3  (dev 0.0s, primary 3*2)
+[10:02:33]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[10:02:33]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R3  (dev 0.0s, primary 3*3)
+[10:02:33]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*3)
+[10:02:33]   flexing: (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[10:02:33]   flexing: (6*p5,3*d15,3)F, (3*d15,3*p1,3,3)F, (6*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:33]   flexing: (6*d19,3*p1,3)F, (3*d15,3*p1,3,3)F, (6*p1,3*d15,3,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:33]   flexing: (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[10:02:33]   flexing: (6*d18,3*p2,3)F, (3*d14,3*p2,3,3)F, (6*p2,3*d14,3,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:33]   flexing: (6*p6,3*d14,3)F, (3*d14,3*p2,3,3)F, (6*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:33]   flexing: (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*3)
+[10:02:33]   flexing: (6*d17,3*p3,3)F, (3*d13,3*p3,3,3)F, (6*p3,3*d13,3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:33]   flexing: (6*p7,3*d13,3)F, (3*d13,3*p3,3,3)F, (6*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:33] k=4: 225 pinned, 15 flexing blocks in 5 families
+[10:02:33]   ctrnact-s24f-family-k4-01: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:33]   ctrnact-s24f-family-k4-02: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:33]   ctrnact-s24f-family-k4-03: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:33]   ctrnact-s24f-family-k4-04: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,6*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*p@a,6*d@-a+20)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:33]   ctrnact-s24f-family-k4-05: (3,3,3*d@-a+16,3*p@a) + (3,3,3*p@a,6*d@-a+16) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,6*p@a+4)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:33] k=5: 439 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k7/s24-k5.blocks.txt
+[10:02:34]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R2  (dev 0.0s, primary 3*1)
+[10:02:34]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[10:02:34]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R2  (dev 0.0s, primary 3*2)
+[10:02:34]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[10:02:34]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R2  (dev 0.0s, primary 3*3)
+[10:02:34]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*3)
+[10:02:34]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:34]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:34]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:34]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:34]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:34]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:34] k=5: 427 pinned, 12 flexing blocks in 4 families
+[10:02:34]   ctrnact-s24f-family-k5-01: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:34]   ctrnact-s24f-family-k5-02: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:34]   ctrnact-s24f-family-k5-03: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:34]   ctrnact-s24f-family-k5-04: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:34] k=6: 897 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k7/s24-k6.blocks.txt
+[10:02:36]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:36]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:36]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:36]   flexing: (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:36]   flexing: (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:36]   flexing: (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:36]   flexing: (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:36]   flexing: (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:37]   flexing: (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:37] k=6: 888 pinned, 9 flexing blocks in 3 families
+[10:02:37]   ctrnact-s24f-family-k6-01: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:37]   ctrnact-s24f-family-k6-02: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:37]   ctrnact-s24f-family-k6-03: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:37] k=7: 1732 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k7/s24-k7.blocks.txt
+[10:02:39]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R2, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:39]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R2, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:41]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R2, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:41]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)A  (dev 0.0s, primary 3*1)
+[10:02:41]   flexing: (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[10:02:41]   flexing: (6*p5,3*d15,3)F, (3*d15,3*p1,3,3)F, (6*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:41]   flexing: (6*d19,3*p1,3)F, (3*d15,3*p1,3,3)F, (6*p1,3*d15,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:41]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)A  (dev 0.0s, primary 3*2)
+[10:02:41]   flexing: (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[10:02:41]   flexing: (6*d18,3*p2,3)F, (3*d14,3*p2,3,3)F, (6*p2,3*d14,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:41]   flexing: (6*p6,3*d14,3)F, (3*d14,3*p2,3,3)F, (6*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:41]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)A  (dev 0.0s, primary 3*3)
+[10:02:41]   flexing: (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*3)
+[10:02:41]   flexing: (6*d17,3*p3,3)F, (3*d13,3*p3,3,3)F, (6*p3,3*d13,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:41]   flexing: (6*p7,3*d13,3)F, (3*d13,3*p3,3,3)F, (6*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:41] k=7: 1717 pinned, 15 flexing blocks in 5 families
+[10:02:41]   ctrnact-s24f-family-k7-01: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:41]   ctrnact-s24f-family-k7-02: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:41]   ctrnact-s24f-family-k7-03: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:41]   ctrnact-s24f-family-k7-04: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,6*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*p@a,6*d@-a+20)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:41]   ctrnact-s24f-family-k7-05: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*p@a,6*d@-a+16) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,6*p@a+4)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:41] k=8: 3362 star-bearing blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k8/s24-k8.blocks.txt
+[10:02:46]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F  (dev 0.1s, primary 3*1)
+[10:02:46]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F  (dev 0.1s, primary 3*1)
+[10:02:47]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[10:02:47]   flexing: (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,6)F, (3*d15,3*p1,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*1)
+[10:02:47]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F  (dev 0.1s, primary 3*2)
+[10:02:47]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F  (dev 0.1s, primary 3*2)
+[10:02:47]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[10:02:47]   flexing: (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,6)F, (3*d14,3*p2,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*2)
+[10:02:49]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F  (dev 0.1s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F  (dev 0.1s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,6)F, (3*d13,3*p3,3,3)F, (3,3,3,3,3,3)R6  (dev 0.0s, primary 3*3)
+[10:02:50]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:50]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:50]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:50]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:50]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F  (dev 0.0s, primary 3*1)
+[10:02:50]   flexing: (3*d15,3,3*p1,3)A, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3*p1,3,3)F, (3*d15,3*p1,3,3)F, (3*d15,3,3*p1,3)F, (3*d15,3,3*p1,3)F  (dev 0.0s, primary 3*1)
+[10:02:50]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:50]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:50]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:50]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:50]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F  (dev 0.0s, primary 3*2)
+[10:02:50]   flexing: (3*d14,3,3*p2,3)A, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3*p2,3,3)F, (3*d14,3*p2,3,3)F, (3*d14,3,3*p2,3)F, (3*d14,3,3*p2,3)F  (dev 0.0s, primary 3*2)
+[10:02:50]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F  (dev 0.0s, primary 3*3)
+[10:02:50]   flexing: (3*d13,3,3*p3,3)A, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3*p3,3,3)F, (3*d13,3,3*p3,3)F, (3*d13,3,3*p3,3)F  (dev 0.0s, primary 3*3)
+[10:02:51] k=8: 3332 pinned, 30 flexing blocks in 10 families
+[10:02:51]   ctrnact-s24f-family-k8-01: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-02: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-03: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-04: (3,3,3,3,3,3) + (3,3,3*d@-a+16,3*p@a) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6) + (3*d@-a+16,3*p@a,6)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-05: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-06: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-07: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-08: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-09: (3,3,3*d@-a+16,3*p@a) + (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51]   ctrnact-s24f-family-k8-10: (3,3,3*d@-a+16,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a) + (3,3*d@-a+16,3,3*p@a)  members a=[1, 2, 3]  alpha in [0.0, 60.0] deg  checks 11/11 pass
+[10:02:51] wrote 39 family records -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/atlas-k8/families-k8-fixed.cells.json  (0 with failing checks)
