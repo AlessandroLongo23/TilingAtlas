@@ -1,38 +1,38 @@
 === load source data ===
 ctrnact.json: 47854 records indexed
-star cell files: 27 read, 6922 ids with per-orbit configs
+star cell files: 30 read, 13055 ids with per-orbit configs
 
-=== classify public/reference-atlas.json (9557 entries) ===
-  [100/2720] regular classified — 3s elapsed, ETA 77s
-  [200/2720] regular classified — 6s elapsed, ETA 76s
-  [300/2720] regular classified — 10s elapsed, ETA 80s
-  [400/2720] regular classified — 15s elapsed, ETA 87s
-  [500/2720] regular classified — 19s elapsed, ETA 84s
-  [600/2720] regular classified — 24s elapsed, ETA 84s
-  [700/2720] regular classified — 28s elapsed, ETA 81s
-  [800/2720] regular classified — 34s elapsed, ETA 82s
-  [900/2720] regular classified — 40s elapsed, ETA 81s
-  [1000/2720] regular classified — 47s elapsed, ETA 80s
-  [1100/2720] regular classified — 62s elapsed, ETA 92s
-  [1200/2720] regular classified — 78s elapsed, ETA 99s
-  [1300/2720] regular classified — 84s elapsed, ETA 92s
-  [1400/2720] regular classified — 89s elapsed, ETA 84s
-  [1500/2720] regular classified — 96s elapsed, ETA 78s
-  [1600/2720] regular classified — 110s elapsed, ETA 77s
-  [1700/2720] regular classified — 126s elapsed, ETA 75s
-  [1800/2720] regular classified — 148s elapsed, ETA 76s
-  [1900/2720] regular classified — 169s elapsed, ETA 73s
-  [2000/2720] regular classified — 188s elapsed, ETA 68s
-  [2100/2720] regular classified — 212s elapsed, ETA 62s
-  [2200/2720] regular classified — 243s elapsed, ETA 58s
-  [2300/2720] regular classified — 264s elapsed, ETA 48s
-  [2400/2720] regular classified — 287s elapsed, ETA 38s
-  [2500/2720] regular classified — 314s elapsed, ETA 28s
-  [2600/2720] regular classified — 336s elapsed, ETA 16s
-  [2700/2720] regular classified — 363s elapsed, ETA 3s
+=== classify public/reference-atlas.json (15680 entries) ===
+  [100/2720] regular classified — 3s elapsed, ETA 68s
+  [200/2720] regular classified — 5s elapsed, ETA 68s
+  [300/2720] regular classified — 9s elapsed, ETA 71s
+  [400/2720] regular classified — 13s elapsed, ETA 78s
+  [500/2720] regular classified — 17s elapsed, ETA 74s
+  [600/2720] regular classified — 21s elapsed, ETA 73s
+  [700/2720] regular classified — 25s elapsed, ETA 71s
+  [800/2720] regular classified — 30s elapsed, ETA 72s
+  [900/2720] regular classified — 35s elapsed, ETA 70s
+  [1000/2720] regular classified — 40s elapsed, ETA 70s
+  [1100/2720] regular classified — 54s elapsed, ETA 79s
+  [1200/2720] regular classified — 67s elapsed, ETA 85s
+  [1300/2720] regular classified — 72s elapsed, ETA 79s
+  [1400/2720] regular classified — 76s elapsed, ETA 72s
+  [1500/2720] regular classified — 82s elapsed, ETA 67s
+  [1600/2720] regular classified — 94s elapsed, ETA 66s
+  [1700/2720] regular classified — 108s elapsed, ETA 65s
+  [1800/2720] regular classified — 127s elapsed, ETA 65s
+  [1900/2720] regular classified — 144s elapsed, ETA 62s
+  [2000/2720] regular classified — 162s elapsed, ETA 58s
+  [2100/2720] regular classified — 184s elapsed, ETA 54s
+  [2200/2720] regular classified — 212s elapsed, ETA 50s
+  [2300/2720] regular classified — 232s elapsed, ETA 42s
+  [2400/2720] regular classified — 251s elapsed, ETA 34s
+  [2500/2720] regular classified — 277s elapsed, ETA 24s
+  [2600/2720] regular classified — 298s elapsed, ETA 14s
+  [2700/2720] regular classified — 682s elapsed, ETA 5s
 
 --- summary ---
-m/partition:  9522 classified, 35 unclassified
+m/partition:  15640 classified, 40 unclassified
 wallpaper:    2720 classified, 0 skipped (stars, by design)
 
 M distribution by k (k: {M: count}):
@@ -44,6 +44,7 @@ M distribution by k (k: {M: count}):
   k=6: {"2":172,"3":411,"4":443,"5":381,"6":160}
   k=7: {"2":248,"3":759,"4":802,"5":775,"6":466,"7":145}
   k=8: {"2":129,"3":298,"4":582,"5":860,"6":864,"7":515,"8":106}
+  k=9: {"2":187,"3":351,"4":769,"5":1374,"6":1656,"7":1182,"8":494,"9":105}
 
 wallpaper-group histogram:
   cm    12
@@ -66,7 +67,7 @@ wallpaper-group histogram:
 
 ✓ ctrnact partition gate: all 1472 entries agree with distinctTypePartition
 
-⚑ 35 tiling(s) with NO m/partition (characterization gap):
+⚑ 40 tiling(s) with NO m/partition (characterization gap):
     ctrnact-s24f-family-k2-01: no star orbits + k>1
     ctrnact-s24f-family-k2-02: no star orbits + k>1
     ctrnact-s24f-family-k2-03: no star orbits + k>1
@@ -102,305 +103,10 @@ wallpaper-group histogram:
     ctrnact-s24f-family-k8-08: no star orbits + k>1
     ctrnact-s24f-family-k8-09: no star orbits + k>1
     ctrnact-s24f-family-k8-10: no star orbits + k>1
+    ctrnact-s24f-family-k9-01: no star orbits + k>1
+    ctrnact-s24f-family-k9-02: no star orbits + k>1
+    ctrnact-s24f-family-k9-03: no star orbits + k>1
+    ctrnact-s24f-family-k9-04: no star orbits + k>1
+    ctrnact-s24f-family-k9-05: no star orbits + k>1
 
-★ wrote public/reference-atlas.json in 369s
-
-=== classify public/reference-atlas-k8.json (2850 entries) ===
-  [100/2850] regular classified — 3s elapsed, ETA 90s
-  [200/2850] regular classified — 7s elapsed, ETA 90s
-  [300/2850] regular classified — 10s elapsed, ETA 86s
-  [400/2850] regular classified — 14s elapsed, ETA 83s
-  [500/2850] regular classified — 18s elapsed, ETA 83s
-  [600/2850] regular classified — 22s elapsed, ETA 82s
-  [700/2850] regular classified — 29s elapsed, ETA 88s
-  [800/2850] regular classified — 33s elapsed, ETA 85s
-  [900/2850] regular classified — 37s elapsed, ETA 81s
-  [1000/2850] regular classified — 41s elapsed, ETA 76s
-  [1100/2850] regular classified — 45s elapsed, ETA 72s
-  [1200/2850] regular classified — 51s elapsed, ETA 70s
-  [1300/2850] regular classified — 56s elapsed, ETA 66s
-  [1400/2850] regular classified — 61s elapsed, ETA 63s
-  [1500/2850] regular classified — 65s elapsed, ETA 59s
-  [1600/2850] regular classified — 70s elapsed, ETA 55s
-  [1700/2850] regular classified — 77s elapsed, ETA 52s
-  [1800/2850] regular classified — 84s elapsed, ETA 49s
-  [1900/2850] regular classified — 89s elapsed, ETA 44s
-  [2000/2850] regular classified — 95s elapsed, ETA 40s
-  [2100/2850] regular classified — 105s elapsed, ETA 37s
-  [2200/2850] regular classified — 123s elapsed, ETA 36s
-  [2300/2850] regular classified — 146s elapsed, ETA 35s
-  [2400/2850] regular classified — 157s elapsed, ETA 29s
-  [2500/2850] regular classified — 167s elapsed, ETA 23s
-  [2600/2850] regular classified — 173s elapsed, ETA 17s
-  [2700/2850] regular classified — 179s elapsed, ETA 10s
-  [2800/2850] regular classified — 185s elapsed, ETA 3s
-
---- summary ---
-m/partition:  2850 classified, 0 unclassified
-wallpaper:    2850 classified, 0 skipped (stars, by design)
-
-M distribution by k (k: {M: count}):
-  k=8: {"2":258,"3":1037,"4":795,"5":537,"6":203,"7":20}
-
-wallpaper-group histogram:
-  cm    15
-  cmm   1116
-  p2    142
-  p3    6
-  p31m  27
-  p3m1  17
-  p4    1
-  p4g   6
-  p4m   2
-  p6    57
-  p6m   224
-  pg    2
-  pgg   52
-  pm    13
-  pmg   401
-  pmm   769
-
-✓ ctrnact partition gate: all 2850 entries agree with distinctTypePartition
-
-★ wrote public/reference-atlas-k8.json in 189s
-
-=== classify public/reference-atlas-k9.json (5960 entries) ===
-  [100/5960] regular classified — 4s elapsed, ETA 233s
-  [200/5960] regular classified — 7s elapsed, ETA 212s
-  [300/5960] regular classified — 12s elapsed, ETA 219s
-  [400/5960] regular classified — 16s elapsed, ETA 221s
-  [500/5960] regular classified — 20s elapsed, ETA 217s
-  [600/5960] regular classified — 24s elapsed, ETA 212s
-  [700/5960] regular classified — 28s elapsed, ETA 209s
-  [800/5960] regular classified — 32s elapsed, ETA 206s
-  [900/5960] regular classified — 36s elapsed, ETA 203s
-  [1000/5960] regular classified — 40s elapsed, ETA 200s
-  [1100/5960] regular classified — 46s elapsed, ETA 203s
-  [1200/5960] regular classified — 51s elapsed, ETA 204s
-  [1300/5960] regular classified — 62s elapsed, ETA 223s
-  [1400/5960] regular classified — 70s elapsed, ETA 228s
-  [1500/5960] regular classified — 76s elapsed, ETA 225s
-  [1600/5960] regular classified — 81s elapsed, ETA 221s
-  [1700/5960] regular classified — 86s elapsed, ETA 216s
-  [1800/5960] regular classified — 91s elapsed, ETA 211s
-  [1900/5960] regular classified — 98s elapsed, ETA 210s
-  [2000/5960] regular classified — 104s elapsed, ETA 206s
-  [2100/5960] regular classified — 109s elapsed, ETA 200s
-  [2200/5960] regular classified — 114s elapsed, ETA 195s
-  [2300/5960] regular classified — 120s elapsed, ETA 190s
-  [2400/5960] regular classified — 125s elapsed, ETA 185s
-  [2500/5960] regular classified — 131s elapsed, ETA 181s
-  [2600/5960] regular classified — 138s elapsed, ETA 178s
-  [2700/5960] regular classified — 143s elapsed, ETA 173s
-  [2800/5960] regular classified — 149s elapsed, ETA 168s
-  [2900/5960] regular classified — 156s elapsed, ETA 165s
-  [3000/5960] regular classified — 164s elapsed, ETA 162s
-  [3100/5960] regular classified — 169s elapsed, ETA 156s
-  [3200/5960] regular classified — 175s elapsed, ETA 151s
-  [3300/5960] regular classified — 182s elapsed, ETA 146s
-  [3400/5960] regular classified — 187s elapsed, ETA 141s
-  [3500/5960] regular classified — 193s elapsed, ETA 135s
-  [3600/5960] regular classified — 200s elapsed, ETA 131s
-  [3700/5960] regular classified — 206s elapsed, ETA 126s
-  [3800/5960] regular classified — 216s elapsed, ETA 123s
-  [3900/5960] regular classified — 223s elapsed, ETA 118s
-  [4000/5960] regular classified — 234s elapsed, ETA 114s
-  [4100/5960] regular classified — 239s elapsed, ETA 108s
-  [4200/5960] regular classified — 244s elapsed, ETA 102s
-  [4300/5960] regular classified — 250s elapsed, ETA 97s
-  [4400/5960] regular classified — 256s elapsed, ETA 91s
-  [4500/5960] regular classified — 268s elapsed, ETA 87s
-  [4600/5960] regular classified — 278s elapsed, ETA 82s
-  [4700/5960] regular classified — 289s elapsed, ETA 77s
-  [4800/5960] regular classified — 307s elapsed, ETA 74s
-  [4900/5960] regular classified — 335s elapsed, ETA 72s
-  [5000/5960] regular classified — 354s elapsed, ETA 68s
-  [5100/5960] regular classified — 362s elapsed, ETA 61s
-  [5200/5960] regular classified — 376s elapsed, ETA 55s
-  [5300/5960] regular classified — 385s elapsed, ETA 48s
-  [5400/5960] regular classified — 395s elapsed, ETA 41s
-  [5500/5960] regular classified — 405s elapsed, ETA 34s
-  [5600/5960] regular classified — 412s elapsed, ETA 26s
-  [5700/5960] regular classified — 419s elapsed, ETA 19s
-  [5800/5960] regular classified — 427s elapsed, ETA 12s
-  [5900/5960] regular classified — 437s elapsed, ETA 4s
-
---- summary ---
-m/partition:  5960 classified, 0 unclassified
-wallpaper:    5960 classified, 0 skipped (stars, by design)
-
-M distribution by k (k: {M: count}):
-  k=9: {"2":424,"3":1992,"4":1608,"5":1278,"6":570,"7":80,"8":8}
-
-wallpaper-group histogram:
-  cm    40
-  cmm   2411
-  p1    1
-  p2    333
-  p3    10
-  p31m  31
-  p3m1  28
-  p4    3
-  p4g   12
-  p4m   1
-  p6    89
-  p6m   330
-  pg    3
-  pgg   94
-  pm    32
-  pmg   883
-  pmm   1659
-
-✓ ctrnact partition gate: all 5960 entries agree with distinctTypePartition
-
-★ wrote public/reference-atlas-k9.json in 443s
-
-=== classify public/reference-atlas-k10.json (11866 entries) ===
-  [100/11866] regular classified — 5s elapsed, ETA 639s
-  [200/11866] regular classified — 11s elapsed, ETA 622s
-  [300/11866] regular classified — 16s elapsed, ETA 602s
-  [400/11866] regular classified — 20s elapsed, ETA 586s
-  [500/11866] regular classified — 25s elapsed, ETA 579s
-  [600/11866] regular classified — 31s elapsed, ETA 583s
-  [700/11866] regular classified — 36s elapsed, ETA 578s
-  [800/11866] regular classified — 42s elapsed, ETA 575s
-  [900/11866] regular classified — 47s elapsed, ETA 575s
-  [1000/11866] regular classified — 53s elapsed, ETA 578s
-  [1100/11866] regular classified — 59s elapsed, ETA 576s
-  [1200/11866] regular classified — 64s elapsed, ETA 572s
-  [1300/11866] regular classified — 69s elapsed, ETA 562s
-  [1400/11866] regular classified — 75s elapsed, ETA 557s
-  [1500/11866] regular classified — 80s elapsed, ETA 551s
-  [1600/11866] regular classified — 85s elapsed, ETA 548s
-  [1700/11866] regular classified — 91s elapsed, ETA 546s
-  [1800/11866] regular classified — 97s elapsed, ETA 543s
-  [1900/11866] regular classified — 102s elapsed, ETA 537s
-  [2000/11866] regular classified — 108s elapsed, ETA 532s
-  [2100/11866] regular classified — 115s elapsed, ETA 534s
-  [2200/11866] regular classified — 122s elapsed, ETA 537s
-  [2300/11866] regular classified — 127s elapsed, ETA 530s
-  [2400/11866] regular classified — 135s elapsed, ETA 531s
-  [2500/11866] regular classified — 148s elapsed, ETA 555s
-  [2600/11866] regular classified — 159s elapsed, ETA 567s
-  [2700/11866] regular classified — 168s elapsed, ETA 571s
-  [2800/11866] regular classified — 178s elapsed, ETA 576s
-  [2900/11866] regular classified — 184s elapsed, ETA 568s
-  [3000/11866] regular classified — 190s elapsed, ETA 562s
-  [3100/11866] regular classified — 197s elapsed, ETA 557s
-  [3200/11866] regular classified — 203s elapsed, ETA 550s
-  [3300/11866] regular classified — 210s elapsed, ETA 544s
-  [3400/11866] regular classified — 216s elapsed, ETA 538s
-  [3500/11866] regular classified — 222s elapsed, ETA 532s
-  [3600/11866] regular classified — 231s elapsed, ETA 530s
-  [3700/11866] regular classified — 237s elapsed, ETA 524s
-  [3800/11866] regular classified — 244s elapsed, ETA 519s
-  [3900/11866] regular classified — 251s elapsed, ETA 514s
-  [4000/11866] regular classified — 260s elapsed, ETA 511s
-  [4100/11866] regular classified — 267s elapsed, ETA 506s
-  [4200/11866] regular classified — 273s elapsed, ETA 498s
-  [4300/11866] regular classified — 280s elapsed, ETA 492s
-  [4400/11866] regular classified — 286s elapsed, ETA 485s
-  [4500/11866] regular classified — 292s elapsed, ETA 477s
-  [4600/11866] regular classified — 298s elapsed, ETA 470s
-  [4700/11866] regular classified — 304s elapsed, ETA 464s
-  [4800/11866] regular classified — 311s elapsed, ETA 458s
-  [4900/11866] regular classified — 317s elapsed, ETA 451s
-  [5000/11866] regular classified — 324s elapsed, ETA 444s
-  [5100/11866] regular classified — 330s elapsed, ETA 437s
-  [5200/11866] regular classified — 336s elapsed, ETA 431s
-  [5300/11866] regular classified — 343s elapsed, ETA 425s
-  [5400/11866] regular classified — 353s elapsed, ETA 423s
-  [5500/11866] regular classified — 364s elapsed, ETA 421s
-  [5600/11866] regular classified — 371s elapsed, ETA 415s
-  [5700/11866] regular classified — 378s elapsed, ETA 409s
-  [5800/11866] regular classified — 386s elapsed, ETA 403s
-  [5900/11866] regular classified — 394s elapsed, ETA 399s
-  [6000/11866] regular classified — 401s elapsed, ETA 392s
-  [6100/11866] regular classified — 408s elapsed, ETA 386s
-  [6200/11866] regular classified — 417s elapsed, ETA 381s
-  [6300/11866] regular classified — 424s elapsed, ETA 375s
-  [6400/11866] regular classified — 433s elapsed, ETA 369s
-  [6500/11866] regular classified — 438s elapsed, ETA 362s
-  [6600/11866] regular classified — 445s elapsed, ETA 355s
-  [6700/11866] regular classified — 452s elapsed, ETA 348s
-  [6800/11866] regular classified — 459s elapsed, ETA 342s
-  [6900/11866] regular classified — 465s elapsed, ETA 334s
-  [7000/11866] regular classified — 472s elapsed, ETA 328s
-  [7100/11866] regular classified — 479s elapsed, ETA 322s
-  [7200/11866] regular classified — 487s elapsed, ETA 316s
-  [7300/11866] regular classified — 494s elapsed, ETA 309s
-  [7400/11866] regular classified — 501s elapsed, ETA 302s
-  [7500/11866] regular classified — 508s elapsed, ETA 296s
-  [7600/11866] regular classified — 515s elapsed, ETA 289s
-  [7700/11866] regular classified — 524s elapsed, ETA 284s
-  [7800/11866] regular classified — 535s elapsed, ETA 279s
-  [7900/11866] regular classified — 542s elapsed, ETA 272s
-  [8000/11866] regular classified — 549s elapsed, ETA 265s
-  [8100/11866] regular classified — 556s elapsed, ETA 259s
-  [8200/11866] regular classified — 574s elapsed, ETA 257s
-  [8300/11866] regular classified — 593s elapsed, ETA 255s
-  [8400/11866] regular classified — 605s elapsed, ETA 250s
-  [8500/11866] regular classified — 620s elapsed, ETA 246s
-  [8600/11866] regular classified — 636s elapsed, ETA 242s
-  [8700/11866] regular classified — 649s elapsed, ETA 236s
-  [8800/11866] regular classified — 655s elapsed, ETA 228s
-  [8900/11866] regular classified — 666s elapsed, ETA 222s
-  [9000/11866] regular classified — 677s elapsed, ETA 216s
-  [9100/11866] regular classified — 688s elapsed, ETA 209s
-  [9200/11866] regular classified — 694s elapsed, ETA 201s
-  [9300/11866] regular classified — 708s elapsed, ETA 195s
-  [9400/11866] regular classified — 725s elapsed, ETA 190s
-  [9500/11866] regular classified — 740s elapsed, ETA 184s
-  [9600/11866] regular classified — 760s elapsed, ETA 179s
-  [9700/11866] regular classified — 786s elapsed, ETA 175s
-  [9800/11866] regular classified — 817s elapsed, ETA 172s
-  [9900/11866] regular classified — 848s elapsed, ETA 168s
-  [10000/11866] regular classified — 876s elapsed, ETA 163s
-  [10100/11866] regular classified — 919s elapsed, ETA 161s
-  [10200/11866] regular classified — 937s elapsed, ETA 153s
-  [10300/11866] regular classified — 959s elapsed, ETA 146s
-  [10400/11866] regular classified — 970s elapsed, ETA 137s
-  [10500/11866] regular classified — 983s elapsed, ETA 128s
-  [10600/11866] regular classified — 1012s elapsed, ETA 121s
-  [10700/11866] regular classified — 1039s elapsed, ETA 113s
-  [10800/11866] regular classified — 1064s elapsed, ETA 105s
-  [10900/11866] regular classified — 1086s elapsed, ETA 96s
-  [11000/11866] regular classified — 1118s elapsed, ETA 88s
-  [11100/11866] regular classified — 1133s elapsed, ETA 78s
-  [11200/11866] regular classified — 1148s elapsed, ETA 68s
-  [11300/11866] regular classified — 1160s elapsed, ETA 58s
-  [11400/11866] regular classified — 1167s elapsed, ETA 48s
-  [11500/11866] regular classified — 1175s elapsed, ETA 37s
-  [11600/11866] regular classified — 1187s elapsed, ETA 27s
-  [11700/11866] regular classified — 1194s elapsed, ETA 17s
-  [11800/11866] regular classified — 1218s elapsed, ETA 7s
-
---- summary ---
-m/partition:  11866 classified, 0 unclassified
-wallpaper:    11866 classified, 0 skipped (stars, by design)
-
-M distribution by k (k: {M: count}):
-  k=10: {"2":663,"3":3772,"4":2979,"5":2745,"6":1468,"7":212,"8":27}
-
-wallpaper-group histogram:
-  cm    92
-  cmm   4955
-  p1    2
-  p2    562
-  p3    15
-  p31m  37
-  p3m1  47
-  p4    3
-  p4g   11
-  p4m   1
-  p6    117
-  p6m   497
-  pg    14
-  pgg   161
-  pm    73
-  pmg   1880
-  pmm   3399
-
-✓ ctrnact partition gate: all 11866 entries agree with distinctTypePartition
-
-★ wrote public/reference-atlas-k10.json in 1232s
+★ wrote public/reference-atlas.json in 688s

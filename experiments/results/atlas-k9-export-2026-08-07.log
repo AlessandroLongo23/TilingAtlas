@@ -1,0 +1,10 @@
+# k=9 cell export — 2026-08-07
+started 12:13:53
+blocks: s24 12076, r18 2317, r20 0
+star24full k=9: 6116 star-bearing records, 31s, areafails=0
+9fold k=9: 17 out-of-ring records, areafails=0
+5fold k=9: 0 out-of-ring records
+staged k=9 cells
+families: 48 records
+KEY COLLISION warnings: 0
+finished 12:14:58

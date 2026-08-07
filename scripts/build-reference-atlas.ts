@@ -383,6 +383,7 @@ const CTRNACT_STAR_CELL_FILES = [
 	'ctrnact-star-k6.cells.json',
 	'ctrnact-star-k7.cells.json',
 	'ctrnact-star-k8.cells.json',
+	'ctrnact-star-k9.cells.json',
 ];
 const CTRNACT_STAR_FAMILIES_FILE = 'ctrnact-star-families.cells.json';
 
@@ -480,6 +481,7 @@ function buildCtrnactOutOfRing(): ReferenceTiling[] {
 		'ctrnact-star-9fold-k6.cells.json', 'ctrnact-star-5fold-k6.cells.json',
 		'ctrnact-star-9fold-k7.cells.json', 'ctrnact-star-5fold-k7.cells.json',
 		'ctrnact-star-9fold-k8.cells.json', 'ctrnact-star-5fold-k8.cells.json',
+		'ctrnact-star-9fold-k9.cells.json', 'ctrnact-star-5fold-k9.cells.json',
 	];
 	for (const fname of files) {
 		const dsPath = path.join(ROOT, 'experiments', 'star-oracle', fname);

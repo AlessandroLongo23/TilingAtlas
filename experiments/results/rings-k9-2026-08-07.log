@@ -1,0 +1,60 @@
+# D=18 and D=20 at k=9 — 2026-08-07
+Standing policy (AL): every new k runs D=18 and D=20 and ships all three to the atlas.
+Ladder to beat: D=18 18/19/40/100/176/327/663/1218 = 2561 to k=8; D=20 6 then zeros.
+
+## ring18 k<=9   started 11:52:24
+[11:52:25] build (MAXNUM=9 PALETTE=ring18)
+[11:52:26] PHASE 1  solve (C++ DFS, all k<=9)
+face filter: 331 of 3839 vertex types can occur in a tiling (3508 impossible)
+OKPAIR: 1350 admissible (tkey, Q(f)) pairs
+nodes: 5852381  simplify_calls: 40390  simplify_true: 15744
+note: up to 19 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[11:52:46]   raw blocks: 15744  (20s)
+[11:52:46] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 18
+  k=2 : 19
+  k=3 : 40
+  k=4 : 100
+  k=5 : 176
+  k=6 : 327
+  k=7 : 663
+  k=8 : 1218
+  k=9 : 2317
+total kept: 4878
+store: peak 1.48288 MB total, 1.48288 MB resident
+[11:52:47]   (1s)
+[11:52:47] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[11:52:47] DONE  total 21s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/rings-k9/ring18/ctrnact-cells-k9.json
+
+real	0m22.250s
+user	0m20.818s
+sys	0m0.928s
+
+## ring20 k<=9   started 11:52:47
+[11:52:47] build (MAXNUM=9 PALETTE=ring20)
+[11:52:48] PHASE 1  solve (C++ DFS, all k<=9)
+face filter: 49 of 1667 vertex types can occur in a tiling (1618 impossible)
+OKPAIR: 158 admissible (tkey, Q(f)) pairs
+nodes: 26968  simplify_calls: 5937  simplify_true: 7
+note: up to 18 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[11:52:48]   raw blocks: 7  (0s)
+[11:52:48] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 6
+  k=2 : 0
+  k=3 : 0
+  k=4 : 0
+  k=5 : 0
+  k=6 : 0
+  k=7 : 0
+  k=8 : 0
+  k=9 : 0
+total kept: 6
+store: peak 0.000324249 MB total, 0.000324249 MB resident
+[11:52:48]   (0s)
+[11:52:48] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[11:52:48] DONE  total 0s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/rings-k9/ring20/ctrnact-cells-k9.json
+
+real	0m1.294s
+user	0m0.932s
+sys	0m0.090s
+

@@ -1,0 +1,8 @@
+
+# Non-star palette sweep — 2026-08-07 11:53  (unfiltered arm capped at 600s)
+
+### composite-convex
+  
+  k<=2  filtered   : 16s raw=209 kept=147
+  k<=2  UNfiltered : 16s raw=372 kept=288
+  k<=3  filtered   : 364s raw=1741 kept=891

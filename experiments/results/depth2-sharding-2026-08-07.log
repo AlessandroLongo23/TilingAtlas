@@ -85,3 +85,6 @@ k=6 N=360 D2=8 | wall 32.1s | cpu 260.7s | max shard 13.6s (5.2% of cpu) | raw 7
 k=7 N=360 D2=1 | wall 217.3s | cpu 970.1s | max shard 212.9s (21.9% of cpu) | raw 18851 | kept 6223
 k=7 N=360 D2=4 | wall 153.3s | cpu 1092.1s | max shard 94.4s (8.6% of cpu) | raw 18851 | kept 6223
 k=7 N=360 D2=8 | wall 138.5s | cpu 1107.1s | max shard 63.1s (5.7% of cpu) | raw 18851 | kept 6223
+k=8 N=360 D2=1 | wall 805.1s | cpu 3481.5s | max shard 792.9s (22.8% of cpu) | raw 42697 | kept 12435
+k=8 N=360 D2=4 | wall 589.9s | cpu 3994.6s | max shard 354.5s (8.9% of cpu) | raw 42697 | kept 12435
+k=8 N=360 D2=8 | wall 191.1s | cpu 1246.3s | max shard 181.2s (14.5% of cpu) | raw 3500 | kept 1233

@@ -1,0 +1,41 @@
+# star24full k=9 — 2026-08-07
+
+First run to use DEPTH-2 sharding (EU_SHARD_D2=8, N=360, 9 slots). Safe for a NEW k: depth-2 changes
+only which representative of an isomorphism class gets printed, and k=9 records do not exist yet, so
+no shipped vertype key moves. The k<=8 prefix of this run will NOT byte-match the stored digests for
+the same reason; it is verified instead with the order-insensitive block-multiset comparison
+(scratchpad/verify-d2.py), the gate that passed at k=5, 6 and 7.
+
+Projection from the ladder (k=8 was 4140 CPU-s at a 3.73 time ratio): ~15,000 CPU-s. At the measured
+depth-2 floor of ~6% that is roughly 30-35 min wall on 9 slots, against ~50 min for depth-1.
+Count projection ~1.9x k=8 => ~11,800, cumulative ~24,200.
+
+Ladder to beat:
+| k | tilings | x prev | cost | time x prev |
+|---|---|---|---|---|
+| 6 | 1570 | 2.04 | 198 s (1 core) | 4.3 |
+| 7 | 3204 | 2.04 | 1109 CPU-s / 222 s wall, 9 cores | 3.73 |
+| 8 | 6212 | 1.94 | 4140 CPU-s / 845 s wall, 9 cores | — |
+
+AL asked for k=9 with the atlas-size cost known and accepted (47.6 MB at k=8, projected ~90 MB).
+
+started 11:27:06  (N=360, EU_SHARD_D2=8, 9 slots)
+built MAXNUM=9 PALETTE=star24full
+  shards done (1494s wall)
+  cpu 11060.4s | max shard 745.2s (6.7% of cpu)  <-- depth-1 floor was ~20-23%
+  merged raw blocks: 94272
+PRUNE
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+  k=4 : 391
+  k=5 : 771
+  k=6 : 1570
+  k=7 : 3204
+  k=8 : 6212
+  k=9 : 12076
+total kept: 24511
+store: peak 7.57162 MB total, 7.57162 MB resident
+digest: 3489713bb0d31c0a   24511 blocks  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/k9/out/pruned
+total wall 1515s
+rings done — see /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/results/rings-k9-2026-08-07.log
