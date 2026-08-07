@@ -1,0 +1,3 @@
+[13:05:21] build (MAXNUM=2 PALETTE=star24full)
+[13:05:21] PHASE 1  parallel solve — 10 workers, budget 6
+note: b6 recert aborted 2 min in, superseded by the unbounded run

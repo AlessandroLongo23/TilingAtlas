@@ -1,7 +1,1 @@
-{
- "_meta": {
-  "source": "Cirnact-engine out-of-ring star extension, exact ZZ[zeta_20]",
-  "note": "Out-of-ring 1-uniform star tilings (D!=24). Reproduces Myers' out-of-ring k=1 entries. Develop is exact in the palette's own cyclotomic ring."
- },
- "records": []
-}
+{"_meta": {"source": "Ctrnact engine, out-of-ring rings ZZ[zeta_18] (9-fold) / ZZ[zeta_20] (5-fold), exact development", "note": "Star-bearing tilings carrying a tile whose symmetry order n does NOT divide 24 (9/18 at D=18, 5/10/20 at D=20). n is a combinatorial invariant, unlike alpha, which is a FREE parameter for flexing families: a family exists at every alpha in its range, so 'this snapshot's alpha is off the zeta24 grid' does NOT make it out-of-ring \u2014 it is an alpha-sample of an in-ring family and belongs to the star24full shelf. --contains now also matches star tokens (9*/18*), which the bare-token regex missed. candidate:true = not in Myers' out-of-ring k=1 set."}, "records": []}

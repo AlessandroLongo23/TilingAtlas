@@ -1,0 +1,37 @@
+=== star24full k=2 with the NC budget REMOVED (EU_NCBUDGET=1e9) ===
+Question (Marek, 2026-08-06): is the noncounting-vertex budget needed at all, or does
+checkpart's face-closure rule bound the degree-2 chains on its own?
+Baseline to match: b6/b7 = 74 pruned blocks, 5797 s wall on 10 workers.
+k=1 already answered: unbounded terminates in 9.5 s, 44 blocks, catalog byte-identical to B=8.
+
+[13:08:09] build (MAXNUM=2 PALETTE=star24full)
+[13:08:09] PHASE 1  parallel solve — 10 workers, budget 1000000000
+[15:19:05]   workers done (7856s wall)
+[15:19:05] PHASE 1b  merge worker outputs
+[15:19:06]   merged raw blocks: 146
+[15:19:06] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+total kept: 118
+store: peak 0.00957489 MB total, 0.00957489 MB resident
+[15:19:06]   prune done (0s);  total wall 7857s
+
+=== RESULT ===
+k=1 : 44
+k=2 : 74      <- identical to the certified b6/b7 catalog
+total kept: 118
+wall 7857 s on 10 workers (b6 with the cap: 5797 s) => removing the cap costs 1.36x
+raw blocks 146 vs b6's ~130: the 16 extra raw blocks all prune away as duplicates
+
+catalog_digest.py --diff  run-par-k2-star24full-b6/out/pruned  <this run>/out/pruned
+  IDENTICAL — 118 blocks, digest 0b6cb12bb7f5f797
+
+So the shipped 74 now has a certificate that contains NO cap: the search ran to completion with the
+noncounting budget effectively infinite, so nothing was truncated anywhere and the enumeration is
+exhaustive as a matter of fact, not of fixpoint ritual.
+
+⚑ The 1.36x is itself evidence for the blind spot found this morning. The b6 run reported "budget
+never engaged" under the OLD instrumentation (in-loop counter 0), yet removing the cap adds 36% wall.
+The cap WAS cutting substantial work at k=2 — through the k-saturated path the in-loop counter could
+not see. At k=2 those cuts cost nothing; at k=3 the same mechanism at budget 7 cost 4 tilings
+(158 vs 162). Same blindness, different outcome, which is the whole argument against trusting it.

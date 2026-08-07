@@ -3,8 +3,15 @@
 
 Uses render_ring.Ring (exact ZZ[zeta_D]) so D=18 (9-fold) and D=20 (5-fold) tilings develop
 exactly, then emits the app's float renderCell shape with a per-cell area check. --contains keeps
-only blocks whose vertype names one of the given regular polygons (e.g. "9,18,5,10,20" = the tiles
+only blocks whose vertype names one of the given n (regular OR star: 9 matches both "9" and "9*p1") (e.g. "9,18,5,10,20" = the tiles
 that make a tiling genuinely out-of-ring, i.e. NOT already an alpha-sample of an in-ring family).
+
+DO NOT replace this with "keep blocks whose angles are off the zeta24 grid" — tried 2026-08-07 and it is
+WRONG. alpha is a FREE parameter for flexing families, so a family exists at EVERY alpha in its range and
+the ring only decides which alphas you happen to sample; an off-grid snapshot of e.g. (6*,6*,3) is an
+alpha-sample of an in-ring family that already ships on the star24full shelf. That test pulled in 34
+duplicate snapshots of 13 shapes. What makes a tiling out-of-ring is a tile whose symmetry order n does
+not divide 24 (9/18 at D=18; 5/10/20 at D=20) — n is combinatorial, alpha is not.
 
 Usage:
   python3 export_ring_cells.py --pruned run-star18-k1b6/out/pruned \
@@ -65,6 +72,7 @@ def main():
     ring = Ring(tab.D)
     need = set(args.contains.split(",")) if args.contains else None
 
+
     files = ([args.pruned] if os.path.isfile(args.pruned)
              else sorted(glob.glob(os.path.join(args.pruned, "eupruned_*.txt"))))
     blocks = []
@@ -73,7 +81,10 @@ def main():
             if "*" not in vt:
                 continue
             if need is not None:
-                regs = set(re.findall(r'[(,](\d+)[,)]', vt))
+                # n-gons named in the vertype, REGULAR ('...,9,...') and STAR ('...,9*p1,...') alike.
+                # Matching only the regular form was a bug: a 9-pointed star is itself an out-of-ring
+                # tile, so blocks carrying 18*/9* but no bare 9/18 were silently dropped.
+                regs = set(re.findall(r'[(,](\d+)[,)]', vt)) | set(re.findall(r'[(,](\d+)\*', vt))
                 if not (regs & need):
                     continue
             if args.kcount:

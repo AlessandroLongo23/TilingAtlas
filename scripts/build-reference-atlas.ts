@@ -370,7 +370,20 @@ function writeHigherKShards(): void {
 // against |det Lambda|). Display-only, never certified; no exactSource (the codec has no star support,
 // same as the Myers entries).
 // ---------------------------------------------------------------------------------------------------
-const CTRNACT_STAR_CELL_FILES = ['ctrnact-star-k1.cells.json', 'ctrnact-star-k2.cells.json', 'ctrnact-star-k3-preview.cells.json'];
+// star24full palette (every corner angle an integer 15° unit), k=1..4. Replaced the in-ring k1/k2 runs
+// and the partial k3 "preview" on 2026-08-07: the new catalog strictly CONTAINS all 172 of those records
+// (verified by vertype), k=3 is now complete (169, was a partial 101) and k=4 is new. Ids of the 172
+// carried-over records are preserved so existing deep links still resolve to the same tiling.
+const CTRNACT_STAR_CELL_FILES = [
+	'ctrnact-star-k1.cells.json',
+	'ctrnact-star-k2.cells.json',
+	'ctrnact-star-k3.cells.json',
+	'ctrnact-star-k4.cells.json',
+	'ctrnact-star-k5.cells.json',
+	'ctrnact-star-k6.cells.json',
+	'ctrnact-star-k7.cells.json',
+	'ctrnact-star-k8.cells.json',
+];
 const CTRNACT_STAR_FAMILIES_FILE = 'ctrnact-star-families.cells.json';
 
 // Every fixed-alpha snapshot that the family detector merged into a one-parameter family, keyed by
@@ -460,6 +473,13 @@ function buildCtrnactOutOfRing(): ReferenceTiling[] {
 		'ctrnact-star-9fold-k1.cells.json', 'ctrnact-star-5fold-k1.cells.json',
 		'ctrnact-star-9fold-k2.cells.json', 'ctrnact-star-5fold-k2.cells.json',
 		'ctrnact-star-9fold-k3.cells.json', 'ctrnact-star-5fold-k3.cells.json',
+		// k=4..7 added 2026-08-07. --contains now also matches STAR tokens (9*/18*), which the bare-token
+		// regex missed; D=20 is empty above k=1, verified by running every k, so its k>=2 files are empty.
+		'ctrnact-star-9fold-k4.cells.json', 'ctrnact-star-5fold-k4.cells.json',
+		'ctrnact-star-9fold-k5.cells.json', 'ctrnact-star-5fold-k5.cells.json',
+		'ctrnact-star-9fold-k6.cells.json', 'ctrnact-star-5fold-k6.cells.json',
+		'ctrnact-star-9fold-k7.cells.json', 'ctrnact-star-5fold-k7.cells.json',
+		'ctrnact-star-9fold-k8.cells.json', 'ctrnact-star-5fold-k8.cells.json',
 	];
 	for (const fname of files) {
 		const dsPath = path.join(ROOT, 'experiments', 'star-oracle', fname);

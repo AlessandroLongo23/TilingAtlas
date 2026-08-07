@@ -1,0 +1,25 @@
+Schwarz edge-system develop — board (2,3,4) (234, spherical)
+source          : ../../materials/corpora/schwarz_edges_234_slotted
+edge lengths    : A10=0.615479709, B10=0.785398163, C10=0.955316618
+certificates in : 90470
+developed       : 90470
+failed          : 0
+multi-variant   : 3605
+wall            : 365.8s (4.0 ms/certificate)
+
+shared board    : V=26 E=72 F=48 (every pattern lands on it)
+
+
+   k   tilings  tiles: min    max
+   3        10           1     48
+   4        13           4     36
+   5      1568           2     44
+   6      2181           2     44
+   7     24603           2     44
+   8     62095           2     44
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k3.json: 10 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k4.json: 13 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k5.json: 1568 records, 0.86 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k6.json: 2181 records, 1.19 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k7.json: 24603 records, 13.49 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k8.json: 62095 records, 33.97 MB

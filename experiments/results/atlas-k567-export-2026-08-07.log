@@ -1,0 +1,8 @@
+# star24full + D=18 cell export, k=5..7 — 2026-08-07
+started 09:17:08
+star24full k=5: 439 star-bearing records, 1s, areafails=0, 4.0M
+star24full k=6: 897 star-bearing records, 4s, areafails=0,  10M
+star24full k=7: 1732 star-bearing records, 9s, areafails=0,  21M
+9fold k=5: 5 out-of-ring records, areafails=0
+9fold k=6: 6 out-of-ring records, areafails=0
+9fold k=7: 6 out-of-ring records, areafails=0

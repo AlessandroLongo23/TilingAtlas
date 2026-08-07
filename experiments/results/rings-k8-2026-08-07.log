@@ -1,0 +1,67 @@
+# D=18 and D=20 at k=8 — 2026-08-07
+
+Standing policy (AL, 2026-08-07): whenever star24full reaches a new k, run D=18 and D=20 at the same k
+and ship all three to the atlas together. D=20 is RUN, never assumed empty.
+
+Landed solver, uncapped. Single core each (ring18 k<=7 cost 2.51 s; ring20 0.01 s).
+Ladder to beat: D=18 18/19/40/100/176/327/663 = 1343 to k=7; D=20 6/0/0/0/0/0/0 = 6.
+
+## ring18 k<=8   started 09:42:13
+[09:42:13] build (MAXNUM=8 PALETTE=ring18)
+[09:42:15] PHASE 1  solve (C++ DFS, all k<=8)
+face filter: 331 of 3839 vertex types can occur in a tiling (3508 impossible)
+OKPAIR: 1350 admissible (tkey, Q(f)) pairs
+note: up to 16 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[09:42:27]   raw blocks: 7555  (12s)
+[09:42:27] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 18
+  k=2 : 19
+  k=3 : 40
+  k=4 : 100
+  k=5 : 176
+  k=6 : 327
+  k=7 : 663
+  k=8 : 1218
+total kept: 2561
+store: peak 0.68224 MB total, 0.68224 MB resident
+[09:42:28]   (1s)
+[09:42:28] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[09:42:28] DONE  total 13s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/rings-k8/ring18/ctrnact-cells-k8.json
+PALETTE=$P ./run-oracle.sh 8 $S/rings-k8/$P  12.61s user 1.07s system 91% cpu 15.031 total
+
+## ring20 k<=8   started 09:42:28
+[09:42:28] build (MAXNUM=8 PALETTE=ring20)
+[09:42:30] PHASE 1  solve (C++ DFS, all k<=8)
+face filter: 49 of 1667 vertex types can occur in a tiling (1618 impossible)
+OKPAIR: 158 admissible (tkey, Q(f)) pairs
+note: up to 16 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[09:42:30]   raw blocks: 7  (0s)
+[09:42:30] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 6
+  k=2 : 0
+  k=3 : 0
+  k=4 : 0
+  k=5 : 0
+  k=6 : 0
+  k=7 : 0
+  k=8 : 0
+total kept: 6
+store: peak 0.000324249 MB total, 0.000324249 MB resident
+[09:42:30]   (0s)
+[09:42:30] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[09:42:30] DONE  total 0s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/rings-k8/ring20/ctrnact-cells-k8.json
+PALETTE=$P ./run-oracle.sh 8 $S/rings-k8/$P  1.62s user 0.17s system 75% cpu 2.385 total
+
+
+## summary
+D=18 (9-fold): 18/19/40/100/176/327/663/1218 = 2,561 tilings to k=8. 12.6 s single core (contended
+with the D=24 pool, so the figure is an upper bound). k7->k8 ratio 1.84, down from 2.03 at k6->k7.
+Raw blocks 7555; face filter keeps 331 of 3839 vertex types.
+
+D=20 (5-fold): 6/0/0/0/0/0/0/0 = 6 tilings, ALL 1-uniform. k=8 RUN, not assumed: 7 raw blocks, 0
+survive above k=1. D=20 is now confirmed empty at every k from 2 to 8. Face filter keeps 49 of 1667.
+
+Out-of-ring records reaching the atlas at k=8: 9fold 22 (up from 6 at k=7 — the biggest jump in the
+series), 5fold 0. The 9fold export keeps only blocks carrying a tile whose symmetry order does not
+divide 24; the other 1196 k=8 D=18 tilings are alpha-samples of in-ring families and belong to the
+star24full shelf, not here.

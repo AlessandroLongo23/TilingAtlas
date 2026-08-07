@@ -1,0 +1,63 @@
+=== star24full k=3, uncapped, fix A+B, 200 shards / 10 slots ===
+NEVER RUN BEFORE on the closed palette. star24 (the 15-species subset) gives 162 blocks at k=3;
+star24full k=3 is unknown and was out of reach before today — k=2 alone was 15.8 CPU-hours.
+With fix A+B, k=2 is 136 CPU-seconds / 39 s wall.
+started 22:05:36
+[22:05:36] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/probe/fixB_k3 (make skipped)
+[22:05:36] PHASE 1  pooled solve — 200 shards through 10 slots, budget 1000000000
+_: line 6: 40114 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 26426 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 40692 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 40842 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 98556 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 30259 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 41497 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 30325 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 98769 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 15277 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42124 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42121 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42145 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42116 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42144 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42119 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42113 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42112 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42125 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42142 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42458 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42507 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42510 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42465 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42504 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42503 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42511 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42494 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42471 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42509 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43080 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43079 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43074 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43078 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43073 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43065 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43021 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43020 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43044 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43077 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43471 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43461 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43470 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43472 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43468 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43463 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43474 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43458 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43473 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 43469 Killed: 9               EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+KILLED after 90/200 shards: 21837s of shard-CPU, mean 243s, max 1213s, 276 raw blocks
+
+KILLED BY AL before completion. Partial data only — do not treat the raw count as a k=3 result.
+Slowest shards seen: s37=1213s s29=1118s s28=968s s36=929s s15=833s 
+The known-heavy indices s76/s77/s125 had NOT run yet, so the projection (15-25 CPU-hours,
+wall floored ~3-4 h by s77) is untested.

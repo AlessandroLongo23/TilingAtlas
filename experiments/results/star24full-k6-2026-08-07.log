@@ -1,0 +1,16 @@
+# star24full k=6 — 2026-08-07
+projection from k=5 (46.2 s, k4->k5 factor 5.5x): ~4-7 min single core.
+started: 09:05:20
+
+solve: user 198.15
+raw blocks: 7967
+note: up to 24 dent-fill (noncounting) vertices per configuration; no cap is applied.
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+  k=4 : 391
+  k=5 : 771
+  k=6 : 1570
+total kept: 3019
+store: peak 0.671949 MB total, 0.671949 MB resident
+k=6 digest: 2075e59e380a2cce    3019 blocks  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/k6/out/pruned

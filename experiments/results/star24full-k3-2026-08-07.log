@@ -1,0 +1,116 @@
+# star24full k=3 — 2026-08-07
+machine: 10 cores, pool 9, 200 shards. AC-pruned alphabet (13,316 of 60,927), EU_NCBUDGET=8.
+started: 01:43:52
+
+[01:43:52] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/m_k3 (make skipped)
+[01:43:52] PHASE 1  pooled solve — 200 shards through 9 slots, budget 8
+[01:46:24]   shards done (152s wall)
+[01:46:24]   slowest shards (index seconds): 77 136 27 82 125 43 47 28 76 26 
+[01:46:24]   shard seconds: total 544, max 136 — max is the floor no pool can beat
+[01:46:24] PHASE 1b  merge shard outputs
+[01:46:25]   merged raw blocks: 445
+[01:46:25]   ⚑ EU_NCBUDGET bound the search 3325 time(s) (6 in-loop, 3319 at k-saturated nodes) — NOT certified (re-run B+1)
+[01:46:25] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+total kept: 287
+store: peak 0.0340843 MB total, 0.0340843 MB resident
+[01:46:25]   prune done (0s);  total wall 153s
+EXIT=0
+
+## B=9 (budget fixpoint attempt), started 01:46:49
+[01:46:49] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/m_k3 (make skipped)
+[01:46:49] PHASE 1  pooled solve — 200 shards through 9 slots, budget 9
+[01:49:23]   shards done (154s wall)
+[01:49:23]   slowest shards (index seconds): 77 140 27 85 125 45 47 26 76 24 
+[01:49:23]   shard seconds: total 545, max 140 — max is the floor no pool can beat
+[01:49:23] PHASE 1b  merge shard outputs
+[01:49:24]   merged raw blocks: 445
+[01:49:24]   ⚑ EU_NCBUDGET bound the search 525 time(s) (0 in-loop, 525 at k-saturated nodes) — NOT certified (re-run B+1)
+[01:49:24] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+total kept: 287
+store: peak 0.0340843 MB total, 0.0340843 MB resident
+[01:49:24]   prune done (0s);  total wall 155s
+EXIT=0
+
+## B=99 (effectively uncapped), started 01:49:49
+[01:49:49] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/m_k3 (make skipped)
+[01:49:49] PHASE 1  pooled solve — 200 shards through 9 slots, budget 99
+[01:52:21]   shards done (152s wall)
+[01:52:21]   slowest shards (index seconds): 77 135 27 83 125 40 47 29 76 25 
+[01:52:21]   shard seconds: total 560, max 135 — max is the floor no pool can beat
+[01:52:21] PHASE 1b  merge shard outputs
+[01:52:22]   merged raw blocks: 445
+[01:52:22] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+total kept: 287
+store: peak 0.0340843 MB total, 0.0340843 MB resident
+[01:52:22]   prune done (0s);  total wall 153s
+EXIT=0
+
+## FULL alphabet (60,927), B=99 — the mask-soundness gate. started 01:52:38
+[01:52:38] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/m_k3 (make skipped)
+[01:52:38] PHASE 1  pooled solve — 200 shards through 9 slots, budget 99
+./run-oracle-pool.sh: line 72: 19868 Done                    seq 0 $((N-1))
+     19869 Terminated: 15          | xargs -P "$POOL" -n 1 bash -c '
+  w="$1"
+  mkdir -p "$OUT/s$w/out"
+  cd "$OUT/s$w" || exit 1
+  s=$(date +%s)
+  EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" \
+    "$BIN" >/dev/null 2>solver-stderr.log || exit 1
+  echo "$w $(( $(date +%s) - s ))" >> "$OUT/shard-times.txt"
+' _
+a shard failed
+EXIT=1
+_: line 6: 20644 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21483 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21417 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21870 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21435 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21459 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21677 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21766 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 21647 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+[01:54:30] KILLED by AL at 25/200 shards — full-alphabet gate NOT run.
+  => the AC prune is verified against the full alphabet at k<=2 only (digests
+     cc1a4e57bde39378 / 0b6cb12bb7f5f797). At k=3 the 287-block catalog
+     de09102dc86ded53 is masked-alphabet-only, cap-free certified (B=8/9/99 identical).
+
+## FACE-CYCLE mask (5,656 types), B=99, k=3. started 02:08:52
+[02:08:52] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/f_k3 (make skipped)
+[02:08:52] PHASE 1  pooled solve — 200 shards through 9 slots, budget 99
+[02:09:10]   shards done (18s wall)
+[02:09:10]   slowest shards (index seconds): 77 15 27 10 125 5 47 4 76 2 
+[02:09:10]   shard seconds: total 80, max 15 — max is the floor no pool can beat
+[02:09:10] PHASE 1b  merge shard outputs
+[02:09:10]   merged raw blocks: 445
+[02:09:10] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+total kept: 287
+store: peak 0.0340843 MB total, 0.0340843 MB resident
+[02:09:10]   prune done (0s);  total wall 18s
+
+## LENGTH-CONSTRAINED mask (2,372 types), B=99, k=3. started 02:15:34
+[02:15:34] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/l_k3 (make skipped)
+[02:15:34] PHASE 1  pooled solve — 200 shards through 9 slots, budget 99
+[02:15:37]   shards done (3s wall)
+[02:15:37]   slowest shards (index seconds): 77 2 27 2 90 1 89 1 88 1 
+[02:15:37]   shard seconds: total 25, max 2 — max is the floor no pool can beat
+[02:15:37] PHASE 1b  merge shard outputs
+[02:15:38]   merged raw blocks: 445
+[02:15:38] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+total kept: 287
+store: peak 0.0340843 MB total, 0.0340843 MB resident
+[02:15:38]   prune done (0s);  total wall 4s

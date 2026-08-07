@@ -1,0 +1,36 @@
+# star24full k=7 — 2026-08-07
+landed solver (face + pair + dynamic). uncapped. 200 shards / 9 slots.
+growth ladder so far: k3->k4 8.7x, k4->k5 5.5x, k5->k6 4.3x  => k7 ~13 min single core
+started: 09:09:11
+
+[09:09:11] build (MAXNUM=7 PALETTE=star24full)
+[09:09:14] PHASE 1  pooled solve — 200 shards through 9 slots, budget 99
+[09:12:53]   shards done (219s wall)
+[09:12:53]   slowest shards (index seconds): 11 218 47 126 109 109 85 105 27 81 
+[09:12:53]   shard seconds: total 1109, max 218 — max is the floor no pool can beat
+[09:12:53] PHASE 1b  merge shard outputs
+[09:12:56]   merged raw blocks: 18851
+[09:12:56] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+  k=4 : 391
+  k=5 : 771
+  k=6 : 1570
+  k=7 : 3204
+total kept: 6223
+store: peak 1.58509 MB total, 1.58509 MB resident
+[09:12:57]   prune done (1s);  total wall 223s
+k=7 digest: aa2cff7bd10c919f    6223 blocks  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/k7/out/pruned
+
+## ladder to k=7
+| k | tilings | x prev | cost |
+|---|---|---|---|
+| 4 | 391 | 2.31 | 8.44 s (1 core) |
+| 5 | 771 | 1.97 | 46.2 s (1 core) |
+| 6 | 1570 | 2.04 | 198 s (1 core) |
+| 7 | 3204 | 2.04 | 1109 CPU-s / 222 s wall on 9 cores |
+total k<=7: 6223, digest aa2cff7bd10c919f. Uncapped throughout.
+⚑ pooled CPU-s are inflated by 1-second shard-timer granularity over 200 shards; the k<=6 column is
+single-core and exact, the k=7 figure is not directly comparable to it.
+⚑ parallel floor: slowest single shard 218 s of 1109 total (20%), so 9 cores cannot beat ~220 s here.

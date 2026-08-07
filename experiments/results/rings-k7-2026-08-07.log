@@ -1,0 +1,36 @@
+# D=18 and D=20 to k=7 — 2026-08-07
+kept in step with star24full. landed solver, EU_NCBUDGET=99 (uncapped).
+
+## ring18 k<=7
+solve: user 2.51  raw=3546
+note: up to 14 dent-fill (noncounting) vertices per configuration; no cap is applied.
+  k=1 : 18
+  k=2 : 19
+  k=3 : 40
+  k=4 : 100
+  k=5 : 176
+  k=6 : 327
+  k=7 : 663
+total kept: 1343
+store: peak 0.316887 MB total, 0.316887 MB resident
+
+## ring20 k<=7
+solve: user 0.01  raw=7
+note: up to 14 dent-fill (noncounting) vertices per configuration; no cap is applied.
+  k=1 : 6
+  k=2 : 0
+  k=3 : 0
+  k=4 : 0
+  k=5 : 0
+  k=6 : 0
+  k=7 : 0
+total kept: 6
+store: peak 0.000324249 MB total, 0.000324249 MB resident
+
+
+## summary
+D=18 (9-fold): 18/19/40/100/176/327/663 = 1,343 tilings to k=7, 2.51 s single core, uncapped.
+D=20 (5-fold): 6/0/0/0/0/0/0 = 6 tilings, ALL 1-uniform. Confirmed empty at k=2..7 by running each,
+not by assumption. D=20 is therefore COMPLETE at 6 tilings for every k.
+Policy from here (AL, 2026-08-07): whenever star24full reaches a new k, run D=18 and D=20 at the same k
+and ship all three to the atlas together.

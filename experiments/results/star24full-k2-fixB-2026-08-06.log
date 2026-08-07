@@ -1,0 +1,8 @@
+=== star24full k=2, uncapped, SINGLE process, fix A + fix B ===
+Baseline for the same search: 7857 s wall on 10 workers (56,990 shard-seconds of CPU).
+k=1 with fix B was 103x faster than baseline, 0.093 s vs 9.62 s.
+started 21:38:39
+real 107.07
+user 104.88
+sys 1.57
+done

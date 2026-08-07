@@ -1,0 +1,16 @@
+=== star24full k=2, uncapped, fix A+B, 200 shards / 10 slots ===
+Same binary that did k=2 single-process in 104.88 s user / 107.07 s real.
+Old baselines for the identical search: 7857 s wall on 10 static workers; 17515 s wall pooled.
+[22:00:53] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/probe/fixB_k2 (make skipped)
+[22:00:53] PHASE 1  pooled solve — 200 shards through 10 slots, budget 1000000000
+[22:01:32]   shards done (39s wall)
+[22:01:32]   slowest shards (index seconds): 77 37 27 22 76 15 125 11 26 10 
+[22:01:32]   shard seconds: total 136, max 37 — max is the floor no pool can beat
+[22:01:32] PHASE 1b  merge shard outputs
+[22:01:32]   merged raw blocks: 146
+[22:01:32] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+total kept: 118
+store: peak 0.00957489 MB total, 0.00957489 MB resident
+[22:01:32]   prune done (0s);  total wall 39s

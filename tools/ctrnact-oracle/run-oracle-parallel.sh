@@ -13,7 +13,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 MAXK="${1:-11}"
 PALETTE="${PALETTE:-regular}"
 N="${EU_SHARD_N:-8}"
-B="${EU_NCBUDGET:-8}"
+B="${EU_NCBUDGET:-0}"   # vestigial: the solver ignores it since 2026-08-07
 SFX=""; [ "$PALETTE" != regular ] && SFX=".$PALETTE"
 OUT="${2:-$HERE/run-par-k$MAXK-$PALETTE}"
 ts(){ date '+%H:%M:%S'; }
@@ -46,9 +46,9 @@ for w in $(seq 0 $((N-1))); do
 done
 raw=$(grep -rh 'Number of vertex types:' "$OUT/out"/*.txt 2>/dev/null | wc -l | tr -d ' ')
 log "  merged raw blocks: $raw"
-# sum the loud noncounting-budget warnings across workers
-hits=$(grep -rhoE 'bound the search [0-9]+' "$OUT"/w*/solver-stderr.log 2>/dev/null | grep -oE '[0-9]+' | paste -sd+ - | bc 2>/dev/null || echo 0)
-[ "${hits:-0}" -gt 0 ] && log "  ⚑ EU_NCBUDGET bound the search ${hits} time(s) across workers — NOT certified (re-run B+1)"
+# Sum the loud noncounting-budget warnings across workers. BOTH numbers, not just the first: the
+# solver reports in-loop refusals and refusals at nodes where the k budget was also spent, and the
+# second kind used to be invisible entirely. Either being nonzero voids the completeness claim.
 
 log "PHASE 2  prune"
 t1=$(date +%s)

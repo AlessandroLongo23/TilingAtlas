@@ -3413,4 +3413,4 @@
 (rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0)F: cls[mirro]=cls[rneig] PASS
 (rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0)F: |Aut|=10, free action PASS
 (rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0,rhomb-4.6.4.6@0)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
-A6: 569 entries pairwise non-isomorphic (iso_key) PASS
+A6: 569 entries, 0 iso-fold collisions (pairwise non-isomorphic PASS)

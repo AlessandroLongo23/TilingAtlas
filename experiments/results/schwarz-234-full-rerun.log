@@ -1,0 +1,71 @@
+  [     8s] 2000/90470 developed, 0 failed, ETA 354s
+  [    16s] 4000/90470 developed, 0 failed, ETA 347s
+  [    24s] 6000/90470 developed, 0 failed, ETA 339s
+  [    32s] 8000/90470 developed, 0 failed, ETA 331s
+  [    40s] 10000/90470 developed, 0 failed, ETA 323s
+  [    48s] 12000/90470 developed, 0 failed, ETA 315s
+  [    56s] 14000/90470 developed, 0 failed, ETA 306s
+  [    64s] 16000/90470 developed, 0 failed, ETA 298s
+  [    72s] 18000/90470 developed, 0 failed, ETA 290s
+  [    81s] 20000/90470 developed, 0 failed, ETA 286s
+  [    89s] 22000/90470 developed, 0 failed, ETA 277s
+  [    97s] 24000/90470 developed, 0 failed, ETA 269s
+  [   105s] 26000/90470 developed, 0 failed, ETA 260s
+  [   113s] 28000/90470 developed, 0 failed, ETA 252s
+  [   121s] 30000/90470 developed, 0 failed, ETA 245s
+  [   129s] 32000/90470 developed, 0 failed, ETA 236s
+  [   137s] 34000/90470 developed, 0 failed, ETA 228s
+  [   145s] 36000/90470 developed, 0 failed, ETA 220s
+  [   153s] 38000/90470 developed, 0 failed, ETA 212s
+  [   161s] 40000/90470 developed, 0 failed, ETA 204s
+  [   169s] 42000/90470 developed, 0 failed, ETA 196s
+  [   177s] 44000/90470 developed, 0 failed, ETA 187s
+  [   185s] 46000/90470 developed, 0 failed, ETA 179s
+  [   193s] 48000/90470 developed, 0 failed, ETA 171s
+  [   202s] 50000/90470 developed, 0 failed, ETA 163s
+  [   210s] 52000/90470 developed, 0 failed, ETA 155s
+  [   218s] 54000/90470 developed, 0 failed, ETA 147s
+  [   225s] 56000/90470 developed, 0 failed, ETA 139s
+  [   233s] 58000/90470 developed, 0 failed, ETA 131s
+  [   241s] 60000/90470 developed, 0 failed, ETA 123s
+  [   249s] 62000/90470 developed, 0 failed, ETA 115s
+  [   257s] 64000/90470 developed, 0 failed, ETA 106s
+  [   265s] 66000/90470 developed, 0 failed, ETA 98s
+  [   273s] 68000/90470 developed, 0 failed, ETA 90s
+  [   281s] 70000/90470 developed, 0 failed, ETA 82s
+  [   289s] 72000/90470 developed, 0 failed, ETA 74s
+  [   297s] 74000/90470 developed, 0 failed, ETA 66s
+  [   305s] 76000/90470 developed, 0 failed, ETA 58s
+  [   313s] 78000/90470 developed, 0 failed, ETA 50s
+  [   321s] 80000/90470 developed, 0 failed, ETA 42s
+  [   330s] 82000/90470 developed, 0 failed, ETA 34s
+  [   339s] 84000/90470 developed, 0 failed, ETA 26s
+  [   348s] 86000/90470 developed, 0 failed, ETA 18s
+  [   356s] 88000/90470 developed, 0 failed, ETA 10s
+  [   364s] 90000/90470 developed, 0 failed, ETA 2s
+Schwarz edge-system develop — board (2,3,4) (234, spherical)
+source          : ../../materials/corpora/schwarz_edges_234_slotted
+edge lengths    : A10=0.615479709, B10=0.785398163, C10=0.955316618
+certificates in : 90470
+developed       : 90470
+failed          : 0
+multi-variant   : 3605
+wall            : 365.8s (4.0 ms/certificate)
+
+shared board    : V=26 E=72 F=48 (every pattern lands on it)
+
+
+   k   tilings  tiles: min    max
+   3        10           1     48
+   4        13           4     36
+   5      1568           2     44
+   6      2181           2     44
+   7     24603           2     44
+   8     62095           2     44
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k3.json: 10 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k4.json: 13 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k5.json: 1568 records, 0.86 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k6.json: 2181 records, 1.19 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k7.json: 24603 records, 13.49 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/s234out/s234-k8.json: 62095 records, 33.97 MB
+

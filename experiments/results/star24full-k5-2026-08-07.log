@@ -1,0 +1,16 @@
+# star24full k=5 — 2026-08-07
+landed solver: face filter + pair (fwd/rev) + DYNAMIC face-closure. EU_NCBUDGET=99 (uncapped).
+projection from k=4 (8.44 s, k3->k4 factor 8.7x): ~75-170 s single core.
+started: 09:04:03
+
+solve: user 46.20
+raw blocks: 3269
+note: up to 20 dent-fill (noncounting) vertices per configuration; no cap is applied.
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+  k=4 : 391
+  k=5 : 771
+total kept: 1449
+store: peak 0.269375 MB total, 0.269375 MB resident
+k=5 digest: e4cebd1a796cd3f3    1449 blocks  /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/k5/out/pruned

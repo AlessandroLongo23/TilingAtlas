@@ -1,0 +1,41 @@
+=== star24full k=2, uncapped, POOL runner (200 shards / 10 slots) ===
+Same search as star24full-k2-nobudget (EU_NCBUDGET=1e9) — only the scheduling differs.
+Baseline: 10 static workers, 7857 s wall, last ~2 h on ONE worker with 9 cores idle.
+Floor: the single heaviest first-type subtree. shard-times.txt will show whether we hit it.
+
+[15:36:54] build (MAXNUM=2 PALETTE=star24full)
+[15:36:57] PHASE 1  pooled solve — 200 shards through 10 slots, budget 1000000000
+[20:28:52]   shards done (17515s wall)
+[20:28:52]   slowest shards (index seconds): 77 16770 27 16707 125 7347 76 2361 26 1912 
+[20:28:52]   shard seconds: total 56990, max 16770 — max is the floor no pool can beat
+[20:28:52] PHASE 1b  merge shard outputs
+[20:28:52]   merged raw blocks: 146
+[20:28:52] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+total kept: 118
+store: peak 0.00957489 MB total, 0.00957489 MB resident
+[20:28:52]   prune done (0s);  total wall 17515s
+
+=== RESULT ===
+k=1 : 44   k=2 : 74   total 118, 146 raw blocks, wall 17515 s
+catalog_digest --diff vs the static uncapped run : IDENTICAL, 118 blocks, 0b6cb12bb7f5f797
+catalog_digest --diff vs the capped b6 run       : IDENTICAL, 118 blocks, 0b6cb12bb7f5f797
+=> three schedulings (10 static / 200 pooled / 10 static capped), two budget settings, one catalog.
+
+WORK CONCENTRATION — the reliable finding. shard-seconds total 56,990 over 200 shards:
+  s77 16,770   s27 16,707   s125 7,347   s76 2,361   s26 1,912   ...
+Two shards hold 33,477 s = 59% of all work; s77 alone is 29%. Depth-1 sharding is EXHAUSTED: no pool
+can finish before 16,770 s while one shard carries 29% of the search. Over-decomposition to 200 did
+not break the monsters up, because a shard is a residue class and a single first-type subtree is
+indivisible under this partition. Depth-2 sharding (split on the first EXTENSION, not just the first
+type) is the only route left for parallelism here.
+
+⚑ TIMING COMPARISON IS VOID, do not cite it. Pool 17,515 s vs static 7,857 s reads as 2.2x slower and
+cannot be: s77 is a subset of the static run's w7 (77 = 7 mod 10), so w7 did strictly MORE work than
+s77 and still finished inside the static run's 7,857 s total, while s77 alone took 16,770 s. Same
+work, twice the time => environmental. Independent measurement of the effect size: the identical
+fixA_clean binary on identical input took 13.9 s user under load and 5.06 s quieter, a 2.7x swing.
+Cause: /usr/libexec/duetexpertd pinned at 99.9% CPU for 4h+ across the whole pool run and none of the
+static run, MediaAnalysis at 209.8% afterwards, plus my own k=1 benchmarks run on the same box.
+Re-run both on a quiet machine before drawing any conclusion about pooling.

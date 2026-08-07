@@ -1,0 +1,29 @@
+# star24full k=4 — 2026-08-07  (FIRST ATTEMPT)
+face-cycle mask: 5,656 of 60,927 types. EU_NCBUDGET=99 (uncapped). 600 shards / 8 slots.
+projection from k=3 (80 CPU-s, growth 163x per k): ~3.6 CPU-hours, ~30 min wall.
+started: 02:10:51
+
+[02:10:51] using prebuilt solver /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/f_k4 (make skipped)
+[02:10:51] PHASE 1  pooled solve — 600 shards through 8 slots, budget 99
+./run-oracle-pool.sh: line 72: 40508 Done                    seq 0 $((N-1))
+     40509 Terminated: 15          | xargs -P "$POOL" -n 1 bash -c '
+  w="$1"
+  mkdir -p "$OUT/s$w/out"
+  cd "$OUT/s$w" || exit 1
+  s=$(date +%s)
+  EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" \
+    "$BIN" >/dev/null 2>solver-stderr.log || exit 1
+  echo "$w $(( $(date +%s) - s ))" >> "$OUT/shard-times.txt"
+' _
+a shard failed
+EXIT=1
+k4: no eupruned_*.txt under /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/vc-ceiling/k4/out/pruned
+_: line 6: 42084 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42024 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 41968 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42096 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42156 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 42132 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 40698 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+_: line 6: 40923 Terminated: 15          EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" "$BIN" > /dev/null 2> solver-stderr.log
+[02:12:46] KILLED by AL before completion — k=4 parked until the static filter stops improving.

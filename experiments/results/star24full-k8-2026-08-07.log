@@ -1,0 +1,70 @@
+# star24full k=8 — 2026-08-07
+
+Landed solver (fixes 1-9 + static face filter + pair filter + dynamic face-closure filter). Uncapped.
+Pooled: 400 shards through 9 slots — doubled from k=7's 200 because the k=7 parallel floor was the
+slowest single shard, 218 s of 1109 total CPU-s (20%). Finer shards only help if that shard held more
+than one heavy first-type subtree; if one type dominates it, the floor does not move.
+
+Projection from the ladder (k5 46.2 s, k6 198 s, k7 1109 CPU-s; time ratio falling 8.7 -> 5.5 -> 4.3):
+expect roughly 3,500-4,500 CPU-s, so 8-12 min wall on 9 slots. Count projection ~2.0x k=7 => ~6,400,
+cumulative ~12,600.
+
+Ladder to beat:
+| k | tilings | x prev | cost |
+|---|---|---|---|
+| 5 | 771 | 1.97 | 46.2 s (1 core) |
+| 6 | 1570 | 2.04 | 198 s (1 core) |
+| 7 | 3204 | 2.04 | 1109 CPU-s / 222 s wall on 9 cores |
+
+started: 09:36:30
+[09:36:30] build (MAXNUM=8 PALETTE=star24full)
+[09:36:34] PHASE 1  pooled solve — 400 shards through 9 slots, budget 99
+[09:50:39]   shards done (845s wall)
+[09:50:39]   slowest shards (index seconds): 211 803 309 537 285 527 27 311 247 309 
+[09:50:39]   shard seconds: total 4140, max 803 — max is the floor no pool can beat
+[09:50:39] PHASE 1b  merge shard outputs
+[09:50:43]   merged raw blocks: 42697
+[09:50:43] PHASE 2  prune
+  k=1 : 44
+  k=2 : 74
+  k=3 : 169
+  k=4 : 391
+  k=5 : 771
+  k=6 : 1570
+  k=7 : 3204
+  k=8 : 6212
+total kept: 12435
+store: peak 3.5228 MB total, 3.5228 MB resident
+[09:50:46]   prune done (3s);  total wall 852s
+EXIT=0
+
+## result
+k=8: 6212 tilings. Cumulative k<=8: 12435. Digest b397d8220bb29cea.
+Cost 4140 CPU-s / 845 s wall on 9 slots (400 shards). Prune 3 s. Raw blocks 42697.
+
+| k | tilings | x prev | cost | time ratio |
+|---|---|---|---|---|
+| 5 | 771 | 1.97 | 46.2 s (1 core) | 5.5 |
+| 6 | 1570 | 2.04 | 198 s (1 core) | 4.3 |
+| 7 | 3204 | 2.04 | 1109 CPU-s / 222 s wall, 9 cores | 3.73 |
+| 8 | 6212 | 1.94 | 4140 CPU-s / 845 s wall, 9 cores | — |
+
+Counts still double per k (1.94, the lowest ratio yet). The TIME ratio keeps falling — 8.7, 5.5, 4.3,
+3.73 — because the dynamic face-closure filter has more accumulated `count` to work with at depth.
+
+## the k<=7 prefix reproduces exactly, at a different shard count
+`catalog_digest.py --diff` between the k=7 run (200 shards) and the k<=7 files of this run (400
+shards): IDENTICAL, 6223 blocks, digest aa2cff7bd10c919f. This is the real regression check on the
+whole pipeline, and it is stronger than the usual one because the shard count differs — an
+order-insensitive digest is the only way to compare across shard counts (`shasum` reports a false
+difference; see catalog_digest.py's header).
+
+## 400 shards did NOT lower the parallel floor
+Slowest single shard 803 s of 4140 total = 19.4%. At k=7 with 200 shards it was 218 s of 1109 =
+19.7%. The fraction is unchanged, so doubling the decomposition bought nothing: ONE first-vertex-type
+subtree dominates, and initex() cannot split inside a single first type. The floor is proportional,
+not a fixed cost, so it will keep taking ~20% of serial time at every k.
+⚑ Getting past it needs depth-2 sharding (split on the first TWO vertex types) — a code change to
+initex(), not a knob. That is the next real parallelism win; at k=9 the floor alone will be ~40 min.
+⚑ Pooled CPU-s are inflated by 1-second shard-timer granularity over 400 shards; the k<=6 column is
+single-core and exact, k>=7 is not directly comparable to it.

@@ -1,0 +1,9 @@
+# k=8 cell export — 2026-08-07
+started 09:51:58
+blocks: s24 6212, r18 1218, r20 0
+star24full k=8: 3362 star-bearing records, 17s, areafails=0
+9fold k=8: 22 out-of-ring records, areafails=0
+5fold k=8: 0 out-of-ring records
+staged k=8 cells into experiments/star-oracle/
+families: 35 records
+finished 09:52:34
