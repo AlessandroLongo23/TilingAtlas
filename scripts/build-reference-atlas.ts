@@ -72,6 +72,41 @@ export interface ReferenceTiling {
 		| { kind: 'cell'; cell: SerializedCell };
 }
 
+/**
+ * The star records the staging step over-flags as ours.
+ *
+ * `candidate` arrives set on every FAMILY record and every out-of-ring record, which is wrong at k ≤ 2:
+ * Myers published four families at k=1 (2004, Figs 3b-3e), five at k=2 (2009, Figs 25-28, 32) and four
+ * out-of-ring k=2 tilings (Figs 18, 19, 22, 23). All thirteen are reproductions, not discoveries, and
+ * without this the shelf credited AL with sixteen k≤2 records when three are his.
+ *
+ * Checked one-to-one against `experiments/star-oracle/myers-{2004-k1,2009-k2}.json` on 2026-08-09, by
+ * tile content: 3e→`3*.6`, 3b→`3.3*`, 3d→`4.4*`, 3c→`3.6*`; 26→`3.4*`, 32→`3*.4.6*`, 27/28→ the two
+ * `3.3*.6*`; 22→`3.3*.18*`, 19→`3.6*.9.9*`, 23→`3.3*.9*`, 18→`3.6*.9*`. The two `3.3*` families at k=2
+ * are separated by vertex incidence, not by their label: Fig 25 carries a 3^6 orbit, and the one that
+ * does not (`…-k2-02`) is the genuinely new family.
+ *
+ * The three that ARE ours at k ≤ 2, and stay flagged: `ctrnact-star-k2-01`, `ctrnact-star-k2-04`
+ * (both proven pinned) and `ctrnact-s24f-family-k2-02`. Everything at k ≥ 3 is ours by construction —
+ * Myers' enumerations stop at k=2 — and needs no exception. A record added at k ≤ 2 by a future run
+ * still defaults to candidate, which is the safe direction.
+ */
+const MYERS_OVERFLAGGED = new Set([
+	'ctrnact-s24f-family-k1-01',
+	'ctrnact-s24f-family-k1-02',
+	'ctrnact-s24f-family-k1-03',
+	'ctrnact-s24f-family-k1-04',
+	'ctrnact-s24f-family-k2-01',
+	'ctrnact-s24f-family-k2-03',
+	'ctrnact-s24f-family-k2-04',
+	'ctrnact-s24f-family-k2-05',
+	'ctrnact-s24f-family-k2-06',
+	'ctrnact-star-9fold-k2-01',
+	'ctrnact-star-9fold-k2-02',
+	'ctrnact-star-9fold-k2-03',
+	'ctrnact-star-9fold-k2-04',
+]);
+
 // Historical discoverer + rigorous completeness status for each tiling. Discoverer is who first found
 // it; certification is whether THIS work proves its enumeration level exhaustive (proven, regular k≤3),
 // merely reproduces a published count (reproduced), or surfaced it without an establishing proof
@@ -87,6 +122,7 @@ function attribute(t: ReferenceTiling): { discoverer: string; certification: 'pr
 	}
 	if (t.source === 'myers') return { discoverer: 'Joseph Myers', certification: 'reproduced' };
 	// ctrnact-star: candidates / previews / new-at-k≥2 out-of-ring are Longo; the rest reproduce Myers
+	if (MYERS_OVERFLAGGED.has(t.id)) return { discoverer: 'Joseph Myers', certification: 'reproduced' };
 	const outOfRing = t.id.startsWith('ctrnact-star-9fold') || t.id.startsWith('ctrnact-star-5fold');
 	if (t.candidate || t.preview || (outOfRing && k >= 2)) {
 		return { discoverer: 'Alessandro Longo', certification: 'candidate' };
