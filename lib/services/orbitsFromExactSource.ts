@@ -5,6 +5,7 @@ import { reconstructOracleCell } from "@/classes/algorithm/oracleCellReconstruct
 import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
+import { starCellFromExact } from "@/lib/services/starExactCell";
 
 export type OrbitData = {
   /** Number of vertex orbits (= k for a k-uniform tiling). */
@@ -29,7 +30,11 @@ export function orbitsFromExactSource(
   source: ExactCellSource,
 ): OrbitData | null {
   let cell: PeriodCell;
-  if (source.kind === "seed") {
+  if (source.kind === "startiles") {
+    const built = starCellFromExact(ring, source.exact);
+    if (!built) return null;
+    cell = built as unknown as PeriodCell;
+  } else if (source.kind === "seed") {
     const rec = reconstructOracleCell(ring, id, { T1: source.T1, T2: source.T2, Seed: source.Seed });
     if ("error" in rec) return null;
     cell = rec.cell;

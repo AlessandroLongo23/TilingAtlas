@@ -456,7 +456,11 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    which has no hyperbolic counterpart yet — Euclidean-only, like the sibling flat-canvas
 					    overlays below. Disabled when the tiling carries no exactSource (the lazy-shard shelves:
 					    scaled/isotoxal/mixed/convex/polyomino) — without an exact cell there are no orbit ids
-					    to color by, and the canvas is inert then too (canvas.tsx orbitMode). */}
+					    to color by, and the canvas is inert then too (canvas.tsx orbitMode).
+					    STAR tilings gained an exactSource on 2026-08-07 (kind 'startiles' — the arguments to the
+					    exact ZZ[zeta_24] constructors, see lib/services/starExactCell.ts), so they enable here
+					    now. The out-of-ring 9-fold/5-fold records still do not: ExactStarPolygon requires the
+					    N=24 ring and those live in ZZ[zeta_18]/ZZ[zeta_20]. */}
 					{isFlat ? (
 						<Checkbox
 							id="showVertexOrbits"

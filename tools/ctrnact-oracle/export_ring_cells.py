@@ -19,6 +19,7 @@ Usage:
       --out ../../experiments/star-oracle/ctrnact-star-9fold-k1.cells.json
 """
 import argparse
+import cmath
 import glob
 import json
 import math
@@ -55,6 +56,70 @@ def poly_area(pts):
         a, b = pts[i], pts[(i + 1) % len(pts)]
         s += a.real * b.imag - a.imag * b.real
     return abs(s) / 2
+
+
+
+def exact_tiles_ring(ring, tab, cell_faces, T1, T2):
+    """Exact cell descriptor for an OUT-OF-RING tiling, same contract as export_atlas_cells.exact_tiles.
+
+    Identical idea, generalised to ZZ[zeta_D]: emit the arguments to the exact TS constructors rather
+    than vertex lists, and self-gate by replaying the walk the constructors will perform. A 9-fold or
+    5-fold tile carries a symmetry order that does not divide 24, so it cannot be expressed at N=24 at
+    all — hence `D` travels with the record and the TS side refuses to build it on any other ring.
+
+    Every 24 and 12 in the N=24 version is D and D/2 here. D is even for every palette in the atlas,
+    so the half-turn stays an integer number of angle units.
+    """
+    D = tab.D
+    H = D // 2
+    ZIDX = {ring.ZK[d]: d for d in range(D)}
+    tiles = []
+    for verts, tile in cell_faces:
+        pts = [ring.zfloat(v) for v in verts]
+        s2 = 0.0
+        for i in range(len(pts)):
+            a, b = pts[i], pts[(i + 1) % len(pts)]
+            s2 += a.real * b.imag - a.imag * b.real
+        if s2 < 0:                                    # constructors walk CCW
+            verts = list(reversed(verts)); pts = list(reversed(pts))
+        cls0 = next(c for c in range(len(tab.CLASS_TILE)) if tab.CLASS_TILE[c] == tile)
+        L, p = tab.CLASS_L[cls0], tab.CLASS_P[cls0]
+        n = L // p
+        star = (p == 2)
+        alpha_u = int(tab.TILE_NAME[tile].split("*")[1]) if star else None
+        start = 0
+        if star:                                      # anchor must be a convex point (vertex 0)
+            best = None
+            for i in range(len(verts)):
+                a, b, c = pts[i - 1], pts[i], pts[(i + 1) % len(pts)]
+                turn = cmath.phase((c - b) / (b - a))
+                if best is None or turn > best[0]:
+                    best = (turn, i)
+            start = best[1]
+        v0 = verts[start]
+        step = ring.zsub(verts[(start + 1) % len(verts)], v0)
+        d = ZIDX.get(step)
+        if d is None:
+            return None
+        t = {"n": n, "anchor": list(v0), "dir": d}
+        if star:
+            t["star"] = True
+            t["alphaU"] = alpha_u
+        # replay exactly what RegularPolygon.fromAnchorAndDirExact / ExactStarPolygon.isotoxal do
+        out, pp, dd = [], tuple(v0), d
+        if star:
+            beta = D - D // n - alpha_u
+            turns = (H - beta, H - alpha_u)
+            for i in range(2 * n):
+                out.append(pp); pp = ring.zadd(pp, ring.ZK[dd % D]); dd = (dd + turns[i % 2]) % D
+        else:
+            turn = D // n
+            for _ in range(n):
+                out.append(pp); pp = ring.zadd(pp, ring.ZK[dd % D]); dd = (dd + turn) % D
+        if set(out) != set(verts):
+            return None
+        tiles.append(t)
+    return {"D": D, "T1": list(T1), "T2": list(T2), "tiles": tiles}
 
 
 def main():
@@ -121,6 +186,7 @@ def main():
         records.append({
             "id": f"{args.id_prefix}-k{args.k}-{bi:02d}",
             "k": args.k, "vertype": vertype, "orbits": orbits, "ring": tab.D,
+            **({"exactCell": _ex} if (_ex := exact_tiles_ring(ring, tab, cell_faces, T1, T2)) else {}),
             "renderCell": {"cellPolygons": polys,
                            "basis": [[round(b1.real, 12), round(b1.imag, 12)],
                                      [round(b2.real, 12), round(b2.imag, 12)]]},

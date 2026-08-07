@@ -7,6 +7,7 @@ import { analyzeSymmetry } from "@/lib/classes/symmetry/WallpaperSymmetry";
 import { symmetryFromExactSource } from "@/lib/services/oracleSymmetry";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { ringOrderOf } from "@/lib/services/starExactCell";
 
 // Session cache keyed on canonicalKey. A null entry means "no cell_codec / analysis failed" — cached
 // so we don't refetch (e.g. reference-mode tilings that carry no exact cell yet). Detection runs ONCE
@@ -30,7 +31,9 @@ export function useSymmetryData(tiling: CatalogueTiling | null): SymmetryData | 
 		let alive = true;
 		(async () => {
 			try {
-				const ring = CyclotomicRing.create(24);
+				// The ring comes from the tiling, not a constant: out-of-ring 9-fold tilings live in
+				// ZZ[zeta_18] and 5-fold in ZZ[zeta_20], and their tiles are not expressible at N=24.
+				const ring = CyclotomicRing.create(ringOrderOf(tiling));
 				setActiveRing(ring);
 				// Oracle tilings (Reference shelf) have no Supabase cell_codec; they carry the exact cell
 				// inline and are reconstructed locally.

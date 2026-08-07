@@ -49,7 +49,8 @@ function log(msg = ''): void {
 
 type ExactSource =
 	| { kind: 'seed'; T1: number[]; T2: number[]; Seed: number[][] }
-	| { kind: 'cell'; cell: unknown };
+	| { kind: 'cell'; cell: unknown }
+	| { kind: 'startiles'; exact: unknown };
 interface AtlasEntry {
 	id: string;
 	source: 'galebach' | 'ctrnact' | 'ctrnact-star' | 'myers';
@@ -80,6 +81,12 @@ function reconstructCell(e: AtlasEntry): { cell: PeriodCell } | { error: string 
 	const src = e.exactSource;
 	if (!src) return { error: 'no exactSource' };
 	if (src.kind === 'seed') return reconstructOracleCell(e.id, { T1: src.T1, T2: src.T2, Seed: src.Seed });
+	// Star tilings gained an exactSource in 2026-08-07 (kind 'startiles') so the /play overlays can run.
+	// This enrichment stays regular-only on purpose: its m/partition path goes through assignOrbits and
+	// vertex-figure naming, which assume convex tiles. Skipping keeps behaviour identical to when stars
+	// had no exactSource at all. Extending it would give stars wallpaperGroup/latticeShape in the atlas
+	// (the library's group and lattice filters would then cover them) — worth doing, separately.
+	if (src.kind === 'startiles') return { error: 'star exactSource: enrichment is regular-only' };
 	try {
 		return { cell: deserializeCell(localRing, src.cell as never) };
 	} catch (err) {

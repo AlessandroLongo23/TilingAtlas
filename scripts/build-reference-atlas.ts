@@ -422,6 +422,10 @@ function buildCtrnactStars(excludeVertypes: Set<string>): { entries: ReferenceTi
 				vertype: string;
 				orbits: string[];
 				candidate?: boolean;
+				// Exact ZZ[zeta_24] constructor arguments for the /play symmetry + orbit overlays. The
+				// exporter self-gates this: a record carries it only if replaying the exact walk
+				// reproduces the developed face vertex-for-vertex, so it is never plausible-but-wrong.
+				exactCell?: { T1: number[]; T2: number[]; tiles: unknown[] };
 				renderCell: ReferenceTiling['renderCell'];
 				areaCheck: { cellArea: number; detAbs: number };
 			}[];
@@ -447,6 +451,7 @@ function buildCtrnactStars(excludeVertypes: Set<string>): { entries: ReferenceTi
 				k: r.k,
 				family,
 				renderCell: r.renderCell,
+				...(r.exactCell ? { exactSource: { kind: 'startiles', exact: r.exactCell } as never } : {}),
 				...(r.candidate ? { candidate: true } : {}),
 			});
 			log(`  ${r.id}  k=${r.k}  ${family}${r.candidate ? '  ★ CANDIDATE (not in Myers)' : ''}  ` +
@@ -491,6 +496,10 @@ function buildCtrnactOutOfRing(): ReferenceTiling[] {
 		}
 		const ds = JSON.parse(fs.readFileSync(dsPath, 'utf8')) as {
 			records: { id: string; k: number; orbits: string[]; ring: number;
+				// Exact ZZ[zeta_D] constructor arguments, D = 18 (9-fold) or 20 (5-fold). Same self-gated
+				// contract as the in-ring stars; `D` travels with it because a 9-fold tile's symmetry order
+				// does not divide 24 and it cannot be built on the ZZ[zeta_24] ring at all.
+				exactCell?: { D: number; T1: number[]; T2: number[]; tiles: unknown[] };
 				renderCell: ReferenceTiling['renderCell']; areaCheck: { cellArea: number; detAbs: number } }[];
 		};
 		for (const r of ds.records) {
@@ -501,7 +510,10 @@ function buildCtrnactOutOfRing(): ReferenceTiling[] {
 					toks.add(m ? `${m[1]}*` : t);
 				}
 			const family = [...toks].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b)).join('.');
-			out.push({ id: r.id, source: 'ctrnact-star', k: r.k, family, renderCell: r.renderCell });
+			out.push({
+				id: r.id, source: 'ctrnact-star', k: r.k, family, renderCell: r.renderCell,
+				...(r.exactCell ? { exactSource: { kind: 'startiles', exact: r.exactCell } as never } : {}),
+			});
 			log(`  ${r.id}  k=${r.k}  ${family}  (ring D=${r.ring}, ${r.renderCell.cellPolygons?.length ?? 0} polys, ` +
 				`area ${Math.abs(r.areaCheck.cellArea - r.areaCheck.detAbs) < 1e-6 ? '✓' : '⚑ FAIL'})`);
 		}

@@ -4,6 +4,7 @@ import { reconstructOracleCell } from '@/classes/algorithm/oracleCellReconstruct
 import { analyzeSymmetry } from '@/lib/classes/symmetry/WallpaperSymmetry';
 import type { SymmetryData } from '@/lib/classes/symmetry/types';
 import { seedFromPeriodCell, type ExactCellSource } from '@/lib/services/cellCodecService';
+import { starCellFromExact } from '@/lib/services/starExactCell';
 
 // Exact wallpaper analysis of an oracle tiling from its inline cell (no network). Returns null if a seed
 // fails to reconstruct — the caller then shows no overlay (never a crash). The caller must have set the
@@ -14,6 +15,14 @@ export function symmetryFromExactSource(
 	source: ExactCellSource,
 ): SymmetryData | null {
 	let cell;
+	if (source.kind === 'startiles') {
+		// Star path: the exact constructors give the polygons and basis directly, so no PeriodCell
+		// round-trip and no codec involvement. seedFromPeriodCell only reads cellPolygons + basisExact.
+		const built = starCellFromExact(ring, source.exact);
+		if (!built) return null;
+		const { T1, T2, seed } = seedFromPeriodCell(built as never);
+		return analyzeSymmetry(ring, T1, T2, seed);
+	}
 	if (source.kind === 'seed') {
 		const rec = reconstructOracleCell(ring, id, { T1: source.T1, T2: source.T2, Seed: source.Seed });
 		if ('error' in rec) return null;

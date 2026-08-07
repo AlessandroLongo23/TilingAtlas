@@ -2,17 +2,21 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
 import { deserializeCell, type SerializedCell } from "@/classes/algorithm/cellCodec";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import type { StarExactCell } from "@/lib/services/starExactCell";
 
 export type { SerializedCell };
 
 // The exact cyclotomic cell an oracle tiling carries inline (it has no Supabase cell_codec). Either the
 // minimal generators {T1,T2,Seed} (reconstructed via reconstructOracleCell — Galebach/ctrnact) or a
 // serialized cell (Galebach t1002/4.8.8, which has no {T1,T2,Seed} encoding but IS regular polygons).
-// Star tilings (Myers) carry NEITHER: the regular-only cell codec cannot represent them, so they get no
-// exactSource and no symmetry overlay (a star-aware codec is follow-up work).
+// Star tilings carry the third variant, `startiles`: the arguments to the exact polygon constructors
+// (see lib/services/starExactCell.ts). The regular-only cell codec still cannot represent them, but
+// neither overlay actually needs a serialized PeriodCell — analyzeSymmetry wants exact T1/T2 plus the
+// vertex set, and vertexOrbits wants exact Polygons, both of which the star constructors produce.
 export type ExactCellSource =
 	| { kind: "seed"; T1: number[]; T2: number[]; Seed: number[][] }
-	| { kind: "cell"; cell: SerializedCell };
+	| { kind: "cell"; cell: SerializedCell }
+	| { kind: "startiles"; exact: StarExactCell };
 
 // One-row exact fetch. The catalogue read (catalogueService) omits cell_codec (heavy); the Play viewer
 // pulls it only for the selected tiling. Returns null if the row/codec is absent — the viewer then

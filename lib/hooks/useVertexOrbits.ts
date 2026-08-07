@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchCellCodec } from "@/lib/services/cellCodecService";
 import { orbitsFromExactSource, type OrbitData } from "@/lib/services/orbitsFromExactSource";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { ringOrderOf } from "@/lib/services/starExactCell";
 
 // Session cache keyed on canonicalKey. null = "no exact cell / gate failed", cached so it is not
 // recomputed. Computed ONCE per tiling (on selection change), never per frame.
@@ -27,7 +28,8 @@ export function useVertexOrbits(tiling: CatalogueTiling | null): OrbitData | nul
     let alive = true;
     (async () => {
       try {
-        const ring = CyclotomicRing.create(24);
+        // The ring comes from the tiling, not a constant — see useSymmetryData.
+        const ring = CyclotomicRing.create(ringOrderOf(tiling));
         setActiveRing(ring);
         if (tiling.exactSource) {
           const result = orbitsFromExactSource(ring, k, tiling.exactSource);
