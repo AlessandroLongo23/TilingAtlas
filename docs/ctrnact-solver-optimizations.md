@@ -567,7 +567,8 @@ catalog exactly.
 | 5 | 771 | 1.97 | 46.2 s | 5.5 |
 | 6 | 1570 | 2.04 | 198 s | 4.3 |
 | 7 | 3204 | 2.04 | 1109 CPU-s / 222 s wall on 9 cores | 3.73 |
-| 8 | 6212 | 1.94 | 4140 CPU-s / 845 s wall on 9 cores | — |
+| 8 | 6212 | 1.94 | 3482 CPU-s / 805 s wall on 9 cores (depth-1) | ~2.9 |
+| 9 | 12076 | 1.94 | 11060 CPU-s / 1494 s wall on 9 cores (**depth-2**) | — |
 
 **Digests (all uncapped, `EU_NCBUDGET=99`):**
 
@@ -581,6 +582,7 @@ catalog exactly.
 | 6 | 3019 | `2075e59e380a2cce` |
 | 7 | 6223 | `aa2cff7bd10c919f` |
 | 8 | 12435 | `b397d8220bb29cea` |
+| 9 | 24511 | `3489713bb0d31c0a` (depth-2; see below) |
 
 Regular gate: `884968dca36a6c41` / 1247, `make check-regular` PASS.
 
@@ -602,8 +604,26 @@ slowest shard 218 s of 1109 total, 19.7%. k=8 on 400 shards: 803 s of 4140, 19.4
 decomposition bought nothing, because `initex()` splits on the first vertex type only and one
 first-type subtree dominates — no number of shards can cut inside it. Expect ~20% of serial time at
 every k from here, so at k=9 the floor alone is around 40 minutes.
-⚑ The fix is depth-2 sharding (split on the first TWO vertex types), a change to `initex()`, not a
-knob. It is the next real parallelism win and nothing else will move this number.
+**Depth-2 sharding landed 2026-08-07 and does move it.** `EU_SHARD_D2=<f>` splits `EU_SHARD_N` two
+ways: `N/D2` root slices (which first types a shard walks) and `D2` branch slices per root (which of
+that root's level-1 branches it descends), so root-level work is duplicated D2-fold instead of
+N-fold. `D2=1` reproduces the old partition byte-identically; `main()` refuses a run where D2 does
+not divide N, since a remainder would leave root slices unwalked.
+
+Floor falls from ~20% to 5-7%. Measured at N=360 on 9 slots — k=6 45.3→32.1 s, k=7 217.3→138.5 s
+(1.57x), and k=9 ran in production at a 6.7% floor.
+
+⚑ **The gain is bounded by floor × slots and the floor saturates near 20%**, so ~1.8x is the ceiling
+on a 10-core box, and unlike the filters it does NOT compound per level. The ceiling scales with core
+count, so this pays off far better on a cluster than here.
+⚑ **Depth-2 changes the catalog TEXT, not the tiling set.** The printed orbit order is DFS insertion
+order and the pruner keeps the first-seen representative, so splitting inside a root changes which
+branch arrives first. Proof the set is unchanged: at k=4 the union of a sequential and a depth-2 run
+(2600 raw blocks) prunes back to exactly 678; at k=9 the k≤8 prefix matches the depth-1 k=8 catalog
+on the order-insensitive multiset. Because the atlas keys ids, the family fold and `cells_index` by
+vertype STRING, depth-2 is safe for a NEW k but re-running a SHIPPED k would move those keys.
+
+Full write-up: `experiments/results/depth2-sharding-2026-08-07.log`.
 
 Two things this table says. **Tiling counts double per k and the ratio is stable** (1.94–2.31), so the
 answer set is well behaved. **The TIME ratio is falling** — 8.7, 5.5, 4.3, 3.73 — because the filters
