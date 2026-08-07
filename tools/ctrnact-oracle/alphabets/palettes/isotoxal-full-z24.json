@@ -1,0 +1,506 @@
+{
+ "name": "isotoxal-full-z24",
+ "D": 24,
+ "pinnedLegacy": false,
+ "maxValence": 12,
+ "pruneOverlap": true,
+ "comment": "COMPLETE isotoxal palette at D=24 (AL 2026-08-07). The zeta24 union of star24full (6 regular + all 42 star species) with ALL 12 convex isotoxal cx tiles. Supersedes isotoxal-star-z24, which carried only 15 of 42 star species (the star24 Myers subset, provably NOT closed under in-ring instantiation of the free-alpha families) and 9 of 12 cx tiles, missing the three unseeded D=24 rhombi 15/165, 30/150 and 45/135. cx completeness derived from alpha+beta = 24 - 24/n units with both < 12 for convex: cx4 {1,11}{2,10}{3,9}{4,8}{5,7}, cx6 {5,11}{6,10}{7,9}, cx8 {7,11}{8,10}, cx12 {9,11}, cx16 {10,11}; n=5,10 give non-integer sums and n=12 gives only the regular case.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  },
+  {
+   "kind": "regular",
+   "n": 24,
+   "name": "24",
+   "famchar": "y"
+  },
+  {
+   "kind": "star",
+   "n": 3,
+   "alphaU": 1,
+   "name": "3*1",
+   "famchar": "sA"
+  },
+  {
+   "kind": "star",
+   "n": 3,
+   "alphaU": 2,
+   "name": "3*2",
+   "famchar": "sB"
+  },
+  {
+   "kind": "star",
+   "n": 3,
+   "alphaU": 3,
+   "name": "3*3",
+   "famchar": "sP"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 1,
+   "name": "4*1",
+   "famchar": "sQ"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 2,
+   "name": "4*2",
+   "famchar": "sC"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 3,
+   "name": "4*3",
+   "famchar": "sD"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 4,
+   "name": "4*4",
+   "famchar": "sE"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 5,
+   "name": "4*5",
+   "famchar": "sR"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 1,
+   "name": "6*1",
+   "famchar": "sS"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 2,
+   "name": "6*2",
+   "famchar": "sF"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 3,
+   "name": "6*3",
+   "famchar": "sT"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 4,
+   "name": "6*4",
+   "famchar": "sG"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 5,
+   "name": "6*5",
+   "famchar": "sH"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 6,
+   "name": "6*6",
+   "famchar": "sK"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 7,
+   "name": "6*7",
+   "famchar": "sU"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 1,
+   "name": "8*1",
+   "famchar": "sI"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 2,
+   "name": "8*2",
+   "famchar": "sV"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 3,
+   "name": "8*3",
+   "famchar": "sL"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 4,
+   "name": "8*4",
+   "famchar": "sW"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 5,
+   "name": "8*5",
+   "famchar": "sX"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 6,
+   "name": "8*6",
+   "famchar": "sM"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 7,
+   "name": "8*7",
+   "famchar": "sY"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 8,
+   "name": "8*8",
+   "famchar": "sZ"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 1,
+   "name": "12*1",
+   "famchar": "uA"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 2,
+   "name": "12*2",
+   "famchar": "sJ"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 3,
+   "name": "12*3",
+   "famchar": "uB"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 4,
+   "name": "12*4",
+   "famchar": "sN"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 5,
+   "name": "12*5",
+   "famchar": "uC"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 6,
+   "name": "12*6",
+   "famchar": "sO"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 7,
+   "name": "12*7",
+   "famchar": "uD"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 8,
+   "name": "12*8",
+   "famchar": "uE"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 9,
+   "name": "12*9",
+   "famchar": "uF"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 1,
+   "name": "24*1",
+   "famchar": "uG"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 2,
+   "name": "24*2",
+   "famchar": "uH"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 3,
+   "name": "24*3",
+   "famchar": "uI"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 4,
+   "name": "24*4",
+   "famchar": "uJ"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 5,
+   "name": "24*5",
+   "famchar": "uK"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 6,
+   "name": "24*6",
+   "famchar": "uL"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 7,
+   "name": "24*7",
+   "famchar": "uM"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 8,
+   "name": "24*8",
+   "famchar": "uN"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 9,
+   "name": "24*9",
+   "famchar": "uO"
+  },
+  {
+   "kind": "star",
+   "n": 24,
+   "alphaU": 10,
+   "name": "24*10",
+   "famchar": "uP"
+  },
+  {
+   "kind": "composite",
+   "name": "cx4-60.120",
+   "angles": [
+    4,
+    8,
+    4,
+    8
+   ],
+   "famchar": "y0"
+  },
+  {
+   "kind": "composite",
+   "name": "cx4-75.105",
+   "angles": [
+    5,
+    7,
+    5,
+    7
+   ],
+   "famchar": "y1"
+  },
+  {
+   "kind": "composite",
+   "name": "cx6-75.165",
+   "angles": [
+    5,
+    11,
+    5,
+    11,
+    5,
+    11
+   ],
+   "famchar": "y2"
+  },
+  {
+   "kind": "composite",
+   "name": "cx6-90.150",
+   "angles": [
+    6,
+    10,
+    6,
+    10,
+    6,
+    10
+   ],
+   "famchar": "y3"
+  },
+  {
+   "kind": "composite",
+   "name": "cx6-105.135",
+   "angles": [
+    7,
+    9,
+    7,
+    9,
+    7,
+    9
+   ],
+   "famchar": "y4"
+  },
+  {
+   "kind": "composite",
+   "name": "cx8-105.165",
+   "angles": [
+    7,
+    11,
+    7,
+    11,
+    7,
+    11,
+    7,
+    11
+   ],
+   "famchar": "y5"
+  },
+  {
+   "kind": "composite",
+   "name": "cx8-120.150",
+   "angles": [
+    8,
+    10,
+    8,
+    10,
+    8,
+    10,
+    8,
+    10
+   ],
+   "famchar": "y6"
+  },
+  {
+   "kind": "composite",
+   "name": "cx12-135.165",
+   "angles": [
+    9,
+    11,
+    9,
+    11,
+    9,
+    11,
+    9,
+    11,
+    9,
+    11,
+    9,
+    11
+   ],
+   "famchar": "y7"
+  },
+  {
+   "kind": "composite",
+   "name": "cx16-150.165",
+   "angles": [
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11,
+    10,
+    11
+   ],
+   "famchar": "y8"
+  },
+  {
+   "kind": "composite",
+   "name": "cx4-15.165",
+   "angles": [
+    1,
+    11,
+    1,
+    11
+   ],
+   "famchar": "y9"
+  },
+  {
+   "kind": "composite",
+   "name": "cx4-30.150",
+   "angles": [
+    2,
+    10,
+    2,
+    10
+   ],
+   "famchar": "yA"
+  },
+  {
+   "kind": "composite",
+   "name": "cx4-45.135",
+   "angles": [
+    3,
+    9,
+    3,
+    9
+   ],
+   "famchar": "yB"
+  }
+ ]
+}
