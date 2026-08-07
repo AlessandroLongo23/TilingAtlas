@@ -9901,3 +9901,545 @@ setting keeps width/spacing small even where the tiles are long gone.
 
 **One coupling worth knowing.** The marks share the "Tile outlines" slider, so setting it to 0 hides
 them along with the tile edges.
+
+## 2026-08-05 — the parquet field stops being a number
+
+`/parquet` gains a 2-D deformation, a Perlin D-field, and two independent drift channels. The feature
+that made all three cheap is a single change of type: `D(x)` returned a scalar `t` and the edge was
+`lerp(from, to, t)`; it now returns a **weight vector over K keyframes** and the edge is `Σ wᵢ·profileᵢ`.
+
+That is the whole generalization. The 1-D strip is K = 2 with weights `(1−t, t)`. The 2-D corner patch
+is K = 4 with bilinear weights. The scattered-keyframe case from the vault note
+"Multi-dimensional scatter interpolation" is K = n with Shepard or RBF weights, and it needs no geometry
+change at all: only `buildBlendField` learns a new branch. Bilinear is the same method the CDT
+interpolation guide lists at #5, with Shepard at #3 and kriging above it, so the ladder the eventual
+scatter UI climbs is already named.
+
+**The gap-free invariant survives untouched, and it is worth saying why.** It never depended on the
+field being scalar. Two faces sharing an edge agree because the curve is derived from the edge's two
+endpoints in canonical (sorted) order and the field is read at the edge MIDPOINT, which is the same
+point for both incident faces. Whatever the field returns there, both faces receive it. What a steep
+field can still do is bulge an edge far enough to cross a non-adjacent one — self-intersection, never a
+gap. `lib/render/parquetTiling.test.ts` now asserts the invariant under a four-keyframe field varying in
+both directions, for all three templates.
+
+### The viewBox envelope is exact, and stays exact for the same reason as before
+
+A vertex sits at `P + s·(P1−P0) + d·perp` with `d = amount·Σwᵢ·profileᵢ`. That is affine in `amount` and
+affine in `w`. The weights are convex (bilinear, the 2-keyframe blend and Shepard all are), so over
+`amount ∈ [0,1] ×` the weight simplex the extremes can only sit at the corners: `amount = 0`, which is
+the base tiling, and each PURE keyframe at `amount = 1`. `keyframeExtremes` builds those K geometries
+and the box is fitted once to them. Motion moves the field's argument, never its range, so the same box
+holds for every animation frame.
+
+⚑ **This is exact only while the weights stay convex.** An RBF scheme that overshoots the simplex —
+which is exactly what makes RBF attractive for scattered keyframes — invalidates the bound and needs a
+sampled envelope instead. Noted at the function, because the failure mode is tiles clipping at the frame
+edge on one setting in a hundred.
+
+### The `% 1` wrap was the bug, not the ramp
+
+Animation used to be disabled for the ramp, on the reasoning that a non-periodic D cannot be slid
+without dragging a seam across the strip. The seam was real, but it came from the implementation:
+`resolveDProfile` wrapped EVERY profile with `% 1`, and wrapping a function whose ends disagree is what
+puts a step in it. `evalProfile` now extends each profile in its own terms. Periodic ones (tent, sine)
+wrap and loop forever; the ramp CLAMPS, so a drifting field sweeps its transition band across the patch
+once and then holds. Finite, but continuous everywhere, and tested as such. The hard disable is gone and
+only a note explaining that the ramp does not loop remains. `resolveDProfile` is untouched — the landing
+miniature and its tests still use it.
+
+Noise needed the same reasoning and lands on a third case: it is defined over all of ℝ², so it drifts
+seamlessly forever without wrapping or clamping.
+
+### Two drifts, and why the grid one loops
+
+Kaplan's decoupling is two knobs: the tiles may move through a static field, or the field may slide over
+static tiles. Both are now expressed in patch-fractions per second, which makes them comparable — set
+them equal and the sample coordinate cancels, so each tile carries its shape along as it slides.
+
+The grid drift is reduced modulo the tiling's own translation period (`wrapOffset`), which is what turns
+it into an exact loop with no jump. Translating a periodic patch by a whole period maps it onto itself,
+so at `Δ = period` the picture is identical to `Δ = 0`; the tile IDENTITIES have wrapped around but the
+occupied positions have not, and the field is static, so the drawing is continuous across the wrap. All
+three templates have an axis-aligned period lattice, so two scalars carry it: `(1,1)` for squares,
+`(dx, 2·dy)` for hexagons, `(1, 2H)` for triangles.
+
+⚑ Feeding a drift straight in without the modulo would slide the patch off its own frame. ⚑ Row parity
+for hexagons had to survive negative rows for the margin ring to line up; `row & 1` does the right thing
+in JS for negatives, `row % 2` would not.
+
+A drifting grid also needs tiles that do not exist yet, so `build` grew a `margin` parameter generating
+rings outside the core patch. Core faces come first in `faces` and `coreCount` marks the boundary, so
+width, height and the viewBox are computed from the core alone — starting a drift must not rescale the
+drawing. `DRIFT_MARGIN = 3`: two rings cover one period (measured, and asserted per template), the third
+carries the deformation bulge of a tile whose body sits just outside the frame.
+
+⚑ The margin is only generated when the grid actually drifts, so a static strip still exports with its
+ragged hexagon boundary, which is what the SVG figures want. With drift on the strip becomes a window
+and needs an explicit `clipPath`: `preserveAspectRatio="meet"` letterboxes the viewBox inside the
+viewport, and without the clip the ring tiles show in the letterbox bands.
+
+### The noise constants are measured, not chosen
+
+Perlin noise is not bounded by ±1, and the `[0,1]` remap divides by an assumed amplitude. Too small and
+the field clips flat over a large patch; too large and it never leaves mid-blend. `NOISE_AMP_2D = 0.72`
+and `NOISE_AMP_3D = 0.78` are pinned by `parquetNoise.test.ts`, which samples densely and asserts the
+real peak sits just under each constant. Gradients are normalized to unit length for the same reason —
+Perlin's originals have length √2, which inflates the range and makes the calibration guesswork.
+
+⚑ A single octave remapped linearly clusters hard around 0.5 and the whole patch reads as one mushy
+mid-shape. `contrast` (default 1.5) stretches about 0.5 and the clamp keeps `t` inside `[0,1]`, which
+both the envelope and the convex blend depend on. It is exposed as a slider because it is the difference
+between a noise deformation that resolves into its two shapes and one that does not.
+
+⚑ Noise is sampled on a coordinate that divides BOTH axes by the patch WIDTH, so cells stay square on a
+patch that is not. Normalizing y by height instead stretches the noise six to one on a 24×4 strip.
+
+### The velocity pad holds no state
+
+The spiral view's pad is now `components/ui/velocity-pad.tsx`, shared with the parquet page's two drift
+controls; `SpiralVelocityPad` is a thin wrapper and its behaviour is unchanged (verified by driving the
+real pad with Playwright: same store value to the last digit before and after).
+
+It began as a copy holding the knob in `useState` and syncing from the prop in an effect, which the
+`react-hooks/set-state-in-effect` rule rejects. The fix removed both: the knob is DERIVED from `value`
+on every render. That works because `padPosition → padVelocity → padPositionFromVelocity` is an exact
+round trip — the quadratic magnitude and its square root cancel — so the knob lands back under the
+pointer with no drift, and following an external reset costs nothing. `tests/velocity-pad.test.ts` now
+pins that identity across `maxRate` values, because the component stands on it.
+
+### Fills read the field
+
+Per-tile colour is the same weight vector that shapes the tile, blended in RGB across four base hues.
+It was previously a one-axis gradient sampled from the static profile, which a 4-corner patch cannot
+express. Blending in RGB and not HSL is deliberate: hue is circular, and averaging it sends a
+blue↔orange mix through green instead of through grey.
+
+### Still not done
+
+Cross-topology transitions (hexagons splitting into squares) remain the Laves-gateway work, deliberately
+not faked. The scattered-keyframe UI — place N points anywhere, assign a shape to each, Shepard or RBF
+weights — is now a field module away rather than a rewrite, which was the point of the whole change.
+
+## 2026-08-06 — the error wall draws from the whole atlas
+
+The error and 404 screens (`components/error-screen.tsx`) showed a fixed nine-cell arrangement of the
+eleven uniform tilings, with the top-left cell split into a 2 × 2 and the bottom-right into a strip over
+one more. AL's brief: eight equal cells, any Euclidean class and any combination of decoration and lens,
+a different eight on every load, drawn at random from the whole atlas and not from a curated handful;
+tile edges off on the colourings and edge patterns; no Islamic.
+
+### One renderer for every Euclidean class
+
+`lib/render/periodicSvg.ts` is new and is the piece that makes the rest cheap. Every Euclidean
+decoration already emits the periodic-cell IR for the inversive shader (`lib/render/periodicCell.ts`),
+so `periodicCellToSvg` consumes exactly that and writes static SVG: tilings, colourings, edge patterns,
+hollow tilings and the Islamic construction, from one function. It is the CPU twin of the shader — the
+shader walks pixels backwards through the lens into the fundamental cell, this walks lattice copies
+forwards through it into the picture — and it needs no canvas, no WebGL context and no server data,
+which is the whole reason an error screen can use it.
+
+`lib/render/tilingSvg.ts` still exists and still has its test, but nothing in the app calls it now.
+
+Four things in it are worth remembering, because each one was a visible bug first:
+
+⚑ **Strokes under a lens are a SCREEN width, not a world width.** The inversive shader's `uStrokeW` is
+in CSS pixels, so a tile the lens has magnified keeps a hairline. Rendering the stroke in cell space and
+letting the map scale it turned the rim tiles of an inversion into black bands with a few thin arcs
+between them. `strokeSpace: "output"` is what the lens specimens use; "cell" stays the default because
+an unwarped picture cannot tell the difference.
+
+⚑ **The blank middle of an inversion shrinks by making the rim tiles BIGGER.** Tile size falls as
+1/R², so at output radius ρ a tile is `rimTile · (ρ/reach)²` across and the disc where tiles fall under
+the size floor has radius `reach · √(minSize / rimTile)`. Sizing the rim tile to a fifth of the frame —
+which sounds like "show more of the tiling" — put the blank at half the frame. Four fifths gives a
+rosette, which is what an inversion is supposed to look like.
+
+⚑ **A spiral's seam has to be long.** One turn of the image advances the preimage by the seam
+`a·v₁ + b·v₂`, so the seam's length in tiles IS the tiles per turn, and the radius grows by e^(2π)
+across that same width. Arms of (1, 1) on a uniform tiling give about five tiles a turn and a
+hundredfold jump between rings: a doughnut, not a spiral. The arms are now derived to make the seam
+roughly eighteen tiles long, capped at the 6 /play's own control allows so the link reproduces the
+picture. `tests/periodic-svg.test.ts` pins the seam closure itself — shifting the preimage by S
+multiplies the image by exp(2πi) = 1, exactly, which is why the branch cut leaves no visible seam.
+
+⚑ **Segment count per copy, not per picture.** A lens spreads one prim's copies over decades of scale,
+so a subdivision that flatters the two tiles at the rim is a hundredfold waste on the thousand behind
+them. `detail` (output units per segment) turns `samples` into a per-copy count, taken from the copy's
+mapped corner box before its outline is subdivided at all. That plus the `minSize` floor — below which
+the shader stops resolving too, and blends to the same average this uses as its backdrop — took the
+first spiral from 259 kB of path data to 92 kB.
+
+### Where the pictures come from
+
+Two sources, because the screen has to paint when everything else has failed AND show more than a
+handful of pictures. `lib/render/errorSpecimen.ts` holds the split.
+
+The SEED is `lib/render/errorSpecimens.ts`, generated by `scripts/build-error-specimens.ts`: seventeen
+finished patches inlined as path data, 90 kB, no fetch. It carries the decoration classes, because
+colourings, edge patterns and hollow tilings are not in the hero index and their shelves run to hundreds
+of megabytes. No lens specimen is baked — a spiral is hundreds of tiles congruent to nothing, so none of
+them share an outline, and the live path renders one in a few milliseconds.
+
+LIVE is `/hero-index.json` + `/hero-cells/<id>.json`, the same two files the landing hero rotator
+lazy-loads: every drawable Euclidean tiling in the atlas, 4593 of them at ~3 kB a cell. Six of the eight
+slots come from there, rendered in the browser, one in four through the spiral or inversion lens; the
+other two stay with the seed's decorations so the wall does not become eight tilings. `isl-*` is
+filtered out. Everything degrades: a 404 on the index, a cell that will not parse, a lattice that is
+degenerate — each one falls back to the seed, and the wall is always eight pictures.
+
+⚑ Nothing random happens during render. A draw in the render body is a different draw on the server than
+on the client, which is a hydration mismatch; and `setState` synchronously inside the mount effect is a
+cascading render, which `react-hooks/set-state-in-effect` rejects. So the opening eight are a fixed
+spread across the seed, and one state write lands from a promise callback.
+
+### Sizing a tiling nobody chose
+
+A random draw from 4593 cannot be hand-framed, so every number is a ratio to the cell's own `feature`
+(median √area per tile). Two corrections: eight tiles across is right until the tiling's tiles differ
+wildly in size — the scaled and composable shelves, where a big triangle sits beside four small ones —
+because the median tracks the small ones and eight of those is two big ones filling the cell. The frame
+now takes the wider of eight tiles and 2.6 lattice periods. And it is capped at twenty tiles, because
+the same argument runs the other way: a k = 10 cell is a hundred tiles, and 2.6 repeats of it is a
+texture rather than a tiling.
+
+## 2026-08-06 — (2,3,4) in full: 5,974 tilings become 90,470, and 176 that only looked lost
+
+Marek's `234.zip` of this morning is not the third extension of that board, it is the whole solve done
+again with the F2 bug fixed: k = 1…8 in one run, 211 certificate files, 173 MB unpacked. Its own
+`solution_list.txt` reads 0, 0, 10, 13, 1568, 2181, 24603, 62095. The shelf had 5,974 tilings on that
+board; it now has 90,470, all developed, 0 failures, 4.0 ms each, and every one still lands on the same
+canonical V=26 E=72 F=48 board.
+
+**What the bug cost, now measurable at every k it reached**: 5 → 10, 2 → 13, 80 → 1,568, 81 → 2,181,
+196 → 24,603, 392 → 62,095. The two slices already re-derived on 2026-08-04 come back BYTE-IDENTICAL,
+which is what says this is the same corrected solver and not a third answer.
+
+### ⚑ The superset check fails on raw bitstrings, and the failure is the interesting part
+
+A correction must contain what it corrects, so the check is that every shipped record survives. Compared
+as raw 72-bit `drawn` strings it does not: 176 old records — 20, 32, 38, 86 at k = 5, 6, 7, 8 — are
+absent from the new corpus, and none of them has merely moved to another k.
+
+They are all there. The board's orthogonal symmetry group has order 48, and under it all 176 match a new
+record exactly; missing up to symmetry is 0 at every k. The legacy and slotted alphabets land the same
+tiling on the board in different POSITIONS, so a raw-bitstring comparison across a dialect change is
+meaningless, and only k=3/k=4 could be compared byte-for-byte because both sides of that comparison were
+already slotted. The group was computed from the data, not assumed: all orthogonal maps carrying the 26
+vertices to themselves (48 of them — trying the signed permutation matrices first finds only 16, because
+the developed board is not axis-aligned), then induced on the 72 edges.
+
+The same machinery answers the question that check raises: are the new counts classes or placements? All
+90,470 records are distinct up to those 48 symmetries — 10 / 13 / 1568 / 2181 / 24603 / 62095 canonical
+forms for the same record counts. No duplicates.
+
+### k = 9, 10 and 11 were deleted
+
+Marek's corrected run stops at k=8, so those three slices (86 / 1,603 / 3,529) would have stayed the
+buggy solver's output. Next to a corrected k=8 of 62,095 a k=9 of 86 is not a lower bound a reader can
+interpret, it is a false statement about the board, and AL's call was to drop them. They are recoverable
+from git if the run ever reaches k=9.
+
+Shard sizes moved the eager/lazy line: k=7 is 13 MB and k=8 is 32 MB, so both wait for their k chip and
+the shelf loads k=3…6 (2 MB) with the geometry. Numbers and checks: `experiments/results/schwarz-234-full-rerun.md`.
+
+## 2026-08-07 — the alphabet was 96% impossible
+
+AL asked whether the star alphabet has the analogue of the six regular vertex configurations that
+satisfy the angle equation but tile nothing (3.8.24 and friends). It does, overwhelmingly: 58,555 of
+star24full's 60,927 vertex types can never occur in any tiling at any k.
+
+Two corrections to the premise came first. Our regular palette has no dead weight to find — it is 44
+vertexdefs = 14 species and all 14 tile, because the 21 -> 15 reduction already happened by TILE
+restriction ({3,4,6,12}, the 12-direction decision), not by any test; every dead species needs a 5, 7,
+8, 9, 10, 15, 18, 20, 24 or 42-gon that is not in the palette. And level-1 filtering already runs at
+alphabet-generation time (`forbidden_adjacent_pairs`, the point-adjacency lemma, `EU_PRUNE_OVERLAP`).
+So the 60,927 were already the survivors of "this vertex figure is valid standing alone". The open
+level was whether it can be SURROUNDED.
+
+Three filters, each strictly stronger, all sound, all k-independent, all computed once in ~0.05 s.
+Arc consistency (a dart with an empty bucket can never be glued) gives 13,316. Requiring every dart to
+lie on a CYCLE of the face-successor digraph gives 5,656. Requiring the cycle length to be admissible —
+`checkface` demands `count % p == 0 && L % count == 0`, so a length-5 cycle around a triangle is not a
+face — gives 2,372.
+
+The third is cheap only because of two structural facts. The face-successor digraph decomposes by
+`CLASS_NEXT` orbit: the bucket condition IS `lvert[rneig[f]] == NEXT[lvert[e]]`, so the successor's
+expect-class is exactly NEXT of the current one, and L and p are constant per component. Derived, then
+measured — zero cross-orbit steps across 751,066 darts, 48 components, the largest being the triangle
+(25,363 darts, allowed lengths {1,3} only). And the test collapses to the key level: a closed walk of
+length c through dart x exists iff `tkey(x)` is reachable from `Q(rneig(x))` in exactly c-1 steps of a
+~16k-node key digraph. Bitset reachability on a few hundred nodes per component instead of cycle
+enumeration over three quarters of a million darts.
+
+Then the same idea one level finer. A gluing fixes the first step of TWO faces, since `glue[e]=f` also
+means `glue[f]=e`, and neither was being checked per-candidate. Both conditions are one bit lookup in a
+`(tkey, Q)` table, with the candidate-side keys precomputed into `CandEnt` and the configuration-side
+keys loop-invariant per node — no hash in the hot loop, which is what made fix 7's first attempt 26%
+slower. Forward 2.8x at k=3, reverse a further 2.2x.
+
+Net: k=2 star24full 17.09 s -> 0.12 s single core (142x), k=3 from 152 s wall on 9 cores to 2 s.
+Every catalog byte-identical: `check-regular` PASS, `cc1a4e57bde39378`/44, `0b6cb12bb7f5f797`/118,
+`de09102dc86ded53`/287, girih and composite-convex untouched, `EU_NOFILTER=1` reproducing the
+unfiltered search exactly. Regular, spherical and hyperbolic lose nothing at all, which is the best
+evidence the test is not trigger-happy.
+
+Two ideas of AL's were killed by measurement along the way. A global VC order on the placement
+sequence ("only consider types ahead in the sorting") loses 26% of the catalog — the placement order is
+not a free permutation, because `mincycle` picks the slot and the solver fills what goes there; the
+decisive counterexample has type 26 in two orbits with 14701 and 27405 forced between them, which no
+global order admits. And the k=3 growth showed memoisation remains impossible for the reason measured
+on 2026-08-06.
+
+The `EU_NCBUDGET` dent cap went too. Its default of 8 sat exactly ON the observed maximum — the k<=3
+catalog contains tilings with 8 dent-fill vertices and the search explores up to 12 — so one more dent
+in a real tiling and it would have dropped it silently behind a warning that fires on every star run.
+Uncapped refused zero times and gave the identical catalog. Replaced by a tripwire reporting the
+largest dent count seen; the structural reason it is safe is the non-adjacency lemma (dents cannot
+chain), but there is still no formal bound, which is why a tripwire beats a guess.
+
+First star24full k=3: **44 / 74 / 169**, 287 total, cap-free certified (budgets 8, 9 and 99 identical,
+99 with zero refusals). No external cross-check exists — no star24full corpus is shipped and the
+isotoxal reference atlases are a different palette. Marek's solver at k=3 on the 15° grid would be it.
+
+What is left: k=3 is 1.25 s against a 0.30 s perfect oracle, ~4x, down from 26x. The gap grows with k.
+The next rung is the full corona — all faces at a vertex closing simultaneously with shared neighbours
+— which is the first one that needs real search instead of reachability algebra. k=4 is now trivially
+affordable and is parked at AL's instruction until the filter work stops improving.
+
+## 2026-08-07 (2) — the corona, and what the dent cap would have cost
+
+Tackled the last rung of static filtering. A vertex must close all its faces simultaneously with one
+consistent choice of neighbours, and the structure is nicer than expected: the face at corner
+(x, rneig[x]) begins with the gluing of rneig[x] and ends with the gluing of x, so the darts of a
+vertex form a CYCLE of binary constraints. That makes the corona a cycle CSP — exact by boolean matrix
+product and a trace test, with values collapsing from darts (mean domain 159) to (tkey(lneig f),
+Q(rneig f)) key pairs (mean 56).
+
+Corner consistency alone kills nothing, and the branch breakdown is the interesting part: it is NOT
+that the degenerate face lengths absorb everything. c>=3 key reachability satisfies 12,411 of 22,169
+corners, c=2 saves 9,050, c=1 only 708, and zero corners are unsatisfiable. The full cycle CSP kills
+12 types, 2,372 -> 2,360, exact over every type, in 0.06 s.
+
+So the cyclic coupling is real and worth nothing. AL asked the right question about that — the corona
+costs a fixed amount at startup but should save a proportional amount of search, so a wash at k=3 could
+still pay at k=4. Measured both with interleaved reps: net of the 0.06 s fixed cost the search is
+unchanged at k=3 (1.17 -> 1.16) and at k=4 (25.34 -> 25.39), inside noise both times. Those 12 types
+barely seed any tree. Not landed. My first pass compared totals against a startup figure that was wrong
+by 3x and called it "net negative"; the lesson is to measure the fixed part separately and then test at
+two values of k, because a fixed cost and a proportional benefit cannot be compared in one number.
+
+That closes static filtering, and for a reason worth stating: the residual gap to a perfect oracle is
+mostly unreachable in principle. The oracle mask is the set of types used at k<=3, which is
+k-DEPENDENT, and a type first appearing at k=7 is genuinely realizable — no k-independent test may
+delete it. The corona result is the evidence, since an exact "can this vertex be surrounded at all"
+test finds only 12 more impossible types out of 2,372. Further gains need a different axis: dynamic
+propagation (the same face-closure algebra against the PARTIAL configuration during search, i.e.
+maintaining arc consistency instead of preprocessing it), or symbolic alpha.
+
+**star24full k=4 = 391.** Full catalog 44 / 74 / 169 / 391, 678 total, `0d6c89a535a16ad8`, 25.4 s
+single core, no cap of any kind. Identical with and without the corona filter.
+
+And it retroactively justified this morning's budget removal in a way I did not anticipate. The k=4
+search explores up to 17 dent-fill vertices, and the shipped catalog contains 5 tilings with 10 dents,
+2 with 11 and 3 with 12. `EU_NCBUDGET` capped dents at 8. Running k=4 with the default we had this
+morning would have produced 668 tilings instead of 678 and reported completeness, behind a warning
+that fires on every star run and is therefore ignored. AL's instinct to ask whether the budget was
+still needed was worth ten tilings.
+
+No external cross-check exists for k=3 or k=4. Marek's solver on the 15° grid remains the only
+independent check available.
+
+## 2026-08-07 (3) — the star shelf, and four bugs on the way in
+
+Put star24full k≤4 into the atlas. The shipped star shelf was 172 records from the in-ring palette runs
+(26 at k=1, 45 at k=2, 101 at k=3 from a solve the files themselves call "preview"). star24full strictly
+contains all 172, checked by vertype with zero missing, so it supersedes that corpus. AL chose
+replace-and-carry-flags over a parallel shelf, and folding proven α-families over. The shelf is now 407
+entries — 23/46/108/230, of which 17 are α-slider families and 12 the out-of-ring 9-fold/5-fold records
+star24full cannot contain — carrying **263 new star-bearing tilings**, 240 of them at k=4 which did not
+exist before. All 435 records developed in exact ℤ[ζ₂₄] with zero area-check failures.
+
+The α-family count is not the naive one, and this is worth remembering: abstracting α out of the vertype
+by regex suggests 38 multi-member groups, but the prover finds 17. The pinning test is linear algebra on
+the angle-sum constraints, so dim 0 is a proof of rigidity; α-lookalikes that do not flex are genuinely
+distinct tilings and ship separately.
+
+Four bugs, three of them mine. I exported without `--only-star` and pulled in 243 pure-regular
+tilings — 11/20/61/151, exactly the regular catalog already shipped from Galebach — invisible on the star
+shelf but duplicated elsewhere; AL caught it by asking whether the shelf counts were right. Ids are
+positional, so renumbering would have left existing deep links resolving to a DIFFERENT tiling; every
+carried-over record keeps its original id, matched by vertype. Phase 5 derives family candidacy from
+`m.atlasId ∈ candidateIds`, and I had run the family prover under one id prefix and staged the cells
+under another, so 0 of 57 member ids matched and all 17 families fell through to the default
+attribution, "Joseph Myers, reproduced" — including five at k=4, which Myers never enumerated. And two
+k=3 records share a vertype (distinct tilings, different gluings) and both inherited the same preserved
+id, which `tests/atlas-id-unique.test.ts` caught.
+
+The fourth was pre-existing and worth having found: Phase 4 never sets `preview`, and the k=3 preview
+file carries no candidate flags, so all 101 shipped k=3 star records were attributed to Myers even
+though his enumerations stop at k=2 (2004 k=1, 2009 k=2). Replacing them with our complete k=3, flagged,
+fixes it. 346 of 407 entries now read as AL/candidate: every record not in Myers' sets, none of which
+has an external cross-check.
+
+### The out-of-ring thread, and an error AL caught
+
+D=18 and D=20 ship separately since ℤ[ζ₂₄] cannot hold 9- or 18-fold tiles. Complete catalogs are now
+cheap, so this should have been routine: 9-fold goes 3/4/4/— to 3/4/4/5, and D=20 has nothing at all
+above k=1 (six tilings exist in the whole ring, all 1-uniform).
+
+One real fix: `--contains 9,18` matched `[(,](\d+)[,)]`, a BARE token, so `18*d15` never matched and the
+k=2 export produced 1 record where the atlas ships 4.
+
+Then I overreached. I replaced `--contains` with an angle test — keep blocks having a tile that cannot
+exist in ℤ[ζ₂₄], n | 24 and for stars 24a % D == 0 — validated it (the 61 D=18 blocks it calls in-ring
+are ALL in the star24full catalog after a₁₈ → 4a/3, zero misses) and staged 51 records. AL: "you added
+the 9-fold snapshots of the parametric family." Correct. **α is a FREE parameter for flexing families**,
+so a family exists at every α in its range and the ring only decides which α values get sampled; an
+off-grid `(6*d10,6*p5,3)` is an α-sample of an in-ring family already on the star24full shelf. Measured:
+34 of the 51 were α-snapshots of 13 shapes. What makes a tiling out-of-ring is a tile whose symmetry
+order n does not divide 24, which is combinatorial and α cannot touch it. The tool's docstring had said
+exactly this ("NOT already an alpha-sample of an in-ring family") and I read past it. The rationale is
+now written back into the docstring with the measurement, so it does not get retried.
+
+## 2026-08-07 (4) — the face filter across every ring, and where it pays most
+
+Swept D=14…46. The two largest speedups in the project are here, not on star24full: **ring18 k≤3 goes
+16.49/17.15/17.10 s to 0.03 s (~560×)** and **ring42 k≤2 goes 97.06 s to 0.17 s (571×)**, catalogs
+identical both ways. ring42 is the largest alphabet in the repo — 192,687 types, three times
+star24full's — collapsing 187× to 1,030.
+
+Six palettes have ZERO live types, and the search agrees (filtered and unfiltered both emit nothing at
+k≤3). All six are D = 2·prime with prime ≥ 7. A regular n-gon needs n | D for integer angle units, so
+those rings hold only p-gons and 2p-gons — no triangles, squares or hexagons — and no combination of the
+surviving angles reaches a full turn. **A ring supports tilings only when D has a factor of 3 or 4.**
+The filter derives that from face closure alone. Confirmed positively too: ring16 has 16 tilings at k≤4
+including (4,4,4,4) and (8,8,4), exactly what the angle arithmetic predicts, and ring28 has 7.
+
+D=9 cannot exist: D is the angular unit, a regular 9-gon's interior angle is D·7/18 units, and at D=9
+that is 3.5. The smallest working D is 18, so the 9-fold family IS ring18. Also found that `star18` and
+`star20` are stale duplicates of `ring18`/`ring20` whose tables predate the CLASS_PREV format and do not
+compile; the first sweep reported "BUILD FAIL" and I moved on, which is why the earlier palette report
+silently omitted D=18 and D=20.
+
+⚑ **`timeout` does not exist on macOS.** Two verification runs used `env … timeout 300 <solver>`, so the
+solver never ran and both reported 0 blocks — which I read as "no tilings exist" for six palettes AND
+for ring42. Re-run without it, ring42 gives 32 blocks at k=1 and 65 at k≤2 with the triangle tiling
+surviving the filter. What caught it was asking whether a palette containing regular triangles could
+really produce nothing.
+
+## 2026-08-07 (5) — the dynamic filter, which is where static filtering stopped being the answer
+
+I closed the previous note by saying static filtering was finished and the next axis was dynamic
+propagation. It was worth more than every static rung after the first.
+
+`checkface` walks a face and, on reaching an unglued edge, returns `count <= L`. That discards the
+count. A face that has already walked `count` darts can only close at an admissible `c > count`, and
+the remaining chain has to be realizable — which is exactly the key reachability the static filter
+already computes. With the walk started at dart i and open at rfree, the branch is dead unless tkey(i)
+is reachable from Q(rfree) in exactly c − count key steps for some admissible c. Since acc[src][dst]
+carries bit b iff dst ∈ Reach_{b−1}(src), the test is `(m << (count−1)) & allowed`, two shifts and an
+AND. This is information preprocessing cannot have: a static filter must assume every possible count.
+
+Measured single core with interleaved reps: 1.39/1.40 → 0.80/0.80 at k=3 (1.75×) and 28.84/29.98 →
+8.21/8.29 at k=4 (3.5×), catalogs identical. **The gain grows with k**, which is the property the
+corona lacked and the reason this one is worth its startup cost. It is neutral where the search is
+shallow (regular k≤6 0.18 → 0.17, ring42 k≤2 0.19 → 0.20).
+
+The first version was unsound and the raw block count caught it immediately: 445 collapsed to 22. An
+off-by-one — closing at total length c needs tkey(i) ∈ Reach_{c−count}(q_r), acc bit c−count+1, not
+c−count. The case that pins it is count=1 closing at c=2, which needs tkey(i) ∈ R(q_r) = Reach_1 where
+the wrong formula demanded plain equality. Worth remembering that a dynamic prune should be tested
+against the RAW block count first: a collapse from 445 to 22 is unmissable, whereas a digest change
+tells you something is wrong without telling you it is a systematic over-prune.
+
+**star24full k=5 = 771.** Full catalog 44/74/169/391/771, total 1,449, `e4cebd1a796cd3f3`, 46.2 s single
+core, no cap (the search explores up to 20 dent-fill vertices). The k≤4 prefix reproduces the certified
+catalog exactly. This morning k=2 alone cost about 15.8 CPU-hours. The k=4→k=5 factor is 5.5×, down
+from 8.7× for k=3→k=4, so growth is decelerating as the filters bite harder at depth — which is why
+k=6 became worth attempting at all.
+
+## 2026-08-07 (6) — to k=7, and the shape of the remaining work
+
+The dynamic filter turned depth from the binding constraint into a non-issue for a while. star24full is
+now complete to k=7: **44 / 74 / 169 / 391 / 771 / 1570 / 3204 = 6,223 tilings**, digest
+`aa2cff7bd10c919f`, k=7 taking 222 s wall on nine cores. This morning k=2 alone cost about 15.8
+CPU-hours.
+
+AL's instruction, now standing policy: whenever star24full reaches a new k, run D=18 and D=20 at the
+same k so the three families stay in step, and update the atlas each time. Done for k=7. **D=18 is
+18/19/40/100/176/327/663 = 1,343** in 2.5 s. **D=20 is 6/0/0/0/0/0/0 — complete at six tilings, all
+1-uniform.** The zeros are measured at every k from 2 to 7 rather than inferred from the k=1 result,
+which is the point of running it: an assumption there would have been indistinguishable from a bug.
+
+The cost ladder is the interesting part. Tiling counts double per k with a stable ratio (1.97–2.31),
+while the TIME ratio keeps falling: 8.7, 5.5, 4.3. The dynamic filter gets stronger with depth because
+it has more accumulated `count` to work with, so the search is getting relatively cheaper exactly where
+it used to blow up. That is why k=8 (about an hour of CPU, ~7 min pooled) is a routine next step rather
+than a project. The floor that will eventually bind is parallel, not serial: the slowest single shard
+at k=7 was 218 s of 1,109 total, so nine cores cannot beat about a fifth of serial time no matter how
+finely it shards.
+
+On the atlas, I proposed lazy shards for k≥5 on the strength of the cells-file sizes (4/10/21 MB) and AL
+pushed back: everything goes in the main atlas. Measuring properly rather than reading file sizes, the
+atlas-entry shape drops vertype, orbits and areaCheck and is written compact, so the real growth is
+13.6 MB → ~29.4 MB. Still roughly a doubling of a file /library fetches client-side, which is worth
+knowing, but the correction matters: I had asserted 35 MB from the wrong artifact. Same failure mode as
+the corona timing — comparing the convenient number instead of the one that governs.
+
+Everything needed to extend this — the run recipe, the five traps that each bit once (`--only-star`, id
+preservation by vertype, family atlasId remapping, candidate flags for anything outside Myers, and
+out-of-ring being about n rather than angles) — is consolidated in
+`experiments/results/star-catalogue-state-2026-08-07.md`. That is the page to read first next time.
+
+## 2026-08-07 (7) — to k=8, and a silent tiling-eater in the family prover
+
+**star24full k=8 = 6,212**, cumulative **12,435**, digest `b397d8220bb29cea`. 4,140 CPU-s / 845 s wall
+on 9 slots at 400 shards. D=18 adds 1,218 for 2,561 total; D=20 was run at k=8 and is still 6, so it
+stays complete. Per the standing policy all three shipped together into the main atlas.
+
+The counts keep doubling (1.94) and the time ratio keeps falling — 8.7, 5.5, 4.3, 3.73 — which is the
+dynamic face-closure filter earning more the deeper the search goes. On the projection that puts k=9
+at roughly 13–14k CPU-seconds and ~12,000 tilings.
+
+**Reproduction across shard counts.** k=8 ran on 400 shards, k=7 on 200. `catalog_digest.py --diff`
+over the two k<=7 catalogs comes back IDENTICAL, 6,223 blocks, `aa2cff7bd10c919f`. That is a stronger
+statement than the usual fixpoint gate, which always compared runs at the same shard count, and it is
+only visible through the order-insensitive digest — `shasum` would report a difference that is not one.
+
+**Doubling the shards bought nothing, and now we know why.** The parallel floor is a fixed FRACTION,
+not a fixed cost: 218 s of 1,109 at k=7 (19.7%), 803 s of 4,140 at k=8 (19.4%). `initex()` splits on
+the first vertex type only, one first-type subtree dominates, and no shard count cuts inside it. At
+k=9 that floor alone is ~40 minutes. The next real parallelism win is depth-2 sharding, a change to
+`initex()`; nothing short of that moves the number, and I should stop reaching for the shard knob.
+
+**The family prover was quietly eating tilings.** Grouping flexing blocks by `family_key(words)` alone
+— the multiset of alpha-abstracted corner words — is necessary but not sufficient: two non-isomorphic
+tilings can carry the same vertex configurations and differ only in the gluing. It had never fired
+below k=8 because every family there had exactly one member per alpha. At k=8 four of six key-groups
+held two parallel families each, every alpha appeared twice, one slider was emitted for both, and
+Phase 4's fold removes members by vertype — so 30 records would have been folded away behind 6 sliders
+covering 18 of them. Twelve real tilings would have left the shelf with no error and no warning.
+
+What caught it was the log line reading `members a=[1, 1, 2, 2, 3, 3]`. A family is one tiling deformed
+by alpha, so it holds at most one member per alpha value; a repeat is a contradiction in terms. I
+nearly let it past as cosmetic.
+
+The fix keys on `(family_key, conway_word)`. The Conway word is the right discriminator precisely
+because it is alpha-INVARIANT — the alpha snapshots of one family differ only in star species, and
+species lives in the vertype, not the gluing. Before landing it I checked the hypothesis against the
+29 known-good k<=7 families: all 29 have members sharing exactly one Conway word, so the new key
+cannot disturb them. Re-running confirms it: k<=7 output byte-identical, k=8 goes 6 families -> 10,
+every one reading `a=[1, 2, 3]`, and the fold accounting balances at 30 records against 10 sliders x 3
+alpha. A `⚑ KEY COLLISION` guard now fires on any repeated alpha, because this failure is invisible
+downstream: the records simply stop existing.
+
+Two collision shapes showed up, worth naming since both will recur. Same vertype with different
+gluings — the solver wrote them as `…1.tes` and `…2.tes`, differing only in `(1@5)(1@6 1@7)` versus
+`(1@5 1@7)(1@6)`, and they also collapse `cells_index`, which is keyed by vertype. And different
+vertypes with the same corner multiset, where the orbits are simply listed in another order. There are
+216 shared vertypes among the 3,362 k=8 star records, so the first shape is not rare; it is going to
+keep pressing on anything keyed by vertype alone.
+
+Detail: `experiments/results/family-key-collision-2026-08-07.md`. State page:
+`experiments/results/star-catalogue-state-2026-08-07.md`, now carrying six traps instead of five.

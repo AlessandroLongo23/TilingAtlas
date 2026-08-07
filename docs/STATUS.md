@@ -3,8 +3,27 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-08-05, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-07, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## Star catalogue: k=8 for all three families (2026-08-07)
+
+**star24full (D=24) 44/74/169/391/771/1570/3204/6212 = 12,435**, digest `b397d8220bb29cea`, 845 s wall
+on 9 cores. **D=18 = 2,561** to k=8. **D=20 complete at 6**, all 1-uniform, run and empty at every
+k=2..8. All three ship into the MAIN `public/reference-atlas.json` — no lazy shards (AL).
+
+- **Standing policy (AL):** every new k runs D=18 and D=20 at the same k and updates the atlas.
+- **Next rung, k=9:** ~13–14k CPU-s, ~45–55 min on 9 cores, ~12,000 tilings. The counts double per k
+  while the time ratio keeps falling (8.7, 5.5, 4.3, 3.73) — the dynamic filter earns more at depth.
+- ⚑ **The parallel floor is a fixed ~20% fraction and shard count does not move it** (218/1109 at
+  k=7 on 200 shards; 803/4140 at k=8 on 400). `initex()` splits on the first vertex type only. The
+  next parallelism win is depth-2 sharding, a code change.
+- ⚑ **`export_family_cells.py` was merging parallel families** and the atlas fold would have dropped
+  12 real k=8 tilings silently. Key now includes the Conway word; a `KEY COLLISION` guard fires on any
+  repeated alpha. k<=7 output byte-identical, so nothing already shipped moved.
+
+Read before touching the corpus: `experiments/results/star-catalogue-state-2026-08-07.md` (state, the
+recipe for the next k, six traps). Nothing is committed.
 
 ## /isohedral covers all 93 IH types (2026-08-05)
 
@@ -398,10 +417,14 @@ DEVELOPMENT_NOTES.md §"The Schwarz family becomes a family".
   four triangles per square, two vertex classes, floor k=2. All 270,768 faces measure 1 : 1 : √2.
 - ⚑ **Coverage is Marek's run, not the board.** (2,2,4) has no k=8 and (2,3,5) no k=4 — gaps in the
   solve, surfaced by `schwarzKGaps` in the /freedraw board picker and asserted in the test suite.
-  **(2,3,4) reran on 2026-07-29 to k=11** (842 → 5,974 certificates, contiguous k=3..11, 0 failures,
-  same canonical board). A rerun that ADDS k is one manifest row; the board hoist is what keeps the
-  new 5,132 tilings at 2.7 MB, not ~10 MB.
-- ⚑ **The `F2` flag was a solver bug. Four boards are corrected; THREE ARE STILL SHORT.**
+  **(2,3,4) was re-solved in full on 2026-08-06** — k=1..8 with the F2 bug fixed, 90,470 certificates
+  against the short solver's 5,974, 0 failures, same canonical V=26 E=72 F=48 board. Per slice:
+  5 → 10, 2 → 13, 80 → 1,568, 81 → 2,181, 196 → 24,603, 392 → 62,095. ⚑ Its superset check FAILS on
+  raw `drawn` bitstrings (176 shipped records look lost) and passes under the board's 48 symmetries —
+  the legacy and slotted alphabets place a tiling differently, so bitstrings do not compare across a
+  dialect change. k=9/10/11 were DELETED: the corrected run stops at k=8 and a k=9 of 86 beside a
+  k=8 of 62,095 is a false statement about the board. k=7 (13 MB) and k=8 (32 MB) are lazy shards.
+- ⚑ **The `F2` flag was a solver bug. Five boards are corrected; TWO ARE STILL SHORT.**
   (Marek, 2026-07-29.) A typo on the boards whose triangle has three different angles dropped every
   tiling that draws the longest edge class — which is why `E2` named all 103 scalene certificates and
   `F2` named none. A second bug (too few starting vertices) hit (2,2,3) and (2,2,4).
@@ -412,7 +435,8 @@ DEVELOPMENT_NOTES.md §"The Schwarz family becomes a family".
   | (2,2,4) | 65,257 | 65,257 | rerun CONFIRMS it; byte diffs are board orientation only |
   | (2,3,6) | 43 | **462** | k=3 5→10, k=4 38→452 |
   | (2,4,5) | 7 | **23** | k=3 5→10, k=4 2→13 |
-  | (2,3,4) (2,3,5) (2,3,7) | | | ⚑ STILL SHORT — no corrected corpus yet |
+  | (2,3,4) | 5,974 | **90,470** | full re-solve 2026-08-06, k=1..8; k=9..11 deleted |
+  | (2,3,5) (2,3,7) | | | ⚑ STILL SHORT — no corrected corpus yet |
 
   (2,3,3) and (2,4,4) are in neither bug and stand as shipped.
   **sch236 k=5 was DELETED, not corrected** (AL: better to show nothing than something false). The

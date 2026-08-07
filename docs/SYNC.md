@@ -2099,3 +2099,74 @@ the herringbone polyomino is NOT edge-to-edge (a long side is met by two short o
 the passing column to the failing one; two scaled examples were the same hexagon-and-triangle
 arrangement in different hues; three star examples shared one 8x3/12x1 core. The two slides now share
 no tiling, so nothing survives the slide change and re-animates. — CC
+
+### 2026-08-06 — CC — the error wall, eight equal cells drawn from the whole atlas
+`lib/render/periodicSvg.ts` renders the periodic-cell IR to static SVG, so every Euclidean class and
+both conformal lenses reach the error screens with no canvas and no server data. The wall is eight equal
+cells: six live from `public/hero-index.json` (4593 tilings, one in four lensed), two from a 90 kB baked
+seed that carries the decoration classes and is the whole wall when the fetch fails. ⚑ A lens stroke is
+a SCREEN width, not a world one. Detail in DEVELOPMENT_NOTES §2026-08-06. — CC
+
+### 2026-08-06 — CC — (2,3,4) is Marek's full corrected solve: 5,974 tilings → 90,470
+`234.zip` redoes the whole board with the F2 bug fixed, k=1..8: 10 / 13 / 1568 / 2181 / 24603 / 62095,
+all 90,470 developed, 0 failures, same canonical V=26 E=72 F=48 board. ⚑ The superset check FAILS on raw
+`drawn` bitstrings — 176 shipped records look lost — and passes under the board's 48 symmetries: the two
+alphabets place a tiling differently, nothing missing, nothing duplicated. k=9/10/11 were DELETED (the
+buggy solver's, AL's call), k=7/k=8 went lazy. DEVELOPMENT_NOTES §2026-08-06. — CC
+
+## 2026-08-07 — the alphabet was 96% impossible (CC)
+
+Landed a face-closure filter in `eu_solver.cpp`: a vertex type whose faces can never close cannot occur
+in any tiling at any k, so it is deleted before the search starts. star24full 60,927 -> 2,372 types in
+0.05 s; **142x at k=2**, k=3 from 152 s wall to 2 s. Removed the `EU_NCBUDGET` dent cap (default 8 sat
+on the observed maximum). Catalogs byte-identical, `check-regular` PASS. First star24full
+**k=3 = 44/74/169** (`de09102dc86ded53`). Detail: `docs/ctrnact-solver-optimizations.md` fixes 10-13.
+
+## 2026-08-07 (2) — star24full k=4, and the dent cap would have cost 10 tilings (CC)
+
+**k=4 = 391** (44/74/169/391, 678 total, `0d6c89a535a16ad8`), 25.4 s single core, no cap. 10 of those
+678 tilings carry more than 8 dent-fill vertices, so this morning's `EU_NCBUDGET=8` would have shipped
+668 and called it complete — removing it was load-bearing. Corona filter (cycle CSP over a vertex's
+darts) built and measured: kills 12 types, changes runtime by nothing at k=3 or k=4, NOT landed.
+That closes static filtering; see `docs/ctrnact-solver-optimizations.md`.
+
+## 2026-08-07 (3) — the star shelf rebuilt on star24full (CC)
+
+**263 new star tilings** in the atlas: shelf now 407 entries (k=23/46/108/230, 17 α-families, 12
+out-of-ring). star24full k≤4 strictly contains the 172 in-ring records it replaces, all of which keep
+their ids so deep links still resolve. Fixed a pre-existing misattribution (101 k=3 records credited to
+Myers, who stopped at k=2) and shipped 5 new 9-fold k=4 tilings; D=20 has none above k=1.
+Detail: `experiments/results/star-shelf-ingest-2026-08-07.md`.
+
+## 2026-08-07 (4) — the face filter across every ring palette (CC)
+
+Swept D=14…46. Biggest speedups in the project are here: **ring18 k≤3 17.1 s → 0.03 s (560×)** and
+**ring42 k≤2 97.1 s → 0.17 s (571×)**, catalogs identical. Six rings (D = 2·prime, prime ≥ 7) have zero
+live types and provably no tilings — a ring works only if D has a factor of 3 or 4. D=9 cannot exist
+(a 9-gon needs D ≡ 0 mod 18); the 9-fold family is D=18.
+Detail: `experiments/results/ring-palette-sweep-2026-08-07.md`.
+
+## 2026-08-07 (5) — dynamic face closure, and star24full k=5 (CC)
+
+Landed the next axis after static filtering: `checkface`'s open branch discarded the walk's `count`, so
+a face that can no longer reach an admissible length was still expanded. **3.5× at k=4, 1.75× at k=3 —
+the gain GROWS with k.** All digests unchanged, `make check-regular` PASS. **star24full k=5 = 771**
+(44/74/169/391/771, `e4cebd1a796cd3f3`), 46 s single core, uncapped.
+Detail: `docs/ctrnact-solver-optimizations.md`.
+
+## 2026-08-07 (6) — star24full to k=7, D=18 to k=7, D=20 complete (CC)
+
+**star24full 44/74/169/391/771/1570/3204 = 6,223** (`aa2cff7bd10c919f`), k=7 in 222 s wall on 9 cores.
+**D=18 = 1,343** to k=7; **D=20 is COMPLETE at 6**, all 1-uniform, zeros measured at every k not assumed.
+Standing policy: each new k runs all three families and updates the atlas, everything in the MAIN atlas
+(no shards; ~29 MB). State + how to extend + the five traps:
+`experiments/results/star-catalogue-state-2026-08-07.md`.
+
+## 2026-08-07 (7) — star24full to k=8, and a family-key bug that was eating tilings (CC)
+
+**star24full 44/74/169/391/771/1570/3204/6212 = 12,435** (`b397d8220bb29cea`), k=8 in 845 s wall on 9
+cores. **D=18 = 2,561** to k=8; **D=20 still 6**, k=8 run and empty. The k<=7 prefix is IDENTICAL to
+the k=7 run at a different shard count (400 vs 200) — the strongest reproduction check yet.
+Fixed `export_family_cells.py`: keying families on corner words alone merged parallel families at k=8
+and the fold would have dropped **12 real tilings silently**; the key now includes the Conway word.
+Detail: `experiments/results/family-key-collision-2026-08-07.md`, state page updated for k=8.
