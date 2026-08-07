@@ -48,6 +48,20 @@ $(shell [ -f .maxnum-$(PALETTE)-$(MAXNUM) ] || rm -f eu_solver$(SFX))
 eu_solver$(SFX): eu_solver.cpp $(TB)/.generated .maxnum-$(PALETTE)-$(MAXNUM)
 	$(CXX) $(CXXFLAGS) -DMAXNUM=$(MAXNUM) -I$(TB) -o $@ $<
 
+# Runtime-alphabet solver. Same search; the tables come from tables.bin at startup (EU_TABLES=<path>)
+# instead of being #included as C++ and compiled in. Two things follow.
+#
+# It removes the wall that killed combined-z24: `g++ -O2` OOMs on a 588 MB single-line .inc of
+# millions of string literals long before the search starts, while the same 1.75M entries are
+# 100-200 MB in RAM. Nothing about the enumeration changes — verified on the regular palette,
+# digest 884968dca36a6c41 / 1247 blocks from both paths, which is the check-regular golden.
+#
+# And it has NO palette dependency, so ONE binary serves every palette; only MAXNUM is baked in.
+#   make eu_solver_rt MAXNUM=6 && EU_TABLES=path/to/tables.bin ./eu_solver_rt
+# The compiled path stays the default so check-regular keeps gating it byte-for-byte.
+eu_solver_rt: eu_solver.cpp
+	$(CXX) $(CXXFLAGS) -DMAXNUM=$(MAXNUM) -DEU_RUNTIME_TABLES -o $@ $<
+
 eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp $(TB)/.generated
 	$(CXX) $(CXXFLAGS) -I$(TB) -o $@ $<
 

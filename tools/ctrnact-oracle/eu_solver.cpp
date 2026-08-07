@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
+#include <iterator>
 #include <ctime>
 
 std::string solvercode = "eu";
@@ -174,7 +176,68 @@ struct configuration {
 // mainlist + class tables are generated per palette by alphabets/gen_alphabet.py
 // (resolved via -I tables/$(PALETTE); regular reproduces the legacy 44 entries exactly).
 #include <map>
+#ifdef EU_RUNTIME_TABLES
+// ---------------------------------------------------------------------------------------------
+// RUNTIME ALPHABET. Same symbols solver_tables.inc defines, read from tables.bin at startup
+// instead of compiled in. The compiled path remains the default and is untouched — build with
+// RUNTIME_TABLES=1 to get this one, and `make check-regular` still gates the compiled path.
+//
+// The wall this removes: the alphabet is normally C++ source, and `g++ -O2` OOMs on a 588 MB
+// single-line file of millions of string literals long before any search begins (combined-z24,
+// 1,747,450 vertex types, 2026-07-12). The data is 100-200 MB in RAM — trivial here. Nothing about
+// the search changes; this is purely how the tables arrive.
+//
+// Format is documented in gen_alphabet.py emit_binary(). Little-endian i32 throughout, which is
+// every machine this runs on; a big-endian host would need byte swaps and is not supported.
+// ---------------------------------------------------------------------------------------------
+static int TABLE_D = 0, TABLE_MAXL = 0;
+std::vector<vertexdef> mainlist;
+static std::vector<int> CLASS_UNITS, CLASS_L, CLASS_P, CLASS_NEXT, CLASS_PREV, CLASS_TILE;
+static std::vector<std::string> CLASS_DISP, TILE_FAM, TILE_NAME;
+
+namespace {
+struct TableReader {
+    const unsigned char* p; const unsigned char* end;
+    void need(size_t n) const {
+        if ((size_t)(end - p) < n) { std::cerr << "tables.bin: truncated\n"; std::exit(2); }
+    }
+    int i32() { need(4); int v; std::memcpy(&v, p, 4); p += 4; return v; }
+    std::string str() { int n = i32(); need((size_t)n); std::string s((const char*)p, (size_t)n); p += n; return s; }
+    std::vector<int> iv() { int n = i32(); std::vector<int> v((size_t)n); for (int i = 0; i < n; i++) v[i] = i32(); return v; }
+    std::vector<std::string> sv() { int n = i32(); std::vector<std::string> v((size_t)n); for (int i = 0; i < n; i++) v[i] = str(); return v; }
+};
+}
+
+static void load_tables_bin(const char* path) {
+    std::ifstream f(path, std::ios::binary);
+    if (!f) { std::cerr << "EU_TABLES: cannot open " << path << "\n"; std::exit(2); }
+    std::vector<unsigned char> buf((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    if (buf.size() < 8 || std::memcmp(buf.data(), "CTRNTB01", 8) != 0) {
+        std::cerr << "EU_TABLES: " << path << " is not a CTRNTB01 table file\n"; std::exit(2);
+    }
+    TableReader r{ buf.data() + 8, buf.data() + buf.size() };
+    TABLE_D = r.i32(); TABLE_MAXL = r.i32();
+    const int ncls = r.i32(), ntiles = r.i32(), ntypes = r.i32();
+    auto fixed = [&](std::vector<int>& v) { v.resize((size_t)ncls); for (int i = 0; i < ncls; i++) v[i] = r.i32(); };
+    fixed(CLASS_UNITS); fixed(CLASS_L); fixed(CLASS_P); fixed(CLASS_NEXT); fixed(CLASS_PREV); fixed(CLASS_TILE);
+    CLASS_DISP = r.sv(); TILE_FAM = r.sv(); TILE_NAME = r.sv();
+    if ((int)CLASS_DISP.size() != ncls || (int)TILE_NAME.size() != ntiles) {
+        std::cerr << "tables.bin: class/tile count mismatch\n"; std::exit(2);
+    }
+    mainlist.resize((size_t)ntypes);
+    for (int i = 0; i < ntypes; i++) {
+        vertexdef& d = mainlist[i];
+        d.symbol = r.str(); d.code = r.str();
+        d.ferkval = r.i32(); d.counting = r.i32();
+        d.label = r.sv(); d.lneig = r.iv(); d.rneig = r.iv(); d.mirro = r.iv(); d.lvert = r.iv(); d.reps = r.iv();
+    }
+    if (r.p != r.end) { std::cerr << "tables.bin: " << (r.end - r.p) << " trailing bytes\n"; std::exit(2); }
+    std::cerr << "tables: " << ntypes << " vertex types, " << ncls << " classes, D=" << TABLE_D
+              << " (runtime, " << path << ")\n";
+}
+#else
 #include "solver_tables.inc"
+#endif
 
 int symbolcount;
 
@@ -1277,6 +1340,15 @@ static void dyn_build() {
 }
 
 int main() {
+#ifdef EU_RUNTIME_TABLES
+    // Must precede everything: symbolcount, mainlist and the CLASS_ tables are all empty until this
+    // runs, so any table read before it would silently see a zero-size alphabet and enumerate nothing.
+    {
+        const char* tp = std::getenv("EU_TABLES");
+        if (!tp) { std::cerr << "built with RUNTIME_TABLES=1 but EU_TABLES is unset\n"; return 2; }
+        load_tables_bin(tp);
+    }
+#endif
     // A remainder here would leave root slices no shard walks, i.e. silently missing tilings. Refuse.
     if (shard_d2 > 1 && (shard_d2 > shard_n || shard_n % shard_d2 != 0)) {
         std::cerr << "EU_SHARD_D2=" << shard_d2 << " must divide EU_SHARD_N=" << shard_n
