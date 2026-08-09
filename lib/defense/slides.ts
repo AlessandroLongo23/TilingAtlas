@@ -20,6 +20,7 @@ export interface Slide {
 }
 
 import { partSlideLabel } from "./parts";
+import { COMPAT_TILINGS } from "./vcTilings";
 
 const SLIDE_FENCE = /^\s*---\s*$/;
 
@@ -105,6 +106,10 @@ export function referencedTilingIds(markdown: string): string[] {
 			}
 		}
 	}
+	// <compat-graph> names none of its tilings: it cycles a pool chosen at build time
+	// (scripts/build-compat-tilings.ts), and listing sixteen ids in an attribute would be a second
+	// copy of that decision, free to drift from the words the same script derived for them.
+	if (/<compat-graph\b/i.test(markdown)) for (const t of COMPAT_TILINGS) ids.add(t.id);
 	return [...ids];
 }
 

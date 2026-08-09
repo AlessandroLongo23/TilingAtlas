@@ -312,6 +312,13 @@ export interface FlatDrawParams {
 	 *  an orbit mesh is uploaded; the renderer converts it to world space itself, so a caller never has
 	 *  to reproduce the shader's transform. */
 	orbitHoverPx?: { x: number; y: number } | null;
+	/**
+	 * Told which orbit the pointer is over, or -1 for none, whenever that answer CHANGES. The
+	 * renderer already computes it for the dot easing; without this it stays inside the frame loop,
+	 * and a caller wanting to react to it would have to reimplement the hit test against the same
+	 * mesh in the same world space, which is two copies of a thing that must not disagree.
+	 */
+	onOrbitHover?: (orbit: number) => void;
 	/** Colour the tiles fade toward in orbit mode, 0..1. Defaults to white. */
 	dimTargetRGB?: [number, number, number];
 	/** Force the same fade with no orbit mesh loaded. The symmetry-elements overlay wants it: colour
@@ -362,6 +369,8 @@ export class FlatCellRenderer {
 	private orbitA: Record<string, number> = {};
 	private orbitMesh: OrbitDotMesh | null = null;
 	private orbitScales: number[] = [];
+	/** Last orbit reported to `onOrbitHover`, so the callback fires on changes and not every frame. */
+	private lastHoveredOrbit = -1;
 	// Polygon points: the fourth program, from the same shaders and mesh fields /play's inline pipeline
 	// uses (euclidean-canvas.tsx). Uploaded with the mesh, drawn only when the caller asks.
 	private pointsProg: WebGLProgram;
@@ -476,6 +485,11 @@ export class FlatCellRenderer {
 		const gl = this.gl;
 		this.orbitMesh = mesh;
 		this.orbitScales = []; // a new mesh means a new orbit count; drop the eased state
+		// `lastHoveredOrbit` is deliberately NOT reset here. It is the record of what the caller was
+		// last told, and clearing the mesh has not told them anything yet — zeroing it makes the next
+		// draw believe -1 was already reported, so a caller that lit something up on hover keeps it lit
+		// after the overlay is switched off, with no dots left on screen to explain why. draw() sees the
+		// mismatch and reports the change.
 		if (!mesh) return;
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitPosBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.pos, gl.STATIC_DRAW);
@@ -650,11 +664,24 @@ export class FlatCellRenderer {
 
 		// Vertex-orbit dots, over the dimmed tiles. The hit-test and the easing are the shared ones in
 		// lib/render/orbitHover.ts, so a card's hover behaves the same as /play's down to the frame.
+		// Orbit mode off, or no mesh: nobody is over an orbit, and a caller told otherwise on the last
+		// frame has to hear that it ended. Without this, pressing `o` again leaves whatever was
+		// highlighted highlighted, with no dots on screen to explain why.
+		if ((!orbitMode || !orbitMesh) && this.lastHoveredOrbit !== -1) {
+			this.lastHoveredOrbit = -1;
+			p.onOrbitHover?.(-1);
+		}
 		if (orbitMode && orbitMesh) {
 			const world = p.orbitHoverPx
 				? screenToWorld(p.orbitHoverPx.x, p.orbitHoverPx.y, draw, p.zoom, rot)
 				: null;
 			const hovered = hoveredOrbitAt(orbitMesh.dots, world, mesh.v1, mesh.v2, mesh.det, p.zoom);
+			// Only on a change: this runs every frame, and a caller that sets React state from it would
+			// otherwise re-render sixty times a second for as long as the pointer sits still.
+			if (hovered !== this.lastHoveredOrbit) {
+				this.lastHoveredOrbit = hovered;
+				p.onOrbitHover?.(hovered);
+			}
 			const scales = stepOrbitScales(this.orbitScales, orbitMesh.k, hovered, ORBIT_MAX);
 
 			gl.enable(gl.BLEND);

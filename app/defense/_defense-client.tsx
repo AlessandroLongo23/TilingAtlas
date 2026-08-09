@@ -11,6 +11,7 @@ import { CountTimeline } from "@/components/count-timeline";
 import { GrowthStrip } from "@/components/growth-strip";
 import { RowStacker } from "@/components/row-stacker";
 import { PeriodFigure } from "@/components/period-figure";
+import { PolygonAngles } from "@/components/polygon-angles";
 import { TorusFigure } from "@/components/torus-figure";
 import { K4Wall } from "@/components/k4-wall";
 import { AbstractVertex } from "@/components/abstract-vertex";
@@ -21,6 +22,9 @@ import { DelaneySymbol } from "@/components/delaney-symbol";
 import { OctagonForcing } from "@/components/octagon-forcing";
 import { DsymGrowth } from "@/components/dsym-growth";
 import { WallpaperGroupWall } from "@/components/wallpaper-group-diagram";
+import { CompatRule } from "@/components/compat-rule";
+import { CompatGraph } from "@/components/compat-graph";
+import { SeedStrip } from "@/components/seed-strip";
 import { PartSlide } from "@/components/part-slide";
 import { ObligationsMark } from "@/components/obligations-mark";
 import { Alphabet44 } from "@/components/alphabet-44";
@@ -640,6 +644,19 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// numbers its children by cloning them, and a wrapper would swallow the prop it injects.
 			"method-strip": MethodStrip,
 			"method-card": MethodCard,
+			// <compat-rule yes="a,b" no="c,d"> — what makes two vertex configurations compatible: a joined
+			// pair drawn from the placement itself, beside the ordered-pair test that rules a pair out.
+			"compat-rule": CompatRule,
+			// <compat-graph> — the compatibility relation over the fifteen configurations that tile, from
+			// the app's own isCompatible (scripts/build-compat-graph.ts). Hover or drag a node; beside it
+			// one tiling from the build-time pool, whose own configurations are the ones lit when the
+			// pointer is off the graph. The pool's cells come from `cells`, which referencedTilingIds
+			// adds for it — the tag names no tilings itself.
+			"compat-graph": () => <CompatGraph cells={cells} overlayData={overlayData} />,
+			// <seed-strip> — a seed assembled one vertex configuration at a time, from precomputed
+			// SeedBuilder output (scripts/build-seed-figure.ts). `,` `.` cycle the placements the builder
+			// offers at the open vertex, Enter takes one.
+			"seed-strip": SeedStrip,
 			// <wallpaper-wall signatures="yes"> — the 17 wallpaper groups as one wall of cell diagrams,
 			// the same Wikipedia images the library sidebar shows on hover. `signatures="yes"` adds the
 			// orbifold notation beside each name.
@@ -658,6 +675,9 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// Omit `panel` for both. `dirs` re-reads the same chains in a coarser alphabet once the octagon
 			// is out of the pool; `size="sm"` is for a slide that already carries another figure.
 			"period-figure": PeriodFigure,
+			// <polygon-angles> — the five tiles of the pool at one edge length, each with its interior
+			// angle. Every angle is a whole number of 15°, which is where the 24 of ζ₂₄ comes from.
+			"polygon-angles": PolygonAngles,
 			// <torus-figure> — why fixing the lattice first bounds the search: the plane beside the same
 			// cell with its opposite edges identified, one tile picked out crossing the seam. Same tiling
 			// and same JSON as <period-figure>.
@@ -725,11 +745,25 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			// <showcase-wall> — the Part V door: sixteen captures of the real library shelf, three
 			// geometries by three decorations plus the tile families that are not regular polygons.
 			"showcase-wall": ShowcaseWall,
-			// <slide-cols> … </slide-cols> — text beside a figure, the commonest slide shape.
-			"slide-cols": ({ children }: { children?: React.ReactNode }) => (
+			// <slide-cols [wide="yes"] [top="yes"]> … </slide-cols> — text beside a figure, the most common
+			// slide shape.
+			// `wide` is for two FIGURES side by side instead: the halves become "whatever the second one
+			// needs, and the rest to the first", and the figure width cap comes off, since that cap exists
+			// to stop one figure swallowing a column of prose.
+			// `top` is for two blocks of PROSE. Centring is right when one side is a figure — the picture
+			// sits level with the sentence about it — and wrong when both sides are lists, since two lists
+			// of different length then start at different heights and the two headings no longer read as
+			// a pair.
+			"slide-cols": ({ wide, top, children }: { wide?: string; top?: string; children?: React.ReactNode }) => (
 				// Same height cap as slide-grid, applied to the figures, not the columns: a column
 				// holding prose should still use its full width.
-				<div className="grid grid-cols-1 items-center gap-8 [&_figure]:mx-auto [&_figure]:max-w-[38vh] md:grid-cols-2">
+				<div
+					className={cn(
+						"grid grid-cols-1 gap-8 [&_figure]:mx-auto",
+						String(top) === "yes" ? "items-start" : "items-center",
+						wide ? "md:grid-cols-[1fr_auto]" : "[&_figure]:max-w-[38vh] md:grid-cols-2",
+					)}
+				>
 					{children}
 				</div>
 			),

@@ -13,7 +13,13 @@ import { screenMapper } from "./figureCanvas";
 /** Hue per ζ exponent, so a step's colour names its direction and the wheel is its legend. */
 export const colourOf = (k: number, n: number) => `hsl(${(360 * k) / n} 85% 45%)`;
 
-export function drawZetaWheel(ctx: CanvasRenderingContext2D, s: number, dpr: number, N: number) {
+export function drawZetaWheel(
+	ctx: CanvasRenderingContext2D,
+	s: number,
+	dpr: number,
+	N: number,
+	axisNames = false,
+) {
 
 		// The axes of the complex plane, and the unit circle every arrowhead lands on — which is what
 		// says "these are UNIT steps" without a word. The tick at 1 gives the circle its scale; ζ⁰ is
@@ -95,4 +101,20 @@ export function drawZetaWheel(ctx: CanvasRenderingContext2D, s: number, dpr: num
 		ctx.textAlign = "center";
 		const [ux, uy] = toScreen(1, -0.22);
 		ctx.fillText("1", ux, uy);
+
+		// Which plane this is. Both labels are placed in SCREEN space, just outside the ζ label that
+		// already sits on their axis, and lifted off the axis line so the pair does not read as one
+		// string: the text is a fixed pixel size, so a world radius that clears ζ⁰ on a large panel runs
+		// straight into it on a small one. Off by default because that clearance costs the wheel room,
+		// which only the slide that introduces the plane can afford to spend.
+		if (axisNames) {
+			ctx.font = `italic ${size * 0.95}px ui-sans-serif, system-ui, sans-serif`;
+			ctx.fillStyle = "rgba(0,0,0,0.55)";
+			const [rex, rey] = toScreen(1.28, 0);
+			ctx.textAlign = "left";
+			ctx.fillText("Re", rex + size * 0.9, rey - size * 0.5);
+			const [imx, imy] = toScreen(0, 1.28);
+			ctx.textAlign = "center";
+			ctx.fillText("Im", imx + size * 0.6, imy - size * 1.2);
+		}
 }

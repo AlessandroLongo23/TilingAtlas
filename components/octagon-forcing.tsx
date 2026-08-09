@@ -114,11 +114,11 @@ function drawVertex(api: Api) {
 	// the angles, each at the middle of its own sector
 	for (const [from, span] of WEDGES) {
 		const a = rad(from + span / 2);
-		text(V[0] + Math.cos(a) * 0.37, V[1] + Math.sin(a) * 0.37, String(span), {
+		text(V[0] + Math.cos(a) * 0.35, V[1] + Math.sin(a) * 0.35, `${span}°`, {
 			colour: "rgba(20,20,20,0.85)", size: 0.68, weight: 700,
 		});
 	}
-	text(0, -1.62, "135 + 135 + 90 = 360", { colour: SOFT, size: 0.66 });
+	text(0, -1.62, "135° + 135° + 90° = 360°", { colour: SOFT, size: 0.66 });
 }
 
 function drawCorona(api: Api) {
@@ -139,7 +139,9 @@ function drawPlane(api: Api) {
 /**
  * The fourth frame is the payoff, and it is the SAME drawing as the ζ₂₄ wheel two slides back —
  * drawZetaWheel, not a copy of it — with the odd powers gone. Nothing here may be free to disagree
- * with the alphabet slide about what a ζ step looks like.
+ * with the alphabet slide about what a ζ step looks like. The one thing it drops is the Re/Im axis
+ * names: they cost the wheel the room they need, and this panel is a quarter of a slide that has
+ * already introduced the plane.
  */
 function drawWheel({ ctx, s, dpr }: Api) {
 	drawZetaWheel(ctx, s, dpr, 12);
@@ -152,25 +154,21 @@ const box = (half: number): Box => ({ minX: -half, maxX: half, minY: -half, maxY
 const FRAMES: PanelSpec[] = [
 	{
 		title: "one vertex",
-		note: "an octagon's corner leaves 225°, and of the two fills that close it, 3.8.24 never tiles",
 		box: box(1.85),
 		draw: drawVertex,
 	},
 	{
 		title: "the corona is forced",
-		note: "so every vertex of the octagon is 4.8.8, and its eight edges alternate square and octagon",
 		box: box(3.9),
 		draw: drawCorona,
 	},
 	{
 		title: "and so is the plane",
-		note: "every octagon the corona placed sits the same way, so the step repeats and nothing is ever chosen",
 		box: box(6.4),
 		draw: drawPlane,
 	},
 	{
 		title: "twelve directions left",
-		note: "so the octagon leaves the pool, and with it the odd powers: every other tiling lives in ζ₁₂",
 		box: box(1.5),
 		draw: drawWheel,
 	},

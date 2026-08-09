@@ -257,7 +257,6 @@ export function CountTimeline() {
 
 			{/* The numbers stay reachable to a screen reader, and to anyone reading the deck as a page. */}
 			<table className="sr-only">
-				<caption>Published k-uniform tiling counts, by author and year</caption>
 				<thead>
 					<tr>
 						<th>Year</th>

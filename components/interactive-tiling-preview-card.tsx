@@ -38,6 +38,8 @@ interface InteractiveTilingPreviewCardProps {
 	/** Vertex orbits for this tiling. Supplied ⇒ the `o` overlay has something to show: tiles dimmed,
 	 *  a dot on every vertex coloured by orbit, and hovering one orbit grows all of its dots. */
 	orbitData?: OrbitData | null;
+	/** Told which orbit the pointer is over, or -1 for none, each time that changes. */
+	onOrbitHover?: (orbit: number) => void;
 	/** Exact wallpaper analysis. Supplied ⇒ the `s` and `d` overlays have something to show. */
 	symmetryData?: SymmetryData | null;
 	/** Overlays this card starts with, before anything touches a key. An `<orbit-card>` passes
@@ -107,6 +109,7 @@ export function InteractiveTilingPreviewCard({
 	title,
 	homePeriods = HOME_PERIODS,
 	orbitData = null,
+	onOrbitHover,
 	symmetryData = null,
 	initialOverlays,
 	showExpand = true,
@@ -139,6 +142,7 @@ export function InteractiveTilingPreviewCard({
 		// The `o` overlay decides whether the dots are DRAWN; the data only decides whether they can
 		// be. A card with no orbit data ignores the key instead of blanking.
 		orbitData: overlays.orbits ? orbitData : null,
+		onOrbitHover,
 		symmetryData,
 		showFundamentalDomain: overlays.fundamentalDomain,
 		showSymmetryElements: overlays.symmetry,

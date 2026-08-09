@@ -50,6 +50,8 @@ export interface FlatCellPreviewOptions {
 	/** Vertex orbits for this tiling. Supplied ⇒ /play's orbit mode: tiles dimmed, a dot on every
 	 *  vertex coloured by orbit, and hovering one orbit grows all of its dots. */
 	orbitData?: OrbitData | null;
+	/** Told which orbit the pointer is over, or -1 for none, each time that changes. */
+	onOrbitHover?: (orbit: number) => void;
 	/** Lattice periods across the host at reset zoom. Wider surfaces want more, or the patch reads as
 	 *  a crop of one tile instead of a tiling. */
 	homePeriods: number;
@@ -110,6 +112,7 @@ export interface FlatCellPreview {
 export function useFlatCellPreview({
 	cell,
 	orbitData = null,
+	onOrbitHover,
 	homePeriods,
 	homeZoom,
 	active,
@@ -130,6 +133,10 @@ export function useFlatCellPreview({
 	cellRef.current = cell;
 	const orbitDataRef = useRef(orbitData);
 	orbitDataRef.current = orbitData;
+	// Through a ref: the draw loop closes over its params once, and a caller passing an inline arrow
+	// would otherwise need a stable identity to avoid tearing the loop down every render.
+	const onOrbitHoverRef = useRef(onOrbitHover);
+	onOrbitHoverRef.current = onOrbitHover;
 	// The symmetry overlays live in refs for the same reason the cell does: toggling one must not
 	// tear the GL context down and rebuild it, it must just change what the next frame paints.
 	const symmetryRef = useRef(symmetryData);
@@ -441,6 +448,7 @@ export function useFlatCellPreview({
 				// euclidean-canvas.tsx (its white-stroke case only exists for fill-off in dark mode).
 				strokeRGB: [0, 0, 0],
 				orbitHoverPx: hoverPxRef.current,
+				onOrbitHover: onOrbitHoverRef.current,
 				// Orbit mode fades the tiles toward whatever the surface sits on, so the dots read as the
 				// subject. Read from the host each frame, as /play does, so a theme switch follows.
 				dimTargetRGB: parseDimTarget(getComputedStyle(host).backgroundColor),

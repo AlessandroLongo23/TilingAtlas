@@ -177,7 +177,7 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 	},
 	{
 		title: "Lost trail",
-		note: "the walk round one face has passed seven corners and both its ends are still free",
+		note: "the walk around one face has passed seven corners and both its ends are still free",
 		draw: (api) => {
 			const { ctx, s, text } = api;
 			// Unrolled: a walk that has over-run its tile cannot be drawn on that tile, and the search

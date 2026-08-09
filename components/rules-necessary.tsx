@@ -8,24 +8,30 @@ import {
 } from "@/lib/render/figureGlyphs";
 
 // Obligation 2 is not about what the four rules SAY — that slide is back in part three. It is about
-// why they cannot cost a tiling, and the argument has two halves, one per panel.
+// why they cannot cost a tiling, and the argument has three parts, one per panel.
 //
-// Left, necessity (lemma L1(i)). The engine's unit of work is a quotient, so a face of the tiling is
+// One, necessity (lemma L1(i)). The engine's unit of work is a quotient, so a face of the tiling is
 // not visited once per corner: the walk closes as soon as it comes back modulo the symmetry that
 // stabilises the face. That stabiliser's rotation part is a cyclic group of some order r, so the walk
 // closes at l = n/r — and n/r is a whole number because r is the order of a group acting freely on
 // the n corners. The divisor test is therefore not a filter someone chose; it is a fact about
 // quotients, which is exactly why applying it can never reject something real.
 //
-// Right, heredity (lemma L1(ii)) with the search's monotonicity. Gluings are only ever added along a
+// Two, heredity (lemma L1(ii)) with the search's monotonicity. Gluings are only ever added along a
 // DFS branch and never removed, so a walk only ever extends: an assembly that has broken a rule
 // carries that break into every descendant. Rejecting at the first violation therefore discards a
 // subtree that contained no finished gluing to begin with.
 //
-// The three corner marks are the three orbits of the hexagon's corners under its half-turn, told apart
-// by SHAPE. Hue would have been easier and wrong: green means "legal" on the four-rules slide seven
-// slides back, where it sits on a hexagon's corners exactly like this, and orange means "the half-edge
-// being worked on" everywhere in the deck.
+// Three, the near miss. Counting orbits of the WHOLE stabiliser instead of its rotations is the
+// strengthening anyone would reach for, and it is unsound. Panel three is panel one's hexagon over
+// again, same corners and same walk, with the mirrors of a 2mm site left in: two of the three orbits
+// merge, the count drops to two, and the walk still closes at three. Drawing it beside the case that
+// works is the only way to show that the rule is exactly as strong as it may be.
+//
+// The corner marks are orbits, told apart by SHAPE. Hue would have been easier and wrong: green means
+// "legal" on the four-rules slide, where it sits on a hexagon's corners exactly like this, and orange
+// means "the half-edge being worked on" everywhere in the deck. REJECT is kept for the thing being
+// ruled out and for nothing else.
 
 /** The crystallographic 2-fold mark, over a cleared disc so it reads on top of the tile. */
 function halfTurn({ ctx }: Api, at: Pt, r = 0.09) {
@@ -41,50 +47,79 @@ function halfTurn({ ctx }: Api, at: Pt, r = 0.09) {
 	ctx.fill();
 }
 
+/** An open ring, for a corner some element of the group holds still. */
+function ring({ ctx, s }: Api, at: Pt, colour: string, r = 9.5) {
+	ctx.strokeStyle = colour;
+	ctx.lineWidth = 1.9 / s;
+	ctx.beginPath();
+	ctx.arc(at[0], at[1], r / s, 0, 2 * Math.PI);
+	ctx.stroke();
+}
+
 // ---------------------------------------------------------------------------------------------
 
-function drawDivisor(api: Api) {
-	const { ctx, s, text } = api;
+/**
+ * The face, shared by panels one and three so the two are the SAME hexagon: same corners, same
+ * directed walk. Panel three's whole argument is that only the orbit count changes when the mirrors
+ * are let in, and a reader can only see that if nothing else moves.
+ */
+const HEX_R = 0.4;
+const hexCorner = (c: Pt, i: number): Pt => {
+	const a = rad(90 + 60 * i);
+	return [c[0] + Math.cos(a) * HEX_R, c[1] + Math.sin(a) * HEX_R];
+};
 
-	// the face, with its six corners in three orbits under the half-turn that stabilises it
-	const c: Pt = [-0.62, 0.14], R = 0.4;
-	const corner = (i: number): Pt => {
-		const a = rad(90 + 60 * i);
-		return [c[0] + Math.cos(a) * R, c[1] + Math.sin(a) * R];
-	};
+/** The outline, and the six steps of the walk in the plane. */
+function walkedHexagon(api: Api, c: Pt) {
+	const { ctx, s } = api;
 	ctx.strokeStyle = SOFT;
 	ctx.lineWidth = 2 / s;
 	ctx.lineJoin = "round";
 	ctx.beginPath();
 	for (let i = 0; i < 6; i++) {
-		const p = corner(i);
+		const p = hexCorner(c, i);
 		if (i) ctx.lineTo(p[0], p[1]);
 		else ctx.moveTo(p[0], p[1]);
 	}
 	ctx.closePath();
 	ctx.stroke();
-	// the six steps of the walk in the plane, so the fold maps a walk to a walk and not a dot pattern
+	// Arrowheads and not plain edges: the walk is DIRECTED, which is the reason a reflection cannot
+	// close it, and a figure that draws the boundary undirected quietly drops that reason.
 	for (let i = 0; i < 6; i++) {
-		const a = corner(i), b = corner((i + 1) % 6);
+		const a = hexCorner(c, i), b = hexCorner(c, (i + 1) % 6);
 		const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-		arrowHead(api, [a[0] + Math.cos(ang) * R * 0.62, a[1] + Math.sin(ang) * R * 0.62], ang, GHOST, 8);
+		arrowHead(api, [a[0] + Math.cos(ang) * HEX_R * 0.62, a[1] + Math.sin(ang) * HEX_R * 0.62], ang, GHOST, 8);
 	}
+}
+
+// ---------------------------------------------------------------------------------------------
+
+function drawDivisor(api: Api) {
+	const { text } = api;
+
+	// the face, with its six corners in three orbits under the half-turn that stabilises it
+	const c: Pt = [-0.62, 0.14];
+	walkedHexagon(api, c);
 	for (let i = 0; i < 6; i++) {
-		const p = corner(i);
+		const p = hexCorner(c, i);
 		halo(api, p[0], p[1], 8);
 		classMark(api, p[0], p[1], (i % 3) as 0 | 1 | 2, 5.6);
 	}
 	halfTurn(api, c);
 	// The mirror the face may also carry, struck out: L1(i) counts the ROTATIONS in the stabiliser and
 	// nothing else, and a reflection does not shorten the walk. Reading "orbits of the corners" instead
-	// of "orbits of the rotations" is exactly the plausible strengthening that would be unsound — on
-	// this very hexagon, a 2mm stabiliser has two corner orbits while the walk still closes at three.
+	// of "orbits of the rotations" is exactly the plausible strengthening that panel three draws.
 	// Vertical, through the top and bottom corners. Drawn horizontally it lay on the fold arrow's own
 	// line and the two dashed strokes read as one object.
 	segment(api, [c[0], c[1] - 0.58], [c[0], c[1] + 0.58], GHOST, 1.6, [5, 4]);
 	segment(api, [c[0] - 0.13, c[1] + 0.3], [c[0] + 0.13, c[1] + 0.44], REJECT, 2.2);
-	text(c[0], c[1] - 0.5, "a mirror does not shorten it", { colour: SOFT, size: 0.54 });
-	text(c[0], c[1] - 0.72, "n = 6 corners, r = 2 rotations", { colour: SOFT, size: 0.6 });
+	// Short strings, deliberately: FigurePanel floors and CAPS its text at 19px, so on a narrow panel
+	// the labels stop shrinking while the drawing keeps going, and a sentence that fits at 1600 wide
+	// runs off the box at 1024. Three panels across is exactly the width where that starts to bite.
+	text(c[0], c[1] - 0.5, "mirrors do not shorten it", { colour: SOFT, size: 0.54 });
+	text(c[0], c[1] - 0.72, "n = 6, r = 2", { colour: SOFT, size: 0.6 });
+	// Stated, because panel three's argument is that these three sizes stop being equal.
+	text(c[0], c[1] - 0.92, "orbits 2, 2, 2", { colour: SOFT, size: 0.6 });
 
 	// the fold
 	segment(api, [-0.09, 0.14], [0.11, 0.14], SOFT, 2, [5, 4]);
@@ -112,9 +147,48 @@ function drawDivisor(api: Api) {
 		classMark(api, p[0], p[1], i as 0 | 1 | 2, 5.6);
 	}
 	text(q[0], q[1] - 0.5, "ℓ = 3", { colour: INK, size: 0.66, weight: 600 });
-	text(q[0], q[1] - 0.72, "one step per orbit", { colour: SOFT, size: 0.6 });
+	text(q[0], q[1] - 0.72, "one per orbit", { colour: SOFT, size: 0.6 });
 
-	text(0, -0.94, "the rotations act freely, so r divides n", { colour: INK, size: 0.7, weight: 600 });
+	text(0, -1.06, "the rotations act freely, so r divides n", { colour: INK, size: 0.7, weight: 600 });
+}
+
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * The same hexagon, with the mirrors of a 2mm site left in. Two of the three orbits merge and the
+ * count drops to two, but nothing about the walk moved, so it still closes at three. That is the
+ * whole objection to counting orbits of the full stabiliser: the group is no longer free, so its
+ * orbits are no longer all the same size, and a count of them is not a length.
+ */
+function drawUnsound(api: Api) {
+	const { text } = api;
+	const c: Pt = [0, 0.14];
+	walkedHexagon(api, c);
+
+	// Both mirrors of the site, live this time: vertical through the top and bottom corners, and
+	// horizontal through the midpoints of the two side edges.
+	segment(api, [c[0], c[1] - 0.58], [c[0], c[1] + 0.58], GHOST, 1.6, [5, 4]);
+	segment(api, [c[0] - 0.58, c[1]], [c[0] + 0.58, c[1]], GHOST, 1.6, [5, 4]);
+	text(c[0] + 0.72, c[1] + 0.14, "2mm", { colour: SOFT, size: 0.56 });
+
+	// The corners the vertical mirror moves are 1 to 5 and 2 to 4, so panel one's second and third
+	// shapes become one. The two it holds still keep the shape they had, which is what makes the
+	// merge legible: only the marks that changed have changed.
+	for (let i = 0; i < 6; i++) {
+		const p = hexCorner(c, i);
+		halo(api, p[0], p[1], 8);
+		classMark(api, p[0], p[1], i % 3 === 0 ? 0 : 1, 5.6);
+	}
+	for (const i of [0, 3]) ring(api, hexCorner(c, i), REJECT);
+	halfTurn(api, c);
+
+	// Unequal orbit sizes are what a non-free action looks like, so they are written where they can be
+	// read off without counting.
+	text(c[0] + 0.19, c[1] + 0.5, "2", { colour: SOFT, size: 0.62 });
+	text(c[0] - 0.56, c[1] + 0.3, "4", { colour: SOFT, size: 0.62 });
+	text(c[0], c[1] - 0.62, "fixed by the mirror, so the action is not free", { colour: SOFT, size: 0.52 });
+	text(c[0], c[1] - 0.86, "2 orbits, but the walk closes at ℓ = 3", { colour: INK, size: 0.62, weight: 600 });
+	text(c[0], c[1] - 1.08, "2 ≠ 3", { colour: REJECT, size: 0.66, weight: 700 });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -176,8 +250,8 @@ function drawHeredity(api: Api) {
 	text(TREE[CUT].at[0] + 0.26, TREE[CUT].at[1] + 0.02, "✗", { colour: REJECT, size: 0.95, weight: 700 });
 	text(TREE[CUT].at[0] + 0.3, TREE[CUT].at[1] - 0.2, "4 ∤ 6", { colour: REJECT, size: 0.58, weight: 600 });
 	text(-0.36, 0.54, "+1 gluing", { colour: SOFT, size: 0.54 });
-	text(0.62, -1.02, "nothing below here", { colour: REJECT, size: 0.66, weight: 600 });
-	text(0, -1.26, "because every descendant keeps its ancestor's gluings", { colour: SOFT, size: 0.6 });
+	text(0.5, -1.02, "nothing below here", { colour: REJECT, size: 0.66, weight: 600 });
+	text(0, -1.26, "gluings are only ever added", { colour: SOFT, size: 0.6 });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -188,7 +262,7 @@ const PANELS: PanelSpec[] = [
 	{
 		title: "why the divisor rule is forced",
 		note: "the walk visits one corner per orbit of the ROTATIONS fixing the face, so it closes at n/r, and those rotations act freely",
-		box: { minX: -1.3, maxX: 1.3, minY: -1.16, maxY: 0.8 },
+		box: { minX: -1.3, maxX: 1.3, minY: -1.24, maxY: 0.8 },
 		draw: drawDivisor,
 	},
 	{
@@ -197,11 +271,20 @@ const PANELS: PanelSpec[] = [
 		box: BOX,
 		draw: drawHeredity,
 	},
+	{
+		title: "why the stronger rule is unsound",
+		note: "let the mirrors in and two orbits merge, so the count drops to two while the walk still closes at three",
+		// The same span as panel one, so the shared hexagon comes out the same size on screen.
+		box: { minX: -1.15, maxX: 1.15, minY: -1.24, maxY: 0.8 },
+		draw: drawUnsound,
+	},
 ];
 
 export function RulesNecessary() {
+	// 64rem and not 52: three panels across at 52rem drop under the width where FigurePanel's text
+	// stops scaling, and the labels are the argument here.
 	return (
-		<div className="not-prose mx-auto flex w-full max-w-[52rem] flex-wrap items-start justify-center gap-6">
+		<div className="not-prose mx-auto flex w-full max-w-[64rem] flex-wrap items-start justify-center gap-5">
 			{PANELS.map((p) => (
 				<FigurePanel key={p.title} panel={p} aspect="4/3" />
 			))}

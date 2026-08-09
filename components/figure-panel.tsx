@@ -4,14 +4,15 @@ import { useCallback, useEffect, useRef } from "react";
 import { prepare, type Box } from "@/lib/render/figureCanvas";
 import { drawWithText, type Api } from "@/lib/render/figureGlyphs";
 
-// One framed canvas with a caption above and a note below: the chrome every multi-panel engine figure
+// One framed canvas with a caption above: the chrome every multi-panel engine figure
 // on /defense uses. Kept in one place so a row of three and a row of four cannot drift apart.
 
 export interface PanelSpec {
 	title: string;
-	note: string;
 	box: Box;
 	draw: (api: Api) => void;
+	/** No longer rendered. Optional so the panels that still carry their note text still typecheck. */
+	note?: string;
 	/** Titles that name an identifier in the source are set in mono, like the code spans in the prose. */
 	mono?: boolean;
 }
@@ -52,9 +53,6 @@ export function FigurePanel({ panel, aspect = "4/3" }: { panel: PanelSpec; aspec
 				style={{ aspectRatio: aspect }}
 			>
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
-			</div>
-			<div className="text-center text-[clamp(0.54rem,0.74vh+0.14vw,0.74rem)] leading-snug text-fg-muted">
-				{panel.note}
 			</div>
 		</figure>
 	);
