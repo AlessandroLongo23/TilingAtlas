@@ -53,6 +53,37 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.16.1",
+		date: "2026-08-09",
+		title: "The star shelf reaches k = 9",
+		commit: "2511586",
+		changes: [
+			{
+				kind: "content",
+				text: "**12,788 new star tilings** take the shelf from 172 to 12,960, with the ceiling now at k = 9.",
+				items: [
+					"235 at k = 4, 436 at k = 5, 897 at k = 6, 1,728 at k = 7, 3,364 at k = 8, 6,123 at k = 9.",
+				],
+				href: "/library",
+				tilings: [
+					"ctrnact-star-k4-n001",
+					"ctrnact-star-k6-n0001",
+					"ctrnact-star-9fold-k5-n003",
+					"ctrnact-star-9fold-k7-n002",
+				],
+			},
+			{
+				kind: "feature",
+				text: "**Symmetry and vertex orbits** now draw on star tilings: 12,916 of them carry an exact cell, where none did before.",
+				href: "/play",
+			},
+			{
+				kind: "content",
+				text: "**The nine-fold star family** grows from 11 tilings to 72, across k = 1 to k = 9.",
+			},
+		],
+	},
+	{
 		version: "1.16.0",
 		date: "2026-08-05",
 		title: "The twelve isohedral types that live in their marks",
