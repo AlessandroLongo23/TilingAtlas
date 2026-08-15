@@ -1,0 +1,679 @@
+{
+	"generatedBy": "scripts/star-species-scan.ts",
+	"sources": [
+		"reference-atlas.json",
+		"reference-atlas-k8.json",
+		"reference-atlas-k9.json"
+	],
+	"starEntriesScanned": 12960,
+	"kDistribution": {
+		"1": 23,
+		"2": 46,
+		"3": 108,
+		"4": 235,
+		"5": 436,
+		"6": 897,
+		"7": 1728,
+		"8": 3364,
+		"9": 6123
+	},
+	"note": "Species measured from each entry's shipped renderCell (the default-α evaluation for a one-parameter family, so an α-family contributes only its representative snapshot). inRing = placeable in ℤ[ζ₂₄].",
+	"starSpeciesPerTiling": {
+		"1": 9246,
+		"2": 3257,
+		"3": 421,
+		"4": 34,
+		"5": 2
+	},
+	"mixedExamples": [
+		{
+			"k": 5,
+			"family": "3.4*.6.6*.12*",
+			"species": [
+				"12*30",
+				"4*30",
+				"4*60",
+				"6*60"
+			]
+		},
+		{
+			"k": 5,
+			"family": "3.3*.4*.8*",
+			"species": [
+				"3*15",
+				"4*45",
+				"4*75",
+				"8*15"
+			]
+		},
+		{
+			"k": 6,
+			"family": "4.6*.12*",
+			"species": [
+				"12*60",
+				"12*90",
+				"6*30",
+				"6*90"
+			]
+		},
+		{
+			"k": 7,
+			"family": "3.4.4*.6.6*.12*",
+			"species": [
+				"12*30",
+				"4*30",
+				"4*60",
+				"6*60"
+			]
+		},
+		{
+			"k": 7,
+			"family": "3.3*.4.4*.6*.12",
+			"species": [
+				"3*30",
+				"4*30",
+				"4*60",
+				"6*30"
+			]
+		},
+		{
+			"k": 7,
+			"family": "3.3*.4.4*.8*",
+			"species": [
+				"3*15",
+				"3*45",
+				"4*75",
+				"8*15"
+			]
+		},
+		{
+			"k": 7,
+			"family": "3.4*.6.6*.12*",
+			"species": [
+				"12*30",
+				"4*30",
+				"4*60",
+				"6*60"
+			]
+		},
+		{
+			"k": 7,
+			"family": "3.3*.4*.6*.12",
+			"species": [
+				"3*30",
+				"4*30",
+				"4*60",
+				"6*90"
+			]
+		},
+		{
+			"k": 7,
+			"family": "3.3*.4*.12*",
+			"species": [
+				"12*30",
+				"3*30",
+				"4*30",
+				"4*60"
+			]
+		},
+		{
+			"k": 8,
+			"family": "3.3*.4.4*.6*.12*",
+			"species": [
+				"12*30",
+				"3*30",
+				"4*30",
+				"6*60"
+			]
+		},
+		{
+			"k": 8,
+			"family": "3.3*.4.4*.6*.12*",
+			"species": [
+				"12*30",
+				"3*30",
+				"4*30",
+				"6*60"
+			]
+		},
+		{
+			"k": 8,
+			"family": "3.4.4*.8*",
+			"species": [
+				"4*60",
+				"8*15",
+				"8*45",
+				"8*90"
+			]
+		},
+		{
+			"k": 8,
+			"family": "3.4.6*.12*",
+			"species": [
+				"12*30",
+				"12*60",
+				"6*30",
+				"6*90"
+			]
+		},
+		{
+			"k": 8,
+			"family": "3.4.6*.12*",
+			"species": [
+				"12*30",
+				"12*60",
+				"6*30",
+				"6*90"
+			]
+		},
+		{
+			"k": 8,
+			"family": "3.4*.6.6*.12*",
+			"species": [
+				"12*30",
+				"4*30",
+				"4*60",
+				"6*60"
+			]
+		},
+		{
+			"k": 8,
+			"family": "3.3*.4*.8.8*",
+			"species": [
+				"3*15",
+				"4*45",
+				"4*75",
+				"8*15"
+			]
+		},
+		{
+			"k": 9,
+			"family": "3.4.4*.6.6*.12*",
+			"species": [
+				"12*30",
+				"4*30",
+				"4*60",
+				"6*60"
+			]
+		},
+		{
+			"k": 9,
+			"family": "3.4.4*.6.6*.12*",
+			"species": [
+				"12*30",
+				"12*60",
+				"4*30",
+				"6*60"
+			]
+		},
+		{
+			"k": 9,
+			"family": "3.3*.4.4*.6*.12*",
+			"species": [
+				"12*30",
+				"3*30",
+				"4*30",
+				"4*60",
+				"6*30"
+			]
+		},
+		{
+			"k": 9,
+			"family": "3.3*.4.4*.6*",
+			"species": [
+				"3*30",
+				"4*30",
+				"6*30",
+				"6*60"
+			]
+		}
+	],
+	"inRing": [
+		{
+			"key": "3",
+			"kind": "regular",
+			"n": 3,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 327701,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 99,
+			"inRing": true
+		},
+		{
+			"key": "4",
+			"kind": "regular",
+			"n": 4,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 87650,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 63,
+			"inRing": true
+		},
+		{
+			"key": "6",
+			"kind": "regular",
+			"n": 6,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 43289,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 36,
+			"inRing": true
+		},
+		{
+			"key": "8",
+			"kind": "regular",
+			"n": 8,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 2721,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 10,
+			"inRing": true
+		},
+		{
+			"key": "12",
+			"kind": "regular",
+			"n": 12,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 3549,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 30,
+			"inRing": true
+		},
+		{
+			"key": "3*15",
+			"kind": "star",
+			"n": 3,
+			"apexDeg": 15,
+			"alphaU": 1,
+			"tiles": 569,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 13,
+			"inRing": true
+		},
+		{
+			"key": "3*30",
+			"kind": "star",
+			"n": 3,
+			"apexDeg": 30,
+			"alphaU": 2,
+			"tiles": 11603,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 37,
+			"inRing": true
+		},
+		{
+			"key": "3*45",
+			"kind": "star",
+			"n": 3,
+			"apexDeg": 45,
+			"alphaU": 3,
+			"tiles": 4,
+			"kMin": 6,
+			"kMax": 7,
+			"families": 2,
+			"inRing": true
+		},
+		{
+			"key": "4*15",
+			"kind": "star",
+			"n": 4,
+			"apexDeg": 15,
+			"alphaU": 1,
+			"tiles": 2,
+			"kMin": 1,
+			"kMax": 2,
+			"families": 2,
+			"inRing": true
+		},
+		{
+			"key": "4*30",
+			"kind": "star",
+			"n": 4,
+			"apexDeg": 30,
+			"alphaU": 2,
+			"tiles": 13091,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 46,
+			"inRing": true
+		},
+		{
+			"key": "4*45",
+			"kind": "star",
+			"n": 4,
+			"apexDeg": 45,
+			"alphaU": 3,
+			"tiles": 1180,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 7,
+			"inRing": true
+		},
+		{
+			"key": "4*60",
+			"kind": "star",
+			"n": 4,
+			"apexDeg": 60,
+			"alphaU": 4,
+			"tiles": 6646,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 41,
+			"inRing": true
+		},
+		{
+			"key": "4*75",
+			"kind": "star",
+			"n": 4,
+			"apexDeg": 75,
+			"alphaU": 5,
+			"tiles": 10,
+			"kMin": 4,
+			"kMax": 8,
+			"families": 5,
+			"inRing": true
+		},
+		{
+			"key": "6*15",
+			"kind": "star",
+			"n": 6,
+			"apexDeg": 15,
+			"alphaU": 1,
+			"tiles": 4,
+			"kMin": 1,
+			"kMax": 7,
+			"families": 2,
+			"inRing": true
+		},
+		{
+			"key": "6*30",
+			"kind": "star",
+			"n": 6,
+			"apexDeg": 30,
+			"alphaU": 2,
+			"tiles": 3912,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 21,
+			"inRing": true
+		},
+		{
+			"key": "6*45",
+			"kind": "star",
+			"n": 6,
+			"apexDeg": 45,
+			"alphaU": 3,
+			"tiles": 1,
+			"kMin": 2,
+			"kMax": 2,
+			"families": 1,
+			"inRing": true
+		},
+		{
+			"key": "6*60",
+			"kind": "star",
+			"n": 6,
+			"apexDeg": 60,
+			"alphaU": 4,
+			"tiles": 8043,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 28,
+			"inRing": true
+		},
+		{
+			"key": "6*75",
+			"kind": "star",
+			"n": 6,
+			"apexDeg": 75,
+			"alphaU": 5,
+			"tiles": 126,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 4,
+			"inRing": true
+		},
+		{
+			"key": "6*90",
+			"kind": "star",
+			"n": 6,
+			"apexDeg": 90,
+			"alphaU": 6,
+			"tiles": 938,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 22,
+			"inRing": true
+		},
+		{
+			"key": "8*15",
+			"kind": "star",
+			"n": 8,
+			"apexDeg": 15,
+			"alphaU": 1,
+			"tiles": 3785,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 11,
+			"inRing": true
+		},
+		{
+			"key": "8*45",
+			"kind": "star",
+			"n": 8,
+			"apexDeg": 45,
+			"alphaU": 3,
+			"tiles": 78,
+			"kMin": 2,
+			"kMax": 9,
+			"families": 6,
+			"inRing": true
+		},
+		{
+			"key": "8*75",
+			"kind": "star",
+			"n": 8,
+			"apexDeg": 75,
+			"alphaU": 5,
+			"tiles": 5,
+			"kMin": 3,
+			"kMax": 8,
+			"families": 1,
+			"inRing": true
+		},
+		{
+			"key": "8*90",
+			"kind": "star",
+			"n": 8,
+			"apexDeg": 90,
+			"alphaU": 6,
+			"tiles": 73,
+			"kMin": 2,
+			"kMax": 9,
+			"families": 7,
+			"inRing": true
+		},
+		{
+			"key": "8*120",
+			"kind": "star",
+			"n": 8,
+			"apexDeg": 120,
+			"alphaU": 8,
+			"tiles": 2,
+			"kMin": 3,
+			"kMax": 8,
+			"families": 1,
+			"inRing": true
+		},
+		{
+			"key": "12*30",
+			"kind": "star",
+			"n": 12,
+			"apexDeg": 30,
+			"alphaU": 2,
+			"tiles": 4619,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 33,
+			"inRing": true
+		},
+		{
+			"key": "12*60",
+			"kind": "star",
+			"n": 12,
+			"apexDeg": 60,
+			"alphaU": 4,
+			"tiles": 461,
+			"kMin": 2,
+			"kMax": 9,
+			"families": 23,
+			"inRing": true
+		},
+		{
+			"key": "12*90",
+			"kind": "star",
+			"n": 12,
+			"apexDeg": 90,
+			"alphaU": 6,
+			"tiles": 276,
+			"kMin": 2,
+			"kMax": 9,
+			"families": 24,
+			"inRing": true
+		},
+		{
+			"key": "12*120",
+			"kind": "star",
+			"n": 12,
+			"apexDeg": 120,
+			"alphaU": 8,
+			"tiles": 168,
+			"kMin": 3,
+			"kMax": 9,
+			"families": 21,
+			"inRing": true
+		}
+	],
+	"offRing": [
+		{
+			"key": "5",
+			"kind": "regular",
+			"n": 5,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 4,
+			"kMin": 1,
+			"kMax": 1,
+			"families": 1,
+			"inRing": false
+		},
+		{
+			"key": "9",
+			"kind": "regular",
+			"n": 9,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 259,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 4,
+			"inRing": false
+		},
+		{
+			"key": "18",
+			"kind": "regular",
+			"n": 18,
+			"apexDeg": 0,
+			"alphaU": 0,
+			"tiles": 67,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 2,
+			"inRing": false
+		},
+		{
+			"key": "3*20",
+			"kind": "star",
+			"n": 3,
+			"apexDeg": 20,
+			"alphaU": 1.3333333333333333,
+			"tiles": 132,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 3,
+			"inRing": false
+		},
+		{
+			"key": "3*40",
+			"kind": "star",
+			"n": 3,
+			"apexDeg": 40,
+			"alphaU": 2.6666666666666665,
+			"tiles": 180,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 3,
+			"inRing": false
+		},
+		{
+			"key": "4*18",
+			"kind": "star",
+			"n": 4,
+			"apexDeg": 18,
+			"alphaU": 1.2,
+			"tiles": 2,
+			"kMin": 1,
+			"kMax": 1,
+			"families": 1,
+			"inRing": false
+		},
+		{
+			"key": "6*80",
+			"kind": "star",
+			"n": 6,
+			"apexDeg": 80,
+			"alphaU": 5.333333333333333,
+			"tiles": 135,
+			"kMin": 1,
+			"kMax": 9,
+			"families": 3,
+			"inRing": false
+		},
+		{
+			"key": "9*20",
+			"kind": "star",
+			"n": 9,
+			"apexDeg": 20,
+			"alphaU": 1.3333333333333333,
+			"tiles": 143,
+			"kMin": 2,
+			"kMax": 9,
+			"families": 4,
+			"inRing": false
+		},
+		{
+			"key": "18*40",
+			"kind": "star",
+			"n": 18,
+			"apexDeg": 40,
+			"alphaU": 2.6666666666666665,
+			"tiles": 23,
+			"kMin": 2,
+			"kMax": 9,
+			"families": 2,
+			"inRing": false
+		}
+	]
+}

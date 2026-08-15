@@ -82,6 +82,8 @@ import {
 	type TileClass,
 	type IslamicSystem,
 } from "@/lib/services/referenceAtlas";
+import { PolygonFilterModal } from "@/components/polygon-filter-modal";
+import { periodLabel, polygonSpeciesOf, speciesCompare, speciesLabel, tilePeriodsOf } from "@/lib/services/polygonSpecies";
 import {
 	withAll,
 	valuesOf,
@@ -920,6 +922,22 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, parametric: v === "all" ? undefined : v });
 	const setIsotoxalShape = (v: "all" | "alpha" | "alpha-beta") =>
 		setFilters({ ...filters, isotoxalShape: v === "all" ? undefined : v });
+	// The polygon vocabulary is per-shelf: "12*" exists under Star and nowhere under Regular. When an
+	// axis that changes the vocabulary moves, keep the tokens the new scope still has and drop the rest,
+	// so a cross-shelf pick like "3" survives while a stale one cannot filter to 0 from a hidden group.
+	// Mutates `next` in place; callers already hold a fresh copy.
+	const prunePolygonsToScope = (next: ReferenceFilter) => {
+		if (!next.polygonNames?.length || !tilings) return;
+		const scope = new Set<string>();
+		for (const t of tilings) {
+			if (next.geometry && geometryOf(t) !== next.geometry) continue;
+			if (next.decoration && decorationOf(t) !== next.decoration) continue;
+			if (next.tileClass && tileClassOf(t) !== next.tileClass) continue;
+			for (const sp of polygonSpeciesOf(t)) scope.add(sp);
+		}
+		const kept = next.polygonNames.filter((tok) => scope.has(tok));
+		next.polygonNames = kept.length ? kept : undefined;
+	};
 	const setTileClass = (v: "all" | TileClass) => {
 		const cls = v === "all" ? undefined : v;
 		const next: ReferenceFilter = { ...filters, tileClass: cls };
@@ -1258,6 +1276,11 @@ export function ReferenceShelf() {
 	const classified = isEuclidean && inTilings && !isUnclassified;
 	const showM = classified && filters.kValue != null;
 	const showStar = classified && tileClass !== "regular" && availableFolds.length > 0;
+	// Tile-inventory facets. Euclidean tilings only (a hyperbolic {p,q} has no family label of this
+	// shape), but unlike the Star block they apply to the regular shelf too — "which tilings use a
+	// dodecagon" is the same question there. Needs at least two tokens to be worth showing: one
+	// species means every tiling in scope has it.
+	const showPolygons = isEuclidean && inTilings && availablePolygons.length > 1;
 	const showGroup = classified && tileClass !== "star" && availableGroups.length > 0;
 	// Marek's five levels are the CURVED counterpart of the M/partition block above, and the two never
 	// show together: the ladder needs per-orbit vertex configurations (only the hyperbolic and spherical
@@ -1994,6 +2017,18 @@ export function ReferenceShelf() {
 					</>
 				)}
 			</main>
+			<PolygonFilterModal
+				isOpen={polygonModalOpen}
+				onOpenChange={setPolygonModalOpen}
+				available={availablePolygons}
+				counts={polygonTokenCounts}
+				selected={filters.polygonNames ?? []}
+				onToggle={togglePolygon}
+				onClear={clearPolygons}
+				mode={filters.polygonMode ?? "all"}
+				onModeChange={setPolygonMode}
+				matchCount={polygonMatchCount}
+			/>
 		</div>
 	);
 }

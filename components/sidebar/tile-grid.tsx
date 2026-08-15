@@ -290,14 +290,18 @@ function Tile({
 // coordinate is not the exported α. Same glyphs as the slider panel and the library card, so the badge
 // reads as a count of the axes, not a generic "this deforms" mark.
 function ParamBadge({ paramCell }: { paramCell: ParametricCellData }) {
-	const glyphs = paramGlyphs(paramCell);
+	const all = paramGlyphs(paramCell);
+	// An INTRINSIC family's parameters are corner angles of the tiling and there can be nineteen of them,
+	// which is a count, not a badge. Past three the badge says the number; the glyph list stays in the
+	// title and in the slider panel, where there is room for it.
+	const glyphs = all.length > 3 ? [`${all.length}×`] : all;
 	if (!glyphs.length) return null;
 	return (
 		<span
 			title={
-				glyphs.length > 1
-					? `${glyphs.length}-parameter family — ${glyphs.join(", ")} vary independently (${glyphs.length} sliders in Play)`
-					: `One-parameter family (adjustable ${glyphs[0]})`
+				all.length > 1
+					? `${all.length}-parameter family — ${all.join(", ")} vary independently (${all.length} sliders in Play)`
+					: `One-parameter family (adjustable ${all[0]})`
 			}
 			// min-w-4 + px-1 keeps the single-glyph badge the square it has always been and lets the
 			// two-glyph one grow sideways instead of squeezing the pair into 16px.

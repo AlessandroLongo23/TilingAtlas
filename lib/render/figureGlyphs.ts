@@ -168,6 +168,27 @@ export function classMark({ ctx, s }: Api, x: number, y: number, kind: 0 | 1 | 2
 }
 
 /**
+ * The crystallographic 2-fold mark, over a cleared disc so it reads on top of whatever it sits on.
+ *
+ * Shared, because two slides now draw it and they must draw the SAME mark: obligation 2 puts it in the
+ * middle of the hexagon whose walk it shortens, and obligation 3 puts it in the middle of the vertex
+ * whose half-edges it pairs. The second only reads as "the same kind of symmetry again" if the glyph
+ * is identical.
+ */
+export function twoFold({ ctx }: Api, at: Pt, r = 0.09) {
+	ctx.fillStyle = "#fff";
+	ctx.beginPath();
+	ctx.arc(at[0], at[1], r * 1.5, 0, 2 * Math.PI);
+	ctx.fill();
+	ctx.fillStyle = INK;
+	ctx.beginPath();
+	ctx.moveTo(at[0] - r * 1.5, at[1]);
+	ctx.quadraticCurveTo(at[0], at[1] + r * 0.78, at[0] + r * 1.5, at[1]);
+	ctx.quadraticCurveTo(at[0], at[1] - r * 0.78, at[0] - r * 1.5, at[1]);
+	ctx.fill();
+}
+
+/**
  * ≅, stroked rather than typed. U+2245 comes back from the font fallback rotated a quarter turn on
  * this machine, and a symbol naming a panel's whole claim cannot be left to whichever font owns the
  * codepoint.

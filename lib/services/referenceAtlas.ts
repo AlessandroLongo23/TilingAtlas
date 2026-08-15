@@ -1,4 +1,5 @@
 import { chiralityOf, type ChiralityFacet } from "@/lib/services/chirality";
+import { polygonSpeciesOf, tilePeriodsOf, tilingHasSpecies } from "@/lib/services/polygonSpecies";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { HollowPattern } from "@/lib/hollow/pattern";
@@ -814,6 +815,34 @@ export function isParametric(t: Pick<ReferenceTiling, "alphaRange">): boolean {
 	return Array.isArray(t.alphaRange);
 }
 
+// The DISTINCT tile tokens of a tiling, as the family label spells them: "3", "4", "12" for regular
+// polygons and "6*" for a 6-pointed star. This is the vocabulary the polygon facets filter on, and it
+// is deliberately the family label rather than renderCell.cellPolygons — the label is what the builder
+// already canonicalised (one token per tile SPECIES, stars marked), so the shelf and the card agree.
+// Sorted regular-then-star, each by side count, so a picker built from it reads in a stable order.
+export function polygonTokensOf(t: Pick<ReferenceTiling, "family">): string[] {
+	const toks = new Set<string>();
+	for (const raw of t.family.split(".")) {
+		const tok = raw.trim();
+		if (tok) toks.add(tok);
+	}
+	return [...toks].sort((a, b) => {
+		const sa = a.endsWith("*"), sb = b.endsWith("*");
+		if (sa !== sb) return sa ? 1 : -1;
+		return parseInt(a, 10) - parseInt(b, 10);
+	});
+}
+
+/** How many distinct tile species the tiling uses (regular and star together). */
+export function distinctPolygonCountOf(t: Pick<ReferenceTiling, "family">): number {
+	return polygonTokensOf(t).length;
+}
+
+/** How many distinct STAR species the tiling uses. 0 for every purely-regular tiling. */
+export function distinctStarCountOf(t: Pick<ReferenceTiling, "family">): number {
+	return polygonTokensOf(t).filter((s) => s.endsWith("*")).length;
+}
+
 /**
  * Redirect a link that names a family absorbed by a merge (or by an α-reversal de-duplication) onto the
  * entry that now carries it, moving the shared angle with it: `u = c + m·α`.
@@ -1076,8 +1105,33 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	if (f.discoverers?.length && !f.discoverers.includes(t.discoverer)) return false;
 	if (f.certifications?.length && (t.certification == null || !f.certifications.includes(t.certification))) return false;
 	if (f.polygonNames?.length) {
-		const fam = t.family.split(".").map((s) => s.trim());
-		if (!f.polygonNames.every((n) => fam.includes(n))) return false;
+		const mode = f.polygonMode ?? "all";
+		const has = (key: string) => tilingHasSpecies(t, key);
+		if (mode === "all" && !f.polygonNames.every(has)) return false;
+		if (mode === "any" && !f.polygonNames.some(has)) return false;
+		// "only": the tile set must be a SUBSET of the selection. A tiling using a species the user did
+		// not pick is out, even if it also uses several they did. Compared at species granularity, with
+		// a bare fold in the selection covering every α of that fold.
+		if (mode === "only") {
+			const folds = new Set(f.polygonNames.filter((s) => s.endsWith("*")).map((s) => s.slice(0, -1)));
+			const exact = new Set(f.polygonNames);
+			for (const s of polygonSpeciesOf(t)) {
+				if (exact.has(s)) continue;
+				const star = s.indexOf("*");
+				if (star > 0 && folds.has(s.slice(0, star))) continue;
+				return false;
+			}
+		}
+	}
+	if (f.distinctPolygons?.length && !f.distinctPolygons.includes(distinctPolygonCountOf(t))) return false;
+	if (f.distinctStars?.length && !f.distinctStars.includes(distinctStarCountOf(t))) return false;
+	if (f.anglePeriods?.length) {
+		const ps = tilePeriodsOf(t);
+		if (!f.anglePeriods.some((p) => ps.includes(p))) return false;
+	}
+	if (f.chirality?.length) {
+		const c = chiralityOf(t);
+		if (c == null || !f.chirality.includes(c)) return false;
 	}
 	if (f.query?.trim()) {
 		const q = f.query.trim().toLowerCase();
