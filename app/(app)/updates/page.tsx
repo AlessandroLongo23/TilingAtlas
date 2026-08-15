@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import { statSync } from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
 import { UPDATES } from "@/lib/updates/entries";
@@ -31,6 +32,13 @@ const ATLAS_FILES = [
 	"reference-atlas-polyomino.json",
 	"reference-atlas-islamic.json",
 	"reference-atlas-hollow.json",
+	// Keep in step with EAGER_ATLAS_FILES in scripts/gen-updates-data.ts: that list feeds the modal,
+	// this one feeds the page, and a shelf missing here shows its release with no picture.
+	"reference-atlas-euhalf.json",
+	"reference-atlas-period.json",
+	"reference-atlas-tri45.json",
+	"reference-atlas-planigon.json",
+	"reference-atlas-penrose.json",
 ];
 
 async function loadCells(ids: string[]): Promise<Record<string, TranslationalCellData>> {
@@ -51,6 +59,32 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 			}
 		} catch {
 			// A shard that is absent or unreadable just leaves its ids without a preview.
+		}
+	}
+
+	// Whatever is left lives in a lazy k-shard, which is where a shelf's deeper tilings are: the scaled
+	// shelf ships k=1 and k=2 eagerly and reaches k=7 only here. Smallest shard first, stopping the
+	// moment nothing is missing, so the big ones are read only when an id needs them.
+	const missing = [...wanted].filter((id) => !out[id]);
+	if (missing.length) {
+		const left = new Set(missing);
+		const shards = (await readdir(dir))
+			.filter((f) => /^reference-atlas-.*-k\d+\.json$/.test(f))
+			.map((f) => ({ f, size: statSync(path.join(dir, f)).size }))
+			.sort((a, b) => a.size - b.size);
+		for (const { f } of shards) {
+			if (!left.size) break;
+			try {
+				const all: ReferenceTiling[] = JSON.parse(await readFile(path.join(dir, f), "utf8"));
+				for (const t of all) {
+					if (left.has(t.id) && t.renderCell) {
+						out[t.id] = t.renderCell;
+						left.delete(t.id);
+					}
+				}
+			} catch {
+				// same as above: an unreadable shard costs a preview, not the page
+			}
 		}
 	}
 	return out;

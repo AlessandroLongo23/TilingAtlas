@@ -38,9 +38,19 @@ the thresholds trip anew.
 3. **Write the bullets.** Three to six per release. Every line must survive a reader who has never
    opened the repo.
 
-4. **Pick previews.** Up to four ids per change, from the script's new-tiling list. Only
-   Euclidean-drawable ids render as pictures — `pnpm updates:data` reports which of your chosen ids
-   have no flat cell, and those degrade to a text chip. Check its output before proposing.
+4. **Pick previews. Every change that adds tilings gets them** (AL directive, 2026-08-15). This is
+   visual work: a release that is a wall of text gets closed without being read, and the reader never
+   learns what arrived. Two to four ids per change, never a gallery, chosen to show the RANGE the
+   change covers: one per board, or one at each end of the k span, not four that look alike. A change
+   about a page or a control takes `href`, and takes `tilings` as well whenever a tiling can stand for
+   what it does. Only a change with genuinely nothing to show goes bare.
+   - Ids may come from any reference-atlas shard, lazy k-shards included: `gen-updates-data.ts` reads
+     those on demand for anything the eager set cannot answer, so a k=7 example is fair game.
+   - Only Euclidean-drawable ids render as pictures. `pnpm updates:data` prints how many cells it
+     built; anything it could not build degrades to a text chip, so read its output before proposing.
+   - The hyperbolic and spherical shelves (half-tile boards, edge-marked boards) carry no flat cell
+     and cannot be previewed at all yet. Say so when proposing such a release instead of quietly
+     shipping it bare; it is a gap in the preview path, not a style choice.
 
 5. **Propose to AL. Wait.**
 

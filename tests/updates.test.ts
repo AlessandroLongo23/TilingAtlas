@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { CURRENT_VERSION, KIND_LABEL, KIND_ORDER, UPDATES, type UpdateEntry } from "@/lib/updates/entries";
@@ -13,30 +13,15 @@ import { previewIdsIn, shouldAutoOpen, unseenSince } from "@/lib/updates/unseen"
 // is the main thing here; the ordering and markup checks are cheap and catch a hand-edit that the
 // release ritual would otherwise ship.
 
-const ATLAS_FILES = [
-	"reference-atlas.json",
-	"reference-atlas-composable.json",
-	"reference-atlas-composable-k3.json",
-	"reference-atlas-isotoxal.json",
-	"reference-atlas-isotoxal-k3.json",
-	"reference-atlas-isotoxal-k4.json",
-	"reference-atlas-mixed.json",
-	"reference-atlas-scaled.json",
-	"reference-atlas-polyomino.json",
-	"reference-atlas-islamic.json",
-	"reference-atlas-hollow.json",
-	"reference-atlas-hyperbolic.json",
-	"reference-atlas-spherical.json",
-];
-
+// Every reference shard on disk, found rather than listed. A hardcoded list is a fourth place to
+// remember a new shelf in, and the failure it causes is a preview id that is real but reads as a typo.
 function atlasIds(): Set<string> {
 	const dir = path.join(process.cwd(), "public");
 	const ids = new Set<string>();
-	for (const name of ATLAS_FILES) {
-		const file = path.join(dir, name);
-		if (!existsSync(file)) continue;
+	for (const name of readdirSync(dir)) {
+		if (!/^reference-atlas.*\.json$/.test(name)) continue;
 		try {
-			for (const t of JSON.parse(readFileSync(file, "utf8")) as { id?: string }[]) {
+			for (const t of JSON.parse(readFileSync(path.join(dir, name), "utf8")) as { id?: string }[]) {
 				if (t.id) ids.add(t.id);
 			}
 		} catch {

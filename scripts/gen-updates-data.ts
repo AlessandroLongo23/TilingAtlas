@@ -18,7 +18,8 @@
 // no flat render path, so they are skipped here (named in the output) and the entry degrades to a
 // text link. Extending previews to those means wiring the curved renderers into a card, which is
 // its own piece of work.
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, readdir } from "node:fs/promises";
+import { statSync } from "node:fs";
 import path from "node:path";
 import { drawableEuclidean, toSpecimen, type LandingSpecimen } from "@/lib/services/landing-core";
 import { UPDATES } from "@/lib/updates/entries";
@@ -41,6 +42,13 @@ const EAGER_ATLAS_FILES = [
 	"reference-atlas-polyomino.json",
 	"reference-atlas-islamic.json",
 	"reference-atlas-hollow.json",
+	// The 2026-08 shelves. Eager files only, same as the rest of this list: their lazy k-shards hold
+	// most of the entries, so a preview id taken from one of those degrades to a text chip.
+	"reference-atlas-euhalf.json",
+	"reference-atlas-period.json",
+	"reference-atlas-tri45.json",
+	"reference-atlas-planigon.json",
+	"reference-atlas-penrose.json",
 ];
 
 const OUT = path.join(process.cwd(), "public", "updates-cells.json");
@@ -61,6 +69,43 @@ async function loadAtlas(): Promise<ReferenceTiling[]> {
 		}),
 	);
 	return parts.flat();
+}
+
+/**
+ * Cells for ids the eager set cannot answer, read out of the lazy k-shards.
+ *
+ * A shelf's most interesting tilings are usually the deep ones, and those live only in a lazy shard:
+ * the scaled shelf ships k=1 and k=2 eagerly and everything up to k=7 behind reference-atlas-scaled-k*.
+ * Without this, previewing what a release is actually about would be impossible for exactly the
+ * releases that most need a picture.
+ *
+ * Shards are read smallest first and the walk stops as soon as every missing id is found, so the 95 MB
+ * k=7 shard is only ever parsed when an id genuinely needs it.
+ */
+async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, ReferenceTiling>> {
+	const found = new Map<string, ReferenceTiling>();
+	if (!missing.size) return found;
+	const dir = path.join(process.cwd(), "public");
+	const shards = (await readdir(dir))
+		.filter((f) => /^reference-atlas-.*-k\d+\.json$/.test(f))
+		.map((f) => ({ f, size: statSync(path.join(dir, f)).size }))
+		.sort((a, b) => a.size - b.size);
+
+	for (const { f } of shards) {
+		if (!missing.size) break;
+		let records: ReferenceTiling[];
+		try {
+			records = JSON.parse(await readFile(path.join(dir, f), "utf8")) as ReferenceTiling[];
+		} catch {
+			continue; // an unreadable shard just leaves its ids without a preview
+		}
+		for (const t of drawableEuclidean(records)) {
+			if (!missing.has(t.id)) continue;
+			found.set(t.id, t);
+			missing.delete(t.id);
+		}
+	}
+	return found;
 }
 
 async function main(): Promise<void> {
@@ -86,6 +131,10 @@ async function main(): Promise<void> {
 
 	const atlas = await loadAtlas();
 	const renderable = new Map(drawableEuclidean(atlas).map((t) => [t.id, t]));
+
+	// Anything the eager set could not answer and that is not a shelf id: look in the lazy shards.
+	const stillMissing = new Set(wanted.filter((id) => !renderable.has(id) && !shelfPreviewCell(id)));
+	for (const [id, t] of await fillFromLazyShards(stillMissing)) renderable.set(id, t);
 
 	const out: Record<string, LandingSpecimen> = {};
 	const skipped: string[] = [];

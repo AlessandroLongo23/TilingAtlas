@@ -13,6 +13,20 @@
 //   - say what a visitor can now do or see; never "improved the experience"
 //   - the unlisted /defense route, the ledgers, the solver internals and the thesis never appear
 //
+// PICTURES ARE NOT OPTIONAL (AL directive, 2026-08-15). This is visual work, and a release that is a
+// wall of text gets closed without being read. Every change that adds tilings to the atlas carries
+// `tilings` with a few examples, never a gallery: 2 to 4, the maximum the guard allows. Pick them to
+// show the RANGE the change covers, one per board or one per end of the k span, not four near-identical
+// ones. A change about a page or a control takes `href`, and takes `tilings` too whenever a tiling can
+// stand for what it does. Only a change with genuinely nothing to show goes bare.
+//   - previews come from any reference-atlas shard, lazy k-shards included: scripts/gen-updates-data.ts
+//     reads the lazy ones on demand for ids the eager set cannot answer, so a k=7 example is fair game
+//   - the preview renderer draws a EUCLIDEAN translational cell. Hyperbolic and spherical shelves
+//     (the half-tile boards, the edge-marked boards) carry no such cell and cannot be previewed yet;
+//     those releases stay text-only until a curved preview path exists, and that is a gap, not a style
+//   - after editing this file run `pnpm updates:data`, which rebuilds public/updates-cells.json for the
+//     newest six releases. The modal reads that asset; the /updates page resolves every release itself
+//
 // Versions: MINOR = a new capability (page, tile class, editor, geometry). PATCH = more tilings in
 // a family that already shipped, fixes, perf, restructuring. See lib/updates/version.ts.
 //
@@ -52,6 +66,229 @@ export interface UpdateEntry {
 
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
+	{
+		version: "1.27.1",
+		date: "2026-08-15",
+		title: "The mixed shelf reaches k = 4",
+		commit: "00949c2",
+		changes: [
+			{
+				kind: "content",
+				text: "**700 new mixed-family tilings** take that shelf from 83 entries to 783, with the ceiling now at k = 4.",
+				href: "/library",
+				tilings: ["ctrnact-mixed-family-k1-03", "ctrnact-mixed-family-k1-05"],
+			},
+			{
+				kind: "content",
+				text: "**The scaled shelf holds 43,405 tilings**, out to k = 7.",
+				href: "/library",
+				tilings: ["d-ctrnact-01_3t-4cs-1", "d-ctrnact-07_3t-2al_2am_2an_2ao_2ap2_4cr3_6bc_6bh_6bm_6br-1"],
+			},
+			{
+				kind: "fix",
+				text: "**Five old links work again.** A de-duplication pass had absorbed those families into more general ones without leaving a redirect, so each one opened on nothing.",
+			},
+		],
+	},
+	{
+		version: "1.27.0",
+		date: "2026-08-15",
+		title: "Half-tiles in the hyperbolic plane",
+		commit: "adc8539",
+		changes: [
+			{
+				kind: "content",
+				text: "**23,372 tilings by half a hyperbolic tile**, on six boards, where a regular {p,q} tile is cut in two and both halves tile on their own.",
+				items: [
+					"{3,7} and {3,8} cut by an altitude; {4,5}, {5,4}, {6,4} and {4,6} cut by a diagonal.",
+					"Which boards exist at all is a counting question: a vertex-transitive tiling needs 2q/p diagonal ends at the average vertex, so it has to be a whole number.",
+				],
+				href: "/library",
+			},
+		],
+	},
+	{
+		version: "1.26.0",
+		date: "2026-08-15",
+		title: "Regular polygons cut in half",
+		commit: "52e33b1",
+		changes: [
+			{
+				kind: "content",
+				text: "**27,728 tilings by half a regular polygon**, cut either across two opposite vertices or across two opposite edge midpoints.",
+				items: [
+					"Half hexagon on the long diagonal, 27,159 tilings to k = 13.",
+					"Half pentagon, 567 tilings to k = 14. A regular pentagon cannot tile the plane; half of one does, at k = 1, and twice over.",
+					"Half hexagon on the edge midpoints, and the domino, one tiling each.",
+				],
+				href: "/library",
+				tilings: ["euhhexv-k1-0001", "euhpent-k1-0001", "euhhexm-k2-0001", "euhsqmid-k1-0001"],
+			},
+			{
+				kind: "content",
+				text: "**The family is exactly six boards**, and that is settled rather than merely unexplored: the angles force the side count to divide 8, and an edge-parity count empties everything else.",
+			},
+		],
+	},
+	{
+		version: "1.25.0",
+		date: "2026-08-15",
+		title: "Half-tiles on the sphere",
+		commit: "3ffd2c6",
+		changes: [
+			{
+				kind: "content",
+				text: "**Four spherical half-tile boards**: the octahedron, cube, icosahedron and dodecahedron faces cut by an altitude or a diagonal.",
+				items: ["16 tilings in total. The sphere runs out of angle budget quickly, so the count is small and complete."],
+				href: "/library",
+			},
+		],
+	},
+	{
+		version: "1.24.0",
+		date: "2026-08-15",
+		title: "Planigons, 45-45-90 and Penrose",
+		commit: "c7e66df",
+		changes: [
+			{
+				kind: "content",
+				text: "**10,873 tilings on three new boards** whose tiles have more than one edge length: 1,055 planigon tilings, 5,313 on the 45-45-90 board, 4,505 Penrose kite and dart.",
+				href: "/library",
+				tilings: ["planigon-k1-001", "tri45-k1-001", "penrose-k1-001"],
+			},
+			{
+				kind: "changed",
+				text: "**Each tile set is its own folder** in the library instead of sharing one, so choosing there means choosing a shape.",
+				href: "/library",
+			},
+		],
+	},
+	{
+		version: "1.23.0",
+		date: "2026-08-15",
+		title: "The period shelf",
+		commit: "d2306a8",
+		changes: [
+			{
+				kind: "content",
+				text: "**427 parametric families** whose parameter space is solved as you drag, so a slider sweeps the whole family including the shapes where tiles turn concave.",
+				href: "/library",
+				tilings: ["period-k1-001", "period-k2-044", "period-k2-045"],
+			},
+			{
+				kind: "changed",
+				text: "**The slider panel collapses past four rows.** One of these families flexes on 19 angles at once, which turned the overlay into a wall.",
+				href: "/play",
+			},
+		],
+	},
+	{
+		version: "1.22.0",
+		date: "2026-08-15",
+		title: "Thirty new edge-marked boards",
+		commit: "4973a72",
+		changes: [
+			{
+				kind: "content",
+				text: "**540,379 edge-marked patterns** on 30 boards that were not there before, across the hyperbolic and spherical shelves.",
+				items: [
+					"393,527 spherical on 10 boards, 91,410 hyperbolic on 10 boards.",
+					"33,800 more hyperbolic polygon patterns on 9 boards, and 21,642 on a new Schwarz board.",
+				],
+				href: "/library",
+			},
+			{
+				kind: "fix",
+				text: "**Curved tiles with a deeply bowed edge draw correctly.** Bending one far enough cut a notch the old triangulation could not see, and it painted outside the tile.",
+			},
+		],
+	},
+	{
+		version: "1.21.0",
+		date: "2026-08-15",
+		title: "Error pages that draw a tiling",
+		commit: "a6f3573",
+		changes: [
+			{
+				kind: "feature",
+				text: "**The error and 404 walls open on a real tiling** instead of a blank page, with a live pick from the atlas replacing the seeded one as soon as it loads.",
+			},
+		],
+	},
+	{
+		version: "1.20.0",
+		date: "2026-08-15",
+		title: "Parquet deformation fields",
+		commit: "c21956a",
+		changes: [
+			{
+				kind: "feature",
+				text: "**The parquet deformation takes a field**, so how far along the evolution a point sits can follow a direction or seeded noise instead of one fixed sweep.",
+				href: "/parquet",
+			},
+			{
+				kind: "changed",
+				text: "**A seed reproduces a figure exactly**, in the canvas and in the exported SVG alike.",
+				href: "/parquet",
+			},
+		],
+	},
+	{
+		version: "1.19.0",
+		date: "2026-08-15",
+		title: "Truchet figures on any tiling",
+		commit: "c974bc8",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Truchet tile figures draw over any tiling**, cutting every edge into thirds and wiring the middle third across the tile.",
+				items: [
+					"A triangle has 2 wirings, a square 14, a hexagon 132, so a seed picks one and the picture changes with it.",
+					"Carlson's multi-scale Truchet construction from Bridges 2018, generalised off the square.",
+				],
+				href: "/play",
+				tilings: ["t1006", "t1011"],
+			},
+		],
+	},
+	{
+		version: "1.18.0",
+		date: "2026-08-15",
+		title: "Filter by tile species",
+		commit: "8aa215d",
+		changes: [
+			{
+				kind: "feature",
+				text: "**The library filters by tile species**, so finding every tiling that uses a pentagram is a choice and not a scroll.",
+				href: "/library",
+				tilings: ["ctrnact-star-5fold-k1-01", "ctrnact-star-9fold-k1-01"],
+			},
+			{
+				kind: "feature",
+				text: "**Each species is drawn at chip size** in the picker, which is quicker to read than its name.",
+				href: "/library",
+			},
+		],
+	},
+	{
+		version: "1.17.0",
+		date: "2026-08-15",
+		title: "The other hand of a chiral tiling",
+		commit: "59c7d20",
+		changes: [
+			{
+				kind: "feature",
+				text: "**A chiral tiling can be flipped to its mirror** on /play. The catalogue counts a tiling and its mirror once, so one of the two hands had nowhere to be seen.",
+				href: "/play",
+				tilings: ["ctrnact-07_34-4o_4u2_5d3_5f-1", "ctrnact-07_34-4r_5d3_5f2_6g-1"],
+			},
+			{
+				kind: "feature",
+				text: "**Handedness is a filter** in the library, read off the wallpaper group.",
+				href: "/library",
+			},
+		],
+	},
 	{
 		version: "1.16.1",
 		date: "2026-08-09",
