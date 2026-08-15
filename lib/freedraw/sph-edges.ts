@@ -134,25 +134,50 @@ export const SPH_EDGES_BOARDS: SphEdgesBoard[] = [
 	{ id: "446", config: "4.4.6", solid: "hexagonal prism", eagerKs: [1, 2, 3, 4, 6, 8, 12], lazyKs: [], complete: true, missing: [], counts: { 1: 5, 2: 8, 3: 17, 4: 17, 6: 55, 8: 11, 12: 51 } },
 	{ id: "447", config: "4.4.7", solid: "heptagonal prism", eagerKs: [1, 2, 4, 7, 8, 14], lazyKs: [], complete: true, missing: [], counts: { 1: 3, 2: 1, 4: 52, 7: 69, 8: 89, 14: 198 } },
 	{ id: "448", config: "4.4.8", solid: "octagonal prism", eagerKs: [1, 2, 3, 4, 5, 6, 8, 10, 16], lazyKs: [], complete: true, missing: [], counts: { 1: 5, 2: 8, 3: 5, 4: 53, 5: 44, 6: 2, 8: 292, 10: 53, 16: 719 } },
+	// The two prisms of Marek's 2026-08-12 drop, and the only boards in it whose run is FINISHED: an
+	// n-gonal prism has 2n vertices and both censuses reach k = 2n exactly.
+	{ id: "4410", config: "4.4.10", solid: "decagonal prism", eagerKs: [1, 2, 3, 5, 6, 10, 12], lazyKs: [20], complete: true, missing: [], counts: { 1: 5, 2: 3, 3: 18, 5: 136, 6: 133, 10: 1454, 12: 221, 20: 8702 } }, // k=20 is 3.1 MB -> lazy
+	{ id: "4411", config: "4.4.11", solid: "hendecagonal prism", eagerKs: [1, 2, 6, 11, 12], lazyKs: [22], complete: true, missing: [], counts: { 1: 3, 2: 1, 6: 374, 11: 2237, 12: 1348, 22: 29719 } }, // k=22 is 11.0 MB -> lazy
+	{ id: "468", config: "4.6.8", solid: "truncated cuboctahedron", eagerKs: [1, 2, 3, 4, 6, 8], lazyKs: [12], complete: false, missing: [], counts: { 1: 5, 2: 5, 3: 29, 4: 42, 6: 638, 8: 1203, 12: 35312 } }, // k=12 is 17.5 MB -> lazy
 	{ id: "663", config: "3.6.6", solid: "truncated tetrahedron", eagerKs: [1, 2, 3, 4, 6, 7, 12], lazyKs: [], complete: true, missing: [], counts: { 1: 3, 2: 5, 3: 11, 4: 14, 6: 11, 7: 58, 12: 53 } },
-	{ id: "664", config: "4.6.6", solid: "truncated octahedron", eagerKs: [1, 2, 3, 4, 5, 6, 8, 10, 16], lazyKs: [12, 24], complete: true, missing: [], counts: { 1: 4, 2: 10, 3: 10, 4: 58, 5: 18, 6: 140, 8: 173, 10: 29, 12: 4776, 16: 885, 24: 101887 } }, // k=12 is 1.8 MB → lazy // k=24 is 38.6 MB → lazy
-	{ id: "j27", config: "3.3.4.4 / 3.4.3.4", solid: "triangular orthobicupola (J27)", eagerKs: [2, 3, 4, 5, 6, 7, 9], lazyKs: [12], complete: true, missing: [], counts: { 2: 15, 3: 20, 4: 8, 5: 168, 6: 867, 7: 2159, 9: 504, 12: 77738 } }, // k=12 is 27.4 MB → lazy
-	{ id: "j37", config: "3.4.4.4", solid: "pseudo-rhombicuboctahedron (J37)", eagerKs: [2, 3, 4, 6], lazyKs: [7], complete: false, missing: [], counts: { 2: 24, 3: 21, 4: 136, 6: 1068, 7: 4400 } }, // k=7 is 1.9 MB → lazy
+	{ id: "664", config: "4.6.6", solid: "truncated octahedron", eagerKs: [1, 2, 3, 4, 5, 6, 8, 10, 16], lazyKs: [12, 24], complete: true, missing: [], counts: { 1: 4, 2: 10, 3: 10, 4: 58, 5: 18, 6: 140, 8: 173, 10: 29, 12: 4776, 16: 885, 24: 101887 } }, // k=12 is 1.8 MB -> lazy // k=24 is 38.6 MB -> lazy
+	// ⚑ 5.6.6 is where the census's TWO MAX markers had to be told apart. Its header reads `MAX=60`, which
+	// declares the ceiling (V), not that the run reached it — it stops at k=16 — so `complete` is false.
+	// A trailing bare `MAX` line is the one that means finished; edges_443 and edges_663 carry that.
+	{ id: "665", config: "5.6.6", solid: "truncated icosahedron", eagerKs: [1, 3, 4, 5, 6, 8, 9, 10], lazyKs: [12, 15, 16], complete: false, missing: [], counts: { 1: 3, 3: 8, 4: 31, 5: 12, 6: 156, 8: 288, 9: 451, 10: 769, 12: 4323, 15: 6477, 16: 37292 } }, // k=12 is 2.4 MB -> lazy // k=15 is 3.7 MB -> lazy // k=16 is 21.2 MB -> lazy
+	{ id: "j27", config: "3.3.4.4 / 3.4.3.4", solid: "triangular orthobicupola (J27)", eagerKs: [2, 3, 4, 5, 6, 7, 9], lazyKs: [12], complete: true, missing: [], counts: { 2: 15, 3: 20, 4: 8, 5: 168, 6: 867, 7: 2159, 9: 504, 12: 77738 } }, // k=12 is 27.4 MB -> lazy
+	{ id: "j37", config: "3.4.4.4", solid: "pseudo-rhombicuboctahedron (J37)", eagerKs: [2, 3, 4, 6], lazyKs: [7], complete: false, missing: [], counts: { 2: 24, 3: 21, 4: 136, 6: 1068, 7: 4400 } }, // k=7 is 1.9 MB -> lazy
+	// The GYRATE PAIR, out of the one edges_4435 run (2026-08-12) alongside the rhombicosidodecahedron
+	// itself. Rotating a pentagonal cupola by 36° keeps V/E/F and the edge length, so the solver's angle
+	// closure produces all three; it turns the 10 vertices of that cupola's join ring from 3.4.5.4 into
+	// 3.4.4.5, and the antipodal pair turns 20. Here the CENSUS separates the twins from the uniform
+	// solid (unlike J37, which needed the measured group), and the group order separates the two gyrates:
+	// C5v = 10 for one cupola, D5d = 20 for two. J74 and J75 do not appear in this corpus.
+	{ id: "j72", config: "3.4.4.5 / 3.4.5.4", solid: "gyrate rhombicosidodecahedron (J72)", eagerKs: [], lazyKs: [8], complete: false, missing: [10], counts: { 8: 21904 } }, // k=8 is 15.2 MB -> lazy
+	{ id: "j73", config: "3.4.4.5 / 3.4.5.4", solid: "parabigyrate rhombicosidodecahedron (J73)", eagerKs: [4, 6], lazyKs: [8], complete: false, missing: [10], counts: { 4: 148, 6: 792, 8: 10878 } }, // k=8 is 7.6 MB -> lazy
 	{ id: "3334", config: "3.3.3.4", solid: "square antiprism", eagerKs: [1, 2, 3, 4, 5, 8], lazyKs: [], complete: true, missing: [], counts: { 1: 5, 2: 9, 3: 8, 4: 91, 5: 105, 8: 504 } },
-	{ id: "3335", config: "3.3.3.5", solid: "pentagonal antiprism", eagerKs: [1, 2, 3, 5, 6], lazyKs: [10], complete: true, missing: [], counts: { 1: 5, 2: 2, 3: 34, 5: 299, 6: 348, 10: 4477 } }, // k=10 is 1.4 MB → lazy
-	{ id: "3336", config: "3.3.3.6", solid: "hexagonal antiprism", eagerKs: [1, 2, 3, 4, 6, 7], lazyKs: [12], complete: true, missing: [], counts: { 1: 5, 2: 17, 3: 33, 4: 33, 6: 974, 7: 1117, 12: 38698 } }, // k=12 is 12.9 MB → lazy
+	{ id: "3335", config: "3.3.3.5", solid: "pentagonal antiprism", eagerKs: [1, 2, 3, 5, 6], lazyKs: [10], complete: true, missing: [], counts: { 1: 5, 2: 2, 3: 34, 5: 299, 6: 348, 10: 4477 } }, // k=10 is 1.4 MB -> lazy
+	{ id: "3336", config: "3.3.3.6", solid: "hexagonal antiprism", eagerKs: [1, 2, 3, 4, 6, 7], lazyKs: [12], complete: true, missing: [], counts: { 1: 5, 2: 17, 3: 33, 4: 33, 6: 974, 7: 1117, 12: 38698 } }, // k=12 is 12.9 MB -> lazy
 	{ id: "3337", config: "3.3.3.7", solid: "heptagonal antiprism", eagerKs: [1, 2, 4], lazyKs: [7, 8], complete: true, missing: [14], counts: { 1: 5, 2: 2, 4: 116, 7: 3124, 8: 3598 } },
 	// ⚑ 5 / 9 / 8 / 91 / 105 at k = 1…5 is IDENTICAL to the square antiprism's, and it is not the same
 	// data: zero drawn-sets are shared, and the solids differ (32 edges and 18 faces against 16 and 10).
 	// The same coincidence IH01 and IH02 have on the isohedral shelf.
 	// ⚑ `missing: [16]` is the big one: the census counts 2,925,191 there and the drop carries no k=16
-	// file at all. Not our budget — the data is not in the drop.
+	// file at all. Not our budget — the data is not in the drop. It is hand-held here because that census
+	// is not in materials/corpora, so emit_board_tables.py cannot derive it; do not let a regenerate drop it.
 	{ id: "3338", config: "3.3.3.8", solid: "octagonal antiprism", eagerKs: [1, 2, 3, 4, 5], lazyKs: [8, 9], complete: false, missing: [16], counts: { 1: 5, 2: 9, 3: 8, 4: 91, 5: 105, 8: 9928, 9: 11412 } }, // k=8 is 3.5 MB, k=9 is 4.1 MB -> lazy
+	{ id: "3339", config: "3.3.3.9", solid: "enneagonal antiprism", eagerKs: [1, 2, 3, 4, 5, 6], lazyKs: [9, 10], complete: false, missing: [], counts: { 1: 5, 2: 10, 3: 25, 4: 29, 5: 366, 6: 52, 9: 31287, 10: 36096 } }, // k=9 is 11.6 MB -> lazy // k=10 is 13.5 MB -> lazy
+	{ id: "33310", config: "3.3.3.10", solid: "decagonal antiprism", eagerKs: [1, 2, 3, 4, 5, 6], lazyKs: [10], complete: false, missing: [], counts: { 1: 5, 2: 9, 3: 42, 4: 4, 5: 299, 6: 348, 10: 98627 } }, // k=10 is 38.4 MB -> lazy
 	// The first CHIRAL board here: |G| = 24 (the rotation group O), not 48, so a mirrored development is
 	// the enantiomorph and lands only because `board_project` tries the reflected frame too.
-	{ id: "33334", config: "3.3.3.3.4", solid: "snub cube", eagerKs: [1, 2, 3, 4], lazyKs: [6], complete: false, missing: [8], counts: { 1: 7, 2: 8, 3: 152, 4: 1078, 6: 22029 } }, // k=6 is 10.1 MB → lazy // k=7 is 1.1 MB → lazy // k=8 is 1.2 MB → lazy
-	{ id: "4443", config: "3.4.4.4", solid: "rhombicuboctahedron", eagerKs: [1, 2, 3, 4], lazyKs: [6, 7, 8], complete: false, missing: [], counts: { 1: 5, 2: 22, 3: 117, 4: 293, 6: 5118, 7: 5428, 8: 3288 } }, // k=6 is 2.1 MB → lazy // k=7 is 2.2 MB → lazy // k=8 is 1.4 MB → lazy
-	{ id: "cuboctahedron", config: "3.4.3.4", solid: "cuboctahedron", eagerKs: [1, 2, 3, 4, 5, 6, 7, 8], lazyKs: [12], complete: true, missing: [], counts: { 1: 3, 2: 14, 3: 39, 4: 72, 5: 37, 6: 114, 7: 1304, 8: 150, 12: 19066 } }, // k=12 is 6.6 MB → lazy
+	{ id: "33334", config: "3.3.3.3.4", solid: "snub cube", eagerKs: [1, 2, 3, 4], lazyKs: [6], complete: false, missing: [8], counts: { 1: 7, 2: 8, 3: 152, 4: 1078, 6: 22029 } }, // k=6 is 10.1 MB -> lazy // k=7 is 1.1 MB -> lazy // k=8 is 1.2 MB -> lazy
+	// The second: |G| = 60 (the rotation group I) on a 60-vertex solid, in one vertex orbit. Marek shipped
+	// no census for this corpus and only k = 1, 5, 6, so the three slices here are a sample of the board
+	// and not a range — `complete: false` and nothing to put in `missing`.
+	{ id: "33335", config: "3.3.3.3.5", solid: "snub dodecahedron", eagerKs: [1], lazyKs: [5, 6], complete: false, missing: [], counts: { 1: 7, 5: 3551, 6: 26034 } }, // k=5 is 2.9 MB -> lazy // k=6 is 21.2 MB -> lazy
+	{ id: "4435", config: "3.4.5.4", solid: "rhombicosidodecahedron", eagerKs: [1, 3, 4, 5], lazyKs: [6, 8, 9], complete: false, missing: [10], counts: { 1: 4, 3: 32, 4: 144, 5: 121, 6: 2264, 8: 10878, 9: 18168 } }, // k=6 is 1.5 MB -> lazy // k=8 is 7.3 MB -> lazy // k=9 is 12.3 MB -> lazy
+	{ id: "4443", config: "3.4.4.4", solid: "rhombicuboctahedron", eagerKs: [1, 2, 3, 4], lazyKs: [6, 7, 8], complete: false, missing: [], counts: { 1: 5, 2: 22, 3: 117, 4: 293, 6: 5118, 7: 5428, 8: 3288 } }, // k=6 is 2.1 MB -> lazy // k=7 is 2.2 MB -> lazy // k=8 is 1.4 MB -> lazy
+	{ id: "cuboctahedron", config: "3.4.3.4", solid: "cuboctahedron", eagerKs: [1, 2, 3, 4, 5, 6, 7, 8], lazyKs: [12], complete: true, missing: [], counts: { 1: 3, 2: 14, 3: 39, 4: 72, 5: 37, 6: 114, 7: 1304, 8: 150, 12: 19066 } }, // k=12 is 6.6 MB -> lazy
 ];
 
 export const SPH_EDGES_BOARD_BY_ID = new Map(SPH_EDGES_BOARDS.map((b) => [b.id, b]));

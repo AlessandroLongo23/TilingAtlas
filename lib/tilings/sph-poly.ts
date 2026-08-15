@@ -55,8 +55,19 @@ export interface SphPolyPattern {
 	vertices: V3[];
 	/** Face rings of vertex indices. Mixed arity. */
 	faces: number[][];
-	/** Polygon size per face (parallel to `faces`) — the fill key. */
+	/** Polygon size per face (parallel to `faces`) — the fill key, unless `fillGroup` overrides it. */
 	faceSize: number[];
+	/**
+	 * Fill group per face, overriding `faceSize` as the colour key when present.
+	 *
+	 * The 3.4.n.4 boards need nothing here: their faces come in several polygon sizes and one colour per
+	 * size is exactly the right reading. A HALF-TILE board (lib/tilings/sph-half.ts) has ONE tile, so
+	 * every face is a triangle and grouping by size collapses the whole solid into a single neutral fill.
+	 * These records group by the face's SYMMETRY ORBIT instead, which says which tiles the solid's own
+	 * isometries carry onto each other — and when that really is one orbit, one colour is the true
+	 * statement, not a rendering accident.
+	 */
+	fillGroup?: number[];
 	/** Every edge, as a vertex-index pair. */
 	edges: [number, number][];
 	/** Certificate vertex-orbit label per vertex. */

@@ -7,13 +7,17 @@
  * or zoom out as far as you like and it keeps going, with no patch edge to run into and no CPU cost
  * per frame.
  *
- * Why this exists instead of `lib/render/buildCellMesh.ts`, which produces the same structure: that
- * one fan-triangulates each polygon from its centroid, which is valid for the whole /play catalogue
- * ("regular tiles are convex and star tiles are star-shaped from their centre") and NOT valid here.
- * The edge-curvature sliders are exactly a way to make a tile that is not star-shaped about its
- * centroid — an S edge bowed hard enough cuts a notch the fan apex cannot see, and the fan then paints
- * triangles outside the tile. Ear clipping (lib/render/triangulate.ts) is correct for any simple
- * polygon, so this builder uses it and leaves /play's untouched.
+ * Why this exists instead of `lib/render/buildCellMesh.ts`, which produces the same structure: that one
+ * fanned every polygon from its centroid, which was valid for the whole /play catalogue ("regular tiles
+ * are convex and star tiles are star-shaped from their centre") and NOT valid here. The edge-curvature
+ * sliders are exactly a way to make a tile that is not star-shaped about its centroid — an S edge bowed
+ * hard enough cuts a notch the fan apex cannot see, and the fan then paints triangles outside the tile.
+ * Ear clipping (lib/render/triangulate.ts) is correct for any simple polygon, so this builder uses it.
+ *
+ * ⚑ /play stopped being safe on 2026-08-09, when the period-p sliders were extended past the convexity
+ * cut and its catalogue gained concave tiles. buildCellMesh now takes the same ear-clipping path when
+ * the centroid is outside the kernel, so the two builders no longer disagree about what is drawable —
+ * this one still exists for the buffer layout (no point overlay) and the per-prototile mesh reuse.
  *
  * The stroke and extent code below is the same construction as buildCellMesh's, deliberately: the
  * shader reads those buffers with a fixed contract. Points are not emitted — this page has no

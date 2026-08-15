@@ -509,8 +509,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (xe && sphEdgesLazyShardsForK(Number(xe[2])).some((b) => b.id === xe[1])) {
 			loadSphericalEdgesShard(xe[1], Number(xe[2])).then(merge).catch(() => {});
 		}
-		const hp = requestedKey?.match(/^hp(\d+)-(\d+)-/);
-		if (hp && hypPolyLazyShardsForK(Number(hp[2])).some((b) => String(b.n) === hp[1])) {
+		// `hpt7-…` as well as `hp7-…`: the shelf carries two families and only the ai2 half is prefixed.
+		const hp = requestedKey?.match(/^hp(t?\d+)-(\d+)-/);
+		if (hp && hypPolyLazyShardsForK(Number(hp[2])).some((b) => b.id === hp[1])) {
 			loadHyperbolicPolyShard(hp[1], Number(hp[2])).then(merge).catch(() => {});
 		}
 		return () => {

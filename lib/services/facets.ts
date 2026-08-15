@@ -35,6 +35,7 @@ import {
 	type FreedrawKind,
 	type FreedrawRegular,
 	type IslamicSystem,
+	type EdgeBoard,
 	type SubFamily,
 	type TileClass,
 } from "./referenceAtlas";
@@ -189,7 +190,12 @@ export function boardFamiliesFor(
 	decoration: "tilings" | "edges" | "colorings",
 ): BoardFamily[] {
 	const BY_SEGMENT: Record<typeof decoration, Record<typeof geometry, SubFamily[]>> = {
-		tilings: { euclidean: [], hyperbolic: ["hyp-poly"], spherical: ["sph-poly"] },
+		// Two hyperbolic tiling families, both one corpus per board: 3.4.n.4 and {3,n}.
+		tilings: {
+			euclidean: [],
+			hyperbolic: ["hyp-poly", "hyp-poly-t", "hyp-half"],
+			spherical: ["sph-poly", "sph-half"],
+		},
 		edges: {
 			euclidean: ["grid", "schwarz-eu", "pent", "ih"],
 			hyperbolic: ["hyp-edges", "schwarz-board"],

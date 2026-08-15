@@ -57,13 +57,17 @@ describe("Schwarz board manifest", () => {
 		}
 	});
 
-	it("reports the two boards whose k coverage has a hole", () => {
-		// These are gaps in Marek's SOLVE, not facts about the board, and every surface that lists a
-		// board's k values leans on this to say so. If a rerun fills them, this test is the reminder.
+	it("reports the three boards whose k coverage has a hole", () => {
+		// On (2,2,4) and (2,3,5) these are gaps in Marek's SOLVE, not facts about the board, and every
+		// surface that lists a board's k values leans on this to say so. If a rerun fills them, this test
+		// is the reminder.
+		// ⚑ (2,2,5) is the exception and the function cannot tell them apart: its census counts a literal
+		// 0 at k=9 and k=10, so those two are empty slices of the board and not a short run. Saying which
+		// is which needs the census on the row, the way SPH_EDGES_BOARDS carries `complete`/`missing`.
 		const gaps = Object.fromEntries(
 			SCHWARZ_BOARDS.map((b) => [b.id, schwarzKGaps(b)]).filter(([, g]) => (g as number[]).length),
 		);
-		expect(gaps).toEqual({ "224": [8], "235": [4] });
+		expect(gaps).toEqual({ "224": [8], "225": [9, 10], "235": [4] });
 	});
 });
 

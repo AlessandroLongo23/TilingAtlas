@@ -967,6 +967,49 @@ function cutIntoWedges(cell: Vec2[], anchor: Vec2, order: number, base: number):
 	return faces;
 }
 
+/** Is `p` a rotation centre of the pattern — i.e. a lattice translate of one of the detected centres? */
+function onCenter(p: Vec2, centers: Center[], c1: Vec2, c2: Vec2): boolean {
+	const det = c1.x * c2.y - c1.y * c2.x;
+	if (Math.abs(det) < 1e-12) return false;
+	return centers.some((c) => {
+		const dx = p.x - c.z.x, dy = p.y - c.z.y;
+		const a = (dx * c2.y - dy * c2.x) / det, b = (-dx * c1.y + dy * c1.x) / det;
+		return Math.abs(a - Math.round(a)) < 1e-6 && Math.abs(b - Math.round(b)) < 1e-6;
+	});
+}
+
+// Every rotation of the ray fan about `anchor` cuts `order` equally valid copies, so WHERE the fan starts is
+// a presentation choice — and one choice draws the ORBIFOLD, the chamber whose corners are the cone points.
+// A fan along the lattice vectors leaves the WS cell through its EDGE MIDPOINTS, and for every group holding
+// a half-turn those midpoints ARE cone points: the 2-folds sit at the half-lattice points, so p4's
+// quarter-square is 4,2,4,2 and p6's kite is 6,2,3,2, both canonical, and the fan stays put.
+//
+// p3 is the one group with no half-turn to lean on: 333, point-group order 3, the only order above 1 of the
+// 17 that is odd. Its rays cross the hexagon edges at points carrying no symmetry at all, so the wedges come
+// out PENTAGONS. Aimed at the cell's own corners the same three wedges are the three rhombi of the standard
+// cell-structure diagram, corners 3,3,3; no coincidence, since on a hexagonal lattice the WS corners ARE the
+// other two 3-fold centres, so a corner-aimed fan runs centre-to-centre.
+//
+// The alignment has to be COMPLETE — every ray of the fan leaving through a corner, not just the first. A
+// half-aligned fan is worse, not better: a non-square rectangle cut on its diagonal gives two triangles and
+// two pentagons that are no longer each other's images, which is how pgg regressed while this was a plain
+// count-the-corners rule.
+function orbifoldWedgeCut(cell: Vec2[], anchor: Vec2, order: number, base: number): Vec2[][] {
+	const best = cutIntoWedges(cell, anchor, order, base);
+	if (order % 2 === 0) return best;
+	const dirs = cell.map((v) => Math.atan2(v.y - anchor.y, v.x - anchor.x));
+	const onCorner = (a: number) => dirs.some((d) => Math.abs(Math.atan2(Math.sin(a - d), Math.cos(a - d))) < 1e-6);
+	const corners = (fs: Vec2[][]) => fs.reduce((s, f) => s + f.length, 0);
+	for (const d of dirs) {
+		let aligned = true;
+		for (let k = 1; k < order && aligned; k++) aligned = onCorner(d + (k * 2 * Math.PI) / order);
+		if (!aligned) continue;
+		const cand = cutIntoWedges(cell, anchor, order, d);
+		if (cand.length === best.length && cand.every((f) => f.length >= 3) && corners(cand) < corners(best)) return cand;
+	}
+	return best;
+}
+
 // The DRAWN cell is the primitive PARALLELOGRAM (Wikipedia's "cell structure"): oblique → generic
 // parallelogram, rectangular → rectangle, square → square, hexagonal → 60°/120° rhombus, cm/cmm →
 // mirror-aligned rhombus. Corner-anchored so a top-order centre sits at a VERTEX (the parallelogram
@@ -1018,8 +1061,10 @@ function cutWignerSeitz(order: number, anchor: Vec2, axes: Axis[], c1: Vec2, c2:
 		const dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
 		return cutByLines(ws, anchor, dirs);
 	}
-	const base = md.length ? (md[0] * Math.PI) / 180 : Math.atan2(c1.y, c1.x);
-	return cutIntoWedges(ws, anchor, order, base);
+	// With a mirror through the anchor the fan must stay ON it (rotating it off would split a chamber);
+	// with none it is free, and turns to whichever alignment draws the orbifold.
+	if (md.length) return cutIntoWedges(ws, anchor, order, (md[0] * Math.PI) / 180);
+	return orbifoldWedgeCut(ws, anchor, order, Math.atan2(c1.y, c1.x));
 }
 
 // The DRAWN parallelogram cell + its `order` fundamental-domain copies (`faces[0]` is emphasized, a WHOLE
@@ -1126,36 +1171,58 @@ function buildSubdivision(
 
 	// general: cut the WS cell into correct FD copies, then re-tile them into the displayed parallelogram.
 	const cell = cornerParallelogram(anchor, c1, c2);
-	const faces = retileIntoCell(cutWignerSeitz(order, anchor, axes, c1, c2), cell, c1, c2);
-	const wedged = finish(cell, faces);
+	const wedges = cutWignerSeitz(order, anchor, axes, c1, c2);
+	const wedged = finish(cell, retileIntoCell(wedges, cell, c1, c2));
 	if (wedged.ok) return wedged;
 
-	// The anchor kaleidoscope only yields chambers when the whole point group ACTS at the anchor, and p4g
-	// is the counterexample: no mirror passes through its 4-folds, so the eight 45° wedges around one are
-	// not eight images of each other — a mirror carries that centre to the OTHER 4-fold of the cell, not
-	// back to itself. When the cut can't be certified, take the orbifold triangle `buildFD` finds (its
-	// legs really do lie on mirrors) and generate the subdivision the honest way round: apply the group to
-	// the chamber, instead of hoping a geometric cut lands on group images.
+	// Two different things land here. One is a wrong CUT: the anchor kaleidoscope only yields chambers when
+	// the whole point group ACTS at the anchor, and p4g is the counterexample — no mirror passes through its
+	// 4-folds, so the eight 45° wedges around one are not eight images of each other (a mirror carries that
+	// centre to the OTHER 4-fold of the cell, not back to itself). The other is a wrong PLACEMENT: p3's three
+	// wedges are genuine chambers — the rhombi of the standard diagram, 120° at the anchor — but none of them
+	// fits a cell cornered on that same 3-fold, because the corner cone is also 120° wide and the rhombi sit
+	// 30° off it, so all three get clipped. Both are fixed the same way round: take a chamber that IS
+	// certified, generate its copies by applying the group, and place the drawn cell around the chamber
+	// instead of expecting a chamber to fall inside a cell that was drawn first.
 	if (cosets) {
-		const wedgedAnchor = anchor;
-		const chamber = buildFD(group, order, centers, axes, c1, c2);
-		// Place the drawn parallelogram so the chamber lands WHOLE inside it. Sliding the shell by a
-		// lattice vector cannot do that (it moves by a full period and the chamber goes with it), so put
-		// the shell's corner at the chamber's own lattice-coordinate corner instead: still a primitive
-		// cell, just not corner-anchored on a symmetry point — which this construction doesn't need,
-		// because the copies come from the group rather than from a cut aligned to the cell edges.
 		const det = c1.x * c2.y - c1.y * c2.x;
-		let a0 = Infinity, b0 = Infinity;
-		for (const p of chamber.fd) {
-			const dx = p.x - chamber.anchor.x, dy = p.y - chamber.anchor.y;
-			a0 = Math.min(a0, (dx * c2.y - dy * c2.x) / det);
-			b0 = Math.min(b0, (-dx * c1.y + dy * c1.x) / det);
+		const latticeCoords = (p: Vec2, o: Vec2) => {
+			const dx = p.x - o.x, dy = p.y - o.y;
+			return { a: (dx * c2.y - dy * c2.x) / det, b: (-dx * c1.y + dy * c1.x) / det };
+		};
+		// The corner of the primitive cell that holds `chamber` whole: its own lattice-coordinate corner.
+		// Sliding the shell by a lattice vector cannot do it (that moves the chamber too), so the shell is
+		// generally NOT corner-anchored on a symmetry point — which this construction doesn't need, the
+		// copies coming from the group and not from a cut aligned to the cell edges. Epsilon outward so a
+		// chamber spanning exactly one period (p3's rhombus does) counts as inside along both edges.
+		const shellCorner = (chamber: { fd: Vec2[]; anchor: Vec2 }): Vec2 => {
+			let a0 = Infinity, b0 = Infinity;
+			for (const p of chamber.fd) {
+				const { a, b } = latticeCoords(p, chamber.anchor);
+				a0 = Math.min(a0, a); b0 = Math.min(b0, b);
+			}
+			return scaleAdd(chamber.anchor, c1, a0 - 1e-9, c2, b0 - 1e-9);
+		};
+		// Candidates, best-looking first: a wedge that is already a certified chamber (that IS the shape the
+		// reference cell-structure diagrams draw), preferring one whose cell placement puts the corner back
+		// on a rotation centre (as those diagrams also draw); then buildFD's orbifold triangle, and last its
+		// area-only parallelogram, for the groups no wedge fits.
+		const cands = wedges
+			.filter((w) => Math.abs(polyArea(w) - target) < 1e-6 * target && isChamber(w, cosets, c1, c2))
+			.map((w) => ({ fd: w, anchor }))
+			.sort((x, y) =>
+				Number(onCenter(shellCorner(y), centers, c1, c2)) - Number(onCenter(shellCorner(x), centers, c1, c2)),
+			);
+		cands.push(buildFD(group, order, centers, axes, c1, c2));
+
+		const wedgedAnchor = anchor;
+		for (const chamber of cands) {
+			anchor = shellCorner(chamber);
+			const shell = cornerParallelogram(anchor, c1, c2);
+			const copies = cosets.map((g) => chamber.fd.map((p) => isoApply(g, p)));
+			const spread = finish(shell, retileIntoCell(copies, shell, c1, c2));
+			if (spread.ok) return spread;
 		}
-		anchor = scaleAdd(chamber.anchor, c1, a0 - 1e-9, c2, b0 - 1e-9);
-		const shell = cornerParallelogram(anchor, c1, c2);
-		const copies = cosets.map((g) => chamber.fd.map((p) => isoApply(g, p)));
-		const spread = finish(shell, retileIntoCell(copies, shell, c1, c2));
-		if (spread.ok) return spread;
 		anchor = wedgedAnchor;
 	}
 	return wedged;

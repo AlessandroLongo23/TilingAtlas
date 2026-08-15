@@ -1,10 +1,18 @@
 // Retained-mode fill geometry for the flat WebGL renderer (components/euclidean-canvas.tsx). Parses the
-// fundamental cell (reusing parseBaseCell), fan-triangulates each polygon from its centroid, and emits
-// a flat triangle-vertex buffer plus a per-vertex hue buffer. The GPU instances this base cell across
-// the viewport, so only ONE cell is triangulated regardless of zoom. Fan-from-centroid is valid for
-// every catalogue tile: regular tiles are convex and star tiles are star-shaped from their centre.
+// fundamental cell (reusing parseBaseCell), triangulates each polygon, and emits a flat triangle-vertex
+// buffer plus a per-vertex hue buffer. The GPU instances this base cell across the viewport, so only ONE
+// cell is triangulated regardless of zoom.
+//
+// Triangulation is fan-from-centroid where that is exact and ear clipping where it is not. The fan was
+// unconditional and was justified by "regular tiles are convex and star tiles are star-shaped from their
+// centre" — true of the catalogue until 2026-08-09, when the period-p families' sliders were extended
+// past the convexity cut. A corner beyond 180° cuts a notch the fan apex cannot see, and the fan then
+// paints triangles outside the tile and leaves the notch unpainted: AL saw it as fills going imprecise
+// near the ends of the α range. `kernelHoldsCentroid` is the exact test for the fan being a valid
+// tessellation, so convex and star tiles keep the cheaper path and byte-identical geometry.
 
 import { DEGENERATE_DET, latticeExtentFromBounds, type LatticeExtent } from "@/lib/render/flatView";
+import { triangulate } from "@/lib/render/triangulate";
 import {
 	parseBaseCell,
 	polygonFillHue,
@@ -12,6 +20,26 @@ import {
 	starHue,
 	type TranslationalCellData,
 } from "@/lib/utils/renderTiling";
+
+/**
+ * Does the polygon's kernel contain its centroid — i.e. does the centroid see every edge?
+ *
+ * That is exactly the condition for the triangles (centroid, vₖ, vₖ₊₁) to tile the polygon with no
+ * overlap and no gap. Every triangle must wind the same way as the ring; one that winds the other way is
+ * a triangle folded back outside the outline, which is the artifact.
+ */
+function kernelHoldsCentroid(vs: readonly { x: number; y: number }[], cx: number, cy: number): boolean {
+	let ring = 0;
+	for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) ring += vs[j].x * vs[i].y - vs[i].x * vs[j].y;
+	const want = Math.sign(ring);
+	for (let k = 0; k < vs.length; k++) {
+		const a = vs[k];
+		const b = vs[(k + 1) % vs.length];
+		const t = (a.x - cx) * (b.y - cy) - (b.x - cx) * (a.y - cy);
+		if (Math.sign(t) !== want || Math.abs(t) < 1e-12) return false;
+	}
+	return true;
+}
 
 export interface CellMesh {
 	fillVerts: Float32Array; // 2 floats per vertex, triangles (x0,y0, x1,y1, ...)
@@ -56,9 +84,20 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	const det = v1x * v2y - v2x * v1y;
 	if (!Number.isFinite(det) || Math.abs(det) < DEGENERATE_DET) return null;
 
-	// Count triangles first: each n-gon fans into n triangles.
+	// Count triangles first: a fanned n-gon gives n triangles, an ear-clipped one n − 2.
+	const centroids: [number, number][] = [];
+	const fanned: boolean[] = [];
 	let triCount = 0;
-	for (const poly of base.polys) triCount += poly.vertices.length;
+	for (const poly of base.polys) {
+		const vs = poly.vertices;
+		let cx = 0, cy = 0;
+		for (const v of vs) { cx += v.x; cy += v.y; }
+		cx /= vs.length; cy /= vs.length;
+		centroids.push([cx, cy]);
+		const fan = kernelHoldsCentroid(vs, cx, cy);
+		fanned.push(fan);
+		triCount += fan ? vs.length : Math.max(0, vs.length - 2);
+	}
 	if (triCount === 0) return null;
 
 	const fillVerts = new Float32Array(triCount * 3 * 2);
@@ -66,28 +105,31 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	const fillCentroid = new Float32Array(triCount * 3 * 2);
 
 	let vi = 0; // vertex index into the flat buffers
-	for (const poly of base.polys) {
+	base.polys.forEach((poly, pi) => {
 		const vs = poly.vertices;
-		let cx = 0, cy = 0;
-		for (const v of vs) { cx += v.x; cy += v.y; }
-		cx /= vs.length;
-		cy /= vs.length;
+		const [cx, cy] = centroids[pi];
 		// Hue: explicit override (polyominoes) > star hue > regular by-side ramp. Mirrors drawPolygons and
 		// buildCellGeom so the shader colour matches the p5 and inversive views exactly.
 		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(vs)) : polygonFillHue(vs));
-		for (let k = 0; k < vs.length; k++) {
-			const a = vs[k];
-			const b = vs[(k + 1) % vs.length];
-			// Triangle (centroid, a, b). Every vertex carries the fan-apex centroid so the wave shader can
-			// scale the whole triangle about it (vertex 0 already IS the centroid; a/b need it too).
-			fillVerts[vi * 2] = cx; fillVerts[vi * 2 + 1] = cy; fillHue[vi] = hue;
+		// Every vertex carries the polygon's centroid so the wave shader can scale the whole triangle about
+		// it. That is the tile's centre, not the triangle's apex, so it stays right under ear clipping too.
+		const push = (x: number, y: number) => {
+			fillVerts[vi * 2] = x; fillVerts[vi * 2 + 1] = y; fillHue[vi] = hue;
 			fillCentroid[vi * 2] = cx; fillCentroid[vi * 2 + 1] = cy; vi++;
-			fillVerts[vi * 2] = a.x; fillVerts[vi * 2 + 1] = a.y; fillHue[vi] = hue;
-			fillCentroid[vi * 2] = cx; fillCentroid[vi * 2 + 1] = cy; vi++;
-			fillVerts[vi * 2] = b.x; fillVerts[vi * 2 + 1] = b.y; fillHue[vi] = hue;
-			fillCentroid[vi * 2] = cx; fillCentroid[vi * 2 + 1] = cy; vi++;
+		};
+		if (fanned[pi]) {
+			for (let k = 0; k < vs.length; k++) {
+				const a = vs[k];
+				const b = vs[(k + 1) % vs.length];
+				push(cx, cy); push(a.x, a.y); push(b.x, b.y); // triangle (centroid, a, b)
+			}
+			return;
 		}
-	}
+		const idx = triangulate(vs);
+		for (let t = 0; t + 2 < idx.length; t += 3) {
+			for (const j of [idx[t], idx[t + 1], idx[t + 2]]) push(vs[j].x, vs[j].y);
+		}
+	});
 
 	// Stroke quads: one quad per edge. For edge (a,b), the left-normal nrm (world space); the vertex shader
 	// offsets each corner by side * halfWidthScreen along the edge normal (constant screen width).

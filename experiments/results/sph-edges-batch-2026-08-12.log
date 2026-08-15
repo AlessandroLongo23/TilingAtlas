@@ -1,0 +1,235 @@
+spherical edge boards, batch of 2026-08-12 — one board per block
+started 10:40:24
+
+=== 4411  10:40:24
+spherical edge-system develop — board 4.4.11 (4411, hendecagonal prism)
+source          : materials/corpora/edges_4411
+forced edge arc : rho = 0.549229157502
+certificates in : 33682
+developed       : 33682
+failed          : 0
+multi-variant   : 0
+wall            : 79.5s (2.4 ms/certificate)
+
+board 4411            : hendecagonal prism — V=22 E=33 F=13, vertices 4.4.11×22, |G|=44 in 1 vertex orbit(s), 33682 patterns
+
+
+   k   tilings  tiles: min    max
+   1         3           1     13
+   2         1           2      2
+   6       374           2     12
+  11      2237           3     11
+  12      1348           2     12
+  22     29719           2     11
+NOTE: no certificates for k = [3, 4, 5, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18, 19, 20, 21]; check the board's census file before reading these as gaps in the run.
+wrote public/spherical-edges/x4411-k1.json: 3 records, 0.00 MB
+wrote public/spherical-edges/x4411-k2.json: 1 records, 0.00 MB
+wrote public/spherical-edges/x4411-k6.json: 374 records, 0.13 MB
+wrote public/spherical-edges/x4411-k11.json: 2237 records, 0.81 MB
+wrote public/spherical-edges/x4411-k12.json: 1348 records, 0.49 MB
+wrote public/spherical-edges/x4411-k22.json: 29719 records, 10.95 MB
+
+--- exit 0 at 10:41:52
+
+=== 665  10:41:52
+spherical edge-system develop — board 5.6.6 (665, truncated icosahedron)
+source          : materials/corpora/edges_665
+forced edge arc : rho = 0.406337892099
+certificates in : 49810
+developed       : 49810
+failed          : 0
+multi-variant   : 0
+wall            : 257.0s (5.2 ms/certificate)
+
+board 665             : truncated icosahedron — V=60 E=90 F=32, vertices 5.6.6×60, |G|=120 in 1 vertex orbit(s), 49810 patterns
+
+
+   k   tilings  tiles: min    max
+   1         3           1     32
+   3         8           7     26
+   4        31           2     24
+   5        12           5     20
+   6       156           2     27
+   8       288           2     28
+   9       451           3     30
+  10       769           2     29
+  12      4323           2     29
+  15      6477           2     28
+  16     37292           2     30
+NOTE: no certificates for k = [2, 7, 11, 13, 14]; check the board's census file before reading these as gaps in the run.
+wrote public/spherical-edges/x665-k1.json: 3 records, 0.01 MB
+wrote public/spherical-edges/x665-k3.json: 8 records, 0.01 MB
+wrote public/spherical-edges/x665-k4.json: 31 records, 0.02 MB
+wrote public/spherical-edges/x665-k5.json: 12 records, 0.01 MB
+wrote public/spherical-edges/x665-k6.json: 156 records, 0.09 MB
+wrote public/spherical-edges/x665-k8.json: 288 records, 0.16 MB
+wrote public/spherical-edges/x665-k9.json: 451 records, 0.25 MB
+wrote public/spherical-edges/x665-k10.json: 769 records, 0.42 MB
+wrote public/spherical-edges/x665-k12.json: 4323 records, 2.41 MB
+wrote public/spherical-edges/x665-k15.json: 6477 records, 3.66 MB
+wrote public/spherical-edges/x665-k16.json: 37292 records, 21.17 MB
+
+--- exit 0 at 10:46:20
+
+=== 3339  10:46:20
+spherical edge-system develop — board 3.3.3.9 (3339, enneagonal antiprism)
+source          : materials/corpora/edges_3339
+forced edge arc : rho = 0.668528399504
+certificates in : 67870
+developed       : 67870
+failed          : 0
+multi-variant   : 0
+wall            : 175.7s (2.6 ms/certificate)
+
+board 3339            : enneagonal antiprism — V=18 E=36 F=20, vertices 3.3.3.9×18, |G|=36 in 1 vertex orbit(s), 67870 patterns
+
+
+   k   tilings  tiles: min    max
+   1         5           1     20
+   2        10           2     14
+   3        25           2     17
+   4        29           2     17
+   5       366           2     18
+   6        52           2     14
+   9     31287           2     19
+  10     36096           2     19
+NOTE: no certificates for k = [7, 8]; check the board's census file before reading these as gaps in the run.
+wrote public/spherical-edges/x3339-k1.json: 5 records, 0.00 MB
+wrote public/spherical-edges/x3339-k2.json: 10 records, 0.00 MB
+wrote public/spherical-edges/x3339-k3.json: 25 records, 0.01 MB
+wrote public/spherical-edges/x3339-k4.json: 29 records, 0.01 MB
+wrote public/spherical-edges/x3339-k5.json: 366 records, 0.14 MB
+wrote public/spherical-edges/x3339-k6.json: 52 records, 0.02 MB
+wrote public/spherical-edges/x3339-k9.json: 31287 records, 11.61 MB
+wrote public/spherical-edges/x3339-k10.json: 36096 records, 13.52 MB
+
+--- exit 0 at 10:49:25
+
+=== 468  10:49:25
+spherical edge-system develop — board 4.6.8 (468, truncated cuboctahedron)
+source          : materials/corpora/edges_468
+forced edge arc : rho = 0.434898008111
+certificates in : 37234
+developed       : 37234
+failed          : 0
+multi-variant   : 0
+wall            : 176.1s (4.7 ms/certificate)
+
+board 468             : truncated cuboctahedron — V=48 E=72 F=26, vertices 4.6.8×48, |G|=48 in 1 vertex orbit(s), 37234 patterns
+
+
+   k   tilings  tiles: min    max
+   1         5           1     26
+   2         5           5     17
+   3        29           3     19
+   4        42           3     20
+   6       638           2     22
+   8      1203           2     23
+  12     35312           2     24
+NOTE: no certificates for k = [5, 7, 9, 10, 11]; check the board's census file before reading these as gaps in the run.
+wrote public/spherical-edges/x468-k1.json: 5 records, 0.01 MB
+wrote public/spherical-edges/x468-k2.json: 5 records, 0.01 MB
+wrote public/spherical-edges/x468-k3.json: 29 records, 0.02 MB
+wrote public/spherical-edges/x468-k4.json: 42 records, 0.02 MB
+wrote public/spherical-edges/x468-k6.json: 638 records, 0.31 MB
+wrote public/spherical-edges/x468-k8.json: 1203 records, 0.59 MB
+wrote public/spherical-edges/x468-k12.json: 35312 records, 17.50 MB
+
+--- exit 0 at 10:52:29
+
+=== 33310  10:52:29
+spherical edge-system develop — board 3.3.3.10 (33310, decagonal antiprism)
+source          : materials/corpora/edges_33310
+forced edge arc : rho = 0.606441880366
+certificates in : 99334
+developed       : 99334
+failed          : 0
+multi-variant   : 0
+wall            : 286.2s (2.9 ms/certificate)
+
+board 33310           : decagonal antiprism — V=20 E=40 F=22, vertices 3.3.3.10×20, |G|=40 in 1 vertex orbit(s), 99334 patterns
+
+
+   k   tilings  tiles: min    max
+   1         5           1     22
+   2         9           2     17
+   3        42           2     18
+   4         4           7     12
+   5       299           2     20
+   6       348           2     20
+  10     98627           2     21
+NOTE: no certificates for k = [7, 8, 9]; check the board's census file before reading these as gaps in the run.
+wrote public/spherical-edges/x33310-k1.json: 5 records, 0.00 MB
+wrote public/spherical-edges/x33310-k2.json: 9 records, 0.00 MB
+wrote public/spherical-edges/x33310-k3.json: 42 records, 0.02 MB
+wrote public/spherical-edges/x33310-k4.json: 4 records, 0.00 MB
+wrote public/spherical-edges/x33310-k5.json: 299 records, 0.12 MB
+wrote public/spherical-edges/x33310-k6.json: 348 records, 0.14 MB
+wrote public/spherical-edges/x33310-k10.json: 98627 records, 38.44 MB
+
+--- exit 0 at 10:57:53
+
+=== 33335  10:57:53
+spherical edge-system develop — board 3.3.3.3.5 (33335, snub dodecahedron)
+source          : materials/corpora/edges_33335
+forced edge arc : rho = 0.468119426413
+certificates in : 29592
+developed       : 29592
+failed          : 0
+multi-variant   : 0
+wall            : 283.8s (9.6 ms/certificate)
+
+board 33335           : snub dodecahedron — V=60 E=150 F=92, vertices 3.3.3.3.5×60, |G|=60 in 1 vertex orbit(s), 29592 patterns
+
+
+   k   tilings  tiles: min    max
+   1         7           1     92
+   5      3551           5     86
+   6     26034           2     87
+NOTE: no certificates for k = [2, 3, 4]; check the board's census file before reading these as gaps in the run.
+wrote public/spherical-edges/x33335-k1.json: 7 records, 0.01 MB
+wrote public/spherical-edges/x33335-k5.json: 3551 records, 2.91 MB
+wrote public/spherical-edges/x33335-k6.json: 26034 records, 21.21 MB
+
+--- exit 0 at 11:02:41
+
+=== 4435  11:02:41
+spherical edge-system develop — board 3.4.5.4 (4435, rhombicosidodecahedron)
+source          : materials/corpora/edges_4435
+forced edge arc : rho = 0.451667419383
+certificates in : 65333
+developed       : 65333
+failed          : 0
+multi-variant   : 0
+wall            : 820.1s (12.6 ms/certificate)
+
+board 4435            : rhombicosidodecahedron — V=60 E=120 F=62, vertices 3.4.5.4×60, |G|=120 in 1 vertex orbit(s), 31611 patterns
+board 4435v2          : rhombicosidodecahedron — V=60 E=120 F=62, vertices 3.4.4.5×20  3.4.5.4×40, |G|=20 in 4 vertex orbit(s), 11818 patterns
+board 4435v3          : rhombicosidodecahedron — V=60 E=120 F=62, vertices 3.4.4.5×10  3.4.5.4×50, |G|=10 in 8 vertex orbit(s), 21904 patterns
+NOTE: this corpus develops into more than one polyhedron. The solver enumerates by angle closure, so a twin sharing the edge length and the V/E/F comes back in the same run; each ships as its own board.
+
+
+   k   tilings  tiles: min    max
+   1         4           1     62
+   3        32           7     50
+   4       292           1     62
+   5       121           5     50
+   6      3056           2     56
+   8     43660           1     62
+   9     18168           3     58
+NOTE: no certificates for k = [2, 7]; check the board's census file before reading these as gaps in the run.
+wrote public/spherical-edges/x4435-k1.json: 4 records, 0.01 MB
+wrote public/spherical-edges/x4435-k3.json: 32 records, 0.03 MB
+wrote public/spherical-edges/x4435-k4.json: 144 records, 0.10 MB
+wrote public/spherical-edges/x4435-k5.json: 121 records, 0.09 MB
+wrote public/spherical-edges/x4435-k6.json: 2264 records, 1.54 MB
+wrote public/spherical-edges/x4435-k8.json: 10878 records, 7.32 MB
+wrote public/spherical-edges/x4435-k9.json: 18168 records, 12.29 MB
+wrote public/spherical-edges/x4435v2-k4.json: 148 records, 0.10 MB
+wrote public/spherical-edges/x4435v2-k6.json: 792 records, 0.55 MB
+wrote public/spherical-edges/x4435v2-k8.json: 10878 records, 7.34 MB
+wrote public/spherical-edges/x4435v3-k8.json: 21904 records, 14.79 MB
+
+--- exit 0 at 11:16:30
+
+finished 11:16:30

@@ -1,0 +1,241 @@
+hyperbolic edge bases, mixed-face-size batch of 2026-08-12
+started 11:02:40
+
+=== 4447  11:02:40
+hyperbolic edge-system develop — base 4.4.4.7 (4447), source materials/corpora/edges_4447
+forced edge length l = 0.777413467109
+certificates in : 5099
+developed       : 5099
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 72.7s (14.3 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         5                          3                3
+   2         2                          1                8
+   4      3676                       2237              389
+   5      1416                        478               99
+wrote public/hyperbolic-edges/e4447-k1.json: 5 records, 0.00 MB
+wrote public/hyperbolic-edges/e4447-k2.json: 2 records, 0.00 MB
+wrote public/hyperbolic-edges/e4447-k4.json: 3676 records, 3.50 MB
+wrote public/hyperbolic-edges/e4447-k5.json: 1416 records, 1.46 MB
+
+--- exit 0 at 11:03:53
+
+=== 4456  11:03:53
+hyperbolic edge-system develop — base 4.6.4.5 (4456), source materials/corpora/edges_4456
+forced edge length l = 0.872268412951
+certificates in : 13857
+developed       : 13857
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 323.0s (23.3 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         5                          3                4
+   2         2                          1                6
+   3       544                        424              279
+   4      1244                        864              355
+   5     12062                       7924              398
+wrote public/hyperbolic-edges/e4456-k1.json: 5 records, 0.00 MB
+wrote public/hyperbolic-edges/e4456-k2.json: 2 records, 0.00 MB
+wrote public/hyperbolic-edges/e4456-k3.json: 544 records, 0.43 MB
+wrote public/hyperbolic-edges/e4456-k4.json: 1244 records, 1.10 MB
+wrote public/hyperbolic-edges/e4456-k5.json: 12062 records, 14.41 MB
+
+--- exit 0 at 11:09:17
+
+=== 4446  11:09:17
+hyperbolic edge-system develop — base 4.4.4.6 (4446), source materials/corpora/edges_4446
+forced edge length l = 0.697395149716
+certificates in : 21214
+developed       : 21214
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 490.5s (23.1 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1        22                         14               37
+   2       129                         93               73
+   3      2170                       1113              179
+   4     18893                      12947              394
+wrote public/hyperbolic-edges/e4446-k1.json: 22 records, 0.01 MB
+wrote public/hyperbolic-edges/e4446-k2.json: 129 records, 0.09 MB
+wrote public/hyperbolic-edges/e4446-k3.json: 2170 records, 1.87 MB
+wrote public/hyperbolic-edges/e4446-k4.json: 18893 records, 19.50 MB
+
+--- exit 0 at 11:17:29
+
+=== 3447  11:17:29
+hyperbolic edge-system develop — base 3.4.7.4 (3447), source materials/corpora/edges_3447
+forced edge length l = 0.364428760057
+certificates in : 31468
+developed       : 31468
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 676.2s (21.5 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         4                          3                1
+   5      1592                        522               50
+   7      8776                       2146              283
+   8     21096                       5653              400
+wrote public/hyperbolic-edges/e3447-k1.json: 4 records, 0.00 MB
+wrote public/hyperbolic-edges/e3447-k5.json: 1592 records, 1.71 MB
+wrote public/hyperbolic-edges/e3447-k7.json: 8776 records, 13.56 MB
+wrote public/hyperbolic-edges/e3447-k8.json: 21096 records, 33.69 MB
+
+--- exit 0 at 11:28:49
+
+=== 33345  11:28:49
+hyperbolic edge-system develop — base 3.3.4.3.5 (33345), source materials/corpora/edges_33345
+forced edge length l = 0.567555402087
+certificates in : 37672
+developed       : 37672
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 560.9s (14.9 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         7                          3                6
+   2         8                          3               11
+   5     37657                       5502              304
+wrote public/hyperbolic-edges/e33345-k1.json: 7 records, 0.00 MB
+wrote public/hyperbolic-edges/e33345-k2.json: 8 records, 0.01 MB
+wrote public/hyperbolic-edges/e33345-k5.json: 37657 records, 52.50 MB
+
+--- exit 0 at 11:38:13
+
+=== 4455  11:38:13
+hyperbolic edge-system develop — base 4.5.4.5 (4455), source materials/corpora/edges_4455
+forced edge length l = 0.767197218251
+certificates in : 37759
+developed       : 37759
+failed          : 0
+multi-variant   : 12751 (more than one mirror axis built a valid block)
+wall            : 432.8s (11.5 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         3                          2                1
+   2        34                         18               28
+   3       200                         57              154
+   4       870                        410              158
+   5      5047                       1255              283
+   6     31605                       9086              308
+wrote public/hyperbolic-edges/e4455-k1.json: 3 records, 0.00 MB
+wrote public/hyperbolic-edges/e4455-k2.json: 34 records, 0.02 MB
+wrote public/hyperbolic-edges/e4455-k3.json: 200 records, 0.16 MB
+wrote public/hyperbolic-edges/e4455-k4.json: 870 records, 0.74 MB
+wrote public/hyperbolic-edges/e4455-k5.json: 5047 records, 5.82 MB
+wrote public/hyperbolic-edges/e4455-k6.json: 31605 records, 38.26 MB
+
+--- exit 0 at 11:45:29
+
+=== 33444  11:45:29
+hyperbolic edge-system develop — base 3.4.3.4.4 (33444), source materials/corpora/edges_33444
+forced edge length l = 0.738997943852
+certificates in : 53467
+developed       : 42063
+failed          : 11404
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 631.4s (11.8 ms/certificate)
+
+    11404  develop   e.g. develop: tile face walk did not close
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   2       133                         36              154
+   3      1312                        266              215
+   4      3410                       1111              398
+   5     37208                      10811              397
+wrote public/hyperbolic-edges/e33444-k2.json: 133 records, 0.11 MB
+wrote public/hyperbolic-edges/e33444-k3.json: 1312 records, 1.30 MB
+wrote public/hyperbolic-edges/e33444-k4.json: 3410 records, 4.13 MB
+wrote public/hyperbolic-edges/e33444-k5.json: 37208 records, 51.95 MB
+
+--- exit 0 at 11:56:04
+
+=== 3448  11:56:04
+hyperbolic edge-system develop — base 3.4.8.4 (3448), source materials/corpora/edges_3448
+forced edge length l = 0.472610327417
+certificates in : 54688
+developed       : 54688
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 1785.6s (32.7 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         5                          3                5
+   2        46                         30               17
+   3       291                        142              125
+   4       991                        511              168
+   5       218                         78              250
+   6     53137                      25221              283
+wrote public/hyperbolic-edges/e3448-k1.json: 5 records, 0.00 MB
+wrote public/hyperbolic-edges/e3448-k2.json: 46 records, 0.03 MB
+wrote public/hyperbolic-edges/e3448-k3.json: 291 records, 0.25 MB
+wrote public/hyperbolic-edges/e3448-k4.json: 991 records, 0.90 MB
+wrote public/hyperbolic-edges/e3448-k5.json: 218 records, 0.22 MB
+wrote public/hyperbolic-edges/e3448-k6.json: 53137 records, 71.95 MB
+
+--- exit 0 at 12:25:54
+
+=== 4445  12:25:54
+hyperbolic edge-system develop — base 4.4.4.5 (4445), source materials/corpora/edges_4445
+forced edge length l = 0.550369334344
+certificates in : 60616
+developed       : 60616
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 916.4s (15.1 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         5                          3                3
+   2         2                          1                6
+   3       364                        189              129
+   4        68                         23               26
+   5     11708                       3445              216
+   6     48469                      22303              387
+wrote public/hyperbolic-edges/e4445-k1.json: 5 records, 0.00 MB
+wrote public/hyperbolic-edges/e4445-k2.json: 2 records, 0.00 MB
+wrote public/hyperbolic-edges/e4445-k3.json: 364 records, 0.29 MB
+wrote public/hyperbolic-edges/e4445-k4.json: 68 records, 0.06 MB
+wrote public/hyperbolic-edges/e4445-k5.json: 11708 records, 14.11 MB
+wrote public/hyperbolic-edges/e4445-k6.json: 48469 records, 58.84 MB
+
+--- exit 0 at 12:41:15
+
+=== 3466  12:41:15
+hyperbolic edge-system develop — base 3.6.4.6 (3466), source materials/corpora/edges_3466
+forced edge length l = 0.678462884423
+certificates in : 73148
+developed       : 73148
+failed          : 0
+multi-variant   : 0 (more than one mirror axis built a valid block)
+wall            : 1297.2s (17.7 ms/certificate)
+
+
+   k   tilings   unbounded-tile solutions  max finite tile
+   1         4                          3                1
+   2        32                         17               28
+   3       276                        150              132
+   4      1000                        719              106
+   5     10736                       6321              184
+   6     61100                      33986              400
+wrote public/hyperbolic-edges/e3466-k1.json: 4 records, 0.00 MB
+wrote public/hyperbolic-edges/e3466-k2.json: 32 records, 0.02 MB
+wrote public/hyperbolic-edges/e3466-k3.json: 276 records, 0.23 MB
+wrote public/hyperbolic-edges/e3466-k4.json: 1000 records, 0.89 MB
+wrote public/hyperbolic-edges/e3466-k5.json: 10736 records, 11.44 MB
+wrote public/hyperbolic-edges/e3466-k6.json: 61100 records, 79.11 MB
+
+--- exit 0 at 13:02:57
+
+finished 13:02:57

@@ -148,27 +148,33 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 	// (2,3,5) no k=4 — and those are gaps in the solve, not empty slices. schwarzKGaps() below is what the
 	// UI says that with; do not quietly present the list as a complete enumeration.
 	//
-	// ⚑ FIVE BOARDS ARE STILL SHORT (Marek, 2026-07-29). Two solver bugs, both since fixed upstream:
+	// ⚑ TWO BOARDS ARE STILL SHORT — (2,3,5) and (2,3,7). Two solver bugs, both fixed upstream:
 	//   · a wrong definition on the boards whose triangle has THREE different angles — (2,3,4) (2,3,5)
 	//     (2,3,6) (2,3,7) (2,4,5) — dropped every tiling that draws the longest edge class. This is the
-	//     F2-never-appears flag: E2 (third class undrawn) names all 103 scalene certificates, F2 (drawn)
-	//     names none. Corrected solvers are in materials/_as-received/corrections.zip.
-	//     (2,3,4) IS PARTLY RERUN (2026-08-04): its k=3 went 5 → 10 and its k=4 went 2 → 13, both strict
-	//     supersets of what shipped. The rerun covers ONLY those two slices, so k = 5…11 on that board
-	//     are still lower bounds and the other four boards are untouched. The rerun also arrived in a
-	//     NEW ALPHABET (corners A<n>, digons X10..X13 rather than S<n> and A2..F2) — see the `Dialect`
-	//     note in tools/ctrnact-oracle/schwarz_board.py.
+	//     F2-never-appears flag: on a short board E2 (third class undrawn) names every scalene
+	//     certificate and F2 (drawn) names none. Corrected solvers are in
+	//     materials/_as-received/corrections.zip. (2,3,6) and (2,4,5) were re-derived 2026-07-29;
+	//     (2,3,4) is Marek's full corrected solve of 2026-08-06, below. Those reruns arrive in a NEW
+	//     ALPHABET (corners A<n>, digons X10..X13 instead of S<n> and A2..F2) — see the `Dialect` note
+	//     in tools/ctrnact-oracle/schwarz_board.py.
 	//   · too few starting vertices on (2,2,3) and (2,2,4), losing tilings built only from the excluded
 	//     ones. (2,2,3) is CORRECTED here (2,297 → 2,347, and the all-edges-drawn pattern it was missing
 	//     is back at ss223-2-00007); (2,2,4) is still rerunning.
 	// (2,3,3) and (2,4,4) are in neither bug and stand as shipped.
 	{ id: "223", pqr: [2, 2, 3], label: "(2,2,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6, 7, 8], lazyKs: [] , counts: { 2: 7, 3: 35, 4: 129, 5: 171, 6: 121, 7: 34, 8: 1850 } },
 	{ id: "224", pqr: [2, 2, 4], label: "(2,2,4)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6, 7, 9], lazyKs: [10] , counts: { 2: 10, 3: 52, 4: 52, 5: 780, 6: 1165, 7: 963, 9: 321, 10: 61914 } }, // k=10 is 61,914 tilings / 23 MB
+	// (2,2,5), Marek's 2026-08-12 drop. Its two holes are NOT like the others on this shelf: his census
+	// counts a literal 0 at k=9 and k=10, so those slices are empty properties of the board, and the
+	// same census stops at k=11 without a MAX line, so the run itself is budget-capped there. Every
+	// shipped k reproduces the census exactly (21,642 certificates, 0 develop failures).
+	{ id: "225", pqr: [2, 2, 5], label: "(2,2,5)", geometry: "spherical", eagerKs: [2, 3, 4, 5], lazyKs: [6, 7, 8, 11] , counts: { 2: 7, 3: 4, 4: 244, 5: 98, 6: 4709, 7: 7372, 8: 6532, 11: 2676 } }, // k=6 1.8 MB, k=7 2.8 MB, k=8 2.5 MB, k=11 1.1 MB
 	{ id: "233", pqr: [2, 3, 3], label: "(2,3,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6], lazyKs: [7] , counts: { 2: 4, 3: 111, 4: 464, 5: 654, 6: 1966, 7: 45580 } }, // k=7 is 45,580 / 19 MB
-	// (2,3,4) reached k=11 in Marek's 2026-07-29 rerun — 5,974 certificates, contiguous from k=3. Every
-	// slice is small enough to load with the geometry (k=11, the biggest, is 3,529 tilings / 1.8 MB).
-	// k=3 and k=4 are the 2026-08-04 rerun (5 → 10, 2 → 13); k=5…11 are still the short solver's.
-	{ id: "234", pqr: [2, 3, 4], label: "(2,3,4)", geometry: "spherical", eagerKs: [3, 4, 5, 6, 7, 8, 9, 10, 11], lazyKs: [] , counts: { 3: 10, 4: 13, 5: 80, 6: 81, 7: 196, 8: 392, 9: 86, 10: 1603, 11: 3529 } },
+	// (2,3,4) is Marek's CORRECTED solve of 2026-08-06, k=1..8 in one run — 90,470 certificates against
+	// the short solver's 5,974, and the shelf now stops at k=8 because the corrected run does. The old
+	// k=9/10/11 slices (86 / 1,603 / 3,529) were the F2-buggy solver's and were DROPPED, not kept as
+	// lower bounds: with k=8 at 62,095 a k=9 of 86 reads as a fact about the board and is not one. What
+	// the bug cost, per slice: 5 → 10, 2 → 13, 80 → 1,568, 81 → 2,181, 196 → 24,603, 392 → 62,095.
+	{ id: "234", pqr: [2, 3, 4], label: "(2,3,4)", geometry: "spherical", eagerKs: [3, 4, 5, 6], lazyKs: [7, 8] , counts: { 3: 10, 4: 13, 5: 1568, 6: 2181, 7: 24603, 8: 62095 } }, // k=7 is 24,603 / 13 MB, k=8 62,095 / 32 MB
 	{ id: "235", pqr: [2, 3, 5], label: "(2,3,5)", geometry: "spherical", eagerKs: [3, 5], lazyKs: [] , counts: { 3: 4, 5: 31 } },
 	// Hyperbolic. Marek's runs here are short — these two are the small end of the hyperbolic Schwarz
 	// family, and (2,3,7) is the smallest hyperbolic triangle there is.

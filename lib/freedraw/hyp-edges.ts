@@ -73,6 +73,25 @@ export const HYP_EDGES_BASES: HypEdgesBase[] = [
 	// 6.6.8 (Marek's 2026-07-31 drop). Its census file stops at k=10 with no MAX line, so the board is
 	// budget-capped there, not exhausted; k=10 is a further 53,417 tilings (~85 MB) and is omitted.
 	{ id: "668", label: "6.6.8", eagerKs: [1, 2, 3, 4, 5, 6], lazyKs: [7, 8, 9] },
+	// 6.6.9, decoded 2026-08-12 from a corpus that arrived with the July drop and sat unread. Marek's
+	// census has no MAX line and stops at k=10, so this is his whole run and not the board's whole
+	// catalogue: 28,283 certificates, every per-k count reproduced, 0 develop failures.
+	{ id: "669", label: "6.6.9", eagerKs: [1, 2, 3, 4, 5, 6], lazyKs: [7, 8, 9] }, // k=10 is 19,330 tilings (~30 MB) — omitted
+	// The MIXED-face-size bases, all 2026-08-12. Nothing on this shelf had more than one polygon size
+	// before them; `alphabet()` already solved the forced ℓ from the whole config, so they cost a row
+	// each in BASES and a row each here. Every per-k count reproduces its census, 0 develop failures.
+	// ⚑ One base of that drop is NOT here: 3.4.3.4.4 (`33444`) has a BASES row and a corpus, and 11,404
+	// of its 53,467 certificates fail to develop ("tile face walk did not close"). Withheld until that is
+	// understood — see DEVELOPMENT_NOTES 2026-08-12 for what was ruled out.
+	{ id: "33345", label: "3.3.4.3.5", eagerKs: [1, 2], lazyKs: [] }, // k=5 is 37,657 tilings (~53 MB) — omitted
+	{ id: "3447", label: "3.4.7.4", eagerKs: [1], lazyKs: [5, 7] }, // k=8 is 21,096 tilings (~34 MB) — omitted
+	{ id: "3448", label: "3.4.8.4", eagerKs: [1, 2, 3, 4, 5], lazyKs: [] }, // k=6 is 53,137 tilings (~72 MB) — omitted
+	{ id: "3466", label: "3.6.4.6", eagerKs: [1, 2, 3, 4], lazyKs: [5] }, // k=6 is 61,100 tilings (~79 MB) — omitted
+	{ id: "4445", label: "4.4.4.5", eagerKs: [1, 2, 3, 4], lazyKs: [5] }, // k=6 is 48,469 tilings (~59 MB) — omitted
+	{ id: "4446", label: "4.4.4.6", eagerKs: [1, 2], lazyKs: [3, 4] },
+	{ id: "4447", label: "4.4.4.7", eagerKs: [1, 2], lazyKs: [4, 5] },
+	{ id: "4455", label: "4.5.4.5", eagerKs: [1, 2, 3, 4], lazyKs: [5] }, // k=6 is 31,605 tilings (~38 MB) — omitted
+	{ id: "4456", label: "4.6.4.5", eagerKs: [1, 2, 3], lazyKs: [4, 5] },
 	{ id: "37", label: "{3,7}", eagerKs: [1, 2], lazyKs: [] }, // k=3 is 29k tilings (~40 MB) — omitted
 	{ id: "38", label: "{3,8}", eagerKs: [1], lazyKs: [] }, // k=2 is 13.5k (~13 MB) — omitted
 	{ id: "45", label: "{4,5}", eagerKs: [1, 2], lazyKs: [] },

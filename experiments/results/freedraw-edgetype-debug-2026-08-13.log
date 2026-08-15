@@ -1,0 +1,233 @@
+[19:52:39] fdsq2 end-to-end k<=4 (held-out check)
+built
+[19:52:46] solved raw:    94541
+  k=1 : 18
+  k=2 : 271
+  k=3 : 2754
+  k=4 : 21967
+total kept: 25010
+store: peak 6.16091 MB total, 6.16091 MB resident
+run-fdsq2-k4/out/pruned/eupruned_01_q.txt: 18
+run-fdsq2-k4/out/pruned/eupruned_02_q.txt: 271
+run-fdsq2-k4/out/pruned/eupruned_03_q.txt: 2754
+run-fdsq2-k4/out/pruned/eupruned_04_q.txt: 21967
+developed: {1: 18, 2: 271, 3: 2754, 4: 21967} total 25010 failures 0
+k    search  dangling   distinct   freedraw   missing   extra
+1        18         5         13         13         0       0
+2       271       118        153        153         0       0
+3      2754      1500       1254       1254         0       0
+4     21967     14119       7848       7848         0       0
+
+union over k <= 4:  search 9268   freedraw 9268   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+[19:55:17] fdtri (triangular grid) k<=3
+raw:   187563
+  k=1 : 22
+  k=2 : 442
+  k=3 : 6234
+total kept: 6698
+store: peak 1.94374 MB total, 1.94374 MB resident
+developed: {1: 22, 2: 442, 3: 6234} total 6698 failures 0
+=== TRIANGLE ===
+k    search  dangling   distinct   freedraw   missing   extra
+1        22         3         19         19         0       0
+2       442        85        357        357         0       0
+3      6234      1551       4683       4683         0       0
+
+union over k <= 3:  search 5059   freedraw 5059   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+[20:00:11] fdhex (hexagonal grid) k<=3
+[gen] FREE EDGES over ['u', 'd']: 1 words -> 4 (word, edge assignment) configurations
+[gen] palette=fdhex D=24 tiles=1 classes=1 configs=4
+[cert] A6: 12 entries, pairwise non-isomorphic PASS
+[gen] tables.bin: 0.0 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/fdhex/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (12 entries)
+raw:     6182
+  k=1 : 8
+  k=2 : 48
+  k=3 : 316
+total kept: 372
+store: peak 0.0465012 MB total, 0.0465012 MB resident
+=== HEX ===
+k    search  dangling   distinct   freedraw   missing   extra
+1         8         3          5          5         0       0
+2        48        32         16         16         0       0
+3       316       236         80         80         0       0
+
+union over k <= 3:  search 101   freedraw 101   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+[20:04:10] fdts (square-triangle grid) k<=3
+[gen] FREE EDGES over ['u', 'd']: 4 words -> 59 (word, edge assignment) configurations
+[gen] palette=fdts D=24 tiles=2 classes=2 configs=59
+[cert] A6: 132 entries, pairwise non-isomorphic PASS
+[gen] tables.bin: 0.0 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/fdts/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (132 entries)
+raw:   669392
+  k=1 : 64
+  k=2 : 1537
+  k=3 : 21542
+total kept: 23143
+store: peak 5.75933 MB total, 5.75933 MB resident
+developed: {1: 64, 2: 1537, 3: 21542} total 23143 failures 0
+=== TS (square-triangle) ===
+k    search  dangling   kept   freedraw   delta
+1        64        12     52         52       0
+2      1537       439   1098       1098       0
+3     21542      7974  13568      13568       0
+VERDICT: COUNTS MATCH
+[20:16:12] fdsq (marking on the TILE, sigma != id) k<=3 — the cost of the sigma hole
+[gen] palette=fdsq D=24 tiles=6 classes=16 configs=570
+[gen] *** INCOMPLETE ALPHABET: 96 of 728 vertex types have a sigma-MIXED dart orbit — a mirror in their site symmetry swaps a tile's corner classes, so their class array cannot be written and the solver cannot use them. Tilings all of whose vertices are of these types are UNREACHABLE. See fold().
+[gen] wrote tables/fdsq/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (728 entries)
+  k=1 : 20
+  k=2 : 143
+  k=3 : 850
+total kept: 1013
+store: peak 0.18055 MB total, 0.18055 MB resident
+developed: {1: 20, 2: 143, 3: 850} total 1013 failures 0
+      MISSING  fd-3-0227  (2/0/5/01110111101010101111)
+      EXTRA    fdsq-3-00708  (1/0/3/011011)
+      EXTRA    fdsq-3-00602  (1/0/3/001110)
+      EXTRA    fdsq-3-00797  (2/1/1/0111)
+
+union over k <= 3:  search 164   freedraw 1420   never found 1256   not in freedraw 0   found at a different k 11
+      k 3 here, 1 there   fd-1-004
+      k 3 here, 2 there   fd-2-003
+      k 3 here, 2 there   fd-2-006
+      k 3 here, 2 there   fd-2-007
+      k 3 here, 2 there   fd-2-008
+VERDICT: MISMATCH
+
+=== fdsq (marking on the TILE) under the three sigma conventions, against freedraw's 13/153/1254 ===
+--- reps=1 sym=1 ---
+[cert] A6: 728 entries, 28 collisions WARN
+[gen] *** INCOMPLETE ALPHABET: 96 of 728 vertex types have a sigma-MIXED dart orbit — a mirror in their site symmetry swaps a tile's corner classes, so their class array cannot be written and the solver cannot use them. Tilings all of whose vertices are of these types are UNREACHABLE. See fold().
+  k=1 : 20   k=2 : 143   k=3 : 850 
+developed: {1: 20, 2: 143, 3: 850} total 1013 failures 0
+union over k <= 3:  search 164   freedraw 1420   never found 1256   not in freedraw 0   found at a different k 11
+VERDICT: MISMATCH
+--- reps=0 sym=1 ---
+[cert] A6: 1138 entries, 12 collisions WARN
+[gen] *** INCOMPLETE ALPHABET: 84 of 1138 vertex types have a sigma-MIXED dart orbit — a mirror in their site symmetry swaps a tile's corner classes, so their class array cannot be written and the solver cannot use them. Tilings all of whose vertices are of these types are UNREACHABLE. See fold().
+
+developed: {1: 3, 2: 0, 3: 0} total 3 failures 0
+union over k <= 3:  search 1   freedraw 1420   never found 1419   not in freedraw 0   found at a different k 0
+VERDICT: MISMATCH
+--- reps=0 sym=0 ---
+  k=1 : 0   k=2 : 0   k=3 : 0 
+Traceback (most recent call last):
+  File "/Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/develop_marked.py", line 232, in <module>
+    main()
+  File "/Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/develop_marked.py", line 134, in main
+    tab = ff.load_tables(args.tables)
+  File "/Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/family_flex.py", line 84, in load_tables
+    spec.loader.exec_module(mod)
+  File "<frozen importlib._bootstrap_external>", line 846, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 982, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1039, in get_data
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/af9d3a41-fdfb-4931-a137-5d783de144e7/scratchpad/fd/fdsq-00/tables.py'
+
+=== make check-regular after the sigma-twin fix ===
+  k=5 : 332
+  k=6 : 673
+[20:24:27]   (1s)
+[20:24:27] DONE  total 2s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/check-k6/ctrnact-cells-k6.json
+cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
+check-regular: PASS (byte-identical catalogs vs golden)
+
+=== END TO END through run-sts.sh, from the generic "freedraw": true palettes ===
+[20:42:33] PHASE 0  alphabet (palette=fdtri)
+[gen] FREE EDGES over ['u', 'd']: 1 words -> 13 (word, edge assignment) configurations
+[gen] palette=fdtri D=24 tiles=1 classes=1 configs=13
+[cert] A6: 49 entries, pairwise non-isomorphic PASS
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/fdtri/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (49 entries)
+[20:42:33] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+[20:42:58]   raw blocks: 187563  (24s)
+[20:42:58] PHASE 2  prune
+  k=1 : 22
+  k=2 : 442
+  k=3 : 6234
+total kept: 6698
+store: peak 1.94374 MB total, 1.94374 MB resident
+
+=== END TO END through run-sts.sh, from the generic "freedraw": true palettes ===
+
+=== END TO END through run-sts.sh, from the generic "freedraw": true palettes ===
+  k=1 : 8
+  k=2 : 48
+  k=3 : 316
+total kept: 372
+store: peak 0.0465012 MB total, 0.0465012 MB resident
+[20:45:41]   (1s)
+[20:45:41] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 8, 2: 48, 3: 316} total 372 failures 0
+[20:45:41]   (0s)
+[20:45:41] PHASE 4  check against the independent enumeration
+k    search  dangling   distinct   freedraw   missing   extra
+1         8         3          5          5         0       0
+2        48        32         16         16         0       0
+3       316       236         80         80         0       0
+
+union over k <= 3:  search 101   freedraw 101   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+[20:45:41] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-fdhex-k3/fdhex-cells.json
+--- fdsq2 k<=4 (held-out k=4) ---
+[20:46:01]   raw blocks: 94541  (4s)
+developed: {1: 18, 2: 271, 3: 2754, 4: 21967} total 25010 failures 0
+k    search  dangling   distinct   freedraw   missing   extra
+1        18         5         13         13         0       0
+2       271       118        153        153         0       0
+3      2754      1500       1254       1254         0       0
+4     21967     14119       7848       7848         0       0
+union over k <= 4:  search 9268   freedraw 9268   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+--- fdtri k<=3 ---
+developed: {1: 22, 2: 442, 3: 6234} total 6698 failures 0
+k    search  dangling   distinct   freedraw   missing   extra
+1        22         3         19         19         0       0
+2       442        85        357        357         0       0
+3      6234      1551       4683       4683         0       0
+union over k <= 3:  search 5059   freedraw 5059   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+--- fdts k<=3 (count referee: not a lattice) ---
+
+=== make check-regular, after every change in this session ===
+[20:47:31] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/check-k6/ctrnact-cells-k6.json
+cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
+check-regular: PASS (byte-identical catalogs vs golden)
+developed: {1: 64, 2: 1537, 3: 21542} total 23143 failures 0
+k    search  dangling   kept   freedraw   delta
+1        64        12     52         52       0
+2      1537       439   1098       1098       0
+3     21542      7974  13568      13568       0
+VERDICT: COUNTS MATCH
+
+=== FINAL: all four grids through run-sts.sh, from the generic "freedraw": true palettes ===
+--- fdsq2 k<=4 (held-out k=4) ---
+[20:46:01]   raw blocks: 94541  (4s)
+developed: {1: 18, 2: 271, 3: 2754, 4: 21967} total 25010 failures 0
+k    search  dangling   distinct   freedraw   missing   extra
+1        18         5         13         13         0       0
+2       271       118        153        153         0       0
+3      2754      1500       1254       1254         0       0
+4     21967     14119       7848       7848         0       0
+union over k <= 4:  search 9268   freedraw 9268   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+--- fdtri k<=3 ---
+developed: {1: 22, 2: 442, 3: 6234} total 6698 failures 0
+k    search  dangling   distinct   freedraw   missing   extra
+1        22         3         19         19         0       0
+2       442        85        357        357         0       0
+3      6234      1551       4683       4683         0       0
+union over k <= 3:  search 5059   freedraw 5059   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+--- fdts k<=3 (count referee: not a lattice) ---
+developed: {1: 64, 2: 1537, 3: 21542} total 23143 failures 0
+k    search  dangling   kept   freedraw   delta
+1        64        12     52         52       0
+2      1537       439   1098       1098       0
+3     21542      7974  13568      13568       0
+VERDICT: COUNTS MATCH
+pnpm build: exit 0
+make check-regular: PASS (byte-identical vs golden)
+every palette with tables on disk: alphabet byte-identical

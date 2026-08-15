@@ -81,6 +81,7 @@ import {
 	type ReferenceFilter,
 	type TileClass,
 	type IslamicSystem,
+	type EdgeBoard,
 } from "@/lib/services/referenceAtlas";
 import { PolygonFilterModal } from "@/components/polygon-filter-modal";
 import { periodLabel, polygonSpeciesOf, speciesCompare, speciesLabel, tilePeriodsOf } from "@/lib/services/polygonSpecies";
@@ -334,6 +335,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (polyOrder === "tetromino") f.polyominoOrder = polyOrder;
 	const islamicSystem = sp.get("islamicsystem");
 	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem)) f.islamicSystem = islamicSystem as IslamicSystem;
+	const edgeBoard = sp.get("edgeboard");
+	if (edgeBoard && (EDGE_BOARD_VALUES as string[]).includes(edgeBoard)) f.edgeBoard = edgeBoard as EdgeBoard;
 	const freedrawKind = sp.get("fdkind");
 	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind)) f.freedrawKind = freedrawKind as FreedrawKind;
 	// The board axis. `fdgrid` / `cogrid` are the two params it replaced; a link carrying either still
@@ -396,6 +399,7 @@ function serializeView(v: ViewState): string {
 	if (f.scaledScaleSet) p.set("scaleset", f.scaledScaleSet);
 	if (f.polyominoOrder) p.set("polyorder", f.polyominoOrder);
 	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
+	if (f.edgeBoard) p.set("edgeboard", f.edgeBoard);
 	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
 	if (f.freedrawGrid) p.set("fdgrid", f.freedrawGrid);
 	if (f.colorsGrid) p.set("cogrid", f.colorsGrid);
@@ -958,6 +962,7 @@ export function ReferenceShelf() {
 		if (v !== "polyomino") next.polyominoOrder = undefined;
 		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
 		if (v !== "islamic") next.islamicSystem = undefined;
+		if (v !== "edgelen") next.edgeBoard = undefined;
 		// The freedraw and colors facets belong to the OTHER decoration segments (setDecoration owns them);
 		// the class chips only ever run inside Tilings, so reaching one means those are stale.
 		next.freedrawKind = undefined;
@@ -995,6 +1000,8 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, polyominoOrder: v === "all" ? undefined : v });
 	const setIslamicSystem = (v: "all" | IslamicSystem) =>
 		setFilters({ ...filters, islamicSystem: v === "all" ? undefined : v });
+	const setEdgeBoard = (v: "all" | EdgeBoard) =>
+		setFilters({ ...filters, edgeBoard: v === "all" ? undefined : v });
 	const setFreedrawKind = (v: "all" | FreedrawKind) =>
 		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
 	// Selecting a board clears the two legacy grid filters: they name the same axis, so leaving one set
@@ -1055,6 +1062,7 @@ export function ReferenceShelf() {
 			next.scaledScaleSet = undefined;
 			next.polyominoOrder = undefined;
 			next.islamicSystem = undefined;
+			next.edgeBoard = undefined;
 			// Neither an edge pattern nor a coloring carries the uniform-tiling classification: freedraw faces
 			// aren't tiles in the Grünbaum & Shephard sense, and a coloring is classified by its colored vertex
 			// classes. No M/partition, no star folds, no α-family, no wallpaper group or lattice.
@@ -1338,6 +1346,7 @@ export function ReferenceShelf() {
 		(filters.scaledScaleSet ? 1 : 0) +
 		(filters.polyominoOrder ? 1 : 0) +
 		(filters.islamicSystem ? 1 : 0) +
+		(filters.edgeBoard ? 1 : 0) +
 		(filters.freedrawKind ? 1 : 0) +
 		(filters.freedrawGrid ? 1 : 0) +
 		(filters.colorsGrid ? 1 : 0) +
@@ -1542,6 +1551,32 @@ export function ReferenceShelf() {
 							/>
 							<GroupNote>
 								The underlying tessellation’s tile set. Toggle the Islamic construction in Play to see the strapwork.
+							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					{tileClass === "edgelen" ? (
+						<FilterGroup
+							title="Palette"
+							summary={filters.edgeBoard ? EDGE_BOARD_LABEL[filters.edgeBoard] : null}
+							note="which tile set"
+						>
+							<OptionWall
+								columns={1}
+								options={EDGE_BOARD_OPTIONS}
+								selected={filters.edgeBoard ?? "all"}
+								onChange={setEdgeBoard}
+							/>
+							<GroupNote>
+								Every tile set here carries edges of more than one length, which is what this class is. The
+								planigons are the duals of the Euclidean vertex configurations — fifteen tiles, twelve edge
+								lengths. Penrose&apos;s kite and dart have two, 1 and φ, and are enumerated without the
+								matching rules, so these are the periodic tilings the two shapes admit. The last four are
+								halves of a regular polygon, cut vertex-to-vertex or between opposite edge midpoints: the
+								half pentagon tiles the plane although the regular pentagon cannot, and the domino has
+								exactly one edge-to-edge tiling. Only six such halves can tile at all, and two of those are
+								already here — the half triangle is one of the planigons, the half square is the 45-45-90
+								board.
 							</GroupNote>
 						</FilterGroup>
 					) : null}

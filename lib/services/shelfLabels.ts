@@ -11,8 +11,16 @@
 // after they landed. The test asserts every member of SUB_ORDER has a label, so the next board that
 // arrives without one fails a test instead of reaching visitors as a slug.
 
+import { HYP_EDGES_BASES } from "@/lib/freedraw/hyp-edges";
+import { SPH_EDGES_BOARDS, sphEdgesSubOfBoard } from "@/lib/freedraw/sph-edges";
 import { IH_EDGE_BOARDS, ihEdgeSubOfBoard } from "@/lib/isohedral/edge-shelf";
 import { PENT_EDGE_BOARDS, pentEdgeSubOfBoard } from "@/lib/pentagon/edge-shelf";
+import { HYP_POLY_BOARDS, hypPolySubOfBoard } from "@/lib/tilings/hyp-poly";
+
+/** "pseudo-rhombicuboctahedron (J37)" → "Pseudo-rhombicuboctahedron". The parenthetical is the Johnson
+ *  number, which the card already carries and a 14-character sidebar chip cannot. */
+const solidName = (s: string): string =>
+	s.replace(/\s*\([^)]*\)\s*$/, "").replace(/^./, (c) => c.toUpperCase());
 
 /**
  * A COLORING sub encodes two axes at once — "square-3" is the square grid, three colours — because a
@@ -45,6 +53,7 @@ export const FAMILY_LABEL: Record<string, string> = {
 	"hyp-edges": "Base tilings",
 	"hyp-colors": "Base tilings",
 	"hyp-poly": "3.4.n.4 boards",
+	"hyp-poly-t": "{3,n} boards",
 	"sph-poly": "3.4.n.4 solids",
 	pent: "Pentagon families",
 	ih: "Isohedral families",
@@ -110,23 +119,8 @@ const NAMED: Record<string, string> = {
 	"spp-3": "3.4.3.4 solids",
 	"spp-4": "3.4.4.4 solids",
 	"spp-5": "3.4.5.4 solids",
-	// The 3.4.n.4 family: one sub per board. Labelled by the defining vertex figure, which is also what
-	// names the edge length the whole board is built at.
-	"hpo-7": "3.4.7.4 tilings",
-	"hpo-8": "3.4.8.4 tilings",
-	"hpo-9": "3.4.9.4 tilings",
-	"hpo-10": "3.4.10.4 tilings",
-	"hpo-11": "3.4.11.4 tilings",
-	"hpo-12": "3.4.12.4 tilings",
-	"hpo-13": "3.4.13.4 tilings",
-	"hpo-14": "3.4.14.4 tilings",
-	"hpo-15": "3.4.15.4 tilings",
-	"hpo-16": "3.4.16.4 tilings",
-	"hpo-17": "3.4.17.4 tilings",
-	"hpo-18": "3.4.18.4 tilings",
-	"hpo-19": "3.4.19.4 tilings",
-	"hpo-20": "3.4.20.4 tilings",
-	"hpo-23": "3.4.23.4 tilings",
+	// The two hyperbolic-poly families are NOT here either: their boards carry a label, so "3.4.7.4
+	// tilings" and "{3,7} tilings" are derived below off HYP_POLY_BOARDS.
 	// Hyperbolic edge systems: one sub per base tiling.
 	"hyp-667": "6.6.7 edges",
 	"hyp-668": "6.6.8 edges",
@@ -170,6 +164,16 @@ export const SUB_LABEL: Record<string, string> = {
 		PENT_EDGE_BOARDS.map((b) => [pentEdgeSubOfBoard(b), `Pentagon (Kershner ${b.type}) edges`]),
 	),
 	...Object.fromEntries(IH_EDGE_BOARDS.map((b) => [ihEdgeSubOfBoard(b), `Isohedral ${b.label} edges`])),
+	// The three board-driven edge shelves, derived for the same reason: the 2026-08-12 drop added 21 subs
+	// across them in one afternoon and every one would have needed a second edit here. The tables already
+	// carry the words — a Schwarz board its triple, a spherical board its solid, a hyperbolic base its
+	// vertex figure — so the name follows the board. `NAMED` still wins where one earns a better phrase.
+	...Object.fromEntries(SCHWARZ_BOARDS.map((b) => [schwarzSubOfBoard(b), `${b.label} board`])),
+	...Object.fromEntries(SPH_EDGES_BOARDS.map((b) => [sphEdgesSubOfBoard(b), `${solidName(b.solid)} edges`])),
+	...Object.fromEntries(HYP_EDGES_BASES.map((b) => [`hyp-${b.id}`, `${b.label} edges`])),
+	// Both hyperbolic-poly families at once — the board's own label decides which words appear, so the
+	// {3,n} boards arrived named on the day they landed and a third family would too.
+	...Object.fromEntries(HYP_POLY_BOARDS.map((b) => [hypPolySubOfBoard(b), `${b.label} tilings`])),
 	...NAMED,
 };
 
@@ -190,6 +194,10 @@ export const SUB_SHORT_LABEL: Record<string, string> = {
 	// Derived from the board tables, like the long names above, so a new board arrives short too.
 	...Object.fromEntries(PENT_EDGE_BOARDS.map((b) => [pentEdgeSubOfBoard(b), `Kershner ${b.type}`])),
 	...Object.fromEntries(IH_EDGE_BOARDS.map((b) => [ihEdgeSubOfBoard(b), b.label])),
+	...Object.fromEntries(SCHWARZ_BOARDS.map((b) => [schwarzSubOfBoard(b), b.label])),
+	...Object.fromEntries(SPH_EDGES_BOARDS.map((b) => [sphEdgesSubOfBoard(b), solidName(b.solid)])),
+	...Object.fromEntries(HYP_EDGES_BASES.map((b) => [`hyp-${b.id}`, b.label])),
+	...Object.fromEntries(HYP_POLY_BOARDS.map((b) => [hypPolySubOfBoard(b), b.label])),
 	// Everything hand-named drops the family word in front and the shelf word behind, which is exactly the
 	// redundancy the heading already covers: "Schwarz (2,3,6) grid" → "(2,3,6)", "3.4.7.4 tilings" → "3.4.7.4".
 	...Object.fromEntries(

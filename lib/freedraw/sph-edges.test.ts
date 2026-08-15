@@ -63,11 +63,21 @@ describe("uniform-polyhedron edge board manifest", () => {
 		// boards that came out of that one run inherit it.
 		const snub = SPH_EDGES_BOARDS.find((b) => b.id === "33334")!;
 		// Lexicographic, so "33334" sorts before "3338" — the fourth character decides.
+		// Twelve of the twenty-seven are unfinished after the 2026-08-12 drop, which is the honest shape of
+		// a shelf fed by budgeted runs: only the prisms and the small truncated solids reach k = V.
 		expect(SPH_EDGES_BOARDS.filter((b) => !b.complete).map((b) => b.id).sort()).toEqual([
+			"33310",
 			"33334",
+			"33335",
 			"3338",
+			"3339",
+			"4435",
 			"4443",
+			"468",
+			"665",
 			"j37",
+			"j72",
+			"j73",
 		]);
 		// ⚑ 3338 is the third shape of the same story: its census counts 2,925,191 tilings at k=16, the
 		// drop carries no k=16 file at all, and the census carries no MAX marker either — so the board is

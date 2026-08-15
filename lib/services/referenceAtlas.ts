@@ -464,6 +464,7 @@ export type SubFamily =
 	| "schwarz-board"
 	| "sph-edges"
 	| "hyp-poly"
+	| "hyp-poly-t"
 	| "sph-poly"
 	| "pent"
 	| "ih";
@@ -480,6 +481,8 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("sps-") || sub.startsWith("hys-")) return "schwarz-board";
 	if (sub.startsWith("spe-")) return "sph-edges";
 	if (sub.startsWith("hpo-")) return "hyp-poly";
+	// One shelf, two one-parameter families: 3.4.n.4 under "hpo-", {3,n} under "hpt-".
+	if (sub.startsWith("hpt-")) return "hyp-poly-t";
 	if (sub.startsWith("spp-")) return "sph-poly";
 	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";
 	if (/^(square|triangle|hex|ts)$/.test(sub)) return "grid";
@@ -971,6 +974,7 @@ export interface ReferenceFilter {
 	// Islamic shelf sub-class: keep only tilings in this Bonner design system. Non-Islamic tilings never
 	// match while this is active.
 	islamicSystem?: IslamicSystem;
+	edgeBoard?: EdgeBoard;
 	// Freedraw shelf sub-class: keep only patterns whose faces are all finite / include a strip / include an
 	// unbounded sheet / include a polyomino with holes. Non-freedraw tilings never match while this is active.
 	freedrawKind?: FreedrawKind;
@@ -1037,6 +1041,9 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	}
 	if (f.islamicSystem) {
 		if (islamicSystemOf(t) !== f.islamicSystem) return false; // non-Islamic tilings never match the system facet
+	}
+	if (f.edgeBoard) {
+		if (edgeBoardOf(t) !== f.edgeBoard) return false; // nothing outside the class matches the palette facet
 	}
 	if (f.freedrawKind) {
 		const s = freedrawStatsOf(t);
@@ -1766,7 +1773,9 @@ export async function loadHyperbolicPolyAtlas(): Promise<ReferenceTiling[]> {
 	if (hypPolyCache) return hypPolyCache;
 	if (hypPolyInflight) return hypPolyInflight;
 	hypPolyInflight = Promise.all(
-		HYP_POLY_BOARDS.flatMap((b: HypPolyBoard) => b.eagerKs.map((k) => fetchHypPolyShard(String(b.n), k))),
+		HYP_POLY_BOARDS.flatMap((b: HypPolyBoard) => b.eagerKs.map((k) => fetchHypPolyShard(b.id, k))).concat(
+			HYP_HALF_BOARDS.flatMap((b) => b.eagerKs.map((k) => fetchHypHalfShard(b.id, k))),
+		),
 	)
 		.then((lists) => {
 			const data = lists.flat();
