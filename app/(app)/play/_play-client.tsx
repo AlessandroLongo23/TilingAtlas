@@ -85,6 +85,7 @@ import { hypSchwarzMeta, schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
 import { hypPolyLazyShardsForK, hypPolyMeta } from "@/lib/tilings/hyp-poly";
 import { SPH_HALF_BOARDS } from "@/lib/tilings/sph-half";
+import { HYP_HALF_BOARDS, hypHalfLazyShardsForK } from "@/lib/tilings/hyp-half";
 import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
 import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
 import { PentagonEdgesCanvas } from "@/components/pentagon-edges-canvas";
@@ -562,6 +563,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		const hp = requestedKey?.match(/^hp(t?\d+)-(\d+)-/);
 		if (hp && hypPolyLazyShardsForK(Number(hp[2])).some((b) => b.id === hp[1])) {
 			loadHyperbolicPolyShard(hp[1], Number(hp[2])).then(merge).catch(() => {});
+		}
+		// Half-tile boards: ids are "hh<board>-<k>-". Which k are lazy is the board's business, not a
+		// constant here — {4,5} k=4, {6,4} k=3 and 4, {4,6} k=2 and 3 today.
+		const hh = requestedKey?.match(/^hh(.+)-(\d+)-\d+$/);
+		if (hh && hypHalfLazyShardsForK(Number(hh[2])).some((b) => b.id === hh[1])) {
+			loadHyperbolicHalfShard(hh[1], Number(hh[2])).then(merge).catch(() => {});
 		}
 		return () => {
 			alive = false;

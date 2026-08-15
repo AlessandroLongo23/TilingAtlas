@@ -1,0 +1,10 @@
+{
+  "name": "hyp-45-half",
+  "D": 10,
+  "tileGeometry": "hyperbolic",
+  "closure": "euclidean",
+  "comment": "HALF THE {4,5} SQUARE. In the hyperbolic {4,5} tiling five squares meet at every vertex, so each corner is 360/5 = 72 degrees; a diagonal cuts one square into two 36-72-36 triangles. The diagonal halves the two corners it lands on and leaves the other whole, so the halves are isosceles and achiral, exactly as in the spherical cube case. Two sides are the {4,5} edge and the third is the square's diagonal. D=10 because 36 degrees is one unit of 2pi/10; the angles are [1,2,1] and sum to 4 against the 5 a FLAT triangle would, and that deficit of 1 unit = 36 degrees = pi/5 is the tile's area. closure=euclidean is the vertex rule and not a mistake: on a fixed-angle tiling the curvature lives in the faces, so the angles at a vertex close a full turn exactly, in H2 as in the plane. Unlike the spherical boards nothing bounds the tile count — the tiling is infinite, so the catalogue grows with k instead of stopping.",
+  "tiles": [
+    { "kind": "composite", "name": "Q45", "famchar": "q", "angles": [1, 2, 1], "edges": ["S", "S", "D"] }
+  ]
+}

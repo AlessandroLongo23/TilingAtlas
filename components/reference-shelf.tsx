@@ -20,6 +20,7 @@ import { sphColorsLazyShardsForK } from "@/lib/colors/sph-colors";
 import { schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
 import { hypPolyLazyShardsForK } from "@/lib/tilings/hyp-poly";
+import { hypHalfLazyShardsForK } from "@/lib/tilings/hyp-half";
 import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
 import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
 import {
@@ -840,8 +841,15 @@ export function ReferenceShelf() {
 				}
 			} else {
 				for (const b of hypPolyLazyShardsForK(k)) {
-					const token = `hpo-${b.n}-${k}`;
-					if (!xLoaded.has(token)) loadHyperbolicPolyShard(String(b.n), k).then((d) => merge(d, token)).catch(() => {});
+					const token = `hpo-${b.id}-${k}`;
+					if (!xLoaded.has(token)) loadHyperbolicPolyShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+				}
+				// The half-tile boards share this axis. Five lazy slices now, the largest {4,6} at k=3 —
+				// 15,443 quotients, 51 MB of JSON that gzips to 1.0 MB, so it is parse time being deferred
+				// here and not bandwidth.
+				for (const b of hypHalfLazyShardsForK(k)) {
+					const token = `hph-${b.id}-${k}`;
+					if (!xLoaded.has(token)) loadHyperbolicHalfShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
 				}
 			}
 		}

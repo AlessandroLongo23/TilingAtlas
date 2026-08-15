@@ -1,0 +1,14 @@
+{
+  "name": "hyp-64-half",
+  "D": 8,
+  "tileGeometry": "hyperbolic",
+  "closure": "euclidean",
+  "comment": "HALF THE {6,4} HEXAGON. Four hexagons meet at every {6,4} vertex, so each corner is 90 degrees; the long diagonal joins two opposite vertices, passes through the face centre and cuts the hexagon into two 45-90-90-45 QUADRILATERALS. It is a mirror of the hexagon, so it bisects the two corners it lands on and the halves are achiral. D=8 because 45 degrees is one unit of 2pi/8; the angles are [1,2,2,1] and sum to 6 against the 8 a FLAT quadrilateral would, so the deficit is 2 units = 90 degrees = pi/2, the tile's area. The sides are DECLARED, because a hyperbolic n-gon has 2n-3 degrees of freedom against n angles and a quadrilateral is therefore a family of shapes, not a shape: three {6,4} edges of 1.316957896924817 and the diagonal 2.292431669561179 = twice the circumradius. That diagonal is EXACTLY the one on the {4,6} board, because cosh R = cot(pi/p)cot(pi/q) is symmetric in p and q, so dual pairs share a circumradius — the two boards' cut edges are congruent even though their tiles are not. Both ends of the cut are {6,4} vertices, so no edge is halved; this board does not test the {3,7}/{3,8} parity argument.",
+  "edgeLensH": {
+    "S": 1.316957896924817,
+    "D": 2.292431669561179
+  },
+  "tiles": [
+    { "kind": "composite", "name": "H64", "famchar": "h", "angles": [1, 2, 2, 1], "edges": ["S", "S", "S", "D"] }
+  ]
+}

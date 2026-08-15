@@ -1,0 +1,174 @@
+HALVED {6,4} AND {4,6} — the dual pair, both cut by a diagonal          2026-08-14, CC
+================================================================================================
+
+WHAT THESE TWO BOARDS ARE, AND WHAT THEY ARE NOT
+
+  {4,6} halved   six squares meet at every {4,6} vertex, so each corner is 60 degrees and a diagonal
+                 cuts one square into two 30-60-30 triangles. Isosceles, achiral, sides DERIVED from
+                 the angles (a hyperbolic triangle is rigid). The direct successor to {4,5} halved:
+                 same cut, one valence further along.
+  {6,4} halved   four hexagons meet at every {6,4} vertex, so each corner is 90 degrees and the LONG
+                 diagonal — vertex to opposite vertex, through the face centre — cuts one hexagon into
+                 two 45-90-90-45 QUADRILATERALS. A mirror of the hexagon, so the halves are achiral.
+                 Sides DECLARED: a hyperbolic quadrilateral has 2n-3 = 5 degrees of freedom against 4
+                 angles, so its angles do not pin it.
+
+  ⚑ CORRECTION TO WHAT I PROPOSED. I offered these as boards that would "extend the parity story to
+  another even valence". That was wrong, and I should have caught it before suggesting it. The parity
+  argument is about ALTITUDE cuts, whose foot lands at an edge MIDPOINT and forces the neighbour across
+  that edge to cut there too; it says a {3,q} vertex can be left uncut only when q is even. BOTH cuts
+  here run vertex to vertex, so no edge is halved, there are no half-edges to alternate, and neither
+  board touches that argument. What they do test is different and still worth having: how the catalogue
+  moves when the CUT is held fixed (a diagonal) and the VALENCE rises — {4,5} halved to {4,6} halved —
+  and whether a dual pair behaves alike.
+
+SIDES, AND ONE EXACT COINCIDENCE
+  {4,6} half:  S = 1.762747174039087 = arccosh(3)   (the {4,6} edge)
+               D = 2.292431669561179 = arccosh(5)   (the diagonal)
+  {6,4} half:  S = 1.316957896924817                (the {6,4} edge)
+               D = 2.292431669561179                (the long diagonal = 2 x circumradius)
+  The two D's are the SAME number to 1e-15, and not by accident: cosh R = cot(pi/p)cot(pi/q) is
+  symmetric in p and q, so a dual pair shares a circumradius, and both cuts are 2R. The two boards' cut
+  edges are congruent even though nothing else about their tiles is. ({4,5} and {5,4} share 2R =
+  1.684964162924016 the same way — visible in the two shipped boards, unremarked until now.)
+  No 2:1 ratio on either board, and there should not be: that relation belongs to altitude cuts, where
+  the short side is half the base. D/S is 1.300 here and 1.741 there.
+
+ALPHABETS (gen_alphabet.py, both accepted first time)
+  hyp-46-half   D=12  angles [1,2,1]    edges S,S,D   4 of 9 adjacent pairs forbidden   49 vertex types
+  hyp-64-half   D=8   angles [1,2,2,1]  edges S,S,S,D 6 of 16 forbidden                 33 vertex types
+  Both achiral on the (angle, edge) word, so no mirror twin — and that is now a checked statement, not
+  an assumption: the test that missed the {5,4} tile yesterday runs on the edge word too.
+
+RUN LOG
+
+--- {6,4} halved, k<=4 --- 14:56:13
+[14:56:14] PHASE 0  alphabet (palette=hyp-64-half)
+[gen] EDGE TYPES (S=1, D=2): 6 incompatible adjacent pairs of 16 forbidden at the vertex
+[gen] palette=hyp-64-half D=8 tiles=1 classes=4 configs=15
+[cert] A6: 33 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 12 of 33 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/hyp-64-half/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (33 entries)
+[14:56:14] PHASE 1  solve (MAXNUM=4)
+[14:56:17]   raw blocks: 2160
+[14:56:17] PHASE 2  prune
+  k=1 : 0
+  k=2 : 24
+  k=3 : 509
+  k=4 : 763
+total kept: 1296
+store: peak 0.225792 MB total, 0.225792 MB resident
+[14:56:17] PHASE 3  certify the quotient (cycle products; no patch, no dedup tolerance)
+developed: {1: 0, 2: 24, 3: 509, 4: 763} total 1296 failures 0
+tile sides: D = 2.292431670, S = 1.316957897
+certificate: every vertex orbit closes a full turn and every face closes to the tile (worst closure residual 8.44e-15)
+[14:56:18] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-hyp-64-half/cells.json
+
+--- {4,6} halved, k<=4 --- 14:56:54
+[14:56:54] PHASE 0  alphabet (palette=hyp-46-half)
+[gen] EDGE TYPES (S=1, D=2): 4 incompatible adjacent pairs of 9 forbidden at the vertex
+[gen] palette=hyp-46-half D=12 tiles=1 classes=3 configs=13
+[cert] A6: 49 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 21 of 49 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/hyp-46-half/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (49 entries)
+[14:56:55] PHASE 1  solve (MAXNUM=4)
+[15:02:47]   raw blocks: 1921832
+[15:02:47] PHASE 2  prune
+[15:07:13] solver finished: 1,921,832 raw blocks, 3.5 GB. Wrapper timeout killed the pruner; re-running prune+certify detached.
+  k=1 : 14
+  k=2 : 462
+  k=3 : 15443
+
+RESULTS
+  {6,4} halved   k=1: 0   k=2: 24   k=3: 509   k=4: 763        = 1,296   (4 s end to end)
+  {4,6} halved   k=1: 14  k=2: 462  k=3: 15,443                = 15,919 shipped
+                 k=4 enumerated but NOT shipped (see below)
+  Zero certificate failures on either board. Worst closure residual 8.44e-15 ({6,4}) and 8.06e-15
+  ({4,6}) — the cycle-product certificate, so these are matrix identities and not measurements.
+
+THE k=1 QUESTION, AND WHY IT HAS AN ANSWER
+  {6,4} has nothing at k=1 and {4,6} has 14. That is not a quirk of the search; it is counting.
+  A diagonal puts 2 cut-ENDPOINTS on each face, and pF = qV, so the average vertex is an endpoint of
+  2F/V = 2q/p diagonals. A vertex-transitive tiling needs every vertex to sit at that average, so it
+  needs 2q/p to be a whole number:
+      {4,5}  5/2   no k=1     (and the shipped board starts at k=2 — this EXPLAINS a floor I had
+                               previously only observed)
+      {6,4}  4/3   no k=1     confirmed: the search returns nothing
+      {4,6}  3     k=1 ALLOWED
+  Predicted before the {4,6} run finished, and confirmed twice over: 14 tilings at k=1, and in every
+  one of the 26 vertex orbits across them the vertex is the endpoint of exactly 3 of its 6 diagonals —
+  3 squares cut, 3 whole, nothing else. So the bound is not just satisfied on average, it is tight
+  everywhere, which is what the argument actually asserts.
+  And the vertex figures are exactly the ones combinatorics allows: 3 cut + 3 uncut squares round a
+  6-cycle makes 3 bracelets, and all 3 appear across the 14 tilings, with nothing else —
+      XXXOOO  30.30.30.30.30.30.60.60.60   (5 vertex orbits)
+      XXOXOO  30.30.30.30.60.30.30.60.60   (20)
+      XOXOXO  30.30.60.30.30.60.30.30.60   (1)
+  Nothing forced the search to realise all three; it did.
+
+  Note this is a DIFFERENT parity story from {3,7}/{3,8}. That one is about altitude cuts and half
+  edges alternating round a vertex. This one is about endpoint counting and needs no half-edge at all.
+  For the {4,q} family it does reduce to a parity: 2q/4 is whole iff q is even.
+
+INDEPENDENT CHECKS (the counts have no census to reproduce, so these are what there is)
+  * k vs geometry. The pruner assigns k; the certifier counts rneig cycles knowing nothing about it.
+    The dart set is chirality-doubled, so a vertex orbit is two cycles unless a mirror identifies them,
+    giving k <= vertexOrbits <= 2k. Holds on all 7,453 records across the six boards, 0 violations.
+  * Re-canonicalisation. The pruner dedups with its own WL/DFA form. A second canonical form written
+    from scratch (BFS from every root over (rneig, glue) with per-dart angle/length labels, minimised
+    over both orientations so mirror pairs fold) agrees on every record of all three boards it was run
+    against: 1,296 / 15,919 / 61 distinct forms from 1,296 / 15,919 / 61 records, zero duplicates.
+    That is the pruner's own job checked by something that shares no code with it.
+  * Side lengths. {4,6}'s are DERIVED by the developer from the angles alone and come out arccosh(3)
+    and arccosh(5) — matching the {4,6} edge and 2R computed independently from cos(pi/p)/sin(pi/q)
+    and cot(pi/p)cot(pi/q) to 1e-15. {6,4}'s are declared, and the face cycle product is what accepts
+    them; a wrong declaration fails every record rather than bending the shape.
+
+{4,6} AT k=4 — ENUMERATED, NOT SHIPPED
+  The solver produced 1,921,832 raw blocks and 3.4 GB for k=4 alone (against 2,160 blocks for the WHOLE
+  {6,4} board). The pruner ran it to completion: 564,906 distinct tilings at k=4 alone, against 15,919 for k<=3
+  put together. At the shelf's ~3 KB per quotient it is well
+  over a gigabyte of JSON, so it is off the shelf and `HypHalfBoard.dropped` says so. Three claims stay
+  apart on every board now: shipped, `emptyKs` (the board has nothing there), `dropped` (we do not ship
+  what it has). `lib/tilings/hyp-half.test.ts` checks each k the search covered is claimed exactly once.
+
+SHIPPED SIZES
+  {6,4}  k=2 0.03 MB eager; k=3 1.1 MB and k=4 1.6 MB lazy
+  {4,6}  k=1 0.03 MB eager; k=2 1.1 MB and k=3 51.2 MB lazy — the 51 MB gzips to 1.0 MB, so what is
+         being deferred is parsing 15,443 quotients on the main thread, not bandwidth.
+
+TWO BUGS THIS RUN EXPOSED IN THE SHELF (both pre-existing, both shipped)
+  ⚑ lvert AND sizes WERE HARDCODED TO 3. True of every board until {5,4}, which halves into a
+    QUADRILATERAL, as does {6,4}. Not cosmetic: `maxTileRadius` reads lvert for the face-size term of the
+    client's develop margin and asinh(sinh(l/2)/sin(pi/p)) GROWS with p, so a 4-gon called a 3-gon
+    under-reserves the radius. Measured on hh64-half-2-00004: Rdev 10.65 with p=4 against 10.32 with
+    p=3, and the safe rim is 10.6 — so the old value would have returned a certificate computed on a
+    develop bound too small for the tiling's own faces. The fix turns a false pass into an honest
+    refusal, and the record renders correctly either way through the 2D path.
+  ⚑ THE `certified` STAMPS HAD BEEN WIPED. emit_hyp_half_shelf.py writes records that have never carried
+    the flag, so yesterday's emit (which added the {5,4} board) destroyed the 34-minute stamping run for
+    {4,5} and {3,7}; I then stamped only the new board and reported the shelf as stamped. It went
+    unnoticed for a day and was found by diffing against a backup taken before re-emitting today.
+    scripts/stamp-hyp-half-parallel.mjs now exists — it pools every record across the 17 shards, which
+    run from 4 rows to 15,443, so dealing whole shards to workers (what the hyp-poly driver does) leaves
+    one worker holding most of the corpus. Re-run it after EVERY emit.
+  ⚑ Neither half-tile shelf had a test at all — 23,372 shipped tilings, nothing checking any of them,
+    which is how both of the above got through. lib/tilings/hyp-half.test.ts now guards this one and
+    caught three of my own assertions being wrong about the data while I wrote it. The SPHERICAL half
+    shelf is still untested.
+
+CERTIFIED FLAG — the whole shelf restamped (2026-08-14, 4778 s over 4 workers)
+  14,628 of 23,372 certified for the per-pixel Dirichlet renderer; the other 8,744 take the 2D developed
+  path. Every record carries a boolean, 0 unstamped. Capability metadata, not catalogue policy — every
+  one of these tilings is real and renders either way; the flag only spares the client a doomed attempt
+  (median 210 ms, up to 1.2 s on the main thread) before it falls back.
+    37-half  k6   9/9      k7   53/54    k8   22/22
+    38-half  k3   4/4      k4   56/56
+    45-half  k2  76/76     k3   40/40    k4 4805/5835
+    54-half  k3   4/4      k4   37/38    k5   18/19
+    64-half  k2  23/24     k3  399/509   k4  561/763
+    46-half  k1  14/14     k2  341/462   k3 8166/15443
+  ⚑ {5,4} was 61/61 yesterday and is 59/61 now, and the two it lost are the POINT of the lvert fix: with
+  a quadrilateral called a triangle the margin came out ~0.33 smaller in hyperbolic radius, so those two
+  passed on a develop bound too small for their own faces. A certificate that only holds because the
+  tile was mis-described is worse than an honest refusal.

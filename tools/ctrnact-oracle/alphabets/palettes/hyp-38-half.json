@@ -1,0 +1,10 @@
+{
+  "name": "hyp-38-half",
+  "D": 16,
+  "tileGeometry": "hyperbolic",
+  "closure": "euclidean",
+  "comment": "HALF THE {3,8} TRIANGLE, and a test of the parity argument that explains {3,7}. Eight triangles meet at every {3,8} vertex, so each corner is 45 degrees; an altitude cuts one into a scalene 22.5-90-45 triangle. Chiral, three edge types, the {3,8} edge exactly twice the half-edge. D=16 because 22.5 = 2pi/16; the angles are [1,4,2] and sum to 7 against the 8 a flat triangle would, so the deficit is 1 unit = 22.5 degrees, the tile's area. THE PREDICTION: on {3,7} nothing exists below k=6, because each half-triangle's corner at a vertex is flanked by one FULL edge and one HALF-edge, the two kinds must alternate round the vertex, and 7 is odd — so no {3,7} vertex can be left entirely uncut. Eight is EVEN, so the alternation closes and an uncut {3,8} vertex is allowed. If the argument is right this board has tilings at low k where {3,7} had none, and the alphabet must contain a vertex configuration of eight base corners.",
+  "tiles": [
+    { "kind": "composite", "name": "T38", "famchar": "t", "angles": [1, 4, 2], "edges": ["alt", "half", "edge"] }
+  ]
+}

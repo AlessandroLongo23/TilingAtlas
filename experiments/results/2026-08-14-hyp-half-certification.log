@@ -1,0 +1,21 @@
+[13:20:52] 23372 tilings across 17 shards -> 8 slices
+[13:31:04] 23372 tilings across 17 shards -> 4 slices
+[14:50:42] stamped in 4778 s
+[14:50:42] 14628 / 23372 certified for the per-pixel renderer; the rest take the 2D developed path
+[14:50:42]   hyphalf-37-half-k6.json             9 /      9
+[14:50:42]   hyphalf-37-half-k7.json            53 /     54
+[14:50:42]   hyphalf-37-half-k8.json            22 /     22
+[14:50:42]   hyphalf-38-half-k3.json             4 /      4
+[14:50:42]   hyphalf-38-half-k4.json            56 /     56
+[14:50:42]   hyphalf-45-half-k2.json            76 /     76
+[14:50:42]   hyphalf-45-half-k3.json            40 /     40
+[14:50:42]   hyphalf-45-half-k4.json          4805 /   5835
+[14:50:42]   hyphalf-46-half-k1.json            14 /     14
+[14:50:42]   hyphalf-46-half-k2.json           341 /    462
+[14:50:42]   hyphalf-46-half-k3.json          8166 /  15443
+[14:50:42]   hyphalf-54-half-k3.json             4 /      4
+[14:50:42]   hyphalf-54-half-k4.json            37 /     38
+[14:50:42]   hyphalf-54-half-k5.json            18 /     19
+[14:50:42]   hyphalf-64-half-k2.json            23 /     24
+[14:50:42]   hyphalf-64-half-k3.json           399 /    509
+[14:50:42]   hyphalf-64-half-k4.json           561 /    763

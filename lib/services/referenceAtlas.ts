@@ -106,6 +106,15 @@ import {
 	type HypPolyBoard,
 	type HypPolyPattern,
 } from "@/lib/tilings/hyp-poly";
+import { EU_HALF_BOARDS, euHalfSub, euHalfSubOfBoard } from "@/lib/tilings/eu-half";
+import {
+	hypHalfFamilyLabel,
+	HYP_HALF_BOARDS,
+	hypHalfShardUrl,
+	hypHalfSub,
+	hypHalfSubOfBoard,
+	isHypHalf,
+} from "@/lib/tilings/hyp-half";
 import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import type { PentEdgeRecord } from "@/lib/pentagon/edgeDevelop";
 import {
@@ -492,6 +501,8 @@ export const SUB_ORDER = [
 	...SPH_EDGES_BOARDS.map((b) => sphEdgesSubOfBoard(b)),
 	// The 3.4.n.4 hyperbolic tilings: one sub per board n. "hpo-" namespaced.
 	...HYP_POLY_BOARDS.map((b) => hypPolySubOfBoard(b)),
+	// The HALF-TILE hyperbolic boards — a {p,q} face cut in two — on the same axis, "hph-" namespaced.
+	...HYP_HALF_BOARDS.map((b) => hypHalfSubOfBoard(b)),
 	// Their spherical siblings, n = 3, 4, 5. "spp-" namespaced.
 	...SPH_POLY_BOARDS.map((b) => sphPolySubOfBoard(b)),
 	// The HALF-TILE spherical boards — a Platonic face cut in two — on the same axis, since the axis is
@@ -535,6 +546,10 @@ export type SubFamily =
 	| "hyp-poly"
 	| "hyp-poly-t"
 	| "sph-poly"
+	// A Platonic / {p,q} face cut in two — its own family, because these boards are NOT members of the
+	// 3.4.n.4 ones and reusing their prefix filed them under that heading on screen.
+	| "sph-half"
+	| "hyp-half"
 	| "pent"
 	| "ih";
 
@@ -549,6 +564,8 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("spc-")) return "sph-colors";
 	if (sub.startsWith("sps-") || sub.startsWith("hys-")) return "schwarz-board";
 	if (sub.startsWith("spe-")) return "sph-edges";
+	if (sub.startsWith("hph-")) return "hyp-half";
+	if (sub.startsWith("sph-")) return "sph-half";
 	if (sub.startsWith("hpo-")) return "hyp-poly";
 	// One shelf, two one-parameter families: 3.4.n.4 under "hpo-", {3,n} under "hpt-".
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
@@ -1863,6 +1880,44 @@ async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[
 	} catch {
 		return [];
 	}
+}
+
+// A half-tile board's record is the same HypPolyPattern — quotient darts plus per-dart angle and edge
+// length — so it re-develops through the same disk renderer with no new component. Only the labelling
+// differs, because "3.4.45-half.4" is not a vertex figure.
+function hypHalfToReference(p: HypPolyPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "hyperbolic",
+		k: p.k,
+		family: `${hypHalfFamilyLabel(p)}${p.chiral ? " · chiral" : ""}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		hypPoly: p,
+		edge: p.edge,
+		geometry: "hyperbolic",
+		discoverer: "Čtrnáct engine (hyperbolic half-tile palette), 2026-08-14",
+		// Certified per record on a developed patch: every interior vertex closes a full turn and every
+		// face is congruent to the tile (worst side error 2.9e-7 on {4,5}, 1.2e-9 on {3,7}). Unlike the
+		// spherical siblings there is no independent global count to check against — a hyperbolic board
+		// has infinitely many tilings — so this is "reproduced" on the local certificate, not on a census.
+		certification: "reproduced",
+	};
+}
+
+async function fetchHypHalfShard(id: string, k: number): Promise<ReferenceTiling[]> {
+	try {
+		const res = await fetch(hypHalfShardUrl(id, k));
+		if (!res.ok) return [];
+		const recs = (await res.json()) as HypPolyPattern[];
+		return recs.map(hypHalfToReference);
+	} catch {
+		return [];
+	}
+}
+
+/** A half-tile board's lazy (board, k) slice — {4,5} at k=4 is 21.4 MB and waits for its chip. */
+export async function loadHyperbolicHalfShard(id: string, k: number): Promise<ReferenceTiling[]> {
+	return fetchHypHalfShard(id, k);
 }
 
 let hypPolyCache: ReferenceTiling[] | null = null;

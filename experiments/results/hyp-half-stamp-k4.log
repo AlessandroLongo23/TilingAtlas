@@ -1,0 +1,4 @@
+  [1/1] hyphalf-45-half-k4.json  5835 rows, 4805/5835 certified, 2038s elapsed, ~0s left
+
+hyperbolic-poly: 5835 tilings stamped (0 skipped), 4805 certified for the per-pixel renderer, 1030 on the 2D path (2038s)
+   1030× develop bound # beyond the safe rim #Rdev#

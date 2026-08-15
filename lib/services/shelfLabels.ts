@@ -56,6 +56,10 @@ export const FAMILY_LABEL: Record<string, string> = {
 	"hyp-poly": "3.4.n.4 boards",
 	"hyp-poly-t": "{3,n} boards",
 	"sph-poly": "3.4.n.4 solids",
+	// A regular face cut in two. Their own heading, because they are not members of the 3.4.n.4 families
+	// and were filed under that heading while they shared its prefix.
+	"sph-half": "Halved Platonic faces",
+	"hyp-half": "Halved {p,q} faces",
 	pent: "Pentagon families",
 	ih: "Isohedral families",
 };

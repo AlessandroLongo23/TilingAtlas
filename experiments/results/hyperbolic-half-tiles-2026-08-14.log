@@ -1,0 +1,131 @@
+HYPERBOLIC HALF-POLYGONS — cut a {p,q} face in two, enumerate what the halves tile
+==================================================================================
+The hyperbolic half of AL's half-polygon idea, after the spherical one. Same model: a fixed-angle,
+fixed-side tile; the vertex rule is EUCLIDEAN (angles close a full turn exactly) because on a
+fixed-angle tiling the curvature sits in the FACES; `tileGeometry: "hyperbolic"` in the palette makes
+gen_alphabet require the tile's angles to fall SHORT of the flat sum by its area.
+
+What differs from the sphere, and it is the whole engineering difference: a hyperbolic tiling never
+closes. There is no area bound and no finite development. What ships is the QUOTIENT plus per-dart data
+the client re-develops under the live view — `alpha` (the turn), `elen` (the edge length), `drawn` (all
+1, since every edge of a tiling is a real boundary). `hyperbolicDevelopClient` already preferred those
+three over its regular-faces derivation, for the Schwarz boards, so nothing client-side was needed.
+
+PALETTES
+  hyp-45-half  D=10  angles [1,2,1] = 36-72-36   edges [S,S,D]        achiral
+    The {4,5} square (five meet at a vertex, so corners are 72) cut by a diagonal. The diagonal's ends
+    are {4,5} VERTICES, so no vertex can become a T-junction and EVERY choice of diagonal tiles.
+  hyp-37-half  D=28  angles [2,7,4] = 25.714-90-51.429  edges [alt,half,edge]  CHIRAL
+    The {3,7} triangle cut by an altitude. Scalene, so the mirror image is its own alphabet symbol —
+    this palette runs only because of the sided-classes repair of 2026-08-13.
+
+SIDES, derived by the polar law of cosines and never typed in
+  {4,5}: S = 1.253739326, D = 1.684964163
+  {3,7}: half = 0.545274832, alt = 0.903799891, edge = 1.090549664
+  ⇒ AL's claim that halving a triangle leaves the long side EXACTLY twice the short one is confirmed:
+    2 x 0.545274832 = 1.090549664 to every digit carried. (cosh(2x) = 2cosh(x)^2 - 1 with
+    cosh(half) = 1.152389 and cosh(edge) = 1.656027.)
+  ⇒ EXTERNAL CROSS-CHECK: 0.545274832 is also the second edge class of Marek's independently produced
+    (2,3,7) Schwarz corpus (public/schwarz-hyp: [0.283128153368, 0.545274831754, 0.620671737556]).
+    It has to be — the (2,3,7) triangle is a barycentric piece of {3,7}, so one of its sides IS half a
+    {3,7} edge — and agreeing to 9 figures with a corpus produced by a different pipeline is the only
+    external check available on this side of the curvature split.
+
+RESULTS
+  hyp-45-half   k=2: 76    k=3: 40    k=4: 5835        total 5951
+  hyp-37-half   k=6:  9    k=7: 54    k=8:   22        total   85
+  All 6,036 develop, ZERO failures.
+
+  ⚑ {3,7} IS EMPTY BELOW k=6, AND THAT IS THE BOARD, NOT A SHORT RUN. A first search to k=4 returned
+  nothing and looked like a failure. It is a parity fact: each half-triangle's corner at a {3,7} vertex
+  is flanked by one FULL edge and one HALF-edge, so the two kinds must alternate round the vertex — and
+  7 is odd, so a {3,7} vertex can never be left entirely uncut. The alphabet says the same thing: no
+  vertex configuration of seven base corners exists. hypHalfKGaps() reports no gap INSIDE the range, so
+  a surface never presents k<6 as missing data.
+
+CERTIFICATION — a proof at the vertex, not a sample
+  A bounded patch is developed per record in the hyperboloid model and two things are checked: every
+  INTERIOR vertex closes to exactly 2*pi, and every face is congruent to the tile. That is sufficient —
+  the developing map is then a local isometry of a simply connected complex with no excess or deficit
+  anywhere, so it cannot fold over itself and no overlap test is needed.
+    worst side error   {4,5} 2.89e-07 over 5,951 records   {3,7} 1.19e-09 over 85
+    min patch          28 closed vertices / 141 faces ({4,5}), 76 / 151 ({3,7})
+  ⚑ The first gate was 1e-7 and rejected good tilings. A 600-instance patch reaches cosh r = 170 and the
+  frames get there through dozens of matrix products, so the developed lengths drift ~1e-7. The gate is
+  now 1e-5 and every record SHIPS its own worst error, so a real shape failure — off by whole units —
+  still cannot pass. Measurement reported, gate generous: the right way round.
+
+  NOT AS STRONG AS THE SPHERE. Each spherical board's count was reproduced exactly by an independent
+  group computation. There is no such check here: a hyperbolic board has infinitely many tilings, so
+  there is no census to reproduce. These are certified LOCALLY (every vertex, every face) and shipped as
+  "reproduced" on that basis, which is a weaker claim than the spherical boards carry.
+
+ON THE SHELF
+  Hyperbolic -> Tilings -> Board -> "Halved {p,q} faces": {4,5} halved, {3,7} halved.
+  A record is a `HypPolyPattern`, so it re-develops through the disk renderer already in place — no new
+  component. k<=3 of {4,5} and all of {3,7} are eager (0.6 MB); {4,5} k=4 is 21.4 MB and lazy.
+  ⚑ Both half-tile families (spherical too) briefly borrowed the 3.4.n.4 prefix so `subOf`/`familyOfSub`
+  would need no changes — and the shelf then filed them under a "3.4.N.4 BOARDS" heading, which is
+  false. They now have their own prefixes ("sph-", "hph-") and their own family headings.
+  ⚑ `certified` had to be stamped: without it every selection pays a doomed buildDirichletDomain attempt
+  on the main thread (median 210 ms, up to 1.2 s). 5,005 of 6,036 certify; the other 1,031 take the 2D path.
+
+CERTIFIED FLAG — final (2026-08-14)
+  All 6,036 records stamped, 0 unstamped.
+    5,005 certified for the per-pixel Dirichlet renderer
+    1,031 on the 2D developed path (1,030 of them in the {4,5} k=4 slice, 17.6% of it)
+  The k=4 shard took 2,038 s to stamp. The failure is always the same and is not a defect: the deck
+  orbit has to develop to Rdev = 2*RD + 2*rMaxTile + margin, and past tanh(Rdev/2) > 0.99995 the
+  Poincare positions collide in the dedup grid, so a certificate there would be a lie. Deeper quotients
+  push past that rim. Capability metadata, not catalogue policy: every one of these tilings is real and
+  renders either way — the flag only spares the client a doomed attempt (median 210 ms, up to 1.2 s on
+  the main thread) before it falls back.
+
+THIRD BOARD: {3,8}, AND THE PARITY PREDICTION TESTED (2026-08-14, later)
+  The {3,7} floor at k=6 was explained by parity: each half-triangle's corner at a vertex is flanked by
+  one FULL edge and one HALF-edge, the two must alternate round the vertex, and 7 is odd — so no {3,7}
+  vertex can be left uncut. That predicts {3,8}, with EVEN valence, should admit an uncut vertex and
+  have tilings at lower k. Falsifiable, and it held:
+    * the alphabet contains the uncut vertex — eight base corners of 45 degrees, alternating tile and
+      mirror-twin (T38'@0/T38@2, both 2 units), summing to 16 = D. {3,7} has no such configuration.
+    * the floor drops from k=6 to k=3: 4 tilings at k=3 and 56 at k=4, 60 in all, zero develop failures,
+      worst side error 9.65e-08.
+  Honest limit of the claim: it did NOT drop to k=1 or k=2, which are still empty. What was predicted and
+  confirmed is the uncut vertex and the direction of the floor, not a specific value.
+  Sides: half 0.764285460, alt 1.224226224, edge 1.528570919 — and edge = 2 x half again, a third
+  independent confirmation of AL's 2:1 observation.
+
+FOURTH BOARD: {5,4}, AND A CERTIFICATE REPLACED (2026-08-14, later)
+  The hyperbolic twin of the dodecahedron: four pentagons meet at a {5,4} vertex so its corners are 90,
+  a pentagon has no halving diagonal, so the cut is the MIRROR and the halves are 45-90-90-90
+  QUADRILATERALS. Chiral. Sides 1.061275061905, half of it, and the mirror segment 1.469351744368 —
+  the long edge exactly twice the short one for the FOURTH time. Deficit 45 deg = pi/4.
+  61 tilings: k=3: 4, k=4: 38, k=5: 19.
+
+  ⚑ CHIRALITY WAS DECIDED ON THE ANGLE WORD ALONE, AND THAT WAS WRONG. This tile's angles are
+  [1,2,2,2], whose reversal is a ROTATION of itself, so mirror_expand called it achiral and added no
+  twin — leaving the palette unable to express either handedness. gen_alphabet then REFUSED to generate
+  rather than under-report, and that refusal is what found it. The test now runs on the (angle, edge)
+  word: an edged tile can have an achiral angle word and still be chiral through its sides. Regression:
+  every existing palette regenerates with identical tile / config / entry counts and A6 PASS, and
+  make check-regular is byte-identical.
+
+  ⚑ THE PATCH CERTIFICATE WAS REPLACED, because its verdict could not be trusted. It developed a bounded
+  patch and measured it, and identifying "the same vertex" reached by two paths needs a dedup tolerance —
+  but hyperboloid coordinates grow like e^r, so no tolerance both avoids splitting one vertex in two far
+  out and avoids merging two into one. On {5,4} the flood accepted 61 of 61 at a 120-instance patch, 60
+  at 200, 38 at 350 and 2 at 600, reporting "vertex overshoots a full turn", which reads like a geometry
+  error and was not one. Absolute, relative and Poincare keys each failed in their own way.
+    What settled it: multiplying the transforms around each cycle needs no dedup at all, and proved all
+    61 close exactly at every vertex AND every face. So that IS the certificate now:
+      vertex — the darts round a vertex are related by pure rotation, so the star closes iff the angles
+               close a full turn; the quotient is folded, so the test is that a cycle sums to 2*pi/m for
+               a whole number m, not to 2*pi
+      face   — the product of rot(alpha).medge(rho) round the face cycle, raised to its wrap factor, is
+               the identity, and the angles and lengths it meets are the tile's
+    Every vertex closing and every face being the tile makes the developing map a local isometry of a
+    simply connected complex with no excess or deficit, so it embeds; a patch adds nothing.
+    Residuals improved by seven orders of magnitude and the run is instant instead of 105 s:
+      {4,5} 2.24e-15   {3,7} 3.07e-16   {3,8} 1.72e-15   {5,4} 1.41e-15   (was 2.89e-07 on {4,5})
+
+  BOARD TOTALS: {4,5} 5951, {3,7} 85, {3,8} 60, {5,4} 61 = 6,157 hyperbolic half-tilings.

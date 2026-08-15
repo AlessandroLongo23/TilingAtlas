@@ -1,0 +1,10 @@
+{
+  "name": "hyp-46-half",
+  "D": 12,
+  "tileGeometry": "hyperbolic",
+  "closure": "euclidean",
+  "comment": "HALF THE {4,6} SQUARE. Six squares meet at every {4,6} vertex, so each corner is 60 degrees; a diagonal cuts one square into two 30-60-30 triangles. The diagonal halves the two corners it lands on and leaves the other whole, so the halves are isosceles and achiral — the same shape of cut as {4,5} halved, one valence further along. D=12 because 30 degrees is one unit of 2pi/12; the angles are [1,2,1] and sum to 4 against the 6 a FLAT triangle would, so the deficit is 2 units = 60 degrees = pi/3, the tile's area. Sides are DERIVED, not declared: a hyperbolic triangle is pinned by its angles, and the polar law of cosines gives arccosh(3) = 1.762747174 for the {4,6} edge and arccosh(5) = 2.292431670 for the diagonal. Both ends of the cut are {4,6} VERTICES, so no edge is halved and no vertex can become a T-junction — this board does NOT test the {3,7}/{3,8} parity argument, which is about altitude cuts landing at edge midpoints. What it tests is how the catalogue grows when the valence rises with the cut held fixed.",
+  "tiles": [
+    { "kind": "composite", "name": "Q46", "famchar": "q", "angles": [1, 2, 1], "edges": ["S", "S", "D"] }
+  ]
+}
