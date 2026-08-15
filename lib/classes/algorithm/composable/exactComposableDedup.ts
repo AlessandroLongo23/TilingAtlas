@@ -183,10 +183,30 @@ function computeEdgeDirs(zetas: Cyclotomic[], verts: Cyclotomic[]): number[] {
 	});
 }
 
+/**
+ * A chiral tile and its mirror twin are TWO alphabet symbols but ONE polygon species, so congruence
+ * must not separate them by name. The generator names the twin `<base>'` (alphabets/gen_alphabet.py
+ * mirror_expand), and this maps both back to `<base>`.
+ *
+ * Without it the dedup cannot merge an enantiomorphic pair even though it tries the reflection: the
+ * reflected geometry of `X` matches `X'` exactly, but the names differ, so the tiles never correspond
+ * and the pair ships twice. Measured 2026-08-08 on the period-3 shelf — period-k2-028 (using
+ * e3-12-165.150.135) and period-k2-029 (using e3-12-165.150.135') are the two hands of one tiling and
+ * both survived.
+ *
+ * Collapsing the names cannot over-merge: the congruence still compares EXACT vertices, and a tile is
+ * not congruent to its mirror under a rotation, so two tilings only merge when a genuine reflection
+ * carries one onto the other — which is exactly the chirality-MERGE convention (A068599).
+ */
+export function speciesName(name: string): string {
+	return name.endsWith("'") ? name.slice(0, -1) : name;
+}
+
 function buildPeriodCell(ring: CyclotomicRing, zetas: Cyclotomic[], ec: ExactComposableCell): PeriodCell {
 	const cellPolygons = ec.cellPolygons.map((cp) => {
 		const verts = cp.exact.map((t) => toCyc(ring, t));
-		const poly = new ExactComposablePolygon(cp.n, cp.name); // getName() = name — separates tile species in the congruence buckets
+		// species, not symbol: mirror twins must compare equal (see speciesName)
+		const poly = new ExactComposablePolygon(cp.n, speciesName(cp.name));
 		if (cp.star) poly.isStar = true;
 		poly.setExactVertices(verts, computeEdgeDirs(zetas, verts));
 		return poly;

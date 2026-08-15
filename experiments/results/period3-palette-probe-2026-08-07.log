@@ -1,0 +1,24 @@
+# Period-p equilateral palettes — config-space probe (2026-08-07 15:27)
+
+## Baseline (known-good palettes, for calibration)
+--- regular-z24
+regular-z24: D=24 tiles=5 corner_classes=5 maxValence=12
+  corner angles (units of 15 deg): [4, 6, 8, 9, 10]
+  forbidden pairs: 0  (0.0s)
+  vertex configs: 15   enumeration 0.0s   total 0.0s
+--- isotoxal-star-z24
+isotoxal-star-z24: D=24 tiles=29 corner_classes=53 maxValence=12
+  corner angles (units of 15 deg): [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 18, 20]
+  forbidden pairs: 589  (0.3s)
+  vertex configs: 34246   enumeration 11.7s   total 11.9s
+
+## Period-3, convex only (regular {3,4,6,8,12} + all 19 convex p=3 tiles)
+--- equi3-cx-z24
+(eval):1: command not found: timeout
+
+## Period-3, convex only (regular {3,4,6,8,12} + all 19 convex p=3 tiles)
+--- equi3-cx-z24
+equi3-cx-z24: D=24 tiles=24 corner_classes=62 maxValence=12
+  corner angles (units of 15 deg): [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+  forbidden pairs: 0  (0.3s)
+  vertex configs: 106266   enumeration 21.2s   total 21.5s

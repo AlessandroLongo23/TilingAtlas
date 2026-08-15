@@ -1,0 +1,21 @@
+# equi3-cx-z24: how much does k=3 cost relative to k=2?
+# Same shard (w=0 of N=480, D2=8), same tables, only MAXNUM differs. Cap 2700s.
+# k=2 reference from the full run: 15.7s for this shard.
+=== e3-k2ref (N=480 D2=8 cap=900s)
+  w=0     10s  blocks=2
+  w=48    10s  blocks=1
+  TOTAL 20s over 2 shards, 3 blocks
+=== e3-k3 (N=480 D2=8 cap=2700s)
+  w=0     338s  blocks=5
+  w=48    361s  blocks=19
+  TOTAL 699s over 2 shards, 24 blocks
+
+## Control (isotox-cx45-z24, period 2, filters live): same k=2 -> k=3 step on the same shards
+=== ctrl-k2 (N=480 D2=8 cap=2700s)
+  w=0     0s  blocks=4
+  w=48    0s  blocks=3
+  TOTAL 0s over 2 shards, 7 blocks
+=== ctrl-k3 (N=480 D2=8 cap=2700s)
+  w=0     1s  blocks=39
+  w=48    1s  blocks=9
+  TOTAL 2s over 2 shards, 48 blocks

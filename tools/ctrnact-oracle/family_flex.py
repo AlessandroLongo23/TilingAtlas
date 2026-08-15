@@ -130,6 +130,18 @@ def decode(tab, vertypeline, conwayline):
     glue = makeglue(conwayline, mirro, label)
     return rneig, lneig, mirro, cls, glue
 
+
+def decode_etype(tab, vertypeline):
+    """Per-dart edge type for the same dart numbering decode() builds. Empty list if the palette
+    declares none (every table generated before CTRNTB02 / the ETYPE key)."""
+    if not hasattr(tab, "ETYPE"):
+        return []
+    idx = {s: i for i, s in enumerate(tab.SYMBOLS)}
+    out = []
+    for s in vertypeline.split(", "):
+        out += tab.ETYPE[idx[s]]
+    return out
+
 # ---------------- step 1: pinning test ----------------
 def species_and_q(tab, cls_used):
     """star species present among used corner classes; qvec[class] = signed unit per species."""

@@ -6,12 +6,14 @@
 //
 // Three layers, in paint order: cell fills, the scaffold (every grid edge, faint), the drawn edges on top.
 
+import { DEFAULT_TILE_RULE, type TileLoop, type TileRule } from "@/lib/freedraw/arcs";
 import {
 	classifyFaces,
 	classifyPatchFaces,
 	type FaceAnalysis,
 } from "@/lib/freedraw/faces";
 import { coset, gridOf, type Curve4, type FreedrawPattern } from "@/lib/freedraw/pattern";
+import { gridCellArcs, patchTileArcs } from "@/lib/freedraw/patternArcs";
 import type { FillMode } from "@/lib/freedraw/render";
 import { cubicAt, cubicFlatness, cubicSegmentCount, type Cubic } from "../cubic";
 import type { PeriodicCell, PeriodicPrim } from "../periodicCell";
@@ -41,17 +43,76 @@ const SCAFFOLD_SCALE = 0.5;
 const Z_FILL = 0;
 const Z_SCAFFOLD = 1;
 const Z_DRAWN = 2;
+const Z_ARCS = 3;
 
 export interface EdgesCellOptions {
 	dark: boolean;
 	fillMode: FillMode;
 	showScaffold: boolean;
+	/**
+	 * Tile mode (lib/freedraw/arcs.ts). Same edge bits, read as connected / not and filled as a black
+	 * region entering each tile through the middle third of every connected edge. The figures come from
+	 * the SAME adapter the 2D canvas uses (lib/freedraw/patternArcs.ts), so turning the lens on cannot
+	 * silently re-wire the picture — `twist` is chiral, and two adapters would have drifted on it.
+	 */
+	showArcs?: boolean;
+	arcRule?: TileRule;
 	/** The face analysis for this pattern (memoised by the caller — it walks the whole period). */
 	analysis: FaceAnalysis;
 }
 
 export function edgesPeriodicCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | null {
+	// The fill and the arcs are two answers to the same question and a coloured face under a curve reads
+	// as neither — the same suppression drawFreedraw applies, so both renderers show one picture.
+	if (opts.showArcs && opts.fillMode !== "none") opts = { ...opts, fillMode: "none" };
 	return p.patch ? patchCell(p, opts) : gridCell(p, opts);
+}
+
+/**
+ * A tile's black region, appended as one filled ring per boundary loop. `ox`/`oy` translate it in the
+ * Y-UP frame the adapter works in, and the y flip to the lens's y-down frame happens on the way out —
+ * never by flipping the tile before `tileFigure` sees it, which would mirror the chiral pairing.
+ *
+ * `nonzero` because a permutation whose arcs cross closes a self-intersecting loop, and an even-odd
+ * fill would hollow out the crossing instead of merging it — the same reason the hollow class asks for it.
+ */
+function emitArcs(
+	prims: PeriodicPrim[],
+	figure: readonly TileLoop[],
+	ox: number,
+	oy: number,
+	rgb: [number, number, number],
+): void {
+	for (const loop of figure) {
+		let x = loop.start[0] + ox;
+		let y = -(loop.start[1] + oy);
+		const verts: number[] = [x, y];
+		for (const seg of loop.segs) {
+			const ex = seg.to[0] + ox;
+			const ey = -(seg.to[1] + oy);
+			if (seg.kind === "line") {
+				verts.push(ex, ey);
+			} else {
+				const c: Cubic = [
+					{ x, y },
+					{ x: seg.c1[0] + ox, y: -(seg.c1[1] + oy) },
+					{ x: seg.c2[0] + ox, y: -(seg.c2[1] + oy) },
+					{ x: ex, y: ey },
+				];
+				const chord = Math.hypot(ex - x, ey - y);
+				const n = cubicSegmentCount(cubicFlatness(c), 1, ARC_TOL_FRAC * chord, MAX_ARC_SEGMENTS);
+				// Skip t = 0: the previous segment already left the point there.
+				for (let i = 1; i < n; i++) {
+					const q = cubicAt(c, i / n);
+					verts.push(q.x, q.y);
+				}
+				verts.push(ex, ey);
+			}
+			x = ex;
+			y = ey;
+		}
+		if (verts.length >= 6) prims.push({ verts, fillRgb: rgb, nonzero: true, z: Z_ARCS });
+	}
 }
 
 function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | null {
@@ -114,7 +175,9 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 						strokeScale: SCAFFOLD_SCALE, z: Z_SCAFFOLD,
 					});
 				}
-				if (drawn) {
+				// No edge strokes in arc mode — see drawFreedraw: a faint ghost of them reads as the grid
+				// scaffold, which is a separate toggle, so it left lines the Grid checkbox did not control.
+				if (drawn && !opts.showArcs) {
 					prims.push({
 						verts: [...verts], open: true, strokeRgb: drawnRgb(opts.dark), strokeAlpha: 1,
 						strokeScale: DRAWN_SCALE, z: Z_DRAWN,
@@ -124,6 +187,26 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 			seg(x, y, x + 1, y, p.h[c] === 1);
 			seg(x, y, x, y + 1, p.v[c] === 1);
 			if (tri) seg(x, y, x + 1, y - 1, p.w?.[c] === 1);
+		}
+	}
+
+	if (opts.showArcs) {
+		// The adapter's figures are relative to their own cell's corner, and the corner's Y-UP world
+		// position is the only thing that changes between the cosets.
+		const figures = gridCellArcs(p, opts.arcRule ?? DEFAULT_TILE_RULE);
+		const rgb = drawnRgb(opts.dark);
+		for (let y = 0; y < p.d; y++) {
+			for (let x = 0; x < p.a; x++) {
+				const c = coset(p, x, y);
+				const ox = wx(x, y);
+				const oy = by * y; // y-up: wy() above has already negated it
+				if (tri) {
+					emitArcs(prims, figures[2 * c], ox, oy, rgb);
+					emitArcs(prims, figures[2 * c + 1], ox, oy, rgb);
+				} else {
+					emitArcs(prims, figures[c], ox, oy, rgb);
+				}
+			}
 		}
 	}
 	if (prims.length === 0) return null;
@@ -230,17 +313,27 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 		const verts: number[] = [];
 		arc(patch.edgeCurves?.[ei], sx, sy, ex, ey, verts);
 		verts.push(ex, ey);
-		if (opts.showScaffold && drawn !== 1) {
+		// Every edge in arc mode: nothing strokes the drawn ones there, and on a Truchet board they all are.
+		if (opts.showScaffold && (drawn !== 1 || opts.showArcs)) {
 			prims.push({
 				verts, open: true, strokeRgb: scaffoldRgb(opts.dark), strokeAlpha: SCAFFOLD_ALPHA,
 				strokeScale: SCAFFOLD_SCALE, z: Z_SCAFFOLD,
 			});
 		}
-		if (drawn === 1) {
+		if (drawn === 1 && !opts.showArcs) {
 			prims.push({
 				verts: [...verts], open: true, strokeRgb: drawnRgb(opts.dark), strokeAlpha: 1,
 				strokeScale: DRAWN_SCALE, z: Z_DRAWN,
 			});
+		}
+	}
+
+	if (opts.showArcs) {
+		// Patch figures are already absolute in the patch's own y-up coordinates, so there is no per-tile
+		// offset to add — only the flip.
+		const rgb = drawnRgb(opts.dark);
+		for (const figure of patchTileArcs(patch, opts.arcRule ?? DEFAULT_TILE_RULE)) {
+			emitArcs(prims, figure, 0, 0, rgb);
 		}
 	}
 	if (prims.length === 0) return null;

@@ -1,0 +1,1346 @@
+[
+ {
+  "id": "period-quotient-k1-001",
+  "k": 1,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k1-005",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-001",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-002",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-003",
+  "k": 3,
+  "P": 3,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k1-002",
+  "k": 1,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k1-004",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-004",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-009",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-005",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-006",
+  "k": 3,
+  "P": 3,
+  "verdict": "internal-same",
+  "match": "period-quotient-k3-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-007",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-008",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-009",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k1-003",
+  "k": 1,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k1-005",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-009",
+  "k": 3,
+  "P": 3,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k1-004",
+  "k": 1,
+  "P": 2,
+  "verdict": "same",
+  "match": "period-family-k1-007",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k1-005",
+  "k": 1,
+  "P": 2,
+  "verdict": "contains",
+  "match": "period-family-k2-039",
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-010",
+  "k": 3,
+  "P": 3,
+  "verdict": "internal-same",
+  "match": "period-quotient-k3-009",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k1-006",
+  "k": 1,
+  "P": 2,
+  "verdict": "internal-same",
+  "match": "period-quotient-k1-004",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-011",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-009",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k1-007",
+  "k": 1,
+  "P": 2,
+  "verdict": "internal-same",
+  "match": "period-quotient-k1-004",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-012",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-009",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-013",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-014",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-015",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-016",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-017",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-018",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-019",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-020",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-021",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-022",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-023",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-024",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-025",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-026",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-027",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-028",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-029",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-030",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-031",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-032",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-033",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-036",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-034",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-035",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-036",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-037",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-038",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-039",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-040",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-041",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-042",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-same",
+  "match": "period-quotient-k3-036",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-043",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-044",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-045",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-046",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-047",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-048",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-049",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-050",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-051",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-052",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-053",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-054",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-055",
+  "k": 3,
+  "P": 2,
+  "verdict": "contains",
+  "match": "period-family-k2-017",
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-056",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-same",
+  "match": "period-quotient-k3-055",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-057",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-058",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-058",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-059",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-060",
+  "k": 3,
+  "P": 2,
+  "verdict": "contains",
+  "match": "period-family-k2-029",
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-061",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-same",
+  "match": "period-quotient-k3-058",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-062",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-063",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-064",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-065",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-066",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-067",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-068",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-069",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-055",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-070",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-071",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-072",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-073",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-074",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-075",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-076",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-077",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-078",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-079",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-080",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-081",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-082",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-083",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-084",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-085",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-086",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-087",
+  "k": 3,
+  "P": 2,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-088",
+  "k": 3,
+  "P": 2,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-087",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-089",
+  "k": 3,
+  "P": 2,
+  "verdict": "inside",
+  "match": "period-family-k2-024",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-090",
+  "k": 3,
+  "P": 2,
+  "verdict": "contains",
+  "match": "period-family-k2-027",
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-091",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-092",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-093",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-094",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-095",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-096",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-009",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-k3-097",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-098",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-099",
+  "k": 3,
+  "P": 1,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-k3-100",
+  "k": 3,
+  "P": 1,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-009",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-001",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-002",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-003",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-004",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-005",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-001",
+  "k": 2,
+  "P": 0,
+  "verdict": "inside",
+  "match": "period-family-k2-036",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-006",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-002",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-003",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-007",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-004",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-same",
+  "match": "period-quotient-rigid-k2-003",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-008",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-009",
+  "k": 3,
+  "P": 0,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-037",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-010",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-011",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-012",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-013",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-014",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-015",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-005",
+  "k": 2,
+  "P": 0,
+  "verdict": "inside",
+  "match": "period-family-k2-014",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k2-006",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-007",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-same",
+  "match": "period-quotient-rigid-k2-006",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-016",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-017",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-018",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-019",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-020",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-008",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-009",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-same",
+  "match": "period-quotient-rigid-k2-008",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-021",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-022",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-023",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-024",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-025",
+  "k": 3,
+  "P": 0,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-037",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-026",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-027",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-028",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-029",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-030",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-031",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-010",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-032",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-033",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-011",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-012",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-090",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k3-034",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-035",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-013",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-inside",
+  "match": "period-quotient-k3-090",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k2-014",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-015",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-016",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-same",
+  "match": "period-quotient-rigid-k2-015",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k2-017",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-018",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-019",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-same",
+  "match": "period-quotient-rigid-k2-017",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k2-020",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k3-036",
+  "k": 3,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-021",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-022",
+  "k": 2,
+  "P": 0,
+  "verdict": "inside",
+  "match": "period-family-k2-032",
+  "ship": false
+ },
+ {
+  "id": "period-quotient-rigid-k2-023",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-024",
+  "k": 2,
+  "P": 0,
+  "verdict": "new",
+  "match": null,
+  "ship": true
+ },
+ {
+  "id": "period-quotient-rigid-k2-025",
+  "k": 2,
+  "P": 0,
+  "verdict": "internal-same",
+  "match": "period-quotient-rigid-k2-024",
+  "ship": false
+ }
+]

@@ -1,4 +1,5 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { evaluateIntrinsic, type IntrinsicCellData } from "@/lib/utils/intrinsicCell";
 
 // Parametric translational cell for free-angle tiling families — one OR more independent parameters.
 //
@@ -22,6 +23,10 @@ export interface ParametricCellData {
 		alphaRangeDegOpen: [number, number]; // mathematical (open) validity interval — the slider domain
 		defaultAlphaDeg: number;
 		tile?: string; // the isotoxal tile this parameter flexes (e.g. "cx6-90.150")
+		// INTRINSIC families only: the dart whose corner angle this slider IS. The parameter is not an
+		// abstract direction in a null space, it is a corner of a tile, which is why the panel can name
+		// it and the canvas can point at it.
+		dart?: number;
 		// The slider is not always injective: some families pass through a maximally symmetric member and
 		// come back, so α and 2·foldCentreDeg − α are the SAME tiling (up to an isometry, `foldKind`).
 		// Measured by scripts/scan-family-ranges.py and confirmed with an explicit isometry search, never
@@ -49,6 +54,12 @@ export interface ParametricCellData {
 	// above stay the FIRST segment's, so a consumer that ignores this field still renders a real tiling
 	// (half the sweep), not nothing. Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md
 	segments?: ParamSegment[];
+	// INTRINSIC families: the parameters are the tiling's own, not the palette's, and the geometry is
+	// solved at render time from the combinatorial map instead of read off a Laurent polynomial. See
+	// lib/utils/intrinsicCell.ts. When present it OWNS the evaluation; `cellPolygons` and `basis` above
+	// still hold the anchor as constant terms, so a consumer that has never heard of this field renders
+	// a real tiling (the entry's default) rather than nothing.
+	intrinsic?: IntrinsicCellData;
 }
 
 /** One half of a merged family: the source family's symbolic cell plus where it sits on the merged slider.
@@ -263,6 +274,19 @@ export function segmentAt(pc: ParametricCellData, u: number): ParamSegment | nul
 
 /** Evaluate the family at a slider position (one number for 1-param, an array for N-param); parseBaseCell-ready. */
 export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | number[]): TranslationalCellData {
+	// An INTRINSIC family solves for its geometry instead of evaluating a polynomial, so it takes the
+	// whole evaluation. The clamp is the per-axis one: its region is a set of intervals, and the joint
+	// question is settled inside, on the cell about to be drawn.
+	if (pc.intrinsic) {
+		const alphas = Array.isArray(alphaDeg) ? alphaDeg : [alphaDeg];
+		const want = pc.params.map((p, j) => {
+			const [lo, hi] = p.alphaRangeDegOpen;
+			const a = alphas[j] ?? p.defaultAlphaDeg;
+			return Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
+		});
+		const cell = evaluateIntrinsic(pc.intrinsic, pc.params.map((p) => p.dart ?? 0), want);
+		if (cell) return cell;
+	}
 	// A merged family carries one parameter and a segment per half: hold the slider position inside the
 	// merged open interval exactly as the unsegmented path does, pick the segment, map the position onto
 	// that segment's own α, and evaluate ITS cell against ITS δ origin. The seam is deliberately NOT

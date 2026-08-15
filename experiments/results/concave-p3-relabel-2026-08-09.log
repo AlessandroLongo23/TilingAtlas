@@ -1,0 +1,23 @@
+# Concave period-3 merge + true-k relabel — 2026-08-09
+# Every developed cell that uses a concave period-3 tile, k MEASURED from the geometry
+# (vertex_orbits.orbit_count, validated on Galebach k=1..6, 1248/1248).
+
+2574 concave-bearing developed cells
+  250/2574  relabelled 12  elapsed 10s  ETA 93s
+  500/2574  relabelled 51  elapsed 15s  ETA 64s
+  750/2574  relabelled 87  elapsed 21s  ETA 50s
+  1000/2574  relabelled 120  elapsed 28s  ETA 44s
+  1250/2574  relabelled 144  elapsed 34s  ETA 36s
+  1500/2574  relabelled 281  elapsed 43s  ETA 31s
+  1750/2574  relabelled 408  elapsed 49s  ETA 23s
+  2000/2574  relabelled 546  elapsed 56s  ETA 16s
+  2250/2574  relabelled 676  elapsed 64s  ETA 9s
+  2500/2574  relabelled 872  elapsed 73s  ETA 2s
+relabelled 946 of 2574: 1->2: 81, 2->1: 19, 2->3: 125, 2->4: 27, 3->1: 38, 3->2: 147, 3->4: 255, 3->5: 122, 3->6: 132
+final k: {1: 197, 2: 595, 3: 1246, 4: 282, 5: 122, 6: 132}
+wrote 197 -> ctrnact-period3-concave-k1.cells.json
+wrote 595 -> ctrnact-period3-concave-k2.cells.json
+wrote 1246 -> ctrnact-period3-concave-k3.cells.json
+wrote 282 -> ctrnact-period3-concave-k4.cells.json
+wrote 122 -> ctrnact-period3-concave-k5.cells.json
+wrote 132 -> ctrnact-period3-concave-k6.cells.json

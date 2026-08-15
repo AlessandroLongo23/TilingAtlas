@@ -1,0 +1,266 @@
+=== scan-family-ranges: true α ranges vs exported ===
+input: experiments/period-oracle/ctrnact-period-families.cells.json
+palette: tools/ctrnact-oracle/alphabets/palettes/equi3-cx-z24.json — 24 species, 15° per angle unit
+44 families, 33 single-parameter (the rest need the 2-param sweep)
+
+[1/33] period-family-k2-012
+    exported (30, 180)  true (0.0000, 210.0000)  stops: low=collapse high=collapse  distinct sweep 210.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +60.00°
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.150.15']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.15.150']
+[2/33] period-family-k2-013
+    exported (30, 180)  true (0.0000, 210.0000)  stops: low=collapse high=collapse  distinct sweep 210.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +60.00°
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.15.150']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.150.15']
+[3/33] period-family-k2-014
+    exported (30, 180)  true (0.0000, 210.0000)  stops: low=collapse high=collapse  distinct sweep 105.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +60.00°; FOLDED reflection @ 42.0°≡168.0° (centre 105°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.15.150']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.150.15']
+[4/33] period-family-k2-015
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+[5/33] period-family-k2-016
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.45.120', 'e3-6-210.30.120', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-210.120.30', 'e3-6-225.120.15']
+[6/33] period-family-k2-017
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+[7/33] period-family-k2-018
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.45.120', 'e3-6-210.30.120', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-210.120.30', 'e3-6-225.120.15']
+[8/33] period-family-k2-019
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6, 6] high=True[6, 6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.45.120', 'e3-6-210.30.120', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-210.120.30', 'e3-6-225.120.15']
+[9/33] period-family-k2-020
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+[10/33] period-family-k2-021
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.45.120', 'e3-6-210.30.120', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-210.120.30', 'e3-6-225.120.15']
+[11/33] period-family-k2-022
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6, 6] high=True[6, 6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-210.120.30', 'e3-6-225.120.15']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.45.120', 'e3-6-210.30.120', 'e3-6-225.15.120']
+[12/33] period-family-k2-023
+    exported (60, 180)  true (0.0000, 240.0000)  stops: low=collapse high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 48.0°≡192.0° (centre 120°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.120.45', 'e3-6-195.45.120', 'e3-6-210.120.30', 'e3-6-210.30.120', 'e3-6-225.120.15', 'e3-6-225.15.120']
+[13/33] period-family-k2-024
+    exported (90, 180)  true (0.0000, 270.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +180.00°; FOLDED reflection @ 54.0°≡216.0° (centre 135°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.75.90', 'e3-6-210.60.90', 'e3-6-225.45.90', 'e3-6-240.30.90', 'e3-6-255.15.90']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.90.75', 'e3-6-210.90.60', 'e3-6-225.90.45', 'e3-6-240.90.30', 'e3-6-255.90.15']
+[14/33] period-family-k2-025
+    exported (90, 180)  true (0.0000, 270.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +180.00°; FOLDED reflection @ 54.0°≡216.0° (centre 135°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.75.90', 'e3-6-195.90.75', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.45.90', 'e3-6-225.90.45', 'e3-6-240.30.90', 'e3-6-240.90.30', 'e3-6-255.15.90', 'e3-6-255.90.15']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.75.90', 'e3-6-195.90.75', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.45.90', 'e3-6-225.90.45', 'e3-6-240.30.90', 'e3-6-240.90.30', 'e3-6-255.15.90', 'e3-6-255.90.15']
+[15/33] period-family-k2-026
+    exported (90, 180)  true (0.0000, 270.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +180.00°; FOLDED reflection @ 54.0°≡216.0° (centre 135°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.75.90', 'e3-6-210.60.90', 'e3-6-225.45.90', 'e3-6-240.30.90', 'e3-6-255.15.90']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.90.75', 'e3-6-210.90.60', 'e3-6-225.90.45', 'e3-6-240.90.30', 'e3-6-255.90.15']
+[16/33] period-family-k2-027
+    exported (90, 180)  true (0.0000, 270.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +180.00°; FOLDED rotation @ 54.0°≡216.0° (centre 135°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.90.75', 'e3-6-210.90.60', 'e3-6-225.90.45', 'e3-6-240.90.30', 'e3-6-255.90.15']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.75.90', 'e3-6-210.60.90', 'e3-6-225.45.90', 'e3-6-240.30.90', 'e3-6-255.15.90']
+[17/33] period-family-k2-028
+    exported (90, 180)  true (0.0000, 270.0000)  stops: low=collapse high=collapse  distinct sweep 135.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +180.00°; FOLDED reflection @ 54.0°≡216.0° (centre 135°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.75.90', 'e3-6-195.90.75', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.45.90', 'e3-6-225.90.45', 'e3-6-240.30.90', 'e3-6-240.90.30', 'e3-6-255.15.90', 'e3-6-255.90.15']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.75.90', 'e3-6-195.90.75', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.45.90', 'e3-6-225.90.45', 'e3-6-240.30.90', 'e3-6-240.90.30', 'e3-6-255.15.90', 'e3-6-255.90.15']
+[18/33] period-family-k2-029
+    exported (120, 180)  true (60.0000, 240.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 96.0°≡204.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.60.75', 'e3-6-225.75.60']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.60.75', 'e3-6-225.75.60']
+[19/33] period-family-k2-030
+    exported (120, 180)  true (60.0000, 240.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +120.00°; FOLDED reflection @ 96.0°≡204.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-210.90.60', 'e3-6-225.75.60']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-225.60.75']
+[20/33] period-family-k2-031
+    exported (120, 180)  true (60.0000, 240.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +120.00°; FOLDED reflection @ 96.0°≡204.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-210.90.60', 'e3-6-225.75.60']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-225.60.75']
+[21/33] period-family-k2-032
+    exported (120, 180)  true (0.0000, 300.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[9, 9] high=True[9, 9]   TRUNCATED +240.00°; FOLDED reflection @ 60.0°≡240.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-9-195.105.120', 'e3-9-210.90.120', 'e3-9-225.75.120', 'e3-9-240.60.120', 'e3-9-255.45.120', 'e3-9-270.30.120', 'e3-9-285.15.120']
+    new high arc: solver-reachable=False  off-palette species ['e3-9-195.120.105', 'e3-9-210.120.90', 'e3-9-225.120.75', 'e3-9-240.120.60', 'e3-9-255.120.45', 'e3-9-270.120.30', 'e3-9-285.120.15']
+[22/33] period-family-k2-033
+    exported (120, 180)  true (60.0000, 240.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6, 6, 6] high=True[6, 6, 6]   TRUNCATED +120.00°; FOLDED rotation @ 96.0°≡204.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-225.60.75']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-210.90.60', 'e3-6-225.75.60']
+[23/33] period-family-k2-034
+    exported (120, 180)  true (0.0000, 300.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[9] high=True[9]   TRUNCATED +240.00°; FOLDED rotation @ 60.0°≡240.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-9-195.120.105', 'e3-9-210.120.90', 'e3-9-225.120.75', 'e3-9-240.120.60', 'e3-9-255.120.45', 'e3-9-270.120.30', 'e3-9-285.120.15']
+    new high arc: solver-reachable=False  off-palette species ['e3-9-195.105.120', 'e3-9-210.90.120', 'e3-9-225.75.120', 'e3-9-240.60.120', 'e3-9-255.45.120', 'e3-9-270.30.120', 'e3-9-285.15.120']
+[24/33] period-family-k2-035
+    exported (120, 180)  true (60.0000, 240.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 96.0°≡204.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.60.75', 'e3-6-225.75.60']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.60.75', 'e3-6-225.75.60']
+[25/33] period-family-k2-036
+    exported (120, 180)  true (60.0000, 240.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6] high=True[6]   TRUNCATED +120.00°; FOLDED reflection @ 96.0°≡204.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-210.90.60', 'e3-6-225.75.60']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-225.60.75']
+[26/33] period-family-k2-037
+    exported (120, 180)  true (60.0000, 240.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 90.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +120.00°; FOLDED reflection @ 96.0°≡204.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.60.75', 'e3-6-225.75.60']
+    new high arc: solver-reachable=False  off-palette species ['e3-6-195.105.60', 'e3-6-195.60.105', 'e3-6-210.60.90', 'e3-6-210.90.60', 'e3-6-225.60.75', 'e3-6-225.75.60']
+[27/33] period-family-k2-038
+    exported (90, 180)  true (60.0000, 180.0000)  stops: low=self-intersecting tile high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +30.00°
+    new low arc: solver-reachable=False  off-palette species ['e3-6-210.75.75']
+[28/33] period-family-k2-039
+    exported (90, 180)  true (60.0000, 180.0000)  stops: low=self-intersecting tile high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +30.00°
+    new low arc: solver-reachable=False  off-palette species ['e3-6-210.75.75']
+[29/33] period-family-k2-040
+    exported (90, 180)  true (60.0000, 180.0000)  stops: low=self-intersecting tile high=collapse  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6, 6, 6] high=True[6, 6, 6, 6]   TRUNCATED +30.00°
+    new low arc: solver-reachable=False  off-palette species ['e3-6-210.75.75']
+[30/33] period-family-k2-041
+    exported (120, 180)  true (0.0000, 300.0000)  stops: low=self-intersecting tile high=self-intersecting tile  distinct sweep 150.00°
+    exported bounds concavity cuts? low=True[12] high=True[12]   TRUNCATED +240.00°; FOLDED reflection @ 60.0°≡240.0° (centre 150°)
+    new low arc: solver-reachable=False  off-palette species ['e3-12-195.105.150', 'e3-12-210.90.150', 'e3-12-225.75.150', 'e3-12-240.60.150', 'e3-12-255.45.150', 'e3-12-270.30.150', 'e3-12-285.15.150']
+    new high arc: solver-reachable=False  off-palette species ['e3-12-195.150.105', 'e3-12-210.150.90', 'e3-12-225.150.75', 'e3-12-240.150.60', 'e3-12-255.150.45', 'e3-12-270.150.30', 'e3-12-285.150.15']
+[31/33] period-family-k2-042
+    exported (-75, 15)  true (-75.0000, 45.0000)  stops: low=collapse high=self-intersecting tile  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +30.00°
+    new high arc: solver-reachable=False  off-palette species ['e3-6-210.75.75']
+[32/33] period-family-k2-043
+    exported (-75, 15)  true (-75.0000, 45.0000)  stops: low=collapse high=self-intersecting tile  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6] high=True[6, 6]   TRUNCATED +30.00°
+    new high arc: solver-reachable=False  off-palette species ['e3-6-210.75.75']
+[33/33] period-family-k2-044
+    exported (-75, 15)  true (-75.0000, 45.0000)  stops: low=collapse high=self-intersecting tile  distinct sweep 120.00°
+    exported bounds concavity cuts? low=True[6, 6, 6, 6] high=True[6, 6, 6, 6]   TRUNCATED +30.00°
+    new high arc: solver-reachable=False  off-palette species ['e3-6-210.75.75']
+
+=== summary ===
+single-parameter families scanned: 33
+TRUNCATED (true range wider than exported): 33
+FOLDED (slider not injective, isometry-confirmed): 25  [Counter({'reflection': 22, 'rotation': 3})]
+stop reasons: {'low:collapse': 20, 'high:collapse': 20, 'low:self-intersecting tile': 13, 'high:self-intersecting tile': 13}
+unshipped α-arc: 3900.00° gross across 33 families (mean 118.18°); 2100.00° after discounting folded replay
+families whose new arc has NO on-palette grid configuration (so the solver cannot supply it under another id — provably absent from the atlas): 33/33
+off-palette species blocking those arcs: {'e3-6-210.60.90': 17, 'e3-6-210.90.60': 17, 'e3-6-210.30.120': 13, 'e3-6-225.120.15': 13, 'e3-6-225.15.120': 13, 'e3-6-210.120.30': 13, 'e3-6-195.45.120': 13, 'e3-6-195.120.45': 13, 'e3-6-195.105.60': 10, 'e3-6-225.75.60': 10, 'e3-6-225.60.75': 10, 'e3-6-195.60.105': 10, 'e3-6-240.30.90': 7, 'e3-6-225.45.90': 7, 'e3-6-255.15.90': 7, 'e3-6-195.75.90': 7, 'e3-6-195.90.75': 7, 'e3-6-255.90.15': 7, 'e3-6-225.90.45': 7, 'e3-6-240.90.30': 7}
+
+  widest truncations:
+    period-family-k2-032               (120,180) → (0.000,300.000)  +240.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-034               (120,180) → (0.000,300.000)  +240.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-041               (120,180) → (0.000,300.000)  +240.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-024               (90,180) → (0.000,270.000)  +180.00°  [collapse | collapse]  FOLDED
+    period-family-k2-025               (90,180) → (0.000,270.000)  +180.00°  [collapse | collapse]  FOLDED
+    period-family-k2-026               (90,180) → (0.000,270.000)  +180.00°  [collapse | collapse]  FOLDED
+    period-family-k2-027               (90,180) → (0.000,270.000)  +180.00°  [collapse | collapse]  FOLDED
+    period-family-k2-028               (90,180) → (0.000,270.000)  +180.00°  [collapse | collapse]  FOLDED
+    period-family-k2-029               (120,180) → (60.000,240.000)  +120.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-030               (120,180) → (60.000,240.000)  +120.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-031               (120,180) → (60.000,240.000)  +120.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-033               (120,180) → (60.000,240.000)  +120.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-035               (120,180) → (60.000,240.000)  +120.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-036               (120,180) → (60.000,240.000)  +120.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-037               (120,180) → (60.000,240.000)  +120.00°  [self-intersecting tile | self-intersecting tile]  FOLDED
+    period-family-k2-015               (60,180) → (0.000,240.000)  +120.00°  [collapse | collapse]  FOLDED
+    period-family-k2-016               (60,180) → (0.000,240.000)  +120.00°  [collapse | collapse]  FOLDED
+    period-family-k2-017               (60,180) → (0.000,240.000)  +120.00°  [collapse | collapse]  FOLDED
+    period-family-k2-018               (60,180) → (0.000,240.000)  +120.00°  [collapse | collapse]  FOLDED
+    period-family-k2-019               (60,180) → (0.000,240.000)  +120.00°  [collapse | collapse]  FOLDED
+
+  folded sliders:
+    period-family-k2-014               exported (30,180)  α=42.00° ≡ α=168.00° by reflection, centre 105°
+    period-family-k2-015               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-016               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-017               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-018               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-019               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-020               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-021               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-022               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-023               exported (60,180)  α=48.00° ≡ α=192.00° by reflection, centre 120°
+    period-family-k2-024               exported (90,180)  α=54.00° ≡ α=216.00° by reflection, centre 135°
+    period-family-k2-025               exported (90,180)  α=54.00° ≡ α=216.00° by reflection, centre 135°
+    period-family-k2-026               exported (90,180)  α=54.00° ≡ α=216.00° by reflection, centre 135°
+    period-family-k2-027               exported (90,180)  α=54.00° ≡ α=216.00° by rotation, centre 135°
+    period-family-k2-028               exported (90,180)  α=54.00° ≡ α=216.00° by reflection, centre 135°
+    period-family-k2-029               exported (120,180)  α=96.00° ≡ α=204.00° by reflection, centre 150°
+    period-family-k2-030               exported (120,180)  α=96.00° ≡ α=204.00° by reflection, centre 150°
+    period-family-k2-031               exported (120,180)  α=96.00° ≡ α=204.00° by reflection, centre 150°
+    period-family-k2-032               exported (120,180)  α=60.00° ≡ α=240.00° by reflection, centre 150°
+    period-family-k2-033               exported (120,180)  α=96.00° ≡ α=204.00° by rotation, centre 150°
+    period-family-k2-034               exported (120,180)  α=60.00° ≡ α=240.00° by rotation, centre 150°
+    period-family-k2-035               exported (120,180)  α=96.00° ≡ α=204.00° by reflection, centre 150°
+    period-family-k2-036               exported (120,180)  α=96.00° ≡ α=204.00° by reflection, centre 150°
+    period-family-k2-037               exported (120,180)  α=96.00° ≡ α=204.00° by reflection, centre 150°
+    period-family-k2-041               exported (120,180)  α=60.00° ≡ α=240.00° by reflection, centre 150°
+
+=== covering confirmation at the widest truncations (1 = tiles exactly) ===
+  period-family-k2-032               inside new low arc   α=  60.000  {1: 300}
+  period-family-k2-032               inside new high arc  α= 240.000  {1: 300}
+  period-family-k2-032               just past true low   α=  -0.500  {1: 299, 3: 1}
+  period-family-k2-032               just past true high  α= 300.500  {1: 300}
+  period-family-k2-034               inside new low arc   α=  60.000  {1: 300}
+  period-family-k2-034               inside new high arc  α= 240.000  {1: 300}
+  period-family-k2-034               just past true low   α=  -0.500  {1: 295, 3: 5}
+  period-family-k2-034               just past true high  α= 300.500  {1: 298, 3: 2}
+  period-family-k2-041               inside new low arc   α=  60.000  {1: 300}
+  period-family-k2-041               inside new high arc  α= 240.000  {1: 300}
+  period-family-k2-041               just past true low   α=  -0.500  {1: 298, 3: 2}
+  period-family-k2-041               just past true high  α= 300.500  {1: 299, 3: 1}
+  period-family-k2-024               inside new low arc   α=  45.000  {1: 300}
+  period-family-k2-024               inside new high arc  α= 225.000  {1: 300}
+  period-family-k2-024               just past true low   α=  -0.500  {1: 298, 3: 2}
+  period-family-k2-024               just past true high  α= 270.500  {1: 297, 3: 3}
+  period-family-k2-025               inside new low arc   α=  45.000  {1: 300}
+  period-family-k2-025               inside new high arc  α= 225.000  {1: 300}
+  period-family-k2-025               just past true low   α=  -0.500  {1: 294, 3: 6}
+  period-family-k2-025               just past true high  α= 270.500  {1: 298, 3: 2}
+  period-family-k2-026               inside new low arc   α=  45.000  {1: 300}
+  period-family-k2-026               inside new high arc  α= 225.000  {1: 300}
+  period-family-k2-026               just past true low   α=  -0.500  {1: 299, 3: 1}
+  period-family-k2-026               just past true high  α= 270.500  {1: 300}
+
+=== 11 multi-parameter families ===
+  period-family-k2-001  P=3  axes [[-90.0, 90.0], [-60.0, 120.0], [-45.0, 135.0]] → [[-135.0, 90.0], [-105.0, 120.0], [-105.0, 135.0]]  +150.00°  corner limit 12→16.008 units (240.1°)
+  period-family-k2-002  P=3  axes [[-90.0, 90.0], [-60.0, 120.0], [-45.0, 135.0]] → [[-135.0, 90.0], [-105.0, 120.0], [-105.0, 135.0]]  +150.00°  corner limit 12→16.008 units (240.1°)
+  period-family-k2-003  P=3  axes [[-75.0, 105.0], [-60.0, 120.0], [0.0, 180.0]] → [[-120.0, 105.0], [-105.0, 120.0], [0.0, 240.0]]  +150.00°  corner limit 12→16.008 units (240.1°)
+  period-family-k2-004  P=3  axes [[-75.0, 105.0], [-60.0, 120.0], [0.0, 180.0]] → [[-120.0, 105.0], [-105.0, 120.0], [0.0, 240.0]]  +150.00°  corner limit 12→16.008 units (240.1°)
+  period-family-k2-005  P=3  axes [[-75.0, 105.0], [-45.0, 135.0], [-90.0, 90.0]] → [[-120.0, 105.0], [-135.0, 120.0], [-135.0, 90.0]]  +180.00°  corner limit 12→16.008 units (240.1°)
+  period-family-k2-006  P=2  axes [[-60.0, 120.0], [-45.0, 135.0]] → [[-105.0, 120.0], [-105.0, 135.0]]  +105.00°  region 72 rays, limit 12→17.912 units, stops {'collapse': 4, 'orientation flip': 46, 'self-intersecting tile': 22}
+  period-family-k1-007  P=2  axes [[-60.0, 120.0], [-45.0, 135.0]] → [[-105.0, 120.0], [-105.0, 135.0]]  +105.00°  region 72 rays, limit 12→17.912 units, stops {'collapse': 4, 'orientation flip': 46, 'self-intersecting tile': 22}
+  period-family-k2-008  P=3  axes [[-60.0, 120.0], [0.0, 180.0], [0.0, 180.0]] → [[-135.0, 120.0], [0.0, 225.0], [0.0, 240.0]]  +180.00°  corner limit 12→16.008 units (240.1°)
+  period-family-k1-009  P=2  axes [[-60.0, 120.0], [-45.0, 135.0]] → [[-105.0, 120.0], [-105.0, 135.0]]  +105.00°  region 72 rays, limit 12→17.912 units, stops {'collapse': 4, 'orientation flip': 46, 'self-intersecting tile': 22}
+  period-family-k1-010  P=2  axes [[-60.0, 120.0], [-45.0, 135.0]] → [[-105.0, 120.0], [-105.0, 135.0]]  +105.00°  region 72 rays, limit 12→17.912 units, stops {'collapse': 4, 'orientation flip': 46, 'self-intersecting tile': 22}
+  period-family-k2-011  P=2  axes [[-60.0, 120.0], [-45.0, 135.0]] → [[-105.0, 120.0], [-105.0, 135.0]]  +105.00°  region 72 rays, limit 12→17.912 units, stops {'collapse': 4, 'orientation flip': 46, 'self-intersecting tile': 22}
+
+=== range plan → experiments/period-oracle/period-range-plan.json ===
+  33 single-parameter entries (33 truncated, 25 folded); 11 multi-parameter regions
+
+done

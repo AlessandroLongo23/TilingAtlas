@@ -1,0 +1,53 @@
+[09:09:05] === period family export; tables=tables/equi3-cx-z24 D=24 ===
+[09:09:05] k=1: 72 period-bearing blocks of 83 in tables/_work/rebuild-equi3-cx-z24-k2/out/pruned  (18 distinct vertypes — 54 blocks a vertype-keyed read would have dropped)
+[09:09:08] k=1: 0 pinned, 72 flexing, 0 failed → 3 keyed groups so far
+[09:09:08]   member ids verified against ctrnact-period3-k1.cells.json: 83 records aligned
+[09:09:08] k=2: 511 period-bearing blocks of 531 in tables/_work/rebuild-equi3-cx-z24-k2/out/pruned  (289 distinct vertypes — 222 blocks a vertype-keyed read would have dropped)
+[09:09:30] k=2: 0 pinned, 511 flexing, 0 failed → 44 keyed groups so far
+[09:09:30]   member ids verified against ctrnact-period3-k2.cells.json: 531 records aligned
+[09:09:30]   period-family-k2-001: P=3 members=64 regionVerts=1-D  δ1 -90.0..90.0, δ2 -60.0..120.0, δ3 -45.0..135.0
+[09:09:30]   period-family-k2-002: P=3 members=64 regionVerts=1-D  δ1 -90.0..90.0, δ2 -60.0..120.0, δ3 -45.0..135.0
+[09:09:30]   period-family-k2-003: P=3 members=55 regionVerts=1-D  δ1 -75.0..105.0, δ2 -60.0..120.0, e3-6-135.120.105@0 0.0..180.0
+[09:09:30]   period-family-k2-004: P=3 members=55 regionVerts=1-D  δ1 -75.0..105.0, δ2 -60.0..120.0, e3-6-135.120.105@0 0.0..180.0
+[09:09:30]   period-family-k2-005: P=3 members=38 regionVerts=1-D  δ1 -75.0..105.0, δ2 -45.0..135.0, δ3 -90.0..90.0
+[09:09:30]   period-family-k2-006: P=2 members=36 regionVerts=3  δ1 -60.0..120.0, δ2 -45.0..135.0
+[09:09:30]   period-family-k1-007: P=2 members=36 regionVerts=3  δ1 -60.0..120.0, δ2 -45.0..135.0
+[09:09:30]   period-family-k2-008: P=3 members=34 regionVerts=1-D  δ1 -60.0..120.0, e3-6-135.120.105'@1 0.0..180.0, e3-6-135.120.105'@2 0.0..180.0
+[09:09:30]   period-family-k1-009: P=2 members=18 regionVerts=3  δ1 -60.0..120.0, δ2 -45.0..135.0
+[09:09:30]   period-family-k1-010: P=2 members=18 regionVerts=3  δ1 -60.0..120.0, δ2 -45.0..135.0
+[09:09:30]   period-family-k2-011: P=2 members=18 regionVerts=3  δ1 -60.0..120.0, δ2 -45.0..135.0
+[09:09:30]   period-family-k2-012: P=1 members=9 regionVerts=1-D  e3-6-150.105.105@1 30.0..180.0
+[09:09:30]   period-family-k2-013: P=1 members=9 regionVerts=1-D  e3-6-150.105.105@1 30.0..180.0
+[09:09:30]   period-family-k2-014: P=1 members=9 regionVerts=1-D  e3-6-150.105.105@1 30.0..180.0
+[09:09:30]   period-family-k2-015: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-016: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-017: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-018: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-019: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-020: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-021: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-022: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-023: P=1 members=6 regionVerts=1-D  e3-6-135.120.105'@0 60.0..180.0
+[09:09:30]   period-family-k2-024: P=1 members=5 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-025: P=1 members=5 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-026: P=1 members=5 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-027: P=1 members=5 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-028: P=1 members=5 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-029: P=1 members=3 regionVerts=1-D  e3-6-150.150.60@0 120.0..180.0
+[09:09:30]   period-family-k2-030: P=1 members=3 regionVerts=1-D  e3-6-150.150.60@0 120.0..180.0
+[09:09:30]   period-family-k2-031: P=1 members=3 regionVerts=1-D  e3-6-150.150.60@0 120.0..180.0
+[09:09:30]   period-family-k2-032: P=1 members=3 regionVerts=1-D  e3-9-150.150.120@0 120.0..180.0
+[09:09:30]   period-family-k2-033: P=1 members=3 regionVerts=1-D  e3-6-150.150.60@0 120.0..180.0
+[09:09:30]   period-family-k2-034: P=1 members=3 regionVerts=1-D  e3-9-150.150.120@0 120.0..180.0
+[09:09:30]   period-family-k2-035: P=1 members=3 regionVerts=1-D  e3-6-150.150.60@0 120.0..180.0
+[09:09:30]   period-family-k2-036: P=1 members=3 regionVerts=1-D  e3-6-150.150.60@0 120.0..180.0
+[09:09:30]   period-family-k2-037: P=1 members=3 regionVerts=1-D  e3-6-150.150.60@0 120.0..180.0
+[09:09:30]   period-family-k2-038: P=1 members=3 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-039: P=1 members=3 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-040: P=1 members=3 regionVerts=1-D  e3-6-135.135.90@0 90.0..180.0
+[09:09:30]   period-family-k2-041: P=1 members=2 regionVerts=1-D  e3-12-165.150.135'@0 120.0..180.0
+[09:09:30]   period-family-k2-042: P=1 members=1 regionVerts=1-D  δ1 -75.0..15.0
+[09:09:30]   period-family-k2-043: P=1 members=1 regionVerts=1-D  δ1 -75.0..15.0
+[09:09:30]   period-family-k2-044: P=1 members=1 regionVerts=1-D  δ1 -75.0..15.0
+[09:09:32] true-k stamp: 6 of 44 families relabelled, 3 defaults moved off a coincidence; 0 of 0 pinned tilings relabelled
+[09:09:32] wrote 44 family records → ../../experiments/period-oracle/ctrnact-period-families.cells.json

@@ -1,11 +1,17 @@
 "use client";
 
+import { useState } from "react";
+
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ALPHA_STEP_DEG, paramGlyph, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { Kbd } from "@/components/ui/kbd";
 import { RangeInput } from "@/components/ui/range-input";
 import { useMetaKeyLabel } from "@/lib/hooks/useMetaKeyLabel";
 import { ParamRegionPad } from "@/components/param-region-pad";
+
+/** How many slider rows the panel shows before collapsing the rest. Four keeps the overlay shorter
+ *  than the canvas is tall on a laptop, and covers all but 60 of the 470 period entries. */
+const VISIBLE_ROWS = 4;
 
 /** Where the fold centre sits along the track, 0–1, or null when there is none (or it is at an end). */
 function foldFraction(p: ParametricCellData["params"][number]): number | null {
@@ -24,6 +30,12 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	const familyAlphas = useFamilyAlphas((s) => s.values);
 	const effAlphas = resolveAlphaDegsRaw(paramCell, familyAlphas);
 	const metaKey = useMetaKeyLabel();
+	// An INTRINSIC family's parameters are corner angles of the tiling itself and there can be a lot of
+	// them — the widest on the period shelf has 19. Showing all of them turns the overlay into a wall, so
+	// past VISIBLE_ROWS the rest collapse behind a count. Nothing is hidden from the store: the parameters
+	// that are not on screen keep their values and still deform the tiling.
+	const [expanded, setExpanded] = useState(false);
+	const visible = expanded ? paramCell.params : paramCell.params.slice(0, VISIBLE_ROWS);
 	// The Command-scrub gesture (canvas.tsx) maps horizontal mouse motion to α and, when a second
 	// parameter exists, vertical motion to β — so only advertise the vertical axis when it does something.
 	const hasVertical = paramCell.params.length >= 2;
@@ -56,11 +68,18 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	return (
 		<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
 			<div className="flex flex-col justify-center gap-2">
-				{paramCell.params.map((p, j) => (
+				{visible.map((p, j) => (
 					<div key={j} className="flex items-center gap-3">
 						<span className="text-xs font-medium text-accent whitespace-nowrap w-24">
 							{paramGlyph(p, j).glyph} = {effAlphas[j].toFixed(1)}°
 						</span>
+						{/* An intrinsic parameter IS a corner of the tiling, so the row says which one. A
+						    palette parameter has no such answer and the slot stays empty. */}
+						{p.dart != null && p.tile ? (
+							<span className="text-[10px] text-fg-muted whitespace-nowrap w-28 truncate" title={p.tile}>
+								{p.tile}
+							</span>
+						) : null}
 						<div className="relative w-56">
 							<RangeInput
 								min={p.alphaRangeDegOpen[0]}
@@ -88,6 +107,17 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 						</span>
 					</div>
 				))}
+				{paramCell.params.length > VISIBLE_ROWS ? (
+					<button
+						type="button"
+						onClick={() => setExpanded((v) => !v)}
+						className="self-start text-[10px] text-fg-muted underline underline-offset-2 hover:text-accent"
+					>
+						{expanded
+							? `show ${VISIBLE_ROWS} of ${paramCell.params.length}`
+							: `${paramCell.params.length - VISIBLE_ROWS} more corner${paramCell.params.length - VISIBLE_ROWS === 1 ? "" : "s"}`}
+					</button>
+				) : null}
 			</div>
 			{/* Discoverability hint for the Command-scrub gesture, kept beside the sliders (not below) so the
 			    panel stays short. The axis→angle mapping is coloured to match each slider's label. */}

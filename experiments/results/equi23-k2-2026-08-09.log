@@ -1,0 +1,6 @@
+[00:24:22] === equi23-cx-z24 k<=2 ===
+[00:24:22] palette: regular{3,4,6,8,12} + 12 convex period-2 + 19 convex period-3 = 36 symbols pre-mirror
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/equi23-cx-z24.json --out tables/equi23-cx-z24 --certify
+[gen] mirror twins added for 10 chiral tile(s): e3-6-135.120.105', e3-6-150.120.90', e3-6-150.135.75', e3-6-165.105.90', e3-6-165.120.75', e3-6-165.135.60', e3-6-165.150.45', e3-9-165.135.120', e3-9-165.150.105', e3-12-165.150.135'
+make: *** [tables/equi23-cx-z24/.generated] Terminated: 15
+[01:22:00] make FAILED

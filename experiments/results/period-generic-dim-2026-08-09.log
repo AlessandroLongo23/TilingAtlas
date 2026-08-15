@@ -1,0 +1,30 @@
+# generic-dimension probe — 470 entries
+# anchor dim -> dim after walking off the anchor and projecting back (3 rounds, 2 deg per step)
+  period-k2-045    k=2 shippedP=1  anchor dim 4 -> generic 3  (moved 2.24 deg)
+  period-k2-060    k=2 shippedP=0  anchor dim 8 -> generic 7  (moved 1.40 deg)
+  ... 50/470  elapsed 1s  ETA 5s
+  period-k3-251    k=3 shippedP=0  anchor dim 4 -> generic 3  (moved 1.51 deg)
+  ... 100/470  elapsed 1s  ETA 4s
+  period-k3-278    k=3 shippedP=0  anchor dim 5 -> generic 4  (moved 2.92 deg)
+  ... 150/470  elapsed 2s  ETA 4s
+  ... 200/470  elapsed 3s  ETA 4s
+  ... 250/470  elapsed 4s  ETA 3s
+  period-k3-163    k=3 shippedP=0  anchor dim 3 -> generic 2  (moved 2.75 deg)
+  period-k3-165    k=3 shippedP=0  anchor dim 2 -> generic 1  (moved 0.49 deg)
+  period-k3-188    k=3 shippedP=0  anchor dim 4 -> generic 3  (moved 3.17 deg)
+  period-k3-192    k=3 shippedP=0  anchor dim 5 -> generic 4  (moved 3.75 deg)
+  ... 300/470  elapsed 4s  ETA 2s
+  period-k3-244    k=3 shippedP=0  anchor dim 7 -> generic 5  (moved 1.40 deg)
+  ... 350/470  elapsed 5s  ETA 2s
+  ... 400/470  elapsed 6s  ETA 1s
+  period-k4-076    k=4 shippedP=0  anchor dim 7 -> generic 5  (moved 4.57 deg)
+  ... 450/470  elapsed 8s  ETA 0s
+  period-k5-019    k=5 shippedP=0  anchor dim 6 -> generic 5  (moved 2.60 deg)
+  period-k6-016    k=6 shippedP=0  anchor dim 2 -> generic 1  (moved 1.57 deg)
+
+470 measured; 12 lose dimension when moved off the anchor; 0 Newton failures
+anchor dim histogram:  0: 10, 1: 90, 2: 78, 3: 86, 4: 63, 5: 45, 6: 20, 7: 30, 8: 7, 9: 16, 10: 9, 11: 3, 13: 9, 14: 2, 16: 1, 19: 1
+generic dim histogram: 0: 10, 1: 92, 2: 77, 3: 88, 4: 62, 5: 46, 6: 19, 7: 29, 8: 6, 9: 16, 10: 9, 11: 3, 13: 9, 14: 2, 16: 1, 19: 1
+intrinsically rigid: 10 at the anchor, 10 after the walk
+ship RIGID but have >=1 generic parameter: 237
+⚑ measure LESS than they ship: 0

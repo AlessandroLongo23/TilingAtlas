@@ -29,6 +29,7 @@ Tests used, in order of cost:
 Run:  python3 scripts/scan-family-ranges.py <cells.json> [<cells.json> …] <out.log>
 """
 import cmath
+import itertools
 import json
 import math
 import random
@@ -108,14 +109,34 @@ def is_simple(v):
     return True
 
 
-# ── the three health tests ────────────────────────────────────────────────────────────────────────────
-def health(polys, basis):
-    """(ok, reason) — why this α is not a tiling, cheaply. reason is None when healthy."""
+# ── the four health tests ─────────────────────────────────────────────────────────────────────────────
+def orientation(polys):
+    """+1/−1 if every tile is traced the same way, 0 if they disagree (or a tile is degenerate)."""
+    signs = {1 if signed_area(p["v"]) > 0 else -1 for p in polys if abs(signed_area(p["v"])) >= ZERO_AREA}
+    return signs.pop() if len(signs) == 1 else 0
+
+
+def health(polys, basis, ref=None):
+    """(ok, reason) — why this α is not a tiling, cheaply. reason is None when healthy.
+
+    `ref` is the cell's orientation at the family's certified default. Without it the continuation walks
+    straight THROUGH a total collapse and keeps going: at the collapse every area is 0 and |det| is 0, and
+    one step later every tile has flipped sign — the cell has turned inside out and is now the mirror image
+    reflected back through zero. Both the area certificate and the simplicity test pass on that, happily,
+    which is how the 2-parameter sweep first reported rays surviving a full 360°. Orientation is what
+    separates a continuation from a reflection-through-nothing, so the caller passes the anchor's sign and
+    any step that does not match it is out.
+    """
     areas = [abs(signed_area(p["v"])) for p in polys]
     if min(areas) < ZERO_AREA:
         return False, "collapse"
     if abs(sum(areas) - det_of(basis)) > AREA_TOL:
         return False, "area-certificate"
+    o = orientation(polys)
+    if o == 0:
+        return False, "orientation split"
+    if ref is not None and o != ref:
+        return False, "orientation flip"
     for p in polys:
         if not is_simple(p["v"]):
             return False, "self-intersecting tile"
@@ -158,24 +179,193 @@ def covering(polys, basis, seed=7, samples=COVER_SAMPLES):
 def extend(pc, start, direction):
     """Walk α outward from `start` in `direction` (±1) while the cell still tiles. Returns
     (last_good_alpha, reason_it_stopped)."""
+    ref = orientation(cell_at(pc, [start])[0])
     good = start
     a = start
     reason = "hard-limit"
     while abs(a - start) < HARD_LIMIT:
         a += direction * STEP
-        ok, why = health(*cell_at(pc, [a]))
+        ok, why = health(*cell_at(pc, [a]), ref=ref)
         if not ok:
             reason = why
             lo, hi = good, a  # bisect between the last good and the first bad
             for _ in range(int(math.log2(STEP / BISECT)) + 2):
                 mid = (lo + hi) / 2
-                if health(*cell_at(pc, [mid]))[0]:
+                if health(*cell_at(pc, [mid]), ref=ref)[0]:
                     lo = mid
                 else:
                     hi = mid
             return lo, reason
         good = a
     return good, reason
+
+
+# ── outward continuation, P ≥ 2 ───────────────────────────────────────────────────────────────────────
+# One parameter has an interval to widen; P of them have a REGION, and the region the exporters ship is the
+# convex polytope where every corner stays under 180°. Past that a corner goes reflex and the tile turns
+# concave, which is a species change and not a tiling failure — the same cut scan-family-ranges was written
+# to undo in 1-D. Generalizing means walking outward in every direction of δ-space, not just two.
+#
+# The measured region is a STAR-SHAPED inner approximation about the family's default: each ray is bisected
+# to its own last-good point, so every reported point is a verified tiling, and a lobe the rays cannot see
+# around a concave corner is under-reported, never over-reported. That direction is the safe one — the
+# region governs what the UI will let you drag to.
+
+def ray_limit(pc, anchor_deg, direction, cap=360.0):
+    """Largest t with anchor + t·direction still a tiling, bisected. `direction` is in degrees per unit t."""
+    ref = orientation(cell_at(pc, anchor_deg)[0])
+    good = 0.0
+    t = 0.0
+    reason = "hard-limit"
+    while t < cap:
+        t += STEP
+        alphas = [a + t * d for a, d in zip(anchor_deg, direction)]
+        ok, why = health(*cell_at(pc, alphas), ref=ref)
+        if not ok:
+            reason = why
+            lo, hi = good, t
+            for _ in range(int(math.log2(STEP / BISECT)) + 2):
+                mid = (lo + hi) / 2
+                pt = [a + mid * d for a, d in zip(anchor_deg, direction)]
+                if health(*cell_at(pc, pt), ref=ref)[0]:
+                    lo = mid
+                else:
+                    hi = mid
+            return lo, reason
+        good = t
+    return good, reason
+
+
+def region_polygon(pc, rays=72):
+    """The measured 2-parameter region as an ordered polygon in δ-UNITS (1 unit = 15°), plus the stop
+    reasons seen. Rays are cast from the family's default, which the exporter developed and certified, so
+    t=0 is known good on every one of them."""
+    anchor = [p["defaultAlphaDeg"] for p in pc["params"]]
+    verts, stops = [], Counter()
+    for i in range(rays):
+        th = 2 * math.pi * i / rays
+        d = (math.cos(th), math.sin(th))
+        t, why = ray_limit(pc, anchor, d)
+        stops[why] += 1
+        verts.append(((anchor[0] + t * d[0] - pc["params"][0]["alpha0Deg"]) / 15.0,
+                      (anchor[1] + t * d[1] - pc["params"][1]["alpha0Deg"]) / 15.0))
+    return verts, stops
+
+
+def axis_limits(pc, cap=360.0):
+    """Per-axis true interval, each measured with the OTHER axes held at their default.
+
+    This is the honest per-axis span for a P ≥ 3 family, where there is no pad to draw a region on and the
+    UI drives one slider at a time. It is a slice through the region, not its bounding box: a box would
+    promise corners that are the product of two independent maxima, and nothing here has verified those.
+    """
+    anchor = [p["defaultAlphaDeg"] for p in pc["params"]]
+    out = []
+    for j in range(len(pc["params"])):
+        d = [0.0] * len(pc["params"])
+        d[j] = 1.0
+        hi, rhi = ray_limit(pc, anchor, d, cap)
+        d[j] = -1.0
+        lo, rlo = ray_limit(pc, anchor, d, cap)
+        out.append((anchor[j] - lo, anchor[j] + hi, rlo, rhi))
+    return out
+
+
+def _region_at(region, limit_units):
+    return [dict(r, limitUnits=limit_units) for r in region]
+
+
+def limit_units_max(pc, region, cap=48.0, samples=220):
+    """Largest UPPER bound (in δ-units, 1 unit = 15°) the corner half-planes may be raised to with the
+    whole polytope still a tiling. The exporters ship D/2 = 12 units = 180°.
+
+    Only the upper bounds move, and that asymmetry is the whole point. A corner angle reaching 0 is a real
+    degeneracy — the tile collapses and there is nothing on the far side. A corner reaching 180° is a
+    SPECIES change: the tile goes concave and keeps tiling. Inflating the polytope uniformly, which is what
+    I tried first, pushes through both and dies at ×1.001 on the angle-0 corners while never testing the
+    180° ones at all.
+
+    Verified on the enlarged polytope's own extreme points, the midpoints of every pair of them, and a
+    deterministic interior sample — a convex hull can straddle a hole once its boundary stops being
+    straight, so corners alone are not enough.
+    """
+    P = len(pc["params"])
+    if not region:
+        return None
+    ref = orientation(cell_at(pc, [p["defaultAlphaDeg"] for p in pc["params"]])[0])
+    base = region[0]["limitUnits"]
+
+    def ok(L):
+        verts = polytope_verts_units(_region_at(region, L), P)
+        if len(verts) < P + 1:
+            return False
+        anchor = [sum(v[t] for v in verts) / len(verts) for t in range(P)]
+        probes = []
+        for i, v in enumerate(verts):
+            probes.append([anchor[t] + 0.999 * (v[t] - anchor[t]) for t in range(P)])
+            for w in verts[i + 1:]:
+                probes.append([anchor[t] + 0.999 * ((v[t] + w[t]) / 2 - anchor[t]) for t in range(P)])
+        rng = random.Random(19)
+        for _ in range(samples):
+            ws = [rng.random() for _ in verts]
+            s = sum(ws) or 1.0
+            probes.append([sum(w * v[t] for w, v in zip(ws, verts)) / s for t in range(P)])
+        for pt in probes:
+            alphas = [pc["params"][t]["alpha0Deg"] + pt[t] * 15.0 for t in range(P)]
+            if not health(*cell_at(pc, alphas), ref=ref)[0]:
+                return False
+        return True
+
+    if not ok(base):
+        return base
+    lo, hi = base, base
+    while hi < cap and ok(hi + 4):
+        lo, hi = hi + 4, hi + 4
+    hi = min(hi + 4, cap)
+    for _ in range(14):
+        mid = (lo + hi) / 2
+        if ok(mid):
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def polytope_verts_units(region, P, eps=1e-9):
+    """Extreme points of the shipped convex polytope, in δ-units. Mirrors export_period_families.polytope_verts;
+    kept here so the scan does not need to import an exporter."""
+    rows = []
+    for r in region:
+        c = r["coef"]
+        if any(c):
+            rows.append(([-x for x in c], float(r["seedUnits"])))
+            rows.append((list(c), r["limitUnits"] - r["seedUnits"]))
+    verts = []
+    for combo in itertools.combinations(range(len(rows)), P):
+        A = [rows[i][0] for i in combo]
+        b = [rows[i][1] for i in combo]
+        sol = _gauss(A, b, eps)
+        if sol is None:
+            continue
+        if all(sum(a[t] * sol[t] for t in range(P)) <= bb + 1e-7 for a, bb in rows):
+            if not any(all(abs(sol[t] - v[t]) < 1e-7 for t in range(P)) for v in verts):
+                verts.append(tuple(sol))
+    return verts
+
+
+def _gauss(A, b, eps):
+    n = len(A)
+    M = [list(map(float, A[i])) + [float(b[i])] for i in range(n)]
+    for c in range(n):
+        piv = max(range(c, n), key=lambda r: abs(M[r][c]))
+        if abs(M[piv][c]) < eps:
+            return None
+        M[c], M[piv] = M[piv], M[c]
+        for r in range(n):
+            if r != c and abs(M[r][c]) > 0:
+                f = M[r][c] / M[c][c]
+                M[r] = [x - f * y for x, y in zip(M[r], M[c])]
+    return [M[i][n] / M[i][i] for i in range(n)]
 
 
 def straight_vertices(polys):
@@ -289,10 +479,15 @@ def congruent_by(a_pts, b_pts, radius=PATCH_R + 1.0):
     return None
 
 
+def _alphas(a):
+    """Accept a scalar (single-parameter caller) or a full tuple (multi-parameter caller)."""
+    return list(a) if isinstance(a, (list, tuple)) else [a]
+
+
 def isometry_between(pa, aa, pb, bb, radius=PATCH_R + 1.0):
     """Congruence of two evaluated cells, trying every anchor pairing. Returns the kind or None."""
-    ca = clouds(*cell_at(pa, [aa]), radius)
-    cb = clouds(*cell_at(pb, [bb]), radius)
+    ca = clouds(*cell_at(pa, _alphas(aa)), radius)
+    cb = clouds(*cell_at(pb, _alphas(bb)), radius)
     for x in ca:
         for y in cb:
             k = congruent_by(x, y, radius)
@@ -346,8 +541,32 @@ def palette_species(path):
     return names, u
 
 
+def _period_name(angs):
+    """`e<p>-<L>-<word>` if the angle word has a proper period p ≥ 3, else None.
+
+    The period-p shelf's tiles are named this way by alphabets/enum_period_tiles.py, and without this every
+    period tile fell through to `irregular-6` — a name no palette carries, so arc_reachable reported EVERY
+    newly-opened arc unreachable. That is the conservative direction, but it is still a wrong answer, and it
+    is the one that decides whether an arc is "provably absent from the atlas" or just filed elsewhere.
+
+    The word is written from its lexicographically largest rotation, which is the convention gen_alphabet
+    canonicalizes to, so the name matches the palette entry when the configuration really is on the grid.
+    """
+    L = len(angs)
+    for p in range(3, L):
+        if L % p:
+            continue
+        if not all(abs(angs[i] - angs[i % p]) < 1e-6 for i in range(L)):
+            continue
+        head = [round(a, 6) for a in angs[:p]]
+        rots = [tuple(head[i:] + head[:i]) for i in range(p)]
+        return f"e{p}-{L}-" + ".".join(f"{a:g}" for a in max(rots))
+    return None
+
+
 def tile_species(polys):
-    """Name each cell tile the way the palette would: regular-n, cx2n-g.b, or n*g (g = point angle°)."""
+    """Name each cell tile the way the palette would: regular-n, cx2n-g.b, n*g (g = point angle°), or the
+    period-p form e<p>-<L>-<word>."""
     out = []
     for p in polys:
         v = p["v"]
@@ -362,7 +581,7 @@ def tile_species(polys):
             n = len(v) // 2
             out.append(f"{n}*{g:g}" if b > 180 + 1e-9 else f"cx{len(v)}-{g:g}.{b:g}")
         else:
-            out.append(f"irregular-{len(v)}")
+            out.append(_period_name(angs) or f"irregular-{len(v)}")
     return out
 
 
@@ -403,8 +622,64 @@ def snap(x, grid=0.5, tol=0.01):
     return (s, True) if abs(s - x) <= tol else (x, False)
 
 
-def emit_range_plan(rows, path):
+def scan_multi(recs, log):
+    """True region of every P ≥ 2 family, and the plan entries to widen it.
+
+    P = 2 gets a measured polygon (the pad draws exactly this, and `nearestInRegionDeg` projects onto it),
+    plus the per-axis slices for the readout. P ≥ 3 has no pad, so it gets the inflation factor for its
+    half-planes instead — `clampToRegion` enforces those at runtime and nothing else would be honoured.
+    """
+    out = []
+    multi = [r for r in recs if len(r["params"]) >= 2 and r.get("allChecksPass", True)]
+    if not multi:
+        return out
+    log("")
+    log(f"=== {len(multi)} multi-parameter families ===")
+    for r in multi:
+        pc = {"params": r["params"], "cellPolygons": r["cellPolygons"], "basis": r["basis"]}
+        P = len(r["params"])
+        region = r.get("region") or []
+        axes = axis_limits(pc)
+        exported = [tuple(p["alphaRangeDegOpen"]) for p in r["params"]]
+        gain = sum(max(0.0, e[0] - a[0]) + max(0.0, a[1] - e[1]) for a, e in zip(axes, exported))
+        entry = {
+            "id": r["id"], "P": P,
+            "exportedAxes": [list(e) for e in exported],
+            "axes": [[round(a[0], 4), round(a[1], 4)] for a in axes],
+            "axisStops": [[a[2], a[3]] for a in axes],
+            "gainDeg": round(gain, 6),
+        }
+        base = region[0]["limitUnits"] if region else 12.0
+        if P == 2:
+            verts, stops = region_polygon(pc)
+            entry["regionVertices"] = [[round(x, 6), round(y, 6)] for x, y in verts]
+            entry["regionStops"] = dict(stops)
+            # `clampToRegion` runs AFTER the pad projects onto the polygon, so its half-planes must not cut
+            # the polygon back to 180°. Raise them to just clear the measured region — the polygon, not the
+            # box, is what governs, and this only stops the box from clipping it.
+            need = base
+            for r0 in region:
+                for v in verts:
+                    a = r0["seedUnits"] + sum(c * v[t] for t, c in enumerate(r0["coef"]))
+                    need = max(need, a)
+            entry["limitUnits"] = round(need + 1e-6, 6)
+            log(f"  {r['id']}  P=2  axes {entry['exportedAxes']} → {entry['axes']}  "
+                f"+{gain:.2f}°  region {len(verts)} rays, limit {base:g}→{entry['limitUnits']:.3f} units, "
+                f"stops {dict(stops)}")
+        else:
+            L = limit_units_max(pc, region) if region else None
+            entry["limitUnits"] = None if L is None else round(L, 6)
+            shown = "n/a" if L is None else f"{base:g}→{L:.3f} units ({L * 15:.1f}°)"
+            log(f"  {r['id']}  P={P}  axes {entry['exportedAxes']} → {entry['axes']}  "
+                f"+{gain:.2f}°  corner limit {shown}")
+        out.append(entry)
+    return out
+
+
+def emit_range_plan(rows, path, multi=None):
     plan = {"ranges": []}
+    if multi:
+        plan["regions"] = multi
     for x in rows:
         lo, hi = x["exported"]
         tlo, thi = x["true"]
@@ -560,12 +835,14 @@ def main(paths, out_path, palette_path, plan_path=None):
             except Exception as e:  # a degenerate cell can make the sampler blow up; report, never hide
                 c = f"error {e}"
             log(f"  {x['r']['id']:<34} {label:<20} α={a:8.3f}  {c}")
+    multi = scan_multi(recs, log)
     if plan_path:
-        plan = emit_range_plan(rows, plan_path)
+        plan = emit_range_plan(rows, plan_path, multi)
         off = [r for r in plan["ranges"] if not all(s for s, m in zip(r["snapped"], r["measured"]))]
         log("")
         log(f"=== range plan → {plan_path} ===")
-        log(f"  {len(plan['ranges'])} entries ({len(trunc)} truncated, {len(folded)} folded)")
+        log(f"  {len(plan['ranges'])} single-parameter entries ({len(trunc)} truncated, {len(folded)} folded)"
+            f"; {len(multi)} multi-parameter regions")
         if off:
             log(f"  ⚑ {len(off)} boundary/ies did not snap to the 0.5° grid — kept as measured: "
                 f"{[r['id'] for r in off]}")

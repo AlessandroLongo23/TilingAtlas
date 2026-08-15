@@ -1,0 +1,12 @@
+# development gate — 470 entries
+  ... 50/470  0 failed  elapsed 2s  ETA 15s
+  ... 100/470  0 failed  elapsed 3s  ETA 11s
+  ... 150/470  0 failed  elapsed 6s  ETA 13s
+  ... 200/470  0 failed  elapsed 9s  ETA 13s
+  ... 250/470  0 failed  elapsed 12s  ETA 10s
+  ... 300/470  0 failed  elapsed 14s  ETA 8s
+  ... 350/470  0 failed  elapsed 17s  ETA 6s
+  ... 400/470  0 failed  elapsed 20s  ETA 3s
+  ... 450/470  0 failed  elapsed 24s  ETA 1s
+
+development gate: PASS

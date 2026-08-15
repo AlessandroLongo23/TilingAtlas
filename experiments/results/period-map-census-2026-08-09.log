@@ -1,0 +1,69 @@
+# period-shelf map census — 470 entries across 5 files
+# id, k, shippedP, faces F, edges E, verts V, comb dim = E-2F+1, measured dim, map key hash
+  ... 25/470  elapsed 1s  ETA 13s
+  ... 50/470  elapsed 1s  ETA 10s
+  ... 75/470  elapsed 2s  ETA 9s
+  ... 100/470  elapsed 2s  ETA 7s
+  ... 125/470  elapsed 3s  ETA 7s
+  ... 150/470  elapsed 4s  ETA 9s
+  ... 175/470  elapsed 5s  ETA 9s
+  ... 200/470  elapsed 6s  ETA 8s
+  ... 225/470  elapsed 7s  ETA 7s
+  ... 250/470  elapsed 8s  ETA 7s
+  ... 275/470  elapsed 8s  ETA 6s
+  ... 300/470  elapsed 9s  ETA 5s
+  ... 325/470  elapsed 9s  ETA 4s
+  ... 350/470  elapsed 11s  ETA 4s
+  ... 375/470  elapsed 12s  ETA 3s
+  ... 400/470  elapsed 13s  ETA 2s
+  ... 425/470  elapsed 14s  ETA 2s
+  ... 450/470  elapsed 16s  ETA 1s
+
+mapped 470 of 470
+DISTINCT MAPS: 427  (from 470 entries)
+  entries per map: 1 entry: 388 map(s), 2 entries: 35 map(s), 3 entries: 4 map(s)
+measured dim != E-2F+1: 272 of 470
+  ⚑ period-k2-045    F=5 E=12 V=7  comb=3  measured=4
+  ⚑ period-k2-056    F=8 E=14 V=6  comb=-1  measured=1
+  ⚑ period-k2-057    F=7 E=13 V=6  comb=0  measured=1
+  ⚑ period-k2-060    F=12 E=30 V=18  comb=7  measured=8
+  ⚑ period-k2-061    F=4 E=10 V=6  comb=3  measured=4
+  ⚑ period-k2-003    F=4 E=8 V=4  comb=1  measured=2
+  ⚑ period-k2-004    F=8 E=16 V=8  comb=1  measured=3
+  ⚑ period-k2-009    F=5 E=9 V=4  comb=0  measured=1
+  ⚑ period-k2-010    F=10 E=18 V=8  comb=-1  measured=2
+  ⚑ period-k2-011    F=4 E=8 V=4  comb=1  measured=2
+  ⚑ period-k2-012    F=8 E=16 V=8  comb=1  measured=4
+  ⚑ period-k2-015    F=5 E=9 V=4  comb=0  measured=1
+  ⚑ period-k2-016    F=12 E=24 V=12  comb=1  measured=3
+  ⚑ period-k2-017    F=10 E=18 V=8  comb=-1  measured=2
+  ⚑ period-k2-022    F=4 E=8 V=4  comb=1  measured=2
+  ⚑ period-k2-023    F=8 E=16 V=8  comb=1  measured=3
+  ⚑ period-k2-031    F=5 E=9 V=4  comb=0  measured=1
+  ⚑ period-k2-032    F=10 E=18 V=8  comb=-1  measured=2
+  ⚑ period-k2-034    F=10 E=18 V=8  comb=-1  measured=1
+  ⚑ period-k2-035    F=5 E=9 V=4  comb=0  measured=1
+  ⚑ period-k2-036    F=10 E=18 V=8  comb=-1  measured=2
+  ⚑ period-k2-037    F=4 E=8 V=4  comb=1  measured=2
+  ⚑ period-k2-038    F=8 E=16 V=8  comb=1  measured=4
+  ⚑ period-k3-121    F=9 E=18 V=9  comb=1  measured=3
+  ⚑ period-k3-125    F=5 E=11 V=6  comb=2  measured=3
+unmeasured (self-check refused): 0
+
+the 12 largest map classes (these are the merges intrinsic parametrization forces):
+    3 entries  dim= 7  F=6 V=12  k values [3]  e.g. period-k3-080, period-k3-083, period-k3-085
+    3 entries  dim= 4  F=3 V=6  k values [3]  e.g. period-k3-081, period-k3-082, period-k3-084
+    3 entries  dim=11  F=10 V=20  k values [5]  e.g. period-k5-002, period-k5-005, period-k5-007
+    3 entries  dim= 6  F=5 V=10  k values [5]  e.g. period-k5-003, period-k5-004, period-k5-006
+    2 entries  dim= 5  F=4 V=8  k values [2]  e.g. period-k2-001, period-k2-018
+    2 entries  dim= 2  F=4 V=5  k values [3]  e.g. period-k3-122, period-k3-123
+    2 entries  dim= 0  F=7 V=6  k values [3]  e.g. period-k3-128, period-k3-003
+    2 entries  dim= 4  F=3 V=6  k values [3]  e.g. period-k3-001, period-k3-065
+    2 entries  dim= 7  F=6 V=12  k values [3]  e.g. period-k3-002, period-k3-064
+    2 entries  dim= 2  F=5 V=6  k values [3]  e.g. period-k3-004, period-k3-006
+    2 entries  dim= 3  F=3 V=5  k values [3]  e.g. period-k3-008, period-k3-013
+    2 entries  dim= 5  F=6 V=10  k values [3]  e.g. period-k3-009, period-k3-012
+
+dim histogram (combinatorial): -8: 1, -5: 6, -4: 2, -3: 12, -2: 17, -1: 44, 0: 30, 1: 120, 2: 35, 3: 52, 4: 36, 5: 39, 6: 4, 7: 32, 8: 2, 9: 13, 10: 9, 11: 3, 13: 9, 14: 2, 16: 1, 19: 1
+k spread inside a map class: 1 distinct k: 427
+wrote map-census.json

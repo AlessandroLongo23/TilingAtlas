@@ -34,6 +34,29 @@ export interface RangePlan {
 		newArcReachable: (boolean | null)[];
 		offPalette: string[];
 	}[];
+	/**
+	 * Multi-parameter families. A single interval cannot describe them: P free angles have a REGION, and
+	 * the region the exporter ships is the convex polytope where every corner stays under 180°. Past that
+	 * a corner goes reflex, the tile turns concave, and the tiling carries on — the same species cut that
+	 * `ranges` undoes in one dimension.
+	 *
+	 * Two shapes, because the runtime enforces two different things. P=2 draws `regionVertices` on the pad
+	 * and projects onto it (`nearestInRegionDeg`), so the measured polygon is the whole answer. P≥3 has no
+	 * pad and is governed by `clampToRegion`, which tests HALF-PLANES — so widening it means raising those,
+	 * and `limitUnits` is the verified bound they may be raised to.
+	 */
+	regions?: {
+		id: string;
+		P: number;
+		exportedAxes: [number, number][];
+		axes: [number, number][];
+		axisStops: [string, string][];
+		gainDeg: number;
+		regionVertices?: [number, number][];
+		regionStops?: Record<string, number>;
+		/** Measured upper bound for every corner half-plane, in δ-units (1 unit = 15°). Null when unmeasured. */
+		limitUnits?: number | null;
+	}[];
 }
 
 export interface ApplyRangeOptions {
@@ -41,6 +64,27 @@ export interface ApplyRangeOptions {
 	logName: string;
 	log: (m?: string) => void;
 	root: string;
+}
+
+/**
+ * Raise a single-parameter family's corner half-planes to clear its widened interval.
+ *
+ * Widening `alphaRangeDegOpen` alone is not enough when the family also ships `region`: `clampToRegion`
+ * runs on EVERY evaluation regardless of P, so a corner still capped at 180° pulls the angle straight back
+ * and the extra slider travel renders nothing — the readout climbs to 235° while the tiling sits frozen at
+ * 180°. Measured on the period shelf, where the exporter emits `region` for P=1 too; a no-op on the mixed
+ * and isotoxal shelves, whose single-parameter families carry no region at all.
+ *
+ * Only the upper bound moves. The lower one stays at 0, where the tile collapses.
+ */
+function raiseCornerLimits(pc: ParametricCellData, range: [number, number]): void {
+	if (!pc.region?.length || pc.params.length !== 1) return;
+	const p = pc.params[0];
+	const du = range.map((a) => (a - p.alpha0Deg) / 15);
+	for (const h of pc.region) {
+		const at = du.map((d) => h.seedUnits + (h.coef[0] ?? 0) * d);
+		h.limitUnits = Math.max(h.limitUnits, ...at) + 1e-6;
+	}
 }
 
 /** Widen `alphaRange` / `paramCell.params[0]` in place and note the fold centre. Returns the entries. */
@@ -84,6 +128,7 @@ export function applyRangePlan(out: ReferenceTiling[], opts: ApplyRangeOptions):
 			p.alphaRangeDegOpen = [lo, hi];
 			p.deltaRangeDeg = [lo - p.alpha0Deg + 0.4, hi - p.alpha0Deg - 0.4];
 			t.alphaRange = [lo, hi];
+			raiseCornerLimits(t.paramCell, [lo, hi]);
 			t.renderCell = evaluateParamCell(t.paramCell, p.defaultAlphaDeg) as ReferenceTiling["renderCell"];
 			widened++;
 			gained += r.gainDeg;
@@ -103,6 +148,66 @@ export function applyRangePlan(out: ReferenceTiling[], opts: ApplyRangeOptions):
 	return out;
 }
 
+/**
+ * Widen a multi-parameter family's REGION past the convexity cut, in place.
+ *
+ * Three things move together and all three must, or the widening is only cosmetic:
+ *   params[j].alphaRangeDegOpen   the slider domain the readout and the per-axis clamp use
+ *   region[].limitUnits           the half-planes `clampToRegion` enforces on every evaluation
+ *   regionVertices                the polygon the pad draws and `nearestInRegionDeg` projects onto (P=2)
+ * Raising the axes alone leaves `clampToRegion` pulling every drag back to 180°, which looks exactly like
+ * the slider being ignored.
+ *
+ * The lower bounds are deliberately untouched. A corner angle reaching 0 collapses the tile and there is
+ * nothing beyond it; only the 180° side is a species change with a tiling on the far side.
+ */
+export function applyRegionPlan(out: ReferenceTiling[], plan: RangePlan, log: (m?: string) => void): number {
+	const regions = plan.regions ?? [];
+	if (regions.length === 0) return 0;
+	const byId = new Map(out.map((t) => [t.id, t]));
+	let widened = 0;
+	log("");
+	log(`  --- region plan: ${regions.length} multi-parameter famil(ies) ---`);
+	for (const r of regions) {
+		const t = byId.get(r.id);
+		if (!t?.paramCell) {
+			log(`  ⚑ ${r.id}: not in this build (or has no paramCell) — skipped`);
+			continue;
+		}
+		const pc = t.paramCell;
+		if (pc.params.length !== r.P) {
+			log(`  ⚑ ${r.id}: plan says P=${r.P}, entry has ${pc.params.length} — SKIPPED (out of sync)`);
+			continue;
+		}
+		if (r.limitUnits == null) {
+			log(`  ⚑ ${r.id}: no measured corner limit — left at the convex cut`);
+			continue;
+		}
+		// The measured axes must still contain each slider's own default, or the entry and the plan were
+		// built from different exports and widening would put the default outside its own domain.
+		const bad = pc.params.findIndex((p, j) => !(r.axes[j][0] <= p.defaultAlphaDeg && p.defaultAlphaDeg <= r.axes[j][1]));
+		if (bad >= 0) {
+			log(`  ⚑ ${r.id}: measured axis ${bad} (${r.axes[bad].join(", ")}) excludes default ` +
+				`α=${pc.params[bad].defaultAlphaDeg} — SKIPPED`);
+			continue;
+		}
+		pc.params.forEach((p, j) => {
+			p.alphaRangeDegOpen = [r.axes[j][0], r.axes[j][1]];
+			p.deltaRangeDeg = [r.axes[j][0] - p.alpha0Deg + 0.4, r.axes[j][1] - p.alpha0Deg - 0.4];
+		});
+		if (pc.region) for (const h of pc.region) h.limitUnits = r.limitUnits;
+		if (r.regionVertices?.length) pc.regionVertices = r.regionVertices;
+		t.alphaRange = [r.axes[0][0], r.axes[0][1]];
+		t.renderCell = evaluateParamCell(pc, pc.params.map((p) => p.defaultAlphaDeg)) as ReferenceTiling["renderCell"];
+		widened++;
+		log(`  ${r.id}  P=${r.P}  axes ${JSON.stringify(r.exportedAxes)} → ${JSON.stringify(r.axes)}  ` +
+			`+${r.gainDeg.toFixed(2)}°  corner limit → ${(r.limitUnits * 15).toFixed(1)}°` +
+			(r.regionVertices ? `  region ${r.regionVertices.length} pts` : ""));
+	}
+	log(`  widened ${widened} of ${regions.length} multi-parameter region(s)`);
+	return widened;
+}
+
 /** Prose for an entry whose range was widened past the exporter's species cut. */
 export function rangeNote(r: RangePlan["ranges"][number]): string {
 	const arcs: string[] = [];
@@ -120,5 +225,19 @@ export function rangeNote(r: RangePlan["ranges"][number]): string {
 			? ` No configuration in it sits on the search palette (missing ${r.offPalette.join(", ")}), so these ` +
 			  `tilings are not reachable as a separate family and were absent from the atlas.`
 			: "")
+	);
+}
+
+/** Prose for a multi-parameter family whose whole region was widened past the convexity cut. */
+export function regionNote(r: NonNullable<RangePlan["regions"]>[number]): string {
+	const stops = Object.keys(r.regionStops ?? {}).sort();
+	return (
+		`REGION EXTENDED: the export clipped this ${r.P}-parameter family at the polytope where every tile ` +
+		`corner stays under 180°. A corner passing 180° turns the tile concave, which changes its species ` +
+		`but not whether it tiles, so the region now runs out to ${((r.limitUnits ?? 12) * 15).toFixed(0)}° ` +
+		`per corner — to where a tile self-intersects or collapses` +
+		(stops.length ? ` (measured stops: ${stops.join(", ")})` : "") +
+		`. The lower bounds are unchanged: a corner reaching 0° collapses the tile, and there is no tiling ` +
+		`on the far side of that.`
 	);
 }

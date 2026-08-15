@@ -1,0 +1,84 @@
+=== build-period-atlas ===
+  k=1 [ctrnact-period3-k1.cells.json]: 72 use a period-p tile, of 83 records
+  k=2 [ctrnact-period3-k2.cells.json]: 511 use a period-p tile, of 531 records
+  families: 44 continuous families absorbing 583 snapshots
+
+  --- range plan: 33 entr(ies) ---
+  period-family-k2-012  (30, 180) → (0, 210)  +60.00°  off-palette: e3-6-195.15.150 e3-6-195.150.15
+  period-family-k2-013  (30, 180) → (0, 210)  +60.00°  off-palette: e3-6-195.15.150 e3-6-195.150.15
+  period-family-k2-014  (30, 180) → (0, 210)  +60.00°  fold reflection @ 105°  off-palette: e3-6-195.15.150 e3-6-195.150.15
+  period-family-k2-015  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-016  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-017  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-018  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-019  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-020  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-021  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-022  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-023  (60, 180) → (0, 240)  +120.00°  fold reflection @ 120°  off-palette: e3-6-195.120.45 e3-6-195.45.120 e3-6-210.120.30 e3-6-210.30.120 e3-6-225.120.15 e3-6-225.15.120
+  period-family-k2-024  (90, 180) → (0, 270)  +180.00°  fold reflection @ 135°  off-palette: e3-6-195.75.90 e3-6-195.90.75 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.45.90 e3-6-225.90.45 e3-6-240.30.90 e3-6-240.90.30 e3-6-255.15.90 e3-6-255.90.15
+  period-family-k2-025  (90, 180) → (0, 270)  +180.00°  fold reflection @ 135°  off-palette: e3-6-195.75.90 e3-6-195.90.75 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.45.90 e3-6-225.90.45 e3-6-240.30.90 e3-6-240.90.30 e3-6-255.15.90 e3-6-255.90.15
+  period-family-k2-026  (90, 180) → (0, 270)  +180.00°  fold reflection @ 135°  off-palette: e3-6-195.75.90 e3-6-195.90.75 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.45.90 e3-6-225.90.45 e3-6-240.30.90 e3-6-240.90.30 e3-6-255.15.90 e3-6-255.90.15
+  period-family-k2-027  (90, 180) → (0, 270)  +180.00°  fold rotation @ 135°  off-palette: e3-6-195.75.90 e3-6-195.90.75 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.45.90 e3-6-225.90.45 e3-6-240.30.90 e3-6-240.90.30 e3-6-255.15.90 e3-6-255.90.15
+  period-family-k2-028  (90, 180) → (0, 270)  +180.00°  fold reflection @ 135°  off-palette: e3-6-195.75.90 e3-6-195.90.75 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.45.90 e3-6-225.90.45 e3-6-240.30.90 e3-6-240.90.30 e3-6-255.15.90 e3-6-255.90.15
+  period-family-k2-029  (120, 180) → (60, 240)  +120.00°  fold reflection @ 150°  off-palette: e3-6-195.105.60 e3-6-195.60.105 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.60.75 e3-6-225.75.60
+  period-family-k2-030  (120, 180) → (60, 240)  +120.00°  fold reflection @ 150°  off-palette: e3-6-195.105.60 e3-6-195.60.105 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.60.75 e3-6-225.75.60
+  period-family-k2-031  (120, 180) → (60, 240)  +120.00°  fold reflection @ 150°  off-palette: e3-6-195.105.60 e3-6-195.60.105 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.60.75 e3-6-225.75.60
+  period-family-k2-032  (120, 180) → (0, 300)  +240.00°  fold reflection @ 150°  off-palette: e3-9-195.105.120 e3-9-195.120.105 e3-9-210.120.90 e3-9-210.90.120 e3-9-225.120.75 e3-9-225.75.120 e3-9-240.120.60 e3-9-240.60.120 e3-9-255.120.45 e3-9-255.45.120 e3-9-270.120.30 e3-9-270.30.120 e3-9-285.120.15 e3-9-285.15.120
+  period-family-k2-033  (120, 180) → (60, 240)  +120.00°  fold rotation @ 150°  off-palette: e3-6-195.105.60 e3-6-195.60.105 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.60.75 e3-6-225.75.60
+  period-family-k2-034  (120, 180) → (0, 300)  +240.00°  fold rotation @ 150°  off-palette: e3-9-195.105.120 e3-9-195.120.105 e3-9-210.120.90 e3-9-210.90.120 e3-9-225.120.75 e3-9-225.75.120 e3-9-240.120.60 e3-9-240.60.120 e3-9-255.120.45 e3-9-255.45.120 e3-9-270.120.30 e3-9-270.30.120 e3-9-285.120.15 e3-9-285.15.120
+  period-family-k2-035  (120, 180) → (60, 240)  +120.00°  fold reflection @ 150°  off-palette: e3-6-195.105.60 e3-6-195.60.105 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.60.75 e3-6-225.75.60
+  period-family-k2-036  (120, 180) → (60, 240)  +120.00°  fold reflection @ 150°  off-palette: e3-6-195.105.60 e3-6-195.60.105 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.60.75 e3-6-225.75.60
+  period-family-k2-037  (120, 180) → (60, 240)  +120.00°  fold reflection @ 150°  off-palette: e3-6-195.105.60 e3-6-195.60.105 e3-6-210.60.90 e3-6-210.90.60 e3-6-225.60.75 e3-6-225.75.60
+  period-family-k2-038  (90, 180) → (60, 180)  +30.00°  off-palette: e3-6-210.75.75
+  period-family-k2-039  (90, 180) → (60, 180)  +30.00°  off-palette: e3-6-210.75.75
+  period-family-k2-040  (90, 180) → (60, 180)  +30.00°  off-palette: e3-6-210.75.75
+  period-family-k2-041  (120, 180) → (0, 300)  +240.00°  fold reflection @ 150°  off-palette: e3-12-195.105.150 e3-12-195.150.105 e3-12-210.150.90 e3-12-210.90.150 e3-12-225.150.75 e3-12-225.75.150 e3-12-240.150.60 e3-12-240.60.150 e3-12-255.150.45 e3-12-255.45.150 e3-12-270.150.30 e3-12-270.30.150 e3-12-285.15.150 e3-12-285.150.15
+  period-family-k2-042  (-75, 15) → (-75, 45)  +30.00°  off-palette: e3-6-210.75.75
+  period-family-k2-043  (-75, 15) → (-75, 45)  +30.00°  off-palette: e3-6-210.75.75
+  period-family-k2-044  (-75, 15) → (-75, 45)  +30.00°  off-palette: e3-6-210.75.75
+  widened 33 range(s) by 3900.00° total; marked 25 fold centre(s)
+
+  --- region plan: 11 multi-parameter famil(ies) ---
+  period-family-k2-001  P=3  axes [[-90,90],[-60,120],[-45,135]] → [[-135,90],[-105,120],[-105,135]]  +150.00°  corner limit → 240.1°
+  period-family-k2-002  P=3  axes [[-90,90],[-60,120],[-45,135]] → [[-135,90],[-105,120],[-105,135]]  +150.00°  corner limit → 240.1°
+  period-family-k2-003  P=3  axes [[-75,105],[-60,120],[0,180]] → [[-120,105],[-105,120],[0,240]]  +150.00°  corner limit → 240.1°
+  period-family-k2-004  P=3  axes [[-75,105],[-60,120],[0,180]] → [[-120,105],[-105,120],[0,240]]  +150.00°  corner limit → 240.1°
+  period-family-k2-005  P=3  axes [[-75,105],[-45,135],[-90,90]] → [[-120,105],[-135,120],[-135,90]]  +180.00°  corner limit → 240.1°
+  period-family-k2-006  P=2  axes [[-60,120],[-45,135]] → [[-105,120],[-105,135]]  +105.00°  corner limit → 268.7°  region 72 pts
+  period-family-k1-007  P=2  axes [[-60,120],[-45,135]] → [[-105,120],[-105,135]]  +105.00°  corner limit → 268.7°  region 72 pts
+  period-family-k2-008  P=3  axes [[-60,120],[0,180],[0,180]] → [[-135,120],[0,225],[0,240]]  +180.00°  corner limit → 240.1°
+  period-family-k1-009  P=2  axes [[-60,120],[-45,135]] → [[-105,120],[-105,135]]  +105.00°  corner limit → 268.7°  region 72 pts
+  period-family-k1-010  P=2  axes [[-60,120],[-45,135]] → [[-105,120],[-105,135]]  +105.00°  corner limit → 268.7°  region 72 pts
+  period-family-k2-011  P=2  axes [[-60,120],[-45,135]] → [[-105,120],[-105,135]]  +105.00°  corner limit → 268.7°  region 72 pts
+  widened 11 of 11 multi-parameter region(s)
+
+  quotient dedup [ctrnact-quotient-families-k3-generic.cells.json]: 127 of 168 ship — contains: 4, inside: 4, internal-inside: 23, internal-same: 13, new: 123, same: 1
+  quotient families [ctrnact-quotient-families-k3-generic.cells.json]: 79 added (k≥1), 28 skipped below k=1
+  quotient RIGID tilings [ctrnact-quotient-families-k3-generic.cells.json]: 48 added
+  quotient families [ctrnact-period3-concave-families.cells.json]: 1117 added (k≥1), 0 skipped below k=1
+  quotient RIGID tilings [ctrnact-period3-concave-families.cells.json]: 225 added
+  family merge (shared tiling, exact congruence): 1513 → 1496 (17 duplicates merged)
+
+  snapshots: 583 → 0 after removing those a family absorbs
+
+  relabel k → true vertex-orbit count: 0 of 0 were chirally over-counted
+
+=== period atlas written (main + 4 shards) ===
+  main  k≤2: 395 tilings → public/reference-atlas-period.json  (1686.2 KB)
+  shard k=3: 820 tilings → public/reference-atlas-period-k3.json  (3819.0 KB)
+  shard k=4: 150 tilings → public/reference-atlas-period-k4.json  (720.3 KB)
+  shard k=5: 68 tilings → public/reference-atlas-period-k5.json  (437.2 KB)
+  shard k=6: 63 tilings → public/reference-atlas-period-k6.json  (615.9 KB)
+
+  by k: k=1: 78, k=2: 317, k=3: 820, k=4: 150, k=5: 68, k=6: 63
+  by tile period: p=3: 583 (pre-dedup)
+
+  [12:02:32] shelf: 1496 → 470 entries
+  [12:02:32]   by k: k=1: 1, k=2: 67, k=3: 283, k=4: 81, k=5: 22, k=6: 16
+  [12:02:32]   parametric: 223   rigid (no parameter): 247
+  [12:02:32]   rewrote public/reference-atlas-period.json: 68 entries
+  [12:02:32]   rewrote public/reference-atlas-period-k3.json: 283 entries
+  [12:02:32]   rewrote public/reference-atlas-period-k4.json: 81 entries
+  [12:02:32]   rewrote public/reference-atlas-period-k5.json: 22 entries
+  [12:02:32]   rewrote public/reference-atlas-period-k6.json: 16 entries

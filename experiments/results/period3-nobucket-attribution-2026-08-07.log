@@ -1,0 +1,32 @@
+# ATTRIBUTION: isotox-cx45-z24 (period-2) re-run with EU_NOBUCKET=1 — same palette, same tables,
+# only the BUCKET_OK path differs. Verified output-identical to the fast path on regular k<=4.
+## ctrl-nb — k<=2, N=480 shards, D2=8, pool=5
+   tables: /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/tb-isotox-cx45-z24/tables.bin
+   started 15:49:21
+
+## Paired same-shard comparison, wall-clock, isotox-cx45-z24 (period 2, 106,359 configs)
+## Same 10 shards of N=480 D2=8 under both configurations. Rebuilt after a scratchpad wipe.
+=== ctrl-fast (N=480 D2=8 cap=900s)
+  w=0     1s  blocks=4
+  w=48    1s  blocks=3
+  w=96    1s  blocks=0
+  w=144   1s  blocks=0
+  w=192   1s  blocks=0
+  w=240   1s  blocks=1
+  w=288   1s  blocks=0
+  w=336   1s  blocks=0
+  w=384   1s  blocks=0
+  w=432   1s  blocks=2
+  TOTAL 10s over 10 shards, 10 blocks
+=== ctrl-nb (N=480 D2=8 cap=900s)
+  w=0     24s  blocks=4
+  w=48    14s  blocks=1
+  w=96    13s  blocks=0
+  w=144   14s  blocks=1
+  w=192   14s  blocks=1
+  w=240   14s  blocks=0
+  w=288   20s  blocks=0
+  w=336   15s  blocks=1
+  w=384   14s  blocks=1
+  w=432   14s  blocks=2
+  TOTAL 156s over 10 shards, 11 blocks

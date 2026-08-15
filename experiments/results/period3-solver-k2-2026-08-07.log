@@ -1,0 +1,61 @@
+# equi3-cx-z24 k<=2 — started 15:41:06, BUCKET_OK=false (period-3 breaks the involution)
+tables: 112452 vertex types, 62 classes, D=24 (runtime, /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/equi3-cx-z24/tables.bin)
+
+# k<=2 head-to-head: period-3 (BUCKET_OK false) vs a SIZE-MATCHED period-2 palette (BUCKET_OK true)
+#   equi3-cx-z24    106,266 configs / 112,452 vertex types / 62 classes  — filters OFF
+#   isotox-cx45-z24 106,359 configs / 111,220 vertex types / 55 classes  — filters ON
+# Both sharded N=480 D2=8, pool 5 each, run concurrently on a 10-core M-series.
+
+## ctrl-p2 — k<=2, N=480 shards, D2=8, pool=5
+   tables: /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/tb-isotox-cx45-z24/tables.bin
+   started 15:46:58
+   [15:47:02] launched 20/480, finished 15, cpu 5s, blocks 71, elapsed 4s, eta ~124s
+## e3-p3 — k<=2, N=480 shards, D2=8, pool=5
+   tables: /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/equi3-cx-z24/tables.bin
+   started 15:47:05
+   [15:47:06] launched 40/480, finished 35, cpu 13s, blocks 257, elapsed 8s, eta ~101s
+   [15:47:10] launched 60/480, finished 55, cpu 20s, blocks 278, elapsed 12s, eta ~92s
+   [15:47:15] launched 80/480, finished 75, cpu 27s, blocks 305, elapsed 16s, eta ~86s
+   [15:47:19] launched 100/480, finished 95, cpu 34s, blocks 348, elapsed 21s, eta ~85s
+   [15:47:23] launched 120/480, finished 115, cpu 41s, blocks 393, elapsed 25s, eta ~79s
+   [15:47:28] launched 140/480, finished 135, cpu 49s, blocks 486, elapsed 30s, eta ~76s
+   [15:47:32] launched 160/480, finished 155, cpu 56s, blocks 519, elapsed 34s, eta ~71s
+   [15:47:36] launched 180/480, finished 175, cpu 63s, blocks 562, elapsed 38s, eta ~66s
+   [15:47:41] launched 200/480, finished 195, cpu 71s, blocks 638, elapsed 43s, eta ~62s
+   [15:47:45] launched 220/480, finished 215, cpu 78s, blocks 663, elapsed 47s, eta ~57s
+   [15:47:49] launched 240/480, finished 235, cpu 86s, blocks 703, elapsed 51s, eta ~53s
+   [15:47:53] launched 260/480, finished 255, cpu 93s, blocks 739, elapsed 55s, eta ~48s
+   [15:47:58] launched 280/480, finished 275, cpu 100s, blocks 808, elapsed 60s, eta ~44s
+   [15:48:00] launched 20/480, finished 15, cpu 227s, blocks 22, elapsed 55s, eta ~1705s
+   [15:48:02] launched 300/480, finished 295, cpu 107s, blocks 925, elapsed 64s, eta ~40s
+   [15:48:06] launched 320/480, finished 315, cpu 115s, blocks 973, elapsed 68s, eta ~35s
+   [15:48:11] launched 340/480, finished 335, cpu 124s, blocks 1073, elapsed 73s, eta ~31s
+   [15:48:15] launched 360/480, finished 355, cpu 132s, blocks 1160, elapsed 77s, eta ~27s
+   [15:48:21] launched 380/480, finished 379, cpu 145s, blocks 1380, elapsed 83s, eta ~22s
+   [15:48:25] launched 400/480, finished 399, cpu 152s, blocks 1415, elapsed 87s, eta ~17s
+   [15:48:29] launched 420/480, finished 419, cpu 159s, blocks 1435, elapsed 91s, eta ~13s
+   [15:48:34] launched 440/480, finished 439, cpu 166s, blocks 1482, elapsed 96s, eta ~8s
+   [15:48:40] launched 460/480, finished 456, cpu 179s, blocks 1557, elapsed 102s, eta ~5s
+   [15:49:02] launched 480/480, finished 476, cpu 230s, blocks 1826, elapsed 124s, eta ~1s
+   DONE 15:49:04: total CPU 257.2s, wall 126s, raw blocks 1892
+   largest single shard 9.1s (3.5% of total CPU = the parallel floor)
+
+   [15:49:21] launched 40/480, finished 35, cpu 529s, blocks 43, elapsed 136s, eta ~1729s
+   [15:50:40] launched 60/480, finished 55, cpu 830s, blocks 58, elapsed 215s, eta ~1661s
+   [15:52:03] launched 80/480, finished 75, cpu 1134s, blocks 83, elapsed 298s, eta ~1609s
+   [15:53:03] launched 100/480, finished 95, cpu 1423s, blocks 123, elapsed 358s, eta ~1450s
+   [15:54:04] launched 120/480, finished 115, cpu 1707s, blocks 140, elapsed 419s, eta ~1329s
+   [15:55:04] launched 140/480, finished 135, cpu 1988s, blocks 152, elapsed 479s, eta ~1224s
+   [15:56:05] launched 160/480, finished 155, cpu 2276s, blocks 164, elapsed 540s, eta ~1132s
+   [15:57:02] launched 180/480, finished 175, cpu 2559s, blocks 183, elapsed 597s, eta ~1040s
+   [15:58:01] launched 200/480, finished 195, cpu 2838s, blocks 192, elapsed 656s, eta ~958s
+   [15:58:59] launched 220/480, finished 215, cpu 3117s, blocks 206, elapsed 714s, eta ~880s
+   [15:59:56] launched 240/480, finished 235, cpu 3397s, blocks 220, elapsed 771s, eta ~803s
+   [16:00:53] launched 260/480, finished 255, cpu 3676s, blocks 249, elapsed 828s, eta ~730s
+   [16:01:52] launched 280/480, finished 275, cpu 3955s, blocks 267, elapsed 887s, eta ~661s
+   [16:02:49] launched 300/480, finished 295, cpu 4233s, blocks 294, elapsed 944s, eta ~592s
+   [16:03:46] launched 320/480, finished 315, cpu 4510s, blocks 298, elapsed 1001s, eta ~524s
+   [16:04:42] launched 340/480, finished 335, cpu 4789s, blocks 322, elapsed 1057s, eta ~457s
+   [16:05:41] launched 360/480, finished 355, cpu 5067s, blocks 326, elapsed 1116s, eta ~392s
+   [16:06:38] launched 380/480, finished 375, cpu 5345s, blocks 339, elapsed 1173s, eta ~328s
+   [16:41:57] launched 400/480, finished 395, cpu 5614s, blocks 346, elapsed 3292s, eta ~708s

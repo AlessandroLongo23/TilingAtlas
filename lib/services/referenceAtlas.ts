@@ -304,6 +304,17 @@ export interface ReferenceTiling {
 	// Present on family entries: the proven parametric cell driving the /play alpha slider
 	// (lib/utils/paramCell.ts). renderCell then holds the default-alpha evaluation (thumbnails).
 	paramCell?: ParametricCellData;
+	// PERIOD shelf, 2026-08-09. How many parameters the TILING has, as opposed to how many its palette
+	// could name (docs/period-intrinsic-plan-2026-08-09.md). `paramCell.params` can be shorter: an axis
+	// whose certified travel is under a quarter of a degree is a real direction and a useless handle, so
+	// it is counted here and left off the panel.
+	intrinsicDim?: number;
+	// Other entries that turned out to be points of THIS one's family, with the slider tuple that reaches
+	// each. Two entries carrying the same combinatorial map have the same constraint variety, so they are
+	// the same tiling seen twice; the absorbed one is not on the shelf any more and this is where it went.
+	// `inRange` is false when the tuple needs two axes to move together — real, and off the cross of
+	// per-axis intervals the ranges certify.
+	anchors?: { id: string; k?: number; values?: number[]; inRange?: boolean }[];
 	exactSource?: ExactCellSource; // exact cyclotomic cell for the symmetry overlay (added 2026-07)
 
 	// Vertex-type classification (build-computed, 2026-07). k counts vertex ORBITS; m counts DISTINCT
@@ -369,6 +380,10 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	isotoxal: { short: "Isotoxal", long: "Isotoxal polygons" },
 	mixed: { short: "Mixed", long: "Mixed polygons" },
 	scaled: { short: "Scaled", long: "Scaled polygons" },
+	period: { short: "Period-p", long: "Period-p equilateral polygons" },
+	// The first class whose tile has two edge LENGTHS. Everything above it is equilateral, because
+	// the alphabet could only say "unit edge" until edge types landed (2026-08-13).
+	edgelen: { short: "Different edge lengths", long: "Different edge lengths" },
 	polyomino: { short: "Polyominoes", long: "Polyominoes" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
 	freedraw: { short: "Freedraw", long: "Freedraw edge patterns" },
@@ -1015,7 +1030,25 @@ export interface ReferenceFilter {
 	latticeShapes?: LatticeShape[]; // exact lattice shape; unclassified (all stars) never match
 	discoverers?: string[]; // each entry's discoverer must be in this set
 	certifications?: Certification[]; // proven / reproduced / candidate
-	polygonNames?: string[]; // each must appear in the tiling's family label
+	polygonNames?: string[]; // tile species ("3", "12", "6*") the tiling must use — see polygonMode
+	// How polygonNames combines. "all" (the default, and what pre-2026-08 ?polygon= links meant) keeps
+	// tilings using EVERY selected species; "any" keeps those using at least one; "only" keeps those
+	// whose whole tile set is inside the selection — the one that answers "what can I build from just
+	// these tiles". Inert without polygonNames.
+	polygonMode?: PolygonMode;
+	distinctPolygons?: number[]; // how many distinct tile species (regular + star), 1..6 in the corpus
+	distinctStars?: number[]; // how many distinct STAR species, 0 for a purely-regular tiling
+	// Angle-word period p of the tiles used (see polygonPeriodOf). A tiling matches if ANY of its tiles
+	// has a selected period, which is the useful reading: "show me tilings that use a period-3 tile"
+	// rather than "tilings whose every tile is period-3" (almost none are — they nearly all mix in
+	// regular p=1 tiles). This is the axis that separates a period-3 equilateral hexagon from a regular
+	// one, which the species key alone cannot: both are "6".
+	anglePeriods?: number[];
+	// Chirality: does the tiling's symmetry group contain an orientation-reversing isometry? A chiral
+	// tiling and its mirror are ONE catalogue entry (A068599 convention — see lib/services/chirality.ts),
+	// so this facet finds the entries that have a second hand to look at, not a second entry.
+	// Entries with no exact wallpaper classification carry no value and never match.
+	chirality?: ChiralityFacet[];
 	query?: string; // free-text substring match on id or family (e.g. "4j5_5b2" or "3.6")
 	// Hyperbolic shelf facets, each an inclusive interval [lo, hi] driven by an IntervalSlider. The
 	// scalars are hyperbolicFacetsOf (valence/polygon maxima over the vertex figures) and the merged
@@ -2097,11 +2130,20 @@ export async function loadReferenceAtlasShard(k: number): Promise<ReferenceTilin
 // solve — load only when the convex-irregular class or a k≥3 chip is selected. Mirrors loadReferenceAtlasShard,
 // but a MISSING shard degrades to an empty merge (HTTP 404 ⇒ []) instead of throwing: the convex-irregular
 // shelf is a best-effort demo, never a hard dependency of the library. Cached per-k across the session.
-const composableShardCache = new Map<number, ReferenceTiling[]>();
-const composableShardInflight = new Map<number, Promise<ReferenceTiling[]>>();
+// One lazy per-k shelf shard. `reference-atlas-<shelf>-k<k>.json`, generated by the shelf's builder; the
+// eager main file carries only k≤2 and the tail loads when that class or a k≥3 chip is selected.
+// Best-effort by contract: a MISSING shard (404) degrades to an empty merge rather than throwing, because
+// these shelves are demos, never a hard dependency of the library. Cached and de-duplicated per (shelf, k)
+// across the session.
+//
+// Extracted 2026-08-09 from the byte-identical composable and isotoxal copies, when the period shelf
+// needed a third.
+const shelfShardCache = new Map<string, ReferenceTiling[]>();
+const shelfShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
 
-export async function loadComposableAtlasShard(k: number): Promise<ReferenceTiling[]> {
-	const cached = composableShardCache.get(k);
+export async function loadShelfShard(shelf: string, k: number): Promise<ReferenceTiling[]> {
+	const key = `${shelf}-k${k}`;
+	const cached = shelfShardCache.get(key);
 	if (cached) return cached;
 	const existing = composableShardInflight.get(k);
 	if (existing) return existing;
@@ -2123,6 +2165,19 @@ export async function loadComposableAtlasShard(k: number): Promise<ReferenceTili
 	composableShardInflight.set(k, p);
 	return p;
 }
+
+export const loadComposableAtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("composable", k);
+export const loadIsotoxalAtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("isotoxal", k);
+/** The period-p shelf's k≥3 tail, produced by the QUOTIENT search (build-period-atlas.ts). */
+export const loadPeriodAtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("period", k);
+export const loadMixedAtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("mixed", k);
+export const loadScaledAtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("scaled", k);
+/** The edge-typed shelf (45-45-90 triangles, squares, scaled copies): k>=3 ships as lazy shards. */
+export const loadTri45AtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("tri45", k);
+export const loadPenroseAtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("penrose", k);
+/** The Euclidean half-polygon shelf ships k<=4 with the atlas; k=5..14 load on demand. The two deep
+ *  slices are 46 and 37 MB of JSON, which gzip to 1.1 and 1.0 — the cost deferred here is parsing. */
+export const loadEuHalfAtlasShard = (k: number): Promise<ReferenceTiling[]> => loadShelfShard("euhalf", k);
 
 // Per-k lazy shards for the Euclidean DECORATION shelves — the hexagonal grid's deep tails, which are
 // the only freedraw/colors slices too big to load with the atlas (edges k=7/8/9 = 6.4/17.6/58 MB,

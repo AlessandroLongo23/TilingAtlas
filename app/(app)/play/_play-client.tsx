@@ -36,6 +36,7 @@ import { lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
+	loadPeriodAtlasShard,
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
 	loadFreedrawShardsForK,
@@ -59,6 +60,7 @@ import {
 	loadIsohedralEdgesShard,
 	loadHyperbolicPolyAtlas,
 	loadHyperbolicPolyShard,
+	loadHyperbolicHalfShard,
 	referenceToCatalogue,
 	tileClassOf,
 	compareCatalogueDisplayOrder,
@@ -69,6 +71,7 @@ import {
 	type ReferenceTiling,
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
+	PERIOD_SHARD_KS,
 	resolveMergedFamilyKey,
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
@@ -176,7 +179,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	useEffect(() => {
 		let alive = true;
 		for (const { source, k } of KNOWN_HIGHER_TIERS) {
-			const loader = source === "composable" ? loadComposableAtlasShard : loadIsotoxalAtlasShard;
+			const loader = SHARD_LOADER[source];
 			loader(k)
 				.then((data) => {
 					if (!alive || data.length === 0) return;
@@ -206,6 +209,30 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (!Number.isFinite(k) || k < 3) return;
 		let alive = true;
 		loadComposableAtlasShard(k)
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [requestedKey]);
+
+	// Period-p k≥3 tilings live in lazy shards (public/reference-atlas-period-k{k}.json). A direct arrival
+	// at one (id "period-family-k{n}-…") fetches that shard. Same shape as the two deep-links below.
+	useEffect(() => {
+		const m = requestedKey?.match(/^period-family-k(\d+)-/);
+		if (!m) return;
+		const k = Number(m[1]);
+		if (!Number.isFinite(k) || k < 3) return;
+		let alive = true;
+		loadPeriodAtlasShard(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
 				setRefList((prev) => {
@@ -879,6 +906,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			x: "inversive",
 			t: "tilingTransition",
 			o: "showVertexOrbits",
+			m: "mirrorFlip",
 		};
 		// The freedraw view's own trio, shadowing the table above whenever a freedraw pattern is selected.
 		const FREEDRAW_TOGGLES: Record<string, keyof ConfigurationState> = {
@@ -1216,6 +1244,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
 					// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
 					<FreedrawPlayCanvas pattern={selected.freedraw} />
+
 				) : selected?.colors ? (
 					// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
 					// contract as freedraw (no polygon cell, owns its pan/zoom).

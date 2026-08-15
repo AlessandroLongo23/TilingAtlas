@@ -36,6 +36,7 @@ import {
 	loadReferenceAtlasShard,
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
+	loadPeriodAtlasShard,
 	loadFreedrawShardsForK,
 	loadColorsShardsForK,
 	hasDecorationShardsForK,
@@ -57,9 +58,12 @@ import {
 	loadIsohedralEdgesShard,
 	loadHyperbolicPolyAtlas,
 	loadHyperbolicPolyShard,
+	loadHyperbolicHalfShard,
 	matchesReferenceFilters,
 	partitionKeyOf,
 	starFoldsOf,
+	distinctPolygonCountOf,
+	distinctStarCountOf,
 	hyperbolicFacetsOf,
 	tileClassOf,
 	geometryOf,
@@ -82,6 +86,7 @@ import {
 	type TileClass,
 	type IslamicSystem,
 	type EdgeBoard,
+	type PolygonMode,
 } from "@/lib/services/referenceAtlas";
 import { PolygonFilterModal } from "@/components/polygon-filter-modal";
 import { periodLabel, polygonSpeciesOf, speciesCompare, speciesLabel, tilePeriodsOf } from "@/lib/services/polygonSpecies";
@@ -95,6 +100,8 @@ import {
 	SHAPE_CLASS_LABEL,
 	ISLAMIC_SYSTEM_ORDER,
 	ISLAMIC_SYSTEM_LABEL,
+	EDGE_BOARD_ORDER,
+	EDGE_BOARD_LABEL,
 	FREEDRAW_KIND_ORDER,
 	FREEDRAW_KIND_LABEL,
 	FREEDRAW_REGULAR_ORDER,
@@ -156,6 +163,8 @@ const PARAM_OPTIONS: { value: "all" | "rigid" | "family"; label: string }[] = [
 	{ value: "rigid", label: "Rigid" },
 	{ value: "family", label: "α-family" },
 ];
+// The Polygons group header when a selection is active: which way the picks combine, then how many.
+const POLY_MODE_SUMMARY: Record<PolygonMode, string> = { all: "all of", any: "any of", only: "only" };
 // Isotoxal-shelf Shape facet: how many tile angles flex independently. 1 free angle (α-family) vs 2
 // independent free angles (α, β-family). There is no rigid bucket — the isotoxal exporter only emits
 // flexing families, so every shipped isotoxal tiling has P ∈ {1, 2}. Shown only for the isotoxal class.
@@ -181,6 +190,8 @@ const POLY_ORDER_OPTIONS: { value: "all" | "tetromino"; label: string }[] = [
 // Islamic class. See docs/ISLAMIC_TILINGS.md.
 const ISLAMIC_SYSTEM_OPTIONS = withAll(ISLAMIC_SYSTEM_ORDER, ISLAMIC_SYSTEM_LABEL);
 const ISLAMIC_SYSTEM_VALUES = valuesOf(ISLAMIC_SYSTEM_ORDER);
+const EDGE_BOARD_OPTIONS = withAll(EDGE_BOARD_ORDER, EDGE_BOARD_LABEL);
+const EDGE_BOARD_VALUES = valuesOf(EDGE_BOARD_ORDER);
 // Freedraw-shelf sub-class facet: what KIND of faces the pattern produces. A freedraw "tile" is whatever
 // face falls out of the drawn edge set, so it can be a finite polyomino, an infinite strip, or a sheet
 // unbounded in both directions — the one axis that says what a pattern actually makes. Shown only for the
@@ -360,6 +371,15 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (certs?.length) f.certifications = certs;
 	const polygons = list("polygon");
 	if (polygons?.length) f.polygonNames = polygons;
+	// Default "all" so links shared before the mode existed keep meaning what they meant.
+	const polyMode = sp.get("polymode");
+	if (polyMode === "any" || polyMode === "only" || polyMode === "all") f.polygonMode = polyMode;
+	const dpoly = list("dpoly")?.map(Number).filter((n) => Number.isFinite(n));
+	if (dpoly?.length) f.distinctPolygons = dpoly;
+	const dstar = list("dstar")?.map(Number).filter((n) => Number.isFinite(n));
+	if (dstar?.length) f.distinctStars = dstar;
+	const aper = list("aper")?.map(Number).filter((n) => Number.isFinite(n));
+	if (aper?.length) f.anglePeriods = aper;
 	const q = sp.get("q");
 	if (q) f.query = q;
 
@@ -411,6 +431,11 @@ function serializeView(v: ViewState): string {
 	if (f.discoverers?.length) p.set("by", f.discoverers.join(","));
 	if (f.certifications?.length) p.set("cert", f.certifications.join(","));
 	if (f.polygonNames?.length) p.set("polygon", f.polygonNames.join(","));
+	// Only worth a param alongside a selection, and only when it isn't the default.
+	if (f.polygonNames?.length && f.polygonMode && f.polygonMode !== "all") p.set("polymode", f.polygonMode);
+	if (f.distinctPolygons?.length) p.set("dpoly", f.distinctPolygons.join(","));
+	if (f.distinctStars?.length) p.set("dstar", f.distinctStars.join(","));
+	if (f.anglePeriods?.length) p.set("aper", f.anglePeriods.join(","));
 	if (f.query?.trim()) p.set("q", f.query.trim());
 	if (v.page > 1) p.set("page", String(v.page));
 	if (v.pageSize !== DEFAULT_PAGE_SIZE) p.set("size", String(v.pageSize));
@@ -520,6 +545,7 @@ export function ReferenceShelf() {
 	const [tilings, setTilings] = useState<ReferenceTiling[] | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [filters, setFilters] = useState<ReferenceFilter>(initialView.filters);
+	const [polygonModalOpen, setPolygonModalOpen] = useState(false);
 	const [gridColumns, setGridColumns] = useState(initialView.gridColumns);
 	const [pageSize, setPageSize] = useState(initialView.pageSize);
 	const [currentPage, setCurrentPage] = useState(initialView.page);
@@ -592,7 +618,11 @@ export function ReferenceShelf() {
 		// a hyperbolic view that would filter every record out by geometry.
 		if (filters.geometry && filters.geometry !== "euclidean") return;
 		const k = filters.kValue;
-		if (k == null || k < 8) return;
+		// `HIGHER_K`, not `k >= 8`: the base Čtrnáct shards are k = 8, 9 and 10 and there is no k=11+ file,
+		// so any higher k 404'd and painted "failed to load k=…" beside the count. That was unreachable
+		// while nothing offered a Euclidean chip above 10; the halved-polygon boards go to k=14, which is
+		// how it surfaced. The bug is the unbounded test, not the new chips.
+		if (k == null || !HIGHER_K.includes(k)) return;
 		if (loadedShards.has(k) || loadingShards.has(k) || shardErrors.has(k)) return;
 		setLoadingShards((s) => new Set(s).add(k));
 		loadReferenceAtlasShard(k)
@@ -846,6 +876,13 @@ export function ReferenceShelf() {
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== "convex" && cls != null) return; // regular/star only — no convex-irregular shard needed
+		// ⚑ Wait for the base atlas. Its load does setTilings(d), a REPLACE, and a shard is small enough to
+		// win that race every time when its class is already in the URL — the merge lands, the base lands
+		// on top of it, and the shard's k is marked loaded so nothing ever retries. Symptom: "0 tilings"
+		// for /library?class=isotoxal&k=3 and ?class=period&k=3 with the shard visibly fetched in the
+		// network panel. The hyperbolic and decoration effects below already guard this way (see the note
+		// at the edge-systems effect); these three did not.
+		if (!tilings) return;
 		const k = filters.kValue;
 		const want =
 			k != null
@@ -870,7 +907,7 @@ export function ReferenceShelf() {
 					}),
 				);
 		}
-	}, [filters.tileClass, filters.kValue, loadedShards, loadingShards, shardErrors]);
+	}, [filters.tileClass, filters.kValue, loadedShards, loadingShards, shardErrors, tilings]);
 
 	// Lazy isotoxal k≥3 shards — same shape as the convex-irregular effect, but with dedicated shard state
 	// (its k=3 collides with convex-irregular's in the shared number-keyed sets). Fetch when the isotoxal
@@ -878,6 +915,7 @@ export function ReferenceShelf() {
 	useEffect(() => {
 		const cls = filters.tileClass;
 		if (cls !== "isotoxal" && cls != null) return;
+		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want =
 			k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === "isotoxal" ? ISOTOXAL_HIGHER_K : [];
@@ -990,6 +1028,7 @@ export function ReferenceShelf() {
 			next.wallpaperGroups = undefined;
 			next.latticeShapes = undefined;
 		}
+		prunePolygonsToScope(next);
 		setFilters(next);
 	};
 	const setConvexDecomp = (v: "all" | "decomposable" | "non-decomposable") =>
@@ -1024,6 +1063,12 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, [key]: next.length ? next : undefined } as ReferenceFilter);
 	};
 	const toggleFold = (n: number) => toggleIn("starFolds", filters.starFolds ?? [], n);
+	const togglePolygon = (tok: string) => toggleIn("polygonNames", filters.polygonNames ?? [], tok);
+	const toggleDistinctPolygons = (n: number) => toggleIn("distinctPolygons", filters.distinctPolygons ?? [], n);
+	const toggleDistinctStars = (n: number) => toggleIn("distinctStars", filters.distinctStars ?? [], n);
+	const toggleAnglePeriods = (n: number) => toggleIn("anglePeriods", filters.anglePeriods ?? [], n);
+	const setPolygonMode = (m: PolygonMode) => setFilters({ ...filters, polygonMode: m });
+	const clearPolygons = () => setFilters({ ...filters, polygonNames: undefined });
 	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
 	const toggleLevel = (l: TilingLevel) => toggleIn("levels", filters.levels ?? [], l);
 	// Lattice is single-select — it drives which wallpaper groups are realizable, so at most one at a
@@ -1085,6 +1130,14 @@ export function ReferenceShelf() {
 			next.colorsGrid = undefined;
 			next.colorsCount = undefined;
 		}
+		if (v !== "tilings") {
+			// Only tilings carry a tile inventory; an edge system's faces are merged polyforms.
+			next.polygonNames = undefined;
+			next.distinctPolygons = undefined;
+			next.distinctStars = undefined;
+			next.anglePeriods = undefined;
+		}
+		prunePolygonsToScope(next);
 		setFilters(next);
 	};
 
@@ -1136,6 +1189,14 @@ export function ReferenceShelf() {
 			// regular HIGHER_K) so selecting one can trigger the fetch.
 			if (!cls || cls === "convex") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
 			if (!cls || cls === "isotoxal") for (const k of ISOTOXAL_HIGHER_K) s.add(k);
+			// Period-p grew a k=3..6 tail with the concave tiles; without this its chips vanish and a
+			// deep link like ?class=period&k=4 resolves to an empty shelf.
+			if (!cls || cls === "period") for (const k of PERIOD_HIGHER_K) s.add(k);
+			if (!cls || cls === "mixed") for (const k of MIXED_HIGHER_K) s.add(k);
+			if (!cls || cls === "scaled") for (const k of SCALED_HIGHER_K) s.add(k);
+			if (!cls || cls === "edgelen") for (const k of TRI45_HIGHER_K) s.add(k);
+			if (!cls || cls === "edgelen") for (const k of PENROSE_HIGHER_K) s.add(k);
+			if (!cls || cls === "edgelen") for (const k of EUHALF_HIGHER_K) s.add(k);
 			return s;
 		},
 		[tilings],
@@ -1228,6 +1289,66 @@ export function ReferenceShelf() {
 		for (const t of tilings) for (const n of starFoldsOf(t)) s.add(n);
 		return [...s].sort((a, b) => a - b);
 	}, [tilings]);
+
+	// The polygon facet's own scope: every tiling matching the OTHER filters. Both the picker's
+	// per-token counts and the "how many distinct species" walls read off this, so a token shows the
+	// tilings it would actually add and a count chip is never offered when it can only return nothing.
+	const polygonScope = useMemo(() => {
+		if (!tilings) return [];
+		return tilings.filter((t) =>
+			matchesReferenceFilters(t, {
+				...filters,
+				polygonNames: undefined,
+				distinctPolygons: undefined,
+				distinctStars: undefined,
+				anglePeriods: undefined,
+			}),
+		);
+	}, [tilings, filters]);
+
+	// Counts are per SPECIES (fold AND point angle), the granularity /theory/tiles shows: "6*30" and
+	// "6*60" are different tiles and get their own card.
+	const polygonTokenCounts = useMemo(() => {
+		const m = new Map<string, number>();
+		for (const t of polygonScope) for (const s of polygonSpeciesOf(t)) m.set(s, (m.get(s) ?? 0) + 1);
+		return m;
+	}, [polygonScope]);
+
+	const availablePolygons = useMemo(
+		() => [...polygonTokenCounts.keys()].sort(speciesCompare),
+		[polygonTokenCounts],
+	);
+
+	const distinctPolygonOptions = useMemo(() => {
+		const s = new Set<number>();
+		for (const t of polygonScope) s.add(distinctPolygonCountOf(t));
+		return [...s].sort((a, b) => a - b);
+	}, [polygonScope]);
+
+	const distinctStarOptions = useMemo(() => {
+		const s = new Set<number>();
+		for (const t of polygonScope) s.add(distinctStarCountOf(t));
+		return [...s].sort((a, b) => a - b);
+	}, [polygonScope]);
+
+	// Angle-word periods present in the current scope. p=1 is every regular tile, so the option only
+	// earns its place when the scope actually mixes periods — hence the length > 1 guard at the render.
+	const anglePeriodOptions = useMemo(() => {
+		const s = new Set<number>();
+		for (const t of polygonScope) for (const n of tilePeriodsOf(t)) s.add(n);
+		return [...s].sort((a, b) => a - b);
+	}, [polygonScope]);
+
+	// Live consequence of the picks, shown in the modal footer while it is open.
+	const polygonMatchCount = useMemo(() => {
+		if (!filters.polygonNames?.length) return polygonScope.length;
+		return polygonScope.filter((t) =>
+			matchesReferenceFilters(t, {
+				polygonNames: filters.polygonNames,
+				polygonMode: filters.polygonMode,
+			}),
+		).length;
+	}, [polygonScope, filters.polygonNames, filters.polygonMode]);
 
 	const availableGroups = useMemo(() => {
 		if (!tilings) return [];
@@ -1365,6 +1486,10 @@ export function ReferenceShelf() {
 		(filters.latticeShapes?.length ? 1 : 0) +
 		(filters.discoverers?.length ? 1 : 0) +
 		(filters.certifications?.length ? 1 : 0) +
+		(filters.polygonNames?.length ? 1 : 0) +
+		(filters.distinctPolygons?.length ? 1 : 0) +
+		(filters.distinctStars?.length ? 1 : 0) +
+		(filters.anglePeriods?.length ? 1 : 0) +
 		(filters.query?.trim() ? 1 : 0);
 
 	// Decoration leads the sort so that Kind = "All" pages in the order the Kind wall reads: every tiling,
@@ -1843,6 +1968,77 @@ export function ReferenceShelf() {
 								selected={filters.parametric ?? "all"}
 								onChange={setParametric}
 							/>
+						</FilterGroup>
+					) : null}
+
+					{showPolygons ? (
+						<FilterGroup
+							title="Polygons"
+							summary={
+								filters.polygonNames?.length
+									? `${POLY_MODE_SUMMARY[filters.polygonMode ?? "all"]} ${filters.polygonNames.length}`
+									: null
+							}
+							note="tile inventory"
+						>
+							<button
+								type="button"
+								onClick={() => setPolygonModalOpen(true)}
+								className="ta-tab ta-wall-cell flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-xs text-fg-secondary hover:text-fg"
+							>
+								{filters.polygonNames?.length ? (
+									<span className="truncate">
+										{filters.polygonNames.map(speciesLabel).join(", ")}
+									</span>
+								) : (
+									<span className="text-fg-muted">Pick polygons…</span>
+								)}
+							</button>
+							{filters.polygonNames?.length ? (
+								<button
+									type="button"
+									onClick={clearPolygons}
+									className="ta-tab ta-wall-cell min-h-8 px-3 py-1.5 text-left text-[11px] text-fg-muted hover:text-fg"
+								>
+									Clear polygon selection
+								</button>
+							) : null}
+							{distinctPolygonOptions.length > 1 ? (
+								<>
+									<SubLabel>Distinct polygons</SubLabel>
+									<OptionWall
+										multi
+										columns={6}
+										options={distinctPolygonOptions.map((n) => ({ value: n, label: String(n) }))}
+										selected={filters.distinctPolygons ?? []}
+										onChange={toggleDistinctPolygons}
+									/>
+								</>
+							) : null}
+							{distinctStarOptions.length > 1 ? (
+								<>
+									<SubLabel>Distinct star polygons</SubLabel>
+									<OptionWall
+										multi
+										columns={6}
+										options={distinctStarOptions.map((n) => ({ value: n, label: String(n) }))}
+										selected={filters.distinctStars ?? []}
+										onChange={toggleDistinctStars}
+									/>
+								</>
+							) : null}
+							{anglePeriodOptions.length > 1 ? (
+								<>
+									<SubLabel>Angle-word period</SubLabel>
+									<OptionWall
+										multi
+										columns={6}
+										options={anglePeriodOptions.map((n) => ({ value: n, label: periodLabel(n) }))}
+										selected={filters.anglePeriods ?? []}
+										onChange={toggleAnglePeriods}
+									/>
+								</>
+							) : null}
 						</FilterGroup>
 					) : null}
 

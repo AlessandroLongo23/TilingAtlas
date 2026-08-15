@@ -1,0 +1,453 @@
+[10:02:50] === quotient family export; tables=tables/equi3q-cx-z24 D=24 classes=26 ===
+[10:02:50] k=3: 9890 quotient blocks in tables/_work/q-e3-k3/out/pruned
+[10:02:57] k=3: {'infeasible': 9164, 'no-grid-seed': 0, 'pinned-degenerate': 46, 'failed': 0, 'no-period': 61, 'forced-coincidence': 304, 'seed-coincident': 24} → 435 keyed families so far
+[10:02:57]   period-quotient-k3-001: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-002: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-003: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-004: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-005: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-006: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-007: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-008: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-009: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-010: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-011: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-012: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-013: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-014: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-015: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-016: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-017: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-018: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-019: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-020: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-021: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-022: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-023: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-024: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-025: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-026: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-027: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-028: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-029: P=2 members=1 regionVerts=3  δ1 -60.0..120.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-030: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-031: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-032: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-033: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-034: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-035: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-036: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-037: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-038: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-039: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-040: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-041: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-042: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-043: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-044: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-045: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-046: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-047: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-048: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-049: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-050: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-051: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-052: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-053: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-054: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-055: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-056: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-057: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-058: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, δ2 -105.0..75.0
+[10:02:57]   period-quotient-k3-059: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-060: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-061: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-062: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-063: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-064: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-065: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-066: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-067: P=3 members=1 regionVerts=1-D  δ1 -45.0..135.0, δ2 -15.0..165.0, δ3 -75.0..105.0
+[10:02:57]   period-quotient-k3-068: P=3 members=1 regionVerts=1-D  δ1 -45.0..135.0, δ2 -15.0..165.0, δ3 -75.0..105.0
+[10:02:57]   period-quotient-k3-069: P=3 members=1 regionVerts=1-D  δ1 -45.0..135.0, δ2 -15.0..165.0, δ3 -75.0..105.0
+[10:02:57]   period-quotient-k3-070: P=3 members=1 regionVerts=1-D  δ1 -45.0..135.0, δ2 -15.0..165.0, δ3 -75.0..105.0
+[10:02:57]   period-quotient-k3-071: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-072: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-073: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-074: P=1 members=1 regionVerts=1-D  e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-075: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-076: P=3 members=1 regionVerts=1-D  δ1 -75.0..105.0, e3-6@0 0.0..180.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-077: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-078: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-079: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-080: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -15.0..165.0, δ3 -120.0..60.0
+[10:02:57]   period-quotient-k3-081: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-082: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-083: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-084: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-085: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-086: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-087: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-088: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-089: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-090: P=3 members=1 regionVerts=1-D  δ1 -90.0..90.0, δ2 -45.0..135.0, δ3 -15.0..165.0
+[10:02:57]   period-quotient-k3-091: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-092: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-093: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-094: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-095: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-096: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-097: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-098: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-099: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-100: P=2 members=1 regionVerts=3  δ1 -60.0..120.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-101: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-102: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-103: P=2 members=1 regionVerts=3  e3-6@1 0.0..180.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-104: P=2 members=1 regionVerts=3  e3-6@0 0.0..180.0, e3-6@1 0.0..180.0
+[10:02:57]   period-quotient-k3-105: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-106: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-107: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-108: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-109: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-110: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-111: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-112: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-113: P=3 members=1 regionVerts=1-D  δ1 -120.0..60.0, e3-6'@1 0.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-114: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, e3-6@0 0.0..180.0
+[10:02:57]   period-quotient-k3-115: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-116: P=2 members=1 regionVerts=3  δ1 -60.0..120.0, δ2 -15.0..165.0
+[10:02:57]   period-quotient-k3-117: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-118: P=2 members=1 regionVerts=3  δ1 -15.0..165.0, δ2 -60.0..120.0
+[10:02:57]   period-quotient-k3-119: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-120: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-121: P=1 members=1 regionVerts=1-D  e3-9'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-122: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-123: P=1 members=1 regionVerts=1-D  e3-9@0 120.0..180.0
+[10:02:57]   period-quotient-k3-124: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-125: P=2 members=1 regionVerts=4  δ1 -30.0..150.0, e3-6'@2 120.0..180.0
+[10:02:57]   period-quotient-k3-126: P=2 members=1 regionVerts=4  δ1 -30.0..150.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-127: P=2 members=1 regionVerts=4  δ1 -135.0..45.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-128: P=2 members=1 regionVerts=4  δ1 -135.0..45.0, e3-6'@2 120.0..180.0
+[10:02:57]   period-quotient-k3-129: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-130: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-131: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, δ2 -30.0..150.0
+[10:02:57]   period-quotient-k3-132: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, δ2 -30.0..150.0
+[10:02:57]   period-quotient-k3-133: P=2 members=1 regionVerts=4  δ1 -30.0..150.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-134: P=2 members=1 regionVerts=4  δ1 -30.0..150.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-135: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-136: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-137: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-138: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-139: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-140: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-141: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-142: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-143: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-144: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-145: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-146: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-147: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-148: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-149: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-150: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-151: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-152: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-153: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-154: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-155: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-156: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-157: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-158: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-159: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-160: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-161: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-162: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-163: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-164: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-165: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6'@2 120.0..180.0
+[10:02:57]   period-quotient-k3-166: P=2 members=1 regionVerts=4  e3-6'@1 120.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-167: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-168: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-169: P=2 members=1 regionVerts=6  e3-6'@1 30.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-170: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-171: P=2 members=1 regionVerts=4  e3-6'@1 120.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-172: P=2 members=1 regionVerts=6  e3-6'@1 90.0..180.0, e3-6'@2 30.0..180.0
+[10:02:57]   period-quotient-k3-173: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-174: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6'@2 120.0..180.0
+[10:02:57]   period-quotient-k3-175: P=2 members=1 regionVerts=6  e3-6'@1 30.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-176: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-177: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-178: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-179: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-180: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-181: P=2 members=1 regionVerts=6  e3-6@0 90.0..180.0, e3-6'@2 30.0..180.0
+[10:02:57]   period-quotient-k3-182: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-183: P=2 members=1 regionVerts=6  e3-6'@1 30.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-184: P=2 members=1 regionVerts=4  e3-6'@1 120.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-185: P=2 members=1 regionVerts=4  e3-6'@1 60.0..180.0, e3-6'@2 120.0..180.0
+[10:02:57]   period-quotient-k3-186: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-187: P=2 members=1 regionVerts=4  e3-6'@1 60.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-188: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-189: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6@1 120.0..180.0
+[10:02:57]   period-quotient-k3-190: P=2 members=1 regionVerts=4  e3-6@1 120.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-191: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6@1 60.0..180.0
+[10:02:57]   period-quotient-k3-192: P=2 members=1 regionVerts=4  e3-6@1 60.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-193: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6@1 90.0..180.0
+[10:02:57]   period-quotient-k3-194: P=2 members=1 regionVerts=4  e3-6@1 90.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-195: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6@1 120.0..180.0
+[10:02:57]   period-quotient-k3-196: P=2 members=1 regionVerts=4  e3-6@1 120.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-197: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6@1 120.0..180.0
+[10:02:57]   period-quotient-k3-198: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-199: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6@1 120.0..180.0
+[10:02:57]   period-quotient-k3-200: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-201: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-202: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 30.0..180.0
+[10:02:57]   period-quotient-k3-203: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6@1 90.0..180.0
+[10:02:57]   period-quotient-k3-204: P=2 members=1 regionVerts=4  e3-6@1 60.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-205: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-206: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-207: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 30.0..180.0
+[10:02:57]   period-quotient-k3-208: P=2 members=1 regionVerts=6  e3-6@1 60.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-209: P=2 members=1 regionVerts=4  e3-6'@1 60.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-210: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-211: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-212: P=2 members=1 regionVerts=4  e3-6'@1 60.0..180.0, e3-6'@2 120.0..180.0
+[10:02:57]   period-quotient-k3-213: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-214: P=2 members=1 regionVerts=4  e3-6'@1 0.0..150.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-215: P=2 members=1 regionVerts=4  e3-6'@1 0.0..150.0, e3-6'@2 120.0..180.0
+[10:02:57]   period-quotient-k3-216: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6@1 60.0..180.0
+[10:02:57]   period-quotient-k3-217: P=2 members=1 regionVerts=6  e3-6'@1 30.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-218: P=2 members=1 regionVerts=6  e3-6@0 90.0..180.0, e3-6@1 60.0..180.0
+[10:02:57]   period-quotient-k3-219: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-220: P=2 members=1 regionVerts=6  e3-6'@1 90.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-221: P=2 members=1 regionVerts=4  e3-6'@1 120.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-222: P=2 members=1 regionVerts=6  e3-6'@1 30.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-223: P=2 members=1 regionVerts=6  e3-6@0 90.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-224: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-225: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-226: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-227: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-228: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-229: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-230: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-231: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-232: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-233: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-234: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-235: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-236: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-237: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-238: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-239: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-240: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-241: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-242: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-243: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-244: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-245: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-246: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-247: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-248: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-249: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-250: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-251: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-252: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-253: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-254: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-255: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-256: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-257: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-258: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-259: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-260: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-261: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-262: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-263: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-264: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-265: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-266: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-267: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-268: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-269: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-270: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-271: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-272: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-273: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-274: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-275: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-276: P=2 members=1 regionVerts=4  e3-6@1 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-277: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-278: P=2 members=1 regionVerts=4  e3-6@1 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-279: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-280: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-281: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-282: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-283: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-284: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-285: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-286: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6@1 120.0..180.0
+[10:02:57]   period-quotient-k3-287: P=2 members=1 regionVerts=4  e3-6@1 120.0..180.0, e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-288: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-289: P=2 members=1 regionVerts=4  e3-6@0 120.0..180.0, e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-290: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@1 60.0..180.0
+[10:02:57]   period-quotient-k3-291: P=2 members=1 regionVerts=4  e3-6@1 60.0..180.0, e3-6'@1 60.0..180.0
+[10:02:57]   period-quotient-k3-292: P=2 members=1 regionVerts=4  e3-6@1 60.0..180.0, e3-6'@1 60.0..180.0
+[10:02:57]   period-quotient-k3-293: P=2 members=1 regionVerts=4  e3-6@0 60.0..180.0, e3-6'@1 60.0..180.0
+[10:02:57]   period-quotient-k3-294: P=2 members=1 regionVerts=6  e3-6@0 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-295: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-296: P=2 members=1 regionVerts=6  e3-6'@1 60.0..180.0, e3-6'@2 60.0..180.0
+[10:02:57]   period-quotient-k3-297: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-298: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-299: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-300: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-301: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-302: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-303: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-304: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-305: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-306: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-307: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-308: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-309: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-310: P=1 members=1 regionVerts=1-D  e3-6'@0 30.0..180.0
+[10:02:57]   period-quotient-k3-311: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-312: P=1 members=1 regionVerts=1-D  e3-6@1 30.0..180.0
+[10:02:57]   period-quotient-k3-313: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-314: P=1 members=1 regionVerts=1-D  e3-6@0 30.0..180.0
+[10:02:57]   period-quotient-k3-315: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-316: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-317: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-318: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-319: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-320: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-321: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-322: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-323: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-324: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-325: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-326: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-327: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-328: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-329: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-330: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-331: P=1 members=1 regionVerts=1-D  e3-6'@1 120.0..180.0
+[10:02:57]   period-quotient-k3-332: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-333: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-334: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-335: P=1 members=1 regionVerts=1-D  e3-6@0 120.0..180.0
+[10:02:57]   period-quotient-k3-336: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-337: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-338: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-339: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-340: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-341: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-342: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-343: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-344: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-345: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-346: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-347: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-348: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-349: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-350: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-351: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-352: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-353: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-354: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-355: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@0 90.0..180.0
+[10:02:57]   period-quotient-k3-356: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-357: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-358: P=2 members=1 regionVerts=4  e3-6'@1 90.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-359: P=2 members=1 regionVerts=4  e3-6'@1 90.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-360: P=2 members=1 regionVerts=4  e3-6'@1 90.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-361: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-362: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-363: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-364: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-365: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-366: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@2 0.0..180.0
+[10:02:57]   period-quotient-k3-367: P=2 members=1 regionVerts=4  e3-6'@1 0.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-368: P=2 members=1 regionVerts=4  e3-6'@1 90.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-369: P=2 members=1 regionVerts=4  e3-6@1 90.0..180.0, e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-370: P=2 members=1 regionVerts=4  e3-6@1 90.0..180.0, e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-371: P=2 members=1 regionVerts=4  e3-6'@1 90.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-372: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-373: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-374: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-375: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-376: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6@1 90.0..180.0
+[10:02:57]   period-quotient-k3-377: P=2 members=1 regionVerts=4  e3-6@1 90.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-378: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-379: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-380: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6@1 90.0..180.0
+[10:02:57]   period-quotient-k3-381: P=2 members=1 regionVerts=4  e3-6@1 90.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-382: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-383: P=2 members=1 regionVerts=4  e3-6@0 90.0..180.0, e3-6@1 90.0..180.0
+[10:02:57]   period-quotient-k3-384: P=2 members=1 regionVerts=4  e3-6'@1 90.0..180.0, e3-6'@2 90.0..180.0
+[10:02:57]   period-quotient-k3-385: P=2 members=1 regionVerts=4  e3-6@1 90.0..180.0, e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-386: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-387: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-388: P=1 members=1 regionVerts=1-D  e3-6'@1 90.0..180.0
+[10:02:57]   period-quotient-k3-389: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-390: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-391: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-392: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-393: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-394: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-395: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-396: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-397: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-398: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-399: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-400: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-401: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-402: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-403: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-404: P=1 members=1 regionVerts=1-D  e3-6'@0 60.0..180.0
+[10:02:57]   period-quotient-k3-405: P=1 members=1 regionVerts=1-D  e3-6@0 60.0..180.0
+[10:02:57]   period-quotient-k3-406: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-407: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-408: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, δ2 -15.0..165.0
+[10:02:57]   period-quotient-k3-409: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-410: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-411: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-412: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-413: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-414: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-415: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, δ2 -15.0..165.0
+[10:02:57]   period-quotient-k3-416: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-417: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-418: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, δ2 -15.0..165.0
+[10:02:57]   period-quotient-k3-419: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-420: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, δ2 -15.0..165.0
+[10:02:57]   period-quotient-k3-421: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-422: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-423: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-424: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-425: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-426: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-427: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, δ2 -15.0..165.0
+[10:02:57]   period-quotient-k3-428: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-429: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-430: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-431: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-432: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-433: P=1 members=1 regionVerts=1-D  e3-6@0 90.0..180.0
+[10:02:57]   period-quotient-k3-434: P=1 members=1 regionVerts=1-D  δ1 -15.0..75.0
+[10:02:57]   period-quotient-k3-435: P=2 members=1 regionVerts=3  δ1 -105.0..75.0, δ2 -15.0..165.0
+[10:03:33] congruence dedup: 435 → 107 families (328 duplicate representations of the same tiling merged)
+[10:03:33] rigid dedup: 184 → 70 distinct tilings
+[10:03:42]   pinned period-quotient-rigid-k3-0188 is a member of period-quotient-k3-042 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-0194 is a member of period-quotient-k3-045 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-0195 is a member of period-quotient-k3-047 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-0228 is a member of period-quotient-k3-023 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-0229 is a member of period-quotient-k3-026 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-1833 is a member of period-quotient-k3-046 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-1878 is a member of period-quotient-k3-044 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-3335 is a member of period-quotient-k3-097 — dropped (would double-count)
+[10:03:42]   pinned period-quotient-rigid-k3-3340 is a member of period-quotient-k3-094 — dropped (would double-count)
+[10:03:42] pinned tilings that are family members: 9 dropped, 61 kept
+[10:03:57] true-k stamp: 7 of 107 families relabelled, 0 defaults moved off a coincidence; 25 of 61 pinned tilings relabelled
+[10:03:57] rigid tilings kept: 61 (pinned, no deformation)
+[10:03:57] wrote 107 family records → ../../experiments/period-oracle/ctrnact-quotient-families-k3-generic.cells.json

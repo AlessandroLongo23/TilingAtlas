@@ -1,0 +1,8 @@
+[23:38:33] === equi3-cx-z24 k=3 ===
+[23:38:33] goal: does the aligned stacking of the k2 square-ribbon family appear at k=3?
+[23:38:34] solver built (MAXNUM=3, runtime tables)
+[03:02:28] solve done in 12233s; raw blocks 3681
+  k=3 : 2454
+total kept: 2454
+[equi3-cx-z24 k=3]  solutions 2454  developed 2454  usesComposite 0  failures 0  -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/period-oracle/ctrnact-period3-k3.cells.json
+[03:18:54] done

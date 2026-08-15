@@ -1,0 +1,22 @@
+[11:43:56] === shelf dedup: 154 entries across 2 file(s) ===
+[11:43:56]     public/reference-atlas-period.json
+[11:43:56]     public/reference-atlas-period-k3.json
+[11:44:08] keyed 154 of 154 (0 unkeyable, kept as-is)
+[11:44:08] 
+[11:44:08] 9 entries are not their own tiling:
+[11:44:08]   period-family-k1-007         is a sub-family of period-family-k2-001  (dim 2 → 3)
+[11:44:08]   period-family-k2-017         is a sub-family of period-quotient-k3-055  (dim 1 → 2)
+[11:44:08]   period-family-k2-021         is a sub-family of period-family-k2-001  (dim 1 → 3)
+[11:44:08]   period-family-k2-027         is a sub-family of period-quotient-k3-090  (dim 1 → 2)
+[11:44:08]   period-family-k2-029         is a sub-family of period-quotient-k3-060  (dim 1 → 2)
+[11:44:08]   period-family-k2-038         is a sub-family of period-family-k2-001  (dim 1 → 3)
+[11:44:08]   period-family-k2-039         is a sub-family of period-quotient-k1-005  (dim 1 → 2)
+[11:44:08]   period-family-k2-042         is a sub-family of period-family-k2-001  (dim 1 → 3)
+[11:44:08]   period-family-k2-043         is a sub-family of period-quotient-k1-005  (dim 1 → 2)
+[11:44:08] 
+[11:44:08] dropped by kind: inside: 9
+[11:44:08] shelf: 154 → 145 entries
+[11:44:08]   by k: k=1: 1, k=2: 32, k=3: 112
+[11:44:08]   parametric: 97   rigid (no parameter): 48
+[11:44:08]   rewrote public/reference-atlas-period.json: 33 entries
+[11:44:08]   rewrote public/reference-atlas-period-k3.json: 112 entries

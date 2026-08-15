@@ -1,0 +1,26 @@
+# What the 4-bucket union unlocks — NEW run to completion, OLD capped for a lower-bound ratio
+# 2026-08-08 18:59, single process at a time, 10-core M-series
+
+== composite-decomp
+ k=2 NEW  wall=0s  nodes=824880  raw=298
+ k=2 OLD  wall=4s  nodes=1074778
+ k=3 NEW  wall=13s  nodes=30399266  raw=2548
+ k=3 OLD  wall>180s CAPPED
+ k=4 NEW  wall=574s  nodes=646644493  raw=16388
+ k=4 OLD  wall>180s CAPPED
+== regular-scaled-123
+ k=2 NEW  wall=0s  nodes=452426  raw=2506
+ k=2 OLD  wall=6s  nodes=898070
+ k=3 NEW  wall=12s  nodes=8973124  raw=25789
+ k=3 OLD  wall>180s CAPPED
+ k=4 NEW  wall=290s  nodes=130473342  raw=210288
+ k=4 OLD  wall>180s CAPPED
+== tetromino
+ k=2 NEW  wall=1s  nodes=23122  raw=206
+ k=2 OLD  wall>180s CAPPED
+ k=3 NEW  wall=2s  nodes=183242  raw=1188
+ k=3 OLD  wall>180s CAPPED
+== equi3-cx-z24
+ k=2 NEW  wall=3s  nodes=12440224  raw=377
+ k=2 OLD  wall>180s CAPPED
+UNLOCK_DONE

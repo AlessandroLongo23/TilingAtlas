@@ -268,6 +268,15 @@ function canonCyclic(seq: string[]): string {
  *    rotations × reflection at a radius > one period. For a periodic tiling, two vertices with
  *    reflection-congruent neighbourhoods that large are provably in the same orbit (the reflection
  *    extends to a global symmetry), so this never falsely merges a genuinely chiral pair.
+ *
+ * DOMAIN LIMIT — grid tilings only. The 24 rotations are the ζ₂₄ powers, so this is exact for any cell
+ * whose edge directions come off the 24-direction grid (every snapshot shelf) and WRONG for a cell whose
+ * angles were solved rather than enumerated: a period-3 family at α = 103.7° has symmetry rotations at no
+ * multiple of 15°, the fingerprints never agree, and the count inflates without bound — 19 orbits for a
+ * 3-tile cell the covering test confirms tiles exactly. `nearVerts` compounds it by never reducing the
+ * vertex set modulo the lattice. For developed parametric cells use `tools/ctrnact-oracle/vertex_orbits.py`,
+ * which reduces mod the lattice first and derives each isometry from the geometry instead of quantising
+ * it; it reproduces Galebach's published k on all 1,248 tilings at k = 1..6.
  */
 export function trueVertexOrbitCount(cell: CanonCell, engineK: number): number {
 	if (engineK <= 1) return engineK;

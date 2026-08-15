@@ -1,0 +1,72 @@
+# Concave period-3 QUOTIENT sweep — 2026-08-09 11:42
+# One QUOTIENT palette per productive concave tile: regular {3,4,6,8,12} + that shape.
+# Corners bounded at 23 D-units (345 deg), so a family may carry a REFLEX corner and its slider
+# sweeps the concave regime instead of stopping at the convexity cut.
+# Output is FAMILIES + genuinely pinned tilings — never fixed-angle snapshots.
+# 63 palettes.
+
+[11:42:57]  1/63  13,10,1      families=34    pinned=0    rc=0  elapsed 51s  ETA 52m
+[11:43:18]  2/63  13,6,5       families=32    pinned=0    rc=0  elapsed 72s  ETA 36m
+[11:43:43]  3/63  13,7,4       families=45    pinned=0    rc=0  elapsed 97s  ETA 32m
+[11:44:09]  4/63  13,8,3       families=49    pinned=0    rc=0  elapsed 123s  ETA 30m
+[11:44:29]  5/63  13,9,2       families=13    pinned=0    rc=0  elapsed 143s  ETA 27m
+[11:44:33]  6/63  14,10,4      families=3     pinned=3    rc=0  elapsed 147s  ETA 23m
+[11:44:38]  7/63  14,10,6      families=1     pinned=4    rc=0  elapsed 152s  ETA 20m
+[11:44:43]  8/63  14,10,8      families=0     pinned=2    rc=0  elapsed 157s  ETA 17m
+[11:44:48]  9/63  14,14,2      families=0     pinned=8    rc=0  elapsed 162s  ETA 16m
+[11:44:52] 10/63  14,14,4      families=0     pinned=5    rc=0  elapsed 166s  ETA 14m
+[11:44:56] 11/63  14,14,5      families=0     pinned=1    rc=0  elapsed 170s  ETA 13m
+[11:45:07] 12/63  14,5,5       families=21    pinned=2    rc=0  elapsed 181s  ETA 12m
+[11:46:06] 13/63  14,6,4       families=86    pinned=21   rc=0  elapsed 240s  ETA 15m
+[11:46:52] 14/63  14,7,3       families=34    pinned=1    rc=0  elapsed 286s  ETA 16m
+[11:47:48] 15/63  14,8,2       families=68    pinned=30   rc=0  elapsed 342s  ETA 18m
+[11:47:52] 16/63  14,8,6       families=0     pinned=2    rc=0  elapsed 346s  ETA 16m
+[11:47:56] 17/63  14,8,8       families=0     pinned=3    rc=0  elapsed 350s  ETA 15m
+[11:48:49] 18/63  14,9,1       families=32    pinned=1    rc=0  elapsed 403s  ETA 16m
+[11:48:53] 19/63  15,15,2      families=0     pinned=3    rc=0  elapsed 407s  ETA 15m
+[11:49:18] 20/63  15,5,4       families=45    pinned=0    rc=0  elapsed 432s  ETA 15m
+[11:49:39] 21/63  15,6,3       families=33    pinned=8    rc=0  elapsed 453s  ETA 15m
+[11:49:58] 22/63  15,7,2       families=13    pinned=0    rc=0  elapsed 472s  ETA 14m
+[11:50:56] 23/63  15,8,1       families=59    pinned=0    rc=0  elapsed 530s  ETA 15m
+[11:51:01] 24/63  16,10,2      families=5     pinned=0    rc=0  elapsed 535s  ETA 14m
+[11:51:05] 25/63  16,10,6      families=1     pinned=0    rc=0  elapsed 539s  ETA 13m
+[11:51:09] 26/63  16,11,1      families=5     pinned=0    rc=0  elapsed 543s  ETA 12m
+[11:51:13] 27/63  16,11,5      families=1     pinned=0    rc=0  elapsed 547s  ETA 12m
+[11:51:18] 28/63  16,13,3      families=1     pinned=0    rc=0  elapsed 551s  ETA 11m
+[11:51:22] 29/63  16,14,2      families=1     pinned=0    rc=0  elapsed 556s  ETA 10m
+[11:51:26] 30/63  16,15,1      families=1     pinned=0    rc=0  elapsed 560s  ETA 10m
+[11:52:57] 31/63  16,5,3       families=124   pinned=0    rc=0  elapsed 651s  ETA 11m
+[11:54:37] 32/63  16,6,2       families=157   pinned=34   rc=0  elapsed 751s  ETA 12m
+[11:54:42] 33/63  16,6,6       families=4     pinned=4    rc=0  elapsed 756s  ETA 11m
+[11:56:20] 34/63  16,7,1       families=132   pinned=2    rc=0  elapsed 854s  ETA 12m
+[11:56:25] 35/63  16,7,5       families=5     pinned=0    rc=0  elapsed 859s  ETA 11m
+[11:56:33] 36/63  16,8,4       families=8     pinned=12   rc=0  elapsed 867s  ETA 10m
+[11:56:37] 37/63  16,8,6       families=0     pinned=5    rc=0  elapsed 871s  ETA 10m
+[11:56:43] 38/63  16,8,8       families=3     pinned=6    rc=0  elapsed 877s  ETA 9m
+[11:56:47] 39/63  16,9,3       families=5     pinned=0    rc=0  elapsed 881s  ETA 9m
+[11:56:51] 40/63  16,9,7       families=1     pinned=0    rc=0  elapsed 885s  ETA 8m
+[11:57:19] 41/63  17,6,1       families=32    pinned=0    rc=0  elapsed 913s  ETA 8m
+[11:57:24] 42/63  18,10,2      families=3     pinned=0    rc=0  elapsed 918s  ETA 7m
+[11:57:28] 43/63  18,11,1      families=3     pinned=0    rc=0  elapsed 922s  ETA 7m
+[11:57:32] 44/63  18,6,4       families=0     pinned=2    rc=0  elapsed 926s  ETA 6m
+[11:57:37] 45/63  18,6,6       families=3     pinned=10   rc=0  elapsed 931s  ETA 6m
+[11:57:41] 46/63  18,7,5       families=3     pinned=0    rc=0  elapsed 935s  ETA 5m
+[11:57:45] 47/63  18,8,2       families=0     pinned=3    rc=0  elapsed 939s  ETA 5m
+[11:57:49] 48/63  18,8,4       families=3     pinned=3    rc=0  elapsed 943s  ETA 4m
+[11:57:54] 49/63  18,8,6       families=0     pinned=2    rc=0  elapsed 948s  ETA 4m
+[11:57:58] 50/63  18,9,3       families=3     pinned=0    rc=0  elapsed 952s  ETA 4m
+[11:58:04] 51/63  20,10,2      families=3     pinned=3    rc=0  elapsed 958s  ETA 3m
+[11:58:10] 52/63  20,11,1      families=3     pinned=0    rc=0  elapsed 964s  ETA 3m
+[11:58:18] 53/63  20,5,3       families=9     pinned=0    rc=0  elapsed 972s  ETA 3m
+[11:58:29] 54/63  20,6,2       families=10    pinned=10   rc=0  elapsed 983s  ETA 2m
+[11:58:34] 55/63  20,6,4       families=0     pinned=9    rc=0  elapsed 988s  ETA 2m
+[11:58:39] 56/63  20,6,6       families=2     pinned=5    rc=0  elapsed 993s  ETA 2m
+[11:58:47] 57/63  20,7,1       families=9     pinned=0    rc=0  elapsed 1001s  ETA 1m
+[11:58:51] 58/63  20,7,3       families=0     pinned=1    rc=0  elapsed 1005s  ETA 1m
+[11:58:57] 59/63  20,7,5       families=3     pinned=0    rc=0  elapsed 1011s  ETA 1m
+[11:59:01] 60/63  20,8,2       families=0     pinned=9    rc=0  elapsed 1015s  ETA 0m
+[11:59:10] 61/63  20,8,4       families=3     pinned=10   rc=0  elapsed 1024s  ETA 0m
+[11:59:14] 62/63  20,8,6       families=0     pinned=1    rc=0  elapsed 1028s  ETA 0m
+[11:59:20] 63/63  20,9,3       families=3     pinned=0    rc=0  elapsed 1034s  ETA 0m
+
+QUOTIENT SWEEP DONE -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/ae24e276-dd5b-4e01-b28c-c3c539f08384/scratchpad/concave-families

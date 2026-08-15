@@ -1,0 +1,9 @@
+# equi3-cx-z24 alphabet generation — started 15:28:41
+[gen] EU_PRUNE_OVERLAP: 0 forbidden adjacent pairs of 3844 (0.3s) — pruned inside the DFS
+[gen] EU_PRUNE_OVERLAP: dropped 0 residual overlapping configs (106266 -> 106266) — the 3+-corner collisions the pair table cannot see
+[gen] palette=equi3-cx-z24 D=24 tiles=24 classes=62 configs=106266
+[cert] A6: 112452 entries, pairwise non-isomorphic PASS
+[gen] tables.bin: 44.3 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/equi3-cx-z24/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (112452 entries)
+python3 alphabets/gen_alphabet.py --palette  --out tables/equi3-cx-z24   63.29s user 1.95s system 95% cpu 1:08.13 total
+exit=0

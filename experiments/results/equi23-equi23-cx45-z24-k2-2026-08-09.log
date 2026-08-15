@@ -1,0 +1,25 @@
+[01:27:54] === equi23-cx45-z24 k<=2 ===
+[01:27:54] palette: 33 symbols pre-mirror — Regular {3,4,6,8,12} + all period-2/3 equilateral tiles (convex) on the zeta24 grid, from enum_period_tiles.py. Corners below 45 deg excluded.
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/equi23-cx45-z24.json --out tables/equi23-cx45-z24 --certify
+[gen] mirror twins added for 10 chiral tile(s): e3-6-135.120.105', e3-6-150.120.90', e3-6-150.135.75', e3-6-165.105.90', e3-6-165.120.75', e3-6-165.135.60', e3-6-165.150.45', e3-9-165.135.120', e3-9-165.150.105', e3-12-165.150.135'
+[gen] EU_PRUNE_OVERLAP: 0 forbidden adjacent pairs of 11881 (0.6s) — pruned inside the DFS
+[gen] EU_PRUNE_OVERLAP: dropped 0 residual overlapping configs (917298 -> 917298) — the 3+-corner collisions the pair table cannot see
+[gen] palette=equi23-cx45-z24 D=24 tiles=43 classes=109 configs=917298
+[cert] A6: 942014 entries, pairwise non-isomorphic PASS
+[gen] tables.bin: 351.7 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/equi23-cx45-z24/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (942014 entries)
+touch tables/equi23-cx45-z24/.generated
+rm -f .maxnum-equi23-cx45-z24-*
+touch .maxnum-equi23-cx45-z24-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/equi23-cx45-z24 -o eu_solver.equi23-cx45-z24 eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/equi23-cx45-z24 -o eu_pruner.equi23-cx45-z24 eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/equi23-cx45-z24 -o eu_develop.equi23-cx45-z24 eu_develop.cpp
+[01:37:16] alphabet + pruner built
+[01:37:17] solver built (MAXNUM=2, runtime tables)
+[01:38:51] solve done in 94s; raw blocks 1757
+  k=1 : 124
+  k=2 : 1299
+total kept: 1423
+[equi23-cx45-z24 k=1]  solutions 124  developed 124  usesComposite 0  failures 0  -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/period-oracle/ctrnact-equi23-cx45-z24-k1.cells.json
+[equi23-cx45-z24 k=2]  solutions 1299  developed 1299  usesComposite 0  failures 0  -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/period-oracle/ctrnact-equi23-cx45-z24-k2.cells.json
+[01:46:37] done

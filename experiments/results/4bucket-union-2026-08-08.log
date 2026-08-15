@@ -1,0 +1,17 @@
+# 4-bucket union — A/B against the pre-change binary (2026-08-08 18:31, rerun after the deque fix)
+# old = eu_solver.cpp before the change: BUCKET_OK false => full type scan per node, all filters off
+# new = 4-bucket union: candidate bucketing + face/pair/dynamic filters active on period-p palettes
+# Digests MUST match. A cap turns a run into a lower bound on the speedup.
+
+== star24full (BUCKET_OK TRUE — control: nothing should change) ==
+ k=4
+  old wall=8s     nodes=2959612      blocks=1300   digest=053f2de0b6a19393
+  new wall=8s     nodes=2959612      blocks=1300   digest=053f2de0b6a19393
+  => digests MATCH
+
+== composite-convex (D=12) ==
+ k=2
+  old wall=18s    nodes=2851115      blocks=372    digest=7b889ac5d6b97753
+  new wall=1s     nodes=2248149      blocks=372    digest=7b889ac5d6b97753
+  => digests MATCH
+ k=3
