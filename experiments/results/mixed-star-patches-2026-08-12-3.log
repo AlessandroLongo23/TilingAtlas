@@ -1,0 +1,71 @@
+mixed-star-patch-growth — target 3 gap-free patches, close-radius 16 (rings 5 → 7 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16)
+alphabet: 5 regular + 23 star species (51 seatable corners), from 12960 catalogue entries k=1..9
+  regular: 3, 4, 6, 8, 12
+  3*: 15°, 30°, 45°
+  4*: 15°, 30°, 45°, 60°, 75°
+  6*: 15°, 30°, 45°, 60°, 75°, 90°
+  8*: 15°, 45°, 75°, 90°, 120°
+  12*: 30°, 60°, 90°, 120°
+excluded (not expressible in ℤ[ζ₂₄]): 5, 9, 18, 3*20, 3*40, 4*18, 6*80, 9*20, 18*40 — 9-fold (20° grid) and 5-fold (18° grid) shelves
+
+  attempt  1: ✗ closed nothing of 16 (65 tiles, 32592 backtracks, 697034 nodes, 150.2s)
+  attempt  2: ✗ closed to r=13 of 16 (578 tiles, 949806 backtracks, 26108650 nodes, 257.5s)
+  attempt  3: ✗ closed to r=12 of 16 (381 tiles, 670774 backtracks, 23985705 nodes, 275.1s)
+  attempt  4: ✗ closed to r=11 of 16 (410 tiles, 150151 backtracks, 5248353 nodes, 239.3s)
+  attempt  5: ✗ closed to r=11 of 16 (375 tiles, 1648355 backtracks, 35951166 nodes, 312.3s)
+  attempt  6: ✗ closed to r=14 of 16 (526 tiles, 1968329 backtracks, 60000350 nodes, 413.3s)
+  attempt  7: ✗ closed to r=5 of 16 (14 tiles, 54994 backtracks, 1738727 nodes, 155.2s)
+  attempt  8: ✗ closed to r=11 of 16 (374 tiles, 1652443 backtracks, 48213954 nodes, 237.8s)
+  attempt  9: ✗ closed to r=11 of 16 (370 tiles, 1055573 backtracks, 35374458 nodes, 241.6s)
+  attempt 10: ✗ closed to r=14 of 16 (629 tiles, 1636987 backtracks, 60000453 nodes, 338.1s)
+  attempt 11: ✗ closed to r=10 of 16 (341 tiles, 1941281 backtracks, 56617846 nodes, 215.0s)
+  attempt 12: ✗ closed to r=15 of 16 (721 tiles, 1940093 backtracks, 60000579 nodes, 349.4s)
+  attempt 13: ✗ closed to r=11 of 16 (398 tiles, 2027830 backtracks, 60000117 nodes, 296.4s)
+  attempt 14: ✗ closed to r=15 of 16 (739 tiles, 2164175 backtracks, 58961683 nodes, 249.5s)
+  attempt 15: ✗ closed to r=11 of 16 (444 tiles, 1778249 backtracks, 60000135 nodes, 311.9s)
+  attempt 16: ✗ closed to r=9 of 16 (267 tiles, 1229528 backtracks, 39621593 nodes, 221.0s)
+  attempt 17: ✗ closed to r=12 of 16 (428 tiles, 1776044 backtracks, 60000277 nodes, 224.6s)
+  attempt 18: ✗ closed to r=14 of 16 (681 tiles, 1613174 backtracks, 49990987 nodes, 228.2s)
+  attempt 19: ✗ closed to r=10 of 16 (283 tiles, 1216545 backtracks, 39841869 nodes, 258.9s)
+  attempt 20: ✗ closed to r=11 of 16 (424 tiles, 1233648 backtracks, 41898062 nodes, 218.8s)
+  attempt 21: ✗ closed to r=10 of 16 (316 tiles, 1390033 backtracks, 60000284 nodes, 201.2s)
+  attempt 22: ✗ closed to r=5 of 16 (72 tiles, 108253 backtracks, 2711315 nodes, 152.6s)
+  attempt 23: ✗ closed to r=7 of 16 (146 tiles, 1517986 backtracks, 43427936 nodes, 162.9s)
+  attempt 24: ✗ closed to r=12 of 16 (416 tiles, 1801724 backtracks, 60000489 nodes, 216.9s)
+  attempt 25: ✗ closed to r=5 of 16 (77 tiles, 242943 backtracks, 5686193 nodes, 160.8s)
+  attempt 26: ✗ closed to r=13 of 16 (647 tiles, 1869226 backtracks, 60000077 nodes, 240.6s)
+  attempt 27: ✗ closed to r=11 of 16 (418 tiles, 1053604 backtracks, 29412918 nodes, 199.8s)
+  attempt 28: ✗ closed to r=13 of 16 (493 tiles, 1664419 backtracks, 60000558 nodes, 307.6s)
+  attempt 29: ✗ closed to r=13 of 16 (520 tiles, 2077636 backtracks, 60000207 nodes, 266.0s)
+  attempt 30: ✗ closed to r=14 of 16 (604 tiles, 2001396 backtracks, 60000170 nodes, 294.4s)
+  attempt 31: ✗ closed to r=11 of 16 (448 tiles, 1920922 backtracks, 38807908 nodes, 175.9s)
+  attempt 32: ✓ patch 01 — 1400 tiles (519 stars), 3 star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), 27209 backtracks, 76.3s
+             rings r5:158 → r7:290 → r9:474 → r10:588 → r11:700 → r12:818 → r13:948 → r14:1079 → r15:1221 → r16:1400
+             3×755  6×126  3*15°×517  4*15°×1  6*15°×1
+  attempt 33: ✗ closed to r=13 of 16 (522 tiles, 1981479 backtracks, 60000082 nodes, 263.9s)
+  attempt 34: ✗ closed to r=15 of 16 (536 tiles, 1720625 backtracks, 60000441 nodes, 320.3s)
+  attempt 35: ✗ closed to r=12 of 16 (479 tiles, 1876579 backtracks, 58639129 nodes, 215.5s)
+  attempt 36: ✗ closed to r=11 of 16 (383 tiles, 1740244 backtracks, 60000244 nodes, 271.5s)
+  attempt 37: ✗ closed to r=11 of 16 (351 tiles, 2023427 backtracks, 60000137 nodes, 210.2s)
+  attempt 38: ✗ closed to r=10 of 16 (352 tiles, 1443328 backtracks, 48461066 nodes, 266.8s)
+  attempt 39: ✗ closed to r=13 of 16 (386 tiles, 1735800 backtracks, 60000373 nodes, 233.1s)
+  attempt 40: ✗ closed to r=13 of 16 (410 tiles, 2073592 backtracks, 60000175 nodes, 294.7s)
+  attempt 41: ✗ closed to r=9 of 16 (241 tiles, 657513 backtracks, 17134189 nodes, 172.6s)
+  attempt 42: ✗ closed to r=12 of 16 (567 tiles, 2156262 backtracks, 60000179 nodes, 265.8s)
+  attempt 43: ✗ closed to r=10 of 16 (303 tiles, 1979759 backtracks, 57702490 nodes, 228.3s)
+  attempt 44: ✓ patch 02 —  399 tiles (112 stars), 7 star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), 1381156 backtracks, 140.8s
+             rings r5:38 → r7:72 → r9:118 → r10:149 → r11:176 → r12:213 → r13:256 → r14:303 → r15:348 → r16:399
+             3×279  4×6  6×2  3*15°×3  3*30°×3  3*45°×1  4*30°×48  4*60°×1  8*75°×35  8*120°×21
+  attempt 45: ✗ closed to r=11 of 16 (358 tiles, 1537319 backtracks, 58211246 nodes, 200.3s)
+  attempt 46: ✗ closed to r=5 of 16 (53 tiles, 34244 backtracks, 781056 nodes, 328.6s)
+  attempt 47: ✗ closed to r=15 of 16 (776 tiles, 859492 backtracks, 26239383 nodes, 446.0s)
+  attempt 48: ✓ patch 03 —  425 tiles (112 stars), 7 star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), 804530 backtracks, 109.7s
+             rings r5:50 → r7:89 → r9:148 → r10:171 → r11:201 → r12:241 → r13:283 → r14:326 → r15:376 → r16:425
+             3×309  4×4  3*15°×3  3*30°×2  4*15°×1  4*30°×49  6*30°×1  8*75°×37  8*120°×19
+
+3/3 gap-free patches, 2224 tiles total
+species used across the gallery: 13/28 of the alphabet
+never placed: 8, 12, 4*45°, 4*75°, 6*45°, 6*60°, 6*75°, 6*90°, 8*15°, 8*45°, 8*90°, 12*30°, 12*60°, 12*90°, 12*120°
+
+→ /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tmp-mixed-star-patches/shard-3/gallery.html
+rasterised 3 PNGs at 1120px

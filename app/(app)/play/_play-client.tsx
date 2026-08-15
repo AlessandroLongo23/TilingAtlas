@@ -37,6 +37,8 @@ import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
 	loadPeriodAtlasShard,
+	loadMixedAtlasShard,
+	loadScaledAtlasShard,
 	loadTri45AtlasShard,
 	loadPenroseAtlasShard,
 	loadReferenceAtlas,
@@ -74,6 +76,8 @@ import {
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
 	PERIOD_SHARD_KS,
+	MIXED_SHARD_KS,
+	SCALED_SHARD_KS,
 	TRI45_SHARD_KS,
 	PENROSE_SHARD_KS,
 	EUHALF_SHARD_KS,
@@ -281,6 +285,48 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (!Number.isFinite(k) || k < 3) return;
 		let alive = true;
 		loadIsotoxalAtlasShard(k)
+			.then((data) => {
+				if (!alive || data.length === 0) return;
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+					return add.length ? [...base, ...add] : base;
+				});
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [requestedKey]);
+
+	// MIXED and SCALED deep links. Both shelves grew lazy k tiers without a deep-link resolver here, so a
+	// /library card click on any of them landed on the default tiling (t1001): the id was simply absent
+	// from the working list, and the fallback is silent. Reported 2026-08-13; it had been true for the
+	// mixed k=3/k=4 tiers since they shipped, and would have been true for every scaled tiling above k=2.
+	//
+	// These two are NOT in KNOWN_HIGHER_TIERS on purpose — that table is eagerly pulled on mount, and the
+	// scaled tail is ~200 MB (k=7 alone is 29,500 tilings). Deep-link only, one shard, on demand.
+	//
+	// Table-driven because this is the fourth and fifth copy of the same effect; the three above
+	// (composable, period, isotoxal) predate it and can fold in here whenever they are next touched.
+	useEffect(() => {
+		if (!requestedKey) return;
+		const RESOLVERS: { re: RegExp; load: (k: number) => Promise<ReferenceTiling[]>; ks: readonly number[] }[] = [
+			// "ctrnact-mixed-family-k3-01" and the rigid crossing entries "ctrnact-cross-star-scaled-k2-08".
+			{ re: /^ctrnact-(?:mixed-family|cross-star-scaled)-k(\d+)-/, load: loadMixedAtlasShard, ks: MIXED_SHARD_KS },
+			// "d-ctrnact-07_3t-…" / "s-ctrnact-01_3e-…" — the two-digit field after the palette tag is k.
+			{ re: /^[ds]-ctrnact-0*(\d+)_/, load: loadScaledAtlasShard, ks: SCALED_SHARD_KS },
+			// "euhhexv-k12-00001" — the Euclidean half-polygons. Same reason as the two above: their tail
+			// is ten slices and 110 MB, so it stays off KNOWN_HIGHER_TIERS and resolves one shard per link.
+			{ re: /^euh[a-z]+-k(\d+)-/, load: loadEuHalfAtlasShard, ks: EUHALF_SHARD_KS },
+		];
+		const hit = RESOLVERS.map((r) => ({ r, m: requestedKey.match(r.re) })).find((x) => x.m);
+		if (!hit?.m) return;
+		const k = Number(hit.m[1]);
+		if (!hit.r.ks.includes(k)) return; // k≤2 rides the eager bundle; anything else has no shard
+		let alive = true;
+		hit.r.load(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
 				setRefList((prev) => {
@@ -524,8 +570,17 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// the 3.4.n.4 hyperbolic tilings — the same lazy pattern once more, one shelf per curved geometry.
 	// Record ids are "xe<board>-k-i" and "hp<n>-k-i", which is what a deep-link is matched on.
 	useEffect(() => {
-		const wantSph = geometry === "spherical" || !!requestedKey?.startsWith("xe") || !!requestedKey?.startsWith("sp");
-		const wantHyp = geometry === "hyperbolic" || !!requestedKey?.startsWith("hp");
+		// The half-tile boards ride this same loader, but their ids begin "sh<board>-" and so failed the
+		// "sp" test above: a /library card click landed on the default tiling because the shelf was never
+		// fetched and the key never resolved. Matched against the board list rather than a bare "sh"
+		// prefix, so a future board is covered and no unrelated id is swallowed. (Same failure the mixed
+		// and scaled shelves hit on 2026-08-13; this is the third time a new shelf has needed a line here.)
+		const wantSph = geometry === "spherical" || !!requestedKey?.startsWith("xe") || !!requestedKey?.startsWith("sp")
+			|| SPH_HALF_BOARDS.some((b) => requestedKey?.startsWith(`sh${b.id}-`));
+		// "hh<board>-" is the half-tile boards; without this a /library click on one lands on the default
+		// tiling, exactly as the spherical halves did before their line above.
+		const wantHyp = geometry === "hyperbolic" || !!requestedKey?.startsWith("hp")
+			|| HYP_HALF_BOARDS.some((b) => requestedKey?.startsWith(`hh${b.id}-`));
 		// The pentagon edge shelf is EUCLIDEAN — a plane tiling — so it rides this effect's default
 		// geometry rather than one of the curved ones.
 		const wantEuc = geometry === "euclidean" || !!requestedKey?.startsWith("pe");

@@ -1,0 +1,162 @@
+=== regular-scaled-123 (sides 1+2+3) k-push — started 2026-08-12 17:51:45 ===
+Palette: regular {3,4,6,12} at sides 1, 2 AND 3. Side-3 tiles have a period-3 angle word, so
+BUCKET_OK is FALSE here — this is the palette the 2026-08-08 4-bucket union was for. It also has
+flat 180 corners, so the face-closure filters are off, same as regular-doubled.
+Shipped baseline: k=1 90 cells, k<=2 355 cells (k=2 = 265). Nothing above k=2 has ever been run.
+Config: EU_SHARD_N=64 EU_SHARD_D2=16 EU_POOL=8 from the start, per AL.
+⚑ A build-scaled-atlas run is alive at nice+15 during these; wall times may be slightly inflated.
+
+### k=1  17:51:45
+[17:51:45] build (MAXNUM=1 PALETTE=regular-scaled-123)
+[17:51:49] PHASE 1  parallel solve — 64 shards, depth2 16, pool 8, budget 0
+[17:51:50]   workers done (1s wall)
+[17:51:50]   merged raw blocks: 222
+[17:51:50] PHASE 2  prune
+  k=1 : 90
+total kept: 90
+store: peak 0.0136948 MB total, 0.0136948 MB resident
+[17:51:51]   prune done (1s);  total wall 2s
+[k=1 total wall 6s]
+
+### k=2  17:51:51
+[17:51:51] build (MAXNUM=2 PALETTE=regular-scaled-123)
+[17:51:52] PHASE 1  parallel solve — 64 shards, depth2 16, pool 8, budget 0
+[17:51:53]   workers done (1s wall)
+[17:51:55]   merged raw blocks: 2534
+[17:51:55] PHASE 2  prune
+  k=1 : 90
+  k=2 : 468
+total kept: 558
+store: peak 0.188704 MB total, 0.188704 MB resident
+[17:51:55]   prune done (0s);  total wall 3s
+[k=2 total wall 4s]
+
+
+### ⚑⚑ THE SHIPPED sides-1-3 CATALOG IS INCOMPLETE — 203 MISSING TILINGS AT k=2
+
+  OLD (run-k2-regular-scaled-123, the input the scaled shelf ships from):  k=1 90, k=2 265  = 355
+  NEW (2026-08-12, current solver):                                        k=1 90, k=2 468  = 558
+
+Two variables changed between them (solver version, and depth-2 sharding), so both were isolated:
+  current solver, D2=1  -> 90 / 468 = 558   (identical to D2=16, so depth-2 is NOT the cause)
+  union re-prune of OLD raw + NEW raw -> 90 / 468 = 558   (identical to NEW alone)
+The union test is the authoritative one: OLD contributes no class NEW lacks, i.e. OLD is a strict
+SUBSET of NEW. The old catalog lost 203 k=2 tilings, 43% of the true count.
+
+Cause: this palette's side-3 tiles carry a period-3 angle word, so BUCKET_OK is false, and before the
+2026-08-08 4-bucket union the dynamic face-closure filter ran WITHOUT its BUCKET_OK guard and was
+unsound on exactly this kind of palette (NOTES 2026-08-08). It deleted vertex types a real tiling
+used. regular-doubled was immune (all tiles period <= 2, BUCKET_OK true), which is why its k=1..4
+reproduced byte-for-byte earlier today while this palette did not.
+
+CONSEQUENCE: public/reference-atlas-scaled.json ships side-3 tilings derived from the 355-cell file.
+The sides-1-2 subclass is unaffected. The k<=7 shelf build running at the time was ALSO reading the
+stale 355-cell file, so it was killed rather than allowed to bake the gap in.
+
+### k=2 develop (corrected catalog)  17:53:48
+developed 558 tilings -> rs123-k2-d2x16/ctrnact-cells-k2.json
+  k=1 : 90
+  k=2 : 468
+area-cert (float Σface=|detΛ|): 558/558 tilings PASS
+
+### k=3  17:53:58  N=64 D2=16 pool=8  [NEW — never run before]
+[17:53:58] build (MAXNUM=3 PALETTE=regular-scaled-123)
+[17:53:59] PHASE 1  parallel solve — 64 shards, depth2 16, pool 8, budget 0
+[17:54:10]   workers done (11s wall)
+[17:54:10] PHASE 1b  merge worker outputs
+[17:54:14]   merged raw blocks: 25859
+[17:54:14] PHASE 2  prune
+  k=1 : 90
+  k=2 : 468
+  k=3 : 3044
+total kept: 3602
+store: peak 2.03615 MB total, 2.03615 MB resident
+[17:54:17]   prune done (3s);  total wall 18s
+[k=3 total wall 19s]
+developed 3602 tilings -> rs123-k3-d2x16/ctrnact-cells-k3.json
+  k=1 : 90
+  k=2 : 468
+  k=3 : 3044
+area-cert (float Σface=|detΛ|): 3602/3602 tilings PASS
+
+### k=4  17:54:28
+[17:58:41]   workers done (251s wall)
+[17:58:50]   merged raw blocks: 210916
+  k=1 : 90
+  k=2 : 468
+  k=3 : 3044
+  k=4 : 18739
+total kept: 22341
+[17:59:39]   prune done (49s);  total wall 309s
+[k=4 total wall 311s]
+developed 22341 tilings -> rs123-k4-d2x16/ctrnact-cells-k4.json
+  k=1 : 90
+  k=2 : 468
+  k=3 : 3044
+  k=4 : 18739
+area-cert (float Σface=|detΛ|): 22341/22341 tilings PASS
+
+k=2 nodes      928,460  max shard     121,743  max%= 13.1  ceiling= 7.63x
+k=3 nodes   42,888,122  max shard   7,279,286  max%= 17.0  ceiling= 5.89x
+k=4 nodes  732,473,873  max shard 180,269,299  max%= 24.6  ceiling= 4.06x
+
+### regular-scaled-123 (sides 1+2+3) — curve so far, all developed and area-certified
+                 k=1        k=2         k=3          k=4
+  blocks          90        468       3,044       18,739
+  cumulative      90        558       3,602       22,341
+  nodes            -    928,460  42,888,122  732,473,873
+  node x           -          -       46.2x        17.1x
+  block x          -       5.2x        6.5x         6.2x
+  solve wall       1s         1s         11s         251s
+  prune            1s         0s          3s          49s
+  total           6s         4s         19s         311s
+  area-cert    90/90    558/558   3602/3602  22341/22341   ALL PASS
+  baseline     MATCH   ⚑ 265->468      new          new
+  max shard %      -      13.1%       17.0%        24.6%   (ceiling 7.63x / 5.89x / 4.06x)
+
+Against regular-doubled at the same k, this palette is far richer and far more expensive:
+  k=4 blocks   18,739 here vs 1,064 there (17.6x);  k=4 nodes 7.3e8 here vs 4.1e6 there (177x).
+Block growth is a steady ~6x per k (5.2, 6.5, 6.2), well above regular-doubled's ~3.2x — the side-3
+tiles multiply the vertex alphabet. Node growth is decaying (46x -> 17x) as it did there.
+Projection k=5: ~115k blocks, ~8e9 nodes, ~45-60min solve. k=6: ~700k blocks, likely hours.
+⚑ The max-shard share is CLIMBING with k (13.1 -> 17.0 -> 24.6%), unlike regular-doubled where it
+held near 12-14%. At k=5 the D2=16 partition may need D2=32 to stay balanced.
+
+### WHERE THE 203 SIT, AND WHY — corrected attribution (2026-08-13)
+
+WHERE. All 203 are at k=2 and they sit in exactly FOUR family words, with nothing lost and no new
+words appearing:
+    a    35 ->  95   (+60)        a = 3s3
+    ab   40 -> 115   (+75)        b = 4s3
+    ae   18 ->  70   (+52)        e = 6s3
+    abe   2 ->  18   (+16)
+Those four words are precisely the PURE SIDE-3 words — tilings whose every tile is a side-3 polygon.
+So AL's instinct identified the right SET (he asked whether single-scale tilings had been removed);
+the mechanism is different, as the tests below show. Nothing was ever removed: both catalogs keep the
+same 10 pure side-1 blocks at k=1, on the same 8 family words.
+
+WHY NOT A FILTER. The old RAW solver output has 1,114 blocks against the new 2,534, and re-pruning the
+OLD RAW with the CURRENT pruner reproduces 355 exactly. The gap is therefore in the solver's own
+output, upstream of every filter and of the develop/T-junction gates in build-scaled-atlas.ts.
+
+⚑ MY FIRST ATTRIBUTION WAS WRONG. I blamed the unguarded dynamic face-closure filter. That filter is
+not even running here: `regular-scaled-123` has flat 180° corners, so eu_solver.cpp:1533 takes the
+`has_flat` branch, disables the face and pair filters and never calls `dyn_build()`. The only
+BUCKET_OK-gated machinery left in play is the CANDIDATE INDEX, and the 4-bucket union is exactly the
+fix to it — under BUCKET_OK false the old single-bucket key under-approximated the candidate pool, so
+the search never visited those side-3 assemblies.
+
+GROUND TRUTH. EU_NOBUCKET=1 removes the candidate index altogether (full scan, no optimization):
+    k=1 90, k=2 468, total 558, from 2,534 raw blocks — identical to the current bucketed run.
+Serial this run exceeded 10 minutes; sharded at N=64 D2=16 it took 3s, so depth-2 is what made the
+completeness oracle affordable. 558 is CONFIRMED COMPLETE; 355 was not.
+
+ARE THEY REAL? Of the 203 new pruned classes, 175 carry a congruence signature (k, |det Λ|, sorted
+face areas, sorted corner angles) absent from the entire old catalog, so they are new geometries and
+not re-labelled duplicates; the other 28 share a signature with an old entry and are supercell/dual
+duplicates of the kind the shelf's canonKey already merges. Of the 175, only 16 carry a T-JUNCTION,
+which is the shelf's admission gate — the remaining 159 are single-scale side-3 tilings with no
+offset, i.e. plain 3x rescalings of scale-1 tilings, and the shelf drops those by design.
+So: 203 more combinatorial classes, >=175 new geometries, and ~16 that actually reach the shelf.
+Example: ctrnact-02_a-2cv_2cy2_2di4_2dn2_4oo_6hm-1, k=2, six 3s3 triangles per cell, |det Λ| = 23.383,
+every face area 3.897114 (= sqrt(3)/4 * 9, the side-3 triangle), T-junction true, area-certified.

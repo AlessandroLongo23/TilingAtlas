@@ -1,0 +1,13 @@
+[13:51:39] build (MAXNUM=4 PALETTE=isotoxal-star-z24)
+[13:51:41] PHASE 1  parallel solve — 8 workers, budget 0
+[14:00:40]   workers done (539s wall)
+[14:00:40] PHASE 1b  merge worker outputs
+[14:00:46]   merged raw blocks: 41172
+[14:00:46] PHASE 2  prune
+  k=1 : 95
+  k=2 : 491
+  k=3 : 2637
+  k=4 : 13582
+total kept: 16805
+store: peak 4.66885 MB total, 4.66885 MB resident
+[14:00:48]   prune done (2s);  total wall 547s

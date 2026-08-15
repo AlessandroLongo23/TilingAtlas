@@ -1,17 +1,254 @@
 === build-scaled-atlas (side-1 + side-2 + side-3 regular {3,4,6,12}) ===
-  loaded 1505 developed tilings from tools/ctrnact-oracle/run-k4-regular-doubled/ctrnact-cells-k4.json
-  loaded 355 developed tilings from tools/ctrnact-oracle/run-k2-regular-scaled-123/ctrnact-cells-k2.json
-  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (4.4₃) — kept min-cell rep
-  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃.6) — kept min-cell rep
-  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃) — kept min-cell rep
-  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃) — kept min-cell rep
-  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (4₃) — kept min-cell rep
-  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (3₃.6₂) — kept min-cell rep
-  ⚑ k-conflict: one geometry carries k=1/2 across supercell duals (4₂.4₃) — kept min-cell rep
-  dropped 665 single-scale regular tilings (no T-junction); 0 area-cert skipped
-  T-junction mixers: 1195 raw duals → 1061 DISTINCT geometries (merged 134 supercell/dual duplicates)
+  loaded 49017 developed tilings from tools/ctrnact-oracle/run-k7-regular-doubled/ctrnact-cells-k7.json
+  loaded 22341 developed tilings from tools/ctrnact-oracle/run-k4-regular-scaled-123/ctrnact-cells-k4.json
+    …2000/71358 cells  34s elapsed  59/s  ETA 1176s
+    …4000/71358 cells  91s elapsed  44/s  ETA 1528s
+    …6000/71358 cells  110s elapsed  55/s  ETA 1196s
+    …8000/71358 cells  157s elapsed  51/s  ETA 1243s
+    …10000/71358 cells  202s elapsed  50/s  ETA 1239s
+    …12000/71358 cells  297s elapsed  40/s  ETA 1471s
+    …14000/71358 cells  348s elapsed  40/s  ETA 1424s
+    …16000/71358 cells  369s elapsed  43/s  ETA 1277s
+    …18000/71358 cells  404s elapsed  45/s  ETA 1199s
+    …20000/71358 cells  445s elapsed  45/s  ETA 1143s
+    …22000/71358 cells  520s elapsed  42/s  ETA 1166s
+    …24000/71358 cells  550s elapsed  44/s  ETA 1084s
+    …26000/71358 cells  594s elapsed  44/s  ETA 1037s
+    …28000/71358 cells  636s elapsed  44/s  ETA 984s
+    …30000/71358 cells  661s elapsed  45/s  ETA 911s
+    …32000/71358 cells  696s elapsed  46/s  ETA 857s
+    …34000/71358 cells  854s elapsed  40/s  ETA 939s
+    …36000/71358 cells  897s elapsed  40/s  ETA 881s
+    …38000/71358 cells  964s elapsed  39/s  ETA 846s
+    …40000/71358 cells  1008s elapsed  40/s  ETA 791s
+    …42000/71358 cells  1038s elapsed  40/s  ETA 725s
+    …44000/71358 cells  1077s elapsed  41/s  ETA 670s
+    …46000/71358 cells  1105s elapsed  42/s  ETA 609s
+    …48000/71358 cells  1135s elapsed  42/s  ETA 552s
+    …50000/71358 cells  1147s elapsed  44/s  ETA 490s
+    …52000/71358 cells  1153s elapsed  45/s  ETA 429s
+    …54000/71358 cells  1179s elapsed  46/s  ETA 379s
+    …56000/71358 cells  1206s elapsed  46/s  ETA 331s
+    …58000/71358 cells  1217s elapsed  48/s  ETA 280s
+    …60000/71358 cells  1231s elapsed  49/s  ETA 233s
+    …62000/71358 cells  1235s elapsed  50/s  ETA 186s
+    …64000/71358 cells  1246s elapsed  51/s  ETA 143s
+    …66000/71358 cells  1252s elapsed  53/s  ETA 102s
+    …68000/71358 cells  1259s elapsed  54/s  ETA 62s
+    …70000/71358 cells  1260s elapsed  56/s  ETA 24s
+  ⚑ k-conflict: one geometry carries k=3/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=4/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=4/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=4/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=4/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=4/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=4/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3.3₂.4₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=5/6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4.4₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4.4₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂.6.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂.6.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂.6.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3.3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=6/7 across supercell duals (3₂.4₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/3/4 across supercell duals (3.6₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/3/4 across supercell duals (3.3₂.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2/4 across supercell duals (4.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2/4 across supercell duals (3₃.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2/3/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2/3/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2/3/4 across supercell duals (4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2/4 across supercell duals (3₃.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/2/4 across supercell duals (4₂.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=1/3/4 across supercell duals (3₂.6₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3.3₃.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3/4 across supercell duals (3.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3 across supercell duals (3.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3.3₃.6₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.6) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3/4 across supercell duals (4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3/4 across supercell duals (4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₃.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₂.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3 across supercell duals (3₂.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3/4 across supercell duals (3₂.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₂.3₃.6₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/4 across supercell duals (3₂.3₃.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=2/3 across supercell duals (3₂.3₃.6₂) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (4.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (3₃.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (4₂.4₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (3₂.3₃) — kept min-cell rep
+  ⚑ k-conflict: one geometry carries k=3/4 across supercell duals (3₂.4₃) — kept min-cell rep
+  ⚑ 1614 record(s) on 1426 duplicated eu_develop id(s) renamed with a -b<n> suffix
+  shard k=3: 403 tilings → public/reference-atlas-scaled-k3.json (898.6 KB)
+  shard k=4: 1602 tilings → public/reference-atlas-scaled-k4.json (4166.0 KB)
+  shard k=5: 2792 tilings → public/reference-atlas-scaled-k5.json (7565.3 KB)
+  shard k=6: 9020 tilings → public/reference-atlas-scaled-k6.json (27287.2 KB)
+  shard k=7: 29500 tilings → public/reference-atlas-scaled-k7.json (97784.2 KB)
+  eager k≤2: 88 tilings; lazy shards: k=3, k=4, k=5, k=6, k=7
+  dropped 17322 single-scale regular tilings (no T-junction); 0 area-cert skipped
+  T-junction mixers: 54036 raw duals → 43405 DISTINCT geometries (merged 10631 supercell/dual duplicates)
     k=1: raw 32 → distinct 16
-    k=2: raw 189 → distinct 71
-    k=3: raw 212 → distinct 212
-    k=4: raw 762 → distinct 762
-  wrote → public/reference-atlas-scaled.json (3446.7 KB), 37.62s
+    k=2: raw 205 → distinct 72
+    k=3: raw 1468 → distinct 403
+    k=4: raw 9793 → distinct 1602
+    k=5: raw 2802 → distinct 2792
+    k=6: raw 9160 → distinct 9020
+    k=7: raw 30576 → distinct 29500
+  wrote → public/reference-atlas-scaled.json (160.1 KB), 1273.31s

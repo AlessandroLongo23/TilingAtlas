@@ -1,0 +1,349 @@
+=== regular-doubled (sides 1-2) k-push — started 2026-08-12 15:40:01 ===
+Palette: regular-doubled {3,4,6,12} + {d3,d4,d6,d12}, D=12, BUCKET_OK true (all tiles period<=2).
+Shipped baseline: k=1..4 in run-k<K>-regular-doubled (built BEFORE the 2026-08-08 4-bucket union).
+Each MAXNUM=n run is cumulative (all k<=n). Low-k runs are a control + a timing curve for k>=5.
+Developer: eu_develop, ZZ[zeta_12] — CORRECT here (D=12), unlike the D=24 palettes.
+
+[15:40:02] build (MAXNUM=1 PALETTE=regular)
+[15:40:03] PHASE 1  solve (C++ DFS, all k<=1)
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 96 admissible (tkey, Q(f)) pairs
+nodes: 230  simplify_calls: 138  simplify_true: 11
+[15:40:03]   raw blocks: 11  (0s)
+[15:40:03] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 10
+total kept: 10
+store: peak 0.000362396 MB total, 0.000362396 MB resident
+[15:40:03]   (0s)
+[15:40:03] PHASE 3  develop (Python geometric, exact) -> cells
+developed 10 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k1-regular-doubled-probe/ctrnact-cells-k1.json
+  k=1 : 10
+[15:40:03]   (0s)
+[15:40:03] DONE  total 0s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k1-regular-doubled-probe/ctrnact-cells-k1.json
+[wall 2s]
+
+### k=1  (PALETTE=regular-doubled, run-oracle.sh, serial)
+raw blocks 30 -> pruned 26 -> developed 26, area-cert 26/26 PASS
+wall: 1s  (solve 0s, prune 0s, develop 0s)
+baseline check: shipped run-k1-regular-doubled = 26 at k=1. MATCH.
+note (solver stderr): "filters: DISABLED - palette has flat 180 deg corners, whose 2-valent vertices
+  the face-closure model does not describe (candidate index stays on)". This is NOT the BUCKET_OK
+  issue (BUCKET_OK is true here); it is a separate, permanent property of any flat-corner palette,
+  and it is the thing that will set the cost of high k.
+shipped baseline for the whole series (run-k4-regular-doubled): k1 26, k2 81, k3 334, k4 1064.
+
+### k=2  (PALETTE=regular-doubled, run-oracle.sh, serial)  started 15:42:14
+[15:42:14] build (MAXNUM=2 PALETTE=regular-doubled)
+[15:42:15] PHASE 1  solve (C++ DFS, all k<=2)
+filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): yes
+nodes: 38942  simplify_calls: 1380  simplify_true: 162
+note: up to 7 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[15:42:16]   raw blocks: 162  (1s)
+[15:42:16] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+total kept: 107
+store: peak 0.0110531 MB total, 0.0110531 MB resident
+[15:42:16]   (0s)
+[15:42:16] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 107 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled-probe/ctrnact-cells-k2.json
+  k=1 : 26
+  k=2 : 81
+area-cert (float Σface=|detΛ|): 107/107 tilings PASS
+[15:42:16]   (0s)
+[15:42:16] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-regular-doubled-probe/ctrnact-cells-k2.json
+[wall 2s]
+
+### k=2 summary
+raw blocks 162 -> pruned 107 (k1 26, k2 81) -> developed 107, area-cert 107/107 PASS
+wall: 2s   solve nodes 38,942   dent-fill vertices <= 7 (uncapped)
+baseline check: shipped k=2 = 81. MATCH.
+cost curve so far (solve nodes):  k1 2,007  ->  k2 38,942   (x19.4)
+block curve (this k only):        k1 26     ->  k2 81       (x3.1)
+
+### k=3  (PALETTE=regular-doubled, run-oracle.sh, serial)  started 15:43:11
+[15:43:11] build (MAXNUM=3 PALETTE=regular-doubled)
+[15:43:13] PHASE 1  solve (C++ DFS, all k<=3)
+filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): yes
+nodes: 642938  simplify_calls: 4718  simplify_true: 886
+note: up to 10 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[15:43:13]   raw blocks: 886  (0s)
+[15:43:13] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+total kept: 441
+store: peak 0.0728035 MB total, 0.0728035 MB resident
+[15:43:13]   (0s)
+[15:43:13] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 441 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-regular-doubled-probe/ctrnact-cells-k3.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+area-cert (float Σface=|detΛ|): 441/441 tilings PASS
+[15:43:13]   (0s)
+[15:43:13] DONE  total 0s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-regular-doubled-probe/ctrnact-cells-k3.json
+[wall 2s]
+
+### k=3 summary
+raw blocks 886 -> pruned 441 (k1 26, k2 81, k3 334) -> developed 441, area-cert 441/441 PASS
+baseline check: shipped k=3 = 334. MATCH. (k1/k2/k3 all reproduce the pre-2026-08-08 catalog.)
+dent-fill vertices <= 10 (uncapped).
+
+Solver timed ALONE (eu_solver.regular-doubled, serial, 1 core; run-oracle.sh wall is dominated by `make`):
+             k=1        k=2        k=3
+  blocks      26         81        334
+  nodes    2,007     38,942    642,938
+  solve     0.13s      0.14s      0.50s
+  node ratio    -       19.4x      16.5x
+  block ratio   -        3.1x       4.1x
+Node growth is ~17x per k and steady, NOT the tiny-denominator artifact k=1->2 suggested.
+Extrapolated nodes: k=4 ~1.1e7, k=5 ~1.8e8, k=6 ~3.1e9.
+Time is NOT yet on that curve (0.13 -> 0.14 -> 0.50): at these sizes it is startup-bound, so the
+first honest time measurement is k=4. Do not extrapolate wall clock from these three points.
+
+### k=4  (PALETTE=regular-doubled, run-oracle.sh, serial)  started 15:44:33
+[15:44:33] build (MAXNUM=4 PALETTE=regular-doubled)
+[15:44:34] PHASE 1  solve (C++ DFS, all k<=4)
+filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): yes
+nodes: 4133576  simplify_calls: 15186  simplify_true: 3779
+note: up to 13 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[15:44:37]   raw blocks: 3779  (3s)
+[15:44:37] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+total kept: 1505
+store: peak 0.327034 MB total, 0.327034 MB resident
+[15:44:38]   (1s)
+[15:44:38] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 1505 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-regular-doubled-probe/ctrnact-cells-k4.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+area-cert (float Σface=|detΛ|): 1505/1505 tilings PASS
+[15:44:38]   (0s)
+[15:44:38] DONE  total 4s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-regular-doubled-probe/ctrnact-cells-k4.json
+[wall 5s]
+
+### k=5  (PALETTE=regular-doubled, run-oracle.sh, serial)  started 15:44:50  [NEW TERRITORY - no baseline]
+[15:44:50] build (MAXNUM=5 PALETTE=regular-doubled)
+[15:44:51] PHASE 1  solve (C++ DFS, all k<=5)
+filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): yes
+nodes: 25904079  simplify_calls: 46626  simplify_true: 15310
+note: up to 16 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[15:45:10]   raw blocks: 15310  (19s)
+[15:45:10] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+  k=5 : 3466
+total kept: 4971
+store: peak 1.38295 MB total, 1.38295 MB resident
+[15:45:11]   (1s)
+[15:45:11] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 4971 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-regular-doubled-probe/ctrnact-cells-k5.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+  k=5 : 3466
+area-cert (float Σface=|detΛ|): 4971/4971 tilings PASS
+[15:45:11]   (0s)
+[15:45:11] DONE  total 20s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-regular-doubled-probe/ctrnact-cells-k5.json
+[wall 21s]
+
+### k=4 + k=5 summary
+k=4: pruned 1064 at this k (1505 cumulative), area-cert 1505/1505 PASS. baseline 1064 -> MATCH.
+     ** k=1..4 now ALL reproduce the pre-2026-08-08 catalog. The 4-bucket-union solver is clean here. **
+k=5: pruned 3466 at this k (4971 cumulative), area-cert 4971/4971 PASS. NEW - no prior baseline.
+     dent-fill vertices <= 16 (uncapped).
+
+Solver timed ALONE (serial, 1 core):
+             k=1        k=2        k=3        k=4         k=5
+  blocks      26         81        334      1,064       3,466
+  nodes    2,007     38,942    642,938  4,133,576  25,904,079
+  solve     0.13s      0.14s      0.50s      2.55s      16.61s
+  node ratio    -      19.4x      16.5x       6.4x        6.3x
+  block ratio   -       3.1x       4.1x       3.2x        3.3x
+  time ratio    -       1.1x       3.6x       5.1x        6.5x
+
+CORRECTION to the k<=3 note above: node growth is NOT ~17x per k. It broke downward at k=4 and has
+settled at ~6.3x for two consecutive steps. The 19x/16x readings were the small-k regime. Blocks grow
+~3.2x per k and have been steady across all five.
+Time now tracks nodes (6.5x vs 6.3x), so wall clock is finally extrapolatable from here.
+Projection, SERIAL: k=6 ~1.6e8 nodes / ~1.7min; k=7 ~1.0e9 / ~11min; k=8 ~6.5e9 / ~70min.
+With run-oracle-parallel.sh (8 workers, ~6x effective on this machine): k=8 ~12min, k=9 ~75min.
+Blocks projected: k=6 ~11k, k=7 ~36k, k=8 ~115k, k=9 ~370k.
+
+### PARALLEL rerun of k=1..5 (EU_SHARD_N=8), started 15:48:31
+sysctl hw.ncpu = 10, hw.perflevel0.logicalcpu = 4
+k=1  workers 1s  total 2s   pruned: k=1:26 
+k=2  workers 0s  total 1s   pruned: k=1:26 k=2:81 
+k=3  workers 0s  total 3s   pruned: k=1:26 k=2:81 k=3:334 
+k=4  workers 1s  total 3s   pruned: k=1:26 k=2:81 k=3:334 k=4:1064 
+k=5  workers 8s  total 11s   pruned: k=1:26 k=2:81 k=3:334 k=4:1064 k=5:3466 
+
+Parallel counts are IDENTICAL to serial at every k (26 / 81 / 334 / 1064 / 3466), as the script's
+disjoint-shard argument promises. So the parallel path is a pure timing question.
+
+             k=1        k=2        k=3        k=4         k=5
+  blocks      26         81        334      1,064       3,466
+  nodes    2,007     38,942    642,938  4,133,576  25,904,079
+  serial    0.13s      0.14s      0.50s      2.55s      16.61s
+  parallel     1s         0s         0s         1s          8s      <- EU_SHARD_N=8, 1s resolution
+  speedup      -          -          -          -         2.1x
+
+** THE PARALLEL SPEEDUP IS 2.1x, NOT THE ~6x PROJECTED. The projection was wrong; here is why. **
+Per-worker nodes at k=5:
+  w0 1,065,305   w1 1,130,750   w2   306,684   w3   680,088
+  w4 2,184,622   w5 1,604,668   w6 2,358,918   w7 16,573,044
+Worker 7 alone holds 64.0% of all 25.9M nodes. run-oracle-parallel.sh shards initex() by first vertex
+type, w handling {i : i%N==w}; on this palette that partition is wildly unbalanced. The balance-limited
+speedup ceiling is total/max = 1.56x REGARDLESS of core count -- adding workers cannot help, because
+one worker is doing two thirds of the search. Measured 2.1x beats that ceiling only because the 1s
+timer resolution is too coarse at 8s; the true figure is near 1.6x.
+Machine: hw.ncpu 10 but hw.perflevel0.logicalcpu 4 (4 performance + 6 efficiency cores), so even a
+balanced shard would not have reached 8x.
+
+Revised projection (serial, 6.3x nodes per k, time tracking nodes):
+  k=6 ~1.6e8 nodes / ~1.7min   k=7 ~1.0e9 / ~11min   k=8 ~6.5e9 / ~70min
+Parallel as it stands buys ~1.6x on top of that, not 6x. To do better the shard key must change from
+i%N to something load-aware (e.g. split the heavy first-type subtree, or greedy bin-pack by a cheap
+node estimate). That is a solver-harness change, not a solver change.
+N=8 1 8 D2= pool=   solve 0s   total 1s   k=1:0 k=2:0 k=3:0 k=4:0 k=5:0   digest: 
+N=64 16 8 D2= pool=   solve 0s   total 0s   k=1:0 k=2:0 k=3:0 k=4:0 k=5:0   digest: 
+N=8 D2=1 pool=8   solve 7s   total 10s   k=1:26 k=2:81 k=3:334 k=4:1064 k=5:3466 
+   digest: adb4a31b4e25a940    4971 blocks  run-par-k5-rd-d2probe/out/pruned
+N=64 D2=16 pool=8   solve 4s   total 10s   k=1:26 k=2:81 k=3:334 k=4:1064 k=5:3466 
+   digest: f3d073b788629c48    4971 blocks  run-par-k5-rd-d2probe/out/pruned
+
+### k=6  depth-1 vs depth-2, started 15:55:41
+N=8  D2=1   total 58s   [15:56:33]   workers done (51s wall)
+N=64 D2=16  total 43s   [15:57:07]   workers done (28s wall)
+  k=1 : 26   k=2 : 81   k=3 : 334   k=4 : 1064   k=5 : 3466   k=6 : 10511 
+  k=1 : 26   k=2 : 81   k=3 : 334   k=4 : 1064   k=5 : 3466   k=6 : 10511 
+k=6 D2=1 : 8 shards  total   117,330,692  max   79,722,871  max%= 67.9  ceiling= 1.47x
+k=6 D2=16: 64 shards  total   117,336,887  max   14,776,905  max%= 12.6  ceiling= 7.94x
+
+=== k=6 union re-prune gate (D2=1 raw + D2=16 raw) ===
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+  k=5 : 3466
+  k=6 : 10511
+total kept: 15482
+
+### depth-2 sharding verdict (EU_SHARD_D2, already in eu_solver.cpp since the k=8 star work;
+### run-oracle-parallel.sh had simply never forwarded it — now it does, with EU_POOL too)
+
+Balance at k=5 (25.9M nodes) and k=6 (117.3M nodes), max-shard share and the resulting ceiling:
+  k=5  N=8  D2=1   64.0% -> 1.56x        k=6  N=8  D2=1   67.9% -> 1.47x
+  k=5  N=8  D2=2   35.7% -> 2.80x        k=6  N=64 D2=16  12.6% -> 7.94x
+  k=5  N=8  D2=4   25.3% -> 3.96x
+  k=5  N=8  D2=8   21.5% -> 4.65x
+  k=5  N=32 D2=8   18.7% -> 5.34x
+  k=5  N=64 D2=8   17.3% -> 5.80x
+  k=5  N=64 D2=16  11.7% -> 8.58x
+D2 is the lever; N is not. At fixed N=64, D2 8->16 moved the ceiling 5.80 -> 8.58; at fixed D2=8,
+N 8->64 moved it only 4.65 -> 5.80. Duplicated root work is negligible (+6k nodes on 25.9M = 0.02%).
+The depth-1 ceiling is stable at ~1.5x across k, confirming the pool script's "fixed FRACTION" note.
+
+MEASURED WALL, k=6 (10,511 new blocks; 15,482 cumulative):
+  N=8  D2=1   solve 51s   total 58s
+  N=64 D2=16  solve 28s   total 43s      -> 1.8x on solve
+Solve is now core-bound, not partition-bound: ceiling 7.94x against 4 performance cores.
+
+⚑ CORRECTNESS. A depth-2 run is NOT text-identical to a depth-1 one and catalog_digest.py says
+DIFFER (k=5: adb4a31b4e25a940 vs f3d073b788629c48, 789 of 4971 blocks differing each way). The
+tilings are the same. Each differing pair agrees on vertype line, count type and TES file and differs
+only in the final gluing word — a different representative of one class, because the pruner keeps
+whichever it meets first and D2 changes that order. Gate used instead, the pruner as its own
+isomorphism oracle: concatenate both runs' RAW eusolver output and re-prune.
+  k=5 union: 30,620 raw -> 26/81/334/1064/3466 = 4971   (each run alone: 4971)  PASS
+  k=6 union: 15,482 cumulative, k=6 = 10,511            (each run alone: same)  PASS
+Neither depth holds a class the other lacks. catalog_digest.py's header now says so.
+
+k=6 block count 10,511 vs the 3.2x-per-k projection of ~11,000. Growth model holds.
+
+### k=6 develop + area certificate  15:59:08
+developed 15482 tilings -> rd-k6-d2x1/ctrnact-cells-k6.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+  k=5 : 3466
+  k=6 : 10511
+area-cert (float Σface=|detΛ|): 15482/15482 tilings PASS
+[develop wall 0s]
+
+### k=7  started 15:59:21  N=64 D2=16 pool=8
+projection from the 6.3x node model: ~7.4e8 nodes; at k=6's measured throughput that is
+~8min serial / ~4-5min at D2=16. Blocks projected ~33k at k=7 (3.2x on 10,511).
+[15:59:21] build (MAXNUM=7 PALETTE=regular-doubled)
+[15:59:22] PHASE 1  parallel solve — 64 shards, depth2 16, pool 8, budget 0
+[16:01:26]   workers done (124s wall)
+[16:01:26] PHASE 1b  merge worker outputs
+[16:01:45]   merged raw blocks: 209794
+[16:01:45] PHASE 2  prune
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+  k=5 : 3466
+  k=6 : 10511
+  k=7 : 33535
+total kept: 49017
+store: peak 19.5072 MB total, 19.5072 MB resident
+[16:01:59]   prune done (14s);  total wall 157s
+[k=7 total wall 158s]
+
+### k=7 develop + area certificate  16:02:27
+developed 49017 tilings -> rd-k7-d2x16/ctrnact-cells-k7.json
+  k=1 : 26
+  k=2 : 81
+  k=3 : 334
+  k=4 : 1064
+  k=5 : 3466
+  k=6 : 10511
+  k=7 : 33535
+area-cert (float Σface=|detΛ|): 49017/49017 tilings PASS
+[develop wall 3s]
+k=7 nodes total 497,833,787   max shard 70,517,550  max%=14.2  ceiling=7.06x
+node ratio vs k=6 (117,330,692): 4.24x
+
+### regular-doubled (sides 1-2) — full curve k=1..7, ALL developed and area-certified
+             k=1     k=2     k=3      k=4       k=5        k=6         k=7
+  blocks      26      81     334    1,064     3,466     10,511      33,535
+  cumulative  26     107     441    1,505     4,971     15,482      49,017
+  nodes    2,007  38,942 642,938 4.13e6   2.59e7    1.173e8     4.978e8
+  node x       -   19.4x   16.5x    6.4x     6.3x       4.5x        4.2x
+  block x      -    3.1x    4.1x    3.2x     3.3x       3.0x        3.2x
+  area-cert  26/26 107/107 441/441 1505/1505 4971/4971 15482/15482 49017/49017  ALL PASS
+  baseline  MATCH   MATCH   MATCH    MATCH      new         new         new
+k=1..4 reproduce the shipped pre-2026-08-08 catalog exactly. k=5,6,7 are new.
+
+The node ratio is DECAYING, not constant: 19.4, 16.5, 6.4, 6.3, 4.5, 4.2. Two earlier projections in
+this log were made on the wrong model and both overshot (a "steady 17x" at k<=3, then "6.3x" at k<=5,
+which predicted 7.4e8 nodes at k=7 against 4.98e8 actual). Blocks, by contrast, have grown 3.0-3.3x at
+EVERY step since k=2 and the k=7 projection of ~33k landed on 33,535. Use the block ratio to plan, not
+the node ratio.
+
+Timings (N=64 D2=16 pool=8): k=7 solve 124s, merge 19s, prune 14s, develop 3s -> 158s total.
+Max shard held 14.2% of k=7 nodes (ceiling 7.06x), so the partition is still healthy at this depth.
+
+Projection for k=8, on the 3.2x block model and a ~4x node model:
+  blocks ~107k (cumulative ~156k), nodes ~2.0e9, solve ~8-9min, prune/merge ~2-3min.
+k=9 ~340k blocks, nodes ~8e9, solve ~35min. Neither is blocked by the solver.
+⚑ The binding constraint is the SHELF, not the search: the scaled shelf ships 1,061 entries today and
+build-scaled-atlas.ts runs an exact congruence dedup over the union of palettes. 49k raw blocks at
+k<=7 (156k at k<=8) will need the lazy-shard split reworked, and the /play catalogue panel still
+cannot reach even the k=3 shard it already has.

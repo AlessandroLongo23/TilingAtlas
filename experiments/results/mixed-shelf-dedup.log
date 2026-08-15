@@ -1,0 +1,62 @@
+[15:15:38] === shelf dedup: 824 entries across 3 file(s) ===
+[15:15:38]     public/reference-atlas-mixed.json
+[15:15:38]     public/reference-atlas-mixed-k3.json
+[15:15:38]     public/reference-atlas-mixed-k4.json
+[15:16:06]   keyed 200/824
+[15:16:43]   keyed 400/824
+[15:17:37]   keyed 600/824
+[15:18:51]   keyed 800/824
+[15:18:56] keyed 824 of 824 (0 unkeyable, kept as-is)
+[15:18:57] 
+[15:18:57] 41 entries are not their own tiling:
+[15:18:57]   ctrnact-cross-star-scaled-k1-02 is one parameter value of ctrnact-mixed-family-k1-02  (dim 0 → 1)
+[15:18:57]   ctrnact-cross-star-scaled-k1-03 is one parameter value of ctrnact-mixed-family-k1-19  (dim 0 → 1)
+[15:18:57]   ctrnact-cross-star-scaled-k1-04 is one parameter value of ctrnact-mixed-family-k1-04  (dim 0 → 1)
+[15:18:57]   ctrnact-cross-star-scaled-k2-12 is one parameter value of ctrnact-mixed-family-k2-45  (dim 0 → 2)
+[15:18:57]   ctrnact-mixed-family-k2-03   is a sub-family of ctrnact-mixed-family-k2-02  (dim 1 → 2)
+[15:18:57]   ctrnact-mixed-family-k2-37   is a sub-family of ctrnact-mixed-family-k2-36  (dim 1 → 2)
+[15:18:57]   ctrnact-mixed-family-k2-39   is a sub-family of ctrnact-mixed-family-k2-36  (dim 1 → 2)
+[15:18:57]   ctrnact-mixed-family-k2-56   is a sub-family of ctrnact-mixed-family-k2-54  (dim 1 → 2)
+[15:18:57]   ctrnact-mixed-family-k2-58   is a sub-family of ctrnact-mixed-family-k2-54  (dim 1 → 2)
+[15:18:57]   ctrnact-mixed-family-k3-10   is the same family as ctrnact-mixed-family-k3-06  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k3-11   is the same family as ctrnact-mixed-family-k3-08  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k3-12   is the same family as ctrnact-mixed-family-k3-09  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k3-13   is the same family as ctrnact-mixed-family-k3-07  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k3-155  is the same family as ctrnact-mixed-family-k3-154  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k3-42   is the same family as ctrnact-mixed-family-k3-37  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k3-51   is the same family as ctrnact-mixed-family-k3-150  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k3-54   is the same family as ctrnact-mixed-family-k3-53  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-06   is the same family as ctrnact-mixed-family-k4-05  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-12   is the same family as ctrnact-mixed-family-k4-11  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-124  is the same family as ctrnact-mixed-family-k4-122  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-14   is the same family as ctrnact-mixed-family-k4-123  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-176  is the same family as ctrnact-mixed-family-k4-140  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-177  is the same family as ctrnact-mixed-family-k4-141  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-212  is the same family as ctrnact-mixed-family-k4-207  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-221  is the same family as ctrnact-mixed-family-k4-186  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-34   is the same family as ctrnact-mixed-family-k4-25  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-35   is the same family as ctrnact-mixed-family-k4-26  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-37   is the same family as ctrnact-mixed-family-k4-31  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-38   is the same family as ctrnact-mixed-family-k4-28  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-41   is the same family as ctrnact-mixed-family-k4-15  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-42   is the same family as ctrnact-mixed-family-k4-19  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-43   is the same family as ctrnact-mixed-family-k4-20  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-44   is the same family as ctrnact-mixed-family-k4-21  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-45   is the same family as ctrnact-mixed-family-k4-22  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-46   is the same family as ctrnact-mixed-family-k4-17  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-47   is the same family as ctrnact-mixed-family-k4-18  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-498  is the same family as ctrnact-mixed-family-k4-201  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-499  is the same family as ctrnact-mixed-family-k4-202  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-522  is the same family as ctrnact-mixed-family-k4-521  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-525  is the same family as ctrnact-mixed-family-k4-524  (dim 1 → 1)
+[15:18:57]   ctrnact-mixed-family-k4-77   is the same family as ctrnact-mixed-family-k4-73  (dim 1 → 1)
+[15:18:57] 
+[15:18:57] dropped by kind: inside: 9, same: 32
+[15:18:57] 
+[15:18:57] renaming skipped (--no-rename): surviving ids are the producer's
+[15:18:57] shelf: 824 → 783 entries
+[15:18:57]   by k: k=1: 33, k=2: 53, k=3: 185, k=4: 512
+[15:18:57]   parametric: 743   rigid (no parameter): 40
+[15:18:57]   rewrote public/reference-atlas-mixed.json: 86 entries
+[15:18:57]   rewrote public/reference-atlas-mixed-k3.json: 185 entries
+[15:18:57]   rewrote public/reference-atlas-mixed-k4.json: 512 entries

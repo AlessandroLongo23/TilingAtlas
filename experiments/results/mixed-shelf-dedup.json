@@ -1,0 +1,168 @@
+{
+ "dropped": {
+  "ctrnact-cross-star-scaled-k1-02": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k1-02"
+  },
+  "ctrnact-cross-star-scaled-k1-04": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k1-04"
+  },
+  "ctrnact-cross-star-scaled-k1-03": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k1-19"
+  },
+  "ctrnact-mixed-family-k2-03": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k2-02"
+  },
+  "ctrnact-mixed-family-k2-37": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k2-36"
+  },
+  "ctrnact-mixed-family-k2-39": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k2-36"
+  },
+  "ctrnact-cross-star-scaled-k2-12": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k2-45"
+  },
+  "ctrnact-mixed-family-k2-56": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k2-54"
+  },
+  "ctrnact-mixed-family-k2-58": {
+   "relation": "inside",
+   "absorbedBy": "ctrnact-mixed-family-k2-54"
+  },
+  "ctrnact-mixed-family-k3-10": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-06"
+  },
+  "ctrnact-mixed-family-k3-11": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-08"
+  },
+  "ctrnact-mixed-family-k3-13": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-07"
+  },
+  "ctrnact-mixed-family-k3-12": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-09"
+  },
+  "ctrnact-mixed-family-k3-42": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-37"
+  },
+  "ctrnact-mixed-family-k3-51": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-150"
+  },
+  "ctrnact-mixed-family-k3-54": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-53"
+  },
+  "ctrnact-mixed-family-k3-155": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k3-154"
+  },
+  "ctrnact-mixed-family-k4-06": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-05"
+  },
+  "ctrnact-mixed-family-k4-12": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-11"
+  },
+  "ctrnact-mixed-family-k4-46": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-17"
+  },
+  "ctrnact-mixed-family-k4-14": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-123"
+  },
+  "ctrnact-mixed-family-k4-41": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-15"
+  },
+  "ctrnact-mixed-family-k4-43": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-20"
+  },
+  "ctrnact-mixed-family-k4-44": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-21"
+  },
+  "ctrnact-mixed-family-k4-47": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-18"
+  },
+  "ctrnact-mixed-family-k4-42": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-19"
+  },
+  "ctrnact-mixed-family-k4-45": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-22"
+  },
+  "ctrnact-mixed-family-k4-34": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-25"
+  },
+  "ctrnact-mixed-family-k4-35": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-26"
+  },
+  "ctrnact-mixed-family-k4-37": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-31"
+  },
+  "ctrnact-mixed-family-k4-38": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-28"
+  },
+  "ctrnact-mixed-family-k4-77": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-73"
+  },
+  "ctrnact-mixed-family-k4-124": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-122"
+  },
+  "ctrnact-mixed-family-k4-176": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-140"
+  },
+  "ctrnact-mixed-family-k4-177": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-141"
+  },
+  "ctrnact-mixed-family-k4-221": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-186"
+  },
+  "ctrnact-mixed-family-k4-498": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-201"
+  },
+  "ctrnact-mixed-family-k4-499": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-202"
+  },
+  "ctrnact-mixed-family-k4-212": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-207"
+  },
+  "ctrnact-mixed-family-k4-522": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-521"
+  },
+  "ctrnact-mixed-family-k4-525": {
+   "relation": "same",
+   "absorbedBy": "ctrnact-mixed-family-k4-524"
+  }
+ }
+}

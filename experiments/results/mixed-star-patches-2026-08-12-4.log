@@ -1,0 +1,37 @@
+mixed-star-patch-growth — target 3 gap-free patches, close-radius 16 (rings 5 → 7 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16)
+alphabet: 5 regular + 23 star species (51 seatable corners), from 12960 catalogue entries k=1..9
+  regular: 3, 4, 6, 8, 12
+  3*: 15°, 30°, 45°
+  4*: 15°, 30°, 45°, 60°, 75°
+  6*: 15°, 30°, 45°, 60°, 75°, 90°
+  8*: 15°, 45°, 75°, 90°, 120°
+  12*: 30°, 60°, 90°, 120°
+excluded (not expressible in ℤ[ζ₂₄]): 5, 9, 18, 3*20, 3*40, 4*18, 6*80, 9*20, 18*40 — 9-fold (20° grid) and 5-fold (18° grid) shelves
+
+  attempt  1: ✗ closed to r=9 of 16 (287 tiles, 1243131 backtracks, 33374619 nodes, 258.3s)
+  attempt  2: ✗ closed to r=15 of 16 (1029 tiles, 1181228 backtracks, 29345008 nodes, 253.8s)
+  attempt  3: ✗ closed to r=13 of 16 (608 tiles, 1593534 backtracks, 44572922 nodes, 370.4s)
+  attempt  4: ✗ closed to r=5 of 16 (28 tiles, 58651 backtracks, 1547122 nodes, 172.0s)
+  attempt  5: ✗ closed to r=5 of 16 (37 tiles, 58159 backtracks, 1291142 nodes, 161.2s)
+  attempt  6: ✗ closed to r=10 of 16 (350 tiles, 315710 backtracks, 9966298 nodes, 174.4s)
+  attempt  7: ✗ closed to r=12 of 16 (395 tiles, 800101 backtracks, 22430526 nodes, 346.9s)
+  attempt  8: ✗ closed to r=10 of 16 (298 tiles, 1107726 backtracks, 38093300 nodes, 199.7s)
+  attempt  9: ✓ patch 01 —  718 tiles (200 stars), 5 star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), 844847 backtracks, 189.2s
+             rings r5:92 → r7:153 → r9:236 → r10:307 → r11:362 → r12:413 → r13:470 → r14:539 → r15:647 → r16:718
+             3×442  8×76  3*15°×1  3*45°×4  4*15°×1  4*45°×134  8*15°×60
+  attempt 10: ✗ closed to r=13 of 16 (527 tiles, 1898445 backtracks, 60000204 nodes, 263.8s)
+  attempt 11: ✗ closed to r=10 of 16 (300 tiles, 1338247 backtracks, 39717156 nodes, 273.2s)
+  attempt 12: ✓ patch 02 —  336 tiles (92 stars), 6 star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), 351226 backtracks, 108.8s
+             rings r5:51 → r7:89 → r9:128 → r10:147 → r11:176 → r12:199 → r13:230 → r14:266 → r15:298 → r16:336
+             3×8  4×236  3*15°×4  3*30°×1  3*45°×2  8*15°×3  8*45°×53  8*90°×29
+  attempt 13: ✗ closed to r=15 of 16 (810 tiles, 2252345 backtracks, 60000195 nodes, 410.7s)
+  attempt 14: ✓ patch 03 —  451 tiles (114 stars), 6 star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), 658847 backtracks, 282.7s
+             rings r5:53 → r7:108 → r9:157 → r10:185 → r11:213 → r12:253 → r13:305 → r14:352 → r15:394 → r16:451
+             3×330  4×5  6×2  3*15°×4  3*30°×5  4*30°×47  4*60°×2  8*75°×37  8*120°×19
+
+3/3 gap-free patches, 1505 tiles total
+species used across the gallery: 16/28 of the alphabet
+never placed: 12, 4*75°, 6*15°, 6*30°, 6*45°, 6*60°, 6*75°, 6*90°, 12*30°, 12*60°, 12*90°, 12*120°
+
+→ /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tmp-mixed-star-patches/shard-4/gallery.html
+rasterised 3 PNGs at 1120px

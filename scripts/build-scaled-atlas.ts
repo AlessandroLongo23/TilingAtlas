@@ -120,7 +120,12 @@ function hasTJunction(c: Cell): boolean {
 // over translation (anchor on each rarest-fingerprint face near origin) × the 24 exact grid symmetries,
 // comparing sorted integer-tuple lists — no float rounding in the key, so congruent tilings (incl.
 // supercell copies) produce byte-identical keys. Validated: pure-scale-1/2/3 → 10/10/9 at k=1.
-const R_GATHER = 30, R_ANCHOR = 4.2, R_WINDOW = 12;
+// R_GATHER was 30 and only ever needed R_WINDOW + R_ANCHOR. `rel` keeps p iff |g(p.P − A.P)| ≤ R_WINDOW,
+// and g is an isometry with |A.P| ≤ R_ANCHOR, so every point that can reach `rel` has |p.P| ≤ 16.2. A
+// gather radius of 17 therefore produces BYTE-IDENTICAL keys while collecting (30/17)² ≈ 3.1× fewer
+// points, and `pts` is scanned once per (anchor, symmetry) pair. Measured on the k≤7 build this was the
+// difference between a 9-hour pass and a workable one.
+const R_GATHER = 17, R_ANCHOR = 4.2, R_WINDOW = 12;
 function canonKey(c: Cell): string {
 	let M = 1;
 	for (const f of c.faces) M = lcm(M, f.verts.length);
@@ -146,19 +151,39 @@ function canonKey(c: Cell): string {
 	let rare = "", rc = Infinity;
 	for (const [k, v] of cnt) if (v < rc || (v === rc && k < rare)) { rc = v; rare = k; }
 	const anchors = pts.filter((p) => { const x = toX(p.P) / M, y = toY(p.P) / M; return p.fp === rare && x * x + y * y <= R_ANCHOR * R_ANCHOR; });
-	let best: string | null = null;
+	// Each (anchor, symmetry) pair is one candidate and the key is the smallest. The old version built the
+	// joined string for EVERY candidate and kept the lexicographically smallest; those strings run to tens
+	// of kB and there are 24 symmetries per anchor, so the pass was dominated by string concatenation and
+	// not by geometry. Compare candidates as integer tuples and stringify only the winner.
+	//
+	// Fingerprints become small ints via a table sorted by fingerprint string, so the ordering is a
+	// property of the cell and not of the order `pts` happened to be built in. Ties on all four
+	// coordinates then fall back to that id, which orders the same way the fp strings did.
+	const fpSorted = [...new Set(pts.map((p) => p.fp))].sort();
+	const fpId = new Map(fpSorted.map((s, i) => [s, i] as const));
+	const cmp = (a: number[], b: number[]): number => {
+		const n = Math.min(a.length, b.length);
+		for (let i = 0; i < n; i++) if (a[i] !== b[i]) return a[i] - b[i];
+		return a.length - b.length;
+	};
+	let best: number[] | null = null;
+	const R2 = R_WINDOW * R_WINDOW;
 	for (const A of anchors) for (const g of SYMS) {
-		const rel: Array<[number, number, number, number, string]> = [];
+		const rows: number[][] = [];
 		for (const p of pts) {
 			const Q = g(sub(p.P, A.P));
 			const x = toX(Q) / M, y = toY(Q) / M;
-			if (x * x + y * y <= R_WINDOW * R_WINDOW) rel.push([Q[0], Q[1], Q[2], Q[3], p.fp]);
+			if (x * x + y * y <= R2) rows.push([Q[0], Q[1], Q[2], Q[3], fpId.get(p.fp)!]);
 		}
-		rel.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3] || (a[4] < b[4] ? -1 : 1));
-		const key = `M${M}|` + rel.map((r) => `${r[0]},${r[1]},${r[2]},${r[3]},${r[4]}`).join(";");
-		if (best === null || key < best) best = key;
+		rows.sort(cmp);
+		const flat: number[] = [];
+		for (const r of rows) flat.push(r[0], r[1], r[2], r[3], r[4]);
+		if (best === null || cmp(flat, best) < 0) best = flat;
 	}
-	return best ?? "";
+	if (!best) return "";
+	const outRows: string[] = [];
+	for (let i = 0; i < best.length; i += 5) outRows.push(`${best[i]},${best[i + 1]},${best[i + 2]},${best[i + 3]},${fpSorted[best[i + 4]]}`);
+	return `M${M}|` + outRows.join(";");
 }
 
 // Unicode subscript (2 -> "₂", 12 -> "₁₂").
@@ -215,6 +240,8 @@ const NOTE =
 
 const logLines: string[] = [];
 const log = (m = ""): void => { logLines.push(m); console.log(m); };
+/** Render coordinate: 6 dp, which also collapses double noise (−1.0000000000000002 → −1). */
+const r6 = (v: number): number => Math.round(v * 1e6) / 1e6;
 
 function main(): void {
 	const t0 = Date.now();
@@ -235,7 +262,18 @@ function main(): void {
 	type Cand = { tiling: ReferenceTiling; key: string; area: number; k: number };
 	const cands: Cand[] = [];
 	let dropped = 0, skipped = 0;
+	// Progress heartbeat. This pass is exact ℚ(ζ₂₄) arithmetic per face and it dominates the build: at
+	// k≤4 (1,505 cells) it finished before anyone looked, at k≤7 (49,017 cells, each with several times
+	// the faces) it runs for many minutes with nothing on stdout, which reads as a hang. Print rate and
+	// ETA so a long run can be told apart from a stuck one.
+	const tPass1 = Date.now();
+	let done = 0;
 	for (const c of cells) {
+		if (++done % 2000 === 0) {
+			const el = (Date.now() - tPass1) / 1000;
+			const rate = done / el;
+			log(`    …${done}/${cells.length} cells  ${el.toFixed(0)}s elapsed  ${rate.toFixed(0)}/s  ETA ${((cells.length - done) / rate).toFixed(0)}s`);
+		}
 		if (!hasTJunction(c)) { dropped++; continue; } // single-scale regular tiling — lives in the regular atlas
 		const u = dec(RING, c.T1), v = dec(RING, c.T2);
 		const cellArea = detSurd(u, v).abs();
@@ -247,9 +285,14 @@ function main(): void {
 			continue;
 		}
 		const uv = u.toVector(), vv = v.toVector();
+		// Round render coordinates to 6 dp. These come out of exact ℤ[ζ₁₂] decoding and then float
+		// conversion, so a lattice point that IS −1 serialises as "-1.0000000000000002" — 19 characters
+		// of double noise per coordinate, and this shelf now writes tens of millions of them. 1e-6 of a
+		// unit edge is far below one device pixel at any zoom /play offers, and the EXACT values live in
+		// the cells JSON, so nothing verifiable is lost. Measured: it is most of the shard size.
 		const cellPolygons = c.faces.map((f) => ({
 			n: f.verts.length,
-			vertices: f.verts.map((p) => { const w = dec(RING, p).toVector(); return [w.x, w.y]; }),
+			vertices: f.verts.map((p) => { const w = dec(RING, p).toVector(); return [r6(w.x), r6(w.y)]; }),
 		}));
 		cands.push({
 			key: canonKey(c),
@@ -260,7 +303,7 @@ function main(): void {
 				source: "scaled",
 				k: c.k,
 				family: familyLabel(c.faces),
-				renderCell: { cellPolygons, basis: [[uv.x, uv.y], [vv.x, vv.y]] } as ReferenceTiling["renderCell"],
+				renderCell: { cellPolygons, basis: [[r6(uv.x), r6(uv.y)], [r6(vv.x), r6(vv.y)]] } as ReferenceTiling["renderCell"],
 				discoverer: "Alessandro Longo",
 				certification: "candidate",
 				note: NOTE,
@@ -278,11 +321,55 @@ function main(): void {
 	}
 	for (const [key, ks] of kSeen) if (ks.size > 1) log(`  ⚑ k-conflict: one geometry carries k=${[...ks].sort().join("/")} across supercell duals (${byKey.get(key)!.tiling.family}) — kept min-cell rep`);
 
-	const out = [...byKey.values()].map((c) => c.tiling);
+	// ⚑ eu_develop's id is not unique once the tiers get deep: at k≤4 every id was distinct, but the k=5–7
+	// doubled tiers and the k=3–4 sides-1–3 tiers produce 1,426 ids carrying 1,614 records — DISTINCT
+	// geometries (they have different canonical keys and survived the dedup above) that the developer
+	// happened to name the same. Duplicate ids break the /play deep link, which resolves by id, and
+	// collide as React keys. Disambiguate here instead of in the C++, which the other shelves also use.
+	//
+	// Deterministic and id-stable: within a colliding group, order by canonical key — unique by
+	// construction, since a shared key would have merged in pass 2 — and let the first keep the bare id.
+	// So the id a tiling gets does not depend on file order or on which k tiers happen to be in the run,
+	// and every id the shelf shipped before stays put (verified against the 1,061-entry build).
+	const kept = [...byKey.values()];
+	const byId = new Map<string, typeof kept>();
+	for (const c of kept) {
+		const g = byId.get(c.tiling.id);
+		if (g) g.push(c); else byId.set(c.tiling.id, [c]);
+	}
+	let renamed = 0;
+	for (const [id, group] of byId) {
+		if (group.length < 2) continue;
+		group.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+		for (let i = 1; i < group.length; i++) { group[i].tiling.id = `${id}-b${i + 1}`; renamed++; }
+	}
+	if (renamed) log(`  ⚑ ${renamed} record(s) on ${[...byId.values()].filter((g) => g.length > 1).length} duplicated eu_develop id(s) renamed with a -b<n> suffix`);
+
+	const out = kept.map((c) => c.tiling);
 	out.sort((a, b) => a.k - b.k || a.family.localeCompare(b.family) || a.id.localeCompare(b.id));
 	fs.mkdirSync(path.dirname(OUT), { recursive: true });
-	fs.writeFileSync(OUT, JSON.stringify(out, null, 0) + "\n");
+	// k≤2 eager, each higher k its own lazy shard — the arrangement the mixed and period shelves already
+	// use, for the same reason. This shelf was one 3.5 MB file while it only held k≤4; the k=5/6/7 tiers
+	// from the depth-2 sharded runs are an order of magnitude more, and the eager bundle already carries a
+	// 34 MB base atlas. `loadShelfShard("scaled", k)` fetches `reference-atlas-scaled-k<k>.json`, so the
+	// filenames here and `SCALED_SHARD_KS` in referenceAtlas.ts have to agree.
+	const MAIN_MAX_K = 2;
+	const main_ = out.filter((t) => t.k <= MAIN_MAX_K);
+	const shardKs = [...new Set(out.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
+	fs.writeFileSync(OUT, JSON.stringify(main_, null, 0) + "\n");
 	const kb = (fs.statSync(OUT).size / 1024).toFixed(1);
+	for (const k of shardKs) {
+		const p = OUT.replace(/\.json$/, `-k${k}.json`);
+		const slice = out.filter((t) => t.k === k);
+		fs.writeFileSync(p, JSON.stringify(slice, null, 0) + "\n");
+		log(`  shard k=${k}: ${slice.length} tilings → ${path.relative(ROOT, p)} (${(fs.statSync(p).size / 1024).toFixed(1)} KB)`);
+	}
+	// Drop a stale shard whose k no longer has entries; leaving it would serve tilings this build removed.
+	for (const f of fs.readdirSync(path.dirname(OUT))) {
+		const m = /^reference-atlas-scaled-k(\d+)\.json$/.exec(f);
+		if (m && !shardKs.includes(Number(m[1]))) fs.unlinkSync(path.join(path.dirname(OUT), f));
+	}
+	log(`  eager k≤${MAIN_MAX_K}: ${main_.length} tilings; lazy shards: k=${shardKs.join(", k=") || "(none)"}`);
 
 	const rawByK = new Map<number, number>(), distByK = new Map<number, number>();
 	for (const c of cands) rawByK.set(c.k, (rawByK.get(c.k) ?? 0) + 1);

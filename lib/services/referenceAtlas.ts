@@ -9,6 +9,7 @@ import type { HollowPattern } from "@/lib/hollow/pattern";
 import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
 import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
 import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
+import ABSORBED_ALIASES from "@/lib/services/absorbedFamilyAliases.json";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
@@ -156,9 +157,15 @@ import { ICO_SOLIDS, ICO_SOLID_BY_ID, icoSolidKs } from "@/lib/render/icoSolids"
 //               engine, as for the regular family. These carry no certification / wallpaper classification.
 export type Certification = "proven" | "reproduced" | "candidate";
 
+/** How a polygon selection combines. See ReferenceFilter.polygonMode. */
+export type PolygonMode = "all" | "any" | "only";
+
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical" | "hollow";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical" | "hollow" | "period" | "tri45" | "planigon" | "penrose" | "euhalf";
+	/** Which half-polygon board an `euhalf` row belongs to ("hexv", "pent", "hexm", "sqmid"); absent
+	 *  elsewhere. The sub-axis needs it because the four boards share one source. */
+	euHalfBoard?: string;
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
@@ -383,7 +390,7 @@ export const EUHALF_SHARD_KS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
+export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "period" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical" | "edgelen";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 /** The palettes inside the "Multiple edge lengths" class — its sub-facet axis, the way IslamicSystem
@@ -422,7 +429,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "period", "edgelen", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
@@ -499,7 +506,8 @@ export const SUB_ORDER = [
 	// Uniform-polyhedron edge systems: one sub per solid. "spe-" namespaced against the bare Platonic
 	// solid names the spherical-freedraw shelf uses.
 	...SPH_EDGES_BOARDS.map((b) => sphEdgesSubOfBoard(b)),
-	// The 3.4.n.4 hyperbolic tilings: one sub per board n. "hpo-" namespaced.
+	// The hyperbolic tilings by regular polygons: one sub per board. "hpo-" is the 3.4.n.4 family,
+	// "hpt-" the {3,n} one.
 	...HYP_POLY_BOARDS.map((b) => hypPolySubOfBoard(b)),
 	// The HALF-TILE hyperbolic boards — a {p,q} face cut in two — on the same axis, "hph-" namespaced.
 	...HYP_HALF_BOARDS.map((b) => hypHalfSubOfBoard(b)),
@@ -578,6 +586,9 @@ export function familyOfSub(sub: string): SubFamily | null {
 }
 
 export function subOf(t: {
+	source?: ReferenceTiling["source"];
+	/** The four Euclidean half-polygon boards share one source, so the board comes off the row. */
+	euHalfBoard?: string;
 	sphericalFreedraw?: { solid: string };
 	freedraw?: FreedrawPattern;
 	colors?: ColorPattern;
@@ -977,11 +988,22 @@ export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: n
 		};
 	}
 	const alias = state.tiling ? MERGED_FAMILY_ALIASES[state.tiling] : undefined;
-	if (!alias) return state;
-	const a = state.alphas?.[0];
-	const alphas =
-		a != null && Number.isFinite(a) ? [alias.uOf.c + alias.uOf.m * a, ...(state.alphas ?? []).slice(1)] : state.alphas;
-	return { tiling: alias.to, alphas };
+	if (alias) {
+		const a = state.alphas?.[0];
+		const alphas =
+			a != null && Number.isFinite(a) ? [alias.uOf.c + alias.uOf.m * a, ...(state.alphas ?? []).slice(1)] : state.alphas;
+		return { tiling: alias.to, alphas };
+	}
+
+	// Last resort: an id that `scripts/shelf-dedup.py` dropped from the built shelf because another entry
+	// contains it. That pass runs downstream of the builders and decides containment, which does not yield
+	// the parameter map the two tables above carry — so the id travels and the ANGLE DOES NOT. Landing on
+	// the survivor's default beats a dead link, and beats guessing a seat in its region and moving the view
+	// somewhere wrong without saying so. See scripts/gen-absorbed-aliases.mjs.
+	const absorbedBy = state.tiling ? ABSORBED_FAMILY_ALIASES[state.tiling] : undefined;
+	if (absorbedBy) return { tiling: absorbedBy, alphas: null };
+
+	return state;
 }
 
 type MergedAliasTable = Record<string, { to: string; uOf: { m: number; c: number } }>;
@@ -994,6 +1016,9 @@ type CoupledAliasTable = Record<string, {
 }>;
 
 const COUPLED_FAMILY_ALIASES: CoupledAliasTable = COUPLED_ALIASES_MIXED as CoupledAliasTable;
+
+/** Absorbed id -> the surviving entry that contains it. Generated; see gen-absorbed-aliases.mjs. */
+const ABSORBED_FAMILY_ALIASES: Record<string, string> = ABSORBED_ALIASES as Record<string, string>;
 
 const MERGED_FAMILY_ALIASES: MergedAliasTable = {
 	...(MERGED_ALIASES_MIXED as MergedAliasTable),
@@ -1849,9 +1874,9 @@ export async function loadSphericalEdgesShard(board: string, k: number): Promise
 	return p;
 }
 
-// ── The 3.4.n.4 hyperbolic tilings by regular polygons ───────────────────────────────────────────
+// ── The hyperbolic tilings by regular polygons: 3.4.n.4 and {3,n} ────────────────────────────────
 // A TILINGS-class shelf, not a decoration: source "hyperbolic" puts it beside the developed patches,
-// and the sub-axis is the board n. The card's family line names the polygon sizes the tiling uses.
+// and the sub-axis is the board. The card's family line names the polygon sizes the tiling uses.
 function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
 	return {
 		id: p.id,
@@ -1865,8 +1890,9 @@ function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
 		geometry: "hyperbolic",
 		discoverer: "Marek Čtrnáct",
 		// Every record developed to a patch whose edges and face sides all measure ℓ (residuals ~1e-12)
-		// before it was emitted; 26,605 of 26,605 certificates passed. The enumeration behind them is
-		// Marek's alone, so "candidate".
+		// before it was emitted; 26,605 of 26,605 ai1 certificates and 33,795 of 33,795 ai2 ones passed,
+		// and every ai2 per-k count reproduces Marek's own census. The enumeration behind them is his
+		// alone, so "candidate".
 		certification: "candidate",
 	};
 }
@@ -2240,7 +2266,8 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 				const e = edgeById.get(t.developed?.patch ?? t.id);
 				if (typeof e === "number") t.edge = e;
 			}
-			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...polyomino, ...islamic, ...hollow, ...freedraw, ...colors, ...hyperbolic, ...spherical];
+			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...period, ...tri45,
+				...planigon, ...penrose, ...euhalf, ...polyomino, ...islamic, ...hollow, ...freedraw, ...colors, ...hyperbolic, ...spherical];
 			cache = data;
 			inflight = null;
 			return data;
@@ -2305,24 +2332,24 @@ export async function loadShelfShard(shelf: string, k: number): Promise<Referenc
 	const key = `${shelf}-k${k}`;
 	const cached = shelfShardCache.get(key);
 	if (cached) return cached;
-	const existing = composableShardInflight.get(k);
+	const existing = shelfShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/reference-atlas-composable-k${k}.json`)
+	const p = fetch(`/reference-atlas-${key}.json`)
 		.then((res) => {
 			if (res.status === 404) return [] as ReferenceTiling[]; // shard not built for this k — empty merge
-			if (!res.ok) throw new Error(`reference-atlas-composable-k${k}.json: HTTP ${res.status}`);
+			if (!res.ok) throw new Error(`reference-atlas-${key}.json: HTTP ${res.status}`);
 			return res.json() as Promise<ReferenceTiling[]>;
 		})
 		.then((data) => {
-			composableShardCache.set(k, data);
-			composableShardInflight.delete(k);
+			shelfShardCache.set(key, data);
+			shelfShardInflight.delete(key);
 			return data;
 		})
 		.catch((err) => {
-			composableShardInflight.delete(k);
+			shelfShardInflight.delete(key);
 			throw err;
 		});
-	composableShardInflight.set(k, p);
+	shelfShardInflight.set(key, p);
 	return p;
 }
 
@@ -2403,29 +2430,3 @@ export const hasDecorationShardsForK = (k: number): boolean =>
 // public/reference-atlas-isotoxal-k{k}.json). The main reference-atlas-isotoxal.json carries only k≤2; k=3
 // (~858 families with parametric cells, several MB) loads only when the isotoxal class or a k≥3 chip is
 // selected. Same best-effort semantics as the convex-irregular shard: a missing shard (404) → empty merge.
-const isotoxalShardCache = new Map<number, ReferenceTiling[]>();
-const isotoxalShardInflight = new Map<number, Promise<ReferenceTiling[]>>();
-
-export async function loadIsotoxalAtlasShard(k: number): Promise<ReferenceTiling[]> {
-	const cached = isotoxalShardCache.get(k);
-	if (cached) return cached;
-	const existing = isotoxalShardInflight.get(k);
-	if (existing) return existing;
-	const p = fetch(`/reference-atlas-isotoxal-k${k}.json`)
-		.then((res) => {
-			if (res.status === 404) return [] as ReferenceTiling[];
-			if (!res.ok) throw new Error(`reference-atlas-isotoxal-k${k}.json: HTTP ${res.status}`);
-			return res.json() as Promise<ReferenceTiling[]>;
-		})
-		.then((data) => {
-			isotoxalShardCache.set(k, data);
-			isotoxalShardInflight.delete(k);
-			return data;
-		})
-		.catch((err) => {
-			isotoxalShardInflight.delete(k);
-			throw err;
-		});
-	isotoxalShardInflight.set(k, p);
-	return p;
-}

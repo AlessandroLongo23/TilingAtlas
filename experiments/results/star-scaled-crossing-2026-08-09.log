@@ -1,0 +1,11 @@
+[14:57:11] === develop_any: 191 blocks from pruned, palette D=24 ===
+[14:57:11]   ... 50/191  1s
+[14:57:12]   ... 100/191  1s
+[14:57:12]   ... 150/191  2s
+[14:57:13] 
+[14:57:13] 191 developed of 191; failures: none
+[14:57:13]   -+-            developed   31   area-certified   31
+[14:57:13]   -+scaled       developed   77   area-certified   77
+[14:57:13]   star+-         developed   71   area-certified   71
+[14:57:13]   star+scaled    developed   12   area-certified   12
+[14:57:13] wrote 12 records → ../../experiments/period-oracle/star-scaled-crossing.cells.json (30 KB)

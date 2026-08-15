@@ -1,0 +1,12 @@
+=== build-scaled-atlas (side-1 + side-2 + side-3 regular {3,4,6,12}) ===
+  loaded 49017 developed tilings from tools/ctrnact-oracle/run-k7-regular-doubled/ctrnact-cells-k7.json
+  loaded 355 developed tilings from tools/ctrnact-oracle/run-k2-regular-scaled-123/ctrnact-cells-k2.json
+    …2000/49372 cells  41s elapsed  49/s  ETA 973s
+    …4000/49372 cells  111s elapsed  36/s  ETA 1257s
+    …6000/49372 cells  701s elapsed  9/s  ETA 5070s
+    …8000/49372 cells  4394s elapsed  2/s  ETA 22722s
+    …10000/49372 cells  5475s elapsed  2/s  ETA 21558s
+    …12000/49372 cells  5587s elapsed  2/s  ETA 17399s
+    …14000/49372 cells  5627s elapsed  2/s  ETA 14217s
+    …16000/49372 cells  5649s elapsed  3/s  ETA 11782s
+    …18000/49372 cells  5684s elapsed  3/s  ETA 9907s

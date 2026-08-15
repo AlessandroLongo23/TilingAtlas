@@ -1,0 +1,12 @@
+[14:14:25] build (MAXNUM=3 PALETTE=regular-star-scaled2-z24)
+[14:14:56] PHASE 1  parallel solve — 8 workers, budget 0
+[15:11:17]   workers done (3381s wall)
+[15:11:17] PHASE 1b  merge worker outputs
+[15:11:18]   merged raw blocks: 1220
+[15:11:18] PHASE 2  prune
+  k=1 : 57
+  k=2 : 134
+  k=3 : 467
+total kept: 658
+store: peak 0.103302 MB total, 0.103302 MB resident
+[15:11:18]   prune done (0s);  total wall 3382s

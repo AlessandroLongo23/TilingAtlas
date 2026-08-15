@@ -38,6 +38,8 @@ import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
 	loadPeriodAtlasShard,
+	loadMixedAtlasShard,
+	loadScaledAtlasShard,
 	loadTri45AtlasShard,
 	loadPenroseAtlasShard,
 	loadFreedrawShardsForK,
@@ -967,7 +969,180 @@ export function ReferenceShelf() {
 					}),
 				);
 		}
-	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, isotoxalLoadingShards]);
+	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, isotoxalLoadingShards, tilings]);
+
+	// Lazy period-p k≥3 shards — same shape as the isotoxal effect. These families come from the QUOTIENT
+	// search, so the tier exists at all only because the alphabet was quotiented by tile shape.
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "period" && cls != null) return;
+		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
+		const k = filters.kValue;
+		const want = k != null ? PERIOD_HIGHER_K.filter((kk) => kk === k) : cls === "period" ? PERIOD_HIGHER_K : [];
+		for (const kk of want) {
+			if (periodLoadedShards.has(kk) || periodLoadingShards.has(kk)) continue;
+			setPeriodLoadingShards((s) => new Set(s).add(kk));
+			loadPeriodAtlasShard(kk)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setPeriodLoadedShards((s) => new Set(s).add(kk));
+				})
+				.catch(() => setPeriodLoadedShards((s) => new Set(s).add(kk))) // best-effort demo; swallow + mark done
+				.finally(() =>
+					setPeriodLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(kk);
+						return n;
+					}),
+				);
+		}
+	}, [filters.tileClass, filters.kValue, periodLoadedShards, periodLoadingShards, tilings]);
+
+	// Lazy MIXED k≥3 shards. Same shape again; these tiers arrived 2026-08-09 when the palette was finally
+	// run past k=2, and they are 15× the entries the shelf had, so they cannot ride the eager bundle.
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "mixed" && cls != null) return;
+		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
+		const k = filters.kValue;
+		const want = k != null ? MIXED_HIGHER_K.filter((kk) => kk === k) : cls === "mixed" ? MIXED_HIGHER_K : [];
+		for (const kk of want) {
+			if (mixedLoadedShards.has(kk) || mixedLoadingShards.has(kk)) continue;
+			setMixedLoadingShards((s) => new Set(s).add(kk));
+			loadMixedAtlasShard(kk)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setMixedLoadedShards((s) => new Set(s).add(kk));
+				})
+				.catch(() => setMixedLoadedShards((s) => new Set(s).add(kk)))
+				.finally(() =>
+					setMixedLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(kk);
+						return n;
+					}),
+				);
+		}
+	}, [filters.tileClass, filters.kValue, mixedLoadedShards, mixedLoadingShards, tilings]);
+
+	// Lazy 45-45-90 k≥3 shards. Same shape as mixed, and the whole tail is 7.4 MB, so picking the class
+	// with no k fetches both tiers rather than making the user click each chip to see the shelf at all.
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "edgelen" && cls != null) return;
+		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
+		const k = filters.kValue;
+		const want = k != null ? TRI45_HIGHER_K.filter((kk) => kk === k) : cls === "edgelen" ? TRI45_HIGHER_K : [];
+		for (const kk of want) {
+			if (tri45LoadedShards.has(kk) || tri45LoadingShards.has(kk)) continue;
+			setTri45LoadingShards((s) => new Set(s).add(kk));
+			loadTri45AtlasShard(kk)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setTri45LoadedShards((s) => new Set(s).add(kk));
+				})
+				.catch(() => setTri45LoadedShards((s) => new Set(s).add(kk)))
+				.finally(() =>
+					setTri45LoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(kk);
+						return n;
+					}),
+				);
+		}
+	}, [filters.tileClass, filters.kValue, tri45LoadedShards, tri45LoadingShards, tilings]);
+
+	// Lazy EUCLIDEAN HALF-POLYGON k>=5 shards. Stricter than BOTH rules above: this tail is ten slices
+	// and 110 MB of JSON (the two deep ones are 46 and 37 MB, gzipping to about 1 each), so it is fetched
+	// only when its own k chip is chosen. Selecting the class, or the board with no k, must not pull it —
+	// the tri45 rule does exactly that and is fine at 7.4 MB; here it would be fifteen times the whole
+	// rest of the Euclidean atlas.
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "edgelen" && cls != null) return;
+		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
+		const k = filters.kValue;
+		if (k == null || !EUHALF_HIGHER_K.includes(k)) return;
+		if (euHalfLoadedShards.has(k) || euHalfLoadingShards.has(k)) return;
+		setEuHalfLoadingShards((sx) => new Set(sx).add(k));
+		loadEuHalfAtlasShard(k)
+			.then((data) => {
+				setTilings((prev) => (prev ? [...prev, ...data] : data));
+				setEuHalfLoadedShards((sx) => new Set(sx).add(k));
+			})
+			.catch(() => setEuHalfLoadedShards((sx) => new Set(sx).add(k)))
+			.finally(() =>
+				setEuHalfLoadingShards((sx) => {
+					const n = new Set(sx);
+					n.delete(k);
+					return n;
+				}),
+			);
+	}, [filters.tileClass, filters.kValue, euHalfLoadedShards, euHalfLoadingShards, tilings]);
+
+	// Lazy PENROSE k>=4 shards. Deliberately NOT the tri45 rule above: k=6 alone is 14.1 MB, so picking
+	// the class with no k must not pull the tail down. A shard is fetched when its own k chip is chosen,
+	// or when the Penrose palette is the one in view — the two moments the user has asked for it.
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "edgelen" && cls != null) return;
+		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
+		const k = filters.kValue;
+		const want =
+			k != null
+				? PENROSE_HIGHER_K.filter((kk) => kk === k)
+				: filters.edgeBoard === "penrose"
+					? PENROSE_HIGHER_K
+					: [];
+		for (const kk of want) {
+			if (penroseLoadedShards.has(kk) || penroseLoadingShards.has(kk)) continue;
+			setPenroseLoadingShards((s) => new Set(s).add(kk));
+			loadPenroseAtlasShard(kk)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setPenroseLoadedShards((s) => new Set(s).add(kk));
+				})
+				.catch(() => setPenroseLoadedShards((s) => new Set(s).add(kk)))
+				.finally(() =>
+					setPenroseLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(kk);
+						return n;
+					}),
+				);
+		}
+	}, [filters.tileClass, filters.kValue, filters.edgeBoard, penroseLoadedShards, penroseLoadingShards, tilings]);
+
+	// Lazy SCALED k≥3 shards. Same shape once more. The sides-1-2 palette went k=4 → k=7 on 2026-08-12,
+	// which is where the bulk of this shelf now lives, so k≥3 cannot ride the eager bundle either.
+	useEffect(() => {
+		const cls = filters.tileClass;
+		if (cls !== "scaled" && cls != null) return;
+		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
+		const k = filters.kValue;
+		// ⚑ Deliberately NOT the mixed/period pattern of "class selected with no k ⇒ fetch every shard".
+		// Those tails are a few MB; this one is ~200 MB (k=7 alone is 29,500 tilings), so picking the
+		// Scaled class would have pulled the lot on one click. A shard here loads only when its own k
+		// chip is chosen, which is what the "k ≥ 3 loads on demand" note under the chips promises.
+		const want = k != null ? SCALED_HIGHER_K.filter((kk) => kk === k) : [];
+		for (const kk of want) {
+			if (scaledLoadedShards.has(kk) || scaledLoadingShards.has(kk)) continue;
+			setScaledLoadingShards((s) => new Set(s).add(kk));
+			loadScaledAtlasShard(kk)
+				.then((data) => {
+					setTilings((prev) => (prev ? [...prev, ...data] : data));
+					setScaledLoadedShards((s) => new Set(s).add(kk));
+				})
+				.catch(() => setScaledLoadedShards((s) => new Set(s).add(kk)))
+				.finally(() =>
+					setScaledLoadingShards((s) => {
+						const n = new Set(s);
+						n.delete(kk);
+						return n;
+					}),
+				);
+		}
+	}, [filters.tileClass, filters.kValue, scaledLoadedShards, scaledLoadingShards, tilings]);
 
 	// Lazy Euclidean DECORATION shards — the hexagonal grid's deep k slices (edges k>=7, colorings k>=6),
 	// the only freedraw/colors slices too big to ship eagerly. Fetch when that k chip is picked, under any
@@ -1247,6 +1422,16 @@ export function ReferenceShelf() {
 			if (!cls || cls === "regular") for (const k of HIGHER_K) s.add(k);
 			if (!cls || cls === "convex") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
 			if (!cls || cls === "isotoxal") for (const k of ISOTOXAL_HIGHER_K) s.add(k);
+			if (!cls || cls === "period") for (const k of PERIOD_HIGHER_K) s.add(k);
+			if (!cls || cls === "mixed") for (const k of MIXED_HIGHER_K) s.add(k);
+			// ⚑ This list and `kValuesForClass` are two separate memos over the same question — this one
+			// draws the chips, that one decides whether a deep link's k survives. Adding a shard tier to
+			// only one leaves the tier reachable by URL but with no chip to click, which is exactly what
+			// the scaled tail did until 2026-08-13. Add to BOTH.
+			if (!cls || cls === "scaled") for (const k of SCALED_HIGHER_K) s.add(k);
+			if (!cls || cls === "edgelen") for (const k of TRI45_HIGHER_K) s.add(k);
+			if (!cls || cls === "edgelen") for (const k of PENROSE_HIGHER_K) s.add(k);
+			if (!cls || cls === "edgelen") for (const k of EUHALF_HIGHER_K) s.add(k);
 		}
 		return [...s].sort((a, b) => a - b);
 	}, [tilings, geometry, isEuclidean, filters.tileClass]);
@@ -1858,7 +2043,7 @@ export function ReferenceShelf() {
 								Orbits of GRID POINTS under the pattern&apos;s own symmetry group — including points with no
 								drawn edge. Not vertex orbits of a tiling.
 							</GroupNote>
-						) : tileClass === "convex" && kChips.some((k) => k >= 3) ? (
+						) : (tileClass === "convex" || tileClass === "scaled") && kChips.some((k) => k >= 3) ? (
 							<GroupNote>k ≥ 3 loads on demand.</GroupNote>
 						) : kChips.some((k) => k >= 8) ? (
 							<GroupNote>k ≥ 8 loads on demand.</GroupNote>

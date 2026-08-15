@@ -1,0 +1,21 @@
+[15:11:51] === develop_any: 658 blocks from pruned, palette D=24 ===
+[15:11:51]   ... 50/658  0s
+[15:11:52]   ... 100/658  1s
+[15:11:52]   ... 150/658  1s
+[15:11:53]   ... 200/658  2s
+[15:11:53]   ... 250/658  3s
+[15:11:54]   ... 300/658  3s
+[15:11:55]   ... 350/658  4s
+[15:11:56]   ... 400/658  5s
+[15:11:57]   ... 450/658  6s
+[15:11:58]   ... 500/658  7s
+[15:11:58]   ... 550/658  8s
+[15:11:59]   ... 600/658  8s
+[15:12:00]   ... 650/658  9s
+[15:12:00] 
+[15:12:00] 658 developed of 658; failures: none
+[15:12:00]   -+-            developed   92   area-certified   92
+[15:12:00]   -+scaled       developed  350   area-certified  350
+[15:12:00]   star+-         developed  172   area-certified  172
+[15:12:00]   star+scaled    developed   44   area-certified   44
+[15:12:00] wrote 658 records → ../../experiments/period-oracle/rss2-k3-all.cells.json (1650 KB)

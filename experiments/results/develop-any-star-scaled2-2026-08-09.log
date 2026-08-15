@@ -1,0 +1,14 @@
+[14:55:51] === develop_any: 191 blocks from pruned, palette D=24 ===
+[14:55:51]   ... 50/191  1s
+[14:55:52]   ... 100/191  1s
+[14:55:53]   ... 150/191  2s
+[14:55:53] 
+[14:55:53] 191 developed of 191; failures: none
+[14:55:53]   -+-            developed   31   area-certified   31
+[14:55:53]   -+scaled       developed   77   area-certified   77
+[14:55:53]   star+-         developed   71   area-certified   71
+[14:55:53]   star+scaled    developed   12   area-certified   12
+[14:55:53] wrote 191 records → ../../experiments/results/star-scaled2-all-cells.json (347 KB)
+[14:55:53] 
+[14:55:53] GATE: 31 regular-only tilings developed, 31 area-certified
+[14:55:53] develop gate: PASS
