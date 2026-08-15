@@ -1,0 +1,14 @@
+# Rebuild after the mirror-twin completion + flat-corner filter guard (2026-08-08 21:55)
+# composite-convex: alphabet 15 -> 16 tiles (cx6-3.4.5.3.4.5 twin added)
+# equi3-cx-z24:     alphabet 24 -> 34 tiles (10 chiral period-3 twins added)
+# tetromino:        alphabet unchanged; re-solved because the flat-corner guard restored the filters-off path
+
+[21:55:23] === equi3-cx-z24 k<=2 ===
+[21:56:11]   solve 47s, raw blocks 736
+  k=1 : 83
+  k=2 : 531
+total kept: 614
+[equi3-cx-z24 k=1]  solutions 83  developed 83  usesComposite 0  failures 0  -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/../../experiments/period-oracle/ctrnact-period3-k1.cells.json
+[equi3-cx-z24 k=2]  solutions 531  developed 531  usesComposite 0  failures 0  -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/../../experiments/period-oracle/ctrnact-period3-k2.cells.json
+[22:11:27]   done equi3-cx-z24 k<=2
+[22:11:27] === tetromino k<=3 ===

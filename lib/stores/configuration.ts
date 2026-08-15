@@ -54,6 +54,10 @@ export interface ConfigurationState {
 	showSymmetryElements: boolean;
 	showFundamentalDomain: boolean;
 	showVertexOrbits: boolean;
+	// Draw the tiling's MIRROR image. A chiral tiling and its mirror are ONE catalogue entry (the
+	// A068599 convention — see lib/services/chirality.ts), so the second hand has nowhere to live except
+	// as a view of the first. Render-only: it reflects float geometry and never touches a count or an id.
+	mirrorFlip: boolean;
 	debugView: boolean;
 	// Flat view: draw the plain coloured-tile fill/stroke with the WebGL2 renderer
 	// (components/euclidean-canvas.tsx) instead of p5 immediate mode. Dev flag until parity is reached.

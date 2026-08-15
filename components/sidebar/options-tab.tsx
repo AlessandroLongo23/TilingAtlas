@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { useConfiguration } from "@/stores/configuration";
+import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";

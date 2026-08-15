@@ -21,6 +21,7 @@ import { SphPolyCanvas } from "@/components/freedraw/sph-poly-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
+import { isChiralTiling, reflectRenderCell } from "@/lib/services/chirality";
 import { useImmersive } from "@/stores/immersive";
 import { cn } from "@/lib/utils/cn";
 import { useInversiveCell } from "@/lib/hooks/useInversiveCell";
@@ -1016,8 +1017,21 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// The alpha-independent base cell + id. For a parametric family the canvases derive the live cell
 	// from `paramCell` + the store's `familyAlphas` in their own draw loops (they append the alpha
 	// signature to this base id), so nothing alpha-dependent flows through this render.
-	const renderCell = (selected?.renderCell ?? null) as TranslationalCellData | null;
-	const renderCellId = selected?.canonicalKey ?? null;
+	const baseRenderCell = (selected?.renderCell ?? null) as TranslationalCellData | null;
+	// Mirror view. The catalogue counts a chiral tiling and its mirror as one entry, so the other hand is
+	// shown by reflecting the render cell here — the single point every flat canvas draws from. The id
+	// gets a suffix because the canvases cache parsed geometry by id; without it the flip would not
+	// repaint. Reflecting an achiral tiling is a no-op up to a rotation, so leaving it enabled is safe.
+	// Never applied to a tiling known to be ACHIRAL: its mirror is congruent to itself, so the flip would
+	// be a no-op that leaves the control looking broken, and a `true` left over from a chiral selection
+	// must not follow the user onto the next tiling.
+	const mirrorFlipCfg = useConfiguration((s) => s.mirrorFlip);
+	const mirrorFlip = mirrorFlipCfg && isChiralTiling(selected ?? { wallpaperGroup: undefined }) !== false;
+	const renderCell = useMemo(
+		() => (mirrorFlip && baseRenderCell ? (reflectRenderCell(baseRenderCell) as TranslationalCellData) : baseRenderCell),
+		[mirrorFlip, baseRenderCell],
+	);
+	const renderCellId = selected?.canonicalKey ? `${selected.canonicalKey}${mirrorFlip ? "#mirror" : ""}` : null;
 	// What the conformal lens draws: the selection reduced to the shared periodic-cell IR. One hook covers
 	// every Euclidean class, so the lens is no longer limited to the plain polygon-cell tilings.
 	const { cell: inversiveCell, cellId: inversiveCellId } = useInversiveCell(selected ?? null, renderCell);

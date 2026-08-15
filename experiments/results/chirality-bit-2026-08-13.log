@@ -1,0 +1,235 @@
+[22:07:43] STEP 1 — the SIDED class (side-0 representative) replaces min() in fold()
+decisive test: fdsq (marking on the TILE, sigma != id), ground truth 13/153/1254 = 1420
+baseline with min(): 164 of 1420, 11 at the wrong k, A6 28 collisions
+  k=1 : 18   k=2 : 271   k=3 : 2754 
+developed: {1: 18, 2: 271, 3: 2754} total 3043 failures 0
+k    search  dangling   distinct   freedraw   missing   extra
+1        18         5         13         13         0       0
+2       271       118        153        153         0       0
+3      2754      1500       1254       1254         0       0
+union over k <= 3:  search 1420   freedraw 1420   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+
+[22:09:20] fdsq at k<=4 — the held-out set
+  k=1 : 18   k=2 : 271   k=3 : 2754   k=4 : 21967 
+developed: {1: 18, 2: 271, 3: 2754, 4: 21967} total 25010 failures 0
+k    search  dangling   distinct   freedraw   missing   extra
+1        18         5         13         13         0       0
+2       271       118        153        153         0       0
+3      2754      1500       1254       1254         0       0
+4     21967     14119       7848       7848         0       0
+union over k <= 4:  search 9268   freedraw 9268   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+
+[22:11:14] make check-regular
+[22:11:19] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/check-k6/ctrnact-cells-k6.json
+cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
+check-regular: PASS (byte-identical catalogs vs golden)
+
+[22:11:33] the 45-45-90 palettes, k<=4 — sided classes vs the shipped shelf (16/152/833/3284)
+--- tri45sq ---
+[cert] A6: 96 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 30 of 96 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote tables/tri45sq/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (96 entries)
+  k=1 : 9   k=2 : 68   k=3 : 412   k=4 : 1896 total kept: 2385 store: peak 0.597162 MB total, 0.597162 MB resident 
+developed: {1: 9, 2: 68, 3: 412, 4: 1896} total 2385 failures 0
+--- tri45two ---
+[cert] A6: 96 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 41 of 96 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote tables/tri45two/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (96 entries)
+  k=1 : 6   k=2 : 50   k=3 : 263   k=4 : 1154 total kept: 1473 store: peak 0.448208 MB total, 0.448208 MB resident 
+developed: {1: 6, 2: 50, 3: 263, 4: 1154} total 1473 failures 0
+--- tri45all ---
+[cert] A6: 234 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 79 of 234 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote tables/tri45all/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (234 entries)
+  k=1 : 16   k=2 : 161   k=3 : 1132   k=4 : 6295 total kept: 7604 store: peak 2.20832 MB total, 2.20832 MB resident 
+developed: {1: 16, 2: 161, 3: 1132, 4: 6295} total 7604 failures 0
+
+[22:14:15] tri45all: min() world vs SIDED world, compared as SETS of tilings
+--- duplicates inside the min() catalogue (27/259/1745) ---
+k   records  distinct  duplicated
+1        27        23           4
+2       259       196          63
+3      1745      1145         600
+--- duplicates inside the sided catalogue (16/161/1132) ---
+k   records  distinct  duplicated
+1        16        16           0
+2       161       160           1
+3      1132      1132           0
+--- containment: sided (new) vs min() (old) ---
+k    new  old  in both  new only  old only
+1      16   23       16         0         7
+2     160  196      133        27        63
+3    1132 1145      819       313       326
+
+union: new 1308   old 1358   old-only 384   new-only 334   same tiling, different k: 6
+
+[22:17:59] tri45all as SETS, referee reduced to the primitive cell
+--- duplicates inside the min() catalogue ---
+k   records  distinct  duplicated
+1        27        19           8
+2       259       181          78
+3      1745      1088         657
+--- duplicates inside the SIDED catalogue ---
+k   records  distinct  duplicated
+1        16        16           0
+2       161       160           1
+3      1132      1132           0
+--- containment ---
+k    new  old  in both  new only  old only
+1      16   19       16         0         3
+2     160  181      133        27        48
+3    1132 1088      820       312       268
+
+union: new 1308   old 1264   old-only 289   new-only 333   same tiling, different k: 6
+
+[22:19:25] AREA CERTIFICATE: the faces of one period must cover the period cell exactly
+min() catalogue              k1 0/27 fail k2 0/259 fail k3 0/1745 fail
+SIDED catalogue              k1 0/16 fail k2 0/161 fail k3 0/1132 fail
+
+[22:20:23] FACE-SHAPE CERTIFICATE: every developed face must be congruent to a palette tile
+min() catalogue          k1 0/27 ILLEGAL k2 0/259 ILLEGAL k3 0/1745 ILLEGAL
+SIDED catalogue          k1 0/16 ILLEGAL k2 0/161 ILLEGAL k3 0/1132 ILLEGAL
+
+[22:20:47] are the min()-only tilings present in the SIDED catalogue at a HIGHER k?
+k    min()-only at this k    of those, found in SIDED at k =
+1    3                      -   not found: 3
+2    48                     k1:2   not found: 46
+3    268                    k1:4 k2:10   not found: 254
+
+min() tilings absent from the sided catalogue at every k<=4: 303
+
+[22:28:17] STEP 2 — the flip bit in the solver. Regression first: check-regular
+[22:28:22] DONE  total 2s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/check-k6/ctrnact-cells-k6.json
+cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
+check-regular: PASS (byte-identical catalogs vs golden)
+
+[22:28:37] tri45all k<=3 WITH the flip bit (sided classes were 16/161/1132)
+tables: 234 vertex types, 8 classes, D=24, EDGE TYPES ON (runtime, /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45all/tables.bin)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 430110  simplify_calls: 6897  simplify_true: 2815
+raw: 2815
+  k=1 : 16
+  k=2 : 161
+  k=3 : 1132
+total kept: 1309
+store: peak 0.284243 MB total, 0.284243 MB resident
+
+[22:28:52] tri45all k<=3 with CLASS_SIGMA actually present
+tables: 234 vertex types, 8 classes, D=24, EDGE TYPES ON (runtime, /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45all/tables.bin)
+sided classes: sigma is not the identity — gluings carry a flip bit, and the candidate index is off (its key is computed unflipped)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 1193986  simplify_calls: 194522  simplify_true: 33798
+  k=1 : 16
+  k=2 : 161
+  k=3 : 1132
+total kept: 1309
+store: peak 0.284243 MB total, 0.284243 MB resident
+
+[22:29:33] TRUE vertex-orbit count of the min()-only tilings, computed from the geometry
+min()-only records, with the k the SEARCH gave and the k the GEOMETRY gives:
+   t45-1-00005        search k=1   geometric orbits=1   |sym group|=4
+   t45-1-00014        search k=1   geometric orbits=4   |sym group|=1
+   t45-1-00021        search k=1   geometric orbits=1   |sym group|=4
+   t45-2-00232        search k=2   geometric orbits=3   |sym group|=4
+   t45-2-00214        search k=2   geometric orbits=4   |sym group|=1
+   t45-2-00012        search k=2   geometric orbits=4   |sym group|=1
+   t45-2-00137        search k=2   geometric orbits=8   |sym group|=2
+   t45-2-00141        search k=2   geometric orbits=6   |sym group|=2
+   t45-2-00250        search k=2   geometric orbits=6   |sym group|=2
+   t45-2-00170        search k=2   geometric orbits=4   |sym group|=1
+
+[22:32:30] EDGE-TO-EDGE certificate: does any face have a vertex in the interior of another's edge?
+  t45-1-00005    angle-sum violations: 1    T-junctions: 0
+      e.g. [((0.0, 0.0), 1440.0)]
+  t45-1-00021    angle-sum violations: 1    T-junctions: 0
+      e.g. [((0.0, 0.0), 1440.0)]
+  t45-1-00014    angle-sum violations: 0    T-junctions: 0
+
+  control — first 40 SIDED records: 40 clean
+
+[22:33:09] angle-sum certificate over BOTH tri45all catalogues (360 degrees at every vertex)
+  min() catalogue    k1 6/27 OVERLAP k2 47/259 OVERLAP k3 209/1745 OVERLAP
+  SIDED catalogue    k1 0/16 OVERLAP k2 0/161 OVERLAP k3 0/1132 OVERLAP
+
+[22:33:36] is the flip SOUND? fdsq k<=3 with it on — must still be exactly 1420
+sided classes: sigma is not the identity — gluings carry a flip bit, and the candidate index is off (its key is computed unflipped)
+nodes: 3001491  simplify_calls: 188704  simplify_true: 30726
+  k=1 : 31   k=2 : 514   k=3 : 5849 
+developed: {1: 31, 2: 514, 3: 5849} total 6394 failures 0
+union over k <= 3:  search 1420   freedraw 1420   never found 0   not in freedraw 0   found at a different k 41
+VERDICT: MISMATCH
+
+[22:35:06] solver-side flip REVERTED. Re-verifying.
+cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
+check-regular: PASS (byte-identical catalogs vs golden)
+
+[22:35:25] FINAL VERIFICATION, sided classes only
+--- fdsq (marking on the TILE, sigma != id), ground truth 13/153/1254 ---
+  k=1 : 18   k=2 : 271   k=3 : 2754 
+developed: {1: 18, 2: 271, 3: 2754} total 3043 failures 0
+union over k <= 3:  search 1420   freedraw 1420   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+--- tri45all ---
+  k=1 : 16   k=2 : 161   k=3 : 1132 
+--- fdsq2 k<=4 (held out) ---
+
+[22:36:01] the 45-45-90 shelf rebuilt on sided classes, k<=4, with certificates
+tri45sq    k=1 : 9   k=2 : 68   k=3 : 412   k=4 : 0 
+developed: {1: 9, 2: 68, 3: 412, 4: 0} total 489 failures 0
+union over k <= 4:  search 1420   freedraw 9268   never found 7848   not in freedraw 0   found at a different k 0
+VERDICT: MISMATCH
+--- fdtri ---
+tri45two    k=1 : 6   k=2 : 50   k=3 : 263   k=4 : 0 
+developed: {1: 6, 2: 50, 3: 263, 4: 0} total 319 failures 0
+tri45all    k=1 : 16   k=2 : 161   k=3 : 1132   k=4 : 0 
+developed: {1: 16, 2: 161, 3: 1132, 4: 0} total 1309 failures 0
+union over k <= 3:  search 5059   freedraw 5059   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+--- fdhex ---
+union over k <= 3:  search 101   freedraw 101   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+--- fdts ---
+
+[22:36:32] 45-45-90 shelf, k<=4 for real this time
+tri45sq    k=1 : 9   k=2 : 68   k=3 : 412   k=4 : 1896 
+developed: {1: 9, 2: 68, 3: 412, 4: 1896} total 2385 failures 0
+tri45two    k=1 : 6   k=2 : 50   k=3 : 263   k=4 : 1154 
+developed: {1: 6, 2: 50, 3: 263, 4: 1154} total 1473 failures 0
+tri45all    k=1 : 16   k=2 : 161   k=3 : 1132   k=4 : 6295 
+developed: {1: 16, 2: 161, 3: 1132, 4: 6295} total 7604 failures 0
+3     21542      7974  13568      13568       0
+VERDICT: COUNTS MATCH
+
+[22:37:11] certificates on the rebuilt shelf: 360 degrees at every vertex, area, tile shapes, duplicates
+  tri45sq    2385 tilings   overlaps 0   area fails 0   illegal tiles 0   duplicates 0
+  tri45two   1473 tilings   overlaps 0   area fails 0   illegal tiles 0   duplicates 0
+  tri45all   7604 tilings   overlaps 0   area fails 0   illegal tiles 0   duplicates 1
+
+[22:40:39] fdsq2 k<=4 re-run with the MAXNUM stamp fixed
+[22:41:30]   raw blocks: 94541  (4s)
+developed: {1: 18, 2: 271, 3: 2754, 4: 21967} total 25010 failures 0
+1        18         5         13         13         0       0
+2       271       118        153        153         0       0
+3      2754      1500       1254       1254         0       0
+4     21967     14119       7848       7848         0       0
+union over k <= 4:  search 9268   freedraw 9268   never found 0   not in freedraw 0   found at a different k 0
+VERDICT: MATCH — the edge-type search reproduces freedraw exactly
+cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
+check-regular: PASS (byte-identical catalogs vs golden)
+
+the one duplicate pair in tri45all:
+  k=2  ['t45-2-00130', 't45-2-00137']
+     faces 4  T1 [1.414213562, 1.414213562]  T2 [2.828427125, -1.414213562]
+     faces 4  T1 [1.414213562, -1.414213562]  T2 [-1.414213562, -2.828427125]
+  rotations only: same tiling? False
+  with reflections: same tiling? True
+girih: A6: 412 entries, pairwise non
+composite-decomp: A6: 9159 entries, pairwise non
+tetromino: A6: 54856 entries, pairwise non
+
+[22:47:42] FINAL STATE
+check-regular: check-regular: PASS (byte-identical catalogs vs golden)
+pnpm build: exit 0
+A6 on the palettes that had lost it: tetromino 54856 / composite-decomp 9159 / girih 412, all pairwise non-isomorphic PASS

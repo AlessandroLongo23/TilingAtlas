@@ -1,3 +1,4 @@
+import { chiralityOf, type ChiralityFacet } from "@/lib/services/chirality";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { HollowPattern } from "@/lib/hollow/pattern";
