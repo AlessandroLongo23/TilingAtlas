@@ -89,6 +89,14 @@ import {
 	type SphPolyPattern,
 } from "@/lib/tilings/sph-poly";
 import {
+	sphHalfFamilyLabel,
+	SPH_HALF_BOARDS,
+	sphHalfShardUrl,
+	sphHalfSub,
+	sphHalfSubOfBoard,
+	isSphHalf,
+} from "@/lib/tilings/sph-half";
+import {
 	hypPolyBoardLabel,
 	hypPolyFamilyLabel,
 	hypPolyShardUrl,
@@ -486,6 +494,10 @@ export const SUB_ORDER = [
 	...HYP_POLY_BOARDS.map((b) => hypPolySubOfBoard(b)),
 	// Their spherical siblings, n = 3, 4, 5. "spp-" namespaced.
 	...SPH_POLY_BOARDS.map((b) => sphPolySubOfBoard(b)),
+	// The HALF-TILE spherical boards — a Platonic face cut in two — on the same axis, since the axis is
+	// "which spherical tiling board" and these are boards. Named ids, so they cannot collide with the
+	// 3.4.n.4 family's digits.
+	...SPH_HALF_BOARDS.map((b) => sphHalfSubOfBoard(b)),
 	// Parametric-pentagon edge systems: one sub per Kershner type. "pen-" namespaced.
 	...PENT_EDGE_BOARDS.map((b) => pentEdgeSubOfBoard(b)),
 	// Parametric-isohedral edge systems: one sub per isohedral type. "ih-" namespaced.
@@ -570,8 +582,8 @@ export function subOf(t: {
 	if (t.ihEdges) return ihEdgeSub(t.ihEdges);
 	if (t.schwarz) return schwarzSub(t.schwarz);
 	if (t.sphEdges) return sphEdgesSub(t.sphEdges);
-	if (t.hypPoly) return hypPolySub(t.hypPoly);
-	if (t.sphPoly) return sphPolySub(t.sphPoly);
+	if (t.hypPoly) return isHypHalf(t.hypPoly) ? hypHalfSub(t.hypPoly) : hypPolySub(t.hypPoly);
+	if (t.sphPoly) return isSphHalf(t.sphPoly) ? sphHalfSub(t.sphPoly) : sphPolySub(t.sphPoly);
 	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
 	if (t.hypEdges) return hypEdgesSub(t.hypEdges);
 	if (t.hypColors) return hypColorsSub(t.hypColors);
@@ -2040,6 +2052,26 @@ function sphPolyToReference(p: SphPolyPattern): ReferenceTiling {
 	};
 }
 
+// A half-tile board's record is the same SphPolyPattern, so it renders through the same three.js
+// sphere with no new component; only the labelling differs, because "3.4.oct-half.4" is not a vertex
+// figure. It rides the same loader below, which is why there is no second call site anywhere.
+function sphHalfToReference(p: SphPolyPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "spherical",
+		k: p.k,
+		family: `${sphHalfFamilyLabel(p)}${p.chiral ? " · chiral" : ""}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		sphPoly: p,
+		geometry: "spherical",
+		discoverer: "Čtrnáct engine (spherical half-tile palette), 2026-08-14",
+		// Every record closes to Euler 2 with the tile count its area bound forces, every face congruent
+		// to the tile, and every sampled point covered exactly once — and the count of tilings per board
+		// is reproduced independently by a group computation, per board, k split included.
+		certification: "reproduced",
+	};
+}
+
 let sphPolyCache: ReferenceTiling[] | null = null;
 let sphPolyInflight: Promise<ReferenceTiling[]> | null = null;
 
@@ -2053,6 +2085,15 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 					.then((res) => (res.ok ? (res.json() as Promise<SphPolyPattern[]>) : []))
 					.catch(() => [] as SphPolyPattern[])
 					.then((recs) => recs.map(sphPolyToReference)),
+			),
+		).concat(
+			SPH_HALF_BOARDS.flatMap((b) =>
+				b.ks.map((k) =>
+					fetch(sphHalfShardUrl(b.id, k))
+						.then((res) => (res.ok ? (res.json() as Promise<SphPolyPattern[]>) : []))
+						.catch(() => [] as SphPolyPattern[])
+						.then((recs) => recs.map(sphHalfToReference)),
+				),
 			),
 		),
 	)

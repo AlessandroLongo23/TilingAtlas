@@ -82,6 +82,7 @@ import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypSchwarzMeta, schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
 import { hypPolyLazyShardsForK, hypPolyMeta } from "@/lib/tilings/hyp-poly";
+import { SPH_HALF_BOARDS } from "@/lib/tilings/sph-half";
 import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
 import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
 import { PentagonEdgesCanvas } from "@/components/pentagon-edges-canvas";

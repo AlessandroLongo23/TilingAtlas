@@ -1,0 +1,17 @@
+{
+  "name": "sph-oct-half",
+  "D": 8,
+  "tileGeometry": "spherical",
+  "closure": "euclidean",
+  "comment": "HALF THE OCTAHEDRON'S FACE. The octahedron cuts the sphere into eight equilateral triangles with three 90-degree corners (four meet at every vertex); an altitude cuts one of those into two 45-90-90 triangles, which is the Schwarz (2,2,4) triangle. Its sides are the arcs opposite its angles: 90, 45, 90 degrees — the long side is EXACTLY twice the short one, the ratio AL points out you always get when you halve an equilateral tile. Two arc lengths, so two edge types, and only like glues to like. D=8 because 45 degrees is one unit of 2pi/8; the tile's angles are [1,2,2] and they sum to 5, not the 4 a FLAT triangle would, and that excess of 1 unit (45 degrees = pi/4) IS the tile's area. Which is what bounds this palette: the sphere has area 4pi, so every tiling by this tile uses exactly 4pi/(pi/4) = 16 of them, and the catalogue is finite before the search starts. closure=euclidean is the right VERTEX rule here and not a mistake: on the sphere as in the plane the angles at a vertex close a full turn exactly, because on a fixed-angle tiling the curvature all sits in the faces, not at the vertices. The reflection tiling is the one to check the answer against — 16 triangles, 10 vertices (two poles where eight 45-degree corners meet, eight equatorial points where four right angles do), 24 edges, so V-E+F = 2 and the map is a sphere.",
+  "edgeArcsDeg": { "S": 45, "L": 90 },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T224",
+      "famchar": "t",
+      "angles": [1, 2, 2],
+      "edges": ["L", "S", "L"]
+    }
+  ]
+}

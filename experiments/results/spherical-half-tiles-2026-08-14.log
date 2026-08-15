@@ -1,0 +1,133 @@
+SPHERICAL HALF-POLYGONS — cut a Platonic face in two, enumerate what the halves tile
+====================================================================================
+AL's idea (2026-08-14): halve a regular tile and the halves carry edges of two or three lengths, so
+they need edge types — and they can be reassembled in ways the whole tile could not.
+
+THE MODEL, and why it is not the existing spherical one. develop_spherical.py enumerates polyhedra
+with FLAT regular faces under positive-defect vertices, solving for the one edge arc rho that closes
+every vertex. None of that applies to a fixed-angle spherical tile:
+  * it is RIGID — a spherical triangle's sides follow from its angles — so there is nothing to solve
+  * it is SCALENE, so the arc is per-dart, read from the alphabet's own ETYPE
+  * the vertex rule is EUCLIDEAN (angles sum to exactly a full turn) and that is correct: on a
+    fixed-angle tiling the curvature sits in the FACES, not at the vertices. The surface is a sphere
+    by Gauss-Bonnet on the faces, total excess = 4pi.
+That last point BOUNDS EACH PALETTE BEFORE THE SEARCH RUNS: excess = tile area, so the tile count is
+4pi / excess exactly, and any development closing with another count is wrong, not merely different.
+
+CHANGES
+  gen_alphabet.py  the composite angle-sum assert is curvature-aware, gated on a new palette field
+                   `tileGeometry` (euclidean | spherical | hyperbolic) so a typo still fails loudly.
+                   GUARD: make check-regular PASS byte-identical; tri45 / planigon / penrose / fdsq2
+                   all regenerate with unchanged configs and A6 PASS.
+  develop_sph_half.py  NEW. develop_spherical's SO(3) flood with rho and alpha made per-dart. Side
+                   arcs are DERIVED from the angles by the polar law of cosines and cross-checked
+                   against the palette's declared degrees — the cube's arcs are arccos(+-1/3) and the
+                   icosahedron's are worse, so hand-typing them was a bug waiting to happen.
+  run-sph-half.sh  NEW driver: alphabet -> solve -> prune -> develop on S(2).
+
+RESULTS — three palettes, all faces certified exactly congruent to the tile
+  palette         tile                  D   tiles   found                     arc/angle err
+  sph-oct-half    45-90-90  (2,2,4)     8    16     2   k=2, 3                4.0e-10
+  sph-cube-half   60-120-60             6    12     7   k=2 x5, 4, 6          3.9e-10
+  sph-ico-half    36-90-72  CHIRAL     20    40     2   k=3, 6                4.4e-10
+  Every one: Euler characteristic 2, tile count exactly the area bound, and 3,000 random points per
+  tiling each covered by EXACTLY ONE face (the first coverage test was wrong — the sign condition for
+  a spherical triangle is invariant under p -> -p, so it counted each face and its antipode).
+
+INDEPENDENT VERIFICATION — the whole point, and it is exact
+  These are not self-checks. Each palette's answer is predicted by a separate group computation and
+  the engine reproduces it including the per-k split and every symmetry-group order.
+  * cube. The diagonal's endpoints are cube VERTICES, so no vertex can be a T-junction and ALL 2^6
+    diagonal choices tile. Orbits under the cube's 48 symmetries: 7. Stabiliser orders 24,12,12,8,4,4,2
+    giving k = 2,2,2,2,2,4,6. ENGINE: 7 tilings, k = 2x5, 4, 6, measured |G| = 24,12,12,8,4,4,2. EXACT.
+    (An earlier run to kmax=5 found only 6 and looked like a mismatch; the 7th is the k=6 one.)
+  * octahedron. The altitude's foot is an edge MIDPOINT, so edge-to-edge forces the neighbour across
+    that edge to cut there too: a tiling IS a perfect matching of the face graph. The octahedron's
+    face graph has 9 perfect matchings, collapsing to 2 tilings, |G| = 32 (k=2, 3 matchings) and
+    |G| = 8 (k=3, 6 matchings). ENGINE: exactly those two, k and |G| both. EXACT.
+  * icosahedron. Same matching argument on the dodecahedral graph: 36 perfect matchings -> 2 tilings,
+    |G| = 20 (k=3) and |G| = 4 (k=6). ENGINE: exactly those two. EXACT.
+  ⚑ One wrong turn recorded: I first computed k as vertex orbits under the stabiliser of the matching
+  INSIDE the polyhedron's symmetry group and got k=3 for both octahedron tilings, against the engine's
+  2 and 3. The engine was right. A tiling's symmetry group need not sit inside the polyhedron's — the
+  |G|=32 one does not even divide 48, because a symmetry may carry a pair of halves that forms an
+  octahedron face onto a pair that does not.
+
+WHAT IT SHOWS
+  Halving is not a relabelling: the cube's single face-diagonal cut yields SEVEN distinct tilings where
+  the cube itself is one, and the halves genuinely orient differently, exactly as AL predicted. The
+  icosahedron palette is also the first CHIRAL spherical tile here — three distinct angles, three
+  distinct sides, mirror twin a separate alphabet symbol — which only runs because of the sided-classes
+  repair of 2026-08-13.
+
+NOT DONE
+  No shelf. These are 11 tilings in S(2) cells (vertices as unit 3-vectors + index rings); the atlas's
+  spherical shelf has its own record shape and this has not been wired into it.
+
+ON THE SHELF (2026-08-14, later)
+  All 11 ship under Spherical -> Tilings -> Board, as three boards beside the 3.4.n.4 family:
+  "Octahedron halved (16 tiles)" 2, "Cube halved (12 tiles)" 7, "Icosahedron halved (40 tiles)" 2.
+
+  NO NEW RENDERER. A record is a `SphPolyPattern`, the type the 3.4.n.4 spherical shelf already uses —
+  explicit per-record geometry, unit vectors and face rings — so populating that field routes the cards,
+  the thumbnails and /play through the three.js sphere every other spherical shelf draws on. What is new
+  is only board metadata (lib/tilings/sph-half.ts) and an emitter (emit_sph_half_shelf.py), which
+  re-certifies everything before writing: Euler 2, the area-bound tile count, every face congruent to
+  the tile, every sampled point covered exactly once.
+
+  FILL BY FACE ORBIT, not by polygon size. The default key is the polygon size, which is right for the
+  3.4.n.4 boards and useless here — every face is a triangle, so the whole solid collapsed into ONE
+  neutral grey (tileColor deliberately mutes a single-group solid). Records now carry `fillGroup`, the
+  face's orbit under the tiling's own isometries; it stays one colour exactly when the tiling really is
+  tile-transitive (the |G|=24 cube) and separates 10 classes on the k=6 icosahedron.
+    tiling                 face orbits / tiles   |G|
+    shoct-half-2-00001       1 / 16               32
+    shoct-half-3-00001       2 / 16                8
+    shcube-half-2-00002      1 / 12               24
+    shcube-half-6-00001      7 / 12                2
+    shico-half-3-00001       2 / 40               20
+    shico-half-6-00001      10 / 40                4
+
+  ⚑ BUG AL FOUND AND I SHIPPED: clicking one of these on /library landed on t1001. `_play-client`
+  decides whether to fetch the spherical shelves with `requestedKey.startsWith("sp")`, and these ids
+  begin "sh<board>-", so the shelf was never fetched, the key never resolved, and the selection fell
+  through to sorted[0] silently. Now matched against SPH_HALF_BOARDS rather than a bare "sh" prefix.
+  This is the THIRD shelf to need a line there (mixed and scaled hit it on 2026-08-13) — the fallback
+  is silent by design, so a new shelf never fails loudly, it just lands on the wrong tiling.
+
+  ⚑ Caught by the guard, not by me: my first version of the shared `sphPolyScene` computed the group
+  count as max(key)+1, which drops a polygon size a board DECLARES but a given record does not use.
+  lib/tilings/sph-poly.test.ts failed on it. The size path now allocates stats.sizes.length groups
+  exactly as before, and only the fillGroup path uses max+1.
+
+  Pre-existing and NOT from this work: 3 of 2,410 tests fail on master-in-progress files I never touched
+  (tests/exact-star-polygon, tests/star-general-path timeout, lib/utils/paramCell.merged — paramCell.ts
+  and the mixed-atlas data were already modified before this session began).
+
+FOURTH BOARD: THE DODECAHEDRON (2026-08-14, later)
+  A pentagon has no halving DIAGONAL — a diagonal cuts off a triangle and leaves a quadrilateral — so
+  the cut is the MIRROR, from a vertex to the midpoint of the opposite edge, and the halves are
+  60-120-120-90 QUADRILATERALS. Chiral. Sides: the dodecahedron edge 41.810315 twice, half of it
+  20.905157, and the mirror segment 69.094843 = 90 minus the half-edge exactly. The long edge is again
+  exactly twice the short one. Excess 30 deg = pi/6, so exactly 4pi/(pi/6) = 24 tiles.
+
+  THE FIRST NON-TRIANGLE, and it forced a real change. A spherical n-gon has 2n-3 degrees of freedom
+  against n angles: at n=3 the angles pin it (rigid, sides derivable) and at n=4 one parameter is free,
+  so a 60-120-120-90 spherical quadrilateral is a FAMILY, not a shape. This board therefore DECLARES its
+  arcs, and the check that they are right is the development, which will not close on a tile that does
+  not exist. Two more places assumed triangles and were generalised: the symmetry solver (three image
+  points determine the map, so take 3 from a face, not len(face) — a 3x4 matrix is not invertible) and
+  the coverage test (any convex n-gon, not a 3-vertex sign test).
+
+  RESULT, and it matches the independent prediction EXACTLY:
+    the cut's foot is an edge midpoint, so a tiling is again a perfect matching of the face graph — here
+    the ICOSAHEDRAL graph (12 vertices, 5-regular). 125 perfect matchings -> 5 distinct tilings, with
+    |G| = 24, 12, 6, 4, 2 and k = 3, 4, 5, 7, 13.
+    ENGINE: 5 tilings, one at each of k = 3, 4, 5, 7, 13 and NOTHING at any other k up to 13, measured
+    |G| = 24, 12, 6, 4, 2. Every one Euler 2, F=24 at the area bound, arc/angle error ~3e-10.
+  ⚑ A first run to k=6 found only 3 and looked like a mismatch against the predicted 5. The missing two
+  are at k=7 and k=13. Third time this session that "the count is short" meant "search deeper" — on the
+  cube it was k=6, on {3,7} it was k=6, here k=13.
+
+  Board totals now: oct 2, cube 7, ico 2, dodec 5 = 16 spherical half-tilings, every count reproduced
+  exactly by an independent group computation, k split and symmetry orders included.

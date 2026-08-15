@@ -1,0 +1,17 @@
+{
+  "name": "sph-cube-half",
+  "D": 6,
+  "tileGeometry": "spherical",
+  "closure": "euclidean",
+  "comment": "HALF THE CUBE'S FACE. The cube cuts the sphere into six squares whose corners are 120 degrees, because three faces meet at every vertex; a diagonal cuts one into two 60-120-60 triangles. The diagonal halves the two corners it lands on and leaves the other whole, which is why the halves are isosceles and achiral. Two sides are the cube's own edge, arccos(1/3) = 70.5288 degrees, and the third is the face diagonal, arccos(-1/3) = 109.4712 — supplementary, and neither a whole number of degrees, which is why this developer derives its arcs from the angles instead of reading them off the palette. D=6 because 60 degrees is one unit of 2pi/6; the angles are [1,2,1] and sum to 4 against the 3 a flat triangle would, so the excess is 1 unit = 60 degrees = pi/3 and every tiling by this tile uses exactly 4pi/(pi/3) = 12 of them — the cube's six faces, halved.",
+  "edgeArcsDeg": { "S": 70.528779366, "D": 109.471220634 },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "C120",
+      "famchar": "c",
+      "angles": [1, 2, 1],
+      "edges": ["S", "S", "D"]
+    }
+  ]
+}

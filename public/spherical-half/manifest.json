@@ -1,0 +1,76 @@
+{
+  "oct-half": {
+    "label": "Octahedron halved",
+    "cut": "the octahedron's face, cut by an altitude",
+    "arcsDeg": [
+      45.0,
+      90.0
+    ],
+    "ks": [
+      2,
+      3
+    ],
+    "counts": {
+      "2": 1,
+      "3": 1
+    }
+  },
+  "cube-half": {
+    "label": "Cube halved",
+    "cut": "the cube's face, cut by a diagonal",
+    "arcsDeg": [
+      70.528779,
+      109.471221
+    ],
+    "ks": [
+      2,
+      4,
+      6
+    ],
+    "counts": {
+      "2": 5,
+      "4": 1,
+      "6": 1
+    }
+  },
+  "ico-half": {
+    "label": "Icosahedron halved",
+    "cut": "the icosahedron's face, cut by an altitude",
+    "arcsDeg": [
+      31.717474,
+      58.282526,
+      63.434949
+    ],
+    "ks": [
+      3,
+      6
+    ],
+    "counts": {
+      "3": 1,
+      "6": 1
+    }
+  },
+  "dodec-half": {
+    "label": "Dodecahedron halved",
+    "cut": "the dodecahedron's pentagon, cut by a mirror",
+    "arcsDeg": [
+      20.905157,
+      41.810315,
+      69.094843
+    ],
+    "ks": [
+      3,
+      4,
+      5,
+      7,
+      13
+    ],
+    "counts": {
+      "3": 1,
+      "4": 1,
+      "5": 1,
+      "7": 1,
+      "13": 1
+    }
+  }
+}

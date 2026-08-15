@@ -1,0 +1,33 @@
+[13:55:25] PHASE 0  alphabet (palette=sph-dodec-half)
+[gen] EDGE TYPES (S=1, M=2, H=3): 40 incompatible adjacent pairs of 64 forbidden at the vertex
+[gen] palette=sph-dodec-half D=12 tiles=2 classes=8 configs=10
+[cert] A6: 21 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 8 of 21 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/sph-dodec-half/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (21 entries)
+[13:55:25] PHASE 1  solve (MAXNUM=13)
+[13:55:26]   raw blocks: 11
+[13:55:26] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+  k=3 : 1
+  k=4 : 1
+  k=5 : 1
+  k=6 : 0
+  k=7 : 1
+  k=8 : 0
+  k=9 : 0
+  k=10 : 0
+  k=11 : 0
+  k=12 : 0
+  k=13 : 1
+total kept: 5
+store: peak 0.000915527 MB total, 0.000915527 MB resident
+[13:55:26] PHASE 3  develop on S(2) (SO(3) flood, per-dart arc and declared angle)
+developed: {1: 0, 2: 0, 3: 1, 4: 1, 5: 1, 6: 0, 7: 1, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 1} total 5 failures 0
+area bound: every tiling must use exactly 24 tiles
+  sph-dodec-half-3-00001  V=26 E=48 F=24  arc err 3.31e-10  angle err 4.42e-10
+  sph-dodec-half-4-00001  V=26 E=48 F=24  arc err 3.30e-10  angle err 4.25e-10
+  sph-dodec-half-5-00001  V=26 E=48 F=24  arc err 3.28e-10  angle err 4.37e-10
+  sph-dodec-half-7-00001  V=26 E=48 F=24  arc err 3.28e-10  angle err 4.30e-10
+  sph-dodec-half-13-00001  V=26 E=48 F=24  arc err 3.28e-10  angle err 4.25e-10
+[13:55:27] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-sph-dodec-half-k13/sph-dodec-half-cells.json

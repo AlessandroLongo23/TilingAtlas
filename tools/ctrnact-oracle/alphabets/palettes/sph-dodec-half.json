@@ -1,0 +1,17 @@
+{
+  "name": "sph-dodec-half",
+  "D": 12,
+  "tileGeometry": "spherical",
+  "closure": "euclidean",
+  "comment": "HALF THE DODECAHEDRON'S FACE, and the first half-tile here that is not a triangle. Three faces meet at every dodecahedron vertex, so the spherical pentagon's corners are 120 degrees. A pentagon has no diagonal that halves it — a diagonal cuts off a triangle and leaves a quadrilateral — so the cut is the MIRROR, from one vertex to the midpoint of the opposite edge, and the two halves are 60-120-120-90 QUADRILATERALS. Scalene and chiral. Its sides are the dodecahedron edge 41.810315 twice, half of it 20.905157, and the mirror segment 69.094843 — which is 90 minus the half-edge, exactly, and the long edge is again exactly twice the short one. Three edge types. D=12 because 30 degrees is one unit of 2pi/12; the angles are [2,4,4,3] and sum to 13 against the 12 a FLAT quadrilateral would, so the excess is 1 unit = 30 degrees = pi/6 and every tiling uses exactly 4pi/(pi/6) = 24 of them — the dodecahedron's twelve faces, halved. NOTE the arcs are DECLARED, not derived: a spherical n-gon has 2n-3 degrees of freedom against n angles, so a triangle is pinned by its angles and a quadrilateral is not.",
+  "edgeArcsDeg": { "S": 41.810314896, "H": 20.905157448, "M": 69.094842552 },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "D120",
+      "famchar": "d",
+      "angles": [2, 4, 4, 3],
+      "edges": ["S", "S", "H", "M"]
+    }
+  ]
+}
