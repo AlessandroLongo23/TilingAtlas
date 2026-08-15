@@ -59,12 +59,23 @@ export function ParametricEdgesCanvas({
 	const showVertices = useConfiguration((s) => s.freedrawVertices);
 	const showLattice = useConfiguration((s) => s.freedrawLattice);
 	const lineWidth = useConfiguration((s) => s.lineWidth);
+	const showArcs = useConfiguration((s) => s.freedrawArcs);
+	const arcWiring = useConfiguration((s) => s.freedrawArcWiring);
+	const arcTwist = useConfiguration((s) => s.freedrawArcTwist);
 	const rotation = useConfiguration((s) => s.rotation);
 	const setRotation = useCallback((deg: number) => useConfiguration.getState().set({ rotation: deg }), []);
 
+	// Arc mode reads these boards through the patch adapter, so the parametric families (the pentagon
+	// and the 93 isohedral types) get it from the same store fields as the fixed grids. Their tiles are
+	// not regular, so the arcs are cubics tangent to each edge's normal instead of circular — which is
+	// the part a neighbouring tile can see, and the only part that has to agree.
+	const arcRule = useMemo(
+		() => ({ wiring: arcWiring, twist: (arcTwist ? 1 : 0) as 0 | 1 }),
+		[arcWiring, arcTwist],
+	);
 	const style = useMemo(
-		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth }),
-		[fillMode, showScaffold, showVertices, showLattice, lineWidth],
+		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule }),
+		[fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule],
 	);
 
 	if (!built?.pattern) {

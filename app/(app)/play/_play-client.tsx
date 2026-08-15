@@ -13,6 +13,8 @@ import { HyperbolicColorsCanvas } from "@/components/hyperbolic-colors-canvas";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
+import { TruchetOverlay } from "@/components/truchet-overlay";
+import { truchetPattern as buildTruchetPattern } from "@/lib/render/truchetTiling";
 import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
 import { HollowCanvas } from "@/components/hollow/hollow-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
@@ -882,6 +884,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			g: "freedrawScaffold",
 			p: "freedrawLattice",
 			o: "freedrawVertices",
+			a: "freedrawArcs",
 		};
 		// The colors view's trio, on the same three keys: G = tile edges, P = period lattice, O = orbit dots.
 		const COLORS_TOGGLES: Record<string, keyof ConfigurationState> = {
@@ -909,10 +912,21 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// The parametric-pentagon shelf draws through the same 2D grid renderer off the same three store
 			// fields, so it takes the same three keys. Gating this on `freedraw` alone left G, P and O dead
 			// on that shelf while its own Options block showed the checkboxes they drive.
+			// A ("Truchet tiles") applies to a PLAIN tiling as well: every edge counts as connected there,
+			// so the overlay has something to draw on any flat shelf. G comes with it once the overlay is
+			// up — it is the scaffold that layer draws, and its checkbox sits in the same block. P and O
+			// stay scoped to the boards that have a period overlay and grid-point orbits to show.
+			const key = e.key.toLowerCase();
+			// Read the overlay flag from the STORE, not from the closure: this effect is keyed on the
+			// selection, so a value captured here would still be whatever it was when the tiling was
+			// picked — which is exactly why G did nothing after A turned the overlay on.
+			const arcsUp = useConfiguration.getState().freedrawArcs;
 			const freedrawField =
 				!!selected?.freedraw || !!selected?.pentEdges || !!selected?.ihEdges
-					? FREEDRAW_TOGGLES[e.key.toLowerCase()]
-					: undefined;
+					? FREEDRAW_TOGGLES[key]
+					: key === "a" || (key === "g" && arcsUp)
+						? FREEDRAW_TOGGLES[key]
+						: undefined;
 			if (freedrawField) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
@@ -1005,6 +1019,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Spherical-freedraw Display controls (View options tab): mode = polyhedron/sphere, grid = faint edge grid.
 	const sphericalFreedrawMode = useConfiguration((s) => s.sphericalFreedrawMode);
 	const sphericalFreedrawGrid = useConfiguration((s) => s.sphericalFreedrawGrid);
+	// The Tiles overlay and its knobs. On a plain tiling these drive the Truchet reading below; on a
+	// freedraw pattern the canvas reads them itself, which is why only the seed is consumed here.
+	const freedrawArcs = useConfiguration((s) => s.freedrawArcs);
+	const freedrawArcWiring = useConfiguration((s) => s.freedrawArcWiring);
+	const freedrawArcTwist = useConfiguration((s) => s.freedrawArcTwist);
+	const truchetSeed = useConfiguration((s) => s.truchetSeed);
 
 	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the canvas fills the window.
 	const immersive = useImmersive((s) => s.immersive);
@@ -1034,7 +1054,34 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const renderCellId = selected?.canonicalKey ? `${selected.canonicalKey}${mirrorFlip ? "#mirror" : ""}` : null;
 	// What the conformal lens draws: the selection reduced to the shared periodic-cell IR. One hook covers
 	// every Euclidean class, so the lens is no longer limited to the plain polygon-cell tilings.
-	const { cell: inversiveCell, cellId: inversiveCellId } = useInversiveCell(selected ?? null, renderCell);
+	// The Truchet reading of a PLAIN tiling: only built while the overlay is up and the selection is one
+	// of the shelves the flat canvas draws, so nothing is spent on it otherwise. `truchetSeed` and the
+	// wiring chips are both in the key — a reshuffle is a new seed, and the un-shuffled comparison is
+	// seed 0, which applies the named wiring to every tile instead of drawing them independently.
+	// Deps are VALUES, never `selected` itself: that object's identity changes on renders where the
+	// selection has not, and rebuilding here means 36 copies of the cell re-drawn — plus, with the
+	// publish effect below keyed on the result, a set/render/rebuild loop that hung the page.
+	const truchetOwnCanvas = !!selected?.freedraw || !!selected?.colors;
+	const truchetPattern = useMemo(() => {
+		if (!freedrawArcs || !renderCell || truchetOwnCanvas) return null;
+		return buildTruchetPattern(renderCell, {
+			seed: truchetSeed,
+			rule: truchetSeed === 0 ? { wiring: freedrawArcWiring, twist: freedrawArcTwist ? 1 : 0 } : null,
+		});
+	}, [freedrawArcs, renderCell, truchetOwnCanvas, truchetSeed, freedrawArcWiring, freedrawArcTwist]);
+
+	// Publish it for canvas.tsx, which blanks the flat layer while the figures are the picture. Keyed on
+	// the BOOLEAN, so it writes when the overlay appears or goes, not on every rebuild of the pattern.
+	const truchetActive = !!truchetPattern;
+	useEffect(() => {
+		useConfiguration.getState().set({ truchetActive });
+	}, [truchetActive]);
+
+	const { cell: inversiveCell, cellId: inversiveCellId } = useInversiveCell(
+		selected ?? null,
+		renderCell,
+		truchetPattern,
+	);
 	// The lens is Euclidean-only: the hyperbolic and spherical shelves have no period lattice to reduce
 	// into, and each owns its own renderer below. Same predicate the Options tab uses to decide whether to
 	// OFFER the toggle, so a checkbox can no longer appear for a shelf this refuses to honour.
@@ -1192,6 +1239,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// regular-faced tilings the (2,p,q) fold shader cannot.
 					<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
 				) : null}
+				{/* Truchet figures over a PLAIN tiling. Deliberately OUTSIDE the exclusive canvas chain above:
+				    it is an overlay, not a renderer, so the flat canvas keeps drawing the tiling and keeps
+				    owning the pointer. It reads the same `controls` the flat uniforms come from, so toggling
+				    it cannot move the picture. Not while the lens is on — the conformal view draws the same
+				    figures itself, through the periodic-cell IR, and a flat layer over a warped one is two
+				    different pictures at once. */}
+				{truchetPattern && !inversive ? <TruchetOverlay pattern={truchetPattern} /> : null}
 				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
 				{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
 				    the family is still what is being drawn when the conformal lens replaces the flat view —

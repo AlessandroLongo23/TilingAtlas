@@ -181,6 +181,38 @@ export interface ConfigurationState {
 	// as that one cell stamped out across the plane. See lib/freedraw/render.ts drawLattice.
 	freedrawLattice: boolean;
 	/**
+	 * TILE MODE (lib/freedraw/arcs.ts): read the same edge bits as connected / not and fill a black
+	 * region on each TILE, entering through the middle third of every connected edge — Carlson's
+	 * multi-scale Truchet construction, generalised off the square. Turns the cell fill off while it is
+	 * up (the renderer enforces that, not the UI).
+	 *
+	 * `freedrawArcWiring` picks which bijection on the connected edges the region follows: "ribbons"
+	 * pairs neighbours into constant-width bands, "junction" runs one region through all of them,
+	 * "caps" caps each port where it stands. `freedrawArcTwist` mirrors the ribbon pairing — a genuine
+	 * choice, since no turn of a square carries one pairing of four connected edges onto the other.
+	 *
+	 * Spelled out and not imported, like every other union here, so the store keeps no dependency on a
+	 * shelf; lib/freedraw/arcs.ts holds the same three names.
+	 */
+	freedrawArcs: boolean;
+	freedrawArcWiring: "ribbons" | "junction" | "caps";
+	freedrawArcTwist: boolean;
+	/**
+	 * TRUCHET SEED. On a plain tiling there is no edge state to read, so every edge counts as connected
+	 * and the drawing is the only freedom left — c! of them per tile (lib/render/truchetTiling.ts). This
+	 * seeds the per-tile draw; the Reshuffle button rolls it. 0 means "not shuffled": every tile takes
+	 * the named wiring above instead, which is the comparison the shuffle is against.
+	 */
+	truchetSeed: number;
+	/**
+	 * The Truchet overlay is actually up over a plain tiling. A transient signal, not a setting: it is
+	 * derived in _play-client (which knows whether a pattern could be built at all) and read by
+	 * canvas.tsx, which blanks the flat layer while it is true. The figures ARE the picture — a tiling
+	 * drawn under them is a second picture, and one that trails a frame behind on a drag, since the two
+	 * layers ease on separate loops. Out of the URL, like every other derived signal.
+	 */
+	truchetActive: boolean;
+	/**
 	 * Where the parametric-pentagon shelf is standing in its family: the three free angles, the free side
 	 * b, and t along the one remaining side ratio (lib/pentagon/edge-board.ts).
 	 *
@@ -266,6 +298,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showSymmetryElements: false,
 	showFundamentalDomain: false,
 	showVertexOrbits: false,
+	mirrorFlip: false,
 	debugView: false,
 	// On by default: the flat plain-tile view renders through the WebGL2 renderer (M1 fill+stroke, M1b
 	// points). Verified at parity with the p5 path across regular/star/parametric/dense/dark tilings
@@ -333,6 +366,11 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	freedrawScaffold: false,
 	freedrawVertices: false,
 	freedrawLattice: false,
+	freedrawArcs: false,
+	freedrawArcWiring: "ribbons",
+	freedrawArcTwist: false,
+	truchetSeed: 0,
+	truchetActive: false,
 	// Mirrors PENT_EDGE_DEFAULTS; spelled out rather than imported so the store keeps no dependency on a
 	// shelf. lib/pentagon/edge-board.test.ts holds the two to each other.
 	pentParams: { A: 120, B: 100, D: 110, b: 0.8, t: 0.5 },

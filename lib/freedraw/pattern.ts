@@ -95,6 +95,14 @@ export interface FreedrawPatch {
 	 */
 	edgeCurves?: (Curve4 | null)[];
 	polyCurves?: (Curve4 | null)[][];
+	/**
+	 * TRUCHET boards only: a per-polygon wiring, one entry per `polys` ring — the bijection on that
+	 * tile's connected edges the figure follows (lib/freedraw/arcs.ts). Present when the patch was
+	 * synthesized from a plain tiling, where every edge counts as connected and the drawing is the ONLY
+	 * degree of freedom, so it is randomised per tile. Absent on every solved board, which takes one
+	 * wiring for the whole pattern from the sidebar instead.
+	 */
+	wirings?: number[][];
 	/** Tile component (face orbit) id per polygon. */
 	polyComp: number[];
 	/** Per component: 0 finite, 1 strip, 2 unbounded — the same holonomy ranks as the fixed grids. */

@@ -11,6 +11,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { HueRing } from "@/components/ui/hue-ring";
 import { Reveal } from "@/components/ui/reveal";
 import { Toggle } from "@/components/ui/toggle";
+import { WIRINGS } from "@/lib/freedraw/arcs";
 import { FILL_MODES } from "@/lib/freedraw/render";
 import { colorCountOf, colorLetter } from "@/lib/colors/pattern";
 import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/colors/render";
@@ -287,6 +288,48 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								checked={cfg.freedrawScaffold}
 								onCheckedChange={(v) => setCfg({ freedrawScaffold: v })}
 							/>
+							{/* Tiles: the same edge bits read as connected / not, filled as a black region that enters
+							    each TILE through the middle third of every connected edge. Fill goes quiet while up. */}
+							<Checkbox
+								id="freedrawArcs"
+								label="Tiles"
+								shortcut="A"
+								checked={cfg.freedrawArcs}
+								onCheckedChange={(v) => setCfg({ freedrawArcs: v })}
+							/>
+							<Reveal show={cfg.freedrawArcs}>
+								<div className="pl-7 space-y-2">
+									<span className="text-[11px] text-fg-muted">Wiring</span>
+									{/* A tile with c connected edges has c! drawings — one per bijection on its ports.
+									    These three name the useful corners of that space. */}
+									<div className="grid grid-cols-3 gap-1">
+										{WIRINGS.map(({ value, label }) => (
+											<Button
+												key={value}
+												variant={cfg.freedrawArcWiring === value ? "primary" : "secondary"}
+												size="sm"
+												classes="flex-1 px-0"
+												onClick={() => setCfg({ freedrawArcWiring: value })}
+											>
+												{label}
+											</Button>
+										))}
+									</div>
+									<p className="text-[11px] text-fg-muted leading-relaxed">
+										{WIRINGS.find((r) => r.value === cfg.freedrawArcWiring)?.help}
+									</p>
+									<Checkbox
+										id="freedrawArcTwist"
+										label="Mirror the pairing"
+										checked={cfg.freedrawArcTwist}
+										onCheckedChange={(v) => setCfg({ freedrawArcTwist: v })}
+									/>
+									<p className="text-[11px] text-fg-muted leading-relaxed">
+										Ribbons only. Four connected edges pair into two bands two ways, and no turn of the
+										tile carries one onto the other. This picks which.
+									</p>
+								</div>
+							</Reveal>
 							{/* The period lattice: the fundamental cell tinted, its translates outlined. Shows the
 							    figure as that one cell stamped out over and over. */}
 							<Checkbox
@@ -308,9 +351,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									Hover a dot to grow every grid point in its orbit.
 								</p>
 							</Reveal>
-							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
-							</p>
 						</div>
 					) : null}
 					{/* Colors: the control set for the colored-square view — the freedraw trio's shape with the
@@ -354,9 +394,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									Hover a dot to grow every vertex in its orbit.
 								</p>
 							</Reveal>
-							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
-							</p>
 						</div>
 					) : null}
 					{/* Hyperbolic + spherical colorings carry the same palette pickers as the Euclidean colors, but
@@ -470,6 +507,104 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							checked={cfg.showVertexOrbits}
 							disabled={!selected?.exactSource}
 							onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
+						/>
+					) : null}
+					{/* TRUCHET. A tiling carries no edge state, so every edge counts as connected and the only
+					    freedom left is which of a tile's c! drawings it takes — 24 for a square, 2 for a
+					    triangle, 720 for a hexagon (lib/render/truchetTiling.ts). Shuffling draws each tile
+					    independently; the un-shuffled state applies one named wiring to every tile, which is the
+					    comparison the shuffle is against. */}
+					{isFlat ? (
+						<>
+							<Checkbox
+								id="freedrawArcsFlat"
+								label="Truchet tiles"
+								shortcut="A"
+								checked={cfg.freedrawArcs}
+								onCheckedChange={(v) => setCfg({ freedrawArcs: v })}
+							/>
+							<Reveal show={cfg.freedrawArcs}>
+								<div className="pl-7 space-y-2">
+									{/* The figures are an OVERLAY: the tiling keeps drawing underneath, so Polygon fill
+									    and Line stroke above still say what the board looks like. This adds the faint
+									    tile-edge scaffold the freedraw browser has, for when both of those are off. */}
+									<Checkbox
+										id="freedrawScaffoldFlat"
+										label="Grid"
+										shortcut="G"
+										checked={cfg.freedrawScaffold}
+										onCheckedChange={(v) => setCfg({ freedrawScaffold: v })}
+									/>
+									<Button
+										variant="secondary"
+										size="sm"
+										classes="w-full"
+										onClick={() =>
+											setCfg({ truchetSeed: 1 + Math.floor(Math.random() * 2147483646) })
+										}
+									>
+										{cfg.truchetSeed ? "Reshuffle" : "Shuffle the tiles"}
+									</Button>
+									{cfg.truchetSeed ? (
+										<>
+											<p className="text-[11px] text-fg-muted leading-relaxed">
+												Every tile drawn independently, seed {cfg.truchetSeed}. The link carries it, so
+												a pattern you like is reproducible.
+											</p>
+											<Button
+												variant="secondary"
+												size="sm"
+												classes="w-full"
+												onClick={() => setCfg({ truchetSeed: 0 })}
+											>
+												Back to one wiring
+											</Button>
+										</>
+									) : (
+										<>
+											<div className="grid grid-cols-3 gap-1">
+												{WIRINGS.map(({ value, label }) => (
+													<Button
+														key={value}
+														variant={cfg.freedrawArcWiring === value ? "primary" : "secondary"}
+														size="sm"
+														classes="flex-1 px-0"
+														onClick={() => setCfg({ freedrawArcWiring: value })}
+													>
+														{label}
+													</Button>
+												))}
+											</div>
+											<p className="text-[11px] text-fg-muted leading-relaxed">
+												{WIRINGS.find((r) => r.value === cfg.freedrawArcWiring)?.help}
+											</p>
+										</>
+									)}
+								</div>
+							</Reveal>
+						</>
+					) : null}
+					{/* Mirror view. A chiral tiling and its mirror image are ONE catalogue entry — the A068599
+					    convention the whole atlas counts in, and the reason the Archimedean tilings are eleven
+					    and not twelve (3.3.3.3.6 is chiral and counted once). Merging is right for counting and
+					    lossy for looking, so the second hand lives here as a view. Chirality is exact, read off
+					    the wallpaper group: the five groups with no orientation-reversing isometry (p1, p2, p3,
+					    p4, p6) are the chiral ones. HIDDEN when the tiling is known ACHIRAL (AL 2026-08-08):
+					    its mirror is congruent to itself, so a flip there is a control that visibly does
+					    nothing. Only the regular family carries a group, so elsewhere chirality is UNKNOWN and
+					    the toggle stays — unknown is not achiral, and suppressing it would hide a real second
+					    hand on the star, composite and period-p shelves. */}
+					{isFlat && isChiralTiling(selected ?? { wallpaperGroup: undefined }) !== false ? (
+						<Checkbox
+							id="mirrorFlip"
+							label={
+								isChiralTiling(selected ?? { wallpaperGroup: undefined }) === true
+									? "Mirror view (chiral)"
+									: "Mirror view"
+							}
+							shortcut="M"
+							checked={cfg.mirrorFlip}
+							onCheckedChange={(v) => setCfg({ mirrorFlip: v })}
 						/>
 					) : null}
 					{/* Radial wave on a tiling change (lib/utils/tilingTransition.ts). Ignored — the swap stays

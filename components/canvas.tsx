@@ -168,10 +168,10 @@ function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): 
 // the React mount gate and the per-frame skipFill decision can never drift.
 function isFlatShaderActive(cfg: {
 	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean; spherical: boolean; freedraw: boolean; hollow?: boolean;
-	colors: boolean; isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+	colors: boolean; truchetActive?: boolean; isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
 }): boolean {
 	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.hollow &&
-		!cfg.colors && !cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
+		!cfg.colors && !cfg.truchetActive && !cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
 }
 
 // Euclidean Islamic PLAIN and CHECKERBOARD fills render through the WebGL IslamicCanvas
@@ -704,7 +704,7 @@ export function Canvas({
 					},
 				});
 				// The hyperbolic / spherical / freedraw / colors (and inversive) views paint via their own overlay; skip the flat grid build.
-				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.colors && !cfg.hollow) ensureTiling();
+				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.colors && !cfg.hollow && !cfg.truchetActive) ensureTiling();
 			};
 
 			p5.draw = () => {
@@ -769,7 +769,11 @@ export function Canvas({
 				const spherical = cfg.spherical;
 				// Freedraw and colors are the same deal on a 2D canvas: they paint the pattern themselves and
 				// there is no polygon cell to build a flat grid from, so the p5 layer stays blank underneath.
-				const skipFlat = inversive || hyperbolic || spherical || cfg.freedraw || cfg.colors || cfg.hollow;
+				// The Truchet overlay is the same deal one step further out: it draws the tiling's own tiles
+				// as black figures, so the tiling drawn underneath is a second picture — and one that
+				// trails a frame behind on a drag, because the two layers ease on separate frame loops.
+				const skipFlat =
+					inversive || hyperbolic || spherical || cfg.freedraw || cfg.colors || cfg.hollow || cfg.truchetActive;
 				if (!skipFlat) ensureTiling();
 				// A WebGL overlay now owns the frame, so ensureTiling — the only place that clears canvasError —
 				// no longer runs. Drop any stale error here so a transient flat-canvas error (e.g. the cold-load

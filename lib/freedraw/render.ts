@@ -8,8 +8,10 @@
 // case then renders correctly with no special-casing, and the whole thing is line art, so 2D canvas is
 // fast enough and a tenth of the code. Promoting it to the GL path later is mechanical.
 
+import { DEFAULT_TILE_RULE, type TileLoop, type TileRule } from "./arcs";
 import { analyseFaces, classifyFaces, classifyPatchFaces, type FaceAnalysis } from "./faces";
 import { coset, gridOf, type FreedrawPattern } from "./pattern";
+import { gridCellArcs, patchTileArcs } from "./patternArcs";
 
 export interface FreedrawView {
 	/** World coordinates at the canvas centre. */
@@ -87,6 +89,15 @@ export interface FreedrawStyle {
 	 * reads the same store field. At lineWidth 1 a freedraw edge is 1 px, matching a normal tiling's edge.
 	 */
 	lineWidth: number;
+	/**
+	 * TILE MODE (lib/freedraw/arcs.ts): read the same edge bits as connected / not and fill a black
+	 * region on each TILE, entering and leaving through the middle third of every connected edge. It
+	 * REPLACES the picture: the cell fill and the drawn edges both go quiet while it is up, so the black
+	 * is the only thing carrying the pattern. The scaffold does not — that is the Grid toggle's job, and
+	 * it is the only way to see the board underneath.
+	 */
+	showArcs?: boolean;
+	arcRule?: TileRule;
 	dark: boolean;
 }
 
@@ -96,8 +107,42 @@ export const DEFAULT_STYLE: FreedrawStyle = {
 	showVertices: false,
 	showLattice: false,
 	lineWidth: 1,
+	showArcs: false,
+	arcRule: DEFAULT_TILE_RULE,
 	dark: false,
 };
+
+const arcRuleOf = (style: FreedrawStyle) => style.arcRule ?? DEFAULT_TILE_RULE;
+
+/**
+ * Append a tile's black region to the current path, through a world-to-screen map.
+ *
+ * Every loop carries its tile's own traversal orientation, so batching a whole screen of them into ONE
+ * path and filling once is safe: a nonzero fill unions same-signed loops, and canvas fills nonzero by
+ * default. Two loops of a crossing permutation therefore merge instead of punching a hole.
+ */
+function pathLoops(
+	ctx: CanvasRenderingContext2D,
+	loops: readonly TileLoop[],
+	sx: (x: number) => number,
+	sy: (y: number) => number,
+): void {
+	for (const loop of loops) {
+		ctx.moveTo(sx(loop.start[0]), sy(loop.start[1]));
+		for (const seg of loop.segs) {
+			if (seg.kind === "line") {
+				ctx.lineTo(sx(seg.to[0]), sy(seg.to[1]));
+				continue;
+			}
+			ctx.bezierCurveTo(
+				sx(seg.c1[0]), sy(seg.c1[1]),
+				sx(seg.c2[0]), sy(seg.c2[1]),
+				sx(seg.to[0]), sy(seg.to[1]),
+			);
+		}
+		ctx.closePath();
+	}
+}
 
 // Orbit-dot hover, ported from Tiling.drawVertexOrbits: the radius factor the hovered orbit grows toward,
 // and the per-frame ease toward it. Same constants as the Euclidean overlay, so the two feel identical.
@@ -239,6 +284,10 @@ export function drawFreedraw(
 	hover: { x: number; y: number } | null = null,
 	orbitScales: number[] = [],
 ): void {
+	// The fill and the arcs are two answers to "what is this pattern a picture of", and a coloured face
+	// under a curve reads as neither. Suppressed here, once, so every caller agrees without each having
+	// to remember — /play's Cell fill buttons and the browser's chips both go quiet while the arcs are up.
+	if (style.showArcs && style.fillMode !== "none") style = { ...style, fillMode: "none" };
 	if (pattern.patch) {
 		drawPatchPattern(ctx, width, height, pattern, view, style, hover, orbitScales);
 		return;
@@ -327,7 +376,11 @@ export function drawFreedraw(
 		ctx.stroke();
 	}
 
-	if (style.lineWidth > 0) {
+	// Arc mode draws NO edge strokes. A faint ghost of the connected edges under the curves is worse than
+	// nothing: it reads as the grid scaffold, which has its own toggle, so turning that toggle off left
+	// lines on screen it did not control (AL, 2026-08-14). The board is the Grid overlay's job; the arcs
+	// already say which edges are connected, since an arc end sits on every connected midpoint.
+	if (style.lineWidth > 0 && !style.showArcs) {
 		ctx.beginPath();
 		for (let y = span.y0; y <= span.y1 + 1; y++) {
 			for (let x = span.x0; x <= span.x1 + 1; x++) {
@@ -352,6 +405,33 @@ export function drawFreedraw(
 		ctx.lineWidth = style.lineWidth;
 		ctx.lineCap = "round";
 		ctx.stroke();
+	}
+
+	if (style.showArcs) {
+		const rule = arcRuleOf(style);
+		const cells = gridCellArcs(pattern, rule);
+		const wsx = (wx: number) => width / 2 + (wx - view.cx) * scale;
+		const wsy = (wy: number) => height / 2 - (wy - view.cy) * scale;
+		ctx.beginPath();
+		for (let y = span.y0; y <= span.y1; y++) {
+			for (let x = span.x0; x <= span.x1; x++) {
+				const c = coset(pattern, x, y);
+				// The cached figure is relative to its cell's corner; the corner's world position is the
+				// only thing that changes between copies.
+				const ox = x + bx * y;
+				const oy = by * y;
+				const sx = (wx: number) => wsx(wx + ox);
+				const sy = (wy: number) => wsy(wy + oy);
+				if (!tri) {
+					pathLoops(ctx, cells[c], sx, sy);
+					continue;
+				}
+				pathLoops(ctx, cells[2 * c], sx, sy);
+				pathLoops(ctx, cells[2 * c + 1], sx, sy);
+			}
+		}
+		ctx.fillStyle = style.dark ? "#f2f4f8" : "#101318";
+		ctx.fill();
 	}
 
 	if (style.showLattice) drawLattice(ctx, pattern, style, px, py, span);
@@ -516,11 +596,16 @@ function drawPatchPattern(
 	// Scaffold (all edges thin) and drawn strokes, both from the same edge list.
 	for (const pass of ["scaffold", "drawn"] as const) {
 		if (pass === "scaffold" && !style.showScaffold) continue;
-		if (pass === "drawn" && style.lineWidth <= 0) continue;
+		if (pass === "drawn" && (style.lineWidth <= 0 || style.showArcs)) continue;
 		ctx.beginPath();
 		for (let ei = 0; ei < patch.edges.length; ei++) {
 			const [vi, vj, ox, oy, drawn] = patch.edges[ei];
-			if ((pass === "drawn") !== (drawn === 1)) continue;
+			const isDrawn = drawn === 1;
+			if (pass === "drawn" && !isDrawn) continue;
+			// The scaffold normally skips the drawn edges because the heavier pass covers them. In arc mode
+			// there is no heavier pass, and on a Truchet board EVERY edge is drawn — so a scaffold of the
+			// undrawn ones is empty, and the Grid toggle did nothing at all.
+			if (pass === "scaffold" && isDrawn && !style.showArcs) continue;
 			const curve = patch.edgeCurves?.[ei];
 			for (let n = n0; n <= n1; n++) {
 				for (let m = m0; m <= m1; m++) {
@@ -541,6 +626,22 @@ function drawPatchPattern(
 			ctx.lineCap = "round";
 		}
 		ctx.stroke();
+	}
+
+	if (style.showArcs) {
+		const figures = patchTileArcs(patch, arcRuleOf(style));
+		ctx.beginPath();
+		for (let n = n0; n <= n1; n++) {
+			for (let m = m0; m <= m1; m++) {
+				const dx = m * t1x + n * t2x;
+				const dy = m * t1y + n * t2y;
+				const sx = (wx: number) => px(wx + dx);
+				const sy = (wy: number) => py(wy + dy);
+				for (const fig of figures) pathLoops(ctx, fig, sx, sy);
+			}
+		}
+		ctx.fillStyle = style.dark ? "#f2f4f8" : "#101318";
+		ctx.fill();
 	}
 
 	if (style.showLattice) {

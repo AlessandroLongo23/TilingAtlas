@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
+import { DEFAULT_TILE_RULE, WIRINGS, type Wiring } from "@/lib/freedraw/arcs";
 import { analyseFaces, rankLabel, summarise } from "@/lib/freedraw/faces";
 import {
 	DEFAULT_FILTER,
@@ -100,6 +101,20 @@ const REGULARITY_OPTIONS: { value: FreedrawFilter["regularity"]; label: string }
 const POLYGON_LABEL: Record<RegularKind, string> = { 3: "△ 3", 4: "▢ 4", 6: "⬡ 6", 12: "12-gon" };
 
 const FILL_OPTIONS = FILL_MODES.map(({ value, label }) => ({ value, label: label.toLowerCase() }));
+
+const WIRING_OPTIONS = WIRINGS.map(({ value, label, help }) => ({
+	value,
+	label: label.toLowerCase(),
+	tooltip: help,
+}));
+
+// Ribbons only. Four connected edges pair into two bands two ways, and no turn of the square carries one
+// onto the other — so the picture takes a handedness the edge pattern does not have. This chip is that
+// choice, made once for the whole plane.
+const TWIST_OPTIONS: { value: 0 | 1; label: string; tooltip: string }[] = [
+	{ value: 0, label: "left", tooltip: "Pair the connected edges starting from the first one round." },
+	{ value: 1, label: "right", tooltip: "Pair them starting one step further round — the mirror choice." },
+];
 
 // Thumbnails per page. Every mounted thumbnail is a live canvas with a ResizeObserver; the square
 // catalogue is 53060 entries (k≤5), so the grid HAS to window them — this is the knob.
@@ -193,6 +208,11 @@ export function PlanarFreedraw({
 	const [showScaffold, setShowScaffold] = useState(true);
 	const [showVertices, setShowVertices] = useState(false);
 	const [showLattice, setShowLattice] = useState(false);
+	// Arc mode: the same edge bits read as connected / not, drawn as a curve through each tile
+	// (lib/freedraw/arcs.ts). The fill goes off with it — a coloured face under a curve reads as neither.
+	const [showArcs, setShowArcs] = useState(false);
+	const [arcWiring, setArcWiring] = useState<Wiring>(DEFAULT_TILE_RULE.wiring);
+	const [arcTwist, setArcTwist] = useState<0 | 1>(DEFAULT_TILE_RULE.twist);
 	const gridRef = useRef<HTMLDivElement | null>(null);
 
 	// Fetch only the files the current grid+k needs, on demand. Switching grid or k triggers this; files
@@ -254,13 +274,30 @@ export function PlanarFreedraw({
 
 	// The detail pane is the interactive one, so it carries the lattice overlay and the orbit hover; the
 	// thumbnails stay plain line art (neither reads at 116px, and the hover loop would run per canvas).
+	const arcRule = useMemo(() => ({ wiring: arcWiring, twist: arcTwist }), [arcWiring, arcTwist]);
 	const style = useMemo(
-		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth: 1 }),
-		[fillMode, showScaffold, showVertices, showLattice],
+		() => ({
+			fillMode,
+			showScaffold,
+			showVertices,
+			showLattice,
+			lineWidth: 1,
+			showArcs,
+			arcRule,
+		}),
+		[fillMode, showScaffold, showVertices, showLattice, showArcs, arcRule],
 	);
 	const thumbStyle = useMemo(
-		() => ({ fillMode, showScaffold, showVertices: false, showLattice: false, lineWidth: 1 }),
-		[fillMode, showScaffold],
+		() => ({
+			fillMode,
+			showScaffold,
+			showVertices: false,
+			showLattice: false,
+			lineWidth: 1,
+			showArcs,
+			arcRule,
+		}),
+		[fillMode, showScaffold, showArcs, arcRule],
 	);
 
 	// Arrow keys walk the grid: ←/→ by one, ↑/↓ by a row. The index is into `shown` (the filtered list),
@@ -282,6 +319,7 @@ export function PlanarFreedraw({
 		g: () => setShowScaffold((v) => !v),
 		p: () => setShowLattice((v) => !v),
 		o: () => setShowVertices((v) => !v),
+		a: () => setShowArcs((v) => !v),
 	});
 
 	// The /play deep link for the selection. Every planar freedraw pattern is in the base reference atlas
@@ -296,6 +334,9 @@ export function PlanarFreedraw({
 				freedrawScaffold: showScaffold,
 				freedrawLattice: showLattice,
 				freedrawVertices: showVertices,
+				freedrawArcs: showArcs,
+				freedrawArcWiring: arcWiring,
+				freedrawArcTwist: arcTwist === 1,
 			},
 			null,
 			selected.pattern.id,
@@ -455,11 +496,27 @@ export function PlanarFreedraw({
 						<WallGroup title="Display">
 							<OptionWall columns={3} options={FILL_OPTIONS} selected={fillMode} onChange={setFillMode} />
 							<WallSubLabel>Overlays</WallSubLabel>
-							<div className="grid grid-cols-3 gap-px">
+							<div className="grid grid-cols-4 gap-px">
 								<ToggleCell label="Grid" shortcut="G" on={showScaffold} onClick={() => setShowScaffold(!showScaffold)} />
 								<ToggleCell label="Lattice" shortcut="P" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
 								<ToggleCell label="Orbits" shortcut="O" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
+								<ToggleCell label="Tiles" shortcut="A" on={showArcs} onClick={() => setShowArcs(!showArcs)} />
 							</div>
+							{/* A tile with c connected edges has c! drawings; these three name the useful corners
+							    of that space. Meaningless until the tiles are up, and `twist` is ribbons-only. */}
+							{showArcs && (
+								<>
+									<WallSubLabel>Wiring</WallSubLabel>
+									<OptionWall columns={3} options={WIRING_OPTIONS} selected={arcWiring} onChange={setArcWiring} />
+									<WallSubLabel>Pairing</WallSubLabel>
+									<OptionWall
+										columns={2}
+										options={TWIST_OPTIONS}
+										selected={arcTwist}
+										onChange={setArcTwist}
+									/>
+								</>
+							)}
 						</WallGroup>
 					</WallColumn>
 				</WallBar>

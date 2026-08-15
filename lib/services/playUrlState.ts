@@ -6,7 +6,7 @@ import { useConfiguration, type ConfigurationState } from "@/stores/configuratio
 // field to PLAY_PARAMS and both follow.
 //
 // Scope (spec: docs/superpowers/specs/2026-07-22-play-url-state-design.md) is exactly what the Options
-// tab can set — 39 fields. If a control exists the field travels, otherwise it does not. Deliberately
+// tab can set — 51 fields. If a control exists the field travels, otherwise it does not. Deliberately
 // OUT: the camera (zoom/pan/rotation live in `controls`, mutated in place per frame to stay off React,
 // so there is nothing to mirror); `hyperbolic`/`spherical`/the geometry toggle (all derived from the
 // selection, so `tiling` implies them); `immersive` (a viewing mode, not the artifact); the dev flags
@@ -40,6 +40,10 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	fdgrid: { field: "freedrawScaffold", kind: "bool" },
 	fdlat: { field: "freedrawLattice", kind: "bool" },
 	fdorb: { field: "freedrawVertices", kind: "bool" },
+	fdarc: { field: "freedrawArcs", kind: "bool" },
+	fdwire: { field: "freedrawArcWiring", kind: "enum", values: ["ribbons", "junction", "caps"] },
+	fdtw: { field: "freedrawArcTwist", kind: "bool" },
+	fdseed: { field: "truchetSeed", kind: "num", min: 0, max: 2147483647, int: true },
 	// colored-square view (co*) — the freedraw trio's shape, minus the fill mode
 	coedge: { field: "colorsEdges", kind: "bool" },
 	colat: { field: "colorsLattice", kind: "bool" },

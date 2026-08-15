@@ -9,6 +9,7 @@ import { edgesPeriodicCell } from "@/lib/render/periodic/edges";
 import { hollowPeriodicCell } from "@/lib/render/periodic/hollow";
 import { islamicPeriodicCell, type IslamicStyle } from "@/lib/render/periodic/islamic";
 import { analyseFaces } from "@/lib/freedraw/faces";
+import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { solveEdgeBoard } from "@/lib/pentagon/edge-board";
 import { pentEdgePattern } from "@/lib/pentagon/edgeShelfPattern";
 import { solveIhBoardFor } from "@/lib/isohedral/edge-board";
@@ -29,6 +30,13 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 export function useInversiveCell(
 	selected: CatalogueTiling | null,
 	renderCell: TranslationalCellData | null,
+	/**
+	 * A PLAIN tiling read as a Truchet board (lib/render/truchetTiling.ts), when that overlay is up. It
+	 * takes precedence over the tiling itself: the lens has to draw what the flat view draws, and the
+	 * flat view is showing the figures. Without this the conformal view fell back to the bare tiling
+	 * while the overlay drew the figures flat on top of it — two different pictures at once.
+	 */
+	truchet: FreedrawPattern | null = null,
 ): { cell: PeriodicCell | null; cellId: string | null } {
 	const dark = useDarkTheme();
 	// Style inputs the colour-bearing adapters bake into their primitives. Narrow subscriptions, so a
@@ -37,6 +45,9 @@ export function useInversiveCell(
 	const colorsPalette = useConfiguration((s) => s.colorsPalette);
 	const freedrawFill = useConfiguration((s) => s.freedrawFill);
 	const freedrawScaffold = useConfiguration((s) => s.freedrawScaffold);
+	const freedrawArcs = useConfiguration((s) => s.freedrawArcs);
+	const freedrawArcWiring = useConfiguration((s) => s.freedrawArcWiring);
+	const freedrawArcTwist = useConfiguration((s) => s.freedrawArcTwist);
 	// The Islamic construction is a TOGGLE over a tiling, not a shelf of its own. Each slider gets its own
 	// narrow selector: a selector returning a fresh object would hand zustand a new reference every render
 	// and spin the component forever.
@@ -123,9 +134,18 @@ export function useInversiveCell(
 		if (selected.colors) {
 			return colorsPeriodicCell(selected.colors, { dark, palette: colorsPalette, edges: colorsEdges });
 		}
+		if (truchet) {
+			return edgesPeriodicCell(truchet, {
+				dark, fillMode: "none", showScaffold: freedrawScaffold, analysis: analyseFaces(truchet),
+				showArcs: true,
+				arcRule: { wiring: freedrawArcWiring, twist: freedrawArcTwist ? 1 : 0 },
+			});
+		}
 		if (freedrawPattern && faceAnalysis) {
 			return edgesPeriodicCell(freedrawPattern, {
 				dark, fillMode: freedrawFill, showScaffold: freedrawScaffold, analysis: faceAnalysis,
+				showArcs: freedrawArcs,
+				arcRule: { wiring: freedrawArcWiring, twist: freedrawArcTwist ? 1 : 0 },
 			});
 		}
 		if (selected.hollow) {
@@ -142,13 +162,15 @@ export function useInversiveCell(
 		return tilingPeriodicCell(renderCell);
 		// islamicKey stands in for the `islamic` object, which is rebuilt on every store read.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selected, renderCell, dark, colorsPalette, colorsEdges, freedrawFill, freedrawScaffold, freedrawPattern, faceAnalysis, hollowPatch, isIslamic, islamicKey]);
+	}, [selected, renderCell, dark, colorsPalette, colorsEdges, freedrawFill, freedrawScaffold, freedrawArcs, freedrawArcWiring, freedrawArcTwist, truchet, freedrawPattern, faceAnalysis, hollowPatch, isIslamic, islamicKey]);
 
 	// The id changes whenever the geometry or its baked colours do, so the canvas re-uploads exactly then.
 	// The pentagon parameters belong in it for the same reason the Islamic sliders do: they change the
 	// GEOMETRY of the cell, so an id that ignored them would leave the lens showing the previous pentagon.
 	const pentKey = selected?.pentEdges ? Object.values(pentParams).join(",") : "-";
-	const styleKey = `${dark ? "d" : "l"}:${colorsEdges ? 1 : 0}:${colorsPalette.join(",")}:${freedrawFill}:${freedrawScaffold ? 1 : 0}:${isIslamic ? islamicKey : "-"}:${pentKey}`;
+	// The Truchet id carries its seed, so a reshuffle re-uploads the cell instead of showing the old draw.
+	const truchetKey = truchet?.id ?? "-";
+	const styleKey = `${dark ? "d" : "l"}:${colorsEdges ? 1 : 0}:${colorsPalette.join(",")}:${freedrawFill}:${freedrawScaffold ? 1 : 0}:${freedrawArcs ? freedrawArcWiring + (freedrawArcTwist ? "R" : "L") : "-"}:${isIslamic ? islamicKey : "-"}:${pentKey}:${truchetKey}`;
 	const cellId = useMemo(
 		() => (cell && selected ? `${selected.canonicalKey}::${styleKey}` : null),
 		[cell, selected, styleKey],
