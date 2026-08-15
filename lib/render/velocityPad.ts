@@ -32,20 +32,28 @@ export function padPosition(dx: number, dy: number, radius: number): PadPos {
  * past the dead zone — fine control near the centre, PAD_MAX_RATE at the rim. Direction: pad right =
  * +dolly, pad up = +spin (screen y down → strip y up), i.e. the velocity version of the mouse drag.
  */
-export function padVelocity(pos: PadPos, radius: number): { x: number; y: number } {
+export function padVelocity(
+	pos: PadPos,
+	radius: number,
+	maxRate: number = PAD_MAX_RATE,
+): { x: number; y: number } {
 	const len = Math.hypot(pos.x, pos.y);
 	if (len === 0) return { x: 0, y: 0 };
 	const rEff = Math.min((len / radius - PAD_DEAD_ZONE) / (1 - PAD_DEAD_ZONE), 1);
 	if (rEff <= 0) return { x: 0, y: 0 };
-	const mag = PAD_MAX_RATE * rEff * rEff;
+	const mag = maxRate * rEff * rEff;
 	return { x: (pos.x / len) * mag, y: (-pos.y / len) * mag };
 }
 
 /** Inverse of padVelocity — restores the knob position from a stored velocity on remount. */
-export function padPositionFromVelocity(vel: { x: number; y: number }, radius: number): PadPos {
+export function padPositionFromVelocity(
+	vel: { x: number; y: number },
+	radius: number,
+	maxRate: number = PAD_MAX_RATE,
+): PadPos {
 	const mag = Math.hypot(vel.x, vel.y);
 	if (mag === 0) return { x: 0, y: 0 };
-	const rEff = Math.min(Math.sqrt(mag / PAD_MAX_RATE), 1);
+	const rEff = Math.min(Math.sqrt(mag / maxRate), 1);
 	const len = (PAD_DEAD_ZONE + rEff * (1 - PAD_DEAD_ZONE)) * radius;
 	return { x: (vel.x / mag) * len, y: (-vel.y / mag) * len };
 }

@@ -79,3 +79,44 @@ describe("padPositionFromVelocity", () => {
 		}
 	});
 });
+
+// components/ui/velocity-pad.tsx holds NO local knob state: it derives the knob from the `value` prop
+// on every render, so a drag only survives because the full pointer → velocity → knob path is an
+// exact identity. If it ever stopped being one, the knob would drift out from under the pointer
+// mid-drag. These tests are what that component stands on.
+describe("the controlled-pad round trip", () => {
+	const RATES = [PAD_MAX_RATE, 0.25, 3];
+
+	it.each(RATES)("maxRate %d: a raw pointer offset lands the knob exactly back under it", (rate) => {
+		for (const [dx, dy] of [
+			[30, -20],
+			[-14, 41],
+			[5, 0],
+			[200, 150], // outside the rim: clamped, and the clamped point must round-trip
+			[-58, -12],
+		]) {
+			const p = padPosition(dx, dy, R);
+			const back = padPositionFromVelocity(padVelocity(p, R, rate), R, rate);
+			expect(back.x, `dx ${dx} rate ${rate}`).toBeCloseTo(p.x, 9);
+			expect(back.y, `dy ${dy} rate ${rate}`).toBeCloseTo(p.y, 9);
+		}
+	});
+
+	it.each(RATES)("maxRate %d: the dead zone round-trips to a stopped knob", (rate) => {
+		const p = padPosition(PAD_DEAD_ZONE * R * 0.5, 0, R);
+		expect(p).toEqual({ x: 0, y: 0 });
+		expect(padPositionFromVelocity(padVelocity(p, R, rate), R, rate)).toEqual({ x: 0, y: 0 });
+	});
+
+	it("scales the velocity with maxRate but leaves the knob position alone", () => {
+		const p = { x: 30, y: -20 };
+		const slow = padVelocity(p, R, 0.25);
+		const fast = padVelocity(p, R, PAD_MAX_RATE);
+		expect(Math.hypot(slow.x, slow.y)).toBeCloseTo(Math.hypot(fast.x, fast.y) * 0.25, 9);
+		// Same knob, different rate: the pad looks identical, only the speed differs.
+		const backSlow = padPositionFromVelocity(slow, R, 0.25);
+		const backFast = padPositionFromVelocity(fast, R, PAD_MAX_RATE);
+		expect(backSlow.x).toBeCloseTo(backFast.x, 9);
+		expect(backSlow.y).toBeCloseTo(backFast.y, 9);
+	});
+});
