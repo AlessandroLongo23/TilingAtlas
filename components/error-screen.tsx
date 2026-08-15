@@ -1,92 +1,152 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ParquetMini } from "@/components/landing/parquet-mini";
-import { tilingToSvg, type TilingSvg } from "@/lib/render/tilingSvg";
-import { UNIFORM_CELLS } from "@/lib/render/uniformCells";
+import {
+	HERO_INDEX_URL,
+	heroCellUrl,
+	isExcludedHeroId,
+	liveSpecimen,
+	pickPresentation,
+	type ErrorSpecimen,
+	type HeroCell,
+} from "@/lib/render/errorSpecimen";
+import { ERROR_SPECIMENS } from "@/lib/render/errorSpecimens";
 
-// The shell behind app/error.tsx and app/not-found.tsx: a 3 × 3 wall of specimens with the message
-// in the middle cell, hairlines between cells like the landing's collections grid. The eight cells
-// around the message hold the eleven uniform tilings — the top-left cell splits into a 2 × 2 of
-// four, the bottom-right into a parquet strip over one more — so the page a reader lands on after a
-// failure still shows the catalogue.
+// The shell behind app/error.tsx and app/not-found.tsx: a 3 × 3 wall of specimens with the message in
+// the middle cell, hairlines between cells like the landing's collections grid. The eight cells around
+// it are all the same size and each holds one whole picture, so the wall reads as eight specimens and
+// not as a layout — earlier it split the top-left cell into four and the bottom-right into two, which
+// made those six read as offcuts of their neighbours.
 //
-// Everything here is self-contained: an error screen renders after something has already broken, so
-// it reaches no server data. The cells come from lib/render/uniformCells.ts (7 kB of vertices lifted
-// out of the atlas) and are drawn as inline SVG, no canvas and no effect to wait on.
+// The eight are new on every load, and drawn from the whole catalogue: after mount the wall fetches
+// /hero-index.json — every drawable Euclidean tiling in the atlas, 4593 of them — picks at random from
+// it, lazy-fetches those cells and renders them in the browser, some of them through the spiral or
+// inversion lens. Same two files the landing hero rotator uses. lib/render/errorSpecimen.ts holds the
+// rendering and explains the split; this file only decides what goes where.
 //
-// Client component: lucide icon references can't cross the RSC boundary into <Button>, so both
-// callers stay client too (see components/landing/landing-buttons.tsx).
+// Until that lands (and if it never does — an error screen renders after something has already broken,
+// so it cannot assume the network is there) the wall shows the baked seed from
+// lib/render/errorSpecimens.ts: inline path data, no fetch, nothing to wait on. The seed also keeps two
+// slots for good, because the colourings, edge patterns and hollow tilings are not in the hero index
+// and a wall filled purely from it would show nothing but tilings.
+//
+// Client component: lucide icon references can't cross the RSC boundary into <Button>, so both callers
+// stay client too (see components/landing/landing-buttons.tsx).
 
-const cellOf = (id: string) => UNIFORM_CELLS.find((c) => c.id === id)!.cell;
+const SLOTS = 8;
+/** Slots the live pick takes; the rest stay with the seed's decoration classes. */
+const LIVE_SLOTS = 6;
 
-// Vertex configurations written out, not taken from the atlas's `family` field — that field carries
-// the distinct polygons ("4.8"), not the configuration (4.8.8), so it would mislabel half of these.
-interface Specimen {
-	id: string;
-	label: string;
-	svg: TilingSvg | null;
+const DECORATIONS = ERROR_SPECIMENS.filter((s) => s.klass && s.klass !== "tiling");
+
+/**
+ * The eight the server renders, and what the client falls back to before it has drawn its own.
+ *
+ * Deliberately not the first eight: the seed is grouped by class, so those would all be uniform
+ * tilings. Spread evenly across it and the wall shows the range even on its very first frame.
+ */
+const OPENING: ErrorSpecimen[] = Array.from({ length: SLOTS }, (_, i) =>
+	ERROR_SPECIMENS[Math.round((i * (ERROR_SPECIMENS.length - 1)) / (SLOTS - 1))],
+);
+
+/** `n` distinct members of `pool`, uniformly at random — a partial Fisher–Yates over a copy of it. */
+function sample<T>(pool: readonly T[], n: number): T[] {
+	const copy = pool.slice();
+	const take = Math.min(n, copy.length);
+	for (let i = 0; i < take; i++) {
+		const j = i + Math.floor(Math.random() * (copy.length - i));
+		[copy[i], copy[j]] = [copy[j], copy[i]];
+	}
+	return copy.slice(0, take);
+}
+
+/** Eight from the seed alone — the opening shuffle, and the whole wall when the fetch fails. */
+const drawSeed = () => sample(ERROR_SPECIMENS, SLOTS);
+
+/**
+ * Eight for a normal load: live tilings from the atlas, plus decorations the index does not carry.
+ *
+ * Every step is allowed to come up short — a 404 on the index, a cell that fails to parse, a tiling
+ * whose lattice is degenerate — and the seed backfills whatever is missing, so the wall is always
+ * eight pictures however little of this worked.
+ */
+async function drawLive(signal: AbortSignal): Promise<ErrorSpecimen[]> {
+	const res = await fetch(HERO_INDEX_URL, { signal });
+	if (!res.ok) throw new Error(`hero index: HTTP ${res.status}`);
+	const ids = (await res.json()) as string[];
+	const wanted = sample(ids.filter((id) => !isExcludedHeroId(id)), LIVE_SLOTS);
+
+	const live = await Promise.all(
+		wanted.map(async (id) => {
+			try {
+				const cell = await fetch(heroCellUrl(id), { signal });
+				if (!cell.ok) return null;
+				return liveSpecimen((await cell.json()) as HeroCell, pickPresentation(Math.random), Math.random);
+			} catch {
+				return null;
+			}
+		}),
+	);
+
+	const drawn = live.filter((s): s is ErrorSpecimen => s !== null);
+	// Whatever the live pick did not fill goes to the seed's decorations — which is the two reserved
+	// slots on a good load, and more when a cell failed to arrive.
+	const fill = sample(DECORATIONS.length ? DECORATIONS : ERROR_SPECIMENS, SLOTS - drawn.length);
+	// Shuffled together, so the live picks are not always the same six cells of the grid.
+	return sample([...drawn, ...fill], SLOTS);
 }
 
 /**
- * @param edges  tile edge-lengths across the cell — the zoom.
- * @param aspect the cell's rough width : height at a desktop viewport, so the patch isn't generated
- *               for rows the crop will throw away.
+ * The eight this load gets: live from the atlas, or the seed if any part of that failed.
+ *
+ * Never rejects. The index can 404 (a dev server before a build), the network can be gone — this is an
+ * error screen, so assuming otherwise is exactly the wrong bet — and either way there is a wall.
  */
-const specimen = (id: string, label: string, edges: number, aspect: number): Specimen => ({
-	id,
-	label,
-	svg: tilingToSvg(cellOf(id), edges, aspect),
-});
+async function drawWall(signal: AbortSignal): Promise<ErrorSpecimen[]> {
+	try {
+		return await drawLive(signal);
+	} catch {
+		return drawSeed();
+	}
+}
 
-// Drawn once at module load: fixed geometry, no per-render work.
-// `edges` is tuned per tiling, not shared: the lattice spacings run from 1 (the triangular tiling)
-// to 4.73 (4.6.12), so a single zoom would show one dodecagon beside forty triangles. Each value
-// puts roughly five repeats across its cell.
-const QUAD = [
-	specimen("t1005", "4⁴", 7, 1.3),
-	specimen("t1001", "6³", 8, 1.3),
-	specimen("t1011", "3⁶", 7, 1.3),
-	specimen("t1007", "(3.6)²", 9, 1.3),
-];
-const TOP_CENTRE = specimen("t1003", "4.6.12", 22, 1.3);
-const TOP_RIGHT = specimen("t1002", "4.8²", 13, 1.3);
-const MID_LEFT = specimen("t1006", "3.4.6.4", 20, 1.6);
-const MID_RIGHT = specimen("t1004", "3.12²", 24, 1.6);
-const BOTTOM_LEFT = specimen("t1010", "3⁴.6", 20, 2.2);
-const BOTTOM_CENTRE = specimen("t1008", "3³.4²", 11, 2.2);
-const BOTTOM_RIGHT = specimen("t1009", "3².4.3.4", 12, 3.5);
-
-/** One specimen, full-bleed in its cell and clickable through to Play. */
-function TilingTile({ spec }: { spec: Specimen }) {
-	if (!spec.svg) return null;
+/** One specimen, full-bleed in its cell and clickable through to the view that draws it. */
+function TilingTile({ spec }: { spec: ErrorSpecimen }) {
 	return (
 		<Link
-			href={`/play?source=reference&tiling=${spec.id}`}
-			className="group relative block w-full h-full overflow-hidden bg-surface-raised"
-			aria-label={`Open the ${spec.label} tiling in Play`}
+			href={spec.href}
+			className="group relative block w-full h-full overflow-hidden"
+			style={{ background: spec.background }}
+			aria-label={`Open ${spec.label} in Play`}
 		>
 			<svg
-				viewBox={spec.svg.viewBox}
+				viewBox={spec.viewBox}
 				preserveAspectRatio="xMidYMid slice"
 				aria-hidden="true"
+				// The lens specimens carry world-space geometry with hairline strokes, so their joins have to
+				// round the way the shader's distance field does — a mitre on a tile the map has bent to a
+				// sliver spikes off the screen.
+				strokeLinejoin="round"
+				strokeLinecap="round"
 				className="absolute inset-0 w-full h-full saturate-[0.88] opacity-95 transition-[filter,opacity] duration-300 group-hover:saturate-100 group-hover:opacity-100"
 			>
-				{spec.svg.paths.map((path, i) => (
+				{spec.paths.map((path, i) => (
 					<path
 						key={i}
 						d={path.d}
-						fill={path.fill}
-						stroke="rgba(0,0,0,0.45)"
-						strokeWidth={1}
-						vectorEffect="non-scaling-stroke"
+						fill={path.fill ?? "none"}
+						fillOpacity={path.fillOpacity}
+						fillRule={path.fillRule}
+						stroke={path.stroke}
+						strokeOpacity={path.strokeOpacity}
+						strokeWidth={path.strokeWidth}
 					/>
 				))}
 			</svg>
 			{/* The specimen names itself on hover, in the caption style the hero uses. */}
 			<span className="absolute bottom-1.5 left-1.5 text-[10px] font-mono bg-surface/80 backdrop-blur-sm border border-line rounded px-1.5 py-0.5 text-fg-secondary opacity-0 group-hover:opacity-100 transition-opacity">
-				{spec.id} · {spec.label}
+				{spec.label}
 			</span>
 		</Link>
 	);
@@ -103,39 +163,53 @@ interface ErrorScreenProps {
 	actions: ReactNode;
 }
 
+// Cells are placed by explicit, literal grid classes — Tailwind scans source text, so a class built by
+// interpolation is never generated and the cell silently auto-flows into the wrong row.
+const TOP_CELLS = ["col-start-1 row-start-1", "col-start-2 row-start-1", "col-start-3 row-start-1"];
+const BOTTOM_CELLS = ["col-start-1 row-start-3", "col-start-2 row-start-3", "col-start-3 row-start-3"];
+
 export function ErrorScreen({ eyebrow, title, body, detail, actions }: ErrorScreenProps) {
-	// Three equal columns and three equal rows from sm up, so the wall is a regular 3 × 3. Below
-	// that the message row sizes to its content instead: a third of a phone screen can't hold a
-	// title, a body, a digest and three buttons.
+	// Picked after mount, never during render: a random draw in the render body is a different draw on
+	// the server than on the client, which is a hydration mismatch. The opening eight paint first, the
+	// seed shuffle replaces them immediately, and the live wall lands when its fetches do.
+	const [picked, setPicked] = useState<ErrorSpecimen[]>(OPENING);
+
+	useEffect(() => {
+		const ctrl = new AbortController();
+		// One state write, and it happens in a promise callback — a synchronous setState in an effect
+		// body is a cascading render, and the lint rule that says so is right.
+		drawWall(ctrl.signal).then((wall) => {
+			if (!ctrl.signal.aborted) setPicked(wall);
+		});
+		return () => ctrl.abort();
+	}, []);
+
+	// Reading order around the message: three across the top, one either side, three across the bottom.
+	const top = picked.slice(0, 3);
+	const bottom = picked.slice(5, 8);
+
+	// Three equal columns and three equal rows from sm up, so the wall is a regular 3 × 3. Below that the
+	// message row sizes to its content instead: a third of a phone screen can't hold a title, a body, a
+	// digest and three buttons.
 	return (
-		// h-screen with overflow-hidden and NO flex-1: as a flex item, `min-height: auto` floors the
-		// grid at its min-content height, so a message row taller than its share pushed the wall past
-		// the viewport and the page scrolled. Out of the flex flow it is exactly one screen, and the
-		// message cell scrolls inside itself instead.
+		// h-screen with overflow-hidden and NO flex-1: as a flex item, `min-height: auto` floors the grid
+		// at its min-content height, so a message row taller than its share pushed the wall past the
+		// viewport and the page scrolled. Out of the flex flow it is exactly one screen, and the message
+		// cell scrolls inside itself instead.
 		<main
 			className="h-screen overflow-hidden grid grid-cols-3 gap-px bg-line-subtle text-fg
 				grid-rows-[minmax(4rem,1fr)_auto_minmax(4rem,1fr)] sm:grid-rows-3"
 		>
-			{/* Row 1 — the top-left cell subdivides into four. A phone column is ~130 px wide, where a
-			    quarter of it is a stripe, not a specimen, so below sm only the first one shows. */}
-			<div className="col-start-1 row-start-1 grid grid-cols-1 grid-rows-1 sm:grid-cols-2 sm:grid-rows-2 gap-px bg-line-subtle">
-				{QUAD.map((spec, i) => (
-					<div key={spec.id} className={i === 0 ? "" : "hidden sm:block"}>
-						<TilingTile spec={spec} />
-					</div>
-				))}
-			</div>
-			<div className="col-start-2 row-start-1">
-				<TilingTile spec={TOP_CENTRE} />
-			</div>
-			<div className="col-start-3 row-start-1">
-				<TilingTile spec={TOP_RIGHT} />
-			</div>
+			{top.map((spec, i) => (
+				<div key={`${spec.id}-${i}`} className={TOP_CELLS[i]}>
+					<TilingTile spec={spec} />
+				</div>
+			))}
 
-			{/* Row 2 — the message. Below sm it takes the whole row and the two flanking specimens
-			    drop out; explicit placement keeps it in the middle cell either way. */}
+			{/* Row 2 — the message. Below sm it takes the whole row and the two flanking specimens drop
+			    out; explicit placement keeps it in the middle cell either way. */}
 			<div className="hidden sm:block col-start-1 row-start-2">
-				<TilingTile spec={MID_LEFT} />
+				<TilingTile spec={picked[3]} />
 			</div>
 			{/* overflow-y-auto: on sm+ this cell is a fixed third of the viewport, and error.message is
 			    whatever was thrown — a long one scrolls instead of spilling over its neighbours. */}
@@ -153,25 +227,14 @@ export function ErrorScreen({ eyebrow, title, body, detail, actions }: ErrorScre
 				<div className="mt-6 flex flex-wrap gap-2">{actions}</div>
 			</div>
 			<div className="hidden sm:block col-start-3 row-start-2">
-				<TilingTile spec={MID_RIGHT} />
+				<TilingTile spec={picked[4]} />
 			</div>
 
-			{/* Row 3 — the bottom-right cell subdivides into a parquet strip over one specimen. */}
-			<div className="col-start-1 row-start-3">
-				<TilingTile spec={BOTTOM_LEFT} />
-			</div>
-			<div className="col-start-2 row-start-3">
-				<TilingTile spec={BOTTOM_CENTRE} />
-			</div>
-			{/* Two equal halves: the strip's box is ~3.1 : 1 and half a cell is ~3.2 : 1, so it very
-			    nearly fills its band. Dropped below sm, where a phone column is too narrow for a strip
-			    to read as a deformation. */}
-			<div className="col-start-3 row-start-3 grid grid-rows-1 sm:grid-rows-2 gap-px bg-line-subtle">
-				<div className="relative overflow-hidden bg-surface-raised hidden sm:block">
-					<ParquetMini />
+			{bottom.map((spec, i) => (
+				<div key={`${spec.id}-${i}`} className={BOTTOM_CELLS[i]}>
+					<TilingTile spec={spec} />
 				</div>
-				<TilingTile spec={BOTTOM_RIGHT} />
-			</div>
+			))}
 		</main>
 	);
 }
