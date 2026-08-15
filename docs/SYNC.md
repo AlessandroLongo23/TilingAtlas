@@ -1669,7 +1669,7 @@ already — `FlatCellRenderer` just never linked the program. Plus `single` (one
 
 ### 2026-07-28 — CC — the cmm failure slide, and a seed card that frames its domain
 `/defense` "Architecture one: failure" now pairs t4003 with its seed. Verified, not asserted:
-t4003 is `cmm`, and cmm is the COMMONEST group at k=4 (50 of 151, then p6m 34, pmm 29) — so the group
+t4003 is `cmm`, and cmm is the most common group at k=4 (50 of 151, then p6m 34, pmm 29) — so the group
 that breaks the method is the typical case, not a corner. `<seed-card domain="yes">` draws the domain
 over the patch, and a single fitted patch now sizes and centres on patch ∪ domain, or the one thing
 the picture is for (a domain vertex outside the patch) lands off-card. — CC
@@ -2193,3 +2193,382 @@ palette dependency, so one binary serves every palette.
 Also measured: completing the isotoxal palette is NOT reachable by filtering — the filter's kill rate
 is palette-dependent (99.5% ring42, 96% star24full, **56% isotoxal**, 0% composite). Detail:
 `experiments/results/isotoxal-completion-feasibility-2026-08-07.md`.
+
+## 2026-08-08 (10) — the 4-bucket union: the composite/scaled family is unstuck (CC)
+
+`BUCKET_OK` gated the whole filter stack AND the candidate index on "every tile has period ≤ 2"; one
+period-3 tile turned all four off and the search fell back to scanning every vertex type per node.
+Replaced the single-bucket key with the union `A ∈ {NEXT,PREV}[b] × B ∈ {NEXT,PREV}[a]` (4 buckets),
+merged in full-scan order, and rebuilt the three filters' successor digraph from the same union — a
+relaxation, so it can only kill fewer types, never wrongly. Frontier moves k≤2-3 → **k≤4**:
+composite-convex ≤4 = **12,742**, composite-decomp ≤4 = **9,661**, regular-scaled-123 ≤4 = **22,125**,
+tetromino ≤3 = **373**. equi3-cx-z24 (period 3) k=2: **6,820s → 3s**, same catalog (377 blocks,
+`0fbc3356d3fecf5c`, verified against a full sharded old run). Gates: `check-regular` byte-identical;
+star24full k≤4 identical node-for-node; composite-convex k≤2 back to the **288** golden. Also fixed a
+latent filter bug (unguarded cross-orbit successor steps could delete reachable types). Detail:
+`experiments/results/4bucket-union-2026-08-08.md`.
+
+## 2026-08-08 (11) — mirror twins, chirality view, and the period-p families (CC)
+
+Chiral tiles had no mirror twin in 5 of 101 palettes (incl. the SHIPPED composite-convex) — the engine
+cannot place a tile reflected, so those tilings were unreachable. `gen_alphabet.mirror_expand` adds them;
+`audit_chirality.py` gates it. composite-convex k≤2: **288 → 332** (the old golden was incomplete).
+The dedup then had to compare tile SPECIES, not symbol, or the twin pair shipped twice (period-k2-028/029).
+Chirality is now a VIEW, not a second entry: `chirality.ts` (p1/p2/p3/p4/p6, pg/pgg correctly achiral) +
+a Mirror-view toggle, hidden for achiral tilings; tested on the snub 3.3.3.3.6 (t1010) vs hexagonal (t1001).
+Period-3 shelf: 307 snapshots → **52 continuous families**. The multivariate flex engine already existed,
+forked byte-identically in two exporters — extracted to `coupled_flex.py`, proven byte-identical both
+ways. Only the corner-class flex model is new (p−1 free angles on ONE tile). Detail:
+`experiments/results/4bucket-union-2026-08-08.md` and DEVELOPMENT_NOTES 2026-08-08 (later).
+
+## 2026-08-09 (12) — period shelf: the dropped blocks, and the concave half of every slider (CC)
+
+`read_blocks` keyed blocks on the vertype, which is NOT unique — 276 of 614 period blocks were discarded
+before analysis; `build-period-atlas.ts` joined absorption on the same string and deleted twins. Family
+identity now uses `canonical_map` (extracted from the isotoxal exporter, verified byte-identical on 2,800
+cases) and snapshots join by verified id. Merge keys on (congruence, P), survivor by lowest k: **21 → 27
+families**, k=1 restored. Sliders stopped at 180° (species change), not at degeneracy: all 33 P=1 families
+truncated, **3,900° gross / 2,100° net** of concave arc, none of it reachable from the palette. Generalized
+`scan-family-ranges.py` to P ≥ 2 and fixed its health test — it walked through a total collapse into the
+mirror image (shipped mixed shelf re-measured: unchanged). Detail: DEVELOPMENT_NOTES 2026-08-09.
+
+## 2026-08-09 (13) — the period unlock: quotient the alphabet (CC)
+
+The star ladder does not port: its point-adjacency lemma generalizes to any period (it IS the engine's
+gluing test) but forbids **0 of 8,464** pairs on regular+p3, because it is a reflex-angle argument and
+convex period tiles have none. Same reason the face filter kills 0 of 801,395 types there vs 96% on
+star24full — those types are all REAL. They are, however, 99.3% REDUNDANT: 801,395 collapse to 22,677 when
+a period corner is read as (shape, position) instead of (angle word, position). `gen_alphabet
+--quotient-period` does it with NO solver change, because `eu_solver` reads CLASS_UNITS in exactly one
+place. **k=2: 47s to 1s, nodes 190.8M to 7.2M; k=3: >3h unfinished to 509s.** The search becomes a
+relaxation; `quotient_feasible.py` decides candidates by exact Fourier-Motzkin on the tile/vertex system.
+Gate: 0 of 614 concrete blocks lost, exactly the 85 grid-realizable types recovered; check-regular
+byte-identical. Detail: DEVELOPMENT_NOTES 2026-08-09 (later).
+
+## 2026-08-09 (14) — the k=3 period shelf, from the quotient search (CC)
+
+`export_quotient_families.py` joins the quotient search to the existing development in one line — patch
+`tab.CLASS_UNITS` with the solved angles and every downstream stage works unchanged — with `integer_seed`
+finding a grid point of each family's polytope (0 failures at k≤2 and k=3). `emit_records` was EXTRACTED
+from the concrete exporter, which re-runs byte-identical. Shipped: **173 k=3 entries** in
+`reference-atlas-period-k3.json` — 103 families (79/20/4 at P=1/2/3) plus **70 rigid tilings** from the
+pinned solutions (AL: hold nothing out), 46 of the 230 pinned dropped as degenerate (they solve to a
+REGULAR hexagon under a period-3 label, already in the regular atlas). The shelf reads 200. Two dedup bugs of mine found by
+disbelieving clean numbers: `isometry_between` was single-parameter and its TypeError was being swallowed
+(0 of 100 merged); and comparing only defaults missed families sitting at different points of one curve.
+The lazy shard loader was deduplicated into `loadShelfShard`. Gates: check-regular byte-identical, tsc
+clean. Detail: DEVELOPMENT_NOTES 2026-08-09 (later).
+
+## 2026-08-09 (15) — the pinned tilings, and what "pinned" actually means (CC)
+
+Shipped the quotient search's 0-dimensional solutions too (AL: hold nothing out): 230 pinned at k=3, 46
+dropped as degenerate (they solve to a REGULAR hexagon under a period-3 label), 184 → 70 by congruence,
+then **10 more dropped as members of an existing family** — a pinned type can BE one α of a continuous
+family, and listing it separately double-counts (rigid-004 = k2-029 at α=150°). ⚑ AL on rigid-039: "the
+regular hexagon can be squeezed and the irregular morph to accommodate for it" — correct, and the label
+was wrong: `6` is the REGULAR hexagon, one corner class, angles locked, so P=0 is a statement about the
+PALETTE, not the tiling. Same species cut the α-sliders hit at 180°, one level up. Renamed "pinned in this
+palette". ⚑ `trueVertexOrbitCount` is unreliable on these cells (19 orbits for a 3-tile cell that the
+covering test passes), so the k labels on this tier are not yet trustworthy. Detail: DEVELOPMENT_NOTES.
+
+## 2026-08-09 (16) — k=3 tier WITHHELD: the seeds are degenerate (CC)
+
+AL: "This is really k=2, not k=3. There are so many errors in this shelf." Measured before answering:
+**65 of 103 families and 29 of 70 pinned entries** carry a k that disagrees with the vertex-figure count
+at the angles actually shipped. One root cause, not many — `integer_seed` returns the FIRST integer point
+of the polytope, which is systematically a SYMMETRIC one where two abstract corner classes take equal
+angles, so two abstract vertex types collapse to one figure and the tiling on screen has fewer orbits than
+its label. The family's k is right generically; the SEED is wrong. Shard pulled from public/; the shelf is
+back to the 27 verified k≤2 families. Completeness at k=3 is also unverified — the concrete cross-check
+was killed unfinished. Detail: DEVELOPMENT_NOTES 2026-08-09.
+
+## 2026-08-09 (17) — the k labels get a counter that survives Galebach (CC)
+
+Next-steps 1 and 2 built. `tools/ctrnact-oracle/vertex_orbits.py` counts vertex orbits on DEVELOPED cells
+and reproduces Galebach's published k on all **1,248** tilings at k=1..6 (`--gate 6`); `generic_seed`
+replaces `integer_seed`'s first-found point. On the withheld k=3 export: seeding fixes 12 of 103 families
+rendering a non-generic tiling at their default (now 0), the counter fixes 7 k=1 families and 25 of 62
+pinned that are k=2. ⚑ The shipped k≤2 shelf has 4 wrong labels of its own; ⚑
+(16)'s "65 of 103 / 29 of 70" is withdrawn. Detail: DEVELOPMENT_NOTES 2026-08-09 (3), period-quotient §9.
+
+## 2026-08-09 (18) — 4 labels shipped; a canonical tiling key, debugged twice (CC)
+
+Shelf rebuilt with `--true-k`: exactly 4 `k` values changed (038/039/042/043 → k=1), zero other fields.
+`tools/ctrnact-oracle/tiling_key.py` decides family identity exactly — canonical dart map for the ambient
+angle space, affine subspace inside it. ⚑ The sampled join it replaces has NO recall (0 of 27 shelf
+families found themselves); ⚑ my first key passed its 1,248-key gate while malformed, so "27 → 22,
+038 ≡ 039" is retracted. Found: the shelf ships `k2-042` = `k2-038` at α=105° (same for 043/039) plus 3
+containments; of 168 k=3 candidates 6 are shelf families, 5 are strictly LARGER than one, 4 inside one,
+153 new. Detail: DEVELOPMENT_NOTES 2026-08-09 (4), period-quotient §10.
+
+## 2026-08-09 (19) — k=3 is on the shelf: 112 tilings (CC)
+
+Period-p goes 27 → **154**: 42 eager at k≤2, a lazy **k=3 shard of 112**. Gated on all three fixes:
+measured k, generic seeds, and an exact duplicate check that dropped 36 of 168 internally and 5 more
+against the shelf (127 ship; the builder throws without the verdict file). ⚑ Fixed a lazy-shard bug that
+hid every tail — the base atlas load REPLACES `tilings`, clobbering a small shard that merged first, so
+`/library?class=isotoxal&k=3` had been showing 0 of its 523 tilings too. ⚑ k=3 completeness stays
+unverified and each entry says so. Detail: DEVELOPMENT_NOTES 2026-08-09 (5).
+
+## 2026-08-09 (20) — concave tier built and PULLED; the gap is real, the shape was wrong (CC)
+
+The palette shipped 19 of 367 period-3 species — `--emit convex` threw **348** away, AL's drawn
+(30,210,210) 12-gon among them. The full concave palette is unbuildable (1.4e40 words vs 1.6e7) but ONE
+concave tile at a time is 66× cheaper than the shipped palette, so all 348 were swept: **63 productive,
+2,574 cells**, AL's tiling among them and measured k=2 as he said. ⚑ PULLED the same hour: a concave
+palette pins its tile to one angle word, so every solution is a SNAPSHOT of a family, and neither exact
+congruence nor memberIds absorption merges points of one curve. Shelf back to 154; it returns as
+families. Detail: DEVELOPMENT_NOTES 2026-08-09 (6).
+
+## 2026-08-09 (21) — one appearance per tiling; concave re-done as families (CC)
+
+AL's rule enforced. Concave corpus re-derived through the QUOTIENT search (`--max-angle` 345°, so a family
+may carry a reflex corner): **1,117 families + 225 pinned** where fixed-angle palettes gave 2,574
+snapshots. `scripts/shelf-dedup.py` enforces one-appearance on the BUILT shelf and `build-period-atlas.ts`
+now calls it — 1,496 → **470** (769 same family, 257 contained), and a second pass drops 0, which is the
+proof. One naming convention, `period-k<k>-<nnn>` from the measured k, `legacyId` kept, survivors record
+what they absorb. 393 of 470 show a reflex corner at their default. Detail: DEVELOPMENT_NOTES (7).
+
+## 2026-08-09 (22) — obligation 2: the rules get their names, the counterexample gets drawn (CC)
+
+Slide 40 carried `L1-L2, S4` with three rules unnamed, "the divisor rule" as a fifth name for False
+closure, heredity only in a caption, and S4 unmentioned though the table promises it there. All four
+fixed; the directed-walk reason and `eu_solver.cpp:256-293` sit in a presenter comment.
+`<rules-necessary>` gains a third panel drawing the unsound strengthening on panel one's own hexagon:
+mirrors live, two orbits merging, `2 ≠ 3`. Detail: DEVELOPMENT_NOTES 2026-08-09 (8).
+
+## 2026-08-09 (23) — part four re-checked against the skeleton; two review findings refuted (CC)
+
+Slides 37-45 audited against `ctrnact-completeness/skeleton.tex`, its trust map and citations audit, and
+the C++. Fixed: the theorem defines `T_k` and states the octagon scope separately; obligation 2 asks only
+for necessity; 42/43/44 carry their resolutions in the body, not in a figure comment; the
+`simplify`/`comparesolutions` conflation; S2+S3 and the A5 link on 41; the counts on 45; the k=1 note on
+47. ⚑ REFUTED: the label ranges are right (superseded outline read) and the theorem is not false at k=1.
+
+## 2026-08-09 (22) — "rigid" measured: 237 of 470 entries are not (CC)
+
+AL on `period-k3-271`: still rigid, should be parametric. Right — **it has 4 intrinsic parameters**. New
+`tools/ctrnact-oracle/intrinsic_freedom.py` counts a tiling's freedom from the developed cell alone (angle
+per dart; tile sum, unit-edge closure, vertex turn; dim = #darts − rank J), independent of any palette.
+Gate PASSES: no entry measures less than its shipped P, which a palette can never invent. Result: only
+**10 of 470** entries are intrinsically rigid; **237 ship P=0 with intrinsic dim 1..19**. Two causes: the
+degenerate-word filter in `enum_period_tiles.py` (FIXED) and the quotient identifying all tiles of one
+shape (NOT fixed — needs a shape multiplicity index). Detail: DEVELOPMENT_NOTES (8).
+
+## 2026-08-09 (24) — slides 47-50 finished: table, star extras, atlas capture, attribution split (CC)
+
+47's 16-column counts table split into two of eight. 48's four star extras identified: E1/E2 =
+`ctrnact-star-k2-01/04`, free-α family = `ctrnact-s24f-family-k2-02`, told from Myers Fig 25's lookalike
+by vertex incidence (Fig 25 has a `3^6` orbit; this has none). ⚑ Two isolated tilings plus ONE family,
+and the later a=3 sibling makes five absent from Myers, not four; the slide states the shape now. 49
+gains a Playwright landing capture, 50 two bulleted columns. Detail: NOTES 2026-08-09 (10).
+
+## 2026-08-09 (25) — the star shelf checked against both Myers papers; 13 records re-credited (CC)
+
+k=1 matches exactly, 23 for 23. k=2 is 46 against his 43: the four out-of-ring and five of six families
+are his, so **three** entries are new, not four (as tilings 4, as in-ring tilings 5). ⚑ The slide's "37 at
+k=1" was the old `star24` palette's whole output, not a Myers number; 48 now reads 23 / 43 / three.
+⚑ FIXED: `attribute()` trusted the staging `candidate` flag, set on every family and out-of-ring record,
+so 13 of Myers' records were credited to AL. Detail: NOTES 2026-08-09 (11).
+
+## 2026-08-09 (26) — intrinsic parametrization built: the sliders are the tiling's own corners (CC)
+
+`intrinsic_family.py` (chart on d corner angles, gate PASS on 470), `develop_map.py` (angles → cell; the
+gate that it reproduces each entry's own tiling PASSES on 470), `export_intrinsic_cells.py` (per-axis
+ranges, endpoint certified by covering + canonical key), `lib/utils/intrinsicCell.ts` (the same solver in
+the browser, with the area certificate re-run on every cell drawn). Measured first: the continuation
+converges on 470/470, only 12 anchors over-report their dimension, and the shelf holds 427 distinct maps
+so map identity merges 43 entries, not hundreds. Shipped: **470 → 427 entries, 256 parametric against 223**, 799
+sliders. ⚑ AL rejected the first version — it let the tiles leave their own class — so the angle word's
+PERIOD is now a row of the system, one per corner. No entry lost a slider the palette gave it; 70 gained
+one. Detail: NOTES 2026-08-09 (12) and its correction.
+
+## 2026-08-09 (27) — part four rewritten in the deck's own vocabulary (CC)
+
+AL: "what the hell is a 1-dimensional Weisfeiler-Leman refinement?" Right, and it was not one slide.
+Rule adopted: a term appears only if an earlier slide introduced it or the sentence defines it, figures
+included. Out: WL, congruence, core, DFA, `simplify`/`comparesolutions`, flag, Aut, vertex link,
+homeomorphism, compact/oriented, cocompact, `T/G(T)`, `Λ`, 2mm, isometry, direction bundle. The technical
+version moved into a presenter comment on 42. Figures reworded to match. Detail: NOTES 2026-08-09 (12).
+
+## 2026-08-09 (28) — obligation 4: the counterexample cut, the algorithm drawn (CC)
+
+⚑ I had been describing the dedup as colour refinement with accumulating labels. `eu_pruner.cpp` does
+the opposite: a table of which half-edge may still match which, everything allowed, pairings crossed off
+to a fixpoint (`comparesolutions` :186), and the same sweep against itself (`simplify` :135) to catch an
+assembly repeating a smaller one. Slide 42 now says that, and the 3-cycle/6-cycle panel is replaced by a
+4x4 elimination table. The counterexample stays as one clause. Detail: NOTES 2026-08-09 (13).
+
+## 2026-08-12 — ten boards from the drop, on shelves that already existed (CC)
+
+Spherical edges gains 7 solids plus `edges_4435`, which develops into THREE polyhedra: the
+rhombicosidodecahedron and the gyrate/parabigyrate twins J72/J73, separated by vertex census and
+measured group order. Hyperbolic edges gains 6.6.9 and the first mixed-face-size bases; Schwarz gains
+(2,2,5). 415,000 certificates, per-k counts equal to Marek's census, 0 develop failures. Two silent
+derivation bugs fixed: an uppercase-only certificate regex, and `MAX=<n>` read as "finished". NOTES.
+
+## 2026-08-09 (23) — mixed shelf to k=4; the scaled×star crossing found, not certifiable — CC
+
+Mixed shelf **83 → 743** (k=3: 153, k=4: 512), k≤2 eager and the rest lazy shards; every family
+area-certified. `shelf-dedup.py` generalized (`--id-prefix`, `--no-rename`) and run on it — it dropped 5
+k=2 slices the coupled plan had missed. Censused `regular + star + scale-2`: its regular-only, +star and
++side-2 buckets reproduce regular-z24 / star24 / regular-doubled EXACTLY, and the 12 star×side-2 blocks it
+adds cannot ship — `eu_develop` is ℤ[ζ₁₂] and the palette is D=24, so it rejects 29 of 31 known-good
+regular tilings. Detail: NOTES 2026-08-09 (13).
+
+## 2026-08-09 (24) — all 31 develop; the star × scaled crossing ships — CC
+
+`develop_any.py`: a thin driver over the shared ℤ[ζ₂₄] engine (`develop_multi` with an empty parameter
+vector), replacing `eu_develop` on D=24 palettes. **191 of 191 blocks area-certified**, including the
+31-regular-only control that the ℤ[ζ₁₂] developer scored 2 on. The 12 star × side-2 tilings ship on the
+mixed shelf (8 after dedup; the other 4 are flattening endpoints of cx+star families, verified by
+sampling). Mixed shelf **751 entries**. Detail: NOTES 2026-08-09 (13).
+
+## 2026-08-12 — the crossing to k=3, and the A068599 control that licenses it — CC
+
+`regular-star-scaled2-z24` at k=3: 658 blocks, **all 658 area-certified** by `develop_any.py`.
+Regular-only is 11+20+61 = **A068599 exactly**, t1002 included — the control saying palette and developer
+measure the tilings and not themselves; all 172 star-bearing blocks are already on the star shelf.
+Crossing 12 → 44, mixed shelf **783**. ⚑ +side-2 reconciled at k≤2 only; ⚑ the /play sidebar catalogue
+cannot reach any lazy shard (5,697 entries, pre-existing). Detail: NOTES 2026-08-12.
+
+## 2026-08-13 — scaled shelf to k=7, and a 203-tiling hole in the shipped side-3 catalog — CC
+
+`regular-doubled` k=4 → **k=7** (49,017 blocks), `regular-scaled-123` k=2 → **k=4**, all area-certified.
+Scaled shelf **1,061 → 43,405**, k≤2 eager + k=3–7 lazy (135 MB). ⚑ The shipped side-3 k=2 count was 265
+against a true 468 — the candidate index under BUCKET_OK=false, confirmed by `EU_NOBUCKET=1`; shelf
+effect is +1 entry. `run-oracle-parallel.sh` now forwards `EU_SHARD_D2` (ceiling 1.5× → 8.6×);
+`build-scaled-atlas.ts` 9h → 24min; /library cards no longer hit t1001. Detail: NOTES 2026-08-13.
+
+## 2026-08-13 (later) — freedraw without the digon, reproduced EXACTLY; five generator bugs — CC
+
+Marek's proposal (split each edge type into drawn/undrawn, ink only the drawn ones) now reproduces
+**all 9,268** square freedraw patterns at k≤4 — 13/153/1254/7848, none invented, solver k = geometric k
+every time, and k=4 was a held-out set — validated by exact canonical form against `public/freedraw/solutions.json`. The idea
+that made it work is AL's: the marking belongs on the EDGE, not the tile, so a palette declares
+`edgeTypes` and a tile writes `"*"`; the alphabet is then 27 vertex types (the six necklaces with
+their symmetries) instead of 728. Five bugs fixed under it: mirror-axis search; per-word edge frame
+(tri45all k≤3: **227 develop failures → 0**); σ-aware word dedup (a vertex and its mirror were two
+types); and the WL colour in `simplify()`, in the pruner, and in `automorphisms()` — the last cost
+k=2 106→153, k=3 448→1254. ⚑ tri45 keeps the σ hole (11/27, 79/234): its leg and hypotenuse are real
+LENGTHS, so its classes must carry edges. check-regular byte-identical. Detail: NOTES 2026-08-13 (later).
+
+## 2026-08-13 (later still) — freedraw-by-edge-type verified on FOUR grids, and made a parameter — CC
+
+Square 13/153/1254/7848 (k≤4), triangle 19/357/4683, hex 5/16/80, square-triangle 52/1098/13568 —
+**28,146 patterns, none invented, none missing**, by exact canonical form on the first three. Each new
+grid is a palette FILE: `"freedraw": true` alone, normalised for both halves of the engine, byte-identical
+to the hand-written palettes; `./run-sts.sh <palette> <kmax>` is the whole pipeline. Fixed: σ searched
+for a tile's mirror inside the tile, so no chiral-tile palette would generate (tetromino died on tile S).
+⚑ σ-awareness costs A6 on girih / composite-decomp / tetromino. Detail: NOTES 2026-08-13 (later still).
+
+## 2026-08-13 (fourth) — the sigma hole is closed; the chirality bit was in the alphabet — CC
+
+`fold()` stored `min(x, sigma x)` per dart, which is neither side nor class. Storing the SIDE-0 reading
+closes it: `fdsq` (marking on the tile, sigma != id) goes **164 of 1,420 → 9,268 of 9,268** at k<=4 with
+k=4 held out, and now returns exactly what `fdsq2` returns. A6 came clean on every palette that had lost
+it — tetromino 24,005 collisions → 0, composite-decomp 2,714 → 0, girih 112 → 0. tri45 shelf rebuilt and
+shipped: **5,313 tilings at k<=4** (was 4,285), with a vertex-angle certificate added to the builder. The
+per-gluing flip bit was built and REVERTED: no new tilings, 26x cost, 41 of fdsq's 1,420 at the wrong k.
+⚑ I retracted an overlap claim of my own (checker bug) and `tiling_canon.py` is unvalidated — see NOTES.
+Detail: NOTES 2026-08-13 (fourth).
+
+## 2026-08-14 — a second infinite family, {3,n}, onto the hyperbolic-poly shelf — CC
+
+Marek's `ai2_<n>` corpora: tilings by triangles and n-gons at the {3,n} edge length, where α(n,ℓ) =
+2·α(3,ℓ) is an identity and a vertex closes iff a + 2b = n. **33,795 of 33,795 developed, 0 failures, 30
+MB, boards n = 7…15**, every per-k count reproducing his census. Shares the ai1 shelf: ids gain a `t`
+prefix, the sub-axis splits `hpo-`/`hpt-`. ⚑ `emit_board_tables.py`, generalized, found ai1 **n = 17**
+has five census-counted k the drop never carried. Detail: NOTES 2026-08-14.
+
+## 2026-08-14 (second) — Penrose's kite and dart, on a ring the developer picks up from the palette — CC
+
+`develop_tri45.py` was ℤ[ζ₂₄] and nothing else; it now reads D off the palette and builds ℤ[ζ_D] through
+`render_ring.Ring`, which at D=24 is the same reduction coefficient for coefficient (planigon cells
+byte-identical, tri45 family identical). That buys the fivefold world: **penrose (D=10, φ = ζ + ζ⁻¹),
+4,505 tilings at k≤6** — 7/18/91/287/890/3212, developed 4,505 of 4,505, zero failures, 49 s wall on the
+depth-2 sharding. Every face certified exactly a kite or a dart, and 4,640 sampled points each covered by
+exactly one tile. ⚑ Its congruence oracle self-check caught my own dedup bug (sorting float coordinates).
+Detail: NOTES 2026-08-14 (second).
+
+## 2026-08-14 (third) — spherical half-polygons, verified against group theory — CC
+
+AL's idea: halve a Platonic face and the halves need edge types. Three palettes at
+`alphabets/palettes/sph-{oct,cube,ico}-half.json`, a curvature-aware composite assert behind a new
+`tileGeometry` field, and `develop_sph_half.py` — develop_spherical's SO(3) flood with the arc and the
+angle made per-dart, arcs derived by the polar law of cosines. **16/12/40 tiles, 2/7/2 tilings**, every
+one χ=2, at its area bound, faces congruent to the tile to 4e-10, points covered exactly once. Each
+count independently predicted (cube: orbits of 2⁶ diagonal choices; octahedron/icosahedron: perfect
+matchings of the face graph) and reproduced EXACTLY, per-k split and |G| included. check-regular PASS.
+⚑ No shelf yet. Detail: NOTES 2026-08-14 (third).
+
+## 2026-08-14 (fourth) — the spherical half-tiles are on the shelf — CC
+
+All 11 under Spherical → Tilings → Board: Octahedron halved (16 tiles) 2, Cube halved (12 tiles) 7,
+Icosahedron halved (40 tiles) 2. No new renderer — a record is a `SphPolyPattern`, so it rides the
+three.js sphere the 3.4.n.4 shelf already uses; new are `lib/tilings/sph-half.ts` and
+`emit_sph_half_shelf.py`, which re-certifies before writing. Fill is keyed on FACE ORBIT via a new
+optional `fillGroup` (one tile means one polygon size, which drew the whole solid neutral grey).
+⚑ AL caught a shipped bug: /library clicks landed on t1001 because `_play-client` gates the spherical
+fetch on an id prefix and these begin "sh" — the third shelf to hit that silent fallback.
+Detail: NOTES 2026-08-14 (third).
+
+## 2026-08-14 (fifth) — hyperbolic half-polygons, and the shelf for them — CC
+
+`hyp-45-half` (the {4,5} square halved by a diagonal) and `hyp-37-half` (the {3,7} triangle halved by an
+altitude, scalene and CHIRAL): **6,036 tilings**, 76/40/5835 and 9/54/22, all developing with zero
+failures. `develop_hyp_half.py` ships the quotient plus per-dart alpha/elen/drawn, which the disk client
+already prefers, so no renderer changed. Certified locally — every interior vertex closes to 2π, every
+face congruent to the tile — but NOT against a census: a hyperbolic board has infinitely many tilings.
+Derived sides confirm AL's 2:1 claim exactly and match Marek's (2,3,7) corpus to 9 figures.
+⚑ {3,7} is empty below k=6 by parity (7 is odd), not by a short run. Detail: NOTES 2026-08-14 (fourth).
+
+## 2026-08-14 (sixth) — two more half-tile boards; the parity prediction held — CC
+
+`hyp-38-half` tests the argument that explains {3,7}'s empty floor: 8 is even, so an uncut vertex is
+allowed, and the floor duly drops k=6 → **k=3** (60 tilings). `sph-dodec-half` is the first NON-triangular
+half-tile — a pentagon's mirror cut gives 60-120-120-90 quadrilaterals — which forced the developer,
+symmetry solver and coverage test off their triangle assumption, since a spherical quadrilateral is not
+pinned by its angles. **125 perfect matchings of the icosahedral graph → 5 tilings at k = 3,4,5,7,13**,
+reproduced exactly, |G| included. ⚑ A first run to k=6 found 3 of 5: third time "short count" meant
+"search deeper". Totals: spherical 16, hyperbolic 6,096. Detail: NOTES 2026-08-14 (fifth).
+
+## 2026-08-14 (seventh) — {5,4} halved; chirality and the hyperbolic certificate both fixed — CC
+
+`hyp-54-half`, the mirror-cut {5,4} pentagon: 45-90-90-90 quadrilaterals, 61 tilings at k=3,4,5.
+⚑ It exposed that `mirror_expand` decided chirality on the ANGLE word alone — [1,2,2,2] reverses to a
+rotation of itself, so no twin was added and the palette could express neither handedness. gen_alphabet
+refused rather than under-report, which is what found it; the test now uses the (angle, edge) word, every
+palette regenerates identically and check-regular is byte-identical. ⚑ The hyperbolic patch certificate
+was REPLACED by an exact cycle-product one: no dedup tolerance, residuals 2e-15 instead of 2.9e-7, and
+instant instead of 105 s. Hyperbolic half-tile total 6,157. Detail: NOTES 2026-08-14 (sixth).
+
+## 2026-08-14 (eighth) — {6,4} and {4,6} halved, and why some boards have no k=1 — CC
+
+`hyp-64-half` (45-90-90-45 quadrilaterals) **1,296 tilings** at k=2,3,4 and `hyp-46-half` (30-60-30
+triangles) **15,919 shipped** at k=1,2,3; zero certificate failures. ⚑ Not the parity test I proposed —
+parity belongs to altitude cuts. The rule here is counting: a diagonal puts 2q/p cut-endpoints on the
+average vertex, so k=1 needs 2q/p whole. Predicted and confirmed both ways, and it explains {4,5}'s
+floor. ⚑ Two boards called a quadrilateral a triangle (`lvert`/`sizes`); ⚑ the `certified` stamps had
+been wiped by the previous emit. Half-tile totals 23,372 + 16. Detail: NOTES 2026-08-14 (seventh).
+
+## 2026-08-14 (ninth) — Euclidean half-polygons: the family is finite, six boards — CC
+
+Halved every regular n-gon both ways. **Two filters bound it: angles give a + 2b = 4 + 8/(n−2) so
+(n−2) | 8, and edge-slot parity (every edge type's slot count at a vertex must be even) kills two
+more.** Live for exactly n=3 mirror, n=4 both, n=5 mirror, n=6 both; empty for every n ≥ 7, re-derived
+independently over n = 3…20. Two were already shipped (planigon `P12.6.4`, the tri45 shelf). The four
+new: `eu-half-hex-v` 27,159 to k=13, `eu-half-pent` 567 to k=14, `eu-half-hex-m` 1, `eu-half-sq-mid` 1
+and provably unique. **The half-pentagon tiles the plane at k=1 though the regular pentagon cannot.**
+⚑ `develop_tri45.surd_offsets` grew a general chord token `c<j>`; cot 18° is no named surd. Enumerated
+and area-checked (0 gaps, 0 overlaps on 27,728 records), NOT shelved. Detail: NOTES 2026-08-14 (eighth).
+
+## 2026-08-14 (tenth) — the Euclidean half-polygons are on the shelf — CC
+
+All four under Euclidean → Different edge lengths, as **one folder per TILE SHAPE** (AL's call): Half
+hexagon ×2, Half pentagon, Domino — beside Planigons, 45-45-90 and Penrose, which already hold the other
+two members of the six-board family. `build-euhalf-shelf.mjs` re-certifies shape, area coverage and
+vertex angle sum on the shipped bytes and dedupes by exact congruence: 27,728 pass, none merged. k≤4
+eager (0.1 MB), k=5…14 ten lazy slices fetched only by their own k chip. ⚑ The angle certificate first
+cried 660° and the bug was my vertex key (`-0` splitting one vertex into two); the tri45 residue is
+correct. Guard `lib/tilings/eu-half.test.ts`, 11 checks. Detail: NOTES 2026-08-14 (eighth).

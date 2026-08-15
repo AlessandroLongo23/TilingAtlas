@@ -1,0 +1,21 @@
+{
+  "name": "fdhex",
+  "D": 24,
+  "comment": "Freedraw on the HEXAGONAL grid {6,3}. Three hexagons meet at a vertex, so the abstract configurations are the four binary necklaces of length three. The vertex set is a honeycomb and not a lattice, which the SEARCH does not care about at all; check_marked_grid reads the answer on the dual instead. Reproduces public/freedraw/hex-solutions-k{1,2,3}.json \u2014 5 / 16 / 80 \u2014 set for set. Angles in D=24 units: 120 = 8.",
+  "freedraw": true,
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "H",
+      "famchar": "h",
+      "angles": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ]
+    }
+  ]
+}

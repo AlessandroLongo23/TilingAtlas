@@ -2477,4 +2477,4 @@
 (d3,d3,d3,d3,d3,d3)F: cls[mirro]=cls[rneig] PASS
 (d3,d3,d3,d3,d3,d3)F: |Aut|=12, free action PASS
 (d3,d3,d3,d3,d3,d3)F: 1 Aut-orbits, reps=[0] (legacy prefix rule holds)
-A6: 413 entries pairwise non-isomorphic (iso_key) PASS
+A6: 413 entries, 0 iso-fold collisions (pairwise non-isomorphic PASS)

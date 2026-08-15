@@ -1,0 +1,29 @@
+{
+  "name": "fdts",
+  "D": 24,
+  "comment": "Freedraw on the SQUARE-TRIANGLE grid. The base grid is not fixed here: the underlying square-triangle tiling varies per solution and the search enumerates the base tiling and the marking together. Two tiles at one edge length, so \"freedraw\": true gives both of them free edges over the same pair. Reproduces public/freedraw/ts-solutions-k{1,2,3}.json \u2014 52 / 1098 / 13568 \u2014 count for count (its patterns are not on a lattice, so the referee is the dangling-edge filter, not a canonical form). Angles in D=24 units: 90 = 6, 60 = 4.",
+  "freedraw": true,
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T",
+      "famchar": "t",
+      "angles": [
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "Q",
+      "famchar": "q",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ]
+    }
+  ]
+}

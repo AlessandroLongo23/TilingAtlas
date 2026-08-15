@@ -1,0 +1,59 @@
+{
+ "name": "e3cv-star4-z24",
+ "D": 24,
+ "pinnedLegacy": false,
+ "maxValence": 12,
+ "comment": "Regular 3,4,6,8,12 + 1 chosen period-3 tile(s), including CONCAVE species (interior corner > 180 deg). Built by mkpal.py for the concave sweep.",
+ "pruneOverlap": true,
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  },
+  {
+   "kind": "composite",
+   "name": "e3-12-210.210.30",
+   "angles": [
+    14,
+    14,
+    2,
+    14,
+    14,
+    2,
+    14,
+    14,
+    2,
+    14,
+    14,
+    2
+   ],
+   "famchar": "ea"
+  }
+ ]
+}

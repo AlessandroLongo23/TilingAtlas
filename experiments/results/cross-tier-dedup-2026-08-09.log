@@ -1,0 +1,71 @@
+[10:04:07] === cross-tier dedup: 107 candidate families + 61 pinned against 27 shelf entries ===
+[10:04:08] shelf: 27 of 27 keyed (0 unkeyable)
+[10:04:22] candidates: 168 of 168 keyed (0 unkeyable)
+[10:04:22] 
+[10:04:22] shelf self-check (a shelf that contains itself twice is its own bug):
+[10:04:22]   period-family-k2-001 vs period-family-k1-007: contains
+[10:04:22]   period-family-k2-001 vs period-family-k2-021: contains
+[10:04:22]   period-family-k2-001 vs period-family-k2-038: contains
+[10:04:22]   period-family-k2-001 vs period-family-k2-042: contains
+[10:04:22]   period-family-k1-007 vs period-family-k2-038: contains
+[10:04:22]   period-family-k1-007 vs period-family-k2-042: contains
+[10:04:22]   period-family-k2-038 vs period-family-k2-042: same
+[10:04:22]   period-family-k2-039 vs period-family-k2-043: same
+[10:04:22] 
+[10:04:22] internal pass (the tier against itself):
+[10:04:22]   period-quotient-k1-001       inside period-quotient-k1-005 — dropped
+[10:04:22]   period-quotient-k1-002       inside period-quotient-k1-004 — dropped
+[10:04:22]   period-quotient-k1-003       inside period-quotient-k1-005 — dropped
+[10:04:22]   period-quotient-k1-006       same period-quotient-k1-004 — dropped
+[10:04:22]   period-quotient-k1-007       same period-quotient-k1-004 — dropped
+[10:04:22]   period-quotient-k3-001       inside period-quotient-k3-003 — dropped
+[10:04:22]   period-quotient-k3-002       inside period-quotient-k3-003 — dropped
+[10:04:22]   period-quotient-k3-004       inside period-quotient-k3-009 — dropped
+[10:04:22]   period-quotient-k3-005       inside period-quotient-k3-003 — dropped
+[10:04:22]   period-quotient-k3-006       same period-quotient-k3-003 — dropped
+[10:04:22]   period-quotient-k3-007       inside period-quotient-k3-003 — dropped
+[10:04:22]   period-quotient-k3-008       inside period-quotient-k3-009 — dropped
+[10:04:22]   period-quotient-k3-010       same period-quotient-k3-009 — dropped
+[10:04:22]   period-quotient-k3-011       inside period-quotient-k3-009 — dropped
+[10:04:22]   period-quotient-k3-012       inside period-quotient-k3-009 — dropped
+[10:04:22]   period-quotient-k3-033       inside period-quotient-k3-036 — dropped
+[10:04:22]   period-quotient-k3-042       same period-quotient-k3-036 — dropped
+[10:04:22]   period-quotient-k3-056       same period-quotient-k3-055 — dropped
+[10:04:22]   period-quotient-k3-057       inside period-quotient-k3-058 — dropped
+[10:04:22]   period-quotient-k3-061       same period-quotient-k3-058 — dropped
+[10:04:22]   period-quotient-k3-069       inside period-quotient-k3-055 — dropped
+[10:04:22]   period-quotient-k3-088       inside period-quotient-k3-087 — dropped
+[10:04:22]   period-quotient-k3-094       inside period-quotient-k3-003 — dropped
+[10:04:22]   period-quotient-k3-095       inside period-quotient-k3-003 — dropped
+[10:04:22]   period-quotient-k3-096       inside period-quotient-k3-009 — dropped
+[10:04:22]   period-quotient-k3-100       inside period-quotient-k3-009 — dropped
+[10:04:22]   period-quotient-rigid-k2-004 same period-quotient-rigid-k2-003 — dropped
+[10:04:22]   period-quotient-rigid-k2-007 same period-quotient-rigid-k2-006 — dropped
+[10:04:22]   period-quotient-rigid-k2-009 same period-quotient-rigid-k2-008 — dropped
+[10:04:22]   period-quotient-rigid-k2-012 inside period-quotient-k3-090 — dropped
+[10:04:22]   period-quotient-rigid-k2-013 inside period-quotient-k3-090 — dropped
+[10:04:22]   period-quotient-rigid-k2-016 same period-quotient-rigid-k2-015 — dropped
+[10:04:22]   period-quotient-rigid-k2-019 same period-quotient-rigid-k2-017 — dropped
+[10:04:22]   period-quotient-rigid-k2-025 same period-quotient-rigid-k2-024 — dropped
+[10:04:22]   period-quotient-rigid-k3-009 inside period-quotient-k3-037 — dropped
+[10:04:22]   period-quotient-rigid-k3-025 inside period-quotient-k3-037 — dropped
+[10:04:22]   internal: 36 of 168 dropped, 132 survive
+[10:04:22] 
+[10:04:22] shelf pass (survivors against the shelf):
+[10:04:22]   period-quotient-k1-004       k=1 P=2 → same period-family-k1-007
+[10:04:22]   period-quotient-k1-005       k=1 P=2 → contains period-family-k2-039
+[10:04:22]   period-quotient-k3-055       k=3 P=2 → contains period-family-k2-017
+[10:04:22]   period-quotient-k3-060       k=3 P=2 → contains period-family-k2-029
+[10:04:22]   period-quotient-k3-089       k=3 P=2 → inside period-family-k2-024
+[10:04:22]   period-quotient-k3-090       k=3 P=2 → contains period-family-k2-027
+[10:04:22]   period-quotient-rigid-k2-001 k=2 P=0 → inside period-family-k2-036
+[10:04:22]   period-quotient-rigid-k2-005 k=2 P=0 → inside period-family-k2-014
+[10:04:22]   period-quotient-rigid-k2-022 k=2 P=0 → inside period-family-k2-032
+[10:04:22] 
+[10:04:22] VERDICT: contains: 4, inside: 4, internal-inside: 23, internal-same: 13, new: 123, same: 1
+[10:04:22]   same by k: k=1: 1
+[10:04:22]   inside by k: k=2: 3, k=3: 1
+[10:04:22]   contains by k: k=1: 1, k=3: 3
+[10:04:22] SHIPPABLE: 127 of 168 — k=1: 1, k=2: 14, k=3: 112
+[10:04:22]   'contains' entries SHIP: the candidate is the larger family, and the shelf entry it contains stays put — dropping verified concrete content is not this script's call.
+[10:04:22] wrote experiments/period-oracle/quotient-k3-dedup.json

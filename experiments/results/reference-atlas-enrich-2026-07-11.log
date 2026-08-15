@@ -3,33 +3,33 @@ ctrnact.json: 47854 records indexed
 star cell files: 30 read, 13055 ids with per-orbit configs
 
 === classify public/reference-atlas.json (15680 entries) ===
-  [100/2720] regular classified — 3s elapsed, ETA 68s
-  [200/2720] regular classified — 5s elapsed, ETA 68s
-  [300/2720] regular classified — 9s elapsed, ETA 71s
-  [400/2720] regular classified — 13s elapsed, ETA 78s
-  [500/2720] regular classified — 17s elapsed, ETA 74s
-  [600/2720] regular classified — 21s elapsed, ETA 73s
-  [700/2720] regular classified — 25s elapsed, ETA 71s
-  [800/2720] regular classified — 30s elapsed, ETA 72s
-  [900/2720] regular classified — 35s elapsed, ETA 70s
-  [1000/2720] regular classified — 40s elapsed, ETA 70s
-  [1100/2720] regular classified — 54s elapsed, ETA 79s
-  [1200/2720] regular classified — 67s elapsed, ETA 85s
-  [1300/2720] regular classified — 72s elapsed, ETA 79s
-  [1400/2720] regular classified — 76s elapsed, ETA 72s
-  [1500/2720] regular classified — 82s elapsed, ETA 67s
-  [1600/2720] regular classified — 94s elapsed, ETA 66s
-  [1700/2720] regular classified — 108s elapsed, ETA 65s
-  [1800/2720] regular classified — 127s elapsed, ETA 65s
-  [1900/2720] regular classified — 144s elapsed, ETA 62s
-  [2000/2720] regular classified — 162s elapsed, ETA 58s
-  [2100/2720] regular classified — 184s elapsed, ETA 54s
-  [2200/2720] regular classified — 212s elapsed, ETA 50s
-  [2300/2720] regular classified — 232s elapsed, ETA 42s
-  [2400/2720] regular classified — 251s elapsed, ETA 34s
-  [2500/2720] regular classified — 277s elapsed, ETA 24s
-  [2600/2720] regular classified — 298s elapsed, ETA 14s
-  [2700/2720] regular classified — 682s elapsed, ETA 5s
+  [100/2720] regular classified — 3s elapsed, ETA 74s
+  [200/2720] regular classified — 6s elapsed, ETA 74s
+  [300/2720] regular classified — 10s elapsed, ETA 78s
+  [400/2720] regular classified — 15s elapsed, ETA 86s
+  [500/2720] regular classified — 19s elapsed, ETA 83s
+  [600/2720] regular classified — 23s elapsed, ETA 83s
+  [700/2720] regular classified — 28s elapsed, ETA 80s
+  [800/2720] regular classified — 33s elapsed, ETA 80s
+  [900/2720] regular classified — 39s elapsed, ETA 78s
+  [1000/2720] regular classified — 45s elapsed, ETA 78s
+  [1100/2720] regular classified — 60s elapsed, ETA 89s
+  [1200/2720] regular classified — 75s elapsed, ETA 95s
+  [1300/2720] regular classified — 80s elapsed, ETA 87s
+  [1400/2720] regular classified — 84s elapsed, ETA 79s
+  [1500/2720] regular classified — 90s elapsed, ETA 73s
+  [1600/2720] regular classified — 103s elapsed, ETA 72s
+  [1700/2720] regular classified — 117s elapsed, ETA 70s
+  [1800/2720] regular classified — 137s elapsed, ETA 70s
+  [1900/2720] regular classified — 155s elapsed, ETA 67s
+  [2000/2720] regular classified — 175s elapsed, ETA 63s
+  [2100/2720] regular classified — 197s elapsed, ETA 58s
+  [2200/2720] regular classified — 227s elapsed, ETA 54s
+  [2300/2720] regular classified — 248s elapsed, ETA 45s
+  [2400/2720] regular classified — 268s elapsed, ETA 36s
+  [2500/2720] regular classified — 294s elapsed, ETA 26s
+  [2600/2720] regular classified — 317s elapsed, ETA 15s
+  [2700/2720] regular classified — 344s elapsed, ETA 3s
 
 --- summary ---
 m/partition:  15640 classified, 40 unclassified
@@ -109,4 +109,4 @@ wallpaper-group histogram:
     ctrnact-s24f-family-k9-04: no star orbits + k>1
     ctrnact-s24f-family-k9-05: no star orbits + k>1
 
-★ wrote public/reference-atlas.json in 688s
+★ wrote public/reference-atlas.json in 350s

@@ -1,0 +1,19 @@
+{
+  "name": "fdsq2",
+  "D": 24,
+  "comment": "Freedraw on the SQUARE grid, as one parameter. \"freedraw\": true splits the palette's one edge length into an undrawn and a drawn variant and lets the SEARCH pick per half-edge, which is Marek's proposal: the drawn bit is just another edge type. The corner class records nothing about the marking, so sigma stays the identity and a vertex figure with a mirror through a drawn line is expressible \u2014 which is exactly what fdsq.json, the same idea with the marking on the TILE, cannot do. The abstract vertex configurations come out as the six binary necklaces of length four. Reproduces public/freedraw's 13 / 153 / 1254 / 7848 at k = 1..4, set for set. Angles in D=24 units: 90 = 6.",
+  "freedraw": true,
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "Q",
+      "famchar": "q",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ]
+    }
+  ]
+}

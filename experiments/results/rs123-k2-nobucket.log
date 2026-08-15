@@ -1,0 +1,11 @@
+[09:21:40] build (MAXNUM=2 PALETTE=regular-scaled-123)
+[09:21:41] PHASE 1  parallel solve — 64 shards, depth2 16, pool 8, budget 0
+[09:21:44]   workers done (3s wall)
+[09:21:44] PHASE 1b  merge worker outputs
+[09:21:46]   merged raw blocks: 2534
+[09:21:46] PHASE 2  prune
+  k=1 : 90
+  k=2 : 468
+total kept: 558
+store: peak 0.188704 MB total, 0.188704 MB resident
+[09:21:46]   prune done (0s);  total wall 5s

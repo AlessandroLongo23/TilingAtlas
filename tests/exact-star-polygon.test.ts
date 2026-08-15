@@ -121,8 +121,10 @@ describe("ExactStarPolygon.isotoxal — all admissible in-ring variants (B1-gen)
 	});
 
 	it("rejects n that does not divide 24", () => {
-		expect(() => ExactStarPolygon.isotoxal(5, 2, ZERO, 0)).toThrow(/divide 24/);
-		expect(() => ExactStarPolygon.isotoxal(9, 2, ZERO, 0)).toThrow(/divide 24/);
+		// The message names the ring it checked against ("must divide N=24") since the path was generalised
+		// off the fixed 24th roots — matching on N= keeps the assertion honest if a caller ever passes another.
+		expect(() => ExactStarPolygon.isotoxal(5, 2, ZERO, 0)).toThrow(/divide N=24/);
+		expect(() => ExactStarPolygon.isotoxal(9, 2, ZERO, 0)).toThrow(/divide N=24/);
 	});
 
 	// C3 gap-seating primitive: the fill loop seats a star's POINT into an open gap with CW boundary ray

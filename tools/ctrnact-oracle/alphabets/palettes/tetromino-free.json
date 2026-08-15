@@ -1,0 +1,124 @@
+{
+ "name": "tetromino-free",
+ "D": 12,
+ "pinnedLegacy": false,
+ "maxValence": 4,
+ "comment": "The 5 FREE tetrominoes (I,O,T,S,L). The one-sided Tetris set also carries Z and J, but Z is S reflected and J is L reflected, and the engine dart set is chirality-DOUBLED (mirro(i,b)=(i,1-b), reflections act as (i,b)->(a-i,1-b)), so it already places every tile in both handednesses. Carrying the mirror twin as a separate alphabet symbol therefore represents the same physical tiling twice. Free set per AL 2026-08-08, and consistent with the settled mirror-merge convention (CLAUDE.md, A068599).",
+ "tiles": [
+  {
+   "kind": "polyomino",
+   "name": "I",
+   "famchar": "i",
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     3,
+     0
+    ]
+   ]
+  },
+  {
+   "kind": "polyomino",
+   "name": "O",
+   "famchar": "o",
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ]
+  },
+  {
+   "kind": "polyomino",
+   "name": "T",
+   "famchar": "t",
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     1,
+     1
+    ]
+   ]
+  },
+  {
+   "kind": "polyomino",
+   "name": "S",
+   "famchar": "s",
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  {
+   "kind": "polyomino",
+   "name": "L",
+   "famchar": "l",
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     2,
+     1
+    ]
+   ]
+  }
+ ]
+}

@@ -77,10 +77,16 @@ BOARDS = {
             "vef": (14, 21, 9), "solver": "pt_edges_447.exe"},
     "448": {"config": [4, 4, 8], "label": "4.4.8", "solid": "octagonal prism",
             "vef": (16, 24, 10), "solver": "pt_edges_448.exe"},
+    "4410": {"config": [4, 4, 10], "label": "4.4.10", "solid": "decagonal prism",
+             "vef": (20, 30, 12), "solver": "pt_edges_4410.exe"},
+    "4411": {"config": [4, 4, 11], "label": "4.4.11", "solid": "hendecagonal prism",
+             "vef": (22, 33, 13), "solver": "pt_edges_4411.exe"},
     "663": {"config": [6, 6, 3], "label": "3.6.6", "solid": "truncated tetrahedron",
             "vef": (12, 18, 8), "solver": "pt_edges_663.exe"},
     "664": {"config": [6, 6, 4], "label": "4.6.6", "solid": "truncated octahedron",
             "vef": (24, 36, 14), "solver": "pt_edges_664.exe"},
+    "665": {"config": [6, 6, 5], "label": "5.6.6", "solid": "truncated icosahedron",
+            "vef": (60, 90, 32), "solver": "pt_edges_665.exe"},
     "3334": {"config": [3, 3, 3, 4], "label": "3.3.3.4", "solid": "square antiprism",
              "vef": (8, 16, 10), "solver": "pt_edges_3334.exe"},
     "3335": {"config": [3, 3, 3, 5], "label": "3.3.3.5", "solid": "pentagonal antiprism",
@@ -93,18 +99,30 @@ BOARDS = {
     # the four above it.
     "3338": {"config": [3, 3, 3, 8], "label": "3.3.3.8", "solid": "octagonal antiprism",
              "vef": (16, 32, 18), "solver": "pt_edges_3338.exe"},
+    "3339": {"config": [3, 3, 3, 9], "label": "3.3.3.9", "solid": "enneagonal antiprism",
+             "vef": (18, 36, 20), "solver": "pt_edges_3339.exe"},
+    "33310": {"config": [3, 3, 3, 10], "label": "3.3.3.10", "solid": "decagonal antiprism",
+              "vef": (20, 40, 22), "solver": "pt_edges_33310.exe"},
     # The first CHIRAL board on this shelf: the snub cube has no mirror symmetry, so its isometry group
     # is the rotation group O (order 24) and not Oh. `board_project` already tries the reflected frame
     # (_YFLIP) for every candidate, so a development that came out mirrored still lands on the one board
     # instead of forking an enantiomorph — which is what the per-k census check confirms.
     "33334": {"config": [3, 3, 3, 3, 4], "label": "3.3.3.3.4", "solid": "snub cube",
               "vef": (24, 60, 38), "solver": "pt_edges_33334.exe"},
+    # The second chiral board, and the same reasoning: |G| = 60 (the rotation group I), so a mirrored
+    # development is the enantiomorph and lands only through `board_project`'s reflected frame.
+    "33335": {"config": [3, 3, 3, 3, 5], "label": "3.3.3.3.5", "solid": "snub dodecahedron",
+              "vef": (60, 150, 92), "solver": "pt_edges_33335.exe"},
     # 3.4.4.4 is shared by the rhombicuboctahedron and the pseudo-rhombicuboctahedron (J37, the
     # elongated square gyrobicupola): same V/E/F, same figure at EVERY vertex, so `census_key` cannot
     # separate them and KNOWN_SOLIDS must not try. The corpus develops into both and the second gets
     # the `4443v2` fallback id; which of the two it is has to be decided from geometry, not census.
     "4443": {"config": [4, 4, 4, 3], "label": "3.4.4.4", "solid": "rhombicuboctahedron",
              "vef": (24, 48, 26), "solver": "pt_edges_4443.exe"},
+    "4435": {"config": [3, 4, 5, 4], "label": "3.4.5.4", "solid": "rhombicosidodecahedron",
+             "vef": (60, 120, 62), "solver": "pt_edges_4435.exe"},
+    "468": {"config": [4, 6, 8], "label": "4.6.8", "solid": "truncated cuboctahedron",
+            "vef": (48, 72, 26), "solver": "pt_edges_468.exe"},
     "cuboctahedron": {"config": [3, 4, 3, 4], "label": "3.4.3.4", "solid": "cuboctahedron",
                       "vef": (12, 24, 14), "solver": "pt_cuboctahedron_edges.exe"},
 }
@@ -626,6 +644,16 @@ KNOWN_SOLIDS = {
     (((( 3, 3, 4, 4), 6), ((3, 4, 3, 4), 6)), 2): ("j27", "triangular orthobicupola (J27)", "3.3.4.4 / 3.4.3.4"),
     (((( 3, 4, 4, 4), 24),), 1): ("4443", "rhombicuboctahedron", "3.4.4.4"),
     (((( 3, 4, 4, 4), 24),), 2): ("j37", "pseudo-rhombicuboctahedron (J37)", "3.4.4.4"),
+    # The GYRATE family, out of edges_4435 (2026-08-12). Rotating one pentagonal cupola of the
+    # rhombicosidodecahedron by 36° keeps V/E/F and the edge length and turns the 10 vertices of that
+    # cupola's join ring from 3.4.5.4 into 3.4.4.5; doing it to the opposite cupola as well turns 20.
+    # So the census separates these two from the uniform solid where J37 could not be separated from the
+    # rhombicuboctahedron, and the measured group order is what tells the two gyrates apart: C5v (10)
+    # for one cupola, D5d (20) for the antipodal pair. J74 (metabigyrate, C2v) and J75 (trigyrate, C3v)
+    # do not appear in this corpus.
+    (((( 3, 4, 5, 4), 60),), 1): ("4435", "rhombicosidodecahedron", "3.4.5.4"),
+    (((( 3, 4, 4, 5), 10), ((3, 4, 5, 4), 50)), 8): ("j72", "gyrate rhombicosidodecahedron (J72)", "3.4.4.5 / 3.4.5.4"),
+    (((( 3, 4, 4, 5), 20), ((3, 4, 5, 4), 40)), 4): ("j73", "parabigyrate rhombicosidodecahedron (J73)", "3.4.4.5 / 3.4.5.4"),
 }
 
 
@@ -699,7 +727,11 @@ def develop_cert(cert, board_id, board, rho, units):
 
 
 # ---------------------------------------------------------------- driver
-CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Z0-9]+)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
+# The alphabet token is LOWERCASE from the 10-gon up: Marek spells polygon sizes in hex, so the
+# decagonal prism's files read `A4Aa` and the hendecagonal `A4Ab`. A class of `[A-Z0-9]` matched none
+# of them and `load_corpus` returned an empty list rather than an error — the same widening
+# develop_ai1.py, develop_ih_edges.py and develop_schwarz.py already carry.
+CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Za-z0-9]+)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
 
 
 def load_corpus(source):

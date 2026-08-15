@@ -1,0 +1,14 @@
+{
+  "name": "fdsq",
+  "D": 24,
+  "comment": "MAREK'S FREEDRAW-BY-EDGE-TYPE PROPOSAL, on the square grid. Today a drawn edge is marked by inserting a degenerate two-sided tile: freedraw's alphabet is literally {A2 digon, A4 square}, the digon marking a drawn edge. That is a workaround for an alphabet that can say 'tiles meet at a vertex' but cannot say anything about an EDGE, and it costs degenerate faces, extra degree-2 vertices and a bigger alphabet. With edge types the property goes on the edge instead: split the one edge type into a DRAWN and an UNDRAWN variant, glue like to like, and ink only the drawn ones. Six tiles, all the unit square, differing only in which of their edges are drawn — the six binary necklaces of length 4 up to the dihedral group (0000, 1000, 1100, 1010, 1110, 1111). Both variants have length 1: the geometry is the plain square grid, and the marking is carried entirely by the edge type. Angles in D=24 units: 90 = 6.",
+  "edgeLengths": { "u": "1", "d": "1" },
+  "tiles": [
+    { "kind": "composite", "name": "Q0", "famchar": "p", "angles": [6, 6, 6, 6], "edges": ["u", "u", "u", "u"] },
+    { "kind": "composite", "name": "Q1", "famchar": "q", "angles": [6, 6, 6, 6], "edges": ["d", "u", "u", "u"] },
+    { "kind": "composite", "name": "Q2", "famchar": "r", "angles": [6, 6, 6, 6], "edges": ["d", "d", "u", "u"] },
+    { "kind": "composite", "name": "Q3", "famchar": "s", "angles": [6, 6, 6, 6], "edges": ["d", "u", "d", "u"] },
+    { "kind": "composite", "name": "Q4", "famchar": "t", "angles": [6, 6, 6, 6], "edges": ["d", "d", "d", "u"] },
+    { "kind": "composite", "name": "Q5", "famchar": "v", "angles": [6, 6, 6, 6], "edges": ["d", "d", "d", "d"] }
+  ]
+}

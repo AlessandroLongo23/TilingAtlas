@@ -39,7 +39,20 @@ $(TB)/.generated: alphabets/palettes/$(PALETTE).json alphabets/gen_alphabet.py
 # Absence then forces the compile, and mtime ordering never enters into it. Only eu_solver
 # is dropped: it is the sole binary that bakes in -DMAXNUM. When the stamp already matches
 # the requested MAXNUM nothing is deleted, so incremental rebuilds still work.
+# eu_solver_rt bakes in -DMAXNUM too and had NO stamp, so `make eu_solver_rt MAXNUM=4` straight after
+# a MAXNUM=3 build was a silent no-op: the binary is newer than its only prerequisite, make calls it
+# up to date, and the search then stops one k short with no error. Measured 2026-08-13 on the tri45
+# shelf, which reported k=4: 0 tilings. It gets the same parse-time deletion as eu_solver, keyed on
+# MAXNUM alone since the runtime binary has no palette baked in.
 $(shell [ -f .maxnum-$(PALETTE)-$(MAXNUM) ] || rm -f eu_solver$(SFX))
+# Scoped to an explicit `make eu_solver_rt` goal. Unscoped, this fires on EVERY make invocation —
+# including `make PALETTE=x eu_pruner.x`, which passes no MAXNUM, defaults it to 11, finds no stamp
+# and deletes the runtime solver a caller had just built at another MAXNUM.
+$(if $(filter eu_solver_rt,$(MAKECMDGOALS)),$(shell [ -f .maxnumrt-$(MAXNUM) ] || rm -f eu_solver_rt))
+
+.maxnumrt-$(MAXNUM):
+	rm -f .maxnumrt-*
+	touch $@
 
 .maxnum-$(PALETTE)-$(MAXNUM):
 	rm -f .maxnum-$(PALETTE)-*
@@ -59,7 +72,7 @@ eu_solver$(SFX): eu_solver.cpp $(TB)/.generated .maxnum-$(PALETTE)-$(MAXNUM)
 # And it has NO palette dependency, so ONE binary serves every palette; only MAXNUM is baked in.
 #   make eu_solver_rt MAXNUM=6 && EU_TABLES=path/to/tables.bin ./eu_solver_rt
 # The compiled path stays the default so check-regular keeps gating it byte-for-byte.
-eu_solver_rt: eu_solver.cpp
+eu_solver_rt: eu_solver.cpp .maxnumrt-$(MAXNUM)
 	$(CXX) $(CXXFLAGS) -DMAXNUM=$(MAXNUM) -DEU_RUNTIME_TABLES -o $@ $<
 
 eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp $(TB)/.generated
@@ -81,4 +94,4 @@ check-regular:
 	@echo "check-regular: PASS (byte-identical catalogs vs golden)"
 
 clean:
-	rm -f eu_solver eu_solver.* eu_pruner eu_pruner.* eu_classify eu_develop eu_develop.* .maxnum-*
+	rm -f eu_solver eu_solver.* eu_solver_rt eu_pruner eu_pruner.* eu_classify eu_develop eu_develop.* .maxnum-* .maxnumrt-*

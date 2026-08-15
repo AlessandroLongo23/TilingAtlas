@@ -43,6 +43,32 @@ def is_composite_tile(tab, tile):
     return tab.TILE_NAME[tile].startswith("cx")
 
 
+def tile_shape(tab, tile, L, p):
+    """(n, star) for a developed tile, from its NAME rather than from its period.
+
+    Three cases, and the period alone cannot separate them — which is why the old
+    `star = (p == 2)` rule mislabelled every period-2 composite as a 2-pointed star:
+      regular   name is bare digits ("6")      -> n = L, not a star
+      star      name contains '*' ("3*1")      -> n = L//2 points, star
+      otherwise full-boundary polygon          -> n = L, not a star
+    The last case covers the composites (cx4-2.4.2.4), the period-p equilateral tiles
+    (e3-6-135.120.105) and anything else whose boundary word IS its outline.
+
+    A bare-integer name with p != 1 is a scaled/doubled tile, whose real corner count is L//p
+    because the extra positions are flat 180° corners. Those palettes develop through eu_develop,
+    not this script, so rather than guess a rule that has never been exercised here, refuse.
+    """
+    name = tab.TILE_NAME[tile]
+    if "*" in name:
+        return L // 2, True
+    if name.isdigit():
+        if p != 1:
+            raise ValueError(f"tile {name!r} has bare-integer name but period {p} "
+                             f"(scaled/doubled?) — not handled by this exporter")
+        return L, False
+    return L, False
+
+
 def class_of_tile(tab, tile):
     return next(c for c in range(len(tab.CLASS_TILE)) if tab.CLASS_TILE[c] == tile)
 
@@ -88,12 +114,9 @@ def develop_block(tab, vertype, conway, k, palette, id_prefix, idx):
     for verts, tile in cell_faces:
         cls0 = class_of_tile(tab, tile)
         L, p = tab.CLASS_L[cls0], tab.CLASS_P[cls0]
-        composite = is_composite_tile(tab, tile)
-        if composite:
-            n, star = L, False        # full boundary; a composite is NEVER a star
+        if is_composite_tile(tab, tile):
             uses_composite = True
-        else:
-            n, star = L // p, (p == 2)  # regular: p=1 -> n=L, not a star
+        n, star = tile_shape(tab, tile, L, p)
         pts = [zfloat(v) for v in verts]
         if len(pts) != n:
             raise ValueError(f"point-count mismatch tile {tab.TILE_NAME[tile]}: "

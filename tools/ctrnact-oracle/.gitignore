@@ -12,6 +12,13 @@ run-star20-*/
 run-star180u-*/
 run-star24-*/
 run-star24full-*/
+run-fdsq*/
+run-fdtri*/
+run-fdhex*/
+run-fdts*/
+run-probe/
+run-t45all-fix/
+run-tri45-rebuild/
 *.runlog
 work/
 out/

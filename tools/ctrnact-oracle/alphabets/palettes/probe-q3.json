@@ -1,0 +1,9 @@
+{
+  "name": "probe-q3",
+  "D": 24,
+  "comment": "Probe only: the square with two opposite edges drawn, alone. Its one tiling is the family of parallel lines.",
+  "edgeLengths": { "u": "1", "d": "1" },
+  "tiles": [
+    { "kind": "composite", "name": "Q3", "famchar": "s", "angles": [6, 6, 6, 6], "edges": ["d", "u", "d", "u"] }
+  ]
+}

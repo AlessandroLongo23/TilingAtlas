@@ -13,6 +13,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <iterator>
 #include <ctime>
 
@@ -43,8 +44,39 @@ static std::vector<int> NC_IDX;
 // equalities, knowable before the vertex is materialised.  Bucket every (type, rep) by the pair
 //   A = class at the rep,  B = class at the rep's right neighbour,  mir = whether the rep is its own mirror
 // and look up (NEXT[b], NEXT[a], mirrored) from the current configuration.
+//
+// 4-BUCKET UNION (2026-08-08). That lookup is a SINGLE bucket only when CLASS_PREV == CLASS_NEXT and
+// NEXT is an involution — the BUCKET_OK property. Derive it without that assumption. Gluing free dart
+// e to candidate dart f makes the face walk cross the new glue in both directions, and checkface's
+// first step accepts either CLASS_NEXT or CLASS_PREV:
+//     crossing e -> f :  lvert[rneig[f]] in {NEXT, PREV}[a]        , a = lvert[e]
+//     crossing f -> e :  lvert[rneig[e]] in {NEXT, PREV}[lvert[f]] , b = lvert[rneig[e]]
+// PREV is NEXT's inverse permutation, so the second reads lvert[f] in {PREV, NEXT}[b]. Two choices on
+// each side is FOUR admissible (A, B) pairs, hence four buckets, and their union is the candidate pool.
+// Under BUCKET_OK the two choices coincide pointwise, qkeys() returns n == 1, and the pool is the same
+// single bucket the fast path always used — which is why check-regular stays byte-identical.
+//
+// Soundness is one-directional and worth stating: the four conditions are NECESSARY (they come from
+// steps checkface performs), so the union never drops an admissible candidate. It is not sufficient —
+// checkface also LOCKS the direction after its first step, which the union deliberately forgets — so
+// the union admits some candidates that checkpart_inc then rejects. Costs work, cannot lose a tiling.
 static bool BUCKET_OK = false;
 static int NCLS = 0;
+static inline int cand_key(int A, int B, bool mir) { return (A * NCLS + B) * 2 + (mir ? 1 : 0); }
+// Copies of the class tables, so qkeys() can be defined here rather than after the table declarations.
+static const int *CN_ = 0, *CP_ = 0;   // set in main() before any qkeys() call
+// The admissible target keys for gluing to free dart e (a = lvert[e], b = lvert[rneig[e]], mir).
+// Writes 1..4 keys, returns the count. n == 1 exactly when NEXT == PREV at both a and b.
+static inline int qkeys(int a, int b, bool mir, int* out) {
+    const int A1 = CN_[b], A2 = CP_[b];
+    const int B1 = CN_[a], B2 = CP_[a];
+    int n = 0;
+    out[n++] = cand_key(A1, B1, mir);
+    if (B2 != B1)   out[n++] = cand_key(A1, B2, mir);
+    if (A2 != A1) { out[n++] = cand_key(A2, B1, mir);
+        if (B2 != B1) out[n++] = cand_key(A2, B2, mir); }
+    return n;
+}
 static std::vector<char> TYPE_OK;   // vertex types that can occur in a tiling (see face_filter)
 // PAIR FILTER — gluing firstfree to candidate dart f fixes successor(lneig[firstfree]) = f, so the
 // face through x = lneig[firstfree] can only still close if tkey(x) is reachable from Q(f) in exactly
@@ -57,15 +89,34 @@ static inline bool pair_ok(int tk, int qf) {
     const size_t b = (size_t)tk * NKEY_ + qf;
     return (OKPAIR[b >> 6] >> (b & 63)) & 1ULL;
 }
+// With the 4-bucket union a dart has up to four query keys, and the face can close if ANY of them
+// admits it. OR, not AND: taking the conjunction would reject branches the union just proved reachable.
+static inline bool pair_ok_any(int tk, const int* qf, int n) {
+    if (!PAIRFILTER) return true;
+    for (int i = 0; i < n; i++) if (pair_ok(tk, qf[i])) return true;
+    return false;
+}
 // FIX 3 — the key constrains a REP, not a type. Admitting a whole type because one of its ~12
 // reps matches meant the inner loop glued and checkpart-ed the other 11 for nothing: measured
 // 6,691,818 reps iterated against 724,811 that can match, 89.2% waste. Entries are (type, rep),
 // built in ascending (type, rep-order) so the visit order is exactly what the full scan gave.
-struct CandEnt { int gr; int rrep; int qf; int tkrev; };   // qf = Q(f); tkrev = tkey(lneig(f))
+// qf = the query keys of rneig(f), 1 under BUCKET_OK and up to 4 without it; tkrev = tkey(lneig(f)).
+// `ord` is the position this entry would occupy in a full ascending scan, so merging several buckets
+// by `ord` reproduces the single-bucket visit order exactly and emission order never depends on how
+// many buckets the union happened to touch.
+struct CandEnt { int gr; int rrep; int ord; int tkrev; int nqf; int qf[4]; };
 static std::vector<std::vector<CandEnt> > CAND;      // (type, rep) pairs, ascending
 static std::vector<std::vector<CandEnt> > CAND_NC;   // the noncounting subset (composes with fix A)
 static std::vector<CandEnt> FULL_ALL, FULL_NC;       // fallback when the bucket key is unsound
-static inline int cand_key(int A, int B, bool mir) { return (A * NCLS + B) * 2 + (mir ? 1 : 0); }
+// Scratch for the >1-bucket union, indexed by DFS depth. extend() recurses from inside the loop that
+// is reading the merged pool, so a single shared buffer would be clobbered by the child call and the
+// parent would resume iterating the child's candidates. Capacity at each depth persists across nodes.
+//
+// ⚑ deque, NOT vector, and the difference is a use-after-free. The parent holds a pointer into its own
+// depth's buffer across the recursive call; a deeper call growing the container would reallocate a
+// vector and move every element, leaving that pointer dangling. std::deque guarantees references to
+// existing elements survive insertion at either end, so the parent's pointer stays valid.
+static std::deque<std::vector<CandEnt> > MERGE_STACK;
    // indices of noncounting types, ascending
 static long nckzero = 0;         // closed all-noncounting solutions suppressed
 static bool has_noncounting = false;  // set in main(); false for the regular palette
@@ -149,6 +200,10 @@ struct vertexdef {
     std::vector<int> rneig;
     std::vector<int> mirro;
     std::vector<int> lvert;   // corner-CLASS id per dart (regular palette: bijective with size)
+    // EDGE TYPE per dart, 0 = untyped. A dart is (half-edge, side) and both sides of a half-edge
+    // carry the same type, so gluing is legal only between darts of equal type. Empty on the
+    // compiled-table path and on CTRNTB01 files, where EDGE_TYPED stays false and nothing reads it.
+    std::vector<int> etype;
     int ferkval;
     std::string code;
     int counting;             // 1 = true (>=3-tile) vertex, 0 = dent-fill point (non-vertex)
@@ -166,6 +221,7 @@ struct configuration {
     std::vector<int> rneig;
     std::vector<int> mirro;
     std::vector<int> lvert;   // corner-class ids (see vertexdef)
+    std::vector<int> etype;   // per-dart edge type, parallel to lvert (empty unless EDGE_TYPED)
     std::vector<int> glue;
     std::vector<int> vertype;
     int num;                  // total vertex types incl. noncounting (drives labels/framing)
@@ -173,6 +229,31 @@ struct configuration {
     int dfs_depth;
 };
 
+// EDGE TYPES. False for every palette that declares none (and for the whole compiled-table
+// path), in which case conf.etype stays empty and none of this costs anything beyond one branch.
+static bool EDGE_TYPED = false;
+// SIDED CLASSES. A dart is (half-edge, side); lvert stores the SIDE-0 corner class and CLASS_SIGMA
+// maps it to the side-1 one. They differ only when a tile's mirror image permutes its corner classes
+// — never for an equilateral tile, so sigma is the identity for the regular, star, isotoxal, scaled
+// and polyomino palettes.
+//
+// The search reads NOTHING through sigma, and that is a measured result, not an omission. Letting a
+// gluing choose which side it joins to — a flip bit per seam, the obvious reading of "a chirality bit
+// per dart" — was implemented and REVERTED: on tri45all it found no tiling the sided classes alone do
+// not, cost a 26x redundancy (33,798 raw solutions pruning to the same 1,309), and on fdsq, where the
+// answer is known, it filed 41 of 1,420 patterns under the WRONG k. Gluing f to i with a flip is the
+// same pair of face constraints as gluing f to mirro[i] without one, with the two faces exchanged, so
+// the freedom was already in the enumeration. Sidedness belongs in the alphabet; the seam has none.
+static bool SIGMA_TRIVIAL = true;
+
+// Does this alphabet carry edge types? Read off the loaded mainlist, so the COMPILED and the RUNTIME
+// table paths reach the same answer. It used to live inside the runtime loader alone, which meant
+// `eu_solver.<palette>` — the binary run-oracle-parallel.sh uses — ran every edge-typed palette with
+// its gluing constraint OFF: on the planigons that was 23/76/298 where the constrained search finds
+// 18/67/233, the extra "tilings" gluing edges of different lengths to each other.
+static void detect_edge_types();
+// One past the largest edge-type id, so (class, edge type) packs into one int for the WL colour.
+static int ETSPAN = 1;
 // mainlist + class tables are generated per palette by alphabets/gen_alphabet.py
 // (resolved via -I tables/$(PALETTE); regular reproduces the legacy 44 entries exactly).
 #include <map>
@@ -192,7 +273,7 @@ struct configuration {
 // ---------------------------------------------------------------------------------------------
 static int TABLE_D = 0, TABLE_MAXL = 0;
 std::vector<vertexdef> mainlist;
-static std::vector<int> CLASS_UNITS, CLASS_L, CLASS_P, CLASS_NEXT, CLASS_PREV, CLASS_TILE;
+static std::vector<int> CLASS_UNITS, CLASS_L, CLASS_P, CLASS_NEXT, CLASS_PREV, CLASS_TILE, CLASS_SIGMA;
 static std::vector<std::string> CLASS_DISP, TILE_FAM, TILE_NAME;
 
 namespace {
@@ -212,14 +293,20 @@ static void load_tables_bin(const char* path) {
     std::ifstream f(path, std::ios::binary);
     if (!f) { std::cerr << "EU_TABLES: cannot open " << path << "\n"; std::exit(2); }
     std::vector<unsigned char> buf((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-    if (buf.size() < 8 || std::memcmp(buf.data(), "CTRNTB01", 8) != 0) {
-        std::cerr << "EU_TABLES: " << path << " is not a CTRNTB01 table file\n"; std::exit(2);
+    const bool v3 = buf.size() >= 8 && std::memcmp(buf.data(), "CTRNTB03", 8) == 0;
+    const bool v2 = v3 || (buf.size() >= 8 && std::memcmp(buf.data(), "CTRNTB02", 8) == 0);
+    if (buf.size() < 8 || (!v2 && std::memcmp(buf.data(), "CTRNTB01", 8) != 0)) {
+        std::cerr << "EU_TABLES: " << path << " is not a CTRNTB01/02/03 table file\n"; std::exit(2);
     }
     TableReader r{ buf.data() + 8, buf.data() + buf.size() };
     TABLE_D = r.i32(); TABLE_MAXL = r.i32();
     const int ncls = r.i32(), ntiles = r.i32(), ntypes = r.i32();
     auto fixed = [&](std::vector<int>& v) { v.resize((size_t)ncls); for (int i = 0; i < ncls; i++) v[i] = r.i32(); };
     fixed(CLASS_UNITS); fixed(CLASS_L); fixed(CLASS_P); fixed(CLASS_NEXT); fixed(CLASS_PREV); fixed(CLASS_TILE);
+    // CLASS_SIGMA arrived with CTRNTB03; an older table file means an equilateral-only alphabet,
+    // where sigma is the identity.
+    if (v3) fixed(CLASS_SIGMA);
+    else { CLASS_SIGMA.resize((size_t)ncls); for (int i = 0; i < ncls; i++) CLASS_SIGMA[i] = i; }
     CLASS_DISP = r.sv(); TILE_FAM = r.sv(); TILE_NAME = r.sv();
     if ((int)CLASS_DISP.size() != ncls || (int)TILE_NAME.size() != ntiles) {
         std::cerr << "tables.bin: class/tile count mismatch\n"; std::exit(2);
@@ -230,14 +317,29 @@ static void load_tables_bin(const char* path) {
         d.symbol = r.str(); d.code = r.str();
         d.ferkval = r.i32(); d.counting = r.i32();
         d.label = r.sv(); d.lneig = r.iv(); d.rneig = r.iv(); d.mirro = r.iv(); d.lvert = r.iv(); d.reps = r.iv();
+        if (v2) d.etype = r.iv();
     }
     if (r.p != r.end) { std::cerr << "tables.bin: " << (r.end - r.p) << " trailing bytes\n"; std::exit(2); }
+    detect_edge_types();
     std::cerr << "tables: " << ntypes << " vertex types, " << ncls << " classes, D=" << TABLE_D
+              << (EDGE_TYPED ? ", EDGE TYPES ON" : "")
               << " (runtime, " << path << ")\n";
 }
 #else
 #include "solver_tables.inc"
 #endif
+
+// Defined where BOTH table paths have `mainlist` in scope. Which is the point: it used to live inside
+// the runtime loader alone, so the compiled binary — the one run-oracle-parallel.sh uses — left
+// EDGE_TYPED false and ran every edge-typed palette with its gluing constraint off.
+static void detect_edge_types() {
+    for (size_t t = 0; t < mainlist.size(); t++)
+        for (size_t q = 0; q < mainlist[t].etype.size(); q++)
+            if (mainlist[t].etype[q]) {
+                EDGE_TYPED = true;
+                if (mainlist[t].etype[q] >= ETSPAN) ETSPAN = mainlist[t].etype[q] + 1;
+            }
+}
 
 int symbolcount;
 
@@ -279,7 +381,11 @@ struct vertypesolv {
 
 std::vector<vertypesolv> vertypesolved;
 
-int solcount = 0;
+// long long, not int: this counts DFS nodes, and runs now reach billions. composite-convex k<=4
+// (2026-08-08) printed "nodes: -1898351957" — a signed 32-bit wrap at ~2.15e9, so every node figure
+// from a long run was silently wrong. The pricing arguments in docs/ctrnact-solver-optimizations.md
+// are built on this number, so a wrapped counter is a misleading measurement, not a cosmetic bug.
+long long solcount = 0;
 int solfound = 0;
 
 std::vector<int> mincycle;
@@ -307,6 +413,12 @@ int writecyclefinal(configuration const& conf, std::ostream& filen);
 int writesolution(configuration const& conf);
 
 bool simplify(configuration const& conf);
+static inline bool edge_ok(configuration const& c, int x, int y) {
+    if (!EDGE_TYPED) return true;
+    const int a = c.etype[x], b = c.etype[y];
+    return a == 0 || b == 0 || a == b;   // 0 is a wildcard: an untyped edge glues to anything
+}
+
 int extend(configuration& slist);
 
 std::string finename(configuration const& conf) {
@@ -427,18 +539,27 @@ static long dyn_open = 0, dyn_reject = 0;
 
 static inline bool dyn_can_close(configuration const& conf, int i, int rfree, int count) {
     const int tk_i = cand_key(conf.lvert[i], conf.lvert[conf.rneig[i]], conf.mirro[i] == i);
-    const int rr   = conf.rneig[rfree];
-    const int q_r  = cand_key(CLASS_NEXT[conf.lvert[rr]], CLASS_NEXT[conf.lvert[rfree]],
-                              conf.mirro[rfree] == rfree);
     const int o = DYN_KORB[tk_i];
-    if (o < 0 || DYN_KORB[q_r] != o) return true;              // unknown -> do not reject
-    const int li = DYN_LOC[q_r], lj = DYN_LOC[tk_i];
-    if (li < 0 || lj < 0) return true;
-    const unsigned long long m = DYN_ACC[o][(size_t)li * DYN_N[o] + lj];
-    // closing at total length c needs tkey(i) in Reach_{c-count}(q_r), i.e. acc bit (c-count+1);
-    // shifting left by (count-1) lands that bit on c, where DYN_ALLOWED has its bits.
-    if (count >= 63) return true;
-    return ((m << (count - 1)) & DYN_ALLOWED[o]) != 0ULL;
+    if (o < 0) return true;                                    // unknown -> do not reject
+    const int lj = DYN_LOC[tk_i];
+    if (lj < 0 || count >= 63) return true;
+    // The open dart has 1..4 query keys under the 4-bucket union. The face can still close if ANY of
+    // them reaches tkey(i) at an admissible length, so this is a disjunction; requiring all of them
+    // would reject branches that are genuinely closable and lose tilings.
+    int qs[4];
+    const int nq = qkeys(conf.lvert[rfree], conf.lvert[conf.rneig[rfree]],
+                         conf.mirro[rfree] == rfree, qs);
+    for (int t = 0; t < nq; t++) {
+        const int q_r = qs[t];
+        if (DYN_KORB[q_r] != o) return true;                   // unknown/other orbit -> do not reject
+        const int li = DYN_LOC[q_r];
+        if (li < 0) return true;
+        const unsigned long long m = DYN_ACC[o][(size_t)li * DYN_N[o] + lj];
+        // closing at total length c needs tkey(i) in Reach_{c-count}(q_r), i.e. acc bit (c-count+1);
+        // shifting left by (count-1) lands that bit on c, where DYN_ALLOWED has its bits.
+        if (((m << (count - 1)) & DYN_ALLOWED[o]) != 0ULL) return true;
+    }
+    return false;
 }
 
 static inline bool checkface(configuration const& conf, int i) {
@@ -655,6 +776,7 @@ int initex() {
         newconf.rneig = mainlist[i].rneig;
         newconf.mirro = mainlist[i].mirro;
         newconf.lvert = mainlist[i].lvert;
+        if (EDGE_TYPED) newconf.etype = mainlist[i].etype;
         newconf.vertype = { i };
         newconf.num = 1;
         newconf.kcnt = mainlist[i].counting;
@@ -833,7 +955,12 @@ bool simplify_inner(configuration const& conf) {
 
         last_num_eq_class = num_eq_class;
         for (int i = 0; i < le; i++) {
-            data[i].first[0] = conf.lvert[i];
+            // Seed colour: the corner class, and the EDGE TYPE where the class alone does not
+            // separate the darts. On a free-edge palette every dart of the square grid is the same
+            // class and only its edge type differs, so colouring by class alone makes the refinement
+            // homogeneous, it never discretizes, and every closure is rejected as non-rigid. Off
+            // unless the alphabet declares edge types, so every equilateral palette is untouched.
+            data[i].first[0] = EDGE_TYPED ? conf.lvert[i] * ETSPAN + conf.etype[i] : conf.lvert[i];
             data[i].first[1] = eq_class[i];
             data[i].first[2] = eq_class[conf.mirro[i]];
             data[i].first[3] = eq_class[conf.glue[i]];
@@ -893,13 +1020,24 @@ int extend(configuration& slist) {
     // from this loop, to reject gluings that two comparisons rule out. a_cls/b_cls are loop-invariant.
     const int a_cls = slist.lvert[firstfree];
     const int b_cls = slist.lvert[slist.rneig[firstfree]];
-    const int want_B = BUCKET_OK ? CLASS_NEXT[a_cls] : -1;
+    // Same two class equalities as the candidate lookup, generalized: B in {NEXT,PREV}[a] and
+    // A in {NEXT,PREV}[b]. Under BUCKET_OK the two alternatives coincide and this is the old test.
+    const int wB1 = CLASS_NEXT[a_cls], wB2 = CLASS_PREV[a_cls];
+    const int wA1 = CLASS_NEXT[b_cls], wA2 = CLASS_PREV[b_cls];
     for (int i = 0; i < (int)slist.rneig.size(); i++) {
         if (slist.glue[i] == -1) {
             bool mirroredi = slist.mirro[i] == i;
             if (mirrored == mirroredi) {
-                if (BUCKET_OK && (slist.lvert[slist.rneig[i]] != want_B ||
-                                  CLASS_NEXT[slist.lvert[i]] != b_cls)) continue;
+                {
+                    const int Bi = slist.lvert[slist.rneig[i]], Ai = slist.lvert[i];
+                    if ((Bi != wB1 && Bi != wB2) || (Ai != wA1 && Ai != wA2)) continue;
+                }
+                // EDGE TYPES: a leg may not be glued to a hypotenuse. Checked on the mirror pair
+                // too, since a non-mirrored glue drags its mirror image along with it.
+                if (EDGE_TYPED) {
+                    if (!edge_ok(slist, firstfree, i)) continue;
+                    if (!mirrored && !edge_ok(slist, slist.mirro[firstfree], slist.mirro[i])) continue;
+                }
                 slist.glue[firstfree] = i;
                 slist.glue[i] = firstfree;
                 if (!mirrored) {
@@ -946,10 +1084,34 @@ int extend(configuration& slist) {
         // this visits the same types in the same order — emission order is unchanged.
         const bool nc_only = !canK;
         const std::vector<CandEnt>* pool;
-        if (BUCKET_OK) {
-            const int key = cand_key(CLASS_NEXT[slist.lvert[slist.rneig[firstfree]]],
-                                     CLASS_NEXT[slist.lvert[firstfree]], mirrored);
-            pool = nc_only ? &CAND_NC[key] : &CAND[key];
+        int qk[4];
+        const int nq = CAND.empty() ? 0 : qkeys(a_cls, b_cls, mirrored, qk);
+        if (nq == 1) {
+            pool = nc_only ? &CAND_NC[qk[0]] : &CAND[qk[0]];   // BUCKET_OK path, unchanged
+        } else if (nq > 1) {
+            // Merge the union by `ord` so the visit order matches a full ascending scan. Each source
+            // is pre-seeked to vertype[0]: ord is assigned in (type, rep) order, so gr is
+            // non-decreasing along it and the outer lower_bound stays valid on the result.
+            const size_t d = (size_t)(slist.dfs_depth < 0 ? 0 : slist.dfs_depth);
+            while (MERGE_STACK.size() <= d) MERGE_STACK.push_back(std::vector<CandEnt>());
+            std::vector<CandEnt>& buf = MERGE_STACK[d];
+            buf.clear();
+            const std::vector<CandEnt>* src[4];
+            size_t idx[4];
+            for (int t = 0; t < nq; t++) {
+                src[t] = nc_only ? &CAND_NC[qk[t]] : &CAND[qk[t]];
+                idx[t] = (size_t)(std::lower_bound(src[t]->begin(), src[t]->end(), slist.vertype[0],
+                                  [](CandEnt const& e, int v) { return e.gr < v; }) - src[t]->begin());
+            }
+            for (;;) {
+                int best = -1;
+                for (int t = 0; t < nq; t++)
+                    if (idx[t] < src[t]->size() &&
+                        (best < 0 || (*src[t])[idx[t]].ord < (*src[best])[idx[best]].ord)) best = t;
+                if (best < 0) break;
+                buf.push_back((*src[best])[idx[best]++]);
+            }
+            pool = &buf;
         } else {
             pool = nc_only ? &FULL_NC : &FULL_ALL;
         }
@@ -966,14 +1128,16 @@ int extend(configuration& slist) {
         // NOTE the dart: successor(y) = glue[rneig[y]], so the chain continues from Q(rneig[firstfree]),
         // NOT Q(firstfree). Using the bucket key here is off by one dart and mixes two class orbits.
         const int rf = slist.rneig[firstfree];
-        const int qf_x = cand_key(CLASS_NEXT[slist.lvert[slist.rneig[rf]]],
-                                  CLASS_NEXT[slist.lvert[rf]], slist.mirro[rf] == rf);
+        int qf_x[4];
+        const int nqf_x = qkeys(slist.lvert[rf], slist.lvert[slist.rneig[rf]],
+                                slist.mirro[rf] == rf, qf_x);
         while (gidx < gend) {
             const int gr = (*pool)[gidx].gr;
             {
                 bool any = false;
                 for (int q = gidx; q < gend && (*pool)[q].gr == gr; q++)
-                    if (pair_ok(tk_x, (*pool)[q].qf) && pair_ok((*pool)[q].tkrev, qf_x)) { any = true; break; }
+                    if (pair_ok_any(tk_x, (*pool)[q].qf, (*pool)[q].nqf) &&
+                        pair_ok_any((*pool)[q].tkrev, qf_x, nqf_x)) { any = true; break; }
                 if (!any) { while (gidx < gend && (*pool)[gidx].gr == gr) gidx++; continue; }
             }
             // Counting types are bounded by maxnum (= k). Noncounting (dent-fill) types are not
@@ -991,11 +1155,14 @@ int extend(configuration& slist) {
             const int newsz = l + symbollength;
             newconf.rneig.resize(newsz); newconf.lneig.resize(newsz); newconf.mirro.resize(newsz);
             newconf.lvert.resize(newsz); newconf.label.resize(newsz); newconf.glue.resize(newsz);
+            if (EDGE_TYPED) newconf.etype.resize(newsz);
             int* RN = newconf.rneig.data(); int* LN = newconf.lneig.data();
             int* MI = newconf.mirro.data(); int* LV = newconf.lvert.data();
             int* LB = newconf.label.data(); int* GL = newconf.glue.data();
             const int* srn = VD.rneig.data(); const int* sln = VD.lneig.data();
             const int* smi = VD.mirro.data(); const int* slv = VD.lvert.data();
+            int* ET = EDGE_TYPED ? newconf.etype.data() : nullptr;
+            const int* set_ = EDGE_TYPED ? VD.etype.data() : nullptr;
             const int* sbo = LBASE_OF[gr].data();
             const int tilenum = newconf.num;
             for (int gg = 0; gg < symbollength; gg++) {
@@ -1004,6 +1171,7 @@ int extend(configuration& slist) {
                 LN[d] = l + sln[gg];
                 MI[d] = l + smi[gg];
                 LV[d] = slv[gg];
+                if (ET) ET[d] = set_[gg];
                 LB[d] = label_code(sbo[gg], tilenum);
                 GL[d] = -1;
             }
@@ -1012,13 +1180,18 @@ int extend(configuration& slist) {
             newconf.kcnt += mainlist[gr].counting;
             while (gidx < gend && (*pool)[gidx].gr == gr) {
                 const int rrep = (*pool)[gidx].rrep;
-                const bool pok = pair_ok(tk_x, (*pool)[gidx].qf) && pair_ok((*pool)[gidx].tkrev, qf_x);
+                const bool pok = pair_ok_any(tk_x, (*pool)[gidx].qf, (*pool)[gidx].nqf) &&
+                                 pair_ok_any((*pool)[gidx].tkrev, qf_x, nqf_x);
                 gidx++;
                 if (!pok) continue;
                 int i = l + rrep;
                 configuration& newconf2 = newconf;
                 bool mirroredi = newconf2.mirro[i] == i;
                 if (mirrored == mirroredi) {
+                    if (EDGE_TYPED) {
+                        if (!edge_ok(newconf2, firstfree, i)) continue;
+                        if (!mirrored && !edge_ok(newconf2, newconf2.mirro[firstfree], newconf2.mirro[i])) continue;
+                    }
                     newconf2.glue[firstfree] = i;
                     newconf2.glue[i] = firstfree;
                     if (!mirrored) {
@@ -1058,6 +1231,7 @@ int extend(configuration& slist) {
             newconf.lneig.resize(l);
             newconf.mirro.resize(l);
             newconf.lvert.resize(l);
+            if (EDGE_TYPED) newconf.etype.resize(l);
             newconf.label.resize(l);
             newconf.glue.resize(l);
         }
@@ -1091,6 +1265,17 @@ static inline int qkey_of(const vertexdef& V, int e) {
 static inline int tkey_of(const vertexdef& V, int f) {
     return cand_key(V.lvert[f], V.lvert[V.rneig[f]], V.mirro[f] == f);
 }
+// The 1..4 query keys of dart e. Under BUCKET_OK this is exactly {qkey_of(V, e)}, so every filter
+// below reduces to its old self and the golden catalogs stay byte-identical.
+static inline int qkeys_of(const vertexdef& V, int e, int* out) {
+    return qkeys(V.lvert[e], V.lvert[V.rneig[e]], V.mirro[e] == e, out);
+}
+// The digraph the filters walk assumes every successor key sits in the SAME CLASS_NEXT orbit as its
+// source ("measured: zero cross-orbit steps"). The BFS indexes successors with a global loc[] and
+// never re-checks the orbit, so a cross-orbit edge would write into another orbit's slot and corrupt
+// the reachability — and since dropping reachability KILLS types, that direction can lose tilings.
+// Count them instead of assuming; a nonzero count disables the filters rather than mis-filtering.
+static long XORB_STEPS = 0;
 
 // FACE-CLOSURE FILTER — deletes vertex types that cannot occur in any tiling, at any k.
 //
@@ -1110,11 +1295,15 @@ static inline int tkey_of(const vertexdef& V, int f) {
 // cross-orbit steps), so this is bitset reachability on a few hundred nodes per component.
 // Face-closure filter. A vertex type whose faces can never close cannot occur in ANY tiling at any k,
 // so it is deleted from the alphabet before the search starts. Sound, k-independent, ~0.05 s.
-// Guarded on BUCKET_OK: the key identity needs CLASS_PREV == CLASS_NEXT with NEXT an involution.
+// Runs on EVERY palette since the 4-bucket union (2026-08-08). The successor relation comes from
+// qkeys_of(), which enumerates all 1-4 admissible keys instead of assuming the single involution one,
+// so the digraph below is a RELAXATION on period-p palettes: more edges, more reachability, fewer
+// kills. Sound in the direction that matters, since only under-approximating reachability can delete
+// a vertex type that a real tiling uses.
 static void face_filter() {
     const int NT = (int)mainlist.size();
     TYPE_OK.assign(NT, 1);
-    if (!BUCKET_OK || std::getenv("EU_NOFILTER")) return;
+    if (std::getenv("EU_NOFILTER")) return;
     const int NKEY = NCLS * NCLS * 2;
     std::vector<int> orb(NCLS, -1), orbL, orbP;
     for (int c = 0; c < NCLS; c++) {
@@ -1132,9 +1321,11 @@ static void face_filter() {
             if (!liveT[T]) continue;
             const vertexdef& V = mainlist[T];
             for (int f = 0; f < (int)V.rneig.size(); f++) {
-                int tk = tkey_of(V, f), qk = qkey_of(V, V.rneig[f]);
+                int qs[4];
+                const int nq = qkeys_of(V, V.rneig[f], qs);
+                const int tk = tkey_of(V, f);
                 korb[tk] = orb[V.lvert[V.rneig[f]]];
-                R[tk].push_back(qk);
+                for (int t = 0; t < nq; t++) R[tk].push_back(qs[t]);
             }
         }
         for (int K = 0; K < NKEY; K++)
@@ -1168,7 +1359,9 @@ static void face_filter() {
                     for (int j = 0; j < n; j++)
                         if (cur[(size_t)i * W + j / 64] >> (j % 64) & 1ULL)
                             for (size_t e = 0; e < R[keys[o][j]].size(); e++) {
-                                int d = loc[R[keys[o][j]][e]];
+                                const int K2 = R[keys[o][j]][e];
+                                if (korb[K2] >= 0 && korb[K2] != (int)o) { XORB_STEPS++; continue; }
+                                int d = loc[K2];
                                 if (d >= 0) nxt[(size_t)i * W + d / 64] |= 1ULL << (d % 64);
                             }
                 cur.swap(nxt);
@@ -1189,6 +1382,16 @@ static void face_filter() {
             if (!ok) { liveT[T] = 0; killed++; } else nlive++;
         }
         if (!killed) {
+            if (XORB_STEPS) {
+                // The per-orbit BFS cannot represent these, and the only representation it has left is
+                // "unreachable", which kills types that may be fine. Refuse to filter at all.
+                TYPE_OK.assign(NT, 1);
+                PAIRFILTER = false;
+                std::cerr << "face filter: DISABLED — " << XORB_STEPS
+                          << " cross-orbit successor steps; the per-orbit reachability cannot model them "
+                             "and under-approximating would delete reachable vertex types\n";
+                return;
+            }
             TYPE_OK.swap(liveT);
             if (nlive != NT)
                 std::cerr << "face filter: " << nlive << " of " << NT
@@ -1204,7 +1407,7 @@ static void face_filter() {
 // at bit c-1 (one step already consumed by fixing the successor), so it is recorded at EVERY t.
 static void build_okpair() {
     const int NT = (int)mainlist.size();
-    if (!BUCKET_OK || std::getenv("EU_NOFILTER")) { PAIRFILTER = false; return; }
+    if (!PAIRFILTER || std::getenv("EU_NOFILTER")) { PAIRFILTER = false; return; }
     NKEY_ = NCLS * NCLS * 2;
     OKPAIR.assign(((size_t)NKEY_ * NKEY_ + 63) / 64, 0ULL);
     std::vector<int> orb(NCLS, -1), orbL, orbP;
@@ -1219,9 +1422,11 @@ static void build_okpair() {
         if (!TYPE_OK[T]) continue;
         const vertexdef& V = mainlist[T];
         for (int f = 0; f < (int)V.rneig.size(); f++) {
-            int tk = tkey_of(V, f), qk = qkey_of(V, V.rneig[f]);
+            int qs[4];
+            const int nq = qkeys_of(V, V.rneig[f], qs);
+            const int tk = tkey_of(V, f);
             korb[tk] = orb[V.lvert[V.rneig[f]]];
-            R[tk].push_back(qk);
+            for (int t = 0; t < nq; t++) R[tk].push_back(qs[t]);
         }
     }
     for (int K = 0; K < NKEY_; K++)
@@ -1283,7 +1488,13 @@ static void dyn_build() {
     // star24full, ring*) has BUCKET_OK true, so `make check-regular` and every star digest passed
     // throughout. The blast radius is the composite/scaled family: composite-convex,
     // composite-decomp, and any other palette with period-p corners.
-    if (!BUCKET_OK) return;   // leaves DYN_READY false => dyn_can_close() is never consulted
+    //
+    // RESOLVED 2026-08-08 by the 4-bucket union: the successor relation is now built from qkeys_of(),
+    // which enumerates every admissible key instead of assuming the single involution one, and
+    // dyn_can_close() accepts if ANY of them can close. That restores the filter on period-p palettes
+    // and the composite-convex k<=2 count is back to 288. The guard that remains is PAIRFILTER, which
+    // face_filter clears when it found cross-orbit steps it cannot model.
+    if (!PAIRFILTER) return;   // leaves DYN_READY false => dyn_can_close() is never consulted
     const int NKEY = NCLS * NCLS * 2;
     std::vector<int> orb(NCLS, -1), orbL, orbP;
     for (int c = 0; c < NCLS; c++) {
@@ -1297,11 +1508,11 @@ static void dyn_build() {
         if (!TYPE_OK[T]) continue;
         const vertexdef& V = mainlist[T];
         for (int f = 0; f < (int)V.rneig.size(); f++) {
-            int tk = cand_key(V.lvert[f], V.lvert[V.rneig[f]], V.mirro[f] == f);
-            int e  = V.rneig[f];
-            int qk = cand_key(CLASS_NEXT[V.lvert[V.rneig[e]]], CLASS_NEXT[V.lvert[e]], V.mirro[e] == e);
+            int qs[4];
+            const int nq = qkeys_of(V, V.rneig[f], qs);
+            const int tk = cand_key(V.lvert[f], V.lvert[V.rneig[f]], V.mirro[f] == f);
             DYN_KORB[tk] = orb[V.lvert[V.rneig[f]]];
-            R[tk].push_back(qk);
+            for (int t = 0; t < nq; t++) R[tk].push_back(qs[t]);
         }
     }
     for (int K = 0; K < NKEY; K++)
@@ -1358,6 +1569,11 @@ int main() {
     if (shard_d2 > 1)
         std::cerr << "shard " << shard_w << "/" << shard_n << ": roots " << shard_w1 << "/" << shard_n1
                   << ", root-branches " << shard_w2 << "/" << shard_d2 << "\n";
+    detect_edge_types();          // no-op on the runtime path, which already ran it after loading
+    for (int c = 0; c < (int)CLASS_SIGMA.size(); c++)
+        if (CLASS_SIGMA[c] != c) { SIGMA_TRIVIAL = false; break; }
+    if (!SIGMA_TRIVIAL)
+        std::cerr << "sided classes: sigma is not the identity on this alphabet\n";
     symbolcount = mainlist.size();
     for (int i = 0; i < (int)mainlist.size(); i++)
         if (!mainlist[i].counting) { has_noncounting = true; NC_IDX.push_back(i); }
@@ -1368,41 +1584,74 @@ int main() {
             LBASE_OF[gr][gg] = lbase_id(mainlist[gr].label[gg]);
     }
     NCLS = (int)CLASS_NEXT.size();
-    // The unique-key lookup below is only sound when PREV == NEXT and NEXT is an involution, which
-    // makes the admissible (A,B) pair for a given (a,b) unique. checkpart's FIRST step accepts either
-    // direction, so a palette breaking that would need the 4-bucket union; fall back to the full scan.
+    CN_ = CLASS_NEXT.data(); CP_ = CLASS_PREV.data();   // must precede the first qkeys() call
+    // BUCKET_OK is now REPORTING ONLY: it says whether the admissible (A,B) pair happens to be unique,
+    // i.e. whether qkeys() will return 1 everywhere and the union degenerates to the single bucket the
+    // engine used before 2026-08-08. Nothing branches on it any more; the union handles both cases.
     BUCKET_OK = true;
     for (int c = 0; c < NCLS && BUCKET_OK; c++)
         if (CLASS_PREV[c] != CLASS_NEXT[c] || CLASS_NEXT[CLASS_NEXT[c]] != c) BUCKET_OK = false;
-    face_filter();
-    if (!std::getenv("EU_NODYN")) dyn_build();
-    if (!BUCKET_OK) {
-        for (int gr = 0; gr < (int)mainlist.size(); gr++)
-            for (int rrep : mainlist[gr].reps) {
-                if (!TYPE_OK[gr]) continue;
-                CandEnt e; e.gr = gr; e.rrep = rrep;
-                e.qf = qkey_of(mainlist[gr], mainlist[gr].rneig[rrep]);
-                e.tkrev = tkey_of(mainlist[gr], mainlist[gr].lneig[rrep]);
-                FULL_ALL.push_back(e);
-                if (!mainlist[gr].counting) FULL_NC.push_back(e);
-            }
+    // EU_NOBUCKET — diagnostic: turn the whole stack off (face filter, pair filter, dynamic filter,
+    // candidate bucketing) and scan every type at every node. Only ever removes optimizations, so it
+    // cannot lose a tiling; it prices the stack on any palette. Measured on isotox-cx45-z24, see
+    // experiments/results/period3-palette-2026-08-07.md.
+    // ⚑ FLAT-CORNER PALETTES GET NO FILTERS. A corner of exactly D/2 units (180°) is a degenerate
+    // boundary position — the scaled/doubled construction's "s-1 flat corners per side", and every
+    // polyomino corner that is not a real turn. It sits at a 2-VALENT vertex, and the face-closure
+    // model the three filters share does not describe those: measured 2026-08-08 on tetromino, the
+    // static filter called 68,038 of 68,370 vertex types impossible and the k=1 catalog fell from 76
+    // to 20 — 56 real tilings deleted, silently. regular-scaled-123 lost 4 of 222 the same way.
+    //
+    // This was invisible until today for the same reason the dyn_build bug was: BUCKET_OK is false on
+    // every flat-corner palette (their periods exceed 2), so the filters had never once run against
+    // one. The 4-bucket union switched them on and the unsoundness surfaced immediately.
+    //
+    // The CANDIDATE INDEX is unaffected and stays on — it is a necessary-condition prune straight out
+    // of checkface's first step, with no closure model in it, and it is where the speedup lives
+    // anyway (EU_NOFILTER=1, i.e. bucketing only, reproduces the old 76 on tetromino exactly).
+    bool has_flat = false;
+    for (int c = 0; c < NCLS && !has_flat; c++) if (CLASS_UNITS[c] * 2 == TABLE_D) has_flat = true;
+    if (std::getenv("EU_NOBUCKET")) {
+        TYPE_OK.assign(mainlist.size(), 1);
+        PAIRFILTER = false;
+    } else if (has_flat) {
+        TYPE_OK.assign(mainlist.size(), 1);
+        PAIRFILTER = false;
+        std::cerr << "filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the "
+                     "face-closure model does not describe (candidate index stays on)\n";
+    } else {
+        face_filter();
+        if (!std::getenv("EU_NODYN")) dyn_build();
     }
-    if (BUCKET_OK) {
-        CAND.assign((size_t)NCLS * NCLS * 2, std::vector<CandEnt>());
-        CAND_NC.assign((size_t)NCLS * NCLS * 2, std::vector<CandEnt>());
+    std::cerr << "bucket key unique (BUCKET_OK): " << (BUCKET_OK ? "yes" : "no — 4-bucket union active")
+              << "\n";
+    // ONE build for every palette now. Entries carry `ord`, their index in this ascending (type, rep)
+    // scan, which is what lets the union of several buckets be visited in full-scan order. FULL_ALL is
+    // kept only for EU_NOBUCKET, the diagnostic that reproduces the old unbucketed cost.
+    {
+        const bool force_full = std::getenv("EU_NOBUCKET") != 0;
+        if (!force_full) {
+            CAND.assign((size_t)NCLS * NCLS * 2, std::vector<CandEnt>());
+            CAND_NC.assign((size_t)NCLS * NCLS * 2, std::vector<CandEnt>());
+        }
+        int ord = 0;
         for (int gr = 0; gr < (int)mainlist.size(); gr++)
             for (int rrep : mainlist[gr].reps) {
                 if (!TYPE_OK[gr]) continue;
-                int A = mainlist[gr].lvert[rrep];
-                int B = mainlist[gr].lvert[mainlist[gr].rneig[rrep]];
-                bool mir = (mainlist[gr].mirro[rrep] == rrep);
-                CandEnt e; e.gr = gr; e.rrep = rrep;
-                e.qf = qkey_of(mainlist[gr], mainlist[gr].rneig[rrep]);
-                e.tkrev = tkey_of(mainlist[gr], mainlist[gr].lneig[rrep]);
-                CAND[cand_key(A, B, mir)].push_back(e);
-                if (!mainlist[gr].counting) CAND_NC[cand_key(A, B, mir)].push_back(e);
+                const vertexdef& V = mainlist[gr];
+                CandEnt e; e.gr = gr; e.rrep = rrep; e.ord = ord++;
+                e.nqf = qkeys_of(V, V.rneig[rrep], e.qf);
+                e.tkrev = tkey_of(V, V.lneig[rrep]);
+                if (force_full) {
+                    FULL_ALL.push_back(e);
+                    if (!V.counting) FULL_NC.push_back(e);
+                } else {
+                    const int key = cand_key(V.lvert[rrep], V.lvert[V.rneig[rrep]],
+                                             V.mirro[rrep] == rrep);
+                    CAND[key].push_back(e);
+                    if (!V.counting) CAND_NC[key].push_back(e);
+                }
             }
-        long tot = 0; for (size_t i = 0; i < CAND.size(); i++) tot += (long)CAND[i].size();
     }
     build_okpair();
     if (eu_trace) {

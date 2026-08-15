@@ -31,6 +31,10 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import family_flex as ff
+# Multi-parameter (coupled) development — extracted 2026-08-08 from the byte-identical copies that
+# lived here and in the sibling exporter; see coupled_flex.py.
+from coupled_flex import (zvec_float, _madd, _face_walk_multi, develop_multi, trace_faces_multi,
+                          lp_terms_multi, canonical_map, map_key_over_perms)
 
 LOG = None
 CX_CORNER = re.compile(r"^(cx\d+-[\d.]+)@(\d+)$")
@@ -48,9 +52,6 @@ def log(msg):
 # ---------------- float evaluation of Laurent elements (verbatim from export_family_cells) ----------
 ZF = [cmath.exp(1j * math.pi * (k % 24) / 12) for k in range(24)]
 
-
-def zvec_float(v):
-    return sum(c * ZF[k] for k, c in enumerate(v) if c)
 
 
 def lp_terms(p):
@@ -198,108 +199,7 @@ def poly_n(nm):
 # (one component per independent parameter). The Laurent primitives in family_flex (lp_add/sub/mono/key,
 # period_lattice, flatten_basis, dedupe_mod_lattice, face_canonical) are agnostic to the monomial-key type,
 # so they are reused unchanged with tuple keys. qeff[c] is a P-tuple: corner c's δ-coefficient per parameter.
-def _madd(m, q, sign):
-    return tuple(mi + sign * qi for mi, qi in zip(m, q))
 
-
-def develop_multi(tab, rneig, cls, glue, qeff, P, sign=1, guard=400000):
-    from collections import deque
-    D = tab.D
-    units = tab.CLASS_UNITS
-    Z = (0,) * P
-
-    def star(h0, t0, m0):
-        seq, cur, t, m = [], h0, t0, m0
-        for _ in range(8 * D):
-            seq.append((cur, t, m))
-            r = rneig[cur]
-            t = (t + sign * units[cls[r]]) % D
-            m = _madd(m, qeff[cls[r]], sign)
-            cur = r
-            if cur == h0 and t == t0 and m == m0:
-                return seq
-            if cur == h0 and t == t0 and m != m0:
-                raise ff.FormalPin("vertex walk depends on δ ⇒ closure only at δ=0")
-        return None
-
-    placed, periods = {}, []
-
-    def reg(key, pos):
-        if key in placed:
-            if ff.lp_key(placed[key]) != ff.lp_key(pos):
-                periods.append(ff.lp_sub(pos, placed[key]))
-            return False
-        placed[key] = pos
-        return True
-
-    start = (0, 0, Z)
-    reg(start, ff.LP0)
-    q = deque([(start, ff.LP0)])
-    expanded = set()
-    g = 0
-    while q:
-        g += 1
-        if g > guard:
-            raise RuntimeError("BFS did not terminate")
-        (h0, t0, m0), pos = q.popleft()
-        pk = ff.lp_key(pos)
-        if pk in expanded:
-            continue
-        expanded.add(pk)
-        seq = star(h0, t0, m0)
-        if seq is None:
-            raise RuntimeError("vertex star did not close")
-        for h, t, m in seq:
-            reg((h, t, m), pos)
-            gg, gt, gm = glue[h], (t + D // 2) % D, m
-            npos = ff.lp_add(pos, ff.lp_mono(t, m))
-            if reg((gg, gt, gm), npos):
-                q.append(((gg, gt, gm), npos))
-    return placed, periods
-
-
-def _face_walk_multi(tab, rneig, cls, glue, qeff, start_key, placed, sign=1):
-    D = tab.D
-    units = tab.CLASS_UNITS
-    h, t, m = start_key
-    pos = placed[start_key]
-    verts, corner_cls = [], []
-    cur_h, cur_t, cur_m, cur_pos = h, t, m, pos
-    for _ in range(128):
-        verts.append(cur_pos)
-        g = glue[cur_h]
-        npos = ff.lp_add(cur_pos, ff.lp_mono(cur_t, cur_m))
-        nh = rneig[g]
-        corner = cls[nh]
-        corner_cls.append(corner)
-        nt = ((cur_t + D // 2) + sign * units[corner]) % D
-        nm = _madd(cur_m, qeff[corner], sign)
-        cur_h, cur_t, cur_m, cur_pos = nh, nt, nm, npos
-        if cur_h == h and cur_t == t and cur_m == m:
-            return verts, corner_cls, ff.lp_key(cur_pos) == ff.lp_key(pos)
-    return None, None, False
-
-
-def trace_faces_multi(tab, rneig, cls, glue, qeff, placed, sign=1):
-    faces = {}
-    for key in placed:
-        verts, ccls, closed = _face_walk_multi(tab, rneig, cls, glue, qeff, key, placed, sign)
-        if verts is None:
-            continue
-        if not closed:
-            raise RuntimeError("face walk failed to close FORMALLY")
-        tiles = {tab.CLASS_TILE[c] for c in ccls}
-        if len(tiles) != 1:
-            continue
-        fkey = frozenset(ff.lp_key(v) for v in verts)
-        if fkey not in faces:
-            faces[fkey] = (verts, tiles.pop())
-    return list(faces.values())
-
-
-def lp_terms_multi(p):
-    """Laurent element with P-tuple keys → [[mVec, re, im], ...] (mVec a list of length P)."""
-    return [[list(m), (z := zvec_float(p[m])).real, z.imag] for m in sorted(p)]
 
 
 def eval_terms_multi(terms, deltas):
@@ -317,33 +217,6 @@ def species_delta_interval(tab, tile):
     return lo, hi
 
 
-def canonical_map(n, rels, lab):
-    """Complete canonical form of a LABELLED oriented dart map (min over deterministic traversals from each
-    start dart). Two maps share it iff isomorphic as labelled maps. O(n²) for these ≤~30-dart maps."""
-    best = None
-    for start in range(n):
-        order = {start: 0}
-        queue = [start]
-        qi = 0
-        while qi < len(queue):  # deterministic BFS: explore relations in fixed order
-            d = queue[qi]
-            qi += 1
-            for R in rels:
-                nb = R[d]
-                if nb not in order:
-                    order[nb] = len(order)
-                    queue.append(nb)
-        if len(order) != n:
-            continue
-        inv = [0] * n
-        for d, i in order.items():
-            inv[i] = d
-        canon = tuple((lab[inv[i]],) + tuple(order[R[inv[i]]] for R in rels) for i in range(n))
-        if best is None or canon < best:
-            best = canon
-    return best
-
-
 def family_map_key(rneig, lneig, mirro, glue, cls, tab, param_of_cls, norm_of_cls, P):
     """α-family invariant: the canonical labelled-map form, MINIMIZED over parameter permutations.
 
@@ -353,24 +226,16 @@ def family_map_key(rneig, lneig, mirro, glue, cls, tab, param_of_cls, norm_of_cl
     family it is the diagonal of — the bare cxL@norm label conflated them, silently dropping a tiling. Taking
     the minimum over parameter permutations makes it invariant to the α₁↔α₂ swap, so the two grid members of
     one 2-parameter family (at (α₁,α₂) and (α₂,α₁)) share the key instead of splitting. Regular corners rigid."""
-    n = len(rneig)
-    rels = (rneig, lneig, mirro, glue)
-    best = None
-    for perm in itertools.permutations(range(P)):
-        lab = []
-        for d in range(n):
-            disp = tab.CLASS_DISP[cls[d]]
-            if disp.startswith("cx"):
-                L = poly_n(tab.TILE_NAME[tab.CLASS_TILE[cls[d]]])
-                p = param_of_cls.get(cls[d])
-                lab.append(f"cx{L}#{perm[p]}@{norm_of_cls[cls[d]]}" if p is not None
-                           else f"cx{L}~{tab.CLASS_UNITS[cls[d]]}")  # rigid composite (coupled/non-param)
-            else:
-                lab.append(disp)
-        k = canonical_map(n, rels, lab)
-        if best is None or k < best:
-            best = k
-    return best
+    def label_of(d, perm):
+        disp = tab.CLASS_DISP[cls[d]]
+        if not disp.startswith("cx"):
+            return disp
+        L = poly_n(tab.TILE_NAME[tab.CLASS_TILE[cls[d]]])
+        p = param_of_cls.get(cls[d])
+        return (f"cx{L}#{perm[p]}@{norm_of_cls[cls[d]]}" if p is not None
+                else f"cx{L}~{tab.CLASS_UNITS[cls[d]]}")  # rigid composite (coupled/non-param)
+
+    return map_key_over_perms((rneig, lneig, mirro, glue), label_of, P)
 
 
 def analyze_block(tab, vertype, conway):

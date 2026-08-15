@@ -71,6 +71,21 @@ _ID2 = np.eye(2, dtype=complex)
 BASES = {
     "667": {"config": [6, 6, 7], "label": "6.6.7", "solver": "pt_edges_667.exe"},
     "668": {"config": [6, 6, 8], "label": "6.6.8", "solver": "pt_edges_668.exe"},
+    "669": {"config": [6, 6, 9], "label": "6.6.9", "solver": "pt_edges_669.exe"},
+    # The first bases here whose faces are NOT all one size. `alphabet()` already derives the
+    # forced l and one unit per distinct face from `config` alone, so these are rows and not code.
+    # `config` is the CYCLIC vertex figure read off the certificates, not the id's digits: the id is a
+    # multiset (`4435` develops as 3.4.5.4), so taking the digits in order would build the wrong board.
+    "33345": {"config": [3, 3, 4, 3, 5], "label": "3.3.4.3.5", "solver": "pt_edges_33345.exe"},
+    "33444": {"config": [3, 4, 3, 4, 4], "label": "3.4.3.4.4", "solver": "pt_edges_33444.exe"},
+    "3447": {"config": [3, 4, 7, 4], "label": "3.4.7.4", "solver": "pt_edges_3447.exe"},
+    "3448": {"config": [3, 4, 8, 4], "label": "3.4.8.4", "solver": "pt_edges_3448.exe"},
+    "3466": {"config": [3, 6, 4, 6], "label": "3.6.4.6", "solver": "pt_edges_3466.exe"},
+    "4445": {"config": [4, 4, 4, 5], "label": "4.4.4.5", "solver": "pt_edges_4445.exe"},
+    "4446": {"config": [4, 4, 4, 6], "label": "4.4.4.6", "solver": "pt_edges_4446.exe"},
+    "4447": {"config": [4, 4, 4, 7], "label": "4.4.4.7", "solver": "pt_edges_4447.exe"},
+    "4455": {"config": [4, 5, 4, 5], "label": "4.5.4.5", "solver": "pt_edges_4455.exe"},
+    "4456": {"config": [4, 6, 4, 5], "label": "4.6.4.5", "solver": "pt_edges_4456.exe"},
     "37": {"config": [3, 3, 3, 3, 3, 3, 3], "label": "3^7", "solver": "pt_triangles_edges_3_7.exe"},
     "38": {"config": [3] * 8, "label": "3^8", "solver": "pt_triangles_edges_3_8.exe"},
     "45": {"config": [4, 4, 4, 4, 4], "label": "4^5", "solver": "pt_squares_edges_4_5.exe"},

@@ -13000,5 +13000,5 @@
     galebach k=4: 151
     galebach k=5: 332
     galebach k=6: 673
-  exactSource: 2719 seed + 1 cell = 2720/15680  (12960 Myers star entries intentionally omit — no codec star support)  ✓
-  elapsed 16.4s
+  exactSource: 2719 seed + 1 cell = 2720/15680  (44 Myers star entries intentionally omit — no codec star support)  ✓
+  elapsed 18.3s

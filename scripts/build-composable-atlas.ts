@@ -109,6 +109,13 @@ const INPUTS: { k: number; files: string[] }[] = [
 		k: 3,
 		files: ["ctrnact-composite-convex-k3.cells.json", "ctrnact-composite-decomp-k3.cells.json"],
 	},
+	// k=4 landed 2026-08-08, once the 4-bucket union removed the BUCKET_OK wall that had kept every
+	// period-p palette at k≤3 (docs/ctrnact-solver-optimizations.md, fix 14). Raw solve: 10,610 convex
+	// and 8,012 decomposable solutions, both developed with zero geometry failures.
+	{
+		k: 4,
+		files: ["ctrnact-composite-convex-k4.cells.json", "ctrnact-composite-decomp-k4.cells.json"],
+	},
 ];
 
 const NOTE =

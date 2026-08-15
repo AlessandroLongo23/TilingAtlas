@@ -6,3 +6,10 @@
   k<=2  filtered   : 16s raw=209 kept=147
   k<=2  UNfiltered : 16s raw=372 kept=288
   k<=3  filtered   : 364s raw=1741 kept=891
+
+### isotoxal-star-z24  (BUCKET_OK TRUE — filters ARE active)
+  face filter: 14966 of 34329 live (56.4% dead)   OKPAIR: 28938
+  k<=2 filt: 1s kept=586
+  k<=2 nofilt: 2s kept=586
+  k<=3 filt: 41s kept=3223
+  k<=3 nofilt: 165s kept=3223

@@ -1,0 +1,18 @@
+{
+  "name": "fdtri",
+  "D": 24,
+  "comment": "Freedraw on the TRIANGULAR grid {3,6}, same construction as fdsq2 and no new code: one equilateral triangle and \"freedraw\": true. Six triangles meet at a vertex, so the abstract configurations are the thirteen binary necklaces of length six. Reproduces public/freedraw/tri-solutions.json \u2014 19 / 357 / 4683 at k = 1, 2, 3 \u2014 set for set. Angles in D=24 units: 60 = 4.",
+  "freedraw": true,
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T",
+      "famchar": "t",
+      "angles": [
+        4,
+        4,
+        4
+      ]
+    }
+  ]
+}

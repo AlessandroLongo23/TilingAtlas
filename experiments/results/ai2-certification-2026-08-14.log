@@ -1,0 +1,45 @@
+ai2 per-pixel certification stamp — started 09:33:27
+STOPPED 09:48 — no shard but hpt7-k3 (52 rows, 49 certified) finished inside the window. Six workers
+over the ai2 set is a multi-hour job: cost grows as rows x k^2 and hpt7-k6 alone is 6,333 rows at k=6.
+Shards are written whole, so nothing here is partial: every hpt shard re-parses and the 20 unstamped
+ones read as "untried", which is the shelf's default and the state 87% of the ai1 half is in.
+Resume with: node scripts/stamp-hyp-poly-parallel.mjs 8 --skip-stamped   (covers both families)
+
+EAGER-ONLY PASS started 09:45:51
+  [1/5] hpt9-k2.json  169 rows, 87/169 certified, 93s elapsed, ~371s left
+  [1/4] hpt7-k4.json  191 rows, 156/191 certified, 93s elapsed, ~280s left
+  [2/4] hpt7-k1.json  3 rows, 159/194 certified, 93s elapsed, ~93s left
+  [3/4] hpt7-k2.json  8 rows, 167/202 certified, 94s elapsed, ~31s left
+
+hyperbolic-poly: 202 tilings stamped (52 skipped), 167 certified for the per-pixel renderer, 35 on the 2D path (94s)
+   35× develop bound # beyond the safe rim #Rdev#
+  [2/5] hpt9-k1.json  10 rows, 96/179 certified, 94s elapsed, ~141s left
+  [1/2] hpt14-k1.json  235 rows, 1/235 certified, 101s elapsed, ~101s left
+  [2/2] hpt13-k1.json  38 rows, 2/273 certified, 108s elapsed, ~0s left
+
+hyperbolic-poly: 273 tilings stamped (0 skipped), 2 certified for the per-pixel renderer, 271 on the 2D path (108s)
+   271× develop bound # beyond the safe rim #Rdev#
+  [3/5] hpt8-k2.json  85 rows, 157/264 certified, 109s elapsed, ~73s left
+  [4/5] hpt8-k1.json  9 rows, 166/273 certified, 109s elapsed, ~27s left
+  [5/5] hpt11-k1.json  18 rows, 175/291 certified, 115s elapsed, ~0s left
+
+hyperbolic-poly: 291 tilings stamped (0 skipped), 175 certified for the per-pixel renderer, 116 on the 2D path (115s)
+   116× develop bound # beyond the safe rim #Rdev#
+  [1/2] hpt15-k1.json  566 rows, 1/566 certified, 118s elapsed, ~118s left
+  [2/2] hpt10-k1.json  16 rows, 15/582 certified, 119s elapsed, ~0s left
+
+hyperbolic-poly: 582 tilings stamped (0 skipped), 15 certified for the per-pixel renderer, 567 on the 2D path (119s)
+   567× develop bound # beyond the safe rim #Rdev#
+  [1/1] hpt11-k2.json  681 rows, 0/681 certified, 383s elapsed, ~0s left
+
+hyperbolic-poly: 681 tilings stamped (0 skipped), 0 certified for the per-pixel renderer, 681 on the 2D path (383s)
+   681× develop bound # beyond the safe rim #Rdev#
+EAGER-ONLY PASS done 09:52:14
+
+RESULT: the 15 EAGER shards are stamped whole — 2,233 records, 473 certified for the per-pixel
+renderer, 1,760 routed to the 2D developed path. That is every ai2 record the Hyperbolic geometry
+loads on sight, so no thumbnail in the sidebar pays a doomed buildDirichletDomain any more (it was
+~185 ms each: opening {3,12}'s 152-record k=1 row cost 28 s of main thread and timed out a Playwright
+screenshot, which is how the cost got measured).
+The 6 LAZY shards stay untried by design: hpt7-k5, hpt7-k6, hpt8-k3, hpt9-k3, hpt10-k2, hpt13-k2 —
+31,567 records, hours of work, and only reached when a visitor opens that k row.

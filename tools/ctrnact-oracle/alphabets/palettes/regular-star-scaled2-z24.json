@@ -1,0 +1,172 @@
+{
+ "name": "regular-star-scaled2-z24",
+ "D": 24,
+ "pinnedLegacy": false,
+ "maxValence": 12,
+ "comment": "PROBE (AL, 2026-08-09): the scaled x star crossing, which docs/TILE_TAXONOMY_AUDIT.md 3.1 records as never searched (`scaled x anything-else`). Scale-2 only, at D=24 so the star species keep their odd-multiple-of-15 corners; a side-2 N-gon is the degenerate 2N-gon (real corner D/2 - D/N, then one flat 180 corner), word period 2, so the 4-bucket union (2026-08-08) leaves the filters ON. Not a shipping palette. The full crossing: regular {3,4,6,8,12} + the 15 Myers in-ring star species + side-2 {3,4,6,12}.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  },
+  {
+   "kind": "star",
+   "n": 3,
+   "alphaU": 1,
+   "name": "3*1",
+   "famchar": "sA"
+  },
+  {
+   "kind": "star",
+   "n": 3,
+   "alphaU": 2,
+   "name": "3*2",
+   "famchar": "sB"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 2,
+   "name": "4*2",
+   "famchar": "sC"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 3,
+   "name": "4*3",
+   "famchar": "sD"
+  },
+  {
+   "kind": "star",
+   "n": 4,
+   "alphaU": 4,
+   "name": "4*4",
+   "famchar": "sE"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 2,
+   "name": "6*2",
+   "famchar": "sF"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 4,
+   "name": "6*4",
+   "famchar": "sG"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 5,
+   "name": "6*5",
+   "famchar": "sH"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 6,
+   "name": "6*6",
+   "famchar": "sK"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 1,
+   "name": "8*1",
+   "famchar": "sI"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 3,
+   "name": "8*3",
+   "famchar": "sL"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 6,
+   "name": "8*6",
+   "famchar": "sM"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 2,
+   "name": "12*2",
+   "famchar": "sJ"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 4,
+   "name": "12*4",
+   "famchar": "sN"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 6,
+   "name": "12*6",
+   "famchar": "sO"
+  },
+  {
+   "kind": "scaled",
+   "n": 3,
+   "scale": 2,
+   "name": "3s2",
+   "famchar": "t"
+  },
+  {
+   "kind": "scaled",
+   "n": 4,
+   "scale": 2,
+   "name": "4s2",
+   "famchar": "q"
+  },
+  {
+   "kind": "scaled",
+   "n": 6,
+   "scale": 2,
+   "name": "6s2",
+   "famchar": "h"
+  },
+  {
+   "kind": "scaled",
+   "n": 12,
+   "scale": 2,
+   "name": "12s2",
+   "famchar": "w"
+  }
+ ]
+}

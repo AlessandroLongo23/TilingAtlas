@@ -1,0 +1,16 @@
+# Cells export for the new k=4 catalogs (21:01)
+  #10610 (cx6-3.4.5.3.4.5@2,cx6-3.4.5.3.4.5@1,cx6-3.4.5.3.4.5@0)F, (cx6-3.4.5.3.4.5@2,cx6-3.4.5.3.4.5@1,cx6-3.4.5.3.4.5@0)F, (cx6-3.4.5.3.4.5@2,cx6-3.4.5.3.4.5@1,cx6-3.4.5.3.4.5@0)F, (cx6-3.4.5.3.4.5@2,cx6-3.4.5.3.4.5@1,cx6-3.4.5.3.4.5@0)F: 8 cell polys, area 18.9282 == |det| ok  [composite]
+[composite-convex k=4]  solutions 10610  developed 10610  usesComposite 10459  failures 0  -> ../../experiments/composable-oracle/ctrnact-composite-convex-k4.cells.json
+  #8012 (cx6-2.5.5.2.5.5@2,cx6-2.5.5.2.5.5@1,cx6-2.5.5.2.5.5@0)F, (cx6-2.5.5.2.5.5@2,cx6-2.5.5.2.5.5@1,cx6-2.5.5.2.5.5@0)F, (cx6-2.5.5.2.5.5@2,cx6-2.5.5.2.5.5@1,cx6-2.5.5.2.5.5@0)F, (cx6-2.5.5.2.5.5@2,cx6-2.5.5.2.5.5@1,cx6-2.5.5.2.5.5@0)F: 8 cell polys, area 14.9282 == |det| ok  [composite]
+[composite-decomp k=4]  solutions 8012  developed 8012  usesComposite 7861  failures 0  -> ../../experiments/composable-oracle/ctrnact-composite-decomp-k4.cells.json
+EXPORT_DONE
+
+== tetromino k<=3 full pipeline (solve+prune+develop)
+[21:21:43] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 373 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-tetromino/ctrnact-cells-k3.json
+  k=1 : 11
+  k=2 : 69
+  k=3 : 293
+area-cert (float Σface=|detΛ|): 373/373 tilings PASS
+[21:21:43]   (0s)
+[21:21:43] DONE  total 2s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-tetromino/ctrnact-cells-k3.json

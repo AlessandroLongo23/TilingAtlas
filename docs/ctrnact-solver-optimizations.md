@@ -632,3 +632,44 @@ depth. That falling ratio is what makes k=9 reachable at all.
 That is the opposite of the usual combinatorial blow-up and is what makes k=8+ plausible.
 
 For scale: this morning k=2 alone cost ~15.8 CPU-hours; the whole k<=6 catalog is now 3.3 minutes.
+
+## Fix 14 — the 4-bucket union: the filter stack works on period-p palettes (2026-08-08)
+
+Everything above was gated on `BUCKET_OK`, true only when `CLASS_PREV == CLASS_NEXT` and `NEXT` is an
+involution, i.e. only when every tile has period ≤ 2. One period-3 tile in a palette turned off the
+face filter, the pair filter, the dynamic filter and the candidate index together, and the search fell
+back to scanning every vertex type at every node. That is why composite-convex, composite-decomp and
+the scaled palettes had all stalled at k ≤ 3 while stars reached k=9.
+
+The identity the index needs, derived without assuming the involution: gluing free dart `e` to
+candidate `f` crosses the new glue in both directions, and `checkface` accepts `CLASS_NEXT` or
+`CLASS_PREV` on its first step, so with `a = lvert[e]`, `b = lvert[rneig[e]]`,
+
+    lvert[rneig[f]] in {NEXT, PREV}[a]      and      lvert[f] in {NEXT, PREV}[b]
+
+which is four admissible `(A, B)` pairs, four buckets, and their union is the pool. Under `BUCKET_OK`
+the alternatives coincide, `qkeys()` returns one key, and this is exactly the old single bucket — which
+is why `check-regular` stays byte-identical and star24full k≤4 reproduces old node-for-node.
+
+The union is a NECESSARY-condition relaxation: `checkface` also locks direction after its first step
+and the union forgets that, so it admits candidates `checkpart_inc` then rejects. It costs work and
+cannot lose a tiling. The same relaxation generalizes the three filters — their successor digraph gets
+1-4 edges per dart instead of 1, and more reachability means fewer kills, which is the safe direction.
+`dyn_can_close` and the pair filter take the disjunction over the key set.
+
+⚑ **The gain is the candidate index, not the filters.** On composite-convex at k=2 the node count falls
+only 21% while wall time falls 18×: the old path scanned all 18,969 types per node, the new one reads
+at most four buckets. The static face filter kills ZERO types on every period-p palette measured,
+against 96% on star24full — these palettes simply have few impossible vertex types, and the relaxation
+weakens the filter further. Do not expect the star ladder's compounding here.
+
+⚑ **A latent filter bug, now guarded.** The per-orbit reachability indexed successors through a global
+`loc[]` without re-checking the orbit, justified by "measured: zero cross-orbit steps". A cross-orbit
+edge would corrupt the reachability, and since reduced reachability KILLS types, that direction loses
+tilings. It now counts them and disables the filters rather than filtering on a corrupted graph.
+
+Gates: `check-regular` PASS byte-identical; star24full k≤4 identical (2,959,612 nodes, digest
+`053f2de0b6a19393`); composite-convex k≤2 pruned back to **288**, the golden that exposed the dynamic
+filter deleting 141 of 288 in the first place.
+
+Full write-up: `experiments/results/4bucket-union-2026-08-08.md`.
