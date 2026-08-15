@@ -1,0 +1,14 @@
+{
+  "name": "tri45",
+  "D": 24,
+  "comment": "The 45-45-90 triangle (half a square), the first palette with EDGE TYPES. Legs and hypotenuse are incommensurable (1 : sqrt2), so the scaled-palette trick of writing a longer edge as a run of unit darts separated by 180-degree corners cannot express this tile at any scale. Instead each boundary position declares an edge type, and only like types may glue: 'S' = leg, 'H' = hypotenuse. D=24 because the 45-degree corner is 3 units of 15 degrees, an ODD power of zeta24, the same reason the octagon needs 24 directions. Angles in D-units: 90 = 6, 45 = 3, sum 12 = (3-2)*(24/2). Marek, 2026-08-12: 'you need to change the algorithm to implement edge types. Basically, each edge has limitation to which edges it can be connected to prevent incompatible edges.'",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T45",
+      "famchar": "t",
+      "angles": [6, 3, 3],
+      "edges": ["S", "H", "S"]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "board": "planigon",
+  "tile": "the 15 planigons",
+  "k": [
+    {
+      "k": 1,
+      "count": 18,
+      "file": "/planigon/planigon-k1.json"
+    },
+    {
+      "k": 2,
+      "count": 67,
+      "file": "/planigon/planigon-k2.json"
+    },
+    {
+      "k": 3,
+      "count": 233,
+      "file": "/planigon/planigon-k3.json"
+    },
+    {
+      "k": 4,
+      "count": 737,
+      "file": "/planigon/planigon-k4.json"
+    }
+  ]
+}

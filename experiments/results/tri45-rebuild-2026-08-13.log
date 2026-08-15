@@ -1,0 +1,49 @@
+[19:06:43] tri45 shelf rebuild, k<=4, on corrected edge frames
+[19:06:45] built eu_solver_rt MAXNUM=4
+[19:06:45] --- tri45sq ---
+[gen] *** INCOMPLETE ALPHABET: 30 of 96 vertex types have a sigma-MIXED dart orbit — a mirror in their site symmetry swaps a tile's corner classes, so their class array cannot be written and the solver cannot use them. Tilings all of whose vertices are of these types are UNREACHABLE. See fold().
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45sq/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (96 entries)
+[19:06:49]   solve 1s  raw 15427
+  k=1 : 16
+  k=2 : 131
+  k=3 : 797
+  k=4 : 3975
+total kept: 4919
+store: peak 1.48718 MB total, 1.48718 MB resident
+developed: {1: 16, 2: 131, 3: 797, 4: 3975} total 4919 failures 0
+[19:06:55]   develop 5s
+[19:06:55] --- tri45two ---
+[gen] *** INCOMPLETE ALPHABET: 41 of 96 vertex types have a sigma-MIXED dart orbit — a mirror in their site symmetry swaps a tile's corner classes, so their class array cannot be written and the solver cannot use them. Tilings all of whose vertices are of these types are UNREACHABLE. See fold().
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45two/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (96 entries)
+[19:06:59]   solve 0s  raw 5390
+  k=1 : 12
+  k=2 : 74
+  k=3 : 410
+  k=4 : 1709
+total kept: 2205
+store: peak 0.730648 MB total, 0.730648 MB resident
+developed: {1: 12, 2: 74, 3: 410, 4: 1709} total 2205 failures 0
+[19:07:02]   develop 3s
+[19:07:02] --- tri45all ---
+[gen] *** INCOMPLETE ALPHABET: 79 of 234 vertex types have a sigma-MIXED dart orbit — a mirror in their site symmetry swaps a tile's corner classes, so their class array cannot be written and the solver cannot use them. Tilings all of whose vertices are of these types are UNREACHABLE. See fold().
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45all/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (234 entries)
+[19:07:09]   solve 4s  raw 33833
+  k=1 : 27
+  k=2 : 259
+  k=3 : 1745
+  k=4 : 9900
+total kept: 11931
+store: peak 3.82006 MB total, 3.82006 MB resident
+developed: {1: 27, 2: 259, 3: 1745, 4: 9900} total 11931 failures 0
+[19:07:25]   develop 15s
+[19:07:25] --- shelf ---
+  dedupe by geometry: 19055 solver solutions -> 4285 distinct tiling(s)
+  k=1: 16 tilings -> public/tri45/t45-k1.json
+  k=2: 152 tilings -> public/tri45/t45-k2.json
+  k=3: 833 tilings -> public/tri45/t45-k3.json
+  k=4: 3284 tilings -> public/tri45/t45-k4.json
+  atlas shelf: 168 entries (k<=2, eager) -> public/reference-atlas-tri45.json
+               833 entries -> public/reference-atlas-tri45-k3.json (lazy)
+               3284 entries -> public/reference-atlas-tri45-k4.json (lazy)
+tri45: 4285 distinct tilings, shape err 1.15e-9, area err 7.07e-10 — certified
+[19:09:32] DONE

@@ -12,6 +12,7 @@
 // arrives without one fails a test instead of reaching visitors as a slug.
 
 import { HYP_EDGES_BASES } from "@/lib/freedraw/hyp-edges";
+import { SCHWARZ_BOARDS, schwarzSubOfBoard } from "@/lib/freedraw/schwarz";
 import { SPH_EDGES_BOARDS, sphEdgesSubOfBoard } from "@/lib/freedraw/sph-edges";
 import { IH_EDGE_BOARDS, ihEdgeSubOfBoard } from "@/lib/isohedral/edge-shelf";
 import { PENT_EDGE_BOARDS, pentEdgeSubOfBoard } from "@/lib/pentagon/edge-shelf";
@@ -116,6 +117,18 @@ const NAMED: Record<string, string> = {
 	"spe-j37": "Pseudo-rhombicuboctahedron edges",
 	"spe-33334": "Snub cube edges",
 	// The 3.4.n.4 family on the sphere, n = 3, 4, 5 — the same rows as "hpo-", other side of the split.
+	// A Platonic face cut in two, and what the halves tile — the count is 4pi/(tile area) exactly.
+	// A {p,q} face cut in two, and what the halves tile. Infinite boards, so no tile count in the name.
+	"hph-45-half": "{4,5} halved",
+	"hph-37-half": "{3,7} halved",
+	"hph-38-half": "{3,8} halved",
+	"hph-54-half": "{5,4} halved",
+	"hph-64-half": "{6,4} halved",
+	"hph-46-half": "{4,6} halved",
+	"sph-oct-half": "Octahedron halved (16 tiles)",
+	"sph-cube-half": "Cube halved (12 tiles)",
+	"sph-ico-half": "Icosahedron halved (40 tiles)",
+	"sph-dodec-half": "Dodecahedron halved (24 tiles)",
 	"spp-3": "3.4.3.4 solids",
 	"spp-4": "3.4.4.4 solids",
 	"spp-5": "3.4.5.4 solids",
@@ -160,6 +173,16 @@ const NAMED: Record<string, string> = {
  * better name than its number.
  */
 export const SUB_LABEL: Record<string, string> = {
+	// The palettes under "Different edge lengths".
+	"el-tri45": "Triangles and squares",
+	"el-planigon": "Planigons",
+	"el-penrose": "Penrose kite and dart",
+	// The Euclidean half-polygons. Named by the polygon and the cut, because the cut is what decides
+	// the board — a hexagon halved two ways gives two entirely different catalogues.
+	"el-euh-hexv": "Half hexagon (long diagonal)",
+	"el-euh-pent": "Half pentagon",
+	"el-euh-hexm": "Half hexagon (edge midpoints)",
+	"el-euh-sqmid": "Domino (half square)",
 	...Object.fromEntries(
 		PENT_EDGE_BOARDS.map((b) => [pentEdgeSubOfBoard(b), `Pentagon (Kershner ${b.type}) edges`]),
 	),

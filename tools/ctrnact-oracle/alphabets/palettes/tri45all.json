@@ -1,0 +1,76 @@
+{
+  "name": "tri45all",
+  "D": 24,
+  "comment": "All four shapes the two edge scales generate: the 45-45-90 triangle at legs 1 and at legs sqrt2, the unit square and the sqrt2 square. Edge types S=1, H=sqrt2, D=2; only like types glue. H is the hinge of the whole palette — it is the small triangle hypotenuse, the big triangle leg, and the sqrt2 square side at once, so every tile can meet every other. Angles in D=24 units: 90=6, 45=3.",
+  "edgeLengths": {
+    "S": "1",
+    "H": "sqrt2",
+    "D": "2"
+  },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T1",
+      "famchar": "t",
+      "angles": [
+        6,
+        3,
+        3
+      ],
+      "edges": [
+        "S",
+        "H",
+        "S"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T2",
+      "famchar": "u",
+      "angles": [
+        6,
+        3,
+        3
+      ],
+      "edges": [
+        "H",
+        "D",
+        "H"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "Q1",
+      "famchar": "q",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "S",
+        "S",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "Q2",
+      "famchar": "r",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "H",
+        "H",
+        "H",
+        "H"
+      ]
+    }
+  ]
+}

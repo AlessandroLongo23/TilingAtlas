@@ -1,0 +1,36 @@
+{
+  "board": "penrose",
+  "tile": "Penrose kite and dart",
+  "k": [
+    {
+      "k": 1,
+      "count": 7,
+      "file": "/penrose/penrose-k1.json"
+    },
+    {
+      "k": 2,
+      "count": 18,
+      "file": "/penrose/penrose-k2.json"
+    },
+    {
+      "k": 3,
+      "count": 91,
+      "file": "/penrose/penrose-k3.json"
+    },
+    {
+      "k": 4,
+      "count": 287,
+      "file": "/penrose/penrose-k4.json"
+    },
+    {
+      "k": 5,
+      "count": 890,
+      "file": "/penrose/penrose-k5.json"
+    },
+    {
+      "k": 6,
+      "count": 3212,
+      "file": "/penrose/penrose-k6.json"
+    }
+  ]
+}

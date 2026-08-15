@@ -37,6 +37,8 @@ import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
 	loadPeriodAtlasShard,
+	loadTri45AtlasShard,
+	loadPenroseAtlasShard,
 	loadReferenceAtlas,
 	loadReferenceAtlasShard,
 	loadFreedrawShardsForK,
@@ -72,6 +74,8 @@ import {
 	COMPOSABLE_SHARD_KS,
 	ISOTOXAL_SHARD_KS,
 	PERIOD_SHARD_KS,
+	TRI45_SHARD_KS,
+	PENROSE_SHARD_KS,
 	resolveMergedFamilyKey,
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
@@ -96,10 +100,25 @@ import type { TranslationalCellData } from "@/classes/algorithm/types";
 
 // Higher-k demo shards held out of the eager main atlas (convex k3, isotoxal k3/k4). We pull them all into
 // the browse list on mount — see the eager-merge effect below.
-const KNOWN_HIGHER_TIERS: { source: "composable" | "isotoxal"; k: number }[] = [
+//
+// The 45-45-90 shelf joins them: its k=3 and k=4 are 1.5 and 7.7 MB, against the 19.5 MB isotoxal k=4
+// already on this list, so it is well inside the budget this table already spends — and deep-link-only
+// would mean the shelf's 5,137 deeper tilings are unreachable by browsing, which is what it was before.
+const KNOWN_HIGHER_TIERS: { source: "composable" | "isotoxal" | "period" | "tri45" | "penrose"; k: number }[] = [
 	...COMPOSABLE_SHARD_KS.map((k) => ({ source: "composable" as const, k })),
 	...ISOTOXAL_SHARD_KS.map((k) => ({ source: "isotoxal" as const, k })),
+	...PERIOD_SHARD_KS.map((k) => ({ source: "period" as const, k })),
+	...TRI45_SHARD_KS.map((k) => ({ source: "tri45" as const, k })),
+	...PENROSE_SHARD_KS.map((k) => ({ source: "penrose" as const, k })),
 ];
+
+const SHARD_LOADER = {
+	composable: loadComposableAtlasShard,
+	isotoxal: loadIsotoxalAtlasShard,
+	period: loadPeriodAtlasShard,
+	tri45: loadTri45AtlasShard,
+	penrose: loadPenroseAtlasShard,
+} as const;
 
 // Trailing debounce on the URL mirror. WebKit caps history.replaceState at 100 calls / 30s, then throws
 // SecurityError and DISABLES the method for a while — so the rate has to stay under it, one call per

@@ -78,6 +78,25 @@ export const SHAPE_CLASS_LABEL = Object.fromEntries(
 
 // ── Per-shelf sub-class facets ───────────────────────────────────────────────────────────────────────
 
+/** The palettes inside the "Multiple edge lengths" class. Planigons first: it is the larger tile set
+ *  and the one whose name explains the class. */
+export const EDGE_BOARD_ORDER: EdgeBoard[] = ["planigon", "tri45", "penrose",
+	"euh-hexv", "euh-pent", "euh-hexm", "euh-sqmid"];
+/** ONE ROW PER TILE SHAPE. The four halved-polygon boards share a source but are four different
+ *  tiles, and a visitor choosing here is choosing a shape — a single "Halved regular polygons"
+ *  chip would hide a trapezoid, a quadrilateral, a pentagon and a domino behind one word. Two more
+ *  members of that family are already above under their own names: the half-triangle is one of the
+ *  planigons and the half-square is the tri45 board. */
+export const EDGE_BOARD_LABEL: Record<EdgeBoard, string> = {
+	planigon: "Planigons",
+	tri45: "45-45-90 triangles and squares",
+	penrose: "Penrose kite and dart",
+	"euh-hexv": "Half hexagon (long diagonal)",
+	"euh-pent": "Half pentagon",
+	"euh-hexm": "Half hexagon (edge midpoints)",
+	"euh-sqmid": "Domino (half square)",
+};
+
 export const ISLAMIC_SYSTEM_ORDER: IslamicSystem[] = [
 	"regular",
 	"fourfold-a",

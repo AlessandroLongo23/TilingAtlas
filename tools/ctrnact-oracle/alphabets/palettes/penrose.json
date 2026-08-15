@@ -1,0 +1,21 @@
+{
+  "name": "penrose",
+  "D": 10,
+  "comment": "PENROSE'S KITE AND DART (the P2 pair), enumerated WITHOUT the matching rules. Both tiles are built from the Robinson triangles: the kite is two acute golden triangles (36-72-72, sides 1:phi:phi) glued along a long side, the dart two obtuse ones (108-36-36, sides phi:1:1) glued along a short side. So the kite is [72,72,144,72] with edges [phi,1,1,phi] and the dart [36,216,36,72] with edges [1,1,phi,phi] — every angle a multiple of 36 degrees, hence D=10, and every edge either 1 or phi. phi = 2cos(36) = zeta10 + zeta10^-1 is already an algebraic integer in Z[zeta10], so this palette needs no length scaling at all. Penrose's arrow decorations, which are what force aperiodicity, are NOT expressible as edge types here: an arrow is directed and edge types glue like-to-like, so what the search enumerates is every edge-to-edge PERIODIC tiling the two shapes admit when only their lengths must match. Those exist in quantity — any quadrilateral tiles by 180-degree rotations about its edge midpoints, and a kite plus a dart make a phi-rhombus — so a non-empty answer is expected, and it is a different catalogue from the aperiodic one. The dart's 216-degree reflex corner puts min_len at 2, which is what admits the valence-2 vertex where that notch is filled by a kite's 144-degree corner.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "Kite",
+      "famchar": "k",
+      "angles": [2, 2, 4, 2],
+      "edgeLens": ["phi", "1", "1", "phi"]
+    },
+    {
+      "kind": "composite",
+      "name": "Dart",
+      "famchar": "d",
+      "angles": [1, 6, 1, 2],
+      "edgeLens": ["1", "1", "phi", "phi"]
+    }
+  ]
+}

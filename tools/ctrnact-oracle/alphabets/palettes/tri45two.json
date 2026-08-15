@@ -1,0 +1,22 @@
+{
+  "name": "tri45two",
+  "D": 24,
+  "comment": "The 45-45-90 triangle at TWO scales: legs 1 with hypotenuse sqrt2, and legs sqrt2 with hypotenuse 2. Three edge types, S = 1, H = sqrt2, D = 2, and only like types glue. Note what the scale factor does: the big triangle's LEGS are the small one's HYPOTENUSE, so the two tiles interlock along H and the search is not two independent copies of the same problem. Both tiles have the same angle word 90-45-45; they differ only in their edges, which is precisely what an equilateral alphabet cannot say. Angles in D=24 units: 90 = 6, 45 = 3.",
+  "edgeLengths": { "S": "1", "H": "sqrt2", "D": "2" },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T1",
+      "famchar": "t",
+      "angles": [6, 3, 3],
+      "edges": ["S", "H", "S"]
+    },
+    {
+      "kind": "composite",
+      "name": "T2",
+      "famchar": "u",
+      "angles": [6, 3, 3],
+      "edges": ["H", "D", "H"]
+    }
+  ]
+}

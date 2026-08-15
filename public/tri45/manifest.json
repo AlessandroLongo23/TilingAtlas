@@ -1,0 +1,30 @@
+{
+  "board": "t45",
+  "tile": "45-45-90 triangle",
+  "edgeTypes": [
+    "leg",
+    "hypotenuse"
+  ],
+  "k": [
+    {
+      "k": 1,
+      "count": 16,
+      "file": "/tri45/t45-k1.json"
+    },
+    {
+      "k": 2,
+      "count": 160,
+      "file": "/tri45/t45-k2.json"
+    },
+    {
+      "k": 3,
+      "count": 941,
+      "file": "/tri45/t45-k3.json"
+    },
+    {
+      "k": 4,
+      "count": 4196,
+      "file": "/tri45/t45-k4.json"
+    }
+  ]
+}

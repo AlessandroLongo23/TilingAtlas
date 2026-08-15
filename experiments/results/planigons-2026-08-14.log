@@ -1,0 +1,206 @@
+[00:37:03] planigon palette: 15 duals of the Euclidean vertex configurations
+[gen] mirror twins added for 3 chiral tile(s): P12.6.4', P6.4.4.3', P12.4.3.3'
+[gen] EDGE TYPES (L1=1, L2=2, L3=3, L4=4, L6=5, L5=6, L7=7, L8=8, L9=9, L10=10, L11=11, L12=12): 3122 incompatible adjacent pairs of 3600 forbidden at the vertex
+[gen] palette=planigon D=24 tiles=18 classes=60 configs=1104
+[cert] A6: 1821 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 525 of 1821 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] tables.bin: 0.9 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/planigon/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (1821 entries)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/planigon.json   0.69s user 0.02s system 97% cpu 0.732 total
+
+[00:37:25] search k=1
+[00:37:28]   raw blocks: 18  (0s)
+  k=1 : 18
+total kept: 18
+./run-sts.sh planigon 1 2>&1  2.49s user 0.41s system 80% cpu 3.604 total
+
+[00:37:55] k=1, with the developer reading the normalised palette
+  FAIL k=1 eu_raw_6ee_1: edge types underdetermined (6 of 6 darts)
+  FAIL k=1 eu_raw_4jb_1: edge types underdetermined (8 of 8 darts)
+  FAIL k=1 eu_raw_4jp_1: edge types underdetermined (4 of 4 darts)
+  FAIL k=1 eu_raw_4bq_1: edge types underdetermined (8 of 8 darts)
+[00:37:57]   (0s)
+[00:37:57] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-planigon-k1/planigon-cells.json
+
+[00:38:51] k=1, developing off the alphabet's own ETYPE
+[00:38:53] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+[gen] mirror twins added for 3 chiral tile(s): P12.6.4', P6.4.4.3', P12.4.3.3'
+developed: {1: 18} total 18 failures 0
+[00:38:53]   (0s)
+[00:38:53] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-planigon-k1/planigon-cells.json
+
+[00:39:23] the 18 k=1 planigon tilings, identified and certified
+ id                tiles/period   planigon species used
+  t45-1-00001        2          P6.6.6x2
+  t45-1-00002        2          P8.8.4x2
+  t45-1-00003        4          P8.8.4x4
+  t45-1-00004        2          P12.6.4x2
+  t45-1-00005        4          P12.6.4x4
+  t45-1-00006        4          P12.6.4x4
+  t45-1-00007        4          P12.6.4x4
+  t45-1-00008        2          P12.12.3x2
+  t45-1-00009        4          P12.12.3x4
+  t45-1-00010        1          P4.4.4.4
+  t45-1-00011        1          P6.3.6.3/P6.6.3.3
+  t45-1-00012        2          P6.3.6.3/P6.6.3.3x2
+  t45-1-00013        2          P6.4.3.4/P6.4.4.3x2
+  t45-1-00014        2          P6.4.3.4/P6.4.4.3x2
+  t45-1-00015        2          P6.3.6.3/P6.6.3.3x2
+  t45-1-00016        2          P12.3.4.3/P12.4.3.3x2
+  t45-1-00017        2          P12.3.4.3/P12.4.3.3x2
+  t45-1-00018        1          P3.3.3.3.3.3
+
+certificates: area failures 0/18, vertices not at 360 degrees 0/18
+
+[00:39:48] search k<=2
+[00:39:51]   raw blocks: 123  (1s)
+  k=1 : 18
+  k=2 : 67
+total kept: 85
+developed: {1: 18, 2: 67} total 85 failures 0
+[00:39:51] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-planigon-k2/planigon-cells.json
+
+[00:40:40] species census over k<=2, matched on the full cyclic (angle, edge) word
+  tilings: {1: 18, 2: 67}   unrecognised faces: 0
+
+  every planigon species, and how many faces of it appear across the catalogue:
+    P6.6.6           16  
+    P8.8.4          112  
+    P12.6.4         278  
+    P12.12.3         54  
+    P4.4.4.4          2  
+    P6.3.6.3         33  
+    P6.4.3.4          2  
+    P6.4.4.3          6  
+    P6.6.3.3         32  
+    P12.3.4.3         6  
+    P12.4.3.3         8  
+    P4.3.4.3.3        4  
+    P4.4.3.3.3        4  
+    P6.3.3.3.3        4  
+    P3.3.3.3.3.3      4  
+
+  MONOHEDRAL tilings (one species only) — the Laves family and its relatives:
+    P12.12.3       k=1  x2
+    P12.12.3       k=2  x6
+    P12.3.4.3      k=1  x1
+    P12.4.3.3      k=1  x1
+    P12.6.4        k=1  x4
+    P12.6.4        k=2  x28
+    P3.3.3.3.3.3   k=1  x1
+    P4.3.4.3.3     k=2  x1
+    P4.4.3.3.3     k=2  x1
+    P4.4.4.4       k=1  x1
+    P6.3.6.3       k=1  x2
+    P6.3.6.3       k=2  x6
+    P6.4.3.4       k=1  x1
+    P6.4.4.3       k=1  x1
+    P6.4.4.3       k=2  x1
+    P6.6.3.3       k=1  x1
+    P6.6.6         k=1  x1
+    P8.8.4         k=1  x2
+    P8.8.4         k=2  x12
+
+[00:43:16] planigon shelf build
+  dedupe by geometry: 85 solver solutions -> 20 distinct tiling(s)
+  k=1: 4 tilings -> public/planigon/planigon-k1.json
+  k=2: 16 tilings -> public/planigon/planigon-k2.json
+  atlas shelf: 20 entries -> public/reference-atlas-planigon.json
+planigon: 20 distinct tilings, shape err 9.65e-10, area err 7.86e-11, angle err 2.10e-8° — certified
+
+[00:43:46] rebuild with a window sized to the palette
+  dedupe by geometry: 85 solver solutions -> 84 distinct tiling(s)
+  k=1: 18 tilings -> public/planigon/planigon-k1.json
+  k=2: 66 tilings -> public/planigon/planigon-k2.json
+  atlas shelf: 84 entries -> public/reference-atlas-planigon.json
+planigon: 84 distinct tilings, shape err 9.65e-10, area err 7.86e-11, angle err 2.10e-8° — certified
+
+[01:04:21] search k<=3
+[01:04:28]   raw blocks: 553  (4s)
+  k=1 : 18
+  k=2 : 67
+  k=3 : 233
+total kept: 318
+developed: {1: 18, 2: 67, 3: 233} total 318 failures 0
+./run-sts.sh planigon 3 2>&1  6.41s user 0.53s system 89% cpu 7.743 total
+
+[01:04:49] planigon shelf, k<=3
+  dedupe by geometry: 318 solver solutions -> 318 distinct tiling(s)
+  k=1: 18 tilings -> public/planigon/planigon-k1.json
+  k=2: 67 tilings -> public/planigon/planigon-k2.json
+  k=3: 233 tilings -> public/planigon/planigon-k3.json
+  atlas shelf: 318 entries -> public/reference-atlas-planigon.json
+planigon: 318 distinct tilings, shape err 1.22e-9, area err 5.77e-10, angle err 1.72e-7° — certified
+
+[01:11:30] k<=4, PARALLEL: EU_SHARD_N=32 EU_SHARD_D2=8 EU_POOL=8 (10 cores)
+[01:11:30] build (MAXNUM=4 PALETTE=planigon)
+[01:11:32] PHASE 1  parallel solve — 32 shards, depth2 8, pool 8, budget 0
+[01:12:11]   workers done (39s wall)
+[01:12:11] PHASE 1b  merge worker outputs
+[01:12:13]   merged raw blocks: 3863
+[01:12:13] PHASE 2  prune
+  k=1 : 23
+  k=2 : 76
+  k=3 : 298
+  k=4 : 994
+total kept: 1391
+store: peak 0.348663 MB total, 0.348663 MB resident
+[01:12:13]   prune done (0s);  total wall 41s
+EU_NOFILTER=1 EU_SHARD_N=32 EU_SHARD_D2=8 EU_POOL=8 PALETTE=planigon  4   267.89s user 2.09s system 630% cpu 42.788 total
+
+[01:12:56] CONTROL: compiled solver, NO sharding, k<=3 (sequential runtime gave 18/67/233)
+raw: 848
+  k=1 : 23
+  k=2 : 76
+  k=3 : 298
+total kept: 397
+store: peak 0.0715446 MB total, 0.0715446 MB resident
+
+[01:14:47] control again: compiled solver with ETYPE wired, k<=3 — must be 18/67/233
+  k=1 : 0
+  k=2 : 0
+  k=3 : 0
+total kept: 0
+store: peak 0 MB total, 0 MB resident
+
+[01:15:34] control: compiled solver with ETYPE wired, k<=3 — must be 18/67/233
+  k=1 : 18
+  k=2 : 67
+  k=3 : 233
+total kept: 318
+store: peak 0.0559902 MB total, 0.0559902 MB resident
+
+[01:16:04] k<=4 PARALLEL, rerun with edge types actually enforced
+[01:16:04] build (MAXNUM=4 PALETTE=planigon)
+[01:16:05] PHASE 1  parallel solve — 32 shards, depth2 8, pool 8, budget 0
+[01:16:37]   workers done (32s wall)
+[01:16:37] PHASE 1b  merge worker outputs
+[01:16:38]   merged raw blocks: 2258
+[01:16:38] PHASE 2  prune
+  k=1 : 18
+  k=2 : 67
+  k=3 : 233
+  k=4 : 749
+total kept: 1067
+store: peak 0.25835 MB total, 0.25835 MB resident
+[01:16:38]   prune done (0s);  total wall 33s
+EU_NOFILTER=1 EU_SHARD_N=32 EU_SHARD_D2=8 EU_POOL=8 PALETTE=planigon  4   223.77s user 1.62s system 659% cpu 34.163 total
+
+[01:17:05] develop k<=4
+[gen] mirror twins added for 3 chiral tile(s): P12.6.4', P6.4.4.3', P12.4.3.3'
+developed: {1: 18, 2: 67, 3: 233, 4: 749} total 1067 failures 0
+python3 develop_tri45.py --palette alphabets/palettes/planigon.json --tables   1.19s user 0.05s system 96% cpu 1.278 total
+tail -3  0.00s user 0.00s system 0% cpu 1.278 total
+
+[01:17:15] planigon shelf, k<=4
+  dedupe by geometry: 1067 solver solutions -> 1055 distinct tiling(s)
+  k=1: 18 tilings -> public/planigon/planigon-k1.json
+  k=2: 67 tilings -> public/planigon/planigon-k2.json
+  k=3: 233 tilings -> public/planigon/planigon-k3.json
+  k=4: 737 tilings -> public/planigon/planigon-k4.json
+  atlas shelf: 1055 entries -> public/reference-atlas-planigon.json
+planigon: 1055 distinct tilings, shape err 1.22e-9, area err 5.77e-10, angle err 1.85e-7° — certified
+
+[01:21:28] REGRESSION after wiring ETYPE into every compiled alphabet
+cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
+check-regular: PASS (byte-identical catalogs vs golden)

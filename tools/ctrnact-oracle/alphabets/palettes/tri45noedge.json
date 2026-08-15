@@ -1,0 +1,17 @@
+{
+  "name": "tri45noedge",
+  "D": 24,
+  "comment": "CONTROL for tri45: identical angles, NO edge types. Its extra tilings are the ones that glue a leg to a hypotenuse.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T45",
+      "famchar": "t",
+      "angles": [
+        6,
+        3,
+        3
+      ]
+    }
+  ]
+}

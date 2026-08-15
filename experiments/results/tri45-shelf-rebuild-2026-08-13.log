@@ -1,0 +1,38 @@
+[23:58:42] tri45 shelf rebuild on sided classes (k<=4), from certified cells
+  dedupe by geometry: 11462 solver solutions -> 5313 distinct tiling(s)
+  k=1: 16 tilings -> public/tri45/t45-k1.json
+  k=2: 160 tilings -> public/tri45/t45-k2.json
+  k=3: 941 tilings -> public/tri45/t45-k3.json
+  k=4: 4196 tilings -> public/tri45/t45-k4.json
+  atlas shelf: 176 entries (k<=2, eager) -> public/reference-atlas-tri45.json
+               941 entries -> public/reference-atlas-tri45-k3.json (lazy)
+               4196 entries -> public/reference-atlas-tri45-k4.json (lazy)
+tri45: 5313 distinct tilings, shape err 1.15e-9, area err 7.07e-10 — certified
+
+[00:00:09] angle-sum certificate on the SHIPPED bytes (new shelf vs the backed-up old one)
+   OLD shelf (backed up)    k=1    16 tilings    0 with a vertex over 360 degrees
+                            k=2   152 tilings    0 with a vertex over 360 degrees
+                            k=3   833 tilings    4 with a vertex over 360 degrees
+                            k=4  3284 tilings   19 with a vertex over 360 degrees
+                            TOTAL 4285, overlapping 23
+   NEW shelf (shipped now)  k=1    16 tilings    0 with a vertex over 360 degrees
+                            k=2   160 tilings    0 with a vertex over 360 degrees
+                            k=3   941 tilings    0 with a vertex over 360 degrees
+                            k=4  4196 tilings    0 with a vertex over 360 degrees
+                            TOTAL 5313, overlapping 0
+
+[00:00:36] rebuild with the angle certificate active
+  dedupe by geometry: 11462 solver solutions -> 5313 distinct tiling(s)
+  k=1: 16 tilings -> public/tri45/t45-k1.json
+  k=2: 160 tilings -> public/tri45/t45-k2.json
+  k=3: 941 tilings -> public/tri45/t45-k3.json
+  k=4: 4196 tilings -> public/tri45/t45-k4.json
+  atlas shelf: 176 entries (k<=2, eager) -> public/reference-atlas-tri45.json
+               941 entries -> public/reference-atlas-tri45-k3.json (lazy)
+               4196 entries -> public/reference-atlas-tri45-k4.json (lazy)
+tri45: 5313 distinct tilings, shape err 1.15e-9, area err 7.07e-10, angle err 2.03e-7° — certified
+
+[00:01:52] does the new certificate REFUSE the old min() catalogue? (it must)
+               833 entries -> public/reference-atlas-tri45-k3.json (lazy)
+tri45: 1001 distinct tilings, shape err 1.15e-9, area err 7.07e-10, angle err 2.03e-7° — certified
+exit=0

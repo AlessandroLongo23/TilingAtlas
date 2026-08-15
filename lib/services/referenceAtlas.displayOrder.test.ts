@@ -135,6 +135,10 @@ describe("decorationOf", () => {
 		isotoxal: T({ canonicalKey: "i", k: 1, source: "isotoxal" }),
 		mixed: T({ canonicalKey: "m", k: 1, source: "mixed" }),
 		scaled: T({ canonicalKey: "sc", k: 1, source: "scaled" }),
+		period: T({ canonicalKey: "pp", k: 1, source: "period" }),
+		// The class is `edgelen` and the SOURCE is tri45: one class holds every palette whose tiles have
+		// edges of several lengths, and tri45 is one of its two boards.
+		edgelen: T({ canonicalKey: "t45", k: 1, source: "tri45" }),
 		polyomino: T({ canonicalKey: "p", k: 1, source: "polyomino" }),
 		islamic: T({ canonicalKey: "is", k: 1, source: "islamic" }),
 		freedraw: T({ canonicalKey: "fd", k: 1, source: "freedraw" }),

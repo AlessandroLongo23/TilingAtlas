@@ -1,0 +1,15 @@
+[09:25:40] build (MAXNUM=6 PALETTE=penrose)
+[09:25:42] PHASE 1  parallel solve — 32 shards, depth2 8, pool 8, budget 0
+[09:26:27]   workers done (45s wall)
+[09:26:27] PHASE 1b  merge worker outputs
+[09:26:27]   merged raw blocks: 37525
+[09:26:27] PHASE 2  prune
+  k=1 : 7
+  k=2 : 18
+  k=3 : 91
+  k=4 : 287
+  k=5 : 890
+  k=6 : 3212
+total kept: 4505
+store: peak 2.4054 MB total, 2.4054 MB resident
+[09:26:31]   prune done (4s);  total wall 49s

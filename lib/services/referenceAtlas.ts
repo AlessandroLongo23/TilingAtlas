@@ -340,6 +340,28 @@ export const STAR_FOLDS = [3, 4, 6, 8, 9, 12, 18] as const;
 // inputs (a new k lands here once its shard is built).
 export const COMPOSABLE_SHARD_KS = [3];
 export const ISOTOXAL_SHARD_KS = [3, 4];
+/** The period-p shelf's lazy tail. k=3 exists only because of the QUOTIENT search — the grid enumeration
+ *  had not finished k=3 after three hours when the quotient did it in 509 s. */
+export const PERIOD_SHARD_KS = [3, 4, 5, 6];
+/** Mixed-shelf k values that ship as lazy shards (k≤2 is eager with the base atlas). */
+export const MIXED_SHARD_KS = [3, 4];
+/** Scaled-shelf lazy tail. The sides-1-2 palette (`regular-doubled`) reached k=7 on 2026-08-12 once
+ *  `run-oracle-parallel.sh` forwarded the solver's depth-2 shard split; the side-3 palette is still k≤2,
+ *  so the deep k here are sides-1-2 only. */
+export const SCALED_SHARD_KS = [3, 4, 5, 6, 7];
+/** The 45-45-90 shelf's lazy tail. Its k≤2 tier is 176 entries and rides the eager bundle; k=3 and
+ *  k=4 are 941 and 4,196 and ship as shards (1.4 and 6.0 MB). Declared here because BOTH the shelf's
+ *  chip lists read it — a tier missing from this constant exists on disk and is unreachable in the UI,
+ *  which is exactly what happened to this shelf between its first build and 2026-08-14. */
+export const TRI45_SHARD_KS = [3, 4];
+/** The Penrose shelf ships k<=3 with the atlas; k=4/5/6 are 0.9/3.4/14.1 MB and load on demand. */
+export const PENROSE_SHARD_KS = [4, 5, 6];
+/** The Euclidean half-polygon shelf's lazy tail, k=5..14. Declared here because BOTH the k-chip
+ *  lists and the fetch effect read it — a tier missing from this constant exists on disk and is
+ *  unreachable in the UI, which is what happened to the tri45 shelf. The tail is 110 MB of JSON
+ *  across ten slices (it gzips to ~7), so unlike tri45 it is fetched ONLY when its own k chip is
+ *  chosen — never by selecting the class or the board, which would pull all ten. */
+export const EUHALF_SHARD_KS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
@@ -347,6 +369,13 @@ export const ISOTOXAL_SHARD_KS = [3, 4];
 export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
+/** The palettes inside the "Multiple edge lengths" class — its sub-facet axis, the way IslamicSystem
+ *  is the Islamic class's. Each is a tile set whose edges take more than one length, which is what
+ *  puts them in one class and what makes each of them need edge types. */
+/** One value per TILE SHAPE, not per source: the four halved-polygon boards share the source
+ *  "euhalf" but are four different tiles, and a visitor picking a shape wants that shape. */
+export type EdgeBoard = "tri45" | "planigon" | "penrose"
+	| "euh-hexv" | "euh-pent" | "euh-hexm" | "euh-sqmid";
 export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
 // The ONE source-driven tile classifier, shared by /library and /play. Source wins when present;
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
@@ -359,6 +388,11 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 	if (t.source === "isotoxal") return "isotoxal";
 	if (t.source === "composable") return "convex";
 	if (t.source === "scaled") return "scaled";
+	if (t.source === "period") return "period";
+	// One class for every palette whose tiles have edges of SEVERAL lengths; which palette is the
+	// sub-facet below, not a class of its own.
+	if (t.source === "tri45" || t.source === "planigon" || t.source === "penrose"
+		|| t.source === "euhalf") return "edgelen";
 	if (t.source === "polyomino") return "polyomino";
 	if (t.source === "islamic") return "islamic";
 	if (t.source === "freedraw") return "freedraw";
@@ -414,6 +448,14 @@ void _everyGridHasASubRow;
 
 export const SUB_ORDER = [
 	"",
+	// "Different edge lengths" splits on PALETTE before k: the 45-45-90 tile set and the planigons are
+	// two different catalogues, not two depths of one. "el-" namespaced like the rest.
+	"el-tri45",
+	"el-planigon",
+	"el-penrose",
+	// The Euclidean half-polygons: one row per board, because the four are four catalogues and not
+	// four depths of one. `lib/tilings/eu-half.ts` says why there are exactly four.
+	...EU_HALF_BOARDS.map(euHalfSubOfBoard),
 	...FREEDRAW_GRID_SUBS,
 	// Colors: grid-major, then palette size — "square-2" is every 2-coloring of the 4^4 grid.
 	"square-2",
@@ -520,6 +562,10 @@ export function subOf(t: {
 	pentEdges?: PentEdgeRecord;
 	ihEdges?: IhEdgeRecord;
 }): string {
+	if (t.source === "tri45") return "el-tri45";
+	if (t.source === "planigon") return "el-planigon";
+	if (t.source === "penrose") return "el-penrose";
+	if (t.source === "euhalf") return euHalfSub(t.euHalfBoard ?? "");
 	if (t.pentEdges) return pentEdgeSub(t.pentEdges);
 	if (t.ihEdges) return ihEdgeSub(t.ihEdges);
 	if (t.schwarz) return schwarzSub(t.schwarz);
@@ -690,6 +736,15 @@ export function polyominoOrderOf(t: Pick<ReferenceTiling, "source" | "polyominoO
 
 // Islamic shelf sub-facet: which Bonner design system the tiling belongs to — the build-stamped field,
 // null for every non-Islamic tiling (so the facet excludes them, matching the exclude-the-unclassified ethos).
+/** Which palette an entry belongs to inside the "Multiple edge lengths" class, or null outside it. */
+export function edgeBoardOf(t: Pick<ReferenceTiling, "source" | "euHalfBoard">): EdgeBoard | null {
+	if (t.source === "planigon") return "planigon";
+	if (t.source === "penrose") return "penrose";
+	if (t.source === "tri45") return "tri45";
+	if (t.source === "euhalf") return `euh-${t.euHalfBoard}` as EdgeBoard;
+	return null;
+}
+
 export function islamicSystemOf(t: Pick<ReferenceTiling, "source" | "islamicSystem">): IslamicSystem | null {
 	if (t.source !== "islamic") return null;
 	return t.islamicSystem ?? null;
@@ -2037,6 +2092,11 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		bestEffort("/reference-atlas-isotoxal.json"),
 		bestEffort("/reference-atlas-mixed.json"),
 		bestEffort("/reference-atlas-scaled.json"),
+		bestEffort("/reference-atlas-period.json"),
+		bestEffort("/reference-atlas-tri45.json"),
+		bestEffort("/reference-atlas-planigon.json"),
+		bestEffort("/reference-atlas-penrose.json"),
+		bestEffort("/reference-atlas-euhalf.json"),
 		bestEffort("/reference-atlas-polyomino.json"),
 		bestEffort("/reference-atlas-islamic.json"),
 		bestEffort("/reference-atlas-hyperbolic.json"),
@@ -2066,11 +2126,15 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 			.then((res) => (res.ok ? (res.json() as Promise<Array<{ id: string; edge?: number }>>) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
-		// One name per Promise.all entry, IN ORDER. `hollow` was missing here, which shifted every binding
-		// after it by one: the hollow shelf arrived as `freedraw`, freedraw as `colors`, and the colorings
-		// as `devPatches`. Net effect — the whole colorings shelf never reached the atlas (Colorings read 0
-		// on /play and /library) and no hyperbolic entry ever got its forced edge length ℓ merged.
-		.then(([base, composable, isotoxal, mixed, scaled, polyomino, islamic, hyperbolic, spherical, hollow, freedraw, colors, devPatches]) => {
+		// One name per Promise.all entry, IN ORDER, and the list below must spread every one of them.
+		// This has now gone wrong twice. `hollow` was missing once; `period` and `tri45` were missing
+		// until 2026-08-14, which shifted every later binding by two and pushed the last two entries off
+		// the end — so the COLORINGS shelf never reached the atlas (Colorings read 0 on /play and
+		// /library, which is exactly what the catalogue showed) and no hyperbolic entry ever got its
+		// forced edge length ℓ merged, because `devPatches` was holding the freedraw patterns.
+		//
+		// If you add a fetch above, add its name here AND to `data`. A missing name is silent.
+		.then(([base, composable, isotoxal, mixed, scaled, period, tri45, planigon, penrose, euhalf, polyomino, islamic, hyperbolic, spherical, hollow, freedraw, colors, devPatches]) => {
 			// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
 			// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
 			const edgeById = new Map<string, number | undefined>(

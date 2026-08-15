@@ -37,6 +37,8 @@ import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
 	loadPeriodAtlasShard,
+	loadTri45AtlasShard,
+	loadPenroseAtlasShard,
 	loadFreedrawShardsForK,
 	loadColorsShardsForK,
 	hasDecorationShardsForK,
@@ -76,6 +78,13 @@ import {
 	TILE_CLASS_LABEL,
 	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
 	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
+	PERIOD_SHARD_KS as PERIOD_HIGHER_K,
+	MIXED_SHARD_KS as MIXED_HIGHER_K,
+	SCALED_SHARD_KS as SCALED_HIGHER_K,
+	TRI45_SHARD_KS as TRI45_HIGHER_K,
+	PENROSE_SHARD_KS as PENROSE_HIGHER_K,
+	EUHALF_SHARD_KS as EUHALF_HIGHER_K,
+	loadEuHalfAtlasShard,
 	type Certification,
 	type FreedrawKind,
 	type FreedrawRegular,
@@ -558,6 +567,20 @@ export function ReferenceShelf() {
 	// Dedicated isotoxal shard tracking — its k=3 collides with the convex-irregular k=3 in the shared sets.
 	const [isotoxalLoadedShards, setIsotoxalLoadedShards] = useState<Set<number>>(new Set());
 	const [isotoxalLoadingShards, setIsotoxalLoadingShards] = useState<Set<number>>(new Set());
+	// Period-p k≥3 needs its OWN shard state for the same reason isotoxal does: the sets are keyed by k
+	// alone, so a shared one would mark period k=3 loaded because convex-irregular k=3 already was.
+	const [periodLoadedShards, setPeriodLoadedShards] = useState<Set<number>>(new Set());
+	const [periodLoadingShards, setPeriodLoadingShards] = useState<Set<number>>(new Set());
+	const [mixedLoadedShards, setMixedLoadedShards] = useState<Set<number>>(new Set());
+	const [mixedLoadingShards, setMixedLoadingShards] = useState<Set<number>>(new Set());
+	const [euHalfLoadedShards, setEuHalfLoadedShards] = useState<Set<number>>(new Set());
+	const [euHalfLoadingShards, setEuHalfLoadingShards] = useState<Set<number>>(new Set());
+	const [tri45LoadedShards, setTri45LoadedShards] = useState<Set<number>>(new Set());
+	const [tri45LoadingShards, setTri45LoadingShards] = useState<Set<number>>(new Set());
+	const [penroseLoadedShards, setPenroseLoadedShards] = useState<Set<number>>(new Set());
+	const [penroseLoadingShards, setPenroseLoadingShards] = useState<Set<number>>(new Set());
+	const [scaledLoadedShards, setScaledLoadedShards] = useState<Set<number>>(new Set());
+	const [scaledLoadingShards, setScaledLoadingShards] = useState<Set<number>>(new Set());
 	// k values whose Euclidean decoration shards have been requested (hexagonal edges/colorings tails).
 	const [decorLoadedShards, setDecorLoadedShards] = useState<Set<number>>(new Set());
 
