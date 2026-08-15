@@ -1,0 +1,405 @@
+EUCLIDEAN HALF-POLYGONS — halving every regular n-gon that can be halved     2026-08-14, CC
+================================================================================================
+
+THE FAMILY IS FINITE, AND SMALL. A regular n-gon has a vertex-to-vertex long diagonal and a
+midpoint-to-midpoint cut when n is even, and one vertex-to-opposite-midpoint mirror when n is odd.
+That is a board per (n, cut) — infinitely many candidates, of which only a handful can hold a tiling.
+
+  FIRST FILTER, THE ANGLES. A vertex figure needs the half's corners to compose 360 exactly, and every
+  corner class needs to appear in some composition. For the VERTEX cut the corners are alpha/2 and
+  alpha with alpha = 180(n-2)/n, so a*(alpha/2) + b*alpha = 360 means
+        a + 2b = 720/alpha = 4n/(n-2) = 4 + 8/(n-2),
+  a whole number only when (n-2) divides 8: n in {3,4,6,10}, and 3 has no vertex-to-vertex diagonal.
+  The midpoint cut resolves the same way to n in {4,6,8}, the odd mirror to n in {3,5}. Eight boards.
+  Everything else dies before a search runs — the half-dodecagon's 75 and 150 degree corners compose
+  360 in no combination at all, and neither do the half-octagon's 67.5 and 135.
+
+  SECOND FILTER, THE EDGE SLOTS, and it kills two of the eight. Angles are not the whole rule: the
+  edges have to match too. Each corner at a vertex contributes TWO edge-slots (its two flanks) and each
+  edge at that vertex is shared by exactly TWO corners, so for every edge TYPE the slot count must be
+  EVEN. That is a parity condition on the edges, the flat cousin of the full/half alternation that
+  empties {3,7} in H2.
+    n=10 vertex — each 72-degree corner is flanked by one unit edge and the long DIAGONAL, and no other
+      corner touches the diagonal at all, so the diagonal-slot count is the number of 72-degree corners
+      a. The angle equation forces a + 2b = 5, so a is always ODD. No vertex figure exists — gen_alphabet
+      returns an alphabet of ZERO entries, which is this fact and not a bug.
+    n=8 midpoint — the CUT is flanked only by the two 90-degree corners, so cut-slots = the number of
+      90s, c. From 90c + 135b = 360 the only options are (c,b) = (4,0) and (1,2), and c must be even, so
+      only four right angles survives. But then NO vertex can ever host a 135-degree corner, and every
+      tile has four of them. The alphabet has exactly 1 vertex configuration and the search returns 0.
+  Re-derived independently (a from-scratch enumeration of edge-matched cyclic vertex figures, sharing no
+  code with gen_alphabet) over n = 3..20: LIVE for exactly n=3 mirror, n=4 vertex, n=4 midpoint,
+  n=5 mirror, n=6 vertex, n=6 midpoint. Every board from n=7 up is empty, and always the same way — the
+  alpha and alpha/2 corners become unplaceable and only the right angle survives.
+
+  SO THE WHOLE EUCLIDEAN FAMILY IS SIX BOARDS. Two were already shipped. Four are new.
+
+ALREADY SHIPPED UNDER OTHER NAMES
+  n=3 altitude   30-60-90 triangle      planigon palette, P12.6.4 = [2,4,6] at D=24
+  n=4 diagonal   45-45-90 triangle      the tri45 shelf (2026-08-13), [6,3,3] at D=24, edges S/H
+
+THE SIX RUN HERE
+  eu-half-sq-mid   D=4   [1,1,1,1]        1,2,1,2                the DOMINO (square, midpoint cut)
+  eu-half-pent     D=20  [3,6,6,5]        2,2,1,c1+c3            pentagon, mirror
+  eu-half-hex-v    D=6   [1,2,2,1]        1,1,1,2                hexagon, long diagonal (trapezoid)
+  eu-half-hex-m    D=12  [3,4,4,4,3]      1,2,2,1,2sqrt3         hexagon, midpoint cut
+  eu-half-oct-m    D=8   [2,3,3,3,3,2]    1,2,2,2,1,2+2sqrt2     octagon, midpoint cut
+  eu-half-dec-v    D=10  [2,4,4,4,4,2]    1,1,1,1,1,2phi         decagon, long diagonal
+
+  Every one closes to 1e-15 as a flat polygon under the developer's edge convention (edgeLens[i] is
+  the side from vertex i to vertex i+1 — checked, not assumed, by walking the boundary).
+
+ONE TOOL CHANGE: A GENERAL CHORD TOKEN
+  The half-pentagon's cut is the pentagon's HEIGHT, R + apothem = cot(18 deg) = sqrt(5 + 2 sqrt5) =
+  3.077683537175254. It is an algebraic integer of Z[zeta20], so the tile is representable — but it is
+  not sqrt2, sqrt3, sqrt6 or phi, which is all develop_tri45's length grammar knew. It IS the chord sum
+  2cos(18) + 2cos(54). So surd_offsets grew `c<j>` = zeta^j + zeta^-j for any j, which is the general
+  case the four named surds were always instances of: verified sqrt2 == c(D/8), sqrt3 == c(D/12),
+  phi == c(D/10) give identical offset tuples, and every existing length string parses unchanged.
+  (I first told AL this tile needed a 2sqrt5 scale. Wrong: I had measured the APOTHEM instead of the
+  height. At scale x2 the cut is an algebraic integer and no exotic scale is needed; what it needed was
+  a way to WRITE it.)
+
+RUN LOG
+
+--- eu-half-hex-v, k<=3 --- 17:46:23
+(eval):1: command not found: timeout
+
+--- eu-half-sq-mid, k<=3 --- 17:46:23
+(eval):1: command not found: timeout
+
+--- eu-half-hex-m, k<=3 --- 17:46:23
+(eval):1: command not found: timeout
+
+--- eu-half-pent, k<=3 --- 17:46:23
+(eval):1: command not found: timeout
+
+--- eu-half-oct-m, k<=3 --- 17:46:23
+(eval):1: command not found: timeout
+
+--- eu-half-dec-v, k<=3 --- 17:46:23
+(eval):1: command not found: timeout
+
+--- eu-half-hex-v, k<=3 --- 17:46:34
+[gen] EDGE TYPES (L1=1, L2=2): 6 incompatible adjacent pairs of 16 forbidden at the vertex
+[gen] palette=eu-half-hex-v D=6 tiles=1 classes=4 configs=7
+[cert] A6: 13 entries, pairwise non-isomorphic PASS
+[17:46:34] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+[17:46:37]   raw blocks: 28  (0s)
+[17:46:37] PHASE 2  prune
+  k=1 : 2
+  k=2 : 4
+  k=3 : 15
+total kept: 21
+store: peak 0.00312805 MB total, 0.00312805 MB resident
+[17:46:37]   (0s)
+[17:46:37] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 2, 2: 4, 3: 15} total 21 failures 0
+[17:46:37]   (0s)
+[17:46:37] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-hex-v-k3/eu-half-hex-v-cells.json
+
+--- eu-half-sq-mid, k<=3 --- 17:46:37
+[gen] EDGE TYPES (L1=1, L2=2): 2 incompatible adjacent pairs of 4 forbidden at the vertex
+[gen] palette=eu-half-sq-mid D=4 tiles=1 classes=2 configs=1
+[cert] A6: 5 entries, pairwise non-isomorphic PASS
+[17:46:37] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+[17:46:38]   raw blocks: 1  (0s)
+[17:46:38] PHASE 2  prune
+  k=1 : 1
+  k=2 : 0
+  k=3 : 0
+total kept: 1
+store: peak 1.90735e-05 MB total, 1.90735e-05 MB resident
+[17:46:38]   (0s)
+[17:46:38] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 1, 2: 0, 3: 0} total 1 failures 0
+[17:46:39]   (1s)
+[17:46:39] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-sq-mid-k3/eu-half-sq-mid-cells.json
+
+--- eu-half-hex-m, k<=3 --- 17:47:00
+[gen] EDGE TYPES (L1=1, L3=2, L2=3): 16 incompatible adjacent pairs of 25 forbidden at the vertex
+[gen] palette=eu-half-hex-m D=12 tiles=1 classes=5 configs=3
+[cert] A6: 11 entries, pairwise non-isomorphic PASS
+[17:47:00] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+[17:47:01]   raw blocks: 1  (0s)
+[17:47:01] PHASE 2  prune
+  k=1 : 0
+  k=2 : 1
+  k=3 : 0
+total kept: 1
+store: peak 4.76837e-05 MB total, 4.76837e-05 MB resident
+[17:47:02]   (1s)
+[17:47:02] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 0, 2: 1, 3: 0} total 1 failures 0
+[17:47:02]   (0s)
+[17:47:02] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-hex-m-k3/eu-half-hex-m-cells.json
+
+--- eu-half-pent, k<=3 --- 17:47:02
+[gen] palette=eu-half-pent D=20 tiles=2 classes=8 configs=4
+[cert] A6: 8 entries, pairwise non-isomorphic PASS
+[17:47:02] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+[17:47:03]   raw blocks: 6  (0s)
+[17:47:03] PHASE 2  prune
+  k=1 : 2
+  k=2 : 1
+  k=3 : 2
+total kept: 5
+store: peak 0.000457764 MB total, 0.000457764 MB resident
+[17:47:03]   (0s)
+[17:47:03] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+[gen] mirror twins added for 1 chiral tile(s): Pen'
+developed: {1: 2, 2: 1, 3: 2} total 5 failures 0
+[17:47:03]   (0s)
+[17:47:03] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-pent-k3/eu-half-pent-cells.json
+
+--- eu-half-oct-m, k<=3 --- 17:47:13
+[17:47:13] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+grep: /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-oct-m-k3/out/eusolver_*.txt: No such file or directory
+[17:47:14]   raw blocks: 0  (0s)
+[17:47:14] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+  k=3 : 0
+total kept: 0
+store: peak 0 MB total, 0 MB resident
+[17:47:14]   (0s)
+[17:47:14] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 0, 2: 0, 3: 0} total 0 failures 0
+[17:47:15]   (1s)
+[17:47:15] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-oct-m-k3/eu-half-oct-m-cells.json
+
+--- eu-half-dec-v, k<=3 --- 17:47:15
+[17:47:15] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+grep: /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-dec-v-k3/out/eusolver_*.txt: No such file or directory
+[17:47:16]   raw blocks: 0  (0s)
+[17:47:16] PHASE 2  prune
+  k=1 : 0
+  k=2 : 0
+  k=3 : 0
+total kept: 0
+store: peak 0 MB total, 0 MB resident
+[17:47:16]   (0s)
+[17:47:16] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 0, 2: 0, 3: 0} total 0 failures 0
+[17:47:16]   (0s)
+[17:47:16] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-eu-half-dec-v-k3/eu-half-dec-v-cells.json
+
+=== deeper: the four live boards to k<=6 === 17:48:38
+--- eu-half-sq-mid ---
+  k=1 : 1
+  k=2 : 0
+  k=3 : 0
+  k=4 : 0
+  k=5 : 0
+  k=6 : 0
+total kept: 1
+developed: {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0} total 1 failures 0
+--- eu-half-hex-m ---
+  k=1 : 0
+  k=2 : 1
+  k=3 : 0
+  k=4 : 0
+  k=5 : 0
+  k=6 : 0
+total kept: 1
+developed: {1: 0, 2: 1, 3: 0, 4: 0, 5: 0, 6: 0} total 1 failures 0
+--- eu-half-pent ---
+  k=1 : 2
+  k=2 : 1
+  k=3 : 2
+  k=4 : 3
+  k=5 : 6
+  k=6 : 7
+total kept: 21
+developed: {1: 2, 2: 1, 3: 2, 4: 3, 5: 6, 6: 7} total 21 failures 0
+--- eu-half-hex-v ---
+  k=1 : 2
+  k=2 : 4
+  k=3 : 15
+  k=4 : 34
+  k=5 : 62
+  k=6 : 166
+total kept: 283
+developed: {1: 2, 2: 4, 3: 15, 4: 34, 5: 62, 6: 166} total 283 failures 0
+
+=== the two growing boards to k<=8 === 17:49:10
+--- eu-half-pent ---
+  k=1 : 2
+  k=2 : 1
+  k=3 : 2
+  k=4 : 3
+  k=5 : 6
+  k=6 : 7
+  k=7 : 14
+  k=8 : 18
+total kept: 53
+developed: {1: 2, 2: 1, 3: 2, 4: 3, 5: 6, 6: 7, 7: 14, 8: 18} total 53 failures 0
+./run-sts.sh $P 8 2>&1  2.27s user 0.39s system 85% cpu 3.124 total
+--- eu-half-hex-v ---
+  k=1 : 2
+  k=2 : 4
+  k=3 : 15
+  k=4 : 34
+  k=5 : 62
+  k=6 : 166
+  k=7 : 226
+  k=8 : 752
+total kept: 1261
+developed: {1: 2, 2: 4, 3: 15, 4: 34, 5: 62, 6: 166, 7: 226, 8: 752} total 1261 failures 0
+./run-sts.sh $P 8 2>&1  2.82s user 0.26s system 93% cpu 3.277 total
+
+=== k<=11 === 17:49:28
+--- eu-half-pent ---
+  k=1 : 2
+  k=2 : 1
+  k=3 : 2
+  k=4 : 3
+  k=5 : 6
+  k=6 : 7
+  k=7 : 14
+  k=8 : 18
+  k=9 : 28
+  k=10 : 39
+  k=11 : 62
+total kept: 182
+developed: {1: 2, 2: 1, 3: 2, 4: 3, 5: 6, 6: 7, 7: 14, 8: 18, 9: 28, 10: 39, 11: 62} total 182 failures 0
+./run-sts.sh $P 11 2>&1  2.52s user 0.55s system 82% cpu 3.708 total
+--- eu-half-hex-v ---
+  k=1 : 2
+  k=2 : 4
+  k=3 : 15
+  k=4 : 34
+  k=5 : 62
+  k=6 : 166
+  k=7 : 226
+  k=8 : 752
+  k=9 : 1006
+  k=10 : 2273
+  k=11 : 2556
+total kept: 7096
+developed: {1: 2, 2: 4, 3: 15, 4: 34, 5: 62, 6: 166, 7: 226, 8: 752, 9: 1006, 10: 2273, 11: 2556} total 7096 failures 0
+./run-sts.sh $P 11 2>&1  26.86s user 0.83s system 98% cpu 28.185 total
+
+=== final depth === 17:50:11
+--- eu-half-pent k<=14 ---
+  k=1 : 2
+  k=2 : 1
+  k=3 : 2
+  k=4 : 3
+  k=5 : 6
+  k=6 : 7
+  k=7 : 14
+  k=8 : 18
+  k=9 : 28
+  k=10 : 39
+  k=11 : 62
+  k=12 : 82
+  k=13 : 126
+  k=14 : 177
+total kept: 567
+developed: {1: 2, 2: 1, 3: 2, 4: 3, 5: 6, 6: 7, 7: 14, 8: 18, 9: 28, 10: 39, 11: 62, 12: 82, 13: 126, 14: 177} total 567 failures 0
+./run-sts.sh eu-half-pent 14 2>&1  4.47s user 0.58s system 88% cpu 5.724 total
+--- eu-half-hex-v k<=13 ---
+  k=1 : 2
+  k=2 : 4
+  k=3 : 15
+  k=4 : 34
+  k=5 : 62
+  k=6 : 166
+  k=7 : 226
+  k=8 : 752
+  k=9 : 1006
+  k=10 : 2273
+  k=11 : 2556
+  k=12 : 11645
+  k=13 : 8418
+total kept: 27159
+developed: {1: 2, 2: 4, 3: 15, 4: 34, 5: 62, 6: 166, 7: 226, 8: 752, 9: 1006, 10: 2273, 11: 2556, 12: 11645, 13: 8418} total 27159 failures 0
+./run-sts.sh eu-half-hex-v 13 2>&1  200.47s user 3.36s system 98% cpu 3:26.59 total
+
+RESULTS
+  eu-half-hex-v   hexagon, long diagonal      60-120-120-60 trapezoid    27,159 tilings, k = 1..13
+      2, 4, 15, 34, 62, 166, 226, 752, 1006, 2273, 2556, 11645, 8418     (3 min 27 s to k=13)
+      Not monotone: k=12 (11,645) outruns k=13 (8,418). Recorded as measured.
+  eu-half-pent    pentagon, mirror            54-108-108-90 quadrilateral    567 tilings, k = 1..14
+      2, 1, 2, 3, 6, 7, 14, 18, 28, 39, 62, 82, 126, 177                 (5.7 s to k=14)
+      THE HEADLINE: the regular pentagon does not tile the plane and its half does, at k=1, twice over.
+      Chiral, so the palette carries a mirror twin (Pen').
+  eu-half-hex-m   hexagon, midpoint           90-120-120-120-90 pentagon         1 tiling, at k=2
+      nothing at k = 1, 3, 4, 5, 6.
+  eu-half-sq-mid  square, midpoint            1x2 rectangle (the DOMINO)         1 tiling, at k=1
+      nothing at k = 2..6, and that one is PROVABLY the only one. Every corner is a right angle flanked
+      by one long and one short side, so the four edges at a vertex alternate long/short; two edges
+      separated by one other sit at 180 degrees, hence collinear; so the long edges lie on one family of
+      parallel lines and the short edges on the perpendicular family, which is the aligned 1x2 grid and
+      nothing else. Running bond, herringbone and basketweave are all T-junction patterns and are not
+      edge-to-edge, which is why they are absent and not missing.
+  eu-half-oct-m   octagon, midpoint           0 — proved empty above
+  eu-half-dec-v   decagon, long diagonal      0 — proved empty above (alphabet has zero entries)
+
+  TOTAL 27,728 Euclidean half-polygon tilings, ZERO develop failures on any board.
+
+INDEPENDENT CHECK — the cells actually tile
+  develop refuses anything that does not close, but it never compares a cell's contents to the cell.
+  So, on all 27,728 records: the shoelace areas of a fundamental cell's faces must sum to |det(T1,T2)|
+  (too little is a gap, too much an overlap), and every face's side and angle multisets must be the
+  tile's. 0 area mismatches, 0 wrong-shape faces, worst area error 3.15e-08 — which is the 9-decimal
+  rounding of the shipped float coordinates, the exact Z[zeta_D] values sitting behind them.
+
+WHAT IS NOT DONE
+  These are enumerated and checked, not shelved. k=13 (hex-v) and k=14 (pent) are BUDGETS, not
+  enumeration results: both boards were still growing when the runs stopped.
+
+ON THE SHELF (2026-08-14, later)
+  Library -> Euclidean -> Different edge lengths -> Palette. FOUR FOLDERS, one per TILE SHAPE, beside the
+  three that were already there:
+      Planigons | 45-45-90 triangles and squares | Penrose kite and dart
+      Half hexagon (long diagonal) | Half pentagon | Half hexagon (edge midpoints) | Domino (half square)
+  One chip per shape and not one for the whole family: a trapezoid, a quadrilateral, a pentagon and a
+  domino behind a single "Halved regular polygons" word is not a choice a visitor can make. Two more
+  members of the family are already in that list under their own names — the half triangle is one of the
+  planigons, the half square IS the 45-45-90 board — which is the whole six-board family on one screen.
+
+  scripts/build-euhalf-shelf.mjs re-certifies against the bytes that ship, not the developer's scratch
+  file: every face congruent to the tile, faces covering the period cell exactly, and every vertex a full
+  turn. All 27,728 pass, and all 27,728 are already distinct up to congruence — the exact oracle
+  (rotations by 2pi/D and a real reflection, lattice carried onto lattice, every tile matched) merged
+  NOTHING, so the pruner had already done its job. The oracle is self-checked first: each sampled entry
+  is rotated, reflected and shifted off its own lattice and must come back congruent to itself, because a
+  predicate that always answered "different" would report a clean dedup too.
+
+  ⚑ MY VERTEX KEY WAS THE BUG, NOT THE DATA. The angle certificate first reported a 660-degree vertex on
+  the trapezoid board. I had keyed vertices by their FRACTIONAL coordinates through a wrap function that
+  returns 0 for one sign and -0 for the other, so a vertex sitting at fraction ~0 landed in two different
+  keys and unrelated points merged. With build-tri45-shelf's residue (reduce to [0,1) in the lattice
+  basis, nudge the near-1 seam, key in CARTESIAN, normalise -0) all 27,159 records are clean. I nearly
+  rejected a correct board on a broken test.
+
+  ⚑ NO PER-BOARD SHARD IS WRITTEN, unlike the sibling shelves. The app fetches
+  /reference-atlas-<shelf>-k<k>.json and nothing else, so the copy under public/euhalf/ was 77 MB of disk
+  for nothing and public/ is already 2 GB with Marek asking about space. Provenance stays in
+  tools/ctrnact-oracle/run-*/ and public/euhalf/manifest.json records what was built.
+
+  SIZES. k<=4 is 65 entries and rides the eager atlas (0.1 MB). k=5..14 are ten lazy slices, 110 MB of
+  JSON that gzips to about 7 — so what laziness defers is PARSING, not bandwidth. Fetched only when the
+  k chip itself is chosen: unlike tri45 (7.4 MB, pulled by picking the class) and Penrose (pulled by
+  picking the board), ten slices at this size must not come down for either. Deep links resolve one shard
+  through the /play RESOLVERS table, which exists for exactly this.
+
+  GUARD: lib/tilings/eu-half.test.ts, 11 checks. Metadata against the shards, the k accounting, the tile
+  being a genuine HALF (its angles doubled give the n-gon's plus 180 per midpoint end of the cut), the
+  side lengths against 1/sin(pi/n), 1/tan(pi/n) and cot(pi/2n), BOTH classification filters re-derived,
+  the folder placement, and the shipped eager bytes re-certified for shape and area. Writing it caught my
+  own halves-add-back formula being wrong: a bisected corner adds nothing, only a midpoint end adds 180.
+
+  ⚑ AND THE SHELF SURFACED A PRE-EXISTING BUG. Selecting k=12 painted "failed to load k=12" beside the
+  count and 404'd. Not the new shards — the BASE Euclidean loader fires for any k >= 8, and the base
+  Ctrnact shards are k = 8, 9, 10 only, so every higher k has always 404'd. It was unreachable while
+  nothing offered a Euclidean chip above 10; these boards go to k=14, which is how it showed up. Bounded
+  to HIGHER_K, the constant that already lists the shards that exist.
+
+FINAL STATE
+  27,728 tilings on four boards, four folders, one per tile shape. Full suite 3 failures of 2,435, all
+  three pre-existing and outside this work (star-general-path is the documented 60 s timeout,
+  exact-star-polygon is ring arithmetic, paramCell is the mixed atlas). Build clean, tsc clean,
+  make check-regular PASS byte-identical.

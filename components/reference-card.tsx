@@ -33,7 +33,9 @@ import {
 	TILE_CLASS_LABEL,
 	type Certification,
 	type ReferenceTiling,
+	edgeBoardOf,
 } from "@/lib/services/referenceAtlas";
+import { EDGE_BOARD_LABEL } from "@/lib/services/facets";
 
 // A tiling card in the unified library. Shows the DISCOVERER (historical first-finder) and a
 // CERTIFICATION badge (proven / reproduced / candidate — the rigorous completeness status of its
@@ -414,7 +416,11 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							{tiling.discoverer}
 						</p>
 						<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
-							k={tiling.k} · {TILE_CLASS_LABEL[tileClassOf(tiling)].long}
+							{/* The class long label names the shelf; where a class holds more than one PALETTE, the
+							    palette is what the card should say — "Multiple edge lengths" is true of both tile
+							    sets in that class and tells the reader nothing about the tiling in front of them. */}
+							k={tiling.k} ·{" "}
+							{edgeBoardOf(tiling) ? EDGE_BOARD_LABEL[edgeBoardOf(tiling)!] : TILE_CLASS_LABEL[tileClassOf(tiling)].long}
 						</p>
 						{classLabel || tiling.wallpaperGroup ? (
 							<p

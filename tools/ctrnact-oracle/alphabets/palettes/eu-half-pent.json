@@ -1,0 +1,26 @@
+{
+  "name": "eu-half-pent",
+  "D": 20,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 5-GON, cut by its mirror, from a vertex to the midpoint of the opposite edge. The Euclidean member of the half-polygon family (lib/tilings/hyp-half.ts, sph-half.ts): halve a regular tile, the halves carry edges of two or three lengths so gluing must be constrained by edge type, and the pieces then lie down in ways the whole tile could not. Five is ODD, so this is the only cut a pentagon has. And the regular pentagon does not tile the plane, which is exactly why this board is worth running: nothing obstructs the halves. The cut is the pentagon's HEIGHT, R + apothem = cot(18 deg) = sqrt(5 + 2 sqrt5) = 3.077683537, which is an algebraic integer of Z[zeta20] but is NOT sqrt2, sqrt3, sqrt6 or phi \u2014 it is the chord sum 2cos(18) + 2cos(54), written 'c1+c3'. That is why develop_tri45.surd_offsets grew a general chord token; the four named surds were always chords, this one just has no name. Angles in D-units of 18 degrees: [3, 6, 6, 5] summing to 20 = (n-2)*D/2 for an 4-gon, so the tile is FLAT \u2014 in the plane the vertex rule and the tile are the same geometry, unlike the curved boards where curvature lives in the faces. Sides 2, 2, 1 and cot(18 deg), at twice the pentagon's own side.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "Pen",
+      "famchar": "p",
+      "angles": [
+        3,
+        6,
+        6,
+        5
+      ],
+      "edgeLens": [
+        "2",
+        "2",
+        "1",
+        "c1+c3"
+      ]
+    }
+  ]
+}

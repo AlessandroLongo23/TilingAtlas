@@ -1,0 +1,28 @@
+{
+  "name": "eu-half-hex-m",
+  "D": 12,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 6-GON, cut by the mirror joining opposite edge midpoints. The Euclidean member of the half-polygon family (lib/tilings/hyp-half.ts, sph-half.ts): halve a regular tile, the halves carry edges of two or three lengths so gluing must be constrained by edge type, and the pieces then lie down in ways the whole tile could not. The hexagon's other cut, and a PENTAGON with two right angles. Its long side is the width across the hexagon, 2 x apothem = sqrt3 at unit side. Angles in D-units of 30 degrees: [3, 4, 4, 4, 3] summing to 18 = (n-2)*D/2 for an 5-gon, so the tile is FLAT \u2014 in the plane the vertex rule and the tile are the same geometry, unlike the curved boards where curvature lives in the faces. Sides 1, 2, 2, 1 and 2sqrt3, at twice the hexagon's own side.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "HxM",
+      "famchar": "g",
+      "angles": [
+        3,
+        4,
+        4,
+        4,
+        3
+      ],
+      "edgeLens": [
+        "1",
+        "2",
+        "2",
+        "1",
+        "2sqrt3"
+      ]
+    }
+  ]
+}

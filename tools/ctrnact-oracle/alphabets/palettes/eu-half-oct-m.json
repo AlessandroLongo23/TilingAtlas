@@ -1,0 +1,30 @@
+{
+  "name": "eu-half-oct-m",
+  "D": 8,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 8-GON, cut by the mirror joining opposite edge midpoints. The Euclidean member of the half-polygon family (lib/tilings/hyp-half.ts, sph-half.ts): halve a regular tile, the halves carry edges of two or three lengths so gluing must be constrained by edge type, and the pieces then lie down in ways the whole tile could not. Regular octagons do not tile the plane; their halves are not obstructed the same way. Note the octagon's OTHER cut is dead before any search: the long diagonal leaves corners of 67.5 and 135 degrees, and a*67.5 + b*135 = 360 forces a + 2b = 16/3, so no vertex figure exists at all. Angles in D-units of 45 degrees: [2, 3, 3, 3, 3, 2] summing to 16 = (n-2)*D/2 for an 6-gon, so the tile is FLAT \u2014 in the plane the vertex rule and the tile are the same geometry, unlike the curved boards where curvature lives in the faces. Sides 1, 2, 2, 2, 1 and 2 + 2sqrt2, at twice the octagon's own side.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "OcM",
+      "famchar": "o",
+      "angles": [
+        2,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "edgeLens": [
+        "1",
+        "2",
+        "2",
+        "2",
+        "1",
+        "2+2sqrt2"
+      ]
+    }
+  ]
+}

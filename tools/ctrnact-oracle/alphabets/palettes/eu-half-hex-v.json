@@ -1,0 +1,26 @@
+{
+  "name": "eu-half-hex-v",
+  "D": 6,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 6-GON, cut by its long diagonal, vertex to opposite vertex through the centre. The Euclidean member of the half-polygon family (lib/tilings/hyp-half.ts, sph-half.ts): halve a regular tile, the halves carry edges of two or three lengths so gluing must be constrained by edge type, and the pieces then lie down in ways the whole tile could not. The classic half-hexagon TRAPEZOID, and the cheap certainty of this batch: two of them glue along the long side to make a hexagon and hexagons tile, so an empty result here is a bug in the wiring and not a fact about the board. Isosceles, so achiral. The only board here whose lengths are both rational. Angles in D-units of 60 degrees: [1, 2, 2, 1] summing to 6 = (n-2)*D/2 for an 4-gon, so the tile is FLAT \u2014 in the plane the vertex rule and the tile are the same geometry, unlike the curved boards where curvature lives in the faces. Sides 1, 1, 1 and 2 at the hexagon's own side \u2014 no scaling, since the cut misses every midpoint.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "HxV",
+      "famchar": "h",
+      "angles": [
+        1,
+        2,
+        2,
+        1
+      ],
+      "edgeLens": [
+        "1",
+        "1",
+        "1",
+        "2"
+      ]
+    }
+  ]
+}

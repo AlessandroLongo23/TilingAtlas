@@ -1,0 +1,26 @@
+{
+  "name": "eu-half-sq-mid",
+  "D": 4,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 4-GON, cut by the mirror joining opposite edge MIDPOINTS. The Euclidean member of the half-polygon family (lib/tilings/hyp-half.ts, sph-half.ts): halve a regular tile, the halves carry edges of two or three lengths so gluing must be constrained by edge type, and the pieces then lie down in ways the whole tile could not. A square cut this way is the 1x2 rectangle \u2014 the DOMINO \u2014 and it is the one board here whose corners are all equal, so its whole constraint lives in the edges: every corner is flanked by one long and one short side, and only like lengths glue. The square's OTHER cut, the diagonal, is the 45-45-90 triangle already shipped as the tri45 shelf. Angles in D-units of 90 degrees: [1, 1, 1, 1] summing to 4 = (n-2)*D/2 for an 4-gon, so the tile is FLAT \u2014 in the plane the vertex rule and the tile are the same geometry, unlike the curved boards where curvature lives in the faces. Sides 1 and 2, at twice the square's own side so the half-edges come out whole.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "Dom",
+      "famchar": "d",
+      "angles": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "edgeLens": [
+        "1",
+        "2",
+        "1",
+        "2"
+      ]
+    }
+  ]
+}

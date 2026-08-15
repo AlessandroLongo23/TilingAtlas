@@ -1,0 +1,30 @@
+{
+  "name": "eu-half-dec-v",
+  "D": 10,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 10-GON, cut by its long diagonal, vertex to opposite vertex through the centre. The Euclidean member of the half-polygon family (lib/tilings/hyp-half.ts, sph-half.ts): halve a regular tile, the halves carry edges of two or three lengths so gluing must be constrained by edge type, and the pieces then lie down in ways the whole tile could not. Regular decagons do not tile the plane either. The long diagonal is 1 + sqrt5 = 2phi, so this tile lives in the same ring as the Penrose kite and dart. The decagon's midpoint cut is dead: 144 degrees fits no composition of 360 alongside 90. Angles in D-units of 36 degrees: [2, 4, 4, 4, 4, 2] summing to 20 = (n-2)*D/2 for an 6-gon, so the tile is FLAT \u2014 in the plane the vertex rule and the tile are the same geometry, unlike the curved boards where curvature lives in the faces. Sides five 1s and 2phi at the decagon's own side \u2014 the cut misses every midpoint.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "DcV",
+      "famchar": "e",
+      "angles": [
+        2,
+        4,
+        4,
+        4,
+        4,
+        2
+      ],
+      "edgeLens": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "2phi"
+      ]
+    }
+  ]
+}

@@ -76,6 +76,8 @@ import {
 	PERIOD_SHARD_KS,
 	TRI45_SHARD_KS,
 	PENROSE_SHARD_KS,
+	EUHALF_SHARD_KS,
+	loadEuHalfAtlasShard,
 	resolveMergedFamilyKey,
 } from "@/lib/services/referenceAtlas";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
