@@ -90,7 +90,7 @@ function drawHolonomy(api: Api) {
 		colour: REJECT, size: 0.95, weight: 700,
 	});
 	dot(api, C[0], C[1], 5.5);
-	text(0, -0.88, "the same edge, come back turned", { colour: REJECT, size: 0.62, weight: 600 });
+	text(0, -0.88, "the same edge, come back rotated", { colour: REJECT, size: 0.62, weight: 600 });
 }
 
 function drawFlat(api: Api) {
@@ -161,8 +161,10 @@ function drawTorus(api: Api) {
 	};
 	for (const y of [-h - 0.06, h - 0.06]) chevrons([0, y], 0, 2, T2_COLOUR);
 	for (const x of [-h, h]) chevrons([x, -0.06], Math.PI / 2, 1, T1_COLOUR);
-	text(0, -0.88, "closed, flat, oriented", { colour: INK, size: 0.66, weight: 600 });
-	text(0, -1.06, "once the bundle unfolds the mirrors", { colour: SOFT, size: 0.58 });
+	text(0, -0.88, "finite, flat, two-sided", { colour: INK, size: 0.66, weight: 600 });
+	// "the mirrors unfolded" and not "the direction bundle": the slide's prose says two-sided, and the
+	// caption under the picture may not be the one place a reader meets the technical name for it.
+	text(0, -1.06, "with the mirrors unfolded", { colour: SOFT, size: 0.58 });
 }
 
 /** The lattice of lifts, with one cell picked out: the plane covering the torus. */
@@ -214,7 +216,7 @@ function drawCover(api: Api) {
 
 	// Above the lattice, not inside it: a halo big enough to clear this label punched visible gaps in
 	// the grid lines either side of it.
-	text(0, 0.72, "ℂ → ℂ/Λ", { colour: INK, size: 0.68, weight: 600 });
+	text(0, 0.72, "plane → torus", { colour: INK, size: 0.68, weight: 600 });
 	text(0, -0.88, "the tiles are lifts, so nothing folds", { colour: INK, size: 0.62, weight: 600 });
 }
 

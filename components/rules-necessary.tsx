@@ -3,7 +3,7 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arrowHead, classMark, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT,
+	arrowHead, classMark, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT, twoFold,
 	type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
 
@@ -23,7 +23,7 @@ import {
 // subtree that contained no finished gluing to begin with.
 //
 // Three, the near miss. Counting orbits of the WHOLE stabiliser instead of its rotations is the
-// strengthening anyone would reach for, and it is unsound. Panel three is panel one's hexagon over
+// strengthening anyone would reach for, and it is unsound. Panel two is panel one's hexagon over
 // again, same corners and same walk, with the mirrors of a 2mm site left in: two of the three orbits
 // merge, the count drops to two, and the walk still closes at three. Drawing it beside the case that
 // works is the only way to show that the rule is exactly as strong as it may be.
@@ -32,20 +32,6 @@ import {
 // "legal" on the four-rules slide, where it sits on a hexagon's corners exactly like this, and orange
 // means "the half-edge being worked on" everywhere in the deck. REJECT is kept for the thing being
 // ruled out and for nothing else.
-
-/** The crystallographic 2-fold mark, over a cleared disc so it reads on top of the tile. */
-function halfTurn({ ctx }: Api, at: Pt, r = 0.09) {
-	ctx.fillStyle = "#fff";
-	ctx.beginPath();
-	ctx.arc(at[0], at[1], r * 1.5, 0, 2 * Math.PI);
-	ctx.fill();
-	ctx.fillStyle = INK;
-	ctx.beginPath();
-	ctx.moveTo(at[0] - r * 1.5, at[1]);
-	ctx.quadraticCurveTo(at[0], at[1] + r * 0.78, at[0] + r * 1.5, at[1]);
-	ctx.quadraticCurveTo(at[0], at[1] - r * 0.78, at[0] - r * 1.5, at[1]);
-	ctx.fill();
-}
 
 /** An open ring, for a corner some element of the group holds still. */
 function ring({ ctx, s }: Api, at: Pt, colour: string, r = 9.5) {
@@ -60,7 +46,7 @@ function ring({ ctx, s }: Api, at: Pt, colour: string, r = 9.5) {
 
 /**
  * The face, shared by panels one and three so the two are the SAME hexagon: same corners, same
- * directed walk. Panel three's whole argument is that only the orbit count changes when the mirrors
+ * directed walk. Panel two's whole argument is that only the orbit count changes when the mirrors
  * are let in, and a reader can only see that if nothing else moves.
  */
 const HEX_R = 0.4;
@@ -105,21 +91,20 @@ function drawDivisor(api: Api) {
 		halo(api, p[0], p[1], 8);
 		classMark(api, p[0], p[1], (i % 3) as 0 | 1 | 2, 5.6);
 	}
-	halfTurn(api, c);
-	// The mirror the face may also carry, struck out: L1(i) counts the ROTATIONS in the stabiliser and
-	// nothing else, and a reflection does not shorten the walk. Reading "orbits of the corners" instead
-	// of "orbits of the rotations" is exactly the plausible strengthening that panel three draws.
-	// Vertical, through the top and bottom corners. Drawn horizontally it lay on the fold arrow's own
-	// line and the two dashed strokes read as one object.
-	segment(api, [c[0], c[1] - 0.58], [c[0], c[1] + 0.58], GHOST, 1.6, [5, 4]);
-	segment(api, [c[0] - 0.13, c[1] + 0.3], [c[0] + 0.13, c[1] + 0.44], REJECT, 2.2);
+	twoFold(api, c);
+	// No mirror here, struck out or otherwise. L1(i) counts the ROTATIONS in the stabiliser and nothing
+	// else, and reading "orbits of the corners" instead is the plausible strengthening — but panel two
+	// makes that case constructively, on this same hexagon, by letting the mirrors in and showing the
+	// count drop. Drawing a crossed-out mirror here as well pre-empted it with a negative, and the slash
+	// landed close enough to a corner's dot to read as a mark on that vertex (AL asked what was wrong
+	// with the top node). One panel per idea; this one is only about the rotations.
+	//
 	// Short strings, deliberately: FigurePanel floors and CAPS its text at 19px, so on a narrow panel
 	// the labels stop shrinking while the drawing keeps going, and a sentence that fits at 1600 wide
 	// runs off the box at 1024. Three panels across is exactly the width where that starts to bite.
-	text(c[0], c[1] - 0.5, "mirrors do not shorten it", { colour: SOFT, size: 0.54 });
-	text(c[0], c[1] - 0.72, "n = 6, r = 2", { colour: SOFT, size: 0.6 });
-	// Stated, because panel three's argument is that these three sizes stop being equal.
-	text(c[0], c[1] - 0.92, "orbits 2, 2, 2", { colour: SOFT, size: 0.6 });
+	text(c[0], c[1] - 0.58, "n = 6, r = 2", { colour: SOFT, size: 0.6 });
+	// Stated, because panel two's argument is that these three sizes stop being equal.
+	text(c[0], c[1] - 0.78, "orbits 2, 2, 2", { colour: SOFT, size: 0.6 });
 
 	// the fold
 	segment(api, [-0.09, 0.14], [0.11, 0.14], SOFT, 2, [5, 4]);
@@ -180,7 +165,7 @@ function drawUnsound(api: Api) {
 		classMark(api, p[0], p[1], i % 3 === 0 ? 0 : 1, 5.6);
 	}
 	for (const i of [0, 3]) ring(api, hexCorner(c, i), REJECT);
-	halfTurn(api, c);
+	twoFold(api, c);
 
 	// Unequal orbit sizes are what a non-free action looks like, so they are written where they can be
 	// read off without counting.
@@ -260,23 +245,25 @@ const BOX: Box = { minX: -1.3, maxX: 1.3, minY: -1.32, maxY: 1.0 };
 
 const PANELS: PanelSpec[] = [
 	{
-		title: "why the divisor rule is forced",
+		title: "the divisor rule is forced",
 		note: "the walk visits one corner per orbit of the ROTATIONS fixing the face, so it closes at n/r, and those rotations act freely",
 		box: { minX: -1.3, maxX: 1.3, minY: -1.24, maxY: 0.8 },
 		draw: drawDivisor,
 	},
 	{
-		title: "why rejecting early costs nothing",
+		title: "the stronger rule is unsound",
+		note: "let the mirrors in and two orbits merge, so the count drops to two while the walk still closes at three",
+		// The same span as panel one, so the shared hexagon comes out the same size on screen — and now
+		// that the two hexagons are ADJACENT, that is not a nicety: the panels are read as one comparison
+		// and any difference in scale would be read as a difference in the figure.
+		box: { minX: -1.15, maxX: 1.15, minY: -1.24, maxY: 0.8 },
+		draw: drawUnsound,
+	},
+	{
+		title: "rejecting early costs nothing",
 		note: "along one branch gluings are only added, so a broken rule stays broken below and the cut subtree held no tiling",
 		box: BOX,
 		draw: drawHeredity,
-	},
-	{
-		title: "why the stronger rule is unsound",
-		note: "let the mirrors in and two orbits merge, so the count drops to two while the walk still closes at three",
-		// The same span as panel one, so the shared hexagon comes out the same size on screen.
-		box: { minX: -1.15, maxX: 1.15, minY: -1.24, maxY: 0.8 },
-		draw: drawUnsound,
 	},
 ];
 

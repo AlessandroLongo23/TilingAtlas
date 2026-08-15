@@ -111,7 +111,9 @@ function drawFlagBound(api: Api) {
 			dot(api, c[0] + Math.cos(t) * R * 0.62, c[1] + Math.sin(t) * R * 0.62, 3.4, INK);
 		}
 	}
-	// one of them named, so "flag" has a referent: half a corner, between an edge and a bisector
+	// One of them named, and named "flag": slide 28 now introduces the word where the 12k count is
+	// derived, and this slide's prose uses it. It went out as "frame" for one afternoon, while the term
+	// was undefined anywhere in the deck; 28 fixed that, so the caption goes back to the standard name.
 	ctx.fillStyle = "hsl(28 88% 44% / 0.22)";
 	ctx.beginPath();
 	ctx.moveTo(c[0], c[1]);
@@ -121,7 +123,7 @@ function drawFlagBound(api: Api) {
 	ctx.fill();
 	text(c[0] + 0.52, c[1] + 0.1, "one flag", { colour: DART, size: 0.5, weight: 600, align: "left" });
 	dot(api, c[0], c[1], 5.4);
-	text(0, -0.7, "degree ≤ 6, so ≤ 12 flags", { colour: INK, size: 0.62 });
+	text(0, -0.7, "at most 6 edges, so at most 12 flags", { colour: INK, size: 0.62 });
 }
 
 /** Fold a tiling by its own symmetries, develop the result, and you are back where you started. */
@@ -137,7 +139,7 @@ function drawRoundTrip(api: Api) {
 			polygon(api, [-0.58 + (i + (j & 1 ? 0.5 : 0)) * dx + dx / 2, 0.3 + j * dy], 6, R, 90, 1.1);
 		}
 	}
-	text(-0.52, -0.2, "T", { colour: INK, size: 0.8, weight: 700 });
+	text(-0.52, -0.2, "the tiling", { colour: INK, size: 0.62, weight: 700 });
 
 	// Right: the honeycomb folded by its TRANSLATION lattice, which is what makes this drawing exactly
 	// true rather than schematic. Two vertices, three edges, one hexagonal face: V − E + F = 0, the
@@ -166,7 +168,7 @@ function drawRoundTrip(api: Api) {
 			[at[0] + Math.cos(ang) * 0.035, at[1] + Math.sin(ang) * 0.035], SOFT, 2);
 	}
 	for (const h of [A, B]) dot(api, h[0], h[1], 5.4);
-	text(0.64, -0.2, "T / Λ", { colour: INK, size: 0.72, weight: 700, mono: true });
+	text(0.64, -0.2, "one cell", { colour: INK, size: 0.62, weight: 700 });
 
 	// Both maps in the clear channel between the patch and the quotient. Drawn wider they ran their
 	// heads into the hexagons and dropped "develop" on top of one.
@@ -186,13 +188,13 @@ const BOX: Box = { minX: -0.9, maxX: 0.9, minY: -0.9, maxY: 0.78 };
 
 const PANELS: PanelSpec[] = [
 	{
-		title: "the symmetries act cocompactly",
+		title: "k neighbourhoods cover the plane",
 		note: "with a discrete group that gives a wallpaper group, a lattice of translations, and periodicity as a theorem",
 		box: BOX,
 		draw: drawCocompact,
 	},
 	{
-		title: "so the quotient is finite",
+		title: "so the folded object is finite",
 		note: "every angle is at least 60°, so a vertex carries at most twelve flags and a k-uniform tiling at most 12k flag orbits",
 		box: BOX,
 		draw: drawFlagBound,

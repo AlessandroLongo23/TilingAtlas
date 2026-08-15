@@ -371,8 +371,9 @@ enumerating tilings becomes enumerating symbols.
 
 ## Architecture four: scaling is still the problem
 
-A vertex has degree at most six, so it carries at most twelve chambers, and there are $k$ vertex
-orbits: a $k$-uniform tiling has **at most $12k$ chambers**, which is the proved bound for the search.
+Every angle is at least $60°$, so a vertex meets **at most six edges**, and each of those carries **two
+chambers**, one on either side: twelve per vertex. With $k$ vertex orbits the whole symbol has **at most
+$12k$ chambers**, which is the proved bound for the search.
 
 <dsym-growth>
 </dsym-growth>
@@ -496,11 +497,10 @@ it **doesn't prove anything**.
 
 ## Theorem and proof obligations
 
-Write $\mathcal{T}_k$ for the $k$-uniform **edge-to-edge, octagon-free** tilings by **unit** regular
-polygons, up to isometry with **mirror pairs merged**, and $P_k$ for the pipeline's pruned output at
-$k$. The claim is that $\mathrm{dev}$ induces a **bijection** $P_k \to \mathcal{T}_k$, for every
-$k \ge 1$. The octagon is a **separate theorem**: octagon-free costs nothing for $k \ge 2$, and at
-$k=1$ it costs exactly $4.8.8$, re-added by hand.
+Let $\mathcal{T}_k$ be the set of $k$-uniform tilings and $P_k$ the pipeline's output at $k$.
+ 
+The claim is that $\mathrm{dev}$ induces a **bijection** $P_k \to \mathcal{T}_k$, for every $k \ge 1$, with the exception of the
+$4.8.8$ at $k=1$, which is not produced because of the missing octagon, but re-added by hand. 
 
 | | obligation | discharged in | whose |
 | --- | --- | --- | --- |
@@ -534,93 +534,75 @@ This set of $44$ is **pairwise non-isomorphic**, it doesn't appear in the litera
 ## Obligation 2: the local rules reject nothing that survives
 
 The four rules are the engine's **only source of speed** and its **only chance to lose a tiling**, so
-each has to be shown **necessary**: satisfied by the quotient of every real tiling. Three are inherited
-term by term. **Mismatch**, because profiles descend to the quotient. **Lost trail**, because an open
-walk only shortens. **Mirror break**, because a symmetry carries fixed half-edges to fixed half-edges.
-**False closure is the one that needs an argument.**
+each has to be shown **necessary**: **no real tiling's fold can break it**. Three transfer directly:
+- **Mismatch**: the fold does not change which tiles sit either side of an edge
+- **Lost trail**: a partial walk sits inside a finished one, so it cannot run long
+- **Mirror break**: a symmetry takes a half-edge on a mirror to a half-edge on a mirror
+
+False closure is a bit more subtle. A face's walk closes as soon as it returns modulo the rotational symmetry that fixes that face, since those act **freely** on the $n$ corners, so the walk closes at $\ell = n/r$ and $r$ divides $n$. 
+
+Counting orbits including the reflections as well is unsound, because those do not act freely: a hexagon
+whose own symmetries include two mirrors has two corner orbits while its walk still closes at three.
 
 <rules-necessary>
 </rules-necessary>
 
-It alone reasons about **the quotient and not about the plane**: a face's walk closes as soon as it
-returns modulo the symmetry that fixes that face. Only the **rotations** can return it, and those act
-**freely** on the $n$ corners, so the walk closes at $\ell = n/r$ and $r$ divides $n$. Counting orbits
-of the **whole** stabiliser is the plausible strengthening, and it is unsound: that group is not free,
-and a hexagon on a $2mm$ site has two corner orbits while its walk still closes at three.
-
-Necessity is about finished gluings; rejecting **early** is safe for a second reason: along a branch
-gluings are only added, so a broken rule stays broken in every descendant and the cut subtree held no
-tiling. **S4** closes the last gap, between the rule as stated and the loop that runs it.
-
-<!-- Presenter, if asked. Why only the rotations can close the walk: the boundary walk is DIRECTED,
-and an orientation-reversing element maps it to the reversed walk, so it can never identify two steps
-of the same walk. And S4 (checkpart correctness) is the loop-level argument that the code's cycle walk
-at eu_solver.cpp:256-293 implements conditions 1/2a/2b exactly as stated: the maths-versus-code leg of
-this same obligation. Sources: docs/ctrnact-proof-program-2026-07-10.md:303-307 (L1, L2) and :325 (S4). -->
-
-
+Necessity is about finished gluings; rejecting **early** is safe because along a branch
+gluings are only added, so a broken rule stays broken in every descendant.
 
 ---
 
 ## Obligation 3: the search visits every gluing
 
-Take any finished gluing. The search **follows** it (S1): whichever free half-edge the rule picks, the
-target is closed so the partner is there, and that partner sits either on a vertex already placed or
-on one the fresh-vertex move brings in. Both are enumerated, so **which half-edge gets picked is a
-choice of order and not of branch**. Two more clauses make that an argument: a DFS is **rooted at
-every letter** (S2), so the induction always has a start whatever the tiling is made of, and the
-budget gates **vertex addition only** (S3), so a run at $K$ emits every $k \le K$.
+We can show that the search produces every finished gluing:
+- **start**: a DFS is **rooted at every letter**, so whatever the tiling is made of, its minimal letter is one of the roots
+- **inductive step**: whichever free half-edge the rule picks, the target gluing is closed, so the partner exists, and it sits either on a vertex already placed or on a new one. Both are enumerated*, so it misses none
+- **emission**: the budget gates **vertex addition only**, so a run at $K$ emits every $k \le K$.
 
 <no-drop>
 </no-drop>
 
-What is not free is the fresh-vertex move: it tries **one half-edge per automorphism orbit**, sound
-only if the representative list meets every orbit, which is certificate **A5**. $(4,4,4,4)$A2 is the
-letter that earns it: four darts, ferkval 2, so two orbits of two, and the Python solver's hand-kept
-list had **length one**. Exactly one $k=8$ tiling was reachable only through the missed orbit, and it
-was **dropped in silence**: 2849 instead of 2850. Of the six this is the one I judge **likeliest to
-still hide an error**, and that is the failure class it exists to exclude.
+$^*$When Adding a new vertex, the search chooses which of the new letter's half-edges to glue, 
+and tries **one per symmetry class** instead of all of them. A missed class here drops every tiling
+reachable only through it (the $2849$ bug). We checked this in the **machine certificate A5**.
 
 ---
 
 ## Obligation 4: the duplicate test is exact
 
-This one is **theirs**, the single theorem their paper proves. I restate and reprove it anyway,
-because as stated it is **false**: take a 3-cycle beside a 6-cycle as one object, **1-dimensional
-Weisfeiler–Leman** refinement puts all nine nodes in one class, and $\mathrm{Aut} = \mathbb{Z}_3 \times
-\mathbb{Z}_6$ has **two orbits**. Refinement identified what no symmetry relates.
+The search reaches the same assembly by many routes, so `prune` must decide when two are **the same one
+relabelled**, i.e., whether their half-edges can be **matched up** so that they have the same partners,
+neighbours around a vertex, and mirrors. It does that by **elimination**: every half-edge of one may
+start out matched to every half-edge of the other; a pairing is **crossed off** the moment it needs one
+that has already gone; and the sweep repeats until nothing more falls.
 
 <refinement-exact>
 </refinement-exact>
 
-Two hypotheses are missing. Refinement does compute the coarsest **congruence** exactly, because the
-operations are **functions**, so this is DFA minimisation and not general-graph WL. And the two tests
-are different: `simplify` refines **everything**, since collapsing to one class is how a non-core is
-detected, while `comparesolutions` only ever sees the **cores** that survive it. Then geometry closes
-it: a **flag** is a frame of the plane, so a symmetry fixing one is the identity (**B0**), at most one
-isometry joins any two flags, and the congruence has nowhere else to go. Of everything in the chapter
-this is **the step whose obviousness is most misleading**.
+The same sweep on **one assembly against itself** answers a second question: a half-edge still free to
+stand in for a *different* one means the assembly **repeats a smaller one**, and it is dropped before
+any comparison.
+
+The rest is geometry. A half-edge with the tile on its left **determines a frame of the plane**, so
+exactly one isometry carries one half-edge to another and the only question is whether it is a
+**symmetry of the whole tiling**: an isometry that is not a symmetry fails at some edge, and that 
+failure travels back along a path and **separates the two half-edges**, which is the sweep crossing them off.
 
 ---
 
 ## Obligation 5: a finished gluing is a real tiling
 
-> Since all the polygons are convex, they are edge-to-edge adjacent and all the vertices fit, a
-> complete tiling describes a valid tiling of the plane.
-
-That sentence is the whole of the original argument, and this is the **heaviest of the six** in
-mathematics. A finished gluing has no coordinates, so turning it into a picture means walking it and
-laying them down, and two things can go wrong that **no local rule can see**. The tour of a vertex may
-come back **turned**, leaving curvature there and no plane figure at all. And the development may
-**fold onto itself**, so tiles overlap after wrapping.
+A finished gluing has no coordinates, so turning it into geometry means walking the assembly and laying
+tiles down as you go, and there are two things that **no local rule could spot**:
+1. **Holonomy**. The walk returns to where it started **carrying a different accumulated rotation**: that vertex is a cone point, not a flat piece of the plane.
+2. **Global overlap**. Tiles can be laid down with no local overlap and still overlap after wrapping around.
 
 <flat-torus>
 </flat-torus>
 
-Neither can happen. Angles are whole **twelfths of a turn** and every vertex link carries exactly
-twelve, so every vertex is flat; the glued object is then compact, flat and oriented, and
-**Killing–Hopf** leaves only the torus. The plane covers it, a covering of the plane by the plane is a
-**homeomorphism**, and that is what convexity was never going to give.
+Turns out that neither can happen: every abstract vertex is **flat by construction**: the angles sum up to the full turn.
+A finite, flat, two-sided surface can only be a **torus** (Killing–Hopf), and unrolling a torus gives back the plane, 
+**covering it exactly once**, so nothing can fold.
 
 ---
 
@@ -629,16 +611,19 @@ twelve, so every vertex is flat; the glued object is then compact, flat and orie
 The other five establish that the engine loses none of the tilings **it was capable of building**; this
 one establishes that those are **all the tilings there are**.
 
+Take any $k$-uniform tiling and **fold it by its own symmetries**. Three things follow:
+- it is **periodic**, and here that is a theorem: the fold has at most $12k$ flags, $k$ neighbourhoods
+  already cover the plane, and a symmetry fixing one flag fixes everything, which is all **Bieberbach**
+  needs to hand back **two independent translations**
+- the fold is a **finished gluing over the alphabet** with exactly **$k$** vertices, so a run at $k$
+  builds it
+- and it **does not repeat a smaller one**, so the pruner keeps it
+
 <quotient-bridge>
 </quotient-bridge>
 
-The chain is short. Every interior angle is at least $60°$, so a vertex carries at most **12 flags**
-and a $k$-uniform tiling at most **$12k$ flag orbits**, which is what makes $T/G(T)$ a finite object
-over the alphabet at all: the same $12k$ that bounded the Delaney–Dress sweep two acts ago. Flag
-rigidity makes $G(T)$ **discrete**, $k$ vertex stars cover the plane so it is **cocompact**, and
-**Bieberbach** turns discrete plus cocompact into a wallpaper group with a rank-2 translation lattice.
-So **periodicity is a theorem here and not an assumption**, and that is a small thing I am pleased
-about.
+Folding and developing are **inverse**, so each tiling has exactly one gluing and each gluing exactly
+one tiling.
 
 ---
 
@@ -650,7 +635,7 @@ four lemmas of obligation 1 are discharged as **machine certificates**: A3, A4, 
 There are still residual risks that can invalidate the proof:
 - **the implementation may not follow the algorithm exactly**, which is exactly where the earlier Python port lost its tiling
 - mis-specified machine certificates
-- three conventions in the development argument rest on finite bookkeeping with no general lemma behind them, the first of them being that the vertex link and the corner step are the same alternation
+- three steps in the flatness argument are checked case by case, with no general lemma behind them
 - the mathematics itself
 
 All this work **still needs peer-reviewing**, and until then I would not call the catalogue proven on my own authority.
@@ -724,20 +709,6 @@ star polygons, composite tiles, scaled families and polyominoes.
 On the star family it reproduces Myers's hand catalogues entry for entry, all 23 at $k=1$ and all 43
 at $k=2$, and it also returns **three entries his 2-uniform list does not contain**: two isolated
 tilings, and a one-parameter family.
-
-<!-- Numbers checked against experiments/star-oracle/myers-{2004-k1,2009-k2}.json, our transcription of
-     the two papers (TA re-transcribed from the PDFs and verified 43/43, 2026-06-11).
-     k=1: he has 19 fixed (15 in-ring + Figs 4e/4g/4l/4q out-of-ring) + 4 families = 23. We have 19 + 4.
-     Nothing of ours is new at k=1.
-     k=2: he has 38 fixed (34 in-ring + Figs 18/19/22/23) + 5 families = 43. We have 40 + 6 = 46.
-     The extra three are E1 = ctrnact-star-k2-01 (3.6.12*), E2 = ctrnact-star-k2-04 (3.4.12*), both
-     proven PINNED (flex dim 0), and the family ctrnact-s24f-family-k2-02 (3.3*), told from Myers Fig 25's
-     lookalike by vertex incidence: Fig 25 carries a 3^6 orbit, this one has no pure-regular orbit at all.
-     Counted as TILINGS instead of entries it is four (E3/E4 = alpha = pi/12, pi/6 of that family, which
-     is what the thesis plate star-E1..E4 draws), and five once the alpha = pi/4 sibling found later is
-     included. Three agents failed to place any of them in Myers 2009
-     (experiments/results/star-adversarial-review-2026-07-11.log). His list is an unchecked hand
-     enumeration ("should be treated with caution", p.1), so this is a disagreement, not a proof. -->
 
 <slide-grid cols="3">
 <tiling-card tiling="ctrnact-star-k2-01" title="3.6.12*, isolated" periods="2"></tiling-card>
