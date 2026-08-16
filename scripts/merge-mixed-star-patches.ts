@@ -121,9 +121,16 @@ const unused = manifest.inRing.map((r) => (r.kind === 'regular' ? `${r.n}` : `${
 if (unused.length) console.log(`never placed: ${unused.map(SPECIES_LABEL).join(', ')}`);
 console.log(`→ ${ROOT}/gallery.html`);
 
+// sharp is NOT a declared dependency: it arrives transitively from Next's image pipeline on a local
+// install and is absent from a clean one, so the raster step is skipped rather than failing the run.
+//
+// The specifier is held in a variable on purpose. `next build` type-checks scripts/ too, and a literal
+// import('sharp') is resolved at BUILD time, where a missing module is a type error and not a caught
+// exception: that failed the Vercel deploy of 240cf44. Runtime behaviour is unchanged.
+const SHARP_MODULE = 'sharp';
 void (async () => {
 	try {
-		const sharp = (await import('sharp')).default;
+		const sharp = (await import(SHARP_MODULE)).default;
 		for (let i = 1; i <= picked.length; i++) {
 			const stem = path.join(ROOT, `patch-${String(i).padStart(2, '0')}`);
 			await sharp(Buffer.from(fs.readFileSync(`${stem}.svg`))).resize(1400).png().toFile(`${stem}.png`);
